@@ -1,0 +1,102 @@
+
+#include <arch/walkerPageRanger.h>
+#include <__kstdlib/__kflagManipulation.h>
+
+uarch_t walkerPageRanger::encodeFlags(uarch_t flags)
+{
+	uarch_t		ret=0;
+
+#ifdef CONFIG_ARCH_x86_32_PAE
+	if (!__KFLAG_TEST(flags, PAGEATTRIB_EXECUTABLE)) {
+		ret |= PAGING_L2_NO_EXECUTE;
+	};
+	if (__KFLAG_TEST(flags, PAGEATTRIB_WRITE)) {
+		ret |= PAGING_L2_WRITE;
+	};
+	if (!__KFLAG_TEST(flags, PAGEATTRIB_SUPERVISOR)) {
+		ret |= PAGING_L2_USER;
+	};
+	if (__KFLAG_TEST(flags, PAGEATTRIB_PRESENT)) {
+		ret |= PAGING_L2_PRESENT;
+	};
+	if (__KFLAG_TEST(flags, PAGEATTRIB_TLB_GLOBAL)) {
+		ret |= PAGING_L2_TLB_GLOBAL;
+	};
+	if (__KFLAG_TEST(flags, PAGEATTRIB_CACHE_WRITE_THROUGH)) {
+		ret |= PAGING_L2_CACHE_WRITE_THROUGH;
+	};
+	if (__KFLAG_TEST_(flags, PAGEATTRIB_CACHE_DISABLED)) {
+		ret |= PAGING_L2_CACHE_DISABLED;
+	};
+#else
+	if (__KFLAG_TEST(flags, PAGEATTRIB_WRITE)) {
+		ret |= PAGING_L1_WRITE;
+	};
+	if (!__KFLAG_TEST(flags, PAGEATTRIB_SUPERVISOR)) {
+		ret |= PAGING_L1_USER;
+	};
+	if (__KFLAG_TEST(flags, PAGEATTRIB_PRESENT)) {
+		ret |= PAGING_L1_PRESENT;
+	};
+	if (__KFLAG_TEST(flags, PAGEATTRIB_TLB_GLOBAL)) {
+		ret |= PAGING_L1_TLB_GLOBAL;
+	};
+	if (__KFLAG_TEST(flags, PAGEATTRIB_CACHE_WRITE_THROUGH)) {
+		ret |= PAGING_L1_CACHE_WRITE_THROUGH;
+	};
+	if (__KFLAG_TEST(flags, PAGEATTRIB_CACHE_DISABLED)) {
+		ret |= PAGING_L1_CACHE_DISABLED;
+	};
+#endif
+	return ret;
+}
+
+uarch_t walkerPageRanger::decodeFlags(uarch_t flags)
+{
+	uarch_t		ret=0;
+
+#ifdef CONFIG_ARCH_x86_32_PAE
+	if (!__KFLAG_TEST(flags, PAGING_L2_NO_EXECUTE)) {
+		ret |= PAGEATTRIB_EXECUTABLE;
+	};
+	if (__KFLAG_TEST(flags, PAGING_L2_WRITE)) {
+		ret |= PAGEATTRIB_WRITE;
+	};
+	if (!__KFLAG_TEST(flags, PAGING_L2_USER)) {
+		ret |= PAGEATTRIB_SUPERVISOR;
+	};
+	if (__KFLAG_TEST(flags, PAGING_L2_PRESENT)) {
+		ret |= PAGEATTRIB_PRESENT;
+	};
+	if (__KFLAG_TEST(flags, PAGING_L2_TLB_GLOBAL)) {
+		ret |= PAGEATTRIB_TLB_GLOBAL;
+	};
+	if (__KFLAG_TEST(flags, PAGING_L2_CACHE_WRITE_THROUGH)) {
+		ret |= PAGEATTRIB_CACHE_WRITE_THROUGH;
+	};
+	if (__KFLAG_TEST(flags, PAGING_L2_CACHE_DISABLED)) {
+		ret |= PAGEATTRIB_CACHE_DISABLED;
+	};
+#else
+	if (__KFLAG_TEST(flags, PAGING_L1_WRITE)) {
+		ret |= PAGEATTRIB_WRITE;
+	};
+	if (!__KFLAG_TEST(flags, PAGING_L1_USER)) {
+		ret |= PAGEATTRIB_SUPERVISOR;
+	};
+	if (__KFLAG_TEST(flags, PAGING_L1_PRESENT)) {
+		ret |= PAGEATTRIB_PRESENT;
+	};
+	if (__KFLAG_TEST(flags, PAGING_L1_TLB_GLOBAL)){
+		ret |= PAGEATTRIB_TLB_GLOBAL;
+	};
+	if (__KFLAG_TEST(flags, PAGING_L1_CACHE_WRITE_THROUGH)) {
+		ret |= PAGEATTRIB_CACHE_WRITE_THROUGH;
+	};
+	if (__KFLAG_TEST(flags, PAGING_L1_CACHE_DISABLED)) {
+		ret |= PAGEATTRIB_CACHE_DISABLED;
+	};
+#endif
+	return ret;
+}
+

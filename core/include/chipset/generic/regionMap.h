@@ -1,0 +1,2 @@
+#define CHIPSET_MEMORY_NREGIONS		0
+

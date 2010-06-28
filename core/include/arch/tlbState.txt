@@ -1,0 +1,89 @@
+tlbState.h
+
+Must define the following class, with the following API:
+
+class tlbStateC
+{
+	public:
+		void switchVaddrSpace(vaddrSpaceC *vaddrSpace)
+
+		[void localFlushSpotless(void);]
+
+		void localFlushVaddrSpace(void);
+		void localFlushSingleEntry(void *vaddr);
+		void localFlushEntryRange(void *vaddr, uarch_t nPages);
+
+		void mpFlushSingleEntry(void *vaddr);
+		void mpFlushEntryRange(void *vaddr, uarch_t nPages);
+
+		[sarch_t fetchTranslation(void *vaddr);]
+};
+
+Any additional helper functinos, etc are perfectly okay and allowed, as usual
+with class definitions. Inlines are allowed wherever senible.
+
+tlbStateC::switchVaddrSpace(vaddrSpaceC *vaddrspace)
+	Takes a vaddrspaceC * and uses that to load the TLB with entries from a new
+	vaddrSpace. In time, this API may change toa llow the kernel to save TLB
+	state per process on context switch so we avoid having to manually
+	reload the TLB each time a vaddrSpace switch occurs.
+
+	This function will automatically flush all TLB entries not associated with
+	the current address space if the architecture has too few TLB entries.
+
+	This problem may be alleviated by, as mentioned above, implementing per-
+	process TLB state saves on swtiching address spaces. So when a vaddrspace
+	is loaded, we restore its previous caching, and when it is switched away,
+	we save its TLB state before the switch.
+
+tlbStateC::localFlushSpotless(void)
+	Flush all tlb cache entries on the local logical CPU. On an architecture
+	with manual TLB management, this may be used to completely flush the TLB.
+
+	If this is not used, then all 'global' translations will be preserved.
+
+	Avoid using this function.
+
+tlbStateC::localFlushVaddrSpace(void)
+	Will flush all entries currently in the TLB associated with the current
+	vaddrSpace. Pretty expensive, so avoid where possible. Most of the time,
+	a simple localFlushsingleEntry() or localFlushEntryRange() should be more
+	than adequate.
+
+tlbStateC::localFlushSingleEntry(void *vaddr)
+	Will flush the TLB entry associated with 'vaddr' out of the TLB on the
+	current CPU. Used mostly after altering a virt-phys translation in the
+	process's vaddrSpace.
+
+tlbStateC::localFlushEntryRange(void *vaddr, uarch_t nPages)
+	Will flush the range of entries from:
+		vaddr to vaddr + (nPages * PAGING_BASE_SIZE) - 1
+	from the local TLB.
+
+sarch_t tlbStateC::fetchTranslation(void *vaddr)
+	On an arch with hardware assisted TLB managament, this is not necessary.
+	In fact, it may even be pre-processed or optimized out.
+
+	This is the main function used to handle page-faults on all architectures.
+
+	After the kernel finds out which address caused the fault, and rules out
+	possibility of a permission error, or a reserved bit error, we now have
+	to load the right translation for the address into the TLB.
+
+	This function will magically return, and upon return, if the entry in the
+	paging structures was loadable (present, etc), the function will return
+	ERROR_SUCCESS. The kernel, upon receiving ERROR_SUCCESS from this method,
+	can assume that the vaddr translation has been added to the TLB, and can
+	return from the exception.
+
+	If the return value is not equal to ERROR_SUCCESS, we can assume that the
+	tranlsation in the page tables was not valid.
+
+	This means that something was wrong. The error would NOT be a swapped out
+	translation, though, since if the page table walk indicated that the page
+	was on disk, this function would call the page swapper and re-obtain the
+	physical data and place it on a frame and re-map the translation.
+
+	In other words, this function will only return an error value if the
+	translation cannot be fulfilled.
+

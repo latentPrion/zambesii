@@ -1,0 +1,12 @@
+*.[oas]
+*.ekf
+*.ekfs
+*.zxe
+iso
+bochsrc
+*.bz2
+*.tgz
+*.tar*
+tmp
+.bochsrc
+*.iso

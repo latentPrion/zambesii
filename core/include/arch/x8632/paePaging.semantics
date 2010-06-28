@@ -1,0 +1,24 @@
+The processor while in PAE mode (PAE is enabled by setting CR4.PAE) holds 4
+internal non-architectural registers which point to the individual entries in
+the PDPT.
+
+In other words, there is no single CR3 in PAE. Software is made to think that
+this is so, but the processor internally uses 4 separate registers and maintains
+the address space as if there were 4 different PDs loaded.
+
+The 4 PDPTE registers are refreshed when:
+	1. Software executes a MOVL to CR0, or CR4 which enables PAE paging from
+		the state of either no-paging enabled, or from 32-bit paging.
+	2. If a MOVL to CR3 is executed while PAE paging is enabled. In this case
+		all 4 PDPTE registers are reloaded.
+	3. A hardware task switch which loads CR3 while PAE paging is enabled.
+	4. Certain VMX transitions.
+
+The manuals astate thet the processor will use Write-back (buffered) reading to
+load the PDPTE registers.
+
+The PAe does not support 1GB pages. The ACCESSED and DIRTY etc bits of the
+PDPT entries are reserved. However, a PDPTE register may be set to access all
+pages on that level to PCD or PWT. Note well that the R/W and U/S bits on PDPT
+entries are reserved.
+

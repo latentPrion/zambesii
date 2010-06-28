@@ -1,0 +1,13 @@
+memory.h:
+
+Must define the following macros for the architecture:
+
+#define ARCH_MEMORY___KLOAD_VADDR_BASE		x
+	This macro tells the kernel build where in the virtual address space of
+	every process it resides. The kernel has been programmed to be able to
+	stay within a fixed range of virtual memory in each address space and not
+	cause any problems.
+
+	You can even, for example, have a kernel build which takes up for example,
+	the lower 1GB of a 4GB address space.
+

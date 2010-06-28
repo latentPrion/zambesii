@@ -1,0 +1,39 @@
+4.1.4        Enumeration of Paging Features by CPUID
+Software can discover support for different paging features using the CPUID instruc-
+tion:
+•   PSE: page-size extensions for 32-bit paging.
+    If CPUID.01H:EDX.PSE [bit 3] = 1, CR4.PSE may be set to 1, enabling support
+    for 4-MByte pages with 32-bit paging (see Section 4.3).
+•   PAE: physical-address extension.
+    If CPUID.01H:EDX.PAE [bit 6] = 1, CR4.PAE may be set to 1, enabling PAE
+    paging (this setting is also required for IA-32e paging).
+•   PGE: global-page support.
+    If CPUID.01H:EDX.PGE [bit 13] = 1, CR4.PGE may be set to 1, enabling the
+    global-page feature (see Section 4.10.1.4).
+•   PAT: page-attribute table.
+    If CPUID.01H:EDX.PAT [bit 16] = 1, the 8-entry page-attribute table (PAT) is
+    supported. When the PAT is supported, three bits in certain paging-structure
+    entries select a memory type (used to determine type of caching used) from the
+    PAT (see Section 4.9).
+•   PSE-36: 36-Bit page size extension.
+    If CPUID.01H:EDX.PSE-36 [bit 17] = 1, the PSE-36 mechanism is supported,
+    indicating that translations using 4-MByte pages with 32-bit paging may produce
+    physical addresses with more than 32 bits (see Section 4.3).
+•   NX: execute disable.
+    If CPUID.80000001H:EDX.NX [bit 20] = 1, IA32_EFER.NXE may be set to 1,
+    allowing PAE paging and IA-32e paging to disable execute access to selected
+    pages (see Section 4.6). (Processors that do not support CPUID function
+    80000001H do not allow IA32_EFER.NXE to be set to 1.)
+•   LM: IA-32e mode support.
+    If CPUID.80000001H:EDX.LM [bit 29] = 1, IA32_EFER.LME may be set to 1,
+    enabling IA-32e paging. (Processors that do not support CPUID function
+    80000001H do not allow IA32_EFER.LME to be set to 1.)
+•   CPUID.80000008H:EAX[7:0] reports the physical-address width supported by
+    the processor. (For processors that do not support CPUID function 80000008H,
+    the width is generally 36 if CPUID.01H:EDX.PAE [bit 6] = 1 and 32 otherwise.)
+    This width is referred to as MAXPHYADDR. MAXPHYADDR is at most 52.
+•   CPUID.80000008H:EAX[15:8] reports the linear-address width supported by the
+    processor. Generally, this value is 48 if CPUID.80000001H:EDX.LM [bit 29] = 1
+    and 32 otherwise. (Processors that do not support CPUID function 80000008H,
+    support a linear-address width of 32.)
+

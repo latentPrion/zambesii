@@ -1,0 +1,92 @@
+paging.txt
+
+All C/C++/HLL types in here must be protected by an __ASM__ guard so they aren't
+included when compiling in ASM, etc.
+
+Must define the following macros:
+
+#define PAGING_NLEVELS		x
+	This is the number of levels of tables the paging heirarchy has. So if the
+	kernel is expected to navigate 2 levels of paging table structures before
+	deriving a physical address translation for any virtual address, then this
+	must be defined to 2.
+
+#define PAGING_L0_NENTRIES	x
+#define PAGING_L1_NENTRIES	x
+#define ...
+	The number of paging structure entries in each of the paging table levels.
+	For example, on x86-32 without the PAE, (notice that the numbering
+	begins at 0), we have two levels of paging structures, and level 0 has
+	1024 entries, and level 1 also has 1024 entries.
+
+	On x86-32 built with the PAE, there are 3 levels of paging structures, and
+	level 0 has 4 entries, level 1 has 512, and level 2 also has 512.
+
+#define PAGING_BASE_SIZE		x
+	The base page size used for the architecture. An architecture may have any
+	number of page sizes. The one used for the base size is the frame size that
+	is handed out for physical memory allocations and also the size assumed to
+	be the size of a paging structure table.
+
+[#define PAGING_ALTERNATE_SIZE	x]
+	The alternative paging size to be used for the architecture. This is only
+	ever used in walkerPageRangerC <arch/walkerPageRanger.h>. When the kernel
+	is mapping a virtual to physical address translation into the paging
+	structures, it attempts to save memory by seeing whether or not it can use
+	an alternate, larger paging size in order to reduce the number of frames
+	needed to map out the virtual range to physical addresses.
+
+	If you do not wish to use an alternate size, or the alternate size is
+	dpeendent upon other factors, (like on x86-32, where 4MB pages are only
+	supported if PSE is also supported), then leave this undefined.
+
+#define PAGING_BASE_MASK_LOW
+#define PAGING_BASE_MASK_HIGH
+	The masks for the base paging size.
+
+	for example, for a 4KB base page size, the low mask would be 0xFFF, and
+	the high mask would be 0xFFFFF000.
+
+[#define PAGING_ALTERNATE_MASK_LOW	x]
+[#define PAGING_ALTERNATE_MASK_HIGH	x]
+	The masks for the alternate size. Same logic as the base size. ONLY define
+	these if the alternate size macro is defined.
+
+#define PAGING_L0_VADDR_MASK
+#define PAGING_L0_VADDR_SHIFT
+#define PAGING_L1_VADDR_MASK
+#define PAGING_L1_VADDR_SHIFT
+...
+	Define the shifts and masks to be used to extract the paging structure
+	index for each level of the paging hierarchy.
+
+	For example, on x86-32, there are 2 levels of paging structures, and to
+	extract the page tables index for:
+
+	Level0: We need to mask with 0xFFC00000, then shift right by 22.
+	Level1: We need to mask with 0x003FF000, then shift right by 12.
+
+	Thus the VADDR_MASK and VADDR_SHIFT are defined appropriately.
+
+#define PAGING_L0_FLAG1
+#define PAGING_L0_FLAG2
+#define PAGING_L1_FLAG1
+#define PAGING_L1_FLAG2
+...
+	These are the architecture specific flags for the page tables, and you may
+	give them any name you please, as long as they are prefixed with PAGING_LX
+	to define which level of the paging hierarchiy they pertain to.
+
+Must define the following C/C++ types:
+
+struct pagingLevel0S
+{
+	paddr_t		entries[PAGING_L0_NENTRIES];
+} __attribute__(( aligned(ALIGNMENT) ));
+
+	This is the level 0 paging structure entry format. It is generally going
+	to be arch-specific. DO NOT use bitfields.
+
+	From here, of course, define any number of other structs for each level
+	of the paging hierarchy as needed.
+

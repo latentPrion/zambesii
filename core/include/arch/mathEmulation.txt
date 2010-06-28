@@ -1,0 +1,22 @@
+mathEmulation.h
+
+This file must have a relevant .cpp file in the root/arch/ARCH_HERE/ dir,
+on architectures which require runtime math emulation.
+
+Any file which uses any form of mathematical calculations which require
+emulation on any arch must include this file.
+
+The file defines global operators to work on signed and unsigned integral types.
+That is, in defining these operators globally, the compiler will insert a
+a reference to the emulated sequence wherever needed such that mathematics
+emultation is made implicit and transparent to the kernel source.
+
+So: in a file with:
+	x = x / y;
+
+Which includes mathEmulation.h, where mathEmulation.h defines global operators
+for division emulation, the compiler will auto-insert a reference to the
+overloaded division sequence without us having to change the source.
+
+C++ operator overloading ftw.
+

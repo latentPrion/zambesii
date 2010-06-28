@@ -1,0 +1,10 @@
+paddr_t is an integral type used to represent a physical address on the
+relevant architecture.
+
+On the x86-32, for example, with the PAE, we need a 64 bit type to represent a
+physical address since the CPU supports a physical address space of > 2^32 in
+PAE mode.
+
+For an architecture without any sort of physical address space extension or
+quirk, just define it to the architecture's word size.
+

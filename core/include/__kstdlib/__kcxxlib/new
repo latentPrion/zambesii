@@ -1,0 +1,26 @@
+#ifndef _NEW_H
+	#define _NEW_H
+
+	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/size_t.h>
+
+void *operator new(size_t size);
+void *operator new[](size_t size);
+inline void *operator new(size_t, void *ptr) {
+	return ptr;
+}
+inline void *operator new[](size_t, void *ptr) {
+	return ptr;
+}
+
+void operator delete(void *ptr);
+void operator delete[](void *ptr);
+inline void operator delete(void *, void *)
+{
+}
+inline void operator delete[](void *, void *)
+{
+}
+
+#endif
+

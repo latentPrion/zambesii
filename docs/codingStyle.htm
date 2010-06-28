@@ -1,0 +1,168 @@
+<html>
+
+<head>
+	<title>Zambezii Documentation: Coding Style</title>
+	<meta name="Description" content="Non-exhaustive discourse on the
+		required coding style for Zambezii kernel development" />
+</head>
+
+<body>
+	<h2>File Naming</h2>
+	<p>
+		All files are to be named in upperCamelCase with, of course, the
+		relevant extension as would be best interpreted by GNU Make for
+		that programming language.
+
+		Generally, you'll only ever use .c and .cpp since C and C++ are
+		the only languages allowed in the kernel.
+
+		An example would be:
+
+<pre>
+// myClass.[h/cpp]
+
+class myClassC
+{
+	// ...
+};
+</pre>
+
+		If myClassC has many functions which are very long, and they
+		would be best implemented in separate files, you may split up
+		the implementation into multiple files, in the form:
+
+		<tt>myClass_functionName.[h/cpp]</tt>
+	</p>
+
+	<h2>Naming of Structures and Classes</h2>
+	<p>
+		All structs are to be named in the form <tt>myStructS</tt>,
+		where the 'S' at the and of the class name is mandatory.
+
+		All classes are to be named in the form <tt>myClassC</tt>,
+		where the 'C' at the end of the class name is mandatory.
+	</p>
+
+	<h2>Indentation</h2>
+	<p>
+		For the sake of sanity, and uniformity, all persons who submit
+		code which is expected to me merged into the main kernel tree
+		should have their code <b>tab indented</b> and configure their
+		editor to use <b>8 character tabs</b>.
+
+		All files are to adhere to <b>strict 80-character line</b>
+		formatting.
+	</p>
+
+	<h2>General statement form and bracing.</h2>
+	<p>
+		For all statements, the default bracing is as follows:
+<pre>
+class myClassC
+{
+	// ...
+};
+
+struct myStructS
+{
+	// ...
+};
+
+namespace someGroupedSetOfFunctions
+{
+	// ...
+}
+
+for (;;)
+{
+	// ...
+};
+
+while ()
+{
+	// ...
+};
+
+do
+{
+	// ...
+} while ();
+
+if ()
+{
+	// ...
+}
+else if ()
+{
+	// ...
+}
+else
+{
+	// ...
+};
+
+int myFunction(int, void *, char *)
+{
+	// ...
+}
+</pre>
+		<br />
+		That is, all braces begin on the following line.
+
+		For block statements whose body is one line long, the programmer
+		<b>shall not</b> omit the braces. In such a case, the programmer
+		<b>shall</b> include the braces, but in the K&R form, placing
+		the opening brace on the same line.
+
+		Examples:
+
+<pre>
+for (;;) {
+	myVar++;
+};
+
+while () {
+	myVar++;
+};
+
+do {
+	myVar++;
+} while ();
+
+if () {
+	myVar++;
+}
+else if () {
+	myVar++;
+}
+else {
+	myVar++;
+};
+</pre>
+
+		<br />
+		All functions, structure definitions, and class definitions are
+		to have their braces on the following line.
+	</p>
+
+	<h2>Variable naming</h2>
+	<p>
+		Use short, intuitive variable names which describe the purpose
+		of that variable. Where a variable name would be like a compound
+		word, lowerCamelCase should be used.
+	</p>
+
+	<h2>Code quality</h2>
+	<p>
+		All code in the kernel is expected and <b>required</b> to
+		compile without any warnings whatsoever, using the chosen
+		compiler's maximum warning level, with several exceptions.
+
+		Currently no such exceptions exist. So all code must compile
+		without warning.
+	</p>
+
+</body>
+
+</html>
+

@@ -1,0 +1,113 @@
+walkerPageRanger.h
+
+Walker Page Ranger is a namespace which holds an API for page table mapping
+code across architectures.
+
+Every architecture ported must define the following back-end functions for use
+with walkerPageRanger:
+
+status_t walkerPageRanger::mapInc(...)
+	This function will take the virtual address, and size of a range of
+	pages to be mapped to a set of contiguous physical frames in the
+	address space passed to it.
+
+	If a mapping has a set of non-contiguous backing physical frames, this
+	function must be called multiple times, for each physical address
+	fragment.
+
+	This function's return value, status_t, is a signed value indicating
+	the number of pages which were successfully mapped by this function.
+
+	CAVEATS:
+
+	1. It is completely possible for a call to this function to fail to map
+	in all the pages in the range given, mainly in the event that physical
+	frames cannot be found to create a new page table somewhere along the
+	walk. In such a case, the function will stop, and return the count of
+	the number of pages it has been able to successfully map so far.
+
+status_t walkerPageRanger::mapNoInc(...)
+	This function will map a range of pages with the physical address and
+	attributes given to it exactly as they are passed. This is useful for
+	mapping a range of pages with a set of attributes, while not mapping
+	them with backing physical memory.
+
+	You would generally use it to map a range of pages as 'not present',
+	and then place a bitfield value to indicate where the data associated
+	with the range is currently being stored. This can be used to for
+	example host 'fake mapped' pages, or pages which must be on-demand
+	mapped by the kernel.
+
+	CAVEATS:
+
+	1. It is completely possible for a call to this function to fail to map
+	in all the pages in the range given, mainly in the event that physical
+	frames cannot be found to create a new page table somewhere along the
+	walk. In such a case, the function will stop, and return the count of
+	the number of pages it has been able to successfully map so far.
+
+void walkerPageRanger::remapInc(...)
+	This function is used to re-map a page range with attributes. If, for
+	example, a range was previously swapped out, and the kernel is required
+	subsequently to re-map this range with physical frames, this can be
+	achieved by means of a call to walkerPageRanger::setTranslationInc().
+
+	However, the 'gotcha' here is that such a range of pages would be also
+	mapped as 'not-present' in the process's address space. Therefore a call
+	to walkerPageRanger::setAttributes() would be necessary to alter the
+	current attributes of the range to set them to 'present'.
+
+	Two walks of the paging structures would then be required. This is
+	grossly inefficient. This is where remapInc() comes in: it will take
+	a virtual address, and a range of pages, and a physical address range,
+	and a set of attributes to bitwise OR or AND-NOT (set or unset), and
+	run through the page range, ensuring that it does not change any other
+	bits in the attributes of that range except the ones it was commanded to
+	alter.
+
+	This function returns void since it is expected to be used only on a
+	range of pages which has ALREADY been mapped out with a call to
+	walkerPageRanger::mapInc() or walkerPageRanger::mapNoInc().
+
+void walkerPageRanger::remapNoInc(...)
+	This functionn will do the same thing as walkerPageRanger::remapInc(),
+	except that as it maps in pages, it will *not* in any way modify
+	(specifically increment) the physical address that was passed to it as
+	its base.
+
+	This is useful when mapping pages as having been swapped out to disk,
+	or having been 'fake' mapped.
+
+void walkerPageRanger::setAttributes(...)
+	This is useful for when the kernel needs to alter only the attributes
+	of a page range. The function will take a bitwise operation to be
+	performed, and go about the page range setting or unsetting the
+	attributes in question.
+
+	Useful when taking the 'read-only' attribute off a range of COW pages
+	for example.
+
+status_t walkerPageRanger::lookup(...)
+	This function will lookup a virtual address's associated page in the
+	given address space and return a status value based on whether that page
+	is currently backed, swapped out, fakemapped, or simply unmapped.
+
+	As an added benefit, it will also return on the stack the actual
+	attributes and physical mapping of the page.
+
+status_t walkerPageRanger::unmap(...)
+	This function will unmap the range of pages given to it. The function
+	assumes that the caller knows what s/he is doing, and unconditionally
+	zeroes out the page range.
+
+	It will return a status value which tells whether or not the FIRST PAGE
+	in the range on which it was called had a valid mapping. That is, it
+	will return a status value telling the exact state of the first page in
+	the range before the range was zeroed out.
+
+	This is useful when unmapping pages in an address space one at a time:
+	the kernel would need to know whether or not it should also free the
+	physical address it got from the mapping. If the mapping was not valid,
+	and fully backed by physical memory, then freeing the garbage value
+	would corrupt the physical memory manager's state.
+

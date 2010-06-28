@@ -1,0 +1,1 @@
+find $1 | grep '.*\.[ch].*' | wc -l
