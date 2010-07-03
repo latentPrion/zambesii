@@ -5,6 +5,7 @@
 #include <chipset/numaMap.h>
 #include <chipset/memoryMap.h>
 #include <chipset/memoryConfig.h>
+#include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 
@@ -45,13 +46,21 @@ static numaStreamC		__kspaceNumaStream(
 numaTribC::numaTribC(void)
 {
 	nStreams = 1;
+	streamArrayNPages = 1;
 	numaStreams.rsrc = initNumaStreamArray;
 	numaStreams.rsrc[0] = &__kspaceNumaStream;
 }
 
 numaTribC::~numaTribC(void)
 {
-	if (numaStreams.rsrc != __KNULL) {
+	if (numaStreams.rsrc != __KNULL)
+	{
+		for (; nStreams > 0; nStreams--)
+		{
+			if (numaStreams.rsrc[nStreams] != __KNULL) {
+				delete numaStreams.rsrc[nStreams];
+			};
+		};
 		memoryTrib.__kspaceMemFree(numaStreams.rsrc, streamArrayNPages);
 	};
 }
