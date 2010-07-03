@@ -8,12 +8,10 @@
 #include <kernel/common/numaTrib/numaTrib.h>
 
 memoryTribC::memoryTribC(
-	paddr_t __kspaceBase, paddr_t __kspaceSize, void *__kspaceInitMem,
 	pagingLevel0S *level0Accessor, paddr_t level0Paddr
 	)
 :
 __kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr),
-__kspaceBmp(__kspaceBase, __kspaceSize, __kspaceInitMem)
 {
 	memset(
 		memRegions, 0,
@@ -179,82 +177,6 @@ void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
 	};
 
 	// Now return the virtual addresses to the swamp.
-	__kmemoryStream.vaddrSpaceStream.releasePages(vaddr, nPages);
-}
-
-void *memoryTribC::__kspaceMemAlloc(uarch_t nPages)
-{
-	void		*ret;
-	paddr_t		paddr;
-	error_t		nFound;
-	uarch_t		frameCount=0, tracker;
-	status_t	nMapped;
-
-	/* Since only the kernel is allowed to use __kspace, all pages that
-	 * map to it are kernel mode pages.
-	 **/
-
-	ret = (__kmemoryStream.vaddrSpaceStream
-		.*__kmemoryStream.vaddrSpaceStream.getPages)(nPages);
-
-	if (ret == __KNULL)
-	{
-		// Let the caller decide how to deal with this.
-		return __KNULL;
-	};
-
-	/* An __kspace allocation will always return the full pmem backing at
-	 * once, and will not return until the allocation is fulfilled.
-	 **/
-	tracker = reinterpret_cast<uarch_t>( ret );
-	do
-	{
-		nFound = __kspaceBmp.fragmentedGetFrames(
-			nPages - frameCount, &paddr);
-
-		if (nFound > 0)
-		{
-			frameCount += nFound;
-
-			// Map the new frames into the address space.
-			nMapped = walkerPageRanger::__kspaceDataMap(
-				&__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-				reinterpret_cast<void *>( tracker ),
-				paddr, nFound);
-
-			if (nMapped < nFound) {
-				panic(mmStr[3]);
-			};
-
-			tracker += nFound * PAGING_BASE_SIZE;
-		};
-	} while (frameCount < nPages);
-
-	return ret;
-}
-
-void memoryTribC::__kspaceMemFree(void *vaddr, uarch_t nPages)
-{
-	paddr_t		paddr;
-	uarch_t		tracker, _nPages, flags;
-	status_t	status;
-
-	tracker = reinterpret_cast<uarch_t>( vaddr );
-
-	for (_nPages = nPages;
-		_nPages > 0;
-		tracker += PAGING_BASE_SIZE, _nPages--)
-	{
-		status = walkerPageRanger::unmap(
-			&__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-			reinterpret_cast<void *>( tracker ),
-			&paddr, 1, &flags, WPRANGER_FLAGS___KSPACE);
-
-		if (status == WPRANGER_STATUS_BACKED) {
-			__kspaceBmp.releaseFrames(paddr, 1);
-		};
-	};
-
 	__kmemoryStream.vaddrSpaceStream.releasePages(vaddr, nPages);
 }
 

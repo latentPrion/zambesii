@@ -1,9 +1,10 @@
+.goutput*
 *.[oas]
 *.ekf
 *.ekfs
 *.zxe
 iso
-bochsrc
+bochsrc*
 *.bz2
 *.tgz
 *.tar*

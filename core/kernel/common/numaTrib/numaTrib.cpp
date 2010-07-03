@@ -1,11 +1,60 @@
 
 #include <scaling.h>
 #include <arch/paging.h>
+#include <chipset/__kmemory.h>
 #include <chipset/numaMap.h>
 #include <chipset/memoryMap.h>
 #include <chipset/memoryConfig.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
+
+
+/**	EXPLANATION:
+ * This NUMA stream is the initial NUMA stream. It is the replacement for the
+ * __kspace BMP in the Memory Tributary, and it contains the numaMemoryBankC
+ * object and numaCpuBankC object for the __kspace region.
+ *
+ * The Kernel space region is used during boot until the kernel can derive the
+ * total amount of RAM available on the chipset.
+ *
+ * When the kernel knows how much RAM is available, and has a map of the RAM,
+ * and a NUMA map as well, or any combination thereof, it will immediately
+ * spawn the correct NUMA Streams, and "absorb" the kernel space RAM BMP into
+ * the new BMPs, and get rid of the kernel space RAM BMP.
+ *
+ * So the __kspaceNumaStream's numaMemoryBank's memBmp is held in place, and at
+ * the same time, a new BMP is allocated, and initialized. This new BMP's
+ * members are then written over the kernel space BMP's, and as such, the
+ * new BMP takes over the kernel space RAM BMP.
+ *
+ * The new one will have to bitwise OR all of the bits that are set in the old
+ * BMP, and also, multiple BMPs will have to be checked against the old one:
+ * there is no guarantee that for example, the __kspace BMP was not overlapping
+ * two different NUMA banks.
+ **/
+// Allocate one page in the kernel image for the array of numaStreams to init.
+static numaStreamC		*initNumaStreamArray[
+	PAGING_PAGES_TO_BYTES(1) / sizeof(void *)];
+
+static numaStreamC		__kspaceNumaStream(
+	0,
+	CHIPSET_MEMORY___KSPACE_BASE, CHIPSET_MEMORY___KSPACE_SIZE,
+	__kspaceInitMem);
+
+
+numaTribC::numaTribC(void)
+{
+	nStreams = 1;
+	numaStreams.rsrc = initNumaStreamArray;
+	numaStreams.rsrc[0] = &__kspaceNumaStream;
+}
+
+numaTribC::~numaTribC(void)
+{
+	if (numaStreams.rsrc != __KNULL) {
+		memoryTrib.__kspaceMemFree(numaStreams.rsrc, streamArrayNPages);
+	};
+}
 
 #if __SCALING__ >= SCALING_CC_NUMA
 numaStreamC *numaTribC::getStream(numaBankId_t bankId)
@@ -21,19 +70,6 @@ numaStreamC *numaTribC::getStream(numaBankId_t bankId)
 	return ret;
 }
 #endif
-
-numaTribC::numaTribC(void)
-{
-	nStreams = 0;
-	numaStreams.rsrc = __KNULL;
-}
-
-numaTribC::~numaTribC(void)
-{
-	if (numaStreams.rsrc != __KNULL) {
-		memoryTrib.__kspaceMemFree(numaStreams.rsrc, streamArrayNPages);
-	};
-}
 
 void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 {

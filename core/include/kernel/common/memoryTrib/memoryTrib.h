@@ -20,19 +20,13 @@ class memoryTribC
 public tributaryC
 {
 public:
-	memoryTribC(
-		paddr_t __kspaceBase, paddr_t __kspaceSize,
-		void *__kspaceInitMem,
-		pagingLevel0S *level0Accessor, paddr_t level0Paddr);
+	memoryTribC(pagingLevel0S *level0Accessor, paddr_t level0Paddr);
 
 	error_t initialize(
 		void *swampStart, uarch_t swampSize,
 		vSwampC::holeMapS *holeMap);
 	
 public:
-	void *__kspaceMemAlloc(uarch_t nPages);
-	void __kspaceMemFree(void *vaddr, uarch_t nPages);
-
 	void *rawMemAlloc(uarch_t nPages);
 	void rawMemFree(void *vaddr, uarch_t nPages);
 
@@ -41,7 +35,6 @@ public:
 
 public:
 	memoryStreamC		__kmemoryStream;
-	memBmpC			__kspaceBmp;
 
 private:
 	memoryRegionC		memRegions[CHIPSET_MEMORY_NREGIONS];

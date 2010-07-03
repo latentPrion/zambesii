@@ -80,7 +80,9 @@ void *vSwampC::getPages(uarch_t nPages)
 				currentNode->nPages -= nPages;
 				ret = reinterpret_cast<void *>(
 					currentNode->startAddr );
-				currentNode->startAddr += nPages;
+
+				currentNode->startAddr +=
+					nPages * PAGING_BASE_SIZE;
 
 				// If all pages on node are exhausted delete it.
 				if (currentNode->nPages == 0)
@@ -142,7 +144,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 			insertionNode->startAddr)
 		{
 			// We can free directly to an existing node.
-			insertionNode->startAddr -= nPages;
+			insertionNode->startAddr -= nPages * PAGING_BASE_SIZE;
 			insertionNode->nPages += nPages;
 
 			/* Check to see if this free also allows us to

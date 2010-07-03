@@ -4,5 +4,5 @@
 #include <__kstdlib/__ktypes.h>
 
 // The array of reserved memory for __kspace.
-extern uarch_t	__kspaceReservedMem[];
+extern uarch_t	__kspaceInitMem[];
 

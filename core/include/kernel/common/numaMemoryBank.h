@@ -20,9 +20,9 @@
 class numaMemoryBankC
 {
 public:
-	numaMemoryBankC(paddr_t baseAddr, paddr_t size)
+	numaMemoryBankC(paddr_t baseAddr, paddr_t size, void *__kspaceInitMem=0)
 	:
-	baseAddr(baseAddr), size(size), memBmp(baseAddr, size)
+	baseAddr(baseAddr), size(size), memBmp(baseAddr, size, __kspaceInitMem)
 	{}
 
 	~numaMemoryBankC(void);
