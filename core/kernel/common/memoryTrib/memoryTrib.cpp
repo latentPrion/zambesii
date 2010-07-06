@@ -61,7 +61,7 @@ error_t memoryTribC::initialize(
 		currBase = currEntry->baseAddr;
 		currSize = currEntry->size;
 
-		bmpMem = __kspaceMemAlloc(1);
+		bmpMem = rawMemAlloc(1);
 		if (bmpMem == __KNULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
