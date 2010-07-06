@@ -50,22 +50,12 @@ status_t walkerPageRanger::mapInc(
 		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
 		if (l0Entry == 0)
 		{
-			if (__KFLAG_TEST(__kflags, WPRANGER_FLAGS___KSPACE))
+			if (memoryTrib.pageTablePop(&paddrTmp)
+				!= ERROR_SUCCESS)
 			{
-				if (memoryTrib.__kspaceBmp.fragmentedGetFrames(
-					1, &paddrTmp) < 1)
-				{
-					goto out;
-				};
-			}
-			else
-			{
-				if (memoryTrib.pageTablePop(&paddrTmp)
-					!= ERROR_SUCCESS)
-				{
-					goto out;
-				};
+				goto out;
 			};
+
 			// Top level address space modification...
 			vaddrSpace->level0Accessor.rsrc->entries[l0Current] =
 				paddrTmp | PAGING_L0_PRESENT | PAGING_L0_WRITE;
@@ -99,23 +89,10 @@ skipL1Flush:
 			l1Entry = level1Accessor->entries[l1Current];
 			if (l1Entry == 0)
 			{
-				if (__KFLAG_TEST(
-					__kflags, WPRANGER_FLAGS___KSPACE)
+				if (memoryTrib.pageTablePop(&paddrTmp)
 					!= ERROR_SUCCESS)
 				{
-					if (memoryTrib.__kspaceBmp.fragmentedGetFrames(
-						1, &paddrTmp) < 1)
-					{
-						goto out;
-					};
-				}
-				else
-				{
-					if (memoryTrib.pageTablePop(&paddrTmp)
-						!= ERROR_SUCCESS)
-					{
-						goto out;
-					};
+					goto out;
 				};
 
 				level1Accessor->entries[l1Current] = paddrTmp

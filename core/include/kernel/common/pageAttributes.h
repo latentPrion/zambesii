@@ -11,10 +11,5 @@
 #define PAGEATTRIB_CACHE_WRITE_THROUGH		(1<<9)
 #define PAGEATTRIB_CACHE_DISABLED		(1<<8)
 
-/* This flag is essential to ensuring that mappings use __kspace before the
- * NUMA Tributary is initialized.
- **/
-#define WPRANGER_FLAGS___KSPACE			(1<<10)
-
 #endif
 
