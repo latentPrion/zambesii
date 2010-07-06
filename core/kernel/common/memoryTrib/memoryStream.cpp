@@ -80,7 +80,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages)
 	error_t	err;
 
 	// Check the alloc cache for fast memory.
-	if (allocCache.pop(nPages, &ret) == ERROR_SUCCESS) {
+	if ((nPages == 1) && (allocCache.pop(nPages, &ret) == ERROR_SUCCESS)) {
 		return ret;
 	}
 
@@ -247,7 +247,8 @@ void memoryStreamC::memFree(void *vaddr)
 	if (err != ERROR_SUCCESS) { return; };
 
 	// Attempt to just push the allocation whole into the cache.
-	if (allocCache.push(nPages, vaddr) == ERROR_SUCCESS) {
+	if ((nPages == 1) && (allocCache.push(nPages, vaddr) == ERROR_SUCCESS))
+	{
 		return;
 	};
 
