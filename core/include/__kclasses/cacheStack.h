@@ -7,20 +7,13 @@
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 
-/**	EXPLANATION:
- * This is a class which can flexibly cache any integral type using a page
- * sized stack.
- *
- * In the casxe of paddr_t, since on x86-32 paddr_t can be larger than the
- * arch's word size, we need to make special purpose functions for paddr_t
- * being the template instantiation type.
- *
- * This is what pushPaddr() and popPaddr() are for.
- **/
-
-#define CACHESTACK_MAX_NITEMS(__t)		(PAGING_BASE_SIZE / sizeof(__t))
-#define CACHESTACK_EMPTY			(-1)
+// This is the number of pages used for each instance of cacheStackC.
+#define CACHESTACK_NPAGES_PER_STACK		(1)
+#define CACHESTACK_MAX_NITEMS(__t)		\
+	((PAGING_BASE_SIZE *CACHESTACK_NPAGES_PER_STACK) / sizeof(__t))
 #define CACHESTACK_FULL(__t)			(CACHESTACK_MAX_NITEMS(__t) -1)
+
+#define CACHESTACK_EMPTY			(-1)
 
 template <class T>
 class cacheStackC

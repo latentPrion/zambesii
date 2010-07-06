@@ -45,10 +45,21 @@ static numaStreamC		__kspaceNumaStream(
 
 numaTribC::numaTribC(void)
 {
-	nStreams = 1;
-	streamArrayNPages = 1;
+	nStreams = 0;
+	streamArrayNPages = 0;
+	numaStreams.rsrc = 0;
+	defaultConfig.def.rsrc = 0;
+}
+
+error_t numaTribC::initialize(void)
+{
 	numaStreams.rsrc = initNumaStreamArray;
 	numaStreams.rsrc[0] = &__kspaceNumaStream;
+
+	streamArrayNPages = 1;
+	nStreams = 1;
+
+	// Initialize the kernel heap?
 }
 
 numaTribC::~numaTribC(void)
@@ -61,7 +72,7 @@ numaTribC::~numaTribC(void)
 				delete numaStreams.rsrc[nStreams];
 			};
 		};
-		memoryTrib.__kspaceMemFree(numaStreams.rsrc, streamArrayNPages);
+		memoryTrib.rawMemFree(numaStreams.rsrc, streamArrayNPages);
 	};
 }
 

@@ -45,7 +45,7 @@ memBmpC::memBmpC(paddr_t baseAddr, paddr_t size, void *preAllocated)
 	{
 		//XXX: Note: This overallocates memory for the BMP.
 		bmp.rsrc.bmp = new (
-			memoryTrib.__kspaceMemAlloc(
+			memoryTrib.rawMemAlloc(
 				PAGING_BYTES_TO_PAGES(bmpSize)))
 			uarch_t[nIndexes];
 
@@ -70,7 +70,7 @@ memBmpC::~memBmpC(void)
 {
 	if (__KFLAG_TEST(flags, MEMBMP_FLAGS_DYNAMIC))
 	{
-		memoryTrib.__kspaceMemFree(bmp.rsrc.bmp,
+		memoryTrib.rawMemFree(bmp.rsrc.bmp,
 			PAGING_BYTES_TO_PAGES(bmpSize));
 	};
 }

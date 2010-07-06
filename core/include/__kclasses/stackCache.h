@@ -4,16 +4,26 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/cacheStack.h>
 
-#define STACKCACHE_NSTACKS		5
+#define STACKCACHE_NSTACKS		1
+// The first stack in the cache stores page blocks of size 1 page large.
 #define STACKCACHE_STACK1_SIZE		1
-#define STACKCACHE_STACK2_SIZE		2
-#define STACKCACHE_STACK3_SIZE		4
-#define STACKCACHE_STACK4_SIZE		6
-#define STACKCACHE_STACK5_SIZE		8
 
 class numaMemoryBankC;
 
-// T must be an integral type, or must have operator=() defined.
+/**	EXPLANATION:
+ * stackCacheC is a simple class which acts as a caching mechanism for items of
+ * integral type.
+ *
+ * Its use is confined to the Memory Stream for the caching of virtual addresses
+ * within a process. It caches single pages only. The whole idea is to speed up
+ * common allocation sizes (such as single pages), so unless a particular number
+ * of contiguous pages becomes a very common allocation, and can be so proven,
+ * it cannot be placed here.
+ *
+ * To change the number of pages each cached page size takes up, modify
+ * 'CACHESTACK_NPAGES_PER_STACK' in cacheStack.h.
+ **/
+
 template <class T>
 class stackCacheC
 {
@@ -38,10 +48,6 @@ template <class T>
 stackCacheC<T>::stackCacheC(void)
 {
 	stacks[0].stackSize = STACKCACHE_STACK1_SIZE;
-	stacks[1].stackSize = STACKCACHE_STACK2_SIZE;
-	stacks[2].stackSize = STACKCACHE_STACK3_SIZE;
-	stacks[3].stackSize = STACKCACHE_STACK4_SIZE;
-	stacks[4].stackSize = STACKCACHE_STACK5_SIZE;
 }
 
 template <class T>
