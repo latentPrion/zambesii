@@ -1,4 +1,3 @@
-
 #include <chipset/regionMap.h>
 #include <chipset/ibmPc/regionMap.h>
 #include <__kstdlib/__ktypes.h>
@@ -8,14 +7,14 @@ static chipsetRegionMapEntryS	chipsetRegions[] =
 {
 	{
 		// DMA region. We reserve 2MB.
-		0x800000, 0x200000,
+		0x1000, 0x80000,
 		__KNULL,
 		0
 	}
 #ifdef CONFIG_ARCH_x86_32_PAE
 	,{
 		// PAE x86-32 PDP table allocator region. 1MB.
-		0xA00000, 0x100000,
+		0x800000, 0x100000,
 		__KNULL,
 		0
 	}
