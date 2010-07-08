@@ -1,4 +1,3 @@
-
 #include <__kstdlib/__kcxxlib/cstring>
 #include <__kthreads/__korientationPreConstruct.h>
 #include <kernel/common/process.h>
@@ -12,7 +11,7 @@ void __kprocessPreConstruct(void)
 
 	__kprocess.head = &__korientationThread;
 	__kprocess.fileName = const_cast<char *>( "zambezii.zxe" );
-	__kprocess.filePath = const_cast<char *>( "/zambezii/" );
+	__kprocess.filePath = const_cast<char *>( "/zambezii/core" );
 	// Probably set argString to the kernel command line later on.
 	__kprocess.memoryStream = &memoryTrib.__kmemoryStream;
 }
