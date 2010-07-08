@@ -153,20 +153,16 @@ T *__kequalizerListC<T>::find(T *item)
 		current != __KNULL;
 		current = current->header.next)
 	{
-		if ((reinterpret_cast<uarch_t>( item ) & PAGING_BASE_MASK_HIGH)
-			== reinterpret_cast<uarch_t>( current ))
+		for (uarch_t i=0; 
+			(i<PAGEBLOCK_NENTRIES(T)) && 
+				(current->entries[i] != 0) &&
+				(current->entries[i] <= *item); 
+			i++)
 		{
-			for (uarch_t i=0; 
-				(i<PAGEBLOCK_NENTRIES(T)) && 
-					(current->entries[i] != 0) &&
-					(current->entries[i] <= *item); 
-				i++)
+			if (current->entries[i] == *item)
 			{
-				if (current->entries[i] == *item) {
-
-					head.lock.release();
-					return &current->entries[i];
-				};
+				head.lock.release();
+				return &current->entries[i];
 			};
 		};
 	};
@@ -188,8 +184,8 @@ void __kequalizerListC<T>::removeEntry(T *item)
 	head.lock.acquire();
 
 	block = findDeletionEntry(item, &entry);
-	if (block == __KNULL) {
-
+	if (block == __KNULL)
+	{
 		head.lock.release();
 		return;
 	};
@@ -250,19 +246,15 @@ __kpageBlockC<T> *__kequalizerListC<T>::findDeletionEntry(
 	for (__kpageBlockC<T> *current = head.rsrc; current != __KNULL;
 		current = current->header.next)
 	{
-		if ((reinterpret_cast<uarch_t>( item ) & PAGING_BASE_MASK_HIGH)
-			== reinterpret_cast<uarch_t>( current ))
+		for (uarch_t i=0;
+			i<PAGEBLOCK_NENTRIES(T)
+			&& current->entries[i] <= *item;
+			i++)
 		{
-				for (uarch_t i=0;
-				i<PAGEBLOCK_NENTRIES(T)
-				&& current->entries[i] <= *item;
-				i++)
+			if (current->entries[i] == *item)
 			{
-				if (current->entries[i] == *item)
-				{
-					*entry = i;
-					return current;
-				};
+				*entry = i;
+				return current;
 			};
 		};
 	};
