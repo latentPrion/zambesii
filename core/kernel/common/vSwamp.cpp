@@ -1,4 +1,3 @@
-
 #include <arch/paging.h>
 #include <kernel/common/vSwamp.h>
 
@@ -154,7 +153,9 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 			while (insertionNode->prev != __KNULL)
 			{
 				prevNode = insertionNode->prev;
-				if ((prevNode->startAddr + prevNode->nPages)
+				if ((prevNode->startAddr
+					+ (prevNode->nPages
+					* PAGING_BASE_SIZE))
 					== insertionNode->startAddr)
 				{
 					// Join the two nodes.
