@@ -7,11 +7,7 @@ all: Makefile $(DELIVERABLE)
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-clean: aclean dirclean
-
-aclean:
-
-dirclean:
+clean: fonyphile
 	rm -rf *.o *.s
 
 fonyphile:

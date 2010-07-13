@@ -4,17 +4,17 @@ OBJFILES=__kheaders.o __koptimizationHacks.o __kclassInstances.o \
 	multipleReaderLock.o waitLock.o recursiveLock.o vSwamp.o panic.o \
 	numaMemoryBank.o preConstruct.o __kprocess.o stream.o
 
-all: Makefile $(DELIVERABLE)
+all: Makefile $(DELIVERABLE) archSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-clean: aclean dirclean
+archSubdir:
+	cd ../$(ZARCH); make
 
-aclean:
-
-dirclean:
+clean:
 	rm -rf *.o *.s
+	cd ../$(ZARCH); make clean
 
 fonyphile:
 	rm -f clean aclean dirclean

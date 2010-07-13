@@ -3,17 +3,17 @@ DELIVERABLE=../../../memoryTrib.a
 OBJFILES=memoryStream.o memoryTrib.o vaddrSpaceStream.o rawMemAlloc.o \
 	__kspaceMemAlloc.o
 
-all: Makefile $(DELIVERABLE)
+all: Makefile $(DELIVERABLE) archSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-clean: aclean dirclean
+archSubdir:
+	cd ../../$(ZARCH)/memoryTrib; make
 
-aclean:
-
-dirclean:
+clean:
 	rm -rf *.o *.s
+	cd ../../$(ZARCH)/memoryTrib; make clean
 
 fonyphile:
 	rm -f clean aclean dirclean

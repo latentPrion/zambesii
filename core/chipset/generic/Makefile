@@ -1,6 +1,6 @@
 .PHONY=
-DELIVERABLE=../__kclasses.a
-OBJFILES=memBmp.o bitmap.o allocTable.o pageTableCache.o
+DELIVERABLE=../../chipsetCore.a
+OBJFILES=memoryConfig.o memoryMap.o regionMap.o numaMap.o
 
 all: Makefile $(DELIVERABLE)
 

@@ -1,7 +1,4 @@
 
-#include <kernel/common/kernel_include.h>
-#include KERNEL_SOURCE_INCLUDE(__kclassInstances.cpp)
-
 /* Part of a trick to prevent reference optimizing linkers from excluding
  * this file.
  **/

@@ -1,26 +1,18 @@
 .PHONY=
 DELIVERABLE=../__kthreads.a
-OBJFILES=__korientationAsm.o __korientationEntry.o __korientationStack.o \
-	__korientationPreConstruct.o
+OBJFILES= __korientationStack.o __korientationPreConstruct.o
 
-all: Makefile $(DELIVERABLE)
+all: Makefile $(DELIVERABLE) archSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-__korientationAsm.o: __korientationAsmTmp.s
-__korientationAsmTmp.s: __korientationAsm.S */__korientationAsm.S
-	$(CPP) -E $(CPPFLAGS) __korientationAsm.S >$@
+archSubdir:
+	cd $(ZARCH); make
 
-__korientationEntry.o: __korientationEntry.cpp */__korientationEntry.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c __korientationEntry.cpp
-
-clean: aclean dirclean
-
-aclean: fonyphile
-
-dirclean: fonyphile
+clean: fonyphile
 	rm -rf *.o *.s
+	cd $(ZARCH); make clean
 
 fonyphile:
 	rm -f clean aclean dirclean

@@ -1,30 +1,18 @@
 .PHONY=
 DELIVERABLE=../chipset.a
-OBJFILES=__kmemory.o memoryConfig.o memoryMap.o regionMap.o numaMap.o
+OBJFILES=__kmemory.o
 
-all: Makefile $(DELIVERABLE)
+all: Makefile $(DELIVERABLE) chipsetSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-memoryConfig.o: memoryConfig.cpp */memoryConfig.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c memoryConfig.cpp
+chipsetSubdir:
+	cd $(ZCHIPSET); make
 
-memoryMap.o: memoryMap.cpp */memoryMap.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c memoryMap.cpp
-
-regionMap.o: regionMap.cpp */regionMap.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c regionMap.cpp
-
-numaMap.o: numaMap.cpp */numaMap.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c numaMap.cpp
-
-clean: aclean dirclean
-
-aclean:
-
-dirclean:
+clean: fonyphile
 	rm -rf *.o *.s
+	cd $(ZCHIPSET); make clean
 
 fonyphile:
 	rm -f clean aclean dirclean

@@ -1,13 +1,13 @@
 .PHONY=
-DELIVERABLE=../__kclasses.a
-OBJFILES=memBmp.o bitmap.o allocTable.o pageTableCache.o
+DELIVERABLE=../../../archCpuTrib.a
+OBJFILES=cpuTrib.o cpuStream.o
 
 all: Makefile $(DELIVERABLE)
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-clean: fonyphile
+clean:
 	rm -rf *.o *.s
 
 fonyphile:

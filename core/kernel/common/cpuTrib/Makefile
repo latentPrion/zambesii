@@ -2,17 +2,18 @@
 DELIVERABLE=../../../cpuTrib.a
 OBJFILES=cpuTrib.o cpuStream.o
 
-all: Makefile $(DELIVERABLE)
+all: Makefile $(DELIVERABLE) archSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-clean: aclean dirclean
+archSubdir:
+	cd ../../$(ZARCH)/cpuTrib; make
 
-aclean:
-
-dirclean:
+clean:
 	rm -rf *.o *.s
+	cd ../../$(ZARCH)/cpuTrib; make clean
+
 
 fonyphile:
 	rm -f clean aclean dirclean

@@ -7,12 +7,12 @@ all: Makefile $(DELIVERABLE)
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-clean: aclean dirclean
+archSubdir:
+	cd ../../$(ZARCH)/numaTrib; make
 
-aclean:
-
-dirclean:
+clean:
 	rm -rf *.o *.s
+	cd ../../$(ZARCH)/numaTrib; make dirclean
 
 fonyphile:
 	rm -f clean aclean dirclean

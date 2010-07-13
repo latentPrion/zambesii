@@ -1,13 +1,16 @@
 .PHONY=
-DELIVERABLE=../platform.a
-OBJFILES=__kpagingLevel0Tables.o __kpagingLevel1Tables.o
+DELIVERABLE=
+OBJFILES=
 
-all: Makefile $(DELIVERABLE) __klinkScript.ld
+all: Makefile $(DELIVERABLE) ../__klinkScript.ld platformSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-__klinkScript.ld: __klinkScriptTmp.s
+platformSubdir:
+	cd $(ZARCH)-$(ZCHIPSET); make
+
+../__klinkScript.ld: __klinkScriptTmp.s
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Generating platform specific linker script.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,27 +18,11 @@ __klinkScript.ld: __klinkScriptTmp.s
 
 __klinkScriptTmp.s: __klinkScript.S */__klinkScript.ld
 	$(CPP) -E $(CPPFLAGS) __klinkScript.S >$@
-	
 
-__kpagingLevel0Tables.o: __kpagingLevel0TablesTmp.s
-__kpagingLevel0TablesTmp.s: __kpagingLevel0Tables.S */__kpagingLevel0Tables.S
-	$(CPP) -E $(CPPFLAGS) __kpagingLevel0Tables.S >$@
-
-__kpagingLevel1Hll.o: __kpagingLevel1Hll.cpp */__kpagingLevel1Hll.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c __kpagingLevel1Hll.cpp
-
-__kpagingLevel1Tables.o: __kpagingLevel1TablesTmp.s
-__kpagingLevel1TablesTmp.s: __kpagingLevel1Tables.S */__kpagingLevel1Tables.S
-	$(CPP) -E $(CPPFLAGS) __kpagingLevel1Tables.S >$@
-
-clean: aclean dirclean
-
-aclean:
-	rm -rf __klinkScript.ld
-
-dirclean:
+clean:
 	rm -rf *.o *.s
+	cd $(ZARCH)-$(ZCHIPSET); make clean
 
 fonyphile:
-	rm -f clean aclean dirclean
+	rm -f clean
 

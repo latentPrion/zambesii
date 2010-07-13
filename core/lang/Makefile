@@ -1,14 +1,18 @@
 .PHONY=
-DELIVERABLE=../../__kcxxlib.a
-OBJFILES=new.o
+DELIVERABLE=
+OBJFILES=
 
-all: Makefile $(DELIVERABLE)
+all: Makefile langSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-clean: fonyphile
+langSubdir:
+	cd $(ZLANG); make
+
+clean:
 	rm -rf *.o *.s
+	cd $(ZLANG); make clean
 
 fonyphile:
 	rm -f clean aclean dirclean
