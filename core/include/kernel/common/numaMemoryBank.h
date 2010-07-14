@@ -17,14 +17,13 @@
  * contiguous and fragmented allocation.
  **/
 
+#define NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP	(1<<0)
+
 class numaMemoryBankC
 {
 public:
-	numaMemoryBankC(paddr_t baseAddr, paddr_t size, void *__kspaceInitMem=0)
-	:
-	baseAddr(baseAddr), size(size), memBmp(baseAddr, size, __kspaceInitMem)
-	{}
-
+	numaMemoryBankC(paddr_t baseAddr, paddr_t size, uarch_t opts);
+	error_t initialize(void);
 	~numaMemoryBankC(void);
 
 	void cut(void);
@@ -45,7 +44,7 @@ public:
 	paddr_t			baseAddr, size;
 
 private:
-	memBmpC			memBmp;
+	memBmpC			*memBmp;
 	// FIXME: Have a look at this.
 	stackCacheC<paddr_t>	frameCache;
 };

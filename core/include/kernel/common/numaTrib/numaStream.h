@@ -21,15 +21,14 @@ class numaStreamC
 :
 public streamC
 {
-public:	
-	// Constructor for __kspace stream.
+public:
 	numaStreamC(
 		numaBankId_t bankId, paddr_t baseAddr, paddr_t size,
-		void *__kspaceInitMem=0)
+		uarch_t opts)
 	:
 	streamC(0),
 	bankId(bankId),
-	memoryBank(baseAddr, size, __kspaceInitMem)
+	memoryBank(baseAddr, size, opts)
 	{}
 	
 	~numaStreamC(void);

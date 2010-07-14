@@ -37,11 +37,27 @@
 static numaStreamC		*initNumaStreamArray[
 	PAGING_PAGES_TO_BYTES(1) / sizeof(void *)];
 
+/**	EXPLANATION:
+ * This NUMA stream is the first physical memory the kernel is made aware of,
+ * and space for it is in fact pre-allocated in the kernel image.
+ *
+ * Inside of the internal numaMemoryBankC object, there is a pointer to a
+ * memBmpC. During numaBankC::initialize() this is initialized with the address
+ * of a static instance of memBmpC stored again within the kernel image.
+ *
+ * Upon construct, this statically allocated memBmp will assume the memory
+ * reserved for __kspace init.
+ *
+ * That is, the numaMemoryBankC's internal memBmpC member is a pointer.
+ **/
 static numaStreamC		__kspaceNumaStream(
 	0,
 	CHIPSET_MEMORY___KSPACE_BASE, CHIPSET_MEMORY___KSPACE_SIZE,
-	__kspaceInitMem);
+	NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP);
 
+static memBmpC			__kspaceBmp(
+	CHIPSET_MEMORY___KSPACE_BASE, CHIPSET_MEMORY___KSPACE_SIZE,
+	__kspaceInitMem);
 
 numaTribC::numaTribC(void)
 {
@@ -59,7 +75,13 @@ error_t numaTribC::initialize(void)
 	streamArrayNPages = 1;
 	nStreams = 1;
 
-	// Initialize the kernel heap?
+	/* To avoid having to init the kernel heap now, we use an initialize()
+	 * method with numaMemoryBanks, which will cause them to allocate an
+	 * object for their internal memBmpC class pointers.
+	 **/
+	numaStreams.rsrc[0]->memoryBank.initialize();
+
+	// At this point all PMM should be initialized to __kspace state.
 	return ERROR_SUCCESS;
 }
 

@@ -1,5 +1,47 @@
 
+#include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/numaMemoryBank.h>
+
+
+/**	NOTES:
+ * In order to support uniformity in the kernel for all physical memory
+ * management, we have to have the internal BMP in the numaMemoryBank objects
+ * be a pointer to a BMP, and not a BMP object instance.
+ *
+ * But for the general case, it is desirable for the class to auto-allocate
+ * the internal BMP object automatically. On startup, however, for the initial
+ * temporary NUMA bank (__kspace), we do not wish for the class to allocate
+ * the internal BMP automatically in its constructor.
+ *
+ * Thus, the internal allocation is controlled by a flag argument to the
+ * constructor. By default, the flags are set to have the class auto-allocate.
+ *
+ * During kernel orientation, the kernel passes the 'no-allocate' flag, so that
+ * it can later send a message to the NUMA Tributary to manually allocate the
+ * internal BMP on the first bank.
+ **/
+numaMemoryBankC::numaMemoryBankC(paddr_t baseAddr, paddr_t size, uarch_t opts)
+:
+baseAddr(baseAddr), size(size)
+{
+	if (!__KFLAG_TEST(opts, NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP)) {
+		initialize();
+	};
+}
+
+error_t numaMemoryBankC::initialize(void)
+{
+	memBmp = new memBmpC(this->baseAddr, this->size);
+	if (memBmp != __KNULL) {
+		return ERROR_MEMORY_NOMEM;
+	}
+	return ERROR_SUCCESS;
+}
+
+numaMemoryBankC::~numaMemoryBankC(void)
+{
+}
 
 error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 {
@@ -8,7 +50,7 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 	};
 
 	// Frame cache allocation failed.
-	return memBmp.contiguousGetFrames(nPages, paddr);
+	return memBmp->contiguousGetFrames(nPages, paddr);
 }
 
 error_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
@@ -32,7 +74,7 @@ error_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	};
 
 	// Return whatever we get.
-	return memBmp.fragmentedGetFrames(nPages, paddr);
+	return memBmp->fragmentedGetFrames(nPages, paddr);
 }
 
 void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
@@ -43,17 +85,17 @@ void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
 	};
 
 	// Bmp free.
-	memBmp.releaseFrames(paddr, nPages);
+	memBmp->releaseFrames(paddr, nPages);
 }
 
 // Couyld probably inline these two.
 void numaMemoryBankC::mapRangeUsed(paddr_t baseAddr, uarch_t nFrames)
 {
-	memBmp.mapRangeUsed(baseAddr, nFrames);
+	memBmp->mapRangeUsed(baseAddr, nFrames);
 }
 
 void numaMemoryBankC::mapRangeUnused(paddr_t baseAddr, uarch_t nFrames)
 {
-	memBmp.mapRangeUnused(baseAddr, nFrames);
+	memBmp->mapRangeUnused(baseAddr, nFrames);
 }
 
