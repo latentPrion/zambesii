@@ -87,32 +87,6 @@ namespace walkerPageRanger
 		vaddrSpaceC *vaddrSpace,
 		void *vaddr, uarch_t nPages, uarch_t flags);
 
-	// These are used before the NUMA Tributary can initialize itself.
-
-	status_t __kspaceIoWriteThroughMap(
-			vaddrSpaceC *vaddrSpace,
-		void *vaddr, paddr_t paddr, uarch_t nPages);
-
-	status_t __kspaceIoUncachedMap(
-		vaddrSpaceC *vaddrSpace,
-		void *vaddr, paddr_t paddr, uarch_t nPages);
-
-	status_t __kspaceExecMap(
-		vaddrSpaceC *vaddrSpace,
-		void *vaddr, paddr_t paddr, uarch_t nPages);
-
-	status_t __kspaceDataMap(
-		vaddrSpaceC *vaddrSpace,
-		void *vaddr, paddr_t paddr, uarch_t nPages);
-
-	status_t __kspaceRoDataMap(
-		vaddrSpaceC *vaddrSpace,
-		void *vaddr, paddr_t paddr, uarch_t nPages);
-
-	status_t __kspaceFakeMap(
-		vaddrSpaceC *vaddrSpace,
-		void *vaddr, uarch_t nPages, uarch_t flags);
-		
 	/* swapMap() will take a range of pages and map them with the relevant
 	 * bitfield values to indicate that the page has been swapped out to
 	 * disk.
@@ -297,74 +271,7 @@ inline status_t walkerPageRanger::__kfakeMap(
 		flags | PAGEATTRIB_SUPERVISOR);
 }
 
-// __kspace Mapping functions.
-
-inline status_t walkerPageRanger::__kspaceIoWriteThroughMap(
-	vaddrSpaceC *vaddrSpace,
-	void *vaddr, paddr_t paddr, uarch_t nPages
-	)
-{
-	return mapInc(
-		vaddrSpace, vaddr, paddr, nPages,
-		PAGEATTRIB_SUPERVISOR | PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE |
-		PAGEATTRIB_CACHE_WRITE_THROUGH | WPRANGER_FLAGS___KSPACE);
-}
-
-inline status_t walkerPageRanger::__kspaceIoUncachedMap(
-	vaddrSpaceC *vaddrSpace,
-	void *vaddr, paddr_t paddr, uarch_t nPages
-	)
-{
-	return mapInc(
-		vaddrSpace, vaddr, paddr, nPages,
-		PAGEATTRIB_SUPERVISOR | PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE |
-		PAGEATTRIB_CACHE_DISABLED | WPRANGER_FLAGS___KSPACE);
-}
-
-inline status_t walkerPageRanger::__kspaceExecMap(
-	vaddrSpaceC *vaddrSpace,
-	void *vaddr, paddr_t paddr, uarch_t nPages
-	)
-{
-	return mapInc(
-		vaddrSpace, vaddr, paddr, nPages,
-		PAGEATTRIB_SUPERVISOR | PAGEATTRIB_PRESENT |
-		PAGEATTRIB_EXECUTABLE | WPRANGER_FLAGS___KSPACE);
-}
-
-inline status_t walkerPageRanger::__kspaceDataMap(
-	vaddrSpaceC *vaddrSpace,
-	void *vaddr, paddr_t paddr, uarch_t nPages
-	)
-{
-	return mapInc(
-		vaddrSpace, vaddr, paddr, nPages,
-		PAGEATTRIB_SUPERVISOR | PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
-		| WPRANGER_FLAGS___KSPACE);
-}
-
-inline status_t walkerPageRanger::__kspaceRoDataMap(
-	vaddrSpaceC *vaddrSpace, 
-	void *vaddr, paddr_t paddr, uarch_t nPages
-	)
-{
-	return mapInc(
-		vaddrSpace, vaddr, paddr, nPages,
-		PAGEATTRIB_SUPERVISOR | PAGEATTRIB_PRESENT
-		| WPRANGER_FLAGS___KSPACE);
-}
-
-inline status_t walkerPageRanger::__kspaceFakeMap(
-	vaddrSpaceC *vaddrSpace,
-	void *vaddr, uarch_t nPages, uarch_t flags
-	)
-{
-	return mapNoInc(
-		vaddrSpace, vaddr, PAGING_LEAF_FAKEMAPPED, nPages,
-		flags | PAGEATTRIB_SUPERVISOR | WPRANGER_FLAGS___KSPACE);
-}
-
-// OThers mapping functions.
+// Other mapping functions.
 
 inline void walkerPageRanger::swapMap(
 	vaddrSpaceC *vaddrSpace,
