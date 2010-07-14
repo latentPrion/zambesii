@@ -1,0 +1,44 @@
+Please refer to the HTML documentation in the docs/ subdirectory.
+
+Cursory information:
+
+ABOUT THIS PROJECT:
+	Zambezii is a portable kernel for 32-bit and above platforms which have
+	a Memory Management Unit. It is still under very heavy development.
+
+ABOUT THE AUTHOR:
+	I am a human being who lives in a country. If you wish to make contact
+	with me, please email me at: reavengrey <AT> gmail <DOT> com.
+
+LICENSING:
+	Zambezii is licensed under the GNU Public License version 2. I chose
+	to use this license for public distribution since I prefer to ensure
+	that non-open-source projects cannot take code from this kernel.
+
+	WHY?
+
+	Because in doing this kernel, so far I have discovered that without the
+	open source movement, I would have had no information, and no resources
+	to rely on to get started. Open source is the only thing that gives
+	hobbyist kernel developers a fighting chance.
+
+	I DISTRIBUTE MY KERNEL AS OPEN SOURCE; JUST NOT UNDER THE GPL.
+
+	This is a very valid point. What if you have a project which uses an
+	open-source model, but is not GPL licensed?
+
+	The GPL works by using copyright law to allow the author to distribute
+	his or her work under a license, based on his or her authority to
+	distribute. It is up to the copyright holder to decide whether or not
+	to pursue legal action against anyone who infringes his or her license.
+
+	I support open source projects. Therefore, I have no problem with
+	allowing other projects which conform to the open source model (they
+	explicitly make their work available to all distributees at no charge,
+	whether upon request, or as a fixed part of the distribution package) to
+	make use in full or in part of my source code.
+
+	Basically, if you have an open-source, non GPL project, and want to use
+	my code, by all means go ahead. If you have a non-open source project,
+	and want to use my code, please look elsewhere.
+
