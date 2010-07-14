@@ -1,4 +1,5 @@
 
+#include <in_asm.h>
 #include <config.h>
 #include <arch/paging.h>
 #include <arch/memory.h>

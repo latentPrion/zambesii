@@ -8,9 +8,6 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 memoryTribC		memoryTrib(
-	static_cast<paddr_t>( CHIPSET_MEMORY___KSPACE_BASE ),
-	static_cast<paddr_t>( CHIPSET_MEMORY___KSPACE_SIZE ),
-	__kspaceReservedMem,
 #ifdef CONFIG_ARCH_x86_32_PAE
 	reinterpret_cast<pagingLevel0S *>( 0xFFFFC000 ),
 #else

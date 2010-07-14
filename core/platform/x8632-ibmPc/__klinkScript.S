@@ -1,3 +1,4 @@
+#include <in_asm.h>
 //Include the memory information for this build of the kernel. We need the Vaddr and the Paddr for this linker script.
 #include <platform/x8632-ibmPc/memory.h>
 #include <arch/x8632/paging.h>

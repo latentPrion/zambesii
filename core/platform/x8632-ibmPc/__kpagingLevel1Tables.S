@@ -1,4 +1,5 @@
 
+#include <in_asm.h>
 #include <config.h>
 
 #ifdef CONFIG_ARCH_x86_32_PAE
