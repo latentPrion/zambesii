@@ -8,7 +8,7 @@ $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
 __korientationEntryTmp.s:
-	$(CPP) -E $(CPPFLAGS) __korientationEntry.S >$@
+	$(CPP) $(CPPFLAGS) __korientationEntry.S >$@
 
 __korientationEntry.o: __korientationEntryTmp.s
 

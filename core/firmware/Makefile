@@ -1,3 +1,5 @@
+# Remember that the shell var for here is $(ZFIRMWARE).
+
 .PHONY=
 DELIVERABLE=../firmware.a
 OBJFILES=foo.o

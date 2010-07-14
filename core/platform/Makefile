@@ -17,7 +17,7 @@ platformSubdir:
 	grep -v '^[[:space:]]*#' __klinkScriptTmp.s > $@
 
 __klinkScriptTmp.s: __klinkScript.S */__klinkScript.ld
-	$(CPP) -E $(CPPFLAGS) __klinkScript.S >$@
+	$(CPP) $(CPPFLAGS) __klinkScript.S >$@
 
 clean:
 	rm -rf *.o *.s
