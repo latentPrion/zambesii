@@ -17,9 +17,6 @@ zambezii.zxe: __kcore drivers libraries resources programs
 	$(LD) -T core/platform/__klinkScript.ld -o $@ \
 		core.o
 
-# Top level clean target
-clean: aclean dirclean
-
 __kcore: core.o
 programs: programs.ekf
 libraries: libraries.ekf
@@ -57,21 +54,15 @@ drivers.ekf:
 #	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #	cd drivers; make
 
-aclean: fonyphile
+# Top level clean target
+clean: fonyphile
 	rm -f *.o *.ekf *.zxe *.iso
-	cd core; make aclean
-#	cd programs; make aclean
-#	cd libraries; make aclean
-#	cd resources; make aclean
-#	cd drivers; make aclean
-
-dirclean: fonyphile
-	cd core; make dirclean
-#	cd programs; make dirclean
-#	cd libraries; make dirclean
-#	cd resources; make dirclean
-#	cd drivers; make dirclean
+	cd core; make clean
+#	cd programs; make clean
+#	cd libraries; make clean
+#	cd resources; make clean
+#	cd drivers; make clean
 
 fonyphile:
-	rm -f clean aclean dirclean
+	rm -f clean
 

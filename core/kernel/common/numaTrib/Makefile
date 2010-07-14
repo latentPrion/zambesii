@@ -12,7 +12,7 @@ archSubdir:
 
 clean:
 	rm -rf *.o *.s
-	cd ../../$(ZARCH)/numaTrib; make dirclean
+	cd ../../$(ZARCH)/numaTrib; make clean
 
 fonyphile:
 	rm -f clean aclean dirclean
