@@ -4,7 +4,6 @@
 # Zambezii Kernel top-level makefile.
 #
 
-# We leave it up to the user to compile ekfsutil on his own.
 iso: zambezii.iso
 	cp -f zambezii.zxe iso/core
 	genisoimage -R -b boot/grub/stage2_eltorito -no-emul-boot \
