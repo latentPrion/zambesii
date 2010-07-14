@@ -11,7 +11,7 @@ memoryTribC::memoryTribC(
 	pagingLevel0S *level0Accessor, paddr_t level0Paddr
 	)
 :
-__kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr),
+__kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
 {
 	memset(
 		memRegions, 0,

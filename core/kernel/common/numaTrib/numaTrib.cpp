@@ -60,6 +60,7 @@ error_t numaTribC::initialize(void)
 	nStreams = 1;
 
 	// Initialize the kernel heap?
+	return ERROR_SUCCESS;
 }
 
 numaTribC::~numaTribC(void)
@@ -314,13 +315,6 @@ error_t numaTribC::configuredGetFrames(
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 #endif
-
-error_t numaTribC::initialize(void)
-{
-	// Report error: function not yet implemented.
-	return ERROR_GENERAL;
-	// Re-implement later.
-}
 
 void numaTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 {

@@ -36,6 +36,6 @@ export \
 export \
 	ZARCH='x8632' \
 	ZCHIPSET='ibmPc' \
-	ZFIRMWARE='ibmPcBios'
-
+	ZFIRMWARE='ibmPcBios' \
+	ZLANG='en-uk'
 

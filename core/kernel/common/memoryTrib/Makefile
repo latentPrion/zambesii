@@ -1,7 +1,6 @@
 .PHONY=
 DELIVERABLE=../../../memoryTrib.a
-OBJFILES=memoryStream.o memoryTrib.o vaddrSpaceStream.o rawMemAlloc.o \
-	__kspaceMemAlloc.o
+OBJFILES=memoryStream.o memoryTrib.o vaddrSpaceStream.o rawMemAlloc.o
 
 all: Makefile $(DELIVERABLE) archSubdir
 

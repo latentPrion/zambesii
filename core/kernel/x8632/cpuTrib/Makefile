@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../../archCpuTrib.a
-OBJFILES=cpuTrib.o cpuStream.o
+OBJFILES=cpuTrib.o
 
 all: Makefile $(DELIVERABLE)
 
