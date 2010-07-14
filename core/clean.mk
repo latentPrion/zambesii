@@ -1,5 +1,5 @@
 clean: fonyphile
-	rm -f *.a $(GOAL)
+	rm -f *.a $(GOAL) __klinkScript.ld
 	rm -f *.o *.s
 	cd arch; make clean
 	cd chipset; make clean

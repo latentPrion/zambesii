@@ -1,4 +1,6 @@
 
+#include <kernel/common/memoryTrib/memoryTrib.h>
+
 /* Part of a trick to prevent reference optimizing linkers from excluding
  * this file.
  **/

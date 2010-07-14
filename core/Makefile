@@ -20,7 +20,7 @@ all: $(GOAL)
 # The kernel core file produced here must be relocatable. We have to link it
 # with the Endo Kernel FS fragments later on in the kernel build process.
 $(GOAL): $(EXECOBJS)
-	$(LD) $(LDFLAGS) -T platform/__klinkScript.ld -i -o $(GOAL) \
+	$(LD) $(LDFLAGS) -T __klinkScript.ld -i -o $(GOAL) \
 		-\( $(EXECOBJS) -\)
 
 include clean.mk
