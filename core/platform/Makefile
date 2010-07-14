@@ -2,7 +2,7 @@
 DELIVERABLE=
 OBJFILES=
 
-all: Makefile $(DELIVERABLE) platformSubdir
+all: Makefile platformSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
