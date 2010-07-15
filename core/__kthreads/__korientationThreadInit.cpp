@@ -1,12 +1,13 @@
 
 #include <scaling.h>
 #include <__kstdlib/__kcxxlib/cstring>
+#include <__kthreads/__korientationPreConstruct.h>
 #include <kernel/common/task.h>
 #include <kernel/common/process.h>
 
 taskS		__korientationThread;
 
-void __korientationPreConstruct(void)
+void __korientationPreConstruct::__korientationThreadInit(void)
 {
 	memset(&__korientationThread, 0, sizeof(taskS));
 

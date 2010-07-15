@@ -3,29 +3,25 @@
 #include <arch/paddr_t.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kcxxlib/cstring>
-#include <__kthreads/__korientationEntry.h>
+#include <__kthreads/__korientation.h>
+#include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
-#include <kernel/common/preConstruct.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
-extern "C" void __korientationEntry(ubit32, multibootDataS *)
+extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	void		(**ctorPtr)();
 
 	__koptimizationHacks();
 
-	//Clear the .BSS section of the kernel ELF.
+	// Zero out the .BSS section of the kernel ELF.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
-	/** EXPLANATION:
-	 * What happens when preConstruct() is called?
-	 *
-	 * 1. The kernel processS structure is initialized.
-	 * 2. The Kernel Orientation Thread structure is initialized.
-	 * 3. The BSP CPU is loaded with its CPU Stream pointer.
-	 **/
-	preConstruct();
+	// Prepare the kernel for its most basic sematics to begin working.
+	__korientationPreConstruct::__kprocessInit();
+	__korientationPreConstruct::__korientationThreadInit();
+	__korientationPreConstruct::bspInit();
 
 	// Call all global constructors.
 	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );

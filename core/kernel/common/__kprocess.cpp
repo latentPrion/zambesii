@@ -1,11 +1,12 @@
+
 #include <__kstdlib/__kcxxlib/cstring>
-#include <__kthreads/__korientationPreConstruct.h>
+#include <__kthreads/__korientation.h>
 #include <kernel/common/process.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 processS	__kprocess;
 
-void __kprocessPreConstruct(void)
+void __korientationPreConstruct::__kprocessInit(void)
 {
 	memset(&__kprocess, 0, sizeof(processS));
 
@@ -15,4 +16,4 @@ void __kprocessPreConstruct(void)
 	// Probably set argString to the kernel command line later on.
 	__kprocess.memoryStream = &memoryTrib.__kmemoryStream;
 }
-	
+

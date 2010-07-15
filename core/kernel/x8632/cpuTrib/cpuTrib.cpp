@@ -1,5 +1,6 @@
 
 #include <__kstdlib/__ktypes.h>
+#include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationPreConstruct.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
@@ -19,13 +20,13 @@ cpuStreamC *cpuTribC::getCurrentCpuStream(void)
 cpuStreamC *cpuTribC::getStream(cpu_t cpu)
 {
 	/* This should be okay for now. We can reshuffle the pointers when we
-	 * have the hardware ids of the CPUs.
+	 * have the hardware IDs of the CPUs.
 	 **/
 	return &(*cpuStreams.rsrc)[cpu];
 }
 #endif
 
-void cpuTribC::preConstruct(void)
+void __korientationPreConstruct::bspInit(void)
 {
 	uarch_t		dr0;
 

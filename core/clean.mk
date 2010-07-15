@@ -1,5 +1,5 @@
 clean: fonyphile
-	rm -f *.a $(GOAL) __klinkScript.ld
+	rm -f *.a __klinkScript.ld
 	rm -f *.o *.s
 	cd arch; make clean
 	cd chipset; make clean
@@ -17,7 +17,7 @@ clean: fonyphile
 	cd kernel/common/cpuTrib; make clean
 
 aclean:
-	rm -f *.a *.o
+	rm -f *.a *.o __klinkScript.ld
 
 fonyphile:
 	rm -f clean
