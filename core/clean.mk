@@ -16,6 +16,9 @@ clean: fonyphile
 	cd kernel/common/numaTrib; make clean
 	cd kernel/common/cpuTrib; make clean
 
+aclean:
+	rm -f *.a *.o
+
 fonyphile:
 	rm -f clean
 

@@ -56,13 +56,21 @@ drivers.ekf:
 
 # Top level clean target
 clean: fonyphile
-	rm -f *.o *.ekf *.zxe *.iso
+	rm -f *.o *.ekf *.zxe *.iso *.img
 	cd core; make clean
 #	cd programs; make clean
 #	cd libraries; make clean
 #	cd resources; make clean
 #	cd drivers; make clean
 
+aclean: fonyphile
+	rm -f *.o *.ekf *.zxe *.iso *.img
+	cd core; make aclean
+#	cd programs; make aclean
+#	cd libraries; make aclean
+#	cd resources; make aclean
+#	cd drivers; make aclean
+
 fonyphile:
-	rm -f clean
+	rm -f clean aclean
 
