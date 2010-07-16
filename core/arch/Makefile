@@ -1,8 +1,11 @@
 .PHONY=
-DELIVERABLE=
-OBJFILES=
+DELIVERABLE=../arch.a
+OBJFILES=foo.o
 
-all: Makefile archSubdir
+all: Makefile $(DELIVERABLE) archSubdir
+
+$(DELIVERABLE): $(OBJFILES)
+	$(AR) -rcs $@ $(OBJFILES)
 
 archSubdir:
 	cd $(ZARCH); make

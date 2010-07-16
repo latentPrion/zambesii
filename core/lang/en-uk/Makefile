@@ -2,7 +2,7 @@
 DELIVERABLE=../../lang.a
 OBJFILES=mm.o lang.o
 
-all: Makefile
+all: $(DELIVERABLE) Makefile
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)

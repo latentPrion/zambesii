@@ -26,7 +26,7 @@ namespace __korientationPreConstruct
 	 * Defined in /core/kernel/<ARCH_HERE>/cpuTrib/cpuTrib.cpp
 	 **/
 	void bspInit(void);
-};
+}
 
 #endif
 

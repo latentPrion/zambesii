@@ -7,10 +7,10 @@ all: Makefile $(DELIVERABLE)
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-__korientationEntryTmp.s:
+__korientationEntry.o: __korientationEntryTmp.s
+__korientationEntryTmp.s: __korientationEntry.S
 	$(CPP) $(CPPFLAGS) __korientationEntry.S >$@
 
-__korientationEntry.o: __korientationEntryTmp.s
 
 clean: fonyphile
 	rm -rf *.o *.s

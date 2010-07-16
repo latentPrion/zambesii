@@ -31,7 +31,7 @@ public:
 	memoryBank(baseAddr, size, opts)
 	{}
 	
-	~numaStreamC(void);
+	~numaStreamC(void){}
 
 public:
 	/* These will pull down the whole bank. Use the individual cut() and

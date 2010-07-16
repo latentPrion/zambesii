@@ -13,7 +13,7 @@ export \
 	\
 	ZCPPFLAGS='-I/osdev/zbz/include -I/osdev/zbz/core/include' \
 	ZCCFLAGS='' \
-	ZCXXFLAGS='-Wall -Wextra -pedantic -Wno-long-long' \
+	ZCXXFLAGS='-Wall -Wextra -pedantic -Wno-long-long -fno-exceptions -fno-rtti' \
 	ZASFLAGS=''\
 	ZLDFLAGS='-nostdlib -nostartfiles -nodefaultlibs' \
 	ZARFLAGS=''
@@ -26,9 +26,9 @@ export \
 	LLD='ld' \
 	LAR='ar' \
 	\
-	LCPPFLAGS='-I/osdev/zbz/include -I/osdev/zbz/core/include' \
+	LCPPFLAGS='' \
 	LCCFLAGS='' \
-	LCXXFLAGS='-Wall -Wextra -pedantic -Wno-long-long' \
+	LCXXFLAGS='-Wall -Wextra -pedantic' \
 	LASFLAGS=''\
 	LLDFLAGS='-nostdlib -nostartfiles -nodefaultlibs' \
 	LARFLAGS=''

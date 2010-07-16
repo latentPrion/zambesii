@@ -1,6 +1,7 @@
 
 #include <__kstdlib/__kcxxlib/cstring>
 #include <__kthreads/__korientation.h>
+#include <__kthreads/__korientationPreConstruct.h>
 #include <kernel/common/process.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 

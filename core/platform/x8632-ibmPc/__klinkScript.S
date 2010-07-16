@@ -7,7 +7,7 @@
  * This causes the 'i386' in OUTPUT_ARCH() to get macro expanded and give syntax errors.
  **/
 //#define i386	i386
-ENTRY(__korientationAsmEntry)
+ENTRY(__korientationEntry)
 /*
 OUTPUT_ARCH(i386)
 OUTPUT_FORMAT(elf)

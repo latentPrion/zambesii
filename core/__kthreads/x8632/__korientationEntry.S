@@ -1,12 +1,12 @@
 #include <in_asm.h>
 
-.global __korientationAsmEntry
-.extern __korientationEntry, __korientationStack
+.global __korientationEntry
+.extern __korientationMain, __korientationStack
 .extern __kpagingLevel0Tables
 
-.section .__korientationText
+.section .__ksetupText
 
-__korientationAsmEntry:
+__korientationEntry:
 	/* Enable Paging, then move on from there. */
 #ifdef CONFIG_ARCH_X86_32_PAE
 	/* Code to enable the PAE, etc here. */
@@ -26,18 +26,21 @@ __korientationAsmEntry:
 	pushl $.virtualStart
 ret
 
+.section .__korientationText
+
 	/* This is a security trick. We push the address of an infinite loop, and
 	 * if the kernel manages to return from the orientation thread somehow, 
 	 * we manipulate the return address to point to this infinite loop code.
 	 **/
 .virtualStart:
+	jmp .
 	pushl $__korientationInfiniteLoop
 
 	/* Push the (possibly) multiboot flags. */
 	pushl %ebx
 	pushl %eax
 
-	call __korientationEntry
+	call __korientationMain
 
 	addl $0x8, %esp
 ret

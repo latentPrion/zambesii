@@ -14,7 +14,7 @@ zambezii.iso: exec
 exec: zambezii.zxe
 
 zambezii.zxe: __kcore drivers libraries resources programs
-	$(LD) -T core/platform/__klinkScript.ld -o $@ \
+	$(LD) -T core/__klinkScript.ld -o $@ \
 		core.o
 
 __kcore: core.o

@@ -9,9 +9,10 @@
 # files resolving as it goes, so if it sees an unresolved symbol too late,
 # it halts saying that the symbol cannot be resolved, even if the symbol is
 # defined in one of the objects passed on the command line.
-EXECOBJS=__kthreads.a kernel.a platform.a \
-	memoryTrib.a numaTrib.a cpuTrib.a \
-	firmware.a chipset.a arch.a __kclasses.a \
+EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a \
+	platform.a platformCore.a memoryTrib.a numaTrib.a \
+	cpuTrib.a archCpuTrib.a firmware.a platform.a platformCore.a \
+	chipset.a chipsetCore.a arch.a archCore.a __kclasses.a \
 	__kcxxabi.a __kstdlib.a __kcxxlib.a __kclib.a lang.a
 GOAL=../core.o
 

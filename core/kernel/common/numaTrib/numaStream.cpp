@@ -13,14 +13,14 @@
  **/
 void numaStreamC::cut(void)
 {
-	memoryBank.cut();
-	cpuBank.cut();
+	// memoryBank.cut();
+	// cpuBank.cut();
 }
 
 void numaStreamC::bind(void)
 {
-	memoryBank.bind();
-	cpuBank.bind();
+	// memoryBank.bind();
+	// cpuBank.bind();
 }
 
 

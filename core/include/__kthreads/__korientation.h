@@ -6,9 +6,7 @@
 	#include <kernel/common/task.h>
 
 extern taskS		__korientationThread;
-
-extern "C" __attribute__((	section(".__korientationText") ))
-	void __korientationMain(ubit32 mbMagic, multibootDataS *mbData);
+extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbData);
 
 #endif
 

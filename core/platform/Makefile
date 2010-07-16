@@ -1,8 +1,8 @@
 .PHONY=
-DELIVERABLE=
-OBJFILES=
+DELIVERABLE=../platform.a
+OBJFILES=foo.o
 
-all: Makefile platformSubdir
+all: Makefile $(DELIVERABLE) platformSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)

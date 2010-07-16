@@ -2,7 +2,7 @@
 DELIVERABLE=../../kernel.a
 OBJFILES=__kheaders.o __koptimizationHacks.o __kclassInstances.o \
 	multipleReaderLock.o waitLock.o recursiveLock.o vSwamp.o panic.o \
-	numaMemoryBank.o preConstruct.o __kprocess.o stream.o
+	numaMemoryBank.o __kprocess.o stream.o
 
 all: Makefile $(DELIVERABLE) archSubdir
 

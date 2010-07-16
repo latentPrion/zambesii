@@ -31,9 +31,9 @@
 class numaCpuBankC
 {
 public:
-	// Halt or restart all logical CPUs on this bank.
-	void cut(void);
-	void bind(void);
+	// Halt or restart all logical CPUs on this bank. Stub for now.
+	void cut(void) {};
+	void bind(void) {};
 
 	// Cpu task pull request functions.
 	// taskS *taskPullRequest(void);

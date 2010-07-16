@@ -23,6 +23,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__korientationPreConstruct::__korientationThreadInit();
 	__korientationPreConstruct::bspInit();
 
+	for (;;){};
+
 	// Call all global constructors.
 	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );
 	for (; ctorPtr < reinterpret_cast<void(**)()>( &__kctorEnd );
