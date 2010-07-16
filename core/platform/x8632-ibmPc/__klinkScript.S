@@ -1,28 +1,37 @@
+
 #include <in_asm.h>
-//Include the memory information for this build of the kernel. We need the Vaddr and the Paddr for this linker script.
+
+/* Include the memory information for this build of the kernel. We need the
+ * Vaddr and the Paddr info from the kernel for this linker script.
+ **/
 #include <platform/x8632-ibmPc/memory.h>
 #include <arch/x8632/paging.h>
 
-/* The C preprocessor in GCC seems to define a symbol 'i386' and give it a value of 1.
- * This causes the 'i386' in OUTPUT_ARCH() to get macro expanded and give syntax errors.
+/* The C preprocessor in GCC seems to define a symbol 'i386' and give it a 
+ * value of 1. This causes the 'i386' in OUTPUT_ARCH() to get macro expanded 
+ * and give syntax errors.
  **/
-//#define i386	i386
-ENTRY(__korientationEntry)
-/*
-OUTPUT_ARCH(i386)
-OUTPUT_FORMAT(elf)
-TARGET(i386-elf)
-*/
+// #define i386	i386
+// OUTPUT_ARCH(i386)
+// OUTPUT_FORMAT(elf)
+// TARGET(i386-elf)
 
+// Absolute kernel entry for any platform. Kernel orientation thread.
+ENTRY(__korientationEntry)
 
 SECTIONS
 {
 	/* Start off with the physical sections */
 	. = CHIPSET_MEMORY___KLOAD_PADDR_BASE;
+
 	__kstart = .;
 
 	__kphysStart = .;
-	.__kheaders ALIGN(PAGING_BASE_SIZE) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+
+	// __kheaders contains things like the zBoot and multiboot headers.
+	.__kheaders ALIGN(PAGING_BASE_SIZE) 
+	:
+	AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
 		__kheadersStart = .;
 		*(.__kheaders*)
@@ -36,66 +45,76 @@ SECTIONS
 		__ksetupDataEnd = .;
 		__ksetupTextStart = .;
 		*(.__ksetupText*)
-		*(.__ksetup*)
 		__ksetupTextEnd = .;
 	}
+
 	__kphysEnd = .;
 
-	. = (__kphysEnd - CHIPSET_MEMORY___KLOAD_PADDR_BASE) + ARCH_MEMORY___KLOAD_VADDR_BASE;
+	. = (__kphysEnd - CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+		+ ARCH_MEMORY___KLOAD_VADDR_BASE;
+	. = ALIGN(PAGING_BASE_SIZE);
 
 	__kvirtStart = .;
-	.__korientation ALIGN(PAGING_BASE_SIZE) : AT( ADDR(.__korientation) - ARCH_MEMORY___KLOAD_VADDR_BASE + CHIPSET_MEMORY___KLOAD_PADDR_BASE)
-	{
-		/* Include the .__korientationText and .__korientationData sections for all files here. */
-		__korientationStart = .;
-		*(.__korientationText*)
-		*(.__korientationData*)
-		*(.__korientation*)
-		__korientationEnd = .;
-	}
 
-	.init ALIGN(PAGING_BASE_SIZE) : AT( ADDR(.init) - ARCH_MEMORY___KLOAD_VADDR_BASE + CHIPSET_MEMORY___KLOAD_PADDR_BASE)
-	{
-		__kinitStart = .;
-		*(.init*)
-		__kinitEnd = .;
-	}
+	__kreadOnlyStart = .;
 
-	.ctor ALIGN(PAGING_BASE_SIZE) : AT( ADDR(.ctor) - ARCH_MEMORY___KLOAD_VADDR_BASE + CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	.rtl
+	:
+	AT( ADDR(.ctor) - ARCH_MEMORY___KLOAD_VADDR_BASE
+		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
 		__kctorStart = .;
 		*(.ctor*)
 		__kctorEnd = .;
+		__kdtorStart = .;
+		*(.dtor*)
+		__kdtorEnd = .;
 	}
 
-	.text ALIGN(PAGING_BASE_SIZE) : AT( ADDR(.text) - ARCH_MEMORY___KLOAD_VADDR_BASE + CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	.text ALIGN(0x4)
+	:
+	AT( ADDR(.text) - ARCH_MEMORY___KLOAD_VADDR_BASE
+		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
+		__korientationTextStart = .;
+		*(__korientationText*)
+		__korientationTextEnd = .;
+
+		. = ALIGN(0x4)
 		__ktextStart = .;
 		*(.text*)
 		__ktextEnd = .;
 	}
 
-	.data ALIGN(PAGING_BASE_SIZE) : AT( ADDR(.data) - ARCH_MEMORY___KLOAD_VADDR_BASE + CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	.rodata ALIGN(0x4)
+	:
+	AT( ADDR(.text) - ARCH_MEMORY___KLOAD_VADDR_BASE
+		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
+		__kroDataStart = .;
+		*(.rodata*)
+		__krodataEnd = .;
+	}
+
+	__kreadOnlyEnd = .;
+
+	. = ALIGN(PAGING_BASE_SIZE);
+	__kreadWriteStart = .;
+
+	.data
+	:
+	AT( ADDR(.data) - ARCH_MEMORY___KLOAD_VADDR_BASE
+		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	{
+		__korientationDataStart = .;
+		*(__korientationData*)
+		__korientationDataEnd = .;
+		. = ALIGN(0x4);
 		__kdataStart = .;
 		*(.data*)
-		. = ALIGN(0x4);
-		*(.rodata*)
 		__kdataEnd = .;
-	}
 
-	.fini ALIGN(PAGING_BASE_SIZE) : AT( ADDR(.fini) - ARCH_MEMORY___KLOAD_VADDR_BASE + CHIPSET_MEMORY___KLOAD_PADDR_BASE)
-	{
-		__kfiniStart = .;
-		*(.fini*)
-		__kdtorStart = .;
-		*(.dtor*)
-		__kdtorEnd = .;
-		__kfiniEnd = .;
-	}
-
-	.bss ALIGN(PAGING_BASE_SIZE) : AT( ADDR(.bss) - ARCH_MEMORY___KLOAD_VADDR_BASE + CHIPSET_MEMORY___KLOAD_PADDR_BASE)
-	{
+		. = ALIGN(0x4);
 		__kbssStart = .;
 		*(.bss*)
 		__kbssEnd = .;
@@ -103,12 +122,15 @@ SECTIONS
 		*(COMMON)
 	}
 
+	__kreadWriteEnd = .;
+
 	/DISCARD/ :
 	{
 		*(.comment)
 		*(.eh_frame)
 	}
-	__kvirtEnd = .;
+
+-	__kvirtEnd = .;
 
 	__kend = .;
 }
