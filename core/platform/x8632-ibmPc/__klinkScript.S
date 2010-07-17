@@ -38,11 +38,15 @@ SECTIONS
 		__kheadersEnd = .;
 	}
 
-	.__ksetup ALIGN(PAGING_BASE_SIZE) : AT(ADDR(.__ksetup))
+	.__ksetupData ALIGN(PAGING_BASE_SIZE) : AT(ADDR(.__ksetupData))
 	{
 		__ksetupDataStart = .;
 		*(.__ksetupData*)
 		__ksetupDataEnd = .;
+	}
+
+	.__ksetupText ALIGN(0x4) : AT(ADDR(.__ksetupText))
+	{
 		__ksetupTextStart = .;
 		*(.__ksetupText*)
 		__ksetupTextEnd = .;
@@ -58,9 +62,29 @@ SECTIONS
 
 	__kreadOnlyStart = .;
 
-	.rtl
+	.__korientationText ALIGN(0x4)
 	:
-	AT( ADDR(.ctor) - ARCH_MEMORY___KLOAD_VADDR_BASE
+	AT( ADDR(.__korientationText) - ARCH_MEMORY___KLOAD_VADDR_BASE
+		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	{
+		__korientationTextStart = .;
+		*(__korientationText*)
+		__korientationTextEnd = .;
+	}
+
+	.__korientationData ALIGN(0x4)
+	:
+	AT( ADDR(.__korientationData) - ARCH_MEMORY___KLOAD_VADDR_BASE
+		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	{
+		__korientationDataStart = .;
+		*(__korientationData*)
+		__korientationDataEnd = .;
+	}
+
+	.cdtortl ALIGN(0x4)
+	:
+	AT( ADDR(.cdtortl) - ARCH_MEMORY___KLOAD_VADDR_BASE
 		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
 		__kctorStart = .;
@@ -76,11 +100,6 @@ SECTIONS
 	AT( ADDR(.text) - ARCH_MEMORY___KLOAD_VADDR_BASE
 		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
-		__korientationTextStart = .;
-		*(__korientationText*)
-		__korientationTextEnd = .;
-
-		. = ALIGN(0x4)
 		__ktextStart = .;
 		*(.text*)
 		__ktextEnd = .;
@@ -88,7 +107,7 @@ SECTIONS
 
 	.rodata ALIGN(0x4)
 	:
-	AT( ADDR(.text) - ARCH_MEMORY___KLOAD_VADDR_BASE
+	AT( ADDR(.rodata) - ARCH_MEMORY___KLOAD_VADDR_BASE
 		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
 		__kroDataStart = .;
@@ -106,10 +125,6 @@ SECTIONS
 	AT( ADDR(.data) - ARCH_MEMORY___KLOAD_VADDR_BASE
 		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
-		__korientationDataStart = .;
-		*(__korientationData*)
-		__korientationDataEnd = .;
-		. = ALIGN(0x4);
 		__kdataStart = .;
 		*(.data*)
 		__kdataEnd = .;
@@ -130,7 +145,7 @@ SECTIONS
 		*(.eh_frame)
 	}
 
--	__kvirtEnd = .;
+	__kvirtEnd = .;
 
 	__kend = .;
 }
