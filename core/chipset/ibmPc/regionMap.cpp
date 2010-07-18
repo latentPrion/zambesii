@@ -2,11 +2,6 @@
 #include <chipset/ibmPc/regionMap.h>
 #include <__kstdlib/__ktypes.h>
 
-#ifdef CONFIG_ARCH_x86_32_PAE
-	#define CHIPSET_MEMORY_NREGIONS		2
-#else
-	#define CHIPSET_MEMORY_NREGIONS		1
-#endif
 
 static chipsetRegionMapEntryS	chipsetRegions[] =
 {
