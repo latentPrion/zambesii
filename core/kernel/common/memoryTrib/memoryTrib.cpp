@@ -168,7 +168,7 @@ void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
 		status = walkerPageRanger::unmap(
 			&__kmemoryStream.vaddrSpaceStream.vaddrSpace,
 			reinterpret_cast<void *>( tracker ),
-			&paddr, 1, &flags, 0);
+			&paddr, 1, &flags);
 
 		//Only free the paddr if there was a valid mapping in the vaddr.
 		if (status == WPRANGER_STATUS_BACKED) {

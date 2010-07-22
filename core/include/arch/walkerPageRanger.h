@@ -131,8 +131,7 @@ namespace walkerPageRanger
 
 	status_t unmap(
 		vaddrSpaceC *vaddrSpace,
-		void *vaddr, paddr_t *paddr, uarch_t nPages, uarch_t *flags,
-		uarch_t opt);
+		void *vaddr, paddr_t *paddr, uarch_t nPages, uarch_t *flags);
 
 	// Architecture specific kernel flag converter.
 	uarch_t decodeFlags(uarch_t flags);

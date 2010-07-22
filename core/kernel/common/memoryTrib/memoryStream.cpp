@@ -260,7 +260,7 @@ void memoryStreamC::memFree(void *vaddr)
 	{
 		status = walkerPageRanger::unmap(
 			&vaddrSpaceStream.vaddrSpace,
-			vaddr, &paddr, nPages, &unmapFlags, 0);
+			vaddr, &paddr, nPages, &unmapFlags);
 
 		if (status == WPRANGER_STATUS_BACKED) {
 			numaTrib.releaseFrames(paddr, nPages);
@@ -275,7 +275,7 @@ void memoryStreamC::memFree(void *vaddr)
 			status = walkerPageRanger::unmap(
 				&vaddrSpaceStream.vaddrSpace,
 				reinterpret_cast<void *>( tracker ),
-				&paddr, 1, &unmapFlags, 0);
+				&paddr, 1, &unmapFlags);
 
 			if (status == WPRANGER_STATUS_BACKED) {
 				numaTrib.releaseFrames(paddr, nPages);

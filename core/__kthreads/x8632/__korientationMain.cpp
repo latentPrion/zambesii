@@ -1,6 +1,7 @@
 
 #include <__ksymbols.h>
 #include <arch/paddr_t.h>
+#include <arch/walkerPageRanger.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kcxxlib/cstring>
 #include <__kthreads/__korientation.h>
@@ -13,6 +14,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	void		(**ctorPtr)();
+	int		*foo;
+	uarch_t		f;
+	paddr_t		p;
 
 	__koptimizationHacks();
 

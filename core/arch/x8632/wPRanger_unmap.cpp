@@ -10,8 +10,7 @@
 status_t walkerPageRanger::unmap(
 	vaddrSpaceC *vaddrSpace,
 	void *vaddr, paddr_t *paddr,
-	uarch_t nPages, uarch_t *flags,
-	uarch_t /*opt*/
+	uarch_t nPages, uarch_t *flags
 	)
 {
 	// This function takes up a *lot* of room on the stack...
@@ -55,6 +54,8 @@ status_t walkerPageRanger::unmap(
 		l0Entry >>= 12;
 		*level1Modifier |= l0Entry << 12;
 
+		tlbControl::flushSingleEntry(level1Accessor);
+
 		l1Current = ((l0Current == l0Start) ? l1Start : 0);
 		l1Limit = ((l0Current == l0End)
 			? l1End : (PAGING_L1_NENTRIES - 1));
@@ -70,6 +71,8 @@ status_t walkerPageRanger::unmap(
 			*level2Modifier &= 0xFFF;
 			l1Entry >>= 12;
 			*level2Modifier |= l1Entry << 12;
+
+			tlbControl::flushSingleEntry(level2Accessor);
 
 			l2Current = (((l0Current == l0Start)
 				&& (l1Current == l1Start)) ? l2Start : 0);
