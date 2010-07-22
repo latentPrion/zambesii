@@ -1,13 +1,13 @@
-#include <in_asm.h>
 
-.global __korientationEntry
+#include <in_asm.h>
+#include <assembler.h>
+
 .extern __korientationMain, __korientationStack
 .extern __kpagingLevel0Tables
 
-.section .__ksetupText
+ASM_SECTION(.__ksetupText)
 
-.type __korientationEntry, @function
-__korientationEntry:
+ASM_GLOBAL_FUNCTION(__korientationEntry)
 	cli
 	xchg %bx,%bx
 	jmp .
@@ -23,13 +23,13 @@ __korientationEntry:
 	movl %ecx, %cr0
 
 	/* Jump to the virtual offset now. */
-	movl $.virtualStart, %ecx
+	movl $__korientationVirtualStart, %ecx
 	jmp *%ecx
+ASM_END_FUNCTION(__korientationEntry)
 
-.balign 0x4
-.section .__korientationText
+ASM_SECTION(.__korientationText)
 
-.virtualStart:
+ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	/* Load the stack pointer for the Orientation thread. */
 	movl $__korientationStack+4096, %esp
 	/* Clear the CPU flags */
@@ -55,4 +55,5 @@ ret
 	cli
 	hlt
 	jmp .infiniteLoop
+ASM_END_FUNCTION(__korientationVirtualStart)
 

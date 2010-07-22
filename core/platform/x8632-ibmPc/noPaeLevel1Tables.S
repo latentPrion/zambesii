@@ -1,4 +1,6 @@
 
+#include <in_asm.h>
+#include <assembler.h>
 #include <arch/paging.h>
 #include <arch/memory.h>
 #include <chipset/memory.h>
@@ -28,14 +30,11 @@
  * assembly file and put them in mine.
  **/
 
-	.file	"noPaeLevel1Tables.cpp"
-.globl __kpagingLevel1Tables
-	.section	.__ksetupDataS,"aw",@progbits
-	.balign PAGING_BASE_SIZE
-	.type	__kpagingLevel1Tables, @object
-	.size	__kpagingLevel1Tables, 12288
+ASM_SECTION(.__ksetupData)
 
-__kpagingLevel1Tables:
+.balign PAGING_BASE_SIZE
+
+ASM_GLOBAL_DATA(__kpagingLevel1Tables)
 	/* Table to ID map 1st 4MB. */
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -1878,4 +1877,5 @@ __kpagingLevel1Tables:
 	.long	(__kpagingLevel1Tables + (4096 * (3 -1))) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 	/* 0xFFFFF000: Level 1 Accessor. */
 	.long	0 + PAGING_L1_PRESENT + PAGING_L1_WRITE
+ASM_END_DATA(__kpagingLevel1Tables)
 
