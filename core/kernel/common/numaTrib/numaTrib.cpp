@@ -6,82 +6,88 @@
 #include <chipset/memoryMap.h>
 #include <chipset/memoryConfig.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kstdlib/__kcxxlib/cstring>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 
-
 /**	EXPLANATION:
- * This NUMA stream is the initial NUMA stream. It is the replacement for the
- * __kspace BMP in the Memory Tributary, and it contains the numaMemoryBankC
- * object and numaCpuBankC object for the __kspace region.
- *
- * The Kernel space region is used during boot until the kernel can derive the
- * total amount of RAM available on the chipset.
- *
- * When the kernel knows how much RAM is available, and has a map of the RAM,
- * and a NUMA map as well, or any combination thereof, it will immediately
- * spawn the correct NUMA Streams, and "absorb" the kernel space RAM BMP into
- * the new BMPs, and get rid of the kernel space RAM BMP.
- *
- * So the __kspaceNumaStream's numaMemoryBank's memBmp is held in place, and at
- * the same time, a new BMP is allocated, and initialized. This new BMP's
- * members are then written over the kernel space BMP's, and as such, the
- * new BMP takes over the kernel space RAM BMP.
- *
- * The new one will have to bitwise OR all of the bits that are set in the old
- * BMP, and also, multiple BMPs will have to be checked against the old one:
- * there is no guarantee that for example, the __kspace BMP was not overlapping
- * two different NUMA banks.
+ * Setting up the NUMA Tributary is a bit more complicated than I'd imagined.
+ * There are several things to consider:
+ *	1. The NUMA Stream pointer array. If we do not pre-allocate memory
+ *	   in the kernel image for it, then it will remain a pointer, and not
+ *	   a pointer to a block of memory partitioned into pointers.
+ *	2. Then we have to ensure that as soon as dynamic pages are available
+ *	   we re-allocate the array so that the kernel can use it. If we don't
+ *	   do that, then when the kernel needs to re-size the array, it will
+ *	   of course, free it, and this will cause the kernel to get trampled.
+ *	   There is a way to avoid the trampling, and that is to allocate the
+ *	   pages for the NUMA stream array from the kernel Memory Stream. This
+ *	   way our allocations are recorded and any false frees will be ignored.
+ *	3. To initialize the actual default bank, first we need to make sure
+ *	   that there is a pre-allocated NUMA stream in the kernel image,
+ *	   completely uninitialized (constructed with the default constructor).
+ *	4. Next we have to set the numaStreams resource to point to the
+ *	   pre-allocated array.
+ *	5. After this we have to point the first pointer in the array to the
+ *	   address of the __kspace bank.
+ *	6. Then we need to call initialize() on the new first bank.
+ *	7. When this returns, then we know that the __kspace BMP is now ready
+ *	   to be used to allocate pages.
  **/
-// Allocate one page in the kernel image for the array of numaStreams to init.
 static numaStreamC		*initNumaStreamArray[
 	PAGING_PAGES_TO_BYTES(1) / sizeof(void *)];
 
-/**	EXPLANATION:
- * This NUMA stream is the first physical memory the kernel is made aware of,
- * and space for it is in fact pre-allocated in the kernel image.
- *
- * Inside of the internal numaMemoryBankC object, there is a pointer to a
- * memBmpC. During numaBankC::initialize() this is initialized with the address
- * of a static instance of memBmpC stored again within the kernel image.
- *
- * Upon construct, this statically allocated memBmp will assume the memory
- * reserved for __kspace init.
- *
- * That is, the numaMemoryBankC's internal memBmpC member is a pointer.
- **/
-static numaStreamC		__kspaceNumaStream(
-	0,
-	CHIPSET_MEMORY___KSPACE_BASE, CHIPSET_MEMORY___KSPACE_SIZE,
-	NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP);
+static numaStreamC		__kspaceNumaStream;
 
-static memBmpC			__kspaceBmp(
-	CHIPSET_MEMORY___KSPACE_BASE, CHIPSET_MEMORY___KSPACE_SIZE,
-	__kspaceInitMem);
 
 numaTribC::numaTribC(void)
 {
-	nStreams = 0;
-	streamArrayNPages = 0;
-	numaStreams.rsrc = 0;
-	defaultConfig.def.rsrc = 0;
+	memset(this, 0, sizeof(*this));
 }
 
 error_t numaTribC::initialize(void)
 {
+	error_t		ret;
+
+	initNumaStreamArray[0] = &__kspaceNumaStream;
 	numaStreams.rsrc = initNumaStreamArray;
-	numaStreams.rsrc[0] = &__kspaceNumaStream;
 
 	streamArrayNPages = 1;
 	nStreams = 1;
 
-	/* To avoid having to init the kernel heap now, we use an initialize()
-	 * method with numaMemoryBanks, which will cause them to allocate an
-	 * object for their internal memBmpC class pointers.
-	 **/
-	numaStreams.rsrc[0]->memoryBank.initialize();
+	// Call initialize() on the __kspace NUMA Stream, give it an ID of 0.
+	ret = numaStreams.rsrc[0]->initialize(
+		0,
+		CHIPSET_MEMORY___KSPACE_BASE,
+		CHIPSET_MEMORY___KSPACE_SIZE,
+		__kspaceInitMem);
 
-	// At this point all PMM should be initialized to __kspace state.
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
+
+	/**	EXPLANATION:
+	 * Right now, if we're still here, then it means that the kernel's
+	 * __kspace bank has just been successfully initalize()d. We now have a
+	 * small bank of physical RAM from which we can allocate (__kspace).
+	 *
+	 * However, if we call any of the non-configured getFrames() functions,
+	 * we'll end up having the kernel search for RAM on banks using the
+	 * default config's internal BMP. This would be disastrous since the
+	 * object is not yet initialized.
+	 *
+	 * To work around this, set the default config's default bank to be
+	 * __kspace. Also, the bitmapC class's constructor sets its internal
+	 * 'nBits' member to 0 on construct. So if call to check its bits is
+	 * made while it's not yet initialized, it will return FALSE for if
+	 * that bit is set.
+	 **/
+#if __SCALING__ >= SCALING_CC_NUMA
+	// Make sure that the NUMA Trib will only allocate from __kspace.
+	defaultConfig.def.rsrc = 0;
+#endif
+
+	// We have now, barring the uninitialized default config, full PMM.
 	return ERROR_SUCCESS;
 }
 
@@ -95,6 +101,10 @@ numaTribC::~numaTribC(void)
 				delete numaStreams.rsrc[nStreams];
 			};
 		};
+		/* FIXME: Think this over and see whether it should be kernel
+		 * stream allocated. Read the comments about (point 2) to see
+		 * what you mean.
+		 **/
 		memoryTrib.rawMemFree(numaStreams.rsrc, streamArrayNPages);
 	};
 }

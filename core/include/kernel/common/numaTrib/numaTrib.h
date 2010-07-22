@@ -76,12 +76,12 @@ private:
 	 * has a thread 0, then any other threads it spawns will derive their
 	 * configuration from thread 0 of that process.
 	 **/
+#if __SCALING__ >= SCALING_CC_NUMA
 	numaConfigS		defaultConfig;
+#endif
 	ubit8			streamArrayNPages;
 
-	/* A resizeable array of pointers to numaStreams. It is resized in
-	 * PAGING_BASE_SIZE increments.
-	 **/
+	// Resizeable (in paged size blocks) array of pointers to numaStreams.
 	sharedResourceGroupC<multipleReaderLockC, numaStreamC **> numaStreams;
 	ubit32			nStreams;
 };
@@ -97,7 +97,7 @@ inline numaStreamC *numaTribC::getStream(numaBankId_t)
 	/* In a non-NUMA build we always spawn a single stream. All calls to
 	 * numaTribC::getStream(bankId) will return the default stream.
 	 **/
-	return streams.rsrc[0];
+	return numaStreams.rsrc[0];
 }
 #endif
 

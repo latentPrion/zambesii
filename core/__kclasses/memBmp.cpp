@@ -16,14 +16,25 @@
 #define MEMBMP_FULL_SLOT		(~((uarch_t)0))
 #define MEMBMP_ALLOC_UNSUCCESSFUL	(~((uarch_t)0))
 
+memBmpC::memBmpC(void)
+{
+}
+
+memBmpC::memBmpC(paddr_t baseAddr, paddr_t size, void *preAllocated)
+{
+	if (initialize(baseAddr, size, preAllocated) != ERROR_SUCCESS) {
+		panic(mmStr[0]);
+	};
+}
+
 /**	EXPLANATION:
- * It isn't necessary to pass a page aligned address to this constructor. You 
+ * It isn't necessary to pass a page aligned address to this function. You 
  * can pass an unaligned address. If an unaligned address is passed, the bmp
  * will automatically map the unaligned frame as used.
  *
  * This is to prevent conflicts between BMPs.
  **/
-memBmpC::memBmpC(paddr_t baseAddr, paddr_t size, void *preAllocated)
+error_t memBmpC::initialize(paddr_t baseAddr, paddr_t size, void *preAllocated)
 {
 	memset(this, 0, sizeof(*this));
 
@@ -50,7 +61,7 @@ memBmpC::memBmpC(paddr_t baseAddr, paddr_t size, void *preAllocated)
 			uarch_t[nIndexes];
 
 		if (bmp.rsrc.bmp == __KNULL) {
-			panic(mmStr[0]);
+			return ERROR_MEMORY_NOMEM;
 		};
 
 		__KFLAG_SET(flags, MEMBMP_FLAGS_DYNAMIC);
@@ -64,6 +75,8 @@ memBmpC::memBmpC(paddr_t baseAddr, paddr_t size, void *preAllocated)
 	if ((baseAddr + size) & PAGING_BASE_MASK_LOW) {
 		setFrame(endPfn);
 	};
+
+	return ERROR_SUCCESS;
 }
 
 memBmpC::~memBmpC(void)

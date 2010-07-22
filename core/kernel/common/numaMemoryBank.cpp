@@ -21,21 +21,31 @@
  * it can later send a message to the NUMA Tributary to manually allocate the
  * internal BMP on the first bank.
  **/
-numaMemoryBankC::numaMemoryBankC(paddr_t baseAddr, paddr_t size, uarch_t opts)
-:
-baseAddr(baseAddr), size(size)
+numaMemoryBankC::numaMemoryBankC(void)
 {
-	if (!__KFLAG_TEST(opts, NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP)) {
-		initialize();
-	};
 }
 
-error_t numaMemoryBankC::initialize(void)
+numaMemoryBankC::numaMemoryBankC(
+	paddr_t baseAddr, paddr_t size, void *preAllocated
+	)
 {
-	memBmp = new memBmpC(this->baseAddr, this->size);
-	if (memBmp != __KNULL) {
-		return ERROR_MEMORY_NOMEM;
-	}
+	initialize(baseAddr, size, preAllocated);
+}
+
+error_t numaMemoryBankC::initialize(
+	paddr_t baseAddr, paddr_t size, void *preAllocated
+	)
+{
+	error_t		ret;
+
+	this->baseAddr = baseAddr;
+	this->size = size;
+
+	ret = memBmp.initialize(baseAddr, size, preAllocated);
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
+
 	return ERROR_SUCCESS;
 }
 
@@ -50,7 +60,7 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 	};
 
 	// Frame cache allocation failed.
-	return memBmp->contiguousGetFrames(nPages, paddr);
+	return memBmp.contiguousGetFrames(nPages, paddr);
 }
 
 error_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
@@ -74,7 +84,7 @@ error_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	};
 
 	// Return whatever we get.
-	return memBmp->fragmentedGetFrames(nPages, paddr);
+	return memBmp.fragmentedGetFrames(nPages, paddr);
 }
 
 void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
@@ -85,17 +95,17 @@ void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
 	};
 
 	// Bmp free.
-	memBmp->releaseFrames(paddr, nPages);
+	memBmp.releaseFrames(paddr, nPages);
 }
 
 // Couyld probably inline these two.
 void numaMemoryBankC::mapRangeUsed(paddr_t baseAddr, uarch_t nFrames)
 {
-	memBmp->mapRangeUsed(baseAddr, nFrames);
+	memBmp.mapRangeUsed(baseAddr, nFrames);
 }
 
 void numaMemoryBankC::mapRangeUnused(paddr_t baseAddr, uarch_t nFrames)
 {
-	memBmp->mapRangeUnused(baseAddr, nFrames);
+	memBmp.mapRangeUnused(baseAddr, nFrames);
 }
 

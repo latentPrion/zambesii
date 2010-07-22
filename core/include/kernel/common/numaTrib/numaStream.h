@@ -22,15 +22,15 @@ class numaStreamC
 public streamC
 {
 public:
+	numaStreamC(void);
 	numaStreamC(
 		numaBankId_t bankId, paddr_t baseAddr, paddr_t size,
-		uarch_t opts)
-	:
-	streamC(0),
-	bankId(bankId),
-	memoryBank(baseAddr, size, opts)
-	{}
-	
+		void *preAllocated);
+
+	error_t initialize(
+		numaBankId_t bankId, paddr_t baseAddr, paddr_t size,
+		void *preAllocated);
+
 	~numaStreamC(void){}
 
 public:

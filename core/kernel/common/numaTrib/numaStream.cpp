@@ -11,6 +11,36 @@
  * along the execution path of numaStreamC::cut() to ensure that stale banks
  * don't remain the default banks for all kernel allocations.
  **/
+
+numaStreamC::numaStreamC(void)
+{
+}
+
+numaStreamC::numaStreamC(
+	numaBankId_t bankId, paddr_t baseAddr, paddr_t size,
+	void *preAllocated
+	)
+{
+	initialize(bankId, baseAddr, size, preAllocated);
+}
+
+error_t numaStreamC::initialize(
+	numaBankId_t bankId, paddr_t baseAddr, paddr_t size,
+	void *preAllocated)
+{
+	error_t		ret;
+
+	streamC::id = 0;
+	this->bankId = bankId;
+
+	ret = memoryBank.initialize(baseAddr, size, preAllocated);
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
+
+	return ERROR_SUCCESS;
+}
+
 void numaStreamC::cut(void)
 {
 	// memoryBank.cut();

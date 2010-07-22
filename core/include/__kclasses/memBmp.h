@@ -29,7 +29,12 @@ class memBmpC
 public allocClassC
 {
 	public:
+		memBmpC(void);
 		memBmpC(
+			paddr_t baseAddr, paddr_t size,
+			void *preAllocated=__KNULL);
+
+		error_t initialize(
 			paddr_t baseAddr, paddr_t size,
 			void *preAllocated=__KNULL);
 

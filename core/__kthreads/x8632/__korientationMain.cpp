@@ -7,6 +7,7 @@
 #include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/numaTrib/numaTrib.h>
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -18,7 +19,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	// Zero out the .BSS section of the kernel ELF.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
-	// Prepare the kernel for its most basic sematics to begin working.
+	// Prepare the kernel for its most basic semantics to begin working.
 	__korientationPreConstruct::__kprocessInit();
 	__korientationPreConstruct::__korientationThreadInit();
 	__korientationPreConstruct::bspInit();
@@ -37,8 +38,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		static_cast<paddr_t>( 0x3FB00000 ),
 		__KNULL);
 
-	if (ret != ERROR_SUCCESS) {
-		for (;;) {};
-	};
+	DO_OR_DIE(ret);
+
+	ret = numaTrib.initialize();
+	DO_OR_DIE(ret);
 }
 
