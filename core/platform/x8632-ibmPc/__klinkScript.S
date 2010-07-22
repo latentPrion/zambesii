@@ -82,14 +82,21 @@ SECTIONS
 		__korientationDataEnd = .;
 	}
 
-	.cdtortl ALIGN(0x4)
+	.ctor ALIGN(0x4)
 	:
-	AT( ADDR(.cdtortl) - ARCH_MEMORY___KLOAD_VADDR_BASE
+	AT( ADDR(.ctor) - ARCH_MEMORY___KLOAD_VADDR_BASE
 		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
 		__kctorStart = .;
 		*(.ctor*)
 		__kctorEnd = .;
+	}
+
+	.dtor ALIGN(0x4)
+	:
+	AT(ADDR(.dtor) - ARCH_MEMORY___KLOAD_VADDR_BASE
+		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	{
 		__kdtorStart = .;
 		*(.dtor*)
 		__kdtorEnd = .;

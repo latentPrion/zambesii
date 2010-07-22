@@ -22,7 +22,6 @@ public tributaryC
 {
 public:
 	cpuTribC(void);
-	void preConstruct(void);
 	error_t initialize(void);
 	~cpuTribC(void);
 

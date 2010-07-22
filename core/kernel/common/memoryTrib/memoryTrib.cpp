@@ -19,20 +19,23 @@ __kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
 }
 
 // Initializes the kernel's Memory Stream.
-error_t memoryTribC::initialize(
+error_t memoryTribC::initialize1(
 	void *swampStart, uarch_t swampSize, vSwampC::holeMapS *holeMap
 	)
+{
+	return __kmemoryStream.initialize(swampStart, swampSize, holeMap);
+}
+
+error_t memoryTribC::initialize2(void)
 {
 	chipsetRegionMapEntryS		*currEntry;
 	chipsetRegionReservedS		*currReserved;
 	paddr_t				currBase, currSize;
 	void				*bmpMem;
-	error_t				ret;
 
 	/**	EXPLANATION:
-	 * On a call to memoryTribC::initialize() the kernel will first call
-	 * initialize() on its Memory Stream. If that returns successfully, it
-	 * will then proceed to spawn the bitmaps for all memory regions.
+	 * On a call to memoryTribC::initialize2() the kernel proceed to spawn
+	 * the bitmaps for all memory regions.
 	 *
 	 * These memory region bitmaps depend on Kernel Space RAM to initialize
 	 * since this is the only usable RAM that the kernel is aware of;
@@ -43,9 +46,6 @@ error_t memoryTribC::initialize(
 	 * which the person who ported us to this chipset told us about, that
 	 * we could assume is guaranteed safe RAM.
 	 **/
-	ret = __kmemoryStream.initialize(swampStart, swampSize, holeMap);
-	if (ret != ERROR_SUCCESS) { return ret; };
-
 	// Return success if the chipset has no regions whatsoever.
 	if (chipsetRegionMap == __KNULL) { return ERROR_SUCCESS; };
 

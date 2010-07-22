@@ -22,9 +22,10 @@ public tributaryC
 public:
 	memoryTribC(pagingLevel0S *level0Accessor, paddr_t level0Paddr);
 
-	error_t initialize(
+	error_t initialize1(
 		void *swampStart, uarch_t swampSize,
 		vSwampC::holeMapS *holeMap);
+	error_t initialize2(void);
 	
 public:
 	void *rawMemAlloc(uarch_t nPages);

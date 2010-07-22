@@ -9,8 +9,6 @@ ASM_SECTION(.__ksetupText)
 
 ASM_GLOBAL_FUNCTION(__korientationEntry)
 	cli
-	xchg %bx,%bx
-	jmp .
 	/* Enable Paging, then move on from there. */
 #ifdef CONFIG_ARCH_X86_32_PAE
 	/* Code to enable the PAE, etc here. */
@@ -23,7 +21,7 @@ ASM_GLOBAL_FUNCTION(__korientationEntry)
 	movl %ecx, %cr0
 
 	/* Jump to the virtual offset now. */
-	movl $__korientationVirtualStart, %ecx
+	movl $__korientationVirtualStart, %ecx	
 	jmp *%ecx
 ASM_END_FUNCTION(__korientationEntry)
 
@@ -46,6 +44,7 @@ ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	/* Push the (possibly) multiboot flags. */
 	pushl %ebx
 	pushl %eax
+
 	call __korientationMain
 
 	addl $0x8, %esp

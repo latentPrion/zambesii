@@ -8,7 +8,6 @@ all: Makefile $(DELIVERABLE) archSubdir
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -S waitLock.cpp
 
 archSubdir:
 	cd ../$(ZARCH); make

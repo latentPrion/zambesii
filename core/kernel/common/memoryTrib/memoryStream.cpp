@@ -23,8 +23,7 @@ memoryStreamC::memoryStreamC(
 :
 streamC(id),
 vaddrSpaceStream(
-	id, swampStart, swampSize, holeMap, level0Accessor, level0Paddr
-	)
+	id, swampStart, swampSize, holeMap, level0Accessor, level0Paddr)
 {
 	bind();
 }
