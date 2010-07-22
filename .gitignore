@@ -9,5 +9,7 @@ bochsrc*
 *.tgz
 *.tar*
 tmp
+foo
+*.tmp
 .bochsrc
 *.iso
