@@ -34,6 +34,9 @@ error_t slamCacheC::initialize(uarch_t objectSize)
 
 slamCacheC::~slamCacheC(void)
 {
+	/* I'm not even sure it's possible to destroy a cache, really, without
+	 * some form of reference counting.
+	 **/
 }
 
 /**	NOTE:
@@ -43,6 +46,7 @@ slamCacheC::~slamCacheC(void)
  **/
 status_t slamCacheC::detangle(void)
 {
+	return 0;
 }
 
 status_t slamCacheC::flush(void)
