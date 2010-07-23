@@ -9,6 +9,13 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
+/**	FIXME:
+ * When you begin doing userspace stuff, remember that this
+ * function maps frames as supervisor by default. So you have to pass user.
+ *
+ * Do something about that...
+ **/
+
 status_t walkerPageRanger::mapInc(
 	vaddrSpaceC *vaddrSpace,
 	void *vaddr, paddr_t paddr,
