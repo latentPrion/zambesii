@@ -13,7 +13,7 @@ EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a \
 	platformCore.a memoryTrib.a numaTrib.a \
 	cpuTrib.a archCpuTrib.a platformCore.a \
 	chipset.a chipsetCore.a archCore.a __kclasses.a \
-	__kcxxabi.a __kstdlib.a __kcxxlib.a __kclib.a lang.a
+	__kcxxabi.a __kcxxlib.a __kclib.a lang.a
 GOAL=../core.o
 
 all: $(GOAL)
@@ -75,12 +75,6 @@ archKernel.a:
 	@echo Building arch kernel dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd kernel/$(ZARCH); make
-
-__kstdlib.a:
-	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	@echo Building __kstdlib/ dir.
-	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd __kstdlib; make
 
 __kclasses.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
