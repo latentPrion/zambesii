@@ -44,6 +44,9 @@ namespace __ktypes
 
 	typedef sarch_t		error_t;
 	typedef sarch_t		status_t;
+
+	typedef ubit8		utf8Char;
+	typedef ubit16		utf16Char;
 }
 
 using namespace __ktypes;

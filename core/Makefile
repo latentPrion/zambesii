@@ -10,7 +10,7 @@
 # it halts saying that the symbol cannot be resolved, even if the symbol is
 # defined in one of the objects passed on the command line.
 EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a \
-	platformCore.a memoryTrib.a numaTrib.a \
+	platformCore.a memoryTrib.a numaTrib.a firmwareTrib.a \
 	cpuTrib.a archCpuTrib.a platformCore.a \
 	chipset.a chipsetCore.a archCore.a __kclasses.a \
 	__kcxxabi.a __kcxxlib.a __kclib.a lang.a

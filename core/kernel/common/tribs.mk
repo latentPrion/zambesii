@@ -25,5 +25,5 @@ firmwareTrib.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building Firmware Tributary.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd kernel/common/cpuTrib; make
+	cd kernel/common/firmwareTrib; make
 

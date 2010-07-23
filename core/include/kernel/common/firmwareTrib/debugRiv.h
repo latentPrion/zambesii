@@ -20,7 +20,7 @@ public:
 	// Refreshes the ouput on all currently tied devices.
 	void refresh(void);
 	// Clears the output on the specified device.
-	errot_t clear(uarch_t dev);
+	error_t clear(uarch_t dev);
 
 	// Ties debug output to the devices passed as a bitfield.
 	error_t tieTo(uarch_t dev);
