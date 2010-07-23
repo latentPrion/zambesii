@@ -39,6 +39,9 @@ public:
 	virtual void *allocate(void);
 	virtual void free(void *ptr);
 
+	status_t detangle(void);
+	status_t flush(void);
+
 private:
 	ubit32		perPageExcess;
 	ubit32		perPageBlocks;

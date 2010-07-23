@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../__kclasses.a
-OBJFILES=memBmp.o bitmap.o allocTable.o pageTableCache.o
+OBJFILES=memBmp.o bitmap.o allocTable.o pageTableCache.o slamCache.o
 
 all: Makefile $(DELIVERABLE)
 

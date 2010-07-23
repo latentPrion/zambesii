@@ -1,5 +1,6 @@
 
 #include <arch/paging.h>
+#include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/slamCache.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
@@ -21,7 +22,7 @@ error_t slamCacheC::initialize(uarch_t objectSize)
 	heapCacheC::objectSize = ((objectSize < sizeof(slamCacheC::object))
 		? sizeof(slamCacheC::object) : objectSize);
 
-	freeList = reinterpret_cast<object *>(
+	freeList.rsrc = reinterpret_cast<object *>(
 		(memoryTrib.__kmemoryStream.*
 			memoryTrib.__kmemoryStream.memAlloc)(1));
 
@@ -62,17 +63,17 @@ status_t slamCacheC::flush(void)
 		tmp = current;
 		current = current->next;
 		memoryTrib.__kmemoryStream.memFree(tmp);
-		ret++
+		ret++;
 	};
 
 	freeList.lock.release();
 	return ret;
 }
 
-virtual void *slamCacheC::allocate(void)
+void *slamCacheC::allocate(void)
 {
 	void			*ret;
-	slamCache::object	*tmp=__KNULL;
+	slamCacheC::object	*tmp=__KNULL;
 
 	partialList.lock.acquire();
 
@@ -91,8 +92,9 @@ virtual void *slamCacheC::allocate(void)
 
 		if (tmp == __KNULL)
 		{
-			tmp = (memoryTrib.__kmemoryStream
-				.*memoryTrib.__kmemoryStream.memAlloc)(1);
+			tmp = new ((memoryTrib.__kmemoryStream
+				.*memoryTrib.__kmemoryStream.memAlloc)(1))
+				slamCacheC::object;
 
 			if (tmp == __KNULL)
 			{
@@ -129,12 +131,13 @@ void slamCacheC::free(void *obj)
 	};
 
 #ifdef CONFIG_HEAP_SLAM_DEBUG
-	static_cast<slamCacheC::object>( obj )->magic = SLAMCACHE_OBJECT_MAGIC;
+	static_cast<slamCacheC::object *>( obj )->magic
+		= SLAMCACHE_OBJECT_MAGIC;
 #endif
 	partialList.lock.acquire();
 
-	static_cast<slamCacheC::object>( obj )->next = partialList.rsrc;
-	partialList.rsrc = static_cast<slamCacheC::object>( obj );
+	static_cast<slamCacheC::object *>( obj )->next = partialList.rsrc;
+	partialList.rsrc = static_cast<slamCacheC::object *>( obj );
 
 	partialList.lock.release();
 }

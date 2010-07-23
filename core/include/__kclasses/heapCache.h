@@ -14,11 +14,11 @@ public:
 
 public:
 	virtual void *allocate(void) { return __KNULL; };
-	virtual void free(void *ptr) {};
+	virtual void free(void *) {};
 
 public:
 	uarch_t objectSize;
-}
+};
 
 #endif
 
