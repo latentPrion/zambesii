@@ -2,7 +2,7 @@
 DELIVERABLE=../platform.a
 OBJFILES=foo.o
 
-all: Makefile $(DELIVERABLE) platformSubdir
+all: Makefile $(DELIVERABLE)
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
@@ -12,7 +12,6 @@ platformSubdir:
 
 clean:
 	rm -rf *.o *.s
-	cd $(ZARCH)-$(ZCHIPSET); make clean
 
 fonyphile:
 	rm -f clean
