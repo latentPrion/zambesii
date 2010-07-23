@@ -41,6 +41,9 @@
 #define DEBUGPIPE_DEVICE_PARALLEL	(1<<3)
 #define DEBUGPIPE_DEVICE_NIC		(1<<4)
 
+#define BUFFPAGE_MAX_NCHARS		\
+	((PAGING_BASE_SIZE - sizeof(void *)) / sizeof(utf16Char))
+
 class debugPipeC
 {
 public:
@@ -50,7 +53,7 @@ public:
 
 public:
 	// Use L"string". Zambezii only supports UTF-16 strings.
-	void printf(utf16Char *str);
+	void printf(utf16Char *str, ...);
 
 	// Can take more than one device per call (hence the bitfield form).
 	error_t tieTo(uarch_t device);
@@ -58,6 +61,17 @@ public:
 
 	// Refresh the buffer into all currently tied devices.
 	void refresh(void);
+	// Relinquish all pages in the buffer to the MM.
+	void flush(void);
+
+private:
+	// sizeof(buffPageS) should be exactly PAGING_BASE_SIZE or just below.
+	struct buffPageS
+	{
+		buffPageS	*next;
+		utf16Char	data[BUFFPAGE_MAX_NCHARS];
+	} *buff;
+	uarch_t devices;
 }
 
 extern debugPipeC	__kdebug;
