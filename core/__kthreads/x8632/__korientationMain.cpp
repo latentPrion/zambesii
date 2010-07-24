@@ -4,6 +4,7 @@
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kcxxlib/cstring>
+#include <__kstdlib/__kcxxlib/new>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
@@ -14,6 +15,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	void		(**ctorPtr)();
+	int		*a;
 
 	__koptimizationHacks();
 

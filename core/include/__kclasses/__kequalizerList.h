@@ -153,7 +153,7 @@ T *__kequalizerListC<T>::find(T *item)
 		current != __KNULL;
 		current = current->header.next)
 	{
-		for (uarch_t i=0; 
+		for (uarch_t i=0;
 			(i<PAGEBLOCK_NENTRIES(T)) && 
 				(current->entries[i] != 0) &&
 				(current->entries[i] <= *item); 
