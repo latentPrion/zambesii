@@ -38,7 +38,8 @@ error_t pageTableCacheC::pop(paddr_t *paddr)
 	{
 		stackPtr.lock.release();
 		// Allocate a new frame from the NUMA Tributary.
-		return numaTrib.fragmentedGetFrames(1, paddr);
+		return ((numaTrib.fragmentedGetFrames(1, paddr) > 0)
+			? ERROR_SUCCESS : ERROR_MEMORY_NOMEM_PHYSICAL);
 	};
 
 	// There are frames in the cache. Pop the top and return it.
