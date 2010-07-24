@@ -4,7 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/swampInfoNode.h>
 	#include <__kclasses/__kequalizerList.h>
-	#include <kernel/common/waitLock.h>
+	#include <kernel/common/recursiveLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 
 #define VSWAMP_NSWAMPS			2
@@ -63,7 +63,7 @@ private:
 		uarch_t		baseAddr;
 		uarch_t		size;
 		uarch_t		flags;
-		sharedResourceGroupC<waitLockC, swampStateS>	ptrs;
+		sharedResourceGroupC<recursiveLockC, swampStateS>	ptrs;
 	};
 	// Initial swamp info nodes.
 	swampInfoNodeC		initSwampNodes[VSWAMP_NSWAMPS];

@@ -5,7 +5,7 @@
 	#include <__kstdlib/__kcxxlib/new>
 	#include <__kclasses/__kpageBlock.h>
 	#include <kernel/common/sharedResourceGroup.h>
-	#include <kernel/common/waitLock.h>
+	#include <kernel/common/recursiveLock.h>
 	#include <kernel/common/memoryTrib/rawMemAlloc.h>
 
 /**	EXPLANATION:
@@ -63,7 +63,7 @@ private:
 	void deleteBlock(__kpageBlockC<T> *block);
 
 private:
-	sharedResourceGroupC<waitLockC, __kpageBlockC<T> *>	head;
+	sharedResourceGroupC<recursiveLockC, __kpageBlockC<T> *>	head;
 };
 
 
@@ -105,8 +105,8 @@ T *__kequalizerListC<T>::addEntry(T *item)
 	if (insertionBlock == __KNULL)
 	{
 		insertionBlock = getNewBlock(head.rsrc);
-		if (insertionBlock == __KNULL) {
-
+		if (insertionBlock == __KNULL)
+		{
 			head.lock.release();
 			return __KNULL;
 		};
@@ -153,7 +153,7 @@ T *__kequalizerListC<T>::find(T *item)
 		current != __KNULL;
 		current = current->header.next)
 	{
-		for (uarch_t i=0; 
+		for (uarch_t i=0;
 			(i<PAGEBLOCK_NENTRIES(T)) && 
 				(current->entries[i] != 0) &&
 				(current->entries[i] <= *item); 

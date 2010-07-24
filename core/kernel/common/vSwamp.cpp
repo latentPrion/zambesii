@@ -1,4 +1,6 @@
+
 #include <arch/paging.h>
+#include <__kstdlib/__kcxxlib/cstring>
 #include <kernel/common/vSwamp.h>
 
 vSwampC::vSwampC(void)
@@ -15,6 +17,8 @@ error_t vSwampC::initialize(
 	void *baseAddr, uarch_t swampSize, holeMapS *holeMap
 	)
 {
+	memset(this, 0, sizeof(*this));
+
 	// FIXME: Proof-check these calculations for userspace process spawning.
 	swamps[0].baseAddr = PAGING_BASE_ALIGN_FORWARD(
 		reinterpret_cast<uarch_t>( baseAddr ));
@@ -119,7 +123,7 @@ void *vSwampC::getPages(uarch_t nPages)
 
 void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 {
-	uarch_t		s=1;
+	uarch_t		s=0;
 	swampInfoNodeC	*insertionNode, *prevNode;
 	status_t	status;
 
@@ -130,8 +134,10 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 	};
 
 	// Find out which swamp we're interested in:
-	if (reinterpret_cast<uarch_t>( vaddr ) < swamps[1].baseAddr) {
-		s = 0;
+	if (swamps[1].baseAddr != __KNULL
+		&& reinterpret_cast<uarch_t>( vaddr ) >= swamps[1].baseAddr)
+	{
+		s = 1;
 	};
 
 	swamps[s].ptrs.lock.acquire();
@@ -139,8 +145,9 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 	insertionNode = findInsertionNode(&swamps[s], vaddr, &status);
 	if (status == VSWAMP_INSERT_BEFORE)
 	{
-		if ((reinterpret_cast<uarch_t>( vaddr ) + nPages) ==
-			insertionNode->startAddr)
+		if ((reinterpret_cast<uarch_t>( vaddr )
+			+ (nPages * PAGING_BASE_SIZE))
+			== insertionNode->startAddr)
 		{
 			// We can free directly to an existing node.
 			insertionNode->startAddr -= nPages * PAGING_BASE_SIZE;
@@ -266,7 +273,7 @@ swampInfoNodeC *vSwampC::findInsertionNode(
 		currentNode = currentNode->next)
 	{
 		// If the current node is the insertion point:
-		if (currentNode->startAddr > reinterpret_cast<uarch_t>( vaddr ))
+		if (reinterpret_cast<uarch_t>( vaddr ) < currentNode->startAddr)
 		{
 			*status = VSWAMP_INSERT_BEFORE;
 			return currentNode;

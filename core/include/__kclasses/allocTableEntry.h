@@ -52,7 +52,7 @@ sarch_t allocTableEntryC::operator ==(int v)
 sarch_t allocTableEntryC::operator !=(int v)
 {
 	if (v == 0) {
-		return vaddr == __KNULL;
+		return vaddr != __KNULL;
 	};
 	return 0;
 }

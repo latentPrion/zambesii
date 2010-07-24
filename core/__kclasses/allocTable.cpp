@@ -44,7 +44,7 @@ error_t allocTableC::lookup(
 
 	ret = allocTable.find(&tmp);
 	if (ret == __KNULL) {
-		return ERROR_INVALID_ARG_VAL;
+		return ERROR_GENERAL;
 	};
 
 	*nPages = ret->nPages;
