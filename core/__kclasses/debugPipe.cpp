@@ -5,44 +5,49 @@
 
 debugPipeC::debugPipeC(void)
 {
-	buff = __KNULL;
 	devices = 0;
 }
 
-error_t debugPipeC::intialize(void)
+error_t debugPipeC::initialize(uarch_t device)
 {
-	buff = (memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(1);
+	return tieTo(device);
+}
 
-	if (buff == __KNULL) {
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	for (uarch_t i=0; i<BUFFPAGE_MAX_NCHARS; i++) {
-		buff->data[i] = 0;
-	};
-
-	if (tieTo(DEBUGPIPE_DEVICE_BUFFER) != ERROR_SUCCESS) {
-		return ERROR_UNKNOWN;
-	};
-
-	return ERROR_SUCCESS;
+debugPipeC::~debugPipeC(void)
+{
+	untieFrom(
+		DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE_TERMINAL
+		| DEBUGPIPE_DEVICE_SERIAL | DEBUGPIPE_DEVICE_PARALLEL
+		| DEBUGPIPE_DEVICE_NIC);
 }
 
 error_t debugPipeC::tieTo(uarch_t device)
 {
 	// FIXME: Should check the device's state first.
 	devices |= device;
+	return ERROR_SUCCESS;
 }
 
 error_t debugPipeC::untieFrom(uarch_t device)
 {
 	// FIXME: Should de-init the device.
 	devices &= ~(device);
+	return ERROR_SUCCESS;
 }
 
 void debugPipeC::refresh(void)
 {
-	if (__KFLAG_TEST(devices, DEBUGPIPE_DEVICE_SERIAL))
-	{
-		
+}
+
+void debugPipeC::printf(utf16Char *str, ...)
+{
+	// Code to process the printf format string here.
+
+	// Send the processed output to all tied devices.
+	if (__KFLAG_TEST(devices, DEBUGPIPE_DEVICE_BUFFER)) {};
+	if (__KFLAG_TEST(devices, DEBUGPIPE_DEVICE_TERMINAL)) {};
+	if (__KFLAG_TEST(devices, DEBUGPIPE_DEVICE_SERIAL)) {};
+	if (__KFLAG_TEST(devices, DEBUGPIPE_DEVICE_PARALLEL)) {};
+	if (__KFLAG_TEST(devices, DEBUGPIPE_DEVICE_NIC)) {};
+}
+

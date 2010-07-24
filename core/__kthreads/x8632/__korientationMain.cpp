@@ -15,7 +15,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	void		(**ctorPtr)();
-	int		*a;
 
 	__koptimizationHacks();
 
