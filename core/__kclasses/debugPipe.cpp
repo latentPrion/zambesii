@@ -43,5 +43,6 @@ error_t debugPipeC::untieFrom(uarch_t device)
 
 void debugPipeC::refresh(void)
 {
-	tmp = 
-	for (
+	if (__KFLAG_TEST(devices, DEBUGPIPE_DEVICE_SERIAL))
+	{
+		
