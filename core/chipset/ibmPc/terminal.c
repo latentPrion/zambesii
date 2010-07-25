@@ -10,7 +10,7 @@ struct ibmPc_terminal_fbS
 	ubit8	attr;
 };
 
-static struct ibmPc_terminal_fbS	**buff, **origBuff;
+static struct ibmPc_terminal_fbS	*buff, *origBuff;
 static uarch_t				row, col, maxRow, maxCol;
 ubit8					*bda;
 
@@ -20,7 +20,7 @@ static error_t ibmPc_terminal_initialize(void)
 
 	buff = __KNULL;
 
-	buff = (struct ibmPc_terminal_fbS **) __kvaddrSpaceStream_getPages(1);
+	buff = (struct ibmPc_terminal_fbS *) __kvaddrSpaceStream_getPages(1);
 	if (buff == __KNULL) {
 		return ERROR_MEMORY_NOMEM_VIRTUAL;
 	};
@@ -84,16 +84,16 @@ static error_t ibmPc_terminal_awake(void)
 
 static void ibmPc_terminal_scrollDown(void)
 {
-	uarch_t		i,j;
+	uarch_t		i;
+	uarch_t		bound=(maxRow * maxCol) - maxCol;
 
-	for (i=0; i<maxRow-1; i++)
-	{
-		for (j=0; j<maxCol; j++) {
-			*(ubit16 *)&buff[i][j] = *(ubit16 *)&buff[i+1][j];
-		};
-	};
-	for (j=0; j<maxCol; j++) {
-		*(ubit16 *)&buff[i][j] = 0;
+	for (i=0; i<bound; i++) {
+		*(ubit16 *)&buff[i] = *(ubit16 *)&buff[i + maxCol];
+	}
+
+	bound += maxCol;
+	for (; i<bound; i++) {
+		*(ubit16 *)&buff[i] = 0;
 	};
 }	
 
@@ -137,8 +137,8 @@ static void ibmPc_terminal_read(const utf16Char *str)
 				};
 				col = 0;
 			};
-			buff[row][col].ch = (ubit8)*str;
-			buff[row][col].attr = 0x07;
+			buff[row * maxCol + col].ch = (ubit8)*str;
+			buff[row * maxCol + col].attr = 0x07;
 			col++;
 			break;
 		};
@@ -147,15 +147,10 @@ static void ibmPc_terminal_read(const utf16Char *str)
 
 void ibmPc_terminal_clear(void)
 {
-	uarch_t		i, j;
+	uarch_t		i, bound=(maxRow * maxCol);
 
-	for (i=0; i<maxRow; i++)
-	{
-		for (j=0; j<maxCol; j++)
-		{
-			buff[i][j].ch = 0;
-			buff[i][j].attr = 0;
-		};
+	for (i=0; i<bound; i++) {
+		*(ubit16 *)&buff[i] = 0;
 	};
 	row = col = 0;
 }
