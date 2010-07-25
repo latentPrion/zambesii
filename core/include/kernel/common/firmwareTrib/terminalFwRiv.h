@@ -1,35 +1,23 @@
 #ifndef _TERMINAL_FIRMWARE_RIVULET_H
 	#define _TERMINAL_FIRMWARE_RIVULET_H
 
-	#include <chipset/terminalFwRiv.h>
+#ifdef __cplusplus
 	#include <__kstdlib/__ktypes.h>
-	#include <kernel/common/firmwareTrib/firmwareRiv.h>
+#else
+	#include <kernel/common/firmwareTrib/firmwareRivTypes.h>
+#endif
 
-#define DEBUGRIV_DEV_VIDEO	(1<<0)
-#define DEBUGRIV_DEV_SERIAL	(1<<1)
-#define DEBUGRIV_DEV_PARALLEL	(1<<2)
-#define DEBUGRIV_DEV_NIC	(1<<3)
-
-class terminalFwRivC
-:
-public firmwareRivC
+struct terminalFwRivS
 {
-public:
-	terminalFwRivC(void) {};
-	~terminalFwRivC(void) {};
+	// Basic control.
+	error_t	(*initialize)(void);
+	error_t	(*shutdown)(void);
+	error_t	(*suspend)(void);
+	error_t	(*awake)(void);
 
-public:
-	virtual error_t initialize(void);
-	virtual error_t suspend(void);
-	virtual error_t awake(void);
-	virtual error_t shutdown(void);
-
-public:
-	void write(utf16Char *buff);
-	void clear(void);
-
-private:
-	terminalFwRivS		riv;
+	// Interface to take input from debugPipeC::printf().
+	void	(*read)(const utf16Char *str);
+	void	(*clear)(void);
 };
 
 #endif

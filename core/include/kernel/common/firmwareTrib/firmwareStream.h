@@ -14,21 +14,13 @@
  * to stash away for kernel use.
  **/
 
-class firmwareStreamC
-:
-public streamC
+struct firmwareStreamS
 {
-public:
-	firmwareStreamC(void);
-	error_t initialize(void);
-	~firmwareStreamC(void);
-
-public:
-	terminalFwRivC		terminalFwRiv;
+	terminalFwRivS		*terminalFwRiv;
 };
 
-extern firmwareStreamC		firmwareFwStream;
-extern firmwareStreamC		chipsetFwStream;
+extern firmwareStreamS		firmwareFwStream;
+extern firmwareStreamS		chipsetFwStream;
 
 #endif
 

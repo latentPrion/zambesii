@@ -7,6 +7,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/firmwareTrib/firmwareTrib.h>
 
 memoryTribC		memoryTrib(
 #ifdef CONFIG_ARCH_x86_32_PAE
@@ -19,5 +20,6 @@ memoryTribC		memoryTrib(
 // Invoke NUMA Trib with the default constructor.
 numaTribC		numaTrib;
 cpuTribC		cpuTrib;
+firmwareTribC		firmwareTrib;
 debugPipeC		__kdebug;
 

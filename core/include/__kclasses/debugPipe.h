@@ -1,7 +1,10 @@
 #ifndef _DEBUG_PIPE_H
 	#define _DEBUG_PIPE_H
 
+	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/waitLock.h>
 
 /**	EXPLANATION:
  * The purpose of the debug pipe is to provide a uniform debug stream output
@@ -45,12 +48,12 @@ class debugPipeC
 {
 public:
 	debugPipeC(void);
-	error_t initialize(uarch_t device);
+	error_t initialize(void);
 	~debugPipeC(void);
 
 public:
 	// Use L"string". Zambezii only supports UTF-16 strings.
-	void printf(utf16Char *str, ...);
+	void printf(const utf16Char *str, ...);
 
 	// Can take more than one device per call (hence the bitfield form).
 	error_t tieTo(uarch_t device);
@@ -62,7 +65,9 @@ public:
 	void flush(void);
 
 private:
-	uarch_t devices;
+	// 'tmpBuff' is used by printf() to process the format string.
+	sharedResourceGroupC<waitLockC, utf16Char *>	tmpBuff;
+	sharedResourceGroupC<waitLockC, uarch_t>	devices;
 };
 
 extern debugPipeC	__kdebug;

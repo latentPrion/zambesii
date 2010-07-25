@@ -5,11 +5,13 @@
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kcxxlib/cstring>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
+#include <kernel/common/firmwareTrib/firmwareTrib.h>
 
 extern "C" error_t ibmPc_terminal_initialize(void);
 extern "C" void ibmPc_terminal_test(void);
@@ -49,8 +51,16 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = numaTrib.initialize();
 	DO_OR_DIE(ret);
 
-	if (ibmPc_terminal_initialize() == ERROR_SUCCESS) {
-		ibmPc_terminal_test();
-	};
+	ret = firmwareTrib.initialize();
+	DO_OR_DIE(ret);
+
+	ret = __kdebug.initialize();
+	DO_OR_DIE(ret);
+
+	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE_TERMINAL);
+	DO_OR_DIE(ret);
+
+	__kdebug.printf(L"Foo.");
+	for (;;){};
 }
 

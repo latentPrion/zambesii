@@ -33,7 +33,7 @@ namespace __ktypes
 	typedef sarch_t		status_t;
 
 	typedef ubit8		utf8Char;
-	typedef ubit16		utf16Char;
+	typedef wchar_t		utf16Char;
 }
 
 using namespace __ktypes;
