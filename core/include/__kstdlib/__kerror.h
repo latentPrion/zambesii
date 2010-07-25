@@ -9,7 +9,7 @@
 	#define ERROR_INVALID_ARG_VAL			-3
 	#define ERROR_INVALID_ARG			-4
 	#define ERROR_MEMORY_NOMEM			-5
-	#define ERROR_MEMORY___KSPACE_NOMEM		-6
+	#define ERROR_MEMORY_VIRTUAL_PAGEMAP		-6
 	#define ERROR_MEMORY_NOMEM_VIRTUAL		-7
 	#define ERROR_MEMORY_NOMEM_PHYSICAL		-8
 	// Hopefully we should never need to use this.

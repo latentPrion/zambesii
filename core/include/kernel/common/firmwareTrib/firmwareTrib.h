@@ -3,7 +3,6 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/firmwareTrib/firmwareStateDescriptor.h>
 	#include <kernel/common/firmwareTrib/debugRiv.h>
 
 class firmwareTribC
@@ -19,7 +18,10 @@ public:
 	debugRivC *getDebugRiv(void);
 
 public:
-	firmwareStateDescriptorS	stateDescriptor;
+	struct firmwareStateDescriptorS
+	{
+		debugRivC	*debugRiv;
+	} stateDescriptor;
 };
 
 extern firmwareTribC		firmwareTrib;

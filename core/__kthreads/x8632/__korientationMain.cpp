@@ -11,6 +11,10 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 
+extern "C" error_t ibmPc_terminal_initialize(void);
+extern "C" void ibmPc_terminal_test(void);
+
+
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -44,5 +48,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	ret = numaTrib.initialize();
 	DO_OR_DIE(ret);
+
+	if (ibmPc_terminal_initialize() == ERROR_SUCCESS) {
+		ibmPc_terminal_test();
+	};
 }
 

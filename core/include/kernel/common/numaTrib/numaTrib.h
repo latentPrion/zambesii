@@ -58,9 +58,9 @@ public:
 	 * Otherwise you end up with NUMA bank specifics in the kernel.
 	 **/
 	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
-	error_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
+	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 #if __SCALING__ >= SCALING_CC_NUMA
-	error_t configuredGetFrames(
+	status_t configuredGetFrames(
 		numaConfigS *config, uarch_t nPages, paddr_t *paddr);
 #endif
 
