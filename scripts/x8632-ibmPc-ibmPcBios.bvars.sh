@@ -12,8 +12,8 @@ export \
 	ZAR='i586-elf-ar' \
 	\
 	ZCPPFLAGS='-I/osdev/zbz/include -I/osdev/zbz/core/include' \
-	ZCCFLAGS='' \
-	ZCXXFLAGS='-Wall -Wextra -pedantic -Wno-long-long -fno-exceptions -fno-rtti' \
+	ZCCFLAGS='-O3 -Wall -Wextra -pedantic' \
+	ZCXXFLAGS='-Wall -Wextra -pedantic -Wno-long-long -fno-exceptions -fno-rtti -O3' \
 	ZASFLAGS=''\
 	ZLDFLAGS='-nostdlib -nostartfiles -nodefaultlibs' \
 	ZARFLAGS=''
@@ -27,8 +27,8 @@ export \
 	LAR='ar' \
 	\
 	LCPPFLAGS='' \
-	LCCFLAGS='' \
-	LCXXFLAGS='-Wall -Wextra -pedantic' \
+	LCCFLAGS='-O3 -Wall -Wextra -pedantic' \
+	LCXXFLAGS='-Wall -Wextra -pedantic -O3' \
 	LASFLAGS=''\
 	LLDFLAGS='-nostdlib -nostartfiles -nodefaultlibs' \
 	LARFLAGS=''
