@@ -16,7 +16,7 @@ struct terminalFwRivS
 	error_t	(*awake)(void);
 
 	// Interface to take input from debugPipeC::printf().
-	void	(*read)(const utf16Char *str);
+	void	(*read)(const unicodePoint *str);
 	void	(*clear)(void);
 };
 

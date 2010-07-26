@@ -32,8 +32,9 @@ namespace __ktypes
 	typedef sarch_t		error_t;
 	typedef sarch_t		status_t;
 
+	// Zambezii supports unicode in the form of UTF-8.
 	typedef ubit8		utf8Char;
-	typedef wchar_t		utf16Char;
+	typedef ubit32		unicodePoint;
 }
 
 using namespace __ktypes;

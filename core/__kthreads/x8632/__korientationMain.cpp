@@ -16,9 +16,6 @@
 extern "C" error_t ibmPc_terminal_initialize(void);
 extern "C" void ibmPc_terminal_test(void);
 
-int slc(void) {
-	return sizeof('ccddr');
-}
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -63,8 +60,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE_TERMINAL);
 	DO_OR_DIE(ret);
 
-	(*firmwareTrib.getTerminalFwRiv()->read)(L"Foo\nBar.");
-	int i=slc();
+	__kdebug.printf((utf8Char *)"Foo\nBar");
 	for(;;){};
 }
 

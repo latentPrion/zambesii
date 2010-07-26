@@ -97,7 +97,7 @@ static void ibmPc_terminal_scrollDown(void)
 	};
 }	
 
-static void ibmPc_terminal_read(const utf16Char *str)
+static void ibmPc_terminal_read(const unicodePoint *str)
 {
 	if (str == __KNULL) {
 		return;
@@ -112,9 +112,11 @@ static void ibmPc_terminal_read(const utf16Char *str)
 			{
 				ibmPc_terminal_scrollDown();
 				row = maxRow-1;
+				col = 0;
 				break;
 			}
 			row++;
+			col = 0;
 			break;
 
 		case '\r':
@@ -137,6 +139,7 @@ static void ibmPc_terminal_read(const utf16Char *str)
 				};
 				col = 0;
 			};
+			// For now we truncate all codepoints.
 			buff[row * maxCol + col].ch = (ubit8)*str;
 			buff[row * maxCol + col].attr = 0x07;
 			col++;

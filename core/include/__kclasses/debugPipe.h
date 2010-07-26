@@ -44,6 +44,8 @@
 #define DEBUGPIPE_DEVICE_PARALLEL	(1<<3)
 #define DEBUGPIPE_DEVICE_NIC		(1<<4)
 
+#define DEBUGPIPE_CONVERSION_BUFF_NPAGES	4
+
 class debugPipeC
 {
 public:
@@ -52,12 +54,13 @@ public:
 	~debugPipeC(void);
 
 public:
-	// Use L"string". Zambezii only supports UTF-16 strings.
-	void printf(const utf16Char *str, ...);
+	// Zambezii only supports UTF-8 strings in the kernel.
+	void printf(const utf8Char *str, ...);
 
 	// Can take more than one device per call (hence the bitfield form).
 	error_t tieTo(uarch_t device);
 	error_t untieFrom(uarch_t device);
+	uarch_t jik(uarch_t);
 
 	// Refresh the buffer into all currently tied devices.
 	void refresh(void);
@@ -66,7 +69,7 @@ public:
 
 private:
 	// 'tmpBuff' is used by printf() to process the format string.
-	sharedResourceGroupC<waitLockC, utf16Char *>	tmpBuff;
+	sharedResourceGroupC<waitLockC, unicodePoint *>	tmpBuff;
 	sharedResourceGroupC<waitLockC, uarch_t>	devices;
 };
 
