@@ -1,4 +1,5 @@
 
+#include <__kstdlib/utf8.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
@@ -108,28 +109,25 @@ void debugPipeC::printf(const utf8Char *str, ...)
 	// Convert the input UTF-8 into a codepoint.
 	for (; (*str != 0) && (buffLen < buffMax); buffLen++, str++)
 	{
-		// Byte 1.
-		tmpBuff.rsrc[buffLen] = *str & 0x7F;
-		// Is this a multibyte sequence?
-		if (*str & 0x80)
+		if (!(*str & 0x80)) {
+			tmpBuff.rsrc[buffLen] = *str;
+		}
+		else
 		{
-			str++;
-			// Get the bits from byte 2.
-			tmpBuff.rsrc[buffLen] |= (*str & 0x3F) << 7;
-			// Does it continue?
-			if ((*str & 0xC0) == 0x80)
+			if ((*str & 0xE0) == 0xC0)
 			{
-				str++;
-				// Get the bits from byte 3.
-				tmpBuff.rsrc[buffLen] |= (*str & 0x3F) << 14;
-				// More bytes yet?
-				if ((*str & 0xC0) == 0x80)
-				{
-					str++;
-					// Get the bits from byte 4.
-					tmpBuff.rsrc[buffLen] |= (*str & 0x3F)
-						<< 20;
-				};
+				tmpBuff.rsrc[buffLen] = utf8::parse2(&str);
+				continue;
+			};
+			if ((*str & 0xF0) == 0xE0)
+			{
+				tmpBuff.rsrc[buffLen] = utf8::parse3(&str);
+				continue;
+			};
+			if ((*str & 0xF8) == 0xF0)
+			{
+				tmpBuff.rsrc[buffLen] = utf8::parse4(&str);
+				continue;
 			};
 		};
 	};

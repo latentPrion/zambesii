@@ -60,7 +60,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE_TERMINAL);
 	DO_OR_DIE(ret);
 
-	__kdebug.printf((utf8Char *)"Foo\nBar");
+	(firmwareTrib.getTerminalFwRiv()->clear)();
+
+	__kdebug.printf((utf8Char *)"\"Hello world!\" from Zambezii.");
 	for(;;){};
 }
 

@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../__kstdlib.a
-OBJFILES=foo.o
+OBJFILES=utf8.o
 
 all: Makefile $(DELIVERABLE)
 

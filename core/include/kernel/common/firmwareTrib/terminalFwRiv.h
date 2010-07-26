@@ -1,11 +1,7 @@
 #ifndef _TERMINAL_FIRMWARE_RIVULET_H
 	#define _TERMINAL_FIRMWARE_RIVULET_H
 
-#ifdef __cplusplus
 	#include <__kstdlib/__ktypes.h>
-#else
-	#include <kernel/common/firmwareTrib/firmwareRivTypes.h>
-#endif
 
 struct terminalFwRivS
 {

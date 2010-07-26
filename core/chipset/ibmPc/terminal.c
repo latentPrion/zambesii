@@ -1,6 +1,5 @@
 
-// Switch the firmwareRiveApi header to use the firmwareRivTypes types.
-#include <kernel/common/firmwareTrib/firmwareRivTypes.h>
+#include <__kstdlib/__ktypes.h>
 #include <kernel/common/firmwareTrib/firmwareRivApi.h>
 #include <kernel/common/firmwareTrib/terminalFwRiv.h>
 
