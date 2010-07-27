@@ -3,6 +3,5 @@
 void __koptimizationHacks(void)
 {
 	__kheadersInit();
-	__kclassInstancesInit();
 }
 

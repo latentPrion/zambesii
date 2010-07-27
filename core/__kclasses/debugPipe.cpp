@@ -47,15 +47,15 @@ error_t debugPipeC::tieTo(uarch_t device)
 	void		*riv;
 	error_t		ret;
 
-/*	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
+	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
 	{
-		ret = buffer.initialize();
+		ret = debugBuff.initialize();
 		if (ret == ERROR_SUCCESS) {
 			__KFLAG_SET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
 		};
 		return ret;
 	};
-*/
+
 	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_TERMINAL))
 	{
 		riv = firmwareTrib.getTerminalFwRiv();
@@ -77,12 +77,12 @@ error_t debugPipeC::tieTo(uarch_t device)
 
 error_t debugPipeC::untieFrom(uarch_t device)
 {
-/*	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
+	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
 	{
 		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
-		return buffer.shutdown();
+		return debugBuff.shutdown();
 	};
-*/	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_TERMINAL))
+	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_TERMINAL))
 	{
 		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE_TERMINAL);
 		return (*firmwareTrib.getTerminalFwRiv()->shutdown)();
@@ -94,12 +94,7 @@ void debugPipeC::refresh(void)
 {
 }
 
-uarch_t debugPipeC::jik(uarch_t bufflen)
-{
-	return bufflen;
-}
-
-void debugPipeC::printf(const utf8Char *str, ...)
+void debugPipeC::printf(const utf8Char *str, uarch_t flags, ...)
 {
 	uarch_t		buffLen=0, buffMax;
 
@@ -133,12 +128,14 @@ void debugPipeC::printf(const utf8Char *str, ...)
 	};
 	tmpBuff.rsrc[buffLen] = 0;
 
-	// At this point the codepoints are in the buffer, completely expanded.
+	// Make sure not to send to the buffer if the memoryTrib is printing.
+	if (!__KFLAG_TEST(flags, DEBUGPIPE_FLAGS_NOBUFF))
+	{
+		if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)) {
+			debugBuff.read(tmpBuff.rsrc, buffLen);
+		};
+	};
 
-	// Send the processed output to all tied devices.rsrc.
-/*	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)) {
-		buffer.read(tmpBuff.rsrc);
-	}; */
 	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_TERMINAL)) {
 		(*firmwareTrib.getTerminalFwRiv()->read)(tmpBuff.rsrc);
 	};

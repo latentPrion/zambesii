@@ -1,14 +1,19 @@
 
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <__kclasses/debugPipe.h>
+#include <kernel/common/numaTrib/numaTrib.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/firmwareTrib/firmwareTrib.h>
 
-/* Part of a trick to prevent reference optimizing linkers from excluding
- * this file.
+/**	EXPLANATION:
+ * These are the instances of the kernel classes which don't require any
+ * arch-specific information to be passed to their constructors. As a rule,
+ * most of the kernel classes will be this way, with only one or two requiring
+ * arch-specific construction information.
+ *
+ * The order in which they are placed here does not matter.
  **/
-int __kclassInstancesInit(void)
-{
-	volatile memoryTribC		*mtp = &memoryTrib;
-
-	while (mtp) { return 0x00FF; };
-	return 0xFFFF;
-}
+numaTribC		numaTrib;
+cpuTribC		cpuTrib;
+firmwareTribC		firmwareTrib;
+debugPipeC		__kdebug;
 

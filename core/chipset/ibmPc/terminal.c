@@ -123,14 +123,17 @@ static void ibmPc_terminal_read(const unicodePoint *str)
 			break;
 
 		case '\t':
-			col = ((col & 0x7) ? ((col & (~0x7)) + 1) : col);
+			col += 8;
+			col &= ~0x7;
+			break;
 
 		default:
 			if (*str < 0x20) {
 				break;
 			};
-			if (col >= maxCol-1)
+			if (col >= maxCol)
 			{
+				row++;
 				if (row >= maxRow-1)
 				{
 					ibmPc_terminal_scrollDown();

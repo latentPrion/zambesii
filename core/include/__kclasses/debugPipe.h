@@ -3,6 +3,7 @@
 
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kclasses/debugBuffer.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
@@ -46,6 +47,9 @@
 
 #define DEBUGPIPE_CONVERSION_BUFF_NPAGES	4
 
+// When the MemoryTrib prints, it must pass this flag. 
+#define DEBUGPIPE_FLAGS_NOBUFF		(1<<0)
+
 class debugPipeC
 {
 public:
@@ -55,12 +59,11 @@ public:
 
 public:
 	// Zambezii only supports UTF-8 strings in the kernel.
-	void printf(const utf8Char *str, ...);
+	void printf(const utf8Char *str, uarch_t flags, ...);
 
 	// Can take more than one device per call (hence the bitfield form).
 	error_t tieTo(uarch_t device);
 	error_t untieFrom(uarch_t device);
-	uarch_t jik(uarch_t);
 
 	// Refresh the buffer into all currently tied devices.
 	void refresh(void);
@@ -69,6 +72,7 @@ public:
 
 private:
 	// 'tmpBuff' is used by printf() to process the format string.
+	debugBufferC		debugBuff;
 	sharedResourceGroupC<waitLockC, unicodePoint *>	tmpBuff;
 	sharedResourceGroupC<waitLockC, uarch_t>	devices;
 };

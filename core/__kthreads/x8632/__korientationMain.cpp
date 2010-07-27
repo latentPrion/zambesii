@@ -51,18 +51,27 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = numaTrib.initialize();
 	DO_OR_DIE(ret);
 
+	// The Interrupt Tributary should be initialized here.
+
 	ret = firmwareTrib.initialize();
 	DO_OR_DIE(ret);
 
+	// Firmware Trib is initialized. Initialize kernel debugPipe.
 	ret = __kdebug.initialize();
 	DO_OR_DIE(ret);
 
 	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE_TERMINAL);
 	DO_OR_DIE(ret);
 
+	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER);
+	DO_OR_DIE(ret);
+
 	(firmwareTrib.getTerminalFwRiv()->clear)();
 
-	__kdebug.printf((utf8Char *)"\"Hello world!\" from Zambezii.");
-	for(;;){};
+	for (uarch_t i=0; i<2; i++)
+	{
+		__kdebug.printf(
+			(utf8Char *)"\"Hello world!\" from Zambezii.\t", 0);
+	}
 }
 
