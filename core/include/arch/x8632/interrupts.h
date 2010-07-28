@@ -1,0 +1,7 @@
+#ifndef _ARCH_x86_32_INTERRUPTS_H
+	#define _ARCH_x86_32_INTERRUPTS_H
+
+#define ARCH_IRQ_NVECTORS		256
+
+#endif
+

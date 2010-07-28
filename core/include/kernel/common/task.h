@@ -13,8 +13,13 @@ struct processS;
 
 struct taskS
 {
-	taskS		*next;
+	struct
+	{
+		void	*priv0;
+		void	*priv1;
+	} stacks;
 	uarch_t		id;
+	taskS		*next;
 	uarch_t		flags;
 	ubit16		nLocksHeld;
 	processS	*parent;
