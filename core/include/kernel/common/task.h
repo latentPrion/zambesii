@@ -13,6 +13,7 @@ struct processS;
 
 struct taskS
 {
+	// Do *NOT* move this struct from where it is.
 	struct
 	{
 		void	*priv0;

@@ -2,9 +2,9 @@
 #include <kernel/common/firmwareTrib/firmwareStream.h>
 
 // List all the rivulets that this chipset provides.
-extern terminalFwRivS		chipsetTerminalFwRiv;
+extern struct terminalFwRivS		chipsetTerminalFwRiv;
 
-firmwareStreamS		chipsetFwStream =
+struct firmwareStreamS		chipsetFwStream =
 {
 	&chipsetTerminalFwRiv
 };

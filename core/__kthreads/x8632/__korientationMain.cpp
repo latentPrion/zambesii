@@ -13,24 +13,27 @@
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 
-extern "C" error_t ibmPc_terminal_initialize(void);
-extern "C" void ibmPc_terminal_test(void);
-
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	void		(**ctorPtr)();
 
-	__koptimizationHacks();
-
-	// Zero out the .BSS section of the kernel ELF.
-	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
-
 	// Prepare the kernel for its most basic semantics to begin working.
 	__korientationPreConstruct::__kprocessInit();
 	__korientationPreConstruct::__korientationThreadInit();
 	__korientationPreConstruct::bspInit();
+
+	// Ensure all the right rivulets are loaded into the descriptor.
+	ret = firmwareTrib.initialize();
+	DO_OR_DIE(ret);
+
+	// Call initialize() on the interruptTrib ASAP.
+//	ret = interruptTrib.initialize();
+//	DO_OR_DIE(ret);
+
+	// Zero out the .BSS section of the kernel ELF.
+	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
 	// Call all global constructors.
 	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );
@@ -53,9 +56,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	// The Interrupt Tributary should be initialized here.
 
-	ret = firmwareTrib.initialize();
-	DO_OR_DIE(ret);
-
 	// Firmware Trib is initialized. Initialize kernel debugPipe.
 	ret = __kdebug.initialize();
 	DO_OR_DIE(ret);
@@ -73,5 +73,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		__kdebug.printf(
 			(utf8Char *)"\"Hello world!\" from Zambezii.\t", 0);
 	}
+
+	// I REALLY want to get rid of this function.
+	__koptimizationHacks();
 }
 

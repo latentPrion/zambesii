@@ -2,19 +2,21 @@
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/firmwareTrib/firmwareStream.h>
 
+#define FIRMWARETRIB_CHOOSE(__riv)					\
+	if (chipsetFwStream.__riv != __KNULL) { \
+		descriptor.__riv = chipsetFwStream.__riv; \
+	} \
+	else { \
+		descriptor.__riv = firmwareFwStream.__riv; \
+	}
+
 firmwareTribC::firmwareTribC(void)
 {
 }
 
 error_t firmwareTribC::initialize(void)
 {
-	if (chipsetFwStream.terminalFwRiv != __KNULL) {
-		descriptor.terminalFwRiv = chipsetFwStream.terminalFwRiv;
-	}
-/*	else {
-		descriptor.terminalFwRiv = firmwareFwStream.terminalFwRiv;
-	}*/;
-
+	FIRMWARETRIB_CHOOSE(terminalFwRiv);
 	return ERROR_SUCCESS;
 }
 

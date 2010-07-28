@@ -18,9 +18,10 @@ public:
 	~cpuStreamC(void);
 
 public:
+	// Do *NOT* move currentTask from where it is.
+	taskS		*currentTask;
 	cpu_t		cpuId;
 	numaBankId_t	bankId;
-	taskS		*currentTask;
 	cpuFeaturesS	cpuFeatures;
 };
 

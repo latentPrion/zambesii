@@ -9,7 +9,7 @@
 # files resolving as it goes, so if it sees an unresolved symbol too late,
 # it halts saying that the symbol cannot be resolved, even if the symbol is
 # defined in one of the objects passed on the command line.
-EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a \
+EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a firmwareCore.a \
 	platformCore.a memoryTrib.a numaTrib.a firmwareTrib.a \
 	cpuTrib.a archCpuTrib.a platformCore.a \
 	chipset.a chipsetCore.a archCore.a __kclasses.a \
@@ -45,6 +45,12 @@ chipsetCore.a:
 	@echo Building chipset core dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd chipset/$(ZCHIPSET); make
+
+firmwareCore.a:
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	@echo Building firmware core dir.
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd firmware/$(ZFIRMWARE); make
 
 platformCore.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
