@@ -18,6 +18,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	void		(**ctorPtr)();
+	void		*r;
 
 	// Prepare the kernel for its most basic semantics to begin working.
 	__korientationPreConstruct::__kprocessInit();

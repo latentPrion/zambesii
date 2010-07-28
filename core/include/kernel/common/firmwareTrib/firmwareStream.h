@@ -3,6 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/firmwareTrib/terminalFwRiv.h>
+	#include <kernel/common/firmwareTrib/watchdogFwRiv.h>
 
 /**	EXPLANATION:
  * The Firmware stream is a presentation layer for all the rivulets on either
@@ -31,6 +32,7 @@
 struct firmwareStreamS
 {
 	struct terminalFwRivS		*terminalFwRiv;
+	struct watchdogFwRivS		*watchdogFwRiv;
 };
 
 extern struct firmwareStreamS		firmwareFwStream;

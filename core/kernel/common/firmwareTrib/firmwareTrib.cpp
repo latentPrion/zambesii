@@ -17,6 +17,7 @@ firmwareTribC::firmwareTribC(void)
 error_t firmwareTribC::initialize(void)
 {
 	FIRMWARETRIB_CHOOSE(terminalFwRiv);
+	FIRMWARETRIB_CHOOSE(watchdogFwRiv);
 	return ERROR_SUCCESS;
 }
 
@@ -27,5 +28,10 @@ firmwareTribC::~firmwareTribC(void)
 terminalFwRivS *firmwareTribC::getTerminalFwRiv(void)
 {
 	return descriptor.terminalFwRiv;
+}
+
+watchdogFwRivS *firmwareTribC::getWatchdogFwRiv(void)
+{
+	return descriptor.watchdogFwRiv;
 }
 

@@ -4,6 +4,8 @@
 
 struct firmwareStreamS		firmwareFwStream =
 {
+	// No terminal or watchdog.
+	__KNULL,
 	__KNULL
 };
 

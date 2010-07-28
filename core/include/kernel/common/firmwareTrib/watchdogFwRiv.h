@@ -3,12 +3,15 @@
 
 /**	EXPLANATION:
  * Watchdog Rivulet API.
- *
- * Must fill in all the following fields:
- *	* isEnabled()
- *	* pet();
- *	*
-
+ * Completely incomplete...
+ **/
 struct watchdogFwRivS
 {
-	
+	error_t (*initialize)();
+	error_t (*shutdown)();
+	error_t (*suspend)();
+	error_t (*awake)();
+};
+
+#endif
+

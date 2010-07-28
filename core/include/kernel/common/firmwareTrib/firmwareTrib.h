@@ -4,6 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/firmwareTrib/terminalFwRiv.h>
+	#include <kernel/common/firmwareTrib/watchdogFwRiv.h>
 
 class firmwareTribC
 :
@@ -16,11 +17,14 @@ public:
 
 public:
 	terminalFwRivS *getTerminalFwRiv(void);
+	watchdogFwRivS *getWatchdogFwRiv(void);
 
 public:
 	struct firmwareStateDescriptorS
 	{
 		terminalFwRivS		*terminalFwRiv;
+		watchdogFwRivS		*watchdogFwRiv;
+		
 	} descriptor;
 };
 
