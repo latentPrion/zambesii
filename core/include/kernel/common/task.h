@@ -1,6 +1,7 @@
 #ifndef _TASK_H
 	#define _TASK_H
 
+	#include <arch/taskContext.h>
 	#include <arch/tlbContext.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/bitmap.h>
@@ -21,6 +22,7 @@ struct taskS
 	} stacks;
 	uarch_t		id;
 	taskS		*next;
+	taskContextS	*context;
 	uarch_t		flags;
 	ubit16		nLocksHeld;
 	processS	*parent;

@@ -20,6 +20,8 @@ clean: fonyphile
 	cd kernel/common/cpuTrib; make clean
 	cd kernel/$(ZARCH)/cpuTrib; make clean
 	cd kernel/common/firmwareTrib; make clean
+	cd kernel/common/interruptTrib; make clean
+	cd kernel/$(ZARCH)/interruptTrib; make clean
 
 aclean:
 	rm -f *.a *.o __klinkScript.ld

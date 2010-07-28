@@ -18,7 +18,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	void		(**ctorPtr)();
-	void		*r;
 
 	// Prepare the kernel for its most basic semantics to begin working.
 	__korientationPreConstruct::__kprocessInit();
@@ -29,9 +28,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = firmwareTrib.initialize();
 	DO_OR_DIE(ret);
 
-	// Call initialize() on the interruptTrib ASAP.
-//	ret = interruptTrib.initialize();
-//	DO_OR_DIE(ret);
+	// Call initialize() on the interruptTrib here.
 
 	// Zero out the .BSS section of the kernel ELF.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
@@ -55,9 +52,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = numaTrib.initialize();
 	DO_OR_DIE(ret);
 
-	// The Interrupt Tributary should be initialized here.
-
-	// Firmware Trib is initialized. Initialize kernel debugPipe.
 	ret = __kdebug.initialize();
 	DO_OR_DIE(ret);
 
@@ -67,7 +61,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER);
 	DO_OR_DIE(ret);
 
-	(firmwareTrib.getTerminalFwRiv()->clear)();
+	(*firmwareTrib.getTerminalFwRiv()->clear)();
 
 	for (uarch_t i=0; i<2; i++)
 	{

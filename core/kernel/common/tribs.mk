@@ -17,7 +17,7 @@ cpuTrib.a:
 	cd kernel/common/cpuTrib; make
 archCpuTrib.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	@echo Building CPU Tributary.
+	@echo Building Arch CPU Tributary.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd kernel/$(ZARCH)/cpuTrib; make
 
@@ -26,4 +26,16 @@ firmwareTrib.a:
 	@echo Building Firmware Tributary.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd kernel/common/firmwareTrib; make
+
+interruptTrib.a:
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	@echo Building Interrupt Tributary.
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd kernel/common/interruptTrib; make
+
+archInterruptTrib.a:
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	@echo Building Arch Interrupt Tributary.
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd kernel/$(ZARCH)/interruptTrib; make
 
