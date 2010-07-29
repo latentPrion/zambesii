@@ -3,7 +3,7 @@
 #include <arch/walkerPageRanger.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
-#include <kernel/common/firmwareTrib/firmwareRivApi.h>
+#include <kernel/common/firmwareTrib/firmwareSupportRivApi.h>
 
 void *__kvaddrSpaceStream_getPages(uarch_t nPages)
 {

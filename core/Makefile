@@ -13,7 +13,7 @@ EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a firmwareCore.a \
 	platformCore.a memoryTrib.a numaTrib.a firmwareTrib.a interruptTrib.a \
 	timerTrib.a \
 	cpuTrib.a archCpuTrib.a platformCore.a \
-	chipset.a chipsetCore.a archCore.a __kclasses.a \
+	chipset.a chipsetCore.a archCore.a firmwareCore.a __kclasses.a \
 	__kstdlib.a __kcxxabi.a __kcxxlib.a __kclib.a lang.a
 GOAL=../core.o
 

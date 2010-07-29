@@ -13,19 +13,18 @@
  *
  * This interface directly connects to the firmwareTributary and prints
  * to the devices there, depending on what you connect it to. That is, the
- * kernel debug output is attached to one or more devices, which include:
- *	1. A buffer,
- *	2. A character terminal.
- *	3. A serial interface.
- *	4. A parallel interface.
- *	5. An NIC.
+ * kernel debug output is attached to one of four devices, all of which are
+ * completely chipset dependent. A chipset may define one, all, or none, or
+ * any other combination. Of course, not having an underlying device to print
+ * to means obviously that you'll be sending all data to the debug buffer, and
+ * not seeing it anywhere.
  *
  * At any time, the debug pipe can be 'untied' from any of these, including the
  * buffer. The buffer acts as a big sprintf() to store all messages. As soon as
  * possible, the kernel allocates the buffer, and begins printing to it.
  *
  * Subsequently, whenever the firmwareTributary is initialize()d, the kernel
- * will then tie the debug buffer to the serial device and screen. This will
+ * can then tie the debug buffer to any number of devices of the four. This will
  * continue until the ekfs is loaded, at which point, the kernel unties from all
  * devices except for the buffer.
  *
@@ -39,11 +38,11 @@
  * to relinquish all of its pages to the kernel.
  **/
 
-#define DEBUGPIPE_DEVICE_BUFFER		(1<<0)
-#define DEBUGPIPE_DEVICE_TERMINAL	(1<<1)
-#define DEBUGPIPE_DEVICE_SERIAL		(1<<2)
-#define DEBUGPIPE_DEVICE_PARALLEL	(1<<3)
-#define DEBUGPIPE_DEVICE_NIC		(1<<4)
+#define DEBUGPIPE_DEVICE1		(1<<0)
+#define DEBUGPIPE_DEVICE2		(1<<1)
+#define DEBUGPIPE_DEVICE3		(1<<2)
+#define DEBUGPIPE_DEVICE4		(1<<3)
+#define DEBUGPIPE_DEVICE_BUFFER		(1<<4)
 
 #define DEBUGPIPE_CONVERSION_BUFF_NPAGES	4
 
@@ -61,9 +60,16 @@ public:
 	// Zambezii only supports UTF-8 strings in the kernel.
 	void printf(const utf8Char *str, uarch_t flags, ...);
 
-	// Can take more than one device per call (hence the bitfield form).
-	error_t tieTo(uarch_t device);
-	error_t untieFrom(uarch_t device);
+	/**	EXPLANATION:
+	 * Can take more than one device per call (hence the bitfield form).
+	 * Will return a bitfield containing the internal device tie state.
+	 *
+	 * So that means that if you ask it to tie to device 1, and it returns
+	 * a bitmap with device1 unset, then obviously the device failed to
+	 * initialize.
+	 **/
+	uarch_t tieTo(uarch_t device);
+	uarch_t untieFrom(uarch_t device);
 
 	// Refresh the buffer into all currently tied devices.
 	void refresh(void);

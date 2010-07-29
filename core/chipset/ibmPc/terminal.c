@@ -1,7 +1,7 @@
 
 #include <__kstdlib/__ktypes.h>
-#include <kernel/common/firmwareTrib/firmwareRivApi.h>
-#include <kernel/common/firmwareTrib/terminalFwRiv.h>
+#include <kernel/common/firmwareTrib/firmwareSupportRivApi.h>
+#include <kernel/common/firmwareTrib/debugSupportRiv.h>
 
 struct ibmPc_terminal_fbS
 {
@@ -79,6 +79,16 @@ static error_t ibmPc_terminal_suspend(void)
 
 static error_t ibmPc_terminal_awake(void)
 {
+}
+
+static sarch_t ibmPc_terminal_isInitialized(void)
+{
+	if (buff == __KNULL) {
+		return 0;
+	}
+	else {
+		return 1;
+	};
 }
 
 static void ibmPc_terminal_scrollDown(void)
@@ -160,12 +170,13 @@ void ibmPc_terminal_clear(void)
 	row = col = 0;
 }
 
-struct terminalFwRivS chipsetTerminalFwRiv =
+struct debugSupportRivS ibmPc_terminal =
 {
 	&ibmPc_terminal_initialize,
 	&ibmPc_terminal_shutdown,
 	&ibmPc_terminal_suspend,
 	&ibmPc_terminal_awake,
+	&ibmPc_terminal_isInitialized,
 	&ibmPc_terminal_read,
 	&ibmPc_terminal_clear
 };

@@ -106,6 +106,7 @@ void debugBufferC::read(unicodePoint *str, uarch_t buffLen)
 	buff.lock.release();
 }
 
+// Expects the lock to be held when called.
 debugBufferC::buffPageS *debugBufferC::scrollBuff(
 	uarch_t *index, uarch_t buffLen
 	)

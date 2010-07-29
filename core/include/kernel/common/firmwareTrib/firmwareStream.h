@@ -2,8 +2,8 @@
 	#define _FIRMWARE_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <kernel/common/firmwareTrib/terminalFwRiv.h>
 	#include <kernel/common/firmwareTrib/watchdogFwRiv.h>
+	#include <kernel/common/firmwareTrib/debugSupportRiv.h>
 
 /**	EXPLANATION:
  * The Firmware stream is a presentation layer for all the rivulets on either
@@ -17,7 +17,7 @@
  * Eventually, the services supported by the kernel through this interface
  * will be:
  *	* !Watchdog management.
- *	* Terminal, !serial, !parallel, and !NIC debug output.
+ *	* Up to four debug devices or services.
  *	* !Memory and !NUMA detection.
  *	* !Power management.
  *	* !Firmware-hosted device tree enumeration.
@@ -31,8 +31,11 @@
 
 struct firmwareStreamS
 {
-	struct terminalFwRivS		*terminalFwRiv;
 	struct watchdogFwRivS		*watchdogFwRiv;
+	struct debugSupportRivS		*debugSupportRiv1;
+	struct debugSupportRivS		*debugSupportRiv2;
+	struct debugSupportRivS		*debugSupportRiv3;
+	struct debugSupportRivS		*debugSupportRiv4;
 };
 
 extern struct firmwareStreamS		firmwareFwStream;

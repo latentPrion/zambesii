@@ -6,6 +6,11 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 
+#define DEBUGPIPE_TEST_AND_SEND(__b,__d,__m,__tb)				\
+	if (__KFLAG_TEST(__b, __d)) { \
+		(*firmwareTrib.__m()->read)(__tb); \
+	}
+
 debugPipeC::debugPipeC(void)
 {
 	devices.rsrc = 0;
@@ -14,80 +19,117 @@ debugPipeC::debugPipeC(void)
 error_t debugPipeC::initialize(void)
 {
 	uarch_t		bound;
+	unicodePoint	*mem;
 
 	// Allocate four pages for UTF-8 expansion buffer. That's 4096 codepts.
-	tmpBuff.rsrc = new ((memoryTrib.__kmemoryStream
+	mem = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(
 			DEBUGPIPE_CONVERSION_BUFF_NPAGES)) unicodePoint;
 
-	if (tmpBuff.rsrc == __KNULL) {
+	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	bound = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
 		/ sizeof(unicodePoint);
 
+	tmpBuff.lock.acquire();
+
+	tmpBuff.rsrc = mem;
 	for (uarch_t i=0; i<bound; i++) {
 		tmpBuff.rsrc[i] = 0;
 	};
+
+	tmpBuff.lock.release();
 	return ERROR_SUCCESS;
 }
 
 debugPipeC::~debugPipeC(void)
 {
 	untieFrom(DEBUGPIPE_DEVICE_BUFFER);
-	untieFrom(DEBUGPIPE_DEVICE_TERMINAL);
-	untieFrom(DEBUGPIPE_DEVICE_SERIAL);
-	untieFrom(DEBUGPIPE_DEVICE_PARALLEL);
-	untieFrom(DEBUGPIPE_DEVICE_NIC);
+	untieFrom(DEBUGPIPE_DEVICE1);
+	untieFrom(DEBUGPIPE_DEVICE2);
+	untieFrom(DEBUGPIPE_DEVICE3);
+	untieFrom(DEBUGPIPE_DEVICE4);
 }
 
-error_t debugPipeC::tieTo(uarch_t device)
+uarch_t debugPipeC::tieTo(uarch_t device)
 {
 	void		*riv;
-	error_t		ret;
+	error_t		result;
+	uarch_t		ret;
 
 	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
 	{
-		ret = debugBuff.initialize();
-		if (ret == ERROR_SUCCESS) {
+		if (debugBuff.initialize() == ERROR_SUCCESS)
+		{
+			devices.lock.acquire();
 			__KFLAG_SET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
+			devices.lock.release();
 		};
-		return ret;
 	};
 
-	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_TERMINAL))
+	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE1))
 	{
-		riv = firmwareTrib.getTerminalFwRiv();
+		riv = firmwareTrib.getDebugSupportRiv1();
 		if (riv != __KNULL)
 		{
-			ret = (*static_cast<terminalFwRivS *>( riv )
+			result = (*static_cast<debugSupportRivS *>( riv )
 				->initialize)();
 
-			if (ret == ERROR_SUCCESS) {
-				__KFLAG_SET(devices.rsrc,
-					DEBUGPIPE_DEVICE_TERMINAL);
+			if (result == ERROR_SUCCESS)
+			{
+				devices.lock.acquire();
+				__KFLAG_SET(devices.rsrc, DEBUGPIPE_DEVICE1);
+				devices.lock.release();
 			};
-			return ret;
 		};
-		return ERROR_UNKNOWN;
 	};
-	return ERROR_INVALID_ARG_VAL;
+	devices.lock.acquire();
+	ret = devices.rsrc;
+	devices.lock.release();
+	return ret;
 }
 
-error_t debugPipeC::untieFrom(uarch_t device)
+uarch_t debugPipeC::untieFrom(uarch_t device)
 {
+	uarch_t		ret;
+
 	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
 	{
+		devices.lock.acquire();
 		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
-		return debugBuff.shutdown();
+		devices.lock.release();
 	};
-	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_TERMINAL))
+	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE1))
 	{
-		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE_TERMINAL);
-		return (*firmwareTrib.getTerminalFwRiv()->shutdown)();
+		devices.lock.acquire();
+		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE1);
+		devices.lock.release();
 	};
-	return ERROR_INVALID_ARG_VAL;	
+	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE2))
+	{
+		devices.lock.acquire();
+		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE2);
+		devices.lock.release();
+	};
+	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE3))
+	{
+		devices.lock.acquire();
+		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE3);
+		devices.lock.release();
+	};
+	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE4))
+	{
+		devices.lock.acquire();
+		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE4);
+		devices.lock.release();
+	};
+
+	devices.lock.acquire();
+	ret = devices.rsrc;
+	devices.lock.release();
+	return ret;
 }
 
 void debugPipeC::refresh(void)
@@ -100,6 +142,14 @@ void debugPipeC::printf(const utf8Char *str, uarch_t flags, ...)
 
 	buffMax = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
 		/ sizeof(unicodePoint);
+
+	tmpBuff.lock.acquire();
+
+	if (tmpBuff.rsrc == __KNULL)
+	{
+		tmpBuff.lock.release();
+		return;
+	};
 
 	// Convert the input UTF-8 into a codepoint.
 	for (; (*str != 0) && (buffLen < buffMax); buffLen++, str++)
@@ -136,8 +186,22 @@ void debugPipeC::printf(const utf8Char *str, uarch_t flags, ...)
 		};
 	};
 
-	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_TERMINAL)) {
-		(*firmwareTrib.getTerminalFwRiv()->read)(tmpBuff.rsrc);
-	};
+	DEBUGPIPE_TEST_AND_SEND(
+		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv1,
+		tmpBuff.rsrc);
+
+	DEBUGPIPE_TEST_AND_SEND(
+		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv2,
+		tmpBuff.rsrc);
+
+	DEBUGPIPE_TEST_AND_SEND(
+		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv3,
+		tmpBuff.rsrc);
+
+	DEBUGPIPE_TEST_AND_SEND(
+		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv4,
+		tmpBuff.rsrc);
+
+	tmpBuff.lock.release();
 }
 

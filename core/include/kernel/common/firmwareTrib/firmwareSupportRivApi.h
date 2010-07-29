@@ -1,5 +1,5 @@
-#ifndef _FIRMWARE_RIVULET_API_H
-	#define _FIRMWARE_RIVULET_API_H
+#ifndef _SUPPORT_RIVULET_API_H
+	#define _SUPPORT_RIVULET_API_H
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/pageAttributes.h>
