@@ -27,3 +27,9 @@ firmwareTrib.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd kernel/common/firmwareTrib; make
 
+timerTrib.a:
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	@echo Building Timer Tributary.
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd kernel/common/timerTrib; make
+
