@@ -9,10 +9,10 @@
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
-
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -26,6 +26,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	// Ensure all the right rivulets are loaded into the descriptor.
 	ret = firmwareTrib.initialize();
+	DO_OR_DIE(ret);
+
+	ret = timerTrib.initialize();
 	DO_OR_DIE(ret);
 
 	// Call initialize() on the interruptTrib here.

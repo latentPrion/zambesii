@@ -11,6 +11,7 @@ timerTribC::timerTribC(void)
 error_t timerTribC::initialize(void)
 {
 	continuousClock.rsrc = clock_t(0, 0);
+	watchdog.rsrc.feedTime = clock_t(0, 0);
 	watchdog.rsrc.isr = __KNULL;
 	flags = 0;
 	return ERROR_SUCCESS;
