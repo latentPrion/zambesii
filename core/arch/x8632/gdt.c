@@ -19,7 +19,7 @@ struct x8632GdtEntryS		x8632Gdt[] =
 
 struct x8632GdtPtrS		x8632GdtPtr =
 {
-	(sizeof(x8632GdtEntryS) * 9) - 1,
+	(sizeof(struct x8632GdtEntryS) * 9) - 1,
 	x8632Gdt
 };
 

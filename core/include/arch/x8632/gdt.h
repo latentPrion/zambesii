@@ -16,7 +16,7 @@ struct x8632GdtEntryS
 struct x8632GdtPtrS
 {
 	ubit16		limit;
-	x8632GdtEntryS	*baseAddr;
+	struct x8632GdtEntryS	*baseAddr;
 } __attribute__((packed));
 
 #endif

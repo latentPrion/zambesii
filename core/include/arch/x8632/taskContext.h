@@ -7,5 +7,7 @@ struct taskContextS
 {
 	uarch_t		ds_es;
 	uarch_t		fs_gs;
+};
 
-	
+#endif
+

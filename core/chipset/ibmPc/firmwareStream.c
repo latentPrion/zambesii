@@ -9,7 +9,7 @@ struct firmwareStreamS		chipsetFwStream =
 {
 	// No watchdog.
 	__KNULL,
-	&ibmPC_terminal,
+	&ibmPc_terminal,
 	__KNULL,
 	__KNULL,
 	__KNULL

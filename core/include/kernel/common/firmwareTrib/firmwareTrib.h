@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/firmwareTrib/watchdogFwRiv.h>
+	#include <kernel/common/firmwareTrib/watchdogSupportRiv.h>
 	#include <kernel/common/firmwareTrib/debugSupportRiv.h>
 
 class firmwareTribC
@@ -16,7 +16,7 @@ public:
 	~firmwareTribC(void);
 
 public:
-	watchdogFwRivS *getWatchdogFwRiv(void);
+	watchdogSupportRivS *getWatchdogFwRiv(void);
 	debugSupportRivS *getDebugSupportRiv1(void);
 	debugSupportRivS *getDebugSupportRiv2(void);
 	debugSupportRivS *getDebugSupportRiv3(void);
@@ -25,7 +25,7 @@ public:
 public:
 	struct firmwareStateDescriptorS
 	{
-		watchdogFwRivS		*watchdogFwRiv;
+		watchdogSupportRivS		*watchdogSupportRiv;
 		debugSupportRivS		*debugSupportRiv1;
 		debugSupportRivS		*debugSupportRiv2;
 		debugSupportRivS		*debugSupportRiv3;

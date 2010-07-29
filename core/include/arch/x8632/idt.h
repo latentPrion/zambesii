@@ -14,8 +14,8 @@ struct x8632IdtEntryS
 
 struct x8632IdtPtrS
 {
-	ubit16		limit;
-	x8632IdtEntryS	*idt;
+	ubit16			limit;
+	struct x8632IdtEntryS	*idt;
 } __attribute__((packed));
 
 #endif

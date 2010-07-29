@@ -22,7 +22,7 @@ ASM_LOCAL_FUNCTION(__ksaveRegs)
 	movw	%gs, %bx
 	movw	%ds, %ax
 	shl	$16, %eax
-	movl	%es, %ax
+	movw	%es, %ax
 
 	/* Push regs: FS|GS then DS|ES. From C, this will look like DS|ES
 	 * comes first on the stack.

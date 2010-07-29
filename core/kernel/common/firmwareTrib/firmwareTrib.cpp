@@ -18,7 +18,7 @@ firmwareTribC::firmwareTribC(void)
 
 error_t firmwareTribC::initialize(void)
 {
-	FIRMWARETRIB_CHOOSE(watchdogFwRiv);
+	FIRMWARETRIB_CHOOSE(watchdogSupportRiv);
 	FIRMWARETRIB_CHOOSE(debugSupportRiv1);
 	FIRMWARETRIB_CHOOSE(debugSupportRiv2);
 	FIRMWARETRIB_CHOOSE(debugSupportRiv3);
@@ -50,8 +50,8 @@ debugSupportRivS *firmwareTribC::getDebugSupportRiv4(void)
 	return descriptor.debugSupportRiv4;
 }
 
-watchdogFwRivS *firmwareTribC::getWatchdogFwRiv(void)
+watchdogSupportRivS *firmwareTribC::getWatchdogFwRiv(void)
 {
-	return descriptor.watchdogFwRiv;
+	return descriptor.watchdogSupportRiv;
 }
 

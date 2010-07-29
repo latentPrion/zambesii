@@ -1,5 +1,5 @@
 
-#include <kernel/common/interruptTrib/vectorTable.h>
+#include <arch/x8632/interrupts.h>
 
 void		(*vectorTable[ARCH_IRQ_NVECTORS])() =
 {

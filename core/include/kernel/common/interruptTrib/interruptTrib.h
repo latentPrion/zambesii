@@ -2,6 +2,7 @@
 	#define _INTERRUPT_TRIB_H
 
 	#include <arch/interrupts.h>
+	#include <arch/taskContext.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
 
@@ -19,22 +20,22 @@ public:
 	typedef status_t (isrFn)();
 
 public:
-	tributaryC(void) {};
+	interruptTribC(void) {};
 	// Architecture specific.
 	error_t initialize1(void);
-	~tributaryC(void) {};
+	~interruptTribC(void) {};
 
 public:
 	// Will Eventually provide a code injection API for usermode drivers.
 	status_t registerIsr(void (*vaddr)(), uarch_t flags);
 	void removeIsr(void (*vaddr)());
 
-	void irqMain(taskContextS *context);
+	void irqMain(taskContextS *regs);
 
 public:
 	struct isrS
 	{
-		interruptHandlerS	next;
+		isrS			*next;
 		uarch_t			flags;
 		isrFn			*isr;
 	};
