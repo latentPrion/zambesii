@@ -4,6 +4,7 @@ clean: fonyphile
 	cd arch/$(ZARCH); make clean
 	cd chipset; make clean
 	cd chipset/$(ZCHIPSET); make clean
+	cd firmware/$(ZFIRMWARE); make clean
 	cd platform/$(ZARCH)-$(ZCHIPSET); make clean
 	cd __kclasses; make clean
 	cd __kstdlib; make clean

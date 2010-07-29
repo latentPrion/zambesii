@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/firmwareTrib/terminalFwRiv.h>
+	#include <kernel/common/firmwareTrib/debugSupportRiv.h>
 
 class firmwareTribC
 :
@@ -15,12 +15,18 @@ public:
 	~firmwareTribC(void);
 
 public:
-	terminalFwRivS *getTerminalFwRiv(void);
+	debugSupportRivS *getDebugSupportRiv1(void);
+	debugSupportRivS *getDebugSupportRiv2(void);
+	debugSupportRivS *getDebugSupportRiv3(void);
+	debugSupportRivS *getDebugSupportRiv4(void);
 
 public:
 	struct firmwareStateDescriptorS
 	{
-		terminalFwRivS		*terminalFwRiv;
+		debugSupportRivS		*debugSupportRiv1;
+		debugSupportRivS		*debugSupportRiv2;
+		debugSupportRivS		*debugSupportRiv3;
+		debugSupportRivS		*debugSupportRiv4;
 	} descriptor;
 };
 

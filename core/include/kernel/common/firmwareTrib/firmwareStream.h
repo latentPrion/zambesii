@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/stream.h>
-	#include <kernel/common/firmwareTrib/terminalFwRiv.h>
+	#include <kernel/common/firmwareTrib/debugSupportRiv.h>
 
 /**	EXPLANATION:
  * The Firmware stream is a presentation layer for all the rivulets on either
@@ -16,7 +16,10 @@
 
 struct firmwareStreamS
 {
-	terminalFwRivS		*terminalFwRiv;
+	debugSupportRivS		*debugSupportRiv1;
+	debugSupportRivS		*debugSupportRiv2;
+	debugSupportRivS		*debugSupportRiv3;
+	debugSupportRivS		*debugSupportRiv4;
 };
 
 extern firmwareStreamS		firmwareFwStream;

@@ -63,13 +63,13 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = __kdebug.initialize();
 	DO_OR_DIE(ret);
 
-	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE_TERMINAL);
-	DO_OR_DIE(ret);
-
 	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER);
 	DO_OR_DIE(ret);
 
-	(firmwareTrib.getTerminalFwRiv()->clear)();
+	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE1);
+	DO_OR_DIE(ret);
+
+	(firmwareTrib.getDebugSupportRiv1()->clear)();
 
 	for (uarch_t i=0; i<2; i++)
 	{

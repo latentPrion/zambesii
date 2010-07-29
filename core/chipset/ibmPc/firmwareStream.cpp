@@ -2,10 +2,13 @@
 #include <kernel/common/firmwareTrib/firmwareStream.h>
 
 // List all the rivulets that this chipset provides.
-extern terminalFwRivS		chipsetTerminalFwRiv;
+extern debugSupportRivS		ibmPc_terminal;
 
 firmwareStreamS		chipsetFwStream =
 {
-	&chipsetTerminalFwRiv
+	&ibmPc_terminal,
+	__KNULL,
+	__KNULL,
+	__KNULL
 };
 

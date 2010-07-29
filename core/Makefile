@@ -13,7 +13,7 @@ EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a \
 	platformCore.a memoryTrib.a numaTrib.a firmwareTrib.a \
 	timerTrib.a \
 	cpuTrib.a archCpuTrib.a platformCore.a \
-	chipset.a chipsetCore.a archCore.a __kclasses.a \
+	chipset.a chipsetCore.a archCore.a firmwareCore.a __kclasses.a \
 	__kstdlib.a __kcxxabi.a __kcxxlib.a __kclib.a lang.a
 GOAL=../core.o
 
@@ -46,6 +46,12 @@ chipsetCore.a:
 	@echo Building chipset core dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd chipset/$(ZCHIPSET); make
+
+firmwareCore.a:
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	@echo Building firmware core dir.
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd firmware/$(ZFIRMWARE); make
 
 platformCore.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
