@@ -31,17 +31,16 @@ public:
 	{}
 
 public:
-	uarch_t operator+(uarch_t i);
-	clock_t &operator+=(uarch_t i);
-//	clock_t &operator=(clock_t i);
+	inline clock_t &operator+=(uarch_t i);
+//	inline clock_t &operator=(clock_t i);
 	// Only allow comparison with other clocks.
-	int operator==(clock_t c);
-	int operator>(clock_t c);
-	int operator<(clock_t c);
-	int operator>=(clock_t c);
-	int operator<=(clock_t c);
-	int operator!=(clock_t c);
-	clock_t &operator++(int);
+	inline int operator==(clock_t c);
+	inline int operator>(clock_t c);
+	inline int operator<(clock_t c);
+	inline int operator>=(clock_t c);
+	inline int operator<=(clock_t c);
+	inline int operator!=(clock_t c);
+	inline clock_t &operator++(int);
 
 private:
 	uarch_t		low;
@@ -51,11 +50,6 @@ private:
 
 /* Inline methods
  ******************************************************************************/
-
-uarch_t clock_t::operator+(uarch_t i)
-{
-	return low+i;
-}
 
 clock_t &clock_t::operator+=(uarch_t i)
 {

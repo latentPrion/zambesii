@@ -9,13 +9,13 @@
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 
 extern "C" error_t ibmPc_terminal_initialize(void);
 extern "C" void ibmPc_terminal_test(void);
-
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -31,6 +31,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__korientationPreConstruct::__kprocessInit();
 	__korientationPreConstruct::__korientationThreadInit();
 	__korientationPreConstruct::bspInit();
+
+	ret = timerTrib.initialize();
+	DO_OR_DIE(ret);
 
 	// Call all global constructors.
 	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );

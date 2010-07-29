@@ -1,5 +1,6 @@
 
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
@@ -10,8 +11,10 @@
  * most of the kernel classes will be this way, with only one or two requiring
  * arch-specific construction information.
  *
- * The order in which they are placed here does not matter.
+ * The order in which they are placed here does not matter. Of course,
+ * initializing in order is preferable.
  **/
+timerTribC		timerTrib;
 numaTribC		numaTrib;
 cpuTribC		cpuTrib;
 firmwareTribC		firmwareTrib;
