@@ -3,12 +3,15 @@
 #include <kernel/common/firmwareTrib/firmwareStream.h>
 
 // List all the rivulets that this chipset provides.
-extern struct terminalFwRivS		chipsetTerminalFwRiv;
+extern struct debugSupportRivS		ibmPc_terminal;
 
 struct firmwareStreamS		chipsetFwStream =
 {
 	// No watchdog.
-	&chipsetTerminalFwRiv,
+	__KNULL,
+	&ibmPC_terminal,
+	__KNULL,
+	__KNULL,
 	__KNULL
 };
 

@@ -31,7 +31,7 @@
 
 struct firmwareStreamS
 {
-	struct watchdogFwRivS		*watchdogFwRiv;
+	struct watchdogSupportRivS	*watchdogSupportRiv;
 	struct debugSupportRivS		*debugSupportRiv1;
 	struct debugSupportRivS		*debugSupportRiv2;
 	struct debugSupportRivS		*debugSupportRiv3;
