@@ -1,7 +1,7 @@
 
 #include <kernel/common/firmwareTrib/firmwareStream.h>
 
-firmwareStreamS		firmwareFwStream =
+struct firmwareStreamS		firmwareFwStream =
 {
 	__KNULL,
 	__KNULL,

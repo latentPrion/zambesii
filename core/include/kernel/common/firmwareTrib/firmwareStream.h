@@ -2,7 +2,6 @@
 	#define _FIRMWARE_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <kernel/common/stream.h>
 	#include <kernel/common/firmwareTrib/debugSupportRiv.h>
 
 /**	EXPLANATION:
@@ -16,14 +15,14 @@
 
 struct firmwareStreamS
 {
-	debugSupportRivS		*debugSupportRiv1;
-	debugSupportRivS		*debugSupportRiv2;
-	debugSupportRivS		*debugSupportRiv3;
-	debugSupportRivS		*debugSupportRiv4;
+	struct debugSupportRivS		*debugSupportRiv1;
+	struct debugSupportRivS		*debugSupportRiv2;
+	struct debugSupportRivS		*debugSupportRiv3;
+	struct debugSupportRivS		*debugSupportRiv4;
 };
 
-extern firmwareStreamS		firmwareFwStream;
-extern firmwareStreamS		chipsetFwStream;
+extern struct firmwareStreamS		firmwareFwStream;
+extern struct firmwareStreamS		chipsetFwStream;
 
 #endif
 
