@@ -4,6 +4,7 @@
 
 .extern __korientationMain, __korientationStack
 .extern __kpagingLevel0Tables
+.extern x8632GdtPtr
 
 ASM_SECTION(.__ksetupText)
 
@@ -34,12 +35,24 @@ ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	pushl $0
 	popfl
 
+	/* Load the GDT */
+	lgdt 	(x8632GdtPtr)
+	movw	$0x10, %cx
+	movw	%cx, %ds
+	movw	%cx, %es
+	movw	%cx, %fs
+	movw	%cx, %gs
+	ljmp	$0x08, $.loadAX
+
+.loadAX:
+	
 	/* This is a security trick. We push the address of an infinite loop,
 	 * and if the kernel manages to return from the orientation thread
 	 * somehow, we manipulate the return address to point to this infinite
 	 * loop code.
 	 **/
 	pushl $.infiniteLoop
+	jmp .
 
 	/* Push the (possibly) multiboot flags. */
 	pushl %ebx
