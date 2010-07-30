@@ -22,7 +22,7 @@ public:
 public:
 	interruptTribC(void) {};
 	// Architecture specific.
-	error_t initialize1(void);
+	error_t initialize(void);
 	~interruptTribC(void) {};
 
 public:
@@ -54,7 +54,7 @@ public:
 			isrS	*list;
 		} handler;
 	};
-	vectorDescriptorS		isrTable;
+	vectorDescriptorS		isrTable[ARCH_IRQ_NVECTORS];
 };
 
 extern interruptTribC		interruptTrib;

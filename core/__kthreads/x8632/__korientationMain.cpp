@@ -10,10 +10,11 @@
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
+#include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
+#include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
-#include <kernel/common/firmwareTrib/firmwareTrib.h>
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -39,6 +40,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(ret);
 
 	// Call initialize() on the interruptTrib here.
+	ret = interruptTrib.initialize();
+	DO_OR_DIE(ret);
 
 	// Call all global constructors.
 	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );

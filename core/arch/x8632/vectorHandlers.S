@@ -40,6 +40,7 @@ ASM_LOCAL_FUNCTION(__ksaveRegs)
 	 * Push the address of the context, and call into the kernel.
 	 **/
 	pushl	%esp
+
 	call	interruptTrib_irqEntry
 
 	/* From a technical POV, Zambezii never should reach here. When we
@@ -51,6 +52,7 @@ ASM_LOCAL_FUNCTION(__ksaveRegs)
 	 * should our kernel crash simply because of that. We should then just
 	 * do the normal thing and then IRET.
 	 **/
+	addl	$0x4, %esp
 
 	popl	%eax
 	popl	%ebx

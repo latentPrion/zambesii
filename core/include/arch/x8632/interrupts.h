@@ -4,9 +4,9 @@
 #define ARCH_IRQ_NVECTORS		256
 
 #ifdef __cplusplus
-extern "C" void 	(*vectorTable[])();
+extern "C" void 	(*__kvectorTable[])();
 #else
-extern void 		(*vectorTable[])();
+extern void 		(*__kvectorTable[])();
 #endif
 
 

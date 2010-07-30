@@ -1,9 +1,10 @@
 
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
+#include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
-#include <kernel/common/firmwareTrib/firmwareTrib.h>
 
 /**	EXPLANATION:
  * These are the instances of the kernel classes which don't require any
@@ -14,9 +15,10 @@
  * The order in which they are placed here does not matter. Of course,
  * initializing in order is preferable.
  **/
+firmwareTribC		firmwareTrib;
 timerTribC		timerTrib;
+interruptTribC		interruptTrib;
 numaTribC		numaTrib;
 cpuTribC		cpuTrib;
-firmwareTribC		firmwareTrib;
 debugPipeC		__kdebug;
 

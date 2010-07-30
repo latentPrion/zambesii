@@ -18,5 +18,8 @@ struct x8632IdtPtrS
 	struct x8632IdtEntryS	*idt;
 } __attribute__((packed));
 
+extern struct x8632IdtEntryS		x8632Idt[];
+extern struct x8632IdtPtrS		x8632IdtPtr;
+
 #endif
 

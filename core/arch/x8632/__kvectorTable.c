@@ -1,7 +1,7 @@
 
 #include <arch/x8632/interrupts.h>
 
-void		(*vectorTable[ARCH_IRQ_NVECTORS])() =
+void		(*__kvectorTable[ARCH_IRQ_NVECTORS])() =
 {
 	&vector0,	&vector1,	&vector2,	&vector3,
 	&vector4,	&vector5,	&vector6,	&vector7,
