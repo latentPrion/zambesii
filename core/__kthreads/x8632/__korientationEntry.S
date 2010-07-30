@@ -52,7 +52,6 @@ ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	 * loop code.
 	 **/
 	pushl $.infiniteLoop
-	jmp .
 
 	/* Push the (possibly) multiboot flags. */
 	pushl %ebx
