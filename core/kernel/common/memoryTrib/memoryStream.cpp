@@ -2,7 +2,7 @@
 #include <scaling.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
-#include <lang/mm.h>
+#include <lang/lang.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/pageAttributes.h>
 #include <kernel/common/task.h>
@@ -185,7 +185,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages)
 				 *	FIXME: When the scheduler is done, get
 				 * this in order.
 				 **/
-				panic(mmStr[4]);
+				panic(ERROR_GENERAL, mmStr[4]);
 			};
 			break;
 		};
@@ -226,7 +226,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages)
 	};
 
 	if (nMapped < static_cast<sarch_t>( nPages ) - nFound) {
-		panic(mmStr[5]);
+		panic(ERROR_GENERAL, mmStr[5]);
 	};
 
 	return ret;

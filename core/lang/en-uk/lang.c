@@ -1,7 +1,7 @@
 
 #include <lang/lang.h>
 
-LANG_TYPE	lang[] =
+utf8Char	*lang[] =
 {
 	// [0]: Language name.
 	"English (United Kingdom)",

@@ -1,6 +1,6 @@
 
 #include <arch/walkerPageRanger.h>
-#include <lang/mm.h>
+#include <lang/lang.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/processId.h>
 #include <kernel/common/panic.h>
@@ -127,7 +127,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages)
 		ret, paddr, nFound);
 
 	if (nMapped < nFound) {
-		panic(mmStr[1]);
+		panic(ERROR_GENERAL, mmStr[1]);
 	};
 
 	// Fakemap the pages that aren't physically backed with RAM.
@@ -140,7 +140,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages)
 		PAGEATTRIB_WRITE);
 
 	if (nMapped < static_cast<sarch_t>( nPages ) - nFound) {
-		panic(mmStr[2]);
+		panic(ERROR_GENERAL, mmStr[2]);
 	};
 
 	return ret;

@@ -4,7 +4,7 @@
 #include <arch/mathEmulation.h>
 #include <chipset/memory.h>
 #include <chipset/__kmemory.h>
-#include <lang/mm.h>
+#include <lang/lang.h>
 #include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -23,7 +23,7 @@ memBmpC::memBmpC(void)
 memBmpC::memBmpC(paddr_t baseAddr, paddr_t size, void *preAllocated)
 {
 	if (initialize(baseAddr, size, preAllocated) != ERROR_SUCCESS) {
-		panic(mmStr[0]);
+		panic(ERROR_UNKNOWN, mmStr[0]);
 	};
 }
 

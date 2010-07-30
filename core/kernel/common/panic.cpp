@@ -3,7 +3,7 @@
 #include <__kstdlib/__ktypes.h>
 #include <kernel/common/panic.h>
 
-void panic(error_t err)
+void panic(error_t err, utf8Char *)
 {
 	switch (err)
 	{
@@ -14,14 +14,6 @@ void panic(error_t err)
 		case ERROR_INVALID_ARG: break;
 		case ERROR_MEMORY_NOMEM_IN_CONSTRUCTOR: break;
 	};
-	for (;;)
-	{
-		cpuControl::halt();
-		cpuControl::disableInterrupts();
-	};
-}
-void panic(const LANG_TYPE)
-{
 	for (;;)
 	{
 		cpuControl::halt();

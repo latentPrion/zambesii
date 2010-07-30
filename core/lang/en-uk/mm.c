@@ -1,7 +1,7 @@
 
 #include <lang/lang.h>
 
-LANG_TYPE	mmStr[] =
+utf8Char		*mmStr[] =
 {
 	// [0]
 	"No memory returned from __kspaceMemAlloc() when a memBmpC instance \
