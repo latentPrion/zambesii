@@ -5,11 +5,12 @@
 
 timerTribC::timerTribC(void)
 {
-	memset(this, 0, sizeof(*this));
 }
 
 error_t timerTribC::initialize(void)
 {
+	memset(this, 0, sizeof(*this));
+
 	continuousClock.rsrc = clock_t(0, 0);
 	watchdog.rsrc.feedTime = clock_t(0, 0);
 	watchdog.rsrc.isr = __KNULL;

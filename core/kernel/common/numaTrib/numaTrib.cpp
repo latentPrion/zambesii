@@ -42,12 +42,13 @@ static numaStreamC		__kspaceNumaStream;
 
 numaTribC::numaTribC(void)
 {
-	memset(this, 0, sizeof(*this));
 }
 
 error_t numaTribC::initialize(void)
 {
 	error_t		ret;
+
+	memset(this, 0, sizeof(*this));
 
 	initNumaStreamArray[0] = &__kspaceNumaStream;
 	numaStreams.rsrc = initNumaStreamArray;

@@ -8,7 +8,6 @@ sharedResourceGroupC<multipleReaderLockC, cpuStreamC **> cpuStreams;
 
 cpuTribC::cpuTribC(void)
 {
-	memset(this, 0, sizeof(*this));
 }
 
 cpuTribC::~cpuTribC(void)

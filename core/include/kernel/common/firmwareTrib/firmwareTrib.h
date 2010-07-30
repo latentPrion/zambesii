@@ -16,7 +16,7 @@ public:
 	~firmwareTribC(void);
 
 public:
-	watchdogSupportRivS *getWatchdogFwRiv(void);
+	watchdogSupportRivS *getWatchdogSupportRiv(void);
 	debugSupportRivS *getDebugSupportRiv1(void);
 	debugSupportRivS *getDebugSupportRiv2(void);
 	debugSupportRivS *getDebugSupportRiv3(void);

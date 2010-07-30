@@ -3,6 +3,7 @@
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__ktypes.h>
+#include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/cstring>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
@@ -17,7 +18,13 @@
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
+	uarch_t		debugRet;
 	void		(**ctorPtr)();
+
+	// Zero out the .BSS section of the kernel ELF.
+	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
+
+	__koptimizationHacks();
 
 	// Prepare the kernel for its most basic semantics to begin working.
 	__korientationPreConstruct::__kprocessInit();
@@ -32,9 +39,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(ret);
 
 	// Call initialize() on the interruptTrib here.
-
-	// Zero out the .BSS section of the kernel ELF.
-	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
 	// Call all global constructors.
 	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );
@@ -58,21 +62,19 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = __kdebug.initialize();
 	DO_OR_DIE(ret);
 
-	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER);
-	DO_OR_DIE(ret);
+	debugRet = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER);
+	if (!__KFLAG_TEST(debugRet, DEBUGPIPE_DEVICE_BUFFER)) {
+		for (;;){};
+	};
 
-	ret = __kdebug.tieTo(DEBUGPIPE_DEVICE1);
-	DO_OR_DIE(ret);
+	debugRet = __kdebug.tieTo(DEBUGPIPE_DEVICE1);
+	if (!__KFLAG_TEST(debugRet, DEBUGPIPE_DEVICE1)) {
+		for (;;){};
+	};
 
 	(firmwareTrib.getDebugSupportRiv1()->clear)();
 
-	for (uarch_t i=0; i<2; i++)
-	{
-		__kdebug.printf(
-			(utf8Char *)"\"Hello world!\" from Zambezii.\t", 0);
-	}
-
-	// I REALLY want to get rid of this function.
-	__koptimizationHacks();
+	__kdebug.printf((utf8Char *)"\"Hello world!\" from Zambezii.\t", 0);
+	__kdebug.printf((utf8Char *)"\"Hello world!\" from Zambezii.\t", 0);
 }
 

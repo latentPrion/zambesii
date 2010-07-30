@@ -13,9 +13,6 @@ memoryTribC::memoryTribC(
 :
 __kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
 {
-	memset(
-		memRegions, 0,
-		sizeof(memoryRegionC *) * CHIPSET_MEMORY_NREGIONS);
 }
 
 // Initializes the kernel's Memory Stream.

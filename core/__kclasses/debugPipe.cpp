@@ -13,7 +13,6 @@
 
 debugPipeC::debugPipeC(void)
 {
-	devices.rsrc = 0;
 }
 
 error_t debugPipeC::initialize(void)
@@ -21,6 +20,7 @@ error_t debugPipeC::initialize(void)
 	uarch_t		bound;
 	unicodePoint	*mem;
 
+	devices.rsrc = 0;
 	// Allocate four pages for UTF-8 expansion buffer. That's 4096 codepts.
 	mem = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(
@@ -191,15 +191,15 @@ void debugPipeC::printf(const utf8Char *str, uarch_t flags, ...)
 		tmpBuff.rsrc);
 
 	DEBUGPIPE_TEST_AND_SEND(
-		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv2,
+		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugSupportRiv2,
 		tmpBuff.rsrc);
 
 	DEBUGPIPE_TEST_AND_SEND(
-		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv3,
+		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugSupportRiv3,
 		tmpBuff.rsrc);
 
 	DEBUGPIPE_TEST_AND_SEND(
-		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv4,
+		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugSupportRiv4,
 		tmpBuff.rsrc);
 
 	tmpBuff.lock.release();
