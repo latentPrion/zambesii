@@ -38,6 +38,10 @@ public:
 	// Calling 'clear' is the same as flushing all pages.
 	void clear(void);
 
+	void *lock(void);
+	unicodePoint *extract(void **handle, uarch_t *len);
+	void unlock(void);
+
 private:
 	buffPageS *scrollBuff(uarch_t *index, uarch_t buffLen);
 

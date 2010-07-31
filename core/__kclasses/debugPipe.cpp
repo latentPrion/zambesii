@@ -6,9 +6,19 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 
-#define DEBUGPIPE_TEST_AND_SEND(__b,__d,__m,__tb)				\
+#define DEBUGPIPE_TEST_AND_SEND(__b,__d,__m,__tb)			\
 	if (__KFLAG_TEST(__b, __d)) { \
 		(*firmwareTrib.__m()->read)(__tb); \
+	}
+
+#define DEBUGPIPE_TEST_AND_SYPHON(__b,__d,__m,__tb,__l)			\
+	if (__KFLAG_TEST(__b, __d)) { \
+		(*firmwareTrib.__m()->syphon)(__tb,__l); \
+	}
+
+#define DEBUGPIPE_TEST_AND_CLEAR(__b,__d,__m)				\
+	if (__KFLAG_TEST(__b, __d)) { \
+		(*firmwareTrib.__m()->clear)(); \
 	}
 
 debugPipeC::debugPipeC(void)
@@ -134,6 +144,47 @@ uarch_t debugPipeC::untieFrom(uarch_t device)
 
 void debugPipeC::refresh(void)
 {
+	unicodePoint	*buff;
+	void		*handle;
+	uarch_t		len, n=0;
+
+	// Send the buffer to all devices.
+	handle = debugBuff.lock();
+
+	DEBUGPIPE_TEST_AND_CLEAR(
+		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv1);
+
+	DEBUGPIPE_TEST_AND_CLEAR(
+		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugSupportRiv2);
+
+	DEBUGPIPE_TEST_AND_CLEAR(
+		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugSupportRiv3);
+
+	DEBUGPIPE_TEST_AND_CLEAR(
+		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugSupportRiv4);
+
+
+	for (buff = debugBuff.extract(&handle, &len); buff != __KNULL; n++)
+	{
+		DEBUGPIPE_TEST_AND_SYPHON(
+			devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv1,
+			buff, len);
+
+		DEBUGPIPE_TEST_AND_SYPHON(
+			devices.rsrc, DEBUGPIPE_DEVICE2, getDebugSupportRiv2,
+			buff, len);
+
+		DEBUGPIPE_TEST_AND_SYPHON(
+			devices.rsrc, DEBUGPIPE_DEVICE3, getDebugSupportRiv3,
+			buff, len);
+
+		DEBUGPIPE_TEST_AND_SYPHON(
+			devices.rsrc, DEBUGPIPE_DEVICE4, getDebugSupportRiv4,
+			buff, len);
+
+		buff = debugBuff.extract(&handle, &len);
+	};
+	debugBuff.unlock();
 }
 
 void debugPipeC::printf(const utf8Char *str, uarch_t flags, ...)

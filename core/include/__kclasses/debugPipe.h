@@ -46,6 +46,11 @@
 
 #define DEBUGPIPE_CONVERSION_BUFF_NPAGES	4
 
+#define NOTICE				(utf8Char *)"Notice: "
+#define WARNING				(utf8Char *)"Warning: "
+#define ERROR				(utf8Char *)"Error: "
+#define FATAL				(utf8Char *)"Fatal: "
+
 // When the MemoryTrib prints, it must pass this flag. 
 #define DEBUGPIPE_FLAGS_NOBUFF		(1<<0)
 

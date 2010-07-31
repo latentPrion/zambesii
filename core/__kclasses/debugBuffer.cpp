@@ -65,6 +65,44 @@ error_t debugBufferC::awake(void)
 	return ERROR_SUCCESS;
 }
 
+void *debugBufferC::lock(void)
+{
+	buff.lock.acquire();
+	return buff.rsrc.head;		
+}
+
+unicodePoint *debugBufferC::extract(void **handle, uarch_t *len)
+{
+	unicodePoint	*ret;
+
+	if (handle == __KNULL || *handle == __KNULL || len == 0) {
+		return __KNULL;
+	};
+
+	if (*reinterpret_cast<debugBufferC::buffPageS **>( handle )
+		!= buff.rsrc.cur)
+	{
+		*len = DEBUGBUFFER_PAGE_NCHARS;
+		ret = &(reinterpret_cast<buffPageS *>( *handle )->data[0]);
+		*handle = reinterpret_cast<buffPageS *>( *handle )->next;
+	}
+	else
+	{
+		*len = buff.rsrc.index;
+		ret = &(reinterpret_cast<buffPageS *>( *handle )->data[0]);
+
+		// Don't allow the caller to advance any further.
+		*handle = __KNULL;
+	};
+
+	return ret;
+}
+
+void debugBufferC::unlock(void)
+{
+	buff.lock.release();
+}
+
 void debugBufferC::read(unicodePoint *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
@@ -101,6 +139,7 @@ void debugBufferC::read(unicodePoint *str, uarch_t buffLen)
 		};
 
 		buff.rsrc.cur->data[buff.rsrc.index] = *str;
+		buff.rsrc.index++;
 	};
 
 	buff.lock.release();

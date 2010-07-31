@@ -6,7 +6,8 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/task.h>
 
-#define DO_OR_DIE(__ret)		\
+#define DO_OR_DIE(__trib,__method,__ret)			\
+	__ret = __trib.__method; \
 	if (__ret != ERROR_SUCCESS) { \
 		for (;;){}; \
 	}

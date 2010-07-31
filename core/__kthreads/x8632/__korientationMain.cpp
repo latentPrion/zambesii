@@ -19,29 +19,21 @@
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
-	uarch_t		debugRet;
+	uarch_t		devMask;
 	void		(**ctorPtr)();
-
-	// Zero out the .BSS section of the kernel ELF.
-	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
 	__koptimizationHacks();
 
-	// Prepare the kernel for its most basic semantics to begin working.
+	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
+
+	// Set up the kernel process, orientation thread, and BSP CPU Stream.
 	__korientationPreConstruct::__kprocessInit();
 	__korientationPreConstruct::__korientationThreadInit();
 	__korientationPreConstruct::bspInit();
 
-	// Ensure all the right rivulets are loaded into the descriptor.
-	ret = firmwareTrib.initialize();
-	DO_OR_DIE(ret);
-
-	ret = timerTrib.initialize();
-	DO_OR_DIE(ret);
-
-	// Call initialize() on the interruptTrib here.
-	ret = interruptTrib.initialize();
-	DO_OR_DIE(ret);
+	DO_OR_DIE(firmwareTrib, initialize(), ret);
+	DO_OR_DIE(timerTrib, initialize(), ret);
+	DO_OR_DIE(interruptTrib, initialize(), ret);
 
 	// Call all global constructors.
 	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );
@@ -52,32 +44,31 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	};
 
 	// Initialize the kernel swamp.
-	ret = memoryTrib.initialize1(
-		reinterpret_cast<void *>( 0xC0000000 + 0x400000 ),
-		static_cast<paddr_t>( 0x3FB00000 ),
-		__KNULL);
+	DO_OR_DIE(
+		memoryTrib,
+		initialize1(
+			reinterpret_cast<void *>( 0xC0000000 + 0x400000 ),
+			static_cast<paddr_t>( 0x3FB00000 ),
+			__KNULL),
+		ret);
 
-	DO_OR_DIE(ret);
+	DO_OR_DIE(numaTrib, initialize(), ret);
+	DO_OR_DIE(__kdebug, initialize(), ret);
 
-	ret = numaTrib.initialize();
-	DO_OR_DIE(ret);
-
-	ret = __kdebug.initialize();
-	DO_OR_DIE(ret);
-
-	debugRet = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER);
-	if (!__KFLAG_TEST(debugRet, DEBUGPIPE_DEVICE_BUFFER)) {
+	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER);
+	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
 		for (;;){};
 	};
 
-	debugRet = __kdebug.tieTo(DEBUGPIPE_DEVICE1);
-	if (!__KFLAG_TEST(debugRet, DEBUGPIPE_DEVICE1)) {
+	__kdebug.printf(
+		NOTICE"Kernel debug output tied to Buffer device.\n", 0);
+
+	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE1);
+	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1)) {
 		for (;;){};
 	};
 
-	(firmwareTrib.getDebugSupportRiv1()->clear)();
-
-	__kdebug.printf((utf8Char *)"\"Hello world!\" from Zambezii.\t", 0);
-	__kdebug.printf((utf8Char *)"\"Hello world!\" from Zambezii.\t", 0);
+	__kdebug.printf(NOTICE"Kernel debug pipe tied to device 1.\n", 0);
+	__kdebug.refresh();
 }
 

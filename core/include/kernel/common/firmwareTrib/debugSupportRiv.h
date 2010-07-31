@@ -15,6 +15,7 @@ struct debugSupportRivS
 	// Interface to take input from debugPipeC::printf().
 	void	(*read)(const unicodePoint *str);
 	void	(*clear)(void);
+	void	(*syphon)(const unicodePoint *str, uarch_t len);
 };
 
 #endif
