@@ -6,18 +6,42 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 
-#define DEBUGPIPE_TEST_AND_SEND(__b,__d,__m,__tb)			\
-	if (__KFLAG_TEST(__b, __d)) { \
-		(*firmwareTrib.__m()->read)(__tb); \
+
+#define DEBUGPIPE_TEST_AND_INITIALIZE(__bp,__db,__di,__rp,__m,__e)	\
+	if (__KFLAG_TEST(__bp, __di)) \
+	{ \
+		__rp = firmwareTrib.__m(); \
+		if(__rp != __KNULL) \
+		{ \
+			__e = (*__rp->initialize)(); \
+			if (__e == ERROR_SUCCESS) \
+			{ \
+				devices.lock.acquire(); \
+				__KFLAG_SET(__db, __di); \
+				devices.lock.release(); \
+			}; \
+		}; \
 	}
 
-#define DEBUGPIPE_TEST_AND_SYPHON(__b,__d,__m,__tb,__l)			\
-	if (__KFLAG_TEST(__b, __d)) { \
-		(*firmwareTrib.__m()->syphon)(__tb,__l); \
+#define DEBUGPIPE_TEST_AND_SHUTDOWN(__dp,__db,__di,__m,__e)		\
+	if (__KFLAG_TEST(__dp, __di)) \
+	{ \
+		__e = (*firmwareTrib.__m()->shutdown)(); \
+		if (__e == ERROR_SUCCESS) \
+		{ \
+			devices.lock.acquire(); \
+			__KFLAG_UNSET(__db, __di); \
+			devices.lock.release(); \
+		}; \
 	}
 
-#define DEBUGPIPE_TEST_AND_CLEAR(__b,__d,__m)				\
-	if (__KFLAG_TEST(__b, __d)) { \
+#define DEBUGPIPE_TEST_AND_SYPHON(__db,__di,__m,__tcb,__bl)		\
+	if (__KFLAG_TEST(__db, __di)) { \
+		(*firmwareTrib.__m()->syphon)(__tcb,__bl); \
+	}
+
+#define DEBUGPIPE_TEST_AND_CLEAR(__db,__di,__m)				\
+	if (__KFLAG_TEST(__db, __di)) { \
 		(*firmwareTrib.__m()->clear)(); \
 	}
 
@@ -57,17 +81,16 @@ error_t debugPipeC::initialize(void)
 debugPipeC::~debugPipeC(void)
 {
 	untieFrom(DEBUGPIPE_DEVICE_BUFFER);
-	untieFrom(DEBUGPIPE_DEVICE1);
-	untieFrom(DEBUGPIPE_DEVICE2);
-	untieFrom(DEBUGPIPE_DEVICE3);
-	untieFrom(DEBUGPIPE_DEVICE4);
+	untieFrom(
+		DEBUGPIPE_DEVICE1 | DEBUGPIPE_DEVICE2 | DEBUGPIPE_DEVICE3
+		| DEBUGPIPE_DEVICE4);
 }
 
 uarch_t debugPipeC::tieTo(uarch_t device)
 {
-	void		*riv;
-	error_t		result;
-	uarch_t		ret;
+	debugSupportRivS	*riv;
+	error_t			err;
+	uarch_t			ret;
 
 	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
 	{
@@ -79,22 +102,22 @@ uarch_t debugPipeC::tieTo(uarch_t device)
 		};
 	};
 
-	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE1))
-	{
-		riv = firmwareTrib.getDebugSupportRiv1();
-		if (riv != __KNULL)
-		{
-			result = (*static_cast<debugSupportRivS *>( riv )
-				->initialize)();
+	DEBUGPIPE_TEST_AND_INITIALIZE(
+		device, devices.rsrc, DEBUGPIPE_DEVICE1, riv,
+		getDebugSupportRiv1, err);
 
-			if (result == ERROR_SUCCESS)
-			{
-				devices.lock.acquire();
-				__KFLAG_SET(devices.rsrc, DEBUGPIPE_DEVICE1);
-				devices.lock.release();
-			};
-		};
-	};
+	DEBUGPIPE_TEST_AND_INITIALIZE(
+		device, devices.rsrc, DEBUGPIPE_DEVICE2, riv,
+		getDebugSupportRiv2, err);
+
+	DEBUGPIPE_TEST_AND_INITIALIZE(
+		device, devices.rsrc, DEBUGPIPE_DEVICE3, riv,
+		getDebugSupportRiv3, err);
+
+	DEBUGPIPE_TEST_AND_INITIALIZE(
+		device, devices.rsrc, DEBUGPIPE_DEVICE4, riv,
+		getDebugSupportRiv4, err);
+
 	devices.lock.acquire();
 	ret = devices.rsrc;
 	devices.lock.release();
@@ -104,37 +127,33 @@ uarch_t debugPipeC::tieTo(uarch_t device)
 uarch_t debugPipeC::untieFrom(uarch_t device)
 {
 	uarch_t		ret;
+	error_t		err;
 
 	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
 	{
-		devices.lock.acquire();
-		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
-		devices.lock.release();
+		if (debugBuff.shutdown() == ERROR_SUCCESS)
+		{
+			devices.lock.acquire();
+			__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
+			devices.lock.release();
+		};
 	};
-	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE1))
-	{
-		devices.lock.acquire();
-		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE1);
-		devices.lock.release();
-	};
-	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE2))
-	{
-		devices.lock.acquire();
-		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE2);
-		devices.lock.release();
-	};
-	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE3))
-	{
-		devices.lock.acquire();
-		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE3);
-		devices.lock.release();
-	};
-	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE4))
-	{
-		devices.lock.acquire();
-		__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE4);
-		devices.lock.release();
-	};
+
+	DEBUGPIPE_TEST_AND_SHUTDOWN(
+		device, devices.rsrc, DEBUGPIPE_DEVICE1,
+		getDebugSupportRiv1, err);
+
+	DEBUGPIPE_TEST_AND_SHUTDOWN(
+		device, devices.rsrc, DEBUGPIPE_DEVICE2,
+		getDebugSupportRiv2, err);
+
+	DEBUGPIPE_TEST_AND_SHUTDOWN(
+		device, devices.rsrc, DEBUGPIPE_DEVICE3,
+		getDebugSupportRiv3, err);
+
+	DEBUGPIPE_TEST_AND_SHUTDOWN(
+		device, devices.rsrc, DEBUGPIPE_DEVICE4,
+		getDebugSupportRiv4, err);
 
 	devices.lock.acquire();
 	ret = devices.rsrc;
@@ -207,6 +226,8 @@ void debugPipeC::printf(const utf8Char *str, uarch_t flags, ...)
 	{
 		if (!(*str & 0x80)) {
 			tmpBuff.rsrc[buffLen] = *str;
+
+			// Printf format string parsing here.
 		}
 		else
 		{
@@ -227,31 +248,30 @@ void debugPipeC::printf(const utf8Char *str, uarch_t flags, ...)
 			};
 		};
 	};
-	tmpBuff.rsrc[buffLen] = 0;
 
 	// Make sure not to send to the buffer if the memoryTrib is printing.
 	if (!__KFLAG_TEST(flags, DEBUGPIPE_FLAGS_NOBUFF))
 	{
 		if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)) {
-			debugBuff.read(tmpBuff.rsrc, buffLen);
+			debugBuff.syphon(tmpBuff.rsrc, buffLen);
 		};
 	};
 
-	DEBUGPIPE_TEST_AND_SEND(
+	DEBUGPIPE_TEST_AND_SYPHON(
 		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv1,
-		tmpBuff.rsrc);
+		tmpBuff.rsrc, buffLen);
 
-	DEBUGPIPE_TEST_AND_SEND(
+	DEBUGPIPE_TEST_AND_SYPHON(
 		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugSupportRiv2,
-		tmpBuff.rsrc);
+		tmpBuff.rsrc, buffLen);
 
-	DEBUGPIPE_TEST_AND_SEND(
+	DEBUGPIPE_TEST_AND_SYPHON(
 		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugSupportRiv3,
-		tmpBuff.rsrc);
+		tmpBuff.rsrc, buffLen);
 
-	DEBUGPIPE_TEST_AND_SEND(
+	DEBUGPIPE_TEST_AND_SYPHON(
 		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugSupportRiv4,
-		tmpBuff.rsrc);
+		tmpBuff.rsrc, buffLen);
 
 	tmpBuff.lock.release();
 }

@@ -106,63 +106,9 @@ static void ibmPc_terminal_scrollDown(void)
 	};
 }	
 
-static void ibmPc_terminal_read(const unicodePoint *str)
-{
-	if (str == __KNULL || buff == __KNULL) {
-		return;
-	};
-
-	for (; *str != 0; str++)
-	{
-		switch(*str)
-		{
-		case '\n':
-			if (row >= maxRow-1)
-			{
-				ibmPc_terminal_scrollDown();
-				row = maxRow-1;
-				col = 0;
-				break;
-			}
-			row++;
-			col = 0;
-			break;
-
-		case '\r':
-			col = 0;
-			break;
-
-		case '\t':
-			col += 8;
-			col &= ~0x7;
-			break;
-
-		default:
-			if (*str < 0x20) {
-				break;
-			};
-			if (col >= maxCol)
-			{
-				row++;
-				if (row >= maxRow-1)
-				{
-					ibmPc_terminal_scrollDown();
-					row = maxRow-1;
-				};
-				col = 0;
-			};
-			// For now we truncate all codepoints.
-			buff[row * maxCol + col].ch = (ubit8)*str;
-			buff[row * maxCol + col].attr = 0x07;
-			col++;
-			break;
-		};
-	};
-}
-
 static void ibmPc_terminal_syphon(const unicodePoint *str, uarch_t len)
 {
-	if (str == __KNULL || buff == __KNULL) {
+	if (buff == __KNULL || str == __KNULL) {
 		return;
 	};
 
@@ -231,8 +177,7 @@ struct debugSupportRivS ibmPc_terminal =
 	&ibmPc_terminal_suspend,
 	&ibmPc_terminal_awake,
 	&ibmPc_terminal_isInitialized,
-	&ibmPc_terminal_read,
-	&ibmPc_terminal_clear,
-	&ibmPc_terminal_syphon
+	&ibmPc_terminal_syphon,
+	&ibmPc_terminal_clear
 };
 

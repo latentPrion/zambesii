@@ -34,9 +34,11 @@ public:
 
 public:
 	// String of raw, expanded unicode characters.
-	void read(unicodePoint *str, uarch_t buffLen);
-	// Calling 'clear' is the same as flushing all pages.
+	void syphon(unicodePoint *str, uarch_t buffLen);
+	// Calling 'clear' will reset the buffer to the 1st page, index 0.
 	void clear(void);
+	// Calling 'flush' will deallocate all pages in the buffer.
+	void flush(void);
 
 	void *lock(void);
 	unicodePoint *extract(void **handle, uarch_t *len);

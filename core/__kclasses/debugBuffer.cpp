@@ -103,7 +103,7 @@ void debugBufferC::unlock(void)
 	buff.lock.release();
 }
 
-void debugBufferC::read(unicodePoint *str, uarch_t buffLen)
+void debugBufferC::syphon(unicodePoint *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
 
