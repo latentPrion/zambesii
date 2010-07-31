@@ -55,20 +55,17 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(numaTrib, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 
-	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER);
-	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
-		for (;;){};
+	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
+	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)
+		|| !__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1)
+	{
+		if (__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1)
+		{
+			__debug.printf(WARNING"No debug buffer allocated.\n",
+				0);
+		};
 	};
 
-	__kdebug.printf(
-		NOTICE"Kernel debug output tied to Buffer device.\n", 0);
-
-	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE1);
-	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1)) {
-		for (;;){};
-	};
-
-	__kdebug.printf(NOTICE"Kernel debug pipe tied to device 1.\n", 0);
 	__kdebug.refresh();
 }
 
