@@ -15,8 +15,9 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 
-extern "C" void __korientationMain(ubit32, multibootDataS *)
+extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 {
 	error_t		ret;
 	uarch_t		devMask;
@@ -57,15 +58,29 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
 	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)
-		|| !__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1)
+		|| !__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1))
 	{
-		if (__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1)
+		for (;;){};
+		if (__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1))
 		{
-			__debug.printf(WARNING"No debug buffer allocated.\n",
+			__kdebug.printf(WARNING"No debug buffer allocated.\n",
 				0);
 		};
 	};
-
 	__kdebug.refresh();
+	__kdebug.printf(
+		NOTICE"Kernel debug output tied to devices BUFFER and "
+		"DEVICE1.\n",
+		0);
+
+	__kdebug.printf(
+		NOTICE"Multiboot magic: %X, pointer: 0x%p\n",
+		0, mbMagic, mbInfo);
+
+	__kdebug.printf(NOTICE"CPU %d, thread %X\n"
+		"\tHolds %d locks.", 0,
+		cpuTrib.getCurrentCpuStream()->id,
+		cpuTrib.getCurrentCpuStream()->currentTask->id,
+		cpuTrib.getCurrentCpuStream()->currentTask->nLocksHeld);
 }
 

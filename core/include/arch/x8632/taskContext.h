@@ -13,7 +13,7 @@ struct taskContextS
 	ubit32		ebp, dummyEsp;
 	ubit32		ebx, edx;
 	ubit32		ecx, eax;
-	ubit32		vectorNum;
+	ubit32		vectorNo;
 	ubit32		flags;
 	ubit32		eip, cs;
 	ubit32		eflags;

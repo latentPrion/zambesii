@@ -10,11 +10,12 @@ taskS		__korientationThread;
 
 void __korientationPreConstruct::__korientationThreadInit(void)
 {
-	memset(&__korientationThread, 0, sizeof(taskS));
+	memset(&__korientationThread, 0, sizeof(__korientationThread));
 
 	__korientationThread.id = 0x1;
 	__korientationThread.parent = &__kprocess;
 	__korientationThread.stacks.priv0 = __korientationStack;
+	__korientationThread.nLocksHeld = 0;
 
 	/* The smpConfig, numaConfig and cpuTrace members will have to be left
 	 * until later since they all either are, or contain bitmapC objects.

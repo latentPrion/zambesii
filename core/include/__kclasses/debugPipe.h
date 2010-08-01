@@ -53,6 +53,7 @@
 
 // When the MemoryTrib prints, it must pass this flag. 
 #define DEBUGPIPE_FLAGS_NOBUFF		(1<<0)
+#define DEBUGPIPE_FLAGS_USE_BACKBUFF	(1<<1)
 
 class debugPipeC
 {
@@ -82,9 +83,13 @@ public:
 	void flush(void);
 
 private:
-	// 'tmpBuff' is used by printf() to process the format string.
+	void unsignedToStr(uarch_t num, uarch_t *len);
+	void signedToStr(sarch_t num, uarch_t *len);
+	void numToStrHex(uarch_t num, uarch_t *len);
+
 	debugBufferC		debugBuff;
-	sharedResourceGroupC<waitLockC, unicodePoint *>	tmpBuff;
+	// 'convBuff' is used to expand the passed UTF-8 string into codepoints.
+	sharedResourceGroupC<waitLockC, unicodePoint *>	convBuff;
 	sharedResourceGroupC<waitLockC, uarch_t>	devices;
 };
 

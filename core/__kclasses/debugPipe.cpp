@@ -1,4 +1,6 @@
 
+#include <stdarg.h>
+#include <arch/arch.h>
 #include <__kstdlib/utf8.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -52,29 +54,41 @@ debugPipeC::debugPipeC(void)
 error_t debugPipeC::initialize(void)
 {
 	uarch_t		bound;
-	unicodePoint	*mem;
+	unicodePoint	*mem1, *mem2;
 
 	devices.rsrc = 0;
 	// Allocate four pages for UTF-8 expansion buffer. That's 4096 codepts.
-	mem = new ((memoryTrib.__kmemoryStream
+	mem1 = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(
 			DEBUGPIPE_CONVERSION_BUFF_NPAGES)) unicodePoint;
 
-	if (mem == __KNULL) {
+	mem2 = new ((memoryTrib.__kmemoryStream
+		.*memoryTrib.__kmemoryStream.memAlloc)(
+			DEBUGPIPE_CONVERSION_BUFF_NPAGES)) unicodePoint;
+
+	if (mem1 == __KNULL || mem2 == __KNULL)
+	{
+		if (mem1 != __KNULL) {
+			memoryTrib.__kmemoryStream.memFree(mem1);
+		};
+		if (mem2 != __KNULL) {
+			memoryTrib.__kmemoryStream.memFree(mem2);
+		};
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	bound = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
 		/ sizeof(unicodePoint);
 
-	tmpBuff.lock.acquire();
+	convBuff.lock.acquire();
 
-	tmpBuff.rsrc = mem;
+	convBuff.rsrc = mem1;
 	for (uarch_t i=0; i<bound; i++) {
-		tmpBuff.rsrc[i] = 0;
+		convBuff.rsrc[i] = 0;
 	};
 
-	tmpBuff.lock.release();
+	convBuff.lock.release();
+
 	return ERROR_SUCCESS;
 }
 
@@ -206,73 +220,176 @@ void debugPipeC::refresh(void)
 	debugBuff.unlock();
 }
 
+void debugPipeC::unsignedToStr(uarch_t num, uarch_t *curLen)
+{
+	utf8Char	b[28];
+	uarch_t		blen=0;
+
+	for (; num / 10 ; blen++)
+	{
+		b[blen] = (num % 10) + '0';
+		num /= 10;
+	};
+	b[blen] = (num % 10) + '0';
+	blen++;
+
+	for (; blen; blen--, *curLen += 1) {
+		convBuff.rsrc[*curLen] = b[blen-1];
+	};
+}
+
+void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen)
+{
+	utf8Char	b[28];
+	uarch_t		blen=0;
+
+	if (num & 1<<((__BITS_PER_BYTE__ * sizeof(uarch_t)) - 1))
+	{
+		num &= ~(1<<((__BITS_PER_BYTE__ * sizeof(uarch_t)) - 1) );
+		convBuff.rsrc[*curLen] = '-';
+		*curLen += 1;
+	};
+
+	for (; num / 10 ; blen++)
+	{
+		b[blen] = (num % 10) + '0';
+		num /= 10;
+	};
+	b[blen] = (num % 10) + '0';
+	blen++;
+
+	for (; blen; blen--, *curLen += 1) {
+		convBuff.rsrc[*curLen] = b[blen-1];
+	};
+}
+
+void debugPipeC::numToStrHex(uarch_t num, uarch_t *curLen)
+{
+	utf8Char	b[28];
+	uarch_t		blen=0;
+
+	for (; num / 16 ; blen++)
+	{
+		b[blen] = (num % 16) + (((num % 16) > 9) ? ('A'-10):'0');
+		num /= 16;
+	};
+	b[blen] = (num % 16) + (((num % 16) > 9) ? ('A'-10):'0');
+	blen++;
+
+	for (; blen; blen--, *curLen += 1) {
+		convBuff.rsrc[*curLen] = b[blen-1];
+	};
+}
+
 void debugPipeC::printf(const utf8Char *str, uarch_t flags, ...)
 {
-	uarch_t		buffLen=0, buffMax;
+	va_list		args;
+	uarch_t		unum, buffLen=0, buffMax;
+	sarch_t		snum;
+
+	va_start_forward(args, flags);
+
+	convBuff.lock.acquire();
+
+	// Make sure we're not printing to an unallocated buffer.
+	if (convBuff.rsrc == __KNULL)
+	{
+		convBuff.lock.release();
+		return;
+	};
 
 	buffMax = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
 		/ sizeof(unicodePoint);
 
-	tmpBuff.lock.acquire();
-
-	if (tmpBuff.rsrc == __KNULL)
+	// Expand the string of UTF-8. Process printf formatting.
+	for (; (*str != 0) && (buffLen < buffMax); str++)
 	{
-		tmpBuff.lock.release();
-		return;
-	};
+		if (!(*str & 0x80))
+		{
+			if (*str == '%')
+			{
+				str++;
+				switch (*str)
+				{
+				case '%':
+					convBuff.rsrc[buffLen++] = *str;
+					break;
 
-	// Convert the input UTF-8 into a codepoint.
-	for (; (*str != 0) && (buffLen < buffMax); buffLen++, str++)
-	{
-		if (!(*str & 0x80)) {
-			tmpBuff.rsrc[buffLen] = *str;
+				case 'd':
+				case 'i':
+					snum = va_arg(args, sarch_t);
+					signedToStr(snum, &buffLen);
 
-			// Printf format string parsing here.
+					break;
+
+				case 'u':
+					unum = va_arg(args, uarch_t);
+					unsignedToStr(unum, &buffLen);
+
+					break;
+
+				case 'x':
+				case 'X':
+				case 'p':
+					unum = va_arg(args, uarch_t);
+					numToStrHex(unum, &buffLen);
+
+					break;
+
+				case 's':
+					unum = va_arg(args, uarch_t);
+					break;
+				default:
+					unum = va_arg(args, uarch_t);
+					break;
+				};	
+			}
+			else {
+				convBuff.rsrc[buffLen++] = *str;
+			};
 		}
 		else
 		{
 			if ((*str & 0xE0) == 0xC0)
 			{
-				tmpBuff.rsrc[buffLen] = utf8::parse2(&str);
+				convBuff.rsrc[buffLen++] = utf8::parse2(&str);
 				continue;
 			};
 			if ((*str & 0xF0) == 0xE0)
 			{
-				tmpBuff.rsrc[buffLen] = utf8::parse3(&str);
+				convBuff.rsrc[buffLen++] = utf8::parse3(&str);
 				continue;
 			};
 			if ((*str & 0xF8) == 0xF0)
 			{
-				tmpBuff.rsrc[buffLen] = utf8::parse4(&str);
+				convBuff.rsrc[buffLen++] = utf8::parse4(&str);
 				continue;
 			};
 		};
 	};
+	va_end(args);
 
-	// Make sure not to send to the buffer if the memoryTrib is printing.
-	if (!__KFLAG_TEST(flags, DEBUGPIPE_FLAGS_NOBUFF))
-	{
-		if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)) {
-			debugBuff.syphon(tmpBuff.rsrc, buffLen);
-		};
+	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)) {
+		debugBuff.syphon(convBuff.rsrc, buffLen);
 	};
 
 	DEBUGPIPE_TEST_AND_SYPHON(
 		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv1,
-		tmpBuff.rsrc, buffLen);
+		convBuff.rsrc, buffLen);
 
 	DEBUGPIPE_TEST_AND_SYPHON(
 		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugSupportRiv2,
-		tmpBuff.rsrc, buffLen);
+		convBuff.rsrc, buffLen);
 
 	DEBUGPIPE_TEST_AND_SYPHON(
 		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugSupportRiv3,
-		tmpBuff.rsrc, buffLen);
+		convBuff.rsrc, buffLen);
 
 	DEBUGPIPE_TEST_AND_SYPHON(
 		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugSupportRiv4,
-		tmpBuff.rsrc, buffLen);
+		convBuff.rsrc, buffLen);
 
-	tmpBuff.lock.release();
+	convBuff.lock.release();
+	
 }
 

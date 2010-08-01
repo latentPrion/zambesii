@@ -14,18 +14,31 @@
 
 error_t debugBufferC::initialize(void)
 {
-	buff.rsrc.tail = new ((memoryTrib.__kmemoryStream.*
+	buff.rsrc.head = new ((memoryTrib.__kmemoryStream.*
 		memoryTrib.__kmemoryStream.memAlloc)(1))
 			debugBufferC::buffPageS;
 
-	if (buff.rsrc.tail == __KNULL) {
+	if (buff.rsrc.head == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
-
-	buff.rsrc.tail->next = __KNULL;
-	buff.rsrc.cur = buff.rsrc.head = buff.rsrc.tail;
-	buff.rsrc.index = 0;
 	buff.rsrc.buffNPages = 1;
+	buff.rsrc.index = 0;
+
+	// Cycle through and point them to one another.
+	buff.rsrc.cur = buff.rsrc.tail = buff.rsrc.head;
+	for (uarch_t i=0; i<DEBUGBUFFER_INIT_NPAGES-1; i++)
+	{
+		buff.rsrc.tail->next = new ((memoryTrib.__kmemoryStream.*
+			memoryTrib.__kmemoryStream.memAlloc)(1))
+				debugBufferC::buffPageS;
+
+		if (buff.rsrc.tail->next == __KNULL) {
+			break;
+		};
+		buff.rsrc.tail = buff.rsrc.tail->next;
+		buff.rsrc.buffNPages++;
+	};
+	buff.rsrc.tail->next = __KNULL;
 
 	return ERROR_SUCCESS;
 }
@@ -117,25 +130,9 @@ void debugBufferC::syphon(unicodePoint *str, uarch_t buffLen)
 
 		if (buff.rsrc.cur == __KNULL)
 		{
-			buff.rsrc.tail->next = new (
-				(memoryTrib.__kmemoryStream
-					.*memoryTrib.__kmemoryStream.memAlloc)(
-						1)) debugBufferC::buffPageS;
-
-			if (buff.rsrc.tail->next != __KNULL)
-			{
-				buff.rsrc.cur = buff.rsrc.tail =
-					buff.rsrc.tail->next;
-
-				buff.rsrc.index = 0;
-				buff.rsrc.buffNPages++;
-			}
-			else
-			{
-				buff.rsrc.cur = scrollBuff(
-					&buff.rsrc.index,
-					buffLen);
-			};
+			buff.rsrc.cur = scrollBuff(
+				&buff.rsrc.index,
+				buffLen);
 		};
 
 		buff.rsrc.cur->data[buff.rsrc.index] = *str;
@@ -189,7 +186,7 @@ debugBufferC::buffPageS *debugBufferC::scrollBuff(
 		tmp2 = tmp2->next;
 	};
 
-	// At this point, the whole buffer is copied buffLen up. Return.
+	// At this point, the whole buffer is copied 'buffLen' up. Return.
 	*index = bound;
 	return tmp1;
 }

@@ -107,6 +107,7 @@ void recursiveLockC::release(void)
 #endif
 			cpuControl::enableInterrupts();
 		};
+	cpuTrib.getCurrentCpuStream()->currentTask->nLocksHeld--;
 	};
 }
 

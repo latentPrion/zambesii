@@ -4,6 +4,7 @@
 #include <arch/walkerPageRanger.h>
 #include <lang/lang.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/pageAttributes.h>
 #include <kernel/common/task.h>
 #include <kernel/common/processId.h>
@@ -229,6 +230,9 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages)
 		panic(ERROR_GENERAL, mmStr[5]);
 	};
 
+/*	__kdebug.printf(NOTICE"Memory Stream: Pid %d: %p, %p.\n",
+		DEBUGPIPE_FLAGS_NOBUFF, id, ret, paddr);
+*/
 	return ret;
 
 releasePmem:

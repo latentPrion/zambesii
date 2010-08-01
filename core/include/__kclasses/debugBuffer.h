@@ -14,14 +14,25 @@
  * safe for later dumping, so any printing done while, say, the kernel has
  * untied the debug pipe from all hardware will all go into the buffer.
  *
- * The buffer is dynamically sized, and will simply grow as the kernel's debug
- * output grows. If ever the buffer asks the kernel for more memory and
- * gets a failed allocation, it will move all data in the buffer up and out of
- * the buffer as necessary to facilitate the new message.
+ * The buffer is statically sized, and its initial size is set with
+ * DEBUGBUFFER_INIT_NPAGES below. This initial buffer is resized after the
+ * NUMA Tributary's initialize2() routine, which allows the kernel to take
+ * full advantage of the chipset's memory.
+ *
+ * At that point, the kernel will allocate more memory, and link it to the
+ * end of the buffer, effectively extending the buffer to allow for more
+ * output.
+ *
+ * That is to say, this class has been written to be implicitly dynamically
+ * sized. However, the dynamicity was pulled since it created a circular
+ * dependency. So now it's generationally dynamically sized, in that it is
+ * resized in stages throughout the kernel's initialization.
  **/
 
 #define DEBUGBUFFER_PAGE_NCHARS				\
 	(PAGING_BASE_SIZE - sizeof(void *)) / sizeof(unicodePoint)
+
+#define DEBUGBUFFER_INIT_NPAGES			(8)
 
 class debugBufferC
 {
@@ -53,7 +64,8 @@ private:
 		// This member should always be 32-bit aligned.
 		unicodePoint	data[DEBUGBUFFER_PAGE_NCHARS];
 	};
-	struct buffPtrStateS {
+	struct buffPtrStateS
+	{
 		buffPageS	*head, *tail, *cur;
 		uarch_t		index, buffNPages;
 	};
