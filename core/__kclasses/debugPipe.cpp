@@ -54,26 +54,15 @@ debugPipeC::debugPipeC(void)
 error_t debugPipeC::initialize(void)
 {
 	uarch_t		bound;
-	unicodePoint	*mem1, *mem2;
+	unicodePoint	*mem;
 
 	devices.rsrc = 0;
 	// Allocate four pages for UTF-8 expansion buffer. That's 4096 codepts.
-	mem1 = new ((memoryTrib.__kmemoryStream
+	mem = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(
 			DEBUGPIPE_CONVERSION_BUFF_NPAGES)) unicodePoint;
 
-	mem2 = new ((memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(
-			DEBUGPIPE_CONVERSION_BUFF_NPAGES)) unicodePoint;
-
-	if (mem1 == __KNULL || mem2 == __KNULL)
-	{
-		if (mem1 != __KNULL) {
-			memoryTrib.__kmemoryStream.memFree(mem1);
-		};
-		if (mem2 != __KNULL) {
-			memoryTrib.__kmemoryStream.memFree(mem2);
-		};
+	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -82,7 +71,7 @@ error_t debugPipeC::initialize(void)
 
 	convBuff.lock.acquire();
 
-	convBuff.rsrc = mem1;
+	convBuff.rsrc = mem;
 	for (uarch_t i=0; i<bound; i++) {
 		convBuff.rsrc[i] = 0;
 	};
