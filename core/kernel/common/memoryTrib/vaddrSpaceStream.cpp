@@ -1,4 +1,5 @@
 
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 
 
@@ -47,6 +48,19 @@ void vaddrSpaceStreamC::cut(void)
 	getPages = &vaddrSpaceStreamC::dummy_getPages;
 	binding.rsrc = 0;
 	binding.lock.release();
+}
+
+void vaddrSpaceStreamC::dump(void)
+{
+	__kdebug.printf(NOTICE"VaddrSpaceStream %X: Binding: %p, "
+		"Level0: v: %p, p: %p\n", 0,
+		id, getPages, vaddrSpace.level0Accessor.rsrc,
+		vaddrSpace.level0Paddr);
+
+	__kdebug.printf(NOTICE"vaddrSpace object: v %X, p %X\n", 0,
+		vaddrSpace.level0Accessor.rsrc, vaddrSpace.level0Paddr);
+
+	vSwamp.dump();
 }
 
 void *vaddrSpaceStreamC::dummy_getPages(uarch_t)

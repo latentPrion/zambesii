@@ -1,6 +1,7 @@
 
 #include <arch/paging.h>
 #include <__kstdlib/__kcxxlib/cstring>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/vSwamp.h>
 
 vSwampC::vSwampC(void)
@@ -10,6 +11,34 @@ vSwampC::vSwampC(void)
 vSwampC::vSwampC(void *startAddr, uarch_t swampSize, holeMapS *holeMap)
 {
 	initialize(startAddr, swampSize, holeMap);
+}
+
+void vSwampC::dump(void)
+{
+	for (uarch_t i=0; i<VSWAMP_NSWAMPS; i++)
+	{
+		__kdebug.printf(NOTICE"vSwamp: Swamp %d: base: %p, size: %X, ",
+			0, i, swamps[i].baseAddr, swamps[i].size);
+
+		swamps[i].ptrs.lock.acquire();
+
+		if (swamps[i].ptrs.rsrc.head == __KNULL)
+		{
+			__kdebug.printf((utf8Char *)"invalid.\n", 0);
+			swamps[i].ptrs.lock.release();
+			continue;
+		};
+		__kdebug.printf((utf8Char *)"valid\n", 0);
+
+		for (swampInfoNodeC *tmp = swamps[i].ptrs.rsrc.head;
+			tmp != __KNULL; tmp = tmp->next)
+		{
+			__kdebug.printf(NOTICE"\tNode: baseAddr %p, nPages %p"
+				"\n", 0, tmp->startAddr, tmp->nPages);
+		};
+
+		swamps[i].ptrs.lock.release();
+	};
 }
 
 //Calculate the specs for, and initialize, the swamp.

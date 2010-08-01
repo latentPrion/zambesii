@@ -31,6 +31,8 @@ public:
 	void *getPages(uarch_t nPages);
 	void releasePages(void *vaddr, uarch_t nPages);
 
+	void dump(void);
+
 private:
 	swampInfoNodeC *getNewSwampNode(
 		void *baseAddr, uarch_t size,

@@ -61,6 +61,7 @@ public:
 public:
 	void cut(void);
 	void bind(void);
+	void dump(void);
 
 	void *real_memAlloc(uarch_t nPages);
 	void *dummy_memAlloc(uarch_t nPages);

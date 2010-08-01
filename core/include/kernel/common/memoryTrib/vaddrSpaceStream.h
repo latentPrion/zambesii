@@ -56,6 +56,7 @@ public:
 public:
 	void cut(void);
 	void bind(void);
+	void dump(void);
 
 	void *real_getPages(uarch_t nPages);
 	void *dummy_getPages(uarch_t nPages);

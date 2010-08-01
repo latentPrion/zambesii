@@ -68,6 +68,12 @@ void memoryStreamC::cut(void)
 	binding.lock.release();
 }
 
+void memoryStreamC::dump(void)
+{
+	__kdebug.printf(NOTICE"Memory Stream %X: Dumping.\n", 0, id);
+	vaddrSpaceStream.dump();
+}
+
 void *memoryStreamC::dummy_memAlloc(uarch_t)
 {
 	return __KNULL;
@@ -86,6 +92,10 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages)
 		walkerPageRanger::setAttributes(
 			&vaddrSpaceStream.vaddrSpace,
 			ret, nPages, WPRANGER_OP_SET_PRESENT, 0);
+
+		__kdebug.printf(NOTICE"Memory Stream %X: memAlloc(%d): alloc "
+			"from cache: vaddr %p\n", 0,
+			id, nPages, ret);
 
 		return ret;
 	}
@@ -230,9 +240,10 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages)
 		panic(ERROR_GENERAL, mmStr[5]);
 	};
 
-/*	__kdebug.printf(NOTICE"Memory Stream: Pid %d: %p, %p.\n",
-		DEBUGPIPE_FLAGS_NOBUFF, id, ret, paddr);
-*/
+	__kdebug.printf(NOTICE"Memory Stream %X: memAlloc(%d): vaddr %p, "
+		"paddr %p.\n",
+		DEBUGPIPE_FLAGS_NOBUFF, id, nPages, ret, paddr);
+
 	return ret;
 
 releasePmem:
@@ -253,11 +264,16 @@ void memoryStreamC::memFree(void *vaddr)
 
 	// First ask the alloc table if the alloc is valid.
 	err = allocTable.lookup(vaddr, &nPages, &type, &flags);
-	if (err != ERROR_SUCCESS) { return; };
+	if (err != ERROR_SUCCESS) {
+		return;
+	};
 
 	// Attempt to just push the allocation whole into the cache.
 	if ((nPages == 1) && (allocCache.push(nPages, vaddr) == ERROR_SUCCESS))
 	{
+		__kdebug.printf(NOTICE"Memory Stream %X: memFree(%p): free to "
+			"cache.\n", 0, id, vaddr);
+
 		walkerPageRanger::setAttributes(
 			&vaddrSpaceStream.vaddrSpace,
 			vaddr, nPages, WPRANGER_OP_CLEAR_PRESENT, 0);
@@ -299,5 +315,9 @@ void memoryStreamC::memFree(void *vaddr)
 	vaddrSpaceStream.releasePages(vaddr, nPages);
 	// Remove the entry from the process's Alloc Table.
 	allocTable.removeEntry(vaddr);	
+
+	__kdebug.printf(NOTICE"Memory Stream %X: memFree(%p): "
+		"nPages: %d, type: %X, flags, %X\n", 0,
+		id, vaddr, nPages, type, flags);
 }
 
