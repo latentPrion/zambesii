@@ -103,11 +103,12 @@ extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 	vaddrSpaceStreamFree(mem2, 0x24);
 	vaddrSpaceStreamFree(mem3, 0x2);
 	vaddrSpaceStreamFree(mem1, 0x3FACA);
-*/
+
 	numaTrib.fragmentedGetFrames(1, &p);
 	numaTrib.releaseFrames(p, 1);
 	numaTrib.fragmentedGetFrames(32, &p);
 	numaTrib.fragmentedGetFrames(32, &p);
-//	memoryTrib.__kmemoryStream.dump();
+	memoryTrib.__kmemoryStream.dump();
+*/
 }
 

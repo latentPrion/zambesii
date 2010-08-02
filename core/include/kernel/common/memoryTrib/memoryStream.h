@@ -51,7 +51,7 @@ public:
 		vSwampC::holeMapS *holeMap);
 
 public:
-	void *(memoryStreamC::*memAlloc)(uarch_t nPages);
+	void *(memoryStreamC::*memAlloc)(uarch_t nPages, uarch_t flags);
 	void memFree(void *vaddr);
 
 	// These two make use of the allocTableC to store nPages.
@@ -63,7 +63,7 @@ public:
 	void bind(void);
 	void dump(void);
 
-	void *real_memAlloc(uarch_t nPages);
+	void *real_memAlloc(uarch_t nPages, uarch_t flags);
 	void *dummy_memAlloc(uarch_t nPages);
 	void *real_memRegionAlloc(ubit8 regionId, uarch_t nPages);
 	void *dummy_memRegionAlloc(ubit8 regionId, void *vaddr);

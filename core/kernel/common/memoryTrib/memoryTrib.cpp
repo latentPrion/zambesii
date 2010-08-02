@@ -85,14 +85,7 @@ error_t memoryTribC::initialize2(void)
 	return ERROR_SUCCESS;
 }
 
-/**	NOTE:
- * It may be beneficial to change the way we try to allocate pmem: Maybe
- * instead of just trying to find pmem only once, we should try to do it
- * multiple times, until we get a NULL delivery, and iteratively map all the
- * frames we got so far. Thus we get as many frames as we can before returning.
- *
- * Then fake map any vmem that didn't get pmem.
- **/
+// TODO: This function can be greatly optimized. KAGS, you are needed.
 void *memoryTribC::rawMemAlloc(uarch_t nPages)
 {
 	void		*ret;

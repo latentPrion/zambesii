@@ -79,7 +79,7 @@ void *memoryStreamC::dummy_memAlloc(uarch_t)
 	return __KNULL;
 }
 
-void *memoryStreamC::real_memAlloc(uarch_t nPages)
+void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 {
 	paddr_t		paddr;
 	void		*ret;
