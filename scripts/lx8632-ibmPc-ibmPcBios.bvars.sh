@@ -13,7 +13,7 @@ export \
 	\
 	ZCPPFLAGS='-I/void/cygwin/osdev/zbz/include -I/void/cygwin/osdev/zbz/core/include' \
 	ZCCFLAGS='-O3 -Wall -Wextra -pedantic' \
-	ZCXXFLAGS='-Wall -Wextra -pedantic -Wno-long-long -fno-exceptions -fno-rtti -O3' \
+	ZCXXFLAGS='-O3 -Wall -Wextra -pedantic -Wno-long-long -fno-exceptions -fno-rtti' \
 	ZASFLAGS=''\
 	ZLDFLAGS='-nostdlib -nostartfiles -nodefaultlibs' \
 	ZARFLAGS=''

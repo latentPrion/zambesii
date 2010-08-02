@@ -21,7 +21,7 @@ extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	void		(**ctorPtr)(), *mem;
+	void		(**ctorPtr)();
 
 	__koptimizationHacks();
 
@@ -82,19 +82,6 @@ extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 		cpuTrib.getCurrentCpuStream()->id,
 		cpuTrib.getCurrentCpuStream()->currentTask->id,
 		cpuTrib.getCurrentCpuStream()->currentTask->nLocksHeld);
-
-	mem = (memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(1);
-
-	memoryTrib.__kmemoryStream.memFree(mem);
-	mem = (memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(2);
-
-	memoryTrib.__kmemoryStream.memFree(mem);
-	mem = (memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(1);
-
-	memoryTrib.__kmemoryStream.memFree(mem);
 
 	memoryTrib.__kmemoryStream.dump();
 }
