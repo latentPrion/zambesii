@@ -14,31 +14,45 @@
 
 error_t debugBufferC::initialize(void)
 {
-	buff.rsrc.head = new ((memoryTrib.__kmemoryStream.*
+	debugBufferC::buffPageS		*mem, *mem2;
+	uarch_t		pageCount = 0;
+
+	mem = new ((memoryTrib.__kmemoryStream.*
 		memoryTrib.__kmemoryStream.memAlloc)(1))
 			debugBufferC::buffPageS;
 
-	if (buff.rsrc.head == __KNULL) {
+	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
+
+	buff.lock.acquire();
+
+	buff.rsrc.cur = buff.rsrc.tail = buff.rsrc.head = mem;
 	buff.rsrc.buffNPages = 1;
 	buff.rsrc.index = 0;
 
-	// Cycle through and point them to one another.
-	buff.rsrc.cur = buff.rsrc.tail = buff.rsrc.head;
+	buff.lock.release();
+
+	mem2 = mem;
 	for (uarch_t i=0; i<DEBUGBUFFER_INIT_NPAGES-1; i++)
 	{
-		buff.rsrc.tail->next = new ((memoryTrib.__kmemoryStream.*
+		mem2->next = new ((memoryTrib.__kmemoryStream.*
 			memoryTrib.__kmemoryStream.memAlloc)(1))
 				debugBufferC::buffPageS;
 
-		if (buff.rsrc.tail->next == __KNULL) {
+		if (mem2->next == __KNULL) {
 			break;
 		};
-		buff.rsrc.tail = buff.rsrc.tail->next;
-		buff.rsrc.buffNPages++;
+		mem2 = mem2->next;
+		pageCount++;
 	};
-	buff.rsrc.tail->next = __KNULL;
+
+	buff.lock.acquire();
+
+	buff.rsrc.tail = mem2;
+	buff.rsrc.buffNPages += pageCount;
+
+	buff.lock.release();
 
 	return ERROR_SUCCESS;
 }

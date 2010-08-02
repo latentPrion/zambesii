@@ -63,26 +63,18 @@ extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 		for (;;){};
 		if (__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1))
 		{
-			__kdebug.printf(WARNING"No debug buffer allocated.\n",
-				0);
+			__kdebug.printf(WARNING"No debug buffer allocated.\n");
 		};
 	};
 	__kdebug.refresh();
-	__kdebug.printf(
-		NOTICE"Kernel debug output tied to devices BUFFER and "
-		"DEVICE1.\n",
-		0);
+	__kdebug.printf(NOTICE"Kernel debug output tied to devices BUFFER and "
+		"DEVICE1.\n");
 
-	__kdebug.printf(
-		NOTICE"Multiboot magic: %X, pointer: 0x%p\n",
-		0, mbMagic, mbInfo);
+	__kdebug.printf(NOTICE"__korientationMain: __kvaddrSpaceStream: "
+		" tests:\n");
 
-	__kdebug.printf(NOTICE"CPU %d, thread %X\n"
-		"\tHolds %d locks.\n", 0,
-		cpuTrib.getCurrentCpuStream()->id,
-		cpuTrib.getCurrentCpuStream()->currentTask->id,
-		cpuTrib.getCurrentCpuStream()->currentTask->nLocksHeld);
-
-	memoryTrib.__kmemoryStream.dump();
+	/**	EXPLANATION:
+	 * The things that must be tested are:
+	 * 1. See if the vSwamp object will*/
 }
 

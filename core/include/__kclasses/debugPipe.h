@@ -51,10 +51,6 @@
 #define ERROR				(utf8Char *)"Error: "
 #define FATAL				(utf8Char *)"Fatal: "
 
-// When the MemoryTrib prints, it must pass this flag. 
-#define DEBUGPIPE_FLAGS_NOBUFF		(1<<0)
-#define DEBUGPIPE_FLAGS_USE_BACKBUFF	(1<<1)
-
 class debugPipeC
 {
 public:
@@ -64,7 +60,7 @@ public:
 
 public:
 	// Zambezii only supports UTF-8 strings in the kernel.
-	void printf(const utf8Char *str, uarch_t flags, ...);
+	void printf(const utf8Char *str, ...);
 
 	/**	EXPLANATION:
 	 * Can take more than one device per call (hence the bitfield form).

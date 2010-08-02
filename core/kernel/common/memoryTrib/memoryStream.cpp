@@ -70,7 +70,7 @@ void memoryStreamC::cut(void)
 
 void memoryStreamC::dump(void)
 {
-	__kdebug.printf(NOTICE"Memory Stream %X: Dumping.\n", 0, id);
+	__kdebug.printf(NOTICE"Memory Stream %X: Dumping.\n", id);
 	vaddrSpaceStream.dump();
 }
 
@@ -94,7 +94,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages)
 			ret, nPages, WPRANGER_OP_SET_PRESENT, 0);
 
 		__kdebug.printf(NOTICE"Memory Stream %X: memAlloc(%d): alloc "
-			"from cache: vaddr %p\n", 0,
+			"from cache: vaddr %p\n",
 			id, nPages, ret);
 
 		return ret;
@@ -242,7 +242,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages)
 
 	__kdebug.printf(NOTICE"Memory Stream %X: memAlloc(%d): vaddr %p, "
 		"paddr %p.\n",
-		DEBUGPIPE_FLAGS_NOBUFF, id, nPages, ret, paddr);
+		id, nPages, ret, paddr);
 
 	return ret;
 
@@ -272,7 +272,7 @@ void memoryStreamC::memFree(void *vaddr)
 	if ((nPages == 1) && (allocCache.push(nPages, vaddr) == ERROR_SUCCESS))
 	{
 		__kdebug.printf(NOTICE"Memory Stream %X: memFree(%p): free to "
-			"cache.\n", 0, id, vaddr);
+			"cache.\n", id, vaddr);
 
 		walkerPageRanger::setAttributes(
 			&vaddrSpaceStream.vaddrSpace,
@@ -317,7 +317,7 @@ void memoryStreamC::memFree(void *vaddr)
 	allocTable.removeEntry(vaddr);	
 
 	__kdebug.printf(NOTICE"Memory Stream %X: memFree(%p): "
-		"nPages: %d, type: %X, flags, %X\n", 0,
+		"nPages: %d, type: %X, flags, %X\n",
 		id, vaddr, nPages, type, flags);
 }
 

@@ -270,13 +270,13 @@ void debugPipeC::numToStrHex(uarch_t num, uarch_t *curLen)
 	};
 }
 
-void debugPipeC::printf(const utf8Char *str, uarch_t flags, ...)
+void debugPipeC::printf(const utf8Char *str, ...)
 {
 	va_list		args;
 	uarch_t		unum, buffLen=0, buffMax;
 	sarch_t		snum;
 
-	va_start_forward(args, flags);
+	va_start_forward(args, str);
 
 	convBuff.lock.acquire();
 

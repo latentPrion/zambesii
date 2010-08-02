@@ -18,23 +18,23 @@ void vSwampC::dump(void)
 	for (uarch_t i=0; i<VSWAMP_NSWAMPS; i++)
 	{
 		__kdebug.printf(NOTICE"vSwamp: Swamp %d: base: %p, size: %X, ",
-			0, i, swamps[i].baseAddr, swamps[i].size);
+			i, swamps[i].baseAddr, swamps[i].size);
 
 		swamps[i].ptrs.lock.acquire();
 
 		if (swamps[i].ptrs.rsrc.head == __KNULL)
 		{
-			__kdebug.printf((utf8Char *)"invalid.\n", 0);
+			__kdebug.printf((utf8Char *)"invalid.\n");
 			swamps[i].ptrs.lock.release();
 			continue;
 		};
-		__kdebug.printf((utf8Char *)"valid\n", 0);
+		__kdebug.printf((utf8Char *)"valid\n");
 
 		for (swampInfoNodeC *tmp = swamps[i].ptrs.rsrc.head;
 			tmp != __KNULL; tmp = tmp->next)
 		{
 			__kdebug.printf(NOTICE"\tNode: baseAddr %p, nPages %p"
-				"\n", 0, tmp->startAddr, tmp->nPages);
+				"\n", tmp->startAddr, tmp->nPages);
 		};
 
 		swamps[i].ptrs.lock.release();
