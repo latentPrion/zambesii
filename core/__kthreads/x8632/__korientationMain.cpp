@@ -21,7 +21,8 @@ extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	void		(**ctorPtr)();
+	void		(**ctorPtr)(), *mem1, *mem2, *mem3;
+	paddr_t		p;
 
 	__koptimizationHacks();
 
@@ -75,6 +76,38 @@ extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 
 	/**	EXPLANATION:
 	 * The things that must be tested are:
-	 * 1. See if the vSwamp object will*/
+	 * 1. Allocate 4 pages. 2. Allocate 32 pages. 3. Allocate 2 pages.
+	 * 4. Free the 32 from (2). Dump and see if there are now two nodes
+	 * with the first having 32 pages on it. 5. Now free the two from (3).
+	 * Dump and see if the swamp has compacted via reverse compacting.
+	 **/
+#define vaddrSpaceStreamAlloc(__n)			\
+	(memoryTrib.__kmemoryStream.vaddrSpaceStream \
+		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(__n)
+
+#define vaddrSpaceStreamFree(__v,__n)			\
+	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(__v, __n)
+
+	mem1 = vaddrSpaceStreamAlloc(4);
+	mem2 = vaddrSpaceStreamAlloc(32);
+	mem3 = vaddrSpaceStreamAlloc(2);
+
+	vaddrSpaceStreamFree(mem2, 32);
+	vaddrSpaceStreamFree(mem3, 2);
+	vaddrSpaceStreamFree(mem1, 4);
+
+/*	mem1 = vaddrSpaceStreamAlloc(0x3FACA);
+	mem2 = vaddrSpaceStreamAlloc(0x24);
+	mem3 = vaddrSpaceStreamAlloc(0x2);
+	vaddrSpaceStreamAlloc(1);
+	vaddrSpaceStreamFree(mem2, 0x24);
+	vaddrSpaceStreamFree(mem3, 0x2);
+	vaddrSpaceStreamFree(mem1, 0x3FACA);
+*/
+	numaTrib.fragmentedGetFrames(1, &p);
+	numaTrib.releaseFrames(p, 1);
+	numaTrib.fragmentedGetFrames(32, &p);
+	numaTrib.fragmentedGetFrames(32, &p);
+//	memoryTrib.__kmemoryStream.dump();
 }
 

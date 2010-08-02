@@ -171,8 +171,6 @@ void debugPipeC::refresh(void)
 	uarch_t		len, n=0;
 
 	// Send the buffer to all devices.
-	handle = debugBuff.lock();
-
 	DEBUGPIPE_TEST_AND_CLEAR(
 		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv1);
 
@@ -185,6 +183,7 @@ void debugPipeC::refresh(void)
 	DEBUGPIPE_TEST_AND_CLEAR(
 		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugSupportRiv4);
 
+	handle = debugBuff.lock();
 
 	for (buff = debugBuff.extract(&handle, &len); buff != __KNULL; n++)
 	{
@@ -209,6 +208,7 @@ void debugPipeC::refresh(void)
 	debugBuff.unlock();
 }
 
+// Expects the lock to already be held.
 void debugPipeC::unsignedToStr(uarch_t num, uarch_t *curLen)
 {
 	utf8Char	b[28];
@@ -227,6 +227,7 @@ void debugPipeC::unsignedToStr(uarch_t num, uarch_t *curLen)
 	};
 }
 
+// Expects the lock to already be held.
 void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen)
 {
 	utf8Char	b[28];
@@ -252,6 +253,7 @@ void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen)
 	};
 }
 
+// Expects the lock to already be held.
 void debugPipeC::numToStrHex(uarch_t num, uarch_t *curLen)
 {
 	utf8Char	b[28];

@@ -1,4 +1,5 @@
 
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/numaTrib/numaStream.h>
 
 /* For these bind()/cut() operations, we don't monitor the binding status. Let\

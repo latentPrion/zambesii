@@ -1,5 +1,6 @@
 
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <__kclasses/debugBuffer.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
@@ -98,6 +99,7 @@ void *debugBufferC::lock(void)
 	return buff.rsrc.head;		
 }
 
+// This expects the caller to call lock() before beforehand, and unlock() after.
 unicodePoint *debugBufferC::extract(void **handle, uarch_t *len)
 {
 	unicodePoint	*ret;

@@ -1,14 +1,10 @@
 //List of TODO:s.
 
-//__kstdlib
-* Write a simple utf8StringC class.
-
 //__kclasses
 * Decide properly how to get the interface for the alloc table to work in a 
   uniform, clean fashion.
 
 //memoryTrib
-* Add a 'dump()' function to vSwampC.
 
 //numaTrib
 * Add some more fancy stuff for informative purposes, such as current status
@@ -17,26 +13,22 @@
 
 //cpuTrib
 
+// VSwamp:
+* Implement backward linking of swamp info nodes. Right now when you free to
+  the swamp, the kernel will only join adjacent nodes forward. If there are
+  adjacent nodes behind you, it will not join them up, and thus will cause
+  fragmentation.
+
 //__kthreads
 * Deal with the issue of how to unify the different architecture setups.
-* Decide how to ensure that a uniform boot is ensured on architectures which
-  don't allow you to begin by enabling paging right from the start.
 
 // PMM:
 
 // General fixes: Continuation for when you resume:
-* You need to first get the kernel compiling.
-* Run through string.cpp, I think there are some postfix '\0' bugs in there.
 * Refine include/__kstdlib/compiler
-* Bug check and dry run test walker Page ranger.
 * Run through all PMM code.
-* Implement all code for TLB management.
 * Run through all locking code and optimize for the NUMA, SMP, and UP cases.
 * Re-implement all allocation functions in the Memory Tributary.
-* Read up on how to use the debug regs to store a pointer per CPU, and update
-  the CPU Trib.
-* Integrate the page table cache into the page table walking code.
-* Revise memBmpC::fragmentedGetFrames.
 * From there, all you need to do is take about a week and run through every
   line of code in the kernel and make sure that the constructores are in order,
   then ensure the initialize() sequence is sane.

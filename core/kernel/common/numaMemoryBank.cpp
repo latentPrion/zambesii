@@ -1,6 +1,7 @@
 
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
 
 
@@ -55,17 +56,26 @@ numaMemoryBankC::~numaMemoryBankC(void)
 
 error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 {
-	if (frameCache.pop(nPages, paddr) == ERROR_SUCCESS) {
+	if (frameCache.pop(nPages, paddr) == ERROR_SUCCESS)
+	{
+		// FIXME: Passing a paddr_t to printf is asking for trouble.
+		__kdebug.printf(NOTICE"numaMemoryBank: contiguousGetFrames(%d) "
+			"returning %p from cache.\n", nPages, *paddr);
+
 		return ERROR_SUCCESS;
 	};
 
 	// Frame cache allocation failed.
+	__kdebug.printf(NOTICE"numaMemoryBank: contiguousGetFrames(%d): BMP "
+		"allocated, p: %p\n", nPages, *paddr);
+
 	return memBmp.contiguousGetFrames(nPages, paddr);
 }
 
-error_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
+status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 {
 	uarch_t			minPages;
+	status_t		ret;
 
 	// Try to see how much of the frame cache we can exhaust.
 	minPages = frameCache.stacks[STACKCACHE_NSTACKS - 1].stackSize;
@@ -78,24 +88,40 @@ error_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	// Probably not as fast as it coule be, but faster than the BMP.
 	for (; minPages > 0; minPages--)
 	{
-		if (frameCache.pop(minPages, paddr) == ERROR_SUCCESS) {
+		if (frameCache.pop(minPages, paddr) == ERROR_SUCCESS)
+		{
+			__kdebug.printf(NOTICE"numaMemoryBank: fragmentedGetFrames(%d) "
+			"returning %d frames at %p from cache.\n", nPages, minPages, *paddr);
+
 			return minPages;
 		};
 	};
 
 	// Return whatever we get.
-	return memBmp.fragmentedGetFrames(nPages, paddr);
+	ret = memBmp.fragmentedGetFrames(nPages, paddr);
+
+	__kdebug.printf(NOTICE"numaMemoryBank: fragmentedGetFrames(%d): BMP "
+		"allocated, %d pages at p: %p\n", nPages, ret, *paddr);
+
+	return ret;
 }
 
 void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
 {
 	// Attempt to free to the frame cache.
-	if (frameCache.push(nPages, paddr) == ERROR_SUCCESS) {
+	if (frameCache.push(nPages, paddr) == ERROR_SUCCESS)
+	{
+		__kdebug.printf(NOTICE"numaMemoryBank: releaseFrames(%p, %d): "
+			"freeing to cache.\n", paddr, nPages);
+
 		return;
 	};
 
 	// Bmp free.
 	memBmp.releaseFrames(paddr, nPages);
+
+	__kdebug.printf(NOTICE"numaMemoryBank: releaseFrames(%p, %d): BMP "
+		"free: done.\n", paddr, nPages);
 }
 
 // Couyld probably inline these two.

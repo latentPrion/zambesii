@@ -240,10 +240,6 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages)
 		panic(ERROR_GENERAL, mmStr[5]);
 	};
 
-	__kdebug.printf(NOTICE"Memory Stream %X: memAlloc(%d): vaddr %p, "
-		"paddr %p.\n",
-		id, nPages, ret, paddr);
-
 	return ret;
 
 releasePmem:
@@ -315,9 +311,5 @@ void memoryStreamC::memFree(void *vaddr)
 	vaddrSpaceStream.releasePages(vaddr, nPages);
 	// Remove the entry from the process's Alloc Table.
 	allocTable.removeEntry(vaddr);	
-
-	__kdebug.printf(NOTICE"Memory Stream %X: memFree(%p): "
-		"nPages: %d, type: %X, flags, %X\n",
-		id, vaddr, nPages, type, flags);
 }
 

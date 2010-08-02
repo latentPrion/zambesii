@@ -2,6 +2,7 @@
 #include <arch/walkerPageRanger.h>
 #include <lang/lang.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/processId.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
@@ -95,55 +96,70 @@ error_t memoryTribC::initialize2(void)
 void *memoryTribC::rawMemAlloc(uarch_t nPages)
 {
 	void		*ret;
-	error_t		nFound;
-	status_t	nMapped;
 	paddr_t		paddr;
+	uarch_t		totalFrames;
+	status_t	nFetched, nMapped;
 
-	/* This method will explicitly allocate memory from the kernel's
-	 * vaddrspace, and it is not very concerned about where the memory
-	 * comes from. It just gets memory from the NUMA Tributary. Allocation
-	 * is done via numaMemoryBankC::fragmentedGetFrames(), so the kernel
-	 * receives RAM from pretty much anywhere, on any bank.
-	 **/
-	// First see if the kernel address space has enough vmem for the alloc.
 	ret = (__kmemoryStream.vaddrSpaceStream
 		.*__kmemoryStream.vaddrSpaceStream.getPages)(nPages);
 
-	if (ret == __KNULL)
-	{
-		// Leave the handling of this problem to the caller.
+	if (ret == __KNULL) {
 		return __KNULL;
 	};
 
-	// We must get at least one frame of backing mem.
-	do
+	/* memoryTribC::rawMemAlloc() has no allocTable. Therefore it is
+	 * impossible to do lazy allocation using fakemapped pages. This is
+	 * due to the fact that lazy allocation requires a #PF to occur on a
+	 * page which has not yet been backed with pmem.
+	 *
+	 * The kernel will then read the alloc table and see how many pages were
+	 * supposed to be given frames, and it will then demand allocate more
+	 * frames. But if there is no alloc table, then the #PF will occur, and
+	 * then we end up knowing nothing about the allocation.
+	 **/
+	for (totalFrames = 0; totalFrames < nPages; )
 	{
-		nFound = numaTrib.fragmentedGetFrames(nPages, &paddr);
-	} while (nFound == 0);
+		nFetched = numaTrib.fragmentedGetFrames(
+			nPages - totalFrames, &paddr);
 
-	// We have N pages that are backed, and N that aren't.
-	nMapped = walkerPageRanger::__kdataMap(
-		&__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		ret, paddr, nFound);
+		if (nFetched > 0)
+		{
+			nMapped = walkerPageRanger::mapInc(
+				&__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+				(void *)((uarch_t)ret
+					+ (totalFrames * PAGING_BASE_SIZE)),
+				paddr, nFetched,
+				PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
+				| PAGEATTRIB_SUPERVISOR);
 
-	if (nMapped < nFound) {
-		panic(ERROR_GENERAL, mmStr[1]);
-	};
+			if (nMapped < nFetched)
+			{
+				__kdebug.printf(
+					FATAL"MemoryTrib.rawMemAlloc(%d): "
+					"walkerPageRanger::mapInc() returned "
+					"%d frames mapped.", nPages, nMapped);
 
-	// Fakemap the pages that aren't physically backed with RAM.
-	nMapped = walkerPageRanger::__kfakeMap(
-		&__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		reinterpret_cast<void *>(
-			reinterpret_cast<uarch_t>( ret )
-				+ (nFound * PAGING_BASE_SIZE) ),
-		nPages - nFound,
-		PAGEATTRIB_WRITE);
+				rawMemFree(
+					ret,
+					totalFrames + static_cast<uarch_t>(
+						nMapped ));
 
-	if (nMapped < static_cast<sarch_t>( nPages ) - nFound) {
-		panic(ERROR_GENERAL, mmStr[2]);
+				goto returnFailure;
+			};
+
+			totalFrames += static_cast<uarch_t>( nFetched );
+		};
 	};
 
 	return ret;
+
+returnFailure:
+	__kmemoryStream.vaddrSpaceStream.releasePages(
+		(void *)((uarch_t)ret + ((totalFrames + (uarch_t)nMapped)
+			* PAGING_BASE_SIZE)),
+		nPages - (totalFrames + nMapped));
+
+	return __KNULL;
 }
 
 void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
