@@ -12,7 +12,7 @@ error_t allocTableC::addEntry(
 
 	// Pack the type and flags attributes into the nPages member.
 	tmp.nPages = (nPages << ALLOCTABLE_NPAGES_SHIFT)
-		| ((type << ALLOCTABLE_TYPE_SHIFT) & ALLOCTABLE_TYPE_MASK)
+		| ((type & ALLOCTABLE_TYPE_MASK) << ALLOCTABLE_TYPE_SHIFT)
 		| (flags & ALLOCTABLE_FLAGS_MASK);
 
 	result = allocTable.addEntry(&tmp);
@@ -64,7 +64,7 @@ error_t allocTableC::lookup(
 	// Unpack the nPages field.
 	*nPages = (ret->nPages >> ALLOCTABLE_NPAGES_SHIFT);
 	*type = (ret->nPages >> ALLOCTABLE_TYPE_SHIFT) & ALLOCTABLE_TYPE_MASK;
-	*flags = ret->flags & ALLOCTABLE_FLAGS_MASK;
+	*flags = ret->nPages & ALLOCTABLE_FLAGS_MASK;
 
 	return ERROR_SUCCESS;
 }

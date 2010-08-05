@@ -17,7 +17,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
-extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
+extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
@@ -88,6 +88,10 @@ extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 #define vaddrSpaceStreamFree(__v,__n)			\
 	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(__v, __n)
 
+#define memAlloc(nPages, opt)				\
+	(memoryTrib.__kmemoryStream.*memoryTrib.__kmemoryStream.memAlloc)(\
+		nPages, opt)
+
 	mem1 = vaddrSpaceStreamAlloc(4);
 	mem2 = vaddrSpaceStreamAlloc(32);
 	mem3 = vaddrSpaceStreamAlloc(2);
@@ -96,7 +100,7 @@ extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 	vaddrSpaceStreamFree(mem3, 2);
 	vaddrSpaceStreamFree(mem1, 4);
 
-/*	mem1 = vaddrSpaceStreamAlloc(0x3FACA);
+	mem1 = vaddrSpaceStreamAlloc(0x3FACA);
 	mem2 = vaddrSpaceStreamAlloc(0x24);
 	mem3 = vaddrSpaceStreamAlloc(0x2);
 	vaddrSpaceStreamAlloc(1);
@@ -109,6 +113,10 @@ extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbInfo)
 	numaTrib.fragmentedGetFrames(32, &p);
 	numaTrib.fragmentedGetFrames(32, &p);
 	memoryTrib.__kmemoryStream.dump();
-*/
+
+	mem1 = memAlloc(4, 0);
+	*(ubit32 *)mem1 = 5;
+	memoryTrib.__kmemoryStream.memFree(mem1);
+	mem1 = memAlloc(1, 0);
 }
 

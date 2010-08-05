@@ -60,7 +60,7 @@ error_t debugPipeC::initialize(void)
 	// Allocate four pages for UTF-8 expansion buffer. That's 4096 codepts.
 	mem = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(
-			DEBUGPIPE_CONVERSION_BUFF_NPAGES)) unicodePoint;
+			DEBUGPIPE_CONVERSION_BUFF_NPAGES, 0)) unicodePoint;
 
 	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;

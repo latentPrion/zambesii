@@ -26,6 +26,8 @@
  * process so that it is best catered for.
  **/
 
+#define MEMALLOC_NO_FAKEMAP		(1<<0)
+
 class memoryTribC;
 
 class memoryStreamC
@@ -64,9 +66,9 @@ public:
 	void dump(void);
 
 	void *real_memAlloc(uarch_t nPages, uarch_t flags);
-	void *dummy_memAlloc(uarch_t nPages);
+	void *dummy_memAlloc(uarch_t nPages, uarch_t flags);
 	void *real_memRegionAlloc(ubit8 regionId, uarch_t nPages);
-	void *dummy_memRegionAlloc(ubit8 regionId, void *vaddr);
+	void *dummy_memRegionAlloc(ubit8 regionId, uarch_t nPages);
 
 private:
 	stackCacheC<void *>	allocCache;

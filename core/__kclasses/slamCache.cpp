@@ -24,7 +24,7 @@ error_t slamCacheC::initialize(uarch_t objectSize)
 
 	freeList.rsrc = reinterpret_cast<object *>(
 		(memoryTrib.__kmemoryStream.*
-			memoryTrib.__kmemoryStream.memAlloc)(1));
+			memoryTrib.__kmemoryStream.memAlloc)(1, 0));
 
 	// Calculate the excess on each page allocated.
 	perPageExcess = PAGING_BASE_SIZE % objectSize;
@@ -93,7 +93,7 @@ void *slamCacheC::allocate(void)
 		if (tmp == __KNULL)
 		{
 			tmp = new ((memoryTrib.__kmemoryStream
-				.*memoryTrib.__kmemoryStream.memAlloc)(1))
+				.*memoryTrib.__kmemoryStream.memAlloc)(1, 0))
 				slamCacheC::object;
 
 			if (tmp == __KNULL)
@@ -103,7 +103,7 @@ void *slamCacheC::allocate(void)
 			};
 		};
 
-		// Break the new block from the free list down.
+		// Break up the new block from the free list.
 		for (uarch_t i=0; i<perPageBlocks-1; i++)
 		{
 #ifdef CONFIG_HEAP_SLAM_DEBUG

@@ -19,7 +19,7 @@ error_t debugBufferC::initialize(void)
 	uarch_t		pageCount = 0;
 
 	mem = new ((memoryTrib.__kmemoryStream.*
-		memoryTrib.__kmemoryStream.memAlloc)(1))
+		memoryTrib.__kmemoryStream.memAlloc)(1, 0))
 			debugBufferC::buffPageS;
 
 	if (mem == __KNULL) {
@@ -38,7 +38,7 @@ error_t debugBufferC::initialize(void)
 	for (uarch_t i=0; i<DEBUGBUFFER_INIT_NPAGES-1; i++)
 	{
 		mem2->next = new ((memoryTrib.__kmemoryStream.*
-			memoryTrib.__kmemoryStream.memAlloc)(1))
+			memoryTrib.__kmemoryStream.memAlloc)(1, 0))
 				debugBufferC::buffPageS;
 
 		if (mem2->next == __KNULL) {

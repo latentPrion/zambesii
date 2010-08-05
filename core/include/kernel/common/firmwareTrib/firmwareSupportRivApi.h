@@ -39,7 +39,7 @@ status_t numaTrib_fragmentedGetFrames(uarch_t nFrames, uarch_t *paddr);
 void numaTrib_releaseFrames(uarch_t paddr, uarch_t nFrames);
 
 // Kernel Memory Stream interface.
-void *__kmemoryStream_memAlloc(uarch_t nPages);
+void *__kmemoryStream_memAlloc(uarch_t nPages, uarch_t opts);
 void __kmemoryStream_memFree(void *vaddr);
 
 // Memory Tributary interface. Use sparingly. Prefer the __kmemoryStream* API.

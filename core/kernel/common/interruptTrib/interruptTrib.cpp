@@ -5,6 +5,8 @@
 
 void interruptTribC::irqMain(taskContextS *regs)
 {
+	__kdebug.printf(NOTICE"Interrupt Trib: CPU %d: Entry from vector %d.\n",
+		regs->vectorNo, cpuTrib.getCurrentCpuStream()->cpuId);
 	// Calls ISRs, then exit.
 }
 

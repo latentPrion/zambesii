@@ -51,10 +51,10 @@ void numaTrib_releaseFrames(uarch_t paddr, uarch_t nFrames)
 	numaTrib.releaseFrames(paddr, nFrames);
 }
 
-void *__kmemoryStream_memAlloc(uarch_t nPages)
+void *__kmemoryStream_memAlloc(uarch_t nPages, uarch_t opts)
 {
 	return (memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(nPages);
+		.*memoryTrib.__kmemoryStream.memAlloc)(nPages, opts);
 }
 
 void __kmemoryStream_memFree(void *vaddr)

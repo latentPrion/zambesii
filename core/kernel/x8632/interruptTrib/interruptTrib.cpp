@@ -52,7 +52,7 @@ error_t interruptTribC::initialize(void)
 	 * need to do any inline ASM stuff since the symbol x8632IdtPtr is
 	 * a global symbol.
 	 **/
-	asm volatile("lidt	(x8632IdtPtr)");
+	asm volatile("lidt	(x8632IdtPtr)\n\t");
 
 	// If we haven't got a 3xfault, then we've essentially succeeded.
 	return ERROR_SUCCESS;
