@@ -65,7 +65,7 @@ public:
 	void bind(void);
 	void dump(void);
 
-	void *real_memAlloc(uarch_t nPages, uarch_t flags);
+	void *real_memAlloc(uarch_t nPages, uarch_t flags=0);
 	void *dummy_memAlloc(uarch_t nPages, uarch_t flags);
 	void *real_memRegionAlloc(ubit8 regionId, uarch_t nPages);
 	void *dummy_memRegionAlloc(ubit8 regionId, uarch_t nPages);

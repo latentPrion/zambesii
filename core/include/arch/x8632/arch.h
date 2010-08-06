@@ -12,5 +12,7 @@
 #define ARCH_LONG_STRING	"Intel IA-32 architecture compatible"
 #define ARCH_PATH		x8632
 
+#define ARCH___KSTACK_NPAGES	2
+
 #endif
 

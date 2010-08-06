@@ -1,5 +1,6 @@
 
 #include <__ksymbols.h>
+#include <arch/paging.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__ktypes.h>
@@ -16,14 +17,15 @@
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <firmware/x86emu.h>
 
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	void		(**ctorPtr)(), *mem1, *mem2, *mem3;
-	paddr_t		p;
+	void		(**ctorPtr)();
+	x86emu		*lm;
 
 	__koptimizationHacks();
 
@@ -93,31 +95,12 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	(memoryTrib.__kmemoryStream.*memoryTrib.__kmemoryStream.memAlloc)(\
 		nPages, opt)
 
-	mem1 = vaddrSpaceStreamAlloc(4);
-	mem2 = vaddrSpaceStreamAlloc(32);
-	mem3 = vaddrSpaceStreamAlloc(2);
+	lm = new (memAlloc(PAGING_BYTES_TO_PAGES(sizeof(struct x86emu)), 0))
+		x86emu;
 
-	vaddrSpaceStreamFree(mem2, 32);
-	vaddrSpaceStreamFree(mem3, 2);
-	vaddrSpaceStreamFree(mem1, 4);
+	__kdebug.printf(NOTICE"Struct x86emu: size: %dB, v: 0x%p.\n",
+		sizeof(struct x86emu), lm);
 
-	mem1 = vaddrSpaceStreamAlloc(0x3FACA);
-	mem2 = vaddrSpaceStreamAlloc(0x24);
-	mem3 = vaddrSpaceStreamAlloc(0x2);
-	vaddrSpaceStreamAlloc(1);
-	vaddrSpaceStreamFree(mem2, 0x24);
-	vaddrSpaceStreamFree(mem3, 0x2);
-	vaddrSpaceStreamFree(mem1, 0x3FACA);
-
-	numaTrib.fragmentedGetFrames(1, &p);
-	numaTrib.releaseFrames(p, 1);
-	numaTrib.fragmentedGetFrames(32, &p);
-	numaTrib.fragmentedGetFrames(32, &p);
-	memoryTrib.__kmemoryStream.dump();
-
-	mem1 = memAlloc(4, 0);
-	*(ubit32 *)mem1 = 5;
-	memoryTrib.__kmemoryStream.memFree(mem1);
-	mem1 = memAlloc(1, 0);
+	x86emu_init_default(lm);
 }
 
