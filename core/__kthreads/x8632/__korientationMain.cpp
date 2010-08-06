@@ -17,6 +17,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
+
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;

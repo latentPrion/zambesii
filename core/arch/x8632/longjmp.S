@@ -18,6 +18,12 @@ ASM_GLOBAL_FUNCTION(longjmp)
 	movl	24(%eax), %esi
 	movl	28(%eax), %edi
 
+	/* Restore the old return EIP value onto the stack since it magically
+	 * gets trampled (I don't know either). FreeBSD does the same, so
+	 * there's apparently some reason for this random crap.
+	 */
+	movl	(%eax), %eax
+	movl	%eax, 4(%esp)
 	/* Move the retval into EAX */
 	popl	%eax
 ret
