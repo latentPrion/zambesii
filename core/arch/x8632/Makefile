@@ -5,7 +5,7 @@ OBJFILES=wPRanger_mapInc.o wPRanger_mapNoInc.o wPRanger_remapInc.o \
 	wPRanger_unmap.o wPRanger_getLevelRanges.o wPRanger_accessors.o \
 	wPRanger_convertFlags.o \
 	tlbControl.o \
-	gdt.o idt.o vectorHandlers.o
+	gdt.o idt.o vectorHandlers.o longjmp.o
 
 all: Makefile $(DELIVERABLE)
 
@@ -15,6 +15,10 @@ $(DELIVERABLE): $(OBJFILES)
 vectorHandlers.o: vectorHandlersTmp.s
 vectorHandlersTmp.s: vectorHandlers.S
 	$(CPP) $(CPPFLAGS) vectorHandlers.S >$@
+
+longjmp.o: longjmpTmp.s
+longjmpTmp.s: longjmp.S
+	$(CPP) $(CPPFLAGS) longjmp.S >$@
 
 clean: fonyphile
 	rm -rf *.o *.s

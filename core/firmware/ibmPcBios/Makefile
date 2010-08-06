@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../firmwareCore.a
-OBJFILES=firmwareStream.o
+OBJFILES=firmwareStream.o x86emu.o x86emu_util.o
 
 all: Makefile $(DELIVERABLE)
 

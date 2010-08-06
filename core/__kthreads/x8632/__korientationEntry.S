@@ -42,6 +42,7 @@ ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	movw	%cx, %es
 	movw	%cx, %fs
 	movw	%cx, %gs
+	movw	%cx, %ss
 	ljmp	$0x08, $.loadAX
 
 .loadAX:

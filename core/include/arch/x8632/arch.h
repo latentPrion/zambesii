@@ -3,6 +3,7 @@
 
 #define __x86_32__
 #define __32_BIT__
+#define __LITTLE_ENDIAN__
 #define __BITS_PER_BYTE__	8
 
 #define __WORDSIZE		32

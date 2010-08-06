@@ -12,7 +12,7 @@ export \
 	ZAR='i586-elf-ar' \
 	\
 	ZCPPFLAGS='-I/void/cygwin/osdev/zbz/include -I/void/cygwin/osdev/zbz/core/include' \
-	ZCCFLAGS='-O3 -Wall -Wextra -pedantic' \
+	ZCCFLAGS='-O3 -Wall -Wextra -pedantic std=c99' \
 	ZCXXFLAGS='-O3 -Wall -Wextra -pedantic -Wno-long-long -fno-exceptions -fno-rtti' \
 	ZASFLAGS=''\
 	ZLDFLAGS='-nostdlib -nostartfiles -nodefaultlibs' \
@@ -27,7 +27,7 @@ export \
 	LAR='ar' \
 	\
 	LCPPFLAGS='' \
-	LCCFLAGS='-O3 -Wall -Extra -pedantic' \
+	LCCFLAGS='-O3 -Wall -Extra -pedantic -std=c99' \
 	LCXXFLAGS='-Wall -Wextra -pedantic -O3' \
 	LASFLAGS=''\
 	LLDFLAGS='-nostdlib -nostartfiles -nodefaultlibs' \

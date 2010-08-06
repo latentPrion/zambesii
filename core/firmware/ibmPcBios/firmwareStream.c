@@ -8,6 +8,7 @@ struct firmwareStreamS		firmwareFwStream =
 	__KNULL,
 	__KNULL,
 	__KNULL,
+	__KNULL,
 	__KNULL
 };
 
