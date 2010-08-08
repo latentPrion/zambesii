@@ -1,6 +1,8 @@
 #ifndef _WATCHDOG_SUPPORT_RIVULET_H
 	#define _WATCHDOG_SUPPORT_RIVULET_H
 
+	#include <__kstdlib/__ktypes.h>
+
 /**	EXPLANATION:
  * Watchdog Firmware Support Rivulet API.
  *
@@ -28,7 +30,7 @@
 #define WATCHDOG_ACTION_SHUTDOWN	0x1
 #define WATCHDOG_ACTION_DO_NOTHING	0x2
 
-struct watchdogSupportRivS
+struct watchdogRivS
 {
 	// ISR to feed the watchdog.
 	status_t (*isr)();

@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-struct debugSupportRivS
+struct debugRivS
 {
 	// Basic control.
 	error_t	(*initialize)(void);

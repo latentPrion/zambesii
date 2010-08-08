@@ -95,12 +95,12 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	(memoryTrib.__kmemoryStream.*memoryTrib.__kmemoryStream.memAlloc)(\
 		nPages, opt)
 
-	lm = new (memAlloc(PAGING_BYTES_TO_PAGES(sizeof(struct x86emu)), 0))
-		x86emu;
+//	lm = new (memAlloc(PAGING_BYTES_TO_PAGES(sizeof(struct x86emu)), 0))
+//		x86emu;
 
-	__kdebug.printf(NOTICE"Struct x86emu: size: %dB, v: 0x%p.\n",
-		sizeof(struct x86emu), lm);
+//	__kdebug.printf(NOTICE"Struct x86emu: size: %dB, v: 0x%p.\n",
+//		sizeof(struct x86emu), lm);
 
-	x86emu_init_default(lm);
+//	x86emu_init_default(lm);
 }
 

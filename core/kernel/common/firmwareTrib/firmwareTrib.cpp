@@ -19,11 +19,11 @@ error_t firmwareTribC::initialize(void)
 {
 	memset(this, 0, sizeof(*this));
 
-	FIRMWARETRIB_CHOOSE(watchdogSupportRiv);
-	FIRMWARETRIB_CHOOSE(debugSupportRiv1);
-	FIRMWARETRIB_CHOOSE(debugSupportRiv2);
-	FIRMWARETRIB_CHOOSE(debugSupportRiv3);
-	FIRMWARETRIB_CHOOSE(debugSupportRiv4);
+	FIRMWARETRIB_CHOOSE(watchdogRiv);
+	FIRMWARETRIB_CHOOSE(debugRiv1);
+	FIRMWARETRIB_CHOOSE(debugRiv2);
+	FIRMWARETRIB_CHOOSE(debugRiv3);
+	FIRMWARETRIB_CHOOSE(debugRiv4);
 	return ERROR_SUCCESS;
 }
 
@@ -31,28 +31,28 @@ firmwareTribC::~firmwareTribC(void)
 {
 }
 
-debugSupportRivS *firmwareTribC::getDebugSupportRiv1(void)
+debugRivS *firmwareTribC::getDebugRiv1(void)
 {
-	return descriptor.debugSupportRiv1;
+	return descriptor.debugRiv1;
 }
 
-debugSupportRivS *firmwareTribC::getDebugSupportRiv2(void)
+debugRivS *firmwareTribC::getDebugRiv2(void)
 {
-	return descriptor.debugSupportRiv2;
+	return descriptor.debugRiv2;
 }
 
-debugSupportRivS *firmwareTribC::getDebugSupportRiv3(void)
+debugRivS *firmwareTribC::getDebugRiv3(void)
 {
-	return descriptor.debugSupportRiv3;
+	return descriptor.debugRiv3;
 }
 
-debugSupportRivS *firmwareTribC::getDebugSupportRiv4(void)
+debugRivS *firmwareTribC::getDebugRiv4(void)
 {
-	return descriptor.debugSupportRiv4;
+	return descriptor.debugRiv4;
 }
 
-watchdogSupportRivS *firmwareTribC::getWatchdogSupportRiv(void)
+watchdogRivS *firmwareTribC::getWatchdogRiv(void)
 {
-	return descriptor.watchdogSupportRiv;
+	return descriptor.watchdogRiv;
 }
 

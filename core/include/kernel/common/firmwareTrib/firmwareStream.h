@@ -2,8 +2,8 @@
 	#define _FIRMWARE_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <kernel/common/firmwareTrib/watchdogSupportRiv.h>
-	#include <kernel/common/firmwareTrib/debugSupportRiv.h>
+	#include <kernel/common/firmwareTrib/watchdogRiv.h>
+	#include <kernel/common/firmwareTrib/debugRiv.h>
 
 /**	EXPLANATION:
  * The Firmware stream is a presentation layer for all the rivulets on either
@@ -31,11 +31,11 @@
 
 struct firmwareStreamS
 {
-	struct watchdogSupportRivS	*watchdogSupportRiv;
-	struct debugSupportRivS		*debugSupportRiv1;
-	struct debugSupportRivS		*debugSupportRiv2;
-	struct debugSupportRivS		*debugSupportRiv3;
-	struct debugSupportRivS		*debugSupportRiv4;
+	struct watchdogRivS	*watchdogSupportRiv;
+	struct debugRivS	*debugSupportRiv1;
+	struct debugRivS	*debugSupportRiv2;
+	struct debugRivS	*debugSupportRiv3;
+	struct debugRivS	*debugSupportRiv4;
 };
 
 extern struct firmwareStreamS		firmwareFwStream;
