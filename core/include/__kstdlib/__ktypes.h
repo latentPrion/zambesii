@@ -4,7 +4,7 @@
 	#include <arch/arch.h>
 	#include <__kstdlib/__kerror.h>
 	#include <__kstdlib/compiler/stdint.h>
-	#include <__kstdlib/__kstddef.h>
+	#include <__kstdlib/__kclib/stddef.h>
 
 #ifndef __ASM__
 

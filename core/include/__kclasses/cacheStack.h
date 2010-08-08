@@ -3,7 +3,7 @@
 
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
-	#include <__kstdlib/__kcxxlib/cstring>
+	#include <__kstdlib/__kclib/string.h>
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 

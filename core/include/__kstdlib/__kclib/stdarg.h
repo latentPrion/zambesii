@@ -1,7 +1,7 @@
 #ifndef _VARIADIC_ARGS_H
 	#define _VARIADIC_ARGS_H
 
-typedef	void* va_list;
+typedef	void * va_list;
 
 #define va_start(vaContainer,firstArg)		\
 	vaContainer = (void *)&firstArg

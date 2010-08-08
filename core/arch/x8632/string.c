@@ -3,20 +3,20 @@
 
 void *memset(void *_ptr, int value, size_t count)
 {
-	ubit8	*ptr = reinterpret_cast<ubit8 *>( _ptr );
+	ubit8	*ptr = (ubit8 *)_ptr;
 
 	if (ptr == __KNULL) { return ptr; };
 
 	while (count--) {
-		*ptr++ = static_cast<ubit8>( value );
+		*ptr++ = (ubit8)value;
 	};
 	return ptr;
 }
 
 void *memcpy(void *_dest, void *_src, size_t count)
 {
-	ubit8		*dest=reinterpret_cast<ubit8 *>( _dest ),
-				*src=reinterpret_cast<ubit8 *>( _src );
+	ubit8		*dest=(ubit8 *)_dest;
+	ubit8		*src=(ubit8 *)_src;
 
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 

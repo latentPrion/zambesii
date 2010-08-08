@@ -2,7 +2,7 @@
 	#define _STRING_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <__kstdlib/size_t.h>
+	#include <__kstdlib/__kclib/size_t.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -7,7 +7,6 @@
 	#include <chipset/__kmemory.h>
 	#include <chipset/regionMap.h>
 	#include <__kstdlib/__ktypes.h>
-	#include <__kstdlib/__kcxxlib/cstring>
 	#include <__kclasses/memBmp.h>
 	#include <__kclasses/pageTableCache.h>
 	#include <kernel/common/tributary.h>
