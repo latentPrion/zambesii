@@ -16,7 +16,7 @@
  *
  * Eventually, the services supported by the kernel through this interface
  * will be:
- *	* !Watchdog management.
+ *	* Watchdog management.
  *	* Up to four debug devices or services.
  *	* !Memory and !NUMA detection.
  *	* !Power management.
@@ -31,6 +31,11 @@
 
 struct firmwareStreamS
 {
+	void (*initialize)(void);
+	void (*shutdown)(void);
+	void (*suspend)(void);
+	void (*awake)(void);
+
 	struct watchdogRivS	*watchdogRiv;
 	struct debugRivS	*debugRiv1;
 	struct debugRivS	*debugRiv2;
