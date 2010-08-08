@@ -9,8 +9,6 @@ clean: fonyphile
 	cd __kclasses; make clean
 	cd __kstdlib; make clean
 	cd __kstdlib/__kcxxabi; make clean
-	cd __kstdlib/__kcxxlib; make clean
-	cd __kstdlib/__kclib; make clean
 	cd __kthreads; make clean
 	cd __kthreads/$(ZARCH); make clean
 	cd kernel/common; make clean

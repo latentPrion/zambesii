@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../../firmwareTrib.a
-OBJFILES=rivMemoryApi.o firmwareTrib.o
+OBJFILES=rivMemoryApi.o rivIoApi.o firmwareTrib.o
 
 all: Makefile $(DELIVERABLE)
 

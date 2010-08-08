@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../__kclib.a
-OBJFILES=string.o
+OBJFILES=
 
 all: Makefile $(DELIVERABLE)
 

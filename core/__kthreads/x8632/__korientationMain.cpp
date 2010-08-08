@@ -5,7 +5,7 @@
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kflagManipulation.h>
-#include <__kstdlib/__kcxxlib/cstring>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kthreads/__korientation.h>

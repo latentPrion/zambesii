@@ -1,5 +1,5 @@
 
-#include <__kstdlib/__kcxxlib/cstring>
+#include <__kstdlib/__kclib/string.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/firmwareTrib/firmwareStream.h>
 

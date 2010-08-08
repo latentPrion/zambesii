@@ -31,11 +31,11 @@
 
 struct firmwareStreamS
 {
-	struct watchdogRivS	*watchdogSupportRiv;
-	struct debugRivS	*debugSupportRiv1;
-	struct debugRivS	*debugSupportRiv2;
-	struct debugRivS	*debugSupportRiv3;
-	struct debugRivS	*debugSupportRiv4;
+	struct watchdogRivS	*watchdogRiv;
+	struct debugRivS	*debugRiv1;
+	struct debugRivS	*debugRiv2;
+	struct debugRivS	*debugRiv3;
+	struct debugRivS	*debugRiv4;
 };
 
 extern struct firmwareStreamS		firmwareFwStream;
