@@ -11,7 +11,6 @@ __korientationEntry.o: __korientationEntryTmp.s
 __korientationEntryTmp.s: __korientationEntry.S
 	$(CPP) $(CPPFLAGS) __korientationEntry.S >$@
 
-
 clean: fonyphile
 	rm -rf *.o *.s
 

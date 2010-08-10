@@ -6,6 +6,7 @@
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kthreads/__korientation.h>
@@ -70,5 +71,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kdebug.refresh();
 	__kprintf(NOTICE"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
+
+	assert_warn(0 == 1);
 }
 
