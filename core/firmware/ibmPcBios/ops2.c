@@ -61,7 +61,7 @@ static void x86emuOp2_illegal_op(
 	START_OF_INSTR();
 	DECODE_PRINTF("ILLEGAL EXTENDED X86 OPCODE\n");
 	TRACE_REGS();
-	printk("%04x:%04x: %02X ILLEGAL EXTENDED X86 OPCODE!\n",
+	rivPrintf("%04x:%04x: %02X ILLEGAL EXTENDED X86 OPCODE!\n",
 		M.x86.R_CS, M.x86.R_IP-2,op2);
     HALT_SYS();
     END_OF_INSTR();
@@ -110,7 +110,7 @@ Handles opcode 0x0f,0x80-0x8F
 static void x86emuOp2_long_jump(u8 op2)
 {
     s32 target;
-    char *name = NULL;
+    char *name = __KNULL;
     int cond = 0;
 
     /* conditional jump to word offset. */
@@ -204,7 +204,7 @@ static void x86emuOp2_set_byte(u8 op2)
     int mod, rl, rh;
     uint destoffset;
     u8  *destreg;
-    char *name = NULL;
+    char *name = __KNULL;
     int cond = 0;
 
     START_OF_INSTR();
@@ -1812,7 +1812,7 @@ static void x86emuOp2_btX_I(u8 X86EMU_UNUSED(op2))
     default:
 	DECODE_PRINTF("ILLEGAL EXTENDED X86 OPCODE\n");
 	TRACE_REGS();
-	printk("%04x:%04x: %02X%02X ILLEGAL EXTENDED X86 OPCODE EXTENSION!\n",
+	rivPrintf("%04x:%04x: %02X%02X ILLEGAL EXTENDED X86 OPCODE EXTENSION!\n",
 		M.x86.R_CS, M.x86.R_IP-3,op2, (mod<<6)|(rh<<3)|rl);
 	HALT_SYS();
     }

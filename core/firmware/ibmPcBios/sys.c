@@ -33,10 +33,10 @@
 * Developer:    Kendall Bennett
 *
 * Description:  This file includes subroutines which are related to
-*				programmed I/O and memory access. Included in this module
-*				are default functions with limited usefulness. For real
-*				uses these functions will most likely be overriden by the
-*				user library.
+*		programmed I/O and memory access. Included in this module
+*		are default functions with limited usefulness. For real
+*		uses these functions will most likely be overriden by the
+*		user library.
 *
 ****************************************************************************/
 
@@ -45,9 +45,8 @@
 #include "x86emu/regs.h"
 #include "x86emu/debug.h"
 #include "x86emu/prim_ops.h"
-#ifndef NO_SYS_HEADERS
-#include <string.h>
-#endif                                                                                           
+
+#include <__kstdlib/__kclib/string.h>
 
 # ifndef NO_INLINE
 #  ifdef __GNUC__
@@ -488,7 +487,7 @@ void X86EMU_setupIntrFuncs(
     int i;
     
 	for (i=0; i < 256; i++)
-		_X86EMU_intrTab[i] = NULL;
+		_X86EMU_intrTab[i] = __KNULL;
 	if (funcs) {
 		for (i = 0; i < 256; i++)
 			_X86EMU_intrTab[i] = funcs[i];

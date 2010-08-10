@@ -1,5 +1,11 @@
 
-#include <__kstdlib/__kcxxabi/dso.h>
+#define CXXABI_ATEXIT_MAX_NFUNCS 64
+
+struct atexitFuncTableEntryS
+{
+	void (*func)(void *);
+	void *arg, *dsoHandle;
+} atexitFuncTable[ CXXABI_ATEXIT_MAX_NFUNCS ];
 
 void * __dso_handle = 0;
 
@@ -24,33 +30,44 @@ extern "C" int __cxa_atexit(
 	return -1;
 }
 
-/* __cxa_finalize(): Calls a function in the list if given a pointer, or calls all destructors if passed a null pointer.
+/* __cxa_finalize(): Calls a function in the list if given a pointer,
+ * or calls all destructors if passed a null pointer.
  **/
 extern "C" void __cxa_finalize(void *dsoHandle)
 {
-	//Function 1: Destroy all of a particular DSO's objects.
+	// Function 1: Destroy all of a particular DSO's objects.
 	if (dsoHandle != 0)
 	{
-		//Run through the list and find all entries with the DSO handle passed to us.
+		// Run through and find all entries with passed DSO handle.
 		for (int i=0; i<CXXABI_ATEXIT_MAX_NFUNCS; i++)
 		{
 			if (atexitFuncTable[i].dsoHandle == dsoHandle)
 			{
-				//If the DSO handle matches, call the function with its registered arg, and remove it from the list.
+				// If handle matches, call function with arg.
 				(*atexitFuncTable[i].func)(
 					atexitFuncTable[i].arg
 					);
 				
-				//To remove a function from the list, we bring all the rest of the functions one index up.
+				// To remove, bring the rest one index up.
 				int j=i;
-				if ((j < CXXABI_ATEXIT_MAX_NFUNCS - 1) && (atexitFuncTable[j+1].func != 0))
+				if ((j < CXXABI_ATEXIT_MAX_NFUNCS - 1) 
+					&& (atexitFuncTable[j+1].func != 0))
 				{
 					while (j < CXXABI_ATEXIT_MAX_NFUNCS - 1)
 					{
-						//A memcpy() would be faster here.
-						atexitFuncTable[j].func = atexitFuncTable[j+1].func;
-						atexitFuncTable[j].arg = atexitFuncTable[j+1].arg;
-						atexitFuncTable[j].dsoHandle = atexitFuncTable[j+1].dsoHandle;
+						// memcpy() may be faster here.
+						atexitFuncTable[j].func =
+							atexitFuncTable[j+1]
+								.func;
+
+						atexitFuncTable[j].arg =
+							atexitFuncTable[j+1]
+								.arg;
+
+						atexitFuncTable[j].dsoHandle =
+							atexitFuncTable[j+1]
+								.dsoHandle;
+
 						atexitFuncTable[j+1].func = 0;
 						j++;
 					};
@@ -58,7 +75,7 @@ extern "C" void __cxa_finalize(void *dsoHandle)
 			};
 		};
 	}
-	//Function 2: Call and destroy every object in the table.
+	// Function 2: Call and destroy every object in the table.
 	else
 	{
 		for (int i=0; i<CXXABI_ATEXIT_MAX_NFUNCS; i++)

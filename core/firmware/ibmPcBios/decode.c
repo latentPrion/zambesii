@@ -37,7 +37,7 @@
 *
 ****************************************************************************/
 
-#include <stdlib.h>
+// #include <stdlib.h>
 #include "x86emu/x86emui.h"
 
 /*----------------------------- Implementation ----------------------------*/
@@ -588,7 +588,7 @@ u8* decode_rm_byte_register(
 		return &M.x86.R_BH;
 	}
 	HALT_SYS();
-	return NULL;                /* NOT REACHED OR REACHED ON ERROR */
+	return __KNULL;                /* NOT REACHED OR REACHED ON ERROR */
 }
 
 /****************************************************************************
@@ -632,7 +632,7 @@ u16* decode_rm_word_register(
 		return &M.x86.R_DI;
 	}
 	HALT_SYS();
-    return NULL;                /* NOTREACHED OR REACHED ON ERROR */
+    return __KNULL;                /* NOTREACHED OR REACHED ON ERROR */
 }
 
 /****************************************************************************
@@ -676,7 +676,7 @@ u32* decode_rm_long_register(
 		return &M.x86.R_EDI;
 	}
 	HALT_SYS();
-    return NULL;                /* NOTREACHED OR REACHED ON ERROR */
+    return __KNULL;                /* NOTREACHED OR REACHED ON ERROR */
 }
 
 /****************************************************************************
@@ -719,7 +719,7 @@ u16* decode_rm_seg_register(
 		break;
 	}
 	HALT_SYS();
-	return NULL;                /* NOT REACHED OR REACHED ON ERROR */
+	return __KNULL;                /* NOT REACHED OR REACHED ON ERROR */
 }
 
 /*

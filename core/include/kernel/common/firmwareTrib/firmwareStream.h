@@ -31,10 +31,10 @@
 
 struct firmwareStreamS
 {
-	void (*initialize)(void);
-	void (*shutdown)(void);
-	void (*suspend)(void);
-	void (*awake)(void);
+	error_t (*initialize)(void);
+	error_t (*shutdown)(void);
+	error_t (*suspend)(void);
+	error_t (*awake)(void);
 
 	struct watchdogRivS	*watchdogRiv;
 	struct debugRivS	*debugRiv1;

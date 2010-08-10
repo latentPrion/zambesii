@@ -33,8 +33,8 @@
 * Developer:    Kendall Bennett
 *
 * Description:  Header file for system specific functions. These functions
-*				are always compiled and linked in the OS depedent libraries,
-*				and never in a binary portable driver.
+*		are always compiled and linked in the OS depedent libraries,
+*		and never in a binary portable driver.
 *
 ****************************************************************************/
 
@@ -61,20 +61,19 @@
 #define	X86EMU_UNUSED(v)	v
 #endif
 
-#include "x86emu.h"
-#include "x86emu/regs.h"
-#include "x86emu/debug.h"
-#include "x86emu/decode.h"
-#include "x86emu/ops.h"
-#include "x86emu/prim_ops.h"
-#include "x86emu/fpu.h"
-#include "x86emu/fpu_regs.h"
+#include "../x86emu.h"
+#include "regs.h"
+#include "debug.h"
+#include "decode.h"
+#include "ops.h"
+#include "prim_ops.h"
+#include "fpu.h"
+#include "fpu_regs.h"
 
-#ifndef NO_SYS_HEADERS
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#endif                                                                                           
+//#include <stdlib.h>
+#include <__kstdlib/__kclib/string.h>
+#include <kernel/common/firmwareTrib/rivDebugApi.h>
+
 /*--------------------------- Inline Functions ----------------------------*/
 
 #ifdef  __cplusplus

@@ -1,5 +1,5 @@
 
-#include <__kstdlib/__kcxxlib/cstring>
+#include <__kstdlib/__kclib/string.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/kernel_include.h>
 

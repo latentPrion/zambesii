@@ -1,6 +1,6 @@
 
 #include <__kstdlib/__kflagManipulation.h>
-#include <__kstdlib/__kcxxlib/cstring>
+#include <__kstdlib/__kclib/string.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 
 timerTribC::timerTribC(void)

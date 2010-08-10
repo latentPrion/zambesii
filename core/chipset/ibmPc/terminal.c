@@ -1,7 +1,7 @@
 
 #include <__kstdlib/__ktypes.h>
-#include <kernel/common/firmwareTrib/firmwareSupportRivApi.h>
-#include <kernel/common/firmwareTrib/debugSupportRiv.h>
+#include <kernel/common/firmwareTrib/rivMemoryApi.h>
+#include <kernel/common/firmwareTrib/debugRiv.h>
 
 struct ibmPc_terminal_fbS
 {
@@ -170,7 +170,7 @@ void ibmPc_terminal_clear(void)
 	row = col = 0;
 }
 
-struct debugSupportRivS ibmPc_terminal =
+struct debugRivS ibmPc_terminal =
 {
 	&ibmPc_terminal_initialize,
 	&ibmPc_terminal_shutdown,

@@ -38,12 +38,10 @@
 ****************************************************************************/
 
 #include "x86emu/x86emui.h"
-#include <stdio.h>
-#include <string.h>
-#ifndef NO_SYS_HEADERS
-#include <stdarg.h>
-#include <stdlib.h>
-#endif
+#include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/stdarg.h>
+#include <kernel/common/firmwareTrib/rivDebugApi.h>
+//#include <stdlib.h>
 
 /*----------------------------- Implementation ----------------------------*/
 
@@ -141,7 +139,7 @@ static void disassemble_forward (u16 seg, u16 off, int n)
 
 void x86emu_check_ip_access (void)
 {
-    /* NULL as of now */
+    /* __KNULL as of now */
 }
 
 void x86emu_check_sp_access (void)

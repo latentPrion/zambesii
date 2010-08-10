@@ -30,14 +30,14 @@ void waitLock_destroy(void *wl)
 
 void waitLock_acquire(void *wl)
 {
-	if (wl->magic == LOCK_MAGIC) {
+	if (static_cast<waitLockC *>( wl )->magic == LOCK_MAGIC) {
 		static_cast<waitLockC *>( wl )->acquire();
 	};
 }
 
 void waitLock_release(void *wl)
 {
-	if (wl->magic == LOCK_MAGIC) {
+	if (static_cast<waitLockC *>( wl )->magic == LOCK_MAGIC) {
 		static_cast<waitLockC *>( wl )->release();
 	};
 }
@@ -58,7 +58,7 @@ void *recursiveLock_create(void)
 
 void recursiveLock_destroy(void *rl)
 {
-	if (rl == __KNULL) {
+	if (static_cast<recursiveLockC *>( rl ) == __KNULL) {
 		return;
 	}
 
@@ -67,14 +67,14 @@ void recursiveLock_destroy(void *rl)
 
 void recursiveLock_acquire(void *rl)
 {
-	if (rl->magic == LOCK_MAGIC) {
+	if (static_cast<recursiveLockC *>( rl )->magic == LOCK_MAGIC) {
 		static_cast<recursiveLockC *>( rl )->acquire();
 	};
 }
 
 void recursiveLock_release(void *rl)
 {
-	if (rl->magic == LOCK_MAGIC) {
+	if (static_cast<recursiveLockC *>( rl )->magic == LOCK_MAGIC) {
 		static_cast<recursiveLockC *>( rl )->release();
 	};
 }

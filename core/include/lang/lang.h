@@ -5,7 +5,7 @@
 
 /**	EXPLANATION:
  * These are all expected to all be printf() compatible strings in UTF-8. That
- * is, they should be able to be used with __kdebug.printf() without any
+ * is, they should be able to be used with __kprintf() without any
  * problems. In fact, they are all very much standardized, and each index has
  * a specific name (given by the preprocessor token), and is a printf format
  * string.

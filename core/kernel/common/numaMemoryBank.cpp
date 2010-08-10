@@ -59,14 +59,14 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 	if (frameCache.pop(nPages, paddr) == ERROR_SUCCESS)
 	{
 		// FIXME: Passing a paddr_t to printf is asking for trouble.
-		__kdebug.printf(NOTICE"numaMemoryBank: contiguousGetFrames(%d) "
+		__kprintf(NOTICE"numaMemoryBank: contiguousGetFrames(%d) "
 			"returning %p from cache.\n", nPages, *paddr);
 
 		return ERROR_SUCCESS;
 	};
 
 	// Frame cache allocation failed.
-	__kdebug.printf(NOTICE"numaMemoryBank: contiguousGetFrames(%d): BMP "
+	__kprintf(NOTICE"numaMemoryBank: contiguousGetFrames(%d): BMP "
 		"allocated, p: %p\n", nPages, *paddr);
 
 	return memBmp.contiguousGetFrames(nPages, paddr);
@@ -90,7 +90,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	{
 		if (frameCache.pop(minPages, paddr) == ERROR_SUCCESS)
 		{
-			__kdebug.printf(NOTICE"numaMemoryBank: fragmentedGetFrames(%d) "
+			__kprintf(NOTICE"numaMemoryBank: fragmentedGetFrames(%d) "
 			"returning %d frames at %p from cache.\n", nPages, minPages, *paddr);
 
 			return minPages;
@@ -100,7 +100,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	// Return whatever we get.
 	ret = memBmp.fragmentedGetFrames(nPages, paddr);
 
-	__kdebug.printf(NOTICE"numaMemoryBank: fragmentedGetFrames(%d): BMP "
+	__kprintf(NOTICE"numaMemoryBank: fragmentedGetFrames(%d): BMP "
 		"allocated, %d pages at p: %p\n", nPages, ret, *paddr);
 
 	return ret;
@@ -111,7 +111,7 @@ void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
 	// Attempt to free to the frame cache.
 	if (frameCache.push(nPages, paddr) == ERROR_SUCCESS)
 	{
-		__kdebug.printf(NOTICE"numaMemoryBank: releaseFrames(%p, %d): "
+		__kprintf(NOTICE"numaMemoryBank: releaseFrames(%p, %d): "
 			"freeing to cache.\n", paddr, nPages);
 
 		return;
@@ -120,7 +120,7 @@ void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
 	// Bmp free.
 	memBmp.releaseFrames(paddr, nPages);
 
-	__kdebug.printf(NOTICE"numaMemoryBank: releaseFrames(%p, %d): BMP "
+	__kprintf(NOTICE"numaMemoryBank: releaseFrames(%p, %d): BMP "
 		"free: done.\n", paddr, nPages);
 }
 

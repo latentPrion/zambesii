@@ -17,7 +17,6 @@
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
-#include <firmware/x86emu.h>
 
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
@@ -25,7 +24,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	error_t		ret;
 	uarch_t		devMask;
 	void		(**ctorPtr)();
-	x86emu		*lm;
 
 	__koptimizationHacks();
 
@@ -67,14 +65,14 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		for (;;){};
 		if (__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1))
 		{
-			__kdebug.printf(WARNING"No debug buffer allocated.\n");
+			__kprintf(WARNING"No debug buffer allocated.\n");
 		};
 	};
 	__kdebug.refresh();
-	__kdebug.printf(NOTICE"Kernel debug output tied to devices BUFFER and "
+	__kprintf(NOTICE"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
 
-	__kdebug.printf(NOTICE"__korientationMain: __kvaddrSpaceStream: "
+	__kprintf(NOTICE"__korientationMain: __kvaddrSpaceStream: "
 		" tests:\n");
 
 	/**	EXPLANATION:
@@ -98,7 +96,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 //	lm = new (memAlloc(PAGING_BYTES_TO_PAGES(sizeof(struct x86emu)), 0))
 //		x86emu;
 
-//	__kdebug.printf(NOTICE"Struct x86emu: size: %dB, v: 0x%p.\n",
+//	__kprintf(NOTICE"Struct x86emu: size: %dB, v: 0x%p.\n",
 //		sizeof(struct x86emu), lm);
 
 //	x86emu_init_default(lm);

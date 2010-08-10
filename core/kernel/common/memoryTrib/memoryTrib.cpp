@@ -127,7 +127,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages)
 
 			if (nMapped < nFetched)
 			{
-				__kdebug.printf(
+				__kprintf(
 					FATAL"MemoryTrib.rawMemAlloc(%d): "
 					"walkerPageRanger::mapInc() returned "
 					"%d frames mapped.", nPages, nMapped);

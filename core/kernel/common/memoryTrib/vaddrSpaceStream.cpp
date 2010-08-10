@@ -52,12 +52,12 @@ void vaddrSpaceStreamC::cut(void)
 
 void vaddrSpaceStreamC::dump(void)
 {
-	__kdebug.printf(NOTICE"VaddrSpaceStream %X: Binding: %p, "
+	__kprintf(NOTICE"VaddrSpaceStream %X: Binding: %p, "
 		"Level0: v: %p, p: %p\n",
 		id, getPages, vaddrSpace.level0Accessor.rsrc,
 		vaddrSpace.level0Paddr);
 
-	__kdebug.printf(NOTICE"vaddrSpace object: v %X, p %X\n",
+	__kprintf(NOTICE"vaddrSpace object: v %X, p %X\n",
 		vaddrSpace.level0Accessor.rsrc, vaddrSpace.level0Paddr);
 
 	vSwamp.dump();
@@ -75,7 +75,7 @@ void *vaddrSpaceStreamC::real_getPages(uarch_t nPages)
 	// First try to allocate from the page cache.
 	if (pageCache.pop(nPages, &ret) == ERROR_SUCCESS)
 	{
-		__kdebug.printf(NOTICE"vaddrSpaceStream %X: getPages(%d): "
+		__kprintf(NOTICE"vaddrSpaceStream %X: getPages(%d): "
 			"Allocating from cache: v: %p\n", id, nPages, ret);
 
 		return ret;
@@ -85,7 +85,7 @@ void *vaddrSpaceStreamC::real_getPages(uarch_t nPages)
 	 * fails then it means the process simply has no more virtual memory.
 	 **/
 	ret = vSwamp.getPages(nPages);
-	__kdebug.printf(NOTICE"vaddrSpaceStream %X: getPages(%d): Swamp alloc "
+	__kprintf(NOTICE"vaddrSpaceStream %X: getPages(%d): Swamp alloc "
 		"returned v: %p\n", id, nPages, ret);
 
 	return ret;
@@ -95,7 +95,7 @@ void vaddrSpaceStreamC::releasePages(void *vaddr, uarch_t nPages)
 {
 	// First try to free to the page cache.
 	if (pageCache.push(nPages, vaddr) == ERROR_SUCCESS) {
-		__kdebug.printf(NOTICE"vaddrSpaceStream %X: "
+		__kprintf(NOTICE"vaddrSpaceStream %X: "
 			"releasePages(%p, %d): pushing to cache.\n",
 			id, vaddr, nPages);
 
@@ -104,7 +104,7 @@ void vaddrSpaceStreamC::releasePages(void *vaddr, uarch_t nPages)
 
 	// Cache free failed. Cache is full. Free to the swamp.
 	vSwamp.releasePages(vaddr, nPages);
-	__kdebug.printf(NOTICE"vaddrSpaceStream %X: releasePages(%p, %d): "
+	__kprintf(NOTICE"vaddrSpaceStream %X: releasePages(%p, %d): "
 		"done.\n", id, vaddr, nPages);
 }
 

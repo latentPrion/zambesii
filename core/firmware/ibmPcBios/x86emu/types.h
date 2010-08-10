@@ -40,28 +40,9 @@
 #ifndef __X86EMU_TYPES_H
 #define __X86EMU_TYPES_H
 
-#ifndef NO_SYS_HEADERS
-#include <sys/types.h>
-#endif
-
-/*
- * The following kludge is an attempt to work around typedef conflicts with
- * <sys/types.h>.
- */
-#define u8   x86emuu8
-#define u16  x86emuu16
-#define u32  x86emuu32
-#define u64  x86emuu64
-#define s8   x86emus8
-#define s16  x86emus16
-#define s32  x86emus32
-#define s64  x86emus64
-#define uint x86emuuint
-#define sint x86emusint
+#include <__kstdlib/compiler/stdint.h>
 
 /*---------------------- Macros and type definitions ----------------------*/
-
-#include <stdint.h>
 
 typedef uint8_t				u8;
 typedef uint16_t			u16;

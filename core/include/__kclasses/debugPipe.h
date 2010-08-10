@@ -3,6 +3,7 @@
 
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/stdarg.h>
 	#include <__kclasses/debugBuffer.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
@@ -60,7 +61,7 @@ public:
 
 public:
 	// Zambezii only supports UTF-8 strings in the kernel.
-	void printf(const utf8Char *str, ...);
+	void printf(const utf8Char *str, va_list v);
 
 	/**	EXPLANATION:
 	 * Can take more than one device per call (hence the bitfield form).
@@ -90,6 +91,15 @@ private:
 };
 
 extern debugPipeC	__kdebug;
+
+inline void __kprintf(const utf8Char *str, ...)
+{
+	va_list		args;
+
+	va_start_forward(args, str);
+	__kprintf(str, args);
+}
+
 
 #endif
 

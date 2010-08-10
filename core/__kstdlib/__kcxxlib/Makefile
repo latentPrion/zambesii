@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../__kcxxlib.a
-OBJFILES=
+OBJFILES=new.o
 
 all: Makefile $(DELIVERABLE)
 

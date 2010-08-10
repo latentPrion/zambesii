@@ -1,4 +1,5 @@
 
+#include <arch/paging.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kclib/string.h>
 #include <kernel/common/firmwareTrib/firmwareStream.h>
@@ -18,7 +19,7 @@ error_t ibmPcBios_initialize(void)
 	memset(&M, 0, sizeof(M));
 
 	// Allocate vmem and map in lower memory.
-	M.mem_base = vaddrSpaceStream_getPages(LOWMEM_NPAGES);
+	M.mem_base = (uarch_t)__kvaddrSpaceStream_getPages(LOWMEM_NPAGES);
 	if (M.mem_base == __KNULL) {
 		return ERROR_MEMORY_NOMEM_VIRTUAL;
 	};
@@ -31,7 +32,7 @@ error_t ibmPcBios_initialize(void)
 	 * writes are immediately seen, and in the right order.
 	 **/
 	nMapped = walkerPageRanger_mapInc(
-		M.mem_base, 0x0, LOWMEM_NPAGES,
+		(void *)M.mem_base, 0x0, LOWMEM_NPAGES,
 		PAGEATTRIB_WRITE | PAGEATTRIB_CACHE_WRITE_THROUGH |
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
@@ -43,7 +44,9 @@ error_t ibmPcBios_initialize(void)
 	ibmPcBiosLock = waitLock_create();
 	if (ibmPcBiosLock == __KNULL)
 	{
-		vaddrSpaceStream_releasePages(M.mem_base, LOWMEM_NPAGES);
+		__kvaddrSpaceStream_releasePages((
+			void *)M.mem_base, LOWMEM_NPAGES);
+
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -57,11 +60,11 @@ error_t ibmPcBios_shutdown(void)
 {
 	waitLock_acquire(ibmPcBiosLock);
 
-	vaddrSpaceStream_releasePages(M.mem_base, LOWMEM_NPAGES);
+	__kvaddrSpaceStream_releasePages((void *)M.mem_base, LOWMEM_NPAGES);
 	M.mem_base = __KNULL;
 
 	waitLock_release(ibmPcBiosLock);
-	waitLock_destroy(ibmPcBioslock);
+	waitLock_destroy(ibmPcBiosLock);
 }
 
 error_t ibmPcBios_suspend(void)

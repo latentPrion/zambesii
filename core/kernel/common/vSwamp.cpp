@@ -1,6 +1,6 @@
 
 #include <arch/paging.h>
-#include <__kstdlib/__kcxxlib/cstring>
+#include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/vSwamp.h>
 
@@ -17,23 +17,23 @@ void vSwampC::dump(void)
 {
 	for (uarch_t i=0; i<VSWAMP_NSWAMPS; i++)
 	{
-		__kdebug.printf(NOTICE"vSwamp: Swamp %d: base: %p, size: %X, ",
+		__kprintf(NOTICE"vSwamp: Swamp %d: base: %p, size: %X, ",
 			i, swamps[i].baseAddr, swamps[i].size);
 
 		swamps[i].ptrs.lock.acquire();
 
 		if (swamps[i].ptrs.rsrc.head == __KNULL)
 		{
-			__kdebug.printf((utf8Char *)"invalid.\n");
+			__kprintf((utf8Char *)"invalid.\n");
 			swamps[i].ptrs.lock.release();
 			continue;
 		};
-		__kdebug.printf((utf8Char *)"valid\n");
+		__kprintf((utf8Char *)"valid\n");
 
 		for (swampInfoNodeC *tmp = swamps[i].ptrs.rsrc.head;
 			tmp != __KNULL; tmp = tmp->next)
 		{
-			__kdebug.printf(NOTICE"\tNode: baseAddr %p, nPages %p"
+			__kprintf(NOTICE"\tNode: baseAddr %p, nPages %p"
 				"\n", tmp->startAddr, tmp->nPages);
 		};
 

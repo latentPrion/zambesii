@@ -8,7 +8,7 @@
 #include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
-#include <__kstdlib/__kcxxlib/cstring>
+#include <__kstdlib/__kclib/string.h>
 #include <__kclasses/memBmp.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>

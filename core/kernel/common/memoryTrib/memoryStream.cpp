@@ -70,7 +70,7 @@ void memoryStreamC::cut(void)
 
 void memoryStreamC::dump(void)
 {
-	__kdebug.printf(NOTICE"Memory Stream %X: Dumping.\n", id);
+	__kprintf(NOTICE"Memory Stream %X: Dumping.\n", id);
 	vaddrSpaceStream.dump();
 }
 
@@ -94,7 +94,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 	// Try to allocate from the cache.
 	if (allocCache.pop(nPages, &ret) == ERROR_SUCCESS)
 	{
-		__kdebug.printf(NOTICE"Memory Stream %X: getPages(%d): "
+		__kprintf(NOTICE"Memory Stream %X: getPages(%d): "
 			"allocating from cache: v %p.\n", id, nPages, ret);
 
 		walkerPageRanger::setAttributes(
@@ -246,7 +246,7 @@ void memoryStreamC::memFree(void *vaddr)
 	// Attempt to just push the allocation whole into the cache.
 	if (allocCache.push(nPages, vaddr) == ERROR_SUCCESS)
 	{
-		__kdebug.printf(NOTICE"Memory Stream %X: memFree(%p): "
+		__kprintf(NOTICE"Memory Stream %X: memFree(%p): "
 			"(nPages = %d): free to cache.\n", id, vaddr, nPages);
 
 		walkerPageRanger::setAttributes(

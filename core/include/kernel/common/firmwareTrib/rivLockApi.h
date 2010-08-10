@@ -11,6 +11,10 @@
  * on behalf of the rivulet.
  **/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void *waitLock_create(void);
 void waitLock_destroy(void *);
 
@@ -22,6 +26,10 @@ void recursiveLock_destroy(void *);
 
 void recursiveLock_acquire(void *);
 void recursiveLock_release(void *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

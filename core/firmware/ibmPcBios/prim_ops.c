@@ -33,7 +33,7 @@
 * Developer:    Kendall Bennett
 *
 * Description:  This file contains the code to implement the primitive
-*				machine operations used by the emulation code in ops.c
+*		machine operations used by the emulation code in ops.c
 *
 * Carry Chain Calculation
 *
@@ -97,7 +97,7 @@
 *
 ****************************************************************************/
 
-#include <stdlib.h>
+// #include <stdlib.h>
 
 #define	PRIM_OPS_NO_REDEFINE_ASM
 #include "x86emu/x86emui.h"

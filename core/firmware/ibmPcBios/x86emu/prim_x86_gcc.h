@@ -40,7 +40,7 @@
 #ifndef __X86EMU_PRIM_X86_GCC_H
 #define __X86EMU_PRIM_X86_GCC_H
 
-#include "x86emu/types.h"
+#include "types.h"
 
 #if !defined(__GNUC__) || !(defined (__i386__) || defined(__i386) || defined(__AMD64__) || defined(__amd64__))
 #error This file is intended to be used by gcc on i386 or x86-64 system

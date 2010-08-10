@@ -1,8 +1,8 @@
 
-#include <stdarg.h>
 #include <arch/arch.h>
 #include <__kstdlib/utf8.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kclib/stdarg.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
@@ -91,7 +91,7 @@ debugPipeC::~debugPipeC(void)
 
 uarch_t debugPipeC::tieTo(uarch_t device)
 {
-	debugSupportRivS	*riv;
+	debugRivS	*riv;
 	error_t			err;
 	uarch_t			ret;
 
@@ -107,19 +107,19 @@ uarch_t debugPipeC::tieTo(uarch_t device)
 
 	DEBUGPIPE_TEST_AND_INITIALIZE(
 		device, devices.rsrc, DEBUGPIPE_DEVICE1, riv,
-		getDebugSupportRiv1, err);
+		getDebugRiv1, err);
 
 	DEBUGPIPE_TEST_AND_INITIALIZE(
 		device, devices.rsrc, DEBUGPIPE_DEVICE2, riv,
-		getDebugSupportRiv2, err);
+		getDebugRiv2, err);
 
 	DEBUGPIPE_TEST_AND_INITIALIZE(
 		device, devices.rsrc, DEBUGPIPE_DEVICE3, riv,
-		getDebugSupportRiv3, err);
+		getDebugRiv3, err);
 
 	DEBUGPIPE_TEST_AND_INITIALIZE(
 		device, devices.rsrc, DEBUGPIPE_DEVICE4, riv,
-		getDebugSupportRiv4, err);
+		getDebugRiv4, err);
 
 	devices.lock.acquire();
 	ret = devices.rsrc;
@@ -144,19 +144,19 @@ uarch_t debugPipeC::untieFrom(uarch_t device)
 
 	DEBUGPIPE_TEST_AND_SHUTDOWN(
 		device, devices.rsrc, DEBUGPIPE_DEVICE1,
-		getDebugSupportRiv1, err);
+		getDebugRiv1, err);
 
 	DEBUGPIPE_TEST_AND_SHUTDOWN(
 		device, devices.rsrc, DEBUGPIPE_DEVICE2,
-		getDebugSupportRiv2, err);
+		getDebugRiv2, err);
 
 	DEBUGPIPE_TEST_AND_SHUTDOWN(
 		device, devices.rsrc, DEBUGPIPE_DEVICE3,
-		getDebugSupportRiv3, err);
+		getDebugRiv3, err);
 
 	DEBUGPIPE_TEST_AND_SHUTDOWN(
 		device, devices.rsrc, DEBUGPIPE_DEVICE4,
-		getDebugSupportRiv4, err);
+		getDebugRiv4, err);
 
 	devices.lock.acquire();
 	ret = devices.rsrc;
@@ -172,35 +172,35 @@ void debugPipeC::refresh(void)
 
 	// Send the buffer to all devices.
 	DEBUGPIPE_TEST_AND_CLEAR(
-		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv1);
+		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugRiv1);
 
 	DEBUGPIPE_TEST_AND_CLEAR(
-		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugSupportRiv2);
+		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugRiv2);
 
 	DEBUGPIPE_TEST_AND_CLEAR(
-		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugSupportRiv3);
+		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugRiv3);
 
 	DEBUGPIPE_TEST_AND_CLEAR(
-		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugSupportRiv4);
+		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugRiv4);
 
 	handle = debugBuff.lock();
 
 	for (buff = debugBuff.extract(&handle, &len); buff != __KNULL; n++)
 	{
 		DEBUGPIPE_TEST_AND_SYPHON(
-			devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv1,
+			devices.rsrc, DEBUGPIPE_DEVICE1, getDebugRiv1,
 			buff, len);
 
 		DEBUGPIPE_TEST_AND_SYPHON(
-			devices.rsrc, DEBUGPIPE_DEVICE2, getDebugSupportRiv2,
+			devices.rsrc, DEBUGPIPE_DEVICE2, getDebugRiv2,
 			buff, len);
 
 		DEBUGPIPE_TEST_AND_SYPHON(
-			devices.rsrc, DEBUGPIPE_DEVICE3, getDebugSupportRiv3,
+			devices.rsrc, DEBUGPIPE_DEVICE3, getDebugRiv3,
 			buff, len);
 
 		DEBUGPIPE_TEST_AND_SYPHON(
-			devices.rsrc, DEBUGPIPE_DEVICE4, getDebugSupportRiv4,
+			devices.rsrc, DEBUGPIPE_DEVICE4, getDebugRiv4,
 			buff, len);
 
 		buff = debugBuff.extract(&handle, &len);
@@ -272,13 +272,10 @@ void debugPipeC::numToStrHex(uarch_t num, uarch_t *curLen)
 	};
 }
 
-void debugPipeC::printf(const utf8Char *str, ...)
+void debugPipeC::printf(const utf8Char *str, va_list args)
 {
-	va_list		args;
 	uarch_t		unum, buffLen=0, buffMax;
 	sarch_t		snum;
-
-	va_start_forward(args, str);
 
 	convBuff.lock.acquire();
 
@@ -365,19 +362,19 @@ void debugPipeC::printf(const utf8Char *str, ...)
 	};
 
 	DEBUGPIPE_TEST_AND_SYPHON(
-		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugSupportRiv1,
+		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugRiv1,
 		convBuff.rsrc, buffLen);
 
 	DEBUGPIPE_TEST_AND_SYPHON(
-		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugSupportRiv2,
+		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugRiv2,
 		convBuff.rsrc, buffLen);
 
 	DEBUGPIPE_TEST_AND_SYPHON(
-		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugSupportRiv3,
+		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugRiv3,
 		convBuff.rsrc, buffLen);
 
 	DEBUGPIPE_TEST_AND_SYPHON(
-		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugSupportRiv4,
+		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugRiv4,
 		convBuff.rsrc, buffLen);
 
 	convBuff.lock.release();
