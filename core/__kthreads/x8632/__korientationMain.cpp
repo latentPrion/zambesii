@@ -62,7 +62,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)
 		|| !__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1))
 	{
-		for (;;){};
 		if (__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1))
 		{
 			__kprintf(WARNING"No debug buffer allocated.\n");
@@ -71,34 +70,5 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kdebug.refresh();
 	__kprintf(NOTICE"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
-
-	__kprintf(NOTICE"__korientationMain: __kvaddrSpaceStream: "
-		" tests:\n");
-
-	/**	EXPLANATION:
-	 * The things that must be tested are:
-	 * 1. Allocate 4 pages. 2. Allocate 32 pages. 3. Allocate 2 pages.
-	 * 4. Free the 32 from (2). Dump and see if there are now two nodes
-	 * with the first having 32 pages on it. 5. Now free the two from (3).
-	 * Dump and see if the swamp has compacted via reverse compacting.
-	 **/
-#define vaddrSpaceStreamAlloc(__n)			\
-	(memoryTrib.__kmemoryStream.vaddrSpaceStream \
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(__n)
-
-#define vaddrSpaceStreamFree(__v,__n)			\
-	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(__v, __n)
-
-#define memAlloc(nPages, opt)				\
-	(memoryTrib.__kmemoryStream.*memoryTrib.__kmemoryStream.memAlloc)(\
-		nPages, opt)
-
-//	lm = new (memAlloc(PAGING_BYTES_TO_PAGES(sizeof(struct x86emu)), 0))
-//		x86emu;
-
-//	__kprintf(NOTICE"Struct x86emu: size: %dB, v: 0x%p.\n",
-//		sizeof(struct x86emu), lm);
-
-//	x86emu_init_default(lm);
 }
 

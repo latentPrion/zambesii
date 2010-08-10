@@ -97,7 +97,7 @@ inline void __kprintf(const utf8Char *str, ...)
 	va_list		args;
 
 	va_start_forward(args, str);
-	__kprintf(str, args);
+	__kdebug.printf(str, args);
 }
 
 
