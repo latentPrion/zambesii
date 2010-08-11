@@ -71,7 +71,5 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kdebug.refresh();
 	__kprintf(NOTICE"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
-
-	assert_warn(0 == 1);
 }
 

@@ -30,7 +30,7 @@
 
 #define assert_fatal(e)			\
 	(((e) == 0) \
-		? __kprintf(FATAL"Assertion failed: " \
+		? panic(FATAL"Assertion failed: " \
 			ASSERT_QUOTE(e) \
 			" on line " \
 			ASSERT_DUAL_QUOTE(__LINE__) \
