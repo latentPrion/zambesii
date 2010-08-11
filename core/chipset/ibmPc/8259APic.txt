@@ -1,0 +1,236 @@
+Quick reference guide.
+	This document seeks to tell the basic behaviour of the 8259A so that
+	maintaining this driver will be made easier. It looks at the device
+	from a technical perspective, and gives the behaviour from a software
+	POV.
+
+	That is, it tells you "How to get it working in a nutshell."
+
+Within this document:
+	"Interrupt" or "Vector" refer to the vector number that the interrupt
+		controller sends to the processor after taking an IRQ off the
+		chipset. That is, the pin that the PIC raises on the CPU when
+		the PIC relays an IRQ to the CPU (i.e.: sends a vector).
+
+		And IRQ may come in as a particular hardware IRQ, but be mapped
+		to be sent to the processor as a particular vector.
+
+	"IRQ" refers to the hardware position of the device on the PIC. That is,
+		which pin on the PIC that the device raises when it wishes to
+		signal the processor.
+
+	"Controlled device", "multiplexed device", etc refer to any device
+		which is positioned such that all of its IRQs are first
+		intercepted by this PIC. There may be multiple Interrupt
+		Controllers on any type of chipset, and there will be N devices
+		positioned logically behind that PIC.
+
+	"PIC" is used in two contexts: (1) To refer to this particular PIC, the
+		8259A, and (2) to refer to a Programmable Interrupt Controller
+		in general.
+
+	"(sic)" is used to state that "what you see preceding here is simply
+		what the technical reference said, and is not open for debate.
+
+--------------------------------------------------------------------------------
+
+* Before sending any commands to the PIC, the processor is expected to mask
+  IRQs. (The datasheet says so.) This includes writing EOI, masking, and sending
+  control bytes.
+
+* The 8259 will issue an IRQ7 if a spurious IRQ comes in. It should not, in this
+  case, set a bit in the In service reg. This way, the OS can tell that a
+  spurious IRQ has occured.
+
+* The 8259 will generally raise higher priority IRQs if they come in while a
+  lower priority IRQ is in service. In this case, the you need not worry: the
+  chipset logic will gracefully handle the occurrence of a situation where a
+  higher priority IRQ comes in, and the CPU has local IRQs off.
+
+* The master PIC must be initialized *before* the slave. Failure to do so will
+  cause unexpected results.
+
+Interrupt Request Register:
+	Holds a bit mask of all currently pending IRQs.
+	Access by writing Op Command byte 3, then reading port 0xA0 or 0x20.
+	After initialization, the 8259 is set to read this register.
+
+In service reg:
+	Holds the bit for the currently serviced IRQ.
+	Access by writing Op cmd byte 3, then reading port 0xA0 or 0x20.
+
+Interrupt Mask reg:
+	Tells the current bit mask of allowed IRQs.
+	Accessed any time an IN port IO access is made to 0xA1 or 0x21.
+
+--------------------------------------------------------------------------------
+
+Modes of operation:
+
+Fully Nested mode:
+	Sets the default prioritization, such that IRQs are prioritized from 0
+	to 7 on a PIC. The priorities can be altered somewhat.
+	Unless steps are taken otherwise in Op cmd byte 2, this mode is the
+	default.
+
+Special Fully nested mode:
+	Does something weird that allows the slave PIC to raise IRQs
+	independently or something like that.
+
+Automatic Rotated mode:
+	In this mode, if a high priority IRQ occurs twice, it will not come in
+	twice in succession. Instead, the PIC will just take note, and allow
+	other IRQs that were pending before that high priority IRQ to be sent
+	first, then it will send the high priority IRQ.
+
+	This means that "fairness" is enforced.
+
+Specific Rotated mode:
+	Same as automatic, but software gets to decide which IRQ is treated as
+	the highest priority.
+
+Poll mode:
+	Some other thing. This mode makes the data reg AFAICT, act as a poll
+	status byte, and software can read the reg to see if an IRQ is pending,
+	and if so, which one.
+
+Level Sensitive mode:
+	Standard level sensitive behaviour. The 8259, according to the technical
+	reference, does not support edge triggered mode.
+
+--------------------------------------------------------------------------------
+
+Initialization cmd byte 1:
+	This is signalled by writing to I/O port 0xA0 or 0x20 with bit 4 set.
+
+	Side effects of sending this signal: The PIC will immediately:
+		* Go into level sensitive mode.
+		* Clear the interrupt mask reg.
+		* Assign IRQ7 a priority of 7.
+		* Any previous reg select is cancelled and the PIC is set to
+		  read the Interrupt request reg on a read.
+
+Bit	Function
+0	Signals that a 4B init sequence is in order. Must be 1 (sic).
+1	Cascade mode: Must be 0 (sic).
+2	Call address interval: must be 0 (sic).
+3	Selects level sensitive mode: must be 1 (sic).
+4	Signals that the PIC should begin init sequence and perform the side
+	effects mentioned above. Must be 1 (sic).
+5-7	Reserved: must be 0 (sic).
+
+So the Init cmd byte is constrained to always be 0x19, and you should not ever
+send any other init cmd b1.
+
+--------------------------------------------------------------------------------
+
+Init Cmd B2
+	Is expected to follow init cmd b1. This byte tells the particular 8259
+	which vectors to raise on the CPU. Written to 0x21 or 0xA1.
+
+	Side effects: None.
+
+Bit	Function
+0-2	Must be initialized to 0 (sic). This is because the PIC must send its
+	IRQ signals to the CPU on a starting vector that is a power of 8.
+3-7	The 8-byte aligned starting vector from which this 8259 will raise IRQs.
+
+--------------------------------------------------------------------------------
+
+Init Cmd B3
+	Is expected to follow init cmd b2. Tells the PIC whether it should
+	operate as master or slave. Written to 0x21 or 0xA1.
+
+	Side effects: none.
+
+Bit	Function
+0	Must be zero (sic)
+1	Must be 0 when initializing the master, and 1 when initializing the
+	slave. (sic)
+2	Must be 1 when initializing the master, and 0 when initializing the
+	slave. (sic)
+3-7	Must be 0. (sic)
+
+So the init cmd byte 3 is constrained to be: 0x04 for master and 0x02 for slave.
+
+--------------------------------------------------------------------------------
+
+Init cmd byte 4
+	Is expected to follow init cmd byte 3. Sets the modes for the 8259.
+	Written to 0x21 or 0xA1.
+
+	Side effects: Sets the PIC into the desired mode.
+
+Bit	Function
+0	80286/80386 mode: Must be 1 (sic)
+1	"Normal EOI": must be 0. (sic)
+2-3	Reserved: must be 0 (sic)
+4	Set to enable Special Fully nested mode, as described above.
+5-7	Reserved: must be 0 (sic)
+
+So the init cmd byte 4 is constrained to be: 0x11 for special fully nested mode,
+or 0x01 for normal fully nested mode (with normal priorities).
+
+--------------------------------------------------------------------------------
+
+================================================================================
+Operation command words.
+================================================================================
+
+These are used to select particular registers or change various operating
+parameters of the 8259.
+
+--------------------------------------------------------------------------------
+
+Operation Command Byte 1:
+	Is expected anytime outside of the 4 byte init sequence. This is the
+	default read or write to the interrupt mask register. Read or write
+	without any prior register select, and get the IMR which is a bit mask
+	or the enabled IRQs on that PIC.
+
+--------------------------------------------------------------------------------
+
+Operation Command Byte 2:
+	Is expected anytime outside of the 4 byte init sequence. This allows
+	custom prioritization of a certain IRQ when using the rotated modes.
+
+// Out of order deliberately.
+Bit	Function
+3-4	Reserved: must be 0 (sic)
+5	Set to send the PIC an EOI signal.
+6	"Set interrupt level": When this is set, bits 0-2 are valid.
+	That is, this tells the PIC that you are selecting an IRQ to use as
+	the higest priority IRQ for rotated mode. AFAICT, bit 7 should also
+	be set if you intend to do this.
+0-2	The IRQ which should be considered highest priority in rotated mode.
+7	Used to denote rotated mode.
+
+So generally unless you're using rotated mode, you'll only ever be sending 0x20
+(EOI) as an op cmd byte 2.
+
+--------------------------------------------------------------------------------
+
+Op cmd byte 3
+	Can be thought of as a "normal" register select operation, which allows
+	you to select the Interrupt Request reg, or the In Service reg. Also
+	used to enable polling mode.
+	Written to 0xA0 or 0x20.
+	Read the selected register from 0x20 or 0xA0.
+
+	Side effects: Selects the desired reg.
+
+Bit	Function
+0-1	Register select: 0x3 for In service reg, 0x2 for interrupt request reg,
+	all other values are ignored. Safest to consider them reserved and
+	having an undefined effect.
+2	Selects the poll mode.
+3	Reserved: Must be 1 (sic)
+4	Reserved: Must be 0 (sic)
+5-6	Enable "Special mask mode", which I have no idea about. Just use 0.
+7	Reserved: must be 0 (sic).
+
+So the op cmd byte 3 is always going to be: 0x3 to read the in service reg,
+or 0x2 to read the interrupt request reg. 
+
+--------------------------------------------------------------------------------
+

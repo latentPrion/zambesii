@@ -77,13 +77,32 @@ error_t ibmPcBios_awake(void)
 	return ERROR_SUCCESS;
 }
 
+static error_t ibmPcBios_nop_failure(void)
+{
+	return ERROR_UNKNOWN;
+}
+
+static error_t ibmPcBios_nop_failure2(uarch_t)
+{
+	return ERROR_UNKNOWN;
+}
+
 struct firmwareStreamS		firmwareFwStream =
 {
 	&ibmPcBios_initialize,
 	&ibmPcBios_shutdown,
 	&ibmPcBios_suspend,
 	&ibmPcBios_awake,
-	// No terminal or watchdog.
+
+	// Interrupt vector control.
+	&ibmPcBios_nop_failure2,
+	&ibmPcBios_nop_failure,
+	&ibmPcBios_nop_failure2,
+	&ibmPcBios_nop_failure,
+
+	/**	Devices:
+	 * Watchdog, debug 1-4.
+	 **/
 	__KNULL,
 	__KNULL,
 	__KNULL,

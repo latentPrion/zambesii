@@ -30,7 +30,7 @@ void interruptTrib_irqEntry(taskContextS *regs)
 	// This point should never be reached. Fooey if it is.
 }
 
-error_t interruptTribC::initialize(void)
+error_t interruptTribC::initialize1(void)
 {
 	/* We have a table of vectors. Run through and initialize the IDT with
 	 * each pointer.

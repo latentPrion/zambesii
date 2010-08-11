@@ -36,6 +36,12 @@ struct firmwareStreamS
 	error_t (*suspend)(void);
 	error_t (*awake)(void);
 
+	// Kernel interrupt vector control.
+	error_t (*maskSingle)(uarch_t vector);
+	error_t (*maskAll)(void);
+	error_t (*unmaskSingle)(uarch_t vector);
+	error_t (*unmaskAll)(void);
+
 	struct watchdogRivS	*watchdogRiv;
 	struct debugRivS	*debugRiv1;
 	struct debugRivS	*debugRiv2;
