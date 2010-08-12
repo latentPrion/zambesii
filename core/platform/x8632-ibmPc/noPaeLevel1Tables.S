@@ -5,31 +5,6 @@
 #include <arch/memory.h>
 #include <chipset/memory.h>
 
-/* I copied these headers below here raw from GCC's assembly output since I was
- * encountering a problem with the GNU LD linker which GCC didn't seem to have.
- *
- * Originally, I was doing these tables in C++. But G++ kept generating
- * constructors to do relocation, and I disliked that. So I did them over in
- * full ASM (hence this file). But LD did not co-operate. The page tables were
- * included in the kernel final binary to be sure. But LD kept generating the
- * wrong LOAD headers in the program header of the kernel ELF.
- *
- * Essentially, what was happening was that the page tables were included in
- * the kernel image, but that was really not very useful since LD did not
- * generate the right LOAD direcives for GRUB to know that it should load the
- * section containing the page tables.
- *
- * There was nothing wrong with the tables either. The only thing that could be
- * said to be different is that I hand wrote the tables in assmbly instead of
- * defining them as structs in C++. The output tables from the compiler were
- * recognized as valid bytes to be loaded when the program was to be loaded,
- * my code was not.
- *
- * In the end, I just left my code as it was, and redid the tables in C++, then
- * ran the cmpiler on it and took the magical headers it placed into the output
- * assembly file and put them in mine.
- **/
-
 ASM_SECTION(.__ksetupData)
 
 .balign PAGING_BASE_SIZE

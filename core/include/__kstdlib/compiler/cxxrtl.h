@@ -1,9 +1,11 @@
 #ifndef _CXX_RTL_H
 	#define _CXX_RTL_H
 
+	#include <__kstdlib/__ktypes.h>
+
 namespace cxxrtl
 {
-	callGlobalConstructors(void);
+	status_t callGlobalConstructors(void);
 }
 
 #endif

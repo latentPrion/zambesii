@@ -1,9 +1,9 @@
 
-#include <__ksymbols.h>
 #include <arch/paging.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__ktypes.h>
+#include <__kstdlib/compiler/cxxrtl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/assert.h>
@@ -39,12 +39,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(interruptTrib, initialize1(), ret);
 
 	// Call all global constructors.
-	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );
-	for (; ctorPtr < reinterpret_cast<void(**)()>( &__kctorEnd );
-		ctorPtr++)
-	{
-		(**ctorPtr)();
-	};
+	cxxrtl::callGlobalConstructors();
 
 	// Initialize the kernel swamp.
 	DO_OR_DIE(

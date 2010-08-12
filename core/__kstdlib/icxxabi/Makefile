@@ -1,6 +1,6 @@
 .PHONY=
-DELIVERABLE=../../__kclib.a
-OBJFILES=
+DELIVERABLE=../../__kcxxabi.a
+OBJFILES=dso.o callConstructors.o
 
 all: Makefile $(DELIVERABLE)
 
