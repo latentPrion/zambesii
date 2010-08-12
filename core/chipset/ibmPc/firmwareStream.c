@@ -19,18 +19,7 @@ struct firmwareStreamS		chipsetFwStream =
 	&ibmPc_nop_success,
 	&ibmPc_nop_success,
 
-	// Interrupt vector control.
-	&ibmPc_initializeInterrupts,
-	&ibmPc_initializeInterrupts2,
-	&ibmPc_pic_maskSingle,
-	&ibmPc_pic_maskAll,
-	&ibmPc_pic_unmaskSingle,
-	&ibmPc_pic_unmaskAll,
-
-	/**	Devices:
-	 * Watchdog, debug 1-4.
-	 **/
-	__KNULL,
+	// Firmware support for debug output (1-4).
 	&ibmPc_terminal,
 	__KNULL,
 	__KNULL,

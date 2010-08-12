@@ -36,7 +36,6 @@ struct firmwareStreamS
 	error_t (*suspend)(void);
 	error_t (*awake)(void);
 
-	struct watchdogRivS	*watchdogRiv;
 	struct debugRivS	*debugRiv1;
 	struct debugRivS	*debugRiv2;
 	struct debugRivS	*debugRiv3;

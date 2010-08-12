@@ -94,18 +94,7 @@ struct firmwareStreamS		firmwareFwStream =
 	&ibmPcBios_suspend,
 	&ibmPcBios_awake,
 
-	// Interrupt vector control.
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-
-	/**	Devices:
-	 * Watchdog, debug 1-4.
-	 **/
-	__KNULL,
+	// Debug interfaces 1-4.
 	__KNULL,
 	__KNULL,
 	__KNULL,
