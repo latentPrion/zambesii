@@ -27,7 +27,8 @@
  * expected to initialize a chipset timer and calibrate it to 1000Hz, then
  * register the ISR for the watchdog's feeding with the Timer Tributary using
  * the relevant API call. The kernel will handle the calling of the watchdog
- * feeding ISR from there.
+ * feeding ISR from there. If a watchdog's initialize() does not return
+ * ERROR_SUCCESS, the kernel will panic and halt.
  *
  * The Interrupt Tributary will scan the chipset support package for the
  * existence of an interrupt controller. If the pointer is non-NULL, the kernel
@@ -47,6 +48,8 @@ struct chipsetSupportPackageS
 	watchdogDevS		*watchdog;
 	intControllerDevS	*intController;
 };
+
+extern chipsetSupportPackageS	chipsetCoreDev;
 
 #endif
 

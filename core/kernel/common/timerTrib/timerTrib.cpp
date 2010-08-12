@@ -2,6 +2,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <kernel/common/timerTrib/timerTrib.h>
+#include <kernel/common/moduleApis/chipsetSupportPackage.h>
 
 timerTribC::timerTribC(void)
 {
@@ -9,15 +10,20 @@ timerTribC::timerTribC(void)
 
 error_t timerTribC::initialize(void)
 {
-	memset(this, 0, sizeof(*this));
+	error_t		ret=ERROR_SUCCESS;
 
 	continuousClock.rsrc = clock_t(0, 0);
 	watchdog.rsrc.feedTime = clock_t(0, 0);
 	watchdog.rsrc.isr = __KNULL;
 	flags = 0;
 
-	// Insert code to check for a watchdog driver here.
-	return ERROR_SUCCESS;
+	// Check for the existence of a watchdog device on this chipset.
+	if (chipsetCoreDev.watchdogDev != __KNULL) {
+		ret = (*chipsetCoreDev.watchdogDev->initialize)();
+	};
+
+	// Return the result from the watchdog's initialize.
+	return ret;
 }
 
 timerTribC::~timerTribC(void)
