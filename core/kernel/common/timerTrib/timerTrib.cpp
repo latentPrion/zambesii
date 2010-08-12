@@ -15,6 +15,8 @@ error_t timerTribC::initialize(void)
 	watchdog.rsrc.feedTime = clock_t(0, 0);
 	watchdog.rsrc.isr = __KNULL;
 	flags = 0;
+
+	// Insert code to check for a watchdog driver here.
 	return ERROR_SUCCESS;
 }
 
