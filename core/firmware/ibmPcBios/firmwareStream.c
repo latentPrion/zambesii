@@ -95,10 +95,12 @@ struct firmwareStreamS		firmwareFwStream =
 	&ibmPcBios_awake,
 
 	// Interrupt vector control.
-	&ibmPcBios_nop_failure2,
-	&ibmPcBios_nop_failure,
-	&ibmPcBios_nop_failure2,
-	&ibmPcBios_nop_failure,
+	__KNULL,
+	__KNULL,
+	__KNULL,
+	__KNULL,
+	__KNULL,
+	__KNULL,
 
 	/**	Devices:
 	 * Watchdog, debug 1-4.

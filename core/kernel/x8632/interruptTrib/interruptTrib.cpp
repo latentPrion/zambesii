@@ -1,8 +1,12 @@
 
 #include <arch/interrupts.h>
 #include <arch/x8632/idt.h>
+#include <__kstdlib/__kclib/assert.h>
+#include <__kstdlib/__kclib/string.h>
+#include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
+static firmwareStreamS	*stream;
 
 void interruptTrib_irqEntry(taskContextS *regs)
 {
@@ -54,6 +58,28 @@ error_t interruptTribC::initialize1(void)
 	 **/
 	asm volatile("lidt	(x8632IdtPtr)\n\t");
 
+	// Zero out the ISR table, and call the chipset init sequence.
+	memset(isrTable, 0, sizeof(interruptTribC::vectorDescriptorS) * 256);
+
+	stream = firmwareTrib.getChipsetStream();
+	if (stream->initializeInterrupts != __KNULL) {
+		(*stream->initializeInterrupts)();
+	}
+	else {
+		stream = firmwareTrib.getFirmwareStream();
+		// One of the stream *MUST* have initializeInterrupts defined.
+		assert_fatal(stream->initializeInterrupts != __KNULL);
+		(*stream->initializeInterrupts)();
+	};
+
+	// Mask all IRQs at the interrupt controller.
+	(*stream->maskAll)();
+
+	for (uarch_t i=0; i<32; i++) {
+		isrTable[i].flags = INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION;
+	};
+
+	for (uarch_t i=0; i<
 	// If we haven't got a 3xfault, then we've essentially succeeded.
 	return ERROR_SUCCESS;
 }

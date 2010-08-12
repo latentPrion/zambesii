@@ -31,6 +31,16 @@ firmwareTribC::~firmwareTribC(void)
 {
 }
 
+firmwareStreamS *firmwareTribC::getChipsetStream(void)
+{
+	return &chipsetFwStream;
+}
+
+firmwareStreamS *firmwareTribC::getFirmwareStream(void)
+{
+	return &firmwareFwStream;
+}
+
 debugRivS *firmwareTribC::getDebugRiv1(void)
 {
 	return descriptor.debugRiv1;

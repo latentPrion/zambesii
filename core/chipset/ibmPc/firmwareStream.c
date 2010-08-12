@@ -20,6 +20,8 @@ struct firmwareStreamS		chipsetFwStream =
 	&ibmPc_nop_success,
 
 	// Interrupt vector control.
+	&ibmPc_initializeInterrupts,
+	&ibmPc_initializeInterrupts2,
 	&ibmPc_pic_maskSingle,
 	&ibmPc_pic_maskAll,
 	&ibmPc_pic_unmaskSingle,

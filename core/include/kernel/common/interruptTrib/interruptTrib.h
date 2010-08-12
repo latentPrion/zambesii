@@ -44,10 +44,16 @@
 
 // Denotes a vector with only one ISR statically (non-shared).
 #define INTERRUPTTRIB_VECTOR_FLAGS_EXCLUSIVE	(1<<0)
+// Applies to any ISR the chipset registered during intializeInterrupts().
 #define INTERRUPTTRIB_VECTOR_FLAGS_BOOTISR	(1<<1)
+// Denotes a vector which has been masked off at its PIC.
 #define INTERRUPTTRIB_VECTOR_FLAGS_MASKED	(1<<2)
+// Identifies a vector which is unknown, and cannot be masked (trouble).
 #define INTERRUPTTRIB_VECTOR_FLAGS_MASKFAILS	(1<<3)
+// States that the vector holds a single exception handler, and no ISRs.
+#define INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION	(1<<4)
 
+// States that this shared ISR is an exception handler and not a hardware ISR.
 #define INTERRUPTTRIB_ISR_FLAGS_EXCEPTION	(1<<0)
 
 class interruptTribC
@@ -60,7 +66,7 @@ public:
 public:
 	interruptTribC(void) {};
 	// Architecture specific.
-	error_t initialize(void);
+	error_t initialize1(void);
 	~interruptTribC(void) {};
 
 public:

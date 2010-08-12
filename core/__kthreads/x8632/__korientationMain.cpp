@@ -37,7 +37,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(firmwareTrib, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
-	DO_OR_DIE(interruptTrib, initialize(), ret);
+	DO_OR_DIE(interruptTrib, initialize1(), ret);
 
 	// Call all global constructors.
 	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );
