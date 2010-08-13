@@ -27,8 +27,18 @@ error_t ibmPc_initializeInterrupts(void)
 	 * no need to explicitly disable them before sending commands to the
 	 * PIC.
 	 **/
-	io_write8(PIC_PIC1_CMD, 0x19); PIC_IO_DELAY(PIC_IO_DELAY_COUNTER);
-	io_write8(PIC_PIC2_CMD, 0x19); PIC_IO_DELAY(PIC_IO_DELAY_COUNTER);
+	/**	NOTE:
+	 * In the datasheet for the 8259, it says that bit 3 must be 1 (for
+	 * level sensitive, since the 8259 does not support edge triggered,
+	 * as written in the docs.), but in the Linux source, and pretty much
+	 * every other code example where the PIC is initialized, no-one else
+	 * sets the level triggered bit.
+	 *
+	 * I'll test this on real hardware sometime, but for now, we'll send
+	 * 0x11 instead of 0x19.
+	 **/
+	io_write8(PIC_PIC1_CMD, 0x11); PIC_IO_DELAY(PIC_IO_DELAY_COUNTER);
+	io_write8(PIC_PIC2_CMD, 0x11); PIC_IO_DELAY(PIC_IO_DELAY_COUNTER);
 
 	io_write8(PIC_PIC1_DATA, PIC_PIC1_VECTOR_BASE);
 	PIC_IO_DELAY(PIC_IO_DELAY_COUNTER);

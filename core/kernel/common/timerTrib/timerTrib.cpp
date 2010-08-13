@@ -12,10 +12,7 @@ error_t timerTribC::initialize(void)
 {
 	error_t		ret=ERROR_SUCCESS;
 
-	continuousClock.rsrc = clock_t(0, 0);
-	watchdog.rsrc.feedTime = clock_t(0, 0);
-	watchdog.rsrc.isr = __KNULL;
-	flags = 0;
+	watchdog.rsrc.isr = watchdog.rsrc.interval = 0;
 
 	// Check for the existence of a watchdog device on this chipset.
 	if (chipsetCoreDev.watchdogDev != __KNULL) {

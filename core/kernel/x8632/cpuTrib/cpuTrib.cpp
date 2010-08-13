@@ -36,6 +36,24 @@ void __korientationPreConstruct::bspInit(void)
 	bspCpu.cpuFeatures.fpuLevel = 0;
 	bspCpu.cpuFeatures.mhz = 0;
 
+	/**	EXPLANATION:
+	 * This one line is VERY important. If you don't initialize the BSP
+	 * CPU Stream with this magic number, the global object constructor call
+	 * sequence that will run on it later will overwrite the arch-specific
+	 * values with normal constructed values. This will cause the BSP CPU's
+	 * Stream to be overwritten, and the pointer to the current task will
+	 * be corrupted.
+	 *
+	 * Every arch MUST make sure to set this magic number in the BSP CPU
+	 * init before exiting. There will be a clean up on this later on after
+	 * the CPU Tributary is written up.
+	 *
+	 * In other words, the purpose of this magic number is to protect the
+	 * BSP CPU Stream instance from being overwritten at boot during the
+	 * global constructor call.
+	 **/
+	bspCpu.initMagic = CPUSTREAM_INIT_MAGIC;
+
 	dr0 = reinterpret_cast<uarch_t>( &bspCpu );
 
 	asm volatile (

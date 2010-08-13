@@ -8,13 +8,14 @@
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/cpuFeatures.h>
 
+#define CPUSTREAM_INIT_MAGIC		0xC101101C
+
 class cpuStreamC
 :
 public streamC
 {
 public:
 	cpuStreamC(void);
-	cpuStreamC(cpu_t id);
 	~cpuStreamC(void);
 
 public:
@@ -23,6 +24,7 @@ public:
 	cpu_t		cpuId;
 	numaBankId_t	bankId;
 	cpuFeaturesS	cpuFeatures;
+	uarch_t		initMagic;
 };
 
 // The hardcoded stream for the BSP CPU.

@@ -24,21 +24,21 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	void		(**ctorPtr)();
 
 	__koptimizationHacks();
 
 	// Prepare the kernel by zeroing .BSS and calling constructors.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
-	cxxrtl::callGlobalConstructors();
 
-	// Set up the kernel process, orientation thread, and BSP CPU Stream.
+	// Initialize BSP CPU stream now; Locking in constructors needs it.
 	__korientationPreConstruct::__kprocessInit();
 	__korientationPreConstruct::__korientationThreadInit();
 	__korientationPreConstruct::bspInit();
 
+	cxxrtl::callGlobalConstructors();
+
 	DO_OR_DIE(timerTrib, initialize(), ret);
-	DO_OR_DIE(interruptTrib, initialize1(), ret);
+	DO_OR_DIE(interruptTrib, initialize(), ret);
 
 
 	// Initialize the kernel swamp.
