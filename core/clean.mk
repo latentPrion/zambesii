@@ -1,3 +1,7 @@
+ifeq ($(ZCXX), i586-elf-g++)
+	ZCXXABI = icxxabi
+endif
+
 clean: fonyphile
 	rm -f *.a __klinkScript.ld
 	rm -f *.o *.s
@@ -8,8 +12,7 @@ clean: fonyphile
 	cd platform/$(ZARCH)-$(ZCHIPSET); make clean
 	cd __kclasses; make clean
 	cd __kstdlib; make clean
-	cd __kstdlib/__kcxxabi; make clean
-	cd __kstdlib/__kcxxlib; make clean
+	cd __kstdlib/$(ZCXXABI); make clean
 	cd __kthreads; make clean
 	cd __kthreads/$(ZARCH); make clean
 	cd kernel/common; make clean

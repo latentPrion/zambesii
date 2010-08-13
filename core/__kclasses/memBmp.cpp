@@ -91,14 +91,16 @@ memBmpC::~memBmpC(void)
 error_t memBmpC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 {
 	/* FIXME: bmp.rsrc.lastAllocIndex should be reset and the whole thing
-	 * done over once more if it reaches the last bit and no memory was found.
+	 * done over once more if it reaches the last bit and no memory was
+	 * found.
 	 *
-	 * FIXME: Right now, the bmp measures its limit by the number of indexes,
-	 * and not the number of bits within the range. Therefore, if the last
-	 * index is such that there should only be 2 relevant bits in the last
-	 * index, and the other 30 should not be searched since they are just
-	 * garbage, right now as things are, the bmp will assume all 32 bits are
-	 * valid to be searched, and possibly find memory in the irrelevant bits.
+	 * FIXME: Right now, the bmp measures its limit by the number of 
+	 * indexes, and not the number of bits within the range. Therefore, if
+	 * the last index is such that there should only be 2 relevant bits in
+	 * the last index, and the other 30 should not be searched since they
+	 * are just garbage, right now as things are, the bmp will assume all
+	 * 32 bits are valid to be searched, and possibly find memory in the
+	 * irrelevant bits.
 	 **/
 	uarch_t nFound = 0, startPfn = MEMBMP_ALLOC_UNSUCCESSFUL, _endPfn;
 
@@ -154,8 +156,8 @@ error_t memBmpC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 		};
 	};
 
-	/* If we end up here then it means that not enough contiguous frames were
-	 * found. Release all locks and exit.
+	/* If we end up here then it means that not enough contiguous frames
+	 * were found. Release all locks and exit.
 	 **/
 	bmp.lock.release();
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
@@ -268,7 +270,7 @@ void memBmpC::releaseFrames(paddr_t frameAddr, uarch_t nFrames)
 		unsetFrame(i);
 	};
 
-	// Encourage possible cache hit by trying to reallocate the same frames.
+	// Encourage possible cache hit by trying to reallocate same frames.
 	bmp.rsrc.lastAllocIndex =
 		(startPfn - basePfn) / __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 

@@ -11,7 +11,6 @@
  * physical memory management will have to be done via a bitmap. There would
  * be way to many circular dependencies if I used something like a linked list,
  * like the kind I invented for the vaddrSpaceStreamC.
- *
  **/
 
 #define MEMBMP_FLAGS_DYNAMIC		(1<<0)
@@ -68,30 +67,27 @@ public allocClassC
 
 
 /**	Inline Methods
- ****************************************************************/
+ ******************************************************************************/
 
 inline void memBmpC::setFrame(uarch_t pfn)
 {
 	__KBIT_SET(
 		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],
-		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp)
-		);
+		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp));
 }
 
 inline void memBmpC::unsetFrame(uarch_t pfn)
 {	
 	__KBIT_UNSET(
 		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],
-		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp)
-		);
+		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp));
 }
 
 inline sarch_t memBmpC::testFrame(uarch_t pfn)
 {
 	return __KBIT_TEST(
 		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],
-		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp)
-		);
+		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp));
 }
 
 #endif

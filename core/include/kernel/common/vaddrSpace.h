@@ -9,11 +9,18 @@
 class vaddrSpaceC
 {
 public:
-	vaddrSpaceC(pagingLevel0S *level0Accessor, paddr_t paddr)
-	: level0Paddr(paddr)
+	vaddrSpaceC(void) {}
+
+	void initialize(pagingLevel0S *level0Accessor, paddr_t paddr)
 	{
-		vaddrSpaceC::level0Accessor.rsrc = level0Accessor;
-	};
+		level0Accessor.rsrc = level0Accessor;
+		level0Paddr = paddr;
+	}
+
+	vaddrSpaceC(pagingLevel0S *level0Accessor, paddr_t paddr)
+	{
+		initialize(level0Accessor, paddr);
+	}
 
 public:
 	// Uses a recursive lock, take note.
