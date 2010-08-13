@@ -20,13 +20,7 @@ public lockC
 public:
 	recursiveLockC(void)
 	{
-		initialize()
-	}
-
-	void initialize(void)
-	{
 		taskId.rsrc = __KPROCESSID;
-		lockC::initialize();
 	}
 
 public:

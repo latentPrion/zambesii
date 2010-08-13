@@ -6,22 +6,16 @@
 
 timerTribC::timerTribC(void)
 {
-	/**	EXPLANATION:
-	 * When we run global constructors the locks and the two clocks will
-	 * be re-initialized. This will cause them both to get to zero, and
-	 * then if there is a watchdog device on the chipset, it will fail to
-	 * be fed any longer.
 }
 
 error_t timerTribC::initialize(void)
 {
 	error_t		ret=ERROR_SUCCESS;
 
-	memset(this, 0, sizeof(*this));
-
-	// Explicit initialization model.
-	continuousClock.lock.initialize();
-	watchdog.lock.initialize();
+	continuousClock.rsrc = clock_t(0, 0);
+	watchdog.rsrc.feedTime = clock_t(0, 0);
+	watchdog.rsrc.isr = __KNULL;
+	flags = 0;
 
 	// Check for the existence of a watchdog device on this chipset.
 	if (chipsetCoreDev.watchdogDev != __KNULL) {

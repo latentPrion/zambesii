@@ -12,11 +12,6 @@ class lockC
 public:
 	lockC(void)
 	{
-		initialize();
-	}
-
-	void initialize(void)
-	{
 		lock = 0;
 		flags = 0;
 		magic = LOCK_MAGIC;

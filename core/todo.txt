@@ -1,5 +1,15 @@
 //List of TODO:s.
 
+ATTENTION:
+	You have to go through the kernel's initialization sequence from start
+	to end, from constructor to constructor and determine which bits of
+	code need to go into which constructors.
+
+	Do this *BEFORE* you move on with any further work, please. Too many
+	bugs where initialization is concerned. It is best, in the end, to
+	depend on what the compiler gives and not try to work around the
+	language's features. Again, use the language to your advantage, reaven.
+
 //__kclasses
 * Decide properly how to get the interface for the alloc table to work in a 
   uniform, clean fashion.
