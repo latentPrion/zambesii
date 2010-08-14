@@ -18,7 +18,6 @@ public:
 	firmwareStreamS *getChipsetStream(void);
 	firmwareStreamS *getFirmwareStream(void);
 
-	watchdogRivS *getWatchdogRiv(void);
 	debugRivS *getDebugRiv1(void);
 	debugRivS *getDebugRiv2(void);
 	debugRivS *getDebugRiv3(void);

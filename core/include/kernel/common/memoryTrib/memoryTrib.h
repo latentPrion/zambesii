@@ -19,10 +19,9 @@ class memoryTribC
 public tributaryC
 {
 public:
-	memoryTribC(void);
+	memoryTribC(pagingLevel0S *level0Accessor, paddr_t level0Paddr);
 
-	error_t initialize1(
-		pagingLevel0S *level0Accessor, paddr_t level0Paddr,
+	error_t initialize(
 		void *swampStart, uarch_t swampSize,
 		vSwampC::holeMapS *holeMap);
 

@@ -10,12 +10,11 @@
 # it halts saying that the symbol cannot be resolved, even if the symbol is
 # defined in one of the objects passed on the command line.
 EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a firmwareCore.a \
-	platformCore.a memoryTrib.a numaTrib.a firmwareTrib.a interruptTrib.a \
-	archInterruptTrib.a \
-	timerTrib.a \
-	cpuTrib.a archCpuTrib.a platformCore.a \
-	chipset.a chipsetCore.a archCore.a firmwareCore.a __kclasses.a \
-	__kstdlib.a __kcxxabi.a lang.a
+	platformCore.a \
+	memoryTrib.a numaTrib.a firmwareTrib.a interruptTrib.a \
+	timerTrib.a cpuTrib.a \
+	platformCore.a chipset.a chipsetCore.a archCore.a firmwareCore.a \
+	__kclasses.a __kstdlib.a __kcxxabi.a lang.a
 GOAL=../core.o
 
 all: $(GOAL)

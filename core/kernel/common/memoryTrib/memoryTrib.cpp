@@ -17,7 +17,7 @@ __kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
 }
 
 // Initializes the kernel's Memory Stream.
-error_t memoryTribC::initialize1(
+error_t memoryTribC::initialize(
 	void *swampStart, uarch_t swampSize, vSwampC::holeMapS *holeMap
 	)
 {

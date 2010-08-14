@@ -15,6 +15,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 
+// Constructor for userspace streams.
 memoryStreamC::memoryStreamC(
 	uarch_t id,
 	void *swampStart, uarch_t swampSize,
@@ -29,6 +30,7 @@ vaddrSpaceStream(
 	bind();
 }
 
+// Constructor for the kernel stream.
 memoryStreamC::memoryStreamC(uarch_t id,
 	pagingLevel0S *level0Accessor, paddr_t level0Paddr
 	)

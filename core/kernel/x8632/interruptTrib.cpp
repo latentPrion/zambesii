@@ -1,6 +1,7 @@
 
 #include <arch/interrupts.h>
 #include <arch/x8632/idt.h>
+#include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
@@ -8,7 +9,6 @@
 #include <kernel/common/moduleApis/chipsetSupportPackage.h>
 #include <kernel/common/moduleApis/interruptController.h>
 
-static firmwareStreamS	*stream;
 
 void interruptTrib_irqEntry(taskContextS *regs)
 {

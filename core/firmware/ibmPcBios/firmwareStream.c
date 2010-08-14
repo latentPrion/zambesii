@@ -82,8 +82,9 @@ static error_t ibmPcBios_nop_failure(void)
 	return ERROR_UNKNOWN;
 }
 
-static error_t ibmPcBios_nop_failure2(uarch_t)
+static error_t ibmPcBios_nop_failure2(uarch_t arg)
 {
+	(void)arg;
 	return ERROR_UNKNOWN;
 }
 

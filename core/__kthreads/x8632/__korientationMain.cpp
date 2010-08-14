@@ -1,4 +1,5 @@
 
+#include <__ksymbols.h>
 #include <arch/paging.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
@@ -44,7 +45,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	// Initialize the kernel swamp.
 	DO_OR_DIE(
 		memoryTrib,
-		initialize1(
+		initialize(
 			reinterpret_cast<void *>( 0xC0000000 + 0x400000 ),
 			static_cast<paddr_t>( 0x3FB00000 ),
 			__KNULL),

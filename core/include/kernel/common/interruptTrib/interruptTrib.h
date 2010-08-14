@@ -63,8 +63,7 @@ public tributaryC
 {
 public:
 	interruptTribC(void);
-	// Architecture specific.
-	error_t initialize1(void);
+	error_t initialize(void);
 	~interruptTribC(void) {};
 
 public:
@@ -75,6 +74,7 @@ public:
 	void irqMain(taskContextS *regs);
 
 private:
+	// These two are architecture specific.
 	void installHardwareVectorTable(void);
 	void installExceptions(void);
 

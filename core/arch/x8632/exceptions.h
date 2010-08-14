@@ -3,6 +3,10 @@
 
 	#include <kernel/common/interruptTrib/isrFn.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 exceptionFn	x8632_div_zero;
 exceptionFn	x8632_debug;
 exceptionFn	x8632_nmi;
@@ -22,7 +26,11 @@ exceptionFn	x8632_unknown_interrupt;
 exceptionFn	x8632_fpu_fault;
 exceptionFn	x8632_alignment_check;
 exceptionFn	x8632_machine_check;
-exceptionFn	x8632_reserved_vector
+exceptionFn	x8632_reserved_vector;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

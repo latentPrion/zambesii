@@ -1,6 +1,10 @@
 
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kclib/assert.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
+#include <kernel/common/moduleApis/chipsetSupportPackage.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 

@@ -2,7 +2,7 @@
 #include <arch/x8632/interrupts.h>
 #include "exceptions.h"
 
-exceptionFn		__kexceptionTable[20] =
+exceptionFn		*__kexceptionTable[20] =
 {
 	&x8632_div_zero,
 	&x8632_debug,

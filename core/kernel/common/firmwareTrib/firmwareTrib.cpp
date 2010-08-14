@@ -19,7 +19,6 @@ error_t firmwareTribC::initialize(void)
 {
 	memset(this, 0, sizeof(*this));
 
-	FIRMWARETRIB_CHOOSE(watchdogRiv);
 	FIRMWARETRIB_CHOOSE(debugRiv1);
 	FIRMWARETRIB_CHOOSE(debugRiv2);
 	FIRMWARETRIB_CHOOSE(debugRiv3);
@@ -59,10 +58,5 @@ debugRivS *firmwareTribC::getDebugRiv3(void)
 debugRivS *firmwareTribC::getDebugRiv4(void)
 {
 	return descriptor.debugRiv4;
-}
-
-watchdogRivS *firmwareTribC::getWatchdogRiv(void)
-{
-	return descriptor.watchdogRiv;
 }
 

@@ -45,11 +45,11 @@
 
 struct chipsetSupportPackageS
 {
-	watchdogDevS		*watchdog;
-	intControllerDevS	*intController;
+	struct watchdogDevS		*watchdog;
+	struct intControllerDevS	*intController;
 };
 
-extern chipsetSupportPackageS	chipsetCoreDev;
+extern struct chipsetSupportPackageS	chipsetCoreDev;
 
 #endif
 

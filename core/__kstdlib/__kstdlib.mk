@@ -7,7 +7,7 @@ endif
 
 __kcxxabi.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	@echo Building __kstdlib/__kcxxabi/ dir.
+	@echo Building __kstdlib/$(ZCXXABI)/ dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd __kstdlib/$(ZCXXABI); make
 

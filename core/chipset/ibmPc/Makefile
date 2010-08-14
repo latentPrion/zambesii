@@ -1,7 +1,7 @@
 .PHONY=
 DELIVERABLE=../../chipsetCore.a
 OBJFILES=memoryConfig.o memoryMap.o regionMap.o numaMap.o terminal.o \
-	firmwareStream.o pic.o
+	firmwareStream.o pic.o chipsetSupportPackage.o
 
 all: Makefile $(DELIVERABLE)
 

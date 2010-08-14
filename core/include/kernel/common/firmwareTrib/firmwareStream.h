@@ -2,7 +2,6 @@
 	#define _FIRMWARE_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <kernel/common/firmwareTrib/watchdogRiv.h>
 	#include <kernel/common/firmwareTrib/debugRiv.h>
 
 /**	EXPLANATION:

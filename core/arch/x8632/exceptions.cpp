@@ -2,103 +2,103 @@
 #include <__kclasses/debugPipe.h>
 #include "exceptions.h"
 
-status_t x8632_div_zero(tastContextS *regs)
+status_t x8632_div_zero(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_debug(tastContextS *regs)
+status_t x8632_debug(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_nmi(tastContextS *regs)
+status_t x8632_nmi(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_breakpoint(tastContextS *regs)
+status_t x8632_breakpoint(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_int_overflow(tastContextS *regs)
+status_t x8632_int_overflow(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_bound(tastContextS *regs)
+status_t x8632_bound(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_invalid_opcode(tastContextS *regs)
+status_t x8632_invalid_opcode(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_no_fpu(tastContextS *regs)
+status_t x8632_no_fpu(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_double_fault(tastContextS *regs)
+status_t x8632_double_fault(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_fpu_segfault(tastContextS *regs)
+status_t x8632_fpu_segfault(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_tss_except(tastContextS *regs)
+status_t x8632_tss_except(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_seg_not_present(tastContextS *regs)
+status_t x8632_seg_not_present(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_stack_fault(tastContextS *regs)
+status_t x8632_stack_fault(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_gpf(tastContextS *regs)
+status_t x8632_gpf(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_page_fault(tastContextS *regs)
+status_t x8632_page_fault(taskContextS *)
 {
 	__kprintf(WARNING"Page fault.\n");
 	return ERROR_SUCCESS;
 }
 
-status_t x8632_unknown_interrupt(tastContextS *regs)
+status_t x8632_unknown_interrupt(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_fpu_fault(tastContextS *regs)
+status_t x8632_fpu_fault(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_alignment_check(tastContextS *regs)
+status_t x8632_alignment_check(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_machine_check(tastContextS *regs)
+status_t x8632_machine_check(taskContextS *)
 {
 	return ERROR_GENERAL;
 }
 
-status_t x8632_reserved_vector(taskContextS *regs)
+status_t x8632_reserved_vector(taskContextS *)
 {
 	__kprintf(WARNING"Interrupt came in on reserved x86-32 vector.\n");
 	return ERROR_SUCCESS;
