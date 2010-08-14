@@ -6,9 +6,13 @@ status_t cxxrtl::callGlobalConstructors(void)
 {
 	void (**ctorPtr)();
 
-	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );
-	for (uarch_t i=0; (void *)ctorPtr < (void *)&__kctorEnd; i++) {
-		(*ctorPtr[i])();
+	ctorPtr = reinterpret_cast<void (**)()>( &__kctorStart );	
+	for (;
+		ctorPtr < reinterpret_cast<void (**)()>( &__kctorEnd );
+		ctorPtr = reinterpret_cast<void (**)()>(
+			(uarch_t)ctorPtr + sizeof(void *) ))
+	{
+		(*ctorPtr[0])();
 	};
 
 	return ERROR_SUCCESS;
