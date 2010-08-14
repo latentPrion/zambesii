@@ -17,8 +17,6 @@ firmwareTribC::firmwareTribC(void)
 
 error_t firmwareTribC::initialize(void)
 {
-	memset(this, 0, sizeof(*this));
-
 	FIRMWARETRIB_CHOOSE(debugRiv1);
 	FIRMWARETRIB_CHOOSE(debugRiv2);
 	FIRMWARETRIB_CHOOSE(debugRiv3);

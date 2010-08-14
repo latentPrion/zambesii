@@ -52,6 +52,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		ret);
 
 	DO_OR_DIE(numaTrib, initialize(), ret);
+	DO_OR_DIE(firmwareTrib, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
@@ -66,5 +67,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kdebug.refresh();
 	__kprintf(NOTICE"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
+
+	(memoryTrib.__kmemoryStream.*memoryTrib.__kmemoryStream.memAlloc)(1, 0);
 }
 
