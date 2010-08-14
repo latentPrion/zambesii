@@ -5,6 +5,7 @@
 	#include <arch/taskContext.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
+	#include <kernel/common/interruptTrib/isrFn.h>
 
 /**	EXPLANATION:
  * When Zambezii receives an IRQ, it quickly saves context (much like any other
@@ -61,18 +62,15 @@ class interruptTribC
 public tributaryC
 {
 public:
-	typedef status_t (isrFn)(uarch_t processId, uarch_t *flags);
-
-public:
-	interruptTribC(void) {};
+	interruptTribC(void);
 	// Architecture specific.
 	error_t initialize1(void);
 	~interruptTribC(void) {};
 
 public:
 	// Will Eventually provide a code injection API for usermode drivers.
-	status_t registerIsr(void (*vaddr)(), uarch_t flags);
-	void removeIsr(void (*vaddr)());
+	status_t registerIsr(isrFn *isr, uarch_t flags);
+	void removeIsr(isrFn *isr);
 
 	void irqMain(taskContextS *regs);
 

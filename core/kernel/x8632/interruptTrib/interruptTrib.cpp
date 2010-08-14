@@ -5,6 +5,8 @@
 #include <__kstdlib/__kclib/string.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
+#include <kernel/common/moduleApis/chipsetSupportPackage.h>
+#include <kernel/common/moduleApis/interruptController.h>
 
 static firmwareStreamS	*stream;
 
@@ -58,29 +60,41 @@ error_t interruptTribC::initialize1(void)
 	 **/
 	asm volatile("lidt	(x8632IdtPtr)\n\t");
 
-	// Zero out the ISR table, and call the chipset init sequence.
-	memset(isrTable, 0, sizeof(interruptTribC::vectorDescriptorS) * 256);
+	/**	EXPLANATION:
+	 * At initialization of the Interrupt Tributary, we wish to ensure that
+	 * all vectors are masked at the interrupt controller immediately after
+	 * loading the hardware vector table into the processor.
+	 *
+	 * But making a single call to
+	 * (*chipsetCoreDev.intController->maskAll)() is not intelligent at all:
+	 * we have previously called to the chipset and initialized the
+	 * watchdog timer if it exists. In the event that the chipset *does*
+	 * have a watchdog, the chipset support code would also have registered
+	 * a timer device with the kernel to interrupt at regular intervals and
+	 * call the watchdog.
+	 *
+	 * See, if we call maskAll at the interrupt controller now, we'll mask
+	 * off the continuous timer, and hence leave the watchdog unfed. So,
+	 * while it would be much faster to just call maskAll, we have to go
+	 * one by one, and make sure first that there are no registered ISRs
+	 * in the ISR list, and for each unfilled ISR slot, we call
+	 * maskSingle() on that slot.
+	 *
+	 * This is not as bad as it seems for two reasons:
+	 *	1. On most processors there aren't a lot of interrupt vectors.
+	 *	   x86 is a nice exception in that sense.
+	 *	2. Since we loop and mask each interrupt one by one, we get to
+	 *	   immediately see, at boot, which interrupts cannot be masked
+	 *	   by the chipset support code that was compiled in with our
+	 *	   kernel build.
+	 **/
+	// Check for int controller, halt if none, else call initialize().
+	assert_fatal(chipsetCoreDev.intController != __KNULL);
+	assert_fatal(
+		(*chipsetCoreDev.intController->initialize)() == ERROR_SUCCESS);
 
-	stream = firmwareTrib.getChipsetStream();
-	if (stream->initializeInterrupts != __KNULL) {
-		(*stream->initializeInterrupts)();
-	}
-	else {
-		stream = firmwareTrib.getFirmwareStream();
-		// One of the stream *MUST* have initializeInterrupts defined.
-		assert_fatal(stream->initializeInterrupts != __KNULL);
-		(*stream->initializeInterrupts)();
-	};
-
-	// Mask all IRQs at the interrupt controller.
-	(*stream->maskAll)();
-
-	for (uarch_t i=0; i<32; i++) {
-		isrTable[i].flags = INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION;
-	};
-
-	for (uarch_t i=0; i<
-	// If we haven't got a 3xfault, then we've essentially succeeded.
-	return ERROR_SUCCESS;
+	for (uarch_t i=0; i<ARCH_IRQ_NVECTORS; i++)
+	{
+		if (isrTable[i].flags
 }
 
