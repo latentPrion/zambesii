@@ -82,9 +82,12 @@ error_t ibmPc_pic_maskSingle(uarch_t vector)
 
 			io_write8(PIC_PIC2_DATA, mask);
 		};
-	};
 
 	return ERROR_SUCCESS;
+	};
+
+	// PIC can't handle non-ISA interrupts.
+	return ERROR_INVALID_ARG_VAL;
 }
 
 error_t ibmPc_pic_maskAll(void)
@@ -118,9 +121,12 @@ error_t ibmPc_pic_unmaskSingle(uarch_t vector)
 
 			io_write8(PIC_PIC2_DATA, mask);
 		};
-	};
 
 	return ERROR_SUCCESS;
+	};
+
+	// PIC can't handle non-ISA interrupts.
+	return ERROR_INVALID_ARG_VAL;
 }
 	
 error_t ibmPc_pic_unmaskAll(void)

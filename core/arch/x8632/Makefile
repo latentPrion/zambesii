@@ -5,7 +5,8 @@ OBJFILES=wPRanger_mapInc.o wPRanger_mapNoInc.o wPRanger_remapInc.o \
 	wPRanger_unmap.o wPRanger_getLevelRanges.o wPRanger_accessors.o \
 	wPRanger_convertFlags.o \
 	tlbControl.o \
-	gdt.o idt.o vectorHandlers.o longjmp.o string.o
+	gdt.o idt.o vectorHandlers.o longjmp.o string.o __kexceptionTable.o \
+	exceptions.o
 
 all: Makefile $(DELIVERABLE)
 

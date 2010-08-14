@@ -74,13 +74,20 @@ public:
 
 	void irqMain(taskContextS *regs);
 
+private:
+	void installHardwareVectorTable(void);
+	void installExceptions(void);
+
 public:
 	struct isrS
 	{
 		isrS		*next;
 		uarch_t		flags;
 		uarch_t		processId;
-		isrFn		*isr;
+		union {
+			isrFn		*isr;
+			exceptionFn	*except;
+		};
 	};
 
 	struct vectorDescriptorS
@@ -95,8 +102,9 @@ public:
 		 * it may be a pointer to a list of ISRs for this vector.
 		 **/
 		union {
-			isrFn	*isr;
-			isrS	*list;
+			isrFn		*isr;
+			exceptionFn	*except;
+			isrS		*list;
 		} handler;
 	};
 	vectorDescriptorS		isrTable[ARCH_IRQ_NVECTORS];

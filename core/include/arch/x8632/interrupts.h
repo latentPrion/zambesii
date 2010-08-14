@@ -1,12 +1,16 @@
 #ifndef _ARCH_x86_32_INTERRUPTS_H
 	#define _ARCH_x86_32_INTERRUPTS_H
 
+	#include <kernel/common/interruptTrib/isrFn.h>
+
 #define ARCH_IRQ_NVECTORS		256
 
 #ifdef __cplusplus
 extern "C" void 	(*__kvectorTable[])();
+extern "C" exceptionFn	*__kexceptionTable[];
 #else
 extern void 		(*__kvectorTable[])();
+extern exceptionFn	*__kexceptionTable[];
 #endif
 
 
