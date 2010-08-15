@@ -11,26 +11,26 @@
 	 **/
 
 #ifdef CONFIG_ARCH_x86_32_PAE
-	#define PAGING_NLEVELS			3
-	#define PAGING_L0_NENTRIES		4
-	#define PAGING_L1_NENTRIES		512
-	#define PAGING_L2_NENTRIES		512
+	#define PAGING_NLEVELS			(3)
+	#define PAGING_L0_NENTRIES		(4)
+	#define PAGING_L1_NENTRIES		(512)
+	#define PAGING_L2_NENTRIES		(512)
 
 	#define PAGING_L0_MAPSIZE		(0x40000000)
 	#define PAGING_L1_MAPSIZE		(0x00200000)
 	#define PAGING_L2_MAPSIZE		(0x00001000)
 #else
-	#define PAGING_NLEVELS			2
-	#define PAGING_L0_NENTRIES		1024
-	#define PAGING_L1_NENTRIES		1024
+	#define PAGING_NLEVELS			(2)
+	#define PAGING_L0_NENTRIES		(1024)
+	#define PAGING_L1_NENTRIES		(1024)
 
 	#define PAGING_L0_MAPSIZE		(0x00400000)
 	#define PAGING_L1_MAPSIZE		(0x00001000)
 #endif
 
-#define PAGING_BASE_SIZE			0x00001000
+#define PAGING_BASE_SIZE			(0x00001000)
 #ifdef CONFIG_ARCH_x86_32_PAE
-	#define PAGING_ALTERNATE_SIZE		0x00200000
+	#define PAGING_ALTERNATE_SIZE		(0x00200000)
 #else
 	// #define PAGING_ALTERNATE_SIZE	0x00400000
 #endif
@@ -48,15 +48,15 @@
 	#define PAGING_L1_VADDR_MASK			((uarch_t)0x3FE00000)
 	#define PAGING_L2_VADDR_MASK			((uarch_t)0x001FF000)
 
-	#define PAGING_L0_VADDR_SHIFT			30
-	#define PAGING_L1_VADDR_SHIFT			21
-	#define PAGING_L2_VADDR_SHIFT			12
+	#define PAGING_L0_VADDR_SHIFT			(30)
+	#define PAGING_L1_VADDR_SHIFT			(21)
+	#define PAGING_L2_VADDR_SHIFT			(12)
 #else
 	#define PAGING_L0_VADDR_MASK			((uarch_t)0xFFC00000)
 	#define PAGING_L1_VADDR_MASK			((uarch_t)0x003FF000)
 
-	#define PAGING_L0_VADDR_SHIFT			22
-	#define PAGING_L1_VADDR_SHIFT			12
+	#define PAGING_L0_VADDR_SHIFT			(22)
+	#define PAGING_L1_VADDR_SHIFT			(12)
 #endif
 
 // Macros to extract and encode a paddr into an L<N> entry.
@@ -118,13 +118,39 @@
  * translation. Whether read from disk, or allocate a frame.
  **/
 #define PAGING_LEAF_SWAPPED		(1<<13)
-#define PAGING_LEAF_FAKEMAPPED		(1<<14)
 // This will help speed up detection of page that are guard mapped.
-#define PAGING_LEAF_GUARDPAGE		(1<<15)
+#define PAGING_LEAF_GUARDPAGE		(1<<14)
+#define PAGING_LEAF_FAKEMAPPED		(1<<15)
+/* When a dynamic allocation is partially fakemapped, the kernel can just
+ * quickly map a page to the touched page.
+ *
+ * In the case of a shared library, or a partially mapped executable section,
+ * the kernel has to know that data must be read from disk and filled in.
+ * It would be much faster if the kernel could tell what kind of data must be
+ * mapped in from the moment it gets the page fault.
+ *
+ * On #PF, if the page was fakemapped, the kernel will check for this flag.
+ * If it's not set, the kernel will assume that the page can just take any old
+ * frame, and will quickly allocate and map a new frame in and then return.
+ *
+ * If this flag is set, it would be a quick indicator to the kernel that the
+ * fakemapped page pertains to a static code/data unmapped range. The kernel
+ * must then consult the shared memory mappings and the executable section
+ * data, and the memory mapped files descriptors, and see which one the page
+ * needs to be filled in with.
+ **/
+#define PAGING_LEAF_STATICDATA		(1<<16)
+
+#define PAGING_LEAF_SDATA_SHIFT		(17)
+#define PAGING_LEAF_SDATA_MASK		(0x3)
+
+#define PAGING_LEAF_EXEC_SECTION	(0x0)
+#define PAGING_LEAF_MMAPPED_FILE	(0x1)
+#define PAGING_LEAF_SHLIB		(0x2)
 
 #ifndef __ASM__
 
-//pagingLevel0S: x86 Top level paging structure, better known as the Page Directory.
+//pagingLevel0S: x86 Top level paging structure, aka the Page Directory.
 struct pagingLevel0S
 {
 	paddr_t		entries[PAGING_L0_NENTRIES];

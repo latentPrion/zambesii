@@ -117,6 +117,7 @@ status_t x8632_page_fault(taskContextS *regs)
 
 	case WPRANGER_STATUS_FAKEMAPPED:
 		__kprintf(NOTICE"Page is fakemapped.\n");
+		if (!__KFLAG_TEST(f, PAGING_LEAF_ALLOCDATA))
 		break;
 
 	case WPRANGER_STATUS_SWAPPED:
