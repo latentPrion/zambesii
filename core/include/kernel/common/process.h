@@ -1,9 +1,11 @@
 #ifndef _PROCESS_H
-	#define PROCESS_H
+	#define _PROCESS_H
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/task.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
+
+struct taskS;
 
 struct processS
 {

@@ -70,8 +70,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		"DEVICE1.\n");
 
 	timerTrib.dump();
-//	chipsetCoreDev.intController->unmaskSingle(33);
-	asm volatile ("sti\n\t");
+	char *foo=(char *)0x1E65CAEB;
+	*foo = 1;
 	for (;;){};
 }
 

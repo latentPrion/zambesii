@@ -87,6 +87,10 @@ void interruptTribC::irqMain(taskContextS *regs)
 {
 	__kprintf(NOTICE"Interrupt Trib: CPU %d: Entry from vector %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
+
+	if (isrTable[regs->vectorNo].handler.isr) {
+		isrTable[regs->vectorNo].handler.except(regs);
+	};
 	// Calls ISRs, then exit.
 }
 

@@ -7,6 +7,7 @@
 	#include <__kclasses/bitmap.h>
 	#include <kernel/common/smpConfig.h>
 	#include <kernel/common/numaConfig.h>
+	#include <kernel/common/process.h>
 
 #define TASK_FLAGS_SCHED_WAITING	(1<<0)
 
