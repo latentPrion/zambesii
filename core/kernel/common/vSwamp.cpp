@@ -46,7 +46,12 @@ error_t vSwampC::initialize(
 	void *baseAddr, uarch_t swampSize, holeMapS *holeMap
 	)
 {
-	memset(this, 0, sizeof(*this));
+	memset(initSwampNodes, 0, sizeof(swampInfoNodeC) * VSWAMP_NSWAMPS);
+	for (uarch_t i=0; i<VSWAMP_NSWAMPS; i++)
+	{
+		swamps[i].baseAddr = swamps[i].size = swamps[i].flags = 0;
+		memset(&swamps[i].ptrs.rsrc, 0, sizeof(swampStateS));
+	};
 
 	// FIXME: Proof-check these calculations for userspace process spawning.
 	swamps[0].baseAddr = PAGING_BASE_ALIGN_FORWARD(

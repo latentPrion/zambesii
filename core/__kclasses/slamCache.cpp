@@ -17,14 +17,14 @@ heapCacheC(objectSize)
 
 error_t slamCacheC::initialize(uarch_t objectSize)
 {
-	memset(this, 0, sizeof(*this));
-
 	heapCacheC::objectSize = ((objectSize < sizeof(slamCacheC::object))
 		? sizeof(slamCacheC::object) : objectSize);
 
 	freeList.rsrc = reinterpret_cast<object *>(
 		(memoryTrib.__kmemoryStream.*
 			memoryTrib.__kmemoryStream.memAlloc)(1, 0));
+
+	partialList.rsrc = __KNULL;
 
 	// Calculate the excess on each page allocated.
 	perPageExcess = PAGING_BASE_SIZE % objectSize;

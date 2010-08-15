@@ -19,6 +19,7 @@
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/moduleApis/chipsetSupportPackage.h>
 
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
@@ -69,5 +70,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		"DEVICE1.\n");
 
 	(memoryTrib.__kmemoryStream.*memoryTrib.__kmemoryStream.memAlloc)(1, 0);
+	chipsetCoreDev.intController->unmaskAll();
+	asm volatile ("sti\n\t");
+	for (;;){};
 }
 

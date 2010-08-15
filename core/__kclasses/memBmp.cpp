@@ -36,8 +36,7 @@ memBmpC::memBmpC(paddr_t baseAddr, paddr_t size, void *preAllocated)
  **/
 error_t memBmpC::initialize(paddr_t baseAddr, paddr_t size, void *preAllocated)
 {
-	memset(this, 0, sizeof(*this));
-
+	flags = 0;
 	memBmpC::baseAddr = baseAddr;
 	endAddr = baseAddr + (size - 1);
 
