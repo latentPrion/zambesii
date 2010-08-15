@@ -70,8 +70,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		"DEVICE1.\n");
 
 	(memoryTrib.__kmemoryStream.*memoryTrib.__kmemoryStream.memAlloc)(1, 0);
-	chipsetCoreDev.intController->unmaskAll();
-	asm volatile ("sti\n\t");
-	for (;;){};
+	__kprintf(NOTICE"This is text %d\n.", 79);
 }
 

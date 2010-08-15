@@ -272,6 +272,15 @@ void debugPipeC::numToStrHex(uarch_t num, uarch_t *curLen)
 	};
 }
 
+void __kprintf(const utf8Char *str, ...)
+{
+	va_list		args;
+
+	va_start_forward(args, str);
+	__kdebug.printf(str, args);
+}
+
+
 void debugPipeC::printf(const utf8Char *str, va_list args)
 {
 	uarch_t		unum, buffLen=0, buffMax;
