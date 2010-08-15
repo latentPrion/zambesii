@@ -2,6 +2,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/moduleApis/interruptController.h>
 #include <kernel/common/firmwareTrib/rivIoApi.h>
+#include <kernel/common/firmwareTrib/rivDebugApi.h>
 
 #define PIC_PIC1_CMD		0x20
 #define PIC_PIC1_DATA		0x21
@@ -74,7 +75,7 @@ static error_t ibmPc_pic_maskSingle(uarch_t vector)
 {
 	uarch_t		mask;
 
-	if (vector > PIC_PIC1_VECTOR_BASE
+	if (vector >= PIC_PIC1_VECTOR_BASE
 		&& vector < (PIC_PIC2_VECTOR_BASE + 8)) 
 	{
 		if (vector < PIC_PIC2_VECTOR_BASE)
@@ -111,7 +112,7 @@ static error_t ibmPc_pic_unmaskSingle(uarch_t vector)
 {
 	uarch_t		mask;
 
-	if (vector > PIC_PIC1_VECTOR_BASE
+	if (vector >= PIC_PIC1_VECTOR_BASE
 		&& vector < (PIC_PIC2_VECTOR_BASE + 8)) 
 	{
 		if (vector < PIC_PIC2_VECTOR_BASE)
