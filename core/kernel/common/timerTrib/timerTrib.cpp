@@ -1,6 +1,7 @@
 
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/moduleApis/chipsetSupportPackage.h>
 
@@ -26,6 +27,26 @@ error_t timerTribC::initialize(void)
 
 timerTribC::~timerTribC(void)
 {
+}
+
+void timerTribC::dump(void)
+{
+	__kprintf(NOTICE"TimerTrib: dumping.\n");
+
+	__kprintf(NOTICE"\tWatchdog: ");
+		if (watchdog.rsrc.isr == __KNULL) {
+			__kprintf((utf8Char *)"No.\n");
+		}
+		else
+		{
+			__kprintf((utf8Char *)"Yes: isr addr: %P, "
+				"interval: %d\n",
+				watchdog.rsrc.isr,
+				watchdog.rsrc.interval);
+		};
+
+	__kprintf(NOTICE"\tContinuousClock: %d, %d\n",
+		continuousClock.rsrc.low, continuousClock.rsrc.high);
 }
 
 void timerTribC::updateContinuousClock(void)

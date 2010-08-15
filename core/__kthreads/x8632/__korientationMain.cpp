@@ -69,7 +69,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kprintf(NOTICE"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
 
-	(memoryTrib.__kmemoryStream.*memoryTrib.__kmemoryStream.memAlloc)(1, 0);
-	__kprintf(NOTICE"This is text %d\n.", 79);
+	timerTrib.dump();
 }
 

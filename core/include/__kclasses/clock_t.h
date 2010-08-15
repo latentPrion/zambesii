@@ -42,7 +42,7 @@ public:
 	inline int operator!=(clock_t c);
 	inline clock_t &operator++(int);
 
-private:
+public:
 	uarch_t		low;
 	uarch_t		high;
 };

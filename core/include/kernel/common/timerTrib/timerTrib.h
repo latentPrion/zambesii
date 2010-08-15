@@ -32,6 +32,8 @@ public:
 	void enablePerCpuClockEmu(void);
 	void disablePerCpuClockEmu(void);
 
+	void dump(void);
+
 private:
 	// Arch-specific per-cpu scheduler call emulation.
 	void invokeSchedulerEmu(void);
