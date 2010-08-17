@@ -9,6 +9,9 @@ bochsrc*
 *.tgz
 *.tar*
 tmp
+flp
+hdd
+fat
 foo
 *.tmp
 .bochsrc

@@ -11,15 +11,15 @@
  **/
 
 // Accessors.
-extern pagingLevel1S	*level1Accessor;
+extern volatile pagingLevel1S	*const level1Accessor;
 #ifdef CONFIG_ARCH_x86_32_PAE
-extern pagingLevel2S	*level2Accessor;
+extern volatile pagingLevel2S	*const level2Accessor;
 #endif
 
 // Modifiers.
-extern paddr_t		*level1Modifier;
+extern paddr_t		*const level1Modifier;
 #ifdef CONFIG_ARCH_x86_32_PAE
-extern paddr_t		*level2Modifier;
+extern paddr_t		*const level2Modifier;
 #endif
 
 #endif

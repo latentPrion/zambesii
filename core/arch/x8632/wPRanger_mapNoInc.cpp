@@ -1,10 +1,12 @@
 
+#include <debug.h>
 #include <arch/paging.h>
 #include <arch/tlbControl.h>
 #include <arch/walkerPageRanger.h>
 #include <arch/x8632/wPRanger_accessors.h>
 #include <arch/x8632/wPRanger_getLevelRanges.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -63,7 +65,7 @@ status_t walkerPageRanger::mapNoInc(
 			*level1Modifier = paddrTmp | (*level1Modifier & 0xFFF);
 
 			// Flush the l1 accessor from the TLB.
-			tlbControl::flushSingleEntry(level1Accessor);
+			tlbControl::flushSingleEntry((void *)level1Accessor);
 
 			// Zero out the new Page Table.
 			for (ztmp=0; ztmp<PAGING_L1_NENTRIES; ztmp++) {
@@ -76,7 +78,7 @@ status_t walkerPageRanger::mapNoInc(
 		*level1Modifier = (l0Entry << 12) | (*level1Modifier & 0xFFF);
 
 		// Flush the l1 Accessor from the TLB.
-		tlbControl::flushSingleEntry(level1Accessor);
+		tlbControl::flushSingleEntry((void *)level1Accessor);
 
 skipL1Flush:
 		l1Current = ((l0Current == l0Start) ? l1Start : 0);
@@ -101,7 +103,8 @@ skipL1Flush:
 				*level2Modifier = paddrTmp
 					| (*level2Modifier & 0xFFF);
 
-				tlbControl::flushSingleEntry(level2Accessor);
+				tlbControl::flushSingleEntry(
+					(void *)level2Accessor);
 
 				// Zero out the new table.
 				for (ztmp=0; ztmp < PAGING_L2_NENTRIES; ztmp++)
@@ -115,7 +118,7 @@ skipL1Flush:
 			*level2Modifier =
 				(l1Entry << 12) | (*level2Modifier & 0xFFF);
 
-			tlbControl::flushSingleEntry(level2Accessor);
+			tlbControl::flushSingleEntry((void *)level2Accessor);
 
 skipL2Flush:
 			l2Current = (((l0Current == l0Start)

@@ -90,9 +90,8 @@ private:
 	sharedResourceGroupC<waitLockC, uarch_t>	devices;
 };
 
-extern debugPipeC	__kdebug;
-
 void __kprintf(const utf8Char *str, ...);
+extern debugPipeC	__kdebug;
 
 #endif
 

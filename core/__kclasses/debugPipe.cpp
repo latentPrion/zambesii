@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/arch.h>
 #include <__kstdlib/utf8.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -278,8 +279,8 @@ void __kprintf(const utf8Char *str, ...)
 
 	va_start_forward(args, str);
 	__kdebug.printf(str, args);
+	va_end(args);
 }
-
 
 void debugPipeC::printf(const utf8Char *str, va_list args)
 {
@@ -386,7 +387,6 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugRiv4,
 		convBuff.rsrc, buffLen);
 
-	convBuff.lock.release();
-	
+	convBuff.lock.release();	
 }
 

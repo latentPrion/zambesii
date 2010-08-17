@@ -70,8 +70,29 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		"DEVICE1.\n");
 
 	timerTrib.dump();
-	char *foo=(char *)0x1E65CAEB;
-	*foo = 1;
-	for (;;){};
+
+	char *foo=(char *)0xF0000000;
+	status_t		status;
+
+	status = walkerPageRanger::mapNoInc(
+		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		foo, PAGING_LEAF_FAKEMAPPED, 1,
+		PAGEATTRIB_WRITE | PAGEATTRIB_SUPERVISOR);
+
+	if (status < 1) {
+		__kprintf(ERROR"Only able to map %d pages at %X.\n",
+			status, foo);
+
+		for (;;){};
+	};
+#define dv		0xC0400000
+	paddr_t	p;
+	uarch_t f;
+	__kprintf(NOTICE"%X's status is = %X.\n", dv,
+		walkerPageRanger::lookup(
+			&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+			(void *)dv, &p, &f));
+	__kprintf(NOTICE"Paddr @ %X is: %X.\n", dv, p);
+	*foo = 29;
 }
 

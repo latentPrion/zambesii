@@ -30,6 +30,8 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 
 /* 7.8.1.1 Exact-width integer types */
 
+#ifndef __ASM__
+
 #ifdef __INT8_TYPE__
 typedef __INT8_TYPE__ int8_t;
 #endif
@@ -255,5 +257,7 @@ typedef __UINTMAX_TYPE__ uintmax_t;
 #define UINTMAX_C(c) __UINTMAX_C(c)
 
 #endif /* !defined __cplusplus || defined __STDC_CONSTANT_MACROS */
+
+#endif /* !defined (__ASM__) */
 
 #endif /* _GCC_STDINT_H */

@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/debugBuffer.h>
@@ -150,7 +151,6 @@ void debugBufferC::syphon(unicodePoint *str, uarch_t buffLen)
 				&buff.rsrc.index,
 				buffLen);
 		};
-
 		buff.rsrc.cur->data[buff.rsrc.index] = *str;
 		buff.rsrc.index++;
 	};
@@ -165,7 +165,6 @@ debugBufferC::buffPageS *debugBufferC::scrollBuff(
 {
 	debugBufferC::buffPageS		*tmp1, *tmp2;
 	uarch_t				bound, nWholePages, nCharsExcess;
-
 
 	if (buffLen >= buff.rsrc.buffNPages * DEBUGBUFFER_PAGE_NCHARS)
 	{

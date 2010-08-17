@@ -85,12 +85,22 @@ error_t interruptTribC::initialize(void)
 
 void interruptTribC::irqMain(taskContextS *regs)
 {
-	__kprintf(NOTICE"Interrupt Trib: CPU %d: Entry from vector %d.\n",
+	__kprintf(NOTICE"interruptTribC::irqMain: CPU %d entered "
+		"on vector %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
 
-	if (isrTable[regs->vectorNo].handler.isr) {
+	if (isrTable[regs->vectorNo].handler.isr)
+	{
+		__kprintf(NOTICE"Calling %X as handler for vector %d.\n",
+			isrTable[regs->vectorNo].handler.isr, regs->vectorNo);
+
 		isrTable[regs->vectorNo].handler.except(regs);
 	};
+
+	__kprintf(NOTICE"interruptTribC::irqMain: Exiting on CPU %d.\n",
+		cpuTrib.getCurrentCpuStream()->cpuId);
+
+	// Execution does not reach here, kofi.
 	// Calls ISRs, then exit.
 }
 

@@ -32,12 +32,12 @@ status_t walkerPageRanger::lookup(
 		return WPRANGER_STATUS_UNMAPPED;
 	};
 
-	l0Start = reinterpret_cast<uarch_t>( vaddr ) & PAGING_L0_VADDR_MASK
+	l0Start = (reinterpret_cast<uarch_t>( vaddr ) & PAGING_L0_VADDR_MASK)
 		>> PAGING_L0_VADDR_SHIFT;
-	l1Start = reinterpret_cast<uarch_t>( vaddr ) & PAGING_L1_VADDR_MASK
+	l1Start = (reinterpret_cast<uarch_t>( vaddr ) & PAGING_L1_VADDR_MASK)
 		>> PAGING_L1_VADDR_SHIFT;
 #ifdef CONFIG_ARCH_x86_32_PAE
-	l2Start = reinterpret_cast<uarch_t>( vaddr ) & PAGING_L2_VADDR_MASK
+	l2Start = (reinterpret_cast<uarch_t>( vaddr ) & PAGING_L2_VADDR_MASK)
 		>> PAGING_L2_VADDR_SHIFT;
 #endif
 
@@ -56,7 +56,7 @@ status_t walkerPageRanger::lookup(
 		l0Entry >>= 12;
 		*level1Modifier |= (l0Entry << 12);
 
-		tlbControl::flushSingleEntry(level1Accessor);
+		tlbControl::flushSingleEntry((void *)level1Accessor);
 
 		l1Entry = level1Accessor->entries[l1Start];
 		if (l1Entry != 0)
@@ -66,7 +66,7 @@ status_t walkerPageRanger::lookup(
 			l1Entry >>= 12;
 			*level2Modifier |= (l1Entry << 12);
 
-			tlbControl::flushSingleEntry(level2Accessor);
+			tlbControl::flushSingleEntry((void *)level2Accessor);
 			l2Entry = level2Accessor->entries[l2Start];
 			if (l2Entry != 0)
 			{
@@ -81,7 +81,7 @@ status_t walkerPageRanger::lookup(
 						*paddr, PAGING_LEAF_SWAPPED))
 					{
 						ret = WPRANGER_STATUS_SWAPPED;
-					}
+					};
 					if (__KFLAG_TEST(
 						*paddr, PAGING_LEAF_FAKEMAPPED))
 					{
@@ -92,7 +92,6 @@ status_t walkerPageRanger::lookup(
 					{
 						ret = WPRANGER_STATUS_GUARDPAGE;
 					};
-
 				};
 			}
 			else {
@@ -110,7 +109,7 @@ status_t walkerPageRanger::lookup(
 					*paddr, PAGING_LEAF_SWAPPED))
 				{
 					ret = WPRANGER_STATUS_SWAPPED;
-				}
+				};
 				if (__KFLAG_TEST(
 					*paddr, PAGING_LEAF_FAKEMAPPED))
 				{

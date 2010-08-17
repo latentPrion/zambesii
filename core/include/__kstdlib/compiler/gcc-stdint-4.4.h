@@ -23,9 +23,9 @@
 #ifndef _STDINT_H
 #define _STDINT_H	1
 
-#ifndef __ASM__
-
 #include <arch/arch.h>
+
+#ifndef __ASM__
 
 /*	Exact integral types.
  **/

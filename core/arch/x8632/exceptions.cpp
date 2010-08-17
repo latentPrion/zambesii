@@ -1,6 +1,8 @@
 
 #include <arch/paddr_t.h>
+#include <arch/paging.h>
 #include <arch/walkerPageRanger.h>
+#include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -117,7 +119,9 @@ status_t x8632_page_fault(taskContextS *regs)
 
 	case WPRANGER_STATUS_FAKEMAPPED:
 		__kprintf(NOTICE"Page is fakemapped.\n");
-		if (!__KFLAG_TEST(f, PAGING_LEAF_ALLOCDATA))
+		if (!__KFLAG_TEST(f, PAGING_LEAF_STATICDATA)) {
+			__kprintf(NOTICE"non STATICDATA fakemapped.\n");
+		};
 		break;
 
 	case WPRANGER_STATUS_SWAPPED:
@@ -137,6 +141,7 @@ status_t x8632_page_fault(taskContextS *regs)
 		panic(FATAL"Unknown page status.\n");
 		break;
 	};
+
 	return ERROR_SUCCESS;
 }
 

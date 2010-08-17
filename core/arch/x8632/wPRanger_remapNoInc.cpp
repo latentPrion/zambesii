@@ -48,7 +48,7 @@ void walkerPageRanger::remapInc(
 		l0Entry >>= 12;
 		*level1Modifier |= l0Entry << 12;
 
-		tlbControl::flushSingleEntry(level1Accessor);
+		tlbControl::flushSingleEntry((void *)level1Accessor);
 
 		l1Current = ((l0Current == l0Start) ? l1Start : 0);
 		l1Limit = ((l0Current == l0End)
@@ -62,7 +62,7 @@ void walkerPageRanger::remapInc(
 			l1Entry >>= 12;
 			*level2Modifier |= l1Entry << 12;
 
-			tlbControl::flushSingleEntry(level2Accessor);
+			tlbControl::flushSingleEntry((void *)level2Accessor);
 
 			l2Current = (((l0Current == l0Start)
 				&& (l1Current == l1Start)) ? l2Start : 0);
