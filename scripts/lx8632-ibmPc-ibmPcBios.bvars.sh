@@ -12,8 +12,8 @@ export \
 	ZAR='i586-elf-ar' \
 	\
 	ZCPPFLAGS='-I/void/cygwin/osdev/zbz/include -I/void/cygwin/osdev/zbz/core/include' \
-	ZCCFLAGS='-O1 -Wall -Wextra -pedantic std=c99' \
-	ZCXXFLAGS='-O1 -Wall -Wextra -pedantic -Wno-long-long -fno-exceptions -fno-rtti' \
+	ZCCFLAGS='-O3 -Wall -Wextra -pedantic std=c99' \
+	ZCXXFLAGS='-O3 -Wall -Wextra -pedantic -Wno-long-long -fno-exceptions -fno-rtti' \
 	ZASFLAGS=''\
 	ZLDFLAGS='-nostdlib -nostartfiles -nodefaultlibs' \
 	ZARFLAGS=''

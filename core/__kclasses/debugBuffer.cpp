@@ -137,7 +137,7 @@ void debugBufferC::syphon(unicodePoint *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
 
-	for (; buffLen; buffLen--, str++)
+	for ( ; buffLen > 0; buffLen--, str++)
 	{
 		if (buff.rsrc.index >= DEBUGBUFFER_PAGE_NCHARS)
 		{

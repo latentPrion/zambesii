@@ -57,10 +57,5 @@ namespace tlbControl
 	void saveContext(tlbContextS *context);
 }
 
-
-/**	Inline Methods
- ****************************************************************************/
-#include ARCH_INCLUDE(tlbControl.h)
-
 #endif
 
