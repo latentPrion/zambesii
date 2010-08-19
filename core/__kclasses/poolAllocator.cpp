@@ -19,7 +19,7 @@ void *poolAllocatorC::allocate(uarch_t size)
 {
 	uarch_t		realSize;
 	slamCacheC	tmp, *cache;
-	allocHeaderS	mem;
+	allocHeaderS	*mem;
 
 	// For now, only support allocations < PAGING_BASE_SIZE.
 	if (size > PAGING_BASE_SIZE || size == 0) {
@@ -55,7 +55,7 @@ void *poolAllocatorC::allocate(uarch_t size)
 	};
 
 	// As of now, 'cache' points to an object cache for 'realSize'.
-	mem = static_cast<slamCacheC::allocHeaderS *>( cache->allocate() );
+	mem = static_cast<poolAllocatorC::allocHeaderS *>( cache->allocate() );
 	if (mem == __KNULL) {
 		return __KNULL;
 	};

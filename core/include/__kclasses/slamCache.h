@@ -122,7 +122,9 @@ inline int slamCacheC::operator !=(int n)
 
 inline slamCacheC &slamCacheC::operator =(int n)
 {
-	this->objectSize = 0;
+	if (n == 0) {
+		this->objectSize = 0;
+	};
 	return *this;
 }
 
