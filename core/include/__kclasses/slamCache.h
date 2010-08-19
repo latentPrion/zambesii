@@ -42,6 +42,18 @@ public:
 	status_t detangle(void);
 	status_t flush(void);
 
+public:
+	int operator ==(slamCacheC &h);
+	int operator !=(slamCacheC &h);
+//	slamCacheC &operator =(slamCacheC &h);
+	int operator >(slamCacheC &h);
+	int operator <(slamCacheC &h);
+	int operator >=(slamCacheC &h);
+	int operator <=(slamCacheC &h);
+	int operator ==(int n);
+	int operator !=(int n);
+	slamCacheC &operator =(int n);
+
 private:
 	ubit32		perPageExcess;
 	ubit32		perPageBlocks;
@@ -55,6 +67,65 @@ private:
 
 	sharedResourceGroupC<waitLockC, object *>	partialList, freeList;
 };
+
+
+/**	Inline Methods
+ *****************************************************************************/
+
+inline int slamCacheC::operator ==(slamCacheC &h)
+{
+	return this->objectSize == h.objectSize;
+}
+
+inline int slamCacheC::operator !=(slamCacheC &h)
+{
+	return this->objectSize != h.objectSize;
+}
+
+// slamCacheC &operator =(slamCacheC &h);
+
+inline int slamCacheC::operator >(slamCacheC &h)
+{
+	return this->objectSize > h.objectSize;
+}
+
+inline int slamCacheC::operator <(slamCacheC &h)
+{
+	return this->objectSize < h.objectSize;
+}
+
+inline int slamCacheC::operator >=(slamCacheC &h)
+{
+	return this->objectSize >= h.objectSize;
+}
+
+inline int slamCacheC::operator <=(slamCacheC &h)
+{
+	return this->objectSize <= h.objectSize;
+}
+
+inline int slamCacheC::operator ==(int n)
+{
+	if (n == 0) {
+		return this->objectSize == 0;
+	};
+	return 0;
+}
+
+inline int slamCacheC::operator !=(int n)
+{
+	if (n == 0) {
+		return this->objectSize != 0;
+	};
+	return 0;
+}
+
+inline slamCacheC &slamCacheC::operator =(int n)
+{
+	this->objectSize = 0;
+	return *this;
+}
+
 
 #endif
 
