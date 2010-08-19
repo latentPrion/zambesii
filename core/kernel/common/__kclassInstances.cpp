@@ -1,5 +1,6 @@
 
 #include <__kclasses/debugPipe.h>
+#include <__kclasses/poolAllocator.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
@@ -19,6 +20,7 @@ firmwareTribC		firmwareTrib;
 timerTribC		timerTrib;
 interruptTribC		interruptTrib;
 numaTribC		numaTrib;
+poolAllocatorC		poolAllocator;
 cpuTribC		cpuTrib;
 debugPipeC		__kdebug;
 

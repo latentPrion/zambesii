@@ -13,6 +13,7 @@
 #include <__kclasses/debugPipe.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
+#include <__kclasses/slamCache.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
@@ -23,13 +24,13 @@
 #include <kernel/common/moduleApis/chipsetSupportPackage.h>
 
 
+slamCacheC	cache;
+
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	status_t	status;
-	paddr_t		p;
-	uarch_t		f;
+	uarch_t		*mem;
 
 	__koptimizationHacks();
 
@@ -74,5 +75,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		"DEVICE1.\n");
 
 	timerTrib.dump();
+
+	assert_error(cache.initialize(512) == ERROR_SUCCESS);
+	mem = new (cache.allocate()) uarch_t;
+	assert_error(mem != __KNULL);
 }
 

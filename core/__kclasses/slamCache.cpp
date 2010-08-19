@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/paging.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/slamCache.h>
@@ -9,8 +10,6 @@ slamCacheC::slamCacheC(void)
 }
 
 slamCacheC::slamCacheC(uarch_t objectSize)
-:
-heapCacheC(objectSize)
 {
 	initialize(objectSize);
 }
@@ -23,6 +22,10 @@ error_t slamCacheC::initialize(uarch_t objectSize)
 	freeList.rsrc = reinterpret_cast<object *>(
 		(memoryTrib.__kmemoryStream.*
 			memoryTrib.__kmemoryStream.memAlloc)(1, 0));
+
+	if (freeList.rsrc != __KNULL) {
+		freeList.rsrc->next = __KNULL;
+	};
 
 	partialList.rsrc = __KNULL;
 
@@ -115,11 +118,11 @@ void *slamCacheC::allocate(void)
 		tmp[perPageBlocks-1].magic = SLAMCACHE_OBJECT_MAGIC;
 #endif
 		tmp[perPageBlocks-1].next = 0;
-
-		ret = partialList.rsrc;
+		partialList.rsrc = tmp;
 	};
-	partialList.rsrc = partialList.rsrc->next;
 
+	ret = partialList.rsrc;
+	partialList.rsrc = partialList.rsrc->next;
 	partialList.lock.release();
 	return ret;
 }

@@ -25,10 +25,13 @@
  * The cache then re-uses that block list on the free list indefinitely.
  **/
 
+class poolAllocatorC;
+
 class slamCacheC
 :
 public heapCacheC
 {
+friend class poolAllocatorC;
 public:
 	slamCacheC(void);
 	slamCacheC(uarch_t objectSize);

@@ -4,7 +4,7 @@
 class heapCacheC
 {
 public:
-	heapCacheC(void);
+	heapCacheC(void) {};
 	heapCacheC(uarch_t objectSize)
 	:
 	objectSize(objectSize)

@@ -20,7 +20,7 @@ static void *getCr2(void)
 	return ret;
 }
 
-status_t x8632_page_fault(taskContextS *)
+status_t x8632_page_fault(taskContextS *regs)
 {
 	status_t	status;
 	memoryStreamC	*memoryStream;
@@ -34,6 +34,10 @@ status_t x8632_page_fault(taskContextS *)
 	status = walkerPageRanger::lookup(
 		&memoryStream->vaddrSpaceStream.vaddrSpace,
 		faultAddr, &pmap, &__kflags);
+
+	__kprintf(NOTICE"Page fault: addr %X, WPRl: stat %d, pmap %X, __kf %X,"
+		" entering EIP: %X.\n",
+		faultAddr, status, pmap, __kflags, regs->eip);
 
 	switch (status)
 	{
