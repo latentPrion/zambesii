@@ -16,6 +16,7 @@ public streamC
 {
 public:
 	cpuStreamC(void);
+	error_t initialize(void);
 	~cpuStreamC(void);
 
 public:

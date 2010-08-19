@@ -1,4 +1,5 @@
 
+#include <__kstdlib/__kclib/string.h>
 #include <kernel/common/task.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 
@@ -49,6 +50,12 @@ cpuStreamC::cpuStreamC(void)
 		return;
 	};
 	initMagic = CPUSTREAM_INIT_MAGIC;
+
+	memset(this, 0, sizeof(*this));
+}
+
+error_t cpuStreamC::initialize(void)
+{
 }
 
 cpuStreamC::~cpuStreamC(void)
