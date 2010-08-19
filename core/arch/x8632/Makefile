@@ -5,7 +5,7 @@ OBJFILES=wPRanger_mapInc.o wPRanger_mapNoInc.o wPRanger_remapInc.o \
 	wPRanger_unmap.o wPRanger_getLevelRanges.o wPRanger_accessors.o \
 	wPRanger_convertFlags.o \
 	tlbControl.o \
-	gdt.o idt.o vectorHandlers.o longjmp.o string.o __kexceptionTable.o \
+	gdt.o idt.o vectorHandlers.o setjmp.o string.o __kexceptionTable.o \
 	exceptions.o x8632_pageFault.o
 
 all: Makefile $(DELIVERABLE)
@@ -17,9 +17,9 @@ vectorHandlers.o: vectorHandlersTmp.s
 vectorHandlersTmp.s: vectorHandlers.S
 	$(CPP) $(CPPFLAGS) vectorHandlers.S >$@
 
-longjmp.o: longjmpTmp.s
-longjmpTmp.s: longjmp.S
-	$(CPP) $(CPPFLAGS) longjmp.S >$@
+setjmp.o: setjmpTmp.s
+setjmpTmp.s: setjmp.S
+	$(CPP) $(CPPFLAGS) setjmp.S >$@
 
 clean: fonyphile
 	rm -rf *.o *.s

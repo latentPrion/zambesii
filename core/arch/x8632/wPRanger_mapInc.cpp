@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <arch/paging.h>
 #include <arch/tlbControl.h>
 #include <arch/walkerPageRanger.h>
@@ -99,17 +98,17 @@ status_t walkerPageRanger::mapInc(
 			l1Entry = level1Accessor->entries[l1Current];
 			if (l1Entry == 0)
 			{
-				if (memoryTrib.pageTablePop(&paddrTmp)
+				if (memoryTrib.pageTablePop(&l1Entry)
 					!= ERROR_SUCCESS)
 				{
 					goto out;
 				};
 
-				level1Accessor->entries[l1Current] = paddrTmp
-					| PAGING_L1_PRESENT | PAGING_L1_WRITE;
+				l1Entry |= PAGING_L1_PRESENT | PAGING_L1_WRITE;
+				level1Accessor->entries[l1Current] = l1Entry;
 
-				*level2Modifier = paddrTmp
-					| (*level2Modifier & 0xFFF);
+				*level2Modifier =
+					level1Accessor->entries[l1Current];
 
 				tlbControl::flushSingleEntry(
 					(void *)level2Accessor);
@@ -119,16 +118,14 @@ status_t walkerPageRanger::mapInc(
 				{
 					level2Accessor->entries[ztmp] = 0;
 				};
-				goto skipL2Flush;
+			}
+			else
+			{
+				*level2Modifier = l1Entry;
+				tlbControl::flushSingleEntry(
+					(void *)level2Accessor);
 			};
 
-			l1Entry >>= 12;
-			*level2Modifier =
-				(l1Entry << 12) | (*level2Modifier & 0xFFF);
-
-			tlbControl::flushSingleEntry((void *)level2Accessor);
-
-skipL2Flush:
 			l2Current = (((l0Current == l0Start)
 				&& (l1Current == l1Start)) ? l2Start : 0);
 

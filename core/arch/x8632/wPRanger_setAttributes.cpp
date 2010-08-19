@@ -14,10 +14,9 @@ void walkerPageRanger::setAttributes(
 {
 	uarch_t		l0Start, l0Current, l0End;
 	uarch_t		l1Start, l1Current, l1Limit, l1End;
-	paddr_t		l0Entry;
 #ifdef CONFIG_ARCH_x86_32_PAE
 	uarch_t		l2Start, l2Current, l2Limit, l2End;
-	paddr_t		l1Entry, l2Entry;
+	paddr_t		l2Entry;
 #endif
 	uarch_t		archFlags;
 
@@ -42,10 +41,8 @@ void walkerPageRanger::setAttributes(
 	l0Current = l0Start;
 	for (; l0Current <= l0End; l0Current++)
 	{
-		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
-		*level1Modifier &= 0xFFF;
-		l0Entry >>= 12;
-		*level1Modifier |= l0Entry << 12;
+		*level1Modifier =
+			vaddrSpace->level0Accessor.rsrc->entries[l0Current];
 
 		tlbControl::flushSingleEntry((void *)level1Accessor);
 
@@ -56,11 +53,7 @@ void walkerPageRanger::setAttributes(
 		for (; l1Current <= l1Limit; l1Current++)
 		{
 #ifdef CONFIG_ARCH_x86_32_PAE
-			l1Entry = level1Accessor->entries[l1Current];
-			*level2Modifier &= 0xFFF;
-			l1Entry >>= 12;
-			*level2Modifier |= l1Entry << 12;
-
+			*level2Modifier = level1Accessor->entries[l1Current];
 			tlbControl::flushSingleEntry((void *)level2Accessor);
 
 			l2Current = (((l0Current == l0Start)
@@ -76,87 +69,96 @@ void walkerPageRanger::setAttributes(
 				{
 				case WPRANGER_OP_ASSIGN:
 				{
-					level1Accessor->entries[l1Current] &=
-						0xFFFFF000;
+					level2Accessor->entries[l2Current]
+						>>= 12;
 
-					level1Accessor->entries[l1Current] |=
+					level2Accessor->entries[l2Current]
+						<<= 12;
+
+					level2Accessor->entries[l2Current] |=
 						archFlags;
 
 					break;
 				};
 				case WPRANGER_OP_SET:
 				{
-					level1Accessor->entries[l1Current] |=
-						archFlags;
+					__KFLAG_SET(
+						level2Accessor
+							->entries[l2Current],
+						archFlags);
 
 					break;
 				};
 				case WPRANGER_OP_CLEAR:
 				{
-					level1Accessor->entries[l1Current] &=
-						~archFlags;
+					__KFLAG_UNSET(
+						level2Accessor
+							->entries[l2Current],
+						archFlags);
 
 					break;
 				};
 				case WPRANGER_OP_SET_PRESENT:
 				{
 					__KFLAG_SET(
-						level1Accessor
-							->entries[l1Current],
-						PAGING_L1_PRESENT);
+						level2Accessor
+							->entries[l2Current],
+						PAGING_L2_PRESENT);
 
 					break;
 				};
 				case WPRANGER_OP_CLEAR_PRESENT:
 				{
 					__KFLAG_UNSET(
-						level1Accessor
-							->entriies[l1Current],
-						PAGING_L1_PRESENT);
+						level2Accessor
+							->entriies[l2Current],
+						PAGING_L2_PRESENT);
 
 					break;
 				};
 				case WPRANGER_OP_SET_WRITE:
 				{
 					__KFLAG_SET(
-						level1Accessor
-							->entries[l1Current],
-						PAGING_L1_WRITE);
+						level2Accessor
+							->entries[l2Current],
+						PAGING_L2_WRITE);
 
 					break;
 				};
 				case WPRANGER_OP_CLEAR_WRITE:
 				{
 					__KFLAG_UNSET(
-						level1Accessor
-							->entries[l1Current],
-						PAGING_L1_WRITE);
+						level2Accessor
+							->entries[l2Current],
+						PAGING_L2_WRITE);
 
 					break;
 				};
 				default: break;
 				};
-
 #else
 			switch(op)
 			{
 			case WPRANGER_OP_ASSIGN:
 			{
-				level1Accessor->entries[l1Current] &=
-					0xFFFFF000;
-
+				level1Accessor->entries[l1Current] >>= 12;
+				level1Accessor->entries[l1Current] <<= 12;
 				level1Accessor->entries[l1Current] |= archFlags;
 				break;
 			};
 			case WPRANGER_OP_SET:
 			{
-				level1Accessor->entries[l1Current] |= archFlags;
+				__KFLAG_SET(
+					level1Accessor->entries[l1Current],
+					archFlags);
+
 				break;
 			};
 			case WPRANGER_OP_CLEAR:
 			{
-				level1Accessor->entries[l1Current] &=
-					~archFlags;
+				__KFLAG_UNSET(
+					level1Accessor->entries[l1Current],
+					archFlags);
 
 				break;
 			};

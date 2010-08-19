@@ -1,15 +1,20 @@
 
-#include <debug.h>
 #include <arch/paging.h>
 #include <arch/tlbControl.h>
 #include <arch/walkerPageRanger.h>
 #include <arch/x8632/wPRanger_accessors.h>
 #include <arch/x8632/wPRanger_getLevelRanges.h>
 #include <__kstdlib/__kflagManipulation.h>
-#include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+
+/**	FIXME:
+ * When you begin doing userspace stuff, remember that this
+ * function maps frames as supervisor by default. So you have to pass user.
+ *
+ * Do something about that...
+ **/
 
 status_t walkerPageRanger::mapNoInc(
 	vaddrSpaceC *vaddrSpace,
@@ -20,7 +25,7 @@ status_t walkerPageRanger::mapNoInc(
 	// This function takes up a *lot* of room on the stack...
 	uarch_t		l0Start, l0Current, l0End;
 	uarch_t		l1Start, l1Current, l1Limit, l1End;
-	paddr_t		l0Entry, paddrTmp;
+	paddr_t		l0Entry;
 #ifdef CONFIG_ARCH_x86_32_PAE
 	uarch_t		l2Start, l2Current, l2Limit, l2End;
 	paddr_t		l1Entry, l2Entry;
@@ -52,17 +57,19 @@ status_t walkerPageRanger::mapNoInc(
 		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
 		if (l0Entry == 0)
 		{
-			if (memoryTrib.pageTablePop(&paddrTmp)
+			if (memoryTrib.pageTablePop(&l0Entry)
 				!= ERROR_SUCCESS)
 			{
 				goto out;
 			};
 
 			// Top level address space modification...
+			l0Entry |= PAGING_L0_PRESENT | PAGING_L0_WRITE;
 			vaddrSpace->level0Accessor.rsrc->entries[l0Current] =
-				paddrTmp | PAGING_L0_PRESENT | PAGING_L0_WRITE;
+				l0Entry;
 
-			*level1Modifier = paddrTmp | (*level1Modifier & 0xFFF);
+			*level1Modifier = vaddrSpace->level0Accessor.rsrc
+				->entries[l0Current];
 
 			// Flush the l1 accessor from the TLB.
 			tlbControl::flushSingleEntry((void *)level1Accessor);
@@ -71,16 +78,16 @@ status_t walkerPageRanger::mapNoInc(
 			for (ztmp=0; ztmp<PAGING_L1_NENTRIES; ztmp++) {
 				level1Accessor->entries[ztmp] = 0;
 			};
-			goto skipL1Flush;
+		}
+		else
+		{
+			l0Entry >>= 12;
+			*level1Modifier = (l0Entry << 12) | (*level1Modifier & 0xFFF);
+
+			// Flush the l1 Accessor from the TLB.
+			tlbControl::flushSingleEntry((void *)level1Accessor);
 		};
 
-		l0Entry >>= 12;
-		*level1Modifier = (l0Entry << 12) | (*level1Modifier & 0xFFF);
-
-		// Flush the l1 Accessor from the TLB.
-		tlbControl::flushSingleEntry((void *)level1Accessor);
-
-skipL1Flush:
 		l1Current = ((l0Current == l0Start) ? l1Start : 0);
 		l1Limit = ((l0Current == l0End)
 			? l1End : (PAGING_L1_NENTRIES - 1));
@@ -91,17 +98,17 @@ skipL1Flush:
 			l1Entry = level1Accessor->entries[l1Current];
 			if (l1Entry == 0)
 			{
-				if (memoryTrib.pageTablePop(&paddrTmp)
+				if (memoryTrib.pageTablePop(&l1Entry)
 					!= ERROR_SUCCESS)
 				{
 					goto out;
 				};
 
-				level1Accessor->entries[l1Current] = paddrTmp
-					| PAGING_L1_PRESENT | PAGING_L1_WRITE;
+				l1Entry |= PAGING_L1_PRESENT | PAGING_L1_WRITE;
+				level1Accessor->entries[l1Current] = l1Entry;
 
-				*level2Modifier = paddrTmp
-					| (*level2Modifier & 0xFFF);
+				*level2Modifier =
+					level1Accessor->entries[l1Current];
 
 				tlbControl::flushSingleEntry(
 					(void *)level2Accessor);
@@ -111,16 +118,14 @@ skipL1Flush:
 				{
 					level2Accessor->entries[ztmp] = 0;
 				};
-				goto skipL2Flush;
+			}
+			else
+			{
+				*level2Modifier = l1Entry;
+				tlbControl::flushSingleEntry(
+					(void *)level2Accessor);
 			};
 
-			l1Entry >>= 12;
-			*level2Modifier =
-				(l1Entry << 12) | (*level2Modifier & 0xFFF);
-
-			tlbControl::flushSingleEntry((void *)level2Accessor);
-
-skipL2Flush:
 			l2Current = (((l0Current == l0Start)
 				&& (l1Current == l1Start)) ? l2Start : 0);
 

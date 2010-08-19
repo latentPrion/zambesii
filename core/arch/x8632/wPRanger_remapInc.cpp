@@ -18,10 +18,10 @@ void walkerPageRanger::remapInc(
 {
 	uarch_t		l0Start, l0Current, l0End;
 	uarch_t		l1Start, l1Current, l1Limit, l1End;
-	paddr_t		l0Entry;
+	paddr_t		l0Entry, l1Entry;
 #ifdef CONFIG_ARCH_x86_32_PAE
 	uarch_t		l2Start, l2Current, l2Limit, l2End;
-	paddr_t		l1Entry, l2Entry;
+	paddr_t		l2Entry;
 #endif
 	uarch_t		archFlags;
 
@@ -48,8 +48,8 @@ __kprintf(NOTICE"WPRr: l0s %d l0e %d l1s %d l1e %d v %X np %X op %d __kf %X.\n",
 	l0Current = l0Start;
 	for (; l0Current <= l0End; l0Current++)
 	{
-		*level1Modifier = vaddrSpace->level0Accessor.rsrc
-			->entries[l0Current];
+		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
+		*level1Modifier = l0Entry;
 __kprintf(NOTICE"WPRr: l1Mod %X.\n", *level1Modifier);
 DEBUG_ON(vaddr == (void *)0xF0000000);
 		tlbControl::flushSingleEntry((void *)level1Accessor);
@@ -61,7 +61,8 @@ DEBUG_ON(vaddr == (void *)0xF0000000);
 		for (; l1Current < l1Limit; l1Current++)
 		{
 #ifdef CONFIG_ARCH_x86_32_PAE
-			*level2Modifier = level1Accessor->entries[l1Current];
+			l1Entry = level1Accessor->entries[l1Current];
+			*level2Modifier = l1Entry;
 			tlbControl::flushSingleEntry((void *)level2Accessor);
 
 			l2Current = (((l0Current == l0Start)
@@ -73,20 +74,29 @@ DEBUG_ON(vaddr == (void *)0xF0000000);
 
 			for (; l2Current < l2Limit; l2Current++)
 			{
-				level2Accessor->entries[l2Current] &= 0xFFF;
+				l2Entry = level2Accessor->entries[l2Current]
+					& 0xFFF;
+
+				level2Accessor->entries[l2Current] = 0;
+				level2Accessor->entries[l2Current] |= l2Entry;
+
 				switch (op)
 				{
 				case WPRANGER_OP_SET:
 				{
-					level2Accessor->entries[l2Current] |=
-						archFlags;
+					__KFLAG_SET(
+						level2Accessor
+							->entries[l2Current],
+						archFlags);
 
 					break;
 				};
 				case WPRANGER_OP_CLEAR:
 				{
-					level2Accessor->entries[l2Current] &=
-						~archFlags;
+					__KFLAG_UNSET(
+						level2Accessor
+							->entries[l2Current],
+						archFlags);
 
 					break;
 				};
@@ -133,20 +143,25 @@ DEBUG_ON(vaddr == (void *)0xF0000000);
 				paddr += PAGING_BASE_SIZE;
 			};
 #else
-			level1Accessor->entries[l1Current] &= 0xFFF;
+			l1Entry = level1Accessor->entries[l1Current] & 0xFFF;
+			level1Accessor->entries[l1Current] = 0;
+			level1Accessor->entries[l1Current] |= l1Entry;
+
 			switch (op)
 			{
 			case WPRANGER_OP_SET:
 			{
-				level1Accessor->entries[l1Current] |=
-					archFlags;
+				__KFLAG_SET(
+					level1Accessor->entries[l1Current],
+					archFlags);
 
 				break;
 			};
 			case WPRANGER_OP_CLEAR:
 			{
-				level1Accessor->entries[l1Current] &=
-					~archFlags;
+				__KFLAG_UNSET(
+					level1Accessor->entries[l1Current],
+					archFlags);
 
 				break;
 			};

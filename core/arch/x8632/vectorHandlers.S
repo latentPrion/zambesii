@@ -119,22 +119,6 @@ ASM_LOCAL_FUNCTION(__ksaveRegs)
 	 * should our kernel crash simply because of that. We should then just
 	 * do the normal thing and then IRET.
 	 **/
-	addl	$0x4, %esp
-
-	popl	%eax
-	popl	%ebx
-
-	/* Reload whatever userspace had in its segment regs. */
-	movw	%ax, %es
-	shr	$16, %eax
-	movw	%ax, %ds
-	movw	%bx, %gs
-	shr	$16, %ebx
-	movw	%bx, %fs
-
-	popa
-	addl	$0x8, %esp
-iret
 ASM_END_FUNCTION(__ksaveRegs)
 
 /**	EXLPLANATION:

@@ -46,14 +46,12 @@ status_t walkerPageRanger::unmap(
 	for (; l0Current <= l0End; l0Current++)
 	{
 		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
-		if (l0Entry == 0) { 
+		// If the table doesn't exist, move on.
+		if (l0Entry == 0) {
 			continue;
 		};
 
-		*level1Modifier &= 0xFFF;
-		l0Entry >>= 12;
-		*level1Modifier |= l0Entry << 12;
-
+		*level1Modifier = l0Entry;
 		tlbControl::flushSingleEntry((void *)level1Accessor);
 
 		l1Current = ((l0Current == l0Start) ? l1Start : 0);
@@ -64,14 +62,12 @@ status_t walkerPageRanger::unmap(
 		{
 #ifdef CONFIG_ARCH_x86_32_PAE
 			l1Entry = level1Accessor->entries[l1Current];
+			// If the table for the entry doesn't exist, move on.
 			if (l1Entry == 0) {
 				continue;
 			};
 
-			*level2Modifier &= 0xFFF;
-			l1Entry >>= 12;
-			*level2Modifier |= l1Entry << 12;
-
+			*level2Modifier = l1Entry;
 			tlbControl::flushSingleEntry((void *)level2Accessor);
 
 			l2Current = (((l0Current == l0Start)
@@ -110,7 +106,9 @@ status_t walkerPageRanger::unmap(
 					*flags = walkerPageRanger::decodeFlags(
 						l2Entry & 0xFFF);
 
-					*paddr = l2Entry & 0xFFFFF000;
+					*paddr = (l2Entry >> 12);
+					*paddr <<= 12;
+
 					if (!__KFLAG_TEST(
 						*flags, PAGEATTRIB_PRESENT))
 					{
@@ -156,7 +154,8 @@ status_t walkerPageRanger::unmap(
 				*flags = walkerPageRanger::decodeFlags(
 					l1Entry & 0xFFF);
 
-				*paddr = l1Entry & 0xFFFFF000;
+				*paddr = (l1Entry >> 12);
+				*paddr <<= 12;
 				
 				if (!__KFLAG_TEST(*flags, PAGEATTRIB_PRESENT))
 				{
