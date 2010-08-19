@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <arch/arch.h>
 #include <__kstdlib/utf8.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -365,7 +364,6 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 			};
 		};
 	};
-	va_end(args);
 
 	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)) {
 		debugBuff.syphon(convBuff.rsrc, buffLen);
