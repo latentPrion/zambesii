@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <arch/tlbControl.h>
 #include <arch/paging.h>
 #include <arch/walkerPageRanger.h>
@@ -51,7 +50,6 @@ __kprintf(NOTICE"WPRr: l0s %d l0e %d l1s %d l1e %d v %X np %X op %d __kf %X.\n",
 		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
 		*level1Modifier = l0Entry;
 __kprintf(NOTICE"WPRr: l1Mod %X.\n", *level1Modifier);
-DEBUG_ON(vaddr == (void *)0xF0000000);
 		tlbControl::flushSingleEntry((void *)level1Accessor);
 
 		l1Current = ((l0Current == l0Start) ? l1Start : 0);
