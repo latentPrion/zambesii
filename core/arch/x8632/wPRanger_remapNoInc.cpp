@@ -58,7 +58,7 @@ DEBUG_ON(vaddr == (void *)0xF0000000);
 		l1Limit = ((l0Current == l0End)
 			? l1End : (PAGING_L1_NENTRIES - 1));
 
-		for (; l1Current < l1Limit; l1Current++)
+		for (; l1Current <= l1Limit; l1Current++)
 		{
 #ifdef CONFIG_ARCH_x86_32_PAE
 			l1Entry = level1Accessor->entries[l1Current];

@@ -58,7 +58,6 @@ status_t x8632_page_fault(taskContextS *)
 				faultAddr, &pmap, &__kflags));
 		__kprintf(NOTICE"Returns from WPR: p: %X, __kf: %X.\n",
 			pmap, __kflags);
-		for (;;){};
 
 		break;
 
