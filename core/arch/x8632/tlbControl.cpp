@@ -5,7 +5,10 @@
 void tlbControl::flushSingleEntry(void *vaddr)
 {
 	asm volatile (
-		"invlpg %0 \n\t"
+		"pushl	%%eax \n\t \
+		movl	%0, %%eax \n\t \
+		invlpg (%%eax) \n\t \
+		popl %%eax \n\t"
 		:
 		: "m" (vaddr)
 		: "memory"
@@ -21,8 +24,13 @@ void tlbControl::flushEntryRange(void *vaddr, uarch_t nPages)
 			nPages--)
 	{
 		asm volatile (
-			"invlpg (%0) \n\t"
-			: "=r" (reinterpret_cast<uarch_t>( vaddr ))
+			"pushl	%%eax \n\t \
+			movl	%0, %%eax \n\t \
+			invlpg (%%eax) \n\t \
+			popl %%eax \n\t"
+			:
+			: "m" (vaddr)
+			: "memory"
 		);
 	};
 }
