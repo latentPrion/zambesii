@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/paging.h>
 #include <arch/tlbControl.h>
 #include <arch/walkerPageRanger.h>
@@ -25,7 +26,7 @@ status_t walkerPageRanger::mapInc(
 	// This function takes up a *lot* of room on the stack...
 	uarch_t		l0Start, l0Current, l0End;
 	uarch_t		l1Start, l1Current, l1Limit, l1End;
-	paddr_t		l0Entry, paddrTmp;
+	paddr_t		l0Entry;
 #ifdef CONFIG_ARCH_x86_32_PAE
 	uarch_t		l2Start, l2Current, l2Limit, l2End;
 	paddr_t		l1Entry, l2Entry;
@@ -57,17 +58,19 @@ status_t walkerPageRanger::mapInc(
 		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
 		if (l0Entry == 0)
 		{
-			if (memoryTrib.pageTablePop(&paddrTmp)
+			if (memoryTrib.pageTablePop(&l0Entry)
 				!= ERROR_SUCCESS)
 			{
 				goto out;
 			};
 
 			// Top level address space modification...
+			l0Entry |= PAGING_L0_PRESENT | PAGING_L0_WRITE;
 			vaddrSpace->level0Accessor.rsrc->entries[l0Current] =
-				paddrTmp | PAGING_L0_PRESENT | PAGING_L0_WRITE;
+				l0Entry;
 
-			*level1Modifier = paddrTmp | (*level1Modifier & 0xFFF);
+			*level1Modifier = vaddrSpace->level0Accessor.rsrc
+				->entries[l0Current];
 
 			// Flush the l1 accessor from the TLB.
 			tlbControl::flushSingleEntry((void *)level1Accessor);
@@ -76,16 +79,16 @@ status_t walkerPageRanger::mapInc(
 			for (ztmp=0; ztmp<PAGING_L1_NENTRIES; ztmp++) {
 				level1Accessor->entries[ztmp] = 0;
 			};
-			goto skipL1Flush;
+		}
+		else
+		{
+			l0Entry >>= 12;
+			*level1Modifier = (l0Entry << 12) | (*level1Modifier & 0xFFF);
+
+			// Flush the l1 Accessor from the TLB.
+			tlbControl::flushSingleEntry((void *)level1Accessor);
 		};
 
-		l0Entry >>= 12;
-		*level1Modifier = (l0Entry << 12) | (*level1Modifier & 0xFFF);
-
-		// Flush the l1 Accessor from the TLB.
-		tlbControl::flushSingleEntry((void *)level1Accessor);
-
-skipL1Flush:
 		l1Current = ((l0Current == l0Start) ? l1Start : 0);
 		l1Limit = ((l0Current == l0End)
 			? l1End : (PAGING_L1_NENTRIES - 1));

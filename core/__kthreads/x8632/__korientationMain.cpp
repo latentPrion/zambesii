@@ -3,6 +3,7 @@
 #include <arch/paging.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
+#include <arch/x8632/wPRanger_accessors.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/compiler/cxxrtl.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -21,11 +22,27 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/moduleApis/chipsetSupportPackage.h>
 
+#define NP		1
+#define VA		0xC0400000
+
+void		*f00=(void *)0xF0000000;
+
+status_t bar(void) __attribute__((noinline));
+status_t bar(void)
+{
+	return walkerPageRanger::mapNoInc(
+		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		f00, PAGING_LEAF_FAKEMAPPED, NP,
+		PAGEATTRIB_WRITE | PAGEATTRIB_SUPERVISOR);
+}
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
+	status_t	status;
+	paddr_t		p;
+	uarch_t		f;
 
 	__koptimizationHacks();
 
@@ -71,28 +88,74 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	timerTrib.dump();
 
-	char *foo=(char *)0xF0000000;
-	status_t		status;
+	__kprintf(NOTICE"Main: Vaddr 0x%X's status is: %d.\n",
+		VA,
+		walkerPageRanger::lookup(
+			&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+			(void *)VA, &p, &f));
 
-	status = walkerPageRanger::mapNoInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		foo, PAGING_LEAF_FAKEMAPPED, 1,
-		PAGEATTRIB_WRITE | PAGEATTRIB_SUPERVISOR);
+__kprintf(NOTICE"Main: Returns from lookup on %X: pmap: %X, __kf: %X.\n",
+	VA, p, f);
 
-	if (status < 1) {
-		__kprintf(ERROR"Only able to map %d pages at %X.\n",
-			status, foo);
+	vaddrSpaceC	*va =
+		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace;
+
+#define L1	769
+#define FL1	960
+
+__kprintf(NOTICE"Main: Explicit read l0[%d]: %X.\n",
+	L1, va->level0Accessor.rsrc->entries[L1]);
+
+	p = va->level0Accessor.rsrc->entries[L1];
+	*level1Modifier = p | PAGING_L1_PRESENT | PAGING_L1_WRITE;
+
+	tlbControl::flushSingleEntry((void*)level1Accessor);
+
+	__kprintf(NOTICE"Main: Explicit read l0[%d] l1[0]: %X.\n",
+		L1, level1Accessor->entries[0]);
+
+	status = bar();
+	if (status < NP)
+	{
+		__kprintf(NOTICE"Only able to map %d pages out of %d.\n",
+			status, NP);
 
 		for (;;){};
 	};
-#define dv		0xC0400000
-	paddr_t	p;
-	uarch_t f;
-	__kprintf(NOTICE"%X's status is = %X.\n", dv,
+
+	__kprintf(NOTICE"Main: Vaddr 0x%X's status is: %d.\n",
+		VA,
 		walkerPageRanger::lookup(
 			&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-			(void *)dv, &p, &f));
-	__kprintf(NOTICE"Paddr @ %X is: %X.\n", dv, p);
-	*foo = 29;
+			(void *)VA, &p, &f));
+
+__kprintf(NOTICE"Main: Returns from lookup on %X: pmap: %X, __kf: %X.\n",
+	VA, p, f);
+
+
+__kprintf(NOTICE"Main: Explicit read l0[%d]: %X.\n",
+	L1, va->level0Accessor.rsrc->entries[L1]);
+
+	p = va->level0Accessor.rsrc->entries[L1];
+	*level1Modifier = p | PAGING_L1_PRESENT | PAGING_L1_WRITE;
+
+	tlbControl::flushSingleEntry((void*)level1Accessor);
+	__kprintf(NOTICE"Main: Explicit read l0[%d] l1[0]: %X.\n",
+		L1, level1Accessor->entries[0]);
+
+__kprintf(NOTICE"Main: Explicit read l0[%d]: %X.\n",
+	FL1, va->level0Accessor.rsrc->entries[FL1]);
+
+	p = va->level0Accessor.rsrc->entries[FL1];
+	*level1Modifier = p | PAGING_L1_PRESENT | PAGING_L1_WRITE;
+
+	tlbControl::flushSingleEntry((void*)level1Accessor);
+	__kprintf(NOTICE"Main: Explicit read l0[%d] l1[0]: %X.\n",
+		FL1, level1Accessor->entries[0]);
+
+	*(char *)f00 = 'A';
+	if (*(char *)f00 == 'A') {
+		__kprintf(NOTICE"Success!\n");
+	};
 }
 

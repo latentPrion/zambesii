@@ -1,10 +1,12 @@
 
+#include <debug.h>
 #include <arch/tlbControl.h>
 #include <arch/paging.h>
 #include <arch/walkerPageRanger.h>
 #include <arch/x8632/wPRanger_accessors.h>
 #include <arch/x8632/wPRanger_getLevelRanges.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -40,14 +42,16 @@ void walkerPageRanger::remapInc(
 	cpuTrib.getCurrentCpuStream()->currentTask->parent->memoryStream
 		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.acquire();
 
+__kprintf(NOTICE"WPRr: l0s %d l0e %d l1s %d l1e %d v %X np %X op %d __kf %X.\n",
+	l0Start, l0End, l1Start, l1End, vaddr, nPages, op, __kflags);
+
 	l0Current = l0Start;
 	for (; l0Current <= l0End; l0Current++)
 	{
-		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
-		*level1Modifier &= 0xFFF;
-		l0Entry >>= 12;
-		*level1Modifier |= l0Entry << 12;
-
+		*level1Modifier = vaddrSpace->level0Accessor.rsrc
+			->entries[l0Current];
+__kprintf(NOTICE"WPRr: l1Mod %X.\n", *level1Modifier);
+DEBUG_ON(vaddr == (void *)0xF0000000);
 		tlbControl::flushSingleEntry((void *)level1Accessor);
 
 		l1Current = ((l0Current == l0Start) ? l1Start : 0);
@@ -57,11 +61,7 @@ void walkerPageRanger::remapInc(
 		for (; l1Current < l1Limit; l1Current++)
 		{
 #ifdef CONFIG_ARCH_x86_32_PAE
-			l1Entry = level1Accessor->entries[l1Current];
-			*level2Modifier &= 0xFFF;
-			l1Entry >>= 12;
-			*level2Modifier |= l1Entry << 12;
-
+			*level2Modifier = level1Accessor->entries[l1Current];
 			tlbControl::flushSingleEntry((void *)level2Accessor);
 
 			l2Current = (((l0Current == l0Start)
@@ -186,7 +186,8 @@ void walkerPageRanger::remapInc(
 
 				break;
 			};
-			default: break;
+			default:
+				break;
 			};
 
 			level1Accessor->entries[l1Current] |= paddr;
