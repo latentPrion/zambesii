@@ -6,7 +6,7 @@
 #include <__kclasses/debugPipe.h>
 
 
-poolAllocatorC::poolAllocatorC(void)
+memReservoirC::memReservoirC(void)
 {
 }
 
@@ -15,7 +15,7 @@ error_t initialize(void)
 	return ERROR_SUCCESS;
 }
 
-void *poolAllocatorC::allocate(uarch_t size)
+void *memReservoirC::allocate(uarch_t size)
 {
 	uarch_t		realSize;
 	slamCacheC	tmp, *cache;
@@ -55,7 +55,7 @@ void *poolAllocatorC::allocate(uarch_t size)
 	};
 
 	// As of now, 'cache' points to an object cache for 'realSize'.
-	mem = static_cast<poolAllocatorC::allocHeaderS *>( cache->allocate() );
+	mem = static_cast<memReservoirC::allocHeaderS *>( cache->allocate() );
 	if (mem == __KNULL) {
 		return __KNULL;
 	};
@@ -65,7 +65,7 @@ void *poolAllocatorC::allocate(uarch_t size)
 	return &mem->firstByte;
 }
 
-void poolAllocatorC::free(void *_mem)
+void memReservoirC::free(void *_mem)
 {
 	allocHeaderS	*mem;
 	slamCacheC	*cache, tmp;

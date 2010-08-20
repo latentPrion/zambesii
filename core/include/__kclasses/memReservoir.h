@@ -1,5 +1,5 @@
-#ifndef _POOL_ALLOCATOR_H
-	#define _POOL_ALLOCATOR_H
+#ifndef _ZAMBEZII_MEMORY_RESERVOIR_H
+	#define _ZAMBEZII_MEMORY_RESERVOIR_H
 
 	#include <arch/arch.h>
 	#include <__kstdlib/__ktypes.h>
@@ -18,10 +18,10 @@
 
 #define ALLOCHEADER_SIZE		(sizeof(poolAllocatorC::allocHeaderS))
 
-class poolAllocatorC
+class memReservoirC
 {
 public:
-	poolAllocatorC(void);
+	memReservoirC(void);
 	error_t initialize(void);
 
 public:
