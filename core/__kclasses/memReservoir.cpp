@@ -10,7 +10,7 @@ memReservoirC::memReservoirC(void)
 {
 }
 
-error_t initialize(void)
+error_t poolAllocatorC::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
@@ -22,7 +22,12 @@ void *memReservoirC::allocate(uarch_t size)
 	allocHeaderS	*mem;
 
 	// For now, only support allocations < PAGING_BASE_SIZE.
-	if (size > PAGING_BASE_SIZE || size == 0) {
+	if (size > PAGING_BASE_SIZE || size == 0)
+	{
+		__kprintf(NOTICE POOLALLOC"Heap currently can only satisfy "
+			"allocations < PAGING_BASE_SIZE (%d).\n",
+			PAGING_BASE_SIZE);
+
 		return __KNULL;
 	};
 
@@ -50,6 +55,9 @@ void *memReservoirC::allocate(uarch_t size)
 			return __KNULL;
 		};
 
+		__kprintf(NOTICE POOLALLOC"Creating new cache, realSize: %d.\n",
+			realSize);
+
 		// Construct the object.
 		cache = new (cache) slamCacheC(realSize);
 	};
@@ -62,7 +70,8 @@ void *memReservoirC::allocate(uarch_t size)
 
 	mem->size = realSize;
 	mem->magic = ALLOCHEADER_MAGIC;
-	return &mem->firstByte;
+	return reinterpret_cast<void *>(
+		reinterpret_cast<uarch_t>( mem ) + ALLOCHEADER_SIZE );
 }
 
 void memReservoirC::free(void *_mem)
@@ -79,8 +88,8 @@ void memReservoirC::free(void *_mem)
 
 	if (mem->magic != ALLOCHEADER_MAGIC)
 	{
-		__kprintf(WARNING"Pool Allocator: Corrupt memory or bad free "
-			"at %X. Size: %d, Magic: %X.\n",
+		__kprintf(WARNING POOLALLOC"Pool Allocator: Corrupt memory or "
+			"bad free at %X. Size: %d, Magic: %X.\n",
 			mem, mem->size, mem->magic);
 
 		return;
@@ -92,8 +101,8 @@ void memReservoirC::free(void *_mem)
 
 	if (cache == __KNULL)
 	{
-		__kprintf(ERROR"Pool Allocator: Mem header passed, but cache "
-			"not found. Mem: %X, realSize: %d.\n",
+		__kprintf(ERROR POOLALLOC"Pool Allocator: Mem header passed, "
+			"but cache not found. Mem: %X, realSize: %d.\n",
 			mem, mem->size);
 
 		return;

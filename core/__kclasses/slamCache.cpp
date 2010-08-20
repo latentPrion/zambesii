@@ -107,16 +107,9 @@ void *slamCacheC::allocate(void)
 		};
 
 		// Break up the new block from the free list.
-		for (uarch_t i=0; i<perPageBlocks-1; i++)
-		{
-#ifdef CONFIG_HEAP_SLAM_DEBUG
-			tmp[i].magic = SLAMCACHE_OBJECT_MAGIC;
-#endif
+		for (uarch_t i=0; i<perPageBlocks-1; i++) {
 			tmp[i].next = &tmp[i+1];
 		};
-#ifdef CONFIG_HEAP_SLAM_DEBUG
-		tmp[perPageBlocks-1].magic = SLAMCACHE_OBJECT_MAGIC;
-#endif
 		tmp[perPageBlocks-1].next = 0;
 		partialList.rsrc = tmp;
 	};
@@ -133,10 +126,6 @@ void slamCacheC::free(void *obj)
 		return;
 	};
 
-#ifdef CONFIG_HEAP_SLAM_DEBUG
-	static_cast<slamCacheC::object *>( obj )->magic
-		= SLAMCACHE_OBJECT_MAGIC;
-#endif
 	partialList.lock.acquire();
 
 	static_cast<slamCacheC::object *>( obj )->next = partialList.rsrc;
