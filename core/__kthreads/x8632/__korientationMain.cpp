@@ -77,16 +77,5 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	timerTrib.dump();
 
 	assert_error(cache.initialize(512) == ERROR_SUCCESS);
-
-	for (uarch_t i=0; i<16; i++)
-	{
-		mem[i] = new (cache.allocate()) uarch_t;
-		assert_warn(mem[i] != __KNULL);
-	};
-	for (uarch_t i=0; i<16; i++)
-	{
-		cache.free(mem[i]);
-	};
-	__kprintf(NOTICE"All tests passed.\n");
 }
 

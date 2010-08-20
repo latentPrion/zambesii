@@ -42,5 +42,7 @@ private:
 	sharedResourceGroupC<multipleReaderLockC, uarch_t>	nCaches;
 };
 
+extern poolAllocatorC		poolAllocator;
+
 #endif
 
