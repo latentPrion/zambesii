@@ -13,7 +13,7 @@
 #include <__kclasses/debugPipe.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
-#include <__kclasses/slamCache.h>
+#include <__kclasses/poolAllocator.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
@@ -23,8 +23,6 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/moduleApis/chipsetSupportPackage.h>
 
-
-slamCacheC	cache;
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -58,6 +56,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		ret);
 
 	DO_OR_DIE(numaTrib, initialize(), ret);
+	DO_OR_DIE(poolAllocator, initialize(), ret);
 	DO_OR_DIE(firmwareTrib, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 
@@ -75,7 +74,5 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		"DEVICE1.\n");
 
 	timerTrib.dump();
-
-	assert_error(cache.initialize(512) == ERROR_SUCCESS);
 }
 

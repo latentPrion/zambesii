@@ -17,6 +17,7 @@
 #endif
 
 #define ALLOCHEADER_SIZE		(sizeof(poolAllocatorC::allocHeaderS))
+#define POOLALLOC			"Pool Allocator: "
 
 class poolAllocatorC
 {
@@ -35,7 +36,6 @@ private:
 	{
 		uarch_t		size;
 		uarch_t		magic;
-		ubit8		firstByte;
 	};
 
 	__kequalizerListC<slamCacheC>	caches;
