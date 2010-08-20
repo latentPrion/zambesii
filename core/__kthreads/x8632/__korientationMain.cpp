@@ -30,7 +30,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	uarch_t		*mem;
+	uarch_t		*mem[16];
 
 	__koptimizationHacks();
 
@@ -77,7 +77,16 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	timerTrib.dump();
 
 	assert_error(cache.initialize(512) == ERROR_SUCCESS);
-	mem = new (cache.allocate()) uarch_t;
-	assert_error(mem != __KNULL);
+
+	for (uarch_t i=0; i<16; i++)
+	{
+		mem[i] = new (cache.allocate()) uarch_t;
+		assert_warn(mem[i] != __KNULL);
+	};
+	for (uarch_t i=0; i<16; i++)
+	{
+		cache.free(mem[i]);
+	};
+	__kprintf(NOTICE"All tests passed.\n");
 }
 
