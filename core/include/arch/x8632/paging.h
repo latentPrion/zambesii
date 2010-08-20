@@ -108,45 +108,8 @@
 	#define PAGING_L2_NO_EXECUTE		(1<<63)
 #endif
 
-/* Though these next two flags may seem insignificant, they are in fact very
- * important: they are the architecture specific flags which map a page as
- * swapped or fakemapped.
- *
- * These are used as a bitfield in an unbacked entry which has attributes, but
- * no physical backing memory. When the kernel faults, it will test these to
- * determine what caused the fault, and see what it must do to satisfy the
- * translation. Whether read from disk, or allocate a frame.
- **/
-#define PAGING_LEAF_SWAPPED		(1<<13)
-// This will help speed up detection of page that are guard mapped.
-#define PAGING_LEAF_GUARDPAGE		(1<<14)
-#define PAGING_LEAF_FAKEMAPPED		(1<<15)
-/* When a dynamic allocation is partially fakemapped, the kernel can just
- * quickly map a page to the touched page.
- *
- * In the case of a shared library, or a partially mapped executable section,
- * the kernel has to know that data must be read from disk and filled in.
- * It would be much faster if the kernel could tell what kind of data must be
- * mapped in from the moment it gets the page fault.
- *
- * On #PF, if the page was fakemapped, the kernel will check for this flag.
- * If it's not set, the kernel will assume that the page can just take any old
- * frame, and will quickly allocate and map a new frame in and then return.
- *
- * If this flag is set, it would be a quick indicator to the kernel that the
- * fakemapped page pertains to a static code/data unmapped range. The kernel
- * must then consult the shared memory mappings and the executable section
- * data, and the memory mapped files descriptors, and see which one the page
- * needs to be filled in with.
- **/
-#define PAGING_LEAF_STATICDATA		(1<<16)
-
-#define PAGING_LEAF_SDATA_SHIFT		(17)
-#define PAGING_LEAF_SDATA_MASK		(0x3)
-
-#define PAGING_LEAF_EXEC_SECTION	(0x0)
-#define PAGING_LEAF_MMAPPED_FILE	(0x1)
-#define PAGING_LEAF_SHLIB		(0x2)
+#define PAGESTATUS_SHIFT			(12)
+#define PAGETYPE_SHIFT				(PAGESTATUS_SHIFT + 3)
 
 #ifndef __ASM__
 
