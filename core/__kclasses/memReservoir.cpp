@@ -10,7 +10,7 @@ memReservoirC::memReservoirC(void)
 {
 }
 
-error_t poolAllocatorC::initialize(void)
+error_t memReservoirC::initialize(void)
 {
 	return ERROR_SUCCESS;
 }

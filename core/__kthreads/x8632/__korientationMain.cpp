@@ -13,7 +13,6 @@
 #include <__kclasses/debugPipe.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
-#include <__kclasses/poolAllocator.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
@@ -28,7 +27,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	uarch_t		*mem[16];
 
 	__koptimizationHacks();
 
