@@ -77,20 +77,26 @@ status_t walkerPageRanger::lookup(
 				}
 				else
 				{
-					if (__KFLAG_TEST(
-						*paddr, PAGING_LEAF_SWAPPED))
+					switch ((*paddr
+						>> PAGING_PAGESTATUS_SHIFT)
+						& PAGESTATUS_MASK)
 					{
+					case PAGESTATUS_SWAPPED:
 						ret = WPRANGER_STATUS_SWAPPED;
-					};
-					if (__KFLAG_TEST(
-						*paddr, PAGING_LEAF_FAKEMAPPED))
-					{
-						ret = WPRANGER_STATUS_FAKEMAPPED;
-					};
-					if (__KFLAG_TEST(
-						*paddr, PAGING_LEAF_GUARDPAGE))
-					{
+						break;
+
+					case PAGESTATUS_GUARDPAGE:
 						ret = WPRANGER_STATUS_GUARDPAGE;
+						break;
+
+					case PAGESTATUS_FAKEMAPPED_STATIC:
+						ret = WPRANGER_STATUS_FAKEMAPPED_STATIC;
+						break;
+
+					case PAGESTATUS_FAKEMAPPED_DYNAMIC:
+						ret = WPRANGER_STATUS_FAKEMAPPED_DYNAMIC;
+						break;
+					default: break;
 					};
 				};
 			}
@@ -105,20 +111,25 @@ status_t walkerPageRanger::lookup(
 			}
 			else
 			{
-				if (__KFLAG_TEST(
-					*paddr, PAGING_LEAF_SWAPPED))
+				switch ((*paddr >> PAGING_PAGESTATUS_SHIFT)
+					& PAGESTATUS_MASK)
 				{
+				case PAGESTATUS_SWAPPED:
 					ret = WPRANGER_STATUS_SWAPPED;
-				};
-				if (__KFLAG_TEST(
-					*paddr, PAGING_LEAF_FAKEMAPPED))
-				{
-					ret = WPRANGER_STATUS_FAKEMAPPED;
-				};
-				if (__KFLAG_TEST(
-					*paddr, PAGING_LEAF_GUARDPAGE))
-				{
+					break;
+
+				case PAGESTATUS_GUARDPAGE:
 					ret = WPRANGER_STATUS_GUARDPAGE;
+					break;
+
+				case PAGESTATUS_FAKEMAPPED_STATIC:
+					ret = WPRANGER_STATUS_FAKEMAPPED_STATIC;
+					break;
+
+				case PAGESTATUS_FAKEMAPPED_DYNAMIC:
+					ret = WPRANGER_STATUS_FAKEMAPPED_DYNAMIC;
+					break;
+				default: break;
 				};
 			};
 #endif

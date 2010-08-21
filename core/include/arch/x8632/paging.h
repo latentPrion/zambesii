@@ -108,8 +108,8 @@
 	#define PAGING_L2_NO_EXECUTE		(1<<63)
 #endif
 
-#define PAGESTATUS_SHIFT			(12)
-#define PAGETYPE_SHIFT				(PAGESTATUS_SHIFT + 3)
+#define PAGING_PAGESTATUS_SHIFT			(12)
+#define PAGING_PAGETYPE_SHIFT				(PAGESTATUS_SHIFT + 3)
 
 #ifndef __ASM__
 

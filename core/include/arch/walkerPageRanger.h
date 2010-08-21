@@ -8,11 +8,12 @@
 	#include <kernel/common/pageAttributes.h>
 
 // These are the valid return values for walkerPageRanger::lookup() and unmap().
-#define WPRANGER_STATUS_BACKED		(0)
-#define WPRANGER_STATUS_SWAPPED		(1)
-#define WPRANGER_STATUS_FAKEMAPPED	(2)
-#define WPRANGER_STATUS_GUARDPAGE	(3)
-#define WPRANGER_STATUS_UNMAPPED	(4)
+#define WPRANGER_STATUS_BACKED			(0)
+#define WPRANGER_STATUS_SWAPPED			(1)
+#define WPRANGER_STATUS_FAKEMAPPED_STATIC	(2)
+#define WPRANGER_STATUS_FAKEMAPPED_DYNAMIC	(3)
+#define WPRANGER_STATUS_GUARDPAGE		(4)
+#define WPRANGER_STATUS_UNMAPPED		(5)
 
 // Generic operations on attributes.
 #define WPRANGER_OP_SET			(1)

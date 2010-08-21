@@ -29,7 +29,8 @@
 
 /**	EXPLANATION:
  * For a FAKEMAPPED_STATIC page, the kernel will use these extra 'type' bits
- * to determine what type of data must be demand paged into this page range.
+ * to determine what type of data must be demand paged into this page range on
+ * a translation (page) fault.
  **/
 #define PAGETYPE_SHLIB			(0x0)
 #define PAGETYPE_EXEC_SECTION		(0x1)
