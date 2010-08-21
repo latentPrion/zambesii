@@ -10,21 +10,21 @@
 /**	EXPLANATION:
  * Alloc Table is the kernel's assurance of recollection of memory from a
  * process when it is killed. Every process has an allocTableC, including the
- * kernel itself. AllocTableC not only monitors allocations, but also gives the
- * allocation's type information, along with flags for optimizations.
+ * kernel itself. AllocTableC monitors dynamic allocations in a process.
  *
- * Generally the kernel needs to know two main bits of information on an
- * allocation in a process's address space:
+ * Generally, all that is needed is the virtual address of the allocation,
+ * and its size in pages. However, since I intend for the page swapping code
+ * to essentially prefer to swap out heap/dynamically allocated memory over
+ * swapping out, for example, executable sections (though swapping executable
+ * sections is a good second choice), the alloc tables will also hold
+ * "attributes", to tell the swapper which pages it is not safe to swap out.
  *
- * 1. What type of allocation it is. Is it a heap range? Is it an executable
- *    range? These will aid the kernel in deciding which pages to swap out
- *    when we get to implementing swap. Generally we'll prefer swapping out
- *    data pages to swapping out executable or other types of pages.
- *
- * 2. Whether the whole range has one single physical corresponding mapping.
- *    This is useful mainly as an optimization to allow the kernel to look up
- *    physical mappings in the page tables less, and speed up frees. 
+ * So for example, a page with the ALLOCTABLE_ATTRIB_NOSWAP attribute set is
+ * meant to be left in memory all the time, and never swapped out.
  **/
+
+#define ALLOCTABLE_ATTRIB_NOSWAP	(1<<0)
+#define ALLOCTABLE_ATTRIB_MASK		0x3
 
 class allocTableC
 {

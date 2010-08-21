@@ -6,40 +6,12 @@
 	#include <kernel/common/numaTypes.h>
 
 /**	EXPLANATION:
- * A class to hold generic allocation information about a range of memory in a
- * process's address space: The TYPE and FLAGS fields are part of the 'nPages'
- * field.
- *
- * There is a caveat here: the TYPE and FLAGS field take up 3 bits and 5 bits
- * respectively. That is, they take up 8 bits of the 'nPages' field, no matter
- * which arch is being compiled for. That is, on an arch with 128-byte or less
- * granular pages, we would have a bug problem. Luckily, no arch vendors have
- * 32+ bit CPUs with 128 byte page sizes.
- *
- *	NOTE:
- * Remember never to try to pack values into the 'vaddr' member. This member
- * must be left unadulterated since the comparison operators for this class
- * rely on it. Keep things simple. In other words, this class has been packed
- * as densely as it can be.
+ * An abstract class to hold information on page granular dynamic memory
+ * allocations. It holds the virtual address and size (in pages) of the
+ * allocation. Within the 'nPages' member is also a set of attribute values
+ * to tell the swapper what *not* to swap out to disk, and other optimization
+ * information.
  **/
-
-#define ALLOCTABLE_TYPE_CODE		0x0
-#define ALLOCTABLE_TYPE_DATA		0x1
-#define ALLOCTABLE_TYPE_RODATA		0x2
-#define ALLOCTABLE_TYPE_STACK		0x3
-#define ALLOCTABLE_TYPE_SHLIB		0x4
-#define ALLOCTABLE_TYPE_SHMEM		0x5
-
-#define ALLOCTABLE_FLAGS_PMEM_REGION	(1<<0)
-#define ALLOCTABLE_FLAGS_NOSWAP		(1<<2)
-
-#define ALLOCTABLE_NPAGES_SHIFT		(8)
-
-#define ALLOCTABLE_TYPE_SHIFT		(5)
-#define ALLOCTABLE_TYPE_MASK		(0x7)
-
-#define ALLOCTABLE_FLAGS_MASK		(0x1F)
-
 class allocTableEntryC
 {
 public:
