@@ -172,7 +172,8 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		nMapped = walkerPageRanger::mapNoInc(
 			&vaddrSpaceStream.vaddrSpace,
 			reinterpret_cast<void *>( pos ),
-			PAGING_LEAF_FAKEMAPPED,
+			(PAGESTATUS_FAKEMAPPED_DYNAMIC
+				<< PAGING_PAGESTATUS_SHIFT),
 			nPages - nFrames,
 			PAGEATTRIB_WRITE
 			| ((id == __KPROCESSID) ? PAGEATTRIB_SUPERVISOR : 0));

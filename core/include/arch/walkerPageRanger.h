@@ -86,7 +86,8 @@ inline void walkerPageRanger::swapMap(
 {
 	// Map all pages as swapped and clear the present attributes.
 	remapNoInc(
-		vaddrSpace, vaddr, PAGING_LEAF_SWAPPED, nPages,
+		vaddrSpace, vaddr,
+		(PAGESTATUS_SWAPPED << PAGING_PAGESTATUS_SHIFT), nPages,
 		WPRANGER_OP_CLEAR_PRESENT, 0);
 }
 
