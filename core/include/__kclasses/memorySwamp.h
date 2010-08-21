@@ -1,6 +1,7 @@
 #ifndef _MEMORY_SWAMP_H
 	#define _MEMORY_SWAMP_H
 
+	#include <arch/arch.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/allocClass.h>
 	#include <kernel/common/sharedResourceGroup.h>
@@ -24,6 +25,17 @@
  * node if necessary, and 
  **/
 
+#ifdef __32_BIT__
+	// SWAM ('111' is both a W and an M).
+	#define MEMSWAMP_MAGIC			(0x5111A111)
+#elif defined (__64_BIT__)
+	// SWAMPALLOCS
+	#define MEMSWAMP_MAGIC			(0x5111A1111DA110C5)
+#endif
+
+#define MEMSWAMP_NO_EXPAND_ON_FAIL		(1<<0)
+#define MEMSWAMP				(utf8Char *)"Memory Swamp "
+
 class memorySwampC
 :
 public allocClassS
@@ -32,22 +44,29 @@ public:
 	error_t initialize(uarch_t swampSize);
 
 public:
-	void *allocate(uarch_t nBytes);
+	void *allocate(uarch_t nBytes, uarch_t flags=0);
 	void free(void *mem);
 
 public:
 	uarch_t		blockSize;
 
 private:
-	struct swampBlockS
-	{
-		swampBlockS	*next;
-		uarch_t	refCount;
-	};
 	struct freeObjectS
 	{
 		freeObjectS	*next;
 		uarch_t		nBytes;
+	};
+	struct swampBlockS
+	{
+		swampBlockS	*next;
+		uarch_t		refCount;
+		freeObjectS	*firstObject;
+	};
+	struct allocHeaderS
+	{
+		uarch_t		nBytes;
+		freeObjectS	*parent;
+		uarch_t		magic;
 	};
 
 	sharedResourceGroupC<waitLockC, swampBlockS *>	head;
