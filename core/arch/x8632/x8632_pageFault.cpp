@@ -45,7 +45,7 @@ status_t x8632_page_fault(taskContextS *regs)
 		// Either COW, or simple access perms violation.
 		break;
 
-	case WPRANGER_STATUS_FAKEMAPPED:
+	case WPRANGER_STATUS_FAKEMAPPED_DYNAMIC:
 		for (status = 0; status < 1; ) {
 			status = numaTrib.fragmentedGetFrames(1, &pmap);
 		};
@@ -63,6 +63,12 @@ status_t x8632_page_fault(taskContextS *regs)
 		__kprintf(NOTICE"Returns from WPR: p: %X, __kf: %X.\n",
 			pmap, __kflags);
 
+		break;
+
+	case WPRANGER_STATUS_FAKEMAPPED_STATIC:
+		break;
+
+	case WPRANGER_STATUS_GUARDPAGE:
 		break;
 
 	case WPRANGER_STATUS_SWAPPED:
