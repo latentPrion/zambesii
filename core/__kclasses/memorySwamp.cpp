@@ -126,10 +126,9 @@ void *memorySwampC::allocate(uarch_t nBytes, uarch_t flags)
 				MEMSWAMP_MAGIC;
 
 			static_cast<allocHeaderS *>( ret )->nBytes = nBytes;
+			static_cast<allocHeaderS *>( ret )->parent = blockTmp;
 			return reinterpret_cast<void *>(
 				(uarch_t)ret + sizeof(allocHeaderS );
-
-			static_cast<allocHeaderS *>( ret )->parent = blockTmp;
 		};
 	};
 
@@ -165,38 +164,89 @@ void memorySwampC::free(void *_mem)
 		return;
 	};
 
+	block = mem->parent;
+
 	head.lock.acquire();
 
-	block = mem->parent;
-	// If the mem to be freed is logically before the first object pointer.
-	if (mem < block->firstObject || block->firstObject == __KNULL)
-	{
-		nBytesTmp = mem->nBytes;
-		static_cast<freeObjectS *>( mem )->next = block->firstObject;
-		block->firstObject = static_cast<freeObjectS *>( mem );
-		static_cast<freeObjectS *>( mem )->nBytes = nBytesTmp;
-
-		// Check to see if we can concatenate two objects.
-		if (block->firstObject->next != __KNULL)
-		{
-			if (((uarch_t)block->firstObject
-				+ block->firstObject->nBytes)
-				== (uarch_t)block->firstObject->next)
-			{
-				block->firstObject->nBytes +=
-					block->firstObject->next->nBytes;
-
-				block->firstObject->next =
-					block->firstObject->next->next;
-			};
-		};
-		return;
-	};
-
+	prevObj = __KNULL;
 	objTmp = block->firstObject;
+
 	for (; objTmp != __KNULL; )
 	{
+		if (mem < objTmp)
+		{
+			nBytesTmp = mem->nBytes;
+			static_cast<freeObjectS *>( mem )->next = objTmp;
+			static_cast<freeObjectS *>( mem )->nBytes = nBytesTmp;
+
+			// Concatenate forward.
+			if (((uarch_t)mem + (freeObjectS *)mem->nBytes)
+				== (uarch_t)objTmp)
+			{
+				static_cast<allocHeaderS *>( mem )->nBytes +=
+					objTmp->nBytes;
+
+				static_cast<allocHeaderS *>( mem )->next =
+					objTmp->next;
+			};
+
+			if (prevObj != __KNULL)
+			{
+				prevObj->next =
+					static_cast<freeObjectS *>( mem );
+
+				// Concatenate backward.
+				if (((uarch_t)prevObj + prevObj->nBytes)
+					== (uarch_t)mem)
+				{
+					prevObj->nBytes +=
+						static_cast<allocHeaderS *>(
+							mem )->nBytes;
+
+					prevObj->next =
+						static_cast<allocHeaderS *>(
+							mem )->next;
+				};
+			}
+			else
+			{
+				block->firstObject =
+					static_cast<freeObjectS *>( mem );
+			};
+		};
+		prevObj = objTmp;
+		objTmp = objTmp->next;
+	};
+
+	/* The loop takes care of the case where we add at the front of the
+	 * object list, and in the middle. This next bit of code will handle
+	 * case where we add at the end of the list or the list is empty.
+	 **/
+	if (prevObj != __KNULL)
+	{
+		// Adding at the end of the list.
+		nBytesTmp = mem->nBytes;
+		prevObj->next = (freeObjectS *)mem;
+		(freeObjectS *)mem->next = __KNULL;
+		(freeObjectS *)mem->nBytes = nBytesTmp;
+
+		if (((uarch_t)prevObj + prevObj->nBytes) == (uarch_t)mem) {
+			prevObj->nBytes += (freeObjectS *)mem->nBytes;
+		}
+		return;
+	}
+	else
+	{
+		// List is empty. Just add and terminal 'next' ptr.
+		nBytesTmp = mem->nBytes;
+		(freeObjectS *)mem->nBytes = nBytesTmp;
+		(freeObjectS *)mem->next = __KNULL;
+		block->firstObject = (freeObjectS *)mem;
+		return;
+	};
+}
 		
+
 memorySwampC::swampBlockS *memorySwampC::getNewBlock(void)
 {
 	swampBlockS		*ret;
