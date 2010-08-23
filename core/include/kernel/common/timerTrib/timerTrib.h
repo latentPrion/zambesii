@@ -21,12 +21,31 @@ public:
 	~timerTribC(void);
 
 public:
-	status_t registerWatchdogIsr(status_t (*isr)(), uarch_t interval);
+	status_t registerWatchdogIsr(isrFn *, uarch_t interval);
 	void updateWatchdogIsr(uarch_t interval);
 	void unregisterWatchdogIsr(void);
 
 	void updateContinuousClock(void);
 	void updateScheduledClock(uarch_t sourceId);
+
+	namespace time
+	{
+		time_t	getCurrent(void);
+		date_t	getCurrent(void);
+	};
+
+	namespace tick
+	{
+		mstime_t	getCurrentMs(void);
+		mstime_t	getUptimeMs(void);
+		mstime_t	getIntervalSinceMs(mstime_t);
+	};
+
+	namespace
+	{
+		void	setTimeoutMs(mstime_t, void (*)());
+		void	setContinuousTimerMs(mstime_t, void (*)());
+	};
 
 	// For MP systems with no per-cpu clock source. Slow. Non-deterministic.
 	void enablePerCpuClockEmu(void);
@@ -38,6 +57,7 @@ private:
 	// Arch-specific per-cpu scheduler call emulation.
 	void invokeSchedulerEmu(void);
 
+private:
 	// The watchdog timer for the chipset, if it exists.
 	struct watchdogIsrS
 	{

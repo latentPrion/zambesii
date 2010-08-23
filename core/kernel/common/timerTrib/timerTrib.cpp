@@ -7,14 +7,14 @@
 
 timerTribC::timerTribC(void)
 {
+	// Do not memset(&watchdog, 0, sizeof(*&watchdog)): contains a lock.
+	watchdog.rsrc.interval = 0;
+	watchdog.rsrc.isr = __KNULL;
 }
 
 error_t timerTribC::initialize(void)
 {
 	error_t		ret=ERROR_SUCCESS;
-
-	watchdog.rsrc.interval = 0;
-	watchdog.rsrc.isr = __KNULL;
 
 	// Check for the existence of a watchdog device on this chipset.
 	if (chipsetCoreDev.watchdog != __KNULL) {
