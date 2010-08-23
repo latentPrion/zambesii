@@ -20,7 +20,7 @@ firmwareTribC		firmwareTrib;
 timerTribC		timerTrib;
 interruptTribC		interruptTrib;
 numaTribC		numaTrib;
-poolAllocatorC		poolAllocator;
+// poolAllocatorC		poolAllocator;
 cpuTribC		cpuTrib;
 debugPipeC		__kdebug;
 

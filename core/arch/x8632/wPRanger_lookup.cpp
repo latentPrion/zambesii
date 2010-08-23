@@ -70,8 +70,10 @@ status_t walkerPageRanger::lookup(
 			l2Entry = level2Accessor->entries[l2Start];
 			if (l2Entry != 0)
 			{
-				*paddr = l2Entry & 0xFFFFF000;
 				*flags = decodeFlags(l2Entry & 0xFFF);
+				*paddr = (l2Entry >> 12);
+				*paddr <<= 12;
+
 				if (__KFLAG_TEST(*flags, PAGEATTRIB_PRESENT)) {
 					ret = WPRANGER_STATUS_BACKED;
 				}
@@ -104,8 +106,10 @@ status_t walkerPageRanger::lookup(
 				ret = WPRANGER_STATUS_UNMAPPED;
 			};
 #else
-			*paddr = l1Entry & 0xFFFFF000;
 			*flags = decodeFlags(l1Entry & 0xFFF);
+			*paddr = (l1Entry >> 12);
+			*paddr <<= 12;
+
 			if (__KFLAG_TEST(*flags, PAGEATTRIB_PRESENT)) {
 				ret = WPRANGER_STATUS_BACKED;
 			}
