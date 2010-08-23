@@ -213,6 +213,8 @@ void memorySwampC::free(void *_mem)
 				block->firstObject =
 					static_cast<freeObjectS *>( mem );
 			};
+			block->refCount--;
+			return;
 		};
 		prevObj = objTmp;
 		objTmp = objTmp->next;
@@ -233,6 +235,7 @@ void memorySwampC::free(void *_mem)
 		if (((uarch_t)prevObj + prevObj->nBytes) == (uarch_t)mem) {
 			prevObj->nBytes += (freeObjectS *)mem->nBytes;
 		}
+		block->refCount--;
 		return;
 	}
 	else
@@ -242,6 +245,7 @@ void memorySwampC::free(void *_mem)
 		(freeObjectS *)mem->nBytes = nBytesTmp;
 		(freeObjectS *)mem->next = __KNULL;
 		block->firstObject = (freeObjectS *)mem;
+		block->refCount--;
 		return;
 	};
 }
