@@ -8,6 +8,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 
+
 memoryTribC::memoryTribC(
 	pagingLevel0S *level0Accessor, paddr_t level0Paddr
 	)

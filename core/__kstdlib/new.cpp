@@ -1,23 +1,25 @@
 
 #include <__kstdlib/__kcxxlib/new>
-#include <__kclasses/poolAllocator.h>
 
 
-void *operator new (size_t nBytes)
+static void *foo(void)
 {
-	return poolAllocator.allocate(nBytes);
-}
-void *operator new[](size_t nBytes)
-{
-	return poolAllocator.allocate(nBytes);
+	return 0;
 }
 
-void operator delete (void *mem)
+void *operator new (size_t)
 {
-	poolAllocator.free(mem);
+	return foo();
 }
-void operator delete[](void *mem)
+void *operator new[](size_t)
 {
-	poolAllocator.free(mem);
+	return foo();
+}
+
+void operator delete (void *)
+{
+}
+void operator delete[](void *)
+{
 }
 

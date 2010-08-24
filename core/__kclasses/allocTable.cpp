@@ -2,7 +2,7 @@
 #include <__kclasses/allocTable.h>
 
 error_t allocTableC::addEntry(
-	void *vaddr, uarch_t nPages, ubit8 type, ubit8 flags
+	void *vaddr, uarch_t nPages, ubit8 attrib
 	)
 {
 	allocTableEntryC	*result;
@@ -12,8 +12,7 @@ error_t allocTableC::addEntry(
 
 	// Pack the type and flags attributes into the nPages member.
 	tmp.nPages = (nPages << ALLOCTABLE_NPAGES_SHIFT)
-		| ((type & ALLOCTABLE_TYPE_MASK) << ALLOCTABLE_TYPE_SHIFT)
-		| (flags & ALLOCTABLE_FLAGS_MASK);
+		| (attrib & ALLOCTABLE_ATTRIB_MASK);
 
 	result = allocTable.addEntry(&tmp);
 	if (result == __KNULL) {
@@ -43,10 +42,10 @@ void allocTableC::removeEntry(void *vaddr)
  * speed up deallocations from alloc table enabled allocation methods.
  **/
 error_t allocTableC::lookup(
-	void *vaddr, uarch_t *nPages, ubit8 *type, ubit8 *flags
+	void *vaddr, uarch_t *nPages, ubit8 *attrib
 	)
 {
-	if (nPages == __KNULL || type == __KNULL || flags == __KNULL) {
+	if (nPages == __KNULL || attrib == __KNULL) {
 		return ERROR_INVALID_ARG;
 	};
 
@@ -62,9 +61,8 @@ error_t allocTableC::lookup(
 	};
 
 	// Unpack the nPages field.
+	*attrib = ret->nPages & ALLOCTABLE_ATTRIB_MASK;
 	*nPages = (ret->nPages >> ALLOCTABLE_NPAGES_SHIFT);
-	*type = (ret->nPages >> ALLOCTABLE_TYPE_SHIFT) & ALLOCTABLE_TYPE_MASK;
-	*flags = ret->nPages & ALLOCTABLE_FLAGS_MASK;
 
 	return ERROR_SUCCESS;
 }

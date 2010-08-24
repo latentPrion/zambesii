@@ -6,6 +6,8 @@
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
+	#include <kernel/common/timerTrib/timeTypes.h>
+	#include <kernel/common/interruptTrib/isrFn.h>
 
 #define TIMERTRIB_WATCHDOG_ALREADY_REGISTERED	(1)
 
@@ -21,27 +23,38 @@ public:
 	~timerTribC(void);
 
 public:
-	status_t registerWatchdogIsr(status_t (*isr)(), uarch_t interval);
+	status_t registerWatchdogIsr(isrFn *, uarch_t interval);
 	void updateWatchdogIsr(uarch_t interval);
 	void unregisterWatchdogIsr(void);
 
 	void updateContinuousClock(void);
 	void updateScheduledClock(uarch_t sourceId);
 
+	time_t	getCurrentTime(void);
+	date_t	getCurrentDate(void);
+
+	mstime_t	getCurrentTickMs(void);
+	mstime_t	getUptimeTickMs(void);
+	mstime_t	getTickIntervalSinceMs(mstime_t);
+
+	void	setTimeoutMs(mstime_t, void (*)());
+	void	setContinuousTimerMs(mstime_t, void (*)());
+
 	// For MP systems with no per-cpu clock source. Slow. Non-deterministic.
-	void enablePerCpuClockEmu(void);
-	void disablePerCpuClockEmu(void);
+	// void enablePerCpuClockEmu(void);
+	// void disablePerCpuClockEmu(void);
 
 	void dump(void);
 
 private:
 	// Arch-specific per-cpu scheduler call emulation.
-	void invokeSchedulerEmu(void);
+	// void invokeSchedulerEmu(void);
 
+private:
 	// The watchdog timer for the chipset, if it exists.
 	struct watchdogIsrS
 	{
-		status_t	(*isr)();
+		isrFn		*isr;
 		clock_t		feedTime;
 		uarch_t		interval;
 	};

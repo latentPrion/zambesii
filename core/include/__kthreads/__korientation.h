@@ -20,6 +20,8 @@
 			ORIENT_QUOTE(__method)".\n"); \
 	}
 
+#define ORIENT				"Orientation "
+
 extern taskS		__korientationThread;
 extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbData);
 extern ubit8		*__korientationStack;

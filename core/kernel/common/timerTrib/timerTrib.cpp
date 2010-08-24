@@ -7,14 +7,15 @@
 
 timerTribC::timerTribC(void)
 {
+	watchdog.rsrc.interval = 0;
+	watchdog.rsrc.isr = __KNULL;
+
+	flags = 0;
 }
 
 error_t timerTribC::initialize(void)
 {
 	error_t		ret=ERROR_SUCCESS;
-
-	watchdog.rsrc.interval = 0;
-	watchdog.rsrc.isr = __KNULL;
 
 	// Check for the existence of a watchdog device on this chipset.
 	if (chipsetCoreDev.watchdog != __KNULL) {
@@ -46,7 +47,7 @@ void timerTribC::dump(void)
 		};
 
 	__kprintf(NOTICE"\tContinuousClock: %d, %d\n",
-		continuousClock.rsrc.low, continuousClock.rsrc.high);
+		continuousClock.rsrc.high, continuousClock.rsrc.low);
 }
 
 void timerTribC::updateContinuousClock(void)
@@ -71,7 +72,8 @@ void timerTribC::updateContinuousClock(void)
 			watchdog.rsrc.feedTime += watchdog.rsrc.interval;
 
 			watchdog.lock.release();
-			(*watchdog.rsrc.isr)();
+			// Fixme: Handle this later.
+			(*watchdog.rsrc.isr)(__KNULL);
 
 			goto skipWatchdogLockRelease;
 		}
@@ -83,7 +85,7 @@ skipWatchdogLockRelease:;
 	};		
 }
 
-status_t timerTribC::registerWatchdogIsr(status_t (*isr)(), uarch_t interval)
+status_t timerTribC::registerWatchdogIsr(isrFn *isr, uarch_t interval)
 {
 	if ((isr == __KNULL) || (interval == 0)) {
 		return ERROR_INVALID_ARG;
@@ -141,15 +143,5 @@ void timerTribC::unregisterWatchdogIsr(void)
 		watchdog.lock.release();
 		return;
 	};
-}
-
-void timerTribC::enablePerCpuClockEmu(void)
-{
-	__KFLAG_SET(flags, TIMERTRIB_PER_CPU_CLOCK_EMU);
-}
-
-void timerTribC::disablePerCpuClockEmu(void)
-{
-	__KFLAG_UNSET(flags, TIMERTRIB_PER_CPU_CLOCK_EMU);
 }
 

@@ -23,6 +23,7 @@
 #include <kernel/common/moduleApis/chipsetSupportPackage.h>
 
 
+
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -54,7 +55,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		ret);
 
 	DO_OR_DIE(numaTrib, initialize(), ret);
-	DO_OR_DIE(poolAllocator, initialize(), ret);
 	DO_OR_DIE(firmwareTrib, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 
