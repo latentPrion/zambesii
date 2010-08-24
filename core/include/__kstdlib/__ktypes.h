@@ -5,6 +5,7 @@
 	#include <__kstdlib/__kerror.h>
 	#include <__kstdlib/compiler/stdint.h>
 	#include <__kstdlib/__kclib/stddef.h>
+	#include <__kstdlib/__kcxxCast.h>
 
 #ifndef __ASM__
 

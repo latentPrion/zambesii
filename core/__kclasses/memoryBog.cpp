@@ -2,19 +2,29 @@
 #include <arch/paging.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
-#include <__kclasses/memorySwamp.h>
+#include <__kclasses/memoryBog.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-error_t memorySwampC::initialize(uarch_t swampSize)
+memoryBogC::memoryBogC(uarch_t bogSize)
 {
-	blockSize = swampSize;
-};
+	blockSize = bogSize;
+}
 
-void *memorySwampC::allocate(uarch_t nBytes, uarch_t flags)
+error_t memoryBogC::initialize(void)
 {
-	swampBlockS	*blockTmp;
+	return ERROR_SUCCESS;
+}
+
+memoryBogC::~memoryBogC(void)
+{
+	// Free all blocks.
+}
+
+void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
+{
+	bogBlockS	*blockTmp;
 	freeObjectS	*ret=0, *objTmp, *objTmpPrev;
 
 	if (nBytes == 0) {
@@ -54,7 +64,9 @@ void *memorySwampC::allocate(uarch_t nBytes, uarch_t flags)
 					<= sizeof(freeObjectS))
 				{
 					nBytes = objTmp->nBytes;
-					objTmpPrev->next = objTmp->next;
+					if (objTmpPrev) {
+						objTmpPrev->next = objTmp->next;
+					};
 					ret = objTmp;
 					// Make sure to keep head valid.
 					if (objTmp == blockTmp->firstObject)
@@ -66,25 +78,25 @@ void *memorySwampC::allocate(uarch_t nBytes, uarch_t flags)
 				else
 				{
 					objTmp->nBytes -= nBytes;
-					ret = reinterpret_cast<freeObjectS *>(
-						(uarch_t)objTmp
+					ret = R_CAST(
+						freeObjectS *,
+						R_CAST(uarch_t, objTmp)
 							+ objTmp->nBytes );
 				};
 				blockTmp->refCount++;
 
 				head.lock.release();
 
-				static_cast<allocHeaderS *>( ret )->magic =
-					MEMSWAMP_MAGIC;
+				R_CAST(allocHeaderS *, ret)->magic =
+					MEMBOG_MAGIC;
 
-				static_cast<allocHeaderS *>( ret )->nBytes =
-					nBytes;
+				R_CAST(allocHeaderS *, ret)->nBytes = nBytes;
+				R_CAST(allocHeaderS *, ret)->parent = blockTmp;
 
-				static_cast<allocHeaderS *>( ret )->parent =
-					blockTmp;
-
-				return reinterpret_cast<void *>(
-					(uarch_t)ret + sizeof(allocHeaderS) );
+				return R_CAST(
+					void *,
+					R_CAST(uarch_t, ret)
+						+ sizeof(allocHeaderS) );
 			};
 			objTmpPrev = objTmp;
 			objTmp = objTmp->next;
@@ -92,7 +104,7 @@ void *memorySwampC::allocate(uarch_t nBytes, uarch_t flags)
 	};
 
 	// If we reach here, there isn't enough space. Get new pool, try again.
-	if (!__KFLAG_TEST(flags, MEMSWAMP_NO_EXPAND_ON_FAIL))
+	if (!__KFLAG_TEST(flags, MEMBOG_NO_EXPAND_ON_FAIL))
 	{
 		blockTmp = getNewBlock();
 		if (blockTmp == __KNULL)
@@ -115,30 +127,30 @@ void *memorySwampC::allocate(uarch_t nBytes, uarch_t flags)
 			else
 			{
 				objTmp->nBytes -= nBytes;
-				ret = reinterpret_cast<freeObjectS *>(
-					(uarch_t)objTmp + objTmp->nBytes );
+				ret = R_CAST(
+					freeObjectS *,
+					R_CAST(uarch_t, objTmp)
+						+ objTmp->nBytes );
 			};
 			blockTmp->refCount++;
 
 			head.lock.release();
 
-			static_cast<allocHeaderS *>( ret )->magic =
-				MEMSWAMP_MAGIC;
-
-			static_cast<allocHeaderS *>( ret )->nBytes = nBytes;
-			static_cast<allocHeaderS *>( ret )->parent = blockTmp;
+			((allocHeaderS *)ret)->magic = MEMBOG_MAGIC;
+			((allocHeaderS *)ret)->nBytes = nBytes;
+			((allocHeaderS *)ret)->parent = blockTmp;
 			return reinterpret_cast<void *>(
-				(uarch_t)ret + sizeof(allocHeaderS );
+				R_CAST(uarch_t, ret) + sizeof(allocHeaderS) );
 		};
 	};
 
 	return __KNULL;
 }
 
-void memorySwampC::free(void *_mem)
+void memoryBogC::free(void *_mem)
 {
 	allocHeaderS	*mem;
-	swampBlockS	*block;
+	bogBlockS	*block;
 	freeObjectS	*objTmp, *prevObj;
 	uarch_t		nBytesTmp;
 
@@ -153,12 +165,12 @@ void memorySwampC::free(void *_mem)
 		(uarch_t)mem - sizeof(allocHeaderS) );
 
 	if (mem == __KNULL) {
-		return __KNULL;
+		return;
 	};
 
-	if (mem->magic != MEMSWAMP_MAGIC)
+	if (mem->magic != MEMBOG_MAGIC)
 	{
-		__kprintf(WARNING MEMSWAMP"Corrupt memory or bad free at %X, "
+		__kprintf(WARNING MEMBOG"Corrupt memory or bad free at %X, "
 			"magic was %X.\n", mem, mem->magic);
 
 		return;
@@ -173,45 +185,42 @@ void memorySwampC::free(void *_mem)
 
 	for (; objTmp != __KNULL; )
 	{
-		if (mem < objTmp)
+		if ((void *)mem < (void *)objTmp)
 		{
 			nBytesTmp = mem->nBytes;
-			static_cast<freeObjectS *>( mem )->next = objTmp;
-			static_cast<freeObjectS *>( mem )->nBytes = nBytesTmp;
+			((freeObjectS *)mem)->next = objTmp;
+			((freeObjectS *)mem)->nBytes = nBytesTmp;
 
 			// Concatenate forward.
-			if (((uarch_t)mem + (freeObjectS *)mem->nBytes)
-				== (uarch_t)objTmp)
+			if ((R_CAST(uarch_t, mem)
+				+ R_CAST(freeObjectS*, mem)->nBytes)
+				== R_CAST(uarch_t, objTmp))
 			{
-				static_cast<allocHeaderS *>( mem )->nBytes +=
+				R_CAST(freeObjectS *, mem)->nBytes +=
 					objTmp->nBytes;
 
-				static_cast<allocHeaderS *>( mem )->next =
-					objTmp->next;
+				R_CAST(freeObjectS *, mem)->next = objTmp->next;
 			};
 
 			if (prevObj != __KNULL)
 			{
-				prevObj->next =
-					static_cast<freeObjectS *>( mem );
+				prevObj->next = R_CAST(freeObjectS *, mem);
 
 				// Concatenate backward.
-				if (((uarch_t)prevObj + prevObj->nBytes)
-					== (uarch_t)mem)
+				if ((R_CAST(uarch_t, prevObj) + prevObj->nBytes)
+					== R_CAST(uarch_t, mem))
 				{
 					prevObj->nBytes +=
-						static_cast<allocHeaderS *>(
-							mem )->nBytes;
+						R_CAST(freeObjectS *, mem)
+							->nBytes;
 
 					prevObj->next =
-						static_cast<allocHeaderS *>(
-							mem )->next;
+						R_CAST(freeObjectS *, mem)
+							->next;
 				};
 			}
-			else
-			{
-				block->firstObject =
-					static_cast<freeObjectS *>( mem );
+			else {
+				block->firstObject = R_CAST(freeObjectS *, mem);
 			};
 			block->refCount--;
 			return;
@@ -229,11 +238,13 @@ void memorySwampC::free(void *_mem)
 		// Adding at the end of the list.
 		nBytesTmp = mem->nBytes;
 		prevObj->next = (freeObjectS *)mem;
-		(freeObjectS *)mem->next = __KNULL;
-		(freeObjectS *)mem->nBytes = nBytesTmp;
+		R_CAST(freeObjectS *, mem)->next = __KNULL;
+		R_CAST(freeObjectS *, mem)->nBytes = nBytesTmp;
 
-		if (((uarch_t)prevObj + prevObj->nBytes) == (uarch_t)mem) {
-			prevObj->nBytes += (freeObjectS *)mem->nBytes;
+		if ((R_CAST(uarch_t, prevObj) + prevObj->nBytes)
+			== R_CAST(uarch_t, mem))
+		{
+			prevObj->nBytes += R_CAST(freeObjectS *, mem)->nBytes;
 		}
 		block->refCount--;
 		return;
@@ -242,24 +253,23 @@ void memorySwampC::free(void *_mem)
 	{
 		// List is empty. Just add and terminal 'next' ptr.
 		nBytesTmp = mem->nBytes;
-		(freeObjectS *)mem->nBytes = nBytesTmp;
-		(freeObjectS *)mem->next = __KNULL;
-		block->firstObject = (freeObjectS *)mem;
+		R_CAST(freeObjectS *, mem)->nBytes = nBytesTmp;
+		R_CAST(freeObjectS *, mem)->next = __KNULL;
+		block->firstObject = R_CAST(freeObjectS *, mem);
 		block->refCount--;
 		return;
 	};
 }
 		
 
-memorySwampC::swampBlockS *memorySwampC::getNewBlock(void)
+memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 {
-	swampBlockS		*ret;
+	bogBlockS	*ret;
 
 	ret = new ((memoryTrib.__kmemoryStream.*
 		memoryTrib.__kmemoryStream.memAlloc)(
 			PAGING_BYTES_TO_PAGES(
-				blockSize + sizeof(swampBlockS)), 0))
-		swampBlockS;
+				blockSize + sizeof(bogBlockS)), 0)) bogBlockS;
 
 	if (ret == __KNULL) {
 		return __KNULL;
@@ -267,11 +277,10 @@ memorySwampC::swampBlockS *memorySwampC::getNewBlock(void)
 
 	ret->next = __KNULL;
 	ret->refCount = 0;
-	ret->firstObject = reinterpret_cast<freeObjectS *>(
-		reinterpret_cast<uarch_t>( ret )
-			+ sizeof(swampBlockS) );
+	ret->firstObject = R_CAST(freeObjectS *,
+		( R_CAST(uarch_t, ret) + sizeof(bogBlockS)) );
 
-	ret->firstObject->size = blockSize;
+	ret->firstObject->nBytes = blockSize;
 	ret->firstObject->next = __KNULL;
 
 	return ret;
