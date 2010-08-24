@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/paging.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -10,6 +11,7 @@
 memoryBogC::memoryBogC(uarch_t bogSize)
 {
 	blockSize = bogSize;
+	head.rsrc = __KNULL;
 }
 
 error_t memoryBogC::initialize(void)
@@ -20,6 +22,36 @@ error_t memoryBogC::initialize(void)
 memoryBogC::~memoryBogC(void)
 {
 	// Free all blocks.
+}
+
+void memoryBogC::dump(void)
+{
+	bogBlockS	*block;
+	freeObjectS	*obj;
+
+	__kprintf(NOTICE MEMBOG"Dumping.\n");
+
+	head.lock.acquire();
+
+	__kprintf(NOTICE MEMBOG"Size: %X, head pointer: %X.\n",
+		blockSize, head.rsrc);
+
+	block = head.rsrc;
+	for (; block != __KNULL; block = block->next)
+	{
+		__kprintf((utf8Char *)"\tBlock: %X, refCount %d 1stObj %X.\n",
+			block, block->refCount, block->firstObject);
+
+		obj = block->firstObject;
+		for (; obj != __KNULL; obj = obj->next)
+		{
+			__kprintf((utf8Char *)"\t\tFree object: "
+				"Addr %X, nBytes %X.",
+				obj, obj->nBytes);
+		};
+	};
+
+	head.lock.release();
 }
 
 void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
@@ -144,6 +176,7 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 		};
 	};
 
+	head.lock.release();
 	return __KNULL;
 }
 
@@ -159,10 +192,8 @@ void memoryBogC::free(void *_mem)
 	 * been corrupted, or the memory isn't a bad free, then as quickly as
 	 * possible, locate the insertion point for the object and free.
 	 **/
-
-	mem = static_cast<allocHeaderS *>( _mem );
 	mem = reinterpret_cast<allocHeaderS *>(
-		(uarch_t)mem - sizeof(allocHeaderS) );
+		reinterpret_cast<uarch_t>( _mem ) - sizeof(allocHeaderS) );
 
 	if (mem == __KNULL) {
 		return;
@@ -223,6 +254,8 @@ void memoryBogC::free(void *_mem)
 				block->firstObject = R_CAST(freeObjectS *, mem);
 			};
 			block->refCount--;
+
+			head.lock.release();
 			return;
 		};
 		prevObj = objTmp;
@@ -245,8 +278,11 @@ void memoryBogC::free(void *_mem)
 			== R_CAST(uarch_t, mem))
 		{
 			prevObj->nBytes += R_CAST(freeObjectS *, mem)->nBytes;
+			prevObj->next = R_CAST(freeObjectS *, mem)->next;
 		}
 		block->refCount--;
+
+		head.lock.release();
 		return;
 	}
 	else
@@ -257,6 +293,8 @@ void memoryBogC::free(void *_mem)
 		R_CAST(freeObjectS *, mem)->next = __KNULL;
 		block->firstObject = R_CAST(freeObjectS *, mem);
 		block->refCount--;
+
+		head.lock.release();
 		return;
 	};
 }
@@ -282,6 +320,9 @@ memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 
 	ret->firstObject->nBytes = blockSize;
 	ret->firstObject->next = __KNULL;
+
+	__kprintf(NOTICE MEMBOG"New bog block @v %X, 1stObj %X, 1ObjnBytes %X."
+		"\n", ret, ret->firstObject, ret->firstObject->nBytes);
 
 	return ret;
 }

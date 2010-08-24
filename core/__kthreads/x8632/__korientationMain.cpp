@@ -30,7 +30,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	char		*c;
+	char		*c, *c2;
 
 	__koptimizationHacks();
 
@@ -67,16 +67,23 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	{
 		if (__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1))
 		{
-			__kprintf(WARNING"No debug buffer allocated.\n");
+			__kprintf(WARNING ORIENT"No debug buffer allocated.\n");
 		};
 	};
 	__kdebug.refresh();
-	__kprintf(NOTICE"Kernel debug output tied to devices BUFFER and "
+	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
 
 	timerTrib.dump();
 
-	c = new(bog.allocate(20)) char;
+	c = new(bog.allocate(0x20)) char;
 	*c = 'A';
+	__kprintf(NOTICE ORIENT"Address of alloc, 0x20B: %X.\n", c);
+	bog.free(c);
+	c2 = new (bog.allocate(0x48)) char;
+
+	assert_error(c == c2);
+
+	bog.dump();
 }
 

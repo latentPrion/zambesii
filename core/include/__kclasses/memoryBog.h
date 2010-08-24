@@ -34,7 +34,7 @@
 #endif
 
 #define MEMBOG_NO_EXPAND_ON_FAIL	(1<<0)
-#define MEMBOG				"Memory Bog "
+#define MEMBOG				"Memory Bog: "
 
 class memoryBogC
 :
@@ -48,6 +48,8 @@ public:
 public:
 	void *allocate(uarch_t nBytes, uarch_t flags=0);
 	void free(void *mem);
+
+	void dump(void);
 
 public:
 	uarch_t		blockSize;
