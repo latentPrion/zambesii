@@ -1,11 +1,15 @@
 
 #include <__kstdlib/__kclib/stdlib.h>
-#include <__kclasses/poolAllocator.h>
 
 
-void *malloc(uarch_t nBytes)
+static void *foo(void)
 {
-	return __KNULL;
+	return 0;
+}
+
+void *malloc(uarch_t)
+{
+	return foo();
 }
 
 void *realloc(void *, uarch_t)
@@ -13,7 +17,7 @@ void *realloc(void *, uarch_t)
 	return __KNULL;
 }
 
-void *calloc(uarch_t objSize, uarch_t nObjs)
+void *calloc(uarch_t, uarch_t)
 {
 	return __KNULL;
 }

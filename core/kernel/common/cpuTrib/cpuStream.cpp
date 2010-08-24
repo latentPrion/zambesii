@@ -56,6 +56,7 @@ cpuStreamC::cpuStreamC(void)
 
 error_t cpuStreamC::initialize(void)
 {
+	return ERROR_SUCCESS;
 }
 
 cpuStreamC::~cpuStreamC(void)

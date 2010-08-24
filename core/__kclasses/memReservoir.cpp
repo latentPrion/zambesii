@@ -2,7 +2,6 @@
 #include <arch/paging.h>
 #include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kcxxlib/new>
-#include <__kclasses/poolAllocator.h>
 #include <__kclasses/debugPipe.h>
 
 

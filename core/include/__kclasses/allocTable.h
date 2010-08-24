@@ -24,15 +24,16 @@
  **/
 
 #define ALLOCTABLE_ATTRIB_NOSWAP	(1<<0)
+// 4 bits for up to 4 attribute flags.
+#define ALLOCTABLE_ATTRIB_MASK		0xF
 
-// 2 bits for up to 3 values (0 is unusable).
-#define ALLOCTABLE_ATTRIB_MASK		0x3
+#define ALLOCTABLE_NPAGES_SHIFT		4
 
 class allocTableC
 {
 public:
-	error_t addEntry(void *vaddr, uarch_t nPages, ubit8 type, ubit8 flags);
-	error_t lookup(void *vaddr, uarch_t *nPages, ubit8 *type, ubit8 *flags);
+	error_t addEntry(void *vaddr, uarch_t nPages, ubit8 attrib);
+	error_t lookup(void *vaddr, uarch_t *nPages, ubit8 *attrib);
 	void removeEntry(void *vaddr);
 
 private:

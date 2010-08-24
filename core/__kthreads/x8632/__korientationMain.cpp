@@ -13,7 +13,6 @@
 #include <__kclasses/debugPipe.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
-#include <__kclasses/poolAllocator.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
@@ -24,11 +23,24 @@
 #include <kernel/common/moduleApis/chipsetSupportPackage.h>
 
 
+#define VA	0xF0000000
+
+void *f00 = (void *)VA;
+
+status_t mafuva(void)
+{
+	return walkerPageRanger::mapNoInc(
+		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		f00, (PAGESTATUS_FAKEMAPPED_DYNAMIC << PAGING_PAGESTATUS_SHIFT),
+		4,
+		PAGEATTRIB_WRITE | PAGEATTRIB_SUPERVISOR);
+}
+
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	uarch_t		*mem[16];
+	status_t	status;
 
 	__koptimizationHacks();
 
@@ -56,7 +68,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		ret);
 
 	DO_OR_DIE(numaTrib, initialize(), ret);
-	DO_OR_DIE(poolAllocator, initialize(), ret);
 	DO_OR_DIE(firmwareTrib, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 
@@ -74,5 +85,11 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		"DEVICE1.\n");
 
 	timerTrib.dump();
+
+	status = mafuva();
+	for (uarch_t i=0; i<1024; i++) {
+		__kprintf(NOTICE ORIENT);
+	};
+	*(char *)f00 = 'A';
 }
 

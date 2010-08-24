@@ -1,6 +1,5 @@
 
 #include <__kclasses/debugPipe.h>
-#include <__kclasses/poolAllocator.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>

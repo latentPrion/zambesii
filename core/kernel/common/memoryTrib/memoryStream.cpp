@@ -187,7 +187,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 	};
 
 	// At this point, ret is backed by pmem and fake mapped possibly.
-	err = allocTable.addEntry(ret, nPages, ALLOCTABLE_TYPE_DATA, 0);
+	err = allocTable.addEntry(ret, nPages, 0);
 	if (err != ERROR_SUCCESS) {
 		goto unmapVRangeFull;
 	};
@@ -236,12 +236,12 @@ void memoryStreamC::memFree(void *vaddr)
 	error_t		err;
 	status_t	status;
 	uarch_t		nPages, _nPages, tracker, unmapFlags;
-	ubit8		type, flags;
+	ubit8		flags;
 
 	if (vaddr == __KNULL) { return; };
 
 	// First ask the alloc table if the alloc is valid.
-	err = allocTable.lookup(vaddr, &nPages, &type, &flags);
+	err = allocTable.lookup(vaddr, &nPages, &flags);
 	if (err != ERROR_SUCCESS) {
 		return;
 	};
