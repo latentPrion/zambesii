@@ -57,19 +57,11 @@ numaMemoryBankC::~numaMemoryBankC(void)
 
 error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 {
-	if (frameCache.pop(nPages, paddr) == ERROR_SUCCESS)
-	{
-		// FIXME: Passing a paddr_t to printf is asking for trouble.
-		__kprintf(NOTICE"numaMemoryBank: contiguousGetFrames(%d) "
-			"returning %p from cache.\n", nPages, *paddr);
-
+	if (frameCache.pop(nPages, paddr) == ERROR_SUCCESS) {
 		return ERROR_SUCCESS;
 	};
 
 	// Frame cache allocation failed.
-	__kprintf(NOTICE"numaMemoryBank: contiguousGetFrames(%d): BMP "
-		"allocated, p: %p\n", nPages, *paddr);
-
 	return memBmp.contiguousGetFrames(nPages, paddr);
 }
 
@@ -89,40 +81,24 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	// Probably not as fast as it coule be, but faster than the BMP.
 	for (; minPages > 0; minPages--)
 	{
-		if (frameCache.pop(minPages, paddr) == ERROR_SUCCESS)
-		{
-			__kprintf(NOTICE"numaMemoryBank: fragmentedGetFrames(%d) "
-			"returning %d frames at %p from cache.\n", nPages, minPages, *paddr);
-
+		if (frameCache.pop(minPages, paddr) == ERROR_SUCCESS) {
 			return minPages;
 		};
 	};
 
 	// Return whatever we get.
-	ret = memBmp.fragmentedGetFrames(nPages, paddr);
-
-	__kprintf(NOTICE"numaMemoryBank: fragmentedGetFrames(%d): BMP "
-		"allocated, %d pages at p: %p\n", nPages, ret, *paddr);
-
-	return ret;
+	return memBmp.fragmentedGetFrames(nPages, paddr);
 }
 
 void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
 {
 	// Attempt to free to the frame cache.
-	if (frameCache.push(nPages, paddr) == ERROR_SUCCESS)
-	{
-		__kprintf(NOTICE"numaMemoryBank: releaseFrames(%p, %d): "
-			"freeing to cache.\n", paddr, nPages);
-
+	if (frameCache.push(nPages, paddr) == ERROR_SUCCESS) {
 		return;
 	};
 
 	// Bmp free.
 	memBmp.releaseFrames(paddr, nPages);
-
-	__kprintf(NOTICE"numaMemoryBank: releaseFrames(%p, %d): BMP "
-		"free: done.\n", paddr, nPages);
 }
 
 // Couyld probably inline these two.

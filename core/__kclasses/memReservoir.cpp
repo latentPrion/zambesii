@@ -106,7 +106,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 		return __KNULL;
 	};
 
-	if (nBytes < PAGING_BASE_SIZE)
+	if (nBytes + sizeof(reservoirHeaderS) < PAGING_BASE_SIZE / 2)
 	{
 		caches.lock.readAcquire(&rwFlags);
 
