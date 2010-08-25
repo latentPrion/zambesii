@@ -154,6 +154,7 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 			{
 				nBytes = objTmp->nBytes;
 				ret = objTmp;
+				blockTmp->firstObject = __KNULL;
 			}
 			else
 			{
