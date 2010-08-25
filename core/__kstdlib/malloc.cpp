@@ -1,28 +1,26 @@
 
 #include <__kstdlib/__kclib/stdlib.h>
+#include <__kclasses/memReservoir.h>
 
 
-static void *foo(void)
+void *malloc(uarch_t nBytes)
 {
-	return 0;
+	return memReservoir.allocate(nBytes);
 }
 
-void *malloc(uarch_t)
+void *realloc(void *mem, uarch_t nBytes)
 {
-	return foo();
+	memReservoir.free(mem);
+	return memReservoir.allocate(nBytes);
 }
 
-void *realloc(void *, uarch_t)
+void *calloc(uarch_t objSize, uarch_t nObjs)
 {
-	return __KNULL;
+	return memReservoir.allocate(objSize * nObjs);
 }
 
-void *calloc(uarch_t, uarch_t)
+void free(void *mem)
 {
-	return __KNULL;
-}
-
-void free(void *)
-{
+	memReservoir.free(mem);
 }
 

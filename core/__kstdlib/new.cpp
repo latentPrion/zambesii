@@ -1,25 +1,24 @@
 
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/memReservoir.h>
 
 
-static void *foo(void)
+void *operator new (size_t nBytes)
 {
-	return 0;
+	return memReservoir.allocate(nBytes);
 }
 
-void *operator new (size_t)
+void *operator new[](size_t nBytes)
 {
-	return foo();
-}
-void *operator new[](size_t)
-{
-	return foo();
+	return memReservoir.allocate(nBytes);
 }
 
-void operator delete (void *)
+void operator delete (void *mem)
 {
+	memReservoir.free(mem);
 }
-void operator delete[](void *)
+void operator delete[](void *mem)
 {
+	memReservoir.free(mem);
 }
 

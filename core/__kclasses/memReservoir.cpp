@@ -58,6 +58,10 @@ error_t memReservoirC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
+memReservoirC::~memReservoirC(void)
+{
+}
+
 void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 {
 	uarch_t			rwFlags;

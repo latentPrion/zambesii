@@ -2,8 +2,6 @@
 #include <__ksymbols.h>
 #include <arch/paging.h>
 #include <arch/paddr_t.h>
-#include <arch/walkerPageRanger.h>
-#include <arch/x8632/wPRanger_accessors.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/compiler/cxxrtl.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -11,7 +9,7 @@
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
-#include <__kclasses/memoryBog.h>
+#include <__kclasses/memReservoir.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
@@ -21,10 +19,7 @@
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
-#include <kernel/common/moduleApis/chipsetSupportPackage.h>
 
-
-memoryBogC	bog(0x100000);
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -59,6 +54,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(numaTrib, initialize(), ret);
 	DO_OR_DIE(firmwareTrib, initialize(), ret);
+	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
@@ -76,14 +72,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	timerTrib.dump();
 
-	c = new(bog.allocate(0x20)) char;
-	*c = 'A';
-	__kprintf(NOTICE ORIENT"Address of alloc, 0x20B: %X.\n", c);
-	bog.free(c);
-	c2 = new (bog.allocate(0x48)) char;
-
-	assert_error(c == c2);
-
-	bog.dump();
+	c = new char[512];
 }
 
