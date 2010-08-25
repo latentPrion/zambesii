@@ -10,6 +10,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
+#include <__kclasses/memoryBog.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
@@ -25,7 +26,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	char		*c, *c2;
 
 	__koptimizationHacks();
 
@@ -68,11 +68,5 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
-
-	timerTrib.dump();
-
-	c = new char[512];
-	delete c;
-	memReservoir.dump();
 }
 
