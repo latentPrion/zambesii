@@ -68,7 +68,6 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 {
 	uarch_t			minPages;
-	status_t		ret;
 
 	// Try to see how much of the frame cache we can exhaust.
 	minPages = frameCache.stacks[STACKCACHE_NSTACKS - 1].stackSize;
