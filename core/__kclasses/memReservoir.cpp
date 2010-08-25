@@ -2,6 +2,7 @@
 #include <arch/paging.h>
 #include <chipset/memory.h>
 #include <__kstdlib/__kmath.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
@@ -36,6 +37,8 @@ error_t memReservoirC::initialize(void)
 	caches.rsrc.ptrs = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(1, 0)) slamCacheC*;
 
+	memset(caches.rsrc.ptrs, 0, PAGING_BASE_SIZE);
+
 	if (caches.rsrc.ptrs == __KNULL)
 	{
 		__kprintf(ERROR RESERVOIR"Unable to allocate a page to hold "
@@ -46,6 +49,8 @@ error_t memReservoirC::initialize(void)
 
 	bogs.rsrc.ptrs = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(1, 0)) memoryBogC*;
+
+	memset(bogs.rsrc.ptrs, 0, PAGING_BASE_SIZE);
 
 	if (bogs.rsrc.ptrs == __KNULL)
 	{
@@ -60,6 +65,35 @@ error_t memReservoirC::initialize(void)
 
 memReservoirC::~memReservoirC(void)
 {
+}
+
+void memReservoirC::dump(void)
+{
+	
+	__kprintf(NOTICE RESERVOIR"Dumping.\n");
+	__kprintf(NOTICE RESERVOIR"Cache array, %X, nCaches %d, __kbog %X, "
+		"(custom) bogs array %X, nBogs %d.\n",
+		caches.rsrc.ptrs, caches.rsrc.nCaches, __kbog, bogs.rsrc.ptrs,
+		bogs.rsrc.nBogs);
+
+	__kprintf(NOTICE RESERVOIR"Dumping __kbog.\n");
+	__kbog->dump();
+
+	for (uarch_t i=0; i<bogs.rsrc.nBogs; i++)
+	{
+		__kprintf(NOTICE RESERVOIR"Dumping bog %d @ v %X.\n",
+			i, bogs.rsrc.ptrs[i]);
+
+		bogs.rsrc.ptrs[i]->dump();
+	};
+
+	for (uarch_t i=0; i<caches.rsrc.nCaches; i++)
+	{
+		__kprintf(NOTICE RESERVOIR"Dumping cache %d @ v %X.\n",
+			i, caches.rsrc.ptrs[i]);
+
+		caches.rsrc.ptrs[i]->dump();
+	};
 }
 
 void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)

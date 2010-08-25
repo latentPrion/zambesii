@@ -3,6 +3,7 @@
 #include <arch/paging.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/slamCache.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 slamCacheC::slamCacheC(void)
@@ -41,6 +42,29 @@ slamCacheC::~slamCacheC(void)
 	/* I'm not even sure it's possible to destroy a cache, really, without
 	 * some form of reference counting.
 	 **/
+}
+
+void slamCacheC::dump(void)
+{
+	slamCacheC::object	*obj;
+	uarch_t			count;
+
+	__kprintf(NOTICE SLAMCACHE"Dumping.\n");
+	__kprintf(NOTICE SLAMCACHE"Object size: %X, FreeList: Pages:\n\t",
+		objectSize);
+
+	count = 0;
+	for (obj = freeList.rsrc; obj != __KNULL; obj = obj->next, count++) {
+		__kprintf((utf8Char *)"v %X ", obj);
+	};
+	__kprintf((utf8Char*)"\n\t%d in total.\nPartialList: free objects:\n\t",
+		count);
+
+	count = 0;
+	for (obj = partialList.rsrc; obj != __KNULL; obj = obj->next, count++) {
+		__kprintf((utf8Char *)"v %X, ", obj);
+	};
+	__kprintf((utf8Char *)"\n\t%d in all.\n", count);
 }
 
 /**	NOTE:

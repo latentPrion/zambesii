@@ -25,6 +25,8 @@
  * The cache then re-uses that block list on the free list indefinitely.
  **/
 
+#define SLAMCACHE		"Slam Cache: "
+
 class memReservoirC;
 
 class slamCacheC
@@ -44,6 +46,8 @@ public:
 
 	status_t detangle(void);
 	status_t flush(void);
+
+	void dump(void);
 
 public:
 	int operator ==(slamCacheC &h);
