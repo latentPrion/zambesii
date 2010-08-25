@@ -61,8 +61,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)
 		|| !__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1))
 	{
-		if (__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1))
-		{
+		if (__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE1)) {
 			__kprintf(WARNING ORIENT"No debug buffer allocated.\n");
 		};
 	};
@@ -73,5 +72,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	timerTrib.dump();
 
 	c = new char[512];
+	delete c;
+	memReservoir.dump();
 }
 

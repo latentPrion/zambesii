@@ -32,7 +32,6 @@ void memoryBogC::dump(void)
 	__kprintf(NOTICE MEMBOG"Dumping.\n");
 
 	head.lock.acquire();
-
 	__kprintf(NOTICE MEMBOG"Size: %X, head pointer: %X.\n",
 		blockSize, head.rsrc);
 
@@ -46,7 +45,7 @@ void memoryBogC::dump(void)
 		for (; obj != __KNULL; obj = obj->next)
 		{
 			__kprintf((utf8Char *)"\t\tFree object: "
-				"Addr %X, nBytes %X.",
+				"Addr %X, nBytes %X.\n",
 				obj, obj->nBytes);
 		};
 	};
