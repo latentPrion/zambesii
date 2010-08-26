@@ -294,6 +294,8 @@ slamCacheC *memReservoirC::createCache(uarch_t objSize)
 		return __KNULL;
 	};
 
+	ret->initialize();
+
 	for (uarch_t i=0; i<caches.rsrc.nCaches; i++)
 	{
 		if (objSize < caches.rsrc.ptrs[i]->objectSize)

@@ -6,20 +6,22 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
-slamCacheC::slamCacheC(void)
-{
-}
 
 slamCacheC::slamCacheC(uarch_t objectSize)
-{
-	initialize(objectSize);
-}
-
-error_t slamCacheC::initialize(uarch_t objectSize)
 {
 	heapCacheC::objectSize = ((objectSize < sizeof(slamCacheC::object))
 		? sizeof(slamCacheC::object) : objectSize);
 
+	// Calculate the excess on each page allocated.
+	perPageExcess = PAGING_BASE_SIZE % objectSize;
+	perPageBlocks = PAGING_BASE_SIZE / objectSize;
+
+	partialList.rsrc = __KNULL;
+	freeList.rsrc = __KNULL;
+}
+
+error_t slamCacheC::initialize(void)
+{
 	freeList.rsrc = reinterpret_cast<object *>(
 		(memoryTrib.__kmemoryStream.*
 			memoryTrib.__kmemoryStream.memAlloc)(1, 0));
@@ -28,11 +30,6 @@ error_t slamCacheC::initialize(uarch_t objectSize)
 		freeList.rsrc->next = __KNULL;
 	};
 
-	partialList.rsrc = __KNULL;
-
-	// Calculate the excess on each page allocated.
-	perPageExcess = PAGING_BASE_SIZE % objectSize;
-	perPageBlocks = PAGING_BASE_SIZE / objectSize;
 	// Don't bother to check for freeList == __KNULL.
 	return ERROR_SUCCESS;
 }

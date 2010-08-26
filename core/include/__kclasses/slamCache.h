@@ -35,9 +35,8 @@ public heapCacheC
 {
 friend class memReservoirC;
 public:
-	slamCacheC(void);
 	slamCacheC(uarch_t objectSize);
-	error_t initialize(uarch_t objectSize);
+	error_t initialize(void);
 	virtual ~slamCacheC(void);
 
 public:
