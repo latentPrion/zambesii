@@ -50,20 +50,33 @@ void slamCacheC::dump(void)
 	uarch_t			count;
 
 	__kprintf(NOTICE SLAMCACHE"Dumping.\n");
-	__kprintf(NOTICE SLAMCACHE"Object size: %X, FreeList: Pages:\n\t",
-		objectSize);
+	__kprintf(NOTICE SLAMCACHE"Object size: %X, ppb %d, ppexcess %d, "
+		"FreeList: Pages:\n\t",
+		objectSize, perPageBlocks, perPageExcess);
 
 	count = 0;
+
+	freeList.lock.acquire();
+
 	for (obj = freeList.rsrc; obj != __KNULL; obj = obj->next, count++) {
 		__kprintf((utf8Char *)"v %X ", obj);
 	};
+
+	freeList.lock.release();
+
 	__kprintf((utf8Char*)"\n\t%d in total.\nPartialList: free objects:\n\t",
 		count);
 
 	count = 0;
+
+	partialList.lock.acquire();
+
 	for (obj = partialList.rsrc; obj != __KNULL; obj = obj->next, count++) {
 		__kprintf((utf8Char *)"v %X, ", obj);
 	};
+	
+	partialList.lock.release();
+
 	__kprintf((utf8Char *)"\n\t%d in all.\n", count);
 }
 
@@ -131,10 +144,10 @@ void *slamCacheC::allocate(void)
 		};
 
 		// Break up the new block from the free list.
-		for (uarch_t i=0; i<perPageBlocks-1; i++) {
+		for (uarch_t i=0; i<perPageBlocks; i++) {
 			tmp[i].next = &tmp[i+1];
 		};
-		tmp[perPageBlocks-1].next = 0;
+		tmp[perPageBlocks].next = 0;
 		partialList.rsrc = tmp;
 	};
 

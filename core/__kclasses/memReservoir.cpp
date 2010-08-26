@@ -303,6 +303,10 @@ slamCacheC *memReservoirC::createCache(uarch_t objSize)
 		};
 	};
 
+	if (spot == RESERVOIR_MAX_NCACHES) {
+		spot = caches.rsrc.nCaches;
+	};
+
 	for (uarch_t i=caches.rsrc.nCaches; i > spot; i--) {
 		caches.rsrc.ptrs[i] = caches.rsrc.ptrs[i-1];
 	};

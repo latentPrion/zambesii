@@ -68,5 +68,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
+
+	char *c = new char[256];
+	*c = 'A';
+	memReservoir.dump();
 }
 
