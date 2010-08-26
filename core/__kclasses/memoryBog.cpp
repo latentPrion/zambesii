@@ -24,6 +24,31 @@ memoryBogC::~memoryBogC(void)
 	// Free all blocks.
 }
 
+// Transparent method of copying headers.
+void memoryBogC::moveHeaderDown(void *hdr, uarch_t nBytes)
+{
+	memoryBogC::allocHeaderS	tmp;
+
+	memcpy(&tmp, hdr, sizeof(memoryBogC::allocHeaderS));
+	memcpy(
+		reinterpret_cast<void *>(
+			(uarch_t)hdr + nBytes ),
+		&tmp,
+		sizeof(memoryBogC::allocHeaderS));
+}
+
+void memoryBogC::moveHeaderUp(void *hdr, uarch_t nBytes)
+{
+	memoryBogC::allocHeaderS	tmp;
+
+	memcpy(
+		&tmp,
+		reinterpret_cast<void *>( (uarch_t)hdr + nBytes ),
+		sizeof(memoryBogC::allocHeaderS));
+
+	memcpy(hdr, &tmp, sizeof(memoryBogC::allocHeaderS));
+}
+
 void memoryBogC::dump(void)
 {
 	bogBlockS	*block;

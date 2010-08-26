@@ -2,6 +2,7 @@
 #include <arch/paging.h>
 #include <chipset/memory.h>
 #include <__kstdlib/__kmath.h>
+#include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
@@ -106,7 +107,9 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 		return __KNULL;
 	};
 
-	if (nBytes + sizeof(reservoirHeaderS) < PAGING_BASE_SIZE / 2)
+	nBytes += sizeof(reservoirHeaderS);
+
+	if (nBytes <= PAGING_BASE_SIZE / 8)
 	{
 		caches.lock.readAcquire(&rwFlags);
 
@@ -115,7 +118,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 			for (uarch_t i=0; i<caches.rsrc.nCaches; i++)
 			{
 				if (caches.rsrc.ptrs[i]->objectSize
-					== nBytes + sizeof(reservoirHeaderS))
+					== nBytes)
 				{
 					ret = static_cast<reservoirHeaderS *>(
 						caches.rsrc.ptrs[i]
@@ -124,6 +127,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 					caches.lock.readRelease(rwFlags);
 
 					ret->owner = caches.rsrc.ptrs[i];
+					ret->magic = RESERVOIR_MAGIC;
 					return reinterpret_cast<void *>(
 						reinterpret_cast<uarch_t>( ret )
 							+ sizeof(reservoirHeaderS) );
@@ -135,7 +139,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 			caches.lock.writeAcquire();
 
 			// No cache. Try to allocate one.
-			cache = createCache(nBytes + sizeof(reservoirHeaderS));
+			cache = createCache(nBytes);
 
 			caches.lock.writeRelease();
 			caches.lock.readAcquire(&rwFlags);
@@ -150,6 +154,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 				if (ret != __KNULL)
 				{
 					ret->owner = cache;
+					ret->magic = RESERVOIR_MAGIC;
 					return reinterpret_cast<void *>(
 						reinterpret_cast<uarch_t>( ret )
 							+ sizeof(reservoirHeaderS) );
@@ -159,23 +164,53 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 		caches.lock.readRelease(rwFlags);
 	};
 
-	// Unable to allocate from an object cache. Do bog alloc.
+	/**	NOTES:
+	 * Even though the very fact that the kernel's bog is unavailable is
+	 * cause for great alarm, we shouldn't kill all allocations simply
+	 * because of that: still try to allocate off of a stream.
+	 **/
 	if (__kbog == __KNULL) {
-		return __KNULL;
+		goto tryStream;
 	};
 
-	ret = reinterpret_cast<reservoirHeaderS *>(
-		__kbog->allocate(nBytes, flags) );
+	if (nBytes <= __kbog->blockSize)
+	{
+		ret = reinterpret_cast<reservoirHeaderS *>(
+			__kbog->allocate(nBytes, flags) );
+
+		if (ret != __KNULL)
+		{
+			/* Copy the bog header down so we don't overwrite it
+			 * with the reservoir header.
+			 **/
+			memoryBogC::moveHeaderDown(
+				ret, sizeof(reservoirHeaderS));
+
+			ret->owner = __KNULL;
+			ret->magic = RESERVOIR_MAGIC | RESERVOIR_FLAGS___KBOG;
+			return reinterpret_cast<reservoirHeaderS *>(
+				reinterpret_cast<uarch_t>( ret )
+					+ sizeof(reservoirHeaderS) );
+		};
+	};
+
+tryStream:
+	// Unable to allocate from caches and the kernel bog. Stream allocate.
+	ret = new ((memoryTrib.__kmemoryStream
+		.*memoryTrib.__kmemoryStream.memAlloc)(
+			PAGING_BYTES_TO_PAGES(nBytes), 0)) reservoirHeaderS;
 
 	if (ret != __KNULL)
 	{
 		ret->owner = __KNULL;
-		ret = reinterpret_cast<reservoirHeaderS *>(
+		ret->magic = RESERVOIR_MAGIC | RESERVOIR_FLAGS_STREAM;
+		return reinterpret_cast<reservoirHeaderS *>(
 			reinterpret_cast<uarch_t>( ret )
 				+ sizeof(reservoirHeaderS) );
 	};
 
-	return ret;
+	// If we're still here, then it means allocation completely failed.
+	return __KNULL;
 }
 
 void memReservoirC::free(void *_mem)
@@ -190,6 +225,33 @@ void memReservoirC::free(void *_mem)
 	mem = reinterpret_cast<reservoirHeaderS *>(
 		reinterpret_cast<uarch_t>( _mem ) - sizeof(reservoirHeaderS) );
 
+	if ((mem->magic >> 4) != (RESERVOIR_MAGIC >> 4))
+	{
+		__kprintf(ERROR RESERVOIR"Corrupt memory or bad free at v %X ",
+			mem);
+
+		return;
+	};
+
+	if (__KFLAG_TEST(
+		(mem->magic & RESERVOIR_FLAGS_MASK), RESERVOIR_FLAGS_STREAM))
+	{
+		memoryTrib.__kmemoryStream.memFree(mem);
+		return;
+	};
+
+	if (__KFLAG_TEST(
+		(mem->magic & RESERVOIR_FLAGS_MASK), RESERVOIR_FLAGS___KBOG))
+	{
+		if (__kbog == __KNULL) {
+			return;
+		};
+
+		memoryBogC::moveHeaderUp(mem, sizeof(reservoirHeaderS));
+		__kbog->free(mem);
+		return;
+	};
+
 	if (mem->owner != __KNULL)
 	{
 		cache = mem->owner;
@@ -197,11 +259,8 @@ void memReservoirC::free(void *_mem)
 		return;
 	};
 
-	// Not a cache allocated object. Free to bog.
-	if (__kbog == __KNULL) {
-		return;
-	};
-	__kbog->free(mem);
+	__kprintf(WARNING RESERVOIR"free(%X): Operation fell through without "
+		"finding subsystem to be freed to.\n", mem);
 }
 
 // Expects the lock to be pre-write-acquired.

@@ -36,10 +36,13 @@
 #define MEMBOG_NO_EXPAND_ON_FAIL	(1<<0)
 #define MEMBOG				"Memory Bog: "
 
+class memReserviorC;
+
 class memoryBogC
 :
 public allocClassC
 {
+friend class memReservoirC;
 public:
 	memoryBogC(uarch_t bogSize);
 	error_t initialize(void);
@@ -48,6 +51,9 @@ public:
 public:
 	void *allocate(uarch_t nBytes, uarch_t flags=0);
 	void free(void *mem);
+
+	static void moveHeaderDown(void *hdr, uarch_t nBytes);
+	static void moveHeaderUp(void *hdr, uarch_t, nBytes);
 
 	void dump(void);
 
