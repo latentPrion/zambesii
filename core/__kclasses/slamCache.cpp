@@ -140,12 +140,18 @@ void *slamCacheC::allocate(void)
 			};
 		};
 
-		// Break up the new block from the free list.
-		for (uarch_t i=0; i<perPageBlocks; i++) {
-			tmp[i].next = &tmp[i+1];
-		};
-		tmp[perPageBlocks].next = 0;
 		partialList.rsrc = tmp;
+
+		// Break up the new block from the free list.
+		for (uarch_t i=perPageBlocks-1; i>0; i--)
+		{
+			tmp->next = reinterpret_cast<slamCacheC::object *>(
+				(uarch_t)tmp + this->objectSize );
+
+			tmp = reinterpret_cast<slamCacheC::object *>(
+				(uarch_t)tmp + this->objectSize );
+		};
+		tmp->next = __KNULL;
 	};
 
 	ret = partialList.rsrc;
