@@ -180,6 +180,12 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 
 		if (ret != __KNULL)
 		{
+			/* Copy the bog header down so we don't overwrite it
+			 * with the reservoir header.
+			 **/
+			memoryBogC::moveHeaderDown(
+				ret, sizeof(reservoirHeaderS));
+
 			ret->owner = __KNULL;
 			ret->magic = RESERVOIR_MAGIC | RESERVOIR_FLAGS___KBOG;
 			return reinterpret_cast<reservoirHeaderS *>(
@@ -240,6 +246,8 @@ void memReservoirC::free(void *_mem)
 		if (__kbog == __KNULL) {
 			return;
 		};
+
+		memoryBogC::moveHeaderUp(mem, sizeof(reservoirHeaderS));
 		__kbog->free(mem);
 		return;
 	};

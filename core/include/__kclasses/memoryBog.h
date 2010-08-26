@@ -52,6 +52,9 @@ public:
 	void *allocate(uarch_t nBytes, uarch_t flags=0);
 	void free(void *mem);
 
+	static void moveHeaderDown(void *hdr, uarch_t nBytes);
+	static void moveHeaderUp(void *hdr, uarch_t, nBytes);
+
 	void dump(void);
 
 public:
