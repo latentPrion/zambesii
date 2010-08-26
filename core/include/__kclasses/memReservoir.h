@@ -9,13 +9,18 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 
+// For any word size, the LAST 4 BITS are RESESRVED.
 #ifdef __32_BIT__
-	// "ZBZ ALLOC"
-	#define RESERVOIR_HEADER_MAGIC	0x2b2A110C
+	// "ZBZ ALLO[C]"
+	#define RESERVOIR_MAGIC	0x2b2A1100
 #elif defined(__64_BIT__)
-	// "ZBZ ALLOC IS SO COOL"
-	#define RESERVOIR_HEADER_MAGIC	0x2b2A110C1550C001
+	// "ZBZ ALLOC IS SO COO[L]"
+	#define RESERVOIR_MAGIC	0x2b2A110C1550C000
 #endif
+
+#define RESERVOIR_FLAGS___KBOG		(1<<0)
+#define RESERVOIR_FLAGS_STREAM		(1<<1)
+#define RESERVOIR_FLAGS_MASK		(0xF)
 
 #define RESERVOIR_MAX_NBOGS		(PAGING_BASE_SIZE / sizeof(void *))
 #define RESERVOIR_MAX_NCACHES		(PAGING_BASE_SIZE / sizeof(void *))
@@ -61,6 +66,7 @@ private:
 	struct reservoirHeaderS
 	{
 		slamCacheC	*owner;
+		uarch_t		magic;
 	};
 	sharedResourceGroupC<multipleReaderLockC, cacheStateS>	caches;
 	memoryBogC	*__kbog;
