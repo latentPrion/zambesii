@@ -11,28 +11,20 @@
 #include <kernel/common/numaTrib/numaTrib.h>
 
 /**	EXPLANATION:
- * Setting up the NUMA Tributary is a bit more complicated than I'd imagined.
- * There are several things to consider:
- *	1. The NUMA Stream pointer array. If we do not pre-allocate memory
- *	   in the kernel image for it, then it will remain a pointer, and not
- *	   a pointer to a block of memory partitioned into pointers.
- *	2. Then we have to ensure that as soon as dynamic pages are available
- *	   we re-allocate the array so that the kernel can use it. If we don't
- *	   do that, then when the kernel needs to re-size the array, it will
- *	   of course, free it, and this will cause the kernel to get trampled.
- *	   There is a way to avoid the trampling, and that is to allocate the
- *	   pages for the NUMA stream array from the kernel Memory Stream. This
- *	   way our allocations are recorded and any false frees will be ignored.
- *	3. To initialize the actual default bank, first we need to make sure
- *	   that there is a pre-allocated NUMA stream in the kernel image,
- *	   completely uninitialized (constructed with the default constructor).
- *	4. Next we have to set the numaStreams resource to point to the
- *	   pre-allocated array.
- *	5. After this we have to point the first pointer in the array to the
- *	   address of the __kspace bank.
- *	6. Then we need to call initialize() on the new first bank.
- *	7. When this returns, then we know that the __kspace BMP is now ready
- *	   to be used to allocate pages.
+ * To initialize the NUMA Tributary, the steps are:
+ *	1. Pre-allocate room for a single pointer to point to the __kspace
+ *	   fake stream at boot and point the array of NUMA stream pointers to
+ *	   point to that pointer.
+ *	2. Pre-allocate an actual instance of numaStreamC for the __kspace
+ *	   NUMA stream and have it constructed with the chipset's __kspace
+ *	   mem range.
+ *	3. Make the pre-allocated pointer in (1) point to the pre-allocated
+ *	   stream in (2).
+ *	4. Call initialize() on the pre-allocated stream from (2), with the
+ *	   pre-allocated memory for __kspace passed to it as an argument.
+ *	5. Set numaStreams.rsrc.nStreams to 1.
+ *	6. Done. We now have a fake NUMA bank at index 0 which allocates from
+ *	   a guaranteed usable area of physical memory for bootup.
  **/
 static numaStreamC	*__kspaceStreamPtr;
 
