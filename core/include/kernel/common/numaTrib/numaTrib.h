@@ -49,6 +49,7 @@ public:
 
 public:
 	numaStreamC *getStream(numaBankId_t bankId);
+	error_t spawnStream(numaBankId_t id, paddr_t baseAddr, paddr_t size);
 
 public:
 	/* NOTE:

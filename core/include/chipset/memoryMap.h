@@ -33,8 +33,8 @@ struct chipsetMemMapEntryS
 
 struct chipsetMemMapS
 {
-	chipsetMemMapEntryS	*entries;
-	ubit32			nEntries;
+	struct chipsetMemMapEntryS	*entries;
+	ubit32				nEntries;
 };
 
 #endif

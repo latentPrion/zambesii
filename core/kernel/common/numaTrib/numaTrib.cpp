@@ -133,8 +133,9 @@ error_t numaTribC::initialize2(void)
 	return ERROR_SUCCESS;
 }
 
-error_t numaTribC::spawnStream(numaBankId_t id, paddr_t baseAddr, paddr_t size)
+error_t numaTribC::spawnStream(numaBankId_t, paddr_t, paddr_t)
 {
+	return ERROR_UNKNOWN;
 }
 
 numaTribC::~numaTribC(void)

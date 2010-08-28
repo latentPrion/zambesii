@@ -17,7 +17,7 @@ struct numaMemMapEntryS
 struct chipsetNumaMapS
 {
 	// numaCpuMapEntryS	*cpuConfig;
-	numaMemMapEntryS	*memConfig;
+	struct numaMemMapEntryS	*memConfig;
 	ubit8			nMemMapEntries, nCpuMapEntries;
 };
 
