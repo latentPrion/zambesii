@@ -37,7 +37,5 @@ struct chipsetMemMapS
 	ubit32			nEntries;
 };
 
-extern chipsetMemMapS	*chipsetMemMap;
-
 #endif
 

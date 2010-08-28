@@ -13,7 +13,5 @@ struct chipsetMemConfigS
 	paddr_t		memSize;
 };
 
-extern chipsetMemConfigS	*chipsetMemConfig;
-
 #endif
 

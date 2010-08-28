@@ -21,7 +21,5 @@ struct chipsetNumaMapS
 	ubit8			nMemMapEntries, nCpuMapEntries;
 };
 
-extern chipsetNumaMapS		*chipsetNumaMap;
-
 #endif
 
