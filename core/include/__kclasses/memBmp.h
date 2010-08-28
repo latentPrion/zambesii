@@ -7,10 +7,10 @@
 	#include <kernel/common/sharedResourceGroup.h>
 
 /**	EXPLANATION:
- * I'm actually very likely to replace this very soon. However, for now,
- * physical memory management will have to be done via a bitmap. There would
- * be way to many circular dependencies if I used something like a linked list,
- * like the kind I invented for the vaddrSpaceStreamC.
+ * Simple bitmap, 1/0 for used/free. Will soon be changed into some sort of
+ * highly efficient doubled layered setup. This combined with the frame caching
+ * that accompanies each bitmap in its NUMA Bank wrapper will make most frame
+ * allocations *very* fast.
  **/
 
 #define MEMBMP_FLAGS_DYNAMIC		(1<<0)

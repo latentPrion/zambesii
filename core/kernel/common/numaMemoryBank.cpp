@@ -25,7 +25,7 @@
  **/
 numaMemoryBankC::numaMemoryBankC(paddr_t baseAddr, paddr_t size)
 :
-memBmp(baseAddr, size), baseAddr(baseAddr), size(size)
+baseAddr(baseAddr), size(size), memBmp(baseAddr, size)
 {
 }
 

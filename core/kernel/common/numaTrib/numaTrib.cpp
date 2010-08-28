@@ -34,13 +34,20 @@
  *	7. When this returns, then we know that the __kspace BMP is now ready
  *	   to be used to allocate pages.
  **/
-static numaStreamC		*__kspaceStreamPtr;
-static numaStreamC		__kspaceNumaStream;
+static numaStreamC	*__kspaceStreamPtr;
+
+// Always initialize the __kspace stream as a fake bank 0.
+static numaStreamC	__kspaceNumaStream(
+	0,
+	CHIPSET_MEMORY___KSPACE_BASE,
+	CHIPSET_MEMORY___KSPACE_SIZE);
 
 
 numaTribC::numaTribC(void)
 {
+#if __SCALING__ >= SCALING_CC_NUMA
 	defaultConfig.def.rsrc = 0;
+#endif
 	numaStreams.rsrc.array = __KNULL;
 	numaStreams.rsrc.nStreams = 0;
 }
@@ -49,61 +56,34 @@ error_t numaTribC::initialize(void)
 {
 	error_t		ret;
 
-	numaStreams.rsrc.array = &__kspaceStreamPtr;
-	numaStreams.rsrc.array[0] = &__kspaceNumaStream;
-	numaStreams.rsrc.nStreams = 1;
-
-	// Call initialize() on the __kspace NUMA Stream, give it an ID of 0.
-	ret = numaStreams.rsrc[0]->initialize(
-		0,
-		CHIPSET_MEMORY___KSPACE_BASE,
-		CHIPSET_MEMORY___KSPACE_SIZE,
-		__kspaceInitMem);
-
+	ret = __kspaceNumaStream.initialize(__kspaceInitMem);
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};
 
-	/**	EXPLANATION:
-	 * Right now, if we're still here, then it means that the kernel's
-	 * __kspace bank has just been successfully initalize()d. We now have a
-	 * small bank of physical RAM from which we can allocate (__kspace).
-	 *
-	 * However, if we call any of the non-configured getFrames() functions,
-	 * we'll end up having the kernel search for RAM on banks using the
-	 * default config's internal BMP. This would be disastrous since the
-	 * object is not yet initialized.
-	 *
-	 * To work around this, set the default config's default bank to be
-	 * __kspace. Also, the bitmapC class's constructor sets its internal
-	 * 'nBits' member to 0 on construct. So if call to check its bits is
-	 * made while it's not yet initialized, it will return FALSE for if
-	 * that bit is set.
-	 **/
-#if __SCALING__ >= SCALING_CC_NUMA
-	// Make sure that the NUMA Trib will only allocate from __kspace.
-	defaultConfig.def.rsrc = 0;
-#endif
+	// Link the now initialized __kspace fake bank 0 into slot 0.
+	numaStreams.rsrc.array = &__kspaceStreamPtr;
+	numaStreams.rsrc.array[0] = &__kspaceNumaStream;
+	numaStreams.rsrc.nStreams = 1;
 
-	// We have now, barring the uninitialized default config, full PMM.
 	return ERROR_SUCCESS;
 }
 
 numaTribC::~numaTribC(void)
 {
-	if (numaStreams.rsrc != __KNULL)
+	if (numaStreams.rsrc.array != __KNULL)
 	{
-		for (; nStreams > 0; nStreams--)
+		for (; numaStreams.rsrc.nStreams > 0;
+			numaStreams.rsrc.nStreams--)
 		{
-			if (numaStreams.rsrc[nStreams] != __KNULL) {
-				delete numaStreams.rsrc[nStreams];
+			if (numaStreams.rsrc.array[numaStreams.rsrc.nStreams]
+				!= __KNULL)
+			{
+				delete numaStreams.rsrc.array[
+					numaStreams.rsrc.nStreams];
 			};
 		};
-		/* FIXME: Think this over and see whether it should be kernel
-		 * stream allocated. Read the comments about (point 2) to see
-		 * what you mean.
-		 **/
-		memoryTrib.rawMemFree(numaStreams.rsrc, streamArrayNPages);
+		delete numaStreams.rsrc.array;
 	};
 }
 
@@ -115,7 +95,7 @@ numaStreamC *numaTribC::getStream(numaBankId_t bankId)
 
 	numaStreams.lock.readAcquire(&rwFlags);
 
-	ret = numaStreams.rsrc[bankId];
+	ret = numaStreams.rsrc.array[bankId];
 
 	numaStreams.lock.readRelease(rwFlags);
 	return ret;
@@ -136,10 +116,10 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	 * before it can be freed.
 	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
-	for (uarch_t i=0; i<nStreams; i++)
+	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
 		numaStreams.lock.readAcquire(&rwFlags);
-		currStream = numaStreams.rsrc[i];
+		currStream = numaStreams.rsrc.array[i];
 		numaStreams.lock.readRelease(rwFlags);
 
 		// Ensure we're not trying to free to hot-swapped out, etc RAM.
@@ -161,7 +141,7 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	 **/
 	// FIXME: Place a log warning here.
 #else
-	numaStreams.rsrc[0]->memoryBank.releaseFrames(paddr, nFrames);
+	numaStreams.rsrc.array[0]->memoryBank.releaseFrames(paddr, nFrames);
 #endif
 
 }
@@ -201,7 +181,7 @@ error_t numaTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 	 * have to now determine which bank would have memory, and set that to
 	 * be the new default bank for raw contiguous allocations.
 	 **/
-	for (ubit32 i=0; i<nStreams; i++)
+	for (ubit32 i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
 		currStream = getStream(i);
 		if (currStream != __KNULL)
@@ -261,7 +241,7 @@ error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	/* If we're still here then we failed at allocating from the default
 	 * bank. Search each other bank, and get frames from one of them.
 	 **/
-	for (ubit32 i=0; i<nStreams; i++)
+	for (ubit32 i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
 		currStream = getStream(i);
 		if (currStream != __KNULL)
@@ -315,7 +295,7 @@ error_t numaTribC::configuredGetFrames(
 	};
 
 	// Allocation from the default bank failed. Find a another default bank.
-	for (ubit32 i=0; i<nStreams; i++)
+	for (ubit32 i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
 		// If this bank is part of the thread's NUMA policy:
 		if (config->memBanks.testSingle(i))
@@ -351,10 +331,10 @@ void numaTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 	uarch_t		rwFlags;
 	numaStreamC	*currStream;
 
-	for (uarch_t i=0; i<nStreams; i++)
+	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
 		numaStreams.lock.readAcquire(&rwFlags);
-		currStream = numaStreams.rsrc[i];
+		currStream = numaStreams.rsrc.array[i];
 		numaStreams.lock.readRelease(rwFlags);
 
 		/* We can most likely afford this small speed bump since ranges
@@ -371,10 +351,10 @@ void numaTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 	uarch_t		rwFlags;
 	numaStreamC	*currStream;
 
-	for (uarch_t i=0; i<nStreams; i++)
+	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
 		numaStreams.lock.readAcquire(&rwFlags);
-		currStream = numaStreams.rsrc[i];
+		currStream = numaStreams.rsrc.array[i];
 		numaStreams.lock.readRelease(rwFlags);
 
 		currStream->memoryBank.mapRangeUnused(baseAddr, nPages);

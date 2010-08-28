@@ -22,16 +22,10 @@ class numaStreamC
 public streamC
 {
 public:
-	numaStreamC(void);
-	numaStreamC(
-		numaBankId_t bankId, paddr_t baseAddr, paddr_t size,
-		void *preAllocated);
+	numaStreamC(numaBankId_t bankId, paddr_t baseAddr, paddr_t size);
+	error_t initialize(void *preAllocated=__KNULL);
 
-	error_t initialize(
-		numaBankId_t bankId, paddr_t baseAddr, paddr_t size,
-		void *preAllocated);
-
-	~numaStreamC(void){}
+	~numaStreamC(void);
 
 public:
 	/* These will pull down the whole bank. Use the individual cut() and
