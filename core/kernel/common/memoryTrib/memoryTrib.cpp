@@ -1,6 +1,7 @@
 
 #include <arch/walkerPageRanger.h>
 #include <lang/lang.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/processId.h>
@@ -15,6 +16,11 @@ memoryTribC::memoryTribC(
 :
 __kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
 {
+	for (uarch_t i=0; i<CHIPSET_MEMORY_NREGIONS; i++)
+	{
+		memRegions[i].info = __KNULL;
+		memRegions[i].memBmp = __KNULL;
+	};
 }
 
 // Initializes the kernel's Memory Stream.

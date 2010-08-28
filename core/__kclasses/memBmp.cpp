@@ -16,25 +16,7 @@
 #define MEMBMP_FULL_SLOT		(~((uarch_t)0))
 #define MEMBMP_ALLOC_UNSUCCESSFUL	(~((uarch_t)0))
 
-memBmpC::memBmpC(void)
-{
-}
-
-memBmpC::memBmpC(paddr_t baseAddr, paddr_t size, void *preAllocated)
-{
-	if (initialize(baseAddr, size, preAllocated) != ERROR_SUCCESS) {
-		panic(ERROR_UNKNOWN, mmStr[0]);
-	};
-}
-
-/**	EXPLANATION:
- * It isn't necessary to pass a page aligned address to this function. You 
- * can pass an unaligned address. If an unaligned address is passed, the bmp
- * will automatically map the unaligned frame as used.
- *
- * This is to prevent conflicts between BMPs.
- **/
-error_t memBmpC::initialize(paddr_t baseAddr, paddr_t size, void *preAllocated)
+memBmpC::memBmpC(paddr_t baseAddr, paddr_t size)
 {
 	flags = 0;
 	memBmpC::baseAddr = baseAddr;
@@ -45,15 +27,25 @@ error_t memBmpC::initialize(paddr_t baseAddr, paddr_t size, void *preAllocated)
 	nFrames = (endPfn - basePfn) + 1;
 
 	nIndexes = __KMATH_NELEMENTS(nFrames, __KBIT_NBITS_IN(*bmp.rsrc.bmp));
-
 	bmpSize = nIndexes * sizeof(*bmp.rsrc.bmp);
 
-	if (preAllocated) {
+	bmp.rsrc.lastAllocIndex = 0;
+}
+
+/**	EXPLANATION:
+ * It isn't necessary to pass a page aligned address to this function. You 
+ * can pass an unaligned address. If an unaligned address is passed, the bmp
+ * will automatically map the unaligned frame as used.
+ *
+ * This is to prevent conflicts between BMPs.
+ **/
+error_t memBmpC::initialize(void *preAllocated)
+{
+	if (preAllocated != __KNULL) {
 		bmp.rsrc.bmp = new (preAllocated) uarch_t[nIndexes];
 	}
 	else
 	{
-		//XXX: Note: This overallocates memory for the BMP.
 		bmp.rsrc.bmp = new (
 			memoryTrib.rawMemAlloc(
 				PAGING_BYTES_TO_PAGES(bmpSize)))
@@ -66,12 +58,12 @@ error_t memBmpC::initialize(paddr_t baseAddr, paddr_t size, void *preAllocated)
 		__KFLAG_SET(flags, MEMBMP_FLAGS_DYNAMIC);
 	};
 	memset(bmp.rsrc.bmp, 0, bmpSize);
-	bmp.rsrc.lastAllocIndex = 0;
 
 	if (baseAddr & PAGING_BASE_MASK_LOW) {
 		setFrame(basePfn);
 	};
-	if ((baseAddr + size) & PAGING_BASE_MASK_LOW) {
+	// Set last frame if end address is on the exact bound of a new frame.
+	if (!(endAddr & PAGING_BASE_MASK_LOW)) {
 		setFrame(endPfn);
 	};
 

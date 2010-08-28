@@ -79,11 +79,13 @@ private:
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaConfigS		defaultConfig;
 #endif
-	ubit8			streamArrayNPages;
 
-	// Resizeable (in paged size blocks) array of pointers to numaStreams.
-	sharedResourceGroupC<multipleReaderLockC, numaStreamC **> numaStreams;
-	ubit32			nStreams;
+	struct numaStreamStateS
+	{
+		numaStreamC	**array;
+		ubit32		nStreams;
+	};
+	sharedResourceGroupC<multipleReaderLockC, numaStreamStateS> numaStreams;
 };
 
 extern numaTribC		numaTrib;
@@ -97,7 +99,7 @@ inline numaStreamC *numaTribC::getStream(numaBankId_t)
 	/* In a non-NUMA build we always spawn a single stream. All calls to
 	 * numaTribC::getStream(bankId) will return the default stream.
 	 **/
-	return numaStreams.rsrc[0];
+	return numaStreams.rsrc.array[0];
 }
 #endif
 

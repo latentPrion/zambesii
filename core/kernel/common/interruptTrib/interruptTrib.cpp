@@ -89,11 +89,7 @@ void interruptTribC::irqMain(taskContextS *regs)
 		"on vector %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
 
-	if (isrTable[regs->vectorNo].handler.isr)
-	{
-		__kprintf(NOTICE"Calling %X as handler for vector %d.\n",
-			isrTable[regs->vectorNo].handler.isr, regs->vectorNo);
-
+	if (isrTable[regs->vectorNo].handler.isr) {
 		isrTable[regs->vectorNo].handler.except(regs);
 	};
 

@@ -34,25 +34,24 @@
  *	7. When this returns, then we know that the __kspace BMP is now ready
  *	   to be used to allocate pages.
  **/
-static numaStreamC		*initNumaStreamArray[
-	PAGING_PAGES_TO_BYTES(1) / sizeof(void *)];
-
+static numaStreamC		*__kspaceStreamPtr;
 static numaStreamC		__kspaceNumaStream;
 
 
 numaTribC::numaTribC(void)
 {
+	defaultConfig.def.rsrc = 0;
+	numaStreams.rsrc.array = __KNULL;
+	numaStreams.rsrc.nStreams = 0;
 }
 
 error_t numaTribC::initialize(void)
 {
 	error_t		ret;
 
-	initNumaStreamArray[0] = &__kspaceNumaStream;
-	numaStreams.rsrc = initNumaStreamArray;
-
-	streamArrayNPages = 1;
-	nStreams = 1;
+	numaStreams.rsrc.array = &__kspaceStreamPtr;
+	numaStreams.rsrc.array[0] = &__kspaceNumaStream;
+	numaStreams.rsrc.nStreams = 1;
 
 	// Call initialize() on the __kspace NUMA Stream, give it an ID of 0.
 	ret = numaStreams.rsrc[0]->initialize(
