@@ -22,9 +22,8 @@
 class numaMemoryBankC
 {
 public:
-	numaMemoryBankC(void);
 	numaMemoryBankC(paddr_t baseAddr, paddr_t size);
-	error_t initialize(void *preAllocated=0);
+	error_t initialize(void *preAllocated=__KNULL);
 	~numaMemoryBankC(void);
 
 	void cut(void);

@@ -23,32 +23,15 @@
  * it can later send a message to the NUMA Tributary to manually allocate the
  * internal BMP on the first bank.
  **/
-numaMemoryBankC::numaMemoryBankC(void)
+numaMemoryBankC::numaMemoryBankC(paddr_t baseAddr, paddr_t size)
+:
+memBmp(baseAddr, size), baseAddr(baseAddr), size(size)
 {
 }
 
-numaMemoryBankC::numaMemoryBankC(
-	paddr_t baseAddr, paddr_t size, void *preAllocated
-	)
+error_t numaMemoryBankC::initialize(void *preAllocated)
 {
-	initialize(baseAddr, size, preAllocated);
-}
-
-error_t numaMemoryBankC::initialize(
-	paddr_t baseAddr, paddr_t size, void *preAllocated
-	)
-{
-	error_t		ret;
-
-	this->baseAddr = baseAddr;
-	this->size = size;
-
-	ret = memBmp.initialize(baseAddr, size, preAllocated);
-	if (ret != ERROR_SUCCESS) {
-		return ret;
-	};
-
-	return ERROR_SUCCESS;
+	return memBmp.initialize(preAllocated);
 }
 
 numaMemoryBankC::~numaMemoryBankC(void)
