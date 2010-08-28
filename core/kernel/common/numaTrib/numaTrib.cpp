@@ -61,6 +61,82 @@ error_t numaTribC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
+/**	EXPLANATION:
+ * Initialize2(): Detects physical memory on the chipset using firmware services
+ * contained in the Firmware Tributary. If the person porting the kernel to
+ * the current chipset did not provide a firmware interface, the kernel will
+ * simply live on with only the __kspace bank; Of course, it should be obvious
+ * that this is probably sub-optimal, but it can work.
+ *
+ * Generally, the kernel relies on the memInfoRiv to provide all memory
+ * information. A prime example of all of this is the IBM-PC. For the IBM-PC,
+ * the memInfoRiv is actually just a wrapper around the x86Emu library. x86Emu
+ * Completely unbeknownst to the kernel, the IBM-PC support code initializes and
+ * runs a full real mode emulator for memory detection. For NUMA detection, the
+ * chipset firmware rivulet code will map low memory into the kernel's address
+ * space and scan for the ACPI tables, trying to find NUMA information in the
+ * SRAT/SLIT tables.
+ *
+ * To actually get the pmem information and numa memory layout information into
+ * a usable state, the kernel must spawn a NUMA Stream for each detected bank,
+ * and initialize it real-time.
+ *
+ * In the broader scope, there are two possibilities:
+ *	1. The kernel finds and parses a physical memory information structure
+ *	   or memory map before discovering NUMA memory layout.
+ *	2. The kernel finds NUMA layout information before finding any kind of
+ *	   general memory information or memory map.
+ *
+ * In Zambezii, a memory map is nothing more than something to overlay the
+ * the real memory information. In other words, the last thing we logically
+ * parse is a memory map. Our priority is:
+ *	1. Find out the total amount of memory first.
+ *	2. Find out about NUMA layout next. See, doing it this way allows us to
+ *	   discover the existence of any memory on-board which does not belong
+ *	   to a particular NUMA bank.
+ *
+ *	   Take the following example: If a chipset is detailed to have 64MB of
+ *	   RAM, yet the NUMA information describes only two nodes: (1) 0MB-8MB,
+ *	   (2) 20MB-32MB, with a hole between 8MB and 20MB, and another hole
+ *	   between 32MB and 64MB, we will spawn a third and fourth bank for the
+ *	   two banks which were not described explicitly as NUMA banks, and
+ *	   treat them as local memory to all NUMA banks. That is, we'll treat
+ *	   those undescribed memory ranges as shared memory that is globally
+ *	   the same distance from each node.
+ *
+ *	3. Find a memory map. When we know how much RAM there is, and also the
+ *	   NUMA layout of this RAM, we can then pass through a memory map and
+ *	   apply the information in the memory map to the NUMA banks. That is,
+ *	   mark all reserved ranges as 'used' in the PMM info, and whatnot.
+ *	   Note well that a memory map may be used as general memory information
+ *	   suitable for use as requirement (1) above.
+ *
+ * ^ If NUMA information does not exist, Zambezii will spawn a single NUMA bank
+ *   as if the chipset only had one bank, and all processes will share this
+ *   bank.
+ *
+ * ^ If a memory map is not found, and only a total figure for "amount of RAM"
+ *   is given, Zambezii will assume that there is no reserved memory on the
+ *   chipset and operate as if all RAM is available for use.
+ *
+ * ^ In the absence of a total figure for "amount of RAM", (where this figure
+ *   may be provided explicitly, or derived from a memory map), Zambezii will
+ *   simply assume that the only usable RAM is the __kspace RAM (bootmem), and
+ *   continue to use that. When that runs out, that's that.
+ **/
+error_t numaTribC::initialize2(void)
+{
+/*	chipsetMemConfigS	*memConfig;
+	chipsetMemMapS		*memMap;
+	chipsetNumaMapS		*numaMap;
+*/
+	return ERROR_SUCCESS;
+}
+
+error_t numaTribC::spawnStream(numaBankId_t id, paddr_t baseAddr, paddr_t size)
+{
+}
+
 numaTribC::~numaTribC(void)
 {
 	if (numaStreams.rsrc.array != __KNULL)

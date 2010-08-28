@@ -42,7 +42,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(timerTrib, initialize(), ret);
 	DO_OR_DIE(interruptTrib, initialize(), ret);
 
-
 	// Initialize the kernel swamp.
 	DO_OR_DIE(
 		memoryTrib,
@@ -55,7 +54,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(numaTrib, initialize(), ret);
 	DO_OR_DIE(firmwareTrib, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
-	DO_OR_DIE(memReservoir, initialize(), ret);
 
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
 	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)
@@ -69,8 +67,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
 
-	char *c = new char[256];
-	*c = 'A';
+	DO_OR_DIE(memReservoir, initialize(), ret);
+
 	memReservoir.dump();
 }
 

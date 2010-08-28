@@ -41,7 +41,10 @@ public tributaryC
 {
 public:
 	numaTribC(void);
+	// Initialize __kspace NUMA bank.
 	error_t initialize(void);
+	// Detect physical memory, merge with __kspace.
+	error_t initialize2(void);
 	~numaTribC(void);
 
 public:
