@@ -23,6 +23,8 @@ public:
 	debugRivS *getDebugRiv3(void);
 	debugRivS *getDebugRiv4(void);
 
+	memInfoRivS *getMemInfoRiv(void);
+
 public:
 	firmwareStreamS		descriptor;
 };

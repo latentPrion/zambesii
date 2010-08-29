@@ -76,6 +76,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ret = (*firmwareFwStream.initialize)();
 	assert_fatal(ret == ERROR_SUCCESS);
 
+	(*firmwareTrib.getMemInfoRiv()->getMemoryConfig)();
+
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 

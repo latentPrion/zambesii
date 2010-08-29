@@ -16,6 +16,8 @@
 
 static void		*ibmPcBiosLock;
 
+extern struct memInfoRivS	ibmPcBios_memInfoRiv;
+
 error_t ibmPcBios_initialize(void)
 {
 	status_t	nMapped;
@@ -153,6 +155,9 @@ struct firmwareStreamS		firmwareFwStream =
 	__KNULL,
 	__KNULL,
 	__KNULL,
-	__KNULL
+	__KNULL,
+
+	// memInfoRiv.
+	&ibmPcBios_memInfoRiv
 };
 

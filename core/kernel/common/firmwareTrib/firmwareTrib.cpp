@@ -21,6 +21,7 @@ error_t firmwareTribC::initialize(void)
 	FIRMWARETRIB_CHOOSE(debugRiv2);
 	FIRMWARETRIB_CHOOSE(debugRiv3);
 	FIRMWARETRIB_CHOOSE(debugRiv4);
+	FIRMWARETRIB_CHOOSE(memInfoRiv);
 	return ERROR_SUCCESS;
 }
 
@@ -56,5 +57,10 @@ debugRivS *firmwareTribC::getDebugRiv3(void)
 debugRivS *firmwareTribC::getDebugRiv4(void)
 {
 	return descriptor.debugRiv4;
+}
+
+memInfoRivS *firmwareTribC::getMemInfoRiv(void)
+{
+	return descriptor.memInfoRiv;
 }
 

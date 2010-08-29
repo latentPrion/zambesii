@@ -1,5 +1,6 @@
 
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/waitLock.h>
 #include <kernel/common/recursiveLock.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
@@ -30,6 +31,7 @@ void waitLock_destroy(void *wl)
 void waitLock_acquire(void *wl)
 {
 	if (static_cast<waitLockC *>( wl )->magic == LOCK_MAGIC) {
+		__kprintf(NOTICE"Acquiring lock @v 0x%X.\n", wl);
 		static_cast<waitLockC *>( wl )->acquire();
 	};
 }
@@ -37,6 +39,7 @@ void waitLock_acquire(void *wl)
 void waitLock_release(void *wl)
 {
 	if (static_cast<waitLockC *>( wl )->magic == LOCK_MAGIC) {
+		__kprintf(NOTICE"Releasing lock @v 0x%X.\n", wl);
 		static_cast<waitLockC *>( wl )->release();
 	};
 }

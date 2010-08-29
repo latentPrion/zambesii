@@ -23,6 +23,9 @@ struct firmwareStreamS		chipsetFwStream =
 	&ibmPc_terminal,
 	__KNULL,
 	__KNULL,
+	__KNULL,
+
+	// memInfoRiv.
 	__KNULL
 };
 
