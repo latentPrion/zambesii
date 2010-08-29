@@ -69,6 +69,13 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(memReservoir, initialize(), ret);
 
-	memReservoir.dump();
+	// Initialize both firmware streams.
+	ret = (*chipsetFwStream.initialize)();
+	assert_fatal(ret == ERROR_SUCCESS);
+
+	ret = (*firmwareFwStream.initialize)();
+	assert_fatal(ret == ERROR_SUCCESS);
+
+	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 

@@ -24,7 +24,7 @@ void waitLock_destroy(void *wl)
 		return;
 	};
 
-	delete wl;
+	delete static_cast<waitLockC *>( wl );
 }
 
 void waitLock_acquire(void *wl)
@@ -60,7 +60,7 @@ void recursiveLock_destroy(void *rl)
 		return;
 	}
 
-	delete rl;
+	delete static_cast<recursiveLockC *>( rl );
 }
 
 void recursiveLock_acquire(void *rl)

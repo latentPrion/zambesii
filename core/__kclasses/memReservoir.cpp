@@ -61,6 +61,10 @@ error_t memReservoirC::initialize(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
+	__kprintf(NOTICE RESERVOIR"initialize(): Done. __kbog v 0x%X, size "
+		"0x%X. caches array 0x%X, custom bogs array 0x%X.\n",
+		__kbog, __kbog->blockSize, caches.rsrc.ptrs, bogs.rsrc.ptrs);
+
 	return ERROR_SUCCESS;
 }
 
@@ -314,6 +318,11 @@ slamCacheC *memReservoirC::createCache(uarch_t objSize)
 	};
 	caches.rsrc.ptrs[spot] = ret;
 	caches.rsrc.nCaches++;
+
+	__kprintf(NOTICE RESERVOIR"Allocated new object cache, v 0x%X, size "
+		"0x%X, occupies slot %d in array.\n",
+		ret, ret->objectSize, spot);
+
 	return ret;
 }
 
