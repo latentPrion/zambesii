@@ -121,7 +121,7 @@ void ibmPcBios_lock_release(void)
 }
 
 // Assume the caller has already set reg state as needed.
-void ibmPc_executeInterrupt(ubit8 intNo)
+void ibmPcBios_executeInterrupt(ubit8 intNo)
 {
 	// Place HLT opcodes at 0x500 and point EIP there.
 	*(ubit32 *)(M.mem_base + 0x500) = 0xF4F4F4F4;
