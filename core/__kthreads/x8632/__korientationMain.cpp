@@ -26,6 +26,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
+	chipsetMemMapS	*map;
 
 	__koptimizationHacks();
 
@@ -77,8 +78,20 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	assert_fatal(ret == ERROR_SUCCESS);
 
 	(*firmwareTrib.getMemInfoRiv()->getMemoryConfig)();
-	(*firmwareTrib.getMemInfoRiv()->getMemoryMap)();
+	map = (*firmwareTrib.getMemInfoRiv()->getMemoryMap)();
+	if (map == __KNULL) {
+		__kprintf(ERROR ORIENT"getMemoryMap() return __KNULL.\n");
+	};
 
+	for (uarch_t i=0; i<map->nEntries; i++)
+	{
+		__kprintf(NOTICE ORIENT"Map: Base 0x%X_%X, size 0x%X_%X type "
+			"%d.\n",
+			0, map->entries[i].baseAddr, 0, map->entries[i].size,
+			map->entries[i].memType);
+	};
+
+	__kprintf(NOTICE ORIENT"%d entries in all.\n", map->nEntries);
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 

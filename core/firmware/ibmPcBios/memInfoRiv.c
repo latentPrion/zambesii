@@ -1,9 +1,14 @@
 
+#include <scaling.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/firmwareTrib/rivDebugApi.h>
 #include <kernel/common/firmwareTrib/memInfoRiv.h>
 #include "ibmPcbios_coreFuncs.h"
+
+
+#define E820_USABLE		0x1
+#define E820_RECLAIMABLE	0x3
 
 struct e820EntryS
 {
@@ -67,16 +72,22 @@ static struct chipsetMemConfigS *ibmPcBios_mi_getMemoryConfig(void)
 static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 {
 	struct chipsetMemMapS	*ret;
-	ubit32		nEntries=0;
+	ubit32		nEntries=0, i, j;
 
 	ret = (void *)rivMalloc(sizeof(struct chipsetMemMapS));
-	if (ret == __KNULL) {
+	if (ret == __KNULL)
+	{
+		rivPrintf(ERROR"ibmPcBios_mi_getMemoryMap(): Failed to alloc "
+			"space for mem map descriptor.\n");
+
 		return __KNULL;
 	};
+	rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): MMAP Desc: 0x%X.\n", ret);
 
 	ibmPcBios_lock_acquire();
 
 	// Buffer is placed into 0x1000 in lowmem.
+	e820Ptr = (struct e820EntryS *)(M.mem_base + 0x1000);
 	ibmPcBios_setEdi(0x00001000);
 	ibmPcBios_setEax(0x0000E820);
 	ibmPcBios_setEbx(0);
@@ -88,30 +99,93 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 	while ((ibmPcBios_getEax() == 0x534D4150)
 		&& !__KFLAG_TEST(ibmPcBios_getEflags(), (1<<0)))
 	{
-		nEntries++;
-		rivPrintf(NOTICE"Memory map: Base 0x%X_%X, length 0x%X_%X, "
-			"type 0x%X, cont 0x%X.\n",
-			*(ubit32 *)((M.mem_base + 0x1000) + 4),
-			*(ubit32 *)((M.mem_base + 0x1000) + 0),
-			*(ubit32 *)((M.mem_base + 0x1000) + 12),
-			*(ubit32 *)((M.mem_base + 0x1000) + 8),
-			*(ubit32 *)((M.mem_base + 0x1000) + 16),
-			ibmPcBios_getEbx());
-
 		if (ibmPcBios_getEbx() == 0)
 		{
 			rivPrintf(NOTICE"EBX = 0, ending loop.\n");
 			break;
 		};
 
+		nEntries++;
+
 		ibmPcBios_setEax(0x0000E820);
 		ibmPcBios_setEcx(24);
+		ibmPcBios_setEdi(ibmPcBios_getEdi() + 24);
 		ibmPcBios_executeInterrupt(0x15);
 	};
 
 	ibmPcBios_lock_release();
 
-	rivPrintf(NOTICE"%d entries in all.\n", nEntries);
+	ret->entries = (struct chipsetMemMapEntryS *)rivMalloc(
+		nEntries * sizeof(struct chipsetMemMapEntryS));
+
+	if (ret->entries == __KNULL) {
+		rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): Failed to alloc "
+			"space for actual entries in mem map.\n");
+
+		return __KNULL;
+	};
+	rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): Mem map entries 0x%X.\n",
+		ret->entries);
+
+	for (i=0, j=0; j<nEntries; j++)
+	{
+		// Skip entries with length = 0.
+		if (e820Ptr[j].lengthLow == 0 && e820Ptr[j].lengthHigh == 0) {
+			continue;
+		};
+#ifdef CONFIG_ARCH_x86_32_PAE
+		ret->entries[i].baseAddr = paddr_t(
+			e820Ptr[i].baseHigh, e820Ptr[j].baseLow);
+
+		ret->entries[i].size = paddr_t(
+			e820Ptr[i].lengthHigh, e820Ptr[j].lengthLow);
+
+		switch (e820Ptr[j].type)
+		{
+		case E820_USABLE:
+			ret->entries[i].memType = CHIPSETMMAP_TYPE_USABLE;
+			break;
+
+		case E820_RECLAIMABLE:
+			ret->entries[i].memType = CHIPSETMMAP_TYPE_RECLAIMABLE;
+			break;
+
+		default:
+			ret->entries[i].memType = CHIPSETMMAP_TYPE_RESERVED;
+			break;
+		};
+
+		i++;
+#else
+		// No PAE, so ignore all e820 entries > 4GB.
+		if (e820Ptr[j].baseHigh != 0) {
+			continue;
+		};
+
+		ret->entries[i].baseAddr = e820Ptr[j].baseLow;
+		ret->entries[i].size = e820Ptr[j].lengthLow;
+
+		switch (e820Ptr[j].type)
+		{
+		case E820_USABLE:
+			ret->entries[i].memType = CHIPSETMMAP_TYPE_USABLE;
+			break;
+
+		case E820_RECLAIMABLE:
+			ret->entries[i].memType = CHIPSETMMAP_TYPE_RECLAIMABLE;
+			break;
+
+		default:
+			ret->entries[i].memType = CHIPSETMMAP_TYPE_RESERVED;
+			break;
+		};
+
+		i++;
+	};
+#endif
+	rivPrintf(NOTICE"%d entries in firmware map.\n", nEntries);
+	ret->nEntries = i;
+	return ret;
 }
 
 struct memInfoRivS	ibmPcBios_memInfoRiv =
