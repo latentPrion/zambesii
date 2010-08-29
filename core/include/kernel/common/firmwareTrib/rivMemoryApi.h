@@ -17,6 +17,10 @@ extern "C" {
  * statically to the kernel's own memory stream) in a C linked interface.
  **/
 
+// Kernel heap access.
+void *rivMalloc(uarch_t size);
+void rivFree(void *mem);
+
 // Virtual Memory management.
 void *__kvaddrSpaceStream_getPages(uarch_t nPages);
 void __kvaddrSpaceStream_releasePages(void *vaddr, uarch_t nPages);

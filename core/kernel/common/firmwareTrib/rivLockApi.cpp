@@ -9,8 +9,7 @@ void *waitLock_create(void)
 {
 	waitLockC	*ret;
 
-	ret = new ((memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(1, 0)) waitLockC;
+	ret = new waitLockC;
 
 	if (ret == __KNULL) {
 		return __KNULL;
@@ -25,7 +24,7 @@ void waitLock_destroy(void *wl)
 		return;
 	};
 
-	memoryTrib.__kmemoryStream.memFree(wl);
+	delete wl;
 }
 
 void waitLock_acquire(void *wl)
@@ -46,8 +45,7 @@ void *recursiveLock_create(void)
 {
 	recursiveLockC	*ret;
 
-	ret = new ((memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(1, 0)) recursiveLockC;
+	ret = new recursiveLockC;
 
 	if (ret == __KNULL) {
 		return __KNULL;
@@ -62,7 +60,7 @@ void recursiveLock_destroy(void *rl)
 		return;
 	}
 
-	memoryTrib.__kmemoryStream.memFree(rl);
+	delete rl;
 }
 
 void recursiveLock_acquire(void *rl)
