@@ -16,6 +16,7 @@ uarch_t ibmPcBios_getEsi(void);
 uarch_t ibmPcBios_getEdi(void);
 uarch_t ibmPcBios_getEsp(void);
 uarch_t ibmPcBios_getEbp(void);
+uarch_t ibmPcBios_getEflags(void);
 uarch_t ibmPcBios_getCs(void);
 uarch_t ibmPcBios_getDs(void);
 uarch_t ibmPcBios_getEs(void);

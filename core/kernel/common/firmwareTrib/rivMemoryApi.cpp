@@ -1,9 +1,21 @@
 
 #include <config.h>
 #include <arch/walkerPageRanger.h>
+#include <__kstdlib/__kclib/stdlib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/firmwareTrib/rivMemoryApi.h>
+
+
+void *rivMalloc(uarch_t nBytes)
+{
+	return malloc(nBytes);
+}
+
+void rivFree(void *mem)
+{
+	free(mem);
+}
 
 void *__kvaddrSpaceStream_getPages(uarch_t nPages)
 {

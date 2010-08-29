@@ -71,4 +71,8 @@ uarch_t ibmPcBios_getSs(void)
 	return M.x86.R_SS;
 }
 
+uarch_t ibmPcBios_getEflags(void)
+{
+	return M.x86.R_EFLG;
+}
 
