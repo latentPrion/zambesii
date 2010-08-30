@@ -99,13 +99,12 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 	while ((ibmPcBios_getEax() == 0x534D4150)
 		&& !__KFLAG_TEST(ibmPcBios_getEflags(), (1<<0)))
 	{
+		nEntries++;
 		if (ibmPcBios_getEbx() == 0)
 		{
 			rivPrintf(NOTICE"EBX = 0, ending loop.\n");
 			break;
 		};
-
-		nEntries++;
 
 		ibmPcBios_setEax(0x0000E820);
 		ibmPcBios_setEcx(24);
@@ -133,12 +132,22 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 		if (e820Ptr[j].lengthLow == 0 && e820Ptr[j].lengthHigh == 0) {
 			continue;
 		};
-#ifdef CONFIG_ARCH_x86_32_PAE
+#if defined(__32_BIT__)
+	#ifdef CONFIG_ARCH_x86_32_PAE
 		ret->entries[i].baseAddr = paddr_t(
-			e820Ptr[i].baseHigh, e820Ptr[j].baseLow);
+			e820Ptr[j].baseHigh, e820Ptr[j].baseLow);
 
 		ret->entries[i].size = paddr_t(
-			e820Ptr[i].lengthHigh, e820Ptr[j].lengthLow);
+			e820Ptr[j].lengthHigh, e820Ptr[j].lengthLow);
+	#else
+		// 32bit with no PAE, so ignore all e820 entries > 4GB.
+		if (e820Ptr[j].baseHigh != 0) {
+			continue;
+		};
+
+		ret->entries[i].baseAddr = e820Ptr[j].baseLow;
+		ret->entries[i].size = e820Ptr[j].lengthLow;
+	#endif
 
 		switch (e820Ptr[j].type)
 		{
@@ -157,13 +166,11 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 
 		i++;
 #else
-		// No PAE, so ignore all e820 entries > 4GB.
-		if (e820Ptr[j].baseHigh != 0) {
-			continue;
-		};
+		ret->entries[i].baseAddr = (e820Ptr[i].baseHigh << 32)
+			| e820Ptr[j].baseLow);
 
-		ret->entries[i].baseAddr = e820Ptr[j].baseLow;
-		ret->entries[i].size = e820Ptr[j].lengthLow;
+		ret->entries[i].size = (e820Ptr[i].lengthHigh << 32)
+			| e820Ptr[j].lengthLow);
 
 		switch (e820Ptr[j].type)
 		{
@@ -181,8 +188,9 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 		};
 
 		i++;
-	};
 #endif
+	};
+
 	rivPrintf(NOTICE"%d entries in firmware map.\n", nEntries);
 	ret->nEntries = i;
 	return ret;
