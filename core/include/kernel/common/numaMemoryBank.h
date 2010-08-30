@@ -6,6 +6,7 @@
 	#include <__kclasses/memBmp.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
+	#include <kernel/common/numaMemoryRange.h>
 
 /**	EXPLANATION:
  * Just as each process has its own NUMA configuration, and a 'default' bank,
@@ -41,7 +42,9 @@ public:
 	numaMemoryBankC(void);
 	~numaMemoryBankC(void);
 
-	error_t addMemoryRange(paddr_t baseAddr, paddr_t size, void *mem=0);
+	error_t addMemoryRange(
+		paddr_t baseAddr, paddr_t size, void *arrayMem=__KNULL);
+
 	error_t removeMemoryRange(paddr_t baseAddr);
 
 	void cut(void);
@@ -57,14 +60,12 @@ public:
 	void mapRangeUnused(paddr_t basePaddr, uarch_t nFrames);
 
 private:
-	// Array of pointers to memBmpC.
 	struct rangeStateS
 	{
-		memBmpC		**arr;
-		ubit32		nRanges;
+		numaMemoryRangeC	**arr;
+		ubit32			nRanges, defRange;
 	};
 	sharedResourceGroupC<multipleReaderlockC, rangeStateS>	ranges;
-	stackCacheC<paddr_t>	frameCache;
 };
 
 #endif

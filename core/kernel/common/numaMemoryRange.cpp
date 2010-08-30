@@ -40,13 +40,13 @@ error_t numaMemoryRangeC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 
 error_t numaMemoryRangeC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 {
-	UNIMPLEMENTED("error_t numaMemoryRangeC::mapMemUsed(paddr_t, uarch_t)");
+	UNIMPLEMENTED("error_t numaMemoryRangeC::mapMemUsed()");
 	return ERROR_UNIMPLEMENTED;
 }
 
 error_t numaMemoryRangeC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 {
-	UNIMPLEMENTED("error_t numaMemoryRangeC::mapMemUsed(paddr_t, uarch_t)");
+	UNIMPLEMENTED("error_t numaMemoryRangeC::mapMemUnused()");
 	return ERROR_UNIMPLEMENTED;
 }
 

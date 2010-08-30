@@ -80,3 +80,29 @@ void multipleReaderLockC::writeRelease(void)
 	readerCount.lock.release();
 }
 
+void multipleReaderLockC::readReleaseWriteAcquire(uarch_t rwFlags)
+{
+	/* Acquire the lock, set the writer flag, decrement the reader count,
+	 * wait for readers to exit. Return.
+	 **/
+	readerCount.lock.acquire();
+
+#if __SCALING__ >= SCALING_SMP
+	__KFLAG_SET(flags, MRLOCK_FLAGS_WRITE_REQUEST);
+	// Decrement reader count.
+	readerCount.rsrc--;
+
+	// Spin on reader count until no readers are left.
+	while (readerCount.rsrc != 0) {
+		cpuControl::subZero();
+	};
+#endif
+
+	/* It doesn't matter whether or not IRQs were enabled before the
+	 * readAcquire() that preceded the call to this function. The write
+	 * acquire must have IRQs disabled. So just save IRQ state in the
+	 * readerCount lock.
+	 **/
+	readerCount.lock.flags |= rwFlags;
+}
+

@@ -4,6 +4,12 @@
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 
+/**	EXPLANATION:
+ * A NUMA Memory range represents a range of physically contiguous memory which
+ * may belong to any NUMA bank. Each numaMemoryRange is provided with its own
+ * personal frame cache to allow for faster allocation of frames from that
+ * range.
+ **/
 class numaMemoryRangeC
 {
 public:

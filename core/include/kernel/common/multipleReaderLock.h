@@ -34,6 +34,8 @@ public:
 	void writeAcquire(void);
 	void writeRelease(void);
 
+	void readReleaseWriteAcquire(uarch_t flags);
+
 private:
 	// An atomic counter for the number of current readers.
 	sharedResourceGroupC<waitLockC, volatile sarch_t>	readerCount;

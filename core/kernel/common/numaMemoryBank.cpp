@@ -11,15 +11,27 @@ numaMemoryBankC::numaMemoryBankC(void)
 {
 	ranges.rsrc.arr = __KNULL;
 	ranges.rsrc.nRanges = 0;
+	ranges.rsrc.defRange = 0;
 }
 
-error_t numaMemoryBankC::initialize(void *preAllocated)
+error_t numaMemoryBankC::initialize(void)
 {
-	return memBmp.initialize(preAllocated);
+	// Nothing to do.
+	return ERROR_SUCCESS;
 }
 
 numaMemoryBankC::~numaMemoryBankC(void)
 {
+	ranges.lock.writeAcquire();
+
+	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++) {
+		delete ranges.rsrc.arr[i];
+	};
+
+	ranges.rsrc.nRanges = 0;
+	delete ranges.rsrc.arr;
+
+	ranges.lock.writeRelease();
 }
 
 status_t numaMemoryBankC::addMemoryRange(
@@ -103,13 +115,9 @@ status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 
 error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 {
-	if (frameCache.pop(nPages, paddr) == ERROR_SUCCESS) {
-		return ERROR_SUCCESS;
-	};
+	uarch_t rwFlags;
 
-	// Frame cache allocation failed.
-	return memBmp.contiguousGetFrames(nPages, paddr);
-}
+	ranges.lock.readAcquire(&rwFlags);
 
 status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 {
