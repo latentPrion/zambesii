@@ -35,6 +35,7 @@
  * storing frees of common frame sizes.
  **/
 #define NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP	(1<<0)
+#define NUMAMEMBANK			"Numa Memory Bank: "
 
 class numaMemoryBankC
 {
@@ -55,9 +56,9 @@ public:
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
 
-	// Is a wrapper around memBmpC::mapRangeU*sed().
-	void mapRangeUsed(paddr_t basePaddr, uarch_t nFrames);
-	void mapRangeUnused(paddr_t basePaddr, uarch_t nFrames);
+	// Is a wrapper around numaMemoryRangeC::mapMemU*sed().
+	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
+	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);
 
 private:
 	struct rangeStateS

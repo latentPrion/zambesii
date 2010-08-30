@@ -240,19 +240,58 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 
-void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
+void numaMemoryBankC::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 {
-	
+	uarch_t		rwFlags;
+
+	ranges.lock.readAcquire(&rwFlags);
+
+	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	{
+		if (ranges.rsrc.arr[i]->identifyPaddr(basePaddr))
+		{
+			ranges.rsrc.arr[i]->releaseFrames(basePaddr, nFrames);
+
+			ranges.lock.readRelease(rwFlags);
+			return;
+		};
+	};
+
+	ranges.lock.readRelease(rwFlags);
+
+	__kprintf(WARNING NUMAMEMBANK"releaseFrames(0x%X, %d) Pmem leak.\n",
+		basePaddr, nFrames);
 }
 
-// Couyld probably inline these two.
-void numaMemoryBankC::mapRangeUsed(paddr_t baseAddr, uarch_t nFrames)
+void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 {
-	memBmp.mapRangeUsed(baseAddr, nFrames);
+	uarch_t		rwFlags;
+
+	ranges.lock.readAcquire(&rwFlags);
+
+	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	{
+		if (ranges.rsrc.arr[i]->identifyPaddr(baseAddr)) {
+			ranges.rsrc.arr[i]->mapMemUsed(baseAddr, nFrames);
+		};
+	};
+
+	ranges.lock.readRelease(rwFlags);
 }
 
-void numaMemoryBankC::mapRangeUnused(paddr_t baseAddr, uarch_t nFrames)
+void numaMemoryBankC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 {
-	memBmp.mapRangeUnused(baseAddr, nFrames);
+	uarch_t		rwFlags;
+
+	ranges.lock.readAcquire(&rwFlags);
+
+	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	{
+		if (ranges.rsrc.arr[i]->identifyPaddr(baseAddr)) {
+			ranges.rsrc.arr[i]->mapMemUnused(baseAddr, nFrames);
+		};
+	};
+
+	ranges.lock.readRelease(rwLock);
 }
 
