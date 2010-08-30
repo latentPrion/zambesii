@@ -22,9 +22,11 @@
 class numaMemoryBankC
 {
 public:
-	numaMemoryBankC(paddr_t baseAddr, paddr_t size);
-	error_t initialize(void *preAllocated=__KNULL);
+	numaMemoryBankC(void);
 	~numaMemoryBankC(void);
+
+	error_t addMemoryRange(paddr_t baseAddr, paddr_t size, void *mem=0);
+	error_t removeMemoryRange(paddr_t baseAddr);
 
 	void cut(void);
 	void bind(void);
@@ -40,12 +42,9 @@ public:
 	void mapRangeUsed(paddr_t basePaddr, uarch_t nFrames);
 	void mapRangeUnused(paddr_t basePaddr, uarch_t nFrames);
 
-public:
-	paddr_t			baseAddr, size;
-
 private:
-	memBmpC			memBmp;
-	// FIXME: Have a look at this.
+	// Array of pointers to memBmpC.
+	memBmpC			**memBmp;
 	stackCacheC<paddr_t>	frameCache;
 };
 
