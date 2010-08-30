@@ -14,6 +14,11 @@
 	#define ERROR_MEMORY_NOMEM_PHYSICAL		-8
 	// Hopefully we should never need to use this.
 	#define ERROR_MEMORY_NOMEM_IN_CONSTRUCTOR	-9
+	#define ERROR_UNIMPLEMENTED			-12
+
+	#define UNIMPLEMENTED(__funcName)		\
+		__kprintf(ERROR"Unimplemented: %s on line %d of file %s.\n", \
+			__funcName, __LINE__, __FILE__);
 
 #endif
 

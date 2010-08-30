@@ -103,6 +103,12 @@ status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 
 error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 {
+	if (frameCache.pop(nPages, paddr) == ERROR_SUCCESS) {
+		return ERROR_SUCCESS;
+	};
+
+	// Frame cache allocation failed.
+	return memBmp.contiguousGetFrames(nPages, paddr);
 }
 
 status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
