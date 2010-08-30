@@ -40,9 +40,7 @@ error_t numaMemoryBankC::__kspaceAddMemoryRange(
 	return ranges.rsrc.arr[0]->initialize(__kspaceInitMem);
 }
 
-status_t numaMemoryBankC::addMemoryRange(
-	paddr_t baseAddr, paddr_t size, void *mem
-	)
+status_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 {
 	numaMemoryRangeC	*memRange, **tmp;
 	error_t			err;
@@ -54,13 +52,7 @@ status_t numaMemoryBankC::addMemoryRange(
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	if (mem != __KNULL) {
-		err = memRange->initialize(mem);
-	}
-	else {
-		err = memRange->initialize();
-	};
-
+	err = memRange->initialize();
 	if (err != ERROR_SUCCESS) {
 		return static_cast<status_t>( err );
 	};
@@ -89,7 +81,7 @@ status_t numaMemoryBankC::addMemoryRange(
 
 status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 {
-	numaMemoryRangeC		*tmp=0;
+	numaMemoryRangeC		*tmp=__KNULL;
 
 	ranges.lock.writeAcquire();
 
@@ -147,9 +139,9 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 		ranges.lock.readReleaseWriteAcquire(rwFlags);
 		ranges.rsrc.defRange = 0;
 		ranges.lock.writeRelease();
+		ranges.lock.readAcquire(&rwFlags);
 	};
 
-	ranges.lock.readAcquire(&rwFlags);
 
 	// Allocate from the default first.
 	rangeTmp = ranges.rsrc.arr[ranges.rsrc.defRange];
@@ -206,9 +198,9 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 		ranges.lock.readReleaseWriteAcquire(rwFlags);
 		ranges.rsrc.defRange = 0;
 		ranges.lock.writeRelease();
+		ranges.lock.readAcquire(&rwFlags);
 	};
 
-	ranges.lock.readAcquire(&rwFlags);
 
 	// Allocate from the default first.
 	rangeTmp = ranges.rsrc.arr[ranges.rsrc.defRange];
@@ -281,10 +273,13 @@ sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
 		 * freeing, it's impossible for us to get a pmem or pmem range
 		 * to be freed which isn't contiguous, and within one range.
 		 **/
-		if (ranges.rsrc.arr[i]->identifyPaddr(paddr)) {
+		if (ranges.rsrc.arr[i]->identifyPaddr(paddr))
+		{
+			ranges.lock.readRelease(rwFlags);
 			return 1;
 		};
 	};
+	ranges.lock.readRelease(rwFlags);
 	return 0;
 }
 

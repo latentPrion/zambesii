@@ -48,9 +48,7 @@ public:
 		void *arrayMem,
 		numaMemoryRangeC *__kspace, void *__kspaceInitMem);
 
-	error_t addMemoryRange(
-		paddr_t baseAddr, paddr_t size, void *arrayMem=__KNULL);
-
+	error_t addMemoryRange(paddr_t baseAddr, paddr_t size);
 	error_t removeMemoryRange(paddr_t baseAddr);
 
 	void cut(void);
