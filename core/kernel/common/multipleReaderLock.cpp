@@ -98,6 +98,8 @@ void multipleReaderLockC::readReleaseWriteAcquire(uarch_t rwFlags)
 	};
 #endif
 
+	cpuTrib.getCurrentCpuStream()->currentTask->nLocksHeld--;
+
 	/* It doesn't matter whether or not IRQs were enabled before the
 	 * readAcquire() that preceded the call to this function. The write
 	 * acquire must have IRQs disabled. So just save IRQ state in the

@@ -7,6 +7,8 @@
 #include <kernel/common/numaMemoryBank.h>
 
 
+#define NUMAMEMBANK_DEFINDEX_NONE	(-1)
+
 numaMemoryBankC::numaMemoryBankC(void)
 {
 	ranges.rsrc.arr = __KNULL;
@@ -99,6 +101,13 @@ status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 			};
 
 			ranges.rsrc.nRanges--;
+			// If we just removed the current default range:
+			if (ranges.rsrc.defRange == i)
+			{
+				ranges.rsrc.defRange =
+					(ranges.rsrc.nRanges == 0)
+					? NUMAMEMBANK_DEFINDEX_NONE : 0;
+			};
 			break;
 		};
 	};
@@ -113,45 +122,127 @@ status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 	delete tmp;
 }
 
-error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
+error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 {
-	uarch_t rwFlags;
+	uarch_t			rwFlags;
+	numaMemoryRangeC	*rangeTmp;
+	status_t		ret;
 
 	ranges.lock.readAcquire(&rwFlags);
 
-status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
-{
-	uarch_t			minPages;
+	if (ranges.rsrc.defRange == NUMAMEMBANK_DEFINDEX_NONE)
+	{
+		// Check and see if any new ranges have been added recently.
+		if (ranges.rsrc.nRanges == 0)
+		{
+			// This bank has no associated ranges of memory.
+			ranges.lock.readRelease(rwFlags);
+			return ERROR_UNKNOWN;
+		};
 
-	// Try to see how much of the frame cache we can exhaust.
-	minPages = frameCache.stacks[STACKCACHE_NSTACKS - 1].stackSize;
-
-	// Determine which stack to start querying from.
-	if (nPages < minPages) {
-		minPages = nPages;
+		ranges.lock.readReleaseWriteAcquire(rwFlags);
+		ranges.rsrc.defRange = 0;
+		ranges.lock.writeRelease();
 	};
 
-	// Probably not as fast as it coule be, but faster than the BMP.
-	for (; minPages > 0; minPages--)
+	ranges.lock.readAcquire(&rwFlags);
+
+	// Allocate from the default first.
+	rangeTmp = ranges.rsrc.arr[ranges.rsrc.defRange];
+	ret = rangeTmp->contiguousGetFrames(nFrames, paddr);
+	if (ret == ERROR_SUCCESS)
 	{
-		if (frameCache.pop(minPages, paddr) == ERROR_SUCCESS) {
-			return minPages;
+		ranges.lock.readRelease(rwFlags);
+		return ret;
+	};
+
+	// If default has no more mem,
+	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	{
+		// Don't waste time re-trying the same range.
+		if (i == ranges.rsrc.defRange) {
+			continue;
+		};
+
+		ret = ranges.rsrc.arr[i]->contiguousGetFrames(nFrames, paddr);
+		if (ret == ERROR_SUCCESS)
+		{
+			ranges.lock.readReleaseWriteAcquire(rwFlags);
+
+			ranges.rsrc.defRange = i;
+
+			ranges.lock.writeRelease();
+			return ret;
 		};
 	};
 
-	// Return whatever we get.
-	return memBmp.fragmentedGetFrames(nPages, paddr);
+	// Reaching here means no mem was found.
+	ranges.lock.readRelease(rwFlags);
+	return ERROR_MEMORY_NOMEM_PHYSICAL;
+}			
+
+status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
+{
+	uarch_t			rwFlags;
+	numaMemoryRangeC	*rangeTmp;
+	error_t			ret;
+
+	ranges.lock.readAcquire(&rwFlags);
+
+	if (ranges.rsrc.defRange == NUMAMEMBANK_DEFINDEX_NONE)
+	{
+		// Check and see if any new ranges have been added recently.
+		if (ranges.rsrc.nRanges == 0)
+		{
+			// This bank has no associated ranges of memory.
+			ranges.lock.readRelease(rwFlags);
+			return ERROR_UNKNOWN;
+		};
+
+		ranges.lock.readReleaseWriteAcquire(rwFlags);
+		ranges.rsrc.defRange = 0;
+		ranges.lock.writeRelease();
+	};
+
+	ranges.lock.readAcquire(&rwFlags);
+
+	// Allocate from the default first.
+	rangeTmp = ranges.rsrc.arr[ranges.rsrc.defRange];
+	ret = rangeTmp->fragmentedGetFrames(nFrames, paddr);
+	if (ret > 0)
+	{
+		ranges.lock.readRelease(rwFlags);
+		return ret;
+	};
+
+	// If default has no more mem,
+	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	{
+		// Don't waste time re-trying the same range.
+		if (i == ranges.rsrc.defRange) {
+			continue;
+		};
+
+		ret = ranges.rsrc.arr[i]->fragmentedGetFrames(nFrames, paddr);
+		if (ret > 0)
+		{
+			ranges.lock.readReleaseWriteAcquire(rwFlags);
+
+			ranges.rsrc.defRange = i;
+
+			ranges.lock.writeRelease();
+			return ret;
+		};
+	};
+
+	// Reaching here means no mem was found.
+	ranges.lock.readRelease(rwFlags);
+	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 
 void numaMemoryBankC::releaseFrames(paddr_t paddr, uarch_t nPages)
 {
-	// Attempt to free to the frame cache.
-	if (frameCache.push(nPages, paddr) == ERROR_SUCCESS) {
-		return;
-	};
-
-	// Bmp free.
-	memBmp.releaseFrames(paddr, nPages);
+	
 }
 
 // Couyld probably inline these two.
