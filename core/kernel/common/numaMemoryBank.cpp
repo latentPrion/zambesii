@@ -16,12 +16,6 @@ numaMemoryBankC::numaMemoryBankC(void)
 	ranges.rsrc.defRange = 0;
 }
 
-error_t numaMemoryBankC::initialize(void)
-{
-	// Nothing to do.
-	return ERROR_SUCCESS;
-}
-
 numaMemoryBankC::~numaMemoryBankC(void)
 {
 	ranges.lock.writeAcquire();
@@ -40,21 +34,21 @@ status_t numaMemoryBankC::addMemoryRange(
 	paddr_t baseAddr, paddr_t size, void *mem
 	)
 {
-	memBmpC		*bmp, **tmp;
-	error_t		err;
-	uarch_t		rwFlags, nRanges;
+	numaMemoryRangeC	*memRange, **tmp;
+	error_t			err;
+	uarch_t			nRanges;
 
 	// Allocate a new bmp allocator.
-	bmp = new memBmpC(baseAddr, size);
-	if (bmp == __KNULL) {
+	memRange = new numaMemoryRangeC(baseAddr, size);
+	if (memRange == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	if (mem != __KNULL) {
-		err = bmp->initialize(mem);
+		err = memRange->initialize(mem);
 	}
 	else {
-		err = bmp->initialize();
+		err = memRange->initialize();
 	};
 
 	if (err != ERROR_SUCCESS) {
@@ -64,18 +58,18 @@ status_t numaMemoryBankC::addMemoryRange(
 	ranges.lock.writeAcquire();
 
 	nRanges = ranges.rsrc.nRanges;
-	tmp = new memBmpC*[nRanges + 1];
+	tmp = new numaMemoryRangeC*[nRanges + 1];
 	if (tmp == __KNULL)
 	{
 		ranges.lock.writeRelease();
-		delete bmp;
+		delete memRange;
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	memcpy(tmp, ranges.rsrc.arr, sizeof(memBmpC *) * nRanges);
+	memcpy(tmp, ranges.rsrc.arr, sizeof(numaMemoryRangeC *) * nRanges);
 	delete ranges.rsrc.arr;
 	ranges.rsrc.arr = tmp;
-	ranges.rsrc.arr[nRanges] = bmp;
+	ranges.rsrc.arr[nRanges] = memRange;
 	ranges.rsrc.nRanges++;
 
 	ranges.lock.writeRelease();
@@ -85,14 +79,13 @@ status_t numaMemoryBankC::addMemoryRange(
 
 status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 {
-	memBmpC		*tmp=0;
+	numaMemoryRangeC		*tmp=0;
 
 	ranges.lock.writeAcquire();
 
 	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
 	{
-		if ((baseAddr >= ranges.rsrc.arr[i]->baseAddr)
-			&& (baseAddr <= ranges.rsrc.arr[i]->endAddr))
+		if (ranges.rsrc.arr[i]->identifyPaddr(baseAddr))
 		{
 			tmp = ranges.rsrc.arr[i];
 			// Move every other pointer up to cover it.
@@ -102,7 +95,7 @@ status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 
 			ranges.rsrc.nRanges--;
 			// If we just removed the current default range:
-			if (ranges.rsrc.defRange == i)
+			if (ranges.rsrc.defRange == static_cast<sarch_t>( i ))
 			{
 				ranges.rsrc.defRange =
 					(ranges.rsrc.nRanges == 0)
@@ -120,6 +113,7 @@ status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 	};
 
 	delete tmp;
+	return ERROR_SUCCESS;
 }
 
 error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
@@ -160,7 +154,7 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
 	{
 		// Don't waste time re-trying the same range.
-		if (i == ranges.rsrc.defRange) {
+		if (static_cast<sarch_t>( i ) == ranges.rsrc.defRange) {
 			continue;
 		};
 
@@ -181,7 +175,7 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }			
 
-status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
+status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 {
 	uarch_t			rwFlags;
 	numaMemoryRangeC	*rangeTmp;
@@ -219,7 +213,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
 	{
 		// Don't waste time re-trying the same range.
-		if (i == ranges.rsrc.defRange) {
+		if (static_cast<sarch_t>( i ) == ranges.rsrc.defRange) {
 			continue;
 		};
 
@@ -292,6 +286,6 @@ void numaMemoryBankC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 		};
 	};
 
-	ranges.lock.readRelease(rwLock);
+	ranges.lock.readRelease(rwFlags);
 }
 

@@ -79,7 +79,7 @@ error_t memoryTribC::initialize2(void)
 		{
 			for (uarch_t j=0; i<currEntry->nReservedEntries; i++)
 			{
-				memRegions[i].memBmp->mapRangeUsed(
+				memRegions[i].memBmp->mapMemUsed(
 					currReserved[j].baseAddr,
 					PAGING_BYTES_TO_PAGES(
 						currReserved[j].size));

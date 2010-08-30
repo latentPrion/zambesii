@@ -64,9 +64,10 @@ private:
 	struct rangeStateS
 	{
 		numaMemoryRangeC	**arr;
-		ubit32			nRanges, defRange;
+		ubit32			nRanges;
+		sarch_t			defRange;
 	};
-	sharedResourceGroupC<multipleReaderlockC, rangeStateS>	ranges;
+	sharedResourceGroupC<multipleReaderLockC, rangeStateS>	ranges;
 };
 
 #endif
