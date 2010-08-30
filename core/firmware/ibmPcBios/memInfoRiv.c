@@ -69,6 +69,13 @@ static struct chipsetMemConfigS *ibmPcBios_mi_getMemoryConfig(void)
 	return __KNULL;
 }
 
+/* Will return an unsorted memory map with zero-length entries taken out, and
+ * in the case of a 32-bit processor, all entries with baseaddress > 4GB taken
+ * out as well.
+ *
+ * For 32-bit with PAE, will return all mem as if it's a 64-bit build, but
+ * using paddr_t constructor.
+ **/
 static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 {
 	struct chipsetMemMapS	*ret;
@@ -196,6 +203,13 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 	return ret;
 }
 
+struct chipsetNumaMapS *ibmPcBios_mi_getNumaMap(void)
+{
+#if __SCALING__ < SCALING_CC_NUMA
+	return __KNULL;
+#endif
+}
+
 struct memInfoRivS	ibmPcBios_memInfoRiv =
 {
 	&ibmPcBios_mi_initialize,
@@ -204,7 +218,7 @@ struct memInfoRivS	ibmPcBios_memInfoRiv =
 	&ibmPcBios_mi_awake,
 
 	&ibmPcBios_mi_getMemoryConfig,
-	__KNULL,
+	&ibmPcBios_mi_getNumaMap,
 	&ibmPcBios_mi_getMemoryMap
 };
 
