@@ -1,32 +1,16 @@
 
 #include <debug.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
 
 
-/**	NOTES:
- * In order to support uniformity in the kernel for all physical memory
- * management, we have to have the internal BMP in the numaMemoryBank objects
- * be a pointer to a BMP, and not a BMP object instance.
- *
- * But for the general case, it is desirable for the class to auto-allocate
- * the internal BMP object automatically. On startup, however, for the initial
- * temporary NUMA bank (__kspace), we do not wish for the class to allocate
- * the internal BMP automatically in its constructor.
- *
- * Thus, the internal allocation is controlled by a flag argument to the
- * constructor. By default, the flags are set to have the class auto-allocate.
- *
- * During kernel orientation, the kernel passes the 'no-allocate' flag, so that
- * it can later send a message to the NUMA Tributary to manually allocate the
- * internal BMP on the first bank.
- **/
-numaMemoryBankC::numaMemoryBankC(paddr_t baseAddr, paddr_t size)
-:
-baseAddr(baseAddr), size(size), memBmp(baseAddr, size)
+numaMemoryBankC::numaMemoryBankC(void)
 {
+	ranges.rsrc.arr = __KNULL;
+	ranges.rsrc.nRanges = 0;
 }
 
 error_t numaMemoryBankC::initialize(void *preAllocated)
@@ -36,6 +20,53 @@ error_t numaMemoryBankC::initialize(void *preAllocated)
 
 numaMemoryBankC::~numaMemoryBankC(void)
 {
+}
+
+status_t numaMemoryBankC::addMemoryRange(
+	paddr_t baseAddr, paddr_t size, void *mem
+	)
+{
+	memBmpC		*bmp, **tmp;
+	error_t		err;
+	uarch_t		rwFlags, nRanges;
+
+	// Allocate a new bmp allocator.
+	bmp = new memBmpC(baseAddr, size);
+	if (bmp == __KNULL) {
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	if (mem != __KNULL) {
+		err = bmp->initialize(mem);
+	}
+	else {
+		err = bmp->initialize();
+	};
+
+	if (err != ERROR_SUCCESS) {
+		return static_cast<status_t>( err );
+	};
+
+	ranges.lock.writeAcquire();
+
+	nRanges = ranges.rsrc.nRanges;
+	tmp = new memBmpC*[nRanges + 1];
+	if (tmp == __KNULL)
+	{
+		ranges.lock.writeRelease();
+		delete bmp;
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	memcpy(tmp, ranges.rsrc.arr, sizeof(memBmpC *) * nRanges);
+	delete ranges.rsrc.arr;
+	ranges.rsrc.arr = tmp;
+	ranges.rsrc.arr[nRanges] = bmp;
+	ranges.rsrc.nRanges++;
+
+	ranges.lock.writeRelease();
+
+	return ERROR_SUCCESS;
 }
 
 error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)

@@ -44,7 +44,12 @@ public:
 
 private:
 	// Array of pointers to memBmpC.
-	memBmpC			**memBmp;
+	struct rangeStateS
+	{
+		memBmpC		**arr;
+		ubit32		nRanges;
+	};
+	sharedResourceGroupC<multipleReaderlockC, rangeStateS>	ranges;
 	stackCacheC<paddr_t>	frameCache;
 };
 
