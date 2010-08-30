@@ -44,6 +44,16 @@ sarch_t numaMemoryRangeC::identifyPaddrRange(paddr_t paddr, uarch_t nFrames)
 	return 0;
 }
 
+void numaMemoryRangeC::releaseFrames(paddr_t paddr, uarch_t nFrames)
+{
+	if (frameCache.push(nFrames, paddr) == ERROR_SUCCESS) {
+		return;
+	};
+
+	// Else free to BMP.
+	bmp.releaseFrames(paddr, nFrames);
+}
+
 error_t numaMemoryRangeC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 {
 	// See if the cache has a loaded stack for this nFrames size.

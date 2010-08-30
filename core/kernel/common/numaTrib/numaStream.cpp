@@ -13,15 +13,10 @@
  * don't remain the default banks for all kernel allocations.
  **/
 
-numaStreamC::numaStreamC(numaBankId_t bankId, paddr_t baseAddr, paddr_t size)
+numaStreamC::numaStreamC(numaBankId_t bankId)
 :
-streamC(0), bankId(bankId), memoryBank(baseAddr, size)
+streamC(0), bankId(bankId)
 {
-}
-
-error_t numaStreamC::initialize(void *preAllocated)
-{
-	return memoryBank.initialize(preAllocated);
 }
 
 numaStreamC::~numaStreamC(void)

@@ -22,9 +22,7 @@ class numaStreamC
 public streamC
 {
 public:
-	numaStreamC(numaBankId_t bankId, paddr_t baseAddr, paddr_t size);
-	error_t initialize(void *preAllocated=__KNULL);
-
+	numaStreamC(numaBankId_t bankId);
 	~numaStreamC(void);
 
 public:

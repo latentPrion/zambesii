@@ -257,6 +257,27 @@ void numaMemoryBankC::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 		basePaddr, nFrames);
 }
 
+sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
+{
+	uarch_t		rwFlags;
+
+	ranges.lock.readAcquire(&rwFlags);
+
+	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	{
+		/* A paddr can only correspond to ONE memory range. We never
+		 * hand out pmem allocations spanning multiple discontiguous
+		 * physical memory ranges in one allocation. Therefore when
+		 * freeing, it's impossible for us to get a pmem or pmem range
+		 * to be freed which isn't contiguous, and within one range.
+		 **/
+		if (ranges.rsrc.arr[i]->identifyPaddr(paddr)) {
+			return 1;
+		};
+	};
+	return 0;
+}
+
 void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 {
 	uarch_t		rwFlags;

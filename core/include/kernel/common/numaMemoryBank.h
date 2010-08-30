@@ -60,6 +60,9 @@ public:
 	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
 	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);
 
+	sarch_t identifyPaddr(paddr_t paddr);
+	// sarch_t identifyPaddrRange(paddr_t base, uarch_t nFrames);
+
 private:
 	struct rangeStateS
 	{

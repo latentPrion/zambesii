@@ -7,6 +7,7 @@
 #include <chipset/memoryConfig.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kstdlib/__kclib/string.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 
@@ -26,13 +27,13 @@
  *	6. Done. We now have a fake NUMA bank at index 0 which allocates from
  *	   a guaranteed usable area of physical memory for bootup.
  **/
-static numaStreamC	*__kspaceStreamPtr;
+
+#define NUMATRIB		"Numa Tributary: "
+
+//static numaStreamC	*__kspaceStreamPtr;
 
 // Always initialize the __kspace stream as a fake bank 0.
-static numaStreamC	__kspaceNumaStream(
-	0,
-	CHIPSET_MEMORY___KSPACE_BASE,
-	CHIPSET_MEMORY___KSPACE_SIZE);
+static numaStreamC	__kspaceNumaStream(0);
 
 
 numaTribC::numaTribC(void)
@@ -46,19 +47,8 @@ numaTribC::numaTribC(void)
 
 error_t numaTribC::initialize(void)
 {
-	error_t		ret;
-
-	ret = __kspaceNumaStream.initialize(__kspaceInitMem);
-	if (ret != ERROR_SUCCESS) {
-		return ret;
-	};
-
-	// Link the now initialized __kspace fake bank 0 into slot 0.
-	numaStreams.rsrc.array = &__kspaceStreamPtr;
-	numaStreams.rsrc.array[0] = &__kspaceNumaStream;
-	numaStreams.rsrc.nStreams = 1;
-
-	return ERROR_SUCCESS;
+	UNIMPLEMENTED("numaTribC::initialize()");
+	return ERROR_UNIMPLEMENTED;
 }
 
 /**	EXPLANATION:
@@ -195,9 +185,7 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 		if (currStream != __KNULL)
 		{
 			// TODO: There must be a way to optimize this.
-			if ((paddr > currStream->memoryBank.baseAddr) &&
-				(paddr < (currStream->memoryBank.baseAddr +
-					currStream->memoryBank.size)))
+			if (currStream->memoryBank.identifyPaddr(paddr))
 			{
 				currStream->memoryBank.releaseFrames(
 					paddr, nFrames);
@@ -208,7 +196,8 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	/* Couldn't find a suitable bank. Probably the memory was hot swapped,
 	 * or there's corruption in the memory manager somewhere.
 	 **/
-	// FIXME: Place a log warning here.
+	__kprintf(WARNING NUMATRIB"releaseFrames(0x%X, %d): pmem leak.\n",
+		paddr, nFrames);
 #else
 	numaStreams.rsrc.array[0]->memoryBank.releaseFrames(paddr, nFrames);
 #endif
@@ -411,7 +400,7 @@ void numaTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 		 * runtime. This generally only happens when the kernel is made
 		 * aware of an MMIO range.
 		 **/
-		currStream->memoryBank.mapRangeUsed(baseAddr, nPages);
+		currStream->memoryBank.mapMemUsed(baseAddr, nPages);
 	};
 }
 
@@ -426,7 +415,7 @@ void numaTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 		currStream = numaStreams.rsrc.array[i];
 		numaStreams.lock.readRelease(rwFlags);
 
-		currStream->memoryBank.mapRangeUnused(baseAddr, nPages);
+		currStream->memoryBank.mapMemUnused(baseAddr, nPages);
 	};
 }
 
