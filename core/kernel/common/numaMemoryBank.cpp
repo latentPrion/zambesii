@@ -30,6 +30,16 @@ numaMemoryBankC::~numaMemoryBankC(void)
 	ranges.lock.writeRelease();
 }
 
+error_t numaMemoryBankC::__kspaceAddMemoryRange(
+	void *arrayMem, numaMemoryRangeC *__kspace, void *__kspaceInitMem
+	)
+{
+	ranges.rsrc.arr = static_cast<numaMemoryRangeC **>( arrayMem );
+	ranges.rsrc.arr[0] = __kspace;
+
+	return ranges.rsrc.arr[0]->initialize(__kspaceInitMem);
+}
+
 status_t numaMemoryBankC::addMemoryRange(
 	paddr_t baseAddr, paddr_t size, void *mem
 	)

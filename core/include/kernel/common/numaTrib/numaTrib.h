@@ -86,7 +86,7 @@ private:
 
 	struct numaStreamStateS
 	{
-		numaStreamC	**array;
+		numaStreamC	**arr;
 		ubit32		nStreams;
 	};
 	sharedResourceGroupC<multipleReaderLockC, numaStreamStateS> numaStreams;

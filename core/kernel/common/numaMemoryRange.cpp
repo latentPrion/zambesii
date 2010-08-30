@@ -9,9 +9,9 @@ baseAddr(baseAddr), size(size), bmp(baseAddr, size)
 {
 }
 
-error_t numaMemoryRangeC::initialize(void *mem)
+error_t numaMemoryRangeC::initialize(void *initMem)
 {
-	return bmp.initialize(mem);
+	return bmp.initialize(initMem);
 }
 
 numaMemoryRangeC::~numaMemoryRangeC(void)

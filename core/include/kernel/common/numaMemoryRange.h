@@ -16,7 +16,7 @@ class numaMemoryRangeC
 {
 public:
 	numaMemoryRangeC(paddr_t baseAddr, paddr_t size);
-	error_t initialize(void *mem=__KNULL);
+	error_t initialize(void *initMem=__KNULL);
 	~numaMemoryRangeC(void);
 
 public:

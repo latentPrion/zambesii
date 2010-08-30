@@ -30,10 +30,14 @@
 
 #define NUMATRIB		"Numa Tributary: "
 
-//static numaStreamC	*__kspaceStreamPtr;
-
 // Always initialize the __kspace stream as a fake bank 0.
 static numaStreamC	__kspaceNumaStream(0);
+static numaStreamC	*__kspaceStreamPtr;
+// Space for the numaMemoryBank's array.
+static numaMemoryRangeC	*__kspaceMemoryRangePtr;
+static numaMemoryRangeC	__kspaceMemoryRange(
+	CHIPSET_MEMORY___KSPACE_BASE,
+	CHIPSET_MEMORY___KSPACE_SIZE);
 
 
 numaTribC::numaTribC(void)
@@ -41,14 +45,24 @@ numaTribC::numaTribC(void)
 #if __SCALING__ >= SCALING_CC_NUMA
 	defaultConfig.def.rsrc = 0;
 #endif
-	numaStreams.rsrc.array = __KNULL;
+	numaStreams.rsrc.arr = __KNULL;
 	numaStreams.rsrc.nStreams = 0;
 }
 
 error_t numaTribC::initialize(void)
 {
-	UNIMPLEMENTED("numaTribC::initialize()");
-	return ERROR_UNIMPLEMENTED;
+	error_t		ret;
+
+	numaStreams.rsrc.arr = &__kspaceStreamPtr;
+	numaStreams.rsrc.arr[0] = &__kspaceNumaStream;
+	numaStreams.rsrc.nStreams = 1;
+
+	ret = numaStreams.rsrc.arr[0]->memoryBank.__kspaceAddMemoryRange(
+		&__kspaceMemoryRangePtr,
+		&__kspaceMemoryRange,
+		__kspaceInitMem);
+
+	return ret;
 }
 
 /**	EXPLANATION:
@@ -130,19 +144,19 @@ error_t numaTribC::spawnStream(numaBankId_t, paddr_t, paddr_t)
 
 numaTribC::~numaTribC(void)
 {
-	if (numaStreams.rsrc.array != __KNULL)
+	if (numaStreams.rsrc.arr != __KNULL)
 	{
 		for (; numaStreams.rsrc.nStreams > 0;
 			numaStreams.rsrc.nStreams--)
 		{
-			if (numaStreams.rsrc.array[numaStreams.rsrc.nStreams]
+			if (numaStreams.rsrc.arr[numaStreams.rsrc.nStreams]
 				!= __KNULL)
 			{
-				delete numaStreams.rsrc.array[
+				delete numaStreams.rsrc.arr[
 					numaStreams.rsrc.nStreams];
 			};
 		};
-		delete numaStreams.rsrc.array;
+		delete numaStreams.rsrc.arr;
 	};
 }
 
@@ -154,7 +168,7 @@ numaStreamC *numaTribC::getStream(numaBankId_t bankId)
 
 	numaStreams.lock.readAcquire(&rwFlags);
 
-	ret = numaStreams.rsrc.array[bankId];
+	ret = numaStreams.rsrc.arr[bankId];
 
 	numaStreams.lock.readRelease(rwFlags);
 	return ret;
@@ -178,7 +192,7 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
 		numaStreams.lock.readAcquire(&rwFlags);
-		currStream = numaStreams.rsrc.array[i];
+		currStream = numaStreams.rsrc.arr[i];
 		numaStreams.lock.readRelease(rwFlags);
 
 		// Ensure we're not trying to free to hot-swapped out, etc RAM.
@@ -199,7 +213,7 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	__kprintf(WARNING NUMATRIB"releaseFrames(0x%X, %d): pmem leak.\n",
 		paddr, nFrames);
 #else
-	numaStreams.rsrc.array[0]->memoryBank.releaseFrames(paddr, nFrames);
+	numaStreams.rsrc.arr[0]->memoryBank.releaseFrames(paddr, nFrames);
 #endif
 
 }
@@ -392,7 +406,7 @@ void numaTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
 		numaStreams.lock.readAcquire(&rwFlags);
-		currStream = numaStreams.rsrc.array[i];
+		currStream = numaStreams.rsrc.arr[i];
 		numaStreams.lock.readRelease(rwFlags);
 
 		/* We can most likely afford this small speed bump since ranges
@@ -412,7 +426,7 @@ void numaTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
 		numaStreams.lock.readAcquire(&rwFlags);
-		currStream = numaStreams.rsrc.array[i];
+		currStream = numaStreams.rsrc.arr[i];
 		numaStreams.lock.readRelease(rwFlags);
 
 		currStream->memoryBank.mapMemUnused(baseAddr, nPages);

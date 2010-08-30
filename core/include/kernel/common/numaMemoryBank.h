@@ -43,6 +43,11 @@ public:
 	numaMemoryBankC(void);
 	~numaMemoryBankC(void);
 
+	// Adds __kspace to the memory ranges on a memory bank.
+	error_t __kspaceAddMemoryRange(
+		void *arrayMem,
+		numaMemoryRangeC *__kspace, void *__kspaceInitMem);
+
 	error_t addMemoryRange(
 		paddr_t baseAddr, paddr_t size, void *arrayMem=__KNULL);
 
