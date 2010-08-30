@@ -23,40 +23,44 @@
 #define MEMBMP_BIT(__pfn,__basePfn,__bmp)			\
 	(MEMBMP_OFFSET(__pfn,__basePfn) % __KBIT_NBITS_IN(__bmp))
 
+class numaMemoryBankC;
+
 class memBmpC
 :
 public allocClassC
 {
-	public:
-		memBmpC(paddr_t baseAddr, paddr_t size);
-		error_t initialize(void *preAllocated=__KNULL);
+friend class numaMemoryBankC;
 
-		~memBmpC(void);
+public:
+	memBmpC(paddr_t baseAddr, paddr_t size);
+	error_t initialize(void *preAllocated=__KNULL);
 
-	public:
-		// The frame address is returned on the stack.
-		error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
-		status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
-		void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
+	~memBmpC(void);
 
-		void mapRangeUsed(paddr_t basePaddr, uarch_t nFrames);
-		void mapRangeUnused(paddr_t basePaddr, uarch_t nFrames);
+public:
+	// The frame address is returned on the stack.
+	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
+	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
+	void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
 
-	private:
-		inline void setFrame(uarch_t pfn);
-		inline void unsetFrame(uarch_t pfn);
-		inline sarch_t testFrame(uarch_t pfn);
+	void mapRangeUsed(paddr_t basePaddr, uarch_t nFrames);
+	void mapRangeUnused(paddr_t basePaddr, uarch_t nFrames);
 
-	private:
-		uarch_t		basePfn, endPfn, nFrames, flags, nIndexes;
-		uarch_t		bmpSize;
-		paddr_t		baseAddr, endAddr;
+private:
+	inline void setFrame(uarch_t pfn);
+	inline void unsetFrame(uarch_t pfn);
+	inline sarch_t testFrame(uarch_t pfn);
 
-		struct bmpPtrsS
-		{
-			uarch_t		*bmp, lastAllocIndex;
-		};
-		sharedResourceGroupC<waitLockC, bmpPtrsS>	bmp;
+private:
+	uarch_t		basePfn, endPfn, nFrames, flags, nIndexes;
+	uarch_t		bmpSize;
+	paddr_t		baseAddr, endAddr;
+
+	struct bmpPtrsS
+	{
+		uarch_t		*bmp, lastAllocIndex;
+	};
+	sharedResourceGroupC<waitLockC, bmpPtrsS>	bmp;
 };
 
 

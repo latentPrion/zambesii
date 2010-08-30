@@ -4,19 +4,35 @@
 	#include <arch/paddr_t.h>
 	#include <__kclasses/stackCache.h>
 	#include <__kclasses/memBmp.h>
+	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/multipleReaderLock.h>
 
 /**	EXPLANATION:
- * A NUMA memory Bank is an allocation API for Zambezii's Physical Memory
- * allocation abstraction.
+ * Just as each process has its own NUMA configuration, and a 'default' bank,
+ * each NUMA Bank has its own bank-local configuration. There can be any number
+ * of disjoint, allocatable memory ranges in a single NUMA memory bank. That is,
+ * within NUMA bank 0, there could be N completely physically discontiguous
+ * usable memory ranges, even going so far as to be able to have ranges of
+ * memory for *different banks* all mixed up together. So a single NUMA bank
+ * isn't necessarily physically a single memory range.
  *
- * It is the base unit of physical memory allocation, and is not to be probed
- * any further. No class is to attempt to for example, reference and call its
- * internal BMP directly.
+ * Zambezii handles this messy problem by allowing multiple physical memory
+ * allocation bitmaps to exist on each NUMA Memory bank. There is another way
+ * to do this: Use a single bitmap object per NUMA bank, and make it as large
+ * as the whole physical span of memory that covers all memory ranges that the
+ * node owns, then mark all frames for all intermediate ranges of memory as
+ * used. But this would make allocation on that bank very slow whenever all the
+ * memory at the front of the BMP was allocated, and you then have to skip over
+ * probably thousands of bits to get to the next range of bits that actually
+ * pertain to this memory bank.
  *
- * The class numaMemoryBankC all physical memory allocation functions for both
- * contiguous and fragmented allocation.
+ * Using multiple bitmaps per bank, one for each disjoint memory range makes
+ * allocation faster and also allows us to support hot-plug of memory by simply
+ * allocating/freeing a bitmap object.
+ *
+ * Each bitmap comes with its own frame cache, which speeds up allocations by
+ * storing frees of common frame sizes.
  **/
-
 #define NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP	(1<<0)
 
 class numaMemoryBankC
@@ -32,10 +48,8 @@ public:
 	void bind(void);
 
 public:
-	// Returns physically contiguous RAM.
 	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
-	// Returns as many physically contiguous frames as it can find < nPages.
-	error_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
+	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
 
 	// Is a wrapper around memBmpC::mapRangeU*sed().

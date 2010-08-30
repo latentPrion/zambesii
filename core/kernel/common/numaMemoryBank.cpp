@@ -69,14 +69,40 @@ status_t numaMemoryBankC::addMemoryRange(
 	return ERROR_SUCCESS;
 }
 
-error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
+status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 {
-	if (frameCache.pop(nPages, paddr) == ERROR_SUCCESS) {
-		return ERROR_SUCCESS;
+	memBmpC		*tmp=0;
+
+	ranges.lock.writeAcquire();
+
+	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	{
+		if ((baseAddr >= ranges.rsrc.arr[i]->baseAddr)
+			&& (baseAddr <= ranges.rsrc.arr[i]->endAddr))
+		{
+			tmp = ranges.rsrc.arr[i];
+			// Move every other pointer up to cover it.
+			for (uarch_t j=i; j<(ranges.rsrc.nRanges - 1); j++) {
+				ranges.rsrc.arr[j] = ranges.rsrc.arr[j+1];
+			};
+
+			ranges.rsrc.nRanges--;
+			break;
+		};
 	};
 
-	// Frame cache allocation failed.
-	return memBmp.contiguousGetFrames(nPages, paddr);
+	ranges.lock.writeRelease();
+
+	// Memory range with this base address/contained address doesn't exist.
+	if (tmp == __KNULL) {
+		return ERROR_INVALID_ARG_VAL;
+	};
+
+	delete tmp;
+}
+
+error_t numaMemoryBankC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
+{
 }
 
 status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
