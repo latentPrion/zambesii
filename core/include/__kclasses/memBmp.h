@@ -43,8 +43,8 @@ public:
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 	void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
 
-	void mapRangeUsed(paddr_t basePaddr, uarch_t nFrames);
-	void mapRangeUnused(paddr_t basePaddr, uarch_t nFrames);
+	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
+	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);
 
 private:
 	inline void setFrame(uarch_t pfn);

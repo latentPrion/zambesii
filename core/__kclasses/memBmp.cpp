@@ -268,7 +268,7 @@ void memBmpC::releaseFrames(paddr_t frameAddr, uarch_t nFrames)
 	bmp.lock.release();
 }
 
-void memBmpC::mapRangeUsed(paddr_t basePaddr, uarch_t nFrames)
+void memBmpC::mapMemUsed(paddr_t basePaddr, uarch_t nFrames)
 {
 	uarch_t		startPfn = basePaddr / PAGING_BASE_SIZE;
 	uarch_t		_endPfn = startPfn + nFrames;
@@ -284,7 +284,7 @@ void memBmpC::mapRangeUsed(paddr_t basePaddr, uarch_t nFrames)
 	bmp.lock.release();
 }
 
-void memBmpC::mapRangeUnused(paddr_t basePaddr, uarch_t nFrames)
+void memBmpC::mapMemUnused(paddr_t basePaddr, uarch_t nFrames)
 {
 	uarch_t		startPfn = basePaddr / PAGING_BASE_SIZE;
 	uarch_t		_endPfn = startPfn + nFrames;
