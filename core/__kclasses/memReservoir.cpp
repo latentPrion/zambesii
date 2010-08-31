@@ -231,7 +231,7 @@ void memReservoirC::free(void *_mem)
 
 	if ((mem->magic >> 4) != (RESERVOIR_MAGIC >> 4))
 	{
-		__kprintf(ERROR RESERVOIR"Corrupt memory or bad free at v %X ",
+		__kprintf(ERROR RESERVOIR"Corrupt memory or bad free v %X.\n",
 			mem);
 
 		return;

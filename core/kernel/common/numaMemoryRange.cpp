@@ -14,6 +14,10 @@ error_t numaMemoryRangeC::initialize(void *initMem)
 	return bmp.initialize(initMem);
 }
 
+void numaMemoryRangeC::dump(void)
+{
+}
+
 numaMemoryRangeC::~numaMemoryRangeC(void)
 {
 }

@@ -51,6 +51,8 @@ public:
 	error_t addMemoryRange(paddr_t baseAddr, paddr_t size);
 	error_t removeMemoryRange(paddr_t baseAddr);
 
+	void dump(void);
+
 	void cut(void);
 	void bind(void);
 

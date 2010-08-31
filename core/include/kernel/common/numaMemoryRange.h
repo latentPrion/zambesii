@@ -12,12 +12,18 @@
  * personal frame cache to allow for faster allocation of frames from that
  * range.
  **/
+class numaMemoryBankC;
+
 class numaMemoryRangeC
 {
+friend class numaMemoryBankC;
+
 public:
 	numaMemoryRangeC(paddr_t baseAddr, paddr_t size);
 	error_t initialize(void *initMem=__KNULL);
 	~numaMemoryRangeC(void);
+
+	void dump(void);
 
 public:
 	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);

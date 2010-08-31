@@ -137,9 +137,24 @@ error_t numaTribC::initialize2(void)
 	return ERROR_SUCCESS;
 }
 
+void numaTribC::dump(void)
+{
+	uarch_t		rwFlags;
+
+	numaStreams.lock.readAcquire(&rwFlags);
+
+	__kprintf(NOTICE NUMATRIB"Dumping. nStreams %d.\n",
+		numaStreams.rsrc.nStreams);
+
+	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++) {
+		getStream(i)->memoryBank.dump();
+	}
+}
+
 error_t numaTribC::spawnStream(numaBankId_t, paddr_t, paddr_t)
 {
-	return ERROR_UNKNOWN;
+	UNIMPLEMENTED("numaTribC::spawnStream()");
+	return ERROR_UNIMPLEMENTED;
 }
 
 numaTribC::~numaTribC(void)
@@ -195,7 +210,6 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 		// Ensure we're not trying to free to hot-swapped out, etc RAM.
 		if (currStream != __KNULL)
 		{
-			__kprintf(NOTICE NUMATRIB"On stream %d. Not null.\n", i);
 			if (currStream->memoryBank.identifyPaddr(paddr))
 			{
 				currStream->memoryBank.releaseFrames(

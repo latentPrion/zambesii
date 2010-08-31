@@ -92,13 +92,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	};
 
 	__kprintf(NOTICE ORIENT"%d entries in all.\n", map->nEntries);
-
-	paddr_t		p;
-	status_t	s;
-
-	s = numaTrib.fragmentedGetFrames(4, &p);
-	__kprintf(NOTICE ORIENT"%d frames returned.\n", s);
-	numaTrib.releaseFrames(p, s);
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 
