@@ -26,8 +26,6 @@
  * process so that it is best catered for.
  **/
 
-#define MEMALLOC_NO_FAKEMAP		(1<<0)
-
 class memoryTribC;
 
 class memoryStreamC
