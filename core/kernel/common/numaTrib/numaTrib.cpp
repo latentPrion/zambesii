@@ -177,7 +177,6 @@ numaStreamC *numaTribC::getStream(numaBankId_t bankId)
 
 void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 {
-	uarch_t		rwFlags;
 	numaStreamC	*currStream;
 
 	/**	EXPLANATION:
@@ -191,14 +190,12 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 #if __SCALING__ >= SCALING_CC_NUMA
 	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
-		numaStreams.lock.readAcquire(&rwFlags);
-		currStream = numaStreams.rsrc.arr[i];
-		numaStreams.lock.readRelease(rwFlags);
+		currStream = getStream(i);
 
 		// Ensure we're not trying to free to hot-swapped out, etc RAM.
 		if (currStream != __KNULL)
 		{
-			// TODO: There must be a way to optimize this.
+			__kprintf(NOTICE NUMATRIB"On stream %d. Not null.\n", i);
 			if (currStream->memoryBank.identifyPaddr(paddr))
 			{
 				currStream->memoryBank.releaseFrames(

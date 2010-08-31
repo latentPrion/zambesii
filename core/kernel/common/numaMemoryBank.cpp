@@ -13,7 +13,7 @@ numaMemoryBankC::numaMemoryBankC(void)
 {
 	ranges.rsrc.arr = __KNULL;
 	ranges.rsrc.nRanges = 0;
-	ranges.rsrc.defRange = 0;
+	ranges.rsrc.defRange = NUMAMEMBANK_DEFINDEX_NONE;
 }
 
 numaMemoryBankC::~numaMemoryBankC(void)
@@ -36,6 +36,11 @@ error_t numaMemoryBankC::__kspaceAddMemoryRange(
 {
 	ranges.rsrc.arr = static_cast<numaMemoryRangeC **>( arrayMem );
 	ranges.rsrc.arr[0] = __kspace;
+	ranges.rsrc.nRanges++;
+
+	if (ranges.rsrc.defRange == NUMAMEMBANK_DEFINDEX_NONE) {
+		ranges.rsrc.defRange = 0;
+	};
 
 	return ranges.rsrc.arr[0]->initialize(__kspaceInitMem);
 }
@@ -73,6 +78,10 @@ status_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	ranges.rsrc.arr = tmp;
 	ranges.rsrc.arr[nRanges] = memRange;
 	ranges.rsrc.nRanges++;
+
+	if (ranges.rsrc.defRange == NUMAMEMBANK_DEFINDEX_NONE) {
+		ranges.rsrc.defRange = 0;
+	};
 
 	ranges.lock.writeRelease();
 
@@ -199,6 +208,8 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 		ranges.rsrc.defRange = 0;
 		ranges.lock.writeRelease();
 		ranges.lock.readAcquire(&rwFlags);
+		__kprintf(WARNING NUMAMEMBANK"Had to resolve alloc on bank "
+			"with no internal mem ranges.");
 	};
 
 
@@ -208,10 +219,15 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 	if (ret > 0)
 	{
 		ranges.lock.readRelease(rwFlags);
+		__kprintf(NOTICE NUMAMEMBANK"(%d): p 0x%X.\n", nFrames, *paddr);
+
 		return ret;
 	};
 
 	// If default has no more mem,
+	__kprintf(NOTICE NUMAMEMBANK"Default range had no pmem. Looking for "
+		"new range.\n");
+
 	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
 	{
 		// Don't waste time re-trying the same range.
@@ -227,12 +243,18 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 			ranges.rsrc.defRange = i;
 
 			ranges.lock.writeRelease();
+			__kprintf(NOTICE NUMAMEMBANK"(%d): p 0x%X.\n",
+				nFrames, *paddr);
+
 			return ret;
 		};
 	};
 
 	// Reaching here means no mem was found.
 	ranges.lock.readRelease(rwFlags);
+	__kprintf(WARNING NUMAMEMBANK"No mem found for pmem alloc of %d.\n",
+		nFrames);
+
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 
@@ -265,6 +287,7 @@ sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
 
 	ranges.lock.readAcquire(&rwFlags);
 
+__kprintf(NOTICE NUMAMEMBANK"%d ranges.\n", ranges.rsrc.nRanges);
 	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
 	{
 		/* A paddr can only correspond to ONE memory range. We never
@@ -273,6 +296,7 @@ sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
 		 * freeing, it's impossible for us to get a pmem or pmem range
 		 * to be freed which isn't contiguous, and within one range.
 		 **/
+		__kprintf(NOTICE NUMAMEMBANK"On range %d. Not null.\n", i);
 		if (ranges.rsrc.arr[i]->identifyPaddr(paddr))
 		{
 			ranges.lock.readRelease(rwFlags);
