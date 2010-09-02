@@ -63,3 +63,16 @@ int strcmp(const char *str1, const char *str2)
 	return 0;
 }
 
+int strncmp(const char *str1, const char *str2, int count)
+{
+	if (str1 == __KNULL || str2 == __KNULL || count == 0) { return 1; };
+	if (str1 == str2) { return 0; };
+
+	for (; count > 0; count--, str1++, str2++)
+	{
+		if (*str1 != *str2) {
+			return ((*str1 > *str2) ? 1 : -1);
+		};
+	};
+	return 0;
+}

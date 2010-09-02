@@ -12,6 +12,7 @@
 #include <kernel/common/process.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryStream.h>
+#include <kernel/common/memoryTrib/mmFlags.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 

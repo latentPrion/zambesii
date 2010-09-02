@@ -1,4 +1,5 @@
 
+#include <chipset/numaMap.h>
 #include <__kstdlib/__ktypes.h>
 #include <kernel/common/firmwareTrib/firmwareStream.h>
 #include "pic.h"
@@ -11,10 +12,18 @@ static error_t ibmPc_nop_success(void)
 	return ERROR_SUCCESS;
 }
 
+extern struct chipsetNumaMapS *ibmPc_mi_getNumaMap(void);
+
+static error_t ibmPc_initialize(void)
+{
+	firmwareFwStream.memInfoRiv->getNumaMap = &ibmPc_mi_getNumaMap;
+	return ERROR_SUCCESS;
+}
+
 struct firmwareStreamS		chipsetFwStream =
 {
 	// General control.
-	&ibmPc_nop_success,
+	&ibmPc_initialize,
 	&ibmPc_nop_success,
 	&ibmPc_nop_success,
 	&ibmPc_nop_success,

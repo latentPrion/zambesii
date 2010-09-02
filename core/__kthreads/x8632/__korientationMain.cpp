@@ -92,6 +92,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	};
 
 	__kprintf(NOTICE ORIENT"%d entries in all.\n", map->nEntries);
+
+	assert_fatal(firmwareTrib.getMemInfoRiv() != __KNULL);
+	(*firmwareTrib.getMemInfoRiv()->getNumaMap)();
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 
