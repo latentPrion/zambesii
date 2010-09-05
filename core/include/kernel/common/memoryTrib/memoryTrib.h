@@ -28,7 +28,7 @@ public:
 	error_t initialize2(void);
 	
 public:
-	void *rawMemAlloc(uarch_t nPages);
+	void *rawMemAlloc(uarch_t nPages, uarch_t flags);
 	void rawMemFree(void *vaddr, uarch_t nPages);
 
 	error_t pageTablePop(paddr_t *paddr);
