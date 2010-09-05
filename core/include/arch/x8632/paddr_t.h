@@ -37,7 +37,7 @@ inline void pu_sub(paddr_t p, uarch_t n)
 {
 	if (n > p.low)
 	{
-		n -= p.low;
+		n -= (p.low + 1);
 		p.low = 0xFFFFFFFF;
 		p.high -= 1;
 	};
@@ -100,7 +100,11 @@ inline void p_shr(paddr_t p, ubit8 n)
 #endif
 
 #else
-typedef uarch_t		paddr_t;
+// Enforce the use of the manipulators even for a 32 bit build.
+typedef struct
+{
+	ubit32		low;
+} paddr_t;
 
 #define pp_eq(p,q)		do { p = q; } while (0)
 #define pu_eq(p,u)		do { p = u; } while (0)
