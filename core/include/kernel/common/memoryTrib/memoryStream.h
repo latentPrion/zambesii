@@ -6,6 +6,7 @@
 	#include <kernel/common/stream.h>
 	#include <kernel/common/vSwamp.h>
 	#include <kernel/common/memoryTrib/vaddrSpaceStream.h>
+	#include <kernel/common/memoryTrib/allocFlags.h>
 
 /**	EXPLANATION:
  * The Memory Stream is responsible for the per-process monitoring of all

@@ -127,7 +127,6 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 
 		if (nFrames > 0)
 		{
-			totalFrames += nFrames;
 			nMapped = walkerPageRanger::mapInc(
 				&vaddrSpaceStream.vaddrSpace,
 				reinterpret_cast<void *>(
@@ -138,6 +137,8 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 				PAGEATTRIB_WRITE | PAGEATTRIB_PRESENT
 				| ((this->id == __KPROCESSID)
 					? PAGEATTRIB_SUPERVISOR : 0));
+
+			totalFrames += nFrames;
 
 			if (nMapped < nFrames)
 			{
@@ -199,6 +200,7 @@ releaseAndUnmap:
 		};
 
 		pos += PAGING_BASE_SIZE;
+		totalFrames--;
 	};
 
 	vaddrSpaceStream.releasePages(reinterpret_cast<void *>( ret ), nPages);

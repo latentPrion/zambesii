@@ -39,7 +39,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__korientationPreConstruct::bspInit();
 
 	cxxrtl::callGlobalConstructors();
-
 	DO_OR_DIE(timerTrib, initialize(), ret);
 	DO_OR_DIE(interruptTrib, initialize(), ret);
 
