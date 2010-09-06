@@ -6,12 +6,10 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/pageAttributes.h>
-#include <kernel/common/task.h>
 #include <kernel/common/processId.h>
-#include <kernel/common/numaConfig.h>
-#include <kernel/common/process.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryStream.h>
+#include <kernel/common/memoryTrib/allocFlags.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 
@@ -83,12 +81,20 @@ void *memoryStreamC::dummy_memAlloc(uarch_t, uarch_t)
 
 void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 {
-	uarch_t		commit, ret, f, pos;
+	uarch_t		commit=nPages, ret, f, pos;
 	status_t	totalFrames, nFrames, nMapped;
 	paddr_t		p;
 
 	if (nPages == 0) {
 		return __KNULL;
+	};
+
+	// Try alloc cache.
+	if (!__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)
+		&& (allocCache.pop(nPages, reinterpret_cast<void **>( &ret ))
+		== ERROR_SUCCESS))
+	{
+		return reinterpret_cast<void *>( ret );
 	};
 
 	// Calculate the number of frames to commit before fakemapping.
@@ -107,7 +113,8 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		return reinterpret_cast<void *>( ret );
 	};
 
-	for (totalFrames=0; totalFrames < commit; )
+
+	for (totalFrames=0; totalFrames < static_cast<sarch_t>( commit ); )
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		nFrames = numaTrib.configuredGetFrames(
@@ -158,7 +165,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 			| ((this->id == __KPROCESSID) ? PAGEATTRIB_SUPERVISOR
 				: 0));
 
-		if (nMapped < nPages - totalFrames)
+		if (nMapped < static_cast<sarch_t>( nPages ) - totalFrames)
 		{
 			__kprintf(WARNING MEMORYSTREAM"0x%X: WPR failed to "
 				"fakemap %d pages for alloc of %d pages.\n",
@@ -177,7 +184,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 
 	// If the alloc table add failed, then unwind and undo everything.
 
-releaseRealFrames:
+releaseAndUnmap:
 	// Release all of the pmem so far.
 	pos = ret;
 	while (totalFrames > 0)

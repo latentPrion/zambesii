@@ -26,8 +26,6 @@
  * process so that it is best catered for.
  **/
 
-#define MEMALLOC_NO_FAKEMAP			(1<<0)
-
 /**	EXPLANATION:
  * MEMORYSTREAM_COMMIT_MAX_NFRAMES is the memory allocation request size above
  * which we begin fake mapping.
