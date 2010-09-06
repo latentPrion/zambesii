@@ -267,7 +267,7 @@ __kpageBlockC<T> *__kequalizerListC<T>::getNewBlock(__kpageBlockC<T> *joinTo)
 {
 	__kpageBlockC<T>	*ret;
 
-	ret = new (rawMemAlloc(1)) __kpageBlockC<T>;
+	ret = new (rawMemAlloc(1, 0)) __kpageBlockC<T>;
 	if (ret == __KNULL) {
 		return __KNULL;
 	};

@@ -6,13 +6,10 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/pageAttributes.h>
-#include <kernel/common/task.h>
 #include <kernel/common/processId.h>
-#include <kernel/common/numaConfig.h>
-#include <kernel/common/process.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryStream.h>
-#include <kernel/common/memoryTrib/mmFlags.h>
+#include <kernel/common/memoryTrib/allocFlags.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 
@@ -84,147 +81,130 @@ void *memoryStreamC::dummy_memAlloc(uarch_t, uarch_t)
 
 void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 {
-	void		*ret;
-	uarch_t		pos, pmapFlags;
-	status_t	nFrames, totalFrames=0, nMapped;
-	paddr_t		paddr, status;
-	error_t		err;
+	uarch_t		commit=nPages, ret, f, pos;
+	status_t	totalFrames, nFrames, nMapped;
+	paddr_t		p;
 
 	if (nPages == 0) {
 		return __KNULL;
 	};
 
-	// Try to allocate from the cache.
-	if (allocCache.pop(nPages, &ret) == ERROR_SUCCESS)
+	// Try alloc cache.
+	if (!__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)
+		&& (allocCache.pop(nPages, reinterpret_cast<void **>( &ret ))
+		== ERROR_SUCCESS))
 	{
-		walkerPageRanger::setAttributes(
-			&vaddrSpaceStream.vaddrSpace,
-			ret, nPages, WPRANGER_OP_SET_PRESENT, 0);
-
-		return ret;
+		return reinterpret_cast<void *>( ret );
 	};
 
-	ret = (vaddrSpaceStream.*vaddrSpaceStream.getPages)(nPages);
+	// Calculate the number of frames to commit before fakemapping.
+	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)) {
+		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
+	};
+
+	ret = reinterpret_cast<uarch_t>(
+		(vaddrSpaceStream.*vaddrSpaceStream.getPages)(nPages) );
+
 	if (ret == __KNULL) {
 		return __KNULL;
 	};
 
-	pos = reinterpret_cast<uarch_t>( ret );
+	if (__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)) {
+		return reinterpret_cast<void *>( ret );
+	};
 
-	if (__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP))
+
+	for (totalFrames=0; totalFrames < static_cast<sarch_t>( commit ); )
 	{
-		/* You can put a counter here to track how many times we've been
-		 * round this loop. Maybe cut off after a certain number of
-		 * tries with nFrames returned as 0, and just unmap the vmem and
-		 * return NULL.
-		 **/
-		for (; totalFrames < static_cast<status_t>( nPages ); )
+#if __SCALING__ >= SCALING_CC_NUMA
+		nFrames = numaTrib.configuredGetFrames(
+			&cpuTrib.getCurrentCpuStream()->currentTask->numaConfig,
+			commit - totalFrames, &p);
+#else
+		nFrames = numaTrib.fragmentedGetFrames(
+			commit - totalFrames, &p);
+#endif
+
+		if (nFrames > 0)
 		{
-			nFrames = numaTrib.fragmentedGetFrames(nPages, &paddr);
-			if (nFrames > 0)
+			nMapped = walkerPageRanger::mapInc(
+				&vaddrSpaceStream.vaddrSpace,
+				reinterpret_cast<void *>(
+					ret + (totalFrames
+						<< PAGING_BASE_SHIFT) ),
+				p,
+				nFrames,
+				PAGEATTRIB_WRITE | PAGEATTRIB_PRESENT
+				| ((this->id == __KPROCESSID)
+					? PAGEATTRIB_SUPERVISOR : 0));
+
+			totalFrames += nFrames;
+
+			if (nMapped < nFrames)
 			{
-				nMapped = walkerPageRanger::mapInc(
-					&vaddrSpaceStream.vaddrSpace,
-					reinterpret_cast<void *>( pos ),
-					paddr, nFrames,
-					PAGEATTRIB_PRESENT
-					| PAGEATTRIB_WRITE
-					| ((id == __KPROCESSID)
-						? PAGEATTRIB_SUPERVISOR
-						: 0));
+				__kprintf(WARNING MEMORYSTREAM"0x%X: "
+					"WPR failed to map %d pages for alloc "
+					"of %d frames.\n",
+					this->id, nFrames, nPages);
 
-				if (nMapped < nFrames) {
-					/* FIXME: Pmem leak here. */
-					goto unmapVRangePartial;
-				};
-
-				totalFrames += nFrames;
-				pos += nFrames * PAGING_BASE_SIZE;
+				goto releaseAndUnmap;
 			};
 		};
-	}
-	else
+	};
+
+	// Now see how many frames we must fake map. 'totalFrames' holds this.
+	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP))
 	{
-		nFrames = numaTrib.fragmentedGetFrames(nPages, &paddr);
-		if (nFrames < 1) {
-			goto releaseVmem;
-		};
-
-		nMapped = walkerPageRanger::mapInc(
-			&vaddrSpaceStream.vaddrSpace,
-			reinterpret_cast<void *>( pos ),
-			paddr, nFrames,
-			PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
-			| ((id == __KPROCESSID) ? PAGEATTRIB_SUPERVISOR
-				: 0));
-
-		if (nMapped < nFrames)
-		{
-			numaTrib.releaseFrames(paddr, nFrames);
-			goto unmapVRangePartial;
-		};
-
-		pos += totalFrames * PAGING_BASE_SIZE;
-
-		// Fakemap from pos onwards.
 		nMapped = walkerPageRanger::mapNoInc(
 			&vaddrSpaceStream.vaddrSpace,
-			reinterpret_cast<void *>( pos ),
-			(PAGESTATUS_FAKEMAPPED_DYNAMIC
-				<< PAGING_PAGESTATUS_SHIFT),
-			nPages - nFrames,
+			reinterpret_cast<void *>(
+				ret + (totalFrames << PAGING_BASE_SHIFT) ),
+			PAGESTATUS_FAKEMAPPED_DYNAMIC
+				<< PAGING_PAGESTATUS_SHIFT,
+			nPages - totalFrames,
 			PAGEATTRIB_WRITE
-			| ((id == __KPROCESSID) ? PAGEATTRIB_SUPERVISOR : 0));
+			| ((this->id == __KPROCESSID) ? PAGEATTRIB_SUPERVISOR
+				: 0));
 
-		if (nMapped < (static_cast<status_t>( nPages ) - nFrames))
+		if (nMapped < static_cast<sarch_t>( nPages ) - totalFrames)
 		{
-			numaTrib.releaseFrames(paddr, nFrames);
-			totalFrames = nFrames;
-			goto unmapVRangePartial;
+			__kprintf(WARNING MEMORYSTREAM"0x%X: WPR failed to "
+				"fakemap %d pages for alloc of %d pages.\n",
+				this->id, nPages - totalFrames, nPages);
+
+			goto releaseAndUnmap;
 		};
 	};
 
-	// At this point, ret is backed by pmem and fake mapped possibly.
-	err = allocTable.addEntry(ret, nPages, 0);
-	if (err != ERROR_SUCCESS) {
-		goto unmapVRangeFull;
-	};
-
-	// Allocation successful.
-	return ret;
-
-unmapVRangePartial:
-	for (uarch_t nPageCount = totalFrames + nMapped;
-		nPageCount > 0;
-		nPageCount--)
+	// Now add to alloc table.
+	if (allocTable.addEntry(reinterpret_cast<void *>( ret ), nPages, 0)
+		== ERROR_SUCCESS)
 	{
-		status = walkerPageRanger::unmap(
-			&vaddrSpaceStream.vaddrSpace,
-			ret, &paddr, 1, &pmapFlags);
-
-		if (status == WPRANGER_STATUS_BACKED) {
-			numaTrib.releaseFrames(paddr, 1);
-		};
+		return reinterpret_cast<void *>( ret );
 	};
-	vaddrSpaceStream.releasePages(ret, nPages);
-	return __KNULL;
 
-unmapVRangeFull:
-	for (uarch_t nPageCount = nPages;
-		nPageCount > 0;
-		nPageCount--)
+	// If the alloc table add failed, then unwind and undo everything.
+
+releaseAndUnmap:
+	// Release all of the pmem so far.
+	pos = ret;
+	while (totalFrames > 0)
 	{
-		status = walkerPageRanger::unmap(
+		nMapped = walkerPageRanger::unmap(
 			&vaddrSpaceStream.vaddrSpace,
-			ret, &paddr, 1, &pmapFlags);
+			reinterpret_cast<void *>( pos ),
+			&p, 1, &f);
 
-		if (status == WPRANGER_STATUS_BACKED) {
-			numaTrib.releaseFrames(paddr, 1);
+		if (nMapped == WPRANGER_STATUS_BACKED) {
+			numaTrib.releaseFrames(p, 1);
 		};
+
+		pos += PAGING_BASE_SIZE;
+		totalFrames--;
 	};
 
-releaseVmem:
-	vaddrSpaceStream.releasePages(ret, nPages);
+	vaddrSpaceStream.releasePages(reinterpret_cast<void *>( ret ), nPages);
+
 	return __KNULL;
 }
 

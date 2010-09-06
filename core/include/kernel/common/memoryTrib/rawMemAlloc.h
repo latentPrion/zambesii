@@ -11,7 +11,7 @@
  * an #include circular chaotic hell.
  **/
 
-void *rawMemAlloc(uarch_t nPages);
+void *rawMemAlloc(uarch_t nPages, uarch_t flags);
 void rawMemFree(void *vaddr, uarch_t nPages);
 
 #endif

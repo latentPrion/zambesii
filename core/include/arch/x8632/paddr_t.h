@@ -8,7 +8,7 @@
 #ifdef CONFIG_ARCH_x86_32_PAE
 typedef ubit64		paddr_t;
 #else
-typedef uarch_t		paddr_t;
+typedef ubit32		paddr_t;
 #endif
 
 #endif /* ! defined (__ASM__) */

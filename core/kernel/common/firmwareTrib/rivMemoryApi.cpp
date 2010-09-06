@@ -74,9 +74,9 @@ void __kmemoryStream_memFree(void *vaddr)
 	memoryTrib.__kmemoryStream.memFree(vaddr);
 }
 
-void *memoryTrib_rawMemAlloc(uarch_t nPages)
+void *memoryTrib_rawMemAlloc(uarch_t nPages, uarch_t flags)
 {
-	return memoryTrib.rawMemAlloc(nPages);
+	return memoryTrib.rawMemAlloc(nPages, flags);
 }
 
 void memoryTrib_rawMemFree(void *vaddr, uarch_t nPages)

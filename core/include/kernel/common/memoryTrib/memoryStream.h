@@ -6,6 +6,7 @@
 	#include <kernel/common/stream.h>
 	#include <kernel/common/vSwamp.h>
 	#include <kernel/common/memoryTrib/vaddrSpaceStream.h>
+	#include <kernel/common/memoryTrib/allocFlags.h>
 
 /**	EXPLANATION:
  * The Memory Stream is responsible for the per-process monitoring of all
@@ -25,6 +26,36 @@
  * process, and thereby decide how best to schedule/allocate, etc for that
  * process so that it is best catered for.
  **/
+
+/**	EXPLANATION:
+ * MEMORYSTREAM_COMMIT_MAX_NFRAMES is the memory allocation request size above
+ * which we begin fake mapping.
+ *
+ * Zambezii will never give out more than MEMORYSTREAM_COMMIT_MAX_NFRAMES + some
+ * extra pages in one allocation unless MEMALLOC_NO_FAKEMAP is passed along
+ * with the allocation request.
+ *
+ * To be precise, the Memory Stream will, on seeing a request for more pages
+ * than the max frame commit size, calculate the number of frames over the max
+ * commit size to give out as a quarter of the number of pages over the max
+ * commit size.
+ *
+ * All other pages in the range beyond the "grace" extension (the quarter) are
+ * fakemapped to generate a translation fault when the app touches them.
+ *
+ * The reason for this is to ensure that huge amounts of physical memory aren't
+ * dispatched to a process all at once. When a process allocates a large amount
+ * of memory, it's unlikely it'll be using all at once, so we wait until the
+ * process touches the memory to commit physical memory to it.
+ **/
+#define MEMORYSTREAM_COMMIT_MAX_NFRAMES		256
+#define MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(np)		\
+	((np > MEMORYSTREAM_COMMIT_MAX_NFRAMES) \
+		? ((np - MEMORYSTREAM_COMMIT_MAX_NFRAMES) / 4) \
+			+ MEMORYSTREAM_COMMIT_MAX_NFRAMES \
+		: np)
+
+#define MEMORYSTREAM		"Memory Stream "
 
 class memoryTribC;
 

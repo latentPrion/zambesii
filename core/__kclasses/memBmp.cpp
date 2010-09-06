@@ -48,7 +48,7 @@ error_t memBmpC::initialize(void *preAllocated)
 	{
 		bmp.rsrc.bmp = new (
 			memoryTrib.rawMemAlloc(
-				PAGING_BYTES_TO_PAGES(bmpSize)))
+				PAGING_BYTES_TO_PAGES(bmpSize), 0))
 			uarch_t[nIndexes];
 
 		if (bmp.rsrc.bmp == __KNULL) {
