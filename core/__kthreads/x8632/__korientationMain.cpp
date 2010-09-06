@@ -48,8 +48,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		memoryTrib,
 		initialize(
 			reinterpret_cast<void *>( 0xC0000000 + 0x400000 ),
-			static_cast<paddr_t>( 0x3FB00000 ),
-			__KNULL),
+			0x3FB00000, __KNULL),
 		ret);
 
 	DO_OR_DIE(numaTrib, initialize(), ret);
