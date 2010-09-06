@@ -47,7 +47,7 @@ void *__kmemoryStream_memAlloc(uarch_t nPages, uarch_t opts);
 void __kmemoryStream_memFree(void *vaddr);
 
 // Memory Tributary interface. Use sparingly. Prefer the __kmemoryStream* API.
-void *memoryTrib_rawMemAlloc(uarch_t nPages);
+void *memoryTrib_rawMemAlloc(uarch_t nPages, uarch_t flags);
 void memoryTrib_rawMemFree(void *vaddr, uarch_t nPages);
 
 // Walker Page Ranger interface. The kernel vaddrSpace object is implied.

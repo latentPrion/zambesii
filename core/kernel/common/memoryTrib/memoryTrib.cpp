@@ -66,7 +66,7 @@ error_t memoryTribC::initialize2(void)
 		currBase = currEntry->baseAddr;
 		currSize = currEntry->size;
 
-		bmpMem = rawMemAlloc(1);
+		bmpMem = rawMemAlloc(1, 0);
 		if (bmpMem == __KNULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
@@ -93,7 +93,7 @@ error_t memoryTribC::initialize2(void)
 }
 
 // TODO: This function can be greatly optimized. KAGS, you are needed.
-void *memoryTribC::rawMemAlloc(uarch_t nPages)
+void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 {
 	void		*ret;
 	paddr_t		paddr;
