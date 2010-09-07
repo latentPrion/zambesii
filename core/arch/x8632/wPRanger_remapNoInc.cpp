@@ -41,15 +41,11 @@ void walkerPageRanger::remapNoInc(
 	cpuTrib.getCurrentCpuStream()->currentTask->parent->memoryStream
 		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.acquire();
 
-__kprintf(NOTICE"WPRr: l0s %d l0e %d l1s %d l1e %d v %X np %X op %d __kf %X.\n",
-	l0Start, l0End, l1Start, l1End, vaddr, nPages, op, __kflags);
-
 	l0Current = l0Start;
 	for (; l0Current <= l0End; l0Current++)
 	{
 		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
 		*level1Modifier = l0Entry;
-__kprintf(NOTICE"WPRr: l1Mod %X.\n", *level1Modifier);
 		tlbControl::flushSingleEntry((void *)level1Accessor);
 
 		l1Current = ((l0Current == l0Start) ? l1Start : 0);
