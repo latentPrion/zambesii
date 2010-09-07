@@ -67,13 +67,13 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		"DEVICE1.\n");
 
 	DO_OR_DIE(memReservoir, initialize(), ret);
-
 	// Initialize both firmware streams.
 	ret = (*chipsetFwStream.initialize)();
 	assert_fatal(ret == ERROR_SUCCESS);
 
 	ret = (*firmwareFwStream.initialize)();
 	assert_fatal(ret == ERROR_SUCCESS);
+for (;;){};
 
 	(*firmwareTrib.getMemInfoRiv()->getMemoryConfig)();
 	map = (*firmwareTrib.getMemInfoRiv()->getMemoryMap)();
