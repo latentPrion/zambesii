@@ -17,7 +17,7 @@ class hardwareIdListC
 {
 public:
 	hardwareIdListC(void);
-
+	void __kspaceSetState(void *arrayMem);
 public:
 	// Retrieves an item's pointer by its hardware ID.
 	T *getItem(sarch_t id);
@@ -57,6 +57,13 @@ hardwareIdListC<T>::hardwareIdListC(void)
 	arr.rsrc.firstValidIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.arr = __KNULL;
 }
+
+template <class T>
+void hardwareIdListC<T>::__kspaceSetState(void *arrayMem)
+{
+	arr.rsrc.arr = static_cast<arrayNodeS *>( arrayMem );
+	arr.rsrc.maxIndex = 0;
+}	
 
 template <class T>
 T *hardwareIdListC<T>::getItem(sarch_t id)
@@ -119,7 +126,7 @@ template <class T>
 error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 {
 	uarch_t		rwFlags;
-	sarch_t		maxIndex, itemNextIndex;
+	sarch_t		maxIndex, itemNextIndex=HWIDLIST_INDEX_INVALID;
 	arrayNodeS	*tmp, *old;
 
 	if (item == __KNULL) {
@@ -131,7 +138,7 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 	maxIndex = arr.rsrc.maxIndex;
 	arr.lock.readRelease(rwFlags);
 
-	if (maxIndex < id || maxIndex == HWIDLIST_INDEX_INVALID)
+	if (id > maxIndex || maxIndex == HWIDLIST_INDEX_INVALID)
 	{
 		/* Allocate new array, copy old one, free old one.
 		 * Make sure to update arr.rsrc.maxIndex.
@@ -181,6 +188,9 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 	arr.rsrc.arr[id].next = itemNextIndex;
 	// Extra measure to ensure coherency across calls to the loop logic.
 	__KFLAG_SET(arr.rsrc.arr[id].flags, HWIDLIST_FLAGS_INDEX_VALID);
+	if (arr.rsrc.firstValidIndex == HWIDLIST_INDEX_INVALID) {
+		arr.rsrc.firstValidIndex = id;
+	};
 
 	arr.lock.writeRelease();
 	return ERROR_SUCCESS;

@@ -32,7 +32,7 @@
 
 // Always initialize the __kspace stream as a fake bank 0.
 static numaStreamC	__kspaceNumaStream(0);
-static numaStreamC	*__kspaceStreamPtr;
+static ubit8		__kspaceStreamPtr[64];
 // Space for the numaMemoryBank's array.
 static numaMemoryRangeC	*__kspaceMemoryRangePtr;
 static numaMemoryRangeC	__kspaceMemoryRange(
@@ -53,11 +53,11 @@ error_t numaTribC::initialize(void)
 {
 	error_t		ret;
 
-	numaStreams.rsrc.arr = &__kspaceStreamPtr;
-	numaStreams.rsrc.arr[0] = &__kspaceNumaStream;
-	numaStreams.rsrc.nStreams = 1;
+	numaStreams.__kspaceSetState(static_cast<void *>( &__kspaceStreamPtr ));
+	numaStreams.addItem(0, &__kspaceNumaStream);
+	nStreams = 1;
 
-	ret = numaStreams.rsrc.arr[0]->memoryBank.__kspaceAddMemoryRange(
+	ret = getStream(0)->memoryBank.__kspaceAddMemoryRange(
 		&__kspaceMemoryRangePtr,
 		&__kspaceMemoryRange,
 		__kspaceInitMem);
