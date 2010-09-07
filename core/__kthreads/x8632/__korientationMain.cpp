@@ -73,7 +73,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	ret = (*firmwareFwStream.initialize)();
 	assert_fatal(ret == ERROR_SUCCESS);
-for (;;){};
 
 	(*firmwareTrib.getMemInfoRiv()->getMemoryConfig)();
 	map = (*firmwareTrib.getMemInfoRiv()->getMemoryMap)();
@@ -88,6 +87,7 @@ for (;;){};
 			0, map->entries[i].baseAddr, 0, map->entries[i].size,
 			map->entries[i].memType);
 	};
+for (;;){};
 
 	__kprintf(NOTICE ORIENT"%d entries in all.\n", map->nEntries);
 
