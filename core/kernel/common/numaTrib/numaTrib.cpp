@@ -47,6 +47,8 @@ numaTribC::numaTribC(void)
 #endif
 	numaStreams.rsrc.arr = __KNULL;
 	numaStreams.rsrc.nStreams = 0;
+
+	sharedBank = NUMATRIB_SHBANK_INVALID;
 }
 
 error_t numaTribC::initialize(void)
@@ -139,14 +141,15 @@ error_t numaTribC::initialize2(void)
 
 void numaTribC::dump(void)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags, nStreams;
 
 	numaStreams.lock.readAcquire(&rwFlags);
+	nStreams = numaStreams.rsrc.nStreams;
+	numaStreams.lock.readRelease(rwFlags);
 
-	__kprintf(NOTICE NUMATRIB"Dumping. nStreams %d.\n",
-		numaStreams.rsrc.nStreams);
+	__kprintf(NOTICE NUMATRIB"Dumping. nStreams %d.\n", nStreams);
 
-	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++) {
+	for (uarch_t i=0; i<nStreams; i++) {
 		getStream(i)->memoryBank.dump();
 	}
 }
@@ -193,6 +196,7 @@ numaStreamC *numaTribC::getStream(numaBankId_t bankId)
 void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 {
 	numaStreamC	*currStream;
+	uarch_t		nStreams, rwFlags;
 
 	/**	EXPLANATION:
 	 * Here we have the result of a trade-off. For a reduction in the size
@@ -202,8 +206,12 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	 * The kernel now has to decipher which bank a range of pmem belongs to
 	 * before it can be freed.
 	 **/
+	numaStreams.lock.readAcquire(&rwFlags); 
+	nStreams = numaStreams.rsrc.nStreams;
+	numaStreams.lock.readRelease(rwFlags);
+
 #if __SCALING__ >= SCALING_CC_NUMA
-	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
+	for (uarch_t i=0; i<nStreams; i++)
 	{
 		currStream = getStream(i);
 
@@ -232,7 +240,7 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 error_t numaTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 {
 	numaBankId_t		def;
-	uarch_t			rwFlags;
+	uarch_t			rwFlags, nStreams;
 	numaStreamC		*currStream;
 	error_t			ret;
 
@@ -264,7 +272,11 @@ error_t numaTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 	 * have to now determine which bank would have memory, and set that to
 	 * be the new default bank for raw contiguous allocations.
 	 **/
-	for (ubit32 i=0; i<numaStreams.rsrc.nStreams; i++)
+	numaStreams.lock.readAcquire(&rwFlags);
+	nStreams = numaStreams.rsrc.nStreams;
+	numaStreams.lock.readRelease(rwFlags);
+
+	for (ubit32 i=0; i<nStreams; i++)
 	{
 		currStream = getStream(i);
 		if (currStream != __KNULL)
@@ -295,7 +307,7 @@ error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 {
 	error_t			ret=0;
 	numaBankId_t		def;
-	uarch_t			rwFlags;
+	uarch_t			rwFlags, nStreams;
 	numaStreamC		*currStream;
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -324,7 +336,11 @@ error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	/* If we're still here then we failed at allocating from the default
 	 * bank. Search each other bank, and get frames from one of them.
 	 **/
-	for (ubit32 i=0; i<numaStreams.rsrc.nStreams; i++)
+	numaStreams.lock.readAcquire(&rwFlags);
+	nStreams = numaStreams.rsrc.nStreams;
+	numaStreams.lock.readRelease(rwFlags);
+
+	for (ubit32 i=0; i<nStreams; i++)
 	{
 		currStream = getStream(i);
 		if (currStream != __KNULL)
@@ -354,7 +370,7 @@ error_t numaTribC::configuredGetFrames(
 	numaConfigS *config, uarch_t nPages, paddr_t *paddr
 	)
 {
-	uarch_t			rwFlags;
+	uarch_t			rwFlags, nStreams;
 	numaBankId_t		def;
 	numaStreamC		*currStream;
 	error_t			ret;
@@ -378,7 +394,11 @@ error_t numaTribC::configuredGetFrames(
 	};
 
 	// Allocation from the default bank failed. Find a another default bank.
-	for (ubit32 i=0; i<numaStreams.rsrc.nStreams; i++)
+	numaStreams.lock.readAcquire(&rwFlags);
+	nStreams = numaStreams.rsrc.nStreams;
+	numaStreams.lock.readRelease(rwFlags);
+
+	for (ubit32 i=0; i<nStreams; i++)
 	{
 		// If this bank is part of the thread's NUMA policy:
 		if (config->memBanks.testSingle(i))
@@ -411,14 +431,16 @@ error_t numaTribC::configuredGetFrames(
 
 void numaTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags, nStreams;
 	numaStreamC	*currStream;
+
+	numaStreams.lock.readAcquire(&rwFlags);
+	nStreams = numaStreams.rsrc.nStreams;
+	numaStreams.lock.readRelease(rwFlags);
 
 	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
-		numaStreams.lock.readAcquire(&rwFlags);
-		currStream = numaStreams.rsrc.arr[i];
-		numaStreams.lock.readRelease(rwFlags);
+		currStream = getStream(i);
 
 		/* We can most likely afford this small speed bump since ranges
 		 * of physical RAM are not often mapped or unmapped as used at
@@ -431,15 +453,16 @@ void numaTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 
 void numaTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags, nStreams;
 	numaStreamC	*currStream;
+
+	numaStreams.lock.readAcquire(&rwFlags);
+	nStreams = numaStreams.rsrc.nStreams;
+	numaStreams.lock.readRelease(rwFlags);
 
 	for (uarch_t i=0; i<numaStreams.rsrc.nStreams; i++)
 	{
-		numaStreams.lock.readAcquire(&rwFlags);
-		currStream = numaStreams.rsrc.arr[i];
-		numaStreams.lock.readRelease(rwFlags);
-
+		currStream = getStream(i);
 		currStream->memoryBank.mapMemUnused(baseAddr, nPages);
 	};
 }

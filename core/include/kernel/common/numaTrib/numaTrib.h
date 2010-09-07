@@ -35,6 +35,8 @@
  * to their device.
  **/
 
+#define NUMATRIB_SHBANK_INVALID		(-1)
+
 class numaTribC
 :
 public tributaryC
@@ -76,14 +78,28 @@ public:
 	void mapRangeUnused(paddr_t baseAddr, uarch_t nPages);
 
 private:
-	/* This config is the default used for any call to
-	 * indiscriminateGetFrames(). It is also copied to any new process being
+#if __SCALING__ >= SCALING_CC_NUMA
+	/* 'defaultConfig' is the default used for any call to
+	 * fragmentedGetFrames(). It is also copied to any new process being
 	 * spawned. Note that I used 'process' and not 'thread'. When a process
 	 * has a thread 0, then any other threads it spawns will derive their
 	 * configuration from thread 0 of that process.
+	 *
+	 * 'sharedBank' is the bank ID of a bank which is used to hold all CPUs
+	 * which were not explicitly listed as belonging to a certain bank, and
+	 * all memory ranges which were not listed to be on any bank.
+	 *
+	 * This is done in case a NUMA map has holes, such as a hole where a
+	 * particular memory region is left out of the NUMA map, and there is
+	 * no place that it has been listed into, or where a CPU is not listed
+	 * as a member of a bank.
+	 *
+	 * On a NUMA build where no NUMA map is found, the kernel will create
+	 * one NUMA Stream, and list that stream's ID as that of the
+	 * "sharedBank".
 	 **/
-#if __SCALING__ >= SCALING_CC_NUMA
 	numaConfigS		defaultConfig;
+	numaBankId_t		sharedBank;
 #endif
 
 	struct numaStreamStateS
