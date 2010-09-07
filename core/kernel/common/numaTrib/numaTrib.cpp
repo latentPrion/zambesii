@@ -134,9 +134,10 @@ error_t numaTribC::initialize(void)
 error_t numaTribC::initialize2(void)
 {
 	error_t			ret;
-	chipsetMemConfigS	*memConfig;
+//	chipsetMemConfigS	*memConfig;
 	chipsetMemMapS		*memMap;
-	chipsetNumaMapS		*numaMap;
+//	chipsetNumaMapS		*numaMap;
+	memInfoRivS		*memInfoRiv;
 
 	/** EXPLANATION:
 	 * In order to prepare the NUMA Tributary to receive all of the new
@@ -166,6 +167,29 @@ error_t numaTribC::initialize2(void)
 
 	__kprintf(NOTICE NUMATRIB"Initialized Firmware and Chipset firmware "
 		"streams.\n");
+
+	// For now, just do something like, create one big bank for all mem.
+	memInfoRiv = firmwareTrib.getMemInfoRiv();
+	assert_fatal(memInfoRiv != __KNULL);
+
+	ret = (*memInfoRiv->initialize)();
+	assert_fatal(ret == ERROR_SUCCESS);
+
+	// Now get the memory map.
+	memMap = (*memInfoRiv->getMemoryMap)();
+	assert_fatal(memMap != __KNULL);
+
+	for (uarch_t i=0; i<memMap->nEntries; i++)
+	{
+		__kprintf(NOTICE NUMATRIB"Map %d: Base 0x%X, length 0x%X, "
+			"type %d.\n",
+			i,
+			memMap->entries[i].baseAddr,
+			memMap->entries[i].size,
+			memMap->entries[i].memType);
+	};
+
+	// Just generate one. But err...yea design all that in, yea?
 
 	return ERROR_SUCCESS;
 }
