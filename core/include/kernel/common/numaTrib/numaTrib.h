@@ -103,6 +103,7 @@ private:
 	numaBankId_t		sharedBank;
 #endif
 
+	uarch_t			nStreams;
 	hardwareIdListC<numaStreamC>	numaStreams;
 };
 
@@ -119,7 +120,11 @@ inline numaStreamC *numaTribC::getStream(numaBankId_t)
 	 **/
 	return numaStreams.getItem(0);
 }
+#else
+inline numaStreamC *numaTribC::getStream(numaBankId_t id)
+{
+	return numaStreams.getItem(id);
+}
 #endif
 
 #endif
-

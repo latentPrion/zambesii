@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-typedef sbit16		cpu_t;
+typedef sarch_t		cpu_t;
 
 #endif
 

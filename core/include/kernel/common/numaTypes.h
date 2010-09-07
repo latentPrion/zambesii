@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-typedef sbit16		numaBankId_t;
+typedef sarch_t		numaBankId_t;
 
 #endif
 

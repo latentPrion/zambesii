@@ -22,7 +22,7 @@ public:
 	// Retrieves an item's pointer by its hardware ID.
 	T *getItem(sarch_t id);
 
-	error_t addItem(sarch_t id, T *id);
+	error_t addItem(sarch_t id, T *item);
 	void removeItem(sarch_t id);
 
 	/* Allows a caller to loop through the array without knowing about
@@ -102,7 +102,7 @@ T *hardwareIdListC<T>::getLoopItem(sarch_t *context)
 	// 'context' is an index into the array.
 	arr.lock.readAcquire(&rwFlags);
 
-	if (!__KFLAG_TEST(arr.rsrc.arr[*context], HWIDLIST_FLAGS_INDEX_VALID)
+	if (!__KFLAG_TEST(arr.rsrc.arr[*context].flags, HWIDLIST_FLAGS_INDEX_VALID))
 	{
 		arr.lock.readRelease(rwFlags);
 		return __KNULL;
