@@ -3,6 +3,7 @@
 
 	#include <scaling.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/tributary.h>
@@ -102,12 +103,7 @@ private:
 	numaBankId_t		sharedBank;
 #endif
 
-	struct numaStreamStateS
-	{
-		numaStreamC	**arr;
-		ubit32		nStreams;
-	};
-	sharedResourceGroupC<multipleReaderLockC, numaStreamStateS> numaStreams;
+	hardwareIdListC<numaStreamC>	numaStreams;
 };
 
 extern numaTribC		numaTrib;
@@ -121,7 +117,7 @@ inline numaStreamC *numaTribC::getStream(numaBankId_t)
 	/* In a non-NUMA build we always spawn a single stream. All calls to
 	 * numaTribC::getStream(bankId) will return the default stream.
 	 **/
-	return numaStreams.rsrc.array[0];
+	return numaStreams.getItem(0);
 }
 #endif
 
