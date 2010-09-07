@@ -29,7 +29,7 @@ public:
 	 * the layout of the members.
 	 **/
 	sarch_t prepareForLoop(void);
-	T *getNextItem(sarch_t *id);
+	T *getLoopItem(sarch_t *id);
 
 private:
 	struct arrayNodeS
@@ -56,6 +56,63 @@ hardwareIdListC<T>::hardwareIdListC(void)
 	arr.rsrc.maxIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.firstValidIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.arr = __KNULL;
+}
+
+template <class T>
+T *hardwareIdListC<T>::getItem(sarch_t id)
+{
+	uarch_t		rwFlags;
+	T		*ret=__KNULL;
+
+	arr.lock.readAcquire(&rwFlags);
+
+	if (id > arr.rsrc.maxIndex)
+	{
+		arr.lock.readRelease(rwFlags);
+		return __KNULL;
+	};
+
+	if (__KFLAG_TEST(arr.rsrc.arr[id].flags, HWIDLIST_FLAGS_INDEX_VALID)) {
+		ret = arr.rsrc.arr[id].item;
+	};
+
+	arr.lock.readRelease(rwFlags);
+	return ret;
+}
+
+template <class T>
+sarch_t hardwareIdListC<T>::prepareForLoop(void)
+{
+	uarch_t		rwFlags;
+	sarch_t		ret;
+
+	arr.lock.readAcquire(&rwFlags);
+	ret = arr.rsrc.firstValidIndex;
+	arr.lock.readRelease(rwFlags);
+
+	return ret;
+}
+
+template <class T>
+T *hardwareIdListC<T>::getLoopItem(sarch_t *context)
+{
+	uarch_t		rwFlags;
+	T		*ret;
+
+	// 'context' is an index into the array.
+	arr.lock.readAcquire(&rwFlags);
+
+	if (!__KFLAG_TEST(arr.rsrc.arr[*context], HWIDLIST_FLAGS_INDEX_VALID)
+	{
+		arr.lock.readRelease(rwFlags);
+		return __KNULL;
+	};
+
+	ret = arr.rsrc.arr[*context].item;
+	*context = arr.rsrc.arr[*context].next;
+
+	arr.lock.readRelease(rwFlags);
+	return ret;
 }
 
 template <class T>
@@ -129,7 +186,8 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 	return ERROR_SUCCESS;
 }
 
-void hardwareIdListC::removeItem(sarch_t id)
+template <class T>
+void hardwareIdListC<T>::removeItem(sarch_t id)
 {
 	uarch_t		rwFlags;
 	sarch_t		maxIndex;
