@@ -3,6 +3,8 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
+	#include <__kstdlib/__kclib/string.h>
+	#include <__kstdlib/__kcxxlib/new>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 
@@ -51,7 +53,7 @@ private:
 template <class T>
 hardwareIdListC<T>::hardwareIdListC(void)
 {
-	arr.rsrc.maxIndex = 0;
+	arr.rsrc.maxIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.firstValidIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.arr = __KNULL;
 }
@@ -61,6 +63,7 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 {
 	uarch_t		rwFlags;
 	sarch_t		maxIndex, itemNextIndex;
+	arrayNodeS	*tmp, *old;
 
 	if (item == __KNULL) {
 		return ERROR_INVALID_ARG_VAL;
@@ -71,12 +74,31 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 	maxIndex = arr.rsrc.maxIndex;
 	arr.lock.readRelease(rwFlags);
 
-	if (maxIndex < id)
+	if (maxIndex < id || maxIndex == HWIDLIST_INDEX_INVALID)
 	{
 		/* Allocate new array, copy old one, free old one.
 		 * Make sure to update arr.rsrc.maxIndex.
 		 **/
-		
+		tmp = new arrayNodeS[id+1];
+		if (tmp == __KNULL) {
+			return ERROR_MEMORY_NOMEM;
+		};
+
+		arr.lock.readAcquire(&rwFlags);
+		memcpy(tmp, arr.rsrc.arr,
+			sizeof(arrayNodeS)
+				* ((maxIndex == HWIDLIST_INDEX_INVALID)
+					? 1
+					: maxIndex + 1));
+
+		arr.lock.readReleaseWriteAcquire(rwFlags);
+
+		old = arr.rsrc.arr;
+		arr.rsrc.arr = tmp;
+		arr.rsrc.maxIndex = id;
+
+		arr.lock.writeRelease();
+		delete old;
 	};
 
 	// At this point there is enough space to hold the new item.
