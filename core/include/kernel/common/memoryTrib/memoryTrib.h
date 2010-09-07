@@ -4,7 +4,6 @@
 	#include <scaling.h>
 	#include <arch/paddr_t.h>
 	#include <arch/paging.h>
-	#include <chipset/__kmemory.h>
 	#include <chipset/regionMap.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/memBmp.h>

@@ -8,8 +8,10 @@
 #define CHIPSET_MEMORY___KSPACE_BASE				0x400000
 #define CHIPSET_MEMORY___KSPACE_SIZE				(0x100000 * 3)
 
+#ifndef __ASM__
 // The array of reserved memory for __kspace.
 extern uarch_t	__kspaceInitMem[];
+#endif
 
 // Absolute load address of the kernel in physical memory.
 #define CHIPSET_MEMORY___KLOAD_PADDR_BASE		(0x100000)
@@ -25,7 +27,7 @@ extern uarch_t	__kspaceInitMem[];
 
 #if __SCALING__ >= SCALING_CC_NUMA
 #define CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
-#define CHIPSET_MEMORY_NUMA_SHBANK_ID			31
+#define CHIPSET_MEMORY_NUMA_SHBANKID			31
 #endif
 
 #endif

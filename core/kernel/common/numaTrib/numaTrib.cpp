@@ -2,7 +2,6 @@
 #include <scaling.h>
 #include <arch/paging.h>
 #include <chipset/memory.h>
-#include <chipset/__kmemory.h>
 #include <chipset/numaMap.h>
 #include <chipset/memoryMap.h>
 #include <chipset/memoryConfig.h>
