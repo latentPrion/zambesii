@@ -1,6 +1,7 @@
 
 #include <scaling.h>
 #include <arch/paging.h>
+#include <chipset/memory.h>
 #include <chipset/__kmemory.h>
 #include <chipset/numaMap.h>
 #include <chipset/memoryMap.h>
@@ -16,19 +17,32 @@
 
 /**	EXPLANATION:
  * To initialize the NUMA Tributary, the steps are:
- *	1. Pre-allocate room for a single pointer to point to the __kspace
- *	   fake stream at boot and point the array of NUMA stream pointers to
- *	   point to that pointer.
- *	2. Pre-allocate an actual instance of numaStreamC for the __kspace
- *	   NUMA stream and have it constructed with the chipset's __kspace
- *	   mem range.
- *	3. Make the pre-allocated pointer in (1) point to the pre-allocated
- *	   stream in (2).
- *	4. Call initialize() on the pre-allocated stream from (2), with the
- *	   pre-allocated memory for __kspace passed to it as an argument.
- *	5. Set numaStreams.rsrc.nStreams to 1.
- *	6. Done. We now have a fake NUMA bank at index 0 which allocates from
- *	   a guaranteed usable area of physical memory for bootup.
+ *	1. Pre-allocate an instance of NUMA StreamC. This stream must be
+ *	   given the ID configured for CHIPSET_MEMORY_NUMA___KSPACE_BANKID.
+ *	2. Pre-allocate an array of bytes with enough space to hold an array
+ *	   of elements of size:
+ *	   	sizeof(hardwareIdListC::arrayNodeS) * ({__kspace bankid} + 1).
+ *
+ *	3. Initialize a numaMemoryRangeC instance, and set it such that its
+ *	   base physical address and size are those configured for
+ *	   CHIPSET_MEMORY___KSPACE_BASE and CHIPSET_MEMORY___KSPACE_SIZE.
+ *	4. Pre-allocate enough memory for the numaMemoryBankC object to use as
+ *	   the single array index to point to the __kspace memory range.
+ *	5. In numaTribC::initialize():
+ *		a. Call numaStreams.__kspaceSetState() with the address of the
+ *		   memory pre-allocated to hold the array with enough space to
+ *		   hold the index for __kspace (from (2) above).
+ *		b. Call numaStreams.addItem() with the configured bank ID of
+ *		   __kspace, and the address of the __kspace NUMA stream.
+ *		c. Now call getStream() with the __kspace bank Id, and call
+ *		   __kspaceAddMemoryRange() on the handle with the address
+ *		   of the __kspace memoryRange object, its array pointer index,
+ *		   and the __kspaceInitMem which the chipset has reserved for
+ *		   it.
+ *
+ * CAVEATS:
+ * ^ __kspace must have its own bank which is guaranteed NOT to clash with any
+ *   other bank ID during numaTribC::initialize2().
  **/
 
 #define NUMATRIB		"Numa Tributary: "
@@ -252,35 +266,34 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	__kprintf(WARNING NUMATRIB"releaseFrames(0x%X, %d): pmem leak.\n",
 		paddr, nFrames);
 #else
-	getStream(0)->memoryBank.releaseFrames(paddr, nFrames);
+	getStream(defaultConfig.def.rsrc)
+		->memoryBank.releaseFrames(paddr, nFrames);
 #endif
 
 }
 
 error_t numaTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 {
-	numaBankId_t		def;
 #if __SCALING__ >= SCALING_CC_NUMA
+	numaBankId_t		def;
 	numaBankId_t		cur;
-#endif
-	numaStreamC		*currStream;
 	uarch_t			rwFlags;
+#endif
 	error_t			ret;
+	numaStreamC		*currStream;
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Get the default bank's Id.
 	defaultConfig.def.lock.readAcquire(&rwFlags);
-
 	def = defaultConfig.def.rsrc;
-
 	defaultConfig.def.lock.readRelease(rwFlags);
+
+	currStream = getStream(def);	
 #else
-	// For a non-NUMA build, the kernel just fakes a bank with id=0.
-	def = 0;
+	// Allocate from default bank, which is the sharedBank for non-NUMA.
+	currStream = getStream(defaultConfig.def.rsrc);
 #endif
 
-	// Allocate from the default bank.
-	currStream = getStream(def);
 	// FIXME: Decide what to do here for an non-NUMA build.
 	if (currStream != __KNULL)
 	{
@@ -324,26 +337,25 @@ error_t numaTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 
 error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 {
-	error_t			ret=0;
-	numaBankId_t		def;
 #if __SCALING__ >= SCALING_CC_NUMA
+	numaBankId_t		def;
 	numaBankId_t		cur;
+	uarch_t			rwFlags;
 #endif
 	numaStreamC		*currStream;
-	uarch_t			rwFlags;
+	error_t			ret=0;
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	defaultConfig.def.lock.readAcquire(&rwFlags);
-
 	def = defaultConfig.def.rsrc;
-
 	defaultConfig.def.lock.readRelease(rwFlags);
+
+	currStream = getStream(def);
 #else
-	def = 0;
+	//Now allocate from the default bank.
+	currStream = getStream(defaultConfig.def.rsrc);
 #endif
 
-	//Now allocate from the default bank.
-	currStream = getStream(def);
 	if (currStream != __KNULL)
 	{
 		ret = currStream->memoryBank.fragmentedGetFrames(nPages, paddr);
@@ -465,7 +477,8 @@ void numaTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 		currStream->memoryBank.mapMemUsed(baseAddr, nPages);
 	};
 #else
-	getStream(0)->memoryBank.mapMemUsed(baseAddr, nPages);
+	getStream(defaultConfig.def.rsrc)
+		->memoryBank.mapMemUsed(baseAddr, nPages);
 #endif
 }
 
@@ -492,7 +505,8 @@ void numaTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 		currStream->memoryBank.mapMemUnused(baseAddr, nPages);
 	};
 #else
-	getStream(0)->memoryBank.mapMemUnused(baseAddr, nPages);
+	getStream(defaultConfig.def.rsrc)
+		->memoryBank.mapMemUnused(baseAddr, nPages);
 #endif
 }
 

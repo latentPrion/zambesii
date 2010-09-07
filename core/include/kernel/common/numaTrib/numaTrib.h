@@ -2,6 +2,7 @@
 	#define _NUMA_TRIB_H
 
 	#include <scaling.h>
+	#include <chipset/memory.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/multipleReaderLock.h>
@@ -79,7 +80,6 @@ public:
 	void mapRangeUnused(paddr_t baseAddr, uarch_t nPages);
 
 private:
-#if __SCALING__ >= SCALING_CC_NUMA
 	/* 'defaultConfig' is the default used for any call to
 	 * fragmentedGetFrames(). It is also copied to any new process being
 	 * spawned. Note that I used 'process' and not 'thread'. When a process
@@ -100,6 +100,8 @@ private:
 	 * "sharedBank".
 	 **/
 	numaConfigS		defaultConfig;
+#if __SCALING__ >= SCALING_CC_NUMA \
+	&& defined(CHIPSET_MEMORY_NUMA_GENERATE_SHBANK)
 	numaBankId_t		sharedBank;
 #endif
 
@@ -117,8 +119,10 @@ inline numaStreamC *numaTribC::getStream(numaBankId_t)
 {
 	/* In a non-NUMA build we always spawn a single stream. All calls to
 	 * numaTribC::getStream(bankId) will return the default stream.
+	 * There is no locking on accesses to defaultConfig.rsrc.def since this
+	 * should never change on a non-NUMa build.
 	 **/
-	return numaStreams.getItem(0);
+	return numaStreams.getItem(defaultConfig.def.rsrc);
 }
 #else
 inline numaStreamC *numaTribC::getStream(numaBankId_t id)
