@@ -47,8 +47,9 @@
 
 #define NUMATRIB		"Numa Tributary: "
 
-// Always initialize the __kspace stream as a fake bank 0.
-static numaStreamC	__kspaceNumaStream(0);
+// Initialize the __kspace NUMA Stream to its configured Stream ID.
+static numaStreamC	__kspaceNumaStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
+// FIXME: This should be defined by the chipset code.
 static ubit8		__kspaceStreamPtr[64];
 // Space for the numaMemoryBank's array.
 static numaMemoryRangeC	*__kspaceMemoryRangePtr;
@@ -59,11 +60,11 @@ static numaMemoryRangeC	__kspaceMemoryRange(
 
 numaTribC::numaTribC(void)
 {
-#if __SCALING__ >= SCALING_CC_NUMA
-	defaultConfig.def.rsrc = 0;
-#endif
+	defaultConfig.def.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 	nStreams = 0;
+#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 	sharedBank = NUMATRIB_SHBANK_INVALID;
+#endif
 }
 
 error_t numaTribC::initialize(void)
@@ -71,13 +72,16 @@ error_t numaTribC::initialize(void)
 	error_t		ret;
 
 	numaStreams.__kspaceSetState(static_cast<void *>( &__kspaceStreamPtr ));
-	numaStreams.addItem(0, &__kspaceNumaStream);
+	numaStreams.addItem(
+		CHIPSET_MEMORY_NUMA___KSPACE_BANKID, &__kspaceNumaStream);
+
 	nStreams = 1;
 
-	ret = getStream(0)->memoryBank.__kspaceAddMemoryRange(
-		&__kspaceMemoryRangePtr,
-		&__kspaceMemoryRange,
-		__kspaceInitMem);
+	ret = getStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID)
+		->memoryBank.__kspaceAddMemoryRange(
+			&__kspaceMemoryRangePtr,
+			&__kspaceMemoryRange,
+			__kspaceInitMem);
 
 	return ret;
 }
@@ -153,24 +157,30 @@ error_t numaTribC::initialize2(void)
 //	chipsetNumaMapS		*numaMap;
 	memInfoRivS		*memInfoRiv;
 
-	/** EXPLANATION:
-	 * In order to prepare the NUMA Tributary to receive all of the new
-	 * memory banks, we must either remove __kspace, or keep it there,
-	 * depending on the fact that the memory range abstraction works by
-	 * using a 'default' range. Assuming this is __kspace (which it
-	 * should be) and that __kspace won't run out of memory while we're
-	 * enumerating RAM (it shouldn't), we should be safe if we leave
-	 * __kspace in place.
+	/**	EXPLANATION:
+	 * Now the NUMA Tributary is ready to check for new banks of memory,
+	 * or for a non-NUMa build, generate a single "shared" NUMA bank as a
+	 * fake bank 0 from which all threads will allocate.
 	 *
-	 * To remove __kspace after enumeration, we must have a function like
-	 * '__kspaceRemoveRange()', which will target and remove only __kspace,
-	 * which is assumed to be on bank 0.
+	 * On both a NUMA and a non-NUMA build, the kernel will eradicate
+	 * __kspace at this point. On a non-NUMA build however, if the kernel
+	 * finds no extra memory, it will send out a nice, conspicuous warning
+	 * and then assign __kspace to be the shared bank, and move on.
 	 *
-	 * The steps in physical memory enumeration are:
-	 *	1. Get numa map.
-	 *	2. Get pmem total.
-	 *	3. Calculate holes, add them to sharedBank.
-	 *	4. Overlay memory ranges with pmem map info.
+	 * On a NUMA build, if the kernel finds no NUMA memory config, then it
+	 * will fall through to the check for shared memory. However, if the
+	 * person porting the kernel to his or her chipset did not define
+	 * CHIPSET_MEMORY_NUMA_GENERATE_SHBANK, then the kernel will just
+	 * fall through, see that __kspace is the only remaining memory, and
+	 * set that as the default bank, send out a nice highly conspicuous
+	 * warning, and move on.
+	 *
+	 * In the event that CHIPSET_MEMORY_NUMA_GENERATE_SHBANK is defined,
+	 * yet still no memory is found, the kernel will do the same as above.
+	 *
+	 * In the event that CHIPSET_MEMORY_NUMA_GENERATE_SHBANK is defined,
+	 * and memory is found, the kernel will set that memory to be shbank,
+	 * and the default bank, and then eradicate __kspace.
 	 **/
 	// Initialize both firmware streams.
 	ret = (*chipsetFwStream.initialize)();
