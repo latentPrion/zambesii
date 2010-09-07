@@ -109,7 +109,8 @@ T *hardwareIdListC<T>::getLoopItem(sarch_t *context)
 	// 'context' is an index into the array.
 	arr.lock.readAcquire(&rwFlags);
 
-	if (!__KFLAG_TEST(arr.rsrc.arr[*context].flags, HWIDLIST_FLAGS_INDEX_VALID))
+	if (!__KFLAG_TEST(
+		arr.rsrc.arr[*context].flags, HWIDLIST_FLAGS_INDEX_VALID))
 	{
 		arr.lock.readRelease(rwFlags);
 		return __KNULL;

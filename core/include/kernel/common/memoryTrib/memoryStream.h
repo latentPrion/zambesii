@@ -1,6 +1,7 @@
 #ifndef _MEMORY_STREAM_H
 	#define _MEMORY_STREAM_H
 
+	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/allocTable.h>
 	#include <kernel/common/stream.h>
@@ -48,7 +49,9 @@
  * of memory, it's unlikely it'll be using all at once, so we wait until the
  * process touches the memory to commit physical memory to it.
  **/
-#define MEMORYSTREAM_COMMIT_MAX_NFRAMES		256
+#define MEMORYSTREAM_COMMIT_MAX_NFRAMES				\
+	(PAGING_BYTES_TO_PAGES(0x180000))
+
 #define MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(np)		\
 	((np > MEMORYSTREAM_COMMIT_MAX_NFRAMES) \
 		? ((np - MEMORYSTREAM_COMMIT_MAX_NFRAMES) / 4) \

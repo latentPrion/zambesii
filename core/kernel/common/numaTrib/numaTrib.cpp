@@ -7,9 +7,12 @@
 #include <chipset/memoryConfig.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/assert.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
+#include <kernel/common/firmwareTrib/firmwareTrib.h>
 
 /**	EXPLANATION:
  * To initialize the NUMA Tributary, the steps are:
@@ -130,10 +133,40 @@ error_t numaTribC::initialize(void)
  **/
 error_t numaTribC::initialize2(void)
 {
-/*	chipsetMemConfigS	*memConfig;
+	error_t			ret;
+	chipsetMemConfigS	*memConfig;
 	chipsetMemMapS		*memMap;
 	chipsetNumaMapS		*numaMap;
-*/
+
+	/** EXPLANATION:
+	 * In order to prepare the NUMA Tributary to receive all of the new
+	 * memory banks, we must either remove __kspace, or keep it there,
+	 * depending on the fact that the memory range abstraction works by
+	 * using a 'default' range. Assuming this is __kspace (which it
+	 * should be) and that __kspace won't run out of memory while we're
+	 * enumerating RAM (it shouldn't), we should be safe if we leave
+	 * __kspace in place.
+	 *
+	 * To remove __kspace after enumeration, we must have a function like
+	 * '__kspaceRemoveRange()', which will target and remove only __kspace,
+	 * which is assumed to be on bank 0.
+	 *
+	 * The steps in physical memory enumeration are:
+	 *	1. Get numa map.
+	 *	2. Get pmem total.
+	 *	3. Calculate holes, add them to sharedBank.
+	 *	4. Overlay memory ranges with pmem map info.
+	 **/
+	// Initialize both firmware streams.
+	ret = (*chipsetFwStream.initialize)();
+	assert_fatal(ret == ERROR_SUCCESS);
+
+	ret = (*firmwareFwStream.initialize)();
+	assert_fatal(ret == ERROR_SUCCESS);
+
+	__kprintf(NOTICE NUMATRIB"Initialized Firmware and Chipset firmware "
+		"streams.\n");
+
 	return ERROR_SUCCESS;
 }
 
