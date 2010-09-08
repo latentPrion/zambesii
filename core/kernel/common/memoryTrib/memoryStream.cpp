@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <scaling.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
@@ -80,8 +79,6 @@ void *memoryStreamC::dummy_memAlloc(uarch_t, uarch_t)
 	return __KNULL;
 }
 
-uarch_t nTries;
-
 void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 {
 	uarch_t		commit=nPages, ret, f, pos;
@@ -115,7 +112,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		return reinterpret_cast<void *>( ret );
 	};
 
-	for (totalFrames=0; totalFrames < static_cast<sarch_t>( commit ); nTries++)
+	for (totalFrames=0; totalFrames < static_cast<sarch_t>( commit ); )
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		nFrames = numaTrib.configuredGetFrames(

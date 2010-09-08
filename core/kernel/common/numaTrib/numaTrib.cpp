@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <scaling.h>
 #include <arch/paging.h>
 #include <chipset/memory.h>
@@ -405,8 +404,6 @@ error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	// If we're here, then we've failed.
 	return ret;
 }
-
-extern uarch_t nTries;
 
 // Preprocess out this whole function on a non-NUMA build.
 #if __SCALING__ >= SCALING_CC_NUMA
