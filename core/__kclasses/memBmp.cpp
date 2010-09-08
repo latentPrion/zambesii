@@ -47,8 +47,9 @@ error_t memBmpC::initialize(void *preAllocated)
 	else
 	{
 		bmp.rsrc.bmp = new (
-			memoryTrib.rawMemAlloc(
-				PAGING_BYTES_TO_PAGES(bmpSize), 0))
+			(memoryTrib.__kmemoryStream
+				.*memoryTrib.__kmemoryStream.memAlloc)(
+					PAGING_BYTES_TO_PAGES(bmpSize), MEMALLOC_NO_FAKEMAP))
 			uarch_t[nIndexes];
 
 		if (bmp.rsrc.bmp == __KNULL) {
@@ -74,8 +75,7 @@ memBmpC::~memBmpC(void)
 {
 	if (__KFLAG_TEST(flags, MEMBMP_FLAGS_DYNAMIC))
 	{
-		memoryTrib.rawMemFree(bmp.rsrc.bmp,
-			PAGING_BYTES_TO_PAGES(bmpSize));
+		memoryTrib.__kmemoryStream.memFree(bmp.rsrc.bmp);
 	};
 }
 
