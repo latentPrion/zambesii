@@ -17,7 +17,7 @@
 debugBufferC::debugBufferC(void)
 {
 	buff.rsrc.head = buff.rsrc.cur = buff.rsrc.tail = __KNULL;
-	buff.rsrc.index = buff.rsrc.nPages = 0;
+	buff.rsrc.index = buff.rsrc.buffNPages = 0;
 }
 
 error_t debugBufferC::initialize(void)
