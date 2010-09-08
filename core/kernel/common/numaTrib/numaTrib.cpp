@@ -158,6 +158,9 @@ error_t numaTribC::initialize2(void)
 	chipsetMemMapS		*memMap;
 //	chipsetNumaMapS		*numaMap;
 	memInfoRivS		*memInfoRiv;
+	numaStreamC		*ns;
+	uarch_t			highest;
+	paddr_t			totalSize;
 
 	/**	EXPLANATION:
 	 * Now the NUMA Tributary is ready to check for new banks of memory,
@@ -205,6 +208,8 @@ error_t numaTribC::initialize2(void)
 	memMap = (*memInfoRiv->getMemoryMap)();
 	assert_fatal(memMap != __KNULL);
 
+	highest = 0;
+	totalSize = 0;
 	for (uarch_t i=0; i<memMap->nEntries; i++)
 	{
 		__kprintf(NOTICE NUMATRIB"Map %d: Base 0x%X, length 0x%X, "
@@ -213,9 +218,39 @@ error_t numaTribC::initialize2(void)
 			memMap->entries[i].baseAddr,
 			memMap->entries[i].size,
 			memMap->entries[i].memType);
+
+		if (memMap->entries[i].baseAddr
+			> memMap->entries[highest].baseAddr)
+		{
+			highest = i;
+		};
+		totalSize += memMap->entries[i].size;
 	};
 
-	// Just generate one. But err...yea design all that in, yea?
+#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
+	__kprintf(NOTICE NUMATRIB"Using mem map entry %d as highest, totalSize "
+		"0x%X.\n",
+		highest, totalSize);
+
+	ns = new numaStreamC(CHIPSET_MEMORY_NUMA_SHBANKID);
+	if (ns == __KNULL) {
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	ret = numaStreams.addItem(CHIPSET_MEMORY_NUMA_SHBANKID, ns);
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
+
+	ret = getStream(CHIPSET_MEMORY_NUMA_SHBANKID)
+		->memoryBank.addMemoryRange(0x0, totalSize);
+
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
+
+	__kprintf(NOTICE NUMATRIB"Mem detection stub done.\n");
+#endif
 
 	return ERROR_SUCCESS;
 }
