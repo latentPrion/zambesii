@@ -224,7 +224,6 @@ error_t numaTribC::initialize2(void)
 		{
 			highest = i;
 		};
-		totalSize += memMap->entries[i].size;
 	};
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
@@ -232,22 +231,36 @@ error_t numaTribC::initialize2(void)
 		"0x%X.\n",
 		highest, totalSize);
 
+__kprintf(NOTICE NUMATRIB"Moving into debugging.\n");
+
 	ns = new numaStreamC(CHIPSET_MEMORY_NUMA_SHBANKID);
 	if (ns == __KNULL) {
+__kprintf(NOTICE NUMATRIB"Failed to allocate new memory stream object.\n");
 		return ERROR_MEMORY_NOMEM;
 	};
+__kprintf(NOTICE NUMATRIB"Allocated new numa stream at 0x%X.\n", ns);
 
 	ret = numaStreams.addItem(CHIPSET_MEMORY_NUMA_SHBANKID, ns);
 	if (ret != ERROR_SUCCESS) {
+__kprintf(NOTICE NUMATRIB"Failed to add new memory stream object to numaStreams list with addItem.\n");
 		return ret;
 	};
+__kprintf(NOTICE NUMATRIB"Successfully called addItem, new memory stream object is in list.\n");
 
-	ret = getStream(CHIPSET_MEMORY_NUMA_SHBANKID)
-		->memoryBank.addMemoryRange(0x0, totalSize);
+	ns = getStream(CHIPSET_MEMORY_NUMA_SHBANKID);
+	if (ns == __KNULL) {
+__kprintf(NOTICE NUMATRIB"Failed to retrieve the numa stream object, even though it was reported to have been added.\n");
+		return ERROR_UNKNOWN;
+	};
+__kprintf(NOTICE NUMATRIB"Retrieved numaStream object, pointer is v 0x%X.\n", ns);
 
+	ret = ns->memoryBank.addMemoryRange(0x0, totalSize);
 	if (ret != ERROR_SUCCESS) {
+__kprintf(NOTICE NUMATRIB"AddMemoryRange on new stream's numamemorybank obj failed.\n");
 		return ret;
 	};
+__kprintf(NOTICE NUMATRIB"addMemoryRange() successful.\n");
+
 
 	__kprintf(NOTICE NUMATRIB"Mem detection stub done.\n");
 #endif

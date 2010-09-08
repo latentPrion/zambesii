@@ -28,6 +28,12 @@ class multipleReaderLockC
 public lockC
 {
 public:
+	multipleReaderLockC(void)
+	{
+		readerCount.rsrc = 0;
+	};
+
+public:
 	void readAcquire(uarch_t *flags);
 	void readRelease(uarch_t flags);
 
