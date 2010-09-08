@@ -20,6 +20,9 @@
  * the new default bank.
  *
  * This reduces the amount of lock contention on the bitmap of NUMA banks.
+ *
+ * FIXME: It may be best to make this a class rather than a struct on account
+ * of the member objects (bitmapC).
  **/
 
 struct numaConfigS

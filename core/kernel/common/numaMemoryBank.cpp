@@ -66,24 +66,18 @@ status_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	error_t			err;
 	uarch_t			nRanges;
 
-__kprintf(NOTICE NUMAMEMBANK"Entered.\n");
 	// Allocate a new bmp allocator.
 	memRange = new numaMemoryRangeC(baseAddr, size);
 	if (memRange == __KNULL) {
-__kprintf(NOTICE NUMAMEMBANK"Failed to allocate the mem range object.\n");
 		return ERROR_MEMORY_NOMEM;
 	};
-__kprintf(NOTICE NUMAMEMBANK"Allocated new memoryRangeC @ 0x%X.\n", memRange);
 
 	err = memRange->initialize();
 	if (err != ERROR_SUCCESS) {
-__kprintf(NOTICE NUMAMEMBANK"Failed to initialize new mem range object.\n");
 		return static_cast<status_t>( err );
 	};
-__kprintf(NOTICE NUMAMEMBANK"Successfully called initialize() on new memRange.\n");
 
 	ranges.lock.writeAcquire();
-__kprintf(NOTICE NUMAMEMBANK"Acquired write lock.\n");
 
 	nRanges = ranges.rsrc.nRanges;
 	tmp = new numaMemoryRangeC*[nRanges + 1];
