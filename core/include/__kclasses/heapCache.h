@@ -4,11 +4,15 @@
 class heapCacheC
 {
 public:
-	heapCacheC(void) {};
+	heapCacheC(void)
+	:
+	objectSize(0)
+	{};
+
 	heapCacheC(uarch_t objectSize)
 	:
 	objectSize(objectSize)
-	{}
+	{};
 
 	virtual ~heapCacheC(void) {}
 

@@ -44,7 +44,9 @@ private:
 template <class T>
 cacheStackC<T>::cacheStackC(void)
 {
-	memset(stack.rsrc.stack, 0, PAGING_BASE_SIZE);
+	memset(
+		stack.rsrc.stack, 0,
+		PAGING_BASE_SIZE * CACHESTACK_NPAGES_PER_STACK);
 
 	stack.rsrc.stackPtr = CACHESTACK_EMPTY;
 }

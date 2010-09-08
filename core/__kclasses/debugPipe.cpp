@@ -49,6 +49,8 @@
 
 debugPipeC::debugPipeC(void)
 {
+	convBuff.rsrc = __KNULL;
+	devices.rsrc = 0;
 }
 
 error_t debugPipeC::initialize(void)

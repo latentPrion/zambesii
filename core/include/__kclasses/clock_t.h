@@ -27,7 +27,7 @@ public:
 
 	clock_t(uarch_t high, uarch_t low)
 	:
-	low(high), high(low)
+	low(low), high(high)
 	{}
 
 public:

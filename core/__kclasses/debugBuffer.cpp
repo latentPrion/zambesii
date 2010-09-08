@@ -14,6 +14,12 @@
  * to hold the current request.
  **/
 
+debugBufferC::debugBufferC(void)
+{
+	buff.rsrc.head = buff.rsrc.cur = buff.rsrc.tail = __KNULL;
+	buff.rsrc.index = buff.rsrc.nPages = 0;
+}
+
 error_t debugBufferC::initialize(void)
 {
 	debugBufferC::buffPageS		*mem, *mem2;
@@ -137,6 +143,12 @@ void debugBufferC::unlock(void)
 void debugBufferC::syphon(unicodePoint *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
+
+	if (buff.rsrc.head == __KNULL)
+	{
+		buff.lock.release();
+		return;
+	};
 
 	for ( ; buffLen > 0; buffLen--, str++)
 	{

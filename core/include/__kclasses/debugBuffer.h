@@ -38,6 +38,7 @@ class debugBufferC
 {
 struct buffPageS;
 public:
+	debugBufferC(void);
 	error_t initialize(void);
 	error_t shutdown(void);
 	error_t suspend(void);
