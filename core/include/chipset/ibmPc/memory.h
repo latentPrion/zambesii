@@ -9,8 +9,11 @@
 #define CHIPSET_MEMORY___KSPACE_SIZE				(0x100000 * 3)
 
 #ifndef __ASM__
+	#include <__kclasses/hardwareIdList.h>
+	#include <kernel/common/numaTrib/numaStream.h>
 // The array of reserved memory for __kspace.
-extern uarch_t	__kspaceInitMem[];
+extern uarch_t						__kspaceInitMem[];
+extern hardwareIdListC<numaStreamC>::arrayNodeS		__kspaceStreamPtr[];
 #endif
 
 // Absolute load address of the kernel in physical memory.

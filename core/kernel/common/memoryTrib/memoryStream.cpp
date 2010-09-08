@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <scaling.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
@@ -79,6 +80,8 @@ void *memoryStreamC::dummy_memAlloc(uarch_t, uarch_t)
 	return __KNULL;
 }
 
+uarch_t nTries;
+
 void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 {
 	uarch_t		commit=nPages, ret, f, pos;
@@ -96,7 +99,6 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 	{
 		return reinterpret_cast<void *>( ret );
 	};
-
 	// Calculate the number of frames to commit before fakemapping.
 	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)) {
 		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
@@ -113,8 +115,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		return reinterpret_cast<void *>( ret );
 	};
 
-
-	for (totalFrames=0; totalFrames < static_cast<sarch_t>( commit ); )
+	for (totalFrames=0; totalFrames < static_cast<sarch_t>( commit ); nTries++)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		nFrames = numaTrib.configuredGetFrames(
@@ -124,7 +125,6 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		nFrames = numaTrib.fragmentedGetFrames(
 			commit - totalFrames, &p);
 #endif
-
 		if (nFrames > 0)
 		{
 			nMapped = walkerPageRanger::mapInc(
@@ -175,7 +175,6 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 			goto releaseAndUnmap;
 		};
 	};
-
 	// Now add to alloc table.
 	if (allocTable.addEntry(reinterpret_cast<void *>( ret ), nPages, 0)
 		== ERROR_SUCCESS)

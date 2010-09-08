@@ -169,16 +169,21 @@ void bitmapC::unsetSingle(ubit32 bit)
 
 sarch_t bitmapC::testSingle(ubit32 bit)
 {
+	sarch_t		ret;
+
 	bmp.lock.acquire();
 
 	if (bit < bmp.rsrc.nBits)
 	{
-		return __KBIT_TEST(
+		ret = __KBIT_TEST(
 			bmp.rsrc.bmp[BITMAP_INDEX(bit)],
 			BITMAP_OFFSET(bit));
+
+		bmp.lock.release();
+		return ret;
 	};
-	return 0;
 
 	bmp.lock.release();
+	return 0;
 }
 

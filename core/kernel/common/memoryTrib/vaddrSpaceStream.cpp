@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 

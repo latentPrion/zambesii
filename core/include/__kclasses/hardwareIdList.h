@@ -17,7 +17,7 @@ class hardwareIdListC
 {
 public:
 	hardwareIdListC(void);
-	void __kspaceSetState(void *arrayMem);
+	void __kspaceSetState(sarch_t id, void *arrayMem);
 public:
 	// Retrieves an item's pointer by its hardware ID.
 	T *getItem(sarch_t id);
@@ -31,13 +31,15 @@ public:
 	sarch_t prepareForLoop(void);
 	T *getLoopItem(sarch_t *id);
 
-private:
+public:
 	struct arrayNodeS
 	{
 		sarch_t		next;
 		uarch_t		flags;
 		T		*item;
 	};
+
+private:
 	struct arrayStateS
 	{
 		arrayNodeS	*arr;
@@ -59,10 +61,10 @@ hardwareIdListC<T>::hardwareIdListC(void)
 }
 
 template <class T>
-void hardwareIdListC<T>::__kspaceSetState(void *arrayMem)
+void hardwareIdListC<T>::__kspaceSetState(sarch_t id, void *arrayMem)
 {
 	arr.rsrc.arr = static_cast<arrayNodeS *>( arrayMem );
-	arr.rsrc.maxIndex = 0;
+	arr.rsrc.maxIndex = id;
 }	
 
 template <class T>
@@ -168,7 +170,6 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 
 	// At this point there is enough space to hold the new item.
 	arr.lock.writeAcquire();
-
 	for (sarch_t i=arr.rsrc.firstValidIndex;
 		i != HWIDLIST_INDEX_INVALID;)
 	{

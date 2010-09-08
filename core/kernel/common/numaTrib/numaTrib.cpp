@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <scaling.h>
 #include <arch/paging.h>
 #include <chipset/memory.h>
@@ -48,8 +49,6 @@
 
 // Initialize the __kspace NUMA Stream to its configured Stream ID.
 static numaStreamC	__kspaceNumaStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
-// FIXME: This should be defined by the chipset code.
-static ubit8		__kspaceStreamPtr[64];
 // Space for the numaMemoryBank's array.
 static numaMemoryRangeC	*__kspaceMemoryRangePtr;
 static numaMemoryRangeC	__kspaceMemoryRange(
@@ -69,13 +68,18 @@ numaTribC::numaTribC(void)
 error_t numaTribC::initialize(void)
 {
 	error_t		ret;
+	numaStreams.__kspaceSetState(
+		CHIPSET_MEMORY_NUMA___KSPACE_BANKID,
+		static_cast<void *>( __kspaceStreamPtr ));
 
-	numaStreams.__kspaceSetState(static_cast<void *>( &__kspaceStreamPtr ));
-	numaStreams.addItem(
+	ret = numaStreams.addItem(
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID, &__kspaceNumaStream);
 
-	nStreams = 1;
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
 
+	nStreams = 1;
 	ret = getStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID)
 		->memoryBank.__kspaceAddMemoryRange(
 			&__kspaceMemoryRangePtr,
@@ -402,6 +406,8 @@ error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	return ret;
 }
 
+extern uarch_t nTries;
+
 // Preprocess out this whole function on a non-NUMA build.
 #if __SCALING__ >= SCALING_CC_NUMA
 error_t numaTribC::configuredGetFrames(
@@ -412,12 +418,9 @@ error_t numaTribC::configuredGetFrames(
 	numaStreamC		*currStream;
 	error_t			ret;
 	uarch_t			rwFlags;
-
 	// Get the thread's default config.
 	config->def.lock.readAcquire(&rwFlags);
-
 	def = config->def.rsrc;
-
 	config->def.lock.readRelease(rwFlags);
 
 	currStream = getStream(def);
@@ -456,10 +459,10 @@ error_t numaTribC::configuredGetFrames(
 		cur = def;
 	};
 
-	/* If we reach here then none of the thread's configured banks has any
-	 * physical mem left on it.
+	/* If we reach here then none of the thread's configured banks have any
+	 * physical mem left on them.
 	 **/
-	return ERROR_MEMORY_NOMEM_PHYSICAL;
+	return 0;
 }
 #endif
 

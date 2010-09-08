@@ -106,7 +106,6 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 	if (ret == __KNULL) {
 		return __KNULL;
 	};
-
 	/* memoryTribC::rawMemAlloc() has no allocTable. Therefore it is
 	 * impossible to do lazy allocation using fakemapped pages. This is
 	 * due to the fact that lazy allocation requires a #PF to occur on a
