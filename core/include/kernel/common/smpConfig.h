@@ -43,6 +43,11 @@
  *
  * That is, for CPU configuration, SMP affinity and NUMA affinity for CPUs are
  * mutually exclusive.
+ *
+ * FIXME: Will most likely have to change this to be a class rather than a
+ * struct later on. Remember the __korientation instance and the fact that
+ * constructors are run *after* the kernel orientation process structure is
+ * initialized.
  **/
 
 #define SMPCONFIG_FLAGS_USES_SMP	(1<<2)

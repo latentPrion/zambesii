@@ -30,16 +30,26 @@
 class streamC
 {
 public:
-	explicit streamC(uarch_t id) : id(id) {};
-	streamC(void);
+	explicit streamC(uarch_t id)
+	:
+	id(id), flags(0)
+	{
+		binding.rsrc = 0;
+	};
+
+	streamC(void)
+	:
+	id(0), flags(0)
+	{
+		binding.rsrc = 0;
+	};
 
 public:
-	virtual void bind(void);
-	virtual void cut(void);
+	virtual void bind(void) {};
+	virtual void cut(void) {};
 
 // jumpListC interface.
 public:
-	streamC		*prev, *next;
 	uarch_t		id;
 	ubit32		flags;
 
