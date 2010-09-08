@@ -11,23 +11,31 @@
 
 numaMemoryBankC::numaMemoryBankC(void)
 {
-	ranges.rsrc.arr = __KNULL;
-	ranges.rsrc.nRanges = 0;
-	ranges.rsrc.defRange = NUMAMEMBANK_DEFINDEX_NONE;
+	ranges.rsrc = __KNULL;
+	defRange.rsrc = __KNULL;
 }
 
 numaMemoryBankC::~numaMemoryBankC(void)
 {
-	ranges.lock.writeAcquire();
+	rangePtrS	*tmp;
 
-	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++) {
-		delete ranges.rsrc.arr[i];
-	};
+	do
+	{
+		ranges.lock.writeAcquire();
 
-	ranges.rsrc.nRanges = 0;
-	delete ranges.rsrc.arr;
+		tmp = ranges.rsrc;
+		if (tmp != __KNULL) {
+			ranges.rsrc = ranges.rsrc->next;
+		};
 
-	ranges.lock.writeRelease();
+		ranges.lock.writeRelease();
+
+		if (tmp == __KNULL) {
+			return;
+		};
+		delete tmp->range;
+		delete tmp;
+	} while (1);
 }
 
 void numaMemoryBankC::dump(void)
@@ -36,28 +44,25 @@ void numaMemoryBankC::dump(void)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	__kprintf(NOTICE NUMAMEMBANK"Dumping.\n");
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
 	{
 		__kprintf((utf8Char *)"\tMem range: base 0x%X, size 0x%X.\n",
-			ranges.rsrc.arr[i]->baseAddr, ranges.rsrc.arr[i]->size);
+			cur->range->baseAddr, cur->range->size);
 	};
 
 	ranges.lock.readRelease(rwFlags);
 }
 
 error_t numaMemoryBankC::__kspaceAddMemoryRange(
-	void *arrayMem, numaMemoryRangeC *__kspace, void *__kspaceInitMem
+	void *ptrNodeMem, numaMemoryRangeC *__kspace, void *__kspaceInitMem
 	)
 {
-	ranges.rsrc.arr = static_cast<numaMemoryRangeC **>( arrayMem );
-	ranges.rsrc.arr[0] = __kspace;
-	ranges.rsrc.nRanges++;
+	ranges.rsrc = static_cast<rangePtrS *>( ptrNodeMem );
+	ranges.rsrc->range = __kspace;
+	defRange.rsrc = __kspace;
 
-	if (ranges.rsrc.defRange == NUMAMEMBANK_DEFINDEX_NONE) {
-		ranges.rsrc.defRange = 0;
-	};
-
-	return ranges.rsrc.arr[0]->initialize(__kspaceInitMem);
+	return ranges.rsrc->range->initialize(__kspaceInitMem);
 }
 
 status_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
