@@ -68,12 +68,14 @@ public:
 	sarch_t identifyPaddr(paddr_t paddr);
 	// sarch_t identifyPaddrRange(paddr_t base, uarch_t nFrames);
 
-private:
+public:
 	struct rangePtrS
 	{
 		numaMemoryRangeC	*range;
 		rangePtrS		*next;
 	};
+
+private:
 	sharedResourceGroupC<multipleReaderLockC, rangePtrS *>	ranges;
 	sharedResourceGroupC<multipleReaderLockC, numaRangeC *>	defRange;
 };

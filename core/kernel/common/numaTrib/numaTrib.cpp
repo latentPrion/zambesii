@@ -49,8 +49,8 @@
 // Initialize the __kspace NUMA Stream to its configured Stream ID.
 static numaStreamC	__kspaceNumaStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
 // Space for the numaMemoryBank's array.
-static numaMemoryRangeC	*__kspaceMemoryRangePtr;
-static numaMemoryRangeC	__kspaceMemoryRange(
+static numaMemoryBankC::rangePtrS	__kspaceRangePtrMem;
+static numaMemoryRangeC			__kspaceMemoryRange(
 	CHIPSET_MEMORY___KSPACE_BASE,
 	CHIPSET_MEMORY___KSPACE_SIZE);
 
@@ -81,7 +81,7 @@ error_t numaTribC::initialize(void)
 	nStreams = 1;
 	ret = getStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID)
 		->memoryBank.__kspaceAddMemoryRange(
-			&__kspaceMemoryRangePtr,
+			&__kspaceRangePtrMem,
 			&__kspaceMemoryRange,
 			__kspaceInitMem);
 
