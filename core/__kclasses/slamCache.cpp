@@ -24,7 +24,8 @@ error_t slamCacheC::initialize(void)
 {
 	freeList.rsrc = reinterpret_cast<object *>(
 		(memoryTrib.__kmemoryStream.*
-			memoryTrib.__kmemoryStream.memAlloc)(1, 0));
+			memoryTrib.__kmemoryStream.memAlloc)(
+				1, MEMALLOC_NO_FAKEMAP));
 
 	if (freeList.rsrc != __KNULL) {
 		freeList.rsrc->next = __KNULL;
@@ -130,7 +131,8 @@ void *slamCacheC::allocate(void)
 		if (tmp == __KNULL)
 		{
 			tmp = new ((memoryTrib.__kmemoryStream
-				.*memoryTrib.__kmemoryStream.memAlloc)(1, 0))
+				.*memoryTrib.__kmemoryStream.memAlloc)(
+					1, MEMALLOC_NO_FAKEMAP))
 				slamCacheC::object;
 
 			if (tmp == __KNULL)
