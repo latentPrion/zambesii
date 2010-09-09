@@ -77,7 +77,7 @@ public:
 
 private:
 	sharedResourceGroupC<multipleReaderLockC, rangePtrS *>	ranges;
-	sharedResourceGroupC<multipleReaderLockC, numaRangeC *>	defRange;
+	sharedResourceGroupC<multipleReaderLockC, numaMemoryRangeC *> defRange;
 };
 
 #endif

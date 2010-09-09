@@ -70,7 +70,6 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	numaMemoryRangeC	*memRange;
 	rangePtrS		*tmpNode;
 	error_t			err;
-	uarch_t			nRanges;
 
 	// Allocate a new bmp allocator.
 	memRange = new numaMemoryRangeC(baseAddr, size);
@@ -86,7 +85,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	};
 
 	tmpNode = new rangePtrS;
-	if (tmp == __KNULL)
+	if (tmpNode == __KNULL)
 	{
 		delete memRange;
 		return ERROR_MEMORY_NOMEM;
@@ -99,7 +98,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	tmpNode->next = ranges.rsrc;
 	ranges.rsrc = tmpNode;
 
-	defRange.lock.writeAcquire()
+	defRange.lock.writeAcquire();
 
 	// If the bank had no ranges before we got here:
 	if (defRange.rsrc == __KNULL) {
@@ -126,13 +125,17 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 	{
 		if (cur->range->identifyPaddr(baseAddr))
 		{
-			def.lock.writeAcquire();
-			if (def.rsrc == cur) { cur = __KNULL; };
-			def.lock.writeRelease();
+			defRange.lock.writeAcquire();
+
+			if (defRange.rsrc == cur->range) {
+				defRange.rsrc = __KNULL;
+			};
+
+			defRange.lock.writeRelease();
 
 			// If we're removing the first range in the list:
 			if (ranges.rsrc == cur) {
-				ranges.rsrc->next;
+				ranges.rsrc = cur->next;
 			}
 			else {
 				prev->next = cur->next;
@@ -184,7 +187,7 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 		};
 
 		defRange.lock.readReleaseWriteAcquire(rwFlags);
-		defRange.rsrc = ranges.rsrc;
+		defRange.rsrc = ranges.rsrc->range;
 		ranges.lock.readRelease(rwFlags2);
 
 		// Note that we still hold readAcquire on defRange here.
@@ -192,7 +195,7 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 
 
 	// Allocate from the default first.
-	ret = defRange->contiguousGetFrames(nFrames, paddr);
+	ret = defRange.rsrc->contiguousGetFrames(nFrames, paddr);
 	if (ret == ERROR_SUCCESS)
 	{
 		defRange.lock.readRelease(rwFlags);
@@ -214,7 +217,7 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 		if (ret == ERROR_SUCCESS)
 		{
 			defRange.lock.readReleaseWriteAcquire(rwFlags);
-			ranges.rsrc.defRange = cur->range;
+			defRange.rsrc = cur->range;
 			defRange.lock.writeRelease();
 			ranges.lock.readRelease(rwFlags2);
 			return ret;
@@ -248,7 +251,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 		};
 
 		defRange.lock.readReleaseWriteAcquire(rwFlags);
-		defRange.rsrc = ranges.rsrc;
+		defRange.rsrc = ranges.rsrc->range;
 		ranges.lock.readRelease(rwFlags2);
 
 		// Note that we still hold readAcquire on defRange here.
@@ -256,7 +259,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 
 
 	// Allocate from the default first.
-	ret = defRange->fragmentedGetFrames(nFrames, paddr);
+	ret = defRange.rsrc->fragmentedGetFrames(nFrames, paddr);
 	if (ret > 0)
 	{
 		defRange.lock.readRelease(rwFlags);
@@ -278,7 +281,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 		if (ret > 0)
 		{
 			defRange.lock.readReleaseWriteAcquire(rwFlags);
-			ranges.rsrc.defRange = cur->range;
+			defRange.rsrc = cur->range;
 			defRange.lock.writeRelease();
 			ranges.lock.readRelease(rwFlags2);
 			return ret;
@@ -297,11 +300,11 @@ void numaMemoryBankC::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
 	{
-		if (ranges.rsrc.arr[i]->identifyPaddr(basePaddr))
+		if (cur->range->identifyPaddr(basePaddr))
 		{
-			ranges.rsrc.arr[i]->releaseFrames(basePaddr, nFrames);
+			cur->range->releaseFrames(basePaddr, nFrames);
 
 			ranges.lock.readRelease(rwFlags);
 			return;
@@ -320,7 +323,7 @@ sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
 	{
 		/* A paddr can only correspond to ONE memory range. We never
 		 * hand out pmem allocations spanning multiple discontiguous
@@ -328,7 +331,7 @@ sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
 		 * freeing, it's impossible for us to get a pmem or pmem range
 		 * to be freed which isn't contiguous, and within one range.
 		 **/
-		if (ranges.rsrc.arr[i]->identifyPaddr(paddr))
+		if (cur->range->identifyPaddr(paddr))
 		{
 			ranges.lock.readRelease(rwFlags);
 			return 1;
@@ -344,10 +347,10 @@ void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
 	{
-		if (ranges.rsrc.arr[i]->identifyPaddr(baseAddr)) {
-			ranges.rsrc.arr[i]->mapMemUsed(baseAddr, nFrames);
+		if (cur->range->identifyPaddr(baseAddr)) {
+			cur->range->mapMemUsed(baseAddr, nFrames);
 		};
 	};
 
@@ -360,10 +363,10 @@ void numaMemoryBankC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
 	{
-		if (ranges.rsrc.arr[i]->identifyPaddr(baseAddr)) {
-			ranges.rsrc.arr[i]->mapMemUnused(baseAddr, nFrames);
+		if (cur->range->identifyPaddr(baseAddr)) {
+			cur->range->mapMemUnused(baseAddr, nFrames);
 		};
 	};
 
