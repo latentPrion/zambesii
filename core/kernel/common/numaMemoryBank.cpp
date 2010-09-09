@@ -65,9 +65,10 @@ error_t numaMemoryBankC::__kspaceAddMemoryRange(
 	return ranges.rsrc->range->initialize(__kspaceInitMem);
 }
 
-status_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
+error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 {
-	numaMemoryRangeC	*memRange, **tmp;
+	numaMemoryRangeC	*memRange;
+	rangePtrS		*tmpNode;
 	error_t			err;
 	uarch_t			nRanges;
 
@@ -78,31 +79,34 @@ status_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	};
 
 	err = memRange->initialize();
-	if (err != ERROR_SUCCESS) {
-		return static_cast<status_t>( err );
+	if (err != ERROR_SUCCESS)
+	{
+		delete memRange;
+		return err;
 	};
 
-	ranges.lock.writeAcquire();
-
-	nRanges = ranges.rsrc.nRanges;
-	tmp = new numaMemoryRangeC*[nRanges + 1];
+	tmpNode = new rangePtrS;
 	if (tmp == __KNULL)
 	{
-		ranges.lock.writeRelease();
 		delete memRange;
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	memcpy(tmp, ranges.rsrc.arr, sizeof(numaMemoryRangeC *) * nRanges);
-	delete ranges.rsrc.arr;
-	ranges.rsrc.arr = tmp;
-	ranges.rsrc.arr[nRanges] = memRange;
-	ranges.rsrc.nRanges++;
+	tmpNode->range = memRange;
 
-	if (ranges.rsrc.defRange == NUMAMEMBANK_DEFINDEX_NONE) {
-		ranges.rsrc.defRange = 0;
+	ranges.lock.writeAcquire();
+
+	tmpNode->next = ranges.rsrc;
+	ranges.rsrc = tmpNode;
+
+	defRange.lock.writeAcquire()
+
+	// If the bank had no ranges before we got here:
+	if (defRange.rsrc == __KNULL) {
+		defRange.rsrc = memRange;
 	};
 
+	defRange.lock.writeRelease();
 	ranges.lock.writeRelease();
 
 	__kprintf(NOTICE NUMAMEMBANK"New mem range: base 0x%X, size 0x%X, "
@@ -112,172 +116,178 @@ status_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	return ERROR_SUCCESS;
 }
 
-status_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
+error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 {
-	numaMemoryRangeC		*tmp=__KNULL;
+	rangePtrS		*cur, *prev=__KNULL;
 
 	ranges.lock.writeAcquire();
 
-	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	for (cur = ranges.rsrc; cur != __KNULL; )
 	{
-		if (ranges.rsrc.arr[i]->identifyPaddr(baseAddr))
+		if (cur->range->identifyPaddr(baseAddr))
 		{
-			tmp = ranges.rsrc.arr[i];
-			// Move every other pointer up to cover it.
-			for (uarch_t j=i; j<(ranges.rsrc.nRanges - 1); j++) {
-				ranges.rsrc.arr[j] = ranges.rsrc.arr[j+1];
+			def.lock.writeAcquire();
+			if (def.rsrc == cur) { cur = __KNULL; };
+			def.lock.writeRelease();
+
+			// If we're removing the first range in the list:
+			if (ranges.rsrc == cur) {
+				ranges.rsrc->next;
+			}
+			else {
+				prev->next = cur->next;
 			};
 
-			ranges.rsrc.nRanges--;
-			// If we just removed the current default range:
-			if (ranges.rsrc.defRange == static_cast<sarch_t>( i ))
-			{
-				ranges.rsrc.defRange =
-					(ranges.rsrc.nRanges == 0)
-					? NUMAMEMBANK_DEFINDEX_NONE : 0;
-			};
-			break;
+			// Can release lock and free now.
+			ranges.lock.writeRelease();
+
+			__kprintf(NOTICE NUMAMEMBANK"Destroying mem range: "
+				"base 0x%X, size 0x%X, v 0x%X.\n",
+				cur->range->baseAddr, cur->range->size,
+				cur->range);
+
+			delete cur->range;
+			delete cur;
+			return ERROR_SUCCESS;
 		};
+		prev = cur;
+		cur = cur->next;
 	};
 
 	ranges.lock.writeRelease();
 
 	// Memory range with this base address/contained address doesn't exist.
-	if (tmp == __KNULL)
-	{
-		__kprintf(NOTICE NUMAMEMBANK"Failed to remove range with base "
-			"0x%X.\n",
-			baseAddr);
+	__kprintf(NOTICE NUMAMEMBANK"Failed to remove range with base 0x%X.\n",
+		baseAddr);
 
-		return ERROR_INVALID_ARG_VAL;
-	};
-
-	__kprintf(NOTICE NUMAMEMBANK"Destroying mem range: base 0x%X, size "
-		"0x%X, v 0x%X.\n",
-		tmp->baseAddr, tmp->size, tmp);
-
-	delete tmp;
-	return ERROR_SUCCESS;
+	return ERROR_INVALID_ARG_VAL;
 }
 
 error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 {
-	uarch_t			rwFlags;
-	numaMemoryRangeC	*rangeTmp;
-	status_t		ret;
+	uarch_t		rwFlags, rwFlags2;
+	error_t		ret;
 
-	ranges.lock.readAcquire(&rwFlags);
+	defRange.lock.readAcquire(&rwFlags);
 
-	if (ranges.rsrc.defRange == NUMAMEMBANK_DEFINDEX_NONE)
+	if (defRange.rsrc == __KNULL)
 	{
 		// Check and see if any new ranges have been added recently.
-		if (ranges.rsrc.nRanges == 0)
+		ranges.lock.readAcquire(&rwFlags2);
+
+		if (ranges.rsrc == __KNULL)
 		{
 			// This bank has no associated ranges of memory.
-			ranges.lock.readRelease(rwFlags);
+			ranges.lock.readRelease(rwFlags2);
+			defRange.lock.readRelease(rwFlags);
 			return ERROR_UNKNOWN;
 		};
 
-		ranges.lock.readReleaseWriteAcquire(rwFlags);
-		ranges.rsrc.defRange = 0;
-		ranges.lock.writeRelease();
-		ranges.lock.readAcquire(&rwFlags);
+		defRange.lock.readReleaseWriteAcquire(rwFlags);
+		defRange.rsrc = ranges.rsrc;
+		ranges.lock.readRelease(rwFlags2);
+
+		// Note that we still hold readAcquire on defRange here.
 	};
 
 
 	// Allocate from the default first.
-	rangeTmp = ranges.rsrc.arr[ranges.rsrc.defRange];
-	ret = rangeTmp->contiguousGetFrames(nFrames, paddr);
+	ret = defRange->contiguousGetFrames(nFrames, paddr);
 	if (ret == ERROR_SUCCESS)
 	{
-		ranges.lock.readRelease(rwFlags);
+		defRange.lock.readRelease(rwFlags);
 		return ret;
 	};
 
-	// If default has no more mem,
-	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	// Default has no mem. Below we'll scan all the other ranges.
+	ranges.lock.readAcquire(&rwFlags2);
+
+	// We now hold both locks.
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
 	{
 		// Don't waste time re-trying the same range.
-		if (static_cast<sarch_t>( i ) == ranges.rsrc.defRange) {
+		if (cur->range == defRange.rsrc) {
 			continue;
 		};
 
-		ret = ranges.rsrc.arr[i]->contiguousGetFrames(nFrames, paddr);
+		ret = cur->range->contiguousGetFrames(nFrames, paddr);
 		if (ret == ERROR_SUCCESS)
 		{
-			ranges.lock.readReleaseWriteAcquire(rwFlags);
-
-			ranges.rsrc.defRange = i;
-
-			ranges.lock.writeRelease();
+			defRange.lock.readReleaseWriteAcquire(rwFlags);
+			ranges.rsrc.defRange = cur->range;
+			defRange.lock.writeRelease();
+			ranges.lock.readRelease(rwFlags2);
 			return ret;
 		};
 	};
 
 	// Reaching here means no mem was found.
-	ranges.lock.readRelease(rwFlags);
+	defRange.lock.readRelease(rwFlags);
+	ranges.lock.readRelease(rwFlags2);
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }			
 
 status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 {
-	uarch_t			rwFlags;
-	numaMemoryRangeC	*rangeTmp;
-	error_t			ret;
+	uarch_t		rwFlags, rwFlags2;
+	status_t	ret;
 
-	ranges.lock.readAcquire(&rwFlags);
+	defRange.lock.readAcquire(&rwFlags);
 
-	if (ranges.rsrc.defRange == NUMAMEMBANK_DEFINDEX_NONE)
+	if (defRange.rsrc == __KNULL)
 	{
 		// Check and see if any new ranges have been added recently.
-		if (ranges.rsrc.nRanges == 0)
+		ranges.lock.readAcquire(&rwFlags2);
+
+		if (ranges.rsrc == __KNULL)
 		{
 			// This bank has no associated ranges of memory.
-			ranges.lock.readRelease(rwFlags);
+			ranges.lock.readRelease(rwFlags2);
+			defRange.lock.readRelease(rwFlags);
 			return ERROR_UNKNOWN;
 		};
 
-		ranges.lock.readReleaseWriteAcquire(rwFlags);
-		ranges.rsrc.defRange = 0;
-		ranges.lock.writeRelease();
-		ranges.lock.readAcquire(&rwFlags);
+		defRange.lock.readReleaseWriteAcquire(rwFlags);
+		defRange.rsrc = ranges.rsrc;
+		ranges.lock.readRelease(rwFlags2);
+
+		// Note that we still hold readAcquire on defRange here.
 	};
 
 
 	// Allocate from the default first.
-	rangeTmp = ranges.rsrc.arr[ranges.rsrc.defRange];
-	ret = rangeTmp->fragmentedGetFrames(nFrames, paddr);
+	ret = defRange->fragmentedGetFrames(nFrames, paddr);
 	if (ret > 0)
 	{
-		ranges.lock.readRelease(rwFlags);
+		defRange.lock.readRelease(rwFlags);
 		return ret;
 	};
 
-	// If default has no more mem,
-	for (uarch_t i=0; i<ranges.rsrc.nRanges; i++)
+	// Default has no mem. Below we'll scan all the other ranges.
+	ranges.lock.readAcquire(&rwFlags2);
+
+	// We now hold both locks.
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
 	{
 		// Don't waste time re-trying the same range.
-		if (static_cast<sarch_t>( i ) == ranges.rsrc.defRange) {
+		if (cur->range == defRange.rsrc) {
 			continue;
 		};
 
-		ret = ranges.rsrc.arr[i]->fragmentedGetFrames(nFrames, paddr);
+		ret = cur->range->fragmentedGetFrames(nFrames, paddr);
 		if (ret > 0)
 		{
-			ranges.lock.readReleaseWriteAcquire(rwFlags);
-
-			ranges.rsrc.defRange = i;
-
-			ranges.lock.writeRelease();
+			defRange.lock.readReleaseWriteAcquire(rwFlags);
+			ranges.rsrc.defRange = cur->range;
+			defRange.lock.writeRelease();
+			ranges.lock.readRelease(rwFlags2);
 			return ret;
 		};
 	};
 
 	// Reaching here means no mem was found.
-	ranges.lock.readRelease(rwFlags);
-	__kprintf(WARNING NUMAMEMBANK"No mem found for pmem alloc of %d.\n",
-		nFrames);
-
+	defRange.lock.readRelease(rwFlags);
+	ranges.lock.readRelease(rwFlags2);
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 
