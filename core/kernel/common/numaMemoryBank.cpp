@@ -12,9 +12,13 @@
 #define NUMAMEMBANK_DEFINDEX_NONE	(-1)
 
 numaMemoryBankC::numaMemoryBankC(void)
+:
+rangePtrCache(sizeof(numaMemoryBankC::rangePtrS))
 {
 	ranges.rsrc = __KNULL;
 	defRange.rsrc = __KNULL;
+	// Should fail to actually get any pages.
+	rangePtrCache.initialize();
 }
 
 numaMemoryBankC::~numaMemoryBankC(void)
@@ -98,7 +102,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 		return err;
 	};
 
-	tmpNode = new rangePtrS;
+	tmpNode = new (rangePtrCache.allocate()) rangePtrS;
 	if (tmpNode == __KNULL)
 	{
 		memoryTrib.__kmemoryStream.memFree(memRange);
@@ -169,7 +173,7 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 			{
 				memoryTrib.__kmemoryStream.memFree(cur->range);
 			};
-			delete cur;
+			rangePtrCache.free(cur);
 			return ERROR_SUCCESS;
 		};
 		prev = cur;

@@ -2,8 +2,8 @@
 	#define _NUMA_MEMORY_BANK_H
 
 	#include <arch/paddr_t.h>
-	#include <__kclasses/stackCache.h>
 	#include <__kclasses/memBmp.h>
+	#include <__kclasses/slamCache.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/numaMemoryRange.h>
@@ -78,6 +78,7 @@ public:
 private:
 	sharedResourceGroupC<multipleReaderLockC, rangePtrS *>	ranges;
 	sharedResourceGroupC<multipleReaderLockC, numaMemoryRangeC *> defRange;
+	slamCacheC	rangePtrCache;
 };
 
 #endif
