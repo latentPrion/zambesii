@@ -128,7 +128,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 
 	__kprintf(NOTICE NUMAMEMBANK"New mem range: base 0x%X, size 0x%X, "
 		"v 0x%X.\n",
-		baseAddr, size);
+		baseAddr, size, memRange);
 
 	return ERROR_SUCCESS;
 }
@@ -368,7 +368,7 @@ sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
 	return 0;
 }
 
-void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
+sarch_t numaMemoryBankC::identifyPaddrRange(paddr_t basePaddr, paddr_t nBytes)
 {
 	uarch_t		rwFlags;
 
@@ -376,9 +376,24 @@ void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 
 	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
 	{
-		if (cur->range->identifyPaddr(baseAddr)) {
-			cur->range->mapMemUsed(baseAddr, nFrames);
+		if (cur->range->identifyPaddrRange(basePaddr, nBytes))
+		{
+			ranges.lock.readRelease(rwFlags);
+			return 1;
 		};
+	};
+	ranges.lock.readRelease(rwFlags);
+	return 0;
+}
+
+void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
+{
+	uarch_t		rwFlags;
+
+	ranges.lock.readAcquire(&rwFlags);
+
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; ) {
+		cur->range->mapMemUsed(baseAddr, nFrames);
 	};
 
 	ranges.lock.readRelease(rwFlags);
@@ -390,11 +405,8 @@ void numaMemoryBankC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
-	{
-		if (cur->range->identifyPaddr(baseAddr)) {
-			cur->range->mapMemUnused(baseAddr, nFrames);
-		};
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; ) {
+		cur->range->mapMemUnused(baseAddr, nFrames);
 	};
 
 	ranges.lock.readRelease(rwFlags);

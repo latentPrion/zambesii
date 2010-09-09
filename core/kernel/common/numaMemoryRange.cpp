@@ -32,16 +32,17 @@ sarch_t numaMemoryRangeC::identifyPaddr(paddr_t baseAddr)
 	return 0;
 }
 
-sarch_t numaMemoryRangeC::identifyPaddrRange(paddr_t paddr, uarch_t nFrames)
+sarch_t numaMemoryRangeC::identifyPaddrRange(paddr_t paddr, paddr_t nBytes)
 {
-	paddr_t		endPaddr;
+	paddr_t		callerEndPaddr;
 	paddr_t		rangeEndPaddr;
 
-	endPaddr = paddr + (nFrames * PAGING_BASE_SIZE) - 1;
+	callerEndPaddr = paddr + nBytes - 1;
 	rangeEndPaddr = baseAddr + size - 1;
 
 	if (((paddr >= this->baseAddr) && (paddr < rangeEndPaddr))
-		|| ((endPaddr >= this->baseAddr) && (endPaddr < rangeEndPaddr)))
+		|| ((callerEndPaddr >= this->baseAddr)
+		&& (callerEndPaddr <= rangeEndPaddr)))
 	{
 		return 1;
 	};
@@ -80,15 +81,32 @@ error_t numaMemoryRangeC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 	return bmp.fragmentedGetFrames(nFrames, paddr);
 }
 
-error_t numaMemoryRangeC::mapMemUsed(paddr_t, uarch_t)
+error_t numaMemoryRangeC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 {
-	UNIMPLEMENTED("error_t numaMemoryRangeC::mapMemUsed()");
-	return ERROR_UNIMPLEMENTED;
+	/* For a numaMemoryRangeC, to map memory used is bit more complex than
+	 * one would think. You need to flush all of the frames from the
+	 * frame cache, otherwise there may be left-over frames from the
+	 * reserved range in the cache that could be handed out to applications.
+	 **/
+	if (!identifyPaddrRange(baseAddr, nFrames << PAGING_BASE_SHIFT)) {
+		return ERROR_INVALID_ARG_VAL;
+	};
+
+	frameCache.flush(&bmp);
+	bmp.mapMemUsed(baseAddr, nFrames);
+	return ERROR_SUCCESS;
 }
 
-error_t numaMemoryRangeC::mapMemUnused(paddr_t, uarch_t)
+error_t numaMemoryRangeC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 {
-	UNIMPLEMENTED("error_t numaMemoryRangeC::mapMemUnused()");
-	return ERROR_UNIMPLEMENTED;
+	/* To map frames unused for a numaMemoryRange, you can just map, and
+	 * not flush the frame cache.
+	 **/
+	if (!identifyPaddrRange(baseAddr, nFrames << PAGING_BASE_SHIFT)) {
+		return ERROR_INVALID_ARG_VAL;
+	};
+
+	bmp.mapMemUnused(baseAddr, nFrames);
+	return ERROR_SUCCESS;
 }
 

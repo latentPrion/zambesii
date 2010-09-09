@@ -204,7 +204,17 @@ error_t numaTribC::initialize2(void)
 	ret = (*memInfoRiv->initialize)();
 	assert_fatal(ret == ERROR_SUCCESS);
 
-	// Now get the memory map.
+#if __SCALING__ >= SCALING_CC_NUMA
+	// Code to call for NUMA detection here.
+#endif
+
+#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
+	/* Code to call for memory config and shbank gen here. On a NUMA build
+	 * of the kernel this is optional. On a non-NUMA build, it is forced
+	 * to true so the kernel will hopefully have *some* RAM to work with.
+	 **/
+
+	// Least common denom: use MMap here.
 	memMap = (*memInfoRiv->getMemoryMap)();
 	assert_fatal(memMap != __KNULL);
 
@@ -227,32 +237,31 @@ error_t numaTribC::initialize2(void)
 		totalSize += memMap->entries[i].size;
 	};
 
-#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
-	__kprintf(NOTICE NUMATRIB"Using mem map entry %d as highest, totalSize "
-		"0x%X.\n",
-		highest, totalSize);
+	// Generate shared bank.
+	ns = new (
+		(memoryTrib.__kmemoryStream
+			.*memoryTrib.__kmemoryStream.memAlloc)(
+				PAGING_BYTES_TO_PAGES(sizeof(numaStreamC)),
+				MEMALLOC_NO_FAKEMAP))
+		numaStreamC(CHIPSET_MEMORY_NUMA_SHBANKID);
 
-	ns = new numaStreamC(CHIPSET_MEMORY_NUMA_SHBANKID);
 	if (ns == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	ret = numaStreams.addItem(CHIPSET_MEMORY_NUMA_SHBANKID, ns);
-	if (ret != ERROR_SUCCESS) {
+	if (ret != ERROR_SUCCESS)
+	{
+		memoryTrib.__kmemoryStream.memFree(ns);
 		return ret;
 	};
 
 	ns = getStream(CHIPSET_MEMORY_NUMA_SHBANKID);
-	if (ns == __KNULL) {
-		return ERROR_UNKNOWN;
-	};
+	assert_error(ns != __KNULL);
 
 	ret = ns->memoryBank.addMemoryRange(0x0, totalSize);
-	if (ret != ERROR_SUCCESS) {
-		return ret;
-	};
+	assert_error(ret == ERROR_SUCCESS);
 
-	__kprintf(NOTICE NUMATRIB"Mem detection stub done.\n");
 #endif
 
 	return ERROR_SUCCESS;

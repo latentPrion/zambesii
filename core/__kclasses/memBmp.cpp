@@ -269,32 +269,48 @@ void memBmpC::releaseFrames(paddr_t frameAddr, uarch_t nFrames)
 	bmp.lock.release();
 }
 
-void memBmpC::mapMemUsed(paddr_t basePaddr, uarch_t nFrames)
+void memBmpC::mapMemUsed(paddr_t rangeBase, uarch_t nFrames)
 {
-	uarch_t		startPfn = basePaddr / PAGING_BASE_SIZE;
-	uarch_t		_endPfn = startPfn + nFrames;
+	uarch_t		startPfn=basePfn, _endPfn;
 
-	if (nFrames == 0) { return; };
+	if (rangeBase >= baseAddr) {
+		startPfn = rangeBase >> PAGING_BASE_SHIFT;
+	};
+
+	if (((startPfn << PAGING_BASE_SHIFT)
+		+ (nFrames << PAGING_BASE_SHIFT) - 1) > endAddr)
+	{
+		nFrames = endPfn - startPfn;
+	};
 
 	bmp.lock.acquire();
 
-	for (uarch_t i=startPfn; i<_endPfn; i++) {
+	_endPfn = startPfn + nFrames;
+	for (uarch_t i=0; i<_endPfn; i++) {
 		setFrame(i);
 	};
 
 	bmp.lock.release();
 }
 
-void memBmpC::mapMemUnused(paddr_t basePaddr, uarch_t nFrames)
+void memBmpC::mapMemUnused(paddr_t rangeBase, uarch_t nFrames)
 {
-	uarch_t		startPfn = basePaddr / PAGING_BASE_SIZE;
-	uarch_t		_endPfn = startPfn + nFrames;
+	uarch_t		startPfn=basePfn, _endPfn;
 
-	if (nFrames == 0) { return; };
+	if (rangeBase >= baseAddr) {
+		startPfn = rangeBase >> PAGING_BASE_SHIFT;
+	};
+
+	if (((startPfn << PAGING_BASE_SHIFT)
+		+ (nFrames << PAGING_BASE_SHIFT) - 1) > endAddr)
+	{
+		nFrames = endPfn - startPfn;
+	};
 
 	bmp.lock.acquire();
 
-	for (uarch_t i=startPfn; i<_endPfn; i++) {
+	_endPfn = startPfn + nFrames;
+	for (uarch_t i=0; i<_endPfn; i++) {
 		unsetFrame(i);
 	};
 

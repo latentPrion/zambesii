@@ -36,6 +36,8 @@ public:
 	error_t push(uarch_t category, T item);
 	error_t pop(uarch_t category, T *item);
 
+	void flush(memBmpC *bmp);
+
 private:
 	cacheStackC<T>		stacks[STACKCACHE_NSTACKS];
 };
@@ -72,6 +74,14 @@ error_t stackCacheC<T>::pop(uarch_t category, T *item)
 		};
 	};
 	return ERROR_GENERAL;
+}
+
+template <class T>
+void stackCacheC<T>::flush(memBmpC *bmp)
+{
+	for (sarch_t i=0; i<STACKCACHE_NSTACKS; i++) {
+		stacks[i].flush(bmp);
+	};
 }
 
 #endif

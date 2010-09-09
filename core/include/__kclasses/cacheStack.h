@@ -2,8 +2,10 @@
 	#define _CACHE_STACK_H
 
 	#include <arch/paging.h>
+	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string.h>
+	#include <__kclasses/memBmp.h>
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 
@@ -24,6 +26,8 @@ public:
 public:
 	error_t push(T item);
 	error_t pop(T *item);
+
+	void flush(memBmpC *bmp);
 
 public:
 	uarch_t	stackSize;
@@ -85,6 +89,21 @@ error_t cacheStackC<T>::pop(T *item)
 
 	stack.lock.release();
 	return ERROR_SUCCESS;
+}
+
+template <class T>
+void cacheStackC<T>::flush(memBmpC *bmp)
+{
+	stack.lock.acquire();
+
+	// Can only be frames from the BMP passed as an argument.
+	for (; stack.rsrc.stackPtr != CACHESTACK_EMPTY; stack.rsrc.stackPtr--)
+	{
+		bmp->releaseFrames(
+			stack.rsrc.stack[stack.rsrc.stackPtr], stackSize);
+	};
+
+	stack.lock.release();
 }
 
 #endif
