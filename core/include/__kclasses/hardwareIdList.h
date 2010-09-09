@@ -7,6 +7,7 @@
 	#include <__kstdlib/__kcxxlib/new>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
+	#include <kernel/common/memoryTrib/memoryTrib.h>
 
 #define HWIDLIST_INDEX_INVALID		(-1)
 
@@ -146,7 +147,14 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 		/* Allocate new array, copy old one, free old one.
 		 * Make sure to update arr.rsrc.maxIndex.
 		 **/
-		tmp = new arrayNodeS[id+1];
+		tmp = new (
+			(memoryTrib.__kmemoryStream
+				.*memoryTrib.__kmemoryStream.memAlloc)(
+					PAGING_BYTES_TO_PAGES(
+						sizeof(arrayNodeS) * (id + 1)),
+					MEMALLOC_NO_FAKEMAP))
+			arrayNodeS;
+
 		if (tmp == __KNULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
@@ -165,7 +173,12 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 		arr.rsrc.maxIndex = id;
 
 		arr.lock.writeRelease();
-		delete old;
+
+		// Avoid freeing __kspace stream if that's what we're handling.
+		if (!(reinterpret_cast<uarch_t>( old ) & PAGING_BASE_MASK_LOW))
+		{
+			memoryTrib.__kmemoryStream.memFree(old);
+		};
 	};
 
 	// At this point there is enough space to hold the new item.
