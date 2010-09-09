@@ -53,7 +53,8 @@ public:
 
 public:
 	numaStreamC *getStream(numaBankId_t bankId);
-	error_t spawnStream(numaBankId_t id, paddr_t baseAddr, paddr_t size);
+	error_t spawnStream(numaBankId_t id);
+	void destroyStream(numaBankId_t id);
 
 	void dump(void);
 

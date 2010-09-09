@@ -167,7 +167,7 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 				cur->range->baseAddr, cur->range->size,
 				cur->range);
 
-			// Make sure we don't mess up the kernel by freeing __kspace.
+			// Make sure we don't mess up by freeing __kspace.
 			if (!(reinterpret_cast<uarch_t>( cur->range )
 				& PAGING_BASE_MASK_LOW))
 			{
@@ -211,8 +211,10 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 
 		defRange.lock.readReleaseWriteAcquire(rwFlags);
 		defRange.rsrc = ranges.rsrc->range;
-		ranges.lock.readRelease(rwFlags2);
+		defRange.lock.writeRelease();
 
+		ranges.lock.readRelease(rwFlags2);
+		defRange.lock.readAcquire(&rwFlags);		
 		// Note that we still hold readAcquire on defRange here.
 	};
 
@@ -256,7 +258,7 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 {
 	uarch_t		rwFlags, rwFlags2;
-	status_t	ret;
+	error_t		ret;
 
 	defRange.lock.readAcquire(&rwFlags);
 
@@ -275,8 +277,10 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 
 		defRange.lock.readReleaseWriteAcquire(rwFlags);
 		defRange.rsrc = ranges.rsrc->range;
-		ranges.lock.readRelease(rwFlags2);
+		defRange.lock.writeRelease();
 
+		ranges.lock.readRelease(rwFlags2);
+		defRange.lock.readAcquire(&rwFlags);		
 		// Note that we still hold readAcquire on defRange here.
 	};
 
