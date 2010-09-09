@@ -44,19 +44,10 @@ public:
 	void dump(void);
 
 private:
-	// Creates a new slam cache and adds it to the array of slam caches.
-	slamCacheC *createCache(uarch_t objSize);
-
 	struct allocHeaderS
 	{
 		uarch_t		size;
 		uarch_t		magic;
-	};
-
-	struct cacheStateS
-	{
-		slamCacheC	**ptrs;
-		uarch_t		nCaches;
 	};
 	struct bogStateS
 	{
@@ -68,7 +59,6 @@ private:
 		slamCacheC	*owner;
 		uarch_t		magic;
 	};
-	sharedResourceGroupC<multipleReaderLockC, cacheStateS>	caches;
 	memoryBogC	*__kbog;
 	sharedResourceGroupC<multipleReaderLockC, bogStateS>	bogs;
 };

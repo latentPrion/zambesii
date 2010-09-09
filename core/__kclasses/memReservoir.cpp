@@ -15,8 +15,6 @@ memReservoirC::memReservoirC(void)
 	__kbog = __KNULL;
 	bogs.rsrc.ptrs = __KNULL;
 	bogs.rsrc.nBogs = 0;
-	caches.rsrc.ptrs = __KNULL;
-	caches.rsrc.ptrs = 0;
 }
 
 error_t memReservoirC::initialize(void)
@@ -265,64 +263,5 @@ void memReservoirC::free(void *_mem)
 
 	__kprintf(WARNING RESERVOIR"free(%X): Operation fell through without "
 		"finding subsystem to be freed to.\n", mem);
-}
-
-// Expects the lock to be pre-write-acquired.
-slamCacheC *memReservoirC::createCache(uarch_t objSize)
-{
-	slamCacheC	*ret=0;
-	uarch_t		spot=RESERVOIR_MAX_NCACHES;
-
-	// It's possible that another thread allocated the cache between locks.
-	for (uarch_t i=0; i<caches.rsrc.nCaches; i++)
-	{
-		if (caches.rsrc.ptrs[i]->objectSize == objSize) {
-			return caches.rsrc.ptrs[i];
-		};
-	};
-
-	if (__kbog != __KNULL) {
-		ret = new (__kbog->allocate(sizeof(slamCacheC)))
-			slamCacheC(objSize);
-	};
-
-	// Just do a page granular alloc.
-	if (ret == __KNULL)
-	{
-		ret = new ((memoryTrib.__kmemoryStream
-			.*memoryTrib.__kmemoryStream.memAlloc)(1, 0))
-				slamCacheC(objSize);
-	};
-
-	if (ret == __KNULL) {
-		return __KNULL;
-	};
-
-	ret->initialize();
-
-	for (uarch_t i=0; i<caches.rsrc.nCaches; i++)
-	{
-		if (objSize < caches.rsrc.ptrs[i]->objectSize)
-		{
-			spot = i;
-			break;
-		};
-	};
-
-	if (spot == RESERVOIR_MAX_NCACHES) {
-		spot = caches.rsrc.nCaches;
-	};
-
-	for (uarch_t i=caches.rsrc.nCaches; i > spot; i--) {
-		caches.rsrc.ptrs[i] = caches.rsrc.ptrs[i-1];
-	};
-	caches.rsrc.ptrs[spot] = ret;
-	caches.rsrc.nCaches++;
-
-	__kprintf(NOTICE RESERVOIR"Allocated new object cache, v 0x%X, size "
-		"0x%X, occupies slot %d in array.\n",
-		ret, ret->objectSize, spot);
-
-	return ret;
 }
 
