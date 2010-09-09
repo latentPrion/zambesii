@@ -273,7 +273,7 @@ void numaTribC::dump(void)
 	}
 }
 
-error_t numaTribC::spawnStream(numaBankId_t, paddr_t, paddr_t)
+error_t numaTribC::spawnStream(numaBankId_t)
 {
 	UNIMPLEMENTED("numaTribC::spawnStream()");
 	return ERROR_UNIMPLEMENTED;
