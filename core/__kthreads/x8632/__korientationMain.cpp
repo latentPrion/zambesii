@@ -66,7 +66,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(numaTrib, initialize2(), ret);
-	for (;;){};
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 

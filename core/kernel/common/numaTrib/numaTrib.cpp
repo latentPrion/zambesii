@@ -108,19 +108,11 @@ error_t numaTribC::initialize(void)
  * a usable state, the kernel must spawn a NUMA Stream for each detected bank,
  * and initialize it real-time.
  *
- * In the broader scope, there are two possibilities:
- *	1. The kernel finds and parses a physical memory information structure
- *	   or memory map before discovering NUMA memory layout.
- *	2. The kernel finds NUMA layout information before finding any kind of
- *	   general memory information or memory map.
- *
  * In Zambezii, a memory map is nothing more than something to overlay the
  * the real memory information. In other words, the last thing we logically
  * parse is a memory map. Our priority is:
- *	1. Find out the total amount of memory first.
- *	2. Find out about NUMA layout next. See, doing it this way allows us to
- *	   discover the existence of any memory on-board which does not belong
- *	   to a particular NUMA bank.
+ *	1. Find out about NUMA layout.
+ *	2. Find out the total amount of memory.
  *
  *	   Take the following example: If a chipset is detailed to have 64MB of
  *	   RAM, yet the NUMA information describes only two nodes: (1) 0MB-8MB,
@@ -138,9 +130,10 @@ error_t numaTribC::initialize(void)
  *	   Note well that a memory map may be used as general memory information
  *	   suitable for use as requirement (1) above.
  *
- * ^ If NUMA information does not exist, Zambezii will spawn a single NUMA bank
- *   as if the chipset only had one bank, and all processes will share this
- *   bank.
+ * ^ If NUMA information does not exist, and shared bank generation is not
+ *   set in the config, Zambezii will assume no memory other than __kspace. If
+ *   shbank is configured, then Zambezii will spawn a single bank for all of
+ *   RAM as shared memory for all processes.
  *
  * ^ If a memory map is not found, and only a total figure for "amount of RAM"
  *   is given, Zambezii will assume that there is no reserved memory on the
@@ -154,13 +147,12 @@ error_t numaTribC::initialize(void)
 error_t numaTribC::initialize2(void)
 {
 	error_t			ret;
-//	chipsetMemConfigS	*memConfig;
+	chipsetMemConfigS	*memConfig;
 	chipsetMemMapS		*memMap;
-//	chipsetNumaMapS		*numaMap;
+	chipsetNumaMapS		*numaMap;
 	memInfoRivS		*memInfoRiv;
 	numaStreamC		*ns;
-	uarch_t			highest;
-	paddr_t			totalSize;
+	sarch_t			pos;
 
 	/**	EXPLANATION:
 	 * Now the NUMA Tributary is ready to check for new banks of memory,
@@ -197,7 +189,7 @@ error_t numaTribC::initialize2(void)
 	__kprintf(NOTICE NUMATRIB"Initialized Firmware and Chipset firmware "
 		"streams.\n");
 
-	// For now, just do something like, create one big bank for all mem.
+	// Fetch and initialize the Memory Info rivulet.
 	memInfoRiv = firmwareTrib.getMemInfoRiv();
 	assert_fatal(memInfoRiv != __KNULL);
 
@@ -205,64 +197,143 @@ error_t numaTribC::initialize2(void)
 	assert_fatal(ret == ERROR_SUCCESS);
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	// Code to call for NUMA detection here.
+	numaMap = (*memInfoRiv->getNumaMap)();
+	if (numaMap != __KNULL)
+	{
+		__kprintf(NOTICE NUMATRIB"NUMA Map: %d entries.\n",
+			numaMap->nMemEntries);
+
+		for (uarch_t i=0; i<numaMap->nMemEntries; i++)
+		{
+			// If we've already spawned a stream for this bank:
+			if (getStream(numaMap->memEntries[i].bankId)) {
+				continue;
+			};
+			// Else allocate one.
+			ns = new (
+				(memoryTrib.__kmemoryStream
+					.*memoryTrib.__kmemoryStream.memAlloc)(
+						PAGING_BYTES_TO_PAGES(
+							sizeof(numaStreamC)),
+						MEMALLOC_NO_FAKEMAP))
+				numaStreamC(numaMap->memEntries[i].bankId);
+
+			if (ns == __KNULL)
+			{
+				__kprintf(ERROR NUMATRIB"Failed to allocate "
+					"Numa Stream obj for bank %d.\n",
+					numaMap->memEntries[i].bankId);
+			}
+			else
+			{
+				ret = numaStreams.addItem(
+					numaMap->memEntries[i].bankId, ns);
+
+				if (ret != ERROR_SUCCESS)
+				{
+					__kprintf(ERROR NUMATRIB"Failed to "
+						"add NUMA Stream for bank %d "
+						"to NUMA Trib list.\n",
+						numaMap->memEntries[i].bankId);
+
+					memoryTrib.__kmemoryStream.memFree(ns);
+				}
+				else
+				{
+					__kprintf(NOTICE NUMATRIB"New NUMA "
+						"Stream obj, ID %d, v 0x%X.\n",
+						numaMap->memEntries[i].bankId,
+						ns);
+				};
+			};
+		};
+	}
+	else {
+		__kprintf(WARNING NUMATRIB"getNumaMap(): no map.\n");
+	};
 #endif
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
-	/* Code to call for memory config and shbank gen here. On a NUMA build
-	 * of the kernel this is optional. On a non-NUMA build, it is forced
-	 * to true so the kernel will hopefully have *some* RAM to work with.
-	 **/
-
-	// Least common denom: use MMap here.
-	memMap = (*memInfoRiv->getMemoryMap)();
-	assert_fatal(memMap != __KNULL);
-
-	highest = 0;
-	totalSize = 0;
-	for (uarch_t i=0; i<memMap->nEntries; i++)
+	memConfig = (*memInfoRiv->getMemoryConfig)();
+	if (memConfig != __KNULL)
 	{
-		__kprintf(NOTICE NUMATRIB"Map %d: Base 0x%X, length 0x%X, "
-			"type %d.\n",
-			i,
-			memMap->entries[i].baseAddr,
-			memMap->entries[i].size,
-			memMap->entries[i].memType);
+		__kprintf(NOTICE NUMATRIB"Memory Config: memory size: 0x%X.\n",
+			memConfig->memSize);
 
-		if (memMap->entries[i].baseAddr
-			> memMap->entries[highest].baseAddr)
+		ns = new (
+			(memoryTrib.__kmemoryStream
+				.*memoryTrib.__kmemoryStream.memAlloc)(
+					PAGING_BYTES_TO_PAGES(
+						sizeof(numaStreamC)),
+					MEMALLOC_NO_FAKEMAP))
+			numaStreamC(CHIPSET_MEMORY_NUMA_SHBANKID);
+
+		ret = numaStreams.addItem(CHIPSET_MEMORY_NUMA_SHBANKID, ns);
+		if (ret != ERROR_SUCCESS)
 		{
-			highest = i;
+			__kprintf(ERROR NUMATRIB"Failed to add shbank to NUMA "
+				"Stream list.\n");
+		}
+		else
+		{
+			__kprintf(NOTICE NUMATRIB"Shbank added @ index %d.\n",
+				CHIPSET_MEMORY_NUMA_SHBANKID);
+
+			ns = getStream(CHIPSET_MEMORY_NUMA_SHBANKID);
+			if (ns != __KNULL)
+			{
+				ret = ns->memoryBank.addMemoryRange(
+					0x0, memConfig->memSize);
+
+				if (ret != ERROR_SUCCESS)
+				{
+					__kprintf(ERROR NUMATRIB"Failed to add "
+						"memory range for shbank.\n");
+				}
+				else
+				{
+					__kprintf(NOTICE NUMATRIB"Shbank mem "
+						"range added to shbank.\n");
+				};
+			}
+			else
+			{
+				__kprintf(ERROR NUMATRIB"Failed to retrieve "
+					"shbank stream pointer from list.\n");
+
+				panic(ERROR_UNKNOWN);
+			};
 		};
-		totalSize += memMap->entries[i].size;
+	}
+	else {
+		__kprintf(WARNING NUMATRIB"getMemoryConfig(): no config.\n");
 	};
-
-	// Generate shared bank.
-	ns = new (
-		(memoryTrib.__kmemoryStream
-			.*memoryTrib.__kmemoryStream.memAlloc)(
-				PAGING_BYTES_TO_PAGES(sizeof(numaStreamC)),
-				MEMALLOC_NO_FAKEMAP))
-		numaStreamC(CHIPSET_MEMORY_NUMA_SHBANKID);
-
-	if (ns == __KNULL) {
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	ret = numaStreams.addItem(CHIPSET_MEMORY_NUMA_SHBANKID, ns);
-	if (ret != ERROR_SUCCESS)
-	{
-		memoryTrib.__kmemoryStream.memFree(ns);
-		return ret;
-	};
-
-	ns = getStream(CHIPSET_MEMORY_NUMA_SHBANKID);
-	assert_error(ns != __KNULL);
-
-	ret = ns->memoryBank.addMemoryRange(0x0, totalSize);
-	assert_error(ret == ERROR_SUCCESS);
-
 #endif
+
+	memMap = (memInfoRiv->getMemoryMap)();
+	if (memMap != __KNULL)
+	{
+		pos = numaStreams.prepareForLoop();
+		ns = numaStreams.getLoopItem(&pos);
+		for (; ns != __KNULL; ns = numaStreams.getLoopItem(&pos))
+		{
+			for (uarch_t i=0; i<memMap->nEntries; i++)
+			{
+				if (memMap->entries[i].memType !=
+					CHIPSETMMAP_TYPE_USABLE)
+				{
+					ns->memoryBank.mapMemUsed(
+						memMap->entries[i].baseAddr,
+						PAGING_BYTES_TO_PAGES(
+							memMap->entries[i]
+								.size));
+				};
+			};
+		};
+	}
+	else {
+		__kprintf(WARNING NUMATRIB"getMemoryMap(): No mem map.\n");
+	};
 
 	return ERROR_SUCCESS;
 }

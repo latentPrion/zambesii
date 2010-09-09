@@ -9,16 +9,21 @@
  * in NUMA configuration for the kernel to use.
  **/
 
+#define NUMAMEMMAP_FLAGS_HOTPLUG	(1<<0)
+#define NUMAMEMMAP_FLAGS_ONLINE		(1<<1)
+
 struct numaMemMapEntryS
 {
 	paddr_t		baseAddr, size;
+	sarch_t		bankId;
+	uarch_t		flags;
 };
 
 struct chipsetNumaMapS
 {
-	// numaCpuMapEntryS	*cpuConfig;
-	struct numaMemMapEntryS	*memConfig;
-	ubit8			nMemMapEntries, nCpuMapEntries;
+	// numaCpuMapEntryS	*cpuEntries;
+	struct numaMemMapEntryS	*memEntries;
+	ubit8			nMemEntries, nCpuEntries;
 };
 
 #endif
