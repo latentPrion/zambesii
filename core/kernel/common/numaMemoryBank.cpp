@@ -1,10 +1,12 @@
 
 #include <debug.h>
+#include <arch/paging.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 
 
 #define NUMAMEMBANK_DEFINDEX_NONE	(-1)
@@ -33,7 +35,13 @@ numaMemoryBankC::~numaMemoryBankC(void)
 		if (tmp == __KNULL) {
 			return;
 		};
-		delete tmp->range;
+
+		// Make sure we don't mess up the kernel by freeing __kspace.
+		if (!(reinterpret_cast<uarch_t>( tmp->range )
+			& PAGING_BASE_MASK_LOW))
+		{
+			memoryTrib.__kmemoryStream.memFree(tmp->range);
+		};
 		delete tmp;
 	} while (1);
 }
@@ -72,7 +80,12 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	error_t			err;
 
 	// Allocate a new bmp allocator.
-	memRange = new numaMemoryRangeC(baseAddr, size);
+	memRange = new ((memoryTrib.__kmemoryStream
+		.*memoryTrib.__kmemoryStream.memAlloc)(
+			PAGING_BYTES_TO_PAGES(sizeof(numaMemoryRangeC)),
+			MEMALLOC_NO_FAKEMAP))
+		numaMemoryRangeC(baseAddr, size);
+
 	if (memRange == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
@@ -80,14 +93,14 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	err = memRange->initialize();
 	if (err != ERROR_SUCCESS)
 	{
-		delete memRange;
+		memoryTrib.__kmemoryStream.memFree(memRange);
 		return err;
 	};
 
 	tmpNode = new rangePtrS;
 	if (tmpNode == __KNULL)
 	{
-		delete memRange;
+		memoryTrib.__kmemoryStream.memFree(memRange);
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -149,7 +162,12 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 				cur->range->baseAddr, cur->range->size,
 				cur->range);
 
-			delete cur->range;
+			// Make sure we don't mess up the kernel by freeing __kspace.
+			if (!(reinterpret_cast<uarch_t>( cur->range )
+				& PAGING_BASE_MASK_LOW))
+			{
+				memoryTrib.__kmemoryStream.memFree(cur->range);
+			};
 			delete cur;
 			return ERROR_SUCCESS;
 		};
