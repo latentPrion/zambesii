@@ -37,9 +37,7 @@ error_t slamCacheC::initialize(void)
 
 slamCacheC::~slamCacheC(void)
 {
-	/* I'm not even sure it's possible to destroy a cache, really, without
-	 * some form of reference counting.
-	 **/
+	//FIXME: Find a way to destroy these things...
 }
 
 void slamCacheC::dump(void)

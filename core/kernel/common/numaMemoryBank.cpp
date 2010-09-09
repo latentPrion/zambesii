@@ -46,7 +46,7 @@ numaMemoryBankC::~numaMemoryBankC(void)
 		{
 			memoryTrib.__kmemoryStream.memFree(tmp->range);
 		};
-		delete tmp;
+		rangePtrCache.free(tmp);
 	} while (1);
 }
 
