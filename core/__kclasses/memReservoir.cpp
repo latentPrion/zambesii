@@ -19,9 +19,11 @@ memReservoirC::memReservoirC(void)
 
 error_t memReservoirC::initialize(void)
 {
-	__kbog = new ((memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(1, 0))
-			memoryBogC(CHIPSET_MEMORY___KBOG_SIZE);
+	__kbog = new (
+		(memoryTrib.__kmemoryStream
+			.*memoryTrib.__kmemoryStream.memAlloc)(
+				1, MEMALLOC_NO_FAKEMAP))
+		memoryBogC(CHIPSET_MEMORY___KBOG_SIZE);
 
 	if (__kbog == __KNULL)
 	{
@@ -33,23 +35,11 @@ error_t memReservoirC::initialize(void)
 
 	__kbog->initialize();
 
-	caches.rsrc.ptrs = new ((memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(1, 0)) slamCacheC*;
-
-	memset(caches.rsrc.ptrs, 0, PAGING_BASE_SIZE);
-
-	if (caches.rsrc.ptrs == __KNULL)
-	{
-		__kprintf(ERROR RESERVOIR"Unable to allocate a page to hold "
-			"the array of object caches.\n");
-
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	bogs.rsrc.ptrs = new ((memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(1, 0)) memoryBogC*;
-
-	memset(bogs.rsrc.ptrs, 0, PAGING_BASE_SIZE);
+	bogs.rsrc.ptrs = new (
+		(memoryTrib.__kmemoryStream
+			.*memoryTrib.__kmemoryStream.memAlloc)(
+				1, MEMALLOC_NO_FAKEMAP))
+		memoryBogC*;
 
 	if (bogs.rsrc.ptrs == __KNULL)
 	{
@@ -59,9 +49,11 @@ error_t memReservoirC::initialize(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
+	memset(bogs.rsrc.ptrs, 0, PAGING_BASE_SIZE);
+
 	__kprintf(NOTICE RESERVOIR"initialize(): Done. __kbog v 0x%X, size "
-		"0x%X. caches array 0x%X, custom bogs array 0x%X.\n",
-		__kbog, __kbog->blockSize, caches.rsrc.ptrs, bogs.rsrc.ptrs);
+		"0x%X, custom bogs array 0x%X.\n",
+		__kbog, __kbog->blockSize, bogs.rsrc.ptrs);
 
 	return ERROR_SUCCESS;
 }
@@ -74,10 +66,8 @@ void memReservoirC::dump(void)
 {
 	
 	__kprintf(NOTICE RESERVOIR"Dumping.\n");
-	__kprintf(NOTICE RESERVOIR"Cache array, %X, nCaches %d, __kbog %X, "
-		"(custom) bogs array %X, nBogs %d.\n",
-		caches.rsrc.ptrs, caches.rsrc.nCaches, __kbog, bogs.rsrc.ptrs,
-		bogs.rsrc.nBogs);
+	__kprintf(NOTICE RESERVOIR"__kbog v 0x%X, bogs array 0x%X, nBogs %d.\n",
+		__kbog, bogs.rsrc.ptrs, bogs.rsrc.nBogs);
 
 	__kprintf(NOTICE RESERVOIR"Dumping __kbog.\n");
 	__kbog->dump();
@@ -89,82 +79,17 @@ void memReservoirC::dump(void)
 
 		bogs.rsrc.ptrs[i]->dump();
 	};
-
-	for (uarch_t i=0; i<caches.rsrc.nCaches; i++)
-	{
-		__kprintf(NOTICE RESERVOIR"Dumping cache %d @ v %X.\n",
-			i, caches.rsrc.ptrs[i]);
-
-		caches.rsrc.ptrs[i]->dump();
-	};
 }
 
 void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 {
-	uarch_t			rwFlags;
 	reservoirHeaderS	*ret;
-	slamCacheC		*cache;
 
 	if (nBytes == 0) {
 		return __KNULL;
 	};
 
 	nBytes += sizeof(reservoirHeaderS);
-
-	if (nBytes <= PAGING_BASE_SIZE / 8)
-	{
-		caches.lock.readAcquire(&rwFlags);
-
-		if (caches.rsrc.ptrs != __KNULL)
-		{
-			for (uarch_t i=0; i<caches.rsrc.nCaches; i++)
-			{
-				if (caches.rsrc.ptrs[i]->objectSize
-					== nBytes)
-				{
-					ret = static_cast<reservoirHeaderS *>(
-						caches.rsrc.ptrs[i]
-							->allocate() );
-
-					caches.lock.readRelease(rwFlags);
-
-					ret->owner = caches.rsrc.ptrs[i];
-					ret->magic = RESERVOIR_MAGIC;
-					return reinterpret_cast<void *>(
-						reinterpret_cast<uarch_t>( ret )
-							+ sizeof(reservoirHeaderS) );
-				};
-			};
-
-			caches.lock.readRelease(rwFlags);
-			// Make sure cache doesn't exist in createCache();
-			caches.lock.writeAcquire();
-
-			// No cache. Try to allocate one.
-			cache = createCache(nBytes);
-
-			caches.lock.writeRelease();
-			caches.lock.readAcquire(&rwFlags);
-
-			if (cache != __KNULL)
-			{
-				ret = static_cast<reservoirHeaderS *>(
-					cache->allocate() );
-
-				caches.lock.readRelease(rwFlags);
-
-				if (ret != __KNULL)
-				{
-					ret->owner = cache;
-					ret->magic = RESERVOIR_MAGIC;
-					return reinterpret_cast<void *>(
-						reinterpret_cast<uarch_t>( ret )
-							+ sizeof(reservoirHeaderS) );
-				};
-			};
-		};
-		caches.lock.readRelease(rwFlags);
-	};
 
 	/**	NOTES:
 	 * Even though the very fact that the kernel's bog is unavailable is
@@ -188,7 +113,6 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 			memoryBogC::moveHeaderDown(
 				ret, sizeof(reservoirHeaderS));
 
-			ret->owner = __KNULL;
 			ret->magic = RESERVOIR_MAGIC | RESERVOIR_FLAGS___KBOG;
 			return reinterpret_cast<reservoirHeaderS *>(
 				reinterpret_cast<uarch_t>( ret )
@@ -197,14 +121,13 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 	};
 
 tryStream:
-	// Unable to allocate from caches and the kernel bog. Stream allocate.
+	// Unable to allocate from the kernel bog. Stream allocate.
 	ret = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(
 			PAGING_BYTES_TO_PAGES(nBytes), 0)) reservoirHeaderS;
 
 	if (ret != __KNULL)
 	{
-		ret->owner = __KNULL;
 		ret->magic = RESERVOIR_MAGIC | RESERVOIR_FLAGS_STREAM;
 		return reinterpret_cast<reservoirHeaderS *>(
 			reinterpret_cast<uarch_t>( ret )
@@ -218,7 +141,6 @@ tryStream:
 void memReservoirC::free(void *_mem)
 {
 	reservoirHeaderS	*mem;
-	slamCacheC		*cache;
 
 	if (_mem == __KNULL) {
 		return;
@@ -229,7 +151,7 @@ void memReservoirC::free(void *_mem)
 
 	if ((mem->magic >> 4) != (RESERVOIR_MAGIC >> 4))
 	{
-		__kprintf(ERROR RESERVOIR"Corrupt memory or bad free v %X.\n",
+		__kprintf(ERROR RESERVOIR"Corrupt memory or bad free v 0xS%X.\n",
 			mem);
 
 		return;
@@ -254,14 +176,7 @@ void memReservoirC::free(void *_mem)
 		return;
 	};
 
-	if (mem->owner != __KNULL)
-	{
-		cache = mem->owner;
-		cache->free(mem);
-		return;
-	};
-
-	__kprintf(WARNING RESERVOIR"free(%X): Operation fell through without "
+	__kprintf(WARNING RESERVOIR"free(0x%X): Operation fell through without "
 		"finding subsystem to be freed to.\n", mem);
 }
 

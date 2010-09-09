@@ -23,7 +23,6 @@
 #define RESERVOIR_FLAGS_MASK		(0xF)
 
 #define RESERVOIR_MAX_NBOGS		(PAGING_BASE_SIZE / sizeof(void *))
-#define RESERVOIR_MAX_NCACHES		(PAGING_BASE_SIZE / sizeof(void *))
 #define RESERVOIR			"Mem Reservoir: "
 
 class memReservoirC
@@ -56,7 +55,6 @@ private:
 	};
 	struct reservoirHeaderS
 	{
-		slamCacheC	*owner;
 		uarch_t		magic;
 	};
 	memoryBogC	*__kbog;
