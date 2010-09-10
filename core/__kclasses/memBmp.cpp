@@ -22,8 +22,8 @@ memBmpC::memBmpC(paddr_t baseAddr, paddr_t size)
 	memBmpC::baseAddr = baseAddr;
 	endAddr = baseAddr + (size - 1);
 
-	basePfn = baseAddr / PAGING_BASE_SIZE;
-	endPfn = endAddr / PAGING_BASE_SIZE;
+	basePfn = baseAddr >> PAGING_BASE_SHIFT;
+	endPfn = endAddr >> PAGING_BASE_SHIFT;
 	nFrames = (endPfn - basePfn) + 1;
 
 	nIndexes = __KMATH_NELEMENTS(nFrames, __KBIT_NBITS_IN(*bmp.rsrc.bmp));
@@ -80,7 +80,7 @@ memBmpC::~memBmpC(void)
 	};
 }
 
-error_t memBmpC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
+error_t memBmpC::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
 {
 	/* FIXME: bmp.rsrc.lastAllocIndex should be reset and the whole thing
 	 * done over once more if it reaches the last bit and no memory was
@@ -94,9 +94,10 @@ error_t memBmpC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 	 * 32 bits are valid to be searched, and possibly find memory in the
 	 * irrelevant bits.
 	 **/
-	uarch_t nFound = 0, startPfn = MEMBMP_ALLOC_UNSUCCESSFUL, _endPfn;
+	uarch_t		nFound=0, startPfn=MEMBMP_ALLOC_UNSUCCESSFUL, _endPfn;
+	uarch_t	bitLimit=__KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
-	if (nFrames == 0) { return ERROR_INVALID_ARG_VAL; };
+	if (_nFrames == 0) { return ERROR_INVALID_ARG_VAL; };
 	if (paddr == __KNULL) { return ERROR_INVALID_ARG; };
 
 	bmp.lock.acquire();
@@ -105,7 +106,15 @@ error_t memBmpC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 	{
 		if (bmp.rsrc.bmp[i] == MEMBMP_FULL_SLOT) { continue; };
 
-		for (uarch_t j=0; j<__KBIT_NBITS_IN(*bmp.rsrc.bmp); j++)
+		if (i == nIndexes-1)
+		{
+			bitLimit = nFrames % __KBIT_NBITS_IN(*bmp.rsrc.bmp);
+			if (bitLimit == 0) {
+				bitLimit = __KBIT_NBITS_IN(*bmp.rsrc.bmp);
+			};
+		};
+
+		for (uarch_t j=0; j<bitLimit; j++)
 		{
 			if (!__KBIT_TEST(bmp.rsrc.bmp[i], j))
 			{
@@ -122,9 +131,20 @@ error_t memBmpC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 						break;
 					};
 
+					if (i == nIndexes-1)
+					{
+						bitLimit = nFrames
+							% __KBIT_NBITS_IN(*bmp.rsrc.bmp);
+
+						if (bitLimit == 0)
+						{
+							bitLimit =
+								__KBIT_NBITS_IN(*bmp.rsrc.bmp);
+						};
+					};
+
 					for (uarch_t k=((nFound == 0) ? j : 0);
-						k < __KBIT_NBITS_IN(
-							*bmp.rsrc.bmp);
+						k < bitLimit;
 						k++)
 					{
 						if (__KBIT_TEST(
@@ -136,7 +156,7 @@ error_t memBmpC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 							break;
 						};
 						nFound++;
-						if (nFound >= nFrames) {
+						if (nFound >= _nFrames) {
 							goto success; 
 						};
 					};
@@ -155,7 +175,7 @@ error_t memBmpC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 
 success:
-	_endPfn = startPfn + nFrames;
+	_endPfn = startPfn + _nFrames;
 	for (uarch_t i=startPfn; i<_endPfn; i++) {
 		setFrame(i);
 	};
@@ -164,11 +184,11 @@ success:
 		(_endPfn - basePfn) / __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 	bmp.lock.release();
-	*paddr = startPfn * PAGING_BASE_SIZE;
+	*paddr = startPfn << PAGING_BASE_SHIFT;
 	return ERROR_SUCCESS;
 }
 
-status_t memBmpC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
+status_t memBmpC::fragmentedGetFrames(uarch_t _nFrames, paddr_t *paddr)
 {
 	/* FIXME: bmp.rsrc.lastAllocIndex should be reset and the whole thing
 	 * done over once more if it reaches the last bit and no memory was
@@ -179,7 +199,7 @@ status_t memBmpC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 	uarch_t 	nFound = 0, _endPfn, startPfn;
 	uarch_t		bitLimit=__KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
-	if (nFrames == 0) { return ERROR_INVALID_ARG_VAL; };
+	if (_nFrames == 0) { return ERROR_INVALID_ARG_VAL; };
 	if (paddr == __KNULL) { return ERROR_INVALID_ARG; };
 
 	bmp.lock.acquire();
@@ -210,6 +230,18 @@ status_t memBmpC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 						goto out;
 					};
 
+					if (i == nIndexes-1)
+					{
+						bitLimit = nFrames
+							% __KBIT_NBITS_IN(*bmp.rsrc.bmp);
+
+						if (bitLimit == 0)
+						{
+							bitLimit =
+								__KBIT_NBITS_IN(*bmp.rsrc.bmp);
+						};
+					};
+
 					for (uarch_t k=((nFound == 0) ? j : 0);
 						k < bitLimit;
 						k++)
@@ -220,7 +252,7 @@ status_t memBmpC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 							goto out;
 						};
 						nFound++;
-						if (nFound >= nFrames) {
+						if (nFound >= _nFrames) {
 							goto out;
 						};
 					};
@@ -245,16 +277,16 @@ out:
 		(_endPfn - basePfn) / __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 	bmp.lock.release();
-	*paddr = startPfn * PAGING_BASE_SIZE;
+	*paddr = startPfn << PAGING_BASE_SHIFT;
 	return nFound;
 }	
 
-void memBmpC::releaseFrames(paddr_t frameAddr, uarch_t nFrames)
+void memBmpC::releaseFrames(paddr_t frameAddr, uarch_t _nFrames)
 {
-	uarch_t		startPfn = frameAddr / PAGING_BASE_SIZE;
-	uarch_t		_endPfn = startPfn + nFrames;
+	uarch_t		startPfn = frameAddr >> PAGING_BASE_SHIFT;
+	uarch_t		_endPfn = startPfn + _nFrames;
 
-	if (nFrames == 0) { return; };
+	if (_nFrames == 0) { return; };
 
 	bmp.lock.acquire();
 
@@ -269,7 +301,7 @@ void memBmpC::releaseFrames(paddr_t frameAddr, uarch_t nFrames)
 	bmp.lock.release();
 }
 
-void memBmpC::mapMemUsed(paddr_t rangeBase, uarch_t nFrames)
+void memBmpC::mapMemUsed(paddr_t rangeBase, uarch_t _nFrames)
 {
 	uarch_t		startPfn=basePfn, _endPfn;
 
@@ -278,14 +310,14 @@ void memBmpC::mapMemUsed(paddr_t rangeBase, uarch_t nFrames)
 	};
 
 	if (((startPfn << PAGING_BASE_SHIFT)
-		+ (nFrames << PAGING_BASE_SHIFT) - 1) > endAddr)
+		+ (_nFrames << PAGING_BASE_SHIFT) - 1) > endAddr)
 	{
-		nFrames = endPfn - startPfn;
+		_nFrames = endPfn - startPfn;
 	};
 
 	bmp.lock.acquire();
 
-	_endPfn = startPfn + nFrames;
+	_endPfn = startPfn + _nFrames;
 	for (uarch_t i=0; i<_endPfn; i++) {
 		setFrame(i);
 	};
@@ -293,7 +325,7 @@ void memBmpC::mapMemUsed(paddr_t rangeBase, uarch_t nFrames)
 	bmp.lock.release();
 }
 
-void memBmpC::mapMemUnused(paddr_t rangeBase, uarch_t nFrames)
+void memBmpC::mapMemUnused(paddr_t rangeBase, uarch_t _nFrames)
 {
 	uarch_t		startPfn=basePfn, _endPfn;
 
@@ -302,14 +334,14 @@ void memBmpC::mapMemUnused(paddr_t rangeBase, uarch_t nFrames)
 	};
 
 	if (((startPfn << PAGING_BASE_SHIFT)
-		+ (nFrames << PAGING_BASE_SHIFT) - 1) > endAddr)
+		+ (_nFrames << PAGING_BASE_SHIFT) - 1) > endAddr)
 	{
-		nFrames = endPfn - startPfn;
+		_nFrames = endPfn - startPfn;
 	};
 
 	bmp.lock.acquire();
 
-	_endPfn = startPfn + nFrames;
+	_endPfn = startPfn + _nFrames;
 	for (uarch_t i=0; i<_endPfn; i++) {
 		unsetFrame(i);
 	};
