@@ -196,6 +196,8 @@ error_t numaTribC::initialize2(void)
 	ret = (*memInfoRiv->initialize)();
 	assert_fatal(ret == ERROR_SUCCESS);
 
+	__kprintf(NOTICE NUMATRIB"Initialized Memory Information Rivulet.\n");
+
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaMap = (*memInfoRiv->getNumaMap)();
 	if (numaMap != __KNULL)
@@ -210,41 +212,40 @@ error_t numaTribC::initialize2(void)
 				continue;
 			};
 			// Else allocate one.
-			ns = new (
-				(memoryTrib.__kmemoryStream
-					.*memoryTrib.__kmemoryStream.memAlloc)(
-						PAGING_BYTES_TO_PAGES(
-							sizeof(numaStreamC)),
-						MEMALLOC_NO_FAKEMAP))
-				numaStreamC(numaMap->memEntries[i].bankId);
+			ret = spawnStream(numaMap->memEntries[i].bankId);
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR NUMATRIB"Failed to spawn "
+					"stream for detected bank %d.\n",
+					numaMap->memEntries[i].bankId);
+			};
+		};
 
+		// Run through again, and this time spawn memory regions.
+		for (uarch_t i=0; i<numaMap->nMemEntries; i++)
+		{
+			ns = getStream(numaMap->memEntries[i].bankId);
 			if (ns == __KNULL)
 			{
-				__kprintf(ERROR NUMATRIB"Failed to allocate "
-					"Numa Stream obj for bank %d.\n",
+				__kprintf(WARNING NUMATRIB"Bank %d found in "
+					"NUMA map, but it has no stream.\n",
 					numaMap->memEntries[i].bankId);
-			}
-			else
+
+				continue;
+			};
+
+			ret = ns->memoryBank.addMemoryRange(
+				numaMap->memEntries[i].baseAddr,
+				numaMap->memEntries[i].size);
+
+			if (ret != ERROR_SUCCESS)
 			{
-				ret = numaStreams.addItem(
-					numaMap->memEntries[i].bankId, ns);
-
-				if (ret != ERROR_SUCCESS)
-				{
-					__kprintf(ERROR NUMATRIB"Failed to "
-						"add NUMA Stream for bank %d "
-						"to NUMA Trib list.\n",
-						numaMap->memEntries[i].bankId);
-
-					memoryTrib.__kmemoryStream.memFree(ns);
-				}
-				else
-				{
-					__kprintf(NOTICE NUMATRIB"New NUMA "
-						"Stream obj, ID %d, v 0x%X.\n",
-						numaMap->memEntries[i].bankId,
-						ns);
-				};
+				__kprintf(ERROR NUMATRIB"Failed to allocate "
+					"memory range obj for range: base 0x%X "
+					"size 0x%X on bank %d.\n",
+					numaMap->memEntries[i].baseAddr,
+					numaMap->memEntries[i].size,
+					numaMap->memEntries[i].bankId);
 			};
 		};
 	}
@@ -253,7 +254,7 @@ error_t numaTribC::initialize2(void)
 	};
 #endif
 
-#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
+/*#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 	memConfig = (*memInfoRiv->getMemoryConfig)();
 	if (memConfig != __KNULL)
 	{
@@ -308,9 +309,9 @@ error_t numaTribC::initialize2(void)
 	else {
 		__kprintf(WARNING NUMATRIB"getMemoryConfig(): no config.\n");
 	};
-#endif
+#endif*/
 
-	memMap = (memInfoRiv->getMemoryMap)();
+/*	memMap = (memInfoRiv->getMemoryMap)();
 	if (memMap != __KNULL)
 	{
 		pos = numaStreams.prepareForLoop();
@@ -333,7 +334,7 @@ error_t numaTribC::initialize2(void)
 	}
 	else {
 		__kprintf(WARNING NUMATRIB"getMemoryMap(): No mem map.\n");
-	};
+	}; */
 
 	return ERROR_SUCCESS;
 }
@@ -353,10 +354,28 @@ void numaTribC::dump(void)
 	}
 }
 
-error_t numaTribC::spawnStream(numaBankId_t)
+error_t numaTribC::spawnStream(numaBankId_t id)
 {
-	UNIMPLEMENTED("numaTribC::spawnStream()");
-	return ERROR_UNIMPLEMENTED;
+	error_t		ret;
+	numaStreamC	*ns;
+
+	ns = new (
+		(memoryTrib.__kmemoryStream
+			.*memoryTrib.__kmemoryStream.memAlloc)(
+				PAGING_BYTES_TO_PAGES(sizeof(numaStreamC)),
+				MEMALLOC_NO_FAKEMAP))
+		numaStreamC(id);
+
+	if (ns == __KNULL) {
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	ret = numaStreams.addItem(id, ns);
+	if (ret != ERROR_SUCCESS) {
+		memoryTrib.__kmemoryStream.memFree(ns);
+	};
+
+	return ret;
 }
 
 numaTribC::~numaTribC(void)
