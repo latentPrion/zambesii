@@ -218,7 +218,12 @@ error_t numaTribC::initialize2(void)
 				__kprintf(ERROR NUMATRIB"Failed to spawn "
 					"stream for detected bank %d.\n",
 					numaMap->memEntries[i].bankId);
+
+				continue;
 			};
+			__kprintf(NOTICE NUMATRIB"Spawned NUMA Stream for bank "
+				"with ID %d.\n",
+				numaMap->memEntries[i].bankId);
 		};
 
 		// Run through again, and this time spawn memory regions.

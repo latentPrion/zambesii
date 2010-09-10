@@ -20,7 +20,54 @@ static uarch_t		lowmem;
 static uarch_t		ebda;
 static struct rsdpS	*rsdp;
 
+static struct numaMemMapEntryS	tmapEntries[] =
+{
+	{
+		0x1000000,
+		0x100000,
+		3,
+		0
+	},
+	{
+		0xC0000000,
+		0x800000,
+		12,
+		0
+	},
+	{
+		0xDFFC0000,
+		0x7000,
+		3,
+		0
+	},
+	{
+		0x80C0F000,
+		0x3000,
+		3,
+		0
+	},
+	{
+		0x60000000,
+		0x9000,
+		12,
+		0
+	}
+};
+
+// Test map for debugging.
+static struct chipsetNumaMapS	tmap =
+{
+	tmapEntries,
+	5,
+	0
+};
+
 struct chipsetNumaMapS *ibmPc_mi_getNumaMap(void)
+{
+	return &tmap;
+}
+
+struct chipsetNumaMapS *ibmPc_mi_getNumaMapRemoved(void)
 {
 	status_t	status;
 	char		rsdpver[9];
