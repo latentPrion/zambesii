@@ -147,12 +147,13 @@ error_t numaTribC::initialize(void)
 error_t numaTribC::initialize2(void)
 {
 	error_t			ret;
-	chipsetMemConfigS	*memConfig;
-	chipsetMemMapS		*memMap;
-	chipsetNumaMapS		*numaMap;
+	chipsetMemConfigS	*memConfig=__KNULL;
+	chipsetMemMapS		*memMap=__KNULL;
+	chipsetNumaMapS		*numaMap=__KNULL;
 	memInfoRivS		*memInfoRiv;
 	numaStreamC		*ns;
 	sarch_t			pos;
+	paddr_t			tmpBase, tmpSize;
 
 	/**	EXPLANATION:
 	 * Now the NUMA Tributary is ready to check for new banks of memory,
@@ -200,7 +201,7 @@ error_t numaTribC::initialize2(void)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaMap = (*memInfoRiv->getNumaMap)();
-	if (numaMap != __KNULL)
+	if (numaMap != __KNULL && numaMap->nMemEntries > 0)
 	{
 		__kprintf(NOTICE NUMATRIB"NUMA Map: %d entries.\n",
 			numaMap->nMemEntries);
@@ -259,65 +260,81 @@ error_t numaTribC::initialize2(void)
 	};
 #endif
 
-/*#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
+#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 	memConfig = (*memInfoRiv->getMemoryConfig)();
-	if (memConfig != __KNULL)
+	if (memConfig != __KNULL && memConfig->memSize > 0)
 	{
-		__kprintf(NOTICE NUMATRIB"Memory Config: memory size: 0x%X.\n",
-			memConfig->memSize);
-
-		ns = new (
-			(memoryTrib.__kmemoryStream
-				.*memoryTrib.__kmemoryStream.memAlloc)(
-					PAGING_BYTES_TO_PAGES(
-						sizeof(numaStreamC)),
-					MEMALLOC_NO_FAKEMAP))
-			numaStreamC(CHIPSET_MEMORY_NUMA_SHBANKID);
-
-		ret = numaStreams.addItem(CHIPSET_MEMORY_NUMA_SHBANKID, ns);
+		ret = spawnStream(CHIPSET_MEMORY_NUMA_SHBANKID);
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR NUMATRIB"Failed to add shbank to NUMA "
-				"Stream list.\n");
+			__kprintf(ERROR NUMATRIB"Failed to spawn shbank.\n");
+			goto parseMemoryMap;
+		};
+
+		if (numaMap != 0 && numaMap->nMemEntries > 0)
+		{
+			// NUMA map exists: need to discover holes for shbank.
+			sortNumaMapByAddress(numaMap);
+			__kprintf(NOTICE NUMATRIB"Shbank: parsing NUMA map for "
+				"holes.\n");
+
+			for (uarch_t i=0; i<numaMap->nMemEntries; i++)
+			{
+				// If the ranges aren't continguous:
+				if ((numaMap->memEntries[i].baseAddr
+					+ numaMap->memEntries[i].size)
+					!= numaMap->memEntries[i+1].baseAddr)
+				{
+					// Generate a range for it in shbank.
+					ns = getStream(
+						CHIPSET_MEMORY_NUMA_SHBANKID);
+
+					tmpBase = numaMap->memEntries[i]
+						.baseAddr
+						+ numaMap->memEntries[i].size;
+
+					tmpSize = numaMap->memEntries[i+1]
+						.baseAddr - tmpBase;
+
+					ret = ns->memoryBank.addMemoryRange(
+						tmpBase, tmpSize);
+
+					if (ret != __KNULL)
+					{
+						__kprintf(ERROR NUMATRIB
+							"Failed to generate "
+							"memory range for NUMA "
+							"map hole 0x%X, size "
+							"0x%X.\n",
+							tmpBase, tmpSize);
+					};
+				};
+			};
 		}
 		else
 		{
-			__kprintf(NOTICE NUMATRIB"Shbank added @ index %d.\n",
-				CHIPSET_MEMORY_NUMA_SHBANKID);
+			__kprintf(NOTICE NUMATRIB"Shbank: no NUMA map. "
+				"Creating single shbank memory range.\n");
 
-			ns = getStream(CHIPSET_MEMORY_NUMA_SHBANKID);
-			if (ns != __KNULL)
+			ret = getStream(CHIPSET_MEMORY_NUMA_SHBANKID)
+				->memoryBank.addMemoryRange(
+					0x0, memoryConfig->memSize);
+
+			if (ret != ERROR_SUCCESS)
 			{
-				ret = ns->memoryBank.addMemoryRange(
-					0x0, memConfig->memSize);
-
-				if (ret != ERROR_SUCCESS)
-				{
-					__kprintf(ERROR NUMATRIB"Failed to add "
-						"memory range for shbank.\n");
-				}
-				else
-				{
-					__kprintf(NOTICE NUMATRIB"Shbank mem "
-						"range added to shbank.\n");
-				};
-			}
-			else
-			{
-				__kprintf(ERROR NUMATRIB"Failed to retrieve "
-					"shbank stream pointer from list.\n");
-
-				panic(ERROR_UNKNOWN);
+				__kprintf(ERROR NUMATRIB"Failed to add memory "
+					"range for shbank memsize.\n");
 			};
 		};
 	}
 	else {
-		__kprintf(WARNING NUMATRIB"getMemoryConfig(): no config.\n");
-	};
-#endif*/
+		__kprintf(ERROR NUMATRIB"getMemoryConfig(): no config.\n");
+	};	
+#endif
 
-/*	memMap = (memInfoRiv->getMemoryMap)();
-	if (memMap != __KNULL)
+parseMemoryMap:
+	memMap = (memInfoRiv->getMemoryMap)();
+	if (memMap != __KNULL && memMap->nEntries > 0)
 	{
 		pos = numaStreams.prepareForLoop();
 		ns = numaStreams.getLoopItem(&pos);
@@ -339,7 +356,7 @@ error_t numaTribC::initialize2(void)
 	}
 	else {
 		__kprintf(WARNING NUMATRIB"getMemoryMap(): No mem map.\n");
-	}; */
+	};
 
 	return ERROR_SUCCESS;
 }
