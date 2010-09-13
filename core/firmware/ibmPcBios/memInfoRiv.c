@@ -49,7 +49,8 @@ static error_t ibmPcBios_mi_awake(void)
 
 static struct chipsetMemConfigS *ibmPcBios_mi_getMemoryConfig(void)
 {
-	uarch_t		ax, bx, cx, dx;
+	struct chipsetMemConfigS	*ret;
+	uarch_t			ax, bx, cx, dx;
 
 	ibmPcBios_lock_acquire();
 
@@ -63,10 +64,25 @@ static struct chipsetMemConfigS *ibmPcBios_mi_getMemoryConfig(void)
 
 	ibmPcBios_lock_release();
 
-	rivPrintf(NOTICE"Regs returned from emu run: 0x%X, 0x%X, 0x%X, 0x%X.\n",
-		ax, bx, cx, dx);
+	ret = (struct chipsetMemConfigS *)rivMalloc(
+		sizeof(struct chipsetMemConfigS));
 
-	return __KNULL;
+	if (ret == __KNULL) {
+		return __KNULL;
+	};
+
+	if (ax == 0)
+	{
+		ret->memSize = 0x100000 + (cx << 10);
+		ret->memSize += dx << 16;
+	}
+	else
+	{
+		ret->memSize = 0x100000 + (ax << 10);
+		ret->memSize += bx << 16;
+	}
+
+	return ret;
 }
 
 /* Will return an unsorted memory map with zero-length entries taken out, and
@@ -89,7 +105,6 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 
 		return __KNULL;
 	};
-	rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): MMAP Desc: 0x%X.\n", ret);
 
 	ibmPcBios_lock_acquire();
 
@@ -130,8 +145,6 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 
 		return __KNULL;
 	};
-	rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): Mem map entries 0x%X.\n",
-		ret->entries);
 
 	for (i=0, j=0; j<nEntries; j++)
 	{
@@ -198,7 +211,9 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 #endif
 	};
 
-	rivPrintf(NOTICE"%d entries in firmware map.\n", nEntries);
+	rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): %d entries in firmware "
+		"map.\n", nEntries);
+
 	ret->nEntries = i;
 	return ret;
 }

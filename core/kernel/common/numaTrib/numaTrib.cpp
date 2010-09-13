@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <scaling.h>
 #include <arch/paging.h>
 #include <chipset/memory.h>
@@ -92,8 +93,13 @@ static void sortNumaMapByAddress(chipsetNumaMapS *map)
 {
 	numaMemMapEntryS	tmp;
 
-	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries ); i++)
-	{
+	/** EXPLANATION:
+	 * Simple one-pass swap sort algorithm. Recurses backward while sorting
+	 * to make sure that the last item sorted is in its rightful place.
+	 **/
+
+	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries - 1 ); )
+	{		
 		if (map->memEntries[i].baseAddr > map->memEntries[i+1].baseAddr)
 		{
 			memcpy(
@@ -107,8 +113,11 @@ static void sortNumaMapByAddress(chipsetNumaMapS *map)
 			memcpy(
 				&map->memEntries[i+1], &tmp,
 				sizeof(numaMemMapEntryS));
-			i -= 1;
+
+			if (i != 0) { i--; };
+			continue;
 		};
+		i++;
 	};
 }
 
@@ -295,35 +304,57 @@ error_t numaTribC::initialize2(void)
 			goto parseMemoryMap;
 		};
 
-		if (numaMap != 0 && numaMap->nMemEntries-1 > 0)
+		__kprintf(NOTICE NUMATRIB"Mem config: memsize 0x%X.\n",
+			memConfig->memSize);
+
+		if (numaMap != __KNULL && numaMap->nMemEntries-1 > 0)
 		{
 			// NUMA map exists: need to discover holes for shbank.
 			sortNumaMapByAddress(numaMap);
 			__kprintf(NOTICE NUMATRIB"Shbank: parsing NUMA map for "
 				"holes.\n");
 
-			for (uarch_t i=0;
-				(numaMap->memEntries[i].baseAddr
-					< memConfig->memSize)
-				&& (i < numaMap->nMemEntries);
+			for (sarch_t i=0;
+				i<static_cast<sarch_t>( numaMap->nMemEntries )
+					- 1;
 				i++)
 			{
+				/* Shbank is only for where holes intersect with
+				 * memoryConfig. i.e., if memSize is reported
+				 * to be 256MB, and there are holes in the NUMA
+				 * map higher up, those holes are ignored.
+				 *
+				 * Only holes that are below the memSize mark
+				 * will get a shbank memory range.
+				 **/
+				if (numaMap->memEntries[i].baseAddr
+					> memConfig->memSize)
+				{
+					break;
+				};
+
 				tmpBase = numaMap->memEntries[i].baseAddr
 					+ numaMap->memEntries[i].size;
 
-				if (tmpBase < numaMap->memEntries[i+1].baseAddr)
+				tmpSize = numaMap->memEntries[i+1].baseAddr
+					- tmpBase;
+
+				if (tmpSize > 0)
 				{
-					if (numaMap->memEntries[i+1].baseAddr
-						< memConfig->memSize)
-					{
-						tmpSize = numaMap->memEntries[i]
-							.baseAddr - tmpBase;
-					}
-					else
-					{
-						tmpSize = memConfig->memSize
-							- tmpBase;
-					};
+					__kprintf(NOTICE NUMATRIB
+						"For memrange %d, on bank %d, "
+						"base 0x%X, size 0x%X, "
+						"next entry base 0x%X, shbank "
+						"memory range with base 0x%X "
+						"and size 0x%X is needed.\n",
+						i,
+						numaMap->memEntries[i].bankId,
+						numaMap->memEntries[i].baseAddr,
+						numaMap->memEntries[i].size,
+						numaMap->memEntries[i+1]
+							.baseAddr,
+						tmpBase, tmpSize);
+
 					ret = getStream(
 						CHIPSET_MEMORY_NUMA_SHBANKID)
 						->memoryBank.addMemoryRange(
@@ -332,18 +363,18 @@ error_t numaTribC::initialize2(void)
 					if (ret != ERROR_SUCCESS)
 					{
 						__kprintf(ERROR NUMATRIB
-							"Failed to generate "
-							"memory range for "
-							"shbank range base "
-							"0x%X, size 0x%X.\n",
+							"Shbank: Failed to "
+							"spawn memrange for "
+							"hole: base 0x%X size "
+							"0x%X.\n",
 							tmpBase, tmpSize);
 					}
 					else
 					{
 						__kprintf(NOTICE NUMATRIB
-							"New shbank memory "
-							"range for base 0x%X "
-							"size 0x%X.\n",
+							"Shbank: New memrange "
+							"base 0x%X, size "
+							"0x%X.\n",
 							tmpBase, tmpSize);
 					};
 				};
@@ -351,8 +382,6 @@ error_t numaTribC::initialize2(void)
 		}
 		else
 		{
-			__kprintf(NOTICE NUMATRIB"Shbank: no NUMA map. "
-				"Creating single shbank memory range.\n");
 
 			ret = getStream(CHIPSET_MEMORY_NUMA_SHBANKID)
 				->memoryBank.addMemoryRange(
@@ -362,15 +391,22 @@ error_t numaTribC::initialize2(void)
 			{
 				__kprintf(ERROR NUMATRIB"Failed to add memory "
 					"range for shbank memsize.\n");
+			}
+			else
+			{
+				__kprintf(NOTICE NUMATRIB"Shbank: no NUMA map. Spawn "
+					"with total memsize 0x%X.\n",
+					memConfig->memSize);
 			};
 		};
 	}
 	else {
 		__kprintf(ERROR NUMATRIB"getMemoryConfig(): no config.\n");
-	};	
+	};
 #endif
 
 parseMemoryMap:
+asm volatile("hlt\n");
 	memMap = (memInfoRiv->getMemoryMap)();
 	if (memMap != __KNULL && memMap->nEntries > 0)
 	{

@@ -23,14 +23,8 @@ static struct rsdpS	*rsdp;
 static struct numaMemMapEntryS	tmapEntries[] =
 {
 	{
-		0x1000000,
-		0x100000,
-		3,
-		0
-	},
-	{
-		0x60000000,
-		0x9000,
+		0xC0800000,
+		0x800000,
 		12,
 		0
 	},
@@ -38,6 +32,12 @@ static struct numaMemMapEntryS	tmapEntries[] =
 		0xC0000000,
 		0x800000,
 		12,
+		0
+	},
+	{
+		0x1000000,
+		0x100000,
+		3,
 		0
 	},
 	{
@@ -64,7 +64,9 @@ static struct chipsetNumaMapS	tmap =
 
 struct chipsetNumaMapS *ibmPc_mi_getNumaMap(void)
 {
-	return &tmap;
+	(void)tmap;
+
+	return __KNULL;
 }
 
 struct chipsetNumaMapS *ibmPc_mi_getNumaMapRemoved(void)
