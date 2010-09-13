@@ -88,6 +88,30 @@ error_t numaTribC::initialize(void)
 	return ret;
 }
 
+static void sortNumaMapByAddress(chipsetNumaMapS *map)
+{
+	numaMemMapEntryS	tmp;
+
+	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries ); i++)
+	{
+		if (map->memEntries[i].baseAddr > map->memEntries[i+1].baseAddr)
+		{
+			memcpy(
+				&tmp, &map->memEntries[i],
+				sizeof(numaMemMapEntryS));
+
+			memcpy(
+				&map->memEntries[i], &map->memEntries[i+1],
+				sizeof(numaMemMapEntryS));
+
+			memcpy(
+				&map->memEntries[i+1], &tmp,
+				sizeof(numaMemMapEntryS));
+			i -= 1;
+		};
+	};
+}
+
 /**	EXPLANATION:
  * Initialize2(): Detects physical memory on the chipset using firmware services
  * contained in the Firmware Tributary. If the person porting the kernel to
@@ -271,41 +295,55 @@ error_t numaTribC::initialize2(void)
 			goto parseMemoryMap;
 		};
 
-		if (numaMap != 0 && numaMap->nMemEntries > 0)
+		if (numaMap != 0 && numaMap->nMemEntries-1 > 0)
 		{
 			// NUMA map exists: need to discover holes for shbank.
 			sortNumaMapByAddress(numaMap);
 			__kprintf(NOTICE NUMATRIB"Shbank: parsing NUMA map for "
 				"holes.\n");
 
-			for (uarch_t i=0; i<numaMap->nMemEntries; i++)
+			for (uarch_t i=0;
+				(numaMap->memEntries[i].baseAddr
+					< memConfig->memSize)
+				&& (i < numaMap->nMemEntries);
+				i++)
 			{
-				// If the ranges aren't continguous:
-				if ((numaMap->memEntries[i].baseAddr
-					+ numaMap->memEntries[i].size)
-					!= numaMap->memEntries[i+1].baseAddr)
+				tmpBase = numaMap->memEntries[i].baseAddr
+					+ numaMap->memEntries[i].size;
+
+				if (tmpBase < numaMap->memEntries[i+1].baseAddr)
 				{
-					// Generate a range for it in shbank.
-					ns = getStream(
-						CHIPSET_MEMORY_NUMA_SHBANKID);
+					if (numaMap->memEntries[i+1].baseAddr
+						< memConfig->memSize)
+					{
+						tmpSize = numaMap->memEntries[i]
+							.baseAddr - tmpBase;
+					}
+					else
+					{
+						tmpSize = memConfig->memSize
+							- tmpBase;
+					};
+					ret = getStream(
+						CHIPSET_MEMORY_NUMA_SHBANKID)
+						->memoryBank.addMemoryRange(
+							tmpBase, tmpSize);
 
-					tmpBase = numaMap->memEntries[i]
-						.baseAddr
-						+ numaMap->memEntries[i].size;
-
-					tmpSize = numaMap->memEntries[i+1]
-						.baseAddr - tmpBase;
-
-					ret = ns->memoryBank.addMemoryRange(
-						tmpBase, tmpSize);
-
-					if (ret != __KNULL)
+					if (ret != ERROR_SUCCESS)
 					{
 						__kprintf(ERROR NUMATRIB
 							"Failed to generate "
-							"memory range for NUMA "
-							"map hole 0x%X, size "
-							"0x%X.\n",
+							"memory range for "
+							"shbank range base "
+							"0x%X, size 0x%X.\n",
+							tmpBase, tmpSize);
+					}
+					else
+					{
+						__kprintf(NOTICE NUMATRIB
+							"New shbank memory "
+							"range for base 0x%X "
+							"size 0x%X.\n",
 							tmpBase, tmpSize);
 					};
 				};
@@ -318,7 +356,7 @@ error_t numaTribC::initialize2(void)
 
 			ret = getStream(CHIPSET_MEMORY_NUMA_SHBANKID)
 				->memoryBank.addMemoryRange(
-					0x0, memoryConfig->memSize);
+					0x0, memConfig->memSize);
 
 			if (ret != ERROR_SUCCESS)
 			{

@@ -29,6 +29,12 @@ static struct numaMemMapEntryS	tmapEntries[] =
 		0
 	},
 	{
+		0x60000000,
+		0x9000,
+		12,
+		0
+	},
+	{
 		0xC0000000,
 		0x800000,
 		12,
@@ -43,13 +49,7 @@ static struct numaMemMapEntryS	tmapEntries[] =
 	{
 		0x80C0F000,
 		0x3000,
-		3,
-		0
-	},
-	{
-		0x60000000,
-		0x9000,
-		12,
+		5,
 		0
 	}
 };
