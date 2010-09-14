@@ -24,9 +24,9 @@ memBmpC::memBmpC(paddr_t baseAddr, paddr_t size)
 
 	basePfn = baseAddr >> PAGING_BASE_SHIFT;
 	endPfn = endAddr >> PAGING_BASE_SHIFT;
-	nFrames = (endPfn - basePfn) + 1;
+	bmpNFrames = (endPfn - basePfn) + 1;
 
-	nIndexes = __KMATH_NELEMENTS(nFrames, __KBIT_NBITS_IN(*bmp.rsrc.bmp));
+	nIndexes = __KMATH_NELEMENTS(bmpNFrames, __KBIT_NBITS_IN(*bmp.rsrc.bmp));
 	bmpSize = nIndexes * sizeof(*bmp.rsrc.bmp);
 
 	bmp.rsrc.lastAllocIndex = 0;
@@ -108,7 +108,7 @@ error_t memBmpC::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
 
 		if (i == nIndexes-1)
 		{
-			bitLimit = nFrames % __KBIT_NBITS_IN(*bmp.rsrc.bmp);
+			bitLimit = bmpNFrames % __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 			if (bitLimit == 0) {
 				bitLimit = __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 			};
@@ -133,7 +133,7 @@ error_t memBmpC::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
 
 					if (i == nIndexes-1)
 					{
-						bitLimit = nFrames
+						bitLimit = bmpNFrames
 							% __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 						if (bitLimit == 0)
@@ -210,7 +210,7 @@ status_t memBmpC::fragmentedGetFrames(uarch_t _nFrames, paddr_t *paddr)
 
 		if (i == nIndexes-1)
 		{
-			bitLimit = nFrames % __KBIT_NBITS_IN(*bmp.rsrc.bmp);
+			bitLimit = bmpNFrames % __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 			if (bitLimit == 0) {
 				bitLimit = __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 			};
@@ -232,7 +232,7 @@ status_t memBmpC::fragmentedGetFrames(uarch_t _nFrames, paddr_t *paddr)
 
 					if (i == nIndexes-1)
 					{
-						bitLimit = nFrames
+						bitLimit = bmpNFrames
 							% __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 						if (bitLimit == 0)
@@ -283,66 +283,64 @@ out:
 
 void memBmpC::releaseFrames(paddr_t frameAddr, uarch_t _nFrames)
 {
-	uarch_t		startPfn = frameAddr >> PAGING_BASE_SHIFT;
-	uarch_t		_endPfn = startPfn + _nFrames;
+	uarch_t		rangeStartPfn = frameAddr >> PAGING_BASE_SHIFT;
+	uarch_t		rangeEndPfn = rangeStartPfn + _nFrames;
 
 	if (_nFrames == 0) { return; };
 
 	bmp.lock.acquire();
 
-	for (uarch_t i=startPfn; i<_endPfn; i++) {
+	for (uarch_t i=rangeStartPfn; i<rangeEndPfn; i++) {
 		unsetFrame(i);
 	};
 
 	// Encourage possible cache hit by trying to reallocate same frames.
 	bmp.rsrc.lastAllocIndex =
-		(startPfn - basePfn) / __KBIT_NBITS_IN(*bmp.rsrc.bmp);
+		(rangeStartPfn - basePfn) / __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 	bmp.lock.release();
 }
 
-void memBmpC::mapMemUsed(paddr_t rangeBase, uarch_t _nFrames)
+void memBmpC::mapMemUsed(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 {
-	uarch_t		startPfn=basePfn, _endPfn;
+	uarch_t		rangeStartPfn=basePfn;
+	uarch_t		rangeEndPfn;
 
-	if (rangeBase >= baseAddr) {
-		startPfn = rangeBase >> PAGING_BASE_SHIFT;
+	if (rangeBaseAddr >= baseAddr) {
+		rangeStartPfn = rangeBaseAddr >> PAGING_BASE_SHIFT;
 	};
 
-	if (((startPfn << PAGING_BASE_SHIFT)
-		+ (_nFrames << PAGING_BASE_SHIFT) - 1) > endAddr)
-	{
-		_nFrames = endPfn - startPfn;
-	};
+	rangeEndPfn = (rangeBaseAddr >> PAGING_BASE_SHIFT) + rangeNFrames;
+	if (rangeEndPfn > endPfn) {
+		rangeEndPfn = endPfn + 1;
+	};	
 
 	bmp.lock.acquire();
 
-	_endPfn = startPfn + _nFrames;
-	for (uarch_t i=0; i<_endPfn; i++) {
+	for (uarch_t i=0; i<rangeEndPfn; i++) {
 		setFrame(i);
 	};
 
 	bmp.lock.release();
 }
 
-void memBmpC::mapMemUnused(paddr_t rangeBase, uarch_t _nFrames)
+void memBmpC::mapMemUnused(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 {
-	uarch_t		startPfn=basePfn, _endPfn;
+	uarch_t		rangeStartPfn=basePfn;
+	uarch_t		rangeEndPfn;
 
-	if (rangeBase >= baseAddr) {
-		startPfn = rangeBase >> PAGING_BASE_SHIFT;
+	if (rangeBaseAddr >= baseAddr) {
+		rangeStartPfn = rangeBaseAddr >> PAGING_BASE_SHIFT;
 	};
 
-	if (((startPfn << PAGING_BASE_SHIFT)
-		+ (_nFrames << PAGING_BASE_SHIFT) - 1) > endAddr)
-	{
-		_nFrames = endPfn - startPfn;
-	};
+	rangeEndPfn = (rangeBaseAddr >> PAGING_BASE_SHIFT) + rangeNFrames;
+	if (rangeEndPfn > endPfn) {
+		rangeEndPfn = endPfn + 1;
+	};	
 
 	bmp.lock.acquire();
 
-	_endPfn = startPfn + _nFrames;
-	for (uarch_t i=0; i<_endPfn; i++) {
+	for (uarch_t i=0; i<rangeEndPfn; i++) {
 		unsetFrame(i);
 	};
 

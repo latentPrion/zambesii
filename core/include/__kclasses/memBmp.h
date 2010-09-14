@@ -52,7 +52,7 @@ private:
 	inline sarch_t testFrame(uarch_t pfn);
 
 private:
-	uarch_t		basePfn, endPfn, nFrames, flags, nIndexes;
+	uarch_t		basePfn, endPfn, bmpNFrames, flags, nIndexes;
 	uarch_t		bmpSize;
 	paddr_t		baseAddr, endAddr;
 
