@@ -95,7 +95,7 @@ static void sortNumaMapByAddress(chipsetNumaMapS *map)
 
 	/** EXPLANATION:
 	 * Simple one-pass swap sort algorithm. Recurses backward while sorting
-	 * to make sure that the last item sorted is in its rightful place.
+	 * to avoid the need for multiple passes.
 	 **/
 
 	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries - 1 ); )
@@ -339,6 +339,10 @@ error_t numaTribC::initialize2(void)
 				tmpSize = numaMap->memEntries[i+1].baseAddr
 					- tmpBase;
 
+				if (tmpBase + tmpSize > memConfig->memSize) {
+					tmpSize = memConfig->memSize - tmpBase;
+				};
+
 				if (tmpSize > 0)
 				{
 					__kprintf(NOTICE NUMATRIB
@@ -394,8 +398,8 @@ error_t numaTribC::initialize2(void)
 			}
 			else
 			{
-				__kprintf(NOTICE NUMATRIB"Shbank: no NUMA map. Spawn "
-					"with total memsize 0x%X.\n",
+				__kprintf(NOTICE NUMATRIB"Shbank: no NUMA map. "
+					"Spawn with total memsize 0x%X.\n",
 					memConfig->memSize);
 			};
 		};
@@ -406,7 +410,6 @@ error_t numaTribC::initialize2(void)
 #endif
 
 parseMemoryMap:
-asm volatile("hlt\n");
 	memMap = (memInfoRiv->getMemoryMap)();
 	if (memMap != __KNULL && memMap->nEntries > 0)
 	{

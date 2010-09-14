@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <arch/paging.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
@@ -392,10 +391,9 @@ void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; ) {
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next) {
 		cur->range->mapMemUsed(baseAddr, nFrames);
 	};
-
 	ranges.lock.readRelease(rwFlags);
 }
 
