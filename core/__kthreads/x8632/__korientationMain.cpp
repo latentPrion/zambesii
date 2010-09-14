@@ -21,6 +21,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
+int oo=0;
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -66,6 +67,31 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(numaTrib, initialize2(), ret);
+
+	__kprintf(NOTICE"Doing some tests.\n");
+	paddr_t		p;
+	uarch_t		n;
+	memBmpC		b(0x100000, 0x100000);
+
+	assert_error(b.initialize() == ERROR_SUCCESS);
+#define countN(n,b)				\
+	for (uarch_t i=0; i<b.bmpNFrames; i++) \
+	{ \
+		if (b.testFrame(b.basePfn + i)) { \
+			n++; \
+		}; \
+	};
+	oo=1;
+	b.mapMemUsed(0x1F8000, 16);
+	n=0;
+	countN(n, b);
+	__kprintf(NOTICE"%d frames set in b.\n", n);
+
+	b.mapMemUnused(0x1FC000, 16);
+	n=0;
+	countN(n, b);
+	__kprintf(NOTICE"%d frames set in b.\n", n);
+
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 

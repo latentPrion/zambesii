@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/arch.h>
 #include <arch/paging.h>
 #include <arch/mathEmulation.h>
@@ -10,6 +11,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/memBmp.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
@@ -317,7 +319,7 @@ void memBmpC::mapMemUsed(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 
 	bmp.lock.acquire();
 
-	for (uarch_t i=0; i<rangeEndPfn; i++) {
+	for (uarch_t i=rangeStartPfn; i<rangeEndPfn; i++) {
 		setFrame(i);
 	};
 
@@ -340,7 +342,7 @@ void memBmpC::mapMemUnused(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 
 	bmp.lock.acquire();
 
-	for (uarch_t i=0; i<rangeEndPfn; i++) {
+	for (uarch_t i=rangeStartPfn; i<rangeEndPfn; i++) {
 		unsetFrame(i);
 	};
 

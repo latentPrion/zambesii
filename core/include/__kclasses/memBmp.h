@@ -46,12 +46,12 @@ public:
 	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
 	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);
 
-private:
+public:
 	inline void setFrame(uarch_t pfn);
 	inline void unsetFrame(uarch_t pfn);
 	inline sarch_t testFrame(uarch_t pfn);
 
-private:
+public:
 	uarch_t		basePfn, endPfn, bmpNFrames, flags, nIndexes;
 	uarch_t		bmpSize;
 	paddr_t		baseAddr, endAddr;
