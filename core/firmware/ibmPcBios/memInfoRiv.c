@@ -136,8 +136,13 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 
 	ibmPcBios_lock_release();
 
+	/**	EXPLANATION:
+	 * On IBM-PC we want to allocate enough space for two extra static
+	 * entries to map out the IVT+BDA and all mem from 0x80000 for 128
+	 * frames as used.
+	 **/
 	ret->entries = (struct chipsetMemMapEntryS *)rivMalloc(
-		nEntries * sizeof(struct chipsetMemMapEntryS));
+		(nEntries + 2) * sizeof(struct chipsetMemMapEntryS));
 
 	if (ret->entries == __KNULL) {
 		rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): Failed to alloc "
@@ -214,7 +219,16 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 	rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): %d entries in firmware "
 		"map.\n", nEntries);
 
-	ret->nEntries = i;
+	// Hardcode in the extra two entries for all chipsets.
+	ret->entries[i].baseAddr = 0x0;
+	ret->entries[i].size = 0x4FF;
+	ret->entries[i].memType = CHIPSETMMAP_TYPE_RESERVED;
+
+	ret->entries[i+1].baseAddr = 0x80000;
+	ret->entries[i+1].size = 0x80000;
+	ret->entries[i+1].memType = CHIPSETMMAP_TYPE_RESERVED;
+
+	ret->nEntries = i + 2;
 	return ret;
 }
 
