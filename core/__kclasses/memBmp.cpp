@@ -82,38 +82,42 @@ memBmpC::~memBmpC(void)
 	};
 }
 
-status_t memBmpC::merge(memBmpC *bmp)
+status_t memBmpC::merge(memBmpC *b)
 {
 	uarch_t		loopMaxPfn, loopStartPfn;
 	status_t	ret=0;
 
 	// Make sure we're not wasting on time on two that don't intersect.
-	if (bmp->basePfn > endPfn || bmp->endPfn < basePfn) {
+	if (b->basePfn > endPfn || b->endPfn < basePfn) {
 		return 0;
 	};
 
-	if (bmp->basePfn < basePfn) {
+	if (b->basePfn < basePfn) {
 		loopStartPfn = basePfn;
 	}
 	else {
-		loopStartPfn = bmp->basePfn;
+		loopStartPfn = b->basePfn;
 	};
 
-	if (bmp->endPfn > endPfn) {
+	if (b->endPfn > endPfn) {
 		loopMaxPfn = endPfn;
 	}
 	else {
-		loopMaxPfn = bmp->endPfn;
+		loopMaxPfn = b->endPfn;
 	};
+
+	bmp.lock.acquire();
 
 	for (uarch_t pfn=loopStartPfn; pfn < loopMaxPfn; pfn++)
 	{
-		if (bmp->testFrame(pfn))
+		if (b->testFrame(pfn))
 		{
 			setFrame(pfn);
 			ret++;
 		};
 	};
+
+	bmp.lock.release();
 
 	return ret;
 }
