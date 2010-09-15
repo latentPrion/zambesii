@@ -390,7 +390,7 @@ parseMemoryMap:
 		"PMM state.\n", nSet);
 
 	// Then apply the Memory Tributary's Memory Regions to all banks.
-	if (chipsetRegionMap != __KNULL) 
+	if (chipsetRegionMap != __KNULL)
 	{
 		pos = numaStreams.prepareForLoop();
 		ns = numaStreams.getLoopItem(&pos);

@@ -70,7 +70,7 @@ void memoryStreamC::cut(void)
 
 void memoryStreamC::dump(void)
 {
-	__kprintf(NOTICE"Memory Stream %X: Dumping.\n", id);
+	__kprintf(NOTICE"Memory Stream 0x%X: Dumping.\n", id);
 	vaddrSpaceStream.dump();
 }
 
@@ -81,7 +81,7 @@ void *memoryStreamC::dummy_memAlloc(uarch_t, uarch_t)
 
 void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 {
-	uarch_t		commit=nPages, ret, f, pos;
+	uarch_t		commit=nPages, ret, f, pos, nTries;
 	status_t	totalFrames, nFrames, nMapped;
 	paddr_t		p;
 
@@ -111,7 +111,8 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		return __KNULL;
 	};
 
-	for (totalFrames=0; totalFrames < static_cast<sarch_t>( commit ); )
+	for (totalFrames=0, nTries=0;
+		totalFrames < static_cast<sarch_t>( commit ); )
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		nFrames = numaTrib.configuredGetFrames(
@@ -142,6 +143,19 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 					"WPR failed to map %d pages for alloc "
 					"of %d frames.\n",
 					this->id, nFrames, nPages);
+
+				goto releaseAndUnmap;
+			};
+		}
+		else
+		{
+			// Make sure we don't waste time spinning indefinitely.
+			nTries++;
+			if (nTries >= 4)
+			{
+				__kprintf(NOTICE"Mem Stream 0x%X: memAlloc(%d):"
+					" with commit nFrames %d: No pmem.\n",
+					this->id, nPages, commit);
 
 				goto releaseAndUnmap;
 			};
