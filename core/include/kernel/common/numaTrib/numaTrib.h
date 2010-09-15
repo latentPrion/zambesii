@@ -3,6 +3,8 @@
 
 	#include <scaling.h>
 	#include <chipset/memory.h>
+	#include <chipset/numaMap.h>
+	#include <chipset/memoryConfig.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/multipleReaderLock.h>
@@ -36,6 +38,8 @@
  * devices so that we can best schedule drivers to run on the closest bank
  * to their device.
  **/
+
+#define NUMATRIB		"Numa Tributary: "
 
 #define NUMATRIB_SHBANK_INVALID		(-1)
 
@@ -79,6 +83,12 @@ public:
 
 	void mapRangeUsed(paddr_t baseAddr, uarch_t nPages);
 	void mapRangeUnused(paddr_t baseAddr, uarch_t nPages);
+
+private:
+	void init2_spawnNumaStreams(chipsetNumaMapS *map);
+	void init2_generateNumaMemoryRanges(chipsetNumaMapS *map);
+	void init2_generateShbankFromNumaMap(
+		chipsetMemConfigS *cfg, chipsetNumaMapS *map);
 
 private:
 	/* 'defaultConfig' is the default used for any call to

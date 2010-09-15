@@ -46,7 +46,6 @@
  *   other bank ID during numaTribC::initialize2().
  **/
 
-#define NUMATRIB		"Numa Tributary: "
 
 // Initialize the __kspace NUMA Stream to its configured Stream ID.
 static numaStreamC	__kspaceNumaStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);

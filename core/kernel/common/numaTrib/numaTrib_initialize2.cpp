@@ -1,3 +1,11 @@
+
+#include <__kstdlib/__kclib/assert.h>
+#include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
+#include <kernel/common/firmwareTrib/firmwareTrib.h>
+#include <kernel/common/firmwareTrib/firmwareStream.h>
+#include <kernel/common/numaTrib/numaTrib.h>
+
 static void sortNumaMapByAddress(chipsetNumaMapS *map)
 {
 	numaMemMapEntryS	tmp;
@@ -86,6 +94,135 @@ static void sortNumaMapByAddress(chipsetNumaMapS *map)
  *   simply assume that the only usable RAM is the __kspace RAM (bootmem), and
  *   continue to use that. When that runs out, that's that.
  **/
+
+#if __SCALING__ >= SCALING_CC_NUMA
+void numaTribC::init2_spawnNumaStreams(chipsetNumaMapS *map)
+{
+	error_t		ret;
+
+	for (uarch_t i=0; i<map->nMemEntries; i++)
+	{
+		// If a stream already exists for this bank:
+		if (getStream(map->memEntries[i].bankId)) {
+			continue;
+		};
+
+		// Else allocate a new stream.
+		ret = spawnStream(map->memEntries[i].bankId);
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR NUMATRIB"Failed to spawn stream for "
+				"detected bank %d.\n",
+				map->memEntries[i].bankId);
+
+			continue;
+		};
+
+		__kprintf(NOTICE NUMATRIB"Spawned NUMA Stream for bank with ID "
+			"%d.\n", map->memEntries[i].bankId);
+	};
+}
+#endif
+
+void numaTribC::init2_generateNumaMemoryRanges(chipsetNumaMapS *map)
+{
+	error_t		ret;
+	numaStreamC	*ns;
+
+	for (uarch_t i=0; i<map->nMemEntries; i++)
+	{
+		ns = getStream(map->memEntries[i].bankId);
+		if (ns == __KNULL)
+		{
+			__kprintf(ERROR NUMATRIB"Bank %d found in NUMA map, "
+				"but it has no stream in hw list.\n",
+				map->memEntries[i].bankId);
+
+			continue;
+		};
+
+		ret = ns->memoryBank.addMemoryRange(
+			map->memEntries[i].baseAddr,
+			map->memEntries[i].size);
+
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR NUMATRIB"Failed to allocate "
+				"memory range obj for range: base 0x%X "
+				"size 0x%X on bank %d.\n",
+				map->memEntries[i].baseAddr,
+				map->memEntries[i].size,
+				map->memEntries[i].bankId);
+		};
+	};
+}
+
+void numaTribC::init2_generateShbankFromNumaMap(
+	chipsetMemConfigS *cfg, chipsetNumaMapS *map
+	)
+{
+	error_t		ret;
+	paddr_t			tmpBase, tmpSize;
+
+	// NUMA map exists: need to discover holes for shbank.
+	sortNumaMapByAddress(map);
+
+	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries ) - 1; i++)
+	{
+		/* Shbank is only for where holes intersect with memoryConfig.
+		 * i.e., if memSize is reported to be 256MB, and there are 
+		 * holes in the NUMA map higher up, those holes are ignored.
+		 *
+		 * Only holes that are below the memSize mark will get a shbank
+		 * memory range.
+		 **/
+		if (map->memEntries[i].baseAddr > cfg->memSize) {
+			break;
+		};
+
+		tmpBase = map->memEntries[i].baseAddr + map->memEntries[i].size;
+		tmpSize = map->memEntries[i+1].baseAddr - tmpBase;
+
+		if (tmpBase + tmpSize > cfg->memSize) {
+			tmpSize = cfg->memSize - tmpBase;
+		};
+
+		if (tmpSize > 0)
+		{
+#ifdef CONFIG_DEBUG_NUMATRIB
+			__kprintf(NOTICE NUMATRIB
+				"For memrange %d, on bank %d, base 0x%X, size "
+				"0x%X, next entry base 0x%X, shbank memory "
+				"range with base 0x%X and size 0x%X is needed."
+				"\n", i,
+				map->memEntries[i].bankId,
+				map->memEntries[i].baseAddr,
+				map->memEntries[i].size,
+				map->memEntries[i+1].baseAddr,
+				tmpBase, tmpSize);
+#endif
+
+			ret = getStream(CHIPSET_MEMORY_NUMA_SHBANKID)
+				->memoryBank.addMemoryRange(tmpBase, tmpSize);
+
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR NUMATRIB
+					"Shbank: Failed to spawn memrange for "
+					"hole: base 0x%X size 0x%X.\n",
+					tmpBase, tmpSize);
+			}
+			else
+			{
+				__kprintf(NOTICE NUMATRIB
+					"Shbank: New memrange base 0x%X, size "
+					"0x%X.\n",
+					tmpBase, tmpSize);
+			};
+		};
+	};
+}
+
 error_t numaTribC::initialize2(void)
 {
 	error_t			ret;
@@ -95,7 +232,6 @@ error_t numaTribC::initialize2(void)
 	memInfoRivS		*memInfoRiv;
 	numaStreamC		*ns;
 	sarch_t			pos;
-	paddr_t			tmpBase, tmpSize;
 	status_t		nSet=0;
 
 	/**	EXPLANATION:
@@ -140,63 +276,27 @@ error_t numaTribC::initialize2(void)
 	ret = (*memInfoRiv->initialize)();
 	assert_fatal(ret == ERROR_SUCCESS);
 
-	__kprintf(NOTICE NUMATRIB"Initialized Memory Information Rivulet.\n");
-
 #if __SCALING__ >= SCALING_CC_NUMA
+	// Get NUMA map from chipset.
 	numaMap = (*memInfoRiv->getNumaMap)();
+
 	if (numaMap != __KNULL && numaMap->nMemEntries > 0)
 	{
-		__kprintf(NOTICE NUMATRIB"NUMA Map: %d entries.\n",
+		__kprintf(NOTICE NUMATRIB"Chipset NUMA Map: %d entries.\n",
 			numaMap->nMemEntries);
 
 		for (uarch_t i=0; i<numaMap->nMemEntries; i++)
 		{
-			// If we've already spawned a stream for this bank:
-			if (getStream(numaMap->memEntries[i].bankId)) {
-				continue;
-			};
-			// Else allocate one.
-			ret = spawnStream(numaMap->memEntries[i].bankId);
-			if (ret != ERROR_SUCCESS)
-			{
-				__kprintf(ERROR NUMATRIB"Failed to spawn "
-					"stream for detected bank %d.\n",
-					numaMap->memEntries[i].bankId);
-
-				continue;
-			};
-			__kprintf(NOTICE NUMATRIB"Spawned NUMA Stream for bank "
-				"with ID %d.\n",
+			__kprintf(NOTICE NUMATRIB"Entry %d: Base 0x%X, size "
+				"0x%X, bank %d.\n",
+				i,
+				numaMap->memEntries[i].baseAddr,
+				numaMap->memEntries[i].size,
 				numaMap->memEntries[i].bankId);
 		};
 
-		// Run through again, and this time spawn memory regions.
-		for (uarch_t i=0; i<numaMap->nMemEntries; i++)
-		{
-			ns = getStream(numaMap->memEntries[i].bankId);
-			if (ns == __KNULL)
-			{
-				__kprintf(WARNING NUMATRIB"Bank %d found in "
-					"NUMA map, but it has no stream.\n",
-					numaMap->memEntries[i].bankId);
-
-				continue;
-			};
-
-			ret = ns->memoryBank.addMemoryRange(
-				numaMap->memEntries[i].baseAddr,
-				numaMap->memEntries[i].size);
-
-			if (ret != ERROR_SUCCESS)
-			{
-				__kprintf(ERROR NUMATRIB"Failed to allocate "
-					"memory range obj for range: base 0x%X "
-					"size 0x%X on bank %d.\n",
-					numaMap->memEntries[i].baseAddr,
-					numaMap->memEntries[i].size,
-					numaMap->memEntries[i].bankId);
-			};
-		};
+		init2_spawnNumaStreams(numaMap);
+		init2_generateNumaMemoryRanges(numaMap);
 	}
 	else {
 		__kprintf(WARNING NUMATRIB"getNumaMap(): no map.\n");
@@ -204,9 +304,14 @@ error_t numaTribC::initialize2(void)
 #endif
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
+	// Get memory config from the chipset.
 	memConfig = (*memInfoRiv->getMemoryConfig)();
+
 	if (memConfig != __KNULL && memConfig->memSize > 0)
 	{
+		__kprintf(NOTICE NUMATRIB"Chipset Mem Config: memsize 0x%X.\n",
+			memConfig->memSize);
+
 		ret = spawnStream(CHIPSET_MEMORY_NUMA_SHBANKID);
 		if (ret != ERROR_SUCCESS)
 		{
@@ -214,85 +319,8 @@ error_t numaTribC::initialize2(void)
 			goto parseMemoryMap;
 		};
 
-		__kprintf(NOTICE NUMATRIB"Mem config: memsize 0x%X.\n",
-			memConfig->memSize);
-
-		if (numaMap != __KNULL && numaMap->nMemEntries-1 > 0)
-		{
-			// NUMA map exists: need to discover holes for shbank.
-			sortNumaMapByAddress(numaMap);
-			__kprintf(NOTICE NUMATRIB"Shbank: parsing NUMA map for "
-				"holes.\n");
-
-			for (sarch_t i=0;
-				i<static_cast<sarch_t>( numaMap->nMemEntries )
-					- 1;
-				i++)
-			{
-				/* Shbank is only for where holes intersect with
-				 * memoryConfig. i.e., if memSize is reported
-				 * to be 256MB, and there are holes in the NUMA
-				 * map higher up, those holes are ignored.
-				 *
-				 * Only holes that are below the memSize mark
-				 * will get a shbank memory range.
-				 **/
-				if (numaMap->memEntries[i].baseAddr
-					> memConfig->memSize)
-				{
-					break;
-				};
-
-				tmpBase = numaMap->memEntries[i].baseAddr
-					+ numaMap->memEntries[i].size;
-
-				tmpSize = numaMap->memEntries[i+1].baseAddr
-					- tmpBase;
-
-				if (tmpBase + tmpSize > memConfig->memSize) {
-					tmpSize = memConfig->memSize - tmpBase;
-				};
-
-				if (tmpSize > 0)
-				{
-					__kprintf(NOTICE NUMATRIB
-						"For memrange %d, on bank %d, "
-						"base 0x%X, size 0x%X, "
-						"next entry base 0x%X, shbank "
-						"memory range with base 0x%X "
-						"and size 0x%X is needed.\n",
-						i,
-						numaMap->memEntries[i].bankId,
-						numaMap->memEntries[i].baseAddr,
-						numaMap->memEntries[i].size,
-						numaMap->memEntries[i+1]
-							.baseAddr,
-						tmpBase, tmpSize);
-
-					ret = getStream(
-						CHIPSET_MEMORY_NUMA_SHBANKID)
-						->memoryBank.addMemoryRange(
-							tmpBase, tmpSize);
-
-					if (ret != ERROR_SUCCESS)
-					{
-						__kprintf(ERROR NUMATRIB
-							"Shbank: Failed to "
-							"spawn memrange for "
-							"hole: base 0x%X size "
-							"0x%X.\n",
-							tmpBase, tmpSize);
-					}
-					else
-					{
-						__kprintf(NOTICE NUMATRIB
-							"Shbank: New memrange "
-							"base 0x%X, size "
-							"0x%X.\n",
-							tmpBase, tmpSize);
-					};
-				};
-			};
+		if (numaMap != __KNULL && numaMap->nMemEntries-1 > 0) {
+			init2_generateShbankFromNumaMap(memConfig, numaMap);
 		}
 		else
 		{
@@ -303,8 +331,9 @@ error_t numaTribC::initialize2(void)
 
 			if (ret != ERROR_SUCCESS)
 			{
-				__kprintf(ERROR NUMATRIB"Failed to add memory "
-					"range for shbank memsize.\n");
+				__kprintf(ERROR NUMATRIB"Shbank: On shbank "
+					"stream, failed to add shbank memrange."
+					"\n");
 			}
 			else
 			{
