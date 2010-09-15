@@ -6,6 +6,7 @@
 #include <chipset/numaMap.h>
 #include <chipset/memoryMap.h>
 #include <chipset/memoryConfig.h>
+#include <chipset/regionMap.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/assert.h>
@@ -187,6 +188,7 @@ error_t numaTribC::initialize2(void)
 	numaStreamC		*ns;
 	sarch_t			pos;
 	paddr_t			tmpBase, tmpSize;
+	status_t		nSet=0;
 
 	/**	EXPLANATION:
 	 * Now the NUMA Tributary is ready to check for new banks of memory,
@@ -433,6 +435,36 @@ parseMemoryMap:
 	}
 	else {
 		__kprintf(WARNING NUMATRIB"getMemoryMap(): No mem map.\n");
+	};
+
+	// Next merge all banks with __kspace.
+	pos = numaStreams.prepareForLoop();
+	ns = numaStreams.getLoopItem(&pos);
+	for (; ns != __KNULL; ns = numaStreams.getLoopItem(&pos)) {
+		nSet = ns->memoryBank.merge(
+			&getStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID)
+				->memoryBank);
+	};
+
+	__kprintf(NOTICE NUMATRIB"%d frames were merged from __kspace into new "
+		"PMM state.\n", nSet);
+
+	// Then apply the Memory Tributary's Memory Regions to all banks.
+	if (chipsetRegionMap != __KNULL) 
+	{
+		pos = numaStreams.prepareForLoop();
+		ns = numaStreams.getLoopItem(&pos);
+		for (; ns != __KNULL; ns = numaStreams.getLoopItem(&pos))
+		{
+			for (uarch_t i=0; i<chipsetRegionMap->nEntries; i++)
+			{
+				ns->memoryBank.mapMemUsed(
+					chipsetRegionMap->entries[i].baseAddr,
+					PAGING_BYTES_TO_PAGES(
+						chipsetRegionMap
+							->entries[i].size));
+			};
+		};
 	};
 
 	return ERROR_SUCCESS;

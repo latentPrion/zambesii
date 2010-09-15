@@ -33,6 +33,8 @@ public:
 	error_t mapMemUsed(paddr_t baseAddr, uarch_t nFrames);
 	error_t mapMemUnused(paddr_t baseAddr, uarch_t nFrames);
 
+	status_t merge(numaMemoryRangeC *nmr);
+
 	sarch_t identifyPaddr(paddr_t paddr);
 	sarch_t identifyPaddrRange(paddr_t baseAddr, uarch_t nFrames);
 

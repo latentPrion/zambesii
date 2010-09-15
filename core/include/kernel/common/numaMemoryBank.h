@@ -51,6 +51,7 @@ public:
 	error_t addMemoryRange(paddr_t baseAddr, paddr_t size);
 	error_t removeMemoryRange(paddr_t baseAddr);
 
+
 	void dump(void);
 
 	void cut(void);
@@ -64,6 +65,8 @@ public:
 	// Is a wrapper around numaMemoryRangeC::mapMemU*sed().
 	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
 	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);
+
+	status_t merge(numaMemoryBankC *nmb);
 
 	sarch_t identifyPaddr(paddr_t paddr);
 	sarch_t identifyPaddrRange(paddr_t base, paddr_t nBytes);

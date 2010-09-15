@@ -46,6 +46,15 @@ public:
 	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
 	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);
 
+	/* Does a big OR operation on this bmp, such that "this" |= bmp.
+	 * Useful for the PMM, when transitioning from __kspace into NUMA Trib
+	 * detected memory.
+	 *
+	 * Returns the number of bits that were set in "this" bmp due to the OR
+	 * with the other one.
+	 **/
+	status_t merge(memBmpC *bmp);
+
 public:
 	inline void setFrame(uarch_t pfn);
 	inline void unsetFrame(uarch_t pfn);

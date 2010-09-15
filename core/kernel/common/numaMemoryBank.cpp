@@ -403,10 +403,33 @@ void numaMemoryBankC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; ) {
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next) {
 		cur->range->mapMemUnused(baseAddr, nFrames);
 	};
 
 	ranges.lock.readRelease(rwFlags);
+}
+
+status_t numaMemoryBankC::merge(numaMemoryBankC *nmb)
+{
+	uarch_t		rwFlags, rwFlags2;
+	status_t	ret=0;
+
+	ranges.lock.readAcquire(&rwFlags);
+	nmb->ranges.lock.readAcquire(&rwFlags2);
+
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
+	{
+		for (rangePtrS *cur2 = nmb->ranges.rsrc; cur2 != __KNULL;
+			cur2 = cur2->next)
+		{
+			ret += cur->range->merge(cur2->range);
+		};
+	};
+
+	nmb->ranges.lock.readRelease(rwFlags2);
+	ranges.lock.readRelease(rwFlags);
+
+	return ret;
 }
 

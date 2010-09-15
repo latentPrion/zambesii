@@ -110,3 +110,8 @@ error_t numaMemoryRangeC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 	return ERROR_SUCCESS;
 }
 
+status_t numaMemoryRangeC::merge(numaMemoryRangeC *nmr)
+{
+	frameCache.flush(&bmp);
+	return bmp.merge(&nmr->bmp);
+}

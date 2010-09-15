@@ -82,6 +82,42 @@ memBmpC::~memBmpC(void)
 	};
 }
 
+status_t memBmpC::merge(memBmpC *bmp)
+{
+	uarch_t		loopMaxPfn, loopStartPfn;
+	status_t	ret=0;
+
+	// Make sure we're not wasting on time on two that don't intersect.
+	if (bmp->basePfn > endPfn || bmp->endPfn < basePfn) {
+		return 0;
+	};
+
+	if (bmp->basePfn < basePfn) {
+		loopStartPfn = basePfn;
+	}
+	else {
+		loopStartPfn = bmp->basePfn;
+	};
+
+	if (bmp->endPfn > endPfn) {
+		loopMaxPfn = endPfn;
+	}
+	else {
+		loopMaxPfn = bmp->endPfn;
+	};
+
+	for (uarch_t pfn=loopStartPfn; pfn < loopMaxPfn; pfn++)
+	{
+		if (bmp->testFrame(pfn))
+		{
+			setFrame(pfn);
+			ret++;
+		};
+	};
+
+	return ret;
+}
+
 error_t memBmpC::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
 {
 	/* FIXME: bmp.rsrc.lastAllocIndex should be reset and the whole thing

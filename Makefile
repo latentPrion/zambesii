@@ -3,8 +3,7 @@
 #
 # Zambezii Kernel top-level makefile.
 #
-
-iso: zambezii.iso
+iso9660: zambezii.iso
 	cp -f zambezii.zxe iso/zambezii/core
 	genisoimage -R -b boot/grub/stage2_eltorito -no-emul-boot \
 	-boot-load-size 4 -boot-info-table -V zambezii -o zambezii.iso iso
@@ -64,7 +63,7 @@ clean: fonyphile
 #	cd drivers; make clean
 
 aclean: fonyphile
-	rm -f *.o *.ekf *.zxe *.iso *.img
+	rm -f *.o *.ekf *.zxe *.iso *.fat
 	cd core; make aclean
 #	cd programs; make aclean
 #	cd libraries; make aclean
