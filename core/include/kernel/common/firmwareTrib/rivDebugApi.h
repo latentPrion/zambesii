@@ -14,10 +14,10 @@ extern "C" {
 	#undef FATAL
 #endif
 
-#define NOTICE			(utf8Char *)"N: "
-#define WARNING			(utf8Char *)"W: "
-#define ERROR			(utf8Char *)"E: "
-#define FATAL			(utf8Char *)"F: "
+#define NOTICE			(utf8Char *)"[N]: "
+#define WARNING			(utf8Char *)"[W]: "
+#define ERROR			(utf8Char *)"[E]: "
+#define FATAL			(utf8Char *)"[F]: "
 
 void rivPrintf(utf8Char *str, ...);
 

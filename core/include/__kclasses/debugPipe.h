@@ -47,10 +47,10 @@
 
 #define DEBUGPIPE_CONVERSION_BUFF_NPAGES	4
 
-#define NOTICE				(utf8Char *)"N: "
-#define WARNING				(utf8Char *)"W: "
-#define ERROR				(utf8Char *)"E: "
-#define FATAL				(utf8Char *)"F: "
+#define NOTICE				(utf8Char *)"[N]: "
+#define WARNING				(utf8Char *)"[W]: "
+#define ERROR				(utf8Char *)"[E]: "
+#define FATAL				(utf8Char *)"[F]: "
 
 class debugPipeC
 {
