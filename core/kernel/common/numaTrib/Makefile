@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../../numaTrib.a
-OBJFILES=numaTrib.o numaStream.o
+OBJFILES=numaTrib.o numaStream.o numaTrib_initialize2.o
 
 all: Makefile $(DELIVERABLE)
 

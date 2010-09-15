@@ -22,8 +22,8 @@ struct e820EntryS
 
 struct e820EntryS	*e820Ptr;
 
-static chipsetMemMapS		*memMap;
-static chipsetMemConfigS	*memConfig;
+static struct chipsetMemMapS		*memMap;
+static struct chipsetMemConfigS	*memConfig;
 
 static error_t ibmPcBios_mi_initialize(void)
 {
@@ -200,8 +200,9 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 static struct chipsetMemConfigS *ibmPcBios_mi_getMemoryConfig(void)
 {
 	struct chipsetMemConfigS	*ret;
-	uarch_t			ax, bx, cx, dx;
-	sarch_t			highest=0;
+	uarch_t				ax, bx, cx, dx;
+	sarch_t				highest=0;
+	uarch_t				i;
 
 	if (memMap == __KNULL)
 	{
@@ -210,14 +211,14 @@ static struct chipsetMemConfigS *ibmPcBios_mi_getMemoryConfig(void)
 		if (memMap != __KNULL)
 		{
 			// Derive mem size from mem map instead of E801 below.
-			for (uarch_t i=0; i<memMap->nEntries; i++)
+			for (i=0; i<memMap->nEntries; i++)
 			{
 				if ((memMap->entries[i].baseAddr
 					> memMap->entries[highest].baseAddr)
 					&& (memMap->entries[i].memType
 						== CHIPSETMMAP_TYPE_USABLE))
 				{
-					highest == i;
+					highest = i;
 				};
 			};
 
