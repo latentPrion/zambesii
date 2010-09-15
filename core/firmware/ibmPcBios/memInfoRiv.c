@@ -22,6 +22,9 @@ struct e820EntryS
 
 struct e820EntryS	*e820Ptr;
 
+static chipsetMemMapS		*memMap;
+static chipsetMemConfigS	*memConfig;
+
 static error_t ibmPcBios_mi_initialize(void)
 {
 	/* TODO:
@@ -45,44 +48,6 @@ static error_t ibmPcBios_mi_suspend(void)
 static error_t ibmPcBios_mi_awake(void)
 {
 	return ERROR_SUCCESS;
-}
-
-static struct chipsetMemConfigS *ibmPcBios_mi_getMemoryConfig(void)
-{
-	struct chipsetMemConfigS	*ret;
-	uarch_t			ax, bx, cx, dx;
-
-	ibmPcBios_lock_acquire();
-
-	ibmPcBios_setEax(0x0000E801);
-	ibmPcBios_executeInterrupt(0x15);
-
-	ax = ibmPcBios_getEax();
-	bx = ibmPcBios_getEbx();
-	cx = ibmPcBios_getEcx();
-	dx = ibmPcBios_getEdx();
-
-	ibmPcBios_lock_release();
-
-	ret = (struct chipsetMemConfigS *)rivMalloc(
-		sizeof(struct chipsetMemConfigS));
-
-	if (ret == __KNULL) {
-		return __KNULL;
-	};
-
-	if (ax == 0)
-	{
-		ret->memSize = 0x100000 + (cx << 10);
-		ret->memSize += dx << 16;
-	}
-	else
-	{
-		ret->memSize = 0x100000 + (ax << 10);
-		ret->memSize += bx << 16;
-	}
-
-	return ret;
 }
 
 /* Will return an unsorted memory map with zero-length entries taken out, and
@@ -122,9 +87,7 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 		&& !__KFLAG_TEST(ibmPcBios_getEflags(), (1<<0)))
 	{
 		nEntries++;
-		if (ibmPcBios_getEbx() == 0)
-		{
-			rivPrintf(NOTICE"EBX = 0, ending loop.\n");
+		if (ibmPcBios_getEbx() == 0) {
 			break;
 		};
 
@@ -217,7 +180,7 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 	};
 
 	rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): %d entries in firmware "
-		"map.\n", nEntries);
+		"mem map.\n", nEntries);
 
 	// Hardcode in the extra two entries for all chipsets.
 	ret->entries[i].baseAddr = 0x0;
@@ -229,14 +192,93 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 	ret->entries[i+1].memType = CHIPSETMMAP_TYPE_RESERVED;
 
 	ret->nEntries = i + 2;
+	memMap = ret;
+
+	return ret;
+}
+
+static struct chipsetMemConfigS *ibmPcBios_mi_getMemoryConfig(void)
+{
+	struct chipsetMemConfigS	*ret;
+	uarch_t			ax, bx, cx, dx;
+	sarch_t			highest=0;
+
+	if (memMap == __KNULL)
+	{
+		// Try to get a memory map.
+		ibmPcBios_mi_getMemoryMap();
+		if (memMap != __KNULL)
+		{
+			// Derive mem size from mem map instead of E801 below.
+			for (uarch_t i=0; i<memMap->nEntries; i++)
+			{
+				if ((memMap->entries[i].baseAddr
+					> memMap->entries[highest].baseAddr)
+					&& (memMap->entries[i].memType
+						== CHIPSETMMAP_TYPE_USABLE))
+				{
+					highest == i;
+				};
+			};
+
+			if (memMap->entries[highest].memType
+				!= CHIPSETMMAP_TYPE_USABLE)
+			{
+				goto useE801;
+			};
+
+			ret = (struct chipsetMemConfigS *)rivMalloc(
+				sizeof(struct chipsetMemConfigS));
+
+			ret->memSize = memMap->entries[highest].baseAddr
+				+ memMap->entries[highest].size;
+
+			memConfig = ret;
+			return ret;
+		};
+	}
+	else {
+		return memConfig;
+	};
+
+useE801:
+	ibmPcBios_lock_acquire();
+
+	ibmPcBios_setEax(0x0000E801);
+	ibmPcBios_executeInterrupt(0x15);
+
+	ax = ibmPcBios_getEax();
+	bx = ibmPcBios_getEbx();
+	cx = ibmPcBios_getEcx();
+	dx = ibmPcBios_getEdx();
+
+	ibmPcBios_lock_release();
+
+	ret = (struct chipsetMemConfigS *)rivMalloc(
+		sizeof(struct chipsetMemConfigS));
+
+	if (ret == __KNULL) {
+		return __KNULL;
+	};
+
+	if (ax == 0)
+	{
+		ret->memSize = 0x100000 + (cx << 10);
+		ret->memSize += dx << 16;
+	}
+	else
+	{
+		ret->memSize = 0x100000 + (ax << 10);
+		ret->memSize += bx << 16;
+	}
+
+	// Don't set the static var memConfig above when we don't use the e820.
 	return ret;
 }
 
 struct chipsetNumaMapS *ibmPcBios_mi_getNumaMap(void)
 {
-#if __SCALING__ < SCALING_CC_NUMA
 	return __KNULL;
-#endif
 }
 
 struct memInfoRivS	ibmPcBios_memInfoRiv =
