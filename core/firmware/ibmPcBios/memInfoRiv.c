@@ -62,10 +62,14 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 	struct chipsetMemMapS	*ret;
 	ubit32		nEntries=0, i, j;
 
+	if (memMap != __KNULL) {
+		return memMap;
+	};
+
 	ret = (void *)rivMalloc(sizeof(struct chipsetMemMapS));
 	if (ret == __KNULL)
 	{
-		rivPrintf(ERROR"ibmPcBios_mi_getMemoryMap(): Failed to alloc "
+		rivPrintf(ERROR"Firmware: getMemoryMap(): Failed to alloc "
 			"space for mem map descriptor.\n");
 
 		return __KNULL;
@@ -108,7 +112,7 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 		(nEntries + 2) * sizeof(struct chipsetMemMapEntryS));
 
 	if (ret->entries == __KNULL) {
-		rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): Failed to alloc "
+		rivPrintf(NOTICE"Firmware: getMemoryMap(): Failed to alloc "
 			"space for actual entries in mem map.\n");
 
 		return __KNULL;
@@ -179,7 +183,7 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 #endif
 	};
 
-	rivPrintf(NOTICE"ibmPcBios_mi_getMemoryMap(): %d entries in firmware "
+	rivPrintf(NOTICE"Firmware: getMemoryMap(): %d entries in firmware "
 		"mem map.\n", nEntries);
 
 	// Hardcode in the extra two entries for all chipsets.

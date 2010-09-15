@@ -234,47 +234,35 @@ error_t numaTribC::initialize2(void)
 	sarch_t			pos;
 	status_t		nSet=0;
 
-	/**	EXPLANATION:
-	 * Now the NUMA Tributary is ready to check for new banks of memory,
-	 * or for a non-NUMa build, generate a single "shared" NUMA bank as a
-	 * fake bank 0 from which all threads will allocate.
-	 *
-	 * On both a NUMA and a non-NUMA build, the kernel will eradicate
-	 * __kspace at this point. On a non-NUMA build however, if the kernel
-	 * finds no extra memory, it will send out a nice, conspicuous warning
-	 * and then assign __kspace to be the shared bank, and move on.
-	 *
-	 * On a NUMA build, if the kernel finds no NUMA memory config, then it
-	 * will fall through to the check for shared memory. However, if the
-	 * person porting the kernel to his or her chipset did not define
-	 * CHIPSET_MEMORY_NUMA_GENERATE_SHBANK, then the kernel will just
-	 * fall through, see that __kspace is the only remaining memory, and
-	 * set that as the default bank, send out a nice highly conspicuous
-	 * warning, and move on.
-	 *
-	 * In the event that CHIPSET_MEMORY_NUMA_GENERATE_SHBANK is defined,
-	 * yet still no memory is found, the kernel will do the same as above.
-	 *
-	 * In the event that CHIPSET_MEMORY_NUMA_GENERATE_SHBANK is defined,
-	 * and memory is found, the kernel will set that memory to be shbank,
-	 * and the default bank, and then eradicate __kspace.
-	 **/
 	// Initialize both firmware streams.
 	ret = (*chipsetFwStream.initialize)();
-	assert_fatal(ret == ERROR_SUCCESS);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE NUMATRIB"Failed to init chipset FWStream.\n");
+		return ret;
+	};
 
 	ret = (*firmwareFwStream.initialize)();
-	assert_fatal(ret == ERROR_SUCCESS);
-
-	__kprintf(NOTICE NUMATRIB"Initialized Firmware and Chipset firmware "
-		"streams.\n");
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE NUMATRIB"Failed to init firmware FWStream.\n");
+		return ret;
+	};
 
 	// Fetch and initialize the Memory Info rivulet.
 	memInfoRiv = firmwareTrib.getMemInfoRiv();
-	assert_fatal(memInfoRiv != __KNULL);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE NUMATRIB"Chipset provides no Mem Info Riv.");
+		return ERROR_UNKNOWN;
+	};
 
 	ret = (*memInfoRiv->initialize)();
-	assert_fatal(ret == ERROR_SUCCESS);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE NUMATRIB"Failed to init Mem Info Rivulet.\n");
+		return ret;
+	};
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Get NUMA map from chipset.
@@ -299,7 +287,7 @@ error_t numaTribC::initialize2(void)
 		init2_generateNumaMemoryRanges(numaMap);
 	}
 	else {
-		__kprintf(WARNING NUMATRIB"getNumaMap(): no map.\n");
+		__kprintf(WARNING NUMATRIB"getNumaMap(): No NUMA map.\n");
 	};
 #endif
 
@@ -344,14 +332,29 @@ error_t numaTribC::initialize2(void)
 		};
 	}
 	else {
-		__kprintf(ERROR NUMATRIB"getMemoryConfig(): no config.\n");
+		__kprintf(ERROR NUMATRIB"getMemoryConfig(): No mem config.\n");
 	};
 #endif
 
 parseMemoryMap:
+	// Get the Memory Map from the chipset code.
 	memMap = (memInfoRiv->getMemoryMap)();
+
 	if (memMap != __KNULL && memMap->nEntries > 0)
 	{
+		__kprintf(NOTICE NUMATRIB"Chipset Mem map: %d entries.\n",
+			memMap->nEntries);
+
+		for (uarch_t i=0; i<memMap->nEntries; i++)
+		{
+			__kprintf(NOTICE NUMATRIB"Entry %d: Base 0x%X, size "
+				"0x%X, type %d.\n",
+				i,
+				memMap->entries[i].baseAddr,
+				memMap->entries[i].size,
+				memMap->entries[i].memType);
+		};
+
 		pos = numaStreams.prepareForLoop();
 		ns = numaStreams.getLoopItem(&pos);
 		for (; ns != __KNULL; ns = numaStreams.getLoopItem(&pos))

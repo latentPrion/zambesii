@@ -12,7 +12,7 @@
 
 
 #define LOWMEM_NPAGES		(0x100000 / PAGING_BASE_SIZE)
-#define FWFWS			"FirmwareFWS: "
+#define FWFWS			"Firmware: "
 
 static void		*ibmPcBiosLock;
 
@@ -28,8 +28,8 @@ error_t ibmPcBios_initialize(void)
 	M.mem_base = (uarch_t)__kvaddrSpaceStream_getPages(LOWMEM_NPAGES);
 	if (M.mem_base == __KNULL)
 	{
-		rivPrintf(ERROR FWFWS"Failed to get %d pages for lowmem buffer."
-			"\n", LOWMEM_NPAGES);
+		rivPrintf(ERROR FWFWS"initialize(): Failed to get %d pages for "
+			"lowmem buffer.\n", LOWMEM_NPAGES);
 
 		return ERROR_MEMORY_NOMEM_VIRTUAL;
 	};
@@ -48,8 +48,8 @@ error_t ibmPcBios_initialize(void)
 
 	if (nMapped < LOWMEM_NPAGES)
 	{
-		rivPrintf(ERROR FWFWS"Unable to map buff 0x%X to lowmem. %d "
-			"of %d pages were mapped.\n",
+		rivPrintf(ERROR FWFWS"initialize(): Unable to map buff 0x%X to "
+			"lowmem. %d of %d pages were mapped.\n",
 			M.mem_base, nMapped, LOWMEM_NPAGES);
 
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
@@ -62,7 +62,9 @@ error_t ibmPcBios_initialize(void)
 		__kvaddrSpaceStream_releasePages(
 			(void *)M.mem_base, LOWMEM_NPAGES);
 
-		rivPrintf(ERROR FWFWS"Failed to allocate waitLockC object.\n");
+		rivPrintf(ERROR FWFWS"initialize(): Failed to alloc "
+			"waitLock.\n");
+
 		return ERROR_MEMORY_NOMEM;
 	};
 
