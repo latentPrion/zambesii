@@ -230,7 +230,7 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 	ranges.lock.readAcquire(&rwFlags2);
 
 	// We now hold both locks.
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
 	{
 		// Don't waste time re-trying the same range.
 		if (cur->range == defRange.rsrc) {
@@ -296,7 +296,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 	ranges.lock.readAcquire(&rwFlags2);
 
 	// We now hold both locks.
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
 	{
 		// Don't waste time re-trying the same range.
 		if (cur->range == defRange.rsrc) {
@@ -326,7 +326,7 @@ void numaMemoryBankC::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
 	{
 		if (cur->range->identifyPaddr(basePaddr))
 		{
@@ -349,7 +349,7 @@ sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
 	{
 		/* A paddr can only correspond to ONE memory range. We never
 		 * hand out pmem allocations spanning multiple discontiguous
@@ -373,7 +373,7 @@ sarch_t numaMemoryBankC::identifyPaddrRange(paddr_t basePaddr, paddr_t nBytes)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; )
+	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
 	{
 		if (cur->range->identifyPaddrRange(basePaddr, nBytes))
 		{
