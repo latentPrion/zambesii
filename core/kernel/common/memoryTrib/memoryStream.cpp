@@ -100,16 +100,15 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)) {
 		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
 	};
+	if (__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)) {
+		commit = 0;
+	};
 
 	ret = reinterpret_cast<uarch_t>(
 		(vaddrSpaceStream.*vaddrSpaceStream.getPages)(nPages) );
 
 	if (ret == __KNULL) {
 		return __KNULL;
-	};
-
-	if (__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)) {
-		return reinterpret_cast<void *>( ret );
 	};
 
 	for (totalFrames=0; totalFrames < static_cast<sarch_t>( commit ); )
