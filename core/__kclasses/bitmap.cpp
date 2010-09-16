@@ -1,6 +1,7 @@
 
 #include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kbitManipulation.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/bitmap.h>
 
@@ -30,6 +31,7 @@ error_t bitmapC::initialize(ubit32 nBits)
 	};
 
 	bmp.rsrc.nBits = nBits;
+	memset(bmp.rsrc.bmp, 0, nIndexes * sizeof(*bmp.rsrc.bmp));
 	return ERROR_SUCCESS;
 }	
 

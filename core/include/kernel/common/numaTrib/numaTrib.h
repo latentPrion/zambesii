@@ -86,9 +86,12 @@ public:
 
 private:
 	void init2_spawnNumaStreams(chipsetNumaMapS *map);
-	void init2_generateNumaMemoryRanges(chipsetNumaMapS *map);
+	void init2_generateNumaMemoryRanges(
+		chipsetNumaMapS *map, sarch_t *__kspaceBool);
+
 	void init2_generateShbankFromNumaMap(
-		chipsetMemConfigS *cfg, chipsetNumaMapS *map);
+		chipsetMemConfigS *cfg, chipsetNumaMapS *map,
+		sarch_t *__kspaceBool);
 
 private:
 	/* 'defaultConfig' is the default used for any call to

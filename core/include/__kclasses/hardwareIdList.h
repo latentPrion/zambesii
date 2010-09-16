@@ -225,7 +225,7 @@ void hardwareIdListC<T>::removeItem(sarch_t id)
 		return;
 	};
 
-	arr.rsrc.writeAcquire();
+	arr.lock.writeAcquire();
 
 	// If removing first item:
 	if (arr.rsrc.firstValidIndex == id)

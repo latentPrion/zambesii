@@ -5,7 +5,7 @@
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/firmwareTrib/firmwareStream.h>
 #include <kernel/common/numaTrib/numaTrib.h>
-
+#include <kernel/common/cpuTrib/cpuTrib.h>
 
 /**	EXPLANATION:
  * The Zambezii NUMA Tributary's initialize2() sequence. Its purpose is to
@@ -79,7 +79,8 @@ error_t numaTribC::initialize2(void)
 	chipsetNumaMapS		*numaMap=__KNULL;
 	memInfoRivS		*memInfoRiv;
 	numaStreamC		*ns;
-	sarch_t			pos;
+	// __kspaceBool is used to determine whether or not to kill __kspace.
+	sarch_t			pos, prevPos, __kspaceBool=0;
 	status_t		nSet=0;
 
 	// Initialize both firmware streams.
@@ -132,7 +133,7 @@ error_t numaTribC::initialize2(void)
 		};
 
 		init2_spawnNumaStreams(numaMap);
-		init2_generateNumaMemoryRanges(numaMap);
+		init2_generateNumaMemoryRanges(numaMap, &__kspaceBool);
 	}
 	else {
 		__kprintf(WARNING NUMATRIB"getNumaMap(): No NUMA map.\n");
@@ -155,8 +156,10 @@ error_t numaTribC::initialize2(void)
 			goto parseMemoryMap;
 		};
 
-		if (numaMap != __KNULL && numaMap->nMemEntries-1 > 0) {
-			init2_generateShbankFromNumaMap(memConfig, numaMap);
+		if (numaMap != __KNULL && numaMap->nMemEntries-1 > 0)
+		{
+			init2_generateShbankFromNumaMap(
+				memConfig, numaMap, &__kspaceBool);
 		}
 		else
 		{
@@ -176,6 +179,8 @@ error_t numaTribC::initialize2(void)
 				__kprintf(NOTICE NUMATRIB"Shbank: no NUMA map. "
 					"Spawn with total memsize 0x%X.\n",
 					memConfig->memSize);
+
+				__kspaceBool = 1;
 			};
 		};
 	}
@@ -260,6 +265,77 @@ parseMemoryMap:
 		};
 	};
 
+	// Allocate BMPs for default config and orientation config.
+	pos = prevPos = numaStreams.prepareForLoop();
+	for (;;)
+	{
+		if (numaStreams.getLoopItem(&pos) == __KNULL) {
+			break;
+		};
+		prevPos = pos;
+	};
+	__kprintf(NOTICE NUMATRIB"Value in prevPos %d.\n", prevPos);
+
+	ret = defaultConfig.memBanks.initialize(prevPos);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR NUMATRIB"Unable to alloc bmp for defconfig.\n");
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	ret = cpuTrib.getCurrentCpuStream()->currentTask
+		->numaConfig.memBanks.initialize(prevPos);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR NUMATRIB"Unable to alloc bmp for orientation "
+			"config.\n");
+
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	pos = prevPos = numaStreams.prepareForLoop();
+	ns = numaStreams.getLoopItem(&pos);
+	for (; ns != __KNULL; ns = numaStreams.getLoopItem(&pos))
+	{
+		defaultConfig.memBanks.setSingle(prevPos);
+		cpuTrib.getCurrentCpuStream()->currentTask
+			->numaConfig.memBanks.setSingle(prevPos);
+
+		prevPos = pos;
+	};
+
+	// And *finally*, see whether or not to destroy __kspace.
+	if (__kspaceBool == 1)
+	{
+		/* To destroy __kspace, we must stop the Orientation thread's
+		 * config from pointing to it. We also have to patch up the
+		 * NUMA Tributary's default config to stop pointing to it as
+		 * well.
+		 *
+		 * Next, if there is a shared bank, we point the both NUMA
+		 * Trib and the orientation thread to it, and move on.
+		 *
+		 * If there is no shared bank, we should be able to leave it
+		 * alone, and the next time a thread asks for pmem, the code in
+		 * numaTrib.cpp should auto-determine which bank to set as the
+		 * new default.
+		 **/
+		numaStreams.removeItem(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
+#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
+		defaultConfig.def.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
+		cpuTrib.getCurrentCpuStream()->currentTask
+			->numaConfig.def.rsrc =
+			CHIPSET_MEMORY_NUMA_SHBANKID;
+
+		sharedBank = CHIPSET_MEMORY_NUMA_SHBANKID;
+		__kprintf(NOTICE NUMATRIB"Patched Orientation and default "
+			"config to now use shbank as default bank.\n");
+#endif
+		__kprintf(NOTICE NUMATRIB"Removed __kspace. Ret is 0x%X.\n",
+			getStream(CHIPSET_MEMORY_NUMA_SHBANKID));
+	};
+
 	return ERROR_SUCCESS;
 }
 
@@ -293,7 +369,9 @@ void numaTribC::init2_spawnNumaStreams(chipsetNumaMapS *map)
 #endif
 
 #if __SCALING__ >= SCALING_CC_NUMA
-void numaTribC::init2_generateNumaMemoryRanges(chipsetNumaMapS *map)
+void numaTribC::init2_generateNumaMemoryRanges(
+	chipsetNumaMapS *map, sarch_t *__kspaceBool
+	)
 {
 	error_t		ret;
 	numaStreamC	*ns;
@@ -322,13 +400,20 @@ void numaTribC::init2_generateNumaMemoryRanges(chipsetNumaMapS *map)
 				map->memEntries[i].baseAddr,
 				map->memEntries[i].size,
 				map->memEntries[i].bankId);
+		}
+		else
+		{
+			/* If even one new memory range was generated
+			 * successfully, we can destroy __kspace.
+			 **/
+			*__kspaceBool = 1;
 		};
 	};
 }
 #endif
 
 void numaTribC::init2_generateShbankFromNumaMap(
-	chipsetMemConfigS *cfg, chipsetNumaMapS *map
+	chipsetMemConfigS *cfg, chipsetNumaMapS *map, sarch_t *__kspaceBool
 	)
 {
 	error_t		ret;
@@ -388,6 +473,8 @@ void numaTribC::init2_generateShbankFromNumaMap(
 					"Shbank: New memrange base 0x%X, size "
 					"0x%X.\n",
 					tmpBase, tmpSize);
+
+				*__kspaceBool = 1;
 			};
 		};
 	};
