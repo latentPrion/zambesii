@@ -8,6 +8,7 @@
 	#include <kernel/common/smpConfig.h>
 	#include <kernel/common/numaConfig.h>
 	#include <kernel/common/process.h>
+	#include <kernel/common/taskTrib/prio.h>
 
 #define TASK_FLAGS_SCHED_WAITING	(1<<0)
 
@@ -25,6 +26,7 @@ struct taskS
 	taskS		*next;
 	taskContextS	*context;
 	uarch_t		flags;
+	prio_t		prio[1];
 	ubit16		nLocksHeld;
 	processS	*parent;
 	smpConfigS	smpConfig;
