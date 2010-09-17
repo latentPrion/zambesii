@@ -6,6 +6,7 @@
 
 // List all the rivulets that this chipset provides.
 extern struct debugRivS		ibmPc_terminal;
+extern struct debugRivS		ibmPc_rs232;
 
 static error_t ibmPc_nop_success(void)
 {
@@ -30,7 +31,7 @@ struct firmwareStreamS		chipsetFwStream =
 
 	// Firmware support for debug output (1-4).
 	&ibmPc_terminal,
-	__KNULL,
+	&ibmPc_rs232,
 	__KNULL,
 	__KNULL,
 
