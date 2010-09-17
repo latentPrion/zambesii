@@ -2,6 +2,7 @@
 	#define _PROCESS_ID_H
 
 	#include <arch/arch.h>
+	#include <__kstdlib/__ktypes.h>
 
 /**	EXPLANATION:
  * Organization of process IDs. A process ID is always a uarch_t. Therefore the
@@ -17,6 +18,8 @@
  * AFAICT, though, POSIX process groups are just groups of processes that are
  * spawned in such a manner as to allow them to recieve POSIX signals as a unit.
  **/
+
+typedef uarch_t		processId_t;
 
 #define __KPROCESSID		0x0
 
