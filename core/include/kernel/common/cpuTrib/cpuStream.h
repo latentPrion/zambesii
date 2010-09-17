@@ -7,6 +7,8 @@
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/cpuFeatures.h>
+	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/waitLock.h>
 
 #define CPUSTREAM_INIT_MAGIC		0xC101101C
 
@@ -26,6 +28,7 @@ public:
 	numaBankId_t	bankId;
 	cpuFeaturesS	cpuFeatures;
 	uarch_t		initMagic;
+	sharedResourceGroupC<waitLockC, uarch_t>	nTasks;
 };
 
 // The hardcoded stream for the BSP CPU.

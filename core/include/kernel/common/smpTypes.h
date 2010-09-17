@@ -3,6 +3,8 @@
 
 	#include <__kstdlib/__ktypes.h>
 
+#define CPUID_INVALID		(-1)
+
 typedef sarch_t		cpu_t;
 
 #endif

@@ -3,6 +3,8 @@
 
 	#include <__kstdlib/__ktypes.h>
 
+#define NUMABANKID_INVALID		(-1)
+
 typedef sarch_t		numaBankId_t;
 
 #endif
