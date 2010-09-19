@@ -4,6 +4,8 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/slamCache.h>
 	#include <kernel/common/stream.h>
+	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/waitLock.h>
 
 class taskStreamC
 :
@@ -25,10 +27,13 @@ public:
 	taskS *pullFlowQ(void);
 	taskS *pullPrioQ(void);
 
+public:
+	uarch_t		nTasks;
+
 private:
 	// Each CPU has its own allocator for taskQNodeS blocks.
 	slamCacheC	taskQNodeCache;
-	taskQNodeS	*prioQ, *flowQ, *dormantQ;
+	sharedResourceGroupC<waitLockC, taskQNodeS *>	prioQ, flowQ, dormantQ;
 };
 
 #endif

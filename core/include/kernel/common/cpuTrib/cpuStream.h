@@ -9,6 +9,7 @@
 	#include <kernel/common/cpuFeatures.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/taskTrib/taskStream.h>
 
 #define CPUSTREAM_INIT_MAGIC		0xC101101C
 
@@ -28,8 +29,8 @@ public:
 	numaBankId_t	bankId;
 	cpuFeaturesS	cpuFeatures;
 	uarch_t		initMagic;
-	sharedResourceGroupC<waitLockC, uarch_t>	nTasks;
-	// Used to tell the CPU whether to fetch from the bank or the local Q.
+	// Per CPU scheduler.
+	taskStreamC	sched;
 };
 
 // The hardcoded stream for the BSP CPU.
