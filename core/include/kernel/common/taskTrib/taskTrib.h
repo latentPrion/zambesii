@@ -20,7 +20,8 @@ public:
 	
 
 private:
-	prio_t		prioClass[PRIO_NCLASSES];
+	prio_t		prioClass[PRIOCLASS_NCLASSES];
+	prio_t		*customPrioClass;
 	sharedResourceGroupC<waitLockC, taskListNodeS *>	deadQ;
 };
 
