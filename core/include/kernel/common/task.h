@@ -34,7 +34,6 @@ struct taskS
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	tlbContextS	*tlbContext;
 #endif
-	bitmapC		cpuTrace;
 };
 
 #endif

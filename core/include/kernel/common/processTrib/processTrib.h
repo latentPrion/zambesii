@@ -3,20 +3,29 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
+	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/multipleReaderLock.h>
+	#include <kernel/common/processId.h>
 
 class processTribC
 :
 public tributaryC
 {
 public:
-	processS *spawnProcess(void);
-	error_t destroyProcess(void);
+	// Init __kprocess, __korientation & boot CPU Stream.
+	error_t initialize(void);
 
-	processS *getProcess(void);
-	processS *__kgetProcess(void);
+public:
+	processS *__kgetProcess(void) { return &__kprocess; };
+	processS *getProcess(processId_t id);
+	processS *getProcess(const utf16Char *absName);
+
+	processS *spawnProcess(const utf16Char *absName);
+	error_t destroyProcess(void);
 
 private:
 	processS	__kprocess;
+	sharedResourceGroupC<multipleReaderLockC, processS *>	processes;
 };
 
 #endif

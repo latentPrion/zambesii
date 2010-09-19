@@ -20,6 +20,7 @@
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 int oo=0;
 
@@ -33,12 +34,12 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	// Prepare the kernel by zeroing .BSS and calling constructors.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
-	// Initialize BSP CPU stream now; Locking in constructors needs it.
-	__korientationPreConstruct::__kprocessInit();
-	__korientationPreConstruct::__korientationThreadInit();
-	__korientationPreConstruct::bspInit();
+	// processTrib initializes __kprocess & __korientation.
+	DO_OR_DIE(processTrib, initialize());
+	DO_OR_DIE(cpuTrib, initialize());
 
 	cxxrtl::callGlobalConstructors();
+
 	DO_OR_DIE(timerTrib, initialize(), ret);
 	DO_OR_DIE(interruptTrib, initialize(), ret);
 

@@ -12,16 +12,14 @@ struct processS
 {
 	uarch_t		id;
 	taskS		*head;
-	char		*fileName, *filePath, *argString;
+	utf16Char	*fileName, *filePath, *argString;
+	utf8Char	*env;
 
 	// Tells which CPUs this process has run on.
 	bitmapC		cpuTrace;
 
 	memoryStreamC	*memoryStream;
 };
-
-void __kprocessPreConstruct(void);
-extern processS		__kprocess;
 
 #endif
 
