@@ -29,6 +29,8 @@ public:
 	cpuFeaturesS	cpuFeatures;
 	uarch_t		initMagic;
 	sharedResourceGroupC<waitLockC, uarch_t>	nTasks;
+	// Used to tell the CPU whether to fetch from the bank or the local Q.
+	ubit8		schedFlipFlop;
 };
 
 // The hardcoded stream for the BSP CPU.
