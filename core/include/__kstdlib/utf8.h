@@ -5,9 +5,9 @@
 
 namespace utf8
 {
-	unicodePoint parse2(const utf8Char **str);
-	unicodePoint parse3(const utf8Char **str);
-	unicodePoint parse4(const utf8Char **str);
+	utf16Char parse2(const utf8Char **str);
+	utf16Char parse3(const utf8Char **str);
+	utf16Char parse4(const utf8Char **str);
 }
 
 #endif
