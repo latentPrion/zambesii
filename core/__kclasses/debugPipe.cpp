@@ -56,21 +56,21 @@ debugPipeC::debugPipeC(void)
 error_t debugPipeC::initialize(void)
 {
 	uarch_t		bound;
-	unicodePoint	*mem;
+	utf16Char	*mem;
 
 	devices.rsrc = 0;
-	// Allocate four pages for UTF-8 expansion buffer. That's 4096 codepts.
+	// Allocate four pages for UTF-8 expansion buffer. That's 8192 codepts.
 	mem = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(
 			DEBUGPIPE_CONVERSION_BUFF_NPAGES, MEMALLOC_NO_FAKEMAP))
-			unicodePoint;
+			utf16Char;
 
 	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	bound = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
-		/ sizeof(unicodePoint);
+		/ sizeof(utf16Char);
 
 	convBuff.lock.acquire();
 
@@ -168,7 +168,7 @@ uarch_t debugPipeC::untieFrom(uarch_t device)
 
 void debugPipeC::refresh(void)
 {
-	unicodePoint	*buff;
+	utf16Char	*buff;
 	void		*handle;
 	uarch_t		len, n=0;
 
@@ -298,7 +298,7 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	};
 
 	buffMax = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
-		/ sizeof(unicodePoint);
+		/ sizeof(utf16Char);
 
 	// Expand the string of UTF-8. Process printf formatting.
 	for (; (*str != 0) && (buffLen < buffMax); str++)
@@ -361,7 +361,9 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 			};
 			if ((*str & 0xF8) == 0xF0)
 			{
-				convBuff.rsrc[buffLen++] = utf8::parse4(&str);
+				// Don't support chars outside unicode BMP.
+				convBuff.rsrc[buffLen++] = '?';
+				str = (const utf8Char *)((uarch_t)str + 4);
 				continue;
 			};
 		};
