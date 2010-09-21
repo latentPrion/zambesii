@@ -108,9 +108,9 @@ void *debugBufferC::lock(void)
 }
 
 // This expects the caller to call lock() before beforehand, and unlock() after.
-utf16Char *debugBufferC::extract(void **handle, uarch_t *len)
+unicodePoint *debugBufferC::extract(void **handle, uarch_t *len)
 {
-	utf16Char	*ret;
+	unicodePoint	*ret;
 
 	if (handle == __KNULL || *handle == __KNULL || len == 0) {
 		return __KNULL;
@@ -140,7 +140,7 @@ void debugBufferC::unlock(void)
 	buff.lock.release();
 }
 
-void debugBufferC::syphon(utf16Char *str, uarch_t buffLen)
+void debugBufferC::syphon(unicodePoint *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
 
