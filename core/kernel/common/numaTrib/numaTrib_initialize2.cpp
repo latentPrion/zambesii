@@ -267,14 +267,9 @@ parseMemoryMap:
 
 	// Allocate BMPs for default config and orientation config.
 	pos = prevPos = numaStreams.prepareForLoop();
-	for (;;)
-	{
-		if (numaStreams.getLoopItem(&pos) == __KNULL) {
-			break;
-		};
+	for (; pos != HWIDLIST_INDEX_INVALID; numaStreams.getLoopItem(&pos)) {
 		prevPos = pos;
 	};
-	__kprintf(NOTICE NUMATRIB"Value in prevPos %d.\n", prevPos);
 
 	ret = defaultConfig.memBanks.initialize(prevPos);
 	if (ret != ERROR_SUCCESS)
@@ -295,14 +290,11 @@ parseMemoryMap:
 	};
 
 	pos = prevPos = numaStreams.prepareForLoop();
-	ns = numaStreams.getLoopItem(&pos);
-	for (; ns != __KNULL; ns = numaStreams.getLoopItem(&pos))
+	for (; pos != HWIDLIST_INDEX_INVALID; numaStreams.getLoopItem(&pos))
 	{
-		defaultConfig.memBanks.setSingle(prevPos);
+		defaultConfig.memBanks.setSingle(pos);
 		cpuTrib.getCurrentCpuStream()->currentTask
-			->numaConfig.memBanks.setSingle(prevPos);
-
-		prevPos = pos;
+			->numaConfig.memBanks.setSingle(pos);
 	};
 
 	// And *finally*, see whether or not to destroy __kspace.
@@ -322,6 +314,9 @@ parseMemoryMap:
 		 * new default.
 		 **/
 		numaStreams.removeItem(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
+		__kprintf(NOTICE NUMATRIB"Removed __kspace. Ret is 0x%X.\n",
+			getStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
+
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 		defaultConfig.def.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
 		cpuTrib.getCurrentCpuStream()->currentTask
@@ -329,11 +324,9 @@ parseMemoryMap:
 			CHIPSET_MEMORY_NUMA_SHBANKID;
 
 		sharedBank = CHIPSET_MEMORY_NUMA_SHBANKID;
-		__kprintf(NOTICE NUMATRIB"Patched Orientation and default "
-			"config to now use shbank as default bank.\n");
+		__kprintf(NOTICE NUMATRIB"Orientation and default "
+			"config patched to use shbank as default.\n");
 #endif
-		__kprintf(NOTICE NUMATRIB"Removed __kspace. Ret is 0x%X.\n",
-			getStream(CHIPSET_MEMORY_NUMA_SHBANKID));
 	};
 
 	return ERROR_SUCCESS;
