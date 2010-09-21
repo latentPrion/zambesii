@@ -53,7 +53,7 @@ public:
 	void flush(void);
 
 	void *lock(void);
-	unicodePoint *extract(void **handle, uarch_t *len);
+	utf16Char *extract(void **handle, uarch_t *len);
 	void unlock(void);
 
 private:
@@ -63,7 +63,7 @@ private:
 	{
 		buffPageS	*next;
 		// This member should always be 32-bit aligned.
-		unicodePoint	data[DEBUGBUFFER_PAGE_NCHARS];
+		utf16Char	data[DEBUGBUFFER_PAGE_NCHARS];
 	};
 	struct buffPtrStateS
 	{
