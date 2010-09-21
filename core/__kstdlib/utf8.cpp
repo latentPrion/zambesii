@@ -1,7 +1,7 @@
 
 #include <__kstdlib/utf8.h>
 
-utf16Char utf8::parse2(const utf8Char **str)
+unicodePoint utf8::parse2(const utf8Char **str)
 {
 	unicodePoint	ret;
 
@@ -11,7 +11,7 @@ utf16Char utf8::parse2(const utf8Char **str)
 	return ret;
 }
 
-utf16Char utf8::parse3(const utf8Char **str)
+unicodePoint utf8::parse3(const utf8Char **str)
 {
 	unicodePoint	ret;
 
@@ -23,7 +23,7 @@ utf16Char utf8::parse3(const utf8Char **str)
 	return ret;
 }
 
-utf16Char utf8::parse4(const utf8Char **str)
+unicodePoint utf8::parse4(const utf8Char **str)
 {
 	unicodePoint	ret;
 
