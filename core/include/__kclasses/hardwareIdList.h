@@ -5,7 +5,6 @@
 	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kstdlib/__kclib/string.h>
 	#include <__kstdlib/__kcxxlib/new>
-	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/memoryTrib/memoryTrib.h>
@@ -110,10 +109,6 @@ T *hardwareIdListC<T>::getLoopItem(sarch_t *context)
 	uarch_t		rwFlags;
 	T		*ret;
 
-	if (*context < 0) {
-		return __KNULL;
-	};
-
 	// 'context' is an index into the array.
 	arr.lock.readAcquire(&rwFlags);
 
@@ -135,7 +130,7 @@ template <class T>
 error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 {
 	uarch_t		rwFlags;
-	sarch_t		maxIndex, itemNextIndex;
+	sarch_t		maxIndex, itemNextIndex=HWIDLIST_INDEX_INVALID;
 	arrayNodeS	*tmp, *old;
 
 	if (item == __KNULL) {
@@ -188,31 +183,19 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 
 	// At this point there is enough space to hold the new item.
 	arr.lock.writeAcquire();
-
-	if (arr.rsrc.firstValidIndex == HWIDLIST_INDEX_INVALID)
+	for (sarch_t i=arr.rsrc.firstValidIndex;
+		i != HWIDLIST_INDEX_INVALID;)
 	{
-		itemNextIndex = HWIDLIST_INDEX_INVALID;
-		arr.rsrc.firstValidIndex = id;
-	}
-	else if (id < arr.rsrc.firstValidIndex)
-	{
-		itemNextIndex = arr.rsrc.firstValidIndex;
-		arr.rsrc.firstValidIndex = id;
-	}
-	else
-	{
-		for (sarch_t i=arr.rsrc.firstValidIndex;
-			i != HWIDLIST_INDEX_INVALID;
-			i = arr.rsrc.arr[i].next)
+		if ((arr.rsrc.arr[i].next >= id)
+			|| (arr.rsrc.arr[i].next == HWIDLIST_INDEX_INVALID))
 		{
-			if (id < arr.rsrc.arr[i].next
-				|| (arr.rsrc.arr[i].next
-					== HWIDLIST_INDEX_INVALID))
-			{
-				itemNextIndex = arr.rsrc.arr[i].next;
-				arr.rsrc.arr[i].next = id;
-				break;
-			};
+			itemNextIndex = arr.rsrc.arr[i].next;
+			arr.rsrc.arr[i].next = id;
+			break;
+		}
+		else {
+			// Skip to the next valid index.
+			i = arr.rsrc.arr[i].next;
 		};
 	};
 
@@ -220,6 +203,9 @@ error_t hardwareIdListC<T>::addItem(sarch_t id, T *item)
 	arr.rsrc.arr[id].next = itemNextIndex;
 	// Extra measure to ensure coherency across calls to the loop logic.
 	__KFLAG_SET(arr.rsrc.arr[id].flags, HWIDLIST_FLAGS_INDEX_VALID);
+	if (arr.rsrc.firstValidIndex == HWIDLIST_INDEX_INVALID) {
+		arr.rsrc.firstValidIndex = id;
+	};
 
 	arr.lock.writeRelease();
 	return ERROR_SUCCESS;
