@@ -13,7 +13,7 @@ struct debugRivS
 	sarch_t	(*isInitialized)(void);
 
 	// Interface to take input from debugPipeC::printf().
-	void	(*syphon)(const utf16Char *str, uarch_t len);
+	void	(*syphon)(const unicodePoint *str, uarch_t len);
 	void	(*clear)(void);
 };
 

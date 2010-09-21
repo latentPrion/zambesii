@@ -33,7 +33,6 @@ typedef sarch_t		status_t;
 
 // Zambezii supports unicode in the form of UTF-8.
 typedef ubit8		utf8Char;
-typedef ubit16		utf16Char;
 typedef ubit32		unicodePoint;
 
 #endif /* !defined( __ASM__ ) */
