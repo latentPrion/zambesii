@@ -1,5 +1,6 @@
 
 #include <debug.h>
+#include <__kstdlib/utf16.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/debugBuffer.h>
@@ -108,9 +109,9 @@ void *debugBufferC::lock(void)
 }
 
 // This expects the caller to call lock() before beforehand, and unlock() after.
-unicodePoint *debugBufferC::extract(void **handle, uarch_t *len)
+utf16Char *debugBufferC::extract(void **handle, uarch_t *len)
 {
-	unicodePoint	*ret;
+	utf16Char	*ret;
 
 	if (handle == __KNULL || *handle == __KNULL || len == 0) {
 		return __KNULL;
@@ -140,7 +141,7 @@ void debugBufferC::unlock(void)
 	buff.lock.release();
 }
 
-void debugBufferC::syphon(unicodePoint *str, uarch_t buffLen)
+void debugBufferC::syphon(utf16Char *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
 
@@ -163,7 +164,8 @@ void debugBufferC::syphon(unicodePoint *str, uarch_t buffLen)
 			buff.rsrc.cur = scrollBuff(
 				&buff.rsrc.index,
 				buffLen);
-		};
+		}
+
 		buff.rsrc.cur->data[buff.rsrc.index] = *str;
 		buff.rsrc.index++;
 	};

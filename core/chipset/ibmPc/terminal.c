@@ -106,7 +106,7 @@ static void ibmPc_terminal_scrollDown(void)
 	};
 }	
 
-static void ibmPc_terminal_syphon(const unicodePoint *str, uarch_t len)
+static void ibmPc_terminal_syphon(const utf16Char *str, uarch_t len)
 {
 	if (buff == __KNULL || str == __KNULL) {
 		return;
