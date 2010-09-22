@@ -7,7 +7,6 @@
 
 processTribC::processTribC(void)
 {
-	processes.rsrc = __KNULL;
 }
 
 error_t processTribC::initialize(void)

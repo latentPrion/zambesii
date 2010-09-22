@@ -5,6 +5,8 @@
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/task.h>
 	#include <kernel/common/taskTrib/prio.h>
+	#include <kernel/common/taskTrib/taskQNode.h>
+	#include <kernel/common/processTrib/processTrib.h>
 
 class taskTribC
 :
@@ -12,6 +14,8 @@ public tributaryC
 {
 public:
 	taskTribC(void);
+
+	void dump(void);
 
 public:
 	taskS *spawn(void);
@@ -25,7 +29,7 @@ public:
 	void setClassQuantum(sarch_t qc, prio_t softPrio);
 
 private:
-	prio_t		quantumClass[PRIOCLASS_NCLASSES];
+	prio_t		quantumClass[QUANTUMCLASS_NCLASSES];
 
 	struct quantumClassS
 	{
@@ -38,8 +42,33 @@ private:
 		uarch_t		nClasses;
 	};
 	sharedResourceGroupC<waitLockC, quantumClassStateS> custQuantumClass;
-	sharedResourceGroupC<waitLockC, taskListNodeS *>	deadQ;
+	sharedResourceGroupC<waitLockC, taskQNodeS *>	deadQ;
 };
+
+extern taskTribC	taskTrib;
+
+
+/**	Inline Methods.
+ *****************************************************************************/
+
+inline taskS *taskTribC::getTask(processId_t id)
+{
+	processS	*p;
+
+	p = processTrib.getProcess(id);
+	if (p == __KNULL) {
+		return __KNULL;
+	};
+
+	for (taskS *tmp = p->head; tmp != __KNULL; tmp = tmp->next)
+	{
+		if (tmp->id == id) {
+			return tmp;
+		};
+	};
+
+	return __KNULL;
+}
 
 #endif
 

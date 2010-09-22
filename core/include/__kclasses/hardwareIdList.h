@@ -6,6 +6,7 @@
 	#include <__kstdlib/__kclib/string.h>
 	#include <__kstdlib/__kcxxlib/new>
 	#include <__kclasses/debugPipe.h>
+	#include <kernel/common/processId.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/memoryTrib/memoryTrib.h>
@@ -26,6 +27,13 @@ public:
 
 	error_t addItem(sarch_t id, T *item);
 	void removeItem(sarch_t id);
+
+	// Custom just for the process list.
+	error_t findFreeProcess(processId_t *id);
+	uarch_t	getNProcesses(void)
+	{
+		return static_cast<uarch_t>( arr.rsrc.maxIndex + 1 );
+	};
 
 	/* Allows a caller to loop through the array without knowing about
 	 * the layout of the members.
@@ -89,6 +97,28 @@ T *hardwareIdListC<T>::getItem(sarch_t id)
 
 	arr.lock.readRelease(rwFlags);
 	return ret;
+}
+
+template <class T>
+error_t hardwareIdListC<T>::findFreeProcess(processId_t *id)
+{
+	uarch_t		rwFlags;
+
+	arr.lock.readAcquire(&rwFlags);
+
+	for (uarch_t i=0; i<static_cast<uarch_t>( arr.rsrc.maxIndex + 1 ); i++)
+	{
+		if (!__KFLAG_TEST(
+			arr.rsrc.arr[i].flags, HWIDLIST_FLAGS_INDEX_VALID))
+		{
+			arr.lock.readRelease(rwFlags);
+			*id = static_cast<processId_t>( i );
+			return ERROR_SUCCESS;
+		};
+	};
+
+	arr.lock.readRelease(rwFlags);
+	return ERROR_GENERAL;
 }
 
 template <class T>

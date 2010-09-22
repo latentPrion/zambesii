@@ -1,4 +1,5 @@
 
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/taskTrib/taskTrib.h>
 
@@ -20,10 +21,10 @@ status_t taskTribC::createQuantumClass(utf16Char *name, prio_t prio)
 
 	custQuantumClass.lock.acquire();
 
-	for (sarch_t i=0; i<custQuantumClass.rsrc.nClasses; i++)
+	for (uarch_t i=0; i<custQuantumClass.rsrc.nClasses; i++)
 	{
 		if (custQuantumClass.rsrc.arr[i].name == __KNULL) {
-			pos = i;
+			pos = static_cast<sarch_t>( i );
 		};
 	};
 
@@ -61,7 +62,7 @@ void taskTribC::setClassQuantum(sarch_t qc, prio_t prio)
 {
 	custQuantumClass.lock.acquire();
 
-	if (qc >= custQuantumClass.rsrc.nClasses)
+	if (qc >= static_cast<sarch_t>( custQuantumClass.rsrc.nClasses ))
 	{
 		custQuantumClass.lock.release();
 		return;
@@ -77,13 +78,13 @@ void taskTribC::setTaskQuantumClass(processId_t id, sarch_t qc)
 {
 	custQuantumClass.lock.acquire();
 
-	if (qc >= custQuantumClass.rsrc.nClasses)
+	if (qc >= static_cast<sarch_t>( custQuantumClass.rsrc.nClasses ))
 	{
 		custQuantumClass.lock.release();
 		return;
 	};
 
-	getTask(id)->prio = custQuantumClass.rsrc.arr[qc].prio;
+	getTask(id)->prio = &custQuantumClass.rsrc.arr[qc].prio;
 
 	custQuantumClass.lock.release();
 }

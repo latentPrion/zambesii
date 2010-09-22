@@ -47,13 +47,13 @@ typedef uarch_t		processId_t;
 
 #endif
 
-#define PROCID_GET_GROUP(__id)				\
+#define PROCID_GROUP(__id)				\
 	(((__id) >> PROCID_GROUP_SHIFT) & PROCID_GROUP_MASK)
 
-#define PROCID_GET_PROCESS(__id)			\
+#define PROCID_PROCESS(__id)			\
 	(((__id) >> PROCID_PROCESS_SHIFT) & PROCID_PROCESS_MASK)
 
-#define PROCID_GET_THREAD(__id)				\
+#define PROCID_THREAD(__id)				\
 	(((__id) >> PROCID_THREAD_SHIFT) & PROCID_THREAD_MASK)
 
 #endif
