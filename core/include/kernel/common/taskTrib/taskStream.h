@@ -6,6 +6,7 @@
 	#include <kernel/common/stream.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/taskTrib/taskQNode.h>
 
 class taskStreamC
 :

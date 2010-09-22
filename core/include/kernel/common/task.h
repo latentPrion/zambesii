@@ -26,7 +26,7 @@ struct taskS
 	taskS		*next;
 	taskContextS	*context;
 	uarch_t		flags;
-	prio_t		prio[1];
+	prio_t		*prio, internalPrio;
 	ubit16		nLocksHeld;
 	processS	*parent;
 	smpConfigS	smpConfig;

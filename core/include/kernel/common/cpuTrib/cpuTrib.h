@@ -34,9 +34,9 @@ public:
 
 private:
 #if __SCALING__ >= SCALING_SMP
-	hardwareIdListC		cpuStreams;
+	hardwareIdListC<cpuStreamC>	cpuStreams;
 #else
-	cpuStreamC		*cpu;
+	cpuStreamC			*cpu;
 #endif
 };
 

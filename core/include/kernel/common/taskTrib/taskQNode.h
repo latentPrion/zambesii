@@ -3,10 +3,10 @@
 
 	#include <kernel/common/task.h>
 
-struct taskListNodeS
+struct taskQNodeS
 {
 	taskS		*task;
-	taskListNodeS	*prev, *next;
+	taskQNodeS	*prev, *next;
 };	
 
 #endif

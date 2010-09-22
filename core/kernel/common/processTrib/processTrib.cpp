@@ -13,10 +13,12 @@ error_t processTribC::initialize(void)
 	// Init kernel process.
 	memset(&__kprocess, 0, sizeof(processS));
 
+	__kprocess.id = 0x0;
 	__kprocess.head = &__korientationThread;
-	__kprocess.fileName = const_cast<char *>( "zambezii.zxe" );
-	__kprocess.filePath = const_cast<char *>( "/zambezii/core" );
-
+	__kprocess.fileName = (utf16Char)"";
+	__kprocess.filePath = (utf16Char)"";
+	__kprocess.argString = (utf16Char)"";
+	__kprocess.env = (utf16Char)"";
 	__kprocess.memoryStream = &memoryTrib.__kmemoryStream;
 
 	// Init __korientation thread.
@@ -26,17 +28,8 @@ error_t processTribC::initialize(void)
 	__korientationThread.parent = &__kprocess;
 	__korientationThread.stacks.priv0 = __korientationStack;
 	__korientationThread.nLocksHeld = 0;
-
-	/* The smpConfig, numaConfig and cpuTrace members will have to be left
-	 * until later since they all either are, or contain bitmapC objects.
-	 *
-	 * Only thing that needs to be done is set numaConfig to default to
-	 * the configured __kspace bank's ID.
-	 *
-	 * bitmapC depends on dynamic memory allocation from the numaTrib, no
-	 * less. So we'll need to arrange to have a postInit() function which
-	 * calls initialize on all of these items.
-	 **/
+	__korientationThread.cpuConfig.last = CPUID_INVALID;
+	// Init cpuConfig and numaConfig BMPs later.
 	__korientationThread.numaConfig.def.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 

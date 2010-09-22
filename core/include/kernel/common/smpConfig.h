@@ -3,6 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/bitmap.h>
+	#include <kernel/common/smpTypes.h>
 
 /**	EXPLANATION:
  * Every thread inherently has SMP config. SMP config is the bitmap of all the
@@ -21,9 +22,6 @@
  * bits in the SMP config for each CPU in the bank, unless the required changes
  * are much finer grained.
  **/
-
-#define SMPCONFIG_FLAGS_USES_SMP	(1<<2)
-
 
 struct smpConfigS
 {

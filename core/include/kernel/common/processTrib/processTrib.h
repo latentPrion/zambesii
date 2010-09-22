@@ -28,5 +28,7 @@ private:
 	sharedResourceGroupC<multipleReaderLockC, processS *>	processes;
 };
 
+extern processTribC	processTrib;
+
 #endif
 

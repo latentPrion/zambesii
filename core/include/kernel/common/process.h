@@ -12,8 +12,7 @@ struct processS
 {
 	uarch_t		id;
 	taskS		*head;
-	utf16Char	*fileName, *filePath, *argString;
-	utf8Char	*env;
+	utf16Char	*fileName, *filePath, *argString, *env;
 
 	// Tells which CPUs this process has run on.
 	bitmapC		cpuTrace;

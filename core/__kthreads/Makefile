@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../__kthreads.a
-OBJFILES= __korientationStack.o __korientationThreadInit.o
+OBJFILES= __korientationStack.o
 
 all: Makefile $(DELIVERABLE)
 

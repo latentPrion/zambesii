@@ -35,8 +35,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
 	// processTrib initializes __kprocess & __korientation.
-	DO_OR_DIE(processTrib, initialize());
-	DO_OR_DIE(cpuTrib, initialize());
+	DO_OR_DIE(processTrib, initialize(), ret);
+	DO_OR_DIE(cpuTrib, initialize(), ret);
 
 	cxxrtl::callGlobalConstructors();
 
