@@ -1,14 +1,91 @@
 
+#include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
 taskTribC::taskTribC(void)
 {
-	prioClass[PRIOINDEX_REALTIME] = PRIOCLASS_REALTIME;
-	prioClass[PRIOINDEX_CRITICAL] = PRIOCLASS_CRITICAL;
-	prioClass[PRIOINDEX_HIGH] = PRIOCLASS_HIGH;
-	prioClass[PRIOINDEX_NORMAL] = PRIOCLASS_NORMAL;
-	prioClass[PRIOINDEX_LOW] = PRIOCLASS_LOW;
-	prioClass[PRIOINDEX_NEGLIGABLE] = PRIOCLASS_NEGLIGABLE;
+	quantumClass[QUANTUMCLASS_NORMAL] = QUANTUMCLASS_NORMAL_INITVAL;
+	quantumClass[QUANTUMCLASS_DRIVER] = QUANTUMCLASS_DRIVER_INITVAL;
+	custQuantumClass.rsrc.arr = __KNULL;
+	custQuantumClass.rsrc.nClasses = 0;
+	deadQ.rsrc = __KNULL;
 }
+
+status_t taskTribC::createQuantumClass(utf16Char *name, prio_t prio)
+{
+	sarch_t		pos=-1;
+	uarch_t		j;
+	quantumClassS	*mem, *old;
+
+	custQuantumClass.lock.acquire();
+
+	for (sarch_t i=0; i<custQuantumClass.rsrc.nClasses; i++)
+	{
+		if (custQuantumClass.rsrc.arr[i].name == __KNULL) {
+			pos = i;
+		};
+	};
+
+	if (pos == -1)
+	{
+		mem = new quantumClassS[custQuantumClass.rsrc.nClasses + 1];
+		if (mem == __KNULL)
+		{
+			custQuantumClass.lock.release();
+			return ERROR_MEMORY_NOMEM;
+		};
+
+		memcpy(
+			mem, custQuantumClass.rsrc.arr,
+			sizeof(quantumClassS) * custQuantumClass.rsrc.nClasses);
+
+		old = custQuantumClass.rsrc.arr;
+		delete old;
+		custQuantumClass.rsrc.arr = mem;
+		pos = custQuantumClass.rsrc.nClasses;
+		custQuantumClass.rsrc.nClasses++;
+	};
+
+	// FIXME: use soft->hard conversion here.
+	custQuantumClass.rsrc.arr[pos].prio = prio;
+	for (j=0; j<64 && *name; j++) {
+		custQuantumClass.rsrc.arr[pos].name[j] = name[j];
+	};
+	custQuantumClass.rsrc.arr[pos].name[((j < 64) ? j:63)] = '\0';
+
+	return pos;
+}
+
+void taskTribC::setClassQuantum(sarch_t qc, prio_t prio)
+{
+	custQuantumClass.lock.acquire();
+
+	if (qc >= custQuantumClass.rsrc.nClasses)
+	{
+		custQuantumClass.lock.release();
+		return;
+	};
+
+	// FIXME: Use soft->hard prio conversion here.
+	custQuantumClass.rsrc.arr[qc].prio = prio;
+
+	custQuantumClass.lock.release();
+}
+
+void taskTribC::setTaskQuantumClass(processId_t id, sarch_t qc)
+{
+	custQuantumClass.lock.acquire();
+
+	if (qc >= custQuantumClass.rsrc.nClasses)
+	{
+		custQuantumClass.lock.release();
+		return;
+	};
+
+	getTask(id)->prio = custQuantumClass.rsrc.arr[qc].prio;
+
+	custQuantumClass.lock.release();
+}
+
 

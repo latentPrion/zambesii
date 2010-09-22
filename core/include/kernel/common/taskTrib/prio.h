@@ -4,66 +4,66 @@
 	#include <__kstdlib/__ktypes.h>
 
 /**	EXPLANATION:
- * The kernel uses 6 priority classes, where REALTIME has its own queue in
- * each CPU. The Queue for realtime tasks is checked first.
+ * Zambezii's scheduler has two main type of scheduling policies for tasks:
+ *	1. "Prio" scheduling, or realtime.
+ *	2. "Flow" scheduling, or normal.
  *
- * Priorities range from 0-126, where 0 is a task which will be ignored by all
- * CPUs. Priorities 1-84 are for normal processes, and priorities 85-126 are
- * real time.
+ * Scheduling is done via per-CPU queues. Each queue has a prioQ, a flowQ and
+ * a dormantQ. Realtime tasks are added to the prioQ, non-real time tasks are
+ * added to the flowQ, sleeping tasks are added to the dormantQ.
  *
- * Each task has a "hard" prio which is the literal number of ticks for which
- * it will run. "Soft" prio is a number from 1-126 which can be used to
- * uniformly express this priority independently of the chipset and arch.
+ * The prioQ is always checked for tasks first. Apart from the type of policy
+ * used to schedule the process, every process has a set of additional options,
+ * such as how it should be treated within the queue (see SCHEDTYPE_*).
  *
- * Priority classes allow the user to manipulate process priorities in groups
- * based on their priority class. The user can even create priority classes of
- * his or her own, and assign processes to that priority.
+ * Every thread has a hard quantum value. "Hard" quantums are the exact number
+ * of timer ticks that this task will execute for at most; that is, the task's
+ * quantum. The user APIs set quantums in "soft" values, which are an abstract
+ * scale of quantums which range from 0-32, and the kernel translates soft
+ * quantums into hard quantums when actually setting quantum values.
  *
- * So the user can customize his scheduler from userspace. So imagine a user
- * defining a priority class called "games", and defining it to soft priority
- * 91. Then, when he starts up a game, he tells the scheduler: run this process
- * on prio class "game". He can start N processes and tell the scheduler to use
- * that prio class.
+ * The kernel will have an API which will allow the user to, from userspace,
+ * exert a certain amount of control over the scheduler, by creating
+ * quantum classes. A quantum class is a quantum value. Multiple processes may
+ * all point to the same quantum class (and thus have the same quantum value).
  *
- * The kernel has several preset prio classes as well, which are:
- *	PRIOCLASS_NORMAL: Set for all new processes unless instructed otherwise.
- *	PRIOCLASS_DRIVER: Set for all driver processes.
- *		Driver processes cannot be re-assigned to new prio classes.
+ * All driver tasks unchangeably share the quantum class QUANTUMCLASS_DRIVER.
+ * All non-driver tasks which have not explicitly been set to some quantum value
+ * share the class QUANTUMCLASS_NORMAL. By changing the value assigned to the
+ * quantum class, one can change the quantums of all tasks which share that
+ * quantum class.
  *
- * The preset classes are set aside in their own array. Custom user prio
- * classes are stored in a dynamic array. When a user creates a new prio class
- * its index in the array is returned as an identifier.
- *
- * To delete a prio class, the kernel must be restarted.
- *
- * The kernel also brackets off soft priorities into low, normal, high,
- * critical and realtime values.
- *	0:	Task will be ignored by CPU.
- *	1-21:	Low priority task.
- *	22-43:	Normal priority task.
- *	44-63:	High priority task.
- *	64-84:	Critical priority task.
- *	85-126:	Real-time priority task.
- *
- * It is important to note that the kernel does not store priorities as soft
- * priorities. All priorities in the kernel are hard values. Soft prio values
- * are only used in API calls.
+ * Along with the two default, unremovable classes the kernel generates at boot,
+ * the user can create new classes, and assign any number of processes to that
+ * class. Of course, the kernel constrains driver processes to only point to
+ * the QUANTUMCLASS_DRIVER class. But all non-driver tasks can be set to any
+ * quantum class.
  **/
-#define PRIOCLASS_NCLASSES		(5)
 
-#define PRIOCLASS_INDEX_NORMAL		(0)
-#define PRIOCLASS_INDEX_DRIVER		(1)
+// Set to enable real-time scheduling for task. Clear to make normal task.
+#define SCHEDFLAG_PRIO			(1<<0)
 
-#define PRIOCLASS_NORMAL_INITVAL	(22)
-#define PRIOCLASS_DRIVER_INITVAL	(43)
+// When timeslice is up, place at back of queue.
+#define SCHEDTYPE_FIFO			(0x1)
+// When timeslice is up, continue executing.
+#define SCHEDTYPE_STICKY		(0x2)
+// Only execute if no other tasks in queue.
+#define SCHEDTYPE_LASTRESORT		(0x3)
 
-#define SOFTPRIO_IGNORE			0
-#define SOFTPRIO_LOW			1
-#define SOFTPRIO_NORMAL			22
-#define SOFTPRIO_HIGH			44
-#define SOFTPRIO_CRITICAL		64
-#define SOFTPRIO_REALTIME		85
 
+#define QUANTUMCLASS_NCLASSES		(5)
+
+#define QUANTUMCLASS_NORMAL		(0)
+#define QUANTUMCLASS_DRIVER		(1)
+
+#define QUANTUMCLASS_NORMAL_INITVAL	(SOFTQUANTUM_NORMAL)
+#define QUANTUMCLASS_DRIVER_INITVAL	(SOFTQUANTUM_NORMAL)
+
+#define SOFTQUANTUM_IGNORE		0
+#define SOFTQUANTUM_LOW			1
+#define SOFTQUANTUM_NORMAL		11
+#define SOFTQUANTUM_HIGH		21
+#define SOFTQUANTUM_CRITICAL		31
 
 typedef sbit16		prio_t;
 
