@@ -1,48 +1,43 @@
 #ifndef ___KUTF_8_H
 	#define ___KUTF_8_H
 
+	#include <arch/arch.h>
 	#include <__kstdlib/__ktypes.h>
 
 namespace utf8
 {
-	inline unicodePoint parse2(const utf8Char **str)
+	inline unicodePoint toCodepoint2(const utf8Char *str)
 	{
 		unicodePoint	c;
 
-		c = (**str & 0x1F) << 6;
-		*str++;
-		c |= (**str & 0x3F);
+		c = (str[0] & 0x1F) << 6;
+		c |= (str[1] & 0x3F);
 
 		return c;
-	};
+	}
 
-	inline unicodePoint parse3(const utf8Char **str)
+	inline unicodePoint toCodepoint3(const utf8Char *str)
 	{
 		unicodePoint	c;
 
-		c = (**str & 0xF) << 12;
-		*str++;
-		c |= (**str & 0x3F) << (12 - 6);
-		*str++
-		c |= (**str & 0x3F);
+		c = (str[0] & 0xF) << 12;
+		c |= (str[1] & 0x3F) << (12 - 6);
+		c |= (str[2] & 0x3F);
 
 		return c;
-	};
+	}
 
-	inline unicodePoint parse4(const utf8Char **str)
+	inline unicodePoint toCodepoint4(const utf8Char *str)
 	{
 		unicodePoint	c;
 
-		c = (**str & 0x7) << 18);
-		*str++;
-		c |= (**str & 0x3F) << (18 - 6);
-		*str++;
-		c |= (**str & 0x3F) << (18 - 12);
-		*str++;
-		c |= (**str & 0x3F);
+		c = (str[0] & 0x7) << 18;
+		c |= (str[1] & 0x3F) << (18 - 6);
+		c |= (str[2] & 0x3F) << (18 - 12);
+		c |= (str[3] & 0x3F);
 
 		return c;
-	};
+	}
 }
 
 #endif

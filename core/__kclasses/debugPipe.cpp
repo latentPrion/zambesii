@@ -1,6 +1,7 @@
 
 #include <arch/arch.h>
 #include <__kstdlib/utf8.h>
+#include <__kstdlib/utf16.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/stdarg.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -56,21 +57,21 @@ debugPipeC::debugPipeC(void)
 error_t debugPipeC::initialize(void)
 {
 	uarch_t		bound;
-	unicodePoint	*mem;
+	utf16Char	*mem;
 
 	devices.rsrc = 0;
 	// Allocate four pages for UTF-8 expansion buffer. That's 4096 codepts.
 	mem = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(
 			DEBUGPIPE_CONVERSION_BUFF_NPAGES, MEMALLOC_NO_FAKEMAP))
-			unicodePoint;
+			utf16Char;
 
 	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	bound = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
-		/ sizeof(unicodePoint);
+		/ sizeof(utf16Char);
 
 	convBuff.lock.acquire();
 
@@ -168,7 +169,7 @@ uarch_t debugPipeC::untieFrom(uarch_t device)
 
 void debugPipeC::refresh(void)
 {
-	unicodePoint	*buff;
+	utf16Char	*buff;
 	void		*handle;
 	uarch_t		len, n=0;
 
@@ -287,6 +288,8 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 {
 	uarch_t		unum, buffLen=0, buffMax;
 	sarch_t		snum;
+	unicodePoint	c=0;
+	utf16Char	h, l;
 
 	convBuff.lock.acquire();
 
@@ -298,7 +301,7 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	};
 
 	buffMax = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
-		/ sizeof(unicodePoint);
+		/ sizeof(utf16Char);
 
 	// Expand the string of UTF-8. Process printf formatting.
 	for (; (*str != 0) && (buffLen < buffMax); str++)
@@ -351,18 +354,32 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 		{
 			if ((*str & 0xE0) == 0xC0)
 			{
-				convBuff.rsrc[buffLen++] = utf8::parse2(&str);
-				continue;
+				c = utf8::toCodepoint2(str);
+				str++;
+				goto blitToBuff;
 			};
 			if ((*str & 0xF0) == 0xE0)
 			{
-				convBuff.rsrc[buffLen++] = utf8::parse3(&str);
-				continue;
+				c = utf8::toCodepoint3(str);
+				str = &str[2];
+				goto blitToBuff;
 			};
 			if ((*str & 0xF8) == 0xF0)
 			{
-				convBuff.rsrc[buffLen++] = utf8::parse4(&str);
-				continue;
+				c = utf8::toCodepoint4(str);
+				str = &str[3];
+				goto blitToBuff;
+			};
+
+blitToBuff:
+			if (c > 0xFFFF)
+			{
+				utf16::toUtf16(c, &h, &l);
+				convBuff.rsrc[buffLen++] = h;
+				convBuff.rsrc[buffLen++] = l;
+			}
+			else {
+				convBuff.rsrc[buffLen++] = c;
 			};
 		};
 	};

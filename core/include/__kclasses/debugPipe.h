@@ -86,7 +86,7 @@ private:
 
 	debugBufferC		debugBuff;
 	// 'convBuff' is used to expand the passed UTF-8 string into codepoints.
-	sharedResourceGroupC<waitLockC, unicodePoint *>	convBuff;
+	sharedResourceGroupC<waitLockC, utf16Char *>	convBuff;
 	sharedResourceGroupC<waitLockC, uarch_t>	devices;
 };
 
