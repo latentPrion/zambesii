@@ -16,22 +16,15 @@ cpuStreamC *cpuTribC::getCurrentCpuStream(void)
 	);
 	return reinterpret_cast<cpuStreamC *>( dr0 );
 }
-
-cpuStreamC *cpuTribC::getStream(cpu_t cpu)
-{
-	/* This should be okay for now. We can reshuffle the pointers when we
-	 * have the hardware IDs of the CPUs.
-	 **/
-	return &(*cpuStreams.rsrc)[cpu];
-}
 #endif
 
-void __korientationPreConstruct::bspInit(void)
+error_t cpuTribC::initialize(void)
 {
 	uarch_t		dr0;
 
 	// Spawn the BSP CPU Stream.
-	bspCpu.id = bspCpu.bankId = 0;
+	bspCpu.id = CPUID_INVALID;
+	bspCpu.bankId = NUMABANKID_INVALID;
 	bspCpu.currentTask = &__korientationThread;
 	bspCpu.cpuFeatures.fpuLevel = 0;
 	bspCpu.cpuFeatures.mhz = 0;
@@ -68,5 +61,7 @@ void __korientationPreConstruct::bspInit(void)
 		: "r" (dr0)
 		: "%eax"
 	);
+
+	return ERROR_SUCCESS;
 }
 

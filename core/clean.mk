@@ -23,6 +23,7 @@ clean: fonyphile
 	cd kernel/common/firmwareTrib; make clean
 	cd kernel/common/interruptTrib; make clean
 	cd kernel/common/timerTrib; make clean
+	cd kernel/common/processTrib; make clean
 
 aclean:
 	rm -f *.a *.o __klinkScript.ld

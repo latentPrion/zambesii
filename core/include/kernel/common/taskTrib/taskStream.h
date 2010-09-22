@@ -13,6 +13,12 @@ class taskStreamC
 public streamC
 {
 public:
+	taskStreamC(void)
+	:
+	taskQNodeCache(sizeof(taskQNodeS))
+	{};
+
+public:
 	// Used by the taskTrib to add/remove tasks from a CPU.
 	error_t addToFlowQ(void);
 	taskS *rmFromFlowQ(void);

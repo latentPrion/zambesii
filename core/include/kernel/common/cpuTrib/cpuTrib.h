@@ -54,7 +54,16 @@ inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
 	};
 	return cpu;
 }
+#else
+inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
+{
+	/* This should be okay for now. We can reshuffle the pointers when we
+	 * have the hardware IDs of the CPUs.
+	 **/
+	return cpuStreams.getItem(cpu);
+}
 #endif
+
 
 #endif
 

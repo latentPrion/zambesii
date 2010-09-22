@@ -6,6 +6,7 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 /**	EXPLANATION:
  * These are the instances of the kernel classes which don't require any
@@ -23,4 +24,5 @@ numaTribC		numaTrib;
 memReservoirC		memReservoir;
 cpuTribC		cpuTrib;
 debugPipeC		__kdebug;
+processTribC		processTrib;
 

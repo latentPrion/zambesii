@@ -12,6 +12,9 @@ class processTribC
 public tributaryC
 {
 public:
+	processTribC(void);
+
+public:
 	// Init __kprocess, __korientation & boot CPU Stream.
 	error_t initialize(void);
 
@@ -20,8 +23,8 @@ public:
 	processS *getProcess(processId_t id);
 	processS *getProcess(const utf16Char *absName);
 
-	processS *spawnProcess(const utf16Char *absName);
-	error_t destroyProcess(void);
+	processS *spawn(const utf16Char *absName);
+	error_t destroy(void);
 
 private:
 	processS	__kprocess;
