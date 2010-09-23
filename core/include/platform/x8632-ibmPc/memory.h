@@ -5,7 +5,7 @@
 	#include <chipset/ibmPc/memory.h>
 
 #define PLATFORM_MEMORY_GET___KSYMBOL_PADDR(__sym)		\
-	((__sym - ARCH_MEMORY___KLOAD_VADDR_BASE)		\
+	((((uarch_t)&__sym) - ARCH_MEMORY___KLOAD_VADDR_BASE)		\
 		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 
 #endif

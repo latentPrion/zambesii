@@ -5,6 +5,7 @@
 #define CONFIG_CHIPSET_IBM_PC
 #define CONFIG_FIRMWARE_IBM_PC_BIOS
 #define CONFIG_LANG_EN_UK
+#define CONFIG_DEBUG_LOCKS
 
 #endif
 

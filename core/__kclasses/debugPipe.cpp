@@ -404,6 +404,6 @@ blitToBuff:
 		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugRiv4,
 		convBuff.rsrc, buffLen);
 
-	convBuff.lock.release();	
+	convBuff.lock.release();
 }
 

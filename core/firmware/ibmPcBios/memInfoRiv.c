@@ -1,5 +1,13 @@
 
 #include <scaling.h>
+#include <__ksymbols.h>
+
+// Don't allow the C++ stuff in memory.h to get into this file.
+#define __ASM__
+#include <chipset/memory.h>
+#undef __ASM__
+
+#include <platform/memory.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/firmwareTrib/rivDebugApi.h>
@@ -104,12 +112,15 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 	ibmPcBios_lock_release();
 
 	/**	EXPLANATION:
-	 * On IBM-PC we want to allocate enough space for two extra static
+	 * On IBM-PC we want to allocate enough space for three extra static
 	 * entries to map out the IVT+BDA and all mem from 0x80000 for 128
 	 * frames as used.
+	 *
+	 * The last extra entry is used to map the kernel's own physical image
+	 * in RAM as used.
 	 **/
 	ret->entries = (struct chipsetMemMapEntryS *)rivMalloc(
-		(nEntries + 2) * sizeof(struct chipsetMemMapEntryS));
+		(nEntries + 3) * sizeof(struct chipsetMemMapEntryS));
 
 	if (ret->entries == __KNULL) {
 		rivPrintf(NOTICE"Firmware: getMemoryMap(): Failed to alloc "
@@ -195,7 +206,18 @@ static struct chipsetMemMapS *ibmPcBios_mi_getMemoryMap(void)
 	ret->entries[i+1].size = 0x80000;
 	ret->entries[i+1].memType = CHIPSETMMAP_TYPE_RESERVED;
 
-	ret->nEntries = i + 2;
+	ret->entries[i+2].baseAddr = CHIPSET_MEMORY___KLOAD_PADDR_BASE;
+	ret->entries[i+2].size = PLATFORM_MEMORY_GET___KSYMBOL_PADDR(__kend)
+		- CHIPSET_MEMORY___KLOAD_PADDR_BASE;
+
+	ret->entries[i+2].memType = CHIPSETMMAP_TYPE_RESERVED;
+
+	rivPrintf(NOTICE"Firmware: getMemoryMap(): Kernel phys: "
+		"base 0x%X, size 0x%X.\n",
+		ret->entries[i+2].baseAddr,
+		ret->entries[i+2].size);
+
+	ret->nEntries = i + 3;
 	memMap = ret;
 
 	return ret;
