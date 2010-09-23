@@ -1,12 +1,18 @@
 
 #include <chipset/memory.h>
+#include <__kstdlib/__kcxxlib/new>
+#include <__kstdlib/__kclib/string.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <__kthreads/__korientation.h>
 
 
+// Global array of processes.
+extern sharedResourceGroupC<multipleReaderLockC, processS*>	processes;
+
 processTribC::processTribC(void)
 {
+	nextProcId.initialize(CHIPSET_MAX_NPROCESSES);
 }
 
 error_t processTribC::initialize(void)
@@ -34,6 +40,18 @@ error_t processTribC::initialize(void)
 	__korientationThread.numaConfig.def.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
+	return ERROR_SUCCESS;
+}
+
+error_t processTribC::initialize2(void)
+{
+	// Allocate the array of processes.
+	processes.rsrc = new processS *[CHIPSET_MAX_NPROCESSES];
+	if (processes.rsrc == __KNULL) {
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	memset(processes.rsrc, 0, sizeof(void *) * CHIPSET_MAX_NPROCESSES);
 	return ERROR_SUCCESS;
 }
 
