@@ -26,7 +26,7 @@ public:
 public:
 	processS *__kgetProcess(void) { return &__kprocess; };
 	processS *getProcess(processId_t id);
-	processS *getTask(processId_t id);
+	taskS *getTask(processId_t id);
 
 	processS *spawn(const utf16Char *absName);
 	error_t destroy(void);
@@ -66,9 +66,9 @@ inline taskS *processTribC::getTask(processId_t id)
 		return __KNULL;
 	};
 
-	p->tasks.lock.readAcquire(&rwFlags);
-	ret = p->tasks.rsrc[PROCID_TASK(id);
-	p->tasks.lock.readRelease(rwFlags);
+	p->taskLock.readAcquire(&rwFlags);
+	ret = p->tasks[PROCID_TASK(id)];
+	p->taskLock.readRelease(rwFlags);
 
 	return ret;
 }

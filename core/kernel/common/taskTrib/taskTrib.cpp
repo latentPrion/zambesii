@@ -2,6 +2,7 @@
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/taskTrib/taskTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 taskTribC::taskTribC(void)
@@ -84,7 +85,7 @@ void taskTribC::setTaskQuantumClass(processId_t id, sarch_t qc)
 		return;
 	};
 
-	getTask(id)->prio = &custQuantumClass.rsrc.arr[qc].prio;
+	processTrib.getTask(id)->prio = &custQuantumClass.rsrc.arr[qc].prio;
 
 	custQuantumClass.lock.release();
 }

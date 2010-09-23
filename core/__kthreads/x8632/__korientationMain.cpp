@@ -70,5 +70,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(numaTrib, initialize2(), ret);
 
 	__kprintf(NOTICE ORIENT"Successful!\n");
+	__kprintf(NOTICE ORIENT"sizeof processS(%d).\n", sizeof(processS));
 }
 

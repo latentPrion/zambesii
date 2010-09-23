@@ -16,12 +16,8 @@ struct processS;
 
 struct taskS
 {
-	// Do *NOT* move this struct from where it is.
-	struct
-	{
-		void	*priv0;
-		void	*priv1;
-	} stacks;
+	// Do *NOT* move 'stack' from where it is.
+	void	*stack;
 	uarch_t		id;
 	taskS		*next;
 	taskContextS	*context;
@@ -35,6 +31,12 @@ struct taskS
 	tlbContextS	*tlbContext;
 #endif
 };
+
+namespace task
+{
+	error_t initialize(taskS *task);
+	void destroy(taskS *task);
+}
 
 #endif
 

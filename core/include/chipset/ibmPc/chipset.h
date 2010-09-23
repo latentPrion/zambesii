@@ -9,7 +9,7 @@
 // Implies the size of the global array of process pointers.
 #define CHIPSET_MAX_NPROCESSES		(16384)
 // The maximum number of threads per process.
-#define CHIPSET_MAX_NTHREADS		(256)
+#define CHIPSET_MAX_NTASKS		(256)
 
 #endif
 

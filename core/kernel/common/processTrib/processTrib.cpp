@@ -8,11 +8,11 @@
 
 
 // Global array of processes.
-extern sharedResourceGroupC<multipleReaderLockC, processS*>	processes;
+sharedResourceGroupC<multipleReaderLockC, processS **>	processes;
 
 processTribC::processTribC(void)
 {
-	nextProcId.initialize(CHIPSET_MAX_NPROCESSES);
+	nextProcId.initialize(CHIPSET_MAX_NPROCESSES - 1);
 }
 
 error_t processTribC::initialize(void)
@@ -21,7 +21,7 @@ error_t processTribC::initialize(void)
 	memset(&__kprocess, 0, sizeof(processS));
 
 	__kprocess.id = 0x0;
-	__kprocess.head = &__korientationThread;
+	__kprocess.tasks[1] = &__korientationThread;
 	__kprocess.fileName = (utf16Char *)"";
 	__kprocess.filePath = (utf16Char *)"";
 	__kprocess.argString = (utf16Char *)"";
@@ -33,7 +33,7 @@ error_t processTribC::initialize(void)
 
 	__korientationThread.id = 0x1;
 	__korientationThread.parent = &__kprocess;
-	__korientationThread.stacks.priv0 = __korientationStack;
+	__korientationThread.stack = __korientationStack;
 	__korientationThread.nLocksHeld = 0;
 	__korientationThread.smpConfig.last = CPUID_INVALID;
 	// Init cpuConfig and numaConfig BMPs later.

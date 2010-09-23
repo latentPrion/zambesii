@@ -21,8 +21,6 @@ public:
 	taskS *spawn(void);
 	error_t destroy(void);
 
-	taskS *getTask(processId_t id);
-
 	// Create, alter and assign quantum classes.
 	status_t createQuantumClass(utf16Char *name, prio_t softPrio);
 	void setTaskQuantumClass(processId_t id, sarch_t qc);
@@ -46,29 +44,6 @@ private:
 };
 
 extern taskTribC	taskTrib;
-
-
-/**	Inline Methods.
- *****************************************************************************/
-
-inline taskS *taskTribC::getTask(processId_t id)
-{
-	processS	*p;
-
-	p = processTrib.getProcess(id);
-	if (p == __KNULL) {
-		return __KNULL;
-	};
-
-	for (taskS *tmp = p->head; tmp != __KNULL; tmp = tmp->next)
-	{
-		if (tmp->id == id) {
-			return tmp;
-		};
-	};
-
-	return __KNULL;
-}
 
 #endif
 

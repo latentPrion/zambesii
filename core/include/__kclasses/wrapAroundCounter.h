@@ -23,14 +23,15 @@ private:
 /**	Inline methods.
  ****************************************************************************/
 
-inline wrapAroundCounterC::wrapAroundCounterC(uarch_t maxVal)
+inline wrapAroundCounterC::wrapAroundCounterC(void)
 {
 	nextVal.rsrc = 0;
 }
 
 inline error_t wrapAroundCounterC::initialize(uarch_t maxVal)
 {
-	wrapAroundCounterC::maxVal = static_cast<srach_t>( maxVal );
+	wrapAroundCounterC::maxVal = static_cast<sarch_t>( maxVal );
+	return ERROR_SUCCESS;
 }
 
 inline sarch_t wrapAroundCounterC::getNextValue(void **arr)
@@ -57,4 +58,6 @@ inline sarch_t wrapAroundCounterC::getNextValue(void **arr)
 	nextVal.lock.release();
 	return ret;
 }
+
+#endif
 
