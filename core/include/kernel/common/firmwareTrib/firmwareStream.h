@@ -4,6 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/firmwareTrib/debugRiv.h>
 	#include <kernel/common/firmwareTrib/memInfoRiv.h>
+	#include <kernel/common/firmwareTrib/cpuInfoRiv.h>
 
 /**	EXPLANATION:
  * The Firmware stream is a presentation layer for all the rivulets on either
@@ -42,6 +43,7 @@ struct firmwareStreamS
 	struct debugRivS	*debugRiv4;
 
 	struct memInfoRivS	*memInfoRiv;
+	struct cpuInfoRivS	*cpuInfoRiv;
 };
 
 extern struct firmwareStreamS		firmwareFwStream;

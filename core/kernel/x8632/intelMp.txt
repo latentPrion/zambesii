@@ -1,0 +1,74 @@
+Lapic Paddr base:
+	0x00000000:FEC00000:	I/O APIC
+	0x00000000:FEE00000:	LAPIC for the accessing logical CPU.
+
+POSSIBLE SPECIFICATION IMPLIED MAX NUMBER OF CPUs ON CC-NUMA:
+	May be implied by the I/O APIC's IRQ routing mechanism:
+
+	The "Logical Destination Register" supports up to 32 bits, for
+	addressing up to 32 APICs. This fact may imply that the Intel MP
+	spec will allow only up to 32 SMP configured processors.
+
+Section 3.5:
+	"For systems based on the integrated APIC, posting of memory writes may
+	result in spurious interrupts for memory-mapped I/O devices using
+	level-triggered interrupts. I/O device drivers must serialize
+	instructions to ensure that the device interrupt clear command reaches
+	the device before the EOI command reaches the APIC and handles the
+	spurious interrupt in case one occurs."
+
+	That is, always issue a memory barrier instruction before using UDI GIO
+	to send EOI.
+
+CONTROLLING THE MODE OF THE APIC/PICs:
+	IMCR_CTRL	port_space(0x22)
+	IMCR_DATA	port_space(0x23)
+
+	To access the IMCR_DATA reg:
+		outb	$0x70, IMCR_CTRL
+		// Now write as desired.
+
+	To set the chipset into APIC mode, (Symmetric I/O mode):
+		outb	$0x70, IMCR_CTRL
+		// Writing 0x01 to IMCR turns on APIC mode.
+		outb	$0x01, IMCR_DATA
+
+		Setting the chipset into APIC mode implicitly also re-wires the
+		PIC-INTR signals to the I/O APIC subsystem, and also wires the
+		NMI there, too.
+
+		At boot, the IMCR_DATA should have 0x00, which means that the
+		PIC is circuited directly into the BSP, (as well as the NMI) so
+		that the interrupt signals bypass the APIC and go into the BSP.
+
+	NOTE: Section 3.6.2.1:
+		"The IMCR must be cleared after a system-wide INIT or RESET to
+		enable the PIC Mode as default. (Refer to Section 3.7 for
+		information on the INIT and RESET signals.)"
+
+		"The IMCR is optional if PIC Mode is not implemented. The IMCRP
+		bit of the MP feature information bytes (refer to Chapter 4)
+		enables the operating system to detect whether the IMCR is
+		implemented."
+
+		I have no idea what that means...
+
+PROVISIONS FROM THE SPEC THAT IMPLY INIT/PARSING ORDER:
+	* If the MP FP struct is supplied, then the spec's default base
+	  addresses are to be taken from there, and not from the spec.
+
+	  This means that the MP FP struct must be scanned for before trying
+	  to interact with any AP CPU.
+
+Section: 3.6.6:
+	"The ID of each I/O APIC unit is set to zero during RESET. It is the
+	responsibility of the operatingsystem to verify the uniqueness of the
+	I/O APIC ID and to assign a unique ID if a conflict is found. The
+	assignment of APIC IDs for I/O units must always begin from the lowest
+	number that ispossible after the assignment of local APIC IDs. The
+	operating system must not attempt to change the ID of an APIC I/O unit
+	if the preset ID number is acceptable."
+
+	This means that when checking I/O APIC IDs, one must ensure that one
+	gives I/O APICs IDs that are contiguous to the last LAPIC ID.
+

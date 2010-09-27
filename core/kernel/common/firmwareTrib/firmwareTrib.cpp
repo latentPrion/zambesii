@@ -64,3 +64,8 @@ memInfoRivS *firmwareTribC::getMemInfoRiv(void)
 	return descriptor.memInfoRiv;
 }
 
+cpuInfoRivS *firmwareTribC::getCpuInfoRiv(void)
+{
+	return descriptor.cpuInfoRiv;
+}
+

@@ -24,6 +24,7 @@ public:
 	debugRivS *getDebugRiv4(void);
 
 	memInfoRivS *getMemInfoRiv(void);
+	cpuInfoRivS *getCpuInfoRiv(void);
 
 public:
 	firmwareStreamS		descriptor;

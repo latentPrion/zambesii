@@ -24,6 +24,7 @@ public tributaryC
 public:
 	cpuTribC(void);
 	error_t initialize(void);
+	error_t initialize2(void);
 	~cpuTribC(void);
 
 public:
