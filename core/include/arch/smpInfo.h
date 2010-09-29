@@ -20,7 +20,6 @@
 namespace smpInfo
 {
 	chipsetNumaMapS *getNumaMap(void);
-	archSmpConfigS *getSmpConfig(void);
 	archSmpMapS *getSmpMap(void);
 }
 
