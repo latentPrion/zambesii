@@ -6,7 +6,8 @@ OBJFILES=wPRanger_mapInc.o wPRanger_mapNoInc.o wPRanger_remapInc.o \
 	wPRanger_convertFlags.o \
 	tlbControl.o \
 	gdt.o idt.o vectorHandlers.o setjmp.o string.o __kexceptionTable.o \
-	exceptions.o x8632_pageFault.o
+	exceptions.o x8632_pageFault.o \
+	lapic.o mpCfg.o
 
 all: Makefile $(DELIVERABLE)
 
