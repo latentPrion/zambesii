@@ -1,7 +1,12 @@
 
 #include <arch/smpInfo.h>
-#include <commonlibs/acpi.h>
-#include <commonlibs/x86mp.h>
+#include <arch/smpMap.h>
+#include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kcxxlib/new>
+// #include <commonlibs/acpi.h>
+#include <commonlibs/libx86mp/libx86mp.h>
+#include <__kclasses/debugPipe.h>
+
 
 chipsetNumaMapS *smpInfo::getNumaMap(void)
 {
@@ -26,6 +31,11 @@ chipsetNumaMapS *smpInfo::getNumaMap(void)
 
 archSmpMapS *smpInfo::getSmpMap(void)
 {
+	x86_mpCfgCpuS	*mpCpu;
+	void		*handle=__KNULL;
+	uarch_t		pos=0, nEntries=0;
+	archSmpMapS	*ret;
+
 	/**	NOTES:
 	 *  This function will return a structure describing all CPUs at boot,
 	 * regardless of NUMA bank membership, and regardless of whether or not
@@ -43,6 +53,69 @@ archSmpMapS *smpInfo::getSmpMap(void)
 	 *
 	 * This function depends on the kernel libx86mp.
 	 **/
+	if (!x86Mp::mpTablesFound())
+	{
+		if (x86Mp::findMpFp() == __KNULL)
+		{
+			__kprintf(NOTICE SMPINFO"getSmpMap: No MP tables.\n");
+			return __KNULL;
+		};
+
+		// Parse x86 MP table info and discover how many CPUs there are.
+		mpCpu = x86Mp::getNextCpuEntry(&handle, &pos);
+		for (; mpCpu != __KNULL;
+			mpCpu = x86Mp::getNextCpuEntry(&handle, &pos))
+		{
+			nEntries++;
+		};
+
+		ret = new archSmpMapS;
+		if (ret == __KNULL)
+		{
+			__kprintf(ERROR SMPINFO"getSmpMap: Not enough heap mem "
+				"to alloc SMP Map.\n");
+
+			return __KNULL;
+		};
+
+		ret->entries = new archSmpMapEntryS[nEntries];
+		if (ret->entries == __KNULL)
+		{
+			__kprintf(ERROR SMPINFO"getSmpMap: Not enough mem to "
+				"alloc SMP map entries.\n");
+
+			delete ret;
+			return __KNULL;
+		};
+
+		// Iterate one more time and fill in SMP map.
+		handle = __KNULL;
+		mpCpu = x86Mp::getNextCpuEntry(&handle, &pos);
+		for (uarch_t i=0; mpCpu != __KNULL;
+			mpCpu = x86Mp::getNextCpuEntry(&handle, &pos), i++)
+		{
+			ret->entries[i].cpuId = mpCpu->lapicId;
+
+			if (!__KFLAG_TEST(
+				mpCpu->flags, x86_MPCFG_CPU_FLAGS_ENABLED))
+			{
+				__KFLAG_SET(
+					ret->entries[i].flags,
+					ARCHSMPMAP_FLAGS_BADCPU);
+			};
+
+			if (__KFLAG_TEST(
+				mpCpu->flags, x86_MPCFG_CPU_FLAGS_BSP))
+			{
+				__KFLAG_SET(
+					ret->entries[i].flags,
+					ARCHSMPMAP_FLAGS_BSP);
+			};
+		};
+
+		return ret;
+	};
+			
 	return __KNULL;
 }
 
