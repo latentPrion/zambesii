@@ -1,5 +1,7 @@
 
 #include <arch/smpInfo.h>
+#include <commonlibs/acpi.h>
+#include <commonlibs/x86mp.h>
 
 chipsetNumaMapS *smpInfo::getNumaMap(void)
 {
