@@ -26,18 +26,19 @@
  * to decide how to handle it.
  **/
 
-#define CHIPSETCPUMAP_FLAGS_BADCPU		(1<<0)
+#define ARCHSMPMAP_FLAGS_BADCPU		(1<<0)
+#define ARCHSMPMAP_FLAGS_BSP		(1<<1)
 
-struct chipsetCpuMapEntryS
+struct archSmpMapEntryS
 {
 	cpu_t		cpuId;
 	uarch_t		flags;
 };
 
-struct chipsetCpuMapS
+struct archSmpMapS
 {
 	uarch_t			nEntries;
-	chipsetCpuMapEntryS	*entries;
+	archSmpMapEntryS	*entries;
 };
 
 #endif

@@ -2,9 +2,8 @@
 	#define _x86_MP_LIBRARY_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include "lapic.h"
-	#include "ioApic.h"
 	#include "mpTables.h"
+	#include "lapic.h"
 
 /**	EXPLANATION:
  * Stateful library which scans and parses x86 MP tables.

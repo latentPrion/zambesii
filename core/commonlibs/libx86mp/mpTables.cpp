@@ -1,5 +1,5 @@
 
-#include <arch/x8632/mp.h>
+#include <commonlibs/libx86mp/mpTables.h>
 #include <arch/walkerPageRanger.h>
 #include <arch/paging.h>
 #include <chipset/findTables.h>
@@ -12,46 +12,63 @@
 
 static struct x86_mpCacheS	cache;
 
-/* I want the MP code to produce, in the end, a CPU map and a CPU Config
- * structure.
- *
- * The MP code must find an MP floating pointer and see if there is an MP
- * config table. The MP code must, if there is a config table, parse it and
- * generate the CPU config and map structures.
- */
+void x86Mp::initializeCache(void)
+{
+	// Don't zero out the cache while it's in use.
+	if (cache.isInitialized == 1) {
+		return;
+	};
+
+	memset(&cache, 0, sizeof(cache));
+	cache.isInitialized = 1;
+}
 
 x86_mpFpS *x86Mp::findMpFp(void)
 {
+	x86_mpFpS	*ret;
+
 	/* This function must call on the chipset for help. The chipset must
 	 * scan for the MP FP structure in its own chipset specific manner.
 	 *
 	 * This function should not fail if there is MP on the board.
 	 **/
-	return (struct x86_mpFpS *)chipset_findx86MpFp();
-}
-
-
-status_t x86Mp::getChipsetDefaultConfig(x86_mpFpS *mpfp)
-{
-	/* Determines whether or not the chipset uses an MP default config.
-	 * Returns negative value if not, returns value greater than 0 if yes.
-	 *
-	 * The value returned, if greater than 0, is an index into a hardcoded
-	 * table of CPU Config and CPU Maps to return for each default config.
-	 **/
-	if (mpfp->features[0] == 0) {
-		return -1;
+	if (cache.fp != __KNULL) {
+		return cache.fp;
 	};
-	return mpfp->features[0];
+
+	ret = (struct x86_mpFpS *)chipset_findx86MpFp();
+	if (ret != __KNULL) {
+		cache.fp = ret;
+	}
+
+	return ret;
 }
 
-x86_mpCfgS *x86Mp::getMpCfgTable(x86_mpFpS *mpfp)
+sarch_t x86Mp::mpTablesFound(void)
 {
-	ubit32		cfgPaddr = mpfp->cfgTablePaddr;
+	if (cache.isInitialized == 0) {
+		return 0;
+	};
+
+	if (cache.fp == __KNULL) {
+		return 0;
+	};
+
+	return 1;
+}
+
+x86_mpCfgS *x86Mp::mapMpConfigTable(void)
+{
+	ubit32		cfgPaddr;
 	ubit32		cfgNPages;
 	status_t	nMapped;
 	x86_mpCfgS	*ret;
 
+	if (!x86Mp::mpTablesFound()) {
+		return __KNULL;
+	};
+
+	cfgPaddr = cache.fp->cfgTablePaddr;
 	// Map the cfg table into the kernel vaddrspace.
 	ret = new ((memoryTrib.__kmemoryStream.vaddrSpaceStream
 		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(1))
@@ -70,7 +87,8 @@ x86_mpCfgS *x86Mp::getMpCfgTable(x86_mpFpS *mpfp)
 	};
 
 	ret = (x86_mpCfgS *)(
-		(uarch_t)ret + (mpfp->cfgTablePaddr & PAGING_BASE_MASK_LOW));
+		(uarch_t)ret + (cache.fp->cfgTablePaddr
+			& PAGING_BASE_MASK_LOW));
 
 	cfgNPages = PAGING_BYTES_TO_PAGES(ret->length) + 1;
 
@@ -95,10 +113,24 @@ x86_mpCfgS *x86Mp::getMpCfgTable(x86_mpFpS *mpfp)
 	};
 
 	ret = (x86_mpCfgS *)(
-		(uarch_t)ret + (mpfp->cfgTablePaddr & PAGING_BASE_MASK_LOW));
+		(uarch_t)ret + (cache.fp->cfgTablePaddr & PAGING_BASE_MASK_LOW));
 
 	// Now we can return the table vaddr.
 	return ret;
+}
+
+status_t x86Mp::getChipsetDefaultConfig(x86_mpFpS *mpfp)
+{
+	/* Determines whether or not the chipset uses an MP default config.
+	 * Returns negative value if not, returns value greater than 0 if yes.
+	 *
+	 * The value returned, if greater than 0, is an index into a hardcoded
+	 * table of CPU Config and CPU Maps to return for each default config.
+	 **/
+	if (mpfp->features[0] == 0) {
+		return -1;
+	};
+	return mpfp->features[0];
 }
 
 void x86Mp::buildCacheData(x86_mpFpS *mpfp, x86_mpCfgS *cfg)

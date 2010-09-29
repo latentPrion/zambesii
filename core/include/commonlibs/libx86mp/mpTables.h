@@ -193,13 +193,26 @@ struct x86_mpCacheS
 	uarch_t			flags;
 	char			oemId[12];
 	char			oemProductId[16];
+	ubit8			isInitialized;
 };
 
 #ifdef __cplusplus
 
 namespace x86Mp
 {
+	// Sets cache to safe init state.
+	void initializeCache(void);
+	void flushCache(void);
+
 	x86_mpFpS *findMpFp(void);
+	sarch_t mpTablesFound(void);
+	x86_mpCfgS *mapMpConfigTable(void);
+
+	// Iterates through all CPU entries in the config.
+	x86_mpCfgCpuS *getNextCpuEntry(void **handle, uarch_t *pos);
+	// Iterates through all I/O APIC entries in the config.
+	x86_mpCfgIoApicS *getNextIoApicEntry(void **handle, uarch_t *pos);
+
 	status_t getChipsetDefaultConfig(x86_mpFpS *mpfp);
 
 	x86_mpCfgS *getMpCfgTable(x86_mpFpS *mpfp);

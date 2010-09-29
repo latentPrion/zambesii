@@ -1,7 +1,7 @@
 
 #include <arch/paddr_t.h>
-#include <arch/x8632/lapic.h>
-#include <arch/x8632/mp.h>
+#include <commonlibs/libx86mp/lapic.h>
+#include <commonlibs/libx86mp/mpTables.h>
 #include <arch/walkerPageRanger.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>

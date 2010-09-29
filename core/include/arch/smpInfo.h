@@ -2,7 +2,6 @@
 	#define _ARCH_SMP_INFO_H
 
 	#include <arch/smpMap.h>
-	#include <arch/smpConfig.h>
 	#include <chipset/numaMap.h>
 
 /**	EXPLANATION:
@@ -16,6 +15,8 @@
  * CPU Config, as well as any NUMA CPU Map that the kernel may require in the
  * case of a NUMA setup.
  **/
+
+#define SMPINFO			"SMP Info: "
 
 namespace smpInfo
 {

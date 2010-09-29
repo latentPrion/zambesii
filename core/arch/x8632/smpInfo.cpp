@@ -53,11 +53,20 @@ archSmpMapS *smpInfo::getSmpMap(void)
 	 *
 	 * This function depends on the kernel libx86mp.
 	 **/
+	x86Mp::initializeCache();
 	if (!x86Mp::mpTablesFound())
 	{
 		if (x86Mp::findMpFp() == __KNULL)
 		{
 			__kprintf(NOTICE SMPINFO"getSmpMap: No MP tables.\n");
+			return __KNULL;
+		};
+
+		if (x86Mp::mapMpConfigTable() == __KNULL)
+		{
+			__kprintf(ERROR SMPINFO"getSmpMap: Unable to map MP "
+				"Config tables.\n");
+
 			return __KNULL;
 		};
 
