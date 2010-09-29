@@ -187,12 +187,12 @@ struct x86_mpCfgLocalIrqSourceS
 
 struct x86_mpCacheS
 {
-	x86_mpFpS	*fp;
-	x86_mpCfgS	*cfg;
-	ubit32		lapicPaddr;
-	uarch_t		flags;
-	char		oemId[12];
-	char		oemProductId[16];
+	struct x86_mpFpS	*fp;
+	struct x86_mpCfgS	*cfg;
+	ubit32			lapicPaddr;
+	uarch_t			flags;
+	char			oemId[12];
+	char			oemProductId[16];
 };
 
 #ifdef __cplusplus

@@ -27,7 +27,7 @@ x86_mpFpS *x86Mp::findMpFp(void)
 	 *
 	 * This function should not fail if there is MP on the board.
 	 **/
-	return (struct c86_mpFpS *)chipset_findx86MpFp();
+	return (struct x86_mpFpS *)chipset_findx86MpFp();
 }
 
 

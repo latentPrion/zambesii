@@ -13,25 +13,11 @@ struct x86_mpCfg1S
 	// We won't care about the IRQ Source entries anytime soon.
 };
 
-extern struct x86_mpCfg1S	x86_mpCfg1, x86_mpCfg2, x86_mpCfg3, x86_mpCfg4,
-				x86_mpCfg5, x86_mpCfg6, x86_mpCfg7;
-
-struct x86_mpCfgS		*x86_mpCfgDefaults[7] =
-{
-	(struct x86_mpCfgS *)&x86_mpCfg1,
-	(struct x86_mpCfgS *)&x86_mpCfg2,
-	(struct x86_mpCfgS *)&x86_mpCfg3,
-	(struct x86_mpCfgS *)&x86_mpCfg4,
-	(struct x86_mpCfgS *)&x86_mpCfg5,
-	(struct x86_mpCfgS *)&x86_mpCfg6,
-	(struct x86_mpCfgS *)&x86_mpCfg7
-};
-
 static struct x86_mpCfg1S	x86_mpCfg1 =
 {
 	{
 		{'P', 'C', 'M', 'P'},
-		sizeof(x86MpConfig1),
+		sizeof(x86_mpCfg1),
 		0x01,
 		// Checksum.
 		0,
@@ -78,7 +64,7 @@ static struct x86_mpCfg1S	x86_mpCfg2 =
 {
 	{
 		{'P', 'C', 'M', 'P'},
-		sizeof(x86MpConfig1),
+		sizeof(x86_mpCfg2),
 		0x01,
 		// Checksum.
 		0,
@@ -125,7 +111,7 @@ static struct x86_mpCfg1S	x86_mpCfg3 =
 {
 	{
 		{'P', 'C', 'M', 'P'},
-		sizeof(x86MpConfig1),
+		sizeof(x86_mpCfg3),
 		0x01,
 		// Checksum.
 		0,
@@ -172,7 +158,7 @@ static struct x86_mpCfg1S	x86_mpCfg4 =
 {
 	{
 		{'P', 'C', 'M', 'P'},
-		sizeof(x86MpConfig1),
+		sizeof(x86_mpCfg4),
 		0x01,
 		// Checksum.
 		0,
@@ -219,7 +205,7 @@ static struct x86_mpCfg1S	x86_mpCfg5 =
 {
 	{
 		{'P', 'C', 'M', 'P'},
-		sizeof(x86MpConfig1),
+		sizeof(x86_mpCfg5),
 		0x01,
 		// Checksum.
 		0,
@@ -266,7 +252,7 @@ static struct x86_mpCfg1S	x86_mpCfg6 =
 {
 	{
 		{'P', 'C', 'M', 'P'},
-		sizeof(x86MpConfig1),
+		sizeof(x86_mpCfg6),
 		0x01,
 		// Checksum.
 		0,
@@ -313,7 +299,7 @@ static struct x86_mpCfg1S	x86_mpCfg7 =
 {
 	{
 		{'P', 'C', 'M', 'P'},
-		sizeof(x86MpConfig1),
+		sizeof(x86_mpCfg7),
 		0x01,
 		// Checksum.
 		0,
@@ -354,5 +340,16 @@ static struct x86_mpCfg1S	x86_mpCfg7 =
 		0xFEE00000
 	}
 	
+};
+
+struct x86_mpCfgS		*x86_mpCfgDefaults[7] =
+{
+	(struct x86_mpCfgS *)&x86_mpCfg1,
+	(struct x86_mpCfgS *)&x86_mpCfg2,
+	(struct x86_mpCfgS *)&x86_mpCfg3,
+	(struct x86_mpCfgS *)&x86_mpCfg4,
+	(struct x86_mpCfgS *)&x86_mpCfg5,
+	(struct x86_mpCfgS *)&x86_mpCfg6,
+	(struct x86_mpCfgS *)&x86_mpCfg7
 };
 

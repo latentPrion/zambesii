@@ -38,6 +38,10 @@
  *	   Floating Pointer structure.
  **/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef CONFIG_ARCH_x86_32
 	#if  __SCALING__ >= SCALING_SMP
 void *chipset_findx86MpFp(void);
@@ -46,6 +50,10 @@ void *chipset_findx86MpFp(void);
 
 #ifdef CHIPSET_HAS_ACPI
 void *chipset_findAcpiRsdp(void);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

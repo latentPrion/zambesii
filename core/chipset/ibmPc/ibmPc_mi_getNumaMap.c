@@ -1,4 +1,5 @@
 
+#include <chipset/findTables.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kclib/string.h>
 #include <kernel/common/pageAttributes.h>
