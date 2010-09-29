@@ -11,5 +11,7 @@
 // The maximum number of threads per process.
 #define CHIPSET_MAX_NTASKS		(256)
 
+#define CHIPSET_HAS_ACPI
+
 #endif
 

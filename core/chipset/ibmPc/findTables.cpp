@@ -40,6 +40,9 @@ static error_t ibmPc_mapLowmem(void)
 	return ERROR_SUCCESS;
 }
 
+
+#ifdef CONFIG_ARCH_x86_32
+	#if  __SCALING__ >= SCALING_SMP
 void *chipset_findx86MpFp(void)
 {
 	if (lowmem == __KNULL)
@@ -70,6 +73,8 @@ void *chipset_findx86MpFp(void)
 	__kprintf(WARNING FINDTABLES"MPFP: No MP FP found.\n");
 	return __KNULL;
 }
+	#endif
+#endif
 
 void *chipset_findAcpiRsdp(void)
 {
