@@ -9,6 +9,8 @@
  * the Intel MP Floating Pointer structure and the MP Configuration Table.
  **/
 
+#define x86MP				"x86 MP Config: "
+
 #define x86_MPFP_SIG			"_MP_"
 #define x86_MPFP_SIGLEN			4
 
@@ -39,7 +41,7 @@ struct x86_mpCfgS
 	ubit8		specRev;
 	ubit8		checksum;
 	char		oemIdString[8];
-	char		productIdString[12];
+	char		oemProductIdString[12];
 	ubit32		oemTablePaddr;
 	ubit16		oemTableLength;
 	// Num entries in THIS table. Not OEM table.
@@ -107,7 +109,7 @@ struct x86_mpCfgBusS
 } __attribute__((packed));
 
 
-#define #define x86_MPCFG_IOAPIC_FLAGS_ENABLED	(1<<0)
+#define x86_MPCFG_IOAPIC_FLAGS_ENABLED	(1<<0)
 
 struct x86_mpCfgIoApicS
 {
@@ -181,9 +183,35 @@ struct x86_mpCfgLocalIrqSourceS
 };
 
 
+#define x86_MPCACHE_FLAGS_WAS_PICMODE		(1<<0)
+
+struct x86_mpCacheS
+{
+	x86_mpFpS	*fp;
+	x86_mpCfgS	*cfg;
+	ubit32		lapicPaddr;
+	uarch_t		flags;
+	char		oemId[12];
+	char		oemProductId[16];
+};
+
+#ifdef __cplusplus
+
 namespace x86Mp
 {
+	x86_mpFpS *findMpFp(void);
+	status_t getChipsetDefaultConfig(x86_mpFpS *mpfp);
+
+	x86_mpCfgS *getMpCfgTable(x86_mpFpS *mpfp);
+	void buildCacheData(x86_mpFpS *fp, x86_mpCfgS *cfg);
+
+	// Following functions return data from cache after buildCacheData().
+	ubit32 getLapicPaddr(void);
+	x86_mpFpS *getMpFp(void);
+	x86_mpCfgS *getMpCfg(void);
 }
+
+#endif
 
 #endif
 

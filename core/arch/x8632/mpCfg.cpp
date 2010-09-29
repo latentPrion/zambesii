@@ -2,6 +2,7 @@
 #include <arch/x8632/mp.h>
 #include <arch/walkerPageRanger.h>
 #include <arch/paging.h>
+#include <chipset/findTables.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -26,7 +27,7 @@ x86_mpFpS *x86Mp::findMpFp(void)
 	 *
 	 * This function should not fail if there is MP on the board.
 	 **/
-	return chipset_x86FindMpFp();
+	return (struct c86_mpFpS *)chipset_findx86MpFp();
 }
 
 

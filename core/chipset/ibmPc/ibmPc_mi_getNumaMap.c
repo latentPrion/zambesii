@@ -57,6 +57,7 @@ static struct numaMemMapEntryS	tmapEntries[] =
 // Test map for debugging.
 static struct chipsetNumaMapS	tmap =
 {
+	__KNULL,
 	tmapEntries,
 	5,
 	0
