@@ -1,6 +1,7 @@
 #ifndef _CPU_STREAM_H
 	#define _CPU_STREAM_H
 
+	#include <arch/schedTimer.h>
 	#include <arch/tlbControl.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/task.h>
@@ -31,6 +32,8 @@ public:
 	uarch_t		initMagic;
 	// Per CPU scheduler.
 	taskStreamC	sched;
+	// Per CPU Timer. May actually be a chipset timer source.
+	schedTimerC	timer;
 };
 
 // The hardcoded stream for the BSP CPU.
