@@ -214,11 +214,11 @@ namespace x86Mp
 	status_t getChipsetDefaultConfig(void);
 
 	// Iterates through all CPU entries in the config.
-	x86_mpCfgCpuS *getNextCpuEntry(void **handle, uarch_t *pos);
+	x86_mpCfgCpuS *getNextCpuEntry(uarch_t *pos, void **const handle);
 	// Iterates through all I/O APIC entries in the config.
-	x86_mpCfgIoApicS *getNextIoApicEntry(void **handle, uarch_t *pos);
+	x86_mpCfgIoApicS *getNextIoApicEntry(uarch_t *pos, void **const handle);
 
-	// Following functions return data from cache after buildCacheData().
+	// Following return stuff from the cache mostly.
 	ubit32 getLapicPaddr(void);
 	x86_mpFpS *getMpFp(void);
 	x86_mpCfgS *getMpCfg(void);

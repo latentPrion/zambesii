@@ -165,10 +165,158 @@ status_t x86Mp::getChipsetDefaultConfig(void)
 
 ubit32 x86Mp::getLapicPaddr(void)
 {
-	if (!x86Mp::mpTablesFound()) {
+	if (x86Mp::getMpCfg() == __KNULL) {
 		return 0;
 	};
 
 	return cache.lapicPaddr;
+}
+
+x86_mpFpS *x86Mp::getMpFp(void)
+{
+	if (!cache.isInitialized) {
+		return __KNULL;
+	};
+
+	return cache.fp;
+}
+
+x86_mpCfgS *x86Mp::getMpCfg(void)
+{
+	if (!x86Mp::mpTablesFound()) {
+		return __KNULL;
+	};
+
+	return x86Mp::mapMpConfigTable();
+}
+
+x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
+{
+	x86_mpCfgCpuS		*ret=0;
+
+	if (!x86Mp::getMpCfg()) {
+		return __KNULL;
+	};
+
+	if (*pos == 0)
+	{
+		// Caller wants a fresh iteration.
+		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86_mpCfgS));
+	};
+
+	for (; *pos < cache.nCfgEntries; *pos += 1)
+	{
+		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_CPU) {
+			ret = (x86_mpCfgCpuS *)*handle;
+		};
+
+		switch (*(ubit8 *)*handle)
+		{
+		case x86_MPCFG_TYPE_CPU:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+
+			break;
+
+		case x86_MPCFG_TYPE_BUS:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgBusS));
+
+			break;
+
+		case x86_MPCFG_TYPE_IOAPIC:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgIoApicS));
+
+			break;
+
+		case x86_MPCFG_TYPE_IRQSOURCE:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgIrqSourceS));
+
+			break;
+
+		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+
+			break;
+
+		default: // This should NEVER be reached.
+			__kprintf(ERROR x86MP"Encountered CFG entry with "
+				"unknown type 0x%X. Ending loop.\n",
+				*(ubit8 *)*handle);
+
+			*pos = 0;
+			break;
+		};
+	};
+
+	return ret;
+}
+
+x86_mpCfgIoApicS x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
+{
+	x86_mpCfgCpuS		*ret=0;
+
+	if (!x86Mp::getMpCfg()) {
+		return __KNULL;
+	};
+
+	if (*pos == 0)
+	{
+		// Caller wants a fresh iteration.
+		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86_mpCfgS));
+	};
+
+	for (; *pos < cache.nCfgEntries; *pos += 1)
+	{
+		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_IOAPIC) {
+			ret = (x86_mpCfgCpuS *)*handle;
+		};
+
+		switch (*(ubit8 *)*handle)
+		{
+		case x86_MPCFG_TYPE_CPU:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+
+			break;
+
+		case x86_MPCFG_TYPE_BUS:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgBusS));
+
+			break;
+
+		case x86_MPCFG_TYPE_IOAPIC:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgIoApicS));
+
+			break;
+
+		case x86_MPCFG_TYPE_IRQSOURCE:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgIrqSourceS));
+
+			break;
+
+		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+
+			break;
+
+		default: // This should NEVER be reached.
+			__kprintf(ERROR x86MP"Encountered CFG entry with "
+				"unknown type 0x%X. Ending loop.\n",
+				*(ubit8 *)*handle);
+
+			*pos = 0;
+			break;
+		};
+	};
+
+	return ret;
 }
 
