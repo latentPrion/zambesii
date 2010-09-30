@@ -8,6 +8,8 @@ static struct intControllerDevS *ibmPc_getIntController(
 	struct intControllerDevS *i
 	)
 {
+	(void)i;
+
 	return &ibmPc_8259a;
 }
 
@@ -15,6 +17,8 @@ static struct continuousTimerDevS *ibmPc_getSchedTimer(
 	struct continuousTimerDevS *c
 	)
 {
+	(void)c;
+
 	return &ibmPc_pit;
 }
 

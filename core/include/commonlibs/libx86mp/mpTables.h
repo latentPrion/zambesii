@@ -49,7 +49,7 @@ struct x86_mpCfgS
 	ubit32		lapicPaddr;
 	ubit16		extTableNEntries;
 	ubit8		extTableChecksum;
-};
+} __attribute__((packed));
 
 // Usage: Pass the address of the 1st byte of proposed next entry.
 #define x86_MPCFG_GET_TYPE(addr)	(*(ubit8 *)addr)
@@ -79,7 +79,7 @@ struct x86_mpCfgCpuS
 	ubit8		lapicVersion;
 	ubit8		flags;
 	ubit32		cpuModel;
-};
+} __attribute__((packed));
 
 
 #define x86_MPCFG_BUS_CBUS	"CBUS"
@@ -118,7 +118,7 @@ struct x86_mpCfgIoApicS
 	ubit8		ioApicVersion;
 	ubit8		flags;
 	ubit32		ioApicPaddr;
-};
+} __attribute__((packed));
 
 
 #define x86_MPCFG_IRQSRC_FLAGS_POLARITY_MASK		0x3
@@ -149,7 +149,7 @@ struct x86_mpCfgIrqSourceS
 	ubit8		sourceBusIrq;
 	ubit8		destIoApicId;
 	ubit8		destIoApicVector;
-};
+} __attribute__((packed));
 
 
 #define x86_MPCFG_LIRQSRC_FLAGS_POLARITY_MASK		0x3
@@ -180,7 +180,7 @@ struct x86_mpCfgLocalIrqSourceS
 	ubit8		sourceBusIrq;
 	ubit8		destLapicId;
 	ubit8		destLapicVector;
-};
+} __attribute__((packed));
 
 
 #define x86_MPCACHE_FLAGS_WAS_PICMODE		(1<<0)

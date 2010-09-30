@@ -71,9 +71,9 @@ archSmpMapS *smpInfo::getSmpMap(void)
 		};
 
 		// Parse x86 MP table info and discover how many CPUs there are.
-		mpCpu = x86Mp::getNextCpuEntry(&handle, &pos);
+		mpCpu = x86Mp::getNextCpuEntry(&pos, &handle);
 		for (; mpCpu != __KNULL;
-			mpCpu = x86Mp::getNextCpuEntry(&handle, &pos))
+			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle))
 		{
 			nEntries++;
 		};
@@ -98,10 +98,10 @@ archSmpMapS *smpInfo::getSmpMap(void)
 		};
 
 		// Iterate one more time and fill in SMP map.
-		handle = __KNULL;
-		mpCpu = x86Mp::getNextCpuEntry(&handle, &pos);
+		pos = 0;
+		mpCpu = x86Mp::getNextCpuEntry(&pos, &handle);
 		for (uarch_t i=0; mpCpu != __KNULL;
-			mpCpu = x86Mp::getNextCpuEntry(&handle, &pos), i++)
+			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle), i++)
 		{
 			ret->entries[i].cpuId = mpCpu->lapicId;
 

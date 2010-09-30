@@ -23,7 +23,8 @@ error_t interruptTribC::initialize(void)
 	/**	EXPLANATION:
 	 * At initialization of the Interrupt Tributary, we wish to ensure that
 	 * all vectors are masked at the interrupt controller immediately after
-	 * loading the hardware vector table into the processor.
+	 * loading the hardware vector table into
+	  the processor.
 	 *
 	 * But making a single call to
 	 * (*chipsetCoreDev.intController->maskAll)() is not intelligent at all:
@@ -49,9 +50,10 @@ error_t interruptTribC::initialize(void)
 	 *	   kernel build.
 	 **/
 	// Check for int controller, halt if none, else call initialize().
-	assert_fatal(chipsetCoreDev.intController != __KNULL);
+	assert_fatal((*chipsetCoreDev.getIntController)(0) != __KNULL);
 	assert_fatal(
-		(*chipsetCoreDev.intController->initialize)() == ERROR_SUCCESS);
+		(*(*chipsetCoreDev.getIntController)(0)->initialize)()
+			== ERROR_SUCCESS);
 
 	// Mask every interrupt that has no handler currently installed.
 	for (uarch_t i=0; i<ARCH_IRQ_NVECTORS; i++)
@@ -59,8 +61,8 @@ error_t interruptTribC::initialize(void)
 		if (!__KFLAG_TEST(
 			isrTable[i].flags, INTERRUPTTRIB_VECTOR_FLAGS_BOOTISR))
 		{
-			if ((*chipsetCoreDev.intController->maskSingle)(i)
-				!= ERROR_SUCCESS)
+			if ((*(*chipsetCoreDev.getIntController)(0)
+				->maskSingle)(i) != ERROR_SUCCESS)
 			{
 				__KFLAG_SET(
 					isrTable[i].flags,

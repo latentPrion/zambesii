@@ -95,13 +95,14 @@ void *chipset_findAcpiRsdp(void)
 	{
 		if (strncmp((char *)tmp, "RSD PTR ", 8) == 0)
 		{
-			__kprintf(NOTICE FINDTABLES"RSDP: Found MP FP: 0x%X.\n",
+			__kprintf(NOTICE FINDTABLES"RSDP: Found RSDP: 0x%X.\n",
 				tmp - (uarch_t)lowmem);
 
 			return (void *)tmp;
 		};
 	};
 
+	__kprintf(WARNING FINDTABLE"RSDP: No RSDP found.\n");
 	return __KNULL;
 }
 

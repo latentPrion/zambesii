@@ -255,9 +255,9 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 	return ret;
 }
 
-x86_mpCfgIoApicS x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
+x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 {
-	x86_mpCfgCpuS		*ret=0;
+	x86_mpCfgIoApicS	*ret=0;
 
 	if (!x86Mp::getMpCfg()) {
 		return __KNULL;
@@ -272,7 +272,7 @@ x86_mpCfgIoApicS x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 	for (; *pos < cache.nCfgEntries; *pos += 1)
 	{
 		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_IOAPIC) {
-			ret = (x86_mpCfgCpuS *)*handle;
+			ret = (x86_mpCfgIoApicS *)*handle;
 		};
 
 		switch (*(ubit8 *)*handle)
