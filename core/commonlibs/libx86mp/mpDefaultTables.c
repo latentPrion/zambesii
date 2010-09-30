@@ -1,5 +1,6 @@
 
-#include <arch/x8632/mp.h>
+#include <commonlibs/libx86mp/mpDefaultTables.h>
+#include <commonlibs/libx86mp/mpTables.h>
 
 /**	EXPLANATION:
  * Hardcoded tables for the default configurations on Intel MP.

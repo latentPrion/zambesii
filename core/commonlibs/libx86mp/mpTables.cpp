@@ -1,11 +1,12 @@
 
-#include <commonlibs/libx86mp/mpTables.h>
 #include <arch/walkerPageRanger.h>
 #include <arch/paging.h>
 #include <chipset/findTables.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <commonlibs/libx86mp/mpTables.h>
+#include <commonlibs/libx86mp/mpDefaultTables.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
@@ -19,8 +20,13 @@ void x86Mp::initializeCache(void)
 		return;
 	};
 
-	memset(&cache, 0, sizeof(cache));
+	x86Mp::flushCache();
 	cache.isInitialized = 1;
+}
+
+void x86Mp::flushCache(void)
+{
+	memset(&cache, 0, sizeof(cache));
 }
 
 x86_mpFpS *x86Mp::findMpFp(void)
@@ -66,6 +72,23 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 
 	if (!x86Mp::mpTablesFound()) {
 		return __KNULL;
+	};
+
+	if (cache.cfg != __KNULL) {
+		return cache.cfg;
+	};
+
+	// See if we need to return a default config.
+	if (cache.fp->features[0] != 0)
+	{
+		__kprintf(NOTICE x86MP"MP FP indicates default config %d.\n",
+			cache.fp->features[0]);
+
+		cache.cfg = x86_mpCfgDefaults[cache.fp->features[0]];
+		cache.defaultConfig = cache.fp->features[0];
+		cache.nCfgEntries = cache.cfg->nEntries;
+		cache.lapicPaddr = cache.cfg->lapicPaddr;
+		return cache.cfg;
 	};
 
 	cfgPaddr = cache.fp->cfgTablePaddr;
@@ -115,48 +138,37 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	ret = (x86_mpCfgS *)(
 		(uarch_t)ret + (cache.fp->cfgTablePaddr & PAGING_BASE_MASK_LOW));
 
+	cache.cfg = ret;
+	cache.lapicPaddr = cache.cfg->lapicPaddr;
+	cache.nCfgEntries = ret->nEntries;
+
 	// Now we can return the table vaddr.
 	return ret;
 }
 
-status_t x86Mp::getChipsetDefaultConfig(x86_mpFpS *mpfp)
+status_t x86Mp::getChipsetDefaultConfig(void)
 {
 	/* Determines whether or not the chipset uses an MP default config.
-	 * Returns negative value if not, returns value greater than 0 if yes.
+	 * Returns negative value if the cache is uninitialized, 0 if the
+	 * chipset provides its own config table, and returns value greater
+	 * than 0 (specifically the default config number) if yes.
 	 *
 	 * The value returned, if greater than 0, is an index into a hardcoded
 	 * table of CPU Config and CPU Maps to return for each default config.
 	 **/
-	if (mpfp->features[0] == 0) {
+	if (!cache.isInitialized || !x86Mp::mpTablesFound()) {
 		return -1;
 	};
-	return mpfp->features[0];
+
+	return cache.fp->features[0];
 }
 
-void x86Mp::buildCacheData(x86_mpFpS *mpfp, x86_mpCfgS *cfg)
+ubit32 x86Mp::getLapicPaddr(void)
 {
-	cache.fp = mpfp;
-	cache.cfg = cfg;
-
-	if (cfg != __KNULL)
-	{
-		cache.lapicPaddr = cfg->lapicPaddr;
-		if (__KFLAG_TEST(
-			mpfp->features[0], x86_MPFP_FEAT2_FLAG_PICMODE))
-		{
-			__KFLAG_SET(cache.flags, x86_MPCACHE_FLAGS_WAS_PICMODE);
-		};
-
-		memcpy(cache.oemId, cfg->oemIdString, 8);
-		cache.oemId[8] = '\0';
-		memcpy(cache.oemProductId, cfg->oemProductIdString, 12);
-		cache.oemProductId[12] = '\0';
-	}
-	else
-	{
-		cache.lapicPaddr = 0xFEC00000;
-		cache.oemId[0] = '\0';
-		cache.oemProductId[0] = '\0';
+	if (!x86Mp::mpTablesFound()) {
+		return 0;
 	};
+
+	return cache.lapicPaddr;
 }
 

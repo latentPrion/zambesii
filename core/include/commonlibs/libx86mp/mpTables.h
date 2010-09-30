@@ -189,6 +189,9 @@ struct x86_mpCacheS
 {
 	struct x86_mpFpS	*fp;
 	struct x86_mpCfgS	*cfg;
+	uarch_t			nCfgEntries;
+	// 0 = no, 1-7 = yes, -1 = no MP.
+	sarch_t			defaultConfig;
 	ubit32			lapicPaddr;
 	uarch_t			flags;
 	char			oemId[12];
@@ -207,16 +210,13 @@ namespace x86Mp
 	x86_mpFpS *findMpFp(void);
 	sarch_t mpTablesFound(void);
 	x86_mpCfgS *mapMpConfigTable(void);
+	// Returns: neg if uninitialized. 0 if cfg table present. >0 if default.
+	status_t getChipsetDefaultConfig(void);
 
 	// Iterates through all CPU entries in the config.
 	x86_mpCfgCpuS *getNextCpuEntry(void **handle, uarch_t *pos);
 	// Iterates through all I/O APIC entries in the config.
 	x86_mpCfgIoApicS *getNextIoApicEntry(void **handle, uarch_t *pos);
-
-	status_t getChipsetDefaultConfig(x86_mpFpS *mpfp);
-
-	x86_mpCfgS *getMpCfgTable(x86_mpFpS *mpfp);
-	void buildCacheData(x86_mpFpS *fp, x86_mpCfgS *cfg);
 
 	// Following functions return data from cache after buildCacheData().
 	ubit32 getLapicPaddr(void);
