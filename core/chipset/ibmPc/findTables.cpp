@@ -102,7 +102,7 @@ void *chipset_findAcpiRsdp(void)
 		};
 	};
 
-	__kprintf(WARNING FINDTABLE"RSDP: No RSDP found.\n");
+	__kprintf(WARNING FINDTABLES"RSDP: No RSDP found.\n");
 	return __KNULL;
 }
 

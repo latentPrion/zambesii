@@ -13,7 +13,7 @@ static struct intControllerDevS *ibmPc_getIntController(
 	return &ibmPc_8259a;
 }
 
-static struct continuousTimerDevS *ibmPc_getSchedTimer(
+/*static struct continuousTimerDevS *ibmPc_getSchedTimer(
 	struct continuousTimerDevS *c
 	)
 {
@@ -21,11 +21,12 @@ static struct continuousTimerDevS *ibmPc_getSchedTimer(
 
 	return &ibmPc_pit;
 }
+*/
 
 struct chipsetSupportPackageS		chipsetCoreDev =
 {
 	__KNULL,
-	&ibmPc_getIntController,
-	&ibmPc_getSchedTimer
+	&ibmPc_8259a,
+	__KNULL
 };
 

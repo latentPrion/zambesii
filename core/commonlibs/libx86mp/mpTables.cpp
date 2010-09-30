@@ -142,6 +142,10 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	cache.lapicPaddr = cache.cfg->lapicPaddr;
 	cache.nCfgEntries = ret->nEntries;
 
+	__kprintf(NOTICE x86MP"Mapped MP Config table to 0x%X, %d pages. %d "
+		"entries in MP config.\n",
+		ret, cfgNPages, ret->nEntries);
+
 	// Now we can return the table vaddr.
 	return ret;
 }
@@ -250,6 +254,12 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 			*pos = 0;
 			break;
 		};
+
+		if (ret != __KNULL)
+		{
+			*pos += 1;
+			break;
+		};
 	};
 
 	return ret;
@@ -313,6 +323,12 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 				*(ubit8 *)*handle);
 
 			*pos = 0;
+			break;
+		};
+
+		if (ret != __KNULL)
+		{
+			*pos += 1;
 			break;
 		};
 	};

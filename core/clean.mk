@@ -25,6 +25,7 @@ clean: fonyphile
 	cd kernel/common/timerTrib; make clean
 	cd kernel/common/processTrib; make clean
 	cd kernel/common/taskTrib; make clean
+	cd commonlibs/libx86mp; make clean
 
 aclean:
 	rm -f *.a *.o __klinkScript.ld

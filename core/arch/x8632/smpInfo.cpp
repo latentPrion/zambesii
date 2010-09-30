@@ -77,6 +77,10 @@ archSmpMapS *smpInfo::getSmpMap(void)
 		{
 			nEntries++;
 		};
+for (;;){};
+
+		__kprintf(NOTICE SMPINFO"getSmpMap: Found %d CPU entries in MP "
+			"config tables.\n", nEntries);
 
 		ret = new archSmpMapS;
 		if (ret == __KNULL)

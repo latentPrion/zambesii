@@ -45,14 +45,9 @@
 
 struct chipsetSupportPackageS
 {
-	struct watchdogDevS		*(*getWatchdogDev)(
-		struct watchdogDevS *w);
-
-	struct intControllerDevS	*(*getIntController)(
-		struct intControllerDevS *i);
-
-	struct continuousTimerDevS	*(*getSchedTimer)(
-		struct continuousTimerDevS *s);
+	struct watchdogDevS		*watchdog;
+	struct intControllerDevS	*intController;
+	struct continuousTimerDevS	*getSchedTimer;
 };
 
 extern struct chipsetSupportPackageS	chipsetCoreDev;
