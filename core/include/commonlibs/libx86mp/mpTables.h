@@ -49,6 +49,7 @@ struct x86_mpCfgS
 	ubit32		lapicPaddr;
 	ubit16		extTableNEntries;
 	ubit8		extTableChecksum;
+	ubit8		rsvd;
 } __attribute__((packed));
 
 // Usage: Pass the address of the 1st byte of proposed next entry.
@@ -59,6 +60,8 @@ struct x86_mpCfgS
 #define x86_MPCFG_TYPE_IOAPIC		0x2
 #define x86_MPCFG_TYPE_IRQSOURCE	0x3
 #define x86_MPCFG_TYPE_LOCALIRQSOURCE	0x4
+// From: linux: arch/x86/include/asm/mpspec_def.h. Used by IBM for NUMA-Q.
+#define x86_MPCFG_TYPE_NUMAQ		192
 
 
 // CPU Entry specific #defines.
@@ -79,6 +82,9 @@ struct x86_mpCfgCpuS
 	ubit8		lapicVersion;
 	ubit8		flags;
 	ubit32		cpuModel;
+	ubit32		featureFlags;
+	ubit32		rsvd1;
+	ubit32		rsvd2;
 } __attribute__((packed));
 
 

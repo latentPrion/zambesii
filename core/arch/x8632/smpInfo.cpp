@@ -72,16 +72,14 @@ archSmpMapS *smpInfo::getSmpMap(void)
 
 		// Parse x86 MP table info and discover how many CPUs there are.
 		mpCpu = x86Mp::getNextCpuEntry(&pos, &handle);
-		for (; mpCpu != __KNULL;
-			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle))
+		for (uarch_t g=0; mpCpu != __KNULL;
+			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle), g++)
 		{
 			nEntries++;
 		};
-for (;;){};
 
 		__kprintf(NOTICE SMPINFO"getSmpMap: Found %d CPU entries in MP "
 			"config tables.\n", nEntries);
-
 		ret = new archSmpMapS;
 		if (ret == __KNULL)
 		{
@@ -126,6 +124,7 @@ for (;;){};
 			};
 		};
 
+asm volatile ("hlt\n\t");
 		return ret;
 	};
 			

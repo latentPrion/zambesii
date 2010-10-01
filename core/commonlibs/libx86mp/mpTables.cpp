@@ -196,7 +196,7 @@ x86_mpCfgS *x86Mp::getMpCfg(void)
 
 x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 {
-	x86_mpCfgCpuS		*ret=0;
+	x86_mpCfgCpuS	*ret=__KNULL;
 
 	if (!x86Mp::getMpCfg()) {
 		return __KNULL;
@@ -210,6 +210,10 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
 	{
+		if (ret != __KNULL) {
+			break;
+		};
+
 		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_CPU) {
 			ret = (x86_mpCfgCpuS *)*handle;
 		};
@@ -242,7 +246,8 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 
 		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+				(uarch_t)*handle
+				+ sizeof(x86_mpCfgLocalIrqSourceS));
 
 			break;
 
@@ -251,14 +256,7 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
-			*pos = 0;
-			break;
-		};
-
-		if (ret != __KNULL)
-		{
-			*pos += 1;
-			break;
+			return __KNULL;
 		};
 	};
 
@@ -267,7 +265,7 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 
 x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 {
-	x86_mpCfgIoApicS	*ret=0;
+	x86_mpCfgIoApicS	*ret=__KNULL;
 
 	if (!x86Mp::getMpCfg()) {
 		return __KNULL;
@@ -281,6 +279,10 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
 	{
+		if (ret != __KNULL) {
+			break;
+		};
+
 		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_IOAPIC) {
 			ret = (x86_mpCfgIoApicS *)*handle;
 		};
@@ -313,7 +315,8 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 
 		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+				(uarch_t)*handle
+				+ sizeof(x86_mpCfgLocalIrqSourceS));
 
 			break;
 
@@ -322,14 +325,7 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
-			*pos = 0;
-			break;
-		};
-
-		if (ret != __KNULL)
-		{
-			*pos += 1;
-			break;
+			return __KNULL;
 		};
 	};
 
