@@ -1,6 +1,7 @@
 #ifndef _DEBUG_PIPE_H
 	#define _DEBUG_PIPE_H
 
+	#include <arch/paddr_t.h>
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/stdarg.h>
@@ -52,6 +53,8 @@
 #define ERROR				(utf8Char *)"[E]: "
 #define FATAL				(utf8Char *)"[F]: "
 
+#define NOLOG				"%[n]"
+
 class debugPipeC
 {
 public:
@@ -82,7 +85,9 @@ public:
 private:
 	void unsignedToStr(uarch_t num, uarch_t *len);
 	void signedToStr(sarch_t num, uarch_t *len);
-	void numToStrHex(uarch_t num, uarch_t *len);
+	void numToStrHexUpper(uarch_t num, uarch_t *len);
+	void numToStrHexLower(uarch_t num, uarch_t *len);
+	void paddrToStrHex(paddr_t num, uarch_t *len);
 
 	debugBufferC		debugBuff;
 	// 'convBuff' is used to expand the passed UTF-8 string into codepoints.

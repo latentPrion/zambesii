@@ -51,8 +51,9 @@ status_t x8632_page_fault(taskContextS *regs)
 			&memoryStream->vaddrSpaceStream.vaddrSpace,
 			faultAddr, pmap, status, WPRANGER_OP_SET_PRESENT, 0);
 
-		__kprintf(NOTICE"Page Fault: FAKE_DYN: addr 0x%X, EIP 0x%X\n"
-			"\tWPRl map: stat %d, pmap 0x%X, __kf 0x%X.\n",
+		__kprintf(NOTICE NOLOG"Page Fault: FAKE_DYN: addr 0x%p, "
+			"EIP 0x%p\n\tWPRl map: stat %d, pmap 0x%P, "
+			"__kf 0x%x.\n",
 			faultAddr, regs->eip,
 			walkerPageRanger::lookup(
 				&memoryStream->vaddrSpaceStream.vaddrSpace,

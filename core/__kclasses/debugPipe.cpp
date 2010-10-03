@@ -257,17 +257,54 @@ void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen)
 }
 
 // Expects the lock to already be held.
-void debugPipeC::numToStrHex(uarch_t num, uarch_t *curLen)
+void debugPipeC::numToStrHexUpper(uarch_t num, uarch_t *curLen)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
 
-	for (; num / 16 ; blen++)
+	for (; num >> 4 ; blen++)
 	{
-		b[blen] = (num % 16) + (((num % 16) > 9) ? ('A'-10):'0');
-		num /= 16;
+		b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0');
+		num >>= 4;
 	};
-	b[blen] = (num % 16) + (((num % 16) > 9) ? ('A'-10):'0');
+	b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0');
+	blen++;
+
+	for (; blen; blen--, *curLen += 1) {
+		convBuff.rsrc[*curLen] = b[blen-1];
+	};
+}
+
+// Expects the lock to already be held.
+void debugPipeC::numToStrHexLower(uarch_t num, uarch_t *curLen)
+{
+	utf8Char	b[28];
+	uarch_t		blen=0;
+
+	for (; num >> 4 ; blen++)
+	{
+		b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('a'-10):'0');
+		num >>= 4;
+	};
+	b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('a'-10):'0');
+	blen++;
+
+	for (; blen; blen--, *curLen += 1) {
+		convBuff.rsrc[*curLen] = b[blen-1];
+	};
+}
+
+void debugPipeC::paddrToStrHex(paddr_t num, uarch_t *curLen)
+{
+	utf8Char	b[28];
+	uarch_t		blen=0;
+
+	for (; num >> 4 ; blen++)
+	{
+		b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0');
+		num >>= 4;
+	};
+	b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0');
 	blen++;
 
 	for (; blen; blen--, *curLen += 1) {
@@ -288,8 +325,10 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 {
 	uarch_t		unum, buffLen=0, buffMax;
 	sarch_t		snum;
+	paddr_t		pnum;
 	unicodePoint	c=0;
 	utf16Char	h, l;
+	ubit8		nolog=0;
 
 	convBuff.lock.acquire();
 
@@ -330,17 +369,42 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 
 					break;
 
-				case 'x':
 				case 'X':
+					unum = va_arg(args, uarch_t);
+					numToStrHexUpper(unum, &buffLen);
+					break;
+
+				case 'P':
+					pnum = va_arg(args, paddr_t);
+					paddrToStrHex(pnum, &buffLen);
+					break;
+
+				case 'x':
 				case 'p':
 					unum = va_arg(args, uarch_t);
-					numToStrHex(unum, &buffLen);
+					numToStrHexLower(unum, &buffLen);
 
 					break;
 
 				case 's':
 					unum = va_arg(args, uarch_t);
 					break;
+
+				case '[':
+					str++;
+					for (; *str != ']'; str++)
+					{
+						switch (*str)
+						{
+						case 'n':
+							nolog = 1;
+							break;
+						default:
+							break;
+						};
+					};
+					break;
+
 				default:
 					unum = va_arg(args, uarch_t);
 					break;
@@ -384,7 +448,7 @@ blitToBuff:
 		};
 	};
 
-	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)) {
+	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER) && !nolog) {
 		debugBuff.syphon(convBuff.rsrc, buffLen);
 	};
 

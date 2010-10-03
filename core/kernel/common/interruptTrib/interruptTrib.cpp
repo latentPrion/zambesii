@@ -85,7 +85,7 @@ error_t interruptTribC::initialize(void)
 
 void interruptTribC::irqMain(taskContextS *regs)
 {
-	__kprintf(NOTICE"interruptTribC::irqMain: CPU %d entered "
+	__kprintf(NOTICE NOLOG"interruptTribC::irqMain: CPU %d entered "
 		"on vector %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
 
@@ -93,10 +93,9 @@ void interruptTribC::irqMain(taskContextS *regs)
 		isrTable[regs->vectorNo].handler.except(regs);
 	};
 
-	__kprintf(NOTICE"interruptTribC::irqMain: Exiting on CPU %d.\n",
+	__kprintf(NOTICE NOLOG"interruptTribC::irqMain: Exiting on CPU %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId);
 
-	// Execution does not reach here, kofi.
 	// Calls ISRs, then exit.
 }
 
