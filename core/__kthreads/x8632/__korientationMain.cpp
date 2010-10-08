@@ -71,6 +71,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(numaTrib, initialize2(), ret);
 	DO_OR_DIE(processTrib, initialize2(), ret);
 
+
+	void		*h=__KNULL;
+
 	acpi::flushCache();
 	if (acpi::findRsdp() == ERROR_SUCCESS)
 	{
@@ -78,8 +81,14 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		if (acpi::testForRsdt())
 		{
 			acpi::mapRsdt();
-			if (acpi::getRsdt() != __KNULL) {
-				__kprintf(NOTICE ORIENT"RSDT mapped.\n");
+			if (acpi::getRsdt() != __KNULL)
+			{
+				__kprintf(NOTICE ORIENT"RSDT mapped. v 0x%p.\n",
+					acpi::getRsdt());
+
+				__kprintf(NOTICE ORIENT"FACP: 0x%p.\n",
+					acpiRsdt::getNextMadt(
+						acpi::getRsdt(), &h));
 			};
 		};
 	};
