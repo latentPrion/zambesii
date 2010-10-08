@@ -11,6 +11,7 @@
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
 #include <__kclasses/memoryBog.h>
+#include <commonlibs/libacpi/libacpi.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
@@ -69,8 +70,21 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(numaTrib, initialize2(), ret);
 	DO_OR_DIE(processTrib, initialize2(), ret);
-	DO_OR_DIE(cpuTrib, initialize2(), ret);
 
+	acpi::flushCache();
+	if (acpi::findRsdp() == ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE ORIENT"RSDP found by libacpi.\n");
+		if (acpi::testForRsdt())
+		{
+			acpi::mapRsdt();
+			if (acpi::getRsdt() != __KNULL) {
+				__kprintf(NOTICE ORIENT"RSDT mapped.\n");
+			};
+		};
+	};
+
+	DO_OR_DIE(cpuTrib, initialize2(), ret);
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 

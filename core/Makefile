@@ -14,7 +14,7 @@ EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a firmwareCore.a \
 	memoryTrib.a numaTrib.a firmwareTrib.a interruptTrib.a \
 	timerTrib.a cpuTrib.a processTrib.a taskTrib.a \
 	platformCore.a chipset.a chipsetCore.a archCore.a firmwareCore.a \
-	__kclasses.a __kstdlib.a __kcxxabi.a lang.a libx86mp.a
+	__kclasses.a __kstdlib.a __kcxxabi.a lang.a libx86mp.a libacpi.a
 GOAL=../core.o
 
 all: $(GOAL)

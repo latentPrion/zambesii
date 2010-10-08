@@ -10,6 +10,7 @@
 
 #define ACPI_MADT_GET_ENDADDR(_madt)			\
 	(void *)((uarch_t)_madt + _madt->hdr.tableLength)
+
 struct acpi_madtS
 {
 	struct acpi_sdtS	hdr;
@@ -95,10 +96,16 @@ struct acpi_madtLapicNmiS
 	ubit8		
 #ifdef __cplusplus
 
-namespace acpiMadt
+namespace acpiRMadt
 {
 	// Return next LAPIC entry.
-	acpi_madtCpuS *getNextCpuEntry(acpi_madtS *madt, void **const handle);
+	acpi_rMadtCpuS *getNextCpuEntry(acpi_rMadtS *madt, void **const handle);
+	acpi_rMadtIoApicS *getNextIoApicEntry(
+		acpi_rMadtS *madt, void **const handle);
+}
+
+namespace acpiXMadt
+{
 }
 
 #endif

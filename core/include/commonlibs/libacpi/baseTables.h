@@ -1,7 +1,10 @@
-#ifndef _ACPI_TABLES_H
-	#define _ACPI_TABLES_H
+#ifndef _ZBZ_LIB_ACPI_BASE_TABLES_H
+	#define _ZBZ_LIB_ACPI_BASE_TABLES_H
 
 	#include <__kstdlib/__ktypes.h>
+
+#define ACPI_PTR_INC_BY(_ptr,_type)			\
+	(void *)(((uarch_t)_ptr) + sizeof(_type))
 
 #define ACPI_RSDP_XSDTPADDR(_rsdp)	(*(ubit64 *)_rsdp->xsdtPaddr)
 #define ACPI_RSDP_SIG			"RSD PTR "
@@ -81,45 +84,6 @@ struct acpi_xsdtS
 	struct acpi_sdtS	hdr;
 	// N 8-byte physical pointers from here on.
 };
-
-
-struct acpi_fadtS
-{
-	struct acpi_sdtS	hdr;
-	ubit32		facsPaddr;
-	ubit32		dsdtPaddr;
-	ubit8		rsvd1;
-	ubit8		preferredPmProfile;
-	ubit16		sciIntVector;
-
-	// SMI command port and valid commands to send to it.
-	ubit32		smiCmd;
-	ubit8		acpiEnable;
-	ubit8		acpiDisable;
-	ubit8		s4BiosReq;
-	ubit8		cpuStateCtrl;
-
-	ubit32		pm1aEvent;
-	ubit32		pm1bEvent;
-	ubit32		pm1aCtrl;
-	ubit32		pm1bCtrl;
-
-	ubit32		pm2Ctrl;
-	ubit32		pmTimer;
-
-	ubit32		gpEvent0;
-	ubit32		gpEvent1;
-
-	ubit8		pm1EventLen;
-	ubit8		pm1CtrlLen;
-	ubit8		pm2CtrlLen;
-	ubit8		pmTimerLen;
-
-	ubit8		gpEvent0Len;
-	ubit8		gpEvent1Len;
-	ubit8		gpEvent1Base;
-	ubit8		cstCtrl;
-
 	
 #endif
 
