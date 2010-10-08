@@ -18,7 +18,7 @@ namespace acpiRsdt
 	acpi_rFacpS *getNextFacp(acpi_rsdtS *r, void **const handle);
 
 	// Unmaps an ACPI table.
-	void destroySdt(void *sdt);
+	void destroySdt(acpi_sdtS *sdt);
 }
 
 namespace acpiXsdt

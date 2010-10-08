@@ -172,3 +172,21 @@ acpi_rFacpS *acpiRsdt::getNextFacp(acpi_rsdtS *rsdt, void **const handle)
 	return ret;
 }
 
+void acpiRsdt::destroySdt(acpi_sdtS *sdt)
+{
+	uarch_t		nPages, f;
+	paddr_t		p;
+
+	if (sdt == __KNULL) {
+		return;
+	};
+
+	// Find out how many pages:
+	nPages = PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1;
+	walkerPageRanger::unmap(
+		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		sdt, &p, nPages, &f);
+
+	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(sdt, nPages);
+}
+
