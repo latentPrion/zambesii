@@ -2,21 +2,8 @@
 	#define _ACPI_MADT_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <commonlibs/libacpi/rsdp.h>
-
-#define ACPI_MADT_FLAGS_PC8259_COMPAT		(1<<0)
-#define ACPI_MADT_GET_FIRST_ENTRY(_madt)		\
-	(void *)((uarch_t)_madt + sizeof(struct acpi_madtS))
-
-#define ACPI_MADT_GET_ENDADDR(_madt)			\
-	(void *)((uarch_t)_madt + _madt->hdr.tableLength)
-
-struct acpi_madtS
-{
-	struct acpi_sdtS	hdr;
-	ubit32			lapicPaddr;
-	ubit32			flags;
-};
+	#include "baseTables.h"
+	#include "mainTables.h"
 
 
 #define ACPI_MADT_GET_TYPE(_addr)			(*(ubit8 *)_addr)
@@ -33,16 +20,17 @@ struct acpi_madtS
 
 #define ACPI_MADT_CPU_FLAGS_ENABLED			(1<<0)
 
-struct acpi_madtCpuS
+struct acpi_rMadtCpuS
 {
 	ubit8		type;
 	ubit8		length;
 	ubit8		acpiLapicId;
 	ubit8		lapicId;
+	ubit32		flags;
 };
 
 
-struct acpi_madtIoApicS
+struct acpi_rMadtIoApicS
 {
 	ubit8		type;
 	ubit8		length;
@@ -67,7 +55,7 @@ struct acpi_madtIoApicS
 #define ACPI_MADT_IRQSRCOVER_TRIGGER_EDGE		0x1
 #define ACPI_MADT_IRQSRCOVER_TRIGGER_LEVEL		0x3
 
-struct acpi_madtIrqSourceOverS
+struct acpi_rMadtIrqSourceOverS
 {
 	ubit8		type;
 	ubit8		length;
@@ -78,7 +66,7 @@ struct acpi_madtIrqSourceOverS
 };
 
 
-struct acpi_madtNmiS
+struct acpi_rMadtNmiS
 {
 	ubit8		type;
 	ubit8		length;
@@ -87,13 +75,32 @@ struct acpi_madtNmiS
 };
 
 
-struct acpi_madtLapicNmiS
+struct acpi_rMadtLapicNmiS
 {
-	ubit8		type;
-	ubit8		length;
-	ubit8		acpiLapicId;
-	ubit16		flags;
-	ubit8		
+	ubit8		pad[6];
+};
+
+struct acpi_rMadtLapicPaddrOverS
+{
+	ubit8		pad[12];
+};
+
+struct acpi_rMadtIoSapicS
+{
+	ubit8		pad[16];
+};
+
+struct acpi_rMadtLSapicS
+{
+	ubit8		pad[18];
+};
+
+struct acpi_rMadtIrqSourceS
+{
+	ubit8		pad[16];
+};
+
+	
 #ifdef __cplusplus
 
 namespace acpiRMadt

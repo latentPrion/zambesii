@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../libacpi.a
-OBJFILES=rsdp.o rxsdt.o
+OBJFILES=rsdp.o rxsdt.o madt.o
 
 all: Makefile $(DELIVERABLE)
 

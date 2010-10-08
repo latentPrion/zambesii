@@ -5,5 +5,7 @@
 	#include "rsdp.h"
 	#include "rxsdt.h"
 
+	#include "madt.h"
+
 #endif
 
