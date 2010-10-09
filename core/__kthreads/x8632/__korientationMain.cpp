@@ -10,10 +10,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
-#include <__kclasses/memoryBog.h>
-#include <commonlibs/libacpi/libacpi.h>
 #include <__kthreads/__korientation.h>
-#include <__kthreads/__korientationpreConstruct.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>

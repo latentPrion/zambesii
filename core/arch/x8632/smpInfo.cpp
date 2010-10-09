@@ -3,7 +3,7 @@
 #include <arch/smpMap.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
-// #include <commonlibs/acpi.h>
+#include <commonlibs/libacpi/libacpi.h>
 #include <commonlibs/libx86mp/libx86mp.h>
 #include <__kclasses/debugPipe.h>
 
@@ -32,9 +32,12 @@ chipsetNumaMapS *smpInfo::getNumaMap(void)
 archSmpMapS *smpInfo::getSmpMap(void)
 {
 	x86_mpCfgCpuS	*mpCpu;
-	void		*handle=__KNULL;
-	uarch_t		pos=0, nEntries=0;
+	void		*handle, *handle2;
+	uarch_t		pos=0, nEntries, i;
 	archSmpMapS	*ret;
+	acpi_rsdtS	*rsdt;
+	acpi_rMadtS	*madt;
+	acpi_rMadtCpuS	*madtCpu;
 
 	/**	NOTES:
 	 *  This function will return a structure describing all CPUs at boot,
@@ -53,6 +56,102 @@ archSmpMapS *smpInfo::getSmpMap(void)
 	 *
 	 * This function depends on the kernel libx86mp.
 	 **/
+	// First try using ACPI. Trust ACPI over MP tables.
+	acpi::flushCache();
+	if (acpi::findRsdp() != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE SMPINFO"getSmpMap: No ACPI. Trying MP.\n");
+		goto tryMpTables;
+	};
+
+	if (!acpi::testForRsdt())
+	{
+		__kprintf(WARNING SMPINFO"getSmpMap: ACPI, but no RSDT.\n");
+		if (acpi::testForXsdt())
+		{
+			__kprintf(WARNING SMPINFO"getSmpMap: XSDT found. "
+				"Consider using 64-bit build for XSDT.\n");
+		}
+		goto tryMpTables;
+	};
+
+	if (acpi::mapRsdt() != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE SMPINFO"getSmpMap: ACPI: Failed to map RSDT."
+			"\n");
+
+		goto tryMpTables;
+	};
+
+	// Now look for a MADT.
+	rsdt = acpi::getRsdt();
+	handle = __KNULL;
+	nEntries = 0;
+	for (madt = acpiRsdt::getNextMadt(rsdt, &handle);
+		madt != __KNULL; madt = acpiRsdt::getNextMadt(rsdt, &handle))
+	{
+		handle2 = __KNULL;
+		for (madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2);
+			madtCpu != __KNULL;
+			madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2))
+		{
+			if (__KFLAG_TEST(
+				madtCpu->flags, ACPI_MADT_CPU_FLAGS_ENABLED))
+			{
+				nEntries++;
+			};
+		};
+	};
+
+	__kprintf(NOTICE SMPINFO"getSmpMap: ACPI: %d valid CPU entries.\n",
+		nEntries);
+
+	ret = new archSmpMapS;
+	if (ret == __KNULL)
+	{
+		__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map.\n");
+		return __KNULL;
+	};
+
+	ret->entries = new archSmpMapEntryS[nEntries];
+	if (ret->entries == __KNULL)
+	{
+		delete ret;
+		__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map "
+			"entries.\n");
+
+		return __KNULL;
+	};
+
+	handle = __KNULL;
+	for (i=0, madt = acpiRsdt::getNextMadt(rsdt, &handle);
+		madt != __KNULL;
+		madt = acpiRsdt::getNextMadt(rsdt, &handle))
+	{
+		handle2 = __KNULL;
+		for (madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2);
+			madtCpu != __KNULL;
+			madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2))
+		{
+			if (__KFLAG_TEST(
+				madtCpu->flags, ACPI_MADT_CPU_FLAGS_ENABLED))
+			{
+				ret->entries[i].cpuId = madtCpu->lapicId;
+				ret->entries[i].flags = 0;
+				i++;
+				continue;
+			};
+			__kprintf(NOTICE SMPINFO"getSmpMap: ACPI: Skipping "
+				"un-enabled CPU %d, ACPI ID %d.\n",
+				madtCpu->lapicId, madtCpu->acpiLapicId);
+		};
+	};
+
+	ret->nEntries = i;
+	return ret;
+
+tryMpTables:
+
 	x86Mp::initializeCache();
 	if (!x86Mp::mpTablesFound())
 	{
@@ -71,20 +170,27 @@ archSmpMapS *smpInfo::getSmpMap(void)
 		};
 
 		// Parse x86 MP table info and discover how many CPUs there are.
+		nEntries = 0;
+		handle = __KNULL;
 		mpCpu = x86Mp::getNextCpuEntry(&pos, &handle);
-		for (uarch_t g=0; mpCpu != __KNULL;
-			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle), g++)
+		for (; mpCpu != __KNULL;
+			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle))
 		{
-			nEntries++;
+			if (__KFLAG_TEST(
+				mpCpu->flags, x86_MPCFG_CPU_FLAGS_ENABLED))
+			{
+				nEntries++;
+			};
 		};
 
-		__kprintf(NOTICE SMPINFO"getSmpMap: Found %d CPU entries in MP "
+		__kprintf(NOTICE SMPINFO"getSmpMap: %d valid CPU entries in MP "
 			"config tables.\n", nEntries);
+
 		ret = new archSmpMapS;
 		if (ret == __KNULL)
 		{
-			__kprintf(ERROR SMPINFO"getSmpMap: Not enough heap mem "
-				"to alloc SMP Map.\n");
+			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
+				"Map.\n");
 
 			return __KNULL;
 		};
@@ -92,8 +198,8 @@ archSmpMapS *smpInfo::getSmpMap(void)
 		ret->entries = new archSmpMapEntryS[nEntries];
 		if (ret->entries == __KNULL)
 		{
-			__kprintf(ERROR SMPINFO"getSmpMap: Not enough mem to "
-				"alloc SMP map entries.\n");
+			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
+				"map entries.\n");
 
 			delete ret;
 			return __KNULL;
@@ -101,33 +207,39 @@ archSmpMapS *smpInfo::getSmpMap(void)
 
 		// Iterate one more time and fill in SMP map.
 		pos = 0;
+		handle = __KNULL;
 		mpCpu = x86Mp::getNextCpuEntry(&pos, &handle);
-		for (uarch_t i=0; mpCpu != __KNULL;
-			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle), i++)
+		for (i=0; mpCpu != __KNULL;
+			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle))
 		{
-			ret->entries[i].cpuId = mpCpu->lapicId;
-
 			if (!__KFLAG_TEST(
 				mpCpu->flags, x86_MPCFG_CPU_FLAGS_ENABLED))
 			{
 				__KFLAG_SET(
 					ret->entries[i].flags,
 					ARCHSMPMAP_FLAGS_BADCPU);
-			};
 
-			if (__KFLAG_TEST(
-				mpCpu->flags, x86_MPCFG_CPU_FLAGS_BSP))
-			{
-				__KFLAG_SET(
-					ret->entries[i].flags,
-					ARCHSMPMAP_FLAGS_BSP);
+				ret->entries[i].cpuId = mpCpu->lapicId;
+
+				if (__KFLAG_TEST(
+					mpCpu->flags, x86_MPCFG_CPU_FLAGS_BSP))
+				{
+					__KFLAG_SET(
+						ret->entries[i].flags,
+						ARCHSMPMAP_FLAGS_BSP);
+				};
+				continue;
 			};
+			__kprintf(NOTICE SMPINFO"getSmpMap: Skipping un-enabled"
+				" CPU %d in MP tables.\n",
+				mpCpu->lapicId);
+
 		};
 
-asm volatile ("hlt\n\t");
+		ret->nEntries = i;
 		return ret;
 	};
-			
+
 	return __KNULL;
 }
 

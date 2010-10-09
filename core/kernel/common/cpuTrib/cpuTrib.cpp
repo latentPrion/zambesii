@@ -31,7 +31,7 @@ error_t cpuTribC::initialize2(void)
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
 	{
 		__kprintf(NOTICE"SMP Map %d: id %d, flags 0x%X.\n",
-			smpMap->entries[i].cpuId, smpMap->entries[i].flags);
+			i, smpMap->entries[i].cpuId, smpMap->entries[i].flags);
 	};
 #endif
 	return ERROR_SUCCESS;

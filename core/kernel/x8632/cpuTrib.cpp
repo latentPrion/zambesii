@@ -1,7 +1,6 @@
 
 #include <__kstdlib/__ktypes.h>
 #include <__kthreads/__korientation.h>
-#include <__kthreads/__korientationPreConstruct.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 
