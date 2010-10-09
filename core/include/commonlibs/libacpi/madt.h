@@ -65,41 +65,6 @@ struct acpi_rMadtIrqSourceOverS
 	ubit16		flags;
 };
 
-
-struct acpi_rMadtNmiS
-{
-	ubit8		type;
-	ubit8		length;
-	ubit16		flags;
-	ubit32		globalIrq;
-};
-
-
-struct acpi_rMadtLapicNmiS
-{
-	ubit8		pad[6];
-};
-
-struct acpi_rMadtLapicPaddrOverS
-{
-	ubit8		pad[12];
-};
-
-struct acpi_rMadtIoSapicS
-{
-	ubit8		pad[16];
-};
-
-struct acpi_rMadtLSapicS
-{
-	ubit8		pad[16];
-};
-
-struct acpi_rMadtIrqSourceS
-{
-	ubit8		pad[16];
-};
-
 	
 #ifdef __cplusplus
 

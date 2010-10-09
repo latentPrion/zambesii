@@ -70,44 +70,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(numaTrib, initialize2(), ret);
 	DO_OR_DIE(processTrib, initialize2(), ret);
-
-
-	void		*h=__KNULL, *h2=__KNULL;
-	acpi_rMadtS	*m;
-	acpi_rMadtCpuS	*c;
-
-	acpi::flushCache();
-	if (acpi::findRsdp() == ERROR_SUCCESS)
-	{
-		__kprintf(NOTICE ORIENT"RSDP found by libacpi.\n");
-		if (acpi::testForRsdt())
-		{
-			acpi::mapRsdt();
-			if (acpi::getRsdt() != __KNULL)
-			{
-				__kprintf(NOTICE ORIENT"RSDT mapped. v 0x%p.\n",
-					acpi::getRsdt());
-
-				m = acpiRsdt::getNextMadt(acpi::getRsdt(), &h);
-
-				__kprintf(NOTICE ORIENT"MADT: 0x%p, len %dB.\n",
-					m, m->hdr.tableLength);
-
-				for (c = acpiRMadt::getNextCpuEntry(m, &h2);
-					c != __KNULL;
-					c = acpiRMadt::getNextCpuEntry(m, &h2))
-				{
-					__kprintf(NOTICE ORIENT"CPU %d, acpi: "
-						"%d.\n",
-						c->lapicId, c->acpiLapicId);
-				};
-
-				acpiRsdt::destroySdt((acpi_sdtS *)m);
-			};
-		};
-	};
-
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
+
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 
