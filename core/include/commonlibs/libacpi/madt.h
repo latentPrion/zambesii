@@ -92,7 +92,7 @@ struct acpi_rMadtIoSapicS
 
 struct acpi_rMadtLSapicS
 {
-	ubit8		pad[18];
+	ubit8		pad[16];
 };
 
 struct acpi_rMadtIrqSourceS
