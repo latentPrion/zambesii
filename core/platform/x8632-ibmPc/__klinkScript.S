@@ -112,6 +112,14 @@ SECTIONS
 		__ktextEnd = .;
 	}
 
+	.gnu.linkonce.t ALIGN(0x4)
+	:
+	AT( ADDR(.gnu.linkonce.t) - ARCH_MEMORY___KLOAD_VADDR_BASE
+		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	{
+		*(.gnu.linkonce.t*)
+	}
+
 	.rodata ALIGN(0x4)
 	:
 	AT( ADDR(.rodata) - ARCH_MEMORY___KLOAD_VADDR_BASE
@@ -121,6 +129,15 @@ SECTIONS
 		*(.rodata*)
 		__krodataEnd = .;
 	}
+
+	.gnu.linkonce.r ALIGN(0x4)
+	:
+	AT( ADDR(.gnu.linkonce.r) - ARCH_MEMORY___KLOAD_VADDR_BASE
+		+ CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	{
+		*(.gnu.linkonce.r*)
+	}
+
 
 	__kreadOnlyEnd = .;
 
