@@ -1,6 +1,7 @@
 
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
+#include <__kclasses/cachePool.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
@@ -27,4 +28,5 @@ cpuTribC		cpuTrib;
 debugPipeC		__kdebug;
 processTribC		processTrib;
 taskTribC		taskTrib;
+cachePoolC		cachePool;
 

@@ -10,6 +10,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
+#include <__kclasses/cachePool.h>
 #include <__kthreads/__korientation.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
@@ -68,7 +69,28 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(numaTrib, initialize2(), ret);
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
+	DO_OR_DIE(cachePool, initialize(), ret);
 
+	__kprintf(NOTICE ORIENT"Call getCache after initialize(): 0x%p.\n",
+		cachePool.getCache(32));
+
+	__kprintf(NOTICE ORIENT"Create cache with size 256. 0x%p.\n",
+		cachePool.createCache(256));
+
+	__kprintf(NOTICE ORIENT"Call get cache with sizes 256 & 257: 0x%p 0x%p."
+		"\n", cachePool.getCache(256), cachePool.getCache(257));
+
+	__kprintf(NOTICE ORIENT"Create caches with sizes 8, 7, 264: "
+		"0x%p, 0x%p, 0x%p.\n",
+		cachePool.createCache(8), cachePool.createCache(7),
+		cachePool.createCache(264));
+
+	cachePool.destroyCache(cachePool.getCache(256));
+	__kprintf(NOTICE ORIENT"Remove cache w/size 256, and then call get: "
+		"0x%p.\n",
+		cachePool.getCache(256));
+
+	cachePool.dump();
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 
