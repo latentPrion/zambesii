@@ -11,7 +11,8 @@
 
 struct executableFormatS
 {
-	error_t identify(void *buff);
+	error_t (*identify)(void *buff);
+	
 };
 
 #endif
