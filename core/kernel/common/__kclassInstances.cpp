@@ -9,6 +9,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
+#include <kernel/common/execTrib/execTrib.h>
 
 /**	EXPLANATION:
  * These are the instances of the kernel classes which don't require any
@@ -29,4 +30,5 @@ debugPipeC		__kdebug;
 processTribC		processTrib;
 taskTribC		taskTrib;
 cachePoolC		cachePool;
+execTribC		execTrib;
 

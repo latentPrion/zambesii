@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../../execTrib.a
-OBJFILES=execTrib.o elf_base.o
+OBJFILES=execTrib.o elf_base.o elfParser.o
 
 all: Makefile $(DELIVERABLE)
 

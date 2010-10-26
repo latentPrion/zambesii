@@ -139,5 +139,21 @@ struct elf32_symTabEntryS
 	ubit16		section;
 };
 
+// This describes the machine on which the parser has been loaded.
+struct elfModuleStateS
+{
+	// String passed by the kernel on initialize().
+	const char		*__karchString;
+	// Word size passed by kernel on initialize().
+	ubit8		__kwordSize;
+	// Correct value for ELF "machine" for this build.
+	sbit32		elfArch;
+	// Correct value for ELF "data" (2MSB/2LSB) on this build.
+	ubit8		elfEndianness;
+	ubit32		elfWordSize;
+};
+
+extern struct elfModuleStateS	elfModuleState;
+
 #endif
 

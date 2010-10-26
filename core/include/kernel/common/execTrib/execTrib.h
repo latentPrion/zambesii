@@ -35,6 +35,8 @@
 
 #define EXECTRIB_MAX_NPARSERS	16
 
+#define EXECTRIB_PARSER_FLAGS_STATIC	(1<<0)
+
 class execTribC
 :
 public tributaryC
@@ -42,11 +44,20 @@ public tributaryC
 public:
 	execTribC(void);
 	error_t initialize(void);
-	~execTribC(void);
 
 public:
+	executableParserS *identify(void *buff);
+
+private:
+	struct executableFormatS
+	{
+		executableParserS	*desc;
+		uarch_t			flags;
+	};
 	executableFormatS	parsers[EXECTRIB_MAX_NPARSERS];
 };
+
+extern execTribC		execTrib;
 
 #endif
 
