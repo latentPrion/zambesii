@@ -47,6 +47,7 @@ struct vfsDirS
 	vfsDirDescS		desc;
 	// fsDrvInstS		*fsDrv;
 	ubit32			flags;
+	ubit8			type;
 };
 
 #endif

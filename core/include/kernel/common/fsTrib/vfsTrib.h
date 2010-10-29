@@ -22,7 +22,13 @@ public:
 
 	void deleteDirectory(vfsDirS *parent, utf16Char *dirName);
 
-	
+	vfsFileS *getFile(utf16Char *path, uarch_t flags);
+	vfsFileS *createFile(
+		vfsDirS *parent, utf16Char *fileName,
+		uarch_t flags, status_t *status);
+
+	void deleteFile(vfsDirS *parent, utf16Char *fileName);
+
 private:
 	struct vfsTreeStateS
 	{
