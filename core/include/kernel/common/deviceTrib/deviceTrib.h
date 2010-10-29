@@ -11,13 +11,13 @@ public tributaryC
 public:
 
 private:
-	busDevC		*bus,
-	videoDevC	*video,
-	audioDevC	*audio,
-	storageDevC	*storage,
-	networkDevC	*network,
-	charInputDevC	*charInput,
-	coordInputDevC	*coordInput,
+	busDevC		*bus;
+	videoDevC	*video;
+	audioDevC	*audio;
+	storageDevC	*storage;
+	networkDevC	*network;
+	charInputDevC	*charInput;
+	coordInputDevC	*coordInput;
 };
 
 #endif
