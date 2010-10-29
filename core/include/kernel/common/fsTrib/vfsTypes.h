@@ -32,8 +32,8 @@ struct vfsFileDescS
 
 struct vfsFileS
 {
-	utf16Char		name[256];
-	vfsFileDescS		desc;
+	utf16Char		name[128];
+	vfsFileDescS		*desc;
 	ubit32			flags;
 	ubit8			type;
 };
@@ -43,8 +43,8 @@ struct vfsFileS
 
 struct vfsDirS
 {
-	utf16Char		name[256];
-	vfsDirDescS		desc;
+	utf16Char		name[128];
+	vfsDirDescS		*desc;
 	// fsDrvInstS		*fsDrv;
 	ubit32			flags;
 	ubit8			type;

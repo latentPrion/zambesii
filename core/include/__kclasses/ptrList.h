@@ -89,12 +89,6 @@ error_t ptrListC<T>::insert(T *item)
 
 	head.lock.acquire();
 
-	if (head.rsrc.ptr == __KNULL)
-	{
-		head.rsrc.ptr = node;
-		node->next = __KNULL;
-	};
-
 	node->next = head.rsrc.ptr;
 	head.rsrc.ptr = node;
 
