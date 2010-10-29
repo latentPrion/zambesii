@@ -15,24 +15,28 @@ class vfsTribC
 public tributaryC
 {
 public:
-	vfsDirS *getDirectory(utf16Char *path, uarch_t flags);
-	vfsDirS *createDirectory(
-		vfsDirS *parent, utf16Char *dirName,
+	vfsDirC *getDirectory(utf16Char *path, uarch_t flags);
+	vfsDirC *createDirectory(
+		vfsDirC *parent, utf16Char *dirName,
 		uarch_t flags, status_t *status);
 
-	void deleteDirectory(vfsDirS *parent, utf16Char *dirName);
+	void deleteDirectory(vfsDirC *parent, utf16Char *dirName);
 
-	vfsFileS *getFile(utf16Char *path, uarch_t flags);
-	vfsFileS *createFile(
-		vfsDirS *parent, utf16Char *fileName,
+	vfsFileC *getFile(utf16Char *path, uarch_t flags);
+	vfsFileC *createFile(
+		vfsDirC *parent, utf16Char *fileName,
 		uarch_t flags, status_t *status);
 
-	void deleteFile(vfsDirS *parent, utf16Char *fileName);
+	void deleteFile(vfsDirC *parent, utf16Char *fileName);
+
+	vfsDirC *createTree(utf16Char *name, uarch_t flags);
+	error_t deleteTree(utf16Char *name);
+	error_t setDefaultTree(utf16Char *name);
 
 private:
 	struct vfsTreeStateS
 	{
-		vfsDirS		*arr;
+		vfsDirC		*arr;
 		ubit32		nTrees;
 	};
 	sharedResourceGroupC<multipleReaderLockC, vfsTreeStateS>	trees;

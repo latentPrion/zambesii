@@ -5,21 +5,21 @@
 	#include <kernel/common/timerTrib/timeTypes.h>
 
 
-struct vfsDirS;
-struct vfsFileS;
+struct vfsDirC;
+struct vfsFileC;
 
-struct vfsDirDescS
+struct vfsDirDescC
 {
 	ubit32			inodeLow, inodeHigh;
-	sharedResourceGroupC<multipleReaderLockC, vfsDirS *>	subDirs;
-	sharedResourceGroupC<multipleReaderLockC, vfsFileS *> files;
+	sharedResourceGroupC<multipleReaderLockC, vfsDirC *>	subDirs;
+	sharedResourceGroupC<multipleReaderLockC, vfsFileC *>	files;
 	ubit32			nSubdirs;
 	ubit32			nFiles;
 	dateS			createdDate, modifiedDate, accessedDate;
 	timeS			createdTime, modifiedTime, accessedTime;
 };
 
-struct vfsFileDescS
+struct vfsFileDescC
 {
 	ubit32			inodeLow, inodeHigh;
 	vfsCacheC		cache;
@@ -30,24 +30,24 @@ struct vfsFileDescS
 
 #define VFSFILE_FLAGS_OPEN	(1<<1)
 
-struct vfsFileS
+struct vfsFileC
 {
-	utf16Char		name[128];
-	vfsFileDescS		*desc;
-	ubit32			flags;
 	ubit8			type;
+	utf16Char		name[128];
+	vfsFileDescC		*desc;
+	ubit32			flags;
 };
 
 
 #define VFSDIR_FLAGS_UNREAD	(1<<0)
 
-struct vfsDirS
+struct vfsDirC
 {
+	ubit8			type;
 	utf16Char		name[128];
-	vfsDirDescS		*desc;
+	vfsDirDescC		*desc;
 	// fsDrvInstS		*fsDrv;
 	ubit32			flags;
-	ubit8			type;
 };
 
 #endif
