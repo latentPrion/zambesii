@@ -312,6 +312,13 @@ void debugPipeC::paddrToStrHex(paddr_t num, uarch_t *curLen)
 	};
 }
 
+void debugPipeC::blitUtf16(utf16Char *str, uarch_t *curLen)
+{
+	for (; *str != 0; *curLen += 1, str++) {
+		convBuff.rsrc[*curLen] = *str;
+	};
+}
+
 void __kprintf(const utf8Char *str, ...)
 {
 	va_list		args;
@@ -327,7 +334,7 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	sarch_t		snum;
 	paddr_t		pnum;
 	unicodePoint	c=0;
-	utf16Char	h, l;
+	utf16Char	h, l, *u16Str;
 	ubit8		nolog=0;
 
 	convBuff.lock.acquire();
@@ -399,6 +406,18 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 						case 'n':
 							nolog = 1;
 							break;
+
+						case 's':
+							u16Str = va_arg(
+								args,
+								utf16Char *);
+
+							blitUtf16(
+								u16Str,
+								&buffLen);
+
+							break;
+
 						default:
 							break;
 						};

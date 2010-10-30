@@ -1,22 +1,23 @@
 
-#include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/string16.h>
 
-void *memset(void *_ptr, int value, size_t count)
+
+void *memset16(void *_ptr, int value, size_t count)
 {
-	ubit8	*ptr = (ubit8 *)_ptr;
+	ubit16	*ptr = (ubit16 *)_ptr;
 
 	if (ptr == __KNULL) { return ptr; };
 
 	while (count--) {
-		*ptr++ = (ubit8)value;
+		*ptr++ = (ubit16)value;
 	};
 	return ptr;
 }
 
-void *memcpy(void *_dest, void *_src, size_t count)
+void *memcpy16(void *_dest, void *_src, size_t count)
 {
-	ubit8		*dest=(ubit8 *)_dest;
-	ubit8		*src=(ubit8 *)_src;
+	ubit16		*dest=(ubit16 *)_dest;
+	ubit16		*src=(ubit16 *)_src;
 
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
@@ -26,18 +27,18 @@ void *memcpy(void *_dest, void *_src, size_t count)
 	return dest;
 }
 
-char *strcpy(char *dest, const char *src)
+utf16Char *strcpy16(utf16Char *dest, const utf16Char *src)
 {
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
 	while (*src) {
 		*dest++ = *src++;
 	};
-	*dest = '\0';
+	*dest = 0;
 	return dest;
 }
 
-size_t strlen(const char *str)
+size_t strlen16(const utf16Char *str)
 {
 	uarch_t		len=0;
 
@@ -49,7 +50,7 @@ size_t strlen(const char *str)
 	return len;
 }
 
-int strcmp(const char *str1, const char *str2)
+int strcmp16(const utf16Char *str1, const utf16Char *str2)
 {
 	if (str1 == __KNULL || str2 == __KNULL) { return 1; };
 	if (str1 == str2) { return 0; };
@@ -63,7 +64,7 @@ int strcmp(const char *str1, const char *str2)
 	return 0;
 }
 
-int strncmp(const char *str1, const char *str2, int count)
+int strncmp16(const utf16Char *str1, const utf16Char *str2, int count)
 {
 	if (str1 == __KNULL || str2 == __KNULL || count == 0) { return 1; };
 	if (str1 == str2) { return 0; };
@@ -76,4 +77,8 @@ int strncmp(const char *str1, const char *str2, int count)
 	};
 	return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
 

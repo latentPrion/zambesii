@@ -4,6 +4,11 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/size_t.h>
 
+/**	EXPLANATION:
+ * Simple, C standard (mostly) compliant UCS-8 string manipulation library. Get
+ * that solidly: NOT UTF-8: UCS-8.
+ **/
+
 #ifdef __cplusplus
 extern "C" {
 #endif

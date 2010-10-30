@@ -16,7 +16,10 @@ public tributaryC
 {
 public:
 	vfsTribC(void);
+	error_t initialize(void) { return ERROR_SUCCESS; };
 	~vfsTribC(void);
+
+	void dumpTrees(void);
 
 public:
 	vfsDirC *getDirectory(utf16Char *path, uarch_t flags);
@@ -43,7 +46,7 @@ private:
 		vfsDirC		*arr;
 		ubit32		nTrees;
 	};
-	sharedResourceGroupC<multipleReaderLockC, vfsTreeStateS>	trees;
+	sharedResourceGroupC<waitLockC, vfsTreeStateS>	trees;
 };
 
 extern vfsTribC		vfsTrib;

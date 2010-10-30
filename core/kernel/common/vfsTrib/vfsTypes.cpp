@@ -60,7 +60,7 @@ error_t vfsFileDescC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-vfsDirDescC::vfsDirDescS(void)
+vfsDirDescC::vfsDirDescC(void)
 {
 	inodeLow = inodeHigh = 0;
 	nSubdirs = nFiles = 0;

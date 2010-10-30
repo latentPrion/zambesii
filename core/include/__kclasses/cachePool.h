@@ -1,5 +1,5 @@
 #ifndef _CACHE_POOL_H
-	#define CACHE_POOL_H
+	#define _CACHE_POOL_H
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/slamCache.h>

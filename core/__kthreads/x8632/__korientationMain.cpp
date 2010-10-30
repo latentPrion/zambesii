@@ -21,21 +21,9 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/execTrib/execTrib.h>
-#include <kernel/common/execTrib/elf.h>
+#include <kernel/common/vfsTrib/vfsTrib.h>
 
 int oo=0;
-
-struct elfHeaderS	e =
-{
-	{
-		'\x7F', 'E', 'L', 'F',
-		EHDR_ID_CLASS_32,
-		EHDR_ID_DATA_BE
-	},
-	EHDR_TYPE_EXECUTABLE,
-	EHDR_ARCH_i386,
-	EHDR_VERSION_CURRENT
-};
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -85,14 +73,14 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
 	DO_OR_DIE(execTrib, initialize(), ret);
+	DO_OR_DIE(vfsTrib, initialize(), ret);
 
-	executableParserS	*fmt;
-
-	__kprintf(NOTICE ORIENT"Identify on fake header: 0x%p.\n",
-		fmt = execTrib.identify(&e));
-
-	__kprintf(NOTICE ORIENT"Is valid? 0x%x.\n", (*fmt->isLocalArch)(&e));
-
+	vfsTrib.dumpTrees();
+	vfsTrib.createTree((utf16Char *)"e\0k\0f\0s\0\0", 0);
+	__kprintf(NOTICE ORIENT"Sample u16: %[s].\n", "e\0k\0f\0s\0\0");
+	vfsTrib.dumpTrees();
+	vfsTrib.deleteTree((utf16Char *)"e\0k\0f\0s\0\0");
+	vfsTrib.dumpTrees();
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 

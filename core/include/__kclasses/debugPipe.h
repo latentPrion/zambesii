@@ -88,6 +88,7 @@ private:
 	void numToStrHexUpper(uarch_t num, uarch_t *len);
 	void numToStrHexLower(uarch_t num, uarch_t *len);
 	void paddrToStrHex(paddr_t num, uarch_t *len);
+	void blitUtf16(utf16Char *str, uarch_t *len);
 
 	debugBufferC		debugBuff;
 	// 'convBuff' is used to expand the passed UTF-8 string into codepoints.

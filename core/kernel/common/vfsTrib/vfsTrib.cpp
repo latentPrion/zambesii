@@ -1,6 +1,9 @@
 
+#include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/string16.h>
 #include <__kstdlib/__kclib/stdlib.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
@@ -14,7 +17,21 @@ vfsTribC::~vfsTribC(void)
 {
 }
 
-vfsDirC *vfsTribC::createTree(utf16Char *name, uarch_t flags)
+void vfsTribC::dumpTrees(void)
+{
+	trees.lock.acquire();
+
+	__kprintf(NOTICE VFSTRIB"Dumping.\t%d trees.\n", trees.rsrc.nTrees);
+	for (uarch_t i=0; i<trees.rsrc.nTrees; i++)
+	{
+		__kprintf(NOTICE VFSTRIB"Tree %d: name: %[s]\n\tDesc @0x%p.\n",
+			i, trees.rsrc.arr[i].name, trees.rsrc.arr[i].desc);
+	};
+
+	trees.lock.release();
+}
+
+vfsDirC *vfsTribC::createTree(utf16Char *name, uarch_t)
 {
 	vfsDirC		*tmp, *tmp2;
 
@@ -43,7 +60,9 @@ vfsDirC *vfsTribC::createTree(utf16Char *name, uarch_t flags)
 	};
 
 	// Create the tree. FIXME: Allocation within a locked section.
-	tmp = malloc(sizeof(vfsDirC) * (trees.rsrc.nTrees + 1));
+	tmp = static_cast<vfsDirC *>(
+		malloc(sizeof(vfsDirC) * (trees.rsrc.nTrees + 1)) );
+
 	if (tmp == __KNULL)
 	{
 		trees.lock.release();
@@ -56,18 +75,20 @@ vfsDirC *vfsTribC::createTree(utf16Char *name, uarch_t flags)
 	tmp = new (&tmp[trees.rsrc.nTrees]) vfsDirC;
 	if (tmp[trees.rsrc.nTrees].initialize() != ERROR_SUCCESS)
 	{
-		tmp[trees.rsrc.nTree].~vfsDirC();
+		tmp[trees.rsrc.nTrees].~vfsDirC();
 		free(tmp);
 
 		trees.lock.release();
 		return __KNULL;
 	};
 
+	strcpy16(tmp[trees.rsrc.nTrees].name, name);
+
 	tmp2 = trees.rsrc.arr;
 	trees.rsrc.arr = tmp;
 	trees.rsrc.nTrees++;
 
-	tree.lock.release();
+	trees.lock.release();
 	free(tmp2);
 	return tmp;
 }

@@ -6,11 +6,11 @@
 // ubit32 foo = TIME_TO_U32(myTime);
 #define TIME_TO_U32(t)			(*(ubit32 *)&t)
 // TIMEU32_TO_TIME(myTime,13,0,0,0);
-#define TIMEU32_TO_TIME(t,h,m,s,ms)			\
+#define TIMEU32_TO_TIME(t,h,m,s,_ms)			\
 	t.hour = h; \
 	t.min = m; \
 	t.sec = s; \
-	t.ms = ms;
+	t.ms = _ms
 
 // time_t myTime = TIME_INIT(13,0,0,0);
 #define TIME_INIT(h,m,s,ms)		{ms,s,m,h}
@@ -21,7 +21,7 @@
 #define DATEU32_TO_DATE(dt,y,m,d)			\
 	dt.year = y; \
 	dt.month = m; \
-	dt.day = d;
+	dt.day = d
 
 // date_t myDate = DATE_INIT(2009,10,11);
 #define DATE_INIT(y,m,d)		{y,m,d}

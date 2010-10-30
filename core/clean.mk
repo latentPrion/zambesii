@@ -28,6 +28,7 @@ clean: fonyphile
 	cd commonlibs/libx86mp; make clean
 	cd commonlibs/libacpi; make clean
 	cd kernel/common/execTrib; make clean
+	cd kernel/common/vfsTrib; make clean
 
 aclean:
 	rm -f *.a *.o __klinkScript.ld
