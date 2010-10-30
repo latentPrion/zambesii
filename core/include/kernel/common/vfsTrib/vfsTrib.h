@@ -15,6 +15,10 @@ class vfsTribC
 public tributaryC
 {
 public:
+	vfsTribC(void);
+	~vfsTribC(void);
+
+public:
 	vfsDirC *getDirectory(utf16Char *path, uarch_t flags);
 	vfsDirC *createDirectory(
 		vfsDirC *parent, utf16Char *dirName,

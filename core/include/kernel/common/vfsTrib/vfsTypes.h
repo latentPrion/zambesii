@@ -5,11 +5,12 @@
 	#include <kernel/common/timerTrib/timeTypes.h>
 
 
-struct vfsDirC;
-struct vfsFileC;
+class vfsDirC;
+class vfsFileC;
 
-struct vfsDirDescC
+class vfsDirDescC
 {
+public:
 	ubit32			inodeLow, inodeHigh;
 	sharedResourceGroupC<multipleReaderLockC, vfsDirC *>	subDirs;
 	sharedResourceGroupC<multipleReaderLockC, vfsFileC *>	files;
@@ -19,8 +20,9 @@ struct vfsDirDescC
 	timeS			createdTime, modifiedTime, accessedTime;
 };
 
-struct vfsFileDescC
+class vfsFileDescC
 {
+public:
 	ubit32			inodeLow, inodeHigh;
 	vfsCacheC		cache;
 	// Max filesize supported by VFS depends on arch.
@@ -30,8 +32,9 @@ struct vfsFileDescC
 
 #define VFSFILE_FLAGS_OPEN	(1<<1)
 
-struct vfsFileC
+class vfsFileC
 {
+public:
 	ubit8			type;
 	utf16Char		name[128];
 	vfsFileDescC		*desc;
@@ -41,8 +44,9 @@ struct vfsFileC
 
 #define VFSDIR_FLAGS_UNREAD	(1<<0)
 
-struct vfsDirC
+class vfsDirC
 {
+public:
 	ubit8			type;
 	utf16Char		name[128];
 	vfsDirDescC		*desc;
