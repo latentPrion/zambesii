@@ -59,7 +59,7 @@ vfsDirC *vfsTribC::createTree(utf16Char *name, uarch_t)
 		};
 	};
 
-	// Create the tree. FIXME: Allocation within a locked section.
+	// Allocate enough space to hold current trees + 1.
 	tmp = static_cast<vfsDirC *>(
 		malloc(sizeof(vfsDirC) * (trees.rsrc.nTrees + 1)) );
 
@@ -72,7 +72,7 @@ vfsDirC *vfsTribC::createTree(utf16Char *name, uarch_t)
 	// Copy old array & use placement new() to construct new object.
 	memcpy(tmp, trees.rsrc.arr, sizeof(vfsDirC) * trees.rsrc.nTrees);
 
-	tmp = new (&tmp[trees.rsrc.nTrees]) vfsDirC;
+	tmp2 = new (&(tmp[trees.rsrc.nTrees])) vfsDirC;
 	if (tmp[trees.rsrc.nTrees].initialize() != ERROR_SUCCESS)
 	{
 		tmp[trees.rsrc.nTrees].~vfsDirC();
@@ -118,4 +118,30 @@ error_t vfsTribC::deleteTree(utf16Char *name)
 	return ERROR_INVALID_ARG_VAL;
 }
 
+error_t vfsTribC::setDefaultTree(utf16Char *name)
+{
+	vfsDirC		tmp;
+
+	trees.lock.acquire();
+
+	for (uarch_t i=0; i<trees.rsrc.nTrees; i++)
+	{
+		// If tree is found:
+		if (strcmp16(trees.rsrc.arr[i].name, name) == 0)
+		{
+			memcpy(&tmp, &trees.rsrc.arr[i], sizeof(vfsDirC));
+			memcpy(
+				&trees.rsrc.arr[i], &trees.rsrc.arr[0],
+				sizeof(vfsDirC));
+
+			memcpy(&trees.rsrc.arr[0], &tmp, sizeof(vfsDirC));
+
+			trees.lock.release();
+			return ERROR_SUCCESS;
+		};
+	};
+
+	trees.lock.release();
+	return ERROR_INVALID_ARG_VAL;
+}
 

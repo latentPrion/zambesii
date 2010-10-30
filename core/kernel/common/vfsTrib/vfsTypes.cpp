@@ -29,7 +29,10 @@ error_t vfsFileC::initialize(void)
 
 vfsDirC::vfsDirC(void)
 {
-	memset(this, 0, sizeof(*this));
+	memset(name, 0, sizeof(utf16Char) * 128);
+	type = 0;
+	desc = 0;
+	flags = 0;
 }
 
 error_t vfsDirC::initialize(void)
