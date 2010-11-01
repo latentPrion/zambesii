@@ -14,7 +14,7 @@ error_t vfsFileC::initialize(void)
 {
 	error_t		ret;
 
-	this->desc = new vfsFileDescC;
+	this->desc = new vfsFileInodeC;
 	if (this->desc == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
@@ -39,7 +39,7 @@ error_t vfsDirC::initialize(void)
 {
 	error_t		ret;
 
-	this->desc = new vfsDirDescC;
+	this->desc = new vfsDirInodeC;
 	if (this->desc == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
@@ -52,18 +52,18 @@ error_t vfsDirC::initialize(void)
 	return ret;
 }
 
-vfsFileDescC::vfsFileDescC(void)
+vfsFileInodeC::vfsFileInodeC(void)
 {
 	inodeLow = inodeHigh = 0;
 	fileSize = 0;
 }
 
-error_t vfsFileDescC::initialize(void)
+error_t vfsFileInodeC::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-vfsDirDescC::vfsDirDescC(void)
+vfsDirInodeC::vfsDirInodeC(void)
 {
 	inodeLow = inodeHigh = 0;
 	nSubdirs = nFiles = 0;
@@ -80,7 +80,7 @@ vfsDirDescC::vfsDirDescC(void)
 	subDirs.rsrc = __KNULL;
 }
 
-error_t vfsDirDescC::initialize(void)
+error_t vfsDirInodeC::initialize(void)
 {
 	return ERROR_SUCCESS;
 }

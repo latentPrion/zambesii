@@ -1,8 +1,10 @@
 #ifndef _VIRTUAL_FILESYSTEM_TRIBUTARY_H
 	#define _VIRTUAL_FILESYSTEM_TRIBUTARY_H
 
+	#include <arch/arch.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/cachePool.h>
+	#include <__kclasses/multiLayerHash.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
@@ -47,6 +49,13 @@ private:
 		ubit32		nTrees;
 	};
 	sharedResourceGroupC<waitLockC, vfsTreeStateS>	trees;
+
+	/* Supports 32-bit and 64-bit VFS inodes, even on a 32-bit build.
+	 * Can be easily extended to support 128-bit, and upwards with changes
+	 * only to the following two lines.
+	 **/
+	multiLayerHashC<multiLayerHashC<vfsDirInodeC>>	dirDescHash;
+	multiLayerHashC<multiLayerHashC<vfsFileInodeC>>	fileDescHash;
 };
 
 extern vfsTribC		vfsTrib;

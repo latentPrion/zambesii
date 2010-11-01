@@ -10,12 +10,12 @@
 class vfsDirC;
 class vfsFileC;
 
-class vfsDirDescC
+class vfsDirInodeC
 {
 public:
-	vfsDirDescC(void);
+	vfsDirInodeC(void);
 	error_t initialize(void);
-	~vfsDirDescC(void) {};
+	~vfsDirInodeC(void) {};
 
 public:
 	ubit32			inodeLow, inodeHigh;
@@ -27,12 +27,12 @@ public:
 	timeS			createdTime, modifiedTime, accessedTime;
 };
 
-class vfsFileDescC
+class vfsFileInodeC
 {
 public:
-	vfsFileDescC(void);
+	vfsFileInodeC(void);
 	error_t initialize(void);
-	~vfsFileDescC(void) {};
+	~vfsFileInodeC(void) {};
 
 public:
 	ubit32			inodeLow, inodeHigh;
@@ -54,7 +54,7 @@ public:
 public:
 	ubit8			type;
 	utf16Char		name[128];
-	vfsFileDescC		*desc;
+	vfsFileInodeC		*desc;
 	ubit32			flags;
 };
 
@@ -71,7 +71,7 @@ public:
 public:
 	ubit8			type;
 	utf16Char		name[128];
-	vfsDirDescC		*desc;
+	vfsDirInodeC		*desc;
 	// fsDrvInstS		*fsDrv;
 	ubit32			flags;
 };
