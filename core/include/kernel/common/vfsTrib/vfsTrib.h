@@ -54,8 +54,8 @@ private:
 	 * Can be easily extended to support 128-bit, and upwards with changes
 	 * only to the following two lines.
 	 **/
-	multiLayerHashC<multiLayerHashC<vfsDirInodeC>>	dirDescHash;
-	multiLayerHashC<multiLayerHashC<vfsFileInodeC>>	fileDescHash;
+	multiLayerHashC< multiLayerHashC<vfsDirInodeC> >	dirDescHash;
+	multiLayerHashC< multiLayerHashC<vfsFileInodeC> >	fileDescHash;
 };
 
 extern vfsTribC		vfsTrib;
