@@ -49,18 +49,19 @@ public:
 public:
 	error_t insert(ubit32 key, T *value);
 	error_t get(ubit32 key, T **ret);
+	void erase(ubit32 key);
 
 private:
 	union mlHashLayerU
 	{
-		T	*leaf[MLHASH_PTRS_PER_LAYER];
+		T		*leaf[MLHASH_PTRS_PER_LAYER];
 		mlHashLayerU	*layer[MLHASH_PTRS_PER_LAYER];
 	};
 
 	sharedResourceGroupC<waitLockC, mlHashLayerU *>	top;
 
 private:
-	mlHashLayerU *getNewLayer(void);
+	void *getNewLayer(void);
 };
 
 
@@ -76,7 +77,7 @@ multiLayerHashC<T>::multiLayerHashC(void)
 template <class T>
 error_t multiLayerHashC<T>::initialize(void)
 {
-	top.rsrc = getNewLayer();
+	top.rsrc = new (getNewLayer()) mlHashLayerU;
 	if (top.rsrc == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
@@ -84,7 +85,7 @@ error_t multiLayerHashC<T>::initialize(void)
 }
 
 template <class T>
-multiLayerHashC<T>::mlHashLayerU *multiLayerHashC::getNewLayer(void)
+void *multiLayerHashC<T>::getNewLayer(void)
 {
 	mlHashLayerU		*ret;
 
@@ -107,7 +108,7 @@ error_t multiLayerHashC<T>::insert(ubit32 key, T *item)
 	idx[1] = MLHASH_GET_IDX2();
 	idx[2] = MLHASH_GET_IDX3();
 
-	top.lock.acquire()
+	top.lock.acquire();
 
 	curLayer = top.rsrc;
 	for (uarch_t i=0; i<MLHASH_NLAYERS; i++)
@@ -117,7 +118,9 @@ error_t multiLayerHashC<T>::insert(ubit32 key, T *item)
 		{
 			if (curLayer->layer[idx[i]] == __KNULL)
 			{
-				curLayer->layer[idx[i]] = getNewLayer();
+				curLayer->layer[idx[i]] = new (getNewLayer())
+					mlHashLayerU;
+
 				if (curLayer->layer[idx[i]] == __KNULL)
 				{
 					top.lock.release();
@@ -172,6 +175,42 @@ error_t multiLayerHashC<T>::get(ubit32 key, T **ret)
 
 	top.lock.release();
 	return ERROR_SUCCESS;
+}
+
+template <class T>
+void multiLayerHashC<T>::erase(ubit32 key)
+{
+	ubit16		idx[MLHASH_NLAYERS];
+	mlHashLayerU	*curLayer;
+
+	idx[0] = MLHASH_GET_IDX1();
+	idx[1] = MLHASH_GET_IDX2();
+	idx[2] = MLHASH_GET_IDX3();
+
+	top.lock.acquire();
+
+	curLayer = top.rsrc;
+	for (uarch_t i=0; i<MLHASH_NLAYERS; i++)
+	{
+		// If we're at a non-leaf layer:
+		if (i < 2)
+		{
+			// If tree doesn't go that far down,
+			if (curLayer->layer[idx[i]] == __KNULL)
+			{
+				top.lock.release();
+				// Item doesn't exist.
+				return;
+			};
+			curLayer = curLayer->layer[idx[i]];
+			continue;
+		};
+
+		// Now we're at a leaf layer. Get return value.
+		curLayer->leaf[idx[i]] = __KNULL;
+	};
+
+	top.lock.release();
 }
 
 #endif
