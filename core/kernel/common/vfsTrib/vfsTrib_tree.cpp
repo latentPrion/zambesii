@@ -9,6 +9,8 @@ void vfsTribC::dumpTrees(void)
 	vfsDirC		*curDir;
 
 	__kprintf(NOTICE VFSTRIB"Dumping: %d trees.\n", trees->nSubDirs);
+	__kprintf(NOTICE VFSTRIB"\tDefault tree: inode: %u, %[s].\n",
+		getDefaultTree()->desc->inodeLow, getDefaultTree()->name);
 
 	// Iterate through all current trees and print debug info.
 	trees->subDirs.lock.acquire();
@@ -24,23 +26,15 @@ void vfsTribC::dumpTrees(void)
 	trees->subDirs.lock.release();
 }
 
-vfsDirC *vfsTribC::getRootTree(void)
+vfsDirC *vfsTribC::getDefaultTree(void)
 {
 	vfsDirC		*ret;
+	uarch_t		rwFlags;
 
-	trees->subDirs.lock.acquire();
+	defaultTree.lock.readAcquire(&rwFlags);
+	ret = defaultTree.rsrc;
+	defaultTree.lock.readRelease(rwFlags);
 
-	// If there are no trees in the VFS:
-	if (trees->subDirs.rsrc == __KNULL)
-	{
-		trees->subDirs.lock.release();
-		return __KNULL;
-	};
-
-	// Get _vfs tree.
-	ret = trees->subDirs.rsrc;
-
-	trees->subDirs.lock.release();
 	return ret;
 }
 
@@ -61,43 +55,53 @@ error_t vfsTribC::createTree(utf16Char *name)
 
 error_t vfsTribC::deleteTree(utf16Char *name)
 {
-	return deleteFolder(trees, name);
+	vfsDirC		*curDef, *cur;
+	ubit8		foundNewDefault=0;
+
+	// Check to see if it's the default. If it is, set the next in line.
+	curDef = getDefaultTree();
+	if (getDirDesc(trees, name) == curDef)
+	{
+		trees->subDirs.lock.acquire();
+
+		cur = trees->subDirs.rsrc;
+		for (; cur != __KNULL; cur = cur->next)
+		{
+			if (cur == curDef) {
+				continue;
+			};
+
+			// Set next in line as default and move on.
+			defaultTree.lock.writeAcquire();
+			defaultTree.rsrc = cur;
+			defaultTree.lock.writeRelease();
+
+			foundNewDefault = 1;
+			break;
+		};
+
+		trees->subDirs.lock.release();
+	};
+
+	if (foundNewDefault) {
+		return deleteFolder(trees, name);
+	};
+	return ERROR_CRITICAL;
 }
 
 error_t vfsTribC::setDefaultTree(utf16Char *name)
 {
-	vfsDirC		*curDesc, *prevDesc;
+	vfsDirC		*dir;
 
-	prevDesc = __KNULL;
-
-	trees->subDirs.lock.acquire();
-
-	curDesc = trees->subDirs.rsrc;
-	for (; curDesc != __KNULL; )
-	{
-		// If we've found the tree:
-		if (strcmp16(curDesc->name, name) == 0)
-		{
-			// If the tree is already the default:
-			if (prevDesc == __KNULL)
-			{
-				trees->subDirs.lock.release();
-				return ERROR_SUCCESS;
-			};
-
-			prevDesc->next = curDesc->next;
-			curDesc->next = trees->subDirs.rsrc;
-			trees->subDirs.rsrc = curDesc;
-
-			trees->subDirs.lock.release();
-			return ERROR_SUCCESS;
-		};
-
-		prevDesc = curDesc;
-		curDesc = curDesc->next;
+	dir = getDirDesc(trees, name);
+	if (dir == __KNULL) {
+		return ERROR_INVALID_ARG_VAL;
 	};
 
-	trees->subDirs.lock.release();
-	return ERROR_INVALID_ARG_VAL;
+	defaultTree.lock.writeAcquire();
+	defaultTree.rsrc = dir;
+	defaultTree.lock.writeRelease();
+
+	return ERROR_SUCCESS;
 }
 

@@ -9,6 +9,7 @@
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 
 #define VFSTRIB			"VFS Trib: "
@@ -39,7 +40,7 @@ public:
 	error_t deleteFolder(vfsDirInodeC *inode, utf16Char *name);
 
 	// Tree manipulation.
-	vfsDirC *getRootTree(void);
+	vfsDirC *getDefaultTree(void);
 	error_t createTree(utf16Char *name);
 	error_t deleteTree(utf16Char *name);
 	error_t setDefaultTree(utf16Char *name);
@@ -59,6 +60,9 @@ private:
 	slamCacheC		*dirDescCache;
 
 	ubit32			inodeCounter;
+
+	// Default VFS tree for unix styled root.
+	sharedResourceGroupC<multipleReaderLockC, vfsDirC *>	defaultTree;
 
 	// The actual VFS directory hierarchy.
 	vfsDirC			_vfs;

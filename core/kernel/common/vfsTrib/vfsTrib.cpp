@@ -20,6 +20,7 @@ inodeStack(VFSTRIB_INODE_STACK_NITEMS)
 	strcpy16(_vfs.name, (utf16Char *)"");
 	inodeCounter = 0;
 	trees = __KNULL;
+	defaultTree.rsrc = __KNULL;
 }
 
 vfsTribC::~vfsTribC(void)
