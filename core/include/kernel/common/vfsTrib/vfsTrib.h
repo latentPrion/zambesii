@@ -4,6 +4,7 @@
 	#include <arch/arch.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/cachePool.h>
+	#include <__kclasses/arrayStack.h>
 	#include <__kclasses/multiLayerHash.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/sharedResourceGroup.h>
@@ -12,50 +13,56 @@
 
 #define VFSTRIB			"VFS Trib: "
 
+#define VFSTRIB_INODE_STACK_NITEMS	(4096)
+
 class vfsTribC
 :
 public tributaryC
 {
 public:
 	vfsTribC(void);
-	error_t initialize(void) { return ERROR_SUCCESS; };
+	error_t initialize(void);
 	~vfsTribC(void);
 
 	void dumpTrees(void);
 
 public:
-	vfsDirC *getDirectory(utf16Char *path, uarch_t flags);
-	vfsDirC *createDirectory(
-		vfsDirC *parent, utf16Char *dirName,
-		uarch_t flags, status_t *status);
+	// VFS Inode allocation.
+	error_t getNewInode(ubit32 *inodeLow);
+	void releaseDirInode(ubit32 inodeLow);
+	error_t registerDirInode(ubit32 inodeLow, vfsDirInodeC *inode) {
+		return dirInodeHash.insert(inodeLow, inode);
+	};
 
-	void deleteDirectory(vfsDirC *parent, utf16Char *dirName);
+	// Folder manipulation.
+	error_t createFolder(vfsDirC *dir, utf16Char *name, uarch_t flags=0);
+	error_t deleteFolder(vfsDirInodeC *inode, utf16Char *name);
 
-	vfsFileC *getFile(utf16Char *path, uarch_t flags);
-	vfsFileC *createFile(
-		vfsDirC *parent, utf16Char *fileName,
-		uarch_t flags, status_t *status);
-
-	void deleteFile(vfsDirC *parent, utf16Char *fileName);
-
-	vfsDirC *createTree(utf16Char *name, uarch_t flags);
+	// Tree manipulation.
+	vfsDirC *getRootTree(void);
+	error_t createTree(utf16Char *name);
 	error_t deleteTree(utf16Char *name);
 	error_t setDefaultTree(utf16Char *name);
 
 private:
-	struct vfsTreeStateS
-	{
-		vfsDirC		*arr;
-		ubit32		nTrees;
-	};
-	sharedResourceGroupC<waitLockC, vfsTreeStateS>	trees;
+	vfsFileC *getFileDesc(vfsDirInodeC *inode, utf16Char *name);
+	vfsDirC *getDirDesc(vfsDirInodeC *inode, utf16Char *name);
 
-	/* Supports 32-bit and 64-bit VFS inodes, even on a 32-bit build.
-	 * Can be easily extended to support 128-bit, and upwards with changes
-	 * only to the following two lines.
-	 **/
-	multiLayerHashC< multiLayerHashC<vfsDirInodeC> >	dirDescHash;
-	multiLayerHashC< multiLayerHashC<vfsFileInodeC> >	fileDescHash;
+private:
+	// For now, VFS inodes are only 32-bits long.
+	multiLayerHashC<vfsDirInodeC>		dirInodeHash;
+	multiLayerHashC<vfsFileInodeC>		fileInodeHash;
+	// Stack of released VFS inode numbers.
+	arrayStackC<ubit32>	inodeStack;
+	// Object caches for the descriptors.
+	slamCacheC		*fileDescCache;
+	slamCacheC		*dirDescCache;
+
+	ubit32			inodeCounter;
+
+	// The actual VFS directory hierarchy.
+	vfsDirC			root;
+	vfsDirInodeC		trees;
 };
 
 extern vfsTribC		vfsTrib;

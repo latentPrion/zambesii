@@ -27,6 +27,17 @@ error_t vfsFileC::initialize(void)
 	return ret;
 }
 
+vfsFileInodeC::vfsFileInodeC(void)
+{
+	inodeLow = 0;
+	fileSize = 0;
+}
+
+error_t vfsFileInodeC::initialize(void)
+{
+	return ERROR_SUCCESS;
+}
+
 vfsDirC::vfsDirC(void)
 {
 	memset(name, 0, sizeof(utf16Char) * 128);
@@ -52,21 +63,15 @@ error_t vfsDirC::initialize(void)
 	return ret;
 }
 
-vfsFileInodeC::vfsFileInodeC(void)
+vfsDirC::~vfsDirC(void)
 {
-	inodeLow = inodeHigh = 0;
-	fileSize = 0;
-}
-
-error_t vfsFileInodeC::initialize(void)
-{
-	return ERROR_SUCCESS;
+	delete this->desc;
 }
 
 vfsDirInodeC::vfsDirInodeC(void)
 {
-	inodeLow = inodeHigh = 0;
-	nSubdirs = nFiles = 0;
+	inodeLow = 0;
+	nSubDirs = nFiles = 0;
 
 	DATEU32_TO_DATE(createdDate, 0, 0, 0);
 	DATEU32_TO_DATE(modifiedDate, 0, 0, 0);
@@ -82,6 +87,26 @@ vfsDirInodeC::vfsDirInodeC(void)
 
 error_t vfsDirInodeC::initialize(void)
 {
+	error_t		ret;
+
+	ret = vfsTrib.getNewInode(&this->inodeLow);
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
+
+	// Now register the new inode in the dir inode hash.
+	ret = vfsTrib.registerDirInode(this->inodeLow, this);
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	}
+
 	return ERROR_SUCCESS;
 }
+
+vfsDirInodeC::~vfsDirInodeC(void)
+{
+	// Release the VFS Inode number.
+	vfsTrib.releaseDirInode(this->inodeLow);
+}
+
 

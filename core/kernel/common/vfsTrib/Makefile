@@ -1,6 +1,7 @@
 .PHONY=
 DELIVERABLE=../../../vfsTrib.a
-OBJFILES=vfsTrib.o vfsTypes.o
+OBJFILES=vfsTrib.o vfsTypes.o vfsTrib_traverse.o vfsTrib_tree.o \
+	vfsTrib_folder.o
 
 all: Makefile $(DELIVERABLE)
 

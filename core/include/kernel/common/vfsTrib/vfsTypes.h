@@ -15,13 +15,13 @@ class vfsDirInodeC
 public:
 	vfsDirInodeC(void);
 	error_t initialize(void);
-	~vfsDirInodeC(void) {};
+	~vfsDirInodeC(void);
 
 public:
-	ubit32			inodeLow, inodeHigh;
+	ubit32			inodeLow/*, inodeHigh*/;
 	sharedResourceGroupC<waitLockC, vfsDirC *>	subDirs;
 	sharedResourceGroupC<waitLockC, vfsFileC *>	files;
-	ubit32			nSubdirs;
+	ubit32			nSubDirs;
 	ubit32			nFiles;
 	dateS			createdDate, modifiedDate, accessedDate;
 	timeS			createdTime, modifiedTime, accessedTime;
@@ -32,10 +32,10 @@ class vfsFileInodeC
 public:
 	vfsFileInodeC(void);
 	error_t initialize(void);
-	~vfsFileInodeC(void) {};
+	~vfsFileInodeC(void);
 
 public:
-	ubit32			inodeLow, inodeHigh;
+	ubit32			inodeLow/*, inodeHigh*/;
 	// vfsCacheC		cache;
 	// Max filesize supported by VFS depends on arch.
 	uarch_t			fileSize;
@@ -49,13 +49,15 @@ class vfsFileC
 public:
 	vfsFileC(void);
 	error_t initialize(void);
-	~vfsFileC(void) {};
+	~vfsFileC(void);
 
 public:
-	ubit8			type;
 	utf16Char		name[128];
+	vfsDirC			*parent;
+	vfsFileC		*next;
 	vfsFileInodeC		*desc;
 	ubit32			flags;
+	ubit8			type;
 };
 
 
@@ -66,14 +68,15 @@ class vfsDirC
 public:
 	vfsDirC(void);
 	error_t initialize(void);
-	~vfsDirC(void) {};
+	~vfsDirC(void);
 
 public:
-	ubit8			type;
 	utf16Char		name[128];
+	vfsDirC			*next, *parent;
 	vfsDirInodeC		*desc;
 	// fsDrvInstS		*fsDrv;
 	ubit32			flags;
+	ubit8			type;
 };
 
 #endif

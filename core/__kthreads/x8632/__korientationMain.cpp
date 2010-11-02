@@ -75,6 +75,13 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 
+	vfsTrib.createTree((utf16Char *)"e\0k\0f\0s\0\0");
+	vfsTrib.createTree((utf16Char *)"d\0e\0f\0a\0u\0l\0t\0\0");
+	vfsTrib.createTree((utf16Char *)"S\0A\0P\0P\0H\0I\0R\0E\0\0");
+	vfsTrib.deleteTree((utf16Char *)"e\0k\0f\0s\0\0");
+	vfsTrib.dumpTrees();
+	
+
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 
