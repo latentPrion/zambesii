@@ -8,39 +8,39 @@ void vfsTribC::dumpTrees(void)
 {
 	vfsDirC		*curDir;
 
-	__kprintf(NOTICE VFSTRIB"Dumping: %d trees.\n", trees.nSubDirs);
+	__kprintf(NOTICE VFSTRIB"Dumping: %d trees.\n", trees->nSubDirs);
 
 	// Iterate through all current trees and print debug info.
-	trees.subDirs.lock.acquire();
+	trees->subDirs.lock.acquire();
 
-	curDir = trees.subDirs.rsrc;
-	for (uarch_t i=0; i<trees.nSubDirs && curDir != __KNULL;
-		curDir = curDir->next)
+	curDir = trees->subDirs.rsrc;
+	for (uarch_t i=0; i<trees->nSubDirs && curDir != __KNULL;
+		curDir = curDir->next, i++)
 	{
-		__kprintf(NOTICE VFSTRIB"Tree %d: name: %[s].\n",
-			i, curDir->name);
+		__kprintf(NOTICE VFSTRIB"Tree %d: inode: %u name: %[s].\n",
+			i, curDir->desc->inodeLow, curDir->name);
 	};
 
-	trees.subDirs.lock.release();
+	trees->subDirs.lock.release();
 }
 
 vfsDirC *vfsTribC::getRootTree(void)
 {
 	vfsDirC		*ret;
 
-	trees.subDirs.lock.acquire();
+	trees->subDirs.lock.acquire();
 
 	// If there are no trees in the VFS:
-	if (trees.subDirs.rsrc == __KNULL)
+	if (trees->subDirs.rsrc == __KNULL)
 	{
-		trees.subDirs.lock.release();
+		trees->subDirs.lock.release();
 		return __KNULL;
 	};
 
 	// Get root tree.
-	ret = trees.subDirs.rsrc;
+	ret = trees->subDirs.rsrc;
 
-	trees.subDirs.lock.release();
+	trees->subDirs.lock.release();
 	return ret;
 }
 
@@ -50,7 +50,7 @@ error_t vfsTribC::createTree(utf16Char *name)
 	error_t		ret;
 
 	// Make sure that tree doesn't already exist.
-	dirDesc = getDirDesc(&trees, name);
+	dirDesc = getDirDesc(trees, name);
 	if (dirDesc != __KNULL) {
 		return ERROR_SUCCESS;
 	};
@@ -61,7 +61,7 @@ error_t vfsTribC::createTree(utf16Char *name)
 
 error_t vfsTribC::deleteTree(utf16Char *name)
 {
-	return deleteFolder(&trees, name);
+	return deleteFolder(trees, name);
 }
 
 error_t vfsTribC::setDefaultTree(utf16Char *name)
@@ -70,9 +70,9 @@ error_t vfsTribC::setDefaultTree(utf16Char *name)
 
 	prevDesc = __KNULL;
 
-	trees.subDirs.lock.acquire();
+	trees->subDirs.lock.acquire();
 
-	curDesc = trees.subDirs.rsrc;
+	curDesc = trees->subDirs.rsrc;
 	for (; curDesc != __KNULL; )
 	{
 		// If we've found the tree:
@@ -81,15 +81,15 @@ error_t vfsTribC::setDefaultTree(utf16Char *name)
 			// If the tree is already the default:
 			if (prevDesc == __KNULL)
 			{
-				trees.subDirs.lock.release();
+				trees->subDirs.lock.release();
 				return ERROR_SUCCESS;
 			};
 
 			prevDesc->next = curDesc->next;
-			curDesc->next = trees.subDirs.rsrc;
-			trees.subDirs.rsrc = curDesc;
+			curDesc->next = trees->subDirs.rsrc;
+			trees->subDirs.rsrc = curDesc;
 
-			trees.subDirs.lock.release();
+			trees->subDirs.lock.release();
 			return ERROR_SUCCESS;
 		};
 
@@ -97,7 +97,7 @@ error_t vfsTribC::setDefaultTree(utf16Char *name)
 		curDesc = curDesc->next;
 	};
 
-	trees.subDirs.lock.release();
+	trees->subDirs.lock.release();
 	return ERROR_INVALID_ARG_VAL;
 }
 

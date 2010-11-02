@@ -13,13 +13,13 @@ inodeStack(VFSTRIB_INODE_STACK_NITEMS)
 {
 	// Loop the root to point to itself.
 	root.parent = &root;
-	root.desc = &trees;
 	// Root cannot have any siblings.
 	root.next = __KNULL;
 	root.flags = 0;
 	root.type = 0;
 	strcpy16(root.name, (utf16Char *)"");
 	inodeCounter = 0;
+	trees = __KNULL;
 }
 
 vfsTribC::~vfsTribC(void)
@@ -54,6 +54,12 @@ error_t vfsTribC::initialize(void)
 	if (dirDescCache == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
+
+	ret = root.initialize();
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
+	trees = root.desc;
 
 	return ERROR_SUCCESS;
 }

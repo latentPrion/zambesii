@@ -62,7 +62,7 @@ private:
 
 	// The actual VFS directory hierarchy.
 	vfsDirC			root;
-	vfsDirInodeC		trees;
+	vfsDirInodeC		*trees;
 };
 
 extern vfsTribC		vfsTrib;
