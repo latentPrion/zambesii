@@ -11,13 +11,13 @@ vfsTribC::vfsTribC(void)
 :
 inodeStack(VFSTRIB_INODE_STACK_NITEMS)
 {
-	// Loop the root to point to itself.
-	root.parent = &root;
-	// Root cannot have any siblings.
-	root.next = __KNULL;
-	root.flags = 0;
-	root.type = 0;
-	strcpy16(root.name, (utf16Char *)"");
+	// Loop the _vfs to point to itself.
+	_vfs.parent = &_vfs;
+	// _vfs cannot have any siblings.
+	_vfs.next = __KNULL;
+	_vfs.flags = 0;
+	_vfs.type = 0;
+	strcpy16(_vfs.name, (utf16Char *)"");
 	inodeCounter = 0;
 	trees = __KNULL;
 }
@@ -55,11 +55,11 @@ error_t vfsTribC::initialize(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	ret = root.initialize();
+	ret = _vfs.initialize();
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};
-	trees = root.desc;
+	trees = _vfs.desc;
 
 	return ERROR_SUCCESS;
 }

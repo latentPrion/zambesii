@@ -61,7 +61,7 @@ private:
 	ubit32			inodeCounter;
 
 	// The actual VFS directory hierarchy.
-	vfsDirC			root;
+	vfsDirC			_vfs;
 	vfsDirInodeC		*trees;
 };
 

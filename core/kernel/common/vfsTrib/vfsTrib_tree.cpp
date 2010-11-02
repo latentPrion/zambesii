@@ -37,7 +37,7 @@ vfsDirC *vfsTribC::getRootTree(void)
 		return __KNULL;
 	};
 
-	// Get root tree.
+	// Get _vfs tree.
 	ret = trees->subDirs.rsrc;
 
 	trees->subDirs.lock.release();
@@ -55,7 +55,7 @@ error_t vfsTribC::createTree(utf16Char *name)
 		return ERROR_SUCCESS;
 	};
 
-	ret = createFolder(&root, name, 0);
+	ret = createFolder(&_vfs, name, 0);
 	return ret;
 }
 
