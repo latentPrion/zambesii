@@ -81,6 +81,13 @@ error_t vfsTribC::deleteTree(utf16Char *name)
 		};
 
 		trees->subDirs.lock.release();
+	}
+	else
+	{
+		/* If we weren't deleting the default, set this to 1 so the
+		 *code below to actually remove the tree will be executed.
+		 **/
+		foundNewDefault = 1;
 	};
 
 	if (foundNewDefault) {
