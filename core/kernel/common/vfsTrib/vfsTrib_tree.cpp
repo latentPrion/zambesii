@@ -10,7 +10,7 @@ void vfsTribC::dumpTrees(void)
 	vfsDirC		*curDir;
 
 	__kprintf(NOTICE VFSTRIB"Dumping: %d trees.\n", trees->nSubDirs);
-	__kprintf(NOTICE VFSTRIB"\tDefault tree: inode: %u, %s.\n",
+	__kprintf(NOTICE VFSTRIB"\tDefault tree: inode: %u, :%s.\n",
 		getDefaultTree()->desc->inodeLow, getDefaultTree()->name);
 
 	// Iterate through all current trees and print debug info.
@@ -20,7 +20,7 @@ void vfsTribC::dumpTrees(void)
 	for (uarch_t i=0; i<trees->nSubDirs && curDir != __KNULL;
 		curDir = curDir->next, i++)
 	{
-		__kprintf(NOTICE VFSTRIB"Tree %d: inode: %u name: %s.\n",
+		__kprintf(NOTICE"\tTree %d: inode: %u name: :%s.\n",
 			i, curDir->desc->inodeLow, curDir->name);
 	};
 
@@ -41,6 +41,9 @@ vfsDirC *vfsTribC::getDefaultTree(void)
 
 vfsDirC *vfsTribC::getTree(utf8Char *name)
 {
+	if (name[0] == ':') {
+		name++;
+	};
 	return vfsTraverse::getDirDesc(trees, name);
 }
 
@@ -48,6 +51,10 @@ error_t vfsTribC::createTree(utf8Char *name, uarch_t)
 {
 	vfsDirC		*dirDesc;
 	error_t		ret;
+
+	if (name[0] == ':') {
+		name++;
+	};
 
 	// Make sure that tree doesn't already exist.
 	dirDesc = vfsTraverse::getDirDesc(trees, name);
@@ -63,6 +70,10 @@ error_t vfsTribC::deleteTree(utf8Char *name)
 {
 	vfsDirC		*curDef, *cur;
 	ubit8		foundNewDefault=0;
+
+	if (name[0] == ':') {
+		name++;
+	};
 
 	// Check to see if it's the default. If it is, set the next in line.
 	curDef = getDefaultTree();
@@ -105,6 +116,10 @@ error_t vfsTribC::deleteTree(utf8Char *name)
 error_t vfsTribC::setDefaultTree(utf8Char *name)
 {
 	vfsDirC		*dir;
+
+	if (name[0] == ':') {
+		name++;
+	};
 
 	dir = vfsTraverse::getDirDesc(trees, name);
 	if (dir == __KNULL) {
