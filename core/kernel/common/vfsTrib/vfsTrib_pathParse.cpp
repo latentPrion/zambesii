@@ -6,7 +6,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-status_t vfsTribC::getPath(utf16Char *path, ubit8 *type, void **ret)
+status_t vfsTribC::getPath(utf8Char *path, ubit8 *type, void **ret)
 {
 	vfsDirC		*dir=0;
 	sbit32		idx=0;

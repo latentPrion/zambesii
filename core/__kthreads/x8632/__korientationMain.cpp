@@ -79,11 +79,11 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	void		*r;
 	status_t	st;
 
-	vfsTrib.createTree((utf16Char *)":\0e\0k\0f\0s\0\0");
-	vfsTrib.setDefaultTree((utf16Char *)":\0e\0k\0f\0s\0\0");
-	vfsTrib.createTree((utf16Char *)":\0s\0a\0p\0p\0h\0i\0r\0e\0\0");
-	vfsTrib.createTree((utf16Char *)":\0f\0t\0p\0\0");
-	st = vfsTrib.getPath((utf16Char *)":\0e\0k\0f\0s\0\0", &t, &r);
+	vfsTrib.createTree((utf8Char *)":ekfs");
+	vfsTrib.setDefaultTree((utf8Char *)":ekfs");
+	vfsTrib.createTree((utf8Char *)":sapphire");
+	vfsTrib.createTree((utf8Char *)":ftp");
+	st = vfsTrib.getPath((utf8Char *)":ekfs", &t, &r);
 
 	__kprintf(NOTICE ORIENT"Result from getPath: st %d, t %d, r %p.\n",
 		st, t, r);

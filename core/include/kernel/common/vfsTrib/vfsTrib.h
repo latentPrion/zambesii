@@ -35,26 +35,26 @@ public:
 
 public:
 	// VFS path traversal.
-	status_t getPath(utf16Char *path, ubit8 *type, void **ret);
+	status_t getPath(utf8Char *path, ubit8 *type, void **ret);
 
 	// Folder manipulation.
-	error_t createFolder(vfsDirC *dir, utf16Char *name, uarch_t flags=0);
-	error_t deleteFolder(vfsDirInodeC *inode, utf16Char *name);
+	error_t createFolder(vfsDirC *dir, utf8Char *name, uarch_t flags=0);
+	error_t deleteFolder(vfsDirInodeC *inode, utf8Char *name);
 	status_t renameFolder(
-		vfsDirInodeC *inode, utf16Char *oldName, utf16Char *newName);
+		vfsDirInodeC *inode, utf8Char *oldName, utf8Char *newName);
 
 	// File manipulation.
-	error_t createFile(vfsDirC *dir, utf16Char *name, uarch_t flags=0);
-	error_t deleteFile(vfsDirInodeC *inode, utf16Char *name);
+	error_t createFile(vfsDirC *dir, utf8Char *name, uarch_t flags=0);
+	error_t deleteFile(vfsDirInodeC *inode, utf8Char *name);
 	status_t renameFile(
-		vfsDirInodeC *inode, utf16Char *oldName, utf16Char *newName);
+		vfsDirInodeC *inode, utf8Char *oldName, utf8Char *newName);
 
 	// Tree manipulation.
 	vfsDirC *getDefaultTree(void);
-	vfsDirC *getTree(utf16Char *name);
-	error_t createTree(utf16Char *name, uarch_t flags=0);
-	error_t deleteTree(utf16Char *name);
-	error_t setDefaultTree(utf16Char *name);
+	vfsDirC *getTree(utf8Char *name);
+	error_t createTree(utf8Char *name, uarch_t flags=0);
+	error_t deleteTree(utf8Char *name);
+	error_t setDefaultTree(utf8Char *name);
 
 public:
 	// VFS Inode allocation.

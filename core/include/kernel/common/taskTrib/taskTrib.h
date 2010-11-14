@@ -22,7 +22,7 @@ public:
 	error_t destroy(void);
 
 	// Create, alter and assign quantum classes.
-	status_t createQuantumClass(utf16Char *name, prio_t softPrio);
+	status_t createQuantumClass(utf8Char *name, prio_t softPrio);
 	void setTaskQuantumClass(processId_t id, sarch_t qc);
 	void setClassQuantum(sarch_t qc, prio_t softPrio);
 
@@ -32,7 +32,7 @@ private:
 	struct quantumClassS
 	{
 		prio_t		prio;
-		utf16Char	name[64];
+		utf8Char	name[128];
 	};
 	struct quantumClassStateS
 	{

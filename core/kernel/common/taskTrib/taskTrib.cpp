@@ -14,7 +14,7 @@ taskTribC::taskTribC(void)
 	deadQ.rsrc = __KNULL;
 }
 
-status_t taskTribC::createQuantumClass(utf16Char *name, prio_t prio)
+status_t taskTribC::createQuantumClass(utf8Char *name, prio_t prio)
 {
 	sarch_t		pos=-1;
 	uarch_t		j;
@@ -51,10 +51,10 @@ status_t taskTribC::createQuantumClass(utf16Char *name, prio_t prio)
 
 	// FIXME: use soft->hard conversion here.
 	custQuantumClass.rsrc.arr[pos].prio = prio;
-	for (j=0; j<64 && *name; j++) {
+	for (j=0; j<127 && *name; j++) {
 		custQuantumClass.rsrc.arr[pos].name[j] = name[j];
 	};
-	custQuantumClass.rsrc.arr[pos].name[((j < 64) ? j:63)] = '\0';
+	custQuantumClass.rsrc.arr[pos].name[((j < 127) ? j:127)] = '\0';
 
 	return pos;
 }

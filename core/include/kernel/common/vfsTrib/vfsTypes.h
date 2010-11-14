@@ -7,6 +7,9 @@
 	#include <kernel/common/timerTrib/timeTypes.h>
 
 
+#define VFSFILE_NAME_MAX_NCHARS		256
+#define VFSDIR_NAME_MAX_NCHARS		256
+
 class vfsDirC;
 class vfsFileC;
 
@@ -52,7 +55,7 @@ public:
 	~vfsFileC(void);
 
 public:
-	utf16Char		name[128];
+	utf8Char		name[256];
 	vfsDirC			*parent;
 	vfsFileC		*next;
 	vfsFileInodeC		*desc;
@@ -71,7 +74,7 @@ public:
 	~vfsDirC(void);
 
 public:
-	utf16Char		name[128];
+	utf8Char		name[256];
 	vfsDirC			*next, *parent;
 	vfsDirInodeC		*desc;
 	// fsDrvInstS		*fsDrv;

@@ -22,10 +22,10 @@ error_t processTribC::initialize(void)
 
 	__kprocess.id = 0x0;
 	__kprocess.tasks[1] = &__korientationThread;
-	__kprocess.fileName = (utf16Char *)"";
-	__kprocess.filePath = (utf16Char *)"";
-	__kprocess.argString = (utf16Char *)"";
-	__kprocess.env = (utf16Char *)"";
+	__kprocess.fileName = (utf8Char *)"zambezii.zxe";
+	__kprocess.filePath = (utf8Char *)":ekfs/zambezii/core";
+	__kprocess.argString = (utf8Char *)"-debug=1";
+	__kprocess.env = (utf8Char *)"";
 	__kprocess.memoryStream = &memoryTrib.__kmemoryStream;
 
 	// Init __korientation thread.
@@ -55,7 +55,7 @@ error_t processTribC::initialize2(void)
 	return ERROR_SUCCESS;
 }
 
-processS *processTribC::spawn(const utf16Char *)
+processS *processTribC::spawn(const utf8Char *)
 {
 	/**	NOTES:
 	 * This routine will essentially be the guiding hand to starting up

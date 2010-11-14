@@ -143,7 +143,7 @@ struct elf32_symTabEntryS
 struct elfModuleStateS
 {
 	// String passed by the kernel on initialize().
-	const char		*__karchString;
+	const char	*__karchString;
 	// Word size passed by kernel on initialize().
 	ubit8		__kwordSize;
 	// Correct value for ELF "machine" for this build.

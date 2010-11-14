@@ -28,7 +28,7 @@ public:
 	processS *getProcess(processId_t id);
 	taskS *getTask(processId_t id);
 
-	processS *spawn(const utf16Char *absName);
+	processS *spawn(const utf8Char *pathName);
 	error_t destroy(void);
 
 private:

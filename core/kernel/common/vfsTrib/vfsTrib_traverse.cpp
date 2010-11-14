@@ -4,7 +4,7 @@
 #include <kernel/common/vfsTrib/vfsTraverse.h>
 
 
-sbit32 vfsTraverse::getNextSegmentIndex(utf16Char *path)
+sbit32 vfsTraverse::getNextSegmentIndex(utf8Char *path)
 {
 	sbit32		ret=0;
 
@@ -18,7 +18,7 @@ sbit32 vfsTraverse::getNextSegmentIndex(utf16Char *path)
 	return -1;
 }
 
-status_t vfsTraverse::validateSegment(utf16Char *segment)
+status_t vfsTraverse::validateSegment(utf8Char *segment)
 {
 	/**	EXPLANATION:
 	 * VFS only reserves '\0', ':' and '/'. Underlying filesystems are
@@ -49,7 +49,7 @@ status_t vfsTraverse::validateSegment(utf16Char *segment)
 }
 
 status_t vfsTraverse::getRelativePath(
-	vfsDirC *dir, utf16Char *path, ubit8 *type, void **ret
+	vfsDirC *dir, utf8Char *path, ubit8 *type, void **ret
 	)
 {
 	vfsFileC	*file;
@@ -102,7 +102,7 @@ status_t vfsTraverse::getRelativePath(
 	return ERROR_SUCCESS;
 }
 
-vfsFileC *vfsTraverse::getFileDesc(vfsDirInodeC *inode, utf16Char *name)
+vfsFileC *vfsTraverse::getFileDesc(vfsDirInodeC *inode, utf8Char *name)
 {
 	vfsFileC	*curFile;
 
@@ -111,7 +111,7 @@ vfsFileC *vfsTraverse::getFileDesc(vfsDirInodeC *inode, utf16Char *name)
 	curFile = inode->files.rsrc;
 	for (uarch_t i=0; i<inode->nFiles && curFile != __KNULL; i++)
 	{
-		if (strcmp16(curFile->name, name) == 0)
+		if (strcmp((char *)curFile->name, (char *)name) == 0)
 		{
 			inode->files.lock.release();
 			return curFile;
@@ -124,7 +124,7 @@ vfsFileC *vfsTraverse::getFileDesc(vfsDirInodeC *inode, utf16Char *name)
 	return __KNULL;
 }
 
-vfsDirC *vfsTraverse::getDirDesc(vfsDirInodeC *inode, utf16Char *name)
+vfsDirC *vfsTraverse::getDirDesc(vfsDirInodeC *inode, utf8Char *name)
 {
 	vfsDirC		*curDir;
 
@@ -133,7 +133,7 @@ vfsDirC *vfsTraverse::getDirDesc(vfsDirInodeC *inode, utf16Char *name)
 	curDir = inode->subDirs.rsrc;
 	for (uarch_t i=0; i<inode->nSubDirs && curDir != __KNULL; i++)
 	{
-		if (strcmp16(curDir->name, name) == 0)
+		if (strcmp((char *)curDir->name, (char *)name) == 0)
 		{
 			inode->subDirs.lock.release();
 			return curDir;

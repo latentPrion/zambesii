@@ -17,7 +17,7 @@ inodeStack(VFSTRIB_INODE_STACK_NITEMS)
 	_vfs.next = __KNULL;
 	_vfs.flags = 0;
 	_vfs.type = 0;
-	strcpy16(_vfs.name, (utf16Char *)"");
+	strcpy((char *)_vfs.name, "ZAMBEZII VIRTUAL FILESYSTEM VROOT");
 	inodeCounter = 0;
 	trees = __KNULL;
 	defaultTree.rsrc = __KNULL;

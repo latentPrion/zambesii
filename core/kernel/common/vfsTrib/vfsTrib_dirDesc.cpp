@@ -7,7 +7,7 @@
 
 vfsDirC::vfsDirC(void)
 {
-	memset(name, 0, sizeof(utf16Char) * 128);
+	memset(name, 0, sizeof(utf8Char) * VFSDIR_NAME_MAX_NCHARS);
 	type = 0;
 	desc = 0;
 	flags = 0;

@@ -50,8 +50,8 @@ class driverC
 {
 public:
 	ubit32		refCount;
-	utf16Char	*driverName;
-	utf16Char	*vendor;
+	utf8Char	*driverName;
+	utf8Char	*vendor;
 
 	/* Information needed to determine whether this driver should be used
 	 * for a device. Generally used in the case that the driver has been
@@ -59,11 +59,11 @@ public:
 	 * drivers to see if it can use a currently loaded one instead of
 	 * searching the disk.
 	 **/
-	utf16Char	*category;
-	utf16Char	*devName;
+	utf8Char	*category;
+	utf8Char	*devName;
 
 	// Basic information needed to load and instantiate the driver.
-	utf16Char	*fileName;
+	utf8Char	*fileName;
 	vfsFileS	*file;
 
 	ubit8		isFullyEnumerated;

@@ -18,7 +18,7 @@ struct processS
 	taskS			*tasks[CHIPSET_MAX_NTASKS];
 	multipleReaderLockC	taskLock;
 
-	utf16Char		*fileName, *filePath, *argString, *env;
+	utf8Char		*fileName, *filePath, *argString, *env;
 
 	// Tells which CPUs this process has run on.
 	bitmapC			cpuTrace;
