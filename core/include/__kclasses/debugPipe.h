@@ -88,12 +88,13 @@ private:
 	void numToStrHexUpper(uarch_t num, uarch_t *len);
 	void numToStrHexLower(uarch_t num, uarch_t *len);
 	void paddrToStrHex(paddr_t num, uarch_t *len);
-	void blitUtf16(utf16Char *str, uarch_t *len);
-	void blitUtf8(utf8Char *str, uarch_t *len);
+	void processPrintfFormatting(
+		const utf8Char *str, va_list args, uarch_t buffMax,
+		uarch_t *buffLen, uarch_t *printfFlags);
 
 	debugBufferC		debugBuff;
-	// 'convBuff' is used to expand the passed UTF-8 string into codepoints.
-	sharedResourceGroupC<waitLockC, utf16Char *>	convBuff;
+	// 'convBuff' is used to expand the printf formatting.
+	sharedResourceGroupC<waitLockC, utf8Char *>	convBuff;
 	sharedResourceGroupC<waitLockC, uarch_t>	devices;
 };
 

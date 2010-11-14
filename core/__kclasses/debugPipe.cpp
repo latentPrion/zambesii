@@ -10,6 +10,8 @@
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
 
 
+#define DEBUGPIPE_FLAGS_NOLOG		(1<<0)
+
 #define DEBUGPIPE_TEST_AND_INITIALIZE(__bp,__db,__di,__rp,__m,__e)	\
 	if (__KFLAG_TEST(__bp, __di)) \
 	{ \
@@ -57,21 +59,21 @@ debugPipeC::debugPipeC(void)
 error_t debugPipeC::initialize(void)
 {
 	uarch_t		bound;
-	utf16Char	*mem;
+	utf8Char	*mem;
 
 	devices.rsrc = 0;
-	// Allocate four pages for UTF-8 expansion buffer. That's 4096 codepts.
+	// Allocate four pages for UTF-8 expansion buffer.
 	mem = new ((memoryTrib.__kmemoryStream
 		.*memoryTrib.__kmemoryStream.memAlloc)(
 			DEBUGPIPE_CONVERSION_BUFF_NPAGES, MEMALLOC_NO_FAKEMAP))
-			utf16Char;
+			utf8Char;
 
 	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	bound = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
-		/ sizeof(utf16Char);
+		/ sizeof(utf8Char);
 
 	convBuff.lock.acquire();
 
@@ -169,7 +171,7 @@ uarch_t debugPipeC::untieFrom(uarch_t device)
 
 void debugPipeC::refresh(void)
 {
-	utf16Char	*buff;
+	utf8Char	*buff;
 	void		*handle;
 	uarch_t		len, n=0;
 
@@ -312,20 +314,6 @@ void debugPipeC::paddrToStrHex(paddr_t num, uarch_t *curLen)
 	};
 }
 
-void debugPipeC::blitUtf8(utf8Char *str, uarch_t *curLen)
-{
-	for (; *str != 0; *curLen += 1, str++) {
-		convBuff.rsrc[*curLen] = *str;
-	};
-}
-
-void debugPipeC::blitUtf16(utf16Char *str, uarch_t *curLen)
-{
-	for (; *str != 0; *curLen += 1, str++) {
-		convBuff.rsrc[*curLen] = *str;
-	};
-}
-
 void __kprintf(const utf8Char *str, ...)
 {
 	va_list		args;
@@ -335,15 +323,101 @@ void __kprintf(const utf8Char *str, ...)
 	va_end(args);
 }
 
-void debugPipeC::printf(const utf8Char *str, va_list args)
+void debugPipeC::processPrintfFormatting(
+	const utf8Char *str, va_list args,
+	uarch_t buffMax, uarch_t *buffLen, uarch_t *printfFlags
+	)
 {
-	uarch_t		unum, buffLen=0, buffMax;
+	uarch_t		unum;
 	sarch_t		snum;
 	paddr_t		pnum;
-	unicodePoint	c=0;
 	utf8Char	*u8Str;
-	utf16Char	h, l;
-	ubit8		nolog=0;
+
+	for (; (*str != '\0') && (*buffLen < buffMax); str++)
+	{
+		if (*str == '%')
+		{
+			str++;
+			switch (*str)
+			{
+			case '%':
+				convBuff.rsrc[*buffLen] = *str;
+				*buffLen += 1;
+				break;
+
+			case 'd':
+			case 'i':
+				snum = va_arg(args, sarch_t);
+				signedToStr(snum, buffLen);
+
+				break;
+
+			case 'u':
+				unum = va_arg(args, uarch_t);
+				unsignedToStr(unum, buffLen);
+
+				break;
+
+			case 'X':
+				unum = va_arg(args, uarch_t);
+				numToStrHexUpper(unum, buffLen);
+				break;
+
+			case 'P':
+				pnum = va_arg(args, paddr_t);
+				paddrToStrHex(pnum, buffLen);
+				break;
+
+			case 'x':
+			case 'p':
+				unum = va_arg(args, uarch_t);
+				numToStrHexLower(unum, buffLen);
+
+				break;
+
+			case 's':
+				u8Str = va_arg(args, utf8Char *);
+				processPrintfFormatting(
+					u8Str, args,
+					buffMax, buffLen, printfFlags);
+
+				break;
+
+			case '[':
+				str++;
+				for (; *str != ']'; str++)
+				{
+					switch (*str)
+					{
+					case 'n':
+						__KFLAG_SET(
+							*printfFlags,
+							DEBUGPIPE_FLAGS_NOLOG);
+						break;
+
+					default:
+						break;
+					};
+				};
+				break;
+
+			default:
+				unum = va_arg(args, uarch_t);
+				break;
+			};	
+		}
+		else
+		{
+			convBuff.rsrc[*buffLen] = *str;
+			*buffLen += 1;
+		};
+	};
+}
+
+void debugPipeC::printf(const utf8Char *str, va_list args)
+{
+	uarch_t		buffLen=0, buffMax;
+	uarch_t		printfFlags=0;
 
 	convBuff.lock.acquire();
 
@@ -355,117 +429,14 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	};
 
 	buffMax = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
-		/ sizeof(utf16Char);
+		/ sizeof(utf8Char);
 
-	// Expand the string of UTF-8. Process printf formatting.
-	for (; (*str != 0) && (buffLen < buffMax); str++)
+	// Expand printf formatting into convBuff.
+	processPrintfFormatting(str, args, buffMax, &buffLen, &printfFlags);
+
+	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
+		&& !__KFLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
 	{
-		if (!(*str & 0x80))
-		{
-			if (*str == '%')
-			{
-				str++;
-				switch (*str)
-				{
-				case '%':
-					convBuff.rsrc[buffLen++] = *str;
-					break;
-
-				case 'd':
-				case 'i':
-					snum = va_arg(args, sarch_t);
-					signedToStr(snum, &buffLen);
-
-					break;
-
-				case 'u':
-					unum = va_arg(args, uarch_t);
-					unsignedToStr(unum, &buffLen);
-
-					break;
-
-				case 'X':
-					unum = va_arg(args, uarch_t);
-					numToStrHexUpper(unum, &buffLen);
-					break;
-
-				case 'P':
-					pnum = va_arg(args, paddr_t);
-					paddrToStrHex(pnum, &buffLen);
-					break;
-
-				case 'x':
-				case 'p':
-					unum = va_arg(args, uarch_t);
-					numToStrHexLower(unum, &buffLen);
-
-					break;
-
-				case 's':
-					u8Str = va_arg(args, utf8Char *);
-					blitUtf8(u8Str, &buffLen);
-					break;
-
-				case '[':
-					str++;
-					for (; *str != ']'; str++)
-					{
-						switch (*str)
-						{
-						case 'n':
-							nolog = 1;
-							break;
-
-						default:
-							break;
-						};
-					};
-					break;
-
-				default:
-					unum = va_arg(args, uarch_t);
-					break;
-				};	
-			}
-			else {
-				convBuff.rsrc[buffLen++] = *str;
-			};
-		}
-		else
-		{
-			if ((*str & 0xE0) == 0xC0)
-			{
-				c = utf8::toCodepoint2(str);
-				str++;
-				goto blitToBuff;
-			};
-			if ((*str & 0xF0) == 0xE0)
-			{
-				c = utf8::toCodepoint3(str);
-				str = &str[2];
-				goto blitToBuff;
-			};
-			if ((*str & 0xF8) == 0xF0)
-			{
-				c = utf8::toCodepoint4(str);
-				str = &str[3];
-				goto blitToBuff;
-			};
-
-blitToBuff:
-			if (c > 0xFFFF)
-			{
-				utf16::toUtf16(c, &h, &l);
-				convBuff.rsrc[buffLen++] = h;
-				convBuff.rsrc[buffLen++] = l;
-			}
-			else {
-				convBuff.rsrc[buffLen++] = c;
-			};
-		};
-	};
-
-	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER) && !nolog) {
 		debugBuff.syphon(convBuff.rsrc, buffLen);
 	};
 
@@ -487,4 +458,28 @@ blitToBuff:
 
 	convBuff.lock.release();
 }
+
+#if 0
+		}
+		else
+		{
+			if ((*str & 0xE0) == 0xC0)
+			{
+				c = utf8::toCodepoint2(str);
+				str++;
+				goto blitToBuff;
+			};
+			if ((*str & 0xF0) == 0xE0)
+			{
+				c = utf8::toCodepoint3(str);
+				str = &str[2];
+				goto blitToBuff;
+			};
+			if ((*str & 0xF8) == 0xF0)
+			{
+				c = utf8::toCodepoint4(str);
+				str = &str[3];
+				goto blitToBuff;
+			};
+#endif
 

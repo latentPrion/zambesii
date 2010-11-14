@@ -87,6 +87,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	__kprintf(NOTICE ORIENT"Result from getPath: st %d, t %d, r %p.\n",
 		st, t, r);
+	__kprintf(NOTICE"%s.\n", "Hi!");
 
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }

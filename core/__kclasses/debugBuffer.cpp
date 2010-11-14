@@ -23,7 +23,7 @@ debugBufferC::debugBufferC(void)
 error_t debugBufferC::initialize(void)
 {
 	debugBufferC::buffPageS		*mem, *mem2;
-	uarch_t		pageCount = 0;
+	uarch_t				pageCount = 0;
 
 	mem = new ((memoryTrib.__kmemoryStream.*
 		memoryTrib.__kmemoryStream.memAlloc)(1, MEMALLOC_NO_FAKEMAP))
@@ -108,9 +108,9 @@ void *debugBufferC::lock(void)
 }
 
 // This expects the caller to call lock() before beforehand, and unlock() after.
-utf16Char *debugBufferC::extract(void **handle, uarch_t *len)
+utf8Char *debugBufferC::extract(void **handle, uarch_t *len)
 {
-	utf16Char	*ret;
+	utf8Char	*ret;
 
 	if (handle == __KNULL || *handle == __KNULL || len == 0) {
 		return __KNULL;
@@ -140,7 +140,7 @@ void debugBufferC::unlock(void)
 	buff.lock.release();
 }
 
-void debugBufferC::syphon(utf16Char *str, uarch_t buffLen)
+void debugBufferC::syphon(utf8Char *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
 

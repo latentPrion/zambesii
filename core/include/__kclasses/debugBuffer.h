@@ -30,7 +30,7 @@
  **/
 
 #define DEBUGBUFFER_PAGE_NCHARS				\
-	(PAGING_BASE_SIZE - sizeof(void *)) / sizeof(utf16Char)
+	(PAGING_BASE_SIZE - sizeof(void *)) / sizeof(utf8Char)
 
 #define DEBUGBUFFER_INIT_NPAGES			(8)
 
@@ -46,14 +46,14 @@ public:
 
 public:
 	// String of raw, expanded unicode characters.
-	void syphon(utf16Char *str, uarch_t buffLen);
+	void syphon(utf8Char *str, uarch_t buffLen);
 	// Calling 'clear' will reset the buffer to the 1st page, index 0.
 	void clear(void);
 	// Calling 'flush' will deallocate all pages in the buffer.
 	void flush(void);
 
 	void *lock(void);
-	utf16Char *extract(void **handle, uarch_t *len);
+	utf8Char *extract(void **handle, uarch_t *len);
 	void unlock(void);
 
 private:
@@ -63,7 +63,7 @@ private:
 	{
 		buffPageS	*next;
 		// This member should always be 32-bit aligned.
-		utf16Char	data[DEBUGBUFFER_PAGE_NCHARS];
+		utf8Char	data[DEBUGBUFFER_PAGE_NCHARS];
 	};
 	struct buffPtrStateS
 	{
