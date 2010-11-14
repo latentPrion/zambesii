@@ -1,5 +1,5 @@
 
-#include <__kstdlib/__kclib/string16.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 #include <kernel/common/vfsTrib/vfsTraverse.h>
 
@@ -111,7 +111,7 @@ vfsFileC *vfsTraverse::getFileDesc(vfsDirInodeC *inode, utf8Char *name)
 	curFile = inode->files.rsrc;
 	for (uarch_t i=0; i<inode->nFiles && curFile != __KNULL; i++)
 	{
-		if (strcmp((char *)curFile->name, (char *)name) == 0)
+		if (strcmp8(curFile->name, name) == 0)
 		{
 			inode->files.lock.release();
 			return curFile;
@@ -133,7 +133,7 @@ vfsDirC *vfsTraverse::getDirDesc(vfsDirInodeC *inode, utf8Char *name)
 	curDir = inode->subDirs.rsrc;
 	for (uarch_t i=0; i<inode->nSubDirs && curDir != __KNULL; i++)
 	{
-		if (strcmp((char *)curDir->name, (char *)name) == 0)
+		if (strcmp8(curDir->name, name) == 0)
 		{
 			inode->subDirs.lock.release();
 			return curDir;

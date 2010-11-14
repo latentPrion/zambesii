@@ -1,6 +1,6 @@
 
 #include <__kstdlib/__kclib/string.h>
-#include <__kstdlib/__kclib/string16.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kclib/stdlib.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
@@ -17,7 +17,7 @@ inodeStack(VFSTRIB_INODE_STACK_NITEMS)
 	_vfs.next = __KNULL;
 	_vfs.flags = 0;
 	_vfs.type = 0;
-	strcpy((char *)_vfs.name, "ZAMBEZII VIRTUAL FILESYSTEM VROOT");
+	strcpy8(_vfs.name, (utf8Char *)"ZAMBEZII VIRTUAL FILESYSTEM VROOT");
 	inodeCounter = 0;
 	trees = __KNULL;
 	defaultTree.rsrc = __KNULL;

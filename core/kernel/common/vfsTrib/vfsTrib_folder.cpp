@@ -1,5 +1,5 @@
 
-#include <__kstdlib/__kclib/string16.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 #include <kernel/common/vfsTrib/vfsTraverse.h>
@@ -23,7 +23,7 @@ error_t vfsTribC::createFolder(vfsDirC *dir, utf8Char *name, uarch_t)
 		return ret;
 	};
 
-	strcpy((char *)newDir->name, (char *)name);
+	strcpy8(newDir->name, name);
 	newDir->parent = dir;
 
 	dir->desc->subDirs.lock.acquire();
@@ -49,7 +49,7 @@ error_t vfsTribC::deleteFolder(vfsDirInodeC *inode, utf8Char *name)
 	for (; curDir != __KNULL; )
 	{
 		// If the folder exists:
-		if (strcmp((char *)curDir->name, (char *)name) == 0)
+		if (strcmp8(curDir->name, name) == 0)
 		{
 			if (prevDir != __KNULL) {
 				prevDir->next = curDir->next;
