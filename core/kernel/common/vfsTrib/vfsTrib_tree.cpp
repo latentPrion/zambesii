@@ -2,6 +2,7 @@
 #include <__kstdlib/__kclib/string16.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
+#include <kernel/common/vfsTrib/vfsTraverse.h>
 
 
 void vfsTribC::dumpTrees(void)
@@ -38,13 +39,18 @@ vfsDirC *vfsTribC::getDefaultTree(void)
 	return ret;
 }
 
-error_t vfsTribC::createTree(utf16Char *name)
+vfsDirC *vfsTribC::getTree(utf16Char *name)
+{
+	return vfsTraverse::getDirDesc(trees, name);
+}
+
+error_t vfsTribC::createTree(utf16Char *name, uarch_t)
 {
 	vfsDirC		*dirDesc;
 	error_t		ret;
 
 	// Make sure that tree doesn't already exist.
-	dirDesc = getDirDesc(trees, name);
+	dirDesc = vfsTraverse::getDirDesc(trees, name);
 	if (dirDesc != __KNULL) {
 		return ERROR_SUCCESS;
 	};
@@ -60,7 +66,7 @@ error_t vfsTribC::deleteTree(utf16Char *name)
 
 	// Check to see if it's the default. If it is, set the next in line.
 	curDef = getDefaultTree();
-	if (getDirDesc(trees, name) == curDef)
+	if (vfsTraverse::getDirDesc(trees, name) == curDef)
 	{
 		trees->subDirs.lock.acquire();
 
@@ -100,7 +106,7 @@ error_t vfsTribC::setDefaultTree(utf16Char *name)
 {
 	vfsDirC		*dir;
 
-	dir = getDirDesc(trees, name);
+	dir = vfsTraverse::getDirDesc(trees, name);
 	if (dir == __KNULL) {
 		return ERROR_INVALID_ARG_VAL;
 	};

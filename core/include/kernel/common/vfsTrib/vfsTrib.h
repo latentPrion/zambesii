@@ -16,6 +16,12 @@
 
 #define VFSTRIB_INODE_STACK_NITEMS	(4096)
 
+#define VFSPATH_TYPE_DIR		0x1
+#define VFSPATH_TYPE_FILE		0x2
+
+#define VFSPATH_INVALID			15
+#define VFSPATH_INVALID_CHAR		16
+
 class vfsTribC
 :
 public tributaryC
@@ -28,26 +34,35 @@ public:
 	void dumpTrees(void);
 
 public:
+	// VFS path traversal.
+	status_t getPath(utf16Char *path, ubit8 *type, void **ret);
+
+	// Folder manipulation.
+	error_t createFolder(vfsDirC *dir, utf16Char *name, uarch_t flags=0);
+	error_t deleteFolder(vfsDirInodeC *inode, utf16Char *name);
+	status_t renameFolder(
+		vfsDirInodeC *inode, utf16Char *oldName, utf16Char *newName);
+
+	// File manipulation.
+	error_t createFile(vfsDirC *dir, utf16Char *name, uarch_t flags=0);
+	error_t deleteFile(vfsDirInodeC *inode, utf16Char *name);
+	status_t renameFile(
+		vfsDirInodeC *inode, utf16Char *oldName, utf16Char *newName);
+
+	// Tree manipulation.
+	vfsDirC *getDefaultTree(void);
+	vfsDirC *getTree(utf16Char *name);
+	error_t createTree(utf16Char *name, uarch_t flags=0);
+	error_t deleteTree(utf16Char *name);
+	error_t setDefaultTree(utf16Char *name);
+
+public:
 	// VFS Inode allocation.
 	error_t getNewInode(ubit32 *inodeLow);
 	void releaseDirInode(ubit32 inodeLow);
 	error_t registerDirInode(ubit32 inodeLow, vfsDirInodeC *inode) {
 		return dirInodeHash.insert(inodeLow, inode);
 	};
-
-	// Folder manipulation.
-	error_t createFolder(vfsDirC *dir, utf16Char *name, uarch_t flags=0);
-	error_t deleteFolder(vfsDirInodeC *inode, utf16Char *name);
-
-	// Tree manipulation.
-	vfsDirC *getDefaultTree(void);
-	error_t createTree(utf16Char *name);
-	error_t deleteTree(utf16Char *name);
-	error_t setDefaultTree(utf16Char *name);
-
-private:
-	vfsFileC *getFileDesc(vfsDirInodeC *inode, utf16Char *name);
-	vfsDirC *getDirDesc(vfsDirInodeC *inode, utf16Char *name);
 
 private:
 	// For now, VFS inodes are only 32-bits long.

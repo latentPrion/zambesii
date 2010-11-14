@@ -1,41 +1,87 @@
 
+#include <__kstdlib/__kflagManipulation.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
+#include <kernel/common/vfsTrib/vfsTraverse.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-#define PATH_TYPE_UNKNOWN		0x0
-#define PATH_TYPE_TREE			0x1
-#define PATH_TYPE_UNIX_ROOT		0x2
-#define PATH_TYPE_DRIVE_ALIAS		0x3
-#define PATH_TYPE_RELATIVE		0x4
-
-static vfsDirDescC *parsePath(utf16Char *path)
+status_t vfsTribC::getPath(utf16Char *path, ubit8 *type, void **ret)
 {
-	ubit8		pathType=PATH_TYPE_UNKNOWN;
+	vfsDirC		*dir=0;
+	sbit32		idx=0;
 
 	/**	EXPLANATION:
-	 * Idea is to take a path (either utf16Char[] or utf8Char[]) and
-	 * progressively split it up into chunks: find each path separator ("/")
-	 * and replace it with NULL.
+	 * The idea is to find out what kind of path we're dealing with, then
+	 * do any preprocessing and pass it on to the recursive relative path
+	 * parser.
 	 *
-	 * For each located segment, scan for invalid sequences. Then pass the
-	 * located segment to a dirDesc parser.
-	 *
-	 * So: take arg 'path', and parse for the indicator of the root:
-	 * whether absolute or relative.
+	 * For a tree-absolute path, we get the tree, then treat the rest of
+	 * the path as if it was relative
 	 **/
-	if (path[0] == static_cast<utf16Char>( ':' )) {
-		pathType = PATH_TYPE_TREE;
-	};
-	if (path[1] == static_cast<utf16Char>( ':' ) && !isTree) {
-		pathType = PATH_TYPE_DRIVE_ALIAS;
-	};
-	if (path[0] == static_cast<utf16Char>( '/' ) && !isDriveAlias) {
-		pathType = PATH_TYPE_UNIX_ROOT;
+	if (vfsTraverse::isTree(path))
+	{
+		__kprintf(NOTICE"Detected tree path.\n");
+		idx = vfsTraverse::getNextSegmentIndex(path);
+		if (idx < 0)
+		{
+			*ret = vfsTrib.getTree(path);
+			*type = VFSPATH_TYPE_DIR;
+			if (*ret != __KNULL) {
+				return ERROR_SUCCESS;
+			};
+		}
+
+		// Temporarily replace the '/' with a '\0'.
+		path[idx - 1] = '\0';
+		dir = vfsTrib.getTree(path);
+		path[idx - 1] = '/';
+		if (dir == __KNULL) {
+			return VFSPATH_INVALID;
+		};
+		goto parseRelative;
 	};
 
-	/**	EXPLANATION:
-	 * Now we have to decide what preprocessing to do before starting to
-	 * split and traverse. If the path is a tree, we need to pass it on.
-	 *
-	 * If it's a unix root, we need to grab the default tree. If it's an
-	 * alias, we need to grab the path for the alias and move on.
+	if (vfsTraverse::isUnixRoot(path))
+	{
+		// Get default tree, then do vfsTraverse::getNextSegmentIndex().
+		__kprintf(NOTICE"Detected unix root path.\n");
+		dir = getDefaultTree();
+		if (dir == __KNULL) {
+			return VFSPATH_INVALID;
+		};
+
+		idx = vfsTraverse::getNextSegmentIndex(path);
+		if (idx < 0)
+		{
+			*type = VFSPATH_TYPE_DIR;
+			*ret = dir;
+			return ERROR_SUCCESS;
+		};
+		goto parseRelative;
+	};
+
+#if 0
+	// Add support for Path Aliases later.
+	if (vfsTraverse::isPathAlias(path)) {
+		// Get path alias via recurse into getPath, then move on.
+	};
+#endif
+
+#if 0
+	// Add support for working-directory-relative paths later.
+	// Fell through to here. Path is relative to process's current dir.
+	if (getPath(
+		cpuTrib.getCurrentCpuStream()
+			->getCurrentTask()->parent->workingDir,
+		type,
+		&dir) != ERROR_SUCCESS || *type == VFSPATH_TYPE_FILE)
+	{
+		return VFSPATH_INVALID;
+	};
+#endif
+parseRelative:
+	// Now pass to the recursive relative path parser.
+	return vfsTraverse::getRelativePath(dir, &path[idx], type, ret);
+}
+

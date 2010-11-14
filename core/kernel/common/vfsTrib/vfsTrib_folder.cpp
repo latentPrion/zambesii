@@ -2,6 +2,7 @@
 #include <__kstdlib/__kclib/string16.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/vfsTrib/vfsTrib.h>
+#include <kernel/common/vfsTrib/vfsTraverse.h>
 
 
 error_t vfsTribC::createFolder(vfsDirC *dir, utf16Char *name, uarch_t)
@@ -10,7 +11,7 @@ error_t vfsTribC::createFolder(vfsDirC *dir, utf16Char *name, uarch_t)
 	vfsDirC		*newDir;
 
 	// Make sure folder doesn't already exist.
-	if (getDirDesc(dir->desc, name) != __KNULL) {
+	if (vfsTraverse::getDirDesc(dir->desc, name) != __KNULL) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 
