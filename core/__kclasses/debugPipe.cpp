@@ -240,9 +240,10 @@ void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen)
 
 	if (num & 1<<((__BITS_PER_BYTE__ * sizeof(uarch_t)) - 1))
 	{
-		num &= ~(1<<((__BITS_PER_BYTE__ * sizeof(uarch_t)) - 1) );
 		convBuff.rsrc[*curLen] = '-';
 		*curLen += 1;
+		num -= 1;
+		num = ~num;
 	};
 
 	for (; num / 10 ; blen++)

@@ -26,6 +26,7 @@ class vfsTribC
 :
 public tributaryC
 {
+friend class vfsDirInodeC;
 public:
 	vfsTribC(void);
 	error_t initialize(void);

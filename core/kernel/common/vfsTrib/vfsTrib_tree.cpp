@@ -44,7 +44,7 @@ vfsDirC *vfsTribC::getTree(utf8Char *name)
 	if (name[0] == ':') {
 		name++;
 	};
-	return vfsTraverse::getDirDesc(trees, name);
+	return trees->getDirDesc(name);
 }
 
 error_t vfsTribC::createTree(utf8Char *name, uarch_t)
@@ -57,7 +57,7 @@ error_t vfsTribC::createTree(utf8Char *name, uarch_t)
 	};
 
 	// Make sure that tree doesn't already exist.
-	dirDesc = vfsTraverse::getDirDesc(trees, name);
+	dirDesc = trees->getDirDesc(name);
 	if (dirDesc != __KNULL) {
 		return ERROR_SUCCESS;
 	};
@@ -77,7 +77,7 @@ error_t vfsTribC::deleteTree(utf8Char *name)
 
 	// Check to see if it's the default. If it is, set the next in line.
 	curDef = getDefaultTree();
-	if (vfsTraverse::getDirDesc(trees, name) == curDef)
+	if (trees->getDirDesc(name) == curDef)
 	{
 		trees->subDirs.lock.acquire();
 
@@ -102,7 +102,7 @@ error_t vfsTribC::deleteTree(utf8Char *name)
 	else
 	{
 		/* If we weren't deleting the default, set this to 1 so the
-		 *code below to actually remove the tree will be executed.
+		 * code below to actually remove the tree will be executed.
 		 **/
 		foundNewDefault = 1;
 	};
@@ -121,7 +121,7 @@ error_t vfsTribC::setDefaultTree(utf8Char *name)
 		name++;
 	};
 
-	dir = vfsTraverse::getDirDesc(trees, name);
+	dir = trees->getDirDesc(name);
 	if (dir == __KNULL) {
 		return ERROR_INVALID_ARG_VAL;
 	};

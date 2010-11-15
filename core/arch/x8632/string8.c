@@ -37,6 +37,18 @@ utf8Char *strcpy8(utf8Char *dest, const utf8Char *src)
 	return dest;
 }
 
+utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count)
+{
+	if (dest == __KNULL || src == __KNULL) { return dest; };
+
+	while (count > 0)
+	{
+		*dest++ = *src++;
+		count--;
+	};
+	return dest;
+}
+
 size_t strlen8(const utf8Char *str)
 {
 	uarch_t		len=0;

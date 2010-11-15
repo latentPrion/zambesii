@@ -5,14 +5,22 @@
 #include <kernel/common/timerTrib/timeTypes.h>
 
 
-vfsFileInodeC::vfsFileInodeC(void)
+vfsFileInodeC::vfsFileInodeC(
+	ubit32 _inodeHigh, ubit32 _inodeLow, uarch_t _fileSize
+	)
+:
+inodeLow(_inodeLow), inodeHigh(_inodeHigh)
 {
-	inodeLow = 0;
-	fileSize = 0;
+	refCount = 0;
+	fileSize = _fileSize;
 }
 
 error_t vfsFileInodeC::initialize(void)
 {
 	return ERROR_SUCCESS;
+}
+
+vfsFileInodeC::~vfsFileInodeC(void)
+{
 }
 

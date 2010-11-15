@@ -21,7 +21,6 @@ status_t vfsTribC::getPath(utf8Char *path, ubit8 *type, void **ret)
 	 **/
 	if (vfsTraverse::isTree(path))
 	{
-		__kprintf(NOTICE"Detected tree path.\n");
 		idx = vfsTraverse::getNextSegmentIndex(path);
 		if (idx < 0)
 		{
@@ -45,7 +44,6 @@ status_t vfsTribC::getPath(utf8Char *path, ubit8 *type, void **ret)
 	if (vfsTraverse::isUnixRoot(path))
 	{
 		// Get default tree, then do vfsTraverse::getNextSegmentIndex().
-		__kprintf(NOTICE"Detected unix root path.\n");
 		dir = getDefaultTree();
 		if (dir == __KNULL) {
 			return VFSPATH_INVALID;

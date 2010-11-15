@@ -15,11 +15,9 @@ inodeStack(VFSTRIB_INODE_STACK_NITEMS)
 	_vfs.parent = &_vfs;
 	// _vfs cannot have any siblings.
 	_vfs.next = __KNULL;
-	_vfs.flags = 0;
-	_vfs.type = 0;
-	strcpy8(_vfs.name, (utf8Char *)"ZAMBEZII VIRTUAL FILESYSTEM VROOT");
-	inodeCounter = 0;
 	trees = __KNULL;
+
+	inodeCounter = 0;
 	defaultTree.rsrc = __KNULL;
 }
 
@@ -56,7 +54,7 @@ error_t vfsTribC::initialize(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	ret = _vfs.initialize();
+	ret = _vfs.initialize((utf8Char *)"Zambezii VFS Root");
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};

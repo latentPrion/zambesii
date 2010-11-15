@@ -12,9 +12,6 @@ namespace vfsTraverse
 	sbit32 getNextSegmentIndex(utf8Char *path);
 	status_t validateSegment(utf8Char *path);
 
-	vfsFileC *getFileDesc(vfsDirInodeC *inode, utf8Char *name);
-	vfsDirC *getDirDesc(vfsDirInodeC *inode, utf8Char *name);
-
 	status_t getRelativePath(
 		vfsDirC *dir, utf8Char *path, ubit8 *type, void **ret);
 }

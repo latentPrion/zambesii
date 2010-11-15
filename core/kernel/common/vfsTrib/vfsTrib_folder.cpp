@@ -5,13 +5,19 @@
 #include <kernel/common/vfsTrib/vfsTraverse.h>
 
 
-error_t vfsTribC::createFolder(vfsDirC *dir, utf8Char *name, uarch_t)
+status_t vfsTribC::createFolder(vfsDirC *dir, utf8Char *name, uarch_t)
 {
-	error_t		ret;
+	status_t	ret;
 	vfsDirC		*newDir;
 
-	// Make sure folder doesn't already exist.
-	if (vfsTraverse::getDirDesc(dir->desc, name) != __KNULL) {
+	ret = vfsTraverse::validateSegment(name);
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
+	// Make sure folder/file with same name doesn't already exist.
+	if (dir->desc->getDirDesc(name) != __KNULL
+		|| dir->desc->getFileDesc(name) != __KNULL)
+	{
 		return ERROR_INVALID_ARG_VAL;
 	};
 
@@ -19,59 +25,21 @@ error_t vfsTribC::createFolder(vfsDirC *dir, utf8Char *name, uarch_t)
 	if (newDir == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
-	if ((ret = newDir->initialize()) != ERROR_SUCCESS) {
+	if ((ret = newDir->initialize(name)) != ERROR_SUCCESS)
+	{
+		newDir->~vfsDirC();
+		dirDescCache->free(newDir);
 		return ret;
 	};
 
-	strcpy8(newDir->name, name);
 	newDir->parent = dir;
-
-	dir->desc->subDirs.lock.acquire();
-
-	newDir->next = dir->desc->subDirs.rsrc;
-	dir->desc->subDirs.rsrc = newDir;
-	dir->desc->nSubDirs++;
-
-	dir->desc->subDirs.lock.release();
+	dir->desc->addDirDesc(newDir);
 
 	return ERROR_SUCCESS;
 }
 
-error_t vfsTribC::deleteFolder(vfsDirInodeC *inode, utf8Char *name)
+status_t vfsTribC::deleteFolder(vfsDirInodeC *inode, utf8Char *name)
 {
-	vfsDirC		*curDir, *prevDir;
-
-	prevDir = __KNULL;
-
-	inode->subDirs.lock.acquire();
-
-	curDir = inode->subDirs.rsrc;
-	for (; curDir != __KNULL; )
-	{
-		// If the folder exists:
-		if (strcmp8(curDir->name, name) == 0)
-		{
-			if (prevDir != __KNULL) {
-				prevDir->next = curDir->next;
-			}
-			else {
-				inode->subDirs.rsrc = curDir->next;
-			};
-			inode->nSubDirs--;
-
-			inode->subDirs.lock.release();
-
-			curDir->~vfsDirC();
-			dirDescCache->free(curDir);
-			return ERROR_SUCCESS;
-		};
-
-		prevDir = curDir;
-		curDir = curDir->next;
-	};
-
-	// Folder didn't exist.
-	inode->subDirs.lock.release();
-	return ERROR_INVALID_ARG_VAL;
+	return inode->removeDirDesc(name);
 }
 

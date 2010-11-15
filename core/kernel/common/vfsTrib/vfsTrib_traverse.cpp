@@ -1,5 +1,6 @@
 
 #include <__kstdlib/__kclib/string8.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 #include <kernel/common/vfsTrib/vfsTraverse.h>
 
@@ -54,9 +55,10 @@ status_t vfsTraverse::getRelativePath(
 {
 	vfsFileC	*file;
 	sbit32		idx;
+	vfsDirC		*tmpDir;
 
 	/**	EXPLANATION:
-	 * Just recursively keep splitting the path at '/', and trying to get
+	 * Just iteratively keep splitting the path at '/', and trying to get
 	 * a folder with the name of the segment, until you reach the last
 	 * path segment.
 	 **/
@@ -68,8 +70,9 @@ status_t vfsTraverse::getRelativePath(
 			path[idx - 1] = '\0';
 		};
 
-		dir = getDirDesc(dir->desc, path);
-		if (dir == __KNULL)
+		dir->desc->dumpSubDirs();
+		tmpDir = dir->desc->getDirDesc(path);
+		if (tmpDir == __KNULL)
 		{
 			if (idx >= 0)
 			{
@@ -78,7 +81,7 @@ status_t vfsTraverse::getRelativePath(
 			};
 
 			// Else is last segment in path, could be file name.
-			file = getFileDesc(dir->desc, path);
+			file = dir->desc->getFileDesc(path);
 			path[idx - 1] = '/';
 			if (file == __KNULL) {
 				return VFSPATH_INVALID;
@@ -95,54 +98,11 @@ status_t vfsTraverse::getRelativePath(
 		else {
 			path = &path[idx];
 		};
+		dir = tmpDir;
 	};
 
 	*type = VFSPATH_TYPE_DIR;
 	*ret = dir;
 	return ERROR_SUCCESS;
-}
-
-vfsFileC *vfsTraverse::getFileDesc(vfsDirInodeC *inode, utf8Char *name)
-{
-	vfsFileC	*curFile;
-
-	inode->files.lock.acquire();
-
-	curFile = inode->files.rsrc;
-	for (uarch_t i=0; i<inode->nFiles && curFile != __KNULL; i++)
-	{
-		if (strcmp8(curFile->name, name) == 0)
-		{
-			inode->files.lock.release();
-			return curFile;
-		};
-		curFile = curFile->next;
-	};
-
-	// File doesn't exist on this inode.
-	inode->files.lock.release();
-	return __KNULL;
-}
-
-vfsDirC *vfsTraverse::getDirDesc(vfsDirInodeC *inode, utf8Char *name)
-{
-	vfsDirC		*curDir;
-
-	inode->subDirs.lock.acquire();
-
-	curDir = inode->subDirs.rsrc;
-	for (uarch_t i=0; i<inode->nSubDirs && curDir != __KNULL; i++)
-	{
-		if (strcmp8(curDir->name, name) == 0)
-		{
-			inode->subDirs.lock.release();
-			return curDir;
-		};
-		curDir = curDir->next;
-	};
-
-	// Subfolder doesn't exist.
-	inode->subDirs.lock.release();
-	return __KNULL;
 }
 
