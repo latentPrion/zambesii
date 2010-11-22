@@ -11,6 +11,10 @@
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/processId.h>
 
+#define PROCESSTRIB_UPDATE_ADD		0x0
+#define PROCESSTRIB_UPDATE_SUBTRACT	0x1
+#define PROCESSTRIB_UPDATE_SET		0x2
+
 class processTribC
 :
 public tributaryC
@@ -31,9 +35,15 @@ public:
 	processS *spawn(const utf8Char *pathName);
 	error_t destroy(void);
 
+	updateCapacity(ubit8 action, uarch_t val);
+	updateLoad(ubit8 action, uarch_t val);
+
 private:
 	processS		__kprocess;
 	wrapAroundCounterC	nextProcId;
+
+	// Global machine scheduling statistics. Used for Ocean Zambezii.
+	uarch_t			capacity, load;
 };
 
 extern processTribC	processTrib;
