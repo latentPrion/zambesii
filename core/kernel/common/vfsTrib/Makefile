@@ -2,7 +2,7 @@
 DELIVERABLE=../../../vfsTrib.a
 OBJFILES=vfsTrib.o vfsTrib_traverse.o vfsTrib_tree.o vfsTrib_folder.o \
 	vfsTrib_fileDesc.o vfsTrib_fileInode.o vfsTrib_dirDesc.o \
-	vfsTrib_dirInode.o vfsTrib_pathParse.o
+	vfsTrib_dirInode.o vfsTrib_pathParse.o vfsTrib_file.o
 
 all: Makefile $(DELIVERABLE)
 

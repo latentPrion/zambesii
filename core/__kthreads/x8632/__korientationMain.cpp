@@ -89,10 +89,18 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kprintf(NOTICE ORIENT"Result of createFolder: %d.\n",
 		vfsTrib.createFolder(static_cast<vfsDirC *>( r ), (utf8Char *)"zambezii"));
 
+	__kprintf(NOTICE ORIENT"Result of createFile: %d.\n",
+		vfsTrib.createFile(static_cast<vfsDirC *>( r ), (utf8Char *)"file1"));
+
 	__kprintf(NOTICE ORIENT"result of getPath on :ekfs/zambezii: %d.\n",
 		vfsTrib.getPath((utf8Char *)":ekfs/zambezii", &t, &r));
 
+	__kprintf(NOTICE ORIENT"result of getPath on :ekfs/file1: %d.\n",
+		vfsTrib.getPath((utf8Char *)":ekfs/file1", &t, &r));
+
+
 	vfsTrib.getDefaultTree()->desc->dumpSubDirs();
+	vfsTrib.getDefaultTree()->desc->dumpFiles();
 
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Successful!\n");

@@ -58,9 +58,12 @@ public:
 	// These are the inode number on the CONCRETE fs and not within the VFS.
 	ubit32			inodeLow, inodeHigh;
 	// vfsCacheC		cache;
+	// fsDrvInstC		fsDrv;
 	// Max filesize supported by VFS depends on arch.
 	uarch_t			fileSize;
 	ubit32			refCount;
+	dateS			createdDate, modifiedDate, accessedDate;
+	timeS			createdTime, modifiedTime, accessedTime;
 };		
 
 

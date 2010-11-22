@@ -42,7 +42,7 @@ error_t vfsDirC::initialize(
 		nameLen = VFSDIR_NAME_MAX_NCHARS;
 	};
 
-	name = new utf8Char[nameLen];
+	name = new utf8Char[nameLen + 1];
 	if (name == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
@@ -82,7 +82,7 @@ status_t vfsDirC::rename(utf8Char *newName)
 		newNameLen = VFSDIR_NAME_MAX_NCHARS;
 	};
 
-	mem = new utf8Char[newNameLen];
+	mem = new utf8Char[newNameLen + 1];
 	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};

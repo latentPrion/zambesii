@@ -43,7 +43,7 @@ error_t vfsFileC::initialize(
 		nameLen = VFSFILE_NAME_MAX_NCHARS;
 	};
 
-	name = new utf8Char[nameLen];
+	name = new utf8Char[nameLen + 1];
 	if (name == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};

@@ -55,7 +55,7 @@ status_t vfsTraverse::getRelativePath(
 {
 	vfsFileC	*file;
 	sbit32		idx;
-	vfsDirC		*tmpDir;
+	vfsDirC		*retDir;
 
 	/**	EXPLANATION:
 	 * Just iteratively keep splitting the path at '/', and trying to get
@@ -70,9 +70,8 @@ status_t vfsTraverse::getRelativePath(
 			path[idx - 1] = '\0';
 		};
 
-		dir->desc->dumpSubDirs();
-		tmpDir = dir->desc->getDirDesc(path);
-		if (tmpDir == __KNULL)
+		retDir = dir->desc->getDirDesc(path);
+		if (retDir == __KNULL)
 		{
 			if (idx >= 0)
 			{
@@ -82,7 +81,6 @@ status_t vfsTraverse::getRelativePath(
 
 			// Else is last segment in path, could be file name.
 			file = dir->desc->getFileDesc(path);
-			path[idx - 1] = '/';
 			if (file == __KNULL) {
 				return VFSPATH_INVALID;
 			};
@@ -92,13 +90,16 @@ status_t vfsTraverse::getRelativePath(
 			return ERROR_SUCCESS;
 		};
 
+		// If the dir we just got was the last segment, return this dir.
+		dir = retDir;
 		if (idx < 0) {
-			*path = '\0';
+			break;
 		}
-		else {
+		else
+		{
+			path[idx - 1] = '/';
 			path = &path[idx];
 		};
-		dir = tmpDir;
 	};
 
 	*type = VFSPATH_TYPE_DIR;
