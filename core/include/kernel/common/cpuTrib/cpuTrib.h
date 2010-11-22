@@ -2,6 +2,7 @@
 	#define _CPU_TRIB_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kclasses/bitmap.h>
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/smpTypes.h>
@@ -32,6 +33,9 @@ public:
 	cpuStreamC *getCurrentCpuStream(void);
 	// Gets the Stream for 'cpu'.
 	cpuStreamC *getStream(cpu_t cpu);
+
+public:
+	bitmapC		onlineCpus;
 
 private:
 #if __SCALING__ >= SCALING_SMP

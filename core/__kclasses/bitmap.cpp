@@ -35,6 +35,23 @@ error_t bitmapC::initialize(ubit32 nBits)
 	return ERROR_SUCCESS;
 }	
 
+void bitmapC::merge(bitmapC *b)
+{
+	// ORs this bmp with the one passes as an argument.
+	lock();
+	b->lock();
+
+	for (ubit32 i=0; i < b->getNBits(); i++)
+	{
+		if (b->test(i)) {
+			set(i);
+		};
+	};
+
+	b->unlock();
+	unlock();
+}
+
 bitmapC::~bitmapC(void)
 {
 	if (bmp.rsrc.bmp != __KNULL)

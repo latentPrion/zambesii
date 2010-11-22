@@ -3,6 +3,7 @@
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/process.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
@@ -23,6 +24,7 @@ id(processId)
 error_t processC::initialize(utf8Char *fileAbsName)
 {
 	ubit32		nameLen;
+	error_t		ret;
 
 	nameLen = strlen8(fileAbsName);
 	absName = new utf8Char[nameLen + 1];
@@ -30,7 +32,11 @@ error_t processC::initialize(utf8Char *fileAbsName)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	// Need to initialize cpuTrace bmp to be a clone of the Memory Trib bmp.
+	// Initialize cpuTrace to the number of bits in Memory Trib bmp.
+	ret = cpuTrace.initialize(cpuTrib.onlineCpus.getNBits());
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
 
 	// Allocate Memory Stream.
 	memoryStream = new memoryStreamC(

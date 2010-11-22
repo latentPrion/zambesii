@@ -21,6 +21,10 @@ public:
 	~bitmapC(void);
 
 public:
+	ubit32 getNBits(void) { return bmp.rsrc.nBits; };
+
+	void merge(bitmapC *b);
+
 	void lock(void);
 	void unlock(void);
 

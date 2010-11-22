@@ -20,7 +20,7 @@ __kprocess(0)
 error_t processTribC::initialize(void)
 {
 	__kprocess.tasks[1] = &__korientationThread;
-	__kprocess.absName = (utf8Char *)":ekfs/zambezii/core/zambezii.zxe";
+	__kprocess.absName = (utf8Char *)":ekfs/core/zambezii.zxe";
 	__kprocess.argString = (utf8Char *)"-debug=1";
 	__kprocess.env = (utf8Char *)"";
 	__kprocess.memoryStream = &memoryTrib.__kmemoryStream;
