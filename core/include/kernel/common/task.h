@@ -12,7 +12,7 @@
 
 #define TASK_FLAGS_SCHED_WAITING	(1<<0)
 
-struct processS;
+struct processC;
 
 struct taskS
 {
@@ -24,7 +24,7 @@ struct taskS
 	uarch_t		flags;
 	prio_t		*prio, internalPrio;
 	ubit16		nLocksHeld;
-	processS	*parent;
+	processC	*parent;
 	smpConfigS	smpConfig;
 	numaConfigS	numaConfig;
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT

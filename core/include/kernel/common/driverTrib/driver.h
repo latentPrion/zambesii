@@ -107,7 +107,7 @@ class driverInstanceC
 {
 public:
 	processId_t	processId;
-	processS	*process;
+	processC	*process;
 
 	
 };

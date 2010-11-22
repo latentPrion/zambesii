@@ -28,18 +28,18 @@ public:
 	error_t initialize2(void);
 
 public:
-	processS *__kgetProcess(void) { return &__kprocess; };
-	processS *getProcess(processId_t id);
+	processC *__kgetProcess(void) { return &__kprocess; };
+	processC *getProcess(processId_t id);
 	taskS *getTask(processId_t id);
 
-	processS *spawn(const utf8Char *pathName);
+	processC *spawn(const utf8Char *pathName);
 	error_t destroy(void);
 
-	updateCapacity(ubit8 action, uarch_t val);
-	updateLoad(ubit8 action, uarch_t val);
+	void updateCapacity(ubit8 action, uarch_t val);
+	void updateLoad(ubit8 action, uarch_t val);
 
 private:
-	processS		__kprocess;
+	processC		__kprocess;
 	wrapAroundCounterC	nextProcId;
 
 	// Global machine scheduling statistics. Used for Ocean Zambezii.
@@ -47,15 +47,15 @@ private:
 };
 
 extern processTribC	processTrib;
-extern sharedResourceGroupC<multipleReaderLockC, processS **>	processes;
+extern sharedResourceGroupC<multipleReaderLockC, processC **>	processes;
 
 
 /**	Inline Methods
  *****************************************************************************/
 
-inline processS *processTribC::getProcess(processId_t id)
+inline processC *processTribC::getProcess(processId_t id)
 {
-	processS	*ret;
+	processC	*ret;
 	uarch_t		rwFlags;
 
 	processes.lock.readAcquire(&rwFlags);
@@ -67,7 +67,7 @@ inline processS *processTribC::getProcess(processId_t id)
 
 inline taskS *processTribC::getTask(processId_t id)
 {
-	processS	*p;
+	processC	*p;
 	taskS		*ret;
 	uarch_t		rwFlags;
 

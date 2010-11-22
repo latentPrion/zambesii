@@ -12,8 +12,9 @@
 
 struct taskS;
 
-struct processS
+class processC
 {
+public:
 	uarch_t			id;
 	taskS			*tasks[CHIPSET_MAX_NTASKS];
 	multipleReaderLockC	taskLock;
@@ -29,8 +30,8 @@ struct processS
 
 namespace process
 {
-	error_t initialize(processS *process);
-	void destroy(processS *process);
+	error_t initialize(processC *process);
+	void destroy(processC *process);
 }
 
 #endif

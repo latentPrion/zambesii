@@ -4,7 +4,7 @@
 #include <kernel/common/process.h>
 
 
-error_t process::initialize(processS *process)
+error_t process::initialize(processC *process)
 {
 	process->nextTaskId.initialize(CHIPSET_MAX_NTASKS - 1);
 	return ERROR_SUCCESS;
