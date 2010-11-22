@@ -6,6 +6,7 @@
 	#include <__kclasses/bitmap.h>
 	#include <__kclasses/wrapAroundCounter.h>
 	#include <kernel/common/task.h>
+	#include <kernel/common/machineAffinity.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
@@ -31,12 +32,16 @@ public:
 
 	utf8Char		*absName, *argString, *env;
 
+	// Oceann and local affinity.
+	affinityS		affinity;
+	localAffinityS		*localAffinity;
+
 	// Tells which CPUs this process has run on.
 	bitmapC			cpuTrace;
 	wrapAroundCounterC	nextTaskId;
+	ubit32			initMagic;
 
 	memoryStreamC		*memoryStream;
-	ubit32			initMagic;
 };
 
 

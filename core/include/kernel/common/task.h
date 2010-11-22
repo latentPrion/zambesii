@@ -5,8 +5,9 @@
 	#include <arch/tlbContext.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/bitmap.h>
-	#include <kernel/common/smpConfig.h>
-	#include <kernel/common/numaConfig.h>
+	#include <kernel/common/machineAffinity.h>
+	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/process.h>
 	#include <kernel/common/taskTrib/prio.h>
 
@@ -17,7 +18,7 @@ struct processC;
 struct taskS
 {
 	// Do *NOT* move 'stack' from where it is.
-	void	*stack;
+	void		*stack;
 	uarch_t		id;
 	taskS		*next;
 	taskContextS	*context;
@@ -25,8 +26,7 @@ struct taskS
 	prio_t		*prio, internalPrio;
 	ubit16		nLocksHeld;
 	processC	*parent;
-	smpConfigS	smpConfig;
-	numaConfigS	numaConfig;
+	localAffinityS	localAffinity;
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	tlbContextS	*tlbContext;
 #endif

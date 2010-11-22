@@ -10,7 +10,7 @@
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/numaConfig.h>
+	#include <kernel/common/machineAffinity.h>
 	#include <kernel/common/numaTrib/numaStream.h>
 
 /**	EXPLANATION:
@@ -76,7 +76,7 @@ public:
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 #if __SCALING__ >= SCALING_CC_NUMA
 	status_t configuredGetFrames(
-		numaConfigS *config, uarch_t nPages, paddr_t *paddr);
+		localAffinityS *aff, uarch_t nPages, paddr_t *paddr);
 #endif
 
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
@@ -113,7 +113,7 @@ private:
 	 * one NUMA Stream, and list that stream's ID as that of the
 	 * "sharedBank".
 	 **/
-	numaConfigS		defaultConfig;
+	localAffinityS		defaultAffinity;
 #if __SCALING__ >= SCALING_CC_NUMA \
 	&& defined(CHIPSET_MEMORY_NUMA_GENERATE_SHBANK)
 	numaBankId_t		sharedBank;

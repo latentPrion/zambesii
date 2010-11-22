@@ -18,6 +18,7 @@ id(processId)
 	memset(tasks, 0, sizeof(tasks));
 
 	absName = argString = env = __KNULL;
+	localAffinity = __KNULL;
 	memoryStream = __KNULL;
 }
 

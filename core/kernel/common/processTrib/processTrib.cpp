@@ -32,9 +32,8 @@ error_t processTribC::initialize(void)
 	__korientationThread.parent = &__kprocess;
 	__korientationThread.stack = __korientationStack;
 	__korientationThread.nLocksHeld = 0;
-	__korientationThread.smpConfig.last = CPUID_INVALID;
 	// Init cpuConfig and numaConfig BMPs later.
-	__korientationThread.numaConfig.def.rsrc =
+	__korientationThread.localAffinity.def.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
 	__kprocess.initMagic = PROCESS_INIT_MAGIC;

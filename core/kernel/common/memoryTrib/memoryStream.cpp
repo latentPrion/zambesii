@@ -116,7 +116,8 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		nFrames = numaTrib.configuredGetFrames(
-			&cpuTrib.getCurrentCpuStream()->currentTask->numaConfig,
+			&cpuTrib.getCurrentCpuStream()
+				->currentTask->localAffinity,
 			commit - totalFrames, &p);
 #else
 		nFrames = numaTrib.fragmentedGetFrames(

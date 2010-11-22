@@ -271,15 +271,15 @@ parseMemoryMap:
 		prevPos = pos;
 	};
 
-	ret = defaultConfig.memBanks.initialize(prevPos);
+	ret = defaultAffinity.memBanks.initialize(prevPos);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR NUMATRIB"Unable to alloc bmp for defconfig.\n");
+		__kprintf(ERROR NUMATRIB"Unable to alloc bmp for defAffin.\n");
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	ret = cpuTrib.getCurrentCpuStream()->currentTask
-		->numaConfig.memBanks.initialize(prevPos);
+		->localAffinity.memBanks.initialize(prevPos);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -292,9 +292,9 @@ parseMemoryMap:
 	pos = prevPos = numaStreams.prepareForLoop();
 	for (; pos != HWIDLIST_INDEX_INVALID; numaStreams.getLoopItem(&pos))
 	{
-		defaultConfig.memBanks.setSingle(pos);
+		defaultAffinity.memBanks.setSingle(pos);
 		cpuTrib.getCurrentCpuStream()->currentTask
-			->numaConfig.memBanks.setSingle(pos);
+			->localAffinity.memBanks.setSingle(pos);
 	};
 
 	// And *finally*, see whether or not to destroy __kspace.
@@ -318,9 +318,9 @@ parseMemoryMap:
 			getStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
-		defaultConfig.def.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
+		defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
 		cpuTrib.getCurrentCpuStream()->currentTask
-			->numaConfig.def.rsrc =
+			->localAffinity.def.rsrc =
 			CHIPSET_MEMORY_NUMA_SHBANKID;
 
 		sharedBank = CHIPSET_MEMORY_NUMA_SHBANKID;

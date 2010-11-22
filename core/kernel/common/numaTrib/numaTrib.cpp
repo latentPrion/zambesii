@@ -58,7 +58,7 @@ static numaMemoryRangeC			__kspaceMemoryRange(
 
 numaTribC::numaTribC(void)
 {
-	defaultConfig.def.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+	defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 	nStreams = 0;
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 	sharedBank = NUMATRIB_SHBANK_INVALID;
@@ -165,7 +165,7 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	__kprintf(WARNING NUMATRIB"releaseFrames(0x%X, %d): pmem leak.\n",
 		paddr, nFrames);
 #else
-	getStream(defaultConfig.def.rsrc)
+	getStream(defaultAffinity.def.rsrc)
 		->memoryBank.releaseFrames(paddr, nFrames);
 #endif
 
@@ -183,14 +183,14 @@ error_t numaTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Get the default bank's Id.
-	defaultConfig.def.lock.readAcquire(&rwFlags);
-	def = defaultConfig.def.rsrc;
-	defaultConfig.def.lock.readRelease(rwFlags);
+	defaultAffinity.def.lock.readAcquire(&rwFlags);
+	def = defaultAffinity.def.rsrc;
+	defaultAffinity.def.lock.readRelease(rwFlags);
 
 	currStream = getStream(def);	
 #else
 	// Allocate from default bank, which is the sharedBank for non-NUMA.
-	currStream = getStream(defaultConfig.def.rsrc);
+	currStream = getStream(defaultAffinity.def.rsrc);
 #endif
 
 	// FIXME: Decide what to do here for an non-NUMA build.
@@ -219,11 +219,9 @@ error_t numaTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 		if (ret == ERROR_SUCCESS)
 		{
 			// Set the current stream to be the new default.
-			defaultConfig.def.lock.writeAcquire();
-
-			defaultConfig.def.rsrc = cur;
-
-			defaultConfig.def.lock.writeRelease();
+			defaultAffinity.def.lock.writeAcquire();
+			defaultAffinity.def.rsrc = cur;
+			defaultAffinity.def.lock.writeRelease();
 			// Return. We got memory off the current bank.
 			return ret;
 		};
@@ -245,14 +243,14 @@ error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	error_t			ret=0;
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	defaultConfig.def.lock.readAcquire(&rwFlags);
-	def = defaultConfig.def.rsrc;
-	defaultConfig.def.lock.readRelease(rwFlags);
+	defaultAffinity.def.lock.readAcquire(&rwFlags);
+	def = defaultAffinity.def.rsrc;
+	defaultAffinity.def.lock.readRelease(rwFlags);
 
 	currStream = getStream(def);
 #else
 	//Now allocate from the default bank.
-	currStream = getStream(defaultConfig.def.rsrc);
+	currStream = getStream(defaultAffinity.def.rsrc);
 #endif
 
 	if (currStream != __KNULL)
@@ -278,11 +276,9 @@ error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 
 		if (ret > 0)
 		{
-			defaultConfig.def.lock.writeAcquire();
-
-			defaultConfig.def.rsrc = cur;
-
-			defaultConfig.def.lock.writeRelease();
+			defaultAffinity.def.lock.writeAcquire();
+			defaultAffinity.def.rsrc = cur;
+			defaultAffinity.def.lock.writeRelease();
 			return ret;
 		};
 		cur = def;
@@ -295,7 +291,7 @@ error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 // Preprocess out this whole function on a non-NUMA build.
 #if __SCALING__ >= SCALING_CC_NUMA
 error_t numaTribC::configuredGetFrames(
-	numaConfigS *config, uarch_t nPages, paddr_t *paddr
+	localAffinityS *config, uarch_t nPages, paddr_t *paddr
 	)
 {
 	numaBankId_t		def, cur;
@@ -333,9 +329,7 @@ error_t numaTribC::configuredGetFrames(
 			if (ret > 0)
 			{
 				config->def.lock.writeAcquire();
-				
 				config->def.rsrc = cur;
-				
 				config->def.lock.writeRelease();
 				return ret;
 			};
@@ -373,7 +367,7 @@ void numaTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 		currStream->memoryBank.mapMemUsed(baseAddr, nPages);
 	};
 #else
-	getStream(defaultConfig.def.rsrc)
+	getStream(defaultAffinity.def.rsrc)
 		->memoryBank.mapMemUsed(baseAddr, nPages);
 #endif
 }
@@ -401,7 +395,7 @@ void numaTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 		currStream->memoryBank.mapMemUnused(baseAddr, nPages);
 	};
 #else
-	getStream(defaultConfig.def.rsrc)
+	getStream(defaultAffinity.def.rsrc)
 		->memoryBank.mapMemUnused(baseAddr, nPages);
 #endif
 }
