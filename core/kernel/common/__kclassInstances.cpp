@@ -29,7 +29,7 @@ memReservoirC		memReservoir;
 cpuTribC		cpuTrib;
 debugPipeC		__kdebug;
 processTribC		processTrib;
-taskTribC		taskTrib;
+// taskTribC		taskTrib;
 cachePoolC		cachePool;
 execTribC		execTrib;
 vfsTribC		vfsTrib;

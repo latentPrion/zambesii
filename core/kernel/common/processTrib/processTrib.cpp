@@ -11,19 +11,16 @@
 sharedResourceGroupC<multipleReaderLockC, processC **>	processes;
 
 processTribC::processTribC(void)
+:
+__kprocess(0)
 {
 	nextProcId.initialize(CHIPSET_MAX_NPROCESSES - 1);
 }
 
 error_t processTribC::initialize(void)
 {
-	// Init kernel process.
-	memset(&__kprocess, 0, sizeof(processC));
-
-	__kprocess.id = 0x0;
 	__kprocess.tasks[1] = &__korientationThread;
-	__kprocess.fileName = (utf8Char *)"zambezii.zxe";
-	__kprocess.filePath = (utf8Char *)":ekfs/zambezii/core";
+	__kprocess.absName = (utf8Char *)":ekfs/zambezii/core/zambezii.zxe";
 	__kprocess.argString = (utf8Char *)"-debug=1";
 	__kprocess.env = (utf8Char *)"";
 	__kprocess.memoryStream = &memoryTrib.__kmemoryStream;
@@ -39,6 +36,8 @@ error_t processTribC::initialize(void)
 	// Init cpuConfig and numaConfig BMPs later.
 	__korientationThread.numaConfig.def.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+
+	__kprocess.initMagic = PROCESS_INIT_MAGIC;
 
 	return ERROR_SUCCESS;
 }
