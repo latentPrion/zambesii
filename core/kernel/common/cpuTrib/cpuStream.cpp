@@ -12,7 +12,7 @@ cpuStreamC::cpuStreamC(void)
 	 * There are three classes that have to check for initialization before
 	 * constructing themselves:
 	 *	1. cpuStreamC (this class).
-	 *	2. processC.
+	 *	2. processStreamC.
 	 *	3. taskS.
 	 *
 	 * Of these three, two of them do not have constructor since they are

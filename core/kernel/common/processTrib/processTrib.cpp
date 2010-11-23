@@ -8,7 +8,7 @@
 
 
 // Global array of processes.
-sharedResourceGroupC<multipleReaderLockC, processC **>	processes;
+sharedResourceGroupC<multipleReaderLockC, processStreamC **>	processes;
 
 processTribC::processTribC(void)
 :
@@ -44,7 +44,7 @@ error_t processTribC::initialize(void)
 error_t processTribC::initialize2(void)
 {
 	// Allocate the array of processes.
-	processes.rsrc = new processC *[CHIPSET_MAX_NPROCESSES];
+	processes.rsrc = new processStreamC *[CHIPSET_MAX_NPROCESSES];
 	if (processes.rsrc == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
@@ -53,7 +53,7 @@ error_t processTribC::initialize2(void)
 	return ERROR_SUCCESS;
 }
 
-processC *processTribC::spawn(const utf8Char *)
+processStreamC *processTribC::spawn(const utf8Char *)
 {
 	/**	NOTES:
 	 * This routine will essentially be the guiding hand to starting up

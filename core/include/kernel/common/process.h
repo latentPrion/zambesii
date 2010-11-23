@@ -15,12 +15,12 @@
 
 struct taskS;
 
-class processC
+class processStreamC
 {
 public:
-	processC(processId_t id);
+	processStreamC(processId_t id);
 	error_t initialize(utf8Char *absName);
-	~processC(void);
+	~processStreamC(void);
 
 public:
 	taskS *getTask(processId_t processId);
@@ -48,7 +48,7 @@ public:
 /**	Inline Methods:
  *****************************************************************************/
 
-inline taskS *processC::getTask(processId_t id)
+inline taskS *processStreamC::getTask(processId_t id)
 {
 	taskS		*ret;
 	uarch_t		rwFlags;

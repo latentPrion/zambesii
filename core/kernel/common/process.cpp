@@ -7,7 +7,7 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
-processC::processC(processId_t processId)
+processStreamC::processStreamC(processId_t processId)
 :
 id(processId)
 {
@@ -22,7 +22,7 @@ id(processId)
 	memoryStream = __KNULL;
 }
 
-error_t processC::initialize(utf8Char *fileAbsName)
+error_t processStreamC::initialize(utf8Char *fileAbsName)
 {
 	ubit32		nameLen;
 	error_t		ret;
@@ -52,7 +52,7 @@ error_t processC::initialize(utf8Char *fileAbsName)
 	return ERROR_SUCCESS;
 }
 
-processC::~processC(void)
+processStreamC::~processStreamC(void)
 {
 	if (absName != __KNULL) {
 		delete absName;
