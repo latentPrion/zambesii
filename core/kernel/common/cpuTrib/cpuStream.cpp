@@ -4,9 +4,11 @@
 #include <kernel/common/cpuTrib/cpuStream.h>
 
 // We make a global cpuStream for the bspCpu.
-cpuStreamC		bspCpu;
+cpuStreamC		bspCpu(0, 0);
 
-cpuStreamC::cpuStreamC(void)
+cpuStreamC::cpuStreamC(numaBankId_t bid, cpu_t cid)
+:
+cpuId(cid), bankId(bid)
 {
 	/**	EXPLANATION:
 	 * There are three classes that have to check for initialization before

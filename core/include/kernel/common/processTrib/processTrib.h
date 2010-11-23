@@ -34,15 +34,9 @@ public:
 	processStreamC *spawn(const utf8Char *pathName);
 	error_t destroy(void);
 
-	void updateCapacity(ubit8 action, uarch_t val);
-	void updateLoad(ubit8 action, uarch_t val);
-
 private:
 	processStreamC		__kprocess;
 	wrapAroundCounterC	nextProcId;
-
-	// Global machine scheduling statistics. Used for Ocean Zambezii.
-	uarch_t			capacity, load;
 };
 
 extern processTribC	processTrib;

@@ -19,6 +19,11 @@ public:
 	{};
 
 public:
+	ubit32 getLoad(void) { return load; };
+	ubit32 getCapacity(void) { return capacity; };
+
+	error_t addTask(taskS *task);
+
 	// Used by the taskTrib to add/remove tasks from a CPU.
 	error_t addToFlowQ(void);
 	taskS *rmFromFlowQ(void);
@@ -35,7 +40,8 @@ public:
 	taskS *pullPrioQ(void);
 
 public:
-	uarch_t		nTasks;
+	ubit32		load;
+	ubit32		capacity;
 
 private:
 	// Each CPU has its own allocator for taskQNodeS blocks.

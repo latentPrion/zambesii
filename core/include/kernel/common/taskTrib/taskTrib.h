@@ -1,6 +1,7 @@
 #ifndef _TASK_TRIB_H
 	#define _TASK_TRIB_H
 
+	#include <scaling.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/task.h>
@@ -18,8 +19,12 @@ public:
 	void dump(void);
 
 public:
-	taskS *spawn(void);
-	error_t destroy(void);
+	error_t schedule(taskS *task);
+
+	ubit32 getLoad(void) { return load; };
+	ubit32 getCapacity(void) { return capacity; };
+	void updateLoad(ubit8 action, ubit32 val);
+	void updateCapacity(ubit8 action, ubit32 val);
 
 	// Create, alter and assign quantum classes.
 	status_t createQuantumClass(utf8Char *name, prio_t softPrio);
@@ -41,9 +46,24 @@ private:
 	};
 	sharedResourceGroupC<waitLockC, quantumClassStateS> custQuantumClass;
 	sharedResourceGroupC<waitLockC, taskQNodeS *>	deadQ;
+
+	// Global machine scheduling statistics. Used for Ocean Zambezii.
+	ubit32		load;
+	ubit32		capacity;
 };
 
 extern taskTribC	taskTrib;
+
+
+/**	Inline methods:
+ *****************************************************************************/
+
+#if __SCALING__ < SCALING_CC_NUMA
+inline error_t taskTribC::schedule(taskS *task)
+{
+	return numaTrib.getStream(0)->cpuBank.schedule(task);
+}
+#endif
 
 #endif
 

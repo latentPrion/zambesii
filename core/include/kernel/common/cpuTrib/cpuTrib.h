@@ -52,11 +52,8 @@ extern cpuTribC		cpuTrib;
  **************************************************************************/
 
 #if __SCALING__ < SCALING_SMP
-inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
+inline cpuStreamC *cpuTribC::getStream(cpu_t)
 {
-	if (cpu != 0) {
-		return __KNULL;
-	};
 	return cpu;
 }
 #else

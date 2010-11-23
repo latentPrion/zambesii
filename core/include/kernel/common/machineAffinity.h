@@ -26,6 +26,7 @@ struct localAffinityS
 {
 	utf8Char	*name;
 	bitmapC		cpus;
+	bitmapC		cpuBanks;
 	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>	def;
 	bitmapC		memBanks;
 };

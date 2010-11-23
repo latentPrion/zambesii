@@ -18,7 +18,7 @@ class cpuStreamC
 public streamC
 {
 public:
-	cpuStreamC(void);
+	cpuStreamC(numaBankId_t bid, cpu_t id);
 	error_t initialize(void);
 	~cpuStreamC(void);
 
@@ -30,7 +30,7 @@ public:
 	cpuFeaturesS	cpuFeatures;
 	uarch_t		initMagic;
 	// Per CPU scheduler.
-	taskStreamC	sched;
+	taskStreamC	scheduler;
 };
 
 // The hardcoded stream for the BSP CPU.
