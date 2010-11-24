@@ -19,24 +19,25 @@ struct taskS
 {
 	// Do *NOT* move 'stack' from where it is.
 	void		*stack;
+
+	// Basic information.
 	uarch_t		id;
-	taskS		*next;
+	processStreamC	*parent;
 	taskContextS	*context;
 	uarch_t		flags;
+
+	// Scheduling information.
 	prio_t		*prio, internalPrio;
+	ubit8		schedPolicy;
+	ubit8		schedAttributes;
+
+	// Miscellaneous properties (NUMA affinity, etc).
 	ubit16		nLocksHeld;
-	processStreamC	*parent;
 	localAffinityS	localAffinity;
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	tlbContextS	*tlbContext;
 #endif
 };
-
-namespace task
-{
-	error_t initialize(taskS *task);
-	void destroy(taskS *task);
-}
 
 #endif
 

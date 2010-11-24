@@ -28,7 +28,7 @@ error_t numaCpuBankC::schedule(taskS *task)
 		return ERROR_UNKNOWN;
 	};
 
-	return bestCpu->scheduler.addTask(task);
+	return bestCpu->scheduler.schedule(task);
 }
 #endif
 

@@ -6,8 +6,10 @@
 	#include <__kclasses/cachePool.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/taskTrib/prio.h>
 
-#define PRIOQUEUE_INSERT_AT_FRONT	(1<<0)
+// Make sure that the insert options match the scheduling attributes.
+#define PRIOQUEUE_INSERT_INFRONT	SCHEDATTR_STICKY
 
 class prioQueueC
 {

@@ -14,6 +14,10 @@ nPrios(nPriorities)
 	q.rsrc.head = __KNULL;
 }
 
+prioQueueC::~prioQueueC(void)
+{
+}
+
 error_t prioQueueC::initialize(void)
 {
 	nodeCache = cachePool.createCache(sizeof(prioQueueNodeS));
@@ -50,18 +54,27 @@ error_t prioQueueC::insert(void *item, ubit16 prio, ubit32 opt)
 	q.lock.acquire();
 
 	greaterPrio = getNextGreaterPrio(prio);
-	if (__KFLAG_TEST(opt, PRIOQUEUE_INSERT_AT_FRONT))
+	lesserPrio = getNextLesserPrio(prio);
+	if (__KFLAG_TEST(opt, PRIOQUEUE_INSERT_INFRONT))
 	{
-		if (greaterPrio == -1) { q.rsrc.head = newNode; }
+		if (greaterPrio == -1) { q.rsrc.head = newNode;	}
 		else
 		{
 			getLastNodeIn(q.rsrc.prios[greaterPrio], greaterPrio)
 				->next = newNode;
 		};
 
-		newNode->next = q.rsrc.prios[prio];
+		if (q.rsrc.prios[prio] == __KNULL)
+		{
+			if (lesserPrio == -1) { newNode->next = __KNULL; }
+			else {
+				newNode->next = q.rsrc.prios[lesserPrio];
+			};
+		}
+		else {
+			newNode->next = q.rsrc.prios[prio];
+		};
 		q.rsrc.prios[prio] = newNode;
-
 	}
 	else
 	{
@@ -90,7 +103,6 @@ error_t prioQueueC::insert(void *item, ubit16 prio, ubit32 opt)
 		};
 
 		// Point new node's 'next' to next lesser prio's first node.
-		lesserPrio = getNextLesserPrio(prio);
 		if (lesserPrio == -1) { newNode->next = __KNULL; }
 		else {
 			newNode->next = q.rsrc.prios[lesserPrio];
@@ -122,7 +134,7 @@ void *prioQueueC::pop(void)
 
 	// Get the item's priority.
 	prio = retNode->prio;
-	if (retNode->next->prio == prio) {
+	if ((retNode->next != __KNULL) && (retNode->next->prio == prio)) {
 		q.rsrc.prios[prio] = retNode->next;
 	}
 	else {
