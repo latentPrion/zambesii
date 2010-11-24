@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../__kstdlib.a
-OBJFILES=new.o malloc.o
+OBJFILES=new.o malloc.o __kmath.o
 
 all: Makefile $(DELIVERABLE)
 
