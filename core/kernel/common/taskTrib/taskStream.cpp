@@ -1,5 +1,6 @@
 
 #include <scaling.h>
+#include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -10,6 +11,8 @@ status_t taskStreamC::schedule(taskS *task)
 	status_t	ret;
 
 #if __SCALING__ >= SCALING_SMP
+	curCpu = cpuTrib.getCurrentCpuStream();
+
 	// Make sure that this CPU is in the task's affinity.
 	if (!task->localAffinity.cpus.testSingle(curCpu->id)) {
 		return TASK_SCHEDULE_TRY_AGAIN;
@@ -27,14 +30,16 @@ status_t taskStreamC::schedule(taskS *task)
 	switch (task->schedPolicy)
 	{
 	case SCHEDPOLICY_ROUND_ROBIN:
+		task->schedState = TASKSTATE_RUNNABLE;
 		ret = roundRobinQ.insert(
-			task, task->schedPrio, task->schedFlags);
+			task, *task->schedPrio, task->schedOptions);
 
 		break;
 
 	case SCHEDPOLICY_REAL_TIME:
+		task->schedState = TASKSTATE_RUNNABLE;
 		ret = realTimeQ.insert(
-			task, task->schedPrio, task->schedFlags);
+			task, *task->schedPrio, task->schedOptions);
 
 		break;
 
@@ -45,21 +50,97 @@ status_t taskStreamC::schedule(taskS *task)
 	return ret;
 }
 
+void taskStreamC::pullTask(void)
+{
+	taskS		*newTask;
+	cpuStreamC	*curCpu;
 
+	curCpu = cpuTrib.getCurrentCpuStream();
 
-void taskTribC::updateCapacity(ubit8 action, uarch_t val)
+	newTask = pullRealTimeQ();
+	if (newTask != __KNULL) {
+		goto execute;
+	};
+
+	newTask = pullRoundRobinQ();
+	if (newTask != __KNULL) {
+		goto execute;
+	};
+
+	// Else get an idle task from the main scheduler.
+
+execute:
+	newTask->currentCpu = curCpu;
+	newTask->schedState = TASKSTATE_RUNNING;
+	curCpu->currentTask = newTask;
+
+	// FIXME: Set nLocksHeld, etc here.
+
+	// TODO: Pop task register context and jump.
+}
+
+taskS *taskStreamC::pullRealTimeQ(void)
+{
+	taskS		*ret;
+	status_t	status;
+
+	do
+	{
+		ret = static_cast<taskS *>( realTimeQ.pop() );
+		if (ret == __KNULL) {
+			return __KNULL;
+		};
+
+		// Make sure the scheduler isn't waiting for this task.
+		if (__KFLAG_TEST(ret->schedFlags, SCHEDFLAGS_SCHED_WAITING))
+		{
+			status = taskStreamC::schedule(ret);
+			continue;
+		};
+
+		return ret;
+	} while (1);
+}
+
+taskS *taskStreamC::pullRoundRobinQ(void)
+{
+	taskS		*ret;
+	status_t	status;
+	cpuStreamC	*curCpu;
+
+	curCpu = cpuTrib.getCurrentCpuStream();
+
+	do
+	{
+		ret = static_cast<taskS *>( roundRobinQ.pop() );
+		if (ret == __KNULL) {
+			return __KNULL;
+		};
+
+		// Make sure the scheduler isn't waiting for this task.
+		if (__KFLAG_TEST(ret->schedFlags, SCHEDFLAGS_SCHED_WAITING))
+		{
+			status = taskStreamC::schedule(ret);
+			continue;
+		};
+
+		return ret;
+	} while (1);
+}
+
+void taskStreamC::updateCapacity(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
-	case PROCESSTRIB_UPDATE_ADD:
+	case TASKSTREAM_UPDATE_ADD:
 		capacity += val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SUBTRACT:
+	case TASKSTREAM_UPDATE_SUBTRACT:
 		capacity -= val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SET:
+	case TASKSTREAM_UPDATE_SET:
 		capacity = val;
 		return;
 
@@ -67,19 +148,19 @@ void taskTribC::updateCapacity(ubit8 action, uarch_t val)
 	};
 }
 
-void taskTribC::updateLoad(ubit8 action, uarch_t val)
+void taskStreamC::updateLoad(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
-	case PROCESSTRIB_UPDATE_ADD:
+	case TASKSTREAM_UPDATE_ADD:
 		load += val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SUBTRACT:
+	case TASKSTREAM_UPDATE_SUBTRACT:
 		load -= val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SET:
+	case TASKSTREAM_UPDATE_SET:
 		load = val;
 		return;
 

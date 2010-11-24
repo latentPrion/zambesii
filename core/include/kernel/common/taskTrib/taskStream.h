@@ -5,11 +5,16 @@
 	#include <__kclasses/slamCache.h>
 	#include <__kclasses/prioQueue.h>
 	#include <kernel/common/stream.h>
+	#include <kernel/common/task.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/taskTrib/prio.h>
 
 #define TASK_SCHEDULE_TRY_AGAIN		0x1
+
+#define TASKSTREAM_UPDATE_ADD		0x1
+#define TASKSTREAM_UPDATE_SUBTRACT	0x2
+#define TASKSTREAM_UPDATE_SET		0x3
 
 class cpuStreamC;
 
@@ -35,9 +40,11 @@ public:
 	
 
 private:
-	// Used by CPU to manipulate tasks in Qs.
-	taskS *pullRealTimeQ(void) { return realTimeQ.pop(); };
-	taskS *pullRoundRobinQ(void) { return roundRobinQ.pop(); };
+	// Used by CPU to get next task to execute.
+	void pullTask(void);
+
+	taskS *pullRealTimeQ(void);
+	taskS *pullRoundRobinQ(void);
 
 public:
 	ubit32		load;

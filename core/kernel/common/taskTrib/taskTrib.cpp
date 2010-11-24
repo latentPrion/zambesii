@@ -11,31 +11,25 @@ taskTribC::taskTribC(void)
 {
 	capacity = 0;
 	load = 0;
-
-	quantumClass[QUANTUMCLASS_NORMAL] = QUANTUMCLASS_NORMAL_INITVAL;
-	quantumClass[QUANTUMCLASS_DRIVER] = QUANTUMCLASS_DRIVER_INITVAL;
-	custQuantumClass.rsrc.arr = __KNULL;
-	custQuantumClass.rsrc.nClasses = 0;
-	deadQ.rsrc = __KNULL;
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
 error_t taskTribC::schedule(taskS *task)
 {
 	ubit32		lowestLoad=0xFFFFFFFF;
-	numaCpuBankC	*bestBank=__KNULL, curBank;
+	numaCpuBankC	*bestBank=__KNULL, *curBank;
 
 	// Go according to NUMA affinity.
 	for (uarch_t i=0; i<task->localAffinity.cpuBanks.getNBits(); i++)
 	{
 		if (task->localAffinity.cpuBanks.testSingle(i))
 		{
-			curBank = numaTrib.getStream(i);
+			curBank = &numaTrib.getStream(i)->cpuBank;
 			if (curBank == __KNULL) { continue; };
-			if (curBank->cpuBank.getLoad() < lowestLoad)
+			if (curBank->getLoad() < lowestLoad)
 			{
 				bestBank = curBank;
-				lowestLoad = curBank->cpuBank.getLoad();
+				lowestLoad = curBank->getLoad();
 			};
 		};
 	};
@@ -44,7 +38,7 @@ error_t taskTribC::schedule(taskS *task)
 		return ERROR_UNKNOWN;
 	};
 
-	return bestBank->cpuBank.schedule(task);
+	return bestBank->schedule(task);
 }
 #endif
 
@@ -88,6 +82,7 @@ void taskTribC::updateLoad(ubit8 action, uarch_t val)
 	};
 }
 
+#if 0
 status_t taskTribC::createQuantumClass(utf8Char *name, prio_t prio)
 {
 	sarch_t		pos=-1;
@@ -163,5 +158,5 @@ void taskTribC::setTaskQuantumClass(processId_t id, sarch_t qc)
 
 	custQuantumClass.lock.release();
 }
-
+#endif
 

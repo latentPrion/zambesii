@@ -9,7 +9,7 @@
 	#include <kernel/common/taskTrib/prio.h>
 
 // Make sure that the insert options match the scheduling attributes.
-#define PRIOQUEUE_INSERT_INFRONT	SCHEDFLAGS_STICKY
+#define PRIOQUEUE_INSERT_INFRONT	SCHEDOPTS_STICKY
 
 class prioQueueC
 {

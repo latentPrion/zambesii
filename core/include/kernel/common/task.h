@@ -11,9 +11,14 @@
 	#include <kernel/common/process.h>
 	#include <kernel/common/taskTrib/prio.h>
 
-#define TASK_FLAGS_SCHED_WAITING	(1<<0)
+#define SCHEDFLAGS_SCHED_WAITING	(1<<0)
 
-struct processStreamC;
+#define TASKSTATE_DORMANT		0x1
+#define TASKSTATE_RUNNABLE		0x2
+#define TASKSTATE_RUNNING		0x3
+
+class processStreamC;
+class cpuStreamC;
 
 struct taskS
 {
@@ -29,7 +34,10 @@ struct taskS
 	// Scheduling information.
 	prio_t		*schedPrio, internalPrio;
 	ubit8		schedPolicy;
+	ubit8		schedOptions;
 	ubit8		schedFlags;
+	ubit8		schedState;
+	cpuStreamC	*currentCpu;
 
 	// Miscellaneous properties (NUMA affinity, etc).
 	ubit16		nLocksHeld;
