@@ -136,7 +136,7 @@ inline numaStreamC *numaTribC::getStream(numaBankId_t)
 	 * There is no locking on accesses to defaultConfig.rsrc.def since this
 	 * should never change on a non-NUMa build.
 	 **/
-	return numaStreams.getItem(defaultConfig.def.rsrc);
+	return numaStreams.getItem(defaultAffinity.def.rsrc);
 }
 #else
 inline numaStreamC *numaTribC::getStream(numaBankId_t id)
