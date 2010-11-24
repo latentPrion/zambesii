@@ -9,6 +9,8 @@
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/taskTrib/prio.h>
 
+#define TASK_SCHEDULE_TRY_AGAIN		0x1
+
 class cpuStreamC;
 
 class taskStreamC
@@ -30,11 +32,12 @@ public:
 	void updateCapacity(ubit8 action, ubit32 val);
 
 	error_t schedule(taskS *task);
+	
 
 private:
 	// Used by CPU to manipulate tasks in Qs.
-	taskS *pullRealTimeQ(void);
-	taskS *pullRoundRobinQ(void);
+	taskS *pullRealTimeQ(void) { return realTimeQ.pop(); };
+	taskS *pullRoundRobinQ(void) { return roundRobinQ.pop(); };
 
 public:
 	ubit32		load;

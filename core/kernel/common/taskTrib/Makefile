@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../../taskTrib.a
-OBJFILES=taskTrib.o
+OBJFILES=taskTrib.o taskStream.o
 
 all: Makefile $(DELIVERABLE)
 

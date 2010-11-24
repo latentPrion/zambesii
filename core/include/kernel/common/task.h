@@ -27,9 +27,9 @@ struct taskS
 	uarch_t		flags;
 
 	// Scheduling information.
-	prio_t		*prio, internalPrio;
+	prio_t		*schedPrio, internalPrio;
 	ubit8		schedPolicy;
-	ubit8		schedAttributes;
+	ubit8		schedFlags;
 
 	// Miscellaneous properties (NUMA affinity, etc).
 	ubit16		nLocksHeld;
