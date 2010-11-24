@@ -202,18 +202,20 @@ slamCacheC *cachePoolC::createCache(uarch_t objSize)
 
 	// Now add it to the list.
 	status = insert(node);
-	if (status < 0) {
+	if (status < 0)
+	{
+		ret = __KNULL;
 		goto releaseCache;
 	};
 
-	return getCache(objSize);
+	ret = getCache(objSize);
 
 releaseCache:
 	delete node->item;
 
 releaseNode:
 	poolNodeCache.free(node);
-	return __KNULL;
+	return ret;
 }
 
 void cachePoolC::destroyCache(slamCacheC *cache)
