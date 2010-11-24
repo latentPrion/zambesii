@@ -187,6 +187,7 @@ slamCacheC *cachePoolC::createCache(uarch_t objSize)
 {
 	cachePoolNodeS	*node;
 	status_t	status;
+	slamCacheC	*ret;
 
 	objSize = CACHEPOOL_SIZE_ROUNDUP(objSize);
 
@@ -196,7 +197,9 @@ slamCacheC *cachePoolC::createCache(uarch_t objSize)
 	};
 
 	node->item = new slamCacheC(objSize);
-	if (node->item == __KNULL) {
+	if (node->item == __KNULL)
+	{
+		ret = __KNULL;
 		goto releaseNode;
 	};
 
