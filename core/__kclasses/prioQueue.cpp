@@ -181,6 +181,7 @@ void prioQueueC::remove(void *item, ubit16 prio)
 				else {
 					q.rsrc.head = curNode->next;
 				};
+				q.rsrc.prios[prio] = curNode->next;
 			}
 			else {
 				prevNode->next = curNode->next;
