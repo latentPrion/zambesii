@@ -24,6 +24,7 @@ public:
 public:
 	error_t insert(void *item, ubit16 prio, ubit32 opt);
 	void *pop(void);
+	void remove(void *item, ubit16 prio);
 
 private:
 	prioQueueNodeS *getLastNodeIn(prioQueueNodeS *list, ubit16 prio);

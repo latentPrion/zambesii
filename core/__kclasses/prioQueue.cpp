@@ -151,6 +151,56 @@ void *prioQueueC::pop(void)
 	return ret;
 }
 
+void prioQueueC::remove(void *item, ubit16 prio)
+{
+	prioQueueNodeS	*curNode, *prevNode;
+	sbit16		lesserPrio, greaterPrio;
+
+	prevNode = __KNULL;
+
+	q.lock.acquire();
+
+	lesserPrio = getNextLesserPrio(prio);
+	greaterPrio = getNextGreaterPrio(prio);
+	curNode = q.rsrc.prios[prio];
+
+	for (; (curNode != __KNULL) && (curNode->prio == prio); )
+	{
+		// If we've found the item:
+		if (curNode->item == item)
+		{
+			if (prevNode == __KNULL)
+			{
+				if (greaterPrio != -1)
+				{
+					getLastNodeIn(
+						q.rsrc.prios[greaterPrio],
+						greaterPrio)->next
+							= curNode->next;
+				}
+				else {
+					q.rsrc.head = curNode->next;
+				};
+			}
+			else {
+				prevNode->next = curNode->next;
+			};
+
+			// Now free the node and exit.
+			q.lock.release();
+
+			nodeCache->free(curNode);
+			return;
+		};
+
+		prevNode = curNode;
+		curNode = curNode->next;
+	};
+
+	// The list on 'prio' was empty, or the item wasn't found on it.
+	q.lock.release();
+}
+
 // Lock is expected to be held before calling this.
 prioQueueC::prioQueueNodeS *prioQueueC::getLastNodeIn(
 	prioQueueNodeS *list, ubit16 listPrio
