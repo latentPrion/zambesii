@@ -156,6 +156,8 @@ void prioQueueC::remove(void *item, ubit16 prio)
 	prioQueueNodeS	*curNode, *prevNode;
 	sbit16		lesserPrio, greaterPrio;
 
+	if (prio >= nPrios) { return; };
+
 	prevNode = __KNULL;
 
 	q.lock.acquire();
