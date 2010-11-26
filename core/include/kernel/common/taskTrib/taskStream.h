@@ -36,15 +36,15 @@ public:
 	void updateLoad(ubit8 action, ubit32 val);
 	void updateCapacity(ubit8 action, ubit32 val);
 
-	error_t schedule(taskS *task);
+	error_t schedule(taskC*task);
 	
 
 private:
 	// Used by CPU to get next task to execute.
 	void pullTask(void);
 
-	taskS *pullRealTimeQ(void);
-	taskS *pullRoundRobinQ(void);
+	taskC*pullRealTimeQ(void);
+	taskC*pullRoundRobinQ(void);
 
 public:
 	ubit32		load;

@@ -14,7 +14,7 @@ taskTribC::taskTribC(void)
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t taskTribC::schedule(taskS *task)
+error_t taskTribC::schedule(taskC*task)
 {
 	ubit32		lowestLoad=0xFFFFFFFF;
 	numaCpuBankC	*bestBank=__KNULL, *curBank;

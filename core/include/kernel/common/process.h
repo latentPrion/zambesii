@@ -13,7 +13,7 @@
 
 #define PROCESS_INIT_MAGIC	0x1D0C3551
 
-struct taskS;
+class taskC;
 
 class processStreamC
 {
@@ -23,11 +23,11 @@ public:
 	~processStreamC(void);
 
 public:
-	taskS *getTask(processId_t processId);
+	taskC *getTask(processId_t processId);
 	
 public:
 	uarch_t			id;
-	taskS			*tasks[CHIPSET_MAX_NTASKS];
+	taskC			*tasks[CHIPSET_MAX_NTASKS];
 	multipleReaderLockC	taskLock;
 
 	utf8Char		*absName, *argString, *env;
@@ -48,9 +48,9 @@ public:
 /**	Inline Methods:
  *****************************************************************************/
 
-inline taskS *processStreamC::getTask(processId_t id)
+inline taskC *processStreamC::getTask(processId_t id)
 {
-	taskS		*ret;
+	taskC		*ret;
 	uarch_t		rwFlags;
 
 	taskLock.readAcquire(&rwFlags);

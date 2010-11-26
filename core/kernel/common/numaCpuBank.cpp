@@ -5,7 +5,7 @@
 
 
 #if __SCALING__ >= SCALING_SMP
-error_t numaCpuBankC::schedule(taskS *task)
+error_t numaCpuBankC::schedule(taskC*task)
 {
 	ubit32		lowestLoad = 0xFFFFFFFF;
 	cpuStreamC	*bestCpu=__KNULL, *curCpu;

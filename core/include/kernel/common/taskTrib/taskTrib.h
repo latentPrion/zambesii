@@ -19,7 +19,7 @@ public:
 	void dump(void);
 
 public:
-	error_t schedule(taskS *task);
+	error_t schedule(taskC*task);
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };
@@ -59,7 +59,7 @@ extern taskTribC	taskTrib;
  *****************************************************************************/
 
 #if __SCALING__ < SCALING_CC_NUMA
-inline error_t taskTribC::schedule(taskS *task)
+inline error_t taskTribC::schedule(taskC*task)
 {
 	return numaTrib.getStream(0)->cpuBank.schedule(task);
 }

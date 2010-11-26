@@ -7,7 +7,7 @@
 
 void waitLockC::acquire(void)
 {
-	taskS		*task;
+	taskC	*task;
 
 	if (cpuControl::interruptsEnabled())
 	{
@@ -28,7 +28,7 @@ void waitLockC::acquire(void)
 
 void waitLockC::release(void)
 {
-	taskS		*task;
+	taskC	*task;
 #if __SCALING__ >= SCALING_SMP
 	uarch_t		enableIrqs=0;
 #endif
@@ -54,7 +54,7 @@ void waitLockC::release(void)
 
 void waitLockC::releaseNoIrqs(void)
 {
-	taskS		*task;
+	taskC	*task;
 
 	__KFLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
 #if __SCALING__ >= SCALING_SMP

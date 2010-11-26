@@ -5,7 +5,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-status_t taskStreamC::schedule(taskS *task)
+status_t taskStreamC::schedule(taskC*task)
 {
 	cpuStreamC	*curCpu;
 	status_t	ret;
@@ -52,7 +52,7 @@ status_t taskStreamC::schedule(taskS *task)
 
 void taskStreamC::pullTask(void)
 {
-	taskS		*newTask;
+	taskC	*newTask;
 	cpuStreamC	*curCpu;
 
 	curCpu = cpuTrib.getCurrentCpuStream();
@@ -79,14 +79,14 @@ execute:
 	// TODO: Pop task register context and jump.
 }
 
-taskS *taskStreamC::pullRealTimeQ(void)
+taskC*taskStreamC::pullRealTimeQ(void)
 {
-	taskS		*ret;
+	taskC	*ret;
 	status_t	status;
 
 	do
 	{
-		ret = static_cast<taskS *>( realTimeQ.pop() );
+		ret = static_cast<taskC*>( realTimeQ.pop() );
 		if (ret == __KNULL) {
 			return __KNULL;
 		};
@@ -102,9 +102,9 @@ taskS *taskStreamC::pullRealTimeQ(void)
 	} while (1);
 }
 
-taskS *taskStreamC::pullRoundRobinQ(void)
+taskC*taskStreamC::pullRoundRobinQ(void)
 {
-	taskS		*ret;
+	taskC	*ret;
 	status_t	status;
 	cpuStreamC	*curCpu;
 
@@ -112,7 +112,7 @@ taskS *taskStreamC::pullRoundRobinQ(void)
 
 	do
 	{
-		ret = static_cast<taskS *>( roundRobinQ.pop() );
+		ret = static_cast<taskC*>( roundRobinQ.pop() );
 		if (ret == __KNULL) {
 			return __KNULL;
 		};

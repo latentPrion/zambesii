@@ -19,7 +19,7 @@
 
 void recursiveLockC::acquire(void)
 {
-	taskS		*task;
+	taskC	*task;
 
 	task = cpuTrib.getCurrentCpuStream()->currentTask;
 

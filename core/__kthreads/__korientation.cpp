@@ -5,6 +5,6 @@
 #include <kernel/common/task.h>
 
 
-taskS	__korientationThread;
-ubit8 __korientationStack[PAGING_BASE_SIZE * ARCH___KSTACK_NPAGES];
+taskC		__korientationThread;
+ubit8		__korientationStack[PAGING_BASE_SIZE * ARCH___KSTACK_NPAGES];
 

@@ -16,7 +16,7 @@ public:
 
 public:
 	// Chooses the best CPU on this bank to schedule the new task to.
-	error_t schedule(taskS *task);
+	error_t schedule(taskC*task);
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };
@@ -39,7 +39,7 @@ private:
  ******************************************************************************/
 
 #if __SCALING__ < SCALING_SMP
-inline error_t numaCpuBankC::schedule(taskS *task)
+inline error_t numaCpuBankC::schedule(taskC*task)
 {
 	return cpuTrib.getStream(0)->scheduler.schedule(task);
 }

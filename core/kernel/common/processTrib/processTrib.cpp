@@ -30,7 +30,7 @@ error_t processTribC::initialize(void)
 
 	__korientationThread.id = 0x1;
 	__korientationThread.parent = &__kprocess;
-	__korientationThread.stack = __korientationStack;
+	__korientationThread.stack0 = __korientationStack;
 	__korientationThread.nLocksHeld = 0;
 	// Init cpuConfig and numaConfig BMPs later.
 	__korientationThread.localAffinity.def.rsrc =
