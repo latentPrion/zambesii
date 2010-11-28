@@ -8,9 +8,22 @@
 #define CHIPSET_MEMORY___KSPACE_BASE				0x400000
 #define CHIPSET_MEMORY___KSPACE_SIZE				(0x100000 * 3)
 
+// Implies the size of the global array of process pointers.
+#define CHIPSET_MEMORY_MAX_NPROCESSES		(16384)
+// The maximum number of threads per process.
+#define CHIPSET_MEMORY_MAX_NTASKS		(256)
+
+
+#ifdef CONFIG_ARCH_x86_32
+// x86-32 stack size for PC is 2 pages.
+#define CHIPSET_MEMORY___KSTACK_NPAGES				2
+#endif
+
+
 #ifndef __ASM__
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/numaTrib/numaStream.h>
+
 // The array of reserved memory for __kspace.
 extern uarch_t						__kspaceInitMem[];
 extern hardwareIdListC<numaStreamC>::arrayNodeS		__kspaceStreamPtr[];

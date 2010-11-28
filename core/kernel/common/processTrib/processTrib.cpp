@@ -12,9 +12,8 @@ sharedResourceGroupC<multipleReaderLockC, processStreamC **>	processes;
 
 processTribC::processTribC(void)
 :
-__kprocess(0)
+__kprocess(0x0, 0x0), nextProcId(CHIPSET_MEMORY_MAX_NPROCESSES - 1)
 {
-	nextProcId.initialize(CHIPSET_MAX_NPROCESSES - 1);
 }
 
 error_t processTribC::initialize(void)
@@ -44,12 +43,15 @@ error_t processTribC::initialize(void)
 error_t processTribC::initialize2(void)
 {
 	// Allocate the array of processes.
-	processes.rsrc = new processStreamC *[CHIPSET_MAX_NPROCESSES];
+	processes.rsrc = new processStreamC *[CHIPSET_MEMORY_MAX_NPROCESSES];
 	if (processes.rsrc == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	memset(processes.rsrc, 0, sizeof(void *) * CHIPSET_MAX_NPROCESSES);
+	memset(
+		processes.rsrc, 0,
+		sizeof(void *) * CHIPSET_MEMORY_MAX_NPROCESSES);
+
 	return ERROR_SUCCESS;
 }
 

@@ -60,6 +60,10 @@ int strcmp(const char *str1, const char *str2)
 			return ((*str1 > *str2) ? 1 : -1);
 		};
 	};
+	if (*str1 != *str2) {
+		return ((*str1 > *str2) ? 1 : -1);
+	};
+
 	return 0;
 }
 

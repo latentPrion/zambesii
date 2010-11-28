@@ -23,6 +23,11 @@ numaStreamC::~numaStreamC(void)
 {
 }
 
+error_t numaStreamC::initialize(uarch_t nCpuBits)
+{
+	return cpuBank.initialize(nCpuBits);
+}
+
 void numaStreamC::cut(void)
 {
 	// memoryBank.cut();

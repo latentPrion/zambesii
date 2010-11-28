@@ -6,9 +6,13 @@
 	#include <kernel/common/task.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/taskTrib/load.h>
 
 class numaCpuBankC
 {
+public:
+	numaCpuBankC(void);
+	error_t initialize(uarch_t nCpuBits);
 public:
 	// Halt or restart all logical CPUs on this bank. Stub for now.
 	void cut(void) {};

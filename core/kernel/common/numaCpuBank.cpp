@@ -2,7 +2,19 @@
 #include <kernel/common/numaCpuBank.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 
+
+numaCpuBankC::numaCpuBankC(void)
+:
+capacity(0), load(0)
+{
+}
+
+error_t numaCpuBankC::initialize(uarch_t nBits)
+{
+	return cpus.initialize(nBits);
+}
 
 #if __SCALING__ >= SCALING_SMP
 error_t numaCpuBankC::schedule(taskC*task)
@@ -36,39 +48,43 @@ void numaCpuBankC::updateCapacity(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
-	case PROCESSTRIB_UPDATE_ADD:
+	case CAPACITY_UPDATE_ADD:
 		capacity += val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SUBTRACT:
+	case CAPACITY_UPDATE_SUBTRACT:
 		capacity -= val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SET:
+	case CAPACITY_UPDATE_SET:
 		capacity = val;
 		return;
 
 	default: return;
 	};
+
+	taskTrib.updateCapacity(action, val);
 }
 
 void numaCpuBankC::updateLoad(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
-	case PROCESSTRIB_UPDATE_ADD:
+	case LOAD_UPDATE_ADD:
 		load += val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SUBTRACT:
+	case LOAD_UPDATE_SUBTRACT:
 		load -= val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SET:
+	case LOAD_UPDATE_SET:
 		load = val;
 		return;
 
 	default: return;
 	};
+
+	taskTrib.updateLoad(action, val);
 }
 

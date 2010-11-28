@@ -49,5 +49,9 @@ typedef uarch_t		processId_t;
 
 #define PROCID_TASK(__id)	PROCID_THREAD(__id)
 
+#define PROCESSID_PROCESS(__id)		PROCID_PROCESS(__id)
+#define PROCESSID_THREAD(__id)		PROCID_THREAD(__id)
+#define PROCESSID_TASK(__id)		PROCID_THREAD(__id)
+
 #endif
 

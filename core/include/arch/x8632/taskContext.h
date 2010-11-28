@@ -20,5 +20,14 @@ struct taskContextS
 	ubit32		esp, ss;
 };
 
+#ifdef __cplusplus
+class taskC;
+
+namespace taskContext
+{
+	error_t initialize(taskContextS *tc, taskC *task, void *entryPoint);
+}
+#endif
+
 #endif
 

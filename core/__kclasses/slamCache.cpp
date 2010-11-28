@@ -18,6 +18,9 @@ slamCacheC::slamCacheC(uarch_t objectSize)
 
 	partialList.rsrc = __KNULL;
 	freeList.rsrc = __KNULL;
+
+	__kprintf(NOTICE"Slam Cache constructor: asked for objsize: %d.\n",
+		objectSize);
 }
 
 error_t slamCacheC::initialize(void)

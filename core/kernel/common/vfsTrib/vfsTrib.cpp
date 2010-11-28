@@ -19,6 +19,7 @@ inodeStack(VFSTRIB_INODE_STACK_NITEMS)
 
 	inodeCounter = 0;
 	defaultTree.rsrc = __KNULL;
+	dirDescCache = fileDescCache = __KNULL;
 }
 
 vfsTribC::~vfsTribC(void)

@@ -3,9 +3,10 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/numaTrib/numaTrib.h>
 
 
-status_t taskStreamC::schedule(taskC*task)
+status_t taskStreamC::schedule(taskC *task)
 {
 	cpuStreamC	*curCpu;
 	status_t	ret;
@@ -47,6 +48,8 @@ status_t taskStreamC::schedule(taskC*task)
 		return ERROR_INVALID_ARG_VAL;
 	};
 
+	// Increment and notify upper layers of new task being scheduled.
+	updateLoad(LOAD_UPDATE_ADD, 1);
 	return ret;
 }
 
@@ -130,41 +133,55 @@ taskC*taskStreamC::pullRoundRobinQ(void)
 
 void taskStreamC::updateCapacity(ubit8 action, uarch_t val)
 {
+	numaStreamC		*ns;
+
 	switch (action)
 	{
-	case TASKSTREAM_UPDATE_ADD:
+	case CAPACITY_UPDATE_ADD:
 		capacity += val;
-		return;
+		break;
 
-	case TASKSTREAM_UPDATE_SUBTRACT:
+	case CAPACITY_UPDATE_SUBTRACT:
 		capacity -= val;
-		return;
+		break;
 
-	case TASKSTREAM_UPDATE_SET:
+	case CAPACITY_UPDATE_SET:
 		capacity = val;
-		return;
+		break;
 
 	default: return;
 	};
+
+	ns = numaTrib.getStream(parentCpu->bankId);
+	if (ns == __KNULL) { return; };
+
+	ns->cpuBank.updateCapacity(action, val);
 }
 
 void taskStreamC::updateLoad(ubit8 action, uarch_t val)
 {
+	numaStreamC		*ns;
+
 	switch (action)
 	{
-	case TASKSTREAM_UPDATE_ADD:
+	case LOAD_UPDATE_ADD:
 		load += val;
-		return;
+		break;
 
-	case TASKSTREAM_UPDATE_SUBTRACT:
+	case LOAD_UPDATE_SUBTRACT:
 		load -= val;
-		return;
+		break;
 
-	case TASKSTREAM_UPDATE_SET:
+	case LOAD_UPDATE_SET:
 		load = val;
-		return;
+		break;
 
 	default: return;
 	};
+
+	ns = numaTrib.getStream(parentCpu->bankId);
+	if (ns == __KNULL) { return; };
+
+	ns->cpuBank.updateLoad(action, val);
 }
 

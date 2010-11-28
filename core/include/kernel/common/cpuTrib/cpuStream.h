@@ -24,7 +24,7 @@ public:
 
 public:
 	// Do *NOT* move currentTask from where it is.
-	taskC	*currentTask;
+	taskC		*currentTask;
 	cpu_t		cpuId;
 	numaBankId_t	bankId;
 	cpuFeaturesS	cpuFeatures;

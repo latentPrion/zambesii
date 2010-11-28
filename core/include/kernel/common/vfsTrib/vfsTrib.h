@@ -65,7 +65,7 @@ public:
 		return dirInodeHash.insert(inodeLow, inode);
 	};
 
-private:
+public:
 	// For now, VFS inodes are only 32-bits long.
 	multiLayerHashC<vfsDirInodeC>		dirInodeHash;
 	multiLayerHashC<vfsFileInodeC>		fileInodeHash;

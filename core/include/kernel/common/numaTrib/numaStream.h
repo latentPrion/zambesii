@@ -23,6 +23,7 @@ public streamC
 {
 public:
 	numaStreamC(numaBankId_t bankId);
+	error_t initialize(uarch_t nCpuBits);
 	~numaStreamC(void);
 
 public:

@@ -2,6 +2,7 @@
 	#define _PROCESS_OCEAN_MACHINE_AFFINITY_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kclasses/bitmap.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
@@ -36,6 +37,13 @@ struct affinityS
 	ubit32		nEntries;
 	localAffinityS	*machines;
 };
+
+namespace affinity
+{
+	error_t copyLocal(localAffinityS *dest, localAffinityS *src);
+	error_t copyMachine(affinityS *dest, affinityS *src);
+	localAffinityS *findLocal(affinityS *affinity);
+}
 
 #endif
 

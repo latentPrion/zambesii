@@ -46,15 +46,15 @@ void taskTribC::updateCapacity(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
-	case PROCESSTRIB_UPDATE_ADD:
+	case CAPACITY_UPDATE_ADD:
 		capacity += val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SUBTRACT:
+	case CAPACITY_UPDATE_SUBTRACT:
 		capacity -= val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SET:
+	case CAPACITY_UPDATE_SET:
 		capacity = val;
 		return;
 
@@ -66,15 +66,15 @@ void taskTribC::updateLoad(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
-	case PROCESSTRIB_UPDATE_ADD:
+	case LOAD_UPDATE_ADD:
 		load += val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SUBTRACT:
+	case LOAD_UPDATE_SUBTRACT:
 		load -= val;
 		return;
 
-	case PROCESSTRIB_UPDATE_SET:
+	case LOAD_UPDATE_SET:
 		load = val;
 		return;
 

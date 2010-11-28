@@ -9,25 +9,22 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/taskTrib/prio.h>
+	#include <kernel/common/taskTrib/load.h>
 
 #define TASK_SCHEDULE_TRY_AGAIN		0x1
 
-#define TASKSTREAM_UPDATE_ADD		0x1
-#define TASKSTREAM_UPDATE_SUBTRACT	0x2
-#define TASKSTREAM_UPDATE_SET		0x3
-
 class cpuStreamC;
-
 class taskStreamC
 :
 public streamC
 {
 friend class cpuStreamC;
 public:
-	taskStreamC(void)
+	taskStreamC(cpuStreamC *parent)
 	:
 	roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
-	dormantQ(SCHEDPRIO_MAX_NPRIOS)
+	dormantQ(SCHEDPRIO_MAX_NPRIOS),
+	parentCpu(parent)
 	{};
 
 public:
@@ -53,6 +50,7 @@ public:
 private:
 	// Three queues on each CPU: rr, rt and sleep.
 	prioQueueC	roundRobinQ, realTimeQ, dormantQ;
+	cpuStreamC	*parentCpu;
 };
 
 #endif

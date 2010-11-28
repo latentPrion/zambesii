@@ -41,11 +41,14 @@ utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count)
 {
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
-	while (count > 0)
+	while (count > 0 && *src)
 	{
 		*dest++ = *src++;
 		count--;
 	};
+	for (; count > 0; count--) {
+		*dest++ = '\0';
+	}
 	return dest;
 }
 
@@ -72,6 +75,10 @@ int strcmp8(const utf8Char *str1, const utf8Char *str2)
 			return ((*str1 > *str2) ? 1 : -1);
 		};
 	};
+	if (*str1 != *str2) {
+		return ((*str1 > *str2) ? 1 : -1);
+	};
+
 	return 0;
 }
 

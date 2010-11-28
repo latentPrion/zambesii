@@ -1,6 +1,7 @@
 
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 #include <kernel/common/vfsTrib/vfsTraverse.h>
 

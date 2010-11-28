@@ -10,7 +10,6 @@
 	#include <__kclasses/pageTableCache.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/memoryRegion.h>
-	#include <kernel/common/numaTrib/numaStream.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
 
 class memoryTribC

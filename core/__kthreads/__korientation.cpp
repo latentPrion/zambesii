@@ -1,10 +1,11 @@
 
-#include <arch/arch.h>
+#include <chipset/memory.h>
 #include <arch/paging.h>
 #include <__kstdlib/__ktypes.h>
 #include <kernel/common/task.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
-taskC		__korientationThread;
-ubit8		__korientationStack[PAGING_BASE_SIZE * ARCH___KSTACK_NPAGES];
+taskC	__korientationThread(0x0, &processTrib.__kprocess);
+ubit8	__korientationStack[PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES];
 

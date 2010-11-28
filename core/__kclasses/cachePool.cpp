@@ -211,7 +211,7 @@ slamCacheC *cachePoolC::createCache(uarch_t objSize)
 		goto releaseCache;
 	};
 
-	ret = getCache(objSize);
+	return getCache(objSize);
 
 releaseCache:
 	delete node->item;

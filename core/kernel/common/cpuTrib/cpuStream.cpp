@@ -8,7 +8,7 @@ cpuStreamC		bspCpu(0, 0);
 
 cpuStreamC::cpuStreamC(numaBankId_t bid, cpu_t cid)
 :
-cpuId(cid), bankId(bid)
+cpuId(cid), bankId(bid), scheduler(this)
 {
 	/**	EXPLANATION:
 	 * There are three classes that have to check for initialization before

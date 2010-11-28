@@ -5,6 +5,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
+#include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include "exceptions.h"
