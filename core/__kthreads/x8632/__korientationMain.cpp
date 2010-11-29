@@ -26,6 +26,11 @@
 
 int oo=0;
 
+int ghfoo(void)
+{
+	__kprintf(NOTICE"This is a thread.\n");
+}
+
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -102,6 +107,13 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	vfsTrib.getDefaultTree()->desc->dumpSubDirs();
 	vfsTrib.getDefaultTree()->desc->dumpFiles();
+
+	ret = processTrib.__kgetProcess()->spawnThread(
+		reinterpret_cast<void *>( &ghfoo ), SCHEDPOLICY_ROUND_ROBIN,
+		13, SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
+		| SPAWNTHREAD_FLAGS_SCHEDPRIO_SET);
+
+	__kprintf(NOTICE"Result of spawnThread: %d.\n", ret);
 
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Successful!\n");
