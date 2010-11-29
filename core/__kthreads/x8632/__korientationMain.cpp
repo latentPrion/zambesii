@@ -24,7 +24,7 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
-int oo=0;
+int oo=0, pp=0, qq=0, rr=0;
 
 int ghfoo(void)
 {
@@ -114,6 +114,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		| SPAWNTHREAD_FLAGS_SCHEDPRIO_SET);
 
 	__kprintf(NOTICE"Result of spawnThread: %d.\n", ret);
+
 
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Successful!\n");

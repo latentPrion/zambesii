@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/paging.h>
 #include <chipset/memory.h>
 #include <__kstdlib/__kmath.h>

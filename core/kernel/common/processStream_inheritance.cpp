@@ -1,5 +1,7 @@
 
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>
+
 
 error_t processStreamC::initializeFirstThread(
 	taskC *newTask, taskC *spawningTask,
@@ -73,7 +75,6 @@ error_t processStreamC::initializeChildThread(
 		// Inherit from containing process.
 		ret = affinity::copyLocal(
 			&newTask->localAffinity, localAffinity);
-
 	}
 	else
 	{

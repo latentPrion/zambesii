@@ -1,4 +1,5 @@
 
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/machineAffinity.h>
 
 
@@ -6,7 +7,7 @@ error_t affinity::copyLocal(localAffinityS *dest, localAffinityS *src)
 {
 	error_t		ret;
 
-	dest->def.rsrc = dest->def.rsrc;
+	src->def.rsrc = dest->def.rsrc;
 
 	ret = dest->memBanks.initialize(src->memBanks.getNBits());
 	if (ret != ERROR_SUCCESS) {

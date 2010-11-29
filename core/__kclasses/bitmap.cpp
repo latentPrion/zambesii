@@ -24,7 +24,7 @@ error_t bitmapC::initialize(ubit32 nBits)
 		nBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__));
 
 	bmp.rsrc.bmp = new uarch_t[nIndexes];
-	if (bmp.rsrc.bmp == __KNULL)
+	if (bmp.rsrc.bmp == __KNULL && nBits != 0)
 	{
 		bmp.rsrc.nBits = 0;
 		return ERROR_MEMORY_NOMEM;
