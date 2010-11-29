@@ -8,6 +8,9 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
+#define MEMORYBOG_SIZE_ROUNDUP(__size)			\
+	((__size + sizeof(uarch_t)) & (~(sizeof(uarch_t) - 1)))
+
 memoryBogC::memoryBogC(uarch_t bogSize)
 {
 	blockSize = bogSize;
@@ -87,6 +90,8 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 		return __KNULL;
 	};
 
+	nBytes = MEMORYBOG_SIZE_ROUNDUP(nBytes);
+
 	// Size of the alloc must accommodate the alloc header.
 	nBytes += sizeof(allocHeaderS);
 
@@ -105,7 +110,6 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 
 	// head.rsrc now points to a block of usable memory.
 	blockTmp = head.rsrc;
-
 	for (; blockTmp != __KNULL; blockTmp = blockTmp->next)
 	{
 		objTmpPrev = 0;
