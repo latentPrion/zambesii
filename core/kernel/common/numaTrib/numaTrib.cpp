@@ -97,9 +97,11 @@ void numaTribC::dump(void)
 	__kprintf(NOTICE NUMATRIB"Dumping. nStreams %d.\n", nStreams);
 
 	cur = numaStreams.prepareForLoop();
-	curStream = numaStreams.getLoopItem(&cur);
+	curStream = (numaStreamC *)numaStreams.getLoopItem(&cur);
 
-	for (; curStream != __KNULL; curStream=numaStreams.getLoopItem(&cur)) {
+	for (; curStream != __KNULL;
+		curStream = (numaStreamC *)numaStreams.getLoopItem(&cur))
+	{
 		curStream->memoryBank.dump();
 	}
 }
@@ -148,10 +150,10 @@ void numaTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
 	cur = numaStreams.prepareForLoop();
-	currStream = numaStreams.getLoopItem(&cur);
+	currStream = (numaStreamC *)numaStreams.getLoopItem(&cur);
 
 	for (; currStream != __KNULL;
-		currStream = numaStreams.getLoopItem(&cur))
+		currStream = (numaStreamC *)numaStreams.getLoopItem(&cur))
 	{
 		if (currStream->memoryBank.identifyPaddr(paddr))
 		{
@@ -208,10 +210,10 @@ error_t numaTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 	 * be the new default bank for raw contiguous allocations.
 	 **/
 	def = cur = numaStreams.prepareForLoop();
-	currStream = numaStreams.getLoopItem(&def);
+	currStream = (numaStreamC *)numaStreams.getLoopItem(&def);
 
 	for (; currStream != __KNULL;
-		currStream = numaStreams.getLoopItem(&def))
+		currStream = (numaStreamC *)numaStreams.getLoopItem(&def))
 	{
 		// Attempt to allocate from the current stream.
 		ret = currStream->memoryBank.contiguousGetFrames(nPages, paddr);
@@ -267,10 +269,10 @@ error_t numaTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	 * bank. Search each other bank, and get frames from one of them.
 	 **/
 	def = cur = numaStreams.prepareForLoop();
-	currStream = numaStreams.getLoopItem(&def);
+	currStream = (numaStreamC *)numaStreams.getLoopItem(&def);
 
 	for (; currStream != __KNULL;
-		currStream = numaStreams.getLoopItem(&def))
+		currStream = (numaStreamC *)numaStreams.getLoopItem(&def))
 	{
 		ret = currStream->memoryBank.fragmentedGetFrames(nPages, paddr);
 
@@ -315,10 +317,10 @@ error_t numaTribC::configuredGetFrames(
 
 	// Allocation from the default bank failed. Find a another default bank.
 	def = cur = numaStreams.prepareForLoop();
-	currStream = numaStreams.getLoopItem(&def);
+	currStream = (numaStreamC *)numaStreams.getLoopItem(&def);
 
 	for (; currStream != __KNULL;
-		currStream = numaStreams.getLoopItem(&def))
+		currStream = (numaStreamC *)numaStreams.getLoopItem(&def))
 	{
 		// If this bank is part of the thread's NUMA policy:
 		if (config->memBanks.testSingle(cur))
@@ -354,10 +356,10 @@ void numaTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	cur = numaStreams.prepareForLoop();
-	currStream = numaStreams.getLoopItem(&cur);
+	currStream = (numaStreamC *)numaStreams.getLoopItem(&cur);
 	
 	for (; currStream != __KNULL;
-		currStream = numaStreams.getLoopItem(&cur))
+		currStream = (numaStreamC *)numaStreams.getLoopItem(&cur))
 	{
 		/* We can most likely afford this small speed bump since ranges
 		 * of physical RAM are not often mapped or unmapped as used at
@@ -382,10 +384,10 @@ void numaTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	cur = numaStreams.prepareForLoop();
-	currStream = numaStreams.getLoopItem(&cur);
+	currStream = (numaStreamC *)numaStreams.getLoopItem(&cur);
 	
 	for (; currStream != __KNULL;
-		currStream = numaStreams.getLoopItem(&cur))
+		currStream = (numaStreamC *)numaStreams.getLoopItem(&cur))
 	{
 		/* We can most likely afford this small speed bump since ranges
 		 * of physical RAM are not often mapped or unmapped as used at

@@ -25,8 +25,8 @@
 	#include <kernel/common/numaTrib/numaStream.h>
 
 // The array of reserved memory for __kspace.
-extern uarch_t						__kspaceInitMem[];
-extern hardwareIdListC<numaStreamC>::arrayNodeS		__kspaceStreamPtr[];
+extern uarch_t					__kspaceInitMem[];
+extern hardwareIdListC::arrayNodeS		__kspaceStreamPtr[];
 #endif
 
 // Absolute load address of the kernel in physical memory.

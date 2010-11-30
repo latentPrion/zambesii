@@ -120,7 +120,7 @@ private:
 #endif
 
 	uarch_t			nStreams;
-	hardwareIdListC<numaStreamC>	numaStreams;
+	hardwareIdListC		numaStreams;
 };
 
 extern numaTribC		numaTrib;
@@ -136,12 +136,13 @@ inline numaStreamC *numaTribC::getStream(numaBankId_t)
 	 * There is no locking on accesses to defaultConfig.rsrc.def since this
 	 * should never change on a non-NUMa build.
 	 **/
-	return numaStreams.getItem(defaultAffinity.def.rsrc);
+	return static_cast<numaStreamC *>(
+		numaStreams.getItem(defaultAffinity.def.rsrc) );
 }
 #else
 inline numaStreamC *numaTribC::getStream(numaBankId_t id)
 {
-	return numaStreams.getItem(id);
+	return static_cast<numaStreamC *>( numaStreams.getItem(id) );
 }
 #endif
 

@@ -98,12 +98,9 @@ error_t processStreamC::spawnThread(
 	newTask = allocateNewThread(this->id | threadId);
 	if (newTask == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
-__kprintf(NOTICE"New thread id 0x%x, v 0x%p.\n", newTask->id, newTask);
-
 	// Allocate internal sub-structures (context, etc.).
 	ret = newTask->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
-__kprintf(NOTICE"Initialize() on new thread was successful.\n");
 
 	/**	EXPLANATION:
 	 * For any thread other than the first, the kernel has a fixed attribute
@@ -139,24 +136,19 @@ __kprintf(NOTICE"Initialize() on new thread was successful.\n");
 	spawningTask = cpuTrib.getCurrentCpuStream()->currentTask;
 	if (__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD))
 	{
-	__kprintf(NOTICE"Branch taken for firstThread.\n");
 		ret = initializeFirstThread(
 			newTask, spawningTask, schedPolicy, prio, flags);
 	}
 	else
 	{
-	__kprintf(NOTICE"Branch taken for childThread.\n");
 		ret = initializeChildThread(
 			newTask, spawningTask, schedPolicy, prio, flags);
 	};
 	if (ret != ERROR_SUCCESS) { return ret; };
-__kprintf(NOTICE"Initialize[First|Child]Thread called successfully.\n");
 
 	// New task has inherited as needed. Initialize register context.
 	taskContext::initialize(newTask->context, newTask, entryPoint);
-	ret = taskTrib.schedule(newTask);
-__kprintf(NOTICE"Ret for schedule. %d.\n", ret);
-	return ret;
+	return taskTrib.schedule(newTask);
 }
 
 extern int oo;

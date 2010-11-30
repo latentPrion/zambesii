@@ -39,9 +39,9 @@ public:
 
 private:
 #if __SCALING__ >= SCALING_SMP
-	hardwareIdListC<cpuStreamC>	cpuStreams;
+	hardwareIdListC		cpuStreams;
 #else
-	cpuStreamC			*cpu;
+	cpuStreamC		*cpu;
 #endif
 };
 
@@ -54,7 +54,7 @@ extern cpuTribC		cpuTrib;
 #if __SCALING__ < SCALING_SMP
 inline cpuStreamC *cpuTribC::getStream(cpu_t)
 {
-	return cpu;
+	return static_cast<cpuStreamC *>( cpu );
 }
 #else
 inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
@@ -62,7 +62,7 @@ inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
 	/* This should be okay for now. We can reshuffle the pointers when we
 	 * have the hardware IDs of the CPUs.
 	 **/
-	return cpuStreams.getItem(cpu);
+	return static_cast<cpuStreamC *>( cpuStreams.getItem(cpu) );
 }
 #endif
 

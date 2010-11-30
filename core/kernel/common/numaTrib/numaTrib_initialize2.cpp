@@ -1,4 +1,5 @@
 
+#include <chipset/regionMap.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
@@ -209,8 +210,9 @@ parseMemoryMap:
 		};
 
 		pos = numaStreams.prepareForLoop();
-		ns = numaStreams.getLoopItem(&pos);
-		for (; ns != __KNULL; ns = numaStreams.getLoopItem(&pos))
+		ns = (numaStreamC *)numaStreams.getLoopItem(&pos);
+		for (; ns != __KNULL;
+			ns = (numaStreamC *)numaStreams.getLoopItem(&pos))
 		{
 			for (uarch_t i=0; i<memMap->nEntries; i++)
 			{
@@ -232,8 +234,9 @@ parseMemoryMap:
 
 	// Next merge all banks with __kspace.
 	pos = numaStreams.prepareForLoop();
-	ns = numaStreams.getLoopItem(&pos);
-	for (; ns != __KNULL; ns = numaStreams.getLoopItem(&pos))
+	ns = (numaStreamC *)numaStreams.getLoopItem(&pos);
+	for (; ns != __KNULL;
+		ns = (numaStreamC *)numaStreams.getLoopItem(&pos))
 	{
 		if (ns == getStream(CHIPSET_MEMORY_NUMA___KSPACE_BANKID)) {
 			continue;
@@ -251,8 +254,9 @@ parseMemoryMap:
 	if (chipsetRegionMap != __KNULL)
 	{
 		pos = numaStreams.prepareForLoop();
-		ns = numaStreams.getLoopItem(&pos);
-		for (; ns != __KNULL; ns = numaStreams.getLoopItem(&pos))
+		ns = (numaStreamC *)numaStreams.getLoopItem(&pos);
+		for (; ns != __KNULL;
+			ns = (numaStreamC *)numaStreams.getLoopItem(&pos))
 		{
 			for (uarch_t i=0; i<chipsetRegionMap->nEntries; i++)
 			{
