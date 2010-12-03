@@ -7,7 +7,7 @@
 #include <kernel/common/panic.h>
 #include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
-#include <kernel/common/numaTrib/numaTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 #include "exceptions.h"
 
 
@@ -44,7 +44,7 @@ status_t x8632_page_fault(taskContextS *regs)
 
 	case WPRANGER_STATUS_FAKEMAPPED_DYNAMIC:
 		for (status = 0; status < 1; ) {
-			status = numaTrib.fragmentedGetFrames(1, &pmap);
+			status = memoryTrib.fragmentedGetFrames(1, &pmap);
 		};
 
 		// Map new frame to fakemapped page.

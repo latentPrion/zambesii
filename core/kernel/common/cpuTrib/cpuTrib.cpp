@@ -7,6 +7,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/firmwareTrib/firmwareTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 #include <__kthreads/__korientation.h>
 
 
@@ -40,5 +41,34 @@ error_t cpuTribC::initialize2(void)
 
 cpuTribC::~cpuTribC(void)
 {
+}
+
+error_t cpuTribC::createBank(numaBankId_t id)
+{
+	error_t		ret;
+	numaCpuBankC	*ncb;
+
+	ncb = new (
+		(memoryTrib.__kmemoryStream
+			.*memoryTrib.__kmemoryStream.memAlloc)(
+				PAGING_BYTES_TO_PAGES(sizeof(numaCpuBankC)),
+				MEMALLOC_NO_FAKEMAP))
+		numaCpuBankC;
+
+	if (ncb == __KNULL) {
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	ret = cpuBanks.addItem(id, ncb);
+	if (ret != ERROR_SUCCESS) {
+		memoryTrib.__kmemoryStream.memFree(ncb);
+	};
+
+	return ret;
+}
+
+void cpuTribC::destroyBank(numaBankId_t id)
+{
+	cpuBanks.removeItem(id);
 }
 

@@ -57,6 +57,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 			reinterpret_cast<void *>( 0xC0000000 + 0x400000 ),
 			0x3FB00000, __KNULL),
 		ret);
+	DO_OR_DIE(memoryTrib, __kspaceInit(), ret);
 	DO_OR_DIE(numaTrib, initialize(), ret);
 	DO_OR_DIE(firmwareTrib, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
@@ -75,7 +76,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
-	DO_OR_DIE(numaTrib, initialize2(), ret);
+	// DO_OR_DIE(numaTrib, initialize2(), ret);
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
 	DO_OR_DIE(execTrib, initialize(), ret);

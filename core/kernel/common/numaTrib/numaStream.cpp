@@ -25,7 +25,7 @@ numaStreamC::~numaStreamC(void)
 
 error_t numaStreamC::initialize(uarch_t nCpuBits)
 {
-	return cpuBank.initialize(nCpuBits);
+	return cpus.initialize(nCpuBits);
 }
 
 void numaStreamC::cut(void)
@@ -40,4 +40,22 @@ void numaStreamC::bind(void)
 	// cpuBank.bind();
 }
 
+void numaStreamC::dump(void)
+{
+	// Print each bit.
+	__kprintf(NOTICE NUMASTREAM"CPUs:\n\t");
+	for (uarch_t i=0; i<cpus.getNBits(); i++)
+	{
+		if (cpus.testSingle(i)) {
+			__kprintf((utf8Char *)"%d ", i);
+		};
+	};
+
+	for (uarch_t i=0; i<memBanks.getNBits(); i++)
+	{
+		if (memBanks.testSingle(i)) {
+			__kprintf((utf8Char *)"%d ", i);
+		};
+	};
+}
 

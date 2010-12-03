@@ -32,11 +32,11 @@ error_t numaTrib_contiguousGetFrames(uarch_t nFrames, uarch_t *paddr)
 {
 	error_t		ret;
 
-	ret = numaTrib.contiguousGetFrames(nFrames, paddr);
+	ret = memoryTrib.contiguousGetFrames(nFrames, paddr);
 #ifdef CONFIG_ARCH_x86_32_PAE
 	if ((ret == ERROR_SUCESS) && (*paddr > 0xFFFFFFFF))
 	{
-		numaTrib.releaseFrames(*paddr, nFrames);
+		memoryTrib.releaseFrames(*paddr, nFrames);
 		ret = ERROR_MEMORY_NOMEM_PHYSICAL;
 	};
 #endif
@@ -47,11 +47,11 @@ status_t numaTrib_fragmentedGetFrames(uarch_t nFrames, uarch_t *paddr)
 {
 	status_t		ret;
 
-	ret = numaTrib.fragmentedGetFrames(nFrames, paddr);
+	ret = memoryTrib.fragmentedGetFrames(nFrames, paddr);
 #ifdef CONFIG_ARCH_x86_32_PAE
 	if ((ret > 0) && (*paddr > 0xFFFFFFFF))
 	{
-		numaTrib.releaseFrames(*paddr, nFrames);
+		memoryTrib.releaseFrames(*paddr, nFrames);
 		ret = 0;
 	};
 #endif
@@ -60,7 +60,7 @@ status_t numaTrib_fragmentedGetFrames(uarch_t nFrames, uarch_t *paddr)
 
 void numaTrib_releaseFrames(uarch_t paddr, uarch_t nFrames)
 {
-	numaTrib.releaseFrames(paddr, nFrames);
+	memoryTrib.releaseFrames(paddr, nFrames);
 }
 
 void *__kmemoryStream_memAlloc(uarch_t nPages, uarch_t opts)

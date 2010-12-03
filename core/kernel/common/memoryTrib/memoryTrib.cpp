@@ -1,5 +1,6 @@
 
 #include <arch/walkerPageRanger.h>
+#include <chipset/memory.h>
 #include <lang/lang.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -21,6 +22,9 @@ __kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
 		memRegions[i].info = __KNULL;
 		memRegions[i].memBmp = __KNULL;
 	};
+
+	defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+	nBanks = 0;
 }
 
 // Initializes the kernel's Memory Stream.
@@ -118,7 +122,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 	 **/
 	for (totalFrames = 0; totalFrames < nPages; )
 	{
-		nFetched = numaTrib.fragmentedGetFrames(
+		nFetched = fragmentedGetFrames(
 			nPages - totalFrames, &paddr);
 
 		if (nFetched > 0)
@@ -184,7 +188,7 @@ void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
 
 		//Only free the paddr if there was a valid mapping in the vaddr.
 		if (status == WPRANGER_STATUS_BACKED) {
-			numaTrib.releaseFrames(paddr, 1);
+			releaseFrames(paddr, 1);
 		};
 	};
 

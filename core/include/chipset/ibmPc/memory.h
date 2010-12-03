@@ -26,7 +26,9 @@
 
 // The array of reserved memory for __kspace.
 extern uarch_t					__kspaceInitMem[];
-extern hardwareIdListC::arrayNodeS		__kspaceStreamPtr[];
+extern hardwareIdListC::arrayNodeS		initialMemoryBankArray[];
+extern hardwareIdListC::arrayNodeS		initialCpuBankArray[];
+extern hardwareIdListC::arrayNodeS		initialNumaStreamArray[];
 #endif
 
 // Absolute load address of the kernel in physical memory.

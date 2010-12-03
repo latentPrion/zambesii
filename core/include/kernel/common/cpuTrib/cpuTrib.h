@@ -6,6 +6,7 @@
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/smpTypes.h>
+	#include <kernel/common/numaCpuBank.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/cpuTrib/cpuStream.h>
@@ -34,15 +35,22 @@ public:
 	// Gets the Stream for 'cpu'.
 	cpuStreamC *getStream(cpu_t cpu);
 
+	numaCpuBankC *getBank(numaBankId_t bankId);
+	error_t createBank(numaBankId_t id);
+	void destroyBank(numaBankId_t id);
+
 public:
 	bitmapC		onlineCpus;
 
 private:
 #if __SCALING__ >= SCALING_SMP
 	hardwareIdListC		cpuStreams;
+	hardwareIdListC		cpuBanks;
 #else
 	cpuStreamC		*cpu;
+	numaCpuBankC		*cpuBank;
 #endif
+
 };
 
 extern cpuTribC		cpuTrib;
@@ -54,7 +62,12 @@ extern cpuTribC		cpuTrib;
 #if __SCALING__ < SCALING_SMP
 inline cpuStreamC *cpuTribC::getStream(cpu_t)
 {
-	return static_cast<cpuStreamC *>( cpu );
+	return cpu;
+}
+
+inline numaCpuBankC *cpuTribC::getBank(numaBankId_t id)
+{
+	return cpuBank;
 }
 #else
 inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
@@ -64,8 +77,12 @@ inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
 	 **/
 	return static_cast<cpuStreamC *>( cpuStreams.getItem(cpu) );
 }
-#endif
 
+inline numaCpuBankC *cpuTribC::getBank(numaBankId_t id)
+{
+	return static_cast<numaCpuBankC *>( cpuBanks.getItem(id) );
+}
+#endif
 
 #endif
 

@@ -1,6 +1,6 @@
 
 #include <__kclasses/pageTableCache.h>
-#include <kernel/common/numaTrib/numaTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 
 pageTableCacheC::pageTableCacheC(void)
 {
@@ -19,7 +19,7 @@ void pageTableCacheC::push(paddr_t paddr)
 	{
 		stackPtr.lock.release();
 		// Free to the NUMA Tributary. Cache is full.
-		numaTrib.releaseFrames(paddr, 1);
+		memoryTrib.releaseFrames(paddr, 1);
 		return;
 	}
 
@@ -38,7 +38,7 @@ error_t pageTableCacheC::pop(paddr_t *paddr)
 	{
 		stackPtr.lock.release();
 		// Allocate a new frame from the NUMA Tributary.
-		return ((numaTrib.fragmentedGetFrames(1, paddr) > 0)
+		return ((memoryTrib.fragmentedGetFrames(1, paddr) > 0)
 			? ERROR_SUCCESS : ERROR_MEMORY_NOMEM_PHYSICAL);
 	};
 
@@ -56,7 +56,7 @@ void pageTableCacheC::flush(void)
 
 	// Flush all frames in the cache. Used when low on pmem.
 	for (; stackPtr.rsrc != PTCACHE_STACK_EMPTY; stackPtr.rsrc--) {
-		numaTrib.releaseFrames(stack[stackPtr.rsrc], 1);
+		memoryTrib.releaseFrames(stack[stackPtr.rsrc], 1);
 	};
 
 	stackPtr.lock.release();

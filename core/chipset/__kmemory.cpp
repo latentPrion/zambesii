@@ -10,6 +10,12 @@ uarch_t		__kspaceInitMem[
 		(CHIPSET_MEMORY___KSPACE_SIZE / PAGING_BASE_SIZE),
 		(sizeof(uarch_t) * __BITS_PER_BYTE__))];
 
-hardwareIdListC::arrayNodeS	__kspaceStreamPtr[
+hardwareIdListC::arrayNodeS	initialMemoryBankArray[
+	CHIPSET_MEMORY_NUMA___KSPACE_BANKID + 1];
+
+hardwareIdListC::arrayNodeS	initialNumaStreamArray[
+	CHIPSET_MEMORY_NUMA___KSPACE_BANKID + 1];
+
+hardwareIdListC::arrayNodeS	initialCpuBankArray[
 	CHIPSET_MEMORY_NUMA___KSPACE_BANKID + 1];
 

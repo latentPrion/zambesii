@@ -133,7 +133,7 @@ taskC*taskStreamC::pullRoundRobinQ(void)
 
 void taskStreamC::updateCapacity(ubit8 action, uarch_t val)
 {
-	numaStreamC		*ns;
+	numaCpuBankC		*ncb;
 
 	switch (action)
 	{
@@ -152,15 +152,15 @@ void taskStreamC::updateCapacity(ubit8 action, uarch_t val)
 	default: return;
 	};
 
-	ns = numaTrib.getStream(parentCpu->bankId);
-	if (ns == __KNULL) { return; };
+	ncb = cpuTrib.getBank(parentCpu->bankId);
+	if (ncb == __KNULL) { return; };
 
-	ns->cpuBank.updateCapacity(action, val);
+	ncb->updateCapacity(action, val);
 }
 
 void taskStreamC::updateLoad(ubit8 action, uarch_t val)
 {
-	numaStreamC		*ns;
+	numaCpuBankC		*ncb;
 
 	switch (action)
 	{
@@ -179,9 +179,9 @@ void taskStreamC::updateLoad(ubit8 action, uarch_t val)
 	default: return;
 	};
 
-	ns = numaTrib.getStream(parentCpu->bankId);
-	if (ns == __KNULL) { return; };
+	ncb = cpuTrib.getBank(parentCpu->bankId);
+	if (ncb == __KNULL) { return; };
 
-	ns->cpuBank.updateLoad(action, val);
+	ncb->updateLoad(action, val);
 }
 

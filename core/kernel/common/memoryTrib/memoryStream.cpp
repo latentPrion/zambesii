@@ -9,9 +9,10 @@
 #include <kernel/common/processId.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryStream.h>
+#include <kernel/common/memoryTrib/pmmBridge.h>
 #include <kernel/common/memoryTrib/allocFlags.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
-#include <kernel/common/numaTrib/numaTrib.h>
+
 
 // Constructor for userspace streams.
 memoryStreamC::memoryStreamC(
@@ -115,12 +116,12 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		totalFrames < static_cast<sarch_t>( commit ); )
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		nFrames = numaTrib.configuredGetFrames(
+		nFrames = memoryTribPmm::configuredGetFrames(
 			&cpuTrib.getCurrentCpuStream()
 				->currentTask->localAffinity,
 			commit - totalFrames, &p);
 #else
-		nFrames = numaTrib.fragmentedGetFrames(
+		nFrames = memoryTribPmm::fragmentedGetFrames(
 			commit - totalFrames, &p);
 #endif
 		if (nFrames > 0)
@@ -206,7 +207,7 @@ releaseAndUnmap:
 			&p, 1, &f);
 
 		if (nMapped == WPRANGER_STATUS_BACKED) {
-			numaTrib.releaseFrames(p, 1);
+			memoryTribPmm::releaseFrames(p, 1);
 		};
 
 		pos += PAGING_BASE_SIZE;
@@ -254,7 +255,7 @@ void memoryStreamC::memFree(void *vaddr)
 			&paddr, 1, &unmapFlags);
 
 		if (status == WPRANGER_STATUS_BACKED) {
-			numaTrib.releaseFrames(paddr, nPages);
+			memoryTribPmm::releaseFrames(paddr, nPages);
 		};
 	};
 

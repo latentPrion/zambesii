@@ -2,9 +2,11 @@
 #include <scaling.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <kernel/common/numaCpuBank.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 
 
 taskTribC::taskTribC(void)
@@ -24,7 +26,7 @@ error_t taskTribC::schedule(taskC*task)
 	{
 		if (task->localAffinity.cpuBanks.testSingle(i))
 		{
-			curBank = &numaTrib.getStream(i)->cpuBank;
+			curBank = cpuTrib.getBank(i);
 			if (curBank == __KNULL) { continue; };
 			if (curBank->getLoad() < lowestLoad)
 			{
