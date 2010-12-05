@@ -10,6 +10,8 @@
 
 struct chipsetMemConfigS
 {
+	// Just in case some chipset doesn't have memory starting at paddr 0x0.
+	paddr_t		memBase;
 	paddr_t		memSize;
 };
 

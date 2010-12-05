@@ -2,6 +2,7 @@
 #include <__ksymbols.h>
 #include <arch/paging.h>
 #include <arch/paddr_t.h>
+#include <chipset/pkg/chipsetPackage.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/compiler/cxxrtl.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -13,7 +14,6 @@
 #include <__kclasses/prioQueue.h>
 #include <__kthreads/__korientation.h>
 #include <kernel/common/__koptimizationHacks.h>
-#include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
@@ -29,20 +29,24 @@ int oo=0, pp=0, qq=0, rr=0;
 int ghfoo(void)
 {
 	__kprintf(NOTICE"This is a thread.\n");
+	return 0;
 }
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
-	uarch_t		devMask;
+	// uarch_t		devMask;
 
 	__koptimizationHacks();
 
 	// Prepare the kernel by zeroing .BSS and calling constructors.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
+	// Initialize the chipset's module package.
+	DO_OR_DIE(chipsetPkg, initialize(), ret);
 	// processTrib initializes __kprocess & __korientation.
 	DO_OR_DIE(processTrib, initialize(), ret);
+#if 0
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 
 	cxxrtl::callGlobalConstructors();
@@ -118,5 +122,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Successful!\n");
+#endif
 }
 

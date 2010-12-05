@@ -23,7 +23,7 @@
 struct cpuInfoRivS
 {
 	struct chipsetNumaMapS *(*getNumaMap)(void);
-	struct chipsetCpuMapS *(*getCpuMap)(void);
+	struct chipsetSmpMapS *(*getCpuMap)(void);
 };
 
 #endif
