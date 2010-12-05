@@ -216,6 +216,7 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	 * kernel asks for the memory map subsequently, it will get the old one
 	 * back.
 	 **/
+	// If memory map was previously obtained, return the cached one.
 	if (_mmap != __KNULL) { return _mmap; };
 
 	ret = new chipsetMemMapS;
@@ -303,15 +304,17 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	__kprintf(NOTICE"getMemoryMap(): %d entries in firmware map.\n",
 		nEntries);
 
-	// Hardcode in the extra two entries for all chipsets.
+	// Hardcode in IVT + BDA
 	ret->entries[j].baseAddr = 0x0;
 	ret->entries[j].size = 0x4FF;
 	ret->entries[j].memType = CHIPSETMMAP_TYPE_RESERVED;
 
+	// Hardcode entry for EBDA + BIOS + VGA framebuffer + anything else.
 	ret->entries[j+1].baseAddr = 0x80000;
 	ret->entries[j+1].size = 0x80000;
 	ret->entries[j+1].memType = CHIPSETMMAP_TYPE_RESERVED;
 
+	// This entry sets the kernel image in pmem as reserved.
 	ret->entries[j+2].baseAddr = CHIPSET_MEMORY___KLOAD_PADDR_BASE;
 	ret->entries[j+2].size = PLATFORM_MEMORY_GET___KSYMBOL_PADDR(__kend)
 		- CHIPSET_MEMORY___KLOAD_PADDR_BASE;
@@ -319,10 +322,10 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	ret->entries[j+2].memType = CHIPSETMMAP_TYPE_RESERVED;
 
 	__kprintf(NOTICE"getMemoryMap(): Kernel phys: base 0x%P, size 0x%P.\n",
-		ret->entries[i+2].baseAddr,
-		ret->entries[i+2].size);
+		ret->entries[j+2].baseAddr,
+		ret->entries[j+2].size);
 
-	ret->nEntries = i + 3;
+	ret->nEntries = j + 3;
 	_mmap = ret;
 
 	return ret;
@@ -351,29 +354,29 @@ chipsetMemConfigS *ibmPc_memoryMod_getMemoryConfig(void)
 	{
 		ibmPc_memoryMod_getMemoryMap();
 		if (_mmap == __KNULL) { goto useE801; };
-
-		for (ubit32 i=0; i<_mmap->nEntries; i++)
-		{
-			if ((_mmap->entries[i].baseAddr
-				> _mmap->entries[highest].baseAddr)
-				&& _mmap->entries[i].memType
-					== CHIPSETMMAP_TYPE_USABLE)
-			{
-				highest = i;
-			};
-		};
-
-		if (_mmap->entries[highest].memType != CHIPSETMMAP_TYPE_USABLE)
-		{
-			goto useE801;
-		};
-
-		ret->memBase = 0x0;
-		ret->memSize = _mmap->entries[highest].baseAddr
-			+ _mmap->entries[highest].size;
-
-		return ret;
 	};
+
+	for (ubit32 i=0; i<_mmap->nEntries; i++)
+	{
+		if ((_mmap->entries[i].baseAddr
+			> _mmap->entries[highest].baseAddr)
+			&& _mmap->entries[i].memType
+				== CHIPSETMMAP_TYPE_USABLE)
+		{
+			highest = i;
+		};
+	};
+
+	if (_mmap->entries[highest].memType != CHIPSETMMAP_TYPE_USABLE)
+	{
+		goto useE801;
+	};
+
+	ret->memBase = 0x0;
+	ret->memSize = _mmap->entries[highest].baseAddr
+		+ _mmap->entries[highest].size;
+
+	return ret;
 
 useE801:
 
@@ -389,6 +392,7 @@ useE801:
 
 	ibmPcBios_lock_release();
 
+	ret->memBase = 0x0;
 	if (ax == 0)
 	{
 		ret->memSize = 0x100000 + (cx << 10);
