@@ -44,11 +44,12 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	// processTrib initializes __kprocess & __korientation.
 	DO_OR_DIE(processTrib, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initialize(), ret);
-
+#if 0
+#endif
 	cxxrtl::callGlobalConstructors();
-
-	DO_OR_DIE(timerTrib, initialize(), ret);
+#if 0
 	DO_OR_DIE(interruptTrib, initialize(), ret);
+	DO_OR_DIE(timerTrib, initialize(), ret);
 
 	// Initialize the kernel swamp.
 	DO_OR_DIE(
@@ -119,5 +120,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Successful!\n");
+#endif
 }
 
