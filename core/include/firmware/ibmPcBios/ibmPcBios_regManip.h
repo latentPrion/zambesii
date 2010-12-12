@@ -4,44 +4,39 @@
 	#include <__kstdlib/__ktypes.h>
 	#include "x86Emu.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace ibmPcBios_regs
+{
+	uarch_t getEax(void);
+	uarch_t getEbx(void);
+	uarch_t getEcx(void);
+	uarch_t getEdx(void);
+	uarch_t getEsi(void);
+	uarch_t getEdi(void);
+	uarch_t getEsp(void);
+	uarch_t getEbp(void);
+	uarch_t getEflags(void);
+	uarch_t getCs(void);
+	uarch_t getDs(void);
+	uarch_t getEs(void);
+	uarch_t getFs(void);
+	uarch_t getGs(void);
+	uarch_t getSs(void);
 
-uarch_t ibmPcBios_getEax(void);
-uarch_t ibmPcBios_getEbx(void);
-uarch_t ibmPcBios_getEcx(void);
-uarch_t ibmPcBios_getEdx(void);
-uarch_t ibmPcBios_getEsi(void);
-uarch_t ibmPcBios_getEdi(void);
-uarch_t ibmPcBios_getEsp(void);
-uarch_t ibmPcBios_getEbp(void);
-uarch_t ibmPcBios_getEflags(void);
-uarch_t ibmPcBios_getCs(void);
-uarch_t ibmPcBios_getDs(void);
-uarch_t ibmPcBios_getEs(void);
-uarch_t ibmPcBios_getFs(void);
-uarch_t ibmPcBios_getGs(void);
-uarch_t ibmPcBios_getSs(void);
-
-void ibmPcBios_setEax(uarch_t val);
-void ibmPcBios_setEbx(uarch_t val);
-void ibmPcBios_setEcx(uarch_t val);
-void ibmPcBios_setEdx(uarch_t val);
-void ibmPcBios_setEsi(uarch_t val);
-void ibmPcBios_setEdi(uarch_t val);
-void ibmPcBios_setEsp(uarch_t val);
-void ibmPcBios_setEbp(uarch_t val);
-void ibmPcBios_setCs(uarch_t val);
-void ibmPcBios_setDs(uarch_t val);
-void ibmPcBios_setEs(uarch_t val);
-void ibmPcBios_setFs(uarch_t val);
-void ibmPcBios_setGs(uarch_t val);
-void ibmPcBios_setSs(uarch_t val);
-
-#ifdef __cplusplus
+	void setEax(uarch_t val);
+	void setEbx(uarch_t val);
+	void setEcx(uarch_t val);
+	void setEdx(uarch_t val);
+	void setEsi(uarch_t val);
+	void setEdi(uarch_t val);
+	void setEsp(uarch_t val);
+	void setEbp(uarch_t val);
+	void setCs(uarch_t val);
+	void setDs(uarch_t val);
+	void setEs(uarch_t val);
+	void setFs(uarch_t val);
+	void setGs(uarch_t val);
+	void setSs(uarch_t val);
 }
-#endif
 
 #endif
 

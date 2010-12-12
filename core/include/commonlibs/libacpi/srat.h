@@ -4,7 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include "rxsdt.h"
 
-#define ACPI_SRAT_GET_TYPE(_addr)		(*(ubit8 *)_addr)
+#define ACPI_SRAT_GET_TYPE(_addr)		(*(ubit8 *)(_addr))
 #define ACPI_SRAT_TYPE_CPU			0
 #define ACPI_SRAT_TYPE_MEM			1
 
@@ -19,7 +19,8 @@ struct acpi_rSratCpuS
 	ubit8		lapicId;
 	ubit32		flags;
 	// Domain 8-31 + Local SAPIC EID.
-	ubit32		domain1;
+	ubit8		domain1;
+	ubit8		localSapicEid;
 	ubit8		reserved[4];
 };
 
@@ -31,7 +32,8 @@ struct acpi_rSratMemS
 {
 	ubit8		type;
 	ubit8		length;
-	ubit32		domain;
+	ubit16		domain0;
+	ubit16		domain1;
 	ubit16		reserved0;
 	ubit32		baseLow;
 	ubit32		baseHigh;

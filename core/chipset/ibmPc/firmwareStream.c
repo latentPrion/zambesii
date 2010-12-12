@@ -13,11 +13,8 @@ static error_t ibmPc_nop_success(void)
 	return ERROR_SUCCESS;
 }
 
-extern struct chipsetNumaMapS *ibmPc_mi_getNumaMap(void);
-
 static error_t ibmPc_initialize(void)
 {
-	firmwareFwStream.memInfoRiv->getNumaMap = &ibmPc_mi_getNumaMap;
 	return ERROR_SUCCESS;
 }
 

@@ -302,7 +302,7 @@ x86			- X86 registers
 typedef struct {
 	unsigned long	mem_base;
 	unsigned long	mem_size;
-	void*        	private;
+	void*        	_private;
 	X86EMU_regs		x86;
 	} X86EMU_sysEnv;
 

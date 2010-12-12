@@ -1,35 +1,43 @@
 
-#include <kernel/common/firmwareTrib/rivIoApi.h>
+#include <arch/io.h>
 #include "x86EmuAuxFuncs.h"
 
-static u8 inb(X86EMU_pioAddr addr)
+
+XEAEXTERN u8 inb(X86EMU_pioAddr addr);
+XEAEXTERN u16 inw(X86EMU_pioAddr addr);
+XEAEXTERN u32 inl(X86EMU_pioAddr addr);
+XEAEXTERN void outb(X86EMU_pioAddr addr, u8 val);
+XEAEXTERN void outw(X86EMU_pioAddr addr, u16 val);
+XEAEXTERN void outl(X86EMU_pioAddr addr, u32 val);
+
+u8 inb(X86EMU_pioAddr addr)
 {
-	return io_read8(addr);
+	return io::read8(addr);
 }
 
-static u16 inw(X86EMU_pioAddr addr)
+u16 inw(X86EMU_pioAddr addr)
 {
-	return io_read16(addr);
+	return io::read16(addr);
 }
 
-static u32 inl(X86EMU_pioAddr addr)
+u32 inl(X86EMU_pioAddr addr)
 {
-	return io_read32(addr);
+	return io::read32(addr);
 }
 
 void outb(X86EMU_pioAddr addr, u8 val)
 {
-	io_write8(addr, val);
+	io::write8(addr, val);
 }
 
 void outw(X86EMU_pioAddr addr, u16 val)
 {
-	io_write16(addr, val);
+	io::write16(addr, val);
 }
 
 void outl(X86EMU_pioAddr addr, u32 val)
 {
-	io_write32(addr, val);
+	io::write32(addr, val);
 }
 
 X86EMU_pioFuncs		x86Emu_ioFuncs =

@@ -1,54 +1,17 @@
 
 #include <arch/arch.h>
+#include <chipset/pkg/chipsetPackage.h>
 #include <__kstdlib/utf8.h>
 #include <__kstdlib/utf16.h>
+#include <__kstdlib/__kbitManipulation.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/stdarg.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
-#include <kernel/common/firmwareTrib/firmwareTrib.h>
 
 
 #define DEBUGPIPE_FLAGS_NOLOG		(1<<0)
-
-#define DEBUGPIPE_TEST_AND_INITIALIZE(__bp,__db,__di,__rp,__m,__e)	\
-	if (__KFLAG_TEST(__bp, __di)) \
-	{ \
-		__rp = firmwareTrib.__m(); \
-		if(__rp != __KNULL) \
-		{ \
-			__e = (*__rp->initialize)(); \
-			if (__e == ERROR_SUCCESS) \
-			{ \
-				devices.lock.acquire(); \
-				__KFLAG_SET(__db, __di); \
-				devices.lock.release(); \
-			}; \
-		}; \
-	}
-
-#define DEBUGPIPE_TEST_AND_SHUTDOWN(__dp,__db,__di,__m,__e)		\
-	if (__KFLAG_TEST(__dp, __di)) \
-	{ \
-		__e = (*firmwareTrib.__m()->shutdown)(); \
-		if (__e == ERROR_SUCCESS) \
-		{ \
-			devices.lock.acquire(); \
-			__KFLAG_UNSET(__db, __di); \
-			devices.lock.release(); \
-		}; \
-	}
-
-#define DEBUGPIPE_TEST_AND_SYPHON(__db,__di,__m,__tcb,__bl)		\
-	if (__KFLAG_TEST(__db, __di)) { \
-		(*firmwareTrib.__m()->syphon)(__tcb,__bl); \
-	}
-
-#define DEBUGPIPE_TEST_AND_CLEAR(__db,__di,__m)				\
-	if (__KFLAG_TEST(__db, __di)) { \
-		(*firmwareTrib.__m()->clear)(); \
-	}
 
 debugPipeC::debugPipeC(void)
 {
@@ -96,7 +59,7 @@ debugPipeC::~debugPipeC(void)
 
 uarch_t debugPipeC::tieTo(uarch_t device)
 {
-	debugRivS	*riv;
+	debugModS	*mod;
 	error_t		err;
 	uarch_t		ret;
 
@@ -109,22 +72,20 @@ uarch_t debugPipeC::tieTo(uarch_t device)
 			devices.lock.release();
 		};
 	};
-
-	DEBUGPIPE_TEST_AND_INITIALIZE(
-		device, devices.rsrc, DEBUGPIPE_DEVICE1, riv,
-		getDebugRiv1, err);
-
-	DEBUGPIPE_TEST_AND_INITIALIZE(
-		device, devices.rsrc, DEBUGPIPE_DEVICE2, riv,
-		getDebugRiv2, err);
-
-	DEBUGPIPE_TEST_AND_INITIALIZE(
-		device, devices.rsrc, DEBUGPIPE_DEVICE3, riv,
-		getDebugRiv3, err);
-
-	DEBUGPIPE_TEST_AND_INITIALIZE(
-		device, devices.rsrc, DEBUGPIPE_DEVICE4, riv,
-		getDebugRiv4, err);
+	for (ubit8 i=0; i<4; i++)
+	{
+		if (__KBIT_TEST(device, i))
+		{
+			mod = chipsetPkg.debug[i];
+			if (mod != __KNULL)
+			{
+				err = mod->initialize();
+				if (err == ERROR_SUCCESS) {
+					__KBIT_SET(devices.rsrc, i);
+				};
+			};
+		};
+	};
 
 	devices.lock.acquire();
 	ret = devices.rsrc;
@@ -147,21 +108,24 @@ uarch_t debugPipeC::untieFrom(uarch_t device)
 		};
 	};
 
-	DEBUGPIPE_TEST_AND_SHUTDOWN(
-		device, devices.rsrc, DEBUGPIPE_DEVICE1,
-		getDebugRiv1, err);
+	for (ubit8 i=0; i<4; i++)
+	{
+		if (__KFLAG_TEST(device, (1<<i)))
+		{
+			if (!__KFLAG_TEST(devices.rsrc, (1<<i))) {
+				continue;
+			};
 
-	DEBUGPIPE_TEST_AND_SHUTDOWN(
-		device, devices.rsrc, DEBUGPIPE_DEVICE2,
-		getDebugRiv2, err);
-
-	DEBUGPIPE_TEST_AND_SHUTDOWN(
-		device, devices.rsrc, DEBUGPIPE_DEVICE3,
-		getDebugRiv3, err);
-
-	DEBUGPIPE_TEST_AND_SHUTDOWN(
-		device, devices.rsrc, DEBUGPIPE_DEVICE4,
-		getDebugRiv4, err);
+			// Assume that mod exists if its bit is set.
+			err = chipsetPkg.debug[i]->shutdown();
+			if (err == ERROR_SUCCESS) {
+				__KFLAG_UNSET(devices.rsrc, (1<<i));
+			}
+			else {
+				// Find some way to warn the user.
+			};
+		};
+	};
 
 	devices.lock.acquire();
 	ret = devices.rsrc;
@@ -173,40 +137,27 @@ void debugPipeC::refresh(void)
 {
 	utf8Char	*buff;
 	void		*handle;
-	uarch_t		len, n=0;
+	uarch_t		len;
+	
 
-	// Send the buffer to all devices.
-	DEBUGPIPE_TEST_AND_CLEAR(
-		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugRiv1);
-
-	DEBUGPIPE_TEST_AND_CLEAR(
-		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugRiv2);
-
-	DEBUGPIPE_TEST_AND_CLEAR(
-		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugRiv3);
-
-	DEBUGPIPE_TEST_AND_CLEAR(
-		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugRiv4);
+	// Clear "screen" on each device, whatever that means to that device.
+	for (ubit8 i=0; i<4; i++)
+	{
+		if (__KFLAG_TEST(devices.rsrc, (1<<i))) {
+			chipsetPkg.debug[i]->clear();
+		};
+	};
 
 	handle = debugBuff.lock();
 
-	for (buff = debugBuff.extract(&handle, &len); buff != __KNULL; n++)
+	for (buff = debugBuff.extract(&handle, &len); buff != __KNULL; )
 	{
-		DEBUGPIPE_TEST_AND_SYPHON(
-			devices.rsrc, DEBUGPIPE_DEVICE1, getDebugRiv1,
-			buff, len);
-
-		DEBUGPIPE_TEST_AND_SYPHON(
-			devices.rsrc, DEBUGPIPE_DEVICE2, getDebugRiv2,
-			buff, len);
-
-		DEBUGPIPE_TEST_AND_SYPHON(
-			devices.rsrc, DEBUGPIPE_DEVICE3, getDebugRiv3,
-			buff, len);
-
-		DEBUGPIPE_TEST_AND_SYPHON(
-			devices.rsrc, DEBUGPIPE_DEVICE4, getDebugRiv4,
-			buff, len);
+		for (ubit8 i=0; i<4; i++)
+		{
+			if (__KFLAG_TEST(devices.rsrc, (1<<i))) {
+				chipsetPkg.debug[i]->syphon(buff, len);
+			};
+		};
 
 		buff = debugBuff.extract(&handle, &len);
 	};
@@ -441,21 +392,12 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 		debugBuff.syphon(convBuff.rsrc, buffLen);
 	};
 
-	DEBUGPIPE_TEST_AND_SYPHON(
-		devices.rsrc, DEBUGPIPE_DEVICE1, getDebugRiv1,
-		convBuff.rsrc, buffLen);
-
-	DEBUGPIPE_TEST_AND_SYPHON(
-		devices.rsrc, DEBUGPIPE_DEVICE2, getDebugRiv2,
-		convBuff.rsrc, buffLen);
-
-	DEBUGPIPE_TEST_AND_SYPHON(
-		devices.rsrc, DEBUGPIPE_DEVICE3, getDebugRiv3,
-		convBuff.rsrc, buffLen);
-
-	DEBUGPIPE_TEST_AND_SYPHON(
-		devices.rsrc, DEBUGPIPE_DEVICE4, getDebugRiv4,
-		convBuff.rsrc, buffLen);
+	for (ubit8 i=0; i<4; i++)
+	{
+		if (__KFLAG_TEST(devices.rsrc, (1<<i))) {
+			chipsetPkg.debug[i]->syphon(convBuff.rsrc, buffLen);
+		};
+	};
 
 	convBuff.lock.release();
 }

@@ -1,4 +1,5 @@
 
+#include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/srat.h>
 
 
@@ -12,21 +13,21 @@ acpi_rSratCpuS *acpiRSrat::getNextCpuEntry(
 		*handle = ACPI_SRAT_GET_FIRST_ENTRY(srat);
 	};
 
-	while (*handle < ACPI_SRAT_GET_ENDADDR(srat))
+	while (*handle < ACPI_TABLE_GET_ENDADDR(srat))
 	{
 		switch (ACPI_SRAT_GET_TYPE(*handle))
 		{
 		case ACPI_SRAT_TYPE_CPU:
 			ret = static_cast<acpi_rSratCpuS *>( *handle );
-			*handle = ACPI_PTR_INC_BY(*handle, acpi_rSratCpuS);
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rSratMemS *)*handle)->length);
+
 			return ret;
 
 		default:
 			// Use the 'length' member to skip over all others.
-			*handle = reinterpret_cast<void *>(
-				(uarch_t)*handle
-					+ (((acpi_rSratCpuS *)*handle)
-					->length));
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rSratMemS *)*handle)->length);
 
 			break;
 		};
@@ -45,21 +46,21 @@ acpi_rSratMemS *acpiRSrat::getNextMemEntry(
 		*handle = ACPI_SRAT_GET_FIRST_ENTRY(srat);
 	};
 
-	while (*handle < ACPI_SRAT_GET_ENDADDR(srat))
+	while (*handle < ACPI_TABLE_GET_ENDADDR(srat))
 	{
 		switch (ACPI_SRAT_GET_TYPE(*handle))
 		{
 		case ACPI_SRAT_TYPE_MEM:
 			ret = static_cast<acpi_rSratMemS *>( *handle );
-			*handle = ACPI_PTR_INC_BY(*handle, acpi_rSratMemS);
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rSratMemS *)*handle)->length);
+
 			return ret;
 
 		default:
 			// Use the 'length' member to skip over all others.
-			*handle = reinterpret_cast<void *>(
-				(uarch_t)*handle
-					+ (((acpi_rSratMemS *)*handle)
-					->length));
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rSratMemS *)*handle)->length);
 
 			break;
 		};

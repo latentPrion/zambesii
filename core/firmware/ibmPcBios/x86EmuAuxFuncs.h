@@ -3,8 +3,14 @@
 
 	#include "x86emu.h"
 
-extern X86EMU_pioFuncs		x86Emu_ioFuncs;
-extern X86EMU_memFuncs		x86Emu_memFuncs;
+#ifdef __cplusplus
+#define XEAEXTERN	extern "C"
+#else
+#define XEAEXTERN	extern
+#endif
+
+XEAEXTERN X86EMU_pioFuncs	x86Emu_ioFuncs;
+XEAEXTERN X86EMU_memFuncs	x86Emu_memFuncs;
 
 #endif
 

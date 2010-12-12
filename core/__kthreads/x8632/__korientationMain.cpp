@@ -35,7 +35,7 @@ int ghfoo(void)
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
-	// uarch_t		devMask;
+	uarch_t		devMask;
 
 	__koptimizationHacks();
 
@@ -46,9 +46,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(chipsetPkg, initialize(), ret);
 	// processTrib initializes __kprocess & __korientation.
 	DO_OR_DIE(processTrib, initialize(), ret);
-#if 0
 	DO_OR_DIE(cpuTrib, initialize(), ret);
-
 	cxxrtl::callGlobalConstructors();
 
 	DO_OR_DIE(timerTrib, initialize(), ret);
@@ -61,8 +59,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 			reinterpret_cast<void *>( 0xC0000000 + 0x400000 ),
 			0x3FB00000, __KNULL),
 		ret);
+
 	DO_OR_DIE(numaTrib, initialize(), ret);
-	DO_OR_DIE(firmwareTrib, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
@@ -73,6 +71,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 			__kprintf(WARNING ORIENT"No debug buffer allocated.\n");
 		};
 	};
+
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
@@ -80,6 +79,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
 	DO_OR_DIE(numaTrib, initialize2(), ret);
+#if 0
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
 	DO_OR_DIE(execTrib, initialize(), ret);

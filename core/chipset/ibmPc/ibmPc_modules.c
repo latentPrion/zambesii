@@ -1,7 +1,21 @@
 
 #include "memoryMod.h"
 #include "terminalMod.h"
+#include "pic.h"
 
+
+struct intControllerModS	ibmPc_intControllerMod =
+{
+	&ibmPc_pic_initialize,
+	&ibmPc_pic_shutdown,
+	&ibmPc_pic_suspend,
+	&ibmPc_pic_restore,
+
+	&ibmPc_pic_maskAll,
+	&ibmPc_pic_maskSingle,
+	&ibmPc_pic_unmaskAll,
+	&ibmPc_pic_unmaskSingle
+};
 
 struct memoryModS	ibmPc_memoryMod =
 {

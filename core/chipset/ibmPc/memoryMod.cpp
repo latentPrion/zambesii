@@ -5,7 +5,7 @@
 #define __ASM__
 #include <platform/memory.h>
 #undef __ASM__
-#include <firmware/ibmPcBios/ibmPcBios.h>
+#include <firmware/ibmPcBios/ibmPcBios_coreFuncs.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
@@ -71,12 +71,12 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 	 **/
 
 	// LibACPI has determined that there is an RSDT present.
+	if (acpi::mapRsdt() != ERROR_SUCCESS) {	return __KNULL; };
 	rsdt = acpi::getRsdt();
 
 	// Now look for an SRAT entry in the RSDT.
 	handle = __KNULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &handle);
-
 	// First run: find out how many entries exist.
 	for (; srat != __KNULL; srat = acpiRsdt::getNextSrat(rsdt, &handle))
 	{
@@ -88,12 +88,14 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 		{
 			nEntries++;
 		};
+
 		acpiRsdt::destroySdt((acpi_sdtS *)srat);
 	};
 
 	ret = new chipsetNumaMapS;
 	if (ret == __KNULL) { return __KNULL; };
 	ret->nCpuEntries = 0;
+	ret->cpuEntries = __KNULL;
 
 	ret->memEntries = new numaMemMapEntryS[nEntries];
 	if (ret->memEntries == __KNULL)
@@ -115,51 +117,54 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 				srat, &sratHandle))
 		{
 #ifdef __32_BIT__
-			if (memEntry->baseHigh == 0
-				&& memEntry->lengthHigh == 0)
+			if (!(memEntry->baseHigh == 0
+				&& memEntry->lengthHigh == 0))
 			{
-#endif
-				ret->memEntries[currEntry].baseAddr
-					= memEntry->baseLow
-#ifndef __32_BIT__
-					| (memEntry->baseHigh << 32)
-#endif
-					;
-				ret->memEntries[currEntry].size
-					= memEntry->lengthLow
-#ifndef __32_BIT__
-					| (memEntry->lengthHigh << 32)
-#endif
-					;
-
-				if (__KFLAG_TEST(
-					memEntry->flags,
-					ACPI_SRAT_MEM_FLAGS_ENABLED))
-				{
-					__KFLAG_SET(
-						ret->memEntries[currEntry].flags,
-						NUMAMEMMAP_FLAGS_ONLINE);
-				};
-
-				if (__KFLAG_TEST(
-					memEntry->flags,
-					ACPI_SRAT_MEM_FLAGS_HOTPLUG))
-				{
-					__KFLAG_SET(
-						ret->memEntries[currEntry].flags,
-						NUMAMEMMAP_FLAGS_HOTPLUG);
-				};
-
-				currEntry++;
-#ifdef __32_BIT__
+				continue;
 			};
 #endif
+			ret->memEntries[currEntry].baseAddr
+				= memEntry->baseLow
+#ifndef __32_BIT__
+				| (memEntry->baseHigh << 32)
+#endif
+				;
+			ret->memEntries[currEntry].size
+				= memEntry->lengthLow
+#ifndef __32_BIT__
+				| (memEntry->lengthHigh << 32)
+#endif
+				;
+
+			ret->memEntries[currEntry].bankId =
+				memEntry->domain0
+				| (memEntry->domain1 << 16);
+
+			if (__KFLAG_TEST(
+				memEntry->flags,
+				ACPI_SRAT_MEM_FLAGS_ENABLED))
+			{
+				__KFLAG_SET(
+					ret->memEntries[currEntry].flags,
+					NUMAMEMMAP_FLAGS_ONLINE);
+			};
+
+			if (__KFLAG_TEST(
+				memEntry->flags,
+				ACPI_SRAT_MEM_FLAGS_HOTPLUG))
+			{
+				__KFLAG_SET(
+					ret->memEntries[currEntry].flags,
+					NUMAMEMMAP_FLAGS_HOTPLUG);
+			};
+
+			currEntry++;
 		};
 
 		acpiRsdt::destroySdt((acpi_sdtS *)srat);
 	};
 
-	ret->nMemEntries = currEntry+1;
+	ret->nMemEntries = currEntry;
 	return ret;
 }
 
@@ -169,6 +174,7 @@ chipsetNumaMapS *ibmPc_memoryMod_getNumaMap(void)
 	chipsetNumaMapS	*ret=0;
 
 	// Get NUMA map from ACPI.
+	acpi::flushCache();
 	err = acpi::findRsdp();
 	if (err != ERROR_SUCCESS) { return __KNULL; };
 
@@ -176,15 +182,19 @@ chipsetNumaMapS *ibmPc_memoryMod_getNumaMap(void)
 #ifndef __32_BIT__
 /*	if (acpi::testForXsdt())
 	{
+		__kprintf(NOTICE"getNumaMap: Using XSDT.\n");
 		// Prefer XSDT to RSDT if found.
 		ret = ibmPc_mMod_gnm_xGnm();
 		if (ret != __KNULL) { return ret; };
 	}; */
 #endif
 	// Else use RSDT.
-	if (acpi::testForRsdt()) {
+	if (acpi::testForRsdt())
+	{
+		__kprintf(NOTICE"getNumaMap: Falling back to RSDT.\n");
 		ret = ibmPc_mMod_gnm_rGnm();
 	};
+
 	return ret;
 }
 
@@ -227,33 +237,34 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	};
 
 	// Find out how many E820 entries there are.
-	ibmPcBios_lock_acquire();
+for (;;){};
+	ibmPcBios::acquireLock();
 
 	// Buffer is placed into 0x1000 in lowmem.
 	e820Ptr = (struct e820EntryS *)(M.mem_base + 0x1000);
-	ibmPcBios_setEdi(0x00001000);
-	ibmPcBios_setEax(0x0000E820);
-	ibmPcBios_setEbx(0);
-	ibmPcBios_setEcx(24);
-	ibmPcBios_setEdx(0x534D4150);
+	ibmPcBios_regs::setEdi(0x00001000);
+	ibmPcBios_regs::setEax(0x0000E820);
+	ibmPcBios_regs::setEbx(0);
+	ibmPcBios_regs::setEcx(24);
+	ibmPcBios_regs::setEdx(0x534D4150);
 
-	ibmPcBios_executeInterrupt(0x15);
+	ibmPcBios::executeInterrupt(0x15);
 
-	while ((ibmPcBios_getEax() == 0x534D4150)
-		&& !__KFLAG_TEST(ibmPcBios_getEflags(), (1<<0)))
+	while ((ibmPcBios_regs::getEax() == 0x534D4150)
+		&& !__KFLAG_TEST(ibmPcBios_regs::getEflags(), (1<<0)))
 	{
 		nEntries++;
-		if (ibmPcBios_getEbx() == 0) {
+		if (ibmPcBios_regs::getEbx() == 0) {
 			break;
 		};
 
-		ibmPcBios_setEax(0x0000E820);
-		ibmPcBios_setEcx(24);
-		ibmPcBios_setEdi(ibmPcBios_getEdi() + 24);
-		ibmPcBios_executeInterrupt(0x15);
+		ibmPcBios_regs::setEax(0x0000E820);
+		ibmPcBios_regs::setEcx(24);
+		ibmPcBios_regs::setEdi(ibmPcBios_regs::getEdi() + 24);
+		ibmPcBios::executeInterrupt(0x15);
 	};
 
-	ibmPcBios_lock_release();
+	ibmPcBios::releaseLock();
 
 	// Allocate enough space to hold them all, plus the extra 3.
 	ret->entries = new chipsetMemMapEntryS[nEntries + 3];
@@ -380,17 +391,17 @@ chipsetMemConfigS *ibmPc_memoryMod_getMemoryConfig(void)
 
 useE801:
 
-	ibmPcBios_lock_acquire();
+	ibmPcBios::acquireLock();
 
-	ibmPcBios_setEax(0x0000E801);
-	ibmPcBios_executeInterrupt(0x15);
+	ibmPcBios_regs::setEax(0x0000E801);
+	ibmPcBios::executeInterrupt(0x15);
 
-	ax = ibmPcBios_getEax();
-	bx = ibmPcBios_getEbx();
-	cx = ibmPcBios_getEcx();
-	dx = ibmPcBios_getEdx();
+	ax = ibmPcBios_regs::getEax();
+	bx = ibmPcBios_regs::getEbx();
+	cx = ibmPcBios_regs::getEcx();
+	dx = ibmPcBios_regs::getEdx();
 
-	ibmPcBios_lock_release();
+	ibmPcBios::releaseLock();
 
 	ret->memBase = 0x0;
 	if (ax == 0)

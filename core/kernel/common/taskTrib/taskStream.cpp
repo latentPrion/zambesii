@@ -55,7 +55,7 @@ status_t taskStreamC::schedule(taskC *task)
 
 void taskStreamC::pullTask(void)
 {
-	taskC	*newTask;
+	taskC		*newTask;
 	cpuStreamC	*curCpu;
 
 	curCpu = cpuTrib.getCurrentCpuStream();
@@ -84,7 +84,7 @@ execute:
 
 taskC*taskStreamC::pullRealTimeQ(void)
 {
-	taskC	*ret;
+	taskC		*ret;
 	status_t	status;
 
 	do
@@ -107,7 +107,7 @@ taskC*taskStreamC::pullRealTimeQ(void)
 
 taskC*taskStreamC::pullRoundRobinQ(void)
 {
-	taskC	*ret;
+	taskC		*ret;
 	status_t	status;
 	cpuStreamC	*curCpu;
 

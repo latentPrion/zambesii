@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/memoryTrib/memoryTrib.h>
@@ -58,13 +59,17 @@ error_t ibmPc_terminalMod_initialize(void)
 
 		if (nMapped == 1)
 		{
-			bda = __KNULL;
 			maxRow = *(bda + 0x484) + 1;
 			maxCol = *(ubit16 *)(bda + 0x44A);
 			return ERROR_SUCCESS;
 		}
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
-			bda, 1);
+		else
+		{
+			memoryTrib.__kmemoryStream.vaddrSpaceStream
+				.releasePages(bda, 1);
+
+			bda = __KNULL;
+		};
 	};
 	maxRow = 25;
 	maxCol = 80;

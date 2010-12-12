@@ -1,9 +1,8 @@
 
+#include <chipset/pkg/chipsetPackage.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
-#include <kernel/common/firmwareTrib/firmwareTrib.h>
-#include <kernel/common/firmwareTrib/firmwareStream.h>
 #include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -77,45 +76,37 @@ error_t numaTribC::initialize2(void)
 	chipsetMemConfigS	*memConfig=__KNULL;
 	chipsetMemMapS		*memMap=__KNULL;
 	chipsetNumaMapS		*numaMap=__KNULL;
-	memInfoRivS		*memInfoRiv;
+	memoryModS		*memoryMod;
 	numaStreamC		*ns;
 	// __kspaceBool is used to determine whether or not to kill __kspace.
 	sarch_t			pos, prevPos, __kspaceBool=0;
 	status_t		nSet=0;
 
+	if (chipsetPkg.initialize == __KNULL || chipsetPkg.memory == __KNULL)
+	{
+		__kprintf(ERROR"Missing chipsetPkg.initialize(), or Memory \
+			Info module.\n");
+	};
+
 	// Initialize both firmware streams.
-	ret = (*chipsetFwStream.initialize)();
+	ret = (*chipsetPkg.initialize)();
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(NOTICE NUMATRIB"Failed to init chipset FWStream.\n");
 		return ret;
 	};
 
-	ret = (*firmwareFwStream.initialize)();
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(NOTICE NUMATRIB"Failed to init firmware FWStream.\n");
-		return ret;
-	};
-
 	// Fetch and initialize the Memory Info rivulet.
-	memInfoRiv = firmwareTrib.getMemInfoRiv();
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(NOTICE NUMATRIB"Chipset provides no Mem Info Riv.");
-		return ERROR_UNKNOWN;
-	};
-
-	ret = (*memInfoRiv->initialize)();
+	memoryMod = chipsetPkg.memory;
+	ret = (*memoryMod->initialize)();
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(NOTICE NUMATRIB"Failed to init Mem Info Rivulet.\n");
 		return ret;
 	};
-
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Get NUMA map from chipset.
-	numaMap = (*memInfoRiv->getNumaMap)();
+	numaMap = (*memoryMod->getNumaMap)();
 
 	if (numaMap != __KNULL && numaMap->nMemEntries > 0)
 	{
@@ -142,7 +133,7 @@ error_t numaTribC::initialize2(void)
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 	// Get memory config from the chipset.
-	memConfig = (*memInfoRiv->getMemoryConfig)();
+	memConfig = (*memoryMod->getMemoryConfig)();
 
 	if (memConfig != __KNULL && memConfig->memSize > 0)
 	{
@@ -191,7 +182,7 @@ error_t numaTribC::initialize2(void)
 
 parseMemoryMap:
 	// Get the Memory Map from the chipset code.
-	memMap = (memInfoRiv->getMemoryMap)();
+	memMap = (memoryMod->getMemoryMap)();
 
 	if (memMap != __KNULL && memMap->nEntries > 0)
 	{
