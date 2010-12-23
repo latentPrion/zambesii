@@ -182,7 +182,7 @@ error_t numaTribC::initialize2(void)
 
 parseMemoryMap:
 	// Get the Memory Map from the chipset code.
-	memMap = (memoryMod->getMemoryMap)();
+	memMap = (*memoryMod->getMemoryMap)();
 
 	if (memMap != __KNULL && memMap->nEntries > 0)
 	{
@@ -401,7 +401,7 @@ void numaTribC::init2_generateShbankFromNumaMap(
 	)
 {
 	error_t		ret;
-	paddr_t			tmpBase, tmpSize;
+	paddr_t		tmpBase, tmpSize;
 
 	// NUMA map exists: need to discover holes for shbank.
 	sortNumaMapByAddress(map);
@@ -415,9 +415,7 @@ void numaTribC::init2_generateShbankFromNumaMap(
 		 * Only holes that are below the memSize mark will get a shbank
 		 * memory range.
 		 **/
-		if (map->memEntries[i].baseAddr > cfg->memSize) {
-			break;
-		};
+		if (map->memEntries[i].baseAddr > cfg->memSize) { break; };
 
 		tmpBase = map->memEntries[i].baseAddr + map->memEntries[i].size;
 		tmpSize = map->memEntries[i+1].baseAddr - tmpBase;
@@ -430,9 +428,9 @@ void numaTribC::init2_generateShbankFromNumaMap(
 		{
 #ifdef CONFIG_DEBUG_NUMATRIB
 			__kprintf(NOTICE NUMATRIB
-				"For memrange %d, on bank %d, base 0x%X, size "
-				"0x%X, next entry base 0x%X, shbank memory "
-				"range with base 0x%X and size 0x%X is needed."
+				"For memrange %d, on bank %d, base 0x%P, size "
+				"0x%P, next entry base 0x%P, shbank memory "
+				"range with base 0x%P and size 0x%P is needed."
 				"\n", i,
 				map->memEntries[i].bankId,
 				map->memEntries[i].baseAddr,
@@ -448,13 +446,13 @@ void numaTribC::init2_generateShbankFromNumaMap(
 			{
 				__kprintf(ERROR NUMATRIB
 					"Shbank: Failed to spawn memrange for "
-					"hole: base 0x%X size 0x%X.\n",
+					"hole: base 0x%P size 0x%P.\n",
 					tmpBase, tmpSize);
 			}
 			else
 			{
 				__kprintf(NOTICE NUMATRIB
-					"Shbank: New memrange base 0x%X, size "
+					"Shbank: New memrange base 0x%P, size "
 					"0x%X.\n",
 					tmpBase, tmpSize);
 

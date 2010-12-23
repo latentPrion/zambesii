@@ -33,12 +33,12 @@ static chipsetMemConfigS	*_mcfg=__KNULL;
 
 error_t ibmPc_memoryMod_initialize(void)
 {
-	return ERROR_SUCCESS;
+	return ibmPcBios::initialize();
 }
 
 error_t ibmPc_memoryMod_shutdown(void)
 {
-	return ERROR_SUCCESS;
+	return ibmPcBios::shutdown();
 }
 
 error_t ibmPc_memoryMod_suspend(void)
@@ -237,7 +237,6 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	};
 
 	// Find out how many E820 entries there are.
-for (;;){};
 	ibmPcBios::acquireLock();
 
 	// Buffer is placed into 0x1000 in lowmem.

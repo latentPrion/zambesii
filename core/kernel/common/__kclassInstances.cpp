@@ -2,7 +2,6 @@
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
 #include <__kclasses/cachePool.h>
-#include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
@@ -21,7 +20,6 @@
  * The order in which they are placed here does not matter. Of course,
  * initializing in order is preferable.
  **/
-firmwareTribC		firmwareTrib;
 timerTribC		timerTrib;
 interruptTribC		interruptTrib;
 numaTribC		numaTrib;

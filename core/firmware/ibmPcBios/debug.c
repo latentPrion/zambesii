@@ -37,10 +37,9 @@
 *
 ****************************************************************************/
 
-#include "x86emu/x86emui.h"
+#include <firmware/ibmPcBios/x86emu/x86emui.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/stdarg.h>
-#include <kernel/common/firmwareTrib/rivDebugApi.h>
 //#include <stdlib.h>
 
 /*----------------------------- Implementation ----------------------------*/

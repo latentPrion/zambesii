@@ -6,7 +6,6 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
-#include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <__kthreads/__korientation.h>
 
 
@@ -30,7 +29,7 @@ error_t cpuTribC::initialize2(void)
 
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
 	{
-		__kprintf(NOTICE"SMP Map %d: id %d, flags 0x%X.\n",
+		__kprintf(NOTICE"SMP Map %d: id %d, flags 0x%x.\n",
 			i, smpMap->entries[i].cpuId, smpMap->entries[i].flags);
 	};
 #endif

@@ -7,7 +7,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/waitLock.h>
-#include "x86emu.h"
+#include <firmware/ibmPcBios/x86emu.h>
 #include "x86EmuAuxFuncs.h"
 
 
@@ -16,10 +16,14 @@
 
 
 waitLockC		ibmPcBiosLock;
+static ubit32		ibmPcBios_initialized=0;
+static error_t		ibmPcBios_initState;
 
 error_t ibmPcBios::initialize(void)
 {
 	status_t	nMapped;
+
+	if (ibmPcBios_initialized != 0) { return ibmPcBios_initState; };
 
 	memset(&M, 0, sizeof(M));
 
@@ -67,6 +71,8 @@ error_t ibmPcBios::initialize(void)
 	__kprintf(NOTICE FWFWS"initialize(): Done. Lowmem 0x%p.\n",
 		M.mem_base);
 
+	ibmPcBios_initialized = 1;
+	ibmPcBios_initState = ERROR_SUCCESS;
 	return ERROR_SUCCESS;
 }
 
@@ -80,6 +86,8 @@ error_t ibmPcBios::shutdown(void)
 	M.mem_base = __KNULL;
 
 	ibmPcBiosLock.release();
+
+	ibmPcBios_initialized = 0;
 	return ERROR_SUCCESS;
 }
 

@@ -40,11 +40,11 @@
 *
 ****************************************************************************/
 
-#include "x86emu.h"
-#include "x86emu/x86emui.h"
-#include "x86emu/regs.h"
-#include "x86emu/debug.h"
-#include "x86emu/prim_ops.h"
+#include <firmware/ibmPcBios/x86emu.h>
+#include <firmware/ibmPcBios/x86emu/x86emui.h>
+#include <firmware/ibmPcBios/x86emu/regs.h>
+#include <firmware/ibmPcBios/x86emu/debug.h>
+#include <firmware/ibmPcBios/x86emu/prim_ops.h>
 
 #include <__kstdlib/__kclib/string.h>
 

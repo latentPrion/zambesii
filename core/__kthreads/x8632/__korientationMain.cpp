@@ -79,7 +79,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
 	DO_OR_DIE(numaTrib, initialize2(), ret);
-#if 0
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
 	DO_OR_DIE(execTrib, initialize(), ret);
@@ -93,8 +92,12 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	vfsTrib.setDefaultTree((utf8Char *)":ekfs");
 	vfsTrib.createTree((utf8Char *)":sapphire");
 	vfsTrib.createTree((utf8Char *)":ftp");
+	__kprintf(NOTICE"Created trees :ekfs, :sapphire, :ftp, :ekfs is the "
+		"default tree.\n");
 
 	st = vfsTrib.getPath((utf8Char *)":ekfs", &t, &r);
+	__kprintf(NOTICE"GetPath on :ekfs: %d.\n", st);
+
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Result of createFolder: %d.\n",
 		vfsTrib.createFolder(static_cast<vfsDirC *>( r ), (utf8Char *)"zambezii"));
@@ -108,10 +111,10 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kprintf(NOTICE ORIENT"result of getPath on :ekfs/file1: %d.\n",
 		vfsTrib.getPath((utf8Char *)":ekfs/file1", &t, &r));
 
-
 	vfsTrib.getDefaultTree()->desc->dumpSubDirs();
 	vfsTrib.getDefaultTree()->desc->dumpFiles();
 
+#if 0
 	ret = processTrib.__kgetProcess()->spawnThread(
 		reinterpret_cast<void *>( &ghfoo ), SCHEDPOLICY_ROUND_ROBIN,
 		13, SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
@@ -121,7 +124,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 
 	__kdebug.refresh();
-	__kprintf(NOTICE ORIENT"Successful!\n");
 #endif
+	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 
