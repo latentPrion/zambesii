@@ -114,7 +114,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	vfsTrib.getDefaultTree()->desc->dumpSubDirs();
 	vfsTrib.getDefaultTree()->desc->dumpFiles();
 
-#if 0
 	ret = processTrib.__kgetProcess()->spawnThread(
 		reinterpret_cast<void *>( &ghfoo ), SCHEDPOLICY_ROUND_ROBIN,
 		13, SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
@@ -122,9 +121,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	__kprintf(NOTICE"Result of spawnThread: %d.\n", ret);
 
-
 	__kdebug.refresh();
-#endif
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 
