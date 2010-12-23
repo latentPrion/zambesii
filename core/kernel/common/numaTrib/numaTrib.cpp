@@ -14,7 +14,6 @@
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/numaTrib/numaTrib.h>
-#include <kernel/common/firmwareTrib/firmwareTrib.h>
 
 /**	EXPLANATION:
  * To initialize the NUMA Tributary, the steps are:

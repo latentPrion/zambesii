@@ -3,10 +3,16 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-#define ACPI_PTR_INC_BY(_ptr,_type)			\
-	(void *)(((uarch_t)_ptr) + sizeof(_type))
+#define ACPI_TABLE_GET_ENDADDR(_t)			\
+	((void *)(((uarch_t)(_t)) + ((_t)->hdr.tableLength) - 1))
 
-#define ACPI_RSDP_XSDTPADDR(_rsdp)	(*(ubit64 *)_rsdp->xsdtPaddr)
+#define ACPI_TABLE_GET_FIRST_ENTRY(_tbl)		\
+	(void *)((uarch_t)(_tbl) + sizeof(*(_tbl)))
+
+#define ACPI_PTR_INC_BY(_ptr,_amt)			\
+	(void *)(((uarch_t)(_ptr)) + (_amt))
+
+#define ACPI_RSDP_XSDTPADDR(_rsdp)	(*(ubit64 *)(_rsdp)->xsdtPaddr)
 #define ACPI_RSDP_SIG			"RSD PTR "
 #define ACPI_RSDP_SIGLEN		8
 
@@ -63,11 +69,8 @@ struct acpi_sdtS
 };
 
 
-#define ACPI_RSDT_GET_FIRST_ENTRY(_rsdt)		\
-	(paddr_t)((uarch_t)_rsdt + sizeof(acpi_sdtS))
-
 #define ACPI_RSDT_GET_NENTRIES(_rsdt)			\
-	((_rsdt->hdr.tableLength - sizeof(acpi_sdtS)) / 4)
+	(((_rsdt)->hdr.tableLength - sizeof(acpi_sdtS)) / 4)
 
 struct acpi_rsdtS
 {
@@ -77,7 +80,7 @@ struct acpi_rsdtS
 
 
 #define ACPI_XSDT_GET_NENTRIES(_xsdt)			\
-	((_xsdt->hdr.tableLength - sizeof(acpi_sdtS)) / 8)
+	(((_xsdt)->hdr.tableLength - sizeof(acpi_sdtS)) / 8)
 
 struct acpi_xsdtS
 {

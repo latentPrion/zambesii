@@ -12,21 +12,22 @@ acpi_rMadtCpuS *acpiRMadt::getNextCpuEntry(
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
 	};
 
-	while (*handle < ACPI_MADT_GET_ENDADDR(madt))
+	while (*handle < ACPI_TABLE_GET_ENDADDR(madt))
 	{
 		switch (ACPI_MADT_GET_TYPE(*handle))
 		{
 		case ACPI_MADT_TYPE_LAPIC:
 			ret = static_cast<acpi_rMadtCpuS *>( *handle );
-			*handle = ACPI_PTR_INC_BY(*handle, acpi_rMadtCpuS);
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+
 			return ret;
+
 
 		default:
 			// Use the 'length' member to skip over all others.
-			*handle = reinterpret_cast<void *>(
-				(uarch_t)*handle
-					+ (((acpi_rMadtCpuS *)*handle)
-					->length));
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rMadtCpuS *)*handle)->length);
 
 			break;
 		};
@@ -45,21 +46,21 @@ acpi_rMadtIoApicS *acpiRMadt::getNextIoApicEntry(
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
 	};
 
-	while (*handle < ACPI_MADT_GET_ENDADDR(madt))
+	while (*handle < ACPI_TABLE_GET_ENDADDR(madt))
 	{
 		switch (ACPI_MADT_GET_TYPE(*handle))
 		{
 		case ACPI_MADT_TYPE_IOAPIC:
 			ret = static_cast<acpi_rMadtIoApicS *>( *handle );
-			*handle = ACPI_PTR_INC_BY(*handle, acpi_rMadtIoApicS);
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+
 			return ret;
 
 		default:
 			// Use the 'length' member to skip over all others.
-			*handle = reinterpret_cast<void *>(
-				(uarch_t)*handle
-					+ (((acpi_rMadtCpuS *)*handle)
-					->length));
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rMadtCpuS *)*handle)->length);
 
 			break;
 		};

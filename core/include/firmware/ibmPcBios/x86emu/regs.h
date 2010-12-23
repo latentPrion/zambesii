@@ -296,13 +296,13 @@ Structure maintaining the emulator machine state.
 MEMBERS:
 mem_base		- Base real mode memory for the emulator
 mem_size		- Size of the real mode memory block for the emulator
-private			- private data pointer
+_private			- private data pointer
 x86			- X86 registers
 ****************************************************************************/
 typedef struct {
 	unsigned long	mem_base;
 	unsigned long	mem_size;
-	void*        	private;
+	void*        	_private;
 	X86EMU_regs		x86;
 	} X86EMU_sysEnv;
 

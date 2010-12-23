@@ -38,7 +38,7 @@
 ****************************************************************************/
 
 // #include <stdlib.h>
-#include "x86emu/x86emui.h"
+#include <firmware/ibmPcBios/x86emu/x86emui.h>
 
 /*----------------------------- Implementation ----------------------------*/
 

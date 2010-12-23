@@ -1,9 +1,10 @@
 
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
+#include <chipset/pkg/chipsetPackage.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/timerTrib/timerTrib.h>
-#include <kernel/common/moduleApis/chipsetSupportPackage.h>
+
 
 timerTribC::timerTribC(void)
 {
@@ -18,8 +19,8 @@ error_t timerTribC::initialize(void)
 	error_t		ret=ERROR_SUCCESS;
 
 	// Check for the existence of a watchdog device on this chipset.
-	if (chipsetCoreDev.watchdog != __KNULL) {
-		ret = (*chipsetCoreDev.watchdog->initialize)();
+	if (chipsetPkg.watchdog != __KNULL) {
+		ret = (*chipsetPkg.watchdog->initialize)();
 	};
 
 	// Return the result from the watchdog's initialize.

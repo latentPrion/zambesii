@@ -18,16 +18,18 @@ __kprocess(0x0, 0x0), nextProcId(CHIPSET_MEMORY_MAX_NPROCESSES - 1)
 
 error_t processTribC::initialize(void)
 {
-	__kprocess.tasks[1] = &__korientationThread;
-	__kprocess.absName = (utf8Char *)":ekfs/core/zambezii.zxe";
+	__kprocess.tasks[0] = &__korientationThread;
+	__kprocess.absName = (utf8Char *)":ekfs/zambezii.zxe";
 	__kprocess.argString = (utf8Char *)"-debug=1";
 	__kprocess.env = (utf8Char *)"";
 	__kprocess.memoryStream = &memoryTrib.__kmemoryStream;
 
+	
+
 	// Init __korientation thread.
 	memset(&__korientationThread, 0, sizeof(__korientationThread));
 
-	__korientationThread.id = 0x1;
+	__korientationThread.id = 0x0;
 	__korientationThread.parent = &__kprocess;
 	__korientationThread.stack0 = __korientationStack;
 	__korientationThread.nLocksHeld = 0;

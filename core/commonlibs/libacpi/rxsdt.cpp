@@ -75,13 +75,11 @@ acpi_rSratS *acpiRsdt::getNextSrat(acpi_rsdtS *rsdt, void **const handle)
 	acpi_sdtS	*sdt;
 	acpi_rSratS	*ret=__KNULL;
 
-	if (*handle == __KNULL)
-	{
-		*handle = reinterpret_cast<void *>(
-			(uarch_t)rsdt + sizeof(acpi_rsdtS) );
+	if (*handle == __KNULL) {
+		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
 	};
 
-	for (; (uarch_t)*handle < ((uarch_t)rsdt + rsdt->hdr.tableLength); )
+	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(*(paddr_t *)*handle);
 		sdt = reinterpret_cast<acpi_sdtS *>(
@@ -92,7 +90,7 @@ acpi_rSratS *acpiRsdt::getNextSrat(acpi_rsdtS *rsdt, void **const handle)
 		{
 			ret = (acpi_rSratS *)acpi_mapTable(
 				*(paddr_t *)*handle,
-				PAGING_BYTES_TO_PAGES(sdt->tableLength) +1);
+				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
 		};
 
 		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
@@ -109,13 +107,11 @@ acpi_rMadtS *acpiRsdt::getNextMadt(acpi_rsdtS *rsdt, void **const handle)
 	acpi_sdtS	*sdt;
 	acpi_rMadtS	*ret=__KNULL;
 
-	if (*handle == __KNULL)
-	{
-		*handle = reinterpret_cast<void *>(
-			(uarch_t)rsdt + sizeof(acpi_rsdtS) );
+	if (*handle == __KNULL) {
+		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
 	};
 
-	for (; (uarch_t)*handle < ((uarch_t)rsdt + rsdt->hdr.tableLength); )
+	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(*(paddr_t *)*handle);
 		sdt = reinterpret_cast<acpi_sdtS *>(
@@ -126,7 +122,7 @@ acpi_rMadtS *acpiRsdt::getNextMadt(acpi_rsdtS *rsdt, void **const handle)
 		{
 			ret = (acpi_rMadtS *)acpi_mapTable(
 				*(paddr_t *)*handle,
-				PAGING_BYTES_TO_PAGES(sdt->tableLength) +1);
+				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
 		};
 
 		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
@@ -143,13 +139,11 @@ acpi_rFacpS *acpiRsdt::getNextFacp(acpi_rsdtS *rsdt, void **const handle)
 	acpi_sdtS	*sdt;
 	acpi_rFacpS	*ret=__KNULL;
 
-	if (*handle == __KNULL)
-	{
-		*handle = reinterpret_cast<void *>(
-			(uarch_t)rsdt + sizeof(acpi_rsdtS) );
+	if (*handle == __KNULL) {
+		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
 	};
 
-	for (; (uarch_t)*handle < ((uarch_t)rsdt + rsdt->hdr.tableLength); )
+	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(*(paddr_t *)*handle);
 		sdt = reinterpret_cast<acpi_sdtS *>(
@@ -160,7 +154,7 @@ acpi_rFacpS *acpiRsdt::getNextFacp(acpi_rsdtS *rsdt, void **const handle)
 		{
 			ret = (acpi_rFacpS *)acpi_mapTable(
 				*(paddr_t *)*handle,
-				PAGING_BYTES_TO_PAGES(sdt->tableLength) +1);
+				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
 		};
 
 		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );

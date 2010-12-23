@@ -1,8 +1,7 @@
 .PHONY=
 DELIVERABLE=../../chipsetCore.a
-OBJFILES=regionMap.o terminal.o \
-	firmwareStream.o pic.o chipsetSupportPackage.o ibmPc_mi_getNumaMap.o \
-	ibmPc_mi_findSrat.o rs232.o findTables.o
+OBJFILES=regionMap.o pic.o findTables.o \
+	memoryMod.o terminalMod.o chipsetPackage.o ibmPc_modules.o
 
 all: Makefile $(DELIVERABLE)
 

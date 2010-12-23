@@ -100,11 +100,11 @@
 // #include <stdlib.h>
 
 #define	PRIM_OPS_NO_REDEFINE_ASM
-#include "x86emu/x86emui.h"
+#include <firmware/ibmPcBios/x86emu/x86emui.h>
 
 #if defined(__GNUC__)
 # if defined (__i386__) || defined(__i386) || defined(__AMD64__) || defined(__amd64__)
-#  include "x86emu/prim_x86_gcc.h"
+#  include <firmware/ibmPcBios/x86emu/prim_x86_gcc.h>
 # endif
 #endif
 

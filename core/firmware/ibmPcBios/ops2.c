@@ -38,7 +38,7 @@
 *
 ****************************************************************************/
 
-#include "x86emu/x86emui.h"
+#include <firmware/ibmPcBios/x86emu/x86emui.h>
 
 #undef bswap_32
 #define bswap_32(x) (((x & 0xff000000) >> 24) | \
@@ -61,8 +61,6 @@ static void x86emuOp2_illegal_op(
 	START_OF_INSTR();
 	DECODE_PRINTF("ILLEGAL EXTENDED X86 OPCODE\n");
 	TRACE_REGS();
-	rivPrintf("%04x:%04x: %02X ILLEGAL EXTENDED X86 OPCODE!\n",
-		M.x86.R_CS, M.x86.R_IP-2,op2);
     HALT_SYS();
     END_OF_INSTR();
 }
@@ -1812,8 +1810,6 @@ static void x86emuOp2_btX_I(u8 X86EMU_UNUSED(op2))
     default:
 	DECODE_PRINTF("ILLEGAL EXTENDED X86 OPCODE\n");
 	TRACE_REGS();
-	rivPrintf("%04x:%04x: %02X%02X ILLEGAL EXTENDED X86 OPCODE EXTENSION!\n",
-		M.x86.R_CS, M.x86.R_IP-3,op2, (mod<<6)|(rh<<3)|rl);
 	HALT_SYS();
     }
     switch (mod) {

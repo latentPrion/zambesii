@@ -1,21 +1,18 @@
 
 #include <arch/interrupts.h>
 #include <arch/x8632/idt.h>
+#include <arch/io.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/firmwareTrib/firmwareTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
-#include <kernel/common/moduleApis/chipsetSupportPackage.h>
-#include <kernel/common/moduleApis/interruptController.h>
-#include <kernel/common/firmwareTrib/rivIoApi.h>
 
 
 void interruptTrib_irqEntry(taskContextS *regs)
 {
 	interruptTrib.irqMain(regs);
-	io_write8(0x20, 0x20);
+	io::write8(0x20, 0x20);
 
 	// We should be able to: point ESP to regs, and then pop and iret.
 	asm volatile(

@@ -1,34 +1,40 @@
 
 #include <arch/paging.h>
+#include <arch/walkerPageRanger.h>
+#include <firmware/ibmPcBios/ibmPcBios_coreFuncs.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kclib/string.h>
-#include <kernel/common/firmwareTrib/firmwareStream.h>
-#include <kernel/common/firmwareTrib/rivMemoryApi.h>
-#include <kernel/common/firmwareTrib/rivLockApi.h>
-#include <kernel/common/firmwareTrib/rivDebugApi.h>
-#include "x86emu.h"
+#include <__kclasses/debugPipe.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/waitLock.h>
+#include <firmware/ibmPcBios/x86emu.h>
 #include "x86EmuAuxFuncs.h"
-#include "ibmPcBios_regManip.h"
 
 
 #define LOWMEM_NPAGES		(0x100000 / PAGING_BASE_SIZE)
 #define FWFWS			"Firmware: "
 
-static void		*ibmPcBiosLock;
 
-extern struct memInfoRivS	ibmPcBios_memInfoRiv;
+waitLockC		ibmPcBiosLock;
+static ubit32		ibmPcBios_initialized=0;
+static error_t		ibmPcBios_initState;
 
-error_t ibmPcBios_initialize(void)
+error_t ibmPcBios::initialize(void)
 {
 	status_t	nMapped;
+
+	if (ibmPcBios_initialized != 0) { return ibmPcBios_initState; };
 
 	memset(&M, 0, sizeof(M));
 
 	// Allocate vmem and map in lower memory.
-	M.mem_base = (uarch_t)__kvaddrSpaceStream_getPages(LOWMEM_NPAGES);
+	M.mem_base = (uarch_t)(memoryTrib.__kmemoryStream.vaddrSpaceStream
+		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(
+			LOWMEM_NPAGES);
+
 	if (M.mem_base == __KNULL)
 	{
-		rivPrintf(ERROR FWFWS"initialize(): Failed to get %d pages for "
+		__kprintf(ERROR FWFWS"initialize(): Failed to get %d pages for "
 			"lowmem buffer.\n", LOWMEM_NPAGES);
 
 		return ERROR_MEMORY_NOMEM_VIRTUAL;
@@ -41,31 +47,19 @@ error_t ibmPcBios_initialize(void)
 	 * will behave, I'll take the safe route and make sure that all data
 	 * writes are immediately seen, and in the right order.
 	 **/
-	nMapped = walkerPageRanger_mapInc(
+	nMapped = walkerPageRanger::mapInc(
+		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
 		(void *)M.mem_base, 0x0, LOWMEM_NPAGES,
 		PAGEATTRIB_WRITE | PAGEATTRIB_CACHE_WRITE_THROUGH |
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
 	if (nMapped < LOWMEM_NPAGES)
 	{
-		rivPrintf(ERROR FWFWS"initialize(): Unable to map buff 0x%X to "
+		__kprintf(ERROR FWFWS"initialize(): Unable to map buff 0x%p to "
 			"lowmem. %d of %d pages were mapped.\n",
 			M.mem_base, nMapped, LOWMEM_NPAGES);
 
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
-	};
-
-	// Low memory is mapped into the kernel addrspace. Allocate lock.
-	ibmPcBiosLock = waitLock_create();
-	if (ibmPcBiosLock == __KNULL)
-	{
-		__kvaddrSpaceStream_releasePages(
-			(void *)M.mem_base, LOWMEM_NPAGES);
-
-		rivPrintf(ERROR FWFWS"initialize(): Failed to alloc "
-			"waitLock.\n");
-
-		return ERROR_MEMORY_NOMEM;
 	};
 
 	X86EMU_setupMemFuncs(&x86Emu_memFuncs);
@@ -74,29 +68,35 @@ error_t ibmPcBios_initialize(void)
 	M.x86.debug = 0;
 	M.x86.mode = 0;
 
-	rivPrintf(NOTICE FWFWS"initialize(): Done. Lowmem 0x%X, lock 0x%X.\n",
-		M.mem_base, ibmPcBiosLock);
+	__kprintf(NOTICE FWFWS"initialize(): Done. Lowmem 0x%p.\n",
+		M.mem_base);
 
+	ibmPcBios_initialized = 1;
+	ibmPcBios_initState = ERROR_SUCCESS;
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPcBios_shutdown(void)
+error_t ibmPcBios::shutdown(void)
 {
-	waitLock_acquire(ibmPcBiosLock);
+	ibmPcBiosLock.acquire();
 
-	__kvaddrSpaceStream_releasePages((void *)M.mem_base, LOWMEM_NPAGES);
+	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+		(void *)M.mem_base, LOWMEM_NPAGES);
+
 	M.mem_base = __KNULL;
 
-	waitLock_release(ibmPcBiosLock);
-	waitLock_destroy(ibmPcBiosLock);
+	ibmPcBiosLock.release();
+
+	ibmPcBios_initialized = 0;
+	return ERROR_SUCCESS;
 }
 
-error_t ibmPcBios_suspend(void)
+error_t ibmPcBios::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPcBios_awake(void)
+error_t ibmPcBios::restore(void)
 {
 	return ERROR_SUCCESS;
 }
@@ -112,18 +112,18 @@ error_t ibmPcBios_awake(void)
  * acquires.
  **/
 
-void ibmPcBios_lock_acquire(void)
+void ibmPcBios::acquireLock(void)
 {
-	waitLock_acquire(ibmPcBiosLock);
+	ibmPcBiosLock.acquire();
 }
 
-void ibmPcBios_lock_release(void)
+void ibmPcBios::releaseLock(void)
 {
-	waitLock_release(ibmPcBiosLock);
+	ibmPcBiosLock.release();
 }
 
 // Assume the caller has already set reg state as needed.
-void ibmPcBios_executeInterrupt(ubit8 intNo)
+void ibmPcBios::executeInterrupt(ubit8 intNo)
 {
 	// Place HLT opcodes at 0x500 and point EIP there.
 	*(ubit32 *)(M.mem_base + 0x500) = 0xF4F4F4F4;
@@ -145,21 +145,4 @@ void ibmPcBios_executeInterrupt(ubit8 intNo)
 	X86EMU_prepareForInt(intNo);
 	X86EMU_exec();
 }
-
-struct firmwareStreamS		firmwareFwStream =
-{
-	&ibmPcBios_initialize,
-	&ibmPcBios_shutdown,
-	&ibmPcBios_suspend,
-	&ibmPcBios_awake,
-
-	// Debug interfaces 1-4.
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-
-	// memInfoRiv.
-	&ibmPcBios_memInfoRiv
-};
 

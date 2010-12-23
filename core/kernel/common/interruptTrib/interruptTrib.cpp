@@ -1,10 +1,10 @@
 
+#include <chipset/pkg/chipsetPackage.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
-#include <kernel/common/moduleApis/chipsetSupportPackage.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -26,7 +26,7 @@ error_t interruptTribC::initialize(void)
 	 * loading the hardware vector table into the processor.
 	 *
 	 * But making a single call to
-	 * (*chipsetCoreDev.intController->maskAll)() is not intelligent at all:
+	 * (*chipsetPkg.intController->maskAll)() is not intelligent at all:
 	 * we have previously called to the chipset and initialized the
 	 * watchdog timer if it exists. In the event that the chipset *does*
 	 * have a watchdog, the chipset support code would also have registered
@@ -49,9 +49,9 @@ error_t interruptTribC::initialize(void)
 	 *	   kernel build.
 	 **/
 	// Check for int controller, halt if none, else call initialize().
-	assert_fatal(chipsetCoreDev.intController != __KNULL);
+	assert_fatal(chipsetPkg.intController != __KNULL);
 	assert_fatal(
-		(*chipsetCoreDev.intController->initialize)() == ERROR_SUCCESS);
+		(*chipsetPkg.intController->initialize)() == ERROR_SUCCESS);
 
 	// Mask every interrupt that has no handler currently installed.
 	for (uarch_t i=0; i<ARCH_IRQ_NVECTORS; i++)
@@ -59,7 +59,7 @@ error_t interruptTribC::initialize(void)
 		if (!__KFLAG_TEST(
 			isrTable[i].flags, INTERRUPTTRIB_VECTOR_FLAGS_BOOTISR))
 		{
-			if ((*chipsetCoreDev.intController->maskSingle)(i)
+			if ((*chipsetPkg.intController->maskSingle)(i)
 				!= ERROR_SUCCESS)
 			{
 				__KFLAG_SET(

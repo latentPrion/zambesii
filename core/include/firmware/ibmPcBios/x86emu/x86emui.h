@@ -72,7 +72,6 @@
 
 //#include <stdlib.h>
 #include <__kstdlib/__kclib/string.h>
-#include <kernel/common/firmwareTrib/rivDebugApi.h>
 
 /*--------------------------- Inline Functions ----------------------------*/
 

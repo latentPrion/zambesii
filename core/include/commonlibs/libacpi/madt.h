@@ -55,6 +55,7 @@ struct acpi_rMadtIoApicS
 #define ACPI_MADT_IRQSRCOVER_TRIGGER_EDGE		0x1
 #define ACPI_MADT_IRQSRCOVER_TRIGGER_LEVEL		0x3
 
+// Struct should be 10B, but alignment causes it to be 12B. Could be an issue.
 struct acpi_rMadtIrqSourceOverS
 {
 	ubit8		type;

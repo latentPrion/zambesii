@@ -6,6 +6,7 @@
 	#include "rxsdt.h"
 
 	#include "madt.h"
+	#include "srat.h"
 
 #endif
 
