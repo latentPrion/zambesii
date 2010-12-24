@@ -63,9 +63,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(memoryTrib, __kspaceInit(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
-	DO_OR_DIE(memoryTrib, pmemInit(), ret);
-#if 0
-	// DO_OR_DIE(numaTrib, initialize(), ret);
 
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
 	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)
@@ -82,7 +79,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
-	// DO_OR_DIE(numaTrib, initialize2(), ret);
+	DO_OR_DIE(memoryTrib, pmemInit(), ret);
+
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
 	DO_OR_DIE(execTrib, initialize(), ret);
@@ -127,6 +125,5 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Successful!\n");
-#endif
 }
 

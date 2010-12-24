@@ -12,7 +12,7 @@
 
 
 #define LOWMEM_NPAGES		(0x100000 / PAGING_BASE_SIZE)
-#define FWFWS			"Firmware: "
+#define FWFWS			"IBMPC BIOS: "
 
 
 waitLockC		ibmPcBiosLock;

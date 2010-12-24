@@ -352,7 +352,6 @@ chipsetMemConfigS *ibmPc_memoryMod_getMemoryConfig(void)
 	 * get an E820 map, then use the firmware's INT 0x15(AH=0x0000E801).
 	 **/
 	if (_mcfg != __KNULL) { return _mcfg; };
-
 	ret = new chipsetMemConfigS;
 	if (ret == __KNULL)
 	{
