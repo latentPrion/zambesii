@@ -28,14 +28,14 @@ __kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
 }
 
 // Initializes the kernel's Memory Stream.
-error_t memoryTribC::initialize(
+error_t memoryTribC::__kstreamInit(
 	void *swampStart, uarch_t swampSize, vSwampC::holeMapS *holeMap
 	)
 {
 	return __kmemoryStream.initialize(swampStart, swampSize, holeMap);
 }
 
-error_t memoryTribC::initialize2(void)
+error_t memoryTribC::memRegionInit(void)
 {
 	chipsetRegionMapEntryS		*currEntry;
 	chipsetRegionReservedS		*currReserved;

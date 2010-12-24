@@ -29,8 +29,13 @@ public:
 		void *swampStart, uarch_t swampSize,
 		vSwampC::holeMapS *holeMap);
 
+	error_t __kstreamInit(
+		void *swampStart, uarch_t swampSize,
+		vSwampC::holeMapS *holeMap);
+
 	error_t __kspaceInit(void);
-	error_t initialize2(void);
+	error_t pmemInit(void);
+	error_t memRegionInit(void);
 
 public:
 	void *rawMemAlloc(uarch_t nPages, uarch_t flags);

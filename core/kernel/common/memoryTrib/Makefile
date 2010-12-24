@@ -1,7 +1,7 @@
 .PHONY=
 DELIVERABLE=../../../memoryTrib.a
 OBJFILES=memoryStream.o memoryTrib.o vaddrSpaceStream.o rawMemAlloc.o \
-	memoryTrib_numa.o memoryTrib_numaInit.o
+	memoryTrib_numa.o memoryTrib_pmemInit.o
 
 all: Makefile $(DELIVERABLE)
 

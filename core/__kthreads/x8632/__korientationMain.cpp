@@ -49,21 +49,23 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 
 	cxxrtl::callGlobalConstructors();
-#if 0
+
 	DO_OR_DIE(interruptTrib, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
 	// Initialize the kernel swamp.
 	DO_OR_DIE(
 		memoryTrib,
-		initialize(
+		__kstreamInit(
 			reinterpret_cast<void *>( 0xC0000000 + 0x400000 ),
 			0x3FB00000, __KNULL),
 		ret);
 
 	DO_OR_DIE(memoryTrib, __kspaceInit(), ret);
-	DO_OR_DIE(numaTrib, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
+	DO_OR_DIE(memoryTrib, pmemInit(), ret);
+#if 0
+	// DO_OR_DIE(numaTrib, initialize(), ret);
 
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
 	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)
