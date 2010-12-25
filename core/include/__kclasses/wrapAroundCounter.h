@@ -12,7 +12,7 @@ public:
 	error_t initialize(void);
 
 public:
-	sarch_t getNextValue(void **arr);
+	sarch_t getNextValue(void **arr, ubit8 secondTry=0);
 
 private:
 	sarch_t		maxVal;
@@ -34,29 +34,26 @@ inline error_t wrapAroundCounterC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-inline sarch_t wrapAroundCounterC::getNextValue(void **arr)
+inline sarch_t wrapAroundCounterC::getNextValue(void **arr, ubit8 secondTry)
 {
 	sarch_t		ret;
 
 	nextVal.lock.acquire();
 
-	ret = nextVal.rsrc;
-
-	for (sarch_t i=((nextVal.rsrc == -1) ? 0 : nextVal.rsrc);
-		i<=maxVal;
-		i++)
+	for (sarch_t i=nextVal.rsrc; i<=maxVal;	i++)
 	{
 		if (arr[i] == __KNULL)
 		{
-			nextVal.rsrc = i;
+			ret = i;
+			nextVal.rsrc = i + 1;
 			nextVal.lock.release();
 			return ret;
 		};
 	};
 
-	nextVal.rsrc = -1;
+	nextVal.rsrc = 0;
 	nextVal.lock.release();
-	return ret;
+	return ((secondTry) ? (-1) : getNextValue(arr, 1));
 }
 
 #endif

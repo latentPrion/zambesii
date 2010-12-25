@@ -1,4 +1,5 @@
 
+#include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/machineAffinity.h>
 
@@ -7,7 +8,13 @@ error_t affinity::copyLocal(localAffinityS *dest, localAffinityS *src)
 {
 	error_t		ret;
 
-	src->def.rsrc = dest->def.rsrc;
+	dest->name = new utf8Char[strlen8(src->name) + 1];
+	if (dest->name == __KNULL && src->name != __KNULL) {
+		return ERROR_MEMORY_NOMEM;
+	};
+	strcpy8(dest->name, src->name);
+
+	dest->def.rsrc = src->def.rsrc;
 
 	ret = dest->memBanks.initialize(src->memBanks.getNBits());
 	if (ret != ERROR_SUCCESS) {
@@ -53,5 +60,16 @@ error_t affinity::copyMachine(affinityS *dest, affinityS *src)
 	};
 
 	return ERROR_SUCCESS;
+}
+
+localAffinityS *affinity::findLocal(affinityS *ma, utf8Char *localName)
+{
+	for (ubit32 i=0; i<ma->nEntries; i++)
+	{
+		if (strcmp8(ma->machines[i].name, localName) == 0) {
+			return &ma->machines[i];
+		};
+	};
+	return __KNULL;
 }
 

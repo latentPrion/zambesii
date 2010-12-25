@@ -31,7 +31,11 @@ class processStreamC
 {
 public:
 	processStreamC(processId_t id, processId_t parent);
-	error_t initialize(utf8Char *absName);
+	error_t initialize(
+		const utf8Char *commandLine,
+		const utf8Char *absName,
+		const utf8Char *workingDir);
+
 	~processStreamC(void);
 
 	error_t initializeChild(processStreamC *child);
@@ -55,7 +59,9 @@ public:
 	taskC			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
 	multipleReaderLockC	taskLock;
 
-	utf8Char		*absName, *argString, *env;
+	utf8Char		*absName, *workingDir;
+	utf8Char		**argString, **env;
+	utf8Char		*commandLine;
 
 	// Oceann and local affinity.
 	affinityS		affinity;

@@ -40,7 +40,7 @@ public:
 	void destroyBank(numaBankId_t id);
 
 public:
-	bitmapC		onlineCpus;
+	bitmapC		onlineCpus, onlineBanks;
 
 private:
 #if __SCALING__ >= SCALING_SMP

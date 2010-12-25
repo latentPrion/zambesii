@@ -19,23 +19,47 @@ id(processId), parentId(parentProcId), nextTaskId(CHIPSET_MEMORY_MAX_NTASKS - 1)
 
 	memset(tasks, 0, sizeof(tasks));
 
-	absName = argString = env = __KNULL;
+	absName = workingDir = commandLine = __KNULL;
+	env = argString = __KNULL;
 	localAffinity = __KNULL;
 	memoryStream = __KNULL;
 }
 
-error_t processStreamC::initialize(utf8Char *fileAbsName)
+error_t processStreamC::initialize(
+	const utf8Char *_commandLine,
+	const utf8Char *_absName,
+	const utf8Char *_workingDir
+	)
 {
-	ubit32		nameLen;
+	ubit32		strLen;
 	error_t		ret;
 
-	nameLen = strlen8(fileAbsName);
-	absName = new utf8Char[nameLen + 1];
+	// Copy off command line, working dir, and exec file path.
+	strLen = strlen8(_absName);
+	absName = new utf8Char[strLen + 1];
 	if (absName == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	// Initialize cpuTrace to the number of bits in Memory Trib bmp.
+	strcpy8(absName, _absName);
+
+	strLen = strlen8(_workingDir);
+	workingDir =  new utf8Char[strLen + 1];
+	if (workingDir == __KNULL) {
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	strcpy8(workingDir, _workingDir);
+
+	strLen = strlen8(_commandLine);
+	commandLine = new utf8Char[strLen + 1];
+	if (commandLine == __KNULL) {
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	strcpy8(commandLine, _commandLine);
+
+	// Initialize cpuTrace to the number of bits in CPU Trib bmp.
 	ret = cpuTrace.initialize(cpuTrib.onlineCpus.getNBits());
 	if (ret != ERROR_SUCCESS) {
 		return ret;
@@ -44,7 +68,7 @@ error_t processStreamC::initialize(utf8Char *fileAbsName)
 	// Allocate Memory Stream.
 	memoryStream = new memoryStreamC(
 		id,
-		reinterpret_cast<void *>( 0x1000 ), 0x80000000, __KNULL,
+		reinterpret_cast<void *>( 0x1000 ), 0xB0000000, __KNULL,
 		__KNULL, static_cast<paddr_t>( 0 ));
 
 	if (memoryStream == __KNULL) {
@@ -67,12 +91,12 @@ processStreamC::~processStreamC(void)
 error_t processStreamC::initializeChild(processStreamC *child)
 {
 	error_t		ret;
-	ubit32		len;
+//	ubit32		len;
 
-	len = strlen8(env);
+/*	len = strlen8(env);
 	child->env = new utf8Char[len + 1];
 	if (child->env == __KNULL) { return ERROR_MEMORY_NOMEM; };
-	strcpy8(child->env, env);
+	strcpy8(child->env, env); */
 
 	ret = affinity::copyMachine(&child->affinity, &affinity);
 	if (ret != ERROR_SUCCESS) { return ret; };

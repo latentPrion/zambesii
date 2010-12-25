@@ -9,15 +9,18 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/processId.h>
+	#include <kernel/common/machineAffinity.h>
+
+#define PROCTRIB			"Proc Trib: "
 
 #define PROCESSTRIB_UPDATE_ADD		0x0
 #define PROCESSTRIB_UPDATE_SUBTRACT	0x1
 #define PROCESSTRIB_UPDATE_SET		0x2
 
 // Inherit affinity from Spawning Thread.
-#define PROCESSTRIB_SPAWN_FLAGS_INHERIT_STAFFINITY	(1<<0)
+#define PROCESSTRIB_SPAWN_FLAGS_STINHERIT_AFFINITY	(1<<0)
 // Inherit affinity from spawning thread's process object.
-#define PROCESSTRIB_SPAWN_FLAGS_INHERIT_AFFINITY	(1<<1)
+#define PROCESSTRIB_SPAWN_FLAGS_PINHERIT_AFFINITY	(1<<1)
 // Inherit elevation from spawning thread's process object.
 #define PROCESSTRIB_SPAWN_FLAGS_INHERIT_ELEVATION	(1<<2)
 // Inherit exec domain from spawning thread's process object.
@@ -40,8 +43,15 @@ public:
 	processStreamC *getStream(processId_t id);
 
 	processStreamC *spawn(
-		const utf8Char *pathName/*,
-		void *affinity, void *elevation, uarch_t flags*/);
+		const utf8Char *_commandLine,	// Full command line w/ args.
+		affinityS *affinity,			// Ocean/NUMA/SMP affinity.
+		void *elevation,		// Privileges.
+		ubit8 execDomain,		// Kernel mode vs. User mode.
+		uarch_t flags,			// Process spawn flags.
+		ubit8 schedPolicy,		// Sched policy of 1st thread.
+		ubit8 prio,			// Sched prio of 1st thread.
+		uarch_t ftFlags,		// 1st thread spawn flags.
+		error_t *err);			// Returned error value.
 
 	error_t destroy(void);
 

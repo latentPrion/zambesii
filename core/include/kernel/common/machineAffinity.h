@@ -12,7 +12,7 @@
  * processes in Zambezii are given locality as follows:
  *	machine_name{node[cpu, ...], ...}, ...
  *	E.g:
- *	    john{0[0,1,3], 3, 2[5]}, mary{4[8,5,1], 6[3]}
+ *	    john{[0,1,3], 3, [5]}, mary{[8,5,1], [3]}
  *
  * The CPU IDs are absolute CPU IDs. That is, CPU 8 is taken to be CPU8 on
  * that machine, and not CPU8 relative to that NUMA node.
@@ -42,7 +42,7 @@ namespace affinity
 {
 	error_t copyLocal(localAffinityS *dest, localAffinityS *src);
 	error_t copyMachine(affinityS *dest, affinityS *src);
-	localAffinityS *findLocal(affinityS *affinity);
+	localAffinityS *findLocal(affinityS *affinity, utf8Char *localName);
 }
 
 #endif

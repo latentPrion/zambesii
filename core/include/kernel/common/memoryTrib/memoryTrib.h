@@ -9,6 +9,7 @@
 	#include <chipset/regionMap.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/memBmp.h>
+	#include <__kclasses/bitmap.h>
 	#include <__kclasses/pageTableCache.h>
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/tributary.h>
@@ -81,6 +82,7 @@ private:
 
 public:
 	memoryStreamC		__kmemoryStream;
+	bitmapC			onlineBanks;
 
 private:
 	memoryRegionC		memRegions[CHIPSET_MEMORY_NREGIONS];

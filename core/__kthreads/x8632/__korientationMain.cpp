@@ -89,6 +89,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	ubit8		t;
 	void		*r;
 	status_t	st;
+	processStreamC	*newProc;
 
 	vfsTrib.createTree((utf8Char *)":ekfs");
 	vfsTrib.setDefaultTree((utf8Char *)":ekfs");
@@ -116,12 +117,24 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	vfsTrib.getDefaultTree()->desc->dumpSubDirs();
 	vfsTrib.getDefaultTree()->desc->dumpFiles();
 
-	ret = processTrib.__kgetProcess()->spawnThread(
-		reinterpret_cast<void *>( &ghfoo ), SCHEDPOLICY_ROUND_ROBIN,
-		13, SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
-		| SPAWNTHREAD_FLAGS_SCHEDPRIO_SET);
+	__kprintf(NOTICE"About to test process spawning.\n");
 
-	__kprintf(NOTICE"Result of spawnThread: %d.\n", ret);
+	for (uarch_t i=0; i<32; i++)
+	{
+		newProc = processTrib.spawn(
+			(const utf8Char *)":ekfs/file1",
+			__KNULL,
+			__KNULL,
+			PROCESS_EXECDOMAIN_KERNEL,
+			0,
+			SCHEDPOLICY_ROUND_ROBIN,
+			SCHEDPRIO_DEFAULT,
+			0,
+			&ret);
+
+		__kprintf(NOTICE"Results: new process at 0x%p, ret from call: %d, procId: 0x%x, absName: %s.\n",
+			newProc, ret, newProc->id, newProc->commandLine);
+	};
 
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Successful!\n");
