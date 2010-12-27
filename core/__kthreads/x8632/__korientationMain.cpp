@@ -49,14 +49,13 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 
 	cxxrtl::callGlobalConstructors();
-
 	DO_OR_DIE(interruptTrib, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
 	// Initialize the kernel swamp.
 	DO_OR_DIE(
-		memoryTrib,
-		__kstreamInit(
+		memoryTrib.__kmemoryStream,
+		initialize(
 			reinterpret_cast<void *>( 0xC0000000 + 0x400000 ),
 			0x3FB00000, __KNULL),
 		ret);

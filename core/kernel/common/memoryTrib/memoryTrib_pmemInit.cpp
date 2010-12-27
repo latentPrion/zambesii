@@ -88,6 +88,7 @@ error_t memoryTribC::pmemInit(void)
 	sarch_t			pos, prevPos, __kspaceBool=0;
 	status_t		nSet=0;
 
+	// Make sure the memory info modules are in order.
 	if (chipsetPkg.initialize == __KNULL || chipsetPkg.memory == __KNULL)
 	{
 		__kprintf(ERROR"Missing chipsetPkg.initialize(), or Memory \
@@ -96,7 +97,7 @@ error_t memoryTribC::pmemInit(void)
 		return ERROR_FATAL;
 	};
 
-	// Initialize both firmware streams.
+	// Initialize the chipset package for use.
 	ret = (*chipsetPkg.initialize)();
 	if (ret != ERROR_SUCCESS)
 	{

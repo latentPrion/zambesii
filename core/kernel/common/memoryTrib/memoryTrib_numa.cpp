@@ -6,7 +6,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-// The initial memory for the array of NUMA memory banks to use.
+// The __kspace allocatable memory range's containing memory bank.
 static numaMemoryBankC			__kspaceMemoryBank;
 // The pointer node on the __kspace bank that points to the __kspace mem range.
 static numaMemoryBankC::rangePtrS	__kspaceRangePtrMem;
@@ -19,12 +19,25 @@ error_t memoryTribC::__kspaceInit(void)
 {
 	error_t		ret;
 
+	/**	EXPLANATION:
+	 * This function literally assembles the boot time physical memory
+	 * allocator (__kspace) for the chipset's __kspace region, by simply
+	 * putting together pre-allocated and initialized memory management
+	 * structures.
+	 *
+	 * The comments below should suffice. We essentially set up an array
+	 * of NUMA banks with memory on them, and place __kspace on it as a fake
+	 * bank. Then we add the __kspace memory region to the bank.
+	 **/
+
 	defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
+	// First give the list class pre-allocated memory to use for its array.
 	memoryBanks.__kspaceSetState(
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID,
 		static_cast<void *>( initialMemoryBankArray ));
 
+	// Next give it the pre-allocated __kspace memory bank.
 	ret = memoryBanks.addItem(
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID, &__kspaceMemoryBank);
 
@@ -33,6 +46,15 @@ error_t memoryTribC::__kspaceInit(void)
 	};
 
 	nBanks = 1;
+
+	/* Next give it the pre-allocated __kspace memory range object.
+	 *
+	 * NOTE: numaMemoryBankC already calls initialize() on a
+	 * numaMemoryRangeC object when it's adding it to its internal list.
+	 *
+	 * Do not explicitly call initialize() on the numaMemoryRangeC object
+	 * before giving it to the __kspace numaMemoryBankC object.
+	 **/
 	ret = getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID)
 		->__kspaceAddMemoryRange(
 			&__kspaceRangePtrMem,
@@ -47,6 +69,7 @@ error_t memoryTribC::createBank(numaBankId_t id)
 	error_t		ret;
 	numaMemoryBankC	*nmb;
 
+	// Note the MEMALLOC_NO_FAKEMAP flag: MM code/data should never pgfault.
 	nmb = new (
 		(memoryTrib.__kmemoryStream
 			.*memoryTrib.__kmemoryStream.memAlloc)(
@@ -100,7 +123,7 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	/* Couldn't find a suitable bank. Probably the memory was hot swapped,
 	 * or there's corruption in the memory manager somewhere.
 	 **/
-	__kprintf(WARNING MEMTRIB"releaseFrames(0x%X, %d): pmem leak.\n",
+	__kprintf(WARNING MEMTRIB"releaseFrames(0x%P, %d): pmem leak.\n",
 		paddr, nFrames);
 #else
 	getBank(defaultAffinity.def.rsrc)
@@ -240,6 +263,7 @@ error_t memoryTribC::configuredGetFrames(
 	numaMemoryBankC		*currBank;
 	error_t			ret;
 	uarch_t			rwFlags;
+
 	// Get the thread's default config.
 	aff->def.lock.readAcquire(&rwFlags);
 	def = aff->def.rsrc;
@@ -255,7 +279,7 @@ error_t memoryTribC::configuredGetFrames(
 		};
 	};
 
-	// Allocation from the default bank failed. Find a another default bank.
+	// Allocation from the default bank failed. Find another default bank.
 	def = cur = memoryBanks.prepareForLoop();
 	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def);
 

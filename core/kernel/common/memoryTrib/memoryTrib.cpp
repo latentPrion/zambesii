@@ -1,6 +1,8 @@
 
 #include <arch/walkerPageRanger.h>
 #include <chipset/memory.h>
+#include <chipset/memoryMap.h>
+#include <chipset/pkg/chipsetPackage.h>
 #include <lang/lang.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -39,23 +41,27 @@ error_t memoryTribC::memRegionInit(void)
 {
 	chipsetRegionMapEntryS		*currEntry;
 	chipsetRegionReservedS		*currReserved;
+	chipsetMemMapS			*memMap;
 	paddr_t				currBase, currSize;
-	void				*bmpMem;
+	error_t				ret;
 
 	/**	EXPLANATION:
-	 * On a call to memoryTribC::initialize2() the kernel proceed to spawn
-	 * the bitmaps for all memory regions.
+	 * The kernel allocates PMM structures for the special memory regions on
+	 * a chipset only after the rest of the physical and virtual memory
+	 * management subsystems have been initialized. This is because the
+	 * physical memory management associated with a chipset's special
+	 * memory regions is generally unnecessary at boot.
 	 *
-	 * These memory region bitmaps depend on Kernel Space RAM to initialize
-	 * since this is the only usable RAM that the kernel is aware of;
-	 * NUMA Tributary has not yet been initialize()d, so we at this point,
-	 * have no idea of how much RAM is on the board, how many NUMA banks,
-	 * if that applies, and what parts of RAM are usable. We only have
-	 * Kernel Space RAM which is a hardcoded range of RAM of size N bytes
-	 * which the person who ported us to this chipset told us about, that
-	 * we could assume is guaranteed safe RAM.
+	 * To set up special regions, the kernel must parse the region map, and
+	 * spawn a PMM structure for each.
+	 *
+	 * Following this, the kernel will overlay each of the memory regions
+	 * with the memory map which the chipset is supposed to have provided.
+	 *
+	 * This memory map overlay will ensure that no reserved RAM areas which
+	 * are contained in a special region will be left marked as allocatable.
 	 **/
-	// Return success if the chipset has no regions whatsoever.
+	// If there are no memory regions, just exit.
 	if (chipsetRegionMap == __KNULL) { return ERROR_SUCCESS; };
 
 	/* We want to run through each chipsetRegionMapEntryS entry and for
@@ -70,15 +76,17 @@ error_t memoryTribC::memRegionInit(void)
 		currBase = currEntry->baseAddr;
 		currSize = currEntry->size;
 
-		bmpMem = rawMemAlloc(1, 0);
-		if (bmpMem == __KNULL) {
+		memRegions[i].memBmp = new (rawMemAlloc(1, 0)) memBmpC(
+			currBase, currSize);
+
+		if (memRegions[i].memBmp == __KNULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
 
-		memRegions[i].memBmp = new (bmpMem) memBmpC(
-			currBase, currSize);
+		ret = memRegions[i].memBmp->initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
 
-		// If there are any hardcoded reserved ranges, map them in.
+		// If there are any hardcoded reserved ranges, mark them used.
 		if (currReserved != __KNULL)
 		{
 			for (uarch_t j=0; i<currEntry->nReservedEntries; i++)
@@ -92,7 +100,29 @@ error_t memoryTribC::memRegionInit(void)
 
 		memRegions[i].info = currEntry;
 	};
-	// Now memory region allocation is half-initialized.
+
+	// Next step is to overlay the memory regions with chipset memory map.
+	if (chipsetPkg.memory == __KNULL) { return ERROR_SUCCESS; };
+
+	memMap = (*chipsetPkg.memory->getMemoryMap)();
+	if (memMap == __KNULL) { return ERROR_SUCCESS; };
+
+	for (ubit32 i=0; i<chipsetRegionMap->nEntries; i++)
+	{
+		for (ubit32 j=0; j<memMap->nEntries; j++)
+		{
+			// Mark any memory that's not usable as used.
+			if (memMap->entries[j].memType
+				!= CHIPSETMMAP_TYPE_USABLE)
+			{
+				memRegions[i].memBmp->mapMemUsed(
+					memMap->entries[j].baseAddr,
+					PAGING_BYTES_TO_PAGES(
+						memMap->entries[j].size));
+			};
+		};
+	};
+
 	return ERROR_SUCCESS;
 }
 
