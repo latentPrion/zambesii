@@ -1,6 +1,6 @@
 
 #include <scaling.h>
-#include <arch/smpInfo.h>
+#include <chipset/pkg/chipsetPackage.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kclasses/debugPipe.h>
@@ -16,7 +16,7 @@ cpuTribC::cpuTribC(void)
 
 error_t cpuTribC::initialize2(void)
 {
-	chipsetNumaMapS		*numaMap;
+/*	chipsetNumaMapS		*numaMap;
 	archSmpMapS		*smpMap;
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -33,7 +33,7 @@ error_t cpuTribC::initialize2(void)
 		__kprintf(NOTICE"SMP Map %d: id %d, flags 0x%x.\n",
 			i, smpMap->entries[i].cpuId, smpMap->entries[i].flags);
 	};
-#endif
+#endif*/
 	return ERROR_SUCCESS;
 }
 	

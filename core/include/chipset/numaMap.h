@@ -15,6 +15,7 @@
 #define NUMAMEMMAP_FLAGS_ONLINE		(1<<1)
 
 #define NUMACPUMAP_FLAGS_HOTPLUG	(1<<0)
+#define NUMACPUMAP_FLAGS_ONLINE		(1<<1)
 
 struct numaCpuMapEntryS
 {

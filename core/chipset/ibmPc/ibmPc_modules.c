@@ -2,6 +2,7 @@
 #include "memoryMod.h"
 #include "terminalMod.h"
 #include "pic.h"
+#include "cpuMod.h"
 
 
 struct intControllerModS	ibmPc_intControllerMod =
@@ -29,7 +30,6 @@ struct memoryModS	ibmPc_memoryMod =
 	&ibmPc_memoryMod_getMemoryConfig
 };
 
-// struct cpuModS		ibmPc_cpuMod;
 struct debugModS	ibmPc_terminalMod =
 {
 	&ibmPc_terminalMod_initialize,
@@ -40,5 +40,16 @@ struct debugModS	ibmPc_terminalMod =
 	&ibmPc_terminalMod_isInitialized,
 	&ibmPc_terminalMod_syphon,
 	&ibmPc_terminalMod_clear
+};
+
+struct cpuModS		ibmPc_cpuMod =
+{
+	&ibmPc_cpuMod_initialize,
+	&ibmPc_cpuMod_shutdown,
+	&ibmPc_cpuMod_suspend,
+	&ibmPc_cpuMod_restore,
+
+	&ibmPc_cpuMod_getNumaMap,
+	&ibmPc_cpuMod_getSmpMap
 };
 

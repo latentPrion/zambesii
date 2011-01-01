@@ -1,7 +1,7 @@
 .PHONY=
 DELIVERABLE=../../chipsetCore.a
 OBJFILES=regionMap.o pic.o findTables.o \
-	memoryMod.o terminalMod.o chipsetPackage.o ibmPc_modules.o
+	memoryMod.o terminalMod.o chipsetPackage.o ibmPc_modules.o cpuMod.o
 
 all: Makefile $(DELIVERABLE)
 

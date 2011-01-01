@@ -2,6 +2,7 @@
 	#define _CPU_INFO_MODULE_H
 
 	#include <chipset/numaMap.h>
+	#include <chipset/smpMap.h>
 	#include <__kstdlib/__ktypes.h>
 
 struct cpuModS

@@ -1,40 +1,159 @@
 
-#include <arch/smpInfo.h>
-#include <arch/smpMap.h>
+#include <arch/arch.h>
+#include <chipset/pkg/cpuMod.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/libacpi.h>
 #include <commonlibs/libx86mp/libx86mp.h>
-#include <__kclasses/debugPipe.h>
+#include "cpuMod.h"
 
 
-chipsetNumaMapS *smpInfo::getNumaMap(void)
+#define SMPINFO		"IBMPC CPU Mod: SMP: "
+
+error_t ibmPc_cpuMod_initialize(void)
 {
-	/**	NOTES:
-	 * This function will return a distinct chipsetNumaMapS *, which is
-	 * in no way associated with the one returned from any chipset's
-	 * getNumaMap().
+	return ERROR_SUCCESS;
+}
+
+error_t ibmPc_cpuMod_shutdown(void)
+{
+	return ERROR_SUCCESS;
+}
+
+error_t ibmPc_cpuMod_suspend(void)
+{
+	return ERROR_SUCCESS;
+}
+
+error_t ibmPc_cpuMod_restore(void)
+{
+	return ERROR_SUCCESS;
+}
+
+chipsetNumaMapS *ibmPc_cm_rGnm(void)
+{
+	chipsetNumaMapS		*ret;
+	acpi_rsdtS		*rsdt;
+	acpi_rSratS		*srat;
+	acpi_rSratCpuS		*cpuEntry;
+	void			*handle, *handle2;
+	ubit32			nEntries=0, i=0;
+	
+
+	// Caller has determined that there is an RSDT present on the chipset.
+	if (acpi::mapRsdt() != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE"Failed to map in the RSDT.\n");
+		return __KNULL;
+	};
+
+	rsdt = acpi::getRsdt();
+
+	// Get the SRAT (all if multiple).
+	handle = __KNULL;
+	srat = acpiRsdt::getNextSrat(rsdt, &handle);
+	for (; srat != __KNULL;
+		srat = acpiRsdt::getNextSrat(rsdt, &handle))
+	{
+		// For each SRAT (if multiple), get the LAPIC entries.
+		handle2 = __KNULL;
+		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
+		for (; cpuEntry != __KNULL;
+			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2))
+		{
+			// Count the number of entries there are in all.
+			nEntries++;
+		};
+	};
+
+	__kprintf(NOTICE"IBMPC CPU Mod: NUMA: %d LAPIC SRAT entries.\n",
+		nEntries);
+
+	// Now we know how many entries exist. Allocate map and reparse.
+	ret = new chipsetNumaMapS;
+	if (ret == __KNULL)
+	{
+		__kprintf(ERROR"IBMPC Cpu Mod: NUMA: Failed to allocate room "
+			"for CPU NUMA map, or 0 entries found.\n");
+
+		return __KNULL;
+	};
+
+	ret->cpuEntries = new numaCpuMapEntryS[nEntries];
+	if (ret->cpuEntries == __KNULL)
+	{
+		delete ret;
+		__kprintf(ERROR"IBMPC CPU Mod: NUMA: Failed to alloc NUMA CPU "
+			"map entries.\n");
+
+		return __KNULL;
+	};
+
+	// Reparse entries and create generic kernel CPU map.
+	handle = __KNULL;
+	srat = acpiRsdt::getNextSrat(rsdt, &handle);
+	for (; srat != __KNULL;
+		srat = acpiRsdt::getNextSrat(rsdt, &handle))
+	{
+		handle2 = __KNULL;
+		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
+		for (; cpuEntry != __KNULL;
+			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2))
+		{
+			ret->cpuEntries[i].cpuId = cpuEntry->lapicId;
+			ret->cpuEntries[i].bankId =
+				cpuEntry->domain0
+				| (cpuEntry->domain1 & 0xFFFFFF00);
+
+			if (__KFLAG_TEST(
+				cpuEntry->flags, ACPI_SRAT_CPU_FLAGS_ENABLED))
+			{
+				__KFLAG_SET(
+					ret->cpuEntries[i].flags,
+					NUMACPUMAP_FLAGS_ONLINE);
+			};
+		};
+	};
+
+	ret->nCpuEntries = nEntries;
+	return ret;
+}
+
+chipsetNumaMapS *ibmPc_cpuMod_getNumaMap(void)
+{
+	/**	EXPLANATION:
+	 * For the IBM-PC, a NUMA map of all CPUs is essentially obtained by
+	 * asking ACPI's SRAT for its layout.
 	 *
-	 * The kernel is expected to only parse for the cpu related entries
-	 * when it asks the smpInfo:: namespace for a NUMA Map anyway.
-	 *
-	 *	EXPLANATION:
-	 * This function works by first scanning for the ACPI RSDP. If it finds
-	 * it, it will then proceed to parse until it finds an SRAT. If it finds
-	 * one, it will then parse for any CPU entries and generate a NUMA
-	 * map of all CPUs present in any particular bank.
-	 *
-	 * This function depends on the kernel libacpi.
+	 * We just call on the kernel's libacpi and then return the map. As
+	 * simple as that.
 	 **/
+	if (acpi::findRsdp() != ERROR_SUCCESS) { return __KNULL; };
+
+// Use XSDT on everything but 32-bit, since XSDT has 64-bit physical addresses.
+#ifndef __32_BIT__
+	if (acpi::testForXsdt())
+	{
+		ret = ibmPc_cm_xGnm();
+		if (ret != __KNULL) { return ret; };
+	};
+#endif
+	if (acpi::testForRsdt())
+	{
+		__kprintf(NOTICE"IBMPC CPU Mod: NUMA: Falling back to RSDT.\n");
+		return ibmPc_cm_rGnm();
+	};
+
 	return __KNULL;
 }
 
-archSmpMapS *smpInfo::getSmpMap(void)
+chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 {
 	x86_mpCfgCpuS	*mpCpu;
 	void		*handle, *handle2;
 	uarch_t		pos=0, nEntries, i;
-	archSmpMapS	*ret;
+	chipsetSmpMapS	*ret;
 	acpi_rsdtS	*rsdt;
 	acpi_rMadtS	*madt;
 	acpi_rMadtCpuS	*madtCpu;
@@ -57,7 +176,6 @@ archSmpMapS *smpInfo::getSmpMap(void)
 	 * This function depends on the kernel libx86mp.
 	 **/
 	// First try using ACPI. Trust ACPI over MP tables.
-	acpi::flushCache();
 	if (acpi::findRsdp() != ERROR_SUCCESS)
 	{
 		__kprintf(NOTICE SMPINFO"getSmpMap: No ACPI. Trying MP.\n");
@@ -83,7 +201,7 @@ archSmpMapS *smpInfo::getSmpMap(void)
 		goto tryMpTables;
 	};
 
-	// Now look for a MADT.
+	// Now look for an MADT.
 	rsdt = acpi::getRsdt();
 	handle = __KNULL;
 	nEntries = 0;
@@ -106,14 +224,14 @@ archSmpMapS *smpInfo::getSmpMap(void)
 	__kprintf(NOTICE SMPINFO"getSmpMap: ACPI: %d valid CPU entries.\n",
 		nEntries);
 
-	ret = new archSmpMapS;
+	ret = new chipsetSmpMapS;
 	if (ret == __KNULL)
 	{
 		__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map.\n");
 		return __KNULL;
 	};
 
-	ret->entries = new archSmpMapEntryS[nEntries];
+	ret->entries = new chipsetSmpMapEntryS[nEntries];
 	if (ret->entries == __KNULL)
 	{
 		delete ret;
@@ -186,7 +304,7 @@ tryMpTables:
 		__kprintf(NOTICE SMPINFO"getSmpMap: %d valid CPU entries in MP "
 			"config tables.\n", nEntries);
 
-		ret = new archSmpMapS;
+		ret = new chipsetSmpMapS;
 		if (ret == __KNULL)
 		{
 			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
@@ -195,7 +313,7 @@ tryMpTables:
 			return __KNULL;
 		};
 
-		ret->entries = new archSmpMapEntryS[nEntries];
+		ret->entries = new chipsetSmpMapEntryS[nEntries];
 		if (ret->entries == __KNULL)
 		{
 			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
@@ -217,7 +335,7 @@ tryMpTables:
 			{
 				__KFLAG_SET(
 					ret->entries[i].flags,
-					ARCHSMPMAP_FLAGS_BADCPU);
+					CHIPSETSMPMAP_FLAGS_BADCPU);
 
 				ret->entries[i].cpuId = mpCpu->lapicId;
 
@@ -226,7 +344,7 @@ tryMpTables:
 				{
 					__KFLAG_SET(
 						ret->entries[i].flags,
-						ARCHSMPMAP_FLAGS_BSP);
+						CHIPSETSMPMAP_FLAGS_BSP);
 				};
 				continue;
 			};

@@ -3,6 +3,7 @@
 #include "memoryMod.h"
 #include "terminalMod.h"
 #include "pic.h"
+#include "cpuMod.h"
 
 
 static error_t ibmPc_pkg_initialize(void) { return ERROR_SUCCESS; }
@@ -19,7 +20,7 @@ struct chipsetPackageS		chipsetPkg =
 
 	__KNULL,
 	&ibmPc_memoryMod,
-	__KNULL,
+	&ibmPc_cpuMod,
 	&ibmPc_intControllerMod,
 
 	{
