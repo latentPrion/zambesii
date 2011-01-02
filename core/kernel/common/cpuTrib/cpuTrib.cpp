@@ -18,6 +18,7 @@ error_t cpuTribC::initialize2(void)
 {
 #if __SCALING__ >= SCALING_CC_NUMA
 	chipsetNumaMapS		*numaMap;
+	numaCpuBankC		*ncb;
 #endif
 
 #if __SCALING__ >= SCALING_SMP
@@ -49,6 +50,7 @@ error_t cpuTribC::initialize2(void)
 	__kprintf(NOTICE CPUTRIB"NUMA map: %d entries.\n",
 		numaMap->nCpuEntries);
 
+	// Print out each entry and spawn an CPU bank object for it.
 	for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
 	{
 		__kprintf(NOTICE CPUTRIB"Entry %d, CPU ID %d, bank ID %d, "
@@ -57,6 +59,37 @@ error_t cpuTribC::initialize2(void)
 			numaMap->cpuEntries[i].cpuId,
 			numaMap->cpuEntries[i].bankId,
 			numaMap->cpuEntries[i].flags);
+
+		ncb = getBank(numaMap->cpuEntries[i].bankId);
+		// If the bank doesn't already exist, create it.
+		if (ncb == __KNULL)
+		{
+			err = createBank(numaMap->cpuEntries[i].bankId);
+			if (err != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR"Failed to create numaCpuBankC "
+					"object for detected CPU bank %d.\n",
+					numaMap->cpuEntries[i].bankId);
+			};
+		};
+	};
+
+	// Go through each entry an set the bit in the CPU bank for the CPU.
+	for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
+	{
+		ncb = getBank(numaMap->cpuEntries[i].bankId);
+
+		if (ncb == __KNULL)
+		{
+			__kprintf(ERROR"NUMA CPU bank %d exists in NUMA map, "
+				"numaCpuBankC object does not exist for it in "
+				"NUMA Tributary.\n",
+				numaMap->cpuEntries[i].bankId);
+
+			continue;
+		};
+
+		ncb->cpus.setSingle(numaMap->cpuEntries[i].bankId);
 	};
 #endif
 
