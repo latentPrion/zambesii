@@ -82,6 +82,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
+for (;;){};
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 

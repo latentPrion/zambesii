@@ -99,13 +99,15 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 		handle2 = __KNULL;
 		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
 		for (; cpuEntry != __KNULL;
-			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2))
+			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2),
+			i++)
 		{
 			ret->cpuEntries[i].cpuId = cpuEntry->lapicId;
 			ret->cpuEntries[i].bankId =
 				cpuEntry->domain0
 				| (cpuEntry->domain1 & 0xFFFFFF00);
 
+			ret->cpuEntries[i].flags = 0;
 			if (__KFLAG_TEST(
 				cpuEntry->flags, ACPI_SRAT_CPU_FLAGS_ENABLED))
 			{
@@ -270,6 +272,7 @@ chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 
 tryMpTables:
 
+	__kprintf(NOTICE SMPINFO"getSmpMap: Falling back to MP tables.\n");
 	x86Mp::initializeCache();
 	if (!x86Mp::mpTablesFound())
 	{

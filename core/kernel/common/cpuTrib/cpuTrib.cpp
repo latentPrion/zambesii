@@ -16,16 +16,59 @@ cpuTribC::cpuTribC(void)
 
 error_t cpuTribC::initialize2(void)
 {
-/*	chipsetNumaMapS		*numaMap;
-	archSmpMapS		*smpMap;
+#if __SCALING__ >= SCALING_CC_NUMA
+	chipsetNumaMapS		*numaMap;
+#endif
+
+#if __SCALING__ >= SCALING_SMP
+	chipsetSmpMapS		*smpMap;
+	cpuModS			*cpuMod;
+	error_t			err;
+
+	cpuMod = chipsetPkg.cpus;
+	if (cpuMod == __KNULL)
+	{
+		__kprintf(FATAL"Chipset package contains no CPU info module.");
+		return ERROR_FATAL;
+	};
+
+	err = cpuMod->initialize();
+	if (err != ERROR_SUCCESS) { return err; };
+#endif
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaMap = smpInfo::getNumaMap();
+	numaMap = cpuMod->getNumaMap();
+	if (numaMap == __KNULL || numaMap->nCpuEntries == 0)
+	{
+		__kprintf(WARNING CPUTRIB"NUMA: getNumaMap: NULL or 0 entries."
+			"\n");
+
+		goto doSmpMap;
+	};
+
+	__kprintf(NOTICE CPUTRIB"NUMA map: %d entries.\n",
+		numaMap->nCpuEntries);
+
+	for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
+	{
+		__kprintf(NOTICE CPUTRIB"Entry %d, CPU ID %d, bank ID %d, "
+			"Flags 0x%x.\n",
+			i,
+			numaMap->cpuEntries[i].cpuId,
+			numaMap->cpuEntries[i].bankId,
+			numaMap->cpuEntries[i].flags);
+	};
 #endif
+
+doSmpMap:
 #if __SCALING__ >= SCALING_SMP
-	smpMap = smpInfo::getSmpMap();
-	if (smpMap == __KNULL) {
-		return ERROR_UNKNOWN;
+	smpMap = cpuMod->getSmpMap();
+	if (smpMap == __KNULL || smpMap->nEntries == 0)
+	{
+		__kprintf(WARNING CPUTRIB"getSmpMap: Returned NULL or 0 "
+			"entries.\n");
+
+		return ERROR_SUCCESS;
 	};
 
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
@@ -33,7 +76,7 @@ error_t cpuTribC::initialize2(void)
 		__kprintf(NOTICE"SMP Map %d: id %d, flags 0x%x.\n",
 			i, smpMap->entries[i].cpuId, smpMap->entries[i].flags);
 	};
-#endif*/
+#endif
 	return ERROR_SUCCESS;
 }
 	

@@ -19,6 +19,8 @@
  * I'm not sure how this will affect the running of the kernel on other archs.
  **/
 
+#define CPUTRIB		"CPU Trib: "
+
 class cpuTribC
 :
 public tributaryC
