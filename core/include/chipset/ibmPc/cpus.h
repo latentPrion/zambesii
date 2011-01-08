@@ -1,0 +1,15 @@
+#ifndef _IBM_PC_CPU_CONFIG_H
+	#define _IBM_PC_CPU_CONFIG_H
+
+	#include <scaling.h>
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	#define CHIPSET_CPU_NUMA_GENERATE_SHBANK
+	#define CHIPSET_CPU_NUMA_SHBANKID			31
+#elif __SCALING__ == SCALING_SMP
+	#define CHIPSET_CPU_NUMA_GENERATE_SHBANK
+	#define CHIPSET_CPU_NUMA_SHBANKID			31
+#endif
+
+#endif
+

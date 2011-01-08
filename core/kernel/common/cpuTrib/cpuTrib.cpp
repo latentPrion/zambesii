@@ -1,5 +1,6 @@
 
 #include <scaling.h>
+#include <chipset/cpus.h>
 #include <chipset/pkg/chipsetPackage.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/assert.h>
@@ -10,105 +11,254 @@
 #include <__kthreads/__korientation.h>
 
 
+static cpu_t		highestCpuId=0;
+
 cpuTribC::cpuTribC(void)
 {
 }
 
 error_t cpuTribC::initialize2(void)
 {
-#if __SCALING__ >= SCALING_CC_NUMA
-	chipsetNumaMapS		*numaMap;
+	error_t			ret;
+	chipsetSmpMapS		*smpMap=__KNULL;
+	chipsetNumaMapS		*numaMap=__KNULL;
+	cpuModS			*cpuMod;
+	sarch_t			found;
 	numaCpuBankC		*ncb;
+
+	/**	EXPLANATION:
+	 * Several abstractions need to be initialized for the CPU Tributary
+	 * to work as it should. These are the internal BMP of all CPUs,
+	 * and the per-bank BMPs of CPUs on each bank.
+	 *
+	 * The kernel will first initialize the "SMP" BMP, which simply has one
+	 * bit set for each present CPU, regardless of its NUMA locality.
+	 *
+	 * Next, for each bank in the NUMA map, the kernel will generate a
+	 * numaCpuBankC object which is (for now) nothing more than a BMP of
+	 * all CPUs on that bank.
+	 *
+	 * After that, if CHIPSET_CPU_NUMA_GENERATE_SHBANK is defined, the
+	 * the kernel will run through each entry in the SMP map (if present)
+	 * and for each CPU in the SMP map that doesn't appear in the NUMA map,
+	 * the kernel will add that CPU to the Shared Bank to be treated as a
+	 * CPU without any known NUMA locality.
+	 *
+	 *	NOTES:
+	 * ^ In the event that no NUMA map is found (on a NUMA kernel build) or
+	 *   that the kernel is an SMP build, all CPUs will be added on the
+	 *   shared bank.
+	 *
+	 * ^ If a NUMA map is found, but no SMP map is found, shbank will not be
+	 *   generated.
+	 *
+	 * ^ On an SMP build, the NUMA map is ignored.
+	 * ^ On uni-processor build, both the SMP and NUMA maps are ignored and
+	 *   a single CPU is assumed regardless of presence of other CPUs.
+	 **/
+#if __SCALING__ >= SCALING_SMP
+	if (chipsetPkg.cpus != __KNULL)
+	{
+		if ((*chipsetPkg.cpus->initialize)() == ERROR_SUCCESS)
+		{
+			cpuMod = chipsetPkg.cpus;
+
+#if __SCALING__ >= SCALING_CC_NUMA
+			numaMap = (*cpuMod->getNumaMap)();
+#endif
+			smpMap = (*cpuMod->getSmpMap)();
+		}
+		else
+		{
+			__kprintf(ERROR CPUTRIB"CPU Info mod present, but "
+				"initialization failed.\n");
+
+			goto fallbackToUp;
+		};
+	}
+	else
+	{
+		__kprintf(ERROR CPUTRIB"No CPU Info mod present.\n");
+		goto fallbackToUp;
+	};
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-	chipsetSmpMapS		*smpMap;
-	cpuModS			*cpuMod;
-	error_t			err;
-
-	cpuMod = chipsetPkg.cpus;
-	if (cpuMod == __KNULL)
-	{
-		__kprintf(FATAL"Chipset package contains no CPU info module.");
-		return ERROR_FATAL;
-	};
-
-	err = cpuMod->initialize();
-	if (err != ERROR_SUCCESS) { return err; };
-#endif
-
+	// First: Find out the highest CPU ID number present on the system.
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaMap = cpuMod->getNumaMap();
-	if (numaMap == __KNULL || numaMap->nCpuEntries == 0)
+	if (numaMap != __KNULL)
 	{
-		__kprintf(WARNING CPUTRIB"NUMA: getNumaMap: NULL or 0 entries."
-			"\n");
-
-		goto doSmpMap;
-	};
-
-	__kprintf(NOTICE CPUTRIB"NUMA map: %d entries.\n",
-		numaMap->nCpuEntries);
-
-	// Print out each entry and spawn an CPU bank object for it.
-	for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
-	{
-		__kprintf(NOTICE CPUTRIB"Entry %d, CPU ID %d, bank ID %d, "
-			"Flags 0x%x.\n",
-			i,
-			numaMap->cpuEntries[i].cpuId,
-			numaMap->cpuEntries[i].bankId,
-			numaMap->cpuEntries[i].flags);
-
-		ncb = getBank(numaMap->cpuEntries[i].bankId);
-		// If the bank doesn't already exist, create it.
-		if (ncb == __KNULL)
+		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
 		{
-			err = createBank(numaMap->cpuEntries[i].bankId);
-			if (err != ERROR_SUCCESS)
-			{
-				__kprintf(ERROR"Failed to create numaCpuBankC "
-					"object for detected CPU bank %d.\n",
-					numaMap->cpuEntries[i].bankId);
+			if (numaMap->cpuEntries[i].cpuId > highestCpuId) {
+				highestCpuId = numaMap->cpuEntries[i].cpuId;
+			};
+		};
+	};
+#endif
+	if (smpMap != __KNULL)
+	{
+		for (ubit32 i=0; i<smpMap->nEntries; i++)
+		{
+			if (smpMap->entries[i].cpuId > highestCpuId) {
+				highestCpuId = smpMap->entries[i].cpuId;
 			};
 		};
 	};
 
-	// Go through each entry an set the bit in the CPU bank for the CPU.
-	for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
+	// Now initialize "all cpus" bmp using our knowledge of the higest id.
+	ret = onlineCpus.initialize(highestCpuId + 1);
+	if (ret != ERROR_SUCCESS)
 	{
-		ncb = getBank(numaMap->cpuEntries[i].bankId);
+		__kprintf(ERROR CPUTRIB"Failed to init() online CPU bmp with "
+			"%d as the highest detected CPU Id.\n",
+			highestCpuId);
 
-		if (ncb == __KNULL)
-		{
-			__kprintf(ERROR"NUMA CPU bank %d exists in NUMA map, "
-				"numaCpuBankC object does not exist for it in "
-				"NUMA Tributary.\n",
-				numaMap->cpuEntries[i].bankId);
-
-			continue;
-		};
-
-		ncb->cpus.setSingle(numaMap->cpuEntries[i].bankId);
+		return ret;
 	};
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	// Now parse the NUMA map.
+	if (numaMap != __KNULL)
+	{
+		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
+		{
+			
+			if (getBank(numaMap->cpuEntries[i].bankId) == __KNULL)
+			{
+				// Create a bank for it if one doesn't exist.
+				ret = createBank(numaMap->cpuEntries[i].bankId);
+				if (ret != ERROR_SUCCESS)
+				{
+					__kprintf(ERROR CPUTRIB"createBank(%d) "
+						"failed failed returning %d.\n",
+						numaMap->cpuEntries[i].bankId,
+						ret);
+
+					continue;
+				};
+
+				// Initialize the new bank's CPU bmp.
+				ret = getBank(numaMap->cpuEntries[i].bankId)
+					->cpus.initialize(highestCpuId + 1);
+
+				if (ret != ERROR_SUCCESS)
+				{
+					__kprintf(ERROR CPUTRIB"Failed to init "
+						"CPU bmp on bank %d.\n",
+						numaMap->cpuEntries[i].bankId);
+
+					// Destroy if it didn't work.
+					destroyBank(
+						numaMap->cpuEntries[i].bankId);
+				};
+			};
+		};
+	};
+
+	// Don't forget to set the bits on the banks.
 #endif
 
-doSmpMap:
-#if __SCALING__ >= SCALING_SMP
-	smpMap = cpuMod->getSmpMap();
-	if (smpMap == __KNULL || smpMap->nEntries == 0)
-	{
-		__kprintf(WARNING CPUTRIB"getSmpMap: Returned NULL or 0 "
-			"entries.\n");
+#endif
 
+#if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_GENERATE_SHBANK)
+	// Generate Shbank.
+	ret = createBank(CHIPSET_CPU_NUMA_SHBANKID);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR CPUTRIB"Failed to generate shbank.\n");
+
+#if __SCALING__ >= SCALING_CC_NUMA
+		if (numaMap == __KNULL || numaMap->nCpuEntries == 0) {
+			goto fallbackToUp;
+		}
+		else
+		{
+			/**	NOTE:
+			 * Reasoning here is that we already have the NUMA banks
+			 * done and everything, so we can just use the CPUs we
+			 * already know about.
+			 *
+			 * Make sure to wake up the CPUs before reaching here,
+			 * though.
+			 **/
+			return ERROR_SUCCESS;
+		};
+#else
+		goto fallbackToUp;
+#endif
+	};
+
+	ret = getBank(CHIPSET_CPU_NUMA_SHBANKID)->initialize(highestCpuId + 1);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR CPUTRIB"Failed to init bmp on shared bank.\n");
 		return ERROR_SUCCESS;
 	};
 
-	for (uarch_t i=0; i<smpMap->nEntries; i++)
+	/* If there is a NUMA map, run through, and for each CPU in the SMP map
+	 * that does not exist in the NUMA map, add it to the shared bank.
+	 *
+	 * If there is no NUMA map, add all CPUs to the shared bank.
+	 **/
+	if (smpMap != __KNULL && smpMap->nEntries != 0
+		&& numaMap != __KNULL && numaMap->nCpuEntries != 0)
 	{
-		__kprintf(NOTICE"SMP Map %d: id %d, flags 0x%x.\n",
-			i, smpMap->entries[i].cpuId, smpMap->entries[i].flags);
+		/* For each entry in the SMP map, check to see if you find
+		 * an equivalent CPU ID in the NUMA Map. If not, then add the
+		 * CPU to the shared bank.
+		 **/
+		for (ubit32 i=0; i<smpMap->nEntries; i++)
+		{
+			found = 0;
+			for (ubit32 j=0; j<numaMap->nCpuEntries; j++)
+			{
+				if (numaMap->cpuEntries[j].cpuId
+					== smpMap->entries[i].cpuId)
+				{
+					found = 1;
+					break;
+				};
+			};
+
+			if (found) { continue; };
+			getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.setSingle(
+				smpMap->entries[i].cpuId);
+		};
 	};
+#endif
+
+	// Don't forget to wake up the CPUs.
+	return ERROR_SUCCESS;
+
+fallbackToUp:
+#if __SCALING__ > SCALING_UNI_PROCESSOR
+	__kprintf(WARNING CPUTRIB"CPU detection fell through to uni-processor "
+		"mode. Assuming single CPU.\n");
+#endif
+
+#if __SCALING__ >= SCALING_SMP
+	ncb = getBank(CHIPSET_CPU_NUMA_SHBANKID);
+	if (ncb == __KNULL)
+	{
+		// Try to create it again for the sake of it.
+		ret = createBank(CHIPSET_CPU_NUMA_SHBANKID);
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUTRIB"Failed to create ShBank on a "
+				"non-UP build, while attempting to fall back "
+				"to UP mode. No CPU management in place.\n\n"
+
+				"Kernel forced to halt orientation.\n");
+
+			return ERROR_FATAL;
+		};
+	};
+
+	// Set a single bit for CPU 0, our UP mode single CPU.
+	ncb->cpus.setSingle(0);
+#else
+	cpu = getCurrentCpuStream();
 #endif
 	return ERROR_SUCCESS;
 }
