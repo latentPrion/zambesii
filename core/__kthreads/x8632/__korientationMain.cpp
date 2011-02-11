@@ -2,6 +2,7 @@
 #include <__ksymbols.h>
 #include <arch/paging.h>
 #include <arch/paddr_t.h>
+#include <chipset/cpus.h>
 #include <chipset/pkg/chipsetPackage.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/compiler/cxxrtl.h>
@@ -82,7 +83,20 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
-	__kdebug.refresh();
+
+	__kprintf(NOTICE"Dumping shbank CPUs:\n\t");
+	for (uarch_t i=0;
+		i<cpuTrib.getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.getNBits();
+		i++)
+	{
+		if (cpuTrib.getBank(CHIPSET_CPU_NUMA_SHBANKID)
+			->cpus.testSingle(i))
+		{
+			__kprintf((utf8Char *)"%d ", i);
+		};
+	};
+	__kprintf((utf8Char *)"\n");
+
 asm volatile("hlt\n\t");
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);
@@ -138,6 +152,7 @@ asm volatile("hlt\n\t");
 	};
 
 	__kdebug.refresh();
+
 	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 

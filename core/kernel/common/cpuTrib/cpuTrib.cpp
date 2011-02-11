@@ -23,7 +23,9 @@ error_t cpuTribC::initialize2(void)
 	chipsetSmpMapS		*smpMap=__KNULL;
 	chipsetNumaMapS		*numaMap=__KNULL;
 	cpuModS			*cpuMod;
+#if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
 	sarch_t			found;
+#endif
 	numaCpuBankC		*ncb;
 
 	/**	EXPLANATION:
@@ -105,7 +107,7 @@ error_t cpuTribC::initialize2(void)
 			};
 		};
 	};
-
+__kprintf(NOTICE"Highest cpu id: %d.\n", highestCpuId);
 	// Now initialize "all cpus" bmp using our knowledge of the higest id.
 	ret = onlineCpus.initialize(highestCpuId + 1);
 	if (ret != ERROR_SUCCESS)
@@ -123,7 +125,6 @@ error_t cpuTribC::initialize2(void)
 	{
 		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
 		{
-			
 			if (getBank(numaMap->cpuEntries[i].bankId) == __KNULL)
 			{
 				// Create a bank for it if one doesn't exist.
@@ -152,16 +153,20 @@ error_t cpuTribC::initialize2(void)
 					destroyBank(
 						numaMap->cpuEntries[i].bankId);
 				};
+__kprintf(NOTICE"Created bank for bank id %d.\n", numaMap->cpuEntries[i].bankId);
 			};
 		};
 	};
+
+__kprintf(NOTICE"Finished creating and initializing numa banks.\n");
 
 	// Don't forget to set the bits on the banks.
 #endif
 
 #endif
 
-#if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_GENERATE_SHBANK)
+#if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
+__kprintf(NOTICE"About to create shbank.\n");
 	// Generate Shbank.
 	ret = createBank(CHIPSET_CPU_NUMA_SHBANKID);
 	if (ret != ERROR_SUCCESS)
@@ -169,6 +174,11 @@ error_t cpuTribC::initialize2(void)
 		__kprintf(ERROR CPUTRIB"Failed to generate shbank.\n");
 
 #if __SCALING__ >= SCALING_CC_NUMA
+		/* If the shared bank could not be generated, and there is no
+		 * NUMA map, then we have no CPU to use except (we assume)
+		 * the one we're running on. Only option is to fall back to
+		 * UP mode.
+		 **/
 		if (numaMap == __KNULL || numaMap->nCpuEntries == 0) {
 			goto fallbackToUp;
 		}
@@ -176,19 +186,17 @@ error_t cpuTribC::initialize2(void)
 		{
 			/**	NOTE:
 			 * Reasoning here is that we already have the NUMA banks
-			 * done and everything, so we can just use the CPUs we
-			 * already know about.
-			 *
-			 * Make sure to wake up the CPUs before reaching here,
-			 * though.
+			
+			 * done and everything, so we can just set their bits,
+			 * wake them up, and then move on without a shared bank.
 			 **/
-			return ERROR_SUCCESS;
+			goto setBits;
 		};
 #else
 		goto fallbackToUp;
 #endif
 	};
-
+__kprintf(NOTICE"Successfully created shbank, ret is 0x%p.\n", getBank(CHIPSET_CPU_NUMA_SHBANKID));
 	ret = getBank(CHIPSET_CPU_NUMA_SHBANKID)->initialize(highestCpuId + 1);
 	if (ret != ERROR_SUCCESS)
 	{
@@ -196,11 +204,14 @@ error_t cpuTribC::initialize2(void)
 		return ERROR_SUCCESS;
 	};
 
+__kprintf(NOTICE"Created and initialized SHBANK.\n");
+
 	/* If there is a NUMA map, run through, and for each CPU in the SMP map
 	 * that does not exist in the NUMA map, add it to the shared bank.
 	 *
 	 * If there is no NUMA map, add all CPUs to the shared bank.
 	 **/
+	__kprintf(NOTICE"Following cpus are in both smp and numa maps.\n");
 	if (smpMap != __KNULL && smpMap->nEntries != 0
 		&& numaMap != __KNULL && numaMap->nCpuEntries != 0)
 	{
@@ -221,13 +232,56 @@ error_t cpuTribC::initialize2(void)
 				};
 			};
 
-			if (found) { continue; };
+			if (found) { __kprintf((utf8Char *)"%d ", smpMap->entries[i].cpuId); continue; };
 			getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.setSingle(
 				smpMap->entries[i].cpuId);
+		};
+	}
+	else if ((smpMap != __KNULL) && (numaMap == __KNULL))
+	{
+		for (uarch_t i=0; i<smpMap->nEntries; i++)
+		{
+			getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.setSingle(
+				smpMap->entries[i].cpuId);
+		};
+	}
+	else {
+		goto fallbackToUp;
+	};
+#endif
+
+setBits:
+#if __SCALING__ >= SCALING_SMP
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	if (numaMap != __KNULL)
+	{
+		// Set bits on banks and in global BMP.
+		for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
+		{
+			// Set the bit in the "global CPUs" bmp.
+			onlineCpus.setSingle(numaMap->cpuEntries[i].cpuId);
+
+			// Set the bit in the CPU's numa bank BMP.
+			getBank(numaMap->cpuEntries[i].bankId)->cpus.setSingle(
+				numaMap->cpuEntries[i].cpuId);
 		};
 	};
 #endif
 
+	if (smpMap != __KNULL)
+	{
+		// Do the same for the SMP map, but only set bits in global bmp.
+		for (uarch_t i=0; i<smpMap->nEntries; i++)
+		{
+			if (getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.testSingle(
+				smpMap->entries[i].cpuId))
+			{
+				onlineCpus.setSingle(smpMap->entries[i].cpuId);
+			};
+		};
+	};
+#endif
 	// Don't forget to wake up the CPUs.
 	return ERROR_SUCCESS;
 

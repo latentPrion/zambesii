@@ -91,12 +91,17 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 	};
 
 	// Try alloc cache.
-	if (!__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)
+	if ((!__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL))
 		&& (allocCache.pop(nPages, reinterpret_cast<void **>( &ret ))
 		== ERROR_SUCCESS))
 	{
+		walkerPageRanger::setAttributes(
+			&vaddrSpaceStream.vaddrSpace,
+			(void *)ret, nPages, WPRANGER_OP_SET_PRESENT, 0);
+
 		return reinterpret_cast<void *>( ret );
 	};
+
 	// Calculate the number of frames to commit before fakemapping.
 	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)) {
 		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
@@ -228,6 +233,10 @@ void memoryStreamC::memFree(void *vaddr)
 	ubit8		flags;
 
 	if (vaddr == __KNULL) { return; };
+
+	/* FIXME: Be careful when freeing a process: it is possible to double
+	 * free a memory area if it is pushed into the alloc cache.
+	 **/
 
 	// First ask the alloc table if the alloc is valid.
 	err = allocTable.lookup(vaddr, &nPages, &flags);
