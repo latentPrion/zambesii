@@ -203,14 +203,14 @@ processStreamC *processTribC::spawn(
 
 			// Online CPU banks.
 			*err = newProc->affinity.machines->cpuBanks.initialize(
-				cpuTrib.onlineBanks.getNBits());
+				cpuTrib.availableBanks.getNBits());
 
 			if (*err != ERROR_SUCCESS) {
 				return __KNULL;
 			};
 
 			newProc->affinity.machines->cpuBanks.merge(
-				&cpuTrib.onlineBanks);
+				&cpuTrib.availableBanks);
 
 			// Online memory banks.
 			*err = newProc->affinity.machines->memBanks.initialize(

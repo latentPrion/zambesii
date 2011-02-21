@@ -113,7 +113,14 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 			__kprintf((utf8Char *)"%d ", i);
 		};
 	};
-	__kprintf((utf8Char *)"\n");
+	__kprintf((utf8Char *)"\nDumping available CPU banks.\n");
+	for (ubit32 i=0; i<cpuTrib.availableBanks.getNBits(); i++)
+	{
+		if (cpuTrib.availableBanks.testSingle(i)) {
+			__kprintf((utf8Char *)"%d ", i);
+		};
+	};
+	__kprintf(CC"\n");
 	__kdebug.refresh();
 
 asm volatile("hlt\n\t");

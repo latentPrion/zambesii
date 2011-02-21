@@ -48,10 +48,13 @@
 
 #define DEBUGPIPE_CONVERSION_BUFF_NPAGES	4
 
-#define NOTICE				(utf8Char *)"[N]: "
-#define WARNING				(utf8Char *)"[W]: "
-#define ERROR				(utf8Char *)"[E]: "
-#define FATAL				(utf8Char *)"[F]: "
+// "CC" below stands for "kernel char cast".
+#define CC				(utf8Char *)
+
+#define NOTICE				CC"[N]: "
+#define WARNING				CC"[W]: "
+#define ERROR				CC"[E]: "
+#define FATAL				CC"[F]: "
 
 #define NOLOG				"%[n]"
 
