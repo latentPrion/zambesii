@@ -163,8 +163,8 @@ __kprintf(NOTICE"Highest cpu id: %d.\n", highestCpuId);
 		};
 	};
 
-	__kprintf(NOTICE"Finished creating and initializing numa banks.\n");
-	__kprintf(NOTICE"Setting per-bank CPU bits.\n");
+	__kprintf(NOTICE"Finished creating and initializing numa banks.\n"
+		"Setting per-bank CPU bits.\n");
 
 	if (numaMap != __KNULL)
 	{
@@ -188,7 +188,7 @@ __kprintf(NOTICE"Highest cpu id: %d.\n", highestCpuId);
 #endif
 
 #if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
-__kprintf(NOTICE"About to create shbank.\n");
+	__kprintf(NOTICE"About to create shbank.\n");
 	// Generate Shbank.
 	ret = createBank(CHIPSET_CPU_NUMA_SHBANKID);
 	if (ret != ERROR_SUCCESS)
@@ -218,7 +218,7 @@ __kprintf(NOTICE"About to create shbank.\n");
 		goto fallbackToUp;
 #endif
 	};
-__kprintf(NOTICE"Successfully created shbank, ret is 0x%p.\n", getBank(CHIPSET_CPU_NUMA_SHBANKID));
+
 	ret = getBank(CHIPSET_CPU_NUMA_SHBANKID)->initialize(highestCpuId + 1);
 	if (ret != ERROR_SUCCESS)
 	{
@@ -226,18 +226,7 @@ __kprintf(NOTICE"Successfully created shbank, ret is 0x%p.\n", getBank(CHIPSET_C
 		return ERROR_SUCCESS;
 	};
 
-__kprintf(NOTICE"Created and initialized SHBANK.\n");
-__kprintf(NOTICE"Dumping Shbank bits before anything gets set officially.\n");
-	for (ubit32 i=0;
-		i<getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.getNBits();
-		i++)
-	{
-		if (getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.testSingle(i))
-		{
-			__kprintf((utf8Char *)"%d ", i);
-		};
-	};
-__kprintf((utf8Char *)"\n");
+	__kprintf(NOTICE"Created and initialized SHBANK.\n");
 
 	/* If there is a NUMA map, run through, and for each CPU in the SMP map
 	 * that does not exist in the NUMA map, add it to the shared bank.

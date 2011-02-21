@@ -2,7 +2,7 @@
 #include <__kstdlib/__kclib/string.h>
 
 
-void *memset8(void *_ptr, int value, size_t count)
+void *memset(void *_ptr, int value, size_t count)
 {
 	if (_ptr == __KNULL) { return _ptr; };
 
@@ -12,7 +12,7 @@ void *memset8(void *_ptr, int value, size_t count)
 	return _ptr;
 }
 
-void *memcpy8(void *dest, void *src, size_t count)
+void *memcpy(void *dest, void *src, size_t count)
 {
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
@@ -22,7 +22,7 @@ void *memcpy8(void *dest, void *src, size_t count)
 	return dest;
 }
 
-char *strcpy8(char *dest, const char *src)
+char *strcpy(char *dest, const char *src)
 {
 	uarch_t		i=0;
 
@@ -35,7 +35,7 @@ char *strcpy8(char *dest, const char *src)
 	return dest;
 }
 
-char *strncpy8(char *dest, const char *src, size_t count)
+char *strncpy(char *dest, const char *src, size_t count)
 {
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
@@ -48,7 +48,7 @@ char *strncpy8(char *dest, const char *src, size_t count)
 	return dest;
 }
 
-size_t strlen8(const char *str)
+size_t strlen(const char *str)
 {
 	uarch_t		len=0;
 
@@ -58,7 +58,7 @@ size_t strlen8(const char *str)
 	return len;
 }
 
-int strcmp8(const char *str1, const char *str2)
+int strcmp(const char *str1, const char *str2)
 {
 	if (str1 == __KNULL || str2 == __KNULL) { return 1; };
 	if (str1 == str2) { return 0; };
@@ -76,7 +76,7 @@ int strcmp8(const char *str1, const char *str2)
 	return 0;
 }
 
-int strncmp8(const char *str1, const char *str2, int count)
+int strncmp(const char *str1, const char *str2, int count)
 {
 	if (str1 == __KNULL || str2 == __KNULL || count == 0) { return 1; };
 	if (str1 == str2) { return 0; };

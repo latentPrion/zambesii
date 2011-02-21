@@ -2,7 +2,7 @@
 #include <__kstdlib/__kclib/string8.h>
 
 
-void *memset(void *_ptr, int value, size_t count)
+void *memset8(void *_ptr, int value, size_t count)
 {
 	if (_ptr == __KNULL) { return _ptr; };
 
@@ -12,7 +12,7 @@ void *memset(void *_ptr, int value, size_t count)
 	return _ptr;
 }
 
-void *memcpy(void *dest, void *src, size_t count)
+void *memcpy8(void *dest, void *src, size_t count)
 {
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
@@ -22,7 +22,7 @@ void *memcpy(void *dest, void *src, size_t count)
 	return dest;
 }
 
-utf8Char *strcpy(utf8Char *dest, const utf8Char *src)
+utf8Char *strcpy8(utf8Char *dest, const utf8Char *src)
 {
 	uarch_t		i=0;
 
@@ -35,7 +35,7 @@ utf8Char *strcpy(utf8Char *dest, const utf8Char *src)
 	return dest;
 }
 
-utf8Char *strncpy(utf8Char *dest, const utf8Char *src, size_t count)
+utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count)
 {
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
@@ -48,7 +48,7 @@ utf8Char *strncpy(utf8Char *dest, const utf8Char *src, size_t count)
 	return dest;
 }
 
-size_t strlen(const utf8Char *str)
+size_t strlen8(const utf8Char *str)
 {
 	uarch_t		len=0;
 
@@ -58,7 +58,7 @@ size_t strlen(const utf8Char *str)
 	return len;
 }
 
-int strcmp(const utf8Char *str1, const utf8Char *str2)
+int strcmp8(const utf8Char *str1, const utf8Char *str2)
 {
 	if (str1 == __KNULL || str2 == __KNULL) { return 1; };
 	if (str1 == str2) { return 0; };
@@ -76,7 +76,7 @@ int strcmp(const utf8Char *str1, const utf8Char *str2)
 	return 0;
 }
 
-int strncmp(const utf8Char *str1, const utf8Char *str2, int count)
+int strncmp8(const utf8Char *str1, const utf8Char *str2, int count)
 {
 	if (str1 == __KNULL || str2 == __KNULL || count == 0) { return 1; };
 	if (str1 == str2) { return 0; };
