@@ -2,55 +2,63 @@
 #include <__kstdlib/__kclib/string16.h>
 
 
-void *memset16(void *_ptr, int value, size_t count)
+void *memset(void *_ptr, int value, size_t count)
 {
-	ubit16	*ptr = (ubit16 *)_ptr;
+	if (_ptr == __KNULL) { return _ptr; };
 
-	if (ptr == __KNULL) { return ptr; };
-
-	while (count--) {
-		*ptr++ = (ubit16)value;
+	for (; count; count--) {
+		((ubit16*)_ptr)[count-1] = (ubit16)value;
 	};
-	return ptr;
+	return _ptr;
 }
 
-void *memcpy16(void *_dest, void *_src, size_t count)
+void *memcpy(void *dest, void *src, size_t count)
 {
-	ubit16		*dest=(ubit16 *)_dest;
-	ubit16		*src=(ubit16 *)_src;
-
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
-	while (count--) {
-		*dest++ = *src++;
+	for (; count; count--) {
+		((ubit16 *)dest)[count - 1] = ((ubit16 *)src)[count - 1];
 	};
 	return dest;
 }
 
-utf16Char *strcpy16(utf16Char *dest, const utf16Char *src)
+utf16Char *strcpy(utf16Char *dest, const utf16Char *src)
 {
+	uarch_t		i=0;
+
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
-	while (*src) {
-		*dest++ = *src++;
+	for (; src[i]; i++) {
+		dest[i] = src[i];
 	};
-	*dest = 0;
+	dest[i] = '\0';
 	return dest;
 }
 
-size_t strlen16(const utf16Char *str)
+utf16Char *strncpy(utf16Char *dest, const utf16Char *src, size_t count)
+{
+	if (dest == __KNULL || src == __KNULL) { return dest; };
+
+	for (; count && src[count - 1]; count--) {
+		dest[count - 1] = src[count - 1];
+	};
+	for (; count; count--) {
+		dest[count - 1] = '\0';
+	}
+	return dest;
+}
+
+size_t strlen(const utf16Char *str)
 {
 	uarch_t		len=0;
 
 	if (str == __KNULL) { return 0; };
 
-	while (*str++) {
-		len++;
-	};
+	for (; str[len]; len++) {};
 	return len;
 }
 
-int strcmp16(const utf16Char *str1, const utf16Char *str2)
+int strcmp(const utf16Char *str1, const utf16Char *str2)
 {
 	if (str1 == __KNULL || str2 == __KNULL) { return 1; };
 	if (str1 == str2) { return 0; };
@@ -68,7 +76,7 @@ int strcmp16(const utf16Char *str1, const utf16Char *str2)
 	return 0;
 }
 
-int strncmp16(const utf16Char *str1, const utf16Char *str2, int count)
+int strncmp(const utf16Char *str1, const utf16Char *str2, int count)
 {
 	if (str1 == __KNULL || str2 == __KNULL || count == 0) { return 1; };
 	if (str1 == str2) { return 0; };
@@ -81,8 +89,4 @@ int strncmp16(const utf16Char *str1, const utf16Char *str2, int count)
 	};
 	return 0;
 }
-
-#ifdef __cplusplus
-}
-#endif
 

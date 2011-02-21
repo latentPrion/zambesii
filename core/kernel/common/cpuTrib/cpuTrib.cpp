@@ -152,15 +152,37 @@ __kprintf(NOTICE"Highest cpu id: %d.\n", highestCpuId);
 					// Destroy if it didn't work.
 					destroyBank(
 						numaMap->cpuEntries[i].bankId);
+				}
+				else
+				{
+					__kprintf(NOTICE"Created bank for bank "
+						"id %d.\n",
+						numaMap->cpuEntries[i].bankId);
 				};
-__kprintf(NOTICE"Created bank for bank id %d.\n", numaMap->cpuEntries[i].bankId);
 			};
 		};
 	};
 
-__kprintf(NOTICE"Finished creating and initializing numa banks.\n");
+	__kprintf(NOTICE"Finished creating and initializing numa banks.\n");
+	__kprintf(NOTICE"Setting per-bank CPU bits.\n");
 
-	// Don't forget to set the bits on the banks.
+	if (numaMap != __KNULL)
+	{
+		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
+		{
+			// For each entry, set the bit on its bank.
+			ncb = getBank(numaMap->cpuEntries[i].bankId);
+			if (ncb == __KNULL)
+			{
+				__kprintf(WARNING"Bank %d found in NUMA map, "
+					"but no bank object was created for it"
+					"\n", numaMap->cpuEntries[i].bankId);
+
+				continue;
+			};
+			ncb->cpus.setSingle(numaMap->cpuEntries[i].cpuId);
+		};
+	};
 #endif
 
 #endif
@@ -186,7 +208,7 @@ __kprintf(NOTICE"About to create shbank.\n");
 		{
 			/**	NOTE:
 			 * Reasoning here is that we already have the NUMA banks
-			
+			 *
 			 * done and everything, so we can just set their bits,
 			 * wake them up, and then move on without a shared bank.
 			 **/
@@ -205,6 +227,17 @@ __kprintf(NOTICE"Successfully created shbank, ret is 0x%p.\n", getBank(CHIPSET_C
 	};
 
 __kprintf(NOTICE"Created and initialized SHBANK.\n");
+__kprintf(NOTICE"Dumping Shbank bits before anything gets set officially.\n");
+	for (ubit32 i=0;
+		i<getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.getNBits();
+		i++)
+	{
+		if (getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.testSingle(i))
+		{
+			__kprintf((utf8Char *)"%d ", i);
+		};
+	};
+__kprintf((utf8Char *)"\n");
 
 	/* If there is a NUMA map, run through, and for each CPU in the SMP map
 	 * that does not exist in the NUMA map, add it to the shared bank.
@@ -248,6 +281,7 @@ __kprintf(NOTICE"Created and initialized SHBANK.\n");
 	else {
 		goto fallbackToUp;
 	};
+	__kprintf((utf8Char *)"\n");
 #endif
 
 setBits:

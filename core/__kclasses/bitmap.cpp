@@ -1,9 +1,10 @@
 
 #include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kbitManipulation.h>
-#include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/bitmap.h>
+
 
 bitmapC::bitmapC(void)
 {
@@ -31,7 +32,7 @@ error_t bitmapC::initialize(ubit32 nBits)
 	};
 
 	bmp.rsrc.nBits = nBits;
-	memset(bmp.rsrc.bmp, 0, nIndexes * sizeof(*bmp.rsrc.bmp));
+	memset8(bmp.rsrc.bmp, 0, nIndexes * sizeof(*bmp.rsrc.bmp));
 	return ERROR_SUCCESS;
 }	
 
@@ -118,7 +119,7 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 		bmp.lock.acquire();
 		if (bmp.rsrc.bmp != __KNULL) {
 			delete bmp.rsrc.bmp;
-		}
+		};
 		bmp.rsrc.nBits = 0;
 		bmp.lock.release();
 		return ERROR_SUCCESS;
