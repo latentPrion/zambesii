@@ -2,7 +2,7 @@
 	#define _IBM_PC_BIOS_REG_STATE_MANIP_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include "x86Emu.h"
+	#include "x86emu.h"
 
 namespace ibmPcBios_regs
 {

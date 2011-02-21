@@ -5,8 +5,10 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
-#define BITMAP_INDEX(__bit)	((__bit) / sizeof(*bmp.rsrc.bmp))
-#define BITMAP_OFFSET(__bit)	((__bit) % sizeof(*bmp.rsrc.bmp))
+#define BITMAP_INDEX(__bit)			\
+	((__bit) / (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__))
+#define BITMAP_OFFSET(__bit)			\
+	((__bit) % (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__))
 
 class bitmapC
 {

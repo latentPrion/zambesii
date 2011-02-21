@@ -1,70 +1,64 @@
 
 #include <__kstdlib/__kclib/string8.h>
 
-void *memset8(void *_ptr, int value, size_t count)
+
+void *memset(void *_ptr, int value, size_t count)
 {
-	ubit8	*ptr = (ubit8 *)_ptr;
+	if (_ptr == __KNULL) { return _ptr; };
 
-	if (ptr == __KNULL) { return ptr; };
-
-	while (count--) {
-		*ptr++ = (ubit8)value;
+	for (; count; count--) {
+		((ubit8*)_ptr)[count-1] = (ubit8)value;
 	};
-	return ptr;
+	return _ptr;
 }
 
-void *memcpy8(void *_dest, void *_src, size_t count)
+void *memcpy(void *dest, void *src, size_t count)
 {
-	ubit8		*dest=(ubit8 *)_dest;
-	ubit8		*src=(ubit8 *)_src;
-
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
-	while (count--) {
-		*dest++ = *src++;
+	for (; count; count--) {
+		((ubit8 *)dest)[count - 1] = ((ubit8 *)src)[count - 1];
 	};
 	return dest;
 }
 
-utf8Char *strcpy8(utf8Char *dest, const utf8Char *src)
+utf8Char *strcpy(utf8Char *dest, const utf8Char *src)
 {
+	uarch_t		i=0;
+
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
-	while (*src) {
-		*dest++ = *src++;
+	for (; src[i]; i++) {
+		dest[i] = src[i];
 	};
-	*dest = '\0';
+	dest[i] = '\0';
 	return dest;
 }
 
-utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count)
+utf8Char *strncpy(utf8Char *dest, const utf8Char *src, size_t count)
 {
 	if (dest == __KNULL || src == __KNULL) { return dest; };
 
-	while (count > 0 && *src)
-	{
-		*dest++ = *src++;
-		count--;
+	for (; count && src[count - 1]; count--) {
+		dest[count - 1] = src[count - 1];
 	};
-	for (; count > 0; count--) {
-		*dest++ = '\0';
+	for (; count; count--) {
+		dest[count - 1] = '\0';
 	}
 	return dest;
 }
 
-size_t strlen8(const utf8Char *str)
+size_t strlen(const utf8Char *str)
 {
 	uarch_t		len=0;
 
 	if (str == __KNULL) { return 0; };
 
-	while (*str++) {
-		len++;
-	};
+	for (; str[len]; len++) {};
 	return len;
 }
 
-int strcmp8(const utf8Char *str1, const utf8Char *str2)
+int strcmp(const utf8Char *str1, const utf8Char *str2)
 {
 	if (str1 == __KNULL || str2 == __KNULL) { return 1; };
 	if (str1 == str2) { return 0; };
@@ -82,7 +76,7 @@ int strcmp8(const utf8Char *str1, const utf8Char *str2)
 	return 0;
 }
 
-int strncmp8(const utf8Char *str1, const utf8Char *str2, int count)
+int strncmp(const utf8Char *str1, const utf8Char *str2, int count)
 {
 	if (str1 == __KNULL || str2 == __KNULL || count == 0) { return 1; };
 	if (str1 == str2) { return 0; };

@@ -84,6 +84,24 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
 
+	numaCpuBankC	*ncb;
+
+	__kprintf(NOTICE"Dumping all banks' set bits.\n");
+	for (ubit32 i=0; i<=CHIPSET_CPU_NUMA_SHBANKID; i++)
+	{
+		ncb = cpuTrib.getBank(i);
+		if (ncb == __KNULL) { continue; };
+
+		__kprintf(NOTICE"\tBank %d: ", i);
+		for (ubit32 j=0; j<ncb->cpus.getNBits(); j++)
+		{
+			if (ncb->cpus.testSingle(j)) {
+				__kprintf((utf8Char *)"%d ", j);
+			};
+		};
+		__kprintf((utf8Char *)"\n");
+	};
+
 	__kprintf(NOTICE"Dumping shbank CPUs:\n\t");
 	for (uarch_t i=0;
 		i<cpuTrib.getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.getNBits();
@@ -96,6 +114,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 		};
 	};
 	__kprintf((utf8Char *)"\n");
+	__kdebug.refresh();
 
 asm volatile("hlt\n\t");
 	DO_OR_DIE(execTrib, initialize(), ret);
