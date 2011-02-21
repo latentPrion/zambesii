@@ -163,13 +163,8 @@ __kprintf(NOTICE"Highest cpu id: %d.\n", highestCpuId);
 		};
 	};
 
-<<<<<<< HEAD
 	__kprintf(NOTICE"Finished creating and initializing numa banks.\n"
 		"Setting per-bank CPU bits.\n");
-=======
-	__kprintf(NOTICE"Finished creating and initializing numa banks.\n");
-	__kprintf(NOTICE"Setting per-bank CPU bits.\n");
->>>>>>> e67f694d1199c12cd4393f4300e5facc2e0a792d
 
 	if (numaMap != __KNULL)
 	{
@@ -231,22 +226,7 @@ __kprintf(NOTICE"Highest cpu id: %d.\n", highestCpuId);
 		return ERROR_SUCCESS;
 	};
 
-<<<<<<< HEAD
 	__kprintf(NOTICE"Created and initialized SHBANK.\n");
-=======
-__kprintf(NOTICE"Created and initialized SHBANK.\n");
-__kprintf(NOTICE"Dumping Shbank bits before anything gets set officially.\n");
-	for (ubit32 i=0;
-		i<getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.getNBits();
-		i++)
-	{
-		if (getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.testSingle(i))
-		{
-			__kprintf((utf8Char *)"%d ", i);
-		};
-	};
-__kprintf((utf8Char *)"\n");
->>>>>>> e67f694d1199c12cd4393f4300e5facc2e0a792d
 
 	/* If there is a NUMA map, run through, and for each CPU in the SMP map
 	 * that does not exist in the NUMA map, add it to the shared bank.
