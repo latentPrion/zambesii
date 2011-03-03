@@ -11,7 +11,7 @@
 #include <__kthreads/__korientation.h>
 
 
-// S loop through all the entries of the particular map to find the highest val.
+// A loop through all the entries of the particular map to find the highest val.
 #define getHighestId(currHighest,map,member,item,hibound)	\
 	do \
 	{ \
