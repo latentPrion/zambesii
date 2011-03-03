@@ -33,10 +33,12 @@ public:
 	~cpuTribC(void);
 
 public:
-	// Quickly acquires the current CPU's Stream.
-	cpuStreamC *getCurrentCpuStream(void);
 	// Gets the Stream for 'cpu'.
 	cpuStreamC *getStream(cpu_t cpu);
+	error_t spawnStream(numaBankId_t bid, cpu_t cid);
+	void destroyStream(cpu_t cpuId);
+	// Quickly acquires the current CPU's Stream.
+	cpuStreamC *getCurrentCpuStream(void);
 
 	numaCpuBankC *getBank(numaBankId_t bankId);
 	error_t createBank(numaBankId_t id);

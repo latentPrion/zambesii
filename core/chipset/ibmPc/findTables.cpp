@@ -53,7 +53,7 @@ void *chipset_findAcpiRsdp(void)
 	{
 		if (chipset_mapArea(CHIPSET_MEMAREA_LOWMEM) != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR FINDTABLES"MPFP: Failed to map lowmem."
+			__kprintf(ERROR FINDTABLES"RSDP: Failed to map lowmem."
 				"\n");
 
 			return __KNULL;

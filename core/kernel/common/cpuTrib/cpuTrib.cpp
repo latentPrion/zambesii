@@ -11,6 +11,19 @@
 #include <__kthreads/__korientation.h>
 
 
+// S loop through all the entries of the particular map to find the highest val.
+#define getHighestId(currHighest,map,member,item,hibound)	\
+	do \
+	{ \
+		for (ubit32 tmpidx=0; tmpidx<hibound; tmpidx++) \
+		{ \
+			if (map->member[tmpidx].item > currHighest) { \
+				currHighest = map->member[tmpidx].item; \
+			}; \
+		}; \
+	} while (0)
+
+
 static cpu_t		highestCpuId=0;
 #if defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK) \
 	|| defined(CHIPSET_CPU_NUMA_SHBANKID)
@@ -92,44 +105,39 @@ error_t cpuTribC::initialize2(void)
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-	// First: Find out the highest CPU ID number present on the system.
+	/* First find out the highest CPU ID number and the highest NUMA bank
+	 * ID number currently available on the chipset.
+	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
 	if (numaMap != __KNULL)
 	{
-		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
-		{
-			if (numaMap->cpuEntries[i].cpuId > highestCpuId) {
-				highestCpuId = numaMap->cpuEntries[i].cpuId;
-			};
-		};
+		// Expands to a macro which performs a loop.
+		getHighestId(
+			highestCpuId, numaMap, cpuEntries, cpuId,
+			numaMap->nCpuEntries);
 	};
 #endif
 	if (smpMap != __KNULL)
 	{
-		for (ubit32 i=0; i<smpMap->nEntries; i++)
-		{
-			if (smpMap->entries[i].cpuId > highestCpuId) {
-				highestCpuId = smpMap->entries[i].cpuId;
-			};
-		};
+		getHighestId(
+			highestCpuId, smpMap, entries, cpuId,
+			smpMap->nEntries);
+	};
+
+	if (numaMap != __KNULL)
+	{
+		getHighestId(
+			highestBankId, numaMap, cpuEntries, bankId,
+			numaMap->nCpuEntries);
 	};
 
 	__kprintf(NOTICE"Highest cpu id: %d.\n", highestCpuId);
-
-	// Find out the highest NUMA CPU bank ID:
-	if (numaMap != __KNULL)
-	{
-		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
-		{
-			if (numaMap->cpuEntries[i].bankId > highestBankId) {
-				highestBankId = numaMap->cpuEntries[i].bankId;
-			};
-		};
-	};
-
 	__kprintf(NOTICE"Highest bank ID: %d.\n", highestBankId);
 
-	// Now initialize "all cpus" bmps using our knowledge of the higest id.
+	/* Next, initialize the "all available CPUs", "all online CPUs" and
+	 * "all available NUMA banks" BMPs with a number of bits equal to the
+	 * highest CPU and NUMA bank IDs on the chipset.
+	 **/
 	ret = onlineCpus.initialize(highestCpuId + 1);
 	if (ret != ERROR_SUCCESS)
 	{
@@ -161,7 +169,12 @@ error_t cpuTribC::initialize2(void)
 	};
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	// Now parse the NUMA map.
+	/* Next parse the NUMA map, and for every entry, see if we already have
+	 * a managing numaCpuBankC object for the bank that the entry is
+	 * related to.
+	 *
+	 * If not of course, it's created on the fly in this next section.
+	 **/
 	if (numaMap != __KNULL)
 	{
 		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
@@ -173,49 +186,27 @@ error_t cpuTribC::initialize2(void)
 				if (ret != ERROR_SUCCESS)
 				{
 					__kprintf(ERROR CPUTRIB"createBank(%d) "
-						"failed failed returning %d.\n",
+						"failed returning %d.\n",
 						numaMap->cpuEntries[i].bankId,
 						ret);
 
 					continue;
 				};
 
-				// Initialize the new bank's CPU bmp.
-				ret = getBank(numaMap->cpuEntries[i].bankId)
-					->cpus.initialize(highestCpuId + 1);
-
-				if (ret != ERROR_SUCCESS)
-				{
-					__kprintf(ERROR CPUTRIB"Failed to init "
-						"CPU bmp on bank %d.\n",
-						numaMap->cpuEntries[i].bankId);
-
-					// Destroy if it didn't work.
-					destroyBank(
-						numaMap->cpuEntries[i].bankId);
-				}
-				else
-				{
-					__kprintf(NOTICE"Created bank for bank "
-						"id %d.\n",
-						numaMap->cpuEntries[i].bankId);
-
-					// Set its bit in available banks bmp.
-					availableBanks.setSingle(
-						numaMap->cpuEntries[i].bankId);
-				};
+				__kprintf(NOTICE"Created bank with id %d.\n",
+					numaMap->cpuEntries[i].bankId);
 			};
 		};
 	};
 
-	__kprintf(NOTICE"Finished creating and initializing numa banks.\n"
-		"Setting per-bank CPU bits.\n");
+	__kprintf(NOTICE"Finished creating and initializing numa banks.\n");
 
+	// Next, for every entry, create a new CPU stream for the related CPU.
 	if (numaMap != __KNULL)
 	{
 		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
 		{
-			// For each entry, set the bit on its bank.
+			// Make sure the bank for stream being created exists.
 			ncb = getBank(numaMap->cpuEntries[i].bankId);
 			if (ncb == __KNULL)
 			{
@@ -225,10 +216,20 @@ error_t cpuTribC::initialize2(void)
 
 				continue;
 			};
-			ncb->cpus.setSingle(numaMap->cpuEntries[i].cpuId);
 
-			// Also set the bit in the availableCpus bitmap.
-			availableCpus.setSingle(numaMap->cpuEntries[i].cpuId);
+			ret = spawnStream(
+				numaMap->cpuEntries[i].bankId,
+				numaMap->cpuEntries[i].cpuId);
+
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR CPUTRIB"Failed to spawn CPU "
+					"Stream for CPU ID %d on bank %d.\n",
+					numaMap->cpuEntries[i].cpuId,
+					numaMap->cpuEntries[i].bankId);
+
+				continue;
+			};
 		};
 	};
 #endif
@@ -236,8 +237,12 @@ error_t cpuTribC::initialize2(void)
 #endif
 
 #if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
+	/* Next, if the supervisor configured the kernel to build with a
+	 * shared bank for all CPUs that exist, but are not on an identifiable
+	 * bank (kernel didn't find a bank associated with its entry), we now
+	 * do the processing necessary to fulfil that directive.
+	 **/
 	__kprintf(NOTICE"About to create shbank.\n");
-	// Generate Shbank.
 	ret = createBank(CHIPSET_CPU_NUMA_SHBANKID);
 	if (ret != ERROR_SUCCESS)
 	{
@@ -256,10 +261,15 @@ error_t cpuTribC::initialize2(void)
 		{
 			/**	NOTE:
 			 * Reasoning here is that we already have the NUMA banks
-			 *
 			 * done and everything, so we can just set their bits,
 			 * wake them up, and then move on without a shared bank.
+			 *
+			 * In other words, we already generated all the other
+			 * banks above, and shared bank is the only one that
+			 * failed. So we can ignore shbank and use the CPUs on
+			 * the other banks.
 			 **/
+			__kprintf(NOTICE CPUTRIB"Waking CPUs anyway.\n");
 			goto wakeCpus;
 		};
 #else
@@ -267,14 +277,6 @@ error_t cpuTribC::initialize2(void)
 #endif
 	};
 
-	ret = getBank(CHIPSET_CPU_NUMA_SHBANKID)->initialize(highestCpuId + 1);
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(ERROR CPUTRIB"Failed to init bmp on shared bank.\n");
-		return ERROR_SUCCESS;
-	};
-
-	availableBanks.setSingle(CHIPSET_CPU_NUMA_SHBANKID);
 	__kprintf(NOTICE"Created and initialized SHBANK.\n");
 
 	/* If there is a NUMA map, run through, and for each CPU in the SMP map
@@ -282,7 +284,7 @@ error_t cpuTribC::initialize2(void)
 	 *
 	 * If there is no NUMA map, add all CPUs to the shared bank.
 	 **/
-	__kprintf(NOTICE"Following cpus are in both smp and numa maps.\n");
+	__kprintf(NOTICE"The following cpus are in both smp and numa maps.\n");
 	if (smpMap != __KNULL && smpMap->nEntries != 0
 		&& numaMap != __KNULL && numaMap->nCpuEntries != 0)
 	{
@@ -309,10 +311,16 @@ error_t cpuTribC::initialize2(void)
 				continue;
 			};
 
-			getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.setSingle(
+			ret = spawnStream(
+				CHIPSET_CPU_NUMA_SHBANKID,
 				smpMap->entries[i].cpuId);
 
-			availableCpus.setSingle(smpMap->entries[i].cpuId);
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR CPUTRIB"Failed to spawn CPU "
+					"Stream for Id %d on shbank.\n",
+					smpMap->entries[i].cpuId);
+			};
 		};
 	}
 	else if ((smpMap != __KNULL) && (numaMap == __KNULL))
@@ -322,10 +330,9 @@ error_t cpuTribC::initialize2(void)
 		 **/
 		for (uarch_t i=0; i<smpMap->nEntries; i++)
 		{
-			getBank(CHIPSET_CPU_NUMA_SHBANKID)->cpus.setSingle(
+			spawnStream(
+				CHIPSET_CPU_NUMA_SHBANKID,
 				smpMap->entries[i].cpuId);
-
-			availableCpus.setSingle(smpMap->entries[i].cpuId);
 		};
 	}
 	else {
@@ -385,6 +392,13 @@ error_t cpuTribC::createBank(numaBankId_t id)
 	error_t		ret;
 	numaCpuBankC	*ncb;
 
+	/**	EXPLANATION:
+	 * Creates a new numaCpuBankC object, and adds it to the CPU Trib's
+	 * unified list of CPU banks, then sets the new bank's bit in the
+	 * CPU Trib's "availableBanks" BMP.
+	 **/
+
+	// Allocate the new CPU bank object.
 	ncb = new (
 		(memoryTrib.__kmemoryStream
 			.*memoryTrib.__kmemoryStream.memAlloc)(
@@ -396,16 +410,92 @@ error_t cpuTribC::createBank(numaBankId_t id)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	ret = cpuBanks.addItem(id, ncb);
-	if (ret != ERROR_SUCCESS) {
+	// Initialize the BMP member.
+	ret = ncb->cpus.initialize(availableCpus.getNBits());
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR CPUTRIB"Failed to initialize new CPU bank %d's "
+			"internal CPU BMP with nBits = %d.\n",
+			id, availableCpus.getNBits());
+
+		ncb->~numaCpuBankC();
 		memoryTrib.__kmemoryStream.memFree(ncb);
+		return ret;
 	};
 
+	// Add the newly initialized bank to the bank list.
+	ret = cpuBanks.addItem(id, ncb);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR CPUTRIB"Failed to add CPU bank with ID %d to "
+			"global list.",
+			id);
+
+		// Call destructor.
+		ncb->~numaCpuBankC();
+		memoryTrib.__kmemoryStream.memFree(ncb);
+		return ret;
+	};
+
+	availableBanks.setSingle(id);
 	return ret;
 }
 
 void cpuTribC::destroyBank(numaBankId_t id)
 {
+	numaCpuBankC		*ncb;
+
+	ncb = static_cast<numaCpuBankC *>( cpuBanks.getItem(id) );
+	ncb->~numaCpuBankC();
+
+	memoryTrib.__kmemoryStream.memFree(ncb);
+
 	cpuBanks.removeItem(id);
+	availableBanks.unsetSingle(id);
+}
+
+error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
+{
+	cpuStreamC	*cs;
+	numaCpuBankC	*ncb;
+
+	/**	EXPLANATION:
+	 * Called when a new logical CPU is detected as being interted on the
+	 * board and physically present. This may be at boot during the CPU
+	 * enumeration stage, or at runtime for a hot-plug detected CPU.
+	 *
+	 * The sequence is as follows:
+	 *	* Create a new cpuStreamC object.
+	 *	* Set its bit on the bank it belongs to, and in the CPU Trib's
+	 *	  unified list of all available CPUs.
+	 **/
+	if ((ncb = getBank(bid)) == __KNULL) { return ERROR_UNKNOWN; };
+
+	cs = new cpuStreamC(bid, cid);
+	if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
+
+	cpuStreams.addItem(cid, cs);
+
+	ncb->cpus.setSingle(cid);
+	availableCpus.setSingle(cid);
+	return ERROR_SUCCESS;
+}
+
+void cpuTribC::destroyStream(cpu_t cpuId)
+{
+	cpuStreamC		*cs;
+	numaCpuBankC		*ncb;
+
+	cs = static_cast<cpuStreamC *>( cpuStreams.getItem(cpuId) );
+	if (cs == __KNULL) { return; };
+
+	availableCpus.unsetSingle(cpuId);
+
+	ncb = getBank(cs->bankId);
+	if (ncb != __KNULL) {
+		ncb->cpus.unsetSingle(cpuId);
+	};
+	delete cs;
+	cpuStreams.removeItem(cpuId);
 }
 

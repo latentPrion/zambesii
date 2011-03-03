@@ -1,0 +1,157 @@
+Basically, I want every detected CPU to have a CPU Stream, whether or not it is
+currently initialized (operational/online).
+
+As long as a CPU is physically plugged into the machine, it shall have a CPU
+stream object allocated in the kernel. Each CPU Stream object shall hold
+a list of features for that CPU, as well as its per-CPU scheduler.
+
+The feature list may or may not be filled out for a CPU which has not yet been
+initialized. Some CPUs would require that feature enumeration code be run ON the
+CPU itself for each CPU, so not every architecture can have a feature list for
+every CPU without having initialized every CPU.
+
+Every CPU shall have a bit set in the CPU Trib's "available CPUs" BMP and on its
+NUMA bank's CPU bmp. Every initialized (online) CPU shall have its bit set in
+the CPU Trib's "onlineCpus" BMP.
+
+NUMA banks do NOT record which CPUs on their banks are ONLINE. They simply
+monitor which CPUs belong to their bank; regardless of state of operation.
+
+Every available NUMA bank shall have a bit set in the CPU Trib's availableBanks
+BMP, regardless of state of operation.
+
+EVERY CPU which is successfully "initialize()"d (brought online) SHALL have its
+bit set in the CPU Trib's onlineCpus BMP. EVERY CPU which is successfully
+"shutDown()"d SHALL have its bit in the CPU Trib's onlineCpus BMP cleared.
+
+If all of these rules are followed, then the structure of all CPU monitoring
+shall be as follows:
+
+1.  Every plugged in CPU on the chipset is recorded in the availableCpus bmp.
+2.  Every identified NUMA bank on the chipset is recorded in the availableBanks
+    bmp.
+3.  Every NUMA bank has its own BMP of member CPUs (regardless of state of
+    operation) in its numaCpuBankC object.
+4.  Every CPU which is a member of a particular bank has its bit set in that
+    bank's numaCpuBankC object's available CPUs BMP regardless of state of
+    operation.
+5.  Therefore, The CPU trib holds a permanently coherent state list of all
+    inserted CPUs and NUMA banks, and each NUMA bank object holds a list of all
+    member CPUs.
+
+6.  Every CPU which is online (initialize()d) shall have its bit set in the CPU
+    Trib's BMP of online CPUs.
+7.  This means that to check to see if a particular CPU is online, one must
+    ultimately check this BMP.
+
+8.  There is no such thing as an "Online NUMA Banks" BMP.
+9.  Tasks do not have a bank specific affinity BMPs.
+10. The former implies that when the scheduler is checking for CPU eligibility
+    to run a task, it shall loop through every bank the task is bound to and
+    every CPU on that bank's available CPUs BMP, and cross-compare each found
+    CPU on that bank with the global "onlineCpus" BMP to see if any particular
+    CPU is online for scheduler use.
+
+11. A task's affinity, when being set, takes arguments for banks and individual
+    CPUs.
+
+    However, a task's CPU affinity *only* holds a bitmap of tied *CPUs* and
+    excludes any bitmap for bank units the task is tied to. This of course,
+    means that when scheduling a task to a CPU, the scheduler must then loop
+    through every CPU bit in the task's affinity BMP to determine which CPU
+    best fits affinity and load criteria.
+
+    In other words, on a machine with 256,000 CPUs, the kernel will loop through
+    256,000 bits on each fresh task scheduling or task migration.
+
+    Shutting down a bank of cpus with an ID given as an argument means then,
+    that the kernel will simply look up that bank's CPU bmp and shut down each
+    CPU on that bank. Bringing a bank online would imply the reverse.
+
+SEMANTICAL ANALYSIS (Use cases?)
+
+Use case for the insertion of a new physical CPU (hotPlug_insert())
+
+	hotPlug_insert(bankId, cpuId);
+		* Chipset logic raises IRQ.
+		* Relevant driver picks up IRQ and notifies kernel of new CPU.
+		* Kernel sets the bit in the "all available CPUs" bmp for the
+		  new CPU.
+		* Kernel checks to see if the new CPU belongs to a new NUMA
+		  bank, and creates a new "bank member CPUs" BMP for the
+		  new bank if needed.
+		* Kernel sets the new CPU's bit on its containing NUMA bank.
+		* The kernel will now execute cpu_initialize().
+
+	hotPlug_remove(cpuId);
+		* In some way, the kernel is notified that a CPU is about to be
+		  removed, or has been removed. The ID of the CPU is implied
+		  as a necessary argument.
+		* The kernel will now execute cpu_shutdown().
+		* The kernel now unsets that CPU's bit in its Bank's BMP, and
+		  in the global "all available CPUs" BMP.
+
+	cpu_initialize(cpuId);
+		* Any CPU which is to be initialize()d (brought online) must
+		  already have gone through the use case for hotPlug_insert().
+		  For CPUs which were present at boot, the kernel runs through
+		  each present CPU and treats them as if they were all
+		  hotplugged at the same time during boot.
+		* The kernel tries to boot the required CPU (or whatever is
+		  needed to get that CPU "online" for scheduling).
+		* (-> Minor things like CPU feature enumeration, etc occur here)
+		* As soon as the CPU's "cpu" object has been initialized and the
+		  new CPU is "initialize()d" (online), the last step is to set
+		  that CPU's bit in the global "online CPUs" BMP.
+		* CPU is now ready to be used by the scheduler.
+
+	cpu_shutdown(cpuId);
+		* Any CPU which is to be shut down is assumed to be currently
+		  initialize()d (online). Obviously if it isn't online, the
+		  sequence will be aborted.
+		* The kernel will remove each task from the CPU's run queues,
+		  and place them into the main scheduler's global "tasks waiting
+		  to be scheduled to a CPU" list.
+		* The kernel will execute whatever architecture/chipset specific
+		  code is needed to power down the CPU.
+		* The kernel will unset that CPU's bit in the "online CPUs"
+		  blobal BMP.
+		* The kernel will execute a callback to the main scheduler to
+		  process the "tasks waiting to be scheduled" queue.
+
+The borders of the various chipset/architecture specific processes can be broken
+down as follows:
+
+CPU detection: Chipset specific (both hotplug and at boot, though the kernel
+	treats the two mostly the same).
+
+CPU Wakeup: Chipset specific:
+	The reasoning behind this is that it is more sensible to consider the
+	wake-up of CPUs on a chipset to be a process specific to that chipset.
+
+	If the CPU architecture used by that chipset has a pre-defined MP
+	template, and that chpset has not strayed from that template, then it
+	simply means that THAT chipset has not customized its MP setup
+	extravagantly. The chipset specific CPU wakeup code for THAT chipset
+	should then call on the kernel's provided library which implements that
+	CPU architecture's pre-ordained CPU setup procedure.
+
+	But for a chipset which has an advanced MP setup procedure, it would be
+	much cleaner if CPU wakeup is considered to be a chipset specific
+	process.
+
+	So for example, the standard IBM-PC makes use of the Intel MP
+	specification, and obeys the I/O APIC architecture and IPI structure.
+	But the Intel CPU is simply a CPU, and any other chipset which happens
+	to use Intel x86 MP compatible CPUs may NOT use the I/O APIC
+	architecture, and may have been manufactured to hook up the individual
+	MP CPUs' LAPICs to some custom MP signal routing circuitry, thereby
+	completely avoiding the I/O APIC part of the specification.
+
+	If the kernel considers CPU wakeup to be chipset specific, then we can
+	cleanly implement code for any such motherboard without having to do
+	extensive re-design or code refactoring.
+
+CPU power management: Again, chipset specific.
+
+

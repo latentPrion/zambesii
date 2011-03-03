@@ -13,6 +13,9 @@
 
 #define CPUSTREAM_INIT_MAGIC		0xC101101C
 
+#define CPUSTREAM_FLAGS_INITIALIZED	(1<<0)
+#define CPUSTREAM_FLAGS_ENUMERATED	(1<<1)
+
 class cpuStreamC
 :
 public streamC
@@ -20,6 +23,7 @@ public streamC
 public:
 	cpuStreamC(numaBankId_t bid, cpu_t id);
 	error_t initialize(void);
+	sarch_t isInitialized(void);
 	~cpuStreamC(void);
 
 public:
@@ -31,6 +35,8 @@ public:
 	uarch_t		initMagic;
 	// Per CPU scheduler.
 	taskStreamC	scheduler;
+
+	ubit32		flags;
 };
 
 // The hardcoded stream for the BSP CPU.
