@@ -7,6 +7,9 @@
 	#include <__kstdlib/__kclib/stddef.h>
 	#include <__kstdlib/__kcxxCast.h>
 
+// "CC" below stands for "kernel char cast".
+#define CC				(utf8Char *)
+
 #ifndef __ASM__
 
 typedef int8_t		sbit8;

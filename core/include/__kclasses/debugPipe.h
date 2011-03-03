@@ -48,9 +48,6 @@
 
 #define DEBUGPIPE_CONVERSION_BUFF_NPAGES	4
 
-// "CC" below stands for "kernel char cast".
-#define CC				(utf8Char *)
-
 #define NOTICE				CC"[N]: "
 #define WARNING				CC"[W]: "
 #define ERROR				CC"[E]: "

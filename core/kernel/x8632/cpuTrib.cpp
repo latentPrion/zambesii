@@ -1,4 +1,7 @@
 
+#include <arch/io.h>
+#include <chipset/chipset.h>
+#include <chipset/memoryAreas.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kthreads/__korientation.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -61,6 +64,11 @@ error_t cpuTribC::initialize(void)
 		: "%eax"
 	);
 
+	return ERROR_SUCCESS;
+}
+
+error_t cpuTribC::wakeupMpCpus(void)
+{
 	return ERROR_SUCCESS;
 }
 

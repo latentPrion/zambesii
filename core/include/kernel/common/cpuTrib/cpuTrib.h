@@ -29,6 +29,7 @@ public:
 	cpuTribC(void);
 	error_t initialize(void);
 	error_t initialize2(void);
+	error_t wakeupMpCpus(void);
 	~cpuTribC(void);
 
 public:
