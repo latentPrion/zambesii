@@ -3,7 +3,7 @@
 #include <arch/paging.h>
 #include <chipset/findTables.h>
 #include <__kstdlib/__kflagManipulation.h>
-#include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <commonlibs/libx86mp/mpTables.h>
 #include <commonlibs/libx86mp/mpDefaultTables.h>
@@ -16,17 +16,17 @@ static struct x86_mpCacheS	cache;
 void x86Mp::initializeCache(void)
 {
 	// Don't zero out the cache while it's in use.
-	if (cache.isInitialized == 1) {
+	if (cache.magic == x86_MPCACHE_MAGIC) {
 		return;
 	};
 
 	x86Mp::flushCache();
-	cache.isInitialized = 1;
+	cache.magic = x86_MPCACHE_MAGIC;
 }
 
 void x86Mp::flushCache(void)
 {
-	memset(&cache, 0, sizeof(cache));
+	memset8(&cache, 0, sizeof(cache));
 }
 
 x86_mpFpS *x86Mp::findMpFp(void)
@@ -50,9 +50,9 @@ x86_mpFpS *x86Mp::findMpFp(void)
 	return ret;
 }
 
-sarch_t x86Mp::mpTablesFound(void)
+sarch_t x86Mp::mpFpFound(void)
 {
-	if (cache.isInitialized == 0) {
+	if (cache.magic != x86_MPCACHE_MAGIC) {
 		return 0;
 	};
 
@@ -70,7 +70,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	status_t	nMapped;
 	x86_mpCfgS	*ret;
 
-	if (!x86Mp::mpTablesFound()) {
+	if (!x86Mp::mpFpFound()) {
 		return __KNULL;
 	};
 
@@ -150,6 +150,34 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	return ret;
 }
 
+void x86Mp::unmapMpConfigTable(void)
+{
+	uarch_t		nPages, f;
+	paddr_t		p;
+
+	if (!mpFpFound() || cache.cfg == __KNULL || cache.fp->features[0] != 0)
+	{
+		return;
+	};
+
+	// Find out how many pages to unmap, and proceed.
+	nPages = PAGING_BYTES_TO_PAGES(cache.cfg->length) + 1;
+	walkerPageRanger::unmap(
+		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		cache.cfg, &p, nPages, &f);
+
+	cache.cfg = __KNULL;
+}
+
+sarch_t x86Mp::mpConfigTableIsMapped(void)
+{
+	if (!mpFpFound() || cache.cfg == __KNULL) {
+		return 0;
+	};
+
+	return 1;
+}
+
 status_t x86Mp::getChipsetDefaultConfig(void)
 {
 	/* Determines whether or not the chipset uses an MP default config.
@@ -160,7 +188,7 @@ status_t x86Mp::getChipsetDefaultConfig(void)
 	 * The value returned, if greater than 0, is an index into a hardcoded
 	 * table of CPU Config and CPU Maps to return for each default config.
 	 **/
-	if (!cache.isInitialized || !x86Mp::mpTablesFound()) {
+	if (!cache.magic == x86_MPCACHE_MAGIC || !x86Mp::mpFpFound()) {
 		return -1;
 	};
 
@@ -178,7 +206,7 @@ ubit32 x86Mp::getLapicPaddr(void)
 
 x86_mpFpS *x86Mp::getMpFp(void)
 {
-	if (!cache.isInitialized) {
+	if (cache.magic != x86_MPCACHE_MAGIC) {
 		return __KNULL;
 	};
 
@@ -187,7 +215,7 @@ x86_mpFpS *x86Mp::getMpFp(void)
 
 x86_mpCfgS *x86Mp::getMpCfg(void)
 {
-	if (!x86Mp::mpTablesFound()) {
+	if (!x86Mp::mpFpFound()) {
 		return __KNULL;
 	};
 

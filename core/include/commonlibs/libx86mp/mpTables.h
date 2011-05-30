@@ -189,10 +189,12 @@ struct x86_mpCfgLocalIrqSourceS
 } __attribute__((packed));
 
 
+#define x86_MPCACHE_MAGIC			0xAABB12DD
 #define x86_MPCACHE_FLAGS_WAS_PICMODE		(1<<0)
 
 struct x86_mpCacheS
 {
+	ubit32			magic;
 	struct x86_mpFpS	*fp;
 	struct x86_mpCfgS	*cfg;
 	uarch_t			nCfgEntries;
@@ -202,7 +204,6 @@ struct x86_mpCacheS
 	uarch_t			flags;
 	char			oemId[12];
 	char			oemProductId[16];
-	ubit8			isInitialized;
 };
 
 #ifdef __cplusplus
@@ -214,8 +215,12 @@ namespace x86Mp
 	void flushCache(void);
 
 	x86_mpFpS *findMpFp(void);
-	sarch_t mpTablesFound(void);
+	sarch_t mpFpFound(void);
+
 	x86_mpCfgS *mapMpConfigTable(void);
+	void unmapMpConfigTable(void);
+	sarch_t mpConfigTableIsMapped(void);
+
 	// Returns: neg if uninitialized. 0 if cfg table present. >0 if default.
 	status_t getChipsetDefaultConfig(void);
 

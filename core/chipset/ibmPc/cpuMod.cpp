@@ -274,7 +274,7 @@ tryMpTables:
 
 	__kprintf(NOTICE SMPINFO"getSmpMap: Falling back to MP tables.\n");
 	x86Mp::initializeCache();
-	if (!x86Mp::mpTablesFound())
+	if (!x86Mp::mpFpFound())
 	{
 		if (x86Mp::findMpFp() == __KNULL)
 		{

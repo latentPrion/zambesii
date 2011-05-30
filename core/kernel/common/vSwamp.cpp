@@ -179,7 +179,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 	if (status == VSWAMP_INSERT_BEFORE)
 	{
 		if ((reinterpret_cast<uarch_t>( vaddr )
-			+ (nPages * PAGING_BASE_SIZE))
+			+ (nPages << PAGING_BASE_SHIFT))
 			== insertionNode->startAddr)
 		{
 			// We can free directly to an existing node.
