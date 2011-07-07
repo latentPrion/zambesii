@@ -133,6 +133,7 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 		== __KMATH_NELEMENTS(
 			nBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__)))
 	{
+		bmp.rsrc.nBits = nBits;
 		bmp.lock.release();
 		return ERROR_SUCCESS;
 	};
@@ -150,6 +151,8 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 	else 
 	{
 		bmp.lock.acquire();
+		// Copy the old array's state into the new.
+		memcpy8(tmp, bmp.rsrc.bmp, nIndexes * sizeof(*bmp.rsrc.bmp));
 		bmp.rsrc.bmp = tmp;
 		bmp.rsrc.nBits = nBits;
 		bmp.lock.release();

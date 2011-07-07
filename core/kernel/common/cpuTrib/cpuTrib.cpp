@@ -387,6 +387,31 @@ cpuTribC::~cpuTribC(void)
 {
 }
 
+/* Args:
+ * __pb = pointer to the bitmapC object to be checked.
+ * __n = the bit number which the bitmap should be able to hold. For example,
+ *	 if the bit number is 32, then the BMP will be checked for 33 bit
+ *	 capacity or higher, since 0-31 = 32 bits, and bit 32 would be the 33rd
+ *	 bit.
+ * __ret = variable to return the error code from the operation in.
+ * __fn = The name of the function this macro was called inside.
+ * __bn = the human recognizible name of the bitmapC instance being checked.
+ *
+ * The latter two are used to print out a more useful error message should an
+ * error occur.
+ **/
+#define CHECK_AND_RESIZE_BMP(__pb,__n,__ret,__fn,__bn)			\
+	if ((__n) > (signed)(__pb)->getNBits() - 1) \
+	{ \
+		*(__ret) = (__pb)->resizeTo((__n) + 1); \
+		if (*(__ret) != ERROR_SUCCESS) \
+		{ \
+			__kprintf(ERROR CPUTRIB"%s: resize failed on %s with " \
+				"required capacity = %d.\n", \
+				__fn, __bn, __n); \
+		}; \
+	}
+
 error_t cpuTribC::createBank(numaBankId_t id)
 {
 	error_t		ret;
@@ -398,6 +423,12 @@ error_t cpuTribC::createBank(numaBankId_t id)
 	 * CPU Trib's "availableBanks" BMP.
 	 **/
 
+	// First make sure that the bitmap can hold the new bank's bit.
+	CHECK_AND_RESIZE_BMP(&availableBanks, id, &ret,
+		"createBank", "available banks");
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+
 	// Allocate the new CPU bank object.
 	ncb = new (
 		(memoryTrib.__kmemoryStream
@@ -408,19 +439,6 @@ error_t cpuTribC::createBank(numaBankId_t id)
 
 	if (ncb == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
-	};
-
-	// Initialize the BMP member.
-	ret = ncb->cpus.initialize(availableCpus.getNBits());
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(ERROR CPUTRIB"Failed to initialize new CPU bank %d's "
-			"internal CPU BMP with nBits = %d.\n",
-			id, availableCpus.getNBits());
-
-		ncb->~numaCpuBankC();
-		memoryTrib.__kmemoryStream.memFree(ncb);
-		return ret;
 	};
 
 	// Add the newly initialized bank to the bank list.
@@ -458,6 +476,7 @@ error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
 {
 	cpuStreamC	*cs;
 	numaCpuBankC	*ncb;
+	error_t		ret;
 
 	/**	EXPLANATION:
 	 * Called when a new logical CPU is detected as being interted on the
@@ -468,8 +487,38 @@ error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
 	 *	* Create a new cpuStreamC object.
 	 *	* Set its bit on the bank it belongs to, and in the CPU Trib's
 	 *	  unified list of all available CPUs.
+	 *
+	 * * The caller should no have to check to see whether or not the bank
+	 *   to which the new CPU pertains has been created.
 	 **/
-	if ((ncb = getBank(bid)) == __KNULL) { return ERROR_UNKNOWN; };
+	/* Make sure the available CPUs bmp, onlineCpus bmp and the BMP of
+	 * CPUs on the containing bank all have enough bits to hold the new
+	 * CPU's bit.
+	 **/
+	CHECK_AND_RESIZE_BMP(&availableCpus, cid, &ret,
+		"spawnStream", "available CPUs");
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	CHECK_AND_RESIZE_BMP(&onlineCpus, cid, &ret,
+		"spawnStream", "online CPUs");
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	if ((ncb = getBank(bid)) == __KNULL)
+	{
+		ret = createBank(bid);
+		if (ret != ERROR_SUCCESS) {
+			return ret;
+		};
+
+		ncb = getBank(bid);
+	};
+
+	CHECK_AND_RESIZE_BMP(&ncb->cpus, cid, &ret,
+		"spawnStream", "resident bank");
+
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	cs = new cpuStreamC(bid, cid);
 	if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };

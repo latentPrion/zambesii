@@ -11,6 +11,7 @@
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/taskTrib/taskStream.h>
 
+// "CPU OK" :/
 #define CPUSTREAM_INIT_MAGIC		0xC101101C
 
 #define CPUSTREAM_FLAGS_INITIALIZED	(1<<0)
@@ -25,6 +26,10 @@ public:
 	error_t initialize(void);
 	sarch_t isInitialized(void);
 	~cpuStreamC(void);
+
+public:
+	status_t powerControl(ubit16 command, uarch_t flags);
+	error_t cpuInfo();
 
 public:
 	// Do *NOT* move currentTask from where it is.

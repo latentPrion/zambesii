@@ -19,6 +19,28 @@
  * I'm not sure how this will affect the running of the kernel on other archs.
  **/
 
+/**	EXPLANATION:
+ * In Zambezii, as long as a CPU physically exists and is plugged in on the
+ * chipset, the kernel will maintain a CPU Stream object for it. The sequence
+ * of events upon discovering a new CPU is:
+ *
+ * New CPU detected:
+ *	-> Spawn CPU Stream object;
+ *	   -> Perform object construction and basic state initialization.
+ *	   -> Initialize(): Allocate any dynamic memory needed, prepare the
+ *	      new software objct in case it will be used.
+ *	-> Attempt to wake up the new CPU.
+ *	   -> powerControl(CPUSTREAM_POWER_ON): Get the CPU in a software
+ *	      controllable state.
+ *	   -> cpuInfo(CPUSTREAM_INFO_ENUMERATE): Obtain information on CPU.
+ *	-> Prepare the new CPU for scheduler use.
+ *	   -> cpuStream->taskStream->Initialize(): Prepare the scheduler object
+ *	      to be used.
+ *	   -> cpuStream->taskStream->attach(): Cause the CPU to advertise itself
+ *	      as a candidate for new threads to be scheduled to and for load
+ *	      balancing.
+ **/
+
 #define CPUTRIB		"CPU Trib: "
 
 class cpuTribC
@@ -37,6 +59,7 @@ public:
 	cpuStreamC *getStream(cpu_t cpu);
 	error_t spawnStream(numaBankId_t bid, cpu_t cid);
 	void destroyStream(cpu_t cpuId);
+
 	// Quickly acquires the current CPU's Stream.
 	cpuStreamC *getCurrentCpuStream(void);
 
