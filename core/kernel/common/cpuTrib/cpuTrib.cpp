@@ -134,6 +134,9 @@ error_t cpuTribC::initialize2(void)
 	__kprintf(NOTICE"Highest cpu id: %d.\n", highestCpuId);
 	__kprintf(NOTICE"Highest bank ID: %d.\n", highestBankId);
 
+	// Get the BSP ID from the chipset.
+	__kprintf(NOTICE CPUTRIB"BSPID: %d.\n", (*chipsetPkg.cpus->getBspId)());
+
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Next, for every entry, create a new CPU stream for the related CPU.
 	__kprintf(NOTICE CPUTRIB"Processing NUMA CPU map.\n");

@@ -16,6 +16,7 @@ IPCMEXTERN error_t ibmPc_cpuMod_restore(void);
 
 IPCMEXTERN struct chipsetNumaMapS *ibmPc_cpuMod_getNumaMap(void);
 IPCMEXTERN struct chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void);
+IPCMEXTERN cpu_t ibmPc_cpuMod_getBspId(void);
 
 IPCMEXTERN struct cpuModS ibmPc_cpuMod;
 

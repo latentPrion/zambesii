@@ -10,6 +10,15 @@
 
 static acpi_sdtCacheS		cache;
 
+void acpi::initializeCache(void)
+{
+	if (cache.magic != ACPI_CACHE_MAGIC)
+	{
+		acpi::flushCache();
+		cache.magic = ACPI_CACHE_MAGIC;
+	};
+}
+
 void acpi::flushCache(void)
 {
 	memset(&cache, 0, sizeof(cache));

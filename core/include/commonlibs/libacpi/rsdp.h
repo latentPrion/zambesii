@@ -5,8 +5,12 @@
 	#include "baseTables.h"
 
 
+// "ACPI OK"
+#define ACPI_CACHE_MAGIC	0xAC1D101C
+
 struct acpi_sdtCacheS
 {
+	ubit32		magic;
 	acpi_rsdpS	*rsdp;
 	acpi_rsdtS	*rsdt;
 	acpi_xsdtS	*xsdt;
@@ -16,6 +20,9 @@ struct acpi_sdtCacheS
 
 namespace acpi
 {
+	// Call before using, every time.
+	void initializeCache(void);
+
 	error_t findRsdp(void);
 	sarch_t rsdpFound(void);
 	acpi_rsdpS *getRsdp(void);

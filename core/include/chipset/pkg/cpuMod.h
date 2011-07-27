@@ -4,6 +4,7 @@
 	#include <chipset/numaMap.h>
 	#include <chipset/smpMap.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <kernel/common/smpTypes.h>
 
 struct cpuModS
 {
@@ -14,6 +15,10 @@ struct cpuModS
 
 	struct chipsetNumaMapS *(*getNumaMap)(void);
 	struct chipsetSmpMapS *(*getSmpMap)(void);
+	/* This MUST be called at least once BEFORE CPU detection begins, and
+	 * must be called ON THE BSP.
+	 **/
+	cpu_t (*getBspId)(void);
 };
 
 #endif

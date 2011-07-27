@@ -50,6 +50,7 @@ struct cpuModS		ibmPc_cpuMod =
 	&ibmPc_cpuMod_restore,
 
 	&ibmPc_cpuMod_getNumaMap,
-	&ibmPc_cpuMod_getSmpMap
+	&ibmPc_cpuMod_getSmpMap,
+	&ibmPc_cpuMod_getBspId
 };
 

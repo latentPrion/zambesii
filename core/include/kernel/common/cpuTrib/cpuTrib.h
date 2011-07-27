@@ -69,6 +69,7 @@ public:
 
 public:
 	bitmapC		availableBanks, availableCpus, onlineCpus;
+	cpu_t		bspId;
 
 private:
 #if __SCALING__ >= SCALING_SMP

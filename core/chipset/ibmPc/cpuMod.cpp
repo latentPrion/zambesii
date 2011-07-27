@@ -11,6 +11,19 @@
 
 #define SMPINFO		"IBMPC CPU Mod: SMP: "
 
+static struct
+{
+	
+	struct
+	{
+		sarch_t		bspIdRequestedAlready;
+		cpu_t		bspId;
+	} bspInfo;
+
+	paddr_t		lapicPaddr;
+} infoCache;
+
+
 error_t ibmPc_cpuMod_initialize(void)
 {
 	return ERROR_SUCCESS;
@@ -362,5 +375,89 @@ tryMpTables:
 	};
 
 	return __KNULL;
+}
+
+cpu_t ibmPc_cpuMod_getBspId(void)
+{
+	x86_mpCfgS		*cfgTable;
+	acpi_rsdtS		*rsdt;
+	acpi_rMadtS		*madt;
+	void			*handle;
+	paddr_t			tmp;
+
+	/* At some point I'll rewrite this function: it's very unsightly.
+	 **/
+
+	if (!infoCache.bspInfo.bspIdRequestedAlready)
+	{
+		/* Run a local CPU ID read. Need liblapic. Will have to parse
+		 * APIC/MP tables to determine the LAPIC paddr, then use
+		 * liblapic to read the current CPUID.
+		 **/
+		x86Mp::initializeCache();
+		if (!x86Mp::mpConfigTableIsMapped())
+		{
+			x86Mp::findMpFp();
+			if (!x86Mp::mpFpFound()) {
+				goto tryAcpi;
+			};
+
+			if (x86Mp::mapMpConfigTable() == __KNULL) {
+				goto tryAcpi;
+			};
+		};
+		cfgTable = x86Mp::getMpCfg();
+		infoCache.lapicPaddr = cfgTable->lapicPaddr;
+		goto initLibLapic;
+
+tryAcpi:
+		acpi::initializeCache();
+#ifndef __32_BIT__
+		// If not 32 bit, use XSDT.
+#else
+		// 32 bit uses RSDT only.
+		if (acpi::findRsdp() != ERROR_SUCCESS || !acpi::testForRsdt()
+			|| acpi::mapRsdt() != ERROR_SUCCESS)
+		{
+			goto useDefaultPaddr;
+		};
+
+		rsdt = acpi::getRsdt();
+		handle = __KNULL;
+		madt = acpiRsdt::getNextMadt(rsdt, &handle);
+		if (madt == __KNULL) { goto useDefaultPaddr; };
+		infoCache.lapicPaddr = (paddr_t)madt->lapicPaddr;
+
+		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
+#endif
+		goto initLibLapic;
+
+useDefaultPaddr:
+		__kprintf(NOTICE"getBspId(): Using default paddr.\n");
+		infoCache.lapicPaddr = 0xFEE00000;
+
+initLibLapic:
+		__kprintf(NOTICE"getBspId(): LAPIC paddr = 0x%P.\n",
+			infoCache.lapicPaddr);
+
+		x86Lapic::initializeCache();
+		if (!x86Lapic::getPaddr(&tmp)) {
+			x86Lapic::setPaddr(infoCache.lapicPaddr);
+		};
+
+		if (x86Lapic::mapLapicMem() != ERROR_SUCCESS)
+		{
+			__kprintf(WARNING"getBspId(): Failed to map lapic into "
+				"kernel vaddrspace. Unable to get true BSP id."
+				"\n");
+
+			return 0;
+		};
+
+		infoCache.bspInfo.bspId = x86Lapic::read32(0x20);
+		infoCache.bspInfo.bspIdRequestedAlready = 1;
+	};
+
+	return infoCache.bspInfo.bspId;
 }
 

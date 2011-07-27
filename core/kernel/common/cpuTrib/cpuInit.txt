@@ -154,4 +154,53 @@ CPU Wakeup: Chipset specific:
 
 CPU power management: Again, chipset specific.
 
+x86 Implementation thoughts:
 
+For the x86-32 implementation of the IBM-PC back end for the CPU wakeup
+mechanism, there are several things to be considered:
+	1. The chipset is not in SMP mode when the kernel begins waking up CPUs.
+	2. There is additional weird complicated annoying foolishness to be
+	   adjusted for each CPU.
+
+Ensuring that the chipset places itself into SMP mode on first wakeup command is
+trivial. I must now identify, before moving on, exactly WHAT about x86 SMP
+is so irritatingly over-complicated.
+
+	1. Each CPU must be uniquely detected as either having a legacy off die
+	   apic, or an integrated apic. Different code must be used for either
+	   case.
+	2. The chipset itself must be probed to determine how many IOAPICs there
+	   are. This can be left up to the chipset driver. [Not an issue any
+	   longer.]
+	3. All IRQ mappings to different CPUs must be detected and properly
+	   enumerated and possibly regulated. This can also be left up to the
+	   chipset driver and UDI environment. [Also no longer an issue].
+	4. The kernel must determine whether or not the chipset's LAPIC model
+	   allows for local timers implemented within the CPU.
+	5. The kernel must set up the IPI IRQ and associated routing.
+
+So does this mean that the kernel can /completely ignore/ all IO-APIC chipset
+specific equipment? It seems so.
+
+Then, looking at the situation, I can have the chipset code IGNORE all
+information about the actual APIC setup.
+
+Examination of scope, responsibility and borders:
+	1. Libx86mp is ONLY able to descend the MP table hierarchy and is to be
+	   a DIRECTED table parser.
+	2. libacpi is also ONLY to be able to, unintelligently parse the ACPI
+	   tables, not making assumptions about what information is or is not
+	   useful.
+	3. The chipset's hidden operation code shall cache all useful
+	   information as it deems fit.
+
+What shall the chipset look for then?
+	1. The LAPIC physical address. The chipset shall pass a block of
+	   architecture specific information back to the arch-specific CPU code
+	   on completion of a POWER_ON operation.
+	2. Nothing else?
+
+Discourse on the CPU wakeup phase's main procedure:
+	1. Kernel begins CPU detection phase. It is waking the CPUs up in
+	   parallel. Before it begins to wake CPUs up, it must determine which
+	   CPU was the BSP.
