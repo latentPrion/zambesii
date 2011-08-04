@@ -1,0 +1,46 @@
+When a CPU is just plugged in, regardless of its power state, the kernel will
+initialize a CPU Stream for it. As long as a CPU is present on the motherboard,
+the kernel will have a stream for it.
+
+When the kernel is ready to use a CPU, it will send it the following command:
+	myCpu->powerControl(CPUSTREAM_POWER_ON, F|L|A|G|S);
+
+This causes the chipset logic to boot the CPU up. After having been booted, the
+chipset code is expected to leave the CPU in the following state:
+	* CPUSTREAM_POWER_LIGHTSLEEP equivalent for that platform.
+
+For x86-32, the following options are available:
+	* Send init IPI, and have the CPU just immediately execute HLT.
+	* Send init IPI, and have the CPU execute a thread that will load the
+	  kernel's address space, and then loop into the kernel's idle thread.
+
+Discourse for analysis:
+
+	* The POWER_ON operation should do nothing more than ensure that the CPU
+	  is electrically on and in a state to receive commands from the kernel.
+	* A CPU with no work to do must enter a power saving state. That is,
+	  when a CPU pulls from its task stream and gets nothing, it must enter
+	  a sleep mode.
+	* Only one CPU may be powered on or off at a time.
+
+As a corollary to the above:
+	* If only one CPU may be booted at once, the need for a stack per CPU
+	  for the wakeup thread is liquidated.
+	* A single stack may be supplied to the CPU wakeup thread. This thread
+	  shall load the kernel's address space, and its stack into the waking
+	  CPU's registers, and then HLT the CPU.
+
+I just got a new idea about different CPU wakeup transitions and stack
+involvement:
+	-> A new CPU being booted will use the cpuWakeup thread.
+	-> If a CPU pulls and gets nothing, it executes code to enter a
+	   sleep mode. When it wakes up, it will awaken either because (1) timer
+	   even woke it up, or (2) message from other CPU woke it up.
+
+	   When a CPU is going to sleep, it loads a sleep stack from its stream.
+	   This sleep stack is very small, and will allow the CPU to execute
+	   power mgmt code, then sleep. When it wakes, it will load the sleep
+	   stack again, and try to pull a task. On failure, it will go back to
+	   sleep.
+	   Special case for this sequence is if the wakes up as a result of an
+	   IRQ.

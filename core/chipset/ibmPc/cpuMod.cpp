@@ -454,7 +454,7 @@ initLibLapic:
 			return 0;
 		};
 
-		infoCache.bspInfo.bspId = x86Lapic::read32(0x20);
+		infoCache.bspInfo.bspId = x86Lapic::read32(x86LAPIC_REG_LAPICID);
 		infoCache.bspInfo.bspIdRequestedAlready = 1;
 	};
 

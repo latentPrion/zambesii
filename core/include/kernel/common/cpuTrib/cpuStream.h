@@ -12,10 +12,17 @@
 	#include <kernel/common/taskTrib/taskStream.h>
 
 // "CPU OK" :/
+#define CPUSTREAM			"CPU Stream "
 #define CPUSTREAM_INIT_MAGIC		0xC101101C
 
 #define CPUSTREAM_FLAGS_INITIALIZED	(1<<0)
 #define CPUSTREAM_FLAGS_ENUMERATED	(1<<1)
+
+#define CPUSTREAM_POWER_ON		0x0
+#define CPUSTREAM_POWER_CHECK		0x1
+#define CPUSTREAM_POWER_LIGHTSLEEP	0x2
+#define CPUSTREAM_POWER_DEEPSLEEP	0x3
+#define CPUSTREAM_POWER_OFF		0x4
 
 class cpuStreamC
 :
@@ -42,6 +49,12 @@ public:
 	taskStreamC	scheduler;
 
 	ubit32		flags;
+	/* Very small stack used to wake and power down CPUs.
+	 * The number of elements in the array indicates how many pushes the
+	 * stack can handle. Assuming each push is a native word's size,
+	 * the stack can handle N pushes of the arch's word size.
+	 **/
+	uarch_t		sleepStack[48];
 };
 
 // The hardcoded stream for the BSP CPU.

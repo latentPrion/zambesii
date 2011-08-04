@@ -1,5 +1,6 @@
 
 #include <__kstdlib/__kclib/string.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/task.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <kernel/common/cpuTrib/powerOperations.h>
@@ -17,6 +18,7 @@ cpuId(cid), bankId(bid), scheduler(this)
 
 status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 {
+	__kprintf(NOTICE CPUSTREAM"%d: POWER_ON received.\n", cpuId);
 	return 0;
 }
 

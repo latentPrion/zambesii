@@ -131,11 +131,14 @@ error_t cpuTribC::initialize2(void)
 			numaMap->nCpuEntries);
 	};
 
-	__kprintf(NOTICE"Highest cpu id: %d.\n", highestCpuId);
-	__kprintf(NOTICE"Highest bank ID: %d.\n", highestBankId);
+	__kprintf(NOTICE CPUTRIB"Highest cpu ID: %d.\n", highestCpuId);
+	__kprintf(NOTICE CPUTRIB"Highest bank ID: %d.\n", highestBankId);
 
-	// Get the BSP ID from the chipset.
-	__kprintf(NOTICE CPUTRIB"BSPID: %d.\n", (*chipsetPkg.cpus->getBspId)());
+	// Assign the BSP's CPU stream its real ID.
+	bspId = (*chipsetPkg.cpus->getBspId)();
+	getCurrentCpuStream()->cpuId = bspId;
+	__kprintf(NOTICE CPUTRIB"BSP's hardware ID: %d. Patched.\n",
+		getCurrentCpuStream()->cpuId);
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Next, for every entry, create a new CPU stream for the related CPU.
@@ -157,6 +160,12 @@ error_t cpuTribC::initialize2(void)
 
 				continue;
 			};
+
+			if (numaMap->cpuEntries[i].cpuId != bspId)
+			{
+				getStream(numaMap->cpuEntries[i].cpuId)
+					->powerControl(CPUSTREAM_POWER_ON, 0);
+			};
 		};
 	};
 #endif
@@ -169,8 +178,8 @@ error_t cpuTribC::initialize2(void)
 	 * bank (kernel didn't find a bank associated with its entry), we now
 	 * do the processing necessary to fulfil that directive.
 	 **/
-	__kprintf(NOTICE"Built as either pure SMP, or numa with excess CPUs on "
-		"shared bank. Spawning shared bank.\n");
+	__kprintf(NOTICE CPUTRIB"Built as either pure SMP, or numa with excess "
+		"CPUs on shared bank. Spawning shared bank.\n");
 
 	ret = createBank(CHIPSET_CPU_NUMA_SHBANKID);
 	if (ret != ERROR_SUCCESS)
@@ -212,7 +221,7 @@ error_t cpuTribC::initialize2(void)
 #endif
 	};
 
-	__kprintf(NOTICE"Created and initialized SHBANK.\n");
+	__kprintf(NOTICE CPUTRIB"Created and initialized SHBANK.\n");
 
 	/* If there is a NUMA map, run through, and for each CPU in the SMP map
 	 * that does not exist in the NUMA map, add it to the shared bank.
@@ -252,7 +261,16 @@ error_t cpuTribC::initialize2(void)
 				__kprintf(ERROR CPUTRIB"Failed to spawn CPU "
 					"Stream for Id %d on shbank.\n",
 					smpMap->entries[i].cpuId);
+
+				continue;
 			};
+
+			if (smpMap->entries[i].cpuId != bspId)
+			{
+				getStream(smpMap->entries[i].cpuId)
+					->powerControl(CPUSTREAM_POWER_ON, 0);
+			};
+
 		};
 	}
 	else if ((smpMap != __KNULL) && (numaMap == __KNULL))
@@ -263,9 +281,25 @@ error_t cpuTribC::initialize2(void)
 		__kprintf(NOTICE CPUTRIB"Pure SMP case, no numa map.\n");
 		for (uarch_t i=0; i<smpMap->nEntries; i++)
 		{
-			spawnStream(
+			ret = spawnStream(
 				CHIPSET_CPU_NUMA_SHBANKID,
 				smpMap->entries[i].cpuId);
+
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR CPUTRIB"Failed to spawn stream "
+					"for cpu %d.\n",
+					smpMap->entries[i].cpuId);
+
+				continue;
+			};
+
+			if (smpMap->entries[i].cpuId != bspId)
+			{
+				getStream(smpMap->entries[i].cpuId)
+					->powerControl(CPUSTREAM_POWER_ON, 0);
+			};
+
 		};
 	}
 	else {

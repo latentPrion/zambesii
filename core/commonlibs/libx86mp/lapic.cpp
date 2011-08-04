@@ -39,7 +39,7 @@ sarch_t x86Lapic::getPaddr(paddr_t *p)
 
 error_t x86Lapic::mapLapicMem(void)
 {
-	paddr_t		p = x86Mp::getLapicPaddr();
+	paddr_t		p = cache.p;
 	void		*v;
 	status_t	nMapped;
 
