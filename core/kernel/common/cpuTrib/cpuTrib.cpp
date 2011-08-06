@@ -144,12 +144,6 @@ error_t cpuTribC::initialize2(void)
 	__kprintf(NOTICE CPUTRIB"Highest cpu ID: %d.\n", highestCpuId);
 	__kprintf(NOTICE CPUTRIB"Highest bank ID: %d.\n", highestBankId);
 
-	// Assign the BSP's CPU stream its real ID.
-	bspId = (*chipsetPkg.cpus->getBspId)();
-	getCurrentCpuStream()->cpuId = bspId;
-	__kprintf(NOTICE CPUTRIB"BSP's hardware ID: %d. Patched.\n",
-		getCurrentCpuStream()->cpuId);
-
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Next, for every entry, create a new CPU stream for the related CPU.
 	__kprintf(NOTICE CPUTRIB"Processing NUMA CPU map.\n");
@@ -181,6 +175,12 @@ error_t cpuTribC::initialize2(void)
 #endif
 
 #endif
+
+	// Assign the BSP's CPU stream its real ID.
+	bspId = (*chipsetPkg.cpus->getBspId)();
+	getCurrentCpuStream()->cpuId = bspId;
+	__kprintf(NOTICE CPUTRIB"BSP's hardware ID: %d. Patched.\n",
+		getCurrentCpuStream()->cpuId);
 
 #if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
 	/* Next, if the supervisor configured the kernel to build with a
