@@ -1,6 +1,7 @@
 
 #include <arch/arch.h>
 #include <chipset/pkg/cpuMod.h>
+#include <asm/x8632/cpuid.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
@@ -377,6 +378,22 @@ tryMpTables:
 	return __KNULL;
 }
 
+sarch_t ibmPc_cpuMod_checkSmpSanity(void)
+{
+	uarch_t		eax, ebx, ecx, edx;
+
+	/**	EXPLANATION:
+	 * This function is supposed to be called during the kernel's initial
+	 * CPU detection stretch. It does the most basic checks to ensure
+	 * that the kernel can successfully run SMP on the chipset.
+	 *
+	 * These checks include:
+	 *	* Check for presence of a LAPIC on the BSP.
+	 **/
+	execCpuid(1, &eax, &ebx, &ecx, &edx);
+	return !!(edx & (1<<9));
+}
+
 cpu_t ibmPc_cpuMod_getBspId(void)
 {
 	x86_mpCfgS		*cfgTable;
@@ -387,6 +404,8 @@ cpu_t ibmPc_cpuMod_getBspId(void)
 
 	/* At some point I'll rewrite this function: it's very unsightly.
 	 **/
+
+	ibmPc_cpuMod_checkSmpSanity();
 
 	if (!infoCache.bspInfo.bspIdRequestedAlready)
 	{
