@@ -84,6 +84,16 @@ error_t cpuTribC::initialize2(void)
 		{
 			cpuMod = chipsetPkg.cpus;
 
+			/** EXPLANATION:
+			 * Every chipset implements this function. The kernel
+			 * calls this to do a set of chipset specific
+			 * preliminary checks to make sure that the chipset
+			 * can successfully be used as an SMP board.
+			 **/
+			if (!(*cpuMod->checkSmpSanity)()) {
+				goto fallbackToUp;
+			};
+
 #if __SCALING__ >= SCALING_CC_NUMA
 			numaMap = (*cpuMod->getNumaMap)();
 #endif

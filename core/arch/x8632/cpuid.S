@@ -2,19 +2,7 @@
 #include <in_asm.h>
 #include <assembler.h>
 
-/*
-*edx
-*ecx
-*ebx
-*eax
-num
-eip
----
-eax
-ebx
-ecx
-edx
-*/
+
 ASM_GLOBAL_FUNCTION(execCpuid)
 	/* void execCpuid(
 	 *	uarch_t num,

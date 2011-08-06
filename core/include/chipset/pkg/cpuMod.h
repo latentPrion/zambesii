@@ -19,6 +19,7 @@ struct cpuModS
 	 * must be called ON THE BSP.
 	 **/
 	cpu_t (*getBspId)(void);
+	sarch_t (*checkSmpSanity)(void);
 };
 
 #endif

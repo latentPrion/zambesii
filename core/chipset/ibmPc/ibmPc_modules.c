@@ -51,6 +51,7 @@ struct cpuModS		ibmPc_cpuMod =
 
 	&ibmPc_cpuMod_getNumaMap,
 	&ibmPc_cpuMod_getSmpMap,
-	&ibmPc_cpuMod_getBspId
+	&ibmPc_cpuMod_getBspId,
+	&ibmPc_cpuMod_checkSmpSanity
 };
 

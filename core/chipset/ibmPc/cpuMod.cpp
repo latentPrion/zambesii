@@ -390,8 +390,18 @@ sarch_t ibmPc_cpuMod_checkSmpSanity(void)
 	 * These checks include:
 	 *	* Check for presence of a LAPIC on the BSP.
 	 **/
+	// This check will work for both x86-32 and x86-64.
 	execCpuid(1, &eax, &ebx, &ecx, &edx);
-	return !!(edx & (1<<9));
+	if (!(edx & (1<<9)))
+	{
+		__kprintf(ERROR"checkSmpSanity(): CPUID[1].EDX[9] LAPIC check "
+			"failed. EDX: %x.\n",
+			edx);
+
+		return 0;
+	};
+
+	return 1;
 }
 
 cpu_t ibmPc_cpuMod_getBspId(void)
@@ -404,8 +414,6 @@ cpu_t ibmPc_cpuMod_getBspId(void)
 
 	/* At some point I'll rewrite this function: it's very unsightly.
 	 **/
-
-	ibmPc_cpuMod_checkSmpSanity();
 
 	if (!infoCache.bspInfo.bspIdRequestedAlready)
 	{
