@@ -1,0 +1,55 @@
+Inter-processor Interrupts:
+	* Initiated using the ICR; Can also be used to forward interrupts or
+	  deliver a self-interrupt.
+
+	-> The act of writing to the low 32 bits of the ICR is what causes the
+	   IPI to be actualized.
+
+ICR:
+
+Bit 0-7: Vector number.
+bit 8-10: Interrupt type.
+	0x0: Fixed int.
+	0x1: Send to the processor with the lowest interrupt priority.
+	0x2: Sends a SMI to the CPU. Most likely only useful to firmware.
+	0x3: Reserved.
+	0x4: Deliver IPI as NMI. Ignores vector number.
+	0x5: Broadcast msg to all LAPICs to reset arbitration ID to LAPIC ID.
+	0x6: SIPI.
+bit 11: Destination mode.
+	0: Phys APIC ID.
+	1: Logical APIC ID.
+bit 12: Delivery status.
+	0: Idle.
+	1: Pending: IPI sent from this LAPIC has not yet been accepted by the
+	   target LAPICs.
+bit 14: Level:
+	0: Must be set for Init Level De-assert (see: bit 8-10, value 0x5).
+	1: Must be set for any other type of IPI.
+bit 15: Trigger mode: Only significant for Init level de-assert.
+	0: Edge-triggered.
+	1: Level-triggered.
+bit 18-19: Destination shorthand.
+	0x0: No shorthand; Manual destination specified.
+	0x1: SELF IPI.
+	0x2: Broadcast including self.
+	0x3: Broadcast excluding self.
+
+Shorthand requirements:
+	-> Level triggered IPIs are invalid on all shorthand modes, and in the
+	   manual destination mode.
+	-> For self IPI, only fixed mode delivery is valid.
+	-> For full broadcast mode, only fixed delivery mode is valid.
+	-> For partial broadcast mode (all but self), all modes are valid.
+
+The following interrupt types must NOT be acknowledged by the kernel to the
+LAPIC: INIT, SIPI, NMI, ExtINT, NMI.
+
+* In x2APIC mode, the only valid value to write to the EOI reg is 0.
+* x86 LAPIC mode processors are by nature nested with reference to interrupt
+  handling. You must support interrupt nesting on x86. You may have up to 16
+  nested interrupts.
+
+  In theory, a stack size of about 2KB is sufficient.
+
+

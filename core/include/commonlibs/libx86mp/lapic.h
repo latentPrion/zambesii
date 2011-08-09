@@ -57,6 +57,7 @@
 #define x86LAPIC_REG_CURR_COUNT		0x390
 #define x86LAPIC_REG_DIV_CFG		0x3E0
 
+#define x86LAPIC_IPI_
 
 struct x86LapicCacheS
 {
@@ -82,6 +83,11 @@ namespace x86Lapic
 	void write8(ubit32 offset, ubit8 val);
 	void write16(ubit32 offset, ubit16 val);
 	void write32(ubit32 regOffset, ubit32 value);
+
+	// IPI-related functions.
+	void sendPhysicalIpi(ubit8 type, ubit8 vector, ubit8 dest);
+	void sendClusterIpi(ubit8 type, ubit8 vector, ubit8 cluster, ubit8 cpu);
+	void sendFlatLogicalIpi(ubit8 type, ubit8 vector, ubit8 mask);
 }
 
 
