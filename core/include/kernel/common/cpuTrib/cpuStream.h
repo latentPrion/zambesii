@@ -9,6 +9,7 @@
 	#include <kernel/common/cpuFeatures.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/cpuTrib/cpuStreamArchBlock.h>
 	#include <kernel/common/taskTrib/taskStream.h>
 
 // "CPU OK" :/
@@ -55,6 +56,7 @@ public:
 	 * the stack can handle N pushes of the arch's word size.
 	 **/
 	uarch_t		sleepStack[48];
+	cpuStreamArchBlockS	archBlock;
 };
 
 // The hardcoded stream for the BSP CPU.
