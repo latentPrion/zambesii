@@ -44,6 +44,7 @@ error_t cpuTribC::initialize2(void)
 	cpuModS			*cpuMod;
 #if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
 	sarch_t			found;
+	cpuStreamC		*bspStream;
 #endif
 	numaCpuBankC		*ncb;
 
@@ -176,8 +177,25 @@ error_t cpuTribC::initialize2(void)
 
 #endif
 
-	// Assign the BSP's CPU stream its real ID.
+	// Ask the chipset what the BSP's real ID is.
+	bspStream = getCurrentCpuStream();
 	bspId = (*chipsetPkg.cpus->getBspId)();
+
+#if __SCALING__ >= SCALING_SMP
+	// Move the BSP's CPU stream into the right index in the CPU array.
+	if (bspId != bspStream->cpuId)
+	{
+		cpuStreams.removeItem(bspStream->cpuId);
+		ret = cpuStreams.addItem(bspId, bspStream);
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(FATAL CPUTRIB"Unable to relocate BSP CPU "
+				"stream within CPU list. Aborting.");
+
+			assert_fatal(ret == ERROR_SUCCESS);
+		};
+	};
+#endif
 	getCurrentCpuStream()->cpuId = bspId;
 	__kprintf(NOTICE CPUTRIB"BSP's hardware ID: %d. Patched.\n",
 		getCurrentCpuStream()->cpuId);

@@ -41,21 +41,21 @@ public:
 
 public:
 	// Do *NOT* move currentTask from where it is.
-	taskC		*currentTask;
-	cpu_t		cpuId;
-	numaBankId_t	bankId;
-	cpuFeaturesS	cpuFeatures;
-	uarch_t		initMagic;
+	taskC			*currentTask;
+	cpu_t			cpuId;
+	numaBankId_t		bankId;
+	cpuFeaturesS		cpuFeatures;
+	uarch_t			initMagic;
 	// Per CPU scheduler.
-	taskStreamC	scheduler;
+	taskStreamC		scheduler;
 
-	ubit32		flags;
+	ubit32			flags;
 	/* Very small stack used to wake and power down CPUs.
 	 * The number of elements in the array indicates how many pushes the
 	 * stack can handle. Assuming each push is a native word's size,
 	 * the stack can handle N pushes of the arch's word size.
 	 **/
-	uarch_t		sleepStack[48];
+	uarch_t			sleepStack[48];
 	cpuStreamArchBlockS	archBlock;
 };
 

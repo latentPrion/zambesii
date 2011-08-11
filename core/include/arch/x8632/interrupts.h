@@ -5,6 +5,8 @@
 
 #define ARCH_IRQ_NVECTORS		256
 
+#define ARCH_x86_32_LAPIC_VECTOR_IPI	255
+
 #ifdef __cplusplus
 extern "C" void 	(*__kvectorTable[])();
 extern "C" exceptionFn	*__kexceptionTable[];
@@ -12,7 +14,6 @@ extern "C" exceptionFn	*__kexceptionTable[];
 extern void 		(*__kvectorTable[])();
 extern exceptionFn	*__kexceptionTable[];
 #endif
-
 
 #ifdef __cplusplus
 extern "C" {
