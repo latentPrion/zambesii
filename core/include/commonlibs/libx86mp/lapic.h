@@ -64,6 +64,8 @@
 #define x86LAPIC_IPI_TYPE_LOWPRIO		0x1
 #define x86LAPIC_IPI_TYPE_SMI			0x2
 #define x86LAPIC_IPI_TYPE_NMI			0x4
+// These two have the same value. Also, when sending INIT, always use vector 0.
+#define x86LAPIC_IPI_TYPE_INIT			0x5
 #define x86LAPIC_IPI_TYPE_ARBIT_RESET		0x5
 #define x86LAPIC_IPI_TYPE_SIPI			0x6
 
@@ -84,6 +86,7 @@
 #define x86LAPIC_IPI_SHORTDEST_SELF		0x1
 #define x86LAPIC_IPI_SHORTDEST_BROAD_INC	0x2
 #define x86LAPIC_IPI_SHORTDEST_BROAD_EXC	0x3
+
 
 struct x86LapicCacheS
 {
@@ -111,7 +114,9 @@ namespace x86Lapic
 	void write32(ubit32 regOffset, ubit32 value);
 
 	// IPI-related functions.
-	void sendPhysicalIpi(ubit8 type, ubit8 vector, ubit8 dest);
+	void sendPhysicalIpi(
+		ubit8 type, ubit8 vector, ubit8 shortDest, ubit8 dest);
+
 	void sendClusterIpi(ubit8 type, ubit8 vector, ubit8 cluster, ubit8 cpu);
 	void sendFlatLogicalIpi(ubit8 type, ubit8 vector, ubit8 mask);
 }
