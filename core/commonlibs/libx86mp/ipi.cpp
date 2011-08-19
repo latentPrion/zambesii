@@ -2,14 +2,18 @@
 #include <arch/interrupts.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <commonlibs/libx86mp/libx86mp.h>
 
 
-x86Lapic::sendPhysicalIpi(ubit8 type, ubit8 vector, ubit8 shortDest, ubit8 dest)
+error_t x86Lapic::sendPhysicalIpi(
+	ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest
+	)
 {
-	ubit32		val, timeout=800;
+	// Timeout value is the one used by Linux.
+	ubit32		timeout=1000;
 
 	// For SIPI, the vector field is ignored.
-	if (shortDest == x86LAPIC_IPI_DESTTYPE_SPECIFIC) {
+	if (shortDest == x86LAPIC_IPI_SHORTDEST_NONE) {
 		x86Lapic::write32(x86LAPIC_REG_INT_CMD1, dest << 24);
 	};
 
@@ -32,7 +36,8 @@ x86Lapic::sendPhysicalIpi(ubit8 type, ubit8 vector, ubit8 shortDest, ubit8 dest)
 		timeout--;
 		cpuControl::subZero();
 	};
-	
+
 	// Check for successful delivery here.
+	return (timeout != 0) ? ERROR_SUCCESS : ERROR_UNKNOWN;
 }
 

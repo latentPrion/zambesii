@@ -3,6 +3,7 @@
 
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <kernel/common/smpTypes.h>
 
 #define x86LAPIC		"LAPIC: "
 // "LAPIC 00"
@@ -114,8 +115,8 @@ namespace x86Lapic
 	void write32(ubit32 regOffset, ubit32 value);
 
 	// IPI-related functions.
-	void sendPhysicalIpi(
-		ubit8 type, ubit8 vector, ubit8 shortDest, ubit8 dest);
+	error_t sendPhysicalIpi(
+		ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest);
 
 	void sendClusterIpi(ubit8 type, ubit8 vector, ubit8 cluster, ubit8 cpu);
 	void sendFlatLogicalIpi(ubit8 type, ubit8 vector, ubit8 mask);

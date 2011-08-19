@@ -5,6 +5,7 @@
  * Vaddr and the Paddr info from the kernel for this linker script.
  **/
 #include <platform/x8632-ibmPc/memory.h>
+#include <platform/x8632-ibmPc/cpu.h>
 #include <arch/x8632/paging.h>
 
 /* The C preprocessor in GCC seems to define a symbol 'i386' and give it a 
@@ -22,14 +23,12 @@ ENTRY(__korientationEntry)
 SECTIONS
 {
 	/* Start off with the physical sections */
-	. = CHIPSET_MEMORY___KLOAD_PADDR_BASE;
+	. = PLATFORM_x86_32_POWERON_DATA_PADDR;
 
-	__kstart = .;
-
-	__kphysStart = .;
+	__kphysStart = CHIPSET_MEMORY___KLOAD_PADDR_BASE;
 
 	// __kheaders contains things like the zBoot and multiboot headers.
-	.__kheaders ALIGN(PAGING_BASE_SIZE) 
+	.__kheaders ALIGN(PAGING_BASE_SIZE)
 	:
 	AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 	{
@@ -37,6 +36,32 @@ SECTIONS
 		*(.__kheaders*)
 		__kheadersEnd = .;
 	}
+
+	.__kcpuPowerOnData ALIGN(PAGING_BASE_SIZE)
+	:
+	AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE)
+	{
+		__kcpuPowerOnDataStart = .;
+		*(.__kcpuPowerOnData*)
+		__kcpuPowerOnDataEnd = .;
+	}
+
+	.__kcpuPowerOnText ALIGN(PAGING_BASE_SIZE)
+	:
+	AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (. - ADDR(.__kcpuPowerData))
+	{
+		__kcpuPowerOnTextStart = .;
+		*(.__kcpuPowerOnText*)
+		__kcpuPowerOnTextEnd = .;
+	}
+
+	/* The next few sections must be identical in physical and virtual
+	 * link address.
+	 **/
+	. += (CHIPSET_MEMORY___KLOAD_PADDR_BASE - .)
+		+ (. - PLATFORM_x86_32_POWERON_DATA_PADDR);
+
+	__kstart = .;
 
 	.__ksetupData ALIGN(PAGING_BASE_SIZE) : AT(ADDR(.__ksetupData))
 	{
@@ -56,6 +81,7 @@ SECTIONS
 
 	. = (__kphysEnd - CHIPSET_MEMORY___KLOAD_PADDR_BASE)
 		+ ARCH_MEMORY___KLOAD_VADDR_BASE;
+
 	. = ALIGN(PAGING_BASE_SIZE);
 
 	__kvirtStart = .;

@@ -19,5 +19,6 @@ struct x8632GdtPtrS
 	struct x8632GdtEntryS	*baseAddr;
 } __attribute__((packed));
 
+extern struct x8632GdtPtrS	x8632GdtPtr;
 #endif
 

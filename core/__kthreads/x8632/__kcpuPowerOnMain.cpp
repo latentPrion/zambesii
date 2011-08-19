@@ -1,15 +1,11 @@
 
+#include <arch/x8632/gdt.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
-// Points to this CPU's stream.
-extern "C" cpuStreamC	*__kcpuPowerOnSelf;
-extern "C" void __kcpuPowerOnMain(void);
 
-void __kcpuPowerOn(void);
-
-void __kcpuPowerOnMain(void)
+void __kcpuPowerOnHll(void)
 {
 	void		*stackAddr;
 
@@ -27,10 +23,10 @@ void __kcpuPowerOnMain(void)
 		: "r" (stackAddr));
 
 	// Stack should be switched now. Let compiler set up new stack frame.
-	__kcpuPowerOn();
+	__kcpuPowerOnMain();
 }
 
-void __kcpuPowerOn(void)
+void __kcpuPowerOnMain(void)
 {
 	cpuStreamC	*myStream = __kcpuPowerOnSelf;
 
@@ -38,6 +34,11 @@ void __kcpuPowerOn(void)
 	asm volatile (
 		"movl	$0, %eax \n\t \
 		xchg	%eax, (__kcpuPowerOnStackLock) \n\t");
+
+	// Load kernel's main GDT:
+	asm volatile ("lgdt	(x8632GdtPtr)");
+	// Load the kernel's IDT:
+	asm volatile ("lidt	(x8632IdtPtr)");
 
 	__kprintf(NOTICE"Power on thread: CPU %d powered on.\n",
 		myStream->cpuId);

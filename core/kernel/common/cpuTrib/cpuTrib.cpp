@@ -368,7 +368,7 @@ fallbackToUp:
 	};
 
 	// Set a single bit for CPU 0, our UP mode single CPU.
-	ncb->cpus.setSingle(getCurrentCpuStream()->cpuId)
+	ncb->cpus.setSingle(getCurrentCpuStream()->cpuId);
 	availableCpus.setSingle(getCurrentCpuStream()->cpuId);
 	onlineCpus.setSingle(getCurrentCpuStream()->cpuId);
 #else

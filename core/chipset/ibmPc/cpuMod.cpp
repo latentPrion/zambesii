@@ -1,16 +1,24 @@
 
 #include <arch/arch.h>
+#include <chipset/memoryAreas.h>
 #include <chipset/pkg/cpuMod.h>
+#include <platform/cpu.h>
 #include <asm/x8632/cpuid.h>
+#include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/libacpi.h>
 #include <commonlibs/libx86mp/libx86mp.h>
+#include <kernel/common/cpuTrib/cpuStream.h>
+#include <__kthreads/__kcpuPowerOn.h>
 #include "cpuMod.h"
 
 
 #define SMPINFO		"IBMPC CPU Mod: SMP: "
+
+#define SMPSTATE_UNIPROCESSOR	0x0
+#define SMPSTATE_SMP		0x1
 
 static struct
 {
@@ -20,6 +28,14 @@ static struct
 		sarch_t		bspIdRequestedAlready;
 		cpu_t		bspId;
 	} bspInfo;
+
+	struct
+	{
+		// Whether SMP (Symmetric I/O) or non-SMP mode.
+		ubit8		chipsetState;
+		// Set the board back to Virt. wire or PIC mode at shutdown.
+		ubit8		chipsetOriginalState;
+	} smpState;
 
 	paddr_t		lapicPaddr;
 } infoCache;
@@ -392,7 +408,7 @@ sarch_t ibmPc_cpuMod_checkSmpSanity(void)
 	 **/
 	// This check will work for both x86-32 and x86-64.
 	execCpuid(1, &eax, &ebx, &ecx, &edx);
-	if (!(edx & (1<<9)))
+	if (!(edx & (1 << 9)))
 	{
 		__kprintf(ERROR"checkSmpSanity(): CPUID[1].EDX[9] LAPIC check "
 			"failed. EDX: %x.\n",
@@ -485,6 +501,128 @@ initLibLapic:
 		infoCache.bspInfo.bspIdRequestedAlready = 1;
 	};
 
-	return infoCache.bspInfo.bspId;
+	return infoCache.bspInfo.bspId >> 24;
+}
+
+static error_t ibmPc_cpuMode_setSmpMode(void)
+{
+	error_t		ret;
+	ubit8		*lowmem;
+
+	/**	EXPLANATION:
+	 * This function will enable Symmetric I/O mode on the IBM-PC chipset.
+	 * By extension, it also sets the CMOS warm reset mode and the BIOS
+	 * reset vector.
+	 *
+	 * Everything done here is taken from the MP specification and Intel
+	 * manuals, with cross-examination from Linux source just in case.
+	 *
+	 * Naturally, to access lowmem, we use the chipset's memoryAreas
+	 * manager.
+	 *
+	 * NOTE:
+	 * * I don't think you need to enable Symm. I/O mode to use the LAPICs.
+	 **/
+	ret = chipset_mapArea(CHIPSET_MEMAREA_LOWMEM);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR"setSmpMode(): Failed to map lowmem.\n");
+		return ret;
+	};
+
+	lowmem = static_cast<ubit8 *>(
+		chipset_getArea(CHIPSET_MEMAREA_LOWMEM) );
+
+	// Change the warm reset vector.
+	*reinterpret_cast<ubit32 *>( &lowmem[(0x40 << 4) + 0x67] ) =
+		PLATFORM_x86_32_POWERON_PADDR;
+
+	// For now just return and don't set Symm. I/O mode.
+	return ERROR_SUCCESS;
+}
+
+error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
+{
+	error_t		ret;
+	ubit8		nTries;
+	x86Lapic::initializeCache();
+
+	switch (command)
+	{
+	case CPUSTREAM_POWER_ON:
+		if (infoCache.smpState == SMPSTATE_UNIPROCESSOR)
+		{
+			ret = ibmPc_cpuMod_setSmpMode();
+			if (ret != ERROR_SUCCESS) { return ret; };
+		};
+
+		nTries = 3;
+		do
+		{
+			// Init IPI: Always with vector = 0.
+			ret = x86Lapic::sendPhysicalIpi(
+				x86LAPIC_IPI_TYPE_INIT,
+				0,
+				x86LAPIC_IPI_SHORTDEST_NONE,
+				cpuId);
+
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR"POWER_ON CPU %d: INIT IPI "
+					"timed out.\n",
+					cpuId);
+			};
+		} while (ret != ERROR_SUCCESS && --nTries);
+
+		for (ubit32 i=10000; i>0; i--) { cpuControl::subZero(); };
+
+		/* The next two IPIs should only be executed if the LAPIC
+		 * is version 1.x. Older LAPICs only need an INIT.
+		 *
+		 * Deal with this later.
+		 **/
+		nTries = 3;
+		do
+		{
+			ret = x86Lapic::sendPhysicalIpi(
+				x86LAPIC_IPI_TYPE_SIPI,
+				PLATFORM_x86_32_POWERON_VECTOR,
+				x86LAPIC_IPI_SHORTDEST_NONE,
+				cpuId);
+
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR"POWER_ON CPU %d: SIPI0 timed "
+					"out.\n",
+					cpuId);
+			};
+		} while (ret != ERROR_SUCCESS && --nTries);
+
+		for (ubit32 i=10000 * 2; i>0; i--) { cpuControl::subZero(); };
+
+		nTries = 3;
+		do
+		{
+			ret = x86Lapic::sendPhysicalIpi(
+				x86LAPIC_IPI_TYPE_SIPI,
+				PLATFORM_x86_32_POWERON_VECTOR,
+				x86LAPIC_IPI_SHORTDEST_NONE,
+				cpuId);
+
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR"POWER_ON CPU %d: SIPI1 timed "
+					"out.\n",
+					cpuId);
+			};
+		} while (ret != ERROR_SUCCESS && --nTries);
+
+		for (ubit32 i=10000 * 2; i>0; i--) { cpuControl::subZero(); };
+		break;
+
+	default: ret = ERROR_SUCCESS;
+	};
+
+	return ret;
 }
 
