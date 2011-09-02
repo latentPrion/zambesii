@@ -1,12 +1,14 @@
 
 #include <__ksymbols.h>
 #include <arch/arch.h>
+#include <arch/memory.h>
 #include <chipset/memoryAreas.h>
 #include <chipset/pkg/cpuMod.h>
 #include <platform/cpu.h>
 #include <asm/x8632/cpuid.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/libacpi.h>
@@ -509,6 +511,8 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 {
 	error_t		ret;
 	ubit8		*lowmem;
+	void		*srcAddr, *destAddr;
+	uarch_t		copySize;
 
 	/**	EXPLANATION:
 	 * This function will enable Symmetric I/O mode on the IBM-PC chipset.
@@ -540,6 +544,35 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 
 __kprintf(NOTICE"Changed warm reset vector to 0x%P.\n",
 	&__kcpuPowerOnTextStart);
+
+	/* Next, we need to copy the kernel's .__kcpuPowerOn[Text/Data] stuff to
+	 * lowmem. Memcpy() ftw...
+	 **/
+	srcAddr = (void *)(((uarch_t)&__kcpuPowerOnTextStart
+		- x8632_IBMPC_POWERON_PADDR_BASE)
+		+ ARCH_MEMORY___KLOAD_VADDR_BASE);
+
+	destAddr = &lowmem[(uarch_t)&__kcpuPowerOnTextStart];
+	copySize = (uarch_t)&__kcpuPowerOnTextEnd
+		- (uarch_t)&__kcpuPowerOnTextStart;
+
+__kprintf(NOTICE"Copying CPU wakeup code from 0x%p to 0x%p; %d bytes.\n",
+	srcAddr, destAddr, copySize);
+
+	memcpy8(destAddr, srcAddr, copySize);
+
+	srcAddr = (void *)(((uarch_t)&__kcpuPowerOnDataStart
+		- x8632_IBMPC_POWERON_PADDR_BASE)
+		+ ARCH_MEMORY___KLOAD_VADDR_BASE);
+
+	destAddr = &lowmem[(uarch_t)&__kcpuPowerOnDataStart];
+	copySize = (uarch_t)&__kcpuPowerOnDataEnd
+		- (uarch_t)&__kcpuPowerOnDataStart;
+
+__kprintf(NOTICE"Copying CPU wakeup data from 0x%p to 0x%p; %d bytes.\n",
+	srcAddr, destAddr, copySize);
+
+	memcpy8(destAddr, srcAddr, copySize);
 
 	// For now just return and don't set Symm. I/O mode.
 	return ERROR_SUCCESS;
@@ -655,7 +688,6 @@ skipMpTables:
 			};
 		} while (ret != ERROR_SUCCESS && --nTries);
 
-asm volatile ("Hlt\n\t");
 		for (ubit32 i=10000; i>0; i--) { cpuControl::subZero(); };
 
 		/* The next two IPIs should only be executed if the LAPIC
@@ -663,6 +695,7 @@ asm volatile ("Hlt\n\t");
 		 **/
 		if (isNewerCpu)
 		{
+__kprintf(NOTICE"Entered SIPI SIPI sequence.\n");
 			nTries = 3;
 			do
 			{
@@ -672,6 +705,7 @@ asm volatile ("Hlt\n\t");
 					x86LAPIC_IPI_SHORTDEST_NONE,
 					cpuId);
 
+//__kprintf(NOTICE"First IPI returned %d.\n", ret);
 				if (ret != ERROR_SUCCESS)
 				{
 					__kprintf(ERROR"POWER_ON CPU %d: SIPI0 "
@@ -693,6 +727,8 @@ asm volatile ("Hlt\n\t");
 					x86LAPIC_IPI_SHORTDEST_NONE,
 					cpuId);
 
+//__kprintf(NOTICE"Second IPI returned %d.\n", ret);
+
 				if (ret != ERROR_SUCCESS)
 				{
 					__kprintf(ERROR"POWER_ON CPU %d: SIPI1 "
@@ -704,6 +740,7 @@ asm volatile ("Hlt\n\t");
 			for (ubit32 i=10000 * 2; i>0; i--) {
 				cpuControl::subZero();
 			};
+asm volatile ("Hlt\n\t");
 		};
 		break;
 

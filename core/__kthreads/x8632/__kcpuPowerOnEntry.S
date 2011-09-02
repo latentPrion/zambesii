@@ -12,6 +12,9 @@
 ASM_SECTION(.__kcpuPowerOnText)
 
 ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
+
+	.code16
+
 	/* Interrupts are assumed to be disabled on the AP at entry, but still.
 	 **/
 	cli
@@ -24,16 +27,25 @@ ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
 	movw	%ax, %ss
 
 	/* Going to jump into pmode. */
-	lgdt	(__kcpuPowerOnGdt)
+	lgdt	(__kcpuPowerOnGdtPtr)
+
 	movl	%cr0, %ebx
 	orl	$0x1, %ebx
 	movl	%ebx, %cr0
 
-	/* Jump to clear prefetch queue. */
-	movl	$.pmode, %ebx
-	jmp	*%ebx
+	ljmp	$0x8, $.next
 
-.pmode:
+.next:
+
+	.code32
+
+	movw	$0x10, %ax
+	movw	%ax, %ds
+	movw	%ax, %es
+	movw	%ax, %fs
+	movw	%ax, %gs
+	movw	%ax, %ss
+
 	/* Enable the MMU immediately. */
 #ifdef CONFIG_ARCH_x86_32_PAE
 	/* Code to enable PAE etc here. Not implemented. */
@@ -44,6 +56,7 @@ ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
 	movl	%cr0, %ecx
 	orl	$0x80000000, %ecx
 	movl	%ecx, %cr0
+	hlt
 
 	/* Jump into kernel vaddrspace. Force a non-relative jump. */
 	movl	$__kcpuPowerOnVirtualStart, %ecx
@@ -82,7 +95,7 @@ ASM_END_FUNCTION(__kcpuPowerOnVirtualStart)
  * CPUs to protected mode, etc.
  **/
 ASM_SECTION(.__kcpuPowerOnData)
-
+.balign 0x4
 .global		__kcpuPowerOnStackLock, __kcpuPowerOnSelf
 
 /**	NOTE:
@@ -101,18 +114,27 @@ __kcpuPowerOnSelf:
  * 4GB of it.
  **/
 __kcpuPowerOnGdt:
+	.word	0, 0
+	.byte	0, 0, 0, 0
+
 	.word	0xFFFF, 0x0
-	.byte	0x0
 	.byte	0x0
 	.byte	0x9A
 	.byte	0xCF
+	.byte	0x0
 
 	.word	0xFFFF, 0x0
 	.byte	0x0
-	.byte	0x0
 	.byte	0x92
 	.byte	0xCF
+	.byte	0x0
+__kcpuPowerOnGdtEnd:
 
+__kcpuPowerOnGdtPtr:
+	.word	__kcpuPowerOnGdtEnd - __kcpuPowerOnGdt - 1
+	.long	__kcpuPowerOnGdt
+
+.balign(0x4)
 tmpStack:
 	.space	TMPSTACK_SIZE
 

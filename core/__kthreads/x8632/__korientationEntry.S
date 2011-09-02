@@ -10,6 +10,7 @@ ASM_SECTION(.__ksetupText)
 
 ASM_GLOBAL_FUNCTION(__korientationEntry)
 	cli
+
 	/* Enable Paging, then move on from there. */
 #ifdef CONFIG_ARCH_X86_32_PAE
 	/* Code to enable the PAE, etc here. */
