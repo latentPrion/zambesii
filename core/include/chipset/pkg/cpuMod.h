@@ -20,6 +20,7 @@ struct cpuModS
 	 **/
 	cpu_t (*getBspId)(void);
 	sarch_t (*checkSmpSanity)(void);
+	status_t (*powerControl)(cpu_t cpuId, ubit8 command, uarch_t flags);
 };
 
 #endif

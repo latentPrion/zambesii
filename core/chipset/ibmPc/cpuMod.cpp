@@ -538,11 +538,14 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	*reinterpret_cast<uarch_t **>( &lowmem[(0x40 << 4) + 0x67] ) =
 		&__kcpuPowerOnTextStart;
 
+__kprintf(NOTICE"Changed warm reset vector to 0x%P.\n",
+	&__kcpuPowerOnTextStart);
+
 	// For now just return and don't set Symm. I/O mode.
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
+error_t ibmPc_cpuMod_powerControl(cpu_t cpuId, ubit8 command, uarch_t)
 {
 	error_t		ret;
 	ubit8		nTries, isNewerCpu=1;
@@ -550,6 +553,7 @@ error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 	uarch_t		pos=0, sipiVector;
 	x86_mpCfgCpuS	*cpu;
 
+__kprintf(NOTICE"Entered CPU Power on routine.\n");
 	/**	EXPLANATION:
 	 * According to the MP specification, only newer LAPICs require the
 	 * INIT-SIPI-SIPI sequence; older LAPICs will be sufficient with a
@@ -576,41 +580,13 @@ error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 	{
 		if (x86Mp::findMpFp())
 		{
-			if (x86Mp::mapMpConfigTable())
-			{
-				/* If CPU is not found in SMP tables,
-				 * assume it is being hotplugged and the
-				 * system admin who is inserting it is
-				 * knowledgeable and won't hotplug an
-				 * older CPU. I don't even think older
-				 * CPUs support hotplug, but I'm sure
-				 * specific chipsets may be custom built
-				 * for all kinds of things.
-				 **/
-				cpu = x86Mp::getNextCpuEntry(&pos, &handle);
-				for (; cpu != __KNULL;
-					cpu = x86Mp::getNextCpuEntry(
-						&pos, &handle))
-				{
-					if (cpu->lapicId != cpuId){ continue; };
-
-					// Check for on-chip APIC.
-					if (!__KFLAG_TEST(
-						cpu->featureFlags, (1<<9)))
-					{
-						isNewerCpu = 0;
-						__kprintf(WARNING"cpu_powerOn("
-							"%d,%d): Old non-"
-							"integrated LAPIC.\n",
-							cpuId, command);
-					};
-				};
-			}
-			else
+			if (!x86Mp::mapMpConfigTable())
 			{
 				__kprintf(WARNING"cpu_powerOn(%d,%d): Unable "
 					"to map MP config table.\n",
 					cpuId, command);
+
+				goto skipMpTables;
 			};
 		}
 		else
@@ -618,9 +594,38 @@ error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 			__kprintf(NOTICE"cpu_powerOn(%d,%d): No MP tables; "
 				"Assuming newer CPU and INIT-SIPI-SIPI.\n",
 				cpuId, command);
+
+			goto skipMpTables;
 		};
 	};
 
+	/* If CPU is not found in SMP tables, assume it is being hotplugged and
+	 * the system admin who is inserting it is knowledgeable and won't
+	 * hotplug an older CPU. I don't even think older CPUs support hotplug,
+	 * but I'm sure specific chipsets may be custom built for all kinds of
+	 * things.
+	 **/
+	cpu = x86Mp::getNextCpuEntry(&pos, &handle);
+	for (; cpu != __KNULL; cpu = x86Mp::getNextCpuEntry(&pos, &handle))
+	{
+		if (cpu->lapicId != cpuId){ continue; };
+
+__kprintf(NOTICE"Found correct CPU.\n");
+		// Check for on-chip APIC.
+		if (!__KFLAG_TEST(cpu->featureFlags, (1<<9)))
+		{
+			isNewerCpu = 0;
+			__kprintf(WARNING"cpu_powerOn(%d,%d): Old non-"
+				"integrated LAPIC.\n",
+				cpuId, command);
+		}
+		else
+		{
+__kprintf(NOTICE"Newer CPU. SIPI SIPI to be sent.\n");
+		};
+	};
+
+skipMpTables:
 	x86Lapic::initializeCache(); 
 
 	switch (command)
@@ -650,6 +655,7 @@ error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 			};
 		} while (ret != ERROR_SUCCESS && --nTries);
 
+asm volatile ("Hlt\n\t");
 		for (ubit32 i=10000; i>0; i--) { cpuControl::subZero(); };
 
 		/* The next two IPIs should only be executed if the LAPIC
