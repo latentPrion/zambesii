@@ -46,7 +46,7 @@ ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
 	movl	%ecx, %cr0
 
 	/* Jump into kernel vaddrspace. Force a non-relative jump. */
-	movl	$virtualStart, %ecx
+	movl	$__kcpuPowerOnVirtualStart, %ecx
 	jmp	*%ecx
 ASM_END_FUNCTION(__kcpuPowerOnEntry)
 
@@ -83,7 +83,7 @@ ASM_END_FUNCTION(__kcpuPowerOnVirtualStart)
  **/
 ASM_SECTION(.__kcpuPowerOnData)
 
-.global		__kcpuPowerOnStackLock, __kcpuPowerOnStream
+.global		__kcpuPowerOnStackLock, __kcpuPowerOnSelf
 
 /**	NOTE:
  * This lock serializes accesses to the temporary stack used to get the CPU on
@@ -94,7 +94,7 @@ ASM_SECTION(.__kcpuPowerOnData)
  **/
 __kcpuPowerOnStackLock:
 	.long	0
-__kcpuPowerOnStream:
+__kcpuPowerOnSelf:
 	.long	0
 
 /* Temporary GDT which allows the AP to see all of pmem...or at least the 1st

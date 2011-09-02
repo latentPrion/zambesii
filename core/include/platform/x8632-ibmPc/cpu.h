@@ -8,7 +8,8 @@
  *
  * Remember that the x86 real mode emulator (x86Emu) uses the frame at 0x4000.
  **/
-#define PLATFORM_x86_32_POWERON_ENTRY_PADDR		0xC000
-#define PLATFORM_x86_32_POWERON_DATA_PADDR		0xA000
-#define PLATFORM_x86_32_POWERON_VECTOR		\
-	(PLATFORM_x86_32_POWERON_PADDR >> 12)
+#define x8632_IBMPC_POWERON_PADDR_BASE		0x8000
+#define x8632_IBMPC_POWERON_GET_VECTOR(_paddr)	(((_paddr) >> 12) & 0xFF)
+
+#endif
+

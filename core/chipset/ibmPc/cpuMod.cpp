@@ -504,7 +504,7 @@ initLibLapic:
 	return infoCache.bspInfo.bspId >> 24;
 }
 
-static error_t ibmPc_cpuMode_setSmpMode(void)
+static error_t ibmPc_cpuMod_setSmpMode(void)
 {
 	error_t		ret;
 	ubit8		*lowmem;
@@ -534,8 +534,10 @@ static error_t ibmPc_cpuMode_setSmpMode(void)
 		chipset_getArea(CHIPSET_MEMAREA_LOWMEM) );
 
 	// Change the warm reset vector.
+	// FIXME: Get symbol from linker.
+	/*
 	*reinterpret_cast<ubit32 *>( &lowmem[(0x40 << 4) + 0x67] ) =
-		PLATFORM_x86_32_POWERON_PADDR;
+		PLATFORM_x86_32_POWERON_PADDR; */
 
 	// For now just return and don't set Symm. I/O mode.
 	return ERROR_SUCCESS;
@@ -544,13 +546,88 @@ static error_t ibmPc_cpuMode_setSmpMode(void)
 error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 {
 	error_t		ret;
-	ubit8		nTries;
-	x86Lapic::initializeCache();
+	ubit8		nTries, isNewerCpu=1;
+	void		*handle=0;
+	uarch_t		pos=0;
+	x86_mpCfgCpuS	*cpu;
+	// FIXME: Get vector for SIPI here.
+
+	/**	EXPLANATION:
+	 * According to the MP specification, only newer LAPICs require the
+	 * INIT-SIPI-SIPI sequence; older LAPICs will be sufficient with a
+	 * single INIT.
+	 *
+	 * The kernel therefore postulates the following when waking CPUs:
+	 *	1. The only way to know what type of LAPIC exists on a CPU
+	 *	   without having already awakened that CPU is for the chipset
+	 *	   to tell the kernel (through MP tables).
+	 *	2. If there are no MP tables, then the chipset is new enough
+	 *	   to not be using older CPUs.
+	 *
+	 * This means that if the kernel checks for MP tables and finds none,
+	 * then it will assume a newer CPU is being awakened and send the
+	 * INIT-SIPI-SIPI sequence. Otherwise, it will check the MP tables and
+	 * see if the CPU in question has an integrated or external LAPIC and
+	 * decide whether or not to use SIPI-SIPI after the INIT.
+	 **/
+
+	// Scan MP tables.
+	x86Mp::initializeCache();
+	if (!x86Mp::mpConfigTableIsMapped())
+	{
+		if (x86Mp::findMpFp())
+		{
+			if (x86Mp::mapMpConfigTable())
+			{
+				/* If CPU is not found in SMP tables,
+				 * assume it is being hotplugged and the
+				 * system admin who is inserting it is
+				 * knowledgeable and won't hotplug an
+				 * older CPU. I don't even think older
+				 * CPUs support hotplug, but I'm sure
+				 * specific chipsets may be custom built
+				 * for all kinds of things.
+				 **/
+				cpu = x86Mp::getNextCpuEntry(&pos, &handle);
+				for (; cpu != __KNULL;
+					cpu = x86Mp::getNextCpuEntry(
+						&pos, &handle))
+				{
+					if (cpu->lapicId != cpuId){ continue; };
+
+					// Check for on-chip APIC.
+					if (!__KFLAG_TEST(
+						cpu->featureFlags, (1<<9)))
+					{
+						isNewerCpu = 0;
+						__kprintf(WARNING"cpu_powerOn("
+							"%d,%d): Old non-"
+							"integrated LAPIC.\n",
+							cpuId, command);
+					};
+				};
+			}
+			else
+			{
+				__kprintf(WARNING"cpu_powerOn(%d,%d): Unable "
+					"to map MP config table.\n",
+					cpuId, command);
+			};
+		}
+		else
+		{
+			__kprintf(NOTICE"cpu_powerOn(%d,%d): No MP tables; "
+				"Assuming newer CPU and INIT-SIPI-SIPI.\n",
+				cpuId, command);
+		};
+	};
+
+	x86Lapic::initializeCache(); 
 
 	switch (command)
 	{
 	case CPUSTREAM_POWER_ON:
-		if (infoCache.smpState == SMPSTATE_UNIPROCESSOR)
+		if (infoCache.smpState.chipsetState == SMPSTATE_UNIPROCESSOR)
 		{
 			ret = ibmPc_cpuMod_setSmpMode();
 			if (ret != ERROR_SUCCESS) { return ret; };
@@ -578,46 +655,53 @@ error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 
 		/* The next two IPIs should only be executed if the LAPIC
 		 * is version 1.x. Older LAPICs only need an INIT.
-		 *
-		 * Deal with this later.
 		 **/
-		nTries = 3;
-		do
+		if (isNewerCpu)
 		{
-			ret = x86Lapic::sendPhysicalIpi(
-				x86LAPIC_IPI_TYPE_SIPI,
-				PLATFORM_x86_32_POWERON_VECTOR,
-				x86LAPIC_IPI_SHORTDEST_NONE,
-				cpuId);
-
-			if (ret != ERROR_SUCCESS)
+			nTries = 3;
+			do
 			{
-				__kprintf(ERROR"POWER_ON CPU %d: SIPI0 timed "
-					"out.\n",
+				ret = x86Lapic::sendPhysicalIpi(
+					x86LAPIC_IPI_TYPE_SIPI,
+					// FIXME: Don't forget vector here.
+					0,
+					x86LAPIC_IPI_SHORTDEST_NONE,
 					cpuId);
+
+				if (ret != ERROR_SUCCESS)
+				{
+					__kprintf(ERROR"POWER_ON CPU %d: SIPI0 "
+						"timed out.\n",
+						cpuId);
+				};
+			} while (ret != ERROR_SUCCESS && --nTries);
+
+			for (ubit32 i=10000 * 2; i>0; i--) {
+				cpuControl::subZero();
 			};
-		} while (ret != ERROR_SUCCESS && --nTries);
 
-		for (ubit32 i=10000 * 2; i>0; i--) { cpuControl::subZero(); };
-
-		nTries = 3;
-		do
-		{
-			ret = x86Lapic::sendPhysicalIpi(
-				x86LAPIC_IPI_TYPE_SIPI,
-				PLATFORM_x86_32_POWERON_VECTOR,
-				x86LAPIC_IPI_SHORTDEST_NONE,
-				cpuId);
-
-			if (ret != ERROR_SUCCESS)
+			nTries = 3;
+			do
 			{
-				__kprintf(ERROR"POWER_ON CPU %d: SIPI1 timed "
-					"out.\n",
+				ret = x86Lapic::sendPhysicalIpi(
+					x86LAPIC_IPI_TYPE_SIPI,
+					// FIXME: Don't forget it here either.
+					0,
+					x86LAPIC_IPI_SHORTDEST_NONE,
 					cpuId);
-			};
-		} while (ret != ERROR_SUCCESS && --nTries);
 
-		for (ubit32 i=10000 * 2; i>0; i--) { cpuControl::subZero(); };
+				if (ret != ERROR_SUCCESS)
+				{
+					__kprintf(ERROR"POWER_ON CPU %d: SIPI1 "
+						"timed out.\n",
+						cpuId);
+				};
+			} while (ret != ERROR_SUCCESS && --nTries);
+
+			for (ubit32 i=10000 * 2; i>0; i--) {
+				cpuControl::subZero();
+			};
+		};
 		break;
 
 	default: ret = ERROR_SUCCESS;

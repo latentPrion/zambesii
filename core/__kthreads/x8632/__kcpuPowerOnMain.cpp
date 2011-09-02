@@ -3,7 +3,15 @@
 #include <__kstdlib/__ktypes.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <__kthreads/__kcpuPowerOn.h>
 
+void *__kcpuPowerOnInit(void)
+{
+	void	*ret;
+
+	ret = (void *)&__kcpuPowerOnEntry;
+	return ret;
+}
 
 void __kcpuPowerOnHll(void)
 {

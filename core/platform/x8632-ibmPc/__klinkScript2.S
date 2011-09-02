@@ -22,9 +22,22 @@ ENTRY(__korientationEntry)
 
 SECTIONS
 {
-	/* Start off with the physical sections */
+	// FIXME: Calculate the kernel image's physical footprint in RAM.
+	/**	EXPLANATION:
+	 * First set of sections to be mapped in low virtual memory.
+	 * These section are:
+	 *	* __kheaders.
+	 *	* __kcpuPowerOnData.
+	 *	* __kcpuPowerOnText.
+	 *
+	 * This is so that the symbols in the CPU wakeup routines are linked
+	 * to low memory which is where the kernel will copy them to during
+	 * boot. The kernel will copy the code and data for the __kcpuPowerOn*
+	 * sections into low memory, and waking CPUs will execute the code
+	 * from within low memory since they wake up in 16-bit real mode without
+	 * the MMU enabled.
+	 **/
 	. = PLATFORM_x86_32_POWERON_DATA_PADDR;
-
 	__kphysStart = CHIPSET_MEMORY___KLOAD_PADDR_BASE;
 
 	// __kheaders contains things like the zBoot and multiboot headers.
@@ -153,7 +166,7 @@ SECTIONS
 	{
 		__kroDataStart = .;
 		*(.rodata*)
-		__krodataEnd = .;
+		__kroDataEnd = .;
 	}
 
 	.gnu.linkonce.r ALIGN(0x4)
