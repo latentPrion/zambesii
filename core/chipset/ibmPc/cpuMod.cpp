@@ -1,4 +1,5 @@
 
+#include <__ksymbols.h>
 #include <arch/arch.h>
 #include <chipset/memoryAreas.h>
 #include <chipset/pkg/cpuMod.h>
@@ -534,10 +535,8 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 		chipset_getArea(CHIPSET_MEMAREA_LOWMEM) );
 
 	// Change the warm reset vector.
-	// FIXME: Get symbol from linker.
-	/*
-	*reinterpret_cast<ubit32 *>( &lowmem[(0x40 << 4) + 0x67] ) =
-		PLATFORM_x86_32_POWERON_PADDR; */
+	*reinterpret_cast<uarch_t **>( &lowmem[(0x40 << 4) + 0x67] ) =
+		&__kcpuPowerOnTextStart;
 
 	// For now just return and don't set Symm. I/O mode.
 	return ERROR_SUCCESS;
@@ -548,9 +547,8 @@ error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 	error_t		ret;
 	ubit8		nTries, isNewerCpu=1;
 	void		*handle=0;
-	uarch_t		pos=0;
+	uarch_t		pos=0, sipiVector;
 	x86_mpCfgCpuS	*cpu;
-	// FIXME: Get vector for SIPI here.
 
 	/**	EXPLANATION:
 	 * According to the MP specification, only newer LAPICs require the
@@ -570,6 +568,7 @@ error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 	 * see if the CPU in question has an integrated or external LAPIC and
 	 * decide whether or not to use SIPI-SIPI after the INIT.
 	 **/
+	sipiVector = (((uarch_t)&__kcpuPowerOnTextStart) >> 12) & 0xFF;
 
 	// Scan MP tables.
 	x86Mp::initializeCache();
@@ -663,8 +662,7 @@ error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 			{
 				ret = x86Lapic::sendPhysicalIpi(
 					x86LAPIC_IPI_TYPE_SIPI,
-					// FIXME: Don't forget vector here.
-					0,
+					sipiVector,
 					x86LAPIC_IPI_SHORTDEST_NONE,
 					cpuId);
 
@@ -685,8 +683,7 @@ error_t ibmPc_cpuMod_powerOn(cpu_t cpuId, ubit8 command, uarch_t)
 			{
 				ret = x86Lapic::sendPhysicalIpi(
 					x86LAPIC_IPI_TYPE_SIPI,
-					// FIXME: Don't forget it here either.
-					0,
+					sipiVector,
 					x86LAPIC_IPI_SHORTDEST_NONE,
 					cpuId);
 

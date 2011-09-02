@@ -16,7 +16,13 @@ cpuId(cid), bankId(bid), scheduler(this)
 	// Nothing to be done for now.
 }
 
-status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
+sarch_t cpuStreamC::reConstruct(void)
+{
+	__kprintf(NOTICE"BSP reconstructing.\n");
+	return 0;
+};
+
+status_t cpuStreamC::powerControl(ubit16, uarch_t)
 {
 	__kprintf(NOTICE CPUSTREAM"%d: POWER_ON received.\n", cpuId);
 	return 0;

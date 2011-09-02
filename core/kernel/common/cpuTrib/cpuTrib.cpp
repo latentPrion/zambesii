@@ -338,6 +338,7 @@ error_t cpuTribC::initialize2(void)
 
 	// Don't forget to wake up the CPUs.
 wakeCpus:
+	__kprintf(NOTICE"Ret reached.");
 	return ERROR_SUCCESS;
 
 fallbackToUp:
@@ -484,6 +485,15 @@ error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
 	 * * The caller should no have to check to see whether or not the bank
 	 *   to which the new CPU pertains has been created.
 	 **/
+	/* If the streamId being spawned is the BSP, use placement new() to call
+	 * it with the correct constructor for re-init.
+	 **/
+	if (cid == bspId)
+	{
+		getStream(cid)->reConstruct();
+		return ERROR_SUCCESS;
+	};
+
 	/* Make sure the available CPUs bmp, onlineCpus bmp and the BMP of
 	 * CPUs on the containing bank all have enough bits to hold the new
 	 * CPU's bit.

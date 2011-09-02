@@ -31,6 +31,9 @@ public streamC
 {
 public:
 	cpuStreamC(numaBankId_t bid, cpu_t id);
+	cpuStreamC(ubit8);
+	sarch_t reConstruct(void);
+
 	error_t initialize(void);
 	sarch_t isInitialized(void);
 	~cpuStreamC(void);

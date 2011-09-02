@@ -24,6 +24,7 @@ EXTERN uarch_t		__kinitstart, __kinitEnd, __kfiniStart, __kfiniEnd;
 EXTERN uarch_t		__ktextStart, __ktextEnd;
 EXTERN uarch_t		__kdataStart, __kdataEnd;
 EXTERN uarch_t		__kbssStart, __kbssEnd;
+EXTERN uarch_t		__kcpuPowerOnTextStart;
 
 #undef EXTERN
 
