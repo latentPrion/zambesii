@@ -3,7 +3,7 @@
 
 extern void __koptimizationHacks(void);
 extern void __kheadersInit(void);
-extern void *__kcpuPowerOnInit(void);
+extern void (*__kcpuPowerOnInit(void))(void);
 
 #endif
 

@@ -12,13 +12,14 @@
 ASM_SECTION(.__kcpuPowerOnText)
 
 ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
-
+	/* In real mode. */
 	.code16
 
 	/* Interrupts are assumed to be disabled on the AP at entry, but still.
 	 **/
 	cli
 
+	/* Make sure real mode segment is set to seg 0. */
 	movw	$0x0, %ax
 	movw	%ax, %ds
 	movw	%ax, %es
@@ -26,7 +27,7 @@ ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
 	movw	%ax, %gs
 	movw	%ax, %ss
 
-	/* Going to jump into pmode. */
+	/* Load temporary GDT for long mode. */
 	lgdt	(__kcpuPowerOnGdtPtr)
 
 	movl	%cr0, %ebx
@@ -36,9 +37,14 @@ ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
 	ljmp	$0x8, $.next
 
 .next:
-
+	/* In protected mode now. */
 	.code32
 
+	/* Load segment selectors from temp GDT so that we can access all of
+	 * linear memory. After they are loaded we will be able to load the
+	 * kernel's main GDT since the CPU will now be able to see all 4GB of
+	 * linear memory.
+	 */
 	movw	$0x10, %ax
 	movw	%ax, %ds
 	movw	%ax, %es
@@ -56,7 +62,6 @@ ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
 	movl	%cr0, %ecx
 	orl	$0x80000000, %ecx
 	movl	%ecx, %cr0
-	hlt
 
 	/* Jump into kernel vaddrspace. Force a non-relative jump. */
 	movl	$__kcpuPowerOnVirtualStart, %ecx
@@ -67,24 +72,23 @@ ASM_END_FUNCTION(__kcpuPowerOnEntry)
 .section .text
 
 ASM_LOCAL_FUNCTION(__kcpuPowerOnVirtualStart)
-	/* Need to find a way to obtain the current CPU's sleep stack.
-	 * This means we need to access an object on the heap...very difficult
-	 * to do from within ASM.
-	 *
-	 * To avoid all of that, this thread provides a very small temporary
-	 * stack for the waking CPU to use. This stack is protected by a very
-	 * crude spinlock.
-	 **/
-	movl	$1, %eax
-.again:
-	xchg	%eax, (__kcpuPowerOnStackLock)
-	cmp	$0, %eax
-	jne	.again
+	/* Now load the kernel's main GDT and set AP's seg regs to selectors. */
+	lgdt	(x8632GdtPtr)
+	movw	$0x10, %ax
+	movw	%ax, %ds
+	movw	%ax, %es
+	movw	%ax, %fs
+	movw	%ax, %gs
+	movw	%ax, %ss
+	ljmp	$0x8, $.next2
 
-	/* We now have the temporary stack, so we can enter the kernel's C++
-	 * code.
-	 **/
-	movl	$tmpStack + TMPSTACK_SIZE, %esp
+.next2:
+	/* Copy the waking CPU's sleep stack address into ESP. */
+	movl	__kcpuPowerOnBlock, %eax
+	movl	(%eax), %eax
+	movl	%eax, %esp
+	movl	%esp, %ebp
+	/* Call into the C++ HLL code finally. */
 	call	__kcpuPowerOnHll
 ASM_END_FUNCTION(__kcpuPowerOnVirtualStart)
 
@@ -96,19 +100,6 @@ ASM_END_FUNCTION(__kcpuPowerOnVirtualStart)
  **/
 ASM_SECTION(.__kcpuPowerOnData)
 .balign 0x4
-.global		__kcpuPowerOnStackLock, __kcpuPowerOnSelf
-
-/**	NOTE:
- * This lock serializes accesses to the temporary stack used to get the CPU on
- * its feet.
- *
- * The new CPU does its best to load its own kernel sleep stack and release the
- * temporary stack ASAP so it doesn't block other CPUs that are booting.
- **/
-__kcpuPowerOnStackLock:
-	.long	0
-__kcpuPowerOnSelf:
-	.long	0
 
 /* Temporary GDT which allows the AP to see all of pmem...or at least the 1st
  * 4GB of it.
@@ -135,6 +126,4 @@ __kcpuPowerOnGdtPtr:
 	.long	__kcpuPowerOnGdt
 
 .balign(0x4)
-tmpStack:
-	.space	TMPSTACK_SIZE
 

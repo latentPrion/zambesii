@@ -2,6 +2,7 @@
 	#define _CPU_STREAM_H
 
 	#include <arch/tlbControl.h>
+	#include <arch/paging.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/task.h>
 	#include <kernel/common/smpTypes.h>
@@ -58,7 +59,7 @@ public:
 	 * stack can handle. Assuming each push is a native word's size,
 	 * the stack can handle N pushes of the arch's word size.
 	 **/
-	uarch_t			sleepStack[48];
+	ubit8			sleepStack[PAGING_BASE_SIZE];
 	cpuStreamArchBlockS	archBlock;
 };
 

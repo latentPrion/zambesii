@@ -8,5 +8,8 @@
 
 #define CHIPSET_HAS_ACPI
 
+// The mask which would tie/untie the debug pipe to/from all output devices.
+#define CHIPSET_DEBUG_DEVICE_TERMINAL_MASK	0x1
+
 #endif
 

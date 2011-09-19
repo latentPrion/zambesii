@@ -52,3 +52,9 @@ vfsTrib.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd kernel/common/vfsTrib; make
 
+debugTrib.a:
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	@echo Building lang/ dir.
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd kernel/common/debugTrib; make
+

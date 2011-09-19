@@ -1,13 +1,13 @@
 .PHONY=
-DELIVERABLE=../__kthreads.a
-OBJFILES= __korientation.o __kcpuPowerOn.o
+DELIVERABLE=../../../debugTrib.a
+OBJFILES=debugTrib.o
 
 all: Makefile $(DELIVERABLE)
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-clean: fonyphile
+clean:
 	rm -rf *.o *.s
 
 fonyphile:

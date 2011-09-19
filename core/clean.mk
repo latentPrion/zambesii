@@ -28,6 +28,7 @@ clean: fonyphile
 	cd commonlibs/libacpi; make clean
 	cd kernel/common/execTrib; make clean
 	cd kernel/common/vfsTrib; make clean
+	cd kernel/common/debugTrib; make clean
 
 aclean:
 	rm -f *.a *.o __klinkScript.ld
