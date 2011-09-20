@@ -478,16 +478,19 @@ error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
 	 *	* Set its bit on the bank it belongs to, and in the CPU Trib's
 	 *	  unified list of all available CPUs.
 	 *
-	 * * The caller should no have to check to see whether or not the bank
+	 * * The caller should not have to check to see whether or not the bank
 	 *   to which the new CPU pertains has been created.
+	 *
+	 * Additionally, when this function is eventually called with the 
+	 * BSP as an argument, will not re-allocate a CPU stream for the BSP,
+	 * but it will ensure that the BSP is moved tot he right bank and set
+	 * its bits in the relevant BMPs.
 	 **/
-	/* If the streamId being spawned is the BSP, use placement new() to call
-	 * it with the correct constructor for re-init.
+	/* If the streamId being spawned is the BSP, call the reConstruct()
+	 * method on it.
 	 **/
-	if (cid == bspId)
-	{
+	if (cid == bspId) {
 		getStream(cid)->reConstruct();
-		return ERROR_SUCCESS;
 	};
 
 	/* Make sure the available CPUs bmp, onlineCpus bmp and the BMP of
@@ -513,10 +516,14 @@ error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
 	CHECK_AND_RESIZE_BMP(&ncb->cpus, cid, &ret,
 		"spawnStream", "resident bank");
 
-	cs = new cpuStreamC(bid, cid);
-	if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	// Don't re-allocate the BSP.
+	if (cid != bspId)
+	{
+		cs = new cpuStreamC(bid, cid);
+		if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
-	cpuStreams.addItem(cid, cs);
+		cpuStreams.addItem(cid, cs);
+	};
 
 	ncb->cpus.setSingle(cid);
 	availableCpus.setSingle(cid);
