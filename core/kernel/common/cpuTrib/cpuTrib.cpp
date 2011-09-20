@@ -144,37 +144,6 @@ error_t cpuTribC::initialize2(void)
 
 	__kprintf(NOTICE CPUTRIB"Highest cpu ID: %d.\n", highestCpuId);
 	__kprintf(NOTICE CPUTRIB"Highest bank ID: %d.\n", highestBankId);
-
-#if __SCALING__ >= SCALING_CC_NUMA
-	// Next, for every entry, create a new CPU stream for the related CPU.
-	__kprintf(NOTICE CPUTRIB"Processing NUMA CPU map.\n");
-	if (numaMap != __KNULL)
-	{
-		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
-		{
-			ret = spawnStream(
-				numaMap->cpuEntries[i].bankId,
-				numaMap->cpuEntries[i].cpuId);
-
-			if (ret != ERROR_SUCCESS)
-			{
-				__kprintf(ERROR CPUTRIB"Failed to spawn CPU "
-					"Stream for CPU ID %d on bank %d.\n",
-					numaMap->cpuEntries[i].cpuId,
-					numaMap->cpuEntries[i].bankId);
-
-				continue;
-			};
-
-			if (numaMap->cpuEntries[i].cpuId != bspId)
-			{
-				getStream(numaMap->cpuEntries[i].cpuId)
-					->powerControl(CPUSTREAM_POWER_ON, 0);
-			};
-		};
-	};
-#endif
-
 #endif
 
 	// Ask the chipset what the BSP's real ID is.
@@ -199,6 +168,36 @@ error_t cpuTribC::initialize2(void)
 	getCurrentCpuStream()->cpuId = bspId;
 	__kprintf(NOTICE CPUTRIB"BSP's hardware ID: %d. Patched.\n",
 		getCurrentCpuStream()->cpuId);
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	// Next, for every entry, create a new CPU stream for the related CPU.
+	if (numaMap != __KNULL)
+	{
+		__kprintf(NOTICE CPUTRIB"Processing NUMA CPU map.\n");
+		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
+		{
+			ret = spawnStream(
+				numaMap->cpuEntries[i].bankId,
+				numaMap->cpuEntries[i].cpuId);
+
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR CPUTRIB"Failed to spawn CPU "
+					"Stream for CPU ID %d on bank %d.\n",
+					numaMap->cpuEntries[i].cpuId,
+					numaMap->cpuEntries[i].bankId);
+
+				continue;
+			};
+
+			if (numaMap->cpuEntries[i].cpuId != bspId)
+			{
+				getStream(numaMap->cpuEntries[i].cpuId)
+					->powerControl(CPUSTREAM_POWER_ON, 0);
+			};
+		};
+	};
+#endif
 
 #if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
 	/* Next, if the supervisor configured the kernel to build with a
@@ -338,7 +337,7 @@ error_t cpuTribC::initialize2(void)
 
 	// Don't forget to wake up the CPUs.
 wakeCpus:
-	__kprintf(NOTICE"Ret reached.");
+	__kprintf(NOTICE"Ret reached.\n");
 	return ERROR_SUCCESS;
 
 fallbackToUp:

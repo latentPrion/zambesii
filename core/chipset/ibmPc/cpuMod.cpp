@@ -433,7 +433,6 @@ cpu_t ibmPc_cpuMod_getBspId(void)
 
 	/* At some point I'll rewrite this function: it's very unsightly.
 	 **/
-
 	if (!infoCache.bspInfo.bspIdRequestedAlready)
 	{
 		/* Run a local CPU ID read. Need liblapic. Will have to parse
@@ -542,9 +541,6 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	*reinterpret_cast<uarch_t **>( &lowmem[(0x40 << 4) + 0x67] ) =
 		&__kcpuPowerOnTextStart;
 
-__kprintf(NOTICE"Changed warm reset vector to 0x%P.\n",
-	&__kcpuPowerOnTextStart);
-
 	/* Next, we need to copy the kernel's .__kcpuPowerOn[Text/Data] stuff to
 	 * lowmem. Memcpy() ftw...
 	 **/
@@ -556,8 +552,8 @@ __kprintf(NOTICE"Changed warm reset vector to 0x%P.\n",
 	copySize = (uarch_t)&__kcpuPowerOnTextEnd
 		- (uarch_t)&__kcpuPowerOnTextStart;
 
-__kprintf(NOTICE"Copying CPU wakeup code from 0x%p to 0x%p; %d bytes.\n",
-	srcAddr, destAddr, copySize);
+	__kprintf(NOTICE"Copying CPU wakeup code from 0x%p to 0x%p; %d B.\n",
+		srcAddr, destAddr, copySize);
 
 	memcpy8(destAddr, srcAddr, copySize);
 
@@ -569,12 +565,13 @@ __kprintf(NOTICE"Copying CPU wakeup code from 0x%p to 0x%p; %d bytes.\n",
 	copySize = (uarch_t)&__kcpuPowerOnDataEnd
 		- (uarch_t)&__kcpuPowerOnDataStart;
 
-__kprintf(NOTICE"Copying CPU wakeup data from 0x%p to 0x%p; %d bytes.\n",
-	srcAddr, destAddr, copySize);
+	__kprintf(NOTICE"Copying CPU wakeup data from 0x%p to 0x%p; %d B.\n",
+		srcAddr, destAddr, copySize);
 
 	memcpy8(destAddr, srcAddr, copySize);
 
 	// For now just return and don't set Symm. I/O mode.
+	infoCache.smpState.chipsetState = SMPSTATE_SMP;
 	return ERROR_SUCCESS;
 }
 
@@ -586,7 +583,6 @@ error_t ibmPc_cpuMod_powerControl(cpu_t cpuId, ubit8 command, uarch_t)
 	uarch_t		pos=0, sipiVector;
 	x86_mpCfgCpuS	*cpu;
 
-__kprintf(NOTICE"Entered CPU Power on routine.\n");
 	/**	EXPLANATION:
 	 * According to the MP specification, only newer LAPICs require the
 	 * INIT-SIPI-SIPI sequence; older LAPICs will be sufficient with a
@@ -643,7 +639,6 @@ __kprintf(NOTICE"Entered CPU Power on routine.\n");
 	{
 		if (cpu->lapicId != cpuId){ continue; };
 
-__kprintf(NOTICE"Found correct CPU.\n");
 		// Check for on-chip APIC.
 		if (!__KFLAG_TEST(cpu->featureFlags, (1<<9)))
 		{
@@ -652,10 +647,6 @@ __kprintf(NOTICE"Found correct CPU.\n");
 				"integrated LAPIC.\n",
 				cpuId, command);
 		}
-		else
-		{
-__kprintf(NOTICE"Newer CPU. SIPI SIPI to be sent.\n");
-		};
 	};
 
 skipMpTables:
@@ -695,7 +686,6 @@ skipMpTables:
 		 **/
 		if (isNewerCpu)
 		{
-__kprintf(NOTICE"Entered SIPI SIPI sequence.\n");
 			nTries = 3;
 			do
 			{
@@ -705,7 +695,6 @@ __kprintf(NOTICE"Entered SIPI SIPI sequence.\n");
 					x86LAPIC_IPI_SHORTDEST_NONE,
 					cpuId);
 
-//__kprintf(NOTICE"First IPI returned %d.\n", ret);
 				if (ret != ERROR_SUCCESS)
 				{
 					__kprintf(ERROR"POWER_ON CPU %d: SIPI0 "
@@ -727,8 +716,6 @@ __kprintf(NOTICE"Entered SIPI SIPI sequence.\n");
 					x86LAPIC_IPI_SHORTDEST_NONE,
 					cpuId);
 
-//__kprintf(NOTICE"Second IPI returned %d.\n", ret);
-
 				if (ret != ERROR_SUCCESS)
 				{
 					__kprintf(ERROR"POWER_ON CPU %d: SIPI1 "
@@ -740,7 +727,6 @@ __kprintf(NOTICE"Entered SIPI SIPI sequence.\n");
 			for (ubit32 i=10000 * 2; i>0; i--) {
 				cpuControl::subZero();
 			};
-asm volatile ("Hlt\n\t");
 		};
 		break;
 

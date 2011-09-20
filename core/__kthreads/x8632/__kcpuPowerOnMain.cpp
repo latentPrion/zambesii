@@ -38,7 +38,6 @@ void __kcpuPowerOnHll(void)
 	myStream->currentTask = &__kcpuPowerOnThread;
 	__kcpuPowerOnBlock.lock.release();
 
-__kprintf(NOTICE"GHWEGHW");
 	__kcpuPowerOnMain(myStream);
 }
 
@@ -53,8 +52,7 @@ void __kcpuPowerOnMain(cpuStreamC *self)
 	asm volatile ("lgdt	(x8632GdtPtr)");
 	// Load the kernel's IDT:
 	asm volatile ("lidt	(x8632IdtPtr)");
-	
-	__kprintf(NOTICE"CPU on.\n");
+
 	__kprintf(NOTICE"Power on thread: CPU %d powered on.\n",
 		self->cpuId);
 

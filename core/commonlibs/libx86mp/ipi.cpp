@@ -2,6 +2,7 @@
 #include <arch/interrupts.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/libx86mp.h>
 
 

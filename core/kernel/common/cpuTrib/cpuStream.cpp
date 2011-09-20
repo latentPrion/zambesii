@@ -26,9 +26,6 @@ sarch_t cpuStreamC::reConstruct(void)
 
 status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 {
-	__kprintf(NOTICE CPUSTREAM"%d: POWER_ON received, this=0x%p, sstack=0x%p, __kcpu...Self=0x%p, sizeof cstrm 0x%x.\n",
-		cpuId, this, &this->sleepStack[4096], __kcpuPowerOnBlock.cpuStream, sizeof(cpuStreamC));
-
 	__kcpuPowerOnBlock.lock.acquire();
 	__kcpuPowerOnBlock.cpuStream = this;
 	__kcpuPowerOnBlock.sleepStack = &this->sleepStack[PAGING_BASE_SIZE];
