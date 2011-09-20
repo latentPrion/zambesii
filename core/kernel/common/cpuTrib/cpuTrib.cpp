@@ -127,6 +127,13 @@ error_t cpuTribC::initialize2(void)
 			highestCpuId, numaMap, cpuEntries, cpuId,
 			numaMap->nCpuEntries);
 	};
+
+	if (numaMap != __KNULL)
+	{
+		getHighestId(
+			highestBankId, numaMap, cpuEntries, bankId,
+			numaMap->nCpuEntries);
+	};
 #endif
 	if (smpMap != __KNULL)
 	{
@@ -135,23 +142,16 @@ error_t cpuTribC::initialize2(void)
 			smpMap->nEntries);
 	};
 
-	if (numaMap != __KNULL)
-	{
-		getHighestId(
-			highestBankId, numaMap, cpuEntries, bankId,
-			numaMap->nCpuEntries);
-	};
-
-	__kprintf(NOTICE CPUTRIB"Highest cpu ID: %d.\n", highestCpuId);
 	__kprintf(NOTICE CPUTRIB"Highest bank ID: %d.\n", highestBankId);
+	__kprintf(NOTICE CPUTRIB"Highest cpu ID: %d.\n", highestCpuId);
 #endif
 
 	// Ask the chipset what the BSP's real ID is.
-	bspStream = getCurrentCpuStream();
 	bspId = (*chipsetPkg.cpus->getBspId)();
 
 #if __SCALING__ >= SCALING_SMP
 	// Move the BSP's CPU stream into the right index in the CPU array.
+	bspStream = getCurrentCpuStream();
 	if (bspId != bspStream->cpuId)
 	{
 		cpuStreams.removeItem(bspStream->cpuId);
