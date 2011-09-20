@@ -241,7 +241,7 @@ error_t cpuTribC::initialize2(void)
 			__kprintf(NOTICE CPUTRIB"NUMA build, NUMA CPUs already "
 				"set up. Using NUMA CPUs.\n");
 
-			goto wakeCpus;
+			goto exit;
 		};
 #else
 		goto fallbackToUp;
@@ -332,12 +332,9 @@ error_t cpuTribC::initialize2(void)
 	else {
 		goto fallbackToUp;
 	};
-	__kprintf(CC"\n");
 #endif
 
-	// Don't forget to wake up the CPUs.
-wakeCpus:
-	__kprintf(NOTICE"Ret reached.\n");
+exit:
 	return ERROR_SUCCESS;
 
 fallbackToUp:
