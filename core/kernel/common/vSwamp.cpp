@@ -102,6 +102,7 @@ void *vSwampC::getPages(uarch_t nPages)
 {
 	void			*ret;
 	uarch_t			i;
+
 	for (i=0; i<VSWAMP_NSWAMPS; i++)
 	{
 		swamps[i].ptrs.lock.acquire();

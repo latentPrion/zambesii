@@ -175,8 +175,6 @@ error_t processStreamC::spawnThread(
 	return taskTrib.schedule(newTask);
 }
 
-extern int oo;
-
 taskC *processStreamC::allocateNewThread(processId_t id)
 {
 	taskC		*ret;
