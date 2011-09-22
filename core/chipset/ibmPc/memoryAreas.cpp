@@ -50,6 +50,7 @@ error_t chipset_mapArea(ubit16 index)
 	};
 
 	// We have now mapped the area in.
+	vaddr = WPRANGER_ADJUST_VADDR(vaddr, memAreas[index].basePaddr, void *);
 	memAreas[index].vaddr = vaddr;
 	return ERROR_SUCCESS;
 }

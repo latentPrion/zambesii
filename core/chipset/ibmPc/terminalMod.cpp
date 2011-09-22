@@ -1,6 +1,7 @@
 
 #include <debug.h>
 #include <arch/walkerPageRanger.h>
+#include <chipset/memoryAreas.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include "terminalMod.h"
@@ -18,61 +19,26 @@ ubit8					*bda;
 
 error_t ibmPc_terminalMod_initialize(void)
 {
-	status_t	nMapped;
+	error_t		ret;
+	ubit8		*lowmem;
 
-	buff = new ((memoryTrib.__kmemoryStream.vaddrSpaceStream.*
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(1))
-		ibmPc_terminalMod_fbS;
-
-	if (buff == __KNULL) {
-		return ERROR_MEMORY_NOMEM_VIRTUAL;
+	// The memoryAreas API maps ranges as PAGEATTRIB_CACHE_WRITE_THROUGH.
+	ret = chipset_mapArea(CHIPSET_MEMAREA_LOWMEM);
+	if (ret != ERROR_SUCCESS) {
+		return ret;
 	};
 
-	nMapped = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		buff, 0xB8000, 1,
-		PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
-		| PAGEATTRIB_CACHE_WRITE_THROUGH | PAGEATTRIB_SUPERVISOR);
+	lowmem = reinterpret_cast<ubit8 *>(
+		chipset_getArea(CHIPSET_MEMAREA_LOWMEM) );
 
-	if (nMapped < 1)
-	{
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
-			buff, 1);
+	origBuff = buff = reinterpret_cast<ibmPc_terminalMod_fbS *>(
+		&lowmem[0xB8000] );
 
-		buff = __KNULL;
-		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
-	};
-
-	origBuff = buff;
 	row = col = 0;
 
-	// Try to map in the BDA. If that fails, just assume 80 * 25.
-	bda = new ((memoryTrib.__kmemoryStream.vaddrSpaceStream.*
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(1)) ubit8;
-
-	if (bda != __KNULL)
-	{
-		nMapped = walkerPageRanger::mapInc(
-			&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-			bda, 0x0, 1,
-			PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
-
-		if (nMapped == 1)
-		{
-			maxRow = *(bda + 0x484) + 1;
-			maxCol = *(ubit16 *)(bda + 0x44A);
-			return ERROR_SUCCESS;
-		}
-		else
-		{
-			memoryTrib.__kmemoryStream.vaddrSpaceStream
-				.releasePages(bda, 1);
-
-			bda = __KNULL;
-		};
-	};
-	maxRow = 25;
-	maxCol = 80;
+	bda = lowmem;
+	maxRow = *(bda + 0x484) + 1;
+	maxCol = *(ubit16 *)(bda + 0x44A);
 
 	// If we're still here, then the range should be mapped in.
 	return ERROR_SUCCESS;

@@ -109,10 +109,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 		return __KNULL;
 	};
 
-	ret = (x86_mpCfgS *)(
-		(uarch_t)ret + (cache.fp->cfgTablePaddr
-			& PAGING_BASE_MASK_LOW));
-
+	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86_mpCfgS *);
 	cfgNPages = PAGING_BYTES_TO_PAGES(ret->length) + 1;
 
 	// Free cfg table mem, and reallocate enough to hold the whole thing.
@@ -135,9 +132,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 		return __KNULL;
 	};
 
-	ret = (x86_mpCfgS *)(
-		(uarch_t)ret + (cache.fp->cfgTablePaddr & PAGING_BASE_MASK_LOW));
-
+	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86_mpCfgS *);
 	cache.cfg = ret;
 	cache.lapicPaddr = cache.cfg->lapicPaddr;
 	cache.nCfgEntries = ret->nEntries;

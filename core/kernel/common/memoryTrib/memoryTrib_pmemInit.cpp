@@ -96,7 +96,6 @@ error_t memoryTribC::pmemInit(void)
 
 		return ERROR_FATAL;
 	};
-
 	// Initialize the chipset package for use.
 	ret = (*chipsetPkg.initialize)();
 	if (ret != ERROR_SUCCESS)

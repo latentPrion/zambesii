@@ -15,7 +15,9 @@ static ubit8	*lowmem;
 	#if  __SCALING__ >= SCALING_SMP
 void *chipset_findx86MpFp(void)
 {
-	if (chipset_getArea(CHIPSET_MEMAREA_LOWMEM) == __KNULL)
+	lowmem = reinterpret_cast<ubit8 *>(
+		chipset_getArea(CHIPSET_MEMAREA_LOWMEM) );
+	if (lowmem == __KNULL)
 	{
 		if (chipset_mapArea(CHIPSET_MEMAREA_LOWMEM) != ERROR_SUCCESS)
 		{
@@ -49,7 +51,10 @@ void *chipset_findx86MpFp(void)
 
 void *chipset_findAcpiRsdp(void)
 {
-	if (chipset_getArea(CHIPSET_MEMAREA_LOWMEM) == __KNULL)
+	lowmem = reinterpret_cast<ubit8 *>(
+		chipset_getArea(CHIPSET_MEMAREA_LOWMEM) );
+
+	if (lowmem == __KNULL)
 	{
 		if (chipset_mapArea(CHIPSET_MEMAREA_LOWMEM) != ERROR_SUCCESS)
 		{

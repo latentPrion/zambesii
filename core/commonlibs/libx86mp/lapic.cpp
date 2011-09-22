@@ -65,6 +65,7 @@ error_t x86Lapic::mapLapicMem(void)
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
+	v = WPRANGER_ADJUST_VADDR(v, p, void *);
 	cache.v = static_cast<ubit8 *>( v );
 	return ERROR_SUCCESS;
 }

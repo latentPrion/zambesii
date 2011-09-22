@@ -36,6 +36,8 @@ static void *acpi_tmpMapSdt(paddr_t p)
 
 		return __KNULL;
 	};
+
+	sdtTmp = WPRANGER_ADJUST_VADDR(sdtTmp, p, void *);
 	return sdtTmp;
 }
 
@@ -64,9 +66,7 @@ static void *acpi_mapTable(paddr_t p, uarch_t nPages)
 		return __KNULL;
 	};
 
-	ret = reinterpret_cast<void *>(
-		(uarch_t)ret + (p & PAGING_BASE_MASK_LOW) );
-
+	ret = WPRANGER_ADJUST_VADDR(ret, p, void *);
 	return ret;
 }
 
@@ -82,10 +82,6 @@ acpi_rSratS *acpiRsdt::getNextSrat(acpi_rsdtS *rsdt, void **const handle)
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(*(paddr_t *)*handle);
-		sdt = reinterpret_cast<acpi_sdtS *>(
-			(uarch_t)sdt
-			+ ((*(paddr_t *)*handle) & PAGING_BASE_MASK_LOW) );
-
 		if (strncmp(sdt->sig, ACPI_SDT_SIG_SRAT, 4) == 0)
 		{
 			ret = (acpi_rSratS *)acpi_mapTable(
@@ -114,10 +110,6 @@ acpi_rMadtS *acpiRsdt::getNextMadt(acpi_rsdtS *rsdt, void **const handle)
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(*(paddr_t *)*handle);
-		sdt = reinterpret_cast<acpi_sdtS *>(
-			(uarch_t)sdt
-			+ ((*(paddr_t *)*handle) & PAGING_BASE_MASK_LOW) );
-
 		if (strncmp(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
 		{
 			ret = (acpi_rMadtS *)acpi_mapTable(
@@ -146,10 +138,6 @@ acpi_rFacpS *acpiRsdt::getNextFacp(acpi_rsdtS *rsdt, void **const handle)
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(*(paddr_t *)*handle);
-		sdt = reinterpret_cast<acpi_sdtS *>(
-			(uarch_t)sdt
-			+ ((*(paddr_t *)*handle) & PAGING_BASE_MASK_LOW) );
-
 		if (strncmp(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
 		{
 			ret = (acpi_rFacpS *)acpi_mapTable(

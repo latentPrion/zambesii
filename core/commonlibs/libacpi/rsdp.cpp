@@ -108,10 +108,7 @@ error_t acpi::mapRsdt(void)
 		goto releaseAndExit;
 	};
 
-	rsdt = reinterpret_cast<acpi_rsdtS *>(
-		(uarch_t)rsdt
-		+ (cache.rsdp->rsdtPaddr & PAGING_BASE_MASK_LOW) );
-
+	rsdt = WPRANGER_ADJUST_VADDR(rsdt, cache.rsdp->rsdtPaddr, acpi_rsdtS *);
 	// Find out the RSDT's real size.
 	rsdtNPages = PAGING_BYTES_TO_PAGES(rsdt->hdr.tableLength) + 1;
 
@@ -137,10 +134,7 @@ error_t acpi::mapRsdt(void)
 		goto releaseAndExit;
 	};
 
-	rsdt = reinterpret_cast<acpi_rsdtS *>(
-		(uarch_t)rsdt
-		+ (cache.rsdp->rsdtPaddr & PAGING_BASE_MASK_LOW) );
-
+	rsdt = WPRANGER_ADJUST_VADDR(rsdt, cache.rsdp->rsdtPaddr, acpi_rsdtS *);
 	cache.rsdt = rsdt;
 	return ERROR_SUCCESS;
 

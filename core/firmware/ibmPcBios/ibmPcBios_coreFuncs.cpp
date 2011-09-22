@@ -62,6 +62,7 @@ error_t ibmPcBios::initialize(void)
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
+	// M.mem_base = WPRANGER_ADJUST_VADDR(M.mem_base, 0x0, unsigned long);
 	X86EMU_setupMemFuncs(&x86Emu_memFuncs);
 	X86EMU_setupPioFuncs(&x86Emu_ioFuncs);
 
