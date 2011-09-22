@@ -37,8 +37,8 @@ error_t ibmPc_terminalMod_initialize(void)
 	row = col = 0;
 
 	bda = lowmem;
-	maxRow = *(bda + 0x484) + 1;
-	maxCol = *(ubit16 *)(bda + 0x44A);
+	maxRow = bda[0x484] + 1;
+	maxCol = *(ubit16 *)&bda[0x44A];
 
 	// If we're still here, then the range should be mapped in.
 	return ERROR_SUCCESS;
@@ -46,30 +46,7 @@ error_t ibmPc_terminalMod_initialize(void)
 
 error_t ibmPc_terminalMod_shutdown(void)
 {
-	uarch_t		p, f;
-
-	// Unmap and free BDA mapping.
-	if (bda != __KNULL)
-	{
-		walkerPageRanger::unmap(
-			&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-			bda, &p, 1, &f);
-
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
-			bda, 1);
-	};
-
-	// Unmap and free text mode buffer mapping.
-	if (buff != __KNULL)
-	{
-		walkerPageRanger::unmap(
-			&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-			buff, &p, 1, &f);
-
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
-			buff, 1);
-	};
-
+	buff = __KNULL;
 	return ERROR_SUCCESS;
 }
 
