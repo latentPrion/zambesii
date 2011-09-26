@@ -74,6 +74,7 @@ status_t x8632_gpf(taskContextS *)
 
 status_t x8632_unknown_interrupt(taskContextS *)
 {
+	// Is also the FPU exception vector in SMP mode.
 	return ERROR_GENERAL;
 }
 

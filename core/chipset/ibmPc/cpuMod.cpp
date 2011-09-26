@@ -2,6 +2,7 @@
 #include <__ksymbols.h>
 #include <arch/arch.h>
 #include <arch/memory.h>
+#include <arch/io.h>
 #include <chipset/memoryAreas.h>
 #include <chipset/pkg/cpuMod.h>
 #include <platform/cpu.h>
@@ -16,9 +17,11 @@
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <__kthreads/__kcpuPowerOn.h>
 #include "cpuMod.h"
+#include "pic.h"
 
 
-#define SMPINFO		"IBMPC CPU Mod: SMP: "
+#define SMPINFO		CPUMOD"SMP: "
+#define CPUMOD		"CPU Mod: "
 
 #define SMPSTATE_UNIPROCESSOR	0x0
 #define SMPSTATE_SMP		0x1
@@ -77,7 +80,9 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 	// Caller has determined that there is an RSDT present on the chipset.
 	if (acpi::mapRsdt() != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE"Failed to map in the RSDT.\n");
+		__kprintf(NOTICE CPUMOD"getNumaMap(): Failed to map in the "
+			"RSDT.\n");
+
 		return __KNULL;
 	};
 
@@ -100,14 +105,14 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 		};
 	};
 
-	__kprintf(NOTICE"IBMPC CPU Mod: NUMA: %d LAPIC SRAT entries.\n",
+	__kprintf(NOTICE CPUMOD"getNumaMap(): %d LAPIC SRAT entries.\n",
 		nEntries);
 
 	// Now we know how many entries exist. Allocate map and reparse.
 	ret = new chipsetNumaMapS;
 	if (ret == __KNULL)
 	{
-		__kprintf(ERROR"IBMPC Cpu Mod: NUMA: Failed to allocate room "
+		__kprintf(ERROR CPUMOD"getNumaMap(): Failed to allocate room "
 			"for CPU NUMA map, or 0 entries found.\n");
 
 		return __KNULL;
@@ -117,8 +122,8 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 	if (ret->cpuEntries == __KNULL)
 	{
 		delete ret;
-		__kprintf(ERROR"IBMPC CPU Mod: NUMA: Failed to alloc NUMA CPU "
-			"map entries.\n");
+		__kprintf(ERROR CPUMOD"getNumaMap(): Failed to alloc "
+			"NUMA CPU map entries.\n");
 
 		return __KNULL;
 	};
@@ -176,7 +181,7 @@ chipsetNumaMapS *ibmPc_cpuMod_getNumaMap(void)
 #endif
 	if (acpi::testForRsdt())
 	{
-		__kprintf(NOTICE"IBMPC CPU Mod: NUMA: Falling back to RSDT.\n");
+		__kprintf(NOTICE CPUMOD"getNumaMap(): Falling back to RSDT.\n");
 		return ibmPc_cm_rGnm();
 	};
 
@@ -413,8 +418,8 @@ sarch_t ibmPc_cpuMod_checkSmpSanity(void)
 	execCpuid(1, &eax, &ebx, &ecx, &edx);
 	if (!(edx & (1 << 9)))
 	{
-		__kprintf(ERROR"checkSmpSanity(): CPUID[1].EDX[9] LAPIC check "
-			"failed. EDX: %x.\n",
+		__kprintf(ERROR CPUMOD"checkSmpSanity(): CPUID[1].EDX[9] LAPIC "
+			"check failed. EDX: %x.\n",
 			edx);
 
 		return 0;
@@ -478,11 +483,11 @@ tryAcpi:
 		goto initLibLapic;
 
 useDefaultPaddr:
-		__kprintf(NOTICE"getBspId(): Using default paddr.\n");
+		__kprintf(NOTICE CPUMOD"getBspId(): Using default paddr.\n");
 		infoCache.lapicPaddr = 0xFEE00000;
 
 initLibLapic:
-		__kprintf(NOTICE"getBspId(): LAPIC paddr = 0x%P.\n",
+		__kprintf(NOTICE CPUMOD"getBspId(): LAPIC paddr = 0x%P.\n",
 			infoCache.lapicPaddr);
 
 		x86Lapic::initializeCache();
@@ -492,9 +497,9 @@ initLibLapic:
 
 		if (x86Lapic::mapLapicMem() != ERROR_SUCCESS)
 		{
-			__kprintf(WARNING"getBspId(): Failed to map lapic into "
-				"kernel vaddrspace. Unable to get true BSP id."
-				"\n");
+			__kprintf(WARNING CPUMOD"getBspId(): Failed to map "
+				"lapic into kernel vaddrspace. Unable to get "
+				"true BSP id.\n");
 
 			return 0;
 		};
@@ -511,7 +516,8 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	error_t		ret;
 	ubit8		*lowmem;
 	void		*srcAddr, *destAddr;
-	uarch_t		copySize;
+	uarch_t		copySize, cpuFlags;
+	x86_mpFpS	*mpFp;
 
 	/**	EXPLANATION:
 	 * This function will enable Symmetric I/O mode on the IBM-PC chipset.
@@ -530,7 +536,7 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	ret = chipset_mapArea(CHIPSET_MEMAREA_LOWMEM);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR"setSmpMode(): Failed to map lowmem.\n");
+		__kprintf(ERROR CPUMOD"setSmpMode(): Failed to map lowmem.\n");
 		return ret;
 	};
 
@@ -540,6 +546,12 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	// Change the warm reset vector.
 	*reinterpret_cast<uarch_t **>( &lowmem[(0x40 << 4) + 0x67] ) =
 		&__kcpuPowerOnTextStart;
+
+	// TODO: Set CMOS reset operation to "warm reset".
+	cpuControl::safeDisableInterrupts(&cpuFlags);
+	io::write8(0x70, 0x0F);
+	io::write8(0x71, 0x0A);
+	cpuControl::safeEnableInterrupts(cpuFlags);
 
 	/* Next, we need to copy the kernel's .__kcpuPowerOn[Text/Data] stuff to
 	 * lowmem. Memcpy() ftw...
@@ -552,7 +564,8 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	copySize = (uarch_t)&__kcpuPowerOnTextEnd
 		- (uarch_t)&__kcpuPowerOnTextStart;
 
-	__kprintf(NOTICE"Copying CPU wakeup code from 0x%p to 0x%p; %d B.\n",
+	__kprintf(NOTICE CPUMOD"setSmpMode: Copying CPU wakeup code from 0x%p "
+		"to 0x%p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
 	memcpy8(destAddr, srcAddr, copySize);
@@ -565,12 +578,40 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	copySize = (uarch_t)&__kcpuPowerOnDataEnd
 		- (uarch_t)&__kcpuPowerOnDataStart;
 
-	__kprintf(NOTICE"Copying CPU wakeup data from 0x%p to 0x%p; %d B.\n",
+	__kprintf(NOTICE CPUMOD"setSmpMode: Copying CPU wakeup data from 0x%p "
+		"to 0x%p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
 	memcpy8(destAddr, srcAddr, copySize);
 
-	// For now just return and don't set Symm. I/O mode.
+	// Mask all ISA IRQs at the PIC:
+	ibmPc_pic_maskAll();
+
+	/** EXPLANATION
+	 * Next, we parse the MP tables to see if the chipset has the IMCR
+	 * implemented. If so, we turn on Symm. I/O mode.
+	 *
+	 * If there are no MP tables, the chipset is assumed to be in virtual
+	 * wire mode.
+	 **/
+	mpFp = x86Mp::findMpFp();
+	if (mpFp != __KNULL
+		&& __KFLAG_TEST(mpFp->features[1], x86_MPFP_FEAT1_FLAG_PICMODE))
+	{
+		infoCache.smpState.chipsetOriginalState = SMPSTATE_UNIPROCESSOR;
+
+		cpuControl::safeDisableInterrupts(&cpuFlags);
+		io::write8(0x22, 0x70);
+		io::write8(0x23, 0x1);
+		cpuControl::safeEnableInterrupts(cpuFlags);
+		__kprintf(NOTICE CPUMOD"setSmpMode: chipset was in PIC mode.\n");
+	}
+	else
+	{
+		infoCache.smpState.chipsetOriginalState = SMPSTATE_SMP;
+		__kprintf(NOTICE CPUMOD"setSmpMode: CPU Mod: chipset was in "
+			"Virtual wire mode.\n");
+	};
 	infoCache.smpState.chipsetState = SMPSTATE_SMP;
 	return ERROR_SUCCESS;
 }
@@ -611,8 +652,8 @@ error_t ibmPc_cpuMod_powerControl(cpu_t cpuId, ubit8 command, uarch_t)
 		{
 			if (!x86Mp::mapMpConfigTable())
 			{
-				__kprintf(WARNING"cpu_powerOn(%d,%d): Unable "
-					"to map MP config table.\n",
+				__kprintf(WARNING CPUMOD"cpu_powerOn(%d,%d): "
+					"Unable to map MP config table.\n",
 					cpuId, command);
 
 				goto skipMpTables;
@@ -620,9 +661,9 @@ error_t ibmPc_cpuMod_powerControl(cpu_t cpuId, ubit8 command, uarch_t)
 		}
 		else
 		{
-			__kprintf(NOTICE"cpu_powerOn(%d,%d): No MP tables; "
-				"Assuming newer CPU and INIT-SIPI-SIPI.\n",
-				cpuId, command);
+			__kprintf(NOTICE CPUMOD"cpu_powerOn(%d,%d): No MP "
+				"tables; Assuming newer CPU and INIT-SIPI-SIPI."
+				"\n", cpuId, command);
 
 			goto skipMpTables;
 		};
@@ -643,7 +684,7 @@ error_t ibmPc_cpuMod_powerControl(cpu_t cpuId, ubit8 command, uarch_t)
 		if (!__KFLAG_TEST(cpu->featureFlags, (1<<9)))
 		{
 			isNewerCpu = 0;
-			__kprintf(WARNING"cpu_powerOn(%d,%d): Old non-"
+			__kprintf(WARNING CPUMOD"cpu_powerOn(%d,%d): Old non-"
 				"integrated LAPIC.\n",
 				cpuId, command);
 		}
@@ -673,8 +714,8 @@ skipMpTables:
 
 			if (ret != ERROR_SUCCESS)
 			{
-				__kprintf(ERROR"POWER_ON CPU %d: INIT IPI "
-					"timed out.\n",
+				__kprintf(ERROR CPUMOD"POWER_ON CPU %d: INIT "
+					"IPI timed out.\n",
 					cpuId);
 			};
 		} while (ret != ERROR_SUCCESS && --nTries);
@@ -697,8 +738,8 @@ skipMpTables:
 
 				if (ret != ERROR_SUCCESS)
 				{
-					__kprintf(ERROR"POWER_ON CPU %d: SIPI0 "
-						"timed out.\n",
+					__kprintf(ERROR CPUMOD"POWER_ON CPU "
+						"%d: SIPI0 timed out.\n",
 						cpuId);
 				};
 			} while (ret != ERROR_SUCCESS && --nTries);
@@ -718,8 +759,8 @@ skipMpTables:
 
 				if (ret != ERROR_SUCCESS)
 				{
-					__kprintf(ERROR"POWER_ON CPU %d: SIPI1 "
-						"timed out.\n",
+					__kprintf(ERROR CPUMOD"POWER_ON CPU "
+						"%d: SIPI1 timed out.\n",
 						cpuId);
 				};
 			} while (ret != ERROR_SUCCESS && --nTries);

@@ -14,9 +14,9 @@
 #define x86_MPFP_SIG			"_MP_"
 #define x86_MPFP_SIGLEN			4
 
-#define x86_MPFP_FEAT1_CFGPRESENT	0
+#define x86_MPFP_FEAT0_CFGPRESENT	0
 
-#define x86_MPFP_FEAT2_FLAG_PICMODE	(1<<7)
+#define x86_MPFP_FEAT1_FLAG_PICMODE	(1<<7)
 
 struct x86_mpFpS
 {
@@ -88,23 +88,24 @@ struct x86_mpCfgCpuS
 } __attribute__((packed));
 
 
-#define x86_MPCFG_BUS_CBUS	"CBUS"
+// Padded out to 6 chars plus the NULL terminator.
+#define x86_MPCFG_BUS_CBUS	"CBUS  "
 #define x86_MPCFG_BUS_CBUSII	"CBUSII"
-#define x86_MPCFG_BUS_EISA	"EISA"
+#define x86_MPCFG_BUS_EISA	"EISA  "
 #define x86_MPCFG_BUS_FUTURE	"FUTURE"
 #define x86_MPCFG_BUS_INTERN	"INTERN"
-#define x86_MPCFG_BUS_ISA	"ISA"
-#define x86_MPCFG_BUS_MBI	"MBI"
-#define x86_MPCFG_BUS_MBII	"MBII"
-#define x86_MPCFG_BUS_MCA	"MCA"
-#define x86_MPCFG_BUS_MPI	"MPI"
-#define x86_MPCFG_BUS_MPSA	"MPSA"
-#define x86_MPCFG_BUS_NUBUS	"NUBUS"
-#define x86_MPCFG_BUS_PCI	"PCI"
+#define x86_MPCFG_BUS_ISA	"ISA   "
+#define x86_MPCFG_BUS_MBI	"MBI   "
+#define x86_MPCFG_BUS_MBII	"MBII  "
+#define x86_MPCFG_BUS_MCA	"MCA   "
+#define x86_MPCFG_BUS_MPI	"MPI   "
+#define x86_MPCFG_BUS_MPSA	"MPSA  "
+#define x86_MPCFG_BUS_NUBUS	"NUBUS "
+#define x86_MPCFG_BUS_PCI	"PCI   "
 #define x86_MPCFG_BUS_PCMCIA	"PCMCIA"
-#define x86_MPCFG_BUS_TC	"TC"
-#define x86_MPCFG_BUS_VL	"VL"
-#define x86_MPCFG_BUS_VME	"VME"
+#define x86_MPCFG_BUS_TC	"TC    "
+#define x86_MPCFG_BUS_VL	"VL    "
+#define x86_MPCFG_BUS_VME	"VME   "
 #define x86_MPCFG_BUS_XPRESS	"XPRESS"
 
 struct x86_mpCfgBusS

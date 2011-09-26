@@ -12,6 +12,8 @@ namespace cpuControl
 	inline void subZero(void);
 	inline void enableInterrupts(void);
 	inline void disableInterrupts(void);
+	inline void safeEnableInterrupts(uarch_t f);
+	inline void safeDisableInterrupts(uarch_t *f);
 	inline sarch_t interruptsEnabled(void);
 }
 
@@ -47,6 +49,36 @@ inline void cpuControl::disableInterrupts(void)
 	asm volatile ("cli\n\t");
 }
 
+inline void cpuControl::safeEnableInterrupts(uarch_t f)
+{
+	// Restore CPU flags, then call enableInterrupts().
+	asm volatile (
+		"pushl	%%eax \n\t \
+		movl	%0, %%eax \n\t \
+		pushl	%%eax \n\t \
+		popfl \n\t \
+		popl	%%eax \n\t"
+		:
+		: "r" (f));
+}
+
+inline void cpuControl::safeDisableInterrupts(uarch_t *f)
+{
+	asm volatile (
+		"pushl	%%eax \n\t \
+		pushl	%%ebx \n\t \
+		movl	%0, %%eax \n\t \
+		pushfl \n\t \
+		popl	%%ebx \n\t \
+		movl	%%ebx, (%%eax) \n\t \
+		popl	%%ebx \n\t \
+		popl	%%eax \n\t"
+		:
+		: "r" (f));
+
+	disableInterrupts();
+}
+		
 inline sarch_t cpuControl::interruptsEnabled(void)
 {
 	uarch_t		flags;
