@@ -15,10 +15,10 @@
 
 // "CPU OK" :/
 #define CPUSTREAM			"CPU Stream "
-#define CPUSTREAM_INIT_MAGIC		0xC101101C
 
 #define CPUSTREAM_FLAGS_INITIALIZED	(1<<0)
 #define CPUSTREAM_FLAGS_ENUMERATED	(1<<1)
+#define CPUSTREAM_FLAGS_BSP		(1<<2)
 
 #define CPUSTREAM_POWER_ON		0x0
 #define CPUSTREAM_POWER_CHECK		0x1
@@ -32,8 +32,6 @@ public streamC
 {
 public:
 	cpuStreamC(numaBankId_t bid, cpu_t id);
-	cpuStreamC(ubit8);
-	sarch_t reConstruct(void);
 
 	error_t initialize(void);
 	sarch_t isInitialized(void);
@@ -49,7 +47,6 @@ public:
 	cpu_t			cpuId;
 	numaBankId_t		bankId;
 	cpuFeaturesS		cpuFeatures;
-	uarch_t			initMagic;
 	// Per CPU scheduler.
 	taskStreamC		scheduler;
 

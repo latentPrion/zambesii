@@ -22,22 +22,9 @@ void __kcpuPowerOnHll(void)
 	 * code though, when cleanup is done later.
 	 **/
 	myStream = __kcpuPowerOnBlock.cpuStream;
-
-	// Load DR0 with a pointer to this CPU's CPU Stream.
-	asm volatile (
-		"pushl	%%eax \n\t \
-		movl	%%dr7, %%eax \n\t \
-		andl	$0xFFFFFE00, %%eax \n\t \
-		movl	%%eax, %%dr7 \n\t \
-		popl	%%eax \n\t \
-		\
-		movl	%0, %%dr0 \n\t"
-		:
-		: "r" (myStream));
-
-	myStream->currentTask = &__kcpuPowerOnThread;
+	// Enumerates, sets up, etc.
+	myStream->initialize();
 	__kcpuPowerOnBlock.lock.release();
-
 	__kcpuPowerOnMain(myStream);
 }
 

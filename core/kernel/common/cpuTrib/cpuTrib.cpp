@@ -148,24 +148,19 @@ error_t cpuTribC::initialize2(void)
 
 	// Ask the chipset what the BSP's real ID is.
 	bspId = (*chipsetPkg.cpus->getBspId)();
-
-#if __SCALING__ >= SCALING_SMP
-	// Move the BSP's CPU stream into the right index in the CPU array.
 	bspStream = getCurrentCpuStream();
-	if (bspId != bspStream->cpuId)
-	{
-		cpuStreams.removeItem(bspStream->cpuId);
-		ret = cpuStreams.addItem(bspId, bspStream);
-		if (ret != ERROR_SUCCESS)
-		{
-			__kprintf(FATAL CPUTRIB"Unable to relocate BSP CPU "
-				"stream within CPU list. Aborting.");
+	bspStream->cpuId = bspId;
 
-			assert_fatal(ret == ERROR_SUCCESS);
-		};
+	// Add the BSP CPU Stream to the CPU array.
+	ret = cpuStreams.addItem(bspId, bspStream);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(FATAL CPUTRIB"Unable to relocate BSP CPU "
+			"stream within CPU list. Aborting.");
+
+		assert_fatal(ret == ERROR_SUCCESS);
 	};
-#endif
-	getCurrentCpuStream()->cpuId = bspId;
+
 	__kprintf(NOTICE CPUTRIB"BSP's hardware ID: %d. Patched.\n",
 		getCurrentCpuStream()->cpuId);
 
@@ -486,11 +481,11 @@ error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
 	 * but it will ensure that the BSP is moved tot he right bank and set
 	 * its bits in the relevant BMPs.
 	 **/
-	/* If the streamId being spawned is the BSP, call the reConstruct()
-	 * method on it.
-	 **/
-	if (cid == bspId) {
-		getStream(cid)->reConstruct();
+	// If the streamId being spawned is the BSP, call initialize() on it.
+	if (cid == bspId)
+	{
+		getStream(cid)->bankId = bid;
+		getStream(cid)->initialize();
 	};
 
 	/* Make sure the available CPUs bmp, onlineCpus bmp and the BMP of

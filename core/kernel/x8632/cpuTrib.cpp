@@ -3,6 +3,7 @@
 #include <chipset/chipset.h>
 #include <chipset/memoryAreas.h>
 #include <__kstdlib/__ktypes.h>
+#include <__kstdlib/__kflagManipulation.h>
 #include <__kthreads/__korientation.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
@@ -13,7 +14,7 @@ cpuStreamC *cpuTribC::getCurrentCpuStream(void)
 	uarch_t		dr0;
 	// Read the current cpu's struct from the fs and gs registers.
 	asm volatile (
-		"movl %%dr0, %0\n\t"
+		"movl %%dr0, %0 \n\t"
 		: "=r" (dr0)
 	);
 	return reinterpret_cast<cpuStreamC *>( dr0 );
@@ -30,25 +31,10 @@ error_t cpuTribC::initialize(void)
 	bspCpu.currentTask = &__korientationThread;
 	bspCpu.cpuFeatures.fpuLevel = 0;
 	bspCpu.cpuFeatures.mhz = 0;
+	// Let the CPU know that it is the BSP.
+	__KFLAG_SET(bspCpu.flags, CPUSTREAM_FLAGS_BSP);
 
-	/**	EXPLANATION:
-	 * This one line is VERY important. If you don't initialize the BSP
-	 * CPU Stream with this magic number, the global object constructor call
-	 * sequence that will run on it later will overwrite the arch-specific
-	 * values with normal constructed values. This will cause the BSP CPU's
-	 * Stream to be overwritten, and the pointer to the current task will
-	 * be corrupted.
-	 *
-	 * Every arch MUST make sure to set this magic number in the BSP CPU
-	 * init before exiting. There will be a clean up on this later on after
-	 * the CPU Tributary is written up.
-	 *
-	 * In other words, the purpose of this magic number is to protect the
-	 * BSP CPU Stream instance from being overwritten at boot during the
-	 * global constructor call.
-	 **/
-	bspCpu.initMagic = CPUSTREAM_INIT_MAGIC;
-
+	// Load the BSP's DR0 with the addr of the BSP's stream.
 	dr0 = reinterpret_cast<uarch_t>( &bspCpu );
 
 	asm volatile (
@@ -64,11 +50,6 @@ error_t cpuTribC::initialize(void)
 		: "%eax"
 	);
 
-	return ERROR_SUCCESS;
-}
-
-error_t cpuTribC::wakeupMpCpus(void)
-{
 	return ERROR_SUCCESS;
 }
 

@@ -1,5 +1,6 @@
 
 #include <chipset/pkg/chipsetPackage.h>
+#include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/task.h>
@@ -18,12 +19,6 @@ cpuId(cid), bankId(bid), scheduler(this)
 	// Nothing to be done for now.
 }
 
-sarch_t cpuStreamC::reConstruct(void)
-{
-	__kprintf(NOTICE"BSP reconstructing.\n");
-	return 0;
-}
-
 status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 {
 	__kcpuPowerOnBlock.lock.acquire();
@@ -34,13 +29,7 @@ status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 	return (*chipsetPkg.cpus->powerControl)(cpuId, command, flags);
 }
 
-error_t cpuStreamC::initialize(void)
-{
-	return ERROR_SUCCESS;
-}
-
 cpuStreamC::~cpuStreamC(void)
 {
 }
-
 
