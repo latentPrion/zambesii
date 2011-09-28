@@ -23,13 +23,13 @@ error_t ibmPc_terminalMod_initialize(void)
 	ubit8		*lowmem;
 
 	// The memoryAreas API maps ranges as PAGEATTRIB_CACHE_WRITE_THROUGH.
-	ret = chipset_mapArea(CHIPSET_MEMAREA_LOWMEM);
+	ret = chipsetMemAreas::mapArea(CHIPSET_MEMAREA_LOWMEM);
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};
 
 	lowmem = reinterpret_cast<ubit8 *>(
-		chipset_getArea(CHIPSET_MEMAREA_LOWMEM) );
+		chipsetMemAreas::getArea(CHIPSET_MEMAREA_LOWMEM) );
 
 	origBuff = buff = reinterpret_cast<ibmPc_terminalMod_fbS *>(
 		&lowmem[0xB8000] );

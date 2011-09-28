@@ -7,7 +7,7 @@ OBJFILES=wPRanger_mapInc.o wPRanger_mapNoInc.o wPRanger_remapInc.o \
 	tlbControl.o \
 	gdt.o idt.o vectorHandlers.o setjmp.o string.o __kexceptionTable.o \
 	exceptions.o x8632_pageFault.o string8.o string16.o \
-	taskContext.o cpuid.o msr.o
+	taskContext.o cpuid.o msr.o cpuEnumerationIntel.o
 
 all: Makefile $(DELIVERABLE)
 

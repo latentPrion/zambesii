@@ -6,7 +6,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-chipsetMemAreaS		memAreas[CHIPSET_MEMAREA_NAREAS] =
+chipsetMemAreas::areaS		memAreas[CHIPSET_MEMAREA_NAREAS] =
 {
 	{
 		CC"Low Memory (0x0-0xFFFFF, 1MB)",
@@ -18,7 +18,7 @@ chipsetMemAreaS		memAreas[CHIPSET_MEMAREA_NAREAS] =
 /**	EXPLANATION:
  **/
 
-error_t chipset_mapArea(ubit16 index)
+error_t chipsetMemAreas::mapArea(ubit16 index)
 {
 	void		*vaddr;
 	status_t	status;
@@ -55,7 +55,7 @@ error_t chipset_mapArea(ubit16 index)
 	return ERROR_SUCCESS;
 }
 
-error_t chipset_unmapArea(ubit16 index)
+error_t chipsetMemAreas::unmapArea(ubit16 index)
 {
 	paddr_t		p;
 	uarch_t		f;
@@ -78,13 +78,13 @@ error_t chipset_unmapArea(ubit16 index)
 	return ERROR_SUCCESS;
 }
 		
-void *chipset_getArea(ubit16 index)
+void *chipsetMemAreas::getArea(ubit16 index)
 {
 	if (index >= CHIPSET_MEMAREA_NAREAS) { return __KNULL; };
 	return memAreas[index].vaddr;
 }
 
-chipsetMemAreaS *chipset_getAreaInfo(ubit16 index)
+chipsetMemAreas::areaS *chipsetMemAreas::getAreaInfo(ubit16 index)
 {
 	if (index >= CHIPSET_MEMAREA_NAREAS) { return __KNULL; };
 	return &memAreas[index];

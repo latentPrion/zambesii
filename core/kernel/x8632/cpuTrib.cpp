@@ -30,7 +30,7 @@ error_t cpuTribC::initialize(void)
 	bspCpu.bankId = NUMABANKID_INVALID;
 	bspCpu.currentTask = &__korientationThread;
 	bspCpu.cpuFeatures.fpuLevel = 0;
-	bspCpu.cpuFeatures.mhz = 0;
+	bspCpu.cpuFeatures.clockMhz = 0;
 	// Let the CPU know that it is the BSP.
 	__KFLAG_SET(bspCpu.flags, CPUSTREAM_FLAGS_BSP);
 

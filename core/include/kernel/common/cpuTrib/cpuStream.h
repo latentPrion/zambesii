@@ -7,7 +7,7 @@
 	#include <kernel/common/task.h>
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/numaTypes.h>
-	#include <kernel/common/cpuFeatures.h>
+	#include <kernel/common/cpuTrib/cpuFeatures.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/cpuTrib/cpuStreamArchBlock.h>
@@ -26,6 +26,10 @@
 #define CPUSTREAM_POWER_DEEPSLEEP	0x3
 #define CPUSTREAM_POWER_OFF		0x4
 
+#define CPUSTREAM_ENUMERATE_UNSUPPORTED_CPU	0x1
+#define CPUSTREAM_ENUMERATE_CPU_MODEL_UNCLEAR	0x2
+#define CPUSTREAM_ENUMERATE_CPU_MODEL_UNKNOWN	0x3
+
 class cpuStreamC
 :
 public streamC
@@ -33,13 +37,15 @@ public streamC
 public:
 	cpuStreamC(numaBankId_t bid, cpu_t id);
 
+	void baseInit(void);
 	error_t initialize(void);
 	sarch_t isInitialized(void);
 	~cpuStreamC(void);
 
 public:
 	status_t powerControl(ubit16 command, uarch_t flags);
-	error_t cpuInfo();
+	status_t enumerate(void);
+	cpuFeaturesS *getCpuFeatureBlock(void);
 
 public:
 	// Do *NOT* move currentTask from where it is.

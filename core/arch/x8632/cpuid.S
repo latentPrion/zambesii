@@ -36,3 +36,31 @@ ret
 
 ASM_END_FUNCTION(execCpuid)
 
+ASM_GLOBAL_FUNCTION(x8632_verifyCpuIsI486OrHigher)
+	pushl	%ebx
+
+	/* Try to change the ID flag in EFLAGS to see if CPUID is supported. */
+	pushfl
+	popl	%eax
+	movl	$1, %ebx
+	shl	$21, %ebx
+	orl	%ebx, %eax
+	pushl	%eax
+	popfl
+	
+	/* Check to see if it got changed. */
+	pushfl
+	popl	%eax
+	andl	%ebx, %eax
+	popl	%ebx
+	cmpl	$0, %eax
+	je	.failed
+
+	/*  CPU is at least i486, since it has CPUID. */
+	ret
+
+.failed:
+	movl	$0, %eax
+	ret
+ASM_END_FUNCTION(x8632_verifyCpuIsI486OrHigher)
+

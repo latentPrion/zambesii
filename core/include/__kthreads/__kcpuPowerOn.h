@@ -15,8 +15,7 @@ struct __kcpuPowerOnBlockS
 
 
 extern "C" void __kcpuPowerOnEntry(void);
-extern "C" void __kcpuPowerOnHll(void);
-void __kcpuPowerOnMain(cpuStreamC *self);
+extern "C" void __kcpuPowerOnMain(void);
 
 extern "C" struct __kcpuPowerOnBlockS	__kcpuPowerOnBlock;
 extern taskC __kcpuPowerOnThread;

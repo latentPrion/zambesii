@@ -34,6 +34,7 @@ static numaBankId_t	highestBankId=0;
 
 cpuTribC::cpuTribC(void)
 {
+	bspId = 0;
 }
 
 error_t cpuTribC::initialize2(void)
@@ -147,7 +148,10 @@ error_t cpuTribC::initialize2(void)
 #endif
 
 	// Ask the chipset what the BSP's real ID is.
+
+#if __SCALING__ > SCALING_UNIPROCESSOR
 	bspId = (*chipsetPkg.cpus->getBspId)();
+#endif
 	bspStream = getCurrentCpuStream();
 	bspStream->cpuId = bspId;
 
@@ -339,24 +343,16 @@ fallbackToUp:
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-	ncb = getBank(CHIPSET_CPU_NUMA_SHBANKID);
-	if (ncb == __KNULL)
+	ret = spawnStream(CHIPSET_CPU_NUMA_SHBANKID, bspId);
+	if (ret != ERROR_SUCCESS)
 	{
-		// Try to create it again for the sake of it.
-		ret = createBank(CHIPSET_CPU_NUMA_SHBANKID);
-		if (ret != ERROR_SUCCESS)
-		{
-			__kprintf(ERROR CPUTRIB"Failed to create ShBank on a "
-				"non-UP build, while attempting to fall back "
-				"to UP mode. No CPU management in place.\n\n"
+		__kprintf(ERROR CPUTRIB"Failed to create ShBank on a non-UP "
+			"build, while attempting to fall back to UP mode. No "
+			"CPU management in place.\n\n"
 
-				"Kernel forced to halt orientation.\n");
+			"Kernel forced to halt orientation.\n");
 
 			return ERROR_FATAL;
-		}
-		else {
-			availableBanks.setSingle(CHIPSET_CPU_NUMA_SHBANKID);
-		};
 	};
 
 	// Set a single bit for CPU 0, our UP mode single CPU.
@@ -487,7 +483,7 @@ error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
 		getStream(cid)->bankId = bid;
 		getStream(cid)->initialize();
 	};
-
+asm volatile ("hlt \n\t");
 	/* Make sure the available CPUs bmp, onlineCpus bmp and the BMP of
 	 * CPUs on the containing bank all have enough bits to hold the new
 	 * CPU's bit.

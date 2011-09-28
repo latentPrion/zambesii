@@ -89,7 +89,7 @@ ASM_LOCAL_FUNCTION(__kcpuPowerOnVirtualStart)
 	movl	%eax, %esp
 	movl	%esp, %ebp
 	/* Call into the C++ HLL code finally. */
-	call	__kcpuPowerOnHll
+	call	__kcpuPowerOnMain
 ASM_END_FUNCTION(__kcpuPowerOnVirtualStart)
 
 

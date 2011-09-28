@@ -3,10 +3,10 @@
 #include <arch/arch.h>
 #include <arch/memory.h>
 #include <arch/io.h>
+#include <arch/x8632/cpuid.h>
 #include <chipset/memoryAreas.h>
 #include <chipset/pkg/cpuMod.h>
 #include <platform/cpu.h>
-#include <asm/x8632/cpuid.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
@@ -107,6 +107,9 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 
 	__kprintf(NOTICE CPUMOD"getNumaMap(): %d LAPIC SRAT entries.\n",
 		nEntries);
+
+	// If there are no NUMA CPUs, return.
+	if (nEntries == 0) { return __KNULL; };
 
 	// Now we know how many entries exist. Allocate map and reparse.
 	ret = new chipsetNumaMapS;
@@ -533,7 +536,7 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	 * NOTE:
 	 * * I don't think you need to enable Symm. I/O mode to use the LAPICs.
 	 **/
-	ret = chipset_mapArea(CHIPSET_MEMAREA_LOWMEM);
+	ret = chipsetMemAreas::mapArea(CHIPSET_MEMAREA_LOWMEM);
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(ERROR CPUMOD"setSmpMode(): Failed to map lowmem.\n");
@@ -541,7 +544,7 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	};
 
 	lowmem = static_cast<ubit8 *>(
-		chipset_getArea(CHIPSET_MEMAREA_LOWMEM) );
+		chipsetMemAreas::getArea(CHIPSET_MEMAREA_LOWMEM) );
 
 	// Change the warm reset vector.
 	*reinterpret_cast<uarch_t **>( &lowmem[(0x40 << 4) + 0x67] ) =
