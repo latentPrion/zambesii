@@ -152,6 +152,33 @@ utf8Char	*overdriveFamily6Signatures[] =
 	CC"Intel Pentium 2 Overdrive"
 };
 
+utf8Char	*brandIds[] =
+{
+	__KNULL,
+	CC"Intel Celeron",
+	CC"Intel Pentium 3",
+	CC"Intel Pentium 3 Xeon",
+	CC"Intel Pentium 3",
+	__KNULL,
+	CC"Mobile Intel Pentium 3 Processor-M",
+	CC"Mobile Intel Celeron",
+	CC"Intel Pentium 4",
+	CC"Intel Pentium 4",
+	CC"Intel Celeron",
+	CC"Intel Xeon",
+	CC"Intel Xeon MP",
+	__KNULL,
+	CC"Mobile Intel Pentium 4 Processor-M",
+	CC"Mobile Intel Celeron",
+	__KNULL,
+	CC"Mobile Genuine Intel",
+	CC"Intel Celeron M",
+	CC"Mobile Intel Celeron",
+	CC"Intel Celeron",
+	CC"Mobile Genuine Intel",
+	CC"Intel Pentium M",
+	CC"Mobile Intel Celeron"
+};
 
 static status_t intelSignatureLookup(utf8Char **cpuNames, ubit32 sigLowModel)
 {
@@ -252,7 +279,18 @@ static status_t intelSignatureEnum(ubit32 sig)
 	return ERROR_SUCCESS;
 }
 
-status_t intelBrandIdEnum(void);
+static status_t intelBrandIdEnum(ubit32 brandId)
+{
+	if (brandIds[brandId] == __KNULL)
+	{
+		__kprintf(ERROR INTELENUM"Invalid CPU brand ID %d.\n", brandId);
+		return CPUENUM_CPU_MODEL_UNKNOWN;
+	};
+
+	cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName = brandIds[brandId];
+	return ERROR_SUCCESS;
+}
+
 status_t intelBrandStringEnum(void)
 {
 	ubit32		eax, ebx, ecx, edx, cpuIdIndex=0x80000002;
@@ -261,7 +299,7 @@ status_t intelBrandStringEnum(void)
 	brandString = new utf8Char[48];
 	if (brandString == __KNULL)
 	{
-		__kprintf(ERROR"Unable to allocate room for brand string.\n");
+		__kprintf(ERROR INTELENUM"Unable to allocate room for brand string.\n");
 		return CPUENUM_CPU_MODEL_UNKNOWN;
 	};
 
@@ -315,7 +353,7 @@ status_t x86CpuEnumeration::intel(void)
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		if (intelBrandStringEnum() == ERROR_SUCCESS) {
-__kprintf(NOTICE"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
+__kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
 			return ERROR_SUCCESS;
 		};
 	};
@@ -327,6 +365,11 @@ __kprintf(NOTICE"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFea
 	{
 		__kprintf(NOTICE INTELENUM"%d: CPUID[1] brand ID supported.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
+
+		if (intelBrandIdEnum(brandId) == ERROR_SUCCESS) {
+__kprintf(NOTICE INTELENUM"CPU Identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
+			return ERROR_SUCCESS;
+		};
 	};
 
 	// Try enumerating with CPUID[1].EAX CPU signature.
@@ -342,7 +385,7 @@ __kprintf(NOTICE"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFea
 
 		return ret;
 	};
-__kprintf(NOTICE"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
+__kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
 	return ERROR_SUCCESS;
 }
 
