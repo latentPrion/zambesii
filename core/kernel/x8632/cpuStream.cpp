@@ -19,10 +19,10 @@ struct x86ManufacturerEntryS
 x86ManufacturerEntryS		x86Manufacturers[] =
 {
 	{CC"GenuineIntel", &x86CpuEnumeration::intel},
-	{__KNULL, __KNULL}
-/*	{CC"AMDisbetter!", &x86CpuEnumeration::amd},
 	{CC"AuthenticAMD", &x86CpuEnumeration::amd},
-	{CC"CentaurHauls"},
+	{CC"AMDisbetter!", &x86CpuEnumeration::amd},
+	{__KNULL, __KNULL}
+/*	{CC"CentaurHauls"},
 	{CC"TransmetaCPU"},
 	{CC"GenuineTMx86"},
 	{CC"CyrixInstead"},
