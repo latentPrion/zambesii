@@ -17,6 +17,7 @@ struct archCpuFeaturesS
 	ubit32		base;
 	ubit32		advanced;
 	ubit8		sseLevel;
+	ubit8		cpuNameNSpaces;
 };
 
 #endif

@@ -2,6 +2,8 @@
 #include <arch/x8632/cpuid.h>
 #include <arch/x8632/cpuEnumeration.h>
 #include <__kstdlib/__kclib/assert.h>
+#include <__kstdlib/__kclib/string8.h>
+#include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -251,7 +253,43 @@ static status_t intelSignatureEnum(ubit32 sig)
 }
 
 status_t intelBrandIdEnum(void);
-status_t intelBrandStringEnum(void);
+status_t intelBrandStringEnum(void)
+{
+	ubit32		eax, ebx, ecx, edx, cpuIdIndex=0x80000002;
+	utf8Char	*brandString;
+
+	brandString = new utf8Char[48];
+	if (brandString == __KNULL)
+	{
+		__kprintf(ERROR"Unable to allocate room for brand string.\n");
+		return CPUENUM_CPU_MODEL_UNKNOWN;
+	};
+
+	// Call CPUID and get moving.
+	for (ubit32 i=0; i<3; i++, cpuIdIndex++)
+	{
+		execCpuid(cpuIdIndex, &eax, &ebx, &ecx, &edx);
+		strncpy8(&brandString[i * 16], CC(&eax), 4);
+		strncpy8(&brandString[(i + 16) + 4], CC(&ebx), 4);
+		strncpy8(&brandString[(i + 16) + 8], CC(&ecx), 4);
+		strncpy8(&brandString[(i + 16) + 12], CC(&edx), 4);
+	};
+
+	cpuTrib.getCurrentCpuStream()
+		->cpuFeatures.archFeatures.cpuNameNSpaces = 0;
+
+	for (ubit32 i=0; brandString[i] == ' '; i++)
+	{
+		cpuTrib.getCurrentCpuStream()
+			->cpuFeatures.archFeatures.cpuNameNSpaces++;
+	};
+
+	cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName = &brandString[
+		cpuTrib.getCurrentCpuStream()
+			->cpuFeatures.archFeatures.cpuNameNSpaces];
+
+	return ERROR_SUCCESS;
+}
 
 status_t x86CpuEnumeration::intel(void)
 {
@@ -272,9 +310,14 @@ status_t x86CpuEnumeration::intel(void)
 	execCpuid(0x8000000, &eax, &ebx, &ecx, &edx);
 	if (eax >= 0x80000004)
 	{
-		__kprintf(NOTICE INTELENUM"%d: CPUID[0x8000000] brand "
-			"string supported.\n",
+		__kprintf(NOTICE INTELENUM"%d: CPUID[0x8000000] brand string "
+			"supported.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
+
+		if (intelBrandStringEnum() == ERROR_SUCCESS) {
+__kprintf(NOTICE"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
+			return ERROR_SUCCESS;
+		};
 	};
 
 	// Else check for brand ID identification.

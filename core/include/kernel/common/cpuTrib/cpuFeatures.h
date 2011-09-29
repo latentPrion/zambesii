@@ -23,7 +23,7 @@ struct cpuFeaturesS
 	ubit8			cacheLineSize;
 	ubit8			bitWidths;
 	// Arch specific CPU features.
-	archCpuFeaturesS	archCpuFeatures;
+	archCpuFeaturesS	archFeatures;
 };
 
 #endif
