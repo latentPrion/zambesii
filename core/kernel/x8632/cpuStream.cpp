@@ -59,11 +59,11 @@ void cpuStreamC::baseInit(void)
 // Parses a MADT for NMI entries to be used to setup the LAPIC LINT inputs.
 static void lintParseMadtForEntries(acpi_rMadtS *rmadt, cpuStreamC *caller)
 {
-	void			*handle2;
+	void			*handle;
 	acpi_rMadtLapicNmiS	*nmiEntry;
 
-	handle2 = __KNULL;
-	nmiEntry = acpiRMadt::getNextLapicNmiEntry(rmadt, &handle2);
+	handle = __KNULL;
+	nmiEntry = acpiRMadt::getNextLapicNmiEntry(rmadt, &handle);
 	while (nmiEntry != __KNULL)
 	{
 		// If this entry pertains to this CPU:
@@ -83,14 +83,14 @@ static void lintParseMadtForEntries(acpi_rMadtS *rmadt, cpuStreamC *caller)
 			x86Lapic::lintEnable(nmiEntry->lapicLint);
 		};
 
-		nmiEntry = acpiRMadt::getNextLapicNmiEntry(rmadt, &handle2);
+		nmiEntry = acpiRMadt::getNextLapicNmiEntry(rmadt, &handle);
 	};
 }
 
 static error_t initializeLapic(cpuStreamC *caller)
 {
 	uarch_t				pos=0;
-	void				*handle;
+	void				*handle, *context;
 	x86_mpCfgLocalIrqSourceS	*lintEntry;
 	acpi_rsdtS			*rsdt;
 	acpi_rMadtS			*rmadt;
@@ -191,15 +191,16 @@ __kprintf(NOTICE CPUSTREAM"This cpu's acpi ID is: %d.\n", caller->cpuAcpiId);
 		{
 			rsdt = acpi::getRsdt();
 
-			handle = __KNULL;
-			rmadt = acpiRsdt::getNextMadt(rsdt, &handle);
+			context = handle = __KNULL;
+			rmadt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 			while (rmadt != __KNULL)
 			{
 __kprintf(NOTICE CPUSTREAM"Found MADT @ 0x%x.\n", rmadt);
 				lintParseMadtForEntries(rmadt, caller);
 
 				acpiRsdt::destroySdt((acpi_sdtS *)rmadt);
-				rmadt = acpiRsdt::getNextMadt(rsdt, &handle);
+				rmadt = acpiRsdt::getNextMadt(
+					rsdt, &context, &handle);
 			};
 		}
 		else
@@ -227,15 +228,15 @@ error_t cpuStreamC::initialize(void)
 		asm volatile ("lidt	(x8632IdtPtr)");
 	};
 
-	// Enumerate CPU and features.
-	enumerate();
-	__kprintf(NOTICE CPUSTREAM"%d: CPU model detected as %s.\n",
-		cpuId, cpuFeatures.cpuName);
-
 	// Init LAPIC (if SMP mode).
 	if (usingChipsetSmpMode()) {
 		initializeLapic(this);
 	};
+
+	// Enumerate CPU and features.
+	enumerate();
+	__kprintf(NOTICE CPUSTREAM"%d: CPU model detected as %s.\n",
+		cpuId, cpuFeatures.cpuName);
 
 	return ERROR_SUCCESS;
 }

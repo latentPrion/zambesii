@@ -1,4 +1,5 @@
 
+#include <scaling.h>
 #include <arch/paging.h>
 #include <arch/tlbControl.h>
 #include <arch/walkerPageRanger.h>

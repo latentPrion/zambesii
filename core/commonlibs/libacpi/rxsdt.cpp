@@ -7,38 +7,46 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-static void	*sdtTmp;
-
-static void *acpi_tmpMapSdt(paddr_t p)
+static void *acpi_tmpMapSdt(void **const context, paddr_t p)
 {
 	status_t	nMapped;
 
-	if (sdtTmp == __KNULL)
+	if (*context == __KNULL)
 	{
-		sdtTmp = (memoryTrib.__kmemoryStream.vaddrSpaceStream
+		*context = (memoryTrib.__kmemoryStream.vaddrSpaceStream
 			.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(
 			2);
 
-		if (sdtTmp == __KNULL) {
+		if (*context == __KNULL) {
 			return __KNULL;
 		};
 	};
 
 	nMapped = walkerPageRanger::mapInc(
 		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		sdtTmp, p, 2,
+		*context, p, 2,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
-	if (nMapped < 2)
-	{
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
-			sdtTmp, 2);
-
+	if (nMapped < 2) {
 		return __KNULL;
 	};
 
-	sdtTmp = WPRANGER_ADJUST_VADDR(sdtTmp, p, void *);
-	return sdtTmp;
+	*context = WPRANGER_ADJUST_VADDR((*context), p, void *);
+	return *context;
+}
+
+void acpiRsdt::destroyContext(void **const context)
+{
+	paddr_t		p;
+	uarch_t		f;
+
+	if (*context == __KNULL) { return; };
+
+	walkerPageRanger::unmap(
+		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		*context, &p, 2, &f);
+
+	*context = __KNULL;
 }
 
 static void *acpi_mapTable(paddr_t p, uarch_t nPages)
@@ -70,7 +78,9 @@ static void *acpi_mapTable(paddr_t p, uarch_t nPages)
 	return ret;
 }
 
-acpi_rSratS *acpiRsdt::getNextSrat(acpi_rsdtS *rsdt, void **const handle)
+acpi_rSratS *acpiRsdt::getNextSrat(
+	acpi_rsdtS *rsdt, void **const context, void **const handle
+	)
 {
 	acpi_sdtS	*sdt;
 	acpi_rSratS	*ret=__KNULL;
@@ -81,7 +91,8 @@ acpi_rSratS *acpiRsdt::getNextSrat(acpi_rsdtS *rsdt, void **const handle)
 
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
-		sdt = (acpi_sdtS *)acpi_tmpMapSdt(*(paddr_t *)*handle);
+		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
+
 		if (strncmp(sdt->sig, ACPI_SDT_SIG_SRAT, 4) == 0)
 		{
 			ret = (acpi_rSratS *)acpi_mapTable(
@@ -95,10 +106,13 @@ acpi_rSratS *acpiRsdt::getNextSrat(acpi_rsdtS *rsdt, void **const handle)
 		};
 	};
 
+	destroyContext(context);
 	return ret;
 }
 
-acpi_rMadtS *acpiRsdt::getNextMadt(acpi_rsdtS *rsdt, void **const handle)
+acpi_rMadtS *acpiRsdt::getNextMadt(
+	acpi_rsdtS *rsdt, void **const context, void **const handle
+	)
 {
 	acpi_sdtS	*sdt;
 	acpi_rMadtS	*ret=__KNULL;
@@ -109,7 +123,7 @@ acpi_rMadtS *acpiRsdt::getNextMadt(acpi_rsdtS *rsdt, void **const handle)
 
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
-		sdt = (acpi_sdtS *)acpi_tmpMapSdt(*(paddr_t *)*handle);
+		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
 		if (strncmp(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
 		{
 			ret = (acpi_rMadtS *)acpi_mapTable(
@@ -123,10 +137,13 @@ acpi_rMadtS *acpiRsdt::getNextMadt(acpi_rsdtS *rsdt, void **const handle)
 		};
 	};
 
+	destroyContext(context);
 	return ret;
 }
 
-acpi_rFacpS *acpiRsdt::getNextFacp(acpi_rsdtS *rsdt, void **const handle)
+acpi_rFacpS *acpiRsdt::getNextFacp(
+	acpi_rsdtS *rsdt, void **const context, void **const handle
+	)
 {
 	acpi_sdtS	*sdt;
 	acpi_rFacpS	*ret=__KNULL;
@@ -137,7 +154,7 @@ acpi_rFacpS *acpiRsdt::getNextFacp(acpi_rsdtS *rsdt, void **const handle)
 
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
-		sdt = (acpi_sdtS *)acpi_tmpMapSdt(*(paddr_t *)*handle);
+		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
 		if (strncmp(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
 		{
 			ret = (acpi_rFacpS *)acpi_mapTable(
@@ -151,6 +168,7 @@ acpi_rFacpS *acpiRsdt::getNextFacp(acpi_rsdtS *rsdt, void **const handle)
 		};
 	};
 
+	destroyContext(context);
 	return ret;
 }
 

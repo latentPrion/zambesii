@@ -73,7 +73,7 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 	acpi_rsdtS		*rsdt;
 	acpi_rSratS		*srat;
 	acpi_rSratCpuS		*cpuEntry;
-	void			*handle, *handle2;
+	void			*handle, *handle2, *context;
 	ubit32			nEntries=0, i=0;
 	
 
@@ -89,10 +89,9 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 	rsdt = acpi::getRsdt();
 
 	// Get the SRAT (all if multiple).
-	handle = __KNULL;
-	srat = acpiRsdt::getNextSrat(rsdt, &handle);
-	for (; srat != __KNULL;
-		srat = acpiRsdt::getNextSrat(rsdt, &handle))
+	context = handle = __KNULL;
+	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
+	while (srat != __KNULL)
 	{
 		// For each SRAT (if multiple), get the LAPIC entries.
 		handle2 = __KNULL;
@@ -103,6 +102,9 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 			// Count the number of entries there are in all.
 			nEntries++;
 		};
+
+		acpiRsdt::destroySdt((acpi_sdtS *)srat);
+		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
 	__kprintf(NOTICE CPUMOD"getNumaMap(): %d LAPIC SRAT entries.\n",
@@ -132,10 +134,9 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 	};
 
 	// Reparse entries and create generic kernel CPU map.
-	handle = __KNULL;
-	srat = acpiRsdt::getNextSrat(rsdt, &handle);
-	for (; srat != __KNULL;
-		srat = acpiRsdt::getNextSrat(rsdt, &handle))
+	context = handle = __KNULL;
+	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
+	while (srat != __KNULL)
 	{
 		handle2 = __KNULL;
 		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
@@ -169,6 +170,9 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 					NUMACPUMAP_FLAGS_ONLINE);
 			};
 		};
+
+		acpiRsdt::destroySdt((acpi_sdtS *)srat);
+		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
 	ret->nCpuEntries = nEntries;
@@ -206,7 +210,7 @@ chipsetNumaMapS *ibmPc_cpuMod_getNumaMap(void)
 chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 {
 	x86_mpCfgCpuS	*mpCpu;
-	void		*handle, *handle2;
+	void		*handle, *handle2, *context;
 	uarch_t		pos=0, nEntries, i;
 	chipsetSmpMapS	*ret;
 	acpi_rsdtS	*rsdt;
@@ -258,10 +262,10 @@ chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 
 	// Now look for an MADT.
 	rsdt = acpi::getRsdt();
-	handle = __KNULL;
+	context = handle = __KNULL;
 	nEntries = 0;
-	for (madt = acpiRsdt::getNextMadt(rsdt, &handle);
-		madt != __KNULL; madt = acpiRsdt::getNextMadt(rsdt, &handle))
+	madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
+	while (madt != __KNULL)
 	{
 		handle2 = __KNULL;
 		for (madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2);
@@ -274,6 +278,9 @@ chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 				nEntries++;
 			};
 		};
+
+		acpiRsdt::destroySdt((acpi_sdtS *)madt);
+		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 	};
 
 	__kprintf(NOTICE SMPINFO"getSmpMap: ACPI: %d valid CPU entries.\n",
@@ -296,10 +303,10 @@ chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 		return __KNULL;
 	};
 
-	handle = __KNULL;
-	for (i=0, madt = acpiRsdt::getNextMadt(rsdt, &handle);
-		madt != __KNULL;
-		madt = acpiRsdt::getNextMadt(rsdt, &handle))
+	i=0;
+	context = handle = __KNULL;
+	madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
+	while (madt != __KNULL)
 	{
 		handle2 = __KNULL;
 		for (madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2);
@@ -321,6 +328,9 @@ chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 				"un-enabled CPU %d, ACPI ID %d.\n",
 				madtCpu->lapicId, madtCpu->acpiLapicId);
 		};
+
+		acpiRsdt::destroySdt((acpi_sdtS *)madt);
+		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 	};
 
 	ret->nEntries = i;
@@ -451,7 +461,7 @@ cpu_t ibmPc_cpuMod_getBspId(void)
 	x86_mpCfgS		*cfgTable;
 	acpi_rsdtS		*rsdt;
 	acpi_rMadtS		*madt;
-	void			*handle;
+	void			*handle, *context;
 	paddr_t			tmp;
 
 	/* At some point I'll rewrite this function: it's very unsightly.
@@ -491,11 +501,12 @@ tryAcpi:
 		};
 
 		rsdt = acpi::getRsdt();
-		handle = __KNULL;
-		madt = acpiRsdt::getNextMadt(rsdt, &handle);
+		context = handle = __KNULL;
+		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 		if (madt == __KNULL) { goto useDefaultPaddr; };
 		infoCache.lapicPaddr = (paddr_t)madt->lapicPaddr;
 
+		acpiRsdt::destroyContext(&context);
 		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
 #endif
 		goto initLibLapic;

@@ -57,7 +57,7 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 	acpi_rsdtS		*rsdt;
 	acpi_rSratS		*srat;
 	acpi_rSratMemS		*memEntry;
-	void			*handle, *sratHandle;
+	void			*handle, *sratHandle, *context;
 	ubit32			nEntries=0, currEntry=0;
 
 	/**	EXPLANATION:
@@ -75,10 +75,10 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 	rsdt = acpi::getRsdt();
 
 	// Now look for an SRAT entry in the RSDT.
-	handle = __KNULL;
-	srat = acpiRsdt::getNextSrat(rsdt, &handle);
+	context = handle = __KNULL;
+	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	// First run: find out how many entries exist.
-	for (; srat != __KNULL; srat = acpiRsdt::getNextSrat(rsdt, &handle))
+	while (srat != __KNULL) 
 	{
 		sratHandle = __KNULL;
 		memEntry = acpiRSrat::getNextMemEntry(srat, &sratHandle);
@@ -90,6 +90,7 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 		};
 
 		acpiRsdt::destroySdt((acpi_sdtS *)srat);
+		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
 	ret = new chipsetNumaMapS;
@@ -104,11 +105,11 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 		return __KNULL;
 	};
 
-	handle = __KNULL;
-	srat = acpiRsdt::getNextSrat(rsdt, &handle);
+	context = handle = __KNULL;
+	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 
 	// Second run: Fill out kernel NUMA map.
-	for (; srat != __KNULL; srat = acpiRsdt::getNextSrat(rsdt, &handle))
+	while (srat != __KNULL)
 	{
 		sratHandle = __KNULL;
 		memEntry = acpiRSrat::getNextMemEntry(srat, &sratHandle);
@@ -162,6 +163,7 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 		};
 
 		acpiRsdt::destroySdt((acpi_sdtS *)srat);
+		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
 	ret->nMemEntries = currEntry;

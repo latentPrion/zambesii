@@ -16,6 +16,17 @@ void __kcpuPowerOnMain(void)
 	/**	EXPLANATION:
 	 * Main path for a waking x86-32 CPU. Do the basics to get the CPU in
 	 * synch with the kernel.
+	 *
+	 * Waking CPUs MUST NOT allocate memory from the kernel address space
+	 * or do anything which would require accessing or changing the kernel
+	 * page tables and translation information. Right now, other CPUs are
+	 * waking up, and when a kernel page is mapped anew, we need to
+	 * flush the TLB on all other CPUs.
+	 *
+	 * But since we're currently waking APs, we could send out a global
+	 * TLB flush request before a CPU is fully initialized and in a state
+	 * to handle inter-CPU-messages, and thus cause that waking CPU to
+	 * crash.
 	 **/
 
 	// Retrieve the stream pointer and release the lock asap.
