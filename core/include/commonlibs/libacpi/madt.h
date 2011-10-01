@@ -66,7 +66,20 @@ struct acpi_rMadtIrqSourceOverS
 	ubit16		flags;
 };
 
-	
+#define ACPI_MADT_NMI_LAPICID_ALL	0xFF
+
+#define ACPI_MADT_NMI_FLAGS_GET_POLARITY(_f)		((_f) & 0x3)
+#define ACPI_MADT_NMI_FLAGS_GET_TRIGGERMODE(_f)		(((_f) >> 2) & 0x3)
+
+struct acpi_rMadtLapicNmiS
+{
+	ubit8		type;
+	ubit8		length;
+	ubit8		acpiLapicId;
+	ubit16		flags;
+	ubit8		lapicLint;
+} __attribute__((packed));
+
 #ifdef __cplusplus
 
 namespace acpiRMadt
@@ -74,6 +87,9 @@ namespace acpiRMadt
 	// Return next LAPIC entry.
 	acpi_rMadtCpuS *getNextCpuEntry(acpi_rMadtS *madt, void **const handle);
 	acpi_rMadtIoApicS *getNextIoApicEntry(
+		acpi_rMadtS *madt, void **const handle);
+
+	acpi_rMadtLapicNmiS *getNextLapicNmiEntry(
 		acpi_rMadtS *madt, void **const handle);
 }
 

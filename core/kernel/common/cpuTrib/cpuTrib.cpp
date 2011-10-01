@@ -35,6 +35,7 @@ static numaBankId_t	highestBankId=0;
 cpuTribC::cpuTribC(void)
 {
 	bspId = 0;
+	usingChipsetSmpMode = 0;
 }
 
 error_t cpuTribC::initialize2(void)
@@ -95,6 +96,21 @@ error_t cpuTribC::initialize2(void)
 			if (!(*cpuMod->checkSmpSanity)()) {
 				goto fallbackToUp;
 			};
+
+			/**	NOTE:
+			 * If even one CPU can operate in SMP mode, we will
+			 * make use of the chipset's SMP interrupt routing
+			 * logic in preference to its uniprocessor routing
+			 * logic.
+			 *
+			 * On the PC, this means that if we get even one CPU
+			 * with LAPIC usable, we will proceed with SMP mode.
+			 * If it turns out in the end that only one CPU is
+			 * usable, it just means that we are in SMP mode with
+			 * only one CPU...but we still get the benefits of the
+			 * IO APIC interrupt routing system which is worth it.
+			 **/
+			usingChipsetSmpMode = 1;
 
 #if __SCALING__ >= SCALING_CC_NUMA
 			numaMap = (*cpuMod->getNumaMap)();
@@ -177,7 +193,8 @@ error_t cpuTribC::initialize2(void)
 		{
 			ret = spawnStream(
 				numaMap->cpuEntries[i].bankId,
-				numaMap->cpuEntries[i].cpuId);
+				numaMap->cpuEntries[i].cpuId,
+				numaMap->cpuEntries[i].cpuAcpiId);
 
 			if (ret != ERROR_SUCCESS)
 			{
@@ -280,6 +297,7 @@ error_t cpuTribC::initialize2(void)
 
 			ret = spawnStream(
 				CHIPSET_CPU_NUMA_SHBANKID,
+				smpMap->entries[i].cpuId,
 				smpMap->entries[i].cpuId);
 
 			if (ret != ERROR_SUCCESS)
@@ -309,7 +327,8 @@ error_t cpuTribC::initialize2(void)
 		{
 			ret = spawnStream(
 				CHIPSET_CPU_NUMA_SHBANKID,
-				smpMap->entries[i].cpuId);
+				smpMap->entries[i].cpuId,
+				smpMap->entries[i].cpuAcpiId);
 
 			if (ret != ERROR_SUCCESS)
 			{
@@ -343,7 +362,7 @@ fallbackToUp:
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-	ret = spawnStream(CHIPSET_CPU_NUMA_SHBANKID, bspId);
+	ret = spawnStream(CHIPSET_CPU_NUMA_SHBANKID, bspId, bspId);
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(ERROR CPUTRIB"Failed to create ShBank on a non-UP "
@@ -453,7 +472,7 @@ void cpuTribC::destroyBank(numaBankId_t id)
 	availableBanks.unsetSingle(id);
 }
 
-error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
+error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
 {
 	cpuStreamC	*cs;
 	numaCpuBankC	*ncb;
@@ -481,6 +500,7 @@ error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid)
 	if (cid == bspId)
 	{
 		getStream(cid)->bankId = bid;
+		getStream(cid)->cpuAcpiId = acpiId;
 		getStream(cid)->initialize();
 	};
 asm volatile ("hlt \n\t");
@@ -510,7 +530,7 @@ asm volatile ("hlt \n\t");
 	// Don't re-allocate the BSP.
 	if (cid != bspId)
 	{
-		cs = new cpuStreamC(bid, cid);
+		cs = new cpuStreamC(bid, cid, acpiId);
 		if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
 		cpuStreams.addItem(cid, cs);

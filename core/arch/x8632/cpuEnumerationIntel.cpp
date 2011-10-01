@@ -296,21 +296,22 @@ status_t intelBrandStringEnum(void)
 	ubit32		eax, ebx, ecx, edx, cpuIdIndex=0x80000002;
 	utf8Char	*brandString;
 
-	brandString = new utf8Char[48];
+	brandString = new utf8Char[49];
 	if (brandString == __KNULL)
 	{
 		__kprintf(ERROR INTELENUM"Unable to allocate room for brand string.\n");
 		return CPUENUM_CPU_MODEL_UNKNOWN;
 	};
 
+	brandString[48] = '\0';
 	// Call CPUID and get moving.
 	for (ubit32 i=0; i<3; i++, cpuIdIndex++)
 	{
 		execCpuid(cpuIdIndex, &eax, &ebx, &ecx, &edx);
 		strncpy8(&brandString[i * 16], CC(&eax), 4);
-		strncpy8(&brandString[(i + 16) + 4], CC(&ebx), 4);
-		strncpy8(&brandString[(i + 16) + 8], CC(&ecx), 4);
-		strncpy8(&brandString[(i + 16) + 12], CC(&edx), 4);
+		strncpy8(&brandString[(i * 16) + 4], CC(&ebx), 4);
+		strncpy8(&brandString[(i * 16) + 8], CC(&ecx), 4);
+		strncpy8(&brandString[(i * 16) + 12], CC(&edx), 4);
 	};
 
 	cpuTrib.getCurrentCpuStream()

@@ -35,7 +35,7 @@ class cpuStreamC
 public streamC
 {
 public:
-	cpuStreamC(numaBankId_t bid, cpu_t id);
+	cpuStreamC(numaBankId_t bid, cpu_t id, ubit32 acpiId);
 
 	void baseInit(void);
 	error_t initialize(void);
@@ -51,6 +51,7 @@ public:
 	// Do *NOT* move currentTask from where it is.
 	taskC			*currentTask;
 	cpu_t			cpuId;
+	ubit32			cpuAcpiId;
 	numaBankId_t		bankId;
 	cpuFeaturesS		cpuFeatures;
 	// Per CPU scheduler.

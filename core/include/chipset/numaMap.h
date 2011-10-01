@@ -21,6 +21,7 @@ struct numaCpuMapEntryS
 {
 	numaBankId_t	bankId;
 	cpu_t		cpuId;
+	ubit32		cpuAcpiId;
 	uarch_t		flags;
 };
 

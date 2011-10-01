@@ -69,3 +69,36 @@ acpi_rMadtIoApicS *acpiRMadt::getNextIoApicEntry(
 	return __KNULL;
 }
 
+acpi_rMadtLapicNmiS *acpiRMadt::getNextLapicNmiEntry(
+	acpi_rMadtS *madt, void **const handle
+	)
+{
+	acpi_rMadtLapicNmiS	*ret=__KNULL;
+
+	if (*handle == __KNULL) {
+		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
+	};
+
+	while (*handle < ACPI_TABLE_GET_ENDADDR(madt))
+	{
+		switch (ACPI_MADT_GET_TYPE(*handle))
+		{
+		case ACPI_MADT_TYPE_LAPIC_NMI:
+			ret = static_cast<acpi_rMadtLapicNmiS *>( *handle );
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+
+			return ret;
+
+		default:
+			// Use the 'length' member to skip over all others.
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+
+			break;
+		};
+	};
+
+	return __KNULL;
+}
+

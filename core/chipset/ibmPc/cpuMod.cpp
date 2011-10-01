@@ -143,7 +143,19 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2),
 			i++)
 		{
+			/**	FIXME
+			 * For this case, we don't know what the correct ACPI
+			 * ID is. We'd like to assume of course, that the ACPI
+			 * ID is the same as the LAPIC ID. This is often not
+			 * the case.
+			 *
+			 * The most effective solution may be to cross check
+			 * the SRAT entries with the MADT entries and try
+			 * to determine if the CPU is also in the MADT. Then we
+			 * can extract its ACPI ID from there.
+			 **/
 			ret->cpuEntries[i].cpuId = cpuEntry->lapicId;
+			ret->cpuEntries[i].cpuAcpiId = cpuEntry->lapicId;
 			ret->cpuEntries[i].bankId =
 				cpuEntry->domain0
 				| (cpuEntry->domain1 & 0xFFFFFF00);
@@ -298,6 +310,9 @@ chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 				madtCpu->flags, ACPI_MADT_CPU_FLAGS_ENABLED))
 			{
 				ret->entries[i].cpuId = madtCpu->lapicId;
+				ret->entries[i].cpuAcpiId
+					= madtCpu->acpiLapicId;
+
 				ret->entries[i].flags = 0;
 				i++;
 				continue;

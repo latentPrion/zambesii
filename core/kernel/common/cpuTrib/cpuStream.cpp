@@ -9,12 +9,12 @@
 #include <__kthreads/__kcpuPowerOn.h>
 
 // We make a global cpuStream for the bspCpu.
-cpuStreamC		bspCpu(0, 0);
+cpuStreamC		bspCpu(0, 0, 0);
 
 
-cpuStreamC::cpuStreamC(numaBankId_t bid, cpu_t cid)
+cpuStreamC::cpuStreamC(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
 :
-cpuId(cid), bankId(bid), scheduler(this)
+cpuId(cid), cpuAcpiId(acpiId), bankId(bid), scheduler(this)
 {
 	// Nothing to be done for now.
 }

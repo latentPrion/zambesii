@@ -158,6 +158,7 @@ struct x86_mpCfgIrqSourceS
 	ubit8		destIoApicVector;
 } __attribute__((packed));
 
+#define x86_MPCFG_LIRQSRC_DEST_ALL			0xFF
 
 #define x86_MPCFG_LIRQSRC_FLAGS_POLARITY_MASK		0x3
 #define x86_MPCFG_LIRQSRC_FLAGS_POLARITY_SHIFT		0
@@ -186,7 +187,7 @@ struct x86_mpCfgLocalIrqSourceS
 	ubit8		sourceBusId;
 	ubit8		sourceBusIrq;
 	ubit8		destLapicId;
-	ubit8		destLapicVector;
+	ubit8		destLapicLint;
 } __attribute__((packed));
 
 
@@ -229,6 +230,9 @@ namespace x86Mp
 	x86_mpCfgCpuS *getNextCpuEntry(uarch_t *pos, void **const handle);
 	// Iterates through all I/O APIC entries in the config.
 	x86_mpCfgIoApicS *getNextIoApicEntry(uarch_t *pos, void **const handle);
+	// Iterates through all Local interrupt entries in the config.
+	x86_mpCfgLocalIrqSourceS *getNextLocalIrqSourceEntry(
+		uarch_t *pos, void **handle);
 
 	// Following return stuff from the cache mostly.
 	ubit32 getLapicPaddr(void);

@@ -32,6 +32,7 @@
 struct chipsetSmpMapEntryS
 {
 	cpu_t		cpuId;
+	ubit32		cpuAcpiId;
 	uarch_t		flags;
 };
 

@@ -62,20 +62,21 @@ static status_t amdBrandStringEnum(void)
 	ubit32		eax, ebx, ecx, edx, cpuIdIndex=0x80000002;
 	utf8Char	*brandString;
 
-	brandString = new utf8Char[48];
+	brandString = new utf8Char[49];
 	if (brandString == __KNULL)
 	{
 		__kprintf(ERROR AMDENUM"Unable to alloc mem brandstring.\n");
 		return CPUENUM_CPU_MODEL_UNKNOWN;
 	};
 
+	brandString[48] = '\0';
 	for (ubit32 i=0; i<3; i++, cpuIdIndex++)
 	{
 		execCpuid(cpuIdIndex, &eax, &ebx, &ecx, &edx);
 		strncpy8(&brandString[i * 16], CC(&eax), 4);
-		strncpy8(&brandString[(i + 16) + 4], CC(&ebx), 4);
-		strncpy8(&brandString[(i + 16) + 8], CC(&ecx), 4);
-		strncpy8(&brandString[(i + 16) + 12], CC(&edx), 4);
+		strncpy8(&brandString[(i * 16) + 4], CC(&ebx), 4);
+		strncpy8(&brandString[(i * 16) + 8], CC(&ecx), 4);
+		strncpy8(&brandString[(i * 16) + 12], CC(&edx), 4);
 	};
 
 	cpuTrib.getCurrentCpuStream()
@@ -134,7 +135,6 @@ status_t x86CpuEnumeration::amd(void)
 	{
 		__kprintf(NOTICE AMDENUM"CPUID brand string supported.\n");
 		if (amdBrandStringEnum() == ERROR_SUCCESS) {
-__kprintf(NOTICE AMDENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
 			return ERROR_SUCCESS;
 		};
 	};
@@ -145,7 +145,6 @@ __kprintf(NOTICE AMDENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()
 	{
 		__kprintf(NOTICE AMDENUM"CPU signature supported.\n");
 		if (amdSignatureEnum() == ERROR_SUCCESS) {
-__kprintf(NOTICE AMDENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
 			return ERROR_SUCCESS;
 		};
 	};

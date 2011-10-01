@@ -4,6 +4,7 @@
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
+	#include "mpTables.h"
 
 #define x86LAPIC		"LAPIC: "
 // "LAPIC 00"
@@ -88,6 +89,10 @@
 #define x86LAPIC_IPI_SHORTDEST_BROAD_INC	0x2
 #define x86LAPIC_IPI_SHORTDEST_BROAD_EXC	0x3
 
+#define x86LAPIC_LINT_TYPE_NMI			0x0
+#define x86LAPIC_LINT_TYPE_EXTINT		0x1
+#define x86LAPIC_LINT_TYPE_INT			0x2
+#define x86LAPIC_LINT_TYPE_SMI			0x3
 
 struct x86LapicCacheS
 {
@@ -114,14 +119,69 @@ namespace x86Lapic
 	void write16(ubit32 offset, ubit16 val);
 	void write32(ubit32 regOffset, ubit32 value);
 
+	void softEnable(void);
+	void softDisable(void);
+	sarch_t isSoftEnabled(void);
+
+	void hardEnable(void);
+	void hardDisable(void);
+	sarch_t isHardEnabled(void);
+
 	// IPI-related functions.
 	error_t sendPhysicalIpi(
 		ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest);
 
 	void sendClusterIpi(ubit8 type, ubit8 vector, ubit8 cluster, ubit8 cpu);
 	void sendFlatLogicalIpi(ubit8 type, ubit8 vector, ubit8 mask);
+
+	/* LINT pin related functions.
+	 *
+	 * The "flags" arg expects the flags to be in the same format as the
+	 * MP specification's "flags" field for the Local Interrupt Source
+	 * entries.
+	 **/
+	void lintSetup(
+		ubit8 lint, ubit8 intType, ubit32 flags, ubit8 vector);
+
+	void lintEnable(ubit8 lint);
+	void lintDisable(ubit8 lint);
+	ubit8 lintConvertMpCfgType(ubit8);
+	ubit32 lintConvertMpCfgFlags(ubit32);
+	ubit32 lintConvertAcpiFlags(ubit32);
+
+	void setupLvtError(ubit8 vector);
 }
 
+inline ubit8 x86Lapic::lintConvertMpCfgType(ubit8 mpTypeField)
+{
+	switch (mpTypeField)
+	{
+	case x86_MPCFG_LIRQSRC_INTTYPE_INT:
+		return x86LAPIC_LINT_TYPE_INT;
+
+	case x86_MPCFG_LIRQSRC_INTTYPE_NMI:
+		return x86LAPIC_LINT_TYPE_NMI;
+
+	case x86_MPCFG_LIRQSRC_INTTYPE_SMI:
+		return x86LAPIC_LINT_TYPE_SMI;
+
+	case x86_MPCFG_LIRQSRC_INTTYPE_EXTINT:
+		return x86LAPIC_LINT_TYPE_EXTINT;
+
+	default: return x86LAPIC_LINT_TYPE_INT;
+	};
+}
+
+// Both ACPI and MP tables use the same flag bit positions, so we will too.
+inline ubit32 x86Lapic::lintConvertMpCfgFlags(ubit32 mpFlagField)
+{
+	return mpFlagField;
+}
+
+inline ubit32 x86Lapic::lintConvertAcpiFlags(ubit32 acpiFlagField)
+{
+	return acpiFlagField;
+}
 
 #endif
 

@@ -56,7 +56,7 @@ public:
 public:
 	// Gets the Stream for 'cpu'.
 	cpuStreamC *getStream(cpu_t cpu);
-	error_t spawnStream(numaBankId_t bid, cpu_t cid);
+	error_t spawnStream(numaBankId_t bid, cpu_t cid, ubit32 cpuAcpiId);
 	void destroyStream(cpu_t cpuId);
 
 	// Quickly acquires the current CPU's Stream.
@@ -66,9 +66,12 @@ public:
 	error_t createBank(numaBankId_t id);
 	void destroyBank(numaBankId_t id);
 
+	sarch_t usingSmpMode(void) { return usingChipsetSmpMode; };
+
 public:
 	bitmapC		availableBanks, availableCpus, onlineCpus;
 	cpu_t		bspId;
+	ubit8		usingChipsetSmpMode;
 
 private:
 #if __SCALING__ >= SCALING_SMP
