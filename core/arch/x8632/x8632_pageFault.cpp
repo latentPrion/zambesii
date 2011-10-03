@@ -29,8 +29,8 @@ status_t x8632_page_fault(taskContextS *regs)
 	paddr_t		pmap;
 	uarch_t		__kflags;
 
-	memoryStream = cpuTrib.getCurrentCpuStream()->currentTask->parent
-		->memoryStream;
+	memoryStream = cpuTrib.getCurrentCpuStream()
+		->taskStream.currentTask->parent->memoryStream;
 
 	status = walkerPageRanger::lookup(
 		&memoryStream->vaddrSpaceStream.vaddrSpace,

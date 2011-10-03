@@ -38,7 +38,7 @@ status_t walkerPageRanger::unmap(
 	);
 
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->currentTask->parent->memoryStream
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
 		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.acquire();
 
 	l0Current = l0Start;
@@ -190,13 +190,16 @@ status_t walkerPageRanger::unmap(
 		};
 	};
 
-	cpuTrib.getCurrentCpuStream()->currentTask->parent->memoryStream
+#if __SCALING__ > SCALING_SMP
+	tlbControl::smpFlushEntryRange(vaddr, ret);
+#else
+	tlbControl::flushEntryRange(vaddr, ret);
+#endif
+
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
 		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.release();
 
 	vaddrSpace->level0Accessor.lock.release();
-
-	// Flush the entire range.
-	tlbControl::flushEntryRange(vaddr, nPages);
 
 	return ret;
 }

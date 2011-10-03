@@ -225,11 +225,21 @@ void x86Lapic::lintSetup(ubit8 lint, ubit8 type, ubit32 flags, ubit8 vector)
 		outval);
 }
 
-#define x86LAPIC_LVT_ERR_DISABLE	(1<<16)
+#define x86LAPIC_LVT_ERR_FLAGS_DISABLE	(1<<16)
 
 void x86Lapic::setupLvtError(ubit8 vector)
 {
 	x86Lapic::write32(x86LAPIC_REG_LVT_ERR, 0 | vector);
+}
+
+#define x86LAPIC_SPURIOUS_VECTOR_FLAGS_DISABLE		(1<<8)
+
+void x86Lapic::setupSpuriousVector(ubit8 vector)
+{
+	ubit32		outval;
+
+	outval = x86Lapic::read32(x86LAPIC_REG_SPURIOUS_VECT);
+	x86Lapic::write32(x86LAPIC_REG_SPURIOUS_VECT, outval | vector);
 }
 
 ubit8 x86Lapic::read8(ubit32 offset)

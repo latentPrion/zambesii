@@ -123,7 +123,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 #if __SCALING__ >= SCALING_CC_NUMA
 		nFrames = memoryTribPmm::configuredGetFrames(
 			&cpuTrib.getCurrentCpuStream()
-				->currentTask->localAffinity,
+				->taskStream.currentTask->localAffinity,
 			commit - totalFrames, &p);
 #else
 		nFrames = memoryTribPmm::fragmentedGetFrames(

@@ -21,7 +21,7 @@ void recursiveLockC::acquire(void)
 {
 	taskC	*task;
 
-	task = cpuTrib.getCurrentCpuStream()->currentTask;
+	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
 
 #if __SCALING__ >= SCALING_SMP
 	for (;;)
@@ -107,7 +107,7 @@ void recursiveLockC::release(void)
 #endif
 			cpuControl::enableInterrupts();
 		};
-	cpuTrib.getCurrentCpuStream()->currentTask->nLocksHeld--;
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->nLocksHeld--;
 	};
 }
 

@@ -7,6 +7,7 @@
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/numaCpuBank.h>
+	#include <kernel/common/waitLock.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/cpuTrib/cpuStream.h>
@@ -69,9 +70,9 @@ public:
 	sarch_t usingSmpMode(void) { return usingChipsetSmpMode; };
 
 public:
-	bitmapC		availableBanks, availableCpus, onlineCpus;
-	cpu_t		bspId;
-	ubit8		usingChipsetSmpMode;
+	bitmapC			availableBanks, availableCpus, onlineCpus;
+	cpu_t			bspId;
+	ubit8			usingChipsetSmpMode;
 
 private:
 #if __SCALING__ >= SCALING_SMP
@@ -81,7 +82,6 @@ private:
 	cpuStreamC		*cpu;
 	numaCpuBankC		*cpuBank;
 #endif
-
 };
 
 extern cpuTribC		cpuTrib;

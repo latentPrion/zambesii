@@ -28,7 +28,7 @@ error_t cpuTribC::initialize(void)
 	// Spawn the BSP CPU Stream.
 	bspCpu.id = CPUID_INVALID;
 	bspCpu.bankId = NUMABANKID_INVALID;
-	bspCpu.currentTask = &__korientationThread;
+	bspCpu.taskStream.currentTask = &__korientationThread;
 	bspCpu.cpuFeatures.fpuLevel = 0;
 	bspCpu.cpuFeatures.clockMhz = 0;
 	// Let the CPU know that it is the BSP.

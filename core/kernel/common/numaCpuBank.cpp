@@ -28,10 +28,10 @@ error_t numaCpuBankC::schedule(taskC*task)
 		{
 			curCpu = cpuTrib.getStream(i);
 			if (curCpu == __KNULL) { continue; };
-			if (curCpu->scheduler.getLoad()	< lowestLoad)
+			if (curCpu->taskStream.getLoad() < lowestLoad)
 			{
 				bestCpu = curCpu;
-				lowestLoad = curCpu->scheduler.getLoad();
+				lowestLoad = curCpu->taskStream.getLoad();
 			};
 		};
 	};
@@ -40,7 +40,7 @@ error_t numaCpuBankC::schedule(taskC*task)
 		return ERROR_UNKNOWN;
 	};
 
-	return bestCpu->scheduler.schedule(task);
+	return bestCpu->taskStream.schedule(task);
 }
 #endif
 

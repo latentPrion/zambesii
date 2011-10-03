@@ -157,7 +157,7 @@ error_t processStreamC::spawnThread(
 	 * defaults.
 	 **/
 
-	spawningTask = cpuTrib.getCurrentCpuStream()->currentTask;
+	spawningTask = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
 	if (__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD))
 	{
 		ret = initializeFirstThread(

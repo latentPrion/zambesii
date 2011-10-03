@@ -50,7 +50,7 @@ status_t walkerPageRanger::mapInc(
 
 	// Lock off the address spaces to show we mean srs bsns.
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->currentTask->parent->memoryStream
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
 		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.acquire();
 
 	for (l0Current = l0Start; l0Current <= l0End; l0Current++)
@@ -151,16 +151,18 @@ status_t walkerPageRanger::mapInc(
 	};
 
 out:
+
+	// Flush all modified pages, using inter-CPU messages if necessary.
+#if __SCALING__ > SCALING_SMP
+	tlbControl::smpFlushEntryRange(vaddr, ret);
+#else
+	tlbControl::flushEntryRange(vaddr, ret);
+#endif
 	// Release both locks.
 	vaddrSpace->level0Accessor.lock.release();
-	cpuTrib.getCurrentCpuStream()->currentTask->parent->memoryStream
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
 		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.release();
 
-	/* At this point, we need to flush all entries that were touched. Also:
-	 * FIXME: Replace this with smpFlushEntryRange(), passing the cpuTrace
-	 * bitmap from the task.
-	 **/
-	tlbControl::flushEntryRange(vaddr, ret);
 
 	/*	FIXME:
 	 * Code is needed here to examine our run just now, to see whether or

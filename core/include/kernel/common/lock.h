@@ -15,7 +15,10 @@ public:
 		lock = 0;
 		flags = 0;
 		magic = LOCK_MAGIC;
-	}
+	};
+
+	void setLock(void) { lock = 1; };
+	void unlock(void) { lock = 0; };
 
 protected:
 #if __SCALING__ >= SCALING_SMP

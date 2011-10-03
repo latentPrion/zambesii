@@ -59,6 +59,9 @@
 #define x86LAPIC_REG_CURR_COUNT		0x390
 #define x86LAPIC_REG_DIV_CFG		0x3E0
 
+// x86 IPI vector. 0xFE is one int priority below the highest on LAPIC.
+#define x86LAPIC_IPI_VECTOR		0xFD
+
 #define x86LAPIC_IPI_DELIVERY_STATUS_PENDING	(1<<12)
 
 #define x86LAPIC_IPI_TYPE_SHIFT			8
@@ -149,6 +152,8 @@ namespace x86Lapic
 	ubit32 lintConvertMpCfgFlags(ubit32);
 	ubit32 lintConvertAcpiFlags(ubit32);
 
+	// This must always be 0xHF, where H is any hex digit, and F is fixed.
+	void setupSpuriousVector(ubit8 vector);
 	void setupLvtError(ubit8 vector);
 }
 

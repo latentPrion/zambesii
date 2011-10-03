@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../../cpuTrib.a
-OBJFILES=cpuTrib.o cpuStream.o chipsetSmpMode.o
+OBJFILES=cpuTrib.o cpuStream.o chipsetSmpMode.o interCpuMessager.o
 
 all: Makefile $(DELIVERABLE)
 

@@ -27,10 +27,7 @@
  * assisted TLB model provides, where the CPU reads directly to physical RAM. We
  * have to slowly map each frame we need to read into vmem.
  *
- * The obvious solution: Open notice to all architecture designers: "Please
- * include hardware assisted TLB loading in your CPUs."
- *
- * Although to be perfectly fair, if writing to and reading from the TLB on an
+ * To be perfectly fair, if writing to and reading from the TLB on an
  * architecture is very fast, then we can provide a very awesome optimization:
  * We could have a loadable TLB state for each process, which is saved on
  * process switch, and restored when a process is loaded onto a CPU. Which is
@@ -46,8 +43,8 @@ namespace tlbControl
 	// Clears the local TLB completely of all (even global) entries.
 	void purge(void);
 
-	void smpFlushSingleEntry(bitmapC *bmp, void *vaddr);
-	void smpFlushEntryRange(bitmapC *bmp, void *vaddr, uarch_t nPages);
+	void smpFlushSingleEntry(void *vaddr);
+	void smpFlushEntryRange(void *vaddr, uarch_t nPages);
 
 	// Called on by the page-translation-fault code.
 	error_t loadTranslation(void *vaddr);

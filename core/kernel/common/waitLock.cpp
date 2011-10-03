@@ -22,7 +22,7 @@ void waitLockC::acquire(void)
 	};
 #endif
 
-	task = cpuTrib.getCurrentCpuStream()->currentTask;
+	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
 	task->nLocksHeld++;
 }
 
@@ -47,7 +47,7 @@ void waitLockC::release(void)
 		cpuControl::enableInterrupts();
 	};
 
-	task = cpuTrib.getCurrentCpuStream()->currentTask;
+	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
 	task->nLocksHeld--;
 
 }
@@ -61,7 +61,7 @@ void waitLockC::releaseNoIrqs(void)
 	atomicAsm::set(&lock, 0);
 #endif
 
-	task = cpuTrib.getCurrentCpuStream()->currentTask;
+	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
 	task->nLocksHeld--;
 }
 

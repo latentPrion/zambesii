@@ -2,6 +2,7 @@
 #include <__ksymbols.h>
 #include <arch/paging.h>
 #include <arch/paddr_t.h>
+#include <arch/memory.h>
 #include <chipset/cpus.h>
 #include <chipset/pkg/chipsetPackage.h>
 #include <__kstdlib/__ktypes.h>
@@ -57,7 +58,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(
 		memoryTrib.__kmemoryStream,
 		initialize(
-			reinterpret_cast<void *>( 0xC0000000 + 0x400000 ),
+			reinterpret_cast<void *>(
+				ARCH_MEMORY___KLOAD_VADDR_BASE + 0x400000 ),
 			0x3FB00000, __KNULL),
 		ret);
 

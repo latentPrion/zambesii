@@ -14,7 +14,8 @@ cpuStreamC		bspCpu(0, 0, 0);
 
 cpuStreamC::cpuStreamC(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
 :
-cpuId(cid), cpuAcpiId(acpiId), bankId(bid), scheduler(this)
+cpuId(cid), cpuAcpiId(acpiId), bankId(bid),
+taskStream(this), interCpuMessager(this)
 {
 	// Nothing to be done for now.
 }

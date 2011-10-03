@@ -53,7 +53,7 @@ void cpuStreamC::baseInit(void)
 		: "r" (this));
 
 	// Load the __kcpuPowerOnThread into the currentTask holder.
-	currentTask = &__kcpuPowerOnThread;
+	taskStream.currentTask = &__kcpuPowerOnThread;
 }
 
 // Parses a MADT for NMI entries to be used to setup the LAPIC LINT inputs.
@@ -67,13 +67,13 @@ static void lintParseMadtForEntries(acpi_rMadtS *rmadt, cpuStreamC *caller)
 	while (nmiEntry != __KNULL)
 	{
 		// If this entry pertains to this CPU:
-		if (nmiEntry->acpiLapicId == caller->cpuAcpiId
-			|| nmiEntry->acpiLapicId == ACPI_MADT_NMI_LAPICID_ALL)
+		if (/*nmiEntry->acpiLapicId == caller->cpuAcpiId
+			|| nmiEntry->acpiLapicId == ACPI_MADT_NMI_LAPICID_ALL*/ 1)
 		{
 			__kprintf(NOTICE CPUSTREAM"%d: ACPI NMI: lint %d.\n",
 				caller->cpuId, nmiEntry->lapicLint);
 
-			x86Lapic::lintSetup(
+/*			x86Lapic::lintSetup(
 				nmiEntry->lapicLint,
 				x86LAPIC_LINT_TYPE_NMI,
 				x86Lapic::lintConvertAcpiFlags(
@@ -81,7 +81,7 @@ static void lintParseMadtForEntries(acpi_rMadtS *rmadt, cpuStreamC *caller)
 				0);
 
 			x86Lapic::lintEnable(nmiEntry->lapicLint);
-		};
+*/		};
 
 		nmiEntry = acpiRMadt::getNextLapicNmiEntry(rmadt, &handle);
 	};
@@ -135,10 +135,14 @@ static error_t initializeLapic(cpuStreamC *caller)
 	 * LAPIC is soft-enabled before trying to set up the rest of the LAPIC
 	 * operating state.
 	 **/
+	x86Lapic::setupSpuriousVector(0xFF);
 	// See above, explicitly enable LAPIC before fiddling with LVT regs.
 	x86Lapic::softEnable();
 	// Use vector 0xFF as the LAPIC error vector.
-	x86Lapic::setupLvtError(0xFF);
+	x86Lapic::setupLvtError(0xFE);
+
+	// This is called only when the CPU is ready to take IPIs.
+	caller->interCpuMessager.initialize();
 
 __kprintf(NOTICE CPUSTREAM"This cpu's acpi ID is: %d.\n", caller->cpuAcpiId);
 	// First print out the LAPIC Int assignment entries.

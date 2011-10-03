@@ -75,7 +75,7 @@ void taskStreamC::pullTask(void)
 execute:
 	newTask->currentCpu = curCpu;
 	newTask->schedState = TASKSTATE_RUNNING;
-	curCpu->currentTask = newTask;
+	currentTask = newTask;
 
 	// FIXME: Set nLocksHeld, etc here.
 

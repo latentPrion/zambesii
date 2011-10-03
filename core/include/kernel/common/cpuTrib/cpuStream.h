@@ -47,15 +47,48 @@ public:
 	status_t enumerate(void);
 	cpuFeaturesS *getCpuFeatureBlock(void);
 
+private:
+#if __SCALING__ >= SCALING_SMP
+	class interCpuMessagerC
+	{
+	public:
+		interCpuMessagerC(cpuStreamC *parent)
+		:
+		parent(parent)
+		{ message.lock.setLock(); };
+
+		error_t initialize(void);
+
+	public:
+		void flushTlbRange(void *vaddr, uarch_t nPages);
+		error_t dispatch(void);
+
+	private:
+		void set(ubit8 type,
+			uarch_t val0=0, uarch_t val1=0,
+			uarch_t val2=0, uarch_t val3=0);
+
+	private:
+		struct messageS
+		{
+			ubit8		type;
+			uarch_t		val0;
+			uarch_t		val1;
+			uarch_t		val2;
+			uarch_t		val3;
+		};
+		sharedResourceGroupC<waitLockC, messageS>	message;
+		cpuStreamC	*parent;
+	};
+#endif
+
 public:
-	// Do *NOT* move currentTask from where it is.
-	taskC			*currentTask;
 	cpu_t			cpuId;
 	ubit32			cpuAcpiId;
 	numaBankId_t		bankId;
 	cpuFeaturesS		cpuFeatures;
 	// Per CPU scheduler.
-	taskStreamC		scheduler;
+	taskStreamC		taskStream;
 
 	ubit32			flags;
 	/* Very small stack used to wake and power down CPUs.
@@ -65,6 +98,9 @@ public:
 	 **/
 	ubit8			sleepStack[PAGING_BASE_SIZE];
 	cpuStreamArchBlockS	archBlock;
+#if __SCALING__ >= SCALING_SMP
+	interCpuMessagerC	interCpuMessager;
+#endif
 };
 
 // The hardcoded stream for the BSP CPU.

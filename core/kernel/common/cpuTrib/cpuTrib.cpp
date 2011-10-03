@@ -537,7 +537,6 @@ asm volatile ("hlt \n\t");
 	};
 
 	ncb->cpus.setSingle(cid);
-	availableCpus.setSingle(cid);
 	__kprintf(NOTICE CPUTRIB"spawnStream(%d, %d): Successful.\n", bid, cid);
 	return ERROR_SUCCESS;
 }

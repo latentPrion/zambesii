@@ -46,7 +46,7 @@ status_t walkerPageRanger::lookup(
 
 	// They'll know we're SRS when we lock off the address spaces.
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->currentTask->parent->memoryStream
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
 		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.acquire();
 
 	l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Start];
@@ -147,7 +147,7 @@ status_t walkerPageRanger::lookup(
 	};
 
 	// Release both locks. Done with the SRS BSNS.
-	cpuTrib.getCurrentCpuStream()->currentTask->parent->memoryStream
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
 		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.release();
 
 	vaddrSpace->level0Accessor.lock.release();

@@ -121,7 +121,8 @@ processStreamC *processTribC::spawn(
 
 	newId = newIdTmp << PROCID_PROCESS_SHIFT;
 	// Get parent (spawning) process' process ID.
-	parentId = cpuTrib.getCurrentCpuStream()->currentTask->parent->id;
+	parentId = cpuTrib.getCurrentCpuStream()
+		->taskStream.currentTask->parent->id;
 
 	newProc = new processStreamC(newId, parentId);
 	if (newProc == __KNULL)
@@ -166,7 +167,7 @@ processStreamC *processTribC::spawn(
 		*err = affinity::copyLocal(
 			newProc->affinity.machines,
 			&cpuTrib.getCurrentCpuStream()
-				->currentTask->localAffinity);
+				->taskStream.currentTask->localAffinity);
 	}
 	else
 	{

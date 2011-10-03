@@ -46,6 +46,7 @@ private:
 public:
 	ubit32		load;
 	ubit32		capacity;
+	taskC		*currentTask;
 
 private:
 	// Three queues on each CPU: rr, rt and sleep.

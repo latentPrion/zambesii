@@ -282,7 +282,7 @@ parseMemoryMap:
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	ret = cpuTrib.getCurrentCpuStream()->currentTask
+	ret = cpuTrib.getCurrentCpuStream()->taskStream.currentTask
 		->localAffinity.memBanks.initialize(prevPos);
 
 	if (ret != ERROR_SUCCESS)
@@ -297,7 +297,7 @@ parseMemoryMap:
 	for (; pos != HWIDLIST_INDEX_INVALID; memoryBanks.getLoopItem(&pos))
 	{
 		defaultAffinity.memBanks.setSingle(pos);
-		cpuTrib.getCurrentCpuStream()->currentTask
+		cpuTrib.getCurrentCpuStream()->taskStream.currentTask
 			->localAffinity.memBanks.setSingle(pos);
 	};
 
@@ -323,7 +323,7 @@ parseMemoryMap:
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 		defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
-		cpuTrib.getCurrentCpuStream()->currentTask
+		cpuTrib.getCurrentCpuStream()->taskStream.currentTask
 			->localAffinity.def.rsrc =
 			CHIPSET_MEMORY_NUMA_SHBANKID;
 
