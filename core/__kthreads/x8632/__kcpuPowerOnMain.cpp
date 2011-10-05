@@ -40,6 +40,10 @@ void __kcpuPowerOnMain(void)
 
 	// Enumerates, sets up, etc.
 	myStream->initialize();
-	asm volatile ("hlt \n\t");
+
+	// Halt the CPU here.
+	for (;;) {
+		asm volatile ("hlt \n\t");
+	};
 }
 

@@ -4,9 +4,13 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/libx86mp.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/interruptTrib/interruptTrib.h>
 
 
-error_t x86Lapic::sendPhysicalIpi(
+static ubit8		handlerIsInstalled=0;
+
+error_t x86Lapic::ipi::sendPhysicalIpi(
 	ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest
 	)
 {
@@ -40,5 +44,25 @@ error_t x86Lapic::sendPhysicalIpi(
 
 	// Check for successful delivery here.
 	return (timeout != 0) ? ERROR_SUCCESS : ERROR_UNKNOWN;
+}
+
+void x86Lapic::ipi::installHandler(void)
+{
+	if (handlerIsInstalled) { return; };
+
+	// Ask the Interrupt Trib to take our handler.
+	interruptTrib.installException(
+		x86LAPIC_IPI_VECTOR, &x86Lapic::ipi::exceptionHandler);
+}
+
+status_t x86Lapic::ipi::exceptionHandler(struct taskContextS *regs)
+{
+	(void)regs;
+
+	__kprintf(NOTICE"CPU %d: in IPI handler.\n", cpuTrib.getCurrentCpuStream()->cpuId);
+	// Check messager and see why we got an IPI.
+	cpuTrib.getCurrentCpuStream()->interCpuMessager.dispatch();
+	sendEoi();
+	return ERROR_SUCCESS;
 }
 

@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <chipset/pkg/chipsetPackage.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
@@ -53,27 +54,8 @@ error_t interruptTribC::initialize(void)
 	assert_fatal(
 		(*chipsetPkg.intController->initialize)() == ERROR_SUCCESS);
 
-	// Mask every interrupt that has no handler currently installed.
-	for (uarch_t i=0; i<ARCH_IRQ_NVECTORS; i++)
-	{
-		if (!__KFLAG_TEST(
-			isrTable[i].flags, INTERRUPTTRIB_VECTOR_FLAGS_BOOTISR))
-		{
-			if ((*chipsetPkg.intController->maskSingle)(i)
-				!= ERROR_SUCCESS)
-			{
-				__KFLAG_SET(
-					isrTable[i].flags,
-					INTERRUPTTRIB_VECTOR_FLAGS_MASKFAILS);
-			}
-			else
-			{
-				__KFLAG_SET(
-					isrTable[i].flags,
-					INTERRUPTTRIB_VECTOR_FLAGS_MASKED);
-			};
-		};
-	};
+	// Ask the chipset to mask all IRQs at its irq controller(s).
+	(*chipsetPkg.intController->maskAll)();
 
 	/* At this point all unneeded vectors are masked off, and their
 	 * relevant flags are set to show that. All we need to do now is install
@@ -83,19 +65,56 @@ error_t interruptTribC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
+static void *getCr2(void)
+{
+	void *ret;
+	asm volatile (
+		"movl	%%cr2, %0\n\t"
+		: "=r" (ret));
+
+	return ret;
+}
+
 void interruptTribC::irqMain(taskContextS *regs)
 {
+/*	if (cpuTrib.getCurrentCpuStream()->cpuId == 1 && regs->vectorNo == 14)
+	{
+		__kprintf(FATAL"Inside of problem domain. %d nesting. Regdump:\n"
+			"cs %x, eip %x, ss %x, esp %x, faultaddr: %x.\n",
+			oo, regs->cs, regs->eip, regs->ss, regs->esp, getCr2());
+
+		asm volatile ("hlt\n\t");
+	};
+*/
 	__kprintf(NOTICE NOLOG"interruptTribC::irqMain: CPU %d entered "
 		"on vector %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
 
-	if (isrTable[regs->vectorNo].handler.isr) {
-		isrTable[regs->vectorNo].handler.except(regs);
+
+	if (__KFLAG_TEST(
+		isrTable[regs->vectorNo].flags,
+		INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION))
+	{
+		(*isrTable[regs->vectorNo].exception)(regs);
 	};
 
 	__kprintf(NOTICE NOLOG"interruptTribC::irqMain: Exiting on CPU %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId);
 
 	// Calls ISRs, then exit.
+}
+
+void interruptTribC::installException(uarch_t vector, exceptionFn *exception)
+{
+	isrTable[vector].exception = exception;
+	__KFLAG_SET(
+		isrTable[vector].flags, INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION);
+}
+
+void interruptTribC::removeException(uarch_t vector)
+{
+	isrTable[vector].exception = __KNULL;
+	__KFLAG_SET(
+		isrTable[vector].flags, INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION);
 }
 

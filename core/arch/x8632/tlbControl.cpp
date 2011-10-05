@@ -2,6 +2,7 @@
 #include <arch/x8632/memory.h>
 #include <arch/tlbControl.h>
 #include <arch/x8632/paging.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -79,6 +80,7 @@ void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 		if (bmp->test(i) && i != cpuTrib.getCurrentCpuStream()->cpuId)
 		{
 			bmp->unlock();
+			__kprintf(NOTICE"About to IPI and flush cpu %d.\n", i);
 			cpuTrib.getStream(i)->interCpuMessager.flushTlbRange(
 				vaddr, nPages);
 

@@ -47,15 +47,10 @@
 #define INTERRUPTTRIB_VECTOR_FLAGS_EXCLUSIVE	(1<<0)
 // Applies to any ISR the chipset registered during intializeInterrupts().
 #define INTERRUPTTRIB_VECTOR_FLAGS_BOOTISR	(1<<1)
-// Denotes a vector which has been masked off at its PIC.
-#define INTERRUPTTRIB_VECTOR_FLAGS_MASKED	(1<<2)
-// Identifies a vector which is unknown, and cannot be masked (trouble).
-#define INTERRUPTTRIB_VECTOR_FLAGS_MASKFAILS	(1<<3)
-// States that the vector holds a single exception handler, and no ISRs.
+// States that the vector holds an exception.
 #define INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION	(1<<4)
 
-// States that this shared ISR is an exception handler and not a hardware ISR.
-#define INTERRUPTTRIB_ISR_FLAGS_EXCEPTION	(1<<0)
+#define INTERRUPTTRIB_ISR_FLAGS_LEVEL_TRIGGERED	(1<<0)
 
 class interruptTribC
 :
@@ -71,6 +66,9 @@ public:
 	status_t registerIsr(isrFn *isr, uarch_t flags);
 	void removeIsr(isrFn *isr);
 
+	void installException(uarch_t vector, exceptionFn *exception);
+	void removeException(uarch_t vector);
+
 	void irqMain(taskContextS *regs);
 
 private:
@@ -82,30 +80,29 @@ public:
 	struct isrS
 	{
 		isrS		*next;
-		uarch_t		flags;
+		ubit32		flags;
+		// For profiling.
+		uarch_t		nHandled;
+		// NOTE: Should actually point to the bus driver instance.
 		uarch_t		processId;
-		union {
-			isrFn		*isr;
-			exceptionFn	*except;
-		};
+		isrFn		*isr;
 	};
 
 	struct vectorDescriptorS
 	{
 		uarch_t		flags;
-		uarch_t		processId;
+		// For debugging.
 		uarch_t		nUnhandled;
 
-		/* Depending on the flags, this may be a direct pointer to an
-		 * ISR in the kernel's address space (in the case that this
-		 * ISR was successfully registered as a non-shared ISR), or
-		 * it may be a pointer to a list of ISRs for this vector.
+		/**	NOTE:
+		 * Each vector may have one exception, and any number of other
+		 * handlers. If an exception handler is installed on the
+		 * vector, it is run first. Userspace and drivers are not
+		 * allowed to install exceptions. They are only installed by
+		 * the kernel at boot as required.
 		 **/
-		union {
-			isrFn		*isr;
-			exceptionFn	*except;
-			isrS		*list;
-		} handler;
+		exceptionFn	*exception;
+		isrS		*isrList;
 	};
 	vectorDescriptorS		isrTable[ARCH_IRQ_NVECTORS];
 };

@@ -225,6 +225,11 @@ void x86Lapic::lintSetup(ubit8 lint, ubit8 type, ubit32 flags, ubit8 vector)
 		outval);
 }
 
+void x86Lapic::sendEoi(void)
+{
+	write32(x86LAPIC_REG_EOI, 0);
+}
+
 #define x86LAPIC_LVT_ERR_FLAGS_DISABLE	(1<<16)
 
 void x86Lapic::setupLvtError(ubit8 vector)

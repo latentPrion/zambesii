@@ -4,6 +4,7 @@
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
+	#include <kernel/common/interruptTrib/isrFn.h>
 	#include "mpTables.h"
 
 #define x86LAPIC		"LAPIC: "
@@ -130,12 +131,22 @@ namespace x86Lapic
 	void hardDisable(void);
 	sarch_t isHardEnabled(void);
 
-	// IPI-related functions.
-	error_t sendPhysicalIpi(
-		ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest);
+	void sendEoi(void);
 
-	void sendClusterIpi(ubit8 type, ubit8 vector, ubit8 cluster, ubit8 cpu);
-	void sendFlatLogicalIpi(ubit8 type, ubit8 vector, ubit8 mask);
+	// IPI-related functions.
+	namespace ipi
+	{
+		error_t sendPhysicalIpi(
+			ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest);
+
+		void sendClusterIpi(
+			ubit8 type, ubit8 vector, ubit8 cluster, ubit8 cpu);
+
+		void sendFlatLogicalIpi(ubit8 type, ubit8 vector, ubit8 mask);
+
+		exceptionFn	exceptionHandler;
+		void installHandler(void);
+	}
 
 	/* LINT pin related functions.
 	 *

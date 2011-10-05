@@ -20,10 +20,10 @@ public:
 	void setLock(void) { lock = 1; };
 	void unlock(void) { lock = 0; };
 
-protected:
 #if __SCALING__ >= SCALING_SMP
 	volatile sarch_t	lock;
 #endif
+protected:
 	uarch_t			flags;
 
 public:

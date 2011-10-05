@@ -20,6 +20,8 @@ taskStream(this), interCpuMessager(this)
 	// Nothing to be done for now.
 }
 
+#include <arch/tlbControl.h>
+
 status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 {
 	__kcpuPowerOnBlock.lock.acquire();
@@ -27,7 +29,12 @@ status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 	__kcpuPowerOnBlock.sleepStack = &this->sleepStack[PAGING_BASE_SIZE];
 
 	// Call the chipset code to now actually wake the CPU up.
-	return (*chipsetPkg.cpus->powerControl)(cpuId, command, flags);
+	(*chipsetPkg.cpus->powerControl)(cpuId, command, flags);
+
+for (;;) {
+	tlbControl::smpFlushEntryRange((void *)0xC0800000, 32);
+};
+return ERROR_SUCCESS;
 }
 
 cpuStreamC::~cpuStreamC(void)

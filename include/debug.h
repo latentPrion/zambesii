@@ -14,6 +14,9 @@
 	}
 
 extern int oo, pp, qq, rr;
+struct taskContextS;
+extern taskContextS	*tc;
+
 // GCC likes to warn me about this, and it gets really irritating.
 // #define PRINTFON(__cond, __str, ...)		{if (__cond) { __kprintf(__str, __VA_ARGS__); };}
 

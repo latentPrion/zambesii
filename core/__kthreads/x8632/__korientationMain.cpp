@@ -27,6 +27,7 @@
 
 
 int oo=0, pp=0, qq=0, rr=0;
+taskContextS		tci, *tc=&tci;
 
 int ghfoo(void)
 {
@@ -83,10 +84,9 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(cachePool, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
+for (;;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
-__kdebug.refresh();
-asm volatile("hlt\n\t");
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 

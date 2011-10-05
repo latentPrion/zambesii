@@ -63,20 +63,12 @@ void interruptTribC::installHardwareVectorTable(void)
 
 void interruptTribC::installExceptions(void)
 {
-	for (uarch_t i=0; i<19; i++)
-	{
-		isrTable[i].handler.except = __kexceptionTable[i];
-		__KFLAG_SET(
-			isrTable[i].flags,
-			INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION);
+	for (uarch_t i=0; i<19; i++) {
+		installException(i, __kexceptionTable[i]);
 	};
 
-	for (uarch_t i=19; i<32; i++)
-	{
-		isrTable[i].handler.except = __kexceptionTable[19];
-		__KFLAG_SET(
-			isrTable[i].flags,
-			INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION);
+	for (uarch_t i=19; i<32; i++) {
+		installException(i, __kexceptionTable[19]);
 	};
 }
 

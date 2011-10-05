@@ -76,7 +76,9 @@ status_t x8632_page_fault(taskContextS *regs)
 		break;
 
 	case WPRANGER_STATUS_UNMAPPED:
-		__kprintf(FATAL"Encountered unmapped page at %X.\n", faultAddr);
+		__kprintf(FATAL"Encountered unmapped page at %X, EIP: 0x%x, esp: 0x%x, sleepstack end: 0x%x.\n",
+			faultAddr, regs->eip, regs->esp, cpuTrib.getCurrentCpuStream()->sleepStack);
+
 		panic(ERROR_UNKNOWN);
 		break;
 	default:

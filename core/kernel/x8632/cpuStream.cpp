@@ -67,13 +67,13 @@ static void lintParseMadtForEntries(acpi_rMadtS *rmadt, cpuStreamC *caller)
 	while (nmiEntry != __KNULL)
 	{
 		// If this entry pertains to this CPU:
-		if (/*nmiEntry->acpiLapicId == caller->cpuAcpiId
-			|| nmiEntry->acpiLapicId == ACPI_MADT_NMI_LAPICID_ALL*/ 1)
+		if (nmiEntry->acpiLapicId == caller->cpuAcpiId
+			|| nmiEntry->acpiLapicId == ACPI_MADT_NMI_LAPICID_ALL)
 		{
 			__kprintf(NOTICE CPUSTREAM"%d: ACPI NMI: lint %d.\n",
 				caller->cpuId, nmiEntry->lapicLint);
 
-/*			x86Lapic::lintSetup(
+			x86Lapic::lintSetup(
 				nmiEntry->lapicLint,
 				x86LAPIC_LINT_TYPE_NMI,
 				x86Lapic::lintConvertAcpiFlags(
@@ -81,7 +81,7 @@ static void lintParseMadtForEntries(acpi_rMadtS *rmadt, cpuStreamC *caller)
 				0);
 
 			x86Lapic::lintEnable(nmiEntry->lapicLint);
-*/		};
+		};
 
 		nmiEntry = acpiRMadt::getNextLapicNmiEntry(rmadt, &handle);
 	};
@@ -140,11 +140,12 @@ static error_t initializeLapic(cpuStreamC *caller)
 	x86Lapic::softEnable();
 	// Use vector 0xFF as the LAPIC error vector.
 	x86Lapic::setupLvtError(0xFE);
+	x86Lapic::ipi::installHandler();
 
 	// This is called only when the CPU is ready to take IPIs.
 	caller->interCpuMessager.initialize();
+if (!__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) {for (;;){asm volatile ("hlt \n\t");};};
 
-__kprintf(NOTICE CPUSTREAM"This cpu's acpi ID is: %d.\n", caller->cpuAcpiId);
 	// First print out the LAPIC Int assignment entries.
 	x86Mp::initializeCache();
 	if (x86Mp::findMpFp() != __KNULL)
@@ -199,7 +200,6 @@ __kprintf(NOTICE CPUSTREAM"This cpu's acpi ID is: %d.\n", caller->cpuAcpiId);
 			rmadt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 			while (rmadt != __KNULL)
 			{
-__kprintf(NOTICE CPUSTREAM"Found MADT @ 0x%x.\n", rmadt);
 				lintParseMadtForEntries(rmadt, caller);
 
 				acpiRsdt::destroySdt((acpi_sdtS *)rmadt);
@@ -237,11 +237,11 @@ error_t cpuStreamC::initialize(void)
 		initializeLapic(this);
 	};
 
-	// Enumerate CPU and features.
+/*	// Enumerate CPU and features.
 	enumerate();
 	__kprintf(NOTICE CPUSTREAM"%d: CPU model detected as %s.\n",
 		cpuId, cpuFeatures.cpuName);
-
+*/
 	return ERROR_SUCCESS;
 }
 

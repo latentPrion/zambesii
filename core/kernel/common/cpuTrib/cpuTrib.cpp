@@ -497,13 +497,13 @@ error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
 	 * its bits in the relevant BMPs.
 	 **/
 	// If the streamId being spawned is the BSP, call initialize() on it.
-	if (cid == cid)
+	if (cid == bspId)
 	{
-		getStream(bspId)->bankId = bid;
-		getStream(bspId)->cpuAcpiId = acpiId;
-		getStream(bspId)->initialize();
+		getStream(cid)->bankId = bid;
+		getStream(cid)->cpuAcpiId = acpiId;
+		getStream(cid)->initialize();
 	};
-asm volatile ("hlt \n\t");
+
 	/* Make sure the available CPUs bmp, onlineCpus bmp and the BMP of
 	 * CPUs on the containing bank all have enough bits to hold the new
 	 * CPU's bit.

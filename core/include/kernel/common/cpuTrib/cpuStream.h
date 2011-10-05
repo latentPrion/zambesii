@@ -30,6 +30,9 @@
 #define CPUSTREAM_ENUMERATE_CPU_MODEL_UNCLEAR	0x2
 #define CPUSTREAM_ENUMERATE_CPU_MODEL_UNKNOWN	0x3
 
+#define CPUMSG				"CPU Messager: "
+#define CPUMESSAGE_TYPE_TLBFLUSH	0x0
+
 class cpuStreamC
 :
 public streamC
@@ -71,11 +74,11 @@ private:
 	private:
 		struct messageS
 		{
-			ubit8		type;
-			uarch_t		val0;
-			uarch_t		val1;
-			uarch_t		val2;
-			uarch_t		val3;
+			volatile ubit8			type;
+			volatile uarch_t		val0;
+			volatile uarch_t		val1;
+			volatile uarch_t		val2;
+			volatile uarch_t		val3;
 		};
 		sharedResourceGroupC<waitLockC, messageS>	message;
 		cpuStreamC	*parent;

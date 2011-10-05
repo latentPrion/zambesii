@@ -735,7 +735,7 @@ skipMpTables:
 		do
 		{
 			// Init IPI: Always with vector = 0.
-			ret = x86Lapic::sendPhysicalIpi(
+			ret = x86Lapic::ipi::sendPhysicalIpi(
 				x86LAPIC_IPI_TYPE_INIT,
 				0,
 				x86LAPIC_IPI_SHORTDEST_NONE,
@@ -759,7 +759,7 @@ skipMpTables:
 			nTries = 3;
 			do
 			{
-				ret = x86Lapic::sendPhysicalIpi(
+				ret = x86Lapic::ipi::sendPhysicalIpi(
 					x86LAPIC_IPI_TYPE_SIPI,
 					sipiVector,
 					x86LAPIC_IPI_SHORTDEST_NONE,
@@ -780,7 +780,7 @@ skipMpTables:
 			nTries = 3;
 			do
 			{
-				ret = x86Lapic::sendPhysicalIpi(
+				ret = x86Lapic::ipi::sendPhysicalIpi(
 					x86LAPIC_IPI_TYPE_SIPI,
 					sipiVector,
 					x86LAPIC_IPI_SHORTDEST_NONE,
