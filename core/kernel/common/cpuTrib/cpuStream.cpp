@@ -9,13 +9,30 @@
 #include <__kthreads/__kcpuPowerOn.h>
 
 // We make a global cpuStream for the bspCpu.
+#if __SCALING__ >= SCALING_CC_NUMA
 cpuStreamC		bspCpu(0, 0, 0);
+#else
+cpuStreamC		bspCpu(0, 0);
+#endif
 
 
+/**	NOTE:
+ * A lot of preprocessing in here: It looks quite ugly I suppose.
+ **/
+#if __SCALING__ >= SCALING_CC_NUMA
 cpuStreamC::cpuStreamC(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
+#else
+cpuStreamC::cpuStreamC(cpu_t cid, ubit32 acpiId)
+#endif
 :
-cpuId(cid), cpuAcpiId(acpiId), bankId(bid),
-taskStream(this), interCpuMessager(this)
+cpuId(cid), cpuAcpiId(acpiId),
+#if __SCALING__ >= SCALING_CC_NUMA
+bankId(bid),
+#endif
+taskStream(this)
+#if __SCALING__ >= SCALING_SMP
+,interCpuMessager(this)
+#endif
 {
 	// Nothing to be done for now.
 }

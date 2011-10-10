@@ -485,9 +485,25 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	/* Now we simply allocate the CPU stream and add it to the global CPU
-	 * array.
+	 * array. Also, do not re-allocate the BSP CPU stream.
 	 **/
-	cs = new cpuStreamC(bid, cid, cpuAcpiId);
+	if (cid != bspId) {
+#if __SCALING__ >= SCALING_CC_NUMA
+		cs = new cpuStreamC(bid, cid, cpuAcpiId);
+#else
+		cs = new cpuStreamC(cid, cpuAcpiId);
+#endif
+	}
+	else
+	{
+		cs = &bspCpu;
+#if __SCALING__ >= SCALING_CC_NUMA
+		cs->bankId = bid;
+#endif
+		cs->cpuAcpiId = cpuAcpiId;
+		cs->initialize();
+	};
+
 	if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
 	if ((ret = cpuStreams.addItem(cid, cs)) != ERROR_SUCCESS)

@@ -38,7 +38,11 @@ class cpuStreamC
 public streamC
 {
 public:
+#if __SCALING__ >= SCALING_CC_NUMA
 	cpuStreamC(numaBankId_t bid, cpu_t id, ubit32 acpiId);
+#else
+	cpuStreamC(cpu_t id, ubit32 cpuAcpiId);
+#endif
 
 	void baseInit(void);
 	error_t initialize(void);
