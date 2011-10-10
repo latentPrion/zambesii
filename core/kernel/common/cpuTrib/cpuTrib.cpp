@@ -2,8 +2,8 @@
 #include <scaling.h>
 #include <chipset/cpus.h>
 #include <chipset/pkg/chipsetPackage.h>
-#include <__kstdlib/__kclib/string.h>
-#include <__kstdlib/__kclib/assert.h>
+#include <asm/cpuControl.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
@@ -11,7 +11,6 @@
 #include <__kthreads/__korientation.h>
 
 
-// A loop through all the entries of the particular map to find the highest val.
 #define getHighestId(currHighest,map,member,item,hibound)	\
 	do \
 	{ \
@@ -23,13 +22,15 @@
 		}; \
 	} while (0)
 
-
+#if __SCALING__ >= SMP
 static cpu_t		highestCpuId=0;
-#if defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK) \
-	|| defined(CHIPSET_CPU_NUMA_SHBANKID)
+#endif
+#if __SCALING__ >= SCALING_CC_NUMA
+	#ifdef CHIPSET_CPU_NUMA_GENERATE_SHBANK
 static numaBankId_t	highestBankId=CHIPSET_CPU_NUMA_SHBANKID;
-#else
+	#else
 static numaBankId_t	highestBankId=0;
+	#endif
 #endif
 
 cpuTribC::cpuTribC(void)
@@ -38,356 +39,372 @@ cpuTribC::cpuTribC(void)
 	usingChipsetSmpMode = 0;
 }
 
+cpuTribC::~cpuTribC(void)
+{
+}
+
 error_t cpuTribC::initialize2(void)
 {
 	error_t			ret;
-	chipsetSmpMapS		*smpMap=__KNULL;
-	chipsetNumaMapS		*numaMap=__KNULL;
-	cpuModS			*cpuMod;
-#if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
-	sarch_t			found;
-	cpuStreamC		*bspStream;
+#if __SCALING__ >= SCALING_CC_NUMA
+	chipsetNumaMapS		*numaMap;
 #endif
-	numaCpuBankC		*ncb;
+#if __SCALING__ == SCALING_SMP
+	chipsetSmpMapS		*smpMap;
+#endif
 
 	/**	EXPLANATION:
-	 * Several abstractions need to be initialized for the CPU Tributary
-	 * to work as it should. These are the internal BMP of all CPUs,
-	 * and the per-bank BMPs of CPUs on each bank.
+	 * Second initialization seqence for the CPU Tributary. This routine
+	 * detects all CPUs present at boot and powers them up.
 	 *
-	 * The kernel will first initialize the "SMP" BMP, which simply has one
-	 * bit set for each present CPU, regardless of its NUMA locality.
+	 * The chipset is asked to run a check to see if it is safe for the
+	 * kernel to use SMP/multi-CPU modes on the machine. If the report
+	 * comes back with a positive result, the kernel will proceed to
+	 * use one of the processing mode initialization functions (numaInit(),
+	 * smpInit(), uniProcessorInit()).
 	 *
-	 * Next, for each bank in the NUMA map, the kernel will generate a
-	 * numaCpuBankC object which is (for now) nothing more than a BMP of
-	 * all CPUs on that bank.
+	 * If on a build with scaling higher than uni-processor, the kernel is
+	 * told by the chipset that MP is NOT safe on that board, the kernel
+	 * will fall into a false uni-processor mode, and hot-plug of new
+	 * CPUs will be rejected.
 	 *
-	 * After that, if CHIPSET_CPU_NUMA_GENERATE_SHBANK is defined, the
-	 * the kernel will run through each entry in the SMP map (if present)
-	 * and for each CPU in the SMP map that doesn't appear in the NUMA map,
-	 * the kernel will add that CPU to the Shared Bank to be treated as a
-	 * CPU without any known NUMA locality.
+	 * The reasoning behind this is that for example, on x86-based boards,
+	 * checkSmpSanity() will detect the presence of the APIC logic. If that
+	 * doesn't exist, it will return FALSE for SMP safety. If the kernel
+	 * were to treat such a board as an SMP board which just only had 1 CPU,
+	 * then on a hotplug event, since there are no LAPICs/IO-APICs, we would
+	 * have a board failure possibly.
 	 *
-	 *	NOTES:
-	 * ^ In the event that no NUMA map is found (on a NUMA kernel build) or
-	 *   that the kernel is an SMP build, all CPUs will be added on the
-	 *   shared bank.
-	 *
-	 * ^ If a NUMA map is found, but no SMP map is found, shbank will not be
-	 *   generated.
-	 *
-	 * ^ On an SMP build, the NUMA map is ignored.
-	 * ^ On uni-processor build, both the SMP and NUMA maps are ignored and
-	 *   a single CPU is assumed regardless of presence of other CPUs.
+	 * The safest way to handle the case where the chipset module reports an
+	 * unsafe MP environment is to force the kernel not to use MP operation.
 	 **/
+	// Ensure that the CPU info mod is ready for use.
+	ret = (*chipsetPkg.cpus->initialize)();
+	if (ret != ERROR_SUCCESS) {
+		__kprintf(ERROR CPUTRIB"initialize2: CPU mod init failed.\n");
+	};
+
 #if __SCALING__ >= SCALING_SMP
-	if (chipsetPkg.cpus != __KNULL)
-	{
-		if ((*chipsetPkg.cpus->initialize)() == ERROR_SUCCESS)
-		{
-			cpuMod = chipsetPkg.cpus;
-
-			/** EXPLANATION:
-			 * Every chipset implements this function. The kernel
-			 * calls this to do a set of chipset specific
-			 * preliminary checks to make sure that the chipset
-			 * can successfully be used as an SMP board.
-			 **/
-			if (!(*cpuMod->checkSmpSanity)()) {
-				goto fallbackToUp;
-			};
-
-			/**	NOTE:
-			 * If even one CPU can operate in SMP mode, we will
-			 * make use of the chipset's SMP interrupt routing
-			 * logic in preference to its uniprocessor routing
-			 * logic.
-			 *
-			 * On the PC, this means that if we get even one CPU
-			 * with LAPIC usable, we will proceed with SMP mode.
-			 * If it turns out in the end that only one CPU is
-			 * usable, it just means that we are in SMP mode with
-			 * only one CPU...but we still get the benefits of the
-			 * IO APIC interrupt routing system which is worth it.
-			 **/
-			usingChipsetSmpMode = 1;
-
-#if __SCALING__ >= SCALING_CC_NUMA
-			numaMap = (*cpuMod->getNumaMap)();
+	bspId = (*chipsetPkg.cpus->getBspId)();
+#else
+	bspId = 0;
 #endif
-			smpMap = (*cpuMod->getSmpMap)();
-		}
-		else
-		{
-			__kprintf(ERROR CPUTRIB"CPU Info mod present, but "
-				"initialization failed.\n");
 
-			goto fallbackToUp;
-		};
+#if __SCALING__ >= SCALING_SMP
+	// Next ask the chipset if multi-cpu is safe on this machine.
+	if ((*chipsetPkg.cpus->checkSmpSanity)()) {
+		usingChipsetSmpMode = 1;
 	}
 	else
 	{
-		__kprintf(ERROR CPUTRIB"No CPU Info mod present.\n");
-		goto fallbackToUp;
-	};
-#endif
+		usingChipsetSmpMode = 0;
+		__kprintf(ERROR CPUTRIB"initialize2:\n"
+			"\tIMPORTANT: Your kernel was compiled as a multi-cpu\n"
+			"build kernel, but your chipset reports that it is\n"
+			"not safe to use multi-cpu processing on it.\n"
+			"\tIf your board is a new board, this may indicate\n"
+			"that it is flawed or defective. If it is an old\n"
+			"board, it may just mean that your kernel was built\n"
+			"with multi-cpu features that your board simply can't\n"
+			"handle.\n");
 
-#if __SCALING__ >= SCALING_SMP
-	/* First find out the highest CPU ID number and the highest NUMA bank
-	 * ID number currently available on the chipset.
+		// Small delay.
+		for (uarch_t i=0; i<2000; i++) { cpuControl::subZero(); };
+		return ERROR_SUCCESS;
+	};
+
+	/* On MP build it's beneficial to pre-determine the size of the BMPs
+	 * so that when CPUs are being spawned the BMPs aren't constantly
+	 * resized.
+	 *
+	 * TODO: Add in this mini-optimization later.
 	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
-	if (numaMap != __KNULL)
-	{
-		// Expands to a macro which performs a loop.
-		getHighestId(
-			highestCpuId, numaMap, cpuEntries, cpuId,
-			numaMap->nCpuEntries);
-	};
-
-	if (numaMap != __KNULL)
+	numaMap = (*chipsetPkg.cpus->getNumaMap)();
+	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
 	{
 		getHighestId(
-			highestBankId, numaMap, cpuEntries, bankId,
-			numaMap->nCpuEntries);
+			highestBankId, numaMap, cpuEntries,
+			bankId, numaMap->nCpuEntries);
+
+		getHighestId(
+			highestCpuId, numaMap, cpuEntries,
+			cpuId, numaMap->nCpuEntries);
 	};
 #endif
-	if (smpMap != __KNULL)
+#endif
+
+#if __SCALING__ == SCALING_CC_NUMA
+	smpMap = (*chipsetPkg.cpus->getSmpMap)();
+	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{
 		getHighestId(
-			highestCpuId, smpMap, entries, cpuId,
-			smpMap->nEntries);
+			highestCpuId, smpMap, entries, cpuId, smpMap->nEntries);
 	};
-
-	__kprintf(NOTICE CPUTRIB"Highest bank ID: %d.\n", highestBankId);
-	__kprintf(NOTICE CPUTRIB"Highest cpu ID: %d.\n", highestCpuId);
 #endif
-
-	// Ask the chipset what the BSP's real ID is.
-
-#if __SCALING__ > SCALING_UNIPROCESSOR
-	bspId = (*chipsetPkg.cpus->getBspId)();
-#endif
-	bspStream = getCurrentCpuStream();
-	bspStream->cpuId = bspId;
-
-	// Add the BSP CPU Stream to the CPU array.
-	ret = cpuStreams.addItem(bspId, bspStream);
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(FATAL CPUTRIB"Unable to relocate BSP CPU "
-			"stream within CPU list. Aborting.");
-
-		assert_fatal(ret == ERROR_SUCCESS);
-	};
-
-	__kprintf(NOTICE CPUTRIB"BSP's hardware ID: %d. Patched.\n",
-		getCurrentCpuStream()->cpuId);
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	// Next, for every entry, create a new CPU stream for the related CPU.
-	if (numaMap != __KNULL)
+	return numaInit();
+#endif
+#if __SCALING__ == SCALING_SMP
+	return smpInit();
+#endif
+#if __SCALING__ == SCALING_UNIPROCESSOR
+	return uniProcessorInit();
+#endif
+
+	// Shaky return value, but leave it for now.
+	return ERROR_SUCCESS;
+}
+
+#if __SCALING__ >= SCALING_CC_NUMA
+error_t cpuTribC::numaInit(void)
+{
+	error_t			ret;
+	chipsetNumaMapS		*numaMap;
+#ifdef CHIPSET_CPU_NUMA_GENERATE_SHBANK
+	chipsetSmpMapS		*smpMap;
+	ubit8			found;
+#endif
+
+	/**	EXPLANATION:
+	 * Use the chipset's NUMA CPU map and spawn streams for each CPU. Each
+	 * CPU is also powered on as soon as it is given a stream.
+	 *
+	 * The chipset CPU info module should have been initialized outside
+	 * by the calling code. Should be able to just use the module from here
+	 * on.
+	 **/
+	numaMap = (*chipsetPkg.cpus->getNumaMap)();
+	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
 	{
-		__kprintf(NOTICE CPUTRIB"Processing NUMA CPU map.\n");
-		for (ubit32 i=0; i<numaMap->nCpuEntries; i++)
+		for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
 		{
 			ret = spawnStream(
 				numaMap->cpuEntries[i].bankId,
 				numaMap->cpuEntries[i].cpuId,
 				numaMap->cpuEntries[i].cpuAcpiId);
 
-			if (ret != ERROR_SUCCESS)
+			if (ret == ERROR_SUCCESS)
 			{
-				__kprintf(ERROR CPUTRIB"Failed to spawn CPU "
-					"Stream for CPU ID %d on bank %d.\n",
-					numaMap->cpuEntries[i].cpuId,
-					numaMap->cpuEntries[i].bankId);
+				if (numaMap->cpuEntries[i].cpuId == bspId) {
+					continue;
+				};
 
-				continue;
-			};
-
-			if (numaMap->cpuEntries[i].cpuId != bspId)
-			{
 				getStream(numaMap->cpuEntries[i].cpuId)
 					->powerControl(CPUSTREAM_POWER_ON, 0);
+			}
+			else
+			{
+				__kprintf(ERROR CPUTRIB"numaInit: Failed to "
+					"spawn stream for CPU %d.\n",
+					numaMap->cpuEntries[i].cpuId);
 			};
 		};
-	};
-#endif
 
-#if (__SCALING__ == SCALING_SMP) || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
-	/* Next, if the supervisor configured the kernel to build with a
-	 * shared bank for all CPUs that exist, but are not on an identifiable
-	 * bank (kernel didn't find a bank associated with its entry), we now
-	 * do the processing necessary to fulfil that directive.
-	 **/
-	__kprintf(NOTICE CPUTRIB"Built as either pure SMP, or numa with excess "
-		"CPUs on shared bank. Spawning shared bank.\n");
-
-	ret = createBank(CHIPSET_CPU_NUMA_SHBANKID);
-	if (ret != ERROR_SUCCESS)
+		return ERROR_SUCCESS;
+	}
+	else
 	{
-		__kprintf(ERROR CPUTRIB"Failed to generate shbank.\n");
+		__kprintf(WARNING CPUTRIB"numaInit: NUMA build, but CPU mod "
+#ifndef CHIPSET_CPU_NUMA_GENERATE_SHBANK
+			"reports no NUMA CPUs, and no shbank configured.\n");
+#else
+			"reports no NUMA CPUs.\n");
+#endif
+	};
 
-#if __SCALING__ >= SCALING_CC_NUMA
-		/* If the shared bank could not be generated, and there is no
-		 * NUMA map, then we have no CPU to use except (we assume)
-		 * the one we're running on. Only option is to fall back to
-		 * UP mode.
+#if defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)				\
+	&& defined(CHIPSET_CPU_NUMA_SHBANKID)
+	smpMap = (*chipsetPkg.cpus->getSmpMap)();
+	if (smpMap != __KNULL && smpMap->nEntries > 0)
+	{
+		/**	EXPLANATION:
+		 * On a NUMA build, there are two cases in which this code will
+		 * have to be executed.
+		 *	1. There was a NUMA map, but the kernel was also asked
+		 *	   to generate an extra bank for CPUs which were not
+		 *	   listed in the NUMA map, and treat these CPUs as if
+		 *	   they were all equally distanced from each other
+		 *	   NUMA-wise.
+		 *	2. There was no NUMA map, so the kernel has fallen back
+		 *	   to SMP operation. CPUs will be placed on a shared
+		 *	   bank in this case also.
 		 **/
-		if (numaMap == __KNULL || numaMap->nCpuEntries == 0)
-		{
-			__kprintf(ERROR CPUTRIB"NUMA build, but no NUMA map. "
-				"No shbank for SMP CPUs either.\n");
+		__kprintf(NOTICE CPUTRIB"numaInit: Using shared CPU bank; ");
 
-			goto fallbackToUp;
+		// Case 1 from above.
+		if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
+		{
+			// Filter out the CPUs which need to be in shared bank.
+			__kprintf(CC"Filtering out NUMA CPUs.\n");
+			for (uarch_t i=0; i<smpMap->nEntries; i++)
+			{
+				found = 0;
+				for (uarch_t j=0; j<numaMap->nCpuEntries; j++)
+				{
+					if (numaMap->cpuEntries[j].cpuId
+						== smpMap->entries[i].cpuId)
+					{
+						found = 1;
+						break;
+					};
+				};
+
+				// If the CPU is not an extra, don't process it.
+				if (found) { continue; };
+
+				ret = spawnStream(
+					CHIPSET_CPU_NUMA_SHBANKID,
+					smpMap->entries[i].cpuId,
+					smpMap->entries[i].cpuId);
+
+				if (ret == ERROR_SUCCESS)
+				{
+					if (smpMap->entries[i].cpuId == bspId) {
+						continue;
+					};
+
+					getStream(smpMap->entries[i].cpuId)
+						->powerControl(
+							CPUSTREAM_POWER_ON, 0);
+				}
+				else
+				{
+					__kprintf(ERROR CPUTRIB"numaInit: "
+						"Failed to spawn CPU Stream "
+						"%d.\n",
+						smpMap->entries[i].cpuId);
+
+					continue;
+				};
+			};
+
+			return ERROR_SUCCESS;
 		}
 		else
 		{
 			/**	NOTE:
-			 * Reasoning here is that we already have the NUMA banks
-			 * done and everything, so we can just set their bits,
-			 * wake them up, and then move on without a shared bank.
+			 * Case 2 from above. We simply spawn all CPUs in the
+			 * SMP map on shared bank.
 			 *
-			 * In other words, we already generated all the other
-			 * banks above, and shared bank is the only one that
-			 * failed. So we can ignore shbank and use the CPUs on
-			 * the other banks.
+			 * I may later choose to collapse this into a pure
+			 * SMP method of handling, but for now, we use the
+			 * shared bank method.
+			 *
+			 * This is imho best since on a hotplug chipset, the
+			 * admin may insert new CPUs later on which have NUMA
+			 * affinity, even if there were none at boot.
 			 **/
-			__kprintf(NOTICE CPUTRIB"NUMA build, NUMA CPUs already "
-				"set up. Using NUMA CPUs.\n");
-
-			goto exit;
-		};
-#else
-		goto fallbackToUp;
-#endif
-	};
-
-	__kprintf(NOTICE CPUTRIB"Created and initialized SHBANK.\n");
-
-	/* If there is a NUMA map, run through, and for each CPU in the SMP map
-	 * that does not exist in the NUMA map, add it to the shared bank.
-	 *
-	 * If there is no NUMA map, add all CPUs to the shared bank.
-	 **/
-	if (smpMap != __KNULL && smpMap->nEntries != 0
-		&& numaMap != __KNULL && numaMap->nCpuEntries != 0)
-	{
-		/* For each entry in the SMP map, check to see if you find
-		 * an equivalent CPU ID in the NUMA Map. If not, then add the
-		 * CPU to the shared bank.
-		 **/
-		__kprintf(NOTICE CPUTRIB"Shbank created on NUMA build. "
-			"Filtering out NUMA CPUs.\n");
-
-		for (ubit32 i=0; i<smpMap->nEntries; i++)
-		{
-			found = 0;
-			for (ubit32 j=0; j<numaMap->nCpuEntries; j++)
+			__kprintf(CC"No NUMA map, all CPUs on shared bank.\n");
+			for (uarch_t i=0; i<smpMap->nEntries; i++)
 			{
-				if (numaMap->cpuEntries[j].cpuId
-					== smpMap->entries[i].cpuId)
+				ret = spawnStream(
+					CHIPSET_CPU_NUMA_SHBANKID,
+					smpMap->entries[i].cpuId,
+					smpMap->entries[i].cpuAcpiId);
+
+				if (ret == ERROR_SUCCESS)
 				{
-					found = 1;
-					break;
+					if (smpMap->entries[i].cpuId == bspId) {
+						continue;
+					};
+
+					getStream(smpMap->entries[i].cpuId)
+						->powerControl(
+							CPUSTREAM_POWER_ON, 0);
+				}
+				else
+				{
+					__kprintf(ERROR CPUTRIB"numaInit: "
+						"Failed to spawn CPU Stream "
+						"for CPU %d.",
+						smpMap->entries[i].cpuId);
 				};
 			};
-			if (found) { continue; };
 
-			ret = spawnStream(
-				CHIPSET_CPU_NUMA_SHBANKID,
-				smpMap->entries[i].cpuId,
-				smpMap->entries[i].cpuId);
-
-			if (ret != ERROR_SUCCESS)
-			{
-				__kprintf(ERROR CPUTRIB"Failed to spawn CPU "
-					"Stream for Id %d on shbank.\n",
-					smpMap->entries[i].cpuId);
-
-				continue;
-			};
-
-			if (smpMap->entries[i].cpuId != bspId)
-			{
-				getStream(smpMap->entries[i].cpuId)
-					->powerControl(CPUSTREAM_POWER_ON, 0);
-			};
-
+			return ERROR_SUCCESS;
 		};
 	}
-	else if ((smpMap != __KNULL) && (numaMap == __KNULL))
+	else
 	{
-		/* If there's an SMP map, but no NUMA map, set everything into
-		 * shbank.
-		 **/
-		__kprintf(NOTICE CPUTRIB"Pure SMP case, no numa map.\n");
+		// No SMP map. If also no NUMA map, then assume single CPU.
+		if (numaMap == __KNULL || numaMap->nCpuEntries == 0)
+		{
+			__kprintf(WARNING CPUTRIB"numaInit: Falling back to "
+				"uniprocessor mode.\n");
+
+			return ERROR_CRITICAL;
+		};
+	};
+#endif
+
+	return ERROR_CRITICAL;
+}
+#endif
+
+#if __SCALING__ == SCALING_SMP
+error_t cpuTribC::smpInit(void)
+{
+	error_t			ret;
+	chipsetSmpMapS		*smpMap;
+
+	/**	EXPLANATION:
+	 * Quite simple: look for an SMP map, and if none exists, return an
+	 * error to indicate that the kernel should fallback to uniprocessor
+	 * mode.
+	 **/
+	smpMap = (*chipsetPkg.cpus->getSmpMap)();
+	if (smpMap != __KNULL && smpMap->nEntries > 0)
+	{
 		for (uarch_t i=0; i<smpMap->nEntries; i++)
 		{
 			ret = spawnStream(
-				CHIPSET_CPU_NUMA_SHBANKID,
 				smpMap->entries[i].cpuId,
 				smpMap->entries[i].cpuAcpiId);
 
-			if (ret != ERROR_SUCCESS)
+			if (ret == ERROR_SUCCESS)
 			{
-				__kprintf(ERROR CPUTRIB"Failed to spawn stream "
-					"for cpu %d.\n",
-					smpMap->entries[i].cpuId);
+				if (smpMap->entries[i].cpuId == bspId) {
+					continue;
+				};
 
-				continue;
-			};
-
-			if (smpMap->entries[i].cpuId != bspId)
-			{
 				getStream(smpMap->entries[i].cpuId)
 					->powerControl(CPUSTREAM_POWER_ON, 0);
+			}
+			else
+			{
+				__kprintf(ERROR CPUTRIB"smpInit: Failed to "
+					"spawn CPU Stream for CPU %d.\n",
+					smpMap->entries[i].cpuId);
 			};
-
 		};
 	}
-	else {
-		goto fallbackToUp;
-	};
-#endif
-
-exit:
-	return ERROR_SUCCESS;
-
-fallbackToUp:
-#if __SCALING__ > SCALING_UNI_PROCESSOR
-	__kprintf(WARNING CPUTRIB"CPU detection fell through to uni-processor "
-		"mode. Assuming single CPU.\n");
-#endif
-
-#if __SCALING__ >= SCALING_SMP
-	ret = spawnStream(CHIPSET_CPU_NUMA_SHBANKID, bspId, bspId);
-	if (ret != ERROR_SUCCESS)
+	else
 	{
-		__kprintf(ERROR CPUTRIB"Failed to create ShBank on a non-UP "
-			"build, while attempting to fall back to UP mode. No "
-			"CPU management in place.\n\n"
+		// Fallback to uniprocessor mode if no SMP map.
+		__kprintf(WARNING CPUTRIB"smpInit: SMP build, but CPU mod "
+			"reports no SMP CPUs.\n");
 
-			"Kernel forced to halt orientation.\n");
-
-			return ERROR_FATAL;
+		return ERROR_CRITICAL;
 	};
 
-	// Set a single bit for CPU 0, our UP mode single CPU.
-	ncb->cpus.setSingle(getCurrentCpuStream()->cpuId);
-	availableCpus.setSingle(getCurrentCpuStream()->cpuId);
-	onlineCpus.setSingle(getCurrentCpuStream()->cpuId);
-#else
-	cpu = getCurrentCpuStream();
-#endif
 	return ERROR_SUCCESS;
 }
-	
+#endif
 
-cpuTribC::~cpuTribC(void)
+#if __SCALING__ == SCALING_UNIPROCESSOR
+error_t cpuTribC::uniProcessorInit(void)
 {
+	/**	EXPLANATION:
+	 * Base setup for a UP build. Nothing very interesting. It just makes
+	 * sure that if getStream(foo) is called, the BSP will always be
+	 * returned, no matter what argument is passed.
+	 **/
+	cpu = getCurrentCpuStream();
+	return ERROR_SUCCESS;
 }
+#endif
 
 /* Args:
  * __pb = pointer to the bitmapC object to be checked.
@@ -403,6 +420,7 @@ cpuTribC::~cpuTribC(void)
  * error occur.
  **/
 #define CHECK_AND_RESIZE_BMP(__pb,__n,__ret,__fn,__bn)			\
+	*(__ret) = ERROR_SUCCESS; \
 	if ((__n) > (signed)(__pb)->getNBits() - 1) \
 	{ \
 		*(__ret) = (__pb)->resizeTo((__n) + 1); \
@@ -414,22 +432,118 @@ cpuTribC::~cpuTribC(void)
 		}; \
 	}
 
-error_t cpuTribC::createBank(numaBankId_t id)
+#if __SCALING__ >= SCALING_CC_NUMA
+error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid, ubit32 cpuAcpiId)
+#else
+error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
+#endif
 {
 	error_t		ret;
+#if __SCALING__ >= SCALING_CC_NUMA
 	numaCpuBankC	*ncb;
+#endif
+	cpuStreamC	*cs;
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	/**	EXPLANATION:
+	 * The NUMA case requires that the CPU be assigned to its holding bank.
+	 * The extra NUMA code is really just dealing with that.
+	 **/
+	if ((ncb = getBank(bid)) == __KNULL)
+	{
+		if ((ret = createBank(bid)) != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): "
+				"Failed to create bank.\n",
+				bid, cid, cpuAcpiId);
+
+			return __KNULL;
+		};
+		ncb = getBank(bid);
+	};
+
+	CHECK_AND_RESIZE_BMP(
+		&ncb->cpus, cid, &ret,
+		"spawnStream", "resident bank");
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+	ncb->cpus.setSingle(cid);
+#endif
 
 	/**	EXPLANATION:
-	 * Creates a new numaCpuBankC object, and adds it to the CPU Trib's
-	 * unified list of CPU banks, then sets the new bank's bit in the
-	 * CPU Trib's "availableBanks" BMP.
+	 * The SMP case requires that the onlineCpus and availableCpus bmps be
+	 * resized to hold the new CPU's bit.
 	 **/
+	CHECK_AND_RESIZE_BMP(
+		&availableCpus, cid, &ret, "spawnStream", "availableCpus");
 
-	// First make sure that the bitmap can hold the new bank's bit.
-	CHECK_AND_RESIZE_BMP(&availableBanks, id, &ret,
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	CHECK_AND_RESIZE_BMP(
+		&onlineCpus, cid, &ret, "spawnStream", "onlineCpus");
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	/* Now we simply allocate the CPU stream and add it to the global CPU
+	 * array.
+	 **/
+	cs = new cpuStreamC(bid, cid, cpuAcpiId);
+	if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
+
+	if ((ret = cpuStreams.addItem(cid, cs)) != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): Failed to add "
+			"new CPU stream to list.\n",
+			bid, cid, cpuAcpiId);
+	};
+
+	return ERROR_SUCCESS;
+}
+
+void cpuTribC::destroyStream(cpu_t cid)
+{
+#if __SCALING__ >= SCALING_CC_NUMA
+	numaCpuBankC		*ncb;
+#endif
+	cpuStreamC		*cs;
+
+	/**	NOTE:
+	 * This will probably never be called on most machines. Called on CPU
+	 * unplug/physical removal.
+	 **/
+	cs = getStream(cid);
+	if (cs == __KNULL) { return; };
+
+	availableCpus.unsetSingle(cid);
+
+	// Now remove it from the list of CPUs and free the mem.
+	cpuStreams.removeItem(cid);
+	delete cs;
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	ncb = getBank(cs->bankId);
+	if (ncb != __KNULL) {
+		ncb->cpus.unsetSingle(cid);
+	};
+#endif
+}
+
+#if __SCALING__ >= SCALING_CC_NUMA
+error_t cpuTribC::createBank(numaBankId_t bankId)
+{
+	error_t			err;
+	numaCpuBankC		*ncb;
+
+	if ((ncb = getBank(bankId)) != __KNULL) {
+		return ERROR_SUCCESS;
+	};
+
+	CHECK_AND_RESIZE_BMP(
+		&availableBanks, bankId, &err,
 		"createBank", "available banks");
 
-	// Allocate the new CPU bank object.
+	if (err != ERROR_SUCCESS) { return err; };
+
 	ncb = new (
 		(memoryTrib.__kmemoryStream
 			.*memoryTrib.__kmemoryStream.memAlloc)(
@@ -437,125 +551,37 @@ error_t cpuTribC::createBank(numaBankId_t id)
 				MEMALLOC_NO_FAKEMAP))
 		numaCpuBankC;
 
-	if (ncb == __KNULL) {
-		return ERROR_MEMORY_NOMEM;
-	};
+	if (ncb == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
-	// Add the newly initialized bank to the bank list.
-	ret = cpuBanks.addItem(id, ncb);
-	if (ret != ERROR_SUCCESS)
+	err = cpuBanks.addItem(bankId, ncb);
+	if (err != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR CPUTRIB"createBank(%d): Couldn't add object.\n",
-			id);
+		__kprintf(ERROR CPUTRIB"createBank(%d): Failed to add to list."
+			"\n", bankId);
 
-		// Call destructor.
 		ncb->~numaCpuBankC();
 		memoryTrib.__kmemoryStream.memFree(ncb);
-		return ret;
-	};
+		return err;
+	}
 
-	availableBanks.setSingle(id);
-	__kprintf(NOTICE CPUTRIB"createBank(%d): Success.\n", id);
-	return ret;
-}
-
-void cpuTribC::destroyBank(numaBankId_t id)
-{
-	numaCpuBankC		*ncb;
-
-	ncb = static_cast<numaCpuBankC *>( cpuBanks.getItem(id) );
-	ncb->~numaCpuBankC();
-
-	memoryTrib.__kmemoryStream.memFree(ncb);
-
-	cpuBanks.removeItem(id);
-	availableBanks.unsetSingle(id);
-}
-
-error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
-{
-	cpuStreamC	*cs;
-	numaCpuBankC	*ncb;
-	error_t		ret;
-
-	/**	EXPLANATION:
-	 * Called when a new logical CPU is detected as being interted on the
-	 * board and physically present. This may be at boot during the CPU
-	 * enumeration stage, or at runtime for a hot-plug detected CPU.
-	 *
-	 * The sequence is as follows:
-	 *	* Create a new cpuStreamC object.
-	 *	* Set its bit on the bank it belongs to, and in the CPU Trib's
-	 *	  unified list of all available CPUs.
-	 *
-	 * * The caller should not have to check to see whether or not the bank
-	 *   to which the new CPU pertains has been created.
-	 *
-	 * Additionally, when this function is eventually called with the 
-	 * BSP as an argument, will not re-allocate a CPU stream for the BSP,
-	 * but it will ensure that the BSP is moved tot he right bank and set
-	 * its bits in the relevant BMPs.
-	 **/
-	// If the streamId being spawned is the BSP, call initialize() on it.
-	if (cid == bspId)
-	{
-		getStream(cid)->bankId = bid;
-		getStream(cid)->cpuAcpiId = acpiId;
-		getStream(cid)->initialize();
-	};
-
-	/* Make sure the available CPUs bmp, onlineCpus bmp and the BMP of
-	 * CPUs on the containing bank all have enough bits to hold the new
-	 * CPU's bit.
-	 **/
-	CHECK_AND_RESIZE_BMP(&availableCpus, cid, &ret,
-		"spawnStream", "available CPUs");
-
-	CHECK_AND_RESIZE_BMP(&onlineCpus, cid, &ret,
-		"spawnStream", "online CPUs");
-
-	if ((ncb = getBank(bid)) == __KNULL)
-	{
-		ret = createBank(bid);
-		if (ret != ERROR_SUCCESS) {
-			return ret;
-		};
-
-		ncb = getBank(bid);
-	};
-
-	CHECK_AND_RESIZE_BMP(&ncb->cpus, cid, &ret,
-		"spawnStream", "resident bank");
-
-	// Don't re-allocate the BSP.
-	if (cid != bspId)
-	{
-		cs = new cpuStreamC(bid, cid, acpiId);
-		if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
-
-		cpuStreams.addItem(cid, cs);
-	};
-
-	ncb->cpus.setSingle(cid);
-	__kprintf(NOTICE CPUTRIB"spawnStream(%d, %d): Successful.\n", bid, cid);
+	availableBanks.setSingle(bankId);
+	__kprintf(NOTICE CPUTRIB"createBank(%d): Successful.\n", bankId);
 	return ERROR_SUCCESS;
 }
+#endif
 
-void cpuTribC::destroyStream(cpu_t cpuId)
+#if __SCALING__ >= SCALING_CC_NUMA
+void cpuTribC::destroyBank(numaBankId_t bid)
 {
-	cpuStreamC		*cs;
 	numaCpuBankC		*ncb;
 
-	cs = static_cast<cpuStreamC *>( cpuStreams.getItem(cpuId) );
-	if (cs == __KNULL) { return; };
+	ncb = getBank(bid);
+	if (ncb == __KNULL) { return; };
 
-	availableCpus.unsetSingle(cpuId);
-
-	ncb = getBank(cs->bankId);
-	if (ncb != __KNULL) {
-		ncb->cpus.unsetSingle(cpuId);
-	};
-	delete cs;
-	cpuStreams.removeItem(cpuId);
+	availableBanks.unsetSingle(bid);
+	cpuBanks.removeItem(bid);
+	ncb->~numaCpuBankC();
+	memoryTrib.__kmemoryStream.memFree(ncb);
 }
+#endif
 

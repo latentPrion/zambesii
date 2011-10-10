@@ -1,6 +1,7 @@
 #ifndef _CPU_TRIB_H
 	#define _CPU_TRIB_H
 
+	#include <scaling.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/bitmap.h>
 	#include <__kclasses/hardwareIdList.h>
@@ -52,27 +53,46 @@ public:
 	cpuTribC(void);
 	error_t initialize(void);
 	error_t initialize2(void);
+#if __SCALING__ >= SCALING_CC_NUMA
+	error_t numaInit(void);
+#endif
+#if __SCALING__ == SCALING_SMP
+	// Not useful on a NUMA or higher scaling build.
+	error_t smpInit(void);
+#endif
+	error_t uniProcessorInit(void);
 	~cpuTribC(void);
 
 public:
+#if __SCALING__ >= SCALING_CC_NUMA
+	error_t spawnStream(numaBankId_t bid, cpu_t cid, ubit32 cpuAcpiId);
+#else
+	error_t spawnStream(cpu_t cid, ubit32 cpuAcpiId);
+#endif
+	void destroyStream(cpu_t cpuId);
 	// Gets the Stream for 'cpu'.
 	cpuStreamC *getStream(cpu_t cpu);
-	error_t spawnStream(numaBankId_t bid, cpu_t cid, ubit32 cpuAcpiId);
-	void destroyStream(cpu_t cpuId);
 
 	// Quickly acquires the current CPU's Stream.
 	cpuStreamC *getCurrentCpuStream(void);
 
+#if __SCALING__ >= SCALING_CC_NUMA
 	numaCpuBankC *getBank(numaBankId_t bankId);
 	error_t createBank(numaBankId_t id);
 	void destroyBank(numaBankId_t id);
+#endif
 
 	sarch_t usingSmpMode(void) { return usingChipsetSmpMode; };
 
 public:
-	bitmapC			availableBanks, availableCpus, onlineCpus;
-	cpu_t			bspId;
+#if __SCALING__ >= SCALING_CC_NUMA
+	bitmapC			availableBanks;
+#endif
+#if __SCALING__ >= SCALING_SMP
+	bitmapC			availableCpus, onlineCpus;
 	ubit8			usingChipsetSmpMode;
+#endif
+	cpu_t			bspId;
 
 private:
 #if __SCALING__ >= SCALING_SMP
@@ -80,7 +100,6 @@ private:
 	hardwareIdListC		cpuBanks;
 #else
 	cpuStreamC		*cpu;
-	numaCpuBankC		*cpuBank;
 #endif
 };
 
@@ -94,11 +113,6 @@ extern cpuTribC		cpuTrib;
 inline cpuStreamC *cpuTribC::getStream(cpu_t)
 {
 	return cpu;
-}
-
-inline numaCpuBankC *cpuTribC::getBank(numaBankId_t id)
-{
-	return cpuBank;
 }
 #else
 inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
