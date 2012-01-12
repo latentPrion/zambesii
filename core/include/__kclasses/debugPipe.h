@@ -66,6 +66,21 @@ public:
 	// Zambezii only supports UTF-8 strings in the kernel.
 	void printf(const utf8Char *str, va_list v);
 
+	/**	NOTE:
+	 * This version of printf is used for kernel debugging inside of
+	 * spinlocks, and when debugging code whose cause of error may actually
+	 * be the debugPipe itself.
+	 *
+	 * If the deadlock in the kernel seems to be on the debugPipe internal
+	 * UTF8-expansion buffer lock, then this version can be used to pass
+	 * a separate buffer for use by the debugPipe for the duration of that
+	 * printf() call. It bypasses the internal lock and uses another one
+	 * passed as an argument. This may cause a race condition on the kernel
+	 * debug log, but seeing some output is better than seeing none.
+	 **/
+	void printf(sharedResourceGroupC<waitLockC, void *> *buff,
+		uarch_t buffSize, utf8Char *str, va_list v);
+
 	/**	EXPLANATION:
 	 * Can take more than one device per call (hence the bitfield form).
 	 * Will return a bitfield containing the internal device tie state.
@@ -83,13 +98,14 @@ public:
 	void flush(void);
 
 private:
-	void unsignedToStr(uarch_t num, uarch_t *len);
-	void signedToStr(sarch_t num, uarch_t *len);
-	void numToStrHexUpper(uarch_t num, uarch_t *len);
-	void numToStrHexLower(uarch_t num, uarch_t *len);
-	void paddrToStrHex(paddr_t num, uarch_t *len);
+	void unsignedToStr(uarch_t num, uarch_t *len, utf8Char *buff);
+	void signedToStr(sarch_t num, uarch_t *len, utf8Char *buff);
+	void numToStrHexUpper(uarch_t num, uarch_t *len, utf8Char *buff);
+	void numToStrHexLower(uarch_t num, uarch_t *len, utf8Char *buff);
+	void paddrToStrHex(paddr_t num, uarch_t *len, utf8Char *buff);
 	void processPrintfFormatting(
-		const utf8Char *str, va_list args, uarch_t buffMax,
+		const utf8Char *str, va_list args,
+		utf8Char *buff, uarch_t buffMax,
 		uarch_t *buffLen, uarch_t *printfFlags);
 
 	debugBufferC		debugBuff;
@@ -99,6 +115,10 @@ private:
 };
 
 void __kprintf(const utf8Char *str, ...);
+// Used for debugging, see above.
+void __kprintf(sharedResourceGroupC<waitLockC, void *> *buff,
+	uarch_t buffSize, utf8Char *str, ...);
+
 extern debugPipeC	__kdebug;
 
 #endif

@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <scaling.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
@@ -82,7 +83,7 @@ void *memoryStreamC::dummy_memAlloc(uarch_t, uarch_t)
 
 void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 {
-	uarch_t		commit=nPages, ret, f, pos, nTries;
+	uarch_t		commit=nPages, ret, f, pos, nTries, localFlush=0;
 	status_t	totalFrames, nFrames, nMapped;
 	paddr_t		p;
 
@@ -90,14 +91,18 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		return __KNULL;
 	};
 
+	if (__KFLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY)) { localFlush = 1; };
+
 	// Try alloc cache.
 	if ((!__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL))
 		&& (allocCache.pop(nPages, reinterpret_cast<void **>( &ret ))
 		== ERROR_SUCCESS))
 	{
+//if (oo==1) { __kprintf(NOTICE"Following.\n"); };
 		walkerPageRanger::setAttributes(
 			&vaddrSpaceStream.vaddrSpace,
-			(void *)ret, nPages, WPRANGER_OP_SET_PRESENT, 0);
+			(void *)ret, nPages, WPRANGER_OP_SET_PRESENT,
+			(localFlush) ? PAGEATTRIB_LOCAL_FLUSH_ONLY : 0);
 
 		return reinterpret_cast<void *>( ret );
 	};
@@ -140,7 +145,8 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 				nFrames,
 				PAGEATTRIB_WRITE | PAGEATTRIB_PRESENT
 				| ((this->id == __KPROCESSID)
-					? PAGEATTRIB_SUPERVISOR : 0));
+					? PAGEATTRIB_SUPERVISOR : 0)
+				| ((localFlush)?PAGEATTRIB_LOCAL_FLUSH_ONLY:0));
 
 			totalFrames += nFrames;
 
@@ -181,7 +187,8 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 			nPages - totalFrames,
 			PAGEATTRIB_WRITE
 			| ((this->id == __KPROCESSID) ? PAGEATTRIB_SUPERVISOR
-				: 0));
+				: 0)
+			| ((localFlush) ? PAGEATTRIB_LOCAL_FLUSH_ONLY : 0));
 
 		if (nMapped < static_cast<sarch_t>( nPages ) - totalFrames)
 		{
@@ -206,6 +213,7 @@ releaseAndUnmap:
 	pos = ret;
 	while (totalFrames > 0)
 	{
+		__KFLAG_SET(f, PAGEATTRIB_LOCAL_FLUSH_ONLY);
 		nMapped = walkerPageRanger::unmap(
 			&vaddrSpaceStream.vaddrSpace,
 			reinterpret_cast<void *>( pos ),

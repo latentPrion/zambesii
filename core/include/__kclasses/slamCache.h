@@ -4,12 +4,13 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/heapCache.h>
 	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/recursiveLock.h>
 	#include <kernel/common/waitLock.h>
 
 /**	NOTES:
  * This idea, the Slam allocator, is designed by James Molloy for the Pedigree
  * (http://pedigree-project.org) project. Please make attempts to support
- * Pedigree.
+ * Pedigree and follow it, as it's a worthwhile project by all standards.
  *
  *	EXPLANATION:
  * The heap algo works by keeping a free list and a partial list. The partial
@@ -27,6 +28,8 @@
 
 #define SLAMCACHE		"Slam Cache: "
 
+#define SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY	(1<<0)
+
 class memReservoirC;
 
 class slamCacheC
@@ -40,7 +43,7 @@ public:
 	virtual ~slamCacheC(void);
 
 public:
-	virtual void *allocate(void);
+	virtual void *allocate(uarch_t flags=0, ubit8 *requiredAlloc=__KNULL);
 	virtual void free(void *ptr);
 
 	status_t detangle(void);

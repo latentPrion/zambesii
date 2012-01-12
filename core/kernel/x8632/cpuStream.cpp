@@ -7,9 +7,10 @@
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/libx86mp.h>
 #include <commonlibs/libacpi/libacpi.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
-#include <__kthreads/__kcpuPowerOn.h>
 #include <kernel/common/cpuTrib/chipsetSmpMode.h>
+#include <__kthreads/__kcpuPowerOn.h>
 
 
 struct x86ManufacturerEntryS
@@ -51,6 +52,14 @@ void cpuStreamC::baseInit(void)
 		movl	%0, %%dr0 \n\t"
 		:
 		: "r" (this));
+
+	if (!__KFLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
+	{
+		// Load kernel's main GDT:
+		asm volatile ("lgdt	(x8632GdtPtr)");
+		// Load the kernel's IDT:
+		asm volatile ("lidt	(x8632IdtPtr)");
+	};
 
 	// Load the __kcpuPowerOnThread into the currentTask holder.
 	taskStream.currentTask = &__kcpuPowerOnThread;
@@ -135,6 +144,15 @@ static error_t initializeLapic(cpuStreamC *caller)
 	 * LAPIC is soft-enabled before trying to set up the rest of the LAPIC
 	 * operating state.
 	 **/
+	
+	x86Lapic::initializeCache();
+	if (!x86Lapic::lapicMemIsMapped())
+	{
+		panic(FATAL CPUSTREAM"%d: setupLapic(): Somehow the LAPIC "
+			"lib's cached vaddr mapping was corrupted.\n",
+			caller->cpuId);
+	};
+
 	x86Lapic::setupSpuriousVector(0xFF);
 	// See above, explicitly enable LAPIC before fiddling with LVT regs.
 	x86Lapic::softEnable();
@@ -144,7 +162,7 @@ static error_t initializeLapic(cpuStreamC *caller)
 
 	// This is called only when the CPU is ready to take IPIs.
 	caller->interCpuMessager.initialize();
-if (!__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) {for (;;){asm volatile ("hlt \n\t");};};
+//if (!__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) { for (__kprintf(NOTICE CPUSTREAM"%d: Reached HLT.\n", caller->cpuId);;) { asm volatile("hlt\n\t"); }; };
 
 	// First print out the LAPIC Int assignment entries.
 	x86Mp::initializeCache();
@@ -224,24 +242,19 @@ if (!__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) {for (;;){asm volatile ("
 
 error_t cpuStreamC::initialize(void)
 {
-	if (!__KFLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
-	{
-		// Load kernel's main GDT:
-		asm volatile ("lgdt	(x8632GdtPtr)");
-		// Load the kernel's IDT:
-		asm volatile ("lidt	(x8632IdtPtr)");
-	};
-
 	// Init LAPIC (if SMP mode).
 	if (usingChipsetSmpMode()) {
 		initializeLapic(this);
 	};
 
-/*	// Enumerate CPU and features.
+#if 0
+	// Enumerate CPU and features.
 	enumerate();
 	__kprintf(NOTICE CPUSTREAM"%d: CPU model detected as %s.\n",
 		cpuId, cpuFeatures.cpuName);
-*/
+#endif
+
+	__kprintf(NOTICE CPUSTREAM"%d: Initialize() complete.\n", cpuId);
 	return ERROR_SUCCESS;
 }
 

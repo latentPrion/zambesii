@@ -1,15 +1,36 @@
 #ifndef _PAGE_ATTRIBUTES_H
 	#define _PAGE_ATTRIBUTES_H
 
-#define PAGEATTRIB_EXECUTABLE			(1<<3)
 #define PAGEATTRIB_WRITE			(1<<1)
 #define PAGEATTRIB_SUPERVISOR			(1<<2)
+#define PAGEATTRIB_EXECUTABLE			(1<<3)
 #define PAGEATTRIB_PRESENT			(1<<4)
 #define PAGEATTRIB_ACCESSED			(1<<5)
 #define PAGEATTRIB_DIRTY			(1<<6)
 #define PAGEATTRIB_TLB_GLOBAL			(1<<7)
-#define PAGEATTRIB_CACHE_WRITE_THROUGH		(1<<9)
 #define PAGEATTRIB_CACHE_DISABLED		(1<<8)
+#define PAGEATTRIB_CACHE_WRITE_THROUGH		(1<<9)
+
+/*	NOTE:
+ * This is more of a Walker Page Ranger option when mapping, used only for
+ * certain special use cases in the kernel; You most likely don't need to use
+ * this flag. It is defined here solely for ease of maintenance since all the
+ * other values for the "flags" argument to Walker Page Ranger are in here too.
+ * In theory it should be in walkerPageRanger.h and should be called
+ * WPRANGER_FLAG_FLUSH_LOCALLY_ONLY since it is a WPR option, and not a page
+ * attribute.
+ *
+ * This flag when passed, is interpreted by Walker Page Ranger directly, and
+ * does not affect the way the relevant page is mapped. It only indicates to
+ * WPR that it should not attempt to do a TLB flush on any CPU other than the
+ * one on which the page is being mapped, even if the address space being
+ * modified is currently loaded on another CPU.
+ *
+ * In effect, it is a force flag to ensure that an address space change is only
+ * properly handled on ONE CPU. This is undesirable in most cases, and again,
+ * you most likely do not need to use this flag.
+ **/
+#define PAGEATTRIB_LOCAL_FLUSH_ONLY		(1<<15)
 
 /**	EXPLANATION:
  * These next few values are for the page faulting code to quickly handle a page

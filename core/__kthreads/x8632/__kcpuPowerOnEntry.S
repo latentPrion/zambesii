@@ -27,7 +27,7 @@ ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
 	movw	%ax, %gs
 	movw	%ax, %ss
 
-	/* Load temporary GDT for long mode. */
+	/* Load temporary GDT for pmode. */
 	lgdt	(__kcpuPowerOnGdtPtr)
 
 	movl	%cr0, %ebx
@@ -83,14 +83,62 @@ ASM_LOCAL_FUNCTION(__kcpuPowerOnVirtualStart)
 	ljmp	$0x8, $.next2
 
 .next2:
-	/* Copy the waking CPU's sleep stack address into ESP. */
-	movl	__kcpuPowerOnBlock, %eax
+	/* Copy the waking CPU's sleep stack address into ESP (The stack address
+	 * is the first member of the __kcpuPowerOnBlock structure).
+	 **/
+	movl	$__kcpuPowerOnBlock, %eax
 	movl	(%eax), %eax
 	movl	%eax, %esp
 	movl	%esp, %ebp
+
+	/* Clear EFLAGS. */
+	pushl	$0x0
+	popfl
+
 	/* Call into the C++ HLL code finally. */
 	call	__kcpuPowerOnMain
 ASM_END_FUNCTION(__kcpuPowerOnVirtualStart)
+
+ASM_GLOBAL_FUNCTION(getRegs)
+	/* void getRegs(taskContextS *t);
+	 * t(8) -> eip(4) | edi(0) ->
+	 */
+	pushl	%edi
+
+	movl	8(%esp), %edi
+	movw	%es, (%edi)
+	movw	%ds, 2(%edi)
+	movw	%gs, 4(%edi)
+	movw	%fs, 6(%edi)
+
+	pushl	%edx
+	movl	4(%esp), %edx
+	movl	%edx, 8(%edi)
+	popl	%edx
+	movl	%esi, 12(%edi)
+	movl	%ebp, 16(%edi)
+	movl	%esp, 20(%edi)
+	movl	%ebx, 24(%edi)
+	movl	%edx, 28(%edi)
+	movl	%ecx, 32(%edi)
+	movl	%eax, 36(%edi)
+	movl	$0, 40(%edi)
+
+	pushl	%ebx
+	pushfl
+	popl	%ebx
+	movl	%ebx, 44(%edi)
+	movl	8(%esp), %ebx
+	movl	%ebx, 48(%edi)
+	popl	%ebx
+	movw	%cs, 52(%edi)
+	movl	$0, 56(%edi)
+	movl	%esp, 60(%edi)
+	movw	%ss, 64(%edi)
+
+	popl	%edi
+ret
+ASM_END_FUNCTION(getRegs)
 
 
 /** EXPLANATION:

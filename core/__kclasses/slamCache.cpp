@@ -1,6 +1,7 @@
 
 #include <debug.h>
 #include <arch/paging.h>
+#include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/slamCache.h>
 #include <__kclasses/debugPipe.h>
@@ -45,7 +46,7 @@ void slamCacheC::dump(void)
 	slamCacheC::object	*obj;
 	uarch_t			count;
 
-	__kprintf(NOTICE SLAMCACHE"Dumping.\n");
+	__kprintf(NOTICE SLAMCACHE"Dumping; locks @ F: 0x%p/P: 0x%p.\n", &freeList.lock, &partialList.lock);
 	__kprintf(NOTICE SLAMCACHE"Object size: %X, ppb %d, ppexcess %d, "
 		"FreeList: Pages:\n\t",
 		objectSize, perPageBlocks, perPageExcess);
@@ -106,10 +107,13 @@ status_t slamCacheC::flush(void)
 	return ret;
 }
 
-void *slamCacheC::allocate(void)
+void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredAlloc)
 {
 	void			*ret;
 	slamCacheC::object	*tmp=__KNULL;
+	uarch_t			localFlush;
+
+	localFlush = __KFLAG_TEST(flags, SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY);
 
 	partialList.lock.acquire();
 
@@ -128,9 +132,12 @@ void *slamCacheC::allocate(void)
 
 		if (tmp == __KNULL)
 		{
+			if (requiredAlloc != __KNULL) { *requiredAlloc = 1; };
 			tmp = new ((memoryTrib.__kmemoryStream
 				.*memoryTrib.__kmemoryStream.memAlloc)(
-					1, MEMALLOC_NO_FAKEMAP))
+					1, MEMALLOC_NO_FAKEMAP
+					| ((localFlush)
+						? MEMALLOC_LOCAL_FLUSH_ONLY:0)))
 				slamCacheC::object;
 
 			if (tmp == __KNULL)

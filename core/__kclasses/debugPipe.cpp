@@ -165,7 +165,7 @@ void debugPipeC::refresh(void)
 }
 
 // Expects the lock to already be held.
-void debugPipeC::unsignedToStr(uarch_t num, uarch_t *curLen)
+void debugPipeC::unsignedToStr(uarch_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
@@ -179,12 +179,12 @@ void debugPipeC::unsignedToStr(uarch_t num, uarch_t *curLen)
 	blen++;
 
 	for (; blen; blen--, *curLen += 1) {
-		convBuff.rsrc[*curLen] = b[blen-1];
+		buff[*curLen] = b[blen-1];
 	};
 }
 
 // Expects the lock to already be held.
-void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen)
+void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
@@ -206,12 +206,12 @@ void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen)
 	blen++;
 
 	for (; blen; blen--, *curLen += 1) {
-		convBuff.rsrc[*curLen] = b[blen-1];
+		buff[*curLen] = b[blen-1];
 	};
 }
 
 // Expects the lock to already be held.
-void debugPipeC::numToStrHexUpper(uarch_t num, uarch_t *curLen)
+void debugPipeC::numToStrHexUpper(uarch_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
@@ -225,12 +225,12 @@ void debugPipeC::numToStrHexUpper(uarch_t num, uarch_t *curLen)
 	blen++;
 
 	for (; blen; blen--, *curLen += 1) {
-		convBuff.rsrc[*curLen] = b[blen-1];
+		buff[*curLen] = b[blen-1];
 	};
 }
 
 // Expects the lock to already be held.
-void debugPipeC::numToStrHexLower(uarch_t num, uarch_t *curLen)
+void debugPipeC::numToStrHexLower(uarch_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
@@ -244,11 +244,11 @@ void debugPipeC::numToStrHexLower(uarch_t num, uarch_t *curLen)
 	blen++;
 
 	for (; blen; blen--, *curLen += 1) {
-		convBuff.rsrc[*curLen] = b[blen-1];
+		buff[*curLen] = b[blen-1];
 	};
 }
 
-void debugPipeC::paddrToStrHex(paddr_t num, uarch_t *curLen)
+void debugPipeC::paddrToStrHex(paddr_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
@@ -262,7 +262,7 @@ void debugPipeC::paddrToStrHex(paddr_t num, uarch_t *curLen)
 	blen++;
 
 	for (; blen; blen--, *curLen += 1) {
-		convBuff.rsrc[*curLen] = b[blen-1];
+		buff[*curLen] = b[blen-1];
 	};
 }
 
@@ -275,9 +275,21 @@ void __kprintf(const utf8Char *str, ...)
 	va_end(args);
 }
 
+void __kprintf(
+	sharedResourceGroupC<waitLockC, void *> *buff, uarch_t buffSize,
+	utf8Char *str, ...
+	)
+{
+	va_list		args;
+
+	va_start_forward(args, str);
+	__kdebug.printf(buff, buffSize, str, args);
+	va_end(args);
+}
+
 void debugPipeC::processPrintfFormatting(
 	const utf8Char *str, va_list args,
-	uarch_t buffMax, uarch_t *buffLen, uarch_t *printfFlags
+	utf8Char *buff, uarch_t buffMax, uarch_t *buffLen, uarch_t *printfFlags
 	)
 {
 	uarch_t		unum;
@@ -293,37 +305,37 @@ void debugPipeC::processPrintfFormatting(
 			switch (*str)
 			{
 			case '%':
-				convBuff.rsrc[*buffLen] = *str;
+				buff[*buffLen] = *str;
 				*buffLen += 1;
 				break;
 
 			case 'd':
 			case 'i':
 				snum = va_arg(args, sarch_t);
-				signedToStr(snum, buffLen);
+				signedToStr(snum, buffLen, buff);
 
 				break;
 
 			case 'u':
 				unum = va_arg(args, uarch_t);
-				unsignedToStr(unum, buffLen);
+				unsignedToStr(unum, buffLen, buff);
 
 				break;
 
 			case 'X':
 				unum = va_arg(args, uarch_t);
-				numToStrHexUpper(unum, buffLen);
+				numToStrHexUpper(unum, buffLen, buff);
 				break;
 
 			case 'P':
 				pnum = va_arg(args, paddr_t);
-				paddrToStrHex(pnum, buffLen);
+				paddrToStrHex(pnum, buffLen, buff);
 				break;
 
 			case 'x':
 			case 'p':
 				unum = va_arg(args, uarch_t);
-				numToStrHexLower(unum, buffLen);
+				numToStrHexLower(unum, buffLen, buff);
 
 				break;
 
@@ -331,7 +343,7 @@ void debugPipeC::processPrintfFormatting(
 				u8Str = va_arg(args, utf8Char *);
 				processPrintfFormatting(
 					u8Str, args,
-					buffMax, buffLen, printfFlags);
+					buff, buffMax, buffLen, printfFlags);
 
 				break;
 
@@ -360,7 +372,7 @@ void debugPipeC::processPrintfFormatting(
 		}
 		else
 		{
-			convBuff.rsrc[*buffLen] = *str;
+			buff[*buffLen] = *str;
 			*buffLen += 1;
 		};
 	};
@@ -384,7 +396,8 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 		/ sizeof(utf8Char);
 
 	// Expand printf formatting into convBuff.
-	processPrintfFormatting(str, args, buffMax, &buffLen, &printfFlags);
+	processPrintfFormatting(
+		str, args, convBuff.rsrc, buffMax, &buffLen, &printfFlags);
 
 	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
 		&& !__KFLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
@@ -400,6 +413,50 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	};
 
 	convBuff.lock.release();
+}
+
+void debugPipeC::printf(
+	sharedResourceGroupC<waitLockC, void *> *buff, uarch_t buffSize,
+	utf8Char *str, va_list args
+	)
+{
+	uarch_t		buffLen=0, buffMax;
+	uarch_t		printfFlags=0;
+
+	buff->lock.acquire();
+
+	// Make sure we're not printing to an unallocated buffer.
+	if (buff->rsrc == __KNULL)
+	{
+		buff->lock.release();
+		return;
+	};
+
+	buffMax = buffSize / sizeof(utf8Char);
+
+	// Expand printf formatting into convBuff.
+	processPrintfFormatting(
+		str, args,
+		static_cast<utf8Char *>( buff->rsrc ),
+		buffMax, &buffLen, &printfFlags);
+
+	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
+		&& !__KFLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
+	{
+		debugBuff.syphon(
+			static_cast<utf8Char *>( buff->rsrc ), buffLen);
+	};
+
+	for (ubit8 i=0; i<4; i++)
+	{
+		if (__KFLAG_TEST(devices.rsrc, (1<<i)))
+		{
+			chipsetPkg.debug[i]->syphon(
+				static_cast<utf8Char *>( buff->rsrc ), buffLen);
+		};
+	};
+
+	buff->lock.release();
 }
 
 #if 0

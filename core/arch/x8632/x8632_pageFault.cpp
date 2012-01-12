@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/paddr_t.h>
 #include <arch/paging.h>
 #include <arch/walkerPageRanger.h>
@@ -76,8 +77,13 @@ status_t x8632_page_fault(taskContextS *regs)
 		break;
 
 	case WPRANGER_STATUS_UNMAPPED:
+		uarch_t esp;
+		asm volatile(
+			"movl %%esp, %0\n\t"
+			: "=r" (esp));
+
 		__kprintf(FATAL"Encountered unmapped page at %X, EIP: 0x%x, esp: 0x%x, sleepstack end: 0x%x.\n",
-			faultAddr, regs->eip, regs->esp, cpuTrib.getCurrentCpuStream()->sleepStack);
+			faultAddr, regs->eip, esp, cpuTrib.getCurrentCpuStream()->sleepStack);
 
 		panic(ERROR_UNKNOWN);
 		break;

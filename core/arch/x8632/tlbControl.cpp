@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/x8632/memory.h>
 #include <arch/tlbControl.h>
 #include <arch/x8632/paging.h>
@@ -55,6 +56,8 @@ void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 	 * For userspace flushing, we use the process's "cpuTrace" BMP so that
 	 * we only flush on CPUs which have run the process in question.
 	 **/
+	flushEntryRange(vaddr, nPages);
+
 	if (!cpuTrib.usingSmpMode())
 	{
 		flushEntryRange(vaddr, nPages);
@@ -80,7 +83,8 @@ void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 		if (bmp->test(i) && i != cpuTrib.getCurrentCpuStream()->cpuId)
 		{
 			bmp->unlock();
-			__kprintf(NOTICE"About to IPI and flush cpu %d.\n", i);
+
+__kprintf(FATAL"Flushing CPU %d, stream v 0x%p, id: %d.\n", i, cpuTrib.getStream(i), cpuTrib.getStream(i)->cpuId);
 			cpuTrib.getStream(i)->interCpuMessager.flushTlbRange(
 				vaddr, nPages);
 
@@ -88,7 +92,5 @@ void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 		};
 	};
 	bmp->unlock();
-
-	flushEntryRange(vaddr, nPages);
 }
 

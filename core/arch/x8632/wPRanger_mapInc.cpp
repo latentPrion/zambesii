@@ -31,11 +31,15 @@ status_t walkerPageRanger::mapInc(
 	uarch_t		l2Start, l2Current, l2Limit, l2End;
 	paddr_t		l1Entry, l2Entry;
 #endif
-	uarch_t		archFlags;
+	uarch_t		archFlags, localFlush;
 	status_t	ret=0;
 	int		ztmp;
 
 	if (nPages == 0) { return ret; };
+
+	localFlush = __KFLAG_TEST(__kflags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
+	vaddr = reinterpret_cast<void *>(
+		(uarch_t)vaddr & PAGING_BASE_MASK_HIGH );
 
 	// Convert the generic kernel flags into arch specific flags.
 	archFlags = walkerPageRanger::encodeFlags(__kflags);
@@ -154,7 +158,12 @@ out:
 
 	// Flush all modified pages, using inter-CPU messages if necessary.
 #if __SCALING__ > SCALING_SMP
-	tlbControl::smpFlushEntryRange(vaddr, ret);
+	if (localFlush) {
+		tlbControl::flushEntryRange(vaddr, ret);
+	}
+	else {
+		tlbControl::smpFlushEntryRange(vaddr, ret);
+	};
 #else
 	tlbControl::flushEntryRange(vaddr, ret);
 #endif

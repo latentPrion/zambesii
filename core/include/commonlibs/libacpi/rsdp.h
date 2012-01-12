@@ -23,6 +23,10 @@ namespace acpi
 	// Call before using, every time.
 	void initializeCache(void);
 
+	// TODO: Remember to remove.
+	void debug(void);
+	void *cacheVaddr(void);
+
 	error_t findRsdp(void);
 	sarch_t rsdpFound(void);
 	acpi_rsdpS *getRsdp(void);

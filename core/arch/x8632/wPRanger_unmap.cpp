@@ -22,8 +22,13 @@ status_t walkerPageRanger::unmap(
 	paddr_t		l2Entry;
 #endif
 	status_t	ret;
+	uarch_t		localFlush;
 
 	if (nPages == 0) { return WPRANGER_STATUS_UNMAPPED; };
+
+	localFlush = __KFLAG_TEST(*flags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
+	vaddr = reinterpret_cast<void *>(
+		(uarch_t)vaddr & PAGING_BASE_MASK_HIGH );
 
 	// Set the return to default to 'unmapped'.
 	ret = WPRANGER_STATUS_UNMAPPED;
@@ -191,9 +196,14 @@ status_t walkerPageRanger::unmap(
 	};
 
 #if __SCALING__ > SCALING_SMP
-	tlbControl::smpFlushEntryRange(vaddr, ret);
+	if (localFlush) {
+		tlbControl::flushEntryRange(vaddr, nPages);
+	}
+	else {
+		tlbControl::smpFlushEntryRange(vaddr, nPages);
+	};
 #else
-	tlbControl::flushEntryRange(vaddr, ret);
+	tlbControl::flushEntryRange(vaddr, nPages);
 #endif
 
 	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream

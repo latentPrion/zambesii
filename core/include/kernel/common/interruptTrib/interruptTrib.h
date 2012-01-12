@@ -5,7 +5,7 @@
 	#include <arch/taskContext.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/interruptTrib/isrFn.h>
+	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
 
 /**	EXPLANATION:
  * When Zambezii receives an IRQ, it quickly saves context (much like any other
@@ -52,6 +52,11 @@
 
 #define INTERRUPTTRIB_ISR_FLAGS_LEVEL_TRIGGERED	(1<<0)
 
+// Zambezii Kernel Chipset Module.
+#define INTERRUPTTRIB_ISR_TYPE_ZKCM		(0x0)
+// Uniform Driver Interface.
+#define INTERRUPTTRIB_ISR_TYPE_UDI		(0x1)
+
 class interruptTribC
 :
 public tributaryC
@@ -59,12 +64,13 @@ public tributaryC
 public:
 	interruptTribC(void);
 	error_t initialize(void);
+	error_t initialize2(void);
 	~interruptTribC(void) {};
 
 public:
 	// Will Eventually provide a code injection API for usermode drivers.
-	status_t registerIsr(isrFn *isr, uarch_t flags);
-	void removeIsr(isrFn *isr);
+	status_t zkcmRegisterIsr(zkcmIsrFn *isr, uarch_t flags);
+	void zkcmRemoveIsr(zkcmIsrFn *isr);
 
 	void installException(uarch_t vector, exceptionFn *exception);
 	void removeException(uarch_t vector);
@@ -85,7 +91,7 @@ public:
 		uarch_t		nHandled;
 		// NOTE: Should actually point to the bus driver instance.
 		uarch_t		processId;
-		isrFn		*isr;
+		zkcmIsrFn		*isr;
 	};
 
 	struct vectorDescriptorS

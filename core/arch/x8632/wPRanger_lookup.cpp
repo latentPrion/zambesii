@@ -32,6 +32,9 @@ status_t walkerPageRanger::lookup(
 		return WPRANGER_STATUS_UNMAPPED;
 	};
 
+	vaddr = reinterpret_cast<void *>(
+		(uarch_t)vaddr & PAGING_BASE_MASK_HIGH );
+
 	l0Start = (reinterpret_cast<uarch_t>( vaddr ) & PAGING_L0_VADDR_MASK)
 		>> PAGING_L0_VADDR_SHIFT;
 	l1Start = (reinterpret_cast<uarch_t>( vaddr ) & PAGING_L1_VADDR_MASK)

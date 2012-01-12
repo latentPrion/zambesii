@@ -3,7 +3,7 @@
 
 	#include <arch/taskContext.h>
 
-typedef status_t (isrFn)(void *persistentScratch);
+typedef status_t (zkcmIsrFn)(void);
 typedef status_t (exceptionFn)(struct taskContextS *regs);
 
 #endif

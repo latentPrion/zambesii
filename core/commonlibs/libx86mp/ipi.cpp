@@ -59,7 +59,6 @@ status_t x86Lapic::ipi::exceptionHandler(struct taskContextS *regs)
 {
 	(void)regs;
 
-	__kprintf(NOTICE"CPU %d: in IPI handler.\n", cpuTrib.getCurrentCpuStream()->cpuId);
 	// Check messager and see why we got an IPI.
 	cpuTrib.getCurrentCpuStream()->interCpuMessager.dispatch();
 	sendEoi();

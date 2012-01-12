@@ -3,6 +3,8 @@
 
 	#include <arch/tlbControl.h>
 	#include <arch/paging.h>
+	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/cachePool.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/task.h>
 	#include <kernel/common/smpTypes.h>
@@ -31,6 +33,10 @@
 #define CPUSTREAM_ENUMERATE_CPU_MODEL_UNKNOWN	0x3
 
 #define CPUMSG				"CPU Messager: "
+
+#define CPUMSGR_STATUS_NORMAL		0
+#define CPUMSGR_STATUS_PROCESSING	1
+
 #define CPUMESSAGE_TYPE_TLBFLUSH	0x0
 
 class cpuStreamC
@@ -58,33 +64,41 @@ private:
 #if __SCALING__ >= SCALING_SMP
 	class interCpuMessagerC
 	{
+	private: struct messageS;
 	public:
 		interCpuMessagerC(cpuStreamC *parent)
 		:
 		parent(parent)
-		{ message.lock.setLock(); };
+		{
+			cache = __KNULL;
+			statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
+		};
 
 		error_t initialize(void);
 
 	public:
-		void flushTlbRange(void *vaddr, uarch_t nPages);
+		error_t flushTlbRange(void *vaddr, uarch_t nPages);
 		error_t dispatch(void);
 
 	private:
-		void set(ubit8 type,
+		void set(messageS *msg, ubit8 type,
 			uarch_t val0=0, uarch_t val1=0,
 			uarch_t val2=0, uarch_t val3=0);
 
 	private:
 		struct messageS
 		{
+			ptrlessListC<messageS>::headerS	listHeader;
 			volatile ubit8			type;
 			volatile uarch_t		val0;
 			volatile uarch_t		val1;
 			volatile uarch_t		val2;
 			volatile uarch_t		val3;
 		};
-		sharedResourceGroupC<waitLockC, messageS>	message;
+		ptrlessListC<messageS>		messageQueue;
+		slamCacheC			*cache;
+		sharedResourceGroupC<waitLockC, uarch_t> statusFlag;
+		// sharedResourceGroupC<waitLockC, messageS>	message;
 		cpuStreamC	*parent;
 	};
 #endif

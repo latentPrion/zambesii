@@ -1,15 +1,17 @@
-
+#include <debug.h>
 #include <scaling.h>
 #include <chipset/cpus.h>
 #include <chipset/pkg/chipsetPackage.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <__kthreads/__korientation.h>
 
+#include <commonlibs/libacpi/libacpi.h>
 
 #define getHighestId(currHighest,map,member,item,hibound)	\
 	do \
@@ -43,13 +45,34 @@ cpuTribC::~cpuTribC(void)
 {
 }
 
+static error_t fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId)
+{
+	error_t		ret;
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	ret = cpuTrib.spawnStream(CHIPSET_CPU_NUMA_SHBANKID, bspId, bspAcpiId);
+#else
+	ret = cpuTrib.spawnStream(bspId, bspAcpiId);
+#endif
+
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(FATAL CPUTRIB"Failed to spawn BSP stream when "
+			"falling back to single-cpu mode.\n");
+
+		return ERROR_FATAL;
+	};
+
+	return ERROR_SUCCESS;
+}
+
 error_t cpuTribC::initialize2(void)
 {
 	error_t			ret;
 #if __SCALING__ >= SCALING_CC_NUMA
 	chipsetNumaMapS		*numaMap;
 #endif
-#if __SCALING__ == SCALING_SMP
+#if __SCALING__ == SCALING_SMP || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
 	chipsetSmpMapS		*smpMap;
 #endif
 
@@ -109,15 +132,13 @@ error_t cpuTribC::initialize2(void)
 			"handle.\n");
 
 		// Small delay.
-		for (uarch_t i=0; i<2000; i++) { cpuControl::subZero(); };
+		for (uarch_t i=0; i<500000; i++) { cpuControl::subZero(); };
 		return ERROR_SUCCESS;
 	};
 
 	/* On MP build it's beneficial to pre-determine the size of the BMPs
 	 * so that when CPUs are being spawned the BMPs aren't constantly
 	 * resized.
-	 *
-	 * TODO: Add in this mini-optimization later.
 	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaMap = (*chipsetPkg.cpus->getNumaMap)();
@@ -131,30 +152,46 @@ error_t cpuTribC::initialize2(void)
 			highestCpuId, numaMap, cpuEntries,
 			cpuId, numaMap->nCpuEntries);
 	};
+
+	if (availableBanks.initialize(highestBankId) != ERROR_SUCCESS) {
+		panic(CC""CPUTRIB"AvailableBanks BMP initialize() failed.\n");
+	};
 #endif
 #endif
 
-#if __SCALING__ == SCALING_CC_NUMA
+
+#if __SCALING__ == SCALING_SMP || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
 	smpMap = (*chipsetPkg.cpus->getSmpMap)();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{
 		getHighestId(
 			highestCpuId, smpMap, entries, cpuId, smpMap->nEntries);
 	};
+
+	if (availableCpus.initialize(highestCpuId) != ERROR_SUCCESS) {
+		panic(CC""CPUTRIB"Failed to initialize() availableCpus bmp.\n");
+	};
+
+	if (onlineCpus.initialize(highestCpuId) != ERROR_SUCCESS) {
+		panic(CC""CPUTRIB"Failed to initialize() onlineCpus bmp.\n");
+	};
 #endif
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	return numaInit();
+	if (numaInit() != ERROR_SUCCESS) {
+		return fallbackToUpMode(bspId, bspId);
+	};
 #endif
 #if __SCALING__ == SCALING_SMP
-	return smpInit();
+	if (smpInit() != ERROR_SUCCESS) {
+		return fallbackToUpMode(bspId, bspId);
+	};
 #endif
 #if __SCALING__ == SCALING_UNIPROCESSOR
 	return uniProcessorInit();
-#endif
-
-	// Shaky return value, but leave it for now.
+#else
 	return ERROR_SUCCESS;
+#endif
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -226,7 +263,7 @@ error_t cpuTribC::numaInit(void)
 		 *	   to generate an extra bank for CPUs which were not
 		 *	   listed in the NUMA map, and treat these CPUs as if
 		 *	   they were all equally distanced from each other
-		 *	   NUMA-wise.
+		 *	   NUMA-wise (place them into the shared bank).
 		 *	2. There was no NUMA map, so the kernel has fallen back
 		 *	   to SMP operation. CPUs will be placed on a shared
 		 *	   bank in this case also.
@@ -296,7 +333,9 @@ error_t cpuTribC::numaInit(void)
 			 * admin may insert new CPUs later on which have NUMA
 			 * affinity, even if there were none at boot.
 			 **/
-			__kprintf(CC"No NUMA map, all CPUs on shared bank.\n");
+			__kprintf(CC"No NUMA map, all CPUs on shared bank (SMP "
+				"operation).\n");
+
 			for (uarch_t i=0; i<smpMap->nEntries; i++)
 			{
 				ret = spawnStream(
@@ -313,6 +352,7 @@ error_t cpuTribC::numaInit(void)
 					getStream(smpMap->entries[i].cpuId)
 						->powerControl(
 							CPUSTREAM_POWER_ON, 0);
+
 				}
 				else
 				{
@@ -444,6 +484,7 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 #endif
 	cpuStreamC	*cs;
 
+
 #if __SCALING__ >= SCALING_CC_NUMA
 	/**	EXPLANATION:
 	 * The NUMA case requires that the CPU be assigned to its holding bank.
@@ -489,9 +530,19 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	 **/
 	if (cid != bspId) {
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new cpuStreamC(bid, cid, cpuAcpiId);
+		cs = new (
+			(memoryTrib.__kmemoryStream
+				.*memoryTrib.__kmemoryStream.memAlloc)(
+				PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
+				MEMALLOC_NO_FAKEMAP))
+			cpuStreamC(bid, cid, cpuAcpiId);
 #else
-		cs = new cpuStreamC(cid, cpuAcpiId);
+		cs = new (
+			(memoryTrib.__kmemoryStream
+				memoryTrib.__kmemoryStream.*memAlloc)(
+				PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
+				MEMALLOC_NO_FAKEMAP))
+			cpuStreamC(cid, cpuAcpiId);
 #endif
 	}
 	else
@@ -513,6 +564,13 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 			bid, cid, cpuAcpiId);
 	};
 
+#if __SCALING__ >= SCALING_CC_NUMA
+	__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d,%d): Success.\n",
+		bid, cid, cpuAcpiId);
+#else
+	__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d): Success.\n",
+		cid, cpuAcpiId);
+#endif
 	return ERROR_SUCCESS;
 }
 

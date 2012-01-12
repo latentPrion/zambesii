@@ -15,7 +15,8 @@ struct intControllerModS	ibmPc_intControllerMod =
 	&ibmPc_pic_maskAll,
 	&ibmPc_pic_maskSingle,
 	&ibmPc_pic_unmaskAll,
-	&ibmPc_pic_unmaskSingle
+	&ibmPc_pic_unmaskSingle,
+	&ibmPc_pic_sendEoi
 };
 
 struct memoryModS	ibmPc_memoryMod =

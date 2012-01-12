@@ -176,7 +176,7 @@ chipsetNumaMapS *ibmPc_memoryMod_getNumaMap(void)
 	chipsetNumaMapS	*ret=0;
 
 	// Get NUMA map from ACPI.
-	acpi::flushCache();
+	acpi::initializeCache();
 	err = acpi::findRsdp();
 	if (err != ERROR_SUCCESS) { return __KNULL; };
 

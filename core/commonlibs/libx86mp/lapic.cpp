@@ -38,6 +38,14 @@ sarch_t x86Lapic::getPaddr(paddr_t *p)
 	return (cache.p != 0);
 }
 
+sarch_t x86Lapic::lapicMemIsMapped(void)
+{
+	if (cache.magic == x86LAPIC_MAGIC && cache.v != __KNULL) {
+		return 1;
+	};
+	return 0;
+}
+
 error_t x86Lapic::mapLapicMem(void)
 {
 	paddr_t		p = cache.p;

@@ -15,9 +15,12 @@
 #define PIC_IO_DELAY(v,x)		for (v=0; v<x; v++) {}
 
 
+static ubit8	firstMaskAllCall=1;
+
 error_t ibmPc_pic_initialize(void)
 {
 	ubit8		i;
+
 	/**	EXPLANATION:
 	 * On IBM-PC, there's no watchdog, so we have no need to initialize
 	 * a timer early. As a result of that, we have no need to enable local
@@ -105,6 +108,12 @@ void ibmPc_pic_maskAll(void)
 {
 	io::write8(PIC_PIC1_DATA, 0xFF);
 	io::write8(PIC_PIC2_DATA, 0xFF);
+	if (firstMaskAllCall)
+	{
+		io::write8(PIC_PIC1_CMD, 0x20);
+		io::write8(PIC_PIC2_CMD, 0x20);
+		firstMaskAllCall = 0;
+	};
 }
 
 error_t ibmPc_pic_unmaskSingle(uarch_t vector)
@@ -142,5 +151,10 @@ void ibmPc_pic_unmaskAll(void)
 {
 	io::write8(PIC_PIC1_DATA, 0x0);
 	io::write8(PIC_PIC2_DATA, 0x0);
+}
+
+void ibmPc_pic_sendEoi(ubit8)
+{
+	// FIXME: implement.
 }
 

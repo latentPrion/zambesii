@@ -1,7 +1,7 @@
 #ifndef x86_32_EXCEPTIONS_H
 	#define x86_32_EXCEPTIONS_H
 
-	#include <kernel/common/interruptTrib/isrFn.h>
+	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
 
 #ifdef __cplusplus
 extern "C" {

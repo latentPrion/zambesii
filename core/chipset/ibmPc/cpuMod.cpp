@@ -235,6 +235,8 @@ chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 	 * This function depends on the kernel libx86mp.
 	 **/
 	// First try using ACPI. Trust ACPI over MP tables.
+	acpi::findRsdp();
+	// acpi::initializeCache();
 	if (acpi::findRsdp() != ERROR_SUCCESS)
 	{
 		__kprintf(NOTICE SMPINFO"getSmpMap: No ACPI. Trying MP.\n");

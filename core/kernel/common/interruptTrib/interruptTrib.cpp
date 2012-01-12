@@ -1,6 +1,7 @@
 
 #include <debug.h>
 #include <chipset/pkg/chipsetPackage.h>
+#include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string.h>
@@ -19,49 +20,82 @@ interruptTribC::interruptTribC(void)
 
 error_t interruptTribC::initialize(void)
 {
+	/**	EXPLANATION:
+	 * First phase of kernel interrupt reception management: ensure that
+	 * the kernel is ready to handle CPU exception interrupts.
+	 *
+	 * This is mostly a simple architecture specific requirement, and
+	 * usually only involves installing pointers to the architecture code's
+	 * exception handler functions into the kernel's ISR table.
+	 *
+	 * Next, the kernel must be able to handle the case of a chipset having
+	 * a watchdog device to periodically pet. This may require the chipset
+	 * enable local IRQs early on the BSP, and enable a timer device.
+	 *
+	 * The kernel is not interested in the details for how the per-chipset
+	 * code handles any watchdog device it may have; the kernel also for the
+	 * most part also assumes that IRQs are still disabled on the BSP, so
+	 * the chipset must ensure that any such device is handled quietly.
+	 *
+	 * Should any form of IRQ handler need to be installed, the chipset
+	 * may use the kernel's ISR table and install its timer device handler.
+	 * There are two stages in installing support for a watchdog device at
+	 * boot. The first is where the chipset code manually dispatches petting
+	 * events. Later on in the boot when the kernel has set up a proper
+	 * system timer clock source, the chipset should hand over watchdog
+	 * management to the kernel.
+	 *
+	 * (1) Early watchdog handling can be done by the chipset as follows:
+	 * register a handler for a timer device, and set up the timer to go off
+	 * regularly. The kernel is unaware of this early timer device, so
+	 * it should be transparent to the kernel. The handler for the timer
+	 * should directly pet the watchdog when the timer IRQ comes in.
+	 *
+	 * (2) Normal watchdog operation is as follows: the chipset registers a
+	 * watchdog ISR with the Timer Tributary. At this point the kernel
+	 * should have set up a system timer periodic source. The chipset is to
+	 * calculate how many ticks there are between each watchdog pet event,
+	 * and tell the kernel. The kernel now takes over petting of the
+	 * watchdog device. The chipset is expected to shut down any timer
+	 * source associated with the early watchdog handling in (1) above.
+	 *
+	 * The chipset may choose to only use (2), in which case it is expected
+	 * that the watchdog will not reset the system before the kernel is able
+	 * to get to the point where it can handle the normal case. Else, the
+	 * chipset may use (1) until the kernel is able to handle the normal
+	 * case, and then switch over to (2).
+	 **/
+	// Arch specific CPU vector table setup.
 	installHardwareVectorTable();
 
-	/**	EXPLANATION:
-	 * At initialization of the Interrupt Tributary, we wish to ensure that
-	 * all vectors are masked at the interrupt controller immediately after
-	 * loading the hardware vector table into the processor.
+	// Arch specific exception handler setup.
+	installExceptions();
+
+	/* Chipset specific call in to notify the chipset that it may begin
+	 * any necessary watchdog device setup, or early IRQ management setup.
+	 * The kernel expects IRQs to be masked off at the BSP until
+	 * interruptTribC::initialize2() is called.
 	 *
-	 * But making a single call to
-	 * (*chipsetPkg.intController->maskAll)() is not intelligent at all:
-	 * we have previously called to the chipset and initialized the
-	 * watchdog timer if it exists. In the event that the chipset *does*
-	 * have a watchdog, the chipset support code would also have registered
-	 * a timer device with the kernel to interrupt at regular intervals and
-	 * call the watchdog.
-	 *
-	 * See, if we call maskAll at the interrupt controller now, we'll mask
-	 * off the continuous timer, and hence leave the watchdog unfed. So,
-	 * while it would be much faster to just call maskAll, we have to go
-	 * one by one, and make sure first that there are no registered ISRs
-	 * in the ISR list, and for each unfilled ISR slot, we call
-	 * maskSingle() on that slot.
-	 *
-	 * This is not as bad as it seems for two reasons:
-	 *	1. On most processors there aren't a lot of interrupt vectors.
-	 *	   x86 is a nice exception in that sense.
-	 *	2. Since we loop and mask each interrupt one by one, we get to
-	 *	   immediately see, at boot, which interrupts cannot be masked
-	 *	   by the chipset support code that was compiled in with our
-	 *	   kernel build.
+	 * So if the chipset does need to install support for a watchdog device,
+	 * for example, it is expected to do so in a manner that is transparent
+	 * to the kernel, until the kernel later notifies the chipset that it is
+	 * about to enable interrupts on the BSP. The kernel is not at
+	 * all prepared to handle device IRQs right at this point, mainly
+	 * because this function, interruptTribC::initialize() is called before
+	 * memory management is initialized.
 	 **/
 	// Check for int controller, halt if none, else call initialize().
 	assert_fatal(chipsetPkg.intController != __KNULL);
 	assert_fatal(
 		(*chipsetPkg.intController->initialize)() == ERROR_SUCCESS);
 
+	/**	EXPLANATION:
+	 * From here on, IRQs will be unmasked one by one as their devices are
+	 * discovered and initialized.
+	 **/
 	// Ask the chipset to mask all IRQs at its irq controller(s).
 	(*chipsetPkg.intController->maskAll)();
 
-	/* At this point all unneeded vectors are masked off, and their
-	 * relevant flags are set to show that. All we need to do now is install
-	 * the architecture specific exception handlers into the ISR table.
-	 **/
-	installExceptions();
 	return ERROR_SUCCESS;
 }
 
@@ -75,21 +109,13 @@ static void *getCr2(void)
 	return ret;
 }
 
+
+
 void interruptTribC::irqMain(taskContextS *regs)
 {
-/*	if (cpuTrib.getCurrentCpuStream()->cpuId == 1 && regs->vectorNo == 14)
-	{
-		__kprintf(FATAL"Inside of problem domain. %d nesting. Regdump:\n"
-			"cs %x, eip %x, ss %x, esp %x, faultaddr: %x.\n",
-			oo, regs->cs, regs->eip, regs->ss, regs->esp, getCr2());
-
-		asm volatile ("hlt\n\t");
-	};
-*/
 	__kprintf(NOTICE NOLOG"interruptTribC::irqMain: CPU %d entered "
 		"on vector %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
-
 
 	if (__KFLAG_TEST(
 		isrTable[regs->vectorNo].flags,

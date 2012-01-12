@@ -41,17 +41,15 @@ taskStream(this)
 
 status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 {
+
 	__kcpuPowerOnBlock.lock.acquire();
 	__kcpuPowerOnBlock.cpuStream = this;
-	__kcpuPowerOnBlock.sleepStack = &this->sleepStack[PAGING_BASE_SIZE];
+	__kcpuPowerOnBlock.sleepStack = &sleepStack[PAGING_BASE_SIZE];
 
 	// Call the chipset code to now actually wake the CPU up.
 	(*chipsetPkg.cpus->powerControl)(cpuId, command, flags);
 
-for (;;) {
-	tlbControl::smpFlushEntryRange((void *)0xC0800000, 32);
-};
-return ERROR_SUCCESS;
+	return ERROR_SUCCESS;
 }
 
 cpuStreamC::~cpuStreamC(void)

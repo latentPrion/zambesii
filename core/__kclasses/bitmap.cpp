@@ -5,6 +5,9 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/bitmap.h>
 
+#include <debug.h>
+#include <__kclasses/debugPipe.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 
 bitmapC::bitmapC(void)
 {
@@ -113,13 +116,13 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 	ubit32		*tmp, currentBits, nIndexes;
 	error_t		ret;
 
-
 	if (nBits == 0)
 	{
 		bmp.lock.acquire();
 		if (bmp.rsrc.bmp != __KNULL) {
 			delete bmp.rsrc.bmp;
 		};
+		bmp.rsrc.bmp = __KNULL;
 		bmp.rsrc.nBits = 0;
 		bmp.lock.release();
 		return ERROR_SUCCESS;
@@ -152,7 +155,9 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 	{
 		bmp.lock.acquire();
 		// Copy the old array's state into the new.
-		memcpy8(tmp, bmp.rsrc.bmp, nIndexes * sizeof(*bmp.rsrc.bmp));
+		if (bmp.rsrc.bmp != __KNULL) {
+			memcpy8(tmp, bmp.rsrc.bmp, nIndexes * sizeof(*bmp.rsrc.bmp));
+		};
 		bmp.rsrc.bmp = tmp;
 		bmp.rsrc.nBits = nBits;
 		bmp.lock.release();

@@ -1,14 +1,31 @@
 
+#include <debug.h>
 #include <asm/cpuControl.h>
 #include <arch/tlbControl.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
-
 error_t cpuStreamC::interCpuMessagerC::initialize(void)
 {
-	message.lock.unlock();
+	messageQueue.initialize();
+	statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
+
+	// Create an object cache for the messages.
+	cache = cachePool.getCache(sizeof(messageS));
+	if (cache == __KNULL)
+	{
+		cache = cachePool.createCache(sizeof(messageS));
+		if (cache == __KNULL)
+		{
+			__kprintf(ERROR CPUMSG"%d: initialize(): Failed "
+				"to create an object cache for messages.\n",
+				parent->cpuId);
+
+			return ERROR_CRITICAL;
+		};
+	};
+
 	/*	NOTE:
 	 * Signifies that this CPU is now "in synch" with the kernel and usable.
 	 * The reason this must only be set after the CPU is ready to receive
@@ -21,53 +38,60 @@ error_t cpuStreamC::interCpuMessagerC::initialize(void)
 	 * "availableCpus" BMP, that likelihood is erased, since no CPU will
 	 * try to send messages to this CPU if its bit isn't set.
 	 **/
+	__kprintf(NOTICE"Enable interrupts on CPU %d.\n", parent->cpuId);
 	cpuControl::enableInterrupts();
+__kprintf(NOTICE CPUMSG"%d: Exon %d: State dump: cache 0x%p, statusFlag %d (lock 0x%p), parent 0x%p, online bit %d.\n", parent->cpuId, cpuTrib.getCurrentCpuStream()->cpuId, cache, statusFlag.rsrc, &statusFlag.lock, parent, cpuTrib.onlineCpus.testSingle(parent->cpuId));
+	cache->dump();
 	cpuTrib.availableCpus.setSingle(parent->cpuId);
+
+// Bochs failing point.
+// NOTE: You want execution to end here for APs right now.
+if (!__KFLAG_TEST(parent->flags, CPUSTREAM_FLAGS_BSP)) {__kprintf(NOTICE"CPU %d: reached HLT.\n", parent->cpuId); for (;;){asm volatile("hlt\n\t");};};
 
 	return ERROR_SUCCESS;
 }
 
 void cpuStreamC::interCpuMessagerC::set(
-	ubit8 type, uarch_t val0, uarch_t val1, uarch_t val2, uarch_t val3
+	messageS *msg, ubit8 type,
+	uarch_t val0, uarch_t val1, uarch_t val2, uarch_t val3
 	)
 {
-	__kprintf(NOTICE"message.lock's value: %d.\n", message.lock.lock);
-	message.lock.acquire();
-
-	message.rsrc.type = type;
-	message.rsrc.val0 = val0;
-	message.rsrc.val1 = val1;
-	message.rsrc.val2 = val2;
-	message.rsrc.val3 = val3;
+	msg->type = type;
+	msg->val0 = val0;
+	msg->val1 = val1;
+	msg->val2 = val2;
+	msg->val3 = val3;
 }
 
 error_t cpuStreamC::interCpuMessagerC::dispatch(void)
 {
-	messageS	tmp;
+	messageS	*msg;
 
-	tmp.type = message.rsrc.type;
-	tmp.val0 = message.rsrc.val0;
-	tmp.val1 = message.rsrc.val1;
-	tmp.val2 = message.rsrc.val2;
-	tmp.val3 = message.rsrc.val3;
-
-	message.lock.release();
-__kprintf(NOTICE"Just released lock in dispatch. Message type is: %d, 0x%p, %d pages. Halting.\n", tmp.type, tmp.val0, tmp.val1);
-	switch (tmp.type)
+	msg = messageQueue.pop();
+	while (msg != __KNULL)
 	{
-	case CPUMESSAGE_TYPE_TLBFLUSH:
-		tlbControl::flushEntryRange(
-			(void *)tmp.val0,
-			tmp.val1);
+		switch (msg->type)
+		{
+		case CPUMESSAGE_TYPE_TLBFLUSH:
+			tlbControl::flushEntryRange(
+				(void *)msg->val0,
+				msg->val1);
 
-		return ERROR_SUCCESS;
+			break;
 
-	default:
-		__kprintf(ERROR CPUMSG"%d: Unknown message type %d.\n",
-			parent->cpuId, tmp.type);
+		default:
+			__kprintf(ERROR CPUMSG"%d: Unknown message type %d.\n",
+				parent->cpuId, msg->type);
+		};
 
-	}
+		cache->free(msg);
+		msg = messageQueue.pop();
+	};
 
-	return ERROR_UNKNOWN;
+/*	statusFlag.lock.acquire();
+	statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
+	statusFlag.lock.release();
+*/
+	return ERROR_SUCCESS;
 }
 

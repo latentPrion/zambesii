@@ -80,13 +80,15 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
 
+	// Initialize the kernel Memory Reservoir (heap) and object cache pool.
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
-for (;;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
+
+for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 

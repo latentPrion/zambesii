@@ -22,9 +22,13 @@ void walkerPageRanger::remapNoInc(
 	uarch_t		l2Start, l2Current, l2Limit, l2End;
 	paddr_t		l2Entry;
 #endif
-	uarch_t		archFlags;
+	uarch_t		archFlags, localFlush;
 
 	if (nPages == 0) { return; };
+
+	localFlush = __KFLAG_TEST(__kflags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
+	vaddr = reinterpret_cast<void *>(
+		(uarch_t)vaddr & PAGING_BASE_MASK_HIGH );
 
 	archFlags = walkerPageRanger::encodeFlags(__kflags);
 	getLevelRanges(
@@ -204,7 +208,12 @@ void walkerPageRanger::remapNoInc(
 	};
 
 #if __SCALING__ > SCALING_SMP
-	tlbControl::smpFlushEntryRange(vaddr, nPages);
+	if (localFlush) {
+		tlbControl::flushEntryRange(vaddr, nPages);
+	}
+	else {
+		tlbControl::smpFlushEntryRange(vaddr, nPages);
+	};
 #else
 	tlbControl::flushEntryRange(vaddr, nPages);
 #endif

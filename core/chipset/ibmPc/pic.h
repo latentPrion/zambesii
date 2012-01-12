@@ -17,6 +17,7 @@ void ibmPc_pic_maskAll(void);
 error_t ibmPc_pic_maskSingle(uarch_t vector);
 void ibmPc_pic_unmaskAll(void);
 error_t ibmPc_pic_unmaskSingle(uarch_t vector);
+void ibmPc_pic_sendEoi(ubit8);
 
 #ifdef __cplusplus
 }

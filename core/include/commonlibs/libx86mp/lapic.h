@@ -4,7 +4,7 @@
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
-	#include <kernel/common/interruptTrib/isrFn.h>
+	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
 	#include "mpTables.h"
 
 #define x86LAPIC		"LAPIC: "
@@ -114,6 +114,7 @@ namespace x86Lapic
 	sarch_t getPaddr(paddr_t *p);
 	void setPaddr(paddr_t p);
 	error_t mapLapicMem(void);
+	sarch_t lapicMemIsMapped(void);
 
 	ubit8 read8(ubit32 offset);
 	ubit16 read16(ubit32 offset);

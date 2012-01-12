@@ -74,7 +74,7 @@ void timerTribC::updateContinuousClock(void)
 
 			watchdog.lock.release();
 			// Fixme: Handle this later.
-			(*watchdog.rsrc.isr)(__KNULL);
+			(*watchdog.rsrc.isr)();
 
 			goto skipWatchdogLockRelease;
 		}
@@ -86,7 +86,7 @@ skipWatchdogLockRelease:;
 	};		
 }
 
-status_t timerTribC::registerWatchdogIsr(isrFn *isr, uarch_t interval)
+status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, uarch_t interval)
 {
 	if ((isr == __KNULL) || (interval == 0)) {
 		return ERROR_INVALID_ARG;

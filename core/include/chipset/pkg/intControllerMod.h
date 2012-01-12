@@ -42,6 +42,7 @@ struct intControllerModS
 	error_t (*maskSingle)(uarch_t vector);
 	void (*unmaskAll)(void);
 	error_t (*unmaskSingle)(uarch_t vector);
+	void (*sendEoi)(ubit8);
 };
 
 #endif

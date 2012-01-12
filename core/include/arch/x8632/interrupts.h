@@ -1,7 +1,7 @@
 #ifndef _ARCH_x86_32_INTERRUPTS_H
 	#define _ARCH_x86_32_INTERRUPTS_H
 
-	#include <kernel/common/interruptTrib/isrFn.h>
+	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
 
 #define ARCH_IRQ_NVECTORS		256
 

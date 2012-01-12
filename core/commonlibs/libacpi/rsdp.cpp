@@ -3,7 +3,8 @@
 #include <arch/paging.h>
 #include <arch/walkerPageRanger.h>
 #include <chipset/findTables.h>
-#include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/string8.h>
+#include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/rsdp.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
@@ -12,23 +13,20 @@ static acpi_sdtCacheS		cache;
 
 void acpi::initializeCache(void)
 {
-	if (cache.magic != ACPI_CACHE_MAGIC)
-	{
-		acpi::flushCache();
-		cache.magic = ACPI_CACHE_MAGIC;
-	};
+	if (cache.magic == ACPI_CACHE_MAGIC) { return; };
+
+	acpi::flushCache();
+	cache.magic = ACPI_CACHE_MAGIC;
 }
 
 void acpi::flushCache(void)
 {
-	memset(&cache, 0, sizeof(cache));
+	memset8(&cache, 0, sizeof(cache));
 }
 
 error_t acpi::findRsdp(void)
 {
-	if (acpi::rsdpFound()) {
-		return ERROR_SUCCESS;
-	};
+	if (acpi::rsdpFound()) { return ERROR_SUCCESS; };
 
 	// Call on chipset code to find ACPI RSDP.
 	cache.rsdp = static_cast<acpi_rsdpS *>( chipset_findAcpiRsdp() );
