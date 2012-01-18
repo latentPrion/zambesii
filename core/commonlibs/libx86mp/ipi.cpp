@@ -52,16 +52,26 @@ void x86Lapic::ipi::installHandler(void)
 
 	// Ask the Interrupt Trib to take our handler.
 	interruptTrib.installException(
-		x86LAPIC_IPI_VECTOR, &x86Lapic::ipi::exceptionHandler);
+		x86LAPIC_IPI_VECTOR, &x86Lapic::ipi::exceptionHandler,
+		INTTRIB_VECTOR_FLAGS_EXCEPTION_POSTCALL);
 }
 
-status_t x86Lapic::ipi::exceptionHandler(struct taskContextS *regs)
+status_t x86Lapic::ipi::exceptionHandler(taskContextS *, ubit8 postcall)
 {
-	(void)regs;
-
 	// Check messager and see why we got an IPI.
-	cpuTrib.getCurrentCpuStream()->interCpuMessager.dispatch();
-	sendEoi();
+	if (!postcall)
+	{
+		cpuTrib.getCurrentCpuStream()->interCpuMessager.dispatch();
+	}
+	else
+	{
+		// Set the CPU's messager state to NORMAL before IRET.
+		cpuTrib.getCurrentCpuStream()
+			->interCpuMessager.setReceiveStateReady();
+
+		sendEoi();
+	}
+		
 	return ERROR_SUCCESS;
 }
 

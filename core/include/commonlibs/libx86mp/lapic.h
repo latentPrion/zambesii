@@ -145,7 +145,7 @@ namespace x86Lapic
 
 		void sendFlatLogicalIpi(ubit8 type, ubit8 vector, ubit8 mask);
 
-		exceptionFn	exceptionHandler;
+		__kexceptionFn	exceptionHandler;
 		void installHandler(void);
 	}
 

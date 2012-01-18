@@ -1,6 +1,6 @@
 
 #include <arch/arch.h>
-#include <chipset/pkg/chipsetPackage.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/utf8.h>
 #include <__kstdlib/utf16.h>
 #include <__kstdlib/__kbitManipulation.h>
@@ -76,7 +76,7 @@ uarch_t debugPipeC::tieTo(uarch_t device)
 	{
 		if (__KBIT_TEST(device, i))
 		{
-			mod = chipsetPkg.debug[i];
+			mod = zkcmCore.debug[i];
 			if (mod != __KNULL)
 			{
 				err = mod->initialize();
@@ -117,7 +117,7 @@ uarch_t debugPipeC::untieFrom(uarch_t device)
 			};
 
 			// Assume that mod exists if its bit is set.
-			err = chipsetPkg.debug[i]->shutdown();
+			err = zkcmCore.debug[i]->shutdown();
 			if (err == ERROR_SUCCESS) {
 				__KFLAG_UNSET(devices.rsrc, (1<<i));
 			}
@@ -144,7 +144,7 @@ void debugPipeC::refresh(void)
 	for (ubit8 i=0; i<4; i++)
 	{
 		if (__KFLAG_TEST(devices.rsrc, (1<<i))) {
-			chipsetPkg.debug[i]->clear();
+			zkcmCore.debug[i]->clear();
 		};
 	};
 
@@ -155,7 +155,7 @@ void debugPipeC::refresh(void)
 		for (ubit8 i=0; i<4; i++)
 		{
 			if (__KFLAG_TEST(devices.rsrc, (1<<i))) {
-				chipsetPkg.debug[i]->syphon(buff, len);
+				zkcmCore.debug[i]->syphon(buff, len);
 			};
 		};
 
@@ -408,7 +408,7 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	for (ubit8 i=0; i<4; i++)
 	{
 		if (__KFLAG_TEST(devices.rsrc, (1<<i))) {
-			chipsetPkg.debug[i]->syphon(convBuff.rsrc, buffLen);
+			zkcmCore.debug[i]->syphon(convBuff.rsrc, buffLen);
 		};
 	};
 
@@ -451,7 +451,7 @@ void debugPipeC::printf(
 	{
 		if (__KFLAG_TEST(devices.rsrc, (1<<i)))
 		{
-			chipsetPkg.debug[i]->syphon(
+			zkcmCore.debug[i]->syphon(
 				static_cast<utf8Char *>( buff->rsrc ), buffLen);
 		};
 	};

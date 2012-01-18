@@ -1,8 +1,8 @@
 
 #include <arch/walkerPageRanger.h>
 #include <chipset/memory.h>
-#include <chipset/memoryMap.h>
-#include <chipset/pkg/chipsetPackage.h>
+#include <chipset/zkcm/memoryMap.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <lang/lang.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -41,7 +41,7 @@ error_t memoryTribC::memRegionInit(void)
 {
 	chipsetRegionMapEntryS		*currEntry;
 	chipsetRegionReservedS		*currReserved;
-	chipsetMemMapS			*memMap;
+	zkcmMemMapS			*memMap;
 	paddr_t				currBase, currSize;
 	error_t				ret;
 
@@ -102,9 +102,9 @@ error_t memoryTribC::memRegionInit(void)
 	};
 
 	// Next step is to overlay the memory regions with chipset memory map.
-	if (chipsetPkg.memory == __KNULL) { return ERROR_SUCCESS; };
+	if (zkcmCore.memoryDetection == __KNULL) { return ERROR_SUCCESS; };
 
-	memMap = (*chipsetPkg.memory->getMemoryMap)();
+	memMap = (*zkcmCore.memoryDetection->getMemoryMap)();
 	if (memMap == __KNULL) { return ERROR_SUCCESS; };
 
 	for (ubit32 i=0; i<chipsetRegionMap->nEntries; i++)
@@ -113,7 +113,7 @@ error_t memoryTribC::memRegionInit(void)
 		{
 			// Mark any memory that's not usable as used.
 			if (memMap->entries[j].memType
-				!= CHIPSETMMAP_TYPE_USABLE)
+				!= ZKCM_MMAP_TYPE_USABLE)
 			{
 				memRegions[i].memBmp->mapMemUsed(
 					memMap->entries[j].baseAddr,

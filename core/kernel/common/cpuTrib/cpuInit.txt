@@ -68,7 +68,7 @@ shall be as follows:
     that the kernel will simply look up that bank's CPU bmp and shut down each
     CPU on that bank. Bringing a bank online would imply the reverse.
 
-SEMANTICAL ANALYSIS (Use cases?)
+MECHANICAL ANALYSIS (Use cases?)
 
 Use case for the insertion of a new physical CPU (hotPlug_insert())
 

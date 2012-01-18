@@ -1,5 +1,5 @@
 
-#include <chipset/pkg/chipsetPackage.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
@@ -47,7 +47,7 @@ status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 	__kcpuPowerOnBlock.sleepStack = &sleepStack[PAGING_BASE_SIZE];
 
 	// Call the chipset code to now actually wake the CPU up.
-	(*chipsetPkg.cpus->powerControl)(cpuId, command, flags);
+	(*zkcmCore.cpuDetection->powerControl)(cpuId, command, flags);
 
 	return ERROR_SUCCESS;
 }

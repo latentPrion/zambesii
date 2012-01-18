@@ -4,7 +4,7 @@
 #include <arch/paddr_t.h>
 #include <arch/memory.h>
 #include <chipset/cpus.h>
-#include <chipset/pkg/chipsetPackage.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/compiler/cxxrtl.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -18,7 +18,6 @@
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
-#include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
@@ -46,7 +45,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
 	// Initialize the chipset's module package.
-	DO_OR_DIE(chipsetPkg, initialize(), ret);
+	DO_OR_DIE(zkcmCore, initialize(), ret);
 	// processTrib initializes __kprocess & __korientation.
 	DO_OR_DIE(processTrib, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initialize(), ret);
@@ -85,10 +84,11 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(cachePool, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
+	DO_OR_DIE(interruptTrib, initialize2(), ret);
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
-
 for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
+
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 

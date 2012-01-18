@@ -4,58 +4,30 @@
 	#include <arch/interrupts.h>
 	#include <arch/taskContext.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kclasses/ptrlessList.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
 
-/**	EXPLANATION:
- * When Zambezii receives an IRQ, it quickly saves context (much like any other
- * kernel), then enters the Interrupt Tributary's main interrupt handling
- * routine (void interruptTribC::irqMain(taskContextS *regs)).
- *
- * On encountering an unknown interrupt, if there are no ISRs registered on the
- * nefarious vector, the kernel will increment the 'nUnhandled' counter on that
- * vector, and then attempt to ask the chipset support code for assistance. The
- * chipset is expected to mask that interrupt.
- *
- * The kernel will not ask the chipset support code to mask a vector if there
- * is at least one ISR registered there. In that case, the kernel will just have
- * to suck it up and increment the nUnhandled counter, since there is at least
- * one device that is known, and is raising a valid IRQ on that vector.
- *
- * If however, later on, for a vector with no handlers, the kernel receives a
- * request to register a handler for that vector, the kernel will ask the
- * chipset to unmask that interrupt.
- *
- * Technically, the kernel will ask the chipset to unmask each vector the first
- * time a handler is registered on that vector. And whenever a handler is
- * unregistered from a vector, such that there are no more ISRs on that vector,
- * the kernel will ask the chipset code to mask that vector once again.
- *
- * In this routine, the interrupt number is used as an index into an array of
- * vector descriptors. Each vector descriptor can be one of three things:
- *	1. An unused vector. (An interrupt coming in on an unused vector means
- *	   that the chipset is raising an unknown IRQ.) A vector is seen as
- *	   unused when there is no pointer to an ISR for that vector, whether
- *	   shared or unshared.
- *
- *	2. An unshared vector, which only holds one ISR. If an IRQ comes in on
- *	   an unshared vector, and the ISR
- *
- **/
 
-// Denotes a vector with only one ISR statically (non-shared).
-#define INTERRUPTTRIB_VECTOR_FLAGS_EXCLUSIVE	(1<<0)
+#define INTTRIB					"InterruptTrib: "
+
 // Applies to any ISR the chipset registered during intializeInterrupts().
-#define INTERRUPTTRIB_VECTOR_FLAGS_BOOTISR	(1<<1)
+#define INTTRIB_VECTOR_FLAGS_BOOTISR		(1<<1)
 // States that the vector holds an exception.
-#define INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION	(1<<4)
+#define INTTRIB_VECTOR_FLAGS_EXCEPTION		(1<<2)
+// The exception on the vector must be called again just before executing IRET.
+#define INTTRIB_VECTOR_FLAGS_EXCEPTION_POSTCALL	(1<<3)
+// Declares that the vector holds a syscall handler and is an SWI vector.
+#define INTTRIB_VECTOR_FLAGS_SWI		(1<<4)
 
-#define INTERRUPTTRIB_ISR_FLAGS_LEVEL_TRIGGERED	(1<<0)
+#define INTTRIB_ISR_IRQTYPE_LEVEL_TRIGGERED	(1<<0)
+#define INTTRIB_ISR_IRQTYPE_EDGE_TRIGGERED	(1<<1)
 
 // Zambezii Kernel Chipset Module.
-#define INTERRUPTTRIB_ISR_TYPE_ZKCM		(0x0)
+#define INTTRIB_ISR_DRIVERTYPE_ZKCM		(0x0)
 // Uniform Driver Interface.
-#define INTERRUPTTRIB_ISR_TYPE_UDI		(0x1)
+#define INTTRIB_ISR_DRIVERTYPE_UDI		(0x1)
+
 
 class interruptTribC
 :
@@ -72,7 +44,9 @@ public:
 	status_t zkcmRegisterIsr(zkcmIsrFn *isr, uarch_t flags);
 	void zkcmRemoveIsr(zkcmIsrFn *isr);
 
-	void installException(uarch_t vector, exceptionFn *exception);
+	void installException(
+		uarch_t vector, __kexceptionFn *exception, uarch_t flags);
+
 	void removeException(uarch_t vector);
 
 	void irqMain(taskContextS *regs);
@@ -83,22 +57,25 @@ private:
 	void installExceptions(void);
 
 public:
-	struct isrS
+	struct isrDescriptorS
 	{
-		isrS		*next;
+		ptrlessListC<isrDescriptorS>::headerS	listHeader;
 		ubit32		flags;
 		// For profiling.
 		uarch_t		nHandled;
 		// NOTE: Should actually point to the bus driver instance.
 		uarch_t		processId;
-		zkcmIsrFn		*isr;
+		zkcmIsrFn	*isr;
+		ubit8		driverType, irqType;
+		// Miscellaneous driver only use.
+		ubit32		scratch;
 	};
 
 	struct vectorDescriptorS
 	{
-		uarch_t		flags;
+		uarch_t			flags;
 		// For debugging.
-		uarch_t		nUnhandled;
+		uarch_t			nUnhandled;
 
 		/**	NOTE:
 		 * Each vector may have one exception, and any number of other
@@ -106,11 +83,27 @@ public:
 		 * vector, it is run first. Userspace and drivers are not
 		 * allowed to install exceptions. They are only installed by
 		 * the kernel at boot as required.
+		 *
+		 * The pointer to the exception handler on a vector is also the
+		 * pointer to the vector's SWI handler if one exists on that
+		 * vector. A vector which is to be used for syscall entry is not
+		 * allowed to have other types of handlers on it as well. No
+		 * ISRs or exceptions are permitted alongside an SWI handler on
+		 * any vector.
 		 **/
-		exceptionFn	*exception;
-		isrS		*isrList;
+		__kexceptionFn		*exception;
+		/* Each vector has a list of ISRs which have been registered to
+		 * it. There is no limit to the number that may be installed on
+		 * a vector, but in time the kernel will be augmented with the
+		 * ability to balance the number of devices presenting on the
+		 * same vector.
+		 *
+		 * If there is an SWI (syscall) handler on a vector, then no
+		 * other type of handler is allowed to exist alongside it.
+		 **/
+		ptrlessListC<isrDescriptorS>	isrList;
 	};
-	vectorDescriptorS		isrTable[ARCH_IRQ_NVECTORS];
+	vectorDescriptorS	intTable[ARCH_IRQ_NVECTORS];
 };
 
 extern interruptTribC		interruptTrib;

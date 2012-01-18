@@ -5,7 +5,6 @@
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/debugTrib/debugTrib.h>
-#include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
@@ -24,7 +23,6 @@
 timerTribC		timerTrib;
 interruptTribC		interruptTrib;
 debugTribC		debugTrib;
-numaTribC		numaTrib;
 memReservoirC		memReservoir;
 cpuTribC		cpuTrib;
 debugPipeC		__kdebug;

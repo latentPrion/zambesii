@@ -63,12 +63,13 @@ void interruptTribC::installHardwareVectorTable(void)
 
 void interruptTribC::installExceptions(void)
 {
+	// Register all of the exceptions with the Interrupt Trib.
 	for (uarch_t i=0; i<19; i++) {
-		installException(i, __kexceptionTable[i]);
+		installException(i, __kexceptionTable[i], 0);
 	};
 
 	for (uarch_t i=19; i<32; i++) {
-		installException(i, __kexceptionTable[19]);
+		installException(i, __kexceptionTable[19], 0);
 	};
 }
 

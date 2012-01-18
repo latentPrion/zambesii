@@ -1,6 +1,6 @@
 
 #include <debug.h>
-#include <chipset/pkg/chipsetPackage.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
@@ -10,60 +10,53 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
+
+/**	EXPLANATION:
+ * In the event that a chipset has an early device to install an ISR for, it is
+ * allowed to install that ISR in the exception slot on the vector its device
+ * raises its IRQ on. A device that registers an early ISR uses
+ * installException(), passing INTTRIB_VECTOR_FLAGS_BOOTISR.
+ *
+ * The kernel takes note of the fact that it is an ISR and will ensure that
+ * when interruptTribC::initialize2() is called, that ISR is removed from the
+ * exception slot and added to the vector's ISR list.
+ *
+ * CAVEAT: No early ISR may be installed on a vector which has a known actual
+ * exception which would be installed by the kernel. For example, on x86-32,
+ * that means that a chipset may not install an early ISR on vectors 0-31.
+ **/
+static ubit8		bootIsrsAllowed=1;
+
 interruptTribC::interruptTribC(void)
 {
-	memset(
-		isrTable,
-		0,
-		sizeof(interruptTribC::vectorDescriptorS) * ARCH_IRQ_NVECTORS);
+	for (ubit32 i=0; i<ARCH_IRQ_NVECTORS; i++)
+	{
+		intTable[i].exception = __KNULL;
+		intTable[i].flags = 0;
+		intTable[i].nUnhandled = 0;
+	};
 }
 
 error_t interruptTribC::initialize(void)
 {
 	/**	EXPLANATION:
-	 * First phase of kernel interrupt reception management: ensure that
-	 * the kernel is ready to handle CPU exception interrupts.
+	 * Installs the architecture specific exception handlers and initializes
+	 * the chipset's intController module.
 	 *
-	 * This is mostly a simple architecture specific requirement, and
-	 * usually only involves installing pointers to the architecture code's
-	 * exception handler functions into the kernel's ISR table.
+	 * The intController initialization also signals to the chipset that
+	 * it is safe to set up any early device ISRs, such as a timer IRQ for
+	 * the periodic petting of a watchdog device.
 	 *
-	 * Next, the kernel must be able to handle the case of a chipset having
-	 * a watchdog device to periodically pet. This may require the chipset
-	 * enable local IRQs early on the BSP, and enable a timer device.
+	 * Should the chipset need to do anything of that sort, it should
+	 * install a handler for the relevant early device using
+	 * installException(v, &handler, INTTRIB_VECTOR_FLAGS_BOOTISR).
 	 *
-	 * The kernel is not interested in the details for how the per-chipset
-	 * code handles any watchdog device it may have; the kernel also for the
-	 * most part also assumes that IRQs are still disabled on the BSP, so
-	 * the chipset must ensure that any such device is handled quietly.
-	 *
-	 * Should any form of IRQ handler need to be installed, the chipset
-	 * may use the kernel's ISR table and install its timer device handler.
-	 * There are two stages in installing support for a watchdog device at
-	 * boot. The first is where the chipset code manually dispatches petting
-	 * events. Later on in the boot when the kernel has set up a proper
-	 * system timer clock source, the chipset should hand over watchdog
-	 * management to the kernel.
-	 *
-	 * (1) Early watchdog handling can be done by the chipset as follows:
-	 * register a handler for a timer device, and set up the timer to go off
-	 * regularly. The kernel is unaware of this early timer device, so
-	 * it should be transparent to the kernel. The handler for the timer
-	 * should directly pet the watchdog when the timer IRQ comes in.
-	 *
-	 * (2) Normal watchdog operation is as follows: the chipset registers a
-	 * watchdog ISR with the Timer Tributary. At this point the kernel
-	 * should have set up a system timer periodic source. The chipset is to
-	 * calculate how many ticks there are between each watchdog pet event,
-	 * and tell the kernel. The kernel now takes over petting of the
-	 * watchdog device. The chipset is expected to shut down any timer
-	 * source associated with the early watchdog handling in (1) above.
-	 *
-	 * The chipset may choose to only use (2), in which case it is expected
-	 * that the watchdog will not reset the system before the kernel is able
-	 * to get to the point where it can handle the normal case. Else, the
-	 * chipset may use (1) until the kernel is able to handle the normal
-	 * case, and then switch over to (2).
+	 * The handler is installed as if it were an exception and not an ISR
+	 * until later on when the kernel is able to properly handle ISR
+	 * installation. At that point the kernel will internally patch up the
+	 * earlier temporary measure. That should suffice for any chipsets which
+	 * may require the installation of an ISR for a device earlier than
+	 * the kernel's normal IRQ handling logic is initialized.
 	 **/
 	// Arch specific CPU vector table setup.
 	installHardwareVectorTable();
@@ -85,16 +78,43 @@ error_t interruptTribC::initialize(void)
 	 * memory management is initialized.
 	 **/
 	// Check for int controller, halt if none, else call initialize().
-	assert_fatal(chipsetPkg.intController != __KNULL);
-	assert_fatal(
-		(*chipsetPkg.intController->initialize)() == ERROR_SUCCESS);
+	assert_fatal(zkcmCore.intController != __KNULL);
+	assert_fatal((zkcmCore.intController->initialize)() == ERROR_SUCCESS);
 
 	/**	EXPLANATION:
 	 * From here on, IRQs will be unmasked one by one as their devices are
 	 * discovered and initialized.
 	 **/
 	// Ask the chipset to mask all IRQs at its irq controller(s).
-	(*chipsetPkg.intController->maskAll)();
+	(zkcmCore.intController->maskAll)();
+
+	return ERROR_SUCCESS;
+}
+
+error_t interruptTribC::initialize2(void)
+{
+	/**	EXPLANATION:
+	 * This is called simply to notify the Interrupt Tributary that memory
+	 * management is now initialized fully and the heap is available.
+	 *
+	 * Now the Interrupt Tributary will cycle through all of the vector
+	 * descriptors and find all the (if any) early ISRs installed by the
+	 * chipset code and properly add them to their respective vectors' ISR
+	 * lists.
+	 **/
+	for (ubit32 i=0; i<ARCH_IRQ_NVECTORS; i++)
+	{
+		if (__KFLAG_TEST(
+			intTable[i].flags, INTTRIB_VECTOR_FLAGS_BOOTISR))
+		{
+			/**	TODO:
+			 * Move the ISR off the "exception" pointer and properly
+			 * add it to the list of ISRs on the vector. Make sure
+			 * you add it as a native interface driver and not a UDI
+			 * driver.
+			 **/
+		};
+	};
 
 	return ERROR_SUCCESS;
 }
@@ -109,38 +129,89 @@ static void *getCr2(void)
 	return ret;
 }
 
-
-
 void interruptTribC::irqMain(taskContextS *regs)
 {
-	__kprintf(NOTICE NOLOG"interruptTribC::irqMain: CPU %d entered "
-		"on vector %d.\n",
-		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
-
-	if (__KFLAG_TEST(
-		isrTable[regs->vectorNo].flags,
-		INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION))
+	if (regs->vectorNo != 253)
 	{
-		(*isrTable[regs->vectorNo].exception)(regs);
+		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: CPU %d entered on "
+			"vector %d.\n",
+			cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
 	};
 
-	__kprintf(NOTICE NOLOG"interruptTribC::irqMain: Exiting on CPU %d.\n",
-		cpuTrib.getCurrentCpuStream()->cpuId);
+	// TODO: Check for a boot ISR.
 
-	// Calls ISRs, then exit.
+	// Check for an exception.
+	if (__KFLAG_TEST(
+		intTable[regs->vectorNo].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION))
+	{
+		(*intTable[regs->vectorNo].exception)(regs, 0);
+	};
+
+
+	// TODO: Calls ISRs, then exit.
+
+	if (regs->vectorNo != 253)
+	{
+		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: Exiting on CPU %d "
+			"vector %d.\n",
+			cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
+	};
+
+	// Check to see if the exception requires a "postcall".
+	if (__KFLAG_TEST(
+		intTable[regs->vectorNo].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION)
+		&& __KFLAG_TEST(
+			intTable[regs->vectorNo].flags,
+			INTTRIB_VECTOR_FLAGS_EXCEPTION_POSTCALL))
+	{
+		(intTable[regs->vectorNo].exception)(regs, 1);
+	};
 }
 
-void interruptTribC::installException(uarch_t vector, exceptionFn *exception)
+void interruptTribC::installException(
+	uarch_t vector, __kexceptionFn *exception, uarch_t flags)
 {
-	isrTable[vector].exception = exception;
-	__KFLAG_SET(
-		isrTable[vector].flags, INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION);
+	if (exception == __KNULL) { return; };
+
+	if (__KFLAG_TEST(flags, INTTRIB_VECTOR_FLAGS_SWI))
+	{
+		__kprintf(WARNING INTTRIB"Failed to install exception 0x%p on "
+			"vector %d; is an SWI vector.\n",
+			exception, vector);
+
+		return;
+	};
+
+	if (__KFLAG_TEST(flags, INTTRIB_VECTOR_FLAGS_BOOTISR))
+	{
+		if (!bootIsrsAllowed)
+		{
+			__kprintf(ERROR INTTRIB"Failed to install boot-ISR "
+				"0x%p on vector %d: boot ISRs have expired. "
+				"\tNormal ISR installation is now initialized."
+				"\n", exception, vector);
+
+			return;
+		};
+
+		// Chipset wants to install an early ISR.
+		__KFLAG_SET(
+			intTable[vector].flags, INTTRIB_VECTOR_FLAGS_BOOTISR);
+	}
+	else
+	{
+		// Else it's a normal exception installation.
+		__KFLAG_SET(
+			intTable[vector].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION);
+	};
+
+	intTable[vector].exception = exception;
+	intTable[vector].flags |= flags;
 }
 
 void interruptTribC::removeException(uarch_t vector)
 {
-	isrTable[vector].exception = __KNULL;
-	__KFLAG_SET(
-		isrTable[vector].flags, INTERRUPTTRIB_VECTOR_FLAGS_EXCEPTION);
+	intTable[vector].exception = __KNULL;
+	intTable[vector].flags = 0;
 }
 

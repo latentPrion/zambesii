@@ -1,7 +1,7 @@
 #include <debug.h>
 #include <scaling.h>
 #include <chipset/cpus.h>
-#include <chipset/pkg/chipsetPackage.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
@@ -70,10 +70,10 @@ error_t cpuTribC::initialize2(void)
 {
 	error_t			ret;
 #if __SCALING__ >= SCALING_CC_NUMA
-	chipsetNumaMapS		*numaMap;
+	zkcmNumaMapS		*numaMap;
 #endif
 #if __SCALING__ == SCALING_SMP || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
-	chipsetSmpMapS		*smpMap;
+	zkcmSmpMapS		*smpMap;
 #endif
 
 	/**	EXPLANATION:
@@ -102,20 +102,20 @@ error_t cpuTribC::initialize2(void)
 	 * unsafe MP environment is to force the kernel not to use MP operation.
 	 **/
 	// Ensure that the CPU info mod is ready for use.
-	ret = (*chipsetPkg.cpus->initialize)();
+	ret = (*zkcmCore.cpuDetection->initialize)();
 	if (ret != ERROR_SUCCESS) {
 		__kprintf(ERROR CPUTRIB"initialize2: CPU mod init failed.\n");
 	};
 
 #if __SCALING__ >= SCALING_SMP
-	bspId = (*chipsetPkg.cpus->getBspId)();
+	bspId = (*zkcmCore.cpuDetection->getBspId)();
 #else
 	bspId = 0;
 #endif
 
 #if __SCALING__ >= SCALING_SMP
 	// Next ask the chipset if multi-cpu is safe on this machine.
-	if ((*chipsetPkg.cpus->checkSmpSanity)()) {
+	if ((*zkcmCore.cpuDetection->checkSmpSanity)()) {
 		usingChipsetSmpMode = 1;
 	}
 	else
@@ -141,7 +141,7 @@ error_t cpuTribC::initialize2(void)
 	 * resized.
 	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaMap = (*chipsetPkg.cpus->getNumaMap)();
+	numaMap = (*zkcmCore.cpuDetection->getNumaMap)();
 	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
 	{
 		getHighestId(
@@ -161,7 +161,7 @@ error_t cpuTribC::initialize2(void)
 
 
 #if __SCALING__ == SCALING_SMP || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
-	smpMap = (*chipsetPkg.cpus->getSmpMap)();
+	smpMap = (*zkcmCore.cpuDetection->getSmpMap)();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{
 		getHighestId(
@@ -198,9 +198,9 @@ error_t cpuTribC::initialize2(void)
 error_t cpuTribC::numaInit(void)
 {
 	error_t			ret;
-	chipsetNumaMapS		*numaMap;
+	zkcmNumaMapS		*numaMap;
 #ifdef CHIPSET_CPU_NUMA_GENERATE_SHBANK
-	chipsetSmpMapS		*smpMap;
+	zkcmSmpMapS		*smpMap;
 	ubit8			found;
 #endif
 
@@ -212,7 +212,7 @@ error_t cpuTribC::numaInit(void)
 	 * by the calling code. Should be able to just use the module from here
 	 * on.
 	 **/
-	numaMap = (*chipsetPkg.cpus->getNumaMap)();
+	numaMap = (*zkcmCore.cpuDetection->getNumaMap)();
 	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
 	{
 		for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
@@ -253,7 +253,7 @@ error_t cpuTribC::numaInit(void)
 
 #if defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)				\
 	&& defined(CHIPSET_CPU_NUMA_SHBANKID)
-	smpMap = (*chipsetPkg.cpus->getSmpMap)();
+	smpMap = (*zkcmCore.cpuDetection->getSmpMap)();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{
 		/**	EXPLANATION:
@@ -387,14 +387,14 @@ error_t cpuTribC::numaInit(void)
 error_t cpuTribC::smpInit(void)
 {
 	error_t			ret;
-	chipsetSmpMapS		*smpMap;
+	zkcmSmpMapS		*smpMap;
 
 	/**	EXPLANATION:
 	 * Quite simple: look for an SMP map, and if none exists, return an
 	 * error to indicate that the kernel should fallback to uniprocessor
 	 * mode.
 	 **/
-	smpMap = (*chipsetPkg.cpus->getSmpMap)();
+	smpMap = (*zkcmCore.cpuDetection->getSmpMap)();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{
 		for (uarch_t i=0; i<smpMap->nEntries; i++)
@@ -440,6 +440,9 @@ error_t cpuTribC::uniProcessorInit(void)
 	 * Base setup for a UP build. Nothing very interesting. It just makes
 	 * sure that if getStream(foo) is called, the BSP will always be
 	 * returned, no matter what argument is passed.
+	 **/
+	/* TODO: Check if you should call spawnStream() and initialize() on the
+	 * BSP on a non-MP build.
 	 **/
 	cpu = getCurrentCpuStream();
 	return ERROR_SUCCESS;

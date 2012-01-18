@@ -5,7 +5,7 @@
 #include <arch/io.h>
 #include <arch/x8632/cpuid.h>
 #include <chipset/memoryAreas.h>
-#include <chipset/pkg/cpuMod.h>
+#include <chipset/zkcm/cpuDetection.h>
 #include <platform/cpu.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -16,7 +16,7 @@
 #include <commonlibs/libx86mp/libx86mp.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <__kthreads/__kcpuPowerOn.h>
-#include "cpuMod.h"
+#include "cpuDetection.h"
 #include "pic.h"
 
 
@@ -67,15 +67,14 @@ error_t ibmPc_cpuMod_restore(void)
 	return ERROR_SUCCESS;
 }
 
-chipsetNumaMapS *ibmPc_cm_rGnm(void)
+zkcmNumaMapS *ibmPc_cm_rGnm(void)
 {
-	chipsetNumaMapS		*ret;
+	zkcmNumaMapS		*ret;
 	acpi_rsdtS		*rsdt;
 	acpi_rSratS		*srat;
 	acpi_rSratCpuS		*cpuEntry;
 	void			*handle, *handle2, *context;
 	ubit32			nEntries=0, i=0;
-	
 
 	// Caller has determined that there is an RSDT present on the chipset.
 	if (acpi::mapRsdt() != ERROR_SUCCESS)
@@ -114,7 +113,7 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 	if (nEntries == 0) { return __KNULL; };
 
 	// Now we know how many entries exist. Allocate map and reparse.
-	ret = new chipsetNumaMapS;
+	ret = new zkcmNumaMapS;
 	if (ret == __KNULL)
 	{
 		__kprintf(ERROR CPUMOD"getNumaMap(): Failed to allocate room "
@@ -179,7 +178,7 @@ chipsetNumaMapS *ibmPc_cm_rGnm(void)
 	return ret;
 }
 
-chipsetNumaMapS *ibmPc_cpuMod_getNumaMap(void)
+zkcmNumaMapS *ibmPc_cpuMod_getNumaMap(void)
 {
 	/**	EXPLANATION:
 	 * For the IBM-PC, a NUMA map of all CPUs is essentially obtained by
@@ -207,12 +206,12 @@ chipsetNumaMapS *ibmPc_cpuMod_getNumaMap(void)
 	return __KNULL;
 }
 
-chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
+zkcmSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 {
 	x86_mpCfgCpuS	*mpCpu;
 	void		*handle, *handle2, *context;
 	uarch_t		pos=0, nEntries, i;
-	chipsetSmpMapS	*ret;
+	zkcmSmpMapS	*ret;
 	acpi_rsdtS	*rsdt;
 	acpi_rMadtS	*madt;
 	acpi_rMadtCpuS	*madtCpu;
@@ -288,14 +287,14 @@ chipsetSmpMapS *ibmPc_cpuMod_getSmpMap(void)
 	__kprintf(NOTICE SMPINFO"getSmpMap: ACPI: %d valid CPU entries.\n",
 		nEntries);
 
-	ret = new chipsetSmpMapS;
+	ret = new zkcmSmpMapS;
 	if (ret == __KNULL)
 	{
 		__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map.\n");
 		return __KNULL;
 	};
 
-	ret->entries = new chipsetSmpMapEntryS[nEntries];
+	ret->entries = new zkcmSmpMapEntryS[nEntries];
 	if (ret->entries == __KNULL)
 	{
 		delete ret;
@@ -375,7 +374,7 @@ tryMpTables:
 		__kprintf(NOTICE SMPINFO"getSmpMap: %d valid CPU entries in MP "
 			"config tables.\n", nEntries);
 
-		ret = new chipsetSmpMapS;
+		ret = new zkcmSmpMapS;
 		if (ret == __KNULL)
 		{
 			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
@@ -384,7 +383,7 @@ tryMpTables:
 			return __KNULL;
 		};
 
-		ret->entries = new chipsetSmpMapEntryS[nEntries];
+		ret->entries = new zkcmSmpMapEntryS[nEntries];
 		if (ret->entries == __KNULL)
 		{
 			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
@@ -406,7 +405,7 @@ tryMpTables:
 			{
 				__KFLAG_SET(
 					ret->entries[i].flags,
-					CHIPSETSMPMAP_FLAGS_BADCPU);
+					ZKCM_SMPMAP_FLAGS_BADCPU);
 
 				ret->entries[i].cpuId = mpCpu->lapicId;
 
@@ -415,7 +414,7 @@ tryMpTables:
 				{
 					__KFLAG_SET(
 						ret->entries[i].flags,
-						CHIPSETSMPMAP_FLAGS_BSP);
+						ZKCM_SMPMAP_FLAGS_BSP);
 				};
 				continue;
 			};
@@ -470,7 +469,7 @@ cpu_t ibmPc_cpuMod_getBspId(void)
 	 **/
 	if (!infoCache.bspInfo.bspIdRequestedAlready)
 	{
-		/* Run a local CPU ID read. Need liblapic. Will have to parse
+		/* Run a local CPU ID read. Need libLapic. Will have to parse
 		 * APIC/MP tables to determine the LAPIC paddr, then use
 		 * liblapic to read the current CPUID.
 		 **/

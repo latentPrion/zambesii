@@ -84,7 +84,6 @@ void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 		{
 			bmp->unlock();
 
-__kprintf(FATAL"Flushing CPU %d, stream v 0x%p, id: %d.\n", i, cpuTrib.getStream(i), cpuTrib.getStream(i)->cpuId);
 			cpuTrib.getStream(i)->interCpuMessager.flushTlbRange(
 				vaddr, nPages);
 

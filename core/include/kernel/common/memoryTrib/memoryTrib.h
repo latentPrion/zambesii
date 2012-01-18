@@ -4,9 +4,9 @@
 	#include <scaling.h>
 	#include <arch/paddr_t.h>
 	#include <arch/paging.h>
-	#include <chipset/numaMap.h>
-	#include <chipset/memoryConfig.h>
 	#include <chipset/regionMap.h>
+	#include <chipset/zkcm/numaMap.h>
+	#include <chipset/zkcm/memoryConfig.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/memBmp.h>
 	#include <__kclasses/bitmap.h>
@@ -71,13 +71,12 @@ public:
 	void mapRangeUnused(paddr_t baseAddr, uarch_t nFrames);
 
 private:
-	void init2_spawnNumaStreams(chipsetNumaMapS *map);
+	void init2_spawnNumaStreams(zkcmNumaMapS *map);
 	void init2_generateNumaMemoryRanges(
-		chipsetNumaMapS *map, sarch_t *__kspaceBool);
+		zkcmNumaMapS *map, sarch_t *__kspaceBool);
 
 	void init2_generateShbankFromNumaMap(
-		chipsetMemConfigS *cfg, chipsetNumaMapS *map,
-		sarch_t *__kspaceBool);
+		zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool);
 
 
 public:

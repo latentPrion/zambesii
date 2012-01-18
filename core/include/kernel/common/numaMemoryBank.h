@@ -7,6 +7,7 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/numaMemoryRange.h>
+	#include <kernel/common/numaTypes.h>
 
 /**	EXPLANATION:
  * Just as each process has its own NUMA configuration, and a 'default' bank,
@@ -40,7 +41,7 @@
 class numaMemoryBankC
 {
 public:
-	numaMemoryBankC(void);
+	numaMemoryBankC(numaBankId_t id);
 	~numaMemoryBankC(void);
 
 	// Adds __kspace to the memory ranges on a memory bank.
@@ -82,6 +83,7 @@ private:
 	sharedResourceGroupC<multipleReaderLockC, rangePtrS *>	ranges;
 	sharedResourceGroupC<multipleReaderLockC, numaMemoryRangeC *> defRange;
 	slamCacheC	rangePtrCache;
+	numaBankId_t	id;
 };
 
 #endif

@@ -32,7 +32,7 @@ struct numaMemMapEntryS
 	uarch_t		flags;
 };
 
-struct chipsetNumaMapS
+struct zkcmNumaMapS
 {
 	struct numaCpuMapEntryS	*cpuEntries;
 	struct numaMemMapEntryS	*memEntries;

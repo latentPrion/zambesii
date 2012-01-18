@@ -18,22 +18,22 @@
  * The Firmware Trib must return a struct of this form as well, take note.
  **/
 
-#define CHIPSETMMAP_TYPE_USABLE			0
-#define CHIPSETMMAP_TYPE_RECLAIMABLE		1
-#define CHIPSETMMAP_TYPE_RESERVED		2
-#define CHIPSETMMAP_TYPE_MMIO			3
-#define CHIPSETMMAP_TYPE_FIRMWARE		4
+#define ZKCM_MMAP_TYPE_USABLE			0
+#define ZKCM_MMAP_TYPE_RECLAIMABLE		1
+#define ZKCM_MMAP_TYPE_RESERVED			2
+#define ZKCM_MMAP_TYPE_MMIO			3
+#define ZKCM_MMAP_TYPE_FIRMWARE			4
 
-struct chipsetMemMapEntryS
+struct zkcmMemMapEntryS
 {
 	paddr_t		baseAddr, size;
 	// Must be signed so it can hold the values defined above.
 	sbit8		memType;
 };
 
-struct chipsetMemMapS
+struct zkcmMemMapS
 {
-	struct chipsetMemMapEntryS	*entries;
+	struct zkcmMemMapEntryS		*entries;
 	ubit32				nEntries;
 };
 

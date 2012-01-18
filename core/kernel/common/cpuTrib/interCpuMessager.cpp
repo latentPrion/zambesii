@@ -40,8 +40,6 @@ error_t cpuStreamC::interCpuMessagerC::initialize(void)
 	 **/
 	__kprintf(NOTICE"Enable interrupts on CPU %d.\n", parent->cpuId);
 	cpuControl::enableInterrupts();
-__kprintf(NOTICE CPUMSG"%d: Exon %d: State dump: cache 0x%p, statusFlag %d (lock 0x%p), parent 0x%p, online bit %d.\n", parent->cpuId, cpuTrib.getCurrentCpuStream()->cpuId, cache, statusFlag.rsrc, &statusFlag.lock, parent, cpuTrib.onlineCpus.testSingle(parent->cpuId));
-	cache->dump();
 	cpuTrib.availableCpus.setSingle(parent->cpuId);
 
 // Bochs failing point.
@@ -88,10 +86,13 @@ error_t cpuStreamC::interCpuMessagerC::dispatch(void)
 		msg = messageQueue.pop();
 	};
 
-/*	statusFlag.lock.acquire();
+	return ERROR_SUCCESS;
+}
+
+void cpuStreamC::interCpuMessagerC::setReceiveStateReady(void)
+{
+	statusFlag.lock.acquire();
 	statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
 	statusFlag.lock.release();
-*/
-	return ERROR_SUCCESS;
 }
 

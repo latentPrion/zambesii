@@ -7,7 +7,9 @@
 
 
 // The __kspace allocatable memory range's containing memory bank.
-static numaMemoryBankC			__kspaceMemoryBank;
+static numaMemoryBankC			__kspaceMemoryBank(
+	CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
+
 // The pointer node on the __kspace bank that points to the __kspace mem range.
 static numaMemoryBankC::rangePtrS	__kspaceRangePtrMem;
 // The __kspace mem range, which has a frame cache and a BMP.
@@ -75,7 +77,7 @@ error_t memoryTribC::createBank(numaBankId_t id)
 			.*memoryTrib.__kmemoryStream.memAlloc)(
 				PAGING_BYTES_TO_PAGES(sizeof(numaMemoryBankC)),
 				MEMALLOC_NO_FAKEMAP))
-		numaMemoryBankC;
+		numaMemoryBankC(id);
 
 	if (nmb == __KNULL) {
 		return ERROR_MEMORY_NOMEM;

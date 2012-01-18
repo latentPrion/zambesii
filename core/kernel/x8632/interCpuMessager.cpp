@@ -10,15 +10,12 @@
 error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages)
 {
 	error_t		err;
-	messageS	*msg, *msg2;
+	messageS	*msg, *msg2=__KNULL;
 	uarch_t		needToIpi=CPUMSGR_STATUS_NORMAL;
 	ubit8		extraFlushNeeded=0;
 
-oo++;
-__kprintf(FATAL"Exon %d, cache: 0x%p, parent: %d.\n", cpuTrib.getCurrentCpuStream()->cpuId, cache, parent->cpuId);
 	msg = new (cache->allocate(
 		SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY, &extraFlushNeeded)) messageS;
-if (oo==2) {__kprintf(NOTICE"Following 2 entry.\n"); };
 
 	if (msg == __KNULL) { return ERROR_MEMORY_NOMEM; };
 

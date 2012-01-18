@@ -1,6 +1,6 @@
 
 #include <chipset/regionMap.h>
-#include <chipset/pkg/chipsetPackage.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
@@ -44,7 +44,7 @@
  *	   get rid of it.
  **/
 
-static void sortNumaMapByAddress(chipsetNumaMapS *map)
+static void sortNumaMapByAddress(zkcmNumaMapS *map)
 {
 	numaMemMapEntryS	tmp;
 
@@ -78,18 +78,19 @@ static void sortNumaMapByAddress(chipsetNumaMapS *map)
 
 error_t memoryTribC::pmemInit(void)
 {
-	error_t			ret;
-	chipsetMemConfigS	*memConfig=__KNULL;
-	chipsetMemMapS		*memMap=__KNULL;
-	chipsetNumaMapS		*numaMap=__KNULL;
-	memoryModS		*memoryMod;
-	numaMemoryBankC		*nmb;
+	error_t				ret;
+	zkcmMemConfigS			*memConfig=__KNULL;
+	zkcmMemMapS			*memMap=__KNULL;
+	zkcmNumaMapS			*numaMap=__KNULL;
+	zkcmMemoryDetectionModS		*memoryMod;
+	numaMemoryBankC			*nmb;
 	// __kspaceBool is used to determine whether or not to kill __kspace.
 	sarch_t			pos, prevPos, __kspaceBool=0;
 	status_t		nSet=0;
 
 	// Make sure the memory info modules are in order.
-	if (chipsetPkg.initialize == __KNULL || chipsetPkg.memory == __KNULL)
+	if (zkcmCore.initialize == __KNULL
+		|| zkcmCore.memoryDetection == __KNULL)
 	{
 		__kprintf(ERROR"Missing chipsetPkg.initialize(), or Memory \
 			Info module.\n");
@@ -97,7 +98,7 @@ error_t memoryTribC::pmemInit(void)
 		return ERROR_FATAL;
 	};
 	// Initialize the chipset package for use.
-	ret = (*chipsetPkg.initialize)();
+	ret = (*zkcmCore.initialize)();
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(NOTICE MEMTRIB"Failed to init chipset package.\n");
@@ -105,7 +106,7 @@ error_t memoryTribC::pmemInit(void)
 	};
 
 	// Fetch and initialize the Memory Info Module.
-	memoryMod = chipsetPkg.memory;
+	memoryMod = zkcmCore.memoryDetection;
 	ret = (*memoryMod->initialize)();
 	if (ret != ERROR_SUCCESS)
 	{
@@ -122,6 +123,7 @@ error_t memoryTribC::pmemInit(void)
 		__kprintf(NOTICE MEMTRIB"Chipset NUMA Map: %d entries.\n",
 			numaMap->nMemEntries);
 
+		sortNumaMapByAddress(numaMap);
 		for (uarch_t i=0; i<numaMap->nMemEntries; i++)
 		{
 			__kprintf(NOTICE MEMTRIB"Entry %d: Base 0x%P, size "
@@ -131,7 +133,6 @@ error_t memoryTribC::pmemInit(void)
 				numaMap->memEntries[i].size,
 				numaMap->memEntries[i].bankId);
 		};
-
 		init2_spawnNumaStreams(numaMap);
 		init2_generateNumaMemoryRanges(numaMap, &__kspaceBool);
 	}
@@ -218,7 +219,7 @@ parseMemoryMap:
 			for (uarch_t i=0; i<memMap->nEntries; i++)
 			{
 				if (memMap->entries[i].memType !=
-					CHIPSETMMAP_TYPE_USABLE)
+					ZKCM_MMAP_TYPE_USABLE)
 				{
 					nmb->mapMemUsed(
 						memMap->entries[i].baseAddr,
@@ -336,7 +337,7 @@ parseMemoryMap:
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
-void memoryTribC::init2_spawnNumaStreams(chipsetNumaMapS *map)
+void memoryTribC::init2_spawnNumaStreams(zkcmNumaMapS *map)
 {
 	error_t		ret;
 
@@ -364,7 +365,7 @@ void memoryTribC::init2_spawnNumaStreams(chipsetNumaMapS *map)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 void memoryTribC::init2_generateNumaMemoryRanges(
-	chipsetNumaMapS *map, sarch_t *__kspaceBool
+	zkcmNumaMapS *map, sarch_t *__kspaceBool
 	)
 {
 	error_t			ret;
@@ -406,15 +407,19 @@ void memoryTribC::init2_generateNumaMemoryRanges(
 }
 #endif
 
+static utf8Char		*overlappingMessage = 
+	ERROR MEMTRIB"Error generating shbank holes: \n"
+	"\tOverlapping entries base 0x%P, size 0x%X, base 0x%P, size 0x%X.\n"
+	"\tHalting generation of shbank due to non-sane NUMA map.\n";
+
 void memoryTribC::init2_generateShbankFromNumaMap(
-	chipsetMemConfigS *cfg, chipsetNumaMapS *map, sarch_t *__kspaceBool
+	zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool
 	)
 {
 	error_t		ret;
 	paddr_t		tmpBase, tmpSize;
 
 	// NUMA map exists: need to discover holes for shbank.
-	sortNumaMapByAddress(map);
 
 	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries ) - 1; i++)
 	{
@@ -425,8 +430,18 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 		 * Only holes that are below the memSize mark will get a shbank
 		 * memory range.
 		 **/
-		if (map->memEntries[i].baseAddr > cfg->memSize) {
-			break;
+		if (map->memEntries[i].baseAddr > cfg->memSize) { break; };
+		if (map->memEntries[i].baseAddr
+			== map->memEntries[i+1].baseAddr)
+		{
+			__kprintf(
+				overlappingMessage,
+				map->memEntries[i].baseAddr,
+				map->memEntries[i].size,
+				map->memEntries[i+1].baseAddr,
+				map->memEntries[i+1].size);
+
+			return;
 		};
 
 		tmpBase = map->memEntries[i].baseAddr + map->memEntries[i].size;
@@ -434,6 +449,17 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 
 		if (tmpBase + tmpSize > cfg->memSize) {
 			tmpSize = cfg->memSize - tmpBase;
+		};
+		if (tmpBase > map->memEntries[i+1].baseAddr)
+		{
+			__kprintf(
+				overlappingMessage,
+				map->memEntries[i].baseAddr,
+				map->memEntries[i].size,
+				map->memEntries[i+1].baseAddr,
+				map->memEntries[i+1].size);
+
+			return;
 		};
 
 		if (tmpSize > 0)

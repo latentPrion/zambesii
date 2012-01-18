@@ -10,9 +10,9 @@
 
 #define NUMAMEMBANK_DEFINDEX_NONE	(-1)
 
-numaMemoryBankC::numaMemoryBankC(void)
+numaMemoryBankC::numaMemoryBankC(numaBankId_t id)
 :
-rangePtrCache(sizeof(numaMemoryBankC::rangePtrS))
+rangePtrCache(sizeof(numaMemoryBankC::rangePtrS)), id(id)
 {
 	ranges.rsrc = __KNULL;
 	defRange.rsrc = __KNULL;
@@ -125,9 +125,9 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	defRange.lock.writeRelease();
 	ranges.lock.writeRelease();
 
-	__kprintf(NOTICE NUMAMEMBANK"New mem range: base 0x%X, size 0x%X, "
+	__kprintf(NOTICE NUMAMEMBANK"%d: New mem range: base 0x%X, size 0x%X, "
 		"v 0x%X.\n",
-		baseAddr, size, memRange);
+		id, baseAddr, size, memRange);
 
 	return ERROR_SUCCESS;
 }

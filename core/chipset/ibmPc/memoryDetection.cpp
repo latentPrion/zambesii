@@ -1,7 +1,7 @@
 
 #include <__ksymbols.h>
 #include <arch/arch.h>
-#include <chipset/pkg/memoryMod.h>
+#include <chipset/zkcm/memoryDetection.h>
 #define __ASM__
 #include <platform/memory.h>
 #undef __ASM__
@@ -10,7 +10,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/libacpi.h>
-#include "memoryMod.h"
+#include "memoryDetection.h"
 
 
 // E820 definitions for ibmPc_memoryMod_getMemoryMap().
@@ -28,8 +28,8 @@ struct e820EntryS
 };
 
 static e820EntryS		*e820Ptr;
-static chipsetMemMapS		*_mmap=__KNULL;
-static chipsetMemConfigS	*_mcfg=__KNULL;
+static zkcmMemMapS		*_mmap=__KNULL;
+static zkcmMemConfigS		*_mcfg=__KNULL;
 
 error_t ibmPc_memoryMod_initialize(void)
 {
@@ -51,9 +51,9 @@ error_t ibmPc_memoryMod_restore(void)
 	return ERROR_SUCCESS;
 }
 
-static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
+static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 {
-	chipsetNumaMapS		*ret;
+	zkcmNumaMapS		*ret;
 	acpi_rsdtS		*rsdt;
 	acpi_rSratS		*srat;
 	acpi_rSratMemS		*memEntry;
@@ -93,7 +93,7 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
-	ret = new chipsetNumaMapS;
+	ret = new zkcmNumaMapS;
 	if (ret == __KNULL) { return __KNULL; };
 	ret->nCpuEntries = 0;
 	ret->cpuEntries = __KNULL;
@@ -170,10 +170,10 @@ static chipsetNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 	return ret;
 }
 
-chipsetNumaMapS *ibmPc_memoryMod_getNumaMap(void)
+zkcmNumaMapS *ibmPc_memoryMod_getNumaMap(void)
 {
 	error_t		err;
-	chipsetNumaMapS	*ret=0;
+	zkcmNumaMapS	*ret=0;
 
 	// Get NUMA map from ACPI.
 	acpi::initializeCache();
@@ -193,7 +193,7 @@ chipsetNumaMapS *ibmPc_memoryMod_getNumaMap(void)
 	// Else use RSDT.
 	if (acpi::testForRsdt())
 	{
-		__kprintf(NOTICE"getNumaMap: Falling back to RSDT.\n");
+		__kprintf(NOTICE"getNumaMap: No XSDT; falling back to RSDT.\n");
 		ret = ibmPc_mMod_gnm_rGnm();
 	};
 
@@ -210,12 +210,12 @@ chipsetNumaMapS *ibmPc_memoryMod_getNumaMap(void)
 	#endif
 #else
 	// For 64-bit, of course, baseHigh is completely fair game.
-	#define IBMPC IBMPCMMAP_ADDRHIGH_BADMASK	0
+	#define IBMPCMMAP_ADDRHIGH_BADMASK	0
 #endif
 
-chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
+zkcmMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 {
-	chipsetMemMapS		*ret;
+	zkcmMemMapS		*ret;
 	ubit32			nEntries=0, i, j;
 
 	/**	EXPLANATION:
@@ -231,7 +231,7 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	// If memory map was previously obtained, return the cached one.
 	if (_mmap != __KNULL) { return _mmap; };
 
-	ret = new chipsetMemMapS;
+	ret = new zkcmMemMapS;
 	if (ret == __KNULL)
 	{
 		__kprintf(ERROR"Failed to alloc memMap main structure.\n");	
@@ -268,7 +268,7 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	ibmPcBios::releaseLock();
 
 	// Allocate enough space to hold them all, plus the extra 3.
-	ret->entries = new chipsetMemMapEntryS[nEntries + 3];
+	ret->entries = new zkcmMemMapEntryS[nEntries + 3];
 	if (ret->entries == __KNULL)
 	{
 		__kprintf(ERROR"Failed to alloc space for mem map entries.\n");
@@ -299,15 +299,15 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 		switch (e820Ptr[i].type)
 		{
 		case E820_USABLE:
-			ret->entries[j].memType = CHIPSETMMAP_TYPE_USABLE;
+			ret->entries[j].memType = ZKCM_MMAP_TYPE_USABLE;
 			break;
 
 		case E820_RECLAIMABLE:
-			ret->entries[j].memType = CHIPSETMMAP_TYPE_RECLAIMABLE;
+			ret->entries[j].memType = ZKCM_MMAP_TYPE_RECLAIMABLE;
 			break;
 
 		default:
-			ret->entries[j].memType = CHIPSETMMAP_TYPE_RESERVED;
+			ret->entries[j].memType = ZKCM_MMAP_TYPE_RESERVED;
 			break;
 		};
 		j++;
@@ -319,19 +319,19 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	// Hardcode in IVT + BDA
 	ret->entries[j].baseAddr = 0x0;
 	ret->entries[j].size = 0x4FF;
-	ret->entries[j].memType = CHIPSETMMAP_TYPE_RESERVED;
+	ret->entries[j].memType = ZKCM_MMAP_TYPE_RESERVED;
 
 	// Hardcode entry for EBDA + BIOS + VGA framebuffer + anything else.
 	ret->entries[j+1].baseAddr = 0x80000;
 	ret->entries[j+1].size = 0x80000;
-	ret->entries[j+1].memType = CHIPSETMMAP_TYPE_RESERVED;
+	ret->entries[j+1].memType = ZKCM_MMAP_TYPE_RESERVED;
 
 	// This entry sets the kernel image in pmem as reserved.
 	ret->entries[j+2].baseAddr = CHIPSET_MEMORY___KLOAD_PADDR_BASE;
 	ret->entries[j+2].size = PLATFORM_MEMORY_GET___KSYMBOL_PADDR(__kend)
 		- CHIPSET_MEMORY___KLOAD_PADDR_BASE;
 
-	ret->entries[j+2].memType = CHIPSETMMAP_TYPE_RESERVED;
+	ret->entries[j+2].memType = ZKCM_MMAP_TYPE_RESERVED;
 
 	__kprintf(NOTICE"getMemoryMap(): Kernel phys: base 0x%P, size 0x%P.\n",
 		ret->entries[j+2].baseAddr,
@@ -343,9 +343,9 @@ chipsetMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	return ret;
 }
 
-chipsetMemConfigS *ibmPc_memoryMod_getMemoryConfig(void)
+zkcmMemConfigS *ibmPc_memoryMod_getMemoryConfig(void)
 {
-	chipsetMemConfigS	*ret;
+	zkcmMemConfigS		*ret;
 	uarch_t			ax, bx, cx, dx;
 	ubit32			highest=0;
 
@@ -354,7 +354,7 @@ chipsetMemConfigS *ibmPc_memoryMod_getMemoryConfig(void)
 	 * get an E820 map, then use the firmware's INT 0x15(AH=0x0000E801).
 	 **/
 	if (_mcfg != __KNULL) { return _mcfg; };
-	ret = new chipsetMemConfigS;
+	ret = new zkcmMemConfigS;
 	if (ret == __KNULL)
 	{
 		__kprintf(ERROR"getMemoryConfig: Failed to alloc config.\n");
@@ -372,13 +372,13 @@ chipsetMemConfigS *ibmPc_memoryMod_getMemoryConfig(void)
 		if ((_mmap->entries[i].baseAddr
 			> _mmap->entries[highest].baseAddr)
 			&& _mmap->entries[i].memType
-				== CHIPSETMMAP_TYPE_USABLE)
+				== ZKCM_MMAP_TYPE_USABLE)
 		{
 			highest = i;
 		};
 	};
 
-	if (_mmap->entries[highest].memType != CHIPSETMMAP_TYPE_USABLE)
+	if (_mmap->entries[highest].memType != ZKCM_MMAP_TYPE_USABLE)
 	{
 		goto useE801;
 	};

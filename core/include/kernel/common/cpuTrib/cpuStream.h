@@ -79,6 +79,7 @@ private:
 	public:
 		error_t flushTlbRange(void *vaddr, uarch_t nPages);
 		error_t dispatch(void);
+		void setReceiveStateReady(void);
 
 	private:
 		void set(messageS *msg, ubit8 type,

@@ -1,9 +1,9 @@
 
-#include <chipset/pkg/chipsetPackage.h>
-#include "memoryMod.h"
+#include <chipset/zkcm/zkcmCore.h>
+#include "memoryDetection.h"
+#include "cpuDetection.h"
 #include "terminalMod.h"
 #include "pic.h"
-#include "cpuMod.h"
 
 
 static error_t ibmPc_pkg_initialize(void) { return ERROR_SUCCESS; }
@@ -11,16 +11,19 @@ static error_t ibmPc_pkg_shutdown(void) { return ERROR_SUCCESS; }
 static error_t ibmPc_pkg_suspend(void) { return ERROR_SUCCESS; }
 static error_t ibmPc_pkg_restore(void) { return ERROR_SUCCESS; }
 
-struct chipsetPackageS		chipsetPkg =
+struct zkcmCoreS		zkcmCore =
 {
+	"IBM PC compatible",
+	"Unknown",
+
 	&ibmPc_pkg_initialize,
 	&ibmPc_pkg_shutdown,
 	&ibmPc_pkg_suspend,
 	&ibmPc_pkg_restore,
 
+	&ibmPc_memoryDetectionMod,
+	&ibmPc_cpuDetectionMod,
 	__KNULL,
-	&ibmPc_memoryMod,
-	&ibmPc_cpuMod,
 	&ibmPc_intControllerMod,
 
 	{

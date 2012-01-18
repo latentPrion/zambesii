@@ -8,11 +8,11 @@
 #define ARCH_x86_32_LAPIC_VECTOR_IPI	255
 
 #ifdef __cplusplus
-extern "C" void 	(*__kvectorTable[])();
-extern "C" exceptionFn	*__kexceptionTable[];
+extern "C" void			(*__kvectorTable[])();
+extern "C" __kexceptionFn	*__kexceptionTable[];
 #else
 extern void 		(*__kvectorTable[])();
-extern exceptionFn	*__kexceptionTable[];
+extern __kexceptionFn	*__kexceptionTable[];
 #endif
 
 #ifdef __cplusplus

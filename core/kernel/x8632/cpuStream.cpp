@@ -19,7 +19,7 @@ struct x86ManufacturerEntryS
 	status_t	(*func)(void);
 };
 
-// Terminate this array with a null entry.
+// XXX: Always ensure that this array is terminated with a null entry.
 static x86ManufacturerEntryS		x86Manufacturers[] =
 {
 	{CC"GenuineIntel", &x86CpuEnumeration::intel},
@@ -162,7 +162,7 @@ static error_t initializeLapic(cpuStreamC *caller)
 
 	// This is called only when the CPU is ready to take IPIs.
 	caller->interCpuMessager.initialize();
-//if (!__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) { for (__kprintf(NOTICE CPUSTREAM"%d: Reached HLT.\n", caller->cpuId);;) { asm volatile("hlt\n\t"); }; };
+if (__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) { for (__kprintf(NOTICE CPUSTREAM"%d: Reached HLT.\n", caller->cpuId);;) { asm volatile("hlt\n\t"); }; };
 
 	// First print out the LAPIC Int assignment entries.
 	x86Mp::initializeCache();
