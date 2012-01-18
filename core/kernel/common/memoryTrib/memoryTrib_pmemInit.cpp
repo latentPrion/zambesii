@@ -1,12 +1,12 @@
 
 #include <chipset/regionMap.h>
+#include <chipset/memory.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/numaMemoryBank.h>
-#include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 

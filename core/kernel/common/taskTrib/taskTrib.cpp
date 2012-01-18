@@ -5,7 +5,6 @@
 #include <kernel/common/numaCpuBank.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
-#include <kernel/common/numaTrib/numaTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 

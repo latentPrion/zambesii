@@ -18,7 +18,6 @@ clean: fonyphile
 	cd kernel/common; make clean
 	cd kernel/$(ZARCH); make clean
 	cd kernel/common/memoryTrib; make clean
-	cd kernel/common/numaTrib; make clean
 	cd kernel/common/cpuTrib; make clean
 	cd kernel/common/interruptTrib; make clean
 	cd kernel/common/timerTrib; make clean

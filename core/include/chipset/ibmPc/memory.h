@@ -22,7 +22,6 @@
 
 #ifndef __ASM__
 	#include <__kclasses/hardwareIdList.h>
-	#include <kernel/common/numaTrib/numaStream.h>
 
 // The array of reserved memory for __kspace.
 extern uarch_t					__kspaceInitMem[];

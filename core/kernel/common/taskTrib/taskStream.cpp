@@ -3,7 +3,6 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
-#include <kernel/common/numaTrib/numaTrib.h>
 
 
 status_t taskStreamC::schedule(taskC *task)

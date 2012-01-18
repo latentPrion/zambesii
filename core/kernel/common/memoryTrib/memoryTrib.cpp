@@ -10,7 +10,6 @@
 #include <kernel/common/processId.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
-#include <kernel/common/numaTrib/numaTrib.h>
 
 
 memoryTribC::memoryTribC(
