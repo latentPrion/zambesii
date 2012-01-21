@@ -109,11 +109,14 @@ oo=1;
 	rsdt = acpi::getRsdt();
 	handle = context = __KNULL;
 	madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
-	while (madt != __KNULL)
+	for (; madt != __KNULL;
+		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle))
 	{
 		handle2 = __KNULL;
 		ioApicEntry = acpiRMadt::getNextIoApicEntry(madt, &handle2);
-		while (ioApicEntry != __KNULL)
+		for (; ioApicEntry != __KNULL;
+			ioApicEntry =
+				acpiRMadt::getNextIoApicEntry(madt, &handle2))
 		{
 			tmp = new (mapIoApic(ioApicEntry->ioApicPaddr))
 				x86IoApic::ioApicC(
@@ -134,8 +137,6 @@ oo=1;
 			};
 
 			ret = cache.ioApics.addItem(ioApicEntry->ioApicId, tmp);
-__kprintf(NOTICE x86IOAPIC"In mapIoApics() madt: 0x%p, ioApic 0x%p: id %d, paddr 0x%P, irqBase %d; new apicobj: 0x%p.\n",
-	madt, ioApicEntry, ioApicEntry->ioApicId, ioApicEntry->ioApicPaddr, ioApicEntry->globalIrqBase, tmp);
 			if (ret != ERROR_SUCCESS)
 			{
 				__kprintf(ERROR x86IOAPIC"Failed to add APIC "
@@ -155,7 +156,6 @@ __kprintf(NOTICE x86IOAPIC"In mapIoApics() madt: 0x%p, ioApic 0x%p: id %d, paddr
 				madt, &handle2);
 		};
 		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
-		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 	};
 
 	cache.mapped = 1;
@@ -225,9 +225,10 @@ tryMpTables:
 
 	pos = 0; handle = __KNULL;
 	ioApicEntry = x86Mp::getNextIoApicEntry(&pos, &handle);
-	while (ioApicEntry != __KNULL)
+	for (; ioApicEntry != __KNULL;
+		ioApicEntry = x86Mp::getNextIoApicEntry(&pos, &handle))
 	{
-		if (__KFLAG_TEST(
+		if (!__KFLAG_TEST(
 			ioApicEntry->flags, x86_MPCFG_IOAPIC_FLAGS_ENABLED))
 		{
 			__kprintf(NOTICE x86IOAPIC"Skipping unsafe IO APIC %d."
@@ -264,8 +265,6 @@ tryMpTables:
 		nIoApics++;
 		__kprintf(NOTICE x86IOAPIC"%d: P 0x%P, v: 0x%p.\n",
 			ioApicEntry->ioApicId, ioApicEntry->ioApicPaddr, tmp);
-
-		ioApicEntry = x86Mp::getNextIoApicEntry(&pos, &handle);
 	};
 
 	cache.mapped = 1;
