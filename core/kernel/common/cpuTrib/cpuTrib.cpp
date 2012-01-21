@@ -152,8 +152,7 @@ error_t cpuTribC::initialize2(void)
 			highestCpuId, numaMap, cpuEntries,
 			cpuId, numaMap->nCpuEntries);
 	};
-
-	if (availableBanks.initialize(highestBankId) != ERROR_SUCCESS) {
+	if (availableBanks.initialize(highestBankId + 1) != ERROR_SUCCESS) {
 		panic(CC""CPUTRIB"AvailableBanks BMP initialize() failed.\n");
 	};
 #endif
@@ -168,11 +167,11 @@ error_t cpuTribC::initialize2(void)
 			highestCpuId, smpMap, entries, cpuId, smpMap->nEntries);
 	};
 
-	if (availableCpus.initialize(highestCpuId) != ERROR_SUCCESS) {
+	if (availableCpus.initialize(highestCpuId + 1) != ERROR_SUCCESS) {
 		panic(CC""CPUTRIB"Failed to initialize() availableCpus bmp.\n");
 	};
 
-	if (onlineCpus.initialize(highestCpuId) != ERROR_SUCCESS) {
+	if (onlineCpus.initialize(highestCpuId + 1) != ERROR_SUCCESS) {
 		panic(CC""CPUTRIB"Failed to initialize() onlineCpus bmp.\n");
 	};
 #endif

@@ -1,10 +1,18 @@
 
 #include <__kstdlib/__kclib/string.h>
+#include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
 
 
 void *memset(void *_ptr, int value, size_t count)
 {
-	if (_ptr == __KNULL) { return _ptr; };
+	if (_ptr == __KNULL)
+	{
+		__kprintf(FATAL"memset: dest 0x%p, caller 0x%x.\n",
+			_ptr, __builtin_return_address(0));
+
+		panic(ERROR_CRITICAL);
+	};
 
 	for (; count; count--) {
 		((ubit8*)_ptr)[count-1] = (ubit8)value;
@@ -14,7 +22,13 @@ void *memset(void *_ptr, int value, size_t count)
 
 void *memcpy(void *dest, void *src, size_t count)
 {
-	if (dest == __KNULL || src == __KNULL) { return dest; };
+	if (dest == __KNULL || src == __KNULL)
+	{
+		__kprintf(FATAL"memcpy: dest 0x%p, src 0x%p, caller 0x%x.\n",
+			dest, src, __builtin_return_address(0));
+
+		panic(ERROR_CRITICAL);
+	};
 
 	for (; count; count--) {
 		((ubit8 *)dest)[count - 1] = ((ubit8 *)src)[count - 1];
@@ -22,11 +36,16 @@ void *memcpy(void *dest, void *src, size_t count)
 	return dest;
 }
 
+#if 0
+/**	EXPLANATION:
+ * Do not use these functions on strings. Use the type-safe UTF-8 functions in
+ * string8.cpp or string16.cpp for UTF-16.
+ *
+ * Do not use "char *" for strings in the kernel.
+ **/
 char *strcpy(char *dest, const char *src)
 {
 	uarch_t		i=0;
-
-	if (dest == __KNULL || src == __KNULL) { return dest; };
 
 	for (; src[i]; i++) {
 		dest[i] = src[i];
@@ -37,8 +56,6 @@ char *strcpy(char *dest, const char *src)
 
 char *strncpy(char *dest, const char *src, size_t count)
 {
-	if (dest == __KNULL || src == __KNULL) { return dest; };
-
 	for (; count && src[count - 1]; count--) {
 		dest[count - 1] = src[count - 1];
 	};
@@ -52,15 +69,12 @@ size_t strlen(const char *str)
 {
 	uarch_t		len=0;
 
-	if (str == __KNULL) { return 0; };
-
 	for (; str[len]; len++) {};
 	return len;
 }
 
 int strcmp(const char *str1, const char *str2)
 {
-	if (str1 == __KNULL || str2 == __KNULL) { return 1; };
 	if (str1 == str2) { return 0; };
 
 	for (; (*str1 && *str2); str1++, str2++)
@@ -78,7 +92,6 @@ int strcmp(const char *str1, const char *str2)
 
 int strncmp(const char *str1, const char *str2, int count)
 {
-	if (str1 == __KNULL || str2 == __KNULL || count == 0) { return 1; };
 	if (str1 == str2) { return 0; };
 
 	for (; count > 0; count--, str1++, str2++)
@@ -89,4 +102,5 @@ int strncmp(const char *str1, const char *str2, int count)
 	};
 	return 0;
 }
+#endif
 

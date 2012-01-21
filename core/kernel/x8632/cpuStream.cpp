@@ -159,6 +159,12 @@ static error_t initializeLapic(cpuStreamC *caller)
 	// Use vector 0xFF as the LAPIC error vector.
 	x86Lapic::setupLvtError(0xFE);
 	x86Lapic::ipi::installHandler();
+	// Testing.
+	x86IoApic::initializeCache();
+	if (!x86IoApic::ioApicsAreMapped())
+	{
+		x86IoApic::mapIoApics();
+	};
 
 	// This is called only when the CPU is ready to take IPIs.
 	caller->interCpuMessager.initialize();

@@ -11,7 +11,7 @@
 
 #define x86_LAPIC_NPAGES		4
 
-static struct x86LapicCacheS	cache;
+static struct x86Lapic::cacheS		cache;
 
 void x86Lapic::initializeCache(void)
 {

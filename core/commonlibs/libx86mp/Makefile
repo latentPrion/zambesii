@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../libx86mp.a
-OBJFILES=lapic.o mpTables.o mpDefaultTables.o ipi.o
+OBJFILES=lapic.o mpTables.o mpDefaultTables.o ipi.o libIoApic.o
 
 all: Makefile $(DELIVERABLE)
 

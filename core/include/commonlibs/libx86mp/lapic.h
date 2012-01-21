@@ -98,16 +98,17 @@
 #define x86LAPIC_LINT_TYPE_INT			0x2
 #define x86LAPIC_LINT_TYPE_SMI			0x3
 
-struct x86LapicCacheS
-{
-	ubit32		magic;
-	ubit8		*v;
-	paddr_t		p;
-};
 
 
 namespace x86Lapic
 {
+	struct cacheS
+	{
+		ubit32		magic;
+		ubit8		*v;
+		paddr_t		p;
+	};
+
 	void initializeCache(void);
 	void flushCache(void);
 

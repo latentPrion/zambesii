@@ -13,14 +13,14 @@
 	(void *)(((uarch_t)(_ptr)) + (_amt))
 
 #define ACPI_RSDP_XSDTPADDR(_rsdp)	(*(ubit64 *)(_rsdp)->xsdtPaddr)
-#define ACPI_RSDP_SIG			"RSD PTR "
+#define ACPI_RSDP_SIG			CC"RSD PTR "
 #define ACPI_RSDP_SIGLEN		8
 
 struct acpi_rsdpS
 {
-	char		sig[ACPI_RSDP_SIGLEN];
+	utf8Char	sig[ACPI_RSDP_SIGLEN];
 	ubit8		checksum;
-	char		oemId[6];
+	utf8Char	oemId[6];
 	ubit8		revision;
 
 	ubit32		rsdtPaddr;
@@ -31,38 +31,38 @@ struct acpi_rsdpS
 };
 
 
-#define ACPI_SDT_SIG_APIC		"APIC"
-#define ACPI_SDT_SIG_DSDT		"DSDT"
-#define ACPI_SDT_SIG_ECDT		"ECDT"
-#define ACPI_SDT_SIG_FACP		"FACP"
-#define ACPI_SDT_SIG_FACS		"FACS"
-#define ACPI_SDT_SIG_PSDT		"PSDT"
-#define ACPI_SDT_SIG_RSDT		"RSDT"
-#define ACPI_SDT_SIG_SBST		"SBST"
-#define ACPI_SDT_SIG_SLIT		"SLIT"
-#define ACPI_SDT_SIG_SRAT		"SRAT"
-#define ACPI_SDT_SIG_SSDT		"SSDT"
-#define ACPI_SDT_SIG_XSDT		"XSDT"
-#define ACPI_SDT_SIG_BOOT		"BOOT"
-#define ACPI_SDT_SIG_CPEP		"CPEP"
-#define ACPI_SDT_SIG_DBGP		"DBGP"
-#define ACPI_SDT_SIG_ETDT		"ETDT"
-#define ACPI_SDT_SIG_HPET		"HPET"
-#define ACPI_SDT_SIG_MCFG		"MCFG"
-#define ACPI_SDT_SIG_SPCR		"SPCR"
-#define ACPI_SDT_SIG_SPMI		"SPMI"
-#define ACPI_SDT_SIG_TCPA		"TCPA"
-#define ACPI_SDT_SIG_WDRT		"WDRT"
+#define ACPI_SDT_SIG_APIC		CC"APIC"
+#define ACPI_SDT_SIG_DSDT		CC"DSDT"
+#define ACPI_SDT_SIG_ECDT		CC"ECDT"
+#define ACPI_SDT_SIG_FACP		CC"FACP"
+#define ACPI_SDT_SIG_FACS		CC"FACS"
+#define ACPI_SDT_SIG_PSDT		CC"PSDT"
+#define ACPI_SDT_SIG_RSDT		CC"RSDT"
+#define ACPI_SDT_SIG_SBST		CC"SBST"
+#define ACPI_SDT_SIG_SLIT		CC"SLIT"
+#define ACPI_SDT_SIG_SRAT		CC"SRAT"
+#define ACPI_SDT_SIG_SSDT		CC"SSDT"
+#define ACPI_SDT_SIG_XSDT		CC"XSDT"
+#define ACPI_SDT_SIG_BOOT		CC"BOOT"
+#define ACPI_SDT_SIG_CPEP		CC"CPEP"
+#define ACPI_SDT_SIG_DBGP		CC"DBGP"
+#define ACPI_SDT_SIG_ETDT		CC"ETDT"
+#define ACPI_SDT_SIG_HPET		CC"HPET"
+#define ACPI_SDT_SIG_MCFG		CC"MCFG"
+#define ACPI_SDT_SIG_SPCR		CC"SPCR"
+#define ACPI_SDT_SIG_SPMI		CC"SPMI"
+#define ACPI_SDT_SIG_TCPA		CC"TCPA"
+#define ACPI_SDT_SIG_WDRT		CC"WDRT"
 
 struct acpi_sdtS
 {
-	char		sig[4];
+	utf8Char	sig[4];
 	// Size of the *entire* table, i.e: this header + it's attached to.
 	ubit32		tableLength;
 	ubit8		revision;
 	ubit8		checksum;
-	char		oemId[6];
-	char		oemTableId[8];
+	utf8Char	oemId[6];
+	utf8Char	oemTableId[8];
 	ubit32		oemRevision;
 	ubit32		creatorId;
 	ubit32		creatorRevision;

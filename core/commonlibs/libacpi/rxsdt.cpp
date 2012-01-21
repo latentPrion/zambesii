@@ -2,7 +2,7 @@
 #include <arch/paddr_t.h>
 #include <arch/paging.h>
 #include <arch/walkerPageRanger.h>
-#include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <commonlibs/libacpi/rxsdt.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
@@ -46,6 +46,7 @@ void acpiRsdt::destroyContext(void **const context)
 		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
 		*context, &p, 2, &f);
 
+	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(*context, 2);
 	*context = __KNULL;
 }
 
@@ -93,7 +94,7 @@ acpi_rSratS *acpiRsdt::getNextSrat(
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
 
-		if (strncmp(sdt->sig, ACPI_SDT_SIG_SRAT, 4) == 0)
+		if (strncmp8(sdt->sig, ACPI_SDT_SIG_SRAT, 4) == 0)
 		{
 			ret = (acpi_rSratS *)acpi_mapTable(
 				*(paddr_t *)*handle,
@@ -124,7 +125,7 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
-		if (strncmp(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
+		if (strncmp8(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
 		{
 			ret = (acpi_rMadtS *)acpi_mapTable(
 				*(paddr_t *)*handle,
@@ -155,7 +156,7 @@ acpi_rFacpS *acpiRsdt::getNextFacp(
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
-		if (strncmp(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
+		if (strncmp8(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
 		{
 			ret = (acpi_rFacpS *)acpi_mapTable(
 				*(paddr_t *)*handle,

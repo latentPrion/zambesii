@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -134,11 +135,13 @@ error_t hardwareIdListC::addItem(sarch_t id, void *item)
 		};
 
 		arr.lock.readAcquire(&rwFlags);
-		memcpy(tmp, arr.rsrc.arr,
-			sizeof(arrayNodeS)
-				* ((maxIndex == HWIDLIST_INDEX_INVALID)
-					? 1
-					: maxIndex + 1));
+
+		if (maxIndex != HWIDLIST_INDEX_INVALID)
+		{
+			memcpy(
+				tmp, arr.rsrc.arr,
+				sizeof(arrayNodeS) * maxIndex + 1);
+		};
 
 		arr.lock.readReleaseWriteAcquire(rwFlags);
 

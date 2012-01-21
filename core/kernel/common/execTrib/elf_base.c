@@ -1,5 +1,5 @@
 
-#include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <kernel/common/execTrib/elf.h>
 
 error_t elf_initialize(const char *archString, ubit16 wordSize)
@@ -18,14 +18,14 @@ error_t elf_initialize(const char *archString, ubit16 wordSize)
 	elfModuleState.elfEndianness = EHDR_ID_DATA_NONE;
 	elfModuleState.elfWordSize = EHDR_ID_CLASS_NONE;
 
-	if (strcmp(archString, "x86-32") == 0)
+	if (strcmp8(archString, CC"x86-32") == 0)
 	{
 		elfModuleState.elfArch = EHDR_ARCH_i386;
 		elfModuleState.elfEndianness = EHDR_ID_DATA_LE;
 		elfModuleState.elfWordSize = EHDR_ID_CLASS_32;
 		ret = ERROR_SUCCESS;
 	};
-	if (strcmp(archString, "x86-64") == 0)
+	if (strcmp8(archString, CC"x86-64") == 0)
 	{
 		// FIXME: Find out what ELF uses for x86-64.
 		// elfModuleState.elfMachine = EHDR_ARCH_???;
@@ -42,7 +42,7 @@ sarch_t elf_identify(void *buff)
 	struct elfHeaderS	*ehdr;
 
 	ehdr = (struct elfHeaderS *)buff;
-	if (strncmp((char *)ehdr->ident, EHDR_ID_MAGIC, 4) == 0) {
+	if (strncmp8((char *)ehdr->ident, EHDR_ID_MAGIC, 4) == 0) {
 		return 1;
 	};
 	return 0;
