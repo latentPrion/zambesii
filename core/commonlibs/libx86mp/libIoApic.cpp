@@ -1,7 +1,6 @@
 
 #include <debug.h>
 #include <arch/arch.h>
-#include <arch/walkerPageRanger.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -36,7 +35,7 @@ void x86IoApic::dump(void)
 		&cache, cache.magic, cache.mapped, cache.nIoApics);
 }
 
-sarch_t x86IoApic::ioApicsAreMapped(void)
+sarch_t x86IoApic::ioApicsAreDetected(void)
 {
 	if (cache.magic != x86IOAPIC_MAGIC) { return 0; };
 
@@ -55,44 +54,7 @@ x86IoApic::ioApicC *x86IoApic::getIoApic(ubit8 id)
 	return reinterpret_cast<ioApicC *>( cache.ioApics.getItem(id) );
 }
 
-static x86IoApic::ioApicC *mapIoApic(paddr_t paddr)
-{
-	x86IoApic::ioApicC	*ret;
-	status_t		status;
-
-	/* Allocates a page and maps it to the paddr of an IO APIC.
-	 **/
-	// IO-APICs are always 1KB aligned.
-	ret = (x86IoApic::ioApicC *)(memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(1);
-
-	if (ret == __KNULL) { return ret; };
-
-	// Now map the page to the paddr passed as an arg.
-	status = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		ret, paddr, 1,
-		PAGEATTRIB_WRITE | PAGEATTRIB_CACHE_WRITE_THROUGH);
-
-	if (status <= 0)
-	{
-		__kprintf(ERROR x86IOAPIC"Failed to map APIC @0x%P to 0x%p.\n",
-			paddr, ret);
-
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
-			ret, 1);
-	};
-
-	ret = WPRANGER_ADJUST_VADDR(ret, paddr, x86IoApic::ioApicC *);
-	return ret;
-}
-
-static void unmapIoApic(x86IoApic::ioApicC *ioApic)
-{
-	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(ioApic, 1);
-}
-
-static error_t rsdtMapIoApics(void)
+static error_t rsdtDetectIoApics(void)
 {
 	error_t			ret;
 	x86IoApic::ioApicC	*tmp;
@@ -118,10 +80,9 @@ oo=1;
 			ioApicEntry =
 				acpiRMadt::getNextIoApicEntry(madt, &handle2))
 		{
-			tmp = new (mapIoApic(ioApicEntry->ioApicPaddr))
-				x86IoApic::ioApicC(
-					ioApicEntry->ioApicId,
-					ioApicEntry->ioApicPaddr);
+			tmp = new x86IoApic::ioApicC(
+				ioApicEntry->ioApicId,
+				ioApicEntry->ioApicPaddr);
 
 			if (tmp == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -132,7 +93,7 @@ oo=1;
 					"%d.\n",
 					ioApicEntry->ioApicId);
 
-				unmapIoApic(tmp);
+				delete tmp;
 				return ret;
 			};
 
@@ -143,15 +104,11 @@ oo=1;
 					"%d to the list.\n",
 					ioApicEntry->ioApicId);
 
-				unmapIoApic(tmp);
+				delete tmp;
 				return ret;
 			};
 
 			nIoApics++;
-			__kprintf(NOTICE x86IOAPIC"%d: P 0x%P, v: 0x%p.\n",
-				ioApicEntry->ioApicId, ioApicEntry->ioApicPaddr,
-				tmp);
-
 			ioApicEntry = acpiRMadt::getNextIoApicEntry(
 				madt, &handle2);
 		};
@@ -163,7 +120,7 @@ oo=1;
 	return ERROR_SUCCESS;
 }
 
-error_t x86IoApic::mapIoApics(void)
+error_t x86IoApic::detectIoApics(void)
 {
 	error_t			ret;
 	x86_mpCfgIoApicS	*ioApicEntry;
@@ -200,7 +157,7 @@ error_t x86IoApic::mapIoApics(void)
 		};
 
 		// Use RSDT to find MADT and parse for IO APICs.
-		return rsdtMapIoApics();
+		return rsdtDetectIoApics();
 	};
 #endif
 
@@ -237,7 +194,7 @@ tryMpTables:
 			continue;
 		};
 
-		tmp = new (mapIoApic(ioApicEntry->ioApicPaddr)) ioApicC(
+		tmp = new ioApicC(
 			ioApicEntry->ioApicId, ioApicEntry->ioApicPaddr);
 
 		// Masks all IRQs and sets safe known state.
@@ -247,7 +204,7 @@ tryMpTables:
 			__kprintf(ERROR x86IOAPIC"Failed to init IOAPIC %d.\n",
 				ioApicEntry->ioApicId);
 
-			unmapIoApic(tmp);
+			delete tmp;
 			return ret;
 		};
 
@@ -258,13 +215,11 @@ tryMpTables:
 				"the list.\n",
 				ioApicEntry->ioApicId);
 
-			unmapIoApic(tmp);
+			delete tmp;
 			return ret;
 		};
 
 		nIoApics++;
-		__kprintf(NOTICE x86IOAPIC"%d: P 0x%P, v: 0x%p.\n",
-			ioApicEntry->ioApicId, ioApicEntry->ioApicPaddr, tmp);
 	};
 
 	cache.mapped = 1;

@@ -161,9 +161,9 @@ static error_t initializeLapic(cpuStreamC *caller)
 	x86Lapic::ipi::installHandler();
 	// Testing.
 	x86IoApic::initializeCache();
-	if (!x86IoApic::ioApicsAreMapped())
+	if (!x86IoApic::ioApicsAreDetected())
 	{
-		x86IoApic::mapIoApics();
+		x86IoApic::detectIoApics();
 	};
 
 	// This is called only when the CPU is ready to take IPIs.

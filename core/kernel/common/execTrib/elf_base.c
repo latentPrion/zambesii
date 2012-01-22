@@ -2,7 +2,7 @@
 #include <__kstdlib/__kclib/string8.h>
 #include <kernel/common/execTrib/elf.h>
 
-error_t elf_initialize(const char *archString, ubit16 wordSize)
+error_t elf_initialize(utf8Char *archString, ubit16 wordSize)
 {
 	error_t		ret=ERROR_CRITICAL;
 
