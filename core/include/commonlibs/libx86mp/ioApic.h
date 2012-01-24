@@ -101,9 +101,9 @@ namespace x86IoApic
 		struct ioApicRegspaceS
 		{
 			// All writes to this reg must be 32-bit.
-			ubit32	ioRegSel[4];
+			ubit32			ioRegSel[4];
 			// All reads and writes to/from this reg must be 32-bit.
-			ubit32	ioWin[4];
+			volatile ubit32		ioWin[4];
 		};
 
 		paddr_t			paddr;
