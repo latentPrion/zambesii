@@ -64,7 +64,6 @@ static error_t rsdtDetectIoApics(void)
 	void			*handle, *handle2, *context;
 	ubit8			nIoApics;
 
-oo=1;
 	/* The fact that we're here means there is an RSDT, so look for an MADT
 	 * etc and get info on IO-APICs.
 	 **/
@@ -130,6 +129,7 @@ error_t x86IoApic::detectIoApics(void)
 	ioApicC			*tmp;
 
 	if (cache.magic != x86IOAPIC_MAGIC) { return ERROR_INVALID_ARG; };
+	if (ioApicsAreDetected()) { return ERROR_SUCCESS; };
 
 	acpi::initializeCache();
 	if (!acpi::rsdpFound())

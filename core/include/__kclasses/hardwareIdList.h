@@ -6,6 +6,8 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 
+#define HWIDLIST			"HwId List: "
+
 #define HWIDLIST_INDEX_INVALID		(-1)
 
 #define HWIDLIST_FLAGS_INDEX_VALID	(1<<0)
@@ -34,6 +36,8 @@ public:
 	 **/
 	sarch_t prepareForLoop(void);
 	void *getLoopItem(sarch_t *id);
+
+	void dump(void);
 
 public:
 	struct arrayNodeS

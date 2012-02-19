@@ -31,7 +31,6 @@ error_t memoryTribC::__kspaceInit(void)
 	 * of NUMA banks with memory on them, and place __kspace on it as a fake
 	 * bank. Then we add the __kspace memory region to the bank.
 	 **/
-
 	defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
 	// First give the list class pre-allocated memory to use for its array.

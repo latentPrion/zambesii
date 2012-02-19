@@ -41,10 +41,10 @@ error_t cpuStreamC::interCpuMessagerC::initialize(void)
 	__kprintf(NOTICE"Enable interrupts on CPU %d.\n", parent->cpuId);
 	cpuControl::enableInterrupts();
 	cpuTrib.availableCpus.setSingle(parent->cpuId);
+if (!__KFLAG_TEST(parent->flags, CPUSTREAM_FLAGS_BSP)) {__kprintf(NOTICE"CPU %d: reached HLT.\n", parent->cpuId); for (;;){asm volatile("hlt\n\t");};};
 
 // Bochs failing point.
 // NOTE: You want execution to end here for APs right now.
-if (!__KFLAG_TEST(parent->flags, CPUSTREAM_FLAGS_BSP)) {__kprintf(NOTICE"CPU %d: reached HLT.\n", parent->cpuId); for (;;){asm volatile("hlt\n\t");};};
 
 	return ERROR_SUCCESS;
 }

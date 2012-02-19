@@ -135,7 +135,6 @@ error_t cpuTribC::initialize2(void)
 		for (uarch_t i=0; i<500000; i++) { cpuControl::subZero(); };
 		return ERROR_SUCCESS;
 	};
-
 	/* On MP build it's beneficial to pre-determine the size of the BMPs
 	 * so that when CPUs are being spawned the BMPs aren't constantly
 	 * resized.

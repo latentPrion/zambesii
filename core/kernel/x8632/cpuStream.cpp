@@ -159,16 +159,10 @@ static error_t initializeLapic(cpuStreamC *caller)
 	// Use vector 0xFF as the LAPIC error vector.
 	x86Lapic::setupLvtError(0xFE);
 	x86Lapic::ipi::installHandler();
-	// Testing.
-	x86IoApic::initializeCache();
-	if (!x86IoApic::ioApicsAreDetected())
-	{
-		x86IoApic::detectIoApics();
-	};
 
 	// This is called only when the CPU is ready to take IPIs.
 	caller->interCpuMessager.initialize();
-if (__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) { for (__kprintf(NOTICE CPUSTREAM"%d: Reached HLT.\n", caller->cpuId);;) { asm volatile("hlt\n\t"); }; };
+if (!__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) { for (__kprintf(NOTICE CPUSTREAM"%d: Reached HLT.\n", caller->cpuId);;) { asm volatile("hlt\n\t"); }; };
 
 	// First print out the LAPIC Int assignment entries.
 	x86Mp::initializeCache();

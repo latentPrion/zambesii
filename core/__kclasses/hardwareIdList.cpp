@@ -15,10 +15,32 @@ hardwareIdListC::hardwareIdListC(void)
 	arr.rsrc.arr = __KNULL;
 }
 
+void hardwareIdListC::dump(void)
+{
+	uarch_t		rwFlags;
+
+	arr.lock.readAcquire(&rwFlags);
+
+	__kprintf(NOTICE"HWID list @ 0x%p, arr @ v0x%p, dumping.\n",
+		this, arr.rsrc.arr);
+
+	for (sarch_t i=arr.rsrc.firstValidIndex; i != HWIDLIST_INDEX_INVALID;
+		i=arr.rsrc.arr[i].next)
+	{
+		__kprintf(NOTICE HWIDLIST"%d (idx@0x%p): item 0x%p, next %d.\n",
+			i, &arr.rsrc.arr[i].item, arr.rsrc.arr[i].item,
+			arr.rsrc.arr[i].next);
+	};
+
+	arr.lock.readRelease(rwFlags);
+}
+
 void hardwareIdListC::__kspaceSetState(sarch_t id, void *arrayMem)
 {
 	arr.rsrc.arr = static_cast<arrayNodeS *>( arrayMem );
 	arr.rsrc.maxIndex = id;
+	arr.rsrc.firstValidIndex = id;
+	arr.rsrc.arr[id].next = HWIDLIST_INDEX_INVALID;
 }	
 
 void *hardwareIdListC::getItem(sarch_t id)
@@ -28,7 +50,7 @@ void *hardwareIdListC::getItem(sarch_t id)
 
 	arr.lock.readAcquire(&rwFlags);
 
-	if (id > arr.rsrc.maxIndex)
+	if (id > arr.rsrc.maxIndex || id < arr.rsrc.firstValidIndex)
 	{
 		arr.lock.readRelease(rwFlags);
 		return __KNULL;
@@ -101,75 +123,86 @@ void *hardwareIdListC::getLoopItem(sarch_t *context)
 	return ret;
 }
 
-
-error_t hardwareIdListC::addItem(sarch_t id, void *item)
+error_t hardwareIdListC::addItem(sarch_t index, void *item)
 {
 	uarch_t		rwFlags;
-	sarch_t		maxIndex, itemNextIndex;
+	sarch_t		maxIndex;
 	arrayNodeS	*tmp, *old;
 
-	if (item == __KNULL) {
-		return ERROR_INVALID_ARG_VAL;
-	};
-
-	// See if there are already enough indexes to hold the new item.
 	arr.lock.readAcquire(&rwFlags);
 	maxIndex = arr.rsrc.maxIndex;
 	arr.lock.readRelease(rwFlags);
 
-	if (id > maxIndex || maxIndex == HWIDLIST_INDEX_INVALID)
+	// If the array must be resized, alloc new mem and copy over.
+	if (index > maxIndex || maxIndex == HWIDLIST_INDEX_INVALID)
 	{
-		/* Allocate new array, copy old one, free old one.
-		 * Make sure to update arr.rsrc.maxIndex.
-		 **/
 		tmp = new (
 			(memoryTrib.__kmemoryStream
 				.*memoryTrib.__kmemoryStream.memAlloc)(
 					PAGING_BYTES_TO_PAGES(
-						sizeof(arrayNodeS) * (id + 1)),
+						sizeof(arrayNodeS)
+							* (index + 1)),
 					MEMALLOC_NO_FAKEMAP))
 			arrayNodeS;
 
-		if (tmp == __KNULL) {
+		if (tmp == __KNULL)
+		{
+			__kprintf(ERROR HWIDLIST"addItem(%d,0x%p): failed to "
+				"resize array.\n",
+				index, item);
+
 			return ERROR_MEMORY_NOMEM;
 		};
 
-		arr.lock.readAcquire(&rwFlags);
+		arr.lock.writeAcquire();
 
+		// Copy old array contents into new array.
 		if (maxIndex != HWIDLIST_INDEX_INVALID)
 		{
 			memcpy(
 				tmp, arr.rsrc.arr,
-				sizeof(arrayNodeS) * maxIndex + 1);
+				sizeof(arrayNodeS) * (maxIndex + 1));
 		};
-
-		arr.lock.readReleaseWriteAcquire(rwFlags);
 
 		old = arr.rsrc.arr;
 		arr.rsrc.arr = tmp;
-		arr.rsrc.maxIndex = id;
+
+		// Now add the new item to the array.
+		if (maxIndex == HWIDLIST_INDEX_INVALID) {
+			arr.rsrc.firstValidIndex = index;
+		}
+		else {
+			arr.rsrc.arr[maxIndex].next = index;
+		};
+
+		arr.rsrc.maxIndex = index;
+		arr.rsrc.arr[index].next = HWIDLIST_INDEX_INVALID;
+		arr.rsrc.arr[index].item = item;
+		__KFLAG_SET(
+			arr.rsrc.arr[index].flags,
+			HWIDLIST_FLAGS_INDEX_VALID);
 
 		arr.lock.writeRelease();
 
-		// Avoid freeing __kspace stream if that's what we're handling.
-		if (!(reinterpret_cast<uarch_t>( old ) & PAGING_BASE_MASK_LOW))
+		// Free the old array mem.
+		if (old != __KNULL
+			&& (!(reinterpret_cast<uarch_t>( old )
+				& PAGING_BASE_MASK_LOW)))
 		{
 			memoryTrib.__kmemoryStream.memFree(old);
 		};
+
+		return ERROR_SUCCESS;
 	};
 
-	// At this point there is enough space to hold the new item.
+	/* Non-resizeable cases: adding to the middle or front of a populated
+	 * array.
+	 **/
 	arr.lock.writeAcquire();
-
-	if (arr.rsrc.firstValidIndex == HWIDLIST_INDEX_INVALID)
+	if (index < arr.rsrc.firstValidIndex)
 	{
-		itemNextIndex = HWIDLIST_INDEX_INVALID;
-		arr.rsrc.firstValidIndex = id;
-	}
-	else if (id < arr.rsrc.firstValidIndex)
-	{
-		itemNextIndex = arr.rsrc.firstValidIndex;
-		arr.rsrc.firstValidIndex = id;
+		arr.rsrc.arr[index].next = arr.rsrc.firstValidIndex;
+		arr.rsrc.firstValidIndex = index;
 	}
 	else
 	{
@@ -177,26 +210,21 @@ error_t hardwareIdListC::addItem(sarch_t id, void *item)
 			i != HWIDLIST_INDEX_INVALID;
 			i = arr.rsrc.arr[i].next)
 		{
-			if (id < arr.rsrc.arr[i].next
-				|| (arr.rsrc.arr[i].next
-					== HWIDLIST_INDEX_INVALID))
+			if (arr.rsrc.arr[i].next > index)
 			{
-				itemNextIndex = arr.rsrc.arr[i].next;
-				arr.rsrc.arr[i].next = id;
+				arr.rsrc.arr[index].next = arr.rsrc.arr[i].next;
+				arr.rsrc.arr[i].next = index;
 				break;
 			};
 		};
 	};
 
-	arr.rsrc.arr[id].item = item;
-	arr.rsrc.arr[id].next = itemNextIndex;
-	// Extra measure to ensure coherency across calls to the loop logic.
-	__KFLAG_SET(arr.rsrc.arr[id].flags, HWIDLIST_FLAGS_INDEX_VALID);
+	arr.rsrc.arr[index].item = item;
+	__KFLAG_SET(arr.rsrc.arr[index].flags, HWIDLIST_FLAGS_INDEX_VALID);
 
 	arr.lock.writeRelease();
 	return ERROR_SUCCESS;
 }
-
 
 void hardwareIdListC::removeItem(sarch_t id)
 {
@@ -224,10 +252,16 @@ void hardwareIdListC::removeItem(sarch_t id)
 		return;
 	};
 
-	for (sarch_t i=arr.rsrc.firstValidIndex; i != HWIDLIST_INDEX_INVALID; )
+	for (sarch_t i=arr.rsrc.firstValidIndex;
+		i != HWIDLIST_INDEX_INVALID;
+		i = arr.rsrc.arr[i].next)
 	{
 		if (arr.rsrc.arr[i].next == id)
 		{
+			if (id == arr.rsrc.maxIndex) {
+				arr.rsrc.maxIndex = i;
+			};
+
 			arr.rsrc.arr[i].next = arr.rsrc.arr[id].next;
 			__KFLAG_UNSET(
 				arr.rsrc.arr[id].flags,
@@ -236,7 +270,6 @@ void hardwareIdListC::removeItem(sarch_t id)
 			arr.lock.writeRelease();
 			return;
 		};
-		i = arr.rsrc.arr[i].next;
 	};
 
 	arr.lock.writeRelease();

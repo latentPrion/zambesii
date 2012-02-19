@@ -643,6 +643,14 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 			"Virtual wire mode.\n");
 	};
 	infoCache.smpState.chipsetState = SMPSTATE_SMP;
+
+	x86IoApic::initializeCache();
+	if (!x86IoApic::ioApicsAreDetected())
+	{
+		ret = x86IoApic::detectIoApics();
+		if (ret != ERROR_SUCCESS) { return ret; };
+	};
+
 	return ERROR_SUCCESS;
 }
 

@@ -205,7 +205,6 @@ void walkerPageRanger::setAttributes(
 		};
 	};
 #if __SCALING__ > SCALING_SMP
-//if (oo==1) { __kprintf(NOTICE"Following.\n"); };
 	if (localFlush) {
 		tlbControl::flushEntryRange(vaddr, nPages);
 	}

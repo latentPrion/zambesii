@@ -33,12 +33,14 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 
 	if (ret == __KNULL) { return ret; };
 
-	// Now map the page to the paddr passed as an arg.
+	/* Now map the page to the paddr passed as an arg. It is worth noting
+	 * that Linux maps the APICs as uncacheable.
+	 **/
 	status = walkerPageRanger::mapInc(
 		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
 		ret, paddr, 1,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
-		| PAGEATTRIB_CACHE_WRITE_THROUGH);
+		| PAGEATTRIB_CACHE_WRITE_THROUGH | PAGEATTRIB_SUPERVISOR);
 
 	if (status < 1)
 	{
@@ -62,9 +64,6 @@ void x86IoApic::ioApicC::unmapIoApic(ioApicRegspaceS *ioApic)
 
 error_t x86IoApic::ioApicC::initialize(void)
 {
-	ubit8		cpu, vector, deliv, destm, pol, trigg;
-	sarch_t		enabled;
-
 	// Map the IO-APIC into kernel vaddrspace.
 	vaddr.rsrc = mapIoApic(paddr);
 	if (vaddr.rsrc == __KNULL) { return ERROR_MEMORY_VIRTUAL_PAGEMAP; };
@@ -77,17 +76,14 @@ error_t x86IoApic::ioApicC::initialize(void)
 	vaddr.lock.release();
 
 	// Mask off all IRQs.
+	__kprintf(NOTICE x86IOAPIC"%d: Masking off all IRQs for now.\n", id);
+	for (ubit8 i=0; i<nIrqs; i++) {
+		maskIrq(i);
+	};
+
 	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x, "
 		"nIrqs %d.\n",
 		id, vaddr.rsrc, paddr, version, nIrqs);
-
-	unmaskIrq(23);
-	for (ubit8 i=0; i<nIrqs; i++)
-	{
-		enabled = getIrqState(i, &cpu, &vector, &deliv, &destm, &pol, &trigg);
-		__kprintf(NOTICE x86IOAPIC"i%d: en %d: cpu %d, vec %d, deliv %d, destm %d, pol %d, trigg %d.\n",
-			i, enabled, cpu, vector, deliv, destm, pol, trigg);
-	};
 
 	return ERROR_SUCCESS;
 }
@@ -135,7 +131,9 @@ void x86IoApic::ioApicC::setIrqState(
 	low |= x86IOAPIC_IRQTABLE_SETPOLARITY(polarity);
 	low |= x86IOAPIC_IRQTABLE_SETTRIGGMODE(triggMode);
 
-	// Same here, not sure if this is how the 64-bit regs are accessed.
+	/* Same here, not sure if this is how the 64-bit regs are accessed.
+	 * Also, of course, write the high 32 bits first.
+	 **/
 	vaddr.lock.acquire();
 	writeIoRegSel(x86IOAPIC_REG_IRQTABLE(irq, 1));
 	writeIoWin(high);

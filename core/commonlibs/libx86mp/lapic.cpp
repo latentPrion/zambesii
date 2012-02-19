@@ -63,6 +63,7 @@ error_t x86Lapic::mapLapicMem(void)
 		return ERROR_MEMORY_NOMEM_VIRTUAL;
 	};
 
+	// Fact worth noting: Linux maps the APICs as uncacheable.
 	nMapped = walkerPageRanger::mapInc(
 		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
 		v, p, x86_LAPIC_NPAGES,
