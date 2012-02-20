@@ -24,6 +24,8 @@
 #include <kernel/common/execTrib/execTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
+#include <kernel/common/numaMemoryBank.h>
+
 
 int oo=0, pp=0, qq=0, rr=0;
 taskContextS		tci, *tc=&tci;
@@ -88,6 +90,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(processTrib, initialize2(), ret);
 
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
+memoryTrib.getBank(31)->dump();
 for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
 	DO_OR_DIE(execTrib, initialize(), ret);

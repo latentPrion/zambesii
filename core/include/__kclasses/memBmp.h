@@ -13,6 +13,8 @@
  * allocations *very* fast.
  **/
 
+#define MEMBMP				"MemBMP: "
+
 #define MEMBMP_FLAGS_DYNAMIC		(1<<0)
 
 #define MEMBMP_OFFSET(__pfn,__basePfn)	(__pfn - __basePfn)
@@ -36,6 +38,8 @@ public:
 	error_t initialize(void *preAllocated=__KNULL);
 
 	~memBmpC(void);
+
+	void dump(void);
 
 public:
 	// The frame address is returned on the stack.

@@ -25,13 +25,11 @@ error_t cpuTribC::initialize(void)
 {
 	uarch_t		dr0;
 
-	// Spawn the BSP CPU Stream.
-	bspCpu.id = CPUID_INVALID;
-	bspCpu.bankId = NUMABANKID_INVALID;
+	// Set the BSP's currentTask to __korientation.
 	bspCpu.taskStream.currentTask = &__korientationThread;
-	bspCpu.cpuFeatures.fpuLevel = 0;
-	bspCpu.cpuFeatures.clockMhz = 0;
+
 	// Let the CPU know that it is the BSP.
+	bspCpu.magic = CPUSTREAM_MAGIC;
 	__KFLAG_SET(bspCpu.flags, CPUSTREAM_FLAGS_BSP);
 
 	// Load the BSP's DR0 with the addr of the BSP's stream.

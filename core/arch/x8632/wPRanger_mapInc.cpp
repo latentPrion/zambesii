@@ -1,4 +1,7 @@
 
+#include <debug.h>
+#include <__kclasses/debugPipe.h>
+
 #include <scaling.h>
 #include <arch/paging.h>
 #include <arch/tlbControl.h>

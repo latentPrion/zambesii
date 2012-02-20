@@ -8,7 +8,7 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
-#define x86IOAPIC				"IO-APIC: "
+#define x86IOAPIC				"IO-APIC "
 
 #define x86IOAPIC_MAGIC				(0x10A1D1C0)
 

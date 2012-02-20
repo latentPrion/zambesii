@@ -44,7 +44,7 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 
 	if (status < 1)
 	{
-		__kprintf(ERROR x86IOAPIC"Failed to map APIC @0x%P to 0x%p.\n",
+		__kprintf(ERROR x86IOAPIC"%d: Failed to map: v:0x%p, p:0x%P.\n",
 			paddr, ret);
 
 		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(

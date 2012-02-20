@@ -350,7 +350,6 @@ error_t cpuTribC::numaInit(void)
 					getStream(smpMap->entries[i].cpuId)
 						->powerControl(
 							CPUSTREAM_POWER_ON, 0);
-
 				}
 				else
 				{
@@ -359,6 +358,7 @@ error_t cpuTribC::numaInit(void)
 						"for CPU %d.",
 						smpMap->entries[i].cpuId);
 				};
+for (__kprintf(NOTICE CPUTRIB"numaInit: Just sent IPIs to CPU %d. HLTing.\n", i);;){ asm volatile("hlt\n\t"); };
 			};
 
 			return ERROR_SUCCESS;
@@ -453,7 +453,7 @@ error_t cpuTribC::uniProcessorInit(void)
  *	 if the bit number is 32, then the BMP will be checked for 33 bit
  *	 capacity or higher, since 0-31 = 32 bits, and bit 32 would be the 33rd
  *	 bit.
- * __ret = variable to return the error code from the operation in.
+ * __ret = pointer to variable to return the error code from the operation in.
  * __fn = The name of the function this macro was called inside.
  * __bn = the human recognizible name of the bitmapC instance being checked.
  *
@@ -461,6 +461,7 @@ error_t cpuTribC::uniProcessorInit(void)
  * error occur.
  **/
 #define CHECK_AND_RESIZE_BMP(__pb,__n,__ret,__fn,__bn)			\
+	do { \
 	*(__ret) = ERROR_SUCCESS; \
 	if ((__n) > (signed)(__pb)->getNBits() - 1) \
 	{ \
@@ -471,7 +472,8 @@ error_t cpuTribC::uniProcessorInit(void)
 				"required capacity = %d.\n", \
 				__fn, __bn, __n); \
 		}; \
-	}
+	}; \
+	} while (0);
 
 #if __SCALING__ >= SCALING_CC_NUMA
 error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid, ubit32 cpuAcpiId)
@@ -560,9 +562,15 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 
 	if ((ret = cpuStreams.addItem(cid, cs)) != ERROR_SUCCESS)
 	{
+#if __SCALING__ >= SCALING_CC_NUMA
 		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): Failed to add "
 			"new CPU stream to list.\n",
 			bid, cid, cpuAcpiId);
+#else
+		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d): Failed to add "
+			"new CPU stream to list.\n",
+			cid, cpuAcpiId);
+#endif		
 	};
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -572,6 +580,7 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d): Success.\n",
 		cid, cpuAcpiId);
 #endif
+
 	return ERROR_SUCCESS;
 }
 
@@ -593,7 +602,8 @@ void cpuTribC::destroyStream(cpu_t cid)
 
 	// Now remove it from the list of CPUs and free the mem.
 	cpuStreams.removeItem(cid);
-	delete cs;
+	cs->~cpuStreamC();
+	memoryTrib.__kmemoryStream.memFree(cs);
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	ncb = getBank(cs->bankId);

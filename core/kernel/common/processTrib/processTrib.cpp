@@ -215,14 +215,14 @@ processStreamC *processTribC::spawn(
 
 			// Online memory banks.
 			*err = newProc->affinity.machines->memBanks.initialize(
-				memoryTrib.onlineBanks.getNBits());
+				memoryTrib.availableBanks.getNBits());
 
 			if (*err != ERROR_SUCCESS) {
 				return __KNULL;
 			};
 
 			newProc->affinity.machines->memBanks.merge(
-				&memoryTrib.onlineBanks);
+				&memoryTrib.availableBanks);
 		};
 	};
 

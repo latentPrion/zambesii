@@ -1,5 +1,6 @@
 
 #include <debug.h>
+
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/libx86mp.h>
@@ -65,8 +66,10 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 
 		if (err != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR"CPU messager: Failed to send IPI to CPU %d.\n",
-				parent->cpuId);
+			__kprintf(ERROR CPUMSG"%d: IPI sent from CPU %d "
+				"failed.\n",
+				parent->cpuId,
+				cpuTrib.getCurrentCpuStream()->cpuId);
 
 			return err;
 		}

@@ -1,4 +1,7 @@
 
+#include <debug.h>
+#include <__kclasses/debugPipe.h>
+
 #include <arch/paddr_t.h>
 #include <arch/paging.h>
 #include <arch/walkerPageRanger.h>
@@ -125,6 +128,7 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
+if (pp==1) {__kprintf(FATAL"In call: rsdt 0x%p, context 0x%p, handle 0x%p.\n", rsdt, *context, *handle); asm volatile("hlt\n\t");};
 		if (strncmp8(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
 		{
 			ret = (acpi_rMadtS *)acpi_mapTable(

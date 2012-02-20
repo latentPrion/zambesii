@@ -594,7 +594,7 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	copySize = (uarch_t)&__kcpuPowerOnTextEnd
 		- (uarch_t)&__kcpuPowerOnTextStart;
 
-	__kprintf(NOTICE CPUMOD"setSmpMode: Copying CPU wakeup code from 0x%p "
+	__kprintf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup code: 0x%p "
 		"to 0x%p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
@@ -608,7 +608,7 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	copySize = (uarch_t)&__kcpuPowerOnDataEnd
 		- (uarch_t)&__kcpuPowerOnDataStart;
 
-	__kprintf(NOTICE CPUMOD"setSmpMode: Copying CPU wakeup data from 0x%p "
+	__kprintf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup data: 0x%p "
 		"to 0x%p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
@@ -643,7 +643,6 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 			"Virtual wire mode.\n");
 	};
 	infoCache.smpState.chipsetState = SMPSTATE_SMP;
-
 	x86IoApic::initializeCache();
 	if (!x86IoApic::ioApicsAreDetected())
 	{

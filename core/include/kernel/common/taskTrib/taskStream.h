@@ -20,12 +20,7 @@ public streamC
 {
 friend class cpuStreamC;
 public:
-	taskStreamC(cpuStreamC *parent)
-	:
-	roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
-	dormantQ(SCHEDPRIO_MAX_NPRIOS),
-	parentCpu(parent)
-	{};
+	taskStreamC(cpuStreamC *parent);
 
 public:
 	ubit32 getLoad(void) { return load; };
@@ -33,7 +28,7 @@ public:
 	void updateLoad(ubit8 action, ubit32 val);
 	void updateCapacity(ubit8 action, ubit32 val);
 
-	error_t schedule(taskC*task);
+	error_t schedule(taskC* task);
 	
 
 private:

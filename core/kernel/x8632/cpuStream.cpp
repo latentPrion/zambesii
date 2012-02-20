@@ -1,4 +1,6 @@
 
+#include <debug.h>
+
 #include <arch/x8632/cpuid.h>
 #include <arch/x8632/gdt.h>
 #include <arch/x8632/cpuEnumeration.h>
@@ -12,6 +14,8 @@
 #include <kernel/common/cpuTrib/chipsetSmpMode.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
+#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/numaMemoryBank.h>
 
 struct x86ManufacturerEntryS
 {
@@ -162,7 +166,6 @@ static error_t initializeLapic(cpuStreamC *caller)
 
 	// This is called only when the CPU is ready to take IPIs.
 	caller->interCpuMessager.initialize();
-if (!__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) { for (__kprintf(NOTICE CPUSTREAM"%d: Reached HLT.\n", caller->cpuId);;) { asm volatile("hlt\n\t"); }; };
 
 	// First print out the LAPIC Int assignment entries.
 	x86Mp::initializeCache();
@@ -213,7 +216,6 @@ if (!__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) { for (__kprintf(NOTICE C
 		if (acpi::mapRsdt() == ERROR_SUCCESS)
 		{
 			rsdt = acpi::getRsdt();
-
 			context = handle = __KNULL;
 			rmadt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 			while (rmadt != __KNULL)
@@ -223,6 +225,7 @@ if (!__KFLAG_TEST(caller->flags, CPUSTREAM_FLAGS_BSP)) { for (__kprintf(NOTICE C
 				acpiRsdt::destroySdt((acpi_sdtS *)rmadt);
 				rmadt = acpiRsdt::getNextMadt(
 					rsdt, &context, &handle);
+
 			};
 		}
 		else
@@ -255,6 +258,7 @@ error_t cpuStreamC::initialize(void)
 #endif
 
 	__kprintf(NOTICE CPUSTREAM"%d: Initialize() complete.\n", cpuId);
+ if (!__KFLAG_TEST(flags, CPUSTREAM_FLAGS_BSP)) { __kprintf(NOTICE CPUSTREAM"%d: reached HLT in initialize.\n", cpuId); for (;;){asm volatile("hlt\n\t");};};
 	return ERROR_SUCCESS;
 }
 

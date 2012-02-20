@@ -19,6 +19,9 @@
 
 #define MEMTRIB		"Memory Trib: "
 
+#define MEMTRIB___KUPDATEAFFINITY_ADD		0
+#define MEMTRIB___KUPDATEAFFINITY_REMOVE	1
+
 class memoryTribC
 :
 public tributaryC
@@ -78,10 +81,12 @@ private:
 	void init2_generateShbankFromNumaMap(
 		zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool);
 
+	error_t __kupdateAffinity(numaBankId_t bid, ubit8 action);
+
 
 public:
 	memoryStreamC		__kmemoryStream;
-	bitmapC			onlineBanks;
+	bitmapC			availableBanks;
 
 private:
 	memoryRegionC		memRegions[CHIPSET_MEMORY_NREGIONS];
@@ -137,7 +142,14 @@ inline numaMemoryBankC *memoryTribC::getBank(numaBankId_t bankId)
 #else
 inline numaMemoryBankC *memoryTribC::getBank(numaBankId_t bankId)
 {
-	return static_cast<numaMemoryBankC *>( memoryBanks.getItem(bankId) );
+	if (bankId != NUMABANKID_INVALID)
+	{
+		return static_cast<numaMemoryBankC *>(
+			memoryBanks.getItem(bankId) );
+	}
+	else {
+		return __KNULL;
+	};
 }
 #endif
 

@@ -303,6 +303,7 @@ parseMemoryMap:
 	};
 
 	// And *finally*, see whether or not to destroy __kspace.
+	// FIXME: This should probably be moved further up.
 	if (__kspaceBool == 1)
 	{
 		/* To destroy __kspace, we must stop the Orientation thread's

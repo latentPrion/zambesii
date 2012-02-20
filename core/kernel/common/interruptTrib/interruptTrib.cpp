@@ -131,7 +131,7 @@ static void *getCr2(void)
 
 void interruptTribC::irqMain(taskContextS *regs)
 {
-	if (regs->vectorNo != 253)
+	if (regs->vectorNo /*!= 253*/)
 	{
 		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: CPU %d entered on "
 			"vector %d.\n",

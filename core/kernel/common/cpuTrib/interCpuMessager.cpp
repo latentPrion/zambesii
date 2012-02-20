@@ -6,6 +6,14 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
+cpuStreamC::interCpuMessagerC::interCpuMessagerC(cpuStreamC *parent)
+:
+parent(parent)
+{
+	cache = __KNULL;
+	statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
+}
+
 error_t cpuStreamC::interCpuMessagerC::initialize(void)
 {
 	messageQueue.initialize();
@@ -38,13 +46,9 @@ error_t cpuStreamC::interCpuMessagerC::initialize(void)
 	 * "availableCpus" BMP, that likelihood is erased, since no CPU will
 	 * try to send messages to this CPU if its bit isn't set.
 	 **/
-	__kprintf(NOTICE"Enable interrupts on CPU %d.\n", parent->cpuId);
+	__kprintf(NOTICE CPUMSG"%d: Enabling interrupts.\n", parent->cpuId);
 	cpuControl::enableInterrupts();
 	cpuTrib.availableCpus.setSingle(parent->cpuId);
-if (!__KFLAG_TEST(parent->flags, CPUSTREAM_FLAGS_BSP)) {__kprintf(NOTICE"CPU %d: reached HLT.\n", parent->cpuId); for (;;){asm volatile("hlt\n\t");};};
-
-// Bochs failing point.
-// NOTE: You want execution to end here for APs right now.
 
 	return ERROR_SUCCESS;
 }

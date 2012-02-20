@@ -36,7 +36,7 @@
  * storing frees of common frame sizes.
  **/
 #define NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP	(1<<0)
-#define NUMAMEMBANK			"Numa Memory Bank: "
+#define NUMAMEMBANK			"Numa Memory Bank "
 
 class numaMemoryBankC
 {

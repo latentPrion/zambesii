@@ -34,6 +34,74 @@ memBmpC::memBmpC(paddr_t baseAddr, paddr_t size)
 	bmp.rsrc.lastAllocIndex = 0;
 }
 
+#define MEMBMP_DUMP_STRETCHTYPE_FREE		0
+#define MEMBMP_DUMP_STRETCHTYPE_USED		1
+
+void memBmpC::dump(void)
+{
+	ubit32		nFree=0, nUsed=0;
+	sbit32		stretch=0, sc;
+	ubit8		stretchType=MEMBMP_DUMP_STRETCHTYPE_FREE;
+
+	bmp.lock.acquire();
+
+	__kprintf(NOTICE MEMBMP"v 0x%p: PFN base 0x%X, nframes %d,\n"
+		"\tarray 0x%p, nIndexes %d, lastAllocIndex %d.\n",
+		this, basePfn, bmpNFrames, bmp.rsrc.bmp, nIndexes,
+		bmp.rsrc.lastAllocIndex);
+
+	for (ubit32 i=0; i<bmpNFrames; i++)
+	{
+		if (__KBIT_TEST(
+			bmp.rsrc.bmp[i / __KBIT_NBITS_IN(*bmp.rsrc.bmp)],
+			i % __KBIT_NBITS_IN(*bmp.rsrc.bmp)))
+		{
+			nUsed++;
+		}
+		else {
+			nFree++;
+		};
+	};
+
+	for (sc=0; sc<(signed)bmpNFrames; sc++)
+	{
+		if (__KBIT_TEST(
+			bmp.rsrc.bmp[sc/__KBIT_NBITS_IN(*bmp.rsrc.bmp)],
+			sc % __KBIT_NBITS_IN(*bmp.rsrc.bmp)))
+		{
+			if (stretchType == MEMBMP_DUMP_STRETCHTYPE_FREE)
+			{
+				stretchType = MEMBMP_DUMP_STRETCHTYPE_USED;
+				__kprintf(NOTICE MEMBMP"Free stretch %d bits "
+					"starting at bit %d.\n",
+					stretch, sc-stretch);
+
+				stretch = 0;
+			};
+			stretch++;
+		}
+		else
+		{
+			if (stretchType == MEMBMP_DUMP_STRETCHTYPE_USED)
+			{
+				stretchType = MEMBMP_DUMP_STRETCHTYPE_FREE;
+				__kprintf(NOTICE MEMBMP"Used stretch %d bits "
+					"starting at bit %d.\n",
+					stretch, sc-stretch);
+
+				stretch = 0;
+			};
+			stretch++;
+		};
+	};
+
+	bmp.lock.release();
+	__kprintf(NOTICE MEMBMP"Final stretch %s, %d bits @ %d; Total %d free, "
+		"%d used.\n",
+		((stretchType == MEMBMP_DUMP_STRETCHTYPE_FREE)?"free":"used"),
+		stretch, sc-stretch, nFree, nUsed);
+}
+
 /**	EXPLANATION:
  * It isn't necessary to pass a page aligned address to this function. You 
  * can pass an unaligned address. If an unaligned address is passed, the bmp

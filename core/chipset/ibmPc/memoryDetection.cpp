@@ -316,9 +316,23 @@ zkcmMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	__kprintf(NOTICE"getMemoryMap(): %d entries in firmware map.\n",
 		nEntries);
 
-	// Hardcode in IVT + BDA
+	/* Hardcode in IVT + BDA.
+	 * Additionally, the kernel force-uses several frames in lowmem, placing
+	 * data and code at specific addresses. These locations should be marked
+	 * in the memory map to avoid data trampling.
+	 *
+	 * They are:
+	 *	* The kernel's x86 CPU wakeup trampoline code, which is placed
+	 *	  at 0x9000, and spans about 4-8 frames.
+	 *	* The E820 memory map, which is placed at 0x1000, as can be
+	 *	  seen right above in this very function, which is where the
+	 *	  memory map code is located.
+	 *
+	 * For safe measure, hardcode the size of the stretch of reserved mem as
+	 * approx 0x20000 bytes in size.
+	 **/
 	ret->entries[j].baseAddr = 0x0;
-	ret->entries[j].size = 0x4FF;
+	ret->entries[j].size = 0x20000;
 	ret->entries[j].memType = ZKCM_MMAP_TYPE_RESERVED;
 
 	// Hardcode entry for EBDA + BIOS + VGA framebuffer + anything else.

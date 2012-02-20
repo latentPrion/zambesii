@@ -1,9 +1,13 @@
 
+#include <debug.h>
+
 #include <scaling.h>
 #include <chipset/memory.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
+#include <__kthreads/__korientation.h>
+#include <__kthreads/__kcpuPowerOn.h>
 
 
 // The __kspace allocatable memory range's containing memory bank.
@@ -64,11 +68,44 @@ error_t memoryTribC::__kspaceInit(void)
 
 	return ret;
 }
+
+/* Args:
+ * __pb = pointer to the bitmapC object to be checked.
+ * __n = the bit number which the bitmap should be able to hold. For example,
+ *	 if the bit number is 32, then the BMP will be checked for 33 bit
+ *	 capacity or higher, since 0-31 = 32 bits, and bit 32 would be the 33rd
+ *	 bit.
+ * __ret = variable to return the error code from the operation in.
+ * __fn = The name of the function this macro was called inside.
+ * __bn = the human recognizible name of the bitmapC instance being checked.
+ *
+ * The latter two are used to print out a more useful error message should an
+ * error occur.
+ **/
+#define CHECK_AND_RESIZE_BMP(__pb,__n,__ret,__fn,__bn)			\
+	do { \
+	*(__ret) = ERROR_SUCCESS; \
+	if ((__n) > (signed)(__pb)->getNBits() - 1) \
+	{ \
+		*(__ret) = (__pb)->resizeTo((__n) + 1); \
+		if (*(__ret) != ERROR_SUCCESS) \
+		{ \
+			__kprintf(ERROR MEMTRIB"%s: resize failed on %s with " \
+				"required capacity = %d.\n", \
+				__fn, __bn, __n); \
+		}; \
+	}; \
+	} while (0);
 	
 error_t memoryTribC::createBank(numaBankId_t id)
 {
-	error_t		ret;
-	numaMemoryBankC	*nmb;
+	error_t			ret;
+	numaMemoryBankC		*nmb;
+
+	CHECK_AND_RESIZE_BMP(
+		&availableBanks, id, &ret, "createBank", "availableBanks");
+
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// Note the MEMALLOC_NO_FAKEMAP flag: MM code/data should never pgfault.
 	nmb = new (
@@ -87,12 +124,22 @@ error_t memoryTribC::createBank(numaBankId_t id)
 		memoryTrib.__kmemoryStream.memFree(nmb);
 	};
 
+	availableBanks.setSingle(id);
+	__kupdateAffinity(id, MEMTRIB___KUPDATEAFFINITY_ADD);
 	return ret;
 }
 
 void memoryTribC::destroyBank(numaBankId_t id)
 {
+	numaMemoryBankC		*nmb;
+
+	availableBanks.unsetSingle(id);
+	nmb = getBank(id);
 	memoryBanks.removeItem(id);
+	__kupdateAffinity(id, MEMTRIB___KUPDATEAFFINITY_REMOVE);
+	if (nmb != __KNULL) {
+		__kmemoryStream.memFree(nmb);
+	};
 }
 
 void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
@@ -127,8 +174,16 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	__kprintf(WARNING MEMTRIB"releaseFrames(0x%P, %d): pmem leak.\n",
 		paddr, nFrames);
 #else
-	getBank(defaultAffinity.def.rsrc)
-		->releaseFrames(paddr, nFrames);
+	currBank = getBank(defaultAffinity.def.rsrc);
+	if (currBank) {
+		currBank->releaseFrames(paddr, nFrames);
+	}
+	else
+	{
+		__kprintf(FATAL MEMTRIB"releaseFrames(0x%P, %d): Attempted to "
+			"free to non-existent mem bank %d.\n",
+			paddr, nFrames, defaultAffinity.def.rsrc);
+	};
 #endif
 
 }
@@ -280,6 +335,11 @@ error_t memoryTribC::configuredGetFrames(
 		};
 	};
 
+	/* FIXME: Re-arrange this loop.
+	 * Make it so that the kernel checks each bit in the thread's affinity,
+	 * instead of checking each available bank and then checking to see if
+	 * the thread has that bank set in its affinity.
+	 **/
 	// Allocation from the default bank failed. Find another default bank.
 	def = cur = memoryBanks.prepareForLoop();
 	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def);
@@ -313,8 +373,8 @@ void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 {
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaBankId_t	cur;
-	numaMemoryBankC	*currBank;
 #endif
+	numaMemoryBankC	*currBank;
 
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -332,7 +392,16 @@ void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 		currBank->mapMemUsed(baseAddr, nPages);
 	};
 #else
-	getBank(defaultAffinity.def.rsrc)->mapMemUsed(baseAddr, nPages);
+	currBank = getBank(defaultAffinity.def.rsrc);
+	if (currBank != __KNULL) {
+		currBank->mapMemUsed(baseAddr, nPages);
+	}
+	else
+	{
+		__kprintf(ERROR MEMTRIB"mapRangeUsed(0x%P, %d): attempt to "
+			"mark on non-existent bank %d.\n",
+			defaultAffinity.def.rsrc);
+	};
 #endif
 }
 
@@ -340,8 +409,8 @@ void memoryTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 {
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaBankId_t	cur;
-	numaMemoryBankC	*currBank;
 #endif
+	numaMemoryBankC	*currBank;
 
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -359,7 +428,83 @@ void memoryTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 		currBank->mapMemUnused(baseAddr, nPages);
 	};
 #else
-	getBank(defaultAffinity.def.rsrc)->mapMemUnused(baseAddr, nPages);
+	currBank = getBank(defaultAffinity.def.rsrc);
+	if (currBank != __KNULL) {
+		currBank->mapMemUnused(baseAddr, nPages);
+	}
+	else
+	{
+		__kprintf(ERROR MEMTRIB"mapRangeUnused(0x%P, %d): attempt to "
+			"mark on non-existent bank %d.\n",
+			defaultAffinity.def.rsrc);
+	};
 #endif
+}
+
+error_t memoryTribC::__kupdateAffinity(numaBankId_t bid, ubit8 action)
+{
+	error_t		ret;
+
+	/**	EXPLANATION:
+	 * When a new memory bank is advertised to the kernel (hot-swap, or
+	 * detected at boot) the kernel updates all of its threads to reflect
+	 * the fact that a new bank of memory is available.
+	 *
+	 * This allows the kernel to make use of all memory banks on the chipset
+	 * thus ensuring that it doesn't run out of memory in the optimal case.
+	 *
+	 * The implications for Oceann aren't profound: when a new CPU is
+	 * advertised to the kernel from another machine, it personally ignores
+	 * the information since kernel threads cannot be scheduled on another
+	 * machine. Instead, the kernel immediately goes on to tell userspace
+	 * that a new CPU is available somewhere across the network (and this
+	 * function is skipped).
+	 **/
+	switch (action)
+	{
+	case MEMTRIB___KUPDATEAFFINITY_ADD:
+		// Update __korientation.
+		CHECK_AND_RESIZE_BMP(
+			&__korientationThread.localAffinity.memBanks, bid, &ret,
+			"__kupdateAffinity", "__korientation affinity");
+
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR MEMTRIB"__kupdateAffinity: "
+				"__korientation unable to use bank %d.\n",
+				bid);
+		};
+
+		__korientationThread.localAffinity.memBanks.setSingle(bid);
+
+		// Update __kcpuPowerOn.
+		CHECK_AND_RESIZE_BMP(
+			&__kcpuPowerOnThread.localAffinity.memBanks, bid, &ret,
+			"__kupdateAffinity", "__kCPU Power On affinity");
+
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR MEMTRIB"__kupdateAffinity: "
+				"__kcpuPowerOn unable to use bank %d.\n",
+				bid);
+		};
+
+		__kcpuPowerOnThread.localAffinity.memBanks.setSingle(bid);
+		return ERROR_SUCCESS;
+
+	case MEMTRIB___KUPDATEAFFINITY_REMOVE:
+		// Update __korientation.
+		__korientationThread.localAffinity.memBanks.unsetSingle(bid);
+		// Update __kcpuPowerOn.
+		__kcpuPowerOnThread.localAffinity.memBanks.unsetSingle(bid);
+		return ERROR_SUCCESS;
+
+	default: return ERROR_INVALID_ARG_VAL;
+	};
+
+	__kprintf(ERROR MEMTRIB"__kupdateAffinity: Reached unreachable "
+		"point.\n");
+
+	return ERROR_UNKNOWN;
 }
 

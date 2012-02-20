@@ -1,5 +1,6 @@
 
 #include <debug.h>
+
 #include <scaling.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
@@ -72,7 +73,7 @@ void memoryStreamC::cut(void)
 
 void memoryStreamC::dump(void)
 {
-	__kprintf(NOTICE"Memory Stream 0x%X: Dumping.\n", id);
+	__kprintf(NOTICE MEMORYSTREAM"%d: Dumping.\n", id);
 	vaddrSpaceStream.dump();
 }
 
@@ -98,7 +99,6 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		&& (allocCache.pop(nPages, reinterpret_cast<void **>( &ret ))
 		== ERROR_SUCCESS))
 	{
-//if (oo==1) { __kprintf(NOTICE"Following.\n"); };
 		walkerPageRanger::setAttributes(
 			&vaddrSpaceStream.vaddrSpace,
 			(void *)ret, nPages, WPRANGER_OP_SET_PRESENT,
@@ -130,6 +130,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 			&cpuTrib.getCurrentCpuStream()
 				->taskStream.currentTask->localAffinity,
 			commit - totalFrames, &p);
+if (pp==1){ __kprintf(FATAL"memAlloc: Tracing. Vaddr from alloc 0x%p, nPages %d, pmem nFrames: %d.\n", ret, nPages, nFrames); };
 #else
 		nFrames = memoryTribPmm::fragmentedGetFrames(
 			commit - totalFrames, &p);
@@ -166,9 +167,11 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 			nTries++;
 			if (nTries >= 4)
 			{
-				__kprintf(NOTICE"Mem Stream 0x%X: memAlloc(%d):"
-					" with commit nFrames %d: No pmem.\n",
-					this->id, nPages, commit);
+				__kprintf(NOTICE MEMORYSTREAM"%d: memAlloc(%d):"
+					" with commit nFrames %d: No pmem. "
+					"Caller: 0x%x.\n",
+					this->id, nPages, commit,
+					__builtin_return_address(4));
 
 				goto releaseAndUnmap;
 			};

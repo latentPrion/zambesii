@@ -16,6 +16,7 @@
 	#include <kernel/common/taskTrib/taskStream.h>
 
 // "CPU OK" :/
+#define CPUSTREAM_MAGIC			0xC1D1101C
 #define CPUSTREAM			"CPU Stream "
 
 #define CPUSTREAM_FLAGS_INITIALIZED	(1<<0)
@@ -32,7 +33,7 @@
 #define CPUSTREAM_ENUMERATE_CPU_MODEL_UNCLEAR	0x2
 #define CPUSTREAM_ENUMERATE_CPU_MODEL_UNKNOWN	0x3
 
-#define CPUMSG				"CPU Messager: "
+#define CPUMSG				"CPU Messager "
 
 #define CPUMSGR_STATUS_NORMAL		0
 #define CPUMSGR_STATUS_PROCESSING	1
@@ -66,14 +67,7 @@ private:
 	{
 	private: struct messageS;
 	public:
-		interCpuMessagerC(cpuStreamC *parent)
-		:
-		parent(parent)
-		{
-			cache = __KNULL;
-			statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
-		};
-
+		interCpuMessagerC(cpuStreamC *parent);
 		error_t initialize(void);
 
 	public:
@@ -112,7 +106,7 @@ public:
 	// Per CPU scheduler.
 	taskStreamC		taskStream;
 
-	ubit32			flags;
+	ubit32			flags, magic;
 	/* Very small stack used to wake and power down CPUs.
 	 * The number of elements in the array indicates how many pushes the
 	 * stack can handle. Assuming each push is a native word's size,

@@ -55,11 +55,13 @@ void numaMemoryBankC::dump(void)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	__kprintf(NOTICE NUMAMEMBANK"Dumping.\n");
+	__kprintf(NOTICE NUMAMEMBANK"%d: Dumping.\n", id);
 	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
 	{
 		__kprintf((utf8Char *)"\tMem range: base 0x%X, size 0x%X.\n",
 			cur->range->baseAddr, cur->range->size);
+
+		cur->range->dump();
 	};
 
 	ranges.lock.readRelease(rwFlags);
@@ -161,9 +163,9 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 			// Can release lock and free now.
 			ranges.lock.writeRelease();
 
-			__kprintf(NOTICE NUMAMEMBANK"Destroying mem range: "
+			__kprintf(NOTICE NUMAMEMBANK"%d: Destroying mem range: "
 				"base 0x%X, size 0x%X, v 0x%X.\n",
-				cur->range->baseAddr, cur->range->size,
+				id, cur->range->baseAddr, cur->range->size,
 				cur->range);
 
 			// Make sure we don't mess up by freeing __kspace.
@@ -182,8 +184,8 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 	ranges.lock.writeRelease();
 
 	// Memory range with this base address/contained address doesn't exist.
-	__kprintf(NOTICE NUMAMEMBANK"Failed to remove range with base 0x%X.\n",
-		baseAddr);
+	__kprintf(NOTICE NUMAMEMBANK"%d: Failed to remove range with base 0x%X."
+		"\n", id, baseAddr);
 
 	return ERROR_INVALID_ARG_VAL;
 }
@@ -339,8 +341,8 @@ void numaMemoryBankC::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 
 	ranges.lock.readRelease(rwFlags);
 
-	__kprintf(WARNING NUMAMEMBANK"releaseFrames(0x%X, %d) Pmem leak.\n",
-		basePaddr, nFrames);
+	__kprintf(WARNING NUMAMEMBANK"%d: releaseFrames(0x%X, %d) Pmem leak.\n",
+		id, basePaddr, nFrames);
 }
 
 sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)

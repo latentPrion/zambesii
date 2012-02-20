@@ -31,7 +31,7 @@ uarch_t getEip(void)
 }
 
 extern "C" void getRegs(taskContextS *t);
-taskContextS		y;
+// taskContextS		y;
 
 void __kcpuPowerOnMain(void)
 {
@@ -60,18 +60,19 @@ void __kcpuPowerOnMain(void)
 //	cpuControl::disableInterrupts();
 
 	// Print a message to allow for CPU wakeup tracing.
-	getRegs(&y);
-/*	__kprintf(NOTICE CPUPOWER"CPU %d: Entered. Sleepstack: 0x%x. Regdump:\n\teax 0x%x, ebx 0x%x, ecx 0x%x, edx 0x%x\n"
+	/* __kprintf(NOTICE CPUPOWER"CPU %d: Entered. Sleepstack: 0x%x. Regdump:\n\teax 0x%x, ebx 0x%x, ecx 0x%x, edx 0x%x\n"
 		"\tesi 0x%x, edi 0x%x, esp 0x%x, ebp 0x%x\n"
 		"\tcs 0x%x, ds 0x%x, es 0x%x, fs 0x%x, gs 0x%x, ss 0x%x\n"
 		"\teip 0x%x, eflags 0x%x\n",
 		myStream->cpuId, myStream->sleepStack,
 		y.eax, y.ebx, y.ecx, y.edx, y.esi, y.edi, y.esp, y.ebp,
 		y.cs, y.ds, y.es, y.fs, y.gs, y.ss, y.eip, y.flags); */
-// if (!__KFLAG_TEST(myStream->flags, CPUSTREAM_FLAGS_BSP)) {__kprintf(NOTICE"CPU %d: Reached HLT!\n", myStream->cpuId); for (;;){asm volatile("hlt\n\t");};};
 
-	// Enumerates, sets up, etc.
+	/* Enumerates, sets up, etc. After this function has returned, the
+	 * waking CPU will be able to allocate memory freely.
+	 **/
 	myStream->initialize();
+__kprintf(NOTICE"CPU %d: Reached HLT!\n", myStream->cpuId); for (;;){asm volatile("hlt\n\t");};
 
 	// Halt the CPU here.
 	for (;;) {

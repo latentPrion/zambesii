@@ -34,7 +34,14 @@ taskStream(this)
 ,interCpuMessager(this)
 #endif
 {
-	// Nothing to be done for now.
+	/* Only the BSP CPU Stream will have this magic value set. The BSP
+	 * CPU Stream is pre-initialized, and holds certain values already which
+	 * should not be overwritten.
+	 **/
+	if (magic != CPUSTREAM_MAGIC) { flags = 0; };
+
+	memset(&cpuFeatures, 0, sizeof(cpuFeatures));
+	memset(&archBlock, 0, sizeof(archBlock));
 }
 
 #include <arch/tlbControl.h>

@@ -3,7 +3,25 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <__kthreads/__kcpuPowerOn.h>
 
+
+taskStreamC::taskStreamC(cpuStreamC *parent)
+:
+roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
+dormantQ(SCHEDPRIO_MAX_NPRIOS),
+parentCpu(parent)
+{
+	load = 0;
+	capacity = 0;
+
+	/* Ensure that the BSP CPU's pointer to __korientation isn't trampled
+	 * by the general case constructor.
+	 **/
+	if (parentCpu->magic != CPUSTREAM_MAGIC) {
+		currentTask = &__kcpuPowerOnThread;
+	};
+}
 
 status_t taskStreamC::schedule(taskC *task)
 {
