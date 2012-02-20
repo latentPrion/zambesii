@@ -75,7 +75,7 @@ error_t memoryTribC::__kspaceInit(void)
  *	 if the bit number is 32, then the BMP will be checked for 33 bit
  *	 capacity or higher, since 0-31 = 32 bits, and bit 32 would be the 33rd
  *	 bit.
- * __ret = variable to return the error code from the operation in.
+ * __ret = pointer to variable to return the error code from the operation in.
  * __fn = The name of the function this macro was called inside.
  * __bn = the human recognizible name of the bitmapC instance being checked.
  *
@@ -473,9 +473,12 @@ error_t memoryTribC::__kupdateAffinity(numaBankId_t bid, ubit8 action)
 			__kprintf(ERROR MEMTRIB"__kupdateAffinity: "
 				"__korientation unable to use bank %d.\n",
 				bid);
+		}
+		else
+		{
+			__korientationThread.localAffinity.memBanks
+				.setSingle(bid);
 		};
-
-		__korientationThread.localAffinity.memBanks.setSingle(bid);
 
 		// Update __kcpuPowerOn.
 		CHECK_AND_RESIZE_BMP(
@@ -487,9 +490,13 @@ error_t memoryTribC::__kupdateAffinity(numaBankId_t bid, ubit8 action)
 			__kprintf(ERROR MEMTRIB"__kupdateAffinity: "
 				"__kcpuPowerOn unable to use bank %d.\n",
 				bid);
+		}
+		else
+		{
+			__kcpuPowerOnThread.localAffinity.memBanks
+				.setSingle(bid);
 		};
-
-		__kcpuPowerOnThread.localAffinity.memBanks.setSingle(bid);
+		
 		return ERROR_SUCCESS;
 
 	case MEMTRIB___KUPDATEAFFINITY_REMOVE:

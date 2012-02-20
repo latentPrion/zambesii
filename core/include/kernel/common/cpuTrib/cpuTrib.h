@@ -45,6 +45,9 @@
 
 #define CPUTRIB		"CPU Trib: "
 
+#define CPUTRIB___KUPDATEAFFINITY_ADD			0
+#define CPUTRIB___KUPDATEAFFINITY_REMOVE		1
+
 class cpuTribC
 :
 public tributaryC
@@ -83,6 +86,9 @@ public:
 #endif
 
 	sarch_t usingSmpMode(void) { return usingChipsetSmpMode; };
+
+private:
+	error_t __kupdateAffinity(cpu_t cid, ubit8 action);
 
 public:
 #if __SCALING__ >= SCALING_CC_NUMA

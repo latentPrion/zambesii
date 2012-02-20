@@ -150,7 +150,7 @@ void interruptTribC::irqMain(taskContextS *regs)
 
 	// TODO: Calls ISRs, then exit.
 
-	if (regs->vectorNo != 253)
+	if (regs->vectorNo /*!= 253*/)
 	{
 		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: Exiting on CPU %d "
 			"vector %d.\n",

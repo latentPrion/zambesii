@@ -1,4 +1,5 @@
 #include <debug.h>
+
 #include <scaling.h>
 #include <chipset/cpus.h>
 #include <chipset/zkcm/zkcmCore.h>
@@ -10,8 +11,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <__kthreads/__korientation.h>
-
-#include <commonlibs/libacpi/libacpi.h>
+#include <__kthreads/__kcpuPowerOn.h>
 
 #define getHighestId(currHighest,map,member,item,hibound)	\
 	do \
@@ -358,7 +358,6 @@ error_t cpuTribC::numaInit(void)
 						"for CPU %d.",
 						smpMap->entries[i].cpuId);
 				};
-for (__kprintf(NOTICE CPUTRIB"numaInit: Just sent IPIs to CPU %d. HLTing.\n", i);;){ asm volatile("hlt\n\t"); };
 			};
 
 			return ERROR_SUCCESS;
@@ -580,6 +579,7 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d): Success.\n",
 		cid, cpuAcpiId);
 #endif
+	__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_ADD);
 
 	return ERROR_SUCCESS;
 }
@@ -602,6 +602,7 @@ void cpuTribC::destroyStream(cpu_t cid)
 
 	// Now remove it from the list of CPUs and free the mem.
 	cpuStreams.removeItem(cid);
+	__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_REMOVE);
 	cs->~cpuStreamC();
 	memoryTrib.__kmemoryStream.memFree(cs);
 
@@ -669,4 +670,60 @@ void cpuTribC::destroyBank(numaBankId_t bid)
 	memoryTrib.__kmemoryStream.memFree(ncb);
 }
 #endif
+
+error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
+{
+	error_t		ret;
+
+	/**	EXPLANATION:
+	 * When a new CPU is detected (either at boot, or as hot-plug) the
+	 * kernel automatically updates the affinity of all of its threads to
+	 * include that new CPU.
+	 **/
+	switch (action)
+	{
+	case CPUTRIB___KUPDATEAFFINITY_ADD:
+		CHECK_AND_RESIZE_BMP(
+			&__korientationThread.localAffinity.cpus, cid, &ret,
+			"__kupdateAffinity", "__korientation CPU affinity");
+
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUTRIB"__korientation unable to use "
+				"CPU %d.\n",
+				cid);
+		}
+		else {
+			__korientationThread.localAffinity.cpus.setSingle(cid);
+		};
+
+		CHECK_AND_RESIZE_BMP(
+			&__kcpuPowerOnThread.localAffinity.cpus, cid, &ret,
+			"__kupdateAffinity", "__kCPU Power on CPU affinity");
+
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUTRIB"__kcpuPowerOn unable to use "
+				"CPU %d.\n",
+				cid);
+		}
+		else {
+			__kcpuPowerOnThread.localAffinity.cpus.setSingle(cid);
+		};
+
+		return ERROR_SUCCESS;
+
+	case CPUTRIB___KUPDATEAFFINITY_REMOVE:
+		__korientationThread.localAffinity.cpus.unsetSingle(cid);
+		__kcpuPowerOnThread.localAffinity.cpus.unsetSingle(cid);
+		return ERROR_SUCCESS;
+
+	default: return ERROR_INVALID_ARG_VAL;
+	};
+
+	__kprintf(ERROR CPUTRIB"__kupdateAffinity: Reached unreachable "
+		"point.\n");
+
+	return ERROR_UNKNOWN;
+}
 
