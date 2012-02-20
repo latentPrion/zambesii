@@ -168,10 +168,8 @@ if (pp==1){ __kprintf(FATAL"memAlloc: Tracing. Vaddr from alloc 0x%p, nPages %d,
 			if (nTries >= 4)
 			{
 				__kprintf(NOTICE MEMORYSTREAM"%d: memAlloc(%d):"
-					" with commit nFrames %d: No pmem. "
-					"Caller: 0x%x.\n",
-					this->id, nPages, commit,
-					__builtin_return_address(4));
+					" with commit nFrames %d: No pmem.\n",
+					this->id, nPages, commit);
 
 				goto releaseAndUnmap;
 			};
