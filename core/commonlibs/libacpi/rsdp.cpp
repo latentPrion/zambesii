@@ -73,12 +73,22 @@ sarch_t acpi::testForXsdt(void)
 	return 0;
 }
 
+static sarch_t checksumIsValid(acpi_rsdtS *rsdt)
+{
+	ubit8		checksum=0;
+	ubit8		*table=reinterpret_cast<ubit8 *>( rsdt );
+
+	for (ubit32 i=0; i<rsdt->hdr.tableLength; i++) {
+		checksum += table[i];
+	};
+
+	return (checksum == 0);
+}
+
 error_t acpi::mapRsdt(void)
 {
 	acpi_rsdtS	*rsdt;
-	status_t	nMapped;
-	uarch_t		rsdtNPages, f;
-	paddr_t		p;
+	uarch_t		rsdtNPages;
 
 	if (!acpi::rsdpFound() || !acpi::testForRsdt()) {
 		return ERROR_GENERAL;
@@ -87,64 +97,45 @@ error_t acpi::mapRsdt(void)
 		return ERROR_SUCCESS;
 	};
 
-	rsdt = new ((memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(2))
-		acpi_rsdtS;
-
-	if (rsdt == __KNULL) {
-		return ERROR_MEMORY_NOMEM_VIRTUAL;
-	};
-
-	nMapped = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		rsdt, cache.rsdp->rsdtPaddr, 2,
+	rsdt = (acpi_rsdtS *)walkerPageRanger::createMappingTo(
+		cache.rsdp->rsdtPaddr, 2,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
-	if (nMapped < 2)
+	if (rsdt == __KNULL)
 	{
-		rsdtNPages = 2;
-		goto releaseAndExit;
+		__kprintf(ERROR ACPI"Failed to temp map RSDT.\n");
+		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
 	rsdt = WPRANGER_ADJUST_VADDR(rsdt, cache.rsdp->rsdtPaddr, acpi_rsdtS *);
-	// Find out the RSDT's real size.
-	rsdtNPages = PAGING_BYTES_TO_PAGES(rsdt->hdr.tableLength) + 1;
+	// Ensure that the table is valid: compute checksum.
+	if (!checksumIsValid(rsdt))
+	{
+		__kprintf(WARNING ACPI"RSDT has invalid checksum.\n");
+		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+			rsdt, 2);
 
-	walkerPageRanger::unmap(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		rsdt, &p, 2, &f);
-
-	// Reallocate vmem.
-	rsdt = new ((memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(2))
-		acpi_rsdtS;
-
-	if (rsdt == __KNULL) {
-		return ERROR_MEMORY_NOMEM_VIRTUAL;
+		return ERROR_GENERAL;
 	};
 
-	nMapped = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		rsdt, cache.rsdp->rsdtPaddr, rsdtNPages,
+	// Find out the RSDT's real size.
+	rsdtNPages = PAGING_BYTES_TO_PAGES(rsdt->hdr.tableLength) + 1;
+	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(rsdt, 2);
+
+	// Reallocate vmem.
+	rsdt = (acpi_rsdtS *)walkerPageRanger::createMappingTo(
+		cache.rsdp->rsdtPaddr, rsdtNPages,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
-	if (nMapped < static_cast<status_t>( rsdtNPages )) {
-		goto releaseAndExit;
+	if (rsdt == __KNULL)
+	{
+		__kprintf(ERROR ACPI"Failed to map RSDT.\n");
+		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
 	rsdt = WPRANGER_ADJUST_VADDR(rsdt, cache.rsdp->rsdtPaddr, acpi_rsdtS *);
 	cache.rsdt = rsdt;
 	return ERROR_SUCCESS;
-
-releaseAndExit:
-	walkerPageRanger::unmap(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		rsdt, &p, rsdtNPages, &f);
-
-	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
-		rsdt, rsdtNPages);
-
-	return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 }
 
 acpi_rsdtS *acpi::getRsdt(void)

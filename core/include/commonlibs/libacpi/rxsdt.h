@@ -5,7 +5,7 @@
 	#include "baseTables.h"
 	#include "mainTables.h"
 
-
+#define ACPIR			"ACPI-RSDT: "
 #ifdef __cplusplus
 
 namespace acpiRsdt

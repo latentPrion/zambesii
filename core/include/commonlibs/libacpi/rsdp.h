@@ -6,6 +6,7 @@
 
 
 // "ACPI OK"
+#define ACPI			"ACPI: "
 #define ACPI_CACHE_MAGIC	0xAC1D101C
 
 struct acpi_sdtCacheS
