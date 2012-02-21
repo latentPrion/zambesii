@@ -63,11 +63,22 @@ sarch_t x86Mp::mpFpFound(void)
 	return 1;
 }
 
+static sarch_t checksumIsValid(x86_mpCfgS *cfg)
+{
+	ubit8		checksum=0;
+	ubit8		*table=reinterpret_cast<ubit8 *>( cfg );
+
+	for (ubit16 i=0; i<cfg->length; i++) {
+		checksum += table[i];
+	};
+
+	return (checksum == 0) ? 1 : 0;
+}
+
 x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 {
 	ubit32		cfgPaddr;
 	ubit32		cfgNPages;
-	status_t	nMapped;
 	x86_mpCfgS	*ret;
 
 	if (!x86Mp::mpFpFound()) {
@@ -92,43 +103,39 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	};
 
 	cfgPaddr = cache.fp->cfgTablePaddr;
-	// Map the cfg table into the kernel vaddrspace.
-	ret = new ((memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(1))
-		x86_mpCfgS;
+	ret = (x86_mpCfgS *)walkerPageRanger::createMappingTo(
+		cfgPaddr, 1, PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
-	nMapped = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		ret, cfgPaddr, 1,
-		// Don't need write perms here.
-		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
-
-	if (nMapped < 1)
+	if (ret == __KNULL)
 	{
-		__kprintf(ERROR x86MP"Failed to map MP Config Table.\n");
+		__kprintf(ERROR x86MP"mapMpCfgTable: Failed to map.\n");
 		return __KNULL;
 	};
 
 	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86_mpCfgS *);
 	cfgNPages = PAGING_BYTES_TO_PAGES(ret->length) + 1;
 
-	// Free cfg table mem, and reallocate enough to hold the whole thing.
+	// First ensure that the table's checksum is valid.
+	if (!checksumIsValid(ret))
+	{
+		__kprintf(WARNING x86MP"mapMpCfgTable: Invalid checksum.\n");
+		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+			ret, 1);
+
+		return __KNULL;
+	};
+
+	// Free the temporary mapping and its mem, then re-map the cfg table.
 	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
 		(void *)((uarch_t)ret & PAGING_BASE_MASK_HIGH), 1);
 
-	ret = new ((memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(
-			cfgNPages))
-		x86_mpCfgS;
-
-	nMapped = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
-		ret, cfgPaddr, cfgNPages,
+	ret = (x86_mpCfgS *)walkerPageRanger::createMappingTo(
+		cfgPaddr, cfgNPages,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
-	if (nMapped < static_cast<status_t>( cfgNPages ))
+	if (ret == __KNULL)
 	{
-		__kprintf(ERROR x86MP"Failed to map MP Config Table.\n");
+		__kprintf(ERROR x86MP"mapMpCfgTable: Failed to map.\n");
 		return __KNULL;
 	};
 
@@ -160,6 +167,9 @@ void x86Mp::unmapMpConfigTable(void)
 	walkerPageRanger::unmap(
 		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
 		cache.cfg, &p, nPages, &f);
+
+	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+		cache.cfg, nPages);
 
 	cache.cfg = __KNULL;
 }

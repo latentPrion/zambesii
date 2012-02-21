@@ -7,6 +7,7 @@
 	#include <kernel/common/vaddrSpace.h>
 	#include <kernel/common/pageAttributes.h>
 
+#define WPRANGER				"WPR: "
 // These are the valid return values for walkerPageRanger::lookup() and unmap().
 #define WPRANGER_STATUS_BACKED			(0)
 #define WPRANGER_STATUS_SWAPPED			(1)
@@ -86,6 +87,18 @@
 
 namespace walkerPageRanger
 {
+	/**	EXPLANATION:
+	 * Reduces code duplication in the kernel significantly by providing a
+	 * single function call that replaces all those areas in the kernel
+	 * where a function allocates a page from the kernel memory stream, then
+	 * asks WPR to map it to a specific physical address.
+	 *
+	 * This function does exactly that: Allocates a new virtual page range
+	 * to cover the allocation, then maps it to the specified physical
+	 * address range with the page attributes provided.
+	 **/
+	void *createMappingTo(paddr_t paddr, uarch_t nPages, uarch_t flags);
+
 	void swapMap(
 		vaddrSpaceC *vaddrSpace,
 		void *vaddr, uarch_t nPages);

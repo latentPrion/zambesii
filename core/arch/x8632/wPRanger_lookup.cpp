@@ -3,8 +3,10 @@
 #include <arch/walkerPageRanger.h>
 #include <arch/x8632/wPRanger_accessors.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 
 /**	EXPLANATION:
  * Will peer into the mappings for the given vaddrspace and return the mapping
@@ -154,6 +156,51 @@ status_t walkerPageRanger::lookup(
 		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.release();
 
 	vaddrSpace->level0Accessor.lock.release();
+
+	return ret;
+}
+
+// This is actually a fully portable function, btw. Shouldn't really be in here.
+void *walkerPageRanger::createMappingTo(
+	paddr_t paddr, uarch_t nPages, uarch_t flags
+	)
+{
+	void		*ret;
+	status_t	nMapped;
+
+	// Safely clear the lower bits of the paddr.
+	paddr >>= PAGING_BASE_SHIFT;
+	paddr <<= PAGING_BASE_SHIFT;
+
+	// Get vmem.
+	ret = (memoryTrib.__kmemoryStream.vaddrSpaceStream
+		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(nPages);
+
+	if (ret == __KNULL)
+	{
+		__kprintf(ERROR WPRANGER"createMappingTo(0x%P, %d): Failed to "
+			"alloc enough vmem.\n",
+			paddr, nPages);
+
+		return __KNULL;
+	};
+
+	// Map vmem to paddr.
+	nMapped = mapInc(
+		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		ret, paddr, nPages, flags);
+
+	if (nMapped < (signed)nPages)
+	{
+		__kprintf(ERROR WPRANGER"createMappingTo(0x%P, %d): mapInc "
+			"failed.\n",
+			paddr, nPages);
+
+		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+			ret, nPages);
+
+		return __KNULL;
+	};
 
 	return ret;
 }
