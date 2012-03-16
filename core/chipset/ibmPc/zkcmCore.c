@@ -2,8 +2,8 @@
 #include <chipset/zkcm/zkcmCore.h>
 #include "memoryDetection.h"
 #include "cpuDetection.h"
+#include "irqControl.h"
 #include "terminalMod.h"
-#include "pic.h"
 
 
 static error_t ibmPc_pkg_initialize(void) { return ERROR_SUCCESS; }
@@ -24,7 +24,7 @@ struct zkcmCoreS		zkcmCore =
 	&ibmPc_memoryDetectionMod,
 	&ibmPc_cpuDetectionMod,
 	__KNULL,
-	&ibmPc_intControllerMod,
+	&ibmPc_irqControlMod,
 
 	{
 		&ibmPc_terminalMod,

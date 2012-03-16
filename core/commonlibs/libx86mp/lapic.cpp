@@ -258,17 +258,17 @@ void x86Lapic::setupSpuriousVector(ubit8 vector)
 
 ubit8 x86Lapic::read8(ubit32 offset)
 {
-	return *reinterpret_cast<ubit8 *>( (uarch_t)cache.v + offset );
+	return *reinterpret_cast<volatile ubit8*>( (uarch_t)cache.v + offset );
 }
 
 ubit16 x86Lapic::read16(ubit32 offset)
 {
-	return *reinterpret_cast<ubit16 *>( (uarch_t)cache.v + offset );
+	return *reinterpret_cast<volatile ubit16*>( (uarch_t)cache.v + offset );
 }
 
 ubit32 x86Lapic::read32(ubit32 offset)
 {
-	return *reinterpret_cast<ubit32 *>( (uarch_t)cache.v + offset );
+	return *reinterpret_cast<volatile ubit32*>( (uarch_t)cache.v + offset );
 }
 
 

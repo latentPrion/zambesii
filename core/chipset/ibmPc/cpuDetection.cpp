@@ -1,4 +1,6 @@
 
+#include <debug.h>
+
 #include <__ksymbols.h>
 #include <arch/arch.h>
 #include <arch/memory.h>
@@ -17,34 +19,12 @@
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <__kthreads/__kcpuPowerOn.h>
 #include "cpuDetection.h"
-#include "pic.h"
+#include "i8259a.h"
+#include "zkcmIbmPcState.h"
 
 
 #define SMPINFO		CPUMOD"SMP: "
 #define CPUMOD		"CPU Mod: "
-
-#define SMPSTATE_UNIPROCESSOR	0x0
-#define SMPSTATE_SMP		0x1
-
-static struct
-{
-	
-	struct
-	{
-		sarch_t		bspIdRequestedAlready;
-		cpu_t		bspId;
-	} bspInfo;
-
-	struct
-	{
-		// Whether SMP (Symmetric I/O) or non-SMP mode.
-		ubit8		chipsetState;
-		// Set the board back to Virt. wire or PIC mode at shutdown.
-		ubit8		chipsetOriginalState;
-	} smpState;
-
-	paddr_t		lapicPaddr;
-} infoCache;
 
 
 error_t ibmPc_cpuMod_initialize(void)
@@ -467,7 +447,7 @@ cpu_t ibmPc_cpuMod_getBspId(void)
 
 	/* At some point I'll rewrite this function: it's very unsightly.
 	 **/
-	if (!infoCache.bspInfo.bspIdRequestedAlready)
+	if (!ibmPcState.bspInfo.bspIdRequestedAlready)
 	{
 		/* Run a local CPU ID read. Need libLapic. Will have to parse
 		 * APIC/MP tables to determine the LAPIC paddr, then use
@@ -486,7 +466,7 @@ cpu_t ibmPc_cpuMod_getBspId(void)
 			};
 		};
 		cfgTable = x86Mp::getMpCfg();
-		infoCache.lapicPaddr = cfgTable->lapicPaddr;
+		ibmPcState.lapicPaddr = cfgTable->lapicPaddr;
 		goto initLibLapic;
 
 tryAcpi:
@@ -505,7 +485,7 @@ tryAcpi:
 		context = handle = __KNULL;
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 		if (madt == __KNULL) { goto useDefaultPaddr; };
-		infoCache.lapicPaddr = (paddr_t)madt->lapicPaddr;
+		ibmPcState.lapicPaddr = (paddr_t)madt->lapicPaddr;
 
 		acpiRsdt::destroyContext(&context);
 		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
@@ -514,15 +494,15 @@ tryAcpi:
 
 useDefaultPaddr:
 		__kprintf(NOTICE CPUMOD"getBspId(): Using default paddr.\n");
-		infoCache.lapicPaddr = 0xFEE00000;
+		ibmPcState.lapicPaddr = 0xFEE00000;
 
 initLibLapic:
 		__kprintf(NOTICE CPUMOD"getBspId(): LAPIC paddr = 0x%P.\n",
-			infoCache.lapicPaddr);
+			ibmPcState.lapicPaddr);
 
 		x86Lapic::initializeCache();
 		if (!x86Lapic::getPaddr(&tmp)) {
-			x86Lapic::setPaddr(infoCache.lapicPaddr);
+			x86Lapic::setPaddr(ibmPcState.lapicPaddr);
 		};
 
 		if (x86Lapic::mapLapicMem() != ERROR_SUCCESS)
@@ -534,11 +514,14 @@ initLibLapic:
 			return 0;
 		};
 
-		infoCache.bspInfo.bspId = x86Lapic::read32(x86LAPIC_REG_LAPICID);
-		infoCache.bspInfo.bspIdRequestedAlready = 1;
+		ibmPcState.bspInfo.bspId = x86Lapic::read32(
+			x86LAPIC_REG_LAPICID);
+
+		ibmPcState.bspInfo.bspIdRequestedAlready = 1;
 	};
 
-	return infoCache.bspInfo.bspId >> 24;
+	ibmPcState.bspInfo.bspId >>= 24;
+	return ibmPcState.bspInfo.bspId;
 }
 
 static error_t ibmPc_cpuMod_setSmpMode(void)
@@ -615,7 +598,7 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	memcpy8(destAddr, srcAddr, copySize);
 
 	// Mask all ISA IRQs at the PIC:
-	ibmPc_pic_maskAll();
+	ibmPc_i8259a_maskAll();
 
 	/** EXPLANATION
 	 * Next, we parse the MP tables to see if the chipset has the IMCR
@@ -628,7 +611,7 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	if (mpFp != __KNULL
 		&& __KFLAG_TEST(mpFp->features[1], x86_MPFP_FEAT1_FLAG_PICMODE))
 	{
-		infoCache.smpState.chipsetOriginalState = SMPSTATE_UNIPROCESSOR;
+		ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_UNIPROCESSOR;
 
 		cpuControl::safeDisableInterrupts(&cpuFlags);
 		io::write8(0x22, 0x70);
@@ -638,11 +621,11 @@ static error_t ibmPc_cpuMod_setSmpMode(void)
 	}
 	else
 	{
-		infoCache.smpState.chipsetOriginalState = SMPSTATE_SMP;
+		ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_SMP;
 		__kprintf(NOTICE CPUMOD"setSmpMode: CPU Mod: chipset was in "
 			"Virtual wire mode.\n");
 	};
-	infoCache.smpState.chipsetState = SMPSTATE_SMP;
+	ibmPcState.smpInfo.chipsetState = SMPSTATE_SMP;
 	x86IoApic::initializeCache();
 	if (!x86IoApic::ioApicsAreDetected())
 	{
@@ -733,7 +716,7 @@ skipMpTables:
 	switch (command)
 	{
 	case CPUSTREAM_POWER_ON:
-		if (infoCache.smpState.chipsetState == SMPSTATE_UNIPROCESSOR)
+		if (ibmPcState.smpInfo.chipsetState == SMPSTATE_UNIPROCESSOR)
 		{
 			ret = ibmPc_cpuMod_setSmpMode();
 			if (ret != ERROR_SUCCESS) { return ret; };

@@ -54,6 +54,8 @@ void x86Lapic::ipi::installHandler(void)
 	interruptTrib.installException(
 		x86LAPIC_IPI_VECTOR, &x86Lapic::ipi::exceptionHandler,
 		INTTRIB_VECTOR_FLAGS_EXCEPTION_POSTCALL);
+
+	handlerIsInstalled = 1;
 }
 
 status_t x86Lapic::ipi::exceptionHandler(taskContextS *, ubit8 postcall)

@@ -1,8 +1,8 @@
 .PHONY=
 DELIVERABLE=../../chipsetCore.a
-OBJFILES=regionMap.o pic.o findTables.o \
+OBJFILES=regionMap.o i8259a.o findTables.o irqControl.o \
 	memoryDetection.o terminalMod.o zkcmCore.o ibmPc_modules.o \
-	cpuDetection.o memoryAreas.o
+	cpuDetection.o memoryAreas.o zkcmIbmPcState.o
 
 all: Makefile $(DELIVERABLE)
 

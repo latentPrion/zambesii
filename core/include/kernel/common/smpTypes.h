@@ -7,5 +7,11 @@
 
 typedef sarch_t		cpu_t;
 
+#ifdef __cplusplus
+	/* There are C files which include this file, so any C++ code in here
+	 * should be properly guarded.
+	 **/
+#endif
+
 #endif
 

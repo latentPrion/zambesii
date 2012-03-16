@@ -151,7 +151,7 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
-			&& (!checksumIsValid(sdt)))
+			&& checksumIsValid(sdt))
 		{
 			ret = (acpi_rMadtS *)acpi_mapTable(
 				*(paddr_t *)*handle,
@@ -191,7 +191,7 @@ acpi_rFacpS *acpiRsdt::getNextFacp(
 	{
 		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
-			&& (!checksumIsValid(sdt)))
+			&& checksumIsValid(sdt))
 		{
 			ret = (acpi_rFacpS *)acpi_mapTable(
 				*(paddr_t *)*handle,

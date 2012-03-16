@@ -46,13 +46,13 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	// Prepare the kernel by zeroing .BSS and calling constructors.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
-	// Initialize the chipset's module package.
-	DO_OR_DIE(zkcmCore, initialize(), ret);
 	// processTrib initializes __kprocess & __korientation.
 	DO_OR_DIE(processTrib, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 
 	cxxrtl::callGlobalConstructors();
+	// Initialize the chipset's module package.
+	DO_OR_DIE(zkcmCore, initialize(), ret);
 	DO_OR_DIE(interruptTrib, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
@@ -90,7 +90,6 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(processTrib, initialize2(), ret);
 
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
-memoryTrib.getBank(31)->dump();
 for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
 	DO_OR_DIE(execTrib, initialize(), ret);

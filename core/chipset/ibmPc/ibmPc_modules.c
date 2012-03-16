@@ -2,21 +2,24 @@
 #include "memoryDetection.h"
 #include "cpuDetection.h"
 #include "terminalMod.h"
-#include "pic.h"
+#include "irqControl.h"
 
-
-struct intControllerModS	ibmPc_intControllerMod =
+struct zkcmIrqControlModS	ibmPc_irqControlMod =
 {
-	&ibmPc_pic_initialize,
-	&ibmPc_pic_shutdown,
-	&ibmPc_pic_suspend,
-	&ibmPc_pic_restore,
+	&ibmPc_irqControl_initialize,
+	&ibmPc_irqControl_detectPins,
+	&ibmPc_irqControl_shutdown,
+	&ibmPc_irqControl_suspend,
+	&ibmPc_irqControl_restore,
 
-	&ibmPc_pic_maskAll,
-	&ibmPc_pic_maskSingle,
-	&ibmPc_pic_unmaskAll,
-	&ibmPc_pic_unmaskSingle,
-	&ibmPc_pic_sendEoi
+	&ibmPc_irqControl___kregisterPinIds,
+	&ibmPc_irqControl_maskIrq,
+	&ibmPc_irqControl_unmaskIrq,
+	&ibmPc_irqControl_maskAll,
+	&ibmPc_irqControl_unmaskAll,
+	&ibmPc_irqControl_maskIrqsByPriority,
+	&ibmPc_irqControl_unmaskIrqsByPriority,
+	&ibmPc_irqControl_getIrqStatus
 };
 
 struct zkcmMemoryDetectionModS	ibmPc_memoryDetectionMod =

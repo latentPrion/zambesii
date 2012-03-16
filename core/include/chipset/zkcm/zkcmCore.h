@@ -4,8 +4,8 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <chipset/zkcm/memoryDetection.h>
 	#include <chipset/zkcm/cpuDetection.h>
+	#include <chipset/zkcm/irqControl.h>
 	#include <chipset/pkg/watchdogMod.h>
-	#include <chipset/pkg/intControllerMod.h>
 	#include <chipset/pkg/debugMod.h>
 
 struct zkcmCoreS
@@ -23,7 +23,7 @@ struct zkcmCoreS
 
 	// XXX: Still to be updated.
 	struct watchdogModS			*watchdog;
-	struct intControllerModS		*intController;
+	struct zkcmIrqControlModS		*irqControl;
 
 	struct debugModS			*debug[4];
 };
