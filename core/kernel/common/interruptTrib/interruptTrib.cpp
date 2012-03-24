@@ -5,6 +5,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
@@ -31,10 +32,12 @@ interruptTribC::interruptTribC(void)
 {
 	for (ubit32 i=0; i<ARCH_IRQ_NVECTORS; i++)
 	{
-		intTable[i].exception = __KNULL;
-		intTable[i].flags = 0;
-		intTable[i].nUnhandled = 0;
+		msiIrqTable[i].exception = __KNULL;
+		msiIrqTable[i].flags = 0;
+		msiIrqTable[i].nUnhandled = 0;
 	};
+
+	pinTableCounter = 0;
 }
 
 error_t interruptTribC::initialize(void)
@@ -87,12 +90,15 @@ error_t interruptTribC::initialize(void)
 	 **/
 	// Ask the chipset to mask all IRQs at its irq controller(s).
 	(zkcmCore.irqControl->maskAll)();
-
 	return ERROR_SUCCESS;
 }
 
 error_t interruptTribC::initialize2(void)
 {
+	zkcmIrqPinS		*chipsetPins;
+	ubit16			nPins;
+	error_t			ret;
+
 	/**	EXPLANATION:
 	 * This is called simply to notify the Interrupt Tributary that memory
 	 * management is now initialized fully and the heap is available.
@@ -105,7 +111,7 @@ error_t interruptTribC::initialize2(void)
 	for (ubit32 i=0; i<ARCH_IRQ_NVECTORS; i++)
 	{
 		if (__KFLAG_TEST(
-			intTable[i].flags, INTTRIB_VECTOR_FLAGS_BOOTISR))
+			msiIrqTable[i].flags, INTTRIB_VECTOR_FLAGS_BOOTISR))
 		{
 			/**	TODO:
 			 * Move the ISR off the "exception" pointer and properly
@@ -116,6 +122,21 @@ error_t interruptTribC::initialize2(void)
 		};
 	};
 
+	/**	EXPLANATION:
+	 * Set up pin-based IRQ management:
+	 * Ask the chipset how many IRQ pins exist, and build the kernel's
+	 * pinIrqTable.
+	 **/
+	ret = (*zkcmCore.irqControl->getInitialPinInfo)(&nPins, &chipsetPins);
+	if (ret != ERROR_SUCCESS)
+	{
+		panic(ret, CC INTTRIB"initialize2(): Chipset returned an error "
+			"when asked about PIC pin info.\n"
+			"Kernel cannot continue without IRQ management.\n");
+	};
+
+	registerIrqPins(nPins, chipsetPins);
+	(*zkcmCore.irqControl->__kregisterPinIds)(nPins, chipsetPins);
 	return ERROR_SUCCESS;
 }
 
@@ -142,9 +163,9 @@ void interruptTribC::irqMain(taskContextS *regs)
 
 	// Check for an exception.
 	if (__KFLAG_TEST(
-		intTable[regs->vectorNo].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION))
+		msiIrqTable[regs->vectorNo].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION))
 	{
-		(*intTable[regs->vectorNo].exception)(regs, 0);
+		(*msiIrqTable[regs->vectorNo].exception)(regs, 0);
 	};
 
 
@@ -159,12 +180,12 @@ void interruptTribC::irqMain(taskContextS *regs)
 
 	// Check to see if the exception requires a "postcall".
 	if (__KFLAG_TEST(
-		intTable[regs->vectorNo].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION)
+		msiIrqTable[regs->vectorNo].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION)
 		&& __KFLAG_TEST(
-			intTable[regs->vectorNo].flags,
+			msiIrqTable[regs->vectorNo].flags,
 			INTTRIB_VECTOR_FLAGS_EXCEPTION_POSTCALL))
 	{
-		(intTable[regs->vectorNo].exception)(regs, 1);
+		(msiIrqTable[regs->vectorNo].exception)(regs, 1);
 	};
 }
 
@@ -196,22 +217,151 @@ void interruptTribC::installException(
 
 		// Chipset wants to install an early ISR.
 		__KFLAG_SET(
-			intTable[vector].flags, INTTRIB_VECTOR_FLAGS_BOOTISR);
+			msiIrqTable[vector].flags, INTTRIB_VECTOR_FLAGS_BOOTISR);
 	}
 	else
 	{
 		// Else it's a normal exception installation.
 		__KFLAG_SET(
-			intTable[vector].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION);
+			msiIrqTable[vector].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION);
 	};
 
-	intTable[vector].exception = exception;
-	intTable[vector].flags |= flags;
+	msiIrqTable[vector].exception = exception;
+	msiIrqTable[vector].flags |= flags;
 }
 
 void interruptTribC::removeException(uarch_t vector)
 {
-	intTable[vector].exception = __KNULL;
-	intTable[vector].flags = 0;
+	msiIrqTable[vector].exception = __KNULL;
+	msiIrqTable[vector].flags = 0;
+}
+
+void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
+{
+	irqPinDescriptorS	*tmp;
+	error_t			err;
+
+	for (ubit16 i=0; i<nPins; i++)
+	{
+		tmp = new irqPinDescriptorS;
+		if (tmp == __KNULL)
+		{
+			__kprintf(FATAL INTTRIB"registerIrqPins(): Failed to "
+				"alloc mem for pin %d.\n",
+				i);
+
+			panic(ERROR_MEMORY_NOMEM);
+		};
+
+		tmp->triggerMode = pinList[i].triggerMode;
+		/* Assign the pin a kernel ID. IDs are taken from the current
+		 * value of the counter.
+		 **/
+		pinList[i].__kid = pinTableCounter;
+
+		// Add it to the list.
+		err = pinIrqTable.addItem(pinTableCounter, tmp);
+		if (err != ERROR_SUCCESS)
+		{
+			__kprintf(FATAL INTTRIB"registerPinIrqs(): Failed to "
+				"add pin %d to the pin IRQ table.\n",
+				i);
+
+			panic(err);
+		};
+		pinTableCounter++;
+	};
+
+	// Return the list with our global kernel pin IDs.
+	(*zkcmCore.irqControl->__kregisterPinIds)(nPins, pinList);
+}
+
+void interruptTribC::removeIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
+{
+	irqPinDescriptorS		*tmp;
+
+	for (ubit16 i=0; i<nPins; i++)
+	{
+		tmp = reinterpret_cast<irqPinDescriptorS *>(
+			pinIrqTable.getItem(pinList[i].__kid) );
+
+		// TODO: Remove each handler registered on the pin as well.
+		pinIrqTable.removeItem(pinList[i].__kid);
+		delete tmp;
+	};
+}
+
+void interruptTribC::dumpExceptions(void)
+{
+	ubit8		flipFlop=0;
+
+	__kprintf(NOTICE INTTRIB"dumpExceptions:\n");
+	for (ubit16 i=0; i<ARCH_IRQ_NVECTORS; i++)
+	{
+		if (__KFLAG_TEST(
+			msiIrqTable[i].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION))
+		{
+			__kprintf(CC"\t%d: 0x%p,", i, msiIrqTable[i].exception);
+			if (flipFlop == 3)
+			{
+				__kprintf(CC"\n");
+				flipFlop = 0;
+			}
+			else { flipFlop++; };
+		};
+	};
+	if (flipFlop != 0) { __kprintf(CC"\n"); };
+}
+
+void interruptTribC::dumpMsiIrqs(void)
+{
+	ubit32		nItems;
+	isrDescriptorS	*tmp;
+
+	__kprintf(NOTICE INTTRIB"dumpMsiIrqs:\n");
+
+	for (ubit16 i=0; i<ARCH_IRQ_NVECTORS; i++)
+	{
+		if (msiIrqTable[i].isrList.getNItems() > 0)
+		{
+			nItems = msiIrqTable[i].isrList.getNItems();
+			__kprintf(CC"vec%d: %d handlers.\n", i, nItems);
+			for (ubit16 j=0; j<nItems; j++)
+			{
+				tmp = msiIrqTable[i].isrList.getItem(j);
+				__kprintf(CC"\t%d: %s; handled %d, "
+					"procId 0x%x, ISR at 0x%p.\n",
+					j,
+					((tmp->driverType
+						== INTTRIB_ISR_DRIVERTYPE_ZKCM)
+						? "ZKCM" : "UDI"),
+					tmp->nHandled, tmp->processId,
+					tmp->isr);
+			};
+		};
+	};
+}
+
+void interruptTribC::dumpUnusedVectors(void)
+{
+	ubit8	flipFlop=0;
+
+	__kprintf(NOTICE INTTRIB"dumpUnusedVectors:\n");
+	for (ubit16 i=0; i<ARCH_IRQ_NVECTORS; i++)
+	{
+		if (!__KFLAG_TEST(
+			msiIrqTable[i].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION)
+			&& msiIrqTable[i].isrList.getNItems() == 0)
+		{
+			__kprintf(CC"\t%d,", i);
+			if (flipFlop == 7)
+			{
+				flipFlop = 0;
+				__kprintf(CC"\n");
+			}
+			else { flipFlop++; };
+		};
+	};
+	if (flipFlop != 0) { __kprintf(CC"\n"); };
 }
 

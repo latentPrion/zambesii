@@ -50,12 +50,12 @@ struct zkcmIrqControlModS
 {
 	error_t (*initialize)(void);
 	// A second initialize(); should report all PIC pins to kernel.
-	error_t (*detectPins)(ubit16 *nPins, struct zkcmIrqPinS **ret);
 	error_t (*shutdown)(void);
 	error_t (*suspend)(void);
 	error_t (*restore)(void);
 
-	void (*__kregisterPinIds)(struct zkcmIrqPinS *list);
+	error_t (*getInitialPinInfo)(ubit16 *nPins, struct zkcmIrqPinS **ret);
+	void (*__kregisterPinIds)(ubit16 nPins, struct zkcmIrqPinS *list);
 
 	void (*maskIrq)(ubit16 __kid);
 	void (*unmaskIrq)(ubit16 __kid);

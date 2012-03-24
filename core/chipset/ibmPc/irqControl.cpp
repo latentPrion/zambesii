@@ -21,7 +21,7 @@ error_t ibmPc_irqControl_initialize(void)
 	return ibmPc_i8259a_initialize();
 }
 
-error_t ibmPc_irqControl_detectPins(ubit16 *nPins, zkcmIrqPinS **ret)
+error_t ibmPc_irqControl_getInitialPinInfo(ubit16 *nPins, zkcmIrqPinS **ret)
 {
 	/**	EXPLANATION:
 	 * This is only ever called once, and is called by the Int Trib. The
@@ -53,9 +53,9 @@ error_t ibmPc_irqControl_restore(void)
 	return ERROR_SUCCESS;
 }
 
-void ibmPc_irqControl___kregisterPinIds(zkcmIrqPinS *)
+void ibmPc_irqControl___kregisterPinIds(ubit16, zkcmIrqPinS *)
 {
-	// Doesn't need to do anything.
+	// If SMP mode, pass the pins back to libIOAPIC.
 }
 
 void ibmPc_irqControl_maskIrq(ubit16 __kpin)

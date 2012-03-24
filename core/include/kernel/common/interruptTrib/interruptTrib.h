@@ -3,8 +3,10 @@
 
 	#include <arch/interrupts.h>
 	#include <arch/taskContext.h>
+	#include <chipset/zkcm/irqControl.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
 
@@ -19,9 +21,6 @@
 #define INTTRIB_VECTOR_FLAGS_EXCEPTION_POSTCALL	(1<<3)
 // Declares that the vector holds a syscall handler and is an SWI vector.
 #define INTTRIB_VECTOR_FLAGS_SWI		(1<<4)
-
-#define INTTRIB_ISR_IRQTYPE_LEVEL_TRIGGERED	(1<<0)
-#define INTTRIB_ISR_IRQTYPE_EDGE_TRIGGERED	(1<<1)
 
 // Zambezii Kernel Chipset Module.
 #define INTTRIB_ISR_DRIVERTYPE_ZKCM		(0x0)
@@ -51,6 +50,15 @@ public:
 
 	void irqMain(taskContextS *regs);
 
+	// Called only by ZKCM IRQ Control module related code.
+	void registerIrqPins(ubit16 nPins, zkcmIrqPinS *list);
+	void removeIrqPins(ubit16 nPins, zkcmIrqPinS *list);
+
+	void dumpIrqPins(void);
+	void dumpExceptions(void);
+	void dumpMsiIrqs(void);
+	void dumpUnusedVectors(void);
+
 private:
 	// These two are architecture specific.
 	void installHardwareVectorTable(void);
@@ -66,7 +74,7 @@ public:
 		// NOTE: Should actually point to the bus driver instance.
 		uarch_t		processId;
 		zkcmIsrFn	*isr;
-		ubit8		driverType, irqType;
+		ubit8		driverType;
 		// Miscellaneous driver only use.
 		ubit32		scratch;
 	};
@@ -103,7 +111,16 @@ public:
 		 **/
 		ptrlessListC<isrDescriptorS>	isrList;
 	};
-	vectorDescriptorS	intTable[ARCH_IRQ_NVECTORS];
+
+	struct irqPinDescriptorS
+	{
+		ubit8		triggerMode;
+		ptrlessListC<isrDescriptorS>	irqList;
+	};
+
+	vectorDescriptorS	msiIrqTable[ARCH_IRQ_NVECTORS];
+	hardwareIdListC		pinIrqTable;
+	ubit16			pinTableCounter;
 };
 
 extern interruptTribC		interruptTrib;

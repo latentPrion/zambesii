@@ -10,12 +10,14 @@
 CPPEXTERN_START
 
 error_t ibmPc_irqControl_initialize(void);
-error_t ibmPc_irqControl_detectPins(ubit16 *nPins, struct zkcmIrqPinS **ret);
 error_t ibmPc_irqControl_shutdown(void);
 error_t ibmPc_irqControl_suspend(void);
 error_t ibmPc_irqControl_restore(void);
 
-void ibmPc_irqControl___kregisterPinIds(struct zkcmIrqPinS *list);
+error_t ibmPc_irqControl_getInitialPinInfo(
+	ubit16 *nPins, struct zkcmIrqPinS **ret);
+
+void ibmPc_irqControl___kregisterPinIds(ubit16 nPins, struct zkcmIrqPinS *list);
 
 void ibmPc_irqControl_maskIrq(ubit16 __kid);
 void ibmPc_irqControl_unmaskIrq(ubit16 __kid);

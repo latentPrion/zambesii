@@ -29,8 +29,22 @@ public:
 	error_t initialize(void);
 
 public:
+	// Inserts an element at the front of the list.
 	void insert(T *item);
+	// Removes the item at the end of the list and returns its pointer.
 	T *pop(void);
+	// Returns a pointer to the Nth item.
+	T *getItem(ubit32 num);
+
+	ubit32 getNItems(void)
+	{
+		ubit32		ret;
+
+		list.lock.acquire();
+		ret = list.rsrc.nItems;
+		list.lock.release();
+		return ret;
+	};
 
 	void dump(void);
 
@@ -119,18 +133,35 @@ template <class T> void ptrlessListC<T>::dump(void)
 
 	__kprintf(NOTICE"PointerlessList @ 0x%p: dumping; lock @ 0x%p.\n"
 		"\tNum items: %d, head: 0x%p, tail 0x%p.\n\t",
-		this, &list.lock, list.rsrc.nItems, list.rsrc.head, list.rsrc.tail);
+		this, &list.lock,
+		list.rsrc.nItems, list.rsrc.head, list.rsrc.tail);
 
-	for (T *tmp = list.rsrc.head;
-		tmp != __KNULL;
-		tmp = tmp->listHeader.next, count--)
+	for (T *curr = list.rsrc.head;
+		curr != __KNULL;
+		curr = curr->listHeader.next, count--)
 	{
 		if (count == 0) { __kprintf(CC"\n\t"); count = 4; };
-		__kprintf(CC"obj: 0x%p, ", tmp);
+		__kprintf(CC"obj: 0x%p, ", curr);
 	};
 	__kprintf(CC"\n");
 
 	list.lock.release();
+}
+
+template <class T> T *ptrlessListC<T>::getItem(ubit32 num)
+{
+	T		*curr;
+
+	list.lock.acquire();
+
+	for (curr = list.rsrc.head;
+		curr != __KNULL && num > 0;
+		curr = curr->listHeader.next, num--)
+	{};
+
+	list.lock.release();
+
+	return curr;
 }
 
 #endif

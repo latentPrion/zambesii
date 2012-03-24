@@ -7,12 +7,13 @@
 struct zkcmIrqControlModS	ibmPc_irqControlMod =
 {
 	&ibmPc_irqControl_initialize,
-	&ibmPc_irqControl_detectPins,
 	&ibmPc_irqControl_shutdown,
 	&ibmPc_irqControl_suspend,
 	&ibmPc_irqControl_restore,
 
+	&ibmPc_irqControl_getInitialPinInfo,
 	&ibmPc_irqControl___kregisterPinIds,
+
 	&ibmPc_irqControl_maskIrq,
 	&ibmPc_irqControl_unmaskIrq,
 	&ibmPc_irqControl_maskAll,
