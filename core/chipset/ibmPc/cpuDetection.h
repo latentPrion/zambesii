@@ -18,6 +18,7 @@ IPCMEXTERN struct zkcmNumaMapS *ibmPc_cpuMod_getNumaMap(void);
 IPCMEXTERN struct zkcmSmpMapS *ibmPc_cpuMod_getSmpMap(void);
 IPCMEXTERN cpu_t ibmPc_cpuMod_getBspId(void);
 IPCMEXTERN sarch_t ibmPc_cpuMod_checkSmpSanity(void);
+IPCMEXTERN error_t ibmPc_cpuMod_setSmpMode(void);
 IPCMEXTERN status_t ibmPc_cpuMod_powerControl(
 	cpu_t cpuId, ubit8 command, uarch_t flags);
 

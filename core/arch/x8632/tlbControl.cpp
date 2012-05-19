@@ -59,7 +59,7 @@ void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 	 **/
 	flushEntryRange(vaddr, nPages);
 
-	if (!cpuTrib.usingSmpMode())
+	if (!cpuTrib.usingChipsetSmpMode())
 	{
 		flushEntryRange(vaddr, nPages);
 		return;

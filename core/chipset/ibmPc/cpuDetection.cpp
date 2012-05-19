@@ -524,7 +524,7 @@ initLibLapic:
 	return ibmPcState.bspInfo.bspId;
 }
 
-static error_t ibmPc_cpuMod_setSmpMode(void)
+error_t ibmPc_cpuMod_setSmpMode(void)
 {
 	error_t		ret;
 	ubit8		*lowmem;
@@ -716,10 +716,13 @@ skipMpTables:
 	switch (command)
 	{
 	case CPUSTREAM_POWER_ON:
-		if (ibmPcState.smpInfo.chipsetState == SMPSTATE_UNIPROCESSOR)
+		if (!cpuTrib.usingChipsetSmpMode())
 		{
-			ret = ibmPc_cpuMod_setSmpMode();
-			if (ret != ERROR_SUCCESS) { return ret; };
+			__kprintf(ERROR CPUMOD"cpu_powerOn(%d,%d): Attempt to "
+				"power on a CPU with usingChipsetSmpMode=0!\n",
+				cpuId, command);
+
+			return ERROR_CRITICAL;
 		};
 
 		nTries = 3;

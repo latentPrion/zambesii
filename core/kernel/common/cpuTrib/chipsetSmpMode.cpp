@@ -3,6 +3,6 @@
 
 sarch_t usingChipsetSmpMode(void)
 {
-	return cpuTrib.usingSmpMode();
+	return cpuTrib.usingChipsetSmpMode();
 }
 

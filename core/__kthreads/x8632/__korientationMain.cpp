@@ -89,7 +89,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(interruptTrib, initialize2(), ret);
 	interruptTrib.dumpExceptions();
 	interruptTrib.dumpMsiIrqs();
-	interruptTrib.dumpUnusedVectors();
+	//interruptTrib.dumpUnusedVectors();
 
 for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(processTrib, initialize2(), ret);

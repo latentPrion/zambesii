@@ -38,7 +38,7 @@ static numaBankId_t	highestBankId=0;
 cpuTribC::cpuTribC(void)
 {
 	bspId = 0;
-	usingChipsetSmpMode = 0;
+	_usingChipsetSmpMode = 0;
 }
 
 cpuTribC::~cpuTribC(void)
@@ -114,13 +114,26 @@ error_t cpuTribC::initialize2(void)
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-	// Next ask the chipset if multi-cpu is safe on this machine.
-	if ((*zkcmCore.cpuDetection->checkSmpSanity)()) {
-		usingChipsetSmpMode = 1;
+	/**	EXPLANATION:
+	 * Next ask the chipset if multi-cpu is safe on this machine. If SMP
+	 * is safe, then the kernel immediately switches the machine into SMP
+	 * mode.
+	 **/
+	if ((*zkcmCore.cpuDetection->checkSmpSanity)())
+	{
+		ret = (*zkcmCore.cpuDetection->setSmpMode)();
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUTRIB"initialize2: Chipset failed "
+				"to safely transition to SMP mode.\n"
+				"\tProceeding in uniprocessor mode.\n");
+		}
+		else {
+			_usingChipsetSmpMode = 1;
+		};
 	}
 	else
 	{
-		usingChipsetSmpMode = 0;
 		__kprintf(ERROR CPUTRIB"initialize2:\n"
 			"\tIMPORTANT: Your kernel was compiled as a multi-cpu\n"
 			"build kernel, but your chipset reports that it is\n"
@@ -210,6 +223,10 @@ error_t cpuTribC::numaInit(void)
 	 * by the calling code. Should be able to just use the module from here
 	 * on.
 	 **/
+
+	// Return non success to force caller to execute fallbackToUpMode().
+	if (!usingChipsetSmpMode()) { return ERROR_GENERAL; };
+
 	numaMap = (*zkcmCore.cpuDetection->getNumaMap)();
 	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
 	{
@@ -391,6 +408,10 @@ error_t cpuTribC::smpInit(void)
 	 * error to indicate that the kernel should fallback to uniprocessor
 	 * mode.
 	 **/
+
+	// Return non success to force caller to execute fallbackToUpMode().
+	if (!usingChipsetSmpMode()) { return ERROR_GENERAL; };
+	
 	smpMap = (*zkcmCore.cpuDetection->getSmpMap)();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{

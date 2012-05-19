@@ -1,0 +1,72 @@
+	1: Kernel Cloning and Address Space Binding.
+
+A kernel cannot truly call itself fully NUMA optimized if it forces processes on
+different nodes to all eventually have to access foreign nodes to execute kernel
+code. This is unacceptable. If a process resides within a single node or set of
+nodes, there should be no situation where the kernel places a limit on its
+performance by situating itself sub-optimally.
+
+On architectures where this can be done, Zbz will, for every numa node which has
+a bank of memory associated with it, copy itself in pmem into the memory range
+for that node, and create a new exact clone of its current address space, with
+the sole difference being that this clone will be mapped to the copy of the
+kernel in RAM on the new node. The new node's memoryBankC memory management
+object will contain this clone address space.
+
+Normally when a new process is created, the kernel clones its address space
+into the new process' space. This will continue on NUMA builds of of the kernel,
+but with a divergence where the kernel will clone an address space of the
+process' choosing, based on the process' creator's chosen NUMA "binding".
+
+For example, if the parent process knew that it would like the new process to
+run on node 4, it could specify that, and the kernel would then be sure that
+it copies a page directory which references a copy of the kernel in node 4's
+RAM, thereby ensuring that when the child process enters kernel context, it
+will not have to access memory off of its local node just to execute syscalls.
+
+	2. Kernel Swamp management.
+
+It would truly be a triumph if there were a uniform, neat way to ensure that
+not only is the userspace process' addrspace customizable for NUMA based on
+the process' preferences, but that all of the /metadata/ held within the
+kernel's addrspace for a process is also allocated off of that process'
+chosen nodes.
+
+For example, if a process opens a handle to a file and the kernel begins
+caching the file's data for accelerated reads and writes, would it not be useful
+for such cached content to have been cached on the process's node's local memory?
+Or, should a process' memory management metadata such as its current allocations
+and address space state not be held, if possible, on its own node? It is unlikely
+that other processes would query such information often, highly likely that that
+process would trigger accesses to that metadata on at least 50% of its syscalls.
+It is useful to note however, that there are negative repercussions to such a
+highly aggressive NUMA approach alongside the benefits.
+
+Advantages:
+	* As long as we can assume that processes rarely access metadata about
+	  processes other than themselves, we can conclude that this
+	  optimization will produce increased performance for the majority
+	  of situations. This assumption is not unreasonable.
+
+Disadvantages:
+	* Such aggressive NUMA dispersing of the kernel's allocations in
+	  physical memory will cause the kernel's physical footprint to
+	  reach out into every possible node that has seen use by any process.
+	* If memory is hot-swapped, the kernel has its management book-keeping
+	  data everywhere, so extensive migration will be necessary before
+	  memory can be hot-removed.
+	* Migrating page tables may prove difficult.
+	* There are imaginable situations where an adminstrator may wish to
+	  have the kernel contain itself within a single node for ease of
+	  management, or to ensure that a specific process, or set of processes
+	  on a particular node get premium performance prioritization.
+	* If such tenacious optimization is to be extended to the kernel heap
+	  (memory reservoir, bogs, etc), the heap would need to be extended
+	  to take NUMA preferences of the process calling on it into consideration.
+	* The amount of per-case analysis needed to decide whether or not this
+	  optimization is worth the negative by-products will be very time consuming.
+
+For now at least, I have personally concluded that this optimization is not needed. At
+the very least, fetches for kernel code and static data from different nodes will be
+localized by the address space binding changes. This is already quite a performance
+boost.

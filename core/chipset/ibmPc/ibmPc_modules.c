@@ -55,6 +55,7 @@ struct zkcmCpuDetectionModS		ibmPc_cpuDetectionMod =
 	&ibmPc_cpuMod_restore,
 
 	&ibmPc_cpuMod_checkSmpSanity,
+	&ibmPc_cpuMod_setSmpMode,
 	&ibmPc_cpuMod_getBspId,
 	&ibmPc_cpuMod_getSmpMap,
 	&ibmPc_cpuMod_getNumaMap,

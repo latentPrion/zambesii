@@ -14,6 +14,7 @@ struct zkcmCpuDetectionModS
 	error_t (*restore)(void);
 
 	sarch_t (*checkSmpSanity)(void);
+	error_t (*setSmpMode)(void);
 	cpu_t (*getBspId)(void);
 	struct zkcmSmpMapS *(*getSmpMap)(void);
 	struct zkcmNumaMapS *(*getNumaMap)(void);

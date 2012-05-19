@@ -85,7 +85,7 @@ public:
 	void destroyBank(numaBankId_t id);
 #endif
 
-	sarch_t usingSmpMode(void) { return usingChipsetSmpMode; };
+	sarch_t usingChipsetSmpMode(void) { return _usingChipsetSmpMode; };
 
 private:
 	error_t __kupdateAffinity(cpu_t cid, ubit8 action);
@@ -96,7 +96,7 @@ public:
 #endif
 #if __SCALING__ >= SCALING_SMP
 	bitmapC			availableCpus, onlineCpus;
-	ubit8			usingChipsetSmpMode;
+	ubit8			_usingChipsetSmpMode;
 #endif
 	cpu_t			bspId;
 

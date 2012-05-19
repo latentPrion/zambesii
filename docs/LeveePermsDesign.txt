@@ -1,0 +1,42 @@
+	1. Purpose.
+
+Levee's Perms API is meant to provide a relatively detailed hook API
+for allowing userspace to have input in the kernel's decisions on
+whether or not to allow a process to execute a specific operation. This
+should be held in contrast to the file access authorization API which
+allows the kernel to enforce data privacy limitations based on ownership
+of files and group-access constraints.
+
+	2. Overview.
+
+Every process is given a Levee perms profile. This consists of a perms
+state for what perms it has /requested/ this session, and a perms state
+for what perms the user has /allowed/ it to be given.
+
+Later on, we will implement persistent perms for a program executable on
+disk, where a program can be granted persistent perms across executions
+based on perms that can be loaded from the file-system's metadata for that
+file, or from the Registered Levee Perms Assistant.
+
+The persistent perms consist of a perms state for what operations are
+/allowed/ and what perms are explicitly /disallowed/ for that program.
+
+	3. With an RLPA.
+
+With an RLPA associated with Levee, Levee will post requests to a queue
+for the RLPA to handle, and sleep the process. The RLPA wake up, pull the
+request from its queue, and make a decision based on some criteria,
+including direct user input. Then it will ask the kernel to wake the thread
+with the corresponding answer given. The kernel will wake the thread, and
+move on with execution based on what the answer was.
+
+A thread can only wait on one RLPA event at a time.
+
+	4. Without an RLPA.
+
+Without an RLPA registered, the kernel will simply allow all operations to
+occur without any question. Therefore the registration of an RLPA is
+/critical/ to good security. A low level boot shell may be used, and one
+is intended to be provided with Zambezii.
+
+	
