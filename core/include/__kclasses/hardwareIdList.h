@@ -61,7 +61,16 @@ private:
 	struct arrayStateS
 	{
 		arrayNodeS	*arr;
-		sarch_t		maxIndex, firstValidIndex;
+		/**	EXPLANATION:
+		 * maxIndex: Current last valid (occupied) index in the array.
+		 * firstValidIndex: current first valid index in the array.
+		 * maxAllocatedIndex: Tracks the size of the array in memory
+		 *	consumption, since the array can be a state such that it
+		 *	is larger than the maxIndex element indicates it is
+		 *	due to unused indexes existing beyond the last currently
+		 *	occupied index.
+		 **/
+		sarch_t		maxIndex, maxAllocatedIndex, firstValidIndex;
 	};
 	sharedResourceGroupC<multipleReaderLockC, arrayStateS>	arr;
 };

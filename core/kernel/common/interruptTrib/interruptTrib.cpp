@@ -250,6 +250,12 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 				"alloc mem for pin %d.\n",
 				i);
 
+			/* If an IRQ pin cannot be managed due to lack of
+			 * memory for metadata, the kernel cannot plausibly
+			 * claim to have proper control over the machine from
+			 * that point on; an unmanaged pin is nothing but
+			 * trouble.
+			 **/
 			panic(ERROR_MEMORY_NOMEM);
 		};
 
@@ -266,22 +272,33 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 		default: break;
 		};
 
-		/* Assign the pin a kernel ID. IDs are taken from the current
+		/* Assign the pin a kernel ID. IDs are either re-used if a blank
+		 * slot is located within the list, or taken from the current
 		 * value of the counter.
 		 **/
-		pinList[i].__kid = pinIrqTableCounter;
-
-		// Add it to the list.
-		err = pinIrqTable.addItem(pinIrqTableCounter, tmp);
-		if (err != ERROR_SUCCESS)
+		if (pinIrqTable.findFreeIndex((uarch_t *)&pinList[i].__kid)
+			== ERROR_SUCCESS)
 		{
-			__kprintf(FATAL INTTRIB"registerPinIrqs(): Failed to "
-				"add pin %d to the pin IRQ table.\n",
-				i);
+			pinIrqTable.addItem(pinList[i].__kid, tmp);
+			__kprintf(NOTICE INTTRIB"Found a free slot at %d.\n", pinList[i].__kid);
+		}
+		else
+		{
+			pinList[i].__kid = pinIrqTableCounter;
 
-			panic(err);
+			// Add it to the list.
+			err = pinIrqTable.addItem(pinIrqTableCounter, tmp);
+			if (err != ERROR_SUCCESS)
+			{
+				__kprintf(FATAL INTTRIB"registerPinIrqs(): "
+					"Failed to add pin %d to the pin IRQ "
+					"table.\n",
+					i);
+
+				panic(err);
+			};
+			pinIrqTableCounter++;
 		};
-		pinIrqTableCounter++;
 	};
 
 	// Return the list with our global kernel pin IDs.

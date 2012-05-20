@@ -3,6 +3,7 @@
 
 #include <scaling.h>
 #include <chipset/memory.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
@@ -38,6 +39,11 @@ error_t memoryTribC::__kspaceInit(void)
 	defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
 	// First give the list class pre-allocated memory to use for its array.
+	memset(
+		initialMemoryBankArray, 0,
+		sizeof(hardwareIdListC::arrayNodeS)
+			* (CHIPSET_MEMORY_NUMA___KSPACE_BANKID + 1));
+
 	memoryBanks.__kspaceSetState(
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID,
 		static_cast<void *>( initialMemoryBankArray ));
