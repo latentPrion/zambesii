@@ -37,7 +37,7 @@ interruptTribC::interruptTribC(void)
 		msiIrqTable[i].nUnhandled = 0;
 	};
 
-	pinTableCounter = 0;
+	pinIrqTableCounter = 0;
 }
 
 error_t interruptTribC::initialize(void)
@@ -253,14 +253,26 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 			panic(ERROR_MEMORY_NOMEM);
 		};
 
-		tmp->triggerMode = pinList[i].triggerMode;
+		switch (pinList[i].triggerMode)
+		{
+		case IRQPIN_TRIGGMODE_LEVEL:
+			tmp->triggerMode = INTTRIB_IRQPIN_TRIGGMODE_LEVEL;
+			break;
+
+		case IRQPIN_TRIGGMODE_EDGE:
+			tmp->triggerMode = INTTRIB_IRQPIN_TRIGGMODE_EDGE;
+			break;
+
+		default: break;
+		};
+
 		/* Assign the pin a kernel ID. IDs are taken from the current
 		 * value of the counter.
 		 **/
-		pinList[i].__kid = pinTableCounter;
+		pinList[i].__kid = pinIrqTableCounter;
 
 		// Add it to the list.
-		err = pinIrqTable.addItem(pinTableCounter, tmp);
+		err = pinIrqTable.addItem(pinIrqTableCounter, tmp);
 		if (err != ERROR_SUCCESS)
 		{
 			__kprintf(FATAL INTTRIB"registerPinIrqs(): Failed to "
@@ -269,7 +281,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 
 			panic(err);
 		};
-		pinTableCounter++;
+		pinIrqTableCounter++;
 	};
 
 	// Return the list with our global kernel pin IDs.
@@ -363,5 +375,30 @@ void interruptTribC::dumpUnusedVectors(void)
 		};
 	};
 	if (flipFlop != 0) { __kprintf(CC"\n"); };
+}
+
+void interruptTribC::dumpIrqPins(void)
+{
+	sarch_t			context, prev;
+	irqPinDescriptorS	*tmp;
+
+	__kprintf(NOTICE INTTRIB"dumpIrqPins:\n");
+
+	prev = context = pinIrqTable.prepareForLoop();
+	tmp = reinterpret_cast<irqPinDescriptorS *>(
+		pinIrqTable.getLoopItem(&context) );
+
+	while (tmp != __KNULL)
+	{
+		__kprintf(CC"\t__kpin %d: Trigger mode %s, %d devices.\n",
+			prev,
+			((tmp->triggerMode == INTTRIB_IRQPIN_TRIGGMODE_LEVEL) ?
+				"level" : "edge"),
+			tmp->irqList.getNItems());
+
+		prev = context;
+		tmp = reinterpret_cast<irqPinDescriptorS *>(
+			pinIrqTable.getLoopItem(&context) );
+	};
 }
 

@@ -64,7 +64,7 @@ void *hardwareIdListC::getItem(sarch_t id)
 	return ret;
 }
 
-error_t hardwareIdListC::findFreeProcess(processId_t *id)
+error_t hardwareIdListC::findFreeIndex(uarch_t *id)
 {
 	uarch_t		rwFlags;
 
@@ -76,7 +76,7 @@ error_t hardwareIdListC::findFreeProcess(processId_t *id)
 			arr.rsrc.arr[i].flags, HWIDLIST_FLAGS_INDEX_VALID))
 		{
 			arr.lock.readRelease(rwFlags);
-			*id = static_cast<processId_t>( i );
+			*id = i;
 			return ERROR_SUCCESS;
 		};
 	};

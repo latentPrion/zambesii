@@ -87,10 +87,12 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
 	DO_OR_DIE(interruptTrib, initialize2(), ret);
-	interruptTrib.dumpExceptions();
-	interruptTrib.dumpMsiIrqs();
+	//interruptTrib.dumpExceptions();
+	//interruptTrib.dumpMsiIrqs();
 	//interruptTrib.dumpUnusedVectors();
+	//interruptTrib.dumpIrqPins();
 
+	(*zkcmCore.irqControl->shutdown)();
 for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(processTrib, initialize2(), ret);
 

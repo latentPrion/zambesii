@@ -1,0 +1,125 @@
+	1. Cause for concern.
+
+Under normal circumstances, a chipset has one interrupt routing layout,
+which can be assumed by the chipset to be as detailed in the chipset
+documentation.
+
+This was the case for IBM-PC compatibles until recently when the I/O-APIC
+standard and chipset components were introduced. Now, the IBM-PC can have any of
+3 IRQ routing layouts. Why is this a problem? The kernel initializes IRQ
+management very early, to handle the case where a watchdog timer or other early
+device must be handled. It enables the chipset to smoothly handle such a device
+without any (significant) hacks.
+
+CPU detection and SMP and higher CPU scaling is set up much later on in the boot
+process. Switching from the i8259 routing layout to the IO-APIC routing layout
+requires the kernel to be able to dynamically manage device-to-pin mappings.
+
+For example, if a watchdog was installed on a chipset, and the chipset handling
+code initialized a timer to fire periodically and pet the watchdog, and the
+timer was firing on i8259 pin 0, and then the kernel entered the CPU deteciton
+stage of boot-strapping, the IO-APIC IRQ-mapping for the timer may be completely
+different from the i8259 IRQ mapping...the same may apply for any other device.
+
+So any devices which were known to the kernel prior to the switch are left in a
+state of limbo where the kernel is now unable to determine which IRQ pin the
+device is tied to. Additionally, the possiblility of there existing multiple
+IRQ controllers adds to the complexity of the issue.
+
+	2. Thoughts.
+
+At any rate, the kernel must know about every IRQ pin on the board. It need not
+know about the distinction between discrete IRQ controllers on a board with
+multiple controllers. This can be abstracted using a "kernel virtual pin ID" for
+each known pin, where all pins are assigned global kernel IDs, which form the
+basis for a global IRQ pin reference ID space.
+
+So the Interrupt Tributary is aware of all IRQ pins in existence, all MSI
+IRQs currently registered, and all exceptions raised by the CPU. For pin IRQs,
+the kernel keeps a list of kernel virtual pins (hereafter, "__kpins"), linking
+them to the devices interrupting on them.
+
+This is the extent of the kernel's knowledge of the layout of the IRQ routing
+on a chipset. The chipset code will quietly implement the back-end code for
+the detection of IRQ controllers and their pins, and the I/O signal propagation
+required to communicate with them.
+
+	3. Chipset-side IRQ controller and pin management.
+
+The IRQ controller management layer in the chipset ZKCM code will support
+dynamic detection of IRQ controllers. This dynamicity can be extended to runtime
+for the (likely ridiculous) support of hot plug of IRQ controller hubs.
+	* registerNewIrqController();
+	* destroyIrqController();
+
+registerNewIrqController():
+	Spawns a structure for a new IRQ controller. This function is also
+	expected to report the new controller back to the kernel for __kpin id
+	assignment. This function shall not be called if an IRQ controller is
+	not hot-plus detected, and chipsets are not required to fully implement
+	it if they do not have need for hot-plug IRQ controller management.
+
+destroyIrqController():
+	Destroys a specified IRQ controller. The means for identifying the
+	controller is yet undecided.
+
+chipsetEventNotification(ubit8 eventType, ubit32 flags):
+	Notifies the IRQ Controller chipset-side code of an event of possible
+	interest to it, such as when the kernel switches the chipset into
+	multiprocessor mode.
+
+	On the IBM-PC, this would cause the chipset back-end IRQ management
+	code to switch to IO-APIC mode and redirect all calls to libIoApic.
+
+The generic layer of the chipset IRQ management code is responsible for any
+behind-the-scenes routing of calls from the kernel to their appropriate
+end-points in the back-end chipset code.
+
+The kernel itself however, must have several call-in entry points for the
+IRQ-management code to use to register new IRQ pins with it, and when
+necessary, to request to take-down of specific __kpins. The following necessary
+Interrupt Trib entry points are provided for exclusive use by the chipset's
+IRQ management code:
+
+registerNewIrqPins(ubit32 nPins, zkcmIrqPinS *pins):
+	This function directly hands the kernel the chipset's own internal
+	structure for the representation of an IRQ pin. The kernel is expected
+	to assign a __kpin ID to each pin presented and directly write that ID
+	into the slot provided for each pin, then return after it has
+	spawned its own metadata for each pin.
+
+destroyIrqPins(ubit32 nPins, zkcmIrqPinS *pins):
+	This function directly passes to the kernel the chipset's own internal
+	metadata structure for the specific pins to be destroyed. The kernel is
+	expected to simply read the __kpin ID from each entry and destroy
+	its own metadata for that __kpin from within the Int Trib.
+
+
+The following calls shall be implemented by both the visible IRQ management
+chipset interface, and where necessary, by the back-end IRQ management code:
+
+error_t identifyPin(uarch_t physicalId, ubit16 *__kpinId):
+	Allows the kernel to ask the chipset what the __kpin ID of a pin is,
+	given the physical ID of the pin as seen by the chipset.
+
+	This is useful for determining which device corresponds to a pin, or
+	other similar look-up sequences.
+
+status_t getPinStatus(
+	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
+	ubit8 *triggerMode, ubit8 *polarity):
+
+	Returns:
+		IRQPINSTATUS_DISABLED: Pin is masked.
+		IRQPINSTATUS_ENABLED: Pin is unmasked.
+		IRQPINSTATUS_INEXISTENT: Pin does not exist.
+
+sarch_t pinIsEnabled(uarch_t __kpin): Returns 1 if pin is masked, 0 if not.
+void maskPin(uarch_t __kpin): Masks an IRQ pin.
+void unmaskPin(uarch_t __kpin): Unmasks an IRQ pin.
+
+void setPinStatus(uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled):
+	Sets a pin to the state specified by the argument list. The interface
+	deliberately does not allow the kernel to specify details such as
+	trigger and polarity modes.
+

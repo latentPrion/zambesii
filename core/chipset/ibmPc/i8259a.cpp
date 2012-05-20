@@ -71,6 +71,11 @@ error_t ibmPc_i8259a_initialize(void)
 
 error_t ibmPc_i8259a_shutdown(void)
 {
+	// Test the current state of IRQ __kpins.
+	interruptTrib.removeIrqPins(3, &irqPinList[5]);
+	interruptTrib.registerIrqPins(3, &irqPinList[5]);
+	interruptTrib.removeIrqPins(2, &irqPinList[5]);
+	interruptTrib.dumpIrqPins();
 	return ERROR_SUCCESS;
 }
 

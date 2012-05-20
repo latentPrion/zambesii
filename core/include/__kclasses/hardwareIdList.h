@@ -25,14 +25,24 @@ public:
 	void removeItem(sarch_t id);
 
 	// Custom just for the process list.
-	error_t findFreeProcess(processId_t *id);
-	uarch_t	getNProcesses(void)
+	error_t findFreeIndex(uarch_t *id);
+	uarch_t	getNIndexes(void)
 	{
 		return static_cast<uarch_t>( arr.rsrc.maxIndex + 1 );
 	};
 
 	/* Allows a caller to loop through the array without knowing about
 	 * the layout of the members.
+	 *
+	 *	USAGE:
+	 * Prepare an iterator of type sarch_t. Call prepareForLoop(), saving
+	 * the return value in the iterator. The returned value is the ID of the
+	 * first valid (occupied) index in the array. From then on, call
+	 * getLoopItem(&it) with the address of the iterator as shown to read
+	 * the current value of the index in the iterator and advance it to the
+	 * next valid index for reading.
+	 *
+	 * Repeat until getLoopItem() returns __KNULL.
 	 **/
 	sarch_t prepareForLoop(void);
 	void *getLoopItem(sarch_t *id);

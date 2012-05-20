@@ -40,6 +40,7 @@ error_t ibmPc_irqControl_getInitialPinInfo(ubit16 *nPins, zkcmIrqPinS **ret)
 
 error_t ibmPc_irqControl_shutdown(void)
 {
+	ibmPc_i8259a_shutdown();
 	return ERROR_SUCCESS;
 }
 
