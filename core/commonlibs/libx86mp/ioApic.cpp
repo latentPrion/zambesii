@@ -3,6 +3,9 @@
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/ioApic.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/interruptTrib/interruptTrib.h>
+
+#include <debug.h>
 
 
 x86IoApic::ioApicC::ioApicC(ubit8 id, paddr_t paddr)
@@ -11,11 +14,20 @@ paddr(paddr), id(id)
 {
 	vaddr.rsrc = __KNULL;
 	nIrqs = 0;
+	__kpinBase = 0;
 }
 
 x86IoApic::ioApicC::~ioApicC(void)
 {
-	unmapIoApic(vaddr.rsrc);
+	if (vaddr.rsrc != __KNULL)
+		{ unmapIoApic(vaddr.rsrc); };
+
+	vaddr.rsrc = __KNULL;
+
+	if (irqPinList != __KNULL)
+		{ delete [] irqPinList; };
+
+	irqPinList = __KNULL;
 }
 
 x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
@@ -64,22 +76,58 @@ void x86IoApic::ioApicC::unmapIoApic(ioApicRegspaceS *ioApic)
 
 error_t x86IoApic::ioApicC::initialize(void)
 {
+	cpu_t		cpu;
+	ubit8		vector, polarity, triggMode, dummy;
+	sarch_t		enabled;
+
 	// Map the IO-APIC into kernel vaddrspace.
 	vaddr.rsrc = mapIoApic(paddr);
 	if (vaddr.rsrc == __KNULL) { return ERROR_MEMORY_VIRTUAL_PAGEMAP; };
 
 	// Get version.
-	vaddr.lock.acquire();
+	vaddr.lock.acquire(); 
 	writeIoRegSel(x86IOAPIC_REG_VERSION);
 	version = readIoWin();
 	nIrqs = (readIoWin() >> 16) + 1;
 	vaddr.lock.release();
 
+	// Allocate irqPinList.
+	irqPinList = new zkcmIrqPinS[nIrqs];
+	if (irqPinList == __KNULL)
+	{
+		__kprintf(ERROR x86IOAPIC"%d: Failed to allocate IRQ pin list."
+			"\n", id);
+
+		return ERROR_MEMORY_NOMEM;
+	};
+
 	// Mask off all IRQs.
 	__kprintf(NOTICE x86IOAPIC"%d: Masking off all IRQs for now.\n", id);
-	for (ubit8 i=0; i<nIrqs; i++) {
-		maskIrq(i);
+	for (ubit8 i=0; i<nIrqs; i++)
+		{ maskIrq(i); };
+
+	for (ubit8 i=0; i<nIrqs; i++)
+	{
+		enabled = getIrqState(
+			i, reinterpret_cast<ubit8 *>( &cpu ), &vector,
+			&dummy, &dummy,
+			&polarity, &triggMode);
+
+		
+		irqPinList[i].acpiId = 0;
+		irqPinList[i].flags = 0;
+		if (enabled) {
+			__KFLAG_SET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
+		};
+
+		irqPinList[i].cpu = cpu;
+		irqPinList[i].vector = vector;
+		irqPinList[i].triggerMode = triggMode;
+		irqPinList[i].polarity = polarity;
 	};
+
+	// Give the pins to the kernel for __kpin ID assignment.
+	interruptTrib.registerIrqPins(nIrqs, irqPinList);
 
 	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x, "
 		"nIrqs %d.\n",

@@ -21,6 +21,7 @@
 #include "cpuDetection.h"
 #include "i8259a.h"
 #include "zkcmIbmPcState.h"
+#include "irqControl.h"
 
 
 #define SMPINFO		CPUMOD"SMP: "
@@ -626,6 +627,10 @@ error_t ibmPc_cpuMod_setSmpMode(void)
 			"Virtual wire mode.\n");
 	};
 	ibmPcState.smpInfo.chipsetState = SMPSTATE_SMP;
+
+	ibmPc_irqControl_chipsetEventNotification(
+		IRQCTL_EVENT_SMP_MODE_SWITCH, 0);
+
 	x86IoApic::initializeCache();
 	if (!x86IoApic::ioApicsAreDetected())
 	{

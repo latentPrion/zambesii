@@ -1,5 +1,6 @@
 
 #include <debug.h>
+
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -22,9 +23,12 @@ void hardwareIdListC::dump(void)
 
 	arr.lock.readAcquire(&rwFlags);
 
-	__kprintf(NOTICE"HWID list @ 0x%p, arr @ v0x%p, maxAllocatedIndex %d: "
+	__kprintf(NOTICE"HWID list @ 0x%p, arr @ v0x%p,\n"
+		"\tmaxAllocatedIndex %d, firstValidIndex %d, maxIndex %d. "
 		"dumping.\n",
-		this, arr.rsrc.arr, arr.rsrc.maxAllocatedIndex);
+		this, arr.rsrc.arr,
+		arr.rsrc.maxAllocatedIndex, arr.rsrc.firstValidIndex,
+		arr.rsrc.maxIndex);
 
 	for (sarch_t i=arr.rsrc.firstValidIndex; i != HWIDLIST_INDEX_INVALID;
 		i=arr.rsrc.arr[i].next)
@@ -81,7 +85,6 @@ error_t hardwareIdListC::findFreeIndex(uarch_t *id)
 		{
 			arr.lock.readRelease(rwFlags);
 			*id = i;
-			__kprintf(CC"List: free index at %d.\n", i);
 			return ERROR_SUCCESS;
 		};
 	};
@@ -212,20 +215,24 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 	 * array.
 	 **/
 	arr.lock.writeAcquire();
-	if (index < arr.rsrc.firstValidIndex)
+	if (arr.rsrc.firstValidIndex == HWIDLIST_INDEX_INVALID)
+	{
+		arr.rsrc.firstValidIndex = arr.rsrc.maxIndex = index;
+		arr.rsrc.arr[index].next = HWIDLIST_INDEX_INVALID;
+	}
+	else if (index < arr.rsrc.firstValidIndex)
 	{
 		arr.rsrc.arr[index].next = arr.rsrc.firstValidIndex;
 		arr.rsrc.firstValidIndex = index;
 	}
+	else if (index > maxIndex)
+	{
+		arr.rsrc.arr[maxIndex].next = index;
+		arr.rsrc.arr[index].next = HWIDLIST_INDEX_INVALID;
+		arr.rsrc.maxIndex = index;
+	}
 	else
 	{
-		if (index > maxIndex)
-		{
-			arr.rsrc.arr[maxIndex].next = index;
-			arr.rsrc.arr[index].next = HWIDLIST_INDEX_INVALID;
-			arr.rsrc.maxIndex = index;
-		};
-
 		for (sarch_t i=arr.rsrc.firstValidIndex;
 			i != HWIDLIST_INDEX_INVALID;
 			i = arr.rsrc.arr[i].next)

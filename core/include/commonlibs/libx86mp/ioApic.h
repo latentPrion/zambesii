@@ -2,6 +2,7 @@
 	#define _LIB_x86MP_IO_APIC_H
 
 	#include <arch/paddr_t.h>
+	#include <chipset/zkcm/irqControl.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/hardwareIdList.h>
@@ -72,6 +73,8 @@ namespace x86IoApic
 
 	public:
 		ubit8 getNIrqs(void);
+		ubit16 get__kPinBase(void) { return __kpinBase; };
+
 		void setIrqState(
 			ubit8 irq, ubit8 cpu, ubit8 vector,
 			ubit8 deliveryMode, ubit8 destMode,
@@ -108,6 +111,8 @@ namespace x86IoApic
 
 		paddr_t			paddr;
 		ubit8			id, version, nIrqs;
+		ubit16			__kpinBase;
+		zkcmIrqPinS		*irqPinList;
 		sharedResourceGroupC<waitLockC, ioApicRegspaceS *>	vaddr;
 	};
 

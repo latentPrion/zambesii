@@ -230,6 +230,8 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 	irqPinDescriptorS	*tmp;
 	error_t			err;
 
+if (nPins == 24) { qq = 12; };
+
 	for (ubit16 i=0; i<nPins; i++)
 	{
 		tmp = new irqPinDescriptorS;
@@ -268,6 +270,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 		if (pinIrqTable.findFreeIndex((uarch_t *)&pinList[i].__kid)
 			== ERROR_SUCCESS)
 		{
+			// No need to actually error check this one.
 			pinIrqTable.addItem(pinList[i].__kid, tmp);
 		}
 		else
@@ -288,9 +291,6 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 			pinIrqTableCounter++;
 		};
 	};
-
-	// Return the list with our global kernel pin IDs.
-	//(*zkcmCore.irqControl->__kregisterPinIds)(nPins, pinList);
 }
 
 void interruptTribC::removeIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
