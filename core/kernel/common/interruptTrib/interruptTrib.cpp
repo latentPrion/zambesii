@@ -95,10 +95,6 @@ error_t interruptTribC::initialize(void)
 
 error_t interruptTribC::initialize2(void)
 {
-	zkcmIrqPinS		*chipsetPins;
-	ubit16			nPins;
-	error_t			ret;
-
 	/**	EXPLANATION:
 	 * This is called simply to notify the Interrupt Tributary that memory
 	 * management is now initialized fully and the heap is available.
@@ -123,20 +119,13 @@ error_t interruptTribC::initialize2(void)
 	};
 
 	/**	EXPLANATION:
-	 * Set up pin-based IRQ management:
-	 * Ask the chipset how many IRQ pins exist, and build the kernel's
-	 * pinIrqTable.
+	 * Notify the chipset IRQ control mod that memory management is now
+	 * available, and that it should tell the kernel about its IRQ routing
+	 * system (number of pins, etc) now.
 	 **/
-	ret = (*zkcmCore.irqControl->getInitialPinInfo)(&nPins, &chipsetPins);
-	if (ret != ERROR_SUCCESS)
-	{
-		panic(ret, CC INTTRIB"initialize2(): Chipset returned an error "
-			"when asked about PIC pin info.\n"
-			"Kernel cannot continue without IRQ management.\n");
-	};
+	(*zkcmCore.irqControl->chipsetEventNotification)(
+		IRQCTL_EVENT_MEMMGT_AVAIL, 0);
 
-	registerIrqPins(nPins, chipsetPins);
-	(*zkcmCore.irqControl->__kregisterPinIds)(nPins, chipsetPins);
 	return ERROR_SUCCESS;
 }
 
@@ -280,7 +269,6 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 			== ERROR_SUCCESS)
 		{
 			pinIrqTable.addItem(pinList[i].__kid, tmp);
-			__kprintf(NOTICE INTTRIB"Found a free slot at %d.\n", pinList[i].__kid);
 		}
 		else
 		{
@@ -302,7 +290,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 	};
 
 	// Return the list with our global kernel pin IDs.
-	(*zkcmCore.irqControl->__kregisterPinIds)(nPins, pinList);
+	//(*zkcmCore.irqControl->__kregisterPinIds)(nPins, pinList);
 }
 
 void interruptTribC::removeIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)

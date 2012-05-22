@@ -17,7 +17,7 @@ requires the kernel to be able to dynamically manage device-to-pin mappings.
 
 For example, if a watchdog was installed on a chipset, and the chipset handling
 code initialized a timer to fire periodically and pet the watchdog, and the
-timer was firing on i8259 pin 0, and then the kernel entered the CPU deteciton
+timer was firing on i8259 pin 0, and then the kernel entered the CPU detection
 stage of boot-strapping, the IO-APIC IRQ-mapping for the timer may be completely
 different from the i8259 IRQ mapping...the same may apply for any other device.
 

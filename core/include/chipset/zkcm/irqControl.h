@@ -37,6 +37,28 @@
 
 #define IRQPIN_FLAGS_ENABLED		(1<<0)
 
+// The Kernel sends these event notifications to the IRQ Control mod.
+#define IRQCTL_EVENT_MEMMGT_AVAIL	0x0
+#define IRQCTL_EVENT_SMP_MODE_SWITCH	0x1
+
+/* Return status values for getIrqStatus.
+ **/
+#define IRQCTL_IRQSTATUS_ENABLED	0x1
+#define IRQCTL_IRQSTATUS_DISABLED	0x2
+// IRQ pin with __kid provided does not exist.
+#define IRQCTL_IRQSTATUS_INEXISTENT	0x3
+
+/* Return values for setIrqStatus.
+ **/
+// Underlying PIC chip does not support remapping to other vectors.
+#define IRQCTL_SETIRQSTATUS_VECTOR_UNSUPPORTED		0x1
+// Underlying PIC chip doesn't support routing to other CPUs.
+#define IRQCTL_SETIRQSTATUS_CPU_UNSUPPORTED		0x2
+// Underlying PIC chip doesn't support indicated trigger mode.
+#define IRQCTL_SETIRQSTATUS_TRIGGMODE_UNSUPPORTED	0x3
+// Underlying PIC chip doesn't support given polarity.
+#define IRQCTL_SETIRQSTATUS_POLARITY_UNSUPPORTED	0x4
+
 struct zkcmIrqPinS
 {
 	ubit16		__kid;
@@ -55,18 +77,29 @@ struct zkcmIrqControlModS
 	error_t (*suspend)(void);
 	error_t (*restore)(void);
 
-	error_t (*getInitialPinInfo)(ubit16 *nPins, struct zkcmIrqPinS **ret);
-	void (*__kregisterPinIds)(ubit16 nPins, struct zkcmIrqPinS *list);
+	error_t (*registerIrqController)(void);
+	void (*destroyIrqController)(void);
 
-	void (*maskIrq)(ubit16 __kid);
-	void (*unmaskIrq)(ubit16 __kid);
+	void (*chipsetEventNotification)(ubit8 event, uarch_t flags);
+
+	error_t (*identifyIrq)(uarch_t physicalId, ubit16 *__kpin);
+	status_t (*getIrqStatus)(
+		uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
+		ubit8 *triggerMode, ubit8 *polarity);
+
+	status_t (*setIrqStatus)(
+		uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled);
+
+	void (*maskIrq)(ubit16 __kpin);
+	void (*unmaskIrq)(ubit16 __kpin);
 	void (*maskAll)(void);
 	void (*unmaskAll)(void);
+	sarch_t (*irqIsEnabled)(ubit16 __kpin);
 
-	void (*maskIrqsByPriority)(ubit16 __kid, cpu_t cpuId, uarch_t *mask0);
-	void (*unmaskIrqsByPriority)(ubit16 __kid, cpu_t cpuId, uarch_t mask0);
+	void (*maskIrqsByPriority)(ubit16 __kpin, cpu_t cpuId, uarch_t *mask0);
+	void (*unmaskIrqsByPriority)(ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
 
-	sarch_t (*getIrqStatus)(ubit16 __kid);
+	void (*sendEoi)(ubit16 __kpin);
 };
 
 #endif

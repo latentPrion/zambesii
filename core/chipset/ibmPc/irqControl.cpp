@@ -3,6 +3,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include "i8259a.h"
 #include "zkcmIbmPcState.h"
@@ -21,26 +22,8 @@ error_t ibmPc_irqControl_initialize(void)
 	return ibmPc_i8259a_initialize();
 }
 
-error_t ibmPc_irqControl_getInitialPinInfo(ubit16 *nPins, zkcmIrqPinS **ret)
-{
-	/**	EXPLANATION:
-	 * This is only ever called once, and is called by the Int Trib. The
-	 * first time the IRQ control module's initialize() is called, it is
-	 * likely that memory management is not yet operational, so pin
-	 * detection cannot be done then.
-	 *
-	 * When memory management is up, the kernel calls this function to have
-	 * the chipset report pins.
-	 *
-	 * For the IBM-PC, we just report the pins on the 8259a chips in this
-	 * function.
-	 **/
-	return ibmPc_i8259a_getPinInfo(nPins, ret);
-}
-
 error_t ibmPc_irqControl_shutdown(void)
 {
-	ibmPc_i8259a_shutdown();
 	return ERROR_SUCCESS;
 }
 
@@ -54,9 +37,81 @@ error_t ibmPc_irqControl_restore(void)
 	return ERROR_SUCCESS;
 }
 
-void ibmPc_irqControl___kregisterPinIds(ubit16, zkcmIrqPinS *)
+error_t ibmPc_irqControl_registerIrqController(void)
 {
-	// If SMP mode, pass the pins back to libIOAPIC.
+	return ERROR_SUCCESS;
+}
+
+void ibmPc_irqControl_destroyIrqController(void)
+{
+}
+
+void ibmPc_irqControl_chipsetEventNotification(ubit8 event, uarch_t flags)
+{
+	switch (event)
+	{
+	case IRQCTL_EVENT_MEMMGT_AVAIL:
+		// Tell the i8259 code to advertise its IRQ pins to the kernel.
+		ibmPc_i8259a_chipsetEventNotification(event, flags);
+		break;
+
+	case IRQCTL_EVENT_SMP_MODE_SWITCH:
+		/**	EXPLANATION:
+		 * When switching to multiprocessor mode on the IBM-PC, the
+		 * i8259a code must first be told, so it can remove its IRQ
+		 * pins from the Interrupt Trib. Then, the irqControl mod must
+		 * switch over to delegating all calls to libIoApic.
+		 **/
+		ibmPc_i8259a_chipsetEventNotification(event, flags);
+		break;
+
+	default:
+		panic(CC IBMPCIRQCTL"chipsetEventNotification: invalid "
+			"event ID.\n");
+
+		break;
+	};
+}
+
+error_t ibmPc_irqControl_identifyIrq(uarch_t physicalId, ubit16 *__kpin)
+{
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
+		// Call libIoApic to perform the action.
+	}
+	else {
+		return ibmPc_i8259a_identifyIrq(physicalId, __kpin);
+	};
+
+	return ERROR_UNKNOWN;
+}
+
+status_t ibmPc_irqControl_getIrqStatus(
+	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
+	ubit8 *triggerMode, ubit8 *polarity
+	)
+{
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
+		// Call LibIOAPIC for info.
+		return IRQCTL_IRQSTATUS_INEXISTENT;
+	}
+	else
+	{
+		return ibmPc_i8259a_getIrqStatus(
+			__kpin, cpu, vector, triggerMode, polarity);
+	};
+}
+
+status_t ibmPc_irqControl_setIrqStatus(
+	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
+	)
+{
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
+		// Call libIoApic to perform the action.
+		return ERROR_UNIMPLEMENTED;
+	}
+	else {
+		return ibmPc_i8259a_setIrqStatus(__kpin, cpu, vector, enabled);
+	};
 }
 
 void ibmPc_irqControl_maskIrq(ubit16 __kpin)
@@ -99,10 +154,9 @@ void ibmPc_irqControl_unmaskAll(void)
 	};
 }
 
-sarch_t ibmPc_irqControl_getIrqStatus(ubit16 __kpin)
+sarch_t ibmPc_irqControl_irqIsEnabled(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		// Call LibIOAPIC for info.
 		return 0;
 	}
 	else {
@@ -132,5 +186,15 @@ void ibmPc_irqControl_unmaskIrqsByPriority(
 	else {
 		ibmPc_i8259a_unmaskIrqsByPriority(__kpin, cpu, mask);
 	};
+}
+
+void ibmPc_irqControl_sendEoi(ubit16 __kpin)
+{
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
+		// Send the command to libIoApic.
+	}
+	else {
+		ibmPc_i8259a_sendEoi(__kpin);
+	}
 }
 

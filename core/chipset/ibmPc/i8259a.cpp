@@ -23,6 +23,20 @@
 
 static zkcmIrqPinS		irqPinList[16];
 
+static error_t lookupPinBy__kid(ubit16 __kpin, uarch_t *pin)
+{
+	for (ubit8 i=0; i<16; i++)
+	{
+		if (irqPinList[i].__kid == __kpin)
+		{
+			*pin = i;
+			return ERROR_SUCCESS;
+		};
+	};
+
+	return ERROR_INVALID_ARG_VAL;
+}
+
 error_t ibmPc_i8259a_initialize(void)
 {
 	ubit8		i;
@@ -71,12 +85,6 @@ error_t ibmPc_i8259a_initialize(void)
 
 error_t ibmPc_i8259a_shutdown(void)
 {
-	// Test the current state of IRQ __kpins.
-	interruptTrib.removeIrqPins(3, &irqPinList[5]);
-	interruptTrib.registerIrqPins(3, &irqPinList[5]);
-	interruptTrib.removeIrqPins(1, &irqPinList[15]);
-	interruptTrib.registerIrqPins(1, &irqPinList[15]);
-	interruptTrib.dumpIrqPins();
 	return ERROR_SUCCESS;
 }
 
@@ -87,6 +95,98 @@ error_t ibmPc_i8259a_suspend(void)
 
 error_t ibmPc_i8259a_restore(void)
 {
+	return ERROR_SUCCESS;
+}
+
+void ibmPc_i8259a_chipsetEventNotification(ubit8 event, uarch_t)
+{
+	switch (event)
+	{
+	case IRQCTL_EVENT_MEMMGT_AVAIL:
+		/**	EXPLANATION:
+		 * Prepare the irqPinList of i8259 IRQ pins for use by the
+		 * kernel.
+		 **/
+		for (ubit8 i=0, j=PIC_PIC1_VECTOR_BASE; i<16; i++, j++)
+		{
+			irqPinList[i].flags = 0;
+			irqPinList[i].cpu = ibmPcState.bspInfo.bspId;
+			irqPinList[i].vector = j;
+			irqPinList[i].triggerMode = IRQPIN_TRIGGMODE_EDGE;
+			irqPinList[i].polarity = IRQPIN_POLARITY_HIGH;
+		};
+
+		interruptTrib.registerIrqPins(
+			16, irqPinList);
+
+		break;
+
+	case IRQCTL_EVENT_SMP_MODE_SWITCH:
+		/**	EXPLANATION:
+		 * Tell the kernel to remove all i8259a IRQ pins from the __kpin
+		 * list, because on IBM-PC, when symmetric multiprocessing mode
+		 * is activated, we use only the IO-APICs and not mixed mode.
+		 **/
+		interruptTrib.removeIrqPins(16, irqPinList);
+		break;
+
+	default: break;
+	};
+}
+
+error_t ibmPc_i8259a_identifyIrq(uarch_t physicalId, ubit16 *__kpin)
+{
+	if (physicalId > 15) { return ERROR_INVALID_ARG_VAL; };
+
+	*__kpin = irqPinList[physicalId].__kid;
+	return ERROR_SUCCESS;
+}
+
+status_t ibmPc_i8259a_getIrqStatus(
+	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
+	ubit8 *triggerMode, ubit8 *polarity
+	)
+{
+	error_t		err;
+	uarch_t		pin;
+
+	err = lookupPinBy__kid(__kpin, &pin);
+	if (err != ERROR_SUCCESS) { return IRQCTL_IRQSTATUS_INEXISTENT; };
+
+	*cpu = irqPinList[pin].cpu;
+	*vector = irqPinList[pin].vector;
+	*triggerMode = irqPinList[pin].triggerMode;
+	*polarity = irqPinList[pin].polarity;
+
+	return __KFLAG_TEST(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
+}
+
+status_t ibmPc_i8259a_setIrqStatus(
+	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
+	)
+{
+	/**	EXPLANATION:
+	 * The i8259s don't support IRQ routing to any CPU other than the BSP.
+	 * Additionally, to make implementation simpler, we just don't allow
+	 * i8259a IRQs to be set to vectors other than the ones they were set
+	 * to in ibmPc_i8259a_initialize().
+	 **/
+
+	if (cpu != ibmPcState.bspInfo.bspId) {
+		return IRQCTL_SETIRQSTATUS_CPU_UNSUPPORTED;
+	};
+
+	if (vector < PIC_PIC1_VECTOR_BASE || vector > PIC_PIC2_VECTOR_BASE+7) {
+		return IRQCTL_SETIRQSTATUS_VECTOR_UNSUPPORTED;
+	};
+
+	if (enabled) {
+		ibmPc_i8259a_unmaskIrq(__kpin);
+	}
+	else {
+		ibmPc_i8259a_maskIrq(__kpin);
+	};
+
 	return ERROR_SUCCESS;
 }
 
@@ -115,23 +215,6 @@ void ibmPc_i8259a_sendEoi(ubit16 __kid)
 			io::write8(PIC_PIC1_CMD, 0x20);
 		};
 	};
-}
-
-error_t ibmPc_i8259a_getPinInfo(ubit16 *nPins, zkcmIrqPinS **ret)
-{
-	*ret = irqPinList;
-
-	for (ubit32 i=0, j=32; i<16; i++, j++)
-	{
-		(*ret)[i].cpu = ibmPcState.bspInfo.bspId;
-		(*ret)[i].triggerMode = IRQPIN_TRIGGMODE_EDGE;
-		(*ret)[i].polarity = IRQPIN_POLARITY_HIGH;
-		(*ret)[i].flags = 0;
-		(*ret)[i].vector = j;
-	};
-
-	*nPins = 16;
-	return ERROR_SUCCESS;
 }
 
 void ibmPc_i8259a_maskIrq(ubit16 __kpin)

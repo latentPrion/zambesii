@@ -11,16 +11,26 @@ struct zkcmIrqControlModS	ibmPc_irqControlMod =
 	&ibmPc_irqControl_suspend,
 	&ibmPc_irqControl_restore,
 
-	&ibmPc_irqControl_getInitialPinInfo,
-	&ibmPc_irqControl___kregisterPinIds,
+	&ibmPc_irqControl_registerIrqController,
+	&ibmPc_irqControl_destroyIrqController,
+
+	&ibmPc_irqControl_chipsetEventNotification,
+
+	&ibmPc_irqControl_identifyIrq,
+	&ibmPc_irqControl_getIrqStatus,
+	&ibmPc_irqControl_setIrqStatus,
 
 	&ibmPc_irqControl_maskIrq,
 	&ibmPc_irqControl_unmaskIrq,
 	&ibmPc_irqControl_maskAll,
 	&ibmPc_irqControl_unmaskAll,
+
+	&ibmPc_irqControl_irqIsEnabled,
+
 	&ibmPc_irqControl_maskIrqsByPriority,
 	&ibmPc_irqControl_unmaskIrqsByPriority,
-	&ibmPc_irqControl_getIrqStatus
+
+	&ibmPc_irqControl_sendEoi
 };
 
 struct zkcmMemoryDetectionModS	ibmPc_memoryDetectionMod =

@@ -27,6 +27,7 @@
 // Uniform Driver Interface.
 #define INTTRIB_ISR_DRIVERTYPE_UDI		(0x1)
 
+// Trigger mode values for irqPinDescriptorS.
 #define INTTRIB_IRQPIN_TRIGGMODE_LEVEL		0
 #define INTTRIB_IRQPIN_TRIGGMODE_EDGE		1
 

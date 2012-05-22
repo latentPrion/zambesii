@@ -72,7 +72,6 @@ error_t hardwareIdListC::findFreeIndex(uarch_t *id)
 
 	arr.lock.readAcquire(&rwFlags);
 
-__kprintf(CC"List: find free index: maxindex: %d.\n", arr.rsrc.maxIndex);
 	for (uarch_t i=0;
 		i<static_cast<uarch_t>( arr.rsrc.maxAllocatedIndex + 1 );
 		i++)
@@ -232,9 +231,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 			i = arr.rsrc.arr[i].next)
 		{
 			if (arr.rsrc.arr[i].next > index)
-				//arr.rsrc.arr[i].next == HWIDLIST_INDEX_INVALID)
 			{
-//if (index == 0 && item == (void *)4) { __kprintf(CC"Current index %d.\n", i); for (;;){}; };
 				// If overwriting occupied slot, do nothing.
 				if (i == index) { break; };
 
@@ -283,7 +280,6 @@ void hardwareIdListC::removeItem(sarch_t id)
 	{
 		if (arr.rsrc.arr[i].next == id)
 		{
-if (id == 15) { __kprintf(CC"On %d, next index is id (%d), and id.next is %d.\n", i, id, arr.rsrc.arr[id].next); };
 			if (id == arr.rsrc.maxIndex) {
 				arr.rsrc.maxIndex = i;
 			};
