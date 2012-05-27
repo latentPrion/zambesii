@@ -6,7 +6,7 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
 #include <debug.h>
-
+	
 
 x86IoApic::ioApicC::ioApicC(ubit8 id, paddr_t paddr)
 :
@@ -80,7 +80,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	ubit8		vector, polarity, triggMode, dummy;
 	sarch_t		enabled;
 
-	// Map the IO-APIC into kernel vaddrspace.
+	// Map the IO-APIC into the kernel vaddrspace.
 	vaddr.rsrc = mapIoApic(paddr);
 	if (vaddr.rsrc == __KNULL) { return ERROR_MEMORY_VIRTUAL_PAGEMAP; };
 
@@ -106,9 +106,10 @@ error_t x86IoApic::ioApicC::initialize(void)
 	for (ubit8 i=0; i<nIrqs; i++)
 		{ maskIrq(i); };
 
+	// Prepare and fill out the irqPinList.
 	for (ubit8 i=0; i<nIrqs; i++)
 	{
-		enabled = getIrqState(
+		enabled = getPinState(
 			i, reinterpret_cast<ubit8 *>( &cpu ), &vector,
 			&dummy, &dummy,
 			&polarity, &triggMode);
@@ -116,9 +117,6 @@ error_t x86IoApic::ioApicC::initialize(void)
 		
 		irqPinList[i].acpiId = 0;
 		irqPinList[i].flags = 0;
-		if (enabled) {
-			__KFLAG_SET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
-		};
 
 		irqPinList[i].cpu = cpu;
 		irqPinList[i].vector = vector;
@@ -128,6 +126,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 
 	// Give the pins to the kernel for __kpin ID assignment.
 	interruptTrib.registerIrqPins(nIrqs, irqPinList);
+	__kpinBase = irqPinList[0].__kid;
 
 	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x, "
 		"nIrqs %d.\n",
@@ -136,7 +135,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-sarch_t x86IoApic::ioApicC::getIrqState(
+sarch_t x86IoApic::ioApicC::getPinState(
 	ubit8 irq, ubit8 *cpu, ubit8 *vector,
 	ubit8 *deliveryMode, ubit8 *destMode,
 	ubit8 *polarity, ubit8 *triggMode
@@ -164,7 +163,7 @@ sarch_t x86IoApic::ioApicC::getIrqState(
 	return ret;
 }
 
-void x86IoApic::ioApicC::setIrqState(
+void x86IoApic::ioApicC::setPinState(
 	ubit8 irq, ubit8 cpu, ubit8 vector,
 	ubit8 deliveryMode, ubit8 destMode,
 	ubit8 polarity, ubit8 triggMode
@@ -190,7 +189,7 @@ void x86IoApic::ioApicC::setIrqState(
 	vaddr.lock.release();
 }
 
-void x86IoApic::ioApicC::maskIrq(ubit8 irq)
+void x86IoApic::ioApicC::maskPin(ubit8 irq)
 {
 	ubit32		low;
 
@@ -203,7 +202,7 @@ void x86IoApic::ioApicC::maskIrq(ubit8 irq)
 	vaddr.lock.release();
 }
 
-void x86IoApic::ioApicC::unmaskIrq(ubit8 irq)
+void x86IoApic::ioApicC::unmaskPin(ubit8 irq)
 {
 	ubit32		low;
 
@@ -214,5 +213,135 @@ void x86IoApic::ioApicC::unmaskIrq(ubit8 irq)
 	__KFLAG_UNSET(low, x86IOAPIC_IRQSTATE_MASKED);
 	writeIoWin(low);
 	vaddr.lock.release();
+}
+
+error_t x86IoApic::ioApicC::identifyIrq(uarch_t physicalId, ubit16 *__kpin)
+{
+	/**	EXPLANATION:
+	 * We assume that any caller of this function is calling to ask for
+	 * a lookup based on an ACPI ID. So we check to see if any of the pins
+	 * on this IO-APIC match, and if not, we return an error.
+	 **/
+	for (ubit8 i=0; i<nIrqs; i++)
+	{
+		if (irqPinList[i].acpiId == physicalId)
+		{
+			*__kpin = irqPinList[i].__kid;
+			return ERROR_SUCCESS;
+		};
+	};
+
+	return ERROR_INVALID_ARG_VAL;
+}
+
+status_t x86IoApic::ioApicC::setIrqStatus(
+	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
+	)
+{
+	error_t		err;
+	ubit8		pin;
+	ubit8		dummy, destMode, deliveryMode, triggerMode, polarity;
+	sarch_t		isEnabled;
+
+	err = lookupPinBy__kid(__kpin, &pin);
+	if (err != ERROR_SUCCESS) { return IRQCTL_IRQSTATUS_INEXISTENT; };
+
+	isEnabled = getPinState(
+		pin, &dummy, &dummy,
+		&deliveryMode, &destMode, &polarity, &triggerMode);
+
+	setPinState(
+		pin, cpu, vector,
+		deliveryMode, destMode, polarity, triggerMode);
+
+	if (enabled && (!isEnabled))
+	{
+		unmaskPin(pin);
+		__KFLAG_SET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
+	};
+
+	if ((!enabled) && isEnabled)
+	{
+		maskPin(pin);
+		__KFLAG_UNSET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
+	};
+
+	irqPinList[pin].cpu = cpu;
+	irqPinList[pin].vector = vector;
+
+	return ERROR_SUCCESS;
+}
+
+status_t x86IoApic::ioApicC::getIrqStatus(
+	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
+	ubit8 *triggerMode, ubit8 *polarity
+	)
+{
+	error_t		err;
+	ubit8		pin;
+
+	err = lookupPinBy__kid(__kpin, &pin);
+	if (err != ERROR_SUCCESS) { return IRQCTL_IRQSTATUS_INEXISTENT; };
+
+	*cpu = irqPinList[pin].cpu;
+	*vector = irqPinList[pin].vector;
+	*triggerMode = irqPinList[pin].triggerMode;
+	*polarity = irqPinList[pin].triggerMode;
+
+	return __KFLAG_TEST(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED) ?
+		IRQCTL_IRQSTATUS_ENABLED : IRQCTL_IRQSTATUS_DISABLED;
+}
+
+void x86IoApic::ioApicC::maskIrq(ubit16 __kpin)
+{
+	error_t		err;
+	ubit8		pin;
+
+	err = lookupPinBy__kid(__kpin, &pin);
+	if (err != ERROR_SUCCESS) { return; };
+
+	maskPin(pin);
+	__KFLAG_UNSET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
+}
+
+void x86IoApic::ioApicC::unmaskIrq(ubit16 __kpin)
+{
+	error_t		err;
+	ubit8		pin;
+
+	err = lookupPinBy__kid(__kpin, &pin);
+	if (err != ERROR_SUCCESS) { return; };
+
+	unmaskPin(pin);
+	__KFLAG_SET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
+}
+
+sarch_t x86IoApic::ioApicC::irqIsEnabled(ubit16 __kpin)
+{
+	error_t		err;
+	ubit8		pin;
+
+	err = lookupPinBy__kid(__kpin, &pin);
+	if (err != ERROR_SUCCESS) { return 0; };
+
+	return __KFLAG_TEST(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
+}
+
+void x86IoApic::ioApicC::maskAll(void)
+{
+	for (ubit8 i=0; i<nIrqs; i++)
+	{
+		maskPin(i);
+		__KFLAG_UNSET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
+	}
+}
+
+void x86IoApic::ioApicC::unmaskAll(void)
+{
+	for (ubit8 i=0; i<nIrqs; i++)
+	{
+		unmaskPin(i);
+		__KFLAG_SET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
+	}
 }
 

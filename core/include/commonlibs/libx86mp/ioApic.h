@@ -6,6 +6,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/hardwareIdList.h>
+	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
@@ -72,22 +73,43 @@ namespace x86IoApic
 		~ioApicC(void);
 
 	public:
-		ubit8 getNIrqs(void);
+		ubit8 getNIrqs(void) { return nIrqs; };
 		ubit16 get__kPinBase(void) { return __kpinBase; };
 
-		void setIrqState(
+		error_t identifyIrq(uarch_t physicalId, ubit16 *__kpin);
+		void setPinState(
 			ubit8 irq, ubit8 cpu, ubit8 vector,
 			ubit8 deliveryMode, ubit8 destMode,
 			ubit8 polarity, ubit8 triggMode);
 
 		// Returns 1 if unmasked, 0 if masked off.
-		sarch_t getIrqState(
+		sarch_t getPinState(
 			ubit8 irq, ubit8 *cpu, ubit8 *vector,
 			ubit8 *deliveryMode, ubit8 *destMode,
 			ubit8 *polarity, ubit8 *triggMode);
 
-		void maskIrq(ubit8 irq);
-		void unmaskIrq(ubit8 irq);
+		status_t getIrqStatus(
+			uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
+			ubit8 *triggerMode, ubit8 *polarity);
+
+		status_t setIrqStatus(
+			uarch_t __kpin, cpu_t cpu, uarch_t vector,
+			ubit8 enabled);
+
+		void maskPin(ubit8 irq);
+		void unmaskPin(ubit8 irq);
+
+		void maskIrq(ubit16 __kpin);
+		void unmaskIrq(ubit16 __kpin);
+		void maskAll(void);
+		void unmaskAll(void);
+		sarch_t irqIsEnabled(ubit16 __kpin);
+
+		// void maskIrqsByPriority(
+		//	ubit16 __kpin, cpu_t cpu, uarch_t *mask0);
+
+		// void unmaskIrqsByPriority(
+		//	ubit16 __kpin, cpu_t cpu, uarch_t mask0);
 
 	private:
 		inline void writeIoRegSel(ubit8 val);
@@ -95,6 +117,8 @@ namespace x86IoApic
 		inline void readIoWin(ubit32 *high, ubit32 *low);
 		inline void writeIoWin(ubit32 val);
 		inline void writeIoWin(ubit32 high, ubit32 low);
+
+		inline error_t lookupPinBy__kid(ubit16 __kpin, ubit8 *pin);
 
 		struct ioApicRegspaceS;
 		ioApicRegspaceS *mapIoApic(paddr_t paddr);
@@ -135,6 +159,24 @@ namespace x86IoApic
 	ubit16 getNIoApics(void);
 
 	ioApicC *getIoApic(ubit8 id);
+	ioApicC *getIoApicFor(ubit16 __kpin);
+
+	error_t identifyIrq(uarch_t physicalId, ubit16 *__kpin);
+	inline status_t getIrqStatus(
+		uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
+		ubit8 *triggerMode, ubit8 *polarity);
+
+	inline status_t setIrqStatus(
+		uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled);
+
+	inline void maskIrq(ubit16 __kpin);
+	inline void unmaskIrq(ubit16 __kpin);
+	void maskAll(void);
+	void unmaskAll(void);
+	inline sarch_t irqIsEnabled(ubit16 __kpin);
+
+	// void maskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t *mask0);
+	// void unmaskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
 }
 
 
@@ -169,6 +211,101 @@ void x86IoApic::ioApicC::writeIoWin(ubit32 high, ubit32 low)
 	vaddr.rsrc->ioWin[1] = high;
 	vaddr.rsrc->ioWin[0] = low;
 }
+
+error_t x86IoApic::ioApicC::lookupPinBy__kid(ubit16 __kid, ubit8 *pin)
+{
+	for (ubit8 i=0; i<nIrqs; i++)
+	{
+		if (irqPinList[i].__kid == __kid)
+		{
+			*pin = i;
+			return ERROR_SUCCESS;
+		};
+	};
+
+	return ERROR_INVALID_ARG_VAL;
+}
+
+sarch_t x86IoApic::irqIsEnabled(ubit16 __kpin)
+{
+	ioApicC		*ioApic;
+
+	ioApic = getIoApicFor(__kpin);
+	if (ioApic != __KNULL) {
+		return ioApic->irqIsEnabled(__kpin);
+	};
+
+	__kprintf(ERROR x86IOAPIC"LibIoApic relay: irqIsEnabled: __kpin %d "
+		"doesn't map to any known IO-APIC.\n",
+		__kpin);
+
+	return 0;
+}
+
+status_t x86IoApic::getIrqStatus(
+	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
+	ubit8 *triggerMode, ubit8 *polarity
+	)
+{
+	ioApicC		*ioApic;
+
+	ioApic = getIoApicFor(__kpin);
+	if (ioApic != __KNULL)
+	{
+		return ioApic->getIrqStatus(
+			__kpin, cpu, vector, triggerMode, polarity);
+	};
+
+	__kprintf(ERROR x86IOAPIC"LibIoApic relay: getIrqStatus: __kpin %d "
+		"doesn't map to any known IO-APIC.\n",
+		__kpin);
+
+	return IRQCTL_IRQSTATUS_INEXISTENT;
+}
+
+status_t x86IoApic::setIrqStatus(
+	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
+	)
+{
+	ioApicC		*ioApic;
+
+	ioApic = getIoApicFor(__kpin);
+	if (ioApic != __KNULL) {
+		return ioApic->setIrqStatus(__kpin, cpu, vector, enabled);
+	};
+
+	__kprintf(ERROR x86IOAPIC"LibIoApic relay: setIrqStatus: __kpin %d "
+		"doesn't map to any known IO-APIC.\n",
+		__kpin);
+
+	return ERROR_INVALID_ARG_VAL;
+}
+
+void x86IoApic::maskIrq(ubit16 __kpin)
+{
+	ioApicC		*ioApic;
+
+	ioApic = getIoApicFor(__kpin);
+	if (ioApic != __KNULL)
+		{ ioApic->maskIrq(__kpin); };
+
+	__kprintf(ERROR x86IOAPIC"LibIoApic relay: maskIrq: __kpin %d "
+		"doesn't map to any known IO-APIC.\n",
+		__kpin);
+}
+
+void x86IoApic::unmaskIrq(ubit16 __kpin)
+{
+	ioApicC		*ioApic;
+
+	ioApic = getIoApicFor(__kpin);
+	if (ioApic != __KNULL)
+		{ ioApic->unmaskIrq(__kpin); };
+
+	__kprintf(ERROR x86IOAPIC"LibIoApic relay: unmaskIrq: __kpin %d "
+		"doesn't map to any known IO-APIC.\n",
+		__kpin);
+}	
 
 #endif
 

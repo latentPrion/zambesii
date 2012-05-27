@@ -61,10 +61,11 @@
 
 struct zkcmIrqPinS
 {
-	ubit16		__kid;
+	ubit32		physId;
 	ubit32		acpiId;
 	uarch_t		flags;
 	cpu_t		cpu;
+	ubit16		__kid;
 	ubit16		vector;
 	ubit8		triggerMode, polarity;
 };

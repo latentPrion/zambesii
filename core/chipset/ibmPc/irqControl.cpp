@@ -3,6 +3,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
+#include <commonlibs/libx86mp/libx86mp.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include "i8259a.h"
@@ -76,7 +77,7 @@ void ibmPc_irqControl_chipsetEventNotification(ubit8 event, uarch_t flags)
 error_t ibmPc_irqControl_identifyIrq(uarch_t physicalId, ubit16 *__kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		// Call libIoApic to perform the action.
+		return x86IoApic::identifyIrq(physicalId, __kpin);
 	}
 	else {
 		return ibmPc_i8259a_identifyIrq(physicalId, __kpin);
@@ -90,9 +91,10 @@ status_t ibmPc_irqControl_getIrqStatus(
 	ubit8 *triggerMode, ubit8 *polarity
 	)
 {
-	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		// Call LibIOAPIC for info.
-		return IRQCTL_IRQSTATUS_INEXISTENT;
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
+	{
+		return x86IoApic::getIrqStatus(
+			__kpin, cpu, vector, triggerMode, polarity);
 	}
 	else
 	{
@@ -105,9 +107,10 @@ status_t ibmPc_irqControl_setIrqStatus(
 	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
 	)
 {
-	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		// Call libIoApic to perform the action.
-		return ERROR_UNIMPLEMENTED;
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
+	{
+		return x86IoApic::setIrqStatus(
+			__kpin, cpu, vector, enabled);
 	}
 	else {
 		return ibmPc_i8259a_setIrqStatus(__kpin, cpu, vector, enabled);
@@ -117,7 +120,7 @@ status_t ibmPc_irqControl_setIrqStatus(
 void ibmPc_irqControl_maskIrq(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		// Call libIOAPIC to perform the action.
+		x86IoApic::maskIrq(__kpin);
 	}
 	else {
 		ibmPc_i8259a_maskIrq(__kpin);
@@ -127,7 +130,7 @@ void ibmPc_irqControl_maskIrq(ubit16 __kpin)
 void ibmPc_irqControl_unmaskIrq(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		// Call libIOAPIC to perform the action.
+		x86IoApic::unmaskIrq(__kpin);
 	}
 	else {
 		ibmPc_i8259a_unmaskIrq(__kpin);
@@ -137,7 +140,7 @@ void ibmPc_irqControl_unmaskIrq(ubit16 __kpin)
 void ibmPc_irqControl_maskAll(void)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		// Call libIOAPIC.
+		x86IoApic::maskAll();
 	}
 	else {
 		ibmPc_i8259a_maskAll();
@@ -147,7 +150,7 @@ void ibmPc_irqControl_maskAll(void)
 void ibmPc_irqControl_unmaskAll(void)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		// Call libIOAPIC.
+		x86IoApic::unmaskAll();
 	}
 	else {
 		ibmPc_i8259a_unmaskAll();
@@ -157,7 +160,7 @@ void ibmPc_irqControl_unmaskAll(void)
 sarch_t ibmPc_irqControl_irqIsEnabled(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		return 0;
+		return x86IoApic::irqIsEnabled(__kpin);
 	}
 	else {
 		return ibmPc_i8259a_irqIsEnabled(__kpin);
@@ -168,8 +171,11 @@ void ibmPc_irqControl_maskIrqsByPriority(
 	ubit16 __kpin, cpu_t cpuId, uarch_t *mask
 	)
 {
-	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
+	{
 		// To be implemented.
+		panic(ERROR_UNIMPLEMENTED, FATAL IBMPCIRQCTL
+			"maskIrqsByPriority: Lib IO-APIC has no back-end.\n");
 	}
 	else {
 		ibmPc_i8259a_maskIrqsByPriority(__kpin, cpuId, mask);
@@ -180,8 +186,11 @@ void ibmPc_irqControl_unmaskIrqsByPriority(
 	ubit16 __kpin, cpu_t cpu, uarch_t mask
 	)
 {
-	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
+	{
 		// To be implemented.
+		panic(ERROR_UNIMPLEMENTED, FATAL IBMPCIRQCTL
+			"unmaskIrqsByPriority: Lib IO-APIC has no back-end.\n");
 	}
 	else {
 		ibmPc_i8259a_unmaskIrqsByPriority(__kpin, cpu, mask);
@@ -190,8 +199,10 @@ void ibmPc_irqControl_unmaskIrqsByPriority(
 
 void ibmPc_irqControl_sendEoi(ubit16 __kpin)
 {
-	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		// Send the command to libIoApic.
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
+	{
+		// Directly call on lib LAPIC to do the EOI.
+		x86Lapic::sendEoi();
 	}
 	else {
 		ibmPc_i8259a_sendEoi(__kpin);

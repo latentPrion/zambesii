@@ -227,4 +227,82 @@ tryMpTables:
 	return ERROR_SUCCESS;
 }
 
+x86IoApic::ioApicC *x86IoApic::getIoApicFor(ubit16 __kpin)
+{
+	sarch_t		context;
+	ioApicC		*ret;
+
+	context = cache.ioApics.prepareForLoop();
+	ret = reinterpret_cast<ioApicC*>( cache.ioApics.getLoopItem(&context) );
+
+	for (; ret != __KNULL;
+		ret = (ioApicC *)cache.ioApics.getLoopItem(&context))
+	{
+		if (__kpin > ret->get__kPinBase()
+			&& __kpin < (ret->get__kPinBase() + ret->getNIrqs() - 1)
+			)
+		{
+			return ret;
+		};
+	};
+
+	return __KNULL;
+}
+
+void x86IoApic::maskAll(void)
+{
+	ioApicC		*ioApic;
+	sarch_t		context;
+
+	context = cache.ioApics.prepareForLoop();
+	ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context);
+
+	for (; ioApic != __KNULL;
+		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
+	{
+		ioApic->maskAll();
+	};
+}
+
+void x86IoApic::unmaskAll(void)
+{
+	ioApicC		*ioApic;
+	sarch_t		context;
+
+	context = cache.ioApics.prepareForLoop();
+	ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context);
+
+	for (; ioApic != __KNULL;
+		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
+	{
+		ioApic->unmaskAll();
+	};
+}
+
+error_t x86IoApic::identifyIrq(uarch_t physicalId, ubit16 *__kpin)
+{
+	sarch_t		context;
+	ioApicC		*ioApic;
+
+	/* Truth be told, the only way to know for this case is by using
+	 * the ACPI IDs.
+	 *
+	 *	EXPLANATION:
+	 * We ask each IO-APIC in turn if it can identify the IRQ based on its
+	 * knowledge of the ACPI IDs of its pins. If none of them can, we just
+	 * assume the pin doesn't exist.
+	 **/
+	context = cache.ioApics.prepareForLoop();
+	ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context);
+
+	for (; ioApic != __KNULL;
+		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
+	{
+		if (ioApic->identifyIrq(physicalId, __kpin) == ERROR_SUCCESS) {
+			return ERROR_SUCCESS;
+		};
+	};
+
+	return ERROR_INVALID_ARG_VAL;
+}
 

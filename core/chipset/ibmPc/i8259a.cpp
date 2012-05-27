@@ -112,7 +112,7 @@ void ibmPc_i8259a_chipsetEventNotification(ubit8 event, uarch_t)
 			irqPinList[i].flags = 0;
 			irqPinList[i].cpu = ibmPcState.bspInfo.bspId;
 			irqPinList[i].vector = j;
-			irqPinList[i].triggerMode = IRQPIN_TRIGGMODE_EDGE;
+			irqPinList[i].triggerMode = IRQPIN_TRIGGMODE_LEVEL;
 			irqPinList[i].polarity = IRQPIN_POLARITY_HIGH;
 		};
 

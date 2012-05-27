@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -229,8 +228,6 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 {
 	irqPinDescriptorS	*tmp;
 	error_t			err;
-
-if (nPins == 24) { qq = 12; };
 
 	for (ubit16 i=0; i<nPins; i++)
 	{
