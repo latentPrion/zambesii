@@ -436,3 +436,74 @@ x86_mpCfgLocalIrqSourceS *x86Mp::getNextLocalIrqSourceEntry(
 	return ret;
 }
 
+x86_mpCfgIrqSourceS *x86Mp::getNextIrqSourceEntry(
+	uarch_t *pos, void **const handle
+	)
+{
+	x86_mpCfgIrqSourceS	*ret=__KNULL;
+
+	if (!x86Mp::getMpCfg()) {
+		return __KNULL;
+	};
+
+	if (*pos == 0)
+	{
+		// Caller wants a fresh iteration.
+		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86_mpCfgS));
+	};
+
+	for (; *pos < cache.nCfgEntries; *pos += 1)
+	{
+		if (ret != __KNULL) {
+			break;
+		};
+
+		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_IRQSOURCE) {
+			ret = (x86_mpCfgIrqSourceS *)*handle;
+		};
+
+		switch (*(ubit8 *)*handle)
+		{
+		case x86_MPCFG_TYPE_CPU:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+
+			break;
+
+		case x86_MPCFG_TYPE_BUS:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgBusS));
+
+			break;
+
+		case x86_MPCFG_TYPE_IOAPIC:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgIoApicS));
+
+			break;
+
+		case x86_MPCFG_TYPE_IRQSOURCE:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgIrqSourceS));
+
+			break;
+
+		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
+			*handle = (void *)(
+				(uarch_t)*handle
+				+ sizeof(x86_mpCfgLocalIrqSourceS));
+
+			break;
+
+		default: // This should NEVER be reached.
+			__kprintf(ERROR x86MP"Encountered CFG entry with "
+				"unknown type 0x%X. Ending loop.\n",
+				*(ubit8 *)*handle);
+
+			return __KNULL;
+		};
+	};
+
+	return ret;
+}
+

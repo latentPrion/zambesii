@@ -1,0 +1,105 @@
+	Overview
+
+The kernel handles pin based IRQs as such:
+	1.  IRQ is raised by device D on pin P on IRQ controller C.
+	2.  Pin P is mapped to interrupt vector V on cpu N.
+	3.  Controller C determines that it can send device D's IRQ to CPU N
+	    right now, since CPU N is open to taking IRQs.
+	4.  Controller C sets pin P's bit in its In Service Register (ISR).
+	5.  Controller C sends an INTR signal to CPU N.
+	6.  CPU N handshakes with INTA and proceeds to accept and service the
+	    IRQ.
+	7.  CPU N reads the vectorThese can be further collaped where needed if a chipset
+does not have support for that many IRQ priorities; For example, if a chipset
+only supports 3 IRQ priorities, the kernel will collapse V from controller C.
+	8.  CPU N stops executing current instruction stream and vectors in on
+	    vector V to enter the kernel.
+	9.  The kernel handler for vector V saves context, switches to a kernel
+	    stack and enters the kernel main IRQ handling lobby.
+	10. The kernel now seeks to find out which IRQ controller sent the IRQ
+	    signal, by reading each IRQ controller's in-service reg, and
+	    checking to see if the controller has an actively raised pin.
+
+	    If it does, the kernel then also checks to see if the currently
+	    raised pin is mapped to interrupt the current CPU (itself). If it
+	    is, it can be assumed that this controller is currently interrupting
+	    the CPU N. Next, the kernel checks to see if the pin is also set
+	    to interrupt on vector V. If it is, then the kernel conclusively
+	    decides that the IRQ is from that pin, P.
+
+	11. The kernel then cycles through each device which is known to be
+	    interrupting on that pin and runs its handler.
+	    	a. If an ISR returns saying that its device was the signaller,
+	    	   the kernel assumes that that ISR also ACK'd its device and
+	    	   has de-asserted the IRQ.
+
+		b. If no ISR returns saying that its device was the signaller,
+		   the kernel logs the fact that an unknown device is
+		   interrupting, and increments the count.
+
+		   If a certain number of interrupts are generated within a set
+		   time that are unhandled, the kernel will have to signal
+		   userspace.
+
+	12. After the device has been handled, the kernel restores context and
+	    returns to the previous execution stream.
+
+	NOTES ON IRQ PINS:
+
+1. A controller may only have one bit set in its In-Service Register.
+
+2. A single controller may raise multiple IRQ signals at once. The assumption is
+   that the controller is aware of the priorities of its pins.
+
+	a. In this case, if there are multiple IRQ controllers, the only way
+	   to know which pin sent in an IRQ is to get the set of IRQ currently
+	   raised for the current CPU.
+
+	   Then out of this set, get the single IRQ with the highest priority.
+	   That IRQ is the one currently being handled by the kernel.
+
+For the purpose of arranging IRQ priorities, the kernel divides devices into
+6 IRQ priority classes.
+
+NMI | Power Management
+Interactive Input
+Network
+Storage | Base.
+
+NMI:	Is generally set up by the chipset to be automatically at the highest
+	priority.
+
+Power:	Is taken by the kernel to be of the same level of importance as NMIs.
+	Where the kernel has rule over how to set up NMIs relative to Power
+	event IRQs, it will place them at the same level of importance.
+
+Input:	Zambezii seeks to prioritize responsiveness of the system over
+	non-interactive throughput.
+
+Network: Zambezii seeks to satisfy network applications with good speed by
+	placing network device IRQs at a high priority level. High IRQ load
+	can be mitigated using temporary polling modes, and other known IRQ
+	storm mitigation techniques.
+
+Storage: Storage related IRQs are taken to be above "Base" priority IRQs
+	because we do not know generally what types of devices will be
+	interrupting in "Base".
+
+Base:	Base IRQ priority devices are all devices which cannot be grouped
+	squarely under one of the above brackets. They have no priority as far
+	as the kernel is concerned. As a rule, if priority classes are in
+	short supply, the chipset should collapse BASE with STORAGE and have
+	them at the same priority.
+
+These can be further collaped where needed if a chipset does not have support
+for that many IRQ priorities; For example, if a chipset only supports 3 IRQ
+priorities, the kernel will collapse priorities similarly to this:
+
+NMI | Power
+Interactive | Network
+Storage | Base
+
+If a chipset only has two priorities, the kernel will collapse as follows:
+
+NMI | Power | Interactive
+Network | Storage | Base

@@ -59,10 +59,17 @@
 // Underlying PIC chip doesn't support given polarity.
 #define IRQCTL_SETIRQSTATUS_POLARITY_UNSUPPORTED	0x4
 
+/* These two values are used for when the chipset does not know the mappings
+ * between IRQ Pins and the pins described by the ACPI/MP tables.
+ **/
+#define IRQPIN_ACPIID_INVALID				(-1)
+#define IRQPIN_INTELMPID_INVALID			(-1)
+
 struct zkcmIrqPinS
 {
 	ubit32		physId;
-	ubit32		acpiId;
+	sbit32		acpiId;
+	sbit32		intelMpId;
 	uarch_t		flags;
 	cpu_t		cpu;
 	ubit16		__kid;

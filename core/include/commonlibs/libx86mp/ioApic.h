@@ -124,6 +124,10 @@ namespace x86IoApic
 		ioApicRegspaceS *mapIoApic(paddr_t paddr);
 		void unmapIoApic(ioApicRegspaceS *vaddr);
 
+		// Related to ACPI and MP setup of pins.
+		error_t setupAcpiPinMappings(void);
+		error_t setupIntelMpPinMappings(void);
+
 	private:
 		struct ioApicRegspaceS
 		{

@@ -234,6 +234,10 @@ namespace x86Mp
 	x86_mpCfgLocalIrqSourceS *getNextLocalIrqSourceEntry(
 		uarch_t *pos, void **handle);
 
+	// Iterates through all IRQ source entries in the config.
+	x86_mpCfgIrqSourceS *getNextIrqSourceEntry(
+		uarch_t *pos, void **const handle);
+
 	// Following return stuff from the cache mostly.
 	ubit32 getLapicPaddr(void);
 	x86_mpFpS *getMpFp(void);
