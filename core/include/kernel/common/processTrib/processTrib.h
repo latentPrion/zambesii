@@ -44,7 +44,7 @@ public:
 
 	processStreamC *spawn(
 		const utf8Char *_commandLine,	// Full command line w/ args.
-		affinityS *affinity,			// Ocean/NUMA/SMP affinity.
+		affinityS *affinity,		// Ocean/NUMA/SMP affinity.
 		void *elevation,		// Privileges.
 		ubit8 execDomain,		// Kernel mode vs. User mode.
 		uarch_t flags,			// Process spawn flags.

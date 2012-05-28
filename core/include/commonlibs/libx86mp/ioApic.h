@@ -67,21 +67,23 @@ namespace x86IoApic
 	class ioApicC
 	{
 	public:
-		ioApicC(ubit8 id, paddr_t paddr);
+		ioApicC(ubit8 id, paddr_t paddr, sarch_t acpiGirqBase);
 		// Gets version, etc, masks every IRQ on the particular IO-APIC.
 		error_t initialize(void);
 		~ioApicC(void);
 
 	public:
 		ubit8 getNIrqs(void) { return nIrqs; };
-		ubit16 get__kPinBase(void) { return __kpinBase; };
+		ubit16 get__kpinBase(void) { return __kpinBase; };
 
-		error_t identifyIrq(uarch_t physicalId, ubit16 *__kpin);
+		void maskPin(ubit8 irq);
+		void unmaskPin(ubit8 irq);
 		void setPinState(
 			ubit8 irq, ubit8 cpu, ubit8 vector,
 			ubit8 deliveryMode, ubit8 destMode,
 			ubit8 polarity, ubit8 triggMode);
 
+		error_t identifyIrq(uarch_t physicalId, ubit16 *__kpin);
 		// Returns 1 if unmasked, 0 if masked off.
 		sarch_t getPinState(
 			ubit8 irq, ubit8 *cpu, ubit8 *vector,
@@ -95,9 +97,6 @@ namespace x86IoApic
 		status_t setIrqStatus(
 			uarch_t __kpin, cpu_t cpu, uarch_t vector,
 			ubit8 enabled);
-
-		void maskPin(ubit8 irq);
-		void unmaskPin(ubit8 irq);
 
 		void maskIrq(ubit16 __kpin);
 		void unmaskIrq(ubit16 __kpin);
@@ -125,8 +124,7 @@ namespace x86IoApic
 		void unmapIoApic(ioApicRegspaceS *vaddr);
 
 		// Related to ACPI and MP setup of pins.
-		error_t setupAcpiPinMappings(void);
-		error_t setupIntelMpPinMappings(void);
+		error_t getIntelMpPinMappings(void);
 
 	private:
 		struct ioApicRegspaceS
@@ -141,6 +139,11 @@ namespace x86IoApic
 		ubit8			id, version, nIrqs;
 		ubit16			__kpinBase;
 		zkcmIrqPinS		*irqPinList;
+		/* This is signed so that in the event that we are not on an
+		 * ACPI supporting chipset, we can set it to a negative
+		 * value to indicate that it is not valid.
+		 **/
+		sarch_t			acpiGirqBase;
 		sharedResourceGroupC<waitLockC, ioApicRegspaceS *>	vaddr;
 	};
 
@@ -218,16 +221,9 @@ void x86IoApic::ioApicC::writeIoWin(ubit32 high, ubit32 low)
 
 error_t x86IoApic::ioApicC::lookupPinBy__kid(ubit16 __kid, ubit8 *pin)
 {
-	for (ubit8 i=0; i<nIrqs; i++)
-	{
-		if (irqPinList[i].__kid == __kid)
-		{
-			*pin = i;
-			return ERROR_SUCCESS;
-		};
-	};
-
-	return ERROR_INVALID_ARG_VAL;
+	*pin = __kid - __kpinBase;
+	if (*pin >= nIrqs) { return ERROR_INVALID_ARG_VAL; };
+	return ERROR_SUCCESS;
 }
 
 sarch_t x86IoApic::irqIsEnabled(ubit16 __kpin)

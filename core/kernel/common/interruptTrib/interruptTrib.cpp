@@ -260,33 +260,47 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 		default: break;
 		};
 
-		/* Assign the pin a kernel ID. IDs are either re-used if a blank
-		 * slot is located within the list, or taken from the current
-		 * value of the counter.
+		/**	NOTE: 2012-05-27.
+		 * There used to be conditional code here which made use of
+		 * hardwareIdListC::findFreeIndex() to re-use indexes in the
+		 * __kpin array which were left blank when __kpins were removed
+		 * by the chipset code. An example of such an occasion is when
+		 * the IBM-PC is switched into multiprocessor mode, and the
+		 * i8259 ZKCM code removes the __kpins it registered,
+		 * leaving holes in the array.
+		 *
+		 * This functionality was deliberately removed. The kernel now
+		 * guarantees that all pins which are registered in the same
+		 * call will be assigned congtiguous __kpin IDs, even at the
+		 * expense of leaving indexes unused and consuming memory
+		 * unnecessarily.
+		 *
+		 * The code below however, is highly naive, and it does not try
+		 * to optimize for space at all. It simply adds new __kpins
+		 * to the end of the array and increments the ID counter. If
+		 * someone is interested, they could improve the depth of the
+		 * algo below. That said, IRQ pins are not added or removed oft,
+		 * and the IBM-PC case is probably one of a very small number
+		 * of chipsets whose IRQ pin layout can be dynamically altered
+		 * at runtime.
 		 **/
-		if (pinIrqTable.findFreeIndex((uarch_t *)&pinList[i].__kid)
-			== ERROR_SUCCESS)
-		{
-			// No need to actually error check this one.
-			pinIrqTable.addItem(pinList[i].__kid, tmp);
-		}
-		else
-		{
-			pinList[i].__kid = pinIrqTableCounter;
+		pinList[i].__kid = pinIrqTableCounter;
 
-			// Add it to the list.
-			err = pinIrqTable.addItem(pinIrqTableCounter, tmp);
-			if (err != ERROR_SUCCESS)
-			{
-				__kprintf(FATAL INTTRIB"registerPinIrqs(): "
-					"Failed to add pin %d to the pin IRQ "
-					"table.\n",
-					i);
+		// Add it to the list.
+		err = pinIrqTable.addItem(pinIrqTableCounter, tmp);
+		if (err != ERROR_SUCCESS)
+		{
+			__kprintf(FATAL INTTRIB"registerPinIrqs(): "
+				"Failed to add pin %d to the pin IRQ "
+				"table.\n",
+				i);
 
-				panic(err);
-			};
-			pinIrqTableCounter++;
+			/* If the kernel cannot monitor an IRQ pin, it cannot
+			 * reasonably say that it has control over the chipset.
+			 **/
+			panic(err);
 		};
+		pinIrqTableCounter++;
 	};
 }
 

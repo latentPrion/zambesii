@@ -21,20 +21,14 @@
 #define PIC_IO_DELAY(v,x)		for (v=0; v<x; v++) {}
 
 
+ubit16 				__kpinBase=0;
 static zkcmIrqPinS		irqPinList[16];
 
-static error_t lookupPinBy__kid(ubit16 __kpin, uarch_t *pin)
+static inline error_t lookupPinBy__kid(ubit16 __kpin, ubit8 *pin)
 {
-	for (ubit8 i=0; i<16; i++)
-	{
-		if (irqPinList[i].__kid == __kpin)
-		{
-			*pin = i;
-			return ERROR_SUCCESS;
-		};
-	};
-
-	return ERROR_INVALID_ARG_VAL;
+	*pin = __kpin - __kpinBase;
+	if (*pin > 15) { return ERROR_INVALID_ARG_VAL; };
+	return ERROR_SUCCESS;
 }
 
 error_t ibmPc_i8259a_initialize(void)
@@ -116,9 +110,8 @@ void ibmPc_i8259a_chipsetEventNotification(ubit8 event, uarch_t)
 			irqPinList[i].polarity = IRQPIN_POLARITY_HIGH;
 		};
 
-		interruptTrib.registerIrqPins(
-			16, irqPinList);
-
+		interruptTrib.registerIrqPins(16, irqPinList);
+		__kpinBase = irqPinList[0].__kid;
 		break;
 
 	case IRQCTL_EVENT_SMP_MODE_SWITCH:
@@ -128,6 +121,7 @@ void ibmPc_i8259a_chipsetEventNotification(ubit8 event, uarch_t)
 		 * is activated, we use only the IO-APICs and not mixed mode.
 		 **/
 		interruptTrib.removeIrqPins(16, irqPinList);
+		__kpinBase = 0;
 		break;
 
 	default: break;
@@ -148,14 +142,15 @@ status_t ibmPc_i8259a_getIrqStatus(
 	)
 {
 	error_t		err;
-	uarch_t		pin;
+	ubit8		pin;
 
 	err = lookupPinBy__kid(__kpin, &pin);
 	if (err != ERROR_SUCCESS) { return IRQCTL_IRQSTATUS_INEXISTENT; };
 
 	*cpu = irqPinList[pin].cpu;
 	*vector = irqPinList[pin].vector;
-	*triggerMode = irqPinList[pin].triggerMode;
+	*triggerMode = IRQPIN_TRIGGMODE_LEVEL;
+	// FIXME: Not sure what polarity ISA IRQs are.
 	*polarity = irqPinList[pin].polarity;
 
 	return __KFLAG_TEST(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
@@ -204,100 +199,100 @@ void ibmPc_i8259a_unmaskAll(void)
 
 void ibmPc_i8259a_sendEoi(ubit16 __kid)
 {
-	// Find out which pin the __kid pertains to, and then send EOI to chip.
-	for (ubit8 i=0; i<16; i++)
-	{
-		if (irqPinList[i].__kid == __kid)
-		{
-			if (i > 7)
-				{ io::write8(PIC_PIC2_CMD, 0x20); };
+	error_t		err;
+	ubit8		pin;
 
-			io::write8(PIC_PIC1_CMD, 0x20);
-		};
-	};
+	err = lookupPinBy__kid(__kid, &pin);
+	if (err != ERROR_SUCCESS) { return; };
+
+	if (pin > 7)
+		{ io::write8(PIC_PIC2_CMD, 0x20); };
+
+	io::write8(PIC_PIC1_CMD, 0x20);
 }
 
 void ibmPc_i8259a_maskIrq(ubit16 __kpin)
 {
 	ubit8		mask;
+	error_t		err;
+	ubit8		pin;
 
-	for (ubit8 i=0; i<16; i++)
-	{
-		if (irqPinList[i].__kid == __kpin)
-		{
-			if (i < 0x8)
-			{
-				mask = io::read8(PIC_PIC1_DATA);
-				__KBIT_SET(mask, i);
-				io::write8(PIC_PIC1_DATA, mask);
-			}
-			else
-			{
-				mask = io::read8(PIC_PIC2_DATA);
-				__KBIT_SET(mask, i-8);
-				io::write8(PIC_PIC2_DATA, mask);
-			};
-			__KFLAG_UNSET(
-				irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
-
-		};
+	if ((err = lookupPinBy__kid(__kpin, &pin)) != ERROR_SUCCESS) {
+		return;
 	};
+
+	if (pin < 0x8)
+	{
+		mask = io::read8(PIC_PIC1_DATA);
+		__KBIT_SET(mask, pin);
+		io::write8(PIC_PIC1_DATA, mask);
+	}
+	else
+	{
+		mask = io::read8(PIC_PIC2_DATA);
+		__KBIT_SET(mask, pin-8);
+		io::write8(PIC_PIC2_DATA, mask);
+	};
+
+	__KFLAG_UNSET(
+		irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
+
 }
 
 void ibmPc_i8259a_unmaskIrq(ubit16 __kpin)
 {
 	ubit8		mask;
+	error_t		err;
+	ubit8		pin;
 
-	for (ubit8 i=0; i<16; i++)
-	{
-		if (irqPinList[i].__kid == __kpin)
-		{
-			if (i < 0x8)
-			{
-				mask = io::read8(PIC_PIC1_DATA);
-				__KBIT_UNSET(mask, i);
-				io::write8(PIC_PIC1_DATA, mask);
-			}
-			else
-			{
-				mask = io::read8(PIC_PIC2_DATA);
-				__KBIT_UNSET(mask, i-8);
-				io::write8(PIC_PIC2_DATA, mask);
-			};
-			__KFLAG_SET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
-		};
+	if ((err = lookupPinBy__kid(__kpin, &pin)) != ERROR_SUCCESS) {
+		return;
 	};
+
+	if (pin < 0x8)
+	{
+		mask = io::read8(PIC_PIC1_DATA);
+		__KBIT_UNSET(mask, pin);
+		io::write8(PIC_PIC1_DATA, mask);
+	}
+	else
+	{
+		mask = io::read8(PIC_PIC2_DATA);
+		__KBIT_UNSET(mask, pin-8);
+		io::write8(PIC_PIC2_DATA, mask);
+	};
+
+	__KFLAG_SET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
 }
 
 void ibmPc_i8259a_maskIrqsByPriority(ubit16 __kid, cpu_t, uarch_t *mask)
 {
 	ubit8		irqNo;
 	ubit16		newMask=0;
+	error_t		err;
 
-	for (irqNo=0; irqNo < 16; irqNo++)
-	{
-		if (irqPinList[irqNo].__kid == __kid)
-		{
-			// Save the current state.
-			*mask = io::read8(PIC_PIC1_DATA);
-			*mask |= io::read8(PIC_PIC2_DATA) << 8;
-
-			// Mask all IRQs lower than and higher than irqNo.
-			newMask = ~(1<<irqNo);
-			// Mask irqNo itself.
-			newMask |= 1 << irqNo;
-			// Use a bitshift to unmask IRQs higher than irqNo.
-			newMask <<= 15 - irqNo;
-			// Reshift 0s into the bits.
-			newMask >>= 15 - irqNo;
-			// OR the old state for the higher bits into the new.
-			newMask |= *mask;
-			// Write the new mask out.
-			io::write8(PIC_PIC1_DATA, newMask & 0xFF);
-			if (irqNo > 7)
-				{ io::write8(PIC_PIC2_DATA, newMask >> 8); };
-		};
+	if ((err = lookupPinBy__kid(__kid, &irqNo)) != ERROR_SUCCESS) {
+		return;
 	};
+
+	// Save the current state.
+	*mask = io::read8(PIC_PIC1_DATA);
+	*mask |= io::read8(PIC_PIC2_DATA) << 8;
+
+	// Mask all IRQs lower than and higher than irqNo.
+	newMask = ~(1<<irqNo);
+	// Mask irqNo itself.
+	newMask |= 1 << irqNo;
+	// Use a bitshift to unmask IRQs higher than irqNo.
+	newMask <<= 15 - irqNo;
+	// Reshift 0s into the bits.
+	newMask >>= 15 - irqNo;
+	// OR the old state for the higher bits into the new.
+	newMask |= *mask;
+	// Write the new mask out.
+	io::write8(PIC_PIC1_DATA, newMask & 0xFF);
+	if (irqNo > 7)
+		{ io::write8(PIC_PIC2_DATA, newMask >> 8); };
 }
 
 void ibmPc_i8259a_unmaskIrqsByPriority(ubit16, cpu_t, uarch_t mask)
@@ -309,21 +304,20 @@ void ibmPc_i8259a_unmaskIrqsByPriority(ubit16, cpu_t, uarch_t mask)
 
 sarch_t ibmPc_i8259a_irqIsEnabled(ubit16 __kid)
 {
-	for (ubit8 i=0; i<16; i++)
-	{
-		if (irqPinList[i].__kid == __kid)
-		{
-			if (i < 8) {
-				return __KBIT_TEST(io::read8(PIC_PIC1_DATA), i);
-			}
-			else
-			{
-				return __KBIT_TEST(
-					io::read8(PIC_PIC2_DATA), i-8);
-			};
-		};
+	error_t		err;
+	ubit8		pin;
+
+	if ((err = lookupPinBy__kid(__kid, &pin)) != ERROR_SUCCESS) {
+		return 0;
 	};
 
-	return 0;
+	if (pin < 8) {
+		return __KBIT_TEST(io::read8(PIC_PIC1_DATA), pin);
+	}
+	else
+	{
+		return __KBIT_TEST(
+			io::read8(PIC_PIC2_DATA), pin-8);
+	};
 }
 

@@ -155,7 +155,7 @@ struct x86_mpCfgIrqSourceS
 	ubit8		sourceBusId;
 	ubit8		sourceBusIrq;
 	ubit8		destIoApicId;
-	ubit8		destIoApicVector;
+	ubit8		destIoApicPin;
 } __attribute__((packed));
 
 #define x86_MPCFG_LIRQSRC_DEST_ALL			0xFF

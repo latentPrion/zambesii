@@ -154,7 +154,6 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 							* (index + 1)),
 					MEMALLOC_NO_FAKEMAP))
 			arrayNodeS;
-
 		if (tmp == __KNULL)
 		{
 			__kprintf(ERROR HWIDLIST"addItem(%d,0x%p): failed to "
@@ -275,6 +274,11 @@ void hardwareIdListC::removeItem(sarch_t id)
 	if (arr.rsrc.firstValidIndex == id)
 	{
 		arr.rsrc.firstValidIndex = arr.rsrc.arr[id].next;
+		// If is also last item, don't forget to update maxIndex.
+		if (id == arr.rsrc.maxIndex) {
+			arr.rsrc.maxIndex = HWIDLIST_INDEX_INVALID;
+		};
+
 		__KFLAG_UNSET(
 			arr.rsrc.arr[id].flags, HWIDLIST_FLAGS_INDEX_VALID);
 

@@ -81,7 +81,8 @@ static error_t rsdtDetectIoApics(void)
 		{
 			tmp = new x86IoApic::ioApicC(
 				ioApicEntry->ioApicId,
-				ioApicEntry->ioApicPaddr);
+				ioApicEntry->ioApicPaddr,
+				ioApicEntry->globalIrqBase);
 
 			if (tmp == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -194,8 +195,10 @@ tryMpTables:
 			continue;
 		};
 
+		// Used MP tables to discover it, so no ACPI Global ID info.
 		tmp = new ioApicC(
-			ioApicEntry->ioApicId, ioApicEntry->ioApicPaddr);
+			ioApicEntry->ioApicId, ioApicEntry->ioApicPaddr,
+			IRQPIN_ACPIID_INVALID);
 
 		// Masks all IRQs and sets safe known state.
 		ret = tmp->initialize();
@@ -238,8 +241,8 @@ x86IoApic::ioApicC *x86IoApic::getIoApicFor(ubit16 __kpin)
 	for (; ret != __KNULL;
 		ret = (ioApicC *)cache.ioApics.getLoopItem(&context))
 	{
-		if (__kpin > ret->get__kPinBase()
-			&& __kpin < (ret->get__kPinBase() + ret->getNIrqs() - 1)
+		if (__kpin > ret->get__kpinBase()
+			&& __kpin < (ret->get__kpinBase() + ret->getNIrqs() - 1)
 			)
 		{
 			return ret;

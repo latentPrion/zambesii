@@ -1,5 +1,6 @@
 
 #include <arch/walkerPageRanger.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/libx86mp.h>
 #include <commonlibs/libx86mp/ioApic.h>
@@ -7,12 +8,10 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
-#include <debug.h>
-	
 
-x86IoApic::ioApicC::ioApicC(ubit8 id, paddr_t paddr)
+x86IoApic::ioApicC::ioApicC(ubit8 id, paddr_t paddr, sarch_t acpiGirqBase)
 :
-paddr(paddr), id(id)
+paddr(paddr), id(id), acpiGirqBase(acpiGirqBase)
 {
 	vaddr.rsrc = __KNULL;
 	nIrqs = 0;
@@ -76,21 +75,40 @@ void x86IoApic::ioApicC::unmapIoApic(ioApicRegspaceS *ioApic)
 	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(ioApic, 1);
 }
 
+/*
+static zkcmIrqPinS		tmp;
+
+static void sortListBy__kids(ubit8 nPins, zkcmIrqPinS *const list)
+{
+	for (ubit8 i=0; i<nPins-1; )
+	{
+		if (list[i].__kid > list[i + 1].__kid)
+		{
+			memcpy(&tmp, &list[i], sizeof(*list));
+			memcpy(&list[i], &list[i+1], sizeof(*list));
+			memcpy(&list[i+1], &tmp, sizeof(*list));
+
+			if (i != 0) { i--; };
+		}
+		else { i++; };
+	};
+}
+*/
+
 error_t x86IoApic::ioApicC::initialize(void)
 {
 	cpu_t		cpu;
 	ubit8		vector, polarity, triggMode, dummy;
-	sarch_t		enabled;
 
 	// Map the IO-APIC into the kernel vaddrspace.
 	vaddr.rsrc = mapIoApic(paddr);
 	if (vaddr.rsrc == __KNULL) { return ERROR_MEMORY_VIRTUAL_PAGEMAP; };
 
-	// Get version.
+	// Get version and number of pins.
 	vaddr.lock.acquire(); 
 	writeIoRegSel(x86IOAPIC_REG_VERSION);
-	version = readIoWin();
-	nIrqs = (readIoWin() >> 16) + 1;
+	version = readIoWin() & 0xFF;
+	nIrqs = ((readIoWin() >> 16) & 0xFF) + 1;
 	vaddr.lock.release();
 
 	// Allocate irqPinList.
@@ -103,27 +121,36 @@ error_t x86IoApic::ioApicC::initialize(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	// Mask off all IRQs.
-	__kprintf(NOTICE x86IOAPIC"%d: Masking off all IRQs for now.\n", id);
-	for (ubit8 i=0; i<nIrqs; i++)
-		{ maskIrq(i); };
-
-	// Prepare and fill out the irqPinList.
+	/* Prepare and fill out the irqPinList. This includes filling out all
+	 * ACPI global IRQ pin IDs.
+	 **/
 	for (ubit8 i=0; i<nIrqs; i++)
 	{
-		enabled = getPinState(
+		// Get current values.
+		maskPin(i);
+		getPinState(
 			i, reinterpret_cast<ubit8 *>( &cpu ), &vector,
 			&dummy, &dummy,
 			&polarity, &triggMode);
 
-		
-		irqPinList[i].acpiId = 0;
-		irqPinList[i].flags = 0;
+
+		// Fill in ACPI Global IRQ ID and set Intel MP ID to invalid.
+		irqPinList[i].intelMpId = IRQPIN_INTELMPID_INVALID;
+		if (acpiGirqBase != IRQPIN_ACPIID_INVALID) {
+			irqPinList[i].acpiId = acpiGirqBase + i;
+		};
+
+		irqPinList[i].triggerMode
+			= (triggMode == x86IOAPIC_TRIGGMODE_EDGE) ?
+				IRQPIN_TRIGGMODE_EDGE : IRQPIN_TRIGGMODE_LEVEL;
+
+		irqPinList[i].polarity
+			= (polarity == x86IOAPIC_POLARITY_LOW) ?
+				IRQPIN_POLARITY_LOW : IRQPIN_POLARITY_HIGH;
 
 		irqPinList[i].cpu = cpu;
 		irqPinList[i].vector = vector;
-		irqPinList[i].triggerMode = triggMode;
-		irqPinList[i].polarity = polarity;
+		irqPinList[i].flags = 0;
 	};
 
 	// Give the pins to the kernel for __kpin ID assignment.
@@ -131,13 +158,11 @@ error_t x86IoApic::ioApicC::initialize(void)
 	__kpinBase = irqPinList[0].__kid;
 
 	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x, "
-		"nIrqs %d.\n",
-		id, vaddr.rsrc, paddr, version, nIrqs);
+		"nIrqs %d, Girqbase %d.\n",
+		id, vaddr.rsrc, paddr, version, nIrqs, acpiGirqBase);
 
-	// Now get the MP and ACPI IDs for each pin.
-	setupIntelMpPinMappings();
-	for (;;){asm volatile ("hlt\n\t"); };
-
+	// Now check to see if there are entries for each pin in the MP tables.
+	getIntelMpPinMappings();
 	return ERROR_SUCCESS;
 }
 
@@ -221,162 +246,6 @@ void x86IoApic::ioApicC::unmaskPin(ubit8 irq)
 	vaddr.lock.release();
 }
 
-error_t x86IoApic::ioApicC::identifyIrq(uarch_t physicalId, ubit16 *__kpin)
-{
-	/**	EXPLANATION:
-	 * We assume that any caller of this function is calling to ask for
-	 * a lookup based on an ACPI ID. So we check to see if any of the pins
-	 * on this IO-APIC match, and if not, we return an error.
-	 **/
-	for (ubit8 i=0; i<nIrqs; i++)
-	{
-		if (irqPinList[i].acpiId == (sarch_t)physicalId)
-		{
-			*__kpin = irqPinList[i].__kid;
-			return ERROR_SUCCESS;
-		};
-	};
-
-	return ERROR_INVALID_ARG_VAL;
-}
-
-status_t x86IoApic::ioApicC::setIrqStatus(
-	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
-	)
-{
-	error_t		err;
-	ubit8		pin;
-	ubit8		dummy, destMode, deliveryMode, triggerMode, polarity;
-	sarch_t		isEnabled;
-
-	err = lookupPinBy__kid(__kpin, &pin);
-	if (err != ERROR_SUCCESS) { return IRQCTL_IRQSTATUS_INEXISTENT; };
-
-	isEnabled = getPinState(
-		pin, &dummy, &dummy,
-		&deliveryMode, &destMode, &polarity, &triggerMode);
-
-	setPinState(
-		pin, cpu, vector,
-		deliveryMode, destMode, polarity, triggerMode);
-
-	if (enabled && (!isEnabled))
-	{
-		unmaskPin(pin);
-		__KFLAG_SET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
-	};
-
-	if ((!enabled) && isEnabled)
-	{
-		maskPin(pin);
-		__KFLAG_UNSET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
-	};
-
-	irqPinList[pin].cpu = cpu;
-	irqPinList[pin].vector = vector;
-
-	return ERROR_SUCCESS;
-}
-
-status_t x86IoApic::ioApicC::getIrqStatus(
-	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
-	ubit8 *triggerMode, ubit8 *polarity
-	)
-{
-	error_t		err;
-	ubit8		pin;
-
-	err = lookupPinBy__kid(__kpin, &pin);
-	if (err != ERROR_SUCCESS) { return IRQCTL_IRQSTATUS_INEXISTENT; };
-
-	*cpu = irqPinList[pin].cpu;
-	*vector = irqPinList[pin].vector;
-	*triggerMode = irqPinList[pin].triggerMode;
-	*polarity = irqPinList[pin].triggerMode;
-
-	return __KFLAG_TEST(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED) ?
-		IRQCTL_IRQSTATUS_ENABLED : IRQCTL_IRQSTATUS_DISABLED;
-}
-
-void x86IoApic::ioApicC::maskIrq(ubit16 __kpin)
-{
-	error_t		err;
-	ubit8		pin;
-
-	err = lookupPinBy__kid(__kpin, &pin);
-	if (err != ERROR_SUCCESS) { return; };
-
-	maskPin(pin);
-	__KFLAG_UNSET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
-}
-
-void x86IoApic::ioApicC::unmaskIrq(ubit16 __kpin)
-{
-	error_t		err;
-	ubit8		pin;
-
-	err = lookupPinBy__kid(__kpin, &pin);
-	if (err != ERROR_SUCCESS) { return; };
-
-	unmaskPin(pin);
-	__KFLAG_SET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
-}
-
-sarch_t x86IoApic::ioApicC::irqIsEnabled(ubit16 __kpin)
-{
-	error_t		err;
-	ubit8		pin;
-
-	err = lookupPinBy__kid(__kpin, &pin);
-	if (err != ERROR_SUCCESS) { return 0; };
-
-	return __KFLAG_TEST(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
-}
-
-void x86IoApic::ioApicC::maskAll(void)
-{
-	for (ubit8 i=0; i<nIrqs; i++)
-	{
-		maskPin(i);
-		__KFLAG_UNSET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
-	}
-}
-
-void x86IoApic::ioApicC::unmaskAll(void)
-{
-	for (ubit8 i=0; i<nIrqs; i++)
-	{
-		unmaskPin(i);
-		__KFLAG_SET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
-	}
-}
-
-error_t x86IoApic::ioApicC::setupAcpiPinMappings(void)
-{
-	/**	EXPLANATION:
-	 * Parse the ACPI tables and assign each pin its ACPI ID. This will
-	 * enabled fast device-pin mapping when a new device is discovered.
-	 **/
-	acpi::initializeCache();
-	if (acpi::findRsdp() != ERROR_SUCCESS)
-	{
-		__kprintf(WARNING x86IOAPIC"setupAcpiPinMappings: No ACPI.\n");
-		return ERROR_GENERAL;
-	};
-
-	if (/*acpi::testForXsdt()*/ 0)
-	{
-#if !defined(__32_BIT__) || defined(CONFIG_ARCH_x86_32_PAE)
-		/*return setupXsdtPinMappings();*/
-#endif
-	}
-	else {
-		/*return setupRsdtPinMappings();*/
-	};
-
-	return ERROR_GENERAL;
-}
-
 static utf8Char		*intTypes[4] = {
 	CC"INT", CC"NMI", CC"SMI", CC"Ext-INT"
 };
@@ -389,14 +258,13 @@ static utf8Char		*triggerModes[4] = {
 	CC"Conforms", CC"Edge", CC"Invalid", CC"Level"
 };
 
-error_t x86IoApic::ioApicC::setupIntelMpPinMappings(void)
+error_t x86IoApic::ioApicC::getIntelMpPinMappings(void)
 {
 	x86_mpCfgS		*mpCfg;
 	x86_mpCfgIrqSourceS	*irqSource;
 	uarch_t			context;
 	void			*handle;
 	ubit16			nPins=0;
-	ubit8			deliveryMode;
 
 	/**	EXPLANATION:
 	 * Parse the MP tables and assign each pin its Intel MP ID.
@@ -404,13 +272,13 @@ error_t x86IoApic::ioApicC::setupIntelMpPinMappings(void)
 	x86Mp::initializeCache();
 	if (x86Mp::findMpFp() == __KNULL)
 	{
-		__kprintf(WARNING x86IOAPIC"setupIntelMpPinMappings: No MP.\n");
+		__kprintf(WARNING x86IOAPIC"getIntelMpPinMappings: No MP.\n");
 		return ERROR_GENERAL;
 	};
 
 	if ((mpCfg = x86Mp::mapMpConfigTable()) == __KNULL)
 	{
-		__kprintf(ERROR x86IOAPIC"setupIntelMpPinMappings: Failed to "
+		__kprintf(ERROR x86IOAPIC"getIntelMpPinMappings: Failed to "
 			"map MP Configuration table.\n");
 
 		return ERROR_MEMORY_NOMEM;
@@ -428,11 +296,11 @@ error_t x86IoApic::ioApicC::setupIntelMpPinMappings(void)
 
 		nPins++;
 		// Print info for debug.
-		__kprintf(NOTICE x86IOAPIC"setupIntelMpPinMappings: "
+		__kprintf(NOTICE x86IOAPIC"getIntelMpPinMappings: "
 			"bus-IRQ(%d, %d), IoApic(%d, %d),\n"
 			"\tintType %s, Pol %s, trigg %s.\n",
 			irqSource->sourceBusId, irqSource->sourceBusIrq,
-			irqSource->destIoApicId, irqSource->destIoApicVector,
+			irqSource->destIoApicId, irqSource->destIoApicPin,
 			intTypes[irqSource->intType],
 			polarities[
 				irqSource->flags
@@ -444,42 +312,15 @@ error_t x86IoApic::ioApicC::setupIntelMpPinMappings(void)
 				& x86_MPCFG_IRQSRC_FLAGS_SENSITIVITY_MASK]);
 
 		/**	EXPLANATION:
-		 * We do not unmask any of these pins until their device has
-		 * been instantiated and is trying to claim its IRQ.
-		 *
-		 * Since the pin is masked at this point, just set the CPU,
-		 * vector, trigger and polarity members to 0.
+		 * The only thing we do in here is check to see if the pin
+		 * has an entry in the MP Tables. If it does, we set the
+		 * intelMpId field to 0. Else, if there is no entry, we leave
+		 * it at IRQPIN_INTELMPID_INVALID.
 		 **/
-		switch (irqSource->intType)
-		{
-		case x86_MPCFG_IRQSRC_INTTYPE_INT:
-			deliveryMode = x86IOAPIC_DELIVERYMODE_FIXED;
-			break;
-
-		case x86_MPCFG_IRQSRC_INTTYPE_NMI:
-			deliveryMode = x86IOAPIC_DELIVERYMODE_NMI;
-			break;
-
-		case x86_MPCFG_IRQSRC_INTTYPE_SMI:
-			deliveryMode = x86IOAPIC_DELIVERYMODE_SMI;
-			break;
-
-		case x86_MPCFG_IRQSRC_INTTYPE_EXTINT:
-			deliveryMode = x86IOAPIC_DELIVERYMODE_EXTINT;
-			break;
-
-		default: deliveryMode = x86IOAPIC_DELIVERYMODE_FIXED;
-			break;
-		};
-
-		setPinState(
-			irqSource->destIoApicVector, 0, 31,
-			deliveryMode, x86IOAPIC_DESTMODE_PHYSICAL,
-			0, 0);
-#if 0
-#endif
+		irqPinList[irqSource->destIoApicPin].intelMpId = 0;
 	};
-	__kprintf(NOTICE x86IOAPIC"setupIntelMpPinMappings: %d pins.\n", nPins);
+
+	__kprintf(NOTICE x86IOAPIC"getIntelMpPinMappings: %d pins.\n", nPins);
 	return ERROR_SUCCESS;
 }
 
