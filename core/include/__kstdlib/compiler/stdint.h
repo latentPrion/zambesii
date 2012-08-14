@@ -1,4 +1,3 @@
-// GNU Compiler Collection.
 #ifdef __GNUC__
 	// For GCC 4.5+, stdint is different, and the old one won't work.
 	#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5))

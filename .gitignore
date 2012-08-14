@@ -17,5 +17,5 @@ foo
 .bochsrc
 *.iso
 Makefile.vars
+Makefile
 config.h
-

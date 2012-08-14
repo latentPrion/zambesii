@@ -2,7 +2,7 @@
 	#define _UCS_8_STRING_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <__kstdlib/__kclib/size_t.h>
+	#include <__kstdlib/compiler/size_t.h>
 
 /**	EXPLANATION:
  * Simple, C standard (mostly) compliant UCS-8 string manipulation library. Get

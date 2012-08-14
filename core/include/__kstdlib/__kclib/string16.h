@@ -2,7 +2,7 @@
 	#define ___KCLIB_STRING_UCS16_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <__kstdlib/__kclib/size_t.h>
+	#include <__kstdlib/compiler/size_t.h>
 
 /**	EXPLANATION:
  * This is not code to manipulate UTF-16 strings. It manipulates UCS-16. *NOT*
