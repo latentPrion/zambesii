@@ -1,0 +1,200 @@
+#!/bin/bash
+hllToolchain=''
+hllCc=''
+hllCxx=''
+hllCxxAbi=''
+hllCpp=''
+assembler=''
+linker=''
+arTest=''
+isoTest=''
+isoProg=''
+arch=''
+chipset=''
+firmware=''
+toolchainTarget=''
+toolchainTest=''
+
+
+echo 'Zambesii kernel interactive build configuration script.'; echo
+echo 'What compiler toolchain will you be using for C/C++ source?
+	Currently supported options: gnu.'
+read hllToolchain
+echo
+
+if [ -z $hllToolchain ]; then echo 'Null string is invalid input.'; exit 1; fi;
+if [ $hllToolchain != 'gnu' ]; then
+	echo "Invalid toolchain '$hllToolchain'."
+	exit 1
+fi
+
+echo 'Which toolchain provides the assembler you will be using?
+	Currently supported options: gnu.'
+read assembler
+echo
+
+if [ -z $assembler ]; then echo 'Null string is invalid input.'; exit 2; fi;
+if [ $assembler != 'gnu' ]; then
+	echo "Invalid assembler toolchain '$assembler'."
+	exit 2
+fi
+
+echo 'Which toolchain provides the linker you will be using?
+	Currently supported options: gnu.'
+read linker
+echo
+
+if [ -z $linker ]; then echo 'Null string is invalid input.'; exit 3; fi;
+if [ $linker != 'gnu' ]; then
+	echo "Invalid toolchain '$linker'."
+	exit 3
+fi
+
+echo 'Which processor architecture are you building the kernel for?
+	Currently supported targets: x8632.'
+read arch
+echo
+
+if [ -z $arch ]; then echo 'Null string is invalid input.'; exit 4; fi;
+if [ $arch != 'x8632' ]; then
+	echo "Unsupported target arch '$arch'."
+	exit 4
+fi
+
+echo 'Which chipset are you building the kernel for?
+	Currently supported targets: ibmPc.'
+read chipset
+echo
+
+if [ -z $chipset ]; then echo 'Null string is invalid input.'; exit 5; fi;
+if [ $chipset != 'ibmPc' ]; then
+	echo "Unsupported chipset '$chipset'."
+	exit 5
+fi
+
+if [ $chipset == 'ibmPc' ]; then
+	echo 'The IBM-PC target may support either IBM-PC BIOS or (U)EFI'
+	echo 'firmware. What firmware does your target board have?'
+	echo '	Currently supported PC firmwares: ibmPcBios.'
+	read firmware
+	echo
+
+	if [ -z $firmware ]; then echo 'Null string is invalid input.'; exit 6; fi;
+	if [ $firmware != 'ibmPcBios' ]; then
+		echo "Unsupported firmware '$firmware'."
+		exit 6
+	fi
+fi
+
+echo 'Please give the target for your toolchain;
+	E.g.: i586-elf, x86_64-elf, armel32-eabi-elf.'
+echo 'You may enter nothing for this value, though it implies the use of a '
+echo 'non-cross-compiler to do the kernel build; this is not a recommended '
+echo 'build setup.'
+read toolchainTarget
+echo
+
+if [ -z $toolchainTarget ]; then
+	echo "Warning: Null input string implies use of your distribution's "
+	echo "native toolchain. Using a cross compiler is highly recommended."
+	echo
+fi
+
+if [ $hllToolchain == 'gnu' ]; then
+	hllCxxAbi='icxxabi'
+
+	if [ -z $toolchainTarget ]; then
+		hllCc='gcc'
+		hllCxx='g++'
+		hllCpp='gcc -E'
+	else
+		hllCc="$toolchainTarget-gcc"
+		hllCxx="$toolchainTarget-g++"
+		hllCpp="$toolchainTarget-gcc -E"
+	fi
+fi
+
+if [ $assembler == 'gnu' ]; then
+	if [ -z $toolchainTarget ]; then assembler='as'; else assembler="$toolchainTarget-as"; fi
+fi
+
+if [ $linker == 'gnu' ]; then
+	if [ -z $toolchainTarget ]; then linker='ld'; else linker="$toolchainTarget-ld"; fi
+fi
+
+# We pass a non-existent file as an argument to ensure that tools that read from
+# stdin when no file arguments are passed will error and exit instead of
+# hanging waiting on stdin, and hanging our script along with themselves.
+rm -f garbagephile
+
+# Check to make sure that the input toolchain exists.
+echo 'Checking to ensure that tools are installed.'
+$hllCc garbagephile >/dev/null 2>&1
+if [ $? == 127 ]; then echo "Build toolchain C compiler $hllCc does not exist."; exit 7; fi
+$hllCxx garbagephile >/dev/null 2>&1
+if [ $? == 127 ]; then echo "Build toolchain C++ compiler $hllCxx does not exist."; exit 7; fi
+$hllCpp garbagephile >/dev/null 2>&1
+if [ $? == 127 ]; then echo "Build toolchain C preprocessor $hllCpp does not exist."; exit 7; fi
+$assembler garbagephile >/dev/null 2>&1
+if [ $? == 127 ]; then echo "Build toolchain assembler $assembler does not exist."; exit 7; fi
+$linker garbagephile >/dev/null 2>&1
+if [ $? == 127 ]; then echo "Build toolchain linker $linker does not exist."; exit 7; fi
+
+# Check to see if a GNU compatible AR is available.
+ar V >/dev/null 2>&1
+arTest=$?
+if [ $arTest != 0 ]; then
+	echo "System \'ar\' is not GNU AR compatible.";
+	exit 4
+fi
+
+#Check for mkisofs or genisoimage
+genisoimage >/dev/null 2>&1
+isoTest=$?
+if [ $isoTest == 127 ]; then
+	mkisofs >/dev/null 2>&1
+	isoTest=$?
+	if [ $isoTest == 127 ]; then
+		echo -n "Package genisoimage or mkisofs is required to "
+		echo "successfully build the kernel."
+
+		exit 5
+	fi
+	isoProg='mkisofs'
+fi
+isoProg='genisoimage'
+
+# Now generate the Makefile.vars file.
+# This is really nothing more than a file written in Makefile syntax that
+# defines a series of variables for use in make. The variables encode the
+# input the user gave above.
+echo "Generating 'Make' environment."
+echo "export CPP=$hllCpp" >Makefile.vars
+echo "export CC=$hllCc" >>Makefile.vars
+echo "export CXX=$hllCxx" >>Makefile.vars
+echo "export ZCXXABI=$hllCxxAbi" >>Makefile.vars
+echo "export AS=$assembler" >>Makefile.vars
+echo "export LD=$linker" >>Makefile.vars
+echo "export ISOPROG=$isoProg" >>Makefile.vars
+echo "export CPPFLAGS=-I/media/hddExtended/cygwin/osdev/zbz/include -I/media/hddExtended/cygwin/osdev/zbz/core/include" >>Makefile.vars
+echo "export CCFLAGS=-O3 -Wall -Wextra -pedantic std=c99" >>Makefile.vars
+echo "export CXXFLAGS=-O3 -Wall -Wextra -pedantic -Wno-long-long -fno-exceptions -fno-rtti" >>Makefile.vars
+echo "export ASFLAGS=" >>Makefile.vars
+echo "export LDFLAGS=-nostdlib -nostartfiles -nodefaultlibs" >>Makefile.vars
+echo "export ARFLAGS=" >>Makefile.vars
+echo "" >>Makefile.vars
+echo "export ZARCH=$arch" >>Makefile.vars
+echo "export ZCHIPSET=$chipset" >>Makefile.vars
+echo "export ZFIRMWARE=$firmware" >>Makefile.vars
+echo "" >>Makefile.vars
+
+# Generate the config.h C header.
+echo "Generating config.h."
+echo "#ifndef _CONFIG_H" >config.h
+echo "	#define _CONFIG_H" >>config.h; echo
+if [ $arch == 'x8632' ]; then echo "#define CONFIG_ARCH_x86_32" >>config.h; fi
+if [ $chipset == 'ibmPc' ]; then echo "#define CONFIG_CHIPSET_IBM_PC" >>config.h; fi
+if [ $firmware == 'ibmPcBios' ]; then echo "#define CONFIG_FIRMWARE_IBM_PC_BIOS" >>config.h; fi
+echo "#endif" >>config.h
+echo "" >>config.h
+

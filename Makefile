@@ -1,5 +1,6 @@
 .PHONY=
 
+include Makefile.vars
 #
 # Zambezii Kernel top-level makefile.
 #
@@ -72,4 +73,8 @@ aclean: fonyphile
 
 fonyphile:
 	rm -f clean aclean
+
+# Spotless removes the configuration created by the coonfigure script.
+spotless: fonyphile clean
+	rm -f Makefile.vars config.h
 

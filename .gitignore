@@ -16,3 +16,6 @@ foo
 *.tmp
 .bochsrc
 *.iso
+Makefile.vars
+config.h
+

@@ -14,7 +14,7 @@ EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a firmwareCore.a \
 	memoryTrib.a interruptTrib.a execTrib.a \
 	timerTrib.a cpuTrib.a processTrib.a vfsTrib.a taskTrib.a debugTrib.a \
 	platformCore.a chipset.a chipsetCore.a archCore.a firmwareCore.a \
-	__kclasses.a __kstdlib.a __kcxxabi.a lang.a libx86mp.a libacpi.a 
+	__kclasses.a __kstdlib.a __kcxxabi.a libx86mp.a libacpi.a 
 
 GOAL=../core.o
 
@@ -90,11 +90,5 @@ __kclasses.a:
 	@echo Building __kclasses/ dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd __kclasses; make
-
-lang.a:
-	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	@echo Building lang/ dir.
-	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd lang/$(ZLANG); make
 
 
