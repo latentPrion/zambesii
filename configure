@@ -19,7 +19,8 @@ builddir="$(pwd)"
 srcdir="$builddir/${0%'/configure'}"
 
 echo "Builddir is $builddir srcdir is $srcdir."
-echo 'Zambesii kernel interactive build configuration script.'; echo
+echo 'Zambesii kernel interactive build configuration script.';
+echo 'Only in-tree builds are supported until autotools support is added.'; echo
 echo 'What compiler toolchain will you be using for C/C++ source?
 	Currently supported options: gnu.'
 read hllToolchain
@@ -167,6 +168,8 @@ if [ $isoTest == 127 ]; then
 fi
 isoProg='genisoimage'
 
+# TODO: Do a check for a 'make' utility.
+
 # Now generate the Makefile.vars file.
 # This is really nothing more than a file written in Makefile syntax that
 # defines a series of variables for use in make. The variables encode the
@@ -198,7 +201,7 @@ echo "" >>Makefile.vars
 echo "Generating config.h."
 echo "#ifndef _CONFIG_H" >config.h
 echo "	#define _CONFIG_H" >>config.h;
-echo "" >config.h
+echo "" >>config.h
 if [ $arch == 'x8632' ]; then echo "#define CONFIG_ARCH_x86_32" >>config.h; fi
 if [ $chipset == 'ibmPc' ]; then echo "#define CONFIG_CHIPSET_IBM_PC" >>config.h; fi
 if [ $firmware == 'ibmPcBios' ]; then echo "#define CONFIG_FIRMWARE_IBM_PC_BIOS" >>config.h; fi
@@ -206,21 +209,8 @@ echo "" >>config.h
 echo "#endif" >>config.h
 echo "" >>config.h
 
-# Create the directory structure for the build and copy the Makefiles to the builddir.
-echo "Generating the build tree."
-mkdir -p core libraries resources drivers programs
-mkdir -p "core/arch/$arch" "core/chipset/$chipset" "core/firmware/$firmware" "core/platform/$arch-$chipset" \
-	"core/__kthreads/$arch" "core/kernel/common" "core/kernel/$arch" "core/__kclasses"
-mkdir -p "core/__kstdlib/$hllCxxAbi" "core/commonlibs/libx86mp" "core/commonlibs/libacpi"
-mkdir -p "core/kernel/common/taskTrib" "core/kernel/common/processTrib" "core/kernel/common/memoryTrib" \
-	"core/kernel/common/cpuTrib" "core/kernel/common/interruptTrib" "core/kernel/common/timerTrib" \
-	"core/kernel/common/execTrib" "core/kernel/common/vfsTrib" "core/kernel/common/debugTrib"
 
 echo "Copying Makefiles."
 cp -f "$srcdir/Makefile.in" "$builddir/Makefile"
 cp -f "$srcdir/core/Makefile.in" "$builddir/core/Makefile"
-cp -f "$srcdir/core/clean.mk" "$builddir/core/clean.mk"
-cp -f "$srcdir/core/__kstdlib/__kstdlib.mk" "$builddir/core/__kstdlib/__kstdlib.mk"
-cp -f "$srcdir/core/kernel/common/tribs.mk" "$builddir/core/kernel/common/tribs.mk"
-cp -f "$srcdir/core/commonlibs/libs.mk" "$builddir/core/commonlibs/libs.mk"
 
