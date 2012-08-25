@@ -1,6 +1,7 @@
 
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/ioApic.h>
+#include <commonlibs/libx86mp/lapic.h>
 
 
 error_t x86IoApic::ioApicC::identifyIrq(uarch_t physicalId, ubit16 *__kpin)

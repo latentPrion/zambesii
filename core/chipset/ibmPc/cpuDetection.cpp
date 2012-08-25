@@ -598,8 +598,10 @@ error_t ibmPc_cpuMod_setSmpMode(void)
 
 	memcpy8(destAddr, srcAddr, copySize);
 
-	// Mask all ISA IRQs at the PIC:
+	// Mask all ISA IRQs at the PIC and send an EOI to clear In-service reg.
 	ibmPc_i8259a_maskAll();
+	ibmPc_i8259a_sendEoi(0);
+	ibmPc_i8259a_sendEoi(8);
 
 	/** EXPLANATION
 	 * Next, we parse the MP tables to see if the chipset has the IMCR

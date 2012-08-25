@@ -70,7 +70,10 @@ error_t ibmPc_i8259a_initialize(void)
 	io::write8(PIC_PIC2_DATA, 0x01); PIC_IO_DELAY(i, PIC_IO_DELAY_COUNTER);
 
 	ibmPc_i8259a_maskAll();
-	// Send EOI to both PICs;
+	/* Send EOI to both PICs; Can't use ibmPc_i8269a_sendEoi() here
+	 * because no __kpin IDs have been assigned yet, and that API call
+	 * requires a __kpin ID as an argument.
+	 **/
 	io::write8(PIC_PIC1_CMD, 0x20);
 	io::write8(PIC_PIC2_CMD, 0x20);
 
@@ -189,12 +192,21 @@ void ibmPc_i8259a_maskAll(void)
 {
 	io::write8(PIC_PIC1_DATA, 0xFF);
 	io::write8(PIC_PIC2_DATA, 0xFF);
+
+	for (ubit8 i=0; i<16; i++) {
+		__KFLAG_UNSET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
+	};
 }
 	
 void ibmPc_i8259a_unmaskAll(void)
 {
 	io::write8(PIC_PIC1_DATA, 0x0);
 	io::write8(PIC_PIC2_DATA, 0x0);
+
+	for (ubit8 i=0; i<16; i++) {
+		__KFLAG_SET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
+	};
+
 }
 
 void ibmPc_i8259a_sendEoi(ubit16 __kid)

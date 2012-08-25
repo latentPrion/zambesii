@@ -97,7 +97,7 @@ static void sortListBy__kids(ubit8 nPins, zkcmIrqPinS *const list)
 
 error_t x86IoApic::ioApicC::initialize(void)
 {
-	cpu_t		cpu;
+	cpu_t		cpu=0;
 	ubit8		vector, polarity, triggMode, dummy;
 
 	// Map the IO-APIC into the kernel vaddrspace.
@@ -133,7 +133,6 @@ error_t x86IoApic::ioApicC::initialize(void)
 			&dummy, &dummy,
 			&polarity, &triggMode);
 
-
 		// Fill in ACPI Global IRQ ID and set Intel MP ID to invalid.
 		irqPinList[i].intelMpId = IRQPIN_INTELMPID_INVALID;
 		if (acpiGirqBase != IRQPIN_ACPIID_INVALID) {
@@ -158,7 +157,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	__kpinBase = irqPinList[0].__kid;
 
 	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x, "
-		"nIrqs %d, Girqbase %d.\n",
+		"nIrqs %d, Girqbase %d.\n\tAll pins masked off for now.",
 		id, vaddr.rsrc, paddr, version, nIrqs, acpiGirqBase);
 
 	// Now check to see if there are entries for each pin in the MP tables.

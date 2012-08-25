@@ -182,6 +182,7 @@ namespace x86IoApic
 	void unmaskAll(void);
 	inline sarch_t irqIsEnabled(ubit16 __kpin);
 
+	// sendEoi() is handled in ibmPc's irqControl ZKCM module.
 	// void maskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t *mask0);
 	// void unmaskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
 }
