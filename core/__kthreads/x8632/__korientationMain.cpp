@@ -14,7 +14,7 @@
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
 #include <__kclasses/prioQueue.h>
-#include <__kclasses/ptrDoubleList.h>
+#include <__kclasses/sortedPtrDoubleList.h>
 #include <__kthreads/__korientation.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/timerTrib/timerTrib.h>

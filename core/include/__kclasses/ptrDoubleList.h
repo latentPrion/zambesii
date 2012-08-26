@@ -37,7 +37,7 @@ public:
 
 	uarch_t	getNItems(void);
 
-private:
+protected:
 	struct listNodeS
 	{
 		T		*item;
@@ -107,7 +107,14 @@ error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
 	listNodeS	*newNode;
 
 	newNode = new listNodeS;
-	if (newNode == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (newNode == __KNULL)
+	{
+		__kprintf(ERROR PTRDBLLIST"addItem(0x%p,%s): Failed to alloc "
+			"mem for new node.\n",
+			item, (mode == PTRDBLLIST_ADD_HEAD)?"head":"tail");
+
+		return ERROR_MEMORY_NOMEM;
+	};
 
 	newNode->item = item;
 
@@ -209,7 +216,10 @@ T *pointerDoubleListC<T>::popFromHead(void)
 	if (list.rsrc.head != __KNULL)
 	{
 		tmp = list.rsrc.head;
-		list.rsrc.head->prev = __KNULL;
+		if (list.rsrc.head->next != __KNULL) {
+			list.rsrc.head->next->prev = __KNULL;
+		};
+
 		list.rsrc.head = list.rsrc.head->next;
 		list.rsrc.nItems--;
 
@@ -240,7 +250,10 @@ T *pointerDoubleListC<T>::popFromTail(void)
 	if (list.rsrc.tail != __KNULL)
 	{
 		tmp = list.rsrc.tail;
-		list.rsrc.tail->next = __KNULL;
+		if (list.rsrc.tail->prev != __KNULL) {
+			list.rsrc.tail->prev->next = __KNULL;
+		};
+
 		list.rsrc.tail = list.rsrc.tail->prev;
 		list.rsrc.nItems--;
 
