@@ -3,6 +3,7 @@
 #include "cpuDetection.h"
 #include "terminalMod.h"
 #include "irqControl.h"
+#include "timerControl.h"
 
 struct zkcmIrqControlModS	ibmPc_irqControlMod =
 {
@@ -71,5 +72,15 @@ struct zkcmCpuDetectionModS		ibmPc_cpuDetectionMod =
 	&ibmPc_cpuMod_getNumaMap,
 
 	&ibmPc_cpuMod_powerControl
+};
+
+struct zkcmTimerControlModS		ibmPc_timerControlMod =
+{
+	&ibmPc_timerControl_initialize,
+	&ibmPc_timerControl_shutdown,
+	&ibmPc_timerControl_suspend,
+	&ibmPc_timerControl_restore,
+
+	&ibmPc_timerControl_getChipsetSafeTimerPeriods
 };
 

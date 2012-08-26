@@ -51,7 +51,6 @@ struct zkcmTimerControlModS
 	 * their model as safe.
 	 **/
 	ubit32 (*getChipsetSafeTimerPeriods)(void);
-
 };
 
 #endif

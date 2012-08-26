@@ -33,12 +33,13 @@ public:
 	time_t	getCurrentTime(void);
 	date_t	getCurrentDate(void);
 
+	/**	Pending redesign.
 	mstime_t	getCurrentTickMs(void);
 	mstime_t	getUptimeTickMs(void);
 	mstime_t	getTickIntervalSinceMs(mstime_t);
 
 	void	setTimeoutMs(mstime_t, void (*)());
-	void	setContinuousTimerMs(mstime_t, void (*)());
+	void	setContinuousTimerMs(mstime_t, void (*)()); */
 
 	void dump(void);
 

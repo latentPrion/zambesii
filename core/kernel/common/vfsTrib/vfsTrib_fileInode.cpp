@@ -45,13 +45,13 @@ inodeLow(_inodeLow), inodeHigh(_inodeHigh)
 	refCount = 0;
 	fileSize = _fileSize;
 
-	DATEU32_TO_DATE(createdDate, 0, 0, 0);
-	DATEU32_TO_DATE(modifiedDate, 0, 0, 0);
-	DATEU32_TO_DATE(accessedDate, 0, 0, 0);
+	createdDate = 0;
+	modifiedDate = 0;
+	accessedDate = 0;
 
-	TIMEU32_TO_TIME(createdTime, 0, 0, 0, 0);
-	TIMEU32_TO_TIME(modifiedTime, 0, 0, 0, 0);
-	TIMEU32_TO_TIME(accessedTime, 0, 0, 0, 0);
+	createdTime = 0;
+	modifiedTime = 0;
+	accessedTime = 0;
 }
 
 error_t vfsFileInodeC::initialize(void)

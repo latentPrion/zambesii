@@ -3,6 +3,7 @@
 #include "memoryDetection.h"
 #include "cpuDetection.h"
 #include "irqControl.h"
+#include "timerControl.h"
 #include "terminalMod.h"
 
 
@@ -25,6 +26,7 @@ struct zkcmCoreS		zkcmCore =
 	&ibmPc_cpuDetectionMod,
 	__KNULL,
 	&ibmPc_irqControlMod,
+	&ibmPc_timerControlMod,
 
 	{
 		&ibmPc_terminalMod,

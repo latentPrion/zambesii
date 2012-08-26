@@ -5,6 +5,7 @@
 	#include <chipset/zkcm/memoryDetection.h>
 	#include <chipset/zkcm/cpuDetection.h>
 	#include <chipset/zkcm/irqControl.h>
+	#include <chipset/zkcm/timerControl.h>
 	#include <chipset/pkg/watchdogMod.h>
 	#include <chipset/pkg/debugMod.h>
 
@@ -24,6 +25,7 @@ struct zkcmCoreS
 	// XXX: Still to be updated.
 	struct watchdogModS			*watchdog;
 	struct zkcmIrqControlModS		*irqControl;
+	struct zkcmTimerControlModS		*timerControl;
 
 	struct debugModS			*debug[4];
 };

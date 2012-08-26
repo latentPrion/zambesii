@@ -35,12 +35,6 @@
 	 *	TIMERTRIB_DATE_GET_YEAR(myBirthday));
 	 **/
 
-#define TIMERTRIB_DATE_DAY_SHIFT
-#define TIMERTRIB_DATE_DAY_MASK
-
-#define TIMERTRIB_DATE_MONTH_SHIFT
-#define TIMERTRIB_DATE_MONTH_MASK
-
 /**	EXPLANATION:
  * Year is given 18 bits to represent a set of dates ranging from 100,000 B.C.E
  * to 100,000 C.E. I think that is adequate for any program having been written
@@ -127,7 +121,7 @@ typedef ubit32		date_t;
 #define TIMERTRIB_TIME_GET_MSECOND(__t)		\
 	(((__t) >> TIMERTRIB_TIME_MSECOND_SHIFT) & TIMERTRIB_TIME_MSECOND_MASK)
 
-#define TIMERTRIB_TIME_SET_SECOND(__ms)		\
+#define TIMERTRIB_TIME_SET_MSECOND(__ms)		\
 	(((__ms) & TIMERTRIB_TIME_MSECOND_MASK) << TIMERTRIB_TIME_MSECOND_SHIFT)
 
 typedef ubit32		time_t;
