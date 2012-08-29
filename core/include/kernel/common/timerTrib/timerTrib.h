@@ -6,7 +6,9 @@
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
+	#include <kernel/common/processId.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
+	#include <kernel/common/timerTrib/timerQueue.h>
 	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
 
 #define TIMERTRIB_WATCHDOG_ALREADY_REGISTERED	(1)
@@ -30,8 +32,8 @@ public:
 	void updateContinuousClock(void);
 	void updateScheduledClock(uarch_t sourceId);
 
-	time_t	getCurrentTime(void);
-	date_t	getCurrentDate(void);
+	void getCurrentTime(timeS *);
+	date_t getCurrentDate(void);
 
 	/**	Pending redesign.
 	mstime_t	getCurrentTickMs(void);
@@ -52,10 +54,11 @@ private:
 		uarch_t		interval;
 	};
 
+	timerQueueC	period100ms, period10ms, period1ms;
 	uarch_t		flags;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
 
-	// Please LOOK at the source for clock_t in /core/include/__kclasses.
+	// To be deprecated in favour of a timestampS object.
 	sharedResourceGroupC<waitLockC, clock_t>	continuousClock;
 };
 

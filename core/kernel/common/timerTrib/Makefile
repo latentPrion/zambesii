@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../../timerTrib.a
-OBJFILES=timerTrib.o
+OBJFILES=timerTrib.o timerQueue.o
 
 all: Makefile $(DELIVERABLE)
 

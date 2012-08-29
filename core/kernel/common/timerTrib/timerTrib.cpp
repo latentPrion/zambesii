@@ -7,6 +7,8 @@
 
 
 timerTribC::timerTribC(void)
+:
+period100ms(100000), period10ms(10000), period1ms(1000)
 {
 	watchdog.rsrc.interval = 0;
 	watchdog.rsrc.isr = __KNULL;

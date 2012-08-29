@@ -2,6 +2,8 @@
 	#define _TIMER_QUEUE_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kclasses/sortedPtrDoubleList.h>
+	#include <kernel/common/timerTrib/timeTypes.h>
 
 	/**	EXPLANATION:
 	 * The subject of Zambesii timer source management as a whole will
@@ -38,8 +40,28 @@
 
 class timerQueueC
 {
+public:
+	timerQueueC(uarch_t nativePeriod);
+	error_t initialize(void);
+	~timerQueueC(void) {};
+
+public:
+	ubit32 getCurrentPeriod(void) { return currentPeriod; };
+	status_t setCurrentPeriod(ubit32 p) { currentPeriod = p; return 0; };
+	ubit32 getNativePeriod(void) { return nativePeriod; };
+	status_t setNativePeriod(ubit32 p) { nativePeriod = p; return 0; };
+
 private:
+	// Specified in nanoseconds.
 	ubit32		currentPeriod, nativePeriod;
+
+	/* Slot for a schedtimer on a single CPU board whose schedtimer relies
+	 * on a chipset timer source rather than a per-CPU timer.
+	 **/
+	timerObjectS	schedTimer;
+
+	// The actual internal queue instance for timer request objects.
+	sortedPointerDoubleListC<timerObjectS, ubit32>	queue;
 };
 
 #endif

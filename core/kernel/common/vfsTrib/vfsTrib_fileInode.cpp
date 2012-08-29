@@ -1,4 +1,5 @@
 
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/vfsTrib/vfsTrib.h>
@@ -49,9 +50,9 @@ inodeLow(_inodeLow), inodeHigh(_inodeHigh)
 	modifiedDate = 0;
 	accessedDate = 0;
 
-	createdTime = 0;
-	modifiedTime = 0;
-	accessedTime = 0;
+	memset(&createdTime, 0, sizeof(createdTime));
+	memset(&modifiedTime, 0, sizeof(modifiedTime));
+	memset(&modifiedTime, 0, sizeof(accessedTime));
 }
 
 error_t vfsFileInodeC::initialize(void)

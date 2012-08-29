@@ -3,6 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kcxxlib/new>
+	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
@@ -21,7 +22,7 @@ public:
 		list.rsrc.nItems = 0;
 	}
 
-	~sortedPointerDoubleListC(void);
+	~sortedPointerDoubleListC(void) {};
 
 	error_t initialize(void) { return ERROR_SUCCESS; };
 

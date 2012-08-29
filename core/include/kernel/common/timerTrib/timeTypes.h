@@ -2,6 +2,7 @@
 	#define _TIMER_TRIBUTARY_TIME_TYPES_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <kernel/common/processId.h>
 
 	/**	EXPLANATION:
 	 * Timer Tributary time types: Zambesii types used to represent dates
@@ -15,13 +16,15 @@
 	 * seconds elapsed since January X XXXX.
 	 *
 	 *	TIME:
-	 * Time is represented as 24-hour clock value packed into a 32-bit
-	 * integer. A locale which prefers some other format may easily convert
-	 * to and from the 24-hour clock format, as it is widely known. I prefer
-	 * this to using seconds elapsed since January X XXXX.
+	 * Time is stored as the offset, in seconds from the current date. I
+	 * prefer this to using seconds elapsed since January X XXXX.
 	 *
-	 * Time is accurate within this abstract type up to millisecond
-	 * precision.
+	 * The time structure also has an 'nseconds' member, which represents
+	 * the number of nanoseconds elapsed since the last concrete second.
+	 * Therefore the structure is able to record time with up to nanosecond
+	 * accuracy, though most of the time the actual value stored in the
+	 * structure will be accurate to the millisecond rather than the
+	 * nanosecond.
 	 *
 	 *	MACRO USAGE:
 	 * date_t	myBirthday;
@@ -88,43 +91,108 @@
 
 typedef ubit32		date_t;
 
-// Hour set/get macros.
-#define TIMERTRIB_TIME_HOUR_SHIFT		(0)
-#define TIMERTRIB_TIME_HOUR_MASK		(0x1F)
-#define TIMERTRIB_TIME_GET_HOUR(__t)		\
-	(((__t) >> TIMERTRIB_TIME_HOUR_SHIFT) & TIMERTRIB_TIME_HOUR_MASK)
 
-#define TIMERTRIB_TIME_SET_HOUR(__h)		\
-	(((__h) & TIMERTRIB_TIME_HOUR_MASK) << TIMERTRIB_TIME_HOUR_SHIFT)
+/**	EXPLANATION:
+ * The kernel stores time as the number of seconds elapsed since the start of
+ * the current day.
+ *
+ * Timestamps are a combination of a dateS and a timeS, which together give
+ * an absolute value for the current date and time, along with a nanosecond
+ * magnitude value for up to nanosecond time precision.
+ *
+ * 17 bits are needed to store the number of seconds in a day. A further 20 bits
+ * are required to store the number of nanoseconds elapsed for up to nanosecond
+ * time accuracy.
+ *
+ * The time data type will take up more than 32 bits, no matter how I represent
+ * it, so I decided to split the units into two 32-bit integers. It's still the
+ * same 64 bits I was going to use anyway. Usage should be intuitive.
+ *
+ *	USAGE:
+ * timeS	myTime = { 0, 0 };
+ * ubit8	h, m, s;
+ *
+ * myTime.seconds = 12345;
+ * myTime.nseconds = 12345;
+ *
+ * h = myTime.seconds / 3600;
+ * m = myTime.seconds / 60 - (h * 60);
+ * s = myTime.seconds % 60;
+ * __kprintf(NOTICE"Current time %02d:%02d:%02d, %dns.",
+ *	h, m, s, myTime.nseconds);
+ **/
+struct timeS
+{
+	inline int operator ==(timeS &t)
+	{
+		return (seconds == t.seconds) && (nseconds == t.nseconds);
+	}
 
-// Minute set/get macros.
-#define TIMERTRIB_TIME_MINUTE_SHIFT		(5)
-#define TIMERTRIB_TIME_MINUTE_MASK		(0x3F)
-#define TIMERTRIB_TIME_GET_MINUTE(__t)		\
-	(((__t) >> TIMERTRIB_TIME_MINUTE_SHIFT) & TIMERTRIB_TIME_MINUTE_MASK)
+	inline int operator >(timeS &t)
+	{
+		return (seconds > t.seconds)
+			|| ((nseconds > t.nseconds) && (seconds >= t.seconds));
+	}
 
-#define TIMERTRIB_TIME_SET_MINUTE(__m)		\
-	(((__m) & TIMERTRIB_TIME_MINUTE_MASK) << TIMERTRIB_TIME_MINUTE_SHIFT)
+	inline int operator >=(timeS &t)
+	{
+		return (*this == t) || (*this > t);
+	}
 
-// Second set/get macros.
-#define TIMERTRIB_TIME_SECOND_SHIFT		(11)
-#define TIMERTRIB_TIME_SECOND_MASK		(0x3F)
-#define TIMERTRIB_TIME_GET_SECOND(__t)		\
-	(((__t) >> TIMERTRIB_TIME_SECOND_SHIFT) & TIMERTRIB_TIME_SECOND_MASK)
+	inline int operator <(timeS &t)
+	{
+		return (seconds < t.seconds)
+			|| ((nseconds < t.nseconds) && (seconds <= t.seconds));
+	}
 
-#define TIMERTRIB_TIME_SET_SECOND(__s)		\
-	(((__s) & TIMERTRIB_TIME_SECOND_MASK) << TIMERTRIB_TIME_SECOND_SHIFT)
+	inline int operator <=(timeS &t)
+	{
+		return (*this == t) || (*this < t);
+	}
 
-// Milli-second set/get macros.
-#define TIMERTRIB_TIME_MSECOND_SHIFT		(17)
-#define TIMERTRIB_TIME_MSECOND_MASK		(0x3FF)
-#define TIMERTRIB_TIME_GET_MSECOND(__t)		\
-	(((__t) >> TIMERTRIB_TIME_MSECOND_SHIFT) & TIMERTRIB_TIME_MSECOND_MASK)
+	ubit32		nseconds, seconds;
+};
 
-#define TIMERTRIB_TIME_SET_MSECOND(__ms)		\
-	(((__ms) & TIMERTRIB_TIME_MSECOND_MASK) << TIMERTRIB_TIME_MSECOND_SHIFT)
+struct timestampS
+{
+	inline int operator ==(timestampS &t)
+	{
+		return (date == t.date) && (time == t.time);
+	}
 
-typedef ubit32		time_t;
+	inline int operator >(timestampS &t)
+	{
+		return (date > t.date)
+			|| ((time > t.time) && (date >= t.date));
+	}
+
+	inline int operator >=(timestampS &t)
+	{
+		return (*this == t) || (*this > t);
+	}
+
+	inline int operator <(timestampS &t)
+	{
+		return (date < t.date)
+			|| ((time < t.time) && (date <= t.date));
+	}
+
+	inline int operator <=(timestampS &t)
+	{
+		return (*this == t) || (*this < t);
+	}
+
+	timeS		time;
+	date_t		date;
+};
+
+// This data type is used by the timerTrib to represent timer service requests.
+struct timerObjectS
+{
+	// Process and threadID to wake up when this object expires.
+	processId_t	thread;
+	timestampS	expirationTime, placementTime;
+};
 
 #endif
 

@@ -44,7 +44,7 @@ public:
 	ubit32			nFiles;
 	ubit32			refCount;
 	date_t			createdDate, modifiedDate, accessedDate;
-	time_t			createdTime, modifiedTime, accessedTime;
+	timeS			createdTime, modifiedTime, accessedTime;
 };
 
 class vfsFileInodeC
@@ -63,7 +63,7 @@ public:
 	uarch_t			fileSize;
 	ubit32			refCount;
 	date_t			createdDate, modifiedDate, accessedDate;
-	time_t			createdTime, modifiedTime, accessedTime;
+	timeS			createdTime, modifiedTime, accessedTime;
 };		
 
 
