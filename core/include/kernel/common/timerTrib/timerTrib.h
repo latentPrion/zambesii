@@ -11,6 +11,8 @@
 	#include <kernel/common/timerTrib/timerQueue.h>
 	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
 
+#define TIMERTRIB				"TimerTrib: "
+
 #define TIMERTRIB_WATCHDOG_ALREADY_REGISTERED	(1)
 
 #define TIMERTRIB_PER_CPU_CLOCK_EMU		(1<<0)
@@ -22,6 +24,7 @@ public tributaryC
 public:
 	timerTribC(void);
 	error_t initialize(void);
+	error_t initialize2(void);
 	~timerTribC(void);
 
 public:

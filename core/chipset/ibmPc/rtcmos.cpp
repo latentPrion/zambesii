@@ -235,8 +235,18 @@ error_t ibmPc_rtc_initialize(void)
 	rtccmos24HourTime =
 		__KFLAG_TEST(status1, RTC_STATUS1_FLAGS_TIME_FORMAT_24HRS);
 
+	if (!rtccmos24HourTime) {
+		__kprintf(ERROR RTCCMOS"Chip reports 12 hour format time.\n");
+	};
+
 	rtccmosBcdDateTime =
 		!__KFLAG_TEST(status1, RTC_STATUS1_FLAGS_DATETIME_FORMAT_BIN);
+
+	if (!rtccmosBcdDateTime)
+	{
+		__kprintf(WARNING RTCCMOS"Date/Time is not in BCD. Possibly "
+			"unstable or non-compliant chip.\n");
+	};
 
 	memset(&systemTime.rsrc, 0, sizeof(systemTime.rsrc));
 
@@ -273,10 +283,6 @@ status_t ibmPc_rtc_getHardwareDate(date_t *date)
 
 	if (rtccmosBcdDateTime)
 	{
-		__kprintf(WARNING RTCCMOS"Date is in BCD. Original BCD values "
-			"ymd: %d:%d-%d-%d.\n",
-			year >> 8, year & 0xFF, month, day);
-
 		year = (bcd8ToUbit8(year >> 8) * 100)
 			+ bcd8ToUbit8(year & 0xFF);
 
@@ -312,10 +318,6 @@ status_t ibmPc_rtc_getHardwareTime(timeS *time)
 
 	if (rtccmosBcdDateTime)
 	{
-		__kprintf(WARNING RTCCMOS"Time is in BCD. Original BCD values "
-			"hms: %d:%d:%d.\n",
-			hour, min, sec);
-
 		hour = bcd8ToUbit8(hour);
 		min = bcd8ToUbit8(min);
 		sec = bcd8ToUbit8(sec);
@@ -325,18 +327,15 @@ status_t ibmPc_rtc_getHardwareTime(timeS *time)
 	 * do we read the "AM"/"PM" value from? Not shown anywhere in the
 	 * PC-AT Technical reference guide, and it says in there that the
 	 * default is 24-hour time, so if any chipset has non-24-hour
-	 * values, we'll just refuse to take its time value.
+	 * values, we may just refuse to take its time value.
 	 *
 	 * Alternatively, I may decide to just return whatever value is in
 	 * the hour register silently: broken board is broken, and it will fail
 	 * somewhere else where the kernel will have a better reason to present
 	 * noticeably whiny behaviour.
-	 *
-	 * ^ NOTE: Chose to do the latter.
 	 **/
 	if (!rtccmos24HourTime) {
 		// Do nothing, but leave this condition here for reference.
-		__kprintf(WARNING RTCCMOS"Chipset uses 12 hour time.\n");
 	};
 
 	time->seconds = hour * 3600 + min * 60 + sec;

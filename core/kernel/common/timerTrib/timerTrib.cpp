@@ -37,9 +37,61 @@ timerTribC::~timerTribC(void)
 {
 }
 
+error_t timerTribC::initialize2(void)
+{
+	error_t			ret;
+	zkcmTimerControlModS	*timerControl;
+	ubit8			h, m, s;
+
+	/**	EXPLANATION:
+	 * Initializes the chipset's Timer Control ZKCM module, fills out the
+	 * boot timestamp, and sets up the Timer Tributary's Timer queues.
+	 **/
+	timerControl = zkcmCore.timerControl;
+	ret = (*timerControl->initialize)();
+	if (ret != ERROR_SUCCESS) {
+		return ret;
+	};
+
+	/* For chipsets which have accurate time keeping hardware, the following
+	 * step is not necessary and those chipsets will generally do nothing.
+	 *
+	 * However, for chipsets where reading the hardware clock is very
+	 * expensive, or where the hardware clock's accuracy is unreliable, the
+	 * chipset may need to set up a timer source and do manual time keeping
+	 * using a cached time value in RAM. For these chipsets, reading the
+	 * current date/time right now /may/ yield a blank timestamp, depending
+	 * on how they go about setting up their manual timer source.
+	 *
+	 * For that reason, we use refreshCachedSystemTime() to force such a
+	 * chipset to update the value they return to us with the correct time
+	 * value from the hardware clock, so we can get a relatively accurate
+	 * boot timestamp value.
+	 **/
+	(*timerControl->refreshCachedSystemTime)();
+	/* We take the time value first because the date value is unlikely to
+	 * change in the next few milliseconds.
+	 **/
+	(*timerControl->getCurrentTime)(&bootTimestamp.time);
+	(*timerControl->getCurrentDate)(&bootTimestamp.date);
+
+	h = bootTimestamp.time.seconds / 3600;
+	m = (bootTimestamp.time.seconds / 60) - (h * 60);
+	s = bootTimestamp.time.seconds % 60;
+
+	__kprintf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d,\n"
+		"\tTime %d:%d:%d, %dns.\n",
+		TIMERTRIB_DATE_GET_YEAR(bootTimestamp.date),
+		TIMERTRIB_DATE_GET_MONTH(bootTimestamp.date),
+		TIMERTRIB_DATE_GET_DAY(bootTimestamp.date),
+		h, m, s, bootTimestamp.time.nseconds);
+
+	return ERROR_SUCCESS;
+}
+
 void timerTribC::dump(void)
 {
-	__kprintf(NOTICE"TimerTrib: dumping.\n");
+	__kprintf(NOTICE TIMERTRIB"Dumping.\n");
 
 	__kprintf(NOTICE"\tWatchdog: ");
 		if (watchdog.rsrc.isr == __KNULL) {
