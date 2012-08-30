@@ -2,22 +2,26 @@
 	#define _ZKCM_TIMER_CONTROL_MODULE_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <kernel/common/timerTrib/timeTypes.h>
+	#include <kernel/common/processId.h>
 
 	/**	EXPLANATION:
 	 * The Timer Control module, part of the Zambesii Kernel Chipset
 	 * Module API aggregate, is the interface that the kernel calls on to
-	 * manage timer sources on a chipset. As a rule, the kernel will
-	 * directly manage timer devices within ZKCM. However, there is no
-	 * plan to disallow UDI drivers for timers on a chipset.
+	 * manage timer sources on a chipset. The kernel will
+	 * directly manage timer devices within ZKCM. There is no
+	 * plan to allow UDI drivers for timers on a chipset.
 	 *
 	 * The Timer Control mod will present the kernel with a list of timer
 	 * sources and, if the kernel ever becomes interested, timer devices,
 	 * which can be filtered based on programming I/O latency, supported
-	 * frequencies, and any other criteria necessary. A timer device may
+	 * resolutions, and any other criteria necessary. A timer device may
 	 * provide more than one timer source.
 	 **/
 
-// Safe timer period bitmap: bit position significance.
+/**	Constants used with zkcmTimerControlModS and the Timer Control Mod API.
+ **/
+// Values for bitfield returned by getChipsetSafeTimerPeriods().
 #define CHIPSET_TIMERS_1S_SAFE		(1<<0)
 #define CHIPSET_TIMERS_100MS_SAFE	(1<<1)
 #define CHIPSET_TIMERS_10MS_SAFE	(1<<2)
@@ -25,7 +29,6 @@
 #define CHIPSET_TIMERS_100NS_SAFE	(1<<4)
 #define CHIPSET_TIMERS_10NS_SAFE	(1<<5)
 #define CHIPSET_TIMERS_1NS_SAFE		(1<<6)
-
 
 struct zkcmTimerControlModS
 {
@@ -51,6 +54,57 @@ struct zkcmTimerControlModS
 	 * their model as safe.
 	 **/
 	ubit32 (*getChipsetSafeTimerPeriods)(void);
+
+	status_t (*getCurrentDate)(date_t *date);
+	status_t (*getCurrentTime)(struct timeS *currTime);
+	/* The chipset may cache the sytem time in RAM, and not actually be
+	 * reading from the hardware clock on time API calls. This updates the
+	 * the cached RAM value by reading from the hardware clock anew.
+	 **/
+	void (*refreshCachedSystemTime)(void);
+	/* The chipset may cache the system time in RAM, and not actually be
+	 * updating the hardware clock when the system time value in RAM
+	 * changes. This is especially so in situations where the hardware
+	 * clock is imprecise, and the chipset is manually maintaining a
+	 * system clock in RAM.
+	 *
+	 * This function flushes the cached RAM value to the hardware clock.
+	 **/
+	void (*flushCachedSystemTime)(void);
+
+	/**	EXPLANATION:
+	 * This is the timer source search and filter API. It allows the caller
+	 * to ask the timer control module to return all timer sources that
+	 * match the criteria passed as arguments. This allows the caller
+	 * to query the chipset for available timer sources that specifically
+	 * meet its needs.
+	 *
+	 * Should no such timer sources be available, the caller may do another
+	 * search with less stringent constraints, until an acceptable timer
+	 * is found, or the caller determines that it will be unable to operate
+	 * reliably on this chipset.
+	 *
+	 * Searching is done by calling filterTimerSources() repeatedly,
+	 * passing a NULL handle on the first call, and subsequently passing
+	 * the same handle back until the function returns NULL.
+	 *
+	 * See include/chipset/zkcm/timerSource.h for preprocessor constants.
+	 **/
+	struct zkcmTimerSourceS *(*filterTimerSources)(
+		ubit8 type,		// PER_CPU or CHIPSET.
+		ubit32 modes,		// PERIODIC | ONESHOT.
+		ubit32 resolutions,	// 1s|100ms|10ms|1ms|100ns|10ns|1ns
+		ubit8 ioLatency,	// LOW, MODERATE or HIGH.
+		ubit8 precision,	// EXACT, NEGLIGABLE, OVERFLOW
+					// or UNDERFLOW
+		void *handle);
+
+	/**	EXPLANATION:
+	 * The chipset calls this function to register new timer sources as
+	 * they are detected. They are then added to the list that is searchable
+	 * by filterTimerSources.
+	 **/
+	error_t (*registerNewTimerSource)(struct zkcmTimerSourceS *timerSource);
 };
 
 #endif

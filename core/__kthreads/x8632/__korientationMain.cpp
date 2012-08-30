@@ -91,6 +91,24 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
 
+	date_t		date;
+	timeS		time;
+	ubit8		h, m, s;
+
+	(*zkcmCore.timerControl->initialize)();
+	(*zkcmCore.timerControl->refreshCachedSystemTime)();
+	(*zkcmCore.timerControl->getCurrentDate)(&date);
+	(*zkcmCore.timerControl->getCurrentTime)(&time);
+
+	h = time.seconds / 3600;
+	m = (time.seconds / 60) - (h * 3600);
+	s = time.seconds % 60;
+
+	__kprintf(NOTICE ORIENT"Date: %d-%d-%d, Time %d:%d:%d, %dns.\n",
+		TIMERTRIB_DATE_GET_YEAR(date), TIMERTRIB_DATE_GET_MONTH(date),
+		TIMERTRIB_DATE_GET_DAY(date),
+		h, m, s, time.nseconds);
+
 for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);

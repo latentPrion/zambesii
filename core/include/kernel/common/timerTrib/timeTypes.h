@@ -123,6 +123,7 @@ typedef ubit32		date_t;
  **/
 struct timeS
 {
+#ifdef __cplusplus
 	inline int operator ==(timeS &t)
 	{
 		return (seconds == t.seconds) && (nseconds == t.nseconds);
@@ -149,12 +150,14 @@ struct timeS
 	{
 		return (*this == t) || (*this < t);
 	}
+#endif
 
 	ubit32		nseconds, seconds;
 };
 
 struct timestampS
 {
+#ifdef __cplusplus
 	inline int operator ==(timestampS &t)
 	{
 		return (date == t.date) && (time == t.time);
@@ -181,8 +184,9 @@ struct timestampS
 	{
 		return (*this == t) || (*this < t);
 	}
+#endif
 
-	timeS		time;
+	struct timeS	time;
 	date_t		date;
 };
 
@@ -190,8 +194,8 @@ struct timestampS
 struct timerObjectS
 {
 	// Process and threadID to wake up when this object expires.
-	processId_t	thread;
-	timestampS	expirationTime, placementTime;
+	processId_t		thread;
+	struct timestampS	expirationTime, placementTime;
 };
 
 #endif

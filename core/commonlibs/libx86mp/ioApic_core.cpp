@@ -157,7 +157,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	__kpinBase = irqPinList[0].__kid;
 
 	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x, "
-		"nIrqs %d, Girqbase %d.\n\tAll pins masked off for now.",
+		"nIrqs %d, Girqbase %d.\n\tAll pins masked off for now.\n.",
 		id, vaddr.rsrc, paddr, version, nIrqs, acpiGirqBase);
 
 	// Now check to see if there are entries for each pin in the MP tables.

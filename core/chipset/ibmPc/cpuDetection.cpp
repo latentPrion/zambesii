@@ -435,6 +435,14 @@ sarch_t ibmPc_cpuMod_checkSmpSanity(void)
 		return 0;
 	};
 
+	/**	TODO:
+	 * Also check for the existence of either the ACPI MADT, or the MP
+	 * tables, and print a warning to the log if neither exists, but return
+	 * positive still.
+	 *
+	 * The chipset may be hot-plug enabled, with only one CPU plugged in
+	 * during boot.
+	 **/
 	return 1;
 }
 
@@ -620,13 +628,22 @@ error_t ibmPc_cpuMod_setSmpMode(void)
 		io::write8(0x22, 0x70);
 		io::write8(0x23, 0x1);
 		cpuControl::safeEnableInterrupts(cpuFlags);
-		__kprintf(NOTICE CPUMOD"setSmpMode: chipset was in PIC mode.\n");
+		__kprintf(NOTICE CPUMOD"setSmpMode: chipset was in PIC mode."
+			"\n");
 	}
 	else
 	{
-		ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_SMP;
-		__kprintf(NOTICE CPUMOD"setSmpMode: CPU Mod: chipset was in "
-			"Virtual wire mode.\n");
+		if (mpFp != __KNULL)
+		{
+			ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_SMP;
+			__kprintf(NOTICE CPUMOD"setSmpMode: CPU Mod: chipset "
+				"was in Virtual wire mode.\n");
+		}
+		else
+		{
+			ibmPcState.smpInfo.chipsetOriginalState =
+				SMPSTATE_UNIPROCESSOR;
+		};
 	};
 	ibmPcState.smpInfo.chipsetState = SMPSTATE_SMP;
 

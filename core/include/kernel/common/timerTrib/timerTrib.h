@@ -25,12 +25,13 @@ public:
 	~timerTribC(void);
 
 public:
-	status_t registerWatchdogIsr(zkcmIsrFn *, uarch_t interval);
-	void updateWatchdogIsr(uarch_t interval);
+	status_t registerWatchdogIsr(zkcmIsrFn *, timeS interval);
+	void updateWatchdogInterval(timeS interval);
 	void unregisterWatchdogIsr(void);
 
+	/**	Deprecated in lieu of redesign.
 	void updateContinuousClock(void);
-	void updateScheduledClock(uarch_t sourceId);
+	void updateScheduledClock(uarch_t sourceId); */
 
 	void getCurrentTime(timeS *);
 	date_t getCurrentDate(void);
@@ -50,16 +51,13 @@ private:
 	struct watchdogIsrS
 	{
 		zkcmIsrFn	*isr;
-		clock_t		feedTime;
-		uarch_t		interval;
+		timestampS	nextFeedTime;
+		timeS		interval;
 	};
 
 	timerQueueC	period100ms, period10ms, period1ms;
 	uarch_t		flags;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
-
-	// To be deprecated in favour of a timestampS object.
-	sharedResourceGroupC<waitLockC, clock_t>	continuousClock;
 };
 
 extern timerTribC		timerTrib;

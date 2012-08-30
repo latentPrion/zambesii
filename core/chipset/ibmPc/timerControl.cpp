@@ -1,11 +1,12 @@
 
 #include <chipset/zkcm/timerControl.h>
 #include "timerControl.h"
+#include "rtcmos.h"
 
 
 error_t ibmPc_timerControl_initialize(void)
 {
-	return ERROR_SUCCESS;
+	return ibmPc_rtc_initialize();
 }
 
 error_t ibmPc_timerControl_shutdown(void)

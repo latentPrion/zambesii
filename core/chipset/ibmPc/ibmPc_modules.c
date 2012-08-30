@@ -4,6 +4,7 @@
 #include "terminalMod.h"
 #include "irqControl.h"
 #include "timerControl.h"
+#include "rtcmos.h"		// Holds parts of timerControl mod.
 
 struct zkcmIrqControlModS	ibmPc_irqControlMod =
 {
@@ -81,6 +82,10 @@ struct zkcmTimerControlModS		ibmPc_timerControlMod =
 	&ibmPc_timerControl_suspend,
 	&ibmPc_timerControl_restore,
 
-	&ibmPc_timerControl_getChipsetSafeTimerPeriods
+	&ibmPc_timerControl_getChipsetSafeTimerPeriods,
+	&ibmPc_rtc_getCurrentDate,
+	&ibmPc_rtc_getCurrentTime,
+	&ibmPc_rtc_refreshCachedSystemTime,
+	&ibmPc_rtc_flushCachedSystemTime
 };
 

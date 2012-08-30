@@ -10,7 +10,11 @@ timerTribC::timerTribC(void)
 :
 period100ms(100000), period10ms(10000), period1ms(1000)
 {
-	watchdog.rsrc.interval = 0;
+	memset(&watchdog.rsrc.interval, 0, sizeof(watchdog.rsrc.interval));
+	memset(
+		&watchdog.rsrc.nextFeedTime, 0,
+		sizeof(watchdog.rsrc.nextFeedTime));
+
 	watchdog.rsrc.isr = __KNULL;
 
 	flags = 0;
@@ -43,54 +47,19 @@ void timerTribC::dump(void)
 		}
 		else
 		{
-			__kprintf((utf8Char *)"Yes: isr addr: %P, "
-				"interval: %d\n",
+			__kprintf((utf8Char *)"Yes: isr addr: 0x%p, "
+				"interval: %ds,%dns\n",
 				watchdog.rsrc.isr,
-				watchdog.rsrc.interval);
+				watchdog.rsrc.interval.seconds,
+				watchdog.rsrc.interval.nseconds);
 		};
-
-	__kprintf(NOTICE"\tContinuousClock: %d, %d\n",
-		continuousClock.rsrc.high, continuousClock.rsrc.low);
 }
 
-void timerTribC::updateContinuousClock(void)
+status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, timeS interval)
 {
-	// Update global continuous clock.
-	continuousClock.lock.acquire();
-	continuousClock.rsrc++;
-	continuousClock.lock.release();
-
-	watchdog.lock.acquire();
-
-	if (watchdog.rsrc.isr == __KNULL) {
-		watchdog.lock.release();
-	}
-	else
+	if ((isr == __KNULL)
+		|| ((interval.seconds == 0) && (interval.nseconds == 0)))
 	{
-		continuousClock.lock.acquire();
-		if (continuousClock.rsrc == watchdog.rsrc.feedTime)
-		{
-			continuousClock.lock.release();
-
-			watchdog.rsrc.feedTime += watchdog.rsrc.interval;
-
-			watchdog.lock.release();
-			// Fixme: Handle this later.
-			(*watchdog.rsrc.isr)();
-
-			goto skipWatchdogLockRelease;
-		}
-		else {
-			continuousClock.lock.release();
-		};
-		watchdog.lock.release();
-skipWatchdogLockRelease:;
-	};		
-}
-
-status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, uarch_t interval)
-{
-	if ((isr == __KNULL) || (interval == 0)) {
 		return ERROR_INVALID_ARG;
 	};
 
@@ -104,27 +73,27 @@ status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, uarch_t interval)
 	else
 	{
 		watchdog.rsrc.isr = isr;
-		watchdog.rsrc.interval = interval;
 
-		continuousClock.lock.acquire();
-		watchdog.rsrc.feedTime = continuousClock.rsrc;
-		watchdog.rsrc.feedTime += interval;
+		memcpy(&watchdog.rsrc.interval, &interval, sizeof(interval));
+		// chipset_getDate(&watchdog.rsrc.nextFeedTime.date);
+		// chipset_getTime(&watchdog.rsrc.nextFeedTime.time);
+		// watchdog.rsrc.nextFeedTime.time.seconds
+		//	+= watchdog.rsrc.interval.seconds;
+		// watchdog.rsrc.nextFeedTime.time.nseconds
+		//	+= watchdog.rsrc.interval.nseconds;
 
-		continuousClock.lock.release();
 		watchdog.lock.release();
 
 		return ERROR_SUCCESS;
 	};
 }
 
-void timerTribC::updateWatchdogIsr(uarch_t interval)
+void timerTribC::updateWatchdogInterval(timeS interval)
 {
-	if (interval == 0) {
-		return;
-	};
+	if (interval.seconds == 0 && interval.nseconds == 0) { return; };
 
 	watchdog.lock.acquire();
-	watchdog.rsrc.interval = interval;
+	memcpy(&watchdog.rsrc.interval, &interval, sizeof(interval));
 	watchdog.lock.release();
 }
 
@@ -140,8 +109,14 @@ void timerTribC::unregisterWatchdogIsr(void)
 	else
 	{
 		watchdog.rsrc.isr = __KNULL;
-		watchdog.rsrc.interval = 0;
-		watchdog.rsrc.feedTime = clock_t(0, 0);
+
+		memset(
+			&watchdog.rsrc.interval, 0,
+			sizeof(watchdog.rsrc.interval));
+
+		memset(
+			&watchdog.rsrc.nextFeedTime, 0,
+			sizeof(watchdog.rsrc.nextFeedTime));
 
 		watchdog.lock.release();
 		return;
