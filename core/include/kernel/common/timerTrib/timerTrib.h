@@ -55,6 +55,8 @@ private:
 		timeS		interval;
 	};
 
+	// Timestamp value for when this kernel instance was booted.
+	timestampS	bootTimestamp;
 	timerQueueC	period100ms, period10ms, period1ms;
 	uarch_t		flags;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
