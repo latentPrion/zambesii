@@ -4,7 +4,7 @@
 	for the contents of the GNU GPLv2, as published by the FSF.
 
 This program, the Zambesii kernel is copyrighted to, and at the time of writing,
-(2012-08-31) almost entirely owned by a single individual. The individual has
+(2012-Aug-31) almost entirely owned by a single individual. The individual has
 chosen to provide Zambesii under the GNU GPLv2 license.
 
 However, Zambesii is not zero-cost software; it is open-source, but it is
@@ -20,7 +20,7 @@ Most open-source copyright holders choose to provide the right to use their
 software under an open-source license at no price. This is simply a matter of
 choice -- as is the choice to sell the licensing contract. The copyright owner
 holds the rights to the software, and may license it to different parties in
-different ways if s/he so chooses.
+different ways even, if s/he so chooses.
 
 The licensing cost to use Zambesii v0.xx.xxx is currently US$0.00, and this
 license is provided for all releases in the Zambesii v0.xx.xxx series. The costs
@@ -28,12 +28,23 @@ of releases of the software with version numbers whose major version number
 does not match v0 will differ according to yet-to-be-defined criteria, at the
 sole discretion of the copyright holder.
 
-Tbh, the price of the kernel will always remain very low, probably around
-US$10.00 or US$15.00.
+Tbh, the price of the kernel will most likely always remain very low, probably
+around US$10.00 or US$15.00. That said, I can't really forecast what the
+pricing will need to be, so those figures are not an official or legally
+binding advertisement of price.
 
 TL;DR: Zambesii is a GPLv2 kernel with a price attached at some point in the
 future, most likely upon release. Currently, it is being sold at a cost of
 US$0.00; in other words, it is currently "free" as in "free beer". At some
 point, it will no longer be free as in free "free beer", but only as in
 "free speech".
+
+	"ZOMG WAE U WANNA SELL T3H SOFTWEREZ? U TR0LLOLOLIN', I REPORT U N00B"
+
+I've chosen to sell Zambesii to pay for the time I spend on it, and to use it
+as a form of income -- I'm human, just like you are, and when the end of the
+month comes, money is on my mind, just as it is on yours.
+
+I offer my most sincere apologies for any inconvenience caused by the pricing,
+but I also offer no sentiment of repentance.
 
