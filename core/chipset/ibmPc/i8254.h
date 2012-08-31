@@ -22,7 +22,7 @@ status_t ibmPc_i8254_setTimerSourceOneshot(
 	struct zkcmTimerSourceS *timerSource,
 	struct timestampS timeout);
 
-uarch_t ibmPc_i8254_getPrecisionDisparityForPeriod(
+uarch_t ibmPc_i8254_getPrecisionDiscrepancyForPeriod(
 	struct zkcmTimerSourceS *timerSource,
 	ubit32 period);
 

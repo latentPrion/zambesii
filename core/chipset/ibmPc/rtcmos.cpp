@@ -222,15 +222,18 @@ error_t ibmPc_rtc_initialize(void)
 
 	rtccmos::writeAddressRegister(RTC_REG_STATUS1);
 	status1 = rtccmos::readDataRegister();
-	rtccmos::resetAddressRegister();
-
-	rtccmos::unlock();
-
 	// Clear all IRQs.
 	__KFLAG_UNSET(status1,
 		RTC_STATUS1_FLAGS_PERIODIC_IRQ_ENABLED
 		| RTC_STATUS1_FLAGS_ALARM_IRQ_ENABLED
 		| RTC_STATUS1_FLAGS_UPDATEEND_IRQ_ENABLED);
+
+	rtccmos::writeAddressRegister(RTC_REG_STATUS1);
+	rtccmos::writeDataRegister(status1);
+	rtccmos::resetAddressRegister();
+
+	rtccmos::unlock();
+
 
 	rtccmos24HourTime =
 		__KFLAG_TEST(status1, RTC_STATUS1_FLAGS_TIME_FORMAT_24HRS);
