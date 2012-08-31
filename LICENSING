@@ -1,0 +1,39 @@
+	General licensing scheme:
+
+	See the file "license-gplv2.txt" in the root folder of the source
+	for the contents of the GNU GPLv2, as published by the FSF.
+
+This program, the Zambesii kernel is copyrighted to, and at the time of writing,
+(2012-08-31) almost entirely owned by a single individual. The individual has
+chosen to provide Zambesii under the GNU GPLv2 license.
+
+However, Zambesii is not zero-cost software; it is open-source, but it is
+provided at a fee. The GNU GPLv2 licensing contract is only provided to users
+who have purchased the software. You buy the rights to the license from the
+copyright owner, and the owner then provides you with the coverage of the
+license. The copyright is in no way transferred to the user, and the license
+may even be terminated if the user violates the terms of the GNU GPLv2 license
+that the copyright holder has granted them rights under. You may read more
+about the terms of the GNU GPLv2 on the FSF website.
+
+Most open-source copyright holders choose to provide the right to use their
+software under an open-source license at no price. This is simply a matter of
+choice -- as is the choice to sell the licensing contract. The copyright owner
+holds the rights to the software, and may license it to different parties in
+different ways if s/he so chooses.
+
+The licensing cost to use Zambesii v0.xx.xxx is currently US$0.00, and this
+license is provided for all releases in the Zambesii v0.xx.xxx series. The costs
+of releases of the software with version numbers whose major version number
+does not match v0 will differ according to yet-to-be-defined criteria, at the
+sole discretion of the copyright holder.
+
+Tbh, the price of the kernel will always remain very low, probably around
+US$10.00 or US$15.00.
+
+TL;DR: Zambesii is a GPLv2 kernel with a price attached at some point in the
+future, most likely upon release. Currently, it is being sold at a cost of
+US$0.00; in other words, it is currently "free" as in "free beer". At some
+point, it will no longer be free as in free "free beer", but only as in
+"free speech".
+
