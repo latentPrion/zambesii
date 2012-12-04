@@ -65,6 +65,11 @@
 #define IRQPIN_ACPIID_INVALID				(-1)
 #define IRQPIN_INTELMPID_INVALID			(-1)
 
+/* Return values for loadBusPinMappings.
+ **/
+#define IRQCTRL_BPM_UNSUPPORTED_BUS			(1)
+#define IRQCTRL_BPM_NO_MAPPINGS_FOUND			(2)
+
 struct zkcmIrqPinS
 {
 	ubit32		physId;
@@ -108,6 +113,8 @@ struct zkcmIrqControlModS
 	void (*unmaskIrqsByPriority)(ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
 
 	void (*sendEoi)(ubit16 __kpin);
+
+	status_t (*loadBusPinMappings)(utf8Char *bus);
 };
 
 #endif

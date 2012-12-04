@@ -10,6 +10,11 @@
 #include "zkcmIbmPcState.h"
 #include "irqControl.h"
 
+
+/**	NOTES:
+ * SCI: Active low, level triggered, shareable (ACPI spec).
+ **/
+
 error_t ibmPc_irqControl_initialize(void)
 {
 	/**	EXPLANATION:

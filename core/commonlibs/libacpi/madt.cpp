@@ -102,3 +102,36 @@ acpi_rMadtLapicNmiS *acpiRMadt::getNextLapicNmiEntry(
 	return __KNULL;
 }
 
+acpi_rMadtIrqSourceOverS *acpiRMadt::getNextIrqSourceOverrideEntry(
+	acpi_rMadtS *madt, void **const handle
+	)
+{
+	acpi_rMadtIrqSourceOverS	*ret=__KNULL;
+
+	if (*handle == __KNULL) {
+		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
+	};
+
+	while (*handle < ACPI_TABLE_GET_ENDADDR(madt))
+	{
+		switch (ACPI_MADT_GET_TYPE(*handle))
+		{
+		case ACPI_MADT_TYPE_IRQSOURCE_OVERRIDE:
+			ret = static_cast<acpi_rMadtIrqSourceOverS*>( *handle );
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+
+			return ret;
+
+		default:
+			// Use the 'length' member to skip over all others.
+			*handle = ACPI_PTR_INC_BY(
+				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+
+			break;
+		};
+	};
+
+	return __KNULL;
+}
+

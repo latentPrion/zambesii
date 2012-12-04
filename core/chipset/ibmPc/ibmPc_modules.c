@@ -32,7 +32,8 @@ struct zkcmIrqControlModS	ibmPc_irqControlMod =
 	&ibmPc_irqControl_maskIrqsByPriority,
 	&ibmPc_irqControl_unmaskIrqsByPriority,
 
-	&ibmPc_irqControl_sendEoi
+	&ibmPc_irqControl_sendEoi,
+	&ibmPc_irqControl_bpm_loadBusPinMappings
 };
 
 struct zkcmMemoryDetectionModS	ibmPc_memoryDetectionMod =

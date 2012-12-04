@@ -42,6 +42,8 @@ void ibmPc_irqControl_unmaskIrqsByPriority(
 
 void ibmPc_irqControl_sendEoi(ubit16 __kpin);
 
+status_t ibmPc_irqControl_bpm_loadBusPinMappings(utf8Char *bus);
+
 CPPEXTERN_END
 
 CPPEXTERN_PROTO struct zkcmIrqControlModS		ibmPc_irqControlMod;

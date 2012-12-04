@@ -75,6 +75,7 @@ namespace x86IoApic
 	public:
 		ubit8 getNIrqs(void) { return nIrqs; };
 		ubit16 get__kpinBase(void) { return __kpinBase; };
+		sarch_t getGirqBase(void) { return acpiGirqBase; };
 
 		void maskPin(ubit8 irq);
 		void unmaskPin(ubit8 irq);

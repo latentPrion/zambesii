@@ -37,6 +37,8 @@ int ghfoo(void)
 	return 0;
 }
 
+#include <commonlibs/libacpi/libacpi.h>
+
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -90,9 +92,12 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(interruptTrib, initialize2(), ret);
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
+	zkcmCore.irqControl->loadBusPinMappings(CC"isa");
+for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(timerTrib, initialize2(), ret);
 
-for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
+	__kprintf(NOTICE ORIENT"Sizeof fadtS: %d.\n", sizeof(acpi_rFadtS));
+
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 

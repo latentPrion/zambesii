@@ -45,9 +45,15 @@ cpuTribC::~cpuTribC(void)
 {
 }
 
-static error_t fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId)
+error_t cpuTribC::fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId)
 {
 	error_t		ret;
+
+	__kprintf(WARNING"The kernel is falling back to Uniprocessor mode; %s."
+		"\n",
+		((_usingChipsetSmpMode == 1) ?
+			"\n\thowever, hotplug of new CPUs is allowed"
+			:"\n\tthis chipset is not safe for multiprocessing"));
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	ret = cpuTrib.spawnStream(CHIPSET_CPU_NUMA_SHBANKID, bspId, bspAcpiId);
@@ -136,17 +142,17 @@ error_t cpuTribC::initialize2(void)
 	{
 		__kprintf(ERROR CPUTRIB"initialize2:\n"
 			"\tIMPORTANT: Your kernel was compiled as a multi-cpu\n"
-			"build kernel, but your chipset reports that it is\n"
-			"not safe to use multi-cpu processing on it.\n"
-			"\tIf your board is a new board, this may indicate\n"
-			"that it is flawed or defective. If it is an old\n"
-			"board, it may just mean that your kernel was built\n"
-			"with multi-cpu features that your board simply can't\n"
-			"handle.\n");
+			"\tbuild kernel, but your chipset reports that it is\n"
+			"\tnot safe to use multi-cpu processing on it.\n"
+			"\t\tIf your board is a new board, this may indicate\n"
+			"\tthat it is flawed or defective. If it is an old\n"
+			"\tboard, it may just mean that your kernel was built\n"
+			"\twith multi-cpu features that your board simply can't\n"
+			"\thandle.\n");
 
 		// Small delay.
 		for (uarch_t i=0; i<500000; i++) { cpuControl::subZero(); };
-		return ERROR_SUCCESS;
+		return fallbackToUpMode(bspId, bspId);
 	};
 	/* On MP build it's beneficial to pre-determine the size of the BMPs
 	 * so that when CPUs are being spawned the BMPs aren't constantly

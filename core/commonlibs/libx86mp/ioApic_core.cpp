@@ -157,7 +157,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	__kpinBase = irqPinList[0].__kid;
 
 	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x, "
-		"nIrqs %d, Girqbase %d.\n\tAll pins masked off for now.\n.",
+		"nIrqs %d, Girqbase %d.\n\tAll pins masked off for now.\n",
 		id, vaddr.rsrc, paddr, version, nIrqs, acpiGirqBase);
 
 	// Now check to see if there are entries for each pin in the MP tables.
@@ -245,7 +245,7 @@ void x86IoApic::ioApicC::unmaskPin(ubit8 irq)
 	vaddr.lock.release();
 }
 
-static utf8Char		*intTypes[4] = {
+/*static utf8Char		*intTypes[4] = {
 	CC"INT", CC"NMI", CC"SMI", CC"Ext-INT"
 };
 
@@ -255,7 +255,7 @@ static utf8Char		*polarities[4] = {
 
 static utf8Char		*triggerModes[4] = {
 	CC"Conforms", CC"Edge", CC"Invalid", CC"Level"
-};
+};*/
 
 error_t x86IoApic::ioApicC::getIntelMpPinMappings(void)
 {
@@ -295,7 +295,7 @@ error_t x86IoApic::ioApicC::getIntelMpPinMappings(void)
 
 		nPins++;
 		// Print info for debug.
-		__kprintf(NOTICE x86IOAPIC"getIntelMpPinMappings: "
+		/*__kprintf(NOTICE x86IOAPIC"getIntelMpPinMappings: "
 			"bus-IRQ(%d, %d), IoApic(%d, %d),\n"
 			"\tintType %s, Pol %s, trigg %s.\n",
 			irqSource->sourceBusId, irqSource->sourceBusIrq,
@@ -308,7 +308,7 @@ error_t x86IoApic::ioApicC::getIntelMpPinMappings(void)
 			triggerModes[
 				irqSource->flags
 				>> x86_MPCFG_IRQSRC_FLAGS_SENSITIVITY_SHIFT
-				& x86_MPCFG_IRQSRC_FLAGS_SENSITIVITY_MASK]);
+				& x86_MPCFG_IRQSRC_FLAGS_SENSITIVITY_MASK]); */
 
 		/**	EXPLANATION:
 		 * The only thing we do in here is check to see if the pin

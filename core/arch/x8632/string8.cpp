@@ -133,6 +133,14 @@ int strncmp8(const utf8Char *str1, const utf8Char *str2, int count)
 			return ((*str1 > *str2) ? 1 : -1);
 		};
 	};
+
+	if (count)
+	{
+		if (((*str1) && (!(*str2))) || ((!(*str1)) && (*str2))) {
+			return ((*str1 > *str2) ? 1 : -1);
+		};
+	};
+
 	return 0;
 }
 

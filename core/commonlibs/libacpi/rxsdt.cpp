@@ -7,6 +7,7 @@
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <commonlibs/libacpi/rxsdt.h>
+#include <commonlibs/libacpi/facp.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
@@ -176,12 +177,12 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 	return ret;
 }
 
-acpi_rFacpS *acpiRsdt::getNextFacp(
+acpi_rFadtS *acpiRsdt::getNextFadt(
 	acpi_rsdtS *rsdt, void **const context, void **const handle
 	)
 {
 	acpi_sdtS	*sdt;
-	acpi_rFacpS	*ret=__KNULL;
+	acpi_rFadtS	*ret=__KNULL;
 
 	if (*handle == __KNULL) {
 		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
@@ -193,7 +194,7 @@ acpi_rFacpS *acpiRsdt::getNextFacp(
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
 			&& checksumIsValid(sdt))
 		{
-			ret = (acpi_rFacpS *)acpi_mapTable(
+			ret = (acpi_rFadtS *)acpi_mapTable(
 				*(paddr_t *)*handle,
 				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
 		};
@@ -201,7 +202,7 @@ acpi_rFacpS *acpiRsdt::getNextFacp(
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
 			&& (!checksumIsValid(sdt)))
 		{
-			__kprintf(WARNING ACPIR"FACP with invalid checksum @P "
+			__kprintf(WARNING ACPIR"FADT with invalid checksum @P "
 				"0x%P.\n",
 				*handle);
 		};

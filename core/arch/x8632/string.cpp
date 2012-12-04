@@ -72,10 +72,20 @@ size_t strlen(const char *str)
 	for (; str[len]; len++) {};
 	return len;
 }
+#endif
 
 int strcmp(const char *str1, const char *str2)
 {
 	if (str1 == str2) { return 0; };
+
+	if (str1 == __KNULL || str2 == __KNULL)
+	{
+		__kprintf(FATAL"strcmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+			str1, str2, __builtin_return_address(0));
+
+		panic(ERROR_CRITICAL);
+	};
+
 
 	for (; (*str1 && *str2); str1++, str2++)
 	{
@@ -94,13 +104,28 @@ int strncmp(const char *str1, const char *str2, int count)
 {
 	if (str1 == str2) { return 0; };
 
-	for (; count > 0; count--, str1++, str2++)
+	if (str1 == __KNULL || str2 == __KNULL)
+	{
+		__kprintf(FATAL"strncmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+			str1, str2, __builtin_return_address(0));
+
+		panic(ERROR_CRITICAL);
+	};
+
+	for (; count > 0 && (*str1) && (*str2); count--, str1++, str2++)
 	{
 		if (*str1 != *str2) {
 			return ((*str1 > *str2) ? 1 : -1);
 		};
 	};
+
+	if (count)
+	{
+		if (((*str1) && (!(*str2))) || ((!(*str1)) && (*str2))) {
+			return ((*str1 > *str2) ? 1 : -1);
+		};
+	};
+
 	return 0;
 }
-#endif
 

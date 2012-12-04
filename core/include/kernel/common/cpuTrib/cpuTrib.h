@@ -89,6 +89,7 @@ public:
 
 private:
 	error_t __kupdateAffinity(cpu_t cid, ubit8 action);
+	error_t fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId);
 
 public:
 #if __SCALING__ >= SCALING_CC_NUMA

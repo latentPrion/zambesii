@@ -4,6 +4,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
+#include <commonlibs/libacpi/libacpi.h>
 #include <kernel/common/waitLock.h>
 #include <kernel/common/sharedResourceGroup.h>
 #include <kernel/common/timerTrib/timeTypes.h>
@@ -265,14 +266,69 @@ static inline ubit8 bcd8ToUbit8(ubit8 bcdVal)
 	return (((bcdVal >> 4) & 0xF) * 10) + (bcdVal & 0xF);
 }
 
+static ubit8 getCenturyOffset(void)
+{
+	ubit8		ret;
+	error_t		err;
+	acpi_rsdtS	*rsdt;
+	acpi_rFadtS	*fadt;
+	void		*handle, *context;
+
+	err = acpi::findRsdp();
+	if (err != ERROR_SUCCESS) {
+		return CMOS_REG_DATE_CENTURY;
+	};
+
+	if (acpi::testForRsdt())
+	{
+		// Use RSDT.
+		err = acpi::mapRsdt();
+		if (err != ERROR_SUCCESS)
+		{
+			__kprintf(WARNING RTCCMOS"getCenturyOffset: failed to "
+				"map RSDT.\n");
+
+			return CMOS_REG_DATE_CENTURY;
+		};
+
+		rsdt = acpi::getRsdt();
+
+		context = handle = __KNULL;
+		fadt = acpiRsdt::getNextFadt(rsdt, &context, &handle);
+		if (fadt != __KNULL)
+		{
+			ret = fadt->cmosCentury;
+			acpiRsdt::destroySdt((acpi_sdtS *)fadt);
+			acpiRsdt::destroyContext(&context);
+			__kprintf(NOTICE RTCCMOS"getCenturyOffset: ACPI: "
+				"Offset is %d.\n", ret);
+
+			return ret;
+		};
+#if !defined(__32_BIT__) || defined(CONFIG_ARCH_x86_32_PAE)
+	}
+	else
+	{
+		// Use XSDT.
+#endif
+	};
+
+	return CMOS_REG_DATE_CENTURY;
+}
+
+
 status_t ibmPc_rtc_getHardwareDate(date_t *date)
 {
 	ubit16	year;
 	ubit8	month, day;
+	ubit8	centuryOffset;
+
+	// Check ACPI for the century register offset.
+	centuryOffset = getCenturyOffset();
 
 	rtccmos::lock();
 
-	rtccmos::writeAddressRegister(CMOS_REG_DATE_CENTURY);
+	rtccmos::writeAddressRegister(centuryOffset);
 	year = rtccmos::readDataRegister() << 8;
 	rtccmos::writeAddressRegister(RTC_REG_YEAR);
 	year |= rtccmos::readDataRegister();

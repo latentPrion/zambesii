@@ -19,7 +19,7 @@ namespace acpiRsdt
 		acpi_rsdtS *r, void **const context, void **const handle);
 
 	// Returns the next FACP.
-	acpi_rFacpS *getNextFacp(
+	acpi_rFadtS *getNextFadt(
 		acpi_rsdtS *r, void **const context, void **const handle);
 
 	/**	EXPLANATION:
@@ -47,7 +47,7 @@ namespace acpiRsdt
 	 *	This implies that you ran through the RSDT wholly, and you
 	 *	were interested in processing multiple instances of a single
 	 *	table type. For example, if an errant BIOS had generated 2 MADTs
-	 *	this lib will is able to process as many as there are. The
+	 *	this lib is able to process as many as there are. The
 	 *	caller may however choose to only process the first one that
 	 *	comes up. If you did NOT loop through the whole table, and only
 	 *	processed the first one that was returned, then you must call

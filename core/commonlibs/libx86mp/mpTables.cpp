@@ -4,6 +4,7 @@
 #include <chipset/findTables.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <commonlibs/libx86mp/mpTables.h>
 #include <commonlibs/libx86mp/mpDefaultTables.h>
@@ -227,6 +228,28 @@ x86_mpCfgS *x86Mp::getMpCfg(void)
 	return x86Mp::mapMpConfigTable();
 }
 
+sbit8 x86Mp::getBusIdFor(const char *bus)
+{
+	x86_mpCfgBusS		*busEntry;
+	void			*handle;
+	uarch_t			pos;
+
+	pos = 0;
+	handle = __KNULL;
+	busEntry = x86Mp::getNextBusEntry(&pos, &handle);
+
+	while (busEntry != __KNULL)
+	{
+		if (strncmp(busEntry->busString, bus, 6) == 0) {
+			return busEntry->busId;
+		};
+
+		busEntry = x86Mp::getNextBusEntry(&pos, &handle);
+	};
+
+	return -1;
+}
+
 x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 {
 	x86_mpCfgCpuS	*ret=__KNULL;
@@ -249,6 +272,75 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 
 		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_CPU) {
 			ret = (x86_mpCfgCpuS *)*handle;
+		};
+
+		switch (*(ubit8 *)*handle)
+		{
+		case x86_MPCFG_TYPE_CPU:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+
+			break;
+
+		case x86_MPCFG_TYPE_BUS:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgBusS));
+
+			break;
+
+		case x86_MPCFG_TYPE_IOAPIC:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgIoApicS));
+
+			break;
+
+		case x86_MPCFG_TYPE_IRQSOURCE:
+			*handle = (void *)(
+				(uarch_t)*handle + sizeof(x86_mpCfgIrqSourceS));
+
+			break;
+
+		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
+			*handle = (void *)(
+				(uarch_t)*handle
+				+ sizeof(x86_mpCfgLocalIrqSourceS));
+
+			break;
+
+		default: // This should NEVER be reached.
+			__kprintf(ERROR x86MP"Encountered CFG entry with "
+				"unknown type 0x%X. Ending loop.\n",
+				*(ubit8 *)*handle);
+
+			return __KNULL;
+		};
+	};
+
+	return ret;
+}
+
+x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
+{
+	x86_mpCfgBusS	*ret=__KNULL;
+
+	if (!x86Mp::getMpCfg()) {
+		return __KNULL;
+	};
+
+	if (*pos == 0)
+	{
+		// Caller wants a fresh iteration.
+		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86_mpCfgS));
+	};
+
+	for (; *pos < cache.nCfgEntries; *pos += 1)
+	{
+		if (ret != __KNULL) {
+			break;
+		};
+
+		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_BUS) {
+			ret = (x86_mpCfgBusS *)*handle;
 		};
 
 		switch (*(ubit8 *)*handle)

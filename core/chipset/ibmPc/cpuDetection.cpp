@@ -414,7 +414,14 @@ tryMpTables:
 
 sarch_t ibmPc_cpuMod_checkSmpSanity(void)
 {
-	uarch_t		eax, ebx, ecx, edx;
+	uarch_t			eax, ebx, ecx, edx;
+	acpi_rsdtS		*rsdt;
+	acpi_rMadtS		*madt;
+	x86_mpCfgIrqSourceS	*mpCfgIrqSource;
+	void			*context, *handle, *handle2;
+	uarch_t			pos;
+	sarch_t			haveMpTableIrqSources=0, haveAcpiIrqSources=0,
+				haveMpTableIoApics=0, haveAcpiIoApics=0;
 
 	/**	EXPLANATION:
 	 * This function is supposed to be called during the kernel's initial
@@ -423,26 +430,139 @@ sarch_t ibmPc_cpuMod_checkSmpSanity(void)
 	 *
 	 * These checks include:
 	 *	* Check for presence of a LAPIC on the BSP.
+	 *	* Check for the presence of at least one IO-APIC.
+	 *	* Check for the presence of either the ACPI IRQ routing
+	 *	  information, or the MP tables' equivalent. Without this
+	 *	  bus-device-pin mapping for use with the IO-APICs, we will have
+	 *	  no idea how IRQs are wired from devices to the IO-APICs.
+	 *
+	 *	  For ISA devices, if there is no such information, we can rely
+	 *	  on there being a 1:1 mapping between the ISA i8259 pins and
+	 *	  the first 16 IO-APIC pins, but beyond that, for devices on
+	 *	  any other bus, we have zero information.
 	 **/
 	// This check will work for both x86-32 and x86-64.
 	execCpuid(1, &eax, &ebx, &ecx, &edx);
 	if (!(edx & (1 << 9)))
 	{
 		__kprintf(ERROR CPUMOD"checkSmpSanity(): CPUID[1].EDX[9] LAPIC "
-			"check failed. EDX: %x.\n",
+			"existence check failed. EDX: %x.\n",
 			edx);
 
 		return 0;
 	};
 
-	/**	TODO:
-	 * Also check for the existence of either the ACPI MADT, or the MP
+	/**	EXPLANATION:
+	 * We also check for the existence of either the ACPI MADT, or the MP
 	 * tables, and print a warning to the log if neither exists, but return
 	 * positive still.
 	 *
 	 * The chipset may be hot-plug enabled, with only one CPU plugged in
 	 * during boot.
 	 **/
+	acpi::initializeCache();
+	if (acpi::findRsdp() != ERROR_SUCCESS) {
+		__kprintf(WARNING CPUMOD"checkSmpSanity(): No ACPI tables.\n");
+	};
+
+#if (!defined(__32_BIT__)) || (defined(CONFIG_ARCH_x86_32_PAE))
+	// XSDT code here, fallback to RSDT if XSDT gives problems.
+#endif
+	if (acpi::testForRsdt())
+	{
+		if (acpi::mapRsdt() != ERROR_SUCCESS)
+		{
+			__kprintf(WARNING CPUMOD"checkSmpSanity: Failed to map "
+				"RSDT.\n");
+
+			goto checkForMpTables;
+		};
+
+		// Now check for the presence of an MADT, and warn if none.
+		rsdt = acpi::getRsdt();
+		handle = context = __KNULL;
+		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
+		// Warn if no MADT.
+		if (madt == __KNULL) {
+			__kprintf(WARNING CPUMOD"checkSmpSanity: No MADT.\n");
+		}
+		else
+		{
+			// Check for at least one IO-APIC entry in the MADT.
+			handle2 = __KNULL;
+			if (acpiRMadt::getNextIoApicEntry(madt, &handle2)
+				!= __KNULL)
+			{
+				haveAcpiIoApics = 1;
+			}
+			else
+			{
+				__kprintf(WARNING CPUMOD"checkSmpSanity: No "
+					"MADT IO-APIC Entries.\n");
+			};
+		};
+
+		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
+		acpiRsdt::destroyContext(&context);
+	};
+
+checkForMpTables:
+	x86Mp::initializeCache();
+	if (x86Mp::findMpFp() == __KNULL) {
+		__kprintf(WARNING CPUMOD"checkSmpSanity(): No MP tables.\n");
+	};
+
+	// Now check for at least one MP table platform interrupt source entry.
+	handle = __KNULL;
+	pos = 0;
+	mpCfgIrqSource = x86Mp::getNextIrqSourceEntry(&pos, &handle);
+	if (mpCfgIrqSource != __KNULL) {
+		haveMpTableIrqSources = 1;
+	}
+	else
+	{
+		__kprintf(WARNING CPUMOD"checkSmpSanity: No MP table IRQ "
+			"source entries.\n");
+	};
+
+	if (x86Mp::getNextIoApicEntry(&pos, &handle) != __KNULL) {
+		haveMpTableIoApics = 1;
+	}
+	else
+	{
+		__kprintf(WARNING CPUMOD"checkSmpSanity: No MP Table IO-APIC "
+			"entries.\n");
+	};
+
+	/**	TODO:
+	 * When we port ACPICA, check for the chipset IRQ routing info.
+	 * For now since we don't have ACPICA parsing, if we didn't find an MP
+	 * table with IRQ source information, we will have to settle for
+	 * warning the user, and continuing in spite of that.
+	 *
+	 * Ideally, we should return false and prevent the kernel from switching
+	 * the chipset to SMP mode, but for the sake of being able to make
+	 * progress in development until we have ACPICA, we allow the kernel to
+	 * continue on with switching to SMP mode.
+	 **/
+	if (!haveMpTableIrqSources && !haveAcpiIrqSources)
+	{
+		__kprintf(ERROR CPUMOD"checkSmpSanity: No MP table IRQ "
+			"sources, and no ACPICA ported yet.\n");
+
+		// Should eventually "return 0" here when ACPICA is ported.
+	};
+
+	if (!haveMpTableIoApics && !haveAcpiIoApics)
+	{
+		__kprintf(ERROR CPUMOD"checkSmpSanity: Serious error:\n\t"
+			"Your kernel was configured for multiprocessor "
+			"operation\n\tbut it has no IO-APICs. The kernel must "
+			"refuse MP operation\n\ton this board.\n");
+
+		return 0;
+	};
+
 	return 1;
 }
 
@@ -480,7 +600,7 @@ cpu_t ibmPc_cpuMod_getBspId(void)
 
 tryAcpi:
 		acpi::initializeCache();
-#ifndef __32_BIT__
+#if !defined(__32_BIT__) || defined(CONFIG_ARCH_x86_32_PAE)
 		// If not 32 bit, use XSDT.
 #else
 		// 32 bit uses RSDT only.
@@ -645,6 +765,7 @@ error_t ibmPc_cpuMod_setSmpMode(void)
 				SMPSTATE_UNIPROCESSOR;
 		};
 	};
+
 	ibmPcState.smpInfo.chipsetState = SMPSTATE_SMP;
 
 	ibmPc_irqControl_chipsetEventNotification(

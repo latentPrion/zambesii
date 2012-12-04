@@ -228,6 +228,8 @@ namespace x86Mp
 
 	// Iterates through all CPU entries in the config.
 	x86_mpCfgCpuS *getNextCpuEntry(uarch_t *pos, void **const handle);
+	// Iterates through all bus entries in the config.
+	x86_mpCfgBusS *getNextBusEntry(uarch_t *pos, void **const handle);
 	// Iterates through all I/O APIC entries in the config.
 	x86_mpCfgIoApicS *getNextIoApicEntry(uarch_t *pos, void **const handle);
 	// Iterates through all Local interrupt entries in the config.
@@ -242,6 +244,18 @@ namespace x86Mp
 	ubit32 getLapicPaddr(void);
 	x86_mpFpS *getMpFp(void);
 	x86_mpCfgS *getMpCfg(void);
+
+	/* The MP spec made it so that the firmware can assign arbitrary IDs
+	 * to each bus; thus we have to do a lookup of the bus ID the firmware
+	 * assigned each bus before we can use information in some of the
+	 * structures.
+	 *
+	 * getBusIdFor() takes a string as input and returns the numeric ID 
+	 * that the firmware assigned to the bus with the string-name passed
+	 * as its argument. Returns (-1) if it could not find the bus' ID in the
+	 * table.
+	 **/
+	sbit8 getBusIdFor(const char *busString);
 }
 
 #endif

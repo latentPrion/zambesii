@@ -61,10 +61,10 @@ struct acpi_rMadtIrqSourceOverS
 	ubit8		type;
 	ubit8		length;
 	ubit8		bus;
-	ubit8		source;
+	ubit8		irqNo;
 	ubit32		globalIrq;
 	ubit16		flags;
-};
+} __attribute__((packed));
 
 #define ACPI_MADT_NMI_LAPICID_ALL	0xFF
 
@@ -90,6 +90,9 @@ namespace acpiRMadt
 		acpi_rMadtS *madt, void **const handle);
 
 	acpi_rMadtLapicNmiS *getNextLapicNmiEntry(
+		acpi_rMadtS *madt, void **const handle);
+
+	acpi_rMadtIrqSourceOverS *getNextIrqSourceOverrideEntry(
 		acpi_rMadtS *madt, void **const handle);
 }
 
