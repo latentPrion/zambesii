@@ -5,6 +5,9 @@
 	#include <kernel/common/timerTrib/timeTypes.h>
 	#include <kernel/common/processId.h>
 
+#define ZKCM_TIMERDRV_MODE_NOT_SUPPORTED
+#define ZKCM_TIMERDRV_RESOLUTION_NOT_SUPPORTED
+#define ZKCM_TIMERDRV
 struct zkcmTimerDriverS
 {
 	error_t (*initialize)(void);

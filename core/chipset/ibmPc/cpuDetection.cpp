@@ -555,7 +555,7 @@ checkForMpTables:
 
 	if (!haveMpTableIoApics && !haveAcpiIoApics)
 	{
-		__kprintf(ERROR CPUMOD"checkSmpSanity: Serious error:\n\t"
+		__kprintf(ERROR CPUMOD"checkSmpSanity: Anomally:\n\t"
 			"Your kernel was configured for multiprocessor "
 			"operation\n\tbut it has no IO-APICs. The kernel must "
 			"refuse MP operation\n\ton this board.\n");

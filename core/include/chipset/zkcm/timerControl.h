@@ -42,7 +42,7 @@ struct zkcmTimerControlModS
 	 * The kernel uses this bit array to determine which timer period
 	 * queues it should spawn for the chipset it is running on. The
 	 * chipset defines this bitmap value in its chipset specific code.
-	 * Bit values defined above as CHIPSET_TIMERS_*_SAFE.
+	 * Bit values are defined further up above as CHIPSET_TIMERS_*_SAFE.
 	 *
 	 * Not every chipset can operate stably with IRQs coming in every 1ms,
 	 * for example. The chipset defines the bits which represent the timer
@@ -97,7 +97,7 @@ struct zkcmTimerControlModS
 		ubit8 ioLatency,	// LOW, MODERATE or HIGH.
 		ubit8 precision,	// EXACT, NEGLIGABLE, OVERFLOW
 					// or UNDERFLOW
-		void *handle);
+		void **handle);
 
 	/**	EXPLANATION:
 	 * The chipset calls this function to register new timer sources as
@@ -105,6 +105,7 @@ struct zkcmTimerControlModS
 	 * by filterTimerSources.
 	 **/
 	error_t (*registerNewTimerSource)(struct zkcmTimerSourceS *timerSource);
+	error_t (*unregisterTimerSource)(struct zkcmTimerSourceS *timerSource);
 };
 
 #endif

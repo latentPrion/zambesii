@@ -27,7 +27,7 @@ struct acpi_rMadtS
 struct acpi_rFadtS
 {
 	struct acpi_sdtS	hdr;
-	ubit32		facsPaddr;
+/*	ubit32		facsPaddr;
 	ubit32		dsdtPaddr;
 	ubit8		rsvd1;
 	ubit8		preferredPmProfile;
@@ -71,6 +71,8 @@ struct acpi_rFadtS
 
 	ubit8		cmosDayAlarm;
 	ubit8		cmosMonthAlarm;
+*/	
+	ubit8		padding[108];
 	ubit8		cmosCentury;
 } __attribute__((packed));
 

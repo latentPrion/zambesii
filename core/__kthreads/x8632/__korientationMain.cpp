@@ -10,11 +10,9 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/assert.h>
-#include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
 #include <__kclasses/prioQueue.h>
-#include <__kclasses/sortedPtrDoubleList.h>
 #include <__kthreads/__korientation.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/timerTrib/timerTrib.h>
@@ -25,11 +23,7 @@
 #include <kernel/common/execTrib/execTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
-#include <__kclasses/ptrlessList.h>
-#include <kernel/common/numaMemoryBank.h>
-
 int oo=0, pp=0, qq=0, rr=0;
-taskContextS		tci, *tc=&tci;
 
 int ghfoo(void)
 {
@@ -37,7 +31,6 @@ int ghfoo(void)
 	return 0;
 }
 
-#include <commonlibs/libacpi/libacpi.h>
 
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
@@ -92,11 +85,15 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(interruptTrib, initialize2(), ret);
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
-	zkcmCore.irqControl->loadBusPinMappings(CC"isa");
-for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
-	DO_OR_DIE(timerTrib, initialize2(), ret);
 
-	__kprintf(NOTICE ORIENT"Sizeof fadtS: %d.\n", sizeof(acpi_rFadtS));
+#ifdef CONFIG_CHIPSET_IBM_PC
+	// Do Bus-pin mapping for the ISA bus.
+	DO_OR_DIE(zkcmCore.irqControl->bpm, loadBusPinMappings(CC"isa"), ret);
+#endif
+
+	DO_OR_DIE(timerTrib, initialize2(), ret);
+for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
+
 
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);

@@ -33,7 +33,12 @@ struct zkcmIrqControlModS	ibmPc_irqControlMod =
 	&ibmPc_irqControl_unmaskIrqsByPriority,
 
 	&ibmPc_irqControl_sendEoi,
-	&ibmPc_irqControl_bpm_loadBusPinMappings
+	{
+		&ibmPc_irqControl_bpm_loadBusPinMappings,
+		&ibmPc_irqControl_bpm_get__kpinFor,
+		&ibmPc_irqControl_bpm_maskIrq,
+		&ibmPc_irqControl_bpm_unmaskIrq
+	}
 };
 
 struct zkcmMemoryDetectionModS	ibmPc_memoryDetectionMod =
@@ -87,6 +92,7 @@ struct zkcmTimerControlModS		ibmPc_timerControlMod =
 	&ibmPc_rtc_getCurrentDate,
 	&ibmPc_rtc_getCurrentTime,
 	&ibmPc_rtc_refreshCachedSystemTime,
-	&ibmPc_rtc_flushCachedSystemTime
+	&ibmPc_rtc_flushCachedSystemTime,
+	__KNULL, __KNULL, __KNULL
 };
 

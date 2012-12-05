@@ -15,6 +15,10 @@
 	// Hopefully we should never need to use this.
 	#define ERROR_MEMORY_NOMEM_IN_CONSTRUCTOR	-9
 	#define ERROR_UNIMPLEMENTED			-12
+	#define ERROR_RESOURCE_BUSY			-13
+	#define ERROR_UNAUTHORIZED			-14
+	#define ERROR_RESOURCE_UNAVAILABLE		-15
+	#define ERROR_NOT_SUPPORTED			-16
 
 	#define UNIMPLEMENTED(__funcName)		\
 		__kprintf(ERROR"Unimplemented: %s on line %d of file %s.\n", \

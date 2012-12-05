@@ -67,8 +67,8 @@
 
 /* Return values for loadBusPinMappings.
  **/
-#define IRQCTRL_BPM_UNSUPPORTED_BUS			(1)
-#define IRQCTRL_BPM_NO_MAPPINGS_FOUND			(2)
+#define IRQCTL_BPM_UNSUPPORTED_BUS			(1)
+#define IRQCTL_BPM_NO_MAPPINGS_FOUND			(2)
 
 struct zkcmIrqPinS
 {
@@ -114,7 +114,16 @@ struct zkcmIrqControlModS
 
 	void (*sendEoi)(ubit16 __kpin);
 
-	status_t (*loadBusPinMappings)(utf8Char *bus);
+	// Bus-Pin Mapping API calls.
+	struct
+	{
+		status_t (*loadBusPinMappings)(utf8Char *bus);
+		error_t (*get__kpinFor)(
+			utf8Char *bus, ubit32 busIrqId, ubit16 *__kpin);
+
+		status_t (*bpm_maskIrq)(utf8Char *bus, ubit32 busIrqId);
+		status_t (*bpm_unmaskIrq)(utf8Char *bus, ubit32 busIrqId);
+	} bpm;
 };
 
 #endif

@@ -22,13 +22,14 @@ static struct x86_mpCfg1S	x86_mpCfg1 =
 		0x01,
 		// Checksum.
 		0,
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i'},
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i', ' ', ' ', ' ', ' '},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i'},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i', ' ', ' ', ' ', ' '},
 		0x0,
 		0x0,
 		// nEntries.
 		0x3,
 		0xFEC00000,
+		0x0,
 		0x0,
 		0x0
 	},
@@ -39,7 +40,8 @@ static struct x86_mpCfg1S	x86_mpCfg1 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_BSP | x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		},
 		{
 			x86_MPCFG_TYPE_CPU,
@@ -47,7 +49,8 @@ static struct x86_mpCfg1S	x86_mpCfg1 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		}
 	},
 	{
@@ -69,13 +72,14 @@ static struct x86_mpCfg1S	x86_mpCfg2 =
 		0x01,
 		// Checksum.
 		0,
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i'},
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i', ' ', ' ', ' ', ' '},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i'},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i', ' ', ' ', ' ', ' '},
 		0x0,
 		0x0,
 		// nEntries.
 		0x3,
 		0xFEC00000,
+		0x0,
 		0x0,
 		0x0
 	},
@@ -86,7 +90,8 @@ static struct x86_mpCfg1S	x86_mpCfg2 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_BSP | x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		},
 		{
 			x86_MPCFG_TYPE_CPU,
@@ -94,7 +99,8 @@ static struct x86_mpCfg1S	x86_mpCfg2 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		}
 	},
 	{
@@ -116,13 +122,14 @@ static struct x86_mpCfg1S	x86_mpCfg3 =
 		0x01,
 		// Checksum.
 		0,
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i'},
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i', ' ', ' ', ' ', ' '},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i'},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i', ' ', ' ', ' ', ' '},
 		0x0,
 		0x0,
 		// nEntries.
 		0x3,
 		0xFEC00000,
+		0x0,
 		0x0,
 		0x0
 	},
@@ -133,7 +140,8 @@ static struct x86_mpCfg1S	x86_mpCfg3 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_BSP | x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		},
 		{
 			x86_MPCFG_TYPE_CPU,
@@ -141,7 +149,8 @@ static struct x86_mpCfg1S	x86_mpCfg3 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		}
 	},
 	{
@@ -163,13 +172,14 @@ static struct x86_mpCfg1S	x86_mpCfg4 =
 		0x01,
 		// Checksum.
 		0,
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i'},
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i', ' ', ' ', ' ', ' '},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i'},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i', ' ', ' ', ' ', ' '},
 		0x0,
 		0x0,
 		// nEntries.
 		0x3,
 		0xFEC00000,
+		0x0,
 		0x0,
 		0x0
 	},
@@ -180,7 +190,8 @@ static struct x86_mpCfg1S	x86_mpCfg4 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_BSP | x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		},
 		{
 			x86_MPCFG_TYPE_CPU,
@@ -188,7 +199,8 @@ static struct x86_mpCfg1S	x86_mpCfg4 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		}
 	},
 	{
@@ -210,13 +222,14 @@ static struct x86_mpCfg1S	x86_mpCfg5 =
 		0x01,
 		// Checksum.
 		0,
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i'},
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i', ' ', ' ', ' ', ' '},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i'},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i', ' ', ' ', ' ', ' '},
 		0x0,
 		0x0,
 		// nEntries.
 		0x3,
 		0xFEC00000,
+		0x0,
 		0x0,
 		0x0
 	},
@@ -227,7 +240,8 @@ static struct x86_mpCfg1S	x86_mpCfg5 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_BSP | x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		},
 		{
 			x86_MPCFG_TYPE_CPU,
@@ -235,7 +249,8 @@ static struct x86_mpCfg1S	x86_mpCfg5 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		}
 	},
 	{
@@ -257,13 +272,14 @@ static struct x86_mpCfg1S	x86_mpCfg6 =
 		0x01,
 		// Checksum.
 		0,
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i'},
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i', ' ', ' ', ' ', ' '},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i'},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i', ' ', ' ', ' ', ' '},
 		0x0,
 		0x0,
 		// nEntries.
 		0x3,
 		0xFEC00000,
+		0x0,
 		0x0,
 		0x0
 	},
@@ -274,7 +290,8 @@ static struct x86_mpCfg1S	x86_mpCfg6 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_BSP | x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		},
 		{
 			x86_MPCFG_TYPE_CPU,
@@ -282,7 +299,8 @@ static struct x86_mpCfg1S	x86_mpCfg6 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		}
 	},
 	{
@@ -304,13 +322,14 @@ static struct x86_mpCfg1S	x86_mpCfg7 =
 		0x01,
 		// Checksum.
 		0,
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i'},
-		{'Z', 'a', 'm', 'b', 'e', 'z', 'i', 'i', ' ', ' ', ' ', ' '},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i'},
+		{'Z', 'a', 'm', 'b', 'e', 's', 'i', 'i', ' ', ' ', ' ', ' '},
 		0x0,
 		0x0,
 		// nEntries.
 		0x3,
 		0xFEC00000,
+		0x0,
 		0x0,
 		0x0
 	},
@@ -321,7 +340,8 @@ static struct x86_mpCfg1S	x86_mpCfg7 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_BSP | x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		},
 		{
 			x86_MPCFG_TYPE_CPU,
@@ -329,7 +349,8 @@ static struct x86_mpCfg1S	x86_mpCfg7 =
 			// FIXME: LAPIC Version. Check over.
 			0x01,
 			x86_MPCFG_CPU_FLAGS_ENABLED,
-			0x0
+			0x0,
+			0x0, 0x0, 0x0
 		}
 	},
 	{

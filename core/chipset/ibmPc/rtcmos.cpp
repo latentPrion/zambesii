@@ -297,6 +297,13 @@ static ubit8 getCenturyOffset(void)
 		fadt = acpiRsdt::getNextFadt(rsdt, &context, &handle);
 		if (fadt != __KNULL)
 		{
+			// Literal value temporarily used. Taken from Linux.
+			if (fadt->hdr.revision < 3 || !fadt->cmosCentury)
+			{
+				__kprintf(NOTICE RTCCMOS"FADT century offset not used.\n");
+				return CMOS_REG_DATE_CENTURY;
+			};
+
 			ret = fadt->cmosCentury;
 			acpiRsdt::destroySdt((acpi_sdtS *)fadt);
 			acpiRsdt::destroyContext(&context);
@@ -340,6 +347,7 @@ status_t ibmPc_rtc_getHardwareDate(date_t *date)
 
 	rtccmos::unlock();
 
+	
 	if (rtccmosBcdDateTime)
 	{
 		year = (bcd8ToUbit8(year >> 8) * 100)
@@ -349,7 +357,7 @@ status_t ibmPc_rtc_getHardwareDate(date_t *date)
 		day = bcd8ToUbit8(day);
 	}
 	else {
-		year = ((year >> 8) * 100) * (year & 0xFF);
+		year = ((year >> 8) * 100) + (year & 0xFF);
 	};
 
 	*date = TIMERTRIB_DATE_ENCODE_YEAR(year)

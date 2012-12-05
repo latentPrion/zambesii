@@ -43,6 +43,11 @@ void ibmPc_irqControl_unmaskIrqsByPriority(
 void ibmPc_irqControl_sendEoi(ubit16 __kpin);
 
 status_t ibmPc_irqControl_bpm_loadBusPinMappings(utf8Char *bus);
+error_t ibmPc_irqControl_bpm_get__kpinFor(
+	utf8Char *bus, ubit32 busIrqId, ubit16 *__kpin);
+
+status_t ibmPc_irqControl_bpm_maskIrq(utf8Char *bus, ubit32 busIrqId);
+status_t ibmPc_irqControl_bpm_unmaskIrq(utf8Char *bus, ubit32 busIrqId);
 
 CPPEXTERN_END
 

@@ -14,7 +14,7 @@ struct zkcmTimerDeviceS
 
 	struct
 	{
-		// Driver can use these to store linked list of children, etc.
+		// Driver can use these to store linked lists of children, etc.
 		ubit8	data0[128];
 		ubit8	data1[64];
 	} scratch;
@@ -28,7 +28,7 @@ struct zkcmTimerDeviceS
 
 /**	Constants used with struct zkcmTimerSourceS.
  **/
-// Bitfield values for timersource.capabilities.type.
+// Values for timersource.capabilities.type.
 #define ZKCM_TIMERSRC_CAP_TYPE_PER_CPU		(0x0)
 #define ZKCM_TIMERSRC_CAP_TYPE_CHIPSET		(0x1)
 
@@ -42,6 +42,7 @@ struct zkcmTimerDeviceS
 #define ZKCM_TIMERSRC_CAP_PRECISION_NEGLIGABLE	(0x1)
 #define ZKCM_TIMERSRC_CAP_PRECISION_UNDERFLOW	(0x2)
 #define ZKCM_TIMERSRC_CAP_PRECISION_OVERFLOW	(0x3)
+#define ZKCM_TIMERSRC_CAP_PRECISION_ANY		(0x4)
 
 // Values for zkcmTimerSourceS.capabilities.modes.
 #define ZKCM_TIMERSRC_CAP_MODE_PERIODIC		(1<<0)
@@ -101,7 +102,7 @@ struct zkcmTimerSourceS
 	processId_t			latchedProcess;
 	struct zkcmTimerDevS		*parentDevice;
 	struct zkcmTimerDriverS		*driver;
-}
+};
 
 #endif
 
