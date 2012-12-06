@@ -6,8 +6,8 @@
 	#include <chipset/zkcm/cpuDetection.h>
 	#include <chipset/zkcm/irqControl.h>
 	#include <chipset/zkcm/timerControl.h>
+	#include <chipset/zkcm/debugDevice.h>
 	#include <chipset/pkg/watchdogMod.h>
-	#include <chipset/pkg/debugMod.h>
 
 class zkcmCoreC
 {
@@ -31,7 +31,7 @@ public:
 	zkcmIrqControlModC		irqControl;
 	zkcmTimerControlModC		timerControl;
 
-	debugModS			*debug[4];
+	zkcmDebugDeviceC		*debug[4];
 };
 
 extern zkcmCoreC		zkcmCore;

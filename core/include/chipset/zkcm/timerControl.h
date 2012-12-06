@@ -1,6 +1,7 @@
 #ifndef _ZKCM_TIMER_CONTROL_MODULE_H
 	#define _ZKCM_TIMER_CONTROL_MODULE_H
 
+	#include <chipset/zkcm/timerDevice.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 	#include <kernel/common/processId.h>
@@ -92,13 +93,13 @@ public:
 	 *
 	 * See include/chipset/zkcm/timerSource.h for preprocessor constants.
 	 **/
-	struct zkcmTimerSourceS *filterTimerSources(
-		ubit8 type,		// PER_CPU or CHIPSET.
-		ubit32 modes,		// PERIODIC | ONESHOT.
+	zkcmTimerDeviceC *filterTimerSources(
+		zkcmTimerDeviceC::timerTypeE type,	// PER_CPU or CHIPSET.
+		ubit32 modes,				// PERIODIC | ONESHOT.
 		ubit32 resolutions,	// 1s|100ms|10ms|1ms|100ns|10ns|1ns
-		ubit8 ioLatency,	// LOW, MODERATE or HIGH.
-		ubit8 precision,	// EXACT, NEGLIGABLE, OVERFLOW
-					// or UNDERFLOW
+		zkcmTimerDeviceC::ioLatencyE ioLatency,	// LOW, MODERATE or HIGH
+		zkcmTimerDeviceC::precisionE precision,	// EXACT, NEGLIGABLE,
+							// OVERFLOW or UNDERFLOW
 		void **handle);
 
 	/**	EXPLANATION:
@@ -106,8 +107,8 @@ public:
 	 * they are detected. They are then added to the list that is searchable
 	 * by filterTimerSources.
 	 **/
-	error_t registerNewTimerSource(zkcmTimerSourceS *timerSource);
-	error_t unregisterTimerSource(zkcmTimerSourceS *timerSource);
+	error_t registerNewTimerSource(zkcmTimerDeviceC *timerSource);
+	error_t unregisterTimerSource(zkcmTimerDeviceC *timerSource);
 };
 
 #endif

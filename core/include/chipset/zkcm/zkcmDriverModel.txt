@@ -1,0 +1,66 @@
+
+Each driver API that the kernel specifies is made usable to driver developers
+as a C++ class. A driver which exports that API should create a derived class
+from the ZKCM API class and write the relevant methods.
+
+From then on, that derived class can be instantiated in any of the instances
+of that driver's device.
+
+Example of a kernel API class:
+
+// Defines a standard API package for all NIC drivers.
+class zkcmNetworkDriverC
+{
+public:
+	zkcmNetworkDriverC(zkcmDeviceC *device, void *self);
+
+public:
+	virtual sendFrame(int size, void *buff)=0;
+	virtual receiveFrame(int size, void *buff)=0;
+};
+
+Example of a specific network driver:
+
+// NE2000 driver, inherits from zkcmNetworkDriverC.
+class ibmPcNe2000
+:
+public zkcmNetworkDriverC
+{
+public:
+	ibmPcNe2000(zkcmDeviceC *device, void *self);
+
+public:
+	virtual sendFrame(int size, void *buff) { do_stuff(); }
+	virtual receiveFrame(int size, void *buff) { do_other_stuff(); }
+
+private:
+	struct
+	{
+		ubit32 sendRegState, recvRegState;
+	} regState;
+}
+
+In the above example class hierarchy, the kernel will always take the base class
+as an argument, and will never care about the derived class attributes that
+have been added on. C++ polymorphism will ensure that the correct method from
+the class ibmPcNe2000 is called when the kernel does things like this:
+	zkcmNetworkDriverC	*device;
+	device->send(strlen("hello world!"), "hello world!");
+
+---------------
+class ne2000DeviceC
+{
+public:
+	ne2000DeviceC(ubit32 childId)
+	:
+	ibmPcNe2000(&device),
+	device(CC"ne2000", CC"Novell NE 2000 Compatible NIC",
+		CC"Unknown Vendor", CC"Unknown vendor contact details")
+	{}
+
+public:
+	ibmPcNe2000	net;
+	zkcmDeviceC	device;
+} ne2k0, ne2k1;
+
+

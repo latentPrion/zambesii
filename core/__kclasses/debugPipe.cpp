@@ -58,9 +58,9 @@ debugPipeC::~debugPipeC(void)
 
 uarch_t debugPipeC::tieTo(uarch_t device)
 {
-	debugModS	*mod;
-	error_t		err;
-	uarch_t		ret;
+	zkcmDebugDeviceC	*mod;
+	error_t			err;
+	uarch_t			ret;
 
 	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
 	{
