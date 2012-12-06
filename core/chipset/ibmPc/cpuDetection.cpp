@@ -7,7 +7,7 @@
 #include <arch/io.h>
 #include <arch/x8632/cpuid.h>
 #include <chipset/memoryAreas.h>
-#include <chipset/zkcm/cpuDetection.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <platform/cpu.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -18,32 +18,30 @@
 #include <commonlibs/libx86mp/libx86mp.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <__kthreads/__kcpuPowerOn.h>
-#include "cpuDetection.h"
 #include "i8259a.h"
 #include "zkcmIbmPcState.h"
-#include "irqControl.h"
 
 
 #define SMPINFO		CPUMOD"SMP: "
 #define CPUMOD		"CPU Mod: "
 
 
-error_t ibmPc_cpuMod_initialize(void)
+error_t zkcmCpuDetectionModC::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_cpuMod_shutdown(void)
+error_t zkcmCpuDetectionModC::shutdown(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_cpuMod_suspend(void)
+error_t zkcmCpuDetectionModC::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_cpuMod_restore(void)
+error_t zkcmCpuDetectionModC::restore(void)
 {
 	return ERROR_SUCCESS;
 }
@@ -159,7 +157,7 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 	return ret;
 }
 
-zkcmNumaMapS *ibmPc_cpuMod_getNumaMap(void)
+zkcmNumaMapS *zkcmCpuDetectionModC::getNumaMap(void)
 {
 	/**	EXPLANATION:
 	 * For the IBM-PC, a NUMA map of all CPUs is essentially obtained by
@@ -187,7 +185,7 @@ zkcmNumaMapS *ibmPc_cpuMod_getNumaMap(void)
 	return __KNULL;
 }
 
-zkcmSmpMapS *ibmPc_cpuMod_getSmpMap(void)
+zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 {
 	x86_mpCfgCpuS	*mpCpu;
 	void		*handle, *handle2, *context;
@@ -412,7 +410,7 @@ tryMpTables:
 	return __KNULL;
 }
 
-sarch_t ibmPc_cpuMod_checkSmpSanity(void)
+sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 {
 	uarch_t			eax, ebx, ecx, edx;
 	acpi_rsdtS		*rsdt;
@@ -566,7 +564,7 @@ checkForMpTables:
 	return 1;
 }
 
-cpu_t ibmPc_cpuMod_getBspId(void)
+cpu_t zkcmCpuDetectionModC::getBspId(void)
 {
 	x86_mpCfgS		*cfgTable;
 	acpi_rsdtS		*rsdt;
@@ -653,7 +651,7 @@ initLibLapic:
 	return ibmPcState.bspInfo.bspId;
 }
 
-error_t ibmPc_cpuMod_setSmpMode(void)
+error_t zkcmCpuDetectionModC::setSmpMode(void)
 {
 	error_t		ret;
 	ubit8		*lowmem;
@@ -768,7 +766,7 @@ error_t ibmPc_cpuMod_setSmpMode(void)
 
 	ibmPcState.smpInfo.chipsetState = SMPSTATE_SMP;
 
-	ibmPc_irqControl_chipsetEventNotification(
+	zkcmCore.irqControl.chipsetEventNotification(
 		IRQCTL_EVENT_SMP_MODE_SWITCH, 0);
 
 	x86IoApic::initializeCache();
@@ -781,7 +779,7 @@ error_t ibmPc_cpuMod_setSmpMode(void)
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_cpuMod_powerControl(cpu_t cpuId, ubit8 command, uarch_t)
+error_t zkcmCpuDetectionModC::powerControl(cpu_t cpuId, ubit8 command, uarch_t)
 {
 	error_t		ret;
 	ubit8		nTries, isNewerCpu=1;

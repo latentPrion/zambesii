@@ -26,8 +26,7 @@ error_t debugPipeC::initialize(void)
 
 	devices.rsrc = 0;
 	// Allocate four pages for UTF-8 expansion buffer.
-	mem = new ((memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(
+	mem = new (memoryTrib.__kmemoryStream.memAlloc(
 			DEBUGPIPE_CONVERSION_BUFF_NPAGES, MEMALLOC_NO_FAKEMAP))
 			utf8Char;
 

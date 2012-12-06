@@ -114,12 +114,10 @@ error_t memoryTribC::createBank(numaBankId_t id)
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// Note the MEMALLOC_NO_FAKEMAP flag: MM code/data should never pgfault.
-	nmb = new (
-		(memoryTrib.__kmemoryStream
-			.*memoryTrib.__kmemoryStream.memAlloc)(
-				PAGING_BYTES_TO_PAGES(sizeof(numaMemoryBankC)),
-				MEMALLOC_NO_FAKEMAP))
-		numaMemoryBankC(id);
+	nmb = new (memoryTrib.__kmemoryStream.memAlloc(
+		PAGING_BYTES_TO_PAGES(sizeof(numaMemoryBankC)),
+		MEMALLOC_NO_FAKEMAP))
+			numaMemoryBankC(id);
 
 	if (nmb == __KNULL) {
 		return ERROR_MEMORY_NOMEM;

@@ -88,7 +88,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 #ifdef CONFIG_CHIPSET_IBM_PC
 	// Do Bus-pin mapping for the ISA bus.
-	DO_OR_DIE(zkcmCore.irqControl->bpm, loadBusPinMappings(CC"isa"), ret);
+	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 #endif
 
 	DO_OR_DIE(timerTrib, initialize2(), ret);

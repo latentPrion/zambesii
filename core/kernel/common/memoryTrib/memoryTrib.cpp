@@ -101,9 +101,7 @@ error_t memoryTribC::memRegionInit(void)
 	};
 
 	// Next step is to overlay the memory regions with chipset memory map.
-	if (zkcmCore.memoryDetection == __KNULL) { return ERROR_SUCCESS; };
-
-	memMap = (*zkcmCore.memoryDetection->getMemoryMap)();
+	memMap = zkcmCore.memoryDetection.getMemoryMap();
 	if (memMap == __KNULL) { return ERROR_SUCCESS; };
 
 	for (ubit32 i=0; i<chipsetRegionMap->nEntries; i++)
@@ -133,9 +131,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 	uarch_t		totalFrames;
 	status_t	nFetched, nMapped;
 
-	ret = (__kmemoryStream.vaddrSpaceStream
-		.*__kmemoryStream.vaddrSpaceStream.getPages)(nPages);
-
+	ret = __kmemoryStream.vaddrSpaceStream.getPages(nPages);
 	if (ret == __KNULL) {
 		return __KNULL;
 	};

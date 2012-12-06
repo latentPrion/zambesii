@@ -27,14 +27,13 @@ id(taskId), parent(parentProcess)
 
 error_t taskC::initialize(void)
 {
-	stack0 = (memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(
+	stack0 = memoryTrib.__kmemoryStream.memAlloc(
 			CHIPSET_MEMORY___KSTACK_NPAGES, MEMALLOC_NO_FAKEMAP);
 
 	if (stack0 == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
 	// TODO: Implement memoryStreamC::stackAlloc().
-	stack1 = (parent->memoryStream->*parent->memoryStream->memAlloc)(4, 0);
+	stack1 = parent->memoryStream->memAlloc(4, 0);
 	if (stack1 == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
 	context = new taskContextS;

@@ -8,14 +8,15 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include "i8259a.h"
 #include "zkcmIbmPcState.h"
-#include "irqControl.h"
 
 
 /**	NOTES:
  * SCI: Active low, level triggered, shareable (ACPI spec).
  **/
 
-error_t ibmPc_irqControl_initialize(void)
+#define IBMPCIRQCTL		"IBMPC Irq-Ctl: "
+
+error_t zkcmIrqControlModC::initialize(void)
 {
 	/**	EXPLANATION:
 	 * At this point, we would like to initialize the i8259 PICs and mask
@@ -28,31 +29,31 @@ error_t ibmPc_irqControl_initialize(void)
 	return ibmPc_i8259a_initialize();
 }
 
-error_t ibmPc_irqControl_shutdown(void)
+error_t zkcmIrqControlModC::shutdown(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_irqControl_suspend(void)
+error_t zkcmIrqControlModC::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_irqControl_restore(void)
+error_t zkcmIrqControlModC::restore(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_irqControl_registerIrqController(void)
+error_t zkcmIrqControlModC::registerIrqController(void)
 {
 	return ERROR_SUCCESS;
 }
 
-void ibmPc_irqControl_destroyIrqController(void)
+void zkcmIrqControlModC::destroyIrqController(void)
 {
 }
 
-void ibmPc_irqControl_chipsetEventNotification(ubit8 event, uarch_t flags)
+void zkcmIrqControlModC::chipsetEventNotification(ubit8 event, uarch_t flags)
 {
 	switch (event)
 	{
@@ -79,7 +80,7 @@ void ibmPc_irqControl_chipsetEventNotification(ubit8 event, uarch_t flags)
 	};
 }
 
-error_t ibmPc_irqControl_identifyIrq(uarch_t physicalId, ubit16 *__kpin)
+error_t zkcmIrqControlModC::identifyIrq(uarch_t physicalId, ubit16 *__kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		return x86IoApic::identifyIrq(physicalId, __kpin);
@@ -91,7 +92,7 @@ error_t ibmPc_irqControl_identifyIrq(uarch_t physicalId, ubit16 *__kpin)
 	return ERROR_UNKNOWN;
 }
 
-status_t ibmPc_irqControl_getIrqStatus(
+status_t zkcmIrqControlModC::getIrqStatus(
 	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
 	ubit8 *triggerMode, ubit8 *polarity
 	)
@@ -108,7 +109,7 @@ status_t ibmPc_irqControl_getIrqStatus(
 	};
 }
 
-status_t ibmPc_irqControl_setIrqStatus(
+status_t zkcmIrqControlModC::setIrqStatus(
 	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
 	)
 {
@@ -122,7 +123,7 @@ status_t ibmPc_irqControl_setIrqStatus(
 	};
 }
 
-void ibmPc_irqControl_maskIrq(ubit16 __kpin)
+void zkcmIrqControlModC::maskIrq(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		x86IoApic::maskIrq(__kpin);
@@ -132,7 +133,7 @@ void ibmPc_irqControl_maskIrq(ubit16 __kpin)
 	};
 }
 
-void ibmPc_irqControl_unmaskIrq(ubit16 __kpin)
+void zkcmIrqControlModC::unmaskIrq(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		x86IoApic::unmaskIrq(__kpin);
@@ -142,7 +143,7 @@ void ibmPc_irqControl_unmaskIrq(ubit16 __kpin)
 	};
 }
 
-void ibmPc_irqControl_maskAll(void)
+void zkcmIrqControlModC::maskAll(void)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		x86IoApic::maskAll();
@@ -152,7 +153,7 @@ void ibmPc_irqControl_maskAll(void)
 	};
 }
 
-void ibmPc_irqControl_unmaskAll(void)
+void zkcmIrqControlModC::unmaskAll(void)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		x86IoApic::unmaskAll();
@@ -162,7 +163,7 @@ void ibmPc_irqControl_unmaskAll(void)
 	};
 }
 
-sarch_t ibmPc_irqControl_irqIsEnabled(ubit16 __kpin)
+sarch_t zkcmIrqControlModC::irqIsEnabled(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		return x86IoApic::irqIsEnabled(__kpin);
@@ -172,7 +173,7 @@ sarch_t ibmPc_irqControl_irqIsEnabled(ubit16 __kpin)
 	};
 }
 
-void ibmPc_irqControl_maskIrqsByPriority(
+void zkcmIrqControlModC::maskIrqsByPriority(
 	ubit16 __kpin, cpu_t cpuId, uarch_t *mask
 	)
 {
@@ -187,7 +188,7 @@ void ibmPc_irqControl_maskIrqsByPriority(
 	};
 }
 
-void ibmPc_irqControl_unmaskIrqsByPriority(
+void zkcmIrqControlModC::unmaskIrqsByPriority(
 	ubit16 __kpin, cpu_t cpu, uarch_t mask
 	)
 {
@@ -202,7 +203,7 @@ void ibmPc_irqControl_unmaskIrqsByPriority(
 	};
 }
 
-void ibmPc_irqControl_sendEoi(ubit16 __kpin)
+void zkcmIrqControlModC::sendEoi(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
 	{

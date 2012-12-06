@@ -51,24 +51,10 @@ error_t memoryStreamC::initialize(
 
 void memoryStreamC::bind(void)
 {
-	binding.lock.acquire();
-
-	memAlloc = &memoryStreamC::real_memAlloc;
-	binding.rsrc = 1;
-	vaddrSpaceStream.bind();
-
-	binding.lock.release();
 }
 
 void memoryStreamC::cut(void)
 {
-	binding.lock.acquire();
-
-	memAlloc = &memoryStreamC::dummy_memAlloc;
-	binding.rsrc = 0;
-	vaddrSpaceStream.cut();
-
-	binding.lock.release();
 }
 
 void memoryStreamC::dump(void)
@@ -77,12 +63,7 @@ void memoryStreamC::dump(void)
 	vaddrSpaceStream.dump();
 }
 
-void *memoryStreamC::dummy_memAlloc(uarch_t, uarch_t)
-{
-	return __KNULL;
-}
-
-void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
+void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 {
 	uarch_t		commit=nPages, ret, f, pos, nTries, localFlush=0;
 	status_t	totalFrames, nFrames, nMapped;
@@ -115,8 +96,7 @@ void *memoryStreamC::real_memAlloc(uarch_t nPages, uarch_t flags)
 		commit = 0;
 	};
 
-	ret = reinterpret_cast<uarch_t>(
-		(vaddrSpaceStream.*vaddrSpaceStream.getPages)(nPages) );
+	ret = reinterpret_cast<uarch_t>( vaddrSpaceStream.getPages(nPages) );
 
 	if (ret == __KNULL) {
 		return __KNULL;

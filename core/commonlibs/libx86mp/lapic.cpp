@@ -53,8 +53,7 @@ error_t x86Lapic::mapLapicMem(void)
 	status_t	nMapped;
 
 	// Map the LAPIC per-contextual paddr to a the kernel's vaddrspace.
-	v = (memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(
+	v = memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages(
 		x86_LAPIC_NPAGES);
 
 	if (v == __KNULL)

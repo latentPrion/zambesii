@@ -5,13 +5,12 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 
-#include "irqControl.h"
 #include "busPinMappings.h"
 
-status_t ibmPc_irqControl_bpm_loadBusPinMappings(utf8Char *bus)
+status_t zkcmIrqControlModC::bpmC::loadBusPinMappings(utf8Char *bus)
 {
 	if (strcmp8(bus, CC"isa") == 0) {
-		return ibmPc_bpm_isa_loadBusPinMappings();
+		return ibmPcBpm::isa::loadBusPinMappings();
 	};
 
 	// The ACPI BPM function will generally find out where SCI is mapped.
@@ -26,12 +25,12 @@ status_t ibmPc_irqControl_bpm_loadBusPinMappings(utf8Char *bus)
 	return IRQCTL_BPM_UNSUPPORTED_BUS;
 }
 
-error_t ibmPc_irqControl_bpm_get__kpinFor(
+error_t zkcmIrqControlModC::bpmC::get__kpinFor(
 	utf8Char *bus, ubit32 busIrqId, ubit16 *__kpin
 	)
 {
 	if (strcmp8(bus, CC"isa") == 0) {
-		return ibmPc_bpm_isa_get__kpinFor(busIrqId, __kpin);
+		return ibmPcBpm::isa::get__kpinFor(busIrqId, __kpin);
 	};
 
 	// The ACPI BPM function will generally find out where SCI is mapped.
@@ -46,10 +45,10 @@ error_t ibmPc_irqControl_bpm_get__kpinFor(
 	return IRQCTL_BPM_UNSUPPORTED_BUS;
 }
 
-status_t ibmPc_irqControl_bpm_maskIrq(utf8Char *bus, ubit32 busIrqId)
+status_t zkcmIrqControlModC::bpmC::maskIrq(utf8Char *bus, ubit32 busIrqId)
 {
 	if (strcmp8(bus, CC"isa") == 0) {
-		return ibmPc_bpm_isa_maskIrq(busIrqId);
+		return ibmPcBpm::isa::maskIrq(busIrqId);
 	};
 
 	// The ACPI BPM function will generally find out where SCI is mapped.
@@ -64,10 +63,10 @@ status_t ibmPc_irqControl_bpm_maskIrq(utf8Char *bus, ubit32 busIrqId)
 	return IRQCTL_BPM_UNSUPPORTED_BUS;
 }
 
-status_t ibmPc_irqControl_bpm_unmaskIrq(utf8Char *bus, ubit32 busIrqId)
+status_t zkcmIrqControlModC::bpmC::unmaskIrq(utf8Char *bus, ubit32 busIrqId)
 {
 	if (strcmp8(bus, CC"isa") == 0) {
-		return ibmPc_bpm_isa_unmaskIrq(busIrqId);
+		return ibmPcBpm::isa::unmaskIrq(busIrqId);
 	};
 
 	// The ACPI BPM function will generally find out where SCI is mapped.

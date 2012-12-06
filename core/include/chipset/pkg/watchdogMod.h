@@ -3,17 +3,18 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-struct watchdogModS
+class watchdogModS
 {
-	error_t (*initialize)(void);
-	error_t (*shutdown)(void);
-	error_t (*suspend)(void);
-	error_t (*restore)(void);
+public:
+	error_t initialize(void);
+	error_t shutdown(void);
+	error_t suspend(void);
+	error_t restore(void);
 
-	status_t (*setAction)(ubit8 action);
-	status_t (*setTimeoutMs)(ubit32 ms);
-	status_t (*enable)(void);
-	status_t (*disable)(void);
+	status_t setAction(ubit8 action);
+	status_t setTimeoutMs(ubit32 ms);
+	status_t enable(void);
+	status_t disable(void);
 };
 
 #endif

@@ -6,19 +6,20 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
 
-struct zkcmCpuDetectionModS
+class zkcmCpuDetectionModC
 {
-	error_t (*initialize)(void);
-	error_t (*shutdown)(void);
-	error_t (*suspend)(void);
-	error_t (*restore)(void);
+public:
+	error_t initialize(void);
+	error_t shutdown(void);
+	error_t suspend(void);
+	error_t restore(void);
 
-	sarch_t (*checkSmpSanity)(void);
-	error_t (*setSmpMode)(void);
-	cpu_t (*getBspId)(void);
-	struct zkcmSmpMapS *(*getSmpMap)(void);
-	struct zkcmNumaMapS *(*getNumaMap)(void);
-	status_t (*powerControl)(cpu_t cpuId, ubit8 command, uarch_t flags);
+	sarch_t checkSmpSanity(void);
+	error_t setSmpMode(void);
+	cpu_t getBspId(void);
+	struct zkcmSmpMapS *getSmpMap(void);
+	struct zkcmNumaMapS *getNumaMap(void);
+	status_t powerControl(cpu_t cpuId, ubit8 command, uarch_t flags);
 };
 
 #endif

@@ -82,47 +82,49 @@ struct zkcmIrqPinS
 	ubit8		triggerMode, polarity;
 };
 
-struct zkcmIrqControlModS
+class zkcmIrqControlModC
 {
-	error_t (*initialize)(void);
+public:
+	error_t initialize(void);
 	// A second initialize(); should report all PIC pins to kernel.
-	error_t (*shutdown)(void);
-	error_t (*suspend)(void);
-	error_t (*restore)(void);
+	error_t shutdown(void);
+	error_t suspend(void);
+	error_t restore(void);
 
-	error_t (*registerIrqController)(void);
-	void (*destroyIrqController)(void);
+	error_t registerIrqController(void);
+	void destroyIrqController(void);
 
-	void (*chipsetEventNotification)(ubit8 event, uarch_t flags);
+	void chipsetEventNotification(ubit8 event, uarch_t flags);
 
-	error_t (*identifyIrq)(uarch_t physicalId, ubit16 *__kpin);
-	status_t (*getIrqStatus)(
+	error_t identifyIrq(uarch_t physicalId, ubit16 *__kpin);
+	status_t getIrqStatus(
 		uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
 		ubit8 *triggerMode, ubit8 *polarity);
 
-	status_t (*setIrqStatus)(
+	status_t setIrqStatus(
 		uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled);
 
-	void (*maskIrq)(ubit16 __kpin);
-	void (*unmaskIrq)(ubit16 __kpin);
-	void (*maskAll)(void);
-	void (*unmaskAll)(void);
-	sarch_t (*irqIsEnabled)(ubit16 __kpin);
+	void maskIrq(ubit16 __kpin);
+	void unmaskIrq(ubit16 __kpin);
+	void maskAll(void);
+	void unmaskAll(void);
+	sarch_t irqIsEnabled(ubit16 __kpin);
 
-	void (*maskIrqsByPriority)(ubit16 __kpin, cpu_t cpuId, uarch_t *mask0);
-	void (*unmaskIrqsByPriority)(ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
+	void maskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t *mask0);
+	void unmaskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
 
-	void (*sendEoi)(ubit16 __kpin);
+	void sendEoi(ubit16 __kpin);
 
 	// Bus-Pin Mapping API calls.
-	struct
+	class bpmC
 	{
-		status_t (*loadBusPinMappings)(utf8Char *bus);
-		error_t (*get__kpinFor)(
+	public:
+		status_t loadBusPinMappings(utf8Char *bus);
+		error_t get__kpinFor(
 			utf8Char *bus, ubit32 busIrqId, ubit16 *__kpin);
 
-		status_t (*bpm_maskIrq)(utf8Char *bus, ubit32 busIrqId);
-		status_t (*bpm_unmaskIrq)(utf8Char *bus, ubit32 busIrqId);
+		status_t maskIrq(utf8Char *bus, ubit32 busIrqId);
+		status_t unmaskIrq(utf8Char *bus, ubit32 busIrqId);
 	} bpm;
 };
 

@@ -54,7 +54,7 @@ status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 	__kcpuPowerOnBlock.sleepStack = &sleepStack[PAGING_BASE_SIZE];
 
 	// Call the chipset code to now actually wake the CPU up.
-	(*zkcmCore.cpuDetection->powerControl)(cpuId, command, flags);
+	zkcmCore.cpuDetection.powerControl(cpuId, command, flags);
 
 	return ERROR_SUCCESS;
 }

@@ -10,10 +10,9 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/libacpi.h>
-#include "memoryDetection.h"
 
 
-// E820 definitions for ibmPc_memoryMod_getMemoryMap().
+// E820 definitions for zkcmMemoryDetectionModC::getMemoryMap().
 #define E820_USABLE		0x1
 #define E820_RECLAIMABLE	0x3
 
@@ -31,22 +30,22 @@ static e820EntryS		*e820Ptr;
 static zkcmMemMapS		*_mmap=__KNULL;
 static zkcmMemConfigS		*_mcfg=__KNULL;
 
-error_t ibmPc_memoryMod_initialize(void)
+error_t zkcmMemoryDetectionModC::initialize(void)
 {
 	return ibmPcBios::initialize();
 }
 
-error_t ibmPc_memoryMod_shutdown(void)
+error_t zkcmMemoryDetectionModC::shutdown(void)
 {
 	return ibmPcBios::shutdown();
 }
 
-error_t ibmPc_memoryMod_suspend(void)
+error_t zkcmMemoryDetectionModC::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_memoryMod_restore(void)
+error_t zkcmMemoryDetectionModC::restore(void)
 {
 	return ERROR_SUCCESS;
 }
@@ -170,7 +169,7 @@ static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 	return ret;
 }
 
-zkcmNumaMapS *ibmPc_memoryMod_getNumaMap(void)
+zkcmNumaMapS *zkcmMemoryDetectionModC::getNumaMap(void)
 {
 	error_t		err;
 	zkcmNumaMapS	*ret=0;
@@ -213,7 +212,7 @@ zkcmNumaMapS *ibmPc_memoryMod_getNumaMap(void)
 	#define IBMPCMMAP_ADDRHIGH_BADMASK	0
 #endif
 
-zkcmMemMapS *ibmPc_memoryMod_getMemoryMap(void)
+zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 {
 	zkcmMemMapS		*ret;
 	ubit32			nEntries=0, i, j;
@@ -357,7 +356,7 @@ zkcmMemMapS *ibmPc_memoryMod_getMemoryMap(void)
 	return ret;
 }
 
-zkcmMemConfigS *ibmPc_memoryMod_getMemoryConfig(void)
+zkcmMemConfigS *zkcmMemoryDetectionModC::getMemoryConfig(void)
 {
 	zkcmMemConfigS		*ret;
 	uarch_t			ax, bx, cx, dx;
@@ -377,7 +376,7 @@ zkcmMemConfigS *ibmPc_memoryMod_getMemoryConfig(void)
 
 	if (_mmap == __KNULL)
 	{
-		ibmPc_memoryMod_getMemoryMap();
+		getMemoryMap();
 		if (_mmap == __KNULL) { goto useE801; };
 	};
 

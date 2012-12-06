@@ -19,7 +19,7 @@
 	 * provide more than one timer source.
 	 **/
 
-/**	Constants used with zkcmTimerControlModS and the Timer Control Mod API.
+/**	Constants used with zkcmTimerControlModC and the Timer Control Mod API.
  **/
 // Values for bitfield returned by getChipsetSafeTimerPeriods().
 #define CHIPSET_TIMERS_1S_SAFE		(1<<0)
@@ -30,12 +30,14 @@
 #define CHIPSET_TIMERS_10NS_SAFE	(1<<5)
 #define CHIPSET_TIMERS_1NS_SAFE		(1<<6)
 
-struct zkcmTimerControlModS
+class zkcmTimerControlModC
 {
-	error_t (*initialize)(void);
-	error_t (*shutdown)(void);
-	error_t (*suspend)(void);
-	error_t (*restore)(void);
+public:
+
+	error_t initialize(void);
+	error_t shutdown(void);
+	error_t suspend(void);
+	error_t restore(void);
 
 	/**	EXPLANATION:
 	 * Returns a bitmap of "safe" timer period values.
@@ -53,15 +55,15 @@ struct zkcmTimerControlModS
 	 * end up just defining all the frequencies supported by the timers on
 	 * their model as safe.
 	 **/
-	ubit32 (*getChipsetSafeTimerPeriods)(void);
+	ubit32 getChipsetSafeTimerPeriods(void);
 
-	status_t (*getCurrentDate)(date_t *date);
-	status_t (*getCurrentTime)(struct timeS *currTime);
+	status_t getCurrentDate(date_t *date);
+	status_t getCurrentTime(struct timeS *currTime);
 	/* The chipset may cache the sytem time in RAM, and not actually be
 	 * reading from the hardware clock on time API calls. This updates the
 	 * the cached RAM value by reading from the hardware clock anew.
 	 **/
-	void (*refreshCachedSystemTime)(void);
+	void refreshCachedSystemTime(void);
 	/* The chipset may cache the system time in RAM, and not actually be
 	 * updating the hardware clock when the system time value in RAM
 	 * changes. This is especially so in situations where the hardware
@@ -70,7 +72,7 @@ struct zkcmTimerControlModS
 	 *
 	 * This function flushes the cached RAM value to the hardware clock.
 	 **/
-	void (*flushCachedSystemTime)(void);
+	void flushCachedSystemTime(void);
 
 	/**	EXPLANATION:
 	 * This is the timer source search and filter API. It allows the caller
@@ -90,7 +92,7 @@ struct zkcmTimerControlModS
 	 *
 	 * See include/chipset/zkcm/timerSource.h for preprocessor constants.
 	 **/
-	struct zkcmTimerSourceS *(*filterTimerSources)(
+	struct zkcmTimerSourceS *filterTimerSources(
 		ubit8 type,		// PER_CPU or CHIPSET.
 		ubit32 modes,		// PERIODIC | ONESHOT.
 		ubit32 resolutions,	// 1s|100ms|10ms|1ms|100ns|10ns|1ns
@@ -104,8 +106,8 @@ struct zkcmTimerControlModS
 	 * they are detected. They are then added to the list that is searchable
 	 * by filterTimerSources.
 	 **/
-	error_t (*registerNewTimerSource)(struct zkcmTimerSourceS *timerSource);
-	error_t (*unregisterTimerSource)(struct zkcmTimerSourceS *timerSource);
+	error_t registerNewTimerSource(zkcmTimerSourceS *timerSource);
+	error_t unregisterTimerSource(zkcmTimerSourceS *timerSource);
 };
 
 #endif

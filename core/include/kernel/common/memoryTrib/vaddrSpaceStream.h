@@ -50,16 +50,13 @@ public:
 		vSwampC::holeMapS *holeMap);
 
 public:
-	void *(vaddrSpaceStreamC::*getPages)(uarch_t nPages);
+	void *getPages(uarch_t nPages);
 	void releasePages(void *vaddr, uarch_t nPages);
 
 public:
 	void cut(void);
 	void bind(void);
 	void dump(void);
-
-	void *real_getPages(uarch_t nPages);
-	void *dummy_getPages(uarch_t nPages);
 
 public:
 	vaddrSpaceC		vaddrSpace;

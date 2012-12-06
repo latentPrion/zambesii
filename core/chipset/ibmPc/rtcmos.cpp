@@ -1,5 +1,6 @@
 
 #include <arch/io.h>
+#include <chipset/zkcm/timerControl.h>
 #include <asm/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
@@ -410,7 +411,7 @@ status_t ibmPc_rtc_getHardwareTime(timeS *time)
 	return ERROR_SUCCESS;
 }
 
-void ibmPc_rtc_refreshCachedSystemTime(void)
+void zkcmTimerControlModC::refreshCachedSystemTime(void)
 {
 	systemTime.lock.acquire();
 
@@ -420,7 +421,7 @@ void ibmPc_rtc_refreshCachedSystemTime(void)
 	systemTime.lock.release();
 }
 
-status_t ibmPc_rtc_getCurrentDate(date_t *date)
+status_t zkcmTimerControlModC::getCurrentDate(date_t *date)
 {
 	systemTime.lock.acquire();
 	*date = systemTime.rsrc.date;
@@ -429,7 +430,7 @@ status_t ibmPc_rtc_getCurrentDate(date_t *date)
 	return ERROR_SUCCESS;
 }
 
-status_t ibmPc_rtc_getCurrentTime(timeS *time)
+status_t zkcmTimerControlModC::getCurrentTime(timeS *time)
 {
 	systemTime.lock.acquire();
 	time->seconds = systemTime.rsrc.time.seconds;
@@ -439,8 +440,9 @@ status_t ibmPc_rtc_getCurrentTime(timeS *time)
 	return ERROR_SUCCESS;
 }
 
-void ibmPc_rtc_flushCachedSystemTime(void)
+void zkcmTimerControlModC::flushCachedSystemTime(void)
 {
 	__kprintf(WARNING RTCCMOS"flushCachedSystemTime: unimplemented.\n");
+	UNIMPLEMENTED("zkcmTimerControlModC::fluskCachedSystemTime");
 }
 

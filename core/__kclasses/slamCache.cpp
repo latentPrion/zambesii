@@ -25,8 +25,7 @@ slamCacheC::slamCacheC(uarch_t objectSize)
 error_t slamCacheC::initialize(void)
 {
 	freeList.rsrc = reinterpret_cast<object *>(
-		(memoryTrib.__kmemoryStream.*
-			memoryTrib.__kmemoryStream.memAlloc)(
+		memoryTrib.__kmemoryStream.memAlloc(
 				1, MEMALLOC_NO_FAKEMAP));
 
 	if (freeList.rsrc != __KNULL) {
@@ -134,12 +133,11 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredAlloc)
 		if (tmp == __KNULL)
 		{
 			if (requiredAlloc != __KNULL) { *requiredAlloc = 1; };
-			tmp = new ((memoryTrib.__kmemoryStream
-				.*memoryTrib.__kmemoryStream.memAlloc)(
-					1, MEMALLOC_NO_FAKEMAP
-					| ((localFlush)
-						? MEMALLOC_LOCAL_FLUSH_ONLY:0)))
-				slamCacheC::object;
+			tmp = new (memoryTrib.__kmemoryStream.memAlloc(
+				1,
+				MEMALLOC_NO_FAKEMAP | ((localFlush)
+					? MEMALLOC_LOCAL_FLUSH_ONLY:0)))
+					slamCacheC::object;
 
 			if (tmp == __KNULL)
 			{

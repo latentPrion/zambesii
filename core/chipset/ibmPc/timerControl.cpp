@@ -9,7 +9,7 @@
 
 ptrListC<zkcmTimerSourceS>	timerSources;
 
-error_t ibmPc_timerControl_initialize(void)
+error_t zkcmTimerControlModC::initialize(void)
 {
 	error_t		ret;
 
@@ -21,22 +21,22 @@ error_t ibmPc_timerControl_initialize(void)
 	return ibmPc_rtc_initialize();
 }
 
-error_t ibmPc_timerControl_shutdown(void)
+error_t zkcmTimerControlModC::shutdown(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_timerControl_suspend(void)
+error_t zkcmTimerControlModC::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_timerControl_restore(void)
+error_t zkcmTimerControlModC::restore(void)
 {
 	return ERROR_SUCCESS;
 }
 
-ubit32 ibmPc_timerControl_getChipsetSafeTimerPeriods(void)
+ubit32 zkcmTimerControlModC::getChipsetSafeTimerPeriods(void)
 {
 	/** EXPLANATION:
 	 * For IBM-PC, safe timer periods are 1s, 100ms, 10ms and 1ms. The
@@ -48,7 +48,7 @@ ubit32 ibmPc_timerControl_getChipsetSafeTimerPeriods(void)
 		| CHIPSET_TIMERS_1MS_SAFE;
 }
 
-struct zkcmTimerSourceS *ibmPc_timerControl_filterTimerSources(
+struct zkcmTimerSourceS *zkcmTimerControlModC::filterTimerSources(
 	ubit8 type,		// PER_CPU or CHIPSET.
 	ubit32 modes,		// PERIODIC | ONESHOT.
 	ubit32 resolutions,	// 1s|100ms|10ms|1ms|100ns|10ns|1ns

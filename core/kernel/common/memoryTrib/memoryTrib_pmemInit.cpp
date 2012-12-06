@@ -82,32 +82,13 @@ error_t memoryTribC::pmemInit(void)
 	zkcmMemConfigS			*memConfig=__KNULL;
 	zkcmMemMapS			*memMap=__KNULL;
 	zkcmNumaMapS			*numaMap=__KNULL;
-	zkcmMemoryDetectionModS		*memoryMod;
 	numaMemoryBankC			*nmb;
 	// __kspaceBool is used to determine whether or not to kill __kspace.
 	sarch_t			pos, prevPos, __kspaceBool=0;
 	status_t		nSet=0;
 
-	// Make sure the memory info modules are in order.
-	if (zkcmCore.initialize == __KNULL
-		|| zkcmCore.memoryDetection == __KNULL)
-	{
-		__kprintf(ERROR"Missing chipsetPkg.initialize(), or Memory \
-			Info module.\n");
-
-		return ERROR_FATAL;
-	};
-	// Initialize the chipset package for use.
-	ret = (*zkcmCore.initialize)();
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(NOTICE MEMTRIB"Failed to init chipset package.\n");
-		return ret;
-	};
-
-	// Fetch and initialize the Memory Info Module.
-	memoryMod = zkcmCore.memoryDetection;
-	ret = (*memoryMod->initialize)();
+	// Initialize the Memory Info Module.
+	ret = zkcmCore.memoryDetection.initialize();
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(NOTICE MEMTRIB"Failed to init memory info module.\n");
@@ -116,7 +97,7 @@ error_t memoryTribC::pmemInit(void)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Get NUMA map from chipset.
-	numaMap = (*memoryMod->getNumaMap)();
+	numaMap = zkcmCore.memoryDetection.getNumaMap();
 
 	if (numaMap != __KNULL && numaMap->nMemEntries > 0)
 	{
@@ -143,7 +124,7 @@ error_t memoryTribC::pmemInit(void)
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 	// Get memory config from the chipset.
-	memConfig = (*memoryMod->getMemoryConfig)();
+	memConfig = zkcmCore.memoryDetection.getMemoryConfig();
 
 	if (memConfig != __KNULL && memConfig->memSize > 0)
 	{
@@ -194,7 +175,7 @@ error_t memoryTribC::pmemInit(void)
 
 parseMemoryMap:
 	// Get the Memory Map from the chipset code.
-	memMap = (*memoryMod->getMemoryMap)();
+	memMap = zkcmCore.memoryDetection.getMemoryMap();
 
 	if (memMap != __KNULL && memMap->nEntries > 0)
 	{

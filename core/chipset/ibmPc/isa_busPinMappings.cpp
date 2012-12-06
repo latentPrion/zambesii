@@ -1,4 +1,5 @@
 
+#include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
@@ -7,7 +8,6 @@
 #include <kernel/common/panic.h>
 
 #include "zkcmIbmPcState.h"
-#include "irqControl.h"
 #include "busPinMappings.h"
 
 
@@ -140,7 +140,7 @@ static void ibmPc_bpm_isa_acpi_loadRsdtBusPinMappings(acpi_rMadtS *madt)
 	 **/
 	for (ubit8 i=0; i<16; i++)
 	{
-		if (ibmPc_irqControl_identifyIrq(
+		if (zkcmCore.irqControl.identifyIrq(
 			i, &isaBusPinMappings[i].__kpin)
 			!= ERROR_SUCCESS)
 		{
@@ -179,7 +179,7 @@ static void ibmPc_bpm_isa_acpi_loadRsdtBusPinMappings(acpi_rMadtS *madt)
 			continue;
 		};
 
-		if (ibmPc_irqControl_identifyIrq(
+		if (zkcmCore.irqControl.identifyIrq(
 			overrideEntry->globalIrq,
 			&isaBusPinMappings[overrideEntry->irqNo].__kpin)
 				!= ERROR_SUCCESS)
@@ -282,7 +282,7 @@ static error_t ibmPc_bpm_isa_x86Mp_loadBusPinMappings(void)
 	return ERROR_SUCCESS;
 }
 
-status_t ibmPc_bpm_isa_loadBusPinMappings(void)
+status_t ibmPcBpm::isa::loadBusPinMappings(void)
 {
 	acpi_rMadtS		*rMadt;
 	/**	EXPLANATION:
@@ -302,7 +302,7 @@ status_t ibmPc_bpm_isa_loadBusPinMappings(void)
 		// Assume that all ISA IRQs are mapped 1:1 to the i8259 pins.
 		for (ubit8 i=0; i<16; i++)
 		{
-			if (ibmPc_irqControl_identifyIrq(
+			if (zkcmCore.irqControl.identifyIrq(
 				i, &isaBusPinMappings[i].__kpin)
 				!= ERROR_SUCCESS)
 			{
@@ -321,19 +321,19 @@ status_t ibmPc_bpm_isa_loadBusPinMappings(void)
 	};
 
 	// Else, use MADT and MP Tables to detect ISA IRQ mappings to IO-APICs.
-	acpi::initializeCache();
-	if (acpi::findRsdp() != ERROR_SUCCESS) {
+	::acpi::initializeCache();
+	if (::acpi::findRsdp() != ERROR_SUCCESS) {
 		goto tryMpTables;
 	};
 
 #if !defined(__32_BIT__) || defined(CONFIG_ARCH_x86_32_PAE)
-	if (acpi::testForXsdt())
+	if (::acpi::testForXsdt())
 	{
 	};
 #endif
-	if (acpi::testForRsdt())
+	if (::acpi::testForRsdt())
 	{
-		if (acpi::mapRsdt() != ERROR_SUCCESS)
+		if (::acpi::mapRsdt() != ERROR_SUCCESS)
 		{
 			__kprintf(NOTICE IBMPCBPM"Unable to map RSDT.\n");
 			goto tryMpTables;
@@ -377,7 +377,7 @@ tryMpTables:
 	return ERROR_SUCCESS;
 }	
 
-error_t ibmPc_bpm_isa_get__kpinFor(ubit32 busIrqId, ubit16 *__kpin)
+error_t ibmPcBpm::isa::get__kpinFor(ubit32 busIrqId, ubit16 *__kpin)
 {
 	// Just lookup the __kpin in the table.
 	if (isaBusPinMappings[busIrqId].isValid)
@@ -389,31 +389,31 @@ error_t ibmPc_bpm_isa_get__kpinFor(ubit32 busIrqId, ubit16 *__kpin)
 	return ERROR_INVALID_ARG_VAL;
 }
 
-status_t ibmPc_bpm_isa_maskIrq(ubit32 busIrqId)
+status_t ibmPcBpm::isa::maskIrq(ubit32 busIrqId)
 {
 	ubit16		__kpin;
 	error_t		ret;
 
-	ret = ibmPc_bpm_isa_get__kpinFor(busIrqId, &__kpin);
+	ret = ibmPcBpm::isa::get__kpinFor(busIrqId, &__kpin);
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};
 
-	ibmPc_irqControl_maskIrq(__kpin);
+	zkcmCore.irqControl.maskIrq(__kpin);
 	return ERROR_SUCCESS;
 }
 
-status_t ibmPc_bpm_isa_unmaskIrq(ubit32 busIrqId)
+status_t ibmPcBpm::isa::unmaskIrq(ubit32 busIrqId)
 {
 	ubit16		__kpin;
 	error_t		ret;
 
-	ret = ibmPc_bpm_isa_get__kpinFor(busIrqId, &__kpin);
+	ret = ibmPcBpm::isa::get__kpinFor(busIrqId, &__kpin);
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};
 
-	ibmPc_irqControl_unmaskIrq(__kpin);
+	zkcmCore.irqControl.unmaskIrq(__kpin);
 	return ERROR_SUCCESS;
 }
 

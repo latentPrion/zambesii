@@ -20,11 +20,9 @@ memReservoirC::memReservoirC(void)
 
 error_t memReservoirC::initialize(void)
 {
-	__kbog = new (
-		(memoryTrib.__kmemoryStream
-			.*memoryTrib.__kmemoryStream.memAlloc)(
-				1, MEMALLOC_NO_FAKEMAP))
-		memoryBogC(CHIPSET_MEMORY___KBOG_SIZE);
+	__kbog = new (memoryTrib.__kmemoryStream.memAlloc(
+		1, MEMALLOC_NO_FAKEMAP))
+			memoryBogC(CHIPSET_MEMORY___KBOG_SIZE);
 
 	if (__kbog == __KNULL)
 	{
@@ -36,11 +34,9 @@ error_t memReservoirC::initialize(void)
 
 	__kbog->initialize();
 
-	bogs.rsrc.ptrs = new (
-		(memoryTrib.__kmemoryStream
-			.*memoryTrib.__kmemoryStream.memAlloc)(
-				1, MEMALLOC_NO_FAKEMAP))
-		memoryBogC*;
+	bogs.rsrc.ptrs = new (memoryTrib.__kmemoryStream.memAlloc(
+		1, MEMALLOC_NO_FAKEMAP))
+			memoryBogC*;
 
 	if (bogs.rsrc.ptrs == __KNULL)
 	{
@@ -123,9 +119,8 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 
 tryStream:
 	// Unable to allocate from the kernel bog. Stream allocate.
-	ret = new ((memoryTrib.__kmemoryStream
-		.*memoryTrib.__kmemoryStream.memAlloc)(
-			PAGING_BYTES_TO_PAGES(nBytes), 0)) reservoirHeaderS;
+	ret = new (memoryTrib.__kmemoryStream.memAlloc(
+		PAGING_BYTES_TO_PAGES(nBytes), 0)) reservoirHeaderS;
 
 	if (ret != __KNULL)
 	{

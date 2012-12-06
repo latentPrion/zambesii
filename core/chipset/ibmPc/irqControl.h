@@ -5,7 +5,6 @@
 	#include <chipset/zkcm/irqControl.h>
 	#include <__kstdlib/__ktypes.h>
 
-#define IBMPCIRQCTL		"IBMPC Irq-Ctl: "
 
 CPPEXTERN_START
 

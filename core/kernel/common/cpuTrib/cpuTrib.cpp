@@ -108,13 +108,13 @@ error_t cpuTribC::initialize2(void)
 	 * unsafe MP environment is to force the kernel not to use MP operation.
 	 **/
 	// Ensure that the CPU info mod is ready for use.
-	ret = (*zkcmCore.cpuDetection->initialize)();
+	ret = zkcmCore.cpuDetection.initialize();
 	if (ret != ERROR_SUCCESS) {
 		__kprintf(ERROR CPUTRIB"initialize2: CPU mod init failed.\n");
 	};
 
 #if __SCALING__ >= SCALING_SMP
-	bspId = (*zkcmCore.cpuDetection->getBspId)();
+	bspId = zkcmCore.cpuDetection.getBspId();
 #else
 	bspId = 0;
 #endif
@@ -125,9 +125,9 @@ error_t cpuTribC::initialize2(void)
 	 * is safe, then the kernel immediately switches the machine into SMP
 	 * mode.
 	 **/
-	if ((*zkcmCore.cpuDetection->checkSmpSanity)())
+	if (zkcmCore.cpuDetection.checkSmpSanity())
 	{
-		ret = (*zkcmCore.cpuDetection->setSmpMode)();
+		ret = zkcmCore.cpuDetection.setSmpMode();
 		if (ret != ERROR_SUCCESS)
 		{
 			__kprintf(ERROR CPUTRIB"initialize2: Chipset failed "
@@ -159,7 +159,7 @@ error_t cpuTribC::initialize2(void)
 	 * resized.
 	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaMap = (*zkcmCore.cpuDetection->getNumaMap)();
+	numaMap = zkcmCore.cpuDetection.getNumaMap();
 	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
 	{
 		getHighestId(
@@ -178,7 +178,7 @@ error_t cpuTribC::initialize2(void)
 
 
 #if __SCALING__ == SCALING_SMP || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
-	smpMap = (*zkcmCore.cpuDetection->getSmpMap)();
+	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{
 		getHighestId(
@@ -233,7 +233,7 @@ error_t cpuTribC::numaInit(void)
 	// Return non success to force caller to execute fallbackToUpMode().
 	if (!usingChipsetSmpMode()) { return ERROR_GENERAL; };
 
-	numaMap = (*zkcmCore.cpuDetection->getNumaMap)();
+	numaMap = zkcmCore.cpuDetection.getNumaMap();
 	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
 	{
 		for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
@@ -274,7 +274,7 @@ error_t cpuTribC::numaInit(void)
 
 #if defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)				\
 	&& defined(CHIPSET_CPU_NUMA_SHBANKID)
-	smpMap = (*zkcmCore.cpuDetection->getSmpMap)();
+	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{
 		/**	EXPLANATION:
@@ -418,7 +418,7 @@ error_t cpuTribC::smpInit(void)
 	// Return non success to force caller to execute fallbackToUpMode().
 	if (!usingChipsetSmpMode()) { return ERROR_GENERAL; };
 	
-	smpMap = (*zkcmCore.cpuDetection->getSmpMap)();
+	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{
 		for (uarch_t i=0; i<smpMap->nEntries; i++)
@@ -559,19 +559,15 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	 **/
 	if (cid != bspId) {
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new (
-			(memoryTrib.__kmemoryStream
-				.*memoryTrib.__kmemoryStream.memAlloc)(
-				PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
-				MEMALLOC_NO_FAKEMAP))
-			cpuStreamC(bid, cid, cpuAcpiId);
+		cs = new (memoryTrib.__kmemoryStream.memAlloc(
+			PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
+			MEMALLOC_NO_FAKEMAP))
+				cpuStreamC(bid, cid, cpuAcpiId);
 #else
-		cs = new (
-			(memoryTrib.__kmemoryStream
-				memoryTrib.__kmemoryStream.*memAlloc)(
-				PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
-				MEMALLOC_NO_FAKEMAP))
-			cpuStreamC(cid, cpuAcpiId);
+		cs = new (memoryTrib.__kmemoryStream.*memAlloc(
+			PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
+			MEMALLOC_NO_FAKEMAP))
+				cpuStreamC(cid, cpuAcpiId);
 #endif
 	}
 	else
@@ -657,12 +653,10 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 
 	if (err != ERROR_SUCCESS) { return err; };
 
-	ncb = new (
-		(memoryTrib.__kmemoryStream
-			.*memoryTrib.__kmemoryStream.memAlloc)(
-				PAGING_BYTES_TO_PAGES(sizeof(numaCpuBankC)),
-				MEMALLOC_NO_FAKEMAP))
-		numaCpuBankC;
+	ncb = new (memoryTrib.__kmemoryStream.memAlloc(
+		PAGING_BYTES_TO_PAGES(sizeof(numaCpuBankC)),
+		MEMALLOC_NO_FAKEMAP))
+			numaCpuBankC;
 
 	if (ncb == __KNULL) { return ERROR_MEMORY_NOMEM; };
 

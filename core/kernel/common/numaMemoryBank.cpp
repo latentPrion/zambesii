@@ -85,12 +85,10 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	error_t			err;
 
 	// Allocate a new bmp allocator.
-	memRange = new (
-		(memoryTrib.__kmemoryStream
-			.*memoryTrib.__kmemoryStream.memAlloc)(
-				PAGING_BYTES_TO_PAGES(sizeof(numaMemoryRangeC)),
-				MEMALLOC_NO_FAKEMAP))
-		numaMemoryRangeC(baseAddr, size);
+	memRange = new (memoryTrib.__kmemoryStream.memAlloc(
+		PAGING_BYTES_TO_PAGES(sizeof(numaMemoryRangeC)),
+		MEMALLOC_NO_FAKEMAP))
+			numaMemoryRangeC(baseAddr, size);
 
 	if (memRange == __KNULL) {
 		return ERROR_MEMORY_NOMEM;

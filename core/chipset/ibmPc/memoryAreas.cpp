@@ -26,9 +26,8 @@ error_t chipsetMemAreas::mapArea(ubit16 index)
 	if (index >= CHIPSET_MEMAREA_NAREAS) { return ERROR_INVALID_ARG_VAL; };
 	if (memAreas[index].vaddr != __KNULL) { return ERROR_SUCCESS; };
 
-	vaddr = (memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(
-			PAGING_BYTES_TO_PAGES(memAreas[index].size));
+	vaddr = memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages(
+		PAGING_BYTES_TO_PAGES(memAreas[index].size));
 
 	if (vaddr == __KNULL) { return ERROR_MEMORY_NOMEM_VIRTUAL; };
 

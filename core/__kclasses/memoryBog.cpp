@@ -333,11 +333,10 @@ memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 {
 	bogBlockS	*ret;
 
-	ret = new ((memoryTrib.__kmemoryStream.*
-		memoryTrib.__kmemoryStream.memAlloc)(
-			PAGING_BYTES_TO_PAGES(
-				blockSize + sizeof(bogBlockS)),
-				MEMALLOC_PURE_VIRTUAL)) bogBlockS;
+	ret = new (memoryTrib.__kmemoryStream.memAlloc(
+		PAGING_BYTES_TO_PAGES(
+			blockSize + sizeof(bogBlockS)),
+			MEMALLOC_PURE_VIRTUAL)) bogBlockS;
 
 	if (ret == __KNULL) {
 		return __KNULL;

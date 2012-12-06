@@ -25,9 +25,8 @@ error_t debugBufferC::initialize(void)
 	debugBufferC::buffPageS		*mem, *mem2;
 	uarch_t				pageCount = 0;
 
-	mem = new ((memoryTrib.__kmemoryStream.*
-		memoryTrib.__kmemoryStream.memAlloc)(1, MEMALLOC_NO_FAKEMAP))
-			debugBufferC::buffPageS;
+	mem = new (memoryTrib.__kmemoryStream.memAlloc(1, MEMALLOC_NO_FAKEMAP))
+		debugBufferC::buffPageS;
 
 	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
@@ -44,9 +43,8 @@ error_t debugBufferC::initialize(void)
 	mem2 = mem;
 	for (uarch_t i=0; i<DEBUGBUFFER_INIT_NPAGES-1; i++)
 	{
-		mem2->next = new ((memoryTrib.__kmemoryStream.*
-			memoryTrib.__kmemoryStream.memAlloc)(
-				1, MEMALLOC_NO_FAKEMAP))
+		mem2->next = new (memoryTrib.__kmemoryStream.memAlloc(
+			1, MEMALLOC_NO_FAKEMAP))
 				debugBufferC::buffPageS;
 
 		if (mem2->next == __KNULL) {

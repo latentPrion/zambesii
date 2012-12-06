@@ -80,15 +80,14 @@ error_t interruptTribC::initialize(void)
 	 * memory management is initialized.
 	 **/
 	// Check for int controller, halt if none, else call initialize().
-	assert_fatal(zkcmCore.irqControl != __KNULL);
-	assert_fatal((zkcmCore.irqControl->initialize)() == ERROR_SUCCESS);
+	assert_fatal(zkcmCore.irqControl.initialize() == ERROR_SUCCESS);
 
 	/**	EXPLANATION:
 	 * From here on, IRQs will be unmasked one by one as their devices are
 	 * discovered and initialized.
 	 **/
 	// Ask the chipset to mask all IRQs at its irq controller(s).
-	(zkcmCore.irqControl->maskAll)();
+	zkcmCore.irqControl.maskAll();
 	return ERROR_SUCCESS;
 }
 
@@ -122,7 +121,7 @@ error_t interruptTribC::initialize2(void)
 	 * available, and that it should tell the kernel about its IRQ routing
 	 * system (number of pins, etc) now.
 	 **/
-	(*zkcmCore.irqControl->chipsetEventNotification)(
+	zkcmCore.irqControl.chipsetEventNotification(
 		IRQCTL_EVENT_MEMMGT_AVAIL, 0);
 
 	return ERROR_SUCCESS;

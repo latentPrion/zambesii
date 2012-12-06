@@ -41,8 +41,8 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 	/* Allocates a page and maps it to the paddr of an IO APIC.
 	 **/
 	// IO-APICs are always 1KB aligned.
-	ret = (ioApicRegspaceS *)(memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(1);
+	ret = (ioApicRegspaceS *)memoryTrib.__kmemoryStream.vaddrSpaceStream
+		.getPages(1);
 
 	if (ret == __KNULL) { return ret; };
 

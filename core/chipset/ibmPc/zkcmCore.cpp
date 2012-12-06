@@ -1,38 +1,22 @@
 
 #include <chipset/zkcm/zkcmCore.h>
-#include "memoryDetection.h"
-#include "cpuDetection.h"
-#include "irqControl.h"
-#include "timerControl.h"
+#include <__kstdlib/__kclib/string8.h>
 #include "terminalMod.h"
 
 
-static error_t ibmPc_pkg_initialize(void) { return ERROR_SUCCESS; }
-static error_t ibmPc_pkg_shutdown(void) { return ERROR_SUCCESS; }
-static error_t ibmPc_pkg_suspend(void) { return ERROR_SUCCESS; }
-static error_t ibmPc_pkg_restore(void) { return ERROR_SUCCESS; }
-
-struct zkcmCoreS		zkcmCore =
+zkcmCoreC::zkcmCoreC(utf8Char *chipsetName, utf8Char *chipsetVendor)
 {
-	"IBM PC compatible",
-	"Unknown",
+	strcpy8(zkcmCoreC::chipsetName, chipsetName);
+	strcpy8(zkcmCoreC::chipsetVendor, chipsetVendor);
 
-	&ibmPc_pkg_initialize,
-	&ibmPc_pkg_shutdown,
-	&ibmPc_pkg_suspend,
-	&ibmPc_pkg_restore,
+	debug[0] = &ibmPc_terminalMod;
+	debug[1] = debug[2] = debug[3] = __KNULL;
+}
 
-	&ibmPc_memoryDetectionMod,
-	&ibmPc_cpuDetectionMod,
-	__KNULL,
-	&ibmPc_irqControlMod,
-	&ibmPc_timerControlMod,
+error_t zkcmCoreC::initialize(void) { return ERROR_SUCCESS; }
+error_t zkcmCoreC::shutdown(void) { return ERROR_SUCCESS; }
+error_t zkcmCoreC::suspend(void) { return ERROR_SUCCESS; }
+error_t zkcmCoreC::restore(void) { return ERROR_SUCCESS; }
 
-	{
-		&ibmPc_terminalMod,
-		__KNULL,
-		__KNULL,
-		__KNULL
-	}
-};
+zkcmCoreC		zkcmCore(CC"IBM PC compatible", CC"Unknown");
 

@@ -146,14 +146,13 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 	if (index > maxAllocatedIndex
 		|| maxAllocatedIndex == HWIDLIST_INDEX_INVALID)
 	{
-		tmp = new (
-			(memoryTrib.__kmemoryStream
-				.*memoryTrib.__kmemoryStream.memAlloc)(
-					PAGING_BYTES_TO_PAGES(
-						sizeof(arrayNodeS)
-							* (index + 1)),
-					MEMALLOC_NO_FAKEMAP))
-			arrayNodeS;
+		tmp = new (memoryTrib.__kmemoryStream.memAlloc(
+			PAGING_BYTES_TO_PAGES(
+				sizeof(arrayNodeS)
+					* (index + 1)),
+			MEMALLOC_NO_FAKEMAP))
+				arrayNodeS;
+
 		if (tmp == __KNULL)
 		{
 			__kprintf(ERROR HWIDLIST"addItem(%d,0x%p): failed to "

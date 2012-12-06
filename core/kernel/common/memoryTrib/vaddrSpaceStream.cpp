@@ -37,25 +37,16 @@ sarch_t vaddrSpaceStreamC::initialize(
 
 void vaddrSpaceStreamC::bind(void)
 {
-	binding.lock.acquire();
-	getPages = &vaddrSpaceStreamC::real_getPages;
-	binding.rsrc = 1;
-	binding.lock.release();
 }
 
 void vaddrSpaceStreamC::cut(void)
 {
-	binding.lock.acquire();
-	getPages = &vaddrSpaceStreamC::dummy_getPages;
-	binding.rsrc = 0;
-	binding.lock.release();
 }
 
 void vaddrSpaceStreamC::dump(void)
 {
-	__kprintf(NOTICE"VaddrSpaceStream %X: Binding: %p, "
-		"Level0: v: %p, p: %p\n",
-		id, getPages, vaddrSpace.level0Accessor.rsrc,
+	__kprintf(NOTICE"VaddrSpaceStream %X: Level0: v: %p, p: %p\n",
+		id, vaddrSpace.level0Accessor.rsrc,
 		vaddrSpace.level0Paddr);
 
 	__kprintf(NOTICE"vaddrSpace object: v %X, p %X\n",
@@ -64,12 +55,7 @@ void vaddrSpaceStreamC::dump(void)
 	vSwamp.dump();
 }
 
-void *vaddrSpaceStreamC::dummy_getPages(uarch_t)
-{
-	return __KNULL;
-}
-
-void *vaddrSpaceStreamC::real_getPages(uarch_t nPages)
+void *vaddrSpaceStreamC::getPages(uarch_t nPages)
 {
 	void		*ret = 0;
 

@@ -173,8 +173,7 @@ void *walkerPageRanger::createMappingTo(
 	paddr <<= PAGING_BASE_SHIFT;
 
 	// Get vmem.
-	ret = (memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(nPages);
+	ret = memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages(nPages);
 
 	if (ret == __KNULL)
 	{

@@ -28,7 +28,7 @@ struct zkcmTimerSourceS *ibmPc_timerControl_filterTimerSources(
 CPPEXTERN_END
 
 // Declare the instance.
-CPPEXTERN_PROTO struct zkcmTimerControlModS		ibmPc_timerControlMod;
+CPPEXTERN_PROTO struct zkcmTimerControlModC		ibmPc_timerControlMod;
 
 #endif
 

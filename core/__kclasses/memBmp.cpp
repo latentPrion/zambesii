@@ -116,12 +116,10 @@ error_t memBmpC::initialize(void *preAllocated)
 	}
 	else
 	{
-		bmp.rsrc.bmp = new (
-			(memoryTrib.__kmemoryStream
-				.*memoryTrib.__kmemoryStream.memAlloc)(
-					PAGING_BYTES_TO_PAGES(bmpSize),
-					MEMALLOC_NO_FAKEMAP))
-			uarch_t[nIndexes];
+		bmp.rsrc.bmp = new (memoryTrib.__kmemoryStream.memAlloc(
+			PAGING_BYTES_TO_PAGES(bmpSize),
+			MEMALLOC_NO_FAKEMAP))
+				uarch_t[nIndexes];
 
 		if (bmp.rsrc.bmp == __KNULL) {
 			return ERROR_MEMORY_NOMEM;

@@ -28,9 +28,8 @@ error_t ibmPcBios::initialize(void)
 	memset(&M, 0, sizeof(M));
 
 	// Allocate vmem and map in lower memory.
-	M.mem_base = (uarch_t)(memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(
-			LOWMEM_NPAGES);
+	M.mem_base = (uarch_t)memoryTrib.__kmemoryStream.vaddrSpaceStream
+		.getPages(LOWMEM_NPAGES);
 
 	if (M.mem_base == __KNULL)
 	{

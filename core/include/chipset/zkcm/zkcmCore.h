@@ -9,28 +9,32 @@
 	#include <chipset/pkg/watchdogMod.h>
 	#include <chipset/pkg/debugMod.h>
 
-struct zkcmCoreS
+class zkcmCoreC
 {
+public:
+	zkcmCoreC(utf8Char *chipsetName, utf8Char *chipsetVendor);
+
+public:
+	error_t initialize(void);
+	error_t shutdown(void);
+	error_t suspend(void);
+	error_t restore(void);
+
 	utf8Char	chipsetName[96];
 	utf8Char	chipsetVendor[96];
 
-	error_t (*initialize)(void);
-	error_t (*shutdown)(void);
-	error_t (*suspend)(void);
-	error_t (*restore)(void);
-
-	struct zkcmMemoryDetectionModS		*memoryDetection;
-	struct zkcmCpuDetectionModS		*cpuDetection;
+	zkcmMemoryDetectionModC		memoryDetection;
+	zkcmCpuDetectionModC		cpuDetection;
 
 	// XXX: Still to be updated.
-	struct watchdogModS			*watchdog;
-	struct zkcmIrqControlModS		*irqControl;
-	struct zkcmTimerControlModS		*timerControl;
+	watchdogModS			watchdog;
+	zkcmIrqControlModC		irqControl;
+	zkcmTimerControlModC		timerControl;
 
-	struct debugModS			*debug[4];
+	debugModS			*debug[4];
 };
 
-extern struct zkcmCoreS		zkcmCore;
+extern zkcmCoreC		zkcmCore;
 
 #endif
 

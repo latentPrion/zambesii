@@ -17,8 +17,7 @@ static void *acpi_tmpMapSdt(void **const context, paddr_t p)
 
 	if (*context == __KNULL)
 	{
-		*context = (memoryTrib.__kmemoryStream.vaddrSpaceStream
-			.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(
+		*context = memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages(
 			2);
 
 		if (*context == __KNULL) {
@@ -59,8 +58,7 @@ static void *acpi_mapTable(paddr_t p, uarch_t nPages)
 	void		*ret;
 	status_t	nMapped;
 
-	ret = (memoryTrib.__kmemoryStream.vaddrSpaceStream
-		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(nPages);
+	ret = memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages(nPages);
 
 	if (ret == __KNULL) {
 		return __KNULL;

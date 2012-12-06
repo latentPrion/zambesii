@@ -6,16 +6,17 @@
 	#include <chipset/zkcm/memoryMap.h>
 	#include <__kstdlib/__ktypes.h>
 
-struct zkcmMemoryDetectionModS
+class zkcmMemoryDetectionModC
 {
-	error_t (*initialize)(void);
-	error_t (*shutdown)(void);
-	error_t (*suspend)(void);
-	error_t (*restore)(void);
+public:
+	error_t initialize(void);
+	error_t shutdown(void);
+	error_t suspend(void);
+	error_t restore(void);
 
-	struct zkcmMemConfigS *(*getMemoryConfig)(void);
-	struct zkcmNumaMapS *(*getNumaMap)(void);
-	struct zkcmMemMapS *(*getMemoryMap)(void);
+	zkcmMemConfigS *getMemoryConfig(void);
+	zkcmNumaMapS *getNumaMap(void);
+	zkcmMemMapS *getMemoryMap(void);
 
 	// Memory hotplug API design proposed for a later date.
 };

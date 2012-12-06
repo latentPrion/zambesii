@@ -25,9 +25,7 @@ error_t timerTribC::initialize(void)
 	error_t		ret=ERROR_SUCCESS;
 
 	// Check for the existence of a watchdog device on this chipset.
-	if (zkcmCore.watchdog != __KNULL) {
-		ret = (*zkcmCore.watchdog->initialize)();
-	};
+	// ret = zkcmCore.watchdog.initialize();
 
 	// Return the result from the watchdog's initialize.
 	return ret;
@@ -40,15 +38,13 @@ timerTribC::~timerTribC(void)
 error_t timerTribC::initialize2(void)
 {
 	error_t			ret;
-	zkcmTimerControlModS	*timerControl;
 	ubit8			h, m, s;
 
 	/**	EXPLANATION:
 	 * Initializes the chipset's Timer Control ZKCM module, fills out the
 	 * boot timestamp, and sets up the Timer Tributary's Timer queues.
 	 **/
-	timerControl = zkcmCore.timerControl;
-	ret = (*timerControl->initialize)();
+	ret = zkcmCore.timerControl.initialize();
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};
@@ -68,12 +64,12 @@ error_t timerTribC::initialize2(void)
 	 * value from the hardware clock, so we can get a relatively accurate
 	 * boot timestamp value.
 	 **/
-	(*timerControl->refreshCachedSystemTime)();
+	zkcmCore.timerControl.refreshCachedSystemTime();
 	/* We take the time value first because the date value is unlikely to
 	 * change in the next few milliseconds.
 	 **/
-	(*timerControl->getCurrentTime)(&bootTimestamp.time);
-	(*timerControl->getCurrentDate)(&bootTimestamp.date);
+	zkcmCore.timerControl.getCurrentTime(&bootTimestamp.time);
+	zkcmCore.timerControl.getCurrentDate(&bootTimestamp.date);
 
 	h = bootTimestamp.time.seconds / 3600;
 	m = (bootTimestamp.time.seconds / 60) - (h * 60);
