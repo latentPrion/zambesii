@@ -1,13 +1,12 @@
 
 #include <chipset/zkcm/timerControl.h>
-#include <chipset/zkcm/timerSource.h>
+#include <chipset/zkcm/timerDevice.h>
 #include <__kclasses/ptrList.h>
 
-#include "timerControl.h"
 #include "rtcmos.h"
 
 
-ptrListC<zkcmTimerSourceS>	timerSources;
+ptrListC<zkcmTimerDeviceC>	timerSources;
 
 error_t zkcmTimerControlModC::initialize(void)
 {
@@ -48,17 +47,17 @@ ubit32 zkcmTimerControlModC::getChipsetSafeTimerPeriods(void)
 		| CHIPSET_TIMERS_1MS_SAFE;
 }
 
-struct zkcmTimerSourceS *zkcmTimerControlModC::filterTimerSources(
-	ubit8 type,		// PER_CPU or CHIPSET.
-	ubit32 modes,		// PERIODIC | ONESHOT.
-	ubit32 resolutions,	// 1s|100ms|10ms|1ms|100ns|10ns|1ns
-	ubit8 ioLatency,	// LOW, MODERATE or HIGH.
-	ubit8 precision,	// EXACT, NEGLIGABLE, OVERFLOW
-				// or UNDERFLOW
+zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerSources(
+	zkcmTimerDeviceC::timerTypeE type,	// PER_CPU or CHIPSET.
+	ubit32 modes,				// PERIODIC | ONESHOT.
+	ubit32 resolutions,		// 1s|100ms|10ms|1ms|100ns|10ns|1ns
+	zkcmTimerDeviceC::ioLatencyE ioLatency,	// LOW, MODERATE or HIGH
+	zkcmTimerDeviceC::precisionE precision,	// EXACT, NEGLIGABLE,
+						// OVERFLOW or UNDERFLOW
 	void **handle
 	)
 {
-	zkcmTimerSourceS	*source;
+	zkcmTimerDeviceC	*source;
 
 	for (source = timerSources.getNextItem(handle);
 		source != __KNULL;
@@ -78,11 +77,11 @@ struct zkcmTimerSourceS *zkcmTimerControlModC::filterTimerSources(
 
 		if (source->capabilities.ioLatency > ioLatency) { continue; };
 
-		if (precision == ZKCM_TIMERSRC_CAP_PRECISION_ANY) {
+		if (precision == zkcmTimerDeviceC::ANY) {
 			goto skipPrecisionCheck;
 		};
 
-		if (precision < ZKCM_TIMERSRC_CAP_PRECISION_OVERFLOW)
+		if (precision < zkcmTimerDeviceC::OVERFLOW)
 		{
 			if (source->capabilities.precision > precision) {
 				continue;
@@ -95,16 +94,16 @@ struct zkcmTimerSourceS *zkcmTimerControlModC::filterTimerSources(
 			 * give them a precision match that follows that
 			 * request.
 			 **/
-			if (precision == ZKCM_TIMERSRC_CAP_PRECISION_OVERFLOW
+			if (precision == zkcmTimerDeviceC::OVERFLOW
 				&& source->capabilities.precision
-					> ZKCM_TIMERSRC_CAP_PRECISION_OVERFLOW)
+					> zkcmTimerDeviceC::OVERFLOW)
 			{
 				continue;
 			};
 
-			if (precision == ZKCM_TIMERSRC_CAP_PRECISION_UNDERFLOW
+			if (precision == zkcmTimerDeviceC::UNDERFLOW
 				&& source->capabilities.precision
-					== ZKCM_TIMERSRC_CAP_PRECISION_OVERFLOW)
+					== zkcmTimerDeviceC::OVERFLOW)
 			{
 				continue;
 			};
@@ -119,7 +118,7 @@ skipPrecisionCheck:
 }
 
 error_t ibmPc_irqControl_registerNewTimerSource(
-	struct zkcmTimerSourceS *timerSource
+	struct zkcmTimerDeviceC *timerSource
 	)
 {
 	// Ensure it's not already been added, then add it to the list.

@@ -1,7 +1,7 @@
 
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kclib/string8.h>
-#include "terminalMod.h"
+#include "vgaTerminal.h"
 
 
 zkcmCoreC::zkcmCoreC(utf8Char *chipsetName, utf8Char *chipsetVendor)
@@ -9,7 +9,7 @@ zkcmCoreC::zkcmCoreC(utf8Char *chipsetName, utf8Char *chipsetVendor)
 	strcpy8(zkcmCoreC::chipsetName, chipsetName);
 	strcpy8(zkcmCoreC::chipsetVendor, chipsetVendor);
 
-	debug[0] = &ibmPc_terminalMod;
+	debug[0] = &ibmPcVgaTerminal;
 	debug[1] = debug[2] = debug[3] = __KNULL;
 }
 

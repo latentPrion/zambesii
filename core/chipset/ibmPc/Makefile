@@ -1,7 +1,7 @@
 .PHONY=
 DELIVERABLE=../../chipsetCore.a
 OBJFILES=regionMap.o i8259a.o findTables.o irqControl.o \
-	memoryDetection.o terminalMod.o zkcmCore.o ibmPc_modules.o \
+	memoryDetection.o vgaTerminal.o zkcmCore.o \
 	cpuDetection.o memoryAreas.o zkcmIbmPcState.o timerControl.o \
 	rtcmos.o isa_busPinMappings.o busPinMappings.o
 

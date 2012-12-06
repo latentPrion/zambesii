@@ -4,20 +4,15 @@
 #include <chipset/memoryAreas.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/memoryTrib/memoryTrib.h>
-#include "terminalMod.h"
+#include "vgaTerminal.h"
 
 
-struct ibmPc_terminalMod_fbS
-{
-	ubit8	ch;
-	ubit8	attr;
-};
+ibmPcVgaTerminalC		ibmPcVgaTerminal(ibmPcVgaTerminalC::TERMINAL);
 
-static struct ibmPc_terminalMod_fbS	*buff=__KNULL, *origBuff;
-static uarch_t				row, col, maxRow, maxCol;
-ubit8					*bda;
+// Static member variable.
+ubit8	*ibmPcVgaTerminalC::bda=__KNULL;
 
-error_t ibmPc_terminalMod_initialize(void)
+error_t ibmPcVgaTerminalC::initialize(void)
 {
 	error_t		ret;
 	ubit8		*lowmem;
@@ -44,23 +39,23 @@ error_t ibmPc_terminalMod_initialize(void)
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_terminalMod_shutdown(void)
+error_t ibmPcVgaTerminalC::shutdown(void)
 {
 	buff = __KNULL;
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_terminalMod_suspend(void)
+error_t ibmPcVgaTerminalC::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_terminalMod_awake(void)
+error_t ibmPcVgaTerminalC::restore(void)
 {
 	return ERROR_SUCCESS;
 }
 
-sarch_t ibmPc_terminalMod_isInitialized(void)
+sarch_t ibmPcVgaTerminalC::isInitialized(void)
 {
 	if (buff == __KNULL) {
 		return 0;
@@ -70,7 +65,7 @@ sarch_t ibmPc_terminalMod_isInitialized(void)
 	};
 }
 
-static void ibmPc_terminalMod_scrollDown(void)
+void ibmPcVgaTerminalC::scrollDown(void)
 {
 	uarch_t		i;
 	uarch_t		bound=(maxRow * maxCol) - maxCol;
@@ -85,7 +80,7 @@ static void ibmPc_terminalMod_scrollDown(void)
 	};
 }	
 
-void ibmPc_terminalMod_syphon(const utf8Char *str, uarch_t len)
+void ibmPcVgaTerminalC::syphon(const utf8Char *str, uarch_t len)
 {
 	// FIXME: Remember to do utf-8 expansion here.
 
@@ -100,7 +95,7 @@ void ibmPc_terminalMod_syphon(const utf8Char *str, uarch_t len)
 		case '\n':
 			if (row >= maxRow-1)
 			{
-				ibmPc_terminalMod_scrollDown();
+				scrollDown();
 				row = maxRow-1;
 				col = 0;
 				break;
@@ -127,7 +122,7 @@ void ibmPc_terminalMod_syphon(const utf8Char *str, uarch_t len)
 				row++;
 				if (row >= maxRow-1)
 				{
-					ibmPc_terminalMod_scrollDown();
+					scrollDown();
 					row = maxRow-1;
 				};
 				col = 0;
@@ -141,7 +136,7 @@ void ibmPc_terminalMod_syphon(const utf8Char *str, uarch_t len)
 	};
 }
 
-void ibmPc_terminalMod_clear(void)
+void ibmPcVgaTerminalC::clear(void)
 {
 	uarch_t		i, bound=(maxRow * maxCol);
 

@@ -267,7 +267,7 @@ static inline ubit8 bcd8ToUbit8(ubit8 bcdVal)
 	return (((bcdVal >> 4) & 0xF) * 10) + (bcdVal & 0xF);
 }
 
-static ubit8 getCenturyOffset(void)
+static sbit8 getCenturyOffset(void)
 {
 	ubit8		ret;
 	error_t		err;
@@ -275,9 +275,15 @@ static ubit8 getCenturyOffset(void)
 	acpi_rFadtS	*fadt;
 	void		*handle, *context;
 
+	/* This function used to return CMOS_REG_DATE_CENTURY on error, to make
+	 * the caller fetch from the "known" century offset, but while this
+	 * yields reliable behaviour in emulators, it does not do so on real
+	 * hardware. Thus we return -1 instead now, which tells the caller to
+	 * just use a hardcoded value for century.
+	 **/
 	err = acpi::findRsdp();
 	if (err != ERROR_SUCCESS) {
-		return CMOS_REG_DATE_CENTURY;
+		return -1;
 	};
 
 	if (acpi::testForRsdt())
@@ -289,7 +295,7 @@ static ubit8 getCenturyOffset(void)
 			__kprintf(WARNING RTCCMOS"getCenturyOffset: failed to "
 				"map RSDT.\n");
 
-			return CMOS_REG_DATE_CENTURY;
+			return -1;
 		};
 
 		rsdt = acpi::getRsdt();
@@ -301,8 +307,10 @@ static ubit8 getCenturyOffset(void)
 			// Literal value temporarily used. Taken from Linux.
 			if (fadt->hdr.revision < 3 || !fadt->cmosCentury)
 			{
-				__kprintf(NOTICE RTCCMOS"FADT century offset not used.\n");
-				return CMOS_REG_DATE_CENTURY;
+				__kprintf(NOTICE RTCCMOS"FADT century offset "
+					"not used.\n");
+
+				return -1;
 			};
 
 			ret = fadt->cmosCentury;
@@ -327,17 +335,21 @@ static ubit8 getCenturyOffset(void)
 
 status_t ibmPc_rtc_getHardwareDate(date_t *date)
 {
-	ubit16	year;
+	ubit16	year=0;
 	ubit8	month, day;
-	ubit8	centuryOffset;
+	sbit8	centuryOffset;
 
 	// Check ACPI for the century register offset.
 	centuryOffset = getCenturyOffset();
 
 	rtccmos::lock();
 
-	rtccmos::writeAddressRegister(centuryOffset);
-	year = rtccmos::readDataRegister() << 8;
+	if (centuryOffset != -1)
+	{
+		rtccmos::writeAddressRegister(centuryOffset);
+		year = rtccmos::readDataRegister() << 8;
+	};
+
 	rtccmos::writeAddressRegister(RTC_REG_YEAR);
 	year |= rtccmos::readDataRegister();
 	rtccmos::writeAddressRegister(RTC_REG_MONTH);
@@ -351,14 +363,15 @@ status_t ibmPc_rtc_getHardwareDate(date_t *date)
 	
 	if (rtccmosBcdDateTime)
 	{
-		year = (bcd8ToUbit8(year >> 8) * 100)
-			+ bcd8ToUbit8(year & 0xFF);
+		year = (((centuryOffset != -1) ? bcd8ToUbit8(year >> 8) : 20)
+			* 100) + bcd8ToUbit8(year & 0xFF);
 
 		month = bcd8ToUbit8(month);
 		day = bcd8ToUbit8(day);
 	}
 	else {
-		year = ((year >> 8) * 100) + (year & 0xFF);
+		year = (((centuryOffset != -1) ? (year >> 8) : 20) * 100)
+			+ (year & 0xFF);
 	};
 
 	*date = TIMERTRIB_DATE_ENCODE_YEAR(year)
