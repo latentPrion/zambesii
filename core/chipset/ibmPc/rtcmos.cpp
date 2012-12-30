@@ -1,7 +1,7 @@
 
 #include <arch/io.h>
 #include <chipset/zkcm/timerControl.h>
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>

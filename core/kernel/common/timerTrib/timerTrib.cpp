@@ -3,12 +3,13 @@
 #include <__kstdlib/__kclib/string.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 
 
 timerTribC::timerTribC(void)
 :
-period100ms(100000), period10ms(10000), period1ms(1000)
+period100ms(100000), period10ms(10000), period1ms(1000), safePeriodMask(0)
 {
 	memset(&watchdog.rsrc.interval, 0, sizeof(watchdog.rsrc.interval));
 	memset(
@@ -20,22 +21,185 @@ period100ms(100000), period10ms(10000), period1ms(1000)
 	flags = 0;
 }
 
-error_t timerTribC::initialize(void)
-{
-	error_t		ret=ERROR_SUCCESS;
-
-	// Check for the existence of a watchdog device on this chipset.
-	// ret = zkcmCore.watchdog.initialize();
-
-	// Return the result from the watchdog's initialize.
-	return ret;
-}
-
 timerTribC::~timerTribC(void)
 {
 }
 
-error_t timerTribC::initialize2(void)
+void timerTribC::initialize100msQueue(void)
+{
+	void			*handle;
+	zkcmTimerDeviceC	*dev;
+	error_t			ret;
+
+	/* EXPLANATION:
+	 * We want a timer that is not already latched. We can use the timer in
+	 * any mode, so that is not an issue. We are looking for 1s period
+	 * granularity or better. Precision is not highly important for the
+	 * kernel's timer queues.
+	 *
+	 * If we get nothing for these filter options, re-run the filter with
+	 * precision being PREC_ANY and IO-latency being ANY.
+	 **/
+	handle = __KNULL;
+	dev = zkcmCore.timerControl.filterTimerDevices(
+		zkcmTimerDeviceC::CHIPSET,
+		0,
+		ZKCM_TIMERDEV_CAP_RES_100MS,
+		zkcmTimerDeviceC::MODERATE,
+		zkcmTimerDeviceC::NEGLIGABLE,
+		TIMERCTL_FILTER_SKIP_LATCHED
+		| TIMERCTL_FILTER_MODE_ANY
+		| TIMERCTL_FILTER_IO_OR_BETTER
+		| TIMERCTL_FILTER_PREC_OR_BETTER,
+		&handle);
+__kprintf(CC"Failed to find\n");
+	if (dev == __KNULL)
+	{
+		handle = __KNULL;
+		dev = zkcmCore.timerControl.filterTimerDevices(
+			zkcmTimerDeviceC::CHIPSET,
+			0,
+			ZKCM_TIMERDEV_CAP_RES_100MS,
+			(zkcmTimerDeviceC::ioLatencyE)0,
+			(zkcmTimerDeviceC::precisionE)0,
+			TIMERCTL_FILTER_SKIP_LATCHED
+			| TIMERCTL_FILTER_MODE_ANY
+			| TIMERCTL_FILTER_IO_ANY
+			| TIMERCTL_FILTER_PREC_ANY,
+			&handle);
+
+		if (dev == __KNULL)
+		{
+			/* If we can't even initialize the 1 second period
+			 * queue, then we cannot continue the boot sequence.
+			 * Panic.
+			 **/
+			__kprintf(FATAL TIMERTRIB"initialize1sQueue: Failed "
+				"to get a timer for the\n"
+				"\tlowest frequency queue. No respectable "
+				"sources available. Halting.\n");
+
+			panic(ERROR_RESOURCE_UNAVAILABLE);
+		};
+	};
+
+	ret = period100ms.initialize(dev);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(FATAL TIMERTRIB"Failed to initialize the lowest "
+			"frequency queue. Panicking.");
+
+		panic(ret);
+	};
+}
+
+void timerTribC::initialize10msQueue(void)
+{
+	void			*handle;
+	zkcmTimerDeviceC	*dev;
+	error_t			ret;
+
+	/* EXPLANATION:
+	 * See above, initialize100msQueue().
+	 **/
+	handle = __KNULL;
+	dev = zkcmCore.timerControl.filterTimerDevices(
+		zkcmTimerDeviceC::CHIPSET,
+		0,
+		ZKCM_TIMERDEV_CAP_RES_10MS,
+		zkcmTimerDeviceC::MODERATE,
+		zkcmTimerDeviceC::NEGLIGABLE,
+		TIMERCTL_FILTER_SKIP_LATCHED
+		| TIMERCTL_FILTER_MODE_ANY
+		| TIMERCTL_FILTER_IO_OR_BETTER
+		| TIMERCTL_FILTER_PREC_OR_BETTER,
+		&handle);
+
+	if (dev == __KNULL)
+	{
+		handle = __KNULL;
+		dev = zkcmCore.timerControl.filterTimerDevices(
+			zkcmTimerDeviceC::CHIPSET,
+			0,
+			ZKCM_TIMERDEV_CAP_RES_10MS,
+			(zkcmTimerDeviceC::ioLatencyE)0,
+			(zkcmTimerDeviceC::precisionE)0,
+			TIMERCTL_FILTER_SKIP_LATCHED
+			| TIMERCTL_FILTER_MODE_ANY
+			| TIMERCTL_FILTER_IO_ANY
+			| TIMERCTL_FILTER_PREC_ANY,
+			&handle);
+
+		if (dev == __KNULL)
+		{
+			// Still unable to find a respectable timer. Return.
+			__kprintf(WARNING TIMERTRIB"10ms queue failed to latch "
+				"onto a timer source.\n");
+
+			return;
+		};
+	};
+
+	ret = period10ms.initialize(dev);
+	if (ret != ERROR_SUCCESS) {
+		__kprintf(FATAL TIMERTRIB"Failed to initialize 10ms queue.\n");
+	};
+}
+
+void timerTribC::initialize1msQueue(void)
+{
+	void			*handle;
+	zkcmTimerDeviceC	*dev;
+	error_t			ret;
+
+	/* EXPLANATION:
+	 * See above, initialize100msQueue().
+	 **/
+	handle = __KNULL;
+	dev = zkcmCore.timerControl.filterTimerDevices(
+		zkcmTimerDeviceC::CHIPSET,
+		0,
+		ZKCM_TIMERDEV_CAP_RES_1MS,
+		zkcmTimerDeviceC::MODERATE,
+		zkcmTimerDeviceC::NEGLIGABLE,
+		TIMERCTL_FILTER_SKIP_LATCHED
+		| TIMERCTL_FILTER_MODE_ANY
+		| TIMERCTL_FILTER_IO_OR_BETTER
+		| TIMERCTL_FILTER_PREC_OR_BETTER,
+		&handle);
+
+	if (dev == __KNULL)
+	{
+		handle = __KNULL;
+		dev = zkcmCore.timerControl.filterTimerDevices(
+			zkcmTimerDeviceC::CHIPSET,
+			0,
+			ZKCM_TIMERDEV_CAP_RES_1MS,
+			(zkcmTimerDeviceC::ioLatencyE)0,
+			(zkcmTimerDeviceC::precisionE)0,
+			TIMERCTL_FILTER_SKIP_LATCHED
+			| TIMERCTL_FILTER_MODE_ANY
+			| TIMERCTL_FILTER_IO_ANY
+			| TIMERCTL_FILTER_PREC_ANY,
+			&handle);
+
+		if (dev == __KNULL)
+		{
+			// Still unable to find a respectable timer. Return.
+			__kprintf(WARNING TIMERTRIB"1ms queue failed to latch "
+				"onto a timer source.\n");
+
+			return;
+		};
+	};
+
+	ret = period1ms.initialize(dev);
+	if (ret != ERROR_SUCCESS) {
+		__kprintf(FATAL TIMERTRIB"Failed to initialize 1ms queue.\n");
+	};
+}
+
+error_t timerTribC::initialize(void)
 {
 	error_t			ret;
 	ubit8			h, m, s;
@@ -82,6 +246,20 @@ error_t timerTribC::initialize2(void)
 		TIMERTRIB_DATE_GET_DAY(bootTimestamp.date),
 		h, m, s, bootTimestamp.time.nseconds);
 
+	// Now set up the timer queues.
+	/*safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
+	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_100MS_SAFE)) {
+		initialize100msQueue();
+	};
+
+	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE)) {
+		initialize10msQueue();
+	};
+
+	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_1MS_SAFE)) {
+		initialize1msQueue();
+	};*/
+
 	return ERROR_SUCCESS;
 }
 
@@ -105,10 +283,9 @@ void timerTribC::dump(void)
 
 status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, timeS interval)
 {
-	if ((isr == __KNULL)
-		|| ((interval.seconds == 0) && (interval.nseconds == 0)))
-	{
-		return ERROR_INVALID_ARG;
+	if (isr == __KNULL) { return ERROR_INVALID_ARG; };
+	if ((interval.seconds == 0) && (interval.nseconds == 0)) {
+		return ERROR_INVALID_ARG_VAL;
 	};
 
 	watchdog.lock.acquire();

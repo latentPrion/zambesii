@@ -157,11 +157,11 @@ static error_t initializeLapic(cpuStreamC *caller)
 			caller->cpuId);
 	};
 
-	x86Lapic::setupSpuriousVector(0xFF);
+	x86Lapic::setupSpuriousVector(x86LAPIC_VECTOR_SPURIOUS);
 	// See above, explicitly enable LAPIC before fiddling with LVT regs.
 	x86Lapic::softEnable();
 	// Use vector 0xFF as the LAPIC error vector.
-	x86Lapic::setupLvtError(0xFE);
+	x86Lapic::setupLvtError(x86LAPIC_VECTOR_LVT_ERROR);
 	x86Lapic::ipi::installHandler();
 
 	// This is called only when the CPU is ready to take IPIs.

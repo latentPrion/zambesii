@@ -60,7 +60,7 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 		for (ubit32 i=0; i<1000; i++) {};
 		err = x86Lapic::ipi::sendPhysicalIpi(
 			x86LAPIC_IPI_TYPE_FIXED,
-			x86LAPIC_IPI_VECTOR,
+			x86LAPIC_VECTOR_IPI,
 			x86LAPIC_IPI_SHORTDEST_NONE,
 			parent->cpuId);
 

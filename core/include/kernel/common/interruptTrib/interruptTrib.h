@@ -4,32 +4,19 @@
 	#include <arch/interrupts.h>
 	#include <arch/taskContext.h>
 	#include <chipset/zkcm/irqControl.h>
+	#include <chipset/zkcm/zkcmIsr.h>
+	#include <chipset/zkcm/device.h>
 	#include <__kstdlib/__ktypes.h>
-	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/ptrList.h>
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
+	#include <kernel/common/interruptTrib/__kexceptionFn.h>
 
 
 #define INTTRIB					"InterruptTrib: "
 
-// Applies to any ISR the chipset registered during intializeInterrupts().
-#define INTTRIB_VECTOR_FLAGS_BOOTISR		(1<<1)
-// States that the vector holds an exception.
-#define INTTRIB_VECTOR_FLAGS_EXCEPTION		(1<<2)
 // The exception on the vector must be called again just before executing IRET.
-#define INTTRIB_VECTOR_FLAGS_EXCEPTION_POSTCALL	(1<<3)
-// Declares that the vector holds a syscall handler and is an SWI vector.
-#define INTTRIB_VECTOR_FLAGS_SWI		(1<<4)
-
-// Zambezii Kernel Chipset Module.
-#define INTTRIB_ISR_DRIVERTYPE_ZKCM		(0x0)
-// Uniform Driver Interface.
-#define INTTRIB_ISR_DRIVERTYPE_UDI		(0x1)
-
-// Trigger mode values for irqPinDescriptorS.
-#define INTTRIB_IRQPIN_TRIGGMODE_LEVEL		0
-#define INTTRIB_IRQPIN_TRIGGMODE_EDGE		1
+#define INTTRIB_EXCEPTION_FLAGS_POSTCALL	(1<<3)
 
 class interruptTribC
 :
@@ -37,26 +24,86 @@ public tributaryC
 {
 public:
 	interruptTribC(void);
+	// Sets up arch-specific exception handling and masks off ALL IRQ pins.
 	error_t initialize(void);
+	// Initializes the ZKCM IRQ Control mod, bus-pin mappings and IRQs.
 	error_t initialize2(void);
 	~interruptTribC(void) {};
 
 public:
-	// Will Eventually provide a code injection API for usermode drivers.
-	status_t zkcmRegisterIsr(zkcmIsrFn *isr, uarch_t flags);
-	void zkcmRemoveIsr(zkcmIsrFn *isr);
+	void irqMain(taskContextS *regs);
+	void swiMain(taskContextS *regs);
+	void exceptionMain(taskContextS *regs);
+	void msiMain(taskContextS *regs);
 
 	void installException(
 		uarch_t vector, __kexceptionFn *exception, uarch_t flags);
 
 	void removeException(uarch_t vector);
 
-	void irqMain(taskContextS *regs);
+	// Containing namespace for the ZKCM sub-API.
+	struct zkcmS
+	{
+		/**	NOTES:
+		 * These functions deal with the registration and retire of
+		 * ZKCM driver API ISRs. When UDI is ported, we will have
+		 * a separate API for registering UDI ISRs.
+		 *
+		 * The kernel keeps pin-based IRQs and message-signaled IRQs
+		 * separate. Pin-based IRQs are registered with registerPinIsr()
+		 * and MSI IRQs are registered with registerMsiIsr().
+		 *
+		 * registerPinIsr():
+		 *	Adds a pin based IRQ handler to the list of ISRs on the
+		 *	specified __kpin. Does not unmask the __kpin if it
+		 *	is not already unmasked -- the caller must explicitly
+		 *	call __kpinEnable() to unmask the IRQ pin.
+		 *
+		 * retirePinIsr():
+		 *	Removes a pin based IRQ handler from the list of ISRs
+		 *	on the specified __kpin. This function /will/ mask the
+		 *	IRQ off automatically if the ISR being removed is the
+		 *	last ISR in the list for the specified __kpin.
+		 *
+		 * registerMsiIsr():
+		 *	Adds an IRQ handler to the list of ISRs on the specified
+		 *	interrupt vector of the CPU. An MSI ISR must not be
+		 *	installed on a vector which has an exception installed
+		 *	on it, or on a vector which was reserved by the CPU
+		 *	architecture's manual. Such an attempt will be rejected.
+		 *	This function does not "enable" the allocated MSI IRQ
+		 *	automatically, and the caller must also call
+		 *	enableMsiVector() as well, after calling this function.
+		 *
+		 * retireMsiIsr():
+		 *	Removes an IRQ handler from the list of ISRs on the
+		 *	specified interrupt vector of the CPU. This function
+		 *	/will/ automatically disable/deallocate the MSI IRQ
+		 *	upon completion.
+		 **/
+		error_t registerPinIsr(
+			ubit16 __kpin, zkcmDeviceBaseC *dev, zkcmIsrFn *isr,
+			uarch_t flags);
+
+		sarch_t retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr);
+
+		error_t registerMsiIsr(
+			uarch_t vector, zkcmDeviceBaseC *dev, zkcmIsrFn *isr,
+			uarch_t flags);
+
+		sarch_t retireMsiIsr(uarch_t vector, zkcmIsrFn *isr);
+	} zkcm;
+
+	error_t __kpinEnable(ubit16 __kpin);
+	sarch_t __kpinDisable(ubit16 __kpin);
+	error_t enableMsiVector(uarch_t vector);
+	sarch_t disableMsiVector(uarch_t vector);
 
 	// Called only by ZKCM IRQ Control module related code.
 	void registerIrqPins(ubit16 nPins, zkcmIrqPinS *list);
 	void removeIrqPins(ubit16 nPins, zkcmIrqPinS *list);
 
+	// For debugging.
 	void dumpIrqPins(void);
 	void dumpExceptions(void);
 	void dumpMsiIrqs(void);
@@ -70,58 +117,93 @@ private:
 public:
 	struct isrDescriptorS
 	{
-		ptrlessListC<isrDescriptorS>::headerS	listHeader;
+		enum driverTypeE { ZKCM=0, UDI };
+
+		isrDescriptorS(driverTypeE driverType)
+		:
+		driverType(driverType), flags(0), nHandled(0)
+		{
+			api.udi.isr = __KNULL;
+			api.zkcm.isr = __KNULL;
+		}
+
+		driverTypeE	driverType;
+
 		ubit32		flags;
-		// For profiling.
+		// Total number of IRQs claimed and handled so far.
 		uarch_t		nHandled;
-		// NOTE: Should actually point to the bus driver instance.
-		uarch_t		processId;
-		zkcmIsrFn	*isr;
-		ubit8		driverType;
-		// Miscellaneous driver only use.
-		ubit32		scratch;
+		union
+		{
+			struct
+			{
+				zkcmIsrFn	*isr;
+				zkcmDeviceBaseC	*device;
+			} zkcm;
+
+			struct
+			{
+				void		*isr;
+				processId_t	istId;
+				void		*queue;
+				void		*transList;
+			} udi;
+		} api;
 	};
 
 	struct vectorDescriptorS
 	{
 		uarch_t			flags;
+		enum vectorTypeE
+		{
+			UNCLAIMED=0, EXCEPTION, MSI_IRQ, SWI
+		} type;
 		// For debugging.
 		uarch_t			nUnhandled;
 
 		/**	NOTE:
-		 * Each vector may have one exception, and any number of other
-		 * handlers. If an exception handler is installed on the
-		 * vector, it is run first. Userspace and drivers are not
-		 * allowed to install exceptions. They are only installed by
-		 * the kernel at boot as required.
+		 * Each vector may have either one exception, a list of IRQ
+		 * handlers (ISRs) or an SWI handler. These are all mutually
+		 * exclusive.
+		 * 
+		 * Exceptions may only be installed on a vector by the kernel
+		 * itself. Userspace and drivers may not install exceptions on
+		 * an interrupt vector.
 		 *
-		 * The pointer to the exception handler on a vector is also the
-		 * pointer to the vector's SWI handler if one exists on that
-		 * vector. A vector which is to be used for syscall entry is not
-		 * allowed to have other types of handlers on it as well. No
-		 * ISRs or exceptions are permitted alongside an SWI handler on
-		 * any vector.
+		 * IRQ handlers may be installed by the kernel and by drivers,
+		 * but not by userspace.
+		 *
+		 * SWI handlers may be installed by the kernel and by UXE
+		 * modules, but not by drivers.
+		 *
+		 * The pointer to the exception handler on each vector
+		 * (__kexceptionFn *exception) is also the pointer to the
+		 * vector's SWI handler if one exists on that vector.
 		 **/
 		__kexceptionFn		*exception;
-		/* Each vector has a list of ISRs which have been registered to
-		 * it. There is no limit to the number that may be installed on
-		 * a vector, but in time the kernel will be augmented with the
-		 * ability to balance the number of devices presenting on the
-		 * same vector.
-		 *
-		 * If there is an SWI (syscall) handler on a vector, then no
-		 * other type of handler is allowed to exist alongside it.
+
+		/* Each interrupt vector has a list for possible MSI ISRs which
+		 * may be installed on it if it is an MSI vector, and not of any
+		 * other type (such as SWI or exception). There is no limit to
+		 * the number of ISRs that may be installed on a vector, but in
+		 * time the kernel will be augmented with the ability to balance
+		 * the number of devices mapped to signal on the same vector.
 		 **/
-		ptrlessListC<isrDescriptorS>	isrList;
+		ptrListC<isrDescriptorS>	isrList;
 	};
 
 	struct irqPinDescriptorS
 	{
-		ubit8		triggerMode;
-		ptrlessListC<isrDescriptorS>	irqList;
+		ubit32		flags;
+		ubit32		nUnhandled;
+		/* Each IRQ __kpin has a list of installed ISRs. There is no
+		 * limit to the number of ISRs which may be installed on a
+		 * __kpin, but the kernel will eventually be equipped with the
+		 * ability to balance the number of IRQs mapped to the same pin.
+		 **/
+		ptrListC<isrDescriptorS>	isrList;
 	};
 
-	vectorDescriptorS	msiIrqTable[ARCH_IRQ_NVECTORS];
+	vectorDescriptorS	msiIrqTable[ARCH_INTERRUPTS_NVECTORS];
 	hardwareIdListC		pinIrqTable;
 	ubit16			pinIrqTableCounter;
 };

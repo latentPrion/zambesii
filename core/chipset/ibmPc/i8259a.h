@@ -1,49 +1,76 @@
 #ifndef _IBM_PC_i8259a_H
 	#define _IBM_PC_i8259a_H
 
-	#include <chipset/zkcm/irqControl.h>
+	#include <chipset/zkcm/picDevice.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
 
 #define i8259a			"IBMPC-8259: "
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class i8259aPicC
+:
+public zkcmPicDeviceC
+{
+public:
+	i8259aPicC(ubit16 nPins)
+	:
+	zkcmPicDeviceC(nPins, &baseDeviceInfo),
+	baseDeviceInfo(
+		0, CC"i8259a", CC"IBM-PC Compatible i8259a PIC chain",
+		CC"Unknown vendor", CC"N/A")
+	{}
 
-error_t ibmPc_i8259a_initialize(void);
-error_t ibmPc_i8259a_shutdown(void);
-error_t ibmPc_i8259a_suspend(void);
-error_t ibmPc_i8259a_restore(void);
+public:
+	virtual error_t initialize(void);
+	virtual error_t shutdown(void);
+	virtual error_t suspend(void);
+	virtual error_t restore(void);
 
-void ibmPc_i8259a_chipsetEventNotification(ubit8 event, uarch_t flags);
+	virtual error_t identifyActiveIrq(
+		cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode);
 
-error_t ibmPc_i8259a_identifyIrq(uarch_t physicalId, ubit16 *__kpin);
-status_t ibmPc_i8259a_getIrqStatus(
-	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
-	ubit8 *triggerMode, ubit8 *polarity);
+	virtual status_t getIrqStatus(
+		uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
+		ubit8 *triggerMode, ubit8 *polarity);
 
-status_t ibmPc_i8259a_setIrqStatus(
-	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled);
+	virtual status_t setIrqStatus(
+		uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled);
 
-void ibmPc_i8259a_maskIrq(ubit16 __kid);
-void ibmPc_i8259a_unmaskIrq(ubit16 __kid);
-void ibmPc_i8259a_maskAll(void);
-void ibmPc_i8259a_unmaskAll(void);
+	virtual void maskIrq(ubit16 __kpin);
+	virtual void unmaskIrq(ubit16 __kpin);
+	virtual void maskAll(void);
+	virtual void unmaskAll(void);
+	virtual sarch_t irqIsEnabled(ubit16 __kpin);
 
-sarch_t ibmPc_i8259a_irqIsEnabled(ubit16 __kpin);
+	virtual void maskIrqsByPriority(
+		ubit16 __kpin, cpu_t cpuId, uarch_t *mask0);
 
-void ibmPc_i8259a_maskIrqsByPriority(
-	ubit16 __kid, cpu_t cpuId, uarch_t *mask);
+	virtual void unmaskIrqsByPriority(
+		ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
 
-void ibmPc_i8259a_unmaskIrqsByPriority(
-	ubit16 __kid, cpu_t cpuId, uarch_t mask);
+	virtual void sendEoi(ubit16 __kpin);
 
-void ibmPc_i8259a_sendEoi(ubit16 __kpin);
+public:
+	error_t get__kpinFor(ubit8 pinNo, ubit16 *__kpin);
+	error_t lookupPinBy__kid(ubit16 __kpin, ubit8 *pin);
+	void chipsetEventNotification(ubit8 event, uarch_t);
 
-#ifdef __cplusplus
+private:
+	zkcmDeviceC	baseDeviceInfo;
+};
+
+extern i8259aPicC	i8259aPic;
+
+
+/**	Inline methods.
+ ******************************************************************************/
+
+inline error_t i8259aPicC::lookupPinBy__kid(ubit16 __kpin, ubit8 *pin)
+{
+	*pin = __kpin - __kpinBase;
+	if (*pin > 15) { return ERROR_INVALID_ARG_VAL; };
+	return ERROR_SUCCESS;
 }
-#endif
 
 #endif
 

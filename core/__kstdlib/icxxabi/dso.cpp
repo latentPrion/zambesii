@@ -1,4 +1,6 @@
 
+#include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
 //#include "icxxabi.h"
 
 #define CXXABI_ATEXIT_MAX_NFUNCS 64
@@ -10,6 +12,11 @@ struct atexitFuncTableEntryS
 } atexitFuncTable[ CXXABI_ATEXIT_MAX_NFUNCS ];
 
 void * __dso_handle = 0;
+
+extern "C" void __cxa_pure_virtual(void)
+{
+	panic(FATAL"Pure virtual function called with no resolve target.\n");
+}
 
 /* __cxa_atexit(): registers a new function in the atexit list.
  **/

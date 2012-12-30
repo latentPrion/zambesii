@@ -9,6 +9,7 @@
 
 #include "zkcmIbmPcState.h"
 #include "busPinMappings.h"
+#include "i8259a.h"
 
 
 /**	EXPLANATION:
@@ -60,7 +61,7 @@
  *	* Method 1: (Ideal): Execute the ACPI _PIC() method, telling the
  *	  firmware that we want to use symmetric IO mode. Populate the ACPI
  *	  namespace and find the _PRT() objects in the tree.
- *	* Method 2: (Preferred): Look in RAM for an Intel MP Specification table
+ *	* Method 2: (Acceptable): Look in RAM for an Intel MP Specification table
  *	  and parse it looking for IRQ Source entries pertaining to PCI. Use
  *	  this information to infer where each PCI link is connected on the
  *	  IO-APICs.
@@ -140,7 +141,7 @@ static void ibmPc_bpm_isa_acpi_loadRsdtBusPinMappings(acpi_rMadtS *madt)
 	 **/
 	for (ubit8 i=0; i<16; i++)
 	{
-		if (zkcmCore.irqControl.identifyIrq(
+		if (x86IoApic::get__kpinFor(
 			i, &isaBusPinMappings[i].__kpin)
 			!= ERROR_SUCCESS)
 		{
@@ -179,7 +180,7 @@ static void ibmPc_bpm_isa_acpi_loadRsdtBusPinMappings(acpi_rMadtS *madt)
 			continue;
 		};
 
-		if (zkcmCore.irqControl.identifyIrq(
+		if (x86IoApic::get__kpinFor(
 			overrideEntry->globalIrq,
 			&isaBusPinMappings[overrideEntry->irqNo].__kpin)
 				!= ERROR_SUCCESS)
@@ -285,10 +286,11 @@ static error_t ibmPc_bpm_isa_x86Mp_loadBusPinMappings(void)
 status_t ibmPcBpm::isa::loadBusPinMappings(void)
 {
 	acpi_rMadtS		*rMadt;
+
 	/**	EXPLANATION:
 	 * This function fills out the array above, isaBusPinMappings[] with
 	 * the most current information available on the mapping of ISA devices
-	 * to the current IRQ subsystem in use.
+	 * to the IRQ subsystem currently in use.
 	 *
 	 * If the i8259s are in use, this function will assume that all ISA IRQs
 	 * are mapped 1:1 to the i8259 inputs.
@@ -302,7 +304,7 @@ status_t ibmPcBpm::isa::loadBusPinMappings(void)
 		// Assume that all ISA IRQs are mapped 1:1 to the i8259 pins.
 		for (ubit8 i=0; i<16; i++)
 		{
-			if (zkcmCore.irqControl.identifyIrq(
+			if (i8259aPic.get__kpinFor(
 				i, &isaBusPinMappings[i].__kpin)
 				!= ERROR_SUCCESS)
 			{
@@ -317,6 +319,7 @@ status_t ibmPcBpm::isa::loadBusPinMappings(void)
 			};
 		};
 
+		__kprintf(NOTICE IBMPCBPM"ISA: UP mode, assumed i8259s.\n");
 		return ERROR_SUCCESS;
 	};
 
@@ -386,9 +389,13 @@ error_t ibmPcBpm::isa::get__kpinFor(ubit32 busIrqId, ubit16 *__kpin)
 		return ERROR_SUCCESS;
 	};
 
-	return ERROR_INVALID_ARG_VAL;
+	return ERROR_RESOURCE_UNAVAILABLE;
 }
 
+#if 0
+/* Deprecated in favour of forcing all calls to maskIrq() and unmaskIrq() to
+ * go through Interrupt Trib and the IRQ Control module.
+ **/
 status_t ibmPcBpm::isa::maskIrq(ubit32 busIrqId)
 {
 	ubit16		__kpin;
@@ -416,4 +423,5 @@ status_t ibmPcBpm::isa::unmaskIrq(ubit32 busIrqId)
 	zkcmCore.irqControl.unmaskIrq(__kpin);
 	return ERROR_SUCCESS;
 }
+#endif
 

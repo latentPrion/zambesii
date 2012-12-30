@@ -4,7 +4,6 @@
 #include <scaling.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
-#include <lang/lang.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/pageAttributes.h>

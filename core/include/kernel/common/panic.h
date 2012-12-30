@@ -1,7 +1,6 @@
 #ifndef _PANIC_H
 	#define _PANIC_H
 
-	#include <lang/lang.h>
 	#include <__kstdlib/__ktypes.h>
 
 // Handle a standard kernel error.

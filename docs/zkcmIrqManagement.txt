@@ -1,0 +1,79 @@
+Int Trib API:
+	/** Does not unmask the IRQ pin. Simply adds the handler to the list
+	 * of handlers on that __kpin.
+	 **/
+	status_t zkcm::registerPinIsr(
+		__kpin, zkcmDeviceC *device, void *handler, uarch_t flags);
+
+	/* DOES mask the pin off if there is no other handler left on it.
+	 * Returns 1 if the physical pin was masked off as a result of this
+	 * call. Returns 0 if the physical pin remained enabled.
+	 **/
+	sarch_t zkcm::retirePinIsr(__kpin, void *handler);
+
+	status_t __kpinEnable(__kpin);
+	sarch_t __kpinDisable(__kpin);
+
+	status_t zkcm::registerMsiIsr(
+		uarch_t vector, zkcmDeviceC *device, void *handler,
+		uarch_t flags);
+
+	sarch_t zkcm::retireMsiIsr(uarch_t vector, void *handle)
+
+	status_t __kmvEnable(vector);
+	sarch_t __kmvDisable(vector);
+	
+irq control mod API:
+	error_t get__kpinFor(utf8Char *bus, irq, ubit16 *ret);
+	error_t get__msiFor(utf8Char *bus, irq, ubit32 *ret);
+
+What do ZKCM devices return from their ISRs?
+	status_t:
+		ZKCM_ISR_NOT_MY_IRQ: This handler's IRQ was not asserted.
+		ERROR_SUCCESS: Means the handler's IRQ was asserted and it was
+			successfully handled. The IRQ is now deasserted and
+			nothing unremarkable occured.
+		ZKCM_ISR_NACK_UNRESPONSIVE:
+			Means the handler's IRQ was not deasserted, and the
+			device is not responding to commands normally. The
+			kernel generally handles this by panicking.
+
+		ZKCM_ISR_NACK_SHUTDOWN_POSSIBLE:
+			Means the handler's IRQ was not able to be deasserted,
+			but the handler has reason to believe that the device
+			will respond to a shutdown request from the kernel.
+			However, the handler is not sure whether or not the
+			device will behave normally if powered on again. The
+			kernel will generally handle this by shutting the
+			device down.
+
+		ZKCM_ISR_NACK_RESET_POSSIBLE:
+			Means the handler's IRQ was not able to be deasserted,
+			but the handler has reason to believe that the device
+			will exhibit normal behaviour again if it is reset.
+			The kernel will generally handle this by reseting the
+			device.
+
+		ZKCM_ISR_ACK_UNRESPONSIVE:
+			Means the IRQ was deasserted, but the handler has
+			determined that the device will not respond to further
+			commands, and is currently unresponsive. The kernel will
+			generally handle this by attempting to gracefully
+			shut down, and then displaying a message to the user on
+			next boot.
+
+		ZKCM_ISR_ACK_SHUTDOWN_POSSIBLE:
+			Same as NACK_SHUTDOWN_POSSIBLE, except that the IRQ
+			was deasserted. The kernel will handle this by shutting
+			the device down.
+
+		ZKCM_ISR_ACK_RESET_POSSIBLE:
+			Same as ACK_RESET_POSSOBLE, except that the IRQ was
+			deasserted. The kernel will handle this by resetting the
+			device.
+
+What arguments does the kernel pass to ZKCM ISRs?
+	A pointer to its device is adequate. Any locking or serialization can
+	be done internally using locks allocated within the device's
+	device object.
+

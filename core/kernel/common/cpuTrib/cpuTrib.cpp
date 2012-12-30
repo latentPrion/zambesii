@@ -3,7 +3,7 @@
 #include <scaling.h>
 #include <chipset/cpus.h>
 #include <chipset/zkcm/zkcmCore.h>
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>

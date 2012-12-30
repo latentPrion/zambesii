@@ -41,7 +41,7 @@ void interruptTribC::installHardwareVectorTable(void)
 	/* We have a table of vectors. Run through and initialize the IDT with
 	 * each pointer.
 	 **/
-	for (uarch_t i=0; i<ARCH_IRQ_NVECTORS; i++)
+	for (uarch_t i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
 		x8632Idt[i].baseLow =
 			reinterpret_cast<uarch_t>( __kvectorTable[i] ) & 0xFFFF;

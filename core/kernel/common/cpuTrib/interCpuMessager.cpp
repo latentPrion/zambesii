@@ -1,6 +1,6 @@
 
 #include <debug.h>
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <arch/tlbControl.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>

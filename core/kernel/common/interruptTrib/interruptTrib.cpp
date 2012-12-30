@@ -1,6 +1,6 @@
 
 #include <chipset/zkcm/zkcmCore.h>
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string.h>
@@ -11,29 +11,14 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-/**	EXPLANATION:
- * In the event that a chipset has an early device to install an ISR for, it is
- * allowed to install that ISR in the exception slot on the vector its device
- * raises its IRQ on. A device that registers an early ISR uses
- * installException(), passing INTTRIB_VECTOR_FLAGS_BOOTISR.
- *
- * The kernel takes note of the fact that it is an ISR and will ensure that
- * when interruptTribC::initialize2() is called, that ISR is removed from the
- * exception slot and added to the vector's ISR list.
- *
- * CAVEAT: No early ISR may be installed on a vector which has a known actual
- * exception which would be installed by the kernel. For example, on x86-32,
- * that means that a chipset may not install an early ISR on vectors 0-31.
- **/
-static ubit8		bootIsrsAllowed=1;
-
 interruptTribC::interruptTribC(void)
 {
-	for (ubit32 i=0; i<ARCH_IRQ_NVECTORS; i++)
+	for (ubit32 i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
 		msiIrqTable[i].exception = __KNULL;
 		msiIrqTable[i].flags = 0;
 		msiIrqTable[i].nUnhandled = 0;
+		msiIrqTable[i].type = vectorDescriptorS::UNCLAIMED;
 	};
 
 	pinIrqTableCounter = 0;
@@ -43,22 +28,13 @@ error_t interruptTribC::initialize(void)
 {
 	/**	EXPLANATION:
 	 * Installs the architecture specific exception handlers and initializes
-	 * the chipset's intController module.
+	 * the chipset's IRQ Control module. The IRQ Control mod is initialized
+	 * for the /sole/ purpose of being able to call maskAll() and mask off
+	 * all IRQs at the chipset's IRQ controller(s).
 	 *
-	 * The intController initialization also signals to the chipset that
-	 * it is safe to set up any early device ISRs, such as a timer IRQ for
-	 * the periodic petting of a watchdog device.
-	 *
-	 * Should the chipset need to do anything of that sort, it should
-	 * install a handler for the relevant early device using
-	 * installException(v, &handler, INTTRIB_VECTOR_FLAGS_BOOTISR).
-	 *
-	 * The handler is installed as if it were an exception and not an ISR
-	 * until later on when the kernel is able to properly handle ISR
-	 * installation. At that point the kernel will internally patch up the
-	 * earlier temporary measure. That should suffice for any chipsets which
-	 * may require the installation of an ISR for a device earlier than
-	 * the kernel's normal IRQ handling logic is initialized.
+	 * The chipset is not expected to register __kpins at this time, and
+	 * indeed, if it tries it will most likely fail because dynamic memory
+	 * allocation is not yet available.
 	 **/
 	// Arch specific CPU vector table setup.
 	installHardwareVectorTable();
@@ -66,25 +42,12 @@ error_t interruptTribC::initialize(void)
 	// Arch specific exception handler setup.
 	installExceptions();
 
-	/* Chipset specific call in to notify the chipset that it may begin
-	 * any necessary watchdog device setup, or early IRQ management setup.
-	 * The kernel expects IRQs to be masked off at the BSP until
-	 * interruptTribC::initialize2() is called.
-	 *
-	 * So if the chipset does need to install support for a watchdog device,
-	 * for example, it is expected to do so in a manner that is transparent
-	 * to the kernel, until the kernel later notifies the chipset that it is
-	 * about to enable interrupts on the BSP. The kernel is not at
-	 * all prepared to handle device IRQs right at this point, mainly
-	 * because this function, interruptTribC::initialize() is called before
-	 * memory management is initialized.
-	 **/
 	// Check for int controller, halt if none, else call initialize().
 	assert_fatal(zkcmCore.irqControl.initialize() == ERROR_SUCCESS);
 
 	/**	EXPLANATION:
-	 * From here on, IRQs will be unmasked one by one as their devices are
-	 * discovered and initialized.
+	 * From here on, IRQ pins will be unmasked one by one as their devices
+	 * are discovered and initialized.
 	 **/
 	// Ask the chipset to mask all IRQs at its irq controller(s).
 	zkcmCore.irqControl.maskAll();
@@ -94,33 +57,49 @@ error_t interruptTribC::initialize(void)
 error_t interruptTribC::initialize2(void)
 {
 	/**	EXPLANATION:
-	 * This is called simply to notify the Interrupt Tributary that memory
-	 * management is now initialized fully and the heap is available.
+	 * After a call to initialize2(), the chipset is expected to be fully
+	 * in synch with the kernel on all information to do with IRQ pins and
+	 * bus/device <-> IRQ-pin relationships. The IBM-PC will be used as the
+	 * paradigm for explanation:
 	 *
-	 * Now the Interrupt Tributary will cycle through all of the vector
-	 * descriptors and find all the (if any) early ISRs installed by the
-	 * chipset code and properly add them to their respective vectors' ISR
-	 * lists.
+	 * On the IBM-PC, this function first sends a notification to the
+	 * chipset's IRQ Control module code stating that dynamic memory
+	 * allocation is available. Chipsets are expected to respond by
+	 * registering all pins on all IRQ controllers with the kernel for
+	 * __kpin ID assignment. After this, most chipsets need not do anything
+	 * more;
+	 *
+	 * The IBM-PC is a case where there are so many clone devices from
+	 * different vendors that devices are not assigned to specific IRQ pins.
+	 * Even the same device being installed on two different boards will be
+	 * given two different IRQ pin assignments by the firmware on both
+	 * boards. Device <-> IRQ-pin and Bus <-> IRQ-pin mappings vary widely
+	 * across boards. On "normal" boards, the hardware features are fixed
+	 * for each marketed model, and the wirings for instances of the same
+	 * model are the same. IBM-PC compatibles by nature cannot achieve that.
+	 *
+	 * So for the IBM-PC, simply announcing the available IRQ pins (whether
+	 * for the i8259s or for the IO-APICs) is insufficient, because the
+	 * IRQ Control module still will not know how PCI devices (or devices
+	 * on any bus other than the ISA bus) are mapped to the pins on the IRQ
+	 * controllers. Yet, the state of the chipset IRQ Control module after
+	 * a call to this function should be that all IRQ pins are registered
+	 * with the kernel, _AND_ the IRQ Control module code should also know
+	 * the mappings for every device's IRQs, and more specifically, which
+	 * pin(s) each device interrupts on.
+	 *
+	 * So, for the IBM-PC, the notification sent here (dynamic mem alloc
+	 * avail) also prompts it to dynamically detect the bus/device <-> pin
+	 * mappings on the board.
+	 *
+	 * The key point is that after this function has been called, the kernel
+	 * proper expects that the chipset IRQ Control code should (1) have
+	 * registered all of its known IRQ pins with the kernel for __kpin ID
+	 * assignment, and (2) the IRQ Control module code should "know" about
+	 * all bus/device <-> pin mappings, and be able to translate those on
+	 * request from the kernel.
 	 **/
-	for (ubit32 i=0; i<ARCH_IRQ_NVECTORS; i++)
-	{
-		if (__KFLAG_TEST(
-			msiIrqTable[i].flags, INTTRIB_VECTOR_FLAGS_BOOTISR))
-		{
-			/**	TODO:
-			 * Move the ISR off the "exception" pointer and properly
-			 * add it to the list of ISRs on the vector. Make sure
-			 * you add it as a native interface driver and not a UDI
-			 * driver.
-			 **/
-		};
-	};
-
-	/**	EXPLANATION:
-	 * Notify the chipset IRQ control mod that memory management is now
-	 * available, and that it should tell the kernel about its IRQ routing
-	 * system (number of pins, etc) now.
-	 **/
+	// Notify the IRQ Control mod that memory management is initialized.
 	zkcmCore.irqControl.chipsetEventNotification(
 		IRQCTL_EVENT_MEMMGT_AVAIL, 0);
 
@@ -139,6 +118,13 @@ static void *getCr2(void)
 
 void interruptTribC::irqMain(taskContextS *regs)
 {
+	ubit16			__kpin;
+	ubit8			triggerMode;
+	status_t		status;
+	irqPinDescriptorS	*pinDesc;
+	isrDescriptorS		*isrDesc;
+	void			*handle;
+
 	if (regs->vectorNo /*!= 253*/)
 	{
 		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: CPU %d entered on "
@@ -146,17 +132,100 @@ void interruptTribC::irqMain(taskContextS *regs)
 			cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
 	};
 
-	// TODO: Check for a boot ISR.
+	/**	FIXME:
+	 * Will have to check for pin IRQs here for now. Pin IRQ vectors should
+	 * have their own kernel entry point which doesn't need to examine
+	 * vectorDescriptorS at all.
+	 **/
+	// Ask the chipset if any pin-based IRQs are pending and handle them.
+	status = zkcmCore.irqControl.identifyActiveIrq(
+		cpuTrib.getCurrentCpuStream()->cpuId,
+		regs->vectorNo,
+		&__kpin, &triggerMode);
 
-	// Check for an exception.
-	if (__KFLAG_TEST(
-		msiIrqTable[regs->vectorNo].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION))
+	__kprintf(NOTICE INTTRIB"irqMain: identifyActiveIrq returned %d, __kpin %d, triggerMode %d.\n",
+		status, __kpin, triggerMode);
+
+	switch (status)
 	{
-		(*msiIrqTable[regs->vectorNo].exception)(regs, 0);
+	case IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS:
+		__kprintf(WARNING INTTRIB"irqMain: Spurious IRQ: vector %d.\n",
+			regs->vectorNo);
+
+		for (;;) {asm volatile("cli\n\thlt\n\t");};
+		return;
+
+	case IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE:
+		break;
+
+	default:
+		pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
+		__kprintf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on CPU %d.\n"
+			"\tDumping: %d unhandled, %d ISRs, %s triggered.\n",
+			__kpin, cpuTrib.getCurrentCpuStream()->cpuId,
+			pinDesc->nUnhandled, pinDesc->isrList.getNItems(),
+			(triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL)
+				? "level" : "edge");
+
+		handle = __KNULL;
+		isrDesc = pinDesc->isrList.getNextItem(&handle);
+		for (; isrDesc != __KNULL;
+			isrDesc = pinDesc->isrList.getNextItem(&handle))
+		{
+			// For now only ZKCM.
+			status = isrDesc->api.zkcm.isr(
+				isrDesc->api.zkcm.device, 0);
+
+			if (status != ZKCM_ISR_NOT_MY_IRQ)
+			{
+				if (triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL
+					&& status == ERROR_SUCCESS)
+				{
+					isrDesc->nHandled++;
+					break;
+				};
+
+				// Else error.
+				pinDesc->nUnhandled++;
+				panic(FATAL"Error handling an IRQ.\n");
+			};
+		};
+
+		zkcmCore.irqControl.sendEoi(__kpin);
+		return;
 	};
 
+	switch (msiIrqTable[regs->vectorNo].type)
+	{
+	case vectorDescriptorS::EXCEPTION:
+		(*msiIrqTable[regs->vectorNo].exception)(regs, 0);
+		break;
 
-	// TODO: Calls ISRs, then exit.
+	case vectorDescriptorS::MSI_IRQ:
+	case vectorDescriptorS::SWI:
+		break;
+
+	case vectorDescriptorS::UNCLAIMED:
+		/* This is actually a very serious error. If no message
+		 * signaled IRQ has been registered on this vector, and the
+		 * vector is not a pin-based IRQ vector, it is still unclaimed
+		 * (not an SWI or exception either), then it means that a random
+		 * IRQ is coming in on this vector that the kernel has no
+		 * control over.
+		 *
+		 * Maybe later on as the design is refined, we will have a
+		 * response to this situation, but for now it mandates a kernel
+		 * panic.
+		 **/
+		__kprintf(FATAL INTTRIB"Entry on UNCLAIMED vector %d from CPU "
+			"%d.\n",
+			regs->vectorNo, cpuTrib.getCurrentCpuStream()->cpuId);
+
+		panic(ERROR_CRITICAL);
+
+	default:
+		break;
+	};
 
 	if (regs->vectorNo /*!= 253*/)
 	{
@@ -166,11 +235,10 @@ void interruptTribC::irqMain(taskContextS *regs)
 	};
 
 	// Check to see if the exception requires a "postcall".
-	if (__KFLAG_TEST(
-		msiIrqTable[regs->vectorNo].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION)
+	if ((msiIrqTable[regs->vectorNo].type == vectorDescriptorS::EXCEPTION)
 		&& __KFLAG_TEST(
 			msiIrqTable[regs->vectorNo].flags,
-			INTTRIB_VECTOR_FLAGS_EXCEPTION_POSTCALL))
+			INTTRIB_EXCEPTION_FLAGS_POSTCALL))
 	{
 		(msiIrqTable[regs->vectorNo].exception)(regs, 1);
 	};
@@ -180,47 +248,187 @@ void interruptTribC::installException(
 	uarch_t vector, __kexceptionFn *exception, uarch_t flags)
 {
 	if (exception == __KNULL) { return; };
-
-	if (__KFLAG_TEST(flags, INTTRIB_VECTOR_FLAGS_SWI))
+	if (msiIrqTable[vector].type != vectorDescriptorS::UNCLAIMED)
 	{
-		__kprintf(WARNING INTTRIB"Failed to install exception 0x%p on "
-			"vector %d; is an SWI vector.\n",
-			exception, vector);
+		__kprintf(FATAL INTTRIB"installException: Vector %d is already "
+			"occupied.\n",
+			vector);
 
+		panic(ERROR_CRITICAL);
 		return;
 	};
 
-	if (__KFLAG_TEST(flags, INTTRIB_VECTOR_FLAGS_BOOTISR))
-	{
-		if (!bootIsrsAllowed)
-		{
-			__kprintf(ERROR INTTRIB"Failed to install boot-ISR "
-				"0x%p on vector %d: boot ISRs have expired. "
-				"\tNormal ISR installation is now initialized."
-				"\n", exception, vector);
+	// Else it's a normal exception installation.
+	msiIrqTable[vector].type = vectorDescriptorS::EXCEPTION;
+	msiIrqTable[vector].exception = exception;
+	msiIrqTable[vector].flags = flags;
+}
 
-			return;
-		};
+error_t interruptTribC::zkcmS::registerPinIsr(
+	ubit16 __kpin, zkcmDeviceBaseC *dev, zkcmIsrFn *isr, uarch_t /*flags*/
+	)
+{
+	irqPinDescriptorS	*pinDesc;
+	isrDescriptorS		*isrDesc;
+	error_t			ret;
 
-		// Chipset wants to install an early ISR.
-		__KFLAG_SET(
-			msiIrqTable[vector].flags, INTTRIB_VECTOR_FLAGS_BOOTISR);
-	}
-	else
+	if (dev == __KNULL || isr == __KNULL) { return ERROR_INVALID_ARG; };
+
+	pinDesc = (irqPinDescriptorS *)interruptTrib.pinIrqTable
+		.getItem(__kpin);
+
+	if (pinDesc == __KNULL)
 	{
-		// Else it's a normal exception installation.
-		__KFLAG_SET(
-			msiIrqTable[vector].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION);
+		__kprintf(ERROR INTTRIB"registerPinIsr: Invalid __kpin %d.\n",
+			__kpin);
+
+		return ERROR_INVALID_ARG_VAL;
 	};
 
-	msiIrqTable[vector].exception = exception;
-	msiIrqTable[vector].flags |= flags;
+	// Constructor zeroes it out.
+	isrDesc = new isrDescriptorS(interruptTribC::isrDescriptorS::ZKCM);
+	if (isrDesc == __KNULL)
+	{
+		__kprintf(ERROR INTTRIB"registerPinIsr: Failed to alloc "
+			"isrDescriptorS object.\n");
+
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	isrDesc->api.zkcm.isr = isr;
+	isrDesc->api.zkcm.device = dev;
+
+	ret = pinDesc->isrList.insert(isrDesc);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR INTTRIB"registerPinIsr: Failed to add new ISR "
+			"on __kpin %d.\n\tzkcmDeviceC obj 0x%p, ISR 0x%p.\n",
+			__kpin, dev, isr);
+
+		delete isrDesc;
+		return ERROR_GENERAL;
+	};
+
+	return ERROR_SUCCESS;
+}
+
+sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
+{
+	irqPinDescriptorS	*pinDesc;
+	isrDescriptorS		*isrDesc;
+	void			*handle;
+
+	if (isr == __KNULL) { return 0; };
+
+	pinDesc = (irqPinDescriptorS *)interruptTrib.pinIrqTable
+		.getItem(__kpin);
+
+	if (pinDesc == __KNULL)
+	{
+		__kprintf(ERROR INTTRIB"retirePinIsr: Invalid __kpin %d.\n",
+			__kpin);
+
+		return 0;
+	};
+
+	handle = __KNULL;
+	for (isrDesc = (isrDescriptorS *)pinDesc->isrList.getNextItem(&handle);
+		isrDesc != __KNULL;
+		isrDesc = (isrDescriptorS *)pinDesc->isrList
+			.getNextItem(&handle))
+	{
+		if (isrDesc->api.zkcm.isr != isr) { continue; };
+
+		// If we found the right one:
+		__kprintf(NOTICE INTTRIB"retirePinIsr: Retiring ISR 0x%p on "
+			"__kpin %d.\n\t(type: ZKCM), handled %d IRQs.\n",
+			isr, __kpin, isrDesc->nHandled);
+
+		pinDesc->isrList.remove(isrDesc);
+		delete isrDesc;
+
+		// If there are now no more ISRs on this __kpin, mask it off. 
+		if (pinDesc->isrList.getNItems() == 0)
+		{
+			interruptTrib.__kpinDisable(__kpin);
+			// Return 1 if this call caused the pin to be masked.
+			return 1;
+		};
+
+		return 0;
+	};
+
+	// Means this was an attempt to retire an ISR that was never registered.
+	return 0;
+}
+
+error_t interruptTribC::__kpinEnable(ubit16 __kpin)
+{
+	irqPinDescriptorS	*pinDesc;
+
+	pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
+	if (pinDesc == __KNULL)
+	{
+		__kprintf(ERROR INTTRIB"__kpinEnable: Invalid __kpin %d.\n",
+			__kpin);
+
+		return ERROR_INVALID_ARG_VAL;
+	};
+
+	if (pinDesc->isrList.getNItems() == 0)
+	{
+		__kprintf(WARNING INTTRIB"__kpinEnable: %d: No ISRs in list.\n",
+			__kpin);
+
+		return ERROR_INVALID_OPERATION;
+	};
+
+	// Unmask the __kpin.
+	zkcmCore.irqControl.unmaskIrq(__kpin);
+	return ERROR_SUCCESS;
+}
+
+sarch_t interruptTribC::__kpinDisable(ubit16 __kpin)
+{
+	irqPinDescriptorS	*pinDesc;
+
+	pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
+	if (pinDesc == __KNULL)
+	{
+		__kprintf(ERROR INTTRIB"__kpinEnable: Invalid __kpin %d.\n",
+			__kpin);
+
+		return 0;
+	};
+
+	if (pinDesc->isrList.getNItems() != 0)
+	{
+		__kprintf(WARNING INTTRIB"__kpinEnable: %d: Unable to mask "
+			"__kpin: still %d handlers in list.\n",
+			__kpin, pinDesc->isrList.getNItems());
+
+		return 0;
+	};
+
+	// Mask the __kpin off.
+	zkcmCore.irqControl.maskIrq(__kpin);
+	return 1;
 }
 
 void interruptTribC::removeException(uarch_t vector)
 {
+	if (msiIrqTable[vector].type != vectorDescriptorS::EXCEPTION)
+	{
+		__kprintf(ERROR INTTRIB"removeException: Vector %d is not an "
+			"exception vector.\n",
+			vector);
+
+		return;
+	};
+
 	msiIrqTable[vector].exception = __KNULL;
 	msiIrqTable[vector].flags = 0;
+	msiIrqTable[vector].type = vectorDescriptorS::UNCLAIMED;
 }
 
 void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
@@ -231,6 +439,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 	for (ubit16 i=0; i<nPins; i++)
 	{
 		tmp = new irqPinDescriptorS;
+		tmp->isrList.initialize();
 		if (tmp == __KNULL)
 		{
 			__kprintf(FATAL INTTRIB"registerIrqPins(): Failed to "
@@ -246,18 +455,21 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 			panic(ERROR_MEMORY_NOMEM);
 		};
 
+// Removed this bit until further design iterations are completed.
+#if 0
 		switch (pinList[i].triggerMode)
 		{
-		case IRQPIN_TRIGGMODE_LEVEL:
-			tmp->triggerMode = INTTRIB_IRQPIN_TRIGGMODE_LEVEL;
+		case IRQCTL_IRQPIN_TRIGGMODE_LEVEL:
+			tmp->triggerMode = INTTRIB_IRQCTL_IRQPIN_TRIGGMODE_LEVEL;
 			break;
 
-		case IRQPIN_TRIGGMODE_EDGE:
-			tmp->triggerMode = INTTRIB_IRQPIN_TRIGGMODE_EDGE;
+		case IRQCTL_IRQPIN_TRIGGMODE_EDGE:
+			tmp->triggerMode = INTTRIB_IRQCTL_IRQPIN_TRIGGMODE_EDGE;
 			break;
 
 		default: break;
 		};
+#endif
 
 		/**	NOTE: 2012-05-27.
 		 * There used to be conditional code here which made use of
@@ -323,10 +535,9 @@ void interruptTribC::dumpExceptions(void)
 	ubit8		flipFlop=0;
 
 	__kprintf(NOTICE INTTRIB"dumpExceptions:\n");
-	for (ubit16 i=0; i<ARCH_IRQ_NVECTORS; i++)
+	for (ubit16 i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
-		if (__KFLAG_TEST(
-			msiIrqTable[i].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION))
+		if (msiIrqTable[i].type == vectorDescriptorS::EXCEPTION)
 		{
 			__kprintf(CC"\t%d: 0x%p,", i, msiIrqTable[i].exception);
 			if (flipFlop == 3)
@@ -340,6 +551,17 @@ void interruptTribC::dumpExceptions(void)
 	if (flipFlop != 0) { __kprintf(CC"\n"); };
 }
 
+static void dumpIsrDescriptor(ubit16 num, interruptTribC::isrDescriptorS *desc)
+{
+	if (desc->driverType == interruptTribC::isrDescriptorS::ZKCM)
+	{
+		__kprintf(CC"\t%d (is ZKCM): nHandled %d,"
+			"\n\tisr @0x%p, device base @0x%p.\n",
+			num, desc->nHandled,
+			desc->api.zkcm.isr, desc->api.zkcm.device);
+	};
+}
+
 void interruptTribC::dumpMsiIrqs(void)
 {
 	ubit32		nItems;
@@ -347,23 +569,16 @@ void interruptTribC::dumpMsiIrqs(void)
 
 	__kprintf(NOTICE INTTRIB"dumpMsiIrqs:\n");
 
-	for (ubit16 i=0; i<ARCH_IRQ_NVECTORS; i++)
+	for (ubit16 i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
-		if (msiIrqTable[i].isrList.getNItems() > 0)
+		if (msiIrqTable[i].type == vectorDescriptorS::MSI_IRQ)
 		{
 			nItems = msiIrqTable[i].isrList.getNItems();
 			__kprintf(CC"vec%d: %d handlers.\n", i, nItems);
 			for (ubit16 j=0; j<nItems; j++)
 			{
 				tmp = msiIrqTable[i].isrList.getItem(j);
-				__kprintf(CC"\t%d: %s; handled %d, "
-					"procId 0x%x, ISR at 0x%p.\n",
-					j,
-					((tmp->driverType
-						== INTTRIB_ISR_DRIVERTYPE_ZKCM)
-						? "ZKCM" : "UDI"),
-					tmp->nHandled, tmp->processId,
-					tmp->isr);
+				dumpIsrDescriptor(j, tmp);
 			};
 		};
 	};
@@ -374,11 +589,9 @@ void interruptTribC::dumpUnusedVectors(void)
 	ubit8	flipFlop=0;
 
 	__kprintf(NOTICE INTTRIB"dumpUnusedVectors:\n");
-	for (ubit16 i=0; i<ARCH_IRQ_NVECTORS; i++)
+	for (ubit16 i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
-		if (!__KFLAG_TEST(
-			msiIrqTable[i].flags, INTTRIB_VECTOR_FLAGS_EXCEPTION)
-			&& msiIrqTable[i].isrList.getNItems() == 0)
+		if (msiIrqTable[i].type == vectorDescriptorS::UNCLAIMED)
 		{
 			__kprintf(CC"\t%d,", i);
 			if (flipFlop == 7)
@@ -405,11 +618,8 @@ void interruptTribC::dumpIrqPins(void)
 
 	while (tmp != __KNULL)
 	{
-		__kprintf(CC"\t__kpin %d: Trigger mode %s, %d devices.\n",
-			prev,
-			((tmp->triggerMode == INTTRIB_IRQPIN_TRIGGMODE_LEVEL) ?
-				"level" : "edge"),
-			tmp->irqList.getNItems());
+		__kprintf(CC"\t__kpin %d: %d devices.\n",
+			prev, tmp->isrList.getNItems());
 
 		prev = context;
 		tmp = reinterpret_cast<irqPinDescriptorS *>(

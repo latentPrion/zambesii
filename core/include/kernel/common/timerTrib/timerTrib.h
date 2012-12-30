@@ -1,6 +1,7 @@
 #ifndef _TIMER_TRIB_H
 	#define _TIMER_TRIB_H
 
+	#include <chipset/zkcm/zkcmIsr.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/clock_t.h>
 	#include <kernel/common/tributary.h>
@@ -9,7 +10,6 @@
 	#include <kernel/common/processId.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 	#include <kernel/common/timerTrib/timerQueue.h>
-	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
 
 #define TIMERTRIB				"TimerTrib: "
 
@@ -39,6 +39,17 @@ public:
 	void getCurrentTime(timeS *);
 	date_t getCurrentDate(void);
 
+	/**	Input values: "1s" "100ms" "10ms" "1ms" "100ns" "10ns" "1ns".
+	 * Returns ERROR_SUCCESS on success,
+	 *	ERROR_UNINITIALIZED if the queue was unable to get a suitable
+	 *		timer source to latch onto,
+	 *	ERROR_NOT_SUPPORTED if the queue is not supported by the
+	 *		chipset.
+	 *	ERROR_INVALID_ARG_VAL if an invalid arg is supplied.
+	 **/
+	error_t enableQueue(utf8Char *queue);
+	error_t disableQueue(utf8Char *queue);
+
 	/**	Pending redesign.
 	mstime_t	getCurrentTickMs(void);
 	mstime_t	getUptimeTickMs(void);
@@ -61,8 +72,14 @@ private:
 	// Timestamp value for when this kernel instance was booted.
 	timestampS	bootTimestamp;
 	timerQueueC	period100ms, period10ms, period1ms;
+	ubit32		safePeriodMask;
 	uarch_t		flags;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
+
+private:
+	void initialize100msQueue(void);
+	void initialize10msQueue(void);
+	void initialize1msQueue(void);
 };
 
 extern timerTribC		timerTrib;

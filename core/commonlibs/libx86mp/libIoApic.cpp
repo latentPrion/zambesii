@@ -2,6 +2,7 @@
 #include <debug.h>
 #include <arch/arch.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <commonlibs/libx86mp/libx86mp.h>
@@ -26,6 +27,65 @@ void x86IoApic::flushCache(void)
 	cache.magic = 0;
 	cache.mapped = 0;
 	cache.nIoApics = 0;
+	// Zero out the vector base array.
+	memset(cache.vectorBases, 0, sizeof(cache.vectorBases));
+	/* We start assigning vectors from 48, since that's where the i8259
+	 * vectors end. Not that there will ever be any collision, but it seems
+	 * neater.
+	 **/
+	cache.vectorBaseCounter = 48;
+}
+
+ubit8 x86IoApic::allocateVectorBaseFor(ioApicC *ioApic)
+{
+	ubit8		i=0;
+
+	for (;
+		i<x86IOAPIC_MAX_NIOAPICS
+			&& cache.vectorBases[i].ioApicId != 0;
+		i++)
+	{
+		if (cache.vectorBases[i].ioApicId == ioApic->getId())
+		{
+			// Re-use already assigned vectors if possible.
+			if (cache.vectorBases[i].vectorBase != 0) {
+				return cache.vectorBases[i].vectorBase;
+			}
+			else
+			{
+				// Honestly this branch should never be taken...
+				cache.vectorBases[i].vectorBase =
+					cache.vectorBaseCounter;
+
+				cache.vectorBases[i].nPins = ioApic->getNIrqs();
+				cache.vectorBaseCounter += ioApic->getNIrqs();
+				return cache.vectorBases[i].vectorBase;
+			};
+		};
+	};
+
+	cache.vectorBases[i].ioApicId = ioApic->getId();
+	cache.vectorBases[i].vectorBase = cache.vectorBaseCounter;
+	cache.vectorBases[i].nPins = ioApic->getNIrqs();
+	cache.vectorBaseCounter += ioApic->getNIrqs();
+	return cache.vectorBases[i].vectorBase;
+}
+
+x86IoApic::ioApicC *x86IoApic::getIoApicByVector(ubit8 vector)
+{
+	for (ubit8 i=0; i<x86IOAPIC_MAX_NIOAPICS; i++)
+	{
+		if (cache.vectorBases[i].vectorBase <= vector
+			&& (cache.vectorBases[i].vectorBase
+				+ cache.vectorBases[i].nPins)
+			> vector)
+		{
+			return (ioApicC *)cache.ioApics
+				.getItem(cache.vectorBases[i].ioApicId);
+		};
+	};
+
+	return __KNULL;
 }
 
 void x86IoApic::dump(void)
@@ -198,7 +258,7 @@ tryMpTables:
 		// Used MP tables to discover it, so no ACPI Global ID info.
 		tmp = new ioApicC(
 			ioApicEntry->ioApicId, ioApicEntry->ioApicPaddr,
-			IRQPIN_ACPIID_INVALID);
+			IRQCTL_IRQPIN_ACPIID_INVALID);
 
 		// Masks all IRQs and sets safe known state.
 		ret = tmp->initialize();
@@ -282,7 +342,7 @@ void x86IoApic::unmaskAll(void)
 	};
 }
 
-error_t x86IoApic::identifyIrq(uarch_t physicalId, ubit16 *__kpin)
+error_t x86IoApic::get__kpinFor(uarch_t girqNo, ubit16 *__kpin)
 {
 	sarch_t		context;
 	ioApicC		*ioApic;
@@ -301,7 +361,7 @@ error_t x86IoApic::identifyIrq(uarch_t physicalId, ubit16 *__kpin)
 	for (; ioApic != __KNULL;
 		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
 	{
-		if (ioApic->identifyIrq(physicalId, __kpin) == ERROR_SUCCESS) {
+		if (ioApic->get__kpinFor(girqNo, __kpin) == ERROR_SUCCESS) {
 			return ERROR_SUCCESS;
 		};
 	};

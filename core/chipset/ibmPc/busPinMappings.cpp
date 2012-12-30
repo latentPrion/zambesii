@@ -45,6 +45,10 @@ error_t zkcmIrqControlModC::bpmC::get__kpinFor(
 	return IRQCTL_BPM_UNSUPPORTED_BUS;
 }
 
+#if 0
+/* Deprecated in favour of forcing all calls to maskIrq() and unmaskIrq() to
+ * go through Interrupt Trib and the IRQ Control module.
+ **/
 status_t zkcmIrqControlModC::bpmC::maskIrq(utf8Char *bus, ubit32 busIrqId)
 {
 	if (strcmp8(bus, CC"isa") == 0) {
@@ -80,4 +84,5 @@ status_t zkcmIrqControlModC::bpmC::unmaskIrq(utf8Char *bus, ubit32 busIrqId)
 
 	return IRQCTL_BPM_UNSUPPORTED_BUS;
 }
+#endif
 

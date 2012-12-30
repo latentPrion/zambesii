@@ -9,7 +9,7 @@
 #include <chipset/memoryAreas.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <platform/cpu.h>
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -725,9 +725,10 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	memcpy8(destAddr, srcAddr, copySize);
 
 	// Mask all ISA IRQs at the PIC and send an EOI to clear In-service reg.
-	ibmPc_i8259a_maskAll();
-	ibmPc_i8259a_sendEoi(0);
-	ibmPc_i8259a_sendEoi(8);
+	i8259aPic.maskAll();
+	// NOTE: The sendEoi call takes __kpins as arguments.
+	i8259aPic.sendEoi(0);
+	i8259aPic.sendEoi(8);
 
 	/** EXPLANATION
 	 * Next, we parse the MP tables to see if the chipset has the IMCR

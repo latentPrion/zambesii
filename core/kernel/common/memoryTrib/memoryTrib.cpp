@@ -3,7 +3,6 @@
 #include <chipset/memory.h>
 #include <chipset/zkcm/memoryMap.h>
 #include <chipset/zkcm/zkcmCore.h>
-#include <lang/lang.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>

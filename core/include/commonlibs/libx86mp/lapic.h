@@ -4,7 +4,7 @@
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
-	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
+	#include <kernel/common/interruptTrib/__kexceptionFn.h>
 	#include "mpTables.h"
 
 #define x86LAPIC		"LAPIC: "
@@ -60,8 +60,10 @@
 #define x86LAPIC_REG_CURR_COUNT		0x390
 #define x86LAPIC_REG_DIV_CFG		0x3E0
 
+#define x86LAPIC_VECTOR_SPURIOUS	0xFF
 // x86 IPI vector. 0xFE is one int priority below the highest on LAPIC.
-#define x86LAPIC_IPI_VECTOR		0xFD
+#define x86LAPIC_VECTOR_IPI		0xFE
+#define x86LAPIC_VECTOR_LVT_ERROR	0xFD
 
 #define x86LAPIC_IPI_DELIVERY_STATUS_PENDING	(1<<12)
 
@@ -111,6 +113,25 @@ namespace x86Lapic
 
 	void initializeCache(void);
 	void flushCache(void);
+
+	/**	EXPLANATION:
+	 * The 'great juju on the mountain' which bridges the IRQ routing
+	 * physical subsystem with the kernel's IRQ handling code. (Ref. Richard
+	 * Dawkinz). The IO-APIC code will assign a separate CPU interrupt
+	 * vector to each IO-APIC pin on each IO-APIC, which will be unique
+	 * across IO-APICs.
+	 *
+	 * This way, it's deathly simple to find out exactly which pin on which
+	 * IO-APIC is currently raising a signal. In this scenario, it is as
+	 * simple as assuming that the triggered interrupt vector directly
+	 * correlates to the IRQ pin being raised. This approach also eliminates
+	 * the need to do any In-service register reading etc...that said, there
+	 * is no In-service register in the IO-APICs; Frankly I don't think that
+	 * this is really as much a smart design, as it is the only workable
+	 * one.
+	 **/
+	status_t getActiveIrq(
+		cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode);
 
 	sarch_t getPaddr(paddr_t *p);
 	void setPaddr(paddr_t p);

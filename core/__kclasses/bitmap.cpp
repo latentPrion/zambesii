@@ -41,11 +41,11 @@ error_t bitmapC::initialize(ubit32 nBits)
 
 void bitmapC::merge(bitmapC *b)
 {
-	// ORs this bmp with the one passes as an argument.
+	// ORs this bmp with the one passed as an argument.
 	lock();
 	b->lock();
 
-	for (ubit32 i=0; i < b->getNBits(); i++)
+	for (ubit32 i=0; i < b->getNBits() && i < getNBits(); i++)
 	{
 		if (b->test(i)) {
 			set(i);
@@ -90,7 +90,9 @@ void bitmapC::set(ubit32 bit)
 
 void bitmapC::unset(ubit32 bit)
 {
-	// Same here. Lock is not acquired.
+	/* Don't acquire the lock. We expect the user to call lock() before 
+	 * calling this method.
+	 **/
 	if (bit < bmp.rsrc.nBits)
 	{
 		__KBIT_UNSET(
@@ -101,7 +103,9 @@ void bitmapC::unset(ubit32 bit)
 
 sarch_t bitmapC::test(ubit32 bit)
 {
-	// And here too.
+	/* Don't acquire the lock. We expect the user to call lock() before 
+	 * calling this method.
+	 **/
 	if (bit < bmp.rsrc.nBits)
 	{
 		return __KBIT_TEST(

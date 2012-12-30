@@ -1,5 +1,5 @@
 
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/multipleReaderLock.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>

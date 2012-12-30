@@ -124,6 +124,16 @@ typedef ubit32		date_t;
 struct timeS
 {
 #ifdef __cplusplus
+	timeS(void)
+	:
+	nseconds(0), seconds(0)
+	{}
+
+	timeS(ubit32 seconds, ubit32 nseconds)
+	:
+	nseconds(nseconds), seconds(seconds)
+	{}
+
 	inline int operator ==(timeS &t)
 	{
 		return (seconds == t.seconds) && (nseconds == t.nseconds);

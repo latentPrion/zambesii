@@ -2,7 +2,7 @@
 	#define _LIB_x86MP_IO_APIC_H
 
 	#include <arch/paddr_t.h>
-	#include <chipset/zkcm/irqControl.h>
+	#include <chipset/zkcm/picDevice.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/hardwareIdList.h>
@@ -13,6 +13,8 @@
 #define x86IOAPIC				"IO-APIC "
 
 #define x86IOAPIC_MAGIC				(0x10A1D1C0)
+
+#define x86IOAPIC_MAX_NIOAPICS			24
 
 #define x86IOAPIC_REG_ID			0x0
 #define x86IOAPIC_REG_VERSION			0x1
@@ -65,17 +67,39 @@
 namespace x86IoApic
 {
 	class ioApicC
+	:
+	public zkcmPicDeviceC
 	{
+	/**	EXPLANATION:
+	 * Class ioApicC is a device driver which can be instantiated, and
+	 * it provides the ZKCM PIC driver interface to the kernel.
+	 **/
 	public:
-		ioApicC(ubit8 id, paddr_t paddr, sarch_t acpiGirqBase);
+		ioApicC(ubit8 id, paddr_t paddr, sarch_t acpiGirqBase)
+		:
+		// Set nPins to 0 until we know how many there are.
+		zkcmPicDeviceC(0, &baseDeviceInfo),
+		// Set "childId" in zkcmDeviceC to the IO-APIC ID.
+		baseDeviceInfo(
+			id, CC"IO-APIC", CC"Intel MP Compliant IO-APIC chip",
+			CC"Unknown vendor", CC"N/A"),
+		paddr(paddr), id(id), acpiGirqBase(acpiGirqBase), vectorBase(0)
+		{
+			vaddr.rsrc = __KNULL;
+			version = 0;
+		}
+
 		// Gets version, etc, masks every IRQ on the particular IO-APIC.
-		error_t initialize(void);
+		virtual error_t initialize(void);
+		virtual error_t shutdown(void) { return ERROR_SUCCESS; };
+		virtual error_t suspend(void) { return ERROR_SUCCESS; };
+		virtual error_t restore(void) { return ERROR_SUCCESS; };
 		~ioApicC(void);
 
 	public:
-		ubit8 getNIrqs(void) { return nIrqs; };
-		ubit16 get__kpinBase(void) { return __kpinBase; };
+		ubit8 getNIrqs(void) { return nPins; };
 		sarch_t getGirqBase(void) { return acpiGirqBase; };
+		ubit8 getId(void) { return id; };
 
 		void maskPin(ubit8 irq);
 		void unmaskPin(ubit8 irq);
@@ -84,32 +108,52 @@ namespace x86IoApic
 			ubit8 deliveryMode, ubit8 destMode,
 			ubit8 polarity, ubit8 triggMode);
 
-		error_t identifyIrq(uarch_t physicalId, ubit16 *__kpin);
 		// Returns 1 if unmasked, 0 if masked off.
 		sarch_t getPinState(
 			ubit8 irq, ubit8 *cpu, ubit8 *vector,
 			ubit8 *deliveryMode, ubit8 *destMode,
 			ubit8 *polarity, ubit8 *triggMode);
 
-		status_t getIrqStatus(
+		virtual status_t identifyActiveIrq(
+			cpu_t, uarch_t vector,
+			ubit16 *__kpin, ubit8 *triggerMode)
+		{
+			// We just map the vector value to a __kpin value.
+			*__kpin = irqPinList[vector - vectorBase].__kid;
+			*triggerMode = 
+				irqPinList[vector - vectorBase].triggerMode;
+
+			return ERROR_SUCCESS;
+		}
+
+		// Returns the registered __kpin ID for Girq ID on this IO-APIC.
+		virtual error_t get__kpinFor(uarch_t physicalId, ubit16 *__kpin);
+		virtual status_t getIrqStatus(
 			uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
 			ubit8 *triggerMode, ubit8 *polarity);
 
-		status_t setIrqStatus(
+		virtual status_t setIrqStatus(
 			uarch_t __kpin, cpu_t cpu, uarch_t vector,
 			ubit8 enabled);
 
-		void maskIrq(ubit16 __kpin);
-		void unmaskIrq(ubit16 __kpin);
-		void maskAll(void);
-		void unmaskAll(void);
-		sarch_t irqIsEnabled(ubit16 __kpin);
+		virtual void maskIrq(ubit16 __kpin);
+		virtual void unmaskIrq(ubit16 __kpin);
+		virtual void maskAll(void);
+		virtual void unmaskAll(void);
+		virtual sarch_t irqIsEnabled(ubit16 __kpin);
 
-		// void maskIrqsByPriority(
-		//	ubit16 __kpin, cpu_t cpu, uarch_t *mask0);
+		virtual void maskIrqsByPriority(
+			ubit16, cpu_t, uarch_t *)
+		{UNIMPLEMENTED("ioApic::ioApicC::maskIrqsByPriority");}
 
-		// void unmaskIrqsByPriority(
-		//	ubit16 __kpin, cpu_t cpu, uarch_t mask0);
+		virtual void unmaskIrqsByPriority(
+			ubit16, cpu_t, uarch_t)
+		{UNIMPLEMENTED("ioApic::ioApicC::unmaskIrqsByPriority");}
+
+		// This function should never be called.
+		virtual void sendEoi(ubit16)
+		{UNIMPLEMENTED("ioApic::ioApicC::sendEoi");}
+
 
 	private:
 		inline void writeIoRegSel(ubit8 val);
@@ -128,6 +172,7 @@ namespace x86IoApic
 		error_t getIntelMpPinMappings(void);
 
 	private:
+		zkcmDeviceC		baseDeviceInfo;
 		struct ioApicRegspaceS
 		{
 			// All writes to this reg must be 32-bit.
@@ -137,15 +182,14 @@ namespace x86IoApic
 		};
 
 		paddr_t			paddr;
-		ubit8			id, version, nIrqs;
-		ubit16			__kpinBase;
-		zkcmIrqPinS		*irqPinList;
+		ubit8			id, version;
 		/* This is signed so that in the event that we are not on an
 		 * ACPI supporting chipset, we can set it to a negative
 		 * value to indicate that it is not valid.
 		 **/
 		sarch_t			acpiGirqBase;
 		sharedResourceGroupC<waitLockC, ioApicRegspaceS *>	vaddr;
+		ubit8			vectorBase;
 	};
 
 	struct cacheS
@@ -156,6 +200,24 @@ namespace x86IoApic
 
 		// List of IO APIC objects.
 		hardwareIdListC		ioApics;
+
+		/* Each IO-APIC is given a unique "vector base" for its pins,
+		 * such that every pin on every IO-APIC will have a different
+		 * vector. The base vector number for each IO-APIC is stored
+		 * here. The fact that the array is 32 indexes large effectively
+		 * hard-limits the number of supported IO-APICs to 32.
+		 **/
+		struct ioApicVectorBaseMapS
+		{
+			ubit8		ioApicId;
+			ubit8		vectorBase;
+			ubit8		nPins;
+		} vectorBases[x86IOAPIC_MAX_NIOAPICS];
+
+		/* The counter used to allocate new vector bases. Initial value
+		 * hardcoded and set in flushCache().
+		 **/
+		ubit8		vectorBaseCounter;
 	};
 
 	void initializeCache(void);
@@ -168,8 +230,9 @@ namespace x86IoApic
 
 	ioApicC *getIoApic(ubit8 id);
 	ioApicC *getIoApicFor(ubit16 __kpin);
+	// Looks up an ACPI Girq number and returns its registered __kpin ID.
+	error_t get__kpinFor(uarch_t girqId, ubit16 *__kpin);
 
-	error_t identifyIrq(uarch_t physicalId, ubit16 *__kpin);
 	inline status_t getIrqStatus(
 		uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
 		ubit8 *triggerMode, ubit8 *polarity);
@@ -183,9 +246,11 @@ namespace x86IoApic
 	void unmaskAll(void);
 	inline sarch_t irqIsEnabled(ubit16 __kpin);
 
-	// sendEoi() is handled in ibmPc's irqControl ZKCM module.
 	// void maskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t *mask0);
 	// void unmaskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
+
+	ubit8 allocateVectorBaseFor(ioApicC *ioApic);
+	ioApicC *getIoApicByVector(ubit8 vector);
 }
 
 
@@ -224,7 +289,7 @@ void x86IoApic::ioApicC::writeIoWin(ubit32 high, ubit32 low)
 error_t x86IoApic::ioApicC::lookupPinBy__kid(ubit16 __kid, ubit8 *pin)
 {
 	*pin = __kid - __kpinBase;
-	if (*pin >= nIrqs) { return ERROR_INVALID_ARG_VAL; };
+	if (*pin >= nPins) { return ERROR_INVALID_ARG_VAL; };
 	return ERROR_SUCCESS;
 }
 
@@ -262,7 +327,7 @@ status_t x86IoApic::getIrqStatus(
 		"doesn't map to any known IO-APIC.\n",
 		__kpin);
 
-	return IRQCTL_IRQSTATUS_INEXISTENT;
+	return IRQCTL_GETIRQSTATUS_INEXISTENT;
 }
 
 status_t x86IoApic::setIrqStatus(

@@ -1,6 +1,6 @@
 
 #include <scaling.h>
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/recursiveLock.h>
 #include <kernel/common/task.h>

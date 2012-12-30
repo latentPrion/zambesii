@@ -29,7 +29,7 @@ public:
 class zkcmDeviceBaseC
 {
 public:
-	zkcmDeviceC *getDevice(void) { return device; }
+	zkcmDeviceC *getBaseDevice(void) { return device; }
 
 protected:
 	zkcmDeviceBaseC(zkcmDeviceC *device)

@@ -23,13 +23,38 @@
 /**	Constants used with zkcmTimerControlModC and the Timer Control Mod API.
  **/
 // Values for bitfield returned by getChipsetSafeTimerPeriods().
-#define CHIPSET_TIMERS_1S_SAFE		(1<<0)
-#define CHIPSET_TIMERS_100MS_SAFE	(1<<1)
-#define CHIPSET_TIMERS_10MS_SAFE	(1<<2)
-#define CHIPSET_TIMERS_1MS_SAFE		(1<<3)
-#define CHIPSET_TIMERS_100NS_SAFE	(1<<4)
-#define CHIPSET_TIMERS_10NS_SAFE	(1<<5)
-#define CHIPSET_TIMERS_1NS_SAFE		(1<<6)
+#define TIMERCTL_1S_SAFE		ZKCM_TIMERDEV_CAP_RES_1S
+#define TIMERCTL_100MS_SAFE		ZKCM_TIMERDEV_CAP_RES_100MS
+#define TIMERCTL_10MS_SAFE		ZKCM_TIMERDEV_CAP_RES_10MS
+#define TIMERCTL_1MS_SAFE		ZKCM_TIMERDEV_CAP_RES_1MS
+#define TIMERCTL_100NS_SAFE		ZKCM_TIMERDEV_CAP_RES_100NS
+#define TIMERCTL_10NS_SAFE		ZKCM_TIMERDEV_CAP_RES_10NS
+#define TIMERCTL_1NS_SAFE		ZKCM_TIMERDEV_CAP_RES_1NS
+
+// Values for 'flags' argument of filterTimerDevices().
+#define TIMERCTL_FILTER_MODE_SHIFT	(0)
+#define TIMERCTL_FILTER_MODE_MASK	(0x3)
+#define TIMERCTL_FILTER_MODE_EXACT	(0<<TIMERCTL_FILTER_MODE_SHIFT)
+#define TIMERCTL_FILTER_MODE_BOTH	(1<<TIMERCTL_FILTER_MODE_SHIFT)
+#define TIMERCTL_FILTER_MODE_ANY	(2<<TIMERCTL_FILTER_MODE_SHIFT)
+#define TIMERCTL_FILTER_RES_SHIFT	(2)
+#define TIMERCTL_FILTER_RES_MASK	(0x3)
+#define TIMERCTL_FILTER_RES_MATCH	(0<<TIMERCTL_FILTER_RES_SHIFT)
+#define TIMERCTL_FILTER_RES_OR_LOWER	(1<<TIMERCTL_FILTER_RES_SHIFT)
+#define TIMERCTL_FILTER_RES_OR_HIGHER	(2<<TIMERCTL_FILTER_RES_SHIFT)
+#define TIMERCTL_FILTER_IO_SHIFT	(4)
+#define TIMERCTL_FILTER_IO_MASK		(0x3)
+#define TIMERCTL_FILTER_IO_OR_BETTER	(0<<TIMERCTL_FILTER_IO_SHIFT)
+#define TIMERCTL_FILTER_IO_OR_WORSE	(1<<TIMERCTL_FILTER_IO_SHIFT)
+#define TIMERCTL_FILTER_IO_ANY		(2<<TIMERCTL_FILTER_IO_SHIFT)
+#define TIMERCTL_FILTER_PREC_SHIFT	(6)
+#define TIMERCTL_FILTER_PREC_MASK	(0x3)
+#define TIMERCTL_FILTER_PREC_OR_BETTER	(0<<TIMERCTL_FILTER_PREC_SHIFT)
+#define TIMERCTL_FILTER_PREC_OR_WORSE	(1<<TIMERCTL_FILTER_PREC_SHIFT)
+#define TIMERCTL_FILTER_PREC_ANY	(2<<TIMERCTL_FILTER_PREC_SHIFT)
+#define TIMERCTL_FILTER_SKIP_LATCHED	(1<<16)
+
+#define TIMERCTL_UNREGISTER_FLAGS_FORCE	(1<<0)
 
 class zkcmTimerControlModC
 {
@@ -93,13 +118,14 @@ public:
 	 *
 	 * See include/chipset/zkcm/timerSource.h for preprocessor constants.
 	 **/
-	zkcmTimerDeviceC *filterTimerSources(
+	zkcmTimerDeviceC *filterTimerDevices(
 		zkcmTimerDeviceC::timerTypeE type,	// PER_CPU or CHIPSET.
 		ubit32 modes,				// PERIODIC | ONESHOT.
 		ubit32 resolutions,	// 1s|100ms|10ms|1ms|100ns|10ns|1ns
 		zkcmTimerDeviceC::ioLatencyE ioLatency,	// LOW, MODERATE or HIGH
 		zkcmTimerDeviceC::precisionE precision,	// EXACT, NEGLIGABLE,
 							// OVERFLOW or UNDERFLOW
+		ubit32 flags,
 		void **handle);
 
 	/**	EXPLANATION:
@@ -107,8 +133,8 @@ public:
 	 * they are detected. They are then added to the list that is searchable
 	 * by filterTimerSources.
 	 **/
-	error_t registerNewTimerSource(zkcmTimerDeviceC *timerSource);
-	error_t unregisterTimerSource(zkcmTimerDeviceC *timerSource);
+	error_t registerNewTimerDevice(zkcmTimerDeviceC *device);
+	error_t unregisterTimerDevice(zkcmTimerDeviceC *device, uarch_t flags);
 };
 
 #endif

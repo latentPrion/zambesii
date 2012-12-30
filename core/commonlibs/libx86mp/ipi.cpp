@@ -1,6 +1,6 @@
 
 #include <arch/interrupts.h>
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/libx86mp.h>
@@ -52,8 +52,8 @@ void x86Lapic::ipi::installHandler(void)
 
 	// Ask the Interrupt Trib to take our handler.
 	interruptTrib.installException(
-		x86LAPIC_IPI_VECTOR, &x86Lapic::ipi::exceptionHandler,
-		INTTRIB_VECTOR_FLAGS_EXCEPTION_POSTCALL);
+		x86LAPIC_VECTOR_IPI, &x86Lapic::ipi::exceptionHandler,
+		INTTRIB_EXCEPTION_FLAGS_POSTCALL);
 
 	handlerIsInstalled = 1;
 }

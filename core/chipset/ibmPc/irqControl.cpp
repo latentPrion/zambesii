@@ -26,7 +26,7 @@ error_t zkcmIrqControlModC::initialize(void)
 		return ERROR_SUCCESS;
 	};
 
-	return ibmPc_i8259a_initialize();
+	return i8259aPic.initialize();
 }
 
 error_t zkcmIrqControlModC::shutdown(void)
@@ -44,6 +44,30 @@ error_t zkcmIrqControlModC::restore(void)
 	return ERROR_SUCCESS;
 }
 
+status_t zkcmIrqControlModC::identifyActiveIrq(
+	cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode
+	)
+{
+	x86IoApic::ioApicC	*ioApic;
+
+	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
+	{
+		// Check vector number for spurious, return immediately if true.
+		if (vector == x86LAPIC_VECTOR_SPURIOUS) {
+			return IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS;
+		};
+
+		ioApic = x86IoApic::getIoApicByVector(vector);
+		return ioApic->identifyActiveIrq(
+			cpu, vector, __kpin, triggerMode);
+	}
+	else
+	{
+		return i8259aPic.identifyActiveIrq(
+			cpu, vector, __kpin, triggerMode);
+	};
+}
+
 error_t zkcmIrqControlModC::registerIrqController(void)
 {
 	return ERROR_SUCCESS;
@@ -58,8 +82,19 @@ void zkcmIrqControlModC::chipsetEventNotification(ubit8 event, uarch_t flags)
 	switch (event)
 	{
 	case IRQCTL_EVENT_MEMMGT_AVAIL:
-		// Tell the i8259 code to advertise its IRQ pins to the kernel.
-		ibmPc_i8259a_chipsetEventNotification(event, flags);
+		/**	EXPLANATION:
+		 * Tell the i8259 code to advertise its IRQ pins to the kernel,
+		 * and run the ISA bus/device <-> pin mapping code.
+		 **/
+		i8259aPic.chipsetEventNotification(event, flags);
+		if (bpm.loadBusPinMappings(CC"isa") != ERROR_SUCCESS)
+		{
+			panic(FATAL IBMPCIRQCTL
+				"chipsetEventNotification(MMGT_AVAIL):\n\t"
+				"Failed to get the bus-pin mappings for the "
+				"chipset for the i8259s.\n\tHalting.\n");
+		};
+
 		break;
 
 	case IRQCTL_EVENT_SMP_MODE_SWITCH:
@@ -69,7 +104,7 @@ void zkcmIrqControlModC::chipsetEventNotification(ubit8 event, uarch_t flags)
 		 * pins from the Interrupt Trib. Then, the irqControl mod must
 		 * switch over to delegating all calls to libIoApic.
 		 **/
-		ibmPc_i8259a_chipsetEventNotification(event, flags);
+		i8259aPic.chipsetEventNotification(event, flags);
 		break;
 
 	default:
@@ -78,18 +113,6 @@ void zkcmIrqControlModC::chipsetEventNotification(ubit8 event, uarch_t flags)
 
 		break;
 	};
-}
-
-error_t zkcmIrqControlModC::identifyIrq(uarch_t physicalId, ubit16 *__kpin)
-{
-	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
-		return x86IoApic::identifyIrq(physicalId, __kpin);
-	}
-	else {
-		return ibmPc_i8259a_identifyIrq(physicalId, __kpin);
-	};
-
-	return ERROR_UNKNOWN;
 }
 
 status_t zkcmIrqControlModC::getIrqStatus(
@@ -104,7 +127,7 @@ status_t zkcmIrqControlModC::getIrqStatus(
 	}
 	else
 	{
-		return ibmPc_i8259a_getIrqStatus(
+		return i8259aPic.getIrqStatus(
 			__kpin, cpu, vector, triggerMode, polarity);
 	};
 }
@@ -119,7 +142,7 @@ status_t zkcmIrqControlModC::setIrqStatus(
 			__kpin, cpu, vector, enabled);
 	}
 	else {
-		return ibmPc_i8259a_setIrqStatus(__kpin, cpu, vector, enabled);
+		return i8259aPic.setIrqStatus(__kpin, cpu, vector, enabled);
 	};
 }
 
@@ -129,7 +152,7 @@ void zkcmIrqControlModC::maskIrq(ubit16 __kpin)
 		x86IoApic::maskIrq(__kpin);
 	}
 	else {
-		ibmPc_i8259a_maskIrq(__kpin);
+		i8259aPic.maskIrq(__kpin);
 	};
 }
 
@@ -139,7 +162,7 @@ void zkcmIrqControlModC::unmaskIrq(ubit16 __kpin)
 		x86IoApic::unmaskIrq(__kpin);
 	}
 	else {
-		ibmPc_i8259a_unmaskIrq(__kpin);
+		i8259aPic.unmaskIrq(__kpin);
 	};
 }
 
@@ -149,7 +172,7 @@ void zkcmIrqControlModC::maskAll(void)
 		x86IoApic::maskAll();
 	}
 	else {
-		ibmPc_i8259a_maskAll();
+		i8259aPic.maskAll();
 	};
 }
 
@@ -159,7 +182,7 @@ void zkcmIrqControlModC::unmaskAll(void)
 		x86IoApic::unmaskAll();
 	}
 	else {
-		ibmPc_i8259a_unmaskAll();
+		i8259aPic.unmaskAll();
 	};
 }
 
@@ -169,7 +192,7 @@ sarch_t zkcmIrqControlModC::irqIsEnabled(ubit16 __kpin)
 		return x86IoApic::irqIsEnabled(__kpin);
 	}
 	else {
-		return ibmPc_i8259a_irqIsEnabled(__kpin);
+		return i8259aPic.irqIsEnabled(__kpin);
 	};
 }
 
@@ -184,7 +207,7 @@ void zkcmIrqControlModC::maskIrqsByPriority(
 			"maskIrqsByPriority: Lib IO-APIC has no back-end.\n");
 	}
 	else {
-		ibmPc_i8259a_maskIrqsByPriority(__kpin, cpuId, mask);
+		i8259aPic.maskIrqsByPriority(__kpin, cpuId, mask);
 	};
 }
 
@@ -199,7 +222,7 @@ void zkcmIrqControlModC::unmaskIrqsByPriority(
 			"unmaskIrqsByPriority: Lib IO-APIC has no back-end.\n");
 	}
 	else {
-		ibmPc_i8259a_unmaskIrqsByPriority(__kpin, cpu, mask);
+		i8259aPic.unmaskIrqsByPriority(__kpin, cpu, mask);
 	};
 }
 
@@ -211,7 +234,7 @@ void zkcmIrqControlModC::sendEoi(ubit16 __kpin)
 		x86Lapic::sendEoi();
 	}
 	else {
-		ibmPc_i8259a_sendEoi(__kpin);
+		i8259aPic.sendEoi(__kpin);
 	}
 }
 

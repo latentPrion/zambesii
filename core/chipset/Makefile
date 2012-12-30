@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../chipset.a
-OBJFILES=__kmemory.o
+OBJFILES=__kmemory.o timerControl_filters.o
 
 all: Makefile $(DELIVERABLE)
 

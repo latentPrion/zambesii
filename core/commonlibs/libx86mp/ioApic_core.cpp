@@ -9,15 +9,6 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
 
-x86IoApic::ioApicC::ioApicC(ubit8 id, paddr_t paddr, sarch_t acpiGirqBase)
-:
-paddr(paddr), id(id), acpiGirqBase(acpiGirqBase)
-{
-	vaddr.rsrc = __KNULL;
-	nIrqs = 0;
-	__kpinBase = 0;
-}
-
 x86IoApic::ioApicC::~ioApicC(void)
 {
 	if (vaddr.rsrc != __KNULL)
@@ -108,11 +99,14 @@ error_t x86IoApic::ioApicC::initialize(void)
 	vaddr.lock.acquire(); 
 	writeIoRegSel(x86IOAPIC_REG_VERSION);
 	version = readIoWin() & 0xFF;
-	nIrqs = ((readIoWin() >> 16) & 0xFF) + 1;
+	nPins = ((readIoWin() >> 16) & 0xFF) + 1;
 	vaddr.lock.release();
 
+	// Get vector base. See zkcmIrqControlModC::identifyActiveIrq().
+	vectorBase = x86IoApic::allocateVectorBaseFor(this);
+
 	// Allocate irqPinList.
-	irqPinList = new zkcmIrqPinS[nIrqs];
+	irqPinList = new zkcmIrqPinS[nPins];
 	if (irqPinList == __KNULL)
 	{
 		__kprintf(ERROR x86IOAPIC"%d: Failed to allocate IRQ pin list."
@@ -124,7 +118,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	/* Prepare and fill out the irqPinList. This includes filling out all
 	 * ACPI global IRQ pin IDs.
 	 **/
-	for (ubit8 i=0; i<nIrqs; i++)
+	for (ubit8 i=0; i<nPins; i++)
 	{
 		// Get current values.
 		maskPin(i);
@@ -134,18 +128,20 @@ error_t x86IoApic::ioApicC::initialize(void)
 			&polarity, &triggMode);
 
 		// Fill in ACPI Global IRQ ID and set Intel MP ID to invalid.
-		irqPinList[i].intelMpId = IRQPIN_INTELMPID_INVALID;
-		if (acpiGirqBase != IRQPIN_ACPIID_INVALID) {
+		irqPinList[i].intelMpId = IRQCTL_IRQPIN_INTELMPID_INVALID;
+		if (acpiGirqBase != IRQCTL_IRQPIN_ACPIID_INVALID) {
 			irqPinList[i].acpiId = acpiGirqBase + i;
 		};
 
 		irqPinList[i].triggerMode
 			= (triggMode == x86IOAPIC_TRIGGMODE_EDGE) ?
-				IRQPIN_TRIGGMODE_EDGE : IRQPIN_TRIGGMODE_LEVEL;
+				IRQCTL_IRQPIN_TRIGGMODE_EDGE
+				: IRQCTL_IRQPIN_TRIGGMODE_LEVEL;
 
 		irqPinList[i].polarity
 			= (polarity == x86IOAPIC_POLARITY_LOW) ?
-				IRQPIN_POLARITY_LOW : IRQPIN_POLARITY_HIGH;
+				IRQCTL_IRQPIN_POLARITY_LOW
+				: IRQCTL_IRQPIN_POLARITY_HIGH;
 
 		irqPinList[i].cpu = cpu;
 		irqPinList[i].vector = vector;
@@ -153,13 +149,12 @@ error_t x86IoApic::ioApicC::initialize(void)
 	};
 
 	// Give the pins to the kernel for __kpin ID assignment.
-	interruptTrib.registerIrqPins(nIrqs, irqPinList);
+	interruptTrib.registerIrqPins(nPins, irqPinList);
 	__kpinBase = irqPinList[0].__kid;
 
 	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x, "
-		"nIrqs %d, Girqbase %d.\n\tAll pins masked off for now.\n",
-		id, vaddr.rsrc, paddr, version, nIrqs, acpiGirqBase);
-
+		"nPins %d, Girqbase %d.\n\tAll pins masked off for now.\n",
+		id, vaddr.rsrc, paddr, version, nPins, acpiGirqBase);
 	// Now check to see if there are entries for each pin in the MP tables.
 	getIntelMpPinMappings();
 	return ERROR_SUCCESS;
@@ -314,7 +309,7 @@ error_t x86IoApic::ioApicC::getIntelMpPinMappings(void)
 		 * The only thing we do in here is check to see if the pin
 		 * has an entry in the MP Tables. If it does, we set the
 		 * intelMpId field to 0. Else, if there is no entry, we leave
-		 * it at IRQPIN_INTELMPID_INVALID.
+		 * it at IRQCTL_IRQPIN_INTELMPID_INVALID.
 		 **/
 		irqPinList[irqSource->destIoApicPin].intelMpId = 0;
 	};

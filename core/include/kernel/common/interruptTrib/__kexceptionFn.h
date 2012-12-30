@@ -3,7 +3,6 @@
 
 	#include <arch/taskContext.h>
 
-typedef status_t (zkcmIsrFn)(void);
 typedef status_t (__kexceptionFn)(struct taskContextS *regs, ubit8 postcall);
 
 #endif

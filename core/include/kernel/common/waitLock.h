@@ -1,7 +1,7 @@
 #ifndef _WAIT_LOCK_H
 	#define _WAIT_LOCK_H
 
-	#include <asm/atomic.h>
+	#include <arch/atomic.h>
 	#include <kernel/common/lock.h>
 
 /**	EXPLANATION:

@@ -1,5 +1,5 @@
 
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>

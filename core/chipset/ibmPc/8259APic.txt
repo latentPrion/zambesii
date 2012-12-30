@@ -229,8 +229,8 @@ Bit	Function
 5-6	Enable "Special mask mode", which I have no idea about. Just use 0.
 7	Reserved: must be 0 (sic).
 
-So the op cmd byte 3 is always going to be: 0x3 to read the in service reg,
-or 0x2 to read the interrupt request reg. 
+So the op cmd byte 3 is always going to be: 0xB to read the in service reg,
+or 0xA to read the interrupt request reg. 
 
 --------------------------------------------------------------------------------
 

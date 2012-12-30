@@ -1,10 +1,12 @@
 
 #include <arch/io.h>
-#include <chipset/zkcm/irqControl.h>
+#include <arch/cpuControl.h>
+#include <chipset/zkcm/picDevice.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kbitManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include "i8259a.h"
 #include "zkcmIbmPcState.h"
@@ -18,20 +20,12 @@
 #define PIC_PIC2_VECTOR_BASE	0x28
 
 #define PIC_IO_DELAY_COUNTER	3
-#define PIC_IO_DELAY(v,x)		for (v=0; v<x; v++) {}
+#define PIC_IO_DELAY(v,x)	for (v=0; v<x; v++) {}
 
 
-ubit16 				__kpinBase=0;
-static zkcmIrqPinS		irqPinList[16];
+i8259aPicC		i8259aPic(16);
 
-static inline error_t lookupPinBy__kid(ubit16 __kpin, ubit8 *pin)
-{
-	*pin = __kpin - __kpinBase;
-	if (*pin > 15) { return ERROR_INVALID_ARG_VAL; };
-	return ERROR_SUCCESS;
-}
-
-error_t ibmPc_i8259a_initialize(void)
+error_t i8259aPicC::initialize(void)
 {
 	ubit8		i;
 
@@ -69,7 +63,7 @@ error_t ibmPc_i8259a_initialize(void)
 	io::write8(PIC_PIC1_DATA, 0x01); PIC_IO_DELAY(i, PIC_IO_DELAY_COUNTER);
 	io::write8(PIC_PIC2_DATA, 0x01); PIC_IO_DELAY(i, PIC_IO_DELAY_COUNTER);
 
-	ibmPc_i8259a_maskAll();
+	maskAll();
 	/* Send EOI to both PICs; Can't use ibmPc_i8269a_sendEoi() here
 	 * because no __kpin IDs have been assigned yet, and that API call
 	 * requires a __kpin ID as an argument.
@@ -80,26 +74,35 @@ error_t ibmPc_i8259a_initialize(void)
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_i8259a_shutdown(void)
+error_t i8259aPicC::shutdown(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_i8259a_suspend(void)
+error_t i8259aPicC::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPc_i8259a_restore(void)
+error_t i8259aPicC::restore(void)
 {
 	return ERROR_SUCCESS;
 }
 
-void ibmPc_i8259a_chipsetEventNotification(ubit8 event, uarch_t)
+void i8259aPicC::chipsetEventNotification(ubit8 event, uarch_t)
 {
 	switch (event)
 	{
 	case IRQCTL_EVENT_MEMMGT_AVAIL:
+
+		// Allocate and zero memory for the __kpin mapping list.
+		irqPinList = new zkcmIrqPinS[16];
+		if (irqPinList == __KNULL)
+		{
+			panic(FATAL i8259a"Failed to allocate memory for "
+				"internal __kpin mapping array.\n");
+		};
+
 		/**	EXPLANATION:
 		 * Prepare the irqPinList of i8259 IRQ pins for use by the
 		 * kernel.
@@ -109,12 +112,17 @@ void ibmPc_i8259a_chipsetEventNotification(ubit8 event, uarch_t)
 			irqPinList[i].flags = 0;
 			irqPinList[i].cpu = ibmPcState.bspInfo.bspId;
 			irqPinList[i].vector = j;
-			irqPinList[i].triggerMode = IRQPIN_TRIGGMODE_LEVEL;
-			irqPinList[i].polarity = IRQPIN_POLARITY_HIGH;
+			irqPinList[i].triggerMode =
+				IRQCTL_IRQPIN_TRIGGMODE_LEVEL;
+
+			irqPinList[i].polarity = IRQCTL_IRQPIN_POLARITY_HIGH;
 		};
 
 		interruptTrib.registerIrqPins(16, irqPinList);
 		__kpinBase = irqPinList[0].__kid;
+		__kprintf(NOTICE i8259a"Registered for __kpins. Base: %d.\n",
+			__kpinBase);
+
 		break;
 
 	case IRQCTL_EVENT_SMP_MODE_SWITCH:
@@ -123,7 +131,10 @@ void ibmPc_i8259a_chipsetEventNotification(ubit8 event, uarch_t)
 		 * list, because on IBM-PC, when symmetric multiprocessing mode
 		 * is activated, we use only the IO-APICs and not mixed mode.
 		 **/
-		interruptTrib.removeIrqPins(16, irqPinList);
+		if (irqPinList != __KNULL) {
+			interruptTrib.removeIrqPins(16, irqPinList);
+		};
+
 		__kpinBase = 0;
 		break;
 
@@ -131,15 +142,90 @@ void ibmPc_i8259a_chipsetEventNotification(ubit8 event, uarch_t)
 	};
 }
 
-error_t ibmPc_i8259a_identifyIrq(uarch_t physicalId, ubit16 *__kpin)
-{
-	if (physicalId > 15) { return ERROR_INVALID_ARG_VAL; };
 
-	*__kpin = irqPinList[physicalId].__kid;
+error_t i8259aPicC::get__kpinFor(ubit8 pinNo, ubit16 *__kpin)
+{
+	if (pinNo > 15) { return ERROR_UNSUPPORTED; };
+	// Return immediately if the array hasn't yet been allocated.
+	if (irqPinList == __KNULL) { return ERROR_RESOURCE_UNAVAILABLE; };
+
+	*__kpin = irqPinList[pinNo].__kid;
 	return ERROR_SUCCESS;
 }
 
-status_t ibmPc_i8259a_getIrqStatus(
+status_t i8259aPicC::identifyActiveIrq(
+	cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode
+	)
+{
+	ubit8		mask=0;
+	uarch_t		flags;
+
+	/**	EXPLANATION:
+	 * Simply read the In-service register. If a bit is set, and the vector
+	 * matches the programmed vector for that bit, return the __kpin for
+	 * the pin that matches that bit.
+	 *
+	 * We can do a bit of minor optimization here: since we know that each
+	 * pin of the i8259 interrupts on a different CPU vector, we can use
+	 * the vector argument to guess which i8259 PIC has signaled us. If the
+	 * vector is within the range for the master i8259, then we won't check
+	 * the slave, and vice-versa.
+	 *
+	 * Also, since the i8259s are hardwired to only interrupt on the BSP CPU
+	 * it is impossible for them to interrupt any CPU other than the BSP. An
+	 * IO-APIC in virtual-wire mode will also emulate this behaviour.
+	 **/
+	if (cpu != ibmPcState.bspInfo.bspId) { return ERROR_UNSUPPORTED; };
+
+	*triggerMode = IRQCTL_IRQPIN_TRIGGMODE_LEVEL;
+	if (vector >= PIC_PIC1_VECTOR_BASE && vector < PIC_PIC2_VECTOR_BASE)
+	{
+		cpuControl::safeDisableInterrupts(&flags);
+		io::write8(PIC_PIC1_CMD, 0x4B);
+		mask = io::read8(PIC_PIC1_CMD);
+		cpuControl::safeEnableInterrupts(flags);
+	};
+
+	if (vector >= PIC_PIC2_VECTOR_BASE && vector < PIC_PIC2_VECTOR_BASE + 8)
+	{
+		cpuControl::safeDisableInterrupts(&flags);
+		io::write8(PIC_PIC2_CMD, 0x4B);
+		mask = io::read8(PIC_PIC2_CMD);
+		cpuControl::safeEnableInterrupts(flags);
+	};		
+
+	if (mask)
+	{
+		/* On the i8259s, lower pin values have higher IRQ
+		 * priority. Start checking from bit 0.
+		 **/
+		for (ubit8 i=0; i<8; i++)
+		{
+			if (__KBIT_TEST(mask, i)) {
+				return get__kpinFor(i, __kpin);
+			};
+		};
+	}
+	else
+	{
+		/* The i8259s issue IRQ signals set up to look like they
+		 * were generated by the 8th pin, when they generate a
+		 * spurious IRQ signal, and they do not set any bits in
+		 * the In-service register.
+		 **/
+		if (vector == PIC_PIC1_VECTOR_BASE + 7
+			|| vector == PIC_PIC2_VECTOR_BASE + 7)
+		{
+			return IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS;
+		};
+
+		return IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE;
+	};
+
+	return IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE;
+}
+
+status_t i8259aPicC::getIrqStatus(
 	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
 	ubit8 *triggerMode, ubit8 *polarity
 	)
@@ -148,18 +234,22 @@ status_t ibmPc_i8259a_getIrqStatus(
 	ubit8		pin;
 
 	err = lookupPinBy__kid(__kpin, &pin);
-	if (err != ERROR_SUCCESS) { return IRQCTL_IRQSTATUS_INEXISTENT; };
+	if (err != ERROR_SUCCESS) { return IRQCTL_GETIRQSTATUS_INEXISTENT; };
+	// Return immediately if the array hasn't been allocated.
+	if (irqPinList == __KNULL) { return IRQCTL_GETIRQSTATUS_INEXISTENT; };
 
 	*cpu = irqPinList[pin].cpu;
 	*vector = irqPinList[pin].vector;
-	*triggerMode = IRQPIN_TRIGGMODE_LEVEL;
+	*triggerMode = IRQCTL_IRQPIN_TRIGGMODE_LEVEL;
 	// FIXME: Not sure what polarity ISA IRQs are.
 	*polarity = irqPinList[pin].polarity;
 
-	return __KFLAG_TEST(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
+	return (__KFLAG_TEST(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED))
+		? IRQCTL_GETIRQSTATUS_ENABLED
+		: IRQCTL_GETIRQSTATUS_DISABLED;
 }
 
-status_t ibmPc_i8259a_setIrqStatus(
+status_t i8259aPicC::setIrqStatus(
 	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
 	)
 {
@@ -167,7 +257,7 @@ status_t ibmPc_i8259a_setIrqStatus(
 	 * The i8259s don't support IRQ routing to any CPU other than the BSP.
 	 * Additionally, to make implementation simpler, we just don't allow
 	 * i8259a IRQs to be set to vectors other than the ones they were set
-	 * to in ibmPc_i8259a_initialize().
+	 * to in i8259aPicC::initialize().
 	 **/
 
 	if (cpu != ibmPcState.bspInfo.bspId) {
@@ -179,37 +269,48 @@ status_t ibmPc_i8259a_setIrqStatus(
 	};
 
 	if (enabled) {
-		ibmPc_i8259a_unmaskIrq(__kpin);
-	}
-	else {
-		ibmPc_i8259a_maskIrq(__kpin);
+		unmaskIrq(__kpin);
+	} else {
+		maskIrq(__kpin);
 	};
 
 	return ERROR_SUCCESS;
 }
 
-void ibmPc_i8259a_maskAll(void)
+void i8259aPicC::maskAll(void)
 {
 	io::write8(PIC_PIC1_DATA, 0xFF);
 	io::write8(PIC_PIC2_DATA, 0xFF);
 
-	for (ubit8 i=0; i<16; i++) {
-		__KFLAG_UNSET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
+	if (irqPinList != __KNULL)
+	{
+		for (ubit8 i=0; i<16; i++)
+		{
+			__KFLAG_UNSET(
+				irqPinList[i].flags,
+				IRQCTL_IRQPIN_FLAGS_ENABLED);
+		};
 	};
 }
 	
-void ibmPc_i8259a_unmaskAll(void)
+void i8259aPicC::unmaskAll(void)
 {
 	io::write8(PIC_PIC1_DATA, 0x0);
 	io::write8(PIC_PIC2_DATA, 0x0);
 
-	for (ubit8 i=0; i<16; i++) {
-		__KFLAG_SET(irqPinList[i].flags, IRQPIN_FLAGS_ENABLED);
+	if (irqPinList != __KNULL)
+	{
+		for (ubit8 i=0; i<16; i++)
+		{
+			__KFLAG_SET(
+				irqPinList[i].flags,
+				IRQCTL_IRQPIN_FLAGS_ENABLED);
+		};
 	};
 
 }
 
-void ibmPc_i8259a_sendEoi(ubit16 __kid)
+void i8259aPicC::sendEoi(ubit16 __kid)
 {
 	error_t		err;
 	ubit8		pin;
@@ -223,7 +324,7 @@ void ibmPc_i8259a_sendEoi(ubit16 __kid)
 	io::write8(PIC_PIC1_CMD, 0x20);
 }
 
-void ibmPc_i8259a_maskIrq(ubit16 __kpin)
+void i8259aPicC::maskIrq(ubit16 __kpin)
 {
 	ubit8		mask;
 	error_t		err;
@@ -246,12 +347,12 @@ void ibmPc_i8259a_maskIrq(ubit16 __kpin)
 		io::write8(PIC_PIC2_DATA, mask);
 	};
 
-	__KFLAG_UNSET(
-		irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
-
+	if (irqPinList != __KNULL) {
+		__KFLAG_UNSET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+	};
 }
 
-void ibmPc_i8259a_unmaskIrq(ubit16 __kpin)
+void i8259aPicC::unmaskIrq(ubit16 __kpin)
 {
 	ubit8		mask;
 	error_t		err;
@@ -274,10 +375,12 @@ void ibmPc_i8259a_unmaskIrq(ubit16 __kpin)
 		io::write8(PIC_PIC2_DATA, mask);
 	};
 
-	__KFLAG_SET(irqPinList[pin].flags, IRQPIN_FLAGS_ENABLED);
+	if (irqPinList != __KNULL) {
+		__KFLAG_SET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+	};
 }
 
-void ibmPc_i8259a_maskIrqsByPriority(ubit16 __kid, cpu_t, uarch_t *mask)
+void i8259aPicC::maskIrqsByPriority(ubit16 __kid, cpu_t, uarch_t *mask)
 {
 	ubit8		irqNo;
 	ubit16		newMask=0;
@@ -307,14 +410,14 @@ void ibmPc_i8259a_maskIrqsByPriority(ubit16 __kid, cpu_t, uarch_t *mask)
 		{ io::write8(PIC_PIC2_DATA, newMask >> 8); };
 }
 
-void ibmPc_i8259a_unmaskIrqsByPriority(ubit16, cpu_t, uarch_t mask)
+void i8259aPicC::unmaskIrqsByPriority(ubit16, cpu_t, uarch_t mask)
 {
 	// Just write the old mask out unconditionally.
 	io::write8(PIC_PIC1_DATA, mask & 0xFF);
 	io::write8(PIC_PIC2_DATA, mask >> 8);
 }
 
-sarch_t ibmPc_i8259a_irqIsEnabled(ubit16 __kid)
+sarch_t i8259aPicC::irqIsEnabled(ubit16 __kid)
 {
 	error_t		err;
 	ubit8		pin;

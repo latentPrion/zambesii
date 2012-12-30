@@ -18,7 +18,9 @@
 	#define ERROR_RESOURCE_BUSY			-13
 	#define ERROR_UNAUTHORIZED			-14
 	#define ERROR_RESOURCE_UNAVAILABLE		-15
-	#define ERROR_NOT_SUPPORTED			-16
+	#define ERROR_UNSUPPORTED			-16
+	#define ERROR_UNINITIALIZED			-17
+	#define ERROR_INVALID_OPERATION			-18
 
 	#define UNIMPLEMENTED(__funcName)		\
 		__kprintf(ERROR"Unimplemented: %s on line %d of file %s.\n", \

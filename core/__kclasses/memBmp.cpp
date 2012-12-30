@@ -4,8 +4,6 @@
 #include <arch/paging.h>
 #include <arch/mathEmulation.h>
 #include <chipset/memory.h>
-//#include <chipset/memory.h>
-#include <lang/lang.h>
 #include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>

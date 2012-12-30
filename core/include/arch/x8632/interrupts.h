@@ -1,11 +1,11 @@
 #ifndef _ARCH_x86_32_INTERRUPTS_H
 	#define _ARCH_x86_32_INTERRUPTS_H
 
-	#include <kernel/common/interruptTrib/zkcmIsrFn.h>
+	#include <kernel/common/interruptTrib/__kexceptionFn.h>
 
-#define ARCH_IRQ_NVECTORS		256
+#define ARCH_INTERRUPTS_NVECTORS		256
 
-#define ARCH_x86_32_LAPIC_VECTOR_IPI	255
+#define ARCH_x86_32_LAPIC_VECTOR_IPI		255
 
 #ifdef __cplusplus
 extern "C" void			(*__kvectorTable[])();

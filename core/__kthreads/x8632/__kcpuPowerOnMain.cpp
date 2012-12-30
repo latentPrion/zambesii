@@ -2,7 +2,7 @@
 #include <debug.h>
 #include <arch/paging.h>
 #include <arch/taskContext.h>
-#include <asm/cpuControl.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>

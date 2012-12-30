@@ -29,6 +29,7 @@ public:
 
 	ubit32 getNItems(void);
 
+	sarch_t checkForItem(T *item);
 	T *getNextItem(void **const handle, ubit32 flags=0);
 	T *getItem(ubit32 num);
 
@@ -123,6 +124,26 @@ void ptrListC<T>::dump(void)
 	};
 
 	head.lock.release();
+}
+
+
+template <class T>
+sarch_t ptrListC<T>::checkForItem(T *item)
+{
+	ptrListNodeS		*tmp;
+
+	head.lock.acquire();
+
+	for (tmp = head.rsrc.ptr; tmp != __KNULL; tmp = tmp->next)
+	{
+		if (tmp->item == item) {
+			head.lock.release();
+			return 1;
+		};
+	};
+
+	head.lock.release();
+	return 0;		
 }
 
 template <class T>
@@ -220,7 +241,7 @@ T *ptrListC<T>::getItem(ubit32 num)
 	head.lock.release();
 
 	// If the list ended before the counter ran out, return an error value.
-	return (num > 0) ? __KNULL : tmp;
+	return (num > 0) ? __KNULL : tmp->item;
 }
 
 template <class T>

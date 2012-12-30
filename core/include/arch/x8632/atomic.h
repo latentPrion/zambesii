@@ -15,6 +15,11 @@
 
 namespace atomicAsm
 {
+	inline void memoryBarrier(void);
+	inline void flushInstructionCache(void);
+	inline void flushDataCache(void);
+	inline void flushAllCaches(void);
+
 	inline sarch_t exchange(volatile sarch_t *lock, sarch_t val);
 	inline void set(volatile sarch_t *lock, sarch_t val);
 	inline sarch_t exchangeAndAdd(
@@ -28,6 +33,15 @@ namespace atomicAsm
 
 /**	Inline Methods
  ***********************************************************************/
+
+inline void atomicAsm::memoryBarrier(void)
+{
+	asm volatile (
+		"pushl	%edx\n\t \
+		movl 	%cr2, %edx\n\t \
+		movl	%edx, %cr2\n\t \
+		popl	%edx\n\t");
+}
 
 inline sarch_t atomicAsm::exchange(volatile sarch_t *lock, sarch_t val)
 {
