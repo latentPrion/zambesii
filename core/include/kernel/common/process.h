@@ -16,6 +16,8 @@
 #define PROCESS_EXECDOMAIN_KERNEL	0x1
 #define PROCESS_EXECDOMAIN_USER		0x2
 
+/**	Flags for processStreamC::spawnThread().
+ **/
 #define SPAWNTHREAD_FLAGS_FIRST_THREAD		(1<<0)
 #define SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT	(1<<1)
 #define SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET	(1<<2)
@@ -41,17 +43,18 @@ public:
 	error_t initializeChild(processStreamC *child);
 	error_t initializeFirstThread(
 		taskC *task, taskC *spawningThread,
-		ubit8 policy, ubit8 prio, uarch_t flags);
+		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
 
 	error_t initializeChildThread(
 		taskC *task, taskC *spawningThread,
-		ubit8 policy, ubit8 prio, uarch_t flags);
+		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
 
 public:
 	taskC *getTask(processId_t processId);
 
 	error_t spawnThread(
-		void *entryPoint, ubit8 schedPolicy, ubit8 prio, uarch_t flags);
+		void *entryPoint, taskC::schedPolicyE schedPolicy,
+		ubit8 prio, uarch_t flags);
 	
 public:
 	uarch_t			id;

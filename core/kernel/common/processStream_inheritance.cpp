@@ -6,7 +6,7 @@
 
 error_t processStreamC::initializeFirstThread(
 	taskC *newTask, taskC *spawningTask,
-	ubit8 schedPolicy, ubit8 prio, uarch_t flags
+	taskC::schedPolicyE schedPolicy, ubit8 prio, uarch_t flags
 	)
 {
 	error_t		ret;
@@ -32,7 +32,7 @@ error_t processStreamC::initializeFirstThread(
 	else
 	{
 		// Set new process policy to system default.
-		newTask->schedPolicy = SCHEDPOLICY_ROUND_ROBIN;
+		newTask->schedPolicy = taskC::ROUND_ROBIN;
 	};
 
 	// And now for the scheduling priority.
@@ -65,7 +65,7 @@ error_t processStreamC::initializeFirstThread(
 
 error_t processStreamC::initializeChildThread(
 	taskC *newTask, taskC *spawningTask,
-	ubit8 schedPolicy, ubit8 prio, uarch_t flags
+	taskC::schedPolicyE schedPolicy, ubit8 prio, uarch_t flags
 	)
 {
 	error_t		ret;
@@ -96,7 +96,7 @@ error_t processStreamC::initializeChildThread(
 		flags, SPAWNTHREAD_FLAGS_SCHEDPOLICY_DEFAULT))
 	{
 		// Caller wants thread to have default policy.
-		newTask->schedPolicy = SCHEDPOLICY_ROUND_ROBIN;
+		newTask->schedPolicy = taskC::ROUND_ROBIN;
 	}
 	else
 	{

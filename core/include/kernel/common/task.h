@@ -41,12 +41,7 @@
  * attribute, and not a thread specific attribute.
  **/
 
-#define SCHEDFLAGS_SCHED_WAITING	(1<<0)
-
-#define TASKSTATE_DORMANT		0x1
-#define TASKSTATE_RUNNABLE		0x2
-#define TASKSTATE_RUNNING		0x3
-#define TASKSTATE_UNSCHEDULED		0x4
+#define TASK_SCHEDFLAGS_SCHED_WAITING	(1<<0)
 
 class processStreamC;
 class cpuStreamC;
@@ -61,21 +56,25 @@ public:
 	error_t initializeChild(taskC *child);
 
 public:
+	enum schedStateE { DORMANT=1, RUNNABLE, RUNNING, UNSCHEDULED };
+	enum schedPolicyE { ROUND_ROBIN, REAL_TIME };
+
 	// Do *NOT* move 'stack' from where it is.
 	void		*stack0, *stack1;
 
 	// Basic information.
-	processId_t	id;
-	processStreamC	*parent;
-	taskContextS	*context;
-	uarch_t		flags;
+	processId_t		id;
+	processStreamC		*parent;
+	taskContextS		*context;
+	uarch_t			flags;
+	multipleReaderLockC	lock;
 
 	// Scheduling information.
 	prio_t		*schedPrio, internalPrio;
-	ubit8		schedPolicy;
+	schedPolicyE	schedPolicy;
 	ubit8		schedOptions;
 	ubit8		schedFlags;
-	ubit8		schedState;
+	schedStateE	schedState;
 	cpuStreamC	*currentCpu;
 
 	// Miscellaneous properties (NUMA affinity, etc).
@@ -84,6 +83,9 @@ public:
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	tlbContextS	*tlbContext;
 #endif
+
+	// Events being waited on by this thread.
+	bitmapC		registeredEvents, pendingEvents;
 };
 
 #endif

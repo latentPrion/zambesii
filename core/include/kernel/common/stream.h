@@ -18,12 +18,12 @@
  * but is intercepted by the thread's stream, and the stream handles the
  * syscall on behalf of the thread.
  *
- * This way, the patterns of allocation, and usage of.rsrcs can be
+ * This way, the patterns of allocation, and usage of resources can be
  * accurately recorded. Also, the kernel can allow for something more
  * dynamic, which is very original and specific to Zambezii:
  *
- * If one cuts a process's link to its stream, it is effectively cut of
- * from syscalls for that.rsrc. I.e: cutting a thread's networking
+ * If one cuts a process's link to its stream, it is effectively cut off
+ * from syscalls for that resource. I.e: cutting a thread's networking
  * related stream cuts it off from all networking activity, for example.
  **/
 

@@ -1,7 +1,9 @@
 
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kcxxlib/new>
 #include <chipset/zkcm/zkcmCore.h>
+#include <chipset/zkcm/timerDevice.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/timerTrib/timerTrib.h>
@@ -347,4 +349,45 @@ void timerTribC::unregisterWatchdogIsr(void)
 		return;
 	};
 }
+
+#if 0
+void timerTribC::timerDeviceTimeoutEvent(zkcmTimerDeviceC *dev)
+{
+	timerStreamC		*stream;
+	zkcmTimerEventS		*event;
+
+	/**	EXPLANATION:
+	 * Called from IRQ context by a timer device driver to notify the kernel
+	 * that a timer device's IRQ has occured. This function does the
+	 * following:
+	 *	1. Gets the ID of the process which is latched to the calling
+	 *	   timer device.
+	 *	2. Gets a handle to that process's Timer Stream object.
+	 *	3. Allocates a new zkcmTimerEventS structure.
+	 *	4. Fills it out with pertinent information about the timed out
+	 *	   timer event that has just been signaled.
+	 *	5. Places it into the queue of timer event notifications for
+	 *	   the target process' Timer Stream object.
+	 *
+	 * At this point, the kernel returns control to the IRQ handler routine,
+	 * which will generally acknowledge the IRQ to the device (if it hadn't
+	 * already done so before notifying the kernel) and exit.
+	 **/
+	event = new zkcmTimerEventS;
+	if (event == __KNULL)
+	{
+		__kprintf(ERROR TIMERTRIB"timerDeviceTimeoutEvent: device %s:\n"
+			"\tFailed to alloc timeout object.\n",
+			dev->getBaseDevice()->shortName);
+
+		return;
+	};
+
+	event->device = dev;
+	dev->getLatchState(&event->latchedStream);
+	getCurrentTime(&event->irqTime);
+
+	//event->latchedStream->timerDeviceTimeoutNotification(event);
+}
+#endif
 

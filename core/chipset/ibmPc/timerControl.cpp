@@ -149,15 +149,14 @@ error_t zkcmTimerControlModC::unregisterTimerDevice(
 	zkcmTimerDeviceC *timer, uarch_t flags
 	)
 {
-	processId_t		latchedProc;
+	void	*latchedStream;
 
 	if (!__KFLAG_TEST(flags, TIMERCTL_UNREGISTER_FLAGS_FORCE))
 	{
-		if (timer->getLatchState(&latchedProc))
+		if (timer->getLatchState(&latchedStream))
 		{
 			__kprintf(ERROR IBMPC_TIMERCTL"unregisterTimerDevice: "
-				"Device is latched by process 0x%x.\n",
-				latchedProc);
+				"Device is latched.\n");
 
 			return ERROR_RESOURCE_BUSY;
 		};

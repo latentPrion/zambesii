@@ -107,7 +107,8 @@ error_t processStreamC::initializeChild(processStreamC *child)
 }
 
 error_t processStreamC::spawnThread(
-	void *entryPoint, ubit8 schedPolicy, ubit8 prio, uarch_t flags
+	void *entryPoint, taskC::schedPolicyE schedPolicy,
+	ubit8 prio, uarch_t flags
 	)
 {
 	sarch_t		threadId;

@@ -61,25 +61,6 @@ public:
 private:
 	void sendEoi(void);
 	void writeOneshotCount(void);
-	sarch_t validateCallerIsLatched(void)
-	{
-		cpuStreamC	*currCpu;
-
-		currCpu = cpuTrib.getCurrentCpuStream();
-
-		state.lock.acquire();
-
-		if (PROCID_PROCESS(currCpu->taskStream.currentTask->id)
-			== PROCID_PROCESS(state.rsrc.latchedProcess))
-		{
-			state.lock.release();
-
-			return 1;
-		};
-
-		state.lock.release();
-		return 0;
-	};
 
 private:
 	zkcmDeviceC		baseDeviceInfo;

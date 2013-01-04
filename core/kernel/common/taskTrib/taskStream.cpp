@@ -47,15 +47,15 @@ status_t taskStreamC::schedule(taskC *task)
 	// Finally, add the task to a queue.
 	switch (task->schedPolicy)
 	{
-	case SCHEDPOLICY_ROUND_ROBIN:
-		task->schedState = TASKSTATE_RUNNABLE;
+	case taskC::ROUND_ROBIN:
+		task->schedState = taskC::RUNNABLE;
 		ret = roundRobinQ.insert(
 			task, *task->schedPrio, task->schedOptions);
 
 		break;
 
-	case SCHEDPOLICY_REAL_TIME:
-		task->schedState = TASKSTATE_RUNNABLE;
+	case taskC::REAL_TIME:
+		task->schedState = taskC::RUNNABLE;
 		ret = realTimeQ.insert(
 			task, *task->schedPrio, task->schedOptions);
 
@@ -91,7 +91,7 @@ void taskStreamC::pullTask(void)
 
 execute:
 	newTask->currentCpu = curCpu;
-	newTask->schedState = TASKSTATE_RUNNING;
+	newTask->schedState = taskC::RUNNING;
 	currentTask = newTask;
 
 	// FIXME: Set nLocksHeld, etc here.
@@ -112,7 +112,8 @@ taskC*taskStreamC::pullRealTimeQ(void)
 		};
 
 		// Make sure the scheduler isn't waiting for this task.
-		if (__KFLAG_TEST(ret->schedFlags, SCHEDFLAGS_SCHED_WAITING))
+		if (__KFLAG_TEST(
+			ret->schedFlags, TASK_SCHEDFLAGS_SCHED_WAITING))
 		{
 			status = taskStreamC::schedule(ret);
 			continue;
@@ -138,7 +139,8 @@ taskC*taskStreamC::pullRoundRobinQ(void)
 		};
 
 		// Make sure the scheduler isn't waiting for this task.
-		if (__KFLAG_TEST(ret->schedFlags, SCHEDFLAGS_SCHED_WAITING))
+		if (__KFLAG_TEST(
+			ret->schedFlags, TASK_SCHEDFLAGS_SCHED_WAITING))
 		{
 			status = taskStreamC::schedule(ret);
 			continue;

@@ -146,7 +146,7 @@ error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
 			list.rsrc.tail->next = newNode;
 		}
 		else { list.rsrc.head = newNode; };
-		list.rsrc.tail =  newNode;
+		list.rsrc.tail = newNode;
 		list.rsrc.nItems++;
 
 		list.lock.release();

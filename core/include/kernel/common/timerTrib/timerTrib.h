@@ -2,6 +2,7 @@
 	#define _TIMER_TRIB_H
 
 	#include <chipset/zkcm/zkcmIsr.h>
+	#include <chipset/zkcm/timerDevice.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/clock_t.h>
 	#include <kernel/common/tributary.h>
@@ -10,6 +11,7 @@
 	#include <kernel/common/processId.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 	#include <kernel/common/timerTrib/timerQueue.h>
+	#include <kernel/common/timerTrib/timerStream.h>
 
 #define TIMERTRIB				"TimerTrib: "
 
@@ -39,6 +41,18 @@ public:
 	void getCurrentTime(timeS *);
 	date_t getCurrentDate(void);
 
+	/**	EXPLANATION:
+	 * Called by timer device drivers from IRQ context to let the kernel
+	 * know that a timer device's programmed timeout has been reached. The
+	 * kernel will in queue an event object on the Timer Stream of the
+	 * process that is currently latched to the timer device that has IRQ'd.
+	 *
+	 * It is then the responsibility of the latched process to call
+	 * "pullTimerEvent()" on its Timer Stream so that it can read timer
+	 * events and respond to them.
+	 **/
+	// void timerDeviceTimeoutEvent(zkcmTimerDeviceC *dev);
+
 	/**	Input values: "1s" "100ms" "10ms" "1ms" "100ns" "10ns" "1ns".
 	 * Returns ERROR_SUCCESS on success,
 	 *	ERROR_UNINITIALIZED if the queue was unable to get a suitable
@@ -59,6 +73,9 @@ public:
 	void	setContinuousTimerMs(mstime_t, void (*)()); */
 
 	void dump(void);
+
+public:
+	timerStreamC		__ktimerStream;
 
 private:
 	// The watchdog timer for the chipset, if it exists.

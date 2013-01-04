@@ -16,7 +16,7 @@ id(taskId), parent(parentProcess)
 
 	schedPrio = &internalPrio;
 	schedFlags = 0;
-	schedState = TASKSTATE_UNSCHEDULED;
+	schedState = UNSCHEDULED;
 	currentCpu = __KNULL;
 
 	nLocksHeld = 0;

@@ -203,9 +203,10 @@ struct timestampS
 // This data type is used by the timerTrib to represent timer service requests.
 struct timerObjectS
 {
+	enum objectTypeE { PERIODIC=1, ONESHOT } type;
 	// Process and threadID to wake up when this object expires.
 	processId_t		thread;
-	struct timestampS	expirationTime, placementTime;
+	timestampS		expirationTime, placementTime;
 };
 
 #endif

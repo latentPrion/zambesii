@@ -8,6 +8,7 @@
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
+	// #include <kernel/common/timerTrib/timerStream.h>
 	#include <kernel/common/cpuTrib/cpuTrib.h>
 
 /**	Constants used with struct zkcmTimerSourceS.
@@ -25,7 +26,7 @@
 #define ZKCM_TIMERDEV_CAP_RES_10NS		(1<<5)
 #define ZKCM_TIMERDEV_CAP_RES_1NS		(1<<6)
 
-// Values for zkcmTimerSourceS.state.flags.
+// Values for zkcmTimerDeviceC.state.flags.
 #define ZKCM_TIMERDEV_STATE_FLAGS_ENABLED	(1<<0)
 #define ZKCM_TIMERDEV_STATE_FLAGS_LATCHED	(1<<1)
 
@@ -75,7 +76,7 @@ public:
 	 **/
 	virtual uarch_t getPrecisionDiscrepancyForPeriod(ubit32 period)=0;
 
-	error_t latch(processId_t processId)
+	error_t latch(void *stream)
 	{
 		state.lock.acquire();
 
@@ -87,7 +88,7 @@ public:
 			return ERROR_RESOURCE_BUSY;
 		};
 
-		state.rsrc.latchedProcess = processId;
+		state.rsrc.latchedStream = stream;
 		__KFLAG_SET(
 			state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_LATCHED);
 
@@ -102,8 +103,9 @@ public:
 		// If it's not the owning process, deny the attempt.
 		currCpu = cpuTrib.getCurrentCpuStream();
 
-		if (PROCID_PROCESS(currCpu->taskStream.currentTask->id)
-			== PROCID_PROCESS(state.rsrc.latchedProcess))
+		// This condition needs to check the floodplain binding.
+		if (/*PROCID_PROCESS(currCpu->taskStream.currentTask->id)
+			== PROCID_PROCESS(state.rsrc.latchedStream->id)*/ 1)
 		{
 			state.lock.acquire();
 
@@ -116,14 +118,14 @@ public:
 	}
 
 	// Returns 1 if latched, 0 if not latched.
-	sarch_t getLatchState(processId_t *processId)
+	sarch_t getLatchState(void **latchedStream)
 	{
 		state.lock.acquire();
 
 		if (__KFLAG_TEST(
 			state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_LATCHED))
 		{
-			*processId = state.rsrc.latchedProcess;
+			*latchedStream = state.rsrc.latchedStream;
 
 			state.lock.release();
 			return 1;
@@ -132,6 +134,25 @@ public:
 		state.lock.release();
 		return 0;
 	}
+
+	sarch_t validateCallerIsLatched(void)
+	{
+		void			*stream;
+		taskC			*currTask;
+
+		currTask = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+
+		// Replace with floodplain binding check.
+		if (getLatchState(&stream)
+			&&
+			/* PROCID_PROCESS(stream->id)
+				== PROCID_PROCESS(currTask->id)*/ 1)
+		{
+			return 1;
+		} else {
+			return 0;
+		};
+	};
 
 public:
 
@@ -158,12 +179,12 @@ public:
 	{
 		stateS(void)
 		:
-		flags(0), latchedProcess(0), mode(UNINITIALIZED), period(0)
+		flags(0), latchedStream(0), mode(UNINITIALIZED), period(0)
 		{}
 
 		ubit32		flags;
-		// ProcID using this timer source. Valid if FLAGS_LATCHED set.
-		processId_t	latchedProcess;
+		// Floodplain Stream for the process using this timer device.
+		void		*latchedStream;
 		// Current mode: periodic/oneshot. Valid if FLAGS_ENABLED set.
 		modeE		mode;
 		// For periodic mode: stores the current timer period in ns.
@@ -174,6 +195,15 @@ public:
 
 	sharedResourceGroupC<waitLockC, stateS>	state;
 };
+
+#if 0
+struct zkcmTimerEventS
+{
+	zkcmTimerDeviceC	*device;
+	timerStreamC		*latchedStream;
+	timeS			irqTime;
+};
+#endif
 
 #endif
 

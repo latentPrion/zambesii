@@ -1,0 +1,34 @@
+The routine for an expiring timer is simple: it queues an object on the stream
+that is latched to it, and then exits.
+
+The process that is latched to the timer, upon waking will process the event.
+The timer leaves a handle to itself in the queued object to enable the process
+to identify which of its latched timers has expired. The queued object states
+the timeout timestamp, the device handle and the type of timer that it is
+(periodic or oneshot). This is queued on the stream, and the IRQ exits.
+
+When the thread next calls "PullMessage()" on its timer stream, it will fetch
+the next expired timer object, and this is where it ends for userspace.
+
+For kernel space, the kernel timer stream sets up an infrastructure around the
+timer stream 0 expiry. When it pulls an expired object, it matches the timer
+device handle against a timer queue. At that point it:
+	1. First gets the timer queue obj that was programmed into the device.
+	2. Checks which process sent it.
+	3. Pulls the next obj from that process.
+	4. Inserts it into the timer trib's timer queues.
+	5. Programs the device for the next timer timeout in the queue.
+	6. Wakes up the target thread for the object.
+
+	The reason the tagret thread is awakened last is because it is the least
+	important task in the series of activities to be performed.
+
+The kernel's BSP CPU Stream's Task Stream holds several objects in its run queue
+by default at boot. One of these is the Timer Tributary's main thread, which
+processes timeout objects placed on the kernel's timer stream. This thread has
+a very high priority, and in fact it sits on the realtimeQueue.
+
+Additionally, when a timer is latched onto by a process, it is allowed to assign
+a private, custom ID to that timer device. This is useful for enabling the
+kernel to assign array indexes to each of the timer queues for fast lookup.
+
