@@ -9,7 +9,6 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/processId.h>
-	#include <kernel/common/machineAffinity.h>
 
 #define PROCTRIB			"Proc Trib: "
 
@@ -44,7 +43,7 @@ public:
 
 	processStreamC *spawn(
 		const utf8Char *_commandLine,	// Full command line w/ args.
-		affinityS *affinity,		// Ocean/NUMA/SMP affinity.
+		bitmapC *cpuAffinity,		// Ocean/NUMA/SMP affinity.
 		void *elevation,		// Privileges.
 		ubit8 execDomain,		// Kernel mode vs. User mode.
 		uarch_t flags,			// Process spawn flags.

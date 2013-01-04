@@ -4,6 +4,17 @@
 #include <kernel/common/process.h>
 
 
+static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
+{
+	error_t		ret;
+
+	ret = dest->resizeTo(src->getNBits());
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	dest->merge(src);
+	return ERROR_SUCCESS;
+}
+
 error_t processStreamC::initializeFirstThread(
 	taskC *newTask, taskC *spawningTask,
 	taskC::schedPolicyE schedPolicy, ubit8 prio, uarch_t flags
@@ -12,9 +23,7 @@ error_t processStreamC::initializeFirstThread(
 	error_t		ret;
 
 	// Affinity unconditionally inherited from containing process.
-	ret = affinity::copyLocal(
-		&newTask->localAffinity, localAffinity);
-
+	ret = resizeAndMergeBitmaps(&newTask->cpuAffinity, &cpuAffinity);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// Now deal with scheduling policy.
@@ -74,15 +83,15 @@ error_t processStreamC::initializeChildThread(
 	if (__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT))
 	{
 		// Inherit from containing process.
-		ret = affinity::copyLocal(
-			&newTask->localAffinity, localAffinity);
+		ret = resizeAndMergeBitmaps(
+			&newTask->cpuAffinity, &cpuAffinity);
 	}
 	else
 	{
 		// Inherit from spawning thread.
-		ret = affinity::copyLocal(
-			&newTask->localAffinity,
-			&spawningTask->localAffinity);
+		ret = resizeAndMergeBitmaps(
+			&newTask->cpuAffinity,
+			&spawningTask->cpuAffinity);
 	};
 	if (ret != ERROR_SUCCESS) { return ret; };
 

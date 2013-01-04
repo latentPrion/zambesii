@@ -21,11 +21,11 @@ error_t taskTribC::schedule(taskC*task)
 	numaCpuBankC	*bestBank=__KNULL, *curBank;
 
 	// Go according to NUMA affinity.
-	for (uarch_t i=0; i<task->localAffinity.cpuBanks.getNBits(); i++)
+	for (uarch_t i=0; i<task->cpuAffinity.getNBits(); i++)
 	{
-		if (task->localAffinity.cpuBanks.testSingle(i))
+		if (task->cpuAffinity.testSingle(i))
 		{
-			curBank = cpuTrib.getBank(i);
+			curBank = cpuTrib.getBank(cpuTrib.getStream(i)->bankId);
 			if (curBank == __KNULL) { continue; };
 			if (curBank->getLoad() < lowestLoad)
 			{

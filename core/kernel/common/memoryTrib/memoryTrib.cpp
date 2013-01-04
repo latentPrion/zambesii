@@ -23,7 +23,7 @@ __kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
 		memRegions[i].memBmp = __KNULL;
 	};
 
-	defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 	nBanks = 0;
 }
 

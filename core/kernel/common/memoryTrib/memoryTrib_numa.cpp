@@ -36,7 +36,7 @@ error_t memoryTribC::__kspaceInit(void)
 	 * of NUMA banks with memory on them, and place __kspace on it as a fake
 	 * bank. Then we add the __kspace memory region to the bank.
 	 **/
-	defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
 	// First give the list class pre-allocated memory to use for its array.
 	memset(
@@ -129,7 +129,6 @@ error_t memoryTribC::createBank(numaBankId_t id)
 	};
 
 	availableBanks.setSingle(id);
-	__kupdateAffinity(id, MEMTRIB___KUPDATEAFFINITY_ADD);
 	return ret;
 }
 
@@ -140,7 +139,6 @@ void memoryTribC::destroyBank(numaBankId_t id)
 	availableBanks.unsetSingle(id);
 	nmb = getBank(id);
 	memoryBanks.removeItem(id);
-	__kupdateAffinity(id, MEMTRIB___KUPDATEAFFINITY_REMOVE);
 	if (nmb != __KNULL) {
 		__kmemoryStream.memFree(nmb);
 	};
@@ -178,7 +176,7 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	__kprintf(WARNING MEMTRIB"releaseFrames(0x%P, %d): pmem leak.\n",
 		paddr, nFrames);
 #else
-	currBank = getBank(defaultAffinity.def.rsrc);
+	currBank = getBank(defaultMemoryBank.rsrc);
 	if (currBank) {
 		currBank->releaseFrames(paddr, nFrames);
 	}
@@ -204,14 +202,14 @@ error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Get the default bank's Id.
-	defaultAffinity.def.lock.readAcquire(&rwFlags);
-	def = defaultAffinity.def.rsrc;
-	defaultAffinity.def.lock.readRelease(rwFlags);
+	defaultMemoryBank.lock.readAcquire(&rwFlags);
+	def = defaultMemoryBank.rsrc;
+	defaultMemoryBank.lock.readRelease(rwFlags);
 
 	currBank = getBank(def);
 #else
 	// Allocate from default bank, which is the sharedBank for non-NUMA.
-	currBank = getBank(defaultAffinity.def.rsrc);
+	currBank = getBank(defaultMemoryBank.rsrc);
 #endif
 
 	// FIXME: Decide what to do here for an non-NUMA build.
@@ -239,9 +237,9 @@ error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 		if (ret == ERROR_SUCCESS)
 		{
 			// Set the current stream to be the new default.
-			defaultAffinity.def.lock.writeAcquire();
-			defaultAffinity.def.rsrc = cur;
-			defaultAffinity.def.lock.writeRelease();
+			defaultMemoryBank.lock.writeAcquire();
+			defaultMemoryBank.rsrc = cur;
+			defaultMemoryBank.lock.writeRelease();
 			// Return. We got memory off the current bank.
 			return ret;
 		};
@@ -264,14 +262,14 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Get the default bank's Id.
-	defaultAffinity.def.lock.readAcquire(&rwFlags);
-	def = defaultAffinity.def.rsrc;
-	defaultAffinity.def.lock.readRelease(rwFlags);
+	defaultMemoryBank.lock.readAcquire(&rwFlags);
+	def = defaultMemoryBank.rsrc;
+	defaultMemoryBank.lock.readRelease(rwFlags);
 
 	currBank = getBank(def);
 #else
 	// Allocate from default bank, which is the sharedBank for non-NUMA.
-	currBank = getBank(defaultAffinity.def.rsrc);
+	currBank = getBank(defaultMemoryBank.rsrc);
 #endif
 
 	// FIXME: Decide what to do here for an non-NUMA build.
@@ -300,9 +298,9 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 		if (ret > 0)
 		{
 			// Set the current stream to be the new default.
-			defaultAffinity.def.lock.writeAcquire();
-			defaultAffinity.def.rsrc = cur;
-			defaultAffinity.def.lock.writeRelease();
+			defaultMemoryBank.lock.writeAcquire();
+			defaultMemoryBank.rsrc = cur;
+			defaultMemoryBank.lock.writeRelease();
 			// Return. We got memory off the current bank.
 			return ret;
 		};
@@ -316,7 +314,10 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 // Preprocess out this whole function on a non-NUMA build.
 #if __SCALING__ >= SCALING_CC_NUMA
 error_t memoryTribC::configuredGetFrames(
-	localAffinityS *aff, uarch_t nPages, paddr_t *paddr
+	bitmapC */*cpuAffinity*/,
+	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+		*defaultMemoryBank,
+	uarch_t nPages, paddr_t *paddr
 	)
 {
 	numaBankId_t		def, cur;
@@ -325,9 +326,9 @@ error_t memoryTribC::configuredGetFrames(
 	uarch_t			rwFlags;
 
 	// Get the thread's default config.
-	aff->def.lock.readAcquire(&rwFlags);
-	def = aff->def.rsrc;
-	aff->def.lock.readRelease(rwFlags);
+	defaultMemoryBank->lock.readAcquire(&rwFlags);
+	def = defaultMemoryBank->rsrc;
+	defaultMemoryBank->lock.readRelease(rwFlags);
 
 	currBank = getBank(def);
 	if (currBank != __KNULL)
@@ -351,17 +352,13 @@ error_t memoryTribC::configuredGetFrames(
 	for (; currBank != __KNULL;
 		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def))
 	{
-		// If this bank is part of the thread's NUMA policy:
-		if (aff->memBanks.testSingle(cur))
+		ret = currBank->fragmentedGetFrames(nPages, paddr);
+		if (ret > 0)
 		{
-			ret = currBank->fragmentedGetFrames(nPages, paddr);
-			if (ret > 0)
-			{
-				aff->def.lock.writeAcquire();
-				aff->def.rsrc = cur;
-				aff->def.lock.writeRelease();
-				return ret;
-			};
+			defaultMemoryBank->lock.writeAcquire();
+			defaultMemoryBank->rsrc = cur;
+			defaultMemoryBank->lock.writeRelease();
+			return ret;
 		};
 		cur = def;
 	};
@@ -396,7 +393,7 @@ void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 		currBank->mapMemUsed(baseAddr, nPages);
 	};
 #else
-	currBank = getBank(defaultAffinity.def.rsrc);
+	currBank = getBank(defaultMemoryBank.rsrc);
 	if (currBank != __KNULL) {
 		currBank->mapMemUsed(baseAddr, nPages);
 	}
@@ -432,7 +429,7 @@ void memoryTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 		currBank->mapMemUnused(baseAddr, nPages);
 	};
 #else
-	currBank = getBank(defaultAffinity.def.rsrc);
+	currBank = getBank(defaultMemoryBank.rsrc);
 	if (currBank != __KNULL) {
 		currBank->mapMemUnused(baseAddr, nPages);
 	}
@@ -443,79 +440,5 @@ void memoryTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 			defaultAffinity.def.rsrc);
 	};
 #endif
-}
-
-error_t memoryTribC::__kupdateAffinity(numaBankId_t bid, ubit8 action)
-{
-	error_t		ret;
-
-	/**	EXPLANATION:
-	 * When a new memory bank is advertised to the kernel (hot-swap, or
-	 * detected at boot) the kernel updates all of its threads to reflect
-	 * the fact that a new bank of memory is available.
-	 *
-	 * This allows the kernel to make use of all memory banks on the chipset
-	 * thus ensuring that it doesn't run out of memory in the optimal case.
-	 *
-	 * The implications for Oceann aren't profound: when a new CPU is
-	 * advertised to the kernel from another machine, it personally ignores
-	 * the information since kernel threads cannot be scheduled on another
-	 * machine. Instead, the kernel immediately goes on to tell userspace
-	 * that a new CPU is available somewhere across the network (and this
-	 * function is skipped).
-	 **/
-	switch (action)
-	{
-	case MEMTRIB___KUPDATEAFFINITY_ADD:
-		// Update __korientation.
-		CHECK_AND_RESIZE_BMP(
-			&__korientationThread.localAffinity.memBanks, bid, &ret,
-			"__kupdateAffinity", "__korientation affinity");
-
-		if (ret != ERROR_SUCCESS)
-		{
-			__kprintf(ERROR MEMTRIB"__kupdateAffinity: "
-				"__korientation unable to use bank %d.\n",
-				bid);
-		}
-		else
-		{
-			__korientationThread.localAffinity.memBanks
-				.setSingle(bid);
-		};
-
-		// Update __kcpuPowerOn.
-		CHECK_AND_RESIZE_BMP(
-			&__kcpuPowerOnThread.localAffinity.memBanks, bid, &ret,
-			"__kupdateAffinity", "__kCPU Power On affinity");
-
-		if (ret != ERROR_SUCCESS)
-		{
-			__kprintf(ERROR MEMTRIB"__kupdateAffinity: "
-				"__kcpuPowerOn unable to use bank %d.\n",
-				bid);
-		}
-		else
-		{
-			__kcpuPowerOnThread.localAffinity.memBanks
-				.setSingle(bid);
-		};
-		
-		return ERROR_SUCCESS;
-
-	case MEMTRIB___KUPDATEAFFINITY_REMOVE:
-		// Update __korientation.
-		__korientationThread.localAffinity.memBanks.unsetSingle(bid);
-		// Update __kcpuPowerOn.
-		__kcpuPowerOnThread.localAffinity.memBanks.unsetSingle(bid);
-		return ERROR_SUCCESS;
-
-	default: return ERROR_INVALID_ARG_VAL;
-	};
-
-	__kprintf(ERROR MEMTRIB"__kupdateAffinity: Reached unreachable "
-		"point.\n");
-
-	return ERROR_UNKNOWN;
 }
 

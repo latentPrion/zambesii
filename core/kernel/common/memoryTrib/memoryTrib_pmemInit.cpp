@@ -84,7 +84,7 @@ error_t memoryTribC::pmemInit(void)
 	zkcmNumaMapS			*numaMap=__KNULL;
 	numaMemoryBankC			*nmb;
 	// __kspaceBool is used to determine whether or not to kill __kspace.
-	sarch_t			pos, prevPos, __kspaceBool=0;
+	sarch_t			pos, __kspaceBool=0;
 	status_t		nSet=0;
 
 	// Initialize the Memory Info Module.
@@ -251,38 +251,6 @@ parseMemoryMap:
 		};
 	};
 
-	// Allocate BMPs for default config and orientation config.
-	pos = prevPos = memoryBanks.prepareForLoop();
-	for (; pos != HWIDLIST_INDEX_INVALID; memoryBanks.getLoopItem(&pos)) {
-		prevPos = pos;
-	};
-
-	ret = defaultAffinity.memBanks.initialize(prevPos);
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(ERROR MEMTRIB"Unable to alloc bmp for defAffin.\n");
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	ret = cpuTrib.getCurrentCpuStream()->taskStream.currentTask
-		->localAffinity.memBanks.initialize(prevPos);
-
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(ERROR MEMTRIB"Unable to alloc bmp for orientation "
-			"config.\n");
-
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	pos = prevPos = memoryBanks.prepareForLoop();
-	for (; pos != HWIDLIST_INDEX_INVALID; memoryBanks.getLoopItem(&pos))
-	{
-		defaultAffinity.memBanks.setSingle(pos);
-		cpuTrib.getCurrentCpuStream()->taskStream.currentTask
-			->localAffinity.memBanks.setSingle(pos);
-	};
-
 	// And *finally*, see whether or not to destroy __kspace.
 	// FIXME: This should probably be moved further up.
 	if (__kspaceBool == 1)
@@ -305,9 +273,9 @@ parseMemoryMap:
 			getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
-		defaultAffinity.def.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
+		defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
 		cpuTrib.getCurrentCpuStream()->taskStream.currentTask
-			->localAffinity.def.rsrc =
+			->defaultMemoryBank.rsrc =
 			CHIPSET_MEMORY_NUMA_SHBANKID;
 
 		__kprintf(NOTICE MEMTRIB"Orientation and default "

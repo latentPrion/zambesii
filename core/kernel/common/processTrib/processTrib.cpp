@@ -37,7 +37,7 @@ error_t processTribC::initialize(void)
 	__korientationThread.stack0 = __korientationStack;
 	__korientationThread.nLocksHeld = 0;
 	// Init cpuConfig and numaConfig BMPs later.
-	__korientationThread.localAffinity.def.rsrc =
+	__korientationThread.defaultMemoryBank.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
 	__kprocess.initMagic = PROCESS_INIT_MAGIC;
@@ -61,9 +61,20 @@ error_t processTribC::initialize2(void)
 	return ERROR_SUCCESS;
 }
 
+static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
+{
+	error_t		ret;
+
+	ret = dest->resizeTo(src->getNBits());
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	dest->merge(src);
+	return ERROR_SUCCESS;
+}
+
 processStreamC *processTribC::spawn(
 	const utf8Char *_commandLine,		// Full command line w/ args.
-	affinityS *affinity,			// Ocean/NUMA/SMP affinity.
+	bitmapC *cpuAffinity,			// Ocean/NUMA/SMP affinity.
 	void */*elevation*/,			// Privileges.
 	ubit8 execDomain,			// Kernel mode vs. User mode.
 	uarch_t flags,				// Process spawn flags.
@@ -77,7 +88,7 @@ processStreamC *processTribC::spawn(
 	sbit32			newIdTmp;
 	uarch_t			rwFlags;
 	processStreamC		*newProc;
-	utf8Char		*absName, *workingDir;
+	utf8Char		*fileName, *workingDir;
 	/**	NOTES:
 	 * This routine will essentially be the guiding hand to starting up
 	 * process: finding the file in the VFS, then finding out what
@@ -132,7 +143,7 @@ processStreamC *processTribC::spawn(
 	};
 
 	// Call initialize().
-	*err = newProc->initialize(_commandLine, absName, workingDir);
+	*err = newProc->initialize(_commandLine, fileName, workingDir);
 	if (*err != ERROR_SUCCESS)
 	{
 		delete newProc;
@@ -151,78 +162,37 @@ processStreamC *processTribC::spawn(
 	if (__KFLAG_TEST(flags, PROCESSTRIB_SPAWN_FLAGS_PINHERIT_AFFINITY))
 	{
 		// Inherit affinity from spawning process.
-		*err = affinity::copyMachine(&newProc->affinity, affinity);
+		*err = resizeAndMergeBitmaps(
+			&newProc->cpuAffinity,
+			&cpuTrib.getCurrentCpuStream()
+				->taskStream.currentTask->parent->cpuAffinity);
 	}
 	else if (__KFLAG_TEST(flags, PROCESSTRIB_SPAWN_FLAGS_STINHERIT_AFFINITY))
 	{
 		// Inherit affinity from spawning thread.
-		newProc->affinity.machines = new localAffinityS;
-		if (newProc->affinity.machines == __KNULL)
-		{
-			*err = ERROR_MEMORY_NOMEM;
-			return __KNULL;
-		};
-
-		newProc->affinity.nEntries = 1;
-		*err = affinity::copyLocal(
-			newProc->affinity.machines,
+		*err = resizeAndMergeBitmaps(
+			&newProc->cpuAffinity,
 			&cpuTrib.getCurrentCpuStream()
-				->taskStream.currentTask->localAffinity);
+				->taskStream.currentTask->cpuAffinity);
 	}
 	else
 	{
 		// If affinity argument is valid:
-		if (affinity != __KNULL)
+		if (cpuAffinity != __KNULL)
 		{
-			*err = affinity::copyMachine(
-				&newProc->affinity, affinity);
+			*err = resizeAndMergeBitmaps(
+				&newProc->cpuAffinity, cpuAffinity);
 		}
 		else
 		{
 			/* Else pull "default" affinity of "all banks/cpus" from
 			 * Memory trib and CPU trib.
 			 **/
-			newProc->affinity.machines = new localAffinityS;
-			if (newProc->affinity.machines == __KNULL)
-			{
-				*err = ERROR_MEMORY_NOMEM;
-				return __KNULL;
-			};
-
-			newProc->affinity.nEntries = 1;
-
 			// Size up and copy bitmaps: Online CPUs.
-			*err = newProc->affinity.machines->cpus.initialize(
-				cpuTrib.onlineCpus.getNBits());
+			*err = resizeAndMergeBitmaps(
+				&newProc->cpuAffinity, &cpuTrib.onlineCpus);
 
-			if (*err != ERROR_SUCCESS) {
-				return __KNULL;
-			};
-
-			newProc->affinity.machines->cpus.merge(
-				&cpuTrib.onlineCpus);
-
-			// Online CPU banks.
-			*err = newProc->affinity.machines->cpuBanks.initialize(
-				cpuTrib.availableBanks.getNBits());
-
-			if (*err != ERROR_SUCCESS) {
-				return __KNULL;
-			};
-
-			newProc->affinity.machines->cpuBanks.merge(
-				&cpuTrib.availableBanks);
-
-			// Online memory banks.
-			*err = newProc->affinity.machines->memBanks.initialize(
-				memoryTrib.availableBanks.getNBits());
-
-			if (*err != ERROR_SUCCESS) {
-				return __KNULL;
-			};
-
-			newProc->affinity.machines->memBanks.merge(
-				&memoryTrib.availableBanks);
+			if (*err != ERROR_SUCCESS) { return __KNULL; };
 		};
 	};
 

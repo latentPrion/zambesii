@@ -25,10 +25,14 @@ status_t memoryTribPmm::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 status_t memoryTribPmm::configuredGetFrames(
-	localAffinityS *aff, uarch_t nFrames, paddr_t *paddr
+	bitmapC *cpuAffinity,
+	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+		*defaultMemoryBank,
+	uarch_t nFrames, paddr_t *paddr
 	)
 {
-	return memoryTrib.configuredGetFrames(aff, nFrames, paddr);
+	return memoryTrib.configuredGetFrames(
+		cpuAffinity, defaultMemoryBank, nFrames, paddr);
 }
 #endif
 

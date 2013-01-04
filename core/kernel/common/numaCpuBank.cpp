@@ -23,9 +23,9 @@ error_t numaCpuBankC::schedule(taskC*task)
 	ubit32		lowestLoad = 0xFFFFFFFF;
 	cpuStreamC	*bestCpu=__KNULL, *curCpu;
 
-	for (uarch_t i=0; i<task->localAffinity.cpus.getNBits(); i++)
+	for (uarch_t i=0; i<task->cpuAffinity.getNBits(); i++)
 	{
-		if (task->localAffinity.cpus.testSingle(i))
+		if (task->cpuAffinity.testSingle(i))
 		{
 			curCpu = cpuTrib.getStream(i);
 			if (curCpu == __KNULL) { continue; };

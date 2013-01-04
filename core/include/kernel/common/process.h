@@ -6,7 +6,6 @@
 	#include <__kclasses/bitmap.h>
 	#include <__kclasses/wrapAroundCounter.h>
 	#include <kernel/common/task.h>
-	#include <kernel/common/machineAffinity.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
@@ -40,7 +39,7 @@ public:
 
 	~processStreamC(void);
 
-	error_t initializeChild(processStreamC *child);
+	error_t cloneStateIntoChild(processStreamC *child);
 	error_t initializeFirstThread(
 		taskC *task, taskC *spawningThread,
 		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
@@ -66,10 +65,9 @@ public:
 	utf8Char		**argString, **env;
 	utf8Char		*commandLine;
 
-	// Oceann and local affinity.
-	affinityS		affinity;
-	// Don't forget to initialize new processes' localAffinity pointer.
-	localAffinityS		*localAffinity;
+	bitmapC			cpuAffinity;
+	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+		defaultMemoryBank;
 
 	// Execution domain and privilege elevation.
 	ubit8			execDomain;

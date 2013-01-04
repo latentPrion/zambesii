@@ -705,7 +705,7 @@ error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
 	{
 	case CPUTRIB___KUPDATEAFFINITY_ADD:
 		CHECK_AND_RESIZE_BMP(
-			&__korientationThread.localAffinity.cpus, cid, &ret,
+			&__korientationThread.cpuAffinity, cid, &ret,
 			"__kupdateAffinity", "__korientation CPU affinity");
 
 		if (ret != ERROR_SUCCESS)
@@ -715,11 +715,11 @@ error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
 				cid);
 		}
 		else {
-			__korientationThread.localAffinity.cpus.setSingle(cid);
+			__korientationThread.cpuAffinity.setSingle(cid);
 		};
 
 		CHECK_AND_RESIZE_BMP(
-			&__kcpuPowerOnThread.localAffinity.cpus, cid, &ret,
+			&__kcpuPowerOnThread.cpuAffinity, cid, &ret,
 			"__kupdateAffinity", "__kCPU Power on CPU affinity");
 
 		if (ret != ERROR_SUCCESS)
@@ -729,14 +729,14 @@ error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
 				cid);
 		}
 		else {
-			__kcpuPowerOnThread.localAffinity.cpus.setSingle(cid);
+			__kcpuPowerOnThread.cpuAffinity.setSingle(cid);
 		};
 
 		return ERROR_SUCCESS;
 
 	case CPUTRIB___KUPDATEAFFINITY_REMOVE:
-		__korientationThread.localAffinity.cpus.unsetSingle(cid);
-		__kcpuPowerOnThread.localAffinity.cpus.unsetSingle(cid);
+		__korientationThread.cpuAffinity.unsetSingle(cid);
+		__kcpuPowerOnThread.cpuAffinity.unsetSingle(cid);
 		return ERROR_SUCCESS;
 
 	default: return ERROR_INVALID_ARG_VAL;

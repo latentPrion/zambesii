@@ -44,8 +44,6 @@ taskStream(this)
 	memset(&archBlock, 0, sizeof(archBlock));
 }
 
-#include <arch/tlbControl.h>
-
 status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 {
 

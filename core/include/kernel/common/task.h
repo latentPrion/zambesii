@@ -5,10 +5,10 @@
 	#include <arch/tlbContext.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/bitmap.h>
-	#include <kernel/common/machineAffinity.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/processId.h>
+	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/taskTrib/prio.h>
 	// Do not #include <kernel/common/process.h> within this file.
 
@@ -53,7 +53,7 @@ public:
 	error_t initialize(void);
 
 	// Passes down parent attributes to child.
-	error_t initializeChild(taskC *child);
+	error_t cloneStateIntoChild(taskC *child);
 
 public:
 	enum schedStateE { DORMANT=1, RUNNABLE, RUNNING, UNSCHEDULED };
@@ -79,7 +79,14 @@ public:
 
 	// Miscellaneous properties (NUMA affinity, etc).
 	ubit16		nLocksHeld;
-	localAffinityS	localAffinity;
+	bitmapC		cpuAffinity;
+	/* Denotes the default memory bank for this thread. When a thread is
+	 * asks for memory, the kernel assigns it a default memory bank based
+	 * on its CPU affinity. This is generally memory that is NUMA local.
+	 **/
+	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+		defaultMemoryBank;
+
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	tlbContextS	*tlbContext;
 #endif

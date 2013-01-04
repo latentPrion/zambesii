@@ -21,7 +21,6 @@ id(processId), parentId(parentProcId), nextTaskId(CHIPSET_MEMORY_MAX_NTASKS - 1)
 
 	absName = workingDir = commandLine = __KNULL;
 	env = argString = __KNULL;
-	localAffinity = __KNULL;
 	memoryStream = __KNULL;
 }
 
@@ -88,7 +87,18 @@ processStreamC::~processStreamC(void)
 	};
 }
 
-error_t processStreamC::initializeChild(processStreamC *child)
+static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
+{
+	error_t		ret;
+
+	ret = dest->resizeTo(src->getNBits());
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	dest->merge(src);
+	return ERROR_SUCCESS;
+}
+
+error_t processStreamC::cloneStateIntoChild(processStreamC *child)
 {
 	error_t		ret;
 //	ubit32		len;
@@ -98,7 +108,7 @@ error_t processStreamC::initializeChild(processStreamC *child)
 	if (child->env == __KNULL) { return ERROR_MEMORY_NOMEM; };
 	strcpy8(child->env, env); */
 
-	ret = affinity::copyMachine(&child->affinity, &affinity);
+	ret = resizeAndMergeBitmaps(&child->cpuAffinity, &cpuAffinity);
 	if (ret != ERROR_SUCCESS) { return ret; };
 	// child->localAffinity = affinity::findLocal(&child->affinity);
 

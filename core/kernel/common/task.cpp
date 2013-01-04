@@ -47,10 +47,19 @@ error_t taskC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-error_t taskC::initializeChild(taskC *child)
+static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 {
 	error_t		ret;
 
+	ret = dest->resizeTo(src->getNBits());
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	dest->merge(src);
+	return ERROR_SUCCESS;
+}
+
+error_t taskC::cloneStateIntoChild(taskC *child)
+{
 	child->flags = flags;
 
 	child->internalPrio = internalPrio;
@@ -63,8 +72,7 @@ error_t taskC::initializeChild(taskC *child)
 	// 'schedFlags' and 'schedState' are not inherited.
 
 	// Copy affinity.
-	ret = affinity::copyLocal(&child->localAffinity, &localAffinity);
-	child->localAffinity.def.rsrc = NUMABANKID_INVALID;
-	return ret;
+	child->defaultMemoryBank.rsrc = NUMABANKID_INVALID;
+	return resizeAndMergeBitmaps(&child->cpuAffinity, &cpuAffinity);
 }
 

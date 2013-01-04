@@ -25,14 +25,11 @@ parentCpu(parent)
 
 status_t taskStreamC::schedule(taskC *task)
 {
-	cpuStreamC	*curCpu;
 	status_t	ret;
 
 #if __SCALING__ >= SCALING_SMP
-	curCpu = cpuTrib.getCurrentCpuStream();
-
 	// Make sure that this CPU is in the task's affinity.
-	if (!task->localAffinity.cpus.testSingle(curCpu->id)) {
+	if (!task->cpuAffinity.testSingle(parentCpu->id)) {
 		return TASK_SCHEDULE_TRY_AGAIN;
 	};
 #endif

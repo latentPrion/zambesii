@@ -4,7 +4,9 @@
 	#include <scaling.h>
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
-	#include <kernel/common/machineAffinity.h>
+	#include <__kclasses/bitmap.h>
+	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/multipleReaderLock.h>
 
 namespace memoryTribPmm
 {
@@ -12,7 +14,10 @@ namespace memoryTribPmm
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 #if __SCALING__ >= SCALING_CC_NUMA
 	status_t configuredGetFrames(
-		localAffinityS *aff, uarch_t nFrames, paddr_t *paddr);
+		bitmapC *cpuAffinity,
+		sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+			*defaultMemoryBank,
+		uarch_t nFrames, paddr_t *paddr);
 #endif
 
 	void releaseFrames(paddr_t basePaddr, uarch_t nFrames);

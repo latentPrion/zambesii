@@ -107,9 +107,10 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 #if __SCALING__ >= SCALING_CC_NUMA
 		nFrames = memoryTribPmm::configuredGetFrames(
 			&cpuTrib.getCurrentCpuStream()
-				->taskStream.currentTask->localAffinity,
+				->taskStream.currentTask->cpuAffinity,
+			&cpuTrib.getCurrentCpuStream()
+				->taskStream.currentTask->defaultMemoryBank,
 			commit - totalFrames, &p);
-if (pp==1){ __kprintf(FATAL"memAlloc: Tracing. Vaddr from alloc 0x%p, nPages %d, pmem nFrames: %d.\n", ret, nPages, nFrames); };
 #else
 		nFrames = memoryTribPmm::fragmentedGetFrames(
 			commit - totalFrames, &p);

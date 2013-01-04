@@ -15,12 +15,8 @@
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/memoryRegion.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
-	#include <kernel/common/machineAffinity.h>
 
 #define MEMTRIB		"Memory Trib: "
-
-#define MEMTRIB___KUPDATEAFFINITY_ADD		0
-#define MEMTRIB___KUPDATEAFFINITY_REMOVE	1
 
 class memoryTribC
 :
@@ -64,7 +60,10 @@ public:
 	// Physical memory management functions.
 #if __SCALING__ >= SCALING_CC_NUMA
 	status_t configuredGetFrames(
-		localAffinityS *aff, uarch_t nFrames, paddr_t *ret);
+		bitmapC *cpuAffinity,
+		sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+			*defaultMemoryBank,
+		uarch_t nFrames, paddr_t *ret);
 #endif
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *ret);
 	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *ret);
@@ -80,9 +79,6 @@ private:
 
 	void init2_generateShbankFromNumaMap(
 		zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool);
-
-	error_t __kupdateAffinity(numaBankId_t bid, ubit8 action);
-
 
 public:
 	memoryStreamC		__kmemoryStream;
@@ -113,8 +109,10 @@ private:
 	 **/
 	// All numa banks with memory on them are listed here.
 	hardwareIdListC		memoryBanks;
-	localAffinityS		defaultAffinity;
 	ubit32			nBanks;
+	bitmapC			defaultCpuAffinity;
+	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+		defaultMemoryBank;
 };
 
 extern memoryTribC		memoryTrib;
