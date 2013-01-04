@@ -1,4 +1,5 @@
 
+#include <__kstdlib/__kclib/string.h>
 #include <kernel/common/numaCpuBank.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>

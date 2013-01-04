@@ -3,9 +3,11 @@
 
 	#include <scaling.h>
 	#include <__kclasses/bitmap.h>
+	#include <__kclasses/sortedPtrDoubleList.h>
 	#include <kernel/common/task.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/timerTrib/timeTypes.h>
 	#include <kernel/common/taskTrib/load.h>
 
 class numaCpuBankC
@@ -27,9 +29,24 @@ public:
 	void updateLoad(ubit8 action, ubit32 val);
 	void updateCapacity(ubit8 action, ubit32 val);
 
+	error_t addProximityInfo(
+		numaBankId_t bankId, timeS latency, sbit32 acpiProximityFactor);
+
+	void removeProximityInfo(numaBankId_t bankId);
+
 public:
 	// A bitmap of all the CPUs on the bank. Initialize with initialize().
 	bitmapC		cpus;
+	struct memProximityEntryS
+	{
+		numaBankId_t	bankId;
+		sbit32		acpiProximityFactor;
+		timeS		latency;
+	};
+
+	sortedPointerDoubleListC<memProximityEntryS, timeS>
+		memProximityMatrix;
+
 	ubit32		capacity;
 	ubit32		load;
 
