@@ -1,6 +1,7 @@
 #ifndef _TASK_H
 	#define _TASK_H
 
+	#include <scaling.h>
 	#include <arch/taskContext.h>
 	#include <arch/tlbContext.h>
 	#include <__kstdlib/__ktypes.h>
@@ -79,13 +80,17 @@ public:
 
 	// Miscellaneous properties (NUMA affinity, etc).
 	ubit16		nLocksHeld;
+#if __SCALING__ >= SCALING_SMP
 	bitmapC		cpuAffinity;
+#endif
+#if __SCALING__ >= SCALING_CC_NUMA
 	/* Denotes the default memory bank for this thread. When a thread is
 	 * asks for memory, the kernel assigns it a default memory bank based
 	 * on its CPU affinity. This is generally memory that is NUMA local.
 	 **/
 	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
 		defaultMemoryBank;
+#endif
 
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	tlbContextS	*tlbContext;

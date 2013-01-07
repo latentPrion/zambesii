@@ -23,7 +23,9 @@ __kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
 		memRegions[i].memBmp = __KNULL;
 	};
 
+#if __SCALING__ < SCALING_CC_NUMA
 	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+#endif
 	nBanks = 0;
 }
 

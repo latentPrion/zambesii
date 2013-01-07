@@ -93,7 +93,6 @@ private:
 		ptrlessListC<messageS>		messageQueue;
 		slamCacheC			*cache;
 		sharedResourceGroupC<waitLockC, uarch_t> statusFlag;
-		// sharedResourceGroupC<waitLockC, messageS>	message;
 		cpuStreamC	*parent;
 	};
 #endif
@@ -101,7 +100,9 @@ private:
 public:
 	cpu_t			cpuId;
 	ubit32			cpuAcpiId;
+#if __SCALING__ >= SCALING_CC_NUMA
 	numaBankId_t		bankId;
+#endif
 	cpuFeaturesS		cpuFeatures;
 	// Per CPU scheduler.
 	taskStreamC		taskStream;

@@ -1,6 +1,4 @@
-
-#include <debug.h>
-
+#include <scaling.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/libx86mp.h>
@@ -8,6 +6,7 @@
 #include <kernel/common/cpuTrib/cpuStream.h>
 
 
+#if __SCALING__ >= SCALING_SMP
 error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages)
 {
 	error_t		err;
@@ -77,4 +76,5 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 
 	return ERROR_SUCCESS;
 }
+#endif /* if __SCALING__ >= SCALING_SMP */
 

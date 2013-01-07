@@ -1,15 +1,41 @@
 
-#include <debug.h>
-
 #include <scaling.h>
 #include <chipset/memory.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
+
+/**	NOTES:
+ * Because of the design of NUMA based memory allocation, there is some added
+ * complication in the process of migrating threads from one NUMA bank to
+ * another, when the scheduler is trying to do load balancing on a non-cache-
+ * coherent NUMA board.
+ *
+ * In any non-CC NUMA setup, not every memory bank may be reachable from every
+ * CPU. The CPUs on bank 0 may not be able to reach memory bank 4, but the CPUs
+ * on bank 3 may be able to. Now, if a process is originally scheduled to run on
+ * CPUs from bank 3, and the kernel happens to allocate memory for it from
+ * memory bank 4, what will happen if the load balancer migrates threads from
+ * that process to CPU bank 0?
+ *
+ * It would mean that all memory that has been allocated to that process that
+ * comes from memory bank 4 will be unreadable. Therefore, when the scheduler's
+ * load balancing idle thread is attempting to migrate threads across possibly
+ * non-cache-coherent NUMA domains, it should examine the two domains in
+ * question to ensure that all memory that is reachable from the original bank
+ * is also reachable in the proposed new bank. Migrating threads to new CPUs in
+ * the same bank is not a problem.
+ *
+ * Naturally, this does not only affect memory allocations explicitly called for
+ * by the requesting process, but also has an impact on the ability of CPUs
+ * to walk page tables when a thread is migrated to a CPU which cannot read
+ * the RAM on a bank where page tables for that process may have been allocated.
+ **/
 
 // The __kspace allocatable memory range's containing memory bank.
 static numaMemoryBankC			__kspaceMemoryBank(
@@ -36,7 +62,9 @@ error_t memoryTribC::__kspaceInit(void)
 	 * of NUMA banks with memory on them, and place __kspace on it as a fake
 	 * bank. Then we add the __kspace memory region to the bank.
 	 **/
+#if __SCALING__ < SCALING_CC_NUMA
 	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+#endif
 
 	// First give the list class pre-allocated memory to use for its array.
 	memset(
@@ -190,29 +218,17 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 
 }
 
+#if __SCALING__ < SCALING_CC_NUMA
 error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 {
-#if __SCALING__ >= SCALING_CC_NUMA
-	numaBankId_t		def;
-	numaBankId_t		cur;
-	uarch_t			rwFlags;
-#endif
 	error_t			ret;
 	numaMemoryBankC		*currBank;
 
-#if __SCALING__ >= SCALING_CC_NUMA
-	// Get the default bank's Id.
-	defaultMemoryBank.lock.readAcquire(&rwFlags);
-	def = defaultMemoryBank.rsrc;
-	defaultMemoryBank.lock.readRelease(rwFlags);
-
-	currBank = getBank(def);
-#else
-	// Allocate from default bank, which is the sharedBank for non-NUMA.
+	/* Allocate from the current default bank, which is either __kspace or
+	 * shared-bank, depending on which stage of memory management
+	 * initialization the kernel is currently at.
+	 **/
 	currBank = getBank(defaultMemoryBank.rsrc);
-#endif
-
-	// FIXME: Decide what to do here for an non-NUMA build.
 	if (currBank != __KNULL)
 	{
 		ret = currBank->contiguousGetFrames(nPages, paddr);
@@ -221,58 +237,20 @@ error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 		};
 	};
 
-#if __SCALING__ >= SCALING_CC_NUMA
-	/* If we're still here then there was no memory on the default bank. We
-	 * have to now determine which bank would have memory, and set that to
-	 * be the new default bank for raw contiguous allocations.
-	 **/
-	def = cur = memoryBanks.prepareForLoop();
-	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def);
-
-	for (; currBank != __KNULL;
-		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def))
-	{
-		// Attempt to allocate from the current stream.
-		ret = currBank->contiguousGetFrames(nPages, paddr);
-		if (ret == ERROR_SUCCESS)
-		{
-			// Set the current stream to be the new default.
-			defaultMemoryBank.lock.writeAcquire();
-			defaultMemoryBank.rsrc = cur;
-			defaultMemoryBank.lock.writeRelease();
-			// Return. We got memory off the current bank.
-			return ret;
-		};
-		cur = def;
-	};
-#endif
 	// If we reached here, then we've failed completely.
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 
 error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 {
-#if __SCALING__ >= SCALING_CC_NUMA
-	numaBankId_t		def;
-	numaBankId_t		cur;
-	uarch_t			rwFlags;
-#endif
 	error_t			ret;
 	numaMemoryBankC		*currBank;
 
-#if __SCALING__ >= SCALING_CC_NUMA
-	// Get the default bank's Id.
-	defaultMemoryBank.lock.readAcquire(&rwFlags);
-	def = defaultMemoryBank.rsrc;
-	defaultMemoryBank.lock.readRelease(rwFlags);
-
-	currBank = getBank(def);
-#else
-	// Allocate from default bank, which is the sharedBank for non-NUMA.
+	/* Allocate from the current default bank, which is either __kspace or
+	 * shared-bank, depending on which stage of memory management
+	 * initialization the kernel is currently at.
+	 **/
 	currBank = getBank(defaultMemoryBank.rsrc);
-#endif
-
-	// FIXME: Decide what to do here for an non-NUMA build.
 	if (currBank != __KNULL)
 	{
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
@@ -281,54 +259,26 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 		};
 	};
 
-#if __SCALING__ >= SCALING_CC_NUMA
-	/* If we're still here then there was no memory on the default bank. We
-	 * have to now determine which bank would have memory, and set that to
-	 * be the new default bank for raw contiguous allocations.
-	 **/
-	def = cur = memoryBanks.prepareForLoop();
-	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def);
-
-	for (; currBank != __KNULL;
-		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def))
-	{
-		// Attempt to allocate from the current stream.
-		ret = currBank->fragmentedGetFrames(nPages, paddr);
-
-		if (ret > 0)
-		{
-			// Set the current stream to be the new default.
-			defaultMemoryBank.lock.writeAcquire();
-			defaultMemoryBank.rsrc = cur;
-			defaultMemoryBank.lock.writeRelease();
-			// Return. We got memory off the current bank.
-			return ret;
-		};
-		cur = def;
-	};
-#endif
 	// If we reached here, then we've failed completely.
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
+#endif /* if __SCALING__ < SCALING_CC_NUMA */
 
-// Preprocess out this whole function on a non-NUMA build.
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t memoryTribC::configuredGetFrames(
-	bitmapC */*cpuAffinity*/,
-	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
-		*defaultMemoryBank,
-	uarch_t nPages, paddr_t *paddr
-	)
+error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 {
 	numaBankId_t		def, cur;
 	numaMemoryBankC		*currBank;
 	error_t			ret;
 	uarch_t			rwFlags;
+	taskC			*currTask;
 
-	// Get the thread's default config.
-	defaultMemoryBank->lock.readAcquire(&rwFlags);
-	def = defaultMemoryBank->rsrc;
-	defaultMemoryBank->lock.readRelease(rwFlags);
+	// Get the calling thread's default memory bank.
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+
+	currTask->defaultMemoryBank.lock.readAcquire(&rwFlags);
+	def = currTask->defaultMemoryBank.rsrc;
+	currTask->defaultMemoryBank.lock.readRelease(rwFlags);
 
 	currBank = getBank(def);
 	if (currBank != __KNULL)
@@ -340,11 +290,13 @@ error_t memoryTribC::configuredGetFrames(
 		};
 	};
 
-	/* FIXME: Re-arrange this loop.
-	 * Make it so that the kernel checks each bit in the thread's affinity,
-	 * instead of checking each available bank and then checking to see if
-	 * the thread has that bank set in its affinity.
+	/**	FIXME: Re-arrange this loop.
+	 * Make it so that the kernel checks each reachable memory bank from the
+	 * thread's current CPU bank's perspective. For each reachable memory
+	 * bank, check to see if memory is available, and if so, set that bank
+	 * to be the thread's new default.
 	 **/
+
 	// Allocation from the default bank failed. Find another default bank.
 	def = cur = memoryBanks.prepareForLoop();
 	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def);
@@ -355,9 +307,9 @@ error_t memoryTribC::configuredGetFrames(
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
 		if (ret > 0)
 		{
-			defaultMemoryBank->lock.writeAcquire();
-			defaultMemoryBank->rsrc = cur;
-			defaultMemoryBank->lock.writeRelease();
+			currTask->defaultMemoryBank.lock.writeAcquire();
+			currTask->defaultMemoryBank.rsrc = cur;
+			currTask->defaultMemoryBank.lock.writeRelease();
 			return ret;
 		};
 		cur = def;
@@ -368,7 +320,7 @@ error_t memoryTribC::configuredGetFrames(
 	 **/
 	return 0;
 }
-#endif
+#endif /* if __SCALING__ >= SCALING_CC_NUMA */
 
 void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 {
@@ -377,11 +329,10 @@ void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 #endif
 	numaMemoryBankC	*currBank;
 
-
 #if __SCALING__ >= SCALING_CC_NUMA
 	cur = memoryBanks.prepareForLoop();
 	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur);
-	
+
 	for (; currBank != __KNULL;
 		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur))
 	{

@@ -10,11 +10,16 @@
 	#include <kernel/common/timerTrib/timeTypes.h>
 	#include <kernel/common/taskTrib/load.h>
 
+// This class is only used in NUMA builds of the kernel.
+#if __SCALING__ >= SCALING_CC_NUMA
 class numaCpuBankC
 {
 public:
 	numaCpuBankC(void);
 	error_t initialize(uarch_t nCpuBits);
+	// Used to set up the fake __kspace NUMA bank.
+	void __kspaceInitialize(void);
+
 public:
 	// Halt or restart all logical CPUs on this bank. Stub for now.
 	void cut(void) {};
@@ -55,16 +60,7 @@ private:
 	sharedResourceGroupC<waitLockC, uarch_t>	nTasks;
 };
 
-
-/**	Inline methods:
- ******************************************************************************/
-
-#if __SCALING__ < SCALING_SMP
-inline error_t numaCpuBankC::schedule(taskC*task)
-{
-	return cpuTrib.getStream(0)->scheduler.schedule(task);
-}
-#endif
+#endif /* if __SCALING__ >= SCALING_CC_NUMA */
 
 #endif
 

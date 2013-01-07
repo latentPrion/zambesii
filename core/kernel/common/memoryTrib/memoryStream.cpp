@@ -1,6 +1,4 @@
 
-#include <debug.h>
-
 #include <scaling.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
@@ -104,17 +102,9 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	for (totalFrames=0, nTries=0;
 		totalFrames < static_cast<sarch_t>( commit ); )
 	{
-#if __SCALING__ >= SCALING_CC_NUMA
-		nFrames = memoryTribPmm::configuredGetFrames(
-			&cpuTrib.getCurrentCpuStream()
-				->taskStream.currentTask->cpuAffinity,
-			&cpuTrib.getCurrentCpuStream()
-				->taskStream.currentTask->defaultMemoryBank,
-			commit - totalFrames, &p);
-#else
 		nFrames = memoryTribPmm::fragmentedGetFrames(
 			commit - totalFrames, &p);
-#endif
+
 		if (nFrames > 0)
 		{
 			nMapped = walkerPageRanger::mapInc(

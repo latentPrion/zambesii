@@ -273,7 +273,9 @@ parseMemoryMap:
 			getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
+	#if __SCALING__ < SCALING_CC_NUMA
 		defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
+	#endif
 		cpuTrib.getCurrentCpuStream()->taskStream.currentTask
 			->defaultMemoryBank.rsrc =
 			CHIPSET_MEMORY_NUMA_SHBANKID;

@@ -1,8 +1,6 @@
 
 #include <__ksymbols.h>
-#include <arch/paging.h>
 #include <arch/memory.h>
-#include <chipset/cpus.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/compiler/cxxrtl.h>

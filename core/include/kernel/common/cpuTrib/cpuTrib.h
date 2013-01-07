@@ -102,9 +102,11 @@ public:
 	cpu_t			bspId;
 
 private:
+#if __SCALING__ >= SCALING_CC_NUMA
+	hardwareIdListC		cpuBanks;
+#endif
 #if __SCALING__ >= SCALING_SMP
 	hardwareIdListC		cpuStreams;
-	hardwareIdListC		cpuBanks;
 #else
 	cpuStreamC		*cpu;
 #endif
@@ -116,12 +118,14 @@ extern cpuTribC		cpuTrib;
 /**	Inline Methods
  **************************************************************************/
 
-#if __SCALING__ < SCALING_SMP
-inline cpuStreamC *cpuTribC::getStream(cpu_t)
+#if __SCALING__ >= SCALING_CC_NUMA
+inline numaCpuBankC *cpuTribC::getBank(numaBankId_t id)
 {
-	return cpu;
+	return static_cast<numaCpuBankC *>( cpuBanks.getItem(id) );
 }
-#else
+#endif
+
+#if __SCALING__ >= SCALING_SMP
 inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
 {
 	/* This should be okay for now. We can reshuffle the pointers when we
@@ -129,10 +133,10 @@ inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
 	 **/
 	return static_cast<cpuStreamC *>( cpuStreams.getItem(cpu) );
 }
-
-inline numaCpuBankC *cpuTribC::getBank(numaBankId_t id)
+#else
+inline cpuStreamC *cpuTribC::getStream(cpu_t)
 {
-	return static_cast<numaCpuBankC *>( cpuBanks.getItem(id) );
+	return cpu;
 }
 #endif
 

@@ -1,4 +1,5 @@
 
+#include <scaling.h>
 #include <__kclasses/pageTableCache.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 

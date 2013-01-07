@@ -12,14 +12,6 @@ namespace memoryTribPmm
 {
 	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
-#if __SCALING__ >= SCALING_CC_NUMA
-	status_t configuredGetFrames(
-		bitmapC *cpuAffinity,
-		sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
-			*defaultMemoryBank,
-		uarch_t nFrames, paddr_t *paddr);
-#endif
-
 	void releaseFrames(paddr_t basePaddr, uarch_t nFrames);
 }
 

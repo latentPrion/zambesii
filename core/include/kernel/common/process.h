@@ -1,6 +1,7 @@
 #ifndef _PROCESS_H
 	#define _PROCESS_H
 
+	#include <scaling.h>
 	#include <chipset/memory.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/bitmap.h>
@@ -65,15 +66,21 @@ public:
 	utf8Char		**argString, **env;
 	utf8Char		*commandLine;
 
+#if __SCALING__ >= SCALING_SMP
 	bitmapC			cpuAffinity;
+#endif
+#if __SCALING__ >= SCALING_CC_NUMA
 	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
 		defaultMemoryBank;
+#endif
 
 	// Execution domain and privilege elevation.
 	ubit8			execDomain;
 
+#if __SCALING__ >= SCALING_SMP
 	// Tells which CPUs this process has run on.
 	bitmapC			cpuTrace;
+#endif
 	wrapAroundCounterC	nextTaskId;
 	ubit32			initMagic;
 

@@ -58,13 +58,6 @@ public:
 	 * Otherwise you end up with NUMA bank specifics in the kernel.
 	 **/
 	// Physical memory management functions.
-#if __SCALING__ >= SCALING_CC_NUMA
-	status_t configuredGetFrames(
-		bitmapC *cpuAffinity,
-		sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
-			*defaultMemoryBank,
-		uarch_t nFrames, paddr_t *ret);
-#endif
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *ret);
 	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *ret);
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
@@ -110,9 +103,10 @@ private:
 	// All numa banks with memory on them are listed here.
 	hardwareIdListC		memoryBanks;
 	ubit32			nBanks;
-	bitmapC			defaultCpuAffinity;
+#if __SCALING__ < SCALING_CC_NUMA
 	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
 		defaultMemoryBank;
+#endif
 };
 
 extern memoryTribC		memoryTrib;
@@ -135,7 +129,7 @@ inline void memoryTribC::pageTablePush(paddr_t paddr)
 inline numaMemoryBankC *memoryTribC::getBank(numaBankId_t bankId)
 {
 	return static_cast<numaMemoryBankC *>(
-		memoryBanks.getItem(defaultAffinity.def.rsrc) );
+		memoryBanks.getItem(defaultMemoryBank.rsrc) );
 }
 #else
 inline numaMemoryBankC *memoryTribC::getBank(numaBankId_t bankId)

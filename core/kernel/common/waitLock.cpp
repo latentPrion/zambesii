@@ -48,6 +48,9 @@ void waitLockC::acquire(void)
 	};
 
 	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	/* On a non-SMP build, this just indicates the number of critical
+	 * sections deep into the kernel this thread has currently traveled.
+	 **/
 	task->nLocksHeld++;
 }
 

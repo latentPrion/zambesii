@@ -6,14 +6,20 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
+#if __SCALING__ >= SCALING_CC_NUMA
 numaCpuBankC::numaCpuBankC(void)
 :
 capacity(0), load(0)
 {
+	nTasks.rsrc = 0;
 }
 
 error_t numaCpuBankC::initialize(uarch_t nBits)
 {
+	error_t		ret;
+
+	ret = memProximityMatrix.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
 	return cpus.initialize(nBits);
 }
 
@@ -88,4 +94,16 @@ void numaCpuBankC::updateLoad(ubit8 action, uarch_t val)
 
 	taskTrib.updateLoad(action, val);
 }
+
+void numaCpuBankC::__kspaceInitialize(void)
+{
+	/**	EXPLANATION:
+	 * On a NUMA build, __kspace's CPU Bank should hold the __kspace
+	 * memory bank ID in its memory proximity matrix.
+	 *
+	 * At boot, the Memory Trib spawns itself and sets the affinity of the
+	 **/
+}
+
+#endif /* if __SCALING__ >= SCALING_CC_NUMA */
 

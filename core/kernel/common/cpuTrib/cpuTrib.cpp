@@ -1,5 +1,3 @@
-#include <debug.h>
-
 #include <scaling.h>
 #include <chipset/cpus.h>
 #include <chipset/zkcm/zkcmCore.h>

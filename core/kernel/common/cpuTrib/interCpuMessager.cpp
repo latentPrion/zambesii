@@ -6,6 +6,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
+#if __SCALING__ >= SCALING_SMP
 cpuStreamC::interCpuMessagerC::interCpuMessagerC(cpuStreamC *parent)
 :
 parent(parent)
@@ -99,4 +100,5 @@ void cpuStreamC::interCpuMessagerC::setReceiveStateReady(void)
 	statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
 	statusFlag.lock.release();
 }
+#endif /* if __SCALING__ >= SCALING_SMP */
 
