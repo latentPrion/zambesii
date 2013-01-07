@@ -64,6 +64,12 @@ error_t memoryTribC::__kspaceInit(void)
 	 **/
 #if __SCALING__ < SCALING_CC_NUMA
 	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+#else
+	__korientationThread.defaultMemoryBank.rsrc =
+		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+
+	__kcpuPowerOnThread..defaultMemoryBank.rsrc =
+		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 #endif
 
 	// First give the list class pre-allocated memory to use for its array.
