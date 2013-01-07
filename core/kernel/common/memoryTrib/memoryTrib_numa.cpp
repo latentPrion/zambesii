@@ -68,7 +68,7 @@ error_t memoryTribC::__kspaceInit(void)
 	__korientationThread.defaultMemoryBank.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
-	__kcpuPowerOnThread..defaultMemoryBank.rsrc =
+	__kcpuPowerOnThread.defaultMemoryBank.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 #endif
 

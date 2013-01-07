@@ -91,7 +91,8 @@ error_t memoryTribC::pmemInit(void)
 	ret = zkcmCore.memoryDetection.initialize();
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE MEMTRIB"Failed to init memory info module.\n");
+		__kprintf(NOTICE MEMTRIB"pmemInit: Failed to init memory info "
+			"module.\n");
 		return ret;
 	};
 
@@ -101,7 +102,8 @@ error_t memoryTribC::pmemInit(void)
 
 	if (numaMap != __KNULL && numaMap->nMemEntries > 0)
 	{
-		__kprintf(NOTICE MEMTRIB"Chipset NUMA Map: %d entries.\n",
+		__kprintf(NOTICE MEMTRIB"pmemInit: Chipset NUMA Map: %d "
+			"entries.\n",
 			numaMap->nMemEntries);
 
 		sortNumaMapByAddress(numaMap);
@@ -117,8 +119,10 @@ error_t memoryTribC::pmemInit(void)
 		init2_spawnNumaStreams(numaMap);
 		init2_generateNumaMemoryRanges(numaMap, &__kspaceBool);
 	}
-	else {
-		__kprintf(WARNING MEMTRIB"getNumaMap(): No NUMA map.\n");
+	else
+	{
+		__kprintf(WARNING MEMTRIB"pmemInit:getNumaMap(): No NUMA map."
+			"\n");
 	};
 #endif
 
@@ -128,14 +132,15 @@ error_t memoryTribC::pmemInit(void)
 
 	if (memConfig != __KNULL && memConfig->memSize > 0)
 	{
-		__kprintf(NOTICE MEMTRIB"Chipset Mem Config: memsize 0x%P.\n",
+		__kprintf(NOTICE MEMTRIB"pmemInit: Chipset Mem Config: memsize "
+			"0x%P.\n",
 			memConfig->memSize);
 
 		ret = createBank(CHIPSET_MEMORY_NUMA_SHBANKID);
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR MEMTRIB"Failed to spawn shbank on "
-				"Memory Trib.\n");
+			__kprintf(ERROR MEMTRIB"pmemInit: Failed to spawn "
+				"shbank on Memory Trib.\n");
 
 			goto parseMemoryMap;
 		};
@@ -154,14 +159,16 @@ error_t memoryTribC::pmemInit(void)
 
 			if (ret != ERROR_SUCCESS)
 			{
-				__kprintf(ERROR MEMTRIB"Shbank: On shbank "
-					"obj, failed to add shbank memrange."
-					"\n");
+				__kprintf(ERROR MEMTRIB"pmemInit: Shbank: On "
+					"shbank obj, failed to add shbank "
+					"memrange.\n");
 			}
 			else
 			{
-				__kprintf(NOTICE MEMTRIB"Shbank: no NUMA map. "
-					"Spawn with total memsize 0x%P.\n",
+				__kprintf(NOTICE MEMTRIB"pmemInit: Shbank: no "
+					"NUMA map.\n"
+					"\tSpawning shbank with total memsize "
+					"0x%P.\n",
 					memConfig->memSize);
 
 				__kspaceBool = 1;
@@ -169,7 +176,8 @@ error_t memoryTribC::pmemInit(void)
 		};
 	}
 	else {
-		__kprintf(ERROR MEMTRIB"getMemoryConfig(): No mem config.\n");
+		__kprintf(ERROR MEMTRIB"pmemInit: getMemoryConfig(): No mem "
+			"config.\n");
 	};
 #endif
 
@@ -179,8 +187,8 @@ parseMemoryMap:
 
 	if (memMap != __KNULL && memMap->nEntries > 0)
 	{
-		__kprintf(NOTICE MEMTRIB"Chipset Mem map: %d entries.\n",
-			memMap->nEntries);
+		__kprintf(NOTICE MEMTRIB"pmemInit: Chipset Mem map: %d entries."
+			"\n", memMap->nEntries);
 
 		for (uarch_t i=0; i<memMap->nEntries; i++)
 		{
@@ -211,8 +219,10 @@ parseMemoryMap:
 			};
 		};
 	}
-	else {
-		__kprintf(WARNING MEMTRIB"getMemoryMap(): No mem map.\n");
+	else
+	{
+		__kprintf(WARNING MEMTRIB"pmemInit: getMemoryMap(): No mem map."
+			"\n");
 	};
 
 	// Next merge all banks with __kspace.
@@ -229,8 +239,9 @@ parseMemoryMap:
 			getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
 	};
 
-	__kprintf(NOTICE MEMTRIB"%d frames were merged from __kspace into new "
-		"PMM state.\n", nSet);
+	__kprintf(NOTICE MEMTRIB"pmemInit: %d frames merged from __kspace into "
+		"new PMM state.\n",
+		nSet);
 
 	// Then apply the Memory Tributary's Memory Regions to all banks.
 	if (chipsetRegionMap != __KNULL)
@@ -253,37 +264,45 @@ parseMemoryMap:
 
 	// And *finally*, see whether or not to destroy __kspace.
 	// FIXME: This should probably be moved further up.
-	if (__kspaceBool == 1)
+	if (__kspaceBool != 1)
 	{
-		/* To destroy __kspace, we must stop the Orientation thread's
-		 * config from pointing to it. We also have to patch up the
-		 * NUMA Tributary's default config to stop pointing to it as
-		 * well.
-		 *
-		 * Next, if there is a shared bank, we point the both NUMA
-		 * Trib and the orientation thread to it, and move on.
-		 *
-		 * If there is no shared bank, we should be able to leave it
-		 * alone, and the next time a thread asks for pmem, the code in
-		 * numaTrib.cpp should auto-determine which bank to set as the
-		 * new default.
-		 **/
-		memoryBanks.removeItem(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
-		__kprintf(NOTICE MEMTRIB"Removed __kspace. Ret is 0x%P.\n",
-			getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
+		__kprintf(FATAL MEMTRIB"pmemInit: __kspace cannot be "
+			"destroyed. Memory detection unsuccessful.\n"
+			"\tKernel halting.\n");
+
+		panic(ERROR_CRITICAL);
+	};
+
+	/* To destroy __kspace, we must stop the Orientation thread's
+	 * config from pointing to it. We also have to patch up the
+	 * Memory Tributary's default config to stop pointing to it as
+	 * well.
+	 *
+	 * Next, if there is a shared bank, we point the both Memory
+	 * Trib and the orientation thread to it, and move on.
+	 *
+	 * If there is no shared bank, we should be able to leave it
+	 * alone, and the next time a thread asks for pmem, the code in
+	 * numaTrib.cpp should auto-determine which bank to set as the
+	 * new default.
+	 **/
+	memoryBanks.removeItem(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
+	__kprintf(NOTICE MEMTRIB"pmemInit: Removed __kspace. Ret is 0x%p.\n",
+		getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 	#if __SCALING__ < SCALING_CC_NUMA
-		defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
-	#endif
-		cpuTrib.getCurrentCpuStream()->taskStream.currentTask
-			->defaultMemoryBank.rsrc =
-			CHIPSET_MEMORY_NUMA_SHBANKID;
+	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
+	__kprintf(NOTICE MEMTRIB"pmemInit: MemTrib using shbank as default.\n");
+	#else
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask
+		->defaultMemoryBank.rsrc =
+		CHIPSET_MEMORY_NUMA_SHBANKID;
 
-		__kprintf(NOTICE MEMTRIB"Orientation and default "
-			"config patched to use shbank as default.\n");
+	__kprintf(NOTICE MEMTRIB"pmemInit: Orientation using shbank as default."
+		"\n");
+	#endif
 #endif
-	};
 
 	return ERROR_SUCCESS;
 }
