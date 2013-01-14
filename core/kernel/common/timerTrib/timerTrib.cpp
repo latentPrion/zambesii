@@ -27,175 +27,65 @@ timerTribC::~timerTribC(void)
 {
 }
 
-void timerTribC::initialize100msQueue(void)
+void timerTribC::initializeQueue(timerQueueC *queue, ubit32 ns)
 {
 	void			*handle;
 	zkcmTimerDeviceC	*dev;
 	error_t			ret;
+	timeS			min, max;
 
 	/* EXPLANATION:
 	 * We want a timer that is not already latched. We can use the timer in
-	 * any mode, so that is not an issue. We are looking for 1s period
-	 * granularity or better. Precision is not highly important for the
-	 * kernel's timer queues.
-	 *
-	 * If we get nothing for these filter options, re-run the filter with
-	 * precision being PREC_ANY and IO-latency being ANY.
+	 * any mode, so that is not an issue. Precision is valued, but not of
+	 * critical importance for the kernel's timer queues. I/O latency cannot
+	 * exceed moderate.
 	 **/
 	handle = __KNULL;
 	dev = zkcmCore.timerControl.filterTimerDevices(
 		zkcmTimerDeviceC::CHIPSET,
-		0,
+		ZKCM_TIMERDEV_CAP_MODE_PERIODIC,
 		zkcmTimerDeviceC::MODERATE,
 		zkcmTimerDeviceC::NEGLIGABLE,
-		TIMERCTL_FILTER_SKIP_LATCHED
-		| TIMERCTL_FILTER_MODE_ANY
+		// TIMERCTL_FILTER_SKIP_LATCHED
+		0| TIMERCTL_FILTER_MODE_EXACT
 		| TIMERCTL_FILTER_IO_OR_BETTER
 		| TIMERCTL_FILTER_PREC_OR_BETTER,
 		&handle);
 
-	if (dev == __KNULL)
-	{
-		__kprintf(WARNING TIMERTRIB"initialize100ms: Loosening filter "
-			"criteria.\n");
-
-		handle = __KNULL;
+	for (; dev != __KNULL;
 		dev = zkcmCore.timerControl.filterTimerDevices(
 			zkcmTimerDeviceC::CHIPSET,
-			0,
-			(zkcmTimerDeviceC::ioLatencyE)0,
-			(zkcmTimerDeviceC::precisionE)0,
-			TIMERCTL_FILTER_SKIP_LATCHED
-			| TIMERCTL_FILTER_MODE_ANY
-			| TIMERCTL_FILTER_IO_ANY
-			| TIMERCTL_FILTER_PREC_ANY,
-			&handle);
-
-		if (dev == __KNULL)
-		{
-			/* If we can't even initialize the 1 second period
-			 * queue, then we cannot continue the boot sequence.
-			 * Panic.
-			 **/
-			__kprintf(FATAL TIMERTRIB"initialize1sQueue: Failed "
-				"to get a timer for the\n"
-				"\tlowest frequency queue. No respectable "
-				"sources available. Halting.\n");
-
-			panic(ERROR_RESOURCE_UNAVAILABLE);
+			ZKCM_TIMERDEV_CAP_MODE_PERIODIC,
+			zkcmTimerDeviceC::MODERATE,
+			zkcmTimerDeviceC::NEGLIGABLE,
+			//TIMERCTL_FILTER_SKIP_LATCHED
+			0| TIMERCTL_FILTER_MODE_EXACT
+			| TIMERCTL_FILTER_IO_OR_BETTER
+			| TIMERCTL_FILTER_PREC_OR_BETTER,
+			&handle))
+	{
+		// If the device doesn't support the period we require, skip.
+		dev->getPeriodicModeMinMaxPeriod(&min, &max);
+		if (ns < min.nseconds || ns > max.nseconds) {
+			continue;
 		};
-	};
 
-	ret = period100ms.initialize(dev);
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(FATAL TIMERTRIB"Failed to initialize the lowest "
-			"frequency queue. Panicking.");
-
-		panic(ret);
-	};
-}
-
-void timerTribC::initialize10msQueue(void)
-{
-	void			*handle;
-	zkcmTimerDeviceC	*dev;
-	error_t			ret;
-
-	/* EXPLANATION:
-	 * See above, initialize100msQueue().
-	 **/
-	handle = __KNULL;
-	dev = zkcmCore.timerControl.filterTimerDevices(
-		zkcmTimerDeviceC::CHIPSET,
-		0,
-		zkcmTimerDeviceC::MODERATE,
-		zkcmTimerDeviceC::NEGLIGABLE,
-		TIMERCTL_FILTER_SKIP_LATCHED
-		| TIMERCTL_FILTER_MODE_ANY
-		| TIMERCTL_FILTER_IO_OR_BETTER
-		| TIMERCTL_FILTER_PREC_OR_BETTER,
-		&handle);
-
-	if (dev == __KNULL)
-	{
-		handle = __KNULL;
-		dev = zkcmCore.timerControl.filterTimerDevices(
-			zkcmTimerDeviceC::CHIPSET,
-			0,
-			(zkcmTimerDeviceC::ioLatencyE)0,
-			(zkcmTimerDeviceC::precisionE)0,
-			TIMERCTL_FILTER_SKIP_LATCHED
-			| TIMERCTL_FILTER_MODE_ANY
-			| TIMERCTL_FILTER_IO_ANY
-			| TIMERCTL_FILTER_PREC_ANY,
-			&handle);
-
-		if (dev == __KNULL)
+		ret = queue->initialize(dev);
+		if (ret != ERROR_SUCCESS)
 		{
-			// Still unable to find a respectable timer. Return.
-			__kprintf(WARNING TIMERTRIB"10ms queue failed to latch "
-				"onto a timer source.\n");
+			__kprintf(ERROR TIMERTRIB"init Q %dns: Queue failed to "
+				"initialize().\n",
+				ns);
 
 			return;
 		};
+
+		__kprintf(NOTICE TIMERTRIB"init Q %dns: Successful.\n", ns);
+		return;
 	};
 
-	ret = period10ms.initialize(dev);
-	if (ret != ERROR_SUCCESS) {
-		__kprintf(FATAL TIMERTRIB"Failed to initialize 10ms queue.\n");
-	};
-}
-
-void timerTribC::initialize1msQueue(void)
-{
-	void			*handle;
-	zkcmTimerDeviceC	*dev;
-	error_t			ret;
-
-	/* EXPLANATION:
-	 * See above, initialize100msQueue().
-	 **/
-	handle = __KNULL;
-	dev = zkcmCore.timerControl.filterTimerDevices(
-		zkcmTimerDeviceC::CHIPSET,
-		0,
-		zkcmTimerDeviceC::MODERATE,
-		zkcmTimerDeviceC::NEGLIGABLE,
-		TIMERCTL_FILTER_SKIP_LATCHED
-		| TIMERCTL_FILTER_MODE_ANY
-		| TIMERCTL_FILTER_IO_OR_BETTER
-		| TIMERCTL_FILTER_PREC_OR_BETTER,
-		&handle);
-
-	if (dev == __KNULL)
-	{
-		handle = __KNULL;
-		dev = zkcmCore.timerControl.filterTimerDevices(
-			zkcmTimerDeviceC::CHIPSET,
-			0,
-			(zkcmTimerDeviceC::ioLatencyE)0,
-			(zkcmTimerDeviceC::precisionE)0,
-			TIMERCTL_FILTER_SKIP_LATCHED
-			| TIMERCTL_FILTER_MODE_ANY
-			| TIMERCTL_FILTER_IO_ANY
-			| TIMERCTL_FILTER_PREC_ANY,
-			&handle);
-
-		if (dev == __KNULL)
-		{
-			// Still unable to find a respectable timer. Return.
-			__kprintf(WARNING TIMERTRIB"1ms queue failed to latch "
-				"onto a timer source.\n");
-
-			return;
-		};
-	};
-
-	ret = period1ms.initialize(dev);
-	if (ret != ERROR_SUCCESS) {
-		__kprintf(FATAL TIMERTRIB"Failed to initialize 1ms queue.\n");
-	};
+	__kprintf(NOTICE TIMERTRIB"init Q %dns: No timer available.\n", ns);
+	return;
 }
 
 error_t timerTribC::initialize(void)
@@ -243,17 +133,16 @@ error_t timerTribC::initialize(void)
 	// Now set up the timer queues.
 	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
 	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_100MS_SAFE)) {
-__kprintf(NOTICE TIMERTRIB"initialize(): about to init 100ms queue.\n");
-		initialize100msQueue();
+		initializeQueue(&period100ms, 100000);
 	};
 
-	/*if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE)) {
-		initialize10msQueue();
+	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE)) {
+		initializeQueue(&period10ms, 10000);
 	};
 
 	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_1MS_SAFE)) {
-		initialize1msQueue();
-	};*/
+		initializeQueue(&period1ms, 1000);
+	};
 
 	return ERROR_SUCCESS;
 }

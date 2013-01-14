@@ -39,6 +39,8 @@
 	 * board.
 	 **/
 
+#define TIMERQUEUE		"timerQ "
+
 class timerQueueC
 {
 public:

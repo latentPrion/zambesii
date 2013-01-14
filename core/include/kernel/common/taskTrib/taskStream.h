@@ -22,7 +22,9 @@ public streamC
 {
 friend class cpuStreamC;
 public:
-	taskStreamC(cpuStreamC *parent);
+
+	taskStreamC(cpuStreamC *parentCpu);
+
 	/* Allocates internal queues, etc.
 	 *	XXX:
 	 * Take care not to allow this to be called twice on the BSP's task

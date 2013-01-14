@@ -5,6 +5,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__korientation.h>
@@ -26,8 +27,7 @@ error_t processTribC::initialize(void)
 	__kprocess.argString = __KNULL;
 	__kprocess.env = __KNULL;
 	__kprocess.memoryStream = &memoryTrib.__kmemoryStream;
-
-	
+	__kprocess.timerStream = &timerTrib.__ktimerStream;
 
 	// Init __korientation thread.
 	memset(&__korientationThread, 0, sizeof(__korientationThread));

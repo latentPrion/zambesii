@@ -14,9 +14,6 @@ roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
 dormantQ(SCHEDPRIO_MAX_NPRIOS),
 parentCpu(parent)
 {
-	load = 0;
-	capacity = 0;
-
 	/* Ensure that the BSP CPU's pointer to __korientation isn't trampled
 	 * by the general case constructor.
 	 **/
@@ -49,7 +46,6 @@ void taskStreamC::dump(void)
 		load, capacity, currentTask->id, currentTask);
 
 	roundRobinQ.dump();
-asm volatile("hlt\n\t");
 	realTimeQ.dump();
 }
 

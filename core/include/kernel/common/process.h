@@ -10,6 +10,7 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
+	#include <kernel/common/timerTrib/timerStream.h>
 
 #define PROCESS_INIT_MAGIC	0x1D0C3551
 
@@ -85,6 +86,7 @@ public:
 	ubit32			initMagic;
 
 	memoryStreamC		*memoryStream;
+	timerStreamC		*timerStream;
 
 private:
 	sarch_t getNextThreadId(void);

@@ -14,13 +14,21 @@ device(__KNULL)
 error_t timerQueueC::initialize(zkcmTimerDeviceC *device)
 {
 	timeS		stamp;
+	error_t		ret;
 
 	/**	CAVEAT:
 	 * Don't forget to unlatch if the initialization fails.
 	 **/
 	if (device == __KNULL) { return ERROR_INVALID_ARG; };
 
-	device->latch(&timerTrib.__ktimerStream);
+	ret = device->latch(&timerTrib.__ktimerStream);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(WARNING TIMERQUEUE"%dns: Latch to dev \"%s\" failed."
+			"\n", nativePeriod, device->getBaseDevice()->shortName);
+
+		return ret;
+	};
 
 	stamp.seconds = 0;
 	stamp.nseconds = nativePeriod;

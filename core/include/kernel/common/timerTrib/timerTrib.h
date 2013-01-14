@@ -94,9 +94,7 @@ private:
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
 
 private:
-	void initialize100msQueue(void);
-	void initialize10msQueue(void);
-	void initialize1msQueue(void);
+	void initializeQueue(timerQueueC *queue, ubit32 ns);
 };
 
 extern timerTribC		timerTrib;

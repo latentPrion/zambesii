@@ -77,14 +77,13 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	// Enable the Task Stream on the BSP CPU for boot time scheduling.
 	DO_OR_DIE(cpuTrib, initializeBspTaskStream(), ret);
-	//cpuTrib.getCurrentCpuStream()->taskStream.dump();
-for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	// Initialize IRQ Control and chipset bus-pin mapping management.
 	DO_OR_DIE(interruptTrib, initialize2(), ret);
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	// Start the Timer Trib timer services.
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
+for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);

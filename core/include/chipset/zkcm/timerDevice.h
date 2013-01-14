@@ -8,7 +8,7 @@
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
-	// #include <kernel/common/timerTrib/timerStream.h>
+	#include <kernel/common/timerTrib/timerStream.h>
 	#include <kernel/common/cpuTrib/cpuTrib.h>
 
 /**	Constants used with struct zkcmTimerSourceS.
@@ -72,7 +72,7 @@ public:
 		max->nseconds = capabilities.oneshotMaxTimeout; 
 	}
 	
-	virtual void getPeriodicModeMinMaxPeriods(timeS *min, timeS *max)
+	virtual void getPeriodicModeMinMaxPeriod(timeS *min, timeS *max)
 	{
 		min->nseconds = capabilities.periodicMinPeriod;
 		max->nseconds = capabilities.periodicMaxPeriod;
@@ -93,7 +93,7 @@ public:
 	 **/
 	virtual uarch_t getPrecisionDiscrepancyForPeriod(ubit32 period)=0;
 
-	error_t latch(void *stream)
+	error_t latch(timerStreamC *stream)
 	{
 		state.lock.acquire();
 
@@ -121,8 +121,8 @@ public:
 		currCpu = cpuTrib.getCurrentCpuStream();
 
 		// This condition needs to check the floodplain binding.
-		if (/*PROCID_PROCESS(currCpu->taskStream.currentTask->id)
-			== PROCID_PROCESS(state.rsrc.latchedStream->id)*/ 1)
+		if (PROCID_PROCESS(currCpu->taskStream.currentTask->id)
+			== PROCID_PROCESS(state.rsrc.latchedStream->id))
 		{
 			state.lock.acquire();
 
@@ -135,7 +135,7 @@ public:
 	}
 
 	// Returns 1 if latched, 0 if not latched.
-	sarch_t getLatchState(void **latchedStream)
+	sarch_t getLatchState(timerStreamC **latchedStream)
 	{
 		state.lock.acquire();
 
@@ -154,16 +154,16 @@ public:
 
 	sarch_t validateCallerIsLatched(void)
 	{
-		void			*stream;
+		timerStreamC		*stream;
 		taskC			*currTask;
 
-		currTask = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+		currTask = cpuTrib.getCurrentCpuStream()
+			->taskStream.currentTask;
 
 		// Replace with floodplain binding check.
 		if (getLatchState(&stream)
-			&&
-			/* PROCID_PROCESS(stream->id)
-				== PROCID_PROCESS(currTask->id)*/ 1)
+			&& PROCID_PROCESS(stream->id)
+				== PROCID_PROCESS(currTask->id))
 		{
 			return 1;
 		} else {
@@ -207,7 +207,7 @@ public:
 
 		ubit32		flags;
 		// Floodplain Stream for the process using this timer device.
-		void		*latchedStream;
+		timerStreamC	*latchedStream;
 		// Current mode: periodic/oneshot. Valid if FLAGS_ENABLED set.
 		modeE		mode;
 		// For periodic mode: stores the current timer period in ns.
