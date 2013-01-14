@@ -27,7 +27,7 @@ public:
 
 public:
 	// Chooses the best CPU on this bank to schedule the new task to.
-	error_t schedule(taskC*task);
+	error_t schedule(taskC *task);
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };
@@ -42,6 +42,7 @@ public:
 public:
 	// A bitmap of all the CPUs on the bank. Initialize with initialize().
 	bitmapC		cpus;
+
 	struct memProximityEntryS
 	{
 		numaBankId_t	bankId;
@@ -49,6 +50,11 @@ public:
 		timeS		latency;
 	};
 
+	/*	EXPLANATION:
+	 * Sorted list of memory banks reachable from this node, ordered by
+	 * latency. The implication is that banks that aren't reachable aren't
+	 * listed.
+	 **/
 	sortedPointerDoubleListC<memProximityEntryS, timeS>
 		memProximityMatrix;
 

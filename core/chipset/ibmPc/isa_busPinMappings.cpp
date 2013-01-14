@@ -156,7 +156,6 @@ static void ibmPc_bpm_isa_acpi_loadRsdtBusPinMappings(acpi_rMadtS *madt)
 		};
 	};
 
-
 	handle = __KNULL;
 	overrideEntry = acpiRMadt::getNextIrqSourceOverrideEntry(
 		madt, &handle);

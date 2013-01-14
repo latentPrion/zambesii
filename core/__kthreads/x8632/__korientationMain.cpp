@@ -20,6 +20,7 @@
 
 #include <arch/cpuControl.h>
 #include "../chipset/ibmPc/i8254.h"
+#include <__kclasses/prioQueue.h>
 
 int oo=0, pp=0, qq=0, rr=0;
 
@@ -73,12 +74,20 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	// Initialize the kernel Memory Reservoir (heap) and object cache pool.
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
-	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
+	// Enable the Task Stream on the BSP CPU for boot time scheduling.
+	DO_OR_DIE(cpuTrib, initializeBspTaskStream(), ret);
+	//cpuTrib.getCurrentCpuStream()->taskStream.dump();
+for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	// Initialize IRQ Control and chipset bus-pin mapping management.
 	DO_OR_DIE(interruptTrib, initialize2(), ret);
+	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
+	// Start the Timer Trib timer services.
+	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
-for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
+
+	// Detect physical memory.
+	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
 	DO_OR_DIE(processTrib, initialize2(), ret);
 	DO_OR_DIE(cpuTrib, initialize2(), ret);
@@ -127,7 +136,7 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 			__KNULL,
 			PROCESS_EXECDOMAIN_KERNEL,
 			0,
-			SCHEDPOLICY_ROUND_ROBIN,
+			taskC::ROUND_ROBIN,
 			SCHEDPRIO_DEFAULT,
 			0,
 			&ret);

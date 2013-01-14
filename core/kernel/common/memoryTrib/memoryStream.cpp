@@ -46,8 +46,9 @@ error_t memoryStreamC::initialize(
 	return vaddrSpaceStream.initialize(swampStart, swampSize, holeMap);
 }
 
-void memoryStreamC::bind(void)
+error_t memoryStreamC::bind(void)
 {
+	return ERROR_SUCCESS;
 }
 
 void memoryStreamC::cut(void)

@@ -201,7 +201,8 @@ static error_t	 ibmPc_rtccmos_initialize(void)
 	if (!batteryStatus2Safe || !batteryStatusDiagnosticSafe)
 	{
 		__kprintf(WARNING RTCCMOS"RTC/CMOS chip may not be powered "
-			"adequately. CMOS RAM may be unreliable/invalid.\n");
+			"adequately.\n"
+			"\tCMOS RAM may be unreliable/invalid.\n");
 	};
 
 	rtccmosIsPowered = 1;
@@ -455,7 +456,6 @@ status_t zkcmTimerControlModC::getCurrentTime(timeS *time)
 
 void zkcmTimerControlModC::flushCachedSystemTime(void)
 {
-	__kprintf(WARNING RTCCMOS"flushCachedSystemTime: unimplemented.\n");
-	UNIMPLEMENTED("zkcmTimerControlModC::fluskCachedSystemTime");
+	UNIMPLEMENTED("zkcmTimerControlModC::flushCachedSystemTime()");
 }
 

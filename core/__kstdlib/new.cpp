@@ -15,10 +15,12 @@ void *operator new[](size_t nBytes)
 
 void operator delete (void *mem)
 {
+	if (mem == __KNULL) { return; };
 	memReservoir.free(mem);
 }
 void operator delete[](void *mem)
 {
+	if (mem == __KNULL) { return; };
 	memReservoir.free(mem);
 }
 

@@ -83,18 +83,9 @@ void zkcmIrqControlModC::chipsetEventNotification(ubit8 event, uarch_t flags)
 	{
 	case IRQCTL_EVENT_MEMMGT_AVAIL:
 		/**	EXPLANATION:
-		 * Tell the i8259 code to advertise its IRQ pins to the kernel,
-		 * and run the ISA bus/device <-> pin mapping code.
+		 * Tell the i8259 code to advertise its IRQ pins to the kernel.
 		 **/
 		i8259aPic.chipsetEventNotification(event, flags);
-		if (bpm.loadBusPinMappings(CC"isa") != ERROR_SUCCESS)
-		{
-			panic(FATAL IBMPCIRQCTL
-				"chipsetEventNotification(MMGT_AVAIL):\n\t"
-				"Failed to get the bus-pin mappings for the "
-				"chipset for the i8259s.\n\tHalting.\n");
-		};
-
 		break;
 
 	case IRQCTL_EVENT_SMP_MODE_SWITCH:

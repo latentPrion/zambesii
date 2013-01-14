@@ -106,16 +106,6 @@ error_t interruptTribC::initialize2(void)
 	return ERROR_SUCCESS;
 }
 
-static void *getCr2(void)
-{
-	void *ret;
-	asm volatile (
-		"movl	%%cr2, %0\n\t"
-		: "=r" (ret));
-
-	return ret;
-}
-
 void interruptTribC::irqMain(taskContextS *regs)
 {
 	ubit16			__kpin;

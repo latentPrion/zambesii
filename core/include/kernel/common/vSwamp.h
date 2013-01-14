@@ -54,7 +54,7 @@ private:
 	struct swampStateS
 	{
 		/* The tail pointer will become necessary when we implement
-		 * stack allocation, where we travers the swamp from the tail
+		 * stack allocation, where we traverse the swamp from the tail
 		 * so as to get pages as high up in the address space as
 		 * possible.
 		 **/

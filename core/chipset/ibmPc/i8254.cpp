@@ -34,7 +34,7 @@
  * reason for this is that I do not believe that Linux uses mode 0
  **/
 
-i8254PitC		i8254Pit;
+i8254PitC		i8254Pit(0);
 
 // Chan 0 and 2 counters are 16bit, chan 3 counter is 8bit.
 #define i8254_CHAN0_IO_COUNTER		(0x40)
@@ -79,6 +79,10 @@ i8254PitC		i8254Pit;
 error_t i8254PitC::initialize(void)
 {
 	error_t		ret;
+
+	// Disable timer source and EOI it to ensure it's not asserting its IRQ.
+	disable();
+	sendEoi();
 
 	// Expose the i8254 channel 0 timer source to the Timer Control mod.
 	ret = zkcmCore.timerControl.registerNewTimerDevice(this);
@@ -155,7 +159,6 @@ error_t i8254PitC::enable(void)
 		return ERROR_UNINITIALIZED;
 	};
 	state.lock.release();
-
 	/**	EXPLANATION:
 	 * 1. Lookup the correct __kpin for our IRQ (ISA IRQ 0).
 	 * 2. Register our ISR with the kernel on the correct __kpin list.
@@ -196,10 +199,11 @@ error_t i8254PitC::enable(void)
 
 	// Now program the i8254 to begin interrupting.
 	if (state.rsrc.mode == ONESHOT) {
-		writeOneshotCount();
+		writeOneshotIo();
+	} else {
+		writePeriodicIo();
 	};
 
-	sendEoi();
 	ret = interruptTrib.__kpinEnable(__kpinId);
 	if (ret != ERROR_SUCCESS)
 	{
@@ -225,57 +229,46 @@ void i8254PitC::disable(void)
 	 *	InterruptTrib will automatically mask the IRQ pin off if
 	 *	it determines that there are no more devices actively signaling
 	 *	on the pin.
-	 **/
-
-	// Stop the i8254 from interrupting.
-
-	interruptTrib.zkcm.retirePinIsr(__kpinId, &isr);
-}
-
-#if 0
-status_t i8254PitC::setPeriodicMode(struct timeS interval)
-{
-	cpuStreamC	*currCpu;
-	ubit16		divisor;
-
-	currCpu = cpuTrib.getCurrentCpuStream();
-
-	/* Do checks here to ensure that the requested period is
-	 * supported by the i8254.
+	 *
+	 * Linux sets the i8254 to mode 0, with a 0 CLK pulse timeout when it
+	 * wants to disable it.
 	 **/
 
 	state.lock.acquire();
 
-	if (__KFLAG_TEST(state.rsrc.flags,
-		ZKCM_TIMERDEV_STATE_FLAGS_LATCHED)
-		&& PROCID_PROCESS(state.rsrc.latchedProcess)
-			== PROCID_PROCESS(currCpu->taskStream->currentProcess))
-	{
-		disable();
-		mode = PERIODIC;
+	// Write out the oneshot mode (mode 0) control byte.
+	io::write8(
+		i8254_CHAN0_IO_CONTROL,
+		i8254_CHAN0_CONTROL_SELECT_COUNTER
+		| i8254_CHAN0_CONTROL_MODE0_ONESHOT
+		| i8254_CHAN0_CONTROL_COUNTER_WRITE_LOWHIGH);
 
-		/**	EXPLANATION:
-		 * i8254 has an input clock source with a frequency of 1.193MHz.
-		 * (1,193
-		 **/
-		
+	atomicAsm::memoryBarrier();
+	io::write8(i8254_CHAN0_IO_COUNTER, 0);
+	io::write8(i8254_CHAN0_IO_COUNTER, 0);
+	__KFLAG_UNSET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+
+	state.lock.release();
+
+	if (isrRegistered) {
+		interruptTrib.zkcm.retirePinIsr(__kpinId, &isr);
+	};
 }
-#endif
 
-static inline sarch_t validateOneshotTimevalLimit(timeS time)
+static inline sarch_t validateTimevalLimit(timeS time)
 {
 	/**	EXPLANATION:
 	 * The i8254's input frequency is a 1,193,180Hz CLK source. This means
 	 * that not every period requirement can be translated exactly. For
 	 * example, if the user asked for 20 nanoseconds to be timed, we would
-	 * actually program the PIT to interrupt after 24 ticks, and not 20,
+	 * actually program the PIT to interrupt after 24 CLK pulses and not 20,
 	 * because the input CLK source is faster than 1,000,000Hz.
 	 *
 	 * The exact conversion table being used is as follows:
 	 *	1ns: 1,193,180ps: 1.193 CLKs -> 1 CLK = 1ns.
 	 *	10ns: 11.93 CLKs -> 12 CLKs = 10ns.
 	 *	100ns: 119.3 CLKs -> 119 CLKs = 100ns.
-	 *	1ms: 1,193.180 CLKs = 1ms.
+	 *	1ms: 1,193.180 CLKs -> 1,193 CLKs = 1ms.
 	 *	10ms: 11,931.8 CLKs -> 11,932 CLKs = 10ms
 	 *
 	 * Even these values are rounded off, and do not guarantee perfect
@@ -312,7 +305,7 @@ static inline sarch_t validateOneshotTimevalLimit(timeS time)
 	return 1;
 }
 
-inline static ubit16 oneshotNanosecondsToClks(ubit32 ns)
+inline static ubit16 nanosecondsToClks(ubit32 ns)
 {
 	ubit32		ret;
 
@@ -332,27 +325,43 @@ inline static ubit16 oneshotNanosecondsToClks(ubit32 ns)
 	return ret;
 }
 
+status_t i8254PitC::setPeriodicMode(struct timeS interval)
+{
+	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
+	// Make sure the requested periodic interval is supported by the i8254.
+	if (!validateTimevalLimit(interval)) { return ERROR_UNSUPPORTED; };
+
+	state.lock.acquire();
+
+	state.rsrc.currentInterval.nseconds = interval.nseconds;
+	state.rsrc.mode = PERIODIC;
+	// Convert the periodic interval into i8254 CLK pulse equivalent.
+	currentIntervalClks = nanosecondsToClks(
+		state.rsrc.currentInterval.nseconds);
+	
+	state.lock.release();
+	return ERROR_SUCCESS;
+}
+
 status_t i8254PitC::setOneshotMode(struct timeS timeout)
 {
-	if (!validateOneshotTimevalLimit(timeout)) {
-		return ERROR_UNSUPPORTED;
-	};
-
 	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
+	// Make sure the requested timeout is supported by the i8254.
+	if (!validateTimevalLimit(timeout)) { return ERROR_UNSUPPORTED; };
 
 	state.lock.acquire();
 
 	state.rsrc.currentTimeout.nseconds = timeout.nseconds;
 	state.rsrc.mode = ONESHOT;
 	// Convert the currentTimeout nanosecond value into i8254 CLK pulses.
-	currentTimeoutClks = oneshotNanosecondsToClks(
+	currentTimeoutClks = nanosecondsToClks(
 		state.rsrc.currentTimeout.nseconds);
 
 	state.lock.release();
 	return ERROR_SUCCESS;
 }
 
-void i8254PitC::writeOneshotCount(void)
+void i8254PitC::writeOneshotIo(void)
 {
 	/**	NOTE:
 	 * Interesting note here, Linux seems to use mode 4 for the oneshot
@@ -377,6 +386,32 @@ void i8254PitC::writeOneshotCount(void)
 	io::write8(
 		i8254_CHAN0_IO_COUNTER,
 		currentTimeoutClks >> 8);
+
+	__KFLAG_SET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+
+	state.lock.release();
+}
+
+void i8254PitC::writePeriodicIo(void)
+{
+	state.lock.acquire();
+
+	io::write8(
+		i8254_CHAN0_IO_CONTROL,
+		i8254_CHAN0_CONTROL_SELECT_COUNTER
+		| i8254_CHAN0_CONTROL_MODE2_RATEGEN
+		| i8254_CHAN0_CONTROL_COUNTER_WRITE_LOWHIGH);
+
+	atomicAsm::memoryBarrier();
+
+	// Write out the currently set periodic rate.
+	io::write8(
+		i8254_CHAN0_IO_COUNTER,
+		currentIntervalClks & 0xFF);
+
+	io::write8(
+		i8254_CHAN0_IO_COUNTER,
+		currentIntervalClks >> 8);
 
 	__KFLAG_SET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
 

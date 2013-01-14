@@ -23,21 +23,19 @@ class i8254PitC
 public zkcmTimerDeviceC
 {
 public:
-	i8254PitC(void)
+	i8254PitC(ubit32 childId)
 	:
 	zkcmTimerDeviceC(
 		zkcmTimerDeviceC::CHIPSET,
 		ZKCM_TIMERDEV_CAP_MODE_PERIODIC
 			| ZKCM_TIMERDEV_CAP_MODE_ONESHOT,
-		ZKCM_TIMERDEV_CAP_RES_1S
-			| ZKCM_TIMERDEV_CAP_RES_100MS
-			| ZKCM_TIMERDEV_CAP_RES_10MS
-			| ZKCM_TIMERDEV_CAP_RES_1MS,
+		1000, i8254_ONESHOT_MAX_NS,
+		1, i8254_ONESHOT_MAX_NS,
 		zkcmTimerDeviceC::MODERATE,
 		zkcmTimerDeviceC::NEGLIGABLE,
 		&baseDeviceInfo),
 	baseDeviceInfo(
-		0, CC"i8254", CC"IBM-PC compatible i8254 PIT, channel 0 timer.",
+		childId, CC"i8254", CC"IBM-PC compatible i8254 PIT, channel 0 timer.",
 		CC"Unknown vendor", CC"N/A"),
 	isrRegistered(0), __kpinId(0)
 	{}
@@ -51,7 +49,7 @@ public:
 	virtual status_t enable(void);
 	virtual void disable(void);
 	// Call disable() before setting timer options, then enable() again.
-	virtual status_t setPeriodicMode(struct timeS /*interval*/) { return 0; };
+	virtual status_t setPeriodicMode(struct timeS interval);
 	virtual status_t setOneshotMode(struct timeS timeout);
 	virtual uarch_t getPrecisionDiscrepancyForPeriod(ubit32 /*period*/) { return 0; };
 
@@ -60,7 +58,8 @@ public:
 
 private:
 	void sendEoi(void);
-	void writeOneshotCount(void);
+	void writeOneshotIo(void);
+	void writePeriodicIo(void);
 
 private:
 	zkcmDeviceC		baseDeviceInfo;
@@ -70,6 +69,7 @@ private:
 	ubit16			__kpinId;
 	// i8254 CLK pulse equivalent of the nanosecond value in currentTimeout.
 	ubit16			currentTimeoutClks;
+	ubit16			currentIntervalClks;
 };
 
 extern i8254PitC	i8254Pit;

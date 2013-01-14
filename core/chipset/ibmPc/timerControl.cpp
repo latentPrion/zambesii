@@ -19,11 +19,12 @@ error_t zkcmTimerControlModC::initialize(void)
 	error_t		ret;
 
 	ret = timers.initialize();
-	if (ret != ERROR_SUCCESS) {
-		return ret;
-	};
+	if (ret != ERROR_SUCCESS) { return ret; };
 
-	return ibmPc_rtc_initialize();
+	ret = ibmPc_rtc_initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	return i8254Pit.initialize();
 }
 
 error_t zkcmTimerControlModC::shutdown(void)
@@ -56,7 +57,6 @@ ubit32 zkcmTimerControlModC::getChipsetSafeTimerPeriods(void)
 zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerDevices(
 	zkcmTimerDeviceC::timerTypeE type,	// PER_CPU or CHIPSET.
 	ubit32 modes,				// PERIODIC | ONESHOT.
-	ubit32 resolutions,		// 1s|100ms|10ms|1ms|100ns|10ns|1ns
 	zkcmTimerDeviceC::ioLatencyE ioLatency,	// LOW, MODERATE or HIGH
 	zkcmTimerDeviceC::precisionE precision,	// EXACT, NEGLIGABLE,
 						// OVERFLOW or UNDERFLOW
@@ -70,14 +70,9 @@ zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerDevices(
 		source != __KNULL;
 		source = timers.getNextItem(handle))
 	{
-		__kprintf(CC"In loop\n");
 		// Must meet all of the criteria passed to us.
 		if (source->capabilities.type != type) { continue; };
 		if (!timerFilters::modes(source, modes, flags)) { continue; };
-		if (!timerFilters::resolutions(source, resolutions, flags)) {
-			continue;
-		};
-
 		if (!timerFilters::ioLatency(source, ioLatency, flags)) {
 			continue;
 		};

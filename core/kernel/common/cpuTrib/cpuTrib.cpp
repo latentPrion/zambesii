@@ -70,6 +70,21 @@ error_t cpuTribC::fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId)
 	return ERROR_SUCCESS;
 }
 
+error_t cpuTribC::initializeBspTaskStream(void)
+{
+	error_t		ret;
+
+	/**	EXPLANATION:
+	 * Called at boot to enable co-operative level scheduling on the BSP's
+	 * Task Stream. Does not touch the BSP CPU's CPU Stream -- only the
+	 * Task Stream member object.
+	 **/
+	ret = bspCpu.taskStream.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	return bspCpu.taskStream.cooperativeBind();
+}
+
 error_t cpuTribC::initialize2(void)
 {
 	error_t			ret;

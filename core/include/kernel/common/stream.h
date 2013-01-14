@@ -45,7 +45,7 @@ public:
 	};
 
 public:
-	virtual void bind(void) {};
+	virtual error_t bind(void) { return ERROR_SUCCESS; };
 	virtual void cut(void) {};
 
 // jumpListC interface.

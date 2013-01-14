@@ -1,13 +1,15 @@
 
 #include <scaling.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
-
+#include <__kthreads/__korientation.h>
 
 taskStreamC::taskStreamC(cpuStreamC *parent)
 :
+load(0), capacity(0),
 roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
 dormantQ(SCHEDPRIO_MAX_NPRIOS),
 parentCpu(parent)
@@ -21,6 +23,64 @@ parentCpu(parent)
 	if (parentCpu->magic != CPUSTREAM_MAGIC) {
 		currentTask = &__kcpuPowerOnThread;
 	};
+}
+
+error_t taskStreamC::initialize(void)
+{
+	error_t		ret;
+
+	ret = realTimeQ.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = roundRobinQ.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = dormantQ.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	return ERROR_SUCCESS;
+}
+
+void taskStreamC::dump(void)
+{
+	__kprintf(NOTICE TASKSTREAM"%d: load %d, capacity %d, "
+		"currentTask 0x%x(@0x%p): dump.\n",
+		parentCpu->id,
+		load, capacity, currentTask->id, currentTask);
+
+	roundRobinQ.dump();
+asm volatile("hlt\n\t");
+	realTimeQ.dump();
+}
+
+error_t taskStreamC::cooperativeBind(void)
+{
+	/**	EXPLANATION:
+	 * This function is only ever called on the BSP CPU's Task Stream,
+	 * because only the BSP task stream will ever be deliberately co-op
+	 * bound without even checking for the presence of pre-empt support.
+	 *
+	 * At boot, co-operative scheduling is needed to enable certain kernel
+	 * services to run, such as the timer services, etc. The timer trib
+	 * service for example uses a worker thread to dispatch timer queue
+	 * request objects. There must be a simple scheduler in place to enable
+	 * thread switching.
+	 *
+	 * Thus, here we are. To enable co-operative scheduling, we simply
+	 * bring up the BSP task stream, add the __korientation thread to it,
+	 * then exit.
+	 **/
+	__korientationThread.schedPolicy = taskC::ROUND_ROBIN;
+	__korientationThread.schedOptions = 0;
+	__korientationThread.internalPrio = SCHEDPRIO_DEFAULT;
+	// Orientation is given its own internal prio; no prio class.
+	__korientationThread.schedPrio = &__korientationThread.internalPrio;
+	__korientationThread.schedFlags = 0;
+
+	return roundRobinQ.insert(
+		&__korientationThread,
+		*__korientationThread.schedPrio,
+		__korientationThread.schedOptions);
 }
 
 status_t taskStreamC::schedule(taskC *task)

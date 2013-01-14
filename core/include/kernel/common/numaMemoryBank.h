@@ -18,7 +18,7 @@
  * memory for *different banks* all mixed up together. So a single NUMA bank
  * isn't necessarily physically a single memory range.
  *
- * Zambezii handles this messy problem by allowing multiple physical memory
+ * Zambesii handles this messy problem by allowing multiple physical memory
  * allocation bitmaps to exist on each NUMA Memory bank. There is another way
  * to do this: Use a single bitmap object per NUMA bank, and make it as large
  * as the whole physical span of memory that covers all memory ranges that the

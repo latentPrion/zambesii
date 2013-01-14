@@ -435,7 +435,7 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 
 		if (tmpSize > 0)
 		{
-#ifdef CONFIG_DEBUG_NUMATRIB
+#ifdef CONFIG_DEBUG_MEMTRIB
 			__kprintf(NOTICE MEMTRIB
 				"For memrange %d, on bank %d, base 0x%P, size "
 				"0x%P, next entry base 0x%P, shbank memory "

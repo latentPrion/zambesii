@@ -21,6 +21,7 @@ void *calloc(uarch_t objSize, uarch_t nObjs)
 
 void free(void *mem)
 {
+	if (mem == __KNULL) { return; };
 	memReservoir.free(mem);
 }
 

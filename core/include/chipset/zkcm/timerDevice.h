@@ -41,12 +41,18 @@ public:
 	enum modeE { PERIODIC=0, ONESHOT, UNINITIALIZED };
 
 	zkcmTimerDeviceC(
-		timerTypeE type, ubit32 modes, ubit32 resolutions,
+		timerTypeE type, ubit32 modes,
+		ubit32 periodicMinPeriod, ubit32 periodicMaxPeriod,
+		ubit32 oneshotMinTimeout, ubit32 oneshotMaxTimeout,
 		ioLatencyE ioLatency, precisionE precision,
 		zkcmDeviceC *device)
 	:
 	zkcmDeviceBaseC(device),
-	capabilities(type, modes, resolutions, ioLatency, precision)
+	capabilities(
+		type, modes,
+		periodicMinPeriod, periodicMaxPeriod,
+		oneshotMinTimeout, oneshotMaxTimeout,
+		ioLatency, precision)
 	{}
 
 public:
@@ -60,6 +66,17 @@ public:
 	// Call disable() before setting timer options, then enable() again.
 	virtual status_t setPeriodicMode(struct timeS interval)=0;
 	virtual status_t setOneshotMode(struct timeS timeout)=0;
+	virtual void getOneshotModeMinMaxTimeout(timeS *min, timeS *max)
+	{
+		min->nseconds = capabilities.oneshotMinTimeout;
+		max->nseconds = capabilities.oneshotMaxTimeout; 
+	}
+	
+	virtual void getPeriodicModeMinMaxPeriods(timeS *min, timeS *max)
+	{
+		min->nseconds = capabilities.periodicMinPeriod;
+		max->nseconds = capabilities.periodicMaxPeriod;
+	}
 
 	/* When a timer source has a 'capability.precision' other than
 	 * EXACT or NEGLIGABLE, this API call will return the exact nanosecond
@@ -159,11 +176,17 @@ public:
 	struct capabilitiesS
 	{
 		capabilitiesS(
-			timerTypeE type, ubit32 modes, ubit32 resolutions,
+			timerTypeE type, ubit32 modes,
+			ubit32 periodicMinPeriod, ubit32 periodicMaxPeriod,
+			ubit32 oneshotMinTimeout, ubit32 oneshotMaxTimeout,
 			ioLatencyE ioLatency, precisionE precision)
 		:
 		type(type), ioLatency(ioLatency), precision(precision),
-		modes(modes), resolutions(resolutions)
+		modes(modes),
+		periodicMinPeriod(periodicMinPeriod),
+		periodicMaxPeriod(periodicMaxPeriod),
+		oneshotMinTimeout(oneshotMinTimeout),
+		oneshotMaxTimeout(oneshotMaxTimeout)
 		{}
 		
 		timerTypeE	type;
@@ -171,8 +194,8 @@ public:
 		precisionE	precision;
 		// Capabilities (bitfield): PERIODIC, ONESHOT.
 		ubit32		modes;
-		// Resolutions (bitfield): 1s, 100ms 10ms 1ms, 100ns 10ns 1ns.
-		ubit32		resolutions;
+		ubit32		periodicMinPeriod, periodicMaxPeriod;
+		ubit32		oneshotMinTimeout, oneshotMaxTimeout;
 	} capabilities;
 
 	struct stateS
@@ -191,6 +214,7 @@ public:
 		ubit32		period;
 		// For oneshot mode: stores the current timeout date and time.
 		timeS		currentTimeout;
+		timeS		currentInterval;
 	};
 
 	sharedResourceGroupC<waitLockC, stateS>	state;

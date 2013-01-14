@@ -46,7 +46,6 @@ void timerTribC::initialize100msQueue(void)
 	dev = zkcmCore.timerControl.filterTimerDevices(
 		zkcmTimerDeviceC::CHIPSET,
 		0,
-		ZKCM_TIMERDEV_CAP_RES_100MS,
 		zkcmTimerDeviceC::MODERATE,
 		zkcmTimerDeviceC::NEGLIGABLE,
 		TIMERCTL_FILTER_SKIP_LATCHED
@@ -54,14 +53,16 @@ void timerTribC::initialize100msQueue(void)
 		| TIMERCTL_FILTER_IO_OR_BETTER
 		| TIMERCTL_FILTER_PREC_OR_BETTER,
 		&handle);
-__kprintf(CC"Failed to find\n");
+
 	if (dev == __KNULL)
 	{
+		__kprintf(WARNING TIMERTRIB"initialize100ms: Loosening filter "
+			"criteria.\n");
+
 		handle = __KNULL;
 		dev = zkcmCore.timerControl.filterTimerDevices(
 			zkcmTimerDeviceC::CHIPSET,
 			0,
-			ZKCM_TIMERDEV_CAP_RES_100MS,
 			(zkcmTimerDeviceC::ioLatencyE)0,
 			(zkcmTimerDeviceC::precisionE)0,
 			TIMERCTL_FILTER_SKIP_LATCHED
@@ -108,7 +109,6 @@ void timerTribC::initialize10msQueue(void)
 	dev = zkcmCore.timerControl.filterTimerDevices(
 		zkcmTimerDeviceC::CHIPSET,
 		0,
-		ZKCM_TIMERDEV_CAP_RES_10MS,
 		zkcmTimerDeviceC::MODERATE,
 		zkcmTimerDeviceC::NEGLIGABLE,
 		TIMERCTL_FILTER_SKIP_LATCHED
@@ -123,7 +123,6 @@ void timerTribC::initialize10msQueue(void)
 		dev = zkcmCore.timerControl.filterTimerDevices(
 			zkcmTimerDeviceC::CHIPSET,
 			0,
-			ZKCM_TIMERDEV_CAP_RES_10MS,
 			(zkcmTimerDeviceC::ioLatencyE)0,
 			(zkcmTimerDeviceC::precisionE)0,
 			TIMERCTL_FILTER_SKIP_LATCHED
@@ -161,7 +160,6 @@ void timerTribC::initialize1msQueue(void)
 	dev = zkcmCore.timerControl.filterTimerDevices(
 		zkcmTimerDeviceC::CHIPSET,
 		0,
-		ZKCM_TIMERDEV_CAP_RES_1MS,
 		zkcmTimerDeviceC::MODERATE,
 		zkcmTimerDeviceC::NEGLIGABLE,
 		TIMERCTL_FILTER_SKIP_LATCHED
@@ -176,7 +174,6 @@ void timerTribC::initialize1msQueue(void)
 		dev = zkcmCore.timerControl.filterTimerDevices(
 			zkcmTimerDeviceC::CHIPSET,
 			0,
-			ZKCM_TIMERDEV_CAP_RES_1MS,
 			(zkcmTimerDeviceC::ioLatencyE)0,
 			(zkcmTimerDeviceC::precisionE)0,
 			TIMERCTL_FILTER_SKIP_LATCHED
@@ -203,17 +200,12 @@ void timerTribC::initialize1msQueue(void)
 
 error_t timerTribC::initialize(void)
 {
-	error_t			ret;
 	ubit8			h, m, s;
 
 	/**	EXPLANATION:
-	 * Initializes the chipset's Timer Control ZKCM module, fills out the
-	 * boot timestamp, and sets up the Timer Tributary's Timer queues.
-	 **/
-	ret = zkcmCore.timerControl.initialize();
-	if (ret != ERROR_SUCCESS) {
-		return ret;
-	};
+	 * Fills out the boot timestamp and sets up the Timer Tributary's Timer
+	 * queues.
+	 */
 
 	/* For chipsets which have accurate time keeping hardware, the following
 	 * step is not necessary and those chipsets will generally do nothing.
@@ -241,20 +233,21 @@ error_t timerTribC::initialize(void)
 	m = (bootTimestamp.time.seconds / 60) - (h * 60);
 	s = bootTimestamp.time.seconds % 60;
 
-	__kprintf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d,\n"
-		"\tTime %d:%d:%d, %dns.\n",
+	__kprintf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d, "
+		"Time %d:%d:%d, %dns.\n",
 		TIMERTRIB_DATE_GET_YEAR(bootTimestamp.date),
 		TIMERTRIB_DATE_GET_MONTH(bootTimestamp.date),
 		TIMERTRIB_DATE_GET_DAY(bootTimestamp.date),
 		h, m, s, bootTimestamp.time.nseconds);
 
 	// Now set up the timer queues.
-	/*safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
+	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
 	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_100MS_SAFE)) {
+__kprintf(NOTICE TIMERTRIB"initialize(): about to init 100ms queue.\n");
 		initialize100msQueue();
 	};
 
-	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE)) {
+	/*if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE)) {
 		initialize10msQueue();
 	};
 

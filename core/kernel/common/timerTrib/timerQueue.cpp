@@ -1,5 +1,6 @@
 
 #include <__kstdlib/__kclib/string.h>
+#include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/timerTrib/timerQueue.h>
 
 
@@ -19,7 +20,7 @@ error_t timerQueueC::initialize(zkcmTimerDeviceC *device)
 	 **/
 	if (device == __KNULL) { return ERROR_INVALID_ARG; };
 
-	device->latch(__KPROCESSID);
+	device->latch(&timerTrib.__ktimerStream);
 
 	stamp.seconds = 0;
 	stamp.nseconds = nativePeriod;
@@ -46,7 +47,6 @@ error_t timerQueueC::enable(void)
 	device->enable();
 	acceptingRequests = 1;
 	return ERROR_SUCCESS;
-
 }
 
 void timerQueueC::disable(void)

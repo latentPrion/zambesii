@@ -35,8 +35,9 @@ sarch_t vaddrSpaceStreamC::initialize(
 	return vSwamp.initialize(swampStart, swampSize, holeMap);
 }
 
-void vaddrSpaceStreamC::bind(void)
+error_t vaddrSpaceStreamC::bind(void)
 {
+	return ERROR_SUCCESS;
 }
 
 void vaddrSpaceStreamC::cut(void)

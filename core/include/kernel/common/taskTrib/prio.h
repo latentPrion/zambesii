@@ -32,9 +32,6 @@
  *		of their peer priority thread list by default.
  **/
 
-#define SCHEDPOLICY_ROUND_ROBIN		0x1
-#define SCHEDPOLICY_REAL_TIME		0x2
-
 #define SCHEDPRIO_MAX_NPRIOS		20
 #define SCHEDPRIO_DEFAULT		10
 

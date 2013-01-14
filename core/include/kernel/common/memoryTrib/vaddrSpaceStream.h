@@ -55,7 +55,7 @@ public:
 
 public:
 	void cut(void);
-	void bind(void);
+	error_t bind(void);
 	void dump(void);
 
 public:
