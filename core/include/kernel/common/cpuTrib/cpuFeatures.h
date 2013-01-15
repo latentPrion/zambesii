@@ -2,6 +2,7 @@
 	#define _CPU_FEATURES_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/string.h>
 	#include <kernel/common/cpuTrib/archCpuFeatures.h>
 
 #define CPUFEAT_FPULEVEL_NONE		0
@@ -16,6 +17,11 @@
 
 struct cpuFeaturesS
 {
+	cpuFeaturesS(void)
+	{
+		memset(this, 0, sizeof(*this));
+	}
+
 	utf8Char		/**cpuFamily, */*cpuName;
 	ubit16			clockMhz;
 	ubit8			fpuLevel;

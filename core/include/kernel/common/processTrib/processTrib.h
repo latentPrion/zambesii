@@ -33,9 +33,7 @@ public:
 	processTribC(void);
 
 public:
-	// Init __kprocess, __korientation & boot CPU Stream.
 	error_t initialize(void);
-	error_t initialize2(void);
 
 public:
 	processStreamC *__kgetProcess(void) { return &__kprocess; };
@@ -62,7 +60,8 @@ private:
 };
 
 extern processTribC	processTrib;
-extern sharedResourceGroupC<multipleReaderLockC, processStreamC **>	processes;
+extern sharedResourceGroupC<multipleReaderLockC, processStreamC **>
+	processes;
 
 
 /**	Inline Methods

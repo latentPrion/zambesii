@@ -22,31 +22,6 @@ __kprocess(0x0, 0x0), nextProcId(CHIPSET_MEMORY_MAX_NPROCESSES - 1)
 
 error_t processTribC::initialize(void)
 {
-	__kprocess.tasks[0] = &__korientationThread;
-	__kprocess.absName = (utf8Char *)":ekfs/zambezii.zxe";
-	__kprocess.argString = __KNULL;
-	__kprocess.env = __KNULL;
-	__kprocess.memoryStream = &memoryTrib.__kmemoryStream;
-	__kprocess.timerStream = &timerTrib.__ktimerStream;
-
-	// Init __korientation thread.
-	memset(&__korientationThread, 0, sizeof(__korientationThread));
-
-	__korientationThread.id = 0x0;
-	__korientationThread.parent = &__kprocess;
-	__korientationThread.stack0 = __korientationStack;
-	__korientationThread.nLocksHeld = 0;
-	// Init cpuConfig and numaConfig BMPs later.
-	__korientationThread.defaultMemoryBank.rsrc =
-		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
-
-	__kprocess.initMagic = PROCESS_INIT_MAGIC;
-
-	return ERROR_SUCCESS;
-}
-
-error_t processTribC::initialize2(void)
-{
 	// Allocate the array of processes.
 	processes.rsrc = new processStreamC *[CHIPSET_MEMORY_MAX_NPROCESSES];
 	if (processes.rsrc == __KNULL) {

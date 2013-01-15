@@ -12,7 +12,6 @@
 	#include <kernel/common/cpuTrib/cpuFeatures.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
-	#include <kernel/common/cpuTrib/cpuStreamArchBlock.h>
 	#include <kernel/common/taskTrib/taskStream.h>
 
 // "CPU OK" :/
@@ -55,6 +54,9 @@ public:
 	error_t initialize(void);
 	sarch_t isInitialized(void);
 	~cpuStreamC(void);
+
+	error_t initializeBspCpuLocking(void);
+	error_t initializeBspCpuTaskStream(void);
 
 public:
 	status_t powerControl(ubit16 command, uarch_t flags);
@@ -114,7 +116,6 @@ public:
 	 * the stack can handle N pushes of the arch's word size.
 	 **/
 	ubit8			sleepStack[PAGING_BASE_SIZE];
-	cpuStreamArchBlockS	archBlock;
 #if __SCALING__ >= SCALING_SMP
 	interCpuMessagerC	interCpuMessager;
 #endif

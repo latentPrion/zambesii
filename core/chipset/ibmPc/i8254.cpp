@@ -151,7 +151,6 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 error_t i8254PitC::enable(void)
 {
 	error_t		ret;
-	void		*owner;
 
 	state.lock.acquire();
 	if (state.rsrc.mode == UNINITIALIZED)
@@ -162,6 +161,7 @@ error_t i8254PitC::enable(void)
 	state.lock.release();
 
 	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
+
 	/**	EXPLANATION:
 	 * 1. Lookup the correct __kpin for our IRQ (ISA IRQ 0).
 	 * 2. Register our ISR with the kernel on the correct __kpin list.

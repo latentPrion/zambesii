@@ -42,7 +42,6 @@ static x86ManufacturerEntryS		x86Manufacturers[] =
 	{CC"RiseRiseRise"} */
 };
 
-
 void cpuStreamC::baseInit(void)
 {
 	// Load DR0 with a pointer to this CPU's CPU Stream.
@@ -63,10 +62,10 @@ void cpuStreamC::baseInit(void)
 		asm volatile ("lgdt	(x8632GdtPtr)");
 		// Load the kernel's IDT:
 		asm volatile ("lidt	(x8632IdtPtr)");
-	};
 
-	// Load the __kcpuPowerOnThread into the currentTask holder.
-	taskStream.currentTask = &__kcpuPowerOnThread;
+		// Load the __kcpuPowerOnThread into the currentTask holder.
+		taskStream.currentTask = &__kcpuPowerOnThread;
+	};
 }
 
 // Parses a MADT for NMI entries to be used to setup the LAPIC LINT inputs.

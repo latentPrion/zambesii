@@ -41,9 +41,8 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	// Prepare the kernel by zeroing .BSS and calling constructors.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 
-	// processTrib initializes __kprocess & __korientation.
-	DO_OR_DIE(processTrib, initialize(), ret);
-	DO_OR_DIE(cpuTrib, initialize(), ret);
+	// Initializes locking and does baseInit() on BSP CPU.
+	DO_OR_DIE(bspCpu, initializeBspCpuLocking(), ret);
 
 	cxxrtl::callGlobalConstructors();
 	// Initialize the chipset's module package.
@@ -74,22 +73,22 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	// Initialize the kernel Memory Reservoir (heap) and object cache pool.
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
+	DO_OR_DIE(processTrib, initialize(), ret);
 
 	// Enable the Task Stream on the BSP CPU for boot time scheduling.
-	DO_OR_DIE(cpuTrib, initializeBspTaskStream(), ret);
+	DO_OR_DIE(bspCpu, initializeBspCpuTaskStream(), ret);
+for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	// Initialize IRQ Control and chipset bus-pin mapping management.
 	DO_OR_DIE(interruptTrib, initialize2(), ret);
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	// Start the Timer Trib timer services.
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
-for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
-	DO_OR_DIE(processTrib, initialize2(), ret);
-	DO_OR_DIE(cpuTrib, initialize2(), ret);
+	DO_OR_DIE(cpuTrib, initialize(), ret);
 
 	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);

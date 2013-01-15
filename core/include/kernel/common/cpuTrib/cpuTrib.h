@@ -54,9 +54,9 @@ public tributaryC
 {
 public:
 	cpuTribC(void);
+	error_t initializeLocking(void);
+	error_t initializeBspCpuStream(void);
 	error_t initialize(void);
-	error_t initializeBspTaskStream(void);
-	error_t initialize2(void);
 #if __SCALING__ >= SCALING_CC_NUMA
 	error_t numaInit(void);
 #endif
