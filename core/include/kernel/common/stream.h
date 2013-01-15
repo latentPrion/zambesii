@@ -6,8 +6,8 @@
 	#include <kernel/common/waitLock.h>
 
 /**	EXPLANATION:
- * StreamC is a fundamental class in Zambezii which is essential to the
- * Zambezii functional model. The stream is the basic concept which aids
+ * StreamC is a fundamental class in Zambesii which is essential to the
+ * Zambesii functional model. The stream is the basic concept which aids
  * in parallelism, and preemption, since it is essentially a form of
  * per-process or per-thread data.
  *
@@ -20,7 +20,7 @@
  *
  * This way, the patterns of allocation, and usage of resources can be
  * accurately recorded. Also, the kernel can allow for something more
- * dynamic, which is very original and specific to Zambezii:
+ * dynamic, which is very original and specific to Zambesii:
  *
  * If one cuts a process's link to its stream, it is effectively cut off
  * from syscalls for that resource. I.e: cutting a thread's networking

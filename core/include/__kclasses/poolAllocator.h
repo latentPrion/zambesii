@@ -6,7 +6,7 @@
 	#include <__kclasses/memoryPool.h>
 
 /**	EXPLANATION:
- * The Zambezii Pool Allocator is a layer of extra abstraction over the memory
+ * The Zambesii Pool Allocator is a layer of extra abstraction over the memory
  * management in the kernel which removes all concern over the underlying
  * architecture's page size, allowing the kernel to neatly allocate memory of
  * sizes up to as large as the largest pool size.
@@ -22,7 +22,7 @@
  * automatically created based on demand. The kernel must explicitly create a
  * pool size before pools of that maximum size can be used.
  *
- * Generally, the Zambezii memory reservoir (what people call a heap) is managed
+ * Generally, the Zambesii memory reservoir (what people call a heap) is managed
  * by a wrapping class, memReservoirC. memReservoir automatically directs all
  * allocations < PAGING_BASE_SIZE to the object caches.
  *

@@ -5,7 +5,7 @@
 	#include <kernel/common/smpTypes.h>
 
 /**	EXPLANATION:
- * The Zambezii kernel IRQ-controller module subsystem. This subsytem is
+ * The Zambesii kernel IRQ-controller module subsystem. This subsytem is
  * responsible for abstracting access to IRQ controllers from the kernel. Seeing
  * as the only example case at the time of writing is the IBM-PC, this case will
  * be explored as an explanation.

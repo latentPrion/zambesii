@@ -110,7 +110,7 @@ ASM_LOCAL_FUNCTION(__ksaveRegs)
 
 	call	interruptTrib_irqEntry
 
-	/* From a technical POV, Zambezii never should reach here. When we
+	/* From a technical POV, Zambesii never should reach here. When we
 	 * return from a interrupt context, we simply point the stack pointer
 	 * to the context structure and pop and ret, all from within inline ASM
 	 * in C.

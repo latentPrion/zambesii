@@ -37,6 +37,6 @@ A thread can only wait on one RLPA event at a time.
 Without an RLPA registered, the kernel will simply allow all operations to
 occur without any question. Therefore the registration of an RLPA is
 /critical/ to good security. A low level boot shell may be used, and one
-is intended to be provided with Zambezii.
+is intended to be provided with Zambesii.
 
 	

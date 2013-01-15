@@ -11,7 +11,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 /**	EXPLANATION:
- * The Zambezii NUMA Tributary's initialize2() sequence. Its purpose is to
+ * The Zambesii NUMA Tributary's initialize2() sequence. Its purpose is to
  * detect physical memory on a chipset.
  *
  * The kernel does this in several distinct stages:

@@ -73,10 +73,10 @@ Power:	Is taken by the kernel to be of the same level of importance as NMIs.
 	Where the kernel has rule over how to set up NMIs relative to Power
 	event IRQs, it will place them at the same level of importance.
 
-Input:	Zambezii seeks to prioritize responsiveness of the system over
+Input:	Zambesii seeks to prioritize responsiveness of the system over
 	non-interactive throughput.
 
-Network: Zambezii seeks to satisfy network applications with good speed by
+Network: Zambesii seeks to satisfy network applications with good speed by
 	placing network device IRQs at a high priority level. High IRQ load
 	can be mitigated using temporary polling modes, and other known IRQ
 	storm mitigation techniques.

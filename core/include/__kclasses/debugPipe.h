@@ -63,7 +63,7 @@ public:
 	~debugPipeC(void);
 
 public:
-	// Zambezii only supports UTF-8 strings in the kernel.
+	// Zambesii only supports UTF-8 strings in the kernel.
 	void printf(const utf8Char *str, va_list v);
 
 	/**	NOTE:

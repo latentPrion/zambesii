@@ -48,7 +48,7 @@ private:
 	sharedResourceGroupC<waitLockC, quantumClassStateS> custQuantumClass;
 	sharedResourceGroupC<waitLockC, taskQNodeS *>	deadQ;
 
-	// Global machine scheduling statistics. Used for Ocean Zambezii.
+	// Global machine scheduling statistics. Used for Ocean Zambesii.
 	ubit32		load;
 	ubit32		capacity;
 };

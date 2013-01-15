@@ -22,7 +22,7 @@
  * In particular, when loading information on a to-be-instantiated driver, the
  * kernel will quickly try to determine the best way to position the driver's
  * surrounding metalanguage libraries. To do this, first we determine the size
- * of the driver image (all Zambezii UDI drivers are relocated statically to a
+ * of the driver image (all Zambesii UDI drivers are relocated statically to a
  * fixed base address when they are "installed", such that they don't begin at
  * base 0x0).
  *
@@ -37,7 +37,7 @@
  * driver instance's address space.
  *
  * Along with information on how to quickly relocate a driver file/meta lib,
- * is information on where its entry points are within the driver. Zambezii
+ * is information on where its entry points are within the driver. Zambesii
  * would prefer to require that drivers are all statically relocated to a
  * specific base address so that entry points remain as described in the ops
  * vectors.

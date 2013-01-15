@@ -55,7 +55,7 @@ error_t vfsTribC::initialize(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	ret = _vfs.initialize((utf8Char *)"Zambezii VFS Root");
+	ret = _vfs.initialize((utf8Char *)"Zambesii VFS Root");
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};

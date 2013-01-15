@@ -13,8 +13,8 @@ it. The process trbutary has the executable parser subsystem built into it,
 which parses executable formats for the kernel. The parser sub-API allows
 for the loading of executable parsers as well.
 
-The kernel searches for a section by the name of "zambezii" in which it
-expects to find certain data structures. Among them is the zambezii static
+The kernel searches for a section by the name of "Zambesii" in which it
+expects to find certain data structures. Among them is the Zambesii static
 block descriptor structure, which describes all of the executable's static
 data blocks and tells the kernel where to load them in vmem, and what offset
 to begin copying from.

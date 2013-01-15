@@ -9,7 +9,7 @@
 
 /**	EXPLANATION:
  * A memoryBog is essentially the equivalent of what is known as a heap. The
- * Zambezii memory bog is a large block partitioning allocator for the kernel
+ * Zambesii memory bog is a large block partitioning allocator for the kernel
  * which does *not* cache object sizes. All it does is take a specific block
  * size, and allocate blocks of memory of that size. It keeps a linked list
  * of all of the blocks it has allocated for that bog size so far.

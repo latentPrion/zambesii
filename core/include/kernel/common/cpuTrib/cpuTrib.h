@@ -22,7 +22,7 @@
  **/
 
 /**	EXPLANATION:
- * In Zambezii, as long as a CPU physically exists and is plugged in on the
+ * In Zambesii, as long as a CPU physically exists and is plugged in on the
  * chipset, the kernel will maintain a CPU Stream object for it. The sequence
  * of events upon discovering a new CPU is:
  *

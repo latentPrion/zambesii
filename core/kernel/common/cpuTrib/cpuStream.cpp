@@ -51,7 +51,7 @@ error_t cpuStreamC::initializeBspCpuLocking(void)
 {
 	processTrib.__kprocess.tasks[0] = &__korientationThread;
 	processTrib.__kprocess.id = 0;
-	// processTrib.__kprocess.absName = CC":ekfs/zambezii.zxe";
+	// processTrib.__kprocess.absName = CC":ekfs/zambesii.zxe";
 	// processTrib.__kprocess.argString = __KNULL;
 	// processTrib.__kprocess.env = __KNULL;
 	processTrib.__kprocess.memoryStream = &memoryTrib.__kmemoryStream;

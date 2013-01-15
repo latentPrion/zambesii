@@ -32,7 +32,7 @@
  * MEMORYSTREAM_COMMIT_MAX_NFRAMES is the memory allocation request size above
  * which we begin fake mapping.
  *
- * Zambezii will never give out more than MEMORYSTREAM_COMMIT_MAX_NFRAMES + some
+ * Zambesii will never give out more than MEMORYSTREAM_COMMIT_MAX_NFRAMES + some
  * extra pages in one allocation unless MEMALLOC_NO_FAKEMAP is passed along
  * with the allocation request.
  *

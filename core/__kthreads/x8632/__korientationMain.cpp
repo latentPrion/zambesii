@@ -15,12 +15,10 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
-#include <kernel/common/execTrib/execTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 #include <arch/cpuControl.h>
 #include "../chipset/ibmPc/i8254.h"
-#include <__kclasses/prioQueue.h>
 
 int oo=0, pp=0, qq=0, rr=0;
 
@@ -40,11 +38,10 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 
 	// Prepare the kernel by zeroing .BSS and calling constructors.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
-
 	// Initializes locking and does baseInit() on BSP CPU.
 	DO_OR_DIE(bspCpu, initializeBspCpuLocking(), ret);
-
 	cxxrtl::callGlobalConstructors();
+
 	// Initialize the chipset's module package.
 	DO_OR_DIE(zkcmCore, initialize(), ret);
 	DO_OR_DIE(interruptTrib, initialize(), ret);
@@ -89,8 +86,6 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
 	DO_OR_DIE(cpuTrib, initialize(), ret);
-
-	DO_OR_DIE(execTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 
 	ubit8		t;
@@ -110,13 +105,13 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Result of createFolder: %d.\n",
-		vfsTrib.createFolder(static_cast<vfsDirC *>( r ), CC"zambezii"));
+		vfsTrib.createFolder(static_cast<vfsDirC *>( r ), CC"zambesii"));
 
 	__kprintf(NOTICE ORIENT"Result of createFile: %d.\n",
 		vfsTrib.createFile(static_cast<vfsDirC *>( r ), CC"file1"));
 
-	__kprintf(NOTICE ORIENT"result of getPath on :ekfs/zambezii: %d.\n",
-		vfsTrib.getPath(CC":ekfs/zambezii", &t, &r));
+	__kprintf(NOTICE ORIENT"result of getPath on :ekfs/zambesii: %d.\n",
+		vfsTrib.getPath(CC":ekfs/zambesii", &t, &r));
 
 	__kprintf(NOTICE ORIENT"result of getPath on :ekfs/file1: %d.\n",
 		vfsTrib.getPath(CC":ekfs/file1", &t, &r));
@@ -129,7 +124,7 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	for (uarch_t i=0; i<32; i++)
 	{
 		newProc = processTrib.spawn(
-			(const utf8Char *)":ekfs/file1",
+			CC":ekfs/file1",
 			__KNULL,
 			__KNULL,
 			PROCESS_EXECDOMAIN_KERNEL,

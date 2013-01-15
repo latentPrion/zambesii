@@ -4,7 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 
 /**	EXPLANATION:
- * The Zambezii scheduler has a total of 20 priorities to which a task can
+ * The Zambesii scheduler has a total of 20 priorities to which a task can
  * belong. As of this writing, the kernel supports two scheduling policies:
  *	1. Priority-enabled round-robin,
  *	2. Priority-enabled real-time.

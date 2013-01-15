@@ -2,23 +2,23 @@
 
 include Makefile.vars
 #
-# Zambezii Kernel top-level makefile.
+# Zambesii Kernel top-level makefile.
 #
-iso9660: zambezii.iso
-	cp -f zambezii.zxe iso/zambezii/core
+iso9660: zambesii.iso
+	cp -f zambesii.zxe iso/zambesii
 	genisoimage -R -b boot/grub/stage2_eltorito -no-emul-boot \
-	-boot-load-size 4 -boot-info-table -V zambezii -o zambezii.iso iso
+	-boot-load-size 4 -boot-info-table -V zambesii -o zambesii.iso iso
 
 # For my personal use. (~lp).
 imm:
-	cp -f zambezii.zxe /media/hddExtended/zambezii.zxe
-	cp -f zambezii.iso /media/hddExtended/zambezii.iso
+	cp -f zambesii.zxe /media/hddExtended/zambesii.zxe
+	cp -f zambesii.iso /media/hddExtended/zambesii.iso
 
-zambezii.iso: exec
+zambesii.iso: exec
 
-exec: zambezii.zxe
+exec: zambesii.zxe
 
-zambezii.zxe: __kcore drivers libraries resources programs
+zambesii.zxe: __kcore drivers libraries resources programs
 	$(LD) -T core/__klinkScript.ld -o $@ \
 		core.o
 

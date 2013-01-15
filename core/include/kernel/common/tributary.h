@@ -6,7 +6,7 @@
 
 /**	EXPLANATION:
  * TributaryC is a base class with singleton design used to instantiate
- * singleton kernel classes. The way the Zambezii singleton model works
+ * singleton kernel classes. The way the Zambesii singleton model works
  * is:
  *
  * There is a global instance of each class in an __kclassInstances.cpp

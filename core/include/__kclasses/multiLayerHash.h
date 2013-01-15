@@ -11,7 +11,7 @@
 /**	EXPLANATION:
  * The Multi-Layer Hash is used in the VFS to store descriptors. There are two
  * hashes in the VFS: the file Descriptor hash and the directory descriptor
- * hash. These correspond to "VFS inodes" in Linux, except that Zambezii
+ * hash. These correspond to "VFS inodes" in Linux, except that Zambesii
  * distinguishes between VFS File inodes and VFS Directory inodes.
  *
  * The hash always takes a 32-bit key, and will always split it up into 10 bits,
