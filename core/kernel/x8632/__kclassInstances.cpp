@@ -1,10 +1,9 @@
 
-#include <arch/paddr_t.h>
-#include <arch/paging.h>
 #include <platform/pageTables.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
-memoryTribC		memoryTrib(
+
+processTribC		processTrib(
 #ifdef CONFIG_ARCH_x86_32_PAE
 	reinterpret_cast<pagingLevel0S *>( 0xFFFFC000 ),
 #else

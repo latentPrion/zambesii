@@ -14,8 +14,6 @@
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/taskTrib/taskStream.h>
 
-// "CPU OK" :/
-#define CPUSTREAM_MAGIC			0xC1D1101C
 #define CPUSTREAM			"CPU Stream "
 
 #define CPUSTREAM_FLAGS_INITIALIZED	(1<<0)
@@ -56,7 +54,6 @@ public:
 	~cpuStreamC(void);
 
 	error_t initializeBspCpuLocking(void);
-	error_t initializeBspCpuTaskStream(void);
 
 public:
 	status_t powerControl(ubit16 command, uarch_t flags);
@@ -109,7 +106,7 @@ public:
 	// Per CPU scheduler.
 	taskStreamC		taskStream;
 
-	ubit32			flags, magic;
+	ubit32			flags;
 	/* Very small stack used to wake and power down CPUs.
 	 * The number of elements in the array indicates how many pushes the
 	 * stack can handle. Assuming each push is a native word's size,

@@ -51,8 +51,8 @@
  * For example:
  *	struct mystruct		*s;
  *
- *	s = (memoryTrib.__kmemoryStream.vaddrSpaceStream
- *		.*memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages)(1);
+ *	s = (processTrib.__kprocess.memoryStream.vaddrSpaceStream
+ *		.*processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages)(1);
  *
  *	// The address returned by the VMM is page aligned.
  *

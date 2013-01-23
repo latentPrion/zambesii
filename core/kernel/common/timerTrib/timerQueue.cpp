@@ -1,6 +1,6 @@
 
 #include <__kstdlib/__kclib/string.h>
-#include <kernel/common/timerTrib/timerTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/timerTrib/timerQueue.h>
 
 
@@ -21,7 +21,7 @@ error_t timerQueueC::initialize(zkcmTimerDeviceC *device)
 	 **/
 	if (device == __KNULL) { return ERROR_INVALID_ARG; };
 
-	ret = device->latch(&timerTrib.__ktimerStream);
+	ret = device->latch(&processTrib.__kprocess.timerStream);
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(WARNING TIMERQUEUE"%dns: Latch to dev \"%s\" failed."

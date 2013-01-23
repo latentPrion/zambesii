@@ -8,7 +8,7 @@
 #include <__kstdlib/__kclib/string8.h>
 #include <commonlibs/libacpi/rxsdt.h>
 #include <commonlibs/libacpi/facp.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 static void *acpi_tmpMapSdt(void **const context, paddr_t p)
@@ -17,7 +17,7 @@ static void *acpi_tmpMapSdt(void **const context, paddr_t p)
 
 	if (*context == __KNULL)
 	{
-		*context = memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages(
+		*context = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(
 			2);
 
 		if (*context == __KNULL) {
@@ -26,7 +26,7 @@ static void *acpi_tmpMapSdt(void **const context, paddr_t p)
 	};
 
 	nMapped = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		*context, p, 2,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
@@ -46,10 +46,10 @@ void acpiRsdt::destroyContext(void **const context)
 	if (*context == __KNULL) { return; };
 
 	walkerPageRanger::unmap(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		*context, &p, 2, &f);
 
-	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(*context, 2);
+	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(*context, 2);
 	*context = __KNULL;
 }
 
@@ -58,20 +58,20 @@ static void *acpi_mapTable(paddr_t p, uarch_t nPages)
 	void		*ret;
 	status_t	nMapped;
 
-	ret = memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages(nPages);
+	ret = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(nPages);
 
 	if (ret == __KNULL) {
 		return __KNULL;
 	};
 
 	nMapped = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		ret, p, nPages,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
 	if (nMapped < static_cast<status_t>( nPages ))
 	{
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+		processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
 			ret, nPages);
 
 		return __KNULL;
@@ -227,9 +227,9 @@ void acpiRsdt::destroySdt(acpi_sdtS *sdt)
 	// Find out how many pages:
 	nPages = PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1;
 	walkerPageRanger::unmap(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		sdt, &p, nPages, &f);
 
-	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(sdt, nPages);
+	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(sdt, nPages);
 }
 

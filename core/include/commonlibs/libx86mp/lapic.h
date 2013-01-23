@@ -133,6 +133,8 @@ namespace x86Lapic
 	status_t getActiveIrq(
 		cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode);
 
+	sarch_t cpuHasLapic(void);
+
 	sarch_t getPaddr(paddr_t *p);
 	void setPaddr(paddr_t p);
 	error_t mapLapicMem(void);

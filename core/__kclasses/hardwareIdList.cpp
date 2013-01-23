@@ -6,7 +6,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/hardwareIdList.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 hardwareIdListC::hardwareIdListC(void)
@@ -146,7 +146,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 	if (index > maxAllocatedIndex
 		|| maxAllocatedIndex == HWIDLIST_INDEX_INVALID)
 	{
-		tmp = new (memoryTrib.__kmemoryStream.memAlloc(
+		tmp = new (processTrib.__kprocess.memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(
 				sizeof(arrayNodeS)
 					* (index + 1)),
@@ -203,7 +203,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 			&& (!(reinterpret_cast<uarch_t>( old )
 				& PAGING_BASE_MASK_LOW)))
 		{
-			memoryTrib.__kmemoryStream.memFree(old);
+			processTrib.__kprocess.memoryStream.memFree(old);
 		};
 
 		return ERROR_SUCCESS;

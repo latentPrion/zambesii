@@ -9,7 +9,7 @@
 #include <commonlibs/libx86mp/mpTables.h>
 #include <commonlibs/libx86mp/mpDefaultTables.h>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 static struct x86_mpCacheS	cache;
@@ -120,14 +120,14 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	if (!checksumIsValid(ret))
 	{
 		__kprintf(WARNING x86MP"mapMpCfgTable: Invalid checksum.\n");
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+		processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
 			ret, 1);
 
 		return __KNULL;
 	};
 
 	// Free the temporary mapping and its mem, then re-map the cfg table.
-	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
 		(void *)((uarch_t)ret & PAGING_BASE_MASK_HIGH), 1);
 
 	ret = (x86_mpCfgS *)walkerPageRanger::createMappingTo(
@@ -166,10 +166,10 @@ void x86Mp::unmapMpConfigTable(void)
 	// Find out how many pages to unmap, and proceed.
 	nPages = PAGING_BYTES_TO_PAGES(cache.cfg->length) + 1;
 	walkerPageRanger::unmap(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		cache.cfg, &p, nPages, &f);
 
-	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
 		cache.cfg, nPages);
 
 	cache.cfg = __KNULL;

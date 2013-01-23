@@ -9,13 +9,10 @@
 #include <kernel/common/processId.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
-memoryTribC::memoryTribC(
-	pagingLevel0S *level0Accessor, paddr_t level0Paddr
-	)
-:
-__kmemoryStream(__KPROCESSID, level0Accessor, level0Paddr)
+memoryTribC::memoryTribC(void)
 {
 	for (uarch_t i=0; i<CHIPSET_MEMORY_NREGIONS; i++)
 	{
@@ -34,7 +31,8 @@ error_t memoryTribC::__kstreamInit(
 	void *swampStart, uarch_t swampSize, vSwampC::holeMapS *holeMap
 	)
 {
-	return __kmemoryStream.initialize(swampStart, swampSize, holeMap);
+	return processTrib.__kprocess.memoryStream.initialize(
+		swampStart, swampSize, holeMap);
 }
 
 error_t memoryTribC::memRegionInit(void)
@@ -132,7 +130,9 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 	uarch_t		totalFrames;
 	status_t	nFetched, nMapped;
 
-	ret = __kmemoryStream.vaddrSpaceStream.getPages(nPages);
+	ret = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(
+		nPages);
+
 	if (ret == __KNULL) {
 		return __KNULL;
 	};
@@ -154,7 +154,8 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 		if (nFetched > 0)
 		{
 			nMapped = walkerPageRanger::mapInc(
-				&__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+				&processTrib.__kprocess.memoryStream
+					.vaddrSpaceStream.vaddrSpace,
 				(void *)((uarch_t)ret
 					+ (totalFrames * PAGING_BASE_SIZE)),
 				paddr, nFetched,
@@ -183,7 +184,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 	return ret;
 
 returnFailure:
-	__kmemoryStream.vaddrSpaceStream.releasePages(
+	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
 		(void *)((uarch_t)ret + ((totalFrames + (uarch_t)nMapped)
 			* PAGING_BASE_SIZE)),
 		nPages - (totalFrames + nMapped));
@@ -208,7 +209,8 @@ void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
 		tracker += PAGING_BASE_SIZE, _nPages--)
 	{
 		status = walkerPageRanger::unmap(
-			&__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+			&processTrib.__kprocess.memoryStream
+				.vaddrSpaceStream.vaddrSpace,
 			reinterpret_cast<void *>( tracker ),
 			&paddr, 1, &flags);
 
@@ -219,6 +221,7 @@ void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
 	};
 
 	// Now return the virtual addresses to the swamp.
-	__kmemoryStream.vaddrSpaceStream.releasePages(vaddr, nPages);
+	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
+		vaddr, nPages);
 }
 

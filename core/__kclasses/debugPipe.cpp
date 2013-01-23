@@ -8,7 +8,7 @@
 #include <__kstdlib/__kclib/stdarg.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 #define DEBUGPIPE_FLAGS_NOLOG		(1<<0)
@@ -26,7 +26,7 @@ error_t debugPipeC::initialize(void)
 
 	devices.rsrc = 0;
 	// Allocate four pages for UTF-8 expansion buffer.
-	mem = new (memoryTrib.__kmemoryStream.memAlloc(
+	mem = new (processTrib.__kprocess.memoryStream.memAlloc(
 			DEBUGPIPE_CONVERSION_BUFF_NPAGES, MEMALLOC_NO_FAKEMAP))
 			utf8Char;
 

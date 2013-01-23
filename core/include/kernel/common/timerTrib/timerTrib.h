@@ -74,9 +74,6 @@ public:
 
 	void dump(void);
 
-public:
-	timerStreamC		__ktimerStream;
-
 private:
 	// The watchdog timer for the chipset, if it exists.
 	struct watchdogIsrS

@@ -6,7 +6,7 @@
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/rsdp.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 static acpi_sdtCacheS		cache;
@@ -112,7 +112,7 @@ error_t acpi::mapRsdt(void)
 	if (!checksumIsValid(rsdt))
 	{
 		__kprintf(WARNING ACPI"RSDT has invalid checksum.\n");
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+		processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
 			rsdt, 2);
 
 		return ERROR_GENERAL;
@@ -120,7 +120,7 @@ error_t acpi::mapRsdt(void)
 
 	// Find out the RSDT's real size.
 	rsdtNPages = PAGING_BYTES_TO_PAGES(rsdt->hdr.tableLength) + 1;
-	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(rsdt, 2);
+	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(rsdt, 2);
 
 	// Reallocate vmem.
 	rsdt = (acpi_rsdtS *)walkerPageRanger::createMappingTo(

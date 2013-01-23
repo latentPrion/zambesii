@@ -5,7 +5,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 #define NUMAMEMBANK_DEFINDEX_NONE	(-1)
@@ -43,7 +43,7 @@ numaMemoryBankC::~numaMemoryBankC(void)
 		if (!(reinterpret_cast<uarch_t>( tmp->range )
 			& PAGING_BASE_MASK_LOW))
 		{
-			memoryTrib.__kmemoryStream.memFree(tmp->range);
+			processTrib.__kprocess.memoryStream.memFree(tmp->range);
 		};
 		rangePtrCache.free(tmp);
 	} while (1);
@@ -85,7 +85,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	error_t			err;
 
 	// Allocate a new bmp allocator.
-	memRange = new (memoryTrib.__kmemoryStream.memAlloc(
+	memRange = new (processTrib.__kprocess.memoryStream.memAlloc(
 		PAGING_BYTES_TO_PAGES(sizeof(numaMemoryRangeC)),
 		MEMALLOC_NO_FAKEMAP))
 			numaMemoryRangeC(baseAddr, size);
@@ -97,14 +97,14 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	err = memRange->initialize();
 	if (err != ERROR_SUCCESS)
 	{
-		memoryTrib.__kmemoryStream.memFree(memRange);
+		processTrib.__kprocess.memoryStream.memFree(memRange);
 		return err;
 	};
 
 	tmpNode = new (rangePtrCache.allocate()) rangePtrS;
 	if (tmpNode == __KNULL)
 	{
-		memoryTrib.__kmemoryStream.memFree(memRange);
+		processTrib.__kprocess.memoryStream.memFree(memRange);
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -170,7 +170,7 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 			if (!(reinterpret_cast<uarch_t>( cur->range )
 				& PAGING_BASE_MASK_LOW))
 			{
-				memoryTrib.__kmemoryStream.memFree(cur->range);
+				processTrib.__kprocess.memoryStream.memFree(cur->range);
 			};
 			rangePtrCache.free(cur);
 			return ERROR_SUCCESS;

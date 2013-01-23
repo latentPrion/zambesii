@@ -1,9 +1,8 @@
 
-#include <debug.h>
-
 #include <arch/x8632/cpuid.h>
 #include <arch/x8632/gdt.h>
 #include <arch/x8632/cpuEnumeration.h>
+#include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
@@ -147,12 +146,10 @@ static error_t initializeLapic(cpuStreamC *caller)
 	 * LAPIC is soft-enabled before trying to set up the rest of the LAPIC
 	 * operating state.
 	 **/
-	
 	x86Lapic::initializeCache();
-	if (!x86Lapic::lapicMemIsMapped())
+	if (x86Lapic::mapLapicMem() != ERROR_SUCCESS)
 	{
-		panic(FATAL CPUSTREAM"%d: setupLapic(): Somehow the LAPIC "
-			"lib's cached vaddr mapping was corrupted.\n",
+		panic(FATAL CPUSTREAM"%d: setupLapic(): Failed to map LAPIC.\n",
 			caller->cpuId);
 	};
 
@@ -236,16 +233,16 @@ static error_t initializeLapic(cpuStreamC *caller)
 
 	/**	NOTE:
 	 * At this point, the LINT pins on the CPU should be set up. Now we set
-	 * up the LVT entries, calibrate the timer, setup vectors for spurious
-	 * irq, LAPIC error, IPI and LAPIC timer.
+	 * up the LVT entries, setup vectors for spurious irq, LAPIC error, and
+	 * LAPIC timer.
 	 **/
 	return ERROR_SUCCESS;
 }
 
 error_t cpuStreamC::initialize(void)
 {
-	// Init LAPIC (if SMP mode).
-	if (usingChipsetSmpMode()) {
+	// Init LAPIC (if SMP mode). Check for LAPIC first in case it's the BSP.
+	if (usingChipsetSmpMode() && x86Lapic::cpuHasLapic()) {
 		initializeLapic(this);
 	};
 
@@ -256,7 +253,6 @@ error_t cpuStreamC::initialize(void)
 		cpuId, cpuFeatures.cpuName);
 #endif
 
-	__kprintf(NOTICE CPUSTREAM"%d: Initialize() complete.\n", cpuId);
  if (!__KFLAG_TEST(flags, CPUSTREAM_FLAGS_BSP)) { __kprintf(NOTICE CPUSTREAM"%d: reached HLT in initialize.\n", cpuId); for (;;){asm volatile("hlt\n\t");};};
 	return ERROR_SUCCESS;
 }

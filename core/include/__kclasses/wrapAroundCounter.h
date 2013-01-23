@@ -8,8 +8,14 @@
 class wrapAroundCounterC
 {
 public:
-	wrapAroundCounterC(sarch_t maxVal);
-	error_t initialize(void);
+	wrapAroundCounterC(uarch_t maxVal, uarch_t startVal=0)
+	:
+	maxVal((sarch_t)maxVal)
+	{
+		nextVal.rsrc = startVal;
+	};
+
+	error_t initialize(void) { return ERROR_SUCCESS; };
 
 public:
 	sarch_t getNextValue(void **arr, ubit8 secondTry=0);
@@ -22,17 +28,6 @@ private:
 
 /**	Inline methods.
  ****************************************************************************/
-
-inline wrapAroundCounterC::wrapAroundCounterC(sarch_t maxVal)
-{
-	nextVal.rsrc = 0;
-	wrapAroundCounterC::maxVal = static_cast<sarch_t>( maxVal );
-}
-
-inline error_t wrapAroundCounterC::initialize(void)
-{
-	return ERROR_SUCCESS;
-}
 
 inline sarch_t wrapAroundCounterC::getNextValue(void **arr, ubit8 secondTry)
 {

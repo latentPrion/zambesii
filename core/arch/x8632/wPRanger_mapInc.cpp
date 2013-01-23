@@ -1,7 +1,4 @@
 
-#include <debug.h>
-#include <__kclasses/debugPipe.h>
-
 #include <scaling.h>
 #include <arch/paging.h>
 #include <arch/tlbControl.h>
@@ -12,6 +9,8 @@
 #include <kernel/common/process.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+
+#include <kernel/common/processTrib/processTrib.h>
 
 /**	FIXME:
  * When you begin doing userspace stuff, remember that this
@@ -57,8 +56,9 @@ status_t walkerPageRanger::mapInc(
 
 	// Lock off the address spaces to show we mean srs bsns.
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
-		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.acquire();
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
+		->memoryStream.vaddrSpaceStream.vaddrSpace
+		.level0Accessor.lock.acquire();
 
 	for (l0Current = l0Start; l0Current <= l0End; l0Current++)
 	{
@@ -158,7 +158,6 @@ status_t walkerPageRanger::mapInc(
 	};
 
 out:
-
 	// Flush all modified pages, using inter-CPU messages if necessary.
 #if __SCALING__ > SCALING_SMP
 	if (localFlush) {
@@ -172,8 +171,9 @@ out:
 #endif
 	// Release both locks.
 	vaddrSpace->level0Accessor.lock.release();
-	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
-		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.release();
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
+		->memoryStream.vaddrSpaceStream.vaddrSpace
+		.level0Accessor.lock.release();
 
 
 	/*	FIXME:

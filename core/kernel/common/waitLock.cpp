@@ -9,8 +9,8 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-static sharedResourceGroupC<waitLockC, void *>	buffDescriptors[4];
-static utf8Char		buffers[4][8192];
+static sharedResourceGroupC<waitLockC, void *>	buffDescriptors[16];
+static utf8Char		buffers[16][1024];
 
 void waitLockC::acquire(void)
 {

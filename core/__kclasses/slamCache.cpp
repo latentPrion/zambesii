@@ -6,7 +6,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/slamCache.h>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 slamCacheC::slamCacheC(uarch_t objectSize)
@@ -25,7 +25,7 @@ slamCacheC::slamCacheC(uarch_t objectSize)
 error_t slamCacheC::initialize(void)
 {
 	freeList.rsrc = reinterpret_cast<object *>(
-		memoryTrib.__kmemoryStream.memAlloc(
+		processTrib.__kprocess.memoryStream.memAlloc(
 				1, MEMALLOC_NO_FAKEMAP));
 
 	if (freeList.rsrc != __KNULL) {
@@ -99,7 +99,7 @@ status_t slamCacheC::flush(void)
 	{
 		tmp = current;
 		current = current->next;
-		memoryTrib.__kmemoryStream.memFree(tmp);
+		processTrib.__kprocess.memoryStream.memFree(tmp);
 		ret++;
 	};
 
@@ -133,7 +133,7 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredAlloc)
 		if (tmp == __KNULL)
 		{
 			if (requiredAlloc != __KNULL) { *requiredAlloc = 1; };
-			tmp = new (memoryTrib.__kmemoryStream.memAlloc(
+			tmp = new (processTrib.__kprocess.memoryStream.memAlloc(
 				1,
 				MEMALLOC_NO_FAKEMAP | ((localFlush)
 					? MEMALLOC_LOCAL_FLUSH_ONLY:0)))

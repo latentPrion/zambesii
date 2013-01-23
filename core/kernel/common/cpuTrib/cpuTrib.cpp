@@ -35,12 +35,49 @@ static numaBankId_t	highestBankId=0;
 
 cpuTribC::cpuTribC(void)
 {
-	bspId = 0;
+	/**	EXPLANATION
+	 * Even on a uniprocessor build of the kernel, we set this to
+	 * CPUID_INVALID at boot, because "bspId" being equal to INVALID lets
+	 * the kernel know that CPU detection has not yet been run. This fact is
+	 * used when initializing the BSP's scheduler.
+	 *
+	 * In addition, we could have been compiled as a uniprocessor kernel,
+	 * but be running on a possibly multprocessor board. In that case, we
+	 * will be taking advantage of the LAPICs and IO-APICs if possible, and
+	 * will thus need to dynamically detect the BSP's ID anyway. Can't
+	 * safely assume we can call the BSP "0" just because it's a
+	 * uniprocessor kernel build.
+	 **/
+	bspId = CPUID_INVALID;
 	_usingChipsetSmpMode = 0;
 }
 
 cpuTribC::~cpuTribC(void)
 {
+}
+
+error_t cpuTribC::initializeBspCpuStream(void)
+{
+	error_t		ret;
+
+	// Get BSP's hardware ID.
+	bspId = zkcmCore.cpuDetection.getBspId();
+
+	ret = spawnStream(
+#if __SCALING__ >= SCALING_CC_NUMA
+		NUMABANKID_INVALID,
+#endif
+		bspId, 0);
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = bspCpu.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = bspCpu.taskStream.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	return bspCpu.taskStream.cooperativeBind();
 }
 
 error_t cpuTribC::fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId)
@@ -105,18 +142,6 @@ error_t cpuTribC::initialize(void)
 	 * The safest way to handle the case where the chipset module reports an
 	 * unsafe MP environment is to force the kernel not to use MP operation.
 	 **/
-	// Ensure that the CPU info mod is ready for use.
-	ret = zkcmCore.cpuDetection.initialize();
-	if (ret != ERROR_SUCCESS) {
-		__kprintf(ERROR CPUTRIB"initialize2: CPU mod init failed.\n");
-	};
-
-#if __SCALING__ >= SCALING_SMP
-	bspId = zkcmCore.cpuDetection.getBspId();
-#else
-	bspId = 0;
-#endif
-
 #if __SCALING__ >= SCALING_SMP
 	/**	EXPLANATION:
 	 * Next ask the chipset if multi-cpu is safe on this machine. If SMP
@@ -145,8 +170,8 @@ error_t cpuTribC::initialize(void)
 			"\t\tIf your board is a new board, this may indicate\n"
 			"\tthat it is flawed or defective. If it is an old\n"
 			"\tboard, it may just mean that your kernel was built\n"
-			"\twith multi-cpu features that your board simply can't\n"
-			"\thandle.\n");
+			"\twith multi-cpu features that your board simply\n"
+			"\tcan't handle.\n");
 
 		// Small delay.
 		for (uarch_t i=0; i<500000; i++) { cpuControl::subZero(); };
@@ -511,30 +536,43 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 #endif
 	cpuStreamC	*cs;
 
+	if (
+#if __SCALING__ >= SCALING_CC_NUMA
+		(bid == NUMABANKID_INVALID && cid != bspId) ||
+#endif
+		cid == CPUID_INVALID)
+	{
+		return ERROR_UNAUTHORIZED;
+	};
+
 #if __SCALING__ >= SCALING_CC_NUMA
 	/**	EXPLANATION:
 	 * The NUMA case requires that the CPU be assigned to its holding bank.
 	 * The extra NUMA code is really just dealing with that.
 	 **/
-	if ((ncb = getBank(bid)) == __KNULL)
+	if (bid == NUMABANKID_INVALID)
 	{
-		if ((ret = createBank(bid)) != ERROR_SUCCESS)
+		if ((ncb = getBank(bid)) == __KNULL)
 		{
-			__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): "
-				"Failed to create bank.\n",
-				bid, cid, cpuAcpiId);
+			if ((ret = createBank(bid)) != ERROR_SUCCESS)
+			{
+				__kprintf(ERROR CPUTRIB"spawnStream"
+					"(%d, %d, %d): "
+					"Failed to create bank.\n",
+					bid, cid, cpuAcpiId);
 
-			return __KNULL;
+				return __KNULL;
+			};
+			ncb = getBank(bid);
 		};
-		ncb = getBank(bid);
+
+		CHECK_AND_RESIZE_BMP(
+			&ncb->cpus, cid, &ret,
+			"spawnStream", "resident bank");
+
+		if (ret != ERROR_SUCCESS) { return ret; };
+		ncb->cpus.setSingle(cid);
 	};
-
-	CHECK_AND_RESIZE_BMP(
-		&ncb->cpus, cid, &ret,
-		"spawnStream", "resident bank");
-
-	if (ret != ERROR_SUCCESS) { return ret; };
-	ncb->cpus.setSingle(cid);
 #endif
 
 	/**	EXPLANATION:
@@ -542,7 +580,8 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	 * resized to hold the new CPU's bit.
 	 **/
 	CHECK_AND_RESIZE_BMP(
-		&availableCpus, cid, &ret, "spawnStream", "availableCpus");
+		&availableCpus, cid, &ret,
+		"spawnStream", "availableCpus");
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -554,14 +593,15 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	/* Now we simply allocate the CPU stream and add it to the global CPU
 	 * array. Also, do not re-allocate the BSP CPU stream.
 	 **/
-	if (cid != bspId) {
+	if (cid != bspId)
+	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new (memoryTrib.__kmemoryStream.memAlloc(
+		cs = new (processTrib.__kprocess.memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
 			MEMALLOC_NO_FAKEMAP))
 				cpuStreamC(bid, cid, cpuAcpiId);
 #else
-		cs = new (memoryTrib.__kmemoryStream.*memAlloc(
+		cs = new (processTrib.__kprocess.memoryStream.*memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
 			MEMALLOC_NO_FAKEMAP))
 				cpuStreamC(cid, cpuAcpiId);
@@ -569,12 +609,11 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	}
 	else
 	{
-		cs = &bspCpu;
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs->bankId = bid;
+		cs = new (&bspCpu) cpuStreamC(bid, cid, 0);
+#else
+		cs = new (&bspCpu) cpuStreamC(cid, 0);
 #endif
-		cs->cpuAcpiId = cpuAcpiId;
-		cs->initialize();
 	};
 
 	if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
@@ -582,24 +621,24 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	if ((ret = cpuStreams.addItem(cid, cs)) != ERROR_SUCCESS)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): Failed to add "
-			"new CPU stream to list.\n",
+		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): "
+			"Failed to add new CPU stream to list.\n",
 			bid, cid, cpuAcpiId);
 #else
-		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d): Failed to add "
-			"new CPU stream to list.\n",
+		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d): Failed "
+			"to add new CPU stream to list.\n",
 			cid, cpuAcpiId);
 #endif		
 	};
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d,%d): Success.\n",
-		bid, cid, cpuAcpiId);
+		__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d,%d): Success.\n",
+			bid, cid, cpuAcpiId);
 #else
-	__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d): Success.\n",
-		cid, cpuAcpiId);
+		__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d): Success.\n",
+			cid, cpuAcpiId);
 #endif
-	__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_ADD);
+		__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_ADD);
 
 	return ERROR_SUCCESS;
 }
@@ -624,7 +663,7 @@ void cpuTribC::destroyStream(cpu_t cid)
 	cpuStreams.removeItem(cid);
 	__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_REMOVE);
 	cs->~cpuStreamC();
-	memoryTrib.__kmemoryStream.memFree(cs);
+	processTrib.__kprocess.memoryStream.memFree(cs);
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	ncb = getBank(cs->bankId);
@@ -650,7 +689,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 
 	if (err != ERROR_SUCCESS) { return err; };
 
-	ncb = new (memoryTrib.__kmemoryStream.memAlloc(
+	ncb = new (processTrib.__kprocess.memoryStream.memAlloc(
 		PAGING_BYTES_TO_PAGES(sizeof(numaCpuBankC)),
 		MEMALLOC_NO_FAKEMAP))
 			numaCpuBankC;
@@ -664,7 +703,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 			"\n", bankId);
 
 		ncb->~numaCpuBankC();
-		memoryTrib.__kmemoryStream.memFree(ncb);
+		processTrib.__kprocess.memoryStream.memFree(ncb);
 		return err;
 	}
 
@@ -685,7 +724,7 @@ void cpuTribC::destroyBank(numaBankId_t bid)
 	availableBanks.unsetSingle(bid);
 	cpuBanks.removeItem(bid);
 	ncb->~numaCpuBankC();
-	memoryTrib.__kmemoryStream.memFree(ncb);
+	processTrib.__kprocess.memoryStream.memFree(ncb);
 }
 #endif
 

@@ -11,31 +11,6 @@
 #include <__kthreads/__korientation.h>
 
 
-// Global array of processes.
-sharedResourceGroupC<multipleReaderLockC, processStreamC **>	processes;
-
-processTribC::processTribC(void)
-:
-__kprocess(0x0, 0x0), nextProcId(CHIPSET_MEMORY_MAX_NPROCESSES - 1)
-{
-}
-
-error_t processTribC::initialize(void)
-{
-	// Allocate the array of processes.
-	processes.rsrc = new processStreamC *[CHIPSET_MEMORY_MAX_NPROCESSES];
-	if (processes.rsrc == __KNULL) {
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	memset(
-		processes.rsrc, 0,
-		sizeof(void *) * CHIPSET_MEMORY_MAX_NPROCESSES);
-
-	processes.rsrc[0] = &__kprocess;
-	return ERROR_SUCCESS;
-}
-
 static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 {
 	error_t		ret;
@@ -47,7 +22,7 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 	return ERROR_SUCCESS;
 }
 
-processStreamC *processTribC::spawn(
+processStreamC *processTribC::spawnStream(
 	const utf8Char *_commandLine,		// Full command line w/ args.
 	bitmapC *cpuAffinity,			// Ocean/NUMA/SMP affinity.
 	void */*elevation*/,			// Privileges.
@@ -62,7 +37,7 @@ processStreamC *processTribC::spawn(
 	processId_t		newId, parentId;
 	sbit32			newIdTmp;
 	uarch_t			rwFlags;
-	processStreamC		*newProc;
+	processStreamC		*newProc=__KNULL;
 	utf8Char		*fileName, *workingDir;
 	/**	NOTES:
 	 * This routine will essentially be the guiding hand to starting up
@@ -110,13 +85,7 @@ processStreamC *processTribC::spawn(
 	parentId = cpuTrib.getCurrentCpuStream()
 		->taskStream.currentTask->parent->id;
 
-	newProc = new processStreamC(newId, parentId);
-	if (newProc == __KNULL)
-	{
-		*err = ERROR_MEMORY_NOMEM;
-		return __KNULL;
-	};
-
+#if 0
 	// Call initialize().
 	*err = newProc->initialize(_commandLine, fileName, workingDir);
 	if (*err != ERROR_SUCCESS)
@@ -174,7 +143,7 @@ processStreamC *processTribC::spawn(
 	// TODO: Handle elevation.
 
 	// 
-
+#endif
 	return newProc;
 }
 

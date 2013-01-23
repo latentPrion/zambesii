@@ -5,7 +5,6 @@
 #include <arch/arch.h>
 #include <arch/memory.h>
 #include <arch/io.h>
-#include <arch/x8632/cpuid.h>
 #include <chipset/memoryAreas.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <platform/cpu.h>
@@ -412,7 +411,6 @@ tryMpTables:
 
 sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 {
-	uarch_t			eax, ebx, ecx, edx;
 	acpi_rsdtS		*rsdt;
 	acpi_rMadtS		*madt;
 	x86_mpCfgIrqSourceS	*mpCfgIrqSource;
@@ -439,14 +437,9 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 	 *	  the first 16 IO-APIC pins, but beyond that, for devices on
 	 *	  any other bus, we have zero information.
 	 **/
-	// This check will work for both x86-32 and x86-64.
-	execCpuid(1, &eax, &ebx, &ecx, &edx);
-	if (!(edx & (1 << 9)))
+	if (!x86Lapic::cpuHasLapic())
 	{
-		__kprintf(ERROR CPUMOD"checkSmpSanity(): CPUID[1].EDX[9] LAPIC "
-			"existence check failed. EDX: %x.\n",
-			edx);
-
+		__kprintf(ERROR CPUMOD"checkSmpSanity(): BSP has no LAPIC.\n");
 		return 0;
 	};
 

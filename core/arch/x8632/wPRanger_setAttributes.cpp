@@ -40,8 +40,9 @@ void walkerPageRanger::setAttributes(
 
 	// Is this SRS BSNS? No WAI!! YES WAI!! O RLLY? YA RLY!!!
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
-		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.acquire();
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
+		->memoryStream.vaddrSpaceStream.vaddrSpace
+		.level0Accessor.lock.acquire();
 
 	l0Current = l0Start;
 	for (; l0Current <= l0End; l0Current++)
@@ -215,8 +216,9 @@ void walkerPageRanger::setAttributes(
 	tlbControl::flushEntryRange(vaddr, nPages);
 #endif
 
-	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
-		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.release();
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
+		->memoryStream.vaddrSpaceStream.vaddrSpace
+		.level0Accessor.lock.release();
 
 	vaddrSpace->level0Accessor.lock.release();
 

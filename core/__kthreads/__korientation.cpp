@@ -6,6 +6,10 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-taskC	__korientationThread(0x0, &processTrib.__kprocess);
+taskC	__korientationThread(
+	0x0, &processTrib.__kprocess,
+	SCHEDPRIO_DEFAULT,
+	TASK_FLAGS_CUSTPRIO);
+
 ubit8	__korientationStack[PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES];
 

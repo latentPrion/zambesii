@@ -23,7 +23,7 @@ class memoryTribC
 public tributaryC
 {
 public:
-	memoryTribC(pagingLevel0S *level0Accessor, paddr_t level0Paddr);
+	memoryTribC(void);
 
 	error_t initialize(
 		void *swampStart, uarch_t swampSize,
@@ -74,7 +74,6 @@ private:
 		zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool);
 
 public:
-	memoryStreamC		__kmemoryStream;
 	bitmapC			availableBanks;
 
 private:

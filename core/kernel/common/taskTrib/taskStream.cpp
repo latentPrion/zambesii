@@ -17,7 +17,7 @@ parentCpu(parent)
 	/* Ensure that the BSP CPU's pointer to __korientation isn't trampled
 	 * by the general case constructor.
 	 **/
-	if (parentCpu->magic != CPUSTREAM_MAGIC) {
+	if (!__KFLAG_TEST(parentCpu->flags, CPUSTREAM_FLAGS_BSP)) {
 		currentTask = &__kcpuPowerOnThread;
 	};
 }
@@ -68,14 +68,11 @@ error_t taskStreamC::cooperativeBind(void)
 	 **/
 	__korientationThread.schedPolicy = taskC::ROUND_ROBIN;
 	__korientationThread.schedOptions = 0;
-	__korientationThread.internalPrio = SCHEDPRIO_DEFAULT;
-	// Orientation is given its own internal prio; no prio class.
-	__korientationThread.schedPrio = &__korientationThread.internalPrio;
 	__korientationThread.schedFlags = 0;
 
 	return roundRobinQ.insert(
 		&__korientationThread,
-		*__korientationThread.schedPrio,
+		__korientationThread.schedPrio->prio,
 		__korientationThread.schedOptions);
 }
 
@@ -93,7 +90,7 @@ status_t taskStreamC::schedule(taskC *task)
 	// Check CPU suitability to run task (FPU, other features).
 
 	// Validate scheduling parameters.
-	if (*task->schedPrio >= SCHEDPRIO_MAX_NPRIOS) {
+	if (task->schedPrio->prio >= SCHEDPRIO_MAX_NPRIOS) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 
@@ -103,14 +100,14 @@ status_t taskStreamC::schedule(taskC *task)
 	case taskC::ROUND_ROBIN:
 		task->schedState = taskC::RUNNABLE;
 		ret = roundRobinQ.insert(
-			task, *task->schedPrio, task->schedOptions);
+			task, task->schedPrio->prio, task->schedOptions);
 
 		break;
 
 	case taskC::REAL_TIME:
 		task->schedState = taskC::RUNNABLE;
 		ret = realTimeQ.insert(
-			task, *task->schedPrio, task->schedOptions);
+			task, task->schedPrio->prio, task->schedOptions);
 
 		break;
 

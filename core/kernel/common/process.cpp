@@ -9,24 +9,9 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
-processStreamC::processStreamC(processId_t processId, processId_t parentProcId)
-:
-id(processId), parentId(parentProcId), nextTaskId(CHIPSET_MEMORY_MAX_NTASKS - 1)
-{
-	if (initMagic == PROCESS_INIT_MAGIC) {
-		return;
-	};
-
-	memset(tasks, 0, sizeof(tasks));
-
-	absName = workingDir = commandLine = __KNULL;
-	env = argString = __KNULL;
-	memoryStream = __KNULL;
-}
-
 error_t processStreamC::initialize(
 	const utf8Char *_commandLine,
-	const utf8Char *_absName,
+	const utf8Char *_fullName,
 	const utf8Char *_workingDir
 	)
 {
@@ -34,13 +19,13 @@ error_t processStreamC::initialize(
 	error_t		ret;
 
 	// Copy off command line, working dir, and exec file path.
-	strLen = strlen8(_absName);
-	absName = new utf8Char[strLen + 1];
-	if (absName == __KNULL) {
+	strLen = strlen8(_fullName);
+	fullName = new utf8Char[strLen + 1];
+	if (fullName == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	strcpy8(absName, _absName);
+	strcpy8(fullName, _fullName);
 
 	strLen = strlen8(_workingDir);
 	workingDir =  new utf8Char[strLen + 1];
@@ -64,26 +49,13 @@ error_t processStreamC::initialize(
 		return ret;
 	};
 
-	// Allocate Memory Stream.
-	memoryStream = new memoryStreamC(
-		id,
-		reinterpret_cast<void *>( 0x1000 ), 0xB0000000, __KNULL,
-		__KNULL, static_cast<paddr_t>( 0 ));
-
-	if (memoryStream == __KNULL) {
-		return ERROR_MEMORY_NOMEM;
-	};
-
 	return ERROR_SUCCESS;
 }
 
 processStreamC::~processStreamC(void)
 {
-	if (absName != __KNULL) {
-		delete absName;
-	};
-	if (memoryStream != __KNULL) {
-		delete memoryStream;
+	if (fullName != __KNULL) {
+		delete fullName;
 	};
 }
 
@@ -182,7 +154,7 @@ error_t processStreamC::spawnThread(
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// New task has inherited as needed. Initialize register context.
-	taskContext::initialize(newTask->context, newTask, entryPoint);
+	taskContext::initialize(&newTask->context, newTask, entryPoint);
 	return taskTrib.schedule(newTask);
 }
 
@@ -190,7 +162,7 @@ taskC *processStreamC::allocateNewThread(processId_t id)
 {
 	taskC		*ret;
  
-	ret = new taskC(id, this);
+	ret = new taskC(id, this, SCHEDPRIO_DEFAULT, TASK_FLAGS_CUSTPRIO);
 	if (ret == __KNULL) { return __KNULL; };
 
 	// Add the new thread to the process's task array.

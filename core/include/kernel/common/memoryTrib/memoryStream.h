@@ -69,14 +69,6 @@ public streamC
 friend class memoryTribC;
 
 public:
-	// Used to initialize userspace process streams.
-	memoryStreamC(
-		uarch_t id,
-		void *swampStart, uarch_t swampSize,
-		vSwampC::holeMapS *holeMap,
-		pagingLevel0S *level0Accessor, paddr_t level0Paddr);
-
-	// Used to initialize the kernel stream.
 	memoryStreamC(uarch_t id,
 		pagingLevel0S *level0Accessor, paddr_t level0Paddr);
 

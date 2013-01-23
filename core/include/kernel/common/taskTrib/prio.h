@@ -2,6 +2,7 @@
 	#define _TASK_PRIORITIES_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/string8.h>
 
 /**	EXPLANATION:
  * The Zambesii scheduler has a total of 20 priorities to which a task can
@@ -40,6 +41,21 @@
 #define QUANTUMCLASS_NCLASSES		5
 
 typedef ubit16		prio_t;
+
+struct prioClassS
+{
+	prioClassS(void) {}
+	prioClassS(const utf8Char *name, prio_t prio)
+	{
+		strcpy8(this->name, name);
+		this->prio = prio;
+	}
+
+	utf8Char	name[32];
+	prio_t		prio;
+};
+
+extern prioClassS	prioClasses[4];
 
 #endif
 

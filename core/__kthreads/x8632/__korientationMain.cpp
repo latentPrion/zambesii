@@ -1,4 +1,6 @@
 
+#include <debug.h>
+
 #include <__ksymbols.h>
 #include <arch/memory.h>
 #include <chipset/zkcm/zkcmCore.h>
@@ -28,7 +30,6 @@ int ghfoo(void)
 	return 0;
 }
 
-
 extern "C" void __korientationMain(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -42,19 +43,22 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(bspCpu, initializeBspCpuLocking(), ret);
 	cxxrtl::callGlobalConstructors();
 
-	// Initialize the chipset's module package.
+	DO_OR_DIE(processTrib, initialize(), ret);
+	// Initialize the chipset's ZKCM package and mask all IRQs.
 	DO_OR_DIE(zkcmCore, initialize(), ret);
 	DO_OR_DIE(interruptTrib, initialize(), ret);
+for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
 	// Initialize the kernel swamp.
 	DO_OR_DIE(
-		memoryTrib.__kmemoryStream,
+		processTrib.__kprocess.memoryStream,
 		initialize(
 			reinterpret_cast<void *>(
 				ARCH_MEMORY___KLOAD_VADDR_BASE + 0x400000 ),
 			0x3FB00000, __KNULL),
 		ret);
 
+	// XXX: I want to initialize __kspace before __kmemoryStream.
 	DO_OR_DIE(memoryTrib, __kspaceInit(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 
@@ -72,9 +76,11 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	DO_OR_DIE(cachePool, initialize(), ret);
 	DO_OR_DIE(processTrib, initialize(), ret);
 
+	// Initialize ZKCM CPU Dectection mod.
+	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	// Enable the Task Stream on the BSP CPU for boot time scheduling.
-	DO_OR_DIE(bspCpu, initializeBspCpuTaskStream(), ret);
-for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
+	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
+//	DO_OR_DIE(processTrib, __kprocessInitialize(), ret);
 	// Initialize IRQ Control and chipset bus-pin mapping management.
 	DO_OR_DIE(interruptTrib, initialize2(), ret);
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
@@ -123,7 +129,7 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
 	for (uarch_t i=0; i<32; i++)
 	{
-		newProc = processTrib.spawn(
+		newProc = processTrib.spawnStream(
 			CC":ekfs/file1",
 			__KNULL,
 			__KNULL,

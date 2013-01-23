@@ -13,21 +13,6 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-// Constructor for userspace streams.
-memoryStreamC::memoryStreamC(
-	uarch_t id,
-	void *swampStart, uarch_t swampSize,
-	vSwampC::holeMapS *holeMap,
-	pagingLevel0S *level0Accessor, paddr_t level0Paddr
-	)
-:
-streamC(id),
-vaddrSpaceStream(
-	id, swampStart, swampSize, holeMap, level0Accessor, level0Paddr)
-{
-	bind();
-}
-
 // Constructor for the kernel stream.
 memoryStreamC::memoryStreamC(uarch_t id,
 	pagingLevel0S *level0Accessor, paddr_t level0Paddr
@@ -85,7 +70,6 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 
 		return reinterpret_cast<void *>( ret );
 	};
-
 	// Calculate the number of frames to commit before fakemapping.
 	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)) {
 		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);

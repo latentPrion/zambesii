@@ -4,6 +4,7 @@
 #include <__kclasses/cachePool.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/debugTrib/debugTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
@@ -22,11 +23,11 @@
  **/
 timerTribC		timerTrib;
 interruptTribC		interruptTrib;
+memoryTribC		memoryTrib;
 debugTribC		debugTrib;
 memReservoirC		memReservoir;
 cpuTribC		cpuTrib;
 debugPipeC		__kdebug;
-processTribC		processTrib;
 taskTribC		taskTrib;
 cachePoolC		cachePool;
 execTribC		execTrib;

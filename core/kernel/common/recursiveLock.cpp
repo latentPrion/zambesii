@@ -20,7 +20,6 @@
 void recursiveLockC::acquire(void)
 {
 	taskC	*task;
-
 	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
 
 #if __SCALING__ >= SCALING_SMP

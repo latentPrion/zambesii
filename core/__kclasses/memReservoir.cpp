@@ -8,7 +8,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 memReservoirC::memReservoirC(void)
@@ -20,7 +20,7 @@ memReservoirC::memReservoirC(void)
 
 error_t memReservoirC::initialize(void)
 {
-	__kbog = new (memoryTrib.__kmemoryStream.memAlloc(
+	__kbog = new (processTrib.__kprocess.memoryStream.memAlloc(
 		1, MEMALLOC_NO_FAKEMAP))
 			memoryBogC(CHIPSET_MEMORY___KBOG_SIZE);
 
@@ -34,7 +34,7 @@ error_t memReservoirC::initialize(void)
 
 	__kbog->initialize();
 
-	bogs.rsrc.ptrs = new (memoryTrib.__kmemoryStream.memAlloc(
+	bogs.rsrc.ptrs = new (processTrib.__kprocess.memoryStream.memAlloc(
 		1, MEMALLOC_NO_FAKEMAP))
 			memoryBogC*;
 
@@ -119,7 +119,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 
 tryStream:
 	// Unable to allocate from the kernel bog. Stream allocate.
-	ret = new (memoryTrib.__kmemoryStream.memAlloc(
+	ret = new (processTrib.__kprocess.memoryStream.memAlloc(
 		PAGING_BYTES_TO_PAGES(nBytes), 0)) reservoirHeaderS;
 
 	if (ret != __KNULL)
@@ -156,7 +156,7 @@ void memReservoirC::free(void *_mem)
 	if (__KFLAG_TEST(
 		(mem->magic & RESERVOIR_FLAGS_MASK), RESERVOIR_FLAGS_STREAM))
 	{
-		memoryTrib.__kmemoryStream.memFree(mem);
+		processTrib.__kprocess.memoryStream.memFree(mem);
 		return;
 	};
 

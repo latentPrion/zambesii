@@ -6,7 +6,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 /**	EXPLANATION:
  * Will peer into the mappings for the given vaddrspace and return the mapping
@@ -51,8 +51,9 @@ status_t walkerPageRanger::lookup(
 
 	// They'll know we're SRS when we lock off the address spaces.
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
-		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.acquire();
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
+		->memoryStream.vaddrSpaceStream.vaddrSpace
+		.level0Accessor.lock.acquire();
 
 	l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Start];
 	if (l0Entry != 0)
@@ -152,8 +153,9 @@ status_t walkerPageRanger::lookup(
 	};
 
 	// Release both locks. Done with the SRS BSNS.
-	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent->memoryStream
-		->vaddrSpaceStream.vaddrSpace.level0Accessor.lock.release();
+	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
+		->memoryStream.vaddrSpaceStream.vaddrSpace
+		.level0Accessor.lock.release();
 
 	vaddrSpace->level0Accessor.lock.release();
 
@@ -173,7 +175,8 @@ void *walkerPageRanger::createMappingTo(
 	paddr <<= PAGING_BASE_SHIFT;
 
 	// Get vmem.
-	ret = memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages(nPages);
+	ret = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(
+		nPages);
 
 	if (ret == __KNULL)
 	{
@@ -186,7 +189,7 @@ void *walkerPageRanger::createMappingTo(
 
 	// Map vmem to paddr.
 	nMapped = mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		ret, paddr, nPages, flags);
 
 	if (nMapped < (signed)nPages)
@@ -195,7 +198,7 @@ void *walkerPageRanger::createMappingTo(
 			"failed.\n",
 			paddr, nPages);
 
-		memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+		processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
 			ret, nPages);
 
 		return __KNULL;

@@ -5,7 +5,7 @@
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/waitLock.h>
 #include <firmware/ibmPcBios/x86emu.h>
 #include "x86EmuAuxFuncs.h"
@@ -28,7 +28,7 @@ error_t ibmPcBios::initialize(void)
 	memset(&M, 0, sizeof(M));
 
 	// Allocate vmem and map in lower memory.
-	M.mem_base = (uarch_t)memoryTrib.__kmemoryStream.vaddrSpaceStream
+	M.mem_base = (uarch_t)processTrib.__kprocess.memoryStream.vaddrSpaceStream
 		.getPages(LOWMEM_NPAGES);
 
 	if (M.mem_base == __KNULL)
@@ -47,7 +47,7 @@ error_t ibmPcBios::initialize(void)
 	 * writes are immediately seen, and in the right order.
 	 **/
 	nMapped = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		(void *)M.mem_base, 0x0, LOWMEM_NPAGES,
 		PAGEATTRIB_WRITE | PAGEATTRIB_CACHE_WRITE_THROUGH |
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
@@ -80,7 +80,7 @@ error_t ibmPcBios::shutdown(void)
 {
 	ibmPcBiosLock.acquire();
 
-	memoryTrib.__kmemoryStream.vaddrSpaceStream.releasePages(
+	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
 		(void *)M.mem_base, LOWMEM_NPAGES);
 
 	M.mem_base = __KNULL;

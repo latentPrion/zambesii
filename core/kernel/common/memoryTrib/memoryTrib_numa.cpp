@@ -5,6 +5,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__kcpuPowerOn.h>
@@ -148,7 +149,7 @@ error_t memoryTribC::createBank(numaBankId_t id)
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// Note the MEMALLOC_NO_FAKEMAP flag: MM code/data should never pgfault.
-	nmb = new (memoryTrib.__kmemoryStream.memAlloc(
+	nmb = new (processTrib.__kprocess.memoryStream.memAlloc(
 		PAGING_BYTES_TO_PAGES(sizeof(numaMemoryBankC)),
 		MEMALLOC_NO_FAKEMAP))
 			numaMemoryBankC(id);
@@ -159,7 +160,7 @@ error_t memoryTribC::createBank(numaBankId_t id)
 
 	ret = memoryBanks.addItem(id, nmb);
 	if (ret != ERROR_SUCCESS) {
-		memoryTrib.__kmemoryStream.memFree(nmb);
+		processTrib.__kprocess.memoryStream.memFree(nmb);
 	};
 
 	availableBanks.setSingle(id);
@@ -174,7 +175,7 @@ void memoryTribC::destroyBank(numaBankId_t id)
 	nmb = getBank(id);
 	memoryBanks.removeItem(id);
 	if (nmb != __KNULL) {
-		__kmemoryStream.memFree(nmb);
+		processTrib.__kprocess.memoryStream.memFree(nmb);
 	};
 }
 

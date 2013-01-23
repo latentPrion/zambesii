@@ -5,6 +5,7 @@
 	#include <arch/taskContext.h>
 	#include <arch/tlbContext.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/bitmap.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
@@ -42,6 +43,8 @@
  * attribute, and not a thread specific attribute.
  **/
 
+#define TASK_FLAGS_CUSTPRIO		(1<<0)
+
 #define TASK_SCHEDFLAGS_SCHED_WAITING	(1<<0)
 
 class processStreamC;
@@ -50,28 +53,47 @@ class cpuStreamC;
 class taskC
 {
 public:
-	taskC(processId_t taskId, processStreamC *parent);
+	enum schedStateE { DORMANT=1, RUNNABLE, RUNNING, UNSCHEDULED };
+	enum schedPolicyE { ROUND_ROBIN, REAL_TIME };
+
+	taskC(
+		processId_t taskId, processStreamC *parentProcess,
+		prio_t prio, uarch_t flags)
+	:
+	stack0(__KNULL), stack1(__KNULL),
+	id(taskId), parent(parentProcess), flags(0),
+	internalPrio(CC"Custom", prio),
+	schedFlags(0), schedState(UNSCHEDULED),
+	currentCpu(__KNULL),
+	nLocksHeld(0)
+	{
+		if (__KFLAG_TEST(flags, TASK_FLAGS_CUSTPRIO))
+		{
+			__KFLAG_SET(this->flags, TASK_FLAGS_CUSTPRIO);
+			schedPrio = &internalPrio;
+		} else {
+			schedPrio = &prioClasses[prio];
+		};
+	}
+
 	error_t initialize(void);
 
 	// Passes down parent attributes to child.
 	error_t cloneStateIntoChild(taskC *child);
 
 public:
-	enum schedStateE { DORMANT=1, RUNNABLE, RUNNING, UNSCHEDULED };
-	enum schedPolicyE { ROUND_ROBIN, REAL_TIME };
-
 	// Do *NOT* move 'stack' from where it is.
 	void		*stack0, *stack1;
 
 	// Basic information.
 	processId_t		id;
 	processStreamC		*parent;
-	taskContextS		*context;
+	taskContextS		context;
 	uarch_t			flags;
 	multipleReaderLockC	lock;
 
 	// Scheduling information.
-	prio_t		*schedPrio, internalPrio;
+	prioClassS	*schedPrio, internalPrio;
 	schedPolicyE	schedPolicy;
 	ubit8		schedOptions;
 	ubit8		schedFlags;
@@ -93,7 +115,7 @@ public:
 #endif
 
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
-	tlbContextS	*tlbContext;
+	tlbContextS	tlbContext;
 #endif
 
 	// Events being waited on by this thread.

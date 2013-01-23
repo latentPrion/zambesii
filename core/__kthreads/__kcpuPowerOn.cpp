@@ -20,7 +20,10 @@ struct __kcpuPowerOnBlockS	__kcpuPowerOnBlock;
  * members are initialized by the CPU Tributary before any CPUs are awakened in
  * cpuTribC::initialize2().
  **/
-taskC	__kcpuPowerOnThread(0x1, &processTrib.__kprocess);
+taskC	__kcpuPowerOnThread(
+	0x1, &processTrib.__kprocess,
+	SCHEDPRIO_DEFAULT,
+	TASK_FLAGS_CUSTPRIO);
 
 // Part of __koptimizationHacks.cpp.
 void (*__kcpuPowerOnInit(void))()

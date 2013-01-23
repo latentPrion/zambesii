@@ -5,7 +5,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/memoryBog.h>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 #define MEMORYBOG_SIZE_ROUNDUP(__size)			\
@@ -333,7 +333,7 @@ memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 {
 	bogBlockS	*ret;
 
-	ret = new (memoryTrib.__kmemoryStream.memAlloc(
+	ret = new (processTrib.__kprocess.memoryStream.memAlloc(
 		PAGING_BYTES_TO_PAGES(
 			blockSize + sizeof(bogBlockS)),
 			MEMALLOC_PURE_VIRTUAL)) bogBlockS;

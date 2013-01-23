@@ -1,12 +1,13 @@
 
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
+#include <arch/x8632/cpuid.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/lapic.h>
 #include <commonlibs/libx86mp/mpTables.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 #define x86_LAPIC_NPAGES		4
@@ -38,6 +39,23 @@ sarch_t x86Lapic::getPaddr(paddr_t *p)
 	return (cache.p != 0);
 }
 
+sarch_t x86Lapic::cpuHasLapic(void)
+{
+	uarch_t			eax, ebx, ecx, edx;
+
+	execCpuid(1, &eax, &ebx, &ecx, &edx);
+	if (!(edx & (1 << 9)))
+	{
+		__kprintf(ERROR x86LAPIC"checkSmpSanity(): CPUID[1].EDX[9] "
+			"LAPIC existence check failed. EDX: %x.\n",
+			edx);
+
+		return 0;
+	};
+
+	return 1;
+}
+
 sarch_t x86Lapic::lapicMemIsMapped(void)
 {
 	if (cache.magic == x86LAPIC_MAGIC && cache.v != __KNULL) {
@@ -52,8 +70,10 @@ error_t x86Lapic::mapLapicMem(void)
 	void		*v;
 	status_t	nMapped;
 
+	if (cache.v != __KNULL) { return ERROR_SUCCESS; };
+
 	// Map the LAPIC per-contextual paddr to a the kernel's vaddrspace.
-	v = memoryTrib.__kmemoryStream.vaddrSpaceStream.getPages(
+	v = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(
 		x86_LAPIC_NPAGES);
 
 	if (v == __KNULL)
@@ -64,7 +84,7 @@ error_t x86Lapic::mapLapicMem(void)
 
 	// Fact worth noting: Linux maps the APICs as uncacheable.
 	nMapped = walkerPageRanger::mapInc(
-		&memoryTrib.__kmemoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		v, p, x86_LAPIC_NPAGES,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE | PAGEATTRIB_SUPERVISOR
 		| PAGEATTRIB_CACHE_WRITE_THROUGH);

@@ -11,7 +11,7 @@
 #include <__kclasses/memBmp.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 #define MEMBMP_FULL_SLOT		(~((uarch_t)0))
 #define MEMBMP_ALLOC_UNSUCCESSFUL	(~((uarch_t)0))
@@ -114,7 +114,7 @@ error_t memBmpC::initialize(void *preAllocated)
 	}
 	else
 	{
-		bmp.rsrc.bmp = new (memoryTrib.__kmemoryStream.memAlloc(
+		bmp.rsrc.bmp = new (processTrib.__kprocess.memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(bmpSize),
 			MEMALLOC_NO_FAKEMAP))
 				uarch_t[nIndexes];
@@ -142,7 +142,7 @@ memBmpC::~memBmpC(void)
 {
 	if (__KFLAG_TEST(flags, MEMBMP_FLAGS_DYNAMIC))
 	{
-		memoryTrib.__kmemoryStream.memFree(bmp.rsrc.bmp);
+		processTrib.__kprocess.memoryStream.memFree(bmp.rsrc.bmp);
 	};
 }
 
