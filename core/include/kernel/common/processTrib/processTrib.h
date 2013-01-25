@@ -76,6 +76,10 @@ private:
 };
 
 extern processTribC	processTrib;
+#if __SCALING__ >= SCALING_SMP
+extern ubit8		__kprocessCpuAffinityBmpMem[];
+extern ubit8		__kprocessCpuTraceBmpMem[];
+#endif
 
 
 /**	Inline Methods

@@ -1,7 +1,7 @@
 
 #include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kbitManipulation.h>
-#include <__kstdlib/__kclib/string8.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/bitmap.h>
 
@@ -11,23 +11,39 @@
 
 bitmapC::bitmapC(void)
 {
+	preAllocated = 0;
+	preAllocatedSize = 0;
 	bmp.rsrc.bmp = __KNULL;
 	bmp.rsrc.nBits = 0;
 }
 
 bitmapC::bitmapC(ubit32 nBits)
 {
+	preAllocated = 0;
+	preAllocatedSize = 0;
 	initialize(nBits);
 }
 
-error_t bitmapC::initialize(ubit32 nBits)
+error_t bitmapC::initialize(
+	ubit32 nBits,
+	void *preAllocatedMemory, ubit16 preAllocatedMemorySize
+	)
 {
 	ubit32		nIndexes;
 
 	nIndexes = __KMATH_NELEMENTS(
 		nBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__));
 
-	bmp.rsrc.bmp = new uarch_t[nIndexes];
+	if (preAllocatedMemory != __KNULL)
+	{
+		preAllocated = 1;
+		preAllocatedSize = preAllocatedMemorySize;
+	};
+
+	bmp.rsrc.bmp = (preAllocatedMemory != __KNULL)
+		? new (preAllocatedMemory) uarch_t[nIndexes]
+		: new uarch_t[nIndexes];
+
 	if (bmp.rsrc.bmp == __KNULL && nBits != 0)
 	{
 		bmp.rsrc.nBits = 0;
@@ -35,7 +51,7 @@ error_t bitmapC::initialize(ubit32 nBits)
 	};
 
 	bmp.rsrc.nBits = nBits;
-	memset8(bmp.rsrc.bmp, 0, nIndexes * sizeof(*bmp.rsrc.bmp));
+	memset(bmp.rsrc.bmp, 0, nIndexes * sizeof(*bmp.rsrc.bmp));
 	return ERROR_SUCCESS;
 }	
 
@@ -58,11 +74,12 @@ void bitmapC::merge(bitmapC *b)
 
 bitmapC::~bitmapC(void)
 {
-	if (bmp.rsrc.bmp != __KNULL)
-	{
+	if (!preAllocated && bmp.rsrc.bmp != __KNULL) {
 		delete bmp.rsrc.bmp;
-		bmp.rsrc.nBits = 0;
 	};
+
+	bmp.rsrc.nBits = 0;
+	preAllocated = 0;
 }
 
 void bitmapC::lock(void)
@@ -117,17 +134,35 @@ sarch_t bitmapC::test(ubit32 bit)
 
 error_t bitmapC::resizeTo(ubit32 nBits)
 {
-	ubit32		*tmp, currentBits, nIndexes;
+	uarch_t		*tmp, *oldmem;
+	ubit32		currentBits, nIndexes;
 	error_t		ret;
 
+	/* If the BMP was pre-allocated and the amount of memory that was
+	 * assigned to it is enough to forego re-allocation, exit early.
+	 **/
+	if (preAllocated
+		&& preAllocatedSize >= __KMATH_NELEMENTS(nBits, sizeof(ubit8)))
+	{
+		bmp.lock.acquire();
+		bmp.rsrc.nBits = nBits;
+		bmp.lock.release();
+		return ERROR_SUCCESS;
+	};
+
+	// Passing nBits = 0 arg deallocates the BMP.
 	if (nBits == 0)
 	{
 		bmp.lock.acquire();
-		if (bmp.rsrc.bmp != __KNULL) {
+
+		if (!preAllocated && bmp.rsrc.bmp != __KNULL) {
 			delete bmp.rsrc.bmp;
 		};
+
+		preAllocated = 0;
 		bmp.rsrc.bmp = __KNULL;
 		bmp.rsrc.nBits = 0;
+
 		bmp.lock.release();
 		return ERROR_SUCCESS;
 	}
@@ -135,6 +170,8 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 	bmp.lock.acquire();
 
 	currentBits = bmp.rsrc.nBits;
+
+	// If the new nBits will fit in the currently allocated memory:
 	if (__KMATH_NELEMENTS(
 		currentBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__))
 		== __KMATH_NELEMENTS(
@@ -154,17 +191,25 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 
 	if (tmp == __KNULL) {
 		ret = ERROR_MEMORY_NOMEM;
-	} 
-	else 
+	}
+	else
 	{
 		bmp.lock.acquire();
 		// Copy the old array's state into the new.
-		if (bmp.rsrc.bmp != __KNULL) {
-			memcpy8(tmp, bmp.rsrc.bmp, nIndexes * sizeof(*bmp.rsrc.bmp));
+		if (bmp.rsrc.bmp != __KNULL)
+		{
+			memcpy(
+				tmp, bmp.rsrc.bmp,
+				nIndexes * sizeof(*bmp.rsrc.bmp));
 		};
+		oldmem = bmp.rsrc.bmp;
 		bmp.rsrc.bmp = tmp;
 		bmp.rsrc.nBits = nBits;
 		bmp.lock.release();
+
+		if (!preAllocated && oldmem != __KNULL) { delete oldmem; };
+		preAllocated = 0;
+
 		ret = ERROR_SUCCESS;
 	};
 

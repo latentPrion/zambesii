@@ -19,7 +19,11 @@ public:
 	/* Used to inialize BMPs which would have been constructed in the
 	 * absence of dynamic memory allocation.
 	 **/
-	error_t initialize(ubit32 nBits);
+	error_t initialize(
+		ubit32 nBits,
+		void *preAllocatedMemory=__KNULL,
+		ubit16 preAllocatedMemorySize=0);
+
 	~bitmapC(void);
 
 public:
@@ -44,6 +48,8 @@ public:
 	error_t resizeTo(ubit32 nBits);
 
 private:
+	ubit8		preAllocated;
+	ubit16		preAllocatedSize;
 	struct bmpStateS
 	{
 		uarch_t		*bmp;

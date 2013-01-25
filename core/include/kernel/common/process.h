@@ -43,7 +43,8 @@ public:
 		ubit8 execDomain,
 		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
 	:
-	id(processId), flags(0), parentId(parentProcId),
+	id(PROCID_PROCESS(processId)), flags(0),
+	parentId(PROCID_PROCESS(parentProcId)),
 	// Kernel process begins handing out thread IDs at 1 since 0 is taken.
 	nextTaskId(
 		CHIPSET_MEMORY_MAX_NTASKS - 1,

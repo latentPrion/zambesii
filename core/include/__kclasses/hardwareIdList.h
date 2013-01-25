@@ -17,6 +17,7 @@ class hardwareIdListC
 public:
 	hardwareIdListC(void);
 	void __kspaceSetState(sarch_t id, void *arrayMem);
+
 public:
 	// Retrieves an item's pointer by its hardware ID.
 	void *getItem(sarch_t id);
