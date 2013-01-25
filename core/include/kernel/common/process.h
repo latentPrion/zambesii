@@ -14,7 +14,6 @@
 	#include <kernel/common/timerTrib/timerStream.h>
 	#include <__kthreads/__korientation.h>
 
-
 #define PROCESS_EXECDOMAIN_KERNEL	0x1
 #define PROCESS_EXECDOMAIN_USER		0x2
 
@@ -43,16 +42,23 @@ public:
 		ubit8 execDomain,
 		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
 	:
-	id(PROCID_PROCESS(processId)), flags(0),
-	parentId(PROCID_PROCESS(parentProcId)),
-	// Kernel process begins handing out thread IDs at 1 since 0 is taken.
-	nextTaskId(
-		CHIPSET_MEMORY_MAX_NTASKS - 1,
-		(processId == __KPROCESSID) ? 1 : 0),
-	commandLine(__KNULL), workingDir(__KNULL), fullName(__KNULL),
-	argString(__KNULL), env(__KNULL),
-	execDomain(execDomain),
-	memoryStream(processId, level0Accessor, level0Paddr)
+		id(PROCID_PROCESS(processId)),
+		parentId(PROCID_PROCESS(parentProcId)),
+		flags(0),
+
+		// Kernel process hands out thread IDs from 1 since 0 is taken.
+		nextTaskId(
+			CHIPSET_MEMORY_MAX_NTASKS - 1,
+			(processId == __KPROCESSID) ? 1 : 0),
+		nTasks(0),
+
+		fullName(__KNULL), workingDirectory(__KNULL), fileName(__KNULL),
+		nArgs(0), nEnvVars(0),
+		argString(__KNULL), env(__KNULL),
+
+		execDomain(execDomain),
+
+		memoryStream(processId, level0Accessor, level0Paddr)
 	{
 		memset(tasks, 0, sizeof(tasks));
 		defaultMemoryBank.rsrc = NUMABANKID_INVALID;
@@ -60,16 +66,14 @@ public:
 		if (id == __KPROCESSID)
 		{
 			__KFLAG_SET(flags, PROCESS_FLAGS___KPROCESS);
+			nTasks = 1;
 			tasks[0] = &__korientationThread;
 			defaultMemoryBank.rsrc =
 				CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 		};
 	}
 
-	error_t initialize(
-		const utf8Char *commandLine,
-		const utf8Char *fullName,
-		const utf8Char *workingDir);
+	error_t initialize(const utf8Char *commandLine, bitmapC *cpuAffinity);
 
 	~processStreamC(void);
 
@@ -90,30 +94,29 @@ public:
 		ubit8 prio, uarch_t flags);
 	
 public:
-	uarch_t			id;
+	processId_t		id, parentId;
 	uarch_t			flags;
-	processId_t		parentId;
-	taskC			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
+
 	multipleReaderLockC	taskLock;
 	wrapAroundCounterC	nextTaskId;
+	uarch_t			nTasks;
+	taskC			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
 
-	utf8Char		*commandLine, *workingDir, *fullName;
+	utf8Char		*fullName, *workingDirectory, *fileName;
+	ubit8			nArgs, nEnvVars;
 	utf8Char		**argString, **env;
 
+	// Execution domain and privilege elevation information.
+	ubit8			execDomain;
+
 #if __SCALING__ >= SCALING_SMP
+	// Tells us which CPUs this process has run on.
+	bitmapC			cpuTrace;
 	bitmapC			cpuAffinity;
 #endif
 #if __SCALING__ >= SCALING_CC_NUMA
 	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
 		defaultMemoryBank;
-#endif
-
-	// Execution domain and privilege elevation.
-	ubit8			execDomain;
-
-#if __SCALING__ >= SCALING_SMP
-	// Tells which CPUs this process has run on.
-	bitmapC			cpuTrace;
 #endif
 
 	memoryStreamC		memoryStream;
@@ -123,6 +126,16 @@ private:
 	sarch_t getNextThreadId(void);
 	taskC *allocateNewThread(processId_t id);
 	void removeThread(processId_t id);
+
+	void __kprocessAllocateInternals(void);
+	void __kprocessGenerateArgString(void);
+	void __kprocessGenerateEnvString(void);
+	void __kprocessInitializeBmps(void);
+
+	error_t allocateInternals(void);
+	error_t generateArgString(void);
+	error_t generateEnvString(void);
+	error_t initializeBmps(void);
 };
 
 

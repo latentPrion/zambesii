@@ -44,6 +44,7 @@ extern "C" void __korientationMain(ubit32, multibootDataS *)
 	cxxrtl::callGlobalConstructors();
 
 	DO_OR_DIE(processTrib, initialize(), ret);
+	DO_OR_DIE(processTrib.__kprocess, initialize(CC"", __KNULL), ret);
 	// Initialize the chipset's ZKCM package and mask all IRQs.
 	DO_OR_DIE(zkcmCore, initialize(), ret);
 	DO_OR_DIE(interruptTrib, initialize(), ret);
@@ -76,6 +77,7 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(cachePool, initialize(), ret);
 	DO_OR_DIE(processTrib, initialize(), ret);
 
+// Right here is where we should enable BSP scheduling and spawn the new thread.
 	// Initialize ZKCM CPU Dectection mod.
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	// Enable the Task Stream on the BSP CPU for boot time scheduling.
@@ -140,8 +142,9 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 			0,
 			&ret);
 
-		__kprintf(NOTICE"Results: new process at 0x%p, ret from call: %d, procId: 0x%x, absName: %s.\n",
-			newProc, ret, newProc->id, newProc->commandLine);
+		__kprintf(NOTICE"Results: new process at 0x%p, ret from call: "
+			"%d, procId: 0x%x, fullName: %s.\n",
+			newProc, ret, newProc->id, newProc->fullName);
 	};
 
 	__kdebug.refresh();

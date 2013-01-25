@@ -25,12 +25,7 @@
 extern taskC	__korientationThread;
 extern "C" void __korientationMain(ubit32 mbMagic, multibootDataS *mbData);
 extern ubit8		__korientationStack[];
-
-#if __SCALING__ >= SCALING_SMP
-extern ubit8		__korientationCpuAffinityBmpMem[];
-#endif
-extern ubit8		__korientationRegisteredEventBmpMem[];
-extern ubit8		__korientationPendingEventBmpMem[];
+extern ubit8		__korientationPreallocatedBmpMem[][64];
 
 #endif
 

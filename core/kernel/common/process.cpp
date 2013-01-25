@@ -9,54 +9,82 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
+// Max length for the kernel command line args.
+#define __KPROCESS_MAX_NARGS			(16)
+#define __KPROCESS_ARG_MAX_NCHARS		(32)
+#define __KPROCESS_STRING_MAX_NCHARS		(64)
+
+// Preallocated mem space for the kernel command line args.
+utf8Char	*__kprocessArgPointerMem[__KPROCESS_MAX_NARGS];
+utf8Char	__kprocessArgStringMem
+	[__KPROCESS_MAX_NARGS]
+	[__KPROCESS_ARG_MAX_NCHARS];
+
+/**	EXPLANATION:
+ * Pre-allocated memory for the strings in the kernel process object. Namely:
+ *	fullName, workingDir, fileName.
+ **/
+utf8Char	__kprocessPreallocatedStringMem
+	[3]
+	[__KPROCESS_STRING_MAX_NCHARS];
+
+
+#if __SCALING__ >= SCALING_SMP
+// Preallocated mem space for the internals of the __kprocess bitmapC objects.
+ubit8		__kprocessPreallocatedBmpMem[2][32];
+#endif
+
 error_t processStreamC::initialize(
-	const utf8Char *_commandLine,
-	const utf8Char *_fullName,
-	const utf8Char *_workingDir
+	const utf8Char * /*commandLine*/, bitmapC * /*cpuAffinity*/
 	)
 {
-	ubit32		strLen;
-	error_t		ret;
+	//error_t		ret;
 
-	// Copy off command line, working dir, and exec file path.
-	strLen = strlen8(_fullName);
-	fullName = new utf8Char[strLen + 1];
-	if (fullName == __KNULL) {
-		return ERROR_MEMORY_NOMEM;
+	// The kernel process is initialized differently.
+	if (PROCESSID_PROCESS(id) == __KPROCESSID)
+	{
+		__kprocessAllocateInternals();
+		// __kprocessGenerateArgString();
+		// __kprocessGenerateEnvString();
+		__kprocessInitializeBmps();
+	}
+	else
+	{
+		/*ret = allocateInternals();
+		if (ret != ERROR_SUCCESS) { return ret; };
+		ret = generateArgString();
+		if (ret != ERROR_SUCCESS) { return ret; };
+		ret = generateEnvString();
+		if (ret != ERROR_SUCCESS) { return ret; };
+		ret = initializeBmps();
+		if (ret != ERROR_SUCCESS) { return ret; };*/
 	};
 
-	strcpy8(fullName, _fullName);
+	// Initialize internal bitmaps.
 
-	strLen = strlen8(_workingDir);
-	workingDir =  new utf8Char[strLen + 1];
-	if (workingDir == __KNULL) {
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	strcpy8(workingDir, _workingDir);
-
-	strLen = strlen8(_commandLine);
-	commandLine = new utf8Char[strLen + 1];
-	if (commandLine == __KNULL) {
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	strcpy8(commandLine, _commandLine);
-
-	// Initialize cpuTrace to the number of bits in CPU Trib bmp.
-	ret = cpuTrace.initialize(cpuTrib.onlineCpus.getNBits());
-	if (ret != ERROR_SUCCESS) {
-		return ret;
-	};
+	// Fill out the fullName, workingDirectory and fileName strings.
 
 	return ERROR_SUCCESS;
 }
 
+void processStreamC::__kprocessAllocateInternals(void)
+{
+	// Assign our preallocated mem to the dynamic members.
+	fullName = &__kprocessPreallocatedStringMem[0][0];
+	workingDirectory = &__kprocessPreallocatedStringMem[1][0];
+	fileName = &__kprocessPreallocatedStringMem[2][0];
+}
+
+void processStreamC::__kprocessInitializeBmps(void)
+{
+#if __SCALING__ >= SCALING_SMP
+	cpuTrace.initialize(0, &__kprocessPreallocatedBmpMem[0], 32);
+	cpuTrace.initialize(0, &__kprocessPreallocatedBmpMem[1], 32);
+#endif
+}
+
 processStreamC::~processStreamC(void)
 {
-	if (fullName != __KNULL) {
-		delete fullName;
-	};
 }
 
 static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)

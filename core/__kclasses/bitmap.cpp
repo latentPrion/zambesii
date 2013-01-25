@@ -51,7 +51,11 @@ error_t bitmapC::initialize(
 	};
 
 	bmp.rsrc.nBits = nBits;
-	memset(bmp.rsrc.bmp, 0, nIndexes * sizeof(*bmp.rsrc.bmp));
+	// Don't pass __KNULL to memset when BMP is initialized to 0 bits.
+	if (nBits > 0) {
+		memset(bmp.rsrc.bmp, 0, nIndexes * sizeof(*bmp.rsrc.bmp));
+	};
+
 	return ERROR_SUCCESS;
 }	
 
