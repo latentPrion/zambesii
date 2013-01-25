@@ -1,7 +1,7 @@
-hTotal=`find $1 | grep '.*\.h' | wc -l`
-cTotal=`find $1 | grep '.*\.c' | wc -l`
-sTotal=`find $1 | grep '.*\.s' | wc -l`
-cppTotal=`find $1 | grep '.*\.cpp' | wc -l`
+hTotal=`find $1 | grep '.*\.h$' | wc -l`
+cTotal=`find $1 | grep '.*\.c$' | wc -l`
+sTotal=`find $1 | grep '.*\.s$' | wc -l`
+cppTotal=`find $1 | grep '.*\.cpp$' | wc -l`
 
 if [ "$2" == "" ]; then
 	echo $((hTotal+cTotal+sTotal+cppTotal))
@@ -11,7 +11,8 @@ else
 	elif [ "$2" == "s" -o "$2" == "S" ]; then echo $sTotal;
 	elif [ "$2" == "cpp" -o "$2" == "C" ]; then echo $cppTotal;
 	else
-		echo 0
 		echo 'Usage: nsource [folder [h|c|s|C]]' 1>&2
+		echo 0
 	fi
 fi
+

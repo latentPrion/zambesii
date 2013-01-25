@@ -1,1 +1,18 @@
-find $1 -type f | cat `grep '.*\.[ch]p*'` | wc -l
+hTotal=`cat \`find $1 -type f | grep '.*\.h$'\` | wc -l \- | sed 's/[[:space:]]-//'`
+cTotal=`cat \`find $1 -type f | grep '.*\.c$'\` | wc -l \- | sed 's/[[:space:]]-//'`
+sTotal=`cat \`find $1 -type f | grep '.*\.S$'\` | wc -l \- | sed 's/[[:space:]]-//'`
+cppTotal=`cat \`find $1 -type f | grep '.*\.cpp$'\` | wc -l \- | sed 's/[[:space:]]-//'`
+
+if [ "$2" == "" ]; then
+	echo $((hTotal+cTotal+sTotal+cppTotal))
+else
+	if [ "$2" == "h" ]; then echo $hTotal;
+	elif [ "$2" == "c" ]; then echo $cTotal;
+	elif [ "$2" == "s" -o "$2" == "S" ]; then echo $sTotal;
+	elif [ "$2" == "cpp" -o "$2" == "C" ]; then echo $cppTotal;
+	else
+		echo 'Usage: loc [folder [h|c|s|C]]' 1>&2
+		echo 0
+	fi
+fi
+
