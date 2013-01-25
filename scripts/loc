@@ -1,1 +1,1 @@
-find $1 | cat `grep '.*\.[ch].*'` | wc -l
+find $1 -type f | cat `grep '.*\.[ch]p*'` | wc -l

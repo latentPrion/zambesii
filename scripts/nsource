@@ -10,6 +10,8 @@ else
 	elif [ "$2" == "c" ]; then echo $cTotal;
 	elif [ "$2" == "s" -o "$2" == "S" ]; then echo $sTotal;
 	elif [ "$2" == "cpp" -o "$2" == "C" ]; then echo $cppTotal;
-	else echo 0
+	else
+		echo 0
+		echo 'Usage: nsource [folder [h|c|s|C]]' 1>&2
 	fi
 fi
