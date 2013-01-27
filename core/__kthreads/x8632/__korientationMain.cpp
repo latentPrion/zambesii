@@ -58,23 +58,21 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 		initialize(CC"@h:boot/zambesii/zambesii.zxe", __KNULL),
 		ret);
 
-	/* Initialize __kspace level memory management.
+	/* Initialize __kspace level physical memory management, then the
+	 * kernel Memory Stream.
 	 **/
 	DO_OR_DIE(memoryTrib, initialize(), ret);
 	DO_OR_DIE(memoryTrib, __kspaceInitialize(), ret);
-for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
-
-	// Initialize the kernel swamp.
 	DO_OR_DIE(
 		processTrib.__kprocess.memoryStream,
 		initialize(
-			reinterpret_cast<void *>(
-				ARCH_MEMORY___KLOAD_VADDR_BASE + 0x400000 ),
+			(void *)(ARCH_MEMORY___KLOAD_VADDR_BASE + 0x400000),
 			0x3FB00000, __KNULL),
 		ret);
 
+	/* Initialize the kernel debug pipe for boot logging, etc.
+	 **/
 	DO_OR_DIE(__kdebug, initialize(), ret);
-
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
 	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
 		__kprintf(WARNING ORIENT"No debug buffer allocated.\n");
@@ -87,14 +85,15 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	// Initialize the kernel Memory Reservoir (heap) and object cache pool.
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
-	DO_OR_DIE(processTrib, initialize(), ret);
+for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
 // Right here is where we should enable BSP scheduling and spawn the new thread.
+
+// From this point on, we split off into __korientationMain.
 	// Initialize ZKCM CPU Dectection mod.
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	// Enable the Task Stream on the BSP CPU for boot time scheduling.
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
-//	DO_OR_DIE(processTrib, __kprocessInitialize(), ret);
 	// Initialize IRQ Control and chipset bus-pin mapping management.
 	DO_OR_DIE(interruptTrib, initialize(), ret);
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);

@@ -16,13 +16,13 @@
  * The Memory Stream for a process provides the allocation table needed to
  * ensure that the kernel's low level garbage collection will work when the
  * process exits. It also provides a cache of allocations so that we don't have
- * constant contention over the NUMA Tributary for physical memory.
+ * constant contention over the Memory Tributary for physical memory.
  *
  * Each process must have its Virtual Address Space managed; The Memory Stream
  * contains the vaddrSpaceStreamC within itself to provide this functionality.
  *
  * NOTE: When this class reaches the pique of its refinement, the idea is that
- * since each process will have its own private memory manager, in the form of
+ * since each process will have its own private memory manager in the form of
  * this class, the Memory Stream, the kernel can do memory profiling on a
  * process, and thereby decide how best to schedule/allocate, etc for that
  * process so that it is best catered for.
@@ -84,15 +84,15 @@ public:
 	void *memRegionAlloc(ubit8 regionId, uarch_t nPages);
 	void memRegionFree(ubit8 regionId, void *vaddr);
 
-public:
 	void cut(void);
 	error_t bind(void);
 	void dump(void);
 
-private:
-	stackCacheC<void *>	allocCache;
 public:
 	vaddrSpaceStreamC	vaddrSpaceStream;
+
+private:
+	stackCacheC<void *>	allocCache;
 	allocTableC		allocTable;
 };
 
