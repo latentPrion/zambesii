@@ -55,6 +55,9 @@ public:
 
 	error_t initializeBspCpuLocking(void);
 
+	error_t bind(void);
+	void cut(void);
+
 public:
 	status_t powerControl(ubit16 command, uarch_t flags);
 	status_t enumerate(void);
@@ -68,6 +71,9 @@ private:
 	public:
 		interCpuMessagerC(cpuStreamC *parent);
 		error_t initialize(void);
+
+		error_t bind(void);
+		void cut(void);
 
 	public:
 		error_t flushTlbRange(void *vaddr, uarch_t nPages);

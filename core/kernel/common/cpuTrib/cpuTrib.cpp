@@ -133,14 +133,10 @@ error_t cpuTribC::initializeBspCpuStream(void)
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = bspCpu.initialize();
+	ret = bspCpu.bind();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-/*	ret = bspCpu.taskStream.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
-
-	return bspCpu.taskStream.cooperativeBind();*/
-	return ERROR_SUCCESS;
+	return bspCpu.taskStream.cooperativeBind();
 }
 
 error_t cpuTribC::fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId)
@@ -672,6 +668,8 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	};
 
 	if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	ret = cs->initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	if ((ret = cpuStreams.addItem(cid, cs)) != ERROR_SUCCESS)
 	{

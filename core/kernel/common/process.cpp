@@ -117,7 +117,7 @@ error_t processStreamC::cloneStateIntoChild(processStreamC *child)
 }
 
 error_t processStreamC::spawnThread(
-	void *entryPoint, taskC::schedPolicyE schedPolicy,
+	void (*entryPoint)(void), taskC::schedPolicyE schedPolicy,
 	ubit8 prio, uarch_t flags
 	)
 {
@@ -182,7 +182,7 @@ error_t processStreamC::spawnThread(
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// New task has inherited as needed. Initialize register context.
-	taskContext::initialize(&newTask->context, newTask, entryPoint);
+	taskContext::initialize(&newTask->context, newTask, (void *)entryPoint);
 	return taskTrib.schedule(newTask);
 }
 

@@ -67,6 +67,21 @@ error_t cpuStreamC::initializeBspCpuLocking(void)
 	return ERROR_SUCCESS;
 }
 
+error_t cpuStreamC::initialize(void)
+{
+	error_t		ret;
+
+	ret = interCpuMessager.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	return taskStream.initialize();
+}
+
+void cpuStreamC::cut(void)
+{
+	// Probably won't need to do much here.
+}
+
 status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
 {
 

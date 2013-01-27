@@ -60,12 +60,12 @@ public:
 		processId_t taskId, processStreamC *parentProcess,
 		prio_t prio, uarch_t flags)
 	:
-	stack0(__KNULL), stack1(__KNULL),
-	id(taskId), parent(parentProcess), flags(0),
-	internalPrio(CC"Custom", prio),
-	schedFlags(0), schedState(UNSCHEDULED),
-	currentCpu(__KNULL),
-	nLocksHeld(0)
+		stack0(__KNULL), stack1(__KNULL),
+		id(taskId), parent(parentProcess), flags(0),
+		internalPrio(CC"Custom", prio),
+		schedFlags(0), schedState(UNSCHEDULED),
+		currentCpu(__KNULL),
+		nLocksHeld(0)
 	{
 		if (__KFLAG_TEST(flags, TASK_FLAGS_CUSTPRIO))
 		{

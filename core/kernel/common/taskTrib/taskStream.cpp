@@ -64,16 +64,19 @@ error_t taskStreamC::cooperativeBind(void)
 	 *
 	 * Thus, here we are. To enable co-operative scheduling, we simply
 	 * bring up the BSP task stream, add the __korientation thread to it,
-	 * then exit.
+	 * set the CPU's bit in onlineCpus, then exit.
 	 **/
-	__korientationThread.schedPolicy = taskC::ROUND_ROBIN;
+	/*__korientationThread.schedPolicy = taskC::ROUND_ROBIN;
 	__korientationThread.schedOptions = 0;
 	__korientationThread.schedFlags = 0;
 
 	return roundRobinQ.insert(
 		&__korientationThread,
 		__korientationThread.schedPrio->prio,
-		__korientationThread.schedOptions);
+		__korientationThread.schedOptions);*/
+
+	cpuTrib.onlineCpus.setSingle(parentCpu->id);
+	return ERROR_SUCCESS;
 }
 
 status_t taskStreamC::schedule(taskC *task)

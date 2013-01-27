@@ -90,9 +90,10 @@ public:
 	taskC *getTask(processId_t processId);
 
 	error_t spawnThread(
-		void *entryPoint, taskC::schedPolicyE schedPolicy,
-		ubit8 prio, uarch_t flags);
-	
+		void (*entryPoint)(),
+		taskC::schedPolicyE schedPolicy, ubit8 prio,
+		uarch_t flags);
+
 public:
 	processId_t		id, parentId;
 	uarch_t			flags;

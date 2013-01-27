@@ -239,7 +239,7 @@ static error_t initializeLapic(cpuStreamC *caller)
 	return ERROR_SUCCESS;
 }
 
-error_t cpuStreamC::initialize(void)
+error_t cpuStreamC::bind(void)
 {
 	// Init LAPIC (if SMP mode). Check for LAPIC first in case it's the BSP.
 	if (usingChipsetSmpMode() && x86Lapic::cpuHasLapic()) {

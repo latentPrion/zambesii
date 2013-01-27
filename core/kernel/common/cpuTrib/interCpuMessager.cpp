@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <arch/cpuControl.h>
 #include <arch/tlbControl.h>
 #include <__kstdlib/__kclib/string8.h>
@@ -35,6 +34,11 @@ error_t cpuStreamC::interCpuMessagerC::initialize(void)
 		};
 	};
 
+	return ERROR_SUCCESS;
+}
+
+error_t cpuStreamC::interCpuMessagerC::bind(void)
+{
 	/*	NOTE:
 	 * Signifies that this CPU is now "in synch" with the kernel and usable.
 	 * The reason this must only be set after the CPU is ready to receive
@@ -47,11 +51,19 @@ error_t cpuStreamC::interCpuMessagerC::initialize(void)
 	 * "availableCpus" BMP, that likelihood is erased, since no CPU will
 	 * try to send messages to this CPU if its bit isn't set.
 	 **/
-	__kprintf(NOTICE CPUMSG"%d: Enabling interrupts.\n", parent->cpuId);
+	__kprintf(NOTICE CPUMSG"%d: Binding.\n", parent->cpuId);
 	cpuControl::enableInterrupts();
 	cpuTrib.availableCpus.setSingle(parent->cpuId);
 
 	return ERROR_SUCCESS;
+}
+
+void cpuStreamC::interCpuMessagerC::cut(void)
+{
+	// TODO: May need to process all pending messages.
+	__kprintf(NOTICE CPUMSG"%d: Cut.\n", parent->cpuId);
+	cpuTrib.availableCpus.unsetSingle(parent->cpuId);
+	cpuControl::disableInterrupts();
 }
 
 void cpuStreamC::interCpuMessagerC::set(
