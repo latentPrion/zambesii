@@ -12,7 +12,13 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
+static ubit8				memoryTribAvailableBanksBmpMem[64];
+static hardwareIdListC::arrayNodeS	memoryTribMemoryBanksListMem[
+	CHIPSET_MEMORY_NUMA___KSPACE_BANKID + 1];
+
 memoryTribC::memoryTribC(void)
+:
+	nBanks(0)
 {
 	for (uarch_t i=0; i<CHIPSET_MEMORY_NREGIONS; i++)
 	{
@@ -21,18 +27,21 @@ memoryTribC::memoryTribC(void)
 	};
 
 #if __SCALING__ < SCALING_CC_NUMA
-	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+	defaultMemoryBank.rsrc = NUMABANKID_INVALID;
 #endif
-	nBanks = 0;
 }
 
-// Initializes the kernel's Memory Stream.
-error_t memoryTribC::__kstreamInit(
-	void *swampStart, uarch_t swampSize, vSwampC::holeMapS *holeMap
-	)
+error_t memoryTribC::initialize(void)
 {
-	return processTrib.__kprocess.memoryStream.initialize(
-		swampStart, swampSize, holeMap);
+	availableBanks.initialize(
+		0, memoryTribAvailableBanksBmpMem,
+		sizeof(memoryTribAvailableBanksBmpMem));
+
+	memoryBanks.initialize(
+		memoryTribMemoryBanksListMem,
+		sizeof(memoryTribMemoryBanksListMem));
+
+	return ERROR_SUCCESS;
 }
 
 error_t memoryTribC::memRegionInit(void)

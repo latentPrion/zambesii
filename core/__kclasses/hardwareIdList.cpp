@@ -1,6 +1,4 @@
 
-#include <debug.h>
-
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -11,10 +9,27 @@
 
 hardwareIdListC::hardwareIdListC(void)
 {
+	preAllocated = 0;
 	arr.rsrc.maxIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.maxAllocatedIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.firstValidIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.arr = __KNULL;
+}
+
+error_t hardwareIdListC::initialize(
+	void *preallocatedMem, ubit16 preallocatedSize
+	)
+{
+	if (preallocatedMem == __KNULL) { return ERROR_SUCCESS; };
+
+	preAllocated = 1;
+	arr.rsrc.maxAllocatedIndex = (preallocatedSize / sizeof(arrayNodeS) > 0)
+		? preallocatedSize / sizeof(arrayNodeS) - 1
+		: arr.rsrc.maxAllocatedIndex;
+
+	arr.rsrc.arr = reinterpret_cast<arrayNodeS *>( preallocatedMem );
+	memset(arr.rsrc.arr, 0, preallocatedSize);
+	return ERROR_SUCCESS;
 }
 
 void hardwareIdListC::dump(void)
@@ -23,10 +38,10 @@ void hardwareIdListC::dump(void)
 
 	arr.lock.readAcquire(&rwFlags);
 
-	__kprintf(NOTICE"HWID list @ 0x%p, arr @ v0x%p,\n"
+	__kprintf(NOTICE"HWID list @ 0x%p, arr @ v0x%p, preAlloc'd: %d,\n"
 		"\tmaxAllocatedIndex %d, firstValidIndex %d, maxIndex %d. "
 		"dumping.\n",
-		this, arr.rsrc.arr,
+		this, arr.rsrc.arr, preAllocated,
 		arr.rsrc.maxAllocatedIndex, arr.rsrc.firstValidIndex,
 		arr.rsrc.maxIndex);
 
@@ -39,14 +54,6 @@ void hardwareIdListC::dump(void)
 	};
 
 	arr.lock.readRelease(rwFlags);
-}
-
-void hardwareIdListC::__kspaceSetState(sarch_t id, void *arrayMem)
-{
-	arr.rsrc.arr = static_cast<arrayNodeS *>( arrayMem );
-	arr.rsrc.maxAllocatedIndex = arr.rsrc.maxIndex = id;
-	arr.rsrc.firstValidIndex = id;
-	arr.rsrc.arr[id].next = HWIDLIST_INDEX_INVALID;
 }
 
 void *hardwareIdListC::getItem(sarch_t id)
@@ -181,7 +188,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 		old = arr.rsrc.arr;
 		arr.rsrc.arr = tmp;
 
-		// Now add the new item to the array. >>>>>>>> trouble <<<<<<
+		// Now add the new item to the array.
 		if (maxIndex == HWIDLIST_INDEX_INVALID) {
 			arr.rsrc.firstValidIndex = index;
 		}
@@ -199,10 +206,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 		arr.lock.writeRelease();
 
 		// Free the old array mem.
-		if (old != __KNULL
-			&& (!(reinterpret_cast<uarch_t>( old )
-				& PAGING_BASE_MASK_LOW)))
-		{
+		if (!preAllocated && old != __KNULL) {
 			processTrib.__kprocess.memoryStream.memFree(old);
 		};
 

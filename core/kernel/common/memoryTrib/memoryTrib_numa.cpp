@@ -1,6 +1,7 @@
 
 #include <scaling.h>
 #include <chipset/memory.h>
+#include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
@@ -49,7 +50,13 @@ static numaMemoryRangeC			__kspaceMemoryRange(
 	CHIPSET_MEMORY___KSPACE_BASE,
 	CHIPSET_MEMORY___KSPACE_SIZE);
 
-error_t memoryTribC::__kspaceInit(void)
+// Reserve space for the __kspaceBmp within the kernel image:
+static uarch_t		__kspaceInitMem[
+	__KMATH_NELEMENTS(
+		(CHIPSET_MEMORY___KSPACE_SIZE / PAGING_BASE_SIZE),
+		(sizeof(uarch_t) * __BITS_PER_BYTE__))];
+
+error_t memoryTribC::__kspaceInitialize(void)
 {
 	error_t		ret;
 
@@ -73,25 +80,13 @@ error_t memoryTribC::__kspaceInit(void)
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 #endif
 
-	// First give the list class pre-allocated memory to use for its array.
-	memset(
-		initialMemoryBankArray, 0,
-		sizeof(hardwareIdListC::arrayNodeS)
-			* (CHIPSET_MEMORY_NUMA___KSPACE_BANKID + 1));
-
-	memoryBanks.__kspaceSetState(
-		CHIPSET_MEMORY_NUMA___KSPACE_BANKID,
-		static_cast<void *>( initialMemoryBankArray ));
-
 	// Next give it the pre-allocated __kspace memory bank.
-	ret = memoryBanks.addItem(
+	ret = createBank(
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID, &__kspaceMemoryBank);
 
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};
-
-	nBanks = 1;
 
 	/* Next give it the pre-allocated __kspace memory range object.
 	 *
@@ -138,7 +133,7 @@ error_t memoryTribC::__kspaceInit(void)
 	}; \
 	} while (0);
 	
-error_t memoryTribC::createBank(numaBankId_t id)
+error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
 {
 	error_t			ret;
 	numaMemoryBankC		*nmb;
@@ -148,22 +143,32 @@ error_t memoryTribC::createBank(numaBankId_t id)
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	// Note the MEMALLOC_NO_FAKEMAP flag: MM code/data should never pgfault.
-	nmb = new (processTrib.__kprocess.memoryStream.memAlloc(
-		PAGING_BYTES_TO_PAGES(sizeof(numaMemoryBankC)),
-		MEMALLOC_NO_FAKEMAP))
-			numaMemoryBankC(id);
+	// Note the MEMALLOC_NO_FAKEMAP flag: MM code/data must never pgfault.
+	if (preAllocated == __KNULL)
+	{
+		nmb = new (processTrib.__kprocess.memoryStream.memAlloc(
+			PAGING_BYTES_TO_PAGES(sizeof(numaMemoryBankC)),
+			MEMALLOC_NO_FAKEMAP))
+				numaMemoryBankC(id);
+	}
+	else {
+		nmb = new (preAllocated) numaMemoryBankC(id);
+	};
 
 	if (nmb == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	ret = memoryBanks.addItem(id, nmb);
-	if (ret != ERROR_SUCCESS) {
-		processTrib.__kprocess.memoryStream.memFree(nmb);
+	if (ret != ERROR_SUCCESS)
+	{
+		if (preAllocated != __KNULL) {
+			processTrib.__kprocess.memoryStream.memFree(nmb);
+		};
 	};
 
 	availableBanks.setSingle(id);
+	nBanks++;
 	return ret;
 }
 
@@ -174,7 +179,8 @@ void memoryTribC::destroyBank(numaBankId_t id)
 	availableBanks.unsetSingle(id);
 	nmb = getBank(id);
 	memoryBanks.removeItem(id);
-	if (nmb != __KNULL) {
+	nBanks--;
+	if (id != CHIPSET_MEMORY_NUMA___KSPACE_BANKID && nmb != __KNULL) {
 		processTrib.__kprocess.memoryStream.memFree(nmb);
 	};
 }

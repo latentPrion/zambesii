@@ -52,8 +52,17 @@ error_t bitmapC::initialize(
 
 	bmp.rsrc.nBits = nBits;
 	// Don't pass __KNULL to memset when BMP is initialized to 0 bits.
-	if (nBits > 0) {
-		memset(bmp.rsrc.bmp, 0, nIndexes * sizeof(*bmp.rsrc.bmp));
+	if (bmp.rsrc.bmp != __KNULL)
+	{
+		if (!preAllocated)
+		{
+			memset(
+				bmp.rsrc.bmp, 0,
+				nIndexes * sizeof(*bmp.rsrc.bmp));
+		}
+		else {
+			memset(bmp.rsrc.bmp, 0, preAllocatedSize);
+		};
 	};
 
 	return ERROR_SUCCESS;
@@ -145,8 +154,7 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 	/* If the BMP was pre-allocated and the amount of memory that was
 	 * assigned to it is enough to forego re-allocation, exit early.
 	 **/
-	if (preAllocated
-		&& preAllocatedSize >= __KMATH_NELEMENTS(nBits, sizeof(ubit8)))
+	if (preAllocated && (preAllocatedSize * __BITS_PER_BYTE__ >= nBits))
 	{
 		bmp.lock.acquire();
 		bmp.rsrc.nBits = nBits;

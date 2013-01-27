@@ -16,7 +16,9 @@ class hardwareIdListC
 {
 public:
 	hardwareIdListC(void);
-	void __kspaceSetState(sarch_t id, void *arrayMem);
+
+	error_t initialize(
+		void *preallocatedMem=__KNULL, ubit16 preallocatedSize=0);
 
 public:
 	// Retrieves an item's pointer by its hardware ID.
@@ -59,6 +61,8 @@ public:
 	};
 
 private:
+	ubit8		preAllocated;
+
 	struct arrayStateS
 	{
 		arrayNodeS	*arr;

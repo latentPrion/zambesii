@@ -14,7 +14,7 @@ __korientationEntryTmp.s: __korientationEntry.S
 
 __kcpuPowerOnEntry.o: __kcpuPowerOnEntryTmp.s
 __kcpuPowerOnEntryTmp.s: __kcpuPowerOnEntry.S
-	$(CPP) $(CPPFLAGS) __korientationEntry.S >$@
+	$(CPP) $(CPPFLAGS) __kcpuPowerOnEntry.S >$@
 
 clean: fonyphile
 	rm -rf *.o *.s

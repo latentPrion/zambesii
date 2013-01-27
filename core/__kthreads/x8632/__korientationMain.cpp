@@ -30,24 +30,38 @@ int ghfoo(void)
 	return 0;
 }
 
-extern "C" void __korientationMain(ubit32, multibootDataS *)
+extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
 
+	/* Zero out uninitialized sections, prepare kernel locking and place a
+	 * pointer to the BSP CPU Stream into the BSP CPU; then we can call all
+	 * C++ global constructors.
+	 **/
 	__koptimizationHacks();
-
-	// Prepare the kernel by zeroing .BSS and calling constructors.
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
-	// Initializes locking and does baseInit() on BSP CPU.
 	DO_OR_DIE(bspCpu, initializeBspCpuLocking(), ret);
 	cxxrtl::callGlobalConstructors();
 
-	DO_OR_DIE(processTrib, initialize(), ret);
-	DO_OR_DIE(processTrib.__kprocess, initialize(CC"", __KNULL), ret);
-	// Initialize the chipset's ZKCM package and mask all IRQs.
+	/* Initialize exception handling, then do chipset-wide early init.
+	 * Finally, initialize the irqControl mod, and mask all IRQs off to
+	 * place the chipset into a stable state.
+	 **/
+	DO_OR_DIE(interruptTrib, initializeExceptions(), ret);
 	DO_OR_DIE(zkcmCore, initialize(), ret);
-	DO_OR_DIE(interruptTrib, initialize(), ret);
+	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
+	zkcmCore.irqControl.maskAll();
+
+	DO_OR_DIE(processTrib, initialize(), ret);
+	DO_OR_DIE(processTrib.__kprocess,
+		initialize(CC"@h:boot/zambesii/zambesii.zxe", __KNULL),
+		ret);
+
+	/* Initialize __kspace level memory management.
+	 **/
+	DO_OR_DIE(memoryTrib, initialize(), ret);
+	DO_OR_DIE(memoryTrib, __kspaceInitialize(), ret);
 for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
 	// Initialize the kernel swamp.
@@ -59,8 +73,6 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 			0x3FB00000, __KNULL),
 		ret);
 
-	// XXX: I want to initialize __kspace before __kmemoryStream.
-	DO_OR_DIE(memoryTrib, __kspaceInit(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
@@ -84,7 +96,7 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
 //	DO_OR_DIE(processTrib, __kprocessInitialize(), ret);
 	// Initialize IRQ Control and chipset bus-pin mapping management.
-	DO_OR_DIE(interruptTrib, initialize2(), ret);
+	DO_OR_DIE(interruptTrib, initialize(), ret);
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	// Start the Timer Trib timer services.
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);

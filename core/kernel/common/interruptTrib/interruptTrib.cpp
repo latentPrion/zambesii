@@ -24,7 +24,7 @@ interruptTribC::interruptTribC(void)
 	pinIrqTableCounter = 0;
 }
 
-error_t interruptTribC::initialize(void)
+error_t interruptTribC::initializeExceptions(void)
 {
 	/**	EXPLANATION:
 	 * Installs the architecture specific exception handlers and initializes
@@ -42,19 +42,10 @@ error_t interruptTribC::initialize(void)
 	// Arch specific exception handler setup.
 	installExceptions();
 
-	// Check for int controller, halt if none, else call initialize().
-	assert_fatal(zkcmCore.irqControl.initialize() == ERROR_SUCCESS);
-
-	/**	EXPLANATION:
-	 * From here on, IRQ pins will be unmasked one by one as their devices
-	 * are discovered and initialized.
-	 **/
-	// Ask the chipset to mask all IRQs at its irq controller(s).
-	zkcmCore.irqControl.maskAll();
 	return ERROR_SUCCESS;
 }
 
-error_t interruptTribC::initialize2(void)
+error_t interruptTribC::initialize(void)
 {
 	/**	EXPLANATION:
 	 * After a call to initialize2(), the chipset is expected to be fully

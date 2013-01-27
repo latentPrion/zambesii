@@ -25,15 +25,8 @@ public tributaryC
 public:
 	memoryTribC(void);
 
-	error_t initialize(
-		void *swampStart, uarch_t swampSize,
-		vSwampC::holeMapS *holeMap);
-
-	error_t __kstreamInit(
-		void *swampStart, uarch_t swampSize,
-		vSwampC::holeMapS *holeMap);
-
-	error_t __kspaceInit(void);
+	error_t initialize(void);
+	error_t __kspaceInitialize(void);
 	error_t pmemInit(void);
 	error_t memRegionInit(void);
 
@@ -45,7 +38,9 @@ public:
 	void pageTablePush(paddr_t paddr);
 
 	numaMemoryBankC *getBank(numaBankId_t bankId);
-	error_t createBank(numaBankId_t bankId);
+	error_t createBank(
+		numaBankId_t bankId, numaMemoryBankC *preAllocated=__KNULL);
+
 	void destroyBank(numaBankId_t bankId);
 
 	/* NOTE:
@@ -53,7 +48,7 @@ public:
 	 * numaMemoryBankC interfaces on each bank. The kernel can efficiently
 	 * tell how best to serve an allocation most of the time. Therefore
 	 * developers are encouraged to use these top-level functions and let
-	 * the implementation logic behind the numaTrib decide what's best.
+	 * the implementation logic behind the Memory Trib decide what's best.
 	 *
 	 * Otherwise you end up with NUMA bank specifics in the kernel.
 	 **/
@@ -80,28 +75,20 @@ private:
 	memoryRegionC		memRegions[CHIPSET_MEMORY_NREGIONS];
 	pageTableCacheC		pageTableCache;
 
-	/* 'defaultConfig' is the default used for any call to
-	 * fragmentedGetFrames(). It is also copied to any new process being
-	 * spawned. Note that I used 'process' and not 'thread'. When a process
-	 * has a thread 0, then any other threads it spawns will derive their
-	 * configuration from thread 0 of that process.
+	/* "defaultMemoryBank" is the bank that the kernel is currently using
+	 * for general allocations.
 	 *
-	 * 'sharedBank' is the bank ID of a bank which is used to hold all CPUs
-	 * which were not explicitly listed as belonging to a certain bank, and
-	 * all memory ranges which were not listed to be on any bank.
-	 *
-	 * This is done in case a NUMA map has holes, such as a hole where a
-	 * particular memory region is left out of the NUMA map, and there is
-	 * no place that it has been listed into, or where a CPU is not listed
-	 * as a member of a bank.
+	 * The "shared bank" is the bank ID of a bank which is used to hold all
+	 * memory ranges which were not listed to be on any bank; e.g. where a
+	 * NUMA map has holes, such as a hole where a particular memory region
+	 * is usable, but left out of the NUMA map. Such a range of pmem will
+	 * be added to the "shared bank".
 	 *
 	 * On a NUMA build where no NUMA map is found, the kernel will create
-	 * one NUMA Stream, and list that stream's ID as that of the
-	 * "sharedBank".
+	 * one bank (the shared bank) and add all pmem to that bank.
 	 **/
-	// All numa banks with memory on them are listed here.
-	hardwareIdListC		memoryBanks;
 	ubit32			nBanks;
+	hardwareIdListC		memoryBanks;
 #if __SCALING__ < SCALING_CC_NUMA
 	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
 		defaultMemoryBank;

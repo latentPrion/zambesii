@@ -25,9 +25,9 @@ public tributaryC
 public:
 	interruptTribC(void);
 	// Sets up arch-specific exception handling and masks off ALL IRQ pins.
-	error_t initialize(void);
+	error_t initializeExceptions(void);
 	// Initializes the ZKCM IRQ Control mod, bus-pin mappings and IRQs.
-	error_t initialize2(void);
+	error_t initialize(void);
 	~interruptTribC(void) {};
 
 public:

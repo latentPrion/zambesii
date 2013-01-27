@@ -2,7 +2,7 @@
 #include <in_asm.h>
 #include <assembler.h>
 
-.extern __korientationMain, __korientationStack
+.extern __korientationInit, __korientationStack
 .extern __kpagingLevel0Tables
 .extern x8632GdtPtr
 
@@ -59,7 +59,7 @@ ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	pushl %ebx
 	pushl %eax
 
-	call __korientationMain
+	call __korientationInit
 
 	addl $0x8, %esp
 ret
