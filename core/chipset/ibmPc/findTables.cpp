@@ -56,13 +56,15 @@ void *chipset_findx86MpFp(void)
 
 		if (checksum != 0) { continue; };
 
-		__kprintf(NOTICE FINDTABLES"MPFP: Found MP FP: 0x%X.\n",
+		__kprintf(NOTICE FINDTABLES"MPFP: Found MP FP: 0x%P.\n",
 			tmp - (uarch_t)lowmem);
 
 		return (void *)tmp;
 	};
 
-	__kprintf(WARNING FINDTABLES"MPFP: No MP FP found.\n");
+	__kprintf(WARNING LOGONCE(LOGONCE_FINDTABLES(0)) FINDTABLES
+		"MPFP: No MP FP found.\n");
+
 	return __KNULL;
 }
 	#endif
@@ -103,13 +105,15 @@ void *chipset_findAcpiRsdp(void)
 
 		if (checksum != 0) { continue; };
 
-		__kprintf(NOTICE FINDTABLES"RSDP: Found RSDP: 0x%X.\n",
+		__kprintf(NOTICE FINDTABLES"RSDP: Found RSDP: 0x%P.\n",
 			tmp - (uarch_t)lowmem);
 
 		return (void *)tmp;
 	};
 
-	__kprintf(WARNING FINDTABLES"RSDP: No RSDP found.\n");
+	__kprintf(WARNING LOGONCE(LOGONCE_FINDTABLES(1)) FINDTABLES
+		"RSDP: No RSDP found.\n");
+
 	return __KNULL;
 }
 

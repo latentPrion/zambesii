@@ -1,5 +1,6 @@
 
 #include <debug.h>
+
 #include <arch/paging.h>
 #include <chipset/memory.h>
 #include <__kstdlib/__kmath.h>
@@ -81,7 +82,6 @@ void memReservoirC::dump(void)
 void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 {
 	reservoirHeaderS	*ret;
-
 	if (nBytes == 0) {
 		return __KNULL;
 	};

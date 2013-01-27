@@ -175,6 +175,10 @@ status_t i8259aPicC::identifyActiveIrq(
 	 * it is impossible for them to interrupt any CPU other than the BSP. An
 	 * IO-APIC in virtual-wire mode will also emulate this behaviour.
 	 **/
+	if (irqPinList == __KNULL) {
+		return IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE;
+	};
+
 	if (cpu != ibmPcState.bspInfo.bspId) { return ERROR_UNSUPPORTED; };
 
 	*triggerMode = IRQCTL_IRQPIN_TRIGGMODE_LEVEL;

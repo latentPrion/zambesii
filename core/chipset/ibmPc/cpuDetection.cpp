@@ -1,6 +1,4 @@
 
-#include <debug.h>
-
 #include <__ksymbols.h>
 #include <arch/arch.h>
 #include <arch/memory.h>
@@ -15,6 +13,7 @@
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/libacpi.h>
 #include <commonlibs/libx86mp/libx86mp.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <__kthreads/__kcpuPowerOn.h>
 #include "i8259a.h"
@@ -559,88 +558,30 @@ checkForMpTables:
 
 cpu_t zkcmCpuDetectionModC::getBspId(void)
 {
-	x86_mpCfgS		*cfgTable;
-	acpi_rsdtS		*rsdt;
-	acpi_rMadtS		*madt;
-	void			*handle, *context;
-	paddr_t			tmp;
-
-	/* At some point I'll rewrite this function: it's very unsightly.
-	 **/
 	if (!ibmPcState.bspInfo.bspIdRequestedAlready)
 	{
-		/* Run a local CPU ID read. Need libLapic. Will have to parse
-		 * APIC/MP tables to determine the LAPIC paddr, then use
-		 * liblapic to read the current CPUID.
-		 **/
-		x86Mp::initializeCache();
-		if (!x86Mp::mpConfigTableIsMapped())
-		{
-			x86Mp::findMpFp();
-			if (!x86Mp::mpFpFound()) {
-				goto tryAcpi;
-			};
-
-			if (x86Mp::mapMpConfigTable() == __KNULL) {
-				goto tryAcpi;
-			};
-		};
-		cfgTable = x86Mp::getMpCfg();
-		ibmPcState.lapicPaddr = cfgTable->lapicPaddr;
-		goto initLibLapic;
-
-tryAcpi:
-		acpi::initializeCache();
-#if !defined(__32_BIT__) || defined(CONFIG_ARCH_x86_32_PAE)
-		// If not 32 bit, use XSDT.
-#else
-		// 32 bit uses RSDT only.
-		if (acpi::findRsdp() != ERROR_SUCCESS || !acpi::testForRsdt()
-			|| acpi::mapRsdt() != ERROR_SUCCESS)
-		{
-			goto useDefaultPaddr;
-		};
-
-		rsdt = acpi::getRsdt();
-		context = handle = __KNULL;
-		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
-		if (madt == __KNULL) { goto useDefaultPaddr; };
-		ibmPcState.lapicPaddr = (paddr_t)madt->lapicPaddr;
-
-		acpiRsdt::destroyContext(&context);
-		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
-#endif
-		goto initLibLapic;
-
-useDefaultPaddr:
-		__kprintf(NOTICE CPUMOD"getBspId(): Using default paddr.\n");
-		ibmPcState.lapicPaddr = 0xFEE00000;
-
-initLibLapic:
-		__kprintf(NOTICE CPUMOD"getBspId(): LAPIC paddr = 0x%P.\n",
-			ibmPcState.lapicPaddr);
-
 		x86Lapic::initializeCache();
-		if (!x86Lapic::getPaddr(&tmp)) {
-			x86Lapic::setPaddr(ibmPcState.lapicPaddr);
-		};
-
-		if (x86Lapic::mapLapicMem() != ERROR_SUCCESS)
+		if (!x86Lapic::lapicMemIsMapped())
 		{
-			__kprintf(WARNING CPUMOD"getBspId(): Failed to map "
-				"lapic into kernel vaddrspace. Unable to get "
-				"true BSP id.\n");
+			// Not safe, but detectPaddr() never returns error.
+			if (x86Lapic::detectPaddr() != ERROR_SUCCESS) {
+				return 0;
+			};
 
-			return 0;
+			if (x86Lapic::mapLapicMem() != ERROR_SUCCESS)
+			{
+				panic(CC CPUMOD"getBspId: Failed to map LAPIC "
+					"into kernel vaddrspace.\n");
+			};
 		};
 
 		ibmPcState.bspInfo.bspId = x86Lapic::read32(
 			x86LAPIC_REG_LAPICID);
 
+		ibmPcState.bspInfo.bspId >>= 24;
 		ibmPcState.bspInfo.bspIdRequestedAlready = 1;
 	};
 
-	ibmPcState.bspInfo.bspId >>= 24;
 	return ibmPcState.bspInfo.bspId;
 }
 

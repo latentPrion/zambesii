@@ -55,6 +55,9 @@
 
 #define NOLOG				"%[n]"
 
+#define LOGONCE(__id)			NOLOG
+#define LOGONCE_FINDTABLES(__id)	
+
 class debugPipeC
 {
 public:

@@ -82,20 +82,32 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
 
-	// Initialize the kernel Memory Reservoir (heap) and object cache pool.
+	/* Initialize the kernel Memory Reservoir (heap) and object cache pool.
+	 **/
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
-for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 
-// Right here is where we should enable BSP scheduling and spawn the new thread.
-
-// From this point on, we split off into __korientationMain.
-	// Initialize ZKCM CPU Dectection mod.
+	/* Initialize the CPU Tributary's internal BMPs etc, then initialize the
+	 * BSP CPU's scheduler to co-op level scheduling capability, and
+	 * spawn the __korientationMain thread, ending __korientationInit.
+	 **/
+	DO_OR_DIE(cpuTrib, initialize(), ret);
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
-	// Enable the Task Stream on the BSP CPU for boot time scheduling.
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
+for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
+// Right here is where we should enable BSP scheduling and spawn the new thread.
+	// processTrib.__kprocess.spawnThread();
+	// processTrib.__kprocess.destroyThread(__korientationThread.id);
+
+	// From this point on, we split off into __korientationMain.
+}
+
+void __korientationMain(void)
+{
+	error_t		ret;
+
 	// Initialize IRQ Control and chipset bus-pin mapping management.
-	DO_OR_DIE(interruptTrib, initialize(), ret);
+//	DO_OR_DIE(interruptTrib, initializeIrqManagement(), ret);
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	// Start the Timer Trib timer services.
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
@@ -104,7 +116,10 @@ for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
-	DO_OR_DIE(cpuTrib, initialize(), ret);
+	// Initialize ZKCM CPU Dectection mod.
+	// Detect and wake all CPUs.
+	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
+	
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 
 	ubit8		t;

@@ -124,7 +124,8 @@ void interruptTribC::irqMain(taskContextS *regs)
 		regs->vectorNo,
 		&__kpin, &triggerMode);
 
-	__kprintf(NOTICE INTTRIB"irqMain: identifyActiveIrq returned %d, __kpin %d, triggerMode %d.\n",
+	__kprintf(NOTICE INTTRIB"irqMain: identifyActiveIrq returned %d, "
+		"__kpin %d, triggerMode %d.\n",
 		status, __kpin, triggerMode);
 
 	switch (status)

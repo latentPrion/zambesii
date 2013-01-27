@@ -1,3 +1,6 @@
+
+#include <debug.h>
+
 #include <scaling.h>
 #include <chipset/cpus.h>
 #include <chipset/zkcm/zkcmCore.h>
@@ -56,16 +59,77 @@ cpuTribC::~cpuTribC(void)
 {
 }
 
+error_t cpuTribC::initialize(void)
+{
+	error_t		ret;
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	ret = availableBanks.initialize(0);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = cpuBanks.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+#endif
+#if __SCALING__ >= SCALING_SMP
+	ret = availableCpus.initialize(0);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = onlineCpus.initialize(0);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = cpuStreams.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+#endif
+
+	return ERROR_SUCCESS;
+}
+
 error_t cpuTribC::initializeBspCpuStream(void)
 {
 	error_t		ret;
 
 	// Get BSP's hardware ID.
 	bspId = zkcmCore.cpuDetection.getBspId();
+	__kprintf(NOTICE CPUTRIB"initializeBspStream: BSP CPU ID is %d.\n",
+		bspId);
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	/**	EXPLANATION:
+	 * If this is a NUMA build, then we also need to find out the ID of the
+	 * bank in which the BSP is located. We get the NUMA map, look for the
+	 * BSP CPU, and try to get its bank ID. If the BSP CPU is not listed in
+	 * the NUMA map, or no NUMA map is obtained, we place the BSP CPU into
+	 * the shared bank.
+	 **/
+	numaBankId_t	bspBankId=CHIPSET_CPU_NUMA_SHBANKID;
+	zkcmNumaMapS	*numaMap;
+
+	numaMap = zkcmCore.cpuDetection.getNumaMap();
+	if (numaMap != __KNULL && numaMap->nCpuEntries != 0)
+	{
+		for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
+		{
+			if (numaMap->cpuEntries[i].cpuId == bspId)
+			{
+				bspBankId = numaMap->cpuEntries[i].bankId;
+				__kprintf(NOTICE CPUTRIB"initializeBspStream: "
+					"BSP CPU bank ID is %d.\n",
+					bspBankId);
+			};
+		};
+	};
+#endif
+
+	if (bspBankId == CHIPSET_CPU_NUMA_SHBANKID)
+	{
+		__kprintf(WARNING CPUTRIB"initializeBspStream: Unable to "
+			"determine BSP bank ID.\n\tUsing SHBANKID (%d).\n",
+			CHIPSET_CPU_NUMA_SHBANKID);
+	};
 
 	ret = spawnStream(
 #if __SCALING__ >= SCALING_CC_NUMA
-		NUMABANKID_INVALID,
+		bspBankId,
 #endif
 		bspId, 0);
 
@@ -74,10 +138,11 @@ error_t cpuTribC::initializeBspCpuStream(void)
 	ret = bspCpu.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = bspCpu.taskStream.initialize();
+/*	ret = bspCpu.taskStream.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	return bspCpu.taskStream.cooperativeBind();
+	return bspCpu.taskStream.cooperativeBind();*/
+	return ERROR_SUCCESS;
 }
 
 error_t cpuTribC::fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId)
@@ -107,7 +172,7 @@ error_t cpuTribC::fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId)
 	return ERROR_SUCCESS;
 }
 
-error_t cpuTribC::initialize(void)
+error_t cpuTribC::initializeAllCpus(void)
 {
 	error_t			ret;
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -177,6 +242,7 @@ error_t cpuTribC::initialize(void)
 		for (uarch_t i=0; i<500000; i++) { cpuControl::subZero(); };
 		return fallbackToUpMode(bspId, bspId);
 	};
+
 	/* On MP build it's beneficial to pre-determine the size of the BMPs
 	 * so that when CPUs are being spawned the BMPs aren't constantly
 	 * resized.
@@ -193,7 +259,7 @@ error_t cpuTribC::initialize(void)
 			highestCpuId, numaMap, cpuEntries,
 			cpuId, numaMap->nCpuEntries);
 	};
-	if (availableBanks.initialize(highestBankId + 1) != ERROR_SUCCESS) {
+	if (availableBanks.resizeTo(highestBankId + 1) != ERROR_SUCCESS) {
 		panic(CC""CPUTRIB"AvailableBanks BMP initialize() failed.\n");
 	};
 #endif
@@ -208,11 +274,11 @@ error_t cpuTribC::initialize(void)
 			highestCpuId, smpMap, entries, cpuId, smpMap->nEntries);
 	};
 
-	if (availableCpus.initialize(highestCpuId + 1) != ERROR_SUCCESS) {
+	if (availableCpus.resizeTo(highestCpuId + 1) != ERROR_SUCCESS) {
 		panic(CC""CPUTRIB"Failed to initialize() availableCpus bmp.\n");
 	};
 
-	if (onlineCpus.initialize(highestCpuId + 1) != ERROR_SUCCESS) {
+	if (onlineCpus.resizeTo(highestCpuId + 1) != ERROR_SUCCESS) {
 		panic(CC""CPUTRIB"Failed to initialize() onlineCpus bmp.\n");
 	};
 #endif
@@ -512,7 +578,7 @@ error_t cpuTribC::uniProcessorInit(void)
 #define CHECK_AND_RESIZE_BMP(__pb,__n,__ret,__fn,__bn)			\
 	do { \
 	*(__ret) = ERROR_SUCCESS; \
-	if ((__n) > (signed)(__pb)->getNBits() - 1) \
+	if ((__n) >= (signed)(__pb)->getNBits()) \
 	{ \
 		*(__ret) = (__pb)->resizeTo((__n) + 1); \
 		if (*(__ret) != ERROR_SUCCESS) \
@@ -536,12 +602,11 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 #endif
 	cpuStreamC	*cs;
 
-	if (
 #if __SCALING__ >= SCALING_CC_NUMA
-		(bid == NUMABANKID_INVALID && cid != bspId) ||
+	if (bid == NUMABANKID_INVALID || cid == CPUID_INVALID) {
+#else
+	if (cid == CPUID_INVALID) {
 #endif
-		cid == CPUID_INVALID)
-	{
 		return ERROR_UNAUTHORIZED;
 	};
 
@@ -550,31 +615,23 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	 * The NUMA case requires that the CPU be assigned to its holding bank.
 	 * The extra NUMA code is really just dealing with that.
 	 **/
-	if (bid == NUMABANKID_INVALID)
+	if ((ret = createBank(bid)) != ERROR_SUCCESS)
 	{
-		if ((ncb = getBank(bid)) == __KNULL)
-		{
-			if ((ret = createBank(bid)) != ERROR_SUCCESS)
-			{
-				__kprintf(ERROR CPUTRIB"spawnStream"
-					"(%d, %d, %d): "
-					"Failed to create bank.\n",
-					bid, cid, cpuAcpiId);
+		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): "
+			"Failed to create bank.\n",
+			bid, cid, cpuAcpiId);
 
-				return __KNULL;
-			};
-			ncb = getBank(bid);
-		};
-
-		CHECK_AND_RESIZE_BMP(
-			&ncb->cpus, cid, &ret,
-			"spawnStream", "resident bank");
-
-		if (ret != ERROR_SUCCESS) { return ret; };
-		ncb->cpus.setSingle(cid);
+		return __KNULL;
 	};
-#endif
 
+	ncb = getBank(bid);
+	CHECK_AND_RESIZE_BMP(
+		&ncb->cpus, cid, &ret,
+		"spawnStream", "resident bank");
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+	ncb->cpus.setSingle(cid);
+#endif
 	/**	EXPLANATION:
 	 * The SMP case requires that the onlineCpus and availableCpus bmps be
 	 * resized to hold the new CPU's bit.
@@ -610,9 +667,9 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	else
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new (&bspCpu) cpuStreamC(bid, cid, 0);
+		cs = new (&bspCpu) cpuStreamC(bid, cid, cpuAcpiId);
 #else
-		cs = new (&bspCpu) cpuStreamC(cid, 0);
+		cs = new (&bspCpu) cpuStreamC(cid, cpuAcpiId);
 #endif
 	};
 
@@ -682,7 +739,6 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 	if ((ncb = getBank(bankId)) != __KNULL) {
 		return ERROR_SUCCESS;
 	};
-
 	CHECK_AND_RESIZE_BMP(
 		&availableBanks, bankId, &err,
 		"createBank", "available banks");

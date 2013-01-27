@@ -7,6 +7,7 @@
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libx86mp/lapic.h>
 #include <commonlibs/libx86mp/mpTables.h>
+#include <commonlibs/libacpi/libacpi.h>
 #include <kernel/common/processTrib/processTrib.h>
 
 
@@ -39,6 +40,80 @@ sarch_t x86Lapic::getPaddr(paddr_t *p)
 	return (cache.p != 0);
 }
 
+error_t x86Lapic::detectPaddr(void)
+{
+	x86_mpCfgS		*cfgTable;
+	acpi_rsdtS		*rsdt;
+	acpi_rMadtS		*madt;
+	void			*handle, *context;
+	paddr_t			tmp;
+
+	if (getPaddr(&tmp)) { return ERROR_SUCCESS; };
+
+	acpi::initializeCache();
+	if (acpi::findRsdp() != ERROR_SUCCESS) { goto tryMpTables; };
+#if !defined(__32_BIT__) || defined(CONFIG_ARCH_x86_32_PAE)
+	// If not 32 bit, try XSDT.
+	if (acpi::testForXsdt())
+	{
+		// Map XSDT, etc.
+	}
+	else // Continues into an else-if for RSDT test.
+#endif
+	// 32 bit uses RSDT only.
+	if (acpi::testForRsdt())
+	{
+		if (acpi::mapRsdt() != ERROR_SUCCESS) { goto tryMpTables; };
+		
+		rsdt = acpi::getRsdt();
+		context = handle = __KNULL;
+		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
+
+		if (madt == __KNULL) { goto tryMpTables; };
+		tmp = (paddr_t)madt->lapicPaddr;
+
+		acpiRsdt::destroyContext(&context);
+		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
+
+		// Have the LAPIC paddr. Move on.
+		goto initLibLapic;
+	}
+	else
+	{
+		__kprintf(WARNING x86LAPIC"detectPaddr(): RSDP found, but no "
+			"RSDT or XSDT.\n");
+	};
+
+tryMpTables:
+	x86Mp::initializeCache();
+	if (!x86Mp::mpConfigTableIsMapped())
+	{
+		x86Mp::findMpFp();
+		if (!x86Mp::mpFpFound()) {
+			goto useDefaultPaddr;
+		};
+
+		if (x86Mp::mapMpConfigTable() == __KNULL) {
+			goto useDefaultPaddr;
+		};
+	};
+
+	cfgTable = x86Mp::getMpCfg();
+	tmp = cfgTable->lapicPaddr;
+	goto initLibLapic;
+
+useDefaultPaddr:
+	__kprintf(WARNING x86LAPIC"detectPaddr: Using default paddr.\n");
+	tmp = 0xFEE00000;
+
+initLibLapic:
+	__kprintf(NOTICE x86LAPIC"detectPaddr: LAPIC paddr: 0x%P.\n",
+		tmp);
+
+	x86Lapic::setPaddr(tmp);
+	return ERROR_SUCCESS;
+}
+
 sarch_t x86Lapic::cpuHasLapic(void)
 {
 	uarch_t			eax, ebx, ecx, edx;
@@ -46,7 +121,7 @@ sarch_t x86Lapic::cpuHasLapic(void)
 	execCpuid(1, &eax, &ebx, &ecx, &edx);
 	if (!(edx & (1 << 9)))
 	{
-		__kprintf(ERROR x86LAPIC"checkSmpSanity(): CPUID[1].EDX[9] "
+		__kprintf(ERROR x86LAPIC"cpuHasLapic: CPUID[1].EDX[9] "
 			"LAPIC existence check failed. EDX: %x.\n",
 			edx);
 

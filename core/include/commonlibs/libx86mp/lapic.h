@@ -135,6 +135,7 @@ namespace x86Lapic
 
 	sarch_t cpuHasLapic(void);
 
+	error_t detectPaddr(void);
 	sarch_t getPaddr(paddr_t *p);
 	void setPaddr(paddr_t p);
 	error_t mapLapicMem(void);
