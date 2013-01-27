@@ -1,6 +1,4 @@
 
-#include <debug.h>
-
 #include <arch/paging.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -97,6 +95,7 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 	nBytes += sizeof(allocHeaderS);
 
 	head.lock.acquire();
+
 	// If swamp is empty, allocate new block.
 	if (head.rsrc == __KNULL)
 	{
