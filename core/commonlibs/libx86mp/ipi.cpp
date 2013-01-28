@@ -58,7 +58,7 @@ void x86Lapic::ipi::installHandler(void)
 	handlerIsInstalled = 1;
 }
 
-status_t x86Lapic::ipi::exceptionHandler(taskContextS *, ubit8 postcall)
+status_t x86Lapic::ipi::exceptionHandler(taskContextC *, ubit8 postcall)
 {
 	// Check messager and see why we got an IPI.
 	if (!postcall)

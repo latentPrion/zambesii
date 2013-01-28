@@ -89,7 +89,6 @@ status_t taskStreamC::schedule(taskC *task)
 		return TASK_SCHEDULE_TRY_AGAIN;
 	};
 #endif
-
 	// Check CPU suitability to run task (FPU, other features).
 
 	// Validate scheduling parameters.

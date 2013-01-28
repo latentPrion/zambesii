@@ -11,12 +11,10 @@
 
 /**	EXPLANATION:
  * The Memory Stream is responsible for the per-process monitoring of all
- * memory allocations etc.
- *
- * The Memory Stream for a process provides the allocation table needed to
- * ensure that the kernel's low level garbage collection will work when the
- * process exits. It also provides a cache of allocations so that we don't have
- * constant contention over the Memory Tributary for physical memory.
+ * dynamic memory allocations. A process' Memory Stream provides the allocation
+ * table needed to ensure the kernel's low level garbage collection will work
+ * when a process exits and also provides a cache of allocations to reduce
+ * contention over Memory Tributary for pmem.
  *
  * Each process must have its Virtual Address Space managed; The Memory Stream
  * contains the vaddrSpaceStreamC within itself to provide this functionality.
@@ -77,12 +75,15 @@ public:
 		vSwampC::holeMapS *holeMap);
 
 public:
+	// ONLY to be used for allocating dynamic memory and stacks.
 	void *memAlloc(uarch_t nPages, uarch_t flags=0);
 	void memFree(void *vaddr);
 
 	// These two make use of the allocTableC to store nPages.
-	void *memRegionAlloc(ubit8 regionId, uarch_t nPages);
-	void memRegionFree(ubit8 regionId, void *vaddr);
+	void *memoryRegionAlloc(ubit8 regionId, uarch_t nPages);
+	void memoryRegionFree(ubit8 regionId, void *vaddr);
+
+	// See allocTable.h for the rest of this class's API.
 
 	void cut(void);
 	error_t bind(void);

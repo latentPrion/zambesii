@@ -97,7 +97,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 
 	processId_t		tid;
 
-	processTrib.__kprocess.spawnThread(
+	ret = processTrib.__kprocess.spawnThread(
 		(void (*)(void *))&__korientationMain, __KNULL,
 		__KNULL,
 		taskC::ROUND_ROBIN,
@@ -105,6 +105,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
 		&tid);
 
+	if (ret == ERROR_SUCCESS) { __kprintf(NOTICE ORIENT"Successfully spawned __korientationMain thread, ID 0x%x.\n", tid); };
 for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 // Right here is where we should enable BSP scheduling and spawn the new thread.
 	// processTrib.__kprocess.destroyThread(__korientationThread.id);

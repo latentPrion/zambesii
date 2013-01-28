@@ -9,7 +9,7 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
 
-void interruptTrib_irqEntry(taskContextS *regs)
+void interruptTrib_irqEntry(taskContextC *regs)
 {
 	interruptTrib.irqMain(regs);
 	io::write8(0x20, 0x20);

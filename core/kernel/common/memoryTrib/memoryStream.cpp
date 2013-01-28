@@ -51,17 +51,15 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	uarch_t		commit=nPages, ret, f, pos, nTries, localFlush=0;
 	status_t	totalFrames, nFrames, nMapped;
 	paddr_t		p;
+	ubit8		fKernel;
 
-	if (nPages == 0) {
-		return __KNULL;
-	};
+	if (nPages == 0) { return __KNULL; };
 
 	if (__KFLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY)) { localFlush = 1; };
 
 	// Try alloc cache.
-	if ((!__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL))
-		&& (allocCache.pop(nPages, reinterpret_cast<void **>( &ret ))
-		== ERROR_SUCCESS))
+	if (!__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)
+		&& (allocCache.pop(nPages, (void **)&ret) == ERROR_SUCCESS))
 	{
 		walkerPageRanger::setAttributes(
 			&vaddrSpaceStream.vaddrSpace,
@@ -70,22 +68,22 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 
 		return reinterpret_cast<void *>( ret );
 	};
+
 	// Calculate the number of frames to commit before fakemapping.
+	if (__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)) { commit = 0; };
 	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)) {
 		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
 	};
-	if (__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)) {
-		commit = 0;
-	};
 
-	ret = reinterpret_cast<uarch_t>( vaddrSpaceStream.getPages(nPages) );
+	ret = (uarch_t)vaddrSpaceStream.getPages(nPages);
+	if (ret == __KNULL) { return __KNULL; };
 
-	if (ret == __KNULL) {
-		return __KNULL;
-	};
+	/**	FIXME: Should be:
+	 * (parentProcess->execDomain == PROCESS_EXECDOMAIN_KERNEL) ? 1 : 0.
+	 **/
+	fKernel = (this->id == __KPROCESSID) ? 1 : 0;
 
-	for (totalFrames=0, nTries=0;
-		totalFrames < static_cast<sarch_t>( commit ); )
+	for (totalFrames=0, nTries=0; totalFrames < (sarch_t)commit; )
 	{
 		nFrames = memoryTribPmm::fragmentedGetFrames(
 			commit - totalFrames, &p);
@@ -94,21 +92,19 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 		{
 			nMapped = walkerPageRanger::mapInc(
 				&vaddrSpaceStream.vaddrSpace,
-				reinterpret_cast<void *>(
-					ret + (totalFrames
-						<< PAGING_BASE_SHIFT) ),
-				p,
-				nFrames,
-				PAGEATTRIB_WRITE | PAGEATTRIB_PRESENT
-				| ((this->id == __KPROCESSID)
-					? PAGEATTRIB_SUPERVISOR : 0)
+				(void *)(ret
+					+ (totalFrames << PAGING_BASE_SHIFT)),
+				p, nFrames,
+				PAGEATTRIB_PRESENT
+				| PAGEATTRIB_WRITE
+				| ((fKernel) ? PAGEATTRIB_SUPERVISOR : 0)
 				| ((localFlush)?PAGEATTRIB_LOCAL_FLUSH_ONLY:0));
 
 			totalFrames += nFrames;
 
 			if (nMapped < nFrames)
 			{
-				__kprintf(WARNING MEMORYSTREAM"0x%X: "
+				__kprintf(WARNING MEMORYSTREAM"0x%x: "
 					"WPR failed to map %d pages for alloc "
 					"of %d frames.\n",
 					this->id, nFrames, nPages);
@@ -138,12 +134,10 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 			&vaddrSpaceStream.vaddrSpace,
 			reinterpret_cast<void *>(
 				ret + (totalFrames << PAGING_BASE_SHIFT) ),
-			PAGESTATUS_FAKEMAPPED_DYNAMIC
-				<< PAGING_PAGESTATUS_SHIFT,
+			PAGESTATUS_FAKEMAPPED_DYNAMIC <<PAGING_PAGESTATUS_SHIFT,
 			nPages - totalFrames,
 			PAGEATTRIB_WRITE
-			| ((this->id == __KPROCESSID) ? PAGEATTRIB_SUPERVISOR
-				: 0)
+			| ((fKernel) ? PAGEATTRIB_SUPERVISOR : 0)
 			| ((localFlush) ? PAGEATTRIB_LOCAL_FLUSH_ONLY : 0));
 
 		if (nMapped < static_cast<sarch_t>( nPages ) - totalFrames)
@@ -156,9 +150,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 		};
 	};
 	// Now add to alloc table.
-	if (allocTable.addEntry(reinterpret_cast<void *>( ret ), nPages, 0)
-		== ERROR_SUCCESS)
-	{
+	if (allocTable.addEntry((void *)ret, nPages, 0)	== ERROR_SUCCESS) {
 		return reinterpret_cast<void *>( ret );
 	};
 
@@ -208,7 +200,6 @@ void memoryStreamC::memFree(void *vaddr)
 		return;
 	};
 
-	// Attempt to just push the allocation whole into the cache.
 	if (allocCache.push(nPages, vaddr) == ERROR_SUCCESS)
 	{
 		walkerPageRanger::setAttributes(

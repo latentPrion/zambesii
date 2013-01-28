@@ -10,12 +10,10 @@
 	#include <kernel/common/task.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
+	#include <kernel/common/execDomain.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
 	#include <kernel/common/timerTrib/timerStream.h>
 	#include <__kthreads/__korientation.h>
-
-#define PROCESS_EXECDOMAIN_KERNEL	0x1
-#define PROCESS_EXECDOMAIN_USER		0x2
 
 /**	Flags for processC::flags.
  **/
@@ -36,7 +34,7 @@
 // Set to PRIOCLASS_DEFAULT by default.
 #define SPAWNTHREAD_FLAGS_SCHEDPRIO_CLASS_DEFAULT	(0)
 #define SPAWNTHREAD_FLAGS_SCHEDPRIO_STINHERIT		(1<<7)
-#define SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS		(1<<5)
+#define SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET	(1<<5)
 #define SPAWNTHREAD_FLAGS_SCHEDPRIO_SET			(1<<6)
 
 #define SPAWNTHREAD_STATUS_NO_PIDS		0x1
@@ -136,10 +134,7 @@ public:
 
 private:
 	sarch_t getNextThreadId(void);
-	taskC *allocateNewThread(
-		processId_t newThreadId,
-		taskC::schedPolicyE schedPolicy, prio_t prio);
-
+	taskC *allocateNewThread(processId_t newThreadId);
 	void removeThread(processId_t id);
 
 	void __kprocessAllocateInternals(void);

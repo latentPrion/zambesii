@@ -14,32 +14,34 @@ taskTribC::taskTribC(void)
 	load = 0;
 }
 
-#if __SCALING__ >= SCALING_CC_NUMA
-error_t taskTribC::schedule(taskC*task)
+#if __SCALING__ >= SCALING_SMP
+error_t taskTribC::schedule(taskC *task)
 {
-	ubit32		lowestLoad=0xFFFFFFFF;
-	numaCpuBankC	*bestBank=__KNULL, *curBank;
+	cpuStreamC	*cs, *bestCandidate=__KNULL;
 
-	// Go according to NUMA affinity.
-	for (uarch_t i=0; i<task->cpuAffinity.getNBits(); i++)
+	for (cpu_t i=0; i<(signed)task->cpuAffinity.getNBits(); i++)
 	{
-		if (task->cpuAffinity.testSingle(i))
+		if (task->cpuAffinity.testSingle(i)
+			&& cpuTrib.onlineCpus.testSingle(i))
 		{
-			curBank = cpuTrib.getBank(cpuTrib.getStream(i)->bankId);
-			if (curBank == __KNULL) { continue; };
-			if (curBank->getLoad() < lowestLoad)
+			cs = cpuTrib.getStream(i);
+
+			if (bestCandidate == __KNULL)
 			{
-				bestBank = curBank;
-				lowestLoad = curBank->getLoad();
+				bestCandidate = cs;
+				continue;
+			};
+
+			if (cs->taskStream.getLoad()
+				< bestCandidate->taskStream.getLoad())
+			{
+				bestCandidate = cs;
 			};
 		};
 	};
 
-	if (bestBank == __KNULL) {
-		return ERROR_UNKNOWN;
-	};
-
-	return bestBank->schedule(task);
+	if (bestCandidate == __KNULL) { return ERROR_UNKNOWN; };
+	return bestCandidate->taskStream.schedule(task);
 }
 #endif
 

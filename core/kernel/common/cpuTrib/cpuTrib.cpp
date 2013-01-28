@@ -820,6 +820,20 @@ error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
 			__kcpuPowerOnThread.cpuAffinity.setSingle(cid);
 		};
 
+		CHECK_AND_RESIZE_BMP(
+			&processTrib.__kprocess.cpuAffinity, cid, &ret,
+			"__kupdateAffinity", "__kprocess CPU affinity");
+
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUTRIB"__kprocess unable to use "
+				"CPU %d.\n",
+				cid);
+		}
+		else {
+			processTrib.__kprocess.cpuAffinity.setSingle(cid);
+		};
+
 		return ERROR_SUCCESS;
 
 	case CPUTRIB___KUPDATEAFFINITY_REMOVE:

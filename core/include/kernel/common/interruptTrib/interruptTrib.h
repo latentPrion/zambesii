@@ -31,10 +31,10 @@ public:
 	~interruptTribC(void) {};
 
 public:
-	void irqMain(taskContextS *regs);
-	void swiMain(taskContextS *regs);
-	void exceptionMain(taskContextS *regs);
-	void msiMain(taskContextS *regs);
+	void irqMain(taskContextC *regs);
+	void swiMain(taskContextC *regs);
+	void exceptionMain(taskContextC *regs);
+	void msiMain(taskContextC *regs);
 
 	void installException(
 		uarch_t vector, __kexceptionFn *exception, uarch_t flags);
@@ -209,7 +209,7 @@ public:
 };
 
 extern interruptTribC		interruptTrib;
-extern "C" void interruptTrib_irqEntry(taskContextS *regs);
+extern "C" void interruptTrib_irqEntry(taskContextC *regs);
 
 #endif
 

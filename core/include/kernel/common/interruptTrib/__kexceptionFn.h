@@ -3,7 +3,7 @@
 
 	#include <arch/taskContext.h>
 
-typedef status_t (__kexceptionFn)(struct taskContextS *regs, ubit8 postcall);
+typedef status_t (__kexceptionFn)(struct taskContextC *regs, ubit8 postcall);
 
 #endif
 

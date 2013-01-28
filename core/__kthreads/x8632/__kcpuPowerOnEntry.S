@@ -100,7 +100,7 @@ ASM_LOCAL_FUNCTION(__kcpuPowerOnVirtualStart)
 ASM_END_FUNCTION(__kcpuPowerOnVirtualStart)
 
 ASM_GLOBAL_FUNCTION(getRegs)
-	/* void getRegs(taskContextS *t);
+	/* void getRegs(taskContextC *t);
 	 * t(8) -> eip(4) | edi(0) ->
 	 */
 	pushl	%edi

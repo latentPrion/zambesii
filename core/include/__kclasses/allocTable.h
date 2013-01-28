@@ -8,19 +8,28 @@
 	#include <kernel/common/numaTypes.h>
 
 /**	EXPLANATION:
- * Alloc Table is the kernel's assurance of recollection of memory from a
- * process when it is killed. Every process has an allocTableC, including the
- * kernel itself. AllocTableC monitors dynamic allocations in a process.
+ * Alloc Table is the kernel's assurance of recollection of dynamically
+ * allocated pmem from a process when it is killed. Every process has an
+ * allocTableC, including the kernel itself. AllocTableC ONLY tracks _dynamic_
+ * allocations.
  *
- * Generally, all that is needed is the virtual address of the allocation,
- * and its size in pages. However, since I intend for the page swapping code
- * to essentially prefer to swap out heap/dynamically allocated memory over
- * swapping out, for example, executable sections (though swapping executable
- * sections is a good second choice), the alloc tables will also hold
- * "attributes", to tell the swapper which pages it is not safe to swap out.
+ * Static executable sections such as .text, .data, .rodata etc do not require
+ * an alloc table since they are not dynamic in nature. The kernel can easily
+ * clean these up by checking the relocation information for the process in
+ * question.
  *
- * So for example, a page with the ALLOCTABLE_ATTRIB_NOSWAP attribute set is
- * meant to be left in memory all the time, and never swapped out.
+ * Generally, only the virtual address of the allocation and its size in pages
+ * are needed. There are 5 types of allocations which are dynamic in nature:
+ *	1. Normal memory allocation:	 : SWAP, RW, FAKE
+ *	2. Stack allocation.		 : NOSWAP, RW, FAKE-IF-NOT-KERNEL
+ *	3. Shared memory allocation.	 : NOSWAP, RW, NOFAKE
+ *	4. Memory mapped file allocation.: SWAP, RW, FAKE
+ *	5. Memory Region allocation.	 : NOSWAP, RW, NOFAKE
+ *
+ * 1, 2: Handled by memoryStreamC::memAlloc().
+ * 3: Handled by memoryStreamC::sharedMemoryAlloc().
+ * 4: Handled by memoryStreamC::memoryMappedFileAlloc().
+ * 5: Handled by memoryStreamC::memoryRegionAlloc().
  **/
 
 #define ALLOCTABLE_ATTRIB_NOSWAP	(1<<0)

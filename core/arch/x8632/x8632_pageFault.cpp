@@ -22,7 +22,7 @@ static void *getCr2(void)
 	return ret;
 }
 
-status_t x8632_page_fault(taskContextS *regs, ubit8)
+status_t x8632_page_fault(taskContextC *regs, ubit8)
 {
 	status_t	status;
 	memoryStreamC	*memoryStream;

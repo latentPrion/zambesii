@@ -117,10 +117,10 @@ error_t processStreamC::cloneStateIntoChild(processStreamC *child)
 }
 
 error_t processStreamC::spawnThread(
-	void (* /*entryPoint*/)(void *), void * /*argument*/,
-	bitmapC * /*cpuAffinity*/,
+	void (* entryPoint)(void *), void * /*argument*/,
+	bitmapC * cpuAffinity,
 	taskC::schedPolicyE schedPolicy,
-	ubit8 prio, uarch_t /*flags*/,
+	ubit8 prio, uarch_t flags,
 	processId_t *newThreadId
 	)
 {
@@ -134,27 +134,38 @@ error_t processStreamC::spawnThread(
 
 	// Allocate new thread if ID was available.
 	*newThreadId = newThreadIdTmp;
-	newTask = allocateNewThread(*newThreadId, schedPolicy, prio);
+	newTask = allocateNewThread(*newThreadId);
 	if (newTask == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
 	// Allocate internal sub-structures (context, etc.).
 	ret = newTask->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	return ERROR_SUCCESS;
+	ret = newTask->allocateStacks();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	// Do affinity inheritance.
+	ret = newTask->inheritAffinity(cpuAffinity, flags);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	newTask->inheritSchedPolicy(schedPolicy, flags);
+	newTask->inheritSchedPrio(prio, flags);
+
+	// Now everything is allocated; just initialize the new thread.
+	newTask->context.setStacks(
+		execDomain, newTask->stack0, newTask->stack1);
+
+	newTask->context.setEntryPoint(entryPoint);
+
+	return taskTrib.schedule(newTask);
 }
 
-taskC *processStreamC::allocateNewThread(
-	processId_t newThreadId,
-	taskC::schedPolicyE schedPolicy, prio_t prio
+taskC *processStreamC::allocateNewThread(processId_t newThreadId
 	)
 {
 	taskC		*ret;
 
-	ret = new taskC(
-		PROCID_PROCESS(id) | newThreadId, this,
-		schedPolicy, prio, 0);
-
+	ret = new taskC(PROCID_PROCESS(id) | newThreadId, this);
 	if (ret == __KNULL) { return __KNULL; };
 
 	taskLock.writeAcquire();

@@ -30,8 +30,8 @@ uarch_t getEip(void)
 	return eip;
 }
 
-extern "C" void getRegs(taskContextS *t);
-// taskContextS		y;
+extern "C" void getRegs(taskContextC *t);
+// taskContextC		y;
 
 void __kcpuPowerOnMain(void)
 {

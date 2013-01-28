@@ -97,7 +97,7 @@ error_t interruptTribC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-void interruptTribC::irqMain(taskContextS *regs)
+void interruptTribC::irqMain(taskContextC *regs)
 {
 	ubit16			__kpin;
 	ubit8			triggerMode;

@@ -43,6 +43,8 @@
  * attribute, and not a thread specific attribute.
  **/
 
+#define TASK				"Task "
+
 #define TASK_FLAGS_CUSTPRIO		(1<<0)
 
 #define TASK_SCHEDFLAGS_SCHED_WAITING	(1<<0)
@@ -56,34 +58,36 @@ public:
 	enum schedStateE { DORMANT=1, RUNNABLE, RUNNING, UNSCHEDULED };
 	enum schedPolicyE { ROUND_ROBIN=1, REAL_TIME };
 
-	taskC(
-		processId_t taskId, processStreamC *parentProcess,
-		schedPolicyE schedPolicy, prio_t prio,
-		uarch_t flags)
+	taskC(processId_t taskId, processStreamC *parentProcess)
 	:
-		stack0(__KNULL), stack1(__KNULL),
-		id(taskId), parent(parentProcess), flags(0),
+	stack0(__KNULL), stack1(__KNULL),
+	id(taskId), parent(parentProcess), flags(0),
 
-		internalPrio(CC"Custom", prio),
-		schedPolicy(schedPolicy), schedFlags(0),
-		schedState(UNSCHEDULED),
+	internalPrio(CC"Custom", PRIOCLASS_DEFAULT),
+	schedPolicy(schedPolicy), schedFlags(0),
+	schedState(UNSCHEDULED),
 
-		currentCpu(__KNULL),
-		nLocksHeld(0)
+	currentCpu(__KNULL),
+	nLocksHeld(0)
 	{
-		if (__KFLAG_TEST(flags, TASK_FLAGS_CUSTPRIO))
-		{
-			__KFLAG_SET(this->flags, TASK_FLAGS_CUSTPRIO);
-			schedPrio = &internalPrio;
-		} else {
-			schedPrio = &prioClasses[prio];
-		};
+#if __SCALING__ >= SCALING_CC_NUMA
+		defaultMemoryBank.rsrc = NUMABANKID_INVALID;
+#endif
 	}
 
 	error_t initialize(void);
 
+public:
 	// Passes down parent attributes to child.
 	error_t cloneStateIntoChild(taskC *child);
+	// Allocates stacks for kernelspace and userspace (if necessary).
+	error_t allocateStacks(void);
+#if __SCALING__ >= SCALING_SMP
+	error_t inheritAffinity(bitmapC *cpuAffinity, uarch_t flags);
+	void inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t flags);
+	void inheritSchedPrio(prio_t prio, uarch_t flags);
+
+#endif
 
 public:
 	// Do *NOT* move 'stack' from where it is.
@@ -92,8 +96,8 @@ public:
 	// Basic information.
 	processId_t		id;
 	processStreamC		*parent;
-	taskContextS		context;
 	uarch_t			flags;
+	taskContextC		context;
 	multipleReaderLockC	lock;
 
 	// Scheduling information.

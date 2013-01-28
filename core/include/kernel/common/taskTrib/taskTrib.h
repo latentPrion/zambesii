@@ -8,6 +8,7 @@
 	#include <kernel/common/taskTrib/prio.h>
 	#include <kernel/common/taskTrib/taskQNode.h>
 	#include <kernel/common/processTrib/processTrib.h>
+	#include <kernel/common/cpuTrib/cpuTrib.h>
 	#include <kernel/common/taskTrib/load.h>
 
 class taskTribC
@@ -46,10 +47,10 @@ extern taskTribC	taskTrib;
 /**	Inline methods:
  *****************************************************************************/
 
-#if __SCALING__ < SCALING_CC_NUMA
+#if __SCALING__ == SCALING_UNIPROCESSOR
 inline error_t taskTribC::schedule(taskC *task)
 {
-	return numaTrib.getStream(0)->cpuBank.schedule(task);
+	return cpuTrib.getCurrentCpuStream()->taskStream.schedule(task);
 }
 #endif
 
