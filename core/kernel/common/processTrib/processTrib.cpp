@@ -16,10 +16,10 @@ prioClassS	prioClasses[PRIOCLASS_NCLASSES];
 void processTribC::fillOutPrioClasses(void)
 {
 	new (&prioClasses[0]) prioClassS(CC"Idle", 0);
-	new (&prioClasses[1]) prioClassS(CC"Low", 5);
-	new (&prioClasses[2]) prioClassS(CC"Moderate", 10);
-	new (&prioClasses[3]) prioClassS(CC"High", 15);
-	new (&prioClasses[4]) prioClassS(CC"Critical", 17);
+	new (&prioClasses[1]) prioClassS(CC"Low", 4);
+	new (&prioClasses[2]) prioClassS(CC"Moderate", 8);
+	new (&prioClasses[3]) prioClassS(CC"High", 12);
+	new (&prioClasses[4]) prioClassS(CC"Critical", 16);
 }
 
 static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
