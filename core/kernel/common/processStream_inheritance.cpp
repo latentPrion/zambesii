@@ -76,12 +76,6 @@ error_t processStreamC::initializeChildThread(
 		// Caller has passed specific scheduling policy.
 		newTask->schedPolicy = schedPolicy;
 	}
-	else if (__KFLAG_TEST(
-		flags, SPAWNTHREAD_FLAGS_SCHEDPOLICY_DEFAULT))
-	{
-		// Caller wants thread to have default policy.
-		newTask->schedPolicy = taskC::ROUND_ROBIN;
-	}
 	else
 	{
 		// Thread inherits spawner's policy by default.

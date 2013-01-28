@@ -54,16 +54,20 @@ class taskC
 {
 public:
 	enum schedStateE { DORMANT=1, RUNNABLE, RUNNING, UNSCHEDULED };
-	enum schedPolicyE { ROUND_ROBIN, REAL_TIME };
+	enum schedPolicyE { ROUND_ROBIN=1, REAL_TIME };
 
 	taskC(
 		processId_t taskId, processStreamC *parentProcess,
-		prio_t prio, uarch_t flags)
+		schedPolicyE schedPolicy, prio_t prio,
+		uarch_t flags)
 	:
 		stack0(__KNULL), stack1(__KNULL),
 		id(taskId), parent(parentProcess), flags(0),
+
 		internalPrio(CC"Custom", prio),
-		schedFlags(0), schedState(UNSCHEDULED),
+		schedPolicy(schedPolicy), schedFlags(0),
+		schedState(UNSCHEDULED),
+
 		currentCpu(__KNULL),
 		nLocksHeld(0)
 	{

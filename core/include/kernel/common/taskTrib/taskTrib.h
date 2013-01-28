@@ -33,19 +33,6 @@ public:
 	void setClassQuantum(sarch_t qc, prio_t softPrio);
 
 private:
-	prio_t		quantumClass[QUANTUMCLASS_NCLASSES];
-
-	struct quantumClassS
-	{
-		prio_t		prio;
-		utf8Char	name[128];
-	};
-	struct quantumClassStateS
-	{
-		quantumClassS	*arr;
-		uarch_t		nClasses;
-	};
-	sharedResourceGroupC<waitLockC, quantumClassStateS> custQuantumClass;
 	sharedResourceGroupC<waitLockC, taskQNodeS *>	deadQ;
 
 	// Global machine scheduling statistics. Used for Ocean Zambesii.

@@ -19,14 +19,11 @@
 
 /**	Flag values for processTribC::spawnProcess().
  **/
-// Inherit affinity from Spawning Thread.
-#define PROCESSTRIB_SPAWN_FLAGS_STINHERIT_AFFINITY	(1<<0)
-// Inherit affinity from spawning thread's process object.
-#define PROCESSTRIB_SPAWN_FLAGS_PINHERIT_AFFINITY	(1<<1)
-// Inherit elevation from spawning thread's process object.
-#define PROCESSTRIB_SPAWN_FLAGS_INHERIT_ELEVATION	(1<<2)
-// Inherit exec domain from spawning thread's process object.
-#define PROCESSTRIB_SPAWN_FLAGS_INHERIT_EXECDOMAIN	(1<<3)
+#define SPAWNPROC_FLAGS_AFFINITY_STINHERIT	(0)
+#define SPAWNPROC_FLAGS_AFFINITY_PINHERIT	(1<<0)
+
+#define SPAWNPROC_FLAGS_SCHEDPRIO_PRIOCLASS	(0)
+#define SPAWNPROC_FLAGS_SCHEDPRIO_SET		(1<<5)
 
 class processTribC
 :
@@ -42,6 +39,8 @@ public:
 	{
 		memset(processes.rsrc, 0, sizeof(processes.rsrc));
 		processes.rsrc[0] = &__kprocess;
+
+		fillOutPrioClasses();
 	}
 
 	error_t initialize(void) { return ERROR_SUCCESS; }
@@ -62,6 +61,9 @@ public:
 		error_t *err);			// Returned error value.
 
 	error_t destroyStream(void);
+
+private:
+	void fillOutPrioClasses(void);
 
 public:
 	processStreamC		__kprocess;

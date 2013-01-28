@@ -94,12 +94,16 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
+
+	processId_t		tid;
+
 	processTrib.__kprocess.spawnThread(
-		&__korientationMain,
+		(void (*)(void *))&__korientationMain, __KNULL,
+		__KNULL,
 		taskC::ROUND_ROBIN,
 		0,
-		SPAWNTHREAD_FLAGS_SCHEDPRIO_DEFAULT
-		| SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT);
+		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
+		&tid);
 
 for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
 // Right here is where we should enable BSP scheduling and spawn the new thread.
@@ -170,7 +174,7 @@ void __korientationMain(void)
 			PROCESS_EXECDOMAIN_KERNEL,
 			0,
 			taskC::ROUND_ROBIN,
-			SCHEDPRIO_DEFAULT,
+			PRIOCLASS_DEFAULT,
 			0,
 			&ret);
 

@@ -35,3 +35,34 @@ a set of flags. The entry point for a thread may be the executable's entry
 point. This is specified by setting the flag SPAWNTHREAD_FLAGS_ENTRY_MAIN.
 
 A thread is scheduled to begin executing as soon as it is created.
+
+	1.4 API.
+
+processStreamC::spawnThread(
+	void *entryPoint,
+	void *argument,
+	bitmapC *cpuAffinity,
+	schedPolicyE schedPolicy, prio_t prio, uarch_t flags,
+	processId_t *ret):
+
+	SchedPolicy should be inherited from the spawning thread, because
+	a process can have multiple threads, each needing different scheduling
+	queue policies.
+	Overrides:
+		SET.
+
+	Priority should be set to PRIOCLASS_DEFAULT by default, to prevent
+	priority based DoS, and discourage users from creating high priority
+	threads en mass by mistake.
+	Overrides:
+		STIHERIT, SET_CLASS, SET.
+
+	Affinity should be inherited from the spawning thread by default. This
+	is because a process may have multple threads, say, one for each device
+	it uses, and it may bind each thread to the NUMA domain for its device,
+	to service requests to that device for it, and gain maximum NUMA
+	optimization. If one of the threads spawns a child, the child should
+	also be bound to the domain of its parent thread.
+	Overrides:
+		PINHERIT, SET.
+

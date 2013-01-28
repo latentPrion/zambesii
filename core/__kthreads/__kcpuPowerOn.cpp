@@ -22,7 +22,8 @@ struct __kcpuPowerOnBlockS	__kcpuPowerOnBlock;
  **/
 taskC	__kcpuPowerOnThread(
 	0x1, &processTrib.__kprocess,
-	SCHEDPRIO_DEFAULT,
+	taskC::ROUND_ROBIN,
+	PRIOCLASS_DEFAULT,
 	TASK_FLAGS_CUSTPRIO);
 
 // Part of __koptimizationHacks.cpp.

@@ -10,7 +10,7 @@ class wrapAroundCounterC
 public:
 	wrapAroundCounterC(uarch_t maxVal, uarch_t startVal=0)
 	:
-	maxVal((sarch_t)maxVal)
+		maxVal((sarch_t)maxVal)
 	{
 		nextVal.rsrc = startVal;
 	};

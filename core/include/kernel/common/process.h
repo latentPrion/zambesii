@@ -23,14 +23,21 @@
 
 /**	Flags for processStreamC::spawnThread().
  **/
-#define SPAWNTHREAD_FLAGS_FIRST_THREAD		(1<<0)
+// STINHERIT by default.
+#define SPAWNTHREAD_FLAGS_AFFINITY_STINHERIT	(0)
+// Implied if the cpuAffinity BMP != __KNULL && !PINHERIT
+#define SPAWNTHREAD_FLAGS_AFFINITY_SET		(0)
 #define SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT	(1<<1)
-#define SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET	(1<<2)
-#define SPAWNTHREAD_FLAGS_SCHEDPOLICY_DEFAULT	(1<<3)
-#define SPAWNTHREAD_FLAGS_SCHEDPOLICY_STINHERIT	(1<<4)
-#define SPAWNTHREAD_FLAGS_SCHEDPRIO_SET		(1<<5)
-#define SPAWNTHREAD_FLAGS_SCHEDPRIO_DEFAULT	(1<<6)
-#define SPAWNTHREAD_FLAGS_SCHEDPRIO_STINHERIT	(1<<7)
+
+// STINHERIT by default.
+#define SPAWNTHREAD_FLAGS_SCHEDPOLICY_STINHERIT	(0)
+#define SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET	(1<<3)
+
+// Set to PRIOCLASS_DEFAULT by default.
+#define SPAWNTHREAD_FLAGS_SCHEDPRIO_CLASS_DEFAULT	(0)
+#define SPAWNTHREAD_FLAGS_SCHEDPRIO_STINHERIT		(1<<7)
+#define SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS		(1<<5)
+#define SPAWNTHREAD_FLAGS_SCHEDPRIO_SET			(1<<6)
 
 #define SPAWNTHREAD_STATUS_NO_PIDS		0x1
 
@@ -89,10 +96,14 @@ public:
 public:
 	taskC *getTask(processId_t processId);
 
+	// I am very reluctant to have this "argument" parameter.
 	error_t spawnThread(
-		void (*entryPoint)(),
+		void (*entryPoint)(void *),
+		void *argument,
+		bitmapC *cpuAffinity,
 		taskC::schedPolicyE schedPolicy, ubit8 prio,
-		uarch_t flags);
+		uarch_t flags,
+		processId_t *ret);
 
 public:
 	processId_t		id, parentId;
@@ -125,7 +136,10 @@ public:
 
 private:
 	sarch_t getNextThreadId(void);
-	taskC *allocateNewThread(processId_t id);
+	taskC *allocateNewThread(
+		processId_t newThreadId,
+		taskC::schedPolicyE schedPolicy, prio_t prio);
+
 	void removeThread(processId_t id);
 
 	void __kprocessAllocateInternals(void);
@@ -157,17 +171,7 @@ inline taskC *processStreamC::getTask(processId_t id)
 
 inline sarch_t processStreamC::getNextThreadId(void)
 {
-	sarch_t			ret;
-
-	ret = nextTaskId.getNextValue(reinterpret_cast<void **>( tasks ));
-	if (ret == -1)
-	{
-		ret = nextTaskId.getNextValue(
-			reinterpret_cast<void **>( tasks ));
-
-		if (ret == -1) { return -1; };
-	};
-	return ret;
+	return nextTaskId.getNextValue(reinterpret_cast<void **>( tasks ));
 }
 
 #endif

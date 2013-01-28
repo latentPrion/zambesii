@@ -34,11 +34,11 @@
  **/
 
 #define SCHEDPRIO_MAX_NPRIOS		20
-#define SCHEDPRIO_DEFAULT		10
 
 #define SCHEDOPTS_STICKY		(1<<0)
 
-#define QUANTUMCLASS_NCLASSES		5
+#define PRIOCLASS_NCLASSES		5
+#define PRIOCLASS_DEFAULT		2
 
 typedef ubit16		prio_t;
 
@@ -55,7 +55,7 @@ struct prioClassS
 	prio_t		prio;
 };
 
-extern prioClassS	prioClasses[4];
+extern prioClassS	prioClasses[];
 
 #endif
 
