@@ -37,6 +37,9 @@
 #define SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET	(1<<5)
 #define SPAWNTHREAD_FLAGS_SCHEDPRIO_SET			(1<<6)
 
+// Set to prevent the thread from being scheduled automatically on creation.
+#define SPAWNTHREAD_FLAGS_DORMANT			(1<<8)
+
 #define SPAWNTHREAD_STATUS_NO_PIDS		0x1
 
 class processStreamC

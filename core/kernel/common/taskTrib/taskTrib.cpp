@@ -90,9 +90,10 @@ error_t taskTribC::dormant(taskC *task)
 	cpuStreamC	*currentCpu;
 
 	if (task->runState == taskC::UNSCHEDULED
-		|| task->blockState == taskC::DORMANT)
+		|| (task->runState == taskC::STOPPED
+			&& task->blockState == taskC::DORMANT))
 	{
-		// return ERROR_SUCCESS;
+		return ERROR_SUCCESS;
 	};
 
 	task->currentCpu->taskStream.dormant(task);
@@ -101,7 +102,8 @@ error_t taskTribC::dormant(taskC *task)
 	if (task->currentCpu != currentCpu)
 	{
 		/* Message the CPU to pre-empt and choose another thread.
-		 * Should take an argument for the thread to be pre-empted.
+		 * Should probably take an argument for the thread to be
+		 * pre-empted.
 		 **/
 	}
 	else
@@ -121,7 +123,18 @@ error_t taskTribC::dormant(taskC *task)
 
 error_t taskTribC::wake(taskC *task)
 {
-	return task->currentCpu->taskStream.wake(task);
+	if (task->runState != taskC::UNSCHEDULED
+		&& (task->runState != taskC::STOPPED
+			&& task->blockState != taskC::DORMANT))
+	{
+		return ERROR_SUCCESS;
+	};
+
+	if (task->runState == taskC::UNSCHEDULED) {
+		return schedule(task);
+	} else {
+		return task->currentCpu->taskStream.wake(task);
+	};
 }
 
 void taskTribC::yield(void)
@@ -134,7 +147,20 @@ void taskTribC::yield(void)
 	saveContextAndCallPull(
 		&currTask->currentCpu->sleepStack[
 			sizeof(currTask->currentCpu->sleepStack)]);
+}
 
-	// Unreachable.
+void taskTribC::block(void)
+{
+	taskC		*currTask;
+
+	/* After placing a task into a waitqueue, call this function to
+	 * place it into a "blocked" state.
+	 **/
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	currTask->currentCpu->taskStream.block(currTask);
+
+	saveContextAndCallPull(
+		&currTask->currentCpu->sleepStack[
+			sizeof(currTask->currentCpu->sleepStack)]);
 }
 

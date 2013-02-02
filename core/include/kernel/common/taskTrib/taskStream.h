@@ -48,6 +48,9 @@ public:
 	error_t schedule(taskC* task);
 	void dormant(taskC *task)
 	{
+		task->runState = taskC::STOPPED;
+		task->blockState = taskC::DORMANT;
+
 		switch (task->schedPolicy)
 		{
 		case taskC::ROUND_ROBIN:
@@ -61,41 +64,72 @@ public:
 		default:
 			return;
 		};
-
-		task->runState = taskC::STOPPED;
-		task->blockState = taskC::DORMANT;
 	}
 
-	void yield(taskC *task)
+	void block(taskC *task)
 	{
+		task->runState = taskC::STOPPED;
+		task->blockState = taskC::BLOCKED;
+
 		switch (task->schedPolicy)
 		{
 		case taskC::ROUND_ROBIN:
-			roundRobinQ.insert(task, task->schedPrio->prio);
+			roundRobinQ.remove(task, task->schedPrio->prio);
 			break;
 
 		case taskC::REAL_TIME:
-			realTimeQ.insert(task, task->schedPrio->prio);
+			realTimeQ.remove(task, task->schedPrio->prio);
 			break;
 
 		default:
 			return;
 		};
-
-		task->runState = taskC::RUNNABLE;
 	}
-
-	error_t wake(taskC *task)
+		
+	void yield(taskC *task)
 	{
-		if (task->runState != taskC::STOPPED) { return ERROR_SUCCESS; };
+		task->runState = taskC::RUNNABLE;
 
 		switch (task->schedPolicy)
 		{
 		case taskC::ROUND_ROBIN:
-			return roundRobinQ.insert(task, task->schedPrio->prio);
+			roundRobinQ.insert(
+				task, task->schedPrio->prio,
+				task->schedOptions);
+			break;
 
 		case taskC::REAL_TIME:
-			return realTimeQ.insert(task, task->schedPrio->prio);
+			realTimeQ.insert(
+				task, task->schedPrio->prio,
+				task->schedOptions);
+			break;
+
+		default:
+			return;
+		};
+	}
+
+	error_t wake(taskC *task)
+	{
+		if (!(task->runState == taskC::STOPPED
+			&& task->blockState == taskC::DORMANT))
+		{
+			return ERROR_SUCCESS;
+		};
+
+		task->runState = taskC::RUNNABLE;
+
+		switch (task->schedPolicy)
+		{
+		case taskC::ROUND_ROBIN:
+			return roundRobinQ.insert(
+				task, task->schedPrio->prio,
+				task->schedOptions);
+
+		case taskC::REAL_TIME:
+			return realTimeQ.insert(
+				task, task->schedPrio->prio,
+				task->schedOptions);
 
 		default:
 			return ERROR_CRITICAL;

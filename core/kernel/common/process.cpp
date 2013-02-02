@@ -157,7 +157,12 @@ error_t processStreamC::spawnThread(
 		execDomain, newTask->stack0, newTask->stack1);
 
 	newTask->context->setEntryPoint(entryPoint);
-	return taskTrib.schedule(newTask);
+
+	if (!__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_DORMANT)) {
+		return taskTrib.schedule(newTask);
+	} else {
+		return ERROR_SUCCESS;
+	};
 }
 
 taskC *processStreamC::allocateNewThread(processId_t newThreadId)

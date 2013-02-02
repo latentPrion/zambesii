@@ -31,9 +31,7 @@ void thread0(void)
 	for (;;)
 	{
 		__kprintf(NOTICE"Thread0: Hello.\n");
-		//asm volatile ("hlt\n\t");
-		taskTrib.wake(0x1);
-		taskTrib.dormant(0x2);
+		taskTrib.yield();
 	};
 }
 
@@ -41,7 +39,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	processId_t		tid;
+	processId_t	tid;
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
 	 * pointer to the BSP CPU Stream into the BSP CPU; then we can call all
@@ -124,7 +122,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 			__KNULL,
 			taskC::ROUND_ROBIN,
 			0,
-			0,
+			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
 			&tid),
 		ret);
 
@@ -138,8 +136,7 @@ void __korientationMain(void)
 	for (;;)
 	{
 		__kprintf(NOTICE ORIENT"Says hello.\n");
-		taskTrib.wake(0x2);
-		taskTrib.dormant(0x1);
+		taskTrib.yield();
 	};
 
 for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("hlt\n\t"); };

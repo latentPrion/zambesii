@@ -106,10 +106,7 @@ status_t taskStreamC::schedule(taskC *task)
 #endif
 	// Check CPU suitability to run task (FPU, other features).
 
-	// Validate scheduling parameters.
-	if (task->schedPrio->prio >= SCHEDPRIO_MAX_NPRIOS) {
-		return ERROR_UNSUPPORTED;
-	};
+	// Validate any scheduling parameters that need to be checked.
 
 	task->runState = taskC::RUNNABLE;
 	task->currentCpu = parentCpu;
