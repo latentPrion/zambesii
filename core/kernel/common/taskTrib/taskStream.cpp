@@ -27,7 +27,6 @@ taskStreamC::taskStreamC(cpuStreamC *parent)
 :
 load(0), capacity(0),
 roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
-dormantQ(SCHEDPRIO_MAX_NPRIOS),
 parentCpu(parent)
 {
 	/* Ensure that the BSP CPU's pointer to __korientation isn't trampled
@@ -48,8 +47,8 @@ error_t taskStreamC::initialize(void)
 	ret = roundRobinQ.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = dormantQ.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
+	//ret = dormantQ.initialize();
+	//if (ret != ERROR_SUCCESS) { return ret; };
 
 	return ERROR_SUCCESS;
 }
@@ -143,7 +142,7 @@ status_t taskStreamC::schedule(taskC *task)
 void taskStreamC::pull(void)
 {
 	taskC		*newTask;
-__kprintf(CC"Here\n");
+
 	newTask = pullRealTimeQ();
 	if (newTask != __KNULL) {
 		goto execute;

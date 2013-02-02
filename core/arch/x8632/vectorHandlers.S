@@ -121,7 +121,7 @@ ASM_LOCAL_FUNCTION(__ksaveRegs)
 	 **/
 ASM_END_FUNCTION(__ksaveRegs)
 
-ASM_GLOBAL_FUNCTION(saveContextAndPullNewTask)
+ASM_GLOBAL_FUNCTION(saveContextAndCallPull)
 	/**	EXPLANATION:
 	 * We were called here using the ABI;
 	 * 	ESP+0 = return address.
@@ -183,7 +183,7 @@ ASM_GLOBAL_FUNCTION(saveContextAndPullNewTask)
 	 **/
 	pushl	%eax
 	call	taskStream_pull
-ASM_END_FUNCTION(saveContextAndPullNewTask)
+ASM_END_FUNCTION(saveContextAndCallPull)
 
 ASM_GLOBAL_FUNCTION(loadContextAndJump)
 	/**	EXPLANATION:

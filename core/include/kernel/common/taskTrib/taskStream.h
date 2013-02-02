@@ -46,6 +46,61 @@ public:
 	void updateCapacity(ubit8 action, ubit32 val);
 
 	error_t schedule(taskC* task);
+	void dormant(taskC *task)
+	{
+		switch (task->schedPolicy)
+		{
+		case taskC::ROUND_ROBIN:
+			roundRobinQ.remove(task, task->schedPrio->prio);
+			break;
+
+		case taskC::REAL_TIME:
+			realTimeQ.remove(task, task->schedPrio->prio);
+			break;
+
+		default:
+			return;
+		};
+
+		task->runState = taskC::STOPPED;
+		task->blockState = taskC::DORMANT;
+	}
+
+	void yield(taskC *task)
+	{
+		switch (task->schedPolicy)
+		{
+		case taskC::ROUND_ROBIN:
+			roundRobinQ.insert(task, task->schedPrio->prio);
+			break;
+
+		case taskC::REAL_TIME:
+			realTimeQ.insert(task, task->schedPrio->prio);
+			break;
+
+		default:
+			return;
+		};
+
+		task->runState = taskC::RUNNABLE;
+	}
+
+	error_t wake(taskC *task)
+	{
+		if (task->runState != taskC::STOPPED) { return ERROR_SUCCESS; };
+
+		switch (task->schedPolicy)
+		{
+		case taskC::ROUND_ROBIN:
+			return roundRobinQ.insert(task, task->schedPrio->prio);
+
+		case taskC::REAL_TIME:
+			return realTimeQ.insert(task, task->schedPrio->prio);
+
+		default:
+			return ERROR_CRITICAL;
+		};
+	}
 
 	void dump(void);
 
@@ -61,7 +116,7 @@ public:
 
 public:
 	// Three queues on each CPU: rr, rt and sleep.
-	prioQueueC<taskC>	roundRobinQ, realTimeQ, dormantQ;
+	prioQueueC<taskC>	roundRobinQ, realTimeQ;
 	cpuStreamC		*parentCpu;
 };
 

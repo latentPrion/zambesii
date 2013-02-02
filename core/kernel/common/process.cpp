@@ -157,29 +157,20 @@ error_t processStreamC::spawnThread(
 		execDomain, newTask->stack0, newTask->stack1);
 
 	newTask->context->setEntryPoint(entryPoint);
-
-__kprintf(NOTICE"New task: cs %d, eip 0x%p, esp 0x%p, ss %d, ds %d.\n",
-	newTask->context->cs,
-	newTask->context->eip,
-	newTask->context->esp,
-	newTask->context->ss,
-	newTask->context->ds);
-
 	return taskTrib.schedule(newTask);
 }
 
-taskC *processStreamC::allocateNewThread(processId_t newThreadId
-	)
+taskC *processStreamC::allocateNewThread(processId_t newThreadId)
 {
 	taskC		*ret;
 
-	ret = new taskC(PROCID_PROCESS(id) | newThreadId, this);
+	ret = new taskC(id | newThreadId, this);
 	if (ret == __KNULL) { return __KNULL; };
 
 	taskLock.writeAcquire();
 
 	// Add the new thread to the process's task array.
-	tasks[PROCID_THREAD(id)] = ret;
+	tasks[PROCID_THREAD(newThreadId)] = ret;
 	nTasks++;
 
 	taskLock.writeRelease();

@@ -23,6 +23,32 @@ public:
 public:
 	error_t schedule(taskC *task);
 	void yield(void);
+	void block(void);
+	error_t dormant(taskC *task);
+	error_t dormant(processId_t tid)
+	{
+		processStreamC	*proc;
+		taskC		*task;
+
+		proc = processTrib.getStream(tid);
+		if (proc == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+
+		task = proc->getTask(tid);
+		return dormant(task);
+	}
+
+	error_t wake(taskC *task);
+	error_t wake(processId_t tid)
+	{
+		processStreamC	*proc;
+		taskC		*task;
+
+		proc = processTrib.getStream(tid);
+		if (proc == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+
+		task = proc->getTask(tid);
+		return wake(task);
+	}
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };

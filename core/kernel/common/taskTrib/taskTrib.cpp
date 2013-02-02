@@ -85,81 +85,56 @@ void taskTribC::updateLoad(ubit8 action, uarch_t val)
 	};
 }
 
-#if 0
-status_t taskTribC::createQuantumClass(utf8Char *name, prio_t prio)
+error_t taskTribC::dormant(taskC *task)
 {
-	sarch_t		pos=-1;
-	uarch_t		j;
-	quantumClassS	*mem, *old;
+	cpuStreamC	*currentCpu;
 
-	custQuantumClass.lock.acquire();
-
-	for (uarch_t i=0; i<custQuantumClass.rsrc.nClasses; i++)
+	if (task->runState == taskC::UNSCHEDULED
+		|| task->blockState == taskC::DORMANT)
 	{
-		if (custQuantumClass.rsrc.arr[i].name == __KNULL) {
-			pos = static_cast<sarch_t>( i );
-		};
+		// return ERROR_SUCCESS;
 	};
 
-	if (pos == -1)
+	task->currentCpu->taskStream.dormant(task);
+
+	currentCpu = cpuTrib.getCurrentCpuStream();
+	if (task->currentCpu != currentCpu)
 	{
-		mem = new quantumClassS[custQuantumClass.rsrc.nClasses + 1];
-		if (mem == __KNULL)
+		/* Message the CPU to pre-empt and choose another thread.
+		 * Should take an argument for the thread to be pre-empted.
+		 **/
+	}
+	else
+	{
+		if (task == currentCpu->taskStream.currentTask)
 		{
-			custQuantumClass.lock.release();
-			return ERROR_MEMORY_NOMEM;
+			saveContextAndCallPull(
+				&currentCpu->sleepStack[
+					sizeof(currentCpu->sleepStack)]);
+
+			// Unreachable.
 		};
-
-		memcpy(
-			mem, custQuantumClass.rsrc.arr,
-			sizeof(quantumClassS) * custQuantumClass.rsrc.nClasses);
-
-		old = custQuantumClass.rsrc.arr;
-		delete old;
-		custQuantumClass.rsrc.arr = mem;
-		pos = custQuantumClass.rsrc.nClasses;
-		custQuantumClass.rsrc.nClasses++;
 	};
 
-	// FIXME: use soft->hard conversion here.
-	custQuantumClass.rsrc.arr[pos].prio = prio;
-	for (j=0; j<127 && *name; j++) {
-		custQuantumClass.rsrc.arr[pos].name[j] = name[j];
-	};
-	custQuantumClass.rsrc.arr[pos].name[((j < 127) ? j:127)] = '\0';
-
-	return pos;
+	return ERROR_SUCCESS;
 }
 
-void taskTribC::setClassQuantum(sarch_t qc, prio_t prio)
+error_t taskTribC::wake(taskC *task)
 {
-	custQuantumClass.lock.acquire();
-
-	if (qc >= static_cast<sarch_t>( custQuantumClass.rsrc.nClasses ))
-	{
-		custQuantumClass.lock.release();
-		return;
-	};
-
-	// FIXME: Use soft->hard prio conversion here.
-	custQuantumClass.rsrc.arr[qc].prio = prio;
-
-	custQuantumClass.lock.release();
+	return task->currentCpu->taskStream.wake(task);
 }
 
-void taskTribC::setTaskQuantumClass(processId_t id, sarch_t qc)
+void taskTribC::yield(void)
 {
-	custQuantumClass.lock.acquire();
+	taskC		*currTask;
 
-	if (qc >= static_cast<sarch_t>( custQuantumClass.rsrc.nClasses ))
-	{
-		custQuantumClass.lock.release();
-		return;
-	};
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	currTask->currentCpu->taskStream.yield(currTask);
 
-	processTrib.getTask(id)->prio = &custQuantumClass.rsrc.arr[qc].prio;
+	saveContextAndCallPull(
+		&currTask->currentCpu->sleepStack[
+			sizeof(currTask->currentCpu->sleepStack)]);
 
-	custQuantumClass.lock.release();
+	// Unreachable.
 }
-#endif
 

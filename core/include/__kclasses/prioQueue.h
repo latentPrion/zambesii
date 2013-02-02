@@ -35,7 +35,7 @@ public:
 	}
 
 public:
-	error_t insert(T *item, ubit16 prio, ubit32 opt);
+	error_t insert(T *item, ubit16 prio, ubit32 opt=0);
 	T *pop(void);
 	void remove(T *item, ubit16 prio);
 

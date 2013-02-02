@@ -47,8 +47,8 @@ public:
 		ubit8 execDomain,
 		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
 	:
-		id(PROCID_PROCESS(processId)),
-		parentId(PROCID_PROCESS(parentProcId)),
+		id(processId << PROCID_PROCESS_SHIFT),
+		parentId(parentProcId << PROCID_PROCESS_SHIFT),
 		flags(0),
 
 		// Kernel process hands out thread IDs from 1 since 0 is taken.

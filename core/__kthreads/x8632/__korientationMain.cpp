@@ -17,24 +17,31 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 #include <arch/cpuControl.h>
 #include "../chipset/ibmPc/i8254.h"
 
+
 int oo=0, pp=0, qq=0, rr=0;
 
-int ghfoo(void)
+void thread0(void)
 {
-	__kprintf(NOTICE"This is a thread.\n");
-	for (;;) { asm volatile ("hlt\n\t"); };
-	return 0;
+	for (;;)
+	{
+		__kprintf(NOTICE"Thread0: Hello.\n");
+		//asm volatile ("hlt\n\t");
+		taskTrib.wake(0x1);
+		taskTrib.dormant(0x2);
+	};
 }
 
 extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
+	processId_t		tid;
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
 	 * pointer to the BSP CPU Stream into the BSP CPU; then we can call all
@@ -96,26 +103,44 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
 
-	processId_t		tid;
-	ret = processTrib.__kprocess.spawnThread(
-		(void (*)(void *))&__korientationMain, __KNULL,
-		__KNULL,
-		taskC::ROUND_ROBIN,
-		18,
-		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
-		&tid);
+	/* Spawn the new thread for __korientationMain. There is no need to
+	 * unschedule __korientationInit() because it will never be scheduled.
+	**/
+	DO_OR_DIE(
+		processTrib.__kprocess,
+		spawnThread(
+			(void (*)(void *))&__korientationMain, __KNULL,
+			__KNULL,
+			taskC::ROUND_ROBIN,
+			0,
+			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
+			&tid),
+		ret);
 
-	if (ret == ERROR_SUCCESS) { __kprintf(NOTICE ORIENT"Successfully spawned __korientationMain thread, ID 0x%x.\n", tid); };
+	DO_OR_DIE(
+		processTrib.__kprocess,
+		spawnThread(
+			(void (*)(void *))&thread0, __KNULL,
+			__KNULL,
+			taskC::ROUND_ROBIN,
+			0,
+			0,
+			&tid),
+		ret);
+
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
-for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Init.\n");;) { asm volatile("hlt\n\t"); };
-	// processTrib.__kprocess.destroyThread(__korientationThread.id);
-
-	// From this point on, we split off into __korientationMain.
 }
 
 void __korientationMain(void)
 {
 	error_t		ret;
+
+	for (;;)
+	{
+		__kprintf(NOTICE ORIENT"Says hello.\n");
+		taskTrib.wake(0x2);
+		taskTrib.dormant(0x1);
+	};
 
 for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("hlt\n\t"); };
 	// Initialize IRQ Control and chipset bus-pin mapping management.
