@@ -20,7 +20,6 @@ class taskStreamC
 :
 public streamC
 {
-friend class cpuStreamC;
 public:
 
 	taskStreamC(cpuStreamC *parentCpu);
@@ -33,6 +32,9 @@ public:
 	error_t initialize(void);
 
 public:
+	// Used by CPUs to get next task to execute.
+	void pull(void);
+
 	// cooperativeBind is only ever used at boot, on the BSP.
 	error_t cooperativeBind(void);
 	// error_t bind(void);
@@ -48,8 +50,6 @@ public:
 	void dump(void);
 
 private:
-	// Used by CPU to get next task to execute.
-	void pullTask(void);
 
 	taskC *pullRealTimeQ(void);
 	taskC *pullRoundRobinQ(void);
@@ -59,7 +59,7 @@ public:
 	ubit32		capacity;
 	taskC		*currentTask;
 
-private:
+public:
 	// Three queues on each CPU: rr, rt and sleep.
 	prioQueueC<taskC>	roundRobinQ, realTimeQ, dormantQ;
 	cpuStreamC		*parentCpu;

@@ -55,17 +55,20 @@ class cpuStreamC;
 class taskC
 {
 public:
-	enum schedStateE { DORMANT=1, RUNNABLE, RUNNING, UNSCHEDULED };
+	enum runStateE { UNSCHEDULED=1, RUNNABLE, RUNNING, STOPPED };
+	enum blockStateE { BLOCKED_UNSCHEDULED=1, PREEMPTED, DORMANT, BLOCKED };
+
 	enum schedPolicyE { ROUND_ROBIN=1, REAL_TIME };
 
 	taskC(processId_t taskId, processStreamC *parentProcess)
 	:
 	stack0(__KNULL), stack1(__KNULL),
 	id(taskId), parent(parentProcess), flags(0),
+	context(__KNULL),
 
 	internalPrio(CC"Custom", PRIOCLASS_DEFAULT),
 	schedPolicy(schedPolicy), schedFlags(0),
-	schedState(UNSCHEDULED),
+	runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
 
 	currentCpu(__KNULL),
 	nLocksHeld(0)
@@ -84,10 +87,9 @@ public:
 	error_t allocateStacks(void);
 #if __SCALING__ >= SCALING_SMP
 	error_t inheritAffinity(bitmapC *cpuAffinity, uarch_t flags);
+#endif
 	void inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t flags);
 	void inheritSchedPrio(prio_t prio, uarch_t flags);
-
-#endif
 
 public:
 	// Do *NOT* move 'stack' from where it is.
@@ -96,8 +98,8 @@ public:
 	// Basic information.
 	processId_t		id;
 	processStreamC		*parent;
-	uarch_t			flags;
-	taskContextC		context;
+	uarch_t			flags;	
+	taskContextC		*context;
 	multipleReaderLockC	lock;
 
 	// Scheduling information.
@@ -105,7 +107,8 @@ public:
 	schedPolicyE	schedPolicy;
 	ubit8		schedOptions;
 	ubit8		schedFlags;
-	schedStateE	schedState;
+	runStateE	runState;
+	blockStateE	blockState;
 	cpuStreamC	*currentCpu;
 
 	// Miscellaneous properties (NUMA affinity, etc).

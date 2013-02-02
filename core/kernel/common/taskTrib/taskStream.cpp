@@ -1,11 +1,27 @@
 
 #include <scaling.h>
+#include <arch/cpuControl.h>
+#include <arch/taskContext.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
 #include <__kthreads/__korientation.h>
+
+
+extern "C" void taskStream_pull(taskContextC *savedContext)
+{
+	cpuStreamC	*currCpu;
+
+	// XXX: We are operating on the CPU's sleep stack.
+	currCpu = cpuTrib.getCurrentCpuStream();
+	if (savedContext != __KNULL) {
+		currCpu->taskStream.currentTask->context = savedContext;
+	};
+
+	currCpu->taskStream.pull();
+}
 
 taskStreamC::taskStreamC(cpuStreamC *parent)
 :
@@ -93,21 +109,22 @@ status_t taskStreamC::schedule(taskC *task)
 
 	// Validate scheduling parameters.
 	if (task->schedPrio->prio >= SCHEDPRIO_MAX_NPRIOS) {
-		return ERROR_INVALID_ARG_VAL;
+		return ERROR_UNSUPPORTED;
 	};
+
+	task->runState = taskC::RUNNABLE;
+	task->currentCpu = parentCpu;
 
 	// Finally, add the task to a queue.
 	switch (task->schedPolicy)
 	{
 	case taskC::ROUND_ROBIN:
-		task->schedState = taskC::RUNNABLE;
 		ret = roundRobinQ.insert(
 			task, task->schedPrio->prio, task->schedOptions);
 
 		break;
 
 	case taskC::REAL_TIME:
-		task->schedState = taskC::RUNNABLE;
 		ret = realTimeQ.insert(
 			task, task->schedPrio->prio, task->schedOptions);
 
@@ -117,18 +134,16 @@ status_t taskStreamC::schedule(taskC *task)
 		return ERROR_INVALID_ARG_VAL;
 	};
 
+	if (ret != ERROR_SUCCESS) { return ret; };
 	// Increment and notify upper layers of new task being scheduled.
 	updateLoad(LOAD_UPDATE_ADD, 1);
 	return ret;
 }
 
-void taskStreamC::pullTask(void)
+void taskStreamC::pull(void)
 {
 	taskC		*newTask;
-	cpuStreamC	*curCpu;
-
-	curCpu = cpuTrib.getCurrentCpuStream();
-
+__kprintf(CC"Here\n");
 	newTask = pullRealTimeQ();
 	if (newTask != __KNULL) {
 		goto execute;
@@ -139,16 +154,17 @@ void taskStreamC::pullTask(void)
 		goto execute;
 	};
 
-	// Else get an idle task from the main scheduler.
+	// Else set the CPU to a low power state.
+	__kprintf(NOTICE TASKSTREAM"%d: Entering C1.\n", parentCpu->id);
+	for (;;) {
+		cpuControl::halt();
+	};
 
 execute:
-	newTask->currentCpu = curCpu;
-	newTask->schedState = taskC::RUNNING;
+	newTask->runState = taskC::RUNNING;
 	currentTask = newTask;
-
-	// FIXME: Set nLocksHeld, etc here.
-
-	// TODO: Pop task register context and jump.
+	// Jump to the newly pulled task.
+	loadContextAndJump(newTask->context);
 }
 
 taskC*taskStreamC::pullRealTimeQ(void)

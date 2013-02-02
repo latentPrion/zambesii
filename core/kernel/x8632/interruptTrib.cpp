@@ -12,7 +12,6 @@
 void interruptTrib_irqEntry(taskContextC *regs)
 {
 	interruptTrib.irqMain(regs);
-	io::write8(0x20, 0x20);
 
 	// We should be able to: point ESP to regs, and then pop and iret.
 	asm volatile(

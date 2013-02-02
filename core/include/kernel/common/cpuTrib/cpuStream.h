@@ -3,6 +3,7 @@
 
 	#include <arch/tlbControl.h>
 	#include <arch/paging.h>
+	#include <chipset/memory.h>
 	#include <__kclasses/ptrlessList.h>
 	#include <__kclasses/cachePool.h>
 	#include <kernel/common/stream.h>

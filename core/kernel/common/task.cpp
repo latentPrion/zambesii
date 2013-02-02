@@ -12,9 +12,6 @@ error_t taskC::initialize(void)
 {
 	error_t		ret;
 
-	ret = context.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
-
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	ret = tlbContext.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -42,7 +39,7 @@ error_t taskC::allocateStacks(void)
 	 **/
 	// No fakemapping for kernel stacks.
 	stack0 = processTrib.__kprocess.memoryStream.memAlloc(
-		1, MEMALLOC_NO_FAKEMAP);
+		CHIPSET_MEMORY___KSTACK_NPAGES, MEMALLOC_NO_FAKEMAP);
 
 	if (stack0 == __KNULL)
 	{
@@ -50,12 +47,18 @@ error_t taskC::allocateStacks(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
+	context = (taskContextC *)((uarch_t)stack0
+		+ CHIPSET_MEMORY___KSTACK_NPAGES * PAGING_BASE_SIZE);
+
+	context = (taskContextC *)((uarch_t)context - sizeof(taskContextC));
+	new (context) taskContextC(parent->execDomain);
+	context->initialize();
 	// Don't allocate a user stack for threads of kernel space processes.
 	if (parent->execDomain != PROCESS_EXECDOMAIN_USER) {
 		return ERROR_SUCCESS;
 	};
 
-	stack1 = parent->memoryStream.memAlloc(8);
+	stack1 = parent->memoryStream.memAlloc(CHIPSET_MEMORY_USERSTACK_NPAGES);
 	if (stack1 == __KNULL)
 	{
 		processTrib.__kprocess.memoryStream.memFree(stack0);

@@ -27,6 +27,7 @@ int oo=0, pp=0, qq=0, rr=0;
 int ghfoo(void)
 {
 	__kprintf(NOTICE"This is a thread.\n");
+	for (;;) { asm volatile ("hlt\n\t"); };
 	return 0;
 }
 
@@ -96,18 +97,17 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
 
 	processId_t		tid;
-
 	ret = processTrib.__kprocess.spawnThread(
 		(void (*)(void *))&__korientationMain, __KNULL,
 		__KNULL,
 		taskC::ROUND_ROBIN,
-		0,
+		18,
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
 		&tid);
 
 	if (ret == ERROR_SUCCESS) { __kprintf(NOTICE ORIENT"Successfully spawned __korientationMain thread, ID 0x%x.\n", tid); };
-for (__kprintf(NOTICE ORIENT"Reached HLT.\n");;) { asm volatile("hlt\n\t"); };
-// Right here is where we should enable BSP scheduling and spawn the new thread.
+	cpuTrib.getCurrentCpuStream()->taskStream.pull();
+for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Init.\n");;) { asm volatile("hlt\n\t"); };
 	// processTrib.__kprocess.destroyThread(__korientationThread.id);
 
 	// From this point on, we split off into __korientationMain.
@@ -117,6 +117,7 @@ void __korientationMain(void)
 {
 	error_t		ret;
 
+for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("hlt\n\t"); };
 	// Initialize IRQ Control and chipset bus-pin mapping management.
 //	DO_OR_DIE(interruptTrib, initializeIrqManagement(), ret);
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);

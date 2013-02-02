@@ -17,6 +17,7 @@
 #ifdef CONFIG_ARCH_x86_32
 // x86-32 stack size for PC is 2 pages.
 #define CHIPSET_MEMORY___KSTACK_NPAGES				2
+#define CHIPSET_MEMORY_USERSTACK_NPAGES				8
 #endif
 
 // Absolute load address of the kernel in physical memory.

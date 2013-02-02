@@ -121,7 +121,73 @@ ASM_LOCAL_FUNCTION(__ksaveRegs)
 	 **/
 ASM_END_FUNCTION(__ksaveRegs)
 
-/**	EXLPLANATION:
+ASM_GLOBAL_FUNCTION(saveContextAndPullNewTask)
+	/**	EXPLANATION:
+	 * We were called here using the ABI;
+	 * 	ESP+0 = return address.
+	 *
+	 * Push all state to the stack in the same order that the CPU does
+	 * naturally on IRQ entry, minus SS + ESP.
+	 **/
+	pushl	%ebp
+	movl	%esp, %ebp
+	/* EBP+0=oldEBP, EBP+4=retAddr, EBP+8=sleepStackBaseAddr argument. */
+
+	pushl	%eax
+	movl	0x4(%ebp), %eax
+	pushl	%cs
+	pushl	%eax
+	addl	$0x8, %esp
+	popl	%eax
+	pushfl
+	subl	$16, %esp
+
+	pusha
+
+	pushw	%fs
+	pushw	%gs
+	pushw	%ds
+	pushw	%es
+
+	/* Save the end address of the register context we just pushed */
+	movl	%esp, %eax
+
+	/* Get the CPU's sleep stack base addr (EBP+8). */
+	movl	0x8(%ebp), %esp
+
+	/* We are now operating on the CPU's sleep stack. cpuStream_pull()
+	 * takes a single argument, which is the address of the beginning of the
+	 * register context for the task whose context we just saved.
+	 *
+	 * This argument is used to set the correct context address in the
+	 * task's thread control block, so that when the task is being resumed,
+	 * we know where to pop its context from.
+	 *
+	 * If NULL is passed as the argument, it means that the task's context
+	 * was not saved. That is, the task was just terminated.
+	 **/
+	pushl	%eax
+	call	taskStream_pull
+ASM_END_FUNCTION(saveContextAndPullNewTask)
+
+ASM_GLOBAL_FUNCTION(loadContextAndJump)
+	/**	EXPLANATION:
+	 * void loadContextAndJump(taskContextC *context);
+	 **/
+	/* At this point, ESP+0=retAddr, ESP+4=context. */
+	movl	0x4(%esp), %esp
+	popw	%es
+	popw	%ds
+	popw	%gs
+	popw	%fs
+
+	popa
+
+	addl	$8, %esp
+	iret
+ASM_END_FUNCTION(loadContextAndJump)
+
+/**	EXPLANATION:
  * Vector handlers: they push the vector number, and, depending on the vector,
  * a value to even off the stack.
  **/

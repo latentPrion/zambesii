@@ -131,7 +131,6 @@ error_t processStreamC::spawnThread(
 	// Check for a free thread ID in this process's thread ID space.
 	newThreadIdTmp = getNextThreadId();
 	if (newThreadIdTmp == -1) { return SPAWNTHREAD_STATUS_NO_PIDS; };
-
 	// Allocate new thread if ID was available.
 	*newThreadId = newThreadIdTmp;
 	newTask = allocateNewThread(*newThreadId);
@@ -144,18 +143,27 @@ error_t processStreamC::spawnThread(
 	ret = newTask->allocateStacks();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
+#if __SCALING__ >= SCALING_SMP
 	// Do affinity inheritance.
 	ret = newTask->inheritAffinity(cpuAffinity, flags);
 	if (ret != ERROR_SUCCESS) { return ret; };
+#endif
 
 	newTask->inheritSchedPolicy(schedPolicy, flags);
 	newTask->inheritSchedPrio(prio, flags);
 
 	// Now everything is allocated; just initialize the new thread.
-	newTask->context.setStacks(
+	newTask->context->setStacks(
 		execDomain, newTask->stack0, newTask->stack1);
 
-	newTask->context.setEntryPoint(entryPoint);
+	newTask->context->setEntryPoint(entryPoint);
+
+__kprintf(NOTICE"New task: cs %d, eip 0x%p, esp 0x%p, ss %d, ds %d.\n",
+	newTask->context->cs,
+	newTask->context->eip,
+	newTask->context->esp,
+	newTask->context->ss,
+	newTask->context->ds);
 
 	return taskTrib.schedule(newTask);
 }

@@ -22,6 +22,7 @@ public:
 
 public:
 	error_t schedule(taskC *task);
+	void yield(void);
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };
