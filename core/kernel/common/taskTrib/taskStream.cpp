@@ -163,7 +163,7 @@ execute:
 	loadContextAndJump(newTask->context);
 }
 
-taskC*taskStreamC::pullRealTimeQ(void)
+taskC* taskStreamC::pullRealTimeQ(void)
 {
 	taskC		*ret;
 	status_t	status;
@@ -179,7 +179,7 @@ taskC*taskStreamC::pullRealTimeQ(void)
 		if (__KFLAG_TEST(
 			ret->schedFlags, TASK_SCHEDFLAGS_SCHED_WAITING))
 		{
-			status = taskStreamC::schedule(ret);
+			status = schedule(ret);
 			continue;
 		};
 
@@ -187,7 +187,7 @@ taskC*taskStreamC::pullRealTimeQ(void)
 	} while (1);
 }
 
-taskC*taskStreamC::pullRoundRobinQ(void)
+taskC* taskStreamC::pullRoundRobinQ(void)
 {
 	taskC		*ret;
 	status_t	status;
@@ -206,7 +206,7 @@ taskC*taskStreamC::pullRoundRobinQ(void)
 		if (__KFLAG_TEST(
 			ret->schedFlags, TASK_SCHEDFLAGS_SCHED_WAITING))
 		{
-			status = taskStreamC::schedule(ret);
+			status = schedule(ret);
 			continue;
 		};
 

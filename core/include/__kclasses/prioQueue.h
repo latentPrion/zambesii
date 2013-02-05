@@ -181,7 +181,7 @@ inline error_t prioQueueC<T>::insert(T *item, ubit16 prio, ubit32 opt)
 }
 
 template <class T>
-inline T *prioQueueC<T>::pop(void)
+T *prioQueueC<T>::pop(void)
 {
 	ubit16		qId;
 	T		*ret;
@@ -255,7 +255,7 @@ inline void prioQueueC<T>::remove(T *item, ubit16 prio)
 }
 
 template <class T>
-void prioQueueC<T>::dump(void)
+inline void prioQueueC<T>::dump(void)
 {
 	__kprintf(NOTICE PRIOQUEUE"%d prios, cache @0x%p, first valid q %d: "
 		"dumping.\n",
@@ -387,7 +387,7 @@ void prioQueueC<T>::queueC<T2>::dump(void)
 			flipFlop = 0;
 		};
 
-		__kprintf(CC"0x%p ", tmp->item);
+		__kprintf(CC"0x%p (tid 0x%x) ", tmp->item, ((taskC *)tmp->item)->id);
 	};
 
 	q.lock.release();

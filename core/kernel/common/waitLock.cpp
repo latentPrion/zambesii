@@ -36,13 +36,14 @@ void waitLockC::acquire(void)
 	if (nTries <= 1)
 	{
 		cid = cpuTrib.getCurrentCpuStream()->cpuId;
-		buffDescriptors[cid].rsrc =
-			static_cast<void *>( &buffers[cid][0] );
+		if (cid == CPUID_INVALID) { cid = 0; };
+		buffDescriptors[cid].rsrc = buffers[cid];
 
-		__kprintf(&buffDescriptors[cid], 8192,
+		__kprintf(&buffDescriptors[cid], 1024,
 			FATAL"Deadlock detected.\n"
-			"\tCPU: %d. Lock address: 0x%p. Calling function: 0x%p, lockval: %d.\n",
-			cid, this, __builtin_return_address(0), lock);
+			"\tCPU: %d, Lock obj addr: 0x%p. Calling function: 0x%p,\n"
+			"\tlock int addr: 0x%p, lockval: %d.\n",
+			cid, this, __builtin_return_address(0), &lock, lock);
 
 		asm volatile("cli\n\thlt\n\t");
 	};

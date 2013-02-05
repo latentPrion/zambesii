@@ -11,6 +11,8 @@
 	#include <kernel/common/cpuTrib/cpuTrib.h>
 	#include <kernel/common/taskTrib/load.h>
 
+#define TASKTRIB		"Task Trib: "
+
 class taskTribC
 :
 public tributaryC

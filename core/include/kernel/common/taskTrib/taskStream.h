@@ -46,6 +46,7 @@ public:
 	void updateCapacity(ubit8 action, ubit32 val);
 
 	error_t schedule(taskC* task);
+
 	void dormant(taskC *task)
 	{
 		task->runState = taskC::STOPPED;
@@ -139,7 +140,6 @@ public:
 	void dump(void);
 
 private:
-
 	taskC *pullRealTimeQ(void);
 	taskC *pullRoundRobinQ(void);
 

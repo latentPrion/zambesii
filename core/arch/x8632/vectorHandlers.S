@@ -129,36 +129,23 @@ ASM_GLOBAL_FUNCTION(saveContextAndCallPull)
 	 * Push all state to the stack in the same order that the CPU does
 	 * naturally on IRQ entry, minus SS + ESP.
 	 **/
-	pushl	%ebp
-	movl	%esp, %ebp
-	/* EBP+0=oldEBP, EBP+4=retAddr, EBP+8=sleepStackBaseAddr argument. */
-
 	pushl	%eax
-	movl	0x4(%ebp), %eax
-	pushl	%cs
+	movl	0x4(%esp), %eax
 	pushl	%eax
-	addl	$0x8, %esp
+	addl	$0x4, %esp
 	popl	%eax
+	addl	$0x4, %esp
 	pushfl
+	pushl	%cs
 	/* We subl an extra 8 bytes because the taskContextC structure has
 	 * 2 dummy values which are only used on IRQ entry. But since we use the
 	 * same structure definition, we need to respect the layout (errorCode
 	 * and vectorNo).
 	 **/
-	subl	$16, %esp
+	subl	$12, %esp
 
 	pusha
 
-	/* Since we need to change the value that was pushed for EBP by pusha
-	 * above, because we used EBP within this function (we set up a C-styled
-	 * stack frame). The correct EBP value that should have been pushed
-	 * by pusha is currently pushed, and accessible as EBP+0. So we just
-	 * use any of the now free GP regs to patch in the correct EBP value.
-	 **/
-	movl	(%ebp), %eax
-	movl	%eax, 0x8(%esp)
-
-	/* Continue pushing the rest of the thread's state. */
 	pushw	%fs
 	pushw	%gs
 	pushw	%ds
@@ -167,8 +154,8 @@ ASM_GLOBAL_FUNCTION(saveContextAndCallPull)
 	/* Save the end address of the register context we just pushed */
 	movl	%esp, %eax
 
-	/* Get the CPU's sleep stack base addr (EBP+8). */
-	movl	0x8(%ebp), %esp
+	/* Get the CPU's sleep stack base addr (ESP+64). */
+	movl	60(%esp), %esp
 
 	/* We are now operating on the CPU's sleep stack. cpuStream_pull()
 	 * takes a single argument, which is the address of the beginning of the
