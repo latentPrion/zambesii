@@ -45,7 +45,7 @@ error_t interruptTribC::initializeExceptions(void)
 	return ERROR_SUCCESS;
 }
 
-error_t interruptTribC::initialize(void)
+error_t interruptTribC::initializeIrqManagement(void)
 {
 	/**	EXPLANATION:
 	 * After a call to initialize2(), the chipset is expected to be fully

@@ -135,7 +135,6 @@ error_t processStreamC::spawnThread(
 	*newThreadId = newThreadIdTmp;
 	newTask = allocateNewThread(*newThreadId);
 	if (newTask == __KNULL) { return ERROR_MEMORY_NOMEM; };
-
 	// Allocate internal sub-structures (context, etc.).
 	ret = newTask->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };

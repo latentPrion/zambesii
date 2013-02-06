@@ -387,7 +387,7 @@ void prioQueueC<T>::queueC<T2>::dump(void)
 			flipFlop = 0;
 		};
 
-		__kprintf(CC"0x%p (tid 0x%x) ", tmp->item, ((taskC *)tmp->item)->id);
+		__kprintf(CC"0x%p ", tmp->item);
 	};
 
 	q.lock.release();

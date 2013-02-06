@@ -67,11 +67,6 @@ status_t x8632_stack_fault(taskContextC *, ubit8)
 	return ERROR_GENERAL;
 }
 
-status_t x8632_gpf(taskContextC *, ubit8)
-{
-	return ERROR_GENERAL;
-}
-
 status_t x8632_unknown_interrupt(taskContextC *, ubit8)
 {
 	// Is also the FPU exception vector in SMP mode.

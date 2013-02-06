@@ -11,12 +11,12 @@ taskContextC::taskContextC(ubit8 execDomain)
 	if (execDomain == PROCESS_EXECDOMAIN_KERNEL)
 	{
 		cs = 0x08;
-		ds = ss = 0x10;
+		ds = es = fs = gs = ss = 0x10;
 	}
 	else
 	{
 		cs = 0x18;
-		ds = ss = 0x18;
+		ds = es = fs = gs = ss = 0x18;
 	};
 }
 

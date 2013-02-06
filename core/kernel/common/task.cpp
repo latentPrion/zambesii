@@ -53,6 +53,7 @@ error_t taskC::allocateStacks(void)
 	context = (taskContextC *)((uarch_t)context - sizeof(taskContextC));
 	new (context) taskContextC(parent->execDomain);
 	context->initialize();
+
 	// Don't allocate a user stack for threads of kernel space processes.
 	if (parent->execDomain != PROCESS_EXECDOMAIN_USER) {
 		return ERROR_SUCCESS;

@@ -24,15 +24,6 @@
 
 int oo=0, pp=0, qq=0, rr=0;
 
-void thread0(void)
-{
-	for (;;)
-	{
-		__kprintf(NOTICE"Thread0: Hello.\n");
-		taskTrib.yield();
-	};
-}
-
 extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -113,37 +104,33 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 			&tid),
 		ret);
 
-	DO_OR_DIE(
-		processTrib.__kprocess,
-		spawnThread(
-			(void (*)(void *))&thread0, __KNULL,
-			__KNULL,
-			taskC::ROUND_ROBIN,
-			0,
-			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
-			&tid),
-		ret);
-
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 }
 
 void __korientationMain(void)
 {
 	error_t		ret;
+	processId_t	tid;
 
-	for (;;)
-	{
-		__kprintf(NOTICE ORIENT"Says hello.\n");
-		taskTrib.yield();
-	};
-
-for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("hlt\n\t"); };
-	// Initialize IRQ Control and chipset bus-pin mapping management.
-//	DO_OR_DIE(interruptTrib, initializeIrqManagement(), ret);
+	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
+	 * then load the chipset's bus-pin mappings and initialize timer
+	 * services.
+	 **/
+	DO_OR_DIE(interruptTrib, initializeIrqManagement(), ret);
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
-	// Start the Timer Trib timer services.
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
-	DO_OR_DIE(timerTrib, initialize(), ret);
+	DO_OR_DIE(
+		processTrib.__kprocess,
+		spawnThread(
+			(void (*)(void *))&timerTribC::main, __KNULL,
+			__KNULL,
+			taskC::ROUND_ROBIN,
+			0,
+			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
+			&tid),
+		ret);
+	taskTrib.yield();
+for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("hlt\n\t"); };
 
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);

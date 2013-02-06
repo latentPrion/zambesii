@@ -7,6 +7,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/timerTrib/timerTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 
 
 timerTribC::timerTribC(void)
@@ -86,6 +87,12 @@ void timerTribC::initializeQueue(timerQueueC *queue, ubit32 ns)
 
 	__kprintf(NOTICE TIMERTRIB"init Q %dns: No timer available.\n", ns);
 	return;
+}
+
+void timerTribC::main(void)
+{
+	timerTrib.initialize();
+	taskTrib.yield();
 }
 
 error_t timerTribC::initialize(void)

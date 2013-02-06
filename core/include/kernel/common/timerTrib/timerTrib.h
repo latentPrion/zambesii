@@ -25,6 +25,7 @@ public tributaryC
 {
 public:
 	timerTribC(void);
+	static void main(void);
 	error_t initialize(void);
 	error_t initialize2(void);
 	~timerTribC(void);
