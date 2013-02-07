@@ -86,7 +86,28 @@ public:
 			return;
 		};
 	}
-		
+
+	error_t unblock(taskC *task)
+	{
+		task->runState = taskC::RUNNABLE;
+
+		switch (task->schedPolicy)
+		{
+		case taskC::ROUND_ROBIN:
+			return roundRobinQ.insert(
+				task, task->schedPrio->prio,
+				task->schedOptions);
+
+		case taskC::REAL_TIME:
+			return realTimeQ.insert(
+				task, task->schedPrio->prio,
+				task->schedOptions);
+
+		default:
+			return ERROR_UNSUPPORTED;
+		};
+	}
+
 	void yield(taskC *task)
 	{
 		task->runState = taskC::RUNNABLE;

@@ -19,6 +19,7 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 #include <arch/cpuControl.h>
+#include <__kclasses/singleWaiterQueue.h>
 #include "../chipset/ibmPc/i8254.h"
 
 
@@ -107,6 +108,19 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 }
 
+singleWaiterQueueC<int>		q;
+
+void processingThread(void)
+{
+	int	*i;
+
+	for (;;)
+	{
+		i = q.pop();
+		__kprintf(NOTICE"Pop: Got %d. ", *i);
+	};
+}
+
 void __korientationMain(void)
 {
 	error_t		ret;
@@ -122,14 +136,22 @@ void __korientationMain(void)
 	DO_OR_DIE(
 		processTrib.__kprocess,
 		spawnThread(
-			(void (*)(void *))&timerTribC::main, __KNULL,
+			(void (*)(void *))&processingThread, __KNULL,
 			__KNULL,
 			taskC::ROUND_ROBIN,
 			0,
 			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
 			&tid),
 		ret);
-	taskTrib.yield();
+
+	DO_OR_DIE(q, initialize(processTrib.__kprocess.getTask(tid)), ret);
+	for (int i=0; i<12; i++)
+	{
+		if (i % 4 == 0) { __kprintf(NOTICE"Yielding.\n"); taskTrib.yield(); };
+		if (q.addItem(&i) != ERROR_SUCCESS) {
+			__kprintf(NOTICE"The addItem call didn't work.\n");
+		};
+	};
 for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("hlt\n\t"); };
 
 	// Detect physical memory.

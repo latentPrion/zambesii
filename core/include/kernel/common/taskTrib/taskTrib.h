@@ -52,6 +52,19 @@ public:
 		return wake(task);
 	}
 
+	error_t unblock(taskC *task);
+	error_t unblock(processId_t tid)
+	{
+		processStreamC	*proc;
+		taskC		*task;
+
+		proc = processTrib.getStream(tid);
+		if (proc == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+
+		task = proc->getTask(tid);
+		return unblock(task);
+	}
+
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };
 	void updateLoad(ubit8 action, ubit32 val);

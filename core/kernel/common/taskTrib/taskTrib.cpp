@@ -164,3 +164,16 @@ void taskTribC::block(void)
 			sizeof(currTask->currentCpu->sleepStack)]);
 }
 
+error_t taskTribC::unblock(taskC *task)
+{
+	if (task->runState == taskC::RUNNABLE) { return ERROR_SUCCESS; };
+
+	if (!(task->runState == taskC::STOPPED
+		&& task->blockState == taskC::BLOCKED))
+	{
+		return ERROR_INVALID_OPERATION;
+	};
+
+	return task->currentCpu->taskStream.unblock(task);
+}
+

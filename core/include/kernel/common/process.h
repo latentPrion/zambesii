@@ -96,6 +96,7 @@ public:
 
 public:
 	taskC *getTask(processId_t processId);
+	taskC *getThread(processId_t processId) { return getTask(processId); }
 
 	// I am very reluctant to have this "argument" parameter.
 	error_t spawnThread(

@@ -21,7 +21,7 @@ public:
 		list.rsrc.nItems = 0;
 	}
 
-	~pointerDoubleListC(void);
+	~pointerDoubleListC(void) {};
 
 	error_t initialize(void) { return ERROR_SUCCESS; };
 
