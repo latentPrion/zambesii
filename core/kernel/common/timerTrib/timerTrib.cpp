@@ -7,7 +7,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/timerTrib/timerTrib.h>
-#include <kernel/common/taskTrib/taskTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 timerTribC::timerTribC(void)
@@ -89,15 +89,11 @@ void timerTribC::initializeQueue(timerQueueC *queue, ubit32 ns)
 	return;
 }
 
-void timerTribC::main(void)
-{
-	timerTrib.initialize();
-	taskTrib.yield();
-}
-
 error_t timerTribC::initialize(void)
 {
 	ubit8			h, m, s;
+	processId_t		tid;
+	error_t			ret;
 
 	/**	EXPLANATION:
 	 * Fills out the boot timestamp and sets up the Timer Tributary's Timer
@@ -151,7 +147,64 @@ error_t timerTribC::initialize(void)
 		initializeQueue(&period1ms, 1000);
 	};
 
+	// Spawn the timer event dequeueing thread.
+	ret = processTrib.__kprocess.spawnThread(
+		(void (*)(void *))&timerTribC::eventProcessorThread, __KNULL,
+		__KNULL,
+		taskC::REAL_TIME,
+		PRIOCLASS_CRITICAL,
+		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
+		| SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET,
+		&tid);
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+	eventProcessorTask = processTrib.__kprocess.getTask(tid);
+	__kprintf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
+		"addr 0x%p, id 0x%x.\n",
+		eventProcessorTask, eventProcessorTask->id);
+
+	eventProcessorControlQueue.initialize(eventProcessorTask);
+	taskTrib.yield();
 	return ERROR_SUCCESS;
+}
+
+void timerTribC::eventProcessorThread(void)
+{
+	eventProcessorMessageS	*currMsg;
+
+	for (;;)
+	{
+		currMsg = timerTrib.eventProcessorControlQueue.pop();
+		if (currMsg != __KNULL)
+		{
+			switch (currMsg->type)
+			{
+			case eventProcessorMessageS::EXIT_THREAD:
+				break;
+
+			case eventProcessorMessageS::QUEUE_INITIALIZED:
+				// Wait on the new queue.
+			case eventProcessorMessageS::QUEUE_DESTROYED:
+				// Stop waiting on this queue.
+				break;
+
+			default:
+				__kprintf(NOTICE TIMERTRIB"event dqer thread: "
+					"invalid message type %d.\n",
+					currMsg->type);
+				break;
+			};
+
+			/* Free the message and force the loop to return and
+			 * check the control queue again, until it returns
+			 * no new messages. Control queue messages have a higher
+			 * priority than IRQ event messages.
+			 **/
+			continue;
+		};
+
+		// Wait for the other queues here.
+	};
 }
 
 void timerTribC::dump(void)

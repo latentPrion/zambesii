@@ -5,6 +5,7 @@
 	#include <chipset/zkcm/timerDevice.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/clock_t.h>
+	#include <__kclasses/singleWaiterQueue.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
@@ -25,7 +26,6 @@ public tributaryC
 {
 public:
 	timerTribC(void);
-	static void main(void);
 	error_t initialize(void);
 	error_t initialize2(void);
 	~timerTribC(void);
@@ -74,6 +74,7 @@ public:
 	void	setContinuousTimerMs(mstime_t, void (*)()); */
 
 	void dump(void);
+	static void eventProcessorThread(void);
 
 private:
 	// The watchdog timer for the chipset, if it exists.
@@ -84,12 +85,28 @@ private:
 		timeS		interval;
 	};
 
+	struct eventProcessorMessageS
+	{
+		enum		typeE
+		{
+			QUEUE_INITIALIZED=1,
+			QUEUE_DESTROYED,
+			EXIT_THREAD
+		};
+
+		ubit8		type;
+		timerQueueC	*timerQueue;
+	};
+
 	// Timestamp value for when this kernel instance was booted.
 	timestampS	bootTimestamp;
 	timerQueueC	period100ms, period10ms, period1ms;
 	ubit32		safePeriodMask;
 	uarch_t		flags;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
+	taskC		*eventProcessorTask;
+	singleWaiterQueueC<eventProcessorMessageS>
+		eventProcessorControlQueue;
 
 private:
 	void initializeQueue(timerQueueC *queue, ubit32 ns);
