@@ -8,6 +8,7 @@
 #include <kernel/common/panic.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 
 
 /* The number of timer queues is limited and defined by the chipset's
@@ -223,13 +224,20 @@ static void findAndClearSlotFor(timerQueueC *timerQueue)
 void timerTribC::eventProcessorThread(void)
 {
 	eventProcessorMessageS	*currMsg;
+	zkcmTimerEventS		*currIrqEvent;
 	ubit8			slot;
+	// Boolean value.
+	ubit8			foundMessages;
 
 	for (;;)
 	{
-		currMsg = timerTrib.eventProcessorControlQueue.pop();
+		foundMessages = 0;
+		currMsg = timerTrib.eventProcessorControlQueue.pop(
+			SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
+
 		if (currMsg != __KNULL)
 		{
+			foundMessages = 1;
 			switch (currMsg->type)
 			{
 			case eventProcessorMessageS::EXIT_THREAD:
@@ -291,6 +299,26 @@ void timerTribC::eventProcessorThread(void)
 		};
 
 		// Wait for the other queues here.
+		for (ubit8 i=0; i<6; i++)
+		{
+			if (currentWaitSet[i].eventQueue != __KNULL)
+			{
+				currIrqEvent = currentWaitSet[i].eventQueue
+					->pop(
+					SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
+
+				if (currIrqEvent != __KNULL)
+				{
+					foundMessages = 1;
+					// Dispatch the message here.
+				};
+			};
+		};
+
+		// If the loop ran to its end and there were no messages, block.
+		if (!foundMessages) {
+			taskTrib.block();
+		};
 	};
 }
 

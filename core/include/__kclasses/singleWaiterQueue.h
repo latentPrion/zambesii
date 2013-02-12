@@ -1,11 +1,13 @@
 #ifndef _SINGLE_WAITER_QUEUE_H
 	#define _SINGLE_WAITER_QUEUE_H
 
+	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/ptrDoubleList.h>
 	#include <kernel/common/taskTrib/taskTrib.h>
 
 #define SWAITQ		"Single-WaiterQ: "
 
+#define SINGLEWAITERQ_POP_FLAGS_DONTBLOCK	(1<<0)
 class taskC;
 
 template <class T>
@@ -68,7 +70,7 @@ __kprintf(NOTICE"Unblocking.\n");
 	// pointerDoubleListC::remove() is sufficient, needs no extending.
 	// pointerDoubleListC::getHead() is sufficient, needs no extending.
 	// pointerDoubleListC::getNItems() is sufficient, needs no extending.
-	T *pop(void)
+	T *pop(uarch_t flags=0)
 	{
 		T	*ret;
 
@@ -79,7 +81,9 @@ __kprintf(NOTICE"Unblocking.\n");
 		 * to guarantee that this will not cause any problems.
 		 **/
 		ret = pointerDoubleListC<T>::popFromHead();
-		for (; ret == __KNULL;
+		for (;
+			!__KFLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_DONTBLOCK)
+				&& ret == __KNULL;
 			ret = pointerDoubleListC<T>::popFromHead())
 		{
 __kprintf(NOTICE"Going to sleep\n");
