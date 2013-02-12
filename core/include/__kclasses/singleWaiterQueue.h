@@ -2,10 +2,11 @@
 	#define _SINGLE_WAITER_QUEUE_H
 
 	#include <__kclasses/ptrDoubleList.h>
-	#include <kernel/common/task.h>
 	#include <kernel/common/taskTrib/taskTrib.h>
 
 #define SWAITQ		"Single-WaiterQ: "
+
+class taskC;
 
 template <class T>
 class singleWaiterQueueC

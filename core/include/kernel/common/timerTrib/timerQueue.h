@@ -49,6 +49,7 @@ public:
 	~timerQueueC(void) {};
 
 	sarch_t isLatched(void) { return device != __KNULL; };
+	zkcmTimerDeviceC *getDevice(void) { return device; };
 
 public:
 	ubit32 getCurrentPeriod(void) { return currentPeriod; };

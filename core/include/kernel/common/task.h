@@ -12,7 +12,7 @@
 	#include <kernel/common/processId.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/taskTrib/prio.h>
-	// Do not #include <kernel/common/process.h> within this file.
+	// Do not #include <kernel/common/process.h> from within this file.
 
 /**	EXPLANATION:
  * To spawn a new thread, first the caller must ask the thread's parent if there

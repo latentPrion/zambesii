@@ -13,6 +13,7 @@
 	#include <kernel/common/execDomain.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
 	#include <kernel/common/timerTrib/timerStream.h>
+	#include <kernel/common/floodplainn/floodplainnStream.h>
 	#include <__kthreads/__korientation.h>
 
 /**	Flags for processC::flags.
@@ -135,6 +136,7 @@ public:
 
 	memoryStreamC		memoryStream;
 	timerStreamC		timerStream;
+	floodplainnStreamC	floodplainnStream;
 
 private:
 	sarch_t getNextThreadId(void);

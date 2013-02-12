@@ -10,10 +10,21 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
+/* The number of timer queues is limited and defined by the chipset's
+ * safe periods. At any rate, we'll probably never exceed ~6 queues in the
+ * kernel.
+ **/
+struct waitInfoS
+{
+	singleWaiterQueueC<zkcmTimerEventS>	*eventQueue;
+	timerQueueC	*timerQueue;
+} static currentWaitSet[6];
+
 timerTribC::timerTribC(void)
 :
 period100ms(100000), period10ms(10000), period1ms(1000), safePeriodMask(0)
 {
+	memset(currentWaitSet, 0, sizeof(currentWaitSet));
 	memset(&watchdog.rsrc.interval, 0, sizeof(watchdog.rsrc.interval));
 	memset(
 		&watchdog.rsrc.nextFeedTime, 0,
@@ -122,6 +133,7 @@ error_t timerTribC::initialize(void)
 	zkcmCore.timerControl.getCurrentTime(&bootTimestamp.time);
 	zkcmCore.timerControl.getCurrentDate(&bootTimestamp.date);
 
+	// TODO: Add %D and %T to debugPipe.printf() for date/time printing.
 	h = bootTimestamp.time.seconds / 3600;
 	m = (bootTimestamp.time.seconds / 60) - (h * 60);
 	s = bootTimestamp.time.seconds % 60;
@@ -132,20 +144,6 @@ error_t timerTribC::initialize(void)
 		TIMERTRIB_DATE_GET_MONTH(bootTimestamp.date),
 		TIMERTRIB_DATE_GET_DAY(bootTimestamp.date),
 		h, m, s, bootTimestamp.time.nseconds);
-
-	// Now set up the timer queues.
-	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
-	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_100MS_SAFE)) {
-		initializeQueue(&period100ms, 100000);
-	};
-
-	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE)) {
-		initializeQueue(&period10ms, 10000);
-	};
-
-	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_1MS_SAFE)) {
-		initializeQueue(&period1ms, 1000);
-	};
 
 	// Spawn the timer event dequeueing thread.
 	ret = processTrib.__kprocess.spawnThread(
@@ -165,12 +163,67 @@ error_t timerTribC::initialize(void)
 
 	eventProcessorControlQueue.initialize(eventProcessorTask);
 	taskTrib.yield();
+
+	// Now set up the timer queues.
+	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
+	/*if (__KFLAG_TEST(safePeriodMask, TIMERCTL_100MS_SAFE)) {
+		initializeQueue(&period100ms, 100000);
+	};*/
+
+	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE)) {
+		initializeQueue(&period10ms, 10000);
+	};
+
+	/*if (__KFLAG_TEST(safePeriodMask, TIMERCTL_1MS_SAFE)) {
+		initializeQueue(&period1ms, 1000);
+	};*/
+
+	eventProcessorMessageS		tmp;
+	tmp.type = eventProcessorMessageS::QUEUE_ENABLED;
+	tmp.timerQueue = &period10ms;
+	eventProcessorControlQueue.addItem(&tmp);
+	taskTrib.yield();
+
+	tmp.type = eventProcessorMessageS::QUEUE_DISABLED;
+	tmp.timerQueue = &period10ms;
+	eventProcessorControlQueue.addItem(&tmp);
+	taskTrib.yield();
 	return ERROR_SUCCESS;
+}
+
+void timerTribC::getCurrentTime(timeS *t)
+{
+	zkcmCore.timerControl.getCurrentTime(t);
+}
+
+static sarch_t getFreeWaitSlot(ubit8 *ret)
+{
+	for (*ret = 0; *ret<6; *ret += 1)
+	{
+		if (currentWaitSet[*ret].eventQueue == __KNULL) {
+			return 1;
+		};
+	};
+
+	return 0;
+}
+
+static void findAndClearSlotFor(timerQueueC *timerQueue)
+{
+	for (ubit8 i=0; i<6; i++)
+	{
+		if (currentWaitSet[i].timerQueue == timerQueue)
+		{
+			currentWaitSet[i].timerQueue = __KNULL;
+			currentWaitSet[i].eventQueue = __KNULL;
+		};
+	};
 }
 
 void timerTribC::eventProcessorThread(void)
 {
 	eventProcessorMessageS	*currMsg;
+	ubit8			slot;
 
 	for (;;)
 	{
@@ -182,10 +235,43 @@ void timerTribC::eventProcessorThread(void)
 			case eventProcessorMessageS::EXIT_THREAD:
 				break;
 
-			case eventProcessorMessageS::QUEUE_INITIALIZED:
+			case eventProcessorMessageS::QUEUE_ENABLED:
 				// Wait on the new queue.
-			case eventProcessorMessageS::QUEUE_DESTROYED:
+				if (!getFreeWaitSlot(&slot))
+				{
+					__kprintf(ERROR TIMERTRIB"event DQer: "
+						"failed to wait on "
+						"timer Q %d ms: no free "
+						"slots.\n",
+						currMsg->timerQueue
+							->getNativePeriod());
+
+					break;
+				};
+
+				currentWaitSet[slot].timerQueue =
+					currMsg->timerQueue;
+
+				currentWaitSet[slot].eventQueue =
+					currMsg->timerQueue
+					->getDevice()->getEventQueue();
+
+				__kprintf(NOTICE TIMERTRIB"event DQer: Waiting "
+					"on timerQueue %dns.\n\tAllocated to "
+					"slot %d.\n",
+					currentWaitSet[slot].timerQueue
+						->getNativePeriod(),
+					slot);
+
+				break;
+
+			case eventProcessorMessageS::QUEUE_DISABLED:
 				// Stop waiting on this queue.
+				findAndClearSlotFor(currMsg->timerQueue);
+				__kprintf(NOTICE TIMERTRIB"event DQer: no "
+					"longer waiting on timerQueue %dns.\n",
+					currMsg->timerQueue->getNativePeriod());
+
 				break;
 
 			default:
@@ -200,6 +286,7 @@ void timerTribC::eventProcessorThread(void)
 			 * no new messages. Control queue messages have a higher
 			 * priority than IRQ event messages.
 			 **/
+			delete currMsg;
 			continue;
 		};
 

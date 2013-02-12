@@ -2,7 +2,7 @@
 	#define _FLOODPLAINN_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <__kclasses/singleWaiterQueue.h>
+	//#include <__kclasses/singleWaiterQueue.h>
 	#include <kernel/common/stream.h>
 
 /**	EXPLANATION:
@@ -53,16 +53,16 @@ class floodplainnStreamC
 public streamC
 {
 public:
-	floodplainnStreamC(void);
+	floodplainnStreamC(void) {};
 
-	error_t initialize(void) { return ERROR_SUCCESS; };
+	error_t initialize(void) { return ERROR_SUCCESS; }
 	// Release all connections.
-	~floodplainnStream(void);
+	~floodplainnStreamC(void) {};
 
 private:
 	// Allocate and deallocate queues.
-	error_t zkcmConnect(singleWaiterQueueC *queue);
-	error_t zkcmDisconnect(singleWaiterQueueC *queue);
+	// error_t zkcmConnect(singleWaiterQueueC *queue);
+	// error_t zkcmDisconnect(singleWaiterQueueC *queue);
 };
 
 #endif

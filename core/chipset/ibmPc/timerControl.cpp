@@ -74,7 +74,7 @@ zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerDevices(
 		// Must meet all of the criteria passed to us.
 		if (__KFLAG_TEST(flags, TIMERCTL_FILTER_SKIP_LATCHED))
 		{
-			if (source->getLatchState((timerStreamC **)&owner)) {
+			if (source->getLatchState((floodplainnStreamC **)&owner)) {
 				continue;
 			};
 		};
@@ -156,7 +156,7 @@ error_t zkcmTimerControlModC::unregisterTimerDevice(
 
 	if (!__KFLAG_TEST(flags, TIMERCTL_UNREGISTER_FLAGS_FORCE))
 	{
-		if (timer->getLatchState((timerStreamC **)&latchedStream))
+		if (timer->getLatchState((floodplainnStreamC **)&latchedStream))
 		{
 			__kprintf(ERROR IBMPC_TIMERCTL"unregisterTimerDevice: "
 				"Device is latched.\n");

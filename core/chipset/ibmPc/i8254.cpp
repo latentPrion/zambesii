@@ -3,10 +3,12 @@
 #include <arch/atomic.h>
 #include <arch/cpuControl.h>
 #include <chipset/zkcm/zkcmCore.h>
+#include <chipset/zkcm/zkcmIsr.h>
 #include <__kstdlib/__kbitManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
+#include <kernel/common/timerTrib/timerTrib.h>
 
 #include "i8254.h"
 
@@ -84,6 +86,12 @@ error_t i8254PitC::initialize(void)
 	disable();
 	sendEoi();
 
+	objectCache = cachePool.createCache(sizeof(zkcmTimerEventS));
+	if (objectCache == __KNULL)
+	{
+		__kprintf(WARNING i8254"Failed to obtain object cache.\n");
+		return ERROR_MEMORY_NOMEM;
+	};
 	// Expose the i8254 channel 0 timer source to the Timer Control mod.
 	ret = zkcmCore.timerControl.registerNewTimerDevice(this);
 	if (ret != ERROR_SUCCESS)
@@ -91,6 +99,7 @@ error_t i8254PitC::initialize(void)
 		__kprintf(WARNING i8254"Failed to register i8254 with Timer "
 			"Control mod.\n");
 
+		cachePool.destroyCache(objectCache);
 		return ret;
 	};
 
@@ -139,13 +148,45 @@ void i8254PitC::sendEoi(void)
 status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 {
 	(void)		flags;
+	ubit32		devFlags;
+	zkcmTimerEventS	*irqEvent;
+	i8254PitC	*device;
+
+	device = static_cast<i8254PitC *>( self );
 
 	/**	EXPLANATION:
 	 * Queue a notification on the waitqueue of the process that is
 	 * latched to us.
 	 **/
-	static_cast<i8254PitC *>( self )->sendEoi();
-	return ERROR_SUCCESS;
+	device->state.lock.acquire();
+	devFlags = device->state.rsrc.flags;
+	device->state.lock.release();
+
+	// Don't claim the IRQ if the timer hadn't been enabled.
+	if (!__KFLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED)) {
+		return ZKCM_ISR_NOT_MY_IRQ;
+	};
+
+	device->sendEoi();
+
+	// Create an event.
+	irqEvent = device->allocateIrqEvent();
+	// Note well, this is faultable memory being allocated.
+	if (irqEvent == __KNULL) {
+		__kprintf(WARNING i8254"isr: Couldn't allocate IRQ event.\n");
+		// FIXME: I don't like this return value.
+		return ZKCM_ISR_SUCCESS;
+	};
+
+	// Fill out the event and queue it.
+	irqEvent->device = device;
+	device->getLatchState(
+		&irqEvent->latchedStream);
+
+	timerTrib.getCurrentTime(&irqEvent->irqTime);
+	device->irqEventQueue.addItem(irqEvent);
+
+	return ZKCM_ISR_SUCCESS;
 }
 
 error_t i8254PitC::enable(void)

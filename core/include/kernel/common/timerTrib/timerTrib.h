@@ -39,7 +39,7 @@ public:
 	void updateContinuousClock(void);
 	void updateScheduledClock(uarch_t sourceId); */
 
-	void getCurrentTime(timeS *);
+	void getCurrentTime(timeS *t);
 	date_t getCurrentDate(void);
 
 	/**	EXPLANATION:
@@ -89,8 +89,8 @@ private:
 	{
 		enum		typeE
 		{
-			QUEUE_INITIALIZED=1,
-			QUEUE_DESTROYED,
+			QUEUE_ENABLED=1,
+			QUEUE_DISABLED,
 			EXIT_THREAD
 		};
 

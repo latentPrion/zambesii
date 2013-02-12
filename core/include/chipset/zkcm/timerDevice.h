@@ -4,11 +4,12 @@
 	#include <chipset/zkcm/device.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
+	#include <__kclasses/singleWaiterQueue.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
-	#include <kernel/common/timerTrib/timerStream.h>
+	#include <kernel/common/floodplainn/floodplainnStream.h>
 	#include <kernel/common/cpuTrib/cpuTrib.h>
 
 /**	Constants used with struct zkcmTimerSourceS.
@@ -29,6 +30,15 @@
 // Values for zkcmTimerDeviceC.state.flags.
 #define ZKCM_TIMERDEV_STATE_FLAGS_ENABLED	(1<<0)
 #define ZKCM_TIMERDEV_STATE_FLAGS_LATCHED	(1<<1)
+
+class zkcmTimerDeviceC;
+
+struct zkcmTimerEventS
+{
+	zkcmTimerDeviceC	*device;
+	floodplainnStreamC	*latchedStream;
+	timeS			irqTime;
+};
 
 class zkcmTimerDeviceC
 :
@@ -93,7 +103,12 @@ public:
 	 **/
 	virtual uarch_t getPrecisionDiscrepancyForPeriod(ubit32 period)=0;
 
-	error_t latch(timerStreamC *stream)
+	singleWaiterQueueC<zkcmTimerEventS> *getEventQueue(void)
+	{
+		return &irqEventQueue;
+	}
+
+	error_t latch(floodplainnStreamC *stream)
 	{
 		state.lock.acquire();
 
@@ -135,7 +150,7 @@ public:
 	}
 
 	// Returns 1 if latched, 0 if not latched.
-	sarch_t getLatchState(timerStreamC **latchedStream)
+	sarch_t getLatchState(floodplainnStreamC **latchedStream)
 	{
 		state.lock.acquire();
 
@@ -154,7 +169,7 @@ public:
 
 	sarch_t validateCallerIsLatched(void)
 	{
-		timerStreamC		*stream;
+		floodplainnStreamC		*stream;
 		taskC			*currTask;
 
 		currTask = cpuTrib.getCurrentCpuStream()
@@ -205,29 +220,21 @@ public:
 		flags(0), latchedStream(0), mode(UNINITIALIZED), period(0)
 		{}
 
-		ubit32		flags;
+		ubit32			flags;
 		// Floodplain Stream for the process using this timer device.
-		timerStreamC	*latchedStream;
+		floodplainnStreamC	*latchedStream;
 		// Current mode: periodic/oneshot. Valid if FLAGS_ENABLED set.
-		modeE		mode;
+		modeE			mode;
 		// For periodic mode: stores the current timer period in ns.
-		ubit32		period;
+		ubit32			period;
 		// For oneshot mode: stores the current timeout date and time.
-		timeS		currentTimeout;
-		timeS		currentInterval;
+		timeS			currentTimeout;
+		timeS			currentInterval;
 	};
 
 	sharedResourceGroupC<waitLockC, stateS>	state;
+	singleWaiterQueueC<zkcmTimerEventS>	irqEventQueue;
 };
-
-#if 0
-struct zkcmTimerEventS
-{
-	zkcmTimerDeviceC	*device;
-	timerStreamC		*latchedStream;
-	timeS			irqTime;
-};
-#endif
 
 #endif
 

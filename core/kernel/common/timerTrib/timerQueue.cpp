@@ -21,7 +21,7 @@ error_t timerQueueC::initialize(zkcmTimerDeviceC *device)
 	 **/
 	if (device == __KNULL) { return ERROR_INVALID_ARG; };
 
-	ret = device->latch(&processTrib.__kprocess.timerStream);
+	ret = device->latch(&processTrib.__kprocess.floodplainnStream);
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(WARNING TIMERQUEUE"%dns: Latch to dev \"%s\" failed."
