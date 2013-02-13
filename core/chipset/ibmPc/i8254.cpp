@@ -86,12 +86,9 @@ error_t i8254PitC::initialize(void)
 	disable();
 	sendEoi();
 
-	objectCache = cachePool.createCache(sizeof(zkcmTimerEventS));
-	if (objectCache == __KNULL)
-	{
-		__kprintf(WARNING i8254"Failed to obtain object cache.\n");
-		return ERROR_MEMORY_NOMEM;
-	};
+	// Initialize the base class members.
+	zkcmTimerDeviceC::initialize();
+
 	// Expose the i8254 channel 0 timer source to the Timer Control mod.
 	ret = zkcmCore.timerControl.registerNewTimerDevice(this);
 	if (ret != ERROR_SUCCESS)
@@ -99,7 +96,7 @@ error_t i8254PitC::initialize(void)
 		__kprintf(WARNING i8254"Failed to register i8254 with Timer "
 			"Control mod.\n");
 
-		cachePool.destroyCache(objectCache);
+		cachePool.destroyCache(irqEventCache);
 		return ret;
 	};
 

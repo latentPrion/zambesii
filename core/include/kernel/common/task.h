@@ -130,7 +130,7 @@ public:
 #endif
 
 	// Events being waited on by this thread.
-	bitmapC		registeredEvents, pendingEvents;
+	bitmapC		registeredEvents;
 };
 
 #endif

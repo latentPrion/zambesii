@@ -44,6 +44,8 @@ class zkcmTimerDeviceC
 :
 public zkcmDeviceBaseC
 {
+friend class timerTribC;
+
 public:
 	enum timerTypeE { PER_CPU=0, CHIPSET };
 	enum ioLatencyE { LOW=0, MODERATE, HIGH };
@@ -66,7 +68,21 @@ public:
 	{}
 
 public:
-	virtual error_t initialize(void)=0;
+	virtual error_t initialize(void)
+	{
+		irqEventCache = cachePool.createCache(sizeof(zkcmTimerEventS));
+		if (irqEventCache == __KNULL)
+		{
+			__kprintf(WARNING"ZKCM-Timer: Creating obj cache "
+				"failed for device \"%s\".\n",
+				getBaseDevice()->shortName);
+
+			return ERROR_MEMORY_NOMEM;
+		};
+
+		return ERROR_SUCCESS;
+	}
+
 	virtual error_t shutdown(void)=0;
 	virtual error_t suspend(void)=0;
 	virtual error_t restore(void)=0;
@@ -213,6 +229,18 @@ public:
 		ubit32		oneshotMinTimeout, oneshotMaxTimeout;
 	} capabilities;
 
+protected:
+	zkcmTimerEventS *allocateIrqEvent(void)
+	{
+		return (zkcmTimerEventS *)irqEventCache->allocate();
+	};
+
+	void freeIrqEvent(zkcmTimerEventS *event)
+	{
+		irqEventCache->free(event);
+	}
+
+protected:
 	struct stateS
 	{
 		stateS(void)
@@ -234,6 +262,7 @@ public:
 
 	sharedResourceGroupC<waitLockC, stateS>	state;
 	singleWaiterQueueC<zkcmTimerEventS>	irqEventQueue;
+	slamCacheC				*irqEventCache;
 };
 
 #endif

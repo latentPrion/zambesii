@@ -1,5 +1,6 @@
 
 #include <__kstdlib/__kclib/string.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/timerTrib/timerQueue.h>
 
@@ -67,4 +68,8 @@ void timerQueueC::disable(void)
 	device->disable();
 }
 
+void timerQueueC::tick(zkcmTimerEventS *)
+{
+	__kprintf(NOTICE TIMERQUEUE"%dns: Tick!\n", getNativePeriod());
+}
 

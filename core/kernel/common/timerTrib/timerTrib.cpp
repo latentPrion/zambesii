@@ -226,21 +226,22 @@ void timerTribC::eventProcessorThread(void)
 	eventProcessorMessageS	*currMsg;
 	zkcmTimerEventS		*currIrqEvent;
 	ubit8			slot;
-	// Boolean value.
-	ubit8			foundMessages;
+	ubit8			messagesWereFound;
 
 	for (;;)
 	{
-		foundMessages = 0;
+		messagesWereFound = 0;
+
 		currMsg = timerTrib.eventProcessorControlQueue.pop(
 			SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
 		if (currMsg != __KNULL)
 		{
-			foundMessages = 1;
+			messagesWereFound = 1;
 			switch (currMsg->type)
 			{
 			case eventProcessorMessageS::EXIT_THREAD:
+				// Code to exit the thread here.
 				break;
 
 			case eventProcessorMessageS::QUEUE_ENABLED:
@@ -309,14 +310,21 @@ void timerTribC::eventProcessorThread(void)
 
 				if (currIrqEvent != __KNULL)
 				{
-					foundMessages = 1;
+					messagesWereFound = 1;
+
 					// Dispatch the message here.
+					currentWaitSet[i].timerQueue->tick(
+						currIrqEvent);
+
+					currentWaitSet[i].timerQueue
+						->getDevice()->freeIrqEvent(
+							currIrqEvent);
 				};
 			};
 		};
 
 		// If the loop ran to its end and there were no messages, block.
-		if (!foundMessages) {
+		if (!messagesWereFound) {
 			taskTrib.block();
 		};
 	};

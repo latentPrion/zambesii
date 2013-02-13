@@ -134,6 +134,9 @@ public:
 		defaultMemoryBank;
 #endif
 
+	// Events which have been queued on this process.
+	bitmapC			pendingEvents;
+
 	memoryStreamC		memoryStream;
 	timerStreamC		timerStream;
 	floodplainnStreamC	floodplainnStream;

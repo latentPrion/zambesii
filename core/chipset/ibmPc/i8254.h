@@ -61,10 +61,6 @@ private:
 	void sendEoi(void);
 	void writeOneshotIo(void);
 	void writePeriodicIo(void);
-	zkcmTimerEventS *allocateIrqEvent(void)
-	{
-		return (zkcmTimerEventS *)objectCache->allocate();
-	};
 
 private:
 	zkcmDeviceC		baseDeviceInfo;
@@ -75,7 +71,6 @@ private:
 	// i8254 CLK pulse equivalent of the nanosecond value in currentTimeout.
 	ubit16			currentTimeoutClks;
 	ubit16			currentIntervalClks;
-	slamCacheC		*objectCache;
 };
 
 extern i8254PitC	i8254Pit;

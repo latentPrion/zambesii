@@ -41,6 +41,8 @@
 
 #define TIMERQUEUE		"timerQ "
 
+struct zkcmTimerEventS;
+
 class timerQueueC
 {
 public:
@@ -56,6 +58,14 @@ public:
 	status_t setCurrentPeriod(ubit32 p) { currentPeriod = p; return 0; };
 	ubit32 getNativePeriod(void) { return nativePeriod; };
 	status_t setNativePeriod(ubit32 p) { nativePeriod = p; return 0; };
+
+	/* Called by the Timer Trib Dqer thread when the latched timer for this
+	 * instance fires an IRQ. Expires/migrates the items at the front of the
+	 * Q if necessary, and sets the pending event bit in the process'
+	 * PCB, before waking the thread that registered to listen for the
+	 * event (if any).
+	 **/
+	void tick(zkcmTimerEventS *timerIrqEvent);
 
 	/* Enables or disables the queue and its underlying timer source. On
 	 * call to disable(), if there are objects waiting to be timed out and
