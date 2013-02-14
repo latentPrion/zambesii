@@ -31,7 +31,7 @@ utf8Char	__kprocessPreallocatedStringMem
 
 #if __SCALING__ >= SCALING_SMP
 // Preallocated mem space for the internals of the __kprocess bitmapC objects.
-ubit8		__kprocessPreallocatedBmpMem[2][32];
+ubit8		__kprocessPreallocatedBmpMem[3][32];
 #endif
 
 error_t processStreamC::initialize(
@@ -70,17 +70,18 @@ error_t processStreamC::initialize(
 void processStreamC::__kprocessAllocateInternals(void)
 {
 	// Assign our preallocated mem to the dynamic members.
-	fullName = &__kprocessPreallocatedStringMem[0][0];
-	workingDirectory = &__kprocessPreallocatedStringMem[1][0];
-	fileName = &__kprocessPreallocatedStringMem[2][0];
+	fullName = __kprocessPreallocatedStringMem[0];
+	workingDirectory = __kprocessPreallocatedStringMem[1];
+	fileName = __kprocessPreallocatedStringMem[2];
 }
 
 void processStreamC::__kprocessInitializeBmps(void)
 {
 #if __SCALING__ >= SCALING_SMP
-	cpuTrace.initialize(0, &__kprocessPreallocatedBmpMem[0], 32);
-	cpuTrace.initialize(0, &__kprocessPreallocatedBmpMem[1], 32);
+	cpuTrace.initialize(0, __kprocessPreallocatedBmpMem[0], 32);
+	cpuAffinity.initialize(0, __kprocessPreallocatedBmpMem[1], 32);
 #endif
+	pendingEvents.initialize(0, __kprocessPreallocatedBmpMem[2], 32);
 }
 
 processStreamC::~processStreamC(void)

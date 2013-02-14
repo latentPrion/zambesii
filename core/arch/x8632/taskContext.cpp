@@ -1,6 +1,7 @@
 
 #include <arch/paging.h>
 #include <arch/taskContext.h>
+#include <arch/x8632/cpuFlags.h>
 #include <chipset/memory.h>
 #include <kernel/common/process.h>
 
@@ -8,6 +9,9 @@
 taskContextC::taskContextC(ubit8 execDomain)
 {
 	memset(this, 0, sizeof(*this));
+
+	// Set the x86 EFLAGS.IF to enable IRQs when new task is pulled.
+	eflags |= x8632_CPUFLAGS_IF;
 	if (execDomain == PROCESS_EXECDOMAIN_KERNEL)
 	{
 		cs = 0x08;

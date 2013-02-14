@@ -11,13 +11,12 @@ cpuStreamC::interCpuMessagerC::interCpuMessagerC(cpuStreamC *parent)
 parent(parent)
 {
 	cache = __KNULL;
-	statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
+	statusFlag.rsrc = NOT_TAKING_REQUESTS;
 }
 
 error_t cpuStreamC::interCpuMessagerC::initialize(void)
 {
 	messageQueue.initialize();
-	statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
 
 	// Create an object cache for the messages.
 	cache = cachePool.getCache(sizeof(messageS));
@@ -52,18 +51,15 @@ error_t cpuStreamC::interCpuMessagerC::bind(void)
 	 * try to send messages to this CPU if its bit isn't set.
 	 **/
 	__kprintf(NOTICE CPUMSG"%d: Binding.\n", parent->cpuId);
-	cpuControl::enableInterrupts();
-	cpuTrib.availableCpus.setSingle(parent->cpuId);
-
+	setStatus(NOT_PROCESSING);
 	return ERROR_SUCCESS;
 }
 
 void cpuStreamC::interCpuMessagerC::cut(void)
 {
-	// TODO: May need to process all pending messages.
+	// TODO: Send a signal to the CPU to dispatch any remaining messages.
 	__kprintf(NOTICE CPUMSG"%d: Cut.\n", parent->cpuId);
-	cpuTrib.availableCpus.unsetSingle(parent->cpuId);
-	cpuControl::disableInterrupts();
+	setStatus(NOT_TAKING_REQUESTS);
 }
 
 void cpuStreamC::interCpuMessagerC::set(
@@ -81,6 +77,8 @@ void cpuStreamC::interCpuMessagerC::set(
 error_t cpuStreamC::interCpuMessagerC::dispatch(void)
 {
 	messageS	*msg;
+
+	setStatus(PROCESSING);
 
 	msg = messageQueue.pop();
 	while (msg != __KNULL)
@@ -103,14 +101,10 @@ error_t cpuStreamC::interCpuMessagerC::dispatch(void)
 		msg = messageQueue.pop();
 	};
 
+	setStatus(NOT_PROCESSING);
+
 	return ERROR_SUCCESS;
 }
 
-void cpuStreamC::interCpuMessagerC::setReceiveStateReady(void)
-{
-	statusFlag.lock.acquire();
-	statusFlag.rsrc = CPUMSGR_STATUS_NORMAL;
-	statusFlag.lock.release();
-}
 #endif /* if __SCALING__ >= SCALING_SMP */
 

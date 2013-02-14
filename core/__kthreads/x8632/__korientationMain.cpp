@@ -89,7 +89,6 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
-
 	/* Spawn the new thread for __korientationMain. There is no need to
 	 * unschedule __korientationInit() because it will never be scheduled.
 	**/
@@ -119,7 +118,7 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
-for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("hlt\n\t"); };
+for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("cli\n\thlt\n\t"); };
 
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);

@@ -161,7 +161,7 @@ static error_t initializeLapic(cpuStreamC *caller)
 	x86Lapic::ipi::installHandler();
 
 	// This is called only when the CPU is ready to take IPIs.
-	caller->interCpuMessager.initialize();
+	caller->interCpuMessager.bind();
 
 	// First print out the LAPIC Int assignment entries.
 	x86Mp::initializeCache();
@@ -245,6 +245,9 @@ error_t cpuStreamC::bind(void)
 	if (usingChipsetSmpMode() && x86Lapic::cpuHasLapic()) {
 		initializeLapic(this);
 	};
+
+	// Open the floodgates.
+	cpuControl::enableInterrupts();
 
 #if 0
 	// Enumerate CPU and features.

@@ -1,0 +1,63 @@
+Should a CPU ever be running without local interrupts unmasked? No: as long as
+the chipset has passed the stage in __korientationInit() where IRQs are masked
+at the IRQ controller, it is safe to run with local IRQs enabled.
+
+CPU Stream:
+	Construct:
+		Initialize to known state, zero out all members.
+	Initialize:
+		Allocate all internal members.
+	Bind:
+		Enables local IRQs on the CPU.
+		Detect all features and initialize APICs, detect model, etc.
+		This is run on the target CPU itself.
+		Sets the CPU's bit in the "availableCpus" BMP, letting the
+		whole of the running system know that the CPU exists.
+		Calls interCpuMessager.bind().
+	Unbind:
+		Does nothing. A CPU should not unset its bit in availableCpus
+		while it is still plugged into the board. It should not unbind
+		its Inter Cpu Messager either, because even a CPU whose
+		Task Stream has been cut should be able to be messaged to
+		wake up when needed.
+	~Destroy:
+		Deallocates all internal dynamically allocated memory.
+
+Inter CPU Messager:
+	Construct:
+		Initialize to known state, zero out all members.
+	Initialize:
+		Allocate all internal members, including object cache for
+		messages, etc.
+	Bind:
+		Begins accepting messages from other CPUs.
+	Unbind:
+		Stops accepting messages from other CPUs and dispatches all
+		currently queued messages.
+	~Destroy:
+		Unbinds and deallocates memory
+
+Task Stream:
+	Construct:
+		Initialize members to known state, zero out all members.
+	Initialize:
+		Initialize the internal priority queues and allocate memory as
+		required.
+	Co-op-bind:
+		Set the CPU's bit in "onlineCpus" to advertise the CPU for
+		scheduling and migration.
+	Bind:
+		Acquire a timer device from ZKCM's Timer Control mod and use it
+		to enter the pre-emptive bound state and enable pre-emption.
+	Unbind:
+		Disable the timer device that is bound to the CPU, unset the
+		CPU's bit in "onlineCpus" and migrate all tasks off of the
+		CPU, to be given to other CPUs. This can be done effectively by
+		giving them to the Task Tributary and letting it schedule them
+		as a matter of course.
+	~Destroy:
+		Unbind, and deallocate any memory that has been acquired.
+
+What does the kernel use "availableCpus" to do?
+	1. Report on current CPUs.
+	2. 

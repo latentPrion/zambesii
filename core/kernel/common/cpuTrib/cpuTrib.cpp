@@ -710,8 +710,6 @@ void cpuTribC::destroyStream(cpu_t cid)
 	cs = getStream(cid);
 	if (cs == __KNULL) { return; };
 
-	availableCpus.unsetSingle(cid);
-
 	// Now remove it from the list of CPUs and free the mem.
 	cpuStreams.removeItem(cid);
 	__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_REMOVE);

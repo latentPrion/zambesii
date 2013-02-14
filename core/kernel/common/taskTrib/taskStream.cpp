@@ -4,6 +4,7 @@
 #include <arch/taskContext.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/process.h>	
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
@@ -44,13 +45,7 @@ error_t taskStreamC::initialize(void)
 	ret = realTimeQ.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = roundRobinQ.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
-
-	//ret = dormantQ.initialize();
-	//if (ret != ERROR_SUCCESS) { return ret; };
-
-	return ERROR_SUCCESS;
+	return roundRobinQ.initialize();
 }
 
 void taskStreamC::dump(void)
@@ -94,6 +89,34 @@ error_t taskStreamC::cooperativeBind(void)
 	return ERROR_SUCCESS;
 }
 
+/* Args:
+ * __pb = pointer to the bitmapC object to be checked.
+ * __n = the bit number which the bitmap should be able to hold. For example,
+ *	 if the bit number is 32, then the BMP will be checked for 33 bit
+ *	 capacity or higher, since 0-31 = 32 bits, and bit 32 would be the 33rd
+ *	 bit.
+ * __ret = pointer to variable to return the error code from the operation in.
+ * __fn = The name of the function this macro was called inside.
+ * __bn = the human recognizible name of the bitmapC instance being checked.
+ *
+ * The latter two are used to print out a more useful error message should an
+ * error occur.
+ **/
+#define CHECK_AND_RESIZE_BMP(__pb,__n,__ret,__fn,__bn)			\
+	do { \
+	*(__ret) = ERROR_SUCCESS; \
+	if ((__n) >= (signed)(__pb)->getNBits()) \
+	{ \
+		*(__ret) = (__pb)->resizeTo((__n) + 1); \
+		if (*(__ret) != ERROR_SUCCESS) \
+		{ \
+			__kprintf(ERROR TASKSTREAM"%s: resize failed on %s " \
+				"with required capacity = %d.\n", \
+				__fn, __bn, __n); \
+		}; \
+	}; \
+	} while (0);
+
 status_t taskStreamC::schedule(taskC *task)
 {
 	status_t	ret;
@@ -103,6 +126,12 @@ status_t taskStreamC::schedule(taskC *task)
 	if (!task->cpuAffinity.testSingle(parentCpu->id)) {
 		return TASK_SCHEDULE_TRY_AGAIN;
 	};
+
+	CHECK_AND_RESIZE_BMP(
+		&task->parent->cpuTrace, parentCpu->id, &ret,
+		"schedule", "cpuTrace");
+
+	if (ret != ERROR_SUCCESS) { return ret; };
 #endif
 	// Check CPU suitability to run task (FPU, other features).
 
@@ -131,6 +160,8 @@ status_t taskStreamC::schedule(taskC *task)
 	};
 
 	if (ret != ERROR_SUCCESS) { return ret; };
+
+	task->parent->cpuTrace.setSingle(parentCpu->id);
 	// Increment and notify upper layers of new task being scheduled.
 	updateLoad(LOAD_UPDATE_ADD, 1);
 	return ret;

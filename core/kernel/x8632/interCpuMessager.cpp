@@ -11,8 +11,18 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 {
 	error_t		err;
 	messageS	*msg, *msg2=__KNULL;
-	uarch_t		needToIpi=CPUMSGR_STATUS_NORMAL;
+	statusE		needToIpi;
 	ubit8		extraFlushNeeded=0;
+
+	needToIpi = getStatus();
+	if (needToIpi == NOT_TAKING_REQUESTS)
+	{
+		__kprintf(WARNING CPUMSG"%d: Refused request "
+			"(NOT_TAKING_REQUESTS).\n",
+			parent->cpuId);
+
+		return ERROR_RESOURCE_BUSY;
+	};
 
 	msg = new (cache->allocate(
 		SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY, &extraFlushNeeded)) messageS;
@@ -39,22 +49,14 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 			(uarch_t)msg, 1);
 	};
 
-	// Check to see if an IPI will be needed.
-	statusFlag.lock.acquire();
-
-	if (statusFlag.rsrc == CPUMSGR_STATUS_NORMAL) {
-		needToIpi = statusFlag.rsrc = CPUMSGR_STATUS_PROCESSING;
-	};
-
-	statusFlag.lock.release();
-
 	// Add the message to the CPU's message queue.
 	if (extraFlushNeeded) {
 		messageQueue.insert(msg2);
 	};
 	messageQueue.insert(msg);
 
-	if (needToIpi == CPUMSGR_STATUS_PROCESSING)
+	// Check to see if an IPI will be needed.
+	if (getStatus() == NOT_PROCESSING)
 	{
 		for (ubit32 i=0; i<1000; i++) {};
 		err = x86Lapic::ipi::sendPhysicalIpi(

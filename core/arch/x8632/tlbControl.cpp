@@ -52,7 +52,8 @@ void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 	 *
 	 * When flushing from the kernel's vaddrspace, we use the
 	 * "availableCPUs" BMP from the CPU Trib to determine which CPUs to send
-	 * the flush message to.
+	 * the flush message to. This is because all CPUs are likely to
+	 * access kernel memory.
 	 *
 	 * For userspace flushing, we use the process's "cpuTrace" BMP so that
 	 * we only flush on CPUs which have run the process in question.

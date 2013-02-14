@@ -79,12 +79,32 @@ private:
 	public:
 		error_t flushTlbRange(void *vaddr, uarch_t nPages);
 		error_t dispatch(void);
-		void setReceiveStateReady(void);
 
 	private:
+		enum statusE {
+			NOT_TAKING_REQUESTS=0, NOT_PROCESSING, PROCESSING };
+
 		void set(messageS *msg, ubit8 type,
 			uarch_t val0=0, uarch_t val1=0,
 			uarch_t val2=0, uarch_t val3=0);
+
+		statusE getStatus(void)
+		{
+			statusE		ret;
+
+			statusFlag.lock.acquire();
+			ret = statusFlag.rsrc;
+			statusFlag.lock.release();
+
+			return ret;
+		}
+
+		void setStatus(statusE status)
+		{
+			statusFlag.lock.acquire();
+			statusFlag.rsrc = status;
+			statusFlag.lock.release();
+		}
 
 	private:
 		struct messageS
@@ -98,7 +118,7 @@ private:
 		};
 		ptrlessListC<messageS>		messageQueue;
 		slamCacheC			*cache;
-		sharedResourceGroupC<waitLockC, uarch_t> statusFlag;
+		sharedResourceGroupC<waitLockC, statusE> statusFlag;
 		cpuStreamC	*parent;
 	};
 #endif

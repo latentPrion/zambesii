@@ -64,15 +64,7 @@ status_t x86Lapic::ipi::exceptionHandler(taskContextC *, ubit8 postcall)
 	if (!postcall)
 	{
 		cpuTrib.getCurrentCpuStream()->interCpuMessager.dispatch();
-	}
-	else
-	{
-		// Set the CPU's messager state to NORMAL before IRET.
-		cpuTrib.getCurrentCpuStream()
-			->interCpuMessager.setReceiveStateReady();
-
-		sendEoi();
-	}
+	};
 		
 	return ERROR_SUCCESS;
 }
