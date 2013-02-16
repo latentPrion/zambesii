@@ -24,6 +24,7 @@ class timerTribC
 :
 public tributaryC
 {
+friend void ::__korientationMain(void);
 public:
 	timerTribC(void);
 	error_t initialize(void);

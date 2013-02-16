@@ -106,7 +106,7 @@ void interruptTribC::irqMain(taskContextC *regs)
 	isrDescriptorS		*isrDesc;
 	void			*handle;
 
-	if (regs->vectorNo /*!= 253*/)
+	if (regs->vectorNo != 253 && regs->vectorNo != 32)
 	{
 		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: CPU %d entered on "
 			"vector %d.\n",
@@ -124,9 +124,12 @@ void interruptTribC::irqMain(taskContextC *regs)
 		regs->vectorNo,
 		&__kpin, &triggerMode);
 
-	__kprintf(NOTICE INTTRIB"irqMain: identifyActiveIrq returned %d, "
-		"__kpin %d, triggerMode %d.\n",
-		status, __kpin, triggerMode);
+	if (regs->vectorNo != 253 && regs->vectorNo != 32)
+	{
+		__kprintf(NOTICE INTTRIB"irqMain: identifyActiveIrq returned %d, "
+			"__kpin %d, triggerMode %d.\n",
+			status, __kpin, triggerMode);
+	};
 
 	switch (status)
 	{
@@ -209,7 +212,7 @@ void interruptTribC::irqMain(taskContextC *regs)
 		break;
 	};
 
-	if (regs->vectorNo /*!= 253*/)
+	if (regs->vectorNo != 253 && regs->vectorNo != 32)
 	{
 		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: Exiting on CPU %d "
 			"vector %d.\n",

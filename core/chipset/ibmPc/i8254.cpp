@@ -148,6 +148,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	ubit32		devFlags;
 	zkcmTimerEventS	*irqEvent;
 	i8254PitC	*device;
+	error_t		err;
 
 	device = static_cast<i8254PitC *>( self );
 
@@ -165,7 +166,6 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	};
 
 	device->sendEoi();
-
 	// Create an event.
 	irqEvent = device->allocateIrqEvent();
 	// Note well, this is faultable memory being allocated.
@@ -181,7 +181,12 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 		&irqEvent->latchedStream);
 
 	timerTrib.getCurrentTime(&irqEvent->irqTime);
-	device->irqEventQueue.addItem(irqEvent);
+	err = device->irqEventQueue.addItem(irqEvent);
+	if (err != ERROR_SUCCESS)
+	{
+		device->freeIrqEvent(irqEvent);
+		__kprintf(WARNING i8254"isr: Failed to queue IRQ event.\n");
+	};
 
 	return ZKCM_ISR_SUCCESS;
 }
@@ -276,7 +281,6 @@ void i8254PitC::disable(void)
 	 **/
 
 	state.lock.acquire();
-
 	// Write out the oneshot mode (mode 0) control byte.
 	io::write8(
 		i8254_CHAN0_IO_CONTROL,
@@ -291,8 +295,10 @@ void i8254PitC::disable(void)
 
 	state.lock.release();
 
-	if (isrRegistered) {
+	if (isrRegistered)
+	{
 		interruptTrib.zkcm.retirePinIsr(__kpinId, &isr);
+		isrRegistered = 0;
 	};
 }
 

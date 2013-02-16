@@ -16,23 +16,14 @@ class singleWaiterQueueC
 public pointerDoubleListC<T>
 {
 public:
-	singleWaiterQueueC(taskC *task=__KNULL)
+	singleWaiterQueueC(void)
 	:
-	task(task)
+	task(__KNULL)
 	{}
 
-	error_t initialize(taskC *task=__KNULL)
+	error_t initialize(void)
 	{
-		if (pointerDoubleListC<T>::initialize() != ERROR_SUCCESS) {
-			return ERROR_UNKNOWN;
-		};
-
-		if (task == __KNULL && this->task == __KNULL) {
-			return ERROR_CRITICAL;
-		};
-
-		this->task = task;
-		return ERROR_SUCCESS;
+		return pointerDoubleListC<T>::initialize();
 	};
 
 	~singleWaiterQueueC(void) {}
@@ -50,9 +41,8 @@ public:
 		ret = pointerDoubleListC<T>::addItem(item);
 		if (ret != ERROR_SUCCESS) { return ret; };
 
-		if (needToWake)
+		if (needToWake && task != __KNULL)
 		{
-__kprintf(NOTICE"Unblocking.\n");
 			ret = taskTrib.unblock(task);
 			if (ret != ERROR_SUCCESS)
 			{
@@ -93,10 +83,33 @@ __kprintf(NOTICE"Going to sleep\n");
 		return ret;
 	}
 
+	error_t setWaitingThread(taskC *task)
+	{
+		if (task == __KNULL) { return ERROR_INVALID_ARG; };
+
+		if (this->task != __KNULL
+			&& this->task->parent->id != task->parent->id)
+		{
+			__kprintf(WARNING SWAITQ"Failed to allow task 0x%x to "
+				"wait.\n",
+				task->id);
+
+			return ERROR_RESOURCE_BUSY;
+		}
+
+		this->task = task;
+		return ERROR_SUCCESS;
+	}
+
+	error_t setWaitingTask(taskC *task)
+	{
+		return setWaitingThread(task);
+	}
+
 	taskC *getThread(void)
 	{
 		return task;
-	};
+	}
 
 	taskC *getTask(void)
 	{

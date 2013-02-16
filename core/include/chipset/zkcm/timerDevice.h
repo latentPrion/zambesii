@@ -80,7 +80,7 @@ public:
 			return ERROR_MEMORY_NOMEM;
 		};
 
-		return ERROR_SUCCESS;
+		return irqEventQueue.initialize();
 	}
 
 	virtual error_t shutdown(void)=0;

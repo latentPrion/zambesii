@@ -118,7 +118,13 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
-for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("cli\n\thlt\n\t"); };
+	timerTrib.period10ms.disable();
+	taskTrib.yield();
+	timerTrib.period10ms.enable();
+	for (ubit32 i=0; i<0xFFF; i++) {};
+	timerTrib.period10ms.disable();
+	taskTrib.yield();
+for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("hlt\n\t"); };
 
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);

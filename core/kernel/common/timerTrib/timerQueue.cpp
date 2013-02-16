@@ -5,6 +5,23 @@
 #include <kernel/common/timerTrib/timerQueue.h>
 
 
+/**	EXPLANATION:
+ * Timer Queue is the class used to represent queues of sorted timer request
+ * objects from processes (kernel, driver and user). At boot, the kernel will
+ * check to see how many timer sources the chipset provides, and how many of
+ * them can be used to initialize timer queues. Subsequently, if any new
+ * timer queues are detected, the kernel will automatically attempt to see if
+ * it can be used to initialize any still-uninitialized timer queues.
+ *
+ * Any left-over timer sources are exposed to any process which may want to use
+ * them via the ZKCM Timer Control mod's TimerFilter api.
+ *
+ * The number of Timer Queues that the kernel initializes for a chipset is
+ * of course, chipset dependent. It is based on the chipset's "safe period bmp",
+ * which states what timer periods the chipset can handle safely. Not every
+ * chipset can have a timer running at 100Hz and remain stable, for example.
+ **/
+
 timerQueueC::timerQueueC(ubit32 nativePeriod)
 :
 currentPeriod(nativePeriod), nativePeriod(nativePeriod), acceptingRequests(0),
@@ -14,7 +31,6 @@ device(__KNULL)
 
 error_t timerQueueC::initialize(zkcmTimerDeviceC *device)
 {
-	timeS		stamp;
 	error_t		ret;
 
 	/**	CAVEAT:
@@ -31,6 +47,19 @@ error_t timerQueueC::initialize(zkcmTimerDeviceC *device)
 		return ret;
 	};
 
+	timerQueueC::device = device;
+	return ERROR_SUCCESS;
+}
+
+error_t timerQueueC::enable(void)
+{
+	error_t		ret;
+	timeS		stamp;
+
+	if (!isLatched()) {
+		return ERROR_UNINITIALIZED;
+	};
+
 	stamp.seconds = 0;
 	stamp.nseconds = nativePeriod;
 
@@ -43,24 +72,20 @@ error_t timerQueueC::initialize(zkcmTimerDeviceC *device)
 		device->setOneshotMode(stamp);
 	};
 
-	timerQueueC::device = device;
-	return ERROR_SUCCESS;
-}
+	ret = device->enable();
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR TIMERQUEUE"%dns: Failed to enable() device.\n",
+			getNativePeriod());
 
-error_t timerQueueC::enable(void)
-{
-	if (!isLatched()) {
-		return ERROR_UNINITIALIZED;
+		return ret;
 	};
 
-	device->enable();
-	acceptingRequests = 1;
 	return ERROR_SUCCESS;
 }
 
 void timerQueueC::disable(void)
 {
-	acceptingRequests = 0;
 	/** FIXME: Should first check to see if there are objects left, and wait
 	 * for them to expire before physically disabling the timer source.
 	 **/

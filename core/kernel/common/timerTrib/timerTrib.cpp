@@ -157,13 +157,14 @@ error_t timerTribC::initialize(void)
 		&tid);
 
 	if (ret != ERROR_SUCCESS) { return ret; };
+
 	eventProcessorTask = processTrib.__kprocess.getTask(tid);
 	__kprintf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
 		"addr 0x%p, id 0x%x.\n",
 		eventProcessorTask, eventProcessorTask->id);
 
-	eventProcessorControlQueue.initialize(eventProcessorTask);
-	taskTrib.yield();
+	eventProcessorControlQueue.initialize();
+	eventProcessorControlQueue.setWaitingThread(eventProcessorTask);
 
 	// Now set up the timer queues.
 	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
@@ -179,16 +180,13 @@ error_t timerTribC::initialize(void)
 		initializeQueue(&period1ms, 1000);
 	};*/
 
-	eventProcessorMessageS		tmp;
-	tmp.type = eventProcessorMessageS::QUEUE_ENABLED;
-	tmp.timerQueue = &period10ms;
-	eventProcessorControlQueue.addItem(&tmp);
-	taskTrib.yield();
+	eventProcessorMessageS	*msg;
+	msg = new eventProcessorMessageS;
+	msg->type = eventProcessorMessageS::QUEUE_ENABLED;
+	msg->timerQueue = &period10ms;
+	eventProcessorControlQueue.addItem(msg);
 
-	tmp.type = eventProcessorMessageS::QUEUE_DISABLED;
-	tmp.timerQueue = &period10ms;
-	eventProcessorControlQueue.addItem(&tmp);
-	taskTrib.yield();
+	period10ms.enable();
 	return ERROR_SUCCESS;
 }
 
@@ -264,6 +262,10 @@ void timerTribC::eventProcessorThread(void)
 				currentWaitSet[slot].eventQueue =
 					currMsg->timerQueue
 					->getDevice()->getEventQueue();
+
+				currentWaitSet[slot].eventQueue
+					->setWaitingThread(
+						timerTrib.eventProcessorTask);
 
 				__kprintf(NOTICE TIMERTRIB"event DQer: Waiting "
 					"on timerQueue %dns.\n\tAllocated to "
