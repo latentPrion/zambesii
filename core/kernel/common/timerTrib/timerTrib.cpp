@@ -186,7 +186,7 @@ error_t timerTribC::initialize(void)
 	msg->timerQueue = &period10ms;
 	eventProcessorControlQueue.addItem(msg);
 
-	period10ms.enable();
+//	period10ms.enable();
 	return ERROR_SUCCESS;
 }
 

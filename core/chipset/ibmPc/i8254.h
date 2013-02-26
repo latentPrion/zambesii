@@ -24,21 +24,21 @@ class i8254PitC
 public zkcmTimerDeviceC
 {
 public:
-	i8254PitC(ubit32 childId)
+	explicit i8254PitC(ubit32 childId)
 	:
 	zkcmTimerDeviceC(
 		zkcmTimerDeviceC::CHIPSET,
 		ZKCM_TIMERDEV_CAP_MODE_PERIODIC
 			| ZKCM_TIMERDEV_CAP_MODE_ONESHOT,
 		1000, i8254_ONESHOT_MAX_NS,
-		1, i8254_ONESHOT_MAX_NS,
+		1000, i8254_ONESHOT_MAX_NS,
 		zkcmTimerDeviceC::MODERATE,
 		zkcmTimerDeviceC::NEGLIGABLE,
 		&baseDeviceInfo),
 	baseDeviceInfo(
-		childId, CC"i8254", CC"IBM-PC compatible i8254 PIT, channel 0 timer.",
-		CC"Unknown vendor", CC"N/A"),
-	isrRegistered(0), __kpinId(0)
+		childId,
+		CC"i8254", CC"IBM-PC compatible i8254 PIT, channel 0 timer.",
+		CC"Unknown vendor", CC"N/A")
 	{}
 
 public:
@@ -64,13 +64,25 @@ private:
 
 private:
 	zkcmDeviceC		baseDeviceInfo;
-	// Boolean to determine whether or not our ISR is registered.
-	ubit8			isrRegistered;
-	// __kpin ID assigned to the IRQ pin our device is currently tied to.
-	ubit16			__kpinId;
-	// i8254 CLK pulse equivalent of the nanosecond value in currentTimeout.
-	ubit16			currentTimeoutClks;
-	ubit16			currentIntervalClks;
+
+	struct i8254StateS
+	{
+		enum irqStateE { DISABLED=1, ENABLED, DISABLING };
+		i8254StateS(void)
+		:
+		currentTimeoutClks(0), currentIntervalClks(0),
+		isrRegistered(0), __kpinId(0), irqState(DISABLED)
+		{}
+
+		// i8254 CLK equivalent of nanosecond value in currentTimeout.
+		ubit16			currentTimeoutClks;
+		ubit16			currentIntervalClks;
+		// Boolean to determine whether or not our ISR is registered.
+		ubit8			isrRegistered;
+		// __kpin ID of the IRQ pin our device is currently tied to.
+		ubit16			__kpinId;
+		irqStateE		irqState;
+	} i8254State;
 };
 
 extern i8254PitC	i8254Pit;

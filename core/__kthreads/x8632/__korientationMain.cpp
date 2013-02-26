@@ -118,13 +118,15 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
-	timerTrib.period10ms.disable();
+
 	taskTrib.yield();
-	timerTrib.period10ms.enable();
-	for (ubit32 i=0; i<0xFFF; i++) {};
-	timerTrib.period10ms.disable();
+	i8254Pit.setPeriodicMode(timeS(0,50000));
+	if (i8254Pit.enable() == ERROR_SUCCESS) { __kprintf(NOTICE ORIENT"Just enabled pit.\n"); };
+	for (ubit32 i=0; i<0xFFFFFF; i++) {};
+	i8254Pit.disable();
 	taskTrib.yield();
-for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;) { asm volatile("hlt\n\t"); };
+
+for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOTICE ORIENT"Escaped HLT, re-entering.\n")) { asm volatile("hlt\n\t"); };
 
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);

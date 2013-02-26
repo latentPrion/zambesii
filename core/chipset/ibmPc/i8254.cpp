@@ -129,17 +129,6 @@ void i8254PitC::sendEoi(void)
 	__KBIT_UNSET(val, 7);
 	io::write8(0x61, val);
 	cpuControl::safeEnableInterrupts(flags);
-
-	state.lock.acquire();
-
-	if (state.rsrc.mode == ONESHOT)
-	{
-		__KFLAG_UNSET(
-			state.rsrc.flags,
-			ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
-	};
-
-	state.lock.release();
 }
 
 status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
@@ -150,14 +139,42 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	i8254PitC	*device;
 	error_t		err;
 
+	/**	EXPLANATION:
+	 * 1. Check to make sure that this is not a "disabling" IRQ which is
+	 *    meant to cause the i8254 to stop sending in IRQs. If it is the
+	 *    disabling IRQ, unregister the ISR and exit.
+	 * 2. If this is not a disabling IRQ, queue an event and exit.
+	 **/
 	device = static_cast<i8254PitC *>( self );
 
-	/**	EXPLANATION:
-	 * Queue a notification on the waitqueue of the process that is
-	 * latched to us.
-	 **/
 	device->state.lock.acquire();
+
 	devFlags = device->state.rsrc.flags;
+
+	// If this is the "disabling" final cleanup IRQ:
+	if (device->i8254State.irqState == i8254StateS::DISABLING)
+	{
+		device->i8254State.isrRegistered = 0;
+		device->i8254State.irqState = i8254StateS::DISABLED;
+		interruptTrib.zkcm.retirePinIsr(
+			device->i8254State.__kpinId, &isr);
+
+
+		// Release the lock and exit.
+		device->state.lock.release();
+
+__kprintf(NOTICE i8254"isr: Just dispatched the final disabling IRQ.\n");
+		return ZKCM_ISR_SUCCESS;
+	};
+
+	// Small state machine cleanup for oneshot mode: unset the ENABLED flag.
+	if (device->state.rsrc.mode == ONESHOT)
+	{
+		__KFLAG_UNSET(
+			device->state.rsrc.flags,
+			ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+	};
+
 	device->state.lock.release();
 
 	// Don't claim the IRQ if the timer hadn't been enabled.
@@ -166,6 +183,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	};
 
 	device->sendEoi();
+
 	// Create an event.
 	irqEvent = device->allocateIrqEvent();
 	// Note well, this is faultable memory being allocated.
@@ -211,10 +229,10 @@ error_t i8254PitC::enable(void)
 	 * 3. Ask the kernel to enable our __kpin.
 	 * 4. Program the i8254 to begin sending in IRQs.
 	 **/
-	if (!isrRegistered)
+	if (!i8254State.isrRegistered)
 	{
 		ret = zkcmCore.irqControl.bpm.get__kpinFor(
-			CC"isa", 0, &__kpinId);
+			CC"isa", 0, &i8254State.__kpinId);
 
 		if (ret != ERROR_SUCCESS)
 		{
@@ -226,21 +244,29 @@ error_t i8254PitC::enable(void)
 
 		__kprintf(NOTICE i8254"enable: BPM reports ISA IRQ 0 __kpin is "
 			"%d.\n",
-			__kpinId);
+			i8254State.__kpinId);
 
+		/* The registration of the ISR and the setting of the irqState
+		 * value must be jointly atomic.
+		 **/
+		state.lock.acquire();
+
+		i8254State.irqState = i8254StateS::ENABLED;
 		ret = interruptTrib.zkcm.registerPinIsr(
-			__kpinId, this, &isr, 0);
+			i8254State.__kpinId, this, &isr, 0);
+
+		state.lock.release();
 
 		if (ret != ERROR_SUCCESS)
 		{
 			__kprintf(ERROR i8254"enable: Failed to register ISR "
 				"on __kpin %d.\n",
-				__kpinId);
+				i8254State.__kpinId);
 
 			return ret;
 		};
 
-		isrRegistered = 1;
+		i8254State.isrRegistered = 1;
 	};
 
 	// Now program the i8254 to begin interrupting.
@@ -250,12 +276,12 @@ error_t i8254PitC::enable(void)
 		writePeriodicIo();
 	};
 
-	ret = interruptTrib.__kpinEnable(__kpinId);
+	ret = interruptTrib.__kpinEnable(i8254State.__kpinId);
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(ERROR i8254"enable: Interrupt Trib failed to "
 			"enable IRQ for __kpin %d.\n",
-			__kpinId);
+			i8254State.__kpinId);
 
 		goto failOut;
 	};
@@ -263,7 +289,7 @@ error_t i8254PitC::enable(void)
 	return ERROR_SUCCESS;
 
 failOut:
-	interruptTrib.zkcm.retirePinIsr(__kpinId, &isr);
+	interruptTrib.zkcm.retirePinIsr(i8254State.__kpinId, &isr);
 	return ret;
 }
 
@@ -276,8 +302,14 @@ void i8254PitC::disable(void)
 	 *	it determines that there are no more devices actively signaling
 	 *	on the pin.
 	 *
-	 * Linux sets the i8254 to mode 0, with a 0 CLK pulse timeout when it
-	 * wants to disable it.
+	 * Linux sets the i8254 to mode 0 (i.e, "oneshot"), with a 0 CLK pulse
+	 * timeout when it wants to disable it. On two laptops from HP that I
+	 * own, this approach generates a spurious IRQ.
+	 *
+	 * My own approach is to set the chip to mode 0 as well, but with a
+	 * non-zero timeout, forcing it to generate one last IRQ, and when that
+	 * IRQ has come in, the device is effectively "disabled", since it
+	 * was a oneshot timeout, so it won't generate any more IRQs.
 	 **/
 
 	state.lock.acquire();
@@ -289,17 +321,15 @@ void i8254PitC::disable(void)
 		| i8254_CHAN0_CONTROL_COUNTER_WRITE_LOWHIGH);
 
 	atomicAsm::memoryBarrier();
-	io::write8(i8254_CHAN0_IO_COUNTER, 0);
-	io::write8(i8254_CHAN0_IO_COUNTER, 0);
+	io::write8(i8254_CHAN0_IO_COUNTER, 1000 & 0xFF);
+	io::write8(i8254_CHAN0_IO_COUNTER, 1000 >> 8);
 	__KFLAG_UNSET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+	i8254State.irqState = i8254StateS::DISABLING;
 
 	state.lock.release();
 
-	if (isrRegistered)
-	{
-		interruptTrib.zkcm.retirePinIsr(__kpinId, &isr);
-		isrRegistered = 0;
-	};
+	// We unregister the ISR, etc in the ISR when the final IRQ comes in.
+__kprintf(NOTICE i8254"disable: completed.\n");
 }
 
 static inline sarch_t validateTimevalLimit(timeS time)
@@ -383,7 +413,7 @@ status_t i8254PitC::setPeriodicMode(struct timeS interval)
 	state.rsrc.currentInterval.nseconds = interval.nseconds;
 	state.rsrc.mode = PERIODIC;
 	// Convert the periodic interval into i8254 CLK pulse equivalent.
-	currentIntervalClks = nanosecondsToClks(
+	i8254State.currentIntervalClks = nanosecondsToClks(
 		state.rsrc.currentInterval.nseconds);
 	
 	state.lock.release();
@@ -401,7 +431,7 @@ status_t i8254PitC::setOneshotMode(struct timeS timeout)
 	state.rsrc.currentTimeout.nseconds = timeout.nseconds;
 	state.rsrc.mode = ONESHOT;
 	// Convert the currentTimeout nanosecond value into i8254 CLK pulses.
-	currentTimeoutClks = nanosecondsToClks(
+	i8254State.currentTimeoutClks = nanosecondsToClks(
 		state.rsrc.currentTimeout.nseconds);
 
 	state.lock.release();
@@ -428,11 +458,11 @@ void i8254PitC::writeOneshotIo(void)
 	// Write out the number of ns converted into i8254 CLK pulse equiv time.
 	io::write8(
 		i8254_CHAN0_IO_COUNTER,
-		currentTimeoutClks & 0xFF);
+		i8254State.currentTimeoutClks & 0xFF);
 
 	io::write8(
 		i8254_CHAN0_IO_COUNTER,
-		currentTimeoutClks >> 8);
+		i8254State.currentTimeoutClks >> 8);
 
 	__KFLAG_SET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
 
@@ -454,11 +484,11 @@ void i8254PitC::writePeriodicIo(void)
 	// Write out the currently set periodic rate.
 	io::write8(
 		i8254_CHAN0_IO_COUNTER,
-		currentIntervalClks & 0xFF);
+		i8254State.currentIntervalClks & 0xFF);
 
 	io::write8(
 		i8254_CHAN0_IO_COUNTER,
-		currentIntervalClks >> 8);
+		i8254State.currentIntervalClks >> 8);
 
 	__KFLAG_SET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
 
