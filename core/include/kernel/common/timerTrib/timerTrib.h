@@ -18,8 +18,6 @@
 
 #define TIMERTRIB_WATCHDOG_ALREADY_REGISTERED	(1)
 
-#define TIMERTRIB_PER_CPU_CLOCK_EMU		(1<<0)
-
 class timerTribC
 :
 public tributaryC
@@ -35,6 +33,9 @@ public:
 	status_t registerWatchdogIsr(zkcmIsrFn *, timeS interval);
 	void updateWatchdogInterval(timeS interval);
 	void unregisterWatchdogIsr(void);
+
+	// Called by ZKCM Timer Control when a new timer device is detected.
+	void newTimerDeviceNotification(zkcmTimerDeviceC *dev);
 
 	/**	Deprecated in lieu of redesign.
 	void updateContinuousClock(void);
@@ -55,7 +56,10 @@ public:
 	 **/
 	// void timerDeviceTimeoutEvent(zkcmTimerDeviceC *dev);
 
-	/**	Input values: "1s" "100ms" "10ms" "1ms" "100ns" "10ns" "1ns".
+	/**	Input value is any multiple of 10 up to 1,000,000,000, where
+	 * "1" indicates 1ns and 1,000,000,000 represents 1 second. So, to
+	 * enable the 1millisecond queue, you would pass "1000000" as the arg.
+	 *
 	 * Returns ERROR_SUCCESS on success,
 	 *	ERROR_UNINITIALIZED if the queue was unable to get a suitable
 	 *		timer source to latch onto,
@@ -63,8 +67,8 @@ public:
 	 *		chipset.
 	 *	ERROR_INVALID_ARG_VAL if an invalid arg is supplied.
 	 **/
-	error_t enableQueue(utf8Char *queue);
-	error_t disableQueue(utf8Char *queue);
+	error_t enableQueue(ubit32 nanos);
+	error_t disableQueue(ubit32 nanos);
 
 	/**	Pending redesign.
 	mstime_t	getCurrentTickMs(void);
@@ -101,7 +105,7 @@ private:
 
 	// Timestamp value for when this kernel instance was booted.
 	timestampS	bootTimestamp;
-	timerQueueC	period100ms, period10ms, period1ms;
+	timerQueueC	period1s, period100ms, period10ms, period1ms;
 	ubit32		safePeriodMask;
 	uarch_t		flags;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
@@ -111,6 +115,7 @@ private:
 
 private:
 	void initializeQueue(timerQueueC *queue, ubit32 ns);
+	void initializeAllQueues(void);
 };
 
 extern timerTribC		timerTrib;

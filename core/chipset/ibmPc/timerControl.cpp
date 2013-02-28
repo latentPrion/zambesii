@@ -72,7 +72,7 @@ zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerDevices(
 		source = timers.getNextItem(handle))
 	{
 		// Must meet all of the criteria passed to us.
-		if (__KFLAG_TEST(flags, TIMERCTL_FILTER_SKIP_LATCHED))
+		if (__KFLAG_TEST(flags, TIMERCTL_FILTER_FLAGS_SKIP_LATCHED))
 		{
 			if (source->getLatchState((floodplainnStreamC **)&owner)) {
 				continue;

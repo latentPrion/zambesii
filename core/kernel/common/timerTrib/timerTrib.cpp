@@ -23,7 +23,9 @@ struct waitInfoS
 
 timerTribC::timerTribC(void)
 :
-period100ms(100000), period10ms(10000), period1ms(1000), safePeriodMask(0)
+period1s(1000000000),
+period100ms(100000000), period10ms(10000000), period1ms(1000000),
+safePeriodMask(0)
 {
 	memset(currentWaitSet, 0, sizeof(currentWaitSet));
 	memset(&watchdog.rsrc.interval, 0, sizeof(watchdog.rsrc.interval));
@@ -40,65 +42,142 @@ timerTribC::~timerTribC(void)
 {
 }
 
-void timerTribC::initializeQueue(timerQueueC *queue, ubit32 ns)
+void timerTribC::initializeAllQueues(void)
 {
-	void			*handle;
 	zkcmTimerDeviceC	*dev;
-	error_t			ret;
-	timeS			min, max;
+	void			*handle=__KNULL;
 
-	/* EXPLANATION:
-	 * We want a timer that is not already latched. We can use the timer in
-	 * any mode, so that is not an issue. Precision is valued, but not of
-	 * critical importance for the kernel's timer queues. I/O latency cannot
-	 * exceed moderate.
+	/**	EXPLANATION:
+	 * For each timer available from the Timer Control mod, we call the
+	 * notification event function, and allow it to check whether or not
+	 * the timer can be consumed by the kernel.
+	 *
+	 * Run a filter that will return all chipset timers indiscriminately.
 	 **/
-	handle = __KNULL;
 	dev = zkcmCore.timerControl.filterTimerDevices(
 		zkcmTimerDeviceC::CHIPSET,
-		ZKCM_TIMERDEV_CAP_MODE_PERIODIC,
-		zkcmTimerDeviceC::MODERATE,
-		zkcmTimerDeviceC::NEGLIGABLE,
-		// TIMERCTL_FILTER_SKIP_LATCHED
-		0| TIMERCTL_FILTER_MODE_EXACT
-		| TIMERCTL_FILTER_IO_OR_BETTER
-		| TIMERCTL_FILTER_PREC_OR_BETTER,
+		0,
+		(zkcmTimerDeviceC::ioLatencyE)0,
+		(zkcmTimerDeviceC::precisionE)0,
+		TIMERCTL_FILTER_MODE_ANY
+		| TIMERCTL_FILTER_IO_ANY
+		| TIMERCTL_FILTER_PREC_ANY
+		| TIMERCTL_FILTER_FLAGS_SKIP_LATCHED,
 		&handle);
 
 	for (; dev != __KNULL;
 		dev = zkcmCore.timerControl.filterTimerDevices(
 			zkcmTimerDeviceC::CHIPSET,
-			ZKCM_TIMERDEV_CAP_MODE_PERIODIC,
-			zkcmTimerDeviceC::MODERATE,
-			zkcmTimerDeviceC::NEGLIGABLE,
-			//TIMERCTL_FILTER_SKIP_LATCHED
-			0| TIMERCTL_FILTER_MODE_EXACT
-			| TIMERCTL_FILTER_IO_OR_BETTER
-			| TIMERCTL_FILTER_PREC_OR_BETTER,
+			0,
+			(zkcmTimerDeviceC::ioLatencyE)0,
+			(zkcmTimerDeviceC::precisionE)0,
+			TIMERCTL_FILTER_MODE_ANY
+			| TIMERCTL_FILTER_IO_ANY
+			| TIMERCTL_FILTER_PREC_ANY
+			| TIMERCTL_FILTER_FLAGS_SKIP_LATCHED,
 			&handle))
 	{
-		// If the device doesn't support the period we require, skip.
-		dev->getPeriodicModeMinMaxPeriod(&min, &max);
-		if (ns < min.nseconds || ns > max.nseconds) {
-			continue;
-		};
+		newTimerDeviceNotification(dev);
+	};
+}
 
-		ret = queue->initialize(dev);
-		if (ret != ERROR_SUCCESS)
+void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
+{
+	timeS		min, max;
+
+	/**	EXPLANATION:
+	 * Checks to see if the new timer device can be consumed by any of the
+	 * kernel's timer queues.
+	 **/
+	dev->getPeriodicModeMinMaxPeriod(&min, &max);
+	__kprintf(NOTICE TIMERTRIB"newTimerDevice: \"%s\"; min %d, max %d.\n",
+		dev->getBaseDevice()->shortName, min.nseconds, max.nseconds);
+
+	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_1S_SAFE
+		&& !period1s.isLatched()))
+	{
+		if (period1s.testTimerDeviceSuitability(dev))
 		{
-			__kprintf(ERROR TIMERTRIB"init Q %dns: Queue failed to "
-				"initialize().\n",
-				ns);
-
+			period1s.initialize(dev);
+			enableQueue(1000000000);
 			return;
 		};
-
-		__kprintf(NOTICE TIMERTRIB"init Q %dns: Successful.\n", ns);
-		return;
 	};
 
-	__kprintf(NOTICE TIMERTRIB"init Q %dns: No timer available.\n", ns);
-	return;
+	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_100MS_SAFE
+		&& !period100ms.isLatched()))
+	{
+		if (period100ms.testTimerDeviceSuitability(dev))
+		{
+			period100ms.initialize(dev);
+			enableQueue(100000000);
+			return;
+		};
+	};
+
+	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE
+		&& !period10ms.isLatched()))
+	{
+		if (period10ms.testTimerDeviceSuitability(dev))
+		{
+			period10ms.initialize(dev);
+			enableQueue(10000000);
+			return;
+		};
+	};
+
+	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_1MS_SAFE
+		&& !period1ms.isLatched()))
+	{
+		if (period1ms.testTimerDeviceSuitability(dev))
+		{
+			period1ms.initialize(dev);
+			enableQueue(1000000);
+			return;
+		};
+	};
+}
+
+error_t timerTribC::enableQueue(ubit32 nanos)
+{
+	timerQueueC	*queue;
+
+	switch (nanos)
+	{
+	case 1000000000:
+		queue = &period1s;
+		break;
+
+	case 100000000:
+		queue = &period100ms;
+		break;
+
+	case 10000000:
+		queue = &period10ms;
+		break;
+
+	case 1000000:
+		queue = &period1ms;
+		break;
+
+	case 100000:
+	case 10000:
+	case 1000:
+	case 100:
+	case 10:
+	case 1:
+		return ERROR_UNSUPPORTED;
+
+	default:
+		return ERROR_INVALID_ARG_VAL;
+	};
+
+	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
+
+	__kprintf(NOTICE TIMERTRIB"Enabling queue %dus.\n",
+		queue->getNativePeriod() / 1000);
+
+	return ERROR_SUCCESS;
 }
 
 error_t timerTribC::initialize(void)
@@ -146,6 +225,9 @@ error_t timerTribC::initialize(void)
 		TIMERTRIB_DATE_GET_DAY(bootTimestamp.date),
 		h, m, s, bootTimestamp.time.nseconds);
 
+	// Get mask of safe periods for this chipset.
+	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
+
 	// Spawn the timer event dequeueing thread.
 	ret = processTrib.__kprocess.spawnThread(
 		(void (*)(void *))&timerTribC::eventProcessorThread, __KNULL,
@@ -153,40 +235,29 @@ error_t timerTribC::initialize(void)
 		taskC::REAL_TIME,
 		PRIOCLASS_CRITICAL,
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
-		| SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET,
+		| SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET
+		| SPAWNTHREAD_FLAGS_DORMANT,
 		&tid);
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
+	ret = eventProcessorControlQueue.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
 	eventProcessorTask = processTrib.__kprocess.getTask(tid);
 	__kprintf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
 		"addr 0x%p, id 0x%x.\n",
 		eventProcessorTask, eventProcessorTask->id);
 
-	eventProcessorControlQueue.initialize();
 	eventProcessorControlQueue.setWaitingThread(eventProcessorTask);
+	taskTrib.wake(eventProcessorTask);
 
-	// Now set up the timer queues.
-	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
-	/*if (__KFLAG_TEST(safePeriodMask, TIMERCTL_100MS_SAFE)) {
-		initializeQueue(&period100ms, 100000);
-	};*/
-
-	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE)) {
-		initializeQueue(&period10ms, 10000);
-	};
-
-	/*if (__KFLAG_TEST(safePeriodMask, TIMERCTL_1MS_SAFE)) {
-		initializeQueue(&period1ms, 1000);
-	};*/
-
-	eventProcessorMessageS	*msg;
+	/*eventProcessorMessageS	*msg;
 	msg = new eventProcessorMessageS;
 	msg->type = eventProcessorMessageS::QUEUE_ENABLED;
 	msg->timerQueue = &period10ms;
-	eventProcessorControlQueue.addItem(msg);
+	eventProcessorControlQueue.addItem(msg);*/
 
-//	period10ms.enable();
+	initializeAllQueues();
 	return ERROR_SUCCESS;
 }
 
@@ -226,6 +297,7 @@ void timerTribC::eventProcessorThread(void)
 	ubit8			slot;
 	ubit8			messagesWereFound;
 
+	__kprintf(NOTICE TIMERTRIB"Event DQer thread has begun executing.\n");
 	for (;;)
 	{
 		messagesWereFound = 0;
@@ -248,10 +320,11 @@ void timerTribC::eventProcessorThread(void)
 				{
 					__kprintf(ERROR TIMERTRIB"event DQer: "
 						"failed to wait on "
-						"timer Q %d ms: no free "
+						"timer Q %dus: no free "
 						"slots.\n",
 						currMsg->timerQueue
-							->getNativePeriod());
+							->getNativePeriod()
+							/ 1000);
 
 					break;
 				};
@@ -268,10 +341,10 @@ void timerTribC::eventProcessorThread(void)
 						timerTrib.eventProcessorTask);
 
 				__kprintf(NOTICE TIMERTRIB"event DQer: Waiting "
-					"on timerQueue %dns.\n\tAllocated to "
+					"on timerQueue %dus.\n\tAllocated to "
 					"slot %d.\n",
 					currentWaitSet[slot].timerQueue
-						->getNativePeriod(),
+						->getNativePeriod() / 1000,
 					slot);
 
 				break;
@@ -280,8 +353,9 @@ void timerTribC::eventProcessorThread(void)
 				// Stop waiting on this queue.
 				findAndClearSlotFor(currMsg->timerQueue);
 				__kprintf(NOTICE TIMERTRIB"event DQer: no "
-					"longer waiting on timerQueue %dns.\n",
-					currMsg->timerQueue->getNativePeriod());
+					"longer waiting on timerQueue %dus.\n",
+					currMsg->timerQueue->getNativePeriod()
+						/ 1000);
 
 				break;
 

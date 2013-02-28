@@ -38,8 +38,8 @@ void panic(error_t err, utf8Char *str)
 
 	for (;;)
 	{
-		cpuControl::halt();
 		cpuControl::disableInterrupts();
+		cpuControl::halt();
 	};
 }
 

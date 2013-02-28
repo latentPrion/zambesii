@@ -8,8 +8,8 @@ sarch_t timerFilters::modes(
 	zkcmTimerDeviceC *dev, ubit32 criteria, ubit32 flags
 	)
 {
-	flags >>= TIMERCTL_FILTER_MODE_SHIFT;
-	flags &= TIMERCTL_FILTER_MODE_MASK;
+	flags &= TIMERCTL_FILTER_MODE_MASK << TIMERCTL_FILTER_MODE_SHIFT;
+
 	if (criteria == 0 && flags != TIMERCTL_FILTER_MODE_ANY) {
 		return 0;
 	};
@@ -37,8 +37,7 @@ sarch_t timerFilters::ioLatency(
 	ubit32 flags
 	)
 {
-	flags >>= TIMERCTL_FILTER_IO_SHIFT;
-	flags &= TIMERCTL_FILTER_IO_MASK;
+	flags &= TIMERCTL_FILTER_IO_MASK << TIMERCTL_FILTER_IO_SHIFT;
 
 	if (flags == TIMERCTL_FILTER_IO_ANY) { return 1; };
 
@@ -58,8 +57,7 @@ sarch_t timerFilters::precision(
 	ubit32 flags
 	)
 {
-	flags >>= TIMERCTL_FILTER_PREC_SHIFT;
-	flags &= TIMERCTL_FILTER_PREC_MASK;
+	flags &= TIMERCTL_FILTER_PREC_MASK << TIMERCTL_FILTER_PREC_SHIFT;
 
 	if (flags == TIMERCTL_FILTER_PREC_ANY) { return 1; };
 

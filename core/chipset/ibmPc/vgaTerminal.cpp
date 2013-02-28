@@ -1,6 +1,4 @@
 
-#include <debug.h>
-#include <arch/walkerPageRanger.h>
 #include <chipset/memoryAreas.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/memoryTrib/memoryTrib.h>

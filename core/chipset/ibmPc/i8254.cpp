@@ -159,11 +159,8 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 		interruptTrib.zkcm.retirePinIsr(
 			device->i8254State.__kpinId, &isr);
 
-
 		// Release the lock and exit.
 		device->state.lock.release();
-
-__kprintf(NOTICE i8254"isr: Just dispatched the final disabling IRQ.\n");
 		return ZKCM_ISR_SUCCESS;
 	};
 
@@ -307,9 +304,10 @@ void i8254PitC::disable(void)
 	 * own, this approach generates a spurious IRQ.
 	 *
 	 * My own approach is to set the chip to mode 0 as well, but with a
-	 * non-zero timeout, forcing it to generate one last IRQ, and when that
-	 * IRQ has come in, the device is effectively "disabled", since it
-	 * was a oneshot timeout, so it won't generate any more IRQs.
+	 * non-zero timeout (1000 CLKs {approx 1ms} specifically), forcing it
+	 * to generate one last IRQ, and when that IRQ has come in, the device
+	 * is effectively "disabled", in the sense that it was a oneshot
+	 * timeout, so no more IRQs will be generated.
 	 **/
 
 	state.lock.acquire();
@@ -329,7 +327,6 @@ void i8254PitC::disable(void)
 	state.lock.release();
 
 	// We unregister the ISR, etc in the ISR when the final IRQ comes in.
-__kprintf(NOTICE i8254"disable: completed.\n");
 }
 
 static inline sarch_t validateTimevalLimit(timeS time)
@@ -337,45 +334,50 @@ static inline sarch_t validateTimevalLimit(timeS time)
 	/**	EXPLANATION:
 	 * The i8254's input frequency is a 1,193,180Hz CLK source. This means
 	 * that not every period requirement can be translated exactly. For
-	 * example, if the user asked for 20 nanoseconds to be timed, we would
+	 * example, if the user asked for 20 microseconds to be timed, we would
 	 * actually program the PIT to interrupt after 24 CLK pulses and not 20,
-	 * because the input CLK source is faster than 1,000,000Hz.
+	 * because the input CLK source is faster than 1,000,000Hz. The i8254
+	 * does not support nanosecond granularity timing.
 	 *
 	 * The exact conversion table being used is as follows:
-	 *	1ns: 1,193,180ps: 1.193 CLKs -> 1 CLK = 1ns.
-	 *	10ns: 11.93 CLKs -> 12 CLKs = 10ns.
-	 *	100ns: 119.3 CLKs -> 119 CLKs = 100ns.
+	 *	1us: 1,193,180ps: 1.193 CLKs -> 1 CLK = 1us.
+	 *	10us: 11.93 CLKs -> 12 CLKs = 10us.
+	 *	100us: 119.3 CLKs -> 119 CLKs = 100us.
 	 *	1ms: 1,193.180 CLKs -> 1,193 CLKs = 1ms.
 	 *	10ms: 11,931.8 CLKs -> 11,932 CLKs = 10ms
 	 *
 	 * Even these values are rounded off, and do not guarantee perfect
 	 * precision. However, they are as precise as it gets.
 	 *
-	 * The user can specify any number of nanoseconds in the timeS structure
-	 * passed as an argument to setOneshotMode(). However, the i8254 cannot
-	 * physically time any number of nanoseconds, because the COUNTER reg
+	 * The user can specify any number of nano/micro-seconds in the timeS
+	 * structure passed as an argument to setOneshotMode(). However, the
+	 * i8254 cannot physically time any number of nanoseconds, because its
+	 * input frequency is microsecond granular, and the COUNTER reg
 	 * takes a 16 bit value, which limits the number of CLKs that can be
-	 * counted down in one i8254 oneshot run.
+	 * counted down in one i8254 oneshot run (to about 54 milliseconds).
 	 *
 	 * Furthermore, since the i8254's input CLK source runs FASTER than
-	 * a power-of-ten value, it also means that 20 ns is NOT EQUAL to 20 CLK
-	 * pulses; consequentially, 65,535 ns is NOT EQUAL to 65,535 CLK pulses
+	 * a power-of-ten value, it also means that 20 CLK pulses are NOT EQUAL
+	 * to 20us; consequentially, 65,535 CLK pulses are NOT EQUAL to 65,535us
 	 * either. While we can program the i8254 to count down a maximum of
 	 * 65535 CLK pulses before interrupting, we cannot give the user an
-	 * accurate guarantee of 65535 ns. In reality the cap on the value
-	 * accepted is approximately 54,928 ns based on the following table:
+	 * accurate guarantee of 65535us. In reality the cap on the value
+	 * accepted is approximately 54,928us based on the following table:
 	 *		10000 * 6 = 11,932 * 5
 	 *		1000 * 5 = 1193 * 4
 	 *		100 * 5 = 119 * 9
 	 *		10 * 3 = 12 * 2
 	 *		1 * 6 = 1 * 8
 	 *
-	 * Basically, 54,928 nanoseconds would take approx 65536 CLK pulses
+	 * Basically, 54,928 microseconds would take approx 65536 CLK pulses
 	 * to timeout. So we define the maximum number of nanoseconds the i8254
-	 * will accept as an argument to be 54928, (i8254_ONESHOT_MAX_NS) and
-	 * NOT 65535 (which is the max timeout value for the 16 bit counter).
+	 * will accept as an argument to be 54,928,000, (i8254_MAX_NS)
+	 * and NOT 65,535,000 (which is the max timeout value for the 16 bit
+	 * hardware counter).
 	 **/
-	if (time.seconds > 0 || time.nseconds > i8254_ONESHOT_MAX_NS) {
+	if (time.seconds > 0 || time.nseconds > i8254_MAX_NS
+		|| time.nseconds < i8254_MIN_NS)
+	{
 		return 0;
 	};
 
@@ -386,19 +388,25 @@ inline static ubit16 nanosecondsToClks(ubit32 ns)
 {
 	ubit32		ret;
 
-	ret = (ns / 10000) * i8254_ONESHOT_NS2CLK_10K;
+	/* Immediately truncate the nanoseconds, effectively rounding the value
+	 * up to the nearest microscond, and converting it.
+	 **/
+	if (ns % 1000) { ns += 1000; };
+	ns /= 1000;
+
+	ret = (ns / 10000) * i8254_US2CLK_10K;
 	ns -= (ns / 10000) * 10000;
 
-	ret += (ns / 1000) * i8254_ONESHOT_NS2CLK_1K;
+	ret += (ns / 1000) * i8254_US2CLK_1K;
 	ns -= (ns / 1000) * 1000;
 
-	ret += (ns / 100) * i8254_ONESHOT_NS2CLK_100;
+	ret += (ns / 100) * i8254_US2CLK_100;
 	ns -= (ns / 100) * 100;
 
-	ret += (ns / 10) * i8254_ONESHOT_NS2CLK_10;
+	ret += (ns / 10) * i8254_US2CLK_10;
 	ns -= (ns / 10) * 10;
 
-	ret += ns * i8254_ONESHOT_NS2CLK_1;
+	ret += ns * i8254_US2CLK_1;
 	return ret;
 }
 
@@ -415,7 +423,7 @@ status_t i8254PitC::setPeriodicMode(struct timeS interval)
 	// Convert the periodic interval into i8254 CLK pulse equivalent.
 	i8254State.currentIntervalClks = nanosecondsToClks(
 		state.rsrc.currentInterval.nseconds);
-	
+
 	state.lock.release();
 	return ERROR_SUCCESS;
 }

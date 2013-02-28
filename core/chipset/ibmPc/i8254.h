@@ -11,13 +11,25 @@
 /* See comments in validateOneshotTimevalLimit() to understand the need for
  * these values, and how they were derived. Feel free to submit more accurate
  * calculations too.
+ *
+ * Minimum resolution period is set to 1ms, max is set to 54.928ms. Even though
+ * the i8254 is technically capable of supporting microsecond resolution, we
+ * don't allow it, and treat it as if it has a millisecond resolution clock
+ * source, because programming the i8254 to count down microsecond values
+ * causes spurious IRQs on some hardware. I have not yet seen any hardware cases
+ * where programming it to count a millisecond granular time val has triggered
+ * strange behaviour.
  **/
-#define i8254_ONESHOT_MAX_NS		(54928)
-#define i8254_ONESHOT_NS2CLK_10K	(11932)
-#define i8254_ONESHOT_NS2CLK_1K		(1193)
-#define i8254_ONESHOT_NS2CLK_100	(119)
-#define i8254_ONESHOT_NS2CLK_10		(12)
-#define i8254_ONESHOT_NS2CLK_1		(1)
+#define i8254_MIN_NS			(1000000)
+#define i8254_MAX_NS			(54928000)
+/* These values are explained in i8254.cpp. Conversion value for transforming
+ * microseconds into i8254 CLK pulses (hence the "US2CLK").
+ **/
+#define i8254_US2CLK_10K		(11932)
+#define i8254_US2CLK_1K			(1193)
+#define i8254_US2CLK_100		(119)
+#define i8254_US2CLK_10			(12)
+#define i8254_US2CLK_1			(1)
 
 class i8254PitC
 :
@@ -30,8 +42,8 @@ public:
 		zkcmTimerDeviceC::CHIPSET,
 		ZKCM_TIMERDEV_CAP_MODE_PERIODIC
 			| ZKCM_TIMERDEV_CAP_MODE_ONESHOT,
-		1000, i8254_ONESHOT_MAX_NS,
-		1000, i8254_ONESHOT_MAX_NS,
+		i8254_MIN_NS, i8254_MAX_NS,
+		i8254_MIN_NS, i8254_MAX_NS,
 		zkcmTimerDeviceC::MODERATE,
 		zkcmTimerDeviceC::NEGLIGABLE,
 		&baseDeviceInfo),

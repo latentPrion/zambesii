@@ -41,13 +41,18 @@ error_t timerQueueC::initialize(zkcmTimerDeviceC *device)
 	ret = device->latch(&processTrib.__kprocess.floodplainnStream);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(WARNING TIMERQUEUE"%dns: Latch to dev \"%s\" failed."
-			"\n", nativePeriod, device->getBaseDevice()->shortName);
+		__kprintf(WARNING TIMERQUEUE"%dus: Latch to dev \"%s\" failed."
+			"\n", nativePeriod / 1000,
+			device->getBaseDevice()->shortName);
 
 		return ret;
 	};
 
 	timerQueueC::device = device;
+	__kprintf(NOTICE TIMERQUEUE"%dus: initialize: Latched to device "
+		"\"%s\".\n",
+		getNativePeriod() / 1000, device->getBaseDevice()->shortName);
+
 	return ERROR_SUCCESS;
 }
 
@@ -75,8 +80,8 @@ error_t timerQueueC::enable(void)
 	ret = device->enable();
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR TIMERQUEUE"%dns: Failed to enable() device.\n",
-			getNativePeriod());
+		__kprintf(ERROR TIMERQUEUE"%dus: Failed to enable() device.\n",
+			getNativePeriod() / 1000);
 
 		return ret;
 	};
@@ -95,6 +100,6 @@ void timerQueueC::disable(void)
 
 void timerQueueC::tick(zkcmTimerEventS *)
 {
-	__kprintf(NOTICE TIMERQUEUE"%dns: Tick!\n", getNativePeriod());
+	__kprintf(NOTICE TIMERQUEUE"%dus: Tick!\n", getNativePeriod() / 1000);
 }
 

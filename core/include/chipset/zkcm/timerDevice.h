@@ -18,15 +18,6 @@
 #define ZKCM_TIMERDEV_CAP_MODE_PERIODIC		(1<<0)
 #define ZKCM_TIMERDEV_CAP_MODE_ONESHOT		(1<<1)
 
-// Values for zkcmTimerDeviceC.capabilities.resolutions.
-#define ZKCM_TIMERDEV_CAP_RES_1S		(1<<0)
-#define ZKCM_TIMERDEV_CAP_RES_100MS		(1<<1)
-#define ZKCM_TIMERDEV_CAP_RES_10MS		(1<<2)
-#define ZKCM_TIMERDEV_CAP_RES_1MS		(1<<3)
-#define ZKCM_TIMERDEV_CAP_RES_100NS		(1<<4)
-#define ZKCM_TIMERDEV_CAP_RES_10NS		(1<<5)
-#define ZKCM_TIMERDEV_CAP_RES_1NS		(1<<6)
-
 // Values for zkcmTimerDeviceC.state.flags.
 #define ZKCM_TIMERDEV_STATE_FLAGS_ENABLED	(1<<0)
 #define ZKCM_TIMERDEV_STATE_FLAGS_LATCHED	(1<<1)
@@ -223,7 +214,7 @@ public:
 		timerTypeE	type;
 		ioLatencyE	ioLatency;
 		precisionE	precision;
-		// Capabilities (bitfield): PERIODIC, ONESHOT.
+		// Modes (bitfield): PERIODIC, ONESHOT.
 		ubit32		modes;
 		ubit32		periodicMinPeriod, periodicMaxPeriod;
 		ubit32		oneshotMinTimeout, oneshotMaxTimeout;

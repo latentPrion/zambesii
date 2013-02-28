@@ -59,6 +59,22 @@ public:
 	ubit32 getNativePeriod(void) { return nativePeriod; };
 	status_t setNativePeriod(ubit32 p) { nativePeriod = p; return 0; };
 
+	/* Called by the kernel to ask this timer queue if the device "dev" is
+	 * suitable for use with this timer queue.
+	 **/
+	sarch_t testTimerDeviceSuitability(zkcmTimerDeviceC *dev)
+	{
+		timeS		min, max;
+
+		dev->getPeriodicModeMinMaxPeriod(&min, &max);
+		if (nativePeriod < min.nseconds || nativePeriod > max.nseconds)
+		{
+			return 0;
+		};
+
+		return 1;
+	}
+
 	/* Called by the Timer Trib Dqer thread when the latched timer for this
 	 * instance fires an IRQ. Expires/migrates the items at the front of the
 	 * Q if necessary, and sets the pending event bit in the process'
