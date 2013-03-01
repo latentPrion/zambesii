@@ -118,8 +118,32 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
-//	taskTrib.yield();
 
+	timerObjectS	to;
+	to.type = timerObjectS::ONESHOT;
+	to.thread = 0x2;
+	zkcmCore.timerControl.refreshCachedSystemTime();
+	timerTrib.getCurrentTime(&to.placementStamp.time);
+	zkcmCore.timerControl.getCurrentDate(&to.placementStamp.date);
+
+	to.expirationStamp = to.placementStamp;
+	to.expirationStamp.time.seconds+= 3;
+	
+	timerTrib.period10ms.insert(&to);
+
+	ubit8		h, m, s;
+	h = to.expirationStamp.time.seconds / 3600;
+	m = (to.expirationStamp.time.seconds / 60) - (h * 60);
+	s = to.expirationStamp.time.seconds % 60;
+
+	__kprintf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d, "
+		"Time %d:%d:%d, %dus.\n",
+		TIMERTRIB_DATE_GET_YEAR(to.expirationStamp.date),
+		TIMERTRIB_DATE_GET_MONTH(to.expirationStamp.date),
+		TIMERTRIB_DATE_GET_DAY(to.expirationStamp.date),
+		h, m, s, to.expirationStamp.time.nseconds / 1000);
+
+	taskTrib.dormant(0x1);
 for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOTICE ORIENT"Escaped HLT, re-entering.\n")) { asm volatile("hlt\n\t"); };
 
 	// Detect physical memory.

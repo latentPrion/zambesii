@@ -44,16 +44,38 @@ timerTribC::~timerTribC(void)
 
 void timerTribC::initializeAllQueues(void)
 {
+	error_t			ret;
 	zkcmTimerDeviceC	*dev;
 	void			*handle=__KNULL;
 
 	/**	EXPLANATION:
-	 * For each timer available from the Timer Control mod, we call the
+	 * First call initialize() on each timerQueueC object, then proceed:
+	 * for each timer available from the Timer Control mod, we call the
 	 * notification event function, and allow it to check whether or not
 	 * the timer can be consumed by the kernel.
 	 *
 	 * Run a filter that will return all chipset timers indiscriminately.
 	 **/
+	ret = period1s.initialize();
+	if (ret != ERROR_SUCCESS) {
+		__kprintf(ERROR TIMERTRIB"period1s initialize() failed.\n");
+	};
+
+	ret = period100ms.initialize();
+	if (ret != ERROR_SUCCESS) {
+		__kprintf(ERROR TIMERTRIB"period100ms initialize() failed.\n");
+	};
+
+	ret = period10ms.initialize();
+	if (ret != ERROR_SUCCESS) {
+		__kprintf(ERROR TIMERTRIB"period10ms initialize() failed.\n");
+	};
+
+	ret = period1ms.initialize();
+	if (ret != ERROR_SUCCESS) {
+		__kprintf(ERROR TIMERTRIB"period1ms initialize() failed.\n");
+	};
+
 	dev = zkcmCore.timerControl.filterTimerDevices(
 		zkcmTimerDeviceC::CHIPSET,
 		0,
@@ -98,7 +120,8 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 	{
 		if (period1s.testTimerDeviceSuitability(dev))
 		{
-			period1s.initialize(dev);
+			period1s.latch(dev);
+			enableWaitingOnQueue(1000000000);
 			return;
 		};
 	};
@@ -108,7 +131,8 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 	{
 		if (period100ms.testTimerDeviceSuitability(dev))
 		{
-			period100ms.initialize(dev);
+			period100ms.latch(dev);
+			enableWaitingOnQueue(100000000);
 			return;
 		};
 	};
@@ -118,7 +142,8 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 	{
 		if (period10ms.testTimerDeviceSuitability(dev))
 		{
-			period10ms.initialize(dev);
+			period10ms.latch(dev);
+			enableWaitingOnQueue(10000000);
 			return;
 		};
 	};
@@ -128,15 +153,17 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 	{
 		if (period1ms.testTimerDeviceSuitability(dev))
 		{
-			period1ms.initialize(dev);
+			period1ms.latch(dev);
+			enableWaitingOnQueue(1000000);
 			return;
 		};
 	};
 }
 
-error_t timerTribC::enableQueue(ubit32 nanos)
+error_t timerTribC::enableWaitingOnQueue(ubit32 nanos)
 {
 	timerQueueC	*queue;
+	eventProcessorMessageS	*msg;
 
 	switch (nanos)
 	{
@@ -169,12 +196,12 @@ error_t timerTribC::enableQueue(ubit32 nanos)
 	};
 
 	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
-	queue->enable();
 
-	__kprintf(NOTICE TIMERTRIB"Enabled queue %dus.\n",
-		queue->getNativePeriod() / 1000);
-
-	return ERROR_SUCCESS;
+	msg = new eventProcessorMessageS;
+	msg->type = eventProcessorMessageS::QUEUE_LATCHED;
+	msg->timerQueue = queue;
+	
+	return eventProcessorControlQueue.addItem(msg);
 }
 
 error_t timerTribC::initialize(void)
@@ -250,7 +277,7 @@ error_t timerTribC::initialize(void)
 
 	/*eventProcessorMessageS	*msg;
 	msg = new eventProcessorMessageS;
-	msg->type = eventProcessorMessageS::QUEUE_ENABLED;
+	msg->type = eventProcessorMessageS::QUEUE_LATCHED;
 	msg->timerQueue = &period10ms;
 	eventProcessorControlQueue.addItem(msg);*/
 
@@ -311,7 +338,7 @@ void timerTribC::eventProcessorThread(void)
 				// Code to exit the thread here.
 				break;
 
-			case eventProcessorMessageS::QUEUE_ENABLED:
+			case eventProcessorMessageS::QUEUE_LATCHED:
 				// Wait on the new queue.
 				if (!getFreeWaitSlot(&slot))
 				{
@@ -346,7 +373,7 @@ void timerTribC::eventProcessorThread(void)
 
 				break;
 
-			case eventProcessorMessageS::QUEUE_DISABLED:
+			case eventProcessorMessageS::QUEUE_UNLATCHED:
 				// Stop waiting on this queue.
 				findAndClearSlotFor(currMsg->timerQueue);
 				__kprintf(NOTICE TIMERTRIB"event DQer: no "

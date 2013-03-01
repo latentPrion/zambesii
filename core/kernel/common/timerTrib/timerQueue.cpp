@@ -22,38 +22,39 @@
  * chipset can have a timer running at 100Hz and remain stable, for example.
  **/
 
-timerQueueC::timerQueueC(ubit32 nativePeriod)
-:
-currentPeriod(nativePeriod), nativePeriod(nativePeriod), acceptingRequests(0),
-device(__KNULL)
-{
-}
-
-error_t timerQueueC::initialize(zkcmTimerDeviceC *device)
+error_t timerQueueC::latch(zkcmTimerDeviceC *dev)
 {
 	error_t		ret;
 
-	/**	CAVEAT:
-	 * Don't forget to unlatch if the initialization fails.
-	 **/
-	if (device == __KNULL) { return ERROR_INVALID_ARG; };
+	if (dev == __KNULL) { return ERROR_INVALID_ARG; };
 
-	ret = device->latch(&processTrib.__kprocess.floodplainnStream);
+	ret = dev->latch(&processTrib.__kprocess.floodplainnStream);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(WARNING TIMERQUEUE"%dus: Latch to dev \"%s\" failed."
+		__kprintf(WARNING TIMERQUEUE"%dus: latch: to dev \"%s\" failed."
 			"\n", nativePeriod / 1000,
-			device->getBaseDevice()->shortName);
+			dev->getBaseDevice()->shortName);
 
 		return ret;
 	};
 
-	timerQueueC::device = device;
-	__kprintf(NOTICE TIMERQUEUE"%dus: initialize: Latched to device "
-		"\"%s\".\n",
+	device = dev;
+	__kprintf(NOTICE TIMERQUEUE"%dus: latch: latched to device \"%s\".\n",
 		getNativePeriod() / 1000, device->getBaseDevice()->shortName);
 
 	return ERROR_SUCCESS;
+}
+
+void timerQueueC::unlatch(void)
+{
+	if (!isLatched()) { return; };
+
+	disable();
+	device->unlatch();
+	device = __KNULL;
+
+	__kprintf(NOTICE TIMERQUEUE"%dus: unlatch: unlatched device \"%s\".\n",
+		getNativePeriod() / 1000);
 }
 
 error_t timerQueueC::enable(void)
@@ -98,8 +99,38 @@ void timerQueueC::disable(void)
 	device->disable();
 }
 
-void timerQueueC::tick(zkcmTimerEventS *)
+error_t timerQueueC::insert(timerObjectS *obj)
 {
+	error_t		ret;
+
+	ret = requestQueue.addItem(obj, obj->expirationStamp);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	if (requestQueue.getNItems() == 1) {
+		return enable();
+	};
+
+	return ERROR_SUCCESS;
+}
+
+sarch_t timerQueueC::cancel(timerObjectS *obj)
+{
+	/**	FIXME:
+	 * This function is intended to return 1 if the item being canceled was
+	 * truly canceled (it had not yet expired and been processed), or 0 if
+	 * it had already been processed and the "cancel" operation ended up
+	 * being a NOP.
+	 *
+	 * Sadly, the list class doesn't return a value from removeItem().
+	 **/
+	requestQueue.removeItem(obj);
+	return 1;
+}
+
+void timerQueueC::tick(zkcmTimerEventS *event)
+{
+	timerObjectS		*obj;
+
 	/**	EXPLANATION
 	 * Get the request at the front of the queue, and if it's expired,
 	 * queue an event on the originating process' Timer Stream.
@@ -107,6 +138,11 @@ void timerQueueC::tick(zkcmTimerEventS *)
 	 * If the queue is emptied by the sequence, disable the underlying
 	 * timer device.
 	 **/
-	__kprintf(NOTICE TIMERQUEUE"%dus: Tick!\n", getNativePeriod() / 1000);
+	obj = requestQueue.getHead();
+	if (obj->expirationStamp.time <= event->irqTime)
+	{
+		__kprintf(NOTICE TIMERQUEUE"%dus: Event just expired.\n");
+		disable();
+	};
 }
 

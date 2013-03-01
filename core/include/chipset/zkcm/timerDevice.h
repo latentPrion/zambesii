@@ -80,6 +80,17 @@ public:
 
 	virtual error_t enable(void)=0;
 	virtual void disable(void)=0;
+	sarch_t isEnabled(void)
+	{
+		uarch_t		flags;
+
+		state.lock.acquire();
+		flags = state.rsrc.flags;
+		state.lock.release();
+
+		return __KFLAG_TEST(flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+	}
+
 	// Call disable() before setting timer options, then enable() again.
 	virtual status_t setPeriodicMode(struct timeS interval)=0;
 	virtual status_t setOneshotMode(struct timeS timeout)=0;

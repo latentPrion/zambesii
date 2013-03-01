@@ -34,7 +34,9 @@ public:
 		error_t		ret;
 		ubit8		needToWake=0;
 
-		if (pointerDoubleListC<T>::getNItems() == 0) {
+		if (task != __KNULL && task->runState != taskC::RUNNABLE
+			&& task->runState != taskC::RUNNING)
+		{
 			needToWake = 1;
 		};
 

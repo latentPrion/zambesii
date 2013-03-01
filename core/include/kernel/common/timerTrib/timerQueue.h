@@ -42,18 +42,30 @@
 #define TIMERQUEUE		"timerQ "
 
 struct zkcmTimerEventS;
+class timerTribC;
 
 class timerQueueC
 {
+friend class timerTribC;
 public:
-	timerQueueC(uarch_t nativePeriod);
-	error_t initialize(zkcmTimerDeviceC *device);
-	~timerQueueC(void) {};
+	timerQueueC(ubit32 nativePeriod)
+	:
+	currentPeriod(nativePeriod), nativePeriod(nativePeriod),
+	device(__KNULL)
+	{}
 
+	error_t initialize(void) { return requestQueue.initialize(); }
+	~timerQueueC(void) {}
+
+public:
+	error_t latch(zkcmTimerDeviceC *device);
+	void unlatch(void);
 	sarch_t isLatched(void) { return device != __KNULL; };
 	zkcmTimerDeviceC *getDevice(void) { return device; };
 
-public:
+	error_t insert(timerObjectS *obj);
+	sarch_t cancel(timerObjectS *obj);
+
 	ubit32 getCurrentPeriod(void) { return currentPeriod; };
 	status_t setCurrentPeriod(ubit32 p) { currentPeriod = p; return 0; };
 	ubit32 getNativePeriod(void) { return nativePeriod; };
@@ -83,7 +95,8 @@ public:
 	 **/
 	void tick(zkcmTimerEventS *timerIrqEvent);
 
-	/* Enables or disables the queue and its underlying timer source. On
+private:
+	/* Enables or disables the queue's underlying timer source. On
 	 * call to disable(), if there are objects waiting to be timed out and
 	 * dispatched on the queue, they will be allowed to time out and trigger
 	 * before the queue is disabled; however the queue will not take any
@@ -97,8 +110,7 @@ private:
 	ubit32		currentPeriod, nativePeriod;
 
 	// The actual internal queue instance for timer request objects.
-	sortedPointerDoubleListC<timerObjectS, ubit32>	queue;
-	sarch_t			acceptingRequests;
+	sortedPointerDoubleListC<timerObjectS, timestampS>	requestQueue;
 	zkcmTimerDeviceC	*device;
 };
 

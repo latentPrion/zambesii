@@ -12,8 +12,8 @@
 	 * Dates are represented as gregorian dates packed into a 32-bit
 	 * integer. Any locale which does not use gregorian dates can easily
 	 * convert to and from them, and most locales today do use them, so I
-	 * feel that this is a sensible and natural choice, as opposed to using
-	 * seconds elapsed since January X XXXX.
+	 * feel that this is a sensible and natural choice, as opposed to going
+	 * full retard and using "seconds elapsed since January X XXXX".
 	 *
 	 *	TIME:
 	 * Time is stored as the offset, in seconds from the current date. I
@@ -24,7 +24,7 @@
 	 * Therefore the structure is able to record time with up to nanosecond
 	 * accuracy, though most of the time the actual value stored in the
 	 * structure will be accurate to the millisecond rather than the
-	 * nanosecond.
+	 * microsecond or nanosecond.
 	 *
 	 *	MACRO USAGE:
 	 * date_t	myBirthday;
@@ -40,7 +40,7 @@
 
 /**	EXPLANATION:
  * Year is given 18 bits to represent a set of dates ranging from 100,000 B.C.E
- * to 100,000 C.E. I think that is adequate for any program having been written
+ * to 100,000 A.D. I think that is adequate for any program having been written
  * according to the C standard, and more than adequate for any program which
  * does normal date manipulation. Programs which do more than that generally
  * have their own date format, and won't be asking the kernel for date/time
@@ -100,9 +100,9 @@ typedef ubit32		date_t;
  * an absolute value for the current date and time, along with a nanosecond
  * magnitude value for up to nanosecond time precision.
  *
- * 17 bits are needed to store the number of seconds in a day. A further 20 bits
- * are required to store the number of nanoseconds elapsed for up to nanosecond
- * time accuracy.
+ * 17 bits are needed to store the number of seconds in a day. A further approx
+ * 30 bits are required to store the number of nanoseconds elapsed for up to
+ * nanosecond time accuracy.
  *
  * The time data type will take up more than 32 bits, no matter how I represent
  * it, so I decided to split the units into two 32-bit integers. It's still the
@@ -168,6 +168,26 @@ struct timeS
 struct timestampS
 {
 #ifdef __cplusplus
+	timestampS(void)
+	:
+	time(0, 0), date(0)
+	{}
+
+	timestampS(ubit32 date, ubit32 sec, ubit32 nsec)
+	:
+	time(sec, nsec), date(date)
+	{}
+
+	timestampS(ubit32 date)
+	:
+	date(date)
+	{}
+
+	timestampS(ubit32 sec, ubit32 nsec)
+	:
+	time(sec, nsec), date(0)
+	{}
+
 	inline int operator ==(timestampS &t)
 	{
 		return (date == t.date) && (time == t.time);
@@ -200,13 +220,13 @@ struct timestampS
 	date_t		date;
 };
 
-// This data type is used by the timerTrib to represent timer service requests.
+// This data type is used by Timer Streams to represent timer service requests.
 struct timerObjectS
 {
 	enum objectTypeE { PERIODIC=1, ONESHOT } type;
 	// Process and threadID to wake up when this object expires.
 	processId_t		thread;
-	timestampS		expirationTime, placementTime;
+	timestampS		expirationStamp, placementStamp;
 };
 
 #endif

@@ -26,7 +26,6 @@ friend void ::__korientationMain(void);
 public:
 	timerTribC(void);
 	error_t initialize(void);
-	error_t initialize2(void);
 	~timerTribC(void);
 
 public:
@@ -67,8 +66,8 @@ public:
 	 *		chipset.
 	 *	ERROR_INVALID_ARG_VAL if an invalid arg is supplied.
 	 **/
-	error_t enableQueue(ubit32 nanos);
-	error_t disableQueue(ubit32 nanos);
+	error_t enableWaitingOnQueue(ubit32 nanos);
+	error_t disableWaitingOnQueue(ubit32 nanos);
 
 	/**	Pending redesign.
 	mstime_t	getCurrentTickMs(void);
@@ -94,8 +93,8 @@ private:
 	{
 		enum		typeE
 		{
-			QUEUE_ENABLED=1,
-			QUEUE_DISABLED,
+			QUEUE_LATCHED=1,
+			QUEUE_UNLATCHED,
 			EXIT_THREAD
 		};
 
