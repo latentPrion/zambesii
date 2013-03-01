@@ -99,7 +99,6 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 		if (period1s.testTimerDeviceSuitability(dev))
 		{
 			period1s.initialize(dev);
-			enableQueue(1000000000);
 			return;
 		};
 	};
@@ -110,7 +109,6 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 		if (period100ms.testTimerDeviceSuitability(dev))
 		{
 			period100ms.initialize(dev);
-			enableQueue(100000000);
 			return;
 		};
 	};
@@ -121,7 +119,6 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 		if (period10ms.testTimerDeviceSuitability(dev))
 		{
 			period10ms.initialize(dev);
-			enableQueue(10000000);
 			return;
 		};
 	};
@@ -132,7 +129,6 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 		if (period1ms.testTimerDeviceSuitability(dev))
 		{
 			period1ms.initialize(dev);
-			enableQueue(1000000);
 			return;
 		};
 	};
@@ -173,8 +169,9 @@ error_t timerTribC::enableQueue(ubit32 nanos)
 	};
 
 	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
+	queue->enable();
 
-	__kprintf(NOTICE TIMERTRIB"Enabling queue %dus.\n",
+	__kprintf(NOTICE TIMERTRIB"Enabled queue %dus.\n",
 		queue->getNativePeriod() / 1000);
 
 	return ERROR_SUCCESS;
@@ -219,11 +216,11 @@ error_t timerTribC::initialize(void)
 	s = bootTimestamp.time.seconds % 60;
 
 	__kprintf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d, "
-		"Time %d:%d:%d, %dns.\n",
+		"Time %d:%d:%d, %dus.\n",
 		TIMERTRIB_DATE_GET_YEAR(bootTimestamp.date),
 		TIMERTRIB_DATE_GET_MONTH(bootTimestamp.date),
 		TIMERTRIB_DATE_GET_DAY(bootTimestamp.date),
-		h, m, s, bootTimestamp.time.nseconds);
+		h, m, s, bootTimestamp.time.nseconds / 1000);
 
 	// Get mask of safe periods for this chipset.
 	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();

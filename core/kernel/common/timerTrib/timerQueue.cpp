@@ -100,6 +100,13 @@ void timerQueueC::disable(void)
 
 void timerQueueC::tick(zkcmTimerEventS *)
 {
+	/**	EXPLANATION
+	 * Get the request at the front of the queue, and if it's expired,
+	 * queue an event on the originating process' Timer Stream.
+	 *
+	 * If the queue is emptied by the sequence, disable the underlying
+	 * timer device.
+	 **/
 	__kprintf(NOTICE TIMERQUEUE"%dus: Tick!\n", getNativePeriod() / 1000);
 }
 
