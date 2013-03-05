@@ -28,7 +28,7 @@ struct zkcmTimerEventS
 {
 	zkcmTimerDeviceC	*device;
 	floodplainnStreamC	*latchedStream;
-	timeS			irqTime;
+	timestampS		irqStamp;
 };
 
 class zkcmTimerDeviceC

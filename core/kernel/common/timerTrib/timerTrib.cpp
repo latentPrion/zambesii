@@ -244,9 +244,9 @@ error_t timerTribC::initialize(void)
 
 	__kprintf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d, "
 		"Time %d:%d:%d, %dus.\n",
-		TIMERTRIB_DATE_GET_YEAR(bootTimestamp.date),
-		TIMERTRIB_DATE_GET_MONTH(bootTimestamp.date),
-		TIMERTRIB_DATE_GET_DAY(bootTimestamp.date),
+		bootTimestamp.date.year,
+		bootTimestamp.date.month,
+		bootTimestamp.date.day,
 		h, m, s, bootTimestamp.time.nseconds / 1000);
 
 	// Get mask of safe periods for this chipset.
@@ -288,6 +288,11 @@ error_t timerTribC::initialize(void)
 void timerTribC::getCurrentTime(timeS *t)
 {
 	zkcmCore.timerControl.getCurrentTime(t);
+}
+
+void timerTribC::getCurrentDate(dateS *d)
+{
+	zkcmCore.timerControl.getCurrentDate(d);
 }
 
 static sarch_t getFreeWaitSlot(ubit8 *ret)

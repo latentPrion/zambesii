@@ -45,14 +45,6 @@ inodeLow(_inodeLow), inodeHigh(_inodeHigh)
 {
 	refCount = 0;
 	fileSize = _fileSize;
-
-	createdDate = 0;
-	modifiedDate = 0;
-	accessedDate = 0;
-
-	memset(&createdTime, 0, sizeof(createdTime));
-	memset(&modifiedTime, 0, sizeof(modifiedTime));
-	memset(&modifiedTime, 0, sizeof(accessedTime));
 }
 
 error_t vfsFileInodeC::initialize(void)

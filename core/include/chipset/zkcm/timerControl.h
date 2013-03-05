@@ -81,8 +81,8 @@ public:
 	 **/
 	ubit32 getChipsetSafeTimerPeriods(void);
 
-	status_t getCurrentDate(date_t *date);
-	status_t getCurrentTime(struct timeS *currTime);
+	status_t getCurrentDate(dateS *date);
+	status_t getCurrentTime(timeS *currTime);
 	/* The chipset may cache the sytem time in RAM, and not actually be
 	 * reading from the hardware clock on time API calls. This updates the
 	 * the cached RAM value by reading from the hardware clock anew.

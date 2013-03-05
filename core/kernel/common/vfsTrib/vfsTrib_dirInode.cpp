@@ -14,14 +14,6 @@ inodeLow(_inodeLow), inodeHigh(_inodeHigh)
 	nSubDirs = nFiles = 0;
 	refCount = 0;
 
-	createdDate = 0;
-	modifiedDate = 0;
-	accessedDate = 0;
-
-	memset(&createdTime, 0, sizeof(createdTime));
-	memset(&modifiedTime, 0, sizeof(modifiedTime));
-	memset(&modifiedTime, 0, sizeof(accessedTime));
-
 	files.rsrc = __KNULL;
 	subDirs.rsrc = __KNULL;
 }

@@ -25,72 +25,47 @@
 	 * accuracy, though most of the time the actual value stored in the
 	 * structure will be accurate to the millisecond rather than the
 	 * microsecond or nanosecond.
-	 *
-	 *	MACRO USAGE:
-	 * date_t	myBirthday;
-	 * myBirthday = TIMERTRIB_DATE_SET_YEAR(1991)
-	 *	| TIMERTRIB_DATE_SET_MONTH(11)
-	 *	| TIMERTRIB_DATE_SET_DAY(8);
-	 *
-	 * printf("My birthday is the %dth of the %dth month, %d.\n",
-	 *	TIMERTRIB_DATE_GET_DAY(myBirthday),
-	 *	TIMERTRIB_DATE_GET_MONTH(myBirthday),
-	 *	TIMERTRIB_DATE_GET_YEAR(myBirthday));
 	 **/
 
-/**	EXPLANATION:
- * Year is given 18 bits to represent a set of dates ranging from 100,000 B.C.E
- * to 100,000 A.D. I think that is adequate for any program having been written
- * according to the C standard, and more than adequate for any program which
- * does normal date manipulation. Programs which do more than that generally
- * have their own date format, and won't be asking the kernel for date/time
- * keeping services beyond what they absolutely need to.
- **/
-// These are "intrinsics" macros -- use the two below for manipulating years.
-#define TIMERTRIB_DATE_YEAR_SHIFT		(0)
-#define TIMERTRIB_DATE_YEAR_MASK		(0x3FFFF)
+struct dateS
+{
+	dateS(sbit32 year=0, ubit8 month=0, ubit8 day=0, sbit8 weekDay=0)
+	:
+	year(year), month(month), day(day), weekDay(weekDay)
+	{}
 
-// Use these to set and get date values.
-#define TIMERTRIB_DATE_GET_YEAR(__year)		\
-	(((__year) >> TIMERTRIB_DATE_YEAR_SHIFT) & TIMERTRIB_DATE_YEAR_MASK)
+	inline int operator ==(dateS &d)
+	{
+		return year == d.year && month == d.month && day == d.day;
+	}
 
-#define TIMERTRIB_DATE_ENCODE_YEAR(__val)\
-	(((__val) & TIMERTRIB_DATE_YEAR_MASK) << TIMERTRIB_DATE_YEAR_SHIFT)
+	inline int operator >(dateS &d)
+	{
+		return year > d.year
+			|| (year == d.year && month > d.month)
+			|| (year == d.year && month == d.month && day > d.day);
+	}
 
-/**	EXPLANATION:
- * Month is given 4 bits so that it can represent values from 0-15. Valid
- * values range from 1-12. Programs using this data type are responsible for
- * ensuring that dates they use internally are sane.
- **/
-// These are "intrinsics" macros -- use the two below for manipulating years.
-#define TIMERTRIB_DATE_MONTH_SHIFT		(18)
-#define TIMERTRIB_DATE_MONTH_MASK		(0xF)
+	inline int operator >=(dateS &d)
+	{
+		return *this == d || *this > d;
+	}
 
-// Use these to set and get date values.
-#define TIMERTRIB_DATE_GET_MONTH(__mon)		\
-	(((__mon) >> TIMERTRIB_DATE_MONTH_SHIFT) & TIMERTRIB_DATE_MONTH_MASK)
+	inline int operator <(dateS &d)
+	{
+		return year < d.year
+			|| (year == d.year && month < d.month)
+			|| (year == d.year && month == d.month && day < d.day);
+	}
 
-#define TIMERTRIB_DATE_ENCODE_MONTH(__val)\
-	(((__val) & TIMERTRIB_DATE_MONTH_MASK) << TIMERTRIB_DATE_MONTH_SHIFT)
+	inline int operator <=(dateS &d)
+	{
+		return *this == d || *this < d;
+	}
 
-/**	EXPLANATION:
- * Day is given 5 bits so that it can represent values from 0-31. Valid
- * values range from 1-31. Programs using this data type are responsible for
- * ensuring that dates they use internally are sane.
- **/
-// These are "intrinsics" macros -- use the two below for manipulating years.
-#define TIMERTRIB_DATE_DAY_SHIFT		(22)
-#define TIMERTRIB_DATE_DAY_MASK			(0x1F)
-
-// Use these to set and get date values.
-#define TIMERTRIB_DATE_GET_DAY(__day)		\
-	(((__day) >> TIMERTRIB_DATE_DAY_SHIFT) & TIMERTRIB_DATE_DAY_MASK)
-
-#define TIMERTRIB_DATE_ENCODE_DAY(__val)\
-	(((__val) & TIMERTRIB_DATE_DAY_MASK) << TIMERTRIB_DATE_DAY_SHIFT)
-
-typedef ubit32		date_t;
-
+	sbit32		year;
+	ubit8		month, day, weekDay;
+};
 
 /**	EXPLANATION:
  * The kernel stores time as the number of seconds elapsed since the start of
@@ -216,8 +191,8 @@ struct timestampS
 	}
 #endif
 
-	struct timeS	time;
-	date_t		date;
+	timeS	time;
+	dateS	date;
 };
 
 // This data type is used by Timer Streams to represent timer service requests.

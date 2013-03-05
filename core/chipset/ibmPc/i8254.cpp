@@ -195,7 +195,8 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	device->getLatchState(
 		&irqEvent->latchedStream);
 
-	timerTrib.getCurrentTime(&irqEvent->irqTime);
+	timerTrib.getCurrentTime(&irqEvent->irqStamp.time);
+	timerTrib.getCurrentDate(&irqEvent->irqStamp.date);
 	err = device->irqEventQueue.addItem(irqEvent);
 	if (err != ERROR_SUCCESS)
 	{

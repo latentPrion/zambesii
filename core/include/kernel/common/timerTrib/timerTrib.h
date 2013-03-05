@@ -41,7 +41,7 @@ public:
 	void updateScheduledClock(uarch_t sourceId); */
 
 	void getCurrentTime(timeS *t);
-	date_t getCurrentDate(void);
+	void getCurrentDate(dateS *d);
 
 	/**	EXPLANATION:
 	 * Called by timer device drivers from IRQ context to let the kernel

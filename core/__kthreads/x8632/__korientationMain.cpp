@@ -124,11 +124,11 @@ void __korientationMain(void)
 	to.thread = 0x2;
 	zkcmCore.timerControl.refreshCachedSystemTime();
 	timerTrib.getCurrentTime(&to.placementStamp.time);
-	zkcmCore.timerControl.getCurrentDate(&to.placementStamp.date);
+	timerTrib.getCurrentDate(&to.placementStamp.date);
 
 	to.expirationStamp = to.placementStamp;
-	to.expirationStamp.time.seconds+= 3;
-	
+	to.expirationStamp.time.seconds += 3;
+
 	timerTrib.period10ms.insert(&to);
 
 	ubit8		h, m, s;
@@ -138,9 +138,9 @@ void __korientationMain(void)
 
 	__kprintf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d, "
 		"Time %d:%d:%d, %dus.\n",
-		TIMERTRIB_DATE_GET_YEAR(to.expirationStamp.date),
-		TIMERTRIB_DATE_GET_MONTH(to.expirationStamp.date),
-		TIMERTRIB_DATE_GET_DAY(to.expirationStamp.date),
+		to.expirationStamp.date.year,
+		to.expirationStamp.date.month,
+		to.expirationStamp.date.day,
 		h, m, s, to.expirationStamp.time.nseconds / 1000);
 
 	taskTrib.dormant(0x1);

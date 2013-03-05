@@ -107,6 +107,8 @@ static ubit8		rtccmos24HourTime=0;
 static ubit8		rtccmosBcdDateTime=0;
 static sharedResourceGroupC<waitLockC, timestampS>	systemTime;
 waitLockC		rtccmosLock;
+static ubit8		rtccmosDateCenturyChecked=0;
+static ubit8		rtccmosDateCenturyOffset=0;
 
 namespace rtc
 {
@@ -268,9 +270,8 @@ static inline ubit8 bcd8ToUbit8(ubit8 bcdVal)
 	return (((bcdVal >> 4) & 0xF) * 10) + (bcdVal & 0xF);
 }
 
-static sbit8 getCenturyOffset(void)
+static sarch_t getCenturyOffset(ubit8 *ret)
 {
-	ubit8		ret;
 	error_t		err;
 	acpi_rsdtS	*rsdt;
 	acpi_rFadtS	*fadt;
@@ -284,7 +285,7 @@ static sbit8 getCenturyOffset(void)
 	 **/
 	err = acpi::findRsdp();
 	if (err != ERROR_SUCCESS) {
-		return -1;
+		return 0;
 	};
 
 	if (acpi::testForRsdt())
@@ -296,7 +297,7 @@ static sbit8 getCenturyOffset(void)
 			__kprintf(WARNING RTCCMOS"getCenturyOffset: failed to "
 				"map RSDT.\n");
 
-			return -1;
+			return 0;
 		};
 
 		rsdt = acpi::getRsdt();
@@ -311,16 +312,16 @@ static sbit8 getCenturyOffset(void)
 				__kprintf(NOTICE RTCCMOS"FADT century offset "
 					"not used.\n");
 
-				return -1;
+				return 0;
 			};
 
-			ret = fadt->cmosCentury;
+			*ret = fadt->cmosCentury;
 			acpiRsdt::destroySdt((acpi_sdtS *)fadt);
 			acpiRsdt::destroyContext(&context);
 			__kprintf(NOTICE RTCCMOS"getCenturyOffset: ACPI: "
-				"Offset is %d.\n", ret);
+				"Offset is %d.\n", *ret);
 
-			return ret;
+			return 1;
 		};
 #if !defined(__32_BIT__) || defined(CONFIG_ARCH_x86_32_PAE)
 	}
@@ -330,54 +331,52 @@ static sbit8 getCenturyOffset(void)
 #endif
 	};
 
-	return CMOS_REG_DATE_CENTURY;
+	return 0;
 }
 
 
-status_t ibmPc_rtc_getHardwareDate(date_t *date)
+status_t ibmPc_rtc_getHardwareDate(dateS *ret)
 {
-	ubit16	year=0;
-	ubit8	month, day;
-	sbit8	centuryOffset;
+	ubit8	century=0x20;
 
 	// Check ACPI for the century register offset.
-	centuryOffset = getCenturyOffset();
+	if (!rtccmosDateCenturyChecked)
+	{
+		getCenturyOffset(&rtccmosDateCenturyOffset);
+		rtccmosDateCenturyChecked = 1;
+	};
 
 	rtccmos::lock();
 
-	if (centuryOffset != -1)
+	// Only try to read century value if ACPI said it's valid.
+	if (rtccmosDateCenturyOffset != 0)
 	{
-		rtccmos::writeAddressRegister(centuryOffset);
-		year = rtccmos::readDataRegister() << 8;
+		rtccmos::writeAddressRegister(rtccmosDateCenturyOffset);
+		century = rtccmos::readDataRegister();
 	};
 
 	rtccmos::writeAddressRegister(RTC_REG_YEAR);
-	year |= rtccmos::readDataRegister();
+	ret->year = rtccmos::readDataRegister();
 	rtccmos::writeAddressRegister(RTC_REG_MONTH);
-	month = rtccmos::readDataRegister();
+	ret->month = rtccmos::readDataRegister();
 	rtccmos::writeAddressRegister(RTC_REG_DAY_OF_MONTH);
-	day = rtccmos::readDataRegister();
+	ret->day = rtccmos::readDataRegister();
+	rtccmos::writeAddressRegister(RTC_REG_DAY_OF_WEEK);
+	ret->weekDay = rtccmos::readDataRegister();
 	rtccmos::resetAddressRegister();
 
 	rtccmos::unlock();
 
-	
 	if (rtccmosBcdDateTime)
 	{
-		year = (((centuryOffset != -1) ? bcd8ToUbit8(year >> 8) : 20)
-			* 100) + bcd8ToUbit8(year & 0xFF);
-
-		month = bcd8ToUbit8(month);
-		day = bcd8ToUbit8(day);
+		ret->year = bcd8ToUbit8(century) * 100 + bcd8ToUbit8(ret->year);
+		ret->month = bcd8ToUbit8(ret->month);
+		ret->day = bcd8ToUbit8(ret->day);
+		ret->weekDay = bcd8ToUbit8(ret->weekDay);
 	}
 	else {
-		year = (((centuryOffset != -1) ? (year >> 8) : 20) * 100)
-			+ (year & 0xFF);
+		ret->year = century * 100 + ret->year;
 	};
-
-	*date = TIMERTRIB_DATE_ENCODE_YEAR(year)
-		| TIMERTRIB_DATE_ENCODE_MONTH(month)
-		| TIMERTRIB_DATE_ENCODE_DAY(day);
 
 	return ERROR_SUCCESS;
 }
@@ -435,7 +434,7 @@ void zkcmTimerControlModC::refreshCachedSystemTime(void)
 	systemTime.lock.release();
 }
 
-status_t zkcmTimerControlModC::getCurrentDate(date_t *date)
+status_t zkcmTimerControlModC::getCurrentDate(dateS *date)
 {
 	systemTime.lock.acquire();
 	*date = systemTime.rsrc.date;
@@ -447,8 +446,7 @@ status_t zkcmTimerControlModC::getCurrentDate(date_t *date)
 status_t zkcmTimerControlModC::getCurrentTime(timeS *time)
 {
 	systemTime.lock.acquire();
-	time->seconds = systemTime.rsrc.time.seconds;
-	time->nseconds = systemTime.rsrc.time.nseconds;
+	*time = systemTime.rsrc.time;
 	systemTime.lock.release();
 
 	return ERROR_SUCCESS;

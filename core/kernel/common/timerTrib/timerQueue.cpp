@@ -139,7 +139,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 	 * timer device.
 	 **/
 	obj = requestQueue.getHead();
-	if (obj->expirationStamp.time <= event->irqTime)
+	if (obj->expirationStamp <= event->irqStamp)
 	{
 		__kprintf(NOTICE TIMERQUEUE"%dus: Event just expired.\n");
 		disable();

@@ -43,8 +43,7 @@ public:
 	ubit32			nSubDirs;
 	ubit32			nFiles;
 	ubit32			refCount;
-	date_t			createdDate, modifiedDate, accessedDate;
-	timeS			createdTime, modifiedTime, accessedTime;
+	timestampS		createdTime, modifiedTime, accessedTime;
 };
 
 class vfsFileInodeC
@@ -62,8 +61,7 @@ public:
 	// Max filesize supported by VFS depends on arch.
 	uarch_t			fileSize;
 	ubit32			refCount;
-	date_t			createdDate, modifiedDate, accessedDate;
-	timeS			createdTime, modifiedTime, accessedTime;
+	timestampS		createdTime, modifiedTime, accessedTime;
 };		
 
 
