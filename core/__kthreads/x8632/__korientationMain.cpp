@@ -118,6 +118,7 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
+for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOTICE ORIENT"Escaped HLT, re-entering.\n")) { asm volatile("hlt\n\t"); };
 
 	timerObjectS	to;
 	to.type = timerObjectS::ONESHOT;
@@ -144,7 +145,6 @@ void __korientationMain(void)
 		h, m, s, to.expirationStamp.time.nseconds / 1000);
 
 	taskTrib.dormant(0x1);
-for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOTICE ORIENT"Escaped HLT, re-entering.\n")) { asm volatile("hlt\n\t"); };
 
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);

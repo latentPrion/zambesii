@@ -11,31 +11,19 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
-/* The number of timer queues is limited and defined by the chipset's
- * safe periods. At any rate, we'll probably never exceed ~6 queues in the
- * kernel.
- **/
-struct waitInfoS
-{
-	singleWaiterQueueC<zkcmTimerEventS>	*eventQueue;
-	timerQueueC	*timerQueue;
-} static currentWaitSet[6];
-
 timerTribC::timerTribC(void)
 :
 period1s(1000000000),
 period100ms(100000000), period10ms(10000000), period1ms(1000000),
-safePeriodMask(0)
+safePeriodMask(0),
+flags(0)
 {
-	memset(currentWaitSet, 0, sizeof(currentWaitSet));
 	memset(&watchdog.rsrc.interval, 0, sizeof(watchdog.rsrc.interval));
 	memset(
 		&watchdog.rsrc.nextFeedTime, 0,
 		sizeof(watchdog.rsrc.nextFeedTime));
 
 	watchdog.rsrc.isr = __KNULL;
-
-	flags = 0;
 }
 
 timerTribC::~timerTribC(void)
@@ -162,8 +150,8 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 
 error_t timerTribC::enableWaitingOnQueue(ubit32 nanos)
 {
-	timerQueueC	*queue;
-	eventProcessorMessageS	*msg;
+	timerQueueC			*queue;
+	eventProcessorS::messageS	*msg;
 
 	switch (nanos)
 	{
@@ -197,17 +185,18 @@ error_t timerTribC::enableWaitingOnQueue(ubit32 nanos)
 
 	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
 
-	msg = new eventProcessorMessageS;
-	msg->type = eventProcessorMessageS::QUEUE_LATCHED;
-	msg->timerQueue = queue;
-	
-	return eventProcessorControlQueue.addItem(msg);
+	msg = new eventProcessorS::messageS(
+		eventProcessorS::messageS::QUEUE_LATCHED,
+		queue);
+
+	if (msg == __KNULL) { return ERROR_MEMORY_NOMEM; };
+
+	return eventProcessor.controlQueue.addItem(msg);
 }
 
 error_t timerTribC::initialize(void)
 {
 	ubit8			h, m, s;
-	processId_t		tid;
 	error_t			ret;
 
 	/**	EXPLANATION:
@@ -254,32 +243,29 @@ error_t timerTribC::initialize(void)
 
 	// Spawn the timer event dequeueing thread.
 	ret = processTrib.__kprocess.spawnThread(
-		(void (*)(void *))&timerTribC::eventProcessorThread, __KNULL,
+		&timerTribC::eventProcessorS::thread, __KNULL,
 		__KNULL,
 		taskC::REAL_TIME,
 		PRIOCLASS_CRITICAL,
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
 		| SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET
 		| SPAWNTHREAD_FLAGS_DORMANT,
-		&tid);
+		&eventProcessor.tid);
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = eventProcessorControlQueue.initialize();
+	ret = eventProcessor.controlQueue.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
-	eventProcessorTask = processTrib.__kprocess.getTask(tid);
+
+	eventProcessor.task = processTrib.__kprocess.getTask(
+		eventProcessor.tid);
+
 	__kprintf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
 		"addr 0x%p, id 0x%x.\n",
-		eventProcessorTask, eventProcessorTask->id);
+		eventProcessor.task, eventProcessor.tid);
 
-	eventProcessorControlQueue.setWaitingThread(eventProcessorTask);
-	taskTrib.wake(eventProcessorTask);
-
-	/*eventProcessorMessageS	*msg;
-	msg = new eventProcessorMessageS;
-	msg->type = eventProcessorMessageS::QUEUE_LATCHED;
-	msg->timerQueue = &period10ms;
-	eventProcessorControlQueue.addItem(msg);*/
+	eventProcessor.controlQueue.setWaitingThread(eventProcessor.task);
+	taskTrib.wake(eventProcessor.task);
 
 	initializeAllQueues();
 	return ERROR_SUCCESS;
@@ -295,11 +281,11 @@ void timerTribC::getCurrentDate(dateS *d)
 	zkcmCore.timerControl.getCurrentDate(d);
 }
 
-static sarch_t getFreeWaitSlot(ubit8 *ret)
+sarch_t timerTribC::eventProcessorS::getFreeWaitSlot(ubit8 *ret)
 {
-	for (*ret = 0; *ret<6; *ret += 1)
+	for (*ret=0; *ret<6; *ret += 1)
 	{
-		if (currentWaitSet[*ret].eventQueue == __KNULL) {
+		if (waitSlots[*ret].eventQueue == __KNULL) {
 			return 1;
 		};
 	};
@@ -307,31 +293,62 @@ static sarch_t getFreeWaitSlot(ubit8 *ret)
 	return 0;
 }
 
-static void findAndClearSlotFor(timerQueueC *timerQueue)
+void timerTribC::eventProcessorS::releaseWaitSlotFor(timerQueueC *timerQueue)
 {
 	for (ubit8 i=0; i<6; i++)
 	{
-		if (currentWaitSet[i].timerQueue == timerQueue)
-		{
-			currentWaitSet[i].timerQueue = __KNULL;
-			currentWaitSet[i].eventQueue = __KNULL;
+		if (waitSlots[i].timerQueue == timerQueue) {
+			releaseWaitSlot(i);
 		};
 	};
 }
 
-void timerTribC::eventProcessorThread(void)
+void timerTribC::eventProcessorS::processQueueLatchedMessage(messageS *msg)
 {
-	eventProcessorMessageS	*currMsg;
-	zkcmTimerEventS		*currIrqEvent;
-	ubit8			slot;
-	ubit8			messagesWereFound;
+	ubit8		slot;
+
+	// Wait on the specified queue.
+	if (!getFreeWaitSlot(&slot))
+	{
+		__kprintf(ERROR TIMERTRIB"event DQer: failed to wait on "
+			"timer Q %dus: no free slots.\n",
+			msg->timerQueue->getNativePeriod() / 1000);
+
+		return;
+	};
+
+	waitSlots[slot].timerQueue = msg->timerQueue;
+	waitSlots[slot].eventQueue = msg->timerQueue
+		->getDevice()->getEventQueue();
+
+	waitSlots[slot].eventQueue->setWaitingThread(
+		timerTrib.eventProcessor.task);
+
+	__kprintf(NOTICE TIMERTRIB"event DQer: Waiting on timerQueue %dus.\n\t"
+		"Allocated to slot %d.\n",
+		waitSlots[slot].timerQueue->getNativePeriod() / 1000, slot);
+}
+
+void timerTribC::eventProcessorS::processQueueUnlatchedMessage(messageS *msg)
+{
+	// Stop waiting on the specified queue.
+	releaseWaitSlotFor(msg->timerQueue);
+	__kprintf(NOTICE TIMERTRIB"event DQer: no longer waiting on timerQueue "
+		"%dus.\n",
+		msg->timerQueue->getNativePeriod() / 1000);
+}
+
+void timerTribC::eventProcessorS::thread(void *)
+{
+	eventProcessorS::messageS	*currMsg;
+	sarch_t				messagesWereFound;
 
 	__kprintf(NOTICE TIMERTRIB"Event DQer thread has begun executing.\n");
 	for (;;)
 	{
 		messagesWereFound = 0;
 
-		currMsg = timerTrib.eventProcessorControlQueue.pop(
+		currMsg = timerTrib.eventProcessor.controlQueue.pop(
 			SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
 		if (currMsg != __KNULL)
@@ -339,52 +356,20 @@ void timerTribC::eventProcessorThread(void)
 			messagesWereFound = 1;
 			switch (currMsg->type)
 			{
-			case eventProcessorMessageS::EXIT_THREAD:
-				// Code to exit the thread here.
+			case eventProcessorS::messageS::EXIT_THREAD:
+				timerTrib.eventProcessor.processExitMessage(
+					currMsg);
 				break;
 
-			case eventProcessorMessageS::QUEUE_LATCHED:
-				// Wait on the new queue.
-				if (!getFreeWaitSlot(&slot))
-				{
-					__kprintf(ERROR TIMERTRIB"event DQer: "
-						"failed to wait on "
-						"timer Q %dus: no free "
-						"slots.\n",
-						currMsg->timerQueue
-							->getNativePeriod()
-							/ 1000);
-
-					break;
-				};
-
-				currentWaitSet[slot].timerQueue =
-					currMsg->timerQueue;
-
-				currentWaitSet[slot].eventQueue =
-					currMsg->timerQueue
-					->getDevice()->getEventQueue();
-
-				currentWaitSet[slot].eventQueue
-					->setWaitingThread(
-						timerTrib.eventProcessorTask);
-
-				__kprintf(NOTICE TIMERTRIB"event DQer: Waiting "
-					"on timerQueue %dus.\n\tAllocated to "
-					"slot %d.\n",
-					currentWaitSet[slot].timerQueue
-						->getNativePeriod() / 1000,
-					slot);
+			case eventProcessorS::messageS::QUEUE_LATCHED:
+				timerTrib.eventProcessor
+					.processQueueLatchedMessage(currMsg);
 
 				break;
 
-			case eventProcessorMessageS::QUEUE_UNLATCHED:
-				// Stop waiting on this queue.
-				findAndClearSlotFor(currMsg->timerQueue);
-				__kprintf(NOTICE TIMERTRIB"event DQer: no "
-					"longer waiting on timerQueue %dus.\n",
-					currMsg->timerQueue->getNativePeriod()
-						/ 1000);
+			case eventProcessorS::messageS::QUEUE_UNLATCHED:
+				timerTrib.eventProcessor
+					.processQueueUnlatchedMessage(currMsg);
 
 				break;
 
@@ -405,26 +390,31 @@ void timerTribC::eventProcessorThread(void)
 		};
 
 		// Wait for the other queues here.
+		zkcmTimerEventS		*currIrqEvent;
 		for (ubit8 i=0; i<6; i++)
 		{
-			if (currentWaitSet[i].eventQueue != __KNULL)
+			// Skip blank slots.
+			if (timerTrib.eventProcessor.waitSlots[i].eventQueue
+				== __KNULL)
 			{
-				currIrqEvent = currentWaitSet[i].eventQueue
-					->pop(
+				continue;
+			};
+
+			currIrqEvent = timerTrib.eventProcessor.waitSlots[i]
+				.eventQueue->pop(
 					SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
-				if (currIrqEvent != __KNULL)
-				{
-					messagesWereFound = 1;
+			if (currIrqEvent != __KNULL)
+			{
+				messagesWereFound = 1;
 
-					// Dispatch the message here.
-					currentWaitSet[i].timerQueue->tick(
+				// Dispatch the message here.
+				timerTrib.eventProcessor.waitSlots[i].timerQueue
+					->tick(currIrqEvent);
+
+				timerTrib.eventProcessor.waitSlots[i].timerQueue
+					->getDevice()->freeIrqEvent(
 						currIrqEvent);
-
-					currentWaitSet[i].timerQueue
-						->getDevice()->freeIrqEvent(
-							currIrqEvent);
-				};
 			};
 		};
 
@@ -519,45 +509,4 @@ void timerTribC::unregisterWatchdogIsr(void)
 		return;
 	};
 }
-
-#if 0
-void timerTribC::timerDeviceTimeoutEvent(zkcmTimerDeviceC *dev)
-{
-	timerStreamC		*stream;
-	zkcmTimerEventS		*event;
-
-	/**	EXPLANATION:
-	 * Called from IRQ context by a timer device driver to notify the kernel
-	 * that a timer device's IRQ has occured. This function does the
-	 * following:
-	 *	1. Gets the ID of the process which is latched to the calling
-	 *	   timer device.
-	 *	2. Gets a handle to that process's Timer Stream object.
-	 *	3. Allocates a new zkcmTimerEventS structure.
-	 *	4. Fills it out with pertinent information about the timed out
-	 *	   timer event that has just been signaled.
-	 *	5. Places it into the queue of timer event notifications for
-	 *	   the target process' Timer Stream object.
-	 *
-	 * At this point, the kernel returns control to the IRQ handler routine,
-	 * which will generally acknowledge the IRQ to the device (if it hadn't
-	 * already done so before notifying the kernel) and exit.
-	 **/
-	event = new zkcmTimerEventS;
-	if (event == __KNULL)
-	{
-		__kprintf(ERROR TIMERTRIB"timerDeviceTimeoutEvent: device %s:\n"
-			"\tFailed to alloc timeout object.\n",
-			dev->getBaseDevice()->shortName);
-
-		return;
-	};
-
-	event->device = dev;
-	dev->getLatchState(&event->latchedStream);
-	getCurrentTime(&event->irqTime);
-
-	//event->latchedStream->timerDeviceTimeoutNotification(event);
-}
-#endif
 

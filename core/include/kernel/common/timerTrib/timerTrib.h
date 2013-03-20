@@ -78,7 +78,6 @@ public:
 	void	setContinuousTimerMs(mstime_t, void (*)()); */
 
 	void dump(void);
-	static void eventProcessorThread(void);
 
 private:
 	// The watchdog timer for the chipset, if it exists.
@@ -89,18 +88,6 @@ private:
 		timeS		interval;
 	};
 
-	struct eventProcessorMessageS
-	{
-		enum		typeE
-		{
-			QUEUE_LATCHED=1,
-			QUEUE_UNLATCHED,
-			EXIT_THREAD
-		};
-
-		ubit8		type;
-		timerQueueC	*timerQueue;
-	};
 
 	// Timestamp value for when this kernel instance was booted.
 	timestampS	bootTimestamp;
@@ -108,9 +95,73 @@ private:
 	ubit32		safePeriodMask;
 	uarch_t		flags;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
-	taskC		*eventProcessorTask;
-	singleWaiterQueueC<eventProcessorMessageS>
-		eventProcessorControlQueue;
+
+	// The event processing thread's state information.
+	struct eventProcessorS
+	{
+		eventProcessorS(void)
+		:
+		tid(0), task(__KNULL)
+		{
+			memset(waitSlots, 0, sizeof(waitSlots));
+		}
+
+		// Entry point for the event processing thread.
+		static void thread(void *);
+		sarch_t getFreeWaitSlot(ubit8 *ret);
+		void releaseWaitSlotFor(timerQueueC *timerQueue);
+		void releaseWaitSlot(ubit8 slot)
+		{
+			waitSlots[slot].timerQueue = __KNULL;
+			waitSlots[slot].eventQueue = __KNULL;
+		}
+
+		struct messageS
+		{
+			enum typeE {
+				QUEUE_LATCHED=1, QUEUE_UNLATCHED, EXIT_THREAD };
+
+			messageS(void)
+			:
+			type(static_cast<typeE>( 0 ))
+			{}
+
+			messageS(typeE type, timerQueueC *timerQueue)
+			:
+			type(type), timerQueue(timerQueue)
+			{}
+
+			typeE		type;
+			timerQueueC	*timerQueue;
+		};
+
+		void processQueueLatchedMessage(messageS *msg);
+		void processQueueUnlatchedMessage(messageS *msg);
+		void processExitMessage(messageS *)
+		{
+			UNIMPLEMENTED(
+				"timerTribC::"
+				"eventProcessorS::processExitMessage");
+		}
+
+		// PID and Pointer to event processing thread's taskC struct.
+		processId_t	tid;
+		taskC		*task;
+		// Control queue used to send signals to the processing thread.
+		singleWaiterQueueC<messageS>	controlQueue;
+		/* Array of wait queues for each of the timerQueues which are
+		 * usable on this chipset. When a timer device is bound to a
+		 * queue (newTimerDeviceNotification() -> initializeQueue()),
+		 * a message is sent to the processing thread via the control
+		 * queue, which causes the thread to begin checking that
+		 * timerQueue's wait queue.
+		 **/
+		struct waitSlotS
+		{
+			timerQueueC	*timerQueue;
+			singleWaiterQueueC<zkcmTimerEventS>	*eventQueue;
+		} waitSlots[6];
+	} eventProcessor;
 
 private:
 	void initializeQueue(timerQueueC *queue, ubit32 ns);
