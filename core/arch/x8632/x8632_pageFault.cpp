@@ -81,7 +81,7 @@ status_t x8632_page_fault(taskContextC *regs, ubit8)
 			"movl %%esp, %0\n\t"
 			: "=r" (esp));
 
-		__kprintf(FATAL"Encountered unmapped page at %X, EIP: 0x%x, esp: 0x%x, sleepstack end: 0x%p sleepstack base 0x%p.\n",
+		__kprintf(FATAL"Encountered unmapped page at 0x%p, EIP: 0x%x, esp: 0x%x, sleepstack end: 0x%p sleepstack base 0x%p.\n",
 			faultAddr, regs->eip, esp, cpuTrib.getCurrentCpuStream()->sleepStack,
 			&cpuTrib.getCurrentCpuStream()->sleepStack[
 				sizeof(cpuTrib.getCurrentCpuStream()->sleepStack)]);

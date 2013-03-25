@@ -7,17 +7,7 @@ status_t x8632_div_zero(taskContextC *, ubit8)
 	return ERROR_GENERAL;
 }
 
-status_t x8632_debug(taskContextC *, ubit8)
-{
-	return ERROR_GENERAL;
-}
-
 status_t x8632_nmi(taskContextC *, ubit8)
-{
-	return ERROR_GENERAL;
-}
-
-status_t x8632_breakpoint(taskContextC *, ubit8)
 {
 	return ERROR_GENERAL;
 }

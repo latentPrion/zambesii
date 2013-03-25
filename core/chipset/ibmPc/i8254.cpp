@@ -180,11 +180,11 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	};
 
 	device->sendEoi();
-
 	// Create an event.
 	irqEvent = device->allocateIrqEvent();
 	// Note well, this is faultable memory being allocated.
-	if (irqEvent == __KNULL) {
+	if (irqEvent == __KNULL)
+	{
 		__kprintf(WARNING i8254"isr: Couldn't allocate IRQ event.\n");
 		// FIXME: I don't like this return value.
 		return ZKCM_ISR_SUCCESS;
@@ -195,6 +195,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	device->getLatchState(
 		&irqEvent->latchedStream);
 
+	zkcmCore.timerControl.refreshCachedSystemTime();
 	timerTrib.getCurrentTime(&irqEvent->irqStamp.time);
 	timerTrib.getCurrentDate(&irqEvent->irqStamp.date);
 	err = device->irqEventQueue.addItem(irqEvent);
@@ -220,7 +221,6 @@ error_t i8254PitC::enable(void)
 	state.lock.release();
 
 	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
-
 	/**	EXPLANATION:
 	 * 1. Lookup the correct __kpin for our IRQ (ISA IRQ 0).
 	 * 2. Register our ISR with the kernel on the correct __kpin list.

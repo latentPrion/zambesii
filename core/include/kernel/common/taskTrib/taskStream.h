@@ -45,6 +45,8 @@ public:
 	void updateLoad(ubit8 action, ubit32 val);
 	void updateCapacity(ubit8 action, ubit32 val);
 
+	taskC *getCurrentTask(void) { return currentTask; }
+
 	error_t schedule(taskC* task);
 
 	void dormant(taskC *task)

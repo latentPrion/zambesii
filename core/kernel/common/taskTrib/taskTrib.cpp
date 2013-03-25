@@ -108,7 +108,7 @@ error_t taskTribC::dormant(taskC *task)
 	}
 	else
 	{
-		if (task == currentCpu->taskStream.currentTask)
+		if (task == currentCpu->taskStream.getCurrentTask())
 		{
 			saveContextAndCallPull(
 				&currentCpu->sleepStack[
@@ -141,7 +141,7 @@ void taskTribC::yield(void)
 {
 	taskC		*currTask;
 
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	currTask->currentCpu->taskStream.yield(currTask);
 
 	saveContextAndCallPull(
@@ -156,7 +156,7 @@ void taskTribC::block(void)
 	/* After placing a task into a waitqueue, call this function to
 	 * place it into a "blocked" state.
 	 **/
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	currTask->currentCpu->taskStream.block(currTask);
 
 	saveContextAndCallPull(

@@ -79,6 +79,10 @@ public:
 
 	void dump(void);
 
+	// Artifacts from debugging.
+	void sendMessage(void);
+	void sendQMessage(void);
+
 private:
 	// The watchdog timer for the chipset, if it exists.
 	struct watchdogIsrS
@@ -137,12 +141,7 @@ private:
 
 		void processQueueLatchedMessage(messageS *msg);
 		void processQueueUnlatchedMessage(messageS *msg);
-		void processExitMessage(messageS *)
-		{
-			UNIMPLEMENTED(
-				"timerTribC::"
-				"eventProcessorS::processExitMessage");
-		}
+		void processExitMessage(messageS *);
 
 		// PID and Pointer to event processing thread's taskC struct.
 		processId_t	tid;

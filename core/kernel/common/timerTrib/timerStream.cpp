@@ -45,5 +45,7 @@ error_t timerStreamC::pullTimerEvent(
 	 *
 	 * Attempts to pull an event from "events" linked list. If it fails, it
 	 * sleeps the process.
+	 */
+	return ERROR_SUCCESS;
 }
 

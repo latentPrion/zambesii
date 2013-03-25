@@ -106,6 +106,8 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 }
 
+int breakOut=0;
+ubit32		testMem;
 void __korientationMain(void)
 {
 	error_t		ret;
@@ -118,7 +120,6 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
-for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOTICE ORIENT"Escaped HLT, re-entering.\n")) { asm volatile("hlt\n\t"); };
 
 	timerObjectS	to;
 	to.type = timerObjectS::ONESHOT;
@@ -128,23 +129,29 @@ for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOT
 	timerTrib.getCurrentDate(&to.placementStamp.date);
 
 	to.expirationStamp = to.placementStamp;
-	to.expirationStamp.time.seconds += 3;
-
-	timerTrib.period10ms.insert(&to);
+	to.expirationStamp.time.seconds += 5;
 
 	ubit8		h, m, s;
 	h = to.expirationStamp.time.seconds / 3600;
 	m = (to.expirationStamp.time.seconds / 60) - (h * 60);
 	s = to.expirationStamp.time.seconds % 60;
 
-	__kprintf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d, "
+	__kprintf(NOTICE TIMERTRIB"Test object expiration stamp: Date: %d-%d-%d, "
 		"Time %d:%d:%d, %dus.\n",
 		to.expirationStamp.date.year,
 		to.expirationStamp.date.month,
 		to.expirationStamp.date.day,
 		h, m, s, to.expirationStamp.time.nseconds / 1000);
 
-	taskTrib.dormant(0x1);
+	timerTrib.period10ms.insert(&to);
+	for (;breakOut==0;)
+	{
+		//timerTrib.sendQMessage();
+		__kprintf(NOTICE"yielding.\n");
+		taskTrib.yield();
+	};
+
+for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOTICE ORIENT"Escaped HLT, re-entering.\n")) { asm volatile("cli\n\thlt\n\t"); };
 
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
@@ -152,7 +159,7 @@ for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOT
 	// Initialize ZKCM CPU Dectection mod.
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
-	
+
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 
 	ubit8		t;

@@ -11,6 +11,7 @@ cpuStreamC *cpuTribC::getCurrentCpuStream(void)
 		"movl %%dr0, %0 \n\t"
 		: "=r" (dr0)
 	);
+
 	return reinterpret_cast<cpuStreamC *>( dr0 );
 }
 #endif

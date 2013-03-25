@@ -132,19 +132,16 @@ ASM_GLOBAL_FUNCTION(saveContextAndCallPull)
 	pushl	%eax
 	movl	0x4(%esp), %eax
 	pushl	%eax
-	addl	$0x4, %esp
-	popl	%eax
-	addl	$0x4, %esp
-	pushfl
-	pushl	%cs
-	/* We subl an extra 8 bytes because the taskContextC structure has
-	 * 2 dummy values which are only used on IRQ entry. But since we use the
-	 * same structure definition, we need to respect the layout (errorCode
-	 * and vectorNo).
-	 **/
-	subl	$12, %esp
+	pushf
+	movl	(%esp), %eax
+	movl	%eax, 12(%esp)
+	xor	%eax, %eax
+	movw	%cs, %ax
+	movl	%eax, 8(%esp)
 
-	pusha
+	subl	$4, %esp
+
+	pushal
 
 	pushw	%fs
 	pushw	%gs
@@ -183,10 +180,10 @@ ASM_GLOBAL_FUNCTION(loadContextAndJump)
 	popw	%gs
 	popw	%fs
 
-	popa
+	popal
 
 	addl	$8, %esp
-	iret
+	iretl
 ASM_END_FUNCTION(loadContextAndJump)
 
 /**	EXPLANATION:

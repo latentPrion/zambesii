@@ -3,6 +3,7 @@
 #include <arch/x8632/gdt.h>
 #include <arch/x8632/cpuEnumeration.h>
 #include <arch/cpuControl.h>
+#include <arch/debug.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
@@ -43,11 +44,13 @@ static x86ManufacturerEntryS		x86Manufacturers[] =
 
 void cpuStreamC::baseInit(void)
 {
+	debug::disableDebugExtensions();
+
 	// Load DR0 with a pointer to this CPU's CPU Stream.
 	asm volatile (
 		"pushl	%%eax \n\t \
 		movl	%%dr7, %%eax \n\t \
-		andl	$0xFFFFFE00, %%eax \n\t \
+		andl	$0xFFFFFC00, %%eax \n\t \
 		movl	%%eax, %%dr7 \n\t \
 		popl	%%eax \n\t \
 		\

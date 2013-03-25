@@ -46,6 +46,7 @@ class timerTribC;
 
 class timerQueueC
 {
+friend void ::__korientationMain(void);
 friend class timerTribC;
 public:
 	timerQueueC(ubit32 nativePeriod)

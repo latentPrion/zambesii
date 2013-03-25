@@ -16,12 +16,7 @@ template <class T, class criterionType>
 class sortedPointerDoubleListC
 {
 public:
-	sortedPointerDoubleListC(void)
-	{
-		list.rsrc.head = list.rsrc.tail = __KNULL;
-		list.rsrc.nItems = 0;
-	}
-
+	sortedPointerDoubleListC(void) {}
 	~sortedPointerDoubleListC(void) {};
 
 	error_t initialize(void) { return ERROR_SUCCESS; };
@@ -51,6 +46,11 @@ protected:
 
 	struct listStateS
 	{
+		listStateS(void)
+		:
+		head(__KNULL), tail(__KNULL), nItems(0)
+		{}
+
 		listNodeS	*head, *tail;
 		uarch_t		nItems;
 	};

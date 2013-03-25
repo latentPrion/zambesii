@@ -184,14 +184,19 @@ void taskStreamC::pull(void)
 	// Else set the CPU to a low power state.
 	for (;;)
 	{
+		cpuControl::disableInterrupts();
 		__kprintf(NOTICE TASKSTREAM"%d: Entering C1.\n", parentCpu->id);
+		roundRobinQ.dump();
+		__kprintf(NOTICE"Current task 0x%x, vaddr 0x%p.\n",
+			cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
+			cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+
 		cpuControl::halt();
 	};
 
 execute:
 	newTask->runState = taskC::RUNNING;
-	currentTask = newTask;
-	// Jump to the newly pulled task.
+	currentTask = newTask;			
 	loadContextAndJump(newTask->context);
 }
 
@@ -223,9 +228,6 @@ taskC* taskStreamC::pullRoundRobinQ(void)
 {
 	taskC		*ret;
 	status_t	status;
-	cpuStreamC	*curCpu;
-
-	curCpu = cpuTrib.getCurrentCpuStream();
 
 	do
 	{

@@ -66,16 +66,15 @@ error_t timerQueueC::enable(void)
 		return ERROR_UNINITIALIZED;
 	};
 
-	stamp.seconds = 0;
-	stamp.nseconds = nativePeriod;
-
-	if (__KFLAG_TEST(
-		device->capabilities.modes, ZKCM_TIMERDEV_CAP_MODE_PERIODIC))
+	ret = device->setPeriodicMode(timeS(0, nativePeriod));
+	if (ret != ERROR_SUCCESS)
 	{
-		device->setPeriodicMode(stamp);
-	}
-	else {
-		device->setOneshotMode(stamp);
+		__kprintf(ERROR TIMERQUEUE"%dus: Failed to set periodic mode "
+			"on \"%s\".\n",
+			getNativePeriod() / 1000,
+			getDevice()->getBaseDevice()->shortName);
+
+		return ret;
 	};
 
 	ret = device->enable();
@@ -127,6 +126,8 @@ sarch_t timerQueueC::cancel(timerObjectS *obj)
 	return 1;
 }
 
+extern int breakOut;
+int nTicks=0;
 void timerQueueC::tick(zkcmTimerEventS *event)
 {
 	timerObjectS		*obj;
@@ -139,10 +140,23 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 	 * timer device.
 	 **/
 	obj = requestQueue.getHead();
-	if (obj->expirationStamp <= event->irqStamp)
+	if (obj == __KNULL)
 	{
-		__kprintf(NOTICE TIMERQUEUE"%dus: Event just expired.\n");
+		__kprintf(WARNING TIMERQUEUE"%dus: tick called on empty Q.\n",
+			getNativePeriod() / 1000);
+
+		return;
+	};
+
+nTicks++;
+__kprintf(NOTICE"Here 4. This means we're inside tick().\n");
+	if (/*obj->expirationStamp <= event->irqStamp*/ nTicks >500)
+	{
+		__kprintf(NOTICE TIMERQUEUE"%dus: Event just expired.\n",
+			getNativePeriod() / 1000);
+
 		disable();
+		breakOut=1;
 	};
 }
 

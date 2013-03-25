@@ -338,6 +338,39 @@ void timerTribC::eventProcessorS::processQueueUnlatchedMessage(messageS *msg)
 		msg->timerQueue->getNativePeriod() / 1000);
 }
 
+void timerTribC::eventProcessorS::processExitMessage(messageS *)
+{
+	__kprintf(WARNING TIMERTRIB"event DQer: Got EXIT_THREAD message.\n");
+	/*UNIMPLEMENTED(
+		"timerTribC::"
+		"eventProcessorS::processExitMessage");*/
+}
+
+void timerTribC::sendMessage(void)
+{
+	eventProcessorS::messageS	*msg;
+
+	// Posts an artificial message to the control queue.
+	msg = new eventProcessorS::messageS(
+		eventProcessorS::messageS::EXIT_THREAD, __KNULL);
+
+	eventProcessor.controlQueue.addItem(msg);
+}
+
+void timerTribC::sendQMessage(void)
+{
+	zkcmTimerEventS		*irqEvent;
+
+	irqEvent = period10ms.getDevice()->allocateIrqEvent();
+	irqEvent->device = period10ms.getDevice();
+	irqEvent->latchedStream = &processTrib.__kprocess.floodplainnStream;
+	zkcmCore.timerControl.refreshCachedSystemTime();
+	getCurrentTime(&irqEvent->irqStamp.time);
+	getCurrentDate(&irqEvent->irqStamp.date);
+
+	period10ms.getDevice()->getEventQueue()->addItem(irqEvent);
+}
+
 void timerTribC::eventProcessorS::thread(void *)
 {
 	eventProcessorS::messageS	*currMsg;

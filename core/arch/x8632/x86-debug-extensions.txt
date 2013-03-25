@@ -1,0 +1,25 @@
+**	Last branch recording facilities — Store branch records in the last branch
+	record (LBR) stack MSRs for the most recent taken branches, interrupts, and/or
+	exceptions in MSRs. A branch record consist of a branch-from and a branch-to
+	instruction address. Send branch records out on the system bus as branch trace
+	messages (BTMs).
+	These facilities allow a debugger to be called as a separate task or as a procedure in
+	the context of the current program or task. The following conditions can be used to
+	invoke the debugger:
+
+* Task switch to a specific task.
+* Execution of the breakpoint instruction.
+* Execution of any instruction.
+* Execution of an instruction at a specified address.
+* Read or write to a specified memory address/range.
+* Write to a specified memory address/range.
+* Input from a specified I/O address/range.
+* Output to a specified I/O address/range.
+* Attempt to change the contents of a debug register.
+
+Debug registers DR4 and DR5 are reserved when debug extensions are enabled
+(when the DE flag in control register CR4 is set) and attempts to reference the DR4
+and DR5 registers cause invalid-opcode exceptions (#UD). When debug extensions
+are not enabled (when the DE flag is clear), these registers are aliased to debug
+registers DR6 and DR7.
+
