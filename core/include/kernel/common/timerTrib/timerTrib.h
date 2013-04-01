@@ -18,6 +18,8 @@
 
 #define TIMERTRIB_WATCHDOG_ALREADY_REGISTERED	(1)
 
+#define TIMERTRIB_TIMERQS_NQUEUES		(10)
+
 class timerTribC
 :
 public tributaryC
@@ -66,7 +68,9 @@ public:
 	 *	ERROR_INVALID_ARG_VAL if an invalid arg is supplied.
 	 **/
 	error_t enableWaitingOnQueue(ubit32 nanos);
+	error_t enableWaitingOnQueue(timerQueueC *queue);
 	error_t disableWaitingOnQueue(ubit32 nanos);
+	error_t disableWaitingOnQueue(timerQueueC *queue);
 
 	/**	Pending redesign.
 	mstime_t	getCurrentTickMs(void);
@@ -107,8 +111,14 @@ private:
 
 	// Timestamp value for when this kernel instance was booted.
 	timestampS	bootTimestamp;
-	timerQueueC	period1s, period100ms, period10ms, period1ms;
+
+	timerQueueC	period1s, period100ms, period10ms, period1ms,
+			period100us, period10us, period1us,
+			period100ns, period10ns, period1ns;
+	timerQueueC	*timerQueues[TIMERTRIB_TIMERQS_NQUEUES];
 	ubit32		safePeriodMask;
+	ubit32		latchedPeriodMask;
+
 	uarch_t		flags;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
 

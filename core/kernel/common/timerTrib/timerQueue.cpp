@@ -174,6 +174,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 
 	// Queue an event on the wake-target process' Timer Stream.
 	targetProcess->timerStream.timerRequestTimeoutNotification(request);
+	delete request;
 
 	// For the case where the target process != creator process.
 	if (PROCID_PROCESS(request->creatorThreadId)

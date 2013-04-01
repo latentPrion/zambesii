@@ -15,7 +15,9 @@ timerTribC::timerTribC(void)
 :
 period1s(1000000000),
 period100ms(100000000), period10ms(10000000), period1ms(1000000),
-safePeriodMask(0),
+period100us(100000), period10us(10000), period1us(1000),
+period100ns(100), period10ns(10), period1ns(1),
+safePeriodMask(0), latchedPeriodMask(0),
 flags(0)
 {
 	memset(&watchdog.rsrc.interval, 0, sizeof(watchdog.rsrc.interval));
@@ -24,6 +26,18 @@ flags(0)
 		sizeof(watchdog.rsrc.nextFeedTime));
 
 	watchdog.rsrc.isr = __KNULL;
+
+	// Initialize the timer queue pointer array.
+	timerQueues[0] = &period1s;
+	timerQueues[1] = &period100ms;
+	timerQueues[2] = &period10ms;
+	timerQueues[3] = &period1ms;
+	timerQueues[4] = &period100us;
+	timerQueues[5] = &period10us;
+	timerQueues[6] = &period1us;
+	timerQueues[7] = &period100ns;
+	timerQueues[8] = &period10ns;
+	timerQueues[9] = &period1ns;
 }
 
 timerTribC::~timerTribC(void)
@@ -44,24 +58,15 @@ void timerTribC::initializeAllQueues(void)
 	 *
 	 * Run a filter that will return all chipset timers indiscriminately.
 	 **/
-	ret = period1s.initialize();
-	if (ret != ERROR_SUCCESS) {
-		__kprintf(ERROR TIMERTRIB"period1s initialize() failed.\n");
-	};
-
-	ret = period100ms.initialize();
-	if (ret != ERROR_SUCCESS) {
-		__kprintf(ERROR TIMERTRIB"period100ms initialize() failed.\n");
-	};
-
-	ret = period10ms.initialize();
-	if (ret != ERROR_SUCCESS) {
-		__kprintf(ERROR TIMERTRIB"period10ms initialize() failed.\n");
-	};
-
-	ret = period1ms.initialize();
-	if (ret != ERROR_SUCCESS) {
-		__kprintf(ERROR TIMERTRIB"period1ms initialize() failed.\n");
+	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
+	{
+		ret = timerQueues[i]->initialize();
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR TIMERTRIB"initializeAllQueues: Period "
+				"%dus failed to initialize.\n",
+				timerQueues[i]->getNativePeriod() / 1000);
+		};
 	};
 
 	dev = zkcmCore.timerControl.filterTimerDevices(
@@ -103,55 +108,27 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 	__kprintf(NOTICE TIMERTRIB"newTimerDevice: \"%s\"; min %d, max %d.\n",
 		dev->getBaseDevice()->shortName, min.nseconds, max.nseconds);
 
-	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_1S_SAFE
-		&& !period1s.isLatched()))
+	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
 	{
-		if (period1s.testTimerDeviceSuitability(dev))
+		if (!__KBIT_TEST(safePeriodMask, i)
+			|| timerQueues[i]->isLatched())
 		{
-			period1s.latch(dev);
-			enableWaitingOnQueue(1000000000);
+			continue;
+		};
+
+		if (timerQueues[i]->testTimerDeviceSuitability(dev))
+		{
+			timerQueues[i]->latch(dev);
+			enableWaitingOnQueue(timerQueues[i]);
 			return;
 		};
 	};
 
-	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_100MS_SAFE
-		&& !period100ms.isLatched()))
-	{
-		if (period100ms.testTimerDeviceSuitability(dev))
-		{
-			period100ms.latch(dev);
-			enableWaitingOnQueue(100000000);
-			return;
-		};
-	};
-
-	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_10MS_SAFE
-		&& !period10ms.isLatched()))
-	{
-		if (period10ms.testTimerDeviceSuitability(dev))
-		{
-			period10ms.latch(dev);
-			enableWaitingOnQueue(10000000);
-			return;
-		};
-	};
-
-	if (__KFLAG_TEST(safePeriodMask, TIMERCTL_1MS_SAFE
-		&& !period1ms.isLatched()))
-	{
-		if (period1ms.testTimerDeviceSuitability(dev))
-		{
-			period1ms.latch(dev);
-			enableWaitingOnQueue(1000000);
-			return;
-		};
-	};
 }
 
 error_t timerTribC::enableWaitingOnQueue(ubit32 nanos)
 {
 	timerQueueC			*queue;
-	eventProcessorS::messageS	*msg;
 
 	switch (nanos)
 	{
@@ -172,16 +149,39 @@ error_t timerTribC::enableWaitingOnQueue(ubit32 nanos)
 		break;
 
 	case 100000:
+		queue = &period100us;
+		break;
+
 	case 10000:
+		queue = &period10us;
+		break;
+
 	case 1000:
+		queue = &period1us;
+		break;
+
 	case 100:
+		queue = &period100ns;
+		break;
+
 	case 10:
+		queue = &period10ns;
+		break;
+
 	case 1:
-		return ERROR_UNSUPPORTED;
+		queue = &period1ns;
+		break;
 
 	default:
 		return ERROR_INVALID_ARG_VAL;
 	};
+
+	return enableWaitingOnQueue(queue);
+}
+
+error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
+{
+	eventProcessorS::messageS	*msg;
 
 	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
 
