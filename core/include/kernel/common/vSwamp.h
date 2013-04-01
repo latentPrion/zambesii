@@ -13,7 +13,7 @@
 
 class vSwampC
 {
-public: class holeMapS;
+public: struct holeMapS;
 private: struct swampS;
 
 public:

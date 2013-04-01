@@ -17,7 +17,7 @@
 	 * Each instantiated object must have a real hardware timer IRQ source
 	 * bound to it. A queue holds multiple timing service request objects,
 	 * all of which have an expiration time filled into them. These requests
-	 * are generated via syscalls to the Timer Tributary; a process can have
+	 * are generated via syscalls to the Timer Streams; a process can have
 	 * any number of pending timer requests, but the kernel will only allow
 	 * a single request from each process to actually be in the timer queues
 	 * at any given time. The rest of a process's timer requests are left on
@@ -48,7 +48,7 @@ class timerQueueC
 {
 friend void ::__korientationMain(void);
 friend class timerTribC;
-public:
+private:
 	timerQueueC(ubit32 nativePeriod)
 	:
 	currentPeriod(nativePeriod), nativePeriod(nativePeriod),
@@ -58,7 +58,7 @@ public:
 	error_t initialize(void) { return requestQueue.initialize(); }
 	~timerQueueC(void) {}
 
-public:
+private:
 	error_t latch(zkcmTimerDeviceC *device);
 	void unlatch(void);
 	sarch_t isLatched(void) { return device != __KNULL; };
@@ -96,7 +96,6 @@ public:
 	 **/
 	void tick(zkcmTimerEventS *timerIrqEvent);
 
-private:
 	/* Enables or disables the queue's underlying timer source. On
 	 * call to disable(), if there are objects waiting to be timed out and
 	 * dispatched on the queue, they will be allowed to time out and trigger
@@ -106,6 +105,7 @@ private:
 	 **/
 	error_t enable(void);
 	void disable(void);
+
 private:
 	// Specified in nanoseconds.
 	ubit32		currentPeriod, nativePeriod;

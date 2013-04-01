@@ -105,8 +105,10 @@ void interruptTribC::irqMain(taskContextC *regs)
 	irqPinDescriptorS	*pinDesc;
 	isrDescriptorS		*isrDesc;
 	void			*handle;
+	sarch_t			makeNoise=0;
 
-	if (regs->vectorNo != 253 && regs->vectorNo != 32)
+	if (regs->vectorNo != 253 && regs->vectorNo != 32) { makeNoise = 1; };
+	if (makeNoise)
 	{
 		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: CPU %d entered on "
 			"vector %d.\n",
@@ -124,7 +126,7 @@ void interruptTribC::irqMain(taskContextC *regs)
 		regs->vectorNo,
 		&__kpin, &triggerMode);
 
-	if (regs->vectorNo != 253 && regs->vectorNo != 32)
+	if (makeNoise)
 	{
 		__kprintf(NOTICE INTTRIB"irqMain: identifyActiveIrq returned %d, "
 			"__kpin %d, triggerMode %d.\n",
@@ -145,12 +147,15 @@ void interruptTribC::irqMain(taskContextC *regs)
 
 	default:
 		pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
-		__kprintf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on CPU %d.\n"
-			"\tDumping: %d unhandled, %d ISRs, %s triggered.\n",
-			__kpin, cpuTrib.getCurrentCpuStream()->cpuId,
-			pinDesc->nUnhandled, pinDesc->isrList.getNItems(),
-			(triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL)
-				? "level" : "edge");
+		if (makeNoise)
+		{
+			__kprintf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on CPU %d.\n"
+				"\tDumping: %d unhandled, %d ISRs, %s triggered.\n",
+				__kpin, cpuTrib.getCurrentCpuStream()->cpuId,
+				pinDesc->nUnhandled, pinDesc->isrList.getNItems(),
+				(triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL)
+					? "level" : "edge");
+		};
 
 		handle = __KNULL;
 		isrDesc = pinDesc->isrList.getNextItem(&handle);
@@ -212,7 +217,7 @@ void interruptTribC::irqMain(taskContextC *regs)
 		break;
 	};
 
-	if (regs->vectorNo != 253 && regs->vectorNo != 32)
+	if (makeNoise)
 	{
 		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: Exiting on CPU %d "
 			"vector %d.\n",

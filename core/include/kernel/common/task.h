@@ -67,7 +67,7 @@ public:
 	context(__KNULL),
 
 	internalPrio(CC"Custom", PRIOCLASS_DEFAULT),
-	schedPolicy(schedPolicy), schedFlags(0),
+	schedPolicy(ROUND_ROBIN), schedFlags(0),
 	runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
 
 	currentCpu(__KNULL),

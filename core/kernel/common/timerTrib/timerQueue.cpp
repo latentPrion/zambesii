@@ -98,21 +98,18 @@ void timerQueueC::disable(void)
 	device->disable();
 }
 
-error_t timerQueueC::insert(timerObjectS *obj)
+error_t timerQueueC::insert(timerObjectS *request)
 {
 	error_t		ret;
 
-	ret = requestQueue.addItem(obj, obj->expirationStamp);
+	ret = requestQueue.addItem(request, request->expirationStamp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	if (requestQueue.getNItems() == 1) {
-		return enable();
-	};
-
+	if (!device->isEnabled()) { return enable(); };
 	return ERROR_SUCCESS;
 }
 
-sarch_t timerQueueC::cancel(timerObjectS *obj)
+sarch_t timerQueueC::cancel(timerObjectS *request)
 {
 	/**	FIXME:
 	 * This function is intended to return 1 if the item being canceled was
@@ -122,15 +119,16 @@ sarch_t timerQueueC::cancel(timerObjectS *obj)
 	 *
 	 * Sadly, the list class doesn't return a value from removeItem().
 	 **/
-	requestQueue.removeItem(obj);
+	requestQueue.removeItem(request);
+	if (requestQueue.getNItems() == 0) { disable(); };
 	return 1;
 }
 
-extern int breakOut;
-int nTicks=0;
 void timerQueueC::tick(zkcmTimerEventS *event)
 {
-	timerObjectS		*obj;
+	timerObjectS	*request;
+	taskC		*targetTask;
+	processStreamC	*targetProcess, *creatorProcess;
 
 	/**	EXPLANATION
 	 * Get the request at the front of the queue, and if it's expired,
@@ -139,8 +137,8 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 	 * If the queue is emptied by the sequence, disable the underlying
 	 * timer device.
 	 **/
-	obj = requestQueue.getHead();
-	if (obj == __KNULL)
+	request = requestQueue.getHead();
+	if (request == __KNULL)
 	{
 		__kprintf(WARNING TIMERQUEUE"%dus: tick called on empty Q.\n",
 			getNativePeriod() / 1000);
@@ -148,15 +146,65 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		return;
 	};
 
-nTicks++;
-__kprintf(NOTICE"Here 4. This means we're inside tick().\n");
-	if (/*obj->expirationStamp <= event->irqStamp*/ nTicks >500)
-	{
-		__kprintf(NOTICE TIMERQUEUE"%dus: Event just expired.\n",
-			getNativePeriod() / 1000);
+	if (request->expirationStamp > event->irqStamp) { return; };
 
-		disable();
-		breakOut=1;
+	// Remove the item.
+	request = requestQueue.popFromHead();
+
+	// Can occur if the process exited before its object expired.
+	targetProcess = processTrib.getStream(request->wakeTargetThreadId);
+	if (targetProcess == __KNULL)
+	{
+		__kprintf(WARNING TIMERQUEUE"%dus: wake target process 0x%x "
+			"does not exist.\n",
+			getNativePeriod() / 1000, request->wakeTargetThreadId);
+
+		return;
 	};
+
+	// Can occur if the thread exited before its object expired.
+	targetTask = targetProcess->getTask(request->wakeTargetThreadId);
+	if (targetTask == __KNULL)
+	{
+		__kprintf(WARNING TIMERQUEUE"%dus: Inexistent thread 0x%x.\n",
+			getNativePeriod() / 1000, request->wakeTargetThreadId);
+
+		return;
+	};
+
+	// Queue an event on the wake-target process' Timer Stream.
+	targetProcess->timerStream.timerRequestTimeoutNotification(request);
+
+	// For the case where the target process != creator process.
+	if (PROCID_PROCESS(request->creatorThreadId)
+		!= PROCID_PROCESS(request->wakeTargetThreadId))
+	{
+		creatorProcess = processTrib.getStream(
+			request->creatorThreadId);
+
+		if (creatorProcess == __KNULL)
+		{
+			__kprintf(WARNING TIMERQUEUE"%dus: Inexistent creating "
+				"process 0x%x for timer queue request.\n",
+				getNativePeriod() / 1000,
+				request->creatorThreadId);
+		}
+		else
+		{
+			// Makes the process insert its next request into the Qs
+			creatorProcess->timerStream
+				.timerRequestTimeoutNotification();
+		};
+	}
+	else
+	{
+		// Makes the process insert its next request into the Qs.
+		targetProcess->timerStream.timerRequestTimeoutNotification();
+	};
+
+	// Disable the queue if it's empty; halt unnecessary IRQ load.
+	if (requestQueue.getHead() == __KNULL) { disable(); };
+	// Unblock the target thread.
+	taskTrib.unblock(targetTask);
 }
 

@@ -22,6 +22,8 @@ class timerTribC
 :
 public tributaryC
 {
+friend class zkcmTimerControlModC;
+friend class timerStreamC;
 friend void ::__korientationMain(void);
 public:
 	timerTribC(void);
@@ -32,9 +34,6 @@ public:
 	status_t registerWatchdogIsr(zkcmIsrFn *, timeS interval);
 	void updateWatchdogInterval(timeS interval);
 	void unregisterWatchdogIsr(void);
-
-	// Called by ZKCM Timer Control when a new timer device is detected.
-	void newTimerDeviceNotification(zkcmTimerDeviceC *dev);
 
 	/**	Deprecated in lieu of redesign.
 	void updateContinuousClock(void);
@@ -82,6 +81,19 @@ public:
 	// Artifacts from debugging.
 	void sendMessage(void);
 	void sendQMessage(void);
+
+private:
+	// Called by ZKCM Timer Control when a new timer device is detected.
+	void newTimerDeviceNotification(zkcmTimerDeviceC *dev);
+
+	// Called by Timer Streams to add new Timer Request objects to timer Qs.
+	error_t insertTimerQueueRequestObject(timerObjectS *request)
+	{
+		return period10ms.insert(request);
+	}
+
+	// Called by Timer Streams to cancel Timer Request objects from Qs.
+	sarch_t cancelTimerQueueRequestObject(timerObjectS *request);
 
 private:
 	// The watchdog timer for the chipset, if it exists.

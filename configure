@@ -27,7 +27,7 @@ read hllToolchain
 echo
 
 if [ -z $hllToolchain ]; then echo 'Null string is invalid input.'; exit 1; fi;
-if [ $hllToolchain != 'gnu' ]; then
+if [ "$hllToolchain" != 'gnu' -a "$hllToolchain" != 'llvm' ]; then
 	echo "Invalid toolchain '$hllToolchain'."
 	exit 1
 fi
@@ -38,7 +38,7 @@ read assembler
 echo
 
 if [ -z $assembler ]; then echo 'Null string is invalid input.'; exit 2; fi;
-if [ $assembler != 'gnu' ]; then
+if [ $assembler != 'gnu' -a "$assembler" != 'llvm' ]; then
 	echo "Invalid assembler toolchain '$assembler'."
 	exit 2
 fi
@@ -49,7 +49,7 @@ read linker
 echo
 
 if [ -z $linker ]; then echo 'Null string is invalid input.'; exit 3; fi;
-if [ $linker != 'gnu' ]; then
+if [ $linker != 'gnu' -a "$linker" != 'llvm' ]; then
 	echo "Invalid toolchain '$linker'."
 	exit 3
 fi
@@ -118,12 +118,38 @@ if [ $hllToolchain == 'gnu' ]; then
 	fi
 fi
 
+if [ $hllToolchain == 'llvm' ]; then
+	hllCxxAbi='icxxabi'
+
+	if [ -z $toolchainTarget ]; then
+		hllCc='clang -###'
+		hllCxx='clang++ -###'
+		hllCpp='clang -E -###'
+	else
+		hllCc="clang -ccc-host-triple $toolchainTarget"
+		hllCxx="clang++ -ccc-host-triple $toolchainTarget"
+		hllCpp="clang -ccc-host-triple $toolchainTarget -E"
+	fi
+fi
+
 if [ $assembler == 'gnu' ]; then
 	if [ -z $toolchainTarget ]; then assembler='as'; else assembler="$toolchainTarget-as"; fi
 fi
 
+if [ $assembler == 'llvm' ]; then
+	if [ -z $toolchainTarget ]; then
+		assembler='llvm-as-3.0'; else assembler="llvm-as-3.0 -ccc-host-triple $toolchainTarget";
+	fi
+fi
+
 if [ $linker == 'gnu' ]; then
 	if [ -z $toolchainTarget ]; then linker='ld'; else linker="$toolchainTarget-ld"; fi
+fi
+
+if [ $linker == 'llvm' ]; then
+	if [ -z $toolchainTarget ]; then
+		linker='llvm-ld-3.0'; else linker="llvm-ld-3.0 -ccc-host-triple $toolchainTarget";
+	fi
 fi
 
 # We pass a non-existent file as an argument to ensure that tools that read from

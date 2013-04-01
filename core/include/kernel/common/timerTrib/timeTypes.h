@@ -199,8 +199,9 @@ struct timestampS
 struct timerObjectS
 {
 	enum objectTypeE { PERIODIC=1, ONESHOT } type;
-	// Process and threadID to wake up when this object expires.
-	processId_t		thread;
+	// ThreadID to wake up when this object expires.
+	processId_t		creatorThreadId, wakeTargetThreadId;
+	void			*privateData;
 	timestampS		expirationStamp, placementStamp;
 };
 

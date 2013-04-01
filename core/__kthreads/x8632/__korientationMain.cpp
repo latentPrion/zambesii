@@ -106,11 +106,10 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 }
 
-int breakOut=0;
-ubit32		testMem;
 void __korientationMain(void)
 {
-	error_t		ret;
+	error_t			ret;
+	timerStreamC::eventS	event;
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
 	 * then load the chipset's bus-pin mappings and initialize timer
@@ -121,38 +120,22 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
-	timerObjectS	to;
-	to.type = timerObjectS::ONESHOT;
-	to.thread = 0x2;
-	zkcmCore.timerControl.refreshCachedSystemTime();
-	timerTrib.getCurrentTime(&to.placementStamp.time);
-	timerTrib.getCurrentDate(&to.placementStamp.date);
+	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
+		timestampS(0, 5, 0),
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
+		__KNULL, 0);
 
-	to.expirationStamp = to.placementStamp;
-	to.expirationStamp.time.seconds += 5;
+	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
+		timestampS(0, 10, 0),
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
+		__KNULL, 0);
 
-	ubit8		h, m, s;
-	h = to.expirationStamp.time.seconds / 3600;
-	m = (to.expirationStamp.time.seconds / 60) - (h * 60);
-	s = to.expirationStamp.time.seconds % 60;
+	processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
+	__kprintf(NOTICE ORIENT"Timer event 0 just expired successfully!\n");
+	processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
+	__kprintf(NOTICE ORIENT"Timer event 1 just expired successfully!\n");
 
-	__kprintf(NOTICE TIMERTRIB"Test object expiration stamp: Date: %d-%d-%d, "
-		"Time %d:%d:%d, %dus.\n",
-		to.expirationStamp.date.year,
-		to.expirationStamp.date.month,
-		to.expirationStamp.date.day,
-		h, m, s, to.expirationStamp.time.nseconds / 1000);
-
-	timerTrib.period10ms.insert(&to);
-	for (;breakOut==0;)
-	{
-		//timerTrib.sendQMessage();
-		__kprintf(NOTICE"yielding.\n");
-		taskTrib.yield();
-	};
-
-for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOTICE ORIENT"Escaped HLT, re-entering.\n")) { asm volatile("cli\n\thlt\n\t"); };
-
+for (__kprintf(NOTICE ORIENT"Reached HLT in Orientation Main.\n");;__kprintf(NOTICE ORIENT"Escaped HLT, re-entering.\n")) { asm volatile("hlt\n\t"); };
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 

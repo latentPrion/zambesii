@@ -47,13 +47,16 @@ private:
 	{
 	friend class prioQueueC;
 	public:
+		// fine.
 		queueC(ubit16 prio, slamCacheC *cache)
 		:
 		prio(prio), nodeCache(cache)
 		{}
 
+		// fine.
 		error_t initialize(void) { return ERROR_SUCCESS; }
 
+		// fine.
 		~queueC(void)
 		{
 			queueNodeS	*tmp, *curr;
@@ -75,6 +78,7 @@ private:
 		T2 *pop(void);
 		void remove(T2 *item);
 
+		// fine.
 		inline uarch_t getNItems(void)
 		{
 			uarch_t		ret;
@@ -89,7 +93,6 @@ private:
 		void dump(void);
 
 	private:
-		ubit16 prio;
 		struct queueNodeS
 		{
 			T2		*item;
@@ -107,6 +110,7 @@ private:
 			queueNodeS	*head, *tail;
 		};
 
+		ubit16 prio;
 		sharedResourceGroupC<waitLockC, queueStateS>	q;
 		slamCacheC		*nodeCache;
 	};
@@ -123,6 +127,7 @@ private:
 /**	Template definition and inline methods for prioQueueC.
  *****************************************************************************/
 
+// fine.
 template <class T>
 error_t prioQueueC<T>::initialize(void)
 {
@@ -158,6 +163,7 @@ error_t prioQueueC<T>::initialize(void)
 	return ERROR_SUCCESS;
 }
 
+// Safe.
 template <class T>
 inline error_t prioQueueC<T>::insert(T *item, ubit16 prio, ubit32 opt)
 {
@@ -180,6 +186,7 @@ inline error_t prioQueueC<T>::insert(T *item, ubit16 prio, ubit32 opt)
 	return ERROR_SUCCESS;
 }
 
+// fine.
 template <class T>
 T *prioQueueC<T>::pop(void)
 {
@@ -195,8 +202,6 @@ T *prioQueueC<T>::pop(void)
 	};
 
 	qId = headQueue.rsrc;
-
-	headQueue.lock.release();
 	ret = queues[qId].pop();
 
 	if (queues[qId].getNItems() == 0)
@@ -207,7 +212,6 @@ T *prioQueueC<T>::pop(void)
 			if (i == qId) { continue; };
 			if (queues[i].getNItems() > 0)
 			{
-				headQueue.lock.acquire();
 				headQueue.rsrc = i;
 				headQueue.lock.release();
 
@@ -215,16 +219,17 @@ T *prioQueueC<T>::pop(void)
 			};
 		};
 
-		headQueue.lock.acquire();
 		headQueue.rsrc = -1;
 		headQueue.lock.release();
 
 		return ret;
 	};
 
+	headQueue.lock.release();
 	return ret;
 }
 
+// safe.
 template <class T>
 inline void prioQueueC<T>::remove(T *item, ubit16 prio)
 {
@@ -268,7 +273,7 @@ inline void prioQueueC<T>::dump(void)
 
 /** Template definition and methods for prioQueueC::queueC.
  ******************************************************************************/
-
+// safe.
 template <class T> template <class T2>
 error_t prioQueueC<T>::queueC<T2>::insert(T2 *item, ubit32 opt)
 {
@@ -282,6 +287,7 @@ error_t prioQueueC<T>::queueC<T2>::insert(T2 *item, ubit32 opt)
 
 	if (__KFLAG_TEST(opt, PRIOQUEUE_INSERT_FRONT))
 	{
+		// safe.
 		tmp->next = q.rsrc.head;
 		q.rsrc.head = tmp;
 		if (q.rsrc.tail == __KNULL) {
@@ -290,6 +296,7 @@ error_t prioQueueC<T>::queueC<T2>::insert(T2 *item, ubit32 opt)
 	}
 	else
 	{
+		// safe.
 		tmp->next = __KNULL;
 		if (q.rsrc.tail != __KNULL) {
 			q.rsrc.tail->next = tmp;
@@ -305,6 +312,7 @@ error_t prioQueueC<T>::queueC<T2>::insert(T2 *item, ubit32 opt)
 	return ERROR_SUCCESS;
 }
 
+// safe.
 template <class T> template <class T2>
 T2 *prioQueueC<T>::queueC<T2>::pop(void)
 {
@@ -334,6 +342,7 @@ T2 *prioQueueC<T>::queueC<T2>::pop(void)
 	return ret;
 }
 
+// safe.
 template <class T> template <class T2>
 void prioQueueC<T>::queueC<T2>::remove(T2 *item)
 {

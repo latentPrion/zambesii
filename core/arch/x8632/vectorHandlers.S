@@ -135,11 +135,14 @@ ASM_GLOBAL_FUNCTION(saveContextAndCallPull)
 	pushf
 	movl	(%esp), %eax
 	movl	%eax, 12(%esp)
+	movl	8(%esp), %eax
+	movl	%eax, (%esp)	
 	xor	%eax, %eax
 	movw	%cs, %ax
 	movl	%eax, 8(%esp)
+	popl	%eax
 
-	subl	$4, %esp
+	subl	$8, %esp
 
 	pushal
 

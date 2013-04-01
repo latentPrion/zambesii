@@ -171,30 +171,23 @@ void taskStreamC::pull(void)
 {
 	taskC		*newTask;
 
-	newTask = pullRealTimeQ();
-	if (newTask != __KNULL) {
-		goto execute;
-	};
-
-	newTask = pullRoundRobinQ();
-	if (newTask != __KNULL) {
-		goto execute;
-	};
-
-	// Else set the CPU to a low power state.
 	for (;;)
 	{
-		cpuControl::disableInterrupts();
-		__kprintf(NOTICE TASKSTREAM"%d: Entering C1.\n", parentCpu->id);
-		roundRobinQ.dump();
-		__kprintf(NOTICE"Current task 0x%x, vaddr 0x%p.\n",
-			cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
-			cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+		newTask = pullRealTimeQ();
+		if (newTask != __KNULL) {
+			break;
+		};
 
+		newTask = pullRoundRobinQ();
+		if (newTask != __KNULL) {
+			break;
+		};
+
+		// Else set the CPU to a low power state.
+//		__kprintf(NOTICE TASKSTREAM"%d: Entering C1.\n", parentCpu->id);
 		cpuControl::halt();
 	};
 
-execute:
 	newTask->runState = taskC::RUNNING;
 	currentTask = newTask;			
 	loadContextAndJump(newTask->context);
