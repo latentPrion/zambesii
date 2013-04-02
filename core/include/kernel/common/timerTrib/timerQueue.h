@@ -46,7 +46,7 @@ class timerTribC;
 
 class timerQueueC
 {
-friend void ::__korientationMain(void);
+friend class zkcmTimerControlModC;
 friend class timerTribC;
 private:
 	timerQueueC(ubit32 nativePeriod)
@@ -95,6 +95,15 @@ private:
 	 * event (if any).
 	 **/
 	void tick(zkcmTimerEventS *timerIrqEvent);
+
+	// Timekeeper call-in routine prototype, which chipsets must conform to.
+	typedef void (timeKeeperRoutineFn)(ubit32 tickGranularity);
+
+	/* These two are back-ends for the methods declared in timerTribC.
+	 **/
+	error_t installTimeKeeperRoutine(timeKeeperRoutineFn *routine);
+	// Returns 1 if a routine was installed and actually removed.
+	sarch_t uninstallTimeKeeperRoutine(void);
 
 	/* Enables or disables the queue's underlying timer source. On
 	 * call to disable(), if there are objects waiting to be timed out and

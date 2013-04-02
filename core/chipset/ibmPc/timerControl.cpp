@@ -13,6 +13,7 @@
 #define IBMPC_TIMERCTL		"Timer Control: "
 
 ptrListC<zkcmTimerDeviceC>	timers;
+sharedResourceGroupC<multipleReaderLockC, timestampS>	systemTime;
 
 error_t zkcmTimerControlModC::initialize(void)
 {

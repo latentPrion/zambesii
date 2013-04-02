@@ -109,12 +109,12 @@ private:
 	 * the chipset is keeping time, and that when it calls getCurrentTime(),
 	 * the correct time will be returned.
 	 **/
-	ubit32 getLatchedTimerQueueMask(void);
+	ubit32 getLatchedTimerQueueMask(void) { return latchedPeriodMask; };
 
-	// Timekeeper call-in routine prototype, which chipsets must conform to.
-	typedef void (timeKeeperRoutineFn)(ubit32 tickGranularity);
 	error_t installTimeKeeperRoutine(
-		ubit32 chosenTimerQueue, timeKeeperRoutineFn *routine);
+		ubit32 chosenTimerQueue,
+		// This typedef is declared in the timerQueueC header.
+		timerQueueC::timeKeeperRoutineFn *routine);
 
 	// Returns 1 if a routine was installed and actually removed.
 	sarch_t uninstallTimeKeeperRoutine(void);
