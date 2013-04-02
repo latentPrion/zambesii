@@ -43,6 +43,7 @@ public:
 
 	void getCurrentTime(timeS *t);
 	void getCurrentDate(dateS *d);
+	void getCurrentDateTime(timestampS *stamp);
 
 	/**	EXPLANATION:
 	 * Called by timer device drivers from IRQ context to let the kernel
@@ -145,6 +146,7 @@ private:
 	ubit32		latchedPeriodMask;
 
 	uarch_t		flags;
+	sbit32		timekeeperQueueId;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
 
 	// The event processing thread's state information.

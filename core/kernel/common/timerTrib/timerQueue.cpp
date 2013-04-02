@@ -131,12 +131,19 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 	processStreamC	*targetProcess, *creatorProcess;
 
 	/**	EXPLANATION
+	 * If this timer queue is being used to emulate system timekeeping,
+	 * call the timekeeper routine to update system time, and then:
+	 *
 	 * Get the request at the front of the queue, and if it's expired,
 	 * queue an event on the originating process' Timer Stream.
 	 *
 	 * If the queue is emptied by the sequence, disable the underlying
 	 * timer device.
 	 **/
+	if (timeKeeperRoutine != __KNULL) {
+		(*timeKeeperRoutine)(getCurrentPeriod());
+	};
+
 	request = requestQueue.getHead();
 	if (request == __KNULL)
 	{

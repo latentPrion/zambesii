@@ -22,6 +22,11 @@ namespace atomicAsm
 
 	inline sarch_t exchange(volatile sarch_t *lock, sarch_t val);
 	inline void set(volatile sarch_t *lock, sarch_t val);
+	inline void set(volatile uarch_t *lock, uarch_t val)
+	{
+		set((sarch_t *)lock, (sarch_t)val);
+	}
+
 	inline sarch_t exchangeAndAdd(
 		volatile sarch_t *ptr1, sarch_t *ptr2, sarch_t val);
 

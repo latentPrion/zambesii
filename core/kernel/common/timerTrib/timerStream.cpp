@@ -71,9 +71,7 @@ error_t timerStreamC::createOneshotEvent(
 	 **/
 	request->wakeTargetThreadId = wakeTargetThreadId;
 
-	zkcmCore.timerControl.refreshCachedSystemTime();
-	timerTrib.getCurrentTime(&request->placementStamp.time);
-	timerTrib.getCurrentDate(&request->placementStamp.date);
+	timerTrib.getCurrentDateTime(&request->placementStamp);
 
 	if (type == TIMERSTREAM_CREATEONESHOT_TYPE_RELATIVE)
 	{

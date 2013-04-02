@@ -105,7 +105,6 @@
 static ubit8		rtccmosIsPowered=0;
 static ubit8		rtccmos24HourTime=0;
 static ubit8		rtccmosBcdDateTime=0;
-static sharedResourceGroupC<waitLockC, timestampS>	systemTime;
 waitLockC		rtccmosLock;
 static ubit8		rtccmosDateCenturyChecked=0;
 static ubit8		rtccmosDateCenturyOffset=0;
@@ -255,8 +254,6 @@ error_t ibmPc_rtc_initialize(void)
 		__kprintf(WARNING RTCCMOS"Date/Time is not in BCD. Possibly "
 			"unstable or non-compliant chip.\n");
 	};
-
-	memset(&systemTime.rsrc, 0, sizeof(systemTime.rsrc));
 
 	return ERROR_SUCCESS;
 }
@@ -422,38 +419,5 @@ status_t ibmPc_rtc_getHardwareTime(timeS *time)
 	time->seconds = hour * 3600 + min * 60 + sec;
 	time->nseconds = 0;
 	return ERROR_SUCCESS;
-}
-
-void zkcmTimerControlModC::refreshCachedSystemTime(void)
-{
-	systemTime.lock.acquire();
-
-	ibmPc_rtc_getHardwareDate(&systemTime.rsrc.date);
-	ibmPc_rtc_getHardwareTime(&systemTime.rsrc.time);
-
-	systemTime.lock.release();
-}
-
-status_t zkcmTimerControlModC::getCurrentDate(dateS *date)
-{
-	systemTime.lock.acquire();
-	*date = systemTime.rsrc.date;
-	systemTime.lock.release();
-
-	return ERROR_SUCCESS;
-}
-
-status_t zkcmTimerControlModC::getCurrentTime(timeS *time)
-{
-	systemTime.lock.acquire();
-	*time = systemTime.rsrc.time;
-	systemTime.lock.release();
-
-	return ERROR_SUCCESS;
-}
-
-void zkcmTimerControlModC::flushCachedSystemTime(void)
-{
-	UNIMPLEMENTED("zkcmTimerControlModC::flushCachedSystemTime()");
 }
 

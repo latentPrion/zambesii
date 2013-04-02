@@ -1,6 +1,7 @@
 #ifndef _TIMER_QUEUE_H
 	#define _TIMER_QUEUE_H
 
+	#include <arch/atomic.h>
 	#include <chipset/zkcm/timerDevice.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/sortedPtrDoubleList.h>
@@ -52,7 +53,7 @@ private:
 	timerQueueC(ubit32 nativePeriod)
 	:
 	currentPeriod(nativePeriod), nativePeriod(nativePeriod),
-	device(__KNULL)
+	device(__KNULL), timeKeeperRoutine(__KNULL)
 	{}
 
 	error_t initialize(void) { return requestQueue.initialize(); }
@@ -101,9 +102,20 @@ private:
 
 	/* These two are back-ends for the methods declared in timerTribC.
 	 **/
-	error_t installTimeKeeperRoutine(timeKeeperRoutineFn *routine);
+	error_t installTimeKeeperRoutine(timeKeeperRoutineFn *routine)
+	{
+		atomicAsm::set((uarch_t *)&timeKeeperRoutine, (uarch_t)routine);
+		return ERROR_SUCCESS;
+	}
 	// Returns 1 if a routine was installed and actually removed.
-	sarch_t uninstallTimeKeeperRoutine(void);
+	sarch_t uninstallTimeKeeperRoutine(void)
+	{
+		sarch_t		ret;
+
+		ret = timeKeeperRoutine != __KNULL;
+		atomicAsm::set((uarch_t *)&timeKeeperRoutine, __KNULL);
+		return ret;
+	}
 
 	/* Enables or disables the queue's underlying timer source. On
 	 * call to disable(), if there are objects waiting to be timed out and
@@ -122,6 +134,7 @@ private:
 	// The actual internal queue instance for timer request objects.
 	sortedPointerDoubleListC<timerObjectS, timestampS>	requestQueue;
 	zkcmTimerDeviceC	*device;
+	timeKeeperRoutineFn	*timeKeeperRoutine;
 };
 
 #endif

@@ -18,7 +18,8 @@ period100ms(100000000), period10ms(10000000), period1ms(1000000),
 period100us(100000), period10us(10000), period1us(1000),
 period100ns(100), period10ns(10), period1ns(1),
 safePeriodMask(0), latchedPeriodMask(0),
-flags(0)
+flags(0),
+timekeeperQueueId(-1)
 {
 	memset(&watchdog.rsrc.interval, 0, sizeof(watchdog.rsrc.interval));
 	memset(
@@ -42,6 +43,28 @@ flags(0)
 
 timerTribC::~timerTribC(void)
 {
+}
+
+error_t timerTribC::installTimeKeeperRoutine(
+	ubit32 chosenTimerQueue, timerQueueC::timeKeeperRoutineFn *routine
+	)
+{
+	for (ubit8 i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
+	{
+		if (!__KBIT_TEST(chosenTimerQueue, i)) { continue; };
+
+		timekeeperQueueId = i;
+		return timerQueues[i]->installTimeKeeperRoutine(routine);
+	};
+
+	return ERROR_FATAL;
+}
+
+sarch_t timerTribC::uninstallTimeKeeperRoutine(void)
+{
+	if (timekeeperQueueId == -1) { return 0; };
+
+	return timerQueues[timekeeperQueueId]->uninstallTimeKeeperRoutine();
 }
 
 void timerTribC::initializeAllQueues(void)
@@ -252,7 +275,7 @@ error_t timerTribC::insertTimerQueueRequestObject(timerObjectS *request)
 }
 
 // Called by Timer Streams to cancel Timer Request objects from Qs.
-sarch_t timerTribC::cancelTimerQueueRequestObject(timerObjectS *request)
+sarch_t timerTribC::cancelTimerQueueRequestObject(timerObjectS * /*request*/)
 {
 	return 1;
 }
@@ -282,12 +305,11 @@ error_t timerTribC::initialize(void)
 	 * value from the hardware clock, so we can get a relatively accurate
 	 * boot timestamp value.
 	 **/
-	zkcmCore.timerControl.refreshCachedSystemTime();
+	zkcmCore.timerControl.refreshCachedSystemDateTime();
 	/* We take the time value first because the date value is unlikely to
 	 * change in the next few milliseconds.
 	 **/
-	zkcmCore.timerControl.getCurrentTime(&bootTimestamp.time);
-	zkcmCore.timerControl.getCurrentDate(&bootTimestamp.date);
+	zkcmCore.timerControl.getCurrentDateTime(&bootTimestamp);
 
 	// TODO: Add %D and %T to debugPipe.printf() for date/time printing.
 	h = bootTimestamp.time.seconds / 3600;
@@ -331,6 +353,7 @@ error_t timerTribC::initialize(void)
 	taskTrib.wake(eventProcessor.task);
 
 	initializeAllQueues();
+	zkcmCore.timerControl.timerQueuesInitializedNotification();
 	return ERROR_SUCCESS;
 }
 
@@ -342,6 +365,11 @@ void timerTribC::getCurrentTime(timeS *t)
 void timerTribC::getCurrentDate(dateS *d)
 {
 	zkcmCore.timerControl.getCurrentDate(d);
+}
+
+void timerTribC::getCurrentDateTime(timestampS *stamp)
+{
+	zkcmCore.timerControl.getCurrentDateTime(stamp);
 }
 
 sarch_t timerTribC::eventProcessorS::getFreeWaitSlot(ubit8 *ret)
@@ -427,7 +455,6 @@ void timerTribC::sendQMessage(void)
 	irqEvent = period10ms.getDevice()->allocateIrqEvent();
 	irqEvent->device = period10ms.getDevice();
 	irqEvent->latchedStream = &processTrib.__kprocess.floodplainnStream;
-	zkcmCore.timerControl.refreshCachedSystemTime();
 	getCurrentTime(&irqEvent->irqStamp.time);
 	getCurrentDate(&irqEvent->irqStamp.date);
 

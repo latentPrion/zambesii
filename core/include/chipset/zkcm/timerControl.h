@@ -83,11 +83,13 @@ public:
 
 	status_t getCurrentDate(dateS *date);
 	status_t getCurrentTime(timeS *currTime);
+	status_t getCurrentDateTime(timestampS *stamp);
+
 	/* The chipset may cache the sytem time in RAM, and not actually be
 	 * reading from the hardware clock on time API calls. This updates the
 	 * the cached RAM value by reading from the hardware clock anew.
 	 **/
-	void refreshCachedSystemTime(void);
+	void refreshCachedSystemDateTime(void);
 	/* The chipset may cache the system time in RAM, and not actually be
 	 * updating the hardware clock when the system time value in RAM
 	 * changes. This is especially so in situations where the hardware
@@ -96,7 +98,7 @@ public:
 	 *
 	 * This function flushes the cached RAM value to the hardware clock.
 	 **/
-	void flushCachedSystemTime(void);
+	void flushCachedSystemDateTime(void);
 
 	/**	EXPLANATION:
 	 * This is the timer source search and filter API. It allows the caller
@@ -132,6 +134,8 @@ public:
 	 **/
 	error_t registerNewTimerDevice(zkcmTimerDeviceC *device);
 	error_t unregisterTimerDevice(zkcmTimerDeviceC *device, uarch_t flags);
+
+	void timerQueuesInitializedNotification(void);
 };
 
 #endif
