@@ -121,12 +121,12 @@ void __korientationMain(void)
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
 	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 5, 0),
+		timestampS(0, 0, 1000000),
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
 		__KNULL, 0);
 
 	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 10, 0),
+		timestampS(0, 0, 2000000),
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
 		__KNULL, 0);
 

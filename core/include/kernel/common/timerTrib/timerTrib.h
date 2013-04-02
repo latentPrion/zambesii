@@ -91,11 +91,7 @@ private:
 	void newTimerDeviceNotification(zkcmTimerDeviceC *dev);
 
 	// Called by Timer Streams to add new Timer Request objects to timer Qs.
-	error_t insertTimerQueueRequestObject(timerObjectS *request)
-	{
-		return period10ms.insert(request);
-	}
-
+	error_t insertTimerQueueRequestObject(timerObjectS *request);
 	// Called by Timer Streams to cancel Timer Request objects from Qs.
 	sarch_t cancelTimerQueueRequestObject(timerObjectS *request);
 

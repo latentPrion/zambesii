@@ -118,7 +118,17 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 
 		if (timerQueues[i]->testTimerDeviceSuitability(dev))
 		{
-			timerQueues[i]->latch(dev);
+			if (timerQueues[i]->latch(dev) != ERROR_SUCCESS)
+			{
+				__kprintf(WARNING TIMERTRIB
+					"newTimerDeviceNotification: Queue %d"
+					"ns failed to latch.\n",
+					timerQueues[i]->getNativePeriod());
+
+				continue;
+			};
+
+			__KBIT_SET(latchedPeriodMask, i);
 			enableWaitingOnQueue(timerQueues[i]);
 			return;
 		};
@@ -192,6 +202,59 @@ error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
 	if (msg == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
 	return eventProcessor.controlQueue.addItem(msg);
+}
+
+error_t timerTribC::insertTimerQueueRequestObject(timerObjectS *request)
+{
+	timerQueueC	*suboptimal=__KNULL;
+
+	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
+	{
+		// Skip queues that aren't latched to a device.
+		if (!__KBIT_TEST(latchedPeriodMask, i)) { continue; };
+
+		suboptimal = timerQueues[i];
+
+		// Temporarily add the queue's period to the placement time.
+		request->placementStamp.time.nseconds
+			+= timerQueues[i]->getNativePeriod();
+
+		/* If the object's timeout will be exceeded by placing it into
+		 * this queue, skip the queue.
+		 **/
+		if (request->placementStamp > request->expirationStamp)
+		{
+			// Reset the change before continuing.
+			request->placementStamp.time.nseconds
+				-= timerQueues[i]->getNativePeriod();
+
+			continue;
+		};
+
+		// Same as above: reset the change to placementStamp.
+		request->placementStamp.time.nseconds
+			-= timerQueues[i]->getNativePeriod();
+
+		// Else, the request can spend at least one tick in this queue.
+		return timerQueues[i]->insert(request);
+	};
+
+	if (suboptimal == __KNULL)
+	{
+		__kprintf(FATAL TIMERTRIB"No timer queues are latched.\n");
+		return ERROR_FATAL;
+	};
+
+	__kprintf(WARNING TIMERTRIB"Request placed into suboptimal queue %dus."
+		"\n", suboptimal->getNativePeriod() / 1000);
+
+	return suboptimal->insert(request);
+}
+
+// Called by Timer Streams to cancel Timer Request objects from Qs.
+sarch_t timerTribC::cancelTimerQueueRequestObject(timerObjectS *request)
+{
+	return 1;
 }
 
 error_t timerTribC::initialize(void)
