@@ -50,8 +50,8 @@ ubit32 zkcmTimerControlModC::getChipsetSafeTimerPeriods(void)
 	 * kernel won't support nanosecond resolution on the IBM-PC until the
 	 * industry has securely moved in that direction.
 	 **/
-	return TIMERCTL_1S_SAFE
-		| TIMERCTL_100MS_SAFE | TIMERCTL_10MS_SAFE
+	return /*TIMERCTL_1S_SAFE
+		| */TIMERCTL_100MS_SAFE | TIMERCTL_10MS_SAFE
 		| TIMERCTL_1MS_SAFE;
 }
 
