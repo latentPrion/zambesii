@@ -90,6 +90,35 @@ private:
 	// Called by ZKCM Timer Control when a new timer device is detected.
 	void newTimerDeviceNotification(zkcmTimerDeviceC *dev);
 
+	/* Called by ZKCM Timer Control to ask the chipset for a mask of latched
+	 * timer queues. This is only called by chipsets which emulate
+	 * timekeeping in software (such as the IBM-PC).
+	 *
+	 * The chipset uses the bitmask of latched queues to determine which
+	 * queue it would like to use to update the system clock. If for
+	 * example, timekeeping on that chipset is best done to the accuracy of
+	 * say, 1ms, the chipset would choose to use the 1ms period timer queue
+	 * (if it's been latched) for timekeeping.
+	 *
+	 * The chipset will then install a routine on its chosen timer queue
+	 * which will be called every time that queue tick()s. This routine is
+	 * installed via installTimeKeeperRoutine().
+	 *
+	 * The kernel proper does not care whether or not timekeeping is being
+	 * emulated in software; it simply assumes that some clock device on
+	 * the chipset is keeping time, and that when it calls getCurrentTime(),
+	 * the correct time will be returned.
+	 **/
+	ubit32 getLatchedTimerQueueMask(void);
+
+	// Timekeeper call-in routine prototype, which chipsets must conform to.
+	typedef void (timeKeeperRoutineFn)(ubit32 tickGranularity);
+	error_t installTimeKeeperRoutine(
+		ubit32 chosenTimerQueue, timeKeeperRoutineFn *routine);
+
+	// Returns 1 if a routine was installed and actually removed.
+	sarch_t uninstallTimeKeeperRoutine(void);
+
 	// Called by Timer Streams to add new Timer Request objects to timer Qs.
 	error_t insertTimerQueueRequestObject(timerObjectS *request);
 	// Called by Timer Streams to cancel Timer Request objects from Qs.
