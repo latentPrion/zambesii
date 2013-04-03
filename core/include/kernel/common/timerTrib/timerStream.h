@@ -27,32 +27,29 @@ public:
 	error_t initialize(void);
 
 public:
+	// Used to represent timer service requests.
+	struct requestS
+	{
+		enum requestTypeE { PERIODIC=1, ONESHOT } type;
+		// ThreadID to wake up when this object expires.
+		processId_t		creatorThreadId, wakeTargetThreadId;
+		timestampS		expirationStamp, placementStamp;
+		void			*privateData;
+	};
+
+	// Used to represent expired timer request events.
 	struct eventS
 	{
+		enum eventTypeE { PERIODIC=1, ONESHOT } type;
 		processId_t	creatorThreadId;
 		timestampS	dueStamp, expirationStamp;
 		void		*privateData;
 	};
 
-	// sarch_t sleep(timeS delayLength);			
-	// error_t setPeriodicTimer(timeS period, ubit32 flags, void **handle);
-	// error_t setOneshotTimer(timeS delayLength, ubit32 flags, void **handle);
-
-
-	/**	EXPLANATION:
-	 * Pulls an object from the process's timer expiry event queue. Will
-	 * dormant the calling thread if there are no items in the queue, unless
-	 * TIMERSTREAM_PULLTIMEREVENT_DONT_BLOCK is specified. If the "device"
-	 * argument is supplied, it is expected to contain the handle for a
-	 * timer device that was latched onto by the calling process. In this
-	 * case, the kernel will only return timer timeout event objects for
-	 * that device.
-	 *
-	 * Returns ERROR_SUCCESS when an object is pulled, else it dormants the
-	 * thread (or if DONT_BLOCK was specified it returns ERROR_WOULD_BLOCK).
-	 **/
-	// error_t pullDeviceEvent(
-	//	void *device, ubit32 flags, zkcmTimerEventS *ret);
+	// sarch_t nanosleep(ubit32 delay);
+	// sarch_t microsleep(ubit32 delay);
+	// sarch_t millisleep(ubit32 delay);
+	// sarch_t sleep(timeS delay);
 
 	error_t createAbsoluteOneshotEvent(
 		timestampS stamp, processId_t wakeTargetThreadId,
@@ -85,15 +82,14 @@ public:
 	error_t pullEvent(ubit32 flags, eventS *ret);
 
 private:
-	// void timerDeviceTimeoutNotification(zkcmTimerEventS *event);
 	// Queues a timer request expiry event on this stream.
-	void timerRequestTimeoutNotification(timerObjectS *request);
+	void timerRequestTimeoutNotification(timerStreamC::requestS *request);
 	// Causes this stream to insert its next request into the timer queues.
 	void timerRequestTimeoutNotification(void);
 
 private:
-	pointerDoubleListC<eventS>		events;
-	sortedPointerDoubleListC<timerObjectS, timestampS>	requests;
+	pointerDoubleListC<eventS>			events;
+	sortedPointerDoubleListC<requestS, timestampS>	requests;
 };
 
 #endif

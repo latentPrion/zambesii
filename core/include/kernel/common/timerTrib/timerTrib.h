@@ -112,18 +112,18 @@ private:
 	 **/
 	ubit32 getLatchedTimerQueueMask(void) { return latchedPeriodMask; };
 
-	error_t installTimeKeeperRoutine(
+	error_t installClockRoutine(
 		ubit32 chosenTimerQueue,
 		// This typedef is declared in the timerQueueC header.
-		timerQueueC::timeKeeperRoutineFn *routine);
+		zkcmTimerDeviceC::clockRoutineFn *routine);
 
 	// Returns 1 if a routine was installed and actually removed.
-	sarch_t uninstallTimeKeeperRoutine(void);
+	sarch_t uninstallClockRoutine(void);
 
 	// Called by Timer Streams to add new Timer Request objects to timer Qs.
-	error_t insertTimerQueueRequestObject(timerObjectS *request);
+	error_t insertTimerQueueRequestObject(timerStreamC::requestS *request);
 	// Called by Timer Streams to cancel Timer Request objects from Qs.
-	sarch_t cancelTimerQueueRequestObject(timerObjectS *request);
+	sarch_t cancelTimerQueueRequestObject(timerStreamC::requestS *request);
 
 private:
 	// The watchdog timer for the chipset, if it exists.
@@ -146,7 +146,7 @@ private:
 	ubit32		latchedPeriodMask;
 
 	uarch_t		flags;
-	sbit32		timekeeperQueueId;
+	sbit32		clockQueueId;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
 
 	// The event processing thread's state information.

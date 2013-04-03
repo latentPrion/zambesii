@@ -19,7 +19,7 @@ period100us(100000), period10us(10000), period1us(1000),
 period100ns(100), period10ns(10), period1ns(1),
 safePeriodMask(0), latchedPeriodMask(0),
 flags(0),
-timekeeperQueueId(-1)
+clockQueueId(-1)
 {
 	memset(&watchdog.rsrc.interval, 0, sizeof(watchdog.rsrc.interval));
 	memset(
@@ -45,26 +45,26 @@ timerTribC::~timerTribC(void)
 {
 }
 
-error_t timerTribC::installTimeKeeperRoutine(
-	ubit32 chosenTimerQueue, timerQueueC::timeKeeperRoutineFn *routine
+error_t timerTribC::installClockRoutine(
+	ubit32 chosenTimerQueue, zkcmTimerDeviceC::clockRoutineFn *routine
 	)
 {
 	for (ubit8 i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
 	{
 		if (!__KBIT_TEST(chosenTimerQueue, i)) { continue; };
 
-		timekeeperQueueId = i;
-		return timerQueues[i]->installTimeKeeperRoutine(routine);
+		clockQueueId = i;
+		return timerQueues[i]->installClockRoutine(routine);
 	};
 
 	return ERROR_FATAL;
 }
 
-sarch_t timerTribC::uninstallTimeKeeperRoutine(void)
+sarch_t timerTribC::uninstallClockRoutine(void)
 {
-	if (timekeeperQueueId == -1) { return 0; };
+	if (clockQueueId == -1) { return 0; };
 
-	return timerQueues[timekeeperQueueId]->uninstallTimeKeeperRoutine();
+	return timerQueues[clockQueueId]->uninstallClockRoutine();
 }
 
 void timerTribC::initializeAllQueues(void)
@@ -227,7 +227,7 @@ error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
 	return eventProcessor.controlQueue.addItem(msg);
 }
 
-error_t timerTribC::insertTimerQueueRequestObject(timerObjectS *request)
+error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *request)
 {
 	timerQueueC	*suboptimal=__KNULL;
 
@@ -275,7 +275,7 @@ error_t timerTribC::insertTimerQueueRequestObject(timerObjectS *request)
 }
 
 // Called by Timer Streams to cancel Timer Request objects from Qs.
-sarch_t timerTribC::cancelTimerQueueRequestObject(timerObjectS * /*request*/)
+sarch_t timerTribC::cancelTimerQueueRequestObject(timerStreamC::requestS * /*request*/)
 {
 	return 1;
 }

@@ -125,7 +125,7 @@ void zkcmTimerControlModC::timerQueuesInitializedNotification(void)
 	{
 		if (!__KBIT_TEST(latchedQueueMask, i)) { continue; };
 
-		timerTrib.installTimeKeeperRoutine((1<<i), &updateSystemTime);
+		timerTrib.installClockRoutine((1<<i), &updateSystemTime);
 		__kprintf(NOTICE IBMPC_TIMERCTL"System timekeeper routine "
 			"installed on timer queue %d.\n",
 			i);

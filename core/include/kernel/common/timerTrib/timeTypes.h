@@ -195,15 +195,5 @@ struct timestampS
 	dateS	date;
 };
 
-// This data type is used by Timer Streams to represent timer service requests.
-struct timerObjectS
-{
-	enum objectTypeE { PERIODIC=1, ONESHOT } type;
-	// ThreadID to wake up when this object expires.
-	processId_t		creatorThreadId, wakeTargetThreadId;
-	void			*privateData;
-	timestampS		expirationStamp, placementStamp;
-};
-
 #endif
 

@@ -1,7 +1,6 @@
 #ifndef _TIMER_QUEUE_H
 	#define _TIMER_QUEUE_H
 
-	#include <arch/atomic.h>
 	#include <chipset/zkcm/timerDevice.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/sortedPtrDoubleList.h>
@@ -53,7 +52,7 @@ private:
 	timerQueueC(ubit32 nativePeriod)
 	:
 	currentPeriod(nativePeriod), nativePeriod(nativePeriod),
-	device(__KNULL), timeKeeperRoutine(__KNULL)
+	device(__KNULL), clockRoutineInstalled(0)
 	{}
 
 	error_t initialize(void) { return requestQueue.initialize(); }
@@ -65,8 +64,8 @@ private:
 	sarch_t isLatched(void) { return device != __KNULL; };
 	zkcmTimerDeviceC *getDevice(void) { return device; };
 
-	error_t insert(timerObjectS *obj);
-	sarch_t cancel(timerObjectS *obj);
+	error_t insert(timerStreamC::requestS *obj);
+	sarch_t cancel(timerStreamC::requestS *obj);
 
 	ubit32 getCurrentPeriod(void) { return currentPeriod; };
 	status_t setCurrentPeriod(ubit32 p) { currentPeriod = p; return 0; };
@@ -97,24 +96,26 @@ private:
 	 **/
 	void tick(zkcmTimerEventS *timerIrqEvent);
 
-	// Timekeeper call-in routine prototype, which chipsets must conform to.
-	typedef void (timeKeeperRoutineFn)(ubit32 tickGranularity);
-
 	/* These two are back-ends for the methods declared in timerTribC.
 	 **/
-	error_t installTimeKeeperRoutine(timeKeeperRoutineFn *routine)
+	error_t installClockRoutine(zkcmTimerDeviceC::clockRoutineFn *routine)
 	{
-		atomicAsm::set((uarch_t *)&timeKeeperRoutine, (uarch_t)routine);
-		return ERROR_SUCCESS;
+		error_t		ret;
+
+		if (!isLatched()) { return ERROR_UNINITIALIZED; };
+		ret = device->installClockRoutine(routine);
+		if (ret == ERROR_SUCCESS) {
+			atomicAsm::set(&clockRoutineInstalled, 1);
+		};
+
+		return ret;
 	}
 	// Returns 1 if a routine was installed and actually removed.
-	sarch_t uninstallTimeKeeperRoutine(void)
+	sarch_t uninstallClockRoutine(void)
 	{
-		sarch_t		ret;
-
-		ret = timeKeeperRoutine != __KNULL;
-		atomicAsm::set((uarch_t *)&timeKeeperRoutine, __KNULL);
-		return ret;
+		if (!isLatched()) { return ERROR_UNINITIALIZED; };
+		atomicAsm::set(&clockRoutineInstalled, 0);
+		return device->uninstallClockRoutine();
 	}
 
 	/* Enables or disables the queue's underlying timer source. On
@@ -132,9 +133,9 @@ private:
 	ubit32		currentPeriod, nativePeriod;
 
 	// The actual internal queue instance for timer request objects.
-	sortedPointerDoubleListC<timerObjectS, timestampS>	requestQueue;
+	sortedPointerDoubleListC<timerStreamC::requestS, timestampS>	requestQueue;
 	zkcmTimerDeviceC	*device;
-	timeKeeperRoutineFn	*timeKeeperRoutine;
+	sarch_t			clockRoutineInstalled;
 };
 
 #endif

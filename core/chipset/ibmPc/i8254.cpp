@@ -138,6 +138,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	zkcmTimerEventS	*irqEvent;
 	i8254PitC	*device;
 	error_t		err;
+	modeE		mode;
 
 	/**	EXPLANATION:
 	 * 1. Check to make sure that this is not a "disabling" IRQ which is
@@ -150,6 +151,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	device->state.lock.acquire();
 
 	devFlags = device->state.rsrc.flags;
+	mode = device->state.rsrc.mode;
 
 	// If this is the "disabling" final cleanup IRQ:
 	if (device->i8254State.irqState == i8254StateS::DISABLING)
@@ -165,7 +167,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	};
 
 	// Small state machine cleanup for oneshot mode: unset the ENABLED flag.
-	if (device->state.rsrc.mode == ONESHOT)
+	if (mode == ONESHOT)
 	{
 		__KFLAG_UNSET(
 			device->state.rsrc.flags,
@@ -180,6 +182,17 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	};
 
 	device->sendEoi();
+
+	// Invoke the system clock update routine if installed on this device.
+	if (device->clockRoutine != __KNULL)
+	{
+		// Accesses state without the lock. Safe.
+		(*device->clockRoutine)(
+			(mode == ONESHOT)
+				? device->state.rsrc.currentTimeout.nseconds
+				: device->state.rsrc.currentInterval.nseconds);
+	};
+
 	// Create an event.
 	irqEvent = device->allocateIrqEvent();
 	// Note well, this is faultable memory being allocated.

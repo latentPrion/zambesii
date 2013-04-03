@@ -51,16 +51,16 @@ error_t timerStreamC::createOneshotEvent(
 	void *privateData, ubit32 /*flags*/
 	)
 {
-	timerObjectS	*request;
+	requestS	*request;
 
 	if (type > TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 
-	request = new timerObjectS;
+	request = new requestS;
 	if (request == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
-	request->type = timerObjectS::ONESHOT;
+	request->type = requestS::ONESHOT;
 	request->privateData = privateData;
 	request->creatorThreadId = cpuTrib.getCurrentCpuStream()
 		->taskStream.getCurrentTask()->id;
@@ -127,7 +127,7 @@ error_t timerStreamC::pullEvent(
 	return ERROR_SUCCESS;
 }
 
-void timerStreamC::timerRequestTimeoutNotification(timerObjectS *request)
+void timerStreamC::timerRequestTimeoutNotification(requestS *request)
 {
 	eventS		*event;
 	error_t		ret;
@@ -142,6 +142,7 @@ void timerStreamC::timerRequestTimeoutNotification(timerObjectS *request)
 		return;
 	};
 
+	event->type = (eventS::eventTypeE)request->type;
 	event->creatorThreadId = request->creatorThreadId;
 	event->dueStamp = event->expirationStamp = request->expirationStamp;
 	event->privateData = request->privateData;
@@ -158,7 +159,7 @@ void timerStreamC::timerRequestTimeoutNotification(timerObjectS *request)
 
 void timerStreamC::timerRequestTimeoutNotification(void)
 {
-	timerObjectS	*nextRequest;
+	requestS	*nextRequest;
 
 	nextRequest = requests.popFromHead();
 	if (nextRequest == __KNULL) { return; };
