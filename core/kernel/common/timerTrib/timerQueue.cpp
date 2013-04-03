@@ -10,8 +10,8 @@
  * objects from processes (kernel, driver and user). At boot, the kernel will
  * check to see how many timer sources the chipset provides, and how many of
  * them can be used to initialize timer queues. Subsequently, if any new
- * timer queues are detected, the kernel will automatically attempt to see if
- * it can be used to initialize any still-uninitialized timer queues.
+ * timer devices are detected, the kernel will automatically attempt to see if
+ * they can be used to initialize any still-uninitialized timer queues.
  *
  * Any left-over timer sources are exposed to any process which may want to use
  * them via the ZKCM Timer Control mod's TimerFilter api.
@@ -102,8 +102,13 @@ error_t timerQueueC::insert(timerStreamC::requestS *request)
 {
 	error_t		ret;
 
+	request->currentQueue = this;
 	ret = requestQueue.addItem(request, request->expirationStamp);
-	if (ret != ERROR_SUCCESS) { return ret; };
+	if (ret != ERROR_SUCCESS)
+	{
+		request->currentQueue = __KNULL;
+		return ret;
+	};
 
 	if (!device->isEnabled()) { return enable(); };
 	return ERROR_SUCCESS;
@@ -120,7 +125,11 @@ sarch_t timerQueueC::cancel(timerStreamC::requestS *request)
 	 * Sadly, the list class doesn't return a value from removeItem().
 	 **/
 	requestQueue.removeItem(request);
-	if (requestQueue.getNItems() == 0) { disable(); };
+	request->currentQueue = __KNULL;
+	if (!clockRoutineInstalled && requestQueue.getNItems() == 0) {
+		disable();
+	};
+
 	return 1;
 }
 
@@ -206,7 +215,6 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 				.timerRequestTimeoutNotification();
 		};
 
-		delete request;
 		request = requestQueue.getHead();
 
 		/* Disable the queue if it's empty; halt unnecessary IRQ load.

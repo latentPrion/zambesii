@@ -275,9 +275,9 @@ error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *reques
 }
 
 // Called by Timer Streams to cancel Timer Request objects from Qs.
-sarch_t timerTribC::cancelTimerQueueRequestObject(timerStreamC::requestS * /*request*/)
+sarch_t timerTribC::cancelTimerQueueRequestObject(timerStreamC::requestS *request)
 {
-	return 1;
+	return request->currentQueue->cancel(request);
 }
 
 error_t timerTribC::initialize(void)

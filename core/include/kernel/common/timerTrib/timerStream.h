@@ -17,6 +17,8 @@
 #define TIMERSTREAM_CREATEONESHOT_TYPE_RELATIVE		(0x1)
 #define TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL		(0x1)
 
+class timerQueueC;
+
 class timerStreamC
 :
 public streamC
@@ -34,6 +36,7 @@ public:
 		// ThreadID to wake up when this object expires.
 		processId_t		creatorThreadId, wakeTargetThreadId;
 		timestampS		expirationStamp, placementStamp;
+		timerQueueC		*currentQueue;
 		void			*privateData;
 	};
 

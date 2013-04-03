@@ -261,6 +261,7 @@ error_t i8254PitC::enable(void)
 		state.lock.acquire();
 
 		i8254State.irqState = i8254StateS::ENABLED;
+		i8254State.isrRegistered = 1;
 		ret = interruptTrib.zkcm.registerPinIsr(
 			i8254State.__kpinId, this, &isr, 0);
 
@@ -268,6 +269,10 @@ error_t i8254PitC::enable(void)
 
 		if (ret != ERROR_SUCCESS)
 		{
+			state.lock.acquire();
+			i8254State.isrRegistered = 0;
+			state.lock.release();
+
 			__kprintf(ERROR i8254"enable: Failed to register ISR "
 				"on __kpin %d.\n",
 				i8254State.__kpinId);
@@ -275,8 +280,11 @@ error_t i8254PitC::enable(void)
 			return ret;
 		};
 
-		i8254State.isrRegistered = 1;
 	};
+
+	state.lock.acquire();
+	i8254State.irqState = i8254StateS::ENABLED;
+	state.lock.release();
 
 	// Now program the i8254 to begin interrupting.
 	if (state.rsrc.mode == ONESHOT) {

@@ -18,40 +18,14 @@ error_t timerStreamC::initialize(void)
 	return events.initialize();
 }
 
-//void timerStreamC::timerDeviceTimeoutNotification(zkcmTimerEventS *event)
-//{
-	/**	EXPLANATION:
-	 * The process' Timer Stream receives the timer event structure from
-	 * the timer device's ISR. It queues the event object as needed, and
-	 * then exits.
-	 *
-	 * It is now up to the process to call "pullTimerEvent()" to process the
-	 * timer events that are pending on its stream.
-	 *
-	 * Returns void because there is really nothing that can be done if
-	 * the memory allocation fails. We are currently executing in IRQ
-	 * context, so the handler really can't be expected to properly know
-	 * what to do with an error return value. At most we can panic, really.
-	 *
-	 **	TODO:
-	 * The API for pulling from the event queue (pullTimerEvent()) has a
-	 * "device" argument for filtering the events by device, such that the
-	 * caller can ask only for events queued by a certain device. In order
-	 * to facilitate this, the kernel needs to (optimally) have a separate
-	 * queue instance for each timer device that the process has latched
-	 * onto. This way, we can quickly pull events without any issues. An
-	 * alternative would be to use prioQueueC, or a derived variant of it.
-	 **/
-//	events.addItem(event);
-//}
-
 error_t timerStreamC::createOneshotEvent(
 	timestampS stamp, ubit8 type,
 	processId_t wakeTargetThreadId,
 	void *privateData, ubit32 /*flags*/
 	)
 {
-	requestS	*request;
+	requestS	*request, *tmp;
+	error_t		ret;
 
 	if (type > TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
@@ -83,9 +57,42 @@ error_t timerStreamC::createOneshotEvent(
 		request->expirationStamp = stamp;
 	};
 
-	if (requests.getNItems() == 0) {
+	tmp = requests.getHead();
+
+	/**	FIXME:
+	 * It is possible for the pull of objects from a process to be halted
+	 * due to a race condition; specifically, where the insertion of a
+	 * new request is called for, and there is already a request for this
+	 * process being serviced by the timer queues; however, before the new
+	 * request is added to the request list, the old request is expired,
+	 * and the kernel asks the process for a new request, but since the
+	 * insertion hasn't happened yet, nothing is pulled.
+	 *
+	 * Thus the process is silently blocked from any Timer Stream syscalls.
+	 * This can be remedied using an idle thread which periodically checks
+	 * to ensure that all processes refresh their queue requests.
+	 **/
+
+	// If the request queue was empty:
+	if (tmp == __KNULL)
+	{
+		ret = requests.addItem(request, request->expirationStamp);
+		if (ret != ERROR_SUCCESS) { return ret; };
+
 		return timerTrib.insertTimerQueueRequestObject(request);
-	} else {
+	};
+
+	// If the new request expires before the one currently being serviced:
+	if (request->expirationStamp < tmp->expirationStamp)
+	{
+		// FIXME: Review here for a possible race condition.
+		timerTrib.cancelTimerQueueRequestObject(tmp);
+		ret = requests.addItem(request, request->expirationStamp);
+		if (ret != ERROR_SUCCESS) { return ret; };
+
+		return timerTrib.insertTimerQueueRequestObject(request);
+	}
+	else {
 		return requests.addItem(request, request->expirationStamp);
 	};
 }
@@ -161,7 +168,21 @@ void timerStreamC::timerRequestTimeoutNotification(void)
 {
 	requestS	*nextRequest;
 
+	// Pop the request that just timed out.
 	nextRequest = requests.popFromHead();
+	if (nextRequest == __KNULL)
+	{
+		__kprintf(FATAL TIMERSTREAM"0x%x: corrupt timer request list:\n"
+			"\tpopFromHead() returned NULL when trying to remove "
+			"the old item.\n",
+			id);
+
+		return;
+	};
+
+	delete nextRequest;
+
+	nextRequest = requests.getHead();
 	if (nextRequest == __KNULL) { return; };
 
 	if (timerTrib.insertTimerQueueRequestObject(nextRequest)

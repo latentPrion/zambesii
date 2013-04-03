@@ -16,14 +16,14 @@
 
 	Any other implications?
 
-* Write the code for migration on tick.
-
 *^Modify the tick code to check the next request in the queue after one expires;
   This is to handle the case where two or more requests expire at the same time,
   and are in the queue in tandem.
 
+* Write the code for migration on tick. [Not yet done]
+
 * Complete the high-precision tail-end implementation of timeout requests by
-  enabling the kernel to latch onto a oneshot timer.
+  enabling the kernel to latch onto a oneshot timer. [Not yet done]
 
 Right now, when a request is queued, it will be queued on the most optimal queue
 for it to start on, and never migrate. The concrete tages it passes through are:
@@ -39,11 +39,11 @@ Ticking needs to enable the request to migrate to lower period queues.
 Additionally, be sure to turn the tick() processing stretch into a loop which
 checks the request queue multiple times if a request expires.
 
-Furthermore, there is a need for you to complete the Timer Stream end of the
+^ Furthermore, there is a need for you to complete the Timer Stream end of the
 abstraction. Right now, a request which expires before a process' currently
 inserted request can come in, and it will be queued instead of immediately
 inserted.
-	Each stream should hold a pointer to the request it has currently
+	^ Each stream should hold a pointer to the request it has currently
 	inserted into the kernel's timer queues; this pointer can be used to
 	speed up this check when inserting. In fact, it not only speeds up this
 	check, but also simplifies the general check for whether or not to
