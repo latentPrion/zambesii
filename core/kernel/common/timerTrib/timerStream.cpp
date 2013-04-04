@@ -72,9 +72,9 @@ error_t timerStreamC::createOneshotEvent(
 	if (tmp == __KNULL)
 	{
 		ret = requests.addItem(request, request->expirationStamp);
+		unlockRequestQueue();
 		if (ret != ERROR_SUCCESS) { return ret; };
 
-		unlockRequestQueue();
 		return timerTrib.insertTimerQueueRequestObject(request);
 	};
 
@@ -83,9 +83,9 @@ error_t timerStreamC::createOneshotEvent(
 	{
 		timerTrib.cancelTimerQueueRequestObject(tmp);
 		ret = requests.addItem(request, request->expirationStamp);
+		unlockRequestQueue();
 		if (ret != ERROR_SUCCESS) { return ret; };
 
-		unlockRequestQueue();
 		return timerTrib.insertTimerQueueRequestObject(request);
 	}
 	else

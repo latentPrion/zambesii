@@ -282,10 +282,13 @@ error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *reques
 sarch_t timerTribC::cancelTimerQueueRequestObject(timerStreamC::requestS *request)
 {
 	sarch_t		ret;
+	timerQueueC	*targetQueue;
 
-	request->currentQueue->lockRequestQueue();
-	ret = request->currentQueue->cancel(request);
-	request->currentQueue->unlockRequestQueue();
+	targetQueue = request->currentQueue;
+
+	targetQueue->lockRequestQueue();
+	ret = targetQueue->cancel(request);
+	targetQueue->unlockRequestQueue();
 	return ret;
 }
 
