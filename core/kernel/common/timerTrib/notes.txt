@@ -50,5 +50,8 @@ inserted.
 	insert a new request into the timer queues, or into the process' request
 	queue.
 
+Solve the race conditions on insertion from Timer Stream by providing a locking
+method for insertion from Timer Stream.
+
 When all of these changes have been made, the kernel's timer subsystem will be
 completed.
