@@ -135,12 +135,14 @@ void __korientationMain(void)
 	processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
 	__kprintf(NOTICE ORIENT"Timer event 1 just expired successfully!\n");
 
-	__kprintf(NOTICE ORIENT"About to dormant.\n");
-	taskTrib.dormant(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+//processTrib.__kgetStream()->memoryStream.dump();
+//	taskTrib.dormant(
+//		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
 
 	// Detect physical memory.
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
+	__kprintf(NOTICE ORIENT"About to dormant.\n");
+asm volatile (".here:\n\tcli\n\thlt\n\tjmp .here\n\t");
 
 	// Initialize ZKCM CPU Dectection mod.
 	// Detect and wake all CPUs.

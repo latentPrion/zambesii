@@ -20,8 +20,29 @@
 #define ZKCM_TIMERDEV_CAP_MODE_ONESHOT		(1<<1)
 
 // Values for zkcmTimerDeviceC.state.flags.
+/* Enabled is the state where the device is set to raise IRQs AND queue messages
+ * on its IRQ event queue when its ISR is called to process one of its IRQs.
+ **/
 #define ZKCM_TIMERDEV_STATE_FLAGS_ENABLED	(1<<0)
 #define ZKCM_TIMERDEV_STATE_FLAGS_LATCHED	(1<<1)
+/* Soft enabled is the state where the device is set to raise IRQs, BUT /not/
+ * queue messages on its IRQ event queue when its ISR is called to process
+ * one of its IRQs.
+ *
+ * The primary use case for this is where a timer device is being used both for
+ * the system clock, and for the Timer Tributary's timer queues. In this case,
+ * the device cannot be hard disabled, because its IRQs must be used to update
+ * the system clock; however, the Timer Tributary does not need IRQ event msgs
+ * from the device because there are no timer service requests. The queueing
+ * of IRQ event messages in this case is unoptimal because it wastes memory,
+ * and causes the Timer Tributary's processing thread to be scheduled
+ * unnecessarily.
+ *
+ * Thus, the "soft enabled" state is provided to enable the device to be told
+ * to be hard enabled (keep raising IRQs and updating the system clock), but
+ * "soft disabled" (don't bother the kernel with unnecessary IRQ event messages)
+ **/
+#define ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED	(1<<2)
 
 class zkcmTimerDeviceC;
 
@@ -80,7 +101,31 @@ public:
 	virtual error_t restore(void)=0;
 
 	virtual error_t enable(void)=0;
+	error_t softEnable(void)
+	{
+		if (!isEnabled()) { return enable(); };
+
+		state.lock.acquire();
+		__KFLAG_SET(
+			state.rsrc.flags,
+			ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+
+		state.lock.release();
+
+		return ERROR_SUCCESS;
+	}
+		
 	virtual void disable(void)=0;
+	void softDisable(void)
+	{
+		state.lock.acquire();
+		__KFLAG_UNSET(
+			state.rsrc.flags,
+			ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+
+		state.lock.release();
+	}
+
 	sarch_t isEnabled(void)
 	{
 		uarch_t		flags;
@@ -92,6 +137,17 @@ public:
 		return __KFLAG_TEST(flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
 	}
 
+	sarch_t isSoftEnabled(void)
+	{
+		uarch_t		flags;
+
+		state.lock.acquire();
+		flags = state.rsrc.flags;
+		state.lock.release();
+
+		return __KFLAG_TEST(
+			flags, ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+	}
 	// Call disable() before setting timer options, then enable() again.
 	virtual status_t setPeriodicMode(struct timeS interval)=0;
 	virtual status_t setOneshotMode(struct timeS timeout)=0;

@@ -171,7 +171,8 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	{
 		__KFLAG_UNSET(
 			device->state.rsrc.flags,
-			ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+			ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
+			| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
 	};
 
 	device->state.lock.release();
@@ -194,6 +195,10 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	};
 
 	// Create an event.
+	if (!__KFLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED)) {
+		return ZKCM_ISR_SUCCESS;
+	};
+
 	irqEvent = device->allocateIrqEvent();
 	// Note well, this is faultable memory being allocated.
 	if (irqEvent == __KNULL)
@@ -341,7 +346,11 @@ void i8254PitC::disable(void)
 	atomicAsm::memoryBarrier();
 	io::write8(i8254_CHAN0_IO_COUNTER, 1000 & 0xFF);
 	io::write8(i8254_CHAN0_IO_COUNTER, 1000 >> 8);
-	__KFLAG_UNSET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+	__KFLAG_UNSET(
+		state.rsrc.flags,
+		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
+		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+
 	i8254State.irqState = i8254StateS::DISABLING;
 
 	state.lock.release();
@@ -492,7 +501,10 @@ void i8254PitC::writeOneshotIo(void)
 		i8254_CHAN0_IO_COUNTER,
 		i8254State.currentTimeoutClks >> 8);
 
-	__KFLAG_SET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+	__KFLAG_SET(
+		state.rsrc.flags,
+		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
+		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
 
 	state.lock.release();
 }
@@ -518,7 +530,10 @@ void i8254PitC::writePeriodicIo(void)
 		i8254_CHAN0_IO_COUNTER,
 		i8254State.currentIntervalClks >> 8);
 
-	__KFLAG_SET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+	__KFLAG_SET(
+		state.rsrc.flags,
+		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
+		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
 
 	state.lock.release();
 }

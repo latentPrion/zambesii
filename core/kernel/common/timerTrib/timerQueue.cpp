@@ -77,7 +77,7 @@ error_t timerQueueC::enable(void)
 		return ret;
 	};
 
-	ret = device->enable();
+	ret = device->softEnable();
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(ERROR TIMERQUEUE"%dus: Failed to enable() device.\n",
@@ -95,7 +95,8 @@ void timerQueueC::disable(void)
 	 * for them to expire before physically disabling the timer source.
 	 **/
 	if (!isLatched()) { return; };
-	device->disable();
+	if (clockRoutineInstalled) { device->softDisable(); }
+	else { device->disable(); };
 }
 
 error_t timerQueueC::insert(timerStreamC::requestS *request)
@@ -110,7 +111,7 @@ error_t timerQueueC::insert(timerStreamC::requestS *request)
 		return ret;
 	};
 
-	if (!device->isEnabled()) { return enable(); };
+	if (!device->isSoftEnabled()) { return timerQueueC::enable(); };
 	return ERROR_SUCCESS;
 }
 
@@ -126,9 +127,7 @@ sarch_t timerQueueC::cancel(timerStreamC::requestS *request)
 	 **/
 	requestQueue.removeItem(request);
 	request->currentQueue = __KNULL;
-	if (!clockRoutineInstalled && requestQueue.getNItems() == 0) {
-		disable();
-	};
+	if (requestQueue.getNItems() == 0) { disable(); };
 
 	return 1;
 }
@@ -245,20 +244,15 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		lockRequestQueue();
 		request = requestQueue.getHead();
 
-		/* Disable the queue if it's empty; halt unnecessary IRQ load.
-		 * However, don't disable the queue if the underlying device
-		 * is being used by the chipset code to effect software-based
-		 * clock timekeeping.
-		 **/
-		if (request == __KNULL && !clockRoutineInstalled) {
-			disable();
-		};
+		// Disable the queue if it's empty; halt unnecessary IRQ load.
+		if (request == __KNULL) { disable(); };
 	};
 
 	unlockRequestQueue();
 
-	if (request == __KNULL && !clockRoutineInstalled)
+	if (request == __KNULL)
 	{
+		// If you see this message in the log, don't be too panicked.
 		__kprintf(WARNING TIMERQUEUE"%dus: tick called on empty Q.\n",
 			getNativePeriod() / 1000);
 	};
