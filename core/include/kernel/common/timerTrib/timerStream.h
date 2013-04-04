@@ -23,6 +23,7 @@ class timerStreamC
 :
 public streamC
 {
+friend class timerTribC;
 friend class timerQueueC;
 public:
 	timerStreamC(void) {}
@@ -85,6 +86,13 @@ public:
 	error_t pullEvent(ubit32 flags, eventS *ret);
 
 private:
+	/* Used by the Timer Tributary's dequeueing thread to lock the stream
+	 * against insertion of new requests while a request from this process
+	 * is being expired. Prevents a series of race conditions from occuring.
+	 **/
+	void lockRequestQueue(void) { requestQueueLock.acquire(); };
+	void unlockRequestQueue(void) { requestQueueLock.release(); };
+
 	// Queues a timer request expiry event on this stream.
 	void timerRequestTimeoutNotification(timerStreamC::requestS *request);
 	// Causes this stream to insert its next request into the timer queues.
@@ -93,6 +101,10 @@ private:
 private:
 	pointerDoubleListC<eventS>			events;
 	sortedPointerDoubleListC<requestS, timestampS>	requests;
+	/* Used to prevent race conditions while requests from this process are
+	 * being expired.
+	 **/
+	waitLockC					requestQueueLock;
 };
 
 #endif

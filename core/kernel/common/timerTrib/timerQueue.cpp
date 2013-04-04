@@ -146,13 +146,36 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 	 * If the queue is emptied by the sequence, disable the underlying
 	 * timer device.
 	 **/
+
+	/* The timer queues will only ever have ONE request from any one process
+	 * inserted at any time. The rest of a process' timer service requests
+	 * are inserted into its Timer Stream's request queue, and when its
+	 * currently active request has expired, the kernel will pull a new
+	 * request from that process off of its Timer Stream.
+	 *
+	 * These lock guards prevent any process from inserting a new request
+	 * which has an expiry timestamp that expires SOONER than the process'
+	 * currently active request for a brief moment to prevent a race.
+	 *
+	 * If this thread dequeues that currently active request, and while it
+	 * is being examined, the process inserts a new item into its queue,
+	 * the process' queue will be in a state which is incoherent, and will
+	 * cause that new item to be skipped.
+	 **/
+	lockRequestQueue();
 	request = requestQueue.getHead();
+
 	while (request != __KNULL)
 	{
-		if (request->expirationStamp > event->irqStamp) { return; };
+		if (request->expirationStamp > event->irqStamp)
+		{
+			unlockRequestQueue();
+			return;
+		};
 
 		// Remove the item.
 		request = requestQueue.popFromHead();
+		unlockRequestQueue();
 
 		// Can occur if the process exited before its object expired.
 		targetProcess = processTrib.getStream(
@@ -215,6 +238,11 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 				.timerRequestTimeoutNotification();
 		};
 
+		// Unblock the target thread.
+		taskTrib.unblock(targetTask);
+
+		// See comments above for the reason behind these lock guards.
+		lockRequestQueue();
 		request = requestQueue.getHead();
 
 		/* Disable the queue if it's empty; halt unnecessary IRQ load.
@@ -225,9 +253,9 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		if (request == __KNULL && !clockRoutineInstalled) {
 			disable();
 		};
-		// Unblock the target thread.
-		taskTrib.unblock(targetTask);
 	};
+
+	unlockRequestQueue();
 
 	if (request == __KNULL && !clockRoutineInstalled)
 	{

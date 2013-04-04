@@ -57,21 +57,16 @@ error_t timerStreamC::createOneshotEvent(
 		request->expirationStamp = stamp;
 	};
 
-	tmp = requests.getHead();
-
-	/**	FIXME:
-	 * It is possible for the pull of objects from a process to be halted
-	 * due to a race condition; specifically, where the insertion of a
-	 * new request is called for, and there is already a request for this
-	 * process being serviced by the timer queues; however, before the new
-	 * request is added to the request list, the old request is expired,
-	 * and the kernel asks the process for a new request, but since the
-	 * insertion hasn't happened yet, nothing is pulled.
-	 *
-	 * Thus the process is silently blocked from any Timer Stream syscalls.
-	 * This can be remedied using an idle thread which periodically checks
-	 * to ensure that all processes refresh their queue requests.
+	/**	NOTE:
+	 * It might have been expedient to do an error check here for the case
+	 * where a request asks for an expiry time that expires in the past and
+	 * reject such a request, but it is probably very possible, and probably
+	 * very common for this to happen in applications, so that might be
+	 * unreasonable.
 	 **/
+
+	lockRequestQueue();
+	tmp = requests.getHead();
 
 	// If the request queue was empty:
 	if (tmp == __KNULL)
@@ -79,21 +74,25 @@ error_t timerStreamC::createOneshotEvent(
 		ret = requests.addItem(request, request->expirationStamp);
 		if (ret != ERROR_SUCCESS) { return ret; };
 
+		unlockRequestQueue();
 		return timerTrib.insertTimerQueueRequestObject(request);
 	};
 
 	// If the new request expires before the one currently being serviced:
 	if (request->expirationStamp < tmp->expirationStamp)
 	{
-		// FIXME: Review here for a possible race condition.
 		timerTrib.cancelTimerQueueRequestObject(tmp);
 		ret = requests.addItem(request, request->expirationStamp);
 		if (ret != ERROR_SUCCESS) { return ret; };
 
+		unlockRequestQueue();
 		return timerTrib.insertTimerQueueRequestObject(request);
 	}
-	else {
-		return requests.addItem(request, request->expirationStamp);
+	else
+	{
+		ret = requests.addItem(request, request->expirationStamp);
+		unlockRequestQueue();
+		return ret;
 	};
 }
 
@@ -168,8 +167,24 @@ void timerStreamC::timerRequestTimeoutNotification(void)
 {
 	requestS	*nextRequest;
 
+	/* Lock the request queue against insertions from the process to prevent
+	 * a race condition. If a process is trying to insert a request into its
+	 * queue, and there is only one item in the queue, then this next
+	 * stretch of code will pop that last item out of the queue.
+	 *
+	 * If this pop occurs at a specific point in the insertion (just after
+	 * the insertion code checks to see if the queue was empty), the pop
+	 * operation will invalidate the result of that check, and cause the
+	 * insertion code to only insert the request on the Timer Stream
+	 * internal queue. This will in turn cause the kernel never to pull
+	 * requests from this process again, effectively silencing this process
+	 * from the kernel's timer services.
+	 **/
+	lockRequestQueue();
 	// Pop the request that just timed out.
 	nextRequest = requests.popFromHead();
+	unlockRequestQueue();
+
 	if (nextRequest == __KNULL)
 	{
 		__kprintf(FATAL TIMERSTREAM"0x%x: corrupt timer request list:\n"

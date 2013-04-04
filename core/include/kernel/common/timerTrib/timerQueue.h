@@ -128,12 +128,19 @@ private:
 	error_t enable(void);
 	void disable(void);
 
+	void lockRequestQueue(void) { requestQueueLock.acquire(); }
+	void unlockRequestQueue(void) { requestQueueLock.release(); }
+
 private:
 	// Specified in nanoseconds.
 	ubit32		currentPeriod, nativePeriod;
 
 	// The actual internal queue instance for timer request objects.
-	sortedPointerDoubleListC<timerStreamC::requestS, timestampS>	requestQueue;
+	sortedPointerDoubleListC<timerStreamC::requestS, timestampS>
+		requestQueue;
+
+	// Used to prevent a series of race conditions.
+	waitLockC		requestQueueLock;
 	zkcmTimerDeviceC	*device;
 	sarch_t			clockRoutineInstalled;
 };

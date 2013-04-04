@@ -1,0 +1,7 @@
+memoryDetection.cpp:
+	The e820 memory map is stored at 0x1000-0x2FFF in low memory.
+
+__kcpuPowerOn[Text|Data]:
+	These sections are copied to 0x8000-0x9FFF in low memory.
+	^ Can probably move these to 0x3000-0x4FFF.
+

@@ -229,6 +229,7 @@ error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
 
 error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *request)
 {
+	error_t		ret;
 	timerQueueC	*suboptimal=__KNULL;
 
 	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
@@ -259,7 +260,10 @@ error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *reques
 			-= timerQueues[i]->getNativePeriod();
 
 		// Else, the request can spend at least one tick in this queue.
-		return timerQueues[i]->insert(request);
+		timerQueues[i]->lockRequestQueue();
+		ret = timerQueues[i]->insert(request);
+		timerQueues[i]->unlockRequestQueue();
+		return ret;
 	};
 
 	if (suboptimal == __KNULL)
@@ -277,7 +281,12 @@ error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *reques
 // Called by Timer Streams to cancel Timer Request objects from Qs.
 sarch_t timerTribC::cancelTimerQueueRequestObject(timerStreamC::requestS *request)
 {
-	return request->currentQueue->cancel(request);
+	sarch_t		ret;
+
+	request->currentQueue->lockRequestQueue();
+	ret = request->currentQueue->cancel(request);
+	request->currentQueue->unlockRequestQueue();
+	return ret;
 }
 
 error_t timerTribC::initialize(void)
