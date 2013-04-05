@@ -25,6 +25,9 @@ error_t taskC::initialize(void)
 	ret = registeredEvents.initialize(32);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
+	ret = timerStreamEvents.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
 	return ERROR_SUCCESS;
 }
 

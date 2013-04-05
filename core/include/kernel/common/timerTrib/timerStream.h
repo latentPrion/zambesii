@@ -94,12 +94,12 @@ private:
 	void unlockRequestQueue(void) { requestQueueLock.release(); };
 
 	// Queues a timer request expiry event on this stream.
-	void timerRequestTimeoutNotification(timerStreamC::requestS *request);
+	void timerRequestTimeoutNotification(
+		timerStreamC::requestS *request, taskC *targetThread);
 	// Causes this stream to insert its next request into the timer queues.
 	void timerRequestTimeoutNotification(void);
 
 private:
-	pointerDoubleListC<eventS>			events;
 	sortedPointerDoubleListC<requestS, timestampS>	requests;
 	/* Used to prevent race conditions while requests from this process are
 	 * being expired.

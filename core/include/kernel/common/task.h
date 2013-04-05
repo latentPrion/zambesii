@@ -7,11 +7,13 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/bitmap.h>
+	#include <__kclasses/ptrDoubleList.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/taskTrib/prio.h>
+	#include <kernel/common/timerTrib/timerStream.h>
 	// Do not #include <kernel/common/process.h> from within this file.
 
 /**	EXPLANATION:
@@ -131,6 +133,7 @@ public:
 
 	// Events being waited on by this thread.
 	bitmapC		registeredEvents;
+	pointerDoubleListC<timerStreamC::eventS>	timerStreamEvents;
 };
 
 #endif

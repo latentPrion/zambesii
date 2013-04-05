@@ -135,8 +135,9 @@ sarch_t timerQueueC::cancel(timerStreamC::requestS *request)
 void timerQueueC::tick(zkcmTimerEventS *event)
 {
 	timerStreamC::requestS	*request;
-	taskC		*targetTask;
-	processStreamC	*targetProcess, *creatorProcess;
+	taskC			*targetTask;
+	processStreamC		*targetProcess, *creatorProcess;
+	ubit8			requestQueueWasEmpty=1;
 
 	/**	EXPLANATION
 	 * Get the request at the front of the queue, and if it's expired,
@@ -166,6 +167,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 
 	while (request != __KNULL)
 	{
+
 		if (request->expirationStamp > event->irqStamp)
 		{
 			unlockRequestQueue();
@@ -176,6 +178,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		request = requestQueue.popFromHead();
 		unlockRequestQueue();
 
+		requestQueueWasEmpty = 0;
 		// Can occur if the process exited before its object expired.
 		targetProcess = processTrib.getStream(
 			request->wakeTargetThreadId);
@@ -206,7 +209,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 
 		// Queue an event on the wake-target process' Timer Stream.
 		targetProcess->timerStream
-			.timerRequestTimeoutNotification(request);
+			.timerRequestTimeoutNotification(request, targetTask);
 
 		// For the case where the target process != creator process.
 		if (PROCID_PROCESS(request->creatorThreadId)
@@ -250,7 +253,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 
 	unlockRequestQueue();
 
-	if (request == __KNULL)
+	if (requestQueueWasEmpty)
 	{
 		// If you see this message in the log, don't be too panicked.
 		__kprintf(WARNING TIMERQUEUE"%dus: tick called on empty Q.\n",

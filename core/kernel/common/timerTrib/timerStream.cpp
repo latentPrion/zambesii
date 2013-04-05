@@ -10,12 +10,7 @@
 
 error_t timerStreamC::initialize(void)
 {
-	error_t		ret;
-
-	ret = requests.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
-
-	return events.initialize();
+	return requests.initialize();
 }
 
 error_t timerStreamC::createOneshotEvent(
@@ -100,19 +95,23 @@ error_t timerStreamC::pullEvent(
 	ubit32 flags, eventS *ret
 	)
 {
-	eventS		*event;
+	eventS				*event;
+	pointerDoubleListC<eventS>	*queue;
 
 	/**	EXPLANATION:
 	 * Blocking (or optionally non-blocking if DONT_BLOCK flag is passed)
-	 * syscall to allow a process to pull expired timer events from its
-	 * Timer Stream.
+	 * syscall to allow a thread to pull expired Timer Stream events from
+	 * its queue.
 	 *
 	 * Attempts to pull an event from "events" linked list. If it fails, it
 	 * sleeps the process.
 	 */
+	queue = &cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
+		->timerStreamEvents;
+
 	for (;;)
 	{
-		event = events.popFromHead();
+		event = queue->popFromHead();
 		if (event == __KNULL)
 		{
 			if (__KFLAG_TEST(
@@ -133,7 +132,9 @@ error_t timerStreamC::pullEvent(
 	return ERROR_SUCCESS;
 }
 
-void timerStreamC::timerRequestTimeoutNotification(requestS *request)
+void timerStreamC::timerRequestTimeoutNotification(
+	requestS *request, taskC *targetThread
+	)
 {
 	eventS		*event;
 	error_t		ret;
@@ -154,12 +155,12 @@ void timerStreamC::timerRequestTimeoutNotification(requestS *request)
 	event->privateData = request->privateData;
 
 	// Queue event.
-	ret = events.addItem(event);
+	ret = targetThread->timerStreamEvents.addItem(event);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR TIMERSTREAM"%d: Failed to add event for "
-			"expired request to event list.\n",
-			id);
+		__kprintf(ERROR TIMERSTREAM"%d: Failed to add expired event to "
+			"thread 0x%x's queue.\n",
+			id, targetThread->id);
 	};
 }
 
