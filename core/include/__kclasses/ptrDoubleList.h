@@ -4,10 +4,13 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kcxxlib/new>
 	#include <__kclasses/debugPipe.h>
+	#include <__kclasses/cachePool.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
 #define PTRDBLLIST			"Dbl-Link PtrList: "
+
+#define PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE	(1<<0)
 
 #define PTRDBLLIST_ADD_HEAD		0x0
 #define PTRDBLLIST_ADD_TAIL		0x1
@@ -17,14 +20,31 @@ class pointerDoubleListC
 {
 public:
 	pointerDoubleListC(void)
+	:
+	objectCache(__KNULL)
 	{
 		list.rsrc.head = list.rsrc.tail = __KNULL;
 		list.rsrc.nItems = 0;
 	}
 
-	~pointerDoubleListC(void) {};
+	~pointerDoubleListC(void)
+	{
+		cachePool.destroyCache(objectCache);
+	};
 
-	error_t initialize(void) { return ERROR_SUCCESS; };
+	error_t initialize(ubit32 flags=0)
+	{
+		if (__KFLAG_TEST(flags,
+			PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE))
+		{
+			objectCache = cachePool.createCache(sizeof(listNodeS));
+			if (objectCache == __KNULL) {
+				return ERROR_MEMORY_NOMEM;
+			};
+		};
+
+		return ERROR_SUCCESS;
+	};
 
 public:
 	void dump(void);
@@ -52,6 +72,7 @@ protected:
 	};
 
 	sharedResourceGroupC<waitLockC, listStateS>	list;
+	slamCacheC		*objectCache;
 };
 
 
@@ -107,7 +128,10 @@ error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
 {
 	listNodeS	*newNode;
 
-	newNode = new listNodeS;
+	newNode = (objectCache == __KNULL)
+		? new listNodeS
+		: new (objectCache->allocate()) listNodeS;
+
 	if (newNode == __KNULL)
 	{
 		__kprintf(ERROR PTRDBLLIST"addItem(0x%p,%s): Failed to alloc "
@@ -195,7 +219,8 @@ void pointerDoubleListC<T>::removeItem(T *item)
 			list.rsrc.nItems--;
 			list.lock.release();
 
-			delete curr;
+			if (objectCache == __KNULL) { delete curr; }
+			else { objectCache->free(curr); };
 			return;
 		};
 	};
@@ -227,7 +252,9 @@ T *pointerDoubleListC<T>::popFromHead(void)
 		list.lock.release();
 
 		ret = tmp->item;
-		delete tmp;
+
+		if (objectCache == __KNULL) { delete tmp; }
+		else { objectCache->free(tmp); };
 		return ret;
 	}
 	else
@@ -261,7 +288,9 @@ T *pointerDoubleListC<T>::popFromTail(void)
 		list.lock.release();
 
 		ret = tmp->item;
-		delete tmp;
+
+		if (objectCache == __KNULL) { delete tmp; }
+		else { objectCache->free(tmp); };
 		return ret;
 	}
 	else

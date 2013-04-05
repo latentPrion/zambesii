@@ -25,7 +25,10 @@ error_t taskC::initialize(void)
 	ret = registeredEvents.initialize(32);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = timerStreamEvents.initialize();
+	// The event queues use object caching to speed up alloc/free of nodes.
+	ret = timerStreamEvents.initialize(
+		PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE);
+
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	return ERROR_SUCCESS;
