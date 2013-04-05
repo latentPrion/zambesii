@@ -78,23 +78,14 @@ static void sortNumaMapByAddress(zkcmNumaMapS *map)
 
 error_t memoryTribC::pmemInit(void)
 {
-	error_t				ret;
-	zkcmMemConfigS			*memConfig=__KNULL;
-	zkcmMemMapS			*memMap=__KNULL;
-	zkcmNumaMapS			*numaMap=__KNULL;
-	numaMemoryBankC			*nmb;
+	error_t			ret;
+	zkcmMemConfigS		*memConfig=__KNULL;
+	zkcmMemMapS		*memMap=__KNULL;
+	zkcmNumaMapS		*numaMap=__KNULL;
+	numaMemoryBankC		*nmb;
 	// __kspaceBool is used to determine whether or not to kill __kspace.
 	sarch_t			pos, __kspaceBool=0;
 	status_t		nSet=0;
-
-	// Initialize the Memory Info Module.
-	ret = zkcmCore.memoryDetection.initialize();
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(NOTICE MEMTRIB"pmemInit: Failed to init memory info "
-			"module.\n");
-		return ret;
-	};
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Get NUMA map from chipset.

@@ -71,7 +71,9 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 
 	// Calculate the number of frames to commit before fakemapping.
 	if (__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)) { commit = 0; };
-	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)) {
+	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)
+		&& !__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL))
+	{
 		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
 	};
 

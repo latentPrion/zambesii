@@ -326,7 +326,6 @@ void memoryBogC::free(void *_mem)
 		return;
 	};
 }
-		
 
 memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 {
@@ -335,7 +334,7 @@ memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 	ret = new (processTrib.__kprocess.memoryStream.memAlloc(
 		PAGING_BYTES_TO_PAGES(
 			blockSize + sizeof(bogBlockS)),
-			MEMALLOC_PURE_VIRTUAL)) bogBlockS;
+		MEMALLOC_PURE_VIRTUAL)) bogBlockS;
 
 	if (ret == __KNULL) {
 		return __KNULL;

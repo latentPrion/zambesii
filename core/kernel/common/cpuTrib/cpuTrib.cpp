@@ -733,6 +733,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 	if ((ncb = getBank(bankId)) != __KNULL) {
 		return ERROR_SUCCESS;
 	};
+
 	CHECK_AND_RESIZE_BMP(
 		&availableBanks, bankId, &err,
 		"createBank", "available banks");

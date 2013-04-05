@@ -89,6 +89,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
+
 	/* Spawn the new thread for __korientationMain. There is no need to
 	 * unschedule __korientationInit() because it will never be scheduled.
 	**/
@@ -120,29 +121,13 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
-	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 10, 0),
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
-		__KNULL, 0);
-
-	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 5, 0),
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
-		__KNULL, 0);
-
-	processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
-	__kprintf(NOTICE ORIENT"Timer event 0 just expired successfully!\n");
-	processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
-	__kprintf(NOTICE ORIENT"Timer event 1 just expired successfully!\n");
-
-//processTrib.__kgetStream()->memoryStream.dump();
-//	taskTrib.dormant(
-//		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
-
 	// Detect physical memory.
+	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
+
 	__kprintf(NOTICE ORIENT"About to dormant.\n");
-asm volatile (".here:\n\tcli\n\thlt\n\tjmp .here\n\t");
+	taskTrib.dormant(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
 
 	// Initialize ZKCM CPU Dectection mod.
 	// Detect and wake all CPUs.
