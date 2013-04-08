@@ -122,32 +122,33 @@ error_t x86IoApic::ioApicC::initialize(void)
 	 **/
 	for (ubit8 i=0; i<nPins; i++)
 	{
-		// Get current values.
+		/**	EXPLANATION:
+		 * For the IO-APICs, the kernel mandates the following state
+		 * upon detection and initialization: all pins must be masked
+		 * off.
+		 *
+		 * The exact programming status of any individual pin with
+		 * reference to target CPU, vector, polarity, trigger mode,
+		 * destination mode, delivery mode, etc are all undefined.
+		 *
+		 * These details are dealt with by the bus-pin mapping code when
+		 * a bus is attached to the kernel. For example, when the ISA
+		 * bus is attached and its bus-pin mappings are loaded
+		 * (loadBusPinMappings(CC"isa"), the bus-pin mapping code
+		 * will at that time program all the ISA pins correctly as
+		 * needed for the ISA bus, and as directed by the ACPI/MP
+		 * tables.
+		 **/
 		maskPin(i);
-		getPinState(
-			i, reinterpret_cast<ubit8 *>( &cpu ), &vector,
-			&dummy, &dummy,
-			&polarity, &triggMode);
+
+		// Set the vector for the pin.
+		irqPinList[i].vector = vectorBase + i;
 
 		// Fill in ACPI Global IRQ ID and set Intel MP ID to invalid.
 		irqPinList[i].intelMpId = IRQCTL_IRQPIN_INTELMPID_INVALID;
 		if (acpiGirqBase != IRQCTL_IRQPIN_ACPIID_INVALID) {
 			irqPinList[i].acpiId = acpiGirqBase + i;
 		};
-
-		irqPinList[i].triggerMode
-			= (triggMode == x86IOAPIC_TRIGGMODE_EDGE) ?
-				IRQCTL_IRQPIN_TRIGGMODE_EDGE
-				: IRQCTL_IRQPIN_TRIGGMODE_LEVEL;
-
-		irqPinList[i].polarity
-			= (polarity == x86IOAPIC_POLARITY_LOW) ?
-				IRQCTL_IRQPIN_POLARITY_LOW
-				: IRQCTL_IRQPIN_POLARITY_HIGH;
-
-		irqPinList[i].cpu = cpu;
-		irqPinList[i].vector = vector;
-		irqPinList[i].flags = 0;
 	};
 
 	// Give the pins to the kernel for __kpin ID assignment.
@@ -159,8 +160,6 @@ error_t x86IoApic::ioApicC::initialize(void)
 		id, vaddr.rsrc, paddr, version, nPins,
 		acpiGirqBase, vectorBase);
 
-	// Now check to see if there are entries for each pin in the MP tables.
-	getIntelMpPinMappings();
 	return ERROR_SUCCESS;
 }
 
@@ -255,70 +254,4 @@ static utf8Char		*polarities[4] = {
 static utf8Char		*triggerModes[4] = {
 	CC"Conforms", CC"Edge", CC"Invalid", CC"Level"
 };*/
-
-error_t x86IoApic::ioApicC::getIntelMpPinMappings(void)
-{
-	x86_mpCfgS		*mpCfg;
-	x86_mpCfgIrqSourceS	*irqSource;
-	uarch_t			context;
-	void			*handle;
-	ubit16			nPins=0;
-
-	/**	EXPLANATION:
-	 * Parse the MP tables and assign each pin its Intel MP ID.
-	 **/
-	x86Mp::initializeCache();
-	if (x86Mp::findMpFp() == __KNULL)
-	{
-		__kprintf(WARNING x86IOAPIC"getIntelMpPinMappings: No MP.\n");
-		return ERROR_GENERAL;
-	};
-
-	if ((mpCfg = x86Mp::mapMpConfigTable()) == __KNULL)
-	{
-		__kprintf(ERROR x86IOAPIC"getIntelMpPinMappings: Failed to "
-			"map MP Configuration table.\n");
-
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	context = 0;
-	handle = __KNULL;
-
-	irqSource = x86Mp::getNextIrqSourceEntry(&context, &handle);
-	for (; irqSource != __KNULL;
-		irqSource = x86Mp::getNextIrqSourceEntry(&context, &handle))
-	{
-		// If not for this IO-APIC, skip it.
-		if (irqSource->destIoApicId != id) { continue; };
-
-		nPins++;
-		// Print info for debug.
-		/*__kprintf(NOTICE x86IOAPIC"getIntelMpPinMappings: "
-			"bus-IRQ(%d, %d), IoApic(%d, %d),\n"
-			"\tintType %s, Pol %s, trigg %s.\n",
-			irqSource->sourceBusId, irqSource->sourceBusIrq,
-			irqSource->destIoApicId, irqSource->destIoApicPin,
-			intTypes[irqSource->intType],
-			polarities[
-				irqSource->flags
-				& x86_MPCFG_IRQSRC_FLAGS_POLARITY_MASK],
-
-			triggerModes[
-				irqSource->flags
-				>> x86_MPCFG_IRQSRC_FLAGS_SENSITIVITY_SHIFT
-				& x86_MPCFG_IRQSRC_FLAGS_SENSITIVITY_MASK]); */
-
-		/**	EXPLANATION:
-		 * The only thing we do in here is check to see if the pin
-		 * has an entry in the MP Tables. If it does, we set the
-		 * intelMpId field to 0. Else, if there is no entry, we leave
-		 * it at IRQCTL_IRQPIN_INTELMPID_INVALID.
-		 **/
-		irqPinList[irqSource->destIoApicPin].intelMpId = 0;
-	};
-
-	__kprintf(NOTICE x86IOAPIC"getIntelMpPinMappings: %d pins.\n", nPins);
-	return ERROR_SUCCESS;
-}
 

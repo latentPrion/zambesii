@@ -114,7 +114,12 @@ void interruptTribC::irqMain(taskContextC *regs)
 	void			*handle;
 	sarch_t			makeNoise=0;
 
-	if (regs->vectorNo != 253 && regs->vectorNo != 32) { makeNoise = 1; };
+	if (regs->vectorNo != 253 && regs->vectorNo != 32
+		/*&& regs->vectorNo != 14*/)
+	{
+		makeNoise = 1;
+	};
+
 	if (makeNoise)
 	{
 		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: CPU %d entered on "
