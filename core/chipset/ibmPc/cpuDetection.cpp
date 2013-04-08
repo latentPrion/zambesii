@@ -8,6 +8,7 @@
 #include <platform/cpu.h>
 #include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
@@ -15,7 +16,10 @@
 #include <commonlibs/libx86mp/libx86mp.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
+#include <kernel/common/interruptTrib/interruptTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
+
+#include "i8254.h"
 #include "i8259a.h"
 #include "zkcmIbmPcState.h"
 
@@ -658,11 +662,20 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 
 	memcpy8(destAddr, srcAddr, copySize);
 
-	// Mask all ISA IRQs at the PIC and send an EOI to clear In-service reg.
-	i8259aPic.maskAll();
-	// NOTE: The sendEoi call takes __kpins as arguments.
-	i8259aPic.sendEoi(0);
-	i8259aPic.sendEoi(8);
+	x86IoApic::initializeCache();
+	if (!x86IoApic::ioApicsAreDetected())
+	{
+		ret = x86IoApic::detectIoApics();
+		if (ret != ERROR_SUCCESS) { return ret; };
+	};
+
+	/* The i8254 is the only device which should be operational right
+	 * now. Disable it to force it to forget its __kpin assignment, then
+	 * mask all of the i8259 PIC pins. We can forcibly remove the ISR for
+	 * __kpin 0 from the Interrupt Tributary without waiting for the
+	 * finalizing IRQ to come in.
+	 **/
+	i8254Pit.disableForSmpModeSwitch();
 
 	/** EXPLANATION
 	 * Next, we parse the MP tables to see if the chipset has the IMCR
@@ -673,7 +686,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	 **/
 	mpFp = x86Mp::findMpFp();
 	if (mpFp != __KNULL
-		&& __KFLAG_TEST(mpFp->features[1], x86_MPFP_FEAT1_FLAG_PICMODE))
+		&&__KFLAG_TEST(mpFp->features[1], x86_MPFP_FEAT1_FLAG_PICMODE))
 	{
 		ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_UNIPROCESSOR;
 
@@ -681,35 +694,29 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 		io::write8(0x22, 0x70);
 		io::write8(0x23, 0x1);
 		cpuControl::safeEnableInterrupts(cpuFlags);
-		__kprintf(NOTICE CPUMOD"setSmpMode: chipset was in PIC mode."
-			"\n");
+		__kprintf(NOTICE CPUMOD"setSmpMode: chipset was in PIC "
+			"mode.\n");
 	}
 	else
 	{
-		if (mpFp != __KNULL)
-		{
-			ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_SMP;
-			__kprintf(NOTICE CPUMOD"setSmpMode: CPU Mod: chipset "
-				"was in Virtual wire mode.\n");
-		}
-		else
-		{
-			ibmPcState.smpInfo.chipsetOriginalState =
-				SMPSTATE_UNIPROCESSOR;
-		};
+		ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_SMP;
+		__kprintf(NOTICE CPUMOD"setSmpMode: chipset was in Virtual "
+			"wire mode.\n");
 	};
 
 	ibmPcState.smpInfo.chipsetState = SMPSTATE_SMP;
+	assert_fatal(
+		zkcmCore.irqControl.bpm.loadBusPinMappings(CC"isa")
+			== ERROR_SUCCESS);
+
+	for (;;)
+	{
+		__kprintf(NOTICE CPUMOD"setSmpMode: About to HLT.\n");
+		cpuControl::halt();
+	};
 
 	zkcmCore.irqControl.chipsetEventNotification(
 		IRQCTL_EVENT_SMP_MODE_SWITCH, 0);
-
-	x86IoApic::initializeCache();
-	if (!x86IoApic::ioApicsAreDetected())
-	{
-		ret = x86IoApic::detectIoApics();
-		if (ret != ERROR_SUCCESS) { return ret; };
-	};
 
 	return ERROR_SUCCESS;
 }

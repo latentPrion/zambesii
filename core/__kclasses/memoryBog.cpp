@@ -88,7 +88,6 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 	if (nBytes == 0) {
 		return __KNULL;
 	};
-
 	nBytes = MEMORYBOG_SIZE_ROUNDUP(nBytes);
 
 	// Size of the alloc must accommodate the alloc header.
@@ -142,6 +141,7 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 						R_CAST(uarch_t, objTmp)
 							+ objTmp->nBytes );
 				};
+
 				blockTmp->refCount++;
 
 				head.lock.release();

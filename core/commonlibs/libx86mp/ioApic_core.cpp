@@ -90,6 +90,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 {
 	cpu_t		cpu=0;
 	ubit8		vector, polarity, triggMode, dummy;
+	error_t		err;
 
 	// Map the IO-APIC into the kernel vaddrspace.
 	vaddr.rsrc = mapIoApic(paddr);
@@ -103,7 +104,8 @@ error_t x86IoApic::ioApicC::initialize(void)
 	vaddr.lock.release();
 
 	// Get vector base. See zkcmIrqControlModC::identifyActiveIrq().
-	vectorBase = x86IoApic::allocateVectorBaseFor(this);
+	err = x86IoApic::allocateVectorBaseFor(this, &vectorBase);
+	if (err != ERROR_SUCCESS) { return err; };
 
 	// Allocate irqPinList.
 	irqPinList = new zkcmIrqPinS[nPins];
@@ -152,9 +154,11 @@ error_t x86IoApic::ioApicC::initialize(void)
 	interruptTrib.registerIrqPins(nPins, irqPinList);
 	__kpinBase = irqPinList[0].__kid;
 
-	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x, "
-		"nPins %d, Girqbase %d.\n\tAll pins masked off for now.\n",
-		id, vaddr.rsrc, paddr, version, nPins, acpiGirqBase);
+	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x,\n"
+		"\tnPins %d, Girqbase %d, vectorBase %d.\n",
+		id, vaddr.rsrc, paddr, version, nPins,
+		acpiGirqBase, vectorBase);
+
 	// Now check to see if there are entries for each pin in the MP tables.
 	getIntelMpPinMappings();
 	return ERROR_SUCCESS;

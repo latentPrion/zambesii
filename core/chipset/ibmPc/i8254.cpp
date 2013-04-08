@@ -315,6 +315,80 @@ failOut:
 	return ret;
 }
 
+void i8254PitC::disableForSmpModeSwitch(void)
+{
+	/**	EXPLANATION:
+	 * Things we have to do here:
+	 *	1. Unregister our ISR.
+	 *	2. Mask off the i8259a pin (done by the kernel automatically).
+	 *
+	 * Following this, the kernel will switch to SMP mode, re-run the
+	 * bus-pin mapping detection code for the ISA bus, and then re-enable
+	 * the i8254 afterwards.
+	 **/
+	state.lock.acquire();
+	interruptTrib.zkcm.retirePinIsr(
+		i8254State.__kpinId, &isr);
+
+	state.lock.release();
+}
+
+error_t i8254PitC::reenableAfterSmpModeSwitch(void)
+{
+	error_t		ret;
+
+	ret = zkcmCore.irqControl.bpm.get__kpinFor(
+		CC"isa", 0, &i8254State.__kpinId);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR i8254"re-enableAfterSmpModeSwitch: "
+			"BPM was unable to map "
+			"ISA IRQ 0 to a __kpin.\n");
+
+		return ret;
+	};
+
+	__kprintf(NOTICE i8254"re-enableAfterSmpModeSwitch: BPM reports ISA "
+		"IRQ 0 __kpin is %d.\n",
+		i8254State.__kpinId);
+
+	/* The registration of the ISR and the setting of the irqState
+	 * value must be jointly atomic.
+	 **/
+	state.lock.acquire();
+
+	ret = interruptTrib.zkcm.registerPinIsr(
+		i8254State.__kpinId, this, &isr, 0);
+
+	state.lock.release();
+
+	if (ret != ERROR_SUCCESS)
+	{
+		state.lock.acquire();
+		i8254State.isrRegistered = 0;
+		state.lock.release();
+
+		__kprintf(ERROR i8254"re-enableAfterSmpModeSwitch: Failed to "
+			"register ISR on __kpin %d.\n",
+			i8254State.__kpinId);
+
+		return ret;
+	};
+
+	ret = interruptTrib.__kpinEnable(i8254State.__kpinId);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR i8254"re-enableAfterSmpModeSwitch: Interrupt "
+			"Trib failed to enable IRQ for __kpin %d.\n",
+			i8254State.__kpinId);
+
+		return ret;
+	};
+
+	return ERROR_SUCCESS;
+}
+
 void i8254PitC::disable(void)
 {
 	/**	EXPLANATION:

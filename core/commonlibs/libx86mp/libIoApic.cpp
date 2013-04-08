@@ -27,61 +27,42 @@ void x86IoApic::flushCache(void)
 	cache.magic = 0;
 	cache.mapped = 0;
 	cache.nIoApics = 0;
-	// Zero out the vector base array.
-	memset(cache.vectorBases, 0, sizeof(cache.vectorBases));
+
 	/* We start assigning vectors from 48, since that's where the i8259
 	 * vectors end. Not that there will ever be any collision, but it seems
 	 * neater.
 	 **/
-	cache.vectorBaseCounter = 48;
+	cache.vectorBaseCounter = ARCH_INTERRUPTS_VECTOR_PIN_START;
 }
 
-ubit8 x86IoApic::allocateVectorBaseFor(ioApicC *ioApic)
+error_t x86IoApic::allocateVectorBaseFor(ioApicC *ioApic, ubit8 *vectorBase)
 {
-	ubit8		i=0;
-
-	for (;
-		i<x86IOAPIC_MAX_NIOAPICS
-			&& cache.vectorBases[i].ioApicId != 0;
-		i++)
+	// Make sure we haven't maxed out on interrupt vectors.
+	if (cache.vectorBaseCounter + ioApic->getNIrqs() - 1
+		>= ARCH_INTERRUPTS_VECTOR_MSI_START)
 	{
-		if (cache.vectorBases[i].ioApicId == ioApic->getId())
-		{
-			// Re-use already assigned vectors if possible.
-			if (cache.vectorBases[i].vectorBase != 0) {
-				return cache.vectorBases[i].vectorBase;
-			}
-			else
-			{
-				// Honestly this branch should never be taken...
-				cache.vectorBases[i].vectorBase =
-					cache.vectorBaseCounter;
-
-				cache.vectorBases[i].nPins = ioApic->getNIrqs();
-				cache.vectorBaseCounter += ioApic->getNIrqs();
-				return cache.vectorBases[i].vectorBase;
-			};
-		};
+		return ERROR_RESOURCE_UNAVAILABLE;
 	};
 
-	cache.vectorBases[i].ioApicId = ioApic->getId();
-	cache.vectorBases[i].vectorBase = cache.vectorBaseCounter;
-	cache.vectorBases[i].nPins = ioApic->getNIrqs();
+	*vectorBase = cache.vectorBaseCounter;
 	cache.vectorBaseCounter += ioApic->getNIrqs();
-	return cache.vectorBases[i].vectorBase;
+	return ERROR_SUCCESS;
 }
 
 x86IoApic::ioApicC *x86IoApic::getIoApicByVector(ubit8 vector)
 {
-	for (ubit8 i=0; i<x86IOAPIC_MAX_NIOAPICS; i++)
+	hardwareIdListC::iterator	it;
+	ioApicC				*ioApic;
+
+	it = cache.ioApics.begin();
+	for (ioApic = (ioApicC *)it++;
+		ioApic != __KNULL; ioApic = (ioApicC *)it++)
 	{
-		if (cache.vectorBases[i].vectorBase <= vector
-			&& (cache.vectorBases[i].vectorBase
-				+ cache.vectorBases[i].nPins)
-			> vector)
+		if (ioApic->getVectorBase() <= vector
+			&& (ioApic->getVectorBase() + ioApic->getNIrqs())
+				> vector)
 		{
-			return (ioApicC *)cache.ioApics
-				.getItem(cache.vectorBases[i].ioApicId);
+			return ioApic;
 		};
 	};
 
@@ -191,7 +172,6 @@ error_t x86IoApic::detectIoApics(void)
 
 	if (cache.magic != x86IOAPIC_MAGIC) { return ERROR_INVALID_ARG; };
 	if (ioApicsAreDetected()) { return ERROR_SUCCESS; };
-
 	acpi::initializeCache();
 	if (!acpi::rsdpFound())
 	{

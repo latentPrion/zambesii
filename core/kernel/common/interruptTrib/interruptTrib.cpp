@@ -12,6 +12,8 @@
 
 
 interruptTribC::interruptTribC(void)
+:
+pinIrqTableCounter(0)
 {
 	for (ubit32 i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
@@ -21,7 +23,6 @@ interruptTribC::interruptTribC(void)
 		msiIrqTable[i].type = vectorDescriptorS::UNCLAIMED;
 	};
 
-	pinIrqTableCounter = 0;
 }
 
 error_t interruptTribC::initializeExceptions(void)
@@ -47,11 +48,13 @@ error_t interruptTribC::initializeExceptions(void)
 
 error_t interruptTribC::initializeIrqManagement(void)
 {
+	error_t		ret;
+
 	/**	EXPLANATION:
-	 * After a call to initialize2(), the chipset is expected to be fully
-	 * in synch with the kernel on all information to do with IRQ pins and
-	 * bus/device <-> IRQ-pin relationships. The IBM-PC will be used as the
-	 * paradigm for explanation:
+	 * After a call to initializeIrqManagement(), the chipset is expected to
+	 * be fully in synch with the kernel on all information to do with IRQ
+	 * pins and bus/device <-> IRQ-pin relationships. The IBM-PC will be
+	 * used as the paradigm for explanation:
 	 *
 	 * On the IBM-PC, this function first sends a notification to the
 	 * chipset's IRQ Control module code stating that dynamic memory
@@ -90,6 +93,10 @@ error_t interruptTribC::initializeIrqManagement(void)
 	 * all bus/device <-> pin mappings, and be able to translate those on
 	 * request from the kernel.
 	 **/
+	// Initialize the data structure before use.
+	ret = pinIrqTable.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
 	// Notify the IRQ Control mod that memory management is initialized.
 	zkcmCore.irqControl.chipsetEventNotification(
 		IRQCTL_EVENT_MEMMGT_AVAIL, 0);
@@ -502,6 +509,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 			panic(err);
 		};
 		pinIrqTableCounter++;
+
 	};
 }
 
@@ -597,23 +605,20 @@ void interruptTribC::dumpUnusedVectors(void)
 
 void interruptTribC::dumpIrqPins(void)
 {
-	sarch_t			context, prev;
-	irqPinDescriptorS	*tmp;
+	hardwareIdListC::iterator	it, prev;
+	irqPinDescriptorS		*tmp;
 
 	__kprintf(NOTICE INTTRIB"dumpIrqPins:\n");
 
-	prev = context = pinIrqTable.prepareForLoop();
-	tmp = reinterpret_cast<irqPinDescriptorS *>(
-		pinIrqTable.getLoopItem(&context) );
-
+	prev = it = pinIrqTable.begin();
+	tmp = reinterpret_cast<irqPinDescriptorS *>( it++ );
 	while (tmp != __KNULL)
 	{
 		__kprintf(CC"\t__kpin %d: %d devices.\n",
-			prev, tmp->isrList.getNItems());
+			prev.cursor, tmp->isrList.getNItems());
 
-		prev = context;
-		tmp = reinterpret_cast<irqPinDescriptorS *>(
-			pinIrqTable.getLoopItem(&context) );
+		prev = it;
+		tmp = reinterpret_cast<irqPinDescriptorS *>( it++ );
 	};
 }
 

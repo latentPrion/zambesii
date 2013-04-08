@@ -152,12 +152,19 @@ public:
 
 	struct vectorDescriptorS
 	{
-		uarch_t			flags;
+		vectorDescriptorS(void)
+		:
+		flags(0), nUnhandled(0),
+		exception(__KNULL)
+		{}
+
 		enum vectorTypeE
 		{
 			UNCLAIMED=0, EXCEPTION, MSI_IRQ, SWI
 		} type;
+
 		// For debugging.
+		uarch_t			flags;
 		uarch_t			nUnhandled;
 
 		/**	NOTE:
@@ -193,6 +200,11 @@ public:
 
 	struct irqPinDescriptorS
 	{
+		irqPinDescriptorS(void)
+		:
+		flags(0), nUnhandled(0)
+		{}
+
 		ubit32		flags;
 		ubit32		nUnhandled;
 		/* Each IRQ __kpin has a list of installed ISRs. There is no
@@ -203,8 +215,11 @@ public:
 		ptrListC<isrDescriptorS>	isrList;
 	};
 
+	// Array of vector descriptors. See above.
 	vectorDescriptorS	msiIrqTable[ARCH_INTERRUPTS_NVECTORS];
+	// Dynamic array of __kpin descriptors. See above.
 	hardwareIdListC		pinIrqTable;
+	// Counter for allocating __kpin IDs.
 	ubit16			pinIrqTableCounter;
 };
 

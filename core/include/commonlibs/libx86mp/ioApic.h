@@ -1,6 +1,7 @@
 #ifndef _LIB_x86MP_IO_APIC_H
 	#define _LIB_x86MP_IO_APIC_H
 
+	#include <arch/interrupts.h>
 	#include <arch/paddr_t.h>
 	#include <chipset/zkcm/picDevice.h>
 	#include <__kstdlib/__ktypes.h>
@@ -97,9 +98,10 @@ namespace x86IoApic
 		~ioApicC(void);
 
 	public:
-		ubit8 getNIrqs(void) { return nPins; };
-		sarch_t getGirqBase(void) { return acpiGirqBase; };
-		ubit8 getId(void) { return id; };
+		ubit8 getNIrqs(void) { return nPins; }
+		sarch_t getGirqBase(void) { return acpiGirqBase; }
+		ubit8 getId(void) { return id; }
+		ubit8 getVectorBase(void) { return vectorBase; }
 
 		void maskPin(ubit8 irq);
 		void unmaskPin(ubit8 irq);
@@ -201,19 +203,6 @@ namespace x86IoApic
 		// List of IO APIC objects.
 		hardwareIdListC		ioApics;
 
-		/* Each IO-APIC is given a unique "vector base" for its pins,
-		 * such that every pin on every IO-APIC will have a different
-		 * vector. The base vector number for each IO-APIC is stored
-		 * here. The fact that the array is 32 indexes large effectively
-		 * hard-limits the number of supported IO-APICs to 32.
-		 **/
-		struct ioApicVectorBaseMapS
-		{
-			ubit8		ioApicId;
-			ubit8		vectorBase;
-			ubit8		nPins;
-		} vectorBases[x86IOAPIC_MAX_NIOAPICS];
-
 		/* The counter used to allocate new vector bases. Initial value
 		 * hardcoded and set in flushCache().
 		 **/
@@ -249,7 +238,7 @@ namespace x86IoApic
 	// void maskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t *mask0);
 	// void unmaskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
 
-	ubit8 allocateVectorBaseFor(ioApicC *ioApic);
+	error_t allocateVectorBaseFor(ioApicC *ioApic, ubit8 *ret);
 	ioApicC *getIoApicByVector(ubit8 vector);
 }
 

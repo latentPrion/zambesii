@@ -35,6 +35,7 @@ class i8254PitC
 :
 public zkcmTimerDeviceC
 {
+friend class zkcmCpuDetectionModC;
 public:
 	explicit i8254PitC(ubit32 childId)
 	:
@@ -73,6 +74,9 @@ private:
 	void sendEoi(void);
 	void writeOneshotIo(void);
 	void writePeriodicIo(void);
+
+	void disableForSmpModeSwitch(void);
+	error_t reenableAfterSmpModeSwitch(void);
 
 private:
 	zkcmDeviceC		baseDeviceInfo;

@@ -121,40 +121,15 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
-	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 5, 0),
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
-		__KNULL, 0);
-
-	processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
-	__kprintf(NOTICE ORIENT"Timer event 0 just expired successfully!\n");
-
-	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 5, 0),
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
-		__KNULL, 0);
-
-	processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
-	__kprintf(NOTICE ORIENT"Timer event 1 just expired successfully!\n");
-
-	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 5, 0),
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
-		__KNULL, 0);
-
-	processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
-	__kprintf(NOTICE ORIENT"Timer event 2 just expired successfully!\n");
-
-	__kprintf(NOTICE ORIENT"About to dormant.\n");
-	taskTrib.dormant(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
 	// Detect physical memory.
 	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
 
-
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
+	__kprintf(NOTICE ORIENT"About to dormant.\n");
+	taskTrib.dormant(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
 
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 

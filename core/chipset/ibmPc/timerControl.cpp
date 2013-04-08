@@ -18,7 +18,7 @@ static ptrListC<zkcmTimerDeviceC>	timers;
 static sharedResourceGroupC<multipleReaderLockC, timestampS>	systemTime;
 static const ubit32			ibmPcSafePeriodMask =
 	/*TIMERCTL_1S_SAFE
-	|*/ TIMERCTL_100MS_SAFE | TIMERCTL_10MS_SAFE | TIMERCTL_1MS_SAFE;
+	|*/ TIMERCTL_100MS_SAFE | TIMERCTL_10MS_SAFE /*| TIMERCTL_1MS_SAFE*/;
 
 static const ubit8 daysInMonth[12] =
 	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };

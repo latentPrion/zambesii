@@ -57,7 +57,19 @@ status_t zkcmIrqControlModC::identifyActiveIrq(
 			return IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS;
 		};
 
+		if (!x86IoApic::ioApicsAreDetected())
+		{
+			panic(FATAL IBMPCIRQCTL"identifyActiveIrq: Chipset "
+				"is in SMP mode, but IO-APICs are\n"
+				"\tundetected. Unable to call into "
+				"x86IoApic::identifyActiveIrq.\n");
+		};
+
 		ioApic = x86IoApic::getIoApicByVector(vector);
+		if (ioApic == __KNULL) {
+			return IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE;
+		};
+
 		return ioApic->identifyActiveIrq(
 			cpu, vector, __kpin, triggerMode);
 	}

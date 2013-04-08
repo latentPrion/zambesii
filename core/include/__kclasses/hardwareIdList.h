@@ -21,6 +21,27 @@ public:
 		void *preallocatedMem=__KNULL, ubit16 preallocatedSize=0);
 
 public:
+	typedef class iteratorC
+	{
+	friend class hardwareIdListC;
+	public:
+		iteratorC(void)
+		:
+		cursor(0), list(__KNULL)
+		{}
+
+		void *operator++(int)
+		{
+			if (list == __KNULL) { return __KNULL; };
+			return list->getLoopItem(&cursor);
+		}
+
+		// Allow "cursor" to be read.
+		sarch_t		cursor;
+	private:
+		hardwareIdListC	*list;
+	} iterator;
+
 	// Retrieves an item's pointer by its hardware ID.
 	void *getItem(sarch_t id);
 
@@ -47,6 +68,15 @@ public:
 	 *
 	 * Repeat until getLoopItem() returns __KNULL.
 	 **/
+	iteratorC begin(void)
+	{
+		iteratorC	it;
+
+		it.cursor = prepareForLoop();
+		it.list = this;
+		return it;
+	}
+
 	sarch_t prepareForLoop(void);
 	void *getLoopItem(sarch_t *id);
 
