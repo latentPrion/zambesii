@@ -88,8 +88,6 @@ static void sortListBy__kids(ubit8 nPins, zkcmIrqPinS *const list)
 
 error_t x86IoApic::ioApicC::initialize(void)
 {
-	cpu_t		cpu=0;
-	ubit8		vector, polarity, triggMode, dummy;
 	error_t		err;
 
 	// Map the IO-APIC into the kernel vaddrspace.
@@ -141,7 +139,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 		 **/
 		maskPin(i);
 
-		// Set the vector for the pin.
+		// Set the vector and __kpinID for each pin.
 		irqPinList[i].vector = vectorBase + i;
 
 		// Fill in ACPI Global IRQ ID and set Intel MP ID to invalid.

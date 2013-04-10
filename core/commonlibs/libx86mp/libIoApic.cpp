@@ -281,8 +281,8 @@ x86IoApic::ioApicC *x86IoApic::getIoApicFor(ubit16 __kpin)
 	for (; ret != __KNULL;
 		ret = (ioApicC *)cache.ioApics.getLoopItem(&context))
 	{
-		if (__kpin > ret->get__kpinBase()
-			&& __kpin < (ret->get__kpinBase() + ret->getNIrqs() - 1)
+		if (__kpin >= ret->get__kpinBase()
+			&& __kpin < (ret->get__kpinBase() + ret->getNIrqs())
 			)
 		{
 			return ret;

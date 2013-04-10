@@ -115,7 +115,7 @@ void interruptTribC::irqMain(taskContextC *regs)
 	sarch_t			makeNoise=0;
 
 	if (regs->vectorNo != 253 && regs->vectorNo != 32
-		/*&& regs->vectorNo != 14*/)
+		&& regs->vectorNo != 34)
 	{
 		makeNoise = 1;
 	};
@@ -161,10 +161,12 @@ void interruptTribC::irqMain(taskContextC *regs)
 		pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
 		if (makeNoise)
 		{
-			__kprintf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on CPU %d.\n"
-				"\tDumping: %d unhandled, %d ISRs, %s triggered.\n",
+			__kprintf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on "
+				"CPU %d.\n\tDumping: %d unhandled, %d ISRs, %s "
+				"triggered.\n",
 				__kpin, cpuTrib.getCurrentCpuStream()->cpuId,
-				pinDesc->nUnhandled, pinDesc->isrList.getNItems(),
+				pinDesc->nUnhandled,
+				pinDesc->isrList.getNItems(),
 				(triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL)
 					? "level" : "edge");
 		};
@@ -180,16 +182,22 @@ void interruptTribC::irqMain(taskContextC *regs)
 
 			if (status != ZKCM_ISR_NOT_MY_IRQ)
 			{
-				if (triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL
-					&& status == ERROR_SUCCESS)
-				{
+				if (status == ZKCM_ISR_SUCCESS) {
 					isrDesc->nHandled++;
-					break;
+				}
+				else
+				{
+					// Else error.
+					pinDesc->nUnhandled++;
+					panic(FATAL"Error handling an IRQ.\n");
 				};
 
-				// Else error.
-				pinDesc->nUnhandled++;
-				panic(FATAL"Error handling an IRQ.\n");
+
+				if (triggerMode
+					== IRQCTL_IRQPIN_TRIGGMODE_LEVEL)
+				{
+					break;
+				};
 			};
 		};
 
@@ -513,8 +521,8 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 			 **/
 			panic(err);
 		};
-		pinIrqTableCounter++;
 
+		pinIrqTableCounter++;
 	};
 }
 

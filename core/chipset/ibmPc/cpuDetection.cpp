@@ -596,6 +596,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	void		*srcAddr, *destAddr;
 	uarch_t		copySize, cpuFlags;
 	x86_mpFpS	*mpFp;
+	ubit8		i8254WasEnabled=0, i8254WasSoftEnabled=0;
 
 	/**	EXPLANATION:
 	 * This function will enable Symmetric I/O mode on the IBM-PC chipset.
@@ -675,7 +676,20 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	 * __kpin 0 from the Interrupt Tributary without waiting for the
 	 * finalizing IRQ to come in.
 	 **/
-	i8254Pit.disableForSmpModeSwitch();
+	if (i8254Pit.isEnabled()) { i8254WasEnabled = 1; };
+	if (i8254Pit.isSoftEnabled()) { i8254WasSoftEnabled = 1; };
+
+	i8254Pit.setSmpModeSwitchFlag(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id);
+
+	if (i8254WasEnabled)
+	{
+		i8254Pit.disable();
+		taskTrib.block();
+		__kprintf(NOTICE"Just unblocked.\n");
+	};
+
+	i8254Pit.unsetSmpModeSwitchFlag();
 
 	/** EXPLANATION
 	 * Next, we parse the MP tables to see if the chipset has the IMCR
@@ -708,6 +722,12 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	assert_fatal(
 		zkcmCore.irqControl.bpm.loadBusPinMappings(CC"isa")
 			== ERROR_SUCCESS);
+
+	if (i8254WasEnabled)
+	{
+		i8254Pit.enable();
+		if (!i8254WasSoftEnabled) { i8254Pit.softDisable(); };
+	};
 
 	for (;;)
 	{

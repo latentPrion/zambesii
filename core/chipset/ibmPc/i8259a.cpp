@@ -431,11 +431,11 @@ sarch_t i8259aPicC::irqIsEnabled(ubit16 __kid)
 	};
 
 	if (pin < 8) {
-		return __KBIT_TEST(io::read8(PIC_PIC1_DATA), pin);
+		return !__KBIT_TEST(io::read8(PIC_PIC1_DATA), pin);
 	}
 	else
 	{
-		return __KBIT_TEST(
+		return !__KBIT_TEST(
 			io::read8(PIC_PIC2_DATA), pin-8);
 	};
 }

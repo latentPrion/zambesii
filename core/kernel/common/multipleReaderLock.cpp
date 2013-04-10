@@ -1,8 +1,10 @@
 
+#include <arch/atomic.h>
 #include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/multipleReaderLock.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+
 
 void multipleReaderLockC::readAcquire(uarch_t *_flags)
 {
@@ -23,7 +25,8 @@ void multipleReaderLockC::readRelease(uarch_t _flags)
 {
 #if __SCALING__ >= SCALING_SMP
 	// See if there is a writer waiting on the lock.
-	if (!__KFLAG_TEST(lockC::flags, MRLOCK_FLAGS_WRITE_REQUEST))
+	if (!__KFLAG_TEST(
+		atomicAsm::read(&flags), MRLOCK_FLAGS_WRITE_REQUEST))
 	{
 		/* If there is no writer waiting, acquire the lock and then
 		 * decrement. Else just decrement.
@@ -35,7 +38,7 @@ void multipleReaderLockC::readRelease(uarch_t _flags)
 	else
 	{
 		// If there is a writer, don't acquire the lock. Just decrement.
-		readerCount.rsrc--;
+		atomicAsm::decrement(&readerCount.rsrc);
 	};
 #endif
 
@@ -58,7 +61,7 @@ void multipleReaderLockC::writeAcquire(void)
 	/* Spin on reader count until there are no readers left on the
 	 * shared resource.
 	 **/
-	while (readerCount.rsrc != 0) {
+	while (atomicAsm::read(&readerCount.rsrc) > 0) {
 		cpuControl::subZero();
 	};
 
@@ -93,7 +96,7 @@ void multipleReaderLockC::readReleaseWriteAcquire(uarch_t rwFlags)
 	readerCount.rsrc--;
 
 	// Spin on reader count until no readers are left.
-	while (readerCount.rsrc != 0) {
+	while (atomicAsm::read(&readerCount.rsrc) > 0) {
 		cpuControl::subZero();
 	};
 #endif

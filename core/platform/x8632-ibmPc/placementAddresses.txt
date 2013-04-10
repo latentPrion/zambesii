@@ -5,3 +5,9 @@ __kcpuPowerOn[Text|Data]:
 	These sections are copied to 0x8000-0x9FFF in low memory.
 	^ Can probably move these to 0x3000-0x4FFF.
 
+Kernel:
+	Load address is at 0x100000.
+	
+__Kspace:
+	Set to 0x400000 in order to give the kernel ample room.
+

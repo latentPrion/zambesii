@@ -60,6 +60,8 @@ public:
 	void mapRangeUsed(paddr_t baseAddr, uarch_t nFrames);
 	void mapRangeUnused(paddr_t baseAddr, uarch_t nFrames);
 
+	void dump(void);
+
 private:
 	void init2_spawnNumaStreams(zkcmNumaMapS *map);
 	void init2_generateNumaMemoryRanges(

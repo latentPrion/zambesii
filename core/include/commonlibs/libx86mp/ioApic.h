@@ -75,6 +75,8 @@ namespace x86IoApic
 	 * Class ioApicC is a device driver which can be instantiated, and
 	 * it provides the ZKCM PIC driver interface to the kernel.
 	 **/
+	friend error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void);
+	friend error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void);
 	public:
 		ioApicC(ubit8 id, paddr_t paddr, sarch_t acpiGirqBase)
 		:
@@ -340,7 +342,10 @@ void x86IoApic::maskIrq(ubit16 __kpin)
 
 	ioApic = getIoApicFor(__kpin);
 	if (ioApic != __KNULL)
-		{ ioApic->maskIrq(__kpin); };
+	{
+		ioApic->maskIrq(__kpin);
+		return;
+	};
 
 	__kprintf(ERROR x86IOAPIC"LibIoApic relay: maskIrq: __kpin %d "
 		"doesn't map to any known IO-APIC.\n",
@@ -353,7 +358,10 @@ void x86IoApic::unmaskIrq(ubit16 __kpin)
 
 	ioApic = getIoApicFor(__kpin);
 	if (ioApic != __KNULL)
-		{ ioApic->unmaskIrq(__kpin); };
+	{
+		ioApic->unmaskIrq(__kpin);
+		return;
+	};
 
 	__kprintf(ERROR x86IOAPIC"LibIoApic relay: unmaskIrq: __kpin %d "
 		"doesn't map to any known IO-APIC.\n",

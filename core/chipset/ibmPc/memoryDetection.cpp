@@ -215,7 +215,7 @@ zkcmNumaMapS *zkcmMemoryDetectionModC::getNumaMap(void)
 zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 {
 	zkcmMemMapS		*ret;
-	ubit32			nEntries=0, i, j;
+	ubit32			nEntries=0, nBadEntries, i, j;
 
 	/**	EXPLANATION:
 	 * Calls on the functions provided in the IBM-PC BIOS code to execute
@@ -277,9 +277,12 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 
 	// Generate the kernel's generic map from the E820.
 	// 'i' indexes into the E820 map, and 'j' indexes into the generic map.
+	nBadEntries = 0;
 	for (i=0, j=0; i<nEntries; i++)
 	{
-		if (e820Ptr[i].baseHigh & IBMPCMMAP_ADDRHIGH_BADMASK) {
+		if (e820Ptr[i].baseHigh & IBMPCMMAP_ADDRHIGH_BADMASK)
+		{
+			nBadEntries++;
 			continue;
 		};
 
@@ -312,8 +315,9 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 		j++;
 	};
 
-	__kprintf(NOTICE"getMemoryMap(): %d entries in firmware map.\n",
-		nEntries);
+	__kprintf(NOTICE"getMemoryMap(): %d firmware map entries; %d were "
+		"skipped.\n",
+		nEntries, nBadEntries);
 
 	/* Hardcode in IVT + BDA.
 	 * Additionally, the kernel force-uses several frames in lowmem, placing
@@ -391,8 +395,7 @@ zkcmMemConfigS *zkcmMemoryDetectionModC::getMemoryConfig(void)
 		};
 	};
 
-	if (_mmap->entries[highest].memType != ZKCM_MMAP_TYPE_USABLE)
-	{
+	if (_mmap->entries[highest].memType != ZKCM_MMAP_TYPE_USABLE) {
 		goto useE801;
 	};
 

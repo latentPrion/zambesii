@@ -12,7 +12,7 @@
 
 numaMemoryBankC::numaMemoryBankC(numaBankId_t id)
 :
-rangePtrCache(sizeof(numaMemoryBankC::rangePtrS)), id(id)
+id(id), rangePtrCache(sizeof(numaMemoryBankC::rangePtrS))
 {
 	ranges.rsrc = __KNULL;
 	defRange.rsrc = __KNULL;
@@ -51,11 +51,16 @@ numaMemoryBankC::~numaMemoryBankC(void)
 
 void numaMemoryBankC::dump(void)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags, rwFlags2;
 
 	ranges.lock.readAcquire(&rwFlags);
+	defRange.lock.readAcquire(&rwFlags2);
 
-	__kprintf(NOTICE NUMAMEMBANK"%d: Dumping.\n", id);
+	__kprintf(NOTICE NUMAMEMBANK"%d: Dumping. Default range base 0x%P.\n",
+		id, defRange.rsrc->baseAddr);
+
+	defRange.lock.readRelease(rwFlags2);
+
 	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
 	{
 		__kprintf((utf8Char *)"\tMem range: base 0x%X, size 0x%X.\n",
@@ -271,7 +276,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 			// This bank has no associated ranges of memory.
 			ranges.lock.readRelease(rwFlags2);
 			defRange.lock.readRelease(rwFlags);
-			return ERROR_UNKNOWN;
+			return ERROR_MEMORY_NOMEM_PHYSICAL;
 		};
 
 		defRange.lock.readReleaseWriteAcquire(rwFlags);
@@ -283,7 +288,6 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 		// Note that we still hold readAcquire on defRange here.
 	};
 
-
 	// Allocate from the default first.
 	ret = defRange.rsrc->fragmentedGetFrames(nFrames, paddr);
 	if (ret > 0)
@@ -294,7 +298,6 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 
 	// Default has no mem. Below we'll scan all the other ranges.
 	ranges.lock.readAcquire(&rwFlags2);
-
 	// We now hold both locks.
 	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
 	{
@@ -306,17 +309,18 @@ status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 		ret = cur->range->fragmentedGetFrames(nFrames, paddr);
 		if (ret > 0)
 		{
+			ranges.lock.readRelease(rwFlags2);
 			defRange.lock.readReleaseWriteAcquire(rwFlags);
 			defRange.rsrc = cur->range;
 			defRange.lock.writeRelease();
-			ranges.lock.readRelease(rwFlags2);
 			return ret;
 		};
 	};
 
 	// Reaching here means no mem was found.
-	defRange.lock.readRelease(rwFlags);
 	ranges.lock.readRelease(rwFlags2);
+	defRange.lock.readRelease(rwFlags);
+
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 

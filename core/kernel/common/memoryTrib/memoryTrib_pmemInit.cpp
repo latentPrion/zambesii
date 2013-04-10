@@ -226,7 +226,7 @@ parseMemoryMap:
 			continue;
 		};
 
-		nSet = nmb->merge(
+		nSet += nmb->merge(
 			getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
 	};
 
@@ -277,7 +277,7 @@ parseMemoryMap:
 	 * numaTrib.cpp should auto-determine which bank to set as the
 	 * new default.
 	 **/
-	memoryBanks.removeItem(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
+	destroyBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
 	__kprintf(NOTICE MEMTRIB"pmemInit: Removed __kspace. Ret is 0x%p.\n",
 		getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
 
@@ -370,7 +370,7 @@ void memoryTribC::init2_generateNumaMemoryRanges(
 #endif
 
 static utf8Char		*overlappingMessage = 
-	ERROR MEMTRIB"Error generating shbank holes: \n"
+	ERROR MEMTRIB"Error generating shbank holes:\n"
 	"\tOverlapping entries base 0x%P, size 0x%X, base 0x%P, size 0x%X.\n"
 	"\tHalting generation of shbank due to non-sane NUMA map.\n";
 
@@ -381,7 +381,18 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 	error_t		ret;
 	paddr_t		tmpBase, tmpSize;
 
-	// NUMA map exists: need to discover holes for shbank.
+	/**	EXPLANATION:
+	 * NUMA map exists: need to discover holes for shbank.
+	 *
+	 *	TODO:
+	 * At present, this function generates the hole memory ranges for
+	 * shbank pretty well, but it fails to generate a memrange for the case
+	 * where there is a memory hole AFTER the last entry in the NUMA map.
+	 * That is, if the size of memory is 256MiB, and the NUMA map ends at
+	 * say, 240MiB, and there is extra memory beyond that up to 256MiB,
+	 * this function will fail to generate the final hole needed to cover
+	 * that scenario. Low priority fix.
+	 **/
 
 	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries ) - 1; i++)
 	{
@@ -428,9 +439,9 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 		{
 #ifdef CONFIG_DEBUG_MEMTRIB
 			__kprintf(NOTICE MEMTRIB
-				"For memrange %d, on bank %d, base 0x%P, size "
-				"0x%P, next entry base 0x%P, shbank memory "
-				"range with base 0x%P and size 0x%P is needed."
+				"For bank %d, memrange %d: base 0x%P, size "
+				"0x%P\n\tNext entry: base 0x%P; spawning "
+				"shbank memrange:\n\tBase 0x%P and size 0x%P."
 				"\n", i,
 				map->memEntries[i].bankId,
 				map->memEntries[i].baseAddr,

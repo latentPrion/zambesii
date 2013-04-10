@@ -297,7 +297,6 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 	if (currBank != __KNULL)
 	{
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
-
 		if (ret > 0) {
 			return ret;
 		};

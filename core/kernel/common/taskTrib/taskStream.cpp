@@ -55,8 +55,8 @@ void taskStreamC::dump(void)
 		parentCpu->id,
 		load, capacity, currentTask->id, currentTask);
 
-	roundRobinQ.dump();
 	realTimeQ.dump();
+	roundRobinQ.dump();
 }
 
 error_t taskStreamC::cooperativeBind(void)
@@ -184,7 +184,7 @@ void taskStreamC::pull(void)
 		};
 
 		// Else set the CPU to a low power state.
-//		__kprintf(NOTICE TASKSTREAM"%d: Entering C1.\n", parentCpu->id);
+		__kprintf(NOTICE TASKSTREAM"%d: Entering C1.\n", parentCpu->id);
 		cpuControl::halt();
 	};
 

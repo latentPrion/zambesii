@@ -79,11 +79,12 @@ public:
 		rangePtrS		*next;
 	};
 
+	numaBankId_t	id;
+
 private:
 	sharedResourceGroupC<multipleReaderLockC, rangePtrS *>	ranges;
 	sharedResourceGroupC<multipleReaderLockC, numaMemoryRangeC *> defRange;
 	slamCacheC	rangePtrCache;
-	numaBankId_t	id;
 };
 
 #endif

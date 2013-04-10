@@ -8,6 +8,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/processId.h>
 #include <kernel/common/panic.h>
+#include <kernel/common/numaMemoryBank.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 
@@ -42,6 +43,28 @@ error_t memoryTribC::initialize(void)
 		sizeof(memoryTribMemoryBanksListMem));
 
 	return ERROR_SUCCESS;
+}
+
+void memoryTribC::dump(void)
+{
+	hardwareIdListC::iterator	it;
+	numaMemoryBankC			*nmb;
+
+	__kprintf(NOTICE MEMTRIB"Dumping: %d banks."
+#if __SCALING__ < SCALING_CC_NUMA
+		" default membank: %d.\n",
+		nBanks, defaultMemoryBank.rsrc);
+#else
+		"\n", nBanks);
+#endif
+
+	it = memoryBanks.begin();
+	for (nmb = (numaMemoryBankC *)it++;
+		nmb != __KNULL;
+		nmb = (numaMemoryBankC *)it++)
+	{
+		nmb->dump();
+	};
 }
 
 error_t memoryTribC::memRegionInit(void)

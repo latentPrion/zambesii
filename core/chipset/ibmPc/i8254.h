@@ -75,8 +75,8 @@ private:
 	void writeOneshotIo(void);
 	void writePeriodicIo(void);
 
-	void disableForSmpModeSwitch(void);
-	error_t reenableAfterSmpModeSwitch(void);
+	void setSmpModeSwitchFlag(processId_t wakeTargetThread);
+	void unsetSmpModeSwitchFlag(void);
 
 private:
 	zkcmDeviceC		baseDeviceInfo;
@@ -87,7 +87,9 @@ private:
 		i8254StateS(void)
 		:
 		currentTimeoutClks(0), currentIntervalClks(0),
-		isrRegistered(0), __kpinId(0), irqState(DISABLED)
+		isrRegistered(0), __kpinId(0), irqState(DISABLED),
+		smpModeSwitchInProgress(0),
+		smpModeSwitchThread(0)
 		{}
 
 		// i8254 CLK equivalent of nanosecond value in currentTimeout.
@@ -98,6 +100,8 @@ private:
 		// __kpin ID of the IRQ pin our device is currently tied to.
 		ubit16			__kpinId;
 		irqStateE		irqState;
+		ubit8			smpModeSwitchInProgress;
+		processId_t		smpModeSwitchThread;
 	} i8254State;
 };
 

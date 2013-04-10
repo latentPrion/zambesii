@@ -233,6 +233,16 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 		ioApic->setIrqStatus(
 			pin, cpu, ioApic->getVectorBase() + pin, 0);
 
+		ioApic->irqPinList[pin].triggerMode =
+			(triggerMode == x86IOAPIC_TRIGGMODE_LEVEL)
+				? IRQCTL_IRQPIN_TRIGGMODE_LEVEL
+				: IRQCTL_IRQPIN_TRIGGMODE_EDGE;
+
+		ioApic->irqPinList[pin].polarity =
+			(polarity == x86IOAPIC_POLARITY_LOW)
+				? IRQCTL_IRQPIN_POLARITY_LOW
+				: IRQCTL_IRQPIN_POLARITY_HIGH;
+
 		__kprintf(NOTICE IBMPCBPM"ACPI override: mapping ISA IRQ "
 			"%d to __kpin %d (girq: %d).\n",
 			irqOverride->irqNo,
@@ -371,7 +381,17 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 			cpu,
 			ioApic->getVectorBase() + irqSourceEntry->destIoApicPin,
 			0);
-			
+
+		ioApic->irqPinList[irqSourceEntry->sourceBusIrq].triggerMode =
+			(triggerMode == x86IOAPIC_TRIGGMODE_LEVEL)
+				? IRQCTL_IRQPIN_TRIGGMODE_LEVEL
+				: IRQCTL_IRQPIN_TRIGGMODE_EDGE;
+
+		ioApic->irqPinList[irqSourceEntry->sourceBusIrq].polarity =
+			(polarity == x86IOAPIC_POLARITY_LOW)
+				? IRQCTL_IRQPIN_POLARITY_LOW
+				: IRQCTL_IRQPIN_POLARITY_HIGH;
+
 		__kprintf(NOTICE IBMPCBPM"x86MP: Mapping ISA IRQ %d to __kpin "
 			"%d (IO-APIC %d, pin %d).\n",
 			irqSourceEntry->sourceBusIrq,
