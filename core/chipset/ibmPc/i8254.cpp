@@ -160,21 +160,20 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 		device->i8254State.irqState = i8254StateS::DISABLED;
 		interruptTrib.zkcm.retirePinIsr(
 			device->i8254State.__kpinId, &isr);
-
-		// Release the lock and exit.
-		device->state.lock.release();
-
-__kprintf(NOTICE"About to check for the SMP switch condition.\n");
 		// Part of the IBM-PC Symmetric IO mode switch.
 		if (device->i8254State.smpModeSwitchInProgress)
 		{
-__kprintf(NOTICE"About to unblock task 0x%x.\n", device->i8254State.smpModeSwitchThread);
+			// Release the lock and exit.
+			device->state.lock.release();
 			taskTrib.unblock(
 				device->i8254State.smpModeSwitchThread);
+		}
+		else
+		{
+			// Release the lock and exit.
+			device->state.lock.release();
 		};
-			
-__kprintf(NOTICE"Returning from the final disabling ISR: dumping schedqueue.\n");
-cpuTrib.getCurrentCpuStream()->taskStream.dump();
+
 		return ZKCM_ISR_SUCCESS;
 	};
 
@@ -340,6 +339,8 @@ void i8254PitC::unsetSmpModeSwitchFlag(void)
 
 void i8254PitC::disable(void)
 {
+	ubit16		disableDelayClks=1000;
+
 	/**	EXPLANATION:
 	 * 1. Program the i8254 to stop interrupting.
 	 * 2. Unregister our ISR from Interrupt Trib.
@@ -359,6 +360,8 @@ void i8254PitC::disable(void)
 	 **/
 
 	state.lock.acquire();
+	if (i8254State.smpModeSwitchInProgress) { disableDelayClks = 15000; };
+
 	// Write out the oneshot mode (mode 0) control byte.
 	io::write8(
 		i8254_CHAN0_IO_CONTROL,
@@ -367,8 +370,8 @@ void i8254PitC::disable(void)
 		| i8254_CHAN0_CONTROL_COUNTER_WRITE_LOWHIGH);
 
 	atomicAsm::memoryBarrier();
-	io::write8(i8254_CHAN0_IO_COUNTER, 1000 & 0xFF);
-	io::write8(i8254_CHAN0_IO_COUNTER, 1000 >> 8);
+	io::write8(i8254_CHAN0_IO_COUNTER, disableDelayClks & 0xFF);
+	io::write8(i8254_CHAN0_IO_COUNTER, disableDelayClks >> 8);
 	__KFLAG_UNSET(
 		state.rsrc.flags,
 		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED

@@ -6,12 +6,55 @@
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
 
-void interruptTrib_irqEntry(taskContextC *regs)
+static void noop(void) {}
+
+void interruptTrib_interruptEntry(taskContextC *regs)
 {
-	interruptTrib.irqMain(regs);
+	ubit8		makeNoise;
+
+	/**	EXPLANATION:
+	 * Subtractively decode the type of interrupt vector being dealt with.
+	 **/
+	makeNoise = regs->vectorNo != 253 && regs->vectorNo != 32
+		/*&& regs->vectorNo != 34*/;
+
+	(makeNoise) ? __kprintf(NOTICE NOLOG INTTRIB"interruptEntry: CPU %d "
+		"entered on vector %d.\n",
+		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo)
+		: noop();
+
+	if (regs->vectorNo >= ARCH_INTERRUPTS_VECTOR_PIN_START
+		&& regs->vectorNo < ARCH_INTERRUPTS_VECTOR_MSI_START)
+	{
+		interruptTrib.pinIrqMain(regs);
+		goto out;
+	};
+
+	if (regs->vectorNo >= ARCH_INTERRUPTS_VECTOR_MSI_START
+		&& regs->vectorNo < ARCH_INTERRUPTS_VECTOR_MSI_START
+			+ ARCH_INTERRUPTS_VECTOR_MSI_MAXNUM)
+	{
+		//interruptTrib.msiIrqMain(regs);
+		goto out;
+	}
+
+	if (regs->vectorNo == ARCH_INTERRUPTS_VECTOR_SWI)
+	{
+		//interruptTrib.swiMain(regs);
+		goto out;
+	};
+
+	interruptTrib.exceptionMain(regs);
+
+out:
+	(makeNoise) ? __kprintf(NOTICE NOLOG INTTRIB"interruptEntry: Exiting "
+		"on CPU %d vector %d.\n",
+		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo)
+		: noop();
 
 	// We should be able to: point ESP to regs, and then pop and iret.
 	asm volatile(

@@ -108,7 +108,7 @@ ASM_LOCAL_FUNCTION(__ksaveRegs)
 	 **/
 	pushl	%esp
 
-	call	interruptTrib_irqEntry
+	call	interruptTrib_interruptEntry
 
 	/* From a technical POV, Zambesii never should reach here. When we
 	 * return from a interrupt context, we simply point the stack pointer

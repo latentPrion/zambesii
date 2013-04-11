@@ -15,6 +15,9 @@
 
 namespace atomicAsm
 {
+	/**	TODO:
+	 * Implement the actual ASM for these functions correctly.
+	 **/
 	inline void memoryBarrier(void);
 	inline void flushInstructionCache(void);
 	inline void flushDataCache(void);

@@ -1,5 +1,6 @@
 
 #include <arch/io.h>
+#include <arch/interrupts.h>
 #include <arch/cpuControl.h>
 #include <chipset/zkcm/picDevice.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -16,8 +17,8 @@
 #define PIC_PIC2_CMD		0xA0
 #define PIC_PIC2_DATA		0xA1
 
-#define PIC_PIC1_VECTOR_BASE	0x20
-#define PIC_PIC2_VECTOR_BASE	0x28
+#define PIC_PIC1_VECTOR_BASE	(ARCH_INTERRUPTS_VECTOR_PIN_START)
+#define PIC_PIC2_VECTOR_BASE	(PIC_PIC1_VECTOR_BASE + 8)
 
 #define PIC_IO_DELAY_COUNTER	3
 #define PIC_IO_DELAY(v,x)	for (v=0; v<x; v++) {}

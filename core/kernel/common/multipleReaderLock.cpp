@@ -6,6 +6,12 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
+/**	FIXME:
+ * A series of race conditions exist in this class, mostly with the writer
+ * acquire/release functions and the readReleaseWriteAcquire function.
+ *
+ * Get rid of these whenever next there is a freeze period.
+ **/
 void multipleReaderLockC::readAcquire(uarch_t *_flags)
 {
 	readerCount.lock.acquire();

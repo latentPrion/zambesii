@@ -104,149 +104,115 @@ error_t interruptTribC::initializeIrqManagement(void)
 	return ERROR_SUCCESS;
 }
 
-void interruptTribC::irqMain(taskContextC *regs)
+void interruptTribC::pinIrqMain(taskContextC *regs)
 {
-	ubit16			__kpin;
-	ubit8			triggerMode;
+	irqPinDescriptorS	*pinDescriptor;
+	isrDescriptorS		*isrDescriptor;
 	status_t		status;
-	irqPinDescriptorS	*pinDesc;
-	isrDescriptorS		*isrDesc;
 	void			*handle;
-	sarch_t			makeNoise=0;
+	ubit8			makeNoise, triggerMode;
+	ubit16			__kpin;
 
-	if (regs->vectorNo != 253 && regs->vectorNo != 32
-		&& regs->vectorNo != 34)
-	{
-		makeNoise = 1;
-	};
-
-	if (makeNoise)
-	{
-		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: CPU %d entered on "
-			"vector %d.\n",
-			cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
-	};
-
-	/**	FIXME:
-	 * Will have to check for pin IRQs here for now. Pin IRQ vectors should
-	 * have their own kernel entry point which doesn't need to examine
-	 * vectorDescriptorS at all.
-	 **/
 	// Ask the chipset if any pin-based IRQs are pending and handle them.
 	status = zkcmCore.irqControl.identifyActiveIrq(
 		cpuTrib.getCurrentCpuStream()->cpuId,
 		regs->vectorNo,
 		&__kpin, &triggerMode);
 
-	if (makeNoise)
+	makeNoise = (__kpin != 0);
+
+	if (status == IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS
+		|| status ==  IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE)
 	{
-		__kprintf(NOTICE INTTRIB"irqMain: identifyActiveIrq returned %d, "
-			"__kpin %d, triggerMode %d.\n",
-			status, __kpin, triggerMode);
-	};
-
-	switch (status)
-	{
-	case IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS:
-		__kprintf(WARNING INTTRIB"irqMain: Spurious IRQ: vector %d.\n",
-			regs->vectorNo);
-
-		for (;;) {asm volatile("cli\n\thlt\n\t");};
-		return;
-
-	case IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE:
-		break;
-
-	default:
-		pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
-		if (makeNoise)
+		if (status == IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS)
 		{
-			__kprintf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on "
-				"CPU %d.\n\tDumping: %d unhandled, %d ISRs, %s "
-				"triggered.\n",
-				__kpin, cpuTrib.getCurrentCpuStream()->cpuId,
-				pinDesc->nUnhandled,
-				pinDesc->isrList.getNItems(),
-				(triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL)
-					? "level" : "edge");
+			__kprintf(WARNING INTTRIB"pinIrqMain: Spurious IRQ: "
+				"vector %d.\n",
+				regs->vectorNo);
+		}
+		else
+		{
+			__kprintf(WARNING INTTRIB"pinIrqMain: Unidentifiable "
+				"interrupt on vector %d.\n"
+				"\tMay not necessarily even be a pin-IRQ.\n",
+				regs->vectorNo);
 		};
 
-		handle = __KNULL;
-		isrDesc = pinDesc->isrList.getNextItem(&handle);
-		for (; isrDesc != __KNULL;
-			isrDesc = pinDesc->isrList.getNextItem(&handle))
+		for (;;)
 		{
-			// For now only ZKCM.
-			status = isrDesc->api.zkcm.isr(
-				isrDesc->api.zkcm.device, 0);
+			cpuControl::disableInterrupts();
+			cpuControl::halt();
+		};
+	};
 
-			if (status != ZKCM_ISR_NOT_MY_IRQ)
+	pinDescriptor = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
+	if (pinDescriptor == __KNULL)
+	{
+		__kprintf(WARNING INTTRIB"handlePinIrq: __kpin %d: No such "
+			"__kpin descriptor.\n",
+			__kpin);
+
+		return;
+	};
+
+	if (makeNoise)
+	{
+		__kprintf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on CPU %d.\n"
+			"\tDumping: %d unhandled, %d ISRs, %s triggered.\n",
+			__kpin,
+			cpuTrib.getCurrentCpuStream()->cpuId,
+			pinDescriptor->nUnhandled,
+			pinDescriptor->isrList.getNItems(),
+			(triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL)
+				? "level" : "edge");
+	};
+
+	handle = __KNULL;
+	isrDescriptor = pinDescriptor->isrList.getNextItem(&handle);
+	for (; isrDescriptor != __KNULL;
+		isrDescriptor = pinDescriptor->isrList.getNextItem(&handle))
+	{
+		// For now only ZKCM.
+		status = isrDescriptor->api.zkcm.isr(
+			isrDescriptor->api.zkcm.device, 0);
+
+		if (status != ZKCM_ISR_NOT_MY_IRQ)
+		{
+			if (status == ZKCM_ISR_SUCCESS) {
+				isrDescriptor->nHandled++;
+			}
+			else
 			{
-				if (status == ZKCM_ISR_SUCCESS) {
-					isrDesc->nHandled++;
-				}
-				else
-				{
-					// Else error.
-					pinDesc->nUnhandled++;
-					panic(FATAL"Error handling an IRQ.\n");
-				};
+				// Else error.
+				pinDescriptor->nUnhandled++;
+				panic(FATAL"Error handling an IRQ.\n");
+			};
 
-
-				if (triggerMode
-					== IRQCTL_IRQPIN_TRIGGMODE_LEVEL)
-				{
-					break;
-				};
+			if (triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL) {
+				break;
 			};
 		};
-
-		zkcmCore.irqControl.sendEoi(__kpin);
-		return;
 	};
 
-	switch (msiIrqTable[regs->vectorNo].type)
+	zkcmCore.irqControl.sendEoi(__kpin);
+}
+
+void interruptTribC::exceptionMain(taskContextC *regs)
+{
+	if (msiIrqTable[regs->vectorNo].type == vectorDescriptorS::UNCLAIMED)
 	{
-	case vectorDescriptorS::EXCEPTION:
-		(*msiIrqTable[regs->vectorNo].exception)(regs, 0);
-		break;
-
-	case vectorDescriptorS::MSI_IRQ:
-	case vectorDescriptorS::SWI:
-		break;
-
-	case vectorDescriptorS::UNCLAIMED:
-		/* This is actually a very serious error. If no message
-		 * signaled IRQ has been registered on this vector, and the
-		 * vector is not a pin-based IRQ vector, it is still unclaimed
-		 * (not an SWI or exception either), then it means that a random
-		 * IRQ is coming in on this vector that the kernel has no
-		 * control over.
-		 *
-		 * Maybe later on as the design is refined, we will have a
-		 * response to this situation, but for now it mandates a kernel
-		 * panic.
-		 **/
-		__kprintf(FATAL INTTRIB"Entry on UNCLAIMED vector %d from CPU "
-			"%d.\n",
-			regs->vectorNo, cpuTrib.getCurrentCpuStream()->cpuId);
+		__kprintf(FATAL INTTRIB"Entry on UNCLAIMED vector %d "
+			"from CPU %d.\n",
+			regs->vectorNo,
+			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		panic(ERROR_CRITICAL);
-
-	default:
-		break;
 	};
 
-	if (makeNoise)
-	{
-		__kprintf(NOTICE NOLOG INTTRIB"IrqMain: Exiting on CPU %d "
-			"vector %d.\n",
-			cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo);
-	};
+	(*msiIrqTable[regs->vectorNo].exception)(regs, 0);
 
 	// Check to see if the exception requires a "postcall".
-	if ((msiIrqTable[regs->vectorNo].type == vectorDescriptorS::EXCEPTION)
-		&& __KFLAG_TEST(
+	if (__KFLAG_TEST(
 			msiIrqTable[regs->vectorNo].flags,
 			INTTRIB_EXCEPTION_FLAGS_POSTCALL))
 	{
@@ -562,7 +528,7 @@ void interruptTribC::dumpExceptions(void)
 	if (flipFlop != 0) { __kprintf(CC"\n"); };
 }
 
-static void dumpIsrDescriptor(ubit16 num, interruptTribC::isrDescriptorS *desc)
+void dumpIsrDescriptor(ubit16 num, interruptTribC::isrDescriptorS *desc)
 {
 	if (desc->driverType == interruptTribC::isrDescriptorS::ZKCM)
 	{

@@ -31,11 +31,6 @@ public:
 	~interruptTribC(void) {};
 
 public:
-	void irqMain(taskContextC *regs);
-	void swiMain(taskContextC *regs);
-	void exceptionMain(taskContextC *regs);
-	void msiMain(taskContextC *regs);
-
 	void installException(
 		uarch_t vector, __kexceptionFn *exception, uarch_t flags);
 
@@ -109,12 +104,17 @@ public:
 	void dumpMsiIrqs(void);
 	void dumpUnusedVectors(void);
 
+	void pinIrqMain(taskContextC *regs);
+	void msiIrqMain(taskContextC *regs);
+	void swiMain(taskContextC *regs);
+	void exceptionMain(taskContextC *regs);
+
 private:
 	// These two are architecture specific.
 	void installHardwareVectorTable(void);
 	void installExceptions(void);
 
-public:
+private:
 	struct isrDescriptorS
 	{
 		enum driverTypeE { ZKCM=0, UDI };
@@ -149,6 +149,8 @@ public:
 			} udi;
 		} api;
 	};
+
+	friend void dumpIsrDescriptor(ubit16, isrDescriptorS *);
 
 	struct vectorDescriptorS
 	{
@@ -224,7 +226,7 @@ public:
 };
 
 extern interruptTribC		interruptTrib;
-extern "C" void interruptTrib_irqEntry(taskContextC *regs);
+extern "C" void interruptTrib_interruptEntry(taskContextC *regs);
 
 #endif
 
