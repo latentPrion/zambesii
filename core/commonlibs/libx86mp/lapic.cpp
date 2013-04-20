@@ -162,7 +162,7 @@ error_t x86Lapic::mapLapicMem(void)
 		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		v, p, x86_LAPIC_NPAGES,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE | PAGEATTRIB_SUPERVISOR
-		| PAGEATTRIB_CACHE_WRITE_THROUGH);
+		| PAGEATTRIB_CACHE_DISABLED);
 
 	if (nMapped < x86_LAPIC_NPAGES)
 	{
@@ -290,15 +290,28 @@ void x86Lapic::lintDisable(ubit8 lint)
 		outval);
 }
 
-void x86Lapic::lintSetup(ubit8 lint, ubit8 type, ubit32 flags, ubit8 vector)
+void x86Lapic::lintSetup(
+	ubit8 lint, ubit8 deliveryMode, ubit32 flags, ubit8 vector
+	)
 {
 	ubit32		outval=0;
 
-	outval |= lintSetup_lvtConvertType(type) << x86LAPIC_LVT_INTTYPE_SHIFT;
+	outval |= lintSetup_lvtConvertType(deliveryMode)
+		<< x86LAPIC_LVT_INTTYPE_SHIFT;
+
 	outval |= lintSetup_lvtConvertPolarity(flags)
 		<< x86LAPIC_LVT_POLARITY_SHIFT;
 
-	switch (type)
+	/* "Selects the trigger mode for the local LINT0 and LINT1 pins:
+	 * (0) edge sensitive and (1) level sensitive. This flag is only
+	 * used when the delivery mode is Fixed. When the delivery mode
+	 * is NMI, SMI, or INIT, the trigger mode is always edge
+	 * sensitive. When the delivery mode is ExtINT, the trigger mode
+	 * is always level sensitive. The timer and error interrupts are
+	 * always treated as edge sensitive."
+	 *	-Intel Manuals Vol 3a, 10.6.1.
+	 **/
+	switch (deliveryMode)
 	{
 	case x86LAPIC_LINT_TYPE_INT:
 		// Vector and trigger mode only apply for fixed interrupts.
@@ -309,7 +322,7 @@ void x86Lapic::lintSetup(ubit8 lint, ubit8 type, ubit32 flags, ubit8 vector)
 		break;
 
 	case x86LAPIC_LINT_TYPE_EXTINT:
-		// ExtINT is always level triggered.
+		// Trigger mode is always level for extInt.
 		outval |= x86LAPIC_LVT_TRIGGERMODE_LEVEL
 			<< x86LAPIC_LVT_TRIGGERMODE_SHIFT;
 
@@ -378,6 +391,7 @@ void x86Lapic::write16(ubit32 offset, ubit16 val)
 
 void x86Lapic::write32(ubit32 offset, ubit32 val)
 {
+	// Linux uses XCHG to write to the LAPIC for certain hardware.
 	*reinterpret_cast<ubit32 *>( (uarch_t)cache.v + offset ) = val;
 }
 

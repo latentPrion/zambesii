@@ -20,7 +20,7 @@ void interruptTrib_interruptEntry(taskContextC *regs)
 	 * Subtractively decode the type of interrupt vector being dealt with.
 	 **/
 	makeNoise = regs->vectorNo != 253 && regs->vectorNo != 32
-		/*&& regs->vectorNo != 34*/;
+		&& regs->vectorNo != 34;
 
 	(makeNoise) ? __kprintf(NOTICE NOLOG INTTRIB"interruptEntry: CPU %d "
 		"entered on vector %d.\n",

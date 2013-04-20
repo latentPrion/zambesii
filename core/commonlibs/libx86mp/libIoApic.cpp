@@ -28,10 +28,7 @@ void x86IoApic::flushCache(void)
 	cache.mapped = 0;
 	cache.nIoApics = 0;
 
-	/* We start assigning vectors from 48, since that's where the i8259
-	 * vectors end. Not that there will ever be any collision, but it seems
-	 * neater.
-	 **/
+	// Set the vector base counter from the arch pin vector start.
 	cache.vectorBaseCounter = ARCH_INTERRUPTS_VECTOR_PIN_START;
 }
 

@@ -222,6 +222,7 @@ error_t cpuTribC::initializeAllCpus(void)
 	}
 	else
 	{
+
 		__kprintf(ERROR CPUTRIB"initialize2:\n"
 			"\tIMPORTANT: Your kernel was compiled as a multi-cpu\n"
 			"\tbuild kernel, but your chipset reports that it is\n"
@@ -233,7 +234,6 @@ error_t cpuTribC::initializeAllCpus(void)
 			"\tcan't handle.\n");
 
 		// Small delay.
-		for (uarch_t i=0; i<500000; i++) { cpuControl::subZero(); };
 		return fallbackToUpMode(bspId, bspId);
 	};
 

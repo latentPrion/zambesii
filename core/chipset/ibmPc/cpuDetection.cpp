@@ -455,8 +455,10 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 	 * during boot.
 	 **/
 	acpi::initializeCache();
-	if (acpi::findRsdp() != ERROR_SUCCESS) {
+	if (acpi::findRsdp() != ERROR_SUCCESS)
+	{
 		__kprintf(WARNING CPUMOD"checkSmpSanity(): No ACPI tables.\n");
+		goto checkForMpTables;
 	};
 
 #if (!defined(__32_BIT__)) || (defined(CONFIG_ARCH_x86_32_PAE))
@@ -565,6 +567,17 @@ cpu_t zkcmCpuDetectionModC::getBspId(void)
 	if (!ibmPcState.bspInfo.bspIdRequestedAlready)
 	{
 		x86Lapic::initializeCache();
+
+		if (!x86Lapic::cpuHasLapic())
+		{
+			__kprintf(NOTICE CPUMOD"getBspId: BSP CPU has no "
+				"LAPIC. Assigning fake ID of 0.\n");
+
+			ibmPcState.bspInfo.bspId = (cpu_t)0;
+			ibmPcState.bspInfo.bspIdRequestedAlready = 1;
+			return ibmPcState.bspInfo.bspId;
+		};
+
 		if (!x86Lapic::lapicMemIsMapped())
 		{
 			// Not safe, but detectPaddr() never returns error.
@@ -574,7 +587,7 @@ cpu_t zkcmCpuDetectionModC::getBspId(void)
 
 			if (x86Lapic::mapLapicMem() != ERROR_SUCCESS)
 			{
-				panic(CC CPUMOD"getBspId: Failed to map LAPIC "
+				panic(ERROR CPUMOD"getBspId: Failed to map LAPIC "
 					"into kernel vaddrspace.\n");
 			};
 		};
@@ -672,21 +685,22 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 
 	/* The i8254 is the only device which should be operational right
 	 * now. Disable it to force it to forget its __kpin assignment, then
-	 * mask all of the i8259 PIC pins. We can forcibly remove the ISR for
-	 * __kpin 0 from the Interrupt Tributary without waiting for the
-	 * finalizing IRQ to come in.
+	 * mask all of the i8259 PIC pins.
 	 **/
 	if (i8254Pit.isEnabled()) { i8254WasEnabled = 1; };
 	if (i8254Pit.isSoftEnabled()) { i8254WasSoftEnabled = 1; };
+	__kprintf(NOTICE CPUMOD"setSmpMode: i8254: wasEnabled=%d, "
+		"wasSoftEnabled=%d.\n",
+		i8254WasEnabled, i8254WasSoftEnabled);
 
 	i8254Pit.setSmpModeSwitchFlag(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id);
 
+	__kprintf(NOTICE CPUMOD"setSmpMode: Waiting for devices to disable.\n");
 	if (i8254WasEnabled)
 	{
 		i8254Pit.disable();
 		taskTrib.block();
-		__kprintf(NOTICE"Just unblocked.\n");
 	};
 
 	i8254Pit.unsetSmpModeSwitchFlag();
@@ -700,10 +714,11 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	 **/
 	mpFp = x86Mp::findMpFp();
 	if (mpFp != __KNULL
-		&&__KFLAG_TEST(mpFp->features[1], x86_MPFP_FEAT1_FLAG_PICMODE))
+		&& __KFLAG_TEST(mpFp->features[1], x86_MPFP_FEAT1_FLAG_PICMODE))
 	{
 		ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_UNIPROCESSOR;
 
+		// Enable Symm. I/O mode using IMCR.
 		cpuControl::safeDisableInterrupts(&cpuFlags);
 		io::write8(0x22, 0x70);
 		io::write8(0x23, 0x1);
@@ -723,16 +738,19 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 		zkcmCore.irqControl.bpm.loadBusPinMappings(CC"isa")
 			== ERROR_SUCCESS);
 
+	__kprintf(NOTICE CPUMOD"setSmpMode: Re-enabling devices.\n");
 	if (i8254WasEnabled)
 	{
-		i8254Pit.enable();
-		if (!i8254WasSoftEnabled) { i8254Pit.softDisable(); };
-	};
+		ret = i8254Pit.enable();
+		if (ret != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUMOD"setSmpMode: i8254 enable() "
+				"failed.\n");
 
-	for (;;)
-	{
-		__kprintf(NOTICE CPUMOD"setSmpMode: About to HLT.\n");
-		cpuControl::halt();
+			return ret;
+		};
+
+		if (!i8254WasSoftEnabled) { i8254Pit.softDisable(); };
 	};
 
 	zkcmCore.irqControl.chipsetEventNotification(

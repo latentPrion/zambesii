@@ -157,6 +157,20 @@ namespace x86Lapic
 	void hardDisable(void);
 	sarch_t isHardEnabled(void);
 
+	inline ubit8 getVersion(void)
+	{
+		return read32(x86LAPIC_REG_LAPIC_VER) & 0xFF;
+	}
+
+	inline sarch_t isIntegrated(void)
+	{
+#ifdef CONFIG_ARCH_x86_32
+		return getVersion() & 0xF0u;
+#else
+		return 1;
+#endif
+	}
+
 	void sendEoi(void);
 
 	// IPI-related functions.

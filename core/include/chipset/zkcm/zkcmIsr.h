@@ -7,6 +7,7 @@
 /* Return values for a ZKCM ISR function. */
 #define ZKCM_ISR_NOT_MY_IRQ		(1)
 #define ZKCM_ISR_SUCCESS		(ERROR_SUCCESS)
+#define ZKCM_ISR_SUCCESS_AND_RETIRE_ME	(8)
 
 #define ZKCM_ISR_NACK_UNRESPONSIVE	(2)
 #define ZKCM_ISR_NACK_SHUTDOWN_POSSIBLE	(3)

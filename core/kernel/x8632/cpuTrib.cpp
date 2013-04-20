@@ -6,7 +6,7 @@
 cpuStreamC *cpuTribC::getCurrentCpuStream(void)
 {
 	uarch_t		dr0;
-	// Read the current cpu's struct from the fs and gs registers.
+	// Read the current cpu's struct from the dr0 register.
 	asm volatile (
 		"movl %%dr0, %0 \n\t"
 		: "=r" (dr0)

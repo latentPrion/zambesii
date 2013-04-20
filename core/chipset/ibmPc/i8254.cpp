@@ -158,23 +158,18 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	{
 		device->i8254State.isrRegistered = 0;
 		device->i8254State.irqState = i8254StateS::DISABLED;
-		interruptTrib.zkcm.retirePinIsr(
-			device->i8254State.__kpinId, &isr);
+
+		device->state.lock.release();
+
 		// Part of the IBM-PC Symmetric IO mode switch.
 		if (device->i8254State.smpModeSwitchInProgress)
 		{
 			// Release the lock and exit.
-			device->state.lock.release();
 			taskTrib.unblock(
 				device->i8254State.smpModeSwitchThread);
-		}
-		else
-		{
-			// Release the lock and exit.
-			device->state.lock.release();
 		};
 
-		return ZKCM_ISR_SUCCESS;
+		return ZKCM_ISR_SUCCESS_AND_RETIRE_ME;
 	};
 
 	// Small state machine cleanup for oneshot mode: unset the ENABLED flag.
@@ -239,6 +234,8 @@ error_t i8254PitC::enable(void)
 {
 	error_t		ret;
 
+	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
+
 	state.lock.acquire();
 	if (state.rsrc.mode == UNINITIALIZED)
 	{
@@ -247,7 +244,6 @@ error_t i8254PitC::enable(void)
 	};
 	state.lock.release();
 
-	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
 	/**	EXPLANATION:
 	 * 1. Lookup the correct __kpin for our IRQ (ISA IRQ 0).
 	 * 2. Register our ISR with the kernel on the correct __kpin list.
@@ -276,17 +272,11 @@ error_t i8254PitC::enable(void)
 		 **/
 		state.lock.acquire();
 
-		i8254State.irqState = i8254StateS::ENABLED;
-		i8254State.isrRegistered = 1;
 		ret = interruptTrib.zkcm.registerPinIsr(
 			i8254State.__kpinId, this, &isr, 0);
 
-		state.lock.release();
-
 		if (ret != ERROR_SUCCESS)
 		{
-			state.lock.acquire();
-			i8254State.isrRegistered = 0;
 			state.lock.release();
 
 			__kprintf(ERROR i8254"enable: Failed to register ISR "
@@ -296,11 +286,17 @@ error_t i8254PitC::enable(void)
 			return ret;
 		};
 
-	};
+		i8254State.isrRegistered = 1;
+		i8254State.irqState = i8254StateS::ENABLED;
 
-	state.lock.acquire();
-	i8254State.irqState = i8254StateS::ENABLED;
-	state.lock.release();
+		state.lock.release();
+	}
+	else
+	{
+		state.lock.acquire();
+		i8254State.irqState = i8254StateS::ENABLED;
+		state.lock.release();
+	};
 
 	// Now program the i8254 to begin interrupting.
 	if (state.rsrc.mode == ONESHOT) {
@@ -316,14 +312,11 @@ error_t i8254PitC::enable(void)
 			"enable IRQ for __kpin %d.\n",
 			i8254State.__kpinId);
 
-		goto failOut;
+		interruptTrib.zkcm.retirePinIsr(i8254State.__kpinId, &isr);
+		return ret;
 	};
 
 	return ERROR_SUCCESS;
-
-failOut:
-	interruptTrib.zkcm.retirePinIsr(i8254State.__kpinId, &isr);
-	return ret;
 }
 
 void i8254PitC::setSmpModeSwitchFlag(processId_t wakeTargetThread)
@@ -360,7 +353,7 @@ void i8254PitC::disable(void)
 	 **/
 
 	state.lock.acquire();
-	if (i8254State.smpModeSwitchInProgress) { disableDelayClks = 15000; };
+	if (i8254State.smpModeSwitchInProgress) { disableDelayClks = 50000; };
 
 	// Write out the oneshot mode (mode 0) control byte.
 	io::write8(
@@ -380,7 +373,6 @@ void i8254PitC::disable(void)
 	i8254State.irqState = i8254StateS::DISABLING;
 
 	state.lock.release();
-__kprintf(NOTICE"Just finished executing disable().\n");
 	// We unregister the ISR, etc in the ISR when the final IRQ comes in.
 }
 

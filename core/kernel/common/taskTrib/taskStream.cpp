@@ -184,7 +184,6 @@ void taskStreamC::pull(void)
 		};
 
 		// Else set the CPU to a low power state.
-		__kprintf(NOTICE TASKSTREAM"%d: Entering C1.\n", parentCpu->id);
 		cpuControl::halt();
 	};
 

@@ -44,7 +44,7 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
 		ret, paddr, 1,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
-		| PAGEATTRIB_CACHE_WRITE_THROUGH | PAGEATTRIB_SUPERVISOR);
+		| PAGEATTRIB_CACHE_DISABLED | PAGEATTRIB_SUPERVISOR);
 
 	if (status < 1)
 	{
@@ -170,7 +170,6 @@ sarch_t x86IoApic::ioApicC::getPinState(
 	ubit32		high, low;
 	sarch_t		ret;
 
-	// Not sure if this is the correct way to access the 64-bit regs.
 	vaddr.lock.acquire();
 	writeIoRegSel(x86IOAPIC_REG_IRQTABLE(irq, 0));
 	low = readIoWin();
@@ -195,8 +194,17 @@ void x86IoApic::ioApicC::setPinState(
 	ubit8 polarity, ubit8 triggMode
 	)
 {
-	ubit32		high=0, low=0;
+	ubit32		high=0, low;
 
+	// Must preserve the masking state of the pin (masked/unmasked).
+	vaddr.lock.acquire();
+	writeIoRegSel(x86IOAPIC_REG_IRQTABLE(irq, 0));
+	low = readIoWin();
+	vaddr.lock.release();
+
+	low &= x86IOAPIC_IRQSTATE_MASKED;
+
+	// Set the parameters.
 	high = x86IOAPIC_IRQTABLE_SETDEST(cpu);
 	low |= x86IOAPIC_IRQTABLE_SETVECTOR(vector);
 	low |= x86IOAPIC_IRQTABLE_SETDELIVERYMODE(deliveryMode);
@@ -204,9 +212,6 @@ void x86IoApic::ioApicC::setPinState(
 	low |= x86IOAPIC_IRQTABLE_SETPOLARITY(polarity);
 	low |= x86IOAPIC_IRQTABLE_SETTRIGGMODE(triggMode);
 
-	/* Same here, not sure if this is how the 64-bit regs are accessed.
-	 * Also, of course, write the high 32 bits first.
-	 **/
 	vaddr.lock.acquire();
 	writeIoRegSel(x86IOAPIC_REG_IRQTABLE(irq, 1));
 	writeIoWin(high);

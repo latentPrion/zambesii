@@ -108,6 +108,27 @@ private:
 			atomicAsm::set(&clockRoutineInstalled, 1);
 		};
 
+		// If the underlying device is not enabled, enable it.
+		if (!device->isEnabled())
+		{
+			ret = enable();
+			if (ret != ERROR_SUCCESS)
+			{
+				__kprintf(NOTICE TIMERQUEUE"%dus: "
+					"installClockRoutine: Failed to enable "
+					"device.\n",
+					getNativePeriod() / 1000);
+
+				return ret;
+			};
+
+			device->softDisable();
+			__kprintf(NOTICE TIMERQUEUE"%dus: installClockRoutine: "
+				"softEnabled device \"%s\".\n",
+				getNativePeriod() / 1000,
+				device->getBaseDevice()->shortName);
+		};
+
 		return ret;
 	}
 	// Returns 1 if a routine was installed and actually removed.

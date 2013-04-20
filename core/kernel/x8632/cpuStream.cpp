@@ -245,9 +245,7 @@ static error_t initializeLapic(cpuStreamC *caller)
 error_t cpuStreamC::bind(void)
 {
 	// Init LAPIC (if SMP mode). Check for LAPIC first in case it's the BSP.
-	if (usingChipsetSmpMode() && x86Lapic::cpuHasLapic()) {
-		initializeLapic(this);
-	};
+	if (x86Lapic::cpuHasLapic()) { initializeLapic(this); };
 
 	// Open the floodgates.
 	cpuControl::enableInterrupts();

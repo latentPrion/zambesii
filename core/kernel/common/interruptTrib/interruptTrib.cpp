@@ -1,11 +1,13 @@
 
 #include <chipset/zkcm/zkcmCore.h>
 #include <arch/cpuControl.h>
+#include <arch/atomic.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
+#include <__kclasses/ptrList.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -107,10 +109,10 @@ error_t interruptTribC::initializeIrqManagement(void)
 void interruptTribC::pinIrqMain(taskContextC *regs)
 {
 	irqPinDescriptorS	*pinDescriptor;
-	isrDescriptorS		*isrDescriptor;
+	isrDescriptorS		*isrDescriptor, (*isrRetireList[4]);
 	status_t		status;
 	void			*handle;
-	ubit8			makeNoise, triggerMode;
+	ubit8			makeNoise, triggerMode, isrRetireListLength=0;
 	ubit16			__kpin;
 
 	// Ask the chipset if any pin-based IRQs are pending and handle them.
@@ -119,7 +121,7 @@ void interruptTribC::pinIrqMain(taskContextC *regs)
 		regs->vectorNo,
 		&__kpin, &triggerMode);
 
-	makeNoise = (__kpin != 0);
+	makeNoise = (__kpin != 0 && __kpin != 18 && __kpin != 16);
 
 	if (status == IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS
 		|| status ==  IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE)
@@ -168,6 +170,8 @@ void interruptTribC::pinIrqMain(taskContextC *regs)
 	};
 
 	handle = __KNULL;
+	atomicAsm::set(&pinDescriptor->inService, 1);
+
 	isrDescriptor = pinDescriptor->isrList.getNextItem(&handle);
 	for (; isrDescriptor != __KNULL;
 		isrDescriptor = pinDescriptor->isrList.getNextItem(&handle))
@@ -178,14 +182,28 @@ void interruptTribC::pinIrqMain(taskContextC *regs)
 
 		if (status != ZKCM_ISR_NOT_MY_IRQ)
 		{
-			if (status == ZKCM_ISR_SUCCESS) {
-				isrDescriptor->nHandled++;
-			}
-			else
+			if (status != ZKCM_ISR_SUCCESS
+				&& status != ZKCM_ISR_SUCCESS_AND_RETIRE_ME)
 			{
 				// Else error.
 				pinDescriptor->nUnhandled++;
 				panic(FATAL"Error handling an IRQ.\n");
+			};
+
+			isrDescriptor->nHandled++;
+			if (status == ZKCM_ISR_SUCCESS_AND_RETIRE_ME)
+			{
+				if (isrRetireListLength > 4)
+				{
+					__kprintf(WARNING INTTRIB"__kpin %d: "
+						"isrRetireList full.\n",
+						__kpin);
+				}
+				else
+				{
+					isrRetireList[isrRetireListLength++] =
+						isrDescriptor;
+				};
 			};
 
 			if (triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL) {
@@ -194,7 +212,20 @@ void interruptTribC::pinIrqMain(taskContextC *regs)
 		};
 	};
 
+	atomicAsm::set(&pinDescriptor->inService, 0);
 	zkcmCore.irqControl.sendEoi(__kpin);
+
+	// Run the retire list.
+	if (isrRetireListLength == 0) { return; };
+	for (uarch_t i=0; i<isrRetireListLength; i++)
+	{
+		if (isrRetireList[i]->driverType == isrDescriptorS::ZKCM)
+		{
+			zkcm.retirePinIsr(
+				__kpin, isrRetireList[i]->api.zkcm.isr);
+		}
+		else {};
+	};
 }
 
 void interruptTribC::exceptionMain(taskContextC *regs)
@@ -248,6 +279,13 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 	isrDescriptorS		*isrDesc;
 	error_t			ret;
 
+	/**	FIXME:
+	 * Race condition here if one tries to register an ISR on a __kpin
+	 * while the kernel is servicing an IRQ from that __kpin. The atomic
+	 * inService flag used below is only a half-solution.
+	 *
+	 * Need an rwlock.
+	 **/
 	if (dev == __KNULL || isr == __KNULL) { return ERROR_INVALID_ARG; };
 
 	pinDesc = (irqPinDescriptorS *)interruptTrib.pinIrqTable
@@ -259,6 +297,15 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 			__kpin);
 
 		return ERROR_INVALID_ARG_VAL;
+	};
+
+	if (atomicAsm::read(&pinDesc->inService) != 0)
+	{
+		__kprintf(ERROR INTTRIB"registerPinIsr: __kpin %d is in "
+			"service.\n",
+			__kpin);
+
+		return ERROR_RESOURCE_BUSY;
 	};
 
 	// Constructor zeroes it out.
@@ -294,6 +341,13 @@ sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 	isrDescriptorS		*isrDesc;
 	void			*handle;
 
+	/**	FIXME:
+	 * Race condition here if one tries to retire an ISR on a __kpin
+	 * while the kernel is servicing an IRQ from that __kpin. The atomic
+	 * inService flag used below is only a half-solution.
+	 *
+	 * Need an rwlock.
+	 **/
 	if (isr == __KNULL) { return 0; };
 
 	pinDesc = (irqPinDescriptorS *)interruptTrib.pinIrqTable
@@ -302,6 +356,15 @@ sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 	if (pinDesc == __KNULL)
 	{
 		__kprintf(ERROR INTTRIB"retirePinIsr: Invalid __kpin %d.\n",
+			__kpin);
+
+		return 0;
+	};
+
+	if (atomicAsm::read(&pinDesc->inService) != 0)
+	{
+		__kprintf(ERROR INTTRIB"retirePinIsr: cannot retire ISR from "
+			"__kpin %d while in service.\n",
 			__kpin);
 
 		return 0;

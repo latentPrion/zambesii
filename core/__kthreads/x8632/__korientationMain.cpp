@@ -123,14 +123,6 @@ void __korientationMain(void)
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
-	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 5, 0),
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id,
-		__KNULL, 0);
-
-	processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
-	__kprintf(NOTICE ORIENT"Timer event 0 just expired successfully!\n");
-
 	// Detect physical memory.
 	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);

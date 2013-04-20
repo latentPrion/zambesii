@@ -6,10 +6,12 @@
 	#include <chipset/zkcm/picDevice.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
+	#include <__kstdlib/__kclib/assert.h>
 	#include <__kclasses/hardwareIdList.h>
 	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/panic.h>
 
 #define x86IOAPIC				"IO-APIC "
 
@@ -132,6 +134,8 @@ namespace x86IoApic
 
 		// Returns the registered __kpin ID for Girq ID on this IO-APIC.
 		virtual error_t get__kpinFor(uarch_t physicalId, ubit16 *__kpin);
+		inline error_t lookupPinBy__kid(ubit16 __kpin, ubit8 *pin);
+
 		virtual status_t getIrqStatus(
 			uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
 			ubit8 *triggerMode, ubit8 *polarity);
@@ -165,8 +169,6 @@ namespace x86IoApic
 		inline void readIoWin(ubit32 *high, ubit32 *low);
 		inline void writeIoWin(ubit32 val);
 		inline void writeIoWin(ubit32 high, ubit32 low);
-
-		inline error_t lookupPinBy__kid(ubit16 __kpin, ubit8 *pin);
 
 		struct ioApicRegspaceS;
 		ioApicRegspaceS *mapIoApic(paddr_t paddr);
@@ -247,6 +249,7 @@ namespace x86IoApic
 
 void x86IoApic::ioApicC::writeIoRegSel(ubit8 val)
 {
+	assert_fatal(!((val > 0x2 && val < 0x10) || val > 0x3f));
 	vaddr.rsrc->ioRegSel[0] = val;
 	asm volatile ("":::"memory");
 }

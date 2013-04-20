@@ -74,36 +74,119 @@ struct isaBusPinMappingS
 	ubit16		__kpin;
 } isaBusPinMappings[16];
 
+static ubit8 loadedSmpIsaBusPinMappingsAlready=0;
+
 static void ibmPc_isaBpm_smpMode_acpi_setIsaDefaults(void)
 {
+	x86IoApic::ioApicC	*ioApic;
+	ubit8			cpu, dummy;
+
 	/**	EXPLANATION:
-	 * When using the ACPI IRQ Source Override entries, we need to first
-	 * set every mapping to "valid", because we must, according to the ACPI
-	 * specification, assume first that all ISA IRQs are identity mapped to
-	 * the ACPI global IRQ namespace.
+	 * In synopsis, set the IO-APIC pins that are used by the ISA IRQs to
+	 * ISA defaults (edge-triggered, rising), and generally explicitly
+	 * program each pin to interrupt on the correct vector. If this is the
+	 * first time we're running through this sequence, we set each ISA pin
+	 * to interrupt the BSP CPU. Else, we preserve the CPU that the pin
+	 * is currently set to interrupt on, as set by the kernel.
 	 *
-	 * Then, we overwrite the default configuration with the overrides in
-	 * the MADT Override entries.
+	 * This sequence is necessary because the ACPI approach to handling ISA
+	 * IRQs is to assume that all ISA IRQs are ID-mapped to GIRQs 0-15.
+	 * There may be no overrides in the MADT at all, so if we don't run
+	 * through and explicitly initialize every pin, the majority of them
+	 * will be uninitialized.
+	 *
+	 * Those pins which must have overrides or non-default settings applied
+	 * (level triggered, etc) will be processed as per directives in the
+	 * MADT override entries.
 	 **/
 
 	/* Fill out each ISA IRQ as being ID mapped to the ACPI global IRQ with
 	 * the same number.
 	 **/
-	for (ubit8 i=0; i<16; i++)
+	for (ubit8 girq=0; girq<16; girq++)
 	{
 		if (x86IoApic::get__kpinFor(
-			i, &isaBusPinMappings[i].__kpin)
-			!= ERROR_SUCCESS)
+			girq, &isaBusPinMappings[girq].__kpin)
+			== ERROR_SUCCESS)
+		{
+			ubit8		pin;
+
+			isaBusPinMappings[girq].isValid = 1;
+
+			ioApic = x86IoApic::getIoApicFor(
+				isaBusPinMappings[girq].__kpin);
+
+			assert_fatal(ioApic != __KNULL);
+
+			ioApic->lookupPinBy__kid(
+				isaBusPinMappings[girq].__kpin, &pin);
+
+			assert_fatal(pin < ioApic->getNIrqs());
+
+			/* Here we set each pin to a default state when loading
+			 * bus-pin information and pin-programming info.
+			 *
+			 * If the ISA bus-pin mappings are being loaded for the
+			 * first time, we set the CPU for each pin to the BSP's
+			 * ID. Else, we have to preserve the ID of the CPU
+			 * that the pin currently maps to since that was most
+			 * likely set by the kernel as part of IRQ load
+			 * balancing or power management.
+			 **/
+			if (loadedSmpIsaBusPinMappingsAlready)
+			{
+				ioApic->getPinState(
+					pin, &cpu, &dummy,
+					&dummy, &dummy, &dummy, &dummy);
+			}
+			else {
+				cpu = ibmPcState.bspInfo.bspId;
+			};
+
+			ioApic->setPinState(
+				pin, cpu, ioApic->getVectorBase() + pin,
+				x86IOAPIC_DELIVERYMODE_FIXED,
+				x86IOAPIC_DESTMODE_PHYSICAL,
+				x86IOAPIC_POLARITY_HIGH,
+				x86IOAPIC_TRIGGMODE_EDGE);
+		}
+		else
 		{
 			__kprintf(FATAL IBMPCBPM"Unable to get "
-				"__kpinId for IO-APIC pin %d.\n",
-				i);
+				"__kpinId for IO-APIC GIRQ %d.\n",
+				girq);
 
-			isaBusPinMappings[i].isValid = 0;
-		}
-		else {
-			isaBusPinMappings[i].isValid = 1;
+			isaBusPinMappings[girq].isValid = 0;
 		};
+	};
+}
+
+void dumpSmpIsaPins(void)
+{
+	__kprintf(NOTICE IBMPCBPM"Dumping all ISA SMP IRQs.\n");
+	for (uarch_t girq=0; girq<16; girq++)
+	{
+		ubit16			__kpin;
+		x86IoApic::ioApicC	*ioApic;
+		ubit8			enabled;
+		ubit8			pin, cpu, vector, polarity, triggMode,
+					destMode, deliveryMode;
+
+		// ISA-GIRQ -> __kpin.
+		x86IoApic::get__kpinFor(girq, &__kpin);
+		ioApic = x86IoApic::getIoApicFor(__kpin);
+		assert_fatal(ioApic != __KNULL);
+
+		ioApic->lookupPinBy__kid(__kpin, &pin);
+		enabled = ioApic->getPinState(
+			pin, &cpu, &vector,
+			&deliveryMode, &destMode,
+			&polarity, &triggMode);
+
+		__kprintf(NOTICE"\tGIRQ-%d (IoApic %d,%d): %s; cpu%d, v %d.\n",
+			girq, ioApic->getId(), pin,
+			(enabled) ? "on" : "off",
+			cpu, vector);
 	};
 }
 
@@ -190,13 +273,12 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 			panic(ERROR_FATAL);
 		};
 
-		isaBusPinMappings[irqOverride->irqNo].isValid = 1;
-
 		// Program the IO-APIC pin now.
-		pin = irqOverride->globalIrq - ioApic->getGirqBase();
-		ioApic->getPinState(
-			pin, &cpu,
-			&dummy, &dummy, &dummy, &dummy, &dummy);
+		assert_fatal(
+			ioApic->lookupPinBy__kid(
+				isaBusPinMappings[irqOverride->irqNo].__kpin,
+				&pin)
+				== ERROR_SUCCESS);
 
 		switch (irqOverride->flags & ACPI_MADT_IRQSRCOVER_POLARITY_MASK)
 		{
@@ -224,6 +306,12 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 		default: triggerMode = x86IOAPIC_TRIGGMODE_EDGE; break;
 		};
 
+		// Only care about preserving the pin's CPU here.
+		ioApic->getPinState(
+			pin, &cpu, &dummy,
+			&dummy, &dummy, &dummy, &dummy);
+
+		// Have to call this to set the polarity/triggmode.
 		ioApic->setPinState(
 			pin, cpu, ioApic->getVectorBase() + pin,
 			x86IOAPIC_DELIVERYMODE_FIXED,
@@ -231,7 +319,8 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 			polarity, triggerMode);
 
 		ioApic->setIrqStatus(
-			pin, cpu, ioApic->getVectorBase() + pin, 0);
+			isaBusPinMappings[irqOverride->irqNo].__kpin,
+			cpu, ioApic->getVectorBase() + pin, 0);
 
 		ioApic->irqPinList[pin].triggerMode =
 			(triggerMode == x86IOAPIC_TRIGGMODE_LEVEL)
@@ -243,7 +332,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 				? IRQCTL_IRQPIN_POLARITY_LOW
 				: IRQCTL_IRQPIN_POLARITY_HIGH;
 
-		__kprintf(NOTICE IBMPCBPM"ACPI override: mapping ISA IRQ "
+		__kprintf(NOTICE IBMPCBPM"ACPI override: mapped ISA IRQ "
 			"%d to __kpin %d (girq: %d).\n",
 			irqOverride->irqNo,
 			isaBusPinMappings[irqOverride->irqNo].__kpin,
@@ -330,10 +419,16 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 
 		isaBusPinMappings[irqSourceEntry->sourceBusIrq].isValid = 1;
 
-		// We don't care to preserve anything but the pin's CPU here.
-		ioApic->getPinState(
-			irqSourceEntry->destIoApicPin, &cpu,
-			&dummy, &dummy, &dummy, &dummy, &dummy);
+		if (loadedSmpIsaBusPinMappingsAlready)
+		{
+			// We don't care for anything but the pin's CPU here.
+			ioApic->getPinState(
+				irqSourceEntry->destIoApicPin, &cpu,
+				&dummy, &dummy, &dummy, &dummy, &dummy);
+		}
+		else {
+			cpu = ibmPcState.bspInfo.bspId;
+		};
 
 		// Determine and set the correct polarity and trigger-mode, etc.
 		switch (irqSourceEntry->flags
@@ -392,7 +487,7 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 				? IRQCTL_IRQPIN_POLARITY_LOW
 				: IRQCTL_IRQPIN_POLARITY_HIGH;
 
-		__kprintf(NOTICE IBMPCBPM"x86MP: Mapping ISA IRQ %d to __kpin "
+		__kprintf(NOTICE IBMPCBPM"x86MP: Mapped ISA IRQ %d to __kpin "
 			"%d (IO-APIC %d, pin %d).\n",
 			irqSourceEntry->sourceBusIrq,
 			isaBusPinMappings[irqSourceEntry->sourceBusIrq].__kpin,
@@ -435,7 +530,10 @@ status_t ibmPc_isaBpm_smpMode_loadBusPinMappings(void)
 			goto useRsdt;
 		};
 
-		/* ret = ibmPc_isaBpm_smpMode_xsdt_loadBusPinMappings();
+		/* __kprintf(NOTICE IBMPCBPM"Using ACPI XSDT for SMP-mode ISA "
+			"bus-pin mappings.\n");
+
+		ret = ibmPc_isaBpm_smpMode_xsdt_loadBusPinMappings();
 		if (ret != ERROR_SUCCESS)
 		{
 			__kprintf(WARNING IBMPCBPM"ISA: XSDT present, but no "
@@ -443,7 +541,11 @@ status_t ibmPc_isaBpm_smpMode_loadBusPinMappings(void)
 
 			// Fall through to testForRsdt().
 		}
-		else { return ret; }; */
+		else
+		{
+			loadedSmpIsaBusPinMappingsAlready = 1;
+			return ret;
+		}; */
 	};
 
 useRsdt:
@@ -457,6 +559,9 @@ useRsdt:
 			goto tryMpTables;
 		};
 
+		__kprintf(NOTICE IBMPCBPM"Using RSDT for SMP-mode ISA Bus-pin "
+			"mappings.\n");
+
 		ret = ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings();
 		if (ret != ERROR_SUCCESS)
 		{
@@ -465,7 +570,11 @@ useRsdt:
 
 			// Fall through to MP Table tests.
 		}
-		else { return ret; };
+		else
+		{
+			loadedSmpIsaBusPinMappingsAlready = 1;				
+			return ret;
+		};
 	};
 
 tryMpTables:
@@ -489,12 +598,16 @@ tryMpTables:
 			"info in there that was\n\tmissed. Halting.\n");
 	};
 
+	__kprintf(NOTICE IBMPCBPM"Using x86 MP tables for SMP-mode ISA bus-pin "
+		"mappings.\n");
+
 	if (ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings() != ERROR_SUCCESS)
 	{
 		panic(FATAL IBMPCBPM"Unable to read bus pin mappings from MP "
 			"Tables.\n");
 	};
 
+	loadedSmpIsaBusPinMappingsAlready = 1;
 	return ERROR_SUCCESS;
 }	
 
@@ -515,20 +628,20 @@ status_t ibmPcBpm::isa::loadBusPinMappings(void)
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_UNIPROCESSOR)
 	{
 		// Assume that all ISA IRQs are mapped 1:1 to the i8259 pins.
-		for (ubit8 i=0; i<16; i++)
+		for (ubit8 isaIrqNo=0; isaIrqNo<16; isaIrqNo++)
 		{
 			if (i8259aPic.get__kpinFor(
-				i, &isaBusPinMappings[i].__kpin)
+				isaIrqNo, &isaBusPinMappings[isaIrqNo].__kpin)
 				!= ERROR_SUCCESS)
 			{
 				__kprintf(FATAL IBMPCBPM"Unable to get "
 					"__kpinId for i8259 pin %d.\n",
-					i);
+					isaIrqNo);
 
-				isaBusPinMappings[i].isValid = 0;
+				isaBusPinMappings[isaIrqNo].isValid = 0;
 			}
 			else {
-				isaBusPinMappings[i].isValid = 1;
+				isaBusPinMappings[isaIrqNo].isValid = 1;
 			};
 		};
 
@@ -541,6 +654,8 @@ status_t ibmPcBpm::isa::loadBusPinMappings(void)
 
 error_t ibmPcBpm::isa::get__kpinFor(ubit32 busIrqId, ubit16 *__kpin)
 {
+	if (busIrqId > 15) { return ERROR_INVALID_ARG_VAL; };
+
 	// Just lookup the __kpin in the table.
 	if (isaBusPinMappings[busIrqId].isValid)
 	{

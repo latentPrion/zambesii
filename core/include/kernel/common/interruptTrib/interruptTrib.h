@@ -204,11 +204,12 @@ private:
 	{
 		irqPinDescriptorS(void)
 		:
-		flags(0), nUnhandled(0)
+		flags(0), nUnhandled(0), inService(0)
 		{}
 
 		ubit32		flags;
 		ubit32		nUnhandled;
+		uarch_t		inService;
 		/* Each IRQ __kpin has a list of installed ISRs. There is no
 		 * limit to the number of ISRs which may be installed on a
 		 * __kpin, but the kernel will eventually be equipped with the
