@@ -90,7 +90,27 @@ public:
 
 private:
 	error_t __kupdateAffinity(cpu_t cid, ubit8 action);
-	error_t fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId);
+	error_t displayUpOperationOnMpBuildMessage(void);
+#if __SCALING__ >= SCALING_CC_NUMA
+	error_t newCpuNotification(numaBankId_t bid, cpu_t cid, ubit32 acpiId);
+	error_t bootCpuNotification(
+		numaBankId_t bid, cpu_t cid, ubit32 acpiId);
+
+	void bootParseNumaMap(struct zkcmNumaMapS *numaMap);
+	void bootParseNumaMap(
+		struct zkcmNumaMapS *numaMap, struct zkcmSmpMapS *smpMap);
+
+	void bootConfirmNumaCpusBooted(struct zkcmNumaMapS *numaMap);
+	void bootConfirmNumaCpusBooted(
+		struct zkcmNumaMapS *numaMap, struct zkcmSmpMapS *smpMap);
+#elif __SCALING__ == SCALING_SMP
+	error_t newCpuNotification(cpu_t cid, ubit32 acpiId);
+	error_t bootCpuNotification(cpu_t cid, ubit32 acpiId);
+#endif
+#if __SCALING__ >= SCALING_SMP
+	void bootParseSmpMap(struct zkcmSmpMapS *smpMap);
+	void bootConfirmSmpCpusBooted(struct zkcmSmpMapS *smpMap);
+#endif
 
 public:
 #if __SCALING__ >= SCALING_CC_NUMA

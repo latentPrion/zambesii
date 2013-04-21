@@ -9,6 +9,7 @@
 #include <commonlibs/libx86mp/mpTables.h>
 #include <commonlibs/libacpi/libacpi.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <__kthreads/__kcpuPowerOn.h>
 
 
 #define x86_LAPIC_NPAGES		4
@@ -171,7 +172,7 @@ error_t x86Lapic::mapLapicMem(void)
 	};
 
 	v = WPRANGER_ADJUST_VADDR(v, p, void *);
-	cache.v = static_cast<ubit8 *>( v );
+	cache.v = __kcpuPowerOnLapicVaddr = static_cast<ubit8 *>( v );
 	return ERROR_SUCCESS;
 }
 

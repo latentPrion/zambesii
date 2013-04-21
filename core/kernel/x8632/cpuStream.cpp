@@ -4,6 +4,7 @@
 #include <arch/x8632/cpuEnumeration.h>
 #include <arch/cpuControl.h>
 #include <arch/debug.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
@@ -12,10 +13,9 @@
 #include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <kernel/common/cpuTrib/chipsetSmpMode.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
-#include <kernel/common/memoryTrib/memoryTrib.h>
-#include <kernel/common/numaMemoryBank.h>
 
 struct x86ManufacturerEntryS
 {
@@ -68,6 +68,8 @@ void cpuStreamC::baseInit(void)
 		// Load the __kcpuPowerOnThread into the currentTask holder.
 		taskStream.currentTask = &__kcpuPowerOnThread;
 	};
+
+	powerManager.setPowerStatus(powerManagerC::C0);
 }
 
 // Parses a MADT for NMI entries to be used to setup the LAPIC LINT inputs.

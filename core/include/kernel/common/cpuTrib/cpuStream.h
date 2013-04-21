@@ -13,9 +13,11 @@
 	#include <kernel/common/cpuTrib/cpuFeatures.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/taskTrib/taskStream.h>
 
 #define CPUSTREAM			"CPU Stream "
+#define CPUPWRMGR			"CPU PwrMgr "
 
 #define CPUSTREAM_FLAGS_INITIALIZED	(1<<0)
 #define CPUSTREAM_FLAGS_ENUMERATED	(1<<1)
@@ -60,9 +62,59 @@ public:
 	void cut(void);
 
 public:
-	status_t powerControl(ubit16 command, uarch_t flags);
 	status_t enumerate(void);
 	cpuFeaturesS *getCpuFeatureBlock(void);
+
+public:
+	class powerManagerC
+	{
+	public:
+		enum powerStatusE {
+			OFF=0, C0, C1, C2, C3,
+			POWERING_ON, POWERING_ON_RETRY, POWERING_OFF,
+			GOING_TO_SLEEP, WAKING,
+			FAILED_BOOT };
+
+		powerManagerC(cpuStreamC *parentStream)
+		:
+		parent(parentStream)
+			{ powerStatus.rsrc = OFF; }
+
+		~powerManagerC(void)
+			{ powerStatus.rsrc = OFF; }
+
+		powerStatusE getPowerStatus(void)
+		{
+			powerStatusE	ret;
+			uarch_t		rwFlags;
+
+			powerStatus.lock.readAcquire(&rwFlags);
+			ret = powerStatus.rsrc;
+			powerStatus.lock.readRelease(rwFlags);
+
+			return ret;
+		}
+
+		void setPowerStatus(powerStatusE status)
+		{
+			powerStatus.lock.writeAcquire();
+			powerStatus.rsrc = status;
+			powerStatus.lock.writeRelease();
+		}
+
+		status_t powerOn(ubit32 flags);
+		status_t bootPowerOn(ubit32 flags);
+		status_t halt(ubit32 flags);
+		status_t sleep(ubit32 flags);
+		status_t powerOff(ubit32 flags);
+		void bootWaitForCpuToPowerOn(void);
+
+	private:
+		sharedResourceGroupC<multipleReaderLockC, powerStatusE>
+			powerStatus;
+
+		cpuStreamC	*parent;
+	};
 
 private:
 #if __SCALING__ >= SCALING_SMP
@@ -140,6 +192,7 @@ public:
 	 * the stack can handle N pushes of the arch's word size.
 	 **/
 	ubit8			sleepStack[PAGING_BASE_SIZE];
+	powerManagerC		powerManager;
 #if __SCALING__ >= SCALING_SMP
 	interCpuMessagerC	interCpuMessager;
 #endif

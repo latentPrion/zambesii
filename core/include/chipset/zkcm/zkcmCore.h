@@ -8,6 +8,7 @@
 	#include <chipset/zkcm/timerControl.h>
 	#include <chipset/zkcm/debugDevice.h>
 	#include <chipset/pkg/watchdogMod.h>
+	#include <kernel/common/smpTypes.h>
 
 class zkcmCoreC
 {
@@ -32,6 +33,8 @@ public:
 	zkcmTimerControlModC		timerControl;
 
 	zkcmDebugDeviceC		*debug[4];
+
+	void newCpuIdNotification(cpu_t highestCpuId);
 };
 
 extern zkcmCoreC		zkcmCore;

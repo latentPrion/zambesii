@@ -17,10 +17,11 @@ void waitLockC::acquire(void)
 	uarch_t	nTries = 0xF00000;
 	cpu_t	cid;
 	taskC	*task;
+	uarch_t contenderFlags=0;
 
 	if (cpuControl::interruptsEnabled())
 	{
-		__KFLAG_SET(lockC::flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
+		__KFLAG_SET(contenderFlags, LOCK_FLAGS_IRQS_WERE_ENABLED);
 		cpuControl::disableInterrupts();
 	};
 
@@ -48,6 +49,7 @@ void waitLockC::acquire(void)
 		asm volatile("cli\n\thlt\n\t");
 	};
 
+	flags = contenderFlags;
 	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
 	/* On a non-SMP build, this just indicates the number of critical
 	 * sections deep into the kernel this thread has currently traveled.

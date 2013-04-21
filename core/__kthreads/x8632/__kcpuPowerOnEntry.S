@@ -1,6 +1,7 @@
 
 #include <in_asm.h>
 #include <assembler.h>
+#include <commonlibs/libx86mp/lapic.h>
 
 #define TMPSTACK_SIZE		512
 
@@ -20,6 +21,8 @@ ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
 	cli
 
 	/* Make sure real mode segment is set to seg 0. */
+	ljmp	$0x0, $.realNext
+.realNext:
 	movw	$0x0, %ax
 	movw	%ax, %ds
 	movw	%ax, %es
@@ -83,12 +86,20 @@ ASM_LOCAL_FUNCTION(__kcpuPowerOnVirtualStart)
 	ljmp	$0x8, $.next2
 
 .next2:
-	/* Copy the waking CPU's sleep stack address into ESP (The stack address
-	 * is the first member of the __kcpuPowerOnBlock structure).
+	/* Get the virtual address the kernel has mapped the LAPIC to.
 	 **/
-	movl	$__kcpuPowerOnBlock, %eax
+	movl	$__kcpuPowerOnLapicVaddr, %eax
+	/* EBX = LAPIC base virtual address. */
+	movl	(%eax), %ebx
+	/* EBX = This CPU's LAPIC ID (LAPIC stores it at bit 24). */
+	movl	x86LAPIC_REG_LAPICID(%ebx), %ebx
+	shr	$24, %ebx
+
+	movl	$__kcpuPowerOnSleepStacks, %eax
+	/* EAX = sleepstacks array start address. */
 	movl	(%eax), %eax
-	movl	%eax, %esp
+	/* ECX = sleepstack address for this CPU. */
+	movl	(%eax,%ebx,4), %esp
 	movl	%esp, %ebp
 
 	/* Clear EFLAGS. */

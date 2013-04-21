@@ -6,18 +6,13 @@
 	#include <kernel/common/task.h>
 	#include <kernel/common/cpuTrib/cpuTrib.h>
 
-struct __kcpuPowerOnBlockS
-{
-	void		*sleepStack;
-	cpuStreamC	*cpuStream;
-	waitLockC	lock;
-};
-
-
 extern "C" void __kcpuPowerOnEntry(void);
-extern "C" void __kcpuPowerOnMain(void);
+extern "C" void __kcpuPowerOnMain(cpuStreamC *self);
 
-extern "C" struct __kcpuPowerOnBlockS	__kcpuPowerOnBlock;
+extern "C" ubit8	*__kcpuPowerOnLapicVaddr;
+extern "C" void		**__kcpuPowerOnSleepStacks;
+extern uarch_t		__kcpuPowerOnSleepStacksLength;
+extern waitLockC	__kcpuPowerOnSleepStacksLock;
 extern taskC __kcpuPowerOnThread;
 
 #endif

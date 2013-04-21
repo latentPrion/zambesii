@@ -1,7 +1,7 @@
 .PHONY=
 DELIVERABLE=../../archKernel.a
 OBJFILES=__kclassInstances.o cpuTrib.o interruptTrib.o cpuStream.o \
-	interCpuMessager.o
+	interCpuMessager.o cpuStream_powerManager.o
 
 all: Makefile $(DELIVERABLE)
 

@@ -31,12 +31,10 @@ uarch_t getEip(void)
 }
 
 extern "C" void getRegs(taskContextC *t);
-// taskContextC		y;
+//taskContextC		y(0);
 
-void __kcpuPowerOnMain(void)
+void __kcpuPowerOnMain(cpuStreamC *self)
 {
-	cpuStreamC	*myStream;
-
 	/**	EXPLANATION:
 	 * Main path for a waking x86-32 CPU. Do the basics to get the CPU in
 	 * synch with the kernel.
@@ -52,27 +50,20 @@ void __kcpuPowerOnMain(void)
 	 * to handle inter-CPU-messages, and thus cause that waking CPU to
 	 * crash.
 	 **/
-
-	// Retrieve the stream pointer and release the lock asap.
-	myStream = __kcpuPowerOnBlock.cpuStream;
-	myStream->baseInit();
-	__kcpuPowerOnBlock.lock.release();
-//	cpuControl::disableInterrupts();
-
-	// Print a message to allow for CPU wakeup tracing.
-	/* __kprintf(NOTICE CPUPOWER"CPU %d: Entered. Sleepstack: 0x%x. Regdump:\n\teax 0x%x, ebx 0x%x, ecx 0x%x, edx 0x%x\n"
+	self->baseInit();
+	/*__kprintf(NOTICE CPUPOWER"CPU %d: Entered. Sleepstack: 0x%x. Regdump:\n\teax 0x%x, ebx 0x%x, ecx 0x%x, edx 0x%x\n"
 		"\tesi 0x%x, edi 0x%x, esp 0x%x, ebp 0x%x\n"
 		"\tcs 0x%x, ds 0x%x, es 0x%x, fs 0x%x, gs 0x%x, ss 0x%x\n"
 		"\teip 0x%x, eflags 0x%x\n",
-		myStream->cpuId, myStream->sleepStack,
+		self->cpuId, self->sleepStack,
 		y.eax, y.ebx, y.ecx, y.edx, y.esi, y.edi, y.esp, y.ebp,
-		y.cs, y.ds, y.es, y.fs, y.gs, y.ss, y.eip, y.flags); */
+		y.cs, y.ds, y.es, y.fs, y.gs, y.ss, y.eip, y.eflags);*/
 
 	/* Enumerates, sets up, etc. After this function has returned, the
 	 * waking CPU will be able to allocate memory freely.
 	 **/
-	myStream->initialize();
-__kprintf(NOTICE"CPU %d: Reached HLT!\n", myStream->cpuId); for (;;){asm volatile("hlt\n\t");};
+	// myStream->initialize();
+__kprintf(NOTICE CPUPOWER"%d: local IRQs %d, Reached HLT!\n", self->cpuId, cpuControl::interruptsEnabled()); for (;;){asm volatile("hlt\n\t");};
 
 	// Halt the CPU here.
 	for (;;) {

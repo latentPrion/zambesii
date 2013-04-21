@@ -8,9 +8,9 @@
 #include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
 #include <__kthreads/__korientation.h>
 #include <__kthreads/__kcpuPowerOn.h>
+
 
 #define getHighestId(currHighest,map,member,item,hibound)	\
 	do \
@@ -35,6 +35,9 @@ static numaBankId_t	highestBankId=0;
 #endif
 
 cpuTribC::cpuTribC(void)
+:
+_usingChipsetSmpMode(0),
+bspId(CPUID_INVALID)
 {
 	/**	EXPLANATION
 	 * Even on a uniprocessor build of the kernel, we set this to
@@ -49,8 +52,6 @@ cpuTribC::cpuTribC(void)
 	 * safely assume we can call the BSP "0" just because it's a
 	 * uniprocessor kernel build.
 	 **/
-	bspId = CPUID_INVALID;
-	_usingChipsetSmpMode = 0;
 }
 
 cpuTribC::~cpuTribC(void)
@@ -125,7 +126,7 @@ error_t cpuTribC::initializeBspCpuStream(void)
 			CHIPSET_CPU_NUMA_SHBANKID);
 	};
 
-	ret = spawnStream(
+	ret = bootCpuNotification(
 #if __SCALING__ >= SCALING_CC_NUMA
 		bspBankId,
 #endif
@@ -139,29 +140,13 @@ error_t cpuTribC::initializeBspCpuStream(void)
 	return bspCpu.taskStream.cooperativeBind();
 }
 
-error_t cpuTribC::fallbackToUpMode(cpu_t bspId, ubit32 bspAcpiId)
+error_t cpuTribC::displayUpOperationOnMpBuildMessage(void)
 {
-	error_t		ret;
-
-	__kprintf(WARNING"The kernel is falling back to Uniprocessor mode; %s."
-		"\n",
-		((_usingChipsetSmpMode == 1) ?
-			"\n\thowever, hotplug of new CPUs is allowed"
-			:"\n\tthis chipset is not safe for multiprocessing"));
-
-#if __SCALING__ >= SCALING_CC_NUMA
-	ret = cpuTrib.spawnStream(CHIPSET_CPU_NUMA_SHBANKID, bspId, bspAcpiId);
-#else
-	ret = cpuTrib.spawnStream(bspId, bspAcpiId);
-#endif
-
-	if (ret != ERROR_SUCCESS)
-	{
-		__kprintf(FATAL CPUTRIB"Failed to spawn BSP stream when "
-			"falling back to single-cpu mode.\n");
-
-		return ERROR_FATAL;
-	};
+	__kprintf(WARNING"The kernel is operating with only one CPU on a\n"
+		"\tmultiprocessor build;\n\t%s\n.",
+		(_usingChipsetSmpMode == 1)
+			? "\n\thowever, hotplug of new CPUs is allowed"
+			: "\n\tthis chipset is not safe for multiprocessing");
 
 	return ERROR_SUCCESS;
 }
@@ -233,8 +218,9 @@ error_t cpuTribC::initializeAllCpus(void)
 			"\twith multi-cpu features that your board simply\n"
 			"\tcan't handle.\n");
 
-		// Small delay.
-		return fallbackToUpMode(bspId, bspId);
+		// TODO: Small delay here, maybe?
+		displayUpOperationOnMpBuildMessage();
+		return ERROR_SUCCESS;
 	};
 
 	/* On MP build it's beneficial to pre-determine the size of the BMPs
@@ -259,7 +245,6 @@ error_t cpuTribC::initializeAllCpus(void)
 #endif
 #endif
 
-
 #if __SCALING__ == SCALING_SMP || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
@@ -277,15 +262,13 @@ error_t cpuTribC::initializeAllCpus(void)
 	};
 #endif
 
+	zkcmCore.newCpuIdNotification(highestCpuId);
+
 #if __SCALING__ >= SCALING_CC_NUMA
-	if (numaInit() != ERROR_SUCCESS) {
-		return fallbackToUpMode(bspId, bspId);
-	};
+	return numaInit();
 #endif
 #if __SCALING__ == SCALING_SMP
-	if (smpInit() != ERROR_SUCCESS) {
-		return fallbackToUpMode(bspId, bspId);
-	};
+	return smpInit();
 #endif
 #if __SCALING__ == SCALING_UNIPROCESSOR
 	return uniProcessorInit();
@@ -295,13 +278,149 @@ error_t cpuTribC::initializeAllCpus(void)
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t cpuTribC::numaInit(void)
+error_t cpuTribC::bootCpuNotification(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
+#elif __SCALING__ == SCALING_SMP
+error_t cpuTribC::bootCpuNotification(cpu_t cid, ubit32 acpiId)
+#endif
 {
 	error_t			ret;
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	ret = spawnStream(bid, cid, acpiId);
+#elif __SCALING__ == SCALING_SMP
+	ret = spawnStream(cid, acpiId);
+#endif
+
+	if (ret != ERROR_SUCCESS)
+	{
+#if __SCALING__ >= SCALING_CC_NUMA
+		__kprintf(ERROR CPUTRIB"bootCpuNotification(%d,%d,%d): Failed "
+			"to spawn stream for CPU.\n",
+			bid, cid, acpiId);
+#elif __SCALING__ == SCALING_SMP
+		__kprintf(ERROR CPUTRIB"bootCpuNotification(%d,%d): Failed to "
+			"spawn stream for CPU.\n",
+			cid, acpiId);
+#endif
+
+		return ret;
+	};
+
+	return ERROR_SUCCESS;
+}
+
+#if __SCALING__ >= SCALING_CC_NUMA
+void cpuTribC::bootParseNumaMap(zkcmNumaMapS *numaMap)
+{
+	error_t		err;
+
+	for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
+	{
+		if (numaMap->cpuEntries[i].cpuId == bspId) { continue; };
+		err = bootCpuNotification(
+			numaMap->cpuEntries[i].bankId,
+			numaMap->cpuEntries[i].cpuId,
+			numaMap->cpuEntries[i].cpuAcpiId);
+
+		if (err != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUTRIB"bootParseNumaMap: Failed to "
+				"power on CPU %d.\n",
+				numaMap->cpuEntries[i].cpuId);
+		};
+
+		getStream(numaMap->cpuEntries[i].cpuId)
+			->powerManager.bootPowerOn(0);
+	};
+}
+
+void cpuTribC::bootConfirmNumaCpusBooted(zkcmNumaMapS *numaMap)
+{
+	for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
+	{
+		if (numaMap->cpuEntries[i].cpuId == bspId) { continue; };
+		getStream(numaMap->cpuEntries[i].cpuId)->powerManager
+			.bootWaitForCpuToPowerOn();
+	};
+}
+
+void cpuTribC::bootParseNumaMap(
+	zkcmNumaMapS *numaMap, zkcmSmpMapS *smpMap
+	)
+{
+	error_t		err;
+
+	for (uarch_t i=0; i<smpMap->nEntries; i++)
+	{
+		sarch_t		found=0;
+
+		if (smpMap->entries[i].cpuId == bspId) { continue; };
+		for (uarch_t j=0; j<numaMap->nCpuEntries; j++)
+		{
+			// If the cpu is also in the NUMA map:
+			if (numaMap->cpuEntries[j].cpuId
+				== smpMap->entries[i].cpuId)
+			{
+				found = 1;
+				break;
+			};
+		};
+
+		// If the CPU is not an extra, don't process it.
+		if (found) { continue; };
+		err = bootCpuNotification(
+			CHIPSET_CPU_NUMA_SHBANKID,
+			smpMap->entries[i].cpuId,
+			smpMap->entries[i].cpuId);
+
+		if (err != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUTRIB"bootParseNumaMapHoles: "
+				"Failed to power on CPU Stream "
+				"%d.\n",
+				smpMap->entries[i].cpuId);
+		};
+
+		getStream(smpMap->entries[i].cpuId)
+			->powerManager.bootPowerOn(0);
+	};
+}
+
+void cpuTribC::bootConfirmNumaCpusBooted(
+	zkcmNumaMapS *numaMap, zkcmSmpMapS *smpMap
+	)
+{
+	for (uarch_t i=0; i<smpMap->nEntries; i++)
+	{
+		sarch_t		found=0;
+
+		if (smpMap->entries[i].cpuId == bspId) { continue; };
+		for (uarch_t j=0; j<numaMap->nCpuEntries; j++)
+		{
+			if (smpMap->entries[i].cpuId
+				== numaMap->cpuEntries[j].cpuId)
+			{
+				found = 1;
+				break;
+			};
+		};
+
+		// Skip those CPUs which appear in both maps.
+		if (!found)
+		{
+			getStream(smpMap->entries[i].cpuId)->powerManager
+				.bootWaitForCpuToPowerOn();
+		};
+	};
+}
+#endif
+
+#if __SCALING__ >= SCALING_CC_NUMA
+error_t cpuTribC::numaInit(void)
+{
 	zkcmNumaMapS		*numaMap;
 #ifdef CHIPSET_CPU_NUMA_GENERATE_SHBANK
 	zkcmSmpMapS		*smpMap;
-	ubit8			found;
 #endif
 
 	/**	EXPLANATION:
@@ -313,37 +432,14 @@ error_t cpuTribC::numaInit(void)
 	 * on.
 	 **/
 
-	// Return non success to force caller to execute fallbackToUpMode().
-	if (!usingChipsetSmpMode()) { return ERROR_GENERAL; };
+	// Return error, because this shouldn't be called in this case.
+	if (!usingChipsetSmpMode()) { return ERROR_UNSUPPORTED; };
 
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
 	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
 	{
-		for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
-		{
-			ret = spawnStream(
-				numaMap->cpuEntries[i].bankId,
-				numaMap->cpuEntries[i].cpuId,
-				numaMap->cpuEntries[i].cpuAcpiId);
-
-			if (ret == ERROR_SUCCESS)
-			{
-				if (numaMap->cpuEntries[i].cpuId == bspId) {
-					continue;
-				};
-
-				getStream(numaMap->cpuEntries[i].cpuId)
-					->powerControl(CPUSTREAM_POWER_ON, 0);
-			}
-			else
-			{
-				__kprintf(ERROR CPUTRIB"numaInit: Failed to "
-					"spawn stream for CPU %d.\n",
-					numaMap->cpuEntries[i].cpuId);
-			};
-		};
-
-		return ERROR_SUCCESS;
+		bootParseNumaMap(numaMap);
+		bootConfirmNumaCpusBooted(numaMap);
 	}
 	else
 	{
@@ -379,49 +475,8 @@ error_t cpuTribC::numaInit(void)
 		{
 			// Filter out the CPUs which need to be in shared bank.
 			__kprintf(CC"Filtering out NUMA CPUs.\n");
-			for (uarch_t i=0; i<smpMap->nEntries; i++)
-			{
-				found = 0;
-				for (uarch_t j=0; j<numaMap->nCpuEntries; j++)
-				{
-					if (numaMap->cpuEntries[j].cpuId
-						== smpMap->entries[i].cpuId)
-					{
-						found = 1;
-						break;
-					};
-				};
-
-				// If the CPU is not an extra, don't process it.
-				if (found) { continue; };
-
-				ret = spawnStream(
-					CHIPSET_CPU_NUMA_SHBANKID,
-					smpMap->entries[i].cpuId,
-					smpMap->entries[i].cpuId);
-
-				if (ret == ERROR_SUCCESS)
-				{
-					if (smpMap->entries[i].cpuId == bspId) {
-						continue;
-					};
-
-					getStream(smpMap->entries[i].cpuId)
-						->powerControl(
-							CPUSTREAM_POWER_ON, 0);
-				}
-				else
-				{
-					__kprintf(ERROR CPUTRIB"numaInit: "
-						"Failed to spawn CPU Stream "
-						"%d.\n",
-						smpMap->entries[i].cpuId);
-
-					continue;
-				};
-			};
-
-			return ERROR_SUCCESS;
+			bootParseNumaMap(numaMap, smpMap);
+			bootConfirmNumaCpusBooted(numaMap, smpMap);
 		}
 		else
 		{
@@ -440,33 +495,8 @@ error_t cpuTribC::numaInit(void)
 			__kprintf(CC"No NUMA map, all CPUs on shared bank (SMP "
 				"operation).\n");
 
-			for (uarch_t i=0; i<smpMap->nEntries; i++)
-			{
-				ret = spawnStream(
-					CHIPSET_CPU_NUMA_SHBANKID,
-					smpMap->entries[i].cpuId,
-					smpMap->entries[i].cpuAcpiId);
-
-				if (ret == ERROR_SUCCESS)
-				{
-					if (smpMap->entries[i].cpuId == bspId) {
-						continue;
-					};
-
-					getStream(smpMap->entries[i].cpuId)
-						->powerControl(
-							CPUSTREAM_POWER_ON, 0);
-				}
-				else
-				{
-					__kprintf(ERROR CPUTRIB"numaInit: "
-						"Failed to spawn CPU Stream "
-						"for CPU %d.",
-						smpMap->entries[i].cpuId);
-				};
-			};
-
-			return ERROR_SUCCESS;
+			bootParseSmpMap(smpMap);
+			bootConfirmSmpCpusBooted(smpMap);
 		};
 	}
 	else
@@ -477,12 +507,54 @@ error_t cpuTribC::numaInit(void)
 			__kprintf(WARNING CPUTRIB"numaInit: Falling back to "
 				"uniprocessor mode.\n");
 
-			return ERROR_CRITICAL;
+			return displayUpOperationOnMpBuildMessage();
 		};
 	};
 #endif
 
-	return ERROR_CRITICAL;
+	return ERROR_SUCCESS;
+}
+#endif
+
+#if __SCALING__ >= SCALING_SMP
+void cpuTribC::bootParseSmpMap(zkcmSmpMapS *smpMap)
+{
+	error_t		err;
+
+	for (uarch_t i=0; i<smpMap->nEntries; i++)
+	{
+		if (smpMap->entries[i].cpuId == bspId) { continue; };
+
+		err = bootCpuNotification(
+#if __SCALING__ >= SCALING_CC_NUMA
+			CHIPSET_CPU_NUMA_SHBANKID,
+#endif
+			smpMap->entries[i].cpuId,
+			smpMap->entries[i].cpuAcpiId);
+
+		if (err != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR CPUTRIB"bootParseSmpMap: "
+				"Failed to power on CPU Stream "
+				"for CPU %d.",
+				smpMap->entries[i].cpuId);
+		};
+
+		getStream(smpMap->entries[i].cpuId)
+			->powerManager.bootPowerOn(0);
+	};
+}
+
+void cpuTribC::bootConfirmSmpCpusBooted(zkcmSmpMapS *smpMap)
+{
+	for (uarch_t i=0; i<smpMap->nEntries; i++)
+	{
+		if (smpMap->entries[i].cpuId != bspId)
+		{
+			getStream(smpMap->entries[i].cpuId)->powerManager
+				.bootWaitForCpuToPowerOn();
+		};
+	};
 }
 #endif
 
@@ -493,47 +565,21 @@ error_t cpuTribC::smpInit(void)
 	zkcmSmpMapS		*smpMap;
 
 	/**	EXPLANATION:
-	 * Quite simple: look for an SMP map, and if none exists, return an
-	 * error to indicate that the kernel should fallback to uniprocessor
-	 * mode.
+	 * Quite simple: look for an SMP map, and if none exists, return success
+	 * since CPUs may still be hotplugged.
 	 **/
 
-	// Return non success to force caller to execute fallbackToUpMode().
-	if (!usingChipsetSmpMode()) { return ERROR_GENERAL; };
+	// Return error, because this shouldn't be called in this case.
+	if (!usingChipsetSmpMode()) { return ERROR_UNSUPPORTED; };
 	
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != __KNULL && smpMap->nEntries > 0)
 	{
-		for (uarch_t i=0; i<smpMap->nEntries; i++)
-		{
-			ret = spawnStream(
-				smpMap->entries[i].cpuId,
-				smpMap->entries[i].cpuAcpiId);
-
-			if (ret == ERROR_SUCCESS)
-			{
-				if (smpMap->entries[i].cpuId == bspId) {
-					continue;
-				};
-
-				getStream(smpMap->entries[i].cpuId)
-					->powerControl(CPUSTREAM_POWER_ON, 0);
-			}
-			else
-			{
-				__kprintf(ERROR CPUTRIB"smpInit: Failed to "
-					"spawn CPU Stream for CPU %d.\n",
-					smpMap->entries[i].cpuId);
-			};
-		};
+		bootParseSmpMap(smpMap);
+		bootConfirmSmpCpusBooted(smpMap);
 	}
-	else
-	{
-		// Fallback to uniprocessor mode if no SMP map.
-		__kprintf(WARNING CPUTRIB"smpInit: SMP build, but CPU mod "
-			"reports no SMP CPUs.\n");
-
-		return ERROR_CRITICAL;
+	else {
+		displayUpOperationOnMpBuildMessage();
 	};
 
 	return ERROR_SUCCESS;
@@ -548,8 +594,9 @@ error_t cpuTribC::uniProcessorInit(void)
 	 * sure that if getStream(foo) is called, the BSP will always be
 	 * returned, no matter what argument is passed.
 	 **/
-	/* TODO: Check if you should call spawnStream() and initialize() on the
-	 * BSP on a non-MP build.
+	/* TODO: Check if you should call spawnStream() and bind() on the
+	 * BSP on a non-MP build. Most likely not, because this is dealt with in
+	 * initializeBspCpuStream() anyway.
 	 **/
 	cpu = getCurrentCpuStream();
 	return ERROR_SUCCESS;
@@ -625,6 +672,7 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ncb->cpus.setSingle(cid);
+
 #endif
 	/**	EXPLANATION:
 	 * The SMP case requires that the onlineCpus and availableCpus bmps be
@@ -671,7 +719,8 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	ret = cs->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	if ((ret = cpuStreams.addItem(cid, cs)) != ERROR_SUCCESS)
+	ret = cpuStreams.addItem(cid, cs);
+	if (ret != ERROR_SUCCESS)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): "
@@ -681,7 +730,8 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d): Failed "
 			"to add new CPU stream to list.\n",
 			cid, cpuAcpiId);
-#endif		
+#endif
+		return ret;
 	};
 
 #if __SCALING__ >= SCALING_CC_NUMA

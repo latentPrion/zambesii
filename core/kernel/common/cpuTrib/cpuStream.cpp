@@ -9,8 +9,6 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <kernel/common/processTrib/processTrib.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
-#include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/cpuTrib/powerOperations.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
@@ -37,16 +35,39 @@ cpuId(cid), cpuAcpiId(acpiId),
 #if __SCALING__ >= SCALING_CC_NUMA
 bankId(bid),
 #endif
-taskStream(this)
+taskStream(this), flags(0),
+powerManager(this)
 #if __SCALING__ >= SCALING_SMP
 ,interCpuMessager(this)
 #endif
 {
-	/* Only the BSP CPU Stream will have this magic value set. The BSP
-	 * CPU Stream is pre-initialized, and holds certain values already which
-	 * should not be overwritten.
+	if (this == &bspCpu) { __KFLAG_SET(flags, CPUSTREAM_FLAGS_BSP); };
+
+	/* We don't need to acquire the __kcpuPowerOnSleepStacksLock lock before
+	 * editing this CPU's index in the array, because a race condition can
+	 * never occur here. No other writer will ever write to any other CPU's
+	 * index, so the operation of writing a sleep stack pointer to the
+	 * array is always serial in nature.
+	 *
+	 *	FIXME:
+	 * Notice that we do not allow the BSP CPU to set its index in the
+	 * sleepstacks array. When writing power management, if it becomes
+	 * necessary for the BSP CPU to know its sleepstack location, we may
+	 * need to change this behaviour, or else just explicitly set the
+	 * BSP CPU's sleep stack in the power management code.
 	 **/
-	if (!__KFLAG_TEST(flags, CPUSTREAM_FLAGS_BSP)) { flags = 0; };
+	if (!__KFLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
+	{
+		__kcpuPowerOnSleepStacks[cpuId] = &sleepStack[
+			sizeof(sleepStack) - sizeof(void *)];
+
+		/* Push the CPU Stream address to the sleep stack so the waking
+		 * CPU can obtain it as if it was passed as an argument to
+		 * __kcpuPowerOnMain.
+		 **/
+		*reinterpret_cast<cpuStreamC **>( 
+			__kcpuPowerOnSleepStacks[cpuId] ) = this;
+	};
 }
 
 error_t cpuStreamC::initializeBspCpuLocking(void)
@@ -58,7 +79,7 @@ error_t cpuStreamC::initializeBspCpuLocking(void)
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
 	// Let the CPU know that it is the BSP.
-	__KFLAG_SET(bspCpu.flags, CPUSTREAM_FLAGS_BSP);
+	__KFLAG_SET(flags, CPUSTREAM_FLAGS_BSP);
 	// Set the BSP's currentTask to __korientation.
 	taskStream.currentTask = &__korientationThread;
 
@@ -80,19 +101,6 @@ error_t cpuStreamC::initialize(void)
 void cpuStreamC::cut(void)
 {
 	// Probably won't need to do much here.
-}
-
-status_t cpuStreamC::powerControl(ubit16 command, uarch_t flags)
-{
-
-	__kcpuPowerOnBlock.lock.acquire();
-	__kcpuPowerOnBlock.cpuStream = this;
-	__kcpuPowerOnBlock.sleepStack = &sleepStack[PAGING_BASE_SIZE];
-
-	// Call the chipset code to now actually wake the CPU up.
-	zkcmCore.cpuDetection.powerControl(cpuId, command, flags);
-
-	return ERROR_SUCCESS;
 }
 
 cpuStreamC::~cpuStreamC(void)

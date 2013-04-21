@@ -1,6 +1,9 @@
 
+#include <chipset/zkcm/numaMap.h>
+#include <chipset/zkcm/smpMap.h>
 #include <__kstdlib/__ktypes.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 #if __SCALING__ >= SCALING_SMP
 cpuStreamC *cpuTribC::getCurrentCpuStream(void)

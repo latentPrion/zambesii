@@ -1,17 +1,19 @@
 #ifndef _x86_LOCAL_APIC_H
 	#define _x86_LOCAL_APIC_H
 
+#ifndef __ASM__
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/interruptTrib/__kexceptionFn.h>
 	#include "mpTables.h"
+#endif
 
 #define x86LAPIC		"LAPIC: "
-// "LAPIC 00"
+/* "LAPIC 00" */
 #define x86LAPIC_MAGIC		0x1A1D1C00
 
-// Offsets to LAPIC registers.
+/* Offsets to LAPIC registers. */
 #define x86LAPIC_REG_LAPICID		0x20
 #define x86LAPIC_REG_LAPIC_VER		0x30
 #define x86LAPIC_REG_TASKPRIO		0x80
@@ -61,7 +63,7 @@
 #define x86LAPIC_REG_DIV_CFG		0x3E0
 
 #define x86LAPIC_VECTOR_SPURIOUS	0xFF
-// x86 IPI vector. 0xFE is one int priority below the highest on LAPIC.
+/* x86 IPI vector. 0xFE is one int priority below the highest on LAPIC. */
 #define x86LAPIC_VECTOR_IPI		0xFE
 #define x86LAPIC_VECTOR_LVT_ERROR	0xFD
 
@@ -72,7 +74,7 @@
 #define x86LAPIC_IPI_TYPE_LOWPRIO		0x1
 #define x86LAPIC_IPI_TYPE_SMI			0x2
 #define x86LAPIC_IPI_TYPE_NMI			0x4
-// These two have the same value. Also, when sending INIT, always use vector 0.
+/* These two have the same value. Also when sending INIT, always use vector 0 */
 #define x86LAPIC_IPI_TYPE_INIT			0x5
 #define x86LAPIC_IPI_TYPE_ARBIT_RESET		0x5
 #define x86LAPIC_IPI_TYPE_SIPI			0x6
@@ -101,7 +103,7 @@
 #define x86LAPIC_LINT_TYPE_SMI			0x3
 
 
-
+#ifndef __ASM__
 namespace x86Lapic
 {
 	struct cacheS
@@ -238,6 +240,7 @@ inline ubit32 x86Lapic::lintConvertAcpiFlags(ubit32 acpiFlagField)
 {
 	return acpiFlagField;
 }
+#endif
 
 #endif
 
