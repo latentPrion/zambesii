@@ -2,6 +2,7 @@
 	#define _x86_LOCAL_APIC_H
 
 #ifndef __ASM__
+	#include <chipset/zkcm/device.h>
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
@@ -104,80 +105,74 @@
 
 
 #ifndef __ASM__
-namespace x86Lapic
+class x86LapicC
+:
+public zkcmDeviceC
 {
-	struct cacheS
-	{
-		ubit32		magic;
-		ubit8		*v;
-		paddr_t		p;
-	};
+public:
+	x86LapicC(class cpuStreamC *parent);
+	error_t initialize(void) { return ERROR_SUCCESS; }
+	~x86LapicC(void) {}
 
-	void initializeCache(void);
-	void flushCache(void);
+	// zkcmTimerDeviceC *getTimer(void) { return &timer; }
 
-	/**	EXPLANATION:
-	 * The 'great juju on the mountain' which bridges the IRQ routing
-	 * physical subsystem with the kernel's IRQ handling code. (Ref. Richard
-	 * Dawkinz). The IO-APIC code will assign a separate CPU interrupt
-	 * vector to each IO-APIC pin on each IO-APIC, which will be unique
-	 * across IO-APICs.
-	 *
-	 * This way, it's deathly simple to find out exactly which pin on which
-	 * IO-APIC is currently raising a signal. In this scenario, it is as
-	 * simple as assuming that the triggered interrupt vector directly
-	 * correlates to the IRQ pin being raised. This approach also eliminates
-	 * the need to do any In-service register reading etc...that said, there
-	 * is no In-service register in the IO-APICs; Frankly I don't think that
-	 * this is really as much a smart design, as it is the only workable
-	 * one.
-	 **/
-	status_t getActiveIrq(
-		cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode);
+public:
+	// Used to set up LAPICs on each CPU when they are booted.
+	error_t setupLapic(void);
 
 	sarch_t cpuHasLapic(void);
+	static error_t mapLapicMem(void);
+	static sarch_t lapicMemIsMapped(void);
 
-	error_t detectPaddr(void);
-	sarch_t getPaddr(paddr_t *p);
-	void setPaddr(paddr_t p);
-	error_t mapLapicMem(void);
-	sarch_t lapicMemIsMapped(void);
+	static error_t detectPaddr(void);
+	static void setPaddr(paddr_t p)
+	{
+		cache.p = p;
+	}
 
-	ubit8 read8(ubit32 offset);
-	ubit16 read16(ubit32 offset);
-	ubit32 read32(ubit32 offset);
+	static sarch_t getPaddr(paddr_t *p)
+	{
+		*p = cache.p;
+		return (cache.p != 0);
+	}
 
-	void write8(ubit32 offset, ubit8 val);
-	void write16(ubit32 offset, ubit16 val);
-	void write32(ubit32 regOffset, ubit32 value);
+	/* Lapic Global enable/disable (IA32_APIC_BASE[11]).
+	 * On 3-wire LAPIC-bus chips, this is irreversible without chipset
+	 * reboot. On system-bus chips this is reversible as long as no
+	 * interrupts are triggered mid-operation.
+	 **/
+	static void globalEnable(void);
+	static void globalDisable(void);
+	static sarch_t isGloballyEnabled(void);
 
+	// Per-LAPIC soft enable/disable.
 	void softEnable(void);
 	void softDisable(void);
 	sarch_t isSoftEnabled(void);
 
-	void hardEnable(void);
-	void hardDisable(void);
-	sarch_t isHardEnabled(void);
+	void sendEoi(void);
 
 	inline ubit8 getVersion(void)
-	{
-		return read32(x86LAPIC_REG_LAPIC_VER) & 0xFF;
-	}
+		{ return read32(x86LAPIC_REG_LAPIC_VER) & 0xFF; }
 
-	inline sarch_t isIntegrated(void)
+	inline sarch_t isOldNonIntegratedLapic(void)
 	{
 #ifdef CONFIG_ARCH_x86_32
-		return getVersion() & 0xF0u;
+		return !(getVersion() & 0xF0u);
 #else
-		return 1;
+		return 0;
 #endif
 	}
 
-	void sendEoi(void);
+
+	ubit32 read32(ubit32 offset);
+	void write32(ubit32 regOffset, ubit32 value);
 
 	// IPI-related functions.
-	namespace ipi
+	struct ipiS
 	{
+		error_t setupIpis(class cpuStreamC *parent);
+
 		error_t sendPhysicalIpi(
 			ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest);
 
@@ -186,60 +181,79 @@ namespace x86Lapic
 
 		void sendFlatLogicalIpi(ubit8 type, ubit8 vector, ubit8 mask);
 
-		__kexceptionFn	exceptionHandler;
+	private:
 		void installHandler(void);
-	}
+		static __kexceptionFn	exceptionHandler;
+		static sarch_t		handlerIsInstalled;
+	} ipi;
 
-	/* LINT pin related functions.
-	 *
-	 * The "flags" arg expects the flags to be in the same format as the
-	 * MP specification's "flags" field for the Local Interrupt Source
-	 * entries.
-	 **/
-	void lintSetup(
-		ubit8 lint, ubit8 intType, ubit32 flags, ubit8 vector);
+	struct lintS
+	{
+		error_t setupLints(class cpuStreamC *parent);
 
-	void lintEnable(ubit8 lint);
-	void lintDisable(ubit8 lint);
-	ubit8 lintConvertMpCfgType(ubit8);
-	ubit32 lintConvertMpCfgFlags(ubit32);
-	ubit32 lintConvertAcpiFlags(ubit32);
+		void lintSetup(
+			class cpuStreamC *parent,
+			ubit8 lint, ubit8 intType, ubit32 flags, ubit8 vector);
+
+		void lintEnable(class cpuStreamC *parent, ubit8 lint);
+		void lintDisable(class cpuStreamC *parent, ubit8 lint);
+
+		/* LINT pin related functions.
+		 *
+		 * The "flags" arg expects the flags to be in the same format
+		 * as the MP specification's "flags" field for the Local
+		 * Interrupt Source entries.
+		 **/
+		static ubit8 lintConvertMpCfgType(ubit8);
+		static ubit32 lintConvertMpCfgFlags(ubit32);
+		static ubit32 lintConvertAcpiFlags(ubit32);
+
+	private:
+		void rsdtSetupLints(class cpuStreamC *parent);
+		void xsdtSetupLints(class cpuStreamC *parent);
+	} lint;
 
 	// This must always be 0xHF, where H is any hex digit, and F is fixed.
-	void setupSpuriousVector(ubit8 vector);
-	void setupLvtError(ubit8 vector);
-}
-
-inline ubit8 x86Lapic::lintConvertMpCfgType(ubit8 mpTypeField)
-{
-	switch (mpTypeField)
+	struct spuriousS
 	{
-	case x86_MPCFG_LIRQSRC_INTTYPE_INT:
-		return x86LAPIC_LINT_TYPE_INT;
+		error_t setupSpuriousVector(class cpuStreamC *parent);
 
-	case x86_MPCFG_LIRQSRC_INTTYPE_NMI:
-		return x86LAPIC_LINT_TYPE_NMI;
+	private:
+		void installHandler(void);
+		static __kexceptionFn	exceptionHandler;
+		static sarch_t		handlerIsInstalled;
+	} spurious;
 
-	case x86_MPCFG_LIRQSRC_INTTYPE_SMI:
-		return x86LAPIC_LINT_TYPE_SMI;
+	struct errorS
+	{
+		error_t setupLvtError(class cpuStreamC *parent);
 
-	case x86_MPCFG_LIRQSRC_INTTYPE_EXTINT:
-		return x86LAPIC_LINT_TYPE_EXTINT;
+	private:
+		void installHandler(void);
+		static __kexceptionFn	exceptionHandler;
+		static sarch_t		handlerIsInstalled;
+	} error;	
 
-	default: return x86LAPIC_LINT_TYPE_INT;
+	struct cacheS
+	{
+		cacheS(void)
+		:
+		magic(x86LAPIC_MAGIC),
+		v(__KNULL)
+		{
+			memset(&p, 0, sizeof(p));
+		}
+
+		ubit32		magic;
+		ubit8		*v;
+		paddr_t		p;
 	};
-}
 
-// Both ACPI and MP tables use the same flag bit positions, so we will too.
-inline ubit32 x86Lapic::lintConvertMpCfgFlags(ubit32 mpFlagField)
-{
-	return mpFlagField;
-}
-
-inline ubit32 x86Lapic::lintConvertAcpiFlags(ubit32 acpiFlagField)
-{
-	return acpiFlagField;
-}
+private:
+	static cacheS		cache;
+	class cpuStreamC	*parent;
+	// lapicTimerC		timer;
+};
 #endif
 
 #endif

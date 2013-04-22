@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../chipset.a
-OBJFILES=timerControl_filters.o
+OBJFILES=timerControl_filters.o timerDevice.o
 
 all: Makefile $(DELIVERABLE)
 

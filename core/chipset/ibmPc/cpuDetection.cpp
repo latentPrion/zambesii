@@ -17,6 +17,7 @@
 #include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
 #include "i8254.h"
@@ -421,6 +422,7 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 	uarch_t			pos;
 	sarch_t			haveMpTableIrqSources=0, haveAcpiIrqSources=0,
 				haveMpTableIoApics=0, haveAcpiIoApics=0;
+	x86LapicC		*lapic;
 
 	/**	EXPLANATION:
 	 * This function is supposed to be called during the kernel's initial
@@ -440,7 +442,8 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 	 *	  the first 16 IO-APIC pins, but beyond that, for devices on
 	 *	  any other bus, we have zero information.
 	 **/
-	if (!x86Lapic::cpuHasLapic())
+	lapic = &cpuTrib.getCurrentCpuStream()->lapic;
+	if (!lapic->cpuHasLapic())
 	{
 		__kprintf(ERROR CPUMOD"checkSmpSanity(): BSP has no LAPIC.\n");
 		return 0;
@@ -564,11 +567,13 @@ checkForMpTables:
 
 cpu_t zkcmCpuDetectionModC::getBspId(void)
 {
+	x86LapicC	*lapic;
+
+	lapic = &cpuTrib.getCurrentCpuStream()->lapic;
 	if (!ibmPcState.bspInfo.bspIdRequestedAlready)
 	{
-		x86Lapic::initializeCache();
-
-		if (!x86Lapic::cpuHasLapic())
+		// We expect to be executing on the BSP, or this won't work.
+		if (!lapic->cpuHasLapic())
 		{
 			__kprintf(NOTICE CPUMOD"getBspId: BSP CPU has no "
 				"LAPIC. Assigning fake ID of 0.\n");
@@ -578,21 +583,21 @@ cpu_t zkcmCpuDetectionModC::getBspId(void)
 			return ibmPcState.bspInfo.bspId;
 		};
 
-		if (!x86Lapic::lapicMemIsMapped())
+		if (!x86LapicC::lapicMemIsMapped())
 		{
 			// Not safe, but detectPaddr() never returns error.
-			if (x86Lapic::detectPaddr() != ERROR_SUCCESS) {
+			if (x86LapicC::detectPaddr() != ERROR_SUCCESS) {
 				return 0;
 			};
 
-			if (x86Lapic::mapLapicMem() != ERROR_SUCCESS)
+			if (x86LapicC::mapLapicMem() != ERROR_SUCCESS)
 			{
 				panic(ERROR CPUMOD"getBspId: Failed to map LAPIC "
 					"into kernel vaddrspace.\n");
 			};
 		};
 
-		ibmPcState.bspInfo.bspId = x86Lapic::read32(
+		ibmPcState.bspInfo.bspId = lapic->read32(
 			x86LAPIC_REG_LAPICID);
 
 		ibmPcState.bspInfo.bspId >>= 24;

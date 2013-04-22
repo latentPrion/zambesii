@@ -35,6 +35,8 @@ extern "C" void getRegs(taskContextC *t);
 
 void __kcpuPowerOnMain(cpuStreamC *self)
 {
+	error_t		err;
+
 	/**	EXPLANATION:
 	 * Main path for a waking x86-32 CPU. Do the basics to get the CPU in
 	 * synch with the kernel.
@@ -51,6 +53,10 @@ void __kcpuPowerOnMain(cpuStreamC *self)
 	 * crash.
 	 **/
 	self->baseInit();
+	err = self->bind();
+	if (err != ERROR_SUCCESS) {
+		__kprintf(FATAL CPUPOWER"%d: Failed to bind().\n", self->cpuId);
+	};
 	/*__kprintf(NOTICE CPUPOWER"CPU %d: Entered. Sleepstack: 0x%x. Regdump:\n\teax 0x%x, ebx 0x%x, ecx 0x%x, edx 0x%x\n"
 		"\tesi 0x%x, edi 0x%x, esp 0x%x, ebp 0x%x\n"
 		"\tcs 0x%x, ds 0x%x, es 0x%x, fs 0x%x, gs 0x%x, ss 0x%x\n"
@@ -63,11 +69,13 @@ void __kcpuPowerOnMain(cpuStreamC *self)
 	 * waking CPU will be able to allocate memory freely.
 	 **/
 	// myStream->initialize();
-__kprintf(NOTICE CPUPOWER"%d: local IRQs %d, Reached HLT!\n", self->cpuId, cpuControl::interruptsEnabled()); for (;;){asm volatile("hlt\n\t");};
+
+	__kprintf(NOTICE CPUPOWER"%d: local IRQs %d, Reached HLT!\n",
+		self->cpuId, cpuControl::interruptsEnabled());
 
 	// Halt the CPU here.
 	for (;;) {
-		asm volatile ("hlt \n\t");
+		cpuControl::halt();
 	};
 }
 

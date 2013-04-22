@@ -50,8 +50,8 @@ error_t cpuStreamC::interCpuMessagerC::bind(void)
 	 * "availableCpus" BMP, that likelihood is erased, since no CPU will
 	 * try to send messages to this CPU if its bit isn't set.
 	 **/
-	__kprintf(NOTICE CPUMSG"%d: Binding.\n", parent->cpuId);
 	setStatus(NOT_PROCESSING);
+	__kprintf(NOTICE CPUMSG"%d: Bound.\n", parent->cpuId);
 	return ERROR_SUCCESS;
 }
 

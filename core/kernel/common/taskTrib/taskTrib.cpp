@@ -166,11 +166,7 @@ void taskTribC::block(void)
 
 error_t taskTribC::unblock(taskC *task)
 {
-	if (task->runState == taskC::RUNNABLE)
-	{
-		__kprintf(NOTICE TASKTRIB"unblock(0x%x): already runnable.\n",
-			task->id);
-
+	if (task->runState == taskC::RUNNABLE) {
 		return ERROR_SUCCESS;
 	};
 

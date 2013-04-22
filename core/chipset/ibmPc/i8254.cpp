@@ -9,6 +9,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 
 #include "i8254.h"
 

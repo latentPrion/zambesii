@@ -170,6 +170,11 @@ void *walkerPageRanger::createMappingTo(
 	void		*ret;
 	status_t	nMapped;
 
+	/*	WARNING:
+	 * Returns a page aligned address which requires the use of
+	 * WPRANGER_ADJUST_PADDR().
+	 **/
+
 	// Safely clear the lower bits of the paddr.
 	paddr >>= PAGING_BASE_SHIFT;
 	paddr <<= PAGING_BASE_SHIFT;
@@ -181,7 +186,7 @@ void *walkerPageRanger::createMappingTo(
 	if (ret == __KNULL)
 	{
 		__kprintf(ERROR WPRANGER"createMappingTo(0x%P, %d): Failed to "
-			"alloc enough vmem.\n",
+			"alloc vmem.\n",
 			paddr, nPages);
 
 		return __KNULL;
@@ -198,8 +203,8 @@ void *walkerPageRanger::createMappingTo(
 			"failed.\n",
 			paddr, nPages);
 
-		processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
-			ret, nPages);
+		processTrib.__kprocess.memoryStream.vaddrSpaceStream
+			.releasePages(ret, nPages);
 
 		return __KNULL;
 	};

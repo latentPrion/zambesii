@@ -6,6 +6,7 @@
 	#include <chipset/memory.h>
 	#include <__kclasses/ptrlessList.h>
 	#include <__kclasses/cachePool.h>
+	#include <commonlibs/libx86mp/lapic.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/task.h>
 	#include <kernel/common/smpTypes.h>
@@ -195,6 +196,9 @@ public:
 	powerManagerC		powerManager;
 #if __SCALING__ >= SCALING_SMP
 	interCpuMessagerC	interCpuMessager;
+#endif
+#if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
+	class x86LapicC		lapic;
 #endif
 };
 

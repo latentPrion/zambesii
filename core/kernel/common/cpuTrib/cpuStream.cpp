@@ -40,6 +40,9 @@ powerManager(this)
 #if __SCALING__ >= SCALING_SMP
 ,interCpuMessager(this)
 #endif
+#if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
+,lapic(this)
+#endif
 {
 	if (this == &bspCpu) { __KFLAG_SET(flags, CPUSTREAM_FLAGS_BSP); };
 
@@ -94,6 +97,11 @@ error_t cpuStreamC::initialize(void)
 
 	ret = interCpuMessager.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
+
+#if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
+	ret = lapic.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+#endif
 
 	return taskStream.initialize();
 }

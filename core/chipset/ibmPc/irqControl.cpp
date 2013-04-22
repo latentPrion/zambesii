@@ -6,6 +6,7 @@
 #include <commonlibs/libx86mp/libx86mp.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 #include "i8259a.h"
 #include "zkcmIbmPcState.h"
 
@@ -234,7 +235,7 @@ void zkcmIrqControlModC::sendEoi(ubit16 __kpin)
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
 	{
 		// Directly call on lib LAPIC to do the EOI.
-		x86Lapic::sendEoi();
+		cpuTrib.getCurrentCpuStream()->lapic.sendEoi();
 	}
 	else {
 		i8259aPic.sendEoi(__kpin);

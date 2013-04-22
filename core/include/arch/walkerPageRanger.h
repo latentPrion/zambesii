@@ -73,9 +73,9 @@
  * to adjust the pointer after mapping before using it:
  *	s = WPRANGER_ADJUST_VADDR(s, 0xFCFCF012, struct mystruct *);
  *
- * TL;DR: After you use mapInc(), remapInc(), remapNoInc() or mapNoInc(), on a
- * raw page allocated from the VMM, be sure to call WPRANGER_ADJUST_VADDR()
- * before using the newly mapped pointer.
+ * TL;DR: After you use mapInc(), remapInc(), remapNoInc(), mapNoInc() or
+ * createMappingTo(), be sure to call WPRANGER_ADJUST_VADDR() before using the
+ * newly mapped pointer.
  *
  * --Thanks.
  **/
@@ -96,6 +96,10 @@ namespace walkerPageRanger
 	 * This function does exactly that: Allocates a new virtual page range
 	 * to cover the allocation, then maps it to the specified physical
 	 * address range with the page attributes provided.
+	 *
+	 *	WARNING:
+	 * RETURNS A PAGE ALIGNED ADDRESS which requires the use of
+	 * WPRANGER_ADJUST_VADDR().
 	 **/
 	void *createMappingTo(paddr_t paddr, uarch_t nPages, uarch_t flags);
 

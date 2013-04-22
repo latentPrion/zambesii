@@ -86,7 +86,8 @@ status_t cpuStreamC::powerManagerC::bootPowerOn(ubit32)
 {
 	error_t		ret;
 
-	x86Lapic::initializeCache();
+	if (!x86LapicC::lapicMemIsMapped()) { return ERROR_UNINITIALIZED; };
+
 	if (!cpuTrib.usingChipsetSmpMode())
 	{
 		__kprintf(ERROR CPUPWRMGR"%d: bootPowerOn: Attempt to "
@@ -97,7 +98,7 @@ status_t cpuStreamC::powerManagerC::bootPowerOn(ubit32)
 	};
 
 	// Init IPI: Always with vector = 0.
-	ret = x86Lapic::ipi::sendPhysicalIpi(
+	ret = parent->lapic.ipi.sendPhysicalIpi(
 		x86LAPIC_IPI_TYPE_INIT,
 		0,
 		x86LAPIC_IPI_SHORTDEST_NONE,
@@ -157,7 +158,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 			{
 				// Intgr. LAPIC. Send first SIPI, set timeout.
 				cs->powerManager.setPowerStatus(POWERING_ON);
-				err = x86Lapic::ipi::sendPhysicalIpi(
+				err = parent->lapic.ipi.sendPhysicalIpi(
 					x86LAPIC_IPI_TYPE_SIPI,
 					sipiVector,
 					x86LAPIC_IPI_SHORTDEST_NONE,
@@ -190,7 +191,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 		case POWERING_ON:
 			// Integrated LAPIC. Send second SIPI and set timeout.
 			cs->powerManager.setPowerStatus(POWERING_ON_RETRY);
-			err = x86Lapic::ipi::sendPhysicalIpi(
+			err = parent->lapic.ipi.sendPhysicalIpi(
 				x86LAPIC_IPI_TYPE_SIPI,
 				sipiVector,
 				x86LAPIC_IPI_SHORTDEST_NONE,

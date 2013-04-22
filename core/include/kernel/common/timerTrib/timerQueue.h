@@ -5,6 +5,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/sortedPtrDoubleList.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
+	#include <kernel/common/timerTrib/timerStream.h>
 
 	/**	EXPLANATION:
 	 * The subject of Zambesii timer source management as a whole will

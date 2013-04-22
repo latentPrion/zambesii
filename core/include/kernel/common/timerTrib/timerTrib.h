@@ -4,6 +4,7 @@
 	#include <chipset/zkcm/zkcmIsr.h>
 	#include <chipset/zkcm/timerDevice.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/string.h>
 	#include <__kclasses/clock_t.h>
 	#include <__kclasses/singleWaiterQueue.h>
 	#include <kernel/common/tributary.h>
@@ -26,7 +27,6 @@ public tributaryC
 {
 friend class zkcmTimerControlModC;
 friend class timerStreamC;
-friend void ::__korientationMain(void);
 public:
 	timerTribC(void);
 	error_t initialize(void);
@@ -193,10 +193,10 @@ private:
 		void processExitMessage(messageS *);
 
 		// PID and Pointer to event processing thread's taskC struct.
-		processId_t	tid;
-		taskC		*task;
+		processId_t		tid;
+		taskC			*task;
 		// Control queue used to send signals to the processing thread.
-		singleWaiterQueueC<messageS>	controlQueue;
+		singleWaiterQueueC	controlQueue;
 		/* Array of wait queues for each of the timerQueues which are
 		 * usable on this chipset. When a timer device is bound to a
 		 * queue (newTimerDeviceNotification() -> initializeQueue()),
@@ -206,8 +206,8 @@ private:
 		 **/
 		struct waitSlotS
 		{
-			timerQueueC	*timerQueue;
-			singleWaiterQueueC<zkcmTimerEventS>	*eventQueue;
+			timerQueueC		*timerQueue;
+			singleWaiterQueueC	*eventQueue;
 		} waitSlots[6];
 	} eventProcessor;
 

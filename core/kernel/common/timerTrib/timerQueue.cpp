@@ -3,6 +3,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/timerTrib/timerQueue.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 
 
 /**	EXPLANATION:

@@ -10,8 +10,6 @@
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
-	#include <kernel/common/floodplainn/floodplainnStream.h>
-	#include <kernel/common/cpuTrib/cpuTrib.h>
 
 /**	Constants used with struct zkcmTimerSourceS.
  **/
@@ -48,9 +46,9 @@ class zkcmTimerDeviceC;
 
 struct zkcmTimerEventS
 {
-	zkcmTimerDeviceC	*device;
-	floodplainnStreamC	*latchedStream;
-	timestampS		irqStamp;
+	zkcmTimerDeviceC		*device;
+	class floodplainnStreamC	*latchedStream;
+	timestampS			irqStamp;
 };
 
 class zkcmTimerDeviceC
@@ -81,21 +79,7 @@ public:
 	{}
 
 public:
-	virtual error_t initialize(void)
-	{
-		irqEventCache = cachePool.createCache(sizeof(zkcmTimerEventS));
-		if (irqEventCache == __KNULL)
-		{
-			__kprintf(WARNING"ZKCM-Timer: Creating obj cache "
-				"failed for device \"%s\".\n",
-				getBaseDevice()->shortName);
-
-			return ERROR_MEMORY_NOMEM;
-		};
-
-		return irqEventQueue.initialize();
-	}
-
+	virtual error_t initialize(void);
 	virtual error_t shutdown(void)=0;
 	virtual error_t suspend(void)=0;
 	virtual error_t restore(void)=0;
@@ -196,88 +180,16 @@ public:
 
 	}
 
-	singleWaiterQueueC<zkcmTimerEventS> *getEventQueue(void)
+	singleWaiterQueueC *getEventQueue(void)
 	{
 		return &irqEventQueue;
 	}
 
-	error_t latch(floodplainnStreamC *stream)
-	{
-		state.lock.acquire();
-
-		if (__KFLAG_TEST(
-			state.rsrc.flags,
-			ZKCM_TIMERDEV_STATE_FLAGS_LATCHED))
-		{
-			state.lock.release();
-			return ERROR_RESOURCE_BUSY;
-		};
-
-		state.rsrc.latchedStream = stream;
-		__KFLAG_SET(
-			state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_LATCHED);
-
-		state.lock.release();
-		return ERROR_SUCCESS;
-	}
-
-	void unlatch(void)
-	{
-		cpuStreamC	*currCpu;
-
-		// If it's not the owning process, deny the attempt.
-		currCpu = cpuTrib.getCurrentCpuStream();
-
-		// This condition needs to check the floodplain binding.
-		if (PROCID_PROCESS(currCpu->taskStream.currentTask->id)
-			== PROCID_PROCESS(state.rsrc.latchedStream->id))
-		{
-			state.lock.acquire();
-
-			__KFLAG_UNSET(
-				state.rsrc.flags,
-				ZKCM_TIMERDEV_STATE_FLAGS_LATCHED);
-
-			state.lock.release();
-		};
-	}
-
+	error_t latch(class floodplainnStreamC *stream);
+	void unlatch(void);
 	// Returns 1 if latched, 0 if not latched.
-	sarch_t getLatchState(floodplainnStreamC **latchedStream)
-	{
-		state.lock.acquire();
-
-		if (__KFLAG_TEST(
-			state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_LATCHED))
-		{
-			*latchedStream = state.rsrc.latchedStream;
-
-			state.lock.release();
-			return 1;
-		};
-
-		state.lock.release();
-		return 0;
-	}
-
-	sarch_t validateCallerIsLatched(void)
-	{
-		floodplainnStreamC		*stream;
-		taskC			*currTask;
-
-		currTask = cpuTrib.getCurrentCpuStream()
-			->taskStream.currentTask;
-
-		// Replace with floodplain binding check.
-		if (getLatchState(&stream)
-			&& PROCID_PROCESS(stream->id)
-				== PROCID_PROCESS(currTask->id))
-		{
-			return 1;
-		} else {
-			return 0;
-		};
-	};
+	sarch_t getLatchState(class floodplainnStreamC **latchedStream);
+	sarch_t validateCallerIsLatched(void);
 
 public:
 
@@ -338,7 +250,7 @@ protected:
 	};
 
 	sharedResourceGroupC<waitLockC, stateS>	state;
-	singleWaiterQueueC<zkcmTimerEventS>	irqEventQueue;
+	singleWaiterQueueC			irqEventQueue;
 	slamCacheC				*irqEventCache;
 	clockRoutineFn				*clockRoutine;
 };

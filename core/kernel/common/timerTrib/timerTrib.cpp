@@ -483,7 +483,7 @@ void timerTribC::eventProcessorS::thread(void *)
 	{
 		messagesWereFound = 0;
 
-		currMsg = timerTrib.eventProcessor.controlQueue.pop(
+		currMsg = (messageS *)timerTrib.eventProcessor.controlQueue.pop(
 			SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
 		if (currMsg != __KNULL)
@@ -535,8 +535,8 @@ void timerTribC::eventProcessorS::thread(void *)
 				continue;
 			};
 
-			currIrqEvent = timerTrib.eventProcessor.waitSlots[i]
-				.eventQueue->pop(
+			currIrqEvent = (zkcmTimerEventS *)timerTrib
+				.eventProcessor.waitSlots[i].eventQueue->pop(
 					SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
 			if (currIrqEvent != __KNULL)
