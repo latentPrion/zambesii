@@ -1,0 +1,27 @@
+The Currentt is the top layer library which implements the set of abstractions in
+Zambesii that represent the idea of the exposition of objects to end-users via a
+uniform, easily understood "pathing" model. It is a series of OO classes that
+enable (at least) the following subsystems to expose objects in a uniform
+manner:
+	* Hierarchical VFS: @h
+	* Tag VFS: @t
+	* Distributaries: @d
+	* Floodplainn devices: @f
+	* Oceann nodes and resources: @o
+
+Currentt exposes a series of foundation classes that provide the basis for the
+construction of abstract object namespaces such as file-systems, device-trees
+and the like. It is upon these base classes that you will implement the
+Distributary FS which is needed for version 0.01.xxx.
+
+	Rationale:
+
+Keep in mind at all times that anytime you decide to expose metadata from a
+particular kernel subsystem to userspace using Currentts, you do so with the
+implicit goal of enabling this metadata to be /easily accessible/. Therefore
+going ahead to expose the metadata in a counter-intuitive manner will only
+counter-act that primary goal.
+
+Keep these metadata object namespaces simple, predictable and childishly simple
+to understand. Sacrifice flexibility for usability /wherever/ they clash.
+

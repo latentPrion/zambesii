@@ -187,14 +187,16 @@ static status_t intelSignatureLookup(utf8Char **cpuNames, ubit32 sigLowModel)
 		__kprintf(ERROR INTELENUM"%d: CPU name unclear.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
-		cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName =
-			unknownCpu;
+		strcpy8(
+			cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel,
+			unknownCpu);
 
 		return CPUENUM_CPU_MODEL_UNCLEAR;
 	};
 
-	cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName =
-		cpuNames[sigLowModel];
+	strcpy8(
+		cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel,
+		cpuNames[sigLowModel]);
 
 	return ERROR_SUCCESS;
 }
@@ -287,7 +289,10 @@ static status_t intelBrandIdEnum(ubit32 brandId)
 		return CPUENUM_CPU_MODEL_UNKNOWN;
 	};
 
-	cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName = brandIds[brandId];
+	strcpy8(
+		cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel,
+		brandIds[brandId]);
+
 	return ERROR_SUCCESS;
 }
 
@@ -299,7 +304,9 @@ status_t intelBrandStringEnum(void)
 	brandString = new utf8Char[49];
 	if (brandString == __KNULL)
 	{
-		__kprintf(ERROR INTELENUM"Unable to allocate room for brand string.\n");
+		__kprintf(ERROR INTELENUM"Unable to allocate room for brand "
+			"string.\n");
+
 		return CPUENUM_CPU_MODEL_UNKNOWN;
 	};
 
@@ -323,10 +330,12 @@ status_t intelBrandStringEnum(void)
 			->cpuFeatures.archFeatures.cpuNameNSpaces++;
 	};
 
-	cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName = &brandString[
-		cpuTrib.getCurrentCpuStream()
-			->cpuFeatures.archFeatures.cpuNameNSpaces];
+	strcpy8(
+		cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel,
+		&brandString[cpuTrib.getCurrentCpuStream()
+			->cpuFeatures.archFeatures.cpuNameNSpaces]);
 
+	delete brandString;
 	return ERROR_SUCCESS;
 }
 
@@ -354,7 +363,7 @@ status_t x86CpuEnumeration::intel(void)
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		if (intelBrandStringEnum() == ERROR_SUCCESS) {
-__kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
+__kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel);
 			return ERROR_SUCCESS;
 		};
 	};
@@ -368,7 +377,7 @@ __kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		if (intelBrandIdEnum(brandId) == ERROR_SUCCESS) {
-__kprintf(NOTICE INTELENUM"CPU Identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
+__kprintf(NOTICE INTELENUM"CPU Identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel);
 			return ERROR_SUCCESS;
 		};
 	};
@@ -381,12 +390,13 @@ __kprintf(NOTICE INTELENUM"CPU Identified as %s.\n", cpuTrib.getCurrentCpuStream
 		__kprintf(ERROR INTELENUM"%d: CPU model unknown.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
-		cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName =
-			unknownCpu;
+		strcpy8(
+			cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel,
+			unknownCpu);
 
 		return ret;
 	};
-__kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName);
+__kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel);
 	return ERROR_SUCCESS;
 }
 

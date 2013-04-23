@@ -184,6 +184,12 @@ void taskStreamC::pull(void)
 		};
 
 		// Else set the CPU to a low power state.
+		if (!__KFLAG_TEST(parentCpu->flags, CPUSTREAM_FLAGS_BSP))
+		{
+			__kprintf(NOTICE TASKSTREAM"%d: Entering C1.\n",
+				parentCpu->cpuId);
+		};
+
 		cpuControl::halt();
 	};
 

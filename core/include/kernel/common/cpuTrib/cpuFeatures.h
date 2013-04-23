@@ -22,12 +22,12 @@ struct cpuFeaturesS
 		memset(this, 0, sizeof(*this));
 	}
 
-	utf8Char		/**cpuFamily, */*cpuName;
+	utf8Char		cpuFamily[32], cpuModel[64];
 	ubit16			clockMhz;
 	ubit8			fpuLevel;
-	ubit8			l1CacheSize;
+	ubit16			l1CacheSize, l2CacheSize, l3CacheSize;
 	ubit8			cacheLineSize;
-	ubit8			bitWidths;
+	ubit8			bitWidth;
 	// Arch specific CPU features.
 	archCpuFeaturesS	archFeatures;
 };

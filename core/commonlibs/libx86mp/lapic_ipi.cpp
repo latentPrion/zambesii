@@ -75,7 +75,8 @@ status_t x86LapicC::ipiS::exceptionHandler(taskContextC *, ubit8 postcall)
 	{
 		cpuTrib.getCurrentCpuStream()->interCpuMessager.dispatch();
 	};
-		
+
+	cpuTrib.getCurrentCpuStream()->lapic.sendEoi();
 	return ERROR_SUCCESS;
 }
 

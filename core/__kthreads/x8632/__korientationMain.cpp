@@ -19,7 +19,6 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 #include <arch/cpuControl.h>
-#include "../chipset/ibmPc/i8254.h"
 
 
 int oo=0, pp=0, qq=0, rr=0;
@@ -107,8 +106,6 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 }
 
-#include "../../chipset/ibmPc/i8259a.h"
-#include <kernel/common/numaMemoryBank.h>
 void __korientationMain(void)
 {
 	error_t			ret;

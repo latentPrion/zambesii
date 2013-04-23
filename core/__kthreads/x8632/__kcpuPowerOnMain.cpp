@@ -7,6 +7,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
 
@@ -53,11 +54,14 @@ void __kcpuPowerOnMain(cpuStreamC *self)
 	 * crash.
 	 **/
 	self->baseInit();
+	// After "bind", the CPU will be able to allocate, etc. normally.
 	err = self->bind();
 	if (err != ERROR_SUCCESS) {
 		__kprintf(FATAL CPUPOWER"%d: Failed to bind().\n", self->cpuId);
 	};
-	/*__kprintf(NOTICE CPUPOWER"CPU %d: Entered. Sleepstack: 0x%x. Regdump:\n\teax 0x%x, ebx 0x%x, ecx 0x%x, edx 0x%x\n"
+
+	/*__kprintf(NOTICE CPUPOWER"CPU %d: Sleepstack: 0x%x. Regdump:\n"
+		"\teax 0x%x, ebx 0x%x, ecx 0x%x, edx 0x%x\n"
 		"\tesi 0x%x, edi 0x%x, esp 0x%x, ebp 0x%x\n"
 		"\tcs 0x%x, ds 0x%x, es 0x%x, fs 0x%x, gs 0x%x, ss 0x%x\n"
 		"\teip 0x%x, eflags 0x%x\n",
@@ -65,17 +69,10 @@ void __kcpuPowerOnMain(cpuStreamC *self)
 		y.eax, y.ebx, y.ecx, y.edx, y.esi, y.edi, y.esp, y.ebp,
 		y.cs, y.ds, y.es, y.fs, y.gs, y.ss, y.eip, y.eflags);*/
 
-	/* Enumerates, sets up, etc. After this function has returned, the
-	 * waking CPU will be able to allocate memory freely.
+	/* Halt the CPU here. This will be replaced with a call to
+	 * taskStreamC::pull() eventually.
 	 **/
-	// myStream->initialize();
-
-	__kprintf(NOTICE CPUPOWER"%d: local IRQs %d, Reached HLT!\n",
-		self->cpuId, cpuControl::interruptsEnabled());
-
-	// Halt the CPU here.
-	for (;;) {
-		cpuControl::halt();
-	};
+	self->taskStream.cooperativeBind();
+	self->taskStream.pull();
 }
 

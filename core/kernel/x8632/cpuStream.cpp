@@ -89,15 +89,15 @@ error_t cpuStreamC::bind(void)
 		};
 	};
 
+	cpuTrib.availableCpus.setSingle(cpuId);
+
 	// Open the floodgates.
 	cpuControl::enableInterrupts();
 
-#if 0
 	// Enumerate CPU and features.
 	enumerate();
 	__kprintf(NOTICE CPUSTREAM"%d: CPU model detected as %s.\n",
-		cpuId, cpuFeatures.cpuName);
-#endif
+		cpuId, cpuFeatures.cpuModel);
 
 	return ERROR_SUCCESS;
 }

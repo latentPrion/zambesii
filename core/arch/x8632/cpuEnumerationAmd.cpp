@@ -88,10 +88,12 @@ static status_t amdBrandStringEnum(void)
 			->cpuFeatures.archFeatures.cpuNameNSpaces++;
 	};
 
-	cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName = &brandString[
-		cpuTrib.getCurrentCpuStream()
-			->cpuFeatures.archFeatures.cpuNameNSpaces];
+	strcpy8(
+		cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel,
+		&brandString[cpuTrib.getCurrentCpuStream()
+			->cpuFeatures.archFeatures.cpuNameNSpaces]);
 
+	delete brandString;
 	return ERROR_SUCCESS;
 }
 
@@ -121,7 +123,10 @@ static status_t amdSignatureEnum(void)
 		AMDENUM_SIG_GET_FAMILY_LOW(eax),
 		ebx, ecx, edx);
 
-	cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName = unknownCpu;
+	strcpy8(
+		cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel,
+		unknownCpu);
+
 	return ERROR_SUCCESS;
 }
 
@@ -133,7 +138,7 @@ status_t x86CpuEnumeration::amd(void)
 	execCpuid(0x80000000, &eax, &ebx, &ecx, &edx);
 	if (eax >= 0x80000004)
 	{
-		__kprintf(NOTICE AMDENUM"CPUID brand string supported.\n");
+		// __kprintf(NOTICE AMDENUM"CPUID brand string supported.\n");
 		if (amdBrandStringEnum() == ERROR_SUCCESS) {
 			return ERROR_SUCCESS;
 		};
@@ -150,7 +155,10 @@ status_t x86CpuEnumeration::amd(void)
 	};
 
 __kprintf(NOTICE AMDENUM"Support for AMD Brand ID and Signature CPUID identification is currently unimplemented.\n");
-	cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuName = unknownCpu;
+	strcpy8(
+		cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel,
+		unknownCpu);
+
 	return CPUENUM_CPU_MODEL_UNKNOWN;
 }
 
