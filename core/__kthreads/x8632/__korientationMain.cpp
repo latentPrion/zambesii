@@ -17,6 +17,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
+#include <kernel/common/distributaryTrib/distributaryTrib.h>
 
 #include <arch/cpuControl.h>
 
@@ -126,6 +127,10 @@ void __korientationMain(void)
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
+
+	/* Prepare the kernel to begin loading Distributaries and processes.
+	 **/
+	DO_OR_DIE(distributaryTrib, initialize(), ret);
 	__kprintf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());

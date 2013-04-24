@@ -51,6 +51,7 @@ utf8Char *strcpy8(utf8Char *dest, const utf8Char *src)
 	for (; src[i]; i++) {
 		dest[i] = src[i];
 	};
+
 	dest[i] = '\0';
 	return dest;
 }
@@ -65,12 +66,15 @@ utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count)
 		panic(ERROR_CRITICAL);
 	};
 
-	for (; count && src[count - 1]; count--) {
-		dest[count - 1] = src[count - 1];
+	uarch_t		n=0;
+
+	for (; count && src[n]; count--, n++) {
+		dest[n] = src[n];
 	};
-	for (; count; count--) {
-		dest[count - 1] = '\0';
+	for (; count; count--, n++) {
+		dest[n] = '\0';
 	}
+
 	return dest;
 }
 
@@ -108,6 +112,7 @@ int strcmp8(const utf8Char *str1, const utf8Char *str2)
 			return ((*str1 > *str2) ? 1 : -1);
 		};
 	};
+
 	if (*str1 != *str2) {
 		return ((*str1 > *str2) ? 1 : -1);
 	};
@@ -127,17 +132,20 @@ int strncmp8(const utf8Char *str1, const utf8Char *str2, int count)
 		panic(ERROR_CRITICAL);
 	};
 
-	for (; count > 0; count--, str1++, str2++)
+	uarch_t		n=0;
+
+	for (; count > 0; count--, n++)
 	{
-		if (*str1 != *str2) {
-			return ((*str1 > *str2) ? 1 : -1);
+		if (!str1[n] || !str2[n]) { break; };
+		if (str1[n] != str2[n]) {
+			return ((str1[n] > str2[n]) ? 1 : -1);
 		};
 	};
 
 	if (count)
 	{
-		if (((*str1) && (!(*str2))) || ((!(*str1)) && (*str2))) {
-			return ((*str1 > *str2) ? 1 : -1);
+		if ((str1[n] && (!str2[n])) || ((!str1[n]) && str2[n])) {
+			return (str1[n] > str2[n]) ? 1 : -1;
 		};
 	};
 

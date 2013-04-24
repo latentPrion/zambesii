@@ -25,7 +25,7 @@ public:
 
 public:
 	error_t insert(T *item);
-	void remove(T *item);
+	sarch_t remove(T *item);
 
 	ubit32 getNItems(void);
 
@@ -182,7 +182,7 @@ error_t ptrListC<T>::insert(T *item)
 }
 
 template <class T>
-void ptrListC<T>::remove(T *item)
+sarch_t ptrListC<T>::remove(T *item)
 {
 	ptrListNodeS		*cur, *prev=__KNULL, *tmp;
 
@@ -205,13 +205,14 @@ void ptrListC<T>::remove(T *item)
 			head.lock.release();
 			tmp->magic = 0;
 			cache->free(tmp);
-			return;
+			return 1;
 		};
 		prev = cur;
 		cur = cur->next;
 	};
 
 	head.lock.release();
+	return 0;
 }
 
 template <class T>
