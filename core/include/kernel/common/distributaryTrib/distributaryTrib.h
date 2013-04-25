@@ -17,7 +17,7 @@
 	 * image.
 	 **/
 
-#define DTRIBTRIB		"dtribTrib: "
+#define DTRIBTRIB		"Dtrib Trib: "
 
 #define DTRIBTRIB_TAG_NAME_MAX_NCHARS		(48)
 
@@ -53,14 +53,10 @@ public:
 	 **/
 	struct distributaryDescriptorS
 	{
-	protected:
-		distributaryDescriptorS(distributaryDescriptorS &desc);
-
-	public:
-		utf8Char	category[DTRIBTRIB_TAG_NAME_MAX_NCHARS],
-				name[DTRIBTRIB_TAG_NAME_MAX_NCHARS],
-				description[256],
-				vendor[64];
+		utf8Char	*category,
+				*name,
+				*description,
+				*vendor;
 		ubit8		majorVersion, minorVersion;
 		ubit16		patchVersion;
 		void		*entryAddress;
@@ -159,10 +155,7 @@ public:
 	public currentt::vfsInodeC, protected distributaryDescriptorS
 	{
 	public:
-		distributaryInodeC(distributaryDescriptorS *desc)
-		:
-		distributaryDescriptorS(*desc)
-		{}
+		distributaryInodeC(distributaryDescriptorS &desc);
 
 		error_t initialize(void)
 			{ return currentt::vfsInodeC::initialize(); }

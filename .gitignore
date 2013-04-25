@@ -18,4 +18,4 @@ foo
 *.iso
 Makefile.vars
 Makefile
-config.h
+

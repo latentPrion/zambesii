@@ -225,15 +225,17 @@ echo "" >>Makefile.vars
 
 # Generate the config.h C header.
 echo "Generating config.h."
-echo "#ifndef _CONFIG_H" >config.h
-echo "	#define _CONFIG_H" >>config.h;
-echo "" >>config.h
-if [ $arch == 'x8632' ]; then echo "#define CONFIG_ARCH_x86_32" >>config.h; fi
-if [ $chipset == 'ibmPc' ]; then echo "#define CONFIG_CHIPSET_IBM_PC" >>config.h; fi
-if [ $firmware == 'ibmPcBios' ]; then echo "#define CONFIG_FIRMWARE_IBM_PC_BIOS" >>config.h; fi
-echo "" >>config.h
-echo "#endif" >>config.h
-echo "" >>config.h
+echo "#ifndef _CONFIG_H" >include/config.h
+echo "	#define _CONFIG_H" >>include/config.h;
+echo "" >>include/config.h
+if [ $arch == 'x8632' ]; then echo "#define CONFIG_ARCH_x86_32" >>include/config.h; fi
+if [ $chipset == 'ibmPc' ]; then echo "#define CONFIG_CHIPSET_IBM_PC" >>include/config.h; fi
+if [ $firmware == 'ibmPcBios' ]; then echo "#define CONFIG_FIRMWARE_IBM_PC_BIOS" >>include/config.h; fi
+echo "#define CONFIG_DTRIB_CISTERNN" >>include/config.h
+echo "#define CONFIG_DEBUG_LOCKS" >>include/config.h
+echo "" >>include/config.h
+echo "#endif" >>include/config.h
+echo "" >>include/config.h
 
 
 echo "Copying Makefiles."
