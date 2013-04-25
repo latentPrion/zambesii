@@ -19,7 +19,7 @@ template <class T>
 class ptrListC
 {
 public:
-	ptrListC(void);
+	ptrListC(sarch_t useCache=1);
 	error_t initialize(void);
 	~ptrListC(void);
 
@@ -39,20 +39,6 @@ public:
 	void dump(void);
 
 private:
-	/*void *operator new(size_t size)
-	{
-		if (cache != __KNULL) {
-			return cache->allocate(size);
-		};
-	};
-
-	void operator delete(void *mem)
-	{
-		if (cache != __KNULL) {
-			cache->free(mem);
-		};
-	};*/
-
 	struct ptrListNodeS
 	{
 		T		*item;
@@ -67,6 +53,7 @@ private:
 
 	sharedResourceGroupC<waitLockC, ptrListStateS>	head;
 	slamCacheC		*cache;
+	sarch_t			usingCache;
 };
 
 
@@ -74,19 +61,23 @@ private:
  ******************************************************************************/
 
 template <class T>
-ptrListC<T>::ptrListC(void)
+ptrListC<T>::ptrListC(sarch_t useCache)
+:
+cache(__KNULL), usingCache(useCache)
 {
 	head.rsrc.nItems = 0;
 	head.rsrc.ptr = __KNULL;
-	cache = __KNULL;
 }
 
 template <class T>
 error_t ptrListC<T>::initialize(void)
 {
-	cache = cachePool.createCache(sizeof(ptrListNodeS));
-	if (cache == __KNULL) {
-		return ERROR_MEMORY_NOMEM;
+	if (usingCache)
+	{
+		cache = cachePool.createCache(sizeof(ptrListNodeS));
+		if (cache == __KNULL) {
+			return ERROR_MEMORY_NOMEM;
+		};
 	};
 
 	return ERROR_SUCCESS;
@@ -102,7 +93,7 @@ ptrListC<T>::~ptrListC(void)
 		tmp = cur;
 		cur = cur->next;
 		tmp->magic = 0;
-		cache->free(tmp);
+		(usingCache) ? cache->free(tmp) : delete tmp;
 	};
 }
 
@@ -163,7 +154,10 @@ error_t ptrListC<T>::insert(T *item)
 {
 	ptrListNodeS		*node;
 
-	node = new (cache->allocate()) ptrListNodeS;
+	node = (usingCache)
+		? new (cache->allocate()) ptrListNodeS
+		: new ptrListNodeS;
+
 	if (node == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
@@ -203,8 +197,9 @@ sarch_t ptrListC<T>::remove(T *item)
 			head.rsrc.nItems--;
 
 			head.lock.release();
+
 			tmp->magic = 0;
-			cache->free(tmp);
+			(usingCache) ? cache->free(tmp) : delete tmp;
 			return 1;
 		};
 		prev = cur;

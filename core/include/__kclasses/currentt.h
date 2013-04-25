@@ -9,14 +9,16 @@ namespace currentt
 	template <ubit16 maxNameLength>
 	class vfsTagC
 	{
-	public:
+	protected:
 		vfsTagC(utf8Char *name)
+		:
+		flags(0)
 		{
 			strncpy8(this->name, name, maxNameLength);
 			this->name[maxNameLength-1] = '\0';
 		}
 
-		error_t initialize(void);
+		error_t initialize(void) { return ERROR_SUCCESS; }
 
 		~vfsTagC(void) {};
 
@@ -33,6 +35,8 @@ namespace currentt
 
 	class vfsInodeC
 	{
+	protected:
+		error_t initialize(void) { return ERROR_SUCCESS; }
 	};
 
 }

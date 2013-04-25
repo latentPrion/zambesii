@@ -40,6 +40,9 @@ public:
 public:
 	class distributaryInodeC;
 	class categoryInodeC;
+	template <class inodeType> class dvfsTagC;
+	typedef dvfsTagC<distributaryInodeC>	distributaryTagC;
+	typedef dvfsTagC<categoryInodeC>	categoryTagC;
 
 	categoryInodeC *getRootCategory(void) { return &rootCategory; }
 
@@ -56,8 +59,15 @@ public:
 		inode(inode)
 		{}
 
+		error_t initialize(void)
+		{
+			return currentt::vfsTagC<DTRIBTRIB_TAG_NAME_MAX_NCHARS>
+				::initialize();
+		};
+
 		~dvfsTagC(void) {}
 
+	public:
 		inodeType *getInode(void) { return inode; }
 		void setInode(inodeType *inode) { this->inode = inode; }
 
@@ -79,6 +89,9 @@ public:
 		{
 			error_t		ret;
 
+			ret = currentt::vfsInodeC::initialize();
+			if (ret != ERROR_SUCCESS) { return ret; };
+
 			ret = distributaries.initialize();
 			if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -87,8 +100,8 @@ public:
 
 		~categoryInodeC(void) {};
 
-		void setDefaultDistributary(
-			dvfsTagC<distributaryInodeC> *defaultDtrib)
+	public:
+		void setDefaultDistributary(distributaryTagC *defaultDtrib)
 		{
 			defaultDistributary = defaultDtrib;
 		}
@@ -99,33 +112,29 @@ public:
 			distributaries.dump();
 		}
 
-		dvfsTagC<distributaryInodeC> *getDefaultDistributary(void)
+		distributaryTagC *getDefaultDistributary(void)
 			{ return defaultDistributary; }
 
 		/* Functions for manipulating distributary tags.
 		 **/
-		dvfsTagC<distributaryInodeC> *createDistributaryTag(
+		distributaryTagC *createDistributaryTag(
 			utf8Char *name, distributaryInodeC *inode=__KNULL);
 
 		sarch_t removeDistributaryTag(utf8Char *name);
-		sarch_t removeDistributaryTag(
-			dvfsTagC<distributaryInodeC> *inode);
-
-		dvfsTagC<distributaryInodeC> *getDistributaryTag(utf8Char *name);
+		sarch_t removeDistributaryTag(distributaryTagC *inode);
+		distributaryTagC *getDistributaryTag(utf8Char *name);
 
 		/* Functions for manipulating category tags.
 		 **/
-		dvfsTagC<categoryInodeC> *createCategory(utf8Char *name);
+		categoryTagC *createCategory(utf8Char *name);
 		sarch_t removeCategory(utf8Char *name);
-		sarch_t removeCategory(
-			dvfsTagC<categoryInodeC> *inode);
+		sarch_t removeCategory(categoryTagC *inode);
+		categoryTagC *getCategory(utf8Char *name);
 
-		dvfsTagC<categoryInodeC> *getCategory(utf8Char *name);
-
-		ptrListC< dvfsTagC<categoryInodeC> >		categories;
 	private:
-		ptrListC< dvfsTagC<distributaryInodeC> >	distributaries;
-		dvfsTagC<distributaryInodeC>		*defaultDistributary;
+		ptrListC<categoryTagC>		categories;
+		ptrListC<distributaryTagC>	distributaries;
+		distributaryTagC		*defaultDistributary;
 	};
 
 	class distributaryInodeC
@@ -137,7 +146,8 @@ public:
 		entryPoint(entryPoint)
 		{}
 
-		error_t initialize(void) { return ERROR_SUCCESS; }
+		error_t initialize(void)
+			{ return currentt::vfsInodeC::initialize(); }
 
 		void *getEntryPoint(void);
 
@@ -149,9 +159,9 @@ private:
 	void buildTree(void);
 
 private:
-	dvfsTagC<categoryInodeC>	rootTag;
-	categoryInodeC			rootCategory;
-	slamCacheC			*dtribTagCache;
+	categoryTagC		rootTag;
+	categoryInodeC		rootCategory;
+	slamCacheC		*dtribTagCache;
 };
 
 extern distributaryTribC	distributaryTrib;

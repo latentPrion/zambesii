@@ -1,32 +1,7 @@
-#include <__kstdlib/__kclib/assert.h>
 
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/cachePool.h>
-#include <kernel/common/panic.h>
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
-
-
-error_t distributaryTribC::initialize(void)
-{
-	/**	EXPLANATION:
-	 * Get the slam cache, etc initialized.
-	 **/
-	// Important in case we make changes and this goes unnoticed.
-	assert_fatal(sizeof(dvfsTagC<distributaryInodeC>)
-		== sizeof(dvfsTagC<categoryInodeC>));
-
-	dtribTagCache = cachePool.createCache(
-		sizeof(dvfsTagC<distributaryInodeC>));
-
-	if (dtribTagCache == __KNULL)
-	{
-		__kprintf(ERROR DTRIBTRIB"Failed to create object cache.\n");
-		return ERROR_UNKNOWN;
-	};
-
-	return rootCategory.initialize();
-	// Build the tree here.
-}
 
 
 distributaryTribC::dvfsTagC<distributaryTribC::distributaryInodeC> *
@@ -34,8 +9,8 @@ distributaryTribC::categoryInodeC::createDistributaryTag(
 	utf8Char *name, distributaryInodeC *inode
 	)
 {
-	dvfsTagC<distributaryInodeC>	*newTag;
-	dvfsTagC<categoryInodeC>	*tmpCat;
+	distributaryTagC	*newTag;
+	categoryTagC		*tmpCat;
 
 	if (name == __KNULL) { return __KNULL; };
 
@@ -46,7 +21,7 @@ distributaryTribC::categoryInodeC::createDistributaryTag(
 	if (tmpCat != __KNULL) { return __KNULL; };
 
 	newTag = new (distributaryTrib.dtribTagCache->allocate())
-		dvfsTagC<distributaryInodeC>(name, inode);
+		distributaryTagC(name, inode);
 
 	if (newTag == __KNULL) { return __KNULL; };
 	// Add the tag to the list.
@@ -56,8 +31,8 @@ distributaryTribC::categoryInodeC::createDistributaryTag(
 
 sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(utf8Char *name)
 {
-	void				*handle;
-	dvfsTagC<distributaryInodeC>	*curr;
+	void			*handle;
+	distributaryTagC	*curr;
 
 	if (name == __KNULL) { return 0; };
 
@@ -89,7 +64,7 @@ sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(utf8Char *name)
 }
 
 sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(
-	dvfsTagC<distributaryInodeC> *inode
+	distributaryTagC *inode
 	)
 {
 	if (inode == __KNULL) { return 0; };
@@ -100,8 +75,8 @@ sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(
 distributaryTribC::dvfsTagC<distributaryTribC::distributaryInodeC> *
 distributaryTribC::categoryInodeC::getDistributaryTag(utf8Char *name)
 {
-	dvfsTagC<distributaryInodeC>	*curr;
-	void				*handle;
+	distributaryTagC	*curr;
+	void			*handle;
 
 	if (name == __KNULL) { return __KNULL; };
 
@@ -132,8 +107,8 @@ distributaryTribC::categoryInodeC::getDistributaryTag(utf8Char *name)
 distributaryTribC::dvfsTagC<distributaryTribC::categoryInodeC> *
 distributaryTribC::categoryInodeC::createCategory(utf8Char *name)
 {
-	dvfsTagC<categoryInodeC>	*newTag;
-	dvfsTagC<distributaryInodeC>	*tmpDtrib;
+	categoryTagC		*newTag;
+	distributaryTagC	*tmpDtrib;
 
 	if (name == __KNULL) { return __KNULL; };
 
@@ -145,7 +120,7 @@ distributaryTribC::categoryInodeC::createCategory(utf8Char *name)
 
 	// Allocate the new tag.
 	newTag = new (distributaryTrib.dtribTagCache->allocate())
-		dvfsTagC<categoryInodeC>(name);
+		categoryTagC(name);
 
 	if (newTag == __KNULL) { return __KNULL; };
 
@@ -170,8 +145,8 @@ distributaryTribC::categoryInodeC::createCategory(utf8Char *name)
 
 sarch_t distributaryTribC::categoryInodeC::removeCategory(utf8Char *name)
 {
-	void				*handle;
-	dvfsTagC<categoryInodeC>	*curr;
+	void		*handle;
+	categoryTagC	*curr;
 
 	if (name == __KNULL) { return 0; };
 
@@ -201,7 +176,7 @@ sarch_t distributaryTribC::categoryInodeC::removeCategory(utf8Char *name)
 }
 
 sarch_t distributaryTribC::categoryInodeC::removeCategory(
-	dvfsTagC<categoryInodeC> *inode
+	categoryTagC *inode
 	)
 {
 	if (inode == __KNULL) { return 0; };
@@ -212,8 +187,8 @@ sarch_t distributaryTribC::categoryInodeC::removeCategory(
 distributaryTribC::dvfsTagC<distributaryTribC::categoryInodeC> *
 distributaryTribC::categoryInodeC::getCategory(utf8Char *name)
 {
-	dvfsTagC<categoryInodeC>	*curr;
-	void				*handle;
+	categoryTagC	*curr;
+	void		*handle;
 
 	if (name == __KNULL) { return __KNULL; };
 
