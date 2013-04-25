@@ -4,6 +4,19 @@
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
 
 
+error_t distributaryTribC::categoryInodeC::initialize(void)
+{
+	error_t		ret;
+
+	ret = currentt::vfsInodeC::initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = distributaries.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	return categories.initialize();
+}
+
 distributaryTribC::dvfsTagC<distributaryTribC::distributaryInodeC> *
 distributaryTribC::categoryInodeC::createDistributaryTag(
 	utf8Char *name, distributaryInodeC *inode

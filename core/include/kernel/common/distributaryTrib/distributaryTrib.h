@@ -47,6 +47,28 @@ public:
 	categoryInodeC *getRootCategory(void) { return &rootCategory; }
 
 public:
+	/**	EXPLANATION:
+	 * Exported by every distributary packaged with the kernel. Used by
+	 * the kernel to create the Distributary VFS.
+	 **/
+	struct distributaryDescriptorS
+	{
+	protected:
+		distributaryDescriptorS(distributaryDescriptorS &desc);
+
+	public:
+		utf8Char	category[DTRIBTRIB_TAG_NAME_MAX_NCHARS],
+				name[DTRIBTRIB_TAG_NAME_MAX_NCHARS],
+				description[256],
+				vendor[64];
+		ubit8		majorVersion, minorVersion;
+		ubit16		patchVersion;
+		void		*entryAddress;
+	};
+
+	/* VFS tag-node type. Typedefs are defined above to avoid the need
+	 * for constant template argument specification.
+	 **/	
 	template <class inodeType>
 	class dvfsTagC
 	:
@@ -75,6 +97,9 @@ public:
 		inodeType	*inode;
 	};
 
+	/* VFS Category Inode data-type. "Category" is really just a sort of
+	 * folder used in the dtrib VFS.
+	 **/
 	class categoryInodeC
 	:
 	public currentt::vfsInodeC
@@ -85,35 +110,21 @@ public:
 		defaultDistributary(__KNULL)
 		{};
 
-		error_t initialize(void)
-		{
-			error_t		ret;
-
-			ret = currentt::vfsInodeC::initialize();
-			if (ret != ERROR_SUCCESS) { return ret; };
-
-			ret = distributaries.initialize();
-			if (ret != ERROR_SUCCESS) { return ret; };
-
-			return categories.initialize();
-		};
-
+		error_t initialize(void);
 		~categoryInodeC(void) {};
 
 	public:
 		void setDefaultDistributary(distributaryTagC *defaultDtrib)
-		{
-			defaultDistributary = defaultDtrib;
-		}
+			{ defaultDistributary = defaultDtrib; }
+
+		distributaryTagC *getDefaultDistributary(void)
+			{ return defaultDistributary; }
 
 		void dump(void)
 		{
 			categories.dump();
 			distributaries.dump();
 		}
-
-		distributaryTagC *getDefaultDistributary(void)
-			{ return defaultDistributary; }
 
 		/* Functions for manipulating distributary tags.
 		 **/
@@ -137,31 +148,39 @@ public:
 		distributaryTagC		*defaultDistributary;
 	};
 
+	/* Dtrib leaf-level VFS node. Describes a distributary directly. Exactly
+	 * one exists for each distributary that is compiled into the kernel.
+	 * To avoid any mismatch between the layouts of this class and the
+	 * distributaryDescriptorS structure, we just cause this class to
+	 * inherit directly from the distributaryDescriptorS structure.
+	 **/
 	class distributaryInodeC
 	:
-	public currentt::vfsInodeC
+	public currentt::vfsInodeC, protected distributaryDescriptorS
 	{
-		distributaryInodeC(void *entryPoint)
+	public:
+		distributaryInodeC(distributaryDescriptorS *desc)
 		:
-		entryPoint(entryPoint)
+		distributaryDescriptorS(*desc)
 		{}
 
 		error_t initialize(void)
 			{ return currentt::vfsInodeC::initialize(); }
 
-		void *getEntryPoint(void);
-
-	private:
-		void		*entryPoint;
+	public:
+		void *getEntryAddress(void) { return entryAddress; }
 	};
 
 private:
+	// Called at boot to construct the distributary VFS tree.
 	void buildTree(void);
 
 private:
-	categoryTagC		rootTag;
-	categoryInodeC		rootCategory;
-	slamCacheC		*dtribTagCache;
+	categoryTagC			rootTag;
+	categoryInodeC			rootCategory;
+	slamCacheC			*dtribTagCache;
+	static const distributaryDescriptorS
+		*const distributaryDescriptors[];
 };
 
 extern distributaryTribC	distributaryTrib;
