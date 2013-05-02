@@ -1,27 +1,48 @@
-The Currentt is the top layer library which implements the set of abstractions in
-Zambesii that represent the idea of the exposition of objects to end-users via a
-uniform, easily understood "pathing" model. It is a series of OO classes that
-enable (at least) the following subsystems to expose objects in a uniform
-manner:
+The Zambesii VFS Trib is a subsystem that provides at least the following
+currentts:
 	* Hierarchical VFS: @h
 	* Tag VFS: @t
 	* Distributaries: @d
 	* Floodplainn devices: @f
 	* Oceann nodes and resources: @o
 
-Currentt exposes a series of foundation classes that provide the basis for the
-construction of abstract object namespaces such as file-systems, device-trees
-and the like. It is upon these base classes that you will implement the
-Distributary FS which is needed for version 0.01.xxx.
+	VFS:
+The VFS Trib is the high level VFS container for the various VFSs in Zambesii.
+Each discrete VFS is called a currentt. Currents hold any number of trees, and
+any tree can be the default in a currentt. Following trees, the subnodes form
+the VFS for that currentt.
 
-	Rationale:
+	Currentt paths:
+@h:1/users/bob/pictures.
+	@h = Specifies the hierarchical storage currentt.
+	:1 = Selects the tree with the name "1".
+	/users/bob/pictures = describes the desired subnode of tree "1".
 
-Keep in mind at all times that anytime you decide to expose metadata from a
-particular kernel subsystem to userspace using Currentts, you do so with the
-implicit goal of enabling this metadata to be /easily accessible/. Therefore
-going ahead to expose the metadata in a counter-intuitive manner will only
-counter-act that primary goal.
+:1/users/bob/pictures.
+	Means the same as the above, because the @h currentt is the default
+	currentt in Zambesii.
 
-Keep these metadata object namespaces simple, predictable and childishly simple
-to understand. Sacrifice flexibility for usability /wherever/ they clash.
+/users/bob/pictures.
+	Implies: @h:0/users/bob/pictures, because 0 is aliased to the tree
+	selected as the default.
+
+	Breakdown:
+Currentt identifiers are used to select a specific currentt from the VFS. @h
+selects the hierarchical storage currentt, @t selects the tag-based storage
+currentt, etc (see above, the first section).
+
+Certain system calls will expect paths descending from a specific current, or
+from specific currents. For example, createProcess() will only accept paths to
+resources from the @h and @t currents, because there is no rational situation
+for the kernel to allow users to try and create a process from a distributary,
+oceann node or floodplainn device, for example.
+
+createDistributaryProcess() will only accept paths from the @d current for
+reasons mirroring those given for the bias in createProcess() calls.
+
+createDriverProcess() will only accept device paths from the @f currentt in the
+general call case, but it will also accept paths from the @t and @h currentts
+because I intend to allow drivers to be loaded from the general filesystem, even
+if they have not been installed into the system drivers directory. This may
+change in the future though.
 

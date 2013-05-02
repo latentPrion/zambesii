@@ -49,6 +49,7 @@ status_t vfsTraverse::validateSegment(utf8Char *segment)
 	return ERROR_SUCCESS;
 }
 
+#if 0
 status_t vfsTraverse::getRelativePath(
 	vfsDirC *dir, utf8Char *path, ubit8 *type, void **ret
 	)
@@ -106,4 +107,5 @@ status_t vfsTraverse::getRelativePath(
 	*ret = dir;
 	return ERROR_SUCCESS;
 }
+#endif
 

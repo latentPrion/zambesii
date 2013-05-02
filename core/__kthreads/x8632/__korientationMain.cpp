@@ -142,32 +142,6 @@ void __korientationMain(void)
 	status_t	st;
 	processStreamC	*newProc;
 
-	vfsTrib.createTree(CC":ekfs");
-	vfsTrib.setDefaultTree(CC":ekfs");
-	vfsTrib.createTree(CC":sapphire");
-	vfsTrib.createTree(CC":ftp");
-	__kprintf(NOTICE"Created trees :ekfs, :sapphire, :ftp, :ekfs is the "
-		"default tree.\n");
-
-	st = vfsTrib.getPath(CC":ekfs", &t, &r);
-	__kprintf(NOTICE"GetPath on :ekfs: %d.\n", st);
-
-	__kdebug.refresh();
-	__kprintf(NOTICE ORIENT"Result of createFolder: %d.\n",
-		vfsTrib.createFolder(static_cast<vfsDirC *>( r ), CC"zambesii"));
-
-	__kprintf(NOTICE ORIENT"Result of createFile: %d.\n",
-		vfsTrib.createFile(static_cast<vfsDirC *>( r ), CC"file1"));
-
-	__kprintf(NOTICE ORIENT"result of getPath on :ekfs/zambesii: %d.\n",
-		vfsTrib.getPath(CC":ekfs/zambesii", &t, &r));
-
-	__kprintf(NOTICE ORIENT"result of getPath on :ekfs/file1: %d.\n",
-		vfsTrib.getPath(CC":ekfs/file1", &t, &r));
-
-	vfsTrib.getDefaultTree()->desc->dumpSubDirs();
-	vfsTrib.getDefaultTree()->desc->dumpFiles();
-
 	__kprintf(NOTICE"About to test process spawning.\n");
 
 	for (uarch_t i=0; i<32; i++)

@@ -1,0 +1,35 @@
+What does process spawning entail?
+
+1. A syscall specifying where the process image data should come from.
+* A check to see if the parent process is authorized to create the process.
+2. A check to see if the kernel can handle the process' image data.
+3. A check to see if the process image can be properly loaded (exec libs).
+4. A memory allocation of the process' process Stream.
+	a. If the process is contained, it must inherit its address space.
+	b. If not, it must have its new address space allocated by the kernel.
+5. The writing of the process' memory image into its address space.
+* The reading of the process' entry address.
+6. Inheritance of attributes from its parent (environment, exec domain,
+   affinity, privilege escalation, creator user, etc)
+7. The creation of its first thread.
+8. The scheduling of its first thread.
+
+Need to change thread switching to take difference in process address space
+into account.
+
+Need to change the way virtual address spaces are stored.
+
+Need to make virtual address spaces directly a member of container processes.
+
+Need to create the new class hierarchy for processes.
+
+	Process hierarchy:
+
+driverProcess
+process
+|-containedProcess
+| +-containedDriverProcess (inherits driverProcess)
++-containerProcess
+  |-distributaryProcess
+  +-containerDriverProcess (inherits driverProcess)
+

@@ -88,7 +88,7 @@ void distributaryTribC::buildTree(void)
 
 		__kprintf(NOTICE DTRIBTRIB"buildTree: Created distributary "
 			"\"%s\".\n",
-			distributaryDescriptors[i]->name);
+			dtrib->getName());
 	};
 
 	__kprintf(NOTICE DTRIBTRIB"buildTree: Processed %d Distribs.\n", i);

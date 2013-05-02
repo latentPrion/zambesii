@@ -1,118 +1,155 @@
 #ifndef _VIRTUAL_FILE_SYSTEM_TYPES_H
 	#define _VIRTUAL_FILE_SYSTEM_TYPES_H
 
+	#include <arch/cpuControl.h>
 	#include <__kstdlib/__ktypes.h>
-	#include <kernel/common/sharedResourceGroup.h>
-	#include <kernel/common/multipleReaderLock.h>
+	#include <__kclasses/ptrList.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 
 
 #define VFSDESC_TYPE_FILE		0x1
 #define VFSDESC_TYPE_DIR		0x2
 
-#define VFSFILE_NAME_MAX_NCHARS		255
-#define VFSDIR_NAME_MAX_NCHARS		255
-
-class vfsDirC;
-class vfsFileC;
-
-class vfsDirInodeC
+namespace vfs
 {
-public:
-	vfsDirInodeC(ubit32 inodeHigh, ubit32 inodeLow);
-	error_t initialize(void);
-	~vfsDirInodeC(void);
+	class nodeC
+	{
+	public:
+		nodeC(void)
+		:
+		refCount(0)
+		{}
 
-	void dumpSubDirs(void);
-	void dumpFiles(void);
+		error_t initialize(void) { return ERROR_SUCCESS; }
+		~nodeC(void) {}
 
-public:
-	void addDirDesc(vfsDirC *newDir);
-	void addFileDesc(vfsFileC *newFile);
-	status_t removeFileDesc(utf8Char *name);
-	status_t removeDirDesc(utf8Char *name);
+	public:
+		void incrementRefCountBy(ubit32 amount)
+			{ atomicAsm::add((sarch_t *)&refCount, amount); }
 
-	vfsFileC *getFileDesc(utf8Char *name);
-	vfsDirC *getDirDesc(utf8Char *name);
+		void decrementRefCountBy(ubit32 amount)
+			{ atomicAsm::add((sarch_t *)&refCount, amount); }
 
-public:
-	// These are the inode number on the CONCRETE fs, and not the VFS.
-	ubit32			inodeLow, inodeHigh;
-	sharedResourceGroupC<waitLockC, vfsDirC *>	subDirs;
-	sharedResourceGroupC<waitLockC, vfsFileC *>	files;
-	ubit32			nSubDirs;
-	ubit32			nFiles;
-	ubit32			refCount;
-	timestampS		createdTime, modifiedTime, accessedTime;
-};
+		ubit32 getRefCount(void)
+			{ return atomicAsm::read((sarch_t *)&refCount); }
 
-class vfsFileInodeC
-{
-public:
-	vfsFileInodeC(ubit32 inodeHigh, ubit32 inodeLow, uarch_t fileSize);
-	error_t initialize(void);
-	~vfsFileInodeC(void);
+	private:
+		ubit32		refCount;
+	};
 
-public:
-	// These are the inode number on the CONCRETE fs and not within the VFS.
-	ubit32			inodeLow, inodeHigh;
-	// vfsCacheC		cache;
-	// fsDrvInstC		fsDrv;
-	// Max filesize supported by VFS depends on arch.
-	uarch_t			fileSize;
-	ubit32			refCount;
-	timestampS		createdTime, modifiedTime, accessedTime;
-};		
+	template <class inodeType, ubit16 maxNameLength>
+	class tagC
+	:
+	public nodeC
+	{
+	public:
+		tagC(utf8Char *name, tagC *parent, inodeType *inode=__KNULL)
+		:
+		parent(parent), inode(inode), flags(0)
+		{
+			strncpy8(this->name, name, maxNameLength);
+		}
 
+		error_t initialize(void) { return nodeC::initialize(); }
+		~tagC(void) {};
 
-#define VFSFILE_FLAGS_OPEN	(1<<1)
+	public:
+		void rename(utf8Char *newName);
+		inodeType *getInode(void) { return inode; }
+		utf8Char *getName(void) { return name; }
 
-class vfsFileC
-{
-public:
-	vfsFileC(void);
-	vfsFileC(vfsFileInodeC *inode);
-	error_t initialize(
-		utf8Char *name,
-		ubit32 inodeHigh=0, ubit32 inodeLow=0, uarch_t fileSize=0);
-	~vfsFileC(void);
+	public:
+		utf8Char		name[maxNameLength];
+		tagC			*parent;
+		inodeType		*inode;
+		ubit32			flags;
+	};
 
-public:
-	status_t rename(utf8Char *newName);
-public:
-	utf8Char		*name;
-	vfsDirC			*parent;
-	vfsFileC		*next;
-	vfsFileInodeC		*desc;
-	ubit32			flags;
-	ubit32			refCount;
-	ubit8			type;
-};
+	class leafInodeC
+	:
+	public nodeC
+	{
+	public:
+		leafInodeC(void) {};
+		error_t initialize(void) { return nodeC::initialize(); }
+		~leafInodeC(void) {};
+	};
 
+	template <ubit16 maxNameLength>
+	class dirInodeC
+	:
+	public nodeC
+	{
+	public:
+		dirInodeC(void)
+		:
+		nDirs(0), nLeaves(0)
+		{}
 
-#define VFSDIR_FLAGS_UNREAD	(1<<0)
+		error_t initialize(void)
+		{
+			error_t		ret;
 
-class vfsDirC
-{
-public:
-	vfsDirC(void);
-	vfsDirC(vfsDirInodeC *inode);
-	error_t initialize(
-		utf8Char *name, ubit32 inodeHigh=0, ubit32 inodeLow=0);
+			ret = nodeC::initialize();
+			if (ret != ERROR_SUCCESS) { return ret; };
+			ret = dirs.initialize();
+			if (ret != ERROR_SUCCESS) { return ret; };
+			return leaves.initialize();
+		}
 
-	~vfsDirC(void);
+		~dirInodeC(void) {};
 
-public:
-	status_t rename(utf8Char *newName);
-public:
-	utf8Char		*name;
-	vfsDirC			*next, *parent;
-	vfsDirInodeC		*desc;
-	// fsDrvInstS		*fsDrv;
-	ubit32			flags;
-	ubit32			refCount;
-	ubit8			type;
-};
+	public:
+		tagC<dirInodeC, maxNameLength> *createDirTag(
+			utf8Char *name, error_t *err);
+
+		tagC<leafInodeC, maxNameLength> *createLeafTag(
+			utf8Char *name, error_t *err);
+
+		sarch_t removeDirTag(utf8Char *name);
+		sarch_t removeLeafTag(utf8Char *name);
+
+		tagC<dirInodeC, maxNameLength> *getDirTag(utf8Char *name);
+		tagC<leafInodeC, maxNameLength> *getLeafTag(utf8Char *name);
+
+		void dumpDirs(void);
+		void dumpLeaves(void);
+
+	public:
+		ptrListC< tagC<dirInodeC, maxNameLength> >	dirs;
+		ptrListC< tagC<leafInodeC, maxNameLength> >	leaves;
+		ubit32			nDirs;
+		ubit32			nLeaves;
+	};
+
+	/**	EXPLANATION:
+	 * A Currentt is an abstraction of a tree of named resources ("VFS").
+	 * There are multiple currentts (VFSs) in Zambesii. We do not unify the
+	 * various different VFSs into one tree. Files are in a separate VFS
+	 * from devices, which are separate from distributaries, etc.
+	 *
+	 * For things like sockets, we may unify them into the hierarchical
+	 * storage VFS, but it is more likely that we will create a new
+	 * currentt for them.
+	 **/
+	class currenttC
+	{
+	public:
+		currenttC(utf8Char prefix)
+		:
+		prefix(prefix)
+		{}
+
+		error_t initialize(void) { return ERROR_SUCCESS; }
+		~currenttC(void) {}
+
+	public:
+		utf8Char getPrefix(void);
+
+	private:
+		utf8Char	prefix;
+	};
+}
 
 #endif
 

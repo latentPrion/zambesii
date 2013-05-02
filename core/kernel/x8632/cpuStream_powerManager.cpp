@@ -217,7 +217,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 
 			loopAgain = 1;
 			break;
-			
+
 		case POWERING_ON_RETRY:
 			// Integrated LAPIC that failed to boot.
 			cs->powerManager.setPowerStatus(FAILED_BOOT);

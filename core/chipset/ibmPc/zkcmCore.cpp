@@ -60,7 +60,6 @@ void zkcmCoreC::newCpuIdNotification(cpu_t newCpuId)
 	__kcpuPowerOnSleepStacksLock.release();
 
 	delete oldArray;
-__kprintf(NOTICE"Sleepstacks array 0x%p.\n", newArray);
 }
 
 zkcmCoreC		zkcmCore(CC"IBM PC compatible", CC"Unknown");

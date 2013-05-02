@@ -5,7 +5,6 @@
 
 namespace vfsTraverse
 {
-	sarch_t isPathAlias(utf8Char *path);
 	sarch_t isTree(utf8Char *path);
 	sarch_t isUnixRoot(utf8Char *path);
 
@@ -13,18 +12,12 @@ namespace vfsTraverse
 	status_t validateSegment(utf8Char *path);
 
 	status_t getRelativePath(
-		vfsDirC *dir, utf8Char *path, ubit8 *type, void **ret);
+		void *dir, utf8Char *path, ubit8 *type, void **ret);
 }
 
 
 /**	Inline methods
  *****************************************************************************/
-
-inline sarch_t vfsTraverse::isPathAlias(utf8Char *path)
-{
-	return (path[1] == ':' && ((path[0] >= 'A' && path[0] <= 'Z')
-		|| (path[0] >= 'a' && path[0] <= 'z')));
-}
 
 inline sarch_t vfsTraverse::isTree(utf8Char *path)
 {
