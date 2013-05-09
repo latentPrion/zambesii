@@ -33,7 +33,9 @@ namespace atomicAsm
 	inline sarch_t exchangeAndAdd(
 		volatile sarch_t *ptr1, sarch_t *ptr2, sarch_t val);
 
-	inline sarch_t add(volatile sarch_t *lock, sarch_t val);
+	inline sarch_t add(volatile sarch_t *lock, sarch_t val)
+		{ *lock += val; return *lock; }
+
 	inline ubit8 bitTestAndComplement(volatile sarch_t *lock, ubit8 bit);
 	inline sarch_t read(volatile sarch_t *lock) { return *lock; }
 	inline uarch_t read(volatile uarch_t *lock) { return *lock; }

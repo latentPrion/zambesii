@@ -272,8 +272,8 @@ error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *reques
 		return ERROR_FATAL;
 	};
 
-	__kprintf(WARNING TIMERTRIB"Request placed into suboptimal queue %dus."
-		"\n", suboptimal->getNativePeriod() / 1000);
+	/*__kprintf(WARNING TIMERTRIB"Request placed into suboptimal queue %dus."
+		"\n", suboptimal->getNativePeriod() / 1000);*/
 
 	return suboptimal->insert(request);
 }

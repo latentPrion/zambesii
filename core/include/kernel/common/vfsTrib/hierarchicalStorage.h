@@ -22,29 +22,6 @@ namespace hvfs
 		uarch_t		high, low;
 	};
 
-	class dirInodeC
-	:
-	public vfs::dirInodeC<HVFS_TAG_NAME_MAX_NCHARS>
-	{
-	public:
-		dirInodeC(inodeC concreteId)
-		:
-		concreteInodeId(concreteId)
-		{}
-
-		error_t initialize(void)
-		{
-			return vfs::dirInodeC<HVFS_TAG_NAME_MAX_NCHARS>
-				::initialize();
-		}
-
-		~dirInodeC(void) {}
-
-	private:
-		inodeC		concreteInodeId;
-		timestampS	createdTime, modifiedTime, accessedTime;
-	};
-
 	class fileInodeC
 	:
 	public vfs::leafInodeC
@@ -70,17 +47,44 @@ namespace hvfs
 		uarch_t		sizeHigh, sizeMid, sizeLow;
 	};
 
-	typedef vfs::tagC<dirInodeC, HVFS_TAG_NAME_MAX_NCHARS>	dirTagC;
-	typedef vfs::tagC<fileInodeC, HVFS_TAG_NAME_MAX_NCHARS>	fileTagC;
+	class dirInodeC
+	:
+	public vfs::dirInodeC<dirInodeC, fileInodeC, HVFS_TAG_NAME_MAX_NCHARS>
+	{
+	public:
+		dirInodeC(inodeC concreteId)
+		:
+		concreteInodeId(concreteId)
+		{}
+
+		error_t initialize(void)
+		{
+			return vfs::dirInodeC<
+				dirInodeC, fileInodeC, HVFS_TAG_NAME_MAX_NCHARS>
+				::initialize();
+		}
+
+		~dirInodeC(void) {}
+
+	private:
+		inodeC		concreteInodeId;
+		timestampS	createdTime, modifiedTime, accessedTime;
+	};
+
+	typedef vfs::tagC<dirInodeC, dirInodeC, HVFS_TAG_NAME_MAX_NCHARS>
+		dirTagC;
+
+	typedef vfs::tagC<fileInodeC, dirInodeC, HVFS_TAG_NAME_MAX_NCHARS>
+		fileTagC;
 
 	class currenttC
 	:
 	public vfs::currenttC
 	{
 	public:
-		currenttC(utf8Char prefix)
+		currenttC(void)
 		:
-		vfs::currenttC(prefix),
+		vfs::currenttC(static_cast<utf8Char>( 'h' )),
 		rootTag(
 			CC"Zambesii Hierarchical VFS Currentt",
 			&rootTag, &rootInode),

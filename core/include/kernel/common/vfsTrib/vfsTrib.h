@@ -10,6 +10,7 @@
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 	#include <kernel/common/vfsTrib/hierarchicalStorage.h>
+	#include <kernel/common/distributaryTrib/dvfs.h>
 
 #define VFSTRIB			"VFS Trib: "
 
@@ -25,11 +26,7 @@ public tributaryC
 {
 friend class vfsDirInodeC;
 public:
-	vfsTribC(void)
-	:
-	hvfsCurrentt('h')
-	{}
-
+	vfsTribC(void) {}
 	error_t initialize(void) { return hvfsCurrentt.initialize(); }
 	~vfsTribC(void) {}
 
@@ -37,6 +34,7 @@ public:
 
 private:
 	hvfs::currenttC		hvfsCurrentt;
+	dvfs::currenttC		dvfsCurrentt;
 };
 
 extern vfsTribC		vfsTrib;

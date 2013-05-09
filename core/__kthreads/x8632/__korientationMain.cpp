@@ -110,7 +110,6 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 void __korientationMain(void)
 {
 	error_t			ret;
-	timerStreamC::eventS	event;
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
 	 * then load the chipset's bus-pin mappings and initialize timer
@@ -128,18 +127,16 @@ void __korientationMain(void)
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
 
-	/* Prepare the kernel to begin loading Distributaries and processes.
+	/* Initialize the VFS Trib to enable us to begin constructing the
+	 * various currentts, and then populate the distributary namespace.
 	 **/
+	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
+
 	__kprintf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
 
-	DO_OR_DIE(vfsTrib, initialize(), ret);
-
-	ubit8		t;
-	void		*r;
-	status_t	st;
 	processStreamC	*newProc;
 
 	__kprintf(NOTICE"About to test process spawning.\n");
