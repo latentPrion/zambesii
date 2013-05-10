@@ -20,14 +20,24 @@
 #define VFSPATH_INVALID			15
 #define VFSPATH_INVALID_CHAR		16
 
+class distributaryTribC;
+
 class vfsTribC
 :
 public tributaryC
 {
-friend class vfsDirInodeC;
+friend class distributaryTribC;
 public:
 	vfsTribC(void) {}
-	error_t initialize(void) { return hvfsCurrentt.initialize(); }
+	error_t initialize(void)
+	{
+		error_t		ret;
+
+		ret = dvfsCurrentt.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+		return hvfsCurrentt.initialize();
+	}
+
 	~vfsTribC(void) {}
 
 	void dumpCurrentts(void);

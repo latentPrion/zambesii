@@ -3,20 +3,27 @@
 #include <kernel/common/distributaryTrib/dvfs.h>
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
 
-extern const dvfs::distributaryDescriptorS	cisternnDescriptor;
 
 const dvfs::distributaryDescriptorS	cisternnDescriptor=
 {
-	{ 's','t','o','r','a','g','e','\0' },
-	{ 'c','i','s','t','e','r','n','n','\0' },
-	{ 'T','h','e',' ','C','i','s','t','e','r','n','n',' ',
-		's','t','o','r','a','g','e',' ',
-		'd','i','s','t','r','i','b','u','t','a','r','y',' ','f','o','r',
-		't','h','e',' ','Z','a','m','b','e','s','i','i',' ',
-		'k','e','r','n','e','l','\0' },
-	{ 'Z','a','m','b','e','s','i','i','\0' },
-	0, 0, 0,
-	__KNULL
+	CC"cisternn", CC"Zambesii",
+	CC"Cisternn storage distributary for Zambesii",
+	{
+		{
+			CC"storage",
+#ifdef CONFIG_DTRIB_CISTERNN
+			1
+#else
+			0
+#endif
+		},
+		{ CC"video output", 0 },
+		{ CC"audio input", 1 }
+	},
+	3,		// Provides only one category.
+	0, 0, 0,	// v0.00.000.
+	__KNULL,
+	0
 };
 
 const dvfs::distributaryDescriptorS

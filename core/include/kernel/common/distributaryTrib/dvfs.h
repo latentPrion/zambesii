@@ -4,9 +4,16 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
-	#include <__kclasses/cachePool.h>
 
-#define DVFS_TAG_NAME_MAX_NCHARS	(48)
+#define DVFS_TAG_NAME_MAX_NCHARS		(48)
+
+#define DVFS_DINODE_VENDOR_MAX_NCHARS		(64)
+#define DVFS_DINODE_VENDORCONTACT_MAX_NCHARS	(128)
+#define DVFS_DINODE_DESCRIPTION_MAX_NCHARS	(256)
+
+#define DVFS_DINODE_FLAGS_DEFAULT		DVFS_DESCRIPTOR_FLAGS_DEFAULT
+
+class distributaryTribC;
 
 namespace dvfs
 {
@@ -16,13 +23,41 @@ namespace dvfs
 	 **/
 	struct distributaryDescriptorS
 	{
-		utf8Char	category[DVFS_TAG_NAME_MAX_NCHARS],
-				name[DVFS_TAG_NAME_MAX_NCHARS],
-				description[256],
-				vendor[64];
+		/**	EXPLANATION:
+		 * The macro constant that determines the maximum length of each
+		 * string field is given after the field name.
+		 *
+		 * For the "categories" string array, the rationale is that a
+		 * distributary can provide more than one service. For example,
+		 * GFX servers often also handle input devices. So most
+		 * GFX servers will list categories for "graphics",
+		 * "co-ordinate input" and "character input", and not just
+		 * "graphics".
+		 *
+		 *	VALID CATEGORY NAMES:
+		 * "video output", "video input",
+		 * "co-ordinate input", "character input",
+		 * "networking", "storage",
+		 * "audio output", "audio input"
+		 *
+		 * As indicated above, in many cases, a single distributary
+		 * will provide multiple services. E.g., an audio server will
+		 * probably handle both "audio input" and "audio output".
+		 **/
+		utf8Char	*name, // DVFS_TAG_NAME_MAX_NCHARS.
+				*vendor, // DVFS_DINODE_VENDOR_MAX_NCHARS
+				*description; // DVFS_DINODE_DESCRIPTION_MAX_NCHARS
+		struct
+		{
+			utf8Char	*name; // DVFS_TAG_NAME_MAX_NCHARS
+			ubit8		isDefault;
+		} categories[4];
+
+		ubit8		nCategories;
 		ubit8		majorVersion, minorVersion;
 		ubit16		patchVersion;
 		void		*entryAddress;
+		ubit32		flags;
 	};
 
 	/* A few typedefs for easier typename access.
@@ -44,15 +79,13 @@ namespace dvfs
 	 **/
 	class distributaryInodeC
 	:
-	public vfs::leafInodeC, protected distributaryDescriptorS
+	public vfs::leafInodeC
 	{
 	public:
 		// Can be either in the kernel image, or loaded from elsewhere.
 		enum typeE { IN_KERNEL=1, OUT_OF_KERNEL };
 
-		distributaryInodeC(
-			typeE type, distributaryDescriptorS *descriptor);
-
+		distributaryInodeC(const distributaryDescriptorS *descriptor);
 		error_t initialize(void)
 			{ return vfs::leafInodeC::initialize(); }
 
@@ -67,6 +100,15 @@ namespace dvfs
 	private:
 		typeE		type;
 		sarch_t		currentlyRunning;
+
+		// Mirror members for distributaryDescriptorS.
+		utf8Char	name[DVFS_TAG_NAME_MAX_NCHARS],
+				vendor[DVFS_DINODE_VENDOR_MAX_NCHARS],
+				description[DVFS_DINODE_DESCRIPTION_MAX_NCHARS];
+		ubit8		majorVersion, minorVersion;
+		ubit16		patchVersion;
+		void		*entryAddress;
+		ubit32		flags;
 	};
 
 	/* Categories are really directories, but they can be "executed" or
@@ -90,11 +132,7 @@ namespace dvfs
 		categoryInodeC, distributaryInodeC, DVFS_TAG_NAME_MAX_NCHARS>
 	{
 	public:
-		categoryInodeC(void)
-		{
-			defaultDtribName[0] = '\0';
-		}
-
+		categoryInodeC(void) {}
 		error_t initialize(void)
 		{
 			return vfs::dirInodeC<
@@ -103,25 +141,6 @@ namespace dvfs
 		}
 
 		~categoryInodeC(void) {}
-
-	public:
-		error_t setDefault(utf8Char *name)
-		{
-			if (getLeafTag(name) == __KNULL)
-				{ return ERROR_INVALID_ARG; };
-
-			strncpy8(
-				defaultDtribName, name,
-				DVFS_TAG_NAME_MAX_NCHARS);
-
-			return ERROR_SUCCESS;
-		}
-
-		distributaryTagC *getDefault(void)
-			{ return getLeafTag(defaultDtribName); }
-
-	private:
-		utf8Char	defaultDtribName[DVFS_TAG_NAME_MAX_NCHARS];
 	};
 
 	/* The currenttC derived type for the DVFS currentt. Essentially
@@ -131,6 +150,7 @@ namespace dvfs
 	:
 	public vfs::currenttC
 	{
+	friend class distributaryTribC;
 	public:
 		currenttC(void)
 		:
@@ -139,12 +159,19 @@ namespace dvfs
 		tagCache(__KNULL)
 		{}
 
-		error_t initialize(void);
+		error_t initialize(void)
+		{
+			error_t		ret;
+
+			ret = rootTag.initialize();
+			if (ret != ERROR_SUCCESS) { return ret; };
+			return rootCategory.initialize();
+		}
+
 		~currenttC(void) {}
 
-	private:
-		dvfs::categoryInodeC *getRootCategory(void)
-			{ return &rootCategory; }
+	public:
+		dvfs::categoryTagC *getRoot(void) { return &rootTag; }
 
 	private:
 		dvfs::categoryTagC		rootTag;

@@ -98,6 +98,7 @@ namespace hvfs
 		~currenttC(void) {}
 
 	public:
+		dirTagC *getRoot(void) { return &rootTag; }
 		/*// VFS path traversal.
 		status_t getPath(utf8Char *path, ubit8 *type, void **ret);
 

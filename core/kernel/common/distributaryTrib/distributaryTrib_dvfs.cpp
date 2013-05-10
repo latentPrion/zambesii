@@ -5,37 +5,25 @@
 #include <kernel/common/distributaryTrib/dvfs.h>
 
 
-error_t dvfs::dvfsCurrenttC::initialize(void)
-{
-	// In case we make changes and forget to check this.
-	assert_fatal(
-		sizeof(dvfs::distributaryTagC) == sizeof(dvfs::categoryTagC));
-
-	tagCache = cachePool.createCache(sizeof(dvfs::distributaryTagC));
-	if (tagCache == __KNULL)
-	{
-		__kprintf(ERROR DTRIBTRIB"Failed to create tag cache.\n");
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	return vfs::currenttC::initialize();
-}
-
 dvfs::distributaryInodeC::distributaryInodeC(
-	typeE type, distributaryDescriptorS *descriptor
+	const distributaryDescriptorS *descriptor
 	)
 :
-distributaryDescriptorS(*descriptor), type(type), currentlyRunning(0)
+type(IN_KERNEL), currentlyRunning(0),
+majorVersion(descriptor->majorVersion), minorVersion(descriptor->minorVersion),
+patchVersion(descriptor->patchVersion),
+entryAddress(descriptor->entryAddress), flags(descriptor->flags)
 {
 	strncpy8(
 		name, descriptor->name,
 		DVFS_TAG_NAME_MAX_NCHARS);
 
 	strncpy8(
-		category, descriptor->category,
-		DVFS_TAG_NAME_MAX_NCHARS);
+		vendor, descriptor->vendor,
+		DVFS_DINODE_VENDOR_MAX_NCHARS);
 
-	strncpy8(description, descriptor->description, 256);
-	strncpy8(vendor, descriptor->vendor, 64);
+	strncpy8(
+		description, descriptor->description,
+		DVFS_DINODE_DESCRIPTION_MAX_NCHARS);
 }
 

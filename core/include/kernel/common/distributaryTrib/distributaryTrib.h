@@ -2,8 +2,6 @@
 	#define _DISTRIBUTARY_TRIB_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <__kclasses/currentt.h>
-	#include <__kclasses/ptrList.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/distributaryTrib/dvfs.h>
 
@@ -33,11 +31,11 @@ public tributaryC
 public:
 	distributaryTribC(void)
 	:
-	dtribTagCache(__KNULL)
+	distributaryTagCache(__KNULL), categoryTagCache(__KNULL)
 	{}
 
 	// Builds the Dtrib VFS tree of compiled-in kernel distributaries.
-	error_t initialize(void) { return ERROR_SUCCESS; }
+	error_t initialize(void);
 	~distributaryTribC(void) {};
 
 public:
@@ -46,10 +44,12 @@ public:
 
 private:
 	// Called at boot to construct the distributary VFS tree.
-	void buildTree(void);
+	error_t bootBuildTree(void);
 
 private:
-	slamCacheC			*dtribTagCache;
+	slamCacheC			*distributaryTagCache,
+					*categoryTagCache;
+
 	static const dvfs::distributaryDescriptorS
 		*const distributaryDescriptors[];
 };
