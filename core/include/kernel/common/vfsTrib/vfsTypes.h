@@ -12,6 +12,20 @@
 
 namespace vfs
 {
+	enum inodeTypeE { DIR=1, LEAF };
+
+	/* Returns:
+	 *	ERROR_NOT_FOUND: if no instance of 'splitChar' is found before
+	 *		the first instance of '\0'.
+	 *	ERROR_INVALID_RESOURCE_NAME: If no instance of 'splitChar' is
+	 *		found before 'maxLength' characters have been searched.
+	 *	A signed integer if 'splitChar' is found. This integer
+	 *	represents the index into the string where 'splitChar' was
+	 *	found.
+	 **/
+	status_t getIndexOfNext(
+		utf8Char *path, utf8Char splitChar, uarch_t maxLength);
+
 	class nodeC
 	{
 	public:
@@ -81,6 +95,9 @@ namespace vfs
 		leafInodeC(void) {};
 		error_t initialize(void) { return nodeC::initialize(); }
 		~leafInodeC(void) {};
+
+	public:
+		vfs::inodeTypeE getType(void) { return LEAF; }
 	};
 
 	template <class dirInodeType, class leafInodeType, ubit16 maxNameLength>
@@ -118,6 +135,8 @@ namespace vfs
 
 		virtual tagC<leafInodeType, dirInodeType, maxNameLength> *
 		getLeafTag(utf8Char *name);
+
+		vfs::inodeTypeE getType(void) { return DIR; }
 
 		void dumpDirs(void);
 		void dumpLeaves(void);

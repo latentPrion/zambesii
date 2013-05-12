@@ -157,6 +157,29 @@ private:
 	error_t initializeBmps(void);
 };
 
+class containedProcessC
+:
+public processStreamC
+{
+};
+
+class containerProcessC
+:
+public processStreamC
+{
+	containerProcessC(
+		processId_t processId, processId_t parentProcessId,
+		ubit8 execDomain,
+		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
+	:
+	processStreamC(
+		processId, parentProcessId, execDomain,
+		level0Accessor, level0Paddr)
+	{}
+
+	error_t initialize(void);
+	~containerProcessC(void) {}
+};
 
 /**	Inline Methods:
  *****************************************************************************/

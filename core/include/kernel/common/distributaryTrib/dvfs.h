@@ -173,6 +173,11 @@ namespace dvfs
 	public:
 		dvfs::categoryTagC *getRoot(void) { return &rootTag; }
 
+		// Both categories and dtribs can be returned.
+		void *getPath(
+			utf8Char *fullName, vfs::inodeTypeE *type,
+			error_t *ret);
+
 	private:
 		dvfs::categoryTagC		rootTag;
 		dvfs::categoryInodeC		rootCategory;
