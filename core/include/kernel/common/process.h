@@ -48,8 +48,7 @@ class processStreamC
 public:
 	processStreamC(
 		processId_t processId, processId_t parentProcId,
-		ubit8 execDomain,
-		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
+		ubit8 execDomain)
 	:
 		id(processId << PROCID_PROCESS_SHIFT),
 		parentId(parentProcId << PROCID_PROCESS_SHIFT),
@@ -67,7 +66,9 @@ public:
 
 		execDomain(execDomain),
 
-		memoryStream(processId, level0Accessor, level0Paddr)
+		memoryStream(processId, this),
+		timerStream(processId, this),
+		floodplainnStream(processId, this)
 	{
 		memset(tasks, 0, sizeof(tasks));
 		defaultMemoryBank.rsrc = NUMABANKID_INVALID;
@@ -86,18 +87,10 @@ public:
 
 	~processStreamC(void);
 
-	error_t cloneStateIntoChild(processStreamC *child);
-	error_t initializeFirstThread(
-		taskC *task, taskC *spawningThread,
-		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
-
-	error_t initializeChildThread(
-		taskC *task, taskC *spawningThread,
-		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
-
 public:
 	taskC *getTask(processId_t processId);
 	taskC *getThread(processId_t processId) { return getTask(processId); }
+	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)=0;
 
 	// I am very reluctant to have this "argument" parameter.
 	error_t spawnThread(
@@ -107,6 +100,16 @@ public:
 		taskC::schedPolicyE schedPolicy, ubit8 prio,
 		uarch_t flags,
 		processId_t *ret);
+
+public:
+	error_t cloneStateIntoChild(processStreamC *child);
+	error_t initializeFirstThread(
+		taskC *task, taskC *spawningThread,
+		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
+
+	error_t initializeChildThread(
+		taskC *task, taskC *spawningThread,
+		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
 
 public:
 	processId_t		id, parentId;
@@ -157,28 +160,71 @@ private:
 	error_t initializeBmps(void);
 };
 
-class containedProcessC
-:
-public processStreamC
-{
-};
-
 class containerProcessC
 :
 public processStreamC
 {
+public:
 	containerProcessC(
 		processId_t processId, processId_t parentProcessId,
 		ubit8 execDomain,
+		void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize,
 		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
 	:
-	processStreamC(
-		processId, parentProcessId, execDomain,
+	processStreamC(processId, parentProcessId, execDomain),
+	vaddrSpaceStream(
+		processId, this,
+		vaddrSpaceBaseAddr, vaddrSpaceSize,
 		level0Accessor, level0Paddr)
 	{}
 
-	error_t initialize(void);
+	error_t initialize(utf8Char *commandLine, bitmapC *affinity)
+	{
+		error_t		ret;
+
+		ret = processStreamC::initialize(commandLine, affinity);
+		if (ret != ERROR_SUCCESS) { return ret; };
+		return vaddrSpaceStream.initialize();
+	}
+
 	~containerProcessC(void) {}
+
+public:
+	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)
+		{ return &vaddrSpaceStream; }
+
+private:
+	vaddrSpaceStreamC	vaddrSpaceStream;
+};
+
+class containedProcessC
+:
+public processStreamC
+{
+public:
+	containedProcessC(
+		processId_t processId, processId_t parentProcessId,
+		ubit8 execDomain,
+		containerProcessC *containerProcess)
+	:
+	processStreamC(processId, parentProcessId, execDomain),
+	containerProcess(containerProcess)
+	{}
+
+	error_t initialize(utf8Char *commandLine, bitmapC *affinity)
+		{ return processStreamC::initialize(commandLine, affinity); }
+
+	~containedProcessC(void) {}
+
+public:
+	containerProcessC *getContainerProcess(void)
+		{ return containerProcess; }
+
+	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)
+		{ return containerProcess->getVaddrSpaceStream(); }
+
+private:
+	containerProcessC	*containerProcess;
 };
 
 /**	Inline Methods:

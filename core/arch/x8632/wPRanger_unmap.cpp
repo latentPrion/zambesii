@@ -44,7 +44,7 @@ status_t walkerPageRanger::unmap(
 
 	vaddrSpace->level0Accessor.lock.acquire();
 	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
-		->memoryStream.vaddrSpaceStream.vaddrSpace
+		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.acquire();
 
 	l0Current = l0Start;
@@ -208,7 +208,7 @@ status_t walkerPageRanger::unmap(
 #endif
 
 	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
-		->memoryStream.vaddrSpaceStream.vaddrSpace
+		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
 
 	vaddrSpace->level0Accessor.lock.release();

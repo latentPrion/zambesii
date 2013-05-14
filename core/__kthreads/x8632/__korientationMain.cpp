@@ -1,6 +1,5 @@
 
 #include <__ksymbols.h>
-#include <arch/memory.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/compiler/cxxrtl.h>
@@ -29,6 +28,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	error_t		ret;
 	uarch_t		devMask;
 	processId_t	tid;
+	containerProcessC	&__kprocess = *processTrib.__kgetStream();
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
 	 * pointer to the BSP CPU Stream into the BSP CPU; then we can call all
@@ -47,23 +47,17 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(zkcmCore, initialize(), ret);
 	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
 	zkcmCore.irqControl.maskAll();
-
 	DO_OR_DIE(processTrib, initialize(), ret);
-	DO_OR_DIE(processTrib.__kprocess,
-		initialize(CC"@h:boot/zambesii/zambesii.zxe", __KNULL),
-		ret);
+	DO_OR_DIE(
+		__kprocess,
+		initialize(CC"@h:boot/zambesii/zambesii.zxe", __KNULL), ret);
 
 	/* Initialize __kspace level physical memory management, then the
 	 * kernel Memory Stream.
 	 **/
 	DO_OR_DIE(memoryTrib, initialize(), ret);
 	DO_OR_DIE(memoryTrib, __kspaceInitialize(), ret);
-	DO_OR_DIE(
-		processTrib.__kprocess.memoryStream,
-		initialize(
-			(void *)(ARCH_MEMORY___KLOAD_VADDR_BASE + 0x400000),
-			0x3FB00000, __KNULL),
-		ret);
+	DO_OR_DIE(processTrib.__kgetStream()->memoryStream, initialize(), ret);
 
 	/* Initialize the kernel debug pipe for boot logging, etc.
 	 **/
@@ -94,7 +88,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	 * unschedule __korientationInit() because it will never be scheduled.
 	**/
 	DO_OR_DIE(
-		processTrib.__kprocess,
+		__kprocess,
 		spawnThread(
 			(void (*)(void *))&__korientationMain, __KNULL,
 			__KNULL,

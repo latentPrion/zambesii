@@ -162,7 +162,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 	uarch_t		totalFrames;
 	status_t	nFetched, nMapped;
 
-	ret = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(
+	ret = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
 		nPages);
 
 	if (ret == __KNULL) {
@@ -186,8 +186,8 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 		if (nFetched > 0)
 		{
 			nMapped = walkerPageRanger::mapInc(
-				&processTrib.__kprocess.memoryStream
-					.vaddrSpaceStream.vaddrSpace,
+				&processTrib.__kgetStream()
+					->getVaddrSpaceStream()->vaddrSpace,
 				(void *)((uarch_t)ret
 					+ (totalFrames * PAGING_BASE_SIZE)),
 				paddr, nFetched,
@@ -216,7 +216,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 	return ret;
 
 returnFailure:
-	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
+	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		(void *)((uarch_t)ret + ((totalFrames + (uarch_t)nMapped)
 			* PAGING_BASE_SIZE)),
 		nPages - (totalFrames + nMapped));
@@ -241,8 +241,8 @@ void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
 		tracker += PAGING_BASE_SIZE, _nPages--)
 	{
 		status = walkerPageRanger::unmap(
-			&processTrib.__kprocess.memoryStream
-				.vaddrSpaceStream.vaddrSpace,
+			&processTrib.__kgetStream()->getVaddrSpaceStream()
+				->vaddrSpace,
 			reinterpret_cast<void *>( tracker ),
 			&paddr, 1, &flags);
 
@@ -253,7 +253,7 @@ void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
 	};
 
 	// Now return the virtual addresses to the swamp.
-	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
+	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		vaddr, nPages);
 }
 

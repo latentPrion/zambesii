@@ -6,30 +6,13 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/pageAttributes.h>
 #include <kernel/common/processId.h>
+#include <kernel/common/process.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/memoryStream.h>
 #include <kernel/common/memoryTrib/pmmBridge.h>
 #include <kernel/common/memoryTrib/allocFlags.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
-
-// Constructor for the kernel stream.
-memoryStreamC::memoryStreamC(uarch_t id,
-	pagingLevel0S *level0Accessor, paddr_t level0Paddr
-	)
-:
-streamC(id),
-vaddrSpaceStream(id, level0Accessor, level0Paddr)
-{
-	bind();
-}
-
-error_t memoryStreamC::initialize(
-	void *swampStart, uarch_t swampSize, vSwampC::holeMapS *holeMap
-	)
-{
-	return vaddrSpaceStream.initialize(swampStart, swampSize, holeMap);
-}
 
 error_t memoryStreamC::bind(void)
 {
@@ -43,7 +26,6 @@ void memoryStreamC::cut(void)
 void memoryStreamC::dump(void)
 {
 	__kprintf(NOTICE MEMORYSTREAM"%d: Dumping.\n", id);
-	vaddrSpaceStream.dump();
 }
 
 void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
@@ -62,7 +44,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 		&& (allocCache.pop(nPages, (void **)&ret) == ERROR_SUCCESS))
 	{
 		walkerPageRanger::setAttributes(
-			&vaddrSpaceStream.vaddrSpace,
+			&parent->getVaddrSpaceStream()->vaddrSpace,
 			(void *)ret, nPages, WPRANGER_OP_SET_PRESENT,
 			(localFlush) ? PAGEATTRIB_LOCAL_FLUSH_ONLY : 0);
 
@@ -77,7 +59,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
 	};
 
-	ret = (uarch_t)vaddrSpaceStream.getPages(nPages);
+	ret = (uarch_t)parent->getVaddrSpaceStream()->getPages(nPages);
 	if (ret == __KNULL) { return __KNULL; };
 
 	/**	FIXME: Should be:
@@ -93,7 +75,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 		if (nFrames > 0)
 		{
 			nMapped = walkerPageRanger::mapInc(
-				&vaddrSpaceStream.vaddrSpace,
+				&parent->getVaddrSpaceStream()->vaddrSpace,
 				(void *)(ret
 					+ (totalFrames << PAGING_BASE_SHIFT)),
 				p, nFrames,
@@ -133,7 +115,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP))
 	{
 		nMapped = walkerPageRanger::mapNoInc(
-			&vaddrSpaceStream.vaddrSpace,
+			&parent->getVaddrSpaceStream()->vaddrSpace,
 			reinterpret_cast<void *>(
 				ret + (totalFrames << PAGING_BASE_SHIFT) ),
 			PAGESTATUS_FAKEMAPPED_DYNAMIC <<PAGING_PAGESTATUS_SHIFT,
@@ -165,7 +147,7 @@ releaseAndUnmap:
 	{
 		__KFLAG_SET(f, PAGEATTRIB_LOCAL_FLUSH_ONLY);
 		nMapped = walkerPageRanger::unmap(
-			&vaddrSpaceStream.vaddrSpace,
+			&parent->getVaddrSpaceStream()->vaddrSpace,
 			reinterpret_cast<void *>( pos ),
 			&p, 1, &f);
 
@@ -177,7 +159,8 @@ releaseAndUnmap:
 		totalFrames--;
 	};
 
-	vaddrSpaceStream.releasePages(reinterpret_cast<void *>( ret ), nPages);
+	parent->getVaddrSpaceStream()->releasePages(
+		reinterpret_cast<void *>( ret ), nPages);
 
 	return __KNULL;
 }
@@ -205,7 +188,7 @@ void memoryStreamC::memFree(void *vaddr)
 	if (allocCache.push(nPages, vaddr) == ERROR_SUCCESS)
 	{
 		walkerPageRanger::setAttributes(
-			&vaddrSpaceStream.vaddrSpace,
+			&parent->getVaddrSpaceStream()->vaddrSpace,
 			vaddr, nPages, WPRANGER_OP_CLEAR_PRESENT, 0);
 
 		return;
@@ -216,7 +199,7 @@ void memoryStreamC::memFree(void *vaddr)
 	for (; _nPages > 0; _nPages--, tracker+=PAGING_BASE_SIZE)
 	{
 		status = walkerPageRanger::unmap(
-			&vaddrSpaceStream.vaddrSpace,
+			&parent->getVaddrSpaceStream()->vaddrSpace,
 			reinterpret_cast<void *>( tracker ),
 			&paddr, 1, &unmapFlags);
 
@@ -226,7 +209,7 @@ void memoryStreamC::memFree(void *vaddr)
 	};
 
 	// Free the virtual memory.
-	vaddrSpaceStream.releasePages(vaddr, nPages);
+	parent->getVaddrSpaceStream()->releasePages(vaddr, nPages);
 	// Remove the entry from the process's Alloc Table.
 	allocTable.removeEntry(vaddr);	
 }

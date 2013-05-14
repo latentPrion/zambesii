@@ -112,7 +112,7 @@ error_t acpi::mapRsdt(void)
 	if (!checksumIsValid(rsdt))
 	{
 		__kprintf(WARNING ACPI"RSDT has invalid checksum.\n");
-		processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
+		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			rsdt, 2);
 
 		return ERROR_GENERAL;
@@ -120,7 +120,8 @@ error_t acpi::mapRsdt(void)
 
 	// Find out the RSDT's real size.
 	rsdtNPages = PAGING_BYTES_TO_PAGES(rsdt->hdr.tableLength) + 1;
-	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(rsdt, 2);
+	processTrib.__kgetStream()->getVaddrSpaceStream()
+		->releasePages(rsdt, 2);
 
 	// Reallocate vmem.
 	rsdt = (acpi_rsdtS *)walkerPageRanger::createMappingTo(

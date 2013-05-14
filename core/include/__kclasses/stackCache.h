@@ -31,6 +31,7 @@ friend class numaMemoryBankC;
 
 public:
 	stackCacheC(void);
+	error_t initialize(void) { return ERROR_SUCCESS; }
 
 public:
 	error_t push(uarch_t category, T item);

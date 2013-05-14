@@ -25,7 +25,9 @@ error_t debugBufferC::initialize(void)
 	debugBufferC::buffPageS		*mem, *mem2;
 	uarch_t				pageCount = 0;
 
-	mem = new (processTrib.__kprocess.memoryStream.memAlloc(1, MEMALLOC_NO_FAKEMAP))
+	mem = new (
+		processTrib.__kgetStream()->memoryStream.memAlloc(
+			1, MEMALLOC_NO_FAKEMAP))
 		debugBufferC::buffPageS;
 
 	if (mem == __KNULL) {
@@ -43,7 +45,7 @@ error_t debugBufferC::initialize(void)
 	mem2 = mem;
 	for (uarch_t i=0; i<DEBUGBUFFER_INIT_NPAGES-1; i++)
 	{
-		mem2->next = new (processTrib.__kprocess.memoryStream.memAlloc(
+		mem2->next = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			1, MEMALLOC_NO_FAKEMAP))
 				debugBufferC::buffPageS;
 
@@ -84,7 +86,7 @@ error_t debugBufferC::shutdown(void)
 
 		buff.lock.release();
 
-		processTrib.__kprocess.memoryStream.memFree(tmp);
+		processTrib.__kgetStream()->memoryStream.memFree(tmp);
 	};
 	return ERROR_SUCCESS;
 }

@@ -6,7 +6,17 @@
 class swampInfoNodeC
 {
 public:
-	uarch_t			startAddr, nPages;
+	swampInfoNodeC(
+		void *baseAddr=__KNULL, uarch_t nPages=0,
+		swampInfoNodeC *prev=__KNULL, swampInfoNodeC *next=__KNULL)
+	:
+	baseAddr(baseAddr), nPages(nPages),
+	prev(prev), next(next)
+	{}
+
+public:
+	void			*baseAddr;
+	uarch_t			nPages;
 	swampInfoNodeC		*prev, *next;
 
 public:
@@ -27,50 +37,50 @@ public:
 
 sarch_t swampInfoNodeC::operator ==(swampInfoNodeC &sin)
 {
-	return startAddr == sin.startAddr;
+	return baseAddr == sin.baseAddr;
 }
 
 sarch_t swampInfoNodeC::operator ==(int v)
 {
-	if (v == 0) {
-		return startAddr == 0;
+	if (v == __KNULL) {
+		return baseAddr == __KNULL;
 	};
 	return 0;
 }
 
 sarch_t swampInfoNodeC::operator !=(int v)
 {
-	if (v == 0) {
-		return v != 0;
+	if (v == __KNULL) {
+		return v != __KNULL;
 	};
 	return 0;
 }
 
 sarch_t swampInfoNodeC::operator >(swampInfoNodeC &sin)
 {
-	return startAddr > sin.startAddr;
+	return baseAddr > sin.baseAddr;
 }
 
 sarch_t swampInfoNodeC::operator <(swampInfoNodeC &sin)
 {
-	return startAddr < sin.startAddr;
+	return baseAddr < sin.baseAddr;
 }
 
 sarch_t swampInfoNodeC::operator <=(swampInfoNodeC &sin)
 {
-	return startAddr <= sin.startAddr;
+	return baseAddr <= sin.baseAddr;
 }
 
 sarch_t swampInfoNodeC::operator >=(swampInfoNodeC &sin)
 {
-	return startAddr >= sin.startAddr;
+	return baseAddr >= sin.baseAddr;
 }
 
 /*
 swampInfoNodeC &swampInfoNodeC::operator =(swampInfoNodeC &sin)
 {
 	next = sin.next; prev = sin.prev;
-	startAddr = sin.startAddr;
+	baseAddr = sin.baseAddr;
 	nPages = sin.nPages;
 	return *this;
 }
@@ -79,7 +89,7 @@ swampInfoNodeC &swampInfoNodeC::operator =(swampInfoNodeC &sin)
 swampInfoNodeC &swampInfoNodeC::operator =(int v)
 {
 	if (v == 0) {
-		startAddr = 0;
+		baseAddr = 0;
 	};
 	return *this;
 }

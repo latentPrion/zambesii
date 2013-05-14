@@ -32,8 +32,8 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 	/* Allocates a page and maps it to the paddr of an IO APIC.
 	 **/
 	// IO-APICs are always 1KB aligned.
-	ret = (ioApicRegspaceS *)processTrib.__kprocess.memoryStream.vaddrSpaceStream
-		.getPages(1);
+	ret = (ioApicRegspaceS *)processTrib.__kgetStream()
+		->getVaddrSpaceStream()->getPages(1);
 
 	if (ret == __KNULL) { return ret; };
 
@@ -41,7 +41,7 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 	 * that Linux maps the APICs as uncacheable.
 	 **/
 	status = walkerPageRanger::mapInc(
-		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		ret, paddr, 1,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
 		| PAGEATTRIB_CACHE_DISABLED | PAGEATTRIB_SUPERVISOR);
@@ -51,7 +51,7 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 		__kprintf(ERROR x86IOAPIC"%d: Failed to map: v:0x%p, p:0x%P.\n",
 			paddr, ret);
 
-		processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
+		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			ret, 1);
 
 		return __KNULL;
@@ -63,7 +63,7 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 
 void x86IoApic::ioApicC::unmapIoApic(ioApicRegspaceS *ioApic)
 {
-	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(ioApic, 1);
+	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(ioApic, 1);
 }
 
 /*

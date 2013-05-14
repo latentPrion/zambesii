@@ -339,7 +339,7 @@ error_t timerTribC::initialize(void)
 	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
 
 	// Spawn the timer event dequeueing thread.
-	ret = processTrib.__kprocess.spawnThread(
+	ret = processTrib.__kgetStream()->spawnThread(
 		&timerTribC::eventProcessorS::thread, __KNULL,
 		__KNULL,
 		taskC::REAL_TIME,
@@ -354,7 +354,7 @@ error_t timerTribC::initialize(void)
 	ret = eventProcessor.controlQueue.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	eventProcessor.task = processTrib.__kprocess.getTask(
+	eventProcessor.task = processTrib.__kgetStream()->getTask(
 		eventProcessor.tid);
 
 	__kprintf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
@@ -466,7 +466,7 @@ void timerTribC::sendQMessage(void)
 
 	irqEvent = period10ms.getDevice()->allocateIrqEvent();
 	irqEvent->device = period10ms.getDevice();
-	irqEvent->latchedStream = &processTrib.__kprocess.floodplainnStream;
+	irqEvent->latchedStream = &processTrib.__kgetStream()->floodplainnStream;
 	getCurrentTime(&irqEvent->irqStamp.time);
 	getCurrentDate(&irqEvent->irqStamp.date);
 

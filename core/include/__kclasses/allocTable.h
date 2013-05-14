@@ -41,6 +41,10 @@
 class allocTableC
 {
 public:
+	allocTableC(void) {}
+	error_t initialize(void) { return allocTable.initialize(); }
+
+public:
 	error_t addEntry(void *vaddr, uarch_t nPages, ubit8 attrib);
 	error_t lookup(void *vaddr, uarch_t *nPages, ubit8 *attrib);
 	void removeEntry(void *vaddr);

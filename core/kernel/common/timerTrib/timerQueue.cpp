@@ -29,7 +29,7 @@ error_t timerQueueC::latch(zkcmTimerDeviceC *dev)
 
 	if (dev == __KNULL) { return ERROR_INVALID_ARG; };
 
-	ret = dev->latch(&processTrib.__kprocess.floodplainnStream);
+	ret = dev->latch(&processTrib.__kgetStream()->floodplainnStream);
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(WARNING TIMERQUEUE"%dus: latch: to dev \"%s\" failed."

@@ -26,14 +26,14 @@ error_t chipsetMemAreas::mapArea(ubit16 index)
 	if (index >= CHIPSET_MEMAREA_NAREAS) { return ERROR_INVALID_ARG_VAL; };
 	if (memAreas[index].vaddr != __KNULL) { return ERROR_SUCCESS; };
 
-	vaddr = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(
+	vaddr = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
 		PAGING_BYTES_TO_PAGES(memAreas[index].size));
 
 	if (vaddr == __KNULL) { return ERROR_MEMORY_NOMEM_VIRTUAL; };
 
 	// Have vmem to play with. Map it to the memory area requested.
 	status = walkerPageRanger::mapInc(
-		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		vaddr,
 		memAreas[index].basePaddr,
 		PAGING_BYTES_TO_PAGES(memAreas[index].size),
@@ -42,7 +42,7 @@ error_t chipsetMemAreas::mapArea(ubit16 index)
 
 	if (status < PAGING_BYTES_TO_PAGES(memAreas[index].size))
 	{
-		processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
+		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			vaddr, PAGING_BYTES_TO_PAGES(memAreas[index].size));
 
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
@@ -63,13 +63,13 @@ error_t chipsetMemAreas::unmapArea(ubit16 index)
 	if (memAreas[index].vaddr == __KNULL) { return ERROR_SUCCESS; };
 
 	walkerPageRanger::unmap(
-		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		memAreas[index].vaddr,
 		&p,
 		PAGING_BYTES_TO_PAGES(memAreas[index].size),
 		&f);
 
-	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
+	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		memAreas[index].vaddr,
 		PAGING_BYTES_TO_PAGES(memAreas[index].size));
 

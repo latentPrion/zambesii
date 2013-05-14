@@ -146,7 +146,7 @@ error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
 	// Note the MEMALLOC_NO_FAKEMAP flag: MM code/data must never pgfault.
 	if (preAllocated == __KNULL)
 	{
-		nmb = new (processTrib.__kprocess.memoryStream.memAlloc(
+		nmb = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(numaMemoryBankC)),
 			MEMALLOC_NO_FAKEMAP))
 				numaMemoryBankC(id);
@@ -163,7 +163,7 @@ error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
 	if (ret != ERROR_SUCCESS)
 	{
 		if (preAllocated != __KNULL) {
-			processTrib.__kprocess.memoryStream.memFree(nmb);
+			processTrib.__kgetStream()->memoryStream.memFree(nmb);
 		};
 	};
 
@@ -181,7 +181,7 @@ void memoryTribC::destroyBank(numaBankId_t id)
 	memoryBanks.removeItem(id);
 	nBanks--;
 	if (id != CHIPSET_MEMORY_NUMA___KSPACE_BANKID && nmb != __KNULL) {
-		processTrib.__kprocess.memoryStream.memFree(nmb);
+		processTrib.__kgetStream()->memoryStream.memFree(nmb);
 	};
 }
 

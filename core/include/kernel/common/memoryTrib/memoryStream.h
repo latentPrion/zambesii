@@ -16,9 +16,6 @@
  * when a process exits and also provides a cache of allocations to reduce
  * contention over Memory Tributary for pmem.
  *
- * Each process must have its Virtual Address Space managed; The Memory Stream
- * contains the vaddrSpaceStreamC within itself to provide this functionality.
- *
  * NOTE: When this class reaches the pique of its refinement, the idea is that
  * since each process will have its own private memory manager in the form of
  * this class, the Memory Stream, the kernel can do memory profiling on a
@@ -59,6 +56,7 @@
 #define MEMORYSTREAM		"Memory Stream "
 
 class memoryTribC;
+class processStreamC;
 
 class memoryStreamC
 :
@@ -67,12 +65,19 @@ public streamC
 friend class memoryTribC;
 
 public:
-	memoryStreamC(uarch_t id,
-		pagingLevel0S *level0Accessor, paddr_t level0Paddr);
+	memoryStreamC(processId_t id, processStreamC *parent)
+	:
+	streamC(id), parent(parent)
+	{}
 
-	error_t initialize(
-		void *swampStart, uarch_t swampSize,
-		vSwampC::holeMapS *holeMap);
+	error_t initialize(void)
+	{
+		error_t		ret;
+
+		ret = allocCache.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+		return allocTable.initialize();
+	}
 
 public:
 	// ONLY to be used for allocating dynamic memory and stacks.
@@ -89,10 +94,8 @@ public:
 	error_t bind(void);
 	void dump(void);
 
-public:
-	vaddrSpaceStreamC	vaddrSpaceStream;
-
 private:
+	processStreamC		*parent;
 	stackCacheC<void *>	allocCache;
 	allocTableC		allocTable;
 };

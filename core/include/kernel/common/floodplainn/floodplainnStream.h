@@ -48,12 +48,17 @@
  * communication with the UDI driver.
  **/
 
+class processStreamC;
+
 class floodplainnStreamC
 :
 public streamC
 {
 public:
-	floodplainnStreamC(void) {};
+	floodplainnStreamC(processId_t id, processStreamC *parent)
+	:
+	streamC(id), parent(parent)
+	{};
 
 	error_t initialize(void) { return ERROR_SUCCESS; }
 	// Release all connections.
@@ -63,6 +68,9 @@ private:
 	// Allocate and deallocate queues.
 	// error_t zkcmConnect(singleWaiterQueueC *queue);
 	// error_t zkcmDisconnect(singleWaiterQueueC *queue);
+
+private:
+	processStreamC		*parent;
 };
 
 #endif

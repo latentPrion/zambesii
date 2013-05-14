@@ -43,7 +43,8 @@ numaMemoryBankC::~numaMemoryBankC(void)
 		if (!(reinterpret_cast<uarch_t>( tmp->range )
 			& PAGING_BASE_MASK_LOW))
 		{
-			processTrib.__kprocess.memoryStream.memFree(tmp->range);
+			processTrib.__kgetStream()->memoryStream.memFree(
+				tmp->range);
 		};
 		rangePtrCache.free(tmp);
 	} while (1);
@@ -90,7 +91,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	error_t			err;
 
 	// Allocate a new bmp allocator.
-	memRange = new (processTrib.__kprocess.memoryStream.memAlloc(
+	memRange = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 		PAGING_BYTES_TO_PAGES(sizeof(numaMemoryRangeC)),
 		MEMALLOC_NO_FAKEMAP))
 			numaMemoryRangeC(baseAddr, size);
@@ -102,14 +103,14 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	err = memRange->initialize();
 	if (err != ERROR_SUCCESS)
 	{
-		processTrib.__kprocess.memoryStream.memFree(memRange);
+		processTrib.__kgetStream()->memoryStream.memFree(memRange);
 		return err;
 	};
 
 	tmpNode = new (rangePtrCache.allocate()) rangePtrS;
 	if (tmpNode == __KNULL)
 	{
-		processTrib.__kprocess.memoryStream.memFree(memRange);
+		processTrib.__kgetStream()->memoryStream.memFree(memRange);
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -175,7 +176,8 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 			if (!(reinterpret_cast<uarch_t>( cur->range )
 				& PAGING_BASE_MASK_LOW))
 			{
-				processTrib.__kprocess.memoryStream.memFree(cur->range);
+				processTrib.__kgetStream()->memoryStream
+					.memFree(cur->range);
 			};
 			rangePtrCache.free(cur);
 			return ERROR_SUCCESS;

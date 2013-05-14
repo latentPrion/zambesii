@@ -23,17 +23,17 @@ static void *getCr2(void)
 
 status_t x8632_page_fault(taskContextC *regs, ubit8)
 {
-	status_t	status;
-	memoryStreamC	*memoryStream;
-	void		*faultAddr = getCr2();
-	paddr_t		pmap;
-	uarch_t		__kflags;
+	status_t		status;
+	vaddrSpaceStreamC	*vaddrSpaceStream;
+	void			*faultAddr = getCr2();
+	paddr_t			pmap;
+	uarch_t			__kflags;
 
-	memoryStream = &cpuTrib.getCurrentCpuStream()
-		->taskStream.currentTask->parent->memoryStream;
+	vaddrSpaceStream = cpuTrib.getCurrentCpuStream()
+		->taskStream.currentTask->parent->getVaddrSpaceStream();
 
 	status = walkerPageRanger::lookup(
-		&memoryStream->vaddrSpaceStream.vaddrSpace,
+		&vaddrSpaceStream->vaddrSpace,
 		faultAddr, &pmap, &__kflags);
 
 	switch (status)
@@ -49,7 +49,7 @@ status_t x8632_page_fault(taskContextC *regs, ubit8)
 
 		// Map new frame to fakemapped page.
 		walkerPageRanger::remapInc(
-			&memoryStream->vaddrSpaceStream.vaddrSpace,
+			&vaddrSpaceStream->vaddrSpace,
 			faultAddr, pmap, status, WPRANGER_OP_SET_PRESENT, 0);
 
 		__kprintf(NOTICE NOLOG"Page Fault: FAKE_DYN: addr 0x%p, "
@@ -57,7 +57,7 @@ status_t x8632_page_fault(taskContextC *regs, ubit8)
 			"__kf 0x%x.\n",
 			faultAddr, regs->eip,
 			walkerPageRanger::lookup(
-				&memoryStream->vaddrSpaceStream.vaddrSpace,
+				&vaddrSpaceStream->vaddrSpace,
 				faultAddr, &pmap, &__kflags),
 			pmap, __kflags);
 

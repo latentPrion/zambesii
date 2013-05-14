@@ -5,271 +5,192 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/vSwamp.h>
 
-vSwampC::vSwampC(void)
-{
-	memset(initSwampNodes, 0, sizeof(swampInfoNodeC) * VSWAMP_NSWAMPS);
-	for (uarch_t i=0; i<VSWAMP_NSWAMPS; i++)
-	{
-		swamps[i].baseAddr = swamps[i].size = swamps[i].flags = 0;
-		swamps[i].ptrs.rsrc.head = swamps[i].ptrs.rsrc.tail = __KNULL;
-	};
-}
-
-vSwampC::vSwampC(void *startAddr, uarch_t swampSize, holeMapS *holeMap)
-{
-	initialize(startAddr, swampSize, holeMap);
-}
 
 void vSwampC::dump(void)
 {
-	for (uarch_t i=0; i<VSWAMP_NSWAMPS; i++)
+	__kprintf(NOTICE"vSwamp: base: 0x%p, size: 0x%x, ", baseAddr, size);
+
+	state.lock.acquire();
+
+	if (state.rsrc.head == __KNULL)
 	{
-		__kprintf(NOTICE"vSwamp: Swamp %d: base: %p, size: %X, ",
-			i, swamps[i].baseAddr, swamps[i].size);
-
-		swamps[i].ptrs.lock.acquire();
-
-		if (swamps[i].ptrs.rsrc.head == __KNULL)
-		{
-			__kprintf((utf8Char *)"invalid.\n");
-			swamps[i].ptrs.lock.release();
-			continue;
-		};
-		__kprintf((utf8Char *)"valid\n");
-
-		for (swampInfoNodeC *tmp = swamps[i].ptrs.rsrc.head;
-			tmp != __KNULL; tmp = tmp->next)
-		{
-			__kprintf(NOTICE"\tNode: baseAddr %p, nPages %p"
-				"\n", tmp->startAddr, tmp->nPages);
-		};
-
-		swamps[i].ptrs.lock.release();
+		__kprintf(CC"invalid.\n");
+		state.lock.release();
+		return;
 	};
-}
 
-//Calculate the specs for, and initialize, the swamp.
-error_t vSwampC::initialize(
-	void *baseAddr, uarch_t swampSize, holeMapS *holeMap
-	)
-{
-	// FIXME: Proof-check these calculations for userspace process spawning.
-	swamps[0].baseAddr = PAGING_BASE_ALIGN_FORWARD(
-		reinterpret_cast<uarch_t>( baseAddr ));
-	if (holeMap != __KNULL)
-	{
-		swamps[0].size = PAGING_BASE_ALIGN_TRUNCATED(
-			holeMap->baseAddr - swamps[0].baseAddr);
-		swamps[1].baseAddr = PAGING_BASE_ALIGN_FORWARD(
-			holeMap->baseAddr + holeMap->size);
-		swamps[1].size = PAGING_BASE_ALIGN_TRUNCATED(
-			(reinterpret_cast<uarch_t>( baseAddr ) + swampSize) -
-			swamps[1].baseAddr);
+	__kprintf(CC"valid\n");
 
-		// Spawn the init swamp node for swamp 1.
-		swamps[1].ptrs.rsrc.head = swamps[1].ptrs.rsrc.tail =
-			&initSwampNodes[1];
-		initSwampNodes[1].prev = initSwampNodes[1].next = __KNULL;
-		initSwampNodes[1].startAddr = swamps[1].baseAddr;
-		initSwampNodes[1].nPages = PAGING_BYTES_TO_PAGES(
-			swamps[1].size);
-	}
-	else
+	for (swampInfoNodeC *tmp = state.rsrc.head;
+		tmp != __KNULL;
+		tmp = tmp->next)
 	{
-		swamps[0].size = PAGING_BASE_ALIGN_TRUNCATED(swampSize);
-		swamps[1].baseAddr = swamps[1].size = __KNULL;
+		__kprintf(CC"\tNode: baseAddr 0x%p, nPages 0x%x.\n",
+			tmp->baseAddr, tmp->nPages);
 	};
-	// Spawn the init node for swamp 0.
-	swamps[0].ptrs.rsrc.head = swamps[0].ptrs.rsrc.tail =
-		&initSwampNodes[0];
-	initSwampNodes[0].prev = initSwampNodes[0].next = __KNULL;
-	initSwampNodes[0].startAddr = swamps[0].baseAddr;
-	initSwampNodes[0].nPages = PAGING_BYTES_TO_PAGES(
-		swamps[0].size);
 
-	// Technically, a swamp cannot fail to initialize.
-	return ERROR_SUCCESS;
+	state.lock.release();
 }
 
-vSwampC::~vSwampC(void)
+void *vSwampC::getPages(uarch_t nPages, ubit32)
 {
-}
+	void		*ret;
 
-/**	FIXME:
- * Find a way to get finer grained locking in here.
- **/
-void *vSwampC::getPages(uarch_t nPages)
-{
-	void			*ret;
-	uarch_t			i;
+	state.lock.acquire();
 
-	for (i=0; i<VSWAMP_NSWAMPS; i++)
+	for (swampInfoNodeC *currentNode = state.rsrc.head;
+		currentNode != __KNULL;
+		currentNode = currentNode->next)
 	{
-		swamps[i].ptrs.lock.acquire();
-
-		for (swampInfoNodeC *currentNode = swamps[i].ptrs.rsrc.head;
-			currentNode != __KNULL;
-			currentNode = currentNode->next)
+		if (currentNode->nPages >= nPages)
 		{
-			if (currentNode->nPages >= nPages)
+			// Modify the swamp info node to show the alloc.
+			currentNode->nPages -= nPages;
+			ret = currentNode->baseAddr;
+
+			currentNode->baseAddr =
+				(void *)((uarch_t)currentNode->baseAddr
+					+ (nPages * PAGING_BASE_SIZE));
+
+			// If all pages on node are exhausted delete it.
+			if (currentNode->nPages == 0)
 			{
-				// Modify the swamp info node to show the alloc.
-				currentNode->nPages -= nPages;
-				ret = reinterpret_cast<void *>(
-					currentNode->startAddr );
-
-				currentNode->startAddr +=
-					nPages * PAGING_BASE_SIZE;
-
-				// If all pages on node are exhausted delete it.
-				if (currentNode->nPages == 0)
-				{
-					// If node to be deleted is the head:
-					if (currentNode ==
-						swamps[i].ptrs.rsrc.head)
-					{
-						swamps[i].ptrs.rsrc.head =
-							currentNode->next;
-					};
-					// If node being deleted is the tail:
-					if (currentNode ==
-						swamps[i].ptrs.rsrc.tail)
-					{
-						swamps[i].ptrs.rsrc.tail =
-							currentNode->prev;
-					};
-
-					/* If this is the init node, it just 
-					 * won't be freed.
-					 **/
-					deleteSwampNode(currentNode);
+				// If node to be deleted is the head:
+				if (currentNode == state.rsrc.head) {
+					state.rsrc.head = currentNode->next;
 				};
 
-				// Return the vmem.
-				swamps[i].ptrs.lock.release();
-				return ret;
+				// If node being deleted is the tail:
+				if (currentNode == state.rsrc.tail) {
+					state.rsrc.tail = currentNode->prev;
+				};
+
+				/* If this is the init node, it just 
+				 * won't be freed.
+				 **/
+				deleteSwampNode(currentNode);
 			};
+
+			// Return the vmem.
+			state.lock.release();
+			return ret;
 		};
-		swamps[i].ptrs.lock.release();
 	};
+
+	state.lock.release();
 	return __KNULL;
 }
 
 void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 {
-	uarch_t		s=0;
-	swampInfoNodeC	*insertionNode, *prevNode;
+	swampInfoNodeC	*insertionNode;
 	status_t	status;
 
 	if (vaddr == __KNULL 
-		|| reinterpret_cast<uarch_t>( vaddr ) & PAGING_BASE_MASK_LOW)
+		|| reinterpret_cast<uarch_t>( vaddr ) & PAGING_BASE_MASK_LOW
+		|| nPages == 0)
 	{
 		return;
 	};
 
-	// Find out which swamp we're interested in:
-	if (swamps[1].baseAddr != __KNULL
-		&& reinterpret_cast<uarch_t>( vaddr ) >= swamps[1].baseAddr)
+	state.lock.acquire();
+
+	insertionNode = findInsertionNode(vaddr, &status);
+
+	// If the data structure is empty (all the process' vmem was exhausted):
+	if (insertionNode == __KNULL)
 	{
-		s = 1;
+
+		state.lock.release();
+		return;
 	};
 
-	swamps[s].ptrs.lock.acquire();
-
-	insertionNode = findInsertionNode(&swamps[s], vaddr, &status);
 	if (status == VSWAMP_INSERT_BEFORE)
 	{
-		if ((reinterpret_cast<uarch_t>( vaddr )
-			+ (nPages << PAGING_BASE_SHIFT))
-			== insertionNode->startAddr)
+		if ((void *)((uarch_t)vaddr + (nPages << PAGING_BASE_SHIFT))
+			== insertionNode->baseAddr)
 		{
-			// We can free directly to an existing node.
-			insertionNode->startAddr -= nPages * PAGING_BASE_SIZE;
+			swampInfoNodeC		*prevNode;
+
+			// We can free directly to the existing insertion node.
+			insertionNode->baseAddr = vaddr;
 			insertionNode->nPages += nPages;
 
+			if (insertionNode->prev == __KNULL) { goto out; };
+
 			/* Check to see if this free also allows us to
-			 * defragment the swamp even more by joining up other
-			 * swamp nodes iteratively.
+			 * defragment the swamp even more by concatenating the
+			 * preceding node as well.
 			 **/
-			while (insertionNode->prev != __KNULL)
+			prevNode = insertionNode->prev;
+
+			if ((void *)((uarch_t)prevNode->baseAddr
+				+ (prevNode->nPages * PAGING_BASE_SIZE))
+				== insertionNode->baseAddr)
 			{
-				prevNode = insertionNode->prev;
-				if ((prevNode->startAddr
-					+ (prevNode->nPages
-					* PAGING_BASE_SIZE))
-					== insertionNode->startAddr)
-				{
-					// Join the two nodes.
-					insertionNode->startAddr =
-						prevNode->startAddr;
-					insertionNode->nPages +=
-						prevNode->nPages;
+				// Join the two nodes.
+				insertionNode->baseAddr = prevNode->baseAddr;
+				insertionNode->nPages += prevNode->nPages;
 
-					// Ensure we keep head valid.
-					if (prevNode ==
-						swamps[s].ptrs.rsrc.head)
-					{
-						swamps[s].ptrs.rsrc.head =
-							insertionNode;
-					};
-					deleteSwampNode(prevNode);
-				}
-				else {
-					break;
+				// Ensure we keep head valid.
+				if (prevNode == state.rsrc.head) {
+					state.rsrc.head = insertionNode;
 				};
-			};
 
-			goto out;
+				deleteSwampNode(prevNode);
+			};
 		}
 		else
 		{
+			swampInfoNodeC		*newNode;
+
 			// Couldn't free to an existing swamp info node.
-			prevNode = getNewSwampNode(
-				vaddr, nPages, 
+			newNode = getNewSwampNode(
+				vaddr, nPages,
 				insertionNode->prev, insertionNode);
 
-			if (prevNode == __KNULL)
+			if (newNode == __KNULL)
 			{
 				// This is essentially a virtual memory leak.
 				goto out;
 			};
 
-			insertionNode->prev = prevNode;
-			if (prevNode->prev) {
-				prevNode->prev->next = prevNode;
+			insertionNode->prev = newNode;
+			if (newNode->prev) {
+				newNode->prev->next = newNode;
+			}
+			else
+			{
+				// Again, ensure we keep head valid.
+				state.rsrc.head = newNode;
 			};
-
-			// Again, ensure we keep head valid.
-			if (insertionNode == swamps[s].ptrs.rsrc.head) {
-				swamps[s].ptrs.rsrc.head = prevNode;
-			};
-
-			goto out;
 		};
 	}
 	else
 	{
-		// Inserting at end of swamp, or swamp empty.
-		if (swamps[s].ptrs.rsrc.head == __KNULL)
+		// Inserting at end of swamp, or list is empty.
+		if (state.rsrc.head == __KNULL)
 		{
-			swamps[s].ptrs.rsrc.head = getNewSwampNode(
-				vaddr, nPages, __KNULL, __KNULL
-			);
-			goto out;
+			// List is empty; re-use the init-node.
+			initSwampNode.baseAddr = vaddr;
+			initSwampNode.nPages = nPages;
+			initSwampNode.prev = initSwampNode.next = __KNULL;
+
+			state.rsrc.head = state.rsrc.tail = &initSwampNode;
 		}
 		else
 		{
+			// Allocate a new node and append it.
 			insertionNode->next = getNewSwampNode(
 				vaddr, nPages, insertionNode, __KNULL
 			);
-			swamps[s].ptrs.rsrc.tail = insertionNode->next;
 
-			goto out;
+			state.rsrc.tail = insertionNode->next;
 		};
 	};
 
 out:
-	swamps[s].ptrs.lock.release();
+	state.lock.release();
 	return;
 }
 
@@ -296,22 +217,21 @@ out:
  *
  * Both conditions have their associated handling requirements.
  **/
-swampInfoNodeC *vSwampC::findInsertionNode(
-	swampS *swamp, void *vaddr, status_t *status
-	)
+swampInfoNodeC *vSwampC::findInsertionNode(void *vaddr, status_t *status)
 {
-	swampInfoNodeC		*altNode=0;
+	swampInfoNodeC		*altNode=__KNULL;
 
-	for (swampInfoNodeC *currentNode = swamp->ptrs.rsrc.head;
+	for (swampInfoNodeC *currentNode = state.rsrc.head;
 		currentNode != __KNULL;
 		currentNode = currentNode->next)
 	{
 		// If the current node is the insertion point:
-		if (reinterpret_cast<uarch_t>( vaddr ) < currentNode->startAddr)
+		if (vaddr < currentNode->baseAddr)
 		{
 			*status = VSWAMP_INSERT_BEFORE;
 			return currentNode;
 		};
+
 		altNode = currentNode;
 	};
 
@@ -333,6 +253,9 @@ void vSwampC::deleteSwampNode(swampInfoNodeC *node)
 		node->prev->next = node->next;
 	};
 
+	// Don't attempt to free the initial placement-memory node.
+	if (node == &initSwampNode) { return; };
+
 	swampNodeList.removeEntry(node);
 }
 
@@ -342,12 +265,7 @@ swampInfoNodeC *vSwampC::getNewSwampNode(
 	)
 {
 	swampInfoNodeC		*ret;
-	swampInfoNodeC		tmp =
-	{
-		reinterpret_cast<uarch_t>( startAddr ),
-		nPages,
-		prev, next
-	};
+	swampInfoNodeC		tmp(startAddr, nPages, prev, next);
 
 	// Allocate a new node from the equalizer.
 	ret = swampNodeList.addEntry(&tmp);
@@ -356,9 +274,10 @@ swampInfoNodeC *vSwampC::getNewSwampNode(
 	};
 
 	// Initialize it.
-	ret->startAddr = reinterpret_cast<uarch_t>( startAddr );
+	ret->baseAddr = startAddr;
 	ret->nPages = nPages;
-	ret->prev = prev; ret->next = next;
+	ret->prev = prev;
+	ret->next = next;
 
 	return ret;
 }

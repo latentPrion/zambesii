@@ -18,6 +18,7 @@
 #define TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL		(0x1)
 
 class timerQueueC;
+class processStreamC;
 
 class timerStreamC
 :
@@ -26,7 +27,11 @@ public streamC
 friend class timerTribC;
 friend class timerQueueC;
 public:
-	timerStreamC(void) {}
+	timerStreamC(processId_t id, processStreamC *parent)
+	:
+	streamC(id), parent(parent)
+	{}
+
 	error_t initialize(void);
 
 public:
@@ -105,6 +110,7 @@ private:
 	 * being expired.
 	 **/
 	waitLockC					requestQueueLock;
+	processStreamC					*parent;
 };
 
 #endif

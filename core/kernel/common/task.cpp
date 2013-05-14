@@ -41,7 +41,7 @@ error_t taskC::allocateStacks(void)
 	 * allocation. For now, just take whatever comes from Memory Stream.
 	 **/
 	// No fakemapping for kernel stacks.
-	stack0 = processTrib.__kprocess.memoryStream.memAlloc(
+	stack0 = processTrib.__kgetStream()->memoryStream.memAlloc(
 		CHIPSET_MEMORY___KSTACK_NPAGES, MEMALLOC_NO_FAKEMAP);
 
 	if (stack0 == __KNULL)
@@ -65,7 +65,7 @@ error_t taskC::allocateStacks(void)
 	stack1 = parent->memoryStream.memAlloc(CHIPSET_MEMORY_USERSTACK_NPAGES);
 	if (stack1 == __KNULL)
 	{
-		processTrib.__kprocess.memoryStream.memFree(stack0);
+		processTrib.__kgetStream()->memoryStream.memFree(stack0);
 		__kprintf(ERROR TASK"0x%x: failed to alloc user stack.\n", id);
 		return ERROR_MEMORY_NOMEM;
 	};

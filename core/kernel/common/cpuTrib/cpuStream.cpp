@@ -31,6 +31,7 @@ cpuStreamC::cpuStreamC(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
 cpuStreamC::cpuStreamC(cpu_t cid, ubit32 acpiId)
 #endif
 :
+streamC(0),
 cpuId(cid), cpuAcpiId(acpiId),
 #if __SCALING__ >= SCALING_CC_NUMA
 bankId(bid),
@@ -76,7 +77,7 @@ powerManager(this)
 error_t cpuStreamC::initializeBspCpuLocking(void)
 {
 	__korientationThread.nLocksHeld = 0;
-	__korientationThread.parent = &processTrib.__kprocess;
+	__korientationThread.parent = processTrib.__kgetStream();
 	// Init cpuConfig and numaConfig BMPs later.
 	__korientationThread.defaultMemoryBank.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;

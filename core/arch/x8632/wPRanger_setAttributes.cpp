@@ -41,7 +41,7 @@ void walkerPageRanger::setAttributes(
 	// Is this SRS BSNS? No WAI!! YES WAI!! O RLLY? YA RLY!!!
 	vaddrSpace->level0Accessor.lock.acquire();
 	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
-		->memoryStream.vaddrSpaceStream.vaddrSpace
+		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.acquire();
 
 	l0Current = l0Start;
@@ -217,7 +217,7 @@ void walkerPageRanger::setAttributes(
 #endif
 
 	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
-		->memoryStream.vaddrSpaceStream.vaddrSpace
+		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
 
 	vaddrSpace->level0Accessor.lock.release();

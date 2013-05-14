@@ -26,6 +26,7 @@ extern "C" void taskStream_pull(taskContextC *savedContext)
 
 taskStreamC::taskStreamC(cpuStreamC *parent)
 :
+streamC(0),
 load(0), capacity(0),
 roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
 parentCpu(parent)

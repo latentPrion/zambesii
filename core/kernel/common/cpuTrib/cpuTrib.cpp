@@ -695,12 +695,12 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	if (cid != bspId)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new (processTrib.__kprocess.memoryStream.memAlloc(
+		cs = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
 			MEMALLOC_NO_FAKEMAP))
 				cpuStreamC(bid, cid, cpuAcpiId);
 #else
-		cs = new (processTrib.__kprocess.memoryStream.*memAlloc(
+		cs = new (processTrib.__kgetStream()->memoryStream.*memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
 			MEMALLOC_NO_FAKEMAP))
 				cpuStreamC(cid, cpuAcpiId);
@@ -764,7 +764,7 @@ void cpuTribC::destroyStream(cpu_t cid)
 	cpuStreams.removeItem(cid);
 	__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_REMOVE);
 	cs->~cpuStreamC();
-	processTrib.__kprocess.memoryStream.memFree(cs);
+	processTrib.__kgetStream()->memoryStream.memFree(cs);
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	ncb = getBank(cs->bankId);
@@ -790,7 +790,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 
 	if (err != ERROR_SUCCESS) { return err; };
 
-	ncb = new (processTrib.__kprocess.memoryStream.memAlloc(
+	ncb = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 		PAGING_BYTES_TO_PAGES(sizeof(numaCpuBankC)),
 		MEMALLOC_NO_FAKEMAP))
 			numaCpuBankC;
@@ -804,7 +804,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 			"\n", bankId);
 
 		ncb->~numaCpuBankC();
-		processTrib.__kprocess.memoryStream.memFree(ncb);
+		processTrib.__kgetStream()->memoryStream.memFree(ncb);
 		return err;
 	}
 
@@ -825,7 +825,7 @@ void cpuTribC::destroyBank(numaBankId_t bid)
 	availableBanks.unsetSingle(bid);
 	cpuBanks.removeItem(bid);
 	ncb->~numaCpuBankC();
-	processTrib.__kprocess.memoryStream.memFree(ncb);
+	processTrib.__kgetStream()->memoryStream.memFree(ncb);
 }
 #endif
 
@@ -870,7 +870,7 @@ error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
 		};
 
 		CHECK_AND_RESIZE_BMP(
-			&processTrib.__kprocess.cpuAffinity, cid, &ret,
+			&processTrib.__kgetStream()->cpuAffinity, cid, &ret,
 			"__kupdateAffinity", "__kprocess CPU affinity");
 
 		if (ret != ERROR_SUCCESS)
@@ -880,7 +880,7 @@ error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
 				cid);
 		}
 		else {
-			processTrib.__kprocess.cpuAffinity.setSingle(cid);
+			processTrib.__kgetStream()->cpuAffinity.setSingle(cid);
 		};
 
 		return ERROR_SUCCESS;

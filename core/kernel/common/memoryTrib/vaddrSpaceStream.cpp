@@ -4,37 +4,6 @@
 #include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 
 
-//Constructor for userspace process streams.
-vaddrSpaceStreamC::vaddrSpaceStreamC(
-	uarch_t id,
-	void *swampStart, uarch_t swampSize, 
-	vSwampC::holeMapS *holeMap,
-	pagingLevel0S *level0Accessor, paddr_t level0Paddr
-	)
-:
-streamC(id),
-vaddrSpace(level0Accessor, level0Paddr), vSwamp(swampStart, swampSize, holeMap)
-{
-	bind();
-}
-
-//Constructor for the kernel stream.
-vaddrSpaceStreamC::vaddrSpaceStreamC(uarch_t id,
-	pagingLevel0S *level0Accessor, paddr_t level0Paddr)
-:
-streamC(id),
-vaddrSpace(level0Accessor, level0Paddr)
-{
-	bind();
-}
-
-sarch_t vaddrSpaceStreamC::initialize(
-	void *swampStart, uarch_t swampSize, vSwampC::holeMapS *holeMap
-	)
-{
-	return vSwamp.initialize(swampStart, swampSize, holeMap);
-}
-
 error_t vaddrSpaceStreamC::bind(void)
 {
 	return ERROR_SUCCESS;

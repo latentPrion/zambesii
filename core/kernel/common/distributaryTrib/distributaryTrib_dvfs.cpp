@@ -105,7 +105,6 @@ void *dvfs::currenttC::getPath(
 		{
 			strncpy8(buff, &fullName[i], nextSplitCharIndex);
 			buff[nextSplitCharIndex] = '\0';
-
 		};
 
 		// Only check leaves if it's the last component(no more slashes)

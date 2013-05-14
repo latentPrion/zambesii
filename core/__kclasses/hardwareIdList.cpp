@@ -153,7 +153,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 	if (index > maxAllocatedIndex
 		|| maxAllocatedIndex == HWIDLIST_INDEX_INVALID)
 	{
-		tmp = new (processTrib.__kprocess.memoryStream.memAlloc(
+		tmp = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(
 				sizeof(arrayNodeS)
 					* (index + 1)),
@@ -207,7 +207,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 
 		// Free the old array mem.
 		if (!preAllocated && old != __KNULL) {
-			processTrib.__kprocess.memoryStream.memFree(old);
+			processTrib.__kgetStream()->memoryStream.memFree(old);
 		};
 
 		return ERROR_SUCCESS;

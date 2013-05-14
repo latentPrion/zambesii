@@ -46,6 +46,7 @@ class __kequalizerListC
 {
 public:
 	__kequalizerListC(void);
+	error_t initialize(void) { return ERROR_SUCCESS; }
 	~__kequalizerListC(void);
 
 public:

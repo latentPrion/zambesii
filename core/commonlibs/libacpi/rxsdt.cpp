@@ -17,8 +17,8 @@ static void *acpi_tmpMapSdt(void **const context, paddr_t p)
 
 	if (*context == __KNULL)
 	{
-		*context = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(
-			2);
+		*context = processTrib.__kgetStream()->getVaddrSpaceStream()
+			->getPages(2);
 
 		if (*context == __KNULL) {
 			return __KNULL;
@@ -26,7 +26,7 @@ static void *acpi_tmpMapSdt(void **const context, paddr_t p)
 	};
 
 	nMapped = walkerPageRanger::mapInc(
-		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		*context, p, 2,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
@@ -46,10 +46,12 @@ void acpiRsdt::destroyContext(void **const context)
 	if (*context == __KNULL) { return; };
 
 	walkerPageRanger::unmap(
-		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		*context, &p, 2, &f);
 
-	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(*context, 2);
+	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
+		*context, 2);
+
 	*context = __KNULL;
 }
 
@@ -58,20 +60,21 @@ static void *acpi_mapTable(paddr_t p, uarch_t nPages)
 	void		*ret;
 	status_t	nMapped;
 
-	ret = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(nPages);
+	ret = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
+		nPages);
 
 	if (ret == __KNULL) {
 		return __KNULL;
 	};
 
 	nMapped = walkerPageRanger::mapInc(
-		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		ret, p, nPages,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
 	if (nMapped < static_cast<status_t>( nPages ))
 	{
-		processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(
+		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			ret, nPages);
 
 		return __KNULL;
@@ -227,9 +230,10 @@ void acpiRsdt::destroySdt(acpi_sdtS *sdt)
 	// Find out how many pages:
 	nPages = PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1;
 	walkerPageRanger::unmap(
-		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		sdt, &p, nPages, &f);
 
-	processTrib.__kprocess.memoryStream.vaddrSpaceStream.releasePages(sdt, nPages);
+	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
+		sdt, nPages);
 }
 

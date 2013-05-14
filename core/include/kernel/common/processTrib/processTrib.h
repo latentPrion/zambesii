@@ -30,9 +30,13 @@ class processTribC
 public tributaryC
 {
 public:
-	processTribC(pagingLevel0S *level0Accessor, paddr_t level0Paddr)
+	processTribC(
+		void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize,
+		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
 	:
-	__kprocess(0x0, 0x0, PROCESS_EXECDOMAIN_KERNEL,
+	__kprocess(
+		0x0, 0x0, PROCESS_EXECDOMAIN_KERNEL,
+		vaddrSpaceBaseAddr, vaddrSpaceSize,
 		level0Accessor, level0Paddr),
 	// Kernel occupies process ID 0; we begin handing process IDs from 1.
 	nextProcId(CHIPSET_MEMORY_MAX_NPROCESSES - 1, 1)
@@ -46,7 +50,7 @@ public:
 	error_t initialize(void) { return ERROR_SUCCESS; }
 
 public:
-	processStreamC *__kgetStream(void) { return &__kprocess; };
+	containerProcessC *__kgetStream(void) { return &__kprocess; };
 	processStreamC *getStream(processId_t id);
 
 	processStreamC *spawnStream(
@@ -65,10 +69,8 @@ public:
 private:
 	void fillOutPrioClasses(void);
 
-public:
-	processStreamC		__kprocess;
-
 private:
+	containerProcessC		__kprocess;
 	wrapAroundCounterC	nextProcId;
 	struct
 	{

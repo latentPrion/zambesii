@@ -114,10 +114,12 @@ error_t memBmpC::initialize(void *preAllocated)
 	}
 	else
 	{
-		bmp.rsrc.bmp = new (processTrib.__kprocess.memoryStream.memAlloc(
-			PAGING_BYTES_TO_PAGES(bmpSize),
-			MEMALLOC_NO_FAKEMAP))
-				uarch_t[nIndexes];
+		bmp.rsrc.bmp = new (
+			processTrib.__kgetStream()->memoryStream
+				.memAlloc(
+					PAGING_BYTES_TO_PAGES(bmpSize),
+					MEMALLOC_NO_FAKEMAP))
+			uarch_t[nIndexes];
 
 		if (bmp.rsrc.bmp == __KNULL) {
 			return ERROR_MEMORY_NOMEM;
@@ -142,7 +144,7 @@ memBmpC::~memBmpC(void)
 {
 	if (__KFLAG_TEST(flags, MEMBMP_FLAGS_DYNAMIC))
 	{
-		processTrib.__kprocess.memoryStream.memFree(bmp.rsrc.bmp);
+		processTrib.__kgetStream()->memoryStream.memFree(bmp.rsrc.bmp);
 	};
 }
 

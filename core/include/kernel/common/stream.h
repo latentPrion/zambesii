@@ -4,6 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/processId.h>
 
 /**	EXPLANATION:
  * StreamC is a fundamental class in Zambesii which is essential to the
@@ -30,16 +31,9 @@
 class streamC
 {
 public:
-	explicit streamC(uarch_t id)
+	explicit streamC(processId_t id)
 	:
 	id(id), flags(0)
-	{
-		binding.rsrc = 0;
-	};
-
-	streamC(void)
-	:
-	id(0), flags(0)
 	{
 		binding.rsrc = 0;
 	};
@@ -50,7 +44,7 @@ public:
 
 // jumpListC interface.
 public:
-	uarch_t		id;
+	processId_t	id;
 	ubit32		flags;
 
 protected:

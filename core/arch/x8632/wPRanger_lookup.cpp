@@ -52,7 +52,7 @@ status_t walkerPageRanger::lookup(
 	// They'll know we're SRS when we lock off the address spaces.
 	vaddrSpace->level0Accessor.lock.acquire();
 	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
-		->memoryStream.vaddrSpaceStream.vaddrSpace
+		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.acquire();
 
 	l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Start];
@@ -154,7 +154,7 @@ status_t walkerPageRanger::lookup(
 
 	// Release both locks. Done with the SRS BSNS.
 	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
-		->memoryStream.vaddrSpaceStream.vaddrSpace
+		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
 
 	vaddrSpace->level0Accessor.lock.release();
@@ -180,7 +180,7 @@ void *walkerPageRanger::createMappingTo(
 	paddr <<= PAGING_BASE_SHIFT;
 
 	// Get vmem.
-	ret = processTrib.__kprocess.memoryStream.vaddrSpaceStream.getPages(
+	ret = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
 		nPages);
 
 	if (ret == __KNULL)
@@ -194,7 +194,7 @@ void *walkerPageRanger::createMappingTo(
 
 	// Map vmem to paddr.
 	nMapped = mapInc(
-		&processTrib.__kprocess.memoryStream.vaddrSpaceStream.vaddrSpace,
+		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		ret, paddr, nPages, flags);
 
 	if (nMapped < (signed)nPages)
@@ -203,8 +203,8 @@ void *walkerPageRanger::createMappingTo(
 			"failed.\n",
 			paddr, nPages);
 
-		processTrib.__kprocess.memoryStream.vaddrSpaceStream
-			.releasePages(ret, nPages);
+		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
+			ret, nPages);
 
 		return __KNULL;
 	};
