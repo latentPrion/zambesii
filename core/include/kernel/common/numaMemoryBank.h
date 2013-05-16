@@ -42,8 +42,10 @@ class numaMemoryBankC
 {
 public:
 	numaMemoryBankC(numaBankId_t id);
+	error_t initialize(void) { return rangePtrCache.initialize(); }
 	~numaMemoryBankC(void);
 
+public:
 	// Adds __kspace to the memory ranges on a memory bank.
 	error_t __kspaceAddMemoryRange(
 		void *arrayMem,
@@ -59,8 +61,12 @@ public:
 	void bind(void);
 
 public:
-	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
-	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
+	error_t contiguousGetFrames(
+		uarch_t nFrames, paddr_t *paddr, ubit32 flags=0);
+
+	status_t fragmentedGetFrames(
+		uarch_t nFrames, paddr_t *paddr, ubit32 flags=0);
+
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
 
 	// Is a wrapper around numaMemoryRangeC::mapMemU*sed().

@@ -18,6 +18,8 @@
 
 #define MEMTRIB		"Memory Trib: "
 
+#define MEMTRIB_GETFRAMES_FLAGS_NOSLEEP		(1<<0)
+
 class memoryTribC
 :
 public tributaryC
@@ -53,8 +55,12 @@ public:
 	 * Otherwise you end up with NUMA bank specifics in the kernel.
 	 **/
 	// Physical memory management functions.
-	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *ret);
-	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *ret);
+	status_t fragmentedGetFrames(
+		uarch_t nFrames, paddr_t *ret, ubit32 flags=0);
+
+	error_t contiguousGetFrames(
+		uarch_t nFrames, paddr_t *ret, ubit32 flags=0);
+
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
 
 	void mapRangeUsed(paddr_t baseAddr, uarch_t nFrames);
@@ -62,7 +68,11 @@ public:
 
 	void dump(void);
 
+	multipleReaderLockC *__kgetVaddrSpaceLevel0Lock(void)
+		{ return &__kvaddrSpaceLevel0Lock; }
+
 private:
+
 	void init2_spawnNumaStreams(zkcmNumaMapS *map);
 	void init2_generateNumaMemoryRanges(
 		zkcmNumaMapS *map, sarch_t *__kspaceBool);
@@ -91,6 +101,7 @@ private:
 	 **/
 	ubit32			nBanks;
 	hardwareIdListC		memoryBanks;
+	multipleReaderLockC	__kvaddrSpaceLevel0Lock;
 #if __SCALING__ < SCALING_CC_NUMA
 	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
 		defaultMemoryBank;

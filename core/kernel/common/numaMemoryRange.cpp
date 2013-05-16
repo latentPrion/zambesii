@@ -60,7 +60,9 @@ void numaMemoryRangeC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	bmp.releaseFrames(paddr, nFrames);
 }
 
-error_t numaMemoryRangeC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
+error_t numaMemoryRangeC::contiguousGetFrames(
+	uarch_t nFrames, paddr_t *paddr, ubit32
+	)
 {
 	// See if the cache has a loaded stack for this nFrames size.
 	if (frameCache.pop(nFrames, paddr) == ERROR_SUCCESS) {
@@ -71,7 +73,9 @@ error_t numaMemoryRangeC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 	return bmp.contiguousGetFrames(nFrames, paddr);
 }
 
-error_t numaMemoryRangeC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
+error_t numaMemoryRangeC::fragmentedGetFrames(
+	uarch_t nFrames, paddr_t *paddr, ubit32
+	)
 {
 	// See if the cache can satisfy any part of this alloc.
 	if (frameCache.pop(1, paddr) == ERROR_SUCCESS) {

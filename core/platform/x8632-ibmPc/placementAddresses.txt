@@ -1,3 +1,6 @@
+
+	IBM-PC CHIPSET RELATED:
+
 memoryDetection.cpp:
 	The e820 memory map is stored at 0x1000-0x2FFF in low memory.
 
@@ -6,8 +9,15 @@ __kcpuPowerOn[Text|Data]:
 	^ Can probably move these to 0x3000-0x4FFF.
 
 Kernel:
-	Load address is at 0x100000.
+	Load address is at 0x100000-0x3FFFFF.
 	
 __Kspace:
-	Set to 0x400000 in order to give the kernel ample room.
+	Set to 0x400000 in order to give the kernel ample room (Max size 3 MiB).
+	(0x400000 - 0x6FFFFF)
 
+Reserved Memory Region :: ISA-DMA
+
+	x86-32 ARCHITECTURE RELATED:
+
+Reserved Memory Region :: PAE PDP table pool.
+	0x700000 - 0x7FFFFF.

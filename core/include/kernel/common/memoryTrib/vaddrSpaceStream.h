@@ -28,7 +28,7 @@
  * responsible for committing changes to a virtual address space.
  **/
 
-class processStreamC;
+class containerProcessC;
 
 class vaddrSpaceStreamC
 :
@@ -37,24 +37,15 @@ public streamC
 public:
 	// This constructor must be used to initialize userspace streams.
 	vaddrSpaceStreamC(
-		uarch_t id, processStreamC *parent,
-		void *swampStart, uarch_t swampSize,
-		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
+		uarch_t id, containerProcessC *parent,
+		void *swampStart, uarch_t swampSize)
 	:
 	streamC(id), parent(parent),
-	vaddrSpace(level0Accessor, level0Paddr),
 	vSwamp(swampStart, swampSize)
 	{}
 
 	// Provides the swamp with the right memory info to initialize.
-	sarch_t initialize(void)
-	{
-		error_t		ret;
-
-		ret = pageCache.initialize();
-		if (ret != ERROR_SUCCESS) { return ret; };
-		return vSwamp.initialize();
-	}
+	error_t initialize(void);
 
 public:
 	void *getPages(uarch_t nPages);
@@ -66,7 +57,7 @@ public:
 	void dump(void);
 
 public:
-	processStreamC		*parent;
+	containerProcessC	*parent;
 	vaddrSpaceC		vaddrSpace;
 	stackCacheC<void *>	pageCache;
 	vSwampC			vSwamp;

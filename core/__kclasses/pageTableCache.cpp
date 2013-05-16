@@ -39,7 +39,11 @@ error_t pageTableCacheC::pop(paddr_t *paddr)
 	{
 		stackPtr.lock.release();
 		// Allocate a new frame from the NUMA Tributary.
-		return ((memoryTrib.fragmentedGetFrames(1, paddr) > 0)
+		/**	FIXME:
+		 * MUST CREATE A NEW "NOSLEEP" FLAG FOR THE PMM.
+		 **/
+		return ((memoryTrib.fragmentedGetFrames(
+			1, paddr, MEMTRIB_GETFRAMES_FLAGS_NOSLEEP) > 0)
 			? ERROR_SUCCESS : ERROR_MEMORY_NOMEM_PHYSICAL);
 	};
 

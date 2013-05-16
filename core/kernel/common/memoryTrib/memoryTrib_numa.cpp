@@ -159,6 +159,9 @@ error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
 		return ERROR_MEMORY_NOMEM;
 	};
 
+	ret = nmb->initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
 	ret = memoryBanks.addItem(id, nmb);
 	if (ret != ERROR_SUCCESS)
 	{
@@ -232,7 +235,7 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 }
 
 #if __SCALING__ < SCALING_CC_NUMA
-error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
+error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 {
 	error_t			ret;
 	numaMemoryBankC		*currBank;
@@ -254,7 +257,7 @@ error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr)
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 
-error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
+error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 {
 	error_t			ret;
 	numaMemoryBankC		*currBank;
@@ -278,7 +281,7 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
 #endif /* if __SCALING__ < SCALING_CC_NUMA */
 
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr)
+error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 {
 	numaBankId_t		def, cur;
 	numaMemoryBankC		*currBank;

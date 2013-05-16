@@ -1,8 +1,20 @@
 
 #include <debug.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/process.h>
 #include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 
+
+error_t vaddrSpaceStreamC::initialize(void)
+{
+	error_t		ret;
+
+	ret = vaddrSpace.initialize(parent->addrSpaceBinding);
+	if (ret != ERROR_SUCCESS) { return ret; };
+	ret = pageCache.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+	return vSwamp.initialize();
+}
 
 error_t vaddrSpaceStreamC::bind(void)
 {

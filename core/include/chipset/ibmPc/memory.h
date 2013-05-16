@@ -4,7 +4,7 @@
 	#include <scaling.h>
 	#include <__kstdlib/__ktypes.h>
 
-// __kspace size is 2MB, starting at the 4MB mark.
+// __kspace size is 2MB, starting at the 4MiB mark. Do not exceed 3MiB.
 #define CHIPSET_MEMORY___KSPACE_BASE				(0x400000)
 #define CHIPSET_MEMORY___KSPACE_SIZE				(0x100000 * 2)
 

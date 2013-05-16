@@ -62,10 +62,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	ret = (uarch_t)parent->getVaddrSpaceStream()->getPages(nPages);
 	if (ret == __KNULL) { return __KNULL; };
 
-	/**	FIXME: Should be:
-	 * (parentProcess->execDomain == PROCESS_EXECDOMAIN_KERNEL) ? 1 : 0.
-	 **/
-	fKernel = (this->id == __KPROCESSID) ? 1 : 0;
+	fKernel = (parent->execDomain == PROCESS_EXECDOMAIN_KERNEL) ? 1 : 0;
 
 	for (totalFrames=0, nTries=0; totalFrames < (sarch_t)commit; )
 	{

@@ -127,34 +127,9 @@ void __korientationMain(void)
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
 
-	__kprintf(NOTICE ORIENT"About to dormant.\n");
+	__kprintf(NOTICE ORIENT"Successful; about to dormant.\n");
+	__kdebug.refresh();
 	taskTrib.dormant(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
-
-	processStreamC	*newProc;
-
-	__kprintf(NOTICE"About to test process spawning.\n");
-
-	for (uarch_t i=0; i<32; i++)
-	{
-		newProc = processTrib.spawnStream(
-			CC":ekfs/file1",
-			__KNULL,
-			__KNULL,
-			PROCESS_EXECDOMAIN_KERNEL,
-			0,
-			taskC::ROUND_ROBIN,
-			PRIOCLASS_DEFAULT,
-			0,
-			&ret);
-
-		__kprintf(NOTICE"Results: new process at 0x%p, ret from call: "
-			"%d, procId: 0x%x, fullName: %s.\n",
-			newProc, ret, newProc->id, newProc->fullName);
-	};
-
-	__kdebug.refresh();
-
-	__kprintf(NOTICE ORIENT"Successful!\n");
 }
 

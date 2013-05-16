@@ -14,7 +14,7 @@ static chipsetRegionMapEntryS	chipsetRegions[] =
 #ifdef CONFIG_ARCH_x86_32_PAE
 	,{
 		// PAE x86-32 PDP table allocator region. 1MB.
-		0x800000, 0x100000,
+		0x700000, 0x100000,
 		__KNULL,
 		0
 	}

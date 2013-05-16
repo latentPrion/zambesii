@@ -2,6 +2,7 @@
 	#define _PROCESS_H
 
 	#include <scaling.h>
+	#include <arch/memory.h>
 	#include <chipset/memory.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
@@ -160,6 +161,9 @@ private:
 	error_t initializeBmps(void);
 };
 
+/**	ContainerProcessC and containedProcessC.
+ ******************************************************************************/
+
 class containerProcessC
 :
 public processStreamC
@@ -167,15 +171,14 @@ public processStreamC
 public:
 	containerProcessC(
 		processId_t processId, processId_t parentProcessId,
-		ubit8 execDomain,
-		void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize,
-		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
+		ubit8 execDomain, numaBankId_t numaAddrSpaceBinding,
+		void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
 	:
 	processStreamC(processId, parentProcessId, execDomain),
+	addrSpaceBinding(numaAddrSpaceBinding),
 	vaddrSpaceStream(
 		processId, this,
-		vaddrSpaceBaseAddr, vaddrSpaceSize,
-		level0Accessor, level0Paddr)
+		vaddrSpaceBaseAddr, vaddrSpaceSize)
 	{}
 
 	error_t initialize(utf8Char *commandLine, bitmapC *affinity)
@@ -192,6 +195,9 @@ public:
 public:
 	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)
 		{ return &vaddrSpaceStream; }
+
+public:
+	numaBankId_t		addrSpaceBinding;
 
 private:
 	vaddrSpaceStreamC	vaddrSpaceStream;
@@ -226,6 +232,34 @@ public:
 private:
 	containerProcessC	*containerProcess;
 };
+
+/**	distributaryProcessC
+ ******************************************************************************/
+
+class distributaryProcessC
+:
+public containerProcessC
+{
+	distributaryProcessC(
+		processId_t processId, processId_t parentProcessId,
+		numaBankId_t numaAddrSpaceBinding)
+	:
+	containerProcessC(
+		processId, parentProcessId,
+		PROCESS_EXECDOMAIN_KERNEL,	// Always kernel domain.
+		numaAddrSpaceBinding,
+		(void *)0x1000, ARCH_MEMORY___KLOAD_VADDR_BASE - 0x1000)
+	{}
+
+	error_t initialize(utf8Char *fullName, bitmapC *affinity)
+		{ return containerProcessC::initialize(fullName, affinity); }
+
+	~distributaryProcessC(void) {}
+};
+
+/**	containerDriverProcessC, driverProcessC (contained),
+ *	userspaceProcessC, containedUserspaceProcessC (contained).
+ **/
 
 /**	Inline Methods:
  *****************************************************************************/

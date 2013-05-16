@@ -16,8 +16,6 @@ id(id), rangePtrCache(sizeof(numaMemoryBankC::rangePtrS))
 {
 	ranges.rsrc = __KNULL;
 	defRange.rsrc = __KNULL;
-	// Should fail to actually get any pages.
-	rangePtrCache.initialize();
 }
 
 numaMemoryBankC::~numaMemoryBankC(void)
@@ -195,7 +193,8 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 	return ERROR_INVALID_ARG_VAL;
 }
 
-error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
+error_t numaMemoryBankC::contiguousGetFrames(
+	uarch_t nFrames, paddr_t *paddr, ubit32)
 {
 	uarch_t		rwFlags, rwFlags2;
 	error_t		ret;
@@ -261,7 +260,8 @@ error_t numaMemoryBankC::contiguousGetFrames(uarch_t nFrames, paddr_t *paddr)
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }			
 
-status_t numaMemoryBankC::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
+status_t numaMemoryBankC::fragmentedGetFrames(
+	uarch_t nFrames, paddr_t *paddr, ubit32)
 {
 	uarch_t		rwFlags, rwFlags2;
 	error_t		ret;

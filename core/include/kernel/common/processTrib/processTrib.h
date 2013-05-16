@@ -30,14 +30,12 @@ class processTribC
 public tributaryC
 {
 public:
-	processTribC(
-		void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize,
-		pagingLevel0S *level0Accessor, paddr_t level0Paddr)
+	processTribC(void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
 	:
 	__kprocess(
 		0x0, 0x0, PROCESS_EXECDOMAIN_KERNEL,
-		vaddrSpaceBaseAddr, vaddrSpaceSize,
-		level0Accessor, level0Paddr),
+		NUMABANKID_INVALID,
+		vaddrSpaceBaseAddr, vaddrSpaceSize),
 	// Kernel occupies process ID 0; we begin handing process IDs from 1.
 	nextProcId(CHIPSET_MEMORY_MAX_NPROCESSES - 1, 1)
 	{
@@ -47,14 +45,20 @@ public:
 		fillOutPrioClasses();
 	}
 
-	error_t initialize(void) { return ERROR_SUCCESS; }
+	error_t initialize(void)
+	{
+		/* DO NOT call __kprocess.initialize() here. It is explicitly
+		 * called by __korientationInit().
+		 **/
+		return ERROR_SUCCESS;
+	}
 
 public:
 	containerProcessC *__kgetStream(void) { return &__kprocess; };
 	processStreamC *getStream(processId_t id);
 
 	processStreamC *spawnStream(
-		const utf8Char *_commandLine,	// Full command line w/ args.
+		numaBankId_t addrSpaceBinding,	// NUMA addrspace binding.
 		bitmapC *cpuAffinity,		// Ocean/NUMA/SMP affinity.
 		void *elevation,		// Privileges.
 		ubit8 execDomain,		// Kernel mode vs. User mode.
@@ -64,13 +68,28 @@ public:
 		uarch_t ftFlags,		// 1st thread spawn flags.
 		error_t *err);			// Returned error value.
 
+	/**	EXPLANATION:
+	 * Distributaries are by nature high privilege processes with high
+	 * trust placed in them, and they all run in the kernel executaion
+	 * domain. Their scheduler priority and policy are determined by
+	 * the kernel and not by the spawning process, and they handle their own
+	 * NUMA affinity on a per-thread basis.
+	 *
+	 * As you can see, the majority of the general userspace arguments
+	 * to spawnStream() are redundant for creating distributary processes.
+	 **/
+	containerProcessC *spawnDistributaryStream(
+		const utf8Char *fullName,
+		numaBankId_t addrSpaceBinding,
+		ubit32 flags);
+
 	error_t destroyStream(void);
 
 private:
 	void fillOutPrioClasses(void);
 
 private:
-	containerProcessC		__kprocess;
+	containerProcessC	__kprocess;
 	wrapAroundCounterC	nextProcId;
 	struct
 	{

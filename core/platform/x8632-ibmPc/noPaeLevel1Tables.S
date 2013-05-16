@@ -11,17 +11,14 @@ ASM_SECTION(.__ksetupData)
 .balign PAGING_BASE_SIZE
 
 ASM_GLOBAL_DATA(__kpagingLevel1Tables)
-	/* Table to ID map 1st 4MB. */
+	/**
+	 * Table 0: Pointed to by Kernel Page Directory Entry[0].
+	 **/
 	.long	0,0,0,0,0,0,0,0
+	/* These entries ID-map the CPU wakeup trampoline code. (0x8000). */
 	.long	(x8632_IBMPC_POWERON_PADDR_BASE + (PAGING_BASE_SIZE * 0)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 	.long	(x8632_IBMPC_POWERON_PADDR_BASE + (PAGING_BASE_SIZE * 1)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
-	.long	(x8632_IBMPC_POWERON_PADDR_BASE + (PAGING_BASE_SIZE * 0)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
-	.long	(x8632_IBMPC_POWERON_PADDR_BASE + (PAGING_BASE_SIZE * 0)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
-	.long	(x8632_IBMPC_POWERON_PADDR_BASE + (PAGING_BASE_SIZE * 0)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
-	.long	(x8632_IBMPC_POWERON_PADDR_BASE + (PAGING_BASE_SIZE * 0)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
-	.long	(x8632_IBMPC_POWERON_PADDR_BASE + (PAGING_BASE_SIZE * 0)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
-	.long	(x8632_IBMPC_POWERON_PADDR_BASE + (PAGING_BASE_SIZE * 0)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
-	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -30,6 +27,13 @@ ASM_GLOBAL_DATA(__kpagingLevel1Tables)
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
+	/* These entries ID-map the kernel's physical image in RAM. (0x100000).
+	 * They number 768, but the ID mapping doesn't really need to be that
+	 * large -- it just needs to cover enough of the kernel image in
+	 * physical RAM to ensure that when we execute the jump into the
+	 * kernel's high virtual address space (0xC0000000), the TLB entry for
+	 * the jump will be filled from these ID-mapping entries.
+	 **/
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 0)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 1)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 2)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
@@ -799,6 +803,12 @@ ASM_GLOBAL_DATA(__kpagingLevel1Tables)
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 766)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 767)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 
+	/**
+	 * Table 1: KErnel page directory entry[768].
+	 **/
+	/* These entries map the kernel's physical image in RAM to 0xC0000000
+	 * and extend for a 4MiB stretch of virtual memory (the whole table).
+	 **/
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 0)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 1)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 2)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
@@ -1824,6 +1834,16 @@ ASM_GLOBAL_DATA(__kpagingLevel1Tables)
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 1022)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 	.long	(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (PAGING_BASE_SIZE * 1023)) + PAGING_L1_PRESENT + PAGING_L1_WRITE
 
+	/**
+	 * Table 2: Kernel page directory entry[1023].
+	 **/
+	/* This page table exists for the sole purpose of enabling the kernel
+	 * to edit its address space and change its own page table mappings.
+	 *
+	 * It does some looping, etc to make it point to the kernel page
+	 * directory, and then to itself, enabling us to modify the kernel page
+	 * tables in physical memory from within the virtual address space.
+	 **/
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

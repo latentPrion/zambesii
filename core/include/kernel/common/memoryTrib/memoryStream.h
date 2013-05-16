@@ -85,7 +85,9 @@ public:
 	void memFree(void *vaddr);
 
 	// These two make use of the allocTableC to store nPages.
-	void *memoryRegionAlloc(ubit8 regionId, uarch_t nPages);
+	void *memoryRegionAlloc(
+		ubit8 regionId, uarch_t nPages, uarch_t flags=0);
+
 	void memoryRegionFree(ubit8 regionId, void *vaddr);
 
 	// See allocTable.h for the rest of this class's API.

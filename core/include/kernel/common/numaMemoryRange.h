@@ -26,8 +26,12 @@ public:
 	void dump(void);
 
 public:
-	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
-	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
+	error_t contiguousGetFrames(
+		uarch_t nFrames, paddr_t *paddr, ubit32 flags=0);
+
+	status_t fragmentedGetFrames(
+		uarch_t nFrames, paddr_t *paddr, ubit32 flags=0);
+
 	void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
 
 	error_t mapMemUsed(paddr_t baseAddr, uarch_t nFrames);

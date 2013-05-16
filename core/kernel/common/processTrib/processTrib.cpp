@@ -34,7 +34,7 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 }
 
 processStreamC *processTribC::spawnStream(
-	const utf8Char *_commandLine,		// Full command line w/ args.
+	numaBankId_t,				// NUMA addrspace binding.
 	bitmapC *cpuAffinity,			// Ocean/NUMA/SMP affinity.
 	void */*elevation*/,			// Privileges.
 	ubit8 execDomain,			// Kernel mode vs. User mode.
