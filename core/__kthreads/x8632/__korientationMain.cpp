@@ -105,6 +105,9 @@ void __korientationMain(void)
 {
 	error_t			ret;
 
+	vaddrSpaceC		vas;
+	vas.initialize(NUMABANKID_INVALID);
+	asm volatile("movl %0, %%cr3\n\t"::"r" (vas.level0Paddr));
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
 	 * then load the chipset's bus-pin mappings and initialize timer
 	 * services.
@@ -117,6 +120,7 @@ void __korientationMain(void)
 	// Detect physical memory.
 	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
+for (;;){/*__kprintf(NOTICE"halting.\n");*/ asm volatile("hlt\n\t"); };
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
@@ -126,6 +130,7 @@ void __korientationMain(void)
 	 **/
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
+
 
 	__kprintf(NOTICE ORIENT"Successful; about to dormant.\n");
 	__kdebug.refresh();

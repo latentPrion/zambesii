@@ -6,6 +6,7 @@
 #include <arch/x8632/wPRanger_getLevelRanges.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/process.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -32,6 +33,7 @@ status_t walkerPageRanger::mapNoInc(
 #endif
 	uarch_t		archFlags, localFlush;
 	status_t	ret=0;
+	sarch_t		l0WasModified=0;
 	int		ztmp;
 
 	if (nPages == 0) { return ret; };
@@ -69,6 +71,7 @@ status_t walkerPageRanger::mapNoInc(
 			};
 
 			// Top level address space modification...
+			l0WasModified = 1;
 			l0Entry |= PAGING_L0_PRESENT | PAGING_L0_WRITE;
 			vaddrSpace->level0Accessor.rsrc->entries[l0Current] =
 				l0Entry;
@@ -153,6 +156,32 @@ status_t walkerPageRanger::mapNoInc(
 	};
 
 out:
+#ifndef CONFIG_ARCH_x86_32_PAE
+	/* Check to see if this mapping call caused a level0 table change in
+	 * the kernel's high address space range. If so, we need to propagate
+	 * the change. Not required on PAE kernel.
+	 **/
+	if (l0Start >= ARCH_MEMORY___KLOAD_VADDR_BASE >> PAGING_L0_VADDR_SHIFT
+		&& l0WasModified
+		&& vaddrSpace != &processTrib.__kgetStream()
+			->getVaddrSpaceStream()->vaddrSpace)
+	{
+		processTrib.__kgetStream()->getVaddrSpaceStream()
+			->vaddrSpace.level0Accessor.lock.acquire();
+
+		// Propagate the change to the kernel's vaddrspace object.
+		for (uarch_t i=l0Start; i <= l0End; i++)
+		{
+			processTrib.__kgetStream()->getVaddrSpaceStream()
+				->vaddrSpace.level0Accessor.rsrc->entries[i] =
+				vaddrSpace->level0Accessor.rsrc->entries[i];
+		};
+
+		processTrib.__kgetStream()->getVaddrSpaceStream()
+			->vaddrSpace.level0Accessor.lock.acquire();
+	};
+#endif
+
 #if __SCALING__ > SCALING_SMP
 	if (localFlush) {
 		tlbControl::flushEntryRange(vaddr, ret);
@@ -170,11 +199,6 @@ out:
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
 
-	/*	FIXME:
-	 * Code is needed here to examine our run just now, to see whether or
-	 * not we need to propagate l0 changes in the kernel address space to
-	 * all processes' address spaces.
-	 **/
 	return ret;
 }
 

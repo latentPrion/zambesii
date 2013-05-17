@@ -11,7 +11,6 @@
 error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 {
 	vaddrSpaceStreamC	*boundVaddrSpaceStream;
-	uarch_t			rwFlags;
 #ifdef CONFIG_ARCH_x86_32_PAE
 	const ubit16		startEntry=3, nEntries=1;
 #else
@@ -30,7 +29,7 @@ error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 #else
 		level0Accessor.rsrc = (pagingLevel0S *)0xFFFFD000;
 #endif
-		level0Paddr = paddr_t(__kpagingLevel0Tables);
+		level0Paddr = paddr_t(&__kpagingLevel0Tables);
 		return ERROR_SUCCESS;
 	};
 
@@ -58,17 +57,12 @@ error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 	boundVaddrSpaceStream = processTrib.__kgetStream()
 		->getVaddrSpaceStream();
 
-	memoryTrib.__kgetVaddrSpaceLevel0Lock()->readAcquire(&rwFlags);
-
-
 	// Clone the kernel vaddrspace top-level table into the new process.
 	memcpy(
 		&level0Accessor.rsrc->entries[startEntry],
 		&boundVaddrSpaceStream->vaddrSpace.level0Accessor.rsrc
 			->entries[startEntry],
 		sizeof(level0Accessor.rsrc->entries[0]) * nEntries);
-
-	memoryTrib.__kgetVaddrSpaceLevel0Lock()->readRelease(rwFlags);
 
 	uarch_t			__kflags;
 	pagingLevel1S		*level1Table;
@@ -91,11 +85,16 @@ error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 	 *
 	 * The jail-window mapping works like this:
 	 *	1. PageDir[1023] -> level1TablePaddr | PRESENT | WRITE | SUPERV.
-	 *	2. level1Table[1022] -> level1TablePaddr | PRES | WRITE | SUPER.
-	 *	3. Level1Table[1023] -> 0 | PRESENT | WRITE | SUPERVISOR.
+	 *	2. level1Table[1021] -> __kpagingLevel0Tables | PRES | WR | SUP.
+	 *	3. level1Table[1022] -> level1TablePaddr | PRES | WRITE | SUPER.
+	 *	4. level1Table[1023] -> 0 | PRESENT | WRITE | SUPERVISOR.
 	 **/
 	level0Accessor.rsrc->entries[1023] = level1TablePaddr
 		| paddr_t(PAGING_L0_PRESENT | PAGING_L0_WRITE);
+
+	// Map the kernel's top level table into the new addrspace.
+	level1Table->entries[1021] = paddr_t(&__kpagingLevel0Tables)
+		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE);
 
 	// Map 0xFFFE000 to the level 1 table, allowing the kernel to modify it.
 	level1Table->entries[1022] = level1TablePaddr
@@ -107,9 +106,9 @@ error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 
 	__kprintf(NOTICE VADDRSPACE"initialize: object 0x%p, bank binding %d.\n"
 		"level0Accessor 0x%p, paddr 0x%P.\n"
-		"\tLevel1Table 0x%p, level1TablePaddr 0x%P.\n",
+		"\tLevel1Table 0x%p, level1TablePaddr 0x%P, klvl0 0x%P.\n",
 		this, boundBankId, level0Accessor.rsrc, level0Paddr,
-		level1Table, level1TablePaddr);
+		level1Table, level1TablePaddr, &__kpagingLevel0Tables);
 
 	return ERROR_SUCCESS;
 }

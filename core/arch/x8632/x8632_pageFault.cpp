@@ -8,6 +8,7 @@
 #include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include "exceptions.h"
 
 
@@ -25,12 +26,56 @@ status_t x8632_page_fault(taskContextC *regs, ubit8)
 {
 	status_t		status;
 	vaddrSpaceStreamC	*vaddrSpaceStream;
+#ifndef CONFIG_ARCH_x86_32_PAE
+	vaddrSpaceStreamC	*__kvaddrSpaceStream;
+#endif
 	void			*faultAddr = getCr2();
 	paddr_t			pmap;
 	uarch_t			__kflags;
 
 	vaddrSpaceStream = cpuTrib.getCurrentCpuStream()
 		->taskStream.currentTask->parent->getVaddrSpaceStream();
+
+#ifndef CONFIG_ARCH_x86_32_PAE
+	/* First check to see if the page fault is caused by a kernel addrspace
+	 * top-level change that hasn't yet been propagated to this process:
+	 *
+	 * (For PAE x86-32, this will never need to be checked, since the
+	 * propagation issue does not exist with PAE.)
+	 **/
+	__kvaddrSpaceStream = processTrib.__kgetStream()->getVaddrSpaceStream();
+	if (vaddrSpaceStream != __kvaddrSpaceStream)
+	{
+		const uarch_t		topLevelEntry=
+			((uarch_t)faultAddr & PAGING_L0_VADDR_MASK)
+				>> PAGING_L0_VADDR_SHIFT;
+
+		vaddrSpaceStream->vaddrSpace.level0Accessor.lock.acquire();
+		__kvaddrSpaceStream->vaddrSpace.level0Accessor.lock.acquire();
+
+		if (__kvaddrSpaceStream->vaddrSpace.level0Accessor.rsrc
+			->entries[topLevelEntry]
+			!= vaddrSpaceStream->vaddrSpace.level0Accessor.rsrc
+				->entries[topLevelEntry])
+		{
+			vaddrSpaceStream->vaddrSpace.level0Accessor.rsrc
+				->entries[topLevelEntry] = __kvaddrSpaceStream
+					->vaddrSpace.level0Accessor.rsrc
+					->entries[topLevelEntry];
+
+			__kvaddrSpaceStream->vaddrSpace.level0Accessor.lock
+				.release();
+
+			vaddrSpaceStream->vaddrSpace.level0Accessor.lock
+				.release();
+
+			return ERROR_SUCCESS;
+		};
+
+		__kvaddrSpaceStream->vaddrSpace.level0Accessor.lock.release();
+		vaddrSpaceStream->vaddrSpace.level0Accessor.lock.release();
+	};
+#endif
 
 	status = walkerPageRanger::lookup(
 		&vaddrSpaceStream->vaddrSpace,
@@ -81,8 +126,10 @@ status_t x8632_page_fault(taskContextC *regs, ubit8)
 			"movl %%esp, %0\n\t"
 			: "=r" (esp));
 
-		__kprintf(FATAL"Encountered unmapped page at 0x%p, EIP: 0x%x, esp: 0x%x, sleepstack end: 0x%p sleepstack base 0x%p.\n",
-			faultAddr, regs->eip, esp, cpuTrib.getCurrentCpuStream()->sleepStack,
+		__kprintf(FATAL"Encountered unmapped page at 0x%p, EIP: 0x%x, "
+			"esp: 0x%x, sleepstack end: 0x%p sleepstack base 0x%p."
+			"\n", faultAddr,
+			regs->eip, esp, cpuTrib.getCurrentCpuStream()->sleepStack,
 			&cpuTrib.getCurrentCpuStream()->sleepStack[
 				sizeof(cpuTrib.getCurrentCpuStream()->sleepStack)]);
 

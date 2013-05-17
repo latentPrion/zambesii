@@ -68,9 +68,6 @@ public:
 
 	void dump(void);
 
-	multipleReaderLockC *__kgetVaddrSpaceLevel0Lock(void)
-		{ return &__kvaddrSpaceLevel0Lock; }
-
 private:
 
 	void init2_spawnNumaStreams(zkcmNumaMapS *map);
@@ -101,7 +98,6 @@ private:
 	 **/
 	ubit32			nBanks;
 	hardwareIdListC		memoryBanks;
-	multipleReaderLockC	__kvaddrSpaceLevel0Lock;
 #if __SCALING__ < SCALING_CC_NUMA
 	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
 		defaultMemoryBank;
