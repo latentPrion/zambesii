@@ -144,3 +144,19 @@ int strncmp16(const utf16Char *str1, const utf16Char *str2, int count)
 	return 0;
 }
 
+size_t strnlen16(const utf16Char *str1, size_t maxLen)
+{
+	size_t		len;
+
+	if (str1 == __KNULL)
+	{
+		__kprintf(FATAL"strnlen16: str1 0x%p, caller 0x%x.\n",
+			str1, __builtin_return_address(0));
+
+		panic(ERROR_CRITICAL);
+	};
+
+	for (len=0; len < maxLen && str1[len] != '\0'; len++) {};
+	return len;
+}
+

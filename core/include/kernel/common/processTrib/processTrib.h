@@ -57,16 +57,25 @@ public:
 	containerProcessC *__kgetStream(void) { return &__kprocess; };
 	processStreamC *getStream(processId_t id);
 
-	processStreamC *spawnStream(
+	error_t spawnDistributary(
+		utf8Char *commandLine,
+		utf8Char *environment,
+		numaBankId_t addrSpaceBinding,
+		ubit8 schedPrio,
+		uarch_t flags,
+		distributaryProcessC **ret);
+
+	error_t spawnStream(
+		utf8Char *commandLine,
+		utf8Char *environment,
 		numaBankId_t addrSpaceBinding,	// NUMA addrspace binding.
 		bitmapC *cpuAffinity,		// Ocean/NUMA/SMP affinity.
 		void *elevation,		// Privileges.
 		ubit8 execDomain,		// Kernel mode vs. User mode.
-		uarch_t flags,			// Process spawn flags.
 		ubit8 schedPolicy,		// Sched policy of 1st thread.
 		ubit8 prio,			// Sched prio of 1st thread.
-		uarch_t ftFlags,		// 1st thread spawn flags.
-		error_t *err);			// Returned error value.
+		uarch_t flags,			// proc + 1st thread spawn flags
+		processStreamC **ret);		// Returned error value.
 
 	/**	EXPLANATION:
 	 * Distributaries are by nature high privilege processes with high
@@ -87,6 +96,7 @@ public:
 
 private:
 	void fillOutPrioClasses(void);
+	error_t getNewProcessId(processId_t *ret);
 
 private:
 	containerProcessC	__kprocess;
@@ -113,6 +123,20 @@ inline processStreamC *processTribC::getStream(processId_t id)
 	processes.lock.readRelease(rwFlags);
 
 	return ret;
+}
+
+inline error_t processTribC::getNewProcessId(processId_t *ret)
+{
+	uarch_t		rwFlags;
+	sbit32		tmpId;
+
+	processes.lock.readAcquire(&rwFlags);
+	tmpId = nextProcId.getNextValue((void **)processes.rsrc);
+	processes.lock.readRelease(rwFlags);
+
+	if (tmpId < 1) { return ERROR_RESOURCE_EXHAUSTED; };
+	*ret = (processId_t)tmpId;
+	return ERROR_SUCCESS;
 }
 
 #endif

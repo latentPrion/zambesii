@@ -33,7 +33,50 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 	return ERROR_SUCCESS;
 }
 
-processStreamC *processTribC::spawnStream(
+error_t processTribC::spawnDistributary(
+	utf8Char *commandLine,
+	utf8Char *environment,
+	numaBankId_t addrSpaceBinding,
+	ubit8 /*schedPrio*/,
+	uarch_t /*flags*/,
+	distributaryProcessC **newProcess
+	)
+{
+	error_t			ret;
+	processId_t		newProcessId;
+	processStreamC		*parentProcess;
+
+	if (commandLine == __KNULL || newProcess == __KNULL)
+		{ return ERROR_INVALID_ARG; };
+
+	parentProcess = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask()->parent;
+
+	ret = getNewProcessId(&newProcessId);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE PROCTRIB"Out of process IDs.\n");
+		return ret;
+	};
+
+	*newProcess = new distributaryProcessC(
+		newProcessId, parentProcess->id, addrSpaceBinding);
+
+	if (*newProcess == __KNULL)
+	{
+		__kprintf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	bitmapC		foo;
+
+	ret = (*newProcess)->initialize(commandLine, environment, &foo);
+	if (ret != ERROR_SUCCESS) { return ret; };
+	return ERROR_SUCCESS;
+}
+
+#if 0
+error_t *processTribC::spawnStream(
 	numaBankId_t,				// NUMA addrspace binding.
 	bitmapC *cpuAffinity,			// Ocean/NUMA/SMP affinity.
 	void */*elevation*/,			// Privileges.
@@ -96,7 +139,6 @@ processStreamC *processTribC::spawnStream(
 	parentId = cpuTrib.getCurrentCpuStream()
 		->taskStream.currentTask->parent->id;
 
-#if 0
 	// Call initialize().
 	*err = newProc->initialize(_commandLine, fileName, workingDir);
 	if (*err != ERROR_SUCCESS)
@@ -154,7 +196,7 @@ processStreamC *processTribC::spawnStream(
 	// TODO: Handle elevation.
 
 	// 
-#endif
 	return newProc;
 }
+#endif
 

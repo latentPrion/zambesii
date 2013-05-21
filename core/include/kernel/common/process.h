@@ -17,6 +17,12 @@
 	#include <kernel/common/floodplainn/floodplainnStream.h>
 	#include <__kthreads/__korientation.h>
 
+#define PROCESS_ENV_MAX_NVARS		(64)
+#define PROCESS_ENV_NAME_MAXLEN		(96)
+#define PROCESS_ENV_VALUE_MAXLEN	(512)
+#define PROCESS_FULLNAME_MAXLEN		(2000)
+#define PROCESS_ARGUMENTS_MAXLEN	(32700)
+
 /**	Flags for processC::flags.
  **/
 #define PROCESS_FLAGS___KPROCESS	(1<<0)
@@ -61,9 +67,10 @@ public:
 			(processId == __KPROCESSID) ? 1 : 0),
 		nTasks(0),
 
-		fullName(__KNULL), workingDirectory(__KNULL), fileName(__KNULL),
-		nArgs(0), nEnvVars(0),
-		argString(__KNULL), env(__KNULL),
+		fullName(__KNULL), workingDirectory(__KNULL),
+		arguments(__KNULL),
+		nEnvVars(0),
+		environment(__KNULL),
 
 		execDomain(execDomain),
 
@@ -84,13 +91,22 @@ public:
 		};
 	}
 
-	error_t initialize(const utf8Char *commandLine, bitmapC *cpuAffinity);
+	error_t initialize(
+		const utf8Char *commandLine, const utf8Char *environment,
+		bitmapC *cpuAffinity);
 
 	~processStreamC(void);
 
 public:
 	taskC *getTask(processId_t processId);
 	taskC *getThread(processId_t processId) { return getTask(processId); }
+
+	ubit32 getProcessFullNameMaxLength(void)
+		{ return PROCESS_FULLNAME_MAXLEN; }
+
+	ubit32 getProcessArgumentsMaxLength(void)
+		{ return PROCESS_ARGUMENTS_MAXLEN; }
+
 	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)=0;
 
 	// I am very reluctant to have this "argument" parameter.
@@ -113,6 +129,12 @@ public:
 		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
 
 public:
+	struct environmentVarS
+	{
+		utf8Char	name[PROCESS_ENV_NAME_MAXLEN],
+				value[PROCESS_ENV_VALUE_MAXLEN];
+	};
+
 	processId_t		id, parentId;
 	uarch_t			flags;
 
@@ -121,9 +143,9 @@ public:
 	uarch_t			nTasks;
 	taskC			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
 
-	utf8Char		*fullName, *workingDirectory, *fileName;
-	ubit8			nArgs, nEnvVars;
-	utf8Char		**argString, **env;
+	utf8Char		*fullName, *workingDirectory, *arguments;
+	ubit8			nEnvVars;
+	environmentVarS		*environment;
 
 	// Execution domain and privilege elevation information.
 	ubit8			execDomain;
@@ -150,14 +172,15 @@ private:
 	taskC *allocateNewThread(processId_t newThreadId);
 	void removeThread(processId_t id);
 
-	void __kprocessAllocateInternals(void);
-	void __kprocessGenerateArgString(void);
-	void __kprocessGenerateEnvString(void);
+	void __kprocessGenerateEnvString(utf8Char *);
 	void __kprocessInitializeBmps(void);
 
 	error_t allocateInternals(void);
-	error_t generateArgString(void);
-	error_t generateEnvString(void);
+	error_t generateFullName(
+		const utf8Char *commandLineString, ubit16 *argumentsStartIndex);
+
+	error_t generateArguments(const utf8Char *argumentString);
+	error_t generateEnvironment(const utf8Char *environmentString);
 	error_t initializeBmps(void);
 };
 
@@ -181,11 +204,15 @@ public:
 		vaddrSpaceBaseAddr, vaddrSpaceSize)
 	{}
 
-	error_t initialize(utf8Char *commandLine, bitmapC *affinity)
+	error_t initialize(
+		const utf8Char *commandLine, const utf8Char *environment,
+		bitmapC *affinity)
 	{
 		error_t		ret;
 
-		ret = processStreamC::initialize(commandLine, affinity);
+		ret = processStreamC::initialize(
+			commandLine, environment, affinity);
+
 		if (ret != ERROR_SUCCESS) { return ret; };
 		return vaddrSpaceStream.initialize();
 	}
@@ -217,8 +244,13 @@ public:
 	containerProcess(containerProcess)
 	{}
 
-	error_t initialize(utf8Char *commandLine, bitmapC *affinity)
-		{ return processStreamC::initialize(commandLine, affinity); }
+	error_t initialize(
+		const utf8Char *commandLine, const utf8Char *environment,
+		bitmapC *affinity)
+	{
+		return processStreamC::initialize(
+			commandLine, environment,affinity);
+	}
 
 	~containedProcessC(void) {}
 
@@ -240,6 +272,7 @@ class distributaryProcessC
 :
 public containerProcessC
 {
+public:
 	distributaryProcessC(
 		processId_t processId, processId_t parentProcessId,
 		numaBankId_t numaAddrSpaceBinding)
@@ -248,11 +281,16 @@ public containerProcessC
 		processId, parentProcessId,
 		PROCESS_EXECDOMAIN_KERNEL,	// Always kernel domain.
 		numaAddrSpaceBinding,
-		(void *)0x1000, ARCH_MEMORY___KLOAD_VADDR_BASE - 0x1000)
+		(void *)0x100000, ARCH_MEMORY___KLOAD_VADDR_BASE - 0x1000)
 	{}
 
-	error_t initialize(utf8Char *fullName, bitmapC *affinity)
-		{ return containerProcessC::initialize(fullName, affinity); }
+	error_t initialize(
+		const utf8Char *fullName, const utf8Char *environment,
+		bitmapC *affinity)
+	{
+		return containerProcessC::initialize(
+			fullName, environment, affinity);
+	}
 
 	~distributaryProcessC(void) {}
 };

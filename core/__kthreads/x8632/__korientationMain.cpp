@@ -23,6 +23,9 @@
 
 int oo=0, pp=0, qq=0, rr=0;
 
+static utf8Char		fullName[PROCESS_FULLNAME_MAXLEN],
+			arguments[PROCESS_ARGUMENTS_MAXLEN];
+
 extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -50,7 +53,8 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(processTrib, initialize(), ret);
 	DO_OR_DIE(
 		__kprocess,
-		initialize(CC"@h:boot/zambesii/zambesii.zxe", __KNULL), ret);
+		initialize(CC"@h:boot/zambesii/zambesii.zxe",
+		CC"PATH=@h:__kramdisk/programs32", __KNULL), ret);
 
 	/* Initialize __kspace level physical memory management, then the
 	 * kernel Memory Stream.
@@ -105,9 +109,6 @@ void __korientationMain(void)
 {
 	error_t			ret;
 
-	vaddrSpaceC		vas;
-	vas.initialize(NUMABANKID_INVALID);
-	asm volatile("movl %0, %%cr3\n\t"::"r" (vas.level0Paddr));
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
 	 * then load the chipset's bus-pin mappings and initialize timer
 	 * services.
@@ -120,7 +121,6 @@ void __korientationMain(void)
 	// Detect physical memory.
 	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
-for (;;){/*__kprintf(NOTICE"halting.\n");*/ asm volatile("hlt\n\t"); };
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);

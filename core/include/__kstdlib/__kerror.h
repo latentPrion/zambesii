@@ -30,6 +30,7 @@
 
 	#define ERROR_WOULD_BLOCK			(-49)
 	#define ERROR_NOT_FOUND				(-50)
+	#define ERROR_LIMIT_OVERFLOWED			(-51)
 
 	#define UNIMPLEMENTED(__funcName)		\
 		__kprintf(ERROR"Unimplemented: %s on line %d of file %s.\n", \

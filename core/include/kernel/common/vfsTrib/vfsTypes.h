@@ -22,6 +22,13 @@ namespace vfs
 	 *	A signed integer if 'splitChar' is found. This integer
 	 *	represents the index into the string where 'splitChar' was
 	 *	found.
+	 *
+	 * Arguments:
+	 *	maxLength: should be taken to be the number of characters
+	 *		to search for 'splitChar' in. That is, maxLength bytes
+	 *		will be searched for splitChar. If "path" is expected
+	 *		to be NULL terminated, you may want to take that into
+	 *		consideration.
 	 **/
 	status_t getIndexOfNext(
 		utf8Char *path, utf8Char splitChar, uarch_t maxLength);

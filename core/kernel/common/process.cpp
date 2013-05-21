@@ -1,4 +1,5 @@
 
+#include <arch/atomic.h>
 #include <chipset/chipset.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
@@ -20,14 +21,6 @@ utf8Char	__kprocessArgStringMem
 	[__KPROCESS_MAX_NARGS]
 	[__KPROCESS_ARG_MAX_NCHARS];
 
-/**	EXPLANATION:
- * Pre-allocated memory for the strings in the kernel process object. Namely:
- *	fullName, workingDir, fileName.
- **/
-utf8Char	__kprocessPreallocatedStringMem
-	[3]
-	[__KPROCESS_STRING_MAX_NCHARS];
-
 
 #if __SCALING__ >= SCALING_SMP
 // Preallocated mem space for the internals of the __kprocess bitmapC objects.
@@ -35,44 +28,34 @@ ubit8		__kprocessPreallocatedBmpMem[3][32];
 #endif
 
 error_t processStreamC::initialize(
-	const utf8Char * /*commandLine*/, bitmapC * /*cpuAffinity*/
+	const utf8Char *commandLineString, const utf8Char *environmentString,
+	bitmapC * /*cpuAffinity*/
 	)
 {
-	//error_t		ret;
+	error_t		ret;
+	ubit16		argumentsStartIndex;
 
 	// The kernel process is initialized differently.
-	if (PROCESSID_PROCESS(id) == __KPROCESSID)
-	{
-		__kprocessAllocateInternals();
-		// __kprocessGenerateArgString();
-		// __kprocessGenerateEnvString();
+	if (PROCESSID_PROCESS(id) == __KPROCESSID) {
 		__kprocessInitializeBmps();
 	}
 	else
 	{
 		/*ret = allocateInternals();
 		if (ret != ERROR_SUCCESS) { return ret; };
-		ret = generateArgString();
-		if (ret != ERROR_SUCCESS) { return ret; };
-		ret = generateEnvString();
-		if (ret != ERROR_SUCCESS) { return ret; };
 		ret = initializeBmps();
 		if (ret != ERROR_SUCCESS) { return ret; };*/
 	};
 
+	ret = generateFullName(commandLineString, &argumentsStartIndex);
+	if (ret != ERROR_SUCCESS) { return ret; };
+	// N-n-next split n-n-next split...
+	ret = generateArguments(&commandLineString[argumentsStartIndex]);
+	if (ret != ERROR_SUCCESS) { return ret; };
+	ret = generateEnvironment(environmentString);
+	if (ret != ERROR_SUCCESS) { return ret; };
 	// Initialize internal bitmaps.
-
-	// Fill out the fullName, workingDirectory and fileName strings.
-
 	return ERROR_SUCCESS;
-}
-
-void processStreamC::__kprocessAllocateInternals(void)
-{
-	// Assign our preallocated mem to the dynamic members.
-	fullName = __kprocessPreallocatedStringMem[0];
-	workingDirectory = __kprocessPreallocatedStringMem[1];
-	fileName = __kprocessPreallocatedStringMem[2];
 }
 
 void processStreamC::__kprocessInitializeBmps(void)
@@ -86,6 +69,348 @@ void processStreamC::__kprocessInitializeBmps(void)
 
 processStreamC::~processStreamC(void)
 {
+}
+
+/* While the maxlength of fullName is 4000, the kernel process' full name will
+ * never actually be that long anyway.
+ **/
+static utf8Char		__kprocessFullNameMem[256+1];
+error_t processStreamC::generateFullName(
+	const utf8Char *_commandLine, ubit16 *argumentsStartIndex
+	)
+{
+	error_t		ret;
+	// 0=un-escaped, 1=single-quote, 2=double-quote.
+	ubit8		escapeType=0;
+	ubit16		length=0, nEscapedSpaces=0;
+
+	/**	EXPLANATION:
+	 * "_commandLine" passed to spawnStream() shall be a pair of strings
+	 * separated by ASCII space, concatenated into one, of maximum length:
+	 *	PROCESS_FULLNAME_MAXLEN + 1 + PROCESS_ARGUMENTS_MAXLEN.
+	 *
+	 * The extra character (+1 in the middle) is provided to allow the
+	 * separating ASCII space character between the two concatenated
+	 * strings; or, if the second string is not provided, the extra char in
+	 * the middle should be used to NULL terminate the first string, if
+	 * necessary. The first string SHALL either be SPACE or NULL terminated,
+	 * whether or not it occupies PROCESS_FULLNAME_MAXLEN characters.
+	 *
+	 * The first string is the process executable image's FULL path+filename
+	 * and is mandatory. The second string is a series of arguments passed
+	 * to the new process, which goes uninterpreted by the kernel
+	 * altogether, and is passed raw to the new process when it requests it.
+	 *
+	 * The filename is terminated at the first un-escaped space (spaces can
+	 * be escaped with ASCII backslash, or else the whole filename can be
+	 * quoted) or the first NULL character encountered. The quotes count
+	 * toward the full filename limit. The first character in the filename
+	 * cannot be a space.
+	 *
+	 * If the kernel first encounters an unescaped space, it will finish
+	 * parsing for the filename, and begin parsing for the arguments
+	 * immediately following the space.
+	 *
+	 * If the kernel first encounters NULL (escaped or not) it will finish
+	 * parsing the string altogether and assume that there were no
+	 * arguments following the filename.
+	 *
+	 * The second string need only be NULL terminated if it is less than
+	 * PROCESS_ARGUMENTS_MAXLEN chars, because regardless of how long it
+	 * actually is, the kernel will only process the first
+	 * PROCESS_ARGUMENTS_MAXLEN chars, or up to the first NULL encountered
+	 * within that many chars.
+	 *
+	 * Use the syscall processTrib.getProcessFullnameMaxLength() and
+	 * processTrib.getProcessArgumentsMaxLength() if you think your app
+	 * will generate an executable name or arguments string longer than
+	 * the system limits.
+	 *
+	 * Examples:
+	 *	/path/file arg arg arg
+	 *	=> name="/path/file", args="arg arg arg"
+	 *	/path/with spaces/file arg arg arg
+	 *	=> name="/path/with", args="spaces/file arg arg arg"
+	 *	'/quoted/path/with spaces/file' arg arg arg
+	 *	=> name="/quoted/path/with spaces/file", args="arg arg arg"
+	 *	"/quoted/path/with spaces/file" arg arg arg
+	 *	=> name="/quoted/path/with spaces/file", args="arg arg arg"
+	 *	/path/file
+	 *	=> name="/path/file", args=""
+	 **/
+	if (_commandLine[0] == '\'') { escapeType = 1; _commandLine++; };
+	if (_commandLine[0] == '"') { escapeType = 2; _commandLine++; };
+
+	if (escapeType > 0)
+	{
+		/* If the image fullname is escaped with quotes, find the ending
+		 * quote, and assume that will give us the full length of the
+		 * string.
+		 *
+		 *	FIXME:
+		 * The current parser does not enable escaping of quotes in
+		 * the filename. It will absolutely take the next quote to be
+		 * the ending quote. Add support for escaping. This also
+		 * mandates that backslash escapes be supported too (\\).
+		 **/
+		ret = vfs::getIndexOfNext(
+			CC _commandLine, (escapeType == 1) ? '\'' : '"',
+			PROCESS_FULLNAME_MAXLEN-1);
+
+		if (ret < 0) { return ret; };
+		length = (unsigned)ret;
+
+		/* Check for sanity after the quote; must have a space or NULL
+		 * after it.
+		 **/
+		if (_commandLine[length+1] != ' '
+			&& _commandLine[length+1] != '\0')
+		{
+			return ERROR_INVALID_RESOURCE_NAME;
+		};
+	}
+	else
+	{
+		/* Else, run through looking for the first space character
+		 * that is not preceded by a backslash (\).
+		 **/
+		ubit16		i;
+
+		for (i=0; _commandLine[i] != '\0' && i<PROCESS_FULLNAME_MAXLEN;
+			i++)
+		{
+			if (_commandLine[i] == ' ')
+			{
+				// Finding a space at index 0 will raise error.
+				if (i == 0) { break; };
+				if (_commandLine[i-1] == '\\')
+				{
+					nEscapedSpaces++;
+					continue;
+				} else { break; };
+			};
+		};
+
+		if (i == PROCESS_FULLNAME_MAXLEN
+			&& (_commandLine[i] != ' ' && _commandLine[i] != '\0'))
+		{
+			// Space or NULL must follow the filename.
+			return ERROR_INVALID_RESOURCE_NAME;
+		};
+
+		length = i;
+	};
+
+	// If the process image length is 0, exit with an error.
+	if (length == 0) { return ERROR_INVALID_RESOURCE_NAME; };
+
+	// Allocate space for the fullName and copy the data.
+	if (id == __KPROCESSID) {
+		fullName = __kprocessFullNameMem;
+	}
+	else
+	{
+		fullName = new utf8Char[length + 1];
+		if (fullName == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	};
+
+	/* Can't just strncpy() here; have to consume the backslashes in the
+	 * fullname.
+	 **/
+	for (ubit16 i=0, j=0, k=0; i<length && _commandLine[i] != '\0'; i++)
+	{
+		if (_commandLine[i] == ' ' && _commandLine[i-1] == '\\'
+			&& k < nEscapedSpaces)
+		{
+			k++;
+			if (j > 0) { j--; };
+		};
+
+		fullName[j++] = _commandLine[i];
+	};
+
+	fullName[length - nEscapedSpaces] = '\0';
+
+	/* If the fullName ends in NULL and not space, make sure that arguments
+	 * generation code will meet NULL as soon as it starts trying to
+	 * parse the string.
+	 **/
+	if (_commandLine[length] == '\0') { *argumentsStartIndex = length; }
+	else if (_commandLine[length] == ' ') {
+		*argumentsStartIndex = length + 1;
+	}
+	else
+	{
+		// Else it's a quote.
+		if (_commandLine[length+1] == ' ') {
+			*argumentsStartIndex = length + 2 + 1;
+		} else {
+			*argumentsStartIndex = length + 1 + 1;
+		};
+	};
+
+	return ERROR_SUCCESS;
+}
+
+static utf8Char		__kprocessArgumentsMem[2048+1];
+error_t processStreamC::generateArguments(const utf8Char *argumentString)
+{
+	ubit16		length;
+	const ubit16	maxLength = (id == __KPROCESSID)
+		? 2048 : PROCESS_ARGUMENTS_MAXLEN;
+
+	/* There is nothing to really parse here -- we don't care what the
+	 * content of the process' argument string is. We just need to know how
+	 * long it is so we can allocate memory to hold it in the kernel
+	 * address space. We parse up to a maximum of PROCESS_ARGUMENTS_MAXLEN
+	 * chars, so if we don't meet a NULL, we assume that the argument
+	 * string is that long.
+	 **/
+	length = strnlen8(argumentString, maxLength);
+
+	/**	XXX:
+	 * Uncomment this line to make the kernel require that arguments be
+	 * NULL terminated, and that the NULL character be part of the length
+	 * limit. This may be desirable, since we may want to return an error
+	 * message to the calling process letting it know that the kernel
+	 * cannot handle the argument string size, rather than silently
+	 * truncating it.
+	 **/
+	// if (length == maxLength) { return ERROR_LIMIT_OVERFLOWED; };
+
+	if (id == __KPROCESSID) {
+		arguments = __kprocessArgumentsMem;
+	}
+	else
+	{
+		arguments = new utf8Char[length + 1];
+		if (arguments == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	};
+
+	strncpy8(arguments, argumentString, length);
+	arguments[length] = '\0';
+	return ERROR_SUCCESS;
+}
+
+static processStreamC::environmentVarS		__kprocessEnvironmentMem[16];
+error_t processStreamC::generateEnvironment(const utf8Char *environmentString)
+{
+	error_t			ret;
+	ubit16			strIndex, nameLen, valueLen;
+	ubit8			nVars=0;
+	sarch_t			isSecondPass=0;
+	ubit8			maxNVars;
+
+	/**	EXPLANATION:
+	 * Environment variable string is a series of NULL terminated strings
+	 * concatenated. The whole sequence of strings is terminated with a
+	 * double NULL sequence (NULL NULL).
+	 *
+	 * Format is:
+	 *	"name=value\0name=value\0name=value\0\0"
+	 *
+	 * Names of environment variables can be anything, including unicode.
+	 * There is no invalid character other than ASCII "equal" sign (=).
+	 * Environment variable names can contain any character the caller
+	 * chooses, other than '=' and '\0'. Variable names cannot be NULL.
+	 *
+	 * Values can be NULL (i.e: "name=\0" or "name\0"). ASCII "equal" sign
+	 * is a valid character in a value. The only character not permitted in
+	 * a value is ASCII NULL.
+	 *
+	 * If the first character in an environment string passed as an argument
+	 * to this function is NULL, the kernel will assume that the string is
+	 * a NULL string (and refuse to parse it).
+	 *
+	 * The parsing happens in two stages, first pass where we just count up
+	 * the number of variables and allocate the total amount of memory
+	 * required, and second pass, where we re-parse and copy the variables
+	 * into the newly allocated memory. If somebody is particularly offended
+	 * by the "goto", you can turn this into a nested loop, or recursive
+	 * function instead.
+	 **/
+	maxNVars = (id == __KPROCESSID) ? 16 : PROCESS_ENV_MAX_NVARS;
+
+secondPass:
+	strIndex = 0;
+	for (ubit8 i=0; i<maxNVars; i++, strIndex += nameLen + valueLen + 1)
+	{
+		if (environmentString[strIndex] == '\0') { break; };
+
+		ret = vfs::getIndexOfNext(
+			CC &environmentString[strIndex], '=',
+			PROCESS_ENV_NAME_MAXLEN+1);
+
+		// No maxlen overflows or zero-length names allowed.
+		if (ret == ERROR_INVALID_RESOURCE_NAME || ret == 0) { break; };
+
+		/* 2 cases left:
+		 *	1. ret is ERROR_NOT_FOUND = variable with no value.
+		 *	2. Normal case, found an equal sign.
+		 *
+		 * Both are valid.
+		 **/
+		nameLen = (ret == ERROR_NOT_FOUND)
+			? strlen8(&environmentString[strIndex])
+			: (unsigned)ret;
+
+		// Set maxNVars to nVars before going on to pass 2.
+		nVars++;
+
+		if (isSecondPass)
+		{
+			strncpy8(
+				environment[i].name,
+				&environmentString[strIndex], nameLen);
+
+			if (nameLen < PROCESS_ENV_NAME_MAXLEN)
+				{ environment[i].name[nameLen] = '\0'; };
+		};
+
+		valueLen = 0;
+		if (ret == ERROR_NOT_FOUND) { continue; };
+
+		// Get the length of the value.
+		valueLen = strnlen8(
+			&environmentString[strIndex + nameLen + 1],
+			PROCESS_ENV_VALUE_MAXLEN + 1);
+
+		if (valueLen == PROCESS_ENV_VALUE_MAXLEN+1)
+			{ return ERROR_LIMIT_OVERFLOWED; };
+
+		if (isSecondPass)
+		{
+			strncpy8(
+				environment[i].value,
+				&environmentString[strIndex + 1], valueLen);
+
+			if (valueLen < PROCESS_ENV_VALUE_MAXLEN)
+				{ environment[i].value[valueLen] = '\0'; };
+		};
+
+		// Consume one for the equal sign.
+		strIndex++;
+	};
+
+	if (!isSecondPass)
+	{
+		if (id == __KPROCESSID) {
+			environment = __kprocessEnvironmentMem;
+		}
+		else
+		{
+			environment = new environmentVarS[nVars];
+			if (environment == __KNULL)
+				{ return ERROR_MEMORY_NOMEM; };
+		};
+
+		maxNVars = nVars;
+		isSecondPass = 1;
+		goto secondPass;
+	};
+
+	nEnvVars = nVars;
+	return ERROR_SUCCESS;
 }
 
 static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
