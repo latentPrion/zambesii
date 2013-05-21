@@ -366,7 +366,9 @@ error_t timerTribC::initialize(void)
 
 	initializeAllQueues();
 	zkcmCore.timerControl.timerQueuesInitializedNotification();
-	return ERROR_SUCCESS;
+
+	// Initialize the kernel Timer Stream.
+	return processTrib.__kgetStream()->timerStream.initialize();
 }
 
 void timerTribC::getCurrentTime(timeS *t)

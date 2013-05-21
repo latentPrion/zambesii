@@ -35,18 +35,6 @@ error_t processStreamC::initialize(
 	error_t		ret;
 	ubit16		argumentsStartIndex;
 
-	// The kernel process is initialized differently.
-	if (PROCESSID_PROCESS(id) == __KPROCESSID) {
-		__kprocessInitializeBmps();
-	}
-	else
-	{
-		/*ret = allocateInternals();
-		if (ret != ERROR_SUCCESS) { return ret; };
-		ret = initializeBmps();
-		if (ret != ERROR_SUCCESS) { return ret; };*/
-	};
-
 	ret = generateFullName(commandLineString, &argumentsStartIndex);
 	if (ret != ERROR_SUCCESS) { return ret; };
 	// N-n-next split n-n-next split...
@@ -54,17 +42,39 @@ error_t processStreamC::initialize(
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ret = generateEnvironment(environmentString);
 	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = initializeBitmaps();
+	if (ret != ERROR_SUCCESS) { return ret; };
 	// Initialize internal bitmaps.
 	return ERROR_SUCCESS;
 }
 
-void processStreamC::__kprocessInitializeBmps(void)
+error_t processStreamC::initializeBitmaps(void)
 {
+	error_t		ret;
+
+	if (id == __KPROCESSID)
+	{
 #if __SCALING__ >= SCALING_SMP
-	cpuTrace.initialize(0, __kprocessPreallocatedBmpMem[0], 32);
-	cpuAffinity.initialize(0, __kprocessPreallocatedBmpMem[1], 32);
+		cpuTrace.initialize(0, __kprocessPreallocatedBmpMem[0], 32);
+		cpuAffinity.initialize(0, __kprocessPreallocatedBmpMem[1], 32);
 #endif
-	pendingEvents.initialize(0, __kprocessPreallocatedBmpMem[2], 32);
+		pendingEvents.initialize(
+			0, __kprocessPreallocatedBmpMem[2], 32);
+	}
+	else
+	{
+#if __SCALING__ >= SCALING_SMP
+		ret = cpuTrace.initialize(cpuTrib.availableCpus.getNBits());
+		if (ret != ERROR_SUCCESS) { return ret; }; 
+		ret = cpuAffinity.initialize(cpuTrib.availableCpus.getNBits());
+		if (ret != ERROR_SUCCESS) { return ret; };
+#endif
+		pendingEvents.initialize(32);
+		if (ret != ERROR_SUCCESS) { return ret; };
+	};
+
+	return ERROR_SUCCESS;
 }
 
 processStreamC::~processStreamC(void)
@@ -87,14 +97,16 @@ error_t processStreamC::generateFullName(
 	/**	EXPLANATION:
 	 * "_commandLine" passed to spawnStream() shall be a pair of strings
 	 * separated by ASCII space, concatenated into one, of maximum length:
-	 *	PROCESS_FULLNAME_MAXLEN + 1 + PROCESS_ARGUMENTS_MAXLEN.
+	 *	PROCESS_FULLNAME_MAXLEN + 1 + PROCESS_ARGUMENTS_MAXLEN + 1.
 	 *
 	 * The extra character (+1 in the middle) is provided to allow the
 	 * separating ASCII space character between the two concatenated
 	 * strings; or, if the second string is not provided, the extra char in
 	 * the middle should be used to NULL terminate the first string, if
 	 * necessary. The first string SHALL either be SPACE or NULL terminated,
-	 * whether or not it occupies PROCESS_FULLNAME_MAXLEN characters.
+	 * whether or not it occupies PROCESS_FULLNAME_MAXLEN characters. The
+	 * second string SHALL be NULL terminated as well, whether or not it
+	 * takes occupies PROCESS_FULLNAME_MAXLEN characters.
 	 *
 	 * The first string is the process executable image's FULL path+filename
 	 * and is mandatory. The second string is a series of arguments passed
@@ -114,12 +126,6 @@ error_t processStreamC::generateFullName(
 	 * If the kernel first encounters NULL (escaped or not) it will finish
 	 * parsing the string altogether and assume that there were no
 	 * arguments following the filename.
-	 *
-	 * The second string need only be NULL terminated if it is less than
-	 * PROCESS_ARGUMENTS_MAXLEN chars, because regardless of how long it
-	 * actually is, the kernel will only process the first
-	 * PROCESS_ARGUMENTS_MAXLEN chars, or up to the first NULL encountered
-	 * within that many chars.
 	 *
 	 * Use the syscall processTrib.getProcessFullnameMaxLength() and
 	 * processTrib.getProcessArgumentsMaxLength() if you think your app
@@ -268,15 +274,9 @@ error_t processStreamC::generateArguments(const utf8Char *argumentString)
 	 **/
 	length = strnlen8(argumentString, maxLength);
 
-	/**	XXX:
-	 * Uncomment this line to make the kernel require that arguments be
-	 * NULL terminated, and that the NULL character be part of the length
-	 * limit. This may be desirable, since we may want to return an error
-	 * message to the calling process letting it know that the kernel
-	 * cannot handle the argument string size, rather than silently
-	 * truncating it.
-	 **/
-	// if (length == maxLength) { return ERROR_LIMIT_OVERFLOWED; };
+	// Don't allow limit overflows.
+	if (length == maxLength && argumentString[length] != '\0')
+		{ return ERROR_LIMIT_OVERFLOWED; };
 
 	if (id == __KPROCESSID) {
 		arguments = __kprocessArgumentsMem;

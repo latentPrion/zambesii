@@ -16,11 +16,9 @@ const dvfs::distributaryDescriptorS	cisternnDescriptor=
 #else
 			0
 #endif
-		},
-		{ CC"video output", 0 },
-		{ CC"audio input", 1 }
+		}
 	},
-	3,		// Provides only one category.
+	1,		// Provides only one category.
 	0, 0, 0,	// v0.00.000.
 	__KNULL,
 	0

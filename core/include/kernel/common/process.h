@@ -172,16 +172,13 @@ private:
 	taskC *allocateNewThread(processId_t newThreadId);
 	void removeThread(processId_t id);
 
-	void __kprocessGenerateEnvString(utf8Char *);
-	void __kprocessInitializeBmps(void);
-
 	error_t allocateInternals(void);
 	error_t generateFullName(
 		const utf8Char *commandLineString, ubit16 *argumentsStartIndex);
 
 	error_t generateArguments(const utf8Char *argumentString);
 	error_t generateEnvironment(const utf8Char *environmentString);
-	error_t initializeBmps(void);
+	error_t initializeBitmaps(void);
 };
 
 /**	ContainerProcessC and containedProcessC.

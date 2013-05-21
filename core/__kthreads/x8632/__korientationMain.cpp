@@ -23,11 +23,6 @@
 
 int oo=0, pp=0, qq=0, rr=0;
 
-static utf8Char		fullName[PROCESS_FULLNAME_MAXLEN],
-			arguments[PROCESS_ARGUMENTS_MAXLEN],
-			ename[PROCESS_ENV_NAME_MAXLEN+1],
-			eval[PROCESS_ENV_VALUE_MAXLEN+1];
-
 extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -55,8 +50,11 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(processTrib, initialize(), ret);
 	DO_OR_DIE(
 		__kprocess,
-		initialize(CC"@h:boot/zambesii/zambesii.zxe",
-		CC"0\0001\0PATH=@h:__kramdisk/programs32\0DRIVERPATH=@h:__kramdisk/zambesii/drivers32\0foo\0bar=\0", __KNULL), ret);
+		initialize(
+			CC"@h:boot/zambesii/zambesii.zxe",
+			CC"__KRAMDISK_NAME=:__kramdisk\0",
+			__KNULL),
+		ret);
 
 	/* Initialize __kspace level physical memory management, then the
 	 * kernel Memory Stream.
@@ -76,17 +74,6 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
-
-	for (ubit8 i=0; i<__kprocess.nEnvVars; i++)
-	{
-		strncpy8(ename, __kprocess.environment[i].name, PROCESS_ENV_NAME_MAXLEN);
-		ename[PROCESS_ENV_NAME_MAXLEN] = '\0';
-		strncpy8(eval, __kprocess.environment[i].value, PROCESS_ENV_VALUE_MAXLEN);
-		eval[PROCESS_ENV_VALUE_MAXLEN] = '\0';
-
-		__kprintf(NOTICE"Env %d of %d: Name %s.\n\tVal %s.\n", i, __kprocess.nEnvVars, ename, eval);
-	};
-for (;;){};
 
 	/* Initialize the kernel Memory Reservoir (heap) and object cache pool.
 	 **/
@@ -143,7 +130,6 @@ void __korientationMain(void)
 	 **/
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
-
 
 	__kprintf(NOTICE ORIENT"Successful; about to dormant.\n");
 	__kdebug.refresh();
