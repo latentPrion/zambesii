@@ -215,7 +215,7 @@ error_t processStreamC::generateFullName(
 	};
 
 	/* Can't just strncpy() here; have to consume the backslashes in the
-	 * fullname.
+	 * fullname while copying it.
 	 **/
 	for (ubit16 i=0, j=0, k=0; i<length && _commandLine[i] != '\0'; i++)
 	{
@@ -298,7 +298,7 @@ error_t processStreamC::generateEnvironment(const utf8Char *environmentString)
 	error_t			ret;
 	ubit16			strIndex, nameLen, valueLen;
 	ubit8			nVars=0;
-	sarch_t			isSecondPass=0;
+	sarch_t			isSecondPass;
 	ubit8			maxNVars;
 
 	/**	EXPLANATION:
@@ -325,75 +325,87 @@ error_t processStreamC::generateEnvironment(const utf8Char *environmentString)
 	 * The parsing happens in two stages, first pass where we just count up
 	 * the number of variables and allocate the total amount of memory
 	 * required, and second pass, where we re-parse and copy the variables
-	 * into the newly allocated memory. If somebody is particularly offended
-	 * by the "goto", you can turn this into a nested loop, or recursive
-	 * function instead.
+	 * into the newly allocated memory.
 	 **/
 	maxNVars = (id == __KPROCESSID) ? 16 : PROCESS_ENV_MAX_NVARS;
 
-secondPass:
-	strIndex = 0;
-	for (ubit8 i=0; i<maxNVars; i++, strIndex += nameLen + valueLen + 1)
+	for (isSecondPass=0; isSecondPass < 2; isSecondPass++)
 	{
-		if (environmentString[strIndex] == '\0') { break; };
-
-		ret = vfs::getIndexOfNext(
-			CC &environmentString[strIndex], '=',
-			PROCESS_ENV_NAME_MAXLEN+1);
-
-		// No maxlen overflows or zero-length names allowed.
-		if (ret == ERROR_INVALID_RESOURCE_NAME || ret == 0) { break; };
-
-		/* 2 cases left:
-		 *	1. ret is ERROR_NOT_FOUND = variable with no value.
-		 *	2. Normal case, found an equal sign.
-		 *
-		 * Both are valid.
-		 **/
-		nameLen = (ret == ERROR_NOT_FOUND)
-			? strlen8(&environmentString[strIndex])
-			: (unsigned)ret;
-
-		// Set maxNVars to nVars before going on to pass 2.
-		nVars++;
-
-		if (isSecondPass)
+		strIndex = 0;
+		for (ubit8 i=0; i<maxNVars;
+			i++, strIndex += nameLen + valueLen + 1)
 		{
-			strncpy8(
-				environment[i].name,
-				&environmentString[strIndex], nameLen);
+			if (environmentString[strIndex] == '\0') { break; };
 
-			if (nameLen < PROCESS_ENV_NAME_MAXLEN)
-				{ environment[i].name[nameLen] = '\0'; };
+			ret = vfs::getIndexOfNext(
+				CC &environmentString[strIndex], '=',
+				PROCESS_ENV_NAME_MAXLEN+1);
+
+			// No maxlen overflows or zero-length names allowed.
+			if (ret == ERROR_INVALID_RESOURCE_NAME || ret == 0)
+				{ return ERROR_INVALID_FORMAT; };
+
+			/* 2 cases left:
+			 *	1. ret is ERROR_NOT_FOUND = variable with no
+			 *	   value.
+			 *	2. Normal case, found an equal sign.
+			 *
+			 * Both are valid.
+			 **/
+			valueLen = 0;
+			nameLen = (ret == ERROR_NOT_FOUND)
+				? strlen8(&environmentString[strIndex])
+				: (unsigned)ret;
+
+			nVars++;
+
+			if (isSecondPass)
+			{
+				strncpy8(
+					environment[i].name,
+					&environmentString[strIndex], nameLen);
+
+				if (nameLen < PROCESS_ENV_NAME_MAXLEN) {
+					environment[i].name[nameLen] = '\0';
+				};
+			};
+
+			if (ret == ERROR_NOT_FOUND)
+			{
+				if (isSecondPass)
+					{ environment[i].value[0] = '\0'; };
+
+				continue;
+			};
+
+			// Get the length of the value.
+			valueLen = strnlen8(
+				&environmentString[strIndex + nameLen + 1],
+				PROCESS_ENV_VALUE_MAXLEN + 1);
+
+			if (valueLen == PROCESS_ENV_VALUE_MAXLEN+1)
+				{ return ERROR_LIMIT_OVERFLOWED; };
+
+			if (isSecondPass)
+			{
+				strncpy8(
+					environment[i].value,
+					&environmentString[
+						strIndex + nameLen + 1],
+					valueLen);
+
+				if (valueLen < PROCESS_ENV_VALUE_MAXLEN) {
+					environment[i].value[valueLen] = '\0';
+				};
+			};
+
+			// Consume one for the equal sign.
+			strIndex++;
 		};
 
-		valueLen = 0;
-		if (ret == ERROR_NOT_FOUND) { continue; };
+		// Don't allocate twice.
+		if (isSecondPass) { break; };
 
-		// Get the length of the value.
-		valueLen = strnlen8(
-			&environmentString[strIndex + nameLen + 1],
-			PROCESS_ENV_VALUE_MAXLEN + 1);
-
-		if (valueLen == PROCESS_ENV_VALUE_MAXLEN+1)
-			{ return ERROR_LIMIT_OVERFLOWED; };
-
-		if (isSecondPass)
-		{
-			strncpy8(
-				environment[i].value,
-				&environmentString[strIndex + 1], valueLen);
-
-			if (valueLen < PROCESS_ENV_VALUE_MAXLEN)
-				{ environment[i].value[valueLen] = '\0'; };
-		};
-
-		// Consume one for the equal sign.
-		strIndex++;
-	};
-
-	if (!isSecondPass)
-	{
 		if (id == __KPROCESSID) {
 			environment = __kprocessEnvironmentMem;
 		}
@@ -404,12 +416,10 @@ secondPass:
 				{ return ERROR_MEMORY_NOMEM; };
 		};
 
+		nEnvVars = nVars;
 		maxNVars = nVars;
-		isSecondPass = 1;
-		goto secondPass;
 	};
 
-	nEnvVars = nVars;
 	return ERROR_SUCCESS;
 }
 
