@@ -42,7 +42,7 @@ sarch_t elf_identify(void *buff)
 	struct elfHeaderS	*ehdr;
 
 	ehdr = (struct elfHeaderS *)buff;
-	if (strncmp8((char *)ehdr->ident, EHDR_ID_MAGIC, 4) == 0) {
+	if (strncmp8((utf8Char *)ehdr->ident, CC EHDR_ID_MAGIC, 4) == 0) {
 		return 1;
 	};
 	return 0;

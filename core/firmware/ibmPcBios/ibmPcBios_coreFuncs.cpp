@@ -31,7 +31,7 @@ error_t ibmPcBios::initialize(void)
 	M.mem_base = (uarch_t)processTrib.__kgetStream()->getVaddrSpaceStream()
 		->getPages(LOWMEM_NPAGES);
 
-	if (M.mem_base == __KNULL)
+	if (M.mem_base == (uintptr_t)__KNULL)
 	{
 		__kprintf(ERROR FWFWS"initialize(): Failed to get %d pages for "
 			"lowmem buffer.\n", LOWMEM_NPAGES);
@@ -83,7 +83,7 @@ error_t ibmPcBios::shutdown(void)
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		(void *)M.mem_base, LOWMEM_NPAGES);
 
-	M.mem_base = __KNULL;
+	M.mem_base = (uintptr_t)__KNULL;
 
 	ibmPcBiosLock.release();
 

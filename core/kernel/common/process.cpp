@@ -29,23 +29,59 @@ ubit8		__kprocessPreallocatedBmpMem[3][32];
 
 error_t processStreamC::initialize(
 	const utf8Char *commandLineString, const utf8Char *environmentString,
-	bitmapC * /*cpuAffinity*/
+	bitmapC *cpuAffinityBmp
 	)
 {
 	error_t		ret;
 	ubit16		argumentsStartIndex;
+
+	ret = nextTaskId.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	ret = generateFullName(commandLineString, &argumentsStartIndex);
 	if (ret != ERROR_SUCCESS) { return ret; };
 	// N-n-next split n-n-next split...
 	ret = generateArguments(&commandLineString[argumentsStartIndex]);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = generateEnvironment(environmentString);
-	if (ret != ERROR_SUCCESS) { return ret; };
+	if (environmentString != __KNULL)
+	{
+		ret = generateEnvironment(environmentString);
+		if (ret != ERROR_SUCCESS) { return ret; };
+	};
 
+	// Initialize internal bitmaps.
 	ret = initializeBitmaps();
 	if (ret != ERROR_SUCCESS) { return ret; };
-	// Initialize internal bitmaps.
+
+	if (cpuAffinityBmp != __KNULL)
+	{
+		bitmapC		cpuAffinityTmp;
+
+		ret = cpuAffinityTmp.initialize(cpuAffinityBmp->getNBits());
+		if (ret != ERROR_SUCCESS) { return ret; };
+
+		cpuAffinityTmp.merge(cpuAffinityBmp);
+
+		/* If the BMP passed by the caller has more bits than there are
+		 * CPUs, we truncate its bits.
+		 **/
+		if (cpuAffinityTmp.getNBits()
+			> cpuTrib.availableCpus.getNBits())
+		{
+			ret = cpuAffinityTmp.resizeTo(
+				cpuTrib.availableCpus.getNBits());
+
+			if (ret != ERROR_SUCCESS) { return ret; };
+		};
+
+		// Finally, set the new process' affinity.
+		cpuAffinity.merge(&cpuAffinityTmp);
+	}
+	else {
+		// If no affinity given, assume default = "all online cpus".
+		cpuAffinity.merge(&cpuTrib.onlineCpus);
+	};
+
 	return ERROR_SUCCESS;
 }
 
@@ -457,44 +493,46 @@ error_t processStreamC::spawnThread(
 	bitmapC * cpuAffinity,
 	taskC::schedPolicyE schedPolicy,
 	ubit8 prio, uarch_t flags,
-	processId_t *newThreadId
+	taskC **const newTask
 	)
 {
-	taskC		*newTask;
 	error_t		ret;
-	sarch_t		newThreadIdTmp;
+	processId_t	newTaskId;
+
+	if (newTask == __KNULL) { return ERROR_INVALID_ARG; };
 
 	// Check for a free thread ID in this process's thread ID space.
-	newThreadIdTmp = getNextThreadId();
-	if (newThreadIdTmp == -1) { return SPAWNTHREAD_STATUS_NO_PIDS; };
+	ret = getNewThreadId(&newTaskId);
+	if (ret != ERROR_SUCCESS) { return SPAWNTHREAD_STATUS_NO_PIDS; };
+
 	// Allocate new thread if ID was available.
-	*newThreadId = newThreadIdTmp;
-	newTask = allocateNewThread(*newThreadId);
-	if (newTask == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	*newTask = allocateNewThread(newTaskId);
+	if (*newTask == __KNULL) { return ERROR_MEMORY_NOMEM; };
+
 	// Allocate internal sub-structures (context, etc.).
-	ret = newTask->initialize();
+	ret = (*newTask)->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = newTask->allocateStacks();
+	ret = (*newTask)->allocateStacks();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 #if __SCALING__ >= SCALING_SMP
 	// Do affinity inheritance.
-	ret = newTask->inheritAffinity(cpuAffinity, flags);
+	ret = (*newTask)->inheritAffinity(cpuAffinity, flags);
 	if (ret != ERROR_SUCCESS) { return ret; };
 #endif
 
-	newTask->inheritSchedPolicy(schedPolicy, flags);
-	newTask->inheritSchedPrio(prio, flags);
+	(*newTask)->inheritSchedPolicy(schedPolicy, flags);
+	(*newTask)->inheritSchedPrio(prio, flags);
 
 	// Now everything is allocated; just initialize the new thread.
-	newTask->context->setStacks(
-		execDomain, newTask->stack0, newTask->stack1);
+	(*newTask)->context->setStacks(
+		execDomain, (*newTask)->stack0, (*newTask)->stack1);
 
-	newTask->context->setEntryPoint(entryPoint);
+	(*newTask)->context->setEntryPoint(entryPoint);
 
 	if (!__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_DORMANT)) {
-		return taskTrib.schedule(newTask);
+		return taskTrib.schedule(*newTask);
 	} else {
 		return ERROR_SUCCESS;
 	};
@@ -504,7 +542,7 @@ taskC *processStreamC::allocateNewThread(processId_t newThreadId)
 {
 	taskC		*ret;
 
-	ret = new taskC(id | newThreadId, this);
+	ret = new taskC(newThreadId, this);
 	if (ret == __KNULL) { return __KNULL; };
 
 	taskLock.writeAcquire();

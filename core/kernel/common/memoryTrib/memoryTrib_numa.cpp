@@ -290,7 +290,7 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	taskC			*currTask;
 
 	// Get the calling thread's default memory bank.
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
 	currTask->defaultMemoryBank.lock.readAcquire(&rwFlags);
 	def = currTask->defaultMemoryBank.rsrc;

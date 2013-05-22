@@ -8,6 +8,11 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
+processId_t taskC::getFullId(void)
+{
+	return (parent->id << PROCID_PROCESS_SHIFT) | id;
+}
+
 error_t taskC::initialize(void)
 {
 	error_t		ret;
@@ -107,7 +112,7 @@ error_t taskC::inheritAffinity(bitmapC *cpuAffinity, uarch_t flags)
 		else
 		{
 			sourceBitmap = &cpuTrib.getCurrentCpuStream()
-				->taskStream.currentTask->cpuAffinity;
+				->taskStream.getCurrentTask()->cpuAffinity;
 		};
 
 		ret = resizeAndMergeBitmaps(&this->cpuAffinity, sourceBitmap);
@@ -139,7 +144,7 @@ void taskC::inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t /*flags*/)
 	{
 		// STINHERIT.
 		this->schedPolicy = cpuTrib.getCurrentCpuStream()->taskStream
-			.currentTask->schedPolicy;
+			.getCurrentTask()->schedPolicy;
 	};
 }
 
@@ -167,7 +172,7 @@ void taskC::inheritSchedPrio(prio_t prio, uarch_t flags)
 		taskC		*spawningThread;
 
 		spawningThread = cpuTrib.getCurrentCpuStream()->taskStream
-			.currentTask;
+			.getCurrentTask();
 
 		if (__KFLAG_TEST(spawningThread->flags, TASK_FLAGS_CUSTPRIO))
 		{

@@ -174,7 +174,7 @@ error_t taskTribC::unblock(taskC *task)
 		&& task->blockState == taskC::BLOCKED))
 	{
 		__kprintf(NOTICE TASKTRIB"unblock(0x%x): Invalid run state.\n",
-			task->id);
+			task->getFullId());
 
 		return ERROR_INVALID_OPERATION;
 	};

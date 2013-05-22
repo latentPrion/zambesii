@@ -1,0 +1,13 @@
+* 2013-05-23:
+	prim_ops.c:
+		In function div_long(), line 2427
+
+		"
+===============>if (h_dvd < (signed)(h_s + carry)) { <==========================
+			h_s >>= 1;"
+
+		Was receiving a warning about this comparison (signed and
+		unsigned ints being compared). Did my best to choose the least
+		harmful conversion, and chose to cast the right-hand operand to
+		signed. May have been wrong, and this may be a bug.
+

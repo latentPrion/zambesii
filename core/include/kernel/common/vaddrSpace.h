@@ -13,7 +13,7 @@ class vaddrSpaceC
 {
 public:
 	vaddrSpaceC(void)
-	: level0Paddr(__KNULL)
+	: level0Paddr((paddr_t)__KNULL)
 	{
 		vaddrSpaceC::level0Accessor.rsrc = __KNULL;
 	}

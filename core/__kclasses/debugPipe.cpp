@@ -1,11 +1,11 @@
 
+#include <stdarg.h>
 #include <arch/arch.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/utf8.h>
 #include <__kstdlib/utf16.h>
 #include <__kstdlib/__kbitManipulation.h>
 #include <__kstdlib/__kflagManipulation.h>
-#include <__kstdlib/__kclib/stdarg.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/processTrib/processTrib.h>
@@ -269,7 +269,7 @@ void __kprintf(const utf8Char *str, ...)
 {
 	va_list		args;
 
-	va_start_forward(args, str);
+	va_start(args, str);
 	__kdebug.printf(str, args);
 	va_end(args);
 }
@@ -281,7 +281,7 @@ void __kprintf(
 {
 	va_list		args;
 
-	va_start_forward(args, str);
+	va_start(args, str);
 	__kdebug.printf(buff, buffSize, str, args);
 	va_end(args);
 }

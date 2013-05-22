@@ -699,7 +699,8 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 		i8254WasEnabled, i8254WasSoftEnabled);
 
 	i8254Pit.setSmpModeSwitchFlag(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->id);
+		cpuTrib.getCurrentCpuStream()
+			->taskStream.getCurrentTask()->getFullId());
 
 	__kprintf(NOTICE CPUMOD"setSmpMode: Waiting for devices to disable.\n");
 	if (i8254WasEnabled)

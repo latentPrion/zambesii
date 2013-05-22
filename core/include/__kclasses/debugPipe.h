@@ -1,10 +1,10 @@
 #ifndef _DEBUG_PIPE_H
 	#define _DEBUG_PIPE_H
 
+	#include <stdarg.h>
 	#include <arch/paddr_t.h>
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
-	#include <__kstdlib/__kclib/stdarg.h>
 	#include <__kclasses/debugBuffer.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>

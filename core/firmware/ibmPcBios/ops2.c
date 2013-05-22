@@ -56,7 +56,7 @@ REMARKS:
 Handles illegal opcodes.
 ****************************************************************************/
 static void x86emuOp2_illegal_op(
-	u8 op2)
+	u8 X86EMU_UNUSED(op2))
 {
 	START_OF_INSTR();
 	DECODE_PRINTF("ILLEGAL EXTENDED X86 OPCODE\n");

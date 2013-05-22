@@ -57,6 +57,16 @@ public:
 	containerProcessC *__kgetStream(void) { return &__kprocess; };
 	processStreamC *getStream(processId_t id);
 
+	/**	EXPLANATION:
+	 * Distributaries are by nature high privilege processes with high
+	 * trust placed in them, and they all run in the kernel executaion
+	 * domain. Their scheduler priority and policy are determined by
+	 * the kernel and not by the spawning process, and they handle their own
+	 * NUMA affinity on a per-thread basis.
+	 *
+	 * As you can see, the majority of the general userspace arguments
+	 * to spawnStream() are redundant for creating distributary processes.
+	 **/
 	error_t spawnDistributary(
 		utf8Char *commandLine,
 		utf8Char *environment,
@@ -76,21 +86,6 @@ public:
 		ubit8 prio,			// Sched prio of 1st thread.
 		uarch_t flags,			// proc + 1st thread spawn flags
 		processStreamC **ret);		// Returned error value.
-
-	/**	EXPLANATION:
-	 * Distributaries are by nature high privilege processes with high
-	 * trust placed in them, and they all run in the kernel executaion
-	 * domain. Their scheduler priority and policy are determined by
-	 * the kernel and not by the spawning process, and they handle their own
-	 * NUMA affinity on a per-thread basis.
-	 *
-	 * As you can see, the majority of the general userspace arguments
-	 * to spawnStream() are redundant for creating distributary processes.
-	 **/
-	containerProcessC *spawnDistributaryStream(
-		const utf8Char *fullName,
-		numaBankId_t addrSpaceBinding,
-		ubit32 flags);
 
 	error_t destroyStream(void);
 

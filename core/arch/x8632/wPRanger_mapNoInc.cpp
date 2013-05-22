@@ -55,7 +55,7 @@ status_t walkerPageRanger::mapNoInc(
 
 	// Lock off the address spaces to show we mean srs bsns.
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.acquire();
 
@@ -195,7 +195,7 @@ out:
 
 	// Release both locks.
 	vaddrSpace->level0Accessor.lock.release();
-	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->parent
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
 

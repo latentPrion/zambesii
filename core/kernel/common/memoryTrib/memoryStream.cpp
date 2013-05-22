@@ -30,10 +30,11 @@ void memoryStreamC::dump(void)
 
 void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 {
-	uarch_t		commit=nPages, ret, f, pos, nTries, localFlush=0;
+	uarch_t		commit=nPages, f, nTries, localFlush=0;
 	status_t	totalFrames, nFrames, nMapped;
 	paddr_t		p;
 	ubit8		fKernel;
+	void		*ret;
 
 	if (nPages == 0) { return __KNULL; };
 
@@ -48,7 +49,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 			(void *)ret, nPages, WPRANGER_OP_SET_PRESENT,
 			(localFlush) ? PAGEATTRIB_LOCAL_FLUSH_ONLY : 0);
 
-		return reinterpret_cast<void *>( ret );
+		return ret;
 	};
 
 	// Calculate the number of frames to commit before fakemapping.
@@ -59,7 +60,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
 	};
 
-	ret = (uarch_t)parent->getVaddrSpaceStream()->getPages(nPages);
+	ret = parent->getVaddrSpaceStream()->getPages(nPages);
 	if (ret == __KNULL) { return __KNULL; };
 
 	fKernel = (parent->execDomain == PROCESS_EXECDOMAIN_KERNEL) ? 1 : 0;
@@ -73,7 +74,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 		{
 			nMapped = walkerPageRanger::mapInc(
 				&parent->getVaddrSpaceStream()->vaddrSpace,
-				(void *)(ret
+				(void *)((uintptr_t)ret
 					+ (totalFrames << PAGING_BASE_SHIFT)),
 				p, nFrames,
 				PAGEATTRIB_PRESENT
@@ -113,8 +114,8 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	{
 		nMapped = walkerPageRanger::mapNoInc(
 			&parent->getVaddrSpaceStream()->vaddrSpace,
-			reinterpret_cast<void *>(
-				ret + (totalFrames << PAGING_BASE_SHIFT) ),
+			(void *)((uintptr_t)ret
+				+ (totalFrames << PAGING_BASE_SHIFT)),
 			PAGESTATUS_FAKEMAPPED_DYNAMIC <<PAGING_PAGESTATUS_SHIFT,
 			nPages - totalFrames,
 			PAGEATTRIB_WRITE
@@ -132,12 +133,14 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	};
 	// Now add to alloc table.
 	if (allocTable.addEntry((void *)ret, nPages, 0)	== ERROR_SUCCESS) {
-		return reinterpret_cast<void *>( ret );
+		return ret;
 	};
 
 	// If the alloc table add failed, then unwind and undo everything.
 
 releaseAndUnmap:
+	void		*pos;
+
 	// Release all of the pmem so far.
 	pos = ret;
 	while (totalFrames > 0)
@@ -145,20 +148,18 @@ releaseAndUnmap:
 		__KFLAG_SET(f, PAGEATTRIB_LOCAL_FLUSH_ONLY);
 		nMapped = walkerPageRanger::unmap(
 			&parent->getVaddrSpaceStream()->vaddrSpace,
-			reinterpret_cast<void *>( pos ),
+			pos,
 			&p, 1, &f);
 
 		if (nMapped == WPRANGER_STATUS_BACKED) {
 			memoryTribPmm::releaseFrames(p, 1);
 		};
 
-		pos += PAGING_BASE_SIZE;
+		pos = (void *)((uintptr_t)pos + PAGING_BASE_SIZE);
 		totalFrames--;
 	};
 
-	parent->getVaddrSpaceStream()->releasePages(
-		reinterpret_cast<void *>( ret ), nPages);
-
+	parent->getVaddrSpaceStream()->releasePages(ret, nPages);
 	return __KNULL;
 }
 

@@ -40,7 +40,7 @@
 #ifndef __X86EMU_TYPES_H
 #define __X86EMU_TYPES_H
 
-#include <__kstdlib/compiler/stdint.h>
+#include <stdint.h>
 
 /*---------------------- Macros and type definitions ----------------------*/
 

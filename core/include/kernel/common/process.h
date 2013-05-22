@@ -57,8 +57,7 @@ public:
 		processId_t processId, processId_t parentProcId,
 		ubit8 execDomain)
 	:
-		id(processId << PROCID_PROCESS_SHIFT),
-		parentId(parentProcId << PROCID_PROCESS_SHIFT),
+		id(processId), parentId(parentProcId),
 		flags(0),
 
 		// Kernel process hands out thread IDs from 1 since 0 is taken.
@@ -116,7 +115,7 @@ public:
 		bitmapC *cpuAffinity,
 		taskC::schedPolicyE schedPolicy, ubit8 prio,
 		uarch_t flags,
-		processId_t *ret);
+		taskC **ret);
 
 public:
 	error_t cloneStateIntoChild(processStreamC *child);
@@ -168,7 +167,7 @@ public:
 	floodplainnStreamC	floodplainnStream;
 
 private:
-	sarch_t getNextThreadId(void);
+	error_t getNewThreadId(processId_t *ret);
 	taskC *allocateNewThread(processId_t newThreadId);
 	void removeThread(processId_t id);
 
@@ -311,9 +310,15 @@ inline taskC *processStreamC::getTask(processId_t id)
 	return ret;
 }
 
-inline sarch_t processStreamC::getNextThreadId(void)
+inline error_t processStreamC::getNewThreadId(processId_t *newThreadId)
 {
-	return nextTaskId.getNextValue(reinterpret_cast<void **>( tasks ));
+	sarch_t		nextVal;
+
+	nextVal = nextTaskId.getNextValue(reinterpret_cast<void **>( tasks ));
+	if (nextVal < 0) { return ERROR_RESOURCE_EXHAUSTED; };
+
+	*newThreadId = nextVal;
+	return ERROR_SUCCESS;
 }
 
 #endif

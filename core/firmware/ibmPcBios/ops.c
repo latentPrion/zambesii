@@ -82,7 +82,7 @@ REMARKS:
 Handles illegal opcodes.
 ****************************************************************************/
 static void x86emuOp_illegal_op(
-    u8 op1)
+    u8 X86EMU_UNUSED(op1))
 {
     START_OF_INSTR();
     if (M.x86.R_SP != 0) {

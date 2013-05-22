@@ -324,7 +324,7 @@ REMARKS:
 Default PIO byte read function. Doesn't perform real inb.
 ****************************************************************************/
 static u8 X86API p_inb(
-	X86EMU_pioAddr addr)
+	X86EMU_pioAddr X86EMU_UNUSED(addr))
 {
 DB(	if (DEBUG_IO_TRACE())
 		printk("inb %#04x \n", addr);)
@@ -340,7 +340,7 @@ REMARKS:
 Default PIO word read function. Doesn't perform real inw.
 ****************************************************************************/
 static u16 X86API p_inw(
-	X86EMU_pioAddr addr)
+	X86EMU_pioAddr X86EMU_UNUSED(addr))
 {
 DB(	if (DEBUG_IO_TRACE())
 		printk("inw %#04x \n", addr);)
@@ -356,7 +356,7 @@ REMARKS:
 Default PIO long read function. Doesn't perform real inl.
 ****************************************************************************/
 static u32 X86API p_inl(
-	X86EMU_pioAddr addr)
+	X86EMU_pioAddr X86EMU_UNUSED(addr))
 {
 DB(	if (DEBUG_IO_TRACE())
 		printk("inl %#04x \n", addr);)
@@ -371,8 +371,8 @@ REMARKS:
 Default PIO byte write function. Doesn't perform real outb.
 ****************************************************************************/
 static void X86API p_outb(
-	X86EMU_pioAddr addr,
-	u8 val)
+	X86EMU_pioAddr X86EMU_UNUSED(addr),
+	u8 X86EMU_UNUSED(val))
 {
 DB(	if (DEBUG_IO_TRACE())
 		printk("outb %#02x -> %#04x \n", val, addr);)
@@ -387,8 +387,8 @@ REMARKS:
 Default PIO word write function. Doesn't perform real outw.
 ****************************************************************************/
 static void X86API p_outw(
-	X86EMU_pioAddr addr,
-	u16 val)
+	X86EMU_pioAddr X86EMU_UNUSED(addr),
+	u16 X86EMU_UNUSED(val))
 {
 DB(	if (DEBUG_IO_TRACE())
 		printk("outw %#04x -> %#04x \n", val, addr);)
@@ -403,8 +403,8 @@ REMARKS:
 Default PIO ;ong write function. Doesn't perform real outl.
 ****************************************************************************/
 static void X86API p_outl(
-	X86EMU_pioAddr addr,
-	u32 val)
+	X86EMU_pioAddr X86EMU_UNUSED(addr),
+	u32 X86EMU_UNUSED(val))
 {
 DB(	if (DEBUG_IO_TRACE())
 		printk("outl %#08x -> %#04x \n", val, addr);)

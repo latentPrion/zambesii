@@ -20,7 +20,7 @@
 void recursiveLockC::acquire(void)
 {
 	taskC	*task;
-	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	task = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
 #if __SCALING__ >= SCALING_SMP
 	for (;;)
@@ -31,7 +31,7 @@ void recursiveLockC::acquire(void)
 #if __SCALING__ >= SCALING_SMP
 		if (taskId.rsrc == __KPROCESSID)
 		{
-			taskId.rsrc = task->id;
+			taskId.rsrc = task->getFullId();
 
 			/* Check the flags on the waitlock which guards
 			 * this critical section to know whether or not
@@ -57,7 +57,7 @@ void recursiveLockC::acquire(void)
 			return;
 		}
 		// If the current task already holds the lock:
-		else if (taskId.rsrc == task->id)
+		else if (taskId.rsrc == task->getFullId())
 		{
 			taskId.lock.releaseNoIrqs();
 			lock++;
@@ -100,13 +100,13 @@ void recursiveLockC::release(void)
 			enableIrqs = 1;
 		};
 		taskId.lock.acquire();
-		taskId.rsrc = __KPROCESSID;
+		taskId.rsrc = __KPROCESSID << PROCID_PROCESS_SHIFT;
 		taskId.lock.release();
 		if (enableIrqs) {
 #endif
 			cpuControl::enableInterrupts();
 		};
-	cpuTrib.getCurrentCpuStream()->taskStream.currentTask->nLocksHeld--;
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->nLocksHeld--;
 	};
 }
 

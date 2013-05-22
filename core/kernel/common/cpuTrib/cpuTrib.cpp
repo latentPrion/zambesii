@@ -662,7 +662,7 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 			"Failed to create bank.\n",
 			bid, cid, cpuAcpiId);
 
-		return __KNULL;
+		return ret;
 	};
 
 	ncb = getBank(bid);

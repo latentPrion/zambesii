@@ -56,6 +56,7 @@ class cpuStreamC;
 
 class taskC
 {
+friend class processStreamC;
 public:
 	enum runStateE { UNSCHEDULED=1, RUNNABLE, RUNNING, STOPPED };
 	enum blockStateE { BLOCKED_UNSCHEDULED=1, PREEMPTED, DORMANT, BLOCKED };
@@ -83,6 +84,10 @@ public:
 	error_t initialize(void);
 
 public:
+	processId_t getId(void) { return id; }
+	processId_t getFullId(void);
+
+private:
 	// Passes down parent attributes to child.
 	error_t cloneStateIntoChild(taskC *child);
 	// Allocates stacks for kernelspace and userspace (if necessary).

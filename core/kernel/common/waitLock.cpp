@@ -50,7 +50,7 @@ void waitLockC::acquire(void)
 	};
 
 	flags = contenderFlags;
-	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	task = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	/* On a non-SMP build, this just indicates the number of critical
 	 * sections deep into the kernel this thread has currently traveled.
 	 **/
@@ -78,7 +78,7 @@ void waitLockC::release(void)
 		cpuControl::enableInterrupts();
 	};
 
-	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	task = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	task->nLocksHeld--;
 
 }
@@ -92,7 +92,7 @@ void waitLockC::releaseNoIrqs(void)
 	atomicAsm::set(&lock, 0);
 #endif
 
-	task = cpuTrib.getCurrentCpuStream()->taskStream.currentTask;
+	task = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	task->nLocksHeld--;
 }
 

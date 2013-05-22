@@ -1,10 +1,12 @@
 #ifndef __KTYPES_H
 	#define __KTYPES_H
 
+#ifndef __ASM__
+	#include <stdint.h>
+	#include <stddef.h>
+#endif
 	#include <arch/arch.h>
 	#include <__kstdlib/__kerror.h>
-	#include <__kstdlib/compiler/stdint.h>
-	#include <__kstdlib/__kclib/stddef.h>
 	#include <__kstdlib/__kcxxCast.h>
 
 // "CC" below stands for "kernel char cast".
@@ -38,6 +40,8 @@ typedef sarch_t		status_t;
 typedef ubit8		utf8Char;
 typedef ubit16		utf16Char;
 typedef ubit32		unicodePoint;
+
+#define __KNULL		NULL
 
 #endif /* !defined( __ASM__ ) */
 

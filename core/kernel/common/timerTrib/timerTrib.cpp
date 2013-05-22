@@ -347,15 +347,14 @@ error_t timerTribC::initialize(void)
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
 		| SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET
 		| SPAWNTHREAD_FLAGS_DORMANT,
-		&eventProcessor.tid);
+		&eventProcessor.task);
 
 	if (ret != ERROR_SUCCESS) { return ret; };
+
+	eventProcessor.tid = eventProcessor.task->getFullId();
 
 	ret = eventProcessor.controlQueue.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
-
-	eventProcessor.task = processTrib.__kgetStream()->getTask(
-		eventProcessor.tid);
 
 	__kprintf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
 		"addr 0x%p, id 0x%x.\n",

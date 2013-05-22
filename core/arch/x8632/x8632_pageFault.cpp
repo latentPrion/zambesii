@@ -34,7 +34,7 @@ status_t x8632_page_fault(taskContextC *regs, ubit8)
 	uarch_t			__kflags;
 
 	vaddrSpaceStream = cpuTrib.getCurrentCpuStream()
-		->taskStream.currentTask->parent->getVaddrSpaceStream();
+		->taskStream.getCurrentTask()->parent->getVaddrSpaceStream();
 
 #ifndef CONFIG_ARCH_x86_32_PAE
 	/* First check to see if the page fault is caused by a kernel addrspace

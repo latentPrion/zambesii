@@ -27,7 +27,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	processId_t	tid;
+	taskC		*mainTask;
 	containerProcessC	&__kprocess = *processTrib.__kgetStream();
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
@@ -99,7 +99,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 			taskC::ROUND_ROBIN,
 			0,
 			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
-			&tid),
+			&mainTask),
 		ret);
 
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
@@ -108,7 +108,12 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 void __korientationMain(void)
 {
 	error_t			ret;
+	taskC			*self;
 
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	__kprintf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
+		self->getFullId(), self);
+ 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
 	 * then load the chipset's bus-pin mappings and initialize timer
 	 * services.
@@ -131,8 +136,23 @@ void __korientationMain(void)
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
 
+	distributaryProcessC		*dtrib;
+
+	DO_OR_DIE(
+		processTrib,
+		spawnDistributary(
+			CC"@d/storage/cisternn", __KNULL,
+			NUMABANKID_INVALID, 0, 0,
+			&dtrib),
+		ret);
+
 	__kprintf(NOTICE ORIENT"Successful; about to dormant.\n");
 	__kdebug.refresh();
+	taskTrib.dormant(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+
+	__kprintf(NOTICE ORIENT"Waking new process and dormanting again.\n");
+	taskTrib.wake(0x10000);
 	taskTrib.dormant(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
 }

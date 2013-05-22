@@ -21,8 +21,8 @@ public:
 
 public:
 	inline sarch_t operator ==(swampInfoNodeC &sin);
-	inline sarch_t operator ==(int v);
-	inline sarch_t operator !=(int v);
+	inline sarch_t operator ==(void *v);
+	inline sarch_t operator !=(void *v);
 	inline sarch_t operator >(swampInfoNodeC &sin);
 	inline sarch_t operator <(swampInfoNodeC &sin);
 	inline sarch_t operator <=(swampInfoNodeC &sin);
@@ -40,7 +40,7 @@ sarch_t swampInfoNodeC::operator ==(swampInfoNodeC &sin)
 	return baseAddr == sin.baseAddr;
 }
 
-sarch_t swampInfoNodeC::operator ==(int v)
+sarch_t swampInfoNodeC::operator ==(void *v)
 {
 	if (v == __KNULL) {
 		return baseAddr == __KNULL;
@@ -48,10 +48,10 @@ sarch_t swampInfoNodeC::operator ==(int v)
 	return 0;
 }
 
-sarch_t swampInfoNodeC::operator !=(int v)
+sarch_t swampInfoNodeC::operator !=(void *v)
 {
 	if (v == __KNULL) {
-		return v != __KNULL;
+		return baseAddr != __KNULL;
 	};
 	return 0;
 }

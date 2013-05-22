@@ -25,7 +25,7 @@ error_t singleWaiterQueueC::addItem(void *item)
 		if (ret != ERROR_SUCCESS)
 		{
 			__kprintf(NOTICE SWAITQ"Failed to unblock "
-				"task 0x%x.\n", task->id);
+				"task 0x%x.\n", task->getFullId());
 
 			pointerDoubleListC<void>::removeItem(item);
 			return ret;
@@ -62,12 +62,13 @@ error_t singleWaiterQueueC::setWaitingThread(taskC *task)
 {
 	if (task == __KNULL) { return ERROR_INVALID_ARG; };
 
+	// Only allow threads from the currently owning process to wait.
 	if (this->task != __KNULL
 		&& this->task->parent->id != task->parent->id)
 	{
 		__kprintf(WARNING SWAITQ"Failed to allow task 0x%x to "
 			"wait.\n",
-			task->id);
+			task->getFullId());
 
 		return ERROR_RESOURCE_BUSY;
 	}

@@ -32,7 +32,7 @@ error_t timerStreamC::createOneshotEvent(
 	request->type = requestS::ONESHOT;
 	request->privateData = privateData;
 	request->creatorThreadId = cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentTask()->id;
+		->taskStream.getCurrentTask()->getFullId();
 
 	/*	FIXME:
 	 * Security check required here, for when the event is set to wake a
@@ -160,7 +160,7 @@ void timerStreamC::timerRequestTimeoutNotification(
 	{
 		__kprintf(ERROR TIMERSTREAM"%d: Failed to add expired event to "
 			"thread 0x%x's queue.\n",
-			id, targetThread->id);
+			id, targetThread->getFullId());
 	};
 }
 

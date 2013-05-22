@@ -1,5 +1,6 @@
 
 #include <chipset/zkcm/timerDevice.h>
+#include <kernel/common/process.h>
 #include <kernel/common/floodplainn/floodplainnStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -47,8 +48,8 @@ void zkcmTimerDeviceC::unlatch(void)
 	currCpu = cpuTrib.getCurrentCpuStream();
 
 	// This condition needs to check the floodplain binding.
-	if (PROCID_PROCESS(currCpu->taskStream.currentTask->id)
-		== PROCID_PROCESS(state.rsrc.latchedStream->id))
+	if (currCpu->taskStream.getCurrentTask()->parent->id
+		== state.rsrc.latchedStream->id)
 	{
 		state.lock.acquire();
 
@@ -83,13 +84,10 @@ sarch_t zkcmTimerDeviceC::validateCallerIsLatched(void)
 	taskC			*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()
-		->taskStream.currentTask;
+		->taskStream.getCurrentTask();
 
 	// Replace with floodplain binding check.
-	if (getLatchState(&stream)
-		&& PROCID_PROCESS(stream->id)
-			== PROCID_PROCESS(currTask->id))
-	{
+	if (getLatchState(&stream) && (stream->id == currTask->parent->id)) {
 		return 1;
 	} else {
 		return 0;

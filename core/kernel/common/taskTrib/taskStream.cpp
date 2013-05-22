@@ -18,7 +18,7 @@ extern "C" void taskStream_pull(taskContextC *savedContext)
 	// XXX: We are operating on the CPU's sleep stack.
 	currCpu = cpuTrib.getCurrentCpuStream();
 	if (savedContext != __KNULL) {
-		currCpu->taskStream.currentTask->context = savedContext;
+		currCpu->taskStream.getCurrentTask()->context = savedContext;
 	};
 
 	currCpu->taskStream.pull();
@@ -54,7 +54,8 @@ void taskStreamC::dump(void)
 	__kprintf(NOTICE TASKSTREAM"%d: load %d, capacity %d, "
 		"currentTask 0x%x(@0x%p): dump.\n",
 		parentCpu->id,
-		load, capacity, currentTask->id, currentTask);
+		load, capacity,
+		getCurrentTask()->getFullId(), getCurrentTask());
 
 	realTimeQ.dump();
 	roundRobinQ.dump();

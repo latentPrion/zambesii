@@ -53,12 +53,17 @@
 #define	_INLINE static
 #endif
 
+/* Implement abs() for x86emu. Make it a function and not a macro so that it
+ * will clash if at any point there is a redefinition in the kernel.
+ **/
+inline int abs(int val) { if (val < 0) { return -val; } else { return val; }; }
+
 /* Get rid of unused parameters in C++ compilation mode */
 
 #ifdef __cplusplus
-#define	X86EMU_UNUSED(v)
+#define	X86EMU_UNUSED(v)	
 #else
-#define	X86EMU_UNUSED(v)	v
+#define	X86EMU_UNUSED(v)	v __attribute__((__unused__))
 #endif
 
 #include "../x86emu.h"

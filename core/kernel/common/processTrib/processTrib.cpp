@@ -7,6 +7,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__korientation.h>
 
@@ -33,6 +34,38 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 	return ERROR_SUCCESS;
 }
 
+static void _main(void *)
+{
+	taskC		*self;
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+
+	__kprintf(NOTICE"New process running. ID = 0x%x. About to yield.\n",
+		self->getFullId());
+
+	taskTrib.yield();
+
+	__kprintf(NOTICE"Process 0x%x: About to wake orientationMain and "
+		"dormant.\n",
+		self->getFullId());
+
+	taskTrib.wake(0x1);
+	if (taskTrib.dormant(self->getFullId()) != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE"Failed to dormant first time.\n");
+		for (;;) { asm volatile("hlt\n\t"); };
+	};
+
+	__kprintf(NOTICE"Process 0x%x: About to dormant again.\n",
+		self->getFullId());
+
+	if (taskTrib.dormant(self->getFullId()) != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE"Failed to dormant second time.\n");
+		for (;;) { asm volatile("hlt\n\t"); };
+	};
+}
+
 error_t processTribC::spawnDistributary(
 	utf8Char *commandLine,
 	utf8Char *environment,
@@ -45,6 +78,7 @@ error_t processTribC::spawnDistributary(
 	error_t			ret;
 	processId_t		newProcessId;
 	processStreamC		*parentProcess;
+	taskC			*firstTask;
 
 	if (commandLine == __KNULL || newProcess == __KNULL)
 		{ return ERROR_INVALID_ARG; };
@@ -68,10 +102,37 @@ error_t processTribC::spawnDistributary(
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	bitmapC		foo;
+	bitmapC		affinity;
 
-	ret = (*newProcess)->initialize(commandLine, environment, &foo);
+	ret = affinity.initialize(cpuTrib.onlineCpus.getNBits());
 	if (ret != ERROR_SUCCESS) { return ret; };
+	affinity.merge(&cpuTrib.onlineCpus);
+
+	ret = (*newProcess)->initialize(commandLine, environment, &affinity);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	processes.lock.writeAcquire();
+	processes.rsrc[newProcessId] = *newProcess;
+	processes.lock.writeRelease();
+
+	// Spawn the first thread.
+	ret = (*newProcess)->spawnThread(
+		&_main, __KNULL,
+		&(*newProcess)->cpuAffinity,
+		taskC::ROUND_ROBIN, 0,
+		SPAWNTHREAD_FLAGS_AFFINITY_SET
+		| SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET,
+		&firstTask);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE"Failed to spawn thread for new process.\n");
+		return ret;
+	};
+
+	__kprintf(NOTICE"New process spawned, tid = 0x%x.\n",
+		firstTask->getFullId());
+
 	return ERROR_SUCCESS;
 }
 
@@ -137,7 +198,7 @@ error_t *processTribC::spawnStream(
 	newId = newIdTmp << PROCID_PROCESS_SHIFT;
 	// Get parent (spawning) process' process ID.
 	parentId = cpuTrib.getCurrentCpuStream()
-		->taskStream.currentTask->parent->id;
+		->taskStream.getCurrentTask()->parent->id;
 
 	// Call initialize().
 	*err = newProc->initialize(_commandLine, fileName, workingDir);
@@ -162,7 +223,7 @@ error_t *processTribC::spawnStream(
 		*err = resizeAndMergeBitmaps(
 			&newProc->cpuAffinity,
 			&cpuTrib.getCurrentCpuStream()
-				->taskStream.currentTask->parent->cpuAffinity);
+				->taskStream.getCurrentTask()->parent->cpuAffinity);
 	}
 	else if (__KFLAG_TEST(flags, PROCESSTRIB_SPAWN_FLAGS_STINHERIT_AFFINITY))
 	{
@@ -170,7 +231,7 @@ error_t *processTribC::spawnStream(
 		*err = resizeAndMergeBitmaps(
 			&newProc->cpuAffinity,
 			&cpuTrib.getCurrentCpuStream()
-				->taskStream.currentTask->cpuAffinity);
+				->taskStream.getCurrentTask()->cpuAffinity);
 	}
 	else
 	{
