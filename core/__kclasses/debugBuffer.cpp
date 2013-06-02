@@ -20,15 +20,23 @@ debugBufferC::debugBufferC(void)
 	buff.rsrc.index = buff.rsrc.buffNPages = 0;
 }
 
+#ifdef CONFIG_DEBUGPIPE_STATIC
+static ubit8	buffMem[PAGING_BASE_SIZE * (DEBUGBUFFER_INIT_NPAGES-1)];
+#endif
+
 error_t debugBufferC::initialize(void)
 {
 	debugBufferC::buffPageS		*mem, *mem2;
 	uarch_t				pageCount = 0;
 
+#ifndef CONFIG_DEBUGPIPE_STATIC
 	mem = new (
 		processTrib.__kgetStream()->memoryStream.memAlloc(
 			1, MEMALLOC_NO_FAKEMAP))
 		debugBufferC::buffPageS;
+#else
+	mem = new (buffMem) debugBufferC::buffPageS;
+#endif
 
 	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
@@ -45,9 +53,13 @@ error_t debugBufferC::initialize(void)
 	mem2 = mem;
 	for (uarch_t i=0; i<DEBUGBUFFER_INIT_NPAGES-1; i++)
 	{
+#ifndef CONFIG_DEBUGPIPE_STATIC
 		mem2->next = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			1, MEMALLOC_NO_FAKEMAP))
 				debugBufferC::buffPageS;
+#else
+		mem2->next = new (&buffMem[i * PAGING_BASE_SIZE]) buffPageS;
+#endif
 
 		if (mem2->next == __KNULL) {
 			break;

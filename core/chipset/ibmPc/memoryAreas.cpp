@@ -26,9 +26,16 @@ error_t chipsetMemAreas::mapArea(ubit16 index)
 	if (index >= CHIPSET_MEMAREA_NAREAS) { return ERROR_INVALID_ARG_VAL; };
 	if (memAreas[index].vaddr != __KNULL) { return ERROR_SUCCESS; };
 
+#ifdef CONFIG_DEBUGPIPE_STATIC
+	if (index == CHIPSET_MEMAREA_LOWMEM) { vaddr = (void *)0xCF800000; };
+	goto skipVmemAlloc;
+#endif
 	vaddr = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
 		PAGING_BYTES_TO_PAGES(memAreas[index].size));
 
+#ifdef CONFIG_DEBUGPIPE_STATIC
+skipVmemAlloc:
+#endif
 	if (vaddr == __KNULL) { return ERROR_MEMORY_NOMEM_VIRTUAL; };
 
 	// Have vmem to play with. Map it to the memory area requested.
@@ -40,7 +47,7 @@ error_t chipsetMemAreas::mapArea(ubit16 index)
 		PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE | PAGEATTRIB_SUPERVISOR
 		| PAGEATTRIB_CACHE_WRITE_THROUGH);
 
-	if (status < PAGING_BYTES_TO_PAGES(memAreas[index].size))
+	if (status < (signed)PAGING_BYTES_TO_PAGES(memAreas[index].size))
 	{
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			vaddr, PAGING_BYTES_TO_PAGES(memAreas[index].size));

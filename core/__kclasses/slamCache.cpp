@@ -1,18 +1,21 @@
 
-#include <debug.h>
-
 #include <arch/paging.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/slamCache.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-slamCacheC::slamCacheC(uarch_t objectSize)
+slamCacheC::slamCacheC(uarch_t objectSize, allocatorE allocator)
+:
+allocator(allocator)
 {
-	heapCacheC::objectSize = ((objectSize < sizeof(slamCacheC::object))
-		? sizeof(slamCacheC::object) : objectSize);
+	heapCacheC::objectSize = (objectSize < sizeof(objectS))
+		? sizeof(objectS)
+		: objectSize;
 
 	// Calculate the excess on each page allocated.
 	perPageExcess = PAGING_BASE_SIZE % objectSize;
@@ -22,31 +25,67 @@ slamCacheC::slamCacheC(uarch_t objectSize)
 	freeList.rsrc = __KNULL;
 }
 
-error_t slamCacheC::initialize(void)
-{
-	freeList.rsrc = reinterpret_cast<object *>(
-		processTrib.__kgetStream()->memoryStream.memAlloc(
-				1, MEMALLOC_NO_FAKEMAP));
-
-	if (freeList.rsrc != __KNULL) {
-		freeList.rsrc->next = __KNULL;
-	};
-
-	// Don't bother to check for freeList == __KNULL.
-	return ERROR_SUCCESS;
-}
-
 slamCacheC::~slamCacheC(void)
 {
 	//FIXME: Find a way to destroy these things...
 }
 
+void *slamCacheC::getNewPage(sarch_t localFlush)
+{
+	switch (allocator)
+	{
+	case RAW:
+		return memoryTrib.rawMemAlloc(
+			1,
+			MEMALLOC_NO_FAKEMAP
+			| ((localFlush) ? MEMALLOC_LOCAL_FLUSH_ONLY : 0));
+
+	case STREAM:
+		return processTrib.__kgetStream()->memoryStream.memAlloc(
+			1,
+			MEMALLOC_NO_FAKEMAP
+			| ((localFlush) ? MEMALLOC_LOCAL_FLUSH_ONLY : 0));
+
+	default:
+		__kprintf(FATAL SLAMCACHE"getNewPage: Invalid allocator %d.\n",
+			allocator);
+
+		dump();
+		panic(ERROR_INVALID_ARG);
+		return __KNULL;
+	};
+}
+
+void slamCacheC::releasePage(void *vaddr)
+{
+	switch (allocator)
+	{
+	case RAW:
+		memoryTrib.rawMemFree(vaddr, 1);
+		return;
+
+	case STREAM:
+		processTrib.__kgetStream()->memoryStream.memFree(vaddr);
+		return;
+
+	default:
+		__kprintf(FATAL SLAMCACHE"releasePage: Invalid allocator %d.\n",
+			allocator);
+
+		dump();
+		panic(ERROR_INVALID_ARG);
+		return;
+	};
+}
+
 void slamCacheC::dump(void)
 {
-	slamCacheC::object	*obj;
-	uarch_t			count;
+	objectS		*obj;
+	uarch_t		count;
 
-	__kprintf(NOTICE SLAMCACHE"Dumping; locks @ F: 0x%p/P: 0x%p.\n", &freeList.lock, &partialList.lock);
+	__kprintf(NOTICE SLAMCACHE"Dumping; locks @ F: 0x%p/P: 0x%p.\n",
+		&freeList.lock, &partialList.lock);
+
 	__kprintf(NOTICE SLAMCACHE"Object size: %X, ppb %d, ppexcess %d, "
 		"FreeList: Pages:\n\t",
 		objectSize, perPageBlocks, perPageExcess);
@@ -78,7 +117,7 @@ void slamCacheC::dump(void)
 }
 
 /**	NOTE:
- * Called by an idle thread to lock the heap and scan for free pages However,
+ * Called by an idle thread to lock the heap and scan for free pages. However,
  * this function will not cause the pages which were restored to be free()d to
  * the kernel memory stream. They will just remain on the free list.
  **/
@@ -89,7 +128,7 @@ status_t slamCacheC::detangle(void)
 
 status_t slamCacheC::flush(void)
 {
-	slamCacheC::object	*current, *tmp;
+	slamCacheC::objectS	*current, *tmp;
 	uarch_t			ret=0;
 
 	freeList.lock.acquire();
@@ -99,7 +138,7 @@ status_t slamCacheC::flush(void)
 	{
 		tmp = current;
 		current = current->next;
-		processTrib.__kgetStream()->memoryStream.memFree(tmp);
+		releasePage(tmp);
 		ret++;
 	};
 
@@ -107,11 +146,11 @@ status_t slamCacheC::flush(void)
 	return ret;
 }
 
-void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredAlloc)
+void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 {
 	void			*ret;
-	slamCacheC::object	*tmp=__KNULL;
-	uarch_t			localFlush;
+	objectS			*tmp=__KNULL;
+	sarch_t			localFlush;
 
 	localFlush = __KFLAG_TEST(flags, SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY);
 
@@ -132,12 +171,11 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredAlloc)
 
 		if (tmp == __KNULL)
 		{
-			if (requiredAlloc != __KNULL) { *requiredAlloc = 1; };
-			tmp = new (processTrib.__kgetStream()->memoryStream.memAlloc(
-				1,
-				MEMALLOC_NO_FAKEMAP | ((localFlush)
-					? MEMALLOC_LOCAL_FLUSH_ONLY:0)))
-					slamCacheC::object;
+			if (requiredNewPage != __KNULL) {
+				*requiredNewPage = 1;
+			};
+
+			tmp = new (getNewPage(localFlush)) objectS;
 
 			if (tmp == __KNULL)
 			{
@@ -151,11 +189,10 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredAlloc)
 		// Break up the new block from the free list.
 		for (uarch_t i=perPageBlocks-1; i>0; i--)
 		{
-			tmp->next = reinterpret_cast<slamCacheC::object *>(
-				(uarch_t)tmp + this->objectSize );
+			tmp->next = reinterpret_cast<objectS *>(
+				(uintptr_t)tmp + this->objectSize );
 
-			tmp = reinterpret_cast<slamCacheC::object *>(
-				(uarch_t)tmp + this->objectSize );
+			tmp = tmp->next;
 		};
 		tmp->next = __KNULL;
 	};
@@ -174,8 +211,8 @@ void slamCacheC::free(void *obj)
 
 	partialList.lock.acquire();
 
-	static_cast<slamCacheC::object *>( obj )->next = partialList.rsrc;
-	partialList.rsrc = static_cast<slamCacheC::object *>( obj );
+	static_cast<objectS *>( obj )->next = partialList.rsrc;
+	partialList.rsrc = static_cast<objectS *>( obj );
 
 	partialList.lock.release();
 }

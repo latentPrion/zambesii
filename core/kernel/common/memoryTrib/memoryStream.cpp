@@ -131,6 +131,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 			goto releaseAndUnmap;
 		};
 	};
+
 	// Now add to alloc table.
 	if (allocTable.addEntry((void *)ret, nPages, 0)	== ERROR_SUCCESS) {
 		return ret;
@@ -145,7 +146,10 @@ releaseAndUnmap:
 	pos = ret;
 	while (totalFrames > 0)
 	{
-		__KFLAG_SET(f, PAGEATTRIB_LOCAL_FLUSH_ONLY);
+		/**	FIXME: Analyse this.
+		**/
+		f = 0;
+		if (localFlush){ __KFLAG_SET(f, PAGEATTRIB_LOCAL_FLUSH_ONLY); };
 		nMapped = walkerPageRanger::unmap(
 			&parent->getVaddrSpaceStream()->vaddrSpace,
 			pos,

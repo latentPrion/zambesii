@@ -4,6 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kcxxlib/new>
 	#include <__kclasses/__kpageBlock.h>
+	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/recursiveLock.h>
 	#include <kernel/common/memoryTrib/rawMemAlloc.h>
@@ -54,11 +55,13 @@ public:
 	T *find(T *item);
 	void removeEntry(T *item);
 
+	void dump(void);
+
 private:
 	__kpageBlockC<T> *findInsertionBlock(void);
 	void findInsertionEntry(
 		__kpageBlockC<T> *block, T *item, uarch_t *entry);
-	
+
 	__kpageBlockC<T> *findDeletionEntry(T *item, uarch_t *entry);
 	__kpageBlockC<T> *getNewBlock(__kpageBlockC<T> *joinTo);
 	void deleteBlock(__kpageBlockC<T> *block);
@@ -88,6 +91,27 @@ __kequalizerListC<T>::~__kequalizerListC(void)
 		head.rsrc = head.rsrc->header.next;
 		rawMemFree(tmp, 1);
 	};
+}
+
+template <class T>
+void __kequalizerListC<T>::dump(void)
+{
+	__kprintf(NOTICE"eqList: @0x%p, head 0x%p, %d entries per block.\n",
+		this, head.rsrc, PAGEBLOCK_NENTRIES(T));
+
+	head.lock.acquire();
+
+	for (__kpageBlockC<T> *tmp=head.rsrc;
+		tmp != __KNULL;
+		tmp = tmp->header.next)
+	{
+		uarch_t		nEntries;
+		for (nEntries=0; tmp->entries[nEntries] != 0; nEntries++) {};
+		__kprintf(CC"\teqList: block 0x%p, %d entries, %d free entries."
+			"\n", tmp, nEntries, tmp->header.nFreeEntries);
+	};
+
+	head.lock.release();
 }
 
 template <class T>
@@ -172,6 +196,7 @@ T *__kequalizerListC<T>::find(T *item)
 	return __KNULL;
 }
 
+// fine.
 template <class T>
 void __kequalizerListC<T>::removeEntry(T *item)
 {
@@ -192,17 +217,15 @@ void __kequalizerListC<T>::removeEntry(T *item)
 	};
 
 	// Now we just move things around a bit.
-	for (;
-		(entry < PAGEBLOCK_NENTRIES(T) - 1) &&
-			(block->entries[entry] != 0);
-		entry++)
-	{
+	const uarch_t		nOccupiedEntries =
+		PAGEBLOCK_NENTRIES(T) - block->header.nFreeEntries;
+
+	for (; entry < (nOccupiedEntries - 1); entry++) {
 		block->entries[entry] = block->entries[entry+1];
 	};
 
-	if (entry == (PAGEBLOCK_NENTRIES(T) - 1)) {
-		block->entries[PAGEBLOCK_NENTRIES(T) - 1] = 0;
-	};
+	block->entries[nOccupiedEntries - 1] = 0;
+	block->header.nFreeEntries++;
 
 	head.lock.release();
 }
@@ -219,6 +242,7 @@ __kpageBlockC<T> *__kequalizerListC<T>::findInsertionBlock(void)
 			return current;
 		};
 	};
+
 	return __KNULL;
 }
 
@@ -247,18 +271,25 @@ __kpageBlockC<T> *__kequalizerListC<T>::findDeletionEntry(
 	for (__kpageBlockC<T> *current = head.rsrc; current != __KNULL;
 		current = current->header.next)
 	{
-		for (uarch_t i=0;
-			i<PAGEBLOCK_NENTRIES(T)
-			&& current->entries[i] <= *item;
+		uarch_t			i;
+		const uarch_t		nOccupiedEntries =
+			PAGEBLOCK_NENTRIES(T) - current->header.nFreeEntries;
+
+		// Run through until we reach one that is >= 'item', or is "0".
+		for (i=0;
+			i<nOccupiedEntries && current->entries[i] != 0
+				&& (*item > current->entries[i]);
 			i++)
+		{};
+
+		// If the one we stopped on == 'item', then we found it.
+		if (current->entries[i] != 0 && current->entries[i] == *item)
 		{
-			if (current->entries[i] == *item)
-			{
-				*entry = i;
-				return current;
-			};
+			*entry = i;
+			return current;
 		};
 	};
+
 	return __KNULL;
 }
 

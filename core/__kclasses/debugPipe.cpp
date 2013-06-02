@@ -19,6 +19,10 @@ debugPipeC::debugPipeC(void)
 	devices.rsrc = 0;
 }
 
+#ifdef CONFIG_DEBUGPIPE_STATIC
+static ubit8	buffMem[DEBUGPIPE_CONVERSION_BUFF_NPAGES * PAGING_BASE_SIZE];
+#endif
+
 error_t debugPipeC::initialize(void)
 {
 	uarch_t		bound;
@@ -26,9 +30,13 @@ error_t debugPipeC::initialize(void)
 
 	devices.rsrc = 0;
 	// Allocate four pages for UTF-8 expansion buffer.
+#ifndef CONFIG_DEBUGPIPE_STATIC
 	mem = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			DEBUGPIPE_CONVERSION_BUFF_NPAGES, MEMALLOC_NO_FAKEMAP))
 			utf8Char;
+#else
+	mem = new (buffMem) utf8Char;
+#endif
 
 	if (mem == __KNULL) {
 		return ERROR_MEMORY_NOMEM;
@@ -50,7 +58,7 @@ error_t debugPipeC::initialize(void)
 
 debugPipeC::~debugPipeC(void)
 {
-	untieFrom(DEBUGPIPE_DEVICE_BUFFER);
+	untieFrom(DEBUGPIPE_DEVICE_BUFFER);     
 	untieFrom(
 		DEBUGPIPE_DEVICE1 | DEBUGPIPE_DEVICE2 | DEBUGPIPE_DEVICE3
 		| DEBUGPIPE_DEVICE4);

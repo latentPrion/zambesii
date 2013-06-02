@@ -155,12 +155,13 @@ error_t memoryTribC::memRegionInit(void)
 }
 
 // TODO: This function can be greatly optimized. KAGS, you are needed.
-void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
+void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t flags)
 {
 	void		*ret;
 	paddr_t		paddr;
 	uarch_t		totalFrames;
 	status_t	nFetched, nMapped;
+	sarch_t		fLocalFlush;
 
 	ret = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
 		nPages);
@@ -168,6 +169,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 	if (ret == __KNULL) {
 		return __KNULL;
 	};
+
 	/* memoryTribC::rawMemAlloc() has no allocTable. Therefore it is
 	 * impossible to do lazy allocation using fakemapped pages. This is
 	 * due to the fact that lazy allocation requires a #PF to occur on a
@@ -178,6 +180,8 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 	 * frames. But if there is no alloc table, then the #PF will occur, and
 	 * then we end up knowing nothing about the allocation.
 	 **/
+	fLocalFlush = __KFLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY) ? 1 : 0;
+
 	for (totalFrames = 0; totalFrames < nPages; )
 	{
 		nFetched = fragmentedGetFrames(
@@ -188,11 +192,13 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 			nMapped = walkerPageRanger::mapInc(
 				&processTrib.__kgetStream()
 					->getVaddrSpaceStream()->vaddrSpace,
-				(void *)((uarch_t)ret
+				(void *)((uintptr_t)ret
 					+ (totalFrames * PAGING_BASE_SIZE)),
 				paddr, nFetched,
 				PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
-				| PAGEATTRIB_SUPERVISOR);
+				| PAGEATTRIB_SUPERVISOR
+				| ((fLocalFlush)
+					? PAGEATTRIB_LOCAL_FLUSH_ONLY : 0));
 
 			if (nMapped < nFetched)
 			{
@@ -204,7 +210,8 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t)
 				rawMemFree(
 					ret,
 					totalFrames + static_cast<uarch_t>(
-						nMapped ));
+						nMapped ),
+					flags);
 
 				goto returnFailure;
 			};
@@ -224,13 +231,12 @@ returnFailure:
 	return __KNULL;
 }
 
-void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
+void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages, uarch_t flags)
 {
 	/* rawMemFree() will look up every paddr for every page since there is
 	 * no alloc table for rawMemFree().
 	 **/
 	uarch_t		_nPages, tracker;
-	uarch_t		flags;
 	paddr_t		paddr;
 	status_t	status;
 
@@ -240,11 +246,17 @@ void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages)
 		_nPages > 0;
 		tracker += PAGING_BASE_SIZE, _nPages--)
 	{
+		uarch_t		__kflags=0;
+
+		if (__KFLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY)) {
+			__KFLAG_SET(__kflags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
+		};
+
 		status = walkerPageRanger::unmap(
 			&processTrib.__kgetStream()->getVaddrSpaceStream()
 				->vaddrSpace,
 			reinterpret_cast<void *>( tracker ),
-			&paddr, 1, &flags);
+			&paddr, 1, &__kflags);
 
 		//Only free the paddr if there was a valid mapping in the vaddr.
 		if (status == WPRANGER_STATUS_BACKED) {

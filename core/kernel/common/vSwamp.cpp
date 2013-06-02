@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <arch/paging.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
@@ -25,8 +24,8 @@ void vSwampC::dump(void)
 		tmp != __KNULL;
 		tmp = tmp->next)
 	{
-		__kprintf(CC"\tNode: baseAddr 0x%p, nPages 0x%x.\n",
-			tmp->baseAddr, tmp->nPages);
+		__kprintf(CC"\tNode (v0x%p): baseAddr 0x%p, nPages 0x%x.\n",
+			tmp, tmp->baseAddr, tmp->nPages);
 	};
 
 	state.lock.release();
@@ -90,6 +89,8 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 		|| reinterpret_cast<uarch_t>( vaddr ) & PAGING_BASE_MASK_LOW
 		|| nPages == 0)
 	{
+		__kprintf(WARNING"vSwamp: ReleasePages with non-page aligned "
+			"vaddr 0x%p.\n", vaddr);
 		return;
 	};
 

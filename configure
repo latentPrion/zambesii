@@ -130,6 +130,11 @@ if [ $hllToolchain == 'llvm' ]; then
 		hllCxx="clang++ -ccc-host-triple $toolchainTarget"
 		hllCpp="clang -ccc-host-triple $toolchainTarget -E"
 	fi
+
+	if [ "$arch" == "x8632" ]; then
+		hllCc="$hllCc -m32"
+		hllCxx="$hllCxx -m32"
+	fi
 fi
 
 if [ $assembler == 'gnu' ]; then

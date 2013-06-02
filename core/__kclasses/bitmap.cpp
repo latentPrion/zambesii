@@ -3,11 +3,9 @@
 #include <__kstdlib/__kbitManipulation.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <__kclasses/bitmap.h>
 
-#include <debug.h>
-#include <__kclasses/debugPipe.h>
-#include <kernel/common/cpuTrib/cpuTrib.h>
 
 bitmapC::bitmapC(void)
 {
@@ -67,6 +65,16 @@ error_t bitmapC::initialize(
 
 	return ERROR_SUCCESS;
 }	
+
+void bitmapC::dump(void)
+{
+	__kprintf(NOTICE BITMAP"@0x%p: %d bits, %s (%dB), array @0x%p.\n",
+		this,
+		bmp.rsrc.nBits,
+		(preAllocated) ? "pre-allocated" : "dyn-allocated",
+		(preAllocated) ? preAllocatedSize : 0,
+		bmp.rsrc.bmp);
+}
 
 void bitmapC::merge(bitmapC *b)
 {

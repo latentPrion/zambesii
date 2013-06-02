@@ -17,16 +17,17 @@
 uarch_t getEip(void) __attribute__((noinline));
 uarch_t getEip(void)
 {
-	volatile uarch_t		eip;
+	volatile uarch_t		eip=0;
 
 	/* Stack should look like this:
 	 *	eip(12) -> ebp(8) -> | eip(4) | eax
 	 */
 	asm volatile (
-		"pushl	%eax\n\t \
-		movl	12(%esp), %eax\n\t \
-		movl	%eax, 4(%esp)\n\t \
-		popl	%eax\n\t");
+		"pushl	%%eax\n\t \
+		movl	12(%%esp), %%eax\n\t \
+		movl	%%eax, 4(%%esp)\n\t \
+		popl	%%eax\n\t"
+		:::"memory");
 
 	return eip;
 }

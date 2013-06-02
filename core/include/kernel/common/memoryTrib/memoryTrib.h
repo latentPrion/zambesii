@@ -34,7 +34,7 @@ public:
 
 public:
 	void *rawMemAlloc(uarch_t nPages, uarch_t flags);
-	void rawMemFree(void *vaddr, uarch_t nPages);
+	void rawMemFree(void *vaddr, uarch_t nPages, uarch_t flags=0);
 
 	error_t pageTablePop(paddr_t *paddr);
 	void pageTablePush(paddr_t paddr);

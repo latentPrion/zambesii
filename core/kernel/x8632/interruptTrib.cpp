@@ -73,7 +73,7 @@ out:
 		popa \n\t\
 		addl	$0x8, %%esp \n\t \
 		iret \n\t"
-		: "=m" (reinterpret_cast<uarch_t>( regs ))
+		: "=m" (regs)
 		);
 	// This point should never be reached. Fooey if it is.
 }

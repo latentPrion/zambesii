@@ -19,6 +19,8 @@ memReservoirC::memReservoirC(void)
 
 error_t memReservoirC::initialize(void)
 {
+	error_t		ret;
+
 	__kbog = new (
 		processTrib.__kgetStream()->memoryStream.memAlloc(
 			1, MEMALLOC_NO_FAKEMAP))
@@ -32,7 +34,8 @@ error_t memReservoirC::initialize(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	__kbog->initialize();
+	ret = __kbog->initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	bogs.rsrc.ptrs = new (
 		processTrib.__kgetStream()->memoryStream.memAlloc(

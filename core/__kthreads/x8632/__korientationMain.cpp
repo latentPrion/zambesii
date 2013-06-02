@@ -113,7 +113,7 @@ void __korientationMain(void)
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	__kprintf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
 		self->getFullId(), self);
- 
+
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
 	 * then load the chipset's bus-pin mappings and initialize timer
 	 * services.

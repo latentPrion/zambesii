@@ -38,7 +38,7 @@ numaMemoryBankC::~numaMemoryBankC(void)
 		};
 
 		// Make sure we don't mess up the kernel by freeing __kspace.
-		if (!(reinterpret_cast<uarch_t>( tmp->range )
+		if (!(reinterpret_cast<uintptr_t>( tmp->range )
 			& PAGING_BASE_MASK_LOW))
 		{
 			processTrib.__kgetStream()->memoryStream.memFree(
@@ -171,7 +171,7 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 				cur->range);
 
 			// Make sure we don't mess up by freeing __kspace.
-			if (!(reinterpret_cast<uarch_t>( cur->range )
+			if (!(reinterpret_cast<uintptr_t>( cur->range )
 				& PAGING_BASE_MASK_LOW))
 			{
 				processTrib.__kgetStream()->memoryStream

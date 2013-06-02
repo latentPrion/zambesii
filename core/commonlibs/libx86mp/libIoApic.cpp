@@ -100,7 +100,7 @@ static error_t rsdtDetectIoApics(void)
 	acpi_rMadtS		*madt;
 	acpi_rMadtIoApicS	*ioApicEntry;
 	void			*handle, *handle2, *context;
-	ubit8			nIoApics;
+	ubit8			nIoApics=0;
 
 	/* The fact that we're here means there is an RSDT, so look for an MADT
 	 * etc and get info on IO-APICs.

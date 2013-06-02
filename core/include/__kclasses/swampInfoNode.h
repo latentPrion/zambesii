@@ -28,7 +28,7 @@ public:
 	inline sarch_t operator <=(swampInfoNodeC &sin);
 	inline sarch_t operator >=(swampInfoNodeC &sin);
 	// inline swampInfoNodeC &operator =(swampInfoNodeC &sin);
-	inline swampInfoNodeC &operator =(int v);
+	inline swampInfoNodeC &operator =(void *);
 };
 
 
@@ -86,10 +86,10 @@ swampInfoNodeC &swampInfoNodeC::operator =(swampInfoNodeC &sin)
 }
 */
 
-swampInfoNodeC &swampInfoNodeC::operator =(int v)
+swampInfoNodeC &swampInfoNodeC::operator =(void *v)
 {
-	if (v == 0) {
-		baseAddr = 0;
+	if (v == __KNULL) {
+		baseAddr = __KNULL;
 	};
 	return *this;
 }

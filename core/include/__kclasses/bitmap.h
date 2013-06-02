@@ -5,6 +5,8 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
+#define BITMAP			"Bitmap: "
+
 #define BITMAP_INDEX(__bit)			\
 	((__bit) / (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__))
 #define BITMAP_OFFSET(__bit)			\
@@ -46,6 +48,8 @@ public:
 
 	// XXX: passing 0 to this will deallocate the internal bmp, btw.
 	error_t resizeTo(ubit32 nBits);
+
+	void dump(void);
 
 private:
 	ubit8		preAllocated;
