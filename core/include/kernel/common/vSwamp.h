@@ -4,7 +4,7 @@
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/swampInfoNode.h>
-	#include <__kclasses/__kequalizerList.h>
+	#include <__kclasses/slamCache.h>
 	#include <__kclasses/allocClass.h>
 	#include <kernel/common/recursiveLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
@@ -22,9 +22,10 @@ public allocClassC
 public:
 	vSwampC(void *swampStart, uarch_t swampSize)
 	:
-	baseAddr((void *)PAGING_BASE_ALIGN_FORWARD((uarch_t)swampStart)),
+	baseAddr((void *)PAGING_BASE_ALIGN_FORWARD((uintptr_t)swampStart)),
 	size(PAGING_BASE_ALIGN_TRUNCATED(swampSize)),
-	flags(0)
+	flags(0),
+	swampNodeList(sizeof(swampInfoNodeC), slamCacheC::RAW)
 	{}
 
 	error_t initialize(void)
@@ -87,7 +88,8 @@ private:
 	sharedResourceGroupC<recursiveLockC, swampStateS>	state;
 
 	// Object allocator for swamp list nodes.
-	__kequalizerListC<swampInfoNodeC>		swampNodeList;
+	// __kequalizerListC<swampInfoNodeC>		swampNodeList;
+	slamCacheC	swampNodeList;
 
 	/* This is a placeholder list node which is used when initializing the
 	 * address space. If we try to dynamically allocate the first node, when

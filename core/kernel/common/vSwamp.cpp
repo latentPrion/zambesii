@@ -1,6 +1,7 @@
 
 #include <arch/paging.h>
 #include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/vSwamp.h>
 
@@ -257,7 +258,7 @@ void vSwampC::deleteSwampNode(swampInfoNodeC *node)
 	// Don't attempt to free the initial placement-memory node.
 	if (node == &initSwampNode) { return; };
 
-	swampNodeList.removeEntry(node);
+	swampNodeList.free(node);
 }
 
 swampInfoNodeC *vSwampC::getNewSwampNode(
@@ -266,19 +267,22 @@ swampInfoNodeC *vSwampC::getNewSwampNode(
 	)
 {
 	swampInfoNodeC		*ret;
-	swampInfoNodeC		tmp(startAddr, nPages, prev, next);
+	/* swampInfoNodeC		tmp(startAddr, nPages, prev, next); */
 
 	// Allocate a new node from the equalizer.
-	ret = swampNodeList.addEntry(&tmp);
+	/* ret = swampNodeList.addEntry(&tmp); */
+	ret = new (swampNodeList.allocate()) swampInfoNodeC(
+		startAddr, nPages, prev, next);
+
 	if (ret == __KNULL) {
 		return __KNULL;
 	};
 
-	// Initialize it.
+	/* // Initialize it.
 	ret->baseAddr = startAddr;
 	ret->nPages = nPages;
 	ret->prev = prev;
-	ret->next = next;
+	ret->next = next; */
 
 	return ret;
 }

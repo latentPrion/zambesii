@@ -6,7 +6,7 @@
 	#include <__kclasses/__kpageBlock.h>
 	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/sharedResourceGroup.h>
-	#include <kernel/common/recursiveLock.h>
+	#include <kernel/common/waitLock.h>
 	#include <kernel/common/memoryTrib/rawMemAlloc.h>
 
 /**	EXPLANATION:
@@ -67,7 +67,7 @@ private:
 	void deleteBlock(__kpageBlockC<T> *block);
 
 private:
-	sharedResourceGroupC<recursiveLockC, __kpageBlockC<T> *>	head;
+	sharedResourceGroupC<waitLockC, __kpageBlockC<T> *>	head;
 };
 
 

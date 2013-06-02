@@ -1,0 +1,31 @@
+// Recursion trace for Kernel Vaddrspace's releasePages().
+|
+|- __kprocess.vaddrSpaceStream.vSwampC[LOCKED]::releasePages()
+|	|- [ENTRY] getNewSwampNode()
+|	|	|- __kprocess.vaddrSpaceStream.vswampC.swampNodeList[LOCKED]::addEntry()
+|	|	|	|- memoryTrib[REENTRY-1]::rawMemAlloc()
+|	|	|	|	|- __kprocess.vaddrSpaceStream.vSwampC[RECURSE-1]::getPages()
+|	|	|	|	+- __kprocess.vaddrSpaceStream.vSwampC[DECURSE-1]
+|	|	|	+- memoryTrib[LEAVE-1]
+|	|	+-__kprocess.vaddrSpaceStream.vswampC.swampNodeList[UNLOCKED]
+|	+- [EXIT]
++- __kprocess.vaddrSpaceStream.vSwampC[UNLOCKED]::releasePages()
+
+// Recursion trace for Memory Trib's rawMemFree().
+|
+|- memoryTrib[ENTRY]::rawMemFree()
+|	|- __kprocess.vaddrSpaceStream.vSwampC[LOCKED]::releasePages()
+|	|	|- [ENTRY] getNewSwampNode()
+|	|	|	|- __kprocess.vaddrSpaceStream.vswampC.swampNodeList[LOCKED]::addEntry()
+|	|	|	|	|- memoryTrib[REENTRY-1]::rawMemAlloc()
+|	|	|	|	|	|- __kprocess.vaddrSpaceStream.vSwampC[RECURSE-1]::getPages()
+|	|	|	|	|	+- __kprocess.vaddrSpaceStream.vSwampC[DECURSE-1]
+|	|	|	|	+- memoryTrib[LEAVE-1]
+|	|	|	+-__kprocess.vaddrSpaceStream.vswampC.swampNodeList[UNLOCKED]
+|	|	+- [EXIT]
+|	+- __kprocess.vaddrSpaceStream.vSwampC[UNLOCKED]::releasePages()
++- [EXIT]
+
+As long as rawMemAlloc() and rawMemFree() do not lock off the Memory Tributary
+object in a non-recursion friendly manner, this recursion domain is safe.
+
