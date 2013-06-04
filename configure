@@ -18,11 +18,11 @@ toolchainTest=''
 builddir="$(pwd)"
 srcdir="$builddir/${0%'/configure'}"
 
-echo "Builddir is $builddir srcdir is $srcdir."
+echo "Builddir is \"$builddir\"; srcdir is \"$srcdir\"."
 echo 'Zambesii kernel interactive build configuration script.';
 echo 'Only in-tree builds are supported until autotools support is added.'; echo
 echo 'What compiler toolchain will you be using for C/C++ source?
-	Currently supported options: gnu.'
+	Currently supported options: gnu, llvm'
 read hllToolchain
 echo
 

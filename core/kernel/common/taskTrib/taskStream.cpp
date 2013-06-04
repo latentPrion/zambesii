@@ -169,6 +169,12 @@ status_t taskStreamC::schedule(taskC *task)
 	return ret;
 }
 
+static inline void getCr3(paddr_t *ret)
+{
+	asm volatile("movl	%%cr3, %0\n\t"
+		: "=r" (*ret));
+}
+
 void taskStreamC::pull(void)
 {
 	taskC		*newTask;
@@ -195,8 +201,21 @@ void taskStreamC::pull(void)
 		cpuControl::halt();
 	};
 
+	tlbControl::saveContext(
+		&currentTask->parent->getVaddrSpaceStream()->vaddrSpace);
+
+	// If the address spaces differ, switch; don't switch if kernel thread.
+	if (newTask->parent->getVaddrSpaceStream()
+		!= currentTask->parent->getVaddrSpaceStream()
+		&& newTask->parent->id != __KPROCESSID)
+	{
+		tlbControl::loadContext(
+			&newTask->parent->getVaddrSpaceStream()
+				->vaddrSpace);
+	};
+
 	newTask->runState = taskC::RUNNING;
-	currentTask = newTask;			
+	currentTask = newTask;
 	loadContextAndJump(newTask->context);
 }
 

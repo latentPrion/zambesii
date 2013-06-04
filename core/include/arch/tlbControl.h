@@ -34,6 +34,8 @@
  * a very awesome optimization if you ask me.
  **/
 
+class vaddrSpaceC;
+
 namespace tlbControl
 {
 	// Called by walkerPageRangerC.
@@ -50,8 +52,8 @@ namespace tlbControl
 	error_t loadTranslation(void *vaddr);
 
 	// Used to load and save a TLB context on the local CPU.
-	void loadContext(tlbContextS *context);
-	void saveContext(tlbContextS *context);
+	void loadContext(vaddrSpaceC *vaddrSpace);
+	void saveContext(vaddrSpaceC *vaddrSpace);
 }
 
 #endif

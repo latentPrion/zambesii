@@ -136,7 +136,7 @@ void __korientationMain(void)
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
 
-	distributaryProcessC		*dtrib;
+	distributaryProcessC		*dtrib, *dtrib2, *dtrib3;
 
 	DO_OR_DIE(
 		processTrib,
@@ -146,8 +146,23 @@ void __korientationMain(void)
 			&dtrib),
 		ret);
 
+	DO_OR_DIE(
+		processTrib,
+		spawnDistributary(
+			CC"@d/storage/cisternn", __KNULL,
+			NUMABANKID_INVALID, 0, 0,
+			&dtrib2),
+		ret);
+
+	DO_OR_DIE(
+		processTrib,
+		spawnDistributary(
+			CC"@d/storage/cisternn", __KNULL,
+			NUMABANKID_INVALID, 0, 0,
+			&dtrib3),
+		ret);
+
 	__kprintf(NOTICE ORIENT"Successful; about to dormant.\n");
-	__kdebug.refresh();
 	taskTrib.dormant(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
 
@@ -155,5 +170,7 @@ void __korientationMain(void)
 	taskTrib.wake(0x10000);
 	taskTrib.dormant(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+
+	for (;;) { asm volatile("hlt\n\t"); };
 }
 

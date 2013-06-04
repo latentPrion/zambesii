@@ -1,5 +1,4 @@
 
-#include <debug.h>
 #include <__kclasses/debugPipe.h>
 
 #include <arch/x8632/memory.h>
@@ -19,6 +18,17 @@ void tlbControl::flushSingleEntry(void *vaddr)
 		: "m" (vaddr)
 		: "memory"
 	);
+}
+
+void tlbControl::saveContext(vaddrSpaceC *)
+{
+}
+
+void tlbControl::loadContext(vaddrSpaceC *context)
+{
+	asm volatile("movl	%0, %%cr3\n\t"
+		:
+		: "r" (context->level0Paddr));
 }
 
 void tlbControl::flushEntryRange(void *vaddr, uarch_t nPages)
