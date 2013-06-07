@@ -4,11 +4,11 @@
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/vfsTrib/vfsTrib.h>
 #include <__kthreads/__korientation.h>
 
 
@@ -34,36 +34,163 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 	return ERROR_SUCCESS;
 }
 
-void processTribC::commonEntry(void *)
+error_t processTribC::getDistributaryExecutableFormat(
+	utf8Char *fullName, processStreamC::executableFormatE *executableFormat
+	)
 {
-	taskC		*self;
+	vfs::inodeTypeE			inodeType;
+	void				*tag;
+	error_t				ret;
+	taskC				*self;
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	__kprintf(NOTICE"New process running. ID = 0x%x. About to yield.\n",
-		self->getFullId());
+	ret = vfsTrib.getDvfs()->getPath(fullName, &inodeType, &tag);
 
-	taskTrib.yield();
-
-	__kprintf(NOTICE"Process 0x%x: About to wake orientationMain and "
-		"dormant.\n",
-		self->getFullId());
-
-	taskTrib.wake(0x1);
-	if (taskTrib.dormant(self->getFullId()) != ERROR_SUCCESS)
+	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE"Failed to dormant first time.\n");
+		__kprintf(ERROR"Proc 0x%x: command line invalid; "
+			"distributary doesn't exist.\n",
+			self->getFullId());
+
+		return SPAWNPROC_STATUS_INVALID_FILE_NAME;
+	};
+
+	if (inodeType == vfs::DIR)
+	{
+		tag = ((dvfs::categoryTagC *)tag)->getInode()
+			->getLeafTag(CC"default");
+
+		if (tag == __KNULL)
+		{
+			__kprintf(ERROR"Proc 0x%x: command line "
+				"invalid; disributary doesn't exist.\n",
+				self->getFullId());
+
+			return SPAWNPROC_STATUS_INVALID_FILE_NAME;
+		};
+	};
+
+	if (((dvfs::distributaryTagC *)tag)->getInode()->getType()
+		== dvfs::distributaryInodeC::IN_KERNEL)
+	{
+		*executableFormat = processStreamC::RAW;
+		return ERROR_SUCCESS;
+	}
+	else
+	{
+		__kprintf(FATAL"Proc 0x%x: out-of-kernel dtribs are "
+			"not yet supported.\n",
+			self->getFullId());
+
+		return ERROR_UNSUPPORTED;
+	};
+}
+
+/**	EXPLANATION:
+ * This is the common entry point for every process other than the kernel
+ * process. It seeks to find out what executable format the new process' image
+ * data is stored in, and load the correct syslib for that process based on its
+ * executable format.
+ *
+ * Zambesii does not prefer any particular executable format, but its native
+ * format is ELF. Confluence libs can be made in any format and the kernel will
+ * load them all. Basically for an ELF process, the kernel will seek to load
+ * an ELF confluence lib, for a PE process, the kernel will seek to load a PE
+ * confluence lib, etc.
+ *
+ * These libraries need not be part of the kernel, and can be distributed in
+ * userspace. If the kernel fails to guess what executable format the new
+ * process' image is encoded in, it will simply refuse to load the process
+ * ("file format not recognized").
+ *
+ * An exception to this rule is in-kernel distributaries; that is,
+ * distributaries that are embedded in the kernel image and require no
+ * executable format parsing -- these types of distributary process will just
+ * be executed raw.
+ **/
+void processTribC::commonEntry(void *)
+{
+	taskC						*self;
+	processStreamC::initializationBlockSizeInfoS	initBlockSizes;
+	processStreamC::initializationBlockS		*initBlock;
+	processStreamC::executableFormatE		executableFormat;
+	uarch_t						initBlockNPages;
+	error_t						err;
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+
+	__kprintf(NOTICE"New process running. ID = 0x%x.\n",
+		self->getFullId());
+
+	self->parent->getInitializationBlockSizeInfo(&initBlockSizes);
+	initBlockNPages = PAGING_BYTES_TO_PAGES(
+		sizeof(processStreamC::initializationBlockS)
+			+ initBlockSizes.fullNameSize + 1
+			+ initBlockSizes.workingDirectorySize + 1
+			+ initBlockSizes.argumentsSize + 1);
+
+	initBlock = new (
+		self->parent->memoryStream.memAlloc(initBlockNPages, MEMALLOC_PURE_VIRTUAL))
+		processStreamC::initializationBlockS;
+
+	initBlock->fullName = (utf8Char *)&initBlock[1];
+	initBlock->workingDirectory =
+		(utf8Char *)((uintptr_t)initBlock->fullName
+			+ initBlockSizes.fullNameSize);
+
+	initBlock->arguments =
+		(utf8Char *)((uintptr_t)initBlock->workingDirectory
+			+ initBlockSizes.argumentsSize);
+
+	self->parent->getInitializationBlock(initBlock);
+
+	/*__kprintf(NOTICE"Proc 0x%x: initBlock %d pages, mem 0x%p.\n"
+		"\tfullNameSize %d, workingDirSize %d, argumentsSize %d.\n",
+		self->getFullId(), initBlockNPages, initBlock,
+		initBlockSizes.fullNameSize,
+		initBlockSizes.workingDirectorySize,
+		initBlockSizes.argumentsSize);
+
+	__kprintf(NOTICE"Proc 0x%x: command line: \"%s\".\n",
+		self->getFullId(), initBlock->fullName);*/
+
+	switch (initBlock->type)
+	{
+	case (ubit8)processStreamC::DISTRIBUTARY:
+		err = getDistributaryExecutableFormat(
+			initBlock->fullName, &executableFormat);
+
+		break;
+
+	default:
+		__kprintf(FATAL"Proc 0x%x: Currently unsupported process type "
+			"%d.\n",
+			self->getFullId(), initBlock->type);
+
+		err = ERROR_UNSUPPORTED;
+		break;
+	};
+
+	if (err != ERROR_SUCCESS)
+	{
+		__kprintf(FATAL"Proc 0x%x: Error identifying executable "
+			"format. Halting.\n",
+			self->getFullId());
+
 		for (;;) { asm volatile("hlt\n\t"); };
 	};
 
-	__kprintf(NOTICE"Process 0x%x: About to dormant again.\n",
-		self->getFullId());
-
-	if (taskTrib.dormant(self->getFullId()) != ERROR_SUCCESS)
+	if (executableFormat != processStreamC::RAW)
 	{
-		__kprintf(NOTICE"Failed to dormant second time.\n");
-		for (;;) { asm volatile("hlt\n\t"); };
+		__kprintf(FATAL"Proc 0x%x: Currently unsupported executable "
+			"format %d.\n",
+			self->getFullId(), executableFormat);
 	};
+
+	taskTrib.wake(0x00001);
+	taskTrib.dormant(self->getFullId());
+	for (;;) { asm volatile("hlt\n\t"); };
 }
 
 error_t processTribC::spawnDistributary(

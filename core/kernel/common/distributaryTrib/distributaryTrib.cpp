@@ -50,7 +50,9 @@ error_t distributaryTribC::bootBuildTree(void)
 			currDesc->nCategories,
 			currDesc->description);
 
-		dInodeTmp = new dvfs::distributaryInodeC(currDesc);
+		dInodeTmp = new dvfs::distributaryInodeC(
+			currDesc, dvfs::distributaryInodeC::IN_KERNEL);
+
 		if (dInodeTmp == __KNULL)
 		{
 			__kprintf(NOTICE DTRIBTRIB"Failed to create dtrib "

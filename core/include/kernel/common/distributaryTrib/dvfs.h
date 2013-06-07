@@ -85,7 +85,9 @@ namespace dvfs
 		// Can be either in the kernel image, or loaded from elsewhere.
 		enum typeE { IN_KERNEL=1, OUT_OF_KERNEL };
 
-		distributaryInodeC(const distributaryDescriptorS *descriptor);
+		distributaryInodeC(
+			const distributaryDescriptorS *descriptor, typeE type);
+
 		error_t initialize(void)
 			{ return vfs::leafInodeC::initialize(); }
 
@@ -174,9 +176,9 @@ namespace dvfs
 		dvfs::categoryTagC *getRoot(void) { return &rootTag; }
 
 		// Both categories and dtribs can be returned.
-		void *getPath(
+		error_t getPath(
 			utf8Char *fullName, vfs::inodeTypeE *type,
-			error_t *ret);
+			void **ret);
 
 	private:
 		dvfs::categoryTagC		rootTag;

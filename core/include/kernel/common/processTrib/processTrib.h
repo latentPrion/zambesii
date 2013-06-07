@@ -25,6 +25,11 @@
 #define SPAWNPROC_FLAGS_SCHEDPRIO_PRIOCLASS	(0)
 #define SPAWNPROC_FLAGS_SCHEDPRIO_SET		(1<<5)
 
+/**	Return values for processTribC::spawnProcess().
+ **/
+#define SPAWNPROC_STATUS_INVALID_FILE_NAME	(0x1)
+
+
 class processTribC
 :
 public tributaryC
@@ -92,6 +97,21 @@ private:
 
 	// All processes begin execution here.
 	static void commonEntry(void *);
+	static error_t getDistributaryExecutableFormat(
+		utf8Char *fullName,
+		processStreamC::executableFormatE *executableFormat);
+
+	static error_t getDriverExecutableFormat(
+		utf8Char *fullName,
+		processStreamC::executableFormatE *executableFormat);
+
+	static error_t getApplicationExecutableFormat(
+		utf8Char *fullName,
+		processStreamC::executableFormatE *executableFormat);
+
+	static error_t getExecutableFormat(
+		ubit8 *buffer,
+		processStreamC::executableFormatE *executableFormat);
 
 private:
 	kernelProcessC		__kprocess;

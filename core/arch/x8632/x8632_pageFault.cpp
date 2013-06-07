@@ -2,6 +2,7 @@
 #include <arch/paddr_t.h>
 #include <arch/paging.h>
 #include <arch/walkerPageRanger.h>
+#include <arch/tlbControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
@@ -12,7 +13,7 @@
 #include "exceptions.h"
 
 
-static void *getCr2(void)
+static inline void *getCr2(void)
 {
 	void *ret;
 	asm volatile (
@@ -22,13 +23,64 @@ static void *getCr2(void)
 	return ret;
 }
 
+static sarch_t __kpropagateTopLevelVaddrSpaceChanges(void)
+{	
+#ifndef CONFIG_ARCH_x86_32_PAE
+	vaddrSpaceC		*__kvaddrSpace, *vaddrSpace;
+	void			*faultAddr = getCr2();
+
+	/* This function returns 1 if there was a need to propagate top-level
+	 * changes, and 0 if not.
+	 *
+	 * First check to see if the page fault is caused by a kernel addrspace
+	 * top-level change that hasn't yet been propagated to this process:
+	 *
+	 * (For PAE x86-32, this will never need to be checked, since the
+	 * propagation issue does not exist with PAE.)
+	 **/
+	__kvaddrSpace = &processTrib.__kgetStream()->getVaddrSpaceStream()
+		->vaddrSpace;
+
+	vaddrSpace = &cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
+		->parent->getVaddrSpaceStream()->vaddrSpace;
+
+	if (vaddrSpace != __kvaddrSpace)
+	{
+		const uarch_t		topLevelEntry=
+			((uintptr_t)faultAddr & PAGING_L0_VADDR_MASK)
+				>> PAGING_L0_VADDR_SHIFT;
+
+		vaddrSpace->level0Accessor.lock.acquire();
+		__kvaddrSpace->level0Accessor.lock.acquire();
+
+		if (__kvaddrSpace->level0Accessor.rsrc->entries[topLevelEntry]
+			!= vaddrSpace->level0Accessor.rsrc
+				->entries[topLevelEntry])
+		{
+			vaddrSpace->level0Accessor.rsrc->entries[topLevelEntry]
+			= __kvaddrSpace->level0Accessor.rsrc
+				->entries[topLevelEntry];
+
+			__kvaddrSpace->level0Accessor.lock.release();
+			vaddrSpace->level0Accessor.lock.release();
+
+			tlbControl::flushSingleEntry(faultAddr);
+			return 1;
+		};
+
+		__kvaddrSpace->level0Accessor.lock.release();
+		vaddrSpace->level0Accessor.lock.release();
+	};
+#endif
+
+	// On PAE this will always return 0.
+	return 0;
+}
+
 status_t x8632_page_fault(taskContextC *regs, ubit8)
 {
 	status_t		status;
 	vaddrSpaceStreamC	*vaddrSpaceStream;
-#ifndef CONFIG_ARCH_x86_32_PAE
-	vaddrSpaceStreamC	*__kvaddrSpaceStream;
-#endif
 	void			*faultAddr = getCr2();
 	paddr_t			pmap;
 	uarch_t			__kflags;
@@ -36,46 +88,8 @@ status_t x8632_page_fault(taskContextC *regs, ubit8)
 	vaddrSpaceStream = cpuTrib.getCurrentCpuStream()
 		->taskStream.getCurrentTask()->parent->getVaddrSpaceStream();
 
-#ifndef CONFIG_ARCH_x86_32_PAE
-	/* First check to see if the page fault is caused by a kernel addrspace
-	 * top-level change that hasn't yet been propagated to this process:
-	 *
-	 * (For PAE x86-32, this will never need to be checked, since the
-	 * propagation issue does not exist with PAE.)
-	 **/
-	__kvaddrSpaceStream = processTrib.__kgetStream()->getVaddrSpaceStream();
-	if (vaddrSpaceStream != __kvaddrSpaceStream)
-	{
-		const uarch_t		topLevelEntry=
-			((uarch_t)faultAddr & PAGING_L0_VADDR_MASK)
-				>> PAGING_L0_VADDR_SHIFT;
-
-		vaddrSpaceStream->vaddrSpace.level0Accessor.lock.acquire();
-		__kvaddrSpaceStream->vaddrSpace.level0Accessor.lock.acquire();
-
-		if (__kvaddrSpaceStream->vaddrSpace.level0Accessor.rsrc
-			->entries[topLevelEntry]
-			!= vaddrSpaceStream->vaddrSpace.level0Accessor.rsrc
-				->entries[topLevelEntry])
-		{
-			vaddrSpaceStream->vaddrSpace.level0Accessor.rsrc
-				->entries[topLevelEntry] = __kvaddrSpaceStream
-					->vaddrSpace.level0Accessor.rsrc
-					->entries[topLevelEntry];
-
-			__kvaddrSpaceStream->vaddrSpace.level0Accessor.lock
-				.release();
-
-			vaddrSpaceStream->vaddrSpace.level0Accessor.lock
-				.release();
-
-			return ERROR_SUCCESS;
-		};
-
-		__kvaddrSpaceStream->vaddrSpace.level0Accessor.lock.release();
-		vaddrSpaceStream->vaddrSpace.level0Accessor.lock.release();
-	};
-#endif
+	if (faultAddr >= (void *)ARCH_MEMORY___KLOAD_VADDR_BASE)
+		{ __kpropagateTopLevelVaddrSpaceChanges(); };
 
 	status = walkerPageRanger::lookup(
 		&vaddrSpaceStream->vaddrSpace,

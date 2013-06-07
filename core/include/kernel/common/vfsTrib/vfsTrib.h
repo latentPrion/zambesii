@@ -40,6 +40,10 @@ public:
 
 	~vfsTribC(void) {}
 
+public:
+	dvfs::currenttC *getDvfs(void) { return &dvfsCurrentt; }
+	hvfs::currenttC *getHvfs(void) { return &hvfsCurrentt; }
+
 	void dumpCurrentts(void);
 
 private:

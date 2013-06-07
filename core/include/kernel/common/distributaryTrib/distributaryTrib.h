@@ -39,9 +39,7 @@ public:
 	~distributaryTribC(void) {};
 
 public:
-
-public:
-
+	
 private:
 	// Called at boot to construct the distributary VFS tree.
 	error_t bootBuildTree(void);

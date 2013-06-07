@@ -55,12 +55,15 @@
 class processStreamC
 {
 public:
-	enum typeE { DRIVER=1, DISTRIBUTARY, APPLICATION, KERNEL };
+	enum typeE { DRIVER=0, DISTRIBUTARY, APPLICATION, KERNEL };
+	enum executableFormatE { RAW=0, ELF, PE, MACHO };
+
 	processStreamC(
 		processId_t processId, processId_t parentProcId,
 		ubit8 execDomain)
 	:
 		id(processId), parentId(parentProcId),
+		executableFormat(RAW),
 		flags(0),
 
 		// Kernel process hands out thread IDs from 1 since 0 is taken.
@@ -130,6 +133,7 @@ public:
 
 	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)=0;
 	virtual typeE getType(void)=0;
+	executableFormatE getExecutableFormat(void) { return executableFormat; }
 
 	void getInitializationBlockSizeInfo(initializationBlockSizeInfoS *ret);
 	void getInitializationBlock(initializationBlockS *ret);
@@ -161,6 +165,7 @@ public:
 	};
 
 	processId_t		id, parentId;
+	executableFormatE	executableFormat;
 	uarch_t			flags;
 
 	multipleReaderLockC	taskLock;

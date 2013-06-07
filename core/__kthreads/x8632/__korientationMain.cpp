@@ -135,9 +135,6 @@ void __korientationMain(void)
 	 **/
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
-	__kprintf(NOTICE ORIENT"Successful; about to dormant.\n");
-	taskTrib.dormant(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
 
 
 	distributaryProcessC		*dtrib, *dtrib2, *dtrib3;
@@ -150,6 +147,10 @@ void __korientationMain(void)
 			&dtrib),
 		ret);
 
+	__kprintf(NOTICE ORIENT"Spawned first process; about to dormant.\n");
+	taskTrib.dormant(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+
 	DO_OR_DIE(
 		processTrib,
 		spawnDistributary(
@@ -158,19 +159,23 @@ void __korientationMain(void)
 			&dtrib2),
 		ret);
 
+	__kprintf(NOTICE ORIENT"Spawned second process; about to dormant.\n");
+	taskTrib.dormant(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+
 	DO_OR_DIE(
 		processTrib,
 		spawnDistributary(
-			CC"@d/storage/cisternn", __KNULL,
+			CC"@d/storage", __KNULL,
 			NUMABANKID_INVALID, 0, 0,
 			&dtrib3),
 		ret);
 
-	__kprintf(NOTICE ORIENT"Waking new process and dormanting again.\n");
-	taskTrib.wake(0x10000);
+	__kprintf(NOTICE ORIENT"Spawned third process; about to dormant.\n");
 	taskTrib.dormant(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
 
+	__kprintf(NOTICE ORIENT"GG :).\n");
 	for (;;) { asm volatile("hlt\n\t"); };
 }
 

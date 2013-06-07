@@ -43,6 +43,7 @@ error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 #endif
 
 	if (level0Accessor.rsrc == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	memset(level0Accessor.rsrc, 0, sizeof(*level0Accessor.rsrc));
 
 	/**	TODO:
 	 * For now, we just get the kernel process' vaddrspace object and

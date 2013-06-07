@@ -465,25 +465,24 @@ void processStreamC::getInitializationBlockSizeInfo(
 {
 	if (ret == __KNULL) { return; };
 
-	ret->fullNameSize = strnlen8(fullName, PROCESS_FULLNAME_MAXLEN);
-	ret->workingDirectorySize = 0;
-	ret->argumentsSize = strnlen8(arguments, PROCESS_ARGUMENTS_MAXLEN);
+	ret->fullNameSize = strnlen8(fullName, PROCESS_FULLNAME_MAXLEN) + 1;
+	ret->workingDirectorySize = 1;
+	ret->argumentsSize = strnlen8(arguments, PROCESS_ARGUMENTS_MAXLEN) + 1;
 }
 
 void processStreamC::getInitializationBlock(initializationBlockS *ret)
 {
 	if (ret == __KNULL) { return; };
 
-	if (ret->fullName != __KNULL) {
-		strncpy8(ret->fullName, fullName, PROCESS_FULLNAME_MAXLEN);
-	};
+	if (ret->fullName != __KNULL) { strcpy8(ret->fullName, fullName); };
 
 	if (ret->workingDirectory != __KNULL) {
-		//strncpy8(ret->workingDirectory, workingDirectory);
+		//strcpy8(ret->workingDirectory, workingDirectory);
+		ret->workingDirectory[0] = '\0';
 	};
 
 	if (ret->arguments != __KNULL) {
-		strncpy8(ret->arguments, arguments, PROCESS_ARGUMENTS_MAXLEN);
+		strcpy8(ret->arguments, arguments);
 	};
 
 	ret->type = (ubit8)getType();
@@ -520,7 +519,7 @@ error_t processStreamC::cloneStateIntoChild(processStreamC *child)
 }
 
 error_t processStreamC::spawnThread(
-	void (* entryPoint)(void *), void * /*argument*/,
+	void (*entryPoint)(void *), void * /*argument*/,
 	bitmapC * cpuAffinity,
 	taskC::schedPolicyE schedPolicy,
 	ubit8 prio, uarch_t flags,

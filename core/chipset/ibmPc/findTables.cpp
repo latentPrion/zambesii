@@ -18,7 +18,7 @@ static ubit8	*lowmem;
 
 static ubit8 mpFpChecksum(ubit8 *location, ubit8 nBytes)
 {
-	ubit8		ret;
+	ubit8		ret=0;
 
 	while (nBytes-- != 0) {
 		ret += *location++;
