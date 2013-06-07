@@ -92,6 +92,9 @@ private:
 	error_t cloneStateIntoChild(taskC *child);
 	// Allocates stacks for kernelspace and userspace (if necessary).
 	error_t allocateStacks(void);
+	void initializeRegisterContext(
+		void (*entryPoint)(void *), sarch_t isFirstThread);
+
 #if __SCALING__ >= SCALING_SMP
 	error_t inheritAffinity(bitmapC *cpuAffinity, uarch_t flags);
 #endif

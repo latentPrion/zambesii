@@ -32,10 +32,7 @@ public tributaryC
 public:
 	processTribC(void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
 	:
-	__kprocess(
-		0x0, 0x0, PROCESS_EXECDOMAIN_KERNEL,
-		NUMABANKID_INVALID,
-		vaddrSpaceBaseAddr, vaddrSpaceSize),
+	__kprocess(vaddrSpaceBaseAddr, vaddrSpaceSize),
 	// Kernel occupies process ID 0; we begin handing process IDs from 1.
 	nextProcId(CHIPSET_MEMORY_MAX_NPROCESSES - 1, 1)
 	{
@@ -93,8 +90,11 @@ private:
 	void fillOutPrioClasses(void);
 	error_t getNewProcessId(processId_t *ret);
 
+	// All processes begin execution here.
+	static void commonEntry(void *);
+
 private:
-	containerProcessC	__kprocess;
+	kernelProcessC		__kprocess;
 	wrapAroundCounterC	nextProcId;
 	struct
 	{

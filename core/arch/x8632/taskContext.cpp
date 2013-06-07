@@ -4,6 +4,7 @@
 #include <arch/x8632/cpuFlags.h>
 #include <chipset/memory.h>
 #include <kernel/common/process.h>
+#include <kernel/common/panic.h>
 
 
 taskContextC::taskContextC(ubit8 execDomain)
@@ -24,9 +25,15 @@ taskContextC::taskContextC(ubit8 execDomain)
 	};
 }
 
-void taskContextC::setStacks(ubit8 execDomain, void *stack0, void *stack1)
+void taskContextC::setStacks(
+	void *stack0, void *stack1, ubit8 initialStackIndex
+	)
 {
-	if (execDomain == PROCESS_EXECDOMAIN_KERNEL)
+	if (initialStackIndex > 1) {
+		panic(CC"taskContextC::setStacks(): illegal stack index.\n");
+	};
+
+	if (initialStackIndex == 0)
 	{
 		esp = (ubit32)stack0
 			+ (CHIPSET_MEMORY___KSTACK_NPAGES * PAGING_BASE_SIZE);

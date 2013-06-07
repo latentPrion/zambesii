@@ -4,6 +4,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/task.h>
 #include <kernel/common/process.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -42,8 +43,15 @@ error_t taskC::initialize(void)
 error_t taskC::allocateStacks(void)
 {
 	/**	NOTES:
-	 * Ideally there should be a special allocation function for stack
-	 * allocation. For now, just take whatever comes from Memory Stream.
+	 * There are 2 separate cases for consideration here:
+	 *	1. Kernel threads: worker threads for the kernel itself, which
+	 *	   are part of the kernel's process. These threads do not
+	 *	   allocate a userspace stack.
+	 *	2. Non-kernel-process-threads: Threads for processes other than
+	 *	   the kernel process. Usually processes executed in the
+	 *	   userspace domain, but occasionally processes executed in the
+	 *	   kernel domain. These allocate both kernelspace and userspace
+	 *	   stacks.
 	 **/
 	// No fakemapping for kernel stacks.
 	stack0 = processTrib.__kgetStream()->memoryStream.memAlloc(
@@ -55,18 +63,10 @@ error_t taskC::allocateStacks(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	context = (taskContextC *)((uarch_t)stack0
-		+ CHIPSET_MEMORY___KSTACK_NPAGES * PAGING_BASE_SIZE);
+	// Don't allocate a user stack for kernel threads.
+	if (parent->id == __KPROCESSID) { return ERROR_SUCCESS; };
 
-	context = (taskContextC *)((uarch_t)context - sizeof(taskContextC));
-	new (context) taskContextC(parent->execDomain);
-	context->initialize();
-
-	// Don't allocate a user stack for threads of kernel space processes.
-	if (parent->execDomain != PROCESS_EXECDOMAIN_USER) {
-		return ERROR_SUCCESS;
-	};
-
+	// Allocate the stack from the parent process' memory stream.
 	stack1 = parent->memoryStream.memAlloc(CHIPSET_MEMORY_USERSTACK_NPAGES);
 	if (stack1 == __KNULL)
 	{
@@ -75,7 +75,64 @@ error_t taskC::allocateStacks(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
+	__kprintf(NOTICE"User stack allocated at 0x%p.\n", stack1);
 	return ERROR_SUCCESS;
+}
+
+void taskC::initializeRegisterContext(
+	void (*entryPoint)(void *), sarch_t isFirstThread
+	)
+{
+	ubit8		stackIndex;
+
+	if (parent->id == __KPROCESSID && isFirstThread)
+	{
+		panic(FATAL"SPAWNTHREAD_FLAGS_FIRST_THREAD used when spawning "
+			"a kernel thread.\n");
+	};
+
+	if (parent->id == __KPROCESSID || isFirstThread)
+	{
+		/* Kernel threads always start on their kernel stack (and they
+		 * have no userspace stack). Furthermore, the first thread of
+		 * every non-kernel process actually executes in kernel domain
+		 * for a short sequence, so the first thread of every new
+		 * process begins executing in kernel-mode on its kernel stack.
+		 **/
+		stackIndex = 0;
+	}
+	else { stackIndex = 1; };
+
+	if (stackIndex == 0)
+	{
+		context = (taskContextC *)((uintptr_t)stack0
+			+ CHIPSET_MEMORY___KSTACK_NPAGES * PAGING_BASE_SIZE);
+	}
+	else
+	{
+		context = (taskContextC *)((uintptr_t)stack1
+			+ CHIPSET_MEMORY_USERSTACK_NPAGES * PAGING_BASE_SIZE);
+	};
+
+	// Context -= sizeof(taskContextC);
+	context--;
+
+	/* For the very first thread in a process, we execute a short sequence
+	 * of code in kernel mode, so if it's the first thread, we have to
+	 * initialize it in PROCESS_EXECDOMAIN_KERNEL.
+	 *
+	 * For every subsequent thread in a process, we initialize the register
+	 * context with the parent process' exec domain.
+	 **/
+	new (context) taskContextC(
+		(isFirstThread)
+			? PROCESS_EXECDOMAIN_KERNEL
+			: parent->execDomain);
+
+	context->initialize();
+	context->setStacks(stack0, stack1, stackIndex);
+	context->setEntryPoint(entryPoint);
+
 }
 
 static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)

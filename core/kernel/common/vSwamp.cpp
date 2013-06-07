@@ -90,8 +90,9 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 		|| reinterpret_cast<uarch_t>( vaddr ) & PAGING_BASE_MASK_LOW
 		|| nPages == 0)
 	{
-		__kprintf(WARNING"vSwamp: ReleasePages with non-page aligned "
-			"vaddr 0x%p.\n", vaddr);
+		__kprintf(WARNING NOLOG"vSwamp: ReleasePages with non-page "
+			"aligned vaddr 0x%p.\n", vaddr);
+
 		return;
 	};
 

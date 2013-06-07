@@ -34,7 +34,7 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 	return ERROR_SUCCESS;
 }
 
-static void _main(void *)
+void processTribC::commonEntry(void *)
 {
 	taskC		*self;
 
@@ -117,11 +117,12 @@ error_t processTribC::spawnDistributary(
 
 	// Spawn the first thread.
 	ret = (*newProcess)->spawnThread(
-		&_main, __KNULL,
+		&processTribC::commonEntry, __KNULL,
 		&(*newProcess)->cpuAffinity,
 		taskC::ROUND_ROBIN, 0,
 		SPAWNTHREAD_FLAGS_AFFINITY_SET
-		| SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET,
+		| SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
+		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
 		&firstTask);
 
 	if (ret != ERROR_SUCCESS)

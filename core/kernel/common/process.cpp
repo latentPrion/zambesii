@@ -459,6 +459,37 @@ error_t processStreamC::generateEnvironment(const utf8Char *environmentString)
 	return ERROR_SUCCESS;
 }
 
+void processStreamC::getInitializationBlockSizeInfo(
+	initializationBlockSizeInfoS *ret
+	)
+{
+	if (ret == __KNULL) { return; };
+
+	ret->fullNameSize = strnlen8(fullName, PROCESS_FULLNAME_MAXLEN);
+	ret->workingDirectorySize = 0;
+	ret->argumentsSize = strnlen8(arguments, PROCESS_ARGUMENTS_MAXLEN);
+}
+
+void processStreamC::getInitializationBlock(initializationBlockS *ret)
+{
+	if (ret == __KNULL) { return; };
+
+	if (ret->fullName != __KNULL) {
+		strncpy8(ret->fullName, fullName, PROCESS_FULLNAME_MAXLEN);
+	};
+
+	if (ret->workingDirectory != __KNULL) {
+		//strncpy8(ret->workingDirectory, workingDirectory);
+	};
+
+	if (ret->arguments != __KNULL) {
+		strncpy8(ret->arguments, arguments, PROCESS_ARGUMENTS_MAXLEN);
+	};
+
+	ret->type = (ubit8)getType();
+	ret->execDomain = execDomain;
+}
+
 static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 {
 	error_t		ret;
@@ -525,11 +556,10 @@ error_t processStreamC::spawnThread(
 	(*newTask)->inheritSchedPolicy(schedPolicy, flags);
 	(*newTask)->inheritSchedPrio(prio, flags);
 
-	// Now everything is allocated; just initialize the new thread.
-	(*newTask)->context->setStacks(
-		execDomain, (*newTask)->stack0, (*newTask)->stack1);
-
-	(*newTask)->context->setEntryPoint(entryPoint);
+	// Now everything is allocated; just initialize the register context.
+	(*newTask)->initializeRegisterContext(
+		entryPoint,
+		__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD));
 
 	if (!__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_DORMANT)) {
 		return taskTrib.schedule(*newTask);

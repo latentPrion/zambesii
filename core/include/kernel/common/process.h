@@ -47,12 +47,15 @@
 
 // Set to prevent the thread from being scheduled automatically on creation.
 #define SPAWNTHREAD_FLAGS_DORMANT			(1<<8)
+// Indicates that this is the first thread of a new process.
+#define SPAWNTHREAD_FLAGS_FIRST_THREAD			(1<<9)
 
 #define SPAWNTHREAD_STATUS_NO_PIDS		0x1
 
 class processStreamC
 {
 public:
+	enum typeE { DRIVER=1, DISTRIBUTARY, APPLICATION, KERNEL };
 	processStreamC(
 		processId_t processId, processId_t parentProcId,
 		ubit8 execDomain)
@@ -97,6 +100,25 @@ public:
 	~processStreamC(void);
 
 public:
+	// Must remain a POD data type.
+	struct initializationBlockSizeInfoS
+	{
+		uarch_t			fullNameSize;
+		uarch_t			workingDirectorySize;
+		uarch_t			argumentsSize;
+	};
+
+	struct initializationBlockS
+	{
+		utf8Char		*fullName;
+		utf8Char		*workingDirectory;
+		utf8Char		*arguments;
+		// enum processStreamC::typeE.
+		ubit8			type;
+		ubit8			execDomain;
+	};
+
+public:
 	taskC *getTask(processId_t processId);
 	taskC *getThread(processId_t processId) { return getTask(processId); }
 
@@ -107,6 +129,10 @@ public:
 		{ return PROCESS_ARGUMENTS_MAXLEN; }
 
 	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)=0;
+	virtual typeE getType(void)=0;
+
+	void getInitializationBlockSizeInfo(initializationBlockSizeInfoS *ret);
+	void getInitializationBlock(initializationBlockS *ret);
 
 	// I am very reluctant to have this "argument" parameter.
 	error_t spawnThread(
@@ -261,6 +287,37 @@ private:
 	containerProcessC	*containerProcess;
 };
 
+/**	kernelProcessC
+ ******************************************************************************/
+
+class kernelProcessC
+:
+public containerProcessC
+{
+public:
+	kernelProcessC(void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
+	:
+	containerProcessC(
+		__KPROCESSID, __KPROCESSID,
+		PROCESS_EXECDOMAIN_KERNEL,
+		NUMABANKID_INVALID,
+		vaddrSpaceBaseAddr, vaddrSpaceSize)
+	{}
+
+	error_t initialize(
+		const utf8Char *fullName, const utf8Char *environment,
+		bitmapC *affinity)
+	{
+		return containerProcessC::initialize(
+			fullName, environment, affinity);
+	}
+
+	~kernelProcessC(void) {}
+
+public:
+	typeE getType(void) { return KERNEL; }
+};
+
 /**	distributaryProcessC
  ******************************************************************************/
 
@@ -277,7 +334,8 @@ public:
 		processId, parentProcessId,
 		PROCESS_EXECDOMAIN_KERNEL,	// Always kernel domain.
 		numaAddrSpaceBinding,
-		(void *)0x100000, ARCH_MEMORY___KLOAD_VADDR_BASE - 0x1000)
+		(void *)0x100000,
+		ARCH_MEMORY___KLOAD_VADDR_BASE - 0x100000 - 0x1000)
 	{}
 
 	error_t initialize(
@@ -289,6 +347,9 @@ public:
 	}
 
 	~distributaryProcessC(void) {}
+
+public:
+	typeE getType(void) { return DISTRIBUTARY; }
 };
 
 /**	containerDriverProcessC, driverProcessC (contained),

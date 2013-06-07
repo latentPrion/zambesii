@@ -14,7 +14,14 @@ public:
 	taskContextC(ubit8 execDomain);
 	error_t initialize(void) { return ERROR_SUCCESS; };
 
-	void setStacks(ubit8 execDomain, void *stack0, void *stack1);
+	/**	EXPLANATION:
+	 * "initialStackIndex" specifies which of the stacks to set the new
+	 * thread's stack pointer register to.
+	 *
+	 * "0" for the kernel stack and "1" for the userspace stack.
+	 **/
+	void setStacks(void *stack0, void *stack1, ubit8 initialStackIndex);
+
 	void setEntryPoint(void (*entryPoint)(void *))
 	{
 		eip = (ubit32)entryPoint;

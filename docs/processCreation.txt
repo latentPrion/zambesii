@@ -6,27 +6,43 @@ space by an interested parent process. An address space is spawned with
 binding to a NUMA resource-grouping. This binding determines which kernel
 clone the process will interact with during syscalls.
 
-	1.2: Executable code loading.
+	1.2: Process Initialization.
 
-An address space may be edited with kernel aid to write code and data into
-it. The process trbutary has the executable parser subsystem built into it,
-which parses executable formats for the kernel. The parser sub-API allows
-for the loading of executable parsers as well.
+Every process which is in the same execution domain has the same entry point.
+Userspace processes have the same entry point whether they are drivers or
+applications, and kernel-space processes also have the same entry point whether
+they are Distributaries or not.
 
-The kernel searches for a section by the name of "Zambesii" in which it
-expects to find certain data structures. Among them is the Zambesii static
-block descriptor structure, which describes all of the executable's static
-data blocks and tells the kernel where to load them in vmem, and what offset
-to begin copying from.
+The kernel provides a syscall, "processTrib_getSelfProcessInfoBlockSize()",
+which will return the amount of memory required for a successful call to
+"processTrib_getSelfProcessInfoBlock()" and then call that function.
 
-An executable's main static blocks are copied into the process's bound node.
-Subsequent static data blocks can be loaded by using
-processStream::defineStaticData(), etc. These will be allocated using the memory
-affinity scheme of the calling thread, so a thread should be sure to change its
-affinity before calling this function, or otherwise have an appropriate thread
-call it.
+This will provide the common-entry code with information such as the new
+process' command line string, environment string, argument string and most
+important for this article, the type of process being dealth with, whether it
+be a driver, distributary or userspace application.
 
-	1.3 Thread Creation.
+From there on, the common-entry code will open a file-handle to the process'
+command line and load the executable data into its address space. Upon a
+successful process loading and initialization, the common-entry code will call
+into the kernel telling it that the new process has been initialized, and this
+will complete the asynchronous round-trip. If the process failed to load, the
+call will simply tell the kernel that the process failed to load, and the
+asynchronous round-trip will still be completed, albeit with a response message
+that indicates an error.
+
+This approach is excellent because it removes the need to have the kernel load
+executables and parse them, and it also means that the kernel never has to
+actually open file handles -- all of this is done by the common-entry code. It
+also makes creating new processes asynchronous, which is a definite good thing.
+
+	1.2: Static Blocks.
+
+The common-entry searches new process' executables for a section by the name of
+".__kzambesii" in which it expects to find certain data structures. These are
+yet-undefined.
+
+	2. Thread Creation.
 
 A thread may be created in any address space. Thread affinity may be set on
 a call to processStream::spawnThread(). It takes the entry point,
@@ -36,7 +52,32 @@ point. This is specified by setting the flag SPAWNTHREAD_FLAGS_ENTRY_MAIN.
 
 A thread is scheduled to begin executing as soon as it is created.
 
-	1.4 API.
+	3. API.
+
+	3.1. Process spawning.
+
+processTribC::spawnProcess() / processStreamC::pullEvent().
+
+Process spawning is asynchronous. The kernel allocates a process control block
+(processStreamC), an all that comes with it (address space, etc) then spawns the
+new process' first thread at a fixed entry point address, which is the
+common-entry for all processes of its type. This common-entry code proceeds to
+open file descriptors for the process as needed parse its executable image,
+expanding it into the new process' address space.
+
+Upon either successful or unsuccessful completion of the executable loading
+sequence, the common-entry code will syscall back into the kernel, effectively
+completing the asynchronous round-trip and notifying the kernel of whether or
+not the process was spawned successfully. The kernel will queue a message to
+that effect on the parent process' event queue, and that is the end of the
+spawnProcess()/pullEvent() asynchronous pair. The parent process can then
+call pullEvent() to determine whether or not its call to createProcess() was
+successful.
+
+	3.2. Thread spawning.
+
+Thread spawning is synchronous since it is impossible for it to block in any
+way.
 
 processStreamC::spawnThread(
 	void *entryPoint,
