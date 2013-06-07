@@ -48,10 +48,10 @@
 
 #define DEBUGPIPE_CONVERSION_BUFF_NPAGES	4
 
-#define NOTICE				CC"[N]: "
-#define WARNING				CC"[W]: "
-#define ERROR				CC"[E]: "
-#define FATAL				CC"[F]: "
+#define NOTICE				CC"N: "
+#define WARNING				CC"W: "
+#define ERROR				CC"E: "
+#define FATAL				CC"F: "
 
 #define NOLOG				"%[n]"
 

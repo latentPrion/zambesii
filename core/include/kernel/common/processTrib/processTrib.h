@@ -99,7 +99,8 @@ private:
 	static void commonEntry(void *);
 	static error_t getDistributaryExecutableFormat(
 		utf8Char *fullName,
-		processStreamC::executableFormatE *executableFormat);
+		processStreamC::executableFormatE *executableFormat,
+		void (**entryPoint)(void));
 
 	static error_t getDriverExecutableFormat(
 		utf8Char *fullName,

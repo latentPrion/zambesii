@@ -13,7 +13,7 @@ dvfs::distributaryInodeC::distributaryInodeC(
 type(type), currentlyRunning(0),
 majorVersion(descriptor->majorVersion), minorVersion(descriptor->minorVersion),
 patchVersion(descriptor->patchVersion),
-entryAddress(descriptor->entryAddress), flags(descriptor->flags)
+flags(descriptor->flags), entryAddress(descriptor->entryAddress)
 {
 	strncpy8(
 		name, descriptor->name,
@@ -26,6 +26,8 @@ entryAddress(descriptor->entryAddress), flags(descriptor->flags)
 	strncpy8(
 		description, descriptor->description,
 		DVFS_DINODE_DESCRIPTION_MAX_NCHARS);
+
+	fullName[0] = '\0';
 }
 
 error_t dvfs::currenttC::getPath(

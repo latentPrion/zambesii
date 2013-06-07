@@ -1,8 +1,36 @@
 
 #include <config.h>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/distributaryTrib/dvfs.h>
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 
+
+void *getEsp(void)
+{
+	void		*esp;
+
+	asm volatile (
+		"movl	%%esp, %0\n\t"
+		: "=r" (esp));
+
+	return esp;
+}
+
+static void cisternnEntry(void)
+{
+	taskC		*self;
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+
+	__kprintf(NOTICE"Cisternn executing; process ID: 0x%x. ESP: 0x%p. "
+		"Dormanting.\n",
+		self->getFullId(), getEsp());
+
+	taskTrib.wake(0x1);
+	taskTrib.dormant(self->getFullId());
+}
 
 const dvfs::distributaryDescriptorS	cisternnDescriptor=
 {
@@ -20,7 +48,7 @@ const dvfs::distributaryDescriptorS	cisternnDescriptor=
 	},
 	1,		// Provides only one category.
 	0, 0, 0,	// v0.00.000.
-	__KNULL,
+	&cisternnEntry,
 	0
 };
 

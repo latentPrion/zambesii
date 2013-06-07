@@ -105,11 +105,9 @@ error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 	level1Table->entries[1023] = 0 
 		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE);
 
-	__kprintf(NOTICE VADDRSPACE"initialize: object 0x%p, bank binding %d.\n"
-		"level0Accessor 0x%p, paddr 0x%P.\n"
-		"\tLevel1Table 0x%p, level1TablePaddr 0x%P, klvl0 0x%P.\n",
-		this, boundBankId, level0Accessor.rsrc, level0Paddr,
-		level1Table, level1TablePaddr, &__kpagingLevel0Tables);
+	__kprintf(NOTICE VADDRSPACE"initialize: binding %d; lvl0: v 0x%p, "
+		"p 0x%P.\n",
+		boundBankId, level0Accessor.rsrc, level0Paddr);
 
 	return ERROR_SUCCESS;
 }

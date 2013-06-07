@@ -8,6 +8,6 @@ const distributaryTribC::distributaryDescriptorS	cisternnDescriptor=
 	"The Cisternn storage distributary for the Zambesii kernel."
 	"Zambesii",
 	0, 0, 0,
-	__KNULL
+	&cisternnEntry
 };
 

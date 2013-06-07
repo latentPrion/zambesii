@@ -56,7 +56,7 @@ namespace dvfs
 		ubit8		nCategories;
 		ubit8		majorVersion, minorVersion;
 		ubit16		patchVersion;
-		void		*entryAddress;
+		void		(*entryAddress)(void);
 		ubit32		flags;
 	};
 
@@ -96,7 +96,8 @@ namespace dvfs
 	public:
 		sarch_t isCurrentlyRunning(void) { return currentlyRunning; }
 		typeE getType(void) { return type; }
-		void *getEntryAddress(void) { return entryAddress; }
+		void (*getEntryAddress(void))(void) { return entryAddress; }
+		utf8Char *getFullName(void) { return fullName; }
 		void getVersion(ubit8 *major, ubit8 *minor, ubit16 *patch);
 
 	private:
@@ -109,8 +110,12 @@ namespace dvfs
 				description[DVFS_DINODE_DESCRIPTION_MAX_NCHARS];
 		ubit8		majorVersion, minorVersion;
 		ubit16		patchVersion;
-		void		*entryAddress;
 		ubit32		flags;
+
+		// Only valid for IN_KERNEL dtribs.
+		void		(*entryAddress)(void);
+		// Only valid for OUT_OF_KERNEL dtribs.
+		utf8Char	fullName[256];
 	};
 
 	/* Categories are really directories, but they can be "executed" or

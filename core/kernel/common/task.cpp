@@ -75,7 +75,6 @@ error_t taskC::allocateStacks(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	__kprintf(NOTICE"User stack allocated at 0x%p.\n", stack1);
 	return ERROR_SUCCESS;
 }
 

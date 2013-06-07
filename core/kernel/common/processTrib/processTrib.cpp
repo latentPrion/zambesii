@@ -35,7 +35,8 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 }
 
 error_t processTribC::getDistributaryExecutableFormat(
-	utf8Char *fullName, processStreamC::executableFormatE *executableFormat
+	utf8Char *fullName, processStreamC::executableFormatE *executableFormat,
+	void (**entryPoint)(void)
 	)
 {
 	vfs::inodeTypeE			inodeType;
@@ -43,6 +44,25 @@ error_t processTribC::getDistributaryExecutableFormat(
 	error_t				ret;
 	taskC				*self;
 
+	/**	EXPLANATION:
+	 * For Distributaries, there are IN_KERNEL and OUT_OF_KERNEL dtribs.
+	 * IN_KERNEL dtribs will always be linked directly into the kernel image
+	 * and are basically like raw binaries embedded and fully linked into
+	 * the kernel.
+	 *
+	 * OUT_OF_KERNEL distributaries are those which are loaded after boot
+	 * time and are actually stored on disk, and advertised to the kernel
+	 * via syscalls.
+	 *
+	 * This function checks to see if this process is an IN_KERNEL
+	 * distributary or not, and if it is, it will return executable format
+	 * RAW.
+	 *
+	 * If it's OUT_OF_KERNEL, this function will read the file path
+	 * of the real file on disk, and pass that on to getExecutableFormat(),
+	 * which will then load the first few bytes of that file and determine
+	 * its executable format.
+	 **/
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
 	ret = vfsTrib.getDvfs()->getPath(fullName, &inodeType, &tag);
@@ -74,6 +94,9 @@ error_t processTribC::getDistributaryExecutableFormat(
 	if (((dvfs::distributaryTagC *)tag)->getInode()->getType()
 		== dvfs::distributaryInodeC::IN_KERNEL)
 	{
+		*entryPoint = ((dvfs::distributaryTagC *)tag)->getInode()
+			->getEntryAddress();
+
 		*executableFormat = processStreamC::RAW;
 		return ERROR_SUCCESS;
 	}
@@ -83,8 +106,37 @@ error_t processTribC::getDistributaryExecutableFormat(
 			"not yet supported.\n",
 			self->getFullId());
 
+		ret = getExecutableFormat(
+			((dvfs::distributaryTagC *)tag)->getInode()
+				->getFullName(),
+			executableFormat);
+
+		if (ret != ERROR_SUCCESS) { return ret; };
+
+		// OUT_OF_KERNEL distributaries can only be ELF.
+		if (*executableFormat != processStreamC::ELF) {
+			return ERROR_UNSUPPORTED;
+		};
+
 		return ERROR_UNSUPPORTED;
 	};
+}
+
+error_t processTribC::getExecutableFormat(
+	utf8Char *, processStreamC::executableFormatE *
+	)
+{
+	/* This function reads a file from disk and determines its executable
+	 * file format.
+	 *
+	 * All of the other get*ExecutableFormat() functions will usually
+	 * eventually call down into this one, though there are exceptions;
+	 * two exceptions at most.
+	 *
+	 * The file fullname passed as the first argument is the fullname of the
+	 * file to be examined.
+	 **/
+	return ERROR_UNSUPPORTED;
 }
 
 /**	EXPLANATION:
@@ -117,7 +169,22 @@ void processTribC::commonEntry(void *)
 	processStreamC::executableFormatE		executableFormat;
 	uarch_t						initBlockNPages;
 	error_t						err;
+	void						(*jumpAddress)(void);
 
+	/**	EXPLANATION:
+	 * Purpose of this common entry routine is to detect the executable
+	 * format of the new process and load the correct confluence library
+	 * for it. This routine /does not/ jump into the new process and begin
+	 * its execution.
+	 *
+	 * Rather it loads a fixed, predetermined confluence library and jumps
+	 * to that instead. That confluence library contains the code to load
+	 * the new process and jump to it.
+	 *
+	 * Only in the case of an IN_KERNEL distributary does this function
+	 * jump and begin the new process immediately.
+	 **/
+	jumpAddress = __KNULL;
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
 	__kprintf(NOTICE"New process running. ID = 0x%x.\n",
@@ -131,7 +198,7 @@ void processTribC::commonEntry(void *)
 			+ initBlockSizes.argumentsSize + 1);
 
 	initBlock = new (
-		self->parent->memoryStream.memAlloc(initBlockNPages, MEMALLOC_PURE_VIRTUAL))
+		self->parent->memoryStream.memAlloc(initBlockNPages))
 		processStreamC::initializationBlockS;
 
 	initBlock->fullName = (utf8Char *)&initBlock[1];
@@ -159,7 +226,7 @@ void processTribC::commonEntry(void *)
 	{
 	case (ubit8)processStreamC::DISTRIBUTARY:
 		err = getDistributaryExecutableFormat(
-			initBlock->fullName, &executableFormat);
+			initBlock->fullName, &executableFormat, &jumpAddress);
 
 		break;
 
@@ -183,14 +250,44 @@ void processTribC::commonEntry(void *)
 
 	if (executableFormat != processStreamC::RAW)
 	{
+		// Load the confluence lib and extract its entry point addr.
 		__kprintf(FATAL"Proc 0x%x: Currently unsupported executable "
 			"format %d.\n",
 			self->getFullId(), executableFormat);
+
+		for (;;) { asm volatile("hlt\n\t"); };
 	};
 
-	taskTrib.wake(0x00001);
-	taskTrib.dormant(self->getFullId());
-	for (;;) { asm volatile("hlt\n\t"); };
+	/* For RAW processes, jumpAddress is set by their get*ExecutableFormat.
+	 * Time to jump to the next stage. For everything other than RAW, we
+	 * jump to a confluence library that holds a parser for the process'
+	 * executable format. For RAW, we jump directly into the process.
+	 *
+	 * The location we are about to jump to is whatever is held inside of
+	 * "jumpAddress". This would have been set either the process'
+	 * get*ExecutableFormat() function, or by the confluence loading code.
+	 *
+	 * Right now we are executing on the new process' kernel stack.
+	 * We can construct the new register context on its userspace
+	 * stack if we wish; this is simpler as well since there is no
+	 * risk of trampling.
+	 **/
+	taskContextC		*context;
+
+	context = (taskContextC *)((uintptr_t)self->stack1
+		+ (CHIPSET_MEMORY_USERSTACK_NPAGES * PAGING_BASE_SIZE));
+
+	context--;
+	new (context) taskContextC(self->parent->execDomain);
+	err = context->initialize();
+	if (err != ERROR_SUCCESS) { for (;;) { asm volatile("hlt\n\t"); }; };
+
+	// Using the userspace stack.
+	context->setStacks(self->stack0, self->stack1, 1);
+	context->setEntryPoint((void (*)(void *))jumpAddress);
+
+	// Now just jump.
+	loadContextAndJump(context);
 }
 
 error_t processTribC::spawnDistributary(
