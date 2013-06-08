@@ -1,0 +1,105 @@
+Every thread has an personal event manager which is used to collect events for
+that thread. The thread can dequeue the events as it sees fit. The event manager
+provides partitioned member functions that select specific queues or groups of
+queues for the thread to wait on, and then furthermore it allows the thread to
+dequeue a subset of its subscribed events if necessary. This is useful for
+implementing crude event prioritization in userspace, for example.
+
+To subscribe to events, thread-global subscribeTo() function is provided; it
+takes a bitmapC object as an argument. This object is a bitmask of all the
+events the thread wants to subscribe to. Subscription is a persistent per-thread
+kernel-metadata bitmap that tells the kernel whether or not it should
+queue a given event on a given thread.
+
+A subsequent call to the "thread-global" pullEvent() function will pull the next
+event from one of the subscribed queues.
+
+	bitmapC		myBitmap;
+	eventS		newEvent;
+
+	myBitmap.initialize();
+	myBitmap.set(...);
+	myBitmap.set(...);
+	myBitmap.set(...);
+
+	myThread->events.subscribeTo(&myBitmap);
+	for (;;)
+	{
+		myThread->events.pullEvent(&newEvent, 0);
+		switch (newEvent->type)
+		{
+			// ...
+		};
+	};
+
+To wait on a subset of the events in the thread's thread-specific wait-mask,
+from a specific subsystem only, use the subsystem-specific pullEvent(). This
+function is provided on a per-kernel-subsystem basis, and enables a thread to
+for example, wait on only VFS events, or only timer subsystem events, etc.
+
+Of course, in order for there to be any events in the queue for that subsystem,
+the thread must have set the bits for the events in that subsystem prior to
+the subsystem-specific pullEvent() call, or else if the bit for a specific event
+is not set for a thread, that thread will not receive an enqueued message for
+that event.
+
+This mechanism can be used for implementing event prioritization from userspace.
+An example is shown below:
+
+	bitmapC		myBitmap;
+	eventS		newEvent;
+
+	myBitmap.initialize();
+	myBitmap.set(VFS_EVENT_1);
+	myBitmap.set(VFS_EVENT_2);
+	myBitmap.set(SOUND_EVENT_5);
+	myBitmap.set(NETWORK_EVENT_3);
+
+	myThread->events.waitOnEvents(&myBitmap);
+	for (;;)
+	{
+		status_t	status;
+		bool		netEventPulled=FALSE, otherEventsPulled=FALSE;
+
+		// First check for network events.
+		status = myThread->events.getNetworkEvents()->pullEvent(
+			&newEvent,
+			// It's a bitfield; can check for multiple net events.
+			0 | NETWORK_EVENT_3,
+			PULLEVENT_FLAGS_DONT_BLOCK);
+
+		if (status == ERROR_SUCCESS)
+		{
+			// If a network event was available, set a bool.
+			netEventPulled = TRUE;
+
+			switch (newEvent->type)
+			{
+				// ...
+			};
+		};
+
+		// Only pull from the global set if no net events pending.
+		if (netEventPulled == TRUE) { continue; };
+
+		// Now check the global set. This will pull sound + VFS events.
+		status = myThread->events.pullEvent(
+			&newEvent, PULLEVENT_FLAGS_DONT_BLOCK);
+
+		if (status == ERROR_SUCCESS)
+		{
+			otherEventsPulled = TRUE;
+
+			switch (newEvent->type)
+			{
+				// ...
+			};
+		};
+
+		// If no events were found at all, block.
+		if (otherEventsPulled == FALSE) {
+			myThread->block();
+		};
+	};
+
+
