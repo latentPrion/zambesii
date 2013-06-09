@@ -50,7 +50,7 @@ void acpiRsdt::destroyContext(void **const context)
 		*context, &p, 2, &f);
 
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
-		*context, 2);
+		(void *)((uintptr_t)(*context) & PAGING_BASE_MASK_HIGH), 2);
 
 	*context = __KNULL;
 }
@@ -234,6 +234,7 @@ void acpiRsdt::destroySdt(acpi_sdtS *sdt)
 		sdt, &p, nPages, &f);
 
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
-		sdt, nPages);
+		(void *)((uintptr_t)sdt & PAGING_BASE_MASK_HIGH),
+		nPages);
 }
 

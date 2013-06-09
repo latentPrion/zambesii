@@ -3,6 +3,7 @@
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/numaCpuBank.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -153,7 +154,12 @@ void taskTribC::block(void)
 {
 	taskC		*currTask;
 
-	/* After placing a task into a waitqueue, call this function to
+	/**	XXX:
+	 * If you update this function, be sure to update its overloaded version
+	 * below as well.
+	 *
+	 *	NOTES:
+	 * After placing a task into a waitqueue, call this function to
 	 * place it into a "blocked" state.
 	 **/
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
@@ -164,17 +170,111 @@ void taskTribC::block(void)
 			sizeof(currTask->currentCpu->sleepStack)]);
 }
 
+void taskTribC::block(
+	lockC *lock, ubit8 lockType, ubit8 unlockOp, uarch_t unlockFlags
+	)
+{
+	taskC		*currTask;
+
+	/**	XXX:
+	 * If you update this function, be sure to update its overloaded version
+	 * above as well.
+	 *
+	 *	NOTES:
+	 * After placing a task into a waitqueue, call this function to
+	 * place it into a "blocked" state.
+	 **/
+	if (lock == __KNULL) { panic(FATAL"block(): 'lock' is __KNULL.\n"); };
+
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	currTask->currentCpu->taskStream.block(currTask);
+
+	/**	EXPLANATION:
+	 * This bit here completely purges the problem of lost wakeups
+	 * for asynchronous callbacks and event notifications. There is a window
+	 * between the point when a thread checks a callback/event message queue
+	 * (and finds the queue empty), and the point when the thread is removed
+	 * from the scheduler queues due to the resultant call to block()
+	 * (because the queue was empty).
+	 *
+	 * If a new callback/event message is inserted at this time, the call
+	 * to unblock() the thread (by the sender of the callback/event) may
+	 * arrive before the thread has actually removed itself from the
+	 * scheduler queues.
+	 *
+	 * If this happens, the thread will remove itself from the scheduler
+	 * queues /after/ the call to unblock() was made by the callback/event
+	 * sender, (when it should have happened before), and therefore the
+	 * thread will never wake again.
+	 *
+	 * This next bit of code is part of the solution: a call to block() can
+	 * be made while the thread holds a lock (which should prevent any new
+	 * callbacks/events from being queued until it is released), and
+	 * this next bit of code will release the lock immediately upon removing
+	 * the thread from the scheduler queues; thereby eliminating the race
+	 * condition.
+	 *
+	 * Be sure to pass in the correct 'lockType' value, and for multiple-
+	 * reader locks, the correct 'unlockOp' value.
+	 **/
+	switch (lockType)
+	{
+	case TASKTRIB_BLOCK_LOCKTYPE_WAIT:
+		static_cast<waitLockC *>( lock )->release();
+		break;
+
+	case TASKTRIB_BLOCK_LOCKTYPE_RECURSIVE:
+		static_cast<recursiveLockC *>( lock )->release();
+		break;
+
+	case TASKTRIB_BLOCK_LOCKTYPE_MULTIPLE_READER:
+		switch (unlockOp)
+		{
+		case TASKTRIB_BLOCK_UNLOCK_OP_READ:
+			static_cast<multipleReaderLockC *>( lock )
+				->readRelease(unlockFlags);
+
+			break;
+
+		case TASKTRIB_BLOCK_UNLOCK_OP_WRITE:
+			static_cast<multipleReaderLockC *>( lock )
+				->writeRelease();
+
+			break;
+
+		default:
+			panic(FATAL"block(): Invalid unlock operation.\n");
+		};
+		break;
+
+	default: panic(FATAL"block(): Invalid lockType.\n");
+	};
+
+	saveContextAndCallPull(
+		&currTask->currentCpu->sleepStack[
+			sizeof(currTask->currentCpu->sleepStack)]);
+}
+
+static utf8Char		*runStates[5] =
+{
+	CC"invalid", CC"unscheduled", CC"runnable", CC"running", CC"stopped"
+};
+
 error_t taskTribC::unblock(taskC *task)
 {
-	if (task->runState == taskC::RUNNABLE) {
+	if (task->runState == taskC::RUNNABLE
+		|| task->runState == taskC::RUNNING)
+	{
 		return ERROR_SUCCESS;
 	};
 
 	if (!(task->runState == taskC::STOPPED
 		&& task->blockState == taskC::BLOCKED))
 	{
-		__kprintf(NOTICE TASKTRIB"unblock(0x%x): Invalid run state.\n",
-			task->getFullId());
+		__kprintf(NOTICE TASKTRIB"unblock(0x%x): Invalid run state."
+			"runState is %s.\n",
+			task->getFullId(),
+			runStates[task->runState]);
 
 		return ERROR_INVALID_OPERATION;
 	};

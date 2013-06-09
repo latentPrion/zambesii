@@ -5,6 +5,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/task.h>
+	#include <kernel/common/lock.h>
 	#include <kernel/common/taskTrib/prio.h>
 	#include <kernel/common/taskTrib/taskQNode.h>
 	#include <kernel/common/processTrib/processTrib.h>
@@ -12,6 +13,18 @@
 	#include <kernel/common/taskTrib/load.h>
 
 #define TASKTRIB		"Task Trib: "
+
+/**	Values for taskTribC::block()'s 'lockType' argument.
+ **/
+#define TASKTRIB_BLOCK_LOCKTYPE_WAIT			(0x0)
+#define TASKTRIB_BLOCK_LOCKTYPE_RECURSIVE		(0x1)
+#define TASKTRIB_BLOCK_LOCKTYPE_MULTIPLE_READER		(0x2)
+
+/**	Values for taskTribC::block()'s 'unlockOp' argument. Only needed when
+ * 'lockType' is MULTIPLE_READER.
+ **/
+#define TASKTRIB_BLOCK_UNLOCK_OP_READ			(0x0)
+#define TASKTRIB_BLOCK_UNLOCK_OP_WRITE			(0x1)
 
 class taskTribC
 :
@@ -26,6 +39,11 @@ public:
 	error_t schedule(taskC *task);
 	void yield(void);
 	void block(void);
+	// Used to prevent race conditions. See comments in definition.
+	void block(
+		lockC *lock, ubit8 lockType,
+		ubit8 unlockOp=0, uarch_t unlockFlags=0);
+
 	error_t dormant(taskC *task);
 	error_t dormant(processId_t tid)
 	{

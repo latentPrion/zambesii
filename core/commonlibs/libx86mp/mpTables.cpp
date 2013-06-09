@@ -170,7 +170,7 @@ void x86Mp::unmapMpConfigTable(void)
 		cache.cfg, &p, nPages, &f);
 
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
-		cache.cfg, nPages);
+		(void *)((uintptr_t)cache.cfg & PAGING_BASE_MASK_HIGH), nPages);
 
 	cache.cfg = __KNULL;
 }

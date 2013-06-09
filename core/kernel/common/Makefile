@@ -3,7 +3,7 @@ DELIVERABLE=../../kernel.a
 OBJFILES=__kheaders.o __koptimizationHacks.o __kclassInstances.o \
 	multipleReaderLock.o waitLock.o recursiveLock.o vSwamp.o panic.o \
 	numaMemoryBank.o numaMemoryRange.o task.o process.o numaCpuBank.o \
-	processStream_inheritance.o
+	processStream_inheritance.o callbackStream.o
 
 all: Makefile $(DELIVERABLE)
 

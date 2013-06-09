@@ -28,7 +28,8 @@ error_t taskC::initialize(void)
 	if (ret != ERROR_SUCCESS) { return ret; };
 #endif
 
-	ret = registeredEvents.initialize(32);
+	// Initialize callback queues.
+	ret = callbackStream.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// The event queues use object caching to speed up alloc/free of nodes.

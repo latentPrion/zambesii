@@ -3,6 +3,7 @@
 
 	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/ptrDoubleList.h>
+	#include <kernel/common/waitLock.h>
 
 #define SWAITQ		"Single-WaiterQ: "
 
@@ -32,7 +33,7 @@ public:
 	// pointerDoubleListC::remove() is sufficient, needs no extending.
 	// pointerDoubleListC::getHead() is sufficient, needs no extending.
 	// pointerDoubleListC::getNItems() is sufficient, needs no extending.
-	void *pop(uarch_t flags=0);
+	error_t pop(void **ret, uarch_t flags=0);
 	error_t setWaitingThread(taskC *task);
 	error_t setWaitingTask(taskC *task)
 	{
@@ -51,6 +52,7 @@ public:
 
 private:
 	taskC		*task;
+	waitLockC	lock;
 };
 
 #endif

@@ -363,7 +363,6 @@ status_t x86CpuEnumeration::intel(void)
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		if (intelBrandStringEnum() == ERROR_SUCCESS) {
-__kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel);
 			return ERROR_SUCCESS;
 		};
 	};
@@ -377,7 +376,6 @@ __kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		if (intelBrandIdEnum(brandId) == ERROR_SUCCESS) {
-__kprintf(NOTICE INTELENUM"CPU Identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel);
 			return ERROR_SUCCESS;
 		};
 	};
@@ -396,7 +394,6 @@ __kprintf(NOTICE INTELENUM"CPU Identified as %s.\n", cpuTrib.getCurrentCpuStream
 
 		return ret;
 	};
-__kprintf(NOTICE INTELENUM"CPU identified as %s.\n", cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel);
 	return ERROR_SUCCESS;
 }
 

@@ -8,54 +8,66 @@
 error_t singleWaiterQueueC::addItem(void *item)
 {
 	error_t		ret;
-	ubit8		needToWake=0;
 
-	if (task != __KNULL && task->runState != taskC::RUNNABLE
-		&& task->runState != taskC::RUNNING)
+	// Prevent lost wakeups from race conditions.
+	lock.acquire();
+
+	if (task == __KNULL)
 	{
-		needToWake = 1;
+		lock.release();
+		return ERROR_UNINITIALIZED;
 	};
 
 	ret = pointerDoubleListC<void>::addItem(item);
-	if (ret != ERROR_SUCCESS) { return ret; };
+	if (ret != ERROR_SUCCESS)
+	{
+		lock.release();
+		return ret;
+	};
 
-	if (needToWake && task != __KNULL)
+	// The "3" is to reduce chances of lost wakeups.
+	if (pointerDoubleListC<void>::getNItems() < 3)
 	{
 		ret = taskTrib.unblock(task);
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(NOTICE SWAITQ"Failed to unblock "
-				"task 0x%x.\n", task->getFullId());
-
 			pointerDoubleListC<void>::removeItem(item);
+
+			lock.release();
+
+			__kprintf(NOTICE SWAITQ"Failed to unblock task 0x%x.\n",
+				task->getFullId());
+
 			return ret;
 		};
 	};
 
+	lock.release();
 	return ERROR_SUCCESS;
 }
 
-void *singleWaiterQueueC::pop(uarch_t flags)
+error_t singleWaiterQueueC::pop(void **item, uarch_t flags)
 {
-	void	*ret;
-
-	/**	NOTE:
-	 * It may be possible for another CPU to simultaneously have
-	 * added an item between after we called pop(), and before
-	 * the call to block() is completed. Think of a way
-	 * to guarantee that this will not cause any problems.
-	 **/
-	ret = pointerDoubleListC<void>::popFromHead();
-	for (;
-		!__KFLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_DONTBLOCK)
-			&& ret == __KNULL;
-		ret = pointerDoubleListC<void>::popFromHead())
+	for (;;)
 	{
-__kprintf(NOTICE"Going to sleep\n");
-		taskTrib.block();
-	};
+		// Prevent lost wakeups from race conditions.
+		lock.acquire();
 
-	return ret;
+		*item = pointerDoubleListC<void>::popFromHead();
+		if (*item != __KNULL)
+		{
+			lock.release();
+			return ERROR_SUCCESS;
+		};
+
+		if (__KFLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_DONTBLOCK))
+		{
+			lock.release();
+			return ERROR_WOULD_BLOCK;
+		};
+
+		taskTrib.block(&lock, TASKTRIB_BLOCK_LOCKTYPE_WAIT);
+	};
 }
 
 error_t singleWaiterQueueC::setWaitingThread(taskC *task)

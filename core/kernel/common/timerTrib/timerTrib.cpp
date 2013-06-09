@@ -478,16 +478,18 @@ void timerTribC::eventProcessorS::thread(void *)
 {
 	eventProcessorS::messageS	*currMsg;
 	sarch_t				messagesWereFound;
+	error_t				err;
 
 	__kprintf(NOTICE TIMERTRIB"Event DQer thread has begun executing.\n");
 	for (;;)
 	{
 		messagesWereFound = 0;
 
-		currMsg = (messageS *)timerTrib.eventProcessor.controlQueue.pop(
+		err = timerTrib.eventProcessor.controlQueue.pop(
+			(void **)&currMsg,
 			SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
-		if (currMsg != __KNULL)
+		if (err == ERROR_SUCCESS)
 		{
 			messagesWereFound = 1;
 			switch (currMsg->type)
@@ -536,11 +538,12 @@ void timerTribC::eventProcessorS::thread(void *)
 				continue;
 			};
 
-			currIrqEvent = (zkcmTimerEventS *)timerTrib
-				.eventProcessor.waitSlots[i].eventQueue->pop(
+			err = timerTrib.eventProcessor.waitSlots[i].eventQueue
+				->pop(
+					(void **)&currIrqEvent,
 					SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
-			if (currIrqEvent != __KNULL)
+			if (err == ERROR_SUCCESS)
 			{
 				messagesWereFound = 1;
 

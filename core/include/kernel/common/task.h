@@ -13,6 +13,7 @@
 	#include <kernel/common/processId.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/taskTrib/prio.h>
+	#include <kernel/common/callbackStream.h>
 	#include <kernel/common/timerTrib/timerStream.h>
 	// Do not #include <kernel/common/process.h> from within this file.
 
@@ -74,7 +75,9 @@ public:
 	runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
 
 	currentCpu(__KNULL),
-	nLocksHeld(0)
+	nLocksHeld(0),
+
+	callbackStream(getFullId(), this)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		defaultMemoryBank.rsrc = NUMABANKID_INVALID;
@@ -139,8 +142,8 @@ public:
 	tlbContextS	tlbContext;
 #endif
 
-	// Events being waited on by this thread.
-	bitmapC		registeredEvents;
+	// Asynchronous API callback queues for this thread.
+	callbackStreamC		callbackStream;
 	pointerDoubleListC<timerStreamC::eventS>	timerStreamEvents;
 };
 
