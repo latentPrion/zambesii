@@ -82,6 +82,7 @@ static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 	return !isNewerCpu;
 }
 
+#include <arch/cpuControl.h>
 status_t cpuStreamC::powerManagerC::bootPowerOn(ubit32)
 {
 	error_t		ret;
@@ -229,6 +230,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 			break;
 
 		default:
+//__kprintf(NOTICE"After INIT ipi on CPU %d, local ints are %d, nLocks %d.\n", cs->cpuId, cpuControl::interruptsEnabled(), cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->nLocksHeld);
 			// CPU successfully booted.
 			__kprintf(NOTICE CPUPWRMGR"%d: Successfully booted.\n",
 				cs->cpuId);

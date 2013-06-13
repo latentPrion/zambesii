@@ -69,14 +69,19 @@ public:
 	 * As you can see, the majority of the general userspace arguments
 	 * to spawnStream() are redundant for creating distributary processes.
 	 **/
+	// Callback uses genericCallbackS.
+	#define ZCALLBACK_PROCESS_FUNCTION_SPAWN_DISTRIBUTARY	(0)
 	error_t spawnDistributary(
 		utf8Char *commandLine,
 		utf8Char *environment,
 		numaBankId_t addrSpaceBinding,
 		ubit8 schedPrio,
 		uarch_t flags,
+		void *privateData,
 		distributaryProcessC **ret);
 
+	// Callback uses genericCallbackS.
+	#define ZCALLBACK_PROCESS_FUNCTION_SPAWN_STREAM		(1)
 	error_t spawnStream(
 		utf8Char *commandLine,
 		utf8Char *environment,
@@ -87,6 +92,7 @@ public:
 		ubit8 schedPolicy,		// Sched policy of 1st thread.
 		ubit8 prio,			// Sched prio of 1st thread.
 		uarch_t flags,			// proc + 1st thread spawn flags
+		void *privateData,
 		processStreamC **ret);		// Returned error value.
 
 	error_t destroyStream(void);
@@ -151,7 +157,7 @@ inline error_t processTribC::getNewProcessId(processId_t *ret)
 	processes.lock.readRelease(rwFlags);
 
 	if (tmpId < 1) { return ERROR_RESOURCE_EXHAUSTED; };
-	*ret = (processId_t)tmpId;
+	*ret = (processId_t)tmpId << PROCID_PROCESS_SHIFT;
 	return ERROR_SUCCESS;
 }
 

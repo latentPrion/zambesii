@@ -4,6 +4,8 @@
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/panic.h>
+#include <kernel/common/callbackStream.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
@@ -139,6 +141,18 @@ error_t processTribC::getExecutableFormat(
 	return ERROR_UNSUPPORTED;
 }
 
+static void initializeSpawnProcessCallback(
+	callbackStreamC::genericCallbackS *message, taskC *self
+	)
+{
+	message->header.sourceId = self->parent->id;
+	message->header.privateData = self->parent->privateData;
+	message->header.flags = 0;
+	message->header.subsystem = ZCALLBACK_SUBSYSTEM_PROCESS;
+	message->header.function =
+		ZCALLBACK_PROCESS_FUNCTION_SPAWN_DISTRIBUTARY;
+}
+
 /**	EXPLANATION:
  * This is the common entry point for every process other than the kernel
  * process. It seeks to find out what executable format the new process' image
@@ -167,6 +181,7 @@ void processTribC::commonEntry(void *)
 	processStreamC::initializationBlockSizeInfoS	initBlockSizes;
 	processStreamC::initializationBlockS		*initBlock;
 	processStreamC::executableFormatE		executableFormat;
+	callbackStreamC::genericCallbackS		*callbackMessage;
 	uarch_t						initBlockNPages;
 	error_t						err;
 	void						(*jumpAddress)(void);
@@ -189,6 +204,18 @@ void processTribC::commonEntry(void *)
 
 	__kprintf(NOTICE"New process running. ID = 0x%x.\n",
 		self->getFullId());
+
+	// Allocate the callback message memory.
+	callbackMessage = new callbackStreamC::genericCallbackS;
+	if (callbackMessage == __KNULL)
+	{
+		__kprintf(FATAL PROCTRIB"commonEntry: process 0x%x:\n",
+			self->getFullId());
+
+		panic(CC"\tFailed to allocate callback message.\n");
+	};
+
+	initializeSpawnProcessCallback(callbackMessage, self);
 
 	self->parent->getInitializationBlockSizeInfo(&initBlockSizes);
 	initBlockNPages = PAGING_BYTES_TO_PAGES(
@@ -245,7 +272,16 @@ void processTribC::commonEntry(void *)
 			"format. Halting.\n",
 			self->getFullId());
 
-		for (;;) { asm volatile("hlt\n\t"); };
+		callbackMessage->header.err = err;
+		err = callbackStreamC::enqueueCallback(
+			self->parent->parentThreadId, &callbackMessage->header);
+
+		if (err != ERROR_SUCCESS) {
+			panic(FATAL"commonEntry: Failed to queue callback\n");
+		};
+
+		// Until we have a destroyStream(), we just dormant it.
+		taskTrib.dormant(self->getFullId());
 	};
 
 	if (executableFormat != processStreamC::RAW)
@@ -255,7 +291,16 @@ void processTribC::commonEntry(void *)
 			"format %d.\n",
 			self->getFullId(), executableFormat);
 
-		for (;;) { asm volatile("hlt\n\t"); };
+		callbackMessage->header.err = ERROR_UNSUPPORTED;
+		err = callbackStreamC::enqueueCallback(
+			self->parent->parentThreadId, &callbackMessage->header);
+
+		if (err != ERROR_SUCCESS) {
+			panic(FATAL"commonEntry: Failed to queue callback\n");
+		};
+
+		// Until we have a destroyStream(), we just dormant it.
+		taskTrib.dormant(self->getFullId());
 	};
 
 	/* For RAW processes, jumpAddress is set by their get*ExecutableFormat.
@@ -286,6 +331,18 @@ void processTribC::commonEntry(void *)
 	context->setStacks(self->stack0, self->stack1, 1);
 	context->setEntryPoint((void (*)(void *))jumpAddress);
 
+	callbackMessage->header.err = ERROR_SUCCESS;
+	err = callbackStreamC::enqueueCallback(
+		self->parent->parentThreadId, &callbackMessage->header);
+
+	if (err != ERROR_SUCCESS)
+	{
+		panic(FATAL"commonEntry: Failed to queue callback\n");
+		// Until we have a destroyStream(), we just dormant it.
+		taskTrib.dormant(self->getFullId());
+	};
+
+	// FIXME: Add support for SPAWNPROCESS_FLAGS_DORMANT.
 	// Now just jump.
 	loadContextAndJump(context);
 }
@@ -296,19 +353,19 @@ error_t processTribC::spawnDistributary(
 	numaBankId_t addrSpaceBinding,
 	ubit8 /*schedPrio*/,
 	uarch_t /*flags*/,
+	void *privateData,
 	distributaryProcessC **newProcess
 	)
 {
 	error_t			ret;
 	processId_t		newProcessId;
-	processStreamC		*parentProcess;
-	taskC			*firstTask;
+	taskC			*parentThread, *firstTask;
 
 	if (commandLine == __KNULL || newProcess == __KNULL)
 		{ return ERROR_INVALID_ARG; };
 
-	parentProcess = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask()->parent;
+	parentThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask();
 
 	ret = getNewProcessId(&newProcessId);
 	if (ret != ERROR_SUCCESS)
@@ -318,7 +375,8 @@ error_t processTribC::spawnDistributary(
 	};
 
 	*newProcess = new distributaryProcessC(
-		newProcessId, parentProcess->id, addrSpaceBinding);
+		newProcessId, parentThread->getFullId(),
+		addrSpaceBinding, privateData);
 
 	if (*newProcess == __KNULL)
 	{
@@ -336,7 +394,7 @@ error_t processTribC::spawnDistributary(
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	processes.lock.writeAcquire();
-	processes.rsrc[newProcessId] = *newProcess;
+	processes.rsrc[PROCID_PROCESS(newProcessId)] = *newProcess;
 	processes.lock.writeRelease();
 
 	// Spawn the first thread.
@@ -371,6 +429,7 @@ error_t *processTribC::spawnStream(
 	ubit8 /*schedPolicy*/,			// Sched policy of 1st thread.
 	ubit8 /*prio*/,				// Sched prio of 1st thread.
 	uarch_t /*ftFlags*/,			// 1st thread spawn flags.
+	void *privateData,
 	error_t *err				// Returned error value.
 	)
 {

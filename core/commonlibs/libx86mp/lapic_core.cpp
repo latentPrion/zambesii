@@ -246,6 +246,7 @@ void x86LapicC::write32(ubit32 offset, ubit32 val)
 	*reinterpret_cast<ubit32 *>( (uarch_t)cache.v + offset ) = val;
 }
 
+#include <debug.h>
 error_t x86LapicC::setupLapic(void)
 {
 	/**	EXPLANATION:
@@ -303,7 +304,6 @@ error_t x86LapicC::setupLapic(void)
 
 	// This is called only when the CPU is ready to take IPIs.
 	parent->interCpuMessager.bind();
-
 	lint.setupLints(parent);
 
 	return ERROR_SUCCESS;

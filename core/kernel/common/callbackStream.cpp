@@ -2,7 +2,27 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/callbackStream.h>
 #include <kernel/common/taskTrib/taskTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
+error_t callbackStreamC::enqueueCallback(
+	processId_t targetThreadId, headerS *header
+	)
+{
+	processStreamC	*targetProcess;
+	taskC		*targetThread;
+
+	targetProcess = processTrib.getStream(targetThreadId);
+	if (targetProcess == __KNULL) {
+		return ERROR_INVALID_RESOURCE_NAME;
+	};
+
+	targetThread = targetProcess->getThread(targetThreadId);
+	if (targetThread == __KNULL) {
+		return ERROR_INVALID_RESOURCE_NAME;
+	};
+
+	return targetThread->callbackStream.enqueue(header);
+}
 
 error_t callbackStreamC::pull(headerS **callback, ubit32 flags)
 {
@@ -64,6 +84,7 @@ error_t	callbackStreamC::enqueue(headerS *callback)
 
 	pendingSubsystems.unlock();
 
+__kprintf(NOTICE"Just enqueued message. Ret is %d, subsystem bit %d.\n", ret, pendingSubsystems.testSingle(callback->subsystem));
 	return ret;
 }
 

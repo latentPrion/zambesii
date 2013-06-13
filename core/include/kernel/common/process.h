@@ -59,12 +59,13 @@ public:
 	enum executableFormatE { RAW=0, ELF, PE, MACHO };
 
 	processStreamC(
-		processId_t processId, processId_t parentProcId,
-		ubit8 execDomain)
+		processId_t processId, processId_t parentThreadId,
+		ubit8 execDomain, void *privateData)
 	:
-		id(processId), parentId(parentProcId),
+		id(processId), parentThreadId(parentThreadId),
 		executableFormat(RAW),
 		flags(0),
+		privateData(privateData),
 
 		// Kernel process hands out thread IDs from 1 since 0 is taken.
 		nextTaskId(
@@ -164,9 +165,11 @@ public:
 				value[PROCESS_ENV_VALUE_MAXLEN];
 	};
 
-	processId_t		id, parentId;
+	processId_t		id, parentThreadId;
 	executableFormatE	executableFormat;
 	uarch_t			flags;
+	// Only used once, but w/e, only 4-8 bytes.
+	void			*privateData;
 
 	multipleReaderLockC	taskLock;
 	wrapAroundCounterC	nextTaskId;
@@ -222,9 +225,10 @@ public:
 	containerProcessC(
 		processId_t processId, processId_t parentProcessId,
 		ubit8 execDomain, numaBankId_t numaAddrSpaceBinding,
-		void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
+		void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize,
+		void *privateData)
 	:
-	processStreamC(processId, parentProcessId, execDomain),
+	processStreamC(processId, parentProcessId, execDomain, privateData),
 	addrSpaceBinding(numaAddrSpaceBinding),
 	vaddrSpaceStream(
 		processId, this,
@@ -265,9 +269,10 @@ public:
 	containedProcessC(
 		processId_t processId, processId_t parentProcessId,
 		ubit8 execDomain,
-		containerProcessC *containerProcess)
+		containerProcessC *containerProcess,
+		void *privateData)
 	:
-	processStreamC(processId, parentProcessId, execDomain),
+	processStreamC(processId, parentProcessId, execDomain, privateData),
 	containerProcess(containerProcess)
 	{}
 
@@ -306,7 +311,8 @@ public:
 		__KPROCESSID, __KPROCESSID,
 		PROCESS_EXECDOMAIN_KERNEL,
 		NUMABANKID_INVALID,
-		vaddrSpaceBaseAddr, vaddrSpaceSize)
+		vaddrSpaceBaseAddr, vaddrSpaceSize,
+		__KNULL)
 	{}
 
 	error_t initialize(
@@ -333,14 +339,16 @@ public containerProcessC
 public:
 	distributaryProcessC(
 		processId_t processId, processId_t parentProcessId,
-		numaBankId_t numaAddrSpaceBinding)
+		numaBankId_t numaAddrSpaceBinding,
+		void *privateData)
 	:
 	containerProcessC(
 		processId, parentProcessId,
 		PROCESS_EXECDOMAIN_KERNEL,	// Always kernel domain.
 		numaAddrSpaceBinding,
 		(void *)0x100000,
-		ARCH_MEMORY___KLOAD_VADDR_BASE - 0x100000 - 0x1000)
+		ARCH_MEMORY___KLOAD_VADDR_BASE - 0x100000 - 0x1000,
+		privateData)
 	{}
 
 	error_t initialize(

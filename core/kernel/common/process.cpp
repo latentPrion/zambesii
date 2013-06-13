@@ -535,6 +535,9 @@ error_t processStreamC::spawnThread(
 	ret = getNewThreadId(&newTaskId);
 	if (ret != ERROR_SUCCESS) { return SPAWNTHREAD_STATUS_NO_PIDS; };
 
+	// Combine the parent process ID with new thread ID for full thread ID.
+	newTaskId = id | newTaskId;
+
 	// Allocate new thread if ID was available.
 	*newTask = allocateNewThread(newTaskId);
 	if (*newTask == __KNULL) { return ERROR_MEMORY_NOMEM; };
@@ -584,16 +587,17 @@ taskC *processStreamC::allocateNewThread(processId_t newThreadId)
 	return ret;
 }
 
-void processStreamC::removeThread(processId_t id)
+void processStreamC::removeThread(processId_t threadId)
 {
 	taskLock.writeAcquire();
 
-	if (tasks[PROCID_THREAD(id)] != __KNULL)
+	if (tasks[PROCID_THREAD(threadId)] != __KNULL)
 	{
-		delete tasks[PROCID_THREAD(id)];
-		tasks[PROCID_THREAD(id)] = __KNULL;
+		delete tasks[PROCID_THREAD(threadId)];
+		tasks[PROCID_THREAD(threadId)] = __KNULL;
 	};
 
+	nTasks--;
 	taskLock.writeRelease();
 }
 

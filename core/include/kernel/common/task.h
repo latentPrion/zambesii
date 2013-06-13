@@ -87,8 +87,7 @@ public:
 	error_t initialize(void);
 
 public:
-	processId_t getId(void) { return id; }
-	processId_t getFullId(void);
+	processId_t getFullId(void) { return id; }
 
 private:
 	// Passes down parent attributes to child.
@@ -109,8 +108,8 @@ public:
 	void		*stack0, *stack1;
 
 	// Basic information.
-	processId_t		id;
-	processStreamC		*parent;
+private:processId_t		id;
+public:	processStreamC		*parent;
 	uarch_t			flags;	
 	taskContextC		*context;
 	multipleReaderLockC	lock;

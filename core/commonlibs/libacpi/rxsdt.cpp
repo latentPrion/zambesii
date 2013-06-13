@@ -218,6 +218,7 @@ acpi_rFadtS *acpiRsdt::getNextFadt(
 	return ret;
 }
 
+#include <kernel/common/cpuTrib/cpuTrib.h>
 void acpiRsdt::destroySdt(acpi_sdtS *sdt)
 {
 	uarch_t		nPages, f;
@@ -236,5 +237,6 @@ void acpiRsdt::destroySdt(acpi_sdtS *sdt)
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		(void *)((uintptr_t)sdt & PAGING_BASE_MASK_HIGH),
 		nPages);
+if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP)) {__kprintf(NOTICE"Destroying SDT @v 0x%p on CPU %d.\n", sdt, cpuTrib.getCurrentCpuStream()->cpuId);};
 }
 

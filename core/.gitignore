@@ -1,4 +1,5 @@
 *.[oas]
 __klinkScript.ld
 tmp
+/Makefile
 

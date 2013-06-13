@@ -129,6 +129,10 @@ void __korientationMain(void)
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
+__kprintf(NOTICE ORIENT"localInterrupts: %d, nLocksHeld: %d.\n",
+	cpuControl::interruptsEnabled(),
+	self->nLocksHeld);
+for (;;) { asm volatile("hlt\n\t"); };
 
 	/* Initialize the VFS Trib to enable us to begin constructing the
 	 * various currentts, and then populate the distributary namespace.
@@ -137,43 +141,34 @@ void __korientationMain(void)
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
 
 
-	distributaryProcessC		*dtrib, *dtrib2, *dtrib3;
 
-	DO_OR_DIE(
-		processTrib,
-		spawnDistributary(
-			CC"@d/storage/cisternn", __KNULL,
-			NUMABANKID_INVALID, 0, 0,
-			&dtrib),
-		ret);
+	distributaryProcessC		*dtribs[3];
 
-	__kprintf(NOTICE ORIENT"Spawned first process; about to dormant.\n");
-	taskTrib.dormant(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+	for (ubit8 i=0; i<3; i++)
+	{
+		DO_OR_DIE(
+			processTrib,
+			spawnDistributary(
+				CC"@d/storage/cisternn", __KNULL,
+				NUMABANKID_INVALID, 0, 0,
+				(void *)i,
+				&dtribs[i]),
+			ret);
 
-	DO_OR_DIE(
-		processTrib,
-		spawnDistributary(
-			CC"@d/storage/cisternn", __KNULL,
-			NUMABANKID_INVALID, 0, 0,
-			&dtrib2),
-		ret);
+		__kprintf(NOTICE ORIENT"Spawned %dth process.\n", i);
+	};
 
-	__kprintf(NOTICE ORIENT"Spawned second process; about to dormant.\n");
-	taskTrib.dormant(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+	for (ubit8 i=0; i<3; i++)
+	{
+		callbackStreamC::genericCallbackS	*callback;
 
-	DO_OR_DIE(
-		processTrib,
-		spawnDistributary(
-			CC"@d/storage", __KNULL,
-			NUMABANKID_INVALID, 0, 0,
-			&dtrib3),
-		ret);
+		self->callbackStream.pull(
+			(callbackStreamC::headerS **)&callback);
 
-	__kprintf(NOTICE ORIENT"Spawned third process; about to dormant.\n");
-	taskTrib.dormant(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask());
+		__kprintf(NOTICE ORIENT"pulled %dth callback: err %d.\n",
+			callback->header.privateData,
+			callback->header.err);
+	};
 
 	__kprintf(NOTICE ORIENT"GG :).\n");
 	for (;;) { asm volatile("hlt\n\t"); };

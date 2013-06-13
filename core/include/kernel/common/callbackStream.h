@@ -60,7 +60,8 @@ public:
 			if (ret != ERROR_SUCCESS) { return ret; };
 		};
 
-		return ERROR_SUCCESS;
+		return pendingSubsystems.initialize(
+			ZCALLBACK_SUBSYSTEM_MAXVAL + 1);
 	};
 
 	~callbackStreamC(void) {};
@@ -104,6 +105,11 @@ public:
 		ubit16		subsystem, function;
 	};
 
+	struct genericCallbackS
+	{
+		headerS		header;
+	};
+
 public:
 	pointerDoubleListC<headerS> *getSubsystem(ubit8 subsystemId)
 	{
@@ -115,6 +121,10 @@ public:
 
 	error_t pull(headerS **callback, ubit32 flags=0);
 	error_t	enqueue(headerS *callback);
+
+	// Utility function exported for other subsystems to use.
+	static error_t enqueueCallback(
+		processId_t targetProcess, headerS *header);
 
 private:
 	pointerDoubleListC<headerS>	queues[ZCALLBACK_SUBSYSTEM_MAXVAL + 1];

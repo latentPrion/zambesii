@@ -16,6 +16,6 @@ foo
 *.tmp
 .bochsrc
 *.iso
-Makefile.vars
-Makefile
+/Makefile.vars
+/Makefile
 

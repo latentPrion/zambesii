@@ -36,6 +36,7 @@ static void lintParseRMadtForEntries(acpi_rMadtS *rmadt, cpuStreamC *parent)
 	};
 }
 
+#include <kernel/common/cpuTrib/cpuTrib.h>
 void x86LapicC::lintS::rsdtSetupLints(cpuStreamC *parent)
 {
 	acpi_rsdtS		*rsdt;
@@ -45,16 +46,28 @@ void x86LapicC::lintS::rsdtSetupLints(cpuStreamC *parent)
 	rsdt = acpi::getRsdt();
 	context = handle = __KNULL;
 	rmadt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
+
+int	i=0;
 	while (rmadt != __KNULL)
 	{
+i++;
+if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
+{
+	__kprintf(NOTICE"CPU %d: madt at 0x%p.\n", cpuTrib.getCurrentCpuStream()->cpuId, rmadt);
+};
 		lintParseRMadtForEntries(rmadt, parent);
 
 		acpiRsdt::destroySdt((acpi_sdtS *)rmadt);
+if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
+{
+	asm volatile("cli\n\thlt\n\t");
+};
 		rmadt = acpiRsdt::getNextMadt(
 			rsdt, &context, &handle);
 	};
 }
 
+#include <debug.h>
 error_t x86LapicC::lintS::setupLints(cpuStreamC *parent)
 {
 	uarch_t				pos=0;

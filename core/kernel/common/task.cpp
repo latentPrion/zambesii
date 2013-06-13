@@ -9,11 +9,6 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-processId_t taskC::getFullId(void)
-{
-	return (parent->id << PROCID_PROCESS_SHIFT) | id;
-}
-
 error_t taskC::initialize(void)
 {
 	error_t		ret;

@@ -26,7 +26,10 @@ error_t singleWaiterQueueC::addItem(void *item)
 	};
 
 	// The "3" is to reduce chances of lost wakeups.
-	if (pointerDoubleListC<void>::getNItems() < 3)
+	ubit32		nItems;
+
+	nItems = pointerDoubleListC<void>::getNItems();
+	if (nItems == 1)
 	{
 		ret = taskTrib.unblock(task);
 		if (ret != ERROR_SUCCESS)
@@ -40,6 +43,9 @@ error_t singleWaiterQueueC::addItem(void *item)
 
 			return ret;
 		};
+
+		lock.release();
+		return ret;		
 	};
 
 	lock.release();
