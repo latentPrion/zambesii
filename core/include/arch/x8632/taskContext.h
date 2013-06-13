@@ -8,10 +8,10 @@
 
 class taskC;
 
-struct taskContextC
+struct registerContextC
 {
 public:
-	taskContextC(ubit8 execDomain);
+	registerContextC(ubit8 execDomain);
 	error_t initialize(void) { return ERROR_SUCCESS; };
 
 	/**	EXPLANATION:

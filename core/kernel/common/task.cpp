@@ -100,16 +100,16 @@ void taskC::initializeRegisterContext(
 
 	if (stackIndex == 0)
 	{
-		context = (taskContextC *)((uintptr_t)stack0
+		context = (registerContextC *)((uintptr_t)stack0
 			+ CHIPSET_MEMORY___KSTACK_NPAGES * PAGING_BASE_SIZE);
 	}
 	else
 	{
-		context = (taskContextC *)((uintptr_t)stack1
+		context = (registerContextC *)((uintptr_t)stack1
 			+ CHIPSET_MEMORY_USERSTACK_NPAGES * PAGING_BASE_SIZE);
 	};
 
-	// Context -= sizeof(taskContextC);
+	// Context -= sizeof(registerContextC);
 	context--;
 
 	/* For the very first thread in a process, we execute a short sequence
@@ -119,7 +119,7 @@ void taskC::initializeRegisterContext(
 	 * For every subsequent thread in a process, we initialize the register
 	 * context with the parent process' exec domain.
 	 **/
-	new (context) taskContextC(
+	new (context) registerContextC(
 		(isFirstThread)
 			? PROCESS_EXECDOMAIN_KERNEL
 			: parent->execDomain);

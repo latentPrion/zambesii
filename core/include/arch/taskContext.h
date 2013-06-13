@@ -4,6 +4,6 @@
 extern "C"
 {
 	void saveContextAndCallPull(void *cpuSleepStackBaseAddr);
-	void loadContextAndJump(taskContextC *tc);
+	void loadContextAndJump(registerContextC *tc);
 }
 

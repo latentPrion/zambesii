@@ -111,7 +111,7 @@ public:
 private:processId_t		id;
 public:	processStreamC		*parent;
 	uarch_t			flags;	
-	taskContextC		*context;
+	registerContextC		*context;
 	multipleReaderLockC	lock;
 
 	// Scheduling information.

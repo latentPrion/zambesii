@@ -11,7 +11,7 @@
 #include <__kthreads/__korientation.h>
 
 
-extern "C" void taskStream_pull(taskContextC *savedContext)
+extern "C" void taskStream_pull(registerContextC *savedContext)
 {
 	cpuStreamC	*currCpu;
 

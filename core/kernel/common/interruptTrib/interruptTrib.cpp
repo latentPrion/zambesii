@@ -105,7 +105,7 @@ error_t interruptTribC::initializeIrqManagement(void)
 	return ERROR_SUCCESS;
 }
 
-void interruptTribC::pinIrqMain(taskContextC *regs)
+void interruptTribC::pinIrqMain(registerContextC *regs)
 {
 	irqPinDescriptorS	*pinDescriptor;
 	isrDescriptorS		*isrDescriptor, (*isrRetireList[4]);
@@ -227,7 +227,7 @@ void interruptTribC::pinIrqMain(taskContextC *regs)
 	};
 }
 
-void interruptTribC::exceptionMain(taskContextC *regs)
+void interruptTribC::exceptionMain(registerContextC *regs)
 {
 	if (msiIrqTable[regs->vectorNo].type == vectorDescriptorS::UNCLAIMED)
 	{

@@ -4,7 +4,7 @@
 #include "exceptions.h"
 
 
-status_t __attribute__((noreturn)) x8632_breakpoint(taskContextC *regs, ubit8)
+status_t __attribute__((noreturn)) x8632_breakpoint(registerContextC *regs, ubit8)
 {
 	taskC		*currTask;
 

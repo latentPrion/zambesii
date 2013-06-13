@@ -12,7 +12,7 @@
 
 static void noop(void) {}
 
-void interruptTrib_interruptEntry(taskContextC *regs)
+void interruptTrib_interruptEntry(registerContextC *regs)
 {
 	ubit8		makeNoise;
 

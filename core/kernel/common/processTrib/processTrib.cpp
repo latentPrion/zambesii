@@ -317,13 +317,13 @@ void processTribC::commonEntry(void *)
 	 * stack if we wish; this is simpler as well since there is no
 	 * risk of trampling.
 	 **/
-	taskContextC		*context;
+	registerContextC		*context;
 
-	context = (taskContextC *)((uintptr_t)self->stack1
+	context = (registerContextC *)((uintptr_t)self->stack1
 		+ (CHIPSET_MEMORY_USERSTACK_NPAGES * PAGING_BASE_SIZE));
 
 	context--;
-	new (context) taskContextC(self->parent->execDomain);
+	new (context) registerContextC(self->parent->execDomain);
 	err = context->initialize();
 	if (err != ERROR_SUCCESS) { for (;;) { asm volatile("hlt\n\t"); }; };
 

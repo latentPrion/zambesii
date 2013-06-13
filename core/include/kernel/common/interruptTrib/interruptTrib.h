@@ -104,10 +104,10 @@ public:
 	void dumpMsiIrqs(void);
 	void dumpUnusedVectors(void);
 
-	void pinIrqMain(taskContextC *regs);
-	void msiIrqMain(taskContextC *regs);
-	void swiMain(taskContextC *regs);
-	void exceptionMain(taskContextC *regs);
+	void pinIrqMain(registerContextC *regs);
+	void msiIrqMain(registerContextC *regs);
+	void swiMain(registerContextC *regs);
+	void exceptionMain(registerContextC *regs);
 
 private:
 	// These two are architecture specific.
@@ -227,7 +227,7 @@ private:
 };
 
 extern interruptTribC		interruptTrib;
-extern "C" void interruptTrib_interruptEntry(taskContextC *regs);
+extern "C" void interruptTrib_interruptEntry(registerContextC *regs);
 
 #endif
 

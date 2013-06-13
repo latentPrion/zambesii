@@ -32,8 +32,8 @@ uarch_t getEip(void)
 	return eip;
 }
 
-extern "C" void getRegs(taskContextC *t);
-//taskContextC		y(0);
+extern "C" void getRegs(registerContextC *t);
+//registerContextC		y(0);
 
 void __kcpuPowerOnMain(cpuStreamC *self)
 {

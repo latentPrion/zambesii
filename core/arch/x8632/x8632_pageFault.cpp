@@ -77,7 +77,7 @@ static sarch_t __kpropagateTopLevelVaddrSpaceChanges(void)
 	return 0;
 }
 
-status_t x8632_page_fault(taskContextC *regs, ubit8)
+status_t x8632_page_fault(registerContextC *regs, ubit8)
 {
 	status_t		status;
 	vaddrSpaceStreamC	*vaddrSpaceStream;
