@@ -31,7 +31,6 @@ cpuStreamC::cpuStreamC(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
 cpuStreamC::cpuStreamC(cpu_t cid, ubit32 acpiId)
 #endif
 :
-streamC(0),
 cpuId(cid), cpuAcpiId(acpiId),
 #if __SCALING__ >= SCALING_CC_NUMA
 bankId(bid),

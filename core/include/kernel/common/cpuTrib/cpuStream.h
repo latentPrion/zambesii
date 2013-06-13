@@ -42,8 +42,6 @@
 #define CPUMESSAGE_TYPE_TLBFLUSH	0x0
 
 class cpuStreamC
-:
-public streamC
 {
 public:
 #if __SCALING__ >= SCALING_CC_NUMA

@@ -14,7 +14,7 @@ status_t __attribute__((noreturn)) x8632_debug(registerContextC *regs, ubit8)
 		"\tESP 0x%p, EBP 0x%p, stack0 0x%p, stack1 0x%p\n"
 		"\tESI 0x%x, EDI 0x%x\n"
 		"\tEAX 0x%x, EBX 0x%x, ECX 0x%x, EDX 0x%x.\n",
-		cpuTrib.getCurrentCpuStream()->id,
+		cpuTrib.getCurrentCpuStream()->cpuId,
 		regs->cs, regs->eip, regs->eflags,
 		regs->esp, regs->ebp,
 			currTask->stack0, currTask->stack1,

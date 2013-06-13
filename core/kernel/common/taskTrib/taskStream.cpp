@@ -53,7 +53,7 @@ void taskStreamC::dump(void)
 {
 	__kprintf(NOTICE TASKSTREAM"%d: load %d, capacity %d, "
 		"currentTask 0x%x(@0x%p): dump.\n",
-		parentCpu->id,
+		parentCpu->cpuId,
 		load, capacity,
 		getCurrentTask()->getFullId(), getCurrentTask());
 
@@ -87,7 +87,7 @@ error_t taskStreamC::cooperativeBind(void)
 		__korientationThread.schedPrio->prio,
 		__korientationThread.schedOptions);*/
 
-	cpuTrib.onlineCpus.setSingle(parentCpu->id);
+	cpuTrib.onlineCpus.setSingle(parentCpu->cpuId);
 	return ERROR_SUCCESS;
 }
 
@@ -125,12 +125,12 @@ status_t taskStreamC::schedule(taskC *task)
 
 #if __SCALING__ >= SCALING_SMP
 	// Make sure that this CPU is in the task's affinity.
-	if (!task->cpuAffinity.testSingle(parentCpu->id)) {
+	if (!task->cpuAffinity.testSingle(parentCpu->cpuId)) {
 		return TASK_SCHEDULE_TRY_AGAIN;
 	};
 
 	CHECK_AND_RESIZE_BMP(
-		&task->parent->cpuTrace, parentCpu->id, &ret,
+		&task->parent->cpuTrace, parentCpu->cpuId, &ret,
 		"schedule", "cpuTrace");
 
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -163,7 +163,7 @@ status_t taskStreamC::schedule(taskC *task)
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	task->parent->cpuTrace.setSingle(parentCpu->id);
+	task->parent->cpuTrace.setSingle(parentCpu->cpuId);
 	// Increment and notify upper layers of new task being scheduled.
 	updateLoad(LOAD_UPDATE_ADD, 1);
 	return ret;
