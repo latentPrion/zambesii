@@ -111,7 +111,7 @@ public:
 private:processId_t		id;
 public:	processStreamC		*parent;
 	uarch_t			flags;	
-	registerContextC		*context;
+	registerContextC	*context;
 	multipleReaderLockC	lock;
 
 	// Scheduling information.
@@ -144,6 +144,18 @@ public:	processStreamC		*parent;
 	// Asynchronous API callback queues for this thread.
 	callbackStreamC		callbackStream;
 	pointerDoubleListC<timerStreamC::eventS>	timerStreamEvents;
+};
+
+class taskContextC
+{
+};
+
+class threadC
+{
+};
+
+class perCpuThreadC
+{
 };
 
 #endif
