@@ -38,11 +38,23 @@ public:
 	processTribC(void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
 	:
 	__kprocess(vaddrSpaceBaseAddr, vaddrSpaceSize),
-	// Kernel occupies process ID 0; we begin handing process IDs from 1.
-	nextProcId(CHIPSET_MEMORY_MAX_NPROCESSES - 1, 1)
+	// Kernel occupies process ID 1; we begin handing process IDs from 2.
+	nextProcId(
+		CHIPSET_MEMORY_MAX_NPROCESSES - 1,
+		PROCID_PROCESS(__KPROCESSID) + 1)
 	{
 		memset(processes.rsrc, 0, sizeof(processes.rsrc));
-		processes.rsrc[0] = &__kprocess;
+		/**	EXPLANATION:
+		 * I am not a fan of mnemonic magic numbers, but in this case
+		 * I will use this here. The kernel reserves process ID 0, and
+		 * occupies process ID 1 for itself.
+		 *
+		 * To ensure that process ID 0 is never allocated, we fill its
+		 * index with garbage. We then expect that should this index
+		 * ever be dereferenced we should get a page fault of some kind.
+		 **/
+		processes.rsrc[0] = (processStreamC *)0xFEEDBEEF;
+		processes.rsrc[PROCID_PROCESS(__KPROCESSID)] = &__kprocess;
 
 		fillOutPrioClasses();
 	}
@@ -134,32 +146,6 @@ extern processTribC	processTrib;
 
 /**	Inline Methods
  *****************************************************************************/
-
-inline processStreamC *processTribC::getStream(processId_t id)
-{
-	processStreamC	*ret;
-	uarch_t		rwFlags;
-
-	processes.lock.readAcquire(&rwFlags);
-	ret = processes.rsrc[PROCID_PROCESS(id)];
-	processes.lock.readRelease(rwFlags);
-
-	return ret;
-}
-
-inline error_t processTribC::getNewProcessId(processId_t *ret)
-{
-	uarch_t		rwFlags;
-	sbit32		tmpId;
-
-	processes.lock.readAcquire(&rwFlags);
-	tmpId = nextProcId.getNextValue((void **)processes.rsrc);
-	processes.lock.readRelease(rwFlags);
-
-	if (tmpId < 1) { return ERROR_RESOURCE_EXHAUSTED; };
-	*ret = (processId_t)tmpId << PROCID_PROCESS_SHIFT;
-	return ERROR_SUCCESS;
-}
 
 #endif
 

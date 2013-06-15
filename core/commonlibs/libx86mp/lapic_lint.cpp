@@ -58,13 +58,13 @@ if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
 		lintParseRMadtForEntries(rmadt, parent);
 
 		acpiRsdt::destroySdt((acpi_sdtS *)rmadt);
+		rmadt = acpiRsdt::getNextMadt(
+			rsdt, &context, &handle);
+	};
 if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
 {
 	asm volatile("cli\n\thlt\n\t");
 };
-		rmadt = acpiRsdt::getNextMadt(
-			rsdt, &context, &handle);
-	};
 }
 
 #include <debug.h>

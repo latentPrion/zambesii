@@ -29,7 +29,7 @@ void recursiveLockC::acquire(void)
 		taskId.lock.acquire();
 
 #if __SCALING__ >= SCALING_SMP
-		if (taskId.rsrc == __KPROCESSID)
+		if (taskId.rsrc == PROCID_INVALID)
 		{
 			taskId.rsrc = task->getFullId();
 
@@ -100,7 +100,7 @@ void recursiveLockC::release(void)
 			enableIrqs = 1;
 		};
 		taskId.lock.acquire();
-		taskId.rsrc = __KPROCESSID << PROCID_PROCESS_SHIFT;
+		taskId.rsrc = PROCID_INVALID;
 		taskId.lock.release();
 		if (enableIrqs) {
 #endif

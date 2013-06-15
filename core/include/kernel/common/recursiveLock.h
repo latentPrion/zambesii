@@ -20,7 +20,7 @@ public lockC
 public:
 	recursiveLockC(void)
 	{
-		taskId.rsrc = __KPROCESSID;
+		taskId.rsrc = PROCID_INVALID;
 	}
 
 public:
@@ -28,7 +28,7 @@ public:
 	void release(void);
 
 private:
-	sharedResourceGroupC<waitLockC, uarch_t>	taskId;
+	sharedResourceGroupC<waitLockC, processId_t>	taskId;
 };
 
 #endif

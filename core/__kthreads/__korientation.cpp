@@ -6,6 +6,6 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-taskC	__korientationThread(0x0, processTrib.__kgetStream());
+taskC	__korientationThread(__KPROCESSID, processTrib.__kgetStream());
 ubit8	__korientationStack[PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES];
 

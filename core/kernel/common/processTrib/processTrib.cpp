@@ -347,6 +347,42 @@ void processTribC::commonEntry(void *)
 	loadContextAndJump(context);
 }
 
+processStreamC *processTribC::getStream(processId_t id)
+{
+	processStreamC	*ret;
+	uarch_t		rwFlags;
+
+	if (PROCID_PROCESS(id) == 0) {
+		panic(FATAL PROCTRIB"getStream: Attempt to get process 0.\n");
+	};
+
+	processes.lock.readAcquire(&rwFlags);
+	ret = processes.rsrc[PROCID_PROCESS(id)];
+	processes.lock.readRelease(rwFlags);
+
+	return ret;
+}
+
+error_t processTribC::getNewProcessId(processId_t *ret)
+{
+	uarch_t		rwFlags;
+	sbit32		tmpId;
+
+	processes.lock.readAcquire(&rwFlags);
+	tmpId = nextProcId.getNextValue((void **)processes.rsrc);
+	processes.lock.readRelease(rwFlags);
+
+	if (tmpId < 0) { return ERROR_RESOURCE_EXHAUSTED; };
+	if (tmpId <= PROCID_PROCESS(__KPROCESSID))
+	{
+		panic(FATAL PROCTRIB"getNewProcessId: attempt to hand out a "
+			"reserved procid.\n");
+	};
+
+	*ret = (processId_t)tmpId << PROCID_PROCESS_SHIFT;
+	return ERROR_SUCCESS;
+}
+
 error_t processTribC::spawnDistributary(
 	utf8Char *commandLine,
 	utf8Char *environment,

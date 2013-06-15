@@ -129,11 +129,11 @@ void __korientationMain(void)
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
-__kprintf(NOTICE ORIENT"localInterrupts: %d, nLocksHeld: %d.\n",
+/*__kprintf(NOTICE ORIENT"localInterrupts: %d, nLocksHeld: %d.\n",
 	cpuControl::interruptsEnabled(),
 	self->nLocksHeld);
 for (;;) { asm volatile("hlt\n\t"); };
-
+*/
 	/* Initialize the VFS Trib to enable us to begin constructing the
 	 * various currentts, and then populate the distributary namespace.
 	 **/

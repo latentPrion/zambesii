@@ -21,8 +21,6 @@
 
 typedef uarch_t		processId_t;
 
-#define __KPROCESSID		0x0
-
 #ifdef __32_BIT__
 
 #define PROCID_PROCESS_MASK	0xFFFF
@@ -30,6 +28,8 @@ typedef uarch_t		processId_t;
 
 #define PROCID_THREAD_MASK	0xFFFF
 #define PROCID_THREAD_SHIFT	0
+
+#define PROCID_INVALID		((processId_t)(0xFFFF << PROCID_PROCESS_SHIFT))
 
 #elif defined(__64_BIT__)
 
@@ -39,7 +39,12 @@ typedef uarch_t		processId_t;
 #define PROCID_THREAD_MASK	0xFFFFFFFF
 #define PROCID_THREAD_SHIFT	0
 
+#define PROCID_INVALID		\
+	((processId_t)(0xFFFFFFFF << PROCID_PROCESS_SHIFT))
+
 #endif
+
+#define __KPROCESSID		(0x1 << PROCID_PROCESS_SHIFT)
 
 #define PROCID_PROCESS(__id)				\
 	(((__id) >> PROCID_PROCESS_SHIFT) & PROCID_PROCESS_MASK)
