@@ -4,7 +4,7 @@
 	#include <scaling.h>
 	#include <__kclasses/bitmap.h>
 	#include <__kclasses/sortedPtrDoubleList.h>
-	#include <kernel/common/task.h>
+	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
@@ -12,6 +12,8 @@
 
 // This class is only used in NUMA builds of the kernel.
 #if __SCALING__ >= SCALING_CC_NUMA
+class threadC;
+
 class numaCpuBankC
 {
 public:
@@ -27,7 +29,7 @@ public:
 
 public:
 	// Chooses the best CPU on this bank to schedule the new task to.
-	error_t schedule(taskC *task);
+	error_t schedule(threadC *thread);
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };

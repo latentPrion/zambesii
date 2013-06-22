@@ -3,7 +3,7 @@
 #include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/recursiveLock.h>
-#include <kernel/common/task.h>
+#include <kernel/common/thread.h>
 #include <kernel/common/processId.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -19,10 +19,13 @@
 
 void recursiveLockC::acquire(void)
 {
-	taskC	*task;
-	task = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	taskContextC	*taskContext;
+
+	taskContext = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTaskContext();
 
 #if __SCALING__ >= SCALING_SMP
+
 	for (;;)
 	{
 #endif
@@ -31,7 +34,8 @@ void recursiveLockC::acquire(void)
 #if __SCALING__ >= SCALING_SMP
 		if (taskId.rsrc == PROCID_INVALID)
 		{
-			taskId.rsrc = task->getFullId();
+			taskId.rsrc = cpuTrib.getCurrentCpuStream()->taskStream
+				.getCurrentTaskId();
 
 			/* Check the flags on the waitlock which guards
 			 * this critical section to know whether or not
@@ -51,13 +55,14 @@ void recursiveLockC::acquire(void)
 			// Release the taskId lock as soon as you can.
 			taskId.lock.releaseNoIrqs();
 
-			task->nLocksHeld++;
+			taskContext->nLocksHeld++;
 			lock++;
 #if __SCALING__ >= SCALING_SMP
 			return;
 		}
 		// If the current task already holds the lock:
-		else if (taskId.rsrc == task->getFullId())
+		else if (taskId.rsrc == cpuTrib.getCurrentCpuStream()
+			->taskStream.getCurrentTaskId())
 		{
 			taskId.lock.releaseNoIrqs();
 			lock++;
@@ -106,7 +111,10 @@ void recursiveLockC::release(void)
 #endif
 			cpuControl::enableInterrupts();
 		};
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->nLocksHeld--;
+
+		// Decrement nLocksHeld:
+		cpuTrib.getCurrentCpuStream()->taskStream
+			.getCurrentTaskContext()->nLocksHeld--;
 	};
 }
 

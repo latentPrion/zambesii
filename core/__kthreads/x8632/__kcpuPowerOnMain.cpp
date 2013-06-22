@@ -1,7 +1,7 @@
 
 #include <debug.h>
 #include <arch/paging.h>
-#include <arch/taskContext.h>
+#include <arch/registerContext.h>
 #include <arch/cpuControl.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -55,6 +55,8 @@ void __kcpuPowerOnMain(cpuStreamC *self)
 	 * crash.
 	 **/
 	self->baseInit();
+	self->powerManager.setPowerStatus(cpuStreamC::powerManagerC::C0);
+
 	// After "bind", the CPU will be able to allocate, etc. normally.
 	err = self->bind();
 	if (err != ERROR_SUCCESS) {

@@ -1,7 +1,7 @@
 
 #include <scaling.h>
 #include <arch/cpuControl.h>
-#include <arch/taskContext.h>
+#include <arch/registerContext.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>	
@@ -13,21 +13,22 @@
 
 extern "C" void taskStream_pull(registerContextC *savedContext)
 {
-	cpuStreamC	*currCpu;
+	taskStreamC	*currTaskStream;
 
 	// XXX: We are operating on the CPU's sleep stack.
-	currCpu = cpuTrib.getCurrentCpuStream();
+	currTaskStream = &cpuTrib.getCurrentCpuStream()->taskStream;
 	if (savedContext != __KNULL) {
-		currCpu->taskStream.getCurrentTask()->context = savedContext;
+		currTaskStream->getCurrentTaskContext()->context = savedContext;
 	};
 
-	currCpu->taskStream.pull();
+	currTaskStream->pull();
 }
 
 taskStreamC::taskStreamC(cpuStreamC *parent)
 :
 streamC(0),
 load(0), capacity(0),
+currentPerCpuThread(__KNULL),
 roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
 parentCpu(parent)
 {
@@ -55,10 +56,31 @@ void taskStreamC::dump(void)
 		"currentTask 0x%x(@0x%p): dump.\n",
 		parentCpu->cpuId,
 		load, capacity,
-		getCurrentTask()->getFullId(), getCurrentTask());
+		(getCurrentTask()->getType() == task::PER_CPU)
+			? ((threadC *)getCurrentTask())->getFullId()
+			: parentCpu->cpuId,
+		getCurrentTask());
 
 	realTimeQ.dump();
 	roundRobinQ.dump();
+}
+
+taskContextC *taskStreamC::getCurrentTaskContext(void)
+{
+	if (getCurrentTask()->getType() == task::PER_CPU) {
+		return parentCpu->getTaskContext();
+	} else {
+		return ((threadC *)getCurrentTask())->getTaskContext();
+	};
+}
+
+processId_t taskStreamC::getCurrentTaskId(void)
+{
+	if (getCurrentTask()->getType() == task::PER_CPU) {
+		return (processId_t)parentCpu->cpuId;
+	} else {
+		return ((threadC *)getCurrentTask())->getFullId();
+	};
 }
 
 error_t taskStreamC::cooperativeBind(void)
@@ -122,11 +144,28 @@ error_t taskStreamC::cooperativeBind(void)
 status_t taskStreamC::schedule(taskC *task)
 {
 	status_t	ret;
+	taskContextC	*taskContext;
+
+	/**	EXPLANATION:
+	 * TaskStreamC::schedule() is the lowest level schedule() call; it is
+	 * per-CPU in nature and it is the only schedule() layer that can
+	 * accept a per-cpu thread as an argument since per-cpu threads are
+	 * directly scheduled to their target CPUs (using this function).
+	 *
+	 * For a normal thread, we just schedule it normally. For per-cpu
+	 * threads, we also have to set the CPU's currentPerCpuThread pointer.
+	 **/
+	taskContext = task->getType() == (task::PER_CPU)
+		? parentCpu->getTaskContext()
+		: static_cast<threadC *>( task )->getTaskContext();
 
 #if __SCALING__ >= SCALING_SMP
-	// Make sure that this CPU is in the task's affinity.
-	if (!task->cpuAffinity.testSingle(parentCpu->cpuId)) {
-		return TASK_SCHEDULE_TRY_AGAIN;
+	// We don't need to test this for per-cpu threads.
+	if (task->getType() == task::UNIQUE)
+	{
+		// Make sure that this CPU is in the thread's affinity.
+		if (!taskContext->cpuAffinity.testSingle(parentCpu->cpuId))
+			{ return TASK_SCHEDULE_TRY_AGAIN; };
 	};
 
 	CHECK_AND_RESIZE_BMP(
@@ -139,8 +178,11 @@ status_t taskStreamC::schedule(taskC *task)
 
 	// Validate any scheduling parameters that need to be checked.
 
-	task->runState = taskC::RUNNABLE;
-	task->currentCpu = parentCpu;
+	taskContext->runState = taskContextC::RUNNABLE;
+	if (task->getType() == task::UNIQUE)
+		{ ((threadC *)task)->currentCpu = parentCpu; }
+	else
+		{ currentPerCpuThread = (perCpuThreadC *)task; };
 
 	// Finally, add the task to a queue.
 	switch (task->schedPolicy)
@@ -201,10 +243,11 @@ void taskStreamC::pull(void)
 		cpuControl::halt();
 	};
 
+	// FIXME: Should take a tlbContextC object instead.
 	tlbControl::saveContext(
 		&currentTask->parent->getVaddrSpaceStream()->vaddrSpace);
 
-	// If the address spaces differ, switch; don't switch if kernel thread.
+	// If addrspaces differ, switch; don't switch if kernel/per-cpu thread.
 	if (newTask->parent->getVaddrSpaceStream()
 		!= currentTask->parent->getVaddrSpaceStream()
 		&& newTask->parent->id != __KPROCESSID)
@@ -214,11 +257,18 @@ void taskStreamC::pull(void)
 				->vaddrSpace);
 	};
 
-	newTask->runState = taskC::RUNNING;
+	taskContextC		*newTaskContext;
+
+	newTaskContext = (newTask->getType() == task::PER_CPU)
+		? parentCpu->getTaskContext()
+		: static_cast<threadC *>( newTask )->getTaskContext();
+
+	newTaskContext->runState = taskContextC::RUNNING;
 	currentTask = newTask;
-	loadContextAndJump(newTask->context);
+	loadContextAndJump(newTaskContext->context);
 }
 
+// TODO: Merge the two queue pull functions for cache efficiency.
 taskC* taskStreamC::pullRealTimeQ(void)
 {
 	taskC		*ret;
@@ -319,5 +369,147 @@ void taskStreamC::updateLoad(ubit8 action, uarch_t val)
 	if (ncb == __KNULL) { return; };
 
 	ncb->updateLoad(action, val);
+}
+
+void taskStreamC::dormant(taskC *task)
+{
+	taskContextC		*taskContext;
+
+	taskContext = (task->getType() == task::PER_CPU)
+		? parentCpu->getTaskContext()
+		: static_cast<threadC *>( task )->getTaskContext();
+
+	taskContext->runState = taskContextC::STOPPED;
+	taskContext->blockState = taskContextC::DORMANT;
+
+	switch (task->schedPolicy)
+	{
+	case taskC::ROUND_ROBIN:
+		roundRobinQ.remove(task, task->schedPrio->prio);
+		break;
+
+	case taskC::REAL_TIME:
+		realTimeQ.remove(task, task->schedPrio->prio);
+		break;
+
+	default: // Might want to panic or make some noise here.
+		return;
+	};
+}
+
+void taskStreamC::block(taskC *task)
+{
+	taskContextC		*taskContext;
+
+	taskContext = (task->getType() == task::PER_CPU)
+		? parentCpu->getTaskContext()
+		: static_cast<threadC *>( task )->getTaskContext();
+
+	taskContext->runState = taskContextC::STOPPED;
+	taskContext->blockState = taskContextC::BLOCKED;
+
+	switch (task->schedPolicy)
+	{
+	case taskC::ROUND_ROBIN:
+		roundRobinQ.remove(task, task->schedPrio->prio);
+		break;
+
+	case taskC::REAL_TIME:
+		realTimeQ.remove(task, task->schedPrio->prio);
+		break;
+
+	default:
+		return;
+	};
+}
+
+error_t taskStreamC::unblock(taskC *task)
+{
+	taskContextC		*taskContext;
+
+	taskContext = (task->getType() == task::PER_CPU)
+		? parentCpu->getTaskContext()
+		: static_cast<threadC *>( task )->getTaskContext();
+
+	taskContext->runState = taskContextC::RUNNABLE;
+
+	switch (task->schedPolicy)
+	{
+	case taskC::ROUND_ROBIN:
+		return roundRobinQ.insert(
+			task, task->schedPrio->prio,
+			task->schedOptions);
+
+	case taskC::REAL_TIME:
+		return realTimeQ.insert(
+			task, task->schedPrio->prio,
+			task->schedOptions);
+
+	default:
+		return ERROR_UNSUPPORTED;
+	};
+}
+
+void taskStreamC::yield(taskC *task)
+{
+	taskContextC		*taskContext;
+
+	taskContext = (task->getType() == task::PER_CPU)
+		? parentCpu->getTaskContext()
+		: static_cast<threadC *>( task )->getTaskContext();
+
+	taskContext->runState = taskContextC::RUNNABLE;
+
+	switch (task->schedPolicy)
+	{
+	case taskC::ROUND_ROBIN:
+		roundRobinQ.insert(
+			task, task->schedPrio->prio,
+			task->schedOptions);
+		break;
+
+	case taskC::REAL_TIME:
+		realTimeQ.insert(
+			task, task->schedPrio->prio,
+			task->schedOptions);
+		break;
+
+	default:
+		return;
+	};
+}
+
+error_t taskStreamC::wake(taskC *task)
+{
+	taskContextC		*taskContext;
+
+	taskContext = (task->getType() == task::PER_CPU)
+		? parentCpu->getTaskContext()
+		: static_cast<threadC *>( task )->getTaskContext();
+
+	if (!(taskContext->runState == taskContextC::STOPPED
+		&& taskContext->blockState == taskContextC::DORMANT)
+		&& taskContext->runState != taskContextC::UNSCHEDULED)
+	{
+		return ERROR_UNSUPPORTED;
+	};
+
+	taskContext->runState = taskContextC::RUNNABLE;
+
+	switch (task->schedPolicy)
+	{
+	case taskC::ROUND_ROBIN:
+		return roundRobinQ.insert(
+			task, task->schedPrio->prio,
+			task->schedOptions);
+
+	case taskC::REAL_TIME:
+		return realTimeQ.insert(
+			task, task->schedPrio->prio,
+			task->schedOptions);
+
+	default:
+		return ERROR_CRITICAL;
+	};
 }
 

@@ -73,10 +73,7 @@ error_t memoryTribC::__kspaceInitialize(void)
 #if __SCALING__ < SCALING_CC_NUMA
 	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 #else
-	__korientationThread.defaultMemoryBank.rsrc =
-		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
-
-	__kcpuPowerOnThread.defaultMemoryBank.rsrc =
+	__korientationThread.getTaskContext()->defaultMemoryBank.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 #endif
 
@@ -287,14 +284,15 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	numaMemoryBankC		*currBank;
 	error_t			ret;
 	uarch_t			rwFlags;
-	taskC			*currTask;
+	taskContextC		*taskContext;
+
+	taskContext = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTaskContext();
 
 	// Get the calling thread's default memory bank.
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-
-	currTask->defaultMemoryBank.lock.readAcquire(&rwFlags);
-	def = currTask->defaultMemoryBank.rsrc;
-	currTask->defaultMemoryBank.lock.readRelease(rwFlags);
+	taskContext->defaultMemoryBank.lock.readAcquire(&rwFlags);
+	def = taskContext->defaultMemoryBank.rsrc;
+	taskContext->defaultMemoryBank.lock.readRelease(rwFlags);
 
 	currBank = getBank(def);
 	if (currBank != __KNULL)
@@ -322,9 +320,9 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
 		if (ret > 0)
 		{
-			currTask->defaultMemoryBank.lock.writeAcquire();
-			currTask->defaultMemoryBank.rsrc = cur;
-			currTask->defaultMemoryBank.lock.writeRelease();
+			taskContext->defaultMemoryBank.lock.writeAcquire();
+			taskContext->defaultMemoryBank.rsrc = cur;
+			taskContext->defaultMemoryBank.lock.writeRelease();
 			return ret;
 		};
 		cur = def;

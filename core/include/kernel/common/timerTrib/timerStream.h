@@ -13,12 +13,19 @@
 
 #define TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK		(1<<0)
 
+#define TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET	(1<<0)
+#define TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_SOURCE	(1<<1)
+
 #define TIMERSTREAM_CREATEONESHOT_TYPE_ABSOLUTE		(0x0)
 #define TIMERSTREAM_CREATEONESHOT_TYPE_RELATIVE		(0x1)
 #define TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL		(0x1)
 
+#define TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_TARGET	(1<<0)
+#define TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_SOURCE	(1<<1)
+
 class timerQueueC;
 class processStreamC;
+class threadC;
 
 class timerStreamC
 :
@@ -44,6 +51,7 @@ public:
 		timestampS		expirationStamp, placementStamp;
 		timerQueueC		*currentQueue;
 		void			*privateData;
+		ubit32			flags;
 	};
 
 	// Used to represent expired timer request events.
@@ -53,6 +61,7 @@ public:
 		processId_t	creatorThreadId;
 		timestampS	dueStamp, expirationStamp;
 		void		*privateData;
+		ubit32		flags;
 	};
 
 	// sarch_t nanosleep(ubit32 delay);
@@ -61,30 +70,52 @@ public:
 	// sarch_t sleep(timeS delay);
 
 	error_t createAbsoluteOneshotEvent(
-		timestampS stamp, processId_t wakeTargetThreadId,
+		timestampS stamp, void *wakeTarget,
 		void *privateData, ubit32 flags)
 	{
 		return createOneshotEvent(
 			stamp, TIMERSTREAM_CREATEONESHOT_TYPE_ABSOLUTE,
-			wakeTargetThreadId, privateData, flags);
+			wakeTarget, privateData, flags);
 	}
 
 	error_t createRelativeOneshotEvent(
-		timestampS stamp, processId_t wakeTargetThreadId,
+		timestampS stamp, void *wakeTarget,
 		void *privateData, ubit32 flags)
 	{
 		return createOneshotEvent(
 			stamp, TIMERSTREAM_CREATEONESHOT_TYPE_RELATIVE,
-			wakeTargetThreadId, privateData, flags);
+			wakeTarget, privateData, flags);
 	}
 
+	/* wakeTarget:
+	 *	Target thread (threadC) or cpu (cpuStreamC) which must be
+	 *	awakened by this timer, and on whose callbackStream the
+	 *	notification message will be queued.
+	 *
+	 *	If TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET is set, then:
+	 *		* If wakeTarget is NULL, the target CPU to wake is
+	 *		  assumed to be the current CPU. The behaviour is the
+	 *		  same as passing the current CPU's cpuStream pointer.
+	 *		* If wakeTarget is set, it is assumed to be a cpuStreamC
+	 *		  pointer for the CPU on which to queue the callback and
+	 *		  wake on event expiry.
+	 *	If TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET is not set, then:
+	 *		* If wakeTarget is NULL, the target thread is assumed to
+	 *		  be the calling thread. The behaviour is the same as
+	 *		  the calling thread passing itself as an argument.
+	 *		* If wakeTarget is set, it is assumed to be a threadC
+	 *		  pointer for the thread to queue the callback on, and
+	 *		  wake when the event expires.
+	 *
+	 * This argument works the same way for createPeriodicEvent.
+	 **/
 	error_t createOneshotEvent(
-		timestampS stamp, ubit8 type, processId_t wakeTargetThreadId,
+		timestampS stamp, ubit8 type, void *wakeTarget,
 		void *privateData, ubit32 flags);
 
 	error_t createPeriodicEvent(
 		timeS interval,
-		processId_t wakeTargetThreadId,
+		void *wakeTarget,
 		void *privateData, ubit32 flags);
 
 	// Pulls an event from the expired events list.
@@ -98,9 +129,12 @@ private:
 	void lockRequestQueue(void) { requestQueueLock.acquire(); };
 	void unlockRequestQueue(void) { requestQueueLock.release(); };
 
-	// Queues a timer request expiry event on this stream.
-	void timerRequestTimeoutNotification(
-		timerStreamC::requestS *request, taskC *targetThread);
+	/* Queues a timer request expiry event on this stream and returns a
+	 * pointer to the object that it unblocked. That is, it returns a
+	 * pointer to the threadC or cpuStreamC object that it unblocked
+	 * after queueing the new callback.
+	 **/
+	void *timerRequestTimeoutNotification(requestS *request);
 	// Causes this stream to insert its next request into the timer queues.
 	void timerRequestTimeoutNotification(void);
 

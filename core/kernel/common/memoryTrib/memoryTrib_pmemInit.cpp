@@ -286,9 +286,8 @@ parseMemoryMap:
 	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
 	__kprintf(NOTICE MEMTRIB"pmemInit: MemTrib using shbank as default.\n");
 	#else
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
-		->defaultMemoryBank.rsrc =
-		CHIPSET_MEMORY_NUMA_SHBANKID;
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
+		->defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
 
 	__kprintf(NOTICE MEMTRIB"pmemInit: Orientation using shbank as default."
 		"\n");

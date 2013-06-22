@@ -4,6 +4,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/timerTrib/timerQueue.h>
 #include <kernel/common/taskTrib/taskTrib.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 
 
 /**	EXPLANATION:
@@ -133,12 +134,54 @@ sarch_t timerQueueC::cancel(timerStreamC::requestS *request)
 	return 1;
 }
 
+static sarch_t isPerCpuCreator(timerStreamC::requestS *request)
+{
+	return (request->type == timerStreamC::requestS::ONESHOT)
+		? __KFLAG_TEST(
+			request->flags,
+			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_SOURCE)
+		: __KFLAG_TEST(
+			request->flags,
+			TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_SOURCE);
+}
+
+static processStreamC *getCreatorProcess(timerStreamC::requestS *request)
+{
+	// If creator was a per-cpu thread, the creator process is the kernel.
+	if (isPerCpuCreator(request)) {
+		return processTrib.__kgetStream();
+	};
+
+	// Else, was a normal unique-context thread.
+	return processTrib.getStream(request->creatorThreadId);
+}
+
+inline static sarch_t isPerCpuTarget(timerStreamC::requestS *request)
+{
+	return (request->type == timerStreamC::requestS::ONESHOT)
+		? __KFLAG_TEST(
+			request->flags,
+			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET)
+		: __KFLAG_TEST(
+			request->flags,
+			TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_TARGET);
+}
+
+static processStreamC *getTargetProcess(timerStreamC::requestS *request)
+{
+	if (isPerCpuTarget(request)) {
+		return processTrib.__kgetStream();
+	};
+
+	return processTrib.getStream(request->wakeTargetThreadId);
+}
+
 void timerQueueC::tick(zkcmTimerEventS *event)
 {
 	timerStreamC::requestS	*request;
-	taskC			*targetTask;
+	void			*targetObject=__KNULL;
 	processStreamC		*targetProcess, *creatorProcess;
-	ubit8			requestQueueWasEmpty=1;
+	sarch_t			requestQueueWasEmpty=1;
 
 	/**	EXPLANATION
 	 * Get the request at the front of the queue, and if it's expired,
@@ -178,71 +221,69 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		// Remove the item.
 		request = requestQueue.popFromHead();
 		unlockRequestQueue();
-
+	
 		requestQueueWasEmpty = 0;
-		// Can occur if the process exited before its object expired.
-		targetProcess = processTrib.getStream(
-			request->wakeTargetThreadId);
 
-		if (targetProcess == __KNULL)
+		// Can occur if the process exited before its object expired.
+		targetProcess = getTargetProcess(request);
+		if (targetProcess != __KNULL)
+		{
+			/* Queue new event on wake-target process' Timer Stream.
+			 * "TargetObject" could end up being NULL if the target
+			 * thread within the target process exited, or never
+			 * existed;
+			 *
+			 * Can also occur if the target is a CPU and that CPU
+			 * was hotplug removed before the request expired.
+			 **/
+			targetObject = targetProcess->timerStream
+				.timerRequestTimeoutNotification(request);
+		}
+		else
 		{
 			__kprintf(WARNING TIMERQUEUE"%dus: wake target process "
 				"0x%x does not exist.\n",
 				getNativePeriod() / 1000,
 				request->wakeTargetThreadId);
-
-			return;
 		};
 
-		// Can occur if the thread exited before its object expired.
-		targetTask = targetProcess->getTask(
-			request->wakeTargetThreadId);
-
-		if (targetTask == __KNULL)
-		{
-			__kprintf(WARNING TIMERQUEUE"%dus: Inexistent thread "
-				"0x%x.\n",
-				getNativePeriod() / 1000,
-				request->wakeTargetThreadId);
-
-			return;
-		};
-
-		// Queue an event on the wake-target process' Timer Stream.
-		targetProcess->timerStream
-			.timerRequestTimeoutNotification(request, targetTask);
-
-		// For the case where the target process != creator process.
+		/* For the case where the target process != creator process.
+		 * Even if the target process does not exist, we should still
+		 * pull a new request from the source process to allow it to
+		 * continue placing requests into the queue.
+		 **/
 		if (PROCID_PROCESS(request->creatorThreadId)
 			!= PROCID_PROCESS(request->wakeTargetThreadId))
 		{
-			creatorProcess = processTrib.getStream(
-				request->creatorThreadId);
+			creatorProcess = getCreatorProcess(request);
+		}
+		else { creatorProcess = targetProcess; };
 
-			if (creatorProcess == __KNULL)
-			{
-				__kprintf(WARNING TIMERQUEUE"%dus: Inexistent "
-					"creator process 0x%x for timer queue "
-					"request.\n",
-					getNativePeriod() / 1000,
-					request->creatorThreadId);
-			}
-			else
-			{
-				// Pull a new request from the process.
-				creatorProcess->timerStream
-					.timerRequestTimeoutNotification();
-			};
+		if (creatorProcess == __KNULL)
+		{
+			__kprintf(WARNING TIMERQUEUE"%dus: Inexistent creator "
+				"process 0x%x for timer queue request.\n",
+				getNativePeriod() / 1000,
+				request->creatorThreadId);
 		}
 		else
 		{
-			// Pull a new request from the process.
-			targetProcess->timerStream
+			// Pull a new request from the creator process.
+			creatorProcess->timerStream
 				.timerRequestTimeoutNotification();
 		};
 
-		// Unblock the target thread.
-		taskTrib.unblock(targetTask);
+		if (targetProcess != __KNULL && targetObject != __KNULL)
+		{
+			// Unblock the target thread/CPU.
+			if (isPerCpuTarget(request)) {
+				taskTrib.unblock((cpuStreamC *)targetObject);
+			} else {
+				taskTrib.unblock((threadC *)targetObject);
+			};
+		};
+
+		delete request;
 
 		// See comments above for the reason behind these lock guards.
 		lockRequestQueue();

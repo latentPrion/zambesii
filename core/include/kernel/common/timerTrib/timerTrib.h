@@ -149,7 +149,7 @@ private:
 	sbit32		clockQueueId;
 	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
 
-	// The event processing thread's state information.
+	// All of the event processing thread's state information.
 	struct eventProcessorS
 	{
 		eventProcessorS(void)
@@ -194,7 +194,7 @@ private:
 
 		// PID and Pointer to event processing thread's taskC struct.
 		processId_t		tid;
-		taskC			*task;
+		threadC			*task;
 		// Control queue used to send signals to the processing thread.
 		singleWaiterQueueC	controlQueue;
 		/* Array of wait queues for each of the timerQueues which are

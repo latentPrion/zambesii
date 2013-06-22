@@ -1,7 +1,7 @@
 
 #include <__kclasses/singleWaiterQueue.h>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/task.h>
+#include <kernel/common/thread.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
@@ -12,7 +12,7 @@ error_t singleWaiterQueueC::addItem(void *item)
 	// Prevent lost wakeups from race conditions.
 	lock.acquire();
 
-	if (task == __KNULL)
+	if (thread == __KNULL)
 	{
 		lock.release();
 		return ERROR_UNINITIALIZED;
@@ -25,13 +25,12 @@ error_t singleWaiterQueueC::addItem(void *item)
 		return ret;
 	};
 
-	// The "3" is to reduce chances of lost wakeups.
 	ubit32		nItems;
 
 	nItems = pointerDoubleListC<void>::getNItems();
 	if (nItems == 1)
 	{
-		ret = taskTrib.unblock(task);
+		ret = taskTrib.unblock(thread);
 		if (ret != ERROR_SUCCESS)
 		{
 			pointerDoubleListC<void>::removeItem(item);
@@ -39,7 +38,7 @@ error_t singleWaiterQueueC::addItem(void *item)
 			lock.release();
 
 			__kprintf(NOTICE SWAITQ"Failed to unblock task 0x%x.\n",
-				task->getFullId());
+				thread->getFullId());
 
 			return ret;
 		};
@@ -76,22 +75,22 @@ error_t singleWaiterQueueC::pop(void **item, uarch_t flags)
 	};
 }
 
-error_t singleWaiterQueueC::setWaitingThread(taskC *task)
+error_t singleWaiterQueueC::setWaitingThread(threadC *newThread)
 {
-	if (task == __KNULL) { return ERROR_INVALID_ARG; };
+	if (newThread == __KNULL) { return ERROR_INVALID_ARG; };
 
 	// Only allow threads from the currently owning process to wait.
-	if (this->task != __KNULL
-		&& this->task->parent->id != task->parent->id)
+	if (thread != __KNULL
+		&& thread->parent->id != newThread->parent->id)
 	{
 		__kprintf(WARNING SWAITQ"Failed to allow task 0x%x to "
 			"wait.\n",
-			task->getFullId());
+			newThread->getFullId());
 
 		return ERROR_RESOURCE_BUSY;
 	}
 
-	this->task = task;
+	thread = newThread;
 	return ERROR_SUCCESS;
 }
 

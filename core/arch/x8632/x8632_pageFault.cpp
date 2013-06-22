@@ -141,11 +141,12 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 			: "=r" (esp));
 
 		__kprintf(FATAL"Encountered unmapped page at 0x%p, EIP: 0x%x, "
-			"esp: 0x%x, sleepstack end: 0x%p sleepstack base 0x%p."
+			"esp: 0x%x, schedstack end: 0x%p schedstack base 0x%p."
 			"\n", faultAddr,
-			regs->eip, esp, cpuTrib.getCurrentCpuStream()->sleepStack,
-			&cpuTrib.getCurrentCpuStream()->sleepStack[
-				sizeof(cpuTrib.getCurrentCpuStream()->sleepStack)]);
+			regs->eip, esp,
+			cpuTrib.getCurrentCpuStream()->schedStack,
+			&cpuTrib.getCurrentCpuStream()->schedStack[
+				sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 
 		panic(ERROR_UNKNOWN);
 		break;

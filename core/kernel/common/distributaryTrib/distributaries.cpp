@@ -20,15 +20,16 @@ void *getEsp(void)
 
 static void cisternnEntry(void)
 {
-	taskC		*self;
+	threadC		*self;
 
-	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	self = static_cast<threadC *>(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
 	__kprintf(NOTICE"Cisternn executing; process ID: 0x%x. ESP: 0x%p. "
 		"Dormanting.\n",
 		self->getFullId(), getEsp());
 
-	taskTrib.wake(0x10001);
+	taskTrib.wake((processId_t)0x10001);
 	taskTrib.dormant(self->getFullId());
 }
 

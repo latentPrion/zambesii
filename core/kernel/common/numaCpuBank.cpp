@@ -1,6 +1,7 @@
 
 #include <__kstdlib/__kclib/string.h>
 #include <kernel/common/numaCpuBank.h>
+#include <kernel/common/thread.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
@@ -24,14 +25,15 @@ error_t numaCpuBankC::initialize(uarch_t nBits)
 }
 
 #if __SCALING__ >= SCALING_SMP
-error_t numaCpuBankC::schedule(taskC*task)
+error_t numaCpuBankC::schedule(threadC *thread)
 {
 	ubit32		lowestLoad = 0xFFFFFFFF;
 	cpuStreamC	*bestCpu=__KNULL, *curCpu;
 
-	for (uarch_t i=0; i<task->cpuAffinity.getNBits(); i++)
+	for (uarch_t i=0;
+		i<thread->getTaskContext()->cpuAffinity.getNBits(); i++)
 	{
-		if (task->cpuAffinity.testSingle(i))
+		if (thread->getTaskContext()->cpuAffinity.testSingle(i))
 		{
 			curCpu = cpuTrib.getStream(i);
 			if (curCpu == __KNULL) { continue; };
@@ -47,7 +49,7 @@ error_t numaCpuBankC::schedule(taskC*task)
 		return ERROR_UNKNOWN;
 	};
 
-	return bestCpu->taskStream.schedule(task);
+	return bestCpu->taskStream.schedule(thread);
 }
 #endif
 

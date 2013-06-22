@@ -4,6 +4,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <kernel/common/panic.h>
 #include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
@@ -500,81 +501,74 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 	return ERROR_SUCCESS;
 }
 
-error_t processStreamC::cloneStateIntoChild(processStreamC *child)
-{
-	error_t		ret;
-//	ubit32		len;
-
-/*	len = strlen8(env);
-	child->env = new utf8Char[len + 1];
-	if (child->env == __KNULL) { return ERROR_MEMORY_NOMEM; };
-	strcpy8(child->env, env); */
-
-	ret = resizeAndMergeBitmaps(&child->cpuAffinity, &cpuAffinity);
-	if (ret != ERROR_SUCCESS) { return ret; };
-	// child->localAffinity = affinity::findLocal(&child->affinity);
-
-	child->execDomain = execDomain;
-	return ERROR_SUCCESS;
-}
-
 error_t processStreamC::spawnThread(
 	void (*entryPoint)(void *), void * /*argument*/,
 	bitmapC * cpuAffinity,
 	taskC::schedPolicyE schedPolicy,
 	ubit8 prio, uarch_t flags,
-	taskC **const newTask
+	threadC **const newThread
 	)
 {
 	error_t		ret;
-	processId_t	newTaskId;
+	processId_t	newThreadId;
 
-	if (newTask == __KNULL) { return ERROR_INVALID_ARG; };
+	if (newThread == __KNULL) { return ERROR_INVALID_ARG; };
+	// For now, per-cpu threads are not allowed to spawn new threads.
+	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
+		->getType() == task::PER_CPU)
+	{
+		panic(FATAL"spawnThread: Called by a per-cpu thread.\n");
+	};
 
 	// Check for a free thread ID in this process's thread ID space.
-	ret = getNewThreadId(&newTaskId);
+	ret = getNewThreadId(&newThreadId);
 	if (ret != ERROR_SUCCESS) { return SPAWNTHREAD_STATUS_NO_PIDS; };
 
 	// Combine the parent process ID with new thread ID for full thread ID.
-	newTaskId = id | newTaskId;
+	newThreadId = id | newThreadId;
 
 	// Allocate new thread if ID was available.
-	*newTask = allocateNewThread(newTaskId);
-	if (*newTask == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	*newThread = allocateNewThread(newThreadId);
+	if (*newThread == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
 	// Allocate internal sub-structures (context, etc.).
-	ret = (*newTask)->initialize();
+	ret = (*newThread)->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = (*newTask)->allocateStacks();
+	ret = (*newThread)->allocateStacks();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 #if __SCALING__ >= SCALING_SMP
 	// Do affinity inheritance.
-	ret = (*newTask)->inheritAffinity(cpuAffinity, flags);
+	ret = (*newThread)->getTaskContext()->inheritAffinity(
+		cpuAffinity, flags);
+
 	if (ret != ERROR_SUCCESS) { return ret; };
 #endif
 
-	(*newTask)->inheritSchedPolicy(schedPolicy, flags);
-	(*newTask)->inheritSchedPrio(prio, flags);
+	(*newThread)->inheritSchedPolicy(schedPolicy, flags);
+	(*newThread)->inheritSchedPrio(prio, flags);
 
 	// Now everything is allocated; just initialize the register context.
-	(*newTask)->initializeRegisterContext(
+	(*newThread)->getTaskContext()->initializeRegisterContext(
 		entryPoint,
+		(*newThread)->stack0,
+		(*newThread)->stack1,
+		this->execDomain,
 		__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD));
 
 	if (!__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_DORMANT)) {
-		return taskTrib.schedule(*newTask);
+		return taskTrib.schedule(*newThread);
 	} else {
 		return ERROR_SUCCESS;
 	};
 }
 
-taskC *processStreamC::allocateNewThread(processId_t newThreadId)
+threadC *processStreamC::allocateNewThread(processId_t newThreadId)
 {
-	taskC		*ret;
+	threadC		*ret;
 
-	ret = new taskC(newThreadId, this);
+	ret = new threadC(newThreadId, this);
 	if (ret == __KNULL) { return __KNULL; };
 
 	taskLock.writeAcquire();

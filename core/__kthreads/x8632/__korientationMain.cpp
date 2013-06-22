@@ -27,7 +27,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
 	uarch_t		devMask;
-	taskC		*mainTask;
+	threadC		*mainTask;
 	containerProcessC	&__kprocess = *processTrib.__kgetStream();
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
@@ -38,6 +38,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 	DO_OR_DIE(bspCpu, initializeBspCpuLocking(), ret);
 	cxxrtl::callGlobalConstructors();
+	bspCpu.powerManager.setPowerStatus(cpuStreamC::powerManagerC::C0);
 
 	/* Initialize exception handling, then do chipset-wide early init.
 	 * Finally, initialize the irqControl mod, and mask all IRQs off to
@@ -108,9 +109,11 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 void __korientationMain(void)
 {
 	error_t			ret;
-	taskC			*self;
+	threadC			*self;
 
-	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask() );
+
 	__kprintf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
 		self->getFullId(), self);
 
@@ -162,7 +165,7 @@ for (;;) { asm volatile("hlt\n\t"); };
 	{
 		callbackStreamC::genericCallbackS	*callback;
 
-		self->callbackStream.pull(
+		self->getTaskContext()->callbackStream.pull(
 			(callbackStreamC::headerS **)&callback);
 
 		__kprintf(NOTICE ORIENT"pulled %dth callback: err %d.\n",

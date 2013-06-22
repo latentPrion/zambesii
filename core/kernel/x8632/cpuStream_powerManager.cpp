@@ -120,8 +120,7 @@ status_t cpuStreamC::powerManagerC::bootPowerOn(ubit32)
 	// Set a 10 millisecond timeout.
 	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
 		timestampS(0, 0, 10000000),
-		cpuTrib.getCurrentCpuStream()
-			->taskStream.getCurrentTask()->getFullId(),
+		__KNULL,
 		parent, 0);
 
 	return ERROR_SUCCESS;
@@ -181,10 +180,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 				processTrib.__kgetStream()->timerStream
 					.createRelativeOneshotEvent(
 						timestampS(0, 0, 200000),
-						cpuTrib.getCurrentCpuStream()
-							->taskStream
-							.getCurrentTask()
-							->getFullId(),
+						__KNULL,
 						cs, 0);
 
 				loopAgain = 1;
@@ -213,9 +209,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 			processTrib.__kgetStream()->timerStream
 				.createRelativeOneshotEvent(
 					timestampS(0, 0, 200000),
-					cpuTrib.getCurrentCpuStream()
-						->taskStream
-						.getCurrentTask()->getFullId(),
+					__KNULL,
 					cs, 0);
 
 			loopAgain = 1;

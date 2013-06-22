@@ -9,7 +9,7 @@
 
 #define SINGLEWAITERQ_POP_FLAGS_DONTBLOCK	(1<<0)
 
-class taskC;
+class threadC;
 
 class singleWaiterQueueC
 :
@@ -18,7 +18,7 @@ public pointerDoubleListC<void>
 public:
 	singleWaiterQueueC(void)
 	:
-	task(__KNULL)
+	thread(__KNULL)
 	{}
 
 	error_t initialize(void)
@@ -34,24 +34,12 @@ public:
 	// pointerDoubleListC::getHead() is sufficient, needs no extending.
 	// pointerDoubleListC::getNItems() is sufficient, needs no extending.
 	error_t pop(void **ret, uarch_t flags=0);
-	error_t setWaitingThread(taskC *task);
-	error_t setWaitingTask(taskC *task)
-	{
-		return setWaitingThread(task);
-	}
+	error_t setWaitingThread(threadC *thread);
 
-	taskC *getThread(void)
-	{
-		return task;
-	}
-
-	taskC *getTask(void)
-	{
-		return getThread();
-	}
+	threadC *getThread(void) { return thread; }
 
 private:
-	taskC		*task;
+	threadC		*thread;
 	waitLockC	lock;
 };
 

@@ -5,23 +5,45 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 error_t callbackStreamC::enqueueCallback(
-	processId_t targetThreadId, headerS *header
+	processId_t targetStreamId, headerS *header
 	)
 {
-	processStreamC	*targetProcess;
-	taskC		*targetThread;
+	callbackStreamC	*targetStream;
 
-	targetProcess = processTrib.getStream(targetThreadId);
-	if (targetProcess == __KNULL) {
-		return ERROR_INVALID_RESOURCE_NAME;
+	if (__KFLAG_TEST(header->flags, ZCALLBACK_FLAGS_CPU_TARGET))
+	{
+		cpuStreamC		*cs;
+
+		/* Dealing with an asynchronous response to an API call from a
+		 * per-CPU thread.
+		 **/
+		cs = cpuTrib.getStream((cpu_t)targetStreamId);
+		if (cs == __KNULL) { return ERROR_INVALID_RESOURCE_NAME; };
+
+		targetStream = &cs->getTaskContext()->callbackStream;
+	}
+	else
+	{
+		processStreamC		*targetProcess;
+		threadC			*targetThread;
+
+		/* Dealing with an asynchronous response to an API call from a
+		 * normal unique-context thread.
+		 **/
+		targetProcess = processTrib.getStream(targetStreamId);
+		if (targetProcess == __KNULL) {
+			return ERROR_INVALID_RESOURCE_NAME;
+		};
+
+		targetThread = targetProcess->getThread(targetStreamId);
+		if (targetThread == __KNULL) {
+			return ERROR_INVALID_RESOURCE_NAME;
+		};
+
+		targetStream = &targetThread->getTaskContext()->callbackStream;
 	};
 
-	targetThread = targetProcess->getThread(targetThreadId);
-	if (targetThread == __KNULL) {
-		return ERROR_INVALID_RESOURCE_NAME;
-	};
-
-	return targetThread->callbackStream.enqueue(header);
+	return targetStream->enqueue(header);
 }
 
 error_t callbackStreamC::pull(headerS **callback, ubit32 flags)
@@ -70,7 +92,9 @@ error_t	callbackStreamC::enqueue(headerS *callback)
 	/**	TODO:
 	 * Think about this type of situation and determine whether or not it's
 	 * safe to execute within the critical section with interrupts enabled
-	 * on the local CPU. Most likely not though.
+	 * on the local CPU. Most likely not though. Low priority as well
+	 * since this is mostly a throughput optimization and not a
+	 * functionality tweak.
 	 **/
 	pendingSubsystems.lock();
 
@@ -78,8 +102,18 @@ error_t	callbackStreamC::enqueue(headerS *callback)
 	if (ret == ERROR_SUCCESS)
 	{
 		pendingSubsystems.set(callback->subsystem);
-		// Unblock the thread.
-		taskTrib.unblock(parent);
+		/* Unblock the thread. This may be a normal thread, or a per-cpu
+		 * thread. In the case of it being a normal thread, no extra
+		 * work is required: just unblock() it.
+		 *
+		 * If it's a per-CPU thread, we need to unblock it /on the
+		 * target CPU/.
+		 **/
+		if (parent->contextType == task::PER_CPU) {
+			taskTrib.unblock(parent->parent.cpu);
+		} else {
+			taskTrib.unblock(parent->parent.thread);
+		};
 	};
 
 	pendingSubsystems.unlock();

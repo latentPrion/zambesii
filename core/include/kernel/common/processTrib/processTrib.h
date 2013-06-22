@@ -5,7 +5,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/wrapAroundCounter.h>
 	#include <kernel/common/process.h>
-	#include <kernel/common/task.h>
+	#include <kernel/common/thread.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>

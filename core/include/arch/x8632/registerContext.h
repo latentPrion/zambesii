@@ -8,7 +8,7 @@
 
 class taskC;
 
-struct registerContextC
+class registerContextC
 {
 public:
 	registerContextC(ubit8 execDomain);

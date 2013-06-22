@@ -5,7 +5,7 @@
 #include <__kclasses/debugPipe.h>
 #include <__kthreads/__korientation.h>
 #include <kernel/common/process.h>
-#include <kernel/common/task.h>
+#include <kernel/common/thread.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/cpuTrib/cpuStream.h>
 #include <kernel/common/processTrib/processTrib.h>
@@ -36,13 +36,14 @@ cpuId(cid), cpuAcpiId(acpiId),
 bankId(bid),
 #endif
 taskStream(this), flags(0),
-powerManager(this)
+powerManager(this),
 #if __SCALING__ >= SCALING_SMP
-,interCpuMessager(this)
+interCpuMessager(this),
 #endif
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
-,lapic(this)
+lapic(this),
 #endif
+perCpuTaskContext(task::PER_CPU, this)
 {
 	if (this == &bspCpu) { __KFLAG_SET(flags, CPUSTREAM_FLAGS_BSP); };
 
@@ -61,8 +62,8 @@ powerManager(this)
 	 **/
 	if (!__KFLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
 	{
-		__kcpuPowerOnSleepStacks[cpuId] = &sleepStack[
-			sizeof(sleepStack) - sizeof(void *)];
+		__kcpuPowerOnSleepStacks[cpuId] = &perCpuThreadStack[
+			sizeof(perCpuThreadStack) - sizeof(void *)];
 
 		/* Push the CPU Stream address to the sleep stack so the waking
 		 * CPU can obtain it as if it was passed as an argument to
@@ -75,10 +76,15 @@ powerManager(this)
 
 error_t cpuStreamC::initializeBspCpuLocking(void)
 {
-	__korientationThread.nLocksHeld = 0;
+	/**	EXPLANATION:
+	 * This gets called before global constructors get called. In here we
+	 * set the CPUSTREAM_FLAGS_BSP flag on the BSP CPU Stream so that when
+	 * its constructor is executed it doesn't trample itself.
+	 **/
+	__korientationThread.getTaskContext()->nLocksHeld = 0;
 	__korientationThread.parent = processTrib.__kgetStream();
 	// Init cpuConfig and numaConfig BMPs later.
-	__korientationThread.defaultMemoryBank.rsrc =
+	__korientationThread.getTaskContext()->defaultMemoryBank.rsrc =
 		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
 
 	// Let the CPU know that it is the BSP.

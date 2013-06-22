@@ -20,7 +20,11 @@
 
 /**	Flags for callbackStreamC::headerS.
  **/
-#define ZCALLBACK_FLAGS_CPU_TARGET		(1<<0)
+#define ZCALLBACK_FLAGS_CPU_SOURCE		(1<<0)
+#define ZCALLBACK_FLAGS_CPU_TARGET		(1<<1)
+
+#define ZREQUEST_FLAGS_CPU_SOURCE		(1<<0)
+#define ZREQUEST_FLAGS_CPU_TARGET		(1<<1)
 
 /**	Values for callbackStreamC::headerS.
  * Subsystems ID are basically implicitly queue IDs (to the kernel; externally
@@ -35,16 +39,13 @@
  **/
 #define ZCALLBACK_PULL_FLAGS_DONT_BLOCK		(1<<0)
 
-class taskC;
+class taskContextC;
 
 class callbackStreamC
-:
-public streamC
 {
 public:
-	callbackStreamC(processId_t threadId, taskC *parent)
+	callbackStreamC(taskContextC *parent)
 	:
-	streamC(threadId),
 	parent(parent)
 	{}
 
@@ -74,9 +75,9 @@ public:
 		 * This structure must remain a plain old data type.
 		 *
 		 * sourceId:
-		 *	ID of the thread that made the asynch syscall that
-		 *	triggered this callback. Can also be a CPU ID if
-		 *	ZCALLBACK_FLAGS_CPU_TARGET is set.
+		 *	ID of the CPU or thread that made the asynch syscall
+		 *	that triggered this callback. Can also be a CPU ID if
+		 *	ZCALLBACK_FLAGS_CPU_SOURCE is set.
 		 * privateData:
 		 *	Data that is private to the source thread which was
 		 *	preserved across the syscall.
@@ -124,7 +125,7 @@ public:
 
 	// Utility function exported for other subsystems to use.
 	static error_t enqueueCallback(
-		processId_t targetProcess, headerS *header);
+		processId_t targetCallbackStream, headerS *header);
 
 private:
 	pointerDoubleListC<headerS>	queues[ZCALLBACK_SUBSYSTEM_MAXVAL + 1];
@@ -138,7 +139,7 @@ private:
 	 * new message.
 	 **/
 	bitmapC				pendingSubsystems;
-	taskC				*parent;
+	taskContextC			*parent;
 };
 
 #endif

@@ -2,6 +2,8 @@
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <kernel/common/panic.h>
+#include <kernel/common/callbackStream.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/timerTrib/timerStream.h>
 #include <kernel/common/taskTrib/taskTrib.h>
@@ -15,30 +17,66 @@ error_t timerStreamC::initialize(void)
 
 error_t timerStreamC::createOneshotEvent(
 	timestampS stamp, ubit8 type,
-	processId_t wakeTargetThreadId,
+	void *wakeTarget,
 	void *privateData, ubit32 /*flags*/
 	)
 {
 	requestS	*request, *tmp;
 	error_t		ret;
+	cpuStreamC	*currCpu;
 
 	if (type > TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
 	};
+
+	currCpu = cpuTrib.getCurrentCpuStream();
 
 	request = new requestS;
 	if (request == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
 	request->type = requestS::ONESHOT;
 	request->privateData = privateData;
-	request->creatorThreadId = cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentTask()->getFullId();
+	request->flags = flags;
+
+	// Set the creator ID.
+	if (currCpu->taskStream.getCurrentTask()->getType() == task::PER_CPU)
+	{
+		request->creatorThreadId = (processId_t)currCpu->cpuId;
+		__KFLAG_SET(
+			request->flags,
+			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_SOURCE);
+	}
+	else
+	{
+		threadC		*tmp;
+
+		tmp = (threadC *)currCpu->taskStream.getCurrentTask();
+		request->creatorThreadId = tmp->getFullId();
+	};
 
 	/*	FIXME:
 	 * Security check required here, for when the event is set to wake a
 	 * thread in a foreign process.
 	 **/
-	request->wakeTargetThreadId = wakeTargetThreadId;
+	if (__KFLAG_TEST(flags, TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET))
+	{
+		cpuStreamC	*tmp;
+
+		tmp = (wakeTarget == __KNULL)
+			? currCpu : (cpuStreamC *)wakeTarget;
+
+		request->wakeTargetThreadId = (processId_t)tmp->cpuId;
+	}
+	else
+	{
+		threadC		*tmp;
+
+		tmp = (wakeTarget == __KNULL)
+			? (threadC *)currCpu->taskStream.getCurrentTask()
+			: (threadC *)wakeTarget;
+
+		request->wakeTargetThreadId = tmp->getFullId();
+	};
 
 	timerTrib.getCurrentDateTime(&request->placementStamp);
 
@@ -106,8 +144,8 @@ error_t timerStreamC::pullEvent(
 	 * Attempts to pull an event from "events" linked list. If it fails, it
 	 * sleeps the process.
 	 */
-	queue = &cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
-		->timerStreamEvents;
+	queue = &cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTaskContext()->timerStreamEvents;
 
 	for (;;)
 	{
@@ -132,12 +170,63 @@ error_t timerStreamC::pullEvent(
 	return ERROR_SUCCESS;
 }
 
-void timerStreamC::timerRequestTimeoutNotification(
-	requestS *request, taskC *targetThread
-	)
+static sarch_t isPerCpuCreator(timerStreamC::requestS *request)
+{
+	return (request->type == timerStreamC::requestS::ONESHOT)
+		? __KFLAG_TEST(
+			request->flags,
+			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_SOURCE)
+		: __KFLAG_TEST(
+			request->flags,
+			TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_SOURCE);
+}
+
+static inline sarch_t isPerCpuTarget(timerStreamC::requestS *request)
+{
+	return (request->type == timerStreamC::requestS::ONESHOT)
+		? __KFLAG_TEST(
+			request->flags,
+			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET)
+		: __KFLAG_TEST(
+			request->flags,
+			TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_TARGET);
+}
+
+void *timerStreamC::timerRequestTimeoutNotification(requestS *request)
 {
 	eventS		*event;
 	error_t		ret;
+	taskContextC	*taskContext;
+
+	if (isPerCpuTarget(request) && parent->id != __KPROCESSID)
+	{
+		panic(FATAL TIMERSTREAM"per-cpu request targeting non-kernel "
+			"process' timer stream.\n");
+	};
+
+	/* Need to get the correct taskContextC object; this could be a context
+	 * object that is part of a threadC object, or a context object that
+	 * is embedded within a cpuStreamC object.
+	 *
+	 * If TIMERSTREAM_CREATE*_FLAGS_CPU_TARGET is set, then the target
+	 * context is a per-CPU context. Else, it is a normal thread context.
+	 **/
+	if (isPerCpuTarget(request))
+	{
+		cpuStreamC	*cs;
+
+		cs = cpuTrib.getStream((cpu_t)request->wakeTargetThreadId);
+		if (cs == __KNULL) { return __KNULL; };
+		taskContext = cs->getTaskContext();
+	}
+	else
+	{
+		threadC		*t;
+
+		t = parent->getThread(request->wakeTargetThreadId);
+		if (t == __KNULL) { return __KNULL; };
+		taskContext = t->getTaskContext();
+	};
 
 	event = new eventS;
 	if (event == __KNULL)
@@ -146,22 +235,39 @@ void timerStreamC::timerRequestTimeoutNotification(
 			"expired request.\n",
 			id);
 
-		return;
+		// Tbh, it doesn't matter which union member we return.
+		return (taskContext->contextType == task::PER_CPU)
+			? (void *)taskContext->parent.cpu
+			: (void *)taskContext->parent.thread;
 	};
 
 	event->type = (eventS::eventTypeE)request->type;
 	event->creatorThreadId = request->creatorThreadId;
 	event->dueStamp = event->expirationStamp = request->expirationStamp;
 	event->privateData = request->privateData;
+	event->flags = 0;
+	if (isPerCpuCreator(request))
+		{ __KFLAG_SET(event->flags, ZCALLBACK_FLAGS_CPU_SOURCE); };
+
+	if (isPerCpuTarget(request))
+		{ __KFLAG_SET(event->flags, ZCALLBACK_FLAGS_CPU_TARGET); };
 
 	// Queue event.
-	ret = targetThread->timerStreamEvents.addItem(event);
+	ret = taskContext->timerStreamEvents.addItem(event);
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(ERROR TIMERSTREAM"%d: Failed to add expired event to "
 			"thread 0x%x's queue.\n",
-			id, targetThread->getFullId());
+			id,
+			(taskContext->contextType == task::PER_CPU)
+				? taskContext->parent.cpu->cpuId
+				: taskContext->parent.thread->getFullId());
 	};
+
+	// Tbh, it doesn't matter which union member we return.
+	return (taskContext->contextType == task::PER_CPU)
+			? (void *)taskContext->parent.cpu
+			: (void *)taskContext->parent.thread;
 }
 
 void timerStreamC::timerRequestTimeoutNotification(void)
@@ -196,7 +302,11 @@ void timerStreamC::timerRequestTimeoutNotification(void)
 		return;
 	};
 
-	delete nextRequest;
+	/**	NOTES:
+	 * We don't delete() the request that was just expired in here because
+	 * it's needed still by the timerQ; so we let the timerQ delete it
+	 * instead.
+	 **/
 
 	nextRequest = requests.getHead();
 	if (nextRequest == __KNULL) { return; };

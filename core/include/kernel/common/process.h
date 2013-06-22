@@ -8,7 +8,7 @@
 	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/bitmap.h>
 	#include <__kclasses/wrapAroundCounter.h>
-	#include <kernel/common/task.h>
+	#include <kernel/common/thread.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/execDomain.h>
@@ -112,6 +112,7 @@ public:
 		uarch_t			argumentsSize;
 	};
 
+	// Must remain a POD data type.
 	struct initializationBlockS
 	{
 		utf8Char		*fullName;
@@ -123,8 +124,8 @@ public:
 	};
 
 public:
-	taskC *getTask(processId_t processId);
-	taskC *getThread(processId_t processId) { return getTask(processId); }
+	threadC *getTask(processId_t processId);
+	threadC *getThread(processId_t processId) { return getTask(processId); }
 
 	ubit32 getProcessFullNameMaxLength(void)
 		{ return PROCESS_FULLNAME_MAXLEN; }
@@ -146,17 +147,7 @@ public:
 		bitmapC *cpuAffinity,
 		taskC::schedPolicyE schedPolicy, ubit8 prio,
 		uarch_t flags,
-		taskC **ret);
-
-public:
-	error_t cloneStateIntoChild(processStreamC *child);
-	error_t initializeFirstThread(
-		taskC *task, taskC *spawningThread,
-		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
-
-	error_t initializeChildThread(
-		taskC *task, taskC *spawningThread,
-		taskC::schedPolicyE policy, ubit8 prio, uarch_t flags);
+		threadC **ret);
 
 public:
 	struct environmentVarS
@@ -174,7 +165,7 @@ public:
 	multipleReaderLockC	taskLock;
 	wrapAroundCounterC	nextTaskId;
 	uarch_t			nTasks;
-	taskC			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
+	threadC			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
 
 	utf8Char		*fullName, *workingDirectory, *arguments;
 	ubit8			nEnvVars;
@@ -202,7 +193,7 @@ public:
 
 private:
 	error_t getNewThreadId(processId_t *ret);
-	taskC *allocateNewThread(processId_t newThreadId);
+	threadC *allocateNewThread(processId_t newThreadId);
 	void removeThread(processId_t id);
 
 	error_t allocateInternals(void);
@@ -372,9 +363,9 @@ public:
 /**	Inline Methods:
  *****************************************************************************/
 
-inline taskC *processStreamC::getTask(processId_t id)
+inline threadC *processStreamC::getTask(processId_t id)
 {
-	taskC		*ret;
+	threadC		*ret;
 	uarch_t		rwFlags;
 
 	taskLock.readAcquire(&rwFlags);

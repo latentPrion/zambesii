@@ -8,7 +8,7 @@
 	#include <__kclasses/cachePool.h>
 	#include <commonlibs/libx86mp/lapic.h>
 	#include <kernel/common/stream.h>
-	#include <kernel/common/task.h>
+	#include <kernel/common/thread.h>
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/cpuTrib/cpuFeatures.h>
@@ -63,6 +63,8 @@ public:
 public:
 	status_t enumerate(void);
 	cpuFeaturesS *getCpuFeatureBlock(void);
+	taskContextC *getTaskContext(void)
+		{ return &perCpuTaskContext; }
 
 public:
 	class powerManagerC
@@ -185,12 +187,10 @@ public:
 	taskStreamC		taskStream;
 
 	ubit32			flags;
-	/* Very small stack used to wake and power down CPUs.
-	 * The number of elements in the array indicates how many pushes the
-	 * stack can handle. Assuming each push is a native word's size,
-	 * the stack can handle N pushes of the arch's word size.
-	 **/
-	ubit8			sleepStack[PAGING_BASE_SIZE];
+	// Small stack used for scheduler task switching.
+	ubit8			schedStack[PAGING_BASE_SIZE / 2];
+	// Small stack used by the per-cpu currently thread running on this CPU.
+	ubit8			perCpuThreadStack[PAGING_BASE_SIZE / 2];
 	powerManagerC		powerManager;
 #if __SCALING__ >= SCALING_SMP
 	interCpuMessagerC	interCpuMessager;
@@ -198,6 +198,8 @@ public:
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
 	class x86LapicC		lapic;
 #endif
+private:
+	taskContextC		perCpuTaskContext;
 };
 
 // The hardcoded stream for the BSP CPU.

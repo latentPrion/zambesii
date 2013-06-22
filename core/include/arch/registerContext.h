@@ -1,5 +1,5 @@
 #include <arch/arch_include.h>
-#include ARCH_INCLUDE(taskContext.h)
+#include ARCH_INCLUDE(registerContext.h)
 
 extern "C"
 {

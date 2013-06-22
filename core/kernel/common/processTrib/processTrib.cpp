@@ -44,7 +44,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 	vfs::inodeTypeE			inodeType;
 	void				*tag;
 	error_t				ret;
-	taskC				*self;
+	threadC				*self;
 
 	/**	EXPLANATION:
 	 * For Distributaries, there are IN_KERNEL and OUT_OF_KERNEL dtribs.
@@ -65,7 +65,8 @@ error_t processTribC::getDistributaryExecutableFormat(
 	 * which will then load the first few bytes of that file and determine
 	 * its executable format.
 	 **/
-	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask();
 
 	ret = vfsTrib.getDvfs()->getPath(fullName, &inodeType, &tag);
 
@@ -177,7 +178,7 @@ static void initializeSpawnProcessCallback(
  **/
 void processTribC::commonEntry(void *)
 {
-	taskC						*self;
+	threadC						*self;
 	processStreamC::initializationBlockSizeInfoS	initBlockSizes;
 	processStreamC::initializationBlockS		*initBlock;
 	processStreamC::executableFormatE		executableFormat;
@@ -200,7 +201,8 @@ void processTribC::commonEntry(void *)
 	 * jump and begin the new process immediately.
 	 **/
 	jumpAddress = __KNULL;
-	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask();
 
 	__kprintf(NOTICE"New process running. ID = 0x%x.\n",
 		self->getFullId());
@@ -395,12 +397,19 @@ error_t processTribC::spawnDistributary(
 {
 	error_t			ret;
 	processId_t		newProcessId;
-	taskC			*parentThread, *firstTask;
+	threadC			*parentThread, *firstTask;
 
 	if (commandLine == __KNULL || newProcess == __KNULL)
 		{ return ERROR_INVALID_ARG; };
 
-	parentThread = cpuTrib.getCurrentCpuStream()->taskStream
+	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
+		->getType() == task::PER_CPU)
+	{
+		panic(FATAL PROCTRIB"spawnDistributary: called from per-cpu "
+			"thread.\n");
+	};
+
+	parentThread = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	ret = getNewProcessId(&newProcessId);

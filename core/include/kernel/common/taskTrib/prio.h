@@ -24,7 +24,7 @@
  * Apart from the policy and priority of a thread, threads have properties which
  * affect the way they are queued, even relative to other threads of the same
  * priority.
- *	SCHEDATTR_STICKY: when the thread is returned to its queue, it is
+ *	SCHEDOPTS_STICKY: when the thread is returned to its queue, it is
  *		placed at the front of all threads of the same priority.
  *		This means that as long as this thread is runnable, and no tasks
  *		of higher priority exist, this thread will always run.

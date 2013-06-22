@@ -68,8 +68,6 @@ void cpuStreamC::baseInit(void)
 		// Load the __kcpuPowerOnThread into the currentTask holder.
 		taskStream.currentTask = &__kcpuPowerOnThread;
 	};
-
-	powerManager.setPowerStatus(powerManagerC::C0);
 }
 
 error_t cpuStreamC::bind(void)

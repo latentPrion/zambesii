@@ -2,6 +2,7 @@
 	#define _POINTER_DOUBLY_LINKED_LIST_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kstdlib/__kcxxlib/new>
 	#include <__kclasses/debugPipe.h>
 	#include <__kclasses/cachePool.h>

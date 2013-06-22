@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/waitLock.h>
-	#include <kernel/common/task.h>
+	#include <kernel/common/thread.h>
 	#include <kernel/common/cpuTrib/cpuTrib.h>
 
 extern "C" void __kcpuPowerOnEntry(void);
@@ -13,7 +13,7 @@ extern "C" ubit8	*__kcpuPowerOnLapicVaddr;
 extern "C" void		**__kcpuPowerOnSleepStacks;
 extern uarch_t		__kcpuPowerOnSleepStacksLength;
 extern waitLockC	__kcpuPowerOnSleepStacksLock;
-extern taskC __kcpuPowerOnThread;
+extern perCpuThreadC	__kcpuPowerOnThread;
 
 #endif
 

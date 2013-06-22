@@ -16,13 +16,15 @@ taskTribC::taskTribC(void)
 }
 
 #if __SCALING__ >= SCALING_SMP
-error_t taskTribC::schedule(taskC *task)
+error_t taskTribC::schedule(threadC *task)
 {
 	cpuStreamC	*cs, *bestCandidate=__KNULL;
 
-	for (cpu_t i=0; i<(signed)task->cpuAffinity.getNBits(); i++)
+	for (cpu_t i=0;
+		i<(signed)task->getTaskContext()->cpuAffinity.getNBits(); i++)
 	{
-		if (task->cpuAffinity.testSingle(i)
+		if (task->getTaskContext()->
+		cpuAffinity.testSingle(i)
 			&& cpuTrib.onlineCpus.testSingle(i))
 		{
 			cs = cpuTrib.getStream(i);
@@ -86,34 +88,96 @@ void taskTribC::updateLoad(ubit8 action, uarch_t val)
 	};
 }
 
-error_t taskTribC::dormant(taskC *task)
+error_t taskTribC::dormant(taskC *task, taskContextC *perCpuContext)
 {
-	cpuStreamC	*currentCpu;
+	cpuStreamC	*taskCurrentCpu;
+	taskContextC	*tmpContext;
+	threadC		*thread;
 
-	if (task->runState == taskC::UNSCHEDULED
-		|| (task->runState == taskC::STOPPED
-			&& task->blockState == taskC::DORMANT))
+	/**	FIXME:
+	 * The following inconsistent behaviour arises:
+	 *
+	 * If a thread, T1, running on CPU1 calls to have a thread, T2,
+	 * currently being executed on CPU2, dormant()ed, the call will
+	 * go through successfully and T2 will be removed from CPU2's runqueue
+	 * at first;
+	 *
+	 * However, T2 is still being executed on CPU2, and it will not stop
+	 * being executed until (1) T2's time quantum expires, (2) T2 is made
+	 * to block, (3) T2 deliberately also calls dormant() on itself, or
+	 * (4) we send an IPI to CPU2 telling it to stop executing T2 and
+	 * forcibly make CPU2 pre-empt T2.
+	 *
+	 * However, in every one of those cases except for (3), the act that
+	 * eventually causes T2 to stop executing will also either re-insert
+	 * T2 into the runqueue on CPU2 or in the case of (2) cause T2 to block
+	 * on some resource and eventually be re-inserted into the runqueue
+	 * in the end anyway.
+	 *
+	 * In other words, right now, if dormant() is called by a foreign thread
+	 * attempting to act on a thread other than itself, the call will
+	 * successfully execute, but the expected behaviour will silently be
+	 * disobeyed.
+	 *
+	 * The expected behaviour of dormant() is to effectively halt the thread
+	 * indefinitely until another thread calls wake() on the dormanted
+	 * thread. In every case from above, the thread would be re-inserted
+	 * into the runqueue at some point and eventually be re-pulled and
+	 * have its execution resumed.
+	 **/
+
+	if (task == __KNULL) { return ERROR_INVALID_ARG; };
+	if (task->getType() == task::PER_CPU && perCpuContext == __KNULL) {
+		return ERROR_INVALID_ARG;
+	};
+
+	thread = static_cast<threadC *>( task );
+
+	if (task->getType() == task::PER_CPU) { tmpContext = perCpuContext; }
+	else { tmpContext = thread->getTaskContext(); };
+
+	if (tmpContext->runState == taskContextC::UNSCHEDULED
+		|| (tmpContext->runState == taskContextC::STOPPED
+			&& tmpContext->blockState == taskContextC::DORMANT))
 	{
 		return ERROR_SUCCESS;
 	};
 
-	task->currentCpu->taskStream.dormant(task);
-
-	currentCpu = cpuTrib.getCurrentCpuStream();
-	if (task->currentCpu != currentCpu)
+	if (task->getType() == task::PER_CPU)
 	{
-		/* Message the CPU to pre-empt and choose another thread.
+		tmpContext->parent.cpu->taskStream.dormant(task);
+		taskCurrentCpu = tmpContext->parent.cpu;
+	}
+	else
+	{
+		thread->currentCpu->taskStream.dormant(task);
+		taskCurrentCpu = thread->currentCpu;
+	};
+
+	/* At this point, taskCurrentCpu points to the CPU on which the
+	 * particular unique thread or per-cpu thread that was our target, is
+	 * currently scheduled to. For a per-cpu thread, it points to the
+	 * particular CPU whose per-cpu thread was acted on.
+	 **/
+	if (taskCurrentCpu != cpuTrib.getCurrentCpuStream())
+	{
+		/* Message the foreign CPU to preempt and choose another thread.
 		 * Should probably take an argument for the thread to be
 		 * pre-empted.
 		 **/
 	}
 	else
 	{
-		if (task == currentCpu->taskStream.getCurrentTask())
+		/* If the task is both on the current CPU and currently being
+		 * executed, force the current CPU to context switch.
+		 **/
+		if (task == cpuTrib.getCurrentCpuStream()->taskStream
+			.getCurrentTask())
 		{
+			// TODO: Set this CPU's currentTask to __KNULL here.
 			saveContextAndCallPull(
-				&currentCpu->sleepStack[
-					sizeof(currentCpu->sleepStack)]);
+				&taskCurrentCpu->schedStack[
+					sizeof(taskCurrentCpu->schedStack)]);
 
 			// Unreachable.
 		};
@@ -122,19 +186,47 @@ error_t taskTribC::dormant(taskC *task)
 	return ERROR_SUCCESS;
 }
 
-error_t taskTribC::wake(taskC *task)
+error_t taskTribC::wake(taskC *task, taskContextC *perCpuContext)
 {
-	if (task->runState != taskC::UNSCHEDULED
-		&& (task->runState != taskC::STOPPED
-			&& task->blockState != taskC::DORMANT))
+	taskContextC	*tmpContext;
+	threadC		*thread;
+
+	if (task == __KNULL) { return ERROR_INVALID_ARG; };
+
+	if (task->getType() == task::PER_CPU && perCpuContext == __KNULL) {
+		return ERROR_INVALID_ARG;
+	};
+
+	thread = static_cast<threadC *>( task );
+
+	if (task->getType() == task::PER_CPU) {
+		tmpContext = perCpuContext;
+	} else {
+		tmpContext = thread->getTaskContext();
+	};
+
+	if (tmpContext->runState != taskContextC::UNSCHEDULED
+		&& (tmpContext->runState != taskContextC::STOPPED
+			&& tmpContext->blockState != taskContextC::DORMANT))
 	{
 		return ERROR_SUCCESS;
 	};
 
-	if (task->runState == taskC::UNSCHEDULED) {
-		return schedule(task);
-	} else {
-		return task->currentCpu->taskStream.wake(task);
+	if (task->getType() == task::PER_CPU)
+	{
+		if (tmpContext->runState == taskContextC::UNSCHEDULED)
+		{
+			return tmpContext->parent.cpu->taskStream
+				.schedule(task);
+		}
+		else { return tmpContext->parent.cpu->taskStream.wake(task); };
+	}
+	else
+	{
+		if (tmpContext->runState == taskContextC::UNSCHEDULED) {
+			return schedule(thread);
+		}
+		else { return thread->currentCpu->taskStream.wake(task); };
 	};
 }
 
@@ -142,17 +234,25 @@ void taskTribC::yield(void)
 {
 	taskC		*currTask;
 
+	/* Yield() and block() are always called by the current thread, and
+	 * they always act on the thread that called them.
+	 **/
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	currTask->currentCpu->taskStream.yield(currTask);
+	cpuTrib.getCurrentCpuStream()->taskStream.yield(currTask);
 
+	// TODO: Set this CPU's currentTask to __KNULL here.
 	saveContextAndCallPull(
-		&currTask->currentCpu->sleepStack[
-			sizeof(currTask->currentCpu->sleepStack)]);
+		&cpuTrib.getCurrentCpuStream()->schedStack[
+			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 }
 
 void taskTribC::block(void)
 {
 	taskC		*currTask;
+
+	/* Yield() and block() are always called by the current thread, and
+	 * they always act on the thread that called them.
+	 **/
 
 	/**	XXX:
 	 * If you update this function, be sure to update its overloaded version
@@ -163,32 +263,18 @@ void taskTribC::block(void)
 	 * place it into a "blocked" state.
 	 **/
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	currTask->currentCpu->taskStream.block(currTask);
+	cpuTrib.getCurrentCpuStream()->taskStream.block(currTask);
 
+	// TODO: Set this CPU's currentTask to __KNULL here.
 	saveContextAndCallPull(
-		&currTask->currentCpu->sleepStack[
-			sizeof(currTask->currentCpu->sleepStack)]);
+		&cpuTrib.getCurrentCpuStream()->schedStack[
+			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 }
 
-void taskTribC::block(
+static void executeLockOperation(
 	lockC *lock, ubit8 lockType, ubit8 unlockOp, uarch_t unlockFlags
 	)
 {
-	taskC		*currTask;
-
-	/**	XXX:
-	 * If you update this function, be sure to update its overloaded version
-	 * above as well.
-	 *
-	 *	NOTES:
-	 * After placing a task into a waitqueue, call this function to
-	 * place it into a "blocked" state.
-	 **/
-	if (lock == __KNULL) { panic(FATAL"block(): 'lock' is __KNULL.\n"); };
-
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	currTask->currentCpu->taskStream.block(currTask);
-
 	/**	EXPLANATION:
 	 * This bit here completely purges the problem of lost wakeups
 	 * for asynchronous callbacks and event notifications. There is a window
@@ -249,10 +335,33 @@ void taskTribC::block(
 
 	default: panic(FATAL"block(): Invalid lockType.\n");
 	};
+}
 
+void taskTribC::block(
+	lockC *lock, ubit8 lockType, ubit8 unlockOp, uarch_t unlockFlags
+	)
+{
+	taskC		*currTask;
+
+	/**	XXX:
+	 * If you update this function, be sure to update its overloaded version
+	 * above as well.
+	 *
+	 *	NOTES:
+	 * After placing a task into a waitqueue, call this function to
+	 * place it into a "blocked" state.
+	 **/
+	if (lock == __KNULL) { panic(FATAL"block(): 'lock' is __KNULL.\n"); };
+
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	cpuTrib.getCurrentCpuStream()->taskStream.block(currTask);
+
+	executeLockOperation(lock, lockType, unlockOp, unlockFlags);
+
+	// TODO: Set this CPU's currentTask to __KNULL here.
 	saveContextAndCallPull(
-		&currTask->currentCpu->sleepStack[
-			sizeof(currTask->currentCpu->sleepStack)]);
+		&cpuTrib.getCurrentCpuStream()->schedStack[
+			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 }
 
 static utf8Char		*runStates[5] =
@@ -260,25 +369,46 @@ static utf8Char		*runStates[5] =
 	CC"invalid", CC"unscheduled", CC"runnable", CC"running", CC"stopped"
 };
 
-error_t taskTribC::unblock(taskC *task)
+error_t taskTribC::unblock(taskC *task, taskContextC *perCpuContext)
 {
-	if (task->runState == taskC::RUNNABLE
-		|| task->runState == taskC::RUNNING)
+	taskContextC	*tmpContext;
+	threadC		*thread;
+
+	if (task == __KNULL) { return ERROR_INVALID_ARG; };
+	if (task->getType() == task::PER_CPU && perCpuContext == __KNULL) {
+		return ERROR_INVALID_ARG;
+	};
+
+	thread = static_cast<threadC *>( task );
+
+	if (task->getType() == task::PER_CPU) {
+		tmpContext = perCpuContext;
+	} else {
+		tmpContext = thread->getTaskContext();
+	};
+
+	if (tmpContext->runState == taskContextC::RUNNABLE
+		|| tmpContext->runState == taskContextC::RUNNING)
 	{
 		return ERROR_SUCCESS;
 	};
 
-	if (!(task->runState == taskC::STOPPED
-		&& task->blockState == taskC::BLOCKED))
+	if (!(tmpContext->runState == taskContextC::STOPPED
+		&& tmpContext->blockState == taskContextC::BLOCKED))
 	{
 		__kprintf(NOTICE TASKTRIB"unblock(0x%x): Invalid run state."
 			"runState is %s.\n",
-			task->getFullId(),
-			runStates[task->runState]);
+			(task->getType() == task::PER_CPU)
+				? tmpContext->parent.cpu->cpuId
+				: thread->getFullId(),
+			runStates[tmpContext->runState]);
 
 		return ERROR_INVALID_OPERATION;
 	};
 
-	return task->currentCpu->taskStream.unblock(task);
+	if (task->getType() == task::PER_CPU)
+		{ return tmpContext->parent.cpu->taskStream.unblock(task); }
+	else
+		{ return thread->currentCpu->taskStream.unblock(task); };
 }
 

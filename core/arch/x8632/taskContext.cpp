@@ -1,6 +1,6 @@
 
 #include <arch/paging.h>
-#include <arch/taskContext.h>
+#include <arch/registerContext.h>
 #include <arch/x8632/cpuFlags.h>
 #include <chipset/memory.h>
 #include <kernel/common/process.h>

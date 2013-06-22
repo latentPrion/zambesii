@@ -5,7 +5,7 @@
 	#include <__kclasses/slamCache.h>
 	#include <__kclasses/prioQueue.h>
 	#include <kernel/common/stream.h>
-	#include <kernel/common/task.h>
+	#include <kernel/common/thread.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/taskTrib/prio.h>
@@ -20,6 +20,7 @@ class taskStreamC
 :
 public streamC
 {
+friend class cpuStreamC;
 public:
 
 	taskStreamC(cpuStreamC *parentCpu);
@@ -46,119 +47,17 @@ public:
 	void updateCapacity(ubit8 action, ubit32 val);
 
 	taskC *getCurrentTask(void) { return currentTask; }
+	perCpuThreadC *getCurrentPerCpuTask(void) { return currentPerCpuThread; }
+	taskContextC *getCurrentTaskContext(void);
+	processId_t getCurrentTaskId(void);
 
 	error_t schedule(taskC* task);
 
-	void dormant(taskC *task)
-	{
-		task->runState = taskC::STOPPED;
-		task->blockState = taskC::DORMANT;
-
-		switch (task->schedPolicy)
-		{
-		case taskC::ROUND_ROBIN:
-			roundRobinQ.remove(task, task->schedPrio->prio);
-			break;
-
-		case taskC::REAL_TIME:
-			realTimeQ.remove(task, task->schedPrio->prio);
-			break;
-
-		default:
-			return;
-		};
-	}
-
-	void block(taskC *task)
-	{
-		task->runState = taskC::STOPPED;
-		task->blockState = taskC::BLOCKED;
-
-		switch (task->schedPolicy)
-		{
-		case taskC::ROUND_ROBIN:
-			roundRobinQ.remove(task, task->schedPrio->prio);
-			break;
-
-		case taskC::REAL_TIME:
-			realTimeQ.remove(task, task->schedPrio->prio);
-			break;
-
-		default:
-			return;
-		};
-	}
-
-	error_t unblock(taskC *task)
-	{
-		task->runState = taskC::RUNNABLE;
-
-		switch (task->schedPolicy)
-		{
-		case taskC::ROUND_ROBIN:
-			return roundRobinQ.insert(
-				task, task->schedPrio->prio,
-				task->schedOptions);
-
-		case taskC::REAL_TIME:
-			return realTimeQ.insert(
-				task, task->schedPrio->prio,
-				task->schedOptions);
-
-		default:
-			return ERROR_UNSUPPORTED;
-		};
-	}
-
-	void yield(taskC *task)
-	{
-		task->runState = taskC::RUNNABLE;
-
-		switch (task->schedPolicy)
-		{
-		case taskC::ROUND_ROBIN:
-			roundRobinQ.insert(
-				task, task->schedPrio->prio,
-				task->schedOptions);
-			break;
-
-		case taskC::REAL_TIME:
-			realTimeQ.insert(
-				task, task->schedPrio->prio,
-				task->schedOptions);
-			break;
-
-		default:
-			return;
-		};
-	}
-
-	error_t wake(taskC *task)
-	{
-		if (!(task->runState == taskC::STOPPED
-			&& task->blockState == taskC::DORMANT))
-		{
-			return ERROR_SUCCESS;
-		};
-
-		task->runState = taskC::RUNNABLE;
-
-		switch (task->schedPolicy)
-		{
-		case taskC::ROUND_ROBIN:
-			return roundRobinQ.insert(
-				task, task->schedPrio->prio,
-				task->schedOptions);
-
-		case taskC::REAL_TIME:
-			return realTimeQ.insert(
-				task, task->schedPrio->prio,
-				task->schedOptions);
-
-		default:
-			return ERROR_CRITICAL;
-		};
-	}
+	void yield(taskC *task);
+	error_t wake(taskC *task);
+	void dormant(taskC *task);
+	void block(taskC *task);
+	error_t unblock(taskC *task);
 
 	void dump(void);
 
@@ -169,7 +68,10 @@ private:
 public:
 	ubit32		load;
 	ubit32		capacity;
+
+private:
 	taskC		*currentTask;
+	perCpuThreadC	*currentPerCpuThread;
 
 public:
 	// Three queues on each CPU: rr, rt and sleep.

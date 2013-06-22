@@ -2,7 +2,7 @@
 	#define _INTERRUPT_TRIB_H
 
 	#include <arch/interrupts.h>
-	#include <arch/taskContext.h>
+	#include <arch/registerContext.h>
 	#include <chipset/zkcm/irqControl.h>
 	#include <chipset/zkcm/zkcmIsr.h>
 	#include <chipset/zkcm/device.h>
