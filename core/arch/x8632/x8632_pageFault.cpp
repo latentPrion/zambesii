@@ -23,11 +23,10 @@ static inline void *getCr2(void)
 	return ret;
 }
 
-static sarch_t __kpropagateTopLevelVaddrSpaceChanges(void)
+static sarch_t __kpropagateTopLevelVaddrSpaceChanges(void *faultAddr)
 {	
 #ifndef CONFIG_ARCH_x86_32_PAE
 	vaddrSpaceC		*__kvaddrSpace, *vaddrSpace;
-	void			*faultAddr = getCr2();
 
 	/* This function returns 1 if there was a need to propagate top-level
 	 * changes, and 0 if not.
@@ -65,6 +64,15 @@ static sarch_t __kpropagateTopLevelVaddrSpaceChanges(void)
 			vaddrSpace->level0Accessor.lock.release();
 
 			tlbControl::flushSingleEntry(faultAddr);
+			faultAddr = (void *)((uintptr_t)faultAddr
+				>> PAGING_L0_VADDR_SHIFT);
+
+			faultAddr = (void *)((uintptr_t)faultAddr
+				<< PAGING_L0_VADDR_SHIFT);
+
+			// Never assume the layout or behaviour of TLB caching.
+			tlbControl::flushSingleEntry(faultAddr);
+
 			return 1;
 		};
 
@@ -89,7 +97,7 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 		->taskStream.getCurrentTask()->parent->getVaddrSpaceStream();
 
 	if (faultAddr >= (void *)ARCH_MEMORY___KLOAD_VADDR_BASE)
-		{ __kpropagateTopLevelVaddrSpaceChanges(); };
+		{ __kpropagateTopLevelVaddrSpaceChanges(faultAddr); };
 
 	status = walkerPageRanger::lookup(
 		&vaddrSpaceStream->vaddrSpace,
