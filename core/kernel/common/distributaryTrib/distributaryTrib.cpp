@@ -12,15 +12,8 @@
 
 error_t distributaryTribC::initialize(void)
 {
-	assert_fatal(
-		sizeof(dvfs::distributaryTagC) == sizeof(dvfs::categoryTagC));
-
-	distributaryTagCache = categoryTagCache = cachePool.createCache(
-		sizeof(dvfs::distributaryTagC));
-
-	if (!(distributaryTagCache != __KNULL && categoryTagCache != __KNULL)) {
-		return ERROR_UNKNOWN;
-	};
+	tagCache = cachePool.createCache(sizeof(dvfs::tagC));
+	if (tagCache == __KNULL) { return ERROR_UNKNOWN; };
 
 	return bootBuildTree();
 }
@@ -29,7 +22,7 @@ error_t distributaryTribC::bootBuildTree(void)
 {
 	const dvfs::distributaryDescriptorS	*currDesc;
 	uarch_t					i;
-	dvfs::categoryTagC			*rootTag;
+	dvfs::tagC				*rootTag;
 	error_t					ret;
 
 	rootTag = vfsTrib.dvfsCurrentt.getRoot();
@@ -64,15 +57,14 @@ error_t distributaryTribC::bootBuildTree(void)
 
 		for (uarch_t j=0; j<currDesc->nCategories; j++)
 		{
-			dvfs::categoryTagC		*cTagTmp;
-			dvfs::categoryInodeC		*cInodeTmp;
-			dvfs::distributaryTagC		*dTagTmp;
+			dvfs::tagC		*cTagTmp, *dTagTmp;
+			dvfs::categoryInodeC	*cInodeTmp;
 
 			__kprintf(CC"\tCategory: %s.",
 				currDesc->categories[j].name);
 
 			// See if the category container exists already.
-			cTagTmp = rootTag->getInode()->getDirTag(
+			cTagTmp = rootTag->getCInode()->getDirTag(
 				currDesc->categories[j].name);
 
 			// If not, create it, and an inode for it.
@@ -83,9 +75,10 @@ error_t distributaryTribC::bootBuildTree(void)
 				if (cInodeTmp->initialize() != ERROR_SUCCESS)
 					{ continue; };
 
-				cTagTmp = rootTag->getInode()->createDirTag(
-					currDesc->categories[j].name, rootTag,
-					cInodeTmp, &ret);
+				cTagTmp = rootTag->getCInode()->createDirTag(
+						currDesc->categories[j].name,
+						vfs::DIR,
+						rootTag, cInodeTmp, &ret);
 
 				if (cTagTmp == __KNULL)
 				{
@@ -103,8 +96,8 @@ error_t distributaryTribC::bootBuildTree(void)
 				/* Check to ensure that the distributary isn't
 				 * being added to the same category twice.
 				 **/
-				dTagTmp = cTagTmp->getInode()->getLeafTag(
-					currDesc->name);
+				dTagTmp = cTagTmp->getCInode()
+					->getLeafTag(currDesc->name);
 
 				if (dTagTmp != __KNULL)
 				{
@@ -117,8 +110,9 @@ error_t distributaryTribC::bootBuildTree(void)
 			};
 
 			// Now add the distributary to the category.
-			dTagTmp = cTagTmp->getInode()->createLeafTag(
-				currDesc->name, cTagTmp, dInodeTmp, &ret);
+			dTagTmp = cTagTmp->getCInode()->createLeafTag(
+				currDesc->name, vfs::FILE,
+				cTagTmp, dInodeTmp, &ret);
 
 			if (dTagTmp != __KNULL) {
 				inodeWasUsed = 1;
@@ -127,7 +121,7 @@ error_t distributaryTribC::bootBuildTree(void)
 			// If the distributary is also default, link it as such.
 			if (currDesc->categories[j].isDefault)
 			{
-				if (cTagTmp->getInode()->getLeafTag(
+				if (cTagTmp->getCInode()->getLeafTag(
 					CC"default") != __KNULL)
 				{
 					__kprintf(FATAL DTRIBTRIB"Distributary "
@@ -141,8 +135,9 @@ error_t distributaryTribC::bootBuildTree(void)
 					panic(CC"Distributary anomaly.\n");
 				};
 
-				dTagTmp = cTagTmp->getInode()->createLeafTag(
-					CC"default", cTagTmp, dInodeTmp, &ret);
+				dTagTmp = cTagTmp->getCInode()->createLeafTag(
+						CC"default", vfs::FILE,
+						cTagTmp, dInodeTmp, &ret);
 
 				if (dTagTmp == __KNULL)
 				{

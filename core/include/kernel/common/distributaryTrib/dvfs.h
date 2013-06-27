@@ -5,11 +5,11 @@
 	#include <__kstdlib/__kclib/string8.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 
-#define DVFS_TAG_NAME_MAX_NCHARS		(48)
+#define DVFS_TAG_NAME_MAXLEN			(48)
 
-#define DVFS_DINODE_VENDOR_MAX_NCHARS		(64)
-#define DVFS_DINODE_VENDORCONTACT_MAX_NCHARS	(128)
-#define DVFS_DINODE_DESCRIPTION_MAX_NCHARS	(256)
+#define DVFS_DINODE_VENDOR_MAXLEN		(64)
+#define DVFS_DINODE_VENDORCONTACT_MAXLEN	(128)
+#define DVFS_DINODE_DESCRIPTION_MAXLEN		(256)
 
 #define DVFS_DINODE_FLAGS_DEFAULT		DVFS_DESCRIPTOR_FLAGS_DEFAULT
 
@@ -17,10 +17,10 @@ class distributaryTribC;
 
 namespace dvfs
 {
-	/**	EXPLANATION:
+	/**	distributaryDescriptorS:
 	 * Exported by every distributary packaged with the kernel. Used by
 	 * the kernel to create the Distributary VFS.
-	 **/
+	 **********************************************************************/
 	struct distributaryDescriptorS
 	{
 		/**	EXPLANATION:
@@ -44,12 +44,12 @@ namespace dvfs
 		 * will provide multiple services. E.g., an audio server will
 		 * probably handle both "audio input" and "audio output".
 		 **/
-		utf8Char	*name, // DVFS_TAG_NAME_MAX_NCHARS.
-				*vendor, // DVFS_DINODE_VENDOR_MAX_NCHARS
-				*description; // DVFS_DINODE_DESCRIPTION_MAX_NCHARS
+		utf8Char	*name, // DVFS_TAG_NAME_MAXLEN.
+				*vendor, // DVFS_DINODE_VENDOR_MAXLEN
+				*description; // DVFS_DINODE_DESCRIPTION_MAXLEN
 		struct
 		{
-			utf8Char	*name; // DVFS_TAG_NAME_MAX_NCHARS
+			utf8Char	*name; // DVFS_TAG_NAME_MAXLEN
 			ubit8		isDefault;
 		} categories[4];
 
@@ -61,25 +61,48 @@ namespace dvfs
 	};
 
 	/* A few typedefs for easier typename access.
-	 **/
+	 **********************************************************************/
 	class distributaryInodeC;
 	class categoryInodeC;
-	typedef vfs::tagC<
-		distributaryInodeC, categoryInodeC, DVFS_TAG_NAME_MAX_NCHARS>
-		distributaryTagC;
 
-	typedef vfs::tagC<
-		categoryInodeC, categoryInodeC, DVFS_TAG_NAME_MAX_NCHARS>
-		categoryTagC;
+	class tagC
+	:
+	public vfs::tagC<DVFS_TAG_NAME_MAXLEN>
+	{
+	public:
+		tagC(
+			utf8Char *name,
+			vfs::tagTypeE type,
+			tagC *parent,
+			vfs::inodeC *inode=__KNULL)
+		:
+		vfs::tagC<DVFS_TAG_NAME_MAXLEN>(name, type, parent, inode)
+		{}
 
-	/* The metadata structure used to store information about distributaries
+		error_t initialize(void)
+		{
+			return vfs::tagC<DVFS_TAG_NAME_MAXLEN>::initialize();
+		}
+
+		~tagC(void) {}
+
+	public:
+		distributaryInodeC *getDInode(void)
+			{ return (distributaryInodeC *)getInode(); }
+
+		categoryInodeC *getCInode(void)
+			{ return (categoryInodeC *)getInode(); }
+	};
+
+	/**	distributaryInodeC:
+	 * The metadata structure used to store information about distributaries
 	 * available for execution by the kernel. The metadata is implicitly
 	 * also a VFS tree of named objects so that userspace (and kernelspace)
 	 * can easily query the status of distributaries, and manage them.
-	 **/
+	 **********************************************************************/
 	class distributaryInodeC
 	:
-	public vfs::leafInodeC
+	public vfs::inodeC
 	{
 	public:
 		// Can be either in the kernel image, or loaded from elsewhere.
@@ -88,9 +111,7 @@ namespace dvfs
 		distributaryInodeC(
 			const distributaryDescriptorS *descriptor, typeE type);
 
-		error_t initialize(void)
-			{ return vfs::leafInodeC::initialize(); }
-
+		error_t initialize(void) { return vfs::inodeC::initialize(); }
 		~distributaryInodeC(void) {}
 
 	public:
@@ -105,9 +126,9 @@ namespace dvfs
 		sarch_t		currentlyRunning;
 
 		// Mirror members for distributaryDescriptorS.
-		utf8Char	name[DVFS_TAG_NAME_MAX_NCHARS],
-				vendor[DVFS_DINODE_VENDOR_MAX_NCHARS],
-				description[DVFS_DINODE_DESCRIPTION_MAX_NCHARS];
+		utf8Char	name[DVFS_TAG_NAME_MAXLEN],
+				vendor[DVFS_DINODE_VENDOR_MAXLEN],
+				description[DVFS_DINODE_DESCRIPTION_MAXLEN];
 		ubit8		majorVersion, minorVersion;
 		ubit16		patchVersion;
 		ubit32		flags;
@@ -118,7 +139,8 @@ namespace dvfs
 		utf8Char	fullName[256];
 	};
 
-	/* Categories are really directories, but they can be "executed" or
+	/**	categoryInodeC:
+	 * Categories are really directories, but they can be "executed" or
 	 * can act like leaf nodes when a caller does not specify one of their
 	 * leaf nodes. More specifically, they hold a pointer to one of their
 	 * leaf nodes which is taken to be the "default" distributary for the
@@ -132,20 +154,15 @@ namespace dvfs
 	 * "default" network service provider, asking the kernel to start up
 	 * the "network" provider would work as well, and can be done by asking
 	 * it to start "@d:/network", which will fall-through to Aqueductt.
-	 **/
+	 **********************************************************************/
 	class categoryInodeC
 	:
-	public vfs::dirInodeC<
-		categoryInodeC, distributaryInodeC, DVFS_TAG_NAME_MAX_NCHARS>
+	public vfs::dirInodeC<tagC>
 	{
 	public:
 		categoryInodeC(void) {}
 		error_t initialize(void)
-		{
-			return vfs::dirInodeC<
-				categoryInodeC, distributaryInodeC,
-				DVFS_TAG_NAME_MAX_NCHARS>::initialize();
-		}
+			{ return vfs::dirInodeC<tagC>::initialize(); }
 
 		~categoryInodeC(void) {}
 	};
@@ -162,7 +179,9 @@ namespace dvfs
 		currenttC(void)
 		:
 		vfs::currenttC(static_cast<utf8Char>( 'd' )),
-		rootTag(CC"Zambesii Distributary VFS", &rootTag, &rootCategory),
+		rootTag(
+			CC"Zambesii Distributary VFS", vfs::DIR,
+			&rootTag, &rootCategory),
 		tagCache(__KNULL)
 		{}
 
@@ -178,17 +197,15 @@ namespace dvfs
 		~currenttC(void) {}
 
 	public:
-		dvfs::categoryTagC *getRoot(void) { return &rootTag; }
+		tagC *getRoot(void) { return &rootTag; }
 
 		// Both categories and dtribs can be returned.
-		error_t getPath(
-			utf8Char *fullName, vfs::inodeTypeE *type,
-			void **ret);
+		error_t getPath(utf8Char *fullName, tagC **ret);
 
 	private:
-		dvfs::categoryTagC		rootTag;
-		dvfs::categoryInodeC		rootCategory;
-		slamCacheC			*tagCache;
+		tagC			rootTag;
+		categoryInodeC		rootCategory;
+		slamCacheC		*tagCache;
 
 		struct stateS
 		{

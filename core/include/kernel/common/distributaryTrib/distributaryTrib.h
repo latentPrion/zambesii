@@ -31,7 +31,7 @@ public tributaryC
 public:
 	distributaryTribC(void)
 	:
-	distributaryTagCache(__KNULL), categoryTagCache(__KNULL)
+	tagCache(__KNULL)
 	{}
 
 	// Builds the Dtrib VFS tree of compiled-in kernel distributaries.
@@ -45,8 +45,7 @@ private:
 	error_t bootBuildTree(void);
 
 private:
-	slamCacheC			*distributaryTagCache,
-					*categoryTagCache;
+	slamCacheC			*tagCache;
 
 	static const dvfs::distributaryDescriptorS
 		*const distributaryDescriptors[];

@@ -17,26 +17,26 @@ flags(descriptor->flags), entryAddress(descriptor->entryAddress)
 {
 	strncpy8(
 		name, descriptor->name,
-		DVFS_TAG_NAME_MAX_NCHARS);
+		DVFS_TAG_NAME_MAXLEN);
 
 	strncpy8(
 		vendor, descriptor->vendor,
-		DVFS_DINODE_VENDOR_MAX_NCHARS);
+		DVFS_DINODE_VENDOR_MAXLEN);
 
 	strncpy8(
 		description, descriptor->description,
-		DVFS_DINODE_DESCRIPTION_MAX_NCHARS);
+		DVFS_DINODE_DESCRIPTION_MAXLEN);
 
 	fullName[0] = '\0';
 }
 
 error_t dvfs::currenttC::getPath(
-	utf8Char *fullName, vfs::inodeTypeE *type, void **tag
+	utf8Char *fullName, tagC **tag
 	)
 {
 	uarch_t			i=0;
 
-	if (fullName == __KNULL || type == __KNULL || tag == __KNULL)
+	if (fullName == __KNULL || tag == __KNULL)
 		{ return ERROR_INVALID_ARG; };
 
 	// Discard the root prefix.
@@ -54,10 +54,9 @@ error_t dvfs::currenttC::getPath(
 		i = 3;
 	};
 
-	dvfs::categoryTagC	*currTag;
-	dvfs::distributaryTagC	*dTag;
+	tagC			*currTag, *dTag;
 	status_t		nextSplitCharIndex;
-	utf8Char		buff[DVFS_TAG_NAME_MAX_NCHARS];
+	utf8Char		buff[DVFS_TAG_NAME_MAXLEN];
 
 	currTag = getRoot();
 	for (;; i += nextSplitCharIndex+1)
@@ -66,7 +65,6 @@ error_t dvfs::currenttC::getPath(
 		{
 			if (currTag != getRoot())
 			{
-				*type = vfs::DIR;
 				*tag = currTag;
 				return ERROR_SUCCESS;
 			}
@@ -75,7 +73,7 @@ error_t dvfs::currenttC::getPath(
 		};
 
 		nextSplitCharIndex = vfs::getIndexOfNext(
-			&fullName[i], '/', DVFS_TAG_NAME_MAX_NCHARS);
+			&fullName[i], '/', DVFS_TAG_NAME_MAXLEN);
 
 		if (nextSplitCharIndex == ERROR_INVALID_RESOURCE_NAME) {
 			return nextSplitCharIndex;
@@ -89,8 +87,8 @@ error_t dvfs::currenttC::getPath(
 		// If there are no further slashes:
 		if (nextSplitCharIndex == ERROR_NOT_FOUND)
 		{
-			strncpy8(buff, &fullName[i], DVFS_TAG_NAME_MAX_NCHARS);
-			buff[DVFS_TAG_NAME_MAX_NCHARS - 1] = '\0';
+			strncpy8(buff, &fullName[i], DVFS_TAG_NAME_MAXLEN);
+			buff[DVFS_TAG_NAME_MAXLEN - 1] = '\0';
 		}
 		else
 		{
@@ -102,16 +100,15 @@ error_t dvfs::currenttC::getPath(
 		if (nextSplitCharIndex == ERROR_NOT_FOUND)
 		{
 			// If it was a leaf node, return it.
-			dTag = currTag->getInode()->getLeafTag(buff);
+			dTag = currTag->getCInode()->getLeafTag(buff);
 			if (dTag != __KNULL)
 			{
-				*type = vfs::LEAF;
 				*tag = dTag;
 				return ERROR_SUCCESS;
 			};
 		};
 
-		currTag = currTag->getInode()->getDirTag(buff);
+		currTag = currTag->getCInode()->getDirTag(buff);
 		if (currTag == __KNULL) {
 			return ERROR_NOT_FOUND;
 		};
@@ -119,7 +116,6 @@ error_t dvfs::currenttC::getPath(
 		// If this was the last path component, return the category tag.
 		if (nextSplitCharIndex == ERROR_NOT_FOUND)
 		{
-			*type = vfs::DIR;
 			*tag = currTag;
 			return ERROR_SUCCESS;
 		};

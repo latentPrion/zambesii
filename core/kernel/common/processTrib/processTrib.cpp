@@ -41,8 +41,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 	void (**entryPoint)(void)
 	)
 {
-	vfs::inodeTypeE			inodeType;
-	void				*tag;
+	dvfs::tagC			*tag;
 	error_t				ret;
 	threadC				*self;
 
@@ -68,7 +67,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
-	ret = vfsTrib.getDvfs()->getPath(fullName, &inodeType, &tag);
+	ret = vfsTrib.getDvfs()->getPath(fullName, &tag);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -79,11 +78,9 @@ error_t processTribC::getDistributaryExecutableFormat(
 		return SPAWNPROC_STATUS_INVALID_FILE_NAME;
 	};
 
-	if (inodeType == vfs::DIR)
+	if (tag->getType() == vfs::DIR)
 	{
-		tag = ((dvfs::categoryTagC *)tag)->getInode()
-			->getLeafTag(CC"default");
-
+		tag = tag->getCInode()->getLeafTag(CC"default");
 		if (tag == __KNULL)
 		{
 			__kprintf(ERROR"Proc 0x%x: command line "
@@ -94,12 +91,9 @@ error_t processTribC::getDistributaryExecutableFormat(
 		};
 	};
 
-	if (((dvfs::distributaryTagC *)tag)->getInode()->getType()
-		== dvfs::distributaryInodeC::IN_KERNEL)
+	if (tag->getDInode()->getType() == dvfs::distributaryInodeC::IN_KERNEL)
 	{
-		*entryPoint = ((dvfs::distributaryTagC *)tag)->getInode()
-			->getEntryAddress();
-
+		*entryPoint = tag->getDInode()->getEntryAddress();
 		*executableFormat = processStreamC::RAW;
 		return ERROR_SUCCESS;
 	}
@@ -110,9 +104,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 			self->getFullId());
 
 		ret = getExecutableFormat(
-			((dvfs::distributaryTagC *)tag)->getInode()
-				->getFullName(),
-			executableFormat);
+			tag->getDInode()->getFullName(), executableFormat);
 
 		if (ret != ERROR_SUCCESS) { return ret; };
 
