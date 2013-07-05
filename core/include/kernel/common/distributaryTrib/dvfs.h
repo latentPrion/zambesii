@@ -3,6 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
+	#include <__kclasses/singleWaiterQueue.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 
 #define DVFS_TAG_NAME_MAXLEN			(48)
@@ -111,7 +112,15 @@ namespace dvfs
 		distributaryInodeC(
 			const distributaryDescriptorS *descriptor, typeE type);
 
-		error_t initialize(void) { return vfs::inodeC::initialize(); }
+		error_t initialize(void)
+		{
+			error_t		ret;
+
+			ret = vfs::inodeC::initialize();
+			if (ret != ERROR_SUCCESS) { return ret; };
+			return controlQueue.initialize();
+		}
+
 		~distributaryInodeC(void) {}
 
 	public:
@@ -120,10 +129,13 @@ namespace dvfs
 		void (*getEntryAddress(void))(void) { return entryAddress; }
 		utf8Char *getFullName(void) { return fullName; }
 		void getVersion(ubit8 *major, ubit8 *minor, ubit16 *patch);
+		singleWaiterQueueC *getControlQueue(void)
+			{ return &controlQueue; }
 
 	private:
-		typeE		type;
-		sarch_t		currentlyRunning;
+		typeE			type;
+		sarch_t			currentlyRunning;
+		singleWaiterQueueC	controlQueue;
 
 		// Mirror members for distributaryDescriptorS.
 		utf8Char	name[DVFS_TAG_NAME_MAXLEN],

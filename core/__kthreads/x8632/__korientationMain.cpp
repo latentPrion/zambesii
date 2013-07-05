@@ -23,6 +23,108 @@
 
 int oo=0, pp=0, qq=0, rr=0;
 
+#include <commonlibs/libacpi/libacpi.h>
+static void rDumpSrat(void)
+{
+	acpi_rsdtS	*rsdt;
+	acpi_rSratS	*srat;
+	void		*context, *handle;
+	uarch_t		nSrats;
+
+	rsdt = acpi::getRsdt();
+	__kprintf(NOTICE"RSDT mapped to 0x%p.\n", rsdt);
+
+	context = handle = __KNULL;
+	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
+	for (nSrats=0; srat != __KNULL;
+		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle), nSrats++)
+	{
+		acpi_rSratCpuS		*cpuEntry;
+		void			*handle2;
+		uarch_t			nCpuEntries;
+
+		__kprintf(NOTICE"Srat #%d, at vaddr 0x%p. CPU entries:\n",
+			nSrats, srat);
+
+		handle2 = __KNULL;
+		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
+		for (nCpuEntries=0; cpuEntry != __KNULL;
+			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2),
+				nCpuEntries++)
+		{
+			__kprintf(NOTICE"Entry %d: bank %d cpuid %d "
+				"firmware-enabled? %s.\n",
+				nCpuEntries,
+				cpuEntry->domain0
+					| (cpuEntry->domain1 & 0xFFFFFF00),
+				cpuEntry->lapicId,
+				((__KFLAG_TEST(
+					cpuEntry->flags,
+					ACPI_SRAT_CPU_FLAGS_ENABLED))
+					? "yes" : "no"));
+		};
+
+		__kprintf(NOTICE"%d CPU entries in all. "
+			"N: Memory range entries:\n",
+			nCpuEntries);
+
+		acpi_rSratMemS		*memEntry;
+		uarch_t			nMemEntries;
+
+		handle2 = __KNULL;
+		memEntry = acpiRSrat::getNextMemEntry(srat, &handle2);
+		for (nMemEntries=0; memEntry != __KNULL;
+			memEntry = acpiRSrat::getNextMemEntry(srat, &handle2),
+				nMemEntries++)
+		{
+			__kprintf(NOTICE"Entry %d: bank %d, firmware-enabled? "
+				"%s, hotplug? %s.\n"
+				"\tBase paddr 0x%P_%P, length 0x%P_%P.\n",
+				nMemEntries,
+				memEntry->domain0
+				| (memEntry->domain1 << 16),
+				((__KFLAG_TEST(
+					memEntry->flags,
+					ACPI_SRAT_MEM_FLAGS_ENABLED))
+					? "yes" : "no"),
+				((__KFLAG_TEST(
+					memEntry->flags,
+					ACPI_SRAT_MEM_FLAGS_HOTPLUG))
+					? "yes" : "no"),
+				memEntry->baseHigh, memEntry->baseLow,
+				memEntry->lengthHigh, memEntry->lengthLow);
+		};
+
+		__kprintf(NOTICE"%d memory range entries.\n", nMemEntries);
+	};
+}
+
+static void dumpSrat(void)
+{
+	acpi::initializeCache();
+
+	if (acpi::findRsdp() != ERROR_SUCCESS)
+	{
+		__kprintf(ERROR"Unable to find RSDP.\n");
+		return;
+	};
+
+	if (acpi::testForRsdt())
+	{
+		if (acpi::mapRsdt() != ERROR_SUCCESS)
+		{
+			__kprintf(ERROR"Failed to map the RSDT into vmem.\n");
+			return;
+		};
+		rDumpSrat();
+	}
+	else if (acpi::testForXsdt()) {
+		__kprintf(FATAL"Machine has an XSDT, but no RSDT; aborting.\n");
+	} else {
+		__kprintf(FATAL"Unable to find either RSDT or XSDT.\n");
+	};
+}
+
 extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -75,6 +177,8 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	__kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
+
+//	dumpSrat();
 
 	/* Initialize the kernel Memory Reservoir (heap) and object cache pool.
 	 **/
@@ -132,11 +236,7 @@ void __korientationMain(void)
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
-/*__kprintf(NOTICE ORIENT"localInterrupts: %d, nLocksHeld: %d.\n",
-	cpuControl::interruptsEnabled(),
-	self->nLocksHeld);
-for (;;) { asm volatile("hlt\n\t"); };
-*/
+
 	/* Initialize the VFS Trib to enable us to begin constructing the
 	 * various currentts, and then populate the distributary namespace.
 	 **/

@@ -245,7 +245,7 @@ status_t i8259aPicC::getIrqStatus(
 
 	*cpu = irqPinList[pin].cpu;
 	*vector = irqPinList[pin].vector;
-	*triggerMode = IRQCTL_IRQPIN_TRIGGMODE_LEVEL;
+	*triggerMode = irqPinList[pin].triggerMode;
 	// FIXME: Not sure what polarity ISA IRQs are.
 	*polarity = irqPinList[pin].polarity;
 

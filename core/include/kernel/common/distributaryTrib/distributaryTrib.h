@@ -22,6 +22,7 @@
 
 #define DTRIBTRIB_TAG_NAME_MAX_NCHARS		(48)
 
+class singlerWaiterQueueC;
 class slamCacheC;
 
 class distributaryTribC
@@ -39,7 +40,11 @@ public:
 	~distributaryTribC(void) {};
 
 public:
-	
+	/* Gets the control queue for the current dtrib process. Returns NULL
+	 * if the calling process is not a dtrib process.
+	 **/
+	singleWaiterQueueC *getControlQueue(void);
+
 private:
 	// Called at boot to construct the distributary VFS tree.
 	error_t bootBuildTree(void);

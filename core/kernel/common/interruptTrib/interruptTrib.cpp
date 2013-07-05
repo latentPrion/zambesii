@@ -212,6 +212,7 @@ void interruptTribC::pinIrqMain(registerContextC *regs)
 	};
 
 	atomicAsm::set(&pinDescriptor->inService, 0);
+	// FIXME: may want to avoid sending EOI for spurious IRQs.
 	zkcmCore.irqControl.sendEoi(__kpin);
 
 	// Run the retire list.
