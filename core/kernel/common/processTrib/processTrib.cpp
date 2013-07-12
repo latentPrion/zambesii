@@ -135,10 +135,10 @@ error_t processTribC::getExecutableFormat(
 }
 
 static void initializeSpawnProcessCallback(
-	zcallback::genericS *message, taskC *self
+	zcallback::genericS *message, threadC *self
 	)
 {
-	message->header.sourceId = self->parent->id;
+	message->header.sourceId = self->getFullId();
 	message->header.privateData = self->parent->privateData;
 	message->header.flags = 0;
 	message->header.subsystem = ZMESSAGE_SUBSYSTEM_PROCESS;

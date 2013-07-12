@@ -18,7 +18,7 @@ error_t timerStreamC::initialize(void)
 error_t timerStreamC::createOneshotEvent(
 	timestampS stamp, ubit8 type,
 	void *wakeTarget,
-	void *privateData, ubit32 /*flags*/
+	void *privateData, ubit32 flags
 	)
 {
 	requestS	*request, *tmp;
@@ -35,37 +35,35 @@ error_t timerStreamC::createOneshotEvent(
 	if (request == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
 	request->type = requestS::ONESHOT;
-	request->privateData = privateData;
-	request->flags = flags;
+	request->header.privateData = privateData;
+	request->header.flags = 0;
 
 	// Set the creator ID.
 	if (currCpu->taskStream.getCurrentTask()->getType() == task::PER_CPU)
 	{
-		request->creatorThreadId = (processId_t)currCpu->cpuId;
-		__KFLAG_SET(
-			request->flags,
-			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_SOURCE);
+		request->header.sourceId = (processId_t)currCpu->cpuId;
+		__KFLAG_SET(request->header.flags, ZREQUEST_FLAGS_CPU_SOURCE);
 	}
 	else
 	{
 		threadC		*tmp;
 
 		tmp = (threadC *)currCpu->taskStream.getCurrentTask();
-		request->creatorThreadId = tmp->getFullId();
+		request->header.sourceId = tmp->getFullId();
 	};
 
 	/*	FIXME:
 	 * Security check required here, for when the event is set to wake a
 	 * thread in a foreign process.
 	 **/
-	if (__KFLAG_TEST(flags, TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET))
+	if (__KFLAG_TEST(flags, ZREQUEST_FLAGS_CPU_TARGET))
 	{
 		cpuStreamC	*tmp;
 
 		tmp = (wakeTarget == __KNULL)
 			? currCpu : (cpuStreamC *)wakeTarget;
 
-		request->wakeTargetThreadId = (processId_t)tmp->cpuId;
+		request->header.targetId = (processId_t)tmp->cpuId;
 	}
 	else
 	{
@@ -75,7 +73,7 @@ error_t timerStreamC::createOneshotEvent(
 			? (threadC *)currCpu->taskStream.getCurrentTask()
 			: (threadC *)wakeTarget;
 
-		request->wakeTargetThreadId = tmp->getFullId();
+		request->header.targetId = tmp->getFullId();
 	};
 
 	timerTrib.getCurrentDateTime(&request->placementStamp);
@@ -172,24 +170,12 @@ error_t timerStreamC::pullEvent(
 
 static sarch_t isPerCpuCreator(timerStreamC::requestS *request)
 {
-	return (request->type == timerStreamC::requestS::ONESHOT)
-		? __KFLAG_TEST(
-			request->flags,
-			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_SOURCE)
-		: __KFLAG_TEST(
-			request->flags,
-			TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_SOURCE);
+	return __KFLAG_TEST(request->header.flags, ZREQUEST_FLAGS_CPU_SOURCE);
 }
 
 static inline sarch_t isPerCpuTarget(timerStreamC::requestS *request)
 {
-	return (request->type == timerStreamC::requestS::ONESHOT)
-		? __KFLAG_TEST(
-			request->flags,
-			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET)
-		: __KFLAG_TEST(
-			request->flags,
-			TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_TARGET);
+	return __KFLAG_TEST(request->header.flags, ZREQUEST_FLAGS_CPU_TARGET);
 }
 
 void *timerStreamC::timerRequestTimeoutNotification(requestS *request)
@@ -215,7 +201,7 @@ void *timerStreamC::timerRequestTimeoutNotification(requestS *request)
 	{
 		cpuStreamC	*cs;
 
-		cs = cpuTrib.getStream((cpu_t)request->wakeTargetThreadId);
+		cs = cpuTrib.getStream((cpu_t)request->header.targetId);
 		if (cs == __KNULL) { return __KNULL; };
 		taskContext = cs->getTaskContext();
 	}
@@ -223,7 +209,7 @@ void *timerStreamC::timerRequestTimeoutNotification(requestS *request)
 	{
 		threadC		*t;
 
-		t = parent->getThread(request->wakeTargetThreadId);
+		t = parent->getThread(request->header.targetId);
 		if (t == __KNULL) { return __KNULL; };
 		taskContext = t->getTaskContext();
 	};
@@ -242,9 +228,9 @@ void *timerStreamC::timerRequestTimeoutNotification(requestS *request)
 	};
 
 	event->type = (eventS::eventTypeE)request->type;
-	event->creatorThreadId = request->creatorThreadId;
+	event->creatorThreadId = request->header.sourceId;
 	event->dueStamp = event->expirationStamp = request->expirationStamp;
-	event->privateData = request->privateData;
+	event->privateData = request->header.privateData;
 	event->flags = 0;
 	if (isPerCpuCreator(request))
 		{ __KFLAG_SET(event->flags, ZCALLBACK_FLAGS_CPU_SOURCE); };

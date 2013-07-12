@@ -136,13 +136,7 @@ sarch_t timerQueueC::cancel(timerStreamC::requestS *request)
 
 static sarch_t isPerCpuCreator(timerStreamC::requestS *request)
 {
-	return (request->type == timerStreamC::requestS::ONESHOT)
-		? __KFLAG_TEST(
-			request->flags,
-			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_SOURCE)
-		: __KFLAG_TEST(
-			request->flags,
-			TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_SOURCE);
+	return __KFLAG_TEST(request->header.flags, ZREQUEST_FLAGS_CPU_SOURCE);
 }
 
 static processStreamC *getCreatorProcess(timerStreamC::requestS *request)
@@ -153,18 +147,12 @@ static processStreamC *getCreatorProcess(timerStreamC::requestS *request)
 	};
 
 	// Else, was a normal unique-context thread.
-	return processTrib.getStream(request->creatorThreadId);
+	return processTrib.getStream(request->header.sourceId);
 }
 
 inline static sarch_t isPerCpuTarget(timerStreamC::requestS *request)
 {
-	return (request->type == timerStreamC::requestS::ONESHOT)
-		? __KFLAG_TEST(
-			request->flags,
-			TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET)
-		: __KFLAG_TEST(
-			request->flags,
-			TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_TARGET);
+	return __KFLAG_TEST(request->header.flags, ZREQUEST_FLAGS_CPU_TARGET);
 }
 
 static processStreamC *getTargetProcess(timerStreamC::requestS *request)
@@ -173,7 +161,7 @@ static processStreamC *getTargetProcess(timerStreamC::requestS *request)
 		return processTrib.__kgetStream();
 	};
 
-	return processTrib.getStream(request->wakeTargetThreadId);
+	return processTrib.getStream(request->header.targetId);
 }
 
 void timerQueueC::tick(zkcmTimerEventS *event)
@@ -244,7 +232,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 			__kprintf(WARNING TIMERQUEUE"%dus: wake target process "
 				"0x%x does not exist.\n",
 				getNativePeriod() / 1000,
-				request->wakeTargetThreadId);
+				request->header.targetId);
 		};
 
 		/* For the case where the target process != creator process.
@@ -252,8 +240,8 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		 * pull a new request from the source process to allow it to
 		 * continue placing requests into the queue.
 		 **/
-		if (PROCID_PROCESS(request->creatorThreadId)
-			!= PROCID_PROCESS(request->wakeTargetThreadId))
+		if (PROCID_PROCESS(request->header.sourceId)
+			!= PROCID_PROCESS(request->header.targetId))
 		{
 			creatorProcess = getCreatorProcess(request);
 		}
@@ -264,7 +252,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 			__kprintf(WARNING TIMERQUEUE"%dus: Inexistent creator "
 				"process 0x%x for timer queue request.\n",
 				getNativePeriod() / 1000,
-				request->creatorThreadId);
+				request->header.sourceId);
 		}
 		else
 		{

@@ -39,9 +39,13 @@
  * no assumptions should be made about the mapping of subsystem IDs to queues
  * in the kernel).
  **/
-#define ZMESSAGE_SUBSYSTEM_MAXVAL		(0x1)
+#define ZMESSAGE_SUBSYSTEM_MAXVAL		(0x5)
 #define ZMESSAGE_SUBSYSTEM_TIMER		(0x0)
 #define ZMESSAGE_SUBSYSTEM_PROCESS		(0x1)
+#define ZMESSAGE_SUBSYSTEM_USER0		(0x2)
+#define ZMESSAGE_SUBSYSTEM_USER1		(0x3)
+#define ZMESSAGE_SUBSYSTEM_USER2		(0x4)
+#define ZMESSAGE_SUBSYSTEM_USER3		(0x5)
 
 namespace zrequest
 {

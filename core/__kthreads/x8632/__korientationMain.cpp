@@ -268,9 +268,11 @@ void __korientationMain(void)
 		self->getTaskContext()->callbackStream.pull(
 			(zcallback::headerS **)&callback);
 
-		__kprintf(NOTICE ORIENT"pulled %dth callback: err %d.\n",
+		__kprintf(NOTICE ORIENT"pulled %dth callback: err %d. "
+			"New process' ID: 0x%x.\n",
 			callback->header.privateData,
-			callback->header.err);
+			callback->header.err,
+			callback->header.sourceId);
 	};
 
 	__kprintf(NOTICE ORIENT"GG :).\n");

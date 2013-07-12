@@ -5,6 +5,7 @@
 	#include <__kclasses/sortedPtrDoubleList.h>
 	#include <__kclasses/ptrDoubleList.h>
 	#include <kernel/common/stream.h>
+	#include <kernel/common/zmessage.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 
 #define TIMERSTREAM		"TimerStream "
@@ -13,15 +14,9 @@
 
 #define TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK		(1<<0)
 
-#define TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET	(1<<0)
-#define TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_SOURCE	(1<<1)
-
 #define TIMERSTREAM_CREATEONESHOT_TYPE_ABSOLUTE		(0x0)
 #define TIMERSTREAM_CREATEONESHOT_TYPE_RELATIVE		(0x1)
 #define TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL		(0x1)
-
-#define TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_TARGET	(1<<0)
-#define TIMERSTREAM_CREATEPERIODIC_FLAGS_CPU_SOURCE	(1<<1)
 
 class timerQueueC;
 class processStreamC;
@@ -45,13 +40,12 @@ public:
 	// Used to represent timer service requests.
 	struct requestS
 	{
-		enum requestTypeE { PERIODIC=1, ONESHOT } type;
-		// ThreadID to wake up when this object expires.
-		processId_t		creatorThreadId, wakeTargetThreadId;
+		enum requestTypeE { PERIODIC=1, ONESHOT };
+
+		zrequest::headerS	header;
+		requestTypeE		type;
 		timestampS		expirationStamp, placementStamp;
 		timerQueueC		*currentQueue;
-		void			*privateData;
-		ubit32			flags;
 	};
 
 	// Used to represent expired timer request events.
@@ -92,14 +86,14 @@ public:
 	 *	awakened by this timer, and on whose callbackStream the
 	 *	notification message will be queued.
 	 *
-	 *	If TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET is set, then:
+	 *	If ZMESSAGE_FLAGS_CPU_TARGET is set, then:
 	 *		* If wakeTarget is NULL, the target CPU to wake is
 	 *		  assumed to be the current CPU. The behaviour is the
 	 *		  same as passing the current CPU's cpuStream pointer.
 	 *		* If wakeTarget is set, it is assumed to be a cpuStreamC
 	 *		  pointer for the CPU on which to queue the callback and
 	 *		  wake on event expiry.
-	 *	If TIMERSTREAM_CREATEONESHOT_FLAGS_CPU_TARGET is not set, then:
+	 *	If ZMESSAGE_FLAGS_CPU_TARGET is not set, then:
 	 *		* If wakeTarget is NULL, the target thread is assumed to
 	 *		  be the calling thread. The behaviour is the same as
 	 *		  the calling thread passing itself as an argument.
@@ -109,10 +103,12 @@ public:
 	 *
 	 * This argument works the same way for createPeriodicEvent.
 	 **/
+	#define ZMESSAGE_TIMER_CREATE_ONESHOT_EVENT	(0)
 	error_t createOneshotEvent(
 		timestampS stamp, ubit8 type, void *wakeTarget,
 		void *privateData, ubit32 flags);
 
+	#define ZMESSAGE_TIMER_CREATE_PERIODIC_EVENT	(1)
 	error_t createPeriodicEvent(
 		timeS interval,
 		void *wakeTarget,
