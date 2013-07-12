@@ -56,7 +56,7 @@ error_t callbackStreamC::pull(
 	{
 		pendingSubsystems.lock();
 
-		for (ubit16 i=0; i<ZCALLBACK_SUBSYSTEM_MAXVAL + 1; i++)
+		for (ubit16 i=0; i<ZMESSAGE_SUBSYSTEM_MAXVAL + 1; i++)
 		{
 			if (pendingSubsystems.test(i))
 			{
@@ -87,7 +87,7 @@ error_t	callbackStreamC::enqueue(zcallback::headerS *callback)
 	error_t		ret;
 
 	if (callback == __KNULL) { return ERROR_INVALID_ARG; };
-	if (callback->subsystem > ZCALLBACK_SUBSYSTEM_MAXVAL) {
+	if (callback->subsystem > ZMESSAGE_SUBSYSTEM_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 

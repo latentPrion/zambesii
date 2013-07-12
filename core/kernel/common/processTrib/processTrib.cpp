@@ -141,9 +141,8 @@ static void initializeSpawnProcessCallback(
 	message->header.sourceId = self->parent->id;
 	message->header.privateData = self->parent->privateData;
 	message->header.flags = 0;
-	message->header.subsystem = ZCALLBACK_SUBSYSTEM_PROCESS;
-	message->header.function =
-		ZCALLBACK_PROCESS_FUNCTION_SPAWN_DISTRIBUTARY;
+	message->header.subsystem = ZMESSAGE_SUBSYSTEM_PROCESS;
+	message->header.function = ZMESSAGE_PROCESS_SPAWN_DISTRIBUTARY;
 }
 
 /**	EXPLANATION:

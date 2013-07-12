@@ -39,7 +39,7 @@ public:
 	{
 		error_t		ret;
 
-		for (ubit16 i=0; i<ZCALLBACK_SUBSYSTEM_MAXVAL + 1; i++)
+		for (ubit16 i=0; i<ZMESSAGE_SUBSYSTEM_MAXVAL + 1; i++)
 		{
 			ret = queues[i].initialize(
 				PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE);
@@ -48,7 +48,7 @@ public:
 		};
 
 		return pendingSubsystems.initialize(
-			ZCALLBACK_SUBSYSTEM_MAXVAL + 1);
+			ZMESSAGE_SUBSYSTEM_MAXVAL + 1);
 	};
 
 	~callbackStreamC(void) {};
@@ -56,7 +56,7 @@ public:
 public:
 	callbackQueueC *getSubsystemQueue(ubit8 subsystemId)
 	{
-		if (subsystemId > ZCALLBACK_SUBSYSTEM_MAXVAL)
+		if (subsystemId > ZMESSAGE_SUBSYSTEM_MAXVAL)
 			{ return __KNULL; }
 
 		return &queues[subsystemId];
@@ -71,7 +71,7 @@ public:
 		zcallback::headerS *header);
 
 private:
-	callbackQueueC	queues[ZCALLBACK_SUBSYSTEM_MAXVAL + 1];
+	callbackQueueC	queues[ZMESSAGE_SUBSYSTEM_MAXVAL + 1];
 
 	/* Bitmap of all subsystem queues which have messages in them. The lock
 	 * on this bitmap is also used as the serializing lock that minimizes

@@ -82,7 +82,7 @@ public:
 	 * to spawnStream() are redundant for creating distributary processes.
 	 **/
 	// Callback uses genericCallbackS.
-	#define ZCALLBACK_PROCESS_FUNCTION_SPAWN_DISTRIBUTARY	(0)
+	#define ZMESSAGE_PROCESS_SPAWN_DISTRIBUTARY	(0)
 	error_t spawnDistributary(
 		utf8Char *commandLine,
 		utf8Char *environment,
@@ -93,7 +93,7 @@ public:
 		distributaryProcessC **ret);
 
 	// Callback uses genericCallbackS.
-	#define ZCALLBACK_PROCESS_FUNCTION_SPAWN_STREAM		(1)
+	#define ZMESSAGE_PROCESS_SPAWN_STREAM		(1)
 	error_t spawnStream(
 		utf8Char *commandLine,
 		utf8Char *environment,
