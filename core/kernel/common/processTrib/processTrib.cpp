@@ -135,7 +135,7 @@ error_t processTribC::getExecutableFormat(
 }
 
 static void initializeSpawnProcessCallback(
-	callbackStreamC::genericCallbackS *message, taskC *self
+	zcallback::genericS *message, taskC *self
 	)
 {
 	message->header.sourceId = self->parent->id;
@@ -174,7 +174,7 @@ void processTribC::commonEntry(void *)
 	processStreamC::initializationBlockSizeInfoS	initBlockSizes;
 	processStreamC::initializationBlockS		*initBlock;
 	processStreamC::executableFormatE		executableFormat;
-	callbackStreamC::genericCallbackS		*callbackMessage;
+	zcallback::genericS				*callbackMessage;
 	uarch_t						initBlockNPages;
 	error_t						err;
 	void						(*jumpAddress)(void);
@@ -200,7 +200,7 @@ void processTribC::commonEntry(void *)
 		self->getFullId());
 
 	// Allocate the callback message memory.
-	callbackMessage = new callbackStreamC::genericCallbackS;
+	callbackMessage = new zcallback::genericS;
 	if (callbackMessage == __KNULL)
 	{
 		__kprintf(FATAL PROCTRIB"commonEntry: process 0x%x:\n",

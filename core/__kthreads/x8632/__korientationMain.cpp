@@ -263,10 +263,10 @@ void __korientationMain(void)
 
 	for (ubit8 i=0; i<3; i++)
 	{
-		callbackStreamC::genericCallbackS	*callback;
+		zcallback::genericS	*callback;
 
 		self->getTaskContext()->callbackStream.pull(
-			(callbackStreamC::headerS **)&callback);
+			(zcallback::headerS **)&callback);
 
 		__kprintf(NOTICE ORIENT"pulled %dth callback: err %d.\n",
 			callback->header.privateData,

@@ -6,6 +6,7 @@
 	#include <__kclasses/ptrDoubleList.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/stream.h>
+	#include <kernel/common/zmessage.h>
 
 /**	EXPLANATION:
  * Per-thread kernel API callback queue manager that enqueues callbacks for the
@@ -18,23 +19,6 @@
  * APIs.
  **/
 
-/**	Flags for callbackStreamC::headerS.
- **/
-#define ZCALLBACK_FLAGS_CPU_SOURCE		(1<<0)
-#define ZCALLBACK_FLAGS_CPU_TARGET		(1<<1)
-
-#define ZREQUEST_FLAGS_CPU_SOURCE		(1<<0)
-#define ZREQUEST_FLAGS_CPU_TARGET		(1<<1)
-
-/**	Values for callbackStreamC::headerS.
- * Subsystems ID are basically implicitly queue IDs (to the kernel; externally
- * no assumptions should be made about the mapping of subsystem IDs to queues
- * in the kernel).
- **/
-#define ZCALLBACK_SUBSYSTEM_MAXVAL		(0x1)
-#define ZCALLBACK_SUBSYSTEM_TIMER		(0x0)
-#define ZCALLBACK_SUBSYSTEM_PROCESS		(0x1)
-
 /**	Flags for callbackStreamC::pull().
  **/
 #define ZCALLBACK_PULL_FLAGS_DONT_BLOCK		(1<<0)
@@ -44,6 +28,8 @@ class taskContextC;
 class callbackStreamC
 {
 public:
+	typedef pointerDoubleListC<zcallback::headerS>	callbackQueueC;
+
 	callbackStreamC(taskContextC *parent)
 	:
 	parent(parent)
@@ -68,51 +54,7 @@ public:
 	~callbackStreamC(void) {};
 
 public:
-	// The base message type included in all callback messages.
-	struct headerS
-	{
-		/**	EXPLANATION:
-		 * This structure must remain a plain old data type.
-		 *
-		 * sourceId:
-		 *	ID of the CPU or thread that made the asynch syscall
-		 *	that triggered this callback. Can also be a CPU ID if
-		 *	ZCALLBACK_FLAGS_CPU_SOURCE is set.
-		 * privateData:
-		 *	Data that is private to the source thread which was
-		 *	preserved across the syscall.
-		 * flags: Self-explanatory.
-		 * err:
-		 *	Most API callbacks return an error status; this member
-		 *	reduces the need for custom messages by enabling
-		 *	callbacks to use it instead of specialized messages.
-		 * subsystem + function:
-		 *	Used by the source thread to determine which function
-		 *	call the callback is for. Most subsystems will not have
-		 *	more than 0xFFFF functions and those that do can overlap
-		 *	their functions into a new subsystem ID, such that they
-		 *	use more than one subsystem ID (while remaining a single
-		 *	subsystem).
-		 *
-		 *	Also, since every new subsystem ID implies a separate,
-		 *	fresh queue, subsystems which wish to isolate specific
-		 *	groups of functions into their own queues can overlap
-		 *	those functions into a new subsystem ID if so desired.
-		 **/
-		processId_t	sourceId;
-		void		*privateData;
-		ubit32		flags;
-		error_t		err;
-		ubit16		subsystem, function;
-	};
-
-	struct genericCallbackS
-	{
-		headerS		header;
-	};
-
-public:
-	pointerDoubleListC<headerS> *getSubsystem(ubit8 subsystemId)
+	callbackQueueC *getSubsystemQueue(ubit8 subsystemId)
 	{
 		if (subsystemId > ZCALLBACK_SUBSYSTEM_MAXVAL)
 			{ return __KNULL; }
@@ -120,15 +62,16 @@ public:
 		return &queues[subsystemId];
 	}
 
-	error_t pull(headerS **callback, ubit32 flags=0);
-	error_t	enqueue(headerS *callback);
+	error_t pull(zcallback::headerS **callback, ubit32 flags=0);
+	error_t	enqueue(zcallback::headerS *callback);
 
 	// Utility function exported for other subsystems to use.
 	static error_t enqueueCallback(
-		processId_t targetCallbackStream, headerS *header);
+		processId_t targetCallbackStream,
+		zcallback::headerS *header);
 
 private:
-	pointerDoubleListC<headerS>	queues[ZCALLBACK_SUBSYSTEM_MAXVAL + 1];
+	callbackQueueC	queues[ZCALLBACK_SUBSYSTEM_MAXVAL + 1];
 
 	/* Bitmap of all subsystem queues which have messages in them. The lock
 	 * on this bitmap is also used as the serializing lock that minimizes

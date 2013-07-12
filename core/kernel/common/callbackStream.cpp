@@ -5,7 +5,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 error_t callbackStreamC::enqueueCallback(
-	processId_t targetStreamId, headerS *header
+	processId_t targetStreamId, zcallback::headerS *header
 	)
 {
 	callbackStreamC	*targetStream;
@@ -46,7 +46,9 @@ error_t callbackStreamC::enqueueCallback(
 	return targetStream->enqueue(header);
 }
 
-error_t callbackStreamC::pull(headerS **callback, ubit32 flags)
+error_t callbackStreamC::pull(
+	zcallback::headerS **callback, ubit32 flags
+	)
 {
 	if (callback == __KNULL) { return ERROR_INVALID_ARG; };
 
@@ -80,7 +82,7 @@ error_t callbackStreamC::pull(headerS **callback, ubit32 flags)
 	};
 }
 
-error_t	callbackStreamC::enqueue(headerS *callback)
+error_t	callbackStreamC::enqueue(zcallback::headerS *callback)
 {
 	error_t		ret;
 
