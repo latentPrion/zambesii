@@ -246,7 +246,7 @@ void taskTribC::yield(void)
 			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 }
 
-void taskTribC::block(void)
+void taskTribC::block(lockC::operationDescriptorS *unlockDescriptor)
 {
 	taskC		*currTask;
 
@@ -256,7 +256,7 @@ void taskTribC::block(void)
 
 	/**	XXX:
 	 * If you update this function, be sure to update its overloaded version
-	 * below as well.
+	 * above as well.
 	 *
 	 *	NOTES:
 	 * After placing a task into a waitqueue, call this function to
@@ -265,16 +265,6 @@ void taskTribC::block(void)
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	cpuTrib.getCurrentCpuStream()->taskStream.block(currTask);
 
-	// TODO: Set this CPU's currentTask to __KNULL here.
-	saveContextAndCallPull(
-		&cpuTrib.getCurrentCpuStream()->schedStack[
-			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
-}
-
-static void executeLockOperation(
-	lockC *lock, ubit8 lockType, ubit8 unlockOp, uarch_t unlockFlags
-	)
-{
 	/**	EXPLANATION:
 	 * This bit here completely purges the problem of lost wakeups
 	 * for asynchronous callbacks and event notifications. There is a window
@@ -303,60 +293,7 @@ static void executeLockOperation(
 	 * Be sure to pass in the correct 'lockType' value, and for multiple-
 	 * reader locks, the correct 'unlockOp' value.
 	 **/
-	switch (lockType)
-	{
-	case TASKTRIB_BLOCK_LOCKTYPE_WAIT:
-		static_cast<waitLockC *>( lock )->release();
-		break;
-
-	case TASKTRIB_BLOCK_LOCKTYPE_RECURSIVE:
-		static_cast<recursiveLockC *>( lock )->release();
-		break;
-
-	case TASKTRIB_BLOCK_LOCKTYPE_MULTIPLE_READER:
-		switch (unlockOp)
-		{
-		case TASKTRIB_BLOCK_UNLOCK_OP_READ:
-			static_cast<multipleReaderLockC *>( lock )
-				->readRelease(unlockFlags);
-
-			break;
-
-		case TASKTRIB_BLOCK_UNLOCK_OP_WRITE:
-			static_cast<multipleReaderLockC *>( lock )
-				->writeRelease();
-
-			break;
-
-		default:
-			panic(FATAL"block(): Invalid unlock operation.\n");
-		};
-		break;
-
-	default: panic(FATAL"block(): Invalid lockType.\n");
-	};
-}
-
-void taskTribC::block(
-	lockC *lock, ubit8 lockType, ubit8 unlockOp, uarch_t unlockFlags
-	)
-{
-	taskC		*currTask;
-
-	/**	XXX:
-	 * If you update this function, be sure to update its overloaded version
-	 * above as well.
-	 *
-	 *	NOTES:
-	 * After placing a task into a waitqueue, call this function to
-	 * place it into a "blocked" state.
-	 **/
-	if (lock == __KNULL) { panic(FATAL"block(): 'lock' is __KNULL.\n"); };
-
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	cpuTrib.getCurrentCpuStream()->taskStream.block(currTask);
-
-	executeLockOperation(lock, lockType, unlockOp, unlockFlags);
+	if (unlockDescriptor != __KNULL) { unlockDescriptor->execute(); };
 
 	// TODO: Set this CPU's currentTask to __KNULL here.
 	saveContextAndCallPull(

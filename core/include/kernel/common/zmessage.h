@@ -39,7 +39,9 @@
  * no assumptions should be made about the mapping of subsystem IDs to queues
  * in the kernel).
  **/
+// Keep this up to date.
 #define ZMESSAGE_SUBSYSTEM_MAXVAL		(0x5)
+// Actual subsystem values.
 #define ZMESSAGE_SUBSYSTEM_TIMER		(0x0)
 #define ZMESSAGE_SUBSYSTEM_PROCESS		(0x1)
 #define ZMESSAGE_SUBSYSTEM_USER0		(0x2)

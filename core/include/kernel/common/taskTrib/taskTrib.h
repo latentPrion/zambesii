@@ -14,18 +14,6 @@
 
 #define TASKTRIB		"Task Trib: "
 
-/**	Values for taskTribC::block()'s 'lockType' argument.
- **/
-#define TASKTRIB_BLOCK_LOCKTYPE_WAIT			(0x0)
-#define TASKTRIB_BLOCK_LOCKTYPE_RECURSIVE		(0x1)
-#define TASKTRIB_BLOCK_LOCKTYPE_MULTIPLE_READER		(0x2)
-
-/**	Values for taskTribC::block()'s 'unlockOp' argument. Only needed when
- * 'lockType' is MULTIPLE_READER.
- **/
-#define TASKTRIB_BLOCK_UNLOCK_OP_READ			(0x0)
-#define TASKTRIB_BLOCK_UNLOCK_OP_WRITE			(0x1)
-
 class taskTribC
 :
 public tributaryC
@@ -43,11 +31,8 @@ public:
 	 **/
 	error_t schedule(threadC *thread);
 	void yield(void);
-	void block(void);
 	// Used to prevent race conditions. See comments in definition.
-	void block(
-		lockC *lock, ubit8 lockType,
-		ubit8 unlockOp=0, uarch_t unlockFlags=0);
+	void block(lockC::operationDescriptorS *unlockDescriptor=__KNULL);
 
 	// Back ends.
 	error_t dormant(taskC *task, taskContextC *perCpuContext=__KNULL);

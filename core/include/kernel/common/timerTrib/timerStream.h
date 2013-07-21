@@ -37,11 +37,10 @@ public:
 	error_t initialize(void);
 
 public:
+	enum requestTypeE { PERIODIC=1, ONESHOT };
 	// Used to represent timer service requests.
 	struct requestS
 	{
-		enum requestTypeE { PERIODIC=1, ONESHOT };
-
 		zrequest::headerS	header;
 		requestTypeE		type;
 		timestampS		expirationStamp, placementStamp;
@@ -51,11 +50,9 @@ public:
 	// Used to represent expired timer request events.
 	struct eventS
 	{
-		enum eventTypeE { PERIODIC=1, ONESHOT } type;
-		processId_t	creatorThreadId;
-		timestampS	dueStamp, expirationStamp;
-		void		*privateData;
-		ubit32		flags;
+		zcallback::headerS	header;
+		requestTypeE		type;
+		timestampS		dueStamp, actualStamp;
 	};
 
 	// sarch_t nanosleep(ubit32 delay);
@@ -130,7 +127,9 @@ private:
 	 * pointer to the threadC or cpuStreamC object that it unblocked
 	 * after queueing the new callback.
 	 **/
-	void *timerRequestTimeoutNotification(requestS *request);
+	void *timerRequestTimeoutNotification(
+		requestS *request, timestampS *eventStamp);
+
 	// Causes this stream to insert its next request into the timer queues.
 	void timerRequestTimeoutNotification(void);
 

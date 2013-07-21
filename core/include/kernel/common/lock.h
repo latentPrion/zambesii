@@ -17,6 +17,31 @@ public:
 		magic = LOCK_MAGIC;
 	};
 
+	struct operationDescriptorS
+	{
+		enum typeE { WAIT=0, RECURSIVE, MULTIPLE_READER };
+		enum unlockOperationE { READ=0, WRITE };
+
+		operationDescriptorS(lockC *lock, typeE type=WAIT)
+		:
+		lock(lock), type(type)
+		{}
+
+		operationDescriptorS(
+			lockC *lock, typeE type,
+			unlockOperationE op, uarch_t rwFlags)
+		:
+		lock(lock), type(type), operation(op), rwFlags(rwFlags)
+		{}
+
+		void execute(void);
+
+		lockC			*lock;
+		typeE			type;
+		unlockOperationE	operation;
+		uarch_t			rwFlags;
+	};
+
 	void setLock(void) { lock = 1; };
 	void unlock(void) { lock = 0; };
 

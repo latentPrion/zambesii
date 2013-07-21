@@ -12,6 +12,44 @@
 static sharedResourceGroupC<waitLockC, void *>	buffDescriptors[16];
 static utf8Char		buffers[16][1024];
 
+void lockC::operationDescriptorS::execute()
+{
+	if (lock == __KNULL) { panic(FATAL"execute: lock is NULL.\n"); };
+
+	switch (type)
+	{
+	case WAIT:
+		static_cast<waitLockC *>( lock )->release();
+		break;
+
+	case RECURSIVE:
+		static_cast<recursiveLockC *>( lock )->release();
+		break;
+
+	case MULTIPLE_READER:
+		switch (operation)
+		{
+		case READ:
+			static_cast<multipleReaderLockC *>( lock )
+				->readRelease(rwFlags);
+
+			break;
+
+		case WRITE:
+			static_cast<multipleReaderLockC *>( lock )
+				->writeRelease();
+
+			break;
+
+		default:
+			panic(FATAL"execute: Invalid unlock operation.\n");
+		};
+		break;
+
+	default: panic(FATAL"execute: Invalid lock type.\n");
+	};
+}
+
 void waitLockC::acquire(void)
 {
 	uarch_t	nTries = 0xF00000;

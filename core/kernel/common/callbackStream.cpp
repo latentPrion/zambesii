@@ -46,6 +46,43 @@ error_t callbackStreamC::enqueueCallback(
 	return targetStream->enqueue(header);
 }
 
+error_t callbackStreamC::pullFrom(
+	ubit16 subsystemQueue, zcallback::headerS **callback, ubit32 flags
+	)
+{
+	if (callback == __KNULL) { return ERROR_INVALID_ARG; };
+	if (subsystemQueue > ZMESSAGE_SUBSYSTEM_MAXVAL)
+		{ return ERROR_INVALID_ARG_VAL; };
+
+	for (;;)
+	{
+		pendingSubsystems.lock();
+
+		if (pendingSubsystems.test(subsystemQueue))
+		{
+			*callback = queues[subsystemQueue].popFromHead();
+			if (queues[subsystemQueue].getNItems() == 0) {
+				pendingSubsystems.unset(subsystemQueue);
+			};
+
+			pendingSubsystems.unlock();
+			return ERROR_SUCCESS;
+		};
+
+		if (__KFLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
+		{
+			pendingSubsystems.unlock();
+			return ERROR_WOULD_BLOCK;
+		};
+
+		lockC::operationDescriptorS	unlockDescriptor(
+			&pendingSubsystems.bmp.lock,
+			lockC::operationDescriptorS::WAIT);
+
+		taskTrib.block(&unlockDescriptor);
+	};
+}
+
 error_t callbackStreamC::pull(
 	zcallback::headerS **callback, ubit32 flags
 	)
@@ -76,9 +113,11 @@ error_t callbackStreamC::pull(
 			return ERROR_WOULD_BLOCK;
 		};
 
-		taskTrib.block(
+		lockC::operationDescriptorS	unlockDescriptor(
 			&pendingSubsystems.bmp.lock,
-			TASKTRIB_BLOCK_LOCKTYPE_WAIT);
+			lockC::operationDescriptorS::WAIT);
+
+		taskTrib.block(&unlockDescriptor);
 	};
 }
 
@@ -119,8 +158,6 @@ error_t	callbackStreamC::enqueue(zcallback::headerS *callback)
 	};
 
 	pendingSubsystems.unlock();
-
-__kprintf(NOTICE"Just enqueued message. Ret is %d, subsystem bit %d.\n", ret, pendingSubsystems.testSingle(callback->subsystem));
 	return ret;
 }
 

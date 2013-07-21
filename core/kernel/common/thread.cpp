@@ -20,16 +20,7 @@ error_t taskContextC::initialize(void)
 #endif
 
 	// Initialize callback queues.
-	ret = callbackStream.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
-
-	// The event queues use object caching to speed up alloc/free of nodes.
-	ret = timerStreamEvents.initialize(
-		PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE);
-
-	if (ret != ERROR_SUCCESS) { return ret; };
-
-	return ERROR_SUCCESS;
+	return callbackStream.initialize();
 }
 
 void taskContextC::initializeRegisterContext(

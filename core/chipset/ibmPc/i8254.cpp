@@ -225,7 +225,9 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	if (err != ERROR_SUCCESS)
 	{
 		device->freeIrqEvent(irqEvent);
-		__kprintf(WARNING i8254"isr: Failed to queue IRQ event.\n");
+		__kprintf(WARNING i8254"isr: Failed to queue IRQ event; "
+			"err %s.\n",
+			strerror(err));
 	};
 
 	return ZKCM_ISR_SUCCESS;

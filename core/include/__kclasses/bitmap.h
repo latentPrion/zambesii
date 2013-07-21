@@ -57,6 +57,7 @@ public:
 private:
 	ubit8		preAllocated;
 	ubit16		preAllocatedSize;
+
 	struct bmpStateS
 	{
 		uarch_t		*bmp;

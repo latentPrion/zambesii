@@ -34,9 +34,11 @@ error_t timerStreamC::createOneshotEvent(
 	request = new requestS;
 	if (request == __KNULL) { return ERROR_MEMORY_NOMEM; };
 
-	request->type = requestS::ONESHOT;
+	request->type = ONESHOT;
 	request->header.privateData = privateData;
 	request->header.flags = 0;
+	request->header.subsystem = ZMESSAGE_SUBSYSTEM_TIMER;
+	request->header.function = ZMESSAGE_TIMER_CREATE_ONESHOT_EVENT;
 
 	// Set the creator ID.
 	if (currCpu->taskStream.getCurrentTask()->getType() == task::PER_CPU)
@@ -128,11 +130,11 @@ error_t timerStreamC::createOneshotEvent(
 }
 
 error_t timerStreamC::pullEvent(
-	ubit32 flags, eventS *ret
+	ubit32 flags, eventS *event
 	)
 {
-	eventS				*event;
-	pointerDoubleListC<eventS>	*queue;
+	error_t			ret;
+	eventS			*tmp;
 
 	/**	EXPLANATION:
 	 * Blocking (or optionally non-blocking if DONT_BLOCK flag is passed)
@@ -142,29 +144,18 @@ error_t timerStreamC::pullEvent(
 	 * Attempts to pull an event from "events" linked list. If it fails, it
 	 * sleeps the process.
 	 */
-	queue = &cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTaskContext()->timerStreamEvents;
+	ret = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTaskContext()->callbackStream.pullFrom(
+			ZMESSAGE_SUBSYSTEM_TIMER,
+			(zcallback::headerS **)&tmp,
+			__KFLAG_TEST(
+				flags, TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK)
+					? ZCALLBACK_PULL_FLAGS_DONT_BLOCK : 0);
 
-	for (;;)
-	{
-		event = queue->popFromHead();
-		if (event == __KNULL)
-		{
-			if (__KFLAG_TEST(
-				flags, TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK))
-			{
-				return ERROR_WOULD_BLOCK;
-			};
+	if (ret != ERROR_SUCCESS) { return ret; };
 
-			taskTrib.block();
-		}
-		else {
-			break;
-		};
-	};
-
-	*ret = *event;
-	delete event;
+	*event = *tmp;
+	delete tmp;
 	return ERROR_SUCCESS;
 }
 
@@ -178,7 +169,9 @@ static inline sarch_t isPerCpuTarget(timerStreamC::requestS *request)
 	return __KFLAG_TEST(request->header.flags, ZREQUEST_FLAGS_CPU_TARGET);
 }
 
-void *timerStreamC::timerRequestTimeoutNotification(requestS *request)
+void *timerStreamC::timerRequestTimeoutNotification(
+	requestS *request, timestampS *eventStamp
+	)
 {
 	eventS		*event;
 	error_t		ret;
@@ -227,19 +220,25 @@ void *timerStreamC::timerRequestTimeoutNotification(requestS *request)
 			: (void *)taskContext->parent.thread;
 	};
 
-	event->type = (eventS::eventTypeE)request->type;
-	event->creatorThreadId = request->header.sourceId;
-	event->dueStamp = event->expirationStamp = request->expirationStamp;
-	event->privateData = request->header.privateData;
-	event->flags = 0;
-	if (isPerCpuCreator(request))
-		{ __KFLAG_SET(event->flags, ZCALLBACK_FLAGS_CPU_SOURCE); };
+	event->type = request->type;
+	event->dueStamp = request->expirationStamp;
+	event->actualStamp = *eventStamp;
+	event->header.sourceId = request->header.sourceId;
+	event->header.privateData = request->header.privateData;
+	event->header.subsystem = request->header.subsystem;
+	event->header.function = request->header.function;
+	event->header.flags = 0;
 
-	if (isPerCpuTarget(request))
-		{ __KFLAG_SET(event->flags, ZCALLBACK_FLAGS_CPU_TARGET); };
+	if (isPerCpuCreator(request)) {
+		__KFLAG_SET(event->header.flags, ZCALLBACK_FLAGS_CPU_SOURCE);
+	};
+
+	if (isPerCpuTarget(request)) {
+		__KFLAG_SET(event->header.flags, ZCALLBACK_FLAGS_CPU_TARGET);
+	};
 
 	// Queue event.
-	ret = taskContext->timerStreamEvents.addItem(event);
+	ret = taskContext->callbackStream.enqueue(&event->header);
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(ERROR TIMERSTREAM"%d: Failed to add expired event to "

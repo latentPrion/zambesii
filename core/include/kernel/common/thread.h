@@ -168,8 +168,6 @@ public:
 
 	// Asynchronous API callback queues for this thread.
 	callbackStreamC		callbackStream;
-	pointerDoubleListC<timerStreamC::eventS>
-		timerStreamEvents;
 };
 
 /**	Class threadC, a normal thread.

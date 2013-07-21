@@ -43,6 +43,8 @@ typedef ubit32		unicodePoint;
 
 #define __KNULL		NULL
 
+const utf8Char *strerror(error_t err);
+
 #endif /* !defined( __ASM__ ) */
 
 #endif

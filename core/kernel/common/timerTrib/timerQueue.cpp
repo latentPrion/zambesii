@@ -225,7 +225,8 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 			 * was hotplug removed before the request expired.
 			 **/
 			targetObject = targetProcess->timerStream
-				.timerRequestTimeoutNotification(request);
+				.timerRequestTimeoutNotification(
+					request, &event->irqStamp);
 		}
 		else
 		{

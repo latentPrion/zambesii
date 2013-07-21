@@ -54,21 +54,26 @@ public:
 	~callbackStreamC(void) {};
 
 public:
-	callbackQueueC *getSubsystemQueue(ubit8 subsystemId)
-	{
-		if (subsystemId > ZMESSAGE_SUBSYSTEM_MAXVAL)
-			{ return __KNULL; }
-
-		return &queues[subsystemId];
-	}
-
 	error_t pull(zcallback::headerS **callback, ubit32 flags=0);
+	error_t pullFrom(
+		ubit16 subsystemQueue, zcallback::headerS **callback,
+		ubit32 flags=0);
+
 	error_t	enqueue(zcallback::headerS *callback);
 
 	// Utility function exported for other subsystems to use.
 	static error_t enqueueCallback(
 		processId_t targetCallbackStream,
 		zcallback::headerS *header);
+
+private:
+	callbackQueueC *getSubsystemQueue(ubit16 subsystemId)
+	{
+		if (subsystemId > ZMESSAGE_SUBSYSTEM_MAXVAL)
+			{ return __KNULL; }
+
+		return &queues[subsystemId];
+	}
 
 private:
 	callbackQueueC	queues[ZMESSAGE_SUBSYSTEM_MAXVAL + 1];

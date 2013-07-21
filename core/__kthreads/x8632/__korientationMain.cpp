@@ -169,12 +169,12 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	/* Initialize the kernel debug pipe for boot logging, etc.
 	 **/
 	DO_OR_DIE(__kdebug, initialize(), ret);
-	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
+	devMask = __kdebug.tieTo(/*DEBUGPIPE_DEVICE_BUFFER |*/ DEBUGPIPE_DEVICE1);
 	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
 		__kprintf(WARNING ORIENT"No debug buffer allocated.\n");
 	};
 
-	__kdebug.refresh();
+	// __kdebug.refresh();
 	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
 
@@ -261,21 +261,51 @@ void __korientationMain(void)
 		__kprintf(NOTICE ORIENT"Spawned %dth process.\n", i);
 	};
 
-	for (ubit8 i=0; i<3; i++)
+	sarch_t		waitForTimeout=1;
+	ret = self->parent->timerStream.createRelativeOneshotEvent(
+		timestampS(0, 3, 0), __KNULL, __KNULL, 0);
+
+	if (ret != ERROR_SUCCESS)
 	{
-		zcallback::genericS	*callback;
-
-		self->getTaskContext()->callbackStream.pull(
-			(zcallback::headerS **)&callback);
-
-		__kprintf(NOTICE ORIENT"pulled %dth callback: err %d. "
-			"New process' ID: 0x%x.\n",
-			callback->header.privateData,
-			callback->header.err,
-			callback->header.sourceId);
+		waitForTimeout = 0;
+		__kprintf(ERROR ORIENT"Failed to create 1 second timeout.\n");
 	};
 
-	__kprintf(NOTICE ORIENT"GG :).\n");
+	for (ubit8 i=0; i<((waitForTimeout) ? 0xFF : 3); i++)
+	{
+		zcallback::headerS	*callback;
+
+		self->getTaskContext()->callbackStream.pull(&callback);
+
+		switch (callback->subsystem)
+		{
+		case ZMESSAGE_SUBSYSTEM_PROCESS:
+			zcallback::genericS	*procMsg;
+
+			procMsg = (zcallback::genericS *)callback;
+			__kprintf(NOTICE ORIENT"pulled %dth callback: err %d. "
+				"New process' ID: 0x%x.\n",
+				procMsg->header.privateData,
+				procMsg->header.err,
+				procMsg->header.sourceId);
+
+			break;
+
+		case ZMESSAGE_SUBSYSTEM_TIMER:
+			timerStreamC::eventS	*timerEvent;
+
+			timerEvent = (timerStreamC::eventS *)callback;
+			__kprintf(NOTICE ORIENT"pulled timer timeout. "
+				"Actual expiration: %d:%dns.\n",
+				timerEvent->actualStamp.time.seconds,
+				timerEvent->actualStamp.time.nseconds);
+
+			__kprintf(NOTICE ORIENT"Kernel should meet scheduler now, and be halted.\n");
+			break;
+		};
+	};
+
+	__kprintf(NOTICE ORIENT"Halting unfavourably.\n");
 	for (;;) { asm volatile("hlt\n\t"); };
 }
 

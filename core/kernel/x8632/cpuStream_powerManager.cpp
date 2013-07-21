@@ -141,7 +141,8 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 		loopAgain = 0;
 
 		processTrib.__kgetStream()->timerStream.pullEvent(0, &event);
-		cs = reinterpret_cast<cpuStreamC *>( event.privateData );
+		cs = reinterpret_cast<cpuStreamC *>( event.header.privateData );
+
 		switch (cs->powerManager.getPowerStatus())
 		{
 		case OFF:

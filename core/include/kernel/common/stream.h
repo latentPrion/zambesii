@@ -33,7 +33,7 @@ class streamC
 public:
 	explicit streamC(processId_t id)
 	:
-	id(id), flags(0)
+	id(id), streamFlags(0)
 	{
 		binding.rsrc = 0;
 	};
@@ -45,7 +45,7 @@ public:
 // jumpListC interface.
 public:
 	processId_t	id;
-	ubit32		flags;
+	ubit32		streamFlags;
 
 protected:
 	sharedResourceGroupC<waitLockC, ubit8>	binding;
