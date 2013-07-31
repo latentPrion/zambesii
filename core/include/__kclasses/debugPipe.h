@@ -53,7 +53,8 @@
 #define ERROR				CC"E: "
 #define FATAL				CC"F: "
 
-#define NOLOG				"%[n]"
+#define OPTS(__opts)			"%-" __opts " "
+#define NOLOG				"n"
 
 #define LOGONCE(__id)			NOLOG
 #define LOGONCE_FINDTABLES(__id)	
@@ -101,15 +102,11 @@ public:
 	void flush(void);
 
 private:
-	void unsignedToStr(uarch_t num, uarch_t *len, utf8Char *buff);
+	/*void unsignedToStr(uarch_t num, uarch_t *len, utf8Char *buff);
 	void signedToStr(sarch_t num, uarch_t *len, utf8Char *buff);
 	void numToStrHexUpper(uarch_t num, uarch_t *len, utf8Char *buff);
 	void numToStrHexLower(uarch_t num, uarch_t *len, utf8Char *buff);
-	void paddrToStrHex(paddr_t num, uarch_t *len, utf8Char *buff);
-	void processPrintfFormatting(
-		const utf8Char *str, va_list args,
-		utf8Char *buff, uarch_t buffMax,
-		uarch_t *buffLen, uarch_t *printfFlags);
+	void paddrToStrHex(paddr_t num, uarch_t *len, utf8Char *buff);*/
 
 	debugBufferC		debugBuff;
 	// 'convBuff' is used to expand the printf formatting.
@@ -118,6 +115,11 @@ private:
 };
 
 void __kprintf(const utf8Char *str, ...);
+
+// The kernel deliberately does not provide sprintf.
+extern "C" sarch_t snprintf(
+	utf8Char *buff, uarch_t maxLength, utf8Char *format, ...);
+
 // Used for debugging, see above.
 void __kprintf(sharedResourceGroupC<waitLockC, void *> *buff,
 	uarch_t buffSize, utf8Char *str, ...);

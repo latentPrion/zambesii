@@ -348,8 +348,8 @@ memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 	ret->firstObject->nBytes = blockSize;
 	ret->firstObject->next = __KNULL;
 
-	__kprintf(NOTICE MEMBOG"New bog block @v 0x%X, 1stObj 0x%X, 1stObj "
-		"nBytes 0x%X.\n",
+	__kprintf(NOTICE MEMBOG"New bog block @v 0x%p, 1stObj 0x%p, 1stObj "
+		"nBytes 0x%x.\n",
 		ret, ret->firstObject, ret->firstObject->nBytes);
 
 	return ret;

@@ -145,7 +145,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	cache.lapicPaddr = cache.cfg->lapicPaddr;
 	cache.nCfgEntries = ret->nEntries;
 
-	__kprintf(NOTICE x86MP"Mapped MP Config table to 0x%X, %d pages. %d "
+	__kprintf(NOTICE x86MP"Mapped MP Config table to 0x%p, %d pages. %d "
 		"entries in MP config.\n",
 		ret, cfgNPages, ret->nEntries);
 

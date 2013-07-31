@@ -119,7 +119,8 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 			&vaddrSpaceStream->vaddrSpace,
 			faultAddr, pmap, status, WPRANGER_OP_SET_PRESENT, 0);
 
-		__kprintf(NOTICE NOLOG"Page Fault: FAKE_DYN: addr 0x%p, "
+		__kprintf(NOTICE OPTS(NOLOG)
+			"Page Fault: FAKE_DYN: addr 0x%p, "
 			"EIP 0x%p\n\tWPRl map: stat %d, pmap 0x%P, "
 			"__kf 0x%x.\n",
 			faultAddr, regs->eip,

@@ -2,10 +2,9 @@
 #include <stdarg.h>
 #include <arch/arch.h>
 #include <chipset/zkcm/zkcmCore.h>
-#include <__kstdlib/utf8.h>
-#include <__kstdlib/utf16.h>
 #include <__kstdlib/__kbitManipulation.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/processTrib/processTrib.h>
@@ -145,7 +144,6 @@ void debugPipeC::refresh(void)
 	utf8Char	*buff;
 	void		*handle;
 	uarch_t		len;
-	
 
 	// Clear "screen" on each device, whatever that means to that device.
 	for (ubit8 i=0; i<4; i++)
@@ -172,7 +170,7 @@ void debugPipeC::refresh(void)
 }
 
 // Expects the lock to already be held.
-void debugPipeC::unsignedToStr(uarch_t num, uarch_t *curLen, utf8Char *buff)
+void unsignedToStr(uarch_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
@@ -191,17 +189,16 @@ void debugPipeC::unsignedToStr(uarch_t num, uarch_t *curLen, utf8Char *buff)
 }
 
 // Expects the lock to already be held.
-void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen, utf8Char *buff)
+void signedToStr(sarch_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
 
-	if (num & 1<<((__BITS_PER_BYTE__ * sizeof(uarch_t)) - 1))
+	if (num < 0)
 	{
-		convBuff.rsrc[*curLen] = '-';
+		buff[*curLen] = '-';
 		*curLen += 1;
-		num -= 1;
-		num = ~num;
+		num = -num;
 	};
 
 	for (; num / 10 ; blen++)
@@ -218,7 +215,7 @@ void debugPipeC::signedToStr(sarch_t num, uarch_t *curLen, utf8Char *buff)
 }
 
 // Expects the lock to already be held.
-void debugPipeC::numToStrHexUpper(uarch_t num, uarch_t *curLen, utf8Char *buff)
+void unsignedToStrHexUpper(uarch_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
@@ -237,7 +234,7 @@ void debugPipeC::numToStrHexUpper(uarch_t num, uarch_t *curLen, utf8Char *buff)
 }
 
 // Expects the lock to already be held.
-void debugPipeC::numToStrHexLower(uarch_t num, uarch_t *curLen, utf8Char *buff)
+void unsignedToStrHexLower(uarch_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
@@ -255,7 +252,7 @@ void debugPipeC::numToStrHexLower(uarch_t num, uarch_t *curLen, utf8Char *buff)
 	};
 }
 
-void debugPipeC::paddrToStrHex(paddr_t num, uarch_t *curLen, utf8Char *buff)
+void paddrToStrHex(paddr_t num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
@@ -294,95 +291,127 @@ void __kprintf(
 	va_end(args);
 }
 
-void debugPipeC::processPrintfFormatting(
-	const utf8Char *str, va_list args,
-	utf8Char *buff, uarch_t buffMax, uarch_t *buffLen, uarch_t *printfFlags
+static sarch_t expandPrintfFormatting(
+	utf8Char *buff, uarch_t buffMax,
+	const utf8Char *str, va_list args, uarch_t *printfFlags
 	)
 {
-	uarch_t		unum;
-	sarch_t		snum;
-	paddr_t		pnum;
-	utf8Char	*u8Str;
+	uarch_t		buffIndex;
 
-	for (; (*str != '\0') && (*buffLen < buffMax); str++)
+	for (buffIndex=0; (*str != '\0') && (buffIndex < buffMax); str++)
 	{
-		if (*str == '%')
+		uarch_t		unum;
+		sarch_t		snum;
+		paddr_t		pnum;
+		utf8Char	*u8Str;
+
+		if (*str != '%')
 		{
-			str++;
-			switch (*str)
-			{
-			case '%':
-				buff[*buffLen] = *str;
-				*buffLen += 1;
-				break;
-
-			case 'd':
-			case 'i':
-				snum = va_arg(args, sarch_t);
-				signedToStr(snum, buffLen, buff);
-
-				break;
-
-			case 'u':
-				unum = va_arg(args, uarch_t);
-				unsignedToStr(unum, buffLen, buff);
-
-				break;
-
-			case 'X':
-				unum = va_arg(args, uarch_t);
-				numToStrHexUpper(unum, buffLen, buff);
-				break;
-
-			case 'P':
-				pnum = va_arg(args, paddr_t);
-				paddrToStrHex(pnum, buffLen, buff);
-				break;
-
-			case 'x':
-			case 'p':
-				unum = va_arg(args, uarch_t);
-				numToStrHexLower(unum, buffLen, buff);
-
-				break;
-
-			case 's':
-				u8Str = va_arg(args, utf8Char *);
-				processPrintfFormatting(
-					u8Str, args,
-					buff, buffMax, buffLen, printfFlags);
-
-				break;
-
-			case '[':
-				str++;
-				for (; *str != ']'; str++)
-				{
-					switch (*str)
-					{
-					case 'n':
-						__KFLAG_SET(
-							*printfFlags,
-							DEBUGPIPE_FLAGS_NOLOG);
-						break;
-
-					default:
-						break;
-					};
-				};
-				break;
-
-			default:
-				unum = va_arg(args, uarch_t);
-				break;
-			};	
-		}
-		else
-		{
-			buff[*buffLen] = *str;
-			*buffLen += 1;
+			buff[buffIndex] = *str;
+			buffIndex += 1;
+			continue;
 		};
+
+		str++;
+		switch (*str)
+		{
+		case 'd':
+			snum = va_arg(args, sarch_t);
+			signedToStr(snum, &buffIndex, buff);
+			break;
+
+		case 'u':
+			unum = va_arg(args, uarch_t);
+			unsignedToStr(unum, &buffIndex, buff);
+			break;
+
+		case 'x':
+		case 'p':
+			unum = va_arg(args, uarch_t);
+			unsignedToStrHexLower(unum, &buffIndex, buff);
+			break;
+
+		case 'X':
+			unum = va_arg(args, uarch_t);
+			unsignedToStrHexUpper(unum, &buffIndex, buff);
+			break;
+
+		case 'P':
+			pnum = va_arg(args, paddr_t);
+			paddrToStrHex(pnum, &buffIndex, buff);
+			break;
+
+		// Non recursive string printing.
+		case 's':
+			uarch_t		u8Strlen;
+
+			u8Str = va_arg(args, utf8Char *);
+			u8Strlen = strnlen8(u8Str, buffMax - buffIndex);
+			strncpy8(&buff[buffIndex], u8Str, u8Strlen);
+			buffIndex += u8Strlen;
+			break;
+
+		// Same as 's', but recursively parses format strings.
+		case 'r':
+			sarch_t		expandRet;
+
+			u8Str = va_arg(args, utf8Char *);
+			expandRet = expandPrintfFormatting(
+				&buff[buffIndex], buffMax - buffIndex,
+				u8Str, args, printfFlags);
+
+			if (expandRet > 0)
+				{ buffIndex += (unsigned)expandRet; };
+
+			break;
+
+		// Options.
+		case '-':
+			str++;
+			for (; *str != ' '; str++)
+			{
+				switch (*str)
+				{
+				case 'n':
+					__KFLAG_SET(
+						*printfFlags,
+						DEBUGPIPE_FLAGS_NOLOG);
+					break;
+
+				default:
+					break;
+				};
+			};
+			break;
+
+		case '%':
+			buff[buffIndex] = *str;
+			buffIndex += 1;
+			break;
+
+		default:
+			unum = va_arg(args, uarch_t);
+			break;
+		};	
 	};
+
+	return buffIndex;
+}
+
+sarch_t snprintf(utf8Char *buff, uarch_t maxLength, utf8Char *format, ...)
+{
+	va_list		args;
+	uarch_t		f;
+	sarch_t		nPrinted;
+
+	va_start(args, format);
+	nPrinted = expandPrintfFormatting(buff, maxLength, format, args, &f);
+	va_end(args);
+
+	if (nPrinted < 0) { return nPrinted; };
+	if (nPrinted >= (signed)maxLength) { nPrinted = maxLength - 1; };
+	buff[nPrinted] = '\0';
+	return nPrinted;
 }
 
 void debugPipeC::printf(const utf8Char *str, va_list args)
@@ -403,8 +432,8 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 		/ sizeof(utf8Char);
 
 	// Expand printf formatting into convBuff.
-	processPrintfFormatting(
-		str, args, convBuff.rsrc, buffMax, &buffLen, &printfFlags);
+	buffLen = expandPrintfFormatting(
+		convBuff.rsrc, buffMax, str, args, &printfFlags);
 
 	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
 		&& !__KFLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
@@ -442,10 +471,9 @@ void debugPipeC::printf(
 	buffMax = buffSize / sizeof(utf8Char);
 
 	// Expand printf formatting into convBuff.
-	processPrintfFormatting(
-		str, args,
-		static_cast<utf8Char *>( buff->rsrc ),
-		buffMax, &buffLen, &printfFlags);
+	buffLen = expandPrintfFormatting(
+		static_cast<utf8Char *>( buff->rsrc ), buffMax,
+		str, args, &printfFlags);
 
 	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
 		&& !__KFLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))

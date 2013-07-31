@@ -62,7 +62,7 @@ void *chipset_findx86MpFp(void)
 		return (void *)tmp;
 	};
 
-	__kprintf(WARNING LOGONCE(LOGONCE_FINDTABLES(0)) FINDTABLES
+	__kprintf(WARNING OPTS(LOGONCE(LOGONCE_FINDTABLES(0))) FINDTABLES
 		"MPFP: No MP FP found.\n");
 
 	return __KNULL;
@@ -111,7 +111,7 @@ void *chipset_findAcpiRsdp(void)
 		return (void *)tmp;
 	};
 
-	__kprintf(WARNING LOGONCE(LOGONCE_FINDTABLES(1)) FINDTABLES
+	__kprintf(WARNING OPTS(LOGONCE(LOGONCE_FINDTABLES(1))) FINDTABLES
 		"RSDP: No RSDP found.\n");
 
 	return __KNULL;

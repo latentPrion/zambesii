@@ -125,6 +125,26 @@ static void dumpSrat(void)
 	};
 }
 
+/**	EXPLANATION:
+ * __korientationMain is responsible for:
+ *	1. Preparing the kernel executable image in RAM for execution (zeroing
+ *	   (.BSS, preparing locking, executing constructors).
+ *	2. Initializing CPU exceptions.
+ *	3. Initializing the kernel's process control block.
+ *	4. Initializing the Memory Manager.
+ *	   a. Setup the __kspace memory bank (boot PMM).
+ *	   b. Setup the kernel process' Memory Stream (VMM).
+ *	   c. Setup the kernel heap.
+ *	5. Setting up the kernel's debug log (we actually do this out of order,
+ *	   before the heap because debug output is really valuable).
+ *	6. Initializing the scheduler on the BSP CPU.
+ *
+ * At the end of __korientationInit(), regardless of the arch/chipset being
+ * booted on, we should be able to rely on having __kspace level MM, cooperative
+ * scheduling with threading and exceptions.
+ *
+ * We then pass control to __korientationMain().
+ **/
 extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -210,6 +230,22 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 }
 
+/**	EXPLANATION:
+ * This function is entered after __korientationInit() so it has access to
+ * memory management (__kspace level), cooperative scheduling on the BSP,
+ * thread spawning and process spawning, along with exception and IRQs.
+ *
+ * Certain chipsets may need to do extra work inside of __korientationMain to
+ * have IRQs etc up to speed, but that is the general initialization state at
+ * this point.
+ *
+ * The rest of this function guides the kernel through the bootstrap sequence
+ * (timers, VFS, drivers, etc). Generally the floodplainn VFS is initialized
+ * first, and then populated with the ZKCM devices, and then the rest of the
+ * kernel is initialized with an emphasis on getting the timers initialized
+ * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
+ **/
+utf8Char	buff[512];
 void __korientationMain(void)
 {
 	error_t			ret;
@@ -220,6 +256,20 @@ void __korientationMain(void)
 
 	__kprintf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
 		self->getFullId(), self);
+
+	DO_OR_DIE(vfsTrib, initialize(), ret);
+	__kprintf(NOTICE"Testing sprintf.\n");
+	ubit32 len = snprintf(
+		buff, sizeof(buff),
+		NOTICE ORIENT OPTS(NOLOG)"%d: %s. %r, %p.\n",
+		1, "This is a flat string",
+		"This " OPTS(NOLOG)"%s string recurses (l%d)",
+			"stupid", 1,
+		buff);
+
+	__kprintf(NOTICE ORIENT"\"%s\". (len %d).\n", buff, len);
+	__kprintf(NOTICE ORIENT"About to dormant.\n");
+	taskTrib.dormant(self->getFullId());
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
 	 * then load the chipset's bus-pin mappings and initialize timer
@@ -236,14 +286,6 @@ void __korientationMain(void)
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
-
-	/* Initialize the VFS Trib to enable us to begin constructing the
-	 * various currentts, and then populate the distributary namespace.
-	 **/
-	DO_OR_DIE(vfsTrib, initialize(), ret);
-	DO_OR_DIE(distributaryTrib, initialize(), ret);
-
-
 
 	distributaryProcessC		*dtribs[3];
 

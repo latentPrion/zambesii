@@ -22,7 +22,8 @@ void interruptTrib_interruptEntry(registerContextC *regs)
 	makeNoise = regs->vectorNo != 254 && regs->vectorNo != 32
 		&& regs->vectorNo != 34;
 
-	(makeNoise) ? __kprintf(NOTICE NOLOG INTTRIB"interruptEntry: CPU %d "
+	(makeNoise) ? __kprintf(NOTICE OPTS(NOLOG)
+		INTTRIB"interruptEntry: CPU %d "
 		"entered on vector %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo)
 		: noop();
@@ -51,7 +52,8 @@ void interruptTrib_interruptEntry(registerContextC *regs)
 	interruptTrib.exceptionMain(regs);
 
 out:
-	(makeNoise) ? __kprintf(NOTICE NOLOG INTTRIB"interruptEntry: Exiting "
+	(makeNoise) ? __kprintf(NOTICE OPTS(NOLOG)
+		INTTRIB"interruptEntry: Exiting "
 		"on CPU %d vector %d.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo)
 		: noop();
