@@ -253,6 +253,13 @@ tagType *vfs::dirInodeC<tagType>::createDirTag(
 		return __KNULL;
 	};
 
+	*err = ret->initialize();
+	if (*err != ERROR_SUCCESS)
+	{
+		delete ret;
+		return __KNULL;
+	};
+
 	*err = dirs.insert(ret);
 	if (*err != ERROR_SUCCESS)
 	{
@@ -300,6 +307,13 @@ tagType *vfs::dirInodeC<tagType>::createLeafTag(
 	if (ret == __KNULL)
 	{
 		*err = ERROR_MEMORY_NOMEM;
+		return __KNULL;
+	};
+
+	*err = ret->initialize();
+	if (*err != ERROR_SUCCESS)
+	{
+		delete ret;
 		return __KNULL;
 	};
 

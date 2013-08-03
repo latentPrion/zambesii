@@ -291,6 +291,39 @@ void __kprintf(
 	va_end(args);
 }
 
+static ubit16 getNumberOfFormatArgsN(utf8Char *format, uarch_t maxLength)
+{
+	uarch_t		i;
+	ubit16		ret=0;
+
+	for (i=0; i < maxLength && format[i] != '\0'; i++)
+	{
+		if (format[i] != '%') { continue; };
+
+		i++;
+		if (format[i] == '\0') { return 0; };
+
+		switch (format[i])
+		{
+		case '%':
+		case '-':
+			break;
+
+		default:
+			ret++;
+			break;
+		};
+	};
+
+	return ret;
+}
+
+static inline uarch_t handleNullPointerArg(utf8Char *buff, uarch_t maxLength)
+{
+	strncpy8(buff, CC"(null)", maxLength);
+	return strnlen8(CC"(null)", maxLength);
+}
+
 static sarch_t expandPrintfFormatting(
 	utf8Char *buff, uarch_t buffMax,
 	const utf8Char *str, va_list args, uarch_t *printfFlags
@@ -298,6 +331,13 @@ static sarch_t expandPrintfFormatting(
 {
 	uarch_t		buffIndex;
 
+	/**	CAVEAT:
+	 * If you ever change the format specifiers (add new ones, take some
+	 * away, etc) be sure to check and update the format-specifier-counter
+	 * function above so that the value it returns for a format-specifier
+	 * count is consistent with the format specifiers that this function
+	 * actually takes.
+	 **/
 	for (buffIndex=0; (*str != '\0') && (buffIndex < buffMax); str++)
 	{
 		uarch_t		unum;
@@ -313,6 +353,8 @@ static sarch_t expandPrintfFormatting(
 		};
 
 		str++;
+		// Avoid the exploit "foo %", which would cause buffer overread.
+		if (*str == '\0') { return -1; };
 		switch (*str)
 		{
 		case 'd':
@@ -346,6 +388,16 @@ static sarch_t expandPrintfFormatting(
 			uarch_t		u8Strlen;
 
 			u8Str = va_arg(args, utf8Char *);
+
+			// Handle NULL pointers passed as string args:
+			if ((uintptr_t)u8Str < PAGING_BASE_SIZE)
+			{
+				buffIndex += handleNullPointerArg(
+					&buff[buffIndex], buffMax - buffIndex);
+
+				break;
+			};
+
 			u8Strlen = strnlen8(u8Str, buffMax - buffIndex);
 			strncpy8(&buff[buffIndex], u8Str, u8Strlen);
 			buffIndex += u8Strlen;
@@ -354,14 +406,35 @@ static sarch_t expandPrintfFormatting(
 		// Same as 's', but recursively parses format strings.
 		case 'r':
 			sarch_t		expandRet;
+			ubit16		numFormatArgs;
 
 			u8Str = va_arg(args, utf8Char *);
+
+			// Handle NULL pointers passed a string args:
+			if ((uintptr_t)u8Str < PAGING_BASE_SIZE)
+			{
+				buffIndex += handleNullPointerArg(
+					&buff[buffIndex], buffMax - buffIndex);
+
+				break;
+			};
+
 			expandRet = expandPrintfFormatting(
 				&buff[buffIndex], buffMax - buffIndex,
 				u8Str, args, printfFlags);
 
 			if (expandRet > 0)
 				{ buffIndex += (unsigned)expandRet; };
+
+			numFormatArgs = getNumberOfFormatArgsN(
+				u8Str, buffMax - buffIndex);
+
+			/* Advance the vararg pointer past the args for the
+			 * recursive format string argument (basically discard
+			 * them).
+			 **/
+			for (uarch_t i=0; i<numFormatArgs; i++)
+				{ va_arg(args, uarch_t); };
 
 			break;
 
@@ -416,7 +489,7 @@ sarch_t snprintf(utf8Char *buff, uarch_t maxLength, utf8Char *format, ...)
 
 void debugPipeC::printf(const utf8Char *str, va_list args)
 {
-	uarch_t		buffLen=0, buffMax;
+	sarch_t		buffLen=0, buffMax;
 	uarch_t		printfFlags=0;
 
 	convBuff.lock.acquire();
@@ -434,6 +507,12 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	// Expand printf formatting into convBuff.
 	buffLen = expandPrintfFormatting(
 		convBuff.rsrc, buffMax, str, args, &printfFlags);
+
+	if (buffLen < 0)
+	{
+		convBuff.lock.release();
+		return;
+	};
 
 	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
 		&& !__KFLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
@@ -456,7 +535,7 @@ void debugPipeC::printf(
 	utf8Char *str, va_list args
 	)
 {
-	uarch_t		buffLen=0, buffMax;
+	sarch_t		buffLen=0, buffMax;
 	uarch_t		printfFlags=0;
 
 	buff->lock.acquire();
@@ -474,6 +553,12 @@ void debugPipeC::printf(
 	buffLen = expandPrintfFormatting(
 		static_cast<utf8Char *>( buff->rsrc ), buffMax,
 		str, args, &printfFlags);
+
+	if (buffLen < 0)
+	{
+		buff->lock.release();
+		return;
+	};
 
 	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
 		&& !__KFLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))

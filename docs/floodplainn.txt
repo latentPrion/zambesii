@@ -1,0 +1,39 @@
+	Device Tree API:
+Most integral part of the Floodplainn subsystem is the device tree maintenance
+API. It allows for the addition, removal and updating of device tree nodes.
+Searching for drivers to instantiate a device, and loading those drivers, etc
+are functions which are delegated to other sub-APIs.
+
+Device tree nodes are referred to via their full device ID strings.
+
+	error_t addDevice(utf8Char *parentId, deviceC *device, ubit32 flags);
+	error_t addDevice(deviceC *parentDev, deviceC *device, ubit32 flags);
+	error_t removeDevice(utf8Char *parentId, ubit32 childId, ubit32 flags);
+	error_t removeDevice(deviceC *parentDev, ubit32 childId, ubit32 flags);
+	error_t removeDeviceAndChildren(
+		utf8Char *parentDev, ubit32 childId, ubit32 flags);
+	error_t removeDeviceAndChildren(
+		deviceC *parentDev, ubit32 childId, ubit32 flags);
+
+A NULL pointer for "parentId" implicitly refers to the root-device node as the
+parent device for the operation.
+
+	Device VFS API:
+The Floodplainn VFS is responsible for providing a named hierarchy of
+referencable objects that can be used to look-up, manipulate and query devices.
+The objects in this namespace are what are used to refer to devices.
+
+Each device has:
+	1. An "ID-based" name.
+	2. A "class-relative" name.
+	3. A "best-guess at a good name" name.
+
+The "ID" forms the basis of device-id strings. Every device has an ID which
+identifies it within the scope of all its sibling devices. All of its parent
+and child devices also have such a sibling-unique-scope ID in turn, creating a
+descending tree of device-IDs with parent-child relationships. Taking all of the
+device-IDs from the root-parent node all the way down to the desired child node
+will yield a multi-partite ID that uniquely globally identifies that device.
+	E.g:	"0/0/1/4/0/2/1" <-- A standard device-ID.
+
+

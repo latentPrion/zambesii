@@ -245,7 +245,6 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
  * kernel is initialized with an emphasis on getting the timers initialized
  * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
  **/
-utf8Char	buff[512];
 void __korientationMain(void)
 {
 	error_t			ret;
@@ -258,16 +257,7 @@ void __korientationMain(void)
 		self->getFullId(), self);
 
 	DO_OR_DIE(vfsTrib, initialize(), ret);
-	__kprintf(NOTICE"Testing sprintf.\n");
-	ubit32 len = snprintf(
-		buff, sizeof(buff),
-		NOTICE ORIENT OPTS(NOLOG)"%d: %s. %r, %p.\n",
-		1, "This is a flat string",
-		"This " OPTS(NOLOG)"%s string recurses (l%d)",
-			"stupid", 1,
-		buff);
 
-	__kprintf(NOTICE ORIENT"\"%s\". (len %d).\n", buff, len);
 	__kprintf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 
