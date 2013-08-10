@@ -1,0 +1,30 @@
+	Metalanguages:
+Currently the most troublesome portion of the specification to concrete into
+implementation planning is the use of the metalanguage libraries.
+
+	Kernel side call-in support code:
+Kernel-side metalanguage implementations will enable the kernel to call into
+drivers via a particular metalanguage. This is useful for device classes whose
+APIs the kernel directly exposes to userspace as part of its native API. e.g.:
+storage devices, timers, network cards, sound cards, etc.
+
+It allows kernel programmers to call into drivers using "C-function" notation
+as opposed to having to manually construct UDI IPC call message themselves. The
+call-in library code will generate the IPC message, format it and send it in the
+appropriate form which is recognized by the API.
+
+	Kernel-side call-back support code:
+There is an analogous call-back layer of code that should complement the call-in
+code. For the most part, when drivers call into the kernel they will be
+syscalling and these syscalls may be to facilitate the execution of say, code
+that processes transaction lists, etc. The actual syscall codepath is
+essentially the call-back sequence.
+
+	Driver-side call-in support code:
+Driver call-in support code is essentially code that dequeues requests on behalf
+of the driver, and calls into the appropriate UDI function entry point. This
+code is then the "main event loop" for each driver region. 
+
+	Driver-side call-back support code:
+This is generally going to be syscall code that enters the kernel syslib and
+executes a privilege escalation operation (SWI).

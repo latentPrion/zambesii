@@ -36,4 +36,51 @@ device-IDs from the root-parent node all the way down to the desired child node
 will yield a multi-partite ID that uniquely globally identifies that device.
 	E.g:	"0/0/1/4/0/2/1" <-- A standard device-ID.
 
+The id-based name of a device forms the basis of its insertion into the kernel's
+device-tree. Links to the device are also created within the floodplainn VFS
+which are used to establish its class-based and shortname FVFS nodes.
 
+Let us take a disk device, D whose location is as follows: it is attached to
+an SCSI HBA, which is attached to PCI-bus 0, which is attached to the sysbus,
+and the sysbus is the root node in the system.
+
+Let us furthermore assume that the sysbus has a sibling ID of 0 (it is the root
+node, and has no siblings or parents); the PCI-0 bus has a sibling ID of 3
+(it has sibling nodes such as the ACPI bus, and the ISA bus, etc); the SCSI
+HBA has a sibling ID of 2; and the disk device, D, has a sibling ID of 0. The
+full ID of the device, D is then:
+	"@f/by-id/0/3/2/0".
+
+Its "shortname"-based VFS name is going to be the compilation of the
+sibling-ID + shortname of each of the nodes that lead up to it, followed by its
+own concatenation of id + shortname. Let us assume that the shortname of the
+sysbus is "pcsysbus". The shortname of the PCI bus is "pci". The shortname of
+the SCSI HBA is "scsi-hba" and the shortname of the disk is "scsidisk". The
+shortname-name of the device is then:
+	"@f/by-shortname/0#pcsysbus/3#pci/2#scsihba/0#scsidisk".
+
+The class-based name of the device, D will be based on the metalanguage APIs
+it exposes. In this case, we are dealing with a disk device, so Zambesii will
+create a VFS link to the device under the "storage" device class. If the device
+had other classes, other links would also have been created.
+
+For example, many sound cards provide both a sound-input and sound-output set of
+metalanguage APIs. So for such a device, two links would be created: one within
+"sound-input" and one within "sound-output". Note well that the numeric ID of
+the same device may be different within two different class-scopes. A device may
+have the ID of the "0th" sound-output device, but at the same time, it may also
+be the "4th" sound-input device, if for example, 4 other mics are attached to
+the system, and the new device was detected after those. The "class-based" name
+of the device, D would be:
+	"@f/by-class/storage/<N>.
+
+All of these Floodplainn VFS nodes are created, managed and removed implicitly
+by the kernel and there is no API available to explicitly manipulate them.
+As long as a device has been enumerated by the kernel, it will have a node
+within the "by-id" subdirectory of the Floodplainn VFS.
+
+If a device has been enumerated but no driver has been found for it, it will
+not have a "by-shortname" or "by-class" name within the FVFS. When a driver is
+matched against a device, the "by-shortname" and "by-class" names are generated.
+
+	

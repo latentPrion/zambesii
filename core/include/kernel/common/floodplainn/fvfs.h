@@ -4,7 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 
-#define FVFS_TAG_NAME_MAXLEN		(64)
+#define FVFS_TAG_NAME_MAXLEN		(16)
 
 /**	EXPLANATION:
  * The Floodplainn VFS is the abstraction used to provide a namespace of
