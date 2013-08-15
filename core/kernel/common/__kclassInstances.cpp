@@ -12,6 +12,7 @@
 #include <kernel/common/execTrib/execTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
+#include <kernel/common/floodplainn/floodplainn.h>
 
 /**	EXPLANATION:
  * These are the instances of the kernel classes which don't require any
@@ -34,4 +35,5 @@ cachePoolC		cachePool;
 execTribC		execTrib;
 vfsTribC		vfsTrib;
 distributaryTribC	distributaryTrib;
+floodplainnC		floodplainn;
 

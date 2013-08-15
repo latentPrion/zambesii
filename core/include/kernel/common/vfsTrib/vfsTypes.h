@@ -12,7 +12,7 @@
 
 namespace vfs
 {
-	enum tagTypeE { DIR=1, MOUNTPOINT, FILE, SYMLINK };
+	enum tagTypeE { DIR=1, MOUNTPOINT, FILE, SYMLINK, DEVICE };
 
 	/* Returns:
 	 *	ERROR_NOT_FOUND: if no instance of 'splitChar' is found before
@@ -83,7 +83,7 @@ namespace vfs
 			tagC *parent,
 			inodeC *inode=__KNULL)
 		:
-		parent(parent), inode(inode), flags(0), type(type)
+		inode(inode), parent(parent), flags(0), type(type)
 		{
 			strncpy8(this->name, name, maxNameLength);
 			this->name[maxNameLength-1] = '\0';
@@ -100,12 +100,32 @@ namespace vfs
 		ubit16 getMaxNameLength(void) { return maxNameLength; }
 		tagTypeE getType(void) { return type; }
 
-	private:
-		utf8Char		name[maxNameLength];
-		tagC			*parent;
+	public:
 		inodeC			*inode;
+
+	private:
+		tagC			*parent;
 		ubit32			flags;
 		tagTypeE		type;
+		/**	XXX:
+		 * The "name" member must always remain the last in the struct.
+		 *
+		 * At some point in the future we may wish to support generic
+		 * VFS tree listing, where a single iterator type can be used
+		 * to iterate through the nodes in any of the VFSs in the kernel
+		 * regardless of which VFS it is (storage VFS, device VFS, etc).
+		 *
+		 * In order to iterate through the tags in a "dirInodeC"'s list
+		 * of sub-tags, we must choose a tag template with a
+		 * "maxNameLength" that is sufficient to generically fit all the
+		 * different VFS' max tag name lengths. This will probably be
+		 * 256, or so.
+		 *
+		 * Consider the fact that for example, the device VFS has a max
+		 * tag name length of about 16, and it becomes obvious why it's
+		 * important to just ensure that the "name" member remains last.
+		 **/
+		utf8Char		name[maxNameLength];
 	};
 
 	/**	inodeC:

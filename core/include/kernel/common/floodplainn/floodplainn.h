@@ -2,43 +2,38 @@
 	#define _FLOODPLAINN_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <kernel/common/tributary.h>
 	#include <kernel/common/floodplainn/floodplainn.h>
 	#include <kernel/common/floodplainn/device.h>
 	#include <kernel/common/vfsTrib/commonOperations.h>
 
 class floodplainnC
 :
-public tributaryC, public vfs::directoryOperationsC
+public tributaryC//, public vfs::directoryOperationsC
 {
 public:
 	floodplainnC(void) {}
-	error_t initialize(void) { return ERROR_SUCCESS; }
+	error_t initialize(void);
 	~floodplainnC(void) {}
 
 public:
+	/* Creates a child device under a given parent and returns it to the
+	 * caller.
+	 **/
 	error_t createDevice(
-		utf8Char *parentId, fplainn::deviceC *device,
-		ubit32 flags);
+		utf8Char *parentId, ubit16 childId, ubit32 flags,
+		fplainn::deviceC **device);
 
-	error_t createDevice(
-		fplainn::deviceC *parentDev, fplainn::deviceC *device,
-		ubit32 flags);
-
-	error_t removeDevice(utf8Char *parentId, ubit32 childId,
-		ubit32 flags);
-
-	error_t removeDevice(
-		fplainn::deviceC *parentDev, ubit32 childId,
-		ubit32 flags);
-
+	// Removes a given child from a given parent.
+	error_t removeDevice(utf8Char *parentId, ubit32 childId, ubit32 flags);
+	// Removes a tree of children from a given parent.
 	error_t removeDeviceAndChildren(
 		utf8Char *parentId, ubit32 childId, ubit32 flags);
 
-	error_t removeDeviceAndChildren(
-		fplainn::deviceC *parentDev, ubit32 childId,
-		ubit32 flags);
-
-	fplainn::deviceC *getDevice(utf8Char *path);
+	/* Retrieves a device by its path. This may be a by-id, by-name,
+	 * by-class or by-path path.
+	 **/
+	error_t getDevice(utf8Char *path, fplainn::deviceC **device);
 
 	/* FVFS listing functions. These allow the device tree to be treated
 	 * like a VFS with "files" that can be listed.
@@ -48,9 +43,9 @@ public:
 	 * attributes of a device, use "getDeviceMetalanguageAttributes()" in
 	 * conjunction with "getDeviceBaseAttributes()".
 	 **/
-	error_t openDirectory(utf8Char *deviceId, void **handle);
-	error_t readDirectory(void *handle, void **tagInfo);
-	void closeDirectory(void *handle);
+	//error_t openDirectory(utf8Char *deviceId, void **handle);
+	//error_t readDirectory(void *handle, void **tagInfo);
+	//void closeDirectory(void *handle);
 
 	/* These aren't really used by the kernel, and are mostly provided for
 	 * userspace's benefit. The kernel will generally directly use
@@ -91,7 +86,11 @@ public:
 	error_t getDeviceMetalanguageAttributes(
 		utf8Char *deviceName, utf8Char *metalanguageName,
 		void *outputMem);
+
+	static void __kdriverEntry(void);
 };
+
+extern floodplainnC		floodplainn;
 
 #endif
 

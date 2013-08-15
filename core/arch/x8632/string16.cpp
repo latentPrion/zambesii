@@ -160,3 +160,19 @@ size_t strnlen16(const utf16Char *str1, size_t maxLen)
 	return len;
 }
 
+utf16Char *strnchr16(const utf16Char *str, size_t n, const utf16Char chr)
+{
+	uarch_t		i=0;
+
+	for (; n > 0 && str[i] != '\0'; n--, i++)
+	{
+		if (str[i] == chr) { return (utf16Char *)&str[i]; };
+	};
+
+	/* "The terminating NULL is included in the search, so strnchr can be
+	 * used to obtain a pointer to the end of the string.
+	 **/
+	if (chr == '\0') { return (utf16Char *)&str[i]; };
+	return __KNULL;
+}
+

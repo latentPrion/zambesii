@@ -8,9 +8,9 @@ namespace vfs
 	class directoryOperationsC
 	{
 	public:
-		error_t openDirectory(utf8Char *name, void **handle)=0;
-		error_t readDirectory(void *handle, void **tagInfo)=0;
-		void closeDirectory(void *handle)=0;
+		virtual error_t openDirectory(utf8Char *name, void **handle)=0;
+		virtual error_t readDirectory(void *handle, void **tagInfo)=0;
+		virtual void closeDirectory(void *handle)=0;
 	};
 }
 

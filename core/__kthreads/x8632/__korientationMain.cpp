@@ -17,6 +17,7 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
+#include <kernel/common/floodplainn/floodplainn.h>
 
 #include <arch/cpuControl.h>
 
@@ -233,7 +234,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 /**	EXPLANATION:
  * This function is entered after __korientationInit() so it has access to
  * memory management (__kspace level), cooperative scheduling on the BSP,
- * thread spawning and process spawning, along with exception and IRQs.
+ * thread spawning and process spawning, along with exceptions and IRQs.
  *
  * Certain chipsets may need to do extra work inside of __korientationMain to
  * have IRQs etc up to speed, but that is the general initialization state at
@@ -249,6 +250,7 @@ void __korientationMain(void)
 {
 	error_t			ret;
 	threadC			*self;
+	fplainn::deviceC	*sysbusDev;
 
 	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
@@ -256,7 +258,14 @@ void __korientationMain(void)
 	__kprintf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
 		self->getFullId(), self);
 
+	/* Initialize the VFS roots and Floodplainn. From there, enumerate the
+	 * chipset's first device (sysbus) before moving on.
+	 **/
 	DO_OR_DIE(vfsTrib, initialize(), ret);
+	DO_OR_DIE(vfsTrib, getFvfs()->initialize(), ret);
+	DO_OR_DIE(vfsTrib, getDvfs()->initialize(), ret);
+	DO_OR_DIE(floodplainn, initialize(), ret);
+	DO_OR_DIE(floodplainn, createDevice(CC"by-id", 0, 0, &sysbusDev), ret);
 
 	__kprintf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());

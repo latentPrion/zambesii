@@ -13,6 +13,7 @@ EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a firmwareCore.a \
 	platformCore.a \
 	memoryTrib.a interruptTrib.a execTrib.a distributaryTrib.a \
 	timerTrib.a cpuTrib.a processTrib.a vfsTrib.a taskTrib.a debugTrib.a \
+	floodplainn.a \
 	platformCore.a chipset.a chipsetCore.a archCore.a firmwareCore.a \
 	__kclasses.a __kstdlib.a __kcxxabi.a libx86mp.a libacpi.a 
 

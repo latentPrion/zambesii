@@ -28,6 +28,16 @@ utf8Char	__kprocessArgStringMem
 ubit8		__kprocessPreallocatedBmpMem[3][32];
 #endif
 
+kernelDriverProcessC::kernelDriverProcessC(
+	processId_t processId, processId_t parentProcessId, void *privateData
+	)
+:
+containedProcessC(
+	processId, parentProcessId,
+	PROCESS_EXECDOMAIN_KERNEL, processTrib.__kgetStream(),
+	privateData)
+{}
+
 error_t processStreamC::initialize(
 	const utf8Char *commandLineString, const utf8Char *environmentString,
 	bitmapC *cpuAffinityBmp
@@ -81,6 +91,20 @@ error_t processStreamC::initialize(
 	else {
 		// If no affinity given, assume default = "all online cpus".
 		cpuAffinity.merge(&cpuTrib.onlineCpus);
+	};
+
+	/* Now initialize all the process' streams if it's not the kernel
+	 * process. The kernel process' streams are initialized separately
+	 * as a result of the kernel initialization sequence.
+	 **/
+	if (this->id != __KPROCESSID)
+	{
+		ret = memoryStream.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+		ret = timerStream.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+		ret = floodplainnStream.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
 	};
 
 	return ERROR_SUCCESS;

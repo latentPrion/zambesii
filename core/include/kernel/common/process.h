@@ -55,7 +55,9 @@
 class processStreamC
 {
 public:
-	enum typeE { DRIVER=0, DISTRIBUTARY, APPLICATION, KERNEL };
+	enum typeE {
+		DRIVER=0, KERNEL_DRIVER, DISTRIBUTARY, APPLICATION, KERNEL };
+
 	enum executableFormatE { RAW=0, ELF, PE, MACHO };
 
 	processStreamC(
@@ -356,12 +358,68 @@ public:
 	typeE getType(void) { return DISTRIBUTARY; }
 };
 
-/**	containerDriverProcessC, driverProcessC (contained),
- *	userspaceProcessC, containedUserspaceProcessC (contained).
- **/
+/**	driverProcessC, kernelDriverProcessC.
+ ******************************************************************************/
+
+class driverProcessC
+:
+public containerProcessC
+{
+public:
+	driverProcessC(
+		processId_t processId, processId_t parentProcessId,
+		numaBankId_t numaAddrSpaceBinding,
+		void *privateData)
+	:
+	containerProcessC(
+		processId, parentProcessId,
+		PROCESS_EXECDOMAIN_USER,	// Always kernel domain.
+		numaAddrSpaceBinding,
+		(void *)0x100000,
+		ARCH_MEMORY___KLOAD_VADDR_BASE - 0x100000 - 0x1000,
+		privateData)
+	{}
+
+	error_t initialize(
+		const utf8Char *fullName, const utf8Char *environment,
+		bitmapC *affinity)
+	{
+		return containerProcessC::initialize(
+			fullName, environment, affinity);
+	}
+
+	~driverProcessC(void) {}
+
+public:
+	typeE getType(void) { return DRIVER; }
+};
+
+class kernelDriverProcessC
+:
+public containedProcessC
+{
+public:
+	// Sets container process to kernel process automatically.
+	kernelDriverProcessC(
+		processId_t processId, processId_t parentProcessId,
+		void *privateData);
+
+	error_t initialize(
+		const utf8Char *commandLine, const utf8Char *environment,
+		bitmapC *affinity)
+	{
+		return containedProcessC::initialize(
+			commandLine, environment, affinity);
+	}
+
+	~kernelDriverProcessC(void) {}
+
+public:
+	typeE getType(void) { return KERNEL_DRIVER; }
+};
 
 /**	Inline Methods:
- *****************************************************************************/
+ ******************************************************************************/
 
 inline threadC *processStreamC::getTask(processId_t id)
 {

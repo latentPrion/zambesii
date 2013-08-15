@@ -3,6 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
+	#include <kernel/common/numaTypes.h>
 
 /**	deviceC:
  * Base type for a device in general. The type of driver used to instantiate
@@ -84,6 +85,7 @@ namespace fplainn
 				vendorName[DEVICE_VENDORNAME_MAXLEN],
 				vendorContactInfo[DEVICE_VENDORCONTACT_MAXLEN];
 
+		numaBankId_t		bankId;
 		driverC			*driver;
 		driverInstanceC		*instance;
 		instanceAttributeS	*attributes;
@@ -100,13 +102,13 @@ namespace fplainn
 
 		driverC(void)
 		:
-		nMetalanguages(0), nModules(0), nRegions(0), nChannels(0),
+		nModules(0), nRegions(0), nChannels(0), nMetalanguages(0),
 		allMetalanguagesSatisfied(0), childEnumerationAttribSize(0),
-		metalanguageInfo(__KNULL), moduleInfo(__KNULL),
-		regionInfo(__KNULL), channelInfo(__KNULL)
+		moduleInfo(__KNULL), regionInfo(__KNULL), channelInfo(__KNULL),
+		metalanguageInfo(__KNULL)
 		{}
 
-		error_t initialize(void){}
+		error_t initialize(void){ return ERROR_SUCCESS; }
 		~driverC(void){}
 
 	public:
@@ -150,7 +152,7 @@ namespace fplainn
 		{
 			metalanguageS(void)
 			:
-			isAvailable(0)
+			isSatisfied(0)
 			{
 				name[0] = '\0';
 			}
@@ -163,7 +165,7 @@ namespace fplainn
 		// Kernel doesn't need to know about control block information.
 
 	public:
-		ubit16		nModules, nRegions, nChannels, nMetalanguages
+		ubit16		nModules, nRegions, nChannels, nMetalanguages,
 				nControlBlocks;
 		sbit8		allMetalanguagesSatisfied;
 

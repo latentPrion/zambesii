@@ -37,7 +37,6 @@ void *vSwampC::getPages(uarch_t nPages, ubit32)
 	void		*ret;
 
 	state.lock.acquire();
-
 	for (swampInfoNodeC *currentNode = state.rsrc.head;
 		currentNode != __KNULL;
 		currentNode = currentNode->next)

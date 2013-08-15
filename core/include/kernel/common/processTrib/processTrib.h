@@ -92,6 +92,36 @@ public:
 		void *privateData,
 		distributaryProcessC **ret);
 
+	/**	EXPLANATION:
+	 * Driver processes can be either kernel processes that share and live
+	 * in the kernel's high address space, or normal userspace processes
+	 * that live in userspace. Those drivers that are embedded in the
+	 * kernel's image are spawned as kernel processes, and all other drivers
+	 * are spawned as userspace processes. I.e.: spawnDriver() can return
+	 * a self-contained containerProcess, or a containedProcess that lives
+	 * in the kernel's address space.
+	 *
+	 * The "commandLine" argument for spawnDriver() is not the path to a
+	 * driver file, but rather the floodplainn VFS path of a device in the
+	 * kernel's device tree. You "execute" the device, and the kernel will
+	 * find the appropriate driver for it; the user need only know a path
+	 * to the device he wants to see brought up.
+	 *
+	 * There is no need for addrspace binding or CPU affinity arguments
+	 * because those things are determined by the NUMA affinity of the
+	 * device itself. Privilege elevation for any device is determined by
+	 * the kernel and current security policy.
+	 **/
+	#define ZMESSAGE_PROCESS_SPAWN_DRIVER		(2)
+	error_t spawnDriver(
+		utf8Char *commandLine,
+		utf8Char *environment,
+		taskC::schedPolicyE schedPolicy,
+		ubit8 prio,
+		uarch_t flags,
+		void *privateData,
+		processStreamC **ret);
+
 	// Callback uses genericCallbackS.
 	#define ZMESSAGE_PROCESS_SPAWN_STREAM		(1)
 	error_t spawnStream(

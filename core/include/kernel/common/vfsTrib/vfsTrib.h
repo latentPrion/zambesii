@@ -11,6 +11,7 @@
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 	#include <kernel/common/vfsTrib/hierarchicalStorage.h>
 	#include <kernel/common/distributaryTrib/dvfs.h>
+	#include <kernel/common/floodplainn/fvfs.h>
 
 #define VFSTRIB			"VFS Trib: "
 
@@ -43,12 +44,14 @@ public:
 public:
 	dvfs::currenttC *getDvfs(void) { return &dvfsCurrentt; }
 	hvfs::currenttC *getHvfs(void) { return &hvfsCurrentt; }
+	fvfs::currenttC *getFvfs(void) { return &fvfsCurrentt; }
 
 	void dumpCurrentts(void);
 
 private:
 	hvfs::currenttC		hvfsCurrentt;
 	dvfs::currenttC		dvfsCurrentt;
+	fvfs::currenttC		fvfsCurrentt;
 };
 
 extern vfsTribC		vfsTrib;

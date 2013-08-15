@@ -28,3 +28,28 @@ code is then the "main event loop" for each driver region.
 	Driver-side call-back support code:
 This is generally going to be syscall code that enters the kernel syslib and
 executes a privilege escalation operation (SWI).
+
+	Inkernal drivers:
+These are performance critical drivers are are kept inside of the "core"
+subfolder of the kernel and not placed inside of the kernel's memdisk. They are
+generally going to be sysbus (chipset) drivers, bus drivers, timer device
+drivers and watchdog device drivers.
+
+These drivers are given their own process containers, but they are contained
+processes that share the kernel's high address space and allocate memory from
+the kernel's address space. They are managed as separate processes via the
+kernel's "Contained process" facility, and have their own process IDs, separate
+thread namespace, and streams.
+
+However, since they are linked directly to the kernel's image in RAM and can
+directly reference kernel symbols (though they are prohibited from doing so,
+and cannot reference any symbols beyond the standardized UDI symbols).
+
+	Inkernal driver-side UDI metalanguages:
+These are provided by the kernel itself, and their symbols are prefixed with
+"k".
+
+	Inkernal kernel-side metalanguages:
+These are provided by the subsystems which need to bind to the drivers, and
+they are probably going to be member functions in some form or other.
+

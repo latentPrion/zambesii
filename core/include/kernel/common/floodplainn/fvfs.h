@@ -3,6 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
+	#include <kernel/common/floodplainn/device.h>
 
 #define FVFS_TAG_NAME_MAXLEN		(16)
 
@@ -24,10 +25,10 @@
  * points to and (3) a list of child nodes.
  **/
 
-class deviceC;
-
 namespace fvfs
 {
+	class currenttC;
+
 	/**	hvfs::tagC:
 	 * Base type for a device that has child devices.
 	 **********************************************************************/
@@ -36,20 +37,17 @@ namespace fvfs
 	public vfs::tagC<FVFS_TAG_NAME_MAXLEN>, public vfs::dirInodeC<tagC>
 	{
 	friend class vfs::dirInodeC<tagC>;
-		// Private constructor only for use within vfs::dirInodeC.
+	friend class currenttC;
+		/* Private constructor only for use within vfs::dirInodeC.
+		 * It is used to allow vfs::dirInodeC::create*Tag() to
+		 * generically create new tags of this type.
+		 **/
 		tagC(
 			utf8Char *name, vfs::tagTypeE,
 			tagC *parent, vfs::inodeC *inode=__KNULL)
 		:
 		vfs::tagC<FVFS_TAG_NAME_MAXLEN>(
-			name, vfs::DIR, parent, inode)
-		{}
-
-	public:
-		tagC(utf8Char *name, tagC *parent, deviceC *device)
-		:
-		vfs::tagC<FVFS_TAG_NAME_MAXLEN>(
-			name, vfs::DIR, parent, (vfs::inodeC *)device)
+			name, vfs::DEVICE, parent, inode)
 		{}
 
 		error_t initialize(void)
@@ -60,10 +58,11 @@ namespace fvfs
 			if (ret != ERROR_SUCCESS) { return ret; }
 			return vfs::tagC<FVFS_TAG_NAME_MAXLEN>::initialize();
 		}
+
 		~tagC(void) {}
 
 	public:
-		deviceC *getDevice(void) { return (deviceC *)getInode(); }
+		fplainn::deviceC *getDevice(void) { return device; }
 
 		/**	EXPLANATION:
 		 * These are the publicly exposed wrappers around the underlying
@@ -72,12 +71,19 @@ namespace fvfs
 		 * *Child() so we could have more intuitive naming, and more
 		 * suitable function prototypes.
 		 **/
-		tagC *createChild(
-			utf8Char *name, deviceC *device, error_t *err)
+		error_t createChild(
+			utf8Char *name, fplainn::deviceC *device, tagC **tag)
 		{
-			return createDirTag(
-				name, vfs::DIR, this,
-				(vfs::dirInodeC<tagC> *)device, err);
+			error_t		ret;
+
+			if (tag == __KNULL) { return ERROR_INVALID_ARG; };
+
+			*tag = createDirTag(
+				name, vfs::DEVICE, this,
+				/*(vfs::dirInodeC<tagC> *)__KNULL,*/ &ret);
+
+			if (ret == ERROR_SUCCESS) { (*tag)->device = device; };
+			return ret;
 		}
 
 		sarch_t removeChild(utf8Char *name)
@@ -91,11 +97,15 @@ namespace fvfs
 		 **/
 		tagC *createDirTag(
 			utf8Char *name, vfs::tagTypeE type,
-			tagC *parent,
-			vfs::dirInodeC<tagC> *inode, error_t *err)
+			tagC *parent, error_t *err)
 		{
-			return vfs::dirInodeC<tagC>::createDirTag(
-				name, type, parent, inode, err);
+			tagC		*ret;
+
+			ret = vfs::dirInodeC<tagC>::createDirTag(
+				name, type, parent, __KNULL, err);
+
+			if (*err == ERROR_SUCCESS) { ret->inode = ret; };
+			return ret;
 		}
 
 		sarch_t removeDirTag(utf8Char *name)
@@ -119,8 +129,41 @@ namespace fvfs
 
 		sarch_t removeLeafTag(utf8Char *) { return 0; }
 		tagC *getLeafTag(utf8Char *) { return __KNULL; }
+
+	public:
+		fplainn::deviceC	*device;
 	};
-		
+
+	class currenttC
+	:
+	public vfs::currenttC
+	{
+	public:
+		currenttC(void)
+		:
+		vfs::currenttC(static_cast<utf8Char>('f')),
+		rootTag(CC"FVFS root tag", vfs::DEVICE, &rootTag, &rootTag)
+		{}
+
+		error_t initialize(void)
+		{
+			error_t		ret;
+
+			ret = vfs::currenttC::initialize();
+			if (ret != ERROR_SUCCESS) { return ret; };
+			return rootTag.initialize();
+		}
+
+		~currenttC(void) {}
+
+	public:
+		tagC *getRoot(void) { return &rootTag; }
+
+		error_t getPath(utf8Char *path, tagC **ret);
+
+	private:
+		tagC		rootTag;
+	};
 }
 
 #endif

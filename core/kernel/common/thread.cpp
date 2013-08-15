@@ -269,15 +269,24 @@ void taskC::inheritSchedPrio(prio_t prio, uarch_t flags)
 error_t threadC::allocateStacks(void)
 {
 	/**	NOTES:
-	 * There are 2 separate cases for consideration here:
+	 * There are 3 separate cases for consideration here:
 	 *	1. Kernel threads: worker threads for the kernel itself, which
 	 *	   are part of the kernel's process. These threads do not
 	 *	   allocate a userspace stack.
-	 *	2. Non-kernel-process-threads: Threads for processes other than
-	 *	   the kernel process. Usually processes executed in the
-	 *	   userspace domain, but occasionally processes executed in the
-	 *	   kernel domain. These allocate both kernelspace and userspace
-	 *	   stacks.
+	 *	2. Threads within a process that is not the kernel, but whose
+	 *	   execdomain == PROCESS_EXECDOMAIN_KERNEL. Threads for such
+	 *	   a process are not given a userspace stack, and are disallowed
+	 *	   from doing so by kernel policy. Failure to comply will,
+	 *	   depending on the CPU arch, likely result in kernel failure.
+	 *	   These processes tend to be driver processes.
+	 *	2. Threads for processes other than the kernel process, that are
+	 *	   not PROCESS_EXECDOMAIN_KERNEL processes. These threads are
+	 *	   given a userspace stack. This is the general case for almost
+	 *	   every process.
+	 *
+	 * Basically, if the parent process' exec domain is KERNEL, we do not
+	 * allocate a userspace stack, and furthermore, the use of a userspace
+	 * stack for such a process is prohibited by kernel policy.
 	 **/
 	// No fakemapping for kernel stacks.
 	stack0 = processTrib.__kgetStream()->memoryStream.memAlloc(
@@ -290,7 +299,8 @@ error_t threadC::allocateStacks(void)
 	};
 
 	// Don't allocate a user stack for kernel- and per-cpu- threads.
-	if (parent->id == __KPROCESSID)	{ return ERROR_SUCCESS; };
+	if (parent->execDomain == PROCESS_EXECDOMAIN_KERNEL)
+		{ __kprintf(NOTICE"Not a user process. No stack1 allocated.\n"); return ERROR_SUCCESS; };
 
 	// Allocate the stack from the parent process' memory stream.
 	stack1 = parent->memoryStream.memAlloc(CHIPSET_MEMORY_USERSTACK_NPAGES);

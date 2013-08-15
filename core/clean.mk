@@ -29,6 +29,7 @@ clean: fonyphile
 	cd kernel/common/vfsTrib; make clean
 	cd kernel/common/debugTrib; make clean
 	cd kernel/common/distributaryTrib; make clean
+	cd kernel/common/floodplainn; make clean
 
 aclean:
 	rm -f *.a *.o __klinkScript.ld

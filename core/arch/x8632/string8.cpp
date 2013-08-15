@@ -168,3 +168,19 @@ size_t strnlen8(const utf8Char *str1, size_t maxLen)
 	return len;
 }
 
+utf8Char *strnchr8(const utf8Char *str, size_t n, const utf8Char chr)
+{
+	uarch_t		i=0;
+
+	for (; n > 0 && str[i] != '\0'; n--, i++)
+	{
+		if (str[i] == chr) { return (utf8Char *)&str[i]; };
+	};
+
+	/* "The terminating NULL is included in the search, so strnchr can be
+	 * used to obtain a pointer to the end of the string.
+	 **/
+	if (chr == '\0') { return (utf8Char *)&str[i]; };
+	return __KNULL;
+}
+

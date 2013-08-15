@@ -11,6 +11,7 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
+#include <kernel/common/floodplainn/floodplainn.h>
 #include <__kthreads/__korientation.h>
 
 
@@ -250,6 +251,12 @@ void processTribC::commonEntry(void *)
 
 		break;
 
+	case (ubit8)processStreamC::KERNEL_DRIVER:
+		err = ERROR_SUCCESS;
+		executableFormat = processStreamC::RAW;
+		jumpAddress = &floodplainnC::__kdriverEntry;
+		break;
+
 	default:
 		__kprintf(FATAL"Proc 0x%x: Currently unsupported process type "
 			"%d.\n",
@@ -297,6 +304,7 @@ void processTribC::commonEntry(void *)
 	};
 
 	/* For RAW processes, jumpAddress is set by their get*ExecutableFormat.
+	 * The jumpAddress is always an address within the kernel image.
 	 * Time to jump to the next stage. For everything other than RAW, we
 	 * jump to a confluence library that holds a parser for the process'
 	 * executable format. For RAW, we jump directly into the process.
@@ -310,6 +318,8 @@ void processTribC::commonEntry(void *)
 	 * stack if we wish; this is simpler as well since there is no
 	 * risk of trampling.
 	 **/
+// All of this is only for userspace processes (anything not RAW).
+#if 0
 	registerContextC		*context;
 
 	context = (registerContextC *)((uintptr_t)self->stack1
@@ -323,6 +333,7 @@ void processTribC::commonEntry(void *)
 	// Using the userspace stack.
 	context->setStacks(self->stack0, self->stack1, 1);
 	context->setEntryPoint((void (*)(void *))jumpAddress);
+#endif
 
 	callbackMessage->header.err = ERROR_SUCCESS;
 	err = callbackStreamC::enqueueCallback(
@@ -337,7 +348,14 @@ void processTribC::commonEntry(void *)
 
 	// FIXME: Add support for SPAWNPROCESS_FLAGS_DORMANT.
 	// Now just jump.
-	loadContextAndJump(context);
+	if (executableFormat == processStreamC::RAW)
+		{ (*jumpAddress)(); }
+	else
+	{
+		// For now, this should be unreachable.
+		panic(FATAL"Reached unreachable code.\n");
+		//loadContextAndJump(context);
+	}
 }
 
 processStreamC *processTribC::getStream(processId_t id)
@@ -376,6 +394,102 @@ error_t processTribC::getNewProcessId(processId_t *ret)
 	return ERROR_SUCCESS;
 }
 
+error_t processTribC::spawnDriver(
+	utf8Char *commandLine,
+	utf8Char *environment,
+	taskC::schedPolicyE /*schedPolicy*/,
+	ubit8 /*prio*/,
+	uarch_t /*flags*/,
+	void *privateData,
+	processStreamC **newProcess
+	)
+{
+	error_t			ret;
+	processId_t		newProcessId;
+	threadC			*parentThread, *firstThread;
+
+	if (commandLine == __KNULL || newProcess == __KNULL)
+		{ return ERROR_INVALID_ARG; };
+
+	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
+		->getType() == task::PER_CPU)
+	{
+		panic(FATAL PROCTRIB"spawnDriver: called from per-cpu "
+			"thread.\n");
+	};
+
+	parentThread = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask();
+
+	ret = getNewProcessId(&newProcessId);
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE PROCTRIB"Out of process IDs.\n");
+		return ret;
+	};
+
+	/**	FIXME:
+	 * In reality, we are supposed to call on the driver search service to
+	 * first determine if a driver can be found for this device, and if so,
+	 * whether the driver needs to be spawned as a userspace or kernelspace
+	 * process, and then allocate the correct type of PCB object.
+	 *
+	 * For now, we just always spawn a kernelspace process because we don't
+	 * even support userspace driver processes as yet anyway.
+	 **/
+	*newProcess = new kernelDriverProcessC(
+		newProcessId, parentThread->getFullId(), privateData);
+
+	if (*newProcess == __KNULL)
+	{
+		__kprintf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	bitmapC		affinity;
+	//numaCpuBankC	*ncb;
+
+	// FIXME: Initialize the BMP to the device's affine bank.
+	// Get the device's object
+	// Get its bankId
+	// ncb = cpuTrib.getBank(deviceBankId);
+	// if (ncb == __KNULL) { fail or something; };
+	// Then set the affinity below to merge with ncb->cpus.
+	ret = affinity.initialize(cpuTrib.onlineCpus.getNBits());
+	if (ret != ERROR_SUCCESS) { return ret; };
+	affinity.merge(&cpuTrib.onlineCpus);
+
+	ret = (*(kernelDriverProcessC **)newProcess)->initialize(
+		commandLine, environment, &affinity);
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	processes.lock.writeAcquire();
+	processes.rsrc[PROCID_PROCESS(newProcessId)] = *newProcess;
+	processes.lock.writeRelease();
+
+	// Spawn the first thread.
+	ret = (*(kernelDriverProcessC **)newProcess)->spawnThread(
+		&processTribC::commonEntry, __KNULL,
+		&(*(kernelDriverProcessC **)newProcess)->cpuAffinity,
+		taskC::ROUND_ROBIN, 0,
+		SPAWNTHREAD_FLAGS_AFFINITY_SET
+		| SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
+		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
+		&firstThread);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		__kprintf(NOTICE"Failed to spawn thread for new driver.\n");
+		return ret;
+	};
+
+	__kprintf(NOTICE"New driver spawned, tid = 0x%x.\n",
+		firstThread->getFullId());
+
+	return ERROR_SUCCESS;
+}
+
 error_t processTribC::spawnDistributary(
 	utf8Char *commandLine,
 	utf8Char *environment,
@@ -393,6 +507,7 @@ error_t processTribC::spawnDistributary(
 	if (commandLine == __KNULL || newProcess == __KNULL)
 		{ return ERROR_INVALID_ARG; };
 
+	// Per-CPU threads are not allowed to spawn new processes.
 	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
 		->getType() == task::PER_CPU)
 	{
