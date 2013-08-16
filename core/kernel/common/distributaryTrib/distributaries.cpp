@@ -29,7 +29,6 @@ static void cisternnEntry(void)
 		"Dormanting.\n",
 		self->getFullId(), getEsp());
 
-	taskTrib.wake((processId_t)0x10001);
 	taskTrib.dormant(self->getFullId());
 }
 

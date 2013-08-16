@@ -80,19 +80,6 @@ error_t processTribC::getDistributaryExecutableFormat(
 		return SPAWNPROC_STATUS_INVALID_FILE_NAME;
 	};
 
-	if (tag->getType() == vfs::DIR)
-	{
-		tag = tag->getCInode()->getLeafTag(CC"default");
-		if (tag == __KNULL)
-		{
-			__kprintf(ERROR"Proc 0x%x: command line "
-				"invalid; disributary doesn't exist.\n",
-				self->getFullId());
-
-			return SPAWNPROC_STATUS_INVALID_FILE_NAME;
-		};
-	};
-
 	if (tag->getDInode()->getType() == dvfs::distributaryInodeC::IN_KERNEL)
 	{
 		// IN_KERNEL dtribs are raw embedded code in the kernel image.

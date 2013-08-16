@@ -264,6 +264,7 @@ void __korientationMain(void)
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, getFvfs()->initialize(), ret);
 	DO_OR_DIE(vfsTrib, getDvfs()->initialize(), ret);
+	DO_OR_DIE(distributaryTrib, initialize(), ret);
 	DO_OR_DIE(floodplainn, initialize(), ret);
 	DO_OR_DIE(floodplainn, createDevice(CC"by-id", 0, 0, &sysbusDev), ret);
 
@@ -285,12 +286,19 @@ void __korientationMain(void)
 	__kprintf(NOTICE"ret is %s; done creating nodes.\n", strerror(ret));
 
 	kernelDriverProcessC		*kdp;
+	distributaryProcessC		*dp;
 	zcallback::headerS		*gcb;
 
-	ret = processTrib.spawnDriver(
+	/*ret = processTrib.spawnDriver(
 		CC"by-id/2/1/1", __KNULL,
 		taskC::ROUND_ROBIN, 0,
-		SPAWNPROC_FLAGS_DORMANT, __KNULL, (processStreamC **)&kdp);
+		SPAWNPROC_FLAGS_DORMANT, __KNULL, (processStreamC **)&kdp);*/
+
+	/*ret = processTrib.spawnDistributary(
+		CC"///@d//././storage/./././//././//cisternn", __KNULL,
+		NUMABANKID_INVALID,
+		0, 0, __KNULL,
+		&dp);*/
 
 	if (ret != ERROR_SUCCESS) {
 		__kprintf(ERROR"Failed to spawn driver; ret is %s(%d).\n", strerror(ret), ret); goto dormant;
