@@ -65,6 +65,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 	 * which will then load the first few bytes of that file and determine
 	 * its executable format.
 	 **/
+	*executableFormat = processStreamC::RAW;
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
@@ -94,28 +95,19 @@ error_t processTribC::getDistributaryExecutableFormat(
 
 	if (tag->getDInode()->getType() == dvfs::distributaryInodeC::IN_KERNEL)
 	{
+		// IN_KERNEL dtribs are raw embedded code in the kernel image.
 		*entryPoint = tag->getDInode()->getEntryAddress();
-		*executableFormat = processStreamC::RAW;
-		return ERROR_SUCCESS;
 	}
 	else
 	{
-		__kprintf(FATAL"Proc 0x%x: out-of-kernel dtribs are "
+		// OUT_OF_KERNEL distributaries can only be ELF.
+		*executableFormat = processStreamC::ELF;
+		__kprintf(WARNING"Proc 0x%x: out-of-kernel dtribs are "
 			"not yet supported.\n",
 			self->getFullId());
-
-		ret = getExecutableFormat(
-			tag->getDInode()->getFullName(), executableFormat);
-
-		if (ret != ERROR_SUCCESS) { return ret; };
-
-		// OUT_OF_KERNEL distributaries can only be ELF.
-		if (*executableFormat != processStreamC::ELF) {
-			return ERROR_UNSUPPORTED;
-		};
-
-		return ERROR_UNSUPPORTED;
 	};
+
+	return ERROR_SUCCESS;
 }
 
 error_t processTribC::getExecutableFormat(
@@ -143,7 +135,19 @@ static void initializeSpawnProcessCallback(
 	message->header.privateData = self->parent->privateData;
 	message->header.flags = 0;
 	message->header.subsystem = ZMESSAGE_SUBSYSTEM_PROCESS;
-	message->header.function = ZMESSAGE_PROCESS_SPAWN_DISTRIBUTARY;
+	switch (self->parent->getType())
+	{
+	case processStreamC::DISTRIBUTARY:
+		message->header.function = ZMESSAGE_PROCESS_SPAWN_DISTRIBUTARY;
+		break;
+
+	case processStreamC::KERNEL_DRIVER:
+		message->header.function = ZMESSAGE_PROCESS_SPAWN_DRIVER;
+		break;
+
+	default:
+		message->header.function = ZMESSAGE_PROCESS_SPAWN_STREAM;
+	};
 }
 
 /**	EXPLANATION:
@@ -156,17 +160,17 @@ static void initializeSpawnProcessCallback(
  * format is ELF. Confluence libs can be made in any format and the kernel will
  * load them all. Basically for an ELF process, the kernel will seek to load
  * an ELF confluence lib, for a PE process, the kernel will seek to load a PE
- * confluence lib, etc.
+ * confluence lib, and so on.
  *
  * These libraries need not be part of the kernel, and can be distributed in
  * userspace. If the kernel fails to guess what executable format the new
  * process' image is encoded in, it will simply refuse to load the process
  * ("file format not recognized").
  *
- * An exception to this rule is in-kernel distributaries; that is,
- * distributaries that are embedded in the kernel image and require no
- * executable format parsing -- these types of distributary process will just
- * be executed raw.
+ * Exceptions to this rule are in-kernel distributaries and in-kernel drivers;
+ * these are embedded in the kernel image and require no executable format
+ * parsing -- these types of process images will just be executed raw, albeit
+ * in the kernel-domain.
  **/
 void processTribC::commonEntry(void *)
 {
@@ -196,8 +200,9 @@ void processTribC::commonEntry(void *)
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
-	__kprintf(NOTICE"New process running. ID = 0x%x.\n",
-		self->getFullId());
+	__kprintf(NOTICE"New process running. ID=0x%x type=%d.\n",
+		self->getFullId(),
+		self->parent->getType());
 
 	// Allocate the callback message memory.
 	callbackMessage = new zcallback::genericS;
@@ -233,16 +238,10 @@ void processTribC::commonEntry(void *)
 
 	self->parent->getInitializationBlock(initBlock);
 
-	/*__kprintf(NOTICE"Proc 0x%x: initBlock %d pages, mem 0x%p.\n"
-		"\tfullNameSize %d, workingDirSize %d, argumentsSize %d.\n",
-		self->getFullId(), initBlockNPages, initBlock,
-		initBlockSizes.fullNameSize,
-		initBlockSizes.workingDirectorySize,
-		initBlockSizes.argumentsSize);
-
-	__kprintf(NOTICE"Proc 0x%x: command line: \"%s\".\n",
-		self->getFullId(), initBlock->fullName);*/
-
+	/* Get the executable format for the new process. If it's a RAW code
+	 * sequence that is embedded in the kernel image, we also obtain the
+	 * jumpAddress right here; else the jumpAddress is determined later on
+	 **/
 	switch (initBlock->type)
 	{
 	case (ubit8)processStreamC::DISTRIBUTARY:
@@ -252,6 +251,7 @@ void processTribC::commonEntry(void *)
 		break;
 
 	case (ubit8)processStreamC::KERNEL_DRIVER:
+		// Common kernel driver entry point is provided by Floodplainn.
 		err = ERROR_SUCCESS;
 		executableFormat = processStreamC::RAW;
 		jumpAddress = &floodplainnC::__kdriverEntry;
@@ -262,26 +262,8 @@ void processTribC::commonEntry(void *)
 			"%d.\n",
 			self->getFullId(), initBlock->type);
 
-		err = ERROR_UNSUPPORTED;
+		panic(ERROR_UNSUPPORTED);
 		break;
-	};
-
-	if (err != ERROR_SUCCESS)
-	{
-		__kprintf(FATAL"Proc 0x%x: Error identifying executable "
-			"format. Halting.\n",
-			self->getFullId());
-
-		callbackMessage->header.err = err;
-		err = callbackStreamC::enqueueCallback(
-			self->parent->parentThreadId, &callbackMessage->header);
-
-		if (err != ERROR_SUCCESS) {
-			panic(FATAL"commonEntry: Failed to queue callback\n");
-		};
-
-		// Until we have a destroyStream(), we just dormant it.
-		taskTrib.dormant(self->getFullId());
 	};
 
 	if (executableFormat != processStreamC::RAW)
@@ -318,22 +300,18 @@ void processTribC::commonEntry(void *)
 	 * stack if we wish; this is simpler as well since there is no
 	 * risk of trampling.
 	 **/
-// All of this is only for userspace processes (anything not RAW).
-#if 0
-	registerContextC		*context;
+	registerContextC		context(self->parent->execDomain);
 
-	context = (registerContextC *)((uintptr_t)self->stack1
-		+ (CHIPSET_MEMORY_USERSTACK_NPAGES * PAGING_BASE_SIZE));
-
-	context--;
-	new (context) registerContextC(self->parent->execDomain);
-	err = context->initialize();
+	err = context.initialize();
 	if (err != ERROR_SUCCESS) { for (;;) { asm volatile("hlt\n\t"); }; };
 
-	// Using the userspace stack.
-	context->setStacks(self->stack0, self->stack1, 1);
-	context->setEntryPoint((void (*)(void *))jumpAddress);
-#endif
+	/* Kernel domain processes must use kernel space stack; user domain
+	 * processes must use userspace stack.
+	 **/
+	context.setEntryPoint((void (*)(void *))jumpAddress);
+	context.setStacks(
+		self->stack0, self->stack1,
+		(self->parent->execDomain == PROCESS_EXECDOMAIN_USER) ? 1 : 0);
 
 	callbackMessage->header.err = ERROR_SUCCESS;
 	err = callbackStreamC::enqueueCallback(
@@ -341,21 +319,16 @@ void processTribC::commonEntry(void *)
 
 	if (err != ERROR_SUCCESS)
 	{
-		panic(FATAL"commonEntry: Failed to queue callback\n");
+		panic(FATAL"commonEntry: Failed to queue callback.\n");
 		// Until we have a destroyStream(), we just dormant it.
 		taskTrib.dormant(self->getFullId());
 	};
 
-	// FIXME: Add support for SPAWNPROCESS_FLAGS_DORMANT.
-	// Now just jump.
-	if (executableFormat == processStreamC::RAW)
-		{ (*jumpAddress)(); }
-	else
-	{
-		// For now, this should be unreachable.
-		panic(FATAL"Reached unreachable code.\n");
-		//loadContextAndJump(context);
-	}
+	// If the process was spawned with DORMANT set, dormant it now.
+	if (__KFLAG_TEST(self->parent->flags, PROCESS_FLAGS_SPAWNED_DORMANT))
+		{ __kprintf(NOTICE"Dormant process.\n"); taskTrib.dormant(self->getFullId()); };
+
+	loadContextAndJump(&context);
 }
 
 processStreamC *processTribC::getStream(processId_t id)
@@ -394,12 +367,21 @@ error_t processTribC::getNewProcessId(processId_t *ret)
 	return ERROR_SUCCESS;
 }
 
+static sarch_t deviceExists(utf8Char *devPath, fplainn::deviceC **dev)
+{
+	error_t			ret;
+
+	ret = floodplainn.getDevice(devPath, dev);
+	if (ret != ERROR_SUCCESS) { return 0; };
+	return 1;
+}
+
 error_t processTribC::spawnDriver(
 	utf8Char *commandLine,
 	utf8Char *environment,
-	taskC::schedPolicyE /*schedPolicy*/,
-	ubit8 /*prio*/,
-	uarch_t /*flags*/,
+	taskC::schedPolicyE schedPolicy,
+	ubit8 prio,
+	uarch_t flags,
 	void *privateData,
 	processStreamC **newProcess
 	)
@@ -407,6 +389,7 @@ error_t processTribC::spawnDriver(
 	error_t			ret;
 	processId_t		newProcessId;
 	threadC			*parentThread, *firstThread;
+	fplainn::deviceC	*dev;
 
 	if (commandLine == __KNULL || newProcess == __KNULL)
 		{ return ERROR_INVALID_ARG; };
@@ -456,31 +439,50 @@ error_t processTribC::spawnDriver(
 	// if (ncb == __KNULL) { fail or something; };
 	// Then set the affinity below to merge with ncb->cpus.
 	ret = affinity.initialize(cpuTrib.onlineCpus.getNBits());
-	if (ret != ERROR_SUCCESS) { return ret; };
+	if (ret != ERROR_SUCCESS) { delete *newProcess; return ret; };
 	affinity.merge(&cpuTrib.onlineCpus);
 
 	ret = (*(kernelDriverProcessC **)newProcess)->initialize(
 		commandLine, environment, &affinity);
 
-	if (ret != ERROR_SUCCESS) { return ret; };
+	if (ret != ERROR_SUCCESS) { delete *newProcess; return ret; };
 
-	processes.lock.writeAcquire();
-	processes.rsrc[PROCID_PROCESS(newProcessId)] = *newProcess;
-	processes.lock.writeRelease();
+	/* Verify that the device exists, a driver is loaded for it, and all
+	 * of that driver's metalanguage dependencies are satisfied.
+	 **/
+	if (!deviceExists((*newProcess)->fullName, &dev))
+		{ delete *newProcess; return ERROR_RESOURCE_UNAVAILABLE; };
 
-	// Spawn the first thread.
+	if (dev->driver == __KNULL)
+		{ delete *newProcess; return SPAWNDRIVER_STATUS_NO_DRIVER; };
+
+	if (!dev->driver->allMetalanguagesSatisfied) {
+		delete *newProcess; return SPAWNDRIVER_STATUS_METAS_MISSING;
+	};
+
+	// Add the new process to the process list.
+	processes.setSlot(newProcessId, *newProcess);
+
+	// Spawn the first thread. Pass on the DORMANT flag if set.
+	if (__KFLAG_TEST(flags, SPAWNPROC_FLAGS_DORMANT))
+	{
+		__KFLAG_SET(
+			(*newProcess)->flags,
+			PROCESS_FLAGS_SPAWNED_DORMANT);
+	};
+
 	ret = (*(kernelDriverProcessC **)newProcess)->spawnThread(
 		&processTribC::commonEntry, __KNULL,
 		&(*(kernelDriverProcessC **)newProcess)->cpuAffinity,
-		taskC::ROUND_ROBIN, 0,
-		SPAWNTHREAD_FLAGS_AFFINITY_SET
-		| SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
-		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
+		schedPolicy, prio,
+		flags | SPAWNTHREAD_FLAGS_AFFINITY_SET | SPAWNTHREAD_FLAGS_FIRST_THREAD,
 		&firstThread);
 
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(NOTICE"Failed to spawn thread for new driver.\n");
+		processes.clearSlot(newProcessId);
+		delete *newProcess;
 		return ret;
 	};
 
@@ -543,10 +545,7 @@ error_t processTribC::spawnDistributary(
 
 	ret = (*newProcess)->initialize(commandLine, environment, &affinity);
 	if (ret != ERROR_SUCCESS) { return ret; };
-
-	processes.lock.writeAcquire();
-	processes.rsrc[PROCID_PROCESS(newProcessId)] = *newProcess;
-	processes.lock.writeRelease();
+	processes.setSlot(newProcessId, *newProcess);
 
 	// Spawn the first thread.
 	ret = (*newProcess)->spawnThread(
@@ -561,6 +560,8 @@ error_t processTribC::spawnDistributary(
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(NOTICE"Failed to spawn thread for new process.\n");
+		delete *newProcess;
+		processes.clearSlot(newProcessId);
 		return ret;
 	};
 

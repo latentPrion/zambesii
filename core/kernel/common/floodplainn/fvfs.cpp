@@ -25,8 +25,9 @@ error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 
 	*ret = __KNULL;
 
-	for (; *path == '/'; path++) {};
-	if (strncmp8(path, CC"@f/", 3) == 0) { i = 3; };
+	// Discard preceding slashes.
+	for (; path[i] == '/'; i++) {};
+	if (strncmp8(path, CC"@f/", 3) == 0) { i += 3; };
 	// zero-length string results in NOT_FOUND.
 	if (path[i] == '\0') { return ERROR_NOT_FOUND; };
 

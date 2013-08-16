@@ -26,6 +26,7 @@
 /**	Flags for processC::flags.
  **/
 #define PROCESS_FLAGS___KPROCESS	(1<<0)
+#define PROCESS_FLAGS_SPAWNED_DORMANT	(1<<1)
 
 /**	Flags for processStreamC::spawnThread().
  **/

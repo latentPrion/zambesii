@@ -267,6 +267,40 @@ void __korientationMain(void)
 	DO_OR_DIE(floodplainn, initialize(), ret);
 	DO_OR_DIE(floodplainn, createDevice(CC"by-id", 0, 0, &sysbusDev), ret);
 
+	ret = floodplainn.createDevice(CC"by-id", 0, 0, &sysbusDev);
+	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	ret = floodplainn.createDevice(CC"by-id", 1, 0, &sysbusDev);
+	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	ret = floodplainn.createDevice(CC"by-id", 2, 0, &sysbusDev);
+	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	ret = floodplainn.createDevice(CC"by-id/2", 0, 0, &sysbusDev);
+	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	ret = floodplainn.createDevice(CC"by-id/2", 1, 0, &sysbusDev);
+	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	ret = floodplainn.createDevice(CC"by-id/2/1", 0, 0, &sysbusDev);
+	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	ret = floodplainn.createDevice(CC"by-id/2/1", 1, 0, &sysbusDev);
+	sysbusDev->driver = new fplainn::driverC;
+	sysbusDev->driver->allMetalanguagesSatisfied = 1;
+	__kprintf(NOTICE"ret is %s; done creating nodes.\n", strerror(ret));
+
+	kernelDriverProcessC		*kdp;
+	zcallback::headerS		*gcb;
+
+	ret = processTrib.spawnDriver(
+		CC"by-id/2/1/1", __KNULL,
+		taskC::ROUND_ROBIN, 0,
+		SPAWNPROC_FLAGS_DORMANT, __KNULL, (processStreamC **)&kdp);
+
+	if (ret != ERROR_SUCCESS) {
+		__kprintf(ERROR"Failed to spawn driver; ret is %s(%d).\n", strerror(ret), ret); goto dormant;
+	};
+
+	ret = self->getTaskContext()->callbackStream.pull(&gcb);
+	__kprintf(NOTICE"Ret from callback is %s.\n", strerror(gcb->err));
+
+dormant:
+	taskTrib.wake(gcb->sourceId);
 	__kprintf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 

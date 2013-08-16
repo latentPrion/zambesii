@@ -24,7 +24,7 @@ typedef uint16_t	ubit16;
 typedef uint32_t	ubit32;
 typedef uint64_t	ubit64;
 	
-//Define Zambesii's integral types.
+// Define Zambesii's integral types.
 #ifdef __64_BIT__
 typedef uint64_t	uarch_t;
 typedef int64_t		sarch_t;

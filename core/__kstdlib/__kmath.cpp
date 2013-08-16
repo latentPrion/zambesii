@@ -1,6 +1,7 @@
 
 #include <arch/arch.h>
 #include <__kstdlib/__kmath.h>
+#include <__kstdlib/__kclib/string8.h>
 
 
 static const uarch_t		shiftTab[] =
@@ -53,11 +54,13 @@ static const utf8Char *const strErrorTable[] =
 		CC"", CC"", CC"", CC"", CC"", CC"", CC""
 };
 
+static const utf8Char		*unknownError = CC"<Unknown error>";
 const utf8Char *strerror(error_t err)
 {
 	if (err > 0) { return (const utf8Char *)"Invalid error code"; };
 
 	if (err != 0) { err = -err; };
+	if (strErrorTable[err][0] == '\0') { return unknownError; };
 	return strErrorTable[err];
 }
 

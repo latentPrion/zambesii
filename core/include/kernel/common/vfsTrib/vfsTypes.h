@@ -370,6 +370,7 @@ sarch_t vfs::dirInodeC<tagType>::removeDirTag(utf8Char *name)
 		};
 
 		// Found it.
+		nDirs--;
 		dirs.unlock();
 		return dirs.remove(currItem);
 	};
@@ -401,6 +402,7 @@ sarch_t vfs::dirInodeC<tagType>::removeLeafTag(utf8Char *name)
 		};
 
 		// Found it.
+		nLeaves--;
 		leaves.unlock();
 		return leaves.remove(currItem);
 	};

@@ -39,7 +39,7 @@ void floodplainnC::__kdriverEntry(void)
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
-	__kprintf(NOTICE"Kernel driver running. About to dormant.\n");
+	__kprintf(NOTICE"!!!Kernel driver running. About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 }
 
@@ -73,6 +73,7 @@ error_t floodplainnC::createDevice(
 
 	if (!isByIdPath(parentId)) { return ERROR_INVALID_ARG_VAL; };
 
+	// Get the parent node's VFS tag.
 	ret = vfsTrib.getFvfs()->getPath(parentId, &parentTag);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -81,10 +82,45 @@ error_t floodplainnC::createDevice(
 
 	utf8Char	tmpBuff[FVFS_TAG_NAME_MAXLEN];
 
+	// Add the new device node to the parent node.
 	snprintf(tmpBuff, FVFS_TAG_NAME_MAXLEN, CC"%d", childId);
 	ret = parentTag->createChild(tmpBuff, newDev, &childTag);
 	if (ret != ERROR_SUCCESS) { delete newDev; };
 	*device = newDev;
+	return ERROR_SUCCESS;
+}
+
+error_t floodplainnC::removeDevice(
+	utf8Char *parentId, ubit32 childId, ubit32 /*flags*/
+	)
+{
+	fvfs::tagC		*parentTag, *childTag;
+	error_t			ret;
+
+	/**	EXPLANATION:
+	 * parentId must be a by-id path.
+	 **/
+
+	if (parentId == __KNULL) { return ERROR_INVALID_ARG; };
+
+	if (!isByIdPath(parentId)) { return ERROR_INVALID_ARG_VAL; };
+	ret = vfsTrib.getFvfs()->getPath(parentId, &parentTag);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	utf8Char	tmpBuff[FVFS_TAG_NAME_MAXLEN];
+
+	// Get the child tag.
+	snprintf(tmpBuff, FVFS_TAG_NAME_MAXLEN, CC"%d", childId);
+	childTag = parentTag->getChild(tmpBuff);
+	if (childTag == __KNULL) { return ERROR_NOT_FOUND; };
+
+	// Don't remove the child if it has children.
+	if (childTag->nDirs > 0) { return ERROR_INVALID_OPERATION; };
+
+	// Delete the device object it points to, then delete the child tag.
+	delete childTag->getDevice();
+	parentTag->removeChild(tmpBuff);
+
 	return ERROR_SUCCESS;
 }
 
@@ -95,6 +131,16 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 
 	ret = vfsTrib.getFvfs()->getPath(path, &tag);
 	if (ret != ERROR_SUCCESS) { return ret; };
+
+	/* Do not allow callers to "getDevice" on the by-* containers.
+	 * e.g: "by-id", "/by-id", "@f/by-id", etc.
+	 **/
+	if (tag->getDevice() == &byId || tag->getDevice() == &byName
+		|| tag->getDevice() == &byClass
+		|| tag->getDevice() == &byPath)
+	{
+		return ERROR_UNAUTHORIZED;
+	};
 
 	*device = tag->getDevice();
 	return ERROR_SUCCESS;
