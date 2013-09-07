@@ -5,9 +5,10 @@
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
+#include <kernel/common/floodplainn/floodplainn.h>
 
 
-void *getEsp(void)
+static void *getEsp(void)
 {
 	void		*esp;
 
@@ -52,6 +53,19 @@ const dvfs::distributaryDescriptorS	cisternnDescriptor=
 	0
 };
 
+const dvfs::distributaryDescriptorS	floodplainnIndexer=
+{
+	CC"floodplainn-indexer", CC"Zambesii",
+	CC"UDI Driver indexer and search service for Zambesii",
+	{
+		{ CC"udi-driver-indexer", 1 },
+	},
+	1,		// Provides only one category.
+	0, 0, 0,	// v0.00.000.
+	&floodplainnC::driverIndexerEntry,
+	0
+};
+
 const dvfs::distributaryDescriptorS
 	* const distributaryTribC::distributaryDescriptors[] =
 {
@@ -64,6 +78,7 @@ const dvfs::distributaryDescriptorS
 #endif
 #ifdef CONFIG_DTRIB_CAURALL
 #endif
+	&floodplainnIndexer,
 	// Null entry to terminate the array. Do not remove.
 	__KNULL
 };

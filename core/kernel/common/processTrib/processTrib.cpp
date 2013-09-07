@@ -5,7 +5,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
-#include <kernel/common/callbackStream.h>
+#include <kernel/common/messageStream.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
@@ -115,25 +115,26 @@ error_t processTribC::getExecutableFormat(
 }
 
 static void initializeSpawnProcessCallback(
-	zcallback::genericS *message, threadC *self
+	zmessage::headerS *message, threadC *self
 	)
 {
-	message->header.sourceId = self->getFullId();
-	message->header.privateData = self->parent->privateData;
-	message->header.flags = 0;
-	message->header.subsystem = ZMESSAGE_SUBSYSTEM_PROCESS;
+	message->sourceId = self->getFullId();
+	message->privateData = self->parent->privateData;
+	message->subsystem = ZMESSAGE_SUBSYSTEM_PROCESS;
+	message->flags = 0;
+	message->size = sizeof(*message);
 	switch (self->parent->getType())
 	{
 	case processStreamC::DISTRIBUTARY:
-		message->header.function = ZMESSAGE_PROCESS_SPAWN_DISTRIBUTARY;
+		message->function = ZMESSAGE_PROCESS_SPAWN_DISTRIBUTARY;
 		break;
 
 	case processStreamC::KERNEL_DRIVER:
-		message->header.function = ZMESSAGE_PROCESS_SPAWN_DRIVER;
+		message->function = ZMESSAGE_PROCESS_SPAWN_DRIVER;
 		break;
 
 	default:
-		message->header.function = ZMESSAGE_PROCESS_SPAWN_STREAM;
+		message->function = ZMESSAGE_PROCESS_SPAWN_STREAM;
 	};
 }
 
@@ -165,7 +166,7 @@ void processTribC::commonEntry(void *)
 	processStreamC::initializationBlockSizeInfoS	initBlockSizes;
 	processStreamC::initializationBlockS		*initBlock;
 	processStreamC::executableFormatE		executableFormat;
-	zcallback::genericS				*callbackMessage;
+	zmessage::headerS				*callbackMessage;
 	uarch_t						initBlockNPages;
 	error_t						err;
 	void						(*jumpAddress)(void);
@@ -192,7 +193,7 @@ void processTribC::commonEntry(void *)
 		self->parent->getType());
 
 	// Allocate the callback message memory.
-	callbackMessage = new zcallback::genericS;
+	callbackMessage = new zmessage::headerS;
 	if (callbackMessage == __KNULL)
 	{
 		__kprintf(FATAL PROCTRIB"commonEntry: process 0x%x:\n",
@@ -260,9 +261,9 @@ void processTribC::commonEntry(void *)
 			"format %d.\n",
 			self->getFullId(), executableFormat);
 
-		callbackMessage->header.err = ERROR_UNSUPPORTED;
-		err = callbackStreamC::enqueueCallback(
-			self->parent->parentThreadId, &callbackMessage->header);
+		callbackMessage->error = ERROR_UNSUPPORTED;
+		err = messageStreamC::enqueueOnThread(
+			self->parent->parentThreadId, callbackMessage);
 
 		if (err != ERROR_SUCCESS) {
 			panic(FATAL"commonEntry: Failed to queue callback\n");
@@ -300,9 +301,9 @@ void processTribC::commonEntry(void *)
 		self->stack0, self->stack1,
 		(self->parent->execDomain == PROCESS_EXECDOMAIN_USER) ? 1 : 0);
 
-	callbackMessage->header.err = ERROR_SUCCESS;
-	err = callbackStreamC::enqueueCallback(
-		self->parent->parentThreadId, &callbackMessage->header);
+	callbackMessage->error = ERROR_SUCCESS;
+	err = messageStreamC::enqueueOnThread(
+		self->parent->parentThreadId, callbackMessage);
 
 	if (err != ERROR_SUCCESS)
 	{

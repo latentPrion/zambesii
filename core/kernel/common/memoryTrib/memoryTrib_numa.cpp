@@ -118,7 +118,7 @@ error_t memoryTribC::__kspaceInitialize(void)
 #define CHECK_AND_RESIZE_BMP(__pb,__n,__ret,__fn,__bn)			\
 	do { \
 	*(__ret) = ERROR_SUCCESS; \
-	if ((__n) > (signed)(__pb)->getNBits() - 1) \
+	if ((unsigned)(__n) > (__pb)->getNBits() - 1) \
 	{ \
 		*(__ret) = (__pb)->resizeTo((__n) + 1); \
 		if (*(__ret) != ERROR_SUCCESS) \

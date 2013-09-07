@@ -1,16 +1,17 @@
 
 #include <__kstdlib/__kflagManipulation.h>
-#include <kernel/common/callbackStream.h>
+#include <__kstdlib/__kclib/string.h>
+#include <kernel/common/messageStream.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 
-error_t callbackStreamC::enqueueCallback(
-	processId_t targetStreamId, zcallback::headerS *header
+error_t messageStreamC::enqueueOnThread(
+	processId_t targetStreamId, zmessage::headerS *header
 	)
 {
-	callbackStreamC	*targetStream;
+	messageStreamC	*targetStream;
 
-	if (__KFLAG_TEST(header->flags, ZCALLBACK_FLAGS_CPU_TARGET))
+	if (__KFLAG_TEST(header->flags, ZMESSAGE_FLAGS_CPU_TARGET))
 	{
 		cpuStreamC		*cs;
 
@@ -20,7 +21,7 @@ error_t callbackStreamC::enqueueCallback(
 		cs = cpuTrib.getStream((cpu_t)targetStreamId);
 		if (cs == __KNULL) { return ERROR_INVALID_RESOURCE_NAME; };
 
-		targetStream = &cs->getTaskContext()->callbackStream;
+		targetStream = &cs->getTaskContext()->messageStream;
 	}
 	else
 	{
@@ -40,16 +41,19 @@ error_t callbackStreamC::enqueueCallback(
 			return ERROR_INVALID_RESOURCE_NAME;
 		};
 
-		targetStream = &targetThread->getTaskContext()->callbackStream;
+		targetStream = &targetThread->getTaskContext()->messageStream;
 	};
 
-	return targetStream->enqueue(header);
+	return targetStream->enqueue(header->subsystem, header);
 }
 
-error_t callbackStreamC::pullFrom(
-	ubit16 subsystemQueue, zcallback::headerS **callback, ubit32 flags
+error_t messageStreamC::pullFrom(
+	ubit16 subsystemQueue, zmessage::iteratorS *callback,
+	ubit32 flags
 	)
 {
+	zmessage::headerS	*tmp;
+
 	if (callback == __KNULL) { return ERROR_INVALID_ARG; };
 	if (subsystemQueue > ZMESSAGE_SUBSYSTEM_MAXVAL)
 		{ return ERROR_INVALID_ARG_VAL; };
@@ -60,12 +64,15 @@ error_t callbackStreamC::pullFrom(
 
 		if (pendingSubsystems.test(subsystemQueue))
 		{
-			*callback = queues[subsystemQueue].popFromHead();
+			tmp = queues[subsystemQueue].popFromHead();
 			if (queues[subsystemQueue].getNItems() == 0) {
 				pendingSubsystems.unset(subsystemQueue);
 			};
 
 			pendingSubsystems.unlock();
+
+			memcpy(callback, tmp, tmp->size);
+			delete tmp;
 			return ERROR_SUCCESS;
 		};
 
@@ -83,10 +90,12 @@ error_t callbackStreamC::pullFrom(
 	};
 }
 
-error_t callbackStreamC::pull(
-	zcallback::headerS **callback, ubit32 flags
+error_t messageStreamC::pull(
+	zmessage::iteratorS *callback, ubit32 flags
 	)
 {
+	zmessage::headerS	*tmp;
+
 	if (callback == __KNULL) { return ERROR_INVALID_ARG; };
 
 	for (;;)
@@ -97,12 +106,14 @@ error_t callbackStreamC::pull(
 		{
 			if (pendingSubsystems.test(i))
 			{
-				*callback = queues[i].popFromHead();
+				tmp = queues[i].popFromHead();
 				if (queues[i].getNItems() == 0) {
 					pendingSubsystems.unset(i);
 				};
 
 				pendingSubsystems.unlock();
+
+				memcpy(callback, tmp, tmp->size);
 				return ERROR_SUCCESS;
 			};
 		};
@@ -121,12 +132,12 @@ error_t callbackStreamC::pull(
 	};
 }
 
-error_t	callbackStreamC::enqueue(zcallback::headerS *callback)
+error_t	messageStreamC::enqueue(ubit16 queueId, zmessage::headerS *callback)
 {
 	error_t		ret;
 
 	if (callback == __KNULL) { return ERROR_INVALID_ARG; };
-	if (callback->subsystem > ZMESSAGE_SUBSYSTEM_MAXVAL) {
+	if (queueId > ZMESSAGE_SUBSYSTEM_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 
@@ -139,10 +150,10 @@ error_t	callbackStreamC::enqueue(zcallback::headerS *callback)
 	 **/
 	pendingSubsystems.lock();
 
-	ret = queues[callback->subsystem].addItem(callback);
+	ret = queues[queueId].addItem(callback);
 	if (ret == ERROR_SUCCESS)
 	{
-		pendingSubsystems.set(callback->subsystem);
+		pendingSubsystems.set(queueId);
 		/* Unblock the thread. This may be a normal thread, or a per-cpu
 		 * thread. In the case of it being a normal thread, no extra
 		 * work is required: just unblock() it.

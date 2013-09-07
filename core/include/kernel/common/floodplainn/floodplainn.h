@@ -2,10 +2,14 @@
 	#define _FLOODPLAINN_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/string8.h>
 	#include <kernel/common/tributary.h>
+	#include <kernel/common/zmessage.h>
 	#include <kernel/common/floodplainn/floodplainn.h>
 	#include <kernel/common/floodplainn/device.h>
 	#include <kernel/common/vfsTrib/commonOperations.h>
+
+#define DRIVERINDEX_REQUEST_DEVNAME_MAXLEN		(256)
 
 class floodplainnC
 :
@@ -17,6 +21,26 @@ public:
 	~floodplainnC(void) {}
 
 public:
+	/**	EXPLANATION:
+	 * The driver indexer will search several levels of drivers in
+	 * this order:
+	 * Chipset List:
+	 *	The list of drivers that are embedded in the kernel's
+	 *	image. These take precedence, and are searched first.
+	 * MRU List:
+	 *	Across boots, the kernel will maintain a list of drivers
+	 *	that were actually loaded and used. This is the MRU
+	 *	(most-recently-used) List. This index is read from the
+	 *	disk and absorbed into the index.
+	 * Disk:
+	 *	After searching among those drivers which are in the
+	 *	kernel image, and those in the MRU list, if a suitable
+	 *	match isn't found, the kernel will just search all the
+	 *	drivers that are available on disk. This is the slowest
+	 *	level of searching that can be done.
+	 **/
+	enum indexLevelE { CHIPSET_LIST=0, MRU_LIST, DISK };
+
 	/* Creates a child device under a given parent and returns it to the
 	 * caller.
 	 **/
@@ -34,6 +58,36 @@ public:
 	 * by-class or by-path path.
 	 **/
 	error_t getDevice(utf8Char *path, fplainn::deviceC **device);
+
+	/**	EXPLANATION:
+	 * These functions take a device path argument and attempt to perform
+	 * a particular driver-loading related operation on them. Generally to
+	 * instantiate and use a device, one first calls:
+	 *	floodplainn.loadDriver("myDevice", ...);
+	 * 	processTrib.spawnDriver("myDevice", ...);
+	 *
+	 * loadDriver() takes a device path and attempts to determine the best
+	 * driver to use to instantiate that device. If loadDriver() was not
+	 * previously called on a device, such that that device has no driver
+	 * associated with it, spawnDriver() will fail.
+	 *
+	 *	DETAILS:
+	 * error_t loadDriver(path, ubit32 flags);
+	 *	Walks the kernel's device VFS searching for the device node that
+	 *	"path" refers to and reads the device's enumeration attributes.
+	 *	These are then compared against an index of drivers in memory.
+	 *
+	 *	If no driver is found in the current set of pre-fetched drivers
+	 *	in memory, the kernel then seeks for the on-disk driver-DB, and
+	 *	uses it to expand the current in-memory index, before searching
+	 *	the index again.
+	 *
+	 *	If this check fails, the kernel assumes that no suitable driver
+	 *	could be found and returns error.
+	 **/
+	#define ZMESSAGE_FPLAINN_LOADDRIVER		(0)
+	error_t loadDriver(
+		utf8Char *devicePath, indexLevelE indexLevel, ubit32 flags);
 
 	/* FVFS listing functions. These allow the device tree to be treated
 	 * like a VFS with "files" that can be listed.
@@ -88,6 +142,29 @@ public:
 		void *outputMem);
 
 	static void __kdriverEntry(void);
+	static void driverIndexerEntry(void);
+
+private:
+	struct driverIndexRequestS
+	{
+		driverIndexRequestS(utf8Char *name, indexLevelE indexLevel)
+		:
+		indexLevel(indexLevel)
+		{
+			strncpy8(
+				deviceName, name,
+				DRIVERINDEX_REQUEST_DEVNAME_MAXLEN);
+		}
+
+		zmessage::headerS	header;
+		utf8Char		deviceName[
+			DRIVERINDEX_REQUEST_DEVNAME_MAXLEN];
+
+		indexLevelE		indexLevel;
+	};
+		
+	processId_t		indexerThreadId;
+	ubit16			indexerQueueId;
 };
 
 extern floodplainnC		floodplainn;

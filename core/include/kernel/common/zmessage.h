@@ -40,7 +40,7 @@
  * in the kernel).
  **/
 // Keep this up to date.
-#define ZMESSAGE_SUBSYSTEM_MAXVAL		(0x5)
+#define ZMESSAGE_SUBSYSTEM_MAXVAL		(0x7)
 // Actual subsystem values.
 #define ZMESSAGE_SUBSYSTEM_TIMER		(0x0)
 #define ZMESSAGE_SUBSYSTEM_PROCESS		(0x1)
@@ -48,58 +48,32 @@
 #define ZMESSAGE_SUBSYSTEM_USER1		(0x3)
 #define ZMESSAGE_SUBSYSTEM_USER2		(0x4)
 #define ZMESSAGE_SUBSYSTEM_USER3		(0x5)
+#define ZMESSAGE_SUBSYSTEM_REQ0			(0x6)
+#define ZMESSAGE_SUBSYSTEM_REQ1			(0x7)
 
-namespace zrequest
+#define ZMESSAGE_USERQ(num)			(ZMESSAGE_SUBSYSTEM_USER0 + num)
+#define ZMESSAGE_REQQ(num)			(ZMESSAGE_SUBSYSTEM_REQ0 + num)
+
+namespace zmessage
 {
-	#define ZREQUEST_FLAGS_CPU_SOURCE		(1<<0)
-	#define ZREQUEST_FLAGS_CPU_TARGET		(1<<1)
+	#define ZMESSAGE_FLAGS_CPU_SOURCE		(1<<0)
+	#define ZMESSAGE_FLAGS_CPU_TARGET		(1<<1)
 
-	// Common header contained within all request messages.
+	// Common header contained within all messages.
 	struct headerS
 	{
 		processId_t	sourceId, targetId;
 		void		*privateData;
-		ubit32		flags;
-		ubit16		subsystem, function;
+		error_t		error;
+		ubit16		subsystem, flags;
+		ubit32		function;
+		uarch_t		size;
 	};
 
-	/* Generic request message type. Can be used where there is no need for
-	 * a specialized message format.
-	 **/
-	struct genericS
+	struct iteratorS
 	{
 		headerS		header;
-	};
-}
-
-namespace zcallback
-{
-	/**	Flags for headerS::flags
-	 **/
-	#define ZCALLBACK_FLAGS_CPU_SOURCE		(1<<0)
-	#define ZCALLBACK_FLAGS_CPU_TARGET		(1<<1)
-	struct headerS
-	{
-		/**	EXPLANATION:
-		 * err:
-		 *	Most API callbacks return an error status; this
-		 *	member reduces the need for custom messages by
-		 *	enabling callbacks to use it instead of
-		 *	specialized messages.
-		 **/
-		processId_t	sourceId;
-		void		*privateData;
-		ubit32		flags;
-		error_t		err;
-		ubit16		subsystem, function;
-	};
-
-	/* Generic callback header. Can be used where no special message type is
-	 * needed.
-	 **/
-	struct genericS
-	{
-		headerS		header;
+		ubit8		_padding_[256];
 	};
 }
 

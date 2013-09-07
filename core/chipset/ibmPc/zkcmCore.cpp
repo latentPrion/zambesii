@@ -29,7 +29,7 @@ void zkcmCoreC::newCpuIdNotification(cpu_t newCpuId)
 
 	__kcpuPowerOnSleepStacksLock.acquire();
 	// If the current array is already large enough, exit.
-	if ((signed)__kcpuPowerOnSleepStacksLength >= newCpuId + 1)
+	if (__kcpuPowerOnSleepStacksLength >= (unsigned)newCpuId + 1)
 	{
 		__kcpuPowerOnSleepStacksLock.release();
 		return;

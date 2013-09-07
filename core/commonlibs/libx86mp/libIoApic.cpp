@@ -35,8 +35,8 @@ void x86IoApic::flushCache(void)
 error_t x86IoApic::allocateVectorBaseFor(ioApicC *ioApic, ubit8 *vectorBase)
 {
 	// Make sure we haven't maxed out on interrupt vectors.
-	if (cache.vectorBaseCounter + ioApic->getNIrqs() - 1
-		>= ARCH_INTERRUPTS_VECTOR_MSI_START)
+	if (cache.vectorBaseCounter + ioApic->getNIrqs()
+		> ARCH_INTERRUPTS_VECTOR_MSI_START)
 	{
 		return ERROR_RESOURCE_UNAVAILABLE;
 	};

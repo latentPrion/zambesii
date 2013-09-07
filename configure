@@ -215,7 +215,7 @@ echo "export LD=$linker" >>Makefile.vars
 echo "export ISOPROG=$isoProg" >>Makefile.vars
 echo "export CPPFLAGS=-I\"$srcdir/include\" -I\"$srcdir/core/include\" -ffreestanding" >>Makefile.vars
 echo "export CFLAGS=-O3 -Wall -Wextra -pedantic -std=c99" >>Makefile.vars
-echo "export CXXFLAGS=-O3 -Wall -Wextra -pedantic -std=c++98 -fno-exceptions -fno-rtti" >>Makefile.vars
+echo "export CXXFLAGS=-O3 -Wstrict-overflow=5 -Wall -Wextra -pedantic -std=c++98 -fno-exceptions -fno-rtti" >>Makefile.vars
 echo "export ASFLAGS=" >>Makefile.vars
 echo "export LDFLAGS=-nostdlib" >>Makefile.vars
 echo "export ARFLAGS=" >>Makefile.vars

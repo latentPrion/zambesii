@@ -109,7 +109,7 @@ namespace hvfs
 
 			ret = vfs::inodeC::initialize();
 			if (ret != ERROR_SUCCESS) { return ret; }
-			return inodeC::initialize();
+			return hvfs::inodeC::initialize();
 		}
 
 		~fileInodeC(void) {}

@@ -95,10 +95,10 @@ namespace fplainn
 	class driverC
 	{
 	public:
-		class metalanguageS;
-		class moduleS;
-		class regionS;
-		class channelS;
+		struct metalanguageS;
+		struct moduleS;
+		struct regionS;
+		struct channelS;
 
 		driverC(void)
 		:

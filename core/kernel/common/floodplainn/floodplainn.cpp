@@ -146,3 +146,37 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 	return ERROR_SUCCESS;
 }
 
+error_t floodplainnC::loadDriver(
+	utf8Char *devicePath, indexLevelE indexLevel, ubit32 /*flags*/
+	)
+{
+	driverIndexRequestS		*request;
+	taskC				*currTask;
+
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+
+	// Allocate and queue the new request.
+	request = new driverIndexRequestS(devicePath, indexLevel);
+	if (request == __KNULL) { return ERROR_MEMORY_NOMEM; };
+
+	if (currTask->getType() == task::PER_CPU)
+	{
+		request->header.sourceId = request->header.targetId =
+			cpuTrib.getCurrentCpuStream()->cpuId;
+	}
+	else
+	{
+		request->header.sourceId = request->header.targetId =
+			((threadC *)currTask)->getFullId();
+	};
+		
+	request->header.privateData = __KNULL;
+	request->header.flags = 0;
+	request->header.size = sizeof(*request);
+	request->header.subsystem = ZMESSAGE_SUBSYSTEM_USER0;
+	request->header.function = ZMESSAGE_FPLAINN_LOADDRIVER;
+
+	return messageStreamC::enqueueOnThread(
+		indexerThreadId, &request->header);
+}
+

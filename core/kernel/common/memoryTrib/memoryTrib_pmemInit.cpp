@@ -136,7 +136,7 @@ error_t memoryTribC::pmemInit(void)
 			goto parseMemoryMap;
 		};
 
-		if (numaMap != __KNULL && numaMap->nMemEntries-1 > 0)
+		if (numaMap != __KNULL && numaMap->nMemEntries > 1)
 		{
 			init2_generateShbankFromNumaMap(
 				memConfig, numaMap, &__kspaceBool);

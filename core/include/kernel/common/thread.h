@@ -7,9 +7,7 @@
 	#include <kernel/common/processId.h>
 	#include <kernel/common/taskTrib/prio.h>
 	#include <kernel/common/multipleReaderLock.h>
-	#include <kernel/common/callbackStream.h>
-	//FIXME: Remove this when callbackStream is fully integrated.
-	#include <kernel/common/timerTrib/timerStream.h>
+	#include <kernel/common/messageStream.h>
 
 #define TASK				"Task "
 
@@ -102,7 +100,7 @@ public:
 	 * (A CPU will only ever have one per-cpu-thread scheduled to
 	 * it at a time.)
 	 **/
-	callbackStream(this)
+	messageStream(this)
 	{
 		if (contextType == task::UNIQUE) {
 			this->parent.thread = (threadC *)parent;
@@ -167,7 +165,7 @@ public:
 #endif
 
 	// Asynchronous API callback queues for this thread.
-	callbackStreamC		callbackStream;
+	messageStreamC		messageStream;
 };
 
 /**	Class threadC, a normal thread.

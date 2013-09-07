@@ -3,6 +3,7 @@
 
 	#include <arch/cpuControl.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/string8.h>
 	#include <__kclasses/ptrList.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 

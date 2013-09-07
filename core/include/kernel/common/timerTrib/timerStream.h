@@ -41,7 +41,7 @@ public:
 	// Used to represent timer service requests.
 	struct requestS
 	{
-		zrequest::headerS	header;
+		zmessage::headerS	header;
 		requestTypeE		type;
 		timestampS		expirationStamp, placementStamp;
 		timerQueueC		*currentQueue;
@@ -50,7 +50,7 @@ public:
 	// Used to represent expired timer request events.
 	struct eventS
 	{
-		zcallback::headerS	header;
+		zmessage::headerS	header;
 		requestTypeE		type;
 		timestampS		dueStamp, actualStamp;
 	};
@@ -80,7 +80,7 @@ public:
 
 	/* wakeTarget:
 	 *	Target thread (threadC) or cpu (cpuStreamC) which must be
-	 *	awakened by this timer, and on whose callbackStream the
+	 *	awakened by this timer, and on whose messageStream the
 	 *	notification message will be queued.
 	 *
 	 *	If ZMESSAGE_FLAGS_CPU_TARGET is set, then:

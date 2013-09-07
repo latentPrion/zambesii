@@ -12,11 +12,11 @@
 #define BITMAP_OFFSET(__bit)			\
 	((__bit) % (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__))
 
-class callbackStreamC;
+class messageStreamC;
 
 class bitmapC
 {
-friend class callbackStreamC;
+friend class messageStreamC;
 public:
 	bitmapC(ubit32 nBits);
 	bitmapC(void);

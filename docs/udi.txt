@@ -53,3 +53,14 @@ These are provided by the kernel itself, and their symbols are prefixed with
 These are provided by the subsystems which need to bind to the drivers, and
 they are probably going to be member functions in some form or other.
 
+	Static props parser:
+udi_std_sprops.c:
+	Line 139: You can change strlen here to be strchr(<space/newline>) or
+	something to allow the kernel to store udiprops with newlines in them.
+	Probably the best approach would be to force \0 at the end of each line,
+	and also allow newlines.
+
+	So you need to add support on line 139 for skipping over the potential
+	\n after each \0, and also for potentially skipping over \n chars in
+	the middle of "lines", where "line" is a \0 terminated string.
+

@@ -3,7 +3,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/panic.h>
-#include <kernel/common/callbackStream.h>
+#include <kernel/common/messageStream.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/timerTrib/timerStream.h>
 #include <kernel/common/taskTrib/taskTrib.h>
@@ -44,7 +44,7 @@ error_t timerStreamC::createOneshotEvent(
 	if (currCpu->taskStream.getCurrentTask()->getType() == task::PER_CPU)
 	{
 		request->header.sourceId = (processId_t)currCpu->cpuId;
-		__KFLAG_SET(request->header.flags, ZREQUEST_FLAGS_CPU_SOURCE);
+		__KFLAG_SET(request->header.flags, ZMESSAGE_FLAGS_CPU_SOURCE);
 	}
 	else
 	{
@@ -58,7 +58,7 @@ error_t timerStreamC::createOneshotEvent(
 	 * Security check required here, for when the event is set to wake a
 	 * thread in a foreign process.
 	 **/
-	if (__KFLAG_TEST(flags, ZREQUEST_FLAGS_CPU_TARGET))
+	if (__KFLAG_TEST(flags, ZMESSAGE_FLAGS_CPU_TARGET))
 	{
 		cpuStreamC	*tmp;
 
@@ -134,7 +134,6 @@ error_t timerStreamC::pullEvent(
 	)
 {
 	error_t			ret;
-	eventS			*tmp;
 
 	/**	EXPLANATION:
 	 * Blocking (or optionally non-blocking if DONT_BLOCK flag is passed)
@@ -145,28 +144,25 @@ error_t timerStreamC::pullEvent(
 	 * sleeps the process.
 	 */
 	ret = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTaskContext()->callbackStream.pullFrom(
+		.getCurrentTaskContext()->messageStream.pullFrom(
 			ZMESSAGE_SUBSYSTEM_TIMER,
-			(zcallback::headerS **)&tmp,
+			(zmessage::iteratorS *)event,
 			__KFLAG_TEST(
 				flags, TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK)
 					? ZCALLBACK_PULL_FLAGS_DONT_BLOCK : 0);
 
 	if (ret != ERROR_SUCCESS) { return ret; };
-
-	*event = *tmp;
-	delete tmp;
 	return ERROR_SUCCESS;
 }
 
 static sarch_t isPerCpuCreator(timerStreamC::requestS *request)
 {
-	return __KFLAG_TEST(request->header.flags, ZREQUEST_FLAGS_CPU_SOURCE);
+	return __KFLAG_TEST(request->header.flags, ZMESSAGE_FLAGS_CPU_SOURCE);
 }
 
 static inline sarch_t isPerCpuTarget(timerStreamC::requestS *request)
 {
-	return __KFLAG_TEST(request->header.flags, ZREQUEST_FLAGS_CPU_TARGET);
+	return __KFLAG_TEST(request->header.flags, ZMESSAGE_FLAGS_CPU_TARGET);
 }
 
 void *timerStreamC::timerRequestTimeoutNotification(
@@ -228,17 +224,20 @@ void *timerStreamC::timerRequestTimeoutNotification(
 	event->header.subsystem = request->header.subsystem;
 	event->header.function = request->header.function;
 	event->header.flags = 0;
+	event->header.size = sizeof(*event);
 
 	if (isPerCpuCreator(request)) {
-		__KFLAG_SET(event->header.flags, ZCALLBACK_FLAGS_CPU_SOURCE);
+		__KFLAG_SET(event->header.flags, ZMESSAGE_FLAGS_CPU_SOURCE);
 	};
 
 	if (isPerCpuTarget(request)) {
-		__KFLAG_SET(event->header.flags, ZCALLBACK_FLAGS_CPU_TARGET);
+		__KFLAG_SET(event->header.flags, ZMESSAGE_FLAGS_CPU_TARGET);
 	};
 
 	// Queue event.
-	ret = taskContext->callbackStream.enqueue(&event->header);
+	ret = taskContext->messageStream.enqueue(
+		event->header.subsystem, &event->header);
+
 	if (ret != ERROR_SUCCESS)
 	{
 		__kprintf(ERROR TIMERSTREAM"%d: Failed to add expired event to "

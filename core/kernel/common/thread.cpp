@@ -20,7 +20,7 @@ error_t taskContextC::initialize(void)
 #endif
 
 	// Initialize callback queues.
-	return callbackStream.initialize();
+	return messageStream.initialize();
 }
 
 void taskContextC::initializeRegisterContext(

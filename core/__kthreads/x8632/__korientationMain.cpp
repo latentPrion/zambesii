@@ -264,7 +264,6 @@ void __korientationMain(void)
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, getFvfs()->initialize(), ret);
 	DO_OR_DIE(vfsTrib, getDvfs()->initialize(), ret);
-	DO_OR_DIE(distributaryTrib, initialize(), ret);
 	DO_OR_DIE(floodplainn, initialize(), ret);
 	DO_OR_DIE(floodplainn, createDevice(CC"by-id", 0, 0, &sysbusDev), ret);
 
@@ -285,30 +284,32 @@ void __korientationMain(void)
 	sysbusDev->driver->allMetalanguagesSatisfied = 1;
 	__kprintf(NOTICE"ret is %s; done creating nodes.\n", strerror(ret));
 
-	kernelDriverProcessC		*kdp;
+	zmessage::iteratorS		iMessage;
 	distributaryProcessC		*dp;
-	zcallback::headerS		*gcb;
 
 	/*ret = processTrib.spawnDriver(
 		CC"by-id/2/1/1", __KNULL,
 		taskC::ROUND_ROBIN, 0,
 		SPAWNPROC_FLAGS_DORMANT, __KNULL, (processStreamC **)&kdp);*/
+	DO_OR_DIE(distributaryTrib, initialize(), ret);
 
-	/*ret = processTrib.spawnDistributary(
-		CC"///@d//././storage/./././//././//cisternn", __KNULL,
+	ret = processTrib.spawnDistributary(
+		CC"///@d//././udi-driver-indexer//./.", __KNULL,
 		NUMABANKID_INVALID,
 		0, 0, __KNULL,
-		&dp);*/
+		&dp);
 
 	if (ret != ERROR_SUCCESS) {
 		__kprintf(ERROR"Failed to spawn driver; ret is %s(%d).\n", strerror(ret), ret); goto dormant;
 	};
 
-	ret = self->getTaskContext()->callbackStream.pull(&gcb);
-	__kprintf(NOTICE"Ret from callback is %s.\n", strerror(gcb->err));
+	ret = self->getTaskContext()->messageStream.pull(&iMessage);
+	__kprintf(NOTICE"Ret from callback is %s.\n", strerror(iMessage.header.error));
 
 dormant:
-	taskTrib.wake(gcb->sourceId);
+	__kprintf(NOTICE ORIENT"loadDriver: ret %d.\n",
+		floodplainn.loadDriver(CC"foo/bar", floodplainnC::CHIPSET_LIST, 0));
+
 	__kprintf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 
@@ -356,28 +357,25 @@ dormant:
 
 	for (ubit8 i=0; i<((waitForTimeout) ? 0xFF : 3); i++)
 	{
-		zcallback::headerS	*callback;
+		zmessage::iteratorS	iMessage;
 
-		self->getTaskContext()->callbackStream.pull(&callback);
+		self->getTaskContext()->messageStream.pull(&iMessage);
 
-		switch (callback->subsystem)
+		switch (iMessage.header.subsystem)
 		{
 		case ZMESSAGE_SUBSYSTEM_PROCESS:
-			zcallback::genericS	*procMsg;
-
-			procMsg = (zcallback::genericS *)callback;
 			__kprintf(NOTICE ORIENT"pulled %dth callback: err %d. "
 				"New process' ID: 0x%x.\n",
-				procMsg->header.privateData,
-				procMsg->header.err,
-				procMsg->header.sourceId);
+				iMessage.header.privateData,
+				iMessage.header.error,
+				iMessage.header.sourceId);
 
 			break;
 
 		case ZMESSAGE_SUBSYSTEM_TIMER:
 			timerStreamC::eventS	*timerEvent;
 
-			timerEvent = (timerStreamC::eventS *)callback;
+			timerEvent = (timerStreamC::eventS *)&iMessage;
 			__kprintf(NOTICE ORIENT"pulled timer timeout. "
 				"Actual expiration: %d:%dns.\n",
 				timerEvent->actualStamp.time.seconds,

@@ -19,18 +19,18 @@
  * APIs.
  **/
 
-/**	Flags for callbackStreamC::pull().
+/**	Flags for messageStreamC::pull().
  **/
 #define ZCALLBACK_PULL_FLAGS_DONT_BLOCK		(1<<0)
 
 class taskContextC;
 
-class callbackStreamC
+class messageStreamC
 {
 public:
-	typedef pointerDoubleListC<zcallback::headerS>	callbackQueueC;
+	typedef pointerDoubleListC<zmessage::headerS>	messageQueueC;
 
-	callbackStreamC(taskContextC *parent)
+	messageStreamC(taskContextC *parent)
 	:
 	parent(parent)
 	{}
@@ -51,23 +51,23 @@ public:
 			ZMESSAGE_SUBSYSTEM_MAXVAL + 1);
 	};
 
-	~callbackStreamC(void) {};
+	~messageStreamC(void) {};
 
 public:
-	error_t pull(zcallback::headerS **callback, ubit32 flags=0);
+	error_t pull(zmessage::iteratorS *callback, ubit32 flags=0);
 	error_t pullFrom(
-		ubit16 subsystemQueue, zcallback::headerS **callback,
+		ubit16 subsystemQueue, zmessage::iteratorS *callback,
 		ubit32 flags=0);
 
-	error_t	enqueue(zcallback::headerS *callback);
+	error_t	enqueue(ubit16 queueId, zmessage::headerS *callback);
 
 	// Utility function exported for other subsystems to use.
-	static error_t enqueueCallback(
+	static error_t enqueueOnThread(
 		processId_t targetCallbackStream,
-		zcallback::headerS *header);
+		zmessage::headerS *header);
 
 private:
-	callbackQueueC *getSubsystemQueue(ubit16 subsystemId)
+	messageQueueC *getSubsystemQueue(ubit16 subsystemId)
 	{
 		if (subsystemId > ZMESSAGE_SUBSYSTEM_MAXVAL)
 			{ return __KNULL; }
@@ -76,7 +76,7 @@ private:
 	}
 
 private:
-	callbackQueueC	queues[ZMESSAGE_SUBSYSTEM_MAXVAL + 1];
+	messageQueueC	queues[ZMESSAGE_SUBSYSTEM_MAXVAL + 1];
 
 	/* Bitmap of all subsystem queues which have messages in them. The lock
 	 * on this bitmap is also used as the serializing lock that minimizes
