@@ -1,0 +1,43 @@
+	Syslibs:
+Every process must have a syslib mapped into it. Syslibs are the syscall
+intermediate code that calls into the kernel on behalf of the process. Generally
+this involves moving arguments into registers and calling the correct INT vector
+to cross the CPU's privilege barrier.
+
+In addition to providing the syscall code for processes, these libraries also
+provide the process' entry point. The key purpose of a syslib is to:
+	1. Provide an entry point for the process.
+	2. Load the process' executable image into memory, do any dynamic
+	   relocation needed, and then jump into the process image.
+	3. Provide syscall support code for when the process wishes to call into
+	   the kernel.
+
+The kernel does not care what executable format the actual process image is
+stored in. Zambesii processes can be ELF, PE, Mach-o, A.OUT, or whatever else
+exists. The kernel itself does not have any executable format parsing code. It
+delegates that functionality to the syslib. As such, the kernel will usually be
+"installed" with multiple syslibs: one for each format supported by the host OS
+environment.
+
+	__ksyslib: The kernel-internal "syslib":
+This syslib is used by in-kernel-image code that is executed in its own process.
+Examples include distributaries and in-kernel drivers. The difference between
+the kernelspace syslib code and the userspace syslib code is that kernel-space
+syslib code:
+	1. Does not need to load an executable image from the disk.
+	2. Does not need to relocate the code for its process, since code in
+	   the kernel image is directly linked to the kernel.
+	3. Does not need to provide syscall support code since kernel-image
+	   code does not need to syscall to cross a privilege barrier; such code
+	   calls directly on other code in the kernel image.
+
+The __ksyslib will generally just provide an entry point for new kernel-image
+processes and no more. Because this syslib is for code that is directly linked
+into the kernel image, it also does not need to parse executable formats since
+all the processes it will be associated with are raw binary code which is linked
+into the kernel image...much like the __ksyslib itself.
+
+	__usyslib: The userspace syslib:
+These syslibs are generally going to be separate code modules on disk or in the
+kernel's ramdisk. They perform all the functions outlined in the first section.
+
