@@ -1,6 +1,10 @@
 #ifndef _FLOODPLAINN_DEVICE_TREE_H
 	#define _FLOODPLAINN_DEVICE_TREE_H
 
+	#define UDI_VERSION	0x101
+	#include <udi.h>
+	#undef UDI_VERSION
+	#include <zudiIndex.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <kernel/common/numaTypes.h>
@@ -19,9 +23,6 @@
 #define DEVICE_VENDORCONTACT_MAXLEN		DRIVER_VENDORCONTACT_MAXLEN
 
 #define DEVICE_CLASS_MAXLEN			(48)
-
-#define DEVICE_ATTR_NAME_MAXLEN			(32)
-#define DEVICE_ATTR_VALUE_MAXLEN		(64)
 
 #define DRIVER_SHORTNAME_MAXLEN			(16)
 #define DRIVER_LONGNAME_MAXLEN			(48)
@@ -64,24 +65,6 @@ namespace fplainn
 		error_t addClass(utf8Char *name);
 		error_t addEnumerationAttribute(utf8Char *name);
 
-		struct instanceAttributeS
-		{
-			instanceAttributeS(void)
-			:
-			valueLength(0), type(NONE)
-			{
-				value[0] = name[0] = '\0';
-			}
-
-			enum typeE {
-				NONE=0, STRING, ARRAY8, UBIT32, BOOLEAN, FILE };
-
-			utf8Char	name[DEVICE_ATTR_NAME_MAXLEN],
-					value[DEVICE_ATTR_VALUE_MAXLEN];
-			ubit8		valueLength;
-			typeE		type;
-		};
-
 	public:
 		ubit16		id;
 		utf8Char	shortName[DEVICE_SHORTNAME_MAXLEN],
@@ -93,7 +76,8 @@ namespace fplainn
 		driverC			*driver;
 		driverInstanceC		*driverInstance;
 		ubit8			nEnumerationAttribs, nInstanceAttribs;
-		instanceAttributeS	**enumeration, **instance;
+		zudiIndexDeviceS::zudiIndexDeviceDataS
+					**enumeration, **instance;
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
 	};
 

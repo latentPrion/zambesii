@@ -1,7 +1,7 @@
 
 #define UDI_VERSION 0x101
-#include <kernel/common/floodplainn/udi/udi.h>
-
+#include <udi.h>
+#undef UDI_VERSION
 
 /* Data type used to represent i8254-pit CLK cycles. CLK cycles are /not/ 1:1
  * related to actual microseconds. The i8254 PIT has an input frequency of
