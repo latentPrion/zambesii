@@ -26,6 +26,15 @@ EXTERN uarch_t		__kdataStart, __kdataEnd;
 EXTERN uarch_t		__kbssStart, __kbssEnd;
 EXTERN uarch_t		__kcpuPowerOnTextStart, __kcpuPowerOnTextEnd;
 EXTERN uarch_t		__kcpuPowerOnDataStart, __kcpuPowerOnDataEnd;
+EXTERN ubit8		chipset_udi_index_driver_headers,
+			chipset_udi_index_driver_data,
+			chipset_udi_index_regions,
+			chipset_udi_index_devices,
+			chipset_udi_index_ranks,
+			chipset_udi_index_messages,
+			chipset_udi_index_disaster_messages,
+			chipset_udi_index_message_files,
+			chipset_udi_index_readable_files;
 
 #undef EXTERN
 

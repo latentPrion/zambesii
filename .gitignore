@@ -18,4 +18,5 @@ foo
 *.iso
 /Makefile.vars
 /Makefile
+*.zudi-index
 

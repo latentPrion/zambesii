@@ -173,7 +173,7 @@ error_t floodplainnC::loadDriver(
 	request->header.privateData = __KNULL;
 	request->header.flags = 0;
 	request->header.size = sizeof(*request);
-	request->header.subsystem = ZMESSAGE_SUBSYSTEM_USER0;
+	request->header.subsystem = indexerQueueId;
 	request->header.function = ZMESSAGE_FPLAINN_LOADDRIVER;
 
 	return messageStreamC::enqueueOnThread(

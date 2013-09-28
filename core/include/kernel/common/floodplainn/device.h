@@ -41,7 +41,9 @@ namespace fplainn
 	public:
 		deviceC(ubit16 id, utf8Char *shortName)
 		:
-		id(id), driver(__KNULL), instance(__KNULL), attributes(__KNULL)
+		id(id), driver(__KNULL), driverInstance(__KNULL),
+		nEnumerationAttribs(0), nInstanceAttribs(0),
+		enumeration(__KNULL), instance(__KNULL)
 		{
 			if (shortName != __KNULL)
 			{
@@ -56,9 +58,11 @@ namespace fplainn
 
 	public:
 		driverC *getDriver(void) { return driver; }
-		driverInstanceC *getDriverInstance(void) { return instance; }
+		driverInstanceC *getDriverInstance(void)
+			{ return driverInstance; }
 
 		error_t addClass(utf8Char *name);
+		error_t addEnumerationAttribute(utf8Char *name);
 
 		struct instanceAttributeS
 		{
@@ -87,8 +91,9 @@ namespace fplainn
 
 		numaBankId_t		bankId;
 		driverC			*driver;
-		driverInstanceC		*instance;
-		instanceAttributeS	*attributes;
+		driverInstanceC		*driverInstance;
+		ubit8			nEnumerationAttribs, nInstanceAttribs;
+		instanceAttributeS	**enumeration, **instance;
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
 	};
 

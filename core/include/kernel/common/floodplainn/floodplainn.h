@@ -9,7 +9,9 @@
 	#include <kernel/common/floodplainn/device.h>
 	#include <kernel/common/vfsTrib/commonOperations.h>
 
-#define DRIVERINDEX_REQUEST_DEVNAME_MAXLEN		(256)
+#define DRIVERINDEX_REQUEST_DEVNAME_MAXLEN		(128)
+
+#define FPLAINNIDX					"FplainnIndex: "
 
 class floodplainnC
 :
@@ -144,7 +146,7 @@ public:
 	static void __kdriverEntry(void);
 	static void driverIndexerEntry(void);
 
-private:
+public:
 	struct driverIndexRequestS
 	{
 		driverIndexRequestS(utf8Char *name, indexLevelE indexLevel)
@@ -162,7 +164,7 @@ private:
 
 		indexLevelE		indexLevel;
 	};
-		
+
 	processId_t		indexerThreadId;
 	ubit16			indexerQueueId;
 };
