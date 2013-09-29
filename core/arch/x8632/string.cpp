@@ -8,7 +8,7 @@ void *memset(void *_ptr, int value, size_t count)
 {
 	if (_ptr == NULL)
 	{
-		__kprintf(FATAL"memset: dest 0x%p, caller 0x%x.\n",
+		printf(FATAL"memset: dest 0x%p, caller 0x%x.\n",
 			_ptr, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -24,7 +24,7 @@ void *memcpy(void *dest, void *src, size_t count)
 {
 	if (dest == NULL || src == NULL)
 	{
-		__kprintf(FATAL"memcpy: dest 0x%p, src 0x%p, caller 0x%x.\n",
+		printf(FATAL"memcpy: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -42,7 +42,7 @@ int strcmp(const char *str1, const char *str2)
 
 	if (str1 == NULL || str2 == NULL)
 	{
-		__kprintf(FATAL"strcmp: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+		printf(FATAL"strcmp: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -67,7 +67,7 @@ int strncmp(const char *str1, const char *str2, int count)
 
 	if (str1 == NULL || str2 == NULL)
 	{
-		__kprintf(FATAL"strncmp: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+		printf(FATAL"strncmp: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -99,7 +99,7 @@ size_t strnlen(const char *str1, size_t maxLen)
 
 	if (str1 == NULL)
 	{
-		__kprintf(FATAL"strnlen: str1 0x%p, caller 0x%x.\n",
+		printf(FATAL"strnlen: str1 0x%p, caller 0x%x.\n",
 			str1, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);

@@ -43,7 +43,7 @@ void memBmpC::dump(void)
 
 	bmp.lock.acquire();
 
-	__kprintf(NOTICE MEMBMP"v 0x%p: PFN base 0x%X, nframes %d,\n"
+	printf(NOTICE MEMBMP"v 0x%p: PFN base 0x%X, nframes %d,\n"
 		"\tarray 0x%p, nIndexes %d, lastAllocIndex %d.\n",
 		this, basePfn, bmpNFrames, bmp.rsrc.bmp, nIndexes,
 		bmp.rsrc.lastAllocIndex);
@@ -70,7 +70,7 @@ void memBmpC::dump(void)
 			if (stretchType == MEMBMP_DUMP_STRETCHTYPE_FREE)
 			{
 				stretchType = MEMBMP_DUMP_STRETCHTYPE_USED;
-				__kprintf(NOTICE MEMBMP"Free stretch %d bits "
+				printf(NOTICE MEMBMP"Free stretch %d bits "
 					"starting at bit %d.\n",
 					stretch, sc-stretch);
 
@@ -83,7 +83,7 @@ void memBmpC::dump(void)
 			if (stretchType == MEMBMP_DUMP_STRETCHTYPE_USED)
 			{
 				stretchType = MEMBMP_DUMP_STRETCHTYPE_FREE;
-				__kprintf(NOTICE MEMBMP"Used stretch %d bits "
+				printf(NOTICE MEMBMP"Used stretch %d bits "
 					"starting at bit %d.\n",
 					stretch, sc-stretch);
 
@@ -94,7 +94,7 @@ void memBmpC::dump(void)
 	};
 
 	bmp.lock.release();
-	__kprintf(NOTICE MEMBMP"Final stretch %s, %d bits @ %d; Total %d free, "
+	printf(NOTICE MEMBMP"Final stretch %s, %d bits @ %d; Total %d free, "
 		"%d used.\n",
 		((stretchType == MEMBMP_DUMP_STRETCHTYPE_FREE)?"free":"used"),
 		stretch, sc-stretch, nFree, nUsed);

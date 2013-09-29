@@ -131,7 +131,7 @@ template <class T> void ptrlessListC<T>::dump(void)
 
 	list.lock.acquire();
 
-	__kprintf(NOTICE"PointerlessList @ 0x%p: dumping; lock @ 0x%p.\n"
+	printf(NOTICE"PointerlessList @ 0x%p: dumping; lock @ 0x%p.\n"
 		"\tNum items: %d, head: 0x%p, tail 0x%p.\n\t",
 		this, &list.lock,
 		list.rsrc.nItems, list.rsrc.head, list.rsrc.tail);
@@ -140,10 +140,10 @@ template <class T> void ptrlessListC<T>::dump(void)
 		curr != NULL;
 		curr = curr->listHeader.next, count--)
 	{
-		if (count == 0) { __kprintf(CC"\n\t"); count = 4; };
-		__kprintf(CC"obj: 0x%p, ", curr);
+		if (count == 0) { printf(CC"\n\t"); count = 4; };
+		printf(CC"obj: 0x%p, ", curr);
 	};
-	__kprintf(CC"\n");
+	printf(CC"\n");
 
 	list.lock.release();
 }

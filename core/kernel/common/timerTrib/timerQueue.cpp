@@ -33,7 +33,7 @@ error_t timerQueueC::latch(zkcmTimerDeviceC *dev)
 	ret = dev->latch(&processTrib.__kgetStream()->floodplainnStream);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(WARNING TIMERQUEUE"%dus: latch: to dev \"%s\" failed."
+		printf(WARNING TIMERQUEUE"%dus: latch: to dev \"%s\" failed."
 			"\n", nativePeriod / 1000,
 			dev->getBaseDevice()->shortName);
 
@@ -41,7 +41,7 @@ error_t timerQueueC::latch(zkcmTimerDeviceC *dev)
 	};
 
 	device = dev;
-	__kprintf(NOTICE TIMERQUEUE"%dus: latch: latched to device \"%s\".\n",
+	printf(NOTICE TIMERQUEUE"%dus: latch: latched to device \"%s\".\n",
 		getNativePeriod() / 1000, device->getBaseDevice()->shortName);
 
 	return ERROR_SUCCESS;
@@ -55,7 +55,7 @@ void timerQueueC::unlatch(void)
 	device->unlatch();
 	device = NULL;
 
-	__kprintf(NOTICE TIMERQUEUE"%dus: unlatch: unlatched device \"%s\".\n",
+	printf(NOTICE TIMERQUEUE"%dus: unlatch: unlatched device \"%s\".\n",
 		getNativePeriod() / 1000);
 }
 
@@ -71,7 +71,7 @@ error_t timerQueueC::enable(void)
 	ret = device->setPeriodicMode(timeS(0, nativePeriod));
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR TIMERQUEUE"%dus: Failed to set periodic mode "
+		printf(ERROR TIMERQUEUE"%dus: Failed to set periodic mode "
 			"on \"%s\".\n",
 			getNativePeriod() / 1000,
 			getDevice()->getBaseDevice()->shortName);
@@ -82,7 +82,7 @@ error_t timerQueueC::enable(void)
 	ret = device->softEnable();
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR TIMERQUEUE"%dus: Failed to enable() device.\n",
+		printf(ERROR TIMERQUEUE"%dus: Failed to enable() device.\n",
 			getNativePeriod() / 1000);
 
 		return ret;
@@ -230,7 +230,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		}
 		else
 		{
-			__kprintf(WARNING TIMERQUEUE"%dus: wake target process "
+			printf(WARNING TIMERQUEUE"%dus: wake target process "
 				"0x%x does not exist.\n",
 				getNativePeriod() / 1000,
 				request->header.targetId);
@@ -250,7 +250,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 
 		if (creatorProcess == NULL)
 		{
-			__kprintf(WARNING TIMERQUEUE"%dus: Inexistent creator "
+			printf(WARNING TIMERQUEUE"%dus: Inexistent creator "
 				"process 0x%x for timer queue request.\n",
 				getNativePeriod() / 1000,
 				request->header.sourceId);
@@ -287,7 +287,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 	if (requestQueueWasEmpty)
 	{
 		// If you see this message in the log, don't be too panicked.
-		__kprintf(WARNING TIMERQUEUE"%dus: tick called on empty Q.\n",
+		printf(WARNING TIMERQUEUE"%dus: tick called on empty Q.\n",
 			getNativePeriod() / 1000);
 	};
 }

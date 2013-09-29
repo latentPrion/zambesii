@@ -9,31 +9,31 @@ void panic(error_t err, utf8Char *str)
 	switch (err)
 	{
 	case ERROR_MEMORY_NOMEM_PHYSICAL:
-		__kprintf(FATAL"Kernel panic: ERROR_MEMORY_NOMEM_PHYSICAL.\n");
+		printf(FATAL"Kernel panic: ERROR_MEMORY_NOMEM_PHYSICAL.\n");
 		break;
 	case ERROR_MEMORY_NOMEM_VIRTUAL:
-		__kprintf(FATAL"Kernel panic: ERROR_MEMORY_NOMEM_VIRTUAL.\n");
+		printf(FATAL"Kernel panic: ERROR_MEMORY_NOMEM_VIRTUAL.\n");
 		break;
 	case ERROR_MEMORY_NOMEM:
-		__kprintf(FATAL"Kernel panic: ERROR_MEMORY_NOMEM.\n");
+		printf(FATAL"Kernel panic: ERROR_MEMORY_NOMEM.\n");
 		break;
 	case ERROR_INVALID_ARG_VAL:
-		__kprintf(FATAL"Kernel panic: ERROR_INVALIC_ARG_VAL.\n");
+		printf(FATAL"Kernel panic: ERROR_INVALIC_ARG_VAL.\n");
 		break;
 	case ERROR_INVALID_ARG:
-		__kprintf(FATAL"Kernel panic: ERROR_INVALID_ARG.\n");
+		printf(FATAL"Kernel panic: ERROR_INVALID_ARG.\n");
 		break;
 	case ERROR_MEMORY_NOMEM_IN_CONSTRUCTOR:
-		__kprintf(FATAL"Kernel panic: "
+		printf(FATAL"Kernel panic: "
 			"ERROR_MEMORY_NOMEM_IN_CONSTRUCTOR.\n");
 
 		break;
 	case ERROR_SUCCESS:
-		__kprintf(FATAL"Kernel panic: ERROR_SUCCESS (...?).\n");
+		printf(FATAL"Kernel panic: ERROR_SUCCESS (...?).\n");
 	};
 
 	if (str != NULL) {
-		__kprintf(str);
+		printf(str);
 	};
 
 	for (;;)

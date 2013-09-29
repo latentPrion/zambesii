@@ -52,7 +52,7 @@ error_t taskStreamC::initialize(void)
 
 void taskStreamC::dump(void)
 {
-	__kprintf(NOTICE TASKSTREAM"%d: load %d, capacity %d, "
+	printf(NOTICE TASKSTREAM"%d: load %d, capacity %d, "
 		"currentTask 0x%x(@0x%p): dump.\n",
 		parentCpu->cpuId,
 		load, capacity,
@@ -134,7 +134,7 @@ error_t taskStreamC::cooperativeBind(void)
 		*(__ret) = (__pb)->resizeTo((__n) + 1); \
 		if (*(__ret) != ERROR_SUCCESS) \
 		{ \
-			__kprintf(ERROR TASKSTREAM"%s: resize failed on %s " \
+			printf(ERROR TASKSTREAM"%s: resize failed on %s " \
 				"with required capacity = %d.\n", \
 				__fn, __bn, __n); \
 		}; \
@@ -236,7 +236,7 @@ void taskStreamC::pull(void)
 		// Else set the CPU to a low power state.
 		if (/*!__KFLAG_TEST(parentCpu->flags, CPUSTREAM_FLAGS_BSP)*/ 0)
 		{
-			__kprintf(NOTICE TASKSTREAM"%d: Entering C1.\n",
+			printf(NOTICE TASKSTREAM"%d: Entering C1.\n",
 				parentCpu->cpuId);
 		};
 

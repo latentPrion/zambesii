@@ -80,7 +80,7 @@ error_t cpuStreamC::bind(void)
 		ret = lapic.setupLapic();
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR CPUSTREAM"%d: bind: LAPIC init failed."
+			printf(ERROR CPUSTREAM"%d: bind: LAPIC init failed."
 				"\n", cpuId);
 
 			return ret;
@@ -94,7 +94,7 @@ error_t cpuStreamC::bind(void)
 
 	// Enumerate CPU and features.
 	enumerate();
-	__kprintf(NOTICE CPUSTREAM"%d: CPU model detected as %s.\n",
+	printf(NOTICE CPUSTREAM"%d: CPU model detected as %s.\n",
 		cpuId, cpuFeatures.cpuModel);
 
 	return ERROR_SUCCESS;
@@ -119,7 +119,7 @@ status_t cpuStreamC::enumerate(void)
 		};
 	};
 
-	__kprintf(ERROR CPUSTREAM"%d: Unable to determine CPU brand.\n", cpuId);
+	printf(ERROR CPUSTREAM"%d: Unable to determine CPU brand.\n", cpuId);
 	return CPUENUM_UNSUPPORTED_CPU;
 }
 

@@ -9,8 +9,8 @@ void vfsTribC::dumpTrees(void)
 {
 	vfsDirC		*curDir;
 
-	__kprintf(NOTICE VFSTRIB"Dumping: %d trees.\n", trees->nSubDirs);
-	__kprintf(NOTICE VFSTRIB"\tDefault tree: inode: %u, :%s.\n",
+	printf(NOTICE VFSTRIB"Dumping: %d trees.\n", trees->nSubDirs);
+	printf(NOTICE VFSTRIB"\tDefault tree: inode: %u, :%s.\n",
 		getDefaultTree()->desc->inodeLow, getDefaultTree()->name);
 
 	// Iterate through all current trees and print debug info.
@@ -20,7 +20,7 @@ void vfsTribC::dumpTrees(void)
 	for (uarch_t i=0; i<trees->nSubDirs && curDir != NULL;
 		curDir = curDir->next, i++)
 	{
-		__kprintf(NOTICE"\tTree %d: inode: %u name: :%s.\n",
+		printf(NOTICE"\tTree %d: inode: %u name: :%s.\n",
 			i, curDir->desc->inodeLow, curDir->name);
 	};
 

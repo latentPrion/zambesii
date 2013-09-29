@@ -105,7 +105,7 @@ error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 	level1Table->entries[1023] = 0 
 		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE);
 
-	__kprintf(NOTICE VADDRSPACE"initialize: binding %d; lvl0: v 0x%p, "
+	printf(NOTICE VADDRSPACE"initialize: binding %d; lvl0: v 0x%p, "
 		"p 0x%P.\n",
 		boundBankId, level0Accessor.rsrc, level0Paddr);
 

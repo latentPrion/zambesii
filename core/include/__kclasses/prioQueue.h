@@ -262,7 +262,7 @@ inline void prioQueueC<T>::remove(T *item, ubit16 prio)
 template <class T>
 inline void prioQueueC<T>::dump(void)
 {
-	__kprintf(NOTICE PRIOQUEUE"%d prios, cache @0x%p, first valid q %d: "
+	printf(NOTICE PRIOQUEUE"%d prios, cache @0x%p, first valid q %d: "
 		"dumping.\n",
 		nPrios, nodeCache, headQueue.rsrc);
 
@@ -384,7 +384,7 @@ void prioQueueC<T>::queueC<T2>::dump(void)
 
 	q.lock.acquire();
 
-	__kprintf(CC"\tQueue %d, head 0x%p, tail 0x%p, %d items:\n%s",
+	printf(CC"\tQueue %d, head 0x%p, tail 0x%p, %d items:\n%s",
 		prio, q.rsrc.head, q.rsrc.tail, q.rsrc.nItems,
 		(q.rsrc.head == NULL) ? "" : "\t");
 
@@ -392,15 +392,15 @@ void prioQueueC<T>::queueC<T2>::dump(void)
 	{
 		if (flipFlop > 5)
 		{
-			__kprintf(CC"\n\t");
+			printf(CC"\n\t");
 			flipFlop = 0;
 		};
 
-		__kprintf(CC"0x%p ", tmp->item);
+		printf(CC"0x%p ", tmp->item);
 	};
 
 	q.lock.release();
-	if (flipFlop != 0) { __kprintf(CC"\n"); };
+	if (flipFlop != 0) { printf(CC"\n"); };
 }
 
 #endif

@@ -293,7 +293,7 @@ sarch_t x86IoApic::irqIsEnabled(ubit16 __kpin)
 		return ioApic->irqIsEnabled(__kpin);
 	};
 
-	__kprintf(ERROR x86IOAPIC"LibIoApic relay: irqIsEnabled: __kpin %d "
+	printf(ERROR x86IOAPIC"LibIoApic relay: irqIsEnabled: __kpin %d "
 		"doesn't map to any known IO-APIC.\n",
 		__kpin);
 
@@ -314,7 +314,7 @@ status_t x86IoApic::getIrqStatus(
 			__kpin, cpu, vector, triggerMode, polarity);
 	};
 
-	__kprintf(ERROR x86IOAPIC"LibIoApic relay: getIrqStatus: __kpin %d "
+	printf(ERROR x86IOAPIC"LibIoApic relay: getIrqStatus: __kpin %d "
 		"doesn't map to any known IO-APIC.\n",
 		__kpin);
 
@@ -332,7 +332,7 @@ status_t x86IoApic::setIrqStatus(
 		return ioApic->setIrqStatus(__kpin, cpu, vector, enabled);
 	};
 
-	__kprintf(ERROR x86IOAPIC"LibIoApic relay: setIrqStatus: __kpin %d "
+	printf(ERROR x86IOAPIC"LibIoApic relay: setIrqStatus: __kpin %d "
 		"doesn't map to any known IO-APIC.\n",
 		__kpin);
 
@@ -350,7 +350,7 @@ void x86IoApic::maskIrq(ubit16 __kpin)
 		return;
 	};
 
-	__kprintf(ERROR x86IOAPIC"LibIoApic relay: maskIrq: __kpin %d "
+	printf(ERROR x86IOAPIC"LibIoApic relay: maskIrq: __kpin %d "
 		"doesn't map to any known IO-APIC.\n",
 		__kpin);
 }
@@ -366,7 +366,7 @@ void x86IoApic::unmaskIrq(ubit16 __kpin)
 		return;
 	};
 
-	__kprintf(ERROR x86IOAPIC"LibIoApic relay: unmaskIrq: __kpin %d "
+	printf(ERROR x86IOAPIC"LibIoApic relay: unmaskIrq: __kpin %d "
 		"doesn't map to any known IO-APIC.\n",
 		__kpin);
 }	

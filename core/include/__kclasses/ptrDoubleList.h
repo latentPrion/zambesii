@@ -103,7 +103,7 @@ void pointerDoubleListC<T>::dump(void)
 	tail = list.rsrc.tail;
 	list.lock.release();
 
-	__kprintf(NOTICE PTRDBLLIST"@ head 0x%p, tail 0x%p, %d items, "
+	printf(NOTICE PTRDBLLIST"@ head 0x%p, tail 0x%p, %d items, "
 		"lock obj 0x%p: Dumping.\n",
 		head, tail, getNItems(), &list.lock);
 
@@ -112,15 +112,15 @@ void pointerDoubleListC<T>::dump(void)
 	curr = head;
 	for (; curr != NULL; curr = curr->next, flipFlop++)
 	{
-		if (flipFlop < 4) { __kprintf(CC"\t0x%p ", curr->item); }
+		if (flipFlop < 4) { printf(CC"\t0x%p ", curr->item); }
 		else
 		{
-			__kprintf(CC"0x%p\n", curr->item);
+			printf(CC"0x%p\n", curr->item);
 			flipFlop = -1;
 		};
 	};
 
-	if (flipFlop != 0) { __kprintf(CC"\n"); };
+	if (flipFlop != 0) { printf(CC"\n"); };
 	list.lock.release();
 }
 
@@ -135,7 +135,7 @@ error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
 
 	if (newNode == NULL)
 	{
-		__kprintf(ERROR PTRDBLLIST"addItem(0x%p,%s): Failed to alloc "
+		printf(ERROR PTRDBLLIST"addItem(0x%p,%s): Failed to alloc "
 			"mem for new node.\n",
 			item, (mode == PTRDBLLIST_ADD_HEAD)?"head":"tail");
 
@@ -179,7 +179,7 @@ error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
 		break;
 
 	default:
-		__kprintf(ERROR PTRDBLLIST"addItem(0x%p): Invalid add mode.\n",
+		printf(ERROR PTRDBLLIST"addItem(0x%p): Invalid add mode.\n",
 			item);
 
 		return ERROR_INVALID_ARG;

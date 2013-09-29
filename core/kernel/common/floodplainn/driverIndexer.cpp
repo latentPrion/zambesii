@@ -64,7 +64,7 @@ void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 	floodplainnC::driverIndexRequestS	*req=
 		(floodplainnC::driverIndexRequestS *)gmsg;
 
-	__kprintf(NOTICE FPLAINNIDX"loadDriver: devname %s.\n",
+	printf(NOTICE FPLAINNIDX"loadDriver: devname %s.\n",
 		req->deviceName);
 }
 
@@ -79,12 +79,12 @@ void floodplainnC::driverIndexerEntry(void)
 	floodplainn.indexerThreadId = self->getFullId();
 	floodplainn.indexerQueueId = ZMESSAGE_SUBSYSTEM_REQ0;
 
-	__kprintf(NOTICE FPLAINNIDX"Floodplainn-indexer executing;\n"
+	printf(NOTICE FPLAINNIDX"Floodplainn-indexer executing;\n"
 		"\tprocess ID: 0x%x. ESP: 0x%p. RequestQ ID: %d. Dormanting.\n",
 		self->getFullId(), getEsp(),
 		floodplainn.indexerQueueId);
 
-	__kprintf(NOTICE FPLAINNIDX"Index: Version %d.%d. (%s), holds %d drivers.\n",
+	printf(NOTICE FPLAINNIDX"Index: Version %d.%d. (%s), holds %d drivers.\n",
 		__kindexHeader->majorVersion, __kindexHeader->minorVersion,
 		__kindexHeader->endianness, __kindexHeader->nRecords);
 
@@ -101,7 +101,7 @@ void floodplainnC::driverIndexerEntry(void)
 				break;
 
 			default:
-				__kprintf(ERROR FPLAINNIDX"Unknown request "
+				printf(ERROR FPLAINNIDX"Unknown request "
 					"%d.\n",
 					gcb.header.function);
 			};
@@ -109,7 +109,7 @@ void floodplainnC::driverIndexerEntry(void)
 			break;
 
 		default:
-			__kprintf(NOTICE FPLAINNIDX"Unknown message.\n");
+			printf(NOTICE FPLAINNIDX"Unknown message.\n");
 		};
 	};
 }

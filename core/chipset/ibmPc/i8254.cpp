@@ -94,7 +94,7 @@ error_t i8254PitC::initialize(void)
 	ret = zkcmCore.timerControl.registerNewTimerDevice(this);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(WARNING i8254"Failed to register i8254 with Timer "
+		printf(WARNING i8254"Failed to register i8254 with Timer "
 			"Control mod.\n");
 
 		cachePool.destroyCache(irqEventCache);
@@ -111,7 +111,7 @@ error_t i8254PitC::shutdown(void)
 	ret = zkcmCore.timerControl.unregisterTimerDevice(this, 0);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(WARNING i8254"Unable to unregister %s; latched.\n",
+		printf(WARNING i8254"Unable to unregister %s; latched.\n",
 			getBaseDevice()->shortName);
 
 		return ret;
@@ -210,7 +210,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	// Note well, this is faultable memory being allocated.
 	if (irqEvent == NULL)
 	{
-		__kprintf(WARNING i8254"isr: Couldn't allocate IRQ event.\n");
+		printf(WARNING i8254"isr: Couldn't allocate IRQ event.\n");
 		// FIXME: I don't like this return value.
 		return ZKCM_ISR_SUCCESS;
 	};
@@ -225,7 +225,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	if (err != ERROR_SUCCESS)
 	{
 		device->freeIrqEvent(irqEvent);
-		__kprintf(WARNING i8254"isr: Failed to queue IRQ event; "
+		printf(WARNING i8254"isr: Failed to queue IRQ event; "
 			"err %s.\n",
 			strerror(err));
 	};
@@ -260,13 +260,13 @@ error_t i8254PitC::enable(void)
 
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR i8254"enable: BPM was unable to map "
+			printf(ERROR i8254"enable: BPM was unable to map "
 				"ISA IRQ 0 to a __kpin.\n");
 
 			return ret;
 		};
 
-		__kprintf(NOTICE i8254"enable: BPM reports ISA IRQ 0 __kpin is "
+		printf(NOTICE i8254"enable: BPM reports ISA IRQ 0 __kpin is "
 			"%d.\n",
 			i8254State.__kpinId);
 
@@ -282,7 +282,7 @@ error_t i8254PitC::enable(void)
 		{
 			state.lock.release();
 
-			__kprintf(ERROR i8254"enable: Failed to register ISR "
+			printf(ERROR i8254"enable: Failed to register ISR "
 				"on __kpin %d.\n",
 				i8254State.__kpinId);
 
@@ -311,7 +311,7 @@ error_t i8254PitC::enable(void)
 	ret = interruptTrib.__kpinEnable(i8254State.__kpinId);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR i8254"enable: Interrupt Trib failed to "
+		printf(ERROR i8254"enable: Interrupt Trib failed to "
 			"enable IRQ for __kpin %d.\n",
 			i8254State.__kpinId);
 

@@ -73,7 +73,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR"Proc 0x%x: command line invalid; "
+		printf(ERROR"Proc 0x%x: command line invalid; "
 			"distributary doesn't exist.\n",
 			self->getFullId());
 
@@ -89,7 +89,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 	{
 		// OUT_OF_KERNEL distributaries can only be ELF.
 		*executableFormat = processStreamC::ELF;
-		__kprintf(WARNING"Proc 0x%x: out-of-kernel dtribs are "
+		printf(WARNING"Proc 0x%x: out-of-kernel dtribs are "
 			"not yet supported.\n",
 			self->getFullId());
 	};
@@ -188,7 +188,7 @@ void processTribC::commonEntry(void *)
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
-	__kprintf(NOTICE"New process running. ID=0x%x type=%d.\n",
+	printf(NOTICE"New process running. ID=0x%x type=%d.\n",
 		self->getFullId(),
 		self->parent->getType());
 
@@ -196,7 +196,7 @@ void processTribC::commonEntry(void *)
 	callbackMessage = new zmessage::headerS;
 	if (callbackMessage == NULL)
 	{
-		__kprintf(FATAL PROCTRIB"commonEntry: process 0x%x:\n",
+		printf(FATAL PROCTRIB"commonEntry: process 0x%x:\n",
 			self->getFullId());
 
 		panic(CC"\tFailed to allocate callback message.\n");
@@ -246,7 +246,7 @@ void processTribC::commonEntry(void *)
 		break;
 
 	default:
-		__kprintf(FATAL"Proc 0x%x: Currently unsupported process type "
+		printf(FATAL"Proc 0x%x: Currently unsupported process type "
 			"%d.\n",
 			self->getFullId(), initBlock->type);
 
@@ -257,7 +257,7 @@ void processTribC::commonEntry(void *)
 	if (executableFormat != processStreamC::RAW)
 	{
 		// Load the confluence lib and extract its entry point addr.
-		__kprintf(FATAL"Proc 0x%x: Currently unsupported executable "
+		printf(FATAL"Proc 0x%x: Currently unsupported executable "
 			"format %d.\n",
 			self->getFullId(), executableFormat);
 
@@ -314,7 +314,7 @@ void processTribC::commonEntry(void *)
 
 	// If the process was spawned with DORMANT set, dormant it now.
 	if (__KFLAG_TEST(self->parent->flags, PROCESS_FLAGS_SPAWNED_DORMANT))
-		{ __kprintf(NOTICE"Dormant process.\n"); taskTrib.dormant(self->getFullId()); };
+		{ printf(NOTICE"Dormant process.\n"); taskTrib.dormant(self->getFullId()); };
 
 	loadContextAndJump(&context);
 }
@@ -395,7 +395,7 @@ error_t processTribC::spawnDriver(
 	ret = getNewProcessId(&newProcessId);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE PROCTRIB"Out of process IDs.\n");
+		printf(NOTICE PROCTRIB"Out of process IDs.\n");
 		return ret;
 	};
 
@@ -413,7 +413,7 @@ error_t processTribC::spawnDriver(
 
 	if (*newProcess == NULL)
 	{
-		__kprintf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
+		printf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -468,13 +468,13 @@ error_t processTribC::spawnDriver(
 
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE"Failed to spawn thread for new driver.\n");
+		printf(NOTICE"Failed to spawn thread for new driver.\n");
 		processes.clearSlot(newProcessId);
 		delete *newProcess;
 		return ret;
 	};
 
-	__kprintf(NOTICE"New driver spawned, tid = 0x%x.\n",
+	printf(NOTICE"New driver spawned, tid = 0x%x.\n",
 		firstThread->getFullId());
 
 	return ERROR_SUCCESS;
@@ -511,7 +511,7 @@ error_t processTribC::spawnDistributary(
 	ret = getNewProcessId(&newProcessId);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE PROCTRIB"Out of process IDs.\n");
+		printf(NOTICE PROCTRIB"Out of process IDs.\n");
 		return ret;
 	};
 
@@ -521,7 +521,7 @@ error_t processTribC::spawnDistributary(
 
 	if (*newProcess == NULL)
 	{
-		__kprintf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
+		printf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -547,13 +547,13 @@ error_t processTribC::spawnDistributary(
 
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE"Failed to spawn thread for new process.\n");
+		printf(NOTICE"Failed to spawn thread for new process.\n");
 		delete *newProcess;
 		processes.clearSlot(newProcessId);
 		return ret;
 	};
 
-	__kprintf(NOTICE"New process spawned, tid = 0x%x.\n",
+	printf(NOTICE"New process spawned, tid = 0x%x.\n",
 		firstTask->getFullId());
 
 	return ERROR_SUCCESS;
@@ -614,7 +614,7 @@ error_t *processTribC::spawnStream(
 
 	if (newIdTmp < 0)
 	{
-		__kprintf(WARNING PROCTRIB"Out of process IDs.\n");
+		printf(WARNING PROCTRIB"Out of process IDs.\n");
 		*err = ERROR_GENERAL;
 		return NULL;
 	};

@@ -28,7 +28,7 @@ error_t memReservoirC::initialize(void)
 
 	if (__kbog == NULL)
 	{
-		__kprintf(ERROR RESERVOIR"Unable to allocate a bog for "
+		printf(ERROR RESERVOIR"Unable to allocate a bog for "
 			"general kernel use.\n");
 
 		return ERROR_MEMORY_NOMEM;
@@ -44,7 +44,7 @@ error_t memReservoirC::initialize(void)
 
 	if (bogs.rsrc.ptrs == NULL)
 	{
-		__kprintf(ERROR RESERVOIR"Unable to allocate a page to hold "
+		printf(ERROR RESERVOIR"Unable to allocate a page to hold "
 			"the array of custom bog allocators.\n");
 
 		return ERROR_MEMORY_NOMEM;
@@ -52,7 +52,7 @@ error_t memReservoirC::initialize(void)
 
 	memset(bogs.rsrc.ptrs, 0, PAGING_BASE_SIZE);
 
-	__kprintf(NOTICE RESERVOIR"initialize(): Done. __kbog v 0x%X, size "
+	printf(NOTICE RESERVOIR"initialize(): Done. __kbog v 0x%X, size "
 		"0x%X, custom bogs array 0x%X.\n",
 		__kbog, __kbog->blockSize, bogs.rsrc.ptrs);
 
@@ -66,16 +66,16 @@ memReservoirC::~memReservoirC(void)
 void memReservoirC::dump(void)
 {
 	
-	__kprintf(NOTICE RESERVOIR"Dumping.\n");
-	__kprintf(NOTICE RESERVOIR"__kbog v 0x%X, bogs array 0x%X, nBogs %d.\n",
+	printf(NOTICE RESERVOIR"Dumping.\n");
+	printf(NOTICE RESERVOIR"__kbog v 0x%X, bogs array 0x%X, nBogs %d.\n",
 		__kbog, bogs.rsrc.ptrs, bogs.rsrc.nBogs);
 
-	__kprintf(NOTICE RESERVOIR"Dumping __kbog.\n");
+	printf(NOTICE RESERVOIR"Dumping __kbog.\n");
 	__kbog->dump();
 
 	for (uarch_t i=0; i<bogs.rsrc.nBogs; i++)
 	{
-		__kprintf(NOTICE RESERVOIR"Dumping bog %d @ v %X.\n",
+		printf(NOTICE RESERVOIR"Dumping bog %d @ v %X.\n",
 			i, bogs.rsrc.ptrs[i]);
 
 		bogs.rsrc.ptrs[i]->dump();
@@ -152,7 +152,7 @@ void memReservoirC::free(void *_mem)
 
 	if ((mem->magic >> 4) != (RESERVOIR_MAGIC >> 4))
 	{
-		__kprintf(ERROR RESERVOIR"Corrupt memory or bad free v 0x%p.\n",
+		printf(ERROR RESERVOIR"Corrupt memory or bad free v 0x%p.\n",
 			mem);
 
 		return;
@@ -177,7 +177,7 @@ void memReservoirC::free(void *_mem)
 		return;
 	};
 
-	__kprintf(WARNING RESERVOIR"free(0x%X): Operation fell through without "
+	printf(WARNING RESERVOIR"free(0x%X): Operation fell through without "
 		"finding subsystem to be freed to.\n", mem);
 }
 

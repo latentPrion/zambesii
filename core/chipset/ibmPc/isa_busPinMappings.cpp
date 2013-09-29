@@ -152,7 +152,7 @@ static void ibmPc_isaBpm_smpMode_acpi_setIsaDefaults(void)
 		}
 		else
 		{
-			__kprintf(FATAL IBMPCBPM"Unable to get "
+			printf(FATAL IBMPCBPM"Unable to get "
 				"__kpinId for IO-APIC GIRQ %d.\n",
 				girq);
 
@@ -163,7 +163,7 @@ static void ibmPc_isaBpm_smpMode_acpi_setIsaDefaults(void)
 
 void dumpSmpIsaPins(void)
 {
-	__kprintf(NOTICE IBMPCBPM"Dumping all ISA SMP IRQs.\n");
+	printf(NOTICE IBMPCBPM"Dumping all ISA SMP IRQs.\n");
 	for (uarch_t girq=0; girq<16; girq++)
 	{
 		ubit16			__kpin;
@@ -183,7 +183,7 @@ void dumpSmpIsaPins(void)
 			&deliveryMode, &destMode,
 			&polarity, &triggMode);
 
-		__kprintf(NOTICE"\tGIRQ-%d (IoApic %d,%d): %s; cpu%d, v %d.\n",
+		printf(NOTICE"\tGIRQ-%d (IoApic %d,%d): %s; cpu%d, v %d.\n",
 			girq, ioApic->getId(), pin,
 			(enabled) ? "on" : "off",
 			cpu, vector);
@@ -207,7 +207,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 	madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 	if (madt == NULL)
 	{
-		__kprintf(WARNING IBMPCBPM"ISA: No MADTs found.\n");
+		printf(WARNING IBMPCBPM"ISA: No MADTs found.\n");
 		return ERROR_UNSUPPORTED;
 	};
 
@@ -237,7 +237,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 
 		if (irqOverride->irqNo > 15)
 		{
-			__kprintf(ERROR IBMPCBPM"Illegal ISA IRQ number %d "
+			printf(ERROR IBMPCBPM"Illegal ISA IRQ number %d "
 				"found in MADT ISA IRQ Source overrides. "
 				"Skipping.\n",
 				irqOverride->irqNo);
@@ -250,7 +250,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 			&isaBusPinMappings[irqOverride->irqNo].__kpin)
 				!= ERROR_SUCCESS)
 		{
-			__kprintf(FATAL IBMPCBPM"Unable to get __kpin ID for "
+			printf(FATAL IBMPCBPM"Unable to get __kpin ID for "
 				"IO-APIC pin %d.\n",
 				irqOverride->globalIrq);
 
@@ -262,7 +262,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 
 		if (ioApic == NULL)
 		{
-			__kprintf(FATAL IBMPCBPM"ISA: LibIO-APIC claims to "
+			printf(FATAL IBMPCBPM"ISA: LibIO-APIC claims to "
 				"have a __kpin mapping\n"
 				"\tfor ACPI GIRQ %d, but at the same time, no "
 				"IO-APIC is returned when looking\n"
@@ -283,7 +283,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 		switch (irqOverride->flags & ACPI_MADT_IRQSRCOVER_POLARITY_MASK)
 		{
 		case ACPI_MADT_IRQSRCOVER_POLARITY_ACTIVELOW:
-			__kprintf(WARNING IBMPCBPM"ISA: Unusual polarity low "
+			printf(WARNING IBMPCBPM"ISA: Unusual polarity low "
 				"for IRQ %d.\n",
 				irqOverride->irqNo);
 
@@ -298,7 +298,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 			& ACPI_MADT_IRQSRCOVER_TRIGGER_MASK)
 		{
 		case ACPI_MADT_IRQSRCOVER_TRIGGER_LEVEL:
-			__kprintf(WARNING IBMPCBPM"ISA: Unusual trigger level "
+			printf(WARNING IBMPCBPM"ISA: Unusual trigger level "
 				"for IRQ %d.\n",
 				irqOverride->irqNo);
 
@@ -332,7 +332,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 				? IRQCTL_IRQPIN_POLARITY_LOW
 				: IRQCTL_IRQPIN_POLARITY_HIGH;
 
-		__kprintf(NOTICE IBMPCBPM"ACPI override: mapped ISA IRQ "
+		printf(NOTICE IBMPCBPM"ACPI override: mapped ISA IRQ "
 			"%d to __kpin %d (girq: %d).\n",
 			irqOverride->irqNo,
 			isaBusPinMappings[irqOverride->irqNo].__kpin,
@@ -361,13 +361,13 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 	isaBusId = x86Mp::getBusIdFor(x86_MPCFG_BUS_ISA);
 	if (isaBusId < 0)
 	{
-		__kprintf(WARNING IBMPCBPM"x86MP: Unable to determine the ID "
+		printf(WARNING IBMPCBPM"x86MP: Unable to determine the ID "
 			"given to the ISA bus by firmware.\n");
 
 		return ERROR_UNKNOWN;
 	};
 	// eisaBusId = x86Mp::getBusIdFor(x86_MPCFG_BUS_EISA);
-	__kprintf(NOTICE IBMPCBPM"x86MP ISA BUS ID: %d.\n", isaBusId);
+	printf(NOTICE IBMPCBPM"x86MP ISA BUS ID: %d.\n", isaBusId);
 
 	pos = 0;
 	handle = NULL;
@@ -387,7 +387,7 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 
 		if (irqSourceEntry->sourceBusIrq > 15)
 		{
-			__kprintf(FATAL IBMPCBPM"x86MP: Invalid ISA IRQ number "
+			printf(FATAL IBMPCBPM"x86MP: Invalid ISA IRQ number "
 				"%d.\n",
 				irqSourceEntry->sourceBusIrq);
 
@@ -405,7 +405,7 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 		ioApic = x86IoApic::getIoApic(irqSourceEntry->destIoApicId);
 		if (ioApic == NULL)
 		{
-			__kprintf(FATAL IBMPCBPM"x86MP: Serious: MP Tables "
+			printf(FATAL IBMPCBPM"x86MP: Serious: MP Tables "
 				"speak of an IO-APIC %d, but\n\tthe kernel "
 				"does not have an IO-APIC object\n\tto manage "
 				"it.\n",
@@ -435,7 +435,7 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 			& x86_MPCFG_IRQSRC_FLAGS_POLARITY_MASK)
 		{
 		case x86_MPCFG_IRQSRC_POLARITY_ACTIVELOW:
-			__kprintf(WARNING IBMPCBPM"ISA: Unusual polarity low "
+			printf(WARNING IBMPCBPM"ISA: Unusual polarity low "
 				"for IRQ %d.\n",
 				irqSourceEntry->sourceBusIrq);
 
@@ -450,7 +450,7 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 			& x86_MPCFG_IRQSRC_FLAGS_SENSITIVITY_MASK)
 		{
 		case x86_MPCFG_IRQSRC_SENSITIVITY_LEVEL:
-			__kprintf(WARNING IBMPCBPM"ISA: Unusual trigger level "
+			printf(WARNING IBMPCBPM"ISA: Unusual trigger level "
 				"for IRQ %d.\n",
 				irqSourceEntry->sourceBusIrq);
 
@@ -487,7 +487,7 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 				? IRQCTL_IRQPIN_POLARITY_LOW
 				: IRQCTL_IRQPIN_POLARITY_HIGH;
 
-		__kprintf(NOTICE IBMPCBPM"x86MP: Mapped ISA IRQ %d to __kpin "
+		printf(NOTICE IBMPCBPM"x86MP: Mapped ISA IRQ %d to __kpin "
 			"%d (IO-APIC %d, pin %d).\n",
 			irqSourceEntry->sourceBusIrq,
 			isaBusPinMappings[irqSourceEntry->sourceBusIrq].__kpin,
@@ -514,7 +514,7 @@ status_t ibmPc_isaBpm_smpMode_loadBusPinMappings(void)
 	ret = acpi::findRsdp();
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE IBMPCBPM"ISA: Failed to find RSDP.\n" );
+		printf(NOTICE IBMPCBPM"ISA: Failed to find RSDP.\n" );
 		goto tryMpTables;
 	};
 
@@ -524,19 +524,19 @@ status_t ibmPc_isaBpm_smpMode_loadBusPinMappings(void)
 		ret = rsdp::mapXsdt();		
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(NOTICE IBMPCBPM"ISA: Failed to map XSDT.\n"
+			printf(NOTICE IBMPCBPM"ISA: Failed to map XSDT.\n"
 				"\tFalling back to RSDT.\n");
 
 			goto useRsdt;
 		};
 
-		/* __kprintf(NOTICE IBMPCBPM"Using ACPI XSDT for SMP-mode ISA "
+		/* printf(NOTICE IBMPCBPM"Using ACPI XSDT for SMP-mode ISA "
 			"bus-pin mappings.\n");
 
 		ret = ibmPc_isaBpm_smpMode_xsdt_loadBusPinMappings();
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(WARNING IBMPCBPM"ISA: XSDT present, but no "
+			printf(WARNING IBMPCBPM"ISA: XSDT present, but no "
 				"Bus-pin mapping info.\n");
 
 			// Fall through to testForRsdt().
@@ -555,17 +555,17 @@ useRsdt:
 		ret = acpi::mapRsdt();
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(NOTICE IBMPCBPM"ISA: Failed to map RSDT.\n");
+			printf(NOTICE IBMPCBPM"ISA: Failed to map RSDT.\n");
 			goto tryMpTables;
 		};
 
-		__kprintf(NOTICE IBMPCBPM"Using RSDT for SMP-mode ISA Bus-pin "
+		printf(NOTICE IBMPCBPM"Using RSDT for SMP-mode ISA Bus-pin "
 			"mappings.\n");
 
 		ret = ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings();
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(WARNING IBMPCBPM"ISA: RSDT present, but no "
+			printf(WARNING IBMPCBPM"ISA: RSDT present, but no "
 				"Bus-pin mapping info.\n");
 
 			// Fall through to MP Table tests.
@@ -581,7 +581,7 @@ tryMpTables:
 	x86Mp::initializeCache();
 	if (x86Mp::findMpFp() == NULL)
 	{
-		__kprintf(FATAL IBMPCBPM"Anomaly:\n"
+		printf(FATAL IBMPCBPM"Anomaly:\n"
 			"\tYour chipset claims to support IO-APICs and SMP\n"
 			"\tmode but did not supply ACPI IRQ Source Overrides,\n"
 			"\tor even an MP Specification table.\n"
@@ -598,7 +598,7 @@ tryMpTables:
 			"info in there that was\n\tmissed. Halting.\n");
 	};
 
-	__kprintf(NOTICE IBMPCBPM"Using x86 MP tables for SMP-mode ISA bus-pin "
+	printf(NOTICE IBMPCBPM"Using x86 MP tables for SMP-mode ISA bus-pin "
 		"mappings.\n");
 
 	if (ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings() != ERROR_SUCCESS)
@@ -634,7 +634,7 @@ status_t ibmPcBpm::isa::loadBusPinMappings(void)
 				isaIrqNo, &isaBusPinMappings[isaIrqNo].__kpin)
 				!= ERROR_SUCCESS)
 			{
-				__kprintf(FATAL IBMPCBPM"Unable to get "
+				printf(FATAL IBMPCBPM"Unable to get "
 					"__kpinId for i8259 pin %d.\n",
 					isaIrqNo);
 
@@ -645,7 +645,7 @@ status_t ibmPcBpm::isa::loadBusPinMappings(void)
 			};
 		};
 
-		__kprintf(NOTICE IBMPCBPM"ISA: UP mode, assumed i8259s.\n");
+		printf(NOTICE IBMPCBPM"ISA: UP mode, assumed i8259s.\n");
 		return ERROR_SUCCESS;
 	};
 

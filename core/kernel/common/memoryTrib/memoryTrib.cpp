@@ -50,7 +50,7 @@ void memoryTribC::dump(void)
 	hardwareIdListC::iterator	it;
 	numaMemoryBankC			*nmb;
 
-	__kprintf(NOTICE MEMTRIB"Dumping: %d banks."
+	printf(NOTICE MEMTRIB"Dumping: %d banks."
 #if __SCALING__ < SCALING_CC_NUMA
 		" default membank: %d.\n",
 		nBanks, defaultMemoryBank.rsrc);
@@ -202,7 +202,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t flags)
 
 			if (nMapped < nFetched)
 			{
-				__kprintf(
+				printf(
 					FATAL"MemoryTrib.rawMemAlloc(%d): "
 					"walkerPageRanger::mapInc() returned "
 					"%d frames mapped.", nPages, nMapped);

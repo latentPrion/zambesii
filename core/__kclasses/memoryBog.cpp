@@ -56,22 +56,22 @@ void memoryBogC::dump(void)
 	bogBlockS	*block;
 	freeObjectS	*obj;
 
-	__kprintf(NOTICE MEMBOG"Dumping.\n");
+	printf(NOTICE MEMBOG"Dumping.\n");
 
 	head.lock.acquire();
-	__kprintf(NOTICE MEMBOG"Size: 0x%X, head pointer: 0x%X.\n",
+	printf(NOTICE MEMBOG"Size: 0x%X, head pointer: 0x%X.\n",
 		blockSize, head.rsrc);
 
 	block = head.rsrc;
 	for (; block != NULL; block = block->next)
 	{
-		__kprintf((utf8Char *)"\tBlock: 0x%X, refCount %d 1stObj 0x%X."
+		printf((utf8Char *)"\tBlock: 0x%X, refCount %d 1stObj 0x%X."
 			"\n", block, block->refCount, block->firstObject);
 
 		obj = block->firstObject;
 		for (; obj != NULL; obj = obj->next)
 		{
-			__kprintf((utf8Char *)"\t\tFree object: "
+			printf((utf8Char *)"\t\tFree object: "
 				"Addr 0x%X, nBytes 0x%X.\n",
 				obj, obj->nBytes);
 		};
@@ -229,7 +229,7 @@ void memoryBogC::free(void *_mem)
 
 	if (mem->magic != MEMBOG_MAGIC)
 	{
-		__kprintf(WARNING MEMBOG"Corrupt memory or bad free at 0x%X, "
+		printf(WARNING MEMBOG"Corrupt memory or bad free at 0x%X, "
 			"magic was 0x%X.\n", mem, mem->magic);
 
 		return;
@@ -348,7 +348,7 @@ memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 	ret->firstObject->nBytes = blockSize;
 	ret->firstObject->next = NULL;
 
-	__kprintf(NOTICE MEMBOG"New bog block @v 0x%p, 1stObj 0x%p, 1stObj "
+	printf(NOTICE MEMBOG"New bog block @v 0x%p, 1stObj 0x%p, 1stObj "
 		"nBytes 0x%x.\n",
 		ret, ret->firstObject, ret->firstObject->nBytes);
 

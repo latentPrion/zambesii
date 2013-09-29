@@ -119,7 +119,7 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 			&vaddrSpaceStream->vaddrSpace,
 			faultAddr, pmap, status, WPRANGER_OP_SET_PRESENT, 0);
 
-		__kprintf(NOTICE OPTS(NOLOG)
+		printf(NOTICE OPTS(NOLOG)
 			"Page Fault: FAKE_DYN: addr 0x%p, "
 			"EIP 0x%p\n\tWPRl map: stat %d, pmap 0x%P, "
 			"__kf 0x%x.\n",
@@ -139,7 +139,7 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 
 	case WPRANGER_STATUS_SWAPPED:
 		// Not implemented.
-		__kprintf(FATAL"Encountered swapped page. at %X.\n", faultAddr);
+		printf(FATAL"Encountered swapped page. at %X.\n", faultAddr);
 		panic(ERROR_GENERAL);
 		break;
 
@@ -149,7 +149,7 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 			"movl %%esp, %0\n\t"
 			: "=r" (esp));
 
-		__kprintf(FATAL"Encountered unmapped page at 0x%p, EIP: 0x%x, "
+		printf(FATAL"Encountered unmapped page at 0x%p, EIP: 0x%x, "
 			"esp: 0x%x, schedstack end: 0x%p schedstack base 0x%p."
 			"\n", faultAddr,
 			regs->eip, esp,
@@ -160,7 +160,7 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 		panic(ERROR_UNKNOWN);
 		break;
 	default:
-		__kprintf(FATAL"Encountered page with unknown status at %X.\n",
+		printf(FATAL"Encountered page with unknown status at %X.\n",
 			faultAddr);
 
 		panic(ERROR_UNKNOWN);

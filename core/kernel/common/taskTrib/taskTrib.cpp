@@ -333,7 +333,7 @@ error_t taskTribC::unblock(taskC *task, taskContextC *perCpuContext)
 	if (!(tmpContext->runState == taskContextC::STOPPED
 		&& tmpContext->blockState == taskContextC::BLOCKED))
 	{
-		__kprintf(NOTICE TASKTRIB"unblock(0x%x): Invalid run state."
+		printf(NOTICE TASKTRIB"unblock(0x%x): Invalid run state."
 			"runState is %s.\n",
 			(task->getType() == task::PER_CPU)
 				? tmpContext->parent.cpu->cpuId

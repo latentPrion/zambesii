@@ -127,13 +127,13 @@ void interruptTribC::pinIrqMain(registerContextC *regs)
 	{
 		if (status == IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS)
 		{
-			__kprintf(WARNING INTTRIB"pinIrqMain: Spurious IRQ: "
+			printf(WARNING INTTRIB"pinIrqMain: Spurious IRQ: "
 				"vector %d.\n",
 				regs->vectorNo);
 		}
 		else
 		{
-			__kprintf(WARNING INTTRIB"pinIrqMain: Unidentifiable "
+			printf(WARNING INTTRIB"pinIrqMain: Unidentifiable "
 				"interrupt on vector %d.\n"
 				"\tMay not necessarily even be a pin-IRQ.\n",
 				regs->vectorNo);
@@ -149,7 +149,7 @@ void interruptTribC::pinIrqMain(registerContextC *regs)
 	pinDescriptor = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
 	if (pinDescriptor == NULL)
 	{
-		__kprintf(WARNING INTTRIB"handlePinIrq: __kpin %d: No such "
+		printf(WARNING INTTRIB"handlePinIrq: __kpin %d: No such "
 			"__kpin descriptor.\n",
 			__kpin);
 
@@ -158,7 +158,7 @@ void interruptTribC::pinIrqMain(registerContextC *regs)
 
 	if (makeNoise)
 	{
-		__kprintf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on CPU %d.\n"
+		printf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on CPU %d.\n"
 			"\tDumping: %d unhandled, %d ISRs, %s triggered.\n",
 			__kpin,
 			cpuTrib.getCurrentCpuStream()->cpuId,
@@ -194,7 +194,7 @@ void interruptTribC::pinIrqMain(registerContextC *regs)
 			{
 				if (isrRetireListLength > 4)
 				{
-					__kprintf(WARNING INTTRIB"__kpin %d: "
+					printf(WARNING INTTRIB"__kpin %d: "
 						"isrRetireList full.\n",
 						__kpin);
 				}
@@ -232,7 +232,7 @@ void interruptTribC::exceptionMain(registerContextC *regs)
 {
 	if (msiIrqTable[regs->vectorNo].type == vectorDescriptorS::UNCLAIMED)
 	{
-		__kprintf(FATAL INTTRIB"Entry on UNCLAIMED vector %d "
+		printf(FATAL INTTRIB"Entry on UNCLAIMED vector %d "
 			"from CPU %d.\n",
 			regs->vectorNo,
 			cpuTrib.getCurrentCpuStream()->cpuId);
@@ -257,7 +257,7 @@ void interruptTribC::installException(
 	if (exception == NULL) { return; };
 	if (msiIrqTable[vector].type != vectorDescriptorS::UNCLAIMED)
 	{
-		__kprintf(FATAL INTTRIB"installException: Vector %d is already "
+		printf(FATAL INTTRIB"installException: Vector %d is already "
 			"occupied.\n",
 			vector);
 
@@ -293,7 +293,7 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 
 	if (pinDesc == NULL)
 	{
-		__kprintf(ERROR INTTRIB"registerPinIsr: Invalid __kpin %d.\n",
+		printf(ERROR INTTRIB"registerPinIsr: Invalid __kpin %d.\n",
 			__kpin);
 
 		return ERROR_INVALID_ARG_VAL;
@@ -301,7 +301,7 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 
 	if (atomicAsm::read(&pinDesc->inService) != 0)
 	{
-		__kprintf(ERROR INTTRIB"registerPinIsr: __kpin %d is in "
+		printf(ERROR INTTRIB"registerPinIsr: __kpin %d is in "
 			"service.\n",
 			__kpin);
 
@@ -312,7 +312,7 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 	isrDesc = new isrDescriptorS(interruptTribC::isrDescriptorS::ZKCM);
 	if (isrDesc == NULL)
 	{
-		__kprintf(ERROR INTTRIB"registerPinIsr: Failed to alloc "
+		printf(ERROR INTTRIB"registerPinIsr: Failed to alloc "
 			"isrDescriptorS object.\n");
 
 		return ERROR_MEMORY_NOMEM;
@@ -324,7 +324,7 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 	ret = pinDesc->isrList.insert(isrDesc);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR INTTRIB"registerPinIsr: Failed to add new ISR "
+		printf(ERROR INTTRIB"registerPinIsr: Failed to add new ISR "
 			"on __kpin %d.\n\tzkcmDeviceC obj 0x%p, ISR 0x%p.\n",
 			__kpin, dev, isr);
 
@@ -355,7 +355,7 @@ sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 
 	if (pinDesc == NULL)
 	{
-		__kprintf(ERROR INTTRIB"retirePinIsr: Invalid __kpin %d.\n",
+		printf(ERROR INTTRIB"retirePinIsr: Invalid __kpin %d.\n",
 			__kpin);
 
 		return 0;
@@ -363,7 +363,7 @@ sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 
 	if (atomicAsm::read(&pinDesc->inService) != 0)
 	{
-		__kprintf(ERROR INTTRIB"retirePinIsr: cannot retire ISR from "
+		printf(ERROR INTTRIB"retirePinIsr: cannot retire ISR from "
 			"__kpin %d while in service.\n",
 			__kpin);
 
@@ -379,7 +379,7 @@ sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 		if (isrDesc->api.zkcm.isr != isr) { continue; };
 
 		// If we found the right one:
-		__kprintf(NOTICE INTTRIB"retirePinIsr: Retiring ISR 0x%p on "
+		printf(NOTICE INTTRIB"retirePinIsr: Retiring ISR 0x%p on "
 			"__kpin %d.\n\t(type: ZKCM), handled %d IRQs.\n",
 			isr, __kpin, isrDesc->nHandled);
 
@@ -408,7 +408,7 @@ error_t interruptTribC::__kpinEnable(ubit16 __kpin)
 	pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
 	if (pinDesc == NULL)
 	{
-		__kprintf(ERROR INTTRIB"__kpinEnable: Invalid __kpin %d.\n",
+		printf(ERROR INTTRIB"__kpinEnable: Invalid __kpin %d.\n",
 			__kpin);
 
 		return ERROR_INVALID_ARG_VAL;
@@ -416,7 +416,7 @@ error_t interruptTribC::__kpinEnable(ubit16 __kpin)
 
 	if (pinDesc->isrList.getNItems() == 0)
 	{
-		__kprintf(WARNING INTTRIB"__kpinEnable: %d: No ISRs in list.\n",
+		printf(WARNING INTTRIB"__kpinEnable: %d: No ISRs in list.\n",
 			__kpin);
 
 		return ERROR_INVALID_OPERATION;
@@ -434,7 +434,7 @@ sarch_t interruptTribC::__kpinDisable(ubit16 __kpin)
 	pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
 	if (pinDesc == NULL)
 	{
-		__kprintf(ERROR INTTRIB"__kpinEnable: Invalid __kpin %d.\n",
+		printf(ERROR INTTRIB"__kpinEnable: Invalid __kpin %d.\n",
 			__kpin);
 
 		return 0;
@@ -442,7 +442,7 @@ sarch_t interruptTribC::__kpinDisable(ubit16 __kpin)
 
 	if (pinDesc->isrList.getNItems() != 0)
 	{
-		__kprintf(WARNING INTTRIB"__kpinEnable: %d: Unable to mask "
+		printf(WARNING INTTRIB"__kpinEnable: %d: Unable to mask "
 			"__kpin: still %d handlers in list.\n",
 			__kpin, pinDesc->isrList.getNItems());
 
@@ -458,7 +458,7 @@ void interruptTribC::removeException(uarch_t vector)
 {
 	if (msiIrqTable[vector].type != vectorDescriptorS::EXCEPTION)
 	{
-		__kprintf(ERROR INTTRIB"removeException: Vector %d is not an "
+		printf(ERROR INTTRIB"removeException: Vector %d is not an "
 			"exception vector.\n",
 			vector);
 
@@ -481,7 +481,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 		tmp->isrList.initialize();
 		if (tmp == NULL)
 		{
-			__kprintf(FATAL INTTRIB"registerIrqPins(): Failed to "
+			printf(FATAL INTTRIB"registerIrqPins(): Failed to "
 				"alloc mem for pin %d.\n",
 				i);
 
@@ -540,7 +540,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 		err = pinIrqTable.addItem(pinIrqTableCounter, tmp);
 		if (err != ERROR_SUCCESS)
 		{
-			__kprintf(FATAL INTTRIB"registerPinIrqs(): "
+			printf(FATAL INTTRIB"registerPinIrqs(): "
 				"Failed to add pin %d to the pin IRQ "
 				"table.\n",
 				i);
@@ -574,28 +574,28 @@ void interruptTribC::dumpExceptions(void)
 {
 	ubit8		flipFlop=0;
 
-	__kprintf(NOTICE INTTRIB"dumpExceptions:\n");
+	printf(NOTICE INTTRIB"dumpExceptions:\n");
 	for (ubit16 i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
 		if (msiIrqTable[i].type == vectorDescriptorS::EXCEPTION)
 		{
-			__kprintf(CC"\t%d: 0x%p,", i, msiIrqTable[i].exception);
+			printf(CC"\t%d: 0x%p,", i, msiIrqTable[i].exception);
 			if (flipFlop == 3)
 			{
-				__kprintf(CC"\n");
+				printf(CC"\n");
 				flipFlop = 0;
 			}
 			else { flipFlop++; };
 		};
 	};
-	if (flipFlop != 0) { __kprintf(CC"\n"); };
+	if (flipFlop != 0) { printf(CC"\n"); };
 }
 
 void dumpIsrDescriptor(ubit16 num, interruptTribC::isrDescriptorS *desc)
 {
 	if (desc->driverType == interruptTribC::isrDescriptorS::ZKCM)
 	{
-		__kprintf(CC"\t%d (is ZKCM): nHandled %d,"
+		printf(CC"\t%d (is ZKCM): nHandled %d,"
 			"\n\tisr @0x%p, device base @0x%p.\n",
 			num, desc->nHandled,
 			desc->api.zkcm.isr, desc->api.zkcm.device);
@@ -607,14 +607,14 @@ void interruptTribC::dumpMsiIrqs(void)
 	ubit32		nItems;
 	isrDescriptorS	*tmp;
 
-	__kprintf(NOTICE INTTRIB"dumpMsiIrqs:\n");
+	printf(NOTICE INTTRIB"dumpMsiIrqs:\n");
 
 	for (ubit16 i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
 		if (msiIrqTable[i].type == vectorDescriptorS::MSI_IRQ)
 		{
 			nItems = msiIrqTable[i].isrList.getNItems();
-			__kprintf(CC"vec%d: %d handlers.\n", i, nItems);
+			printf(CC"vec%d: %d handlers.\n", i, nItems);
 			for (ubit16 j=0; j<nItems; j++)
 			{
 				tmp = msiIrqTable[i].isrList.getItem(j);
@@ -628,21 +628,21 @@ void interruptTribC::dumpUnusedVectors(void)
 {
 	ubit8	flipFlop=0;
 
-	__kprintf(NOTICE INTTRIB"dumpUnusedVectors:\n");
+	printf(NOTICE INTTRIB"dumpUnusedVectors:\n");
 	for (ubit16 i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
 		if (msiIrqTable[i].type == vectorDescriptorS::UNCLAIMED)
 		{
-			__kprintf(CC"\t%d,", i);
+			printf(CC"\t%d,", i);
 			if (flipFlop == 7)
 			{
 				flipFlop = 0;
-				__kprintf(CC"\n");
+				printf(CC"\n");
 			}
 			else { flipFlop++; };
 		};
 	};
-	if (flipFlop != 0) { __kprintf(CC"\n"); };
+	if (flipFlop != 0) { printf(CC"\n"); };
 }
 
 void interruptTribC::dumpIrqPins(void)
@@ -650,13 +650,13 @@ void interruptTribC::dumpIrqPins(void)
 	hardwareIdListC::iterator	it, prev;
 	irqPinDescriptorS		*tmp;
 
-	__kprintf(NOTICE INTTRIB"dumpIrqPins:\n");
+	printf(NOTICE INTTRIB"dumpIrqPins:\n");
 
 	prev = it = pinIrqTable.begin();
 	tmp = reinterpret_cast<irqPinDescriptorS *>( it++ );
 	while (tmp != NULL)
 	{
-		__kprintf(CC"\t__kpin %d: %d devices.\n",
+		printf(CC"\t__kpin %d: %d devices.\n",
 			prev.cursor, tmp->isrList.getNItems());
 
 		prev = it;

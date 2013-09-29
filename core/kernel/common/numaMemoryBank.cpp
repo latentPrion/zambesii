@@ -55,14 +55,14 @@ void numaMemoryBankC::dump(void)
 	ranges.lock.readAcquire(&rwFlags);
 	defRange.lock.readAcquire(&rwFlags2);
 
-	__kprintf(NOTICE NUMAMEMBANK"%d: Dumping. Default range base 0x%P.\n",
+	printf(NOTICE NUMAMEMBANK"%d: Dumping. Default range base 0x%P.\n",
 		id, defRange.rsrc->baseAddr);
 
 	defRange.lock.readRelease(rwFlags2);
 
 	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
-		__kprintf((utf8Char *)"\tMem range: base 0x%X, size 0x%X.\n",
+		printf((utf8Char *)"\tMem range: base 0x%X, size 0x%X.\n",
 			cur->range->baseAddr, cur->range->size);
 
 		cur->range->dump();
@@ -129,7 +129,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	defRange.lock.writeRelease();
 	ranges.lock.writeRelease();
 
-	__kprintf(NOTICE NUMAMEMBANK"%d: New mem range: base 0x%X, size 0x%X, "
+	printf(NOTICE NUMAMEMBANK"%d: New mem range: base 0x%X, size 0x%X, "
 		"v 0x%X.\n",
 		id, baseAddr, size, memRange);
 
@@ -165,7 +165,7 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 			// Can release lock and free now.
 			ranges.lock.writeRelease();
 
-			__kprintf(NOTICE NUMAMEMBANK"%d: Destroying mem range: "
+			printf(NOTICE NUMAMEMBANK"%d: Destroying mem range: "
 				"base 0x%X, size 0x%X, v 0x%X.\n",
 				id, cur->range->baseAddr, cur->range->size,
 				cur->range);
@@ -187,7 +187,7 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 	ranges.lock.writeRelease();
 
 	// Memory range with this base address/contained address doesn't exist.
-	__kprintf(NOTICE NUMAMEMBANK"%d: Failed to remove range with base 0x%X."
+	printf(NOTICE NUMAMEMBANK"%d: Failed to remove range with base 0x%X."
 		"\n", id, baseAddr);
 
 	return ERROR_INVALID_ARG_VAL;
@@ -345,7 +345,7 @@ void numaMemoryBankC::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 
 	ranges.lock.readRelease(rwFlags);
 
-	__kprintf(WARNING NUMAMEMBANK"%d: releaseFrames(0x%X, %d) Pmem leak.\n",
+	printf(WARNING NUMAMEMBANK"%d: releaseFrames(0x%X, %d) Pmem leak.\n",
 		id, basePaddr, nFrames);
 }
 

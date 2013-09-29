@@ -123,7 +123,7 @@ acpi_rSratS *acpiRsdt::getNextSrat(
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_SRAT, 4) == 0)
 			&& (!checksumIsValid(sdt)))
 		{
-			__kprintf(WARNING ACPIR"SRAT with invalid checksum @P "
+			printf(WARNING ACPIR"SRAT with invalid checksum @P "
 				"0x%P.\n",
 				*handle);
 		};
@@ -163,7 +163,7 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
 			&& (!checksumIsValid(sdt)))
 		{
-			__kprintf(WARNING ACPIR"MADT with invalid checksum @P "
+			printf(WARNING ACPIR"MADT with invalid checksum @P "
 				"0x%P.\n",
 				*handle);
 		};
@@ -203,7 +203,7 @@ acpi_rFadtS *acpiRsdt::getNextFadt(
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
 			&& (!checksumIsValid(sdt)))
 		{
-			__kprintf(WARNING ACPIR"FADT with invalid checksum @P "
+			printf(WARNING ACPIR"FADT with invalid checksum @P "
 				"0x%P.\n",
 				*handle);
 		};
@@ -237,6 +237,6 @@ void acpiRsdt::destroySdt(acpi_sdtS *sdt)
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		(void *)((uintptr_t)sdt & PAGING_BASE_MASK_HIGH),
 		nPages);
-if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP)) {__kprintf(NOTICE"Destroying SDT @v 0x%p on CPU %d.\n", sdt, cpuTrib.getCurrentCpuStream()->cpuId);};
+if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP)) {printf(NOTICE"Destroying SDT @v 0x%p on CPU %d.\n", sdt, cpuTrib.getCurrentCpuStream()->cpuId);};
 }
 

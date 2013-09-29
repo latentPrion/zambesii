@@ -123,7 +123,7 @@ error_t memoryTribC::__kspaceInitialize(void)
 		*(__ret) = (__pb)->resizeTo((__n) + 1); \
 		if (*(__ret) != ERROR_SUCCESS) \
 		{ \
-			__kprintf(ERROR MEMTRIB"%s: resize failed on %s with " \
+			printf(ERROR MEMTRIB"%s: resize failed on %s with " \
 				"required capacity = %d.\n", \
 				__fn, __bn, __n); \
 		}; \
@@ -214,7 +214,7 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	/* Couldn't find a suitable bank. Probably the memory was hot swapped,
 	 * or there's corruption in the memory manager somewhere.
 	 **/
-	__kprintf(WARNING MEMTRIB"releaseFrames(0x%P, %d): pmem leak.\n",
+	printf(WARNING MEMTRIB"releaseFrames(0x%P, %d): pmem leak.\n",
 		paddr, nFrames);
 #else
 	currBank = getBank(defaultMemoryBank.rsrc);
@@ -223,7 +223,7 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	}
 	else
 	{
-		__kprintf(FATAL MEMTRIB"releaseFrames(0x%P, %d): Attempted to "
+		printf(FATAL MEMTRIB"releaseFrames(0x%P, %d): Attempted to "
 			"free to non-existent mem bank %d.\n",
 			paddr, nFrames, defaultAffinity.def.rsrc);
 	};
@@ -363,7 +363,7 @@ void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 	}
 	else
 	{
-		__kprintf(ERROR MEMTRIB"mapRangeUsed(0x%P, %d): attempt to "
+		printf(ERROR MEMTRIB"mapRangeUsed(0x%P, %d): attempt to "
 			"mark on non-existent bank %d.\n",
 			defaultAffinity.def.rsrc);
 	};
@@ -399,7 +399,7 @@ void memoryTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 	}
 	else
 	{
-		__kprintf(ERROR MEMTRIB"mapRangeUnused(0x%P, %d): attempt to "
+		printf(ERROR MEMTRIB"mapRangeUnused(0x%P, %d): attempt to "
 			"mark on non-existent bank %d.\n",
 			defaultAffinity.def.rsrc);
 	};

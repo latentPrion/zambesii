@@ -47,7 +47,7 @@ void *slamCacheC::getNewPage(sarch_t localFlush)
 			| ((localFlush) ? MEMALLOC_LOCAL_FLUSH_ONLY : 0));
 
 	default:
-		__kprintf(FATAL SLAMCACHE"getNewPage: Invalid allocator %d.\n",
+		printf(FATAL SLAMCACHE"getNewPage: Invalid allocator %d.\n",
 			allocator);
 
 		dump();
@@ -69,7 +69,7 @@ void slamCacheC::releasePage(void *vaddr)
 		return;
 
 	default:
-		__kprintf(FATAL SLAMCACHE"releasePage: Invalid allocator %d.\n",
+		printf(FATAL SLAMCACHE"releasePage: Invalid allocator %d.\n",
 			allocator);
 
 		dump();
@@ -83,10 +83,10 @@ void slamCacheC::dump(void)
 	objectS		*obj;
 	uarch_t		count;
 
-	__kprintf(NOTICE SLAMCACHE"Dumping; locks @ F: 0x%p/P: 0x%p.\n",
+	printf(NOTICE SLAMCACHE"Dumping; locks @ F: 0x%p/P: 0x%p.\n",
 		&freeList.lock, &partialList.lock);
 
-	__kprintf(NOTICE SLAMCACHE"Object size: %X, ppb %d, ppexcess %d, "
+	printf(NOTICE SLAMCACHE"Object size: %X, ppb %d, ppexcess %d, "
 		"FreeList: Pages:\n\t",
 		objectSize, perPageBlocks, perPageExcess);
 
@@ -95,12 +95,12 @@ void slamCacheC::dump(void)
 	freeList.lock.acquire();
 
 	for (obj = freeList.rsrc; obj != NULL; obj = obj->next, count++) {
-		__kprintf((utf8Char *)"v %X ", obj);
+		printf((utf8Char *)"v %X ", obj);
 	};
 
 	freeList.lock.release();
 
-	__kprintf((utf8Char*)"\n\t%d in total.\nPartialList: free objects:\n\t",
+	printf((utf8Char*)"\n\t%d in total.\nPartialList: free objects:\n\t",
 		count);
 
 	count = 0;
@@ -108,12 +108,12 @@ void slamCacheC::dump(void)
 	partialList.lock.acquire();
 
 	for (obj = partialList.rsrc; obj != NULL; obj = obj->next, count++) {
-		__kprintf((utf8Char *)"v %X, ", obj);
+		printf((utf8Char *)"v %X, ", obj);
 	};
 	
 	partialList.lock.release();
 
-	__kprintf((utf8Char *)"\n\t%d in all.\n", count);
+	printf((utf8Char *)"\n\t%d in all.\n", count);
 }
 
 /**	NOTE:

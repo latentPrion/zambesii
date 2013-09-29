@@ -270,7 +270,7 @@ void paddrToStrHex(paddr_t num, uarch_t *curLen, utf8Char *buff)
 	};
 }
 
-void __kprintf(const utf8Char *str, ...)
+void printf(const utf8Char *str, ...)
 {
 	va_list		args;
 
@@ -279,7 +279,7 @@ void __kprintf(const utf8Char *str, ...)
 	va_end(args);
 }
 
-void __kprintf(
+void printf(
 	sharedResourceGroupC<waitLockC, void *> *buff, uarch_t buffSize,
 	utf8Char *str, ...
 	)

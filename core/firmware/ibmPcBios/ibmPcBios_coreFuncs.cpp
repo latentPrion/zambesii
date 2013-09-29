@@ -33,7 +33,7 @@ error_t ibmPcBios::initialize(void)
 
 	if (M.mem_base == (uintptr_t)NULL)
 	{
-		__kprintf(ERROR FWFWS"initialize(): Failed to get %d pages for "
+		printf(ERROR FWFWS"initialize(): Failed to get %d pages for "
 			"lowmem buffer.\n", LOWMEM_NPAGES);
 
 		return ERROR_MEMORY_NOMEM_VIRTUAL;
@@ -54,7 +54,7 @@ error_t ibmPcBios::initialize(void)
 
 	if (nMapped < LOWMEM_NPAGES)
 	{
-		__kprintf(ERROR FWFWS"initialize(): Unable to map buff 0x%p to "
+		printf(ERROR FWFWS"initialize(): Unable to map buff 0x%p to "
 			"lowmem. %d of %d pages were mapped.\n",
 			M.mem_base, nMapped, LOWMEM_NPAGES);
 
@@ -68,7 +68,7 @@ error_t ibmPcBios::initialize(void)
 	M.x86.debug = 0;
 	M.x86.mode = 0;
 
-	__kprintf(NOTICE FWFWS"initialize(): Done. Lowmem 0x%p.\n",
+	printf(NOTICE FWFWS"initialize(): Done. Lowmem 0x%p.\n",
 		M.mem_base);
 
 	ibmPcBios_initialized = 1;

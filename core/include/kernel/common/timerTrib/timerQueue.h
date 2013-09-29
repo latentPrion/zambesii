@@ -115,7 +115,7 @@ private:
 			ret = enable();
 			if (ret != ERROR_SUCCESS)
 			{
-				__kprintf(NOTICE TIMERQUEUE"%dus: "
+				printf(NOTICE TIMERQUEUE"%dus: "
 					"installClockRoutine: Failed to enable "
 					"device.\n",
 					getNativePeriod() / 1000);
@@ -124,7 +124,7 @@ private:
 			};
 
 			device->softDisable();
-			__kprintf(NOTICE TIMERQUEUE"%dus: installClockRoutine: "
+			printf(NOTICE TIMERQUEUE"%dus: installClockRoutine: "
 				"softEnabled device \"%s\".\n",
 				getNativePeriod() / 1000,
 				device->getBaseDevice()->shortName);

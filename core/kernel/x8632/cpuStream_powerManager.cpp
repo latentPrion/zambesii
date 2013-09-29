@@ -40,7 +40,7 @@ static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 		{
 			if (!x86Mp::mapMpConfigTable())
 			{
-				__kprintf(WARNING CPUPWRMGR"%d: bootPowerOn: "
+				printf(WARNING CPUPWRMGR"%d: bootPowerOn: "
 					"Unable to map MP config table.\n",
 					cpuId);
 
@@ -49,7 +49,7 @@ static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 		}
 		else
 		{
-			__kprintf(NOTICE CPUPWRMGR"%d: bootPowerOn: No MP "
+			printf(NOTICE CPUPWRMGR"%d: bootPowerOn: No MP "
 				"tables; Assuming newer CPU and INIT-SIPI-SIPI."
 				"\n", cpuId);
 
@@ -73,7 +73,7 @@ static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 			&& !(cpu->lapicVersion & 0xF0))
 		{
 			isNewerCpu = 0;
-			__kprintf(WARNING CPUPWRMGR"%d: bootPowerOn: Old "
+			printf(WARNING CPUPWRMGR"%d: bootPowerOn: Old "
 				"non-integrated LAPIC.\n",
 				cpuId);
 		}
@@ -91,7 +91,7 @@ status_t cpuStreamC::powerManagerC::bootPowerOn(ubit32)
 
 	if (!cpuTrib.usingChipsetSmpMode())
 	{
-		__kprintf(ERROR CPUPWRMGR"%d: bootPowerOn: Attempt to "
+		printf(ERROR CPUPWRMGR"%d: bootPowerOn: Attempt to "
 			"power on a CPU with usingChipsetSmpMode=0!\n",
 			parent->cpuId);
 
@@ -107,7 +107,7 @@ status_t cpuStreamC::powerManagerC::bootPowerOn(ubit32)
 
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR CPUPWRMGR"%d: bootPowerOn: INIT IPI timed out."
+		printf(ERROR CPUPWRMGR"%d: bootPowerOn: INIT IPI timed out."
 			"\n", parent->cpuId);
 	};
 
@@ -150,7 +150,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 			if (cpuHasOlderNonIntegratedLapic(cs->cpuId))
 			{
 				cs->powerManager.setPowerStatus(FAILED_BOOT);
-				__kprintf(WARNING CPUPWRMGR"%d: CPU failed to "
+				printf(WARNING CPUPWRMGR"%d: CPU failed to "
 					"boot.\n",
 					cs->cpuId);
 
@@ -168,7 +168,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 
 				if (err != ERROR_SUCCESS)
 				{
-					__kprintf(ERROR CPUPWRMGR"%d: "
+					printf(ERROR CPUPWRMGR"%d: "
 						"bootPowerOn: SIPI1 timed out."
 						"\n", cs->cpuId);
 
@@ -199,7 +199,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 
 			if (err != ERROR_SUCCESS)
 			{
-				__kprintf(ERROR CPUPWRMGR"%d: bootPowerOn: "
+				printf(ERROR CPUPWRMGR"%d: bootPowerOn: "
 					"SIPI2 timed out.\n",
 					cs->cpuId);
 
@@ -219,15 +219,15 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 		case POWERING_ON_RETRY:
 			// Integrated LAPIC that failed to boot.
 			cs->powerManager.setPowerStatus(FAILED_BOOT);
-			__kprintf(WARNING CPUPWRMGR"%d: CPU failed to boot.\n",
+			printf(WARNING CPUPWRMGR"%d: CPU failed to boot.\n",
 				cs->cpuId);
 
 			break;
 
 		default:
-//__kprintf(NOTICE"After INIT ipi on CPU %d, local ints are %d, nLocks %d.\n", cs->cpuId, cpuControl::interruptsEnabled(), cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->nLocksHeld);
+//printf(NOTICE"After INIT ipi on CPU %d, local ints are %d, nLocks %d.\n", cs->cpuId, cpuControl::interruptsEnabled(), cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->nLocksHeld);
 			// CPU successfully booted.
-			__kprintf(NOTICE CPUPWRMGR"%d: Successfully booted.\n",
+			printf(NOTICE CPUPWRMGR"%d: Successfully booted.\n",
 				cs->cpuId);
 
 			break;

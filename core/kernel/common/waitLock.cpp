@@ -77,7 +77,7 @@ void waitLockC::acquire(void)
 		if (cid == CPUID_INVALID) { cid = 0; };
 		buffDescriptors[cid].rsrc = buffers[cid];
 
-		__kprintf(&buffDescriptors[cid], 1024,
+		printf(&buffDescriptors[cid], 1024,
 			FATAL"Deadlock detected.\n"
 			"\tCPU: %d, Lock obj addr: 0x%p. Calling function: 0x%p,\n"
 			"\tlock int addr: 0x%p, lockval: %d.\n",

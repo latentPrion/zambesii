@@ -6,7 +6,7 @@
 
 #define assert_warn(e)			\
 	(((e) == 0) \
-		? __kprintf(WARNING"Assertion failed: " \
+		? printf(WARNING"Assertion failed: " \
 			ASSERT_QUOTE(e) \
 			" on line " \
 			ASSERT_DUAL_QUOTE(__LINE__) \
@@ -18,7 +18,7 @@
 
 #define assert_error(e)			\
 	(((e) == 0) \
-		? __kprintf(ERROR"Assertion failed: " \
+		? printf(ERROR"Assertion failed: " \
 			ASSERT_QUOTE(e) \
 			" on line " \
 			ASSERT_DUAL_QUOTE(__LINE__) \

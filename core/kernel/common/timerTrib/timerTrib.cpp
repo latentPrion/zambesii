@@ -86,7 +86,7 @@ void timerTribC::initializeAllQueues(void)
 		ret = timerQueues[i]->initialize();
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR TIMERTRIB"initializeAllQueues: Period "
+			printf(ERROR TIMERTRIB"initializeAllQueues: Period "
 				"%dus failed to initialize.\n",
 				timerQueues[i]->getNativePeriod() / 1000);
 		};
@@ -128,7 +128,7 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 	 * kernel's timer queues.
 	 **/
 	dev->getPeriodicModeMinMaxPeriod(&min, &max);
-	__kprintf(NOTICE TIMERTRIB"newTimerDevice: \"%s\"; min %d, max %d.\n",
+	printf(NOTICE TIMERTRIB"newTimerDevice: \"%s\"; min %d, max %d.\n",
 		dev->getBaseDevice()->shortName, min.nseconds, max.nseconds);
 
 	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
@@ -143,7 +143,7 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 		{
 			if (timerQueues[i]->latch(dev) != ERROR_SUCCESS)
 			{
-				__kprintf(WARNING TIMERTRIB
+				printf(WARNING TIMERTRIB
 					"newTimerDeviceNotification: Queue %d"
 					"ns failed to latch.\n",
 					timerQueues[i]->getNativePeriod());
@@ -268,11 +268,11 @@ error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *reques
 
 	if (suboptimal == NULL)
 	{
-		__kprintf(FATAL TIMERTRIB"No timer queues are latched.\n");
+		printf(FATAL TIMERTRIB"No timer queues are latched.\n");
 		return ERROR_FATAL;
 	};
 
-	/*__kprintf(WARNING TIMERTRIB"Request placed into suboptimal queue %dus."
+	/*printf(WARNING TIMERTRIB"Request placed into suboptimal queue %dus."
 		"\n", suboptimal->getNativePeriod() / 1000);*/
 
 	return suboptimal->insert(request);
@@ -328,7 +328,7 @@ error_t timerTribC::initialize(void)
 	m = (bootTimestamp.time.seconds / 60) - (h * 60);
 	s = bootTimestamp.time.seconds % 60;
 
-	__kprintf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d, "
+	printf(NOTICE TIMERTRIB"Kernel boot timestamp: Date: %d-%d-%d, "
 		"Time %d:%d:%d, %dus.\n",
 		bootTimestamp.date.year,
 		bootTimestamp.date.month,
@@ -356,7 +356,7 @@ error_t timerTribC::initialize(void)
 	ret = eventProcessor.controlQueue.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	__kprintf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
+	printf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
 		"addr 0x%p, id 0x%x.\n",
 		eventProcessor.task, eventProcessor.tid);
 
@@ -414,7 +414,7 @@ void timerTribC::eventProcessorS::processQueueLatchedMessage(messageS *msg)
 	// Wait on the specified queue.
 	if (!getFreeWaitSlot(&slot))
 	{
-		__kprintf(ERROR TIMERTRIB"event DQer: failed to wait on "
+		printf(ERROR TIMERTRIB"event DQer: failed to wait on "
 			"timer Q %dus: no free slots.\n",
 			msg->timerQueue->getNativePeriod() / 1000);
 
@@ -428,7 +428,7 @@ void timerTribC::eventProcessorS::processQueueLatchedMessage(messageS *msg)
 	waitSlots[slot].eventQueue->setWaitingThread(
 		timerTrib.eventProcessor.task);
 
-	__kprintf(NOTICE TIMERTRIB"event DQer: Waiting on timerQueue %dus.\n\t"
+	printf(NOTICE TIMERTRIB"event DQer: Waiting on timerQueue %dus.\n\t"
 		"Allocated to slot %d.\n",
 		waitSlots[slot].timerQueue->getNativePeriod() / 1000, slot);
 }
@@ -437,14 +437,14 @@ void timerTribC::eventProcessorS::processQueueUnlatchedMessage(messageS *msg)
 {
 	// Stop waiting on the specified queue.
 	releaseWaitSlotFor(msg->timerQueue);
-	__kprintf(NOTICE TIMERTRIB"event DQer: no longer waiting on timerQueue "
+	printf(NOTICE TIMERTRIB"event DQer: no longer waiting on timerQueue "
 		"%dus.\n",
 		msg->timerQueue->getNativePeriod() / 1000);
 }
 
 void timerTribC::eventProcessorS::processExitMessage(messageS *)
 {
-	__kprintf(WARNING TIMERTRIB"event DQer: Got EXIT_THREAD message.\n");
+	printf(WARNING TIMERTRIB"event DQer: Got EXIT_THREAD message.\n");
 	/*UNIMPLEMENTED(
 		"timerTribC::"
 		"eventProcessorS::processExitMessage");*/
@@ -480,7 +480,7 @@ void timerTribC::eventProcessorS::thread(void *)
 	sarch_t				messagesWereFound;
 	error_t				err;
 
-	__kprintf(NOTICE TIMERTRIB"Event DQer thread has begun executing.\n");
+	printf(NOTICE TIMERTRIB"Event DQer thread has begun executing.\n");
 	for (;;)
 	{
 		messagesWereFound = 0;
@@ -512,7 +512,7 @@ void timerTribC::eventProcessorS::thread(void *)
 				break;
 
 			default:
-				__kprintf(NOTICE TIMERTRIB"event dqer thread: "
+				printf(NOTICE TIMERTRIB"event dqer thread: "
 					"invalid message type %d.\n",
 					currMsg->type);
 				break;
@@ -566,15 +566,15 @@ void timerTribC::eventProcessorS::thread(void *)
 
 void timerTribC::dump(void)
 {
-	__kprintf(NOTICE TIMERTRIB"Dumping.\n");
+	printf(NOTICE TIMERTRIB"Dumping.\n");
 
-	__kprintf(NOTICE"\tWatchdog: ");
+	printf(NOTICE"\tWatchdog: ");
 		if (watchdog.rsrc.isr == NULL) {
-			__kprintf((utf8Char *)"No.\n");
+			printf((utf8Char *)"No.\n");
 		}
 		else
 		{
-			__kprintf((utf8Char *)"Yes: isr addr: 0x%p, "
+			printf((utf8Char *)"Yes: isr addr: 0x%p, "
 				"interval: %ds,%dns\n",
 				watchdog.rsrc.isr,
 				watchdog.rsrc.interval.seconds,

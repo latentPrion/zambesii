@@ -17,7 +17,7 @@ static void lintParseRMadtForEntries(acpi_rMadtS *rmadt, cpuStreamC *parent)
 		if (nmiEntry->acpiLapicId == parent->cpuAcpiId
 			|| nmiEntry->acpiLapicId == ACPI_MADT_NMI_LAPICID_ALL)
 		{
-			__kprintf(NOTICE CPUSTREAM"%d: ACPI NMI: lint %d.\n",
+			printf(NOTICE CPUSTREAM"%d: ACPI NMI: lint %d.\n",
 				parent->cpuId, nmiEntry->lapicLint);
 
 			parent->lapic.lint.lintSetup(
@@ -53,7 +53,7 @@ int	i=0;
 i++;
 if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
 {
-	__kprintf(NOTICE"CPU %d: madt at 0x%p.\n", cpuTrib.getCurrentCpuStream()->cpuId, rmadt);
+	printf(NOTICE"CPU %d: madt at 0x%p.\n", cpuTrib.getCurrentCpuStream()->cpuId, rmadt);
 };
 		lintParseRMadtForEntries(rmadt, parent);
 
@@ -88,7 +88,7 @@ error_t x86LapicC::lintS::setupLints(cpuStreamC *parent)
 
 	if (x86Mp::mapMpConfigTable() == NULL)
 	{
-		__kprintf(WARNING x86LAPIC"Failed to map MP config table.\n");
+		printf(WARNING x86LAPIC"Failed to map MP config table.\n");
 		goto useAcpi;
 	};
 
@@ -99,7 +99,7 @@ error_t x86LapicC::lintS::setupLints(cpuStreamC *parent)
 		if (lintEntry->destLapicId == parent->cpuId
 			|| lintEntry->destLapicId == x86_MPCFG_LIRQSRC_DEST_ALL)
 		{
-			__kprintf(NOTICE CPUSTREAM"%d: MPCFG: lint %d, type %d."
+			printf(NOTICE CPUSTREAM"%d: MPCFG: lint %d, type %d."
 				"\n", parent->cpuId,
 				lintEntry->destLapicLint,
 				lintEntry->intType);
@@ -135,7 +135,7 @@ useAcpi:
 		{
 			if (acpi::mapRsdt() != ERROR_SUCCESS)
 			{
-				__kprintf(ERROR CPUSTREAM"%d: Unable to map "
+				printf(ERROR CPUSTREAM"%d: Unable to map "
 					"RSDT.\n",
 					parent->cpuId);
 

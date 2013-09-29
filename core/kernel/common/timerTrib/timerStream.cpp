@@ -206,7 +206,7 @@ void *timerStreamC::timerRequestTimeoutNotification(
 	event = new eventS;
 	if (event == NULL)
 	{
-		__kprintf(ERROR TIMERSTREAM"%d: Failed to allocate event for "
+		printf(ERROR TIMERSTREAM"%d: Failed to allocate event for "
 			"expired request.\n",
 			id);
 
@@ -240,7 +240,7 @@ void *timerStreamC::timerRequestTimeoutNotification(
 
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR TIMERSTREAM"%d: Failed to add expired event to "
+		printf(ERROR TIMERSTREAM"%d: Failed to add expired event to "
 			"thread 0x%x's queue.\n",
 			id,
 			(taskContext->contextType == task::PER_CPU)
@@ -278,7 +278,7 @@ void timerStreamC::timerRequestTimeoutNotification(void)
 
 	if (nextRequest == NULL)
 	{
-		__kprintf(FATAL TIMERSTREAM"0x%x: corrupt timer request list:\n"
+		printf(FATAL TIMERSTREAM"0x%x: corrupt timer request list:\n"
 			"\tpopFromHead() returned NULL when trying to remove "
 			"the old item.\n",
 			id);
@@ -298,7 +298,7 @@ void timerStreamC::timerRequestTimeoutNotification(void)
 	if (timerTrib.insertTimerQueueRequestObject(nextRequest)
 		!= ERROR_SUCCESS)
 	{
-		__kprintf(ERROR TIMERSTREAM"%d: Failed to insert the next "
+		printf(ERROR TIMERSTREAM"%d: Failed to insert the next "
 			"timer request object.\n",
 			id);
 	};

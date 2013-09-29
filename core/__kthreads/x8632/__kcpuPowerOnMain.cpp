@@ -60,10 +60,10 @@ void __kcpuPowerOnMain(cpuStreamC *self)
 	// After "bind", the CPU will be able to allocate, etc. normally.
 	err = self->bind();
 	if (err != ERROR_SUCCESS) {
-		__kprintf(FATAL CPUPOWER"%d: Failed to bind().\n", self->cpuId);
+		printf(FATAL CPUPOWER"%d: Failed to bind().\n", self->cpuId);
 	};
 
-	/*__kprintf(NOTICE CPUPOWER"CPU %d: Sleepstack: 0x%x. Regdump:\n"
+	/*printf(NOTICE CPUPOWER"CPU %d: Sleepstack: 0x%x. Regdump:\n"
 		"\teax 0x%x, ebx 0x%x, ecx 0x%x, edx 0x%x\n"
 		"\tesi 0x%x, edi 0x%x, esp 0x%x, ebp 0x%x\n"
 		"\tcs 0x%x, ds 0x%x, es 0x%x, fs 0x%x, gs 0x%x, ss 0x%x\n"

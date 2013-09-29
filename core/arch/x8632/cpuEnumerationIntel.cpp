@@ -184,7 +184,7 @@ static status_t intelSignatureLookup(utf8Char **cpuNames, ubit32 sigLowModel)
 {
 	if (cpuNames[sigLowModel] == NULL)
 	{
-		__kprintf(ERROR INTELENUM"%d: CPU name unclear.\n",
+		printf(ERROR INTELENUM"%d: CPU name unclear.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		strcpy8(
@@ -285,7 +285,7 @@ static status_t intelBrandIdEnum(ubit32 brandId)
 {
 	if (brandIds[brandId] == NULL)
 	{
-		__kprintf(ERROR INTELENUM"Invalid CPU brand ID %d.\n", brandId);
+		printf(ERROR INTELENUM"Invalid CPU brand ID %d.\n", brandId);
 		return CPUENUM_CPU_MODEL_UNKNOWN;
 	};
 
@@ -304,7 +304,7 @@ status_t intelBrandStringEnum(void)
 	brandString = new utf8Char[49];
 	if (brandString == NULL)
 	{
-		__kprintf(ERROR INTELENUM"Unable to allocate room for brand "
+		printf(ERROR INTELENUM"Unable to allocate room for brand "
 			"string.\n");
 
 		return CPUENUM_CPU_MODEL_UNKNOWN;
@@ -348,7 +348,7 @@ status_t x86CpuEnumeration::intel(void)
 	// Kernel's x86 port supports i486+.
 	if (!x8632_verifyCpuIsI486OrHigher())
 	{
-		__kprintf(ERROR INTELENUM"%d: This CPU is i386 or lower.\n",
+		printf(ERROR INTELENUM"%d: This CPU is i386 or lower.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		return CPUSTREAM_ENUMERATE_UNSUPPORTED_CPU;
@@ -358,7 +358,7 @@ status_t x86CpuEnumeration::intel(void)
 	execCpuid(0x8000000, &eax, &ebx, &ecx, &edx);
 	if (eax >= 0x80000004)
 	{
-		__kprintf(NOTICE INTELENUM"%d: CPUID[0x8000000] brand string "
+		printf(NOTICE INTELENUM"%d: CPUID[0x8000000] brand string "
 			"supported.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
@@ -372,7 +372,7 @@ status_t x86CpuEnumeration::intel(void)
 	sig = eax;
 	if ((brandId = ebx & 0x7F) != 0)
 	{
-		__kprintf(NOTICE INTELENUM"%d: CPUID[1] brand ID supported.\n",
+		printf(NOTICE INTELENUM"%d: CPUID[1] brand ID supported.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		if (intelBrandIdEnum(brandId) == ERROR_SUCCESS) {
@@ -385,7 +385,7 @@ status_t x86CpuEnumeration::intel(void)
 	if (ret != ERROR_SUCCESS)
 	{
 		// Place the manual old style enum code here later.
-		__kprintf(ERROR INTELENUM"%d: CPU model unknown.\n",
+		printf(ERROR INTELENUM"%d: CPU model unknown.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
 
 		strcpy8(

@@ -16,7 +16,7 @@ status_t zkcmIrqControlModC::bpmC::loadBusPinMappings(utf8Char *bus)
 	// The ACPI BPM function will generally find out where SCI is mapped.
 	if (strcmp8(bus, CC"pci") == 0 || strcmp8(bus, CC"acpi") == 0)
 	{
-		__kprintf(FATAL IBMPCBPM"PCI and ACPI buses are not yet "
+		printf(FATAL IBMPCBPM"PCI and ACPI buses are not yet "
 			"supported.\n");
 
 		return IRQCTL_BPM_UNSUPPORTED_BUS;
@@ -36,7 +36,7 @@ error_t zkcmIrqControlModC::bpmC::get__kpinFor(
 	// The ACPI BPM function will generally find out where SCI is mapped.
 	if (strcmp8(bus, CC"pci") == 0 || strcmp8(bus, CC"acpi") == 0)
 	{
-		__kprintf(FATAL IBMPCBPM"PCI and ACPI buses are not yet "
+		printf(FATAL IBMPCBPM"PCI and ACPI buses are not yet "
 			"supported.\n");
 
 		return IRQCTL_BPM_UNSUPPORTED_BUS;
@@ -58,7 +58,7 @@ status_t zkcmIrqControlModC::bpmC::maskIrq(utf8Char *bus, ubit32 busIrqId)
 	// The ACPI BPM function will generally find out where SCI is mapped.
 	if (strcmp8(bus, CC"pci") == 0 || strcmp8(bus, CC"acpi") == 0)
 	{
-		__kprintf(FATAL IBMPCBPM"PCI and ACPI buses are not yet "
+		printf(FATAL IBMPCBPM"PCI and ACPI buses are not yet "
 			"supported.\n");
 
 		return IRQCTL_BPM_UNSUPPORTED_BUS;
@@ -76,7 +76,7 @@ status_t zkcmIrqControlModC::bpmC::unmaskIrq(utf8Char *bus, ubit32 busIrqId)
 	// The ACPI BPM function will generally find out where SCI is mapped.
 	if (strcmp8(bus, CC"pci") == 0 || strcmp8(bus, CC"acpi") == 0)
 	{
-		__kprintf(FATAL IBMPCBPM"PCI and ACPI buses are not yet "
+		printf(FATAL IBMPCBPM"PCI and ACPI buses are not yet "
 			"supported.\n");
 
 		return IRQCTL_BPM_UNSUPPORTED_BUS;

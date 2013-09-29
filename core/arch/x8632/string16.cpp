@@ -8,7 +8,7 @@ void *memset16(void *_ptr, int value, size_t count)
 {
 	if (_ptr == NULL)
 	{
-		__kprintf(FATAL"memset16: dest 0x%p, caller 0x%x.\n",
+		printf(FATAL"memset16: dest 0x%p, caller 0x%x.\n",
 			_ptr, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -24,7 +24,7 @@ void *memcpy16(void *dest, void *src, size_t count)
 {
 	if (dest == NULL || src == NULL)
 	{
-		__kprintf(FATAL"memcpy16: dest 0x%p, src 0x%p, caller 0x%x.\n",
+		printf(FATAL"memcpy16: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -42,7 +42,7 @@ utf16Char *strcpy16(utf16Char *dest, const utf16Char *src)
 
 	if (dest == NULL || src == NULL)
 	{
-		__kprintf(FATAL"strcpy16: dest 0x%p, src 0x%p, caller 0x%x.\n",
+		printf(FATAL"strcpy16: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -59,7 +59,7 @@ utf16Char *strncpy16(utf16Char *dest, const utf16Char *src, size_t count)
 {
 	if (dest == NULL || src == NULL)
 	{
-		__kprintf(FATAL"strncpy16: dest 0x%p, src 0x%p, caller 0x%x.\n",
+		printf(FATAL"strncpy16: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -80,7 +80,7 @@ size_t strlen16(const utf16Char *str)
 
 	if (str == NULL)
 	{
-		__kprintf(FATAL"strlen16: str 0x%p, caller 0x%x.\n",
+		printf(FATAL"strlen16: str 0x%p, caller 0x%x.\n",
 			str, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -96,7 +96,7 @@ int strcmp16(const utf16Char *str1, const utf16Char *str2)
 
 	if (str1 == NULL || str2 == NULL)
 	{
-		__kprintf(FATAL"strcmp16: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+		printf(FATAL"strcmp16: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -121,7 +121,7 @@ int strncmp16(const utf16Char *str1, const utf16Char *str2, int count)
 
 	if (str1 == NULL || str2 == NULL)
 	{
-		__kprintf(FATAL"strcpy16: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+		printf(FATAL"strcpy16: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -150,7 +150,7 @@ size_t strnlen16(const utf16Char *str1, size_t maxLen)
 
 	if (str1 == NULL)
 	{
-		__kprintf(FATAL"strnlen16: str1 0x%p, caller 0x%x.\n",
+		printf(FATAL"strnlen16: str1 0x%p, caller 0x%x.\n",
 			str1, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);

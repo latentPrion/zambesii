@@ -80,7 +80,7 @@ status_t x8632_machine_check(registerContextC *, ubit8)
 
 status_t x8632_reserved_vector(registerContextC *, ubit8)
 {
-	__kprintf(WARNING"Interrupt came in on reserved x86-32 vector.\n");
+	printf(WARNING"Interrupt came in on reserved x86-32 vector.\n");
 	return ERROR_SUCCESS;
 }
 

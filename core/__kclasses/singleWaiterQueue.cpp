@@ -37,7 +37,7 @@ error_t singleWaiterQueueC::addItem(void *item)
 
 			lock.release();
 
-			__kprintf(NOTICE SWAITQ"Failed to unblock task 0x%x.\n",
+			printf(NOTICE SWAITQ"Failed to unblock task 0x%x.\n",
 				thread->getFullId());
 
 			return ret;
@@ -87,7 +87,7 @@ error_t singleWaiterQueueC::setWaitingThread(threadC *newThread)
 	if (thread != NULL
 		&& thread->parent->id != newThread->parent->id)
 	{
-		__kprintf(WARNING SWAITQ"Failed to allow task 0x%x to "
+		printf(WARNING SWAITQ"Failed to allow task 0x%x to "
 			"wait.\n",
 			newThread->getFullId());
 

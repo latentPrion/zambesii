@@ -294,20 +294,20 @@ error_t threadC::allocateStacks(void)
 
 	if (stack0 == NULL)
 	{
-		__kprintf(ERROR TASK"0x%x: kernel stack alloc failed.\n", id);
+		printf(ERROR TASK"0x%x: kernel stack alloc failed.\n", id);
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	// Don't allocate a user stack for kernel- and per-cpu- threads.
 	if (parent->execDomain == PROCESS_EXECDOMAIN_KERNEL)
-		{ __kprintf(NOTICE"Not a user process. No stack1 allocated.\n"); return ERROR_SUCCESS; };
+		{ printf(NOTICE"Not a user process. No stack1 allocated.\n"); return ERROR_SUCCESS; };
 
 	// Allocate the stack from the parent process' memory stream.
 	stack1 = parent->memoryStream.memAlloc(CHIPSET_MEMORY_USERSTACK_NPAGES);
 	if (stack1 == NULL)
 	{
 		processTrib.__kgetStream()->memoryStream.memFree(stack0);
-		__kprintf(ERROR TASK"0x%x: failed to alloc user stack.\n", id);
+		printf(ERROR TASK"0x%x: failed to alloc user stack.\n", id);
 		return ERROR_MEMORY_NOMEM;
 	};
 

@@ -8,7 +8,7 @@ void *memset8(void *_ptr, int value, size_t count)
 {
 	if (_ptr == NULL)
 	{
-		__kprintf(FATAL"memset8: dest 0x%p, caller 0x%x.\n",
+		printf(FATAL"memset8: dest 0x%p, caller 0x%x.\n",
 			_ptr, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -24,7 +24,7 @@ void *memcpy8(void *dest, void *src, size_t count)
 {
 	if (dest == NULL || src == NULL)
 	{
-		__kprintf(FATAL"memcpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
+		printf(FATAL"memcpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -42,7 +42,7 @@ utf8Char *strcpy8(utf8Char *dest, const utf8Char *src)
 
 	if (dest == NULL || src == NULL)
 	{
-		__kprintf(FATAL"strcpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
+		printf(FATAL"strcpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -60,7 +60,7 @@ utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count)
 {
 	if (dest == NULL || src == NULL)
 	{
-		__kprintf(FATAL"strncpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
+		printf(FATAL"strncpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -84,7 +84,7 @@ size_t strlen8(const utf8Char *str)
 
 	if (str == NULL)
 	{
-		__kprintf(FATAL"strlen8: str 0x%p, caller 0x%x.\n",
+		printf(FATAL"strlen8: str 0x%p, caller 0x%x.\n",
 			str, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -100,7 +100,7 @@ int strcmp8(const utf8Char *str1, const utf8Char *str2)
 
 	if (str1 == NULL || str2 == NULL)
 	{
-		__kprintf(FATAL"strcmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+		printf(FATAL"strcmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -126,7 +126,7 @@ int strncmp8(const utf8Char *str1, const utf8Char *str2, int count)
 
 	if (str1 == NULL || str2 == NULL)
 	{
-		__kprintf(FATAL"strncmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+		printf(FATAL"strncmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -158,7 +158,7 @@ size_t strnlen8(const utf8Char *str1, size_t maxLen)
 
 	if (str1 == NULL)
 	{
-		__kprintf(FATAL"strnlen8: str1 0x%p, caller 0x%x.\n",
+		printf(FATAL"strnlen8: str1 0x%p, caller 0x%x.\n",
 			str1, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);

@@ -93,7 +93,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	// See if we need to return a default config.
 	if (cache.fp->features[0] != 0)
 	{
-		__kprintf(NOTICE x86MP"MP FP indicates default config %d.\n",
+		printf(NOTICE x86MP"MP FP indicates default config %d.\n",
 			cache.fp->features[0]);
 
 		cache.cfg = x86_mpCfgDefaults[cache.fp->features[0]];
@@ -109,7 +109,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 
 	if (ret == NULL)
 	{
-		__kprintf(ERROR x86MP"mapMpCfgTable: Failed to map.\n");
+		printf(ERROR x86MP"mapMpCfgTable: Failed to map.\n");
 		return NULL;
 	};
 
@@ -119,7 +119,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	// First ensure that the table's checksum is valid.
 	if (!checksumIsValid(ret))
 	{
-		__kprintf(WARNING x86MP"mapMpCfgTable: Invalid checksum.\n");
+		printf(WARNING x86MP"mapMpCfgTable: Invalid checksum.\n");
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			ret, 1);
 
@@ -136,7 +136,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 
 	if (ret == NULL)
 	{
-		__kprintf(ERROR x86MP"mapMpCfgTable: Failed to map.\n");
+		printf(ERROR x86MP"mapMpCfgTable: Failed to map.\n");
 		return NULL;
 	};
 
@@ -145,7 +145,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	cache.lapicPaddr = cache.cfg->lapicPaddr;
 	cache.nCfgEntries = ret->nEntries;
 
-	__kprintf(NOTICE x86MP"Mapped MP Config table to 0x%p, %d pages. %d "
+	printf(NOTICE x86MP"Mapped MP Config table to 0x%p, %d pages. %d "
 		"entries in MP config.\n",
 		ret, cfgNPages, ret->nEntries);
 
@@ -308,7 +308,7 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 			break;
 
 		default: // This should NEVER be reached.
-			__kprintf(ERROR x86MP"Encountered CFG entry with "
+			printf(ERROR x86MP"Encountered CFG entry with "
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
@@ -377,7 +377,7 @@ x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 			break;
 
 		default: // This should NEVER be reached.
-			__kprintf(ERROR x86MP"Encountered CFG entry with "
+			printf(ERROR x86MP"Encountered CFG entry with "
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
@@ -446,7 +446,7 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 			break;
 
 		default: // This should NEVER be reached.
-			__kprintf(ERROR x86MP"Encountered CFG entry with "
+			printf(ERROR x86MP"Encountered CFG entry with "
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
@@ -517,7 +517,7 @@ x86_mpCfgLocalIrqSourceS *x86Mp::getNextLocalIrqSourceEntry(
 			break;
 
 		default: // This should NEVER be reached.
-			__kprintf(ERROR x86MP"Encountered CFG entry with "
+			printf(ERROR x86MP"Encountered CFG entry with "
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
@@ -588,7 +588,7 @@ x86_mpCfgIrqSourceS *x86Mp::getNextIrqSourceEntry(
 			break;
 
 		default: // This should NEVER be reached.
-			__kprintf(ERROR x86MP"Encountered CFG entry with "
+			printf(ERROR x86MP"Encountered CFG entry with "
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 

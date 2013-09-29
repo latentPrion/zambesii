@@ -29,10 +29,10 @@ void vfsDirInodeC::dumpSubDirs(void)
 
 	subDirs.lock.acquire();
 
-	__kprintf(NOTICE"Subdirs: %d.\n", nSubDirs);
+	printf(NOTICE"Subdirs: %d.\n", nSubDirs);
 	for (curDir = subDirs.rsrc; curDir != NULL; curDir = curDir->next)
 	{
-		__kprintf(NOTICE"\tName: %s, Refcount: %d.\n",
+		printf(NOTICE"\tName: %s, Refcount: %d.\n",
 			curDir->name, curDir->refCount);
 	};
 
@@ -45,10 +45,10 @@ void vfsDirInodeC::dumpFiles(void)
 
 	files.lock.acquire();
 
-	__kprintf(NOTICE"Files: %d.\n", nFiles);
+	printf(NOTICE"Files: %d.\n", nFiles);
 	for (curFile = files.rsrc; curFile != NULL; curFile = curFile->next)
 	{
-		__kprintf(NOTICE"\tName: %s, Refcount: %d.\n",
+		printf(NOTICE"\tName: %s, Refcount: %d.\n",
 			curFile->name, curFile->refCount);
 	};
 

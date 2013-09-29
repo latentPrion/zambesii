@@ -93,7 +93,7 @@ struct dateS
  * h = myTime.seconds / 3600;
  * m = myTime.seconds / 60 - (h * 60);
  * s = myTime.seconds % 60;
- * __kprintf(NOTICE"Current time %02d:%02d:%02d, %dns.",
+ * printf(NOTICE"Current time %02d:%02d:%02d, %dns.",
  *	h, m, s, myTime.nseconds);
  **/
 struct timeS

@@ -61,7 +61,7 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 	// Caller has determined that there is an RSDT present on the chipset.
 	if (acpi::mapRsdt() != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE CPUMOD"getNumaMap(): Failed to map in the "
+		printf(NOTICE CPUMOD"getNumaMap(): Failed to map in the "
 			"RSDT.\n");
 
 		return NULL;
@@ -88,7 +88,7 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
-	__kprintf(NOTICE CPUMOD"getNumaMap(): %d LAPIC SRAT entries.\n",
+	printf(NOTICE CPUMOD"getNumaMap(): %d LAPIC SRAT entries.\n",
 		nEntries);
 
 	// If there are no NUMA CPUs, return.
@@ -98,7 +98,7 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 	ret = new zkcmNumaMapS;
 	if (ret == NULL)
 	{
-		__kprintf(ERROR CPUMOD"getNumaMap(): Failed to allocate room "
+		printf(ERROR CPUMOD"getNumaMap(): Failed to allocate room "
 			"for CPU NUMA map, or 0 entries found.\n");
 
 		return NULL;
@@ -108,7 +108,7 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 	if (ret->cpuEntries == NULL)
 	{
 		delete ret;
-		__kprintf(ERROR CPUMOD"getNumaMap(): Failed to alloc "
+		printf(ERROR CPUMOD"getNumaMap(): Failed to alloc "
 			"NUMA CPU map entries.\n");
 
 		return NULL;
@@ -181,7 +181,7 @@ zkcmNumaMapS *zkcmCpuDetectionModC::getNumaMap(void)
 #endif
 	if (acpi::testForRsdt())
 	{
-		__kprintf(NOTICE CPUMOD"getNumaMap(): Falling back to RSDT.\n");
+		printf(NOTICE CPUMOD"getNumaMap(): Falling back to RSDT.\n");
 		return ibmPc_cm_rGnm();
 	};
 
@@ -220,16 +220,16 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 	// acpi::initializeCache();
 	if (acpi::findRsdp() != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE SMPINFO"getSmpMap: No ACPI. Trying MP.\n");
+		printf(NOTICE SMPINFO"getSmpMap: No ACPI. Trying MP.\n");
 		goto tryMpTables;
 	};
 
 	if (!acpi::testForRsdt())
 	{
-		__kprintf(WARNING SMPINFO"getSmpMap: ACPI, but no RSDT.\n");
+		printf(WARNING SMPINFO"getSmpMap: ACPI, but no RSDT.\n");
 		if (acpi::testForXsdt())
 		{
-			__kprintf(WARNING SMPINFO"getSmpMap: XSDT found. "
+			printf(WARNING SMPINFO"getSmpMap: XSDT found. "
 				"Consider using 64-bit build for XSDT.\n");
 		}
 		goto tryMpTables;
@@ -237,7 +237,7 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 
 	if (acpi::mapRsdt() != ERROR_SUCCESS)
 	{
-		__kprintf(NOTICE SMPINFO"getSmpMap: ACPI: Failed to map RSDT."
+		printf(NOTICE SMPINFO"getSmpMap: ACPI: Failed to map RSDT."
 			"\n");
 
 		goto tryMpTables;
@@ -266,13 +266,13 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 	};
 
-	__kprintf(NOTICE SMPINFO"getSmpMap: ACPI: %d valid CPU entries.\n",
+	printf(NOTICE SMPINFO"getSmpMap: ACPI: %d valid CPU entries.\n",
 		nEntries);
 
 	ret = new zkcmSmpMapS;
 	if (ret == NULL)
 	{
-		__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map.\n");
+		printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map.\n");
 		return NULL;
 	};
 
@@ -280,7 +280,7 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 	if (ret->entries == NULL)
 	{
 		delete ret;
-		__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map "
+		printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map "
 			"entries.\n");
 
 		return NULL;
@@ -307,7 +307,7 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 				i++;
 				continue;
 			};
-			__kprintf(NOTICE SMPINFO"getSmpMap: ACPI: Skipping "
+			printf(NOTICE SMPINFO"getSmpMap: ACPI: Skipping "
 				"un-enabled CPU %d, ACPI ID %d.\n",
 				madtCpu->lapicId, madtCpu->acpiLapicId);
 		};
@@ -321,19 +321,19 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 
 tryMpTables:
 
-	__kprintf(NOTICE SMPINFO"getSmpMap: Falling back to MP tables.\n");
+	printf(NOTICE SMPINFO"getSmpMap: Falling back to MP tables.\n");
 	x86Mp::initializeCache();
 	if (!x86Mp::mpFpFound())
 	{
 		if (x86Mp::findMpFp() == NULL)
 		{
-			__kprintf(NOTICE SMPINFO"getSmpMap: No MP tables.\n");
+			printf(NOTICE SMPINFO"getSmpMap: No MP tables.\n");
 			return NULL;
 		};
 
 		if (x86Mp::mapMpConfigTable() == NULL)
 		{
-			__kprintf(ERROR SMPINFO"getSmpMap: Unable to map MP "
+			printf(ERROR SMPINFO"getSmpMap: Unable to map MP "
 				"Config tables.\n");
 
 			return NULL;
@@ -353,13 +353,13 @@ tryMpTables:
 			};
 		};
 
-		__kprintf(NOTICE SMPINFO"getSmpMap: %d valid CPU entries in MP "
+		printf(NOTICE SMPINFO"getSmpMap: %d valid CPU entries in MP "
 			"config tables.\n", nEntries);
 
 		ret = new zkcmSmpMapS;
 		if (ret == NULL)
 		{
-			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
+			printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
 				"Map.\n");
 
 			return NULL;
@@ -368,7 +368,7 @@ tryMpTables:
 		ret->entries = new zkcmSmpMapEntryS[nEntries];
 		if (ret->entries == NULL)
 		{
-			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
+			printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
 				"map entries.\n");
 
 			delete ret;
@@ -400,7 +400,7 @@ tryMpTables:
 				};
 				continue;
 			};
-			__kprintf(NOTICE SMPINFO"getSmpMap: Skipping un-enabled"
+			printf(NOTICE SMPINFO"getSmpMap: Skipping un-enabled"
 				" CPU %d in MP tables.\n",
 				mpCpu->lapicId);
 
@@ -445,7 +445,7 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 	lapic = &cpuTrib.getCurrentCpuStream()->lapic;
 	if (!lapic->cpuHasLapic())
 	{
-		__kprintf(ERROR CPUMOD"checkSmpSanity(): BSP has no LAPIC.\n");
+		printf(ERROR CPUMOD"checkSmpSanity(): BSP has no LAPIC.\n");
 		return 0;
 	};
 
@@ -460,7 +460,7 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 	acpi::initializeCache();
 	if (acpi::findRsdp() != ERROR_SUCCESS)
 	{
-		__kprintf(WARNING CPUMOD"checkSmpSanity(): No ACPI tables.\n");
+		printf(WARNING CPUMOD"checkSmpSanity(): No ACPI tables.\n");
 		goto checkForMpTables;
 	};
 
@@ -471,7 +471,7 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 	{
 		if (acpi::mapRsdt() != ERROR_SUCCESS)
 		{
-			__kprintf(WARNING CPUMOD"checkSmpSanity: Failed to map "
+			printf(WARNING CPUMOD"checkSmpSanity: Failed to map "
 				"RSDT.\n");
 
 			goto checkForMpTables;
@@ -483,7 +483,7 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 		// Warn if no MADT.
 		if (madt == NULL) {
-			__kprintf(WARNING CPUMOD"checkSmpSanity: No MADT.\n");
+			printf(WARNING CPUMOD"checkSmpSanity: No MADT.\n");
 		}
 		else
 		{
@@ -496,7 +496,7 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 			}
 			else
 			{
-				__kprintf(WARNING CPUMOD"checkSmpSanity: No "
+				printf(WARNING CPUMOD"checkSmpSanity: No "
 					"MADT IO-APIC Entries.\n");
 			};
 		};
@@ -508,7 +508,7 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 checkForMpTables:
 	x86Mp::initializeCache();
 	if (x86Mp::findMpFp() == NULL) {
-		__kprintf(WARNING CPUMOD"checkSmpSanity(): No MP tables.\n");
+		printf(WARNING CPUMOD"checkSmpSanity(): No MP tables.\n");
 	};
 
 	// Now check for at least one MP table platform interrupt source entry.
@@ -520,7 +520,7 @@ checkForMpTables:
 	}
 	else
 	{
-		__kprintf(WARNING CPUMOD"checkSmpSanity: No MP table IRQ "
+		printf(WARNING CPUMOD"checkSmpSanity: No MP table IRQ "
 			"source entries.\n");
 	};
 
@@ -529,7 +529,7 @@ checkForMpTables:
 	}
 	else
 	{
-		__kprintf(WARNING CPUMOD"checkSmpSanity: No MP Table IO-APIC "
+		printf(WARNING CPUMOD"checkSmpSanity: No MP Table IO-APIC "
 			"entries.\n");
 	};
 
@@ -546,7 +546,7 @@ checkForMpTables:
 	 **/
 	if (!haveMpTableIrqSources && !haveAcpiIrqSources)
 	{
-		__kprintf(ERROR CPUMOD"checkSmpSanity: No MP table IRQ "
+		printf(ERROR CPUMOD"checkSmpSanity: No MP table IRQ "
 			"sources, and no ACPICA ported yet.\n");
 
 		// Should eventually "return 0" here when ACPICA is ported.
@@ -554,7 +554,7 @@ checkForMpTables:
 
 	if (!haveMpTableIoApics && !haveAcpiIoApics)
 	{
-		__kprintf(ERROR CPUMOD"checkSmpSanity: Anomally:\n\t"
+		printf(ERROR CPUMOD"checkSmpSanity: Anomally:\n\t"
 			"Your kernel was configured for multiprocessor "
 			"operation\n\tbut it has no IO-APICs. The kernel must "
 			"refuse MP operation\n\ton this board.\n");
@@ -575,7 +575,7 @@ cpu_t zkcmCpuDetectionModC::getBspId(void)
 		// We expect to be executing on the BSP, or this won't work.
 		if (!lapic->cpuHasLapic())
 		{
-			__kprintf(NOTICE CPUMOD"getBspId: BSP CPU has no "
+			printf(NOTICE CPUMOD"getBspId: BSP CPU has no "
 				"LAPIC. Assigning fake ID of 0.\n");
 
 			ibmPcState.bspInfo.bspId = (cpu_t)0;
@@ -633,7 +633,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	ret = chipsetMemAreas::mapArea(CHIPSET_MEMAREA_LOWMEM);
 	if (ret != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR CPUMOD"setSmpMode(): Failed to map lowmem.\n");
+		printf(ERROR CPUMOD"setSmpMode(): Failed to map lowmem.\n");
 		return ret;
 	};
 
@@ -661,7 +661,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	copySize = (uarch_t)&__kcpuPowerOnTextEnd
 		- (uarch_t)&__kcpuPowerOnTextStart;
 
-	__kprintf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup code: 0x%p "
+	printf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup code: 0x%p "
 		"to 0x%p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
@@ -675,7 +675,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	copySize = (uarch_t)&__kcpuPowerOnDataEnd
 		- (uarch_t)&__kcpuPowerOnDataStart;
 
-	__kprintf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup data: 0x%p "
+	printf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup data: 0x%p "
 		"to 0x%p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
@@ -694,7 +694,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	 **/
 	if (i8254Pit.isEnabled()) { i8254WasEnabled = 1; };
 	if (i8254Pit.isSoftEnabled()) { i8254WasSoftEnabled = 1; };
-	__kprintf(NOTICE CPUMOD"setSmpMode: i8254: wasEnabled=%d, "
+	printf(NOTICE CPUMOD"setSmpMode: i8254: wasEnabled=%d, "
 		"wasSoftEnabled=%d.\n",
 		i8254WasEnabled, i8254WasSoftEnabled);
 
@@ -702,7 +702,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 		cpuTrib.getCurrentCpuStream()
 			->taskStream.getCurrentTaskId());
 
-	__kprintf(NOTICE CPUMOD"setSmpMode: Waiting for devices to disable.\n");
+	printf(NOTICE CPUMOD"setSmpMode: Waiting for devices to disable.\n");
 	if (i8254WasEnabled)
 	{
 		i8254Pit.disable();
@@ -729,13 +729,13 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 		io::write8(0x22, 0x70);
 		io::write8(0x23, 0x1);
 		cpuControl::safeEnableInterrupts(cpuFlags);
-		__kprintf(NOTICE CPUMOD"setSmpMode: chipset was in PIC "
+		printf(NOTICE CPUMOD"setSmpMode: chipset was in PIC "
 			"mode.\n");
 	}
 	else
 	{
 		ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_SMP;
-		__kprintf(NOTICE CPUMOD"setSmpMode: chipset was in Virtual "
+		printf(NOTICE CPUMOD"setSmpMode: chipset was in Virtual "
 			"wire mode.\n");
 	};
 
@@ -744,13 +744,13 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 		zkcmCore.irqControl.bpm.loadBusPinMappings(CC"isa")
 			== ERROR_SUCCESS);
 
-	__kprintf(NOTICE CPUMOD"setSmpMode: Re-enabling devices.\n");
+	printf(NOTICE CPUMOD"setSmpMode: Re-enabling devices.\n");
 	if (i8254WasEnabled)
 	{
 		ret = i8254Pit.enable();
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR CPUMOD"setSmpMode: i8254 enable() "
+			printf(ERROR CPUMOD"setSmpMode: i8254 enable() "
 				"failed.\n");
 
 			return ret;

@@ -33,7 +33,7 @@ static void rDumpSrat(void)
 	uarch_t		nSrats;
 
 	rsdt = acpi::getRsdt();
-	__kprintf(NOTICE"RSDT mapped to 0x%p.\n", rsdt);
+	printf(NOTICE"RSDT mapped to 0x%p.\n", rsdt);
 
 	context = handle = NULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
@@ -44,7 +44,7 @@ static void rDumpSrat(void)
 		void			*handle2;
 		uarch_t			nCpuEntries;
 
-		__kprintf(NOTICE"Srat #%d, at vaddr 0x%p. CPU entries:\n",
+		printf(NOTICE"Srat #%d, at vaddr 0x%p. CPU entries:\n",
 			nSrats, srat);
 
 		handle2 = NULL;
@@ -53,7 +53,7 @@ static void rDumpSrat(void)
 			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2),
 				nCpuEntries++)
 		{
-			__kprintf(NOTICE"Entry %d: bank %d cpuid %d "
+			printf(NOTICE"Entry %d: bank %d cpuid %d "
 				"firmware-enabled? %s.\n",
 				nCpuEntries,
 				cpuEntry->domain0
@@ -65,7 +65,7 @@ static void rDumpSrat(void)
 					? "yes" : "no"));
 		};
 
-		__kprintf(NOTICE"%d CPU entries in all. "
+		printf(NOTICE"%d CPU entries in all. "
 			"N: Memory range entries:\n",
 			nCpuEntries);
 
@@ -78,7 +78,7 @@ static void rDumpSrat(void)
 			memEntry = acpiRSrat::getNextMemEntry(srat, &handle2),
 				nMemEntries++)
 		{
-			__kprintf(NOTICE"Entry %d: bank %d, firmware-enabled? "
+			printf(NOTICE"Entry %d: bank %d, firmware-enabled? "
 				"%s, hotplug? %s.\n"
 				"\tBase paddr 0x%P_%P, length 0x%P_%P.\n",
 				nMemEntries,
@@ -96,7 +96,7 @@ static void rDumpSrat(void)
 				memEntry->lengthHigh, memEntry->lengthLow);
 		};
 
-		__kprintf(NOTICE"%d memory range entries.\n", nMemEntries);
+		printf(NOTICE"%d memory range entries.\n", nMemEntries);
 	};
 }
 
@@ -106,7 +106,7 @@ static void dumpSrat(void)
 
 	if (acpi::findRsdp() != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR"Unable to find RSDP.\n");
+		printf(ERROR"Unable to find RSDP.\n");
 		return;
 	};
 
@@ -114,15 +114,15 @@ static void dumpSrat(void)
 	{
 		if (acpi::mapRsdt() != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR"Failed to map the RSDT into vmem.\n");
+			printf(ERROR"Failed to map the RSDT into vmem.\n");
 			return;
 		};
 		rDumpSrat();
 	}
 	else if (acpi::testForXsdt()) {
-		__kprintf(FATAL"Machine has an XSDT, but no RSDT; aborting.\n");
+		printf(FATAL"Machine has an XSDT, but no RSDT; aborting.\n");
 	} else {
-		__kprintf(FATAL"Unable to find either RSDT or XSDT.\n");
+		printf(FATAL"Unable to find either RSDT or XSDT.\n");
 	};
 }
 
@@ -192,11 +192,11 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(__kdebug, initialize(), ret);
 	devMask = __kdebug.tieTo(/*DEBUGPIPE_DEVICE_BUFFER |*/ DEBUGPIPE_DEVICE1);
 	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
-		__kprintf(WARNING ORIENT"No debug buffer allocated.\n");
+		printf(WARNING ORIENT"No debug buffer allocated.\n");
 	};
 
 	// __kdebug.refresh();
-	__kprintf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
+	printf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
 		"DEVICE1.\n");
 
 //	dumpSrat();
@@ -255,7 +255,7 @@ void __korientationMain(void)
 	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
 
-	__kprintf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
+	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
 		self->getFullId(), self);
 
 	/* Initialize the VFS roots and Floodplainn. From there, enumerate the
@@ -268,21 +268,21 @@ void __korientationMain(void)
 	DO_OR_DIE(floodplainn, createDevice(CC"by-id", 0, 0, &sysbusDev), ret);
 
 	ret = floodplainn.createDevice(CC"by-id", 0, 0, &sysbusDev);
-	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	printf(NOTICE"ret is %s.\n", strerror(ret));
 	ret = floodplainn.createDevice(CC"by-id", 1, 0, &sysbusDev);
-	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	printf(NOTICE"ret is %s.\n", strerror(ret));
 	ret = floodplainn.createDevice(CC"by-id", 2, 0, &sysbusDev);
-	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	printf(NOTICE"ret is %s.\n", strerror(ret));
 	ret = floodplainn.createDevice(CC"by-id/2", 0, 0, &sysbusDev);
-	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	printf(NOTICE"ret is %s.\n", strerror(ret));
 	ret = floodplainn.createDevice(CC"by-id/2", 1, 0, &sysbusDev);
-	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	printf(NOTICE"ret is %s.\n", strerror(ret));
 	ret = floodplainn.createDevice(CC"by-id/2/1", 0, 0, &sysbusDev);
-	__kprintf(NOTICE"ret is %s.\n", strerror(ret));
+	printf(NOTICE"ret is %s.\n", strerror(ret));
 	ret = floodplainn.createDevice(CC"by-id/2/1", 1, 0, &sysbusDev);
 	sysbusDev->driver = new fplainn::driverC;
 	sysbusDev->driver->allMetalanguagesSatisfied = 1;
-	__kprintf(NOTICE"ret is %s; done creating nodes.\n", strerror(ret));
+	printf(NOTICE"ret is %s; done creating nodes.\n", strerror(ret));
 
 	zmessage::iteratorS		iMessage;
 	distributaryProcessC		*dp;
@@ -300,17 +300,17 @@ void __korientationMain(void)
 		&dp);
 
 	if (ret != ERROR_SUCCESS) {
-		__kprintf(ERROR"Failed to spawn driver; ret is %s(%d).\n", strerror(ret), ret); goto dormant;
+		printf(ERROR"Failed to spawn driver; ret is %s(%d).\n", strerror(ret), ret); goto dormant;
 	};
 
 	ret = self->getTaskContext()->messageStream.pull(&iMessage);
-	__kprintf(NOTICE"Ret from callback is %s.\n", strerror(iMessage.header.error));
+	printf(NOTICE"Ret from callback is %s.\n", strerror(iMessage.header.error));
 
 dormant:
-	__kprintf(NOTICE ORIENT"loadDriver: ret %d.\n",
+	printf(NOTICE ORIENT"loadDriver: ret %d.\n",
 		floodplainn.loadDriver(CC"foo/bar", floodplainnC::CHIPSET_LIST, 0));
 
-	__kprintf(NOTICE ORIENT"About to dormant.\n");
+	printf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
@@ -342,7 +342,7 @@ dormant:
 				&dtribs[i]),
 			ret);
 
-		__kprintf(NOTICE ORIENT"Spawned %dth process.\n", i);
+		printf(NOTICE ORIENT"Spawned %dth process.\n", i);
 	};
 
 	sarch_t		waitForTimeout=1;
@@ -352,7 +352,7 @@ dormant:
 	if (ret != ERROR_SUCCESS)
 	{
 		waitForTimeout = 0;
-		__kprintf(ERROR ORIENT"Failed to create 1 second timeout.\n");
+		printf(ERROR ORIENT"Failed to create 1 second timeout.\n");
 	};
 
 	for (ubit8 i=0; i<((waitForTimeout) ? 0xFF : 3); i++)
@@ -364,7 +364,7 @@ dormant:
 		switch (iMessage.header.subsystem)
 		{
 		case ZMESSAGE_SUBSYSTEM_PROCESS:
-			__kprintf(NOTICE ORIENT"pulled %dth callback: err %d. "
+			printf(NOTICE ORIENT"pulled %dth callback: err %d. "
 				"New process' ID: 0x%x.\n",
 				iMessage.header.privateData,
 				iMessage.header.error,
@@ -376,17 +376,17 @@ dormant:
 			timerStreamC::eventS	*timerEvent;
 
 			timerEvent = (timerStreamC::eventS *)&iMessage;
-			__kprintf(NOTICE ORIENT"pulled timer timeout. "
+			printf(NOTICE ORIENT"pulled timer timeout. "
 				"Actual expiration: %d:%dns.\n",
 				timerEvent->actualStamp.time.seconds,
 				timerEvent->actualStamp.time.nseconds);
 
-			__kprintf(NOTICE ORIENT"Kernel should meet scheduler now, and be halted.\n");
+			printf(NOTICE ORIENT"Kernel should meet scheduler now, and be halted.\n");
 			break;
 		};
 	};
 
-	__kprintf(NOTICE ORIENT"Halting unfavourably.\n");
+	printf(NOTICE ORIENT"Halting unfavourably.\n");
 	for (;;) { asm volatile("hlt\n\t"); };
 }
 

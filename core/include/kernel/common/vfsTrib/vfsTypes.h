@@ -483,14 +483,14 @@ void vfs::dirInodeC<tagType>::dumpDirs(void)
 	void			*handle;
 	tagType		*currItem;
 
-	__kprintf(NOTICE"vfs::dirInode: dumping dirs (%d total).\n", nDirs);
+	printf(NOTICE"vfs::dirInode: dumping dirs (%d total).\n", nDirs);
 	handle = NULL;
 	dirs.lock();
 	currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
 	for (; currItem != NULL;
 		currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
-		__kprintf(CC"\tname: %s. Parent 0x%p.\n",
+		printf(CC"\tname: %s. Parent 0x%p.\n",
 			currItem->getName(), currItem->getParent());
 	};
 
@@ -503,14 +503,14 @@ void vfs::dirInodeC<tagType>::dumpLeaves(void)
 	void			*handle;
 	tagType		*currItem;
 
-	__kprintf(NOTICE"vfs::dirInode: dumping leaves (%d total).\n", nLeaves);
+	printf(NOTICE"vfs::dirInode: dumping leaves (%d total).\n", nLeaves);
 	handle = NULL;
 	leaves.lock();
 	currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
 	for (; currItem != NULL;
 		currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
-		__kprintf(CC"\tname: %s. Parent 0x%p.\n",
+		printf(CC"\tname: %s. Parent 0x%p.\n",
 			currItem->getName(), currItem->getParent());
 	};
 

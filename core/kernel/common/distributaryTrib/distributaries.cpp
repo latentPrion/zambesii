@@ -26,7 +26,7 @@ static void cisternnEntry(void)
 	self = static_cast<threadC *>(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
-	__kprintf(NOTICE"Cisternn executing; process ID: 0x%x. ESP: 0x%p. "
+	printf(NOTICE"Cisternn executing; process ID: 0x%x. ESP: 0x%p. "
 		"Dormanting.\n",
 		self->getFullId(), getEsp());
 

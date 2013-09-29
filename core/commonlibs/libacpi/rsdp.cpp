@@ -103,7 +103,7 @@ error_t acpi::mapRsdt(void)
 
 	if (rsdt == NULL)
 	{
-		__kprintf(ERROR ACPI"Failed to temp map RSDT.\n");
+		printf(ERROR ACPI"Failed to temp map RSDT.\n");
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
@@ -111,7 +111,7 @@ error_t acpi::mapRsdt(void)
 	// Ensure that the table is valid: compute checksum.
 	if (!checksumIsValid(rsdt))
 	{
-		__kprintf(WARNING ACPI"RSDT has invalid checksum.\n");
+		printf(WARNING ACPI"RSDT has invalid checksum.\n");
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			rsdt, 2);
 
@@ -130,7 +130,7 @@ error_t acpi::mapRsdt(void)
 
 	if (rsdt == NULL)
 	{
-		__kprintf(ERROR ACPI"Failed to map RSDT.\n");
+		printf(ERROR ACPI"Failed to map RSDT.\n");
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 

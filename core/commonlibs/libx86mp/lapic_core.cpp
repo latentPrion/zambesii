@@ -42,7 +42,7 @@ sarch_t x86LapicC::cpuHasLapic(void)
 	execCpuid(1, &eax, &ebx, &ecx, &edx);
 	if (!(edx & (1 << 9)))
 	{
-		__kprintf(ERROR x86LAPIC"%d: cpuHasLapic: CPUID[1].EDX[9] "
+		printf(ERROR x86LAPIC"%d: cpuHasLapic: CPUID[1].EDX[9] "
 			"LAPIC check failed.\n\tEDX: %x.\n",
 			parent->cpuId, edx);
 
@@ -81,7 +81,7 @@ error_t x86LapicC::mapLapicMem(void)
 
 	if (v == NULL)
 	{
-		__kprintf(ERROR x86LAPIC"Failed to map LAPIC paddr.\n");
+		printf(ERROR x86LAPIC"Failed to map LAPIC paddr.\n");
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
@@ -130,7 +130,7 @@ error_t x86LapicC::detectPaddr(void)
 	}
 	else
 	{
-		__kprintf(WARNING x86LAPIC"detectPaddr(): RSDP found, but no "
+		printf(WARNING x86LAPIC"detectPaddr(): RSDP found, but no "
 			"RSDT or XSDT.\n");
 	};
 
@@ -153,11 +153,11 @@ tryMpTables:
 	goto initLibLapic;
 
 useDefaultPaddr:
-	__kprintf(WARNING x86LAPIC"detectPaddr: Using default paddr.\n");
+	printf(WARNING x86LAPIC"detectPaddr: Using default paddr.\n");
 	tmp = 0xFEE00000;
 
 initLibLapic:
-	__kprintf(NOTICE x86LAPIC"detectPaddr: LAPIC paddr: 0x%P.\n",
+	printf(NOTICE x86LAPIC"detectPaddr: LAPIC paddr: 0x%P.\n",
 		tmp);
 
 	x86LapicC::setPaddr(tmp);

@@ -120,7 +120,7 @@ namespace rtccmos
 		// If NMI bit is set, refuse the write.
 		if (index & 0x80)
 		{
-			__kprintf(ERROR RTCCMOS"Please use enableNmi"
+			printf(ERROR RTCCMOS"Please use enableNmi"
 				"/disableNmi explicitly to manipulate the NMI "
 				"signal.\n");
 
@@ -201,7 +201,7 @@ static error_t	 ibmPc_rtccmos_initialize(void)
 
 	if (!batteryStatus2Safe || !batteryStatusDiagnosticSafe)
 	{
-		__kprintf(WARNING RTCCMOS"RTC/CMOS chip may not be powered "
+		printf(WARNING RTCCMOS"RTC/CMOS chip may not be powered "
 			"adequately.\n"
 			"\tCMOS RAM may be unreliable/invalid.\n");
 	};
@@ -243,7 +243,7 @@ error_t ibmPc_rtc_initialize(void)
 		__KFLAG_TEST(status1, RTC_STATUS1_FLAGS_TIME_FORMAT_24HRS);
 
 	if (!rtccmos24HourTime) {
-		__kprintf(ERROR RTCCMOS"Chip reports 12 hour format time.\n");
+		printf(ERROR RTCCMOS"Chip reports 12 hour format time.\n");
 	};
 
 	rtccmosBcdDateTime =
@@ -251,7 +251,7 @@ error_t ibmPc_rtc_initialize(void)
 
 	if (!rtccmosBcdDateTime)
 	{
-		__kprintf(WARNING RTCCMOS"Date/Time is not in BCD. Possibly "
+		printf(WARNING RTCCMOS"Date/Time is not in BCD. Possibly "
 			"unstable or non-compliant chip.\n");
 	};
 
@@ -291,7 +291,7 @@ static sarch_t getCenturyOffset(ubit8 *ret)
 		err = acpi::mapRsdt();
 		if (err != ERROR_SUCCESS)
 		{
-			__kprintf(WARNING RTCCMOS"getCenturyOffset: failed to "
+			printf(WARNING RTCCMOS"getCenturyOffset: failed to "
 				"map RSDT.\n");
 
 			return 0;
@@ -306,7 +306,7 @@ static sarch_t getCenturyOffset(ubit8 *ret)
 			// Literal value temporarily used. Taken from Linux.
 			if (fadt->hdr.revision < 3 || !fadt->cmosCentury)
 			{
-				__kprintf(NOTICE RTCCMOS"FADT century offset "
+				printf(NOTICE RTCCMOS"FADT century offset "
 					"not used.\n");
 
 				return 0;
@@ -315,7 +315,7 @@ static sarch_t getCenturyOffset(ubit8 *ret)
 			*ret = fadt->cmosCentury;
 			acpiRsdt::destroySdt((acpi_sdtS *)fadt);
 			acpiRsdt::destroyContext(&context);
-			__kprintf(NOTICE RTCCMOS"getCenturyOffset: ACPI: "
+			printf(NOTICE RTCCMOS"getCenturyOffset: ACPI: "
 				"Offset is %d.\n", *ret);
 
 			return 1;

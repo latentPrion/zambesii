@@ -89,7 +89,7 @@ error_t cpuTribC::initializeBspCpuStream(void)
 
 	// Get BSP's hardware ID.
 	bspId = zkcmCore.cpuDetection.getBspId();
-	__kprintf(NOTICE CPUTRIB"initializeBspStream: BSP CPU ID is %d.\n",
+	printf(NOTICE CPUTRIB"initializeBspStream: BSP CPU ID is %d.\n",
 		bspId);
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -111,7 +111,7 @@ error_t cpuTribC::initializeBspCpuStream(void)
 			if (numaMap->cpuEntries[i].cpuId == bspId)
 			{
 				bspBankId = numaMap->cpuEntries[i].bankId;
-				__kprintf(NOTICE CPUTRIB"initializeBspStream: "
+				printf(NOTICE CPUTRIB"initializeBspStream: "
 					"BSP CPU bank ID is %d.\n",
 					bspBankId);
 			};
@@ -121,7 +121,7 @@ error_t cpuTribC::initializeBspCpuStream(void)
 
 	if (bspBankId == CHIPSET_CPU_NUMA_SHBANKID)
 	{
-		__kprintf(WARNING CPUTRIB"initializeBspStream: Unable to "
+		printf(WARNING CPUTRIB"initializeBspStream: Unable to "
 			"determine BSP bank ID.\n\tUsing SHBANKID (%d).\n",
 			CHIPSET_CPU_NUMA_SHBANKID);
 	};
@@ -142,7 +142,7 @@ error_t cpuTribC::initializeBspCpuStream(void)
 
 error_t cpuTribC::displayUpOperationOnMpBuildMessage(void)
 {
-	__kprintf(WARNING"The kernel is operating with only one CPU on a\n"
+	printf(WARNING"The kernel is operating with only one CPU on a\n"
 		"\tmultiprocessor build;\n\t%s\n.",
 		(_usingChipsetSmpMode == 1)
 			? "\n\thowever, hotplug of new CPUs is allowed"
@@ -197,7 +197,7 @@ error_t cpuTribC::initializeAllCpus(void)
 		ret = zkcmCore.cpuDetection.setSmpMode();
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR CPUTRIB"initialize2: Chipset failed "
+			printf(ERROR CPUTRIB"initialize2: Chipset failed "
 				"to safely transition to SMP mode.\n"
 				"\tProceeding in uniprocessor mode.\n");
 		}
@@ -208,7 +208,7 @@ error_t cpuTribC::initializeAllCpus(void)
 	else
 	{
 
-		__kprintf(ERROR CPUTRIB"initialize2:\n"
+		printf(ERROR CPUTRIB"initialize2:\n"
 			"\tIMPORTANT: Your kernel was compiled as a multi-cpu\n"
 			"\tbuild kernel, but your chipset reports that it is\n"
 			"\tnot safe to use multi-cpu processing on it.\n"
@@ -294,11 +294,11 @@ error_t cpuTribC::bootCpuNotification(cpu_t cid, ubit32 acpiId)
 	if (ret != ERROR_SUCCESS)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		__kprintf(ERROR CPUTRIB"bootCpuNotification(%d,%d,%d): Failed "
+		printf(ERROR CPUTRIB"bootCpuNotification(%d,%d,%d): Failed "
 			"to spawn stream for CPU.\n",
 			bid, cid, acpiId);
 #elif __SCALING__ == SCALING_SMP
-		__kprintf(ERROR CPUTRIB"bootCpuNotification(%d,%d): Failed to "
+		printf(ERROR CPUTRIB"bootCpuNotification(%d,%d): Failed to "
 			"spawn stream for CPU.\n",
 			cid, acpiId);
 #endif
@@ -324,7 +324,7 @@ void cpuTribC::bootParseNumaMap(zkcmNumaMapS *numaMap)
 
 		if (err != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR CPUTRIB"bootParseNumaMap: Failed to "
+			printf(ERROR CPUTRIB"bootParseNumaMap: Failed to "
 				"power on CPU %d.\n",
 				numaMap->cpuEntries[i].cpuId);
 		};
@@ -375,7 +375,7 @@ void cpuTribC::bootParseNumaMap(
 
 		if (err != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR CPUTRIB"bootParseNumaMapHoles: "
+			printf(ERROR CPUTRIB"bootParseNumaMapHoles: "
 				"Failed to power on CPU Stream "
 				"%d.\n",
 				smpMap->entries[i].cpuId);
@@ -443,7 +443,7 @@ error_t cpuTribC::numaInit(void)
 	}
 	else
 	{
-		__kprintf(WARNING CPUTRIB"numaInit: NUMA build, but CPU mod "
+		printf(WARNING CPUTRIB"numaInit: NUMA build, but CPU mod "
 #ifndef CHIPSET_CPU_NUMA_GENERATE_SHBANK
 			"reports no NUMA CPUs, and no shbank configured.\n");
 #else
@@ -468,13 +468,13 @@ error_t cpuTribC::numaInit(void)
 		 *	   to SMP operation. CPUs will be placed on a shared
 		 *	   bank in this case also.
 		 **/
-		__kprintf(NOTICE CPUTRIB"numaInit: Using shared CPU bank; ");
+		printf(NOTICE CPUTRIB"numaInit: Using shared CPU bank; ");
 
 		// Case 1 from above.
 		if (numaMap != NULL && numaMap->nCpuEntries > 0)
 		{
 			// Filter out the CPUs which need to be in shared bank.
-			__kprintf(CC"Filtering out NUMA CPUs.\n");
+			printf(CC"Filtering out NUMA CPUs.\n");
 			bootParseNumaMap(numaMap, smpMap);
 			bootConfirmNumaCpusBooted(numaMap, smpMap);
 		}
@@ -492,7 +492,7 @@ error_t cpuTribC::numaInit(void)
 			 * admin may insert new CPUs later on which have NUMA
 			 * affinity, even if there were none at boot.
 			 **/
-			__kprintf(CC"No NUMA map, all CPUs on shared bank (SMP "
+			printf(CC"No NUMA map, all CPUs on shared bank (SMP "
 				"operation).\n");
 
 			bootParseSmpMap(smpMap);
@@ -504,7 +504,7 @@ error_t cpuTribC::numaInit(void)
 		// No SMP map. If also no NUMA map, then assume single CPU.
 		if (numaMap == NULL || numaMap->nCpuEntries == 0)
 		{
-			__kprintf(WARNING CPUTRIB"numaInit: Falling back to "
+			printf(WARNING CPUTRIB"numaInit: Falling back to "
 				"uniprocessor mode.\n");
 
 			return displayUpOperationOnMpBuildMessage();
@@ -534,7 +534,7 @@ void cpuTribC::bootParseSmpMap(zkcmSmpMapS *smpMap)
 
 		if (err != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR CPUTRIB"bootParseSmpMap: "
+			printf(ERROR CPUTRIB"bootParseSmpMap: "
 				"Failed to power on CPU Stream "
 				"for CPU %d.",
 				smpMap->entries[i].cpuId);
@@ -624,7 +624,7 @@ error_t cpuTribC::uniProcessorInit(void)
 		*(__ret) = (__pb)->resizeTo((__n) + 1); \
 		if (*(__ret) != ERROR_SUCCESS) \
 		{ \
-			__kprintf(ERROR CPUTRIB"%s: resize failed on %s with " \
+			printf(ERROR CPUTRIB"%s: resize failed on %s with " \
 				"required capacity = %d.\n", \
 				__fn, __bn, __n); \
 		}; \
@@ -658,7 +658,7 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	 **/
 	if ((ret = createBank(bid)) != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): "
+		printf(ERROR CPUTRIB"spawnStream(%d, %d, %d): "
 			"Failed to create bank.\n",
 			bid, cid, cpuAcpiId);
 
@@ -723,11 +723,11 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	if (ret != ERROR_SUCCESS)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d, %d): "
+		printf(ERROR CPUTRIB"spawnStream(%d, %d, %d): "
 			"Failed to add new CPU stream to list.\n",
 			bid, cid, cpuAcpiId);
 #else
-		__kprintf(ERROR CPUTRIB"spawnStream(%d, %d): Failed "
+		printf(ERROR CPUTRIB"spawnStream(%d, %d): Failed "
 			"to add new CPU stream to list.\n",
 			cid, cpuAcpiId);
 #endif
@@ -735,10 +735,10 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	};
 
 #if __SCALING__ >= SCALING_CC_NUMA
-		__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d,%d): Success.\n",
+		printf(NOTICE CPUTRIB"spawnStream(%d,%d,%d): Success.\n",
 			bid, cid, cpuAcpiId);
 #else
-		__kprintf(NOTICE CPUTRIB"spawnStream(%d,%d): Success.\n",
+		printf(NOTICE CPUTRIB"spawnStream(%d,%d): Success.\n",
 			cid, cpuAcpiId);
 #endif
 		__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_ADD);
@@ -800,7 +800,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 	err = cpuBanks.addItem(bankId, ncb);
 	if (err != ERROR_SUCCESS)
 	{
-		__kprintf(ERROR CPUTRIB"createBank(%d): Failed to add to list."
+		printf(ERROR CPUTRIB"createBank(%d): Failed to add to list."
 			"\n", bankId);
 
 		ncb->~numaCpuBankC();
@@ -809,7 +809,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 	}
 
 	availableBanks.setSingle(bankId);
-	__kprintf(NOTICE CPUTRIB"createBank(%d): Successful.\n", bankId);
+	printf(NOTICE CPUTRIB"createBank(%d): Successful.\n", bankId);
 	return ERROR_SUCCESS;
 }
 #endif
@@ -848,7 +848,7 @@ error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
 
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR CPUTRIB"__korientation unable to use "
+			printf(ERROR CPUTRIB"__korientation unable to use "
 				"CPU %d.\n",
 				cid);
 		}
@@ -864,7 +864,7 @@ error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
 
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR CPUTRIB"__kprocess unable to use "
+			printf(ERROR CPUTRIB"__kprocess unable to use "
 				"CPU %d.\n",
 				cid);
 		}
@@ -884,7 +884,7 @@ error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
 	default: return ERROR_INVALID_ARG_VAL;
 	};
 
-	__kprintf(ERROR CPUTRIB"__kupdateAffinity: Reached unreachable "
+	printf(ERROR CPUTRIB"__kupdateAffinity: Reached unreachable "
 		"point.\n");
 
 	return ERROR_UNKNOWN;

@@ -56,7 +56,7 @@ static void __attribute__((noinline)) setRwxBits(ubit8 breakpoint, ubit8 rwx)
 		case DEBUG_BREAKPOINT_EXEC: rwx = 0x0; break;
 		// We don't support I/O breakpoints right now.
 		default:
-			__kprintf(ERROR"x86 Debug: Invalid breakpoint "
+			printf(ERROR"x86 Debug: Invalid breakpoint "
 				"condition 0x%x for bp %d.\n"
 				"\tDisabling breakpoint.\n",
 				rwx, breakpoint);
@@ -92,7 +92,7 @@ static void __attribute__((noinline)) setOpSize(ubit8 breakpoint, ubit8 opSize)
 
 	if ((opSize > 4 && opSize != 8) || opSize == 3)
 	{
-		__kprintf(ERROR"x86 Debug: Invalid opsize %d for bp %d. "
+		printf(ERROR"x86 Debug: Invalid opsize %d for bp %d. "
 			"Disabling breakpoint.\n",
 			opSize, breakpoint);
 
@@ -174,7 +174,7 @@ void debug::debuggerC::setBreakpoint(
 {
 	if (breakpoint > 3)
 	{
-		__kprintf(ERROR"x86 Debug: Invalid breakpoint %d.\n",
+		printf(ERROR"x86 Debug: Invalid breakpoint %d.\n",
 			breakpoint);
 
 		return;
@@ -191,7 +191,7 @@ void debug::debuggerC::enableBreakpoint(ubit8 breakpoint)
 	 **/
 	if (breakpoint > 3)
 	{
-		__kprintf(ERROR"x86 Debug: Invalid breakpoint %d.\n",
+		printf(ERROR"x86 Debug: Invalid breakpoint %d.\n",
 			breakpoint);
 
 		return;
@@ -217,7 +217,7 @@ void debug::debuggerC::disableBreakpoint(ubit8 breakpoint)
 	 **/
 	if (breakpoint > 3)
 	{
-		__kprintf(ERROR"x86 Debug: Invalid breakpoint %d.\n",
+		printf(ERROR"x86 Debug: Invalid breakpoint %d.\n",
 			breakpoint);
 
 		return;
@@ -240,7 +240,7 @@ sarch_t debug::debuggerC::breakpointEnabled(ubit8 breakpoint)
 {
 	if (breakpoint > 3)
 	{
-		__kprintf(ERROR"x86 Debug: Invalid breakpoint %d.\n",
+		printf(ERROR"x86 Debug: Invalid breakpoint %d.\n",
 			breakpoint);
 
 		return 0;

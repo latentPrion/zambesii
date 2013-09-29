@@ -104,13 +104,13 @@ void ptrListC<T>::dump(void)
 
 	head.lock.acquire();
 	tmp = head.rsrc.ptr;
-	__kprintf(NOTICE PTRLIST"List obj @0x%p, %d items, 1st item @0x%p: "
+	printf(NOTICE PTRLIST"List obj @0x%p, %d items, 1st item @0x%p: "
 		"Dumping.\n",
 		this, head.rsrc.nItems, head.rsrc.ptr);
 
 	for (; tmp != NULL; tmp = tmp->next)
 	{
-		__kprintf(NOTICE PTRLIST"Node @0x%p, item: 0x%p, next: 0x%p.\n",
+		printf(NOTICE PTRLIST"Node @0x%p, item: 0x%p, next: 0x%p.\n",
 			tmp, tmp->item, tmp->next);
 	};
 

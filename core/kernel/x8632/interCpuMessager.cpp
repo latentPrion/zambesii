@@ -17,7 +17,7 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 	needToIpi = getStatus();
 	if (needToIpi == NOT_TAKING_REQUESTS)
 	{
-		__kprintf(WARNING CPUMSG"%d: Refused request "
+		printf(WARNING CPUMSG"%d: Refused request "
 			"(NOT_TAKING_REQUESTS).\n",
 			parent->cpuId);
 
@@ -67,7 +67,7 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 
 		if (err != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR CPUMSG"%d: IPI sent from CPU %d "
+			printf(ERROR CPUMSG"%d: IPI sent from CPU %d "
 				"failed.\n",
 				parent->cpuId,
 				cpuTrib.getCurrentCpuStream()->cpuId);

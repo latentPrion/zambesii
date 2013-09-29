@@ -85,7 +85,7 @@ void sortedPointerDoubleListC<T, criterionType>::dump(void)
 	tail = list.rsrc.tail;
 	list.lock.release();
 
-	__kprintf(NOTICE SRT_PTRDBLLIST"@ head 0x%p, tail 0x%p, %d items, "
+	printf(NOTICE SRT_PTRDBLLIST"@ head 0x%p, tail 0x%p, %d items, "
 		"lock obj 0x%p: Dumping.\n",
 		head, tail, getNItems(), &list.lock);
 
@@ -95,16 +95,16 @@ void sortedPointerDoubleListC<T, criterionType>::dump(void)
 	for (; curr != NULL; curr = curr->next, flipFlop++)
 	{
 		if (flipFlop < 4) {
-			__kprintf(CC"\t0x%p(%d) ", curr->item, curr->criterion);
+			printf(CC"\t0x%p(%d) ", curr->item, curr->criterion);
 		}
 		else
 		{
-			__kprintf(CC"0x%p(%d)\n", curr->item, curr->criterion);
+			printf(CC"0x%p(%d)\n", curr->item, curr->criterion);
 			flipFlop = -1;
 		};
 	};
 
-	if (flipFlop != 0) { __kprintf(CC"\n"); };
+	if (flipFlop != 0) { printf(CC"\n"); };
 	list.lock.release();
 }
 
@@ -117,7 +117,7 @@ error_t sortedPointerDoubleListC<T, criterionType>::addItem(
 
 	if (mode == SRT_PTRDBLLIST_ADD_DESCENDING)
 	{
-		__kprintf(ERROR SRT_PTRDBLLIST"addItem(0x%p,desc): "
+		printf(ERROR SRT_PTRDBLLIST"addItem(0x%p,desc): "
 			"Descended ordering insertion is currently "
 			"unimplemented.\n",
 			item);
@@ -128,7 +128,7 @@ error_t sortedPointerDoubleListC<T, criterionType>::addItem(
 	newNode = new listNodeS;
 	if (newNode == NULL)
 	{
-		__kprintf(ERROR SRT_PTRDBLLIST"addItem(0x%p,%s): Failed "
+		printf(ERROR SRT_PTRDBLLIST"addItem(0x%p,%s): Failed "
 			"to alloc mem for new node.\n",
 			item,
 			(mode == SRT_PTRDBLLIST_ADD_ASCENDING)?"asc":"desc");

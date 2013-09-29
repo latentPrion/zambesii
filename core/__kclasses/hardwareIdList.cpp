@@ -38,7 +38,7 @@ void hardwareIdListC::dump(void)
 
 	arr.lock.readAcquire(&rwFlags);
 
-	__kprintf(NOTICE"HWID list @ 0x%p, arr @ v0x%p, preAlloc'd: %d,\n"
+	printf(NOTICE"HWID list @ 0x%p, arr @ v0x%p, preAlloc'd: %d,\n"
 		"\tmaxAllocatedIndex %d, firstValidIndex %d, maxIndex %d. "
 		"dumping.\n",
 		this, arr.rsrc.arr, preAllocated,
@@ -48,7 +48,7 @@ void hardwareIdListC::dump(void)
 	for (sarch_t i=arr.rsrc.firstValidIndex; i != HWIDLIST_INDEX_INVALID;
 		i=arr.rsrc.arr[i].next)
 	{
-		__kprintf(NOTICE HWIDLIST"%d (idx@0x%p): item 0x%p, next %d.\n",
+		printf(NOTICE HWIDLIST"%d (idx@0x%p): item 0x%p, next %d.\n",
 			i, &arr.rsrc.arr[i].item, arr.rsrc.arr[i].item,
 			arr.rsrc.arr[i].next);
 	};
@@ -162,7 +162,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 
 		if (tmp == NULL)
 		{
-			__kprintf(ERROR HWIDLIST"addItem(%d,0x%p): failed to "
+			printf(ERROR HWIDLIST"addItem(%d,0x%p): failed to "
 				"resize array.\n",
 				index, item);
 

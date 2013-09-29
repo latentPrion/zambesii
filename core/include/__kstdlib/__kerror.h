@@ -34,7 +34,7 @@
 	#define ERROR_LIMIT_OVERFLOWED			(-52)
 
 	#define UNIMPLEMENTED(__funcName)		\
-		__kprintf(ERROR"Unimplemented: %s on line %d of file %s.\n", \
+		printf(ERROR"Unimplemented: %s on line %d of file %s.\n", \
 			__funcName, __LINE__, __FILE__);
 
 #endif

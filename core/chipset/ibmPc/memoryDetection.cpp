@@ -183,7 +183,7 @@ zkcmNumaMapS *zkcmMemoryDetectionModC::getNumaMap(void)
 #ifndef __32_BIT__
 /*	if (acpi::testForXsdt())
 	{
-		__kprintf(NOTICE"getNumaMap: Using XSDT.\n");
+		printf(NOTICE"getNumaMap: Using XSDT.\n");
 		// Prefer XSDT to RSDT if found.
 		ret = ibmPc_mMod_gnm_xGnm();
 		if (ret != NULL) { return ret; };
@@ -192,7 +192,7 @@ zkcmNumaMapS *zkcmMemoryDetectionModC::getNumaMap(void)
 	// Else use RSDT.
 	if (acpi::testForRsdt())
 	{
-		__kprintf(NOTICE"getNumaMap: No XSDT; falling back to RSDT.\n");
+		printf(NOTICE"getNumaMap: No XSDT; falling back to RSDT.\n");
 		ret = ibmPc_mMod_gnm_rGnm();
 	};
 
@@ -233,7 +233,7 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 	ret = new zkcmMemMapS;
 	if (ret == NULL)
 	{
-		__kprintf(ERROR"Failed to alloc memMap main structure.\n");	
+		printf(ERROR"Failed to alloc memMap main structure.\n");	
 		return NULL;
 	};
 
@@ -270,7 +270,7 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 	ret->entries = new zkcmMemMapEntryS[nEntries + 3];
 	if (ret->entries == NULL)
 	{
-		__kprintf(ERROR"Failed to alloc space for mem map entries.\n");
+		printf(ERROR"Failed to alloc space for mem map entries.\n");
 		delete ret;
 		return NULL;
 	};
@@ -315,7 +315,7 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 		j++;
 	};
 
-	__kprintf(NOTICE"getMemoryMap(): %d firmware map entries; %d were "
+	printf(NOTICE"getMemoryMap(): %d firmware map entries; %d were "
 		"skipped.\n",
 		nEntries, nBadEntries);
 
@@ -350,7 +350,7 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 
 	ret->entries[j+2].memType = ZKCM_MMAP_TYPE_RESERVED;
 
-	__kprintf(NOTICE"getMemoryMap(): Kernel phys: base 0x%P, size 0x%P.\n",
+	printf(NOTICE"getMemoryMap(): Kernel phys: base 0x%P, size 0x%P.\n",
 		ret->entries[j+2].baseAddr,
 		ret->entries[j+2].size);
 
@@ -374,7 +374,7 @@ zkcmMemConfigS *zkcmMemoryDetectionModC::getMemoryConfig(void)
 	ret = new zkcmMemConfigS;
 	if (ret == NULL)
 	{
-		__kprintf(ERROR"getMemoryConfig: Failed to alloc config.\n");
+		printf(ERROR"getMemoryConfig: Failed to alloc config.\n");
 		return NULL;
 	};
 

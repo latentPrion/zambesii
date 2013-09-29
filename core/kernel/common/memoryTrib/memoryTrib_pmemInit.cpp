@@ -93,14 +93,14 @@ error_t memoryTribC::pmemInit(void)
 
 	if (numaMap != NULL && numaMap->nMemEntries > 0)
 	{
-		__kprintf(NOTICE MEMTRIB"pmemInit: Chipset NUMA Map: %d "
+		printf(NOTICE MEMTRIB"pmemInit: Chipset NUMA Map: %d "
 			"entries.\n",
 			numaMap->nMemEntries);
 
 		sortNumaMapByAddress(numaMap);
 		for (uarch_t i=0; i<numaMap->nMemEntries; i++)
 		{
-			__kprintf(NOTICE MEMTRIB"Entry %d: Base 0x%P, size "
+			printf(NOTICE MEMTRIB"Entry %d: Base 0x%P, size "
 				"0x%P, bank %d.\n",
 				i,
 				numaMap->memEntries[i].baseAddr,
@@ -112,7 +112,7 @@ error_t memoryTribC::pmemInit(void)
 	}
 	else
 	{
-		__kprintf(WARNING MEMTRIB"pmemInit:getNumaMap(): No NUMA map."
+		printf(WARNING MEMTRIB"pmemInit:getNumaMap(): No NUMA map."
 			"\n");
 	};
 #endif
@@ -123,14 +123,14 @@ error_t memoryTribC::pmemInit(void)
 
 	if (memConfig != NULL && memConfig->memSize > 0)
 	{
-		__kprintf(NOTICE MEMTRIB"pmemInit: Chipset Mem Config: memsize "
+		printf(NOTICE MEMTRIB"pmemInit: Chipset Mem Config: memsize "
 			"0x%P.\n",
 			memConfig->memSize);
 
 		ret = createBank(CHIPSET_MEMORY_NUMA_SHBANKID);
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR MEMTRIB"pmemInit: Failed to spawn "
+			printf(ERROR MEMTRIB"pmemInit: Failed to spawn "
 				"shbank on Memory Trib.\n");
 
 			goto parseMemoryMap;
@@ -150,13 +150,13 @@ error_t memoryTribC::pmemInit(void)
 
 			if (ret != ERROR_SUCCESS)
 			{
-				__kprintf(ERROR MEMTRIB"pmemInit: Shbank: On "
+				printf(ERROR MEMTRIB"pmemInit: Shbank: On "
 					"shbank obj, failed to add shbank "
 					"memrange.\n");
 			}
 			else
 			{
-				__kprintf(NOTICE MEMTRIB"pmemInit: Shbank: no "
+				printf(NOTICE MEMTRIB"pmemInit: Shbank: no "
 					"NUMA map.\n"
 					"\tSpawning shbank with total memsize "
 					"0x%P.\n",
@@ -167,7 +167,7 @@ error_t memoryTribC::pmemInit(void)
 		};
 	}
 	else {
-		__kprintf(ERROR MEMTRIB"pmemInit: getMemoryConfig(): No mem "
+		printf(ERROR MEMTRIB"pmemInit: getMemoryConfig(): No mem "
 			"config.\n");
 	};
 #endif
@@ -178,12 +178,12 @@ parseMemoryMap:
 
 	if (memMap != NULL && memMap->nEntries > 0)
 	{
-		__kprintf(NOTICE MEMTRIB"pmemInit: Chipset Mem map: %d entries."
+		printf(NOTICE MEMTRIB"pmemInit: Chipset Mem map: %d entries."
 			"\n", memMap->nEntries);
 
 		for (uarch_t i=0; i<memMap->nEntries; i++)
 		{
-			__kprintf(NOTICE MEMTRIB"Entry %d: Base 0x%P, size "
+			printf(NOTICE MEMTRIB"Entry %d: Base 0x%P, size "
 				"0x%P, type %d.\n",
 				i,
 				memMap->entries[i].baseAddr,
@@ -212,7 +212,7 @@ parseMemoryMap:
 	}
 	else
 	{
-		__kprintf(WARNING MEMTRIB"pmemInit: getMemoryMap(): No mem map."
+		printf(WARNING MEMTRIB"pmemInit: getMemoryMap(): No mem map."
 			"\n");
 	};
 
@@ -230,7 +230,7 @@ parseMemoryMap:
 			getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
 	};
 
-	__kprintf(NOTICE MEMTRIB"pmemInit: %d frames merged from __kspace into "
+	printf(NOTICE MEMTRIB"pmemInit: %d frames merged from __kspace into "
 		"new PMM state.\n",
 		nSet);
 
@@ -257,7 +257,7 @@ parseMemoryMap:
 	// FIXME: This should probably be moved further up.
 	if (__kspaceBool != 1)
 	{
-		__kprintf(FATAL MEMTRIB"pmemInit: __kspace cannot be "
+		printf(FATAL MEMTRIB"pmemInit: __kspace cannot be "
 			"destroyed. Memory detection unsuccessful.\n"
 			"\tKernel halting.\n");
 
@@ -278,18 +278,18 @@ parseMemoryMap:
 	 * new default.
 	 **/
 	destroyBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
-	__kprintf(NOTICE MEMTRIB"pmemInit: Removed __kspace. Ret is 0x%p.\n",
+	printf(NOTICE MEMTRIB"pmemInit: Removed __kspace. Ret is 0x%p.\n",
 		getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
 
 #ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 	#if __SCALING__ < SCALING_CC_NUMA
 	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
-	__kprintf(NOTICE MEMTRIB"pmemInit: MemTrib using shbank as default.\n");
+	printf(NOTICE MEMTRIB"pmemInit: MemTrib using shbank as default.\n");
 	#else
 	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
 		->defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
 
-	__kprintf(NOTICE MEMTRIB"pmemInit: Orientation using shbank as default."
+	printf(NOTICE MEMTRIB"pmemInit: Orientation using shbank as default."
 		"\n");
 	#endif
 #endif
@@ -311,14 +311,14 @@ void memoryTribC::init2_spawnNumaStreams(zkcmNumaMapS *map)
 		ret = createBank(map->memEntries[i].bankId);
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR MEMTRIB"Failed to spawn memory bank "
+			printf(ERROR MEMTRIB"Failed to spawn memory bank "
 				"for %d.\n",
 				map->memEntries[i].bankId);
 
 			continue;
 		};
 
-		__kprintf(NOTICE MEMTRIB"Spawned NUMA Stream for bank with ID "
+		printf(NOTICE MEMTRIB"Spawned NUMA Stream for bank with ID "
 			"%d.\n", map->memEntries[i].bankId);
 	};
 }
@@ -337,7 +337,7 @@ void memoryTribC::init2_generateNumaMemoryRanges(
 		nmb = getBank(map->memEntries[i].bankId);
 		if (nmb == NULL)
 		{
-			__kprintf(ERROR MEMTRIB"Bank %d found in NUMA map, "
+			printf(ERROR MEMTRIB"Bank %d found in NUMA map, "
 				"but no bank obj in mem trib list.\n",
 				map->memEntries[i].bankId);
 
@@ -350,7 +350,7 @@ void memoryTribC::init2_generateNumaMemoryRanges(
 
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR MEMTRIB"Failed to allocate "
+			printf(ERROR MEMTRIB"Failed to allocate "
 				"memory range obj for range: base 0x%P "
 				"size 0x%P on bank %d.\n",
 				map->memEntries[i].baseAddr,
@@ -406,7 +406,7 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 		if (map->memEntries[i].baseAddr
 			== map->memEntries[i+1].baseAddr)
 		{
-			__kprintf(
+			printf(
 				overlappingMessage,
 				map->memEntries[i].baseAddr,
 				map->memEntries[i].size,
@@ -424,7 +424,7 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 		};
 		if (tmpBase > map->memEntries[i+1].baseAddr)
 		{
-			__kprintf(
+			printf(
 				overlappingMessage,
 				map->memEntries[i].baseAddr,
 				map->memEntries[i].size,
@@ -437,7 +437,7 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 		if (tmpSize > 0)
 		{
 #ifdef CONFIG_DEBUG_MEMTRIB
-			__kprintf(NOTICE MEMTRIB
+			printf(NOTICE MEMTRIB
 				"For bank %d, memrange %d: base 0x%P, size "
 				"0x%P\n\tNext entry: base 0x%P; spawning "
 				"shbank memrange:\n\tBase 0x%P and size 0x%P."
@@ -454,14 +454,14 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 
 			if (ret != ERROR_SUCCESS)
 			{
-				__kprintf(ERROR MEMTRIB
+				printf(ERROR MEMTRIB
 					"Shbank: Failed to spawn memrange for "
 					"hole: base 0x%P size 0x%P.\n",
 					tmpBase, tmpSize);
 			}
 			else
 			{
-				__kprintf(NOTICE MEMTRIB
+				printf(NOTICE MEMTRIB
 					"Shbank: New memrange base 0x%P, size "
 					"0x%P.\n",
 					tmpBase, tmpSize);

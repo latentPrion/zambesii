@@ -39,7 +39,7 @@ void floodplainnC::__kdriverEntry(void)
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
-	__kprintf(NOTICE"!!!Kernel driver running. About to dormant.\n");
+	printf(NOTICE"!!!Kernel driver running. About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 }
 

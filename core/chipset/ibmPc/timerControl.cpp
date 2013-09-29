@@ -126,7 +126,7 @@ void zkcmTimerControlModC::timerQueuesInitializedNotification(void)
 		if (!__KBIT_TEST(latchedQueueMask, i)) { continue; };
 
 		timerTrib.installClockRoutine((1<<i), &updateSystemTime);
-		__kprintf(NOTICE IBMPC_TIMERCTL"System timekeeper routine "
+		printf(NOTICE IBMPC_TIMERCTL"System timekeeper routine "
 			"installed on timer queue %d.\n",
 			i);
 
@@ -231,7 +231,7 @@ static utf8Char *timerDevIoLatencies[] = { CC"Low", CC"Moderate", CC"High" };
 
 static void dumpTimerDeviceInfo(zkcmTimerDeviceC *dev)
 {
-	__kprintf(NOTICE"ZKCM Timer Device: (childId %d) \"%s\"\n"
+	printf(NOTICE"ZKCM Timer Device: (childId %d) \"%s\"\n"
 		"\t%s\n"
 		"\tType: %s; supported modes %s.\n"
 		"\tPrecision %s, ioLatency %s.\n",
@@ -253,13 +253,13 @@ error_t zkcmTimerControlModC::registerNewTimerDevice(zkcmTimerDeviceC *timer)
 		ret = timers.insert(timer);
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR IBMPC_TIMERCTL"registerNewTimerDevice: "
+			printf(ERROR IBMPC_TIMERCTL"registerNewTimerDevice: "
 				"Failed to add timer:\n");
 
 			dumpTimerDeviceInfo(timer);
 		};
 
-		__kprintf(NOTICE IBMPC_TIMERCTL"registerNewTimerDevice: Added "
+		printf(NOTICE IBMPC_TIMERCTL"registerNewTimerDevice: Added "
 			"timer:\n");
 
 		dumpTimerDeviceInfo(timer);
@@ -279,7 +279,7 @@ error_t zkcmTimerControlModC::unregisterTimerDevice(
 	{
 		if (timer->getLatchState((floodplainnStreamC **)&latchedStream))
 		{
-			__kprintf(ERROR IBMPC_TIMERCTL"unregisterTimerDevice: "
+			printf(ERROR IBMPC_TIMERCTL"unregisterTimerDevice: "
 				"Device is latched.\n");
 
 			return ERROR_RESOURCE_BUSY;

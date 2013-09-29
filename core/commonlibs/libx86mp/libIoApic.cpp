@@ -68,7 +68,7 @@ x86IoApic::ioApicC *x86IoApic::getIoApicByVector(ubit8 vector)
 
 void x86IoApic::dump(void)
 {
-	__kprintf(NOTICE x86IOAPIC"Dumping. Cache @v 0x%p magic: 0x%x.\n"
+	printf(NOTICE x86IOAPIC"Dumping. Cache @v 0x%p magic: 0x%x.\n"
 		"\tmapped %d, nIoApics %d.\n",
 		&cache, cache.magic, cache.mapped, cache.nIoApics);
 }
@@ -127,7 +127,7 @@ static error_t rsdtDetectIoApics(void)
 			ret = tmp->initialize();
 			if (ret != ERROR_SUCCESS)
 			{
-				__kprintf(ERROR x86IOAPIC"Failed to init APIC "
+				printf(ERROR x86IOAPIC"Failed to init APIC "
 					"%d.\n",
 					ioApicEntry->ioApicId);
 
@@ -138,7 +138,7 @@ static error_t rsdtDetectIoApics(void)
 			ret = cache.ioApics.addItem(ioApicEntry->ioApicId, tmp);
 			if (ret != ERROR_SUCCESS)
 			{
-				__kprintf(ERROR x86IOAPIC"Failed to add APIC "
+				printf(ERROR x86IOAPIC"Failed to add APIC "
 					"%d to the list.\n",
 					ioApicEntry->ioApicId);
 
@@ -174,7 +174,7 @@ error_t x86IoApic::detectIoApics(void)
 	{
 		if (acpi::findRsdp() != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR x86IOAPIC"Unable to find RSDP; falling "
+			printf(ERROR x86IOAPIC"Unable to find RSDP; falling "
 				"back to MP tables.\n");
 
 			goto tryMpTables;
@@ -188,7 +188,7 @@ error_t x86IoApic::detectIoApics(void)
 	{
 		if (acpi::mapRsdt() != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR x86IOAPIC"Unable to map RSDT. "
+			printf(ERROR x86IOAPIC"Unable to map RSDT. "
 				"Falling back to MP tables.\n");
 
 			goto tryMpTables;
@@ -205,13 +205,13 @@ tryMpTables:
 	{
 		if (x86Mp::findMpFp() == NULL)
 		{
-			__kprintf(WARNING x86IOAPIC"Failed to find MP FP.\n");
+			printf(WARNING x86IOAPIC"Failed to find MP FP.\n");
 			return ERROR_GENERAL;
 		};
 
 		if (x86Mp::mapMpConfigTable() == NULL)
 		{
-			__kprintf(WARNING x86IOAPIC"Failed to map MP config "
+			printf(WARNING x86IOAPIC"Failed to map MP config "
 				"table.\n");
 
 			return ERROR_MEMORY_VIRTUAL_PAGEMAP;
@@ -226,7 +226,7 @@ tryMpTables:
 		if (!__KFLAG_TEST(
 			ioApicEntry->flags, x86_MPCFG_IOAPIC_FLAGS_ENABLED))
 		{
-			__kprintf(NOTICE x86IOAPIC"Skipping unsafe IO APIC %d."
+			printf(NOTICE x86IOAPIC"Skipping unsafe IO APIC %d."
 				"\n", ioApicEntry->ioApicId);
 
 			continue;
@@ -241,7 +241,7 @@ tryMpTables:
 		ret = tmp->initialize();
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR x86IOAPIC"Failed to init IOAPIC %d.\n",
+			printf(ERROR x86IOAPIC"Failed to init IOAPIC %d.\n",
 				ioApicEntry->ioApicId);
 
 			delete tmp;
@@ -251,7 +251,7 @@ tryMpTables:
 		ret = cache.ioApics.addItem(ioApicEntry->ioApicId, tmp);
 		if (ret != ERROR_SUCCESS)
 		{
-			__kprintf(ERROR x86IOAPIC"Failed to add APIC %d to "
+			printf(ERROR x86IOAPIC"Failed to add APIC %d to "
 				"the list.\n",
 				ioApicEntry->ioApicId);
 

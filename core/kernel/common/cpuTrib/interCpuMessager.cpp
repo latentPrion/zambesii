@@ -25,7 +25,7 @@ error_t cpuStreamC::interCpuMessagerC::initialize(void)
 		cache = cachePool.createCache(sizeof(messageS));
 		if (cache == NULL)
 		{
-			__kprintf(ERROR CPUMSG"%d: initialize(): Failed "
+			printf(ERROR CPUMSG"%d: initialize(): Failed "
 				"to create an object cache for messages.\n",
 				parent->cpuId);
 
@@ -51,14 +51,14 @@ error_t cpuStreamC::interCpuMessagerC::bind(void)
 	 * try to send messages to this CPU if its bit isn't set.
 	 **/
 	setStatus(NOT_PROCESSING);
-	__kprintf(NOTICE CPUMSG"%d: Bound.\n", parent->cpuId);
+	printf(NOTICE CPUMSG"%d: Bound.\n", parent->cpuId);
 	return ERROR_SUCCESS;
 }
 
 void cpuStreamC::interCpuMessagerC::cut(void)
 {
 	// TODO: Send a signal to the CPU to dispatch any remaining messages.
-	__kprintf(NOTICE CPUMSG"%d: Cut.\n", parent->cpuId);
+	printf(NOTICE CPUMSG"%d: Cut.\n", parent->cpuId);
 	setStatus(NOT_TAKING_REQUESTS);
 }
 
@@ -93,7 +93,7 @@ error_t cpuStreamC::interCpuMessagerC::dispatch(void)
 			break;
 
 		default:
-			__kprintf(ERROR CPUMSG"%d: Unknown message type %d.\n",
+			printf(ERROR CPUMSG"%d: Unknown message type %d.\n",
 				parent->cpuId, msg->type);
 		};
 

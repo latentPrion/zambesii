@@ -70,7 +70,7 @@ error_t distributaryTribC::bootBuildTree(void)
 		sarch_t				inodeWasUsed=0;
 		dvfs::distributaryInodeC	*dInodeTmp;
 
-		__kprintf(NOTICE DTRIBTRIB"Desc: name \"%s\", vendor \"%s\", "
+		printf(NOTICE DTRIBTRIB"Desc: name \"%s\", vendor \"%s\", "
 			"%d categories.\n"
 			"\tdescription: \"%s\".\n",
 			currDesc->name, currDesc->vendor,
@@ -82,7 +82,7 @@ error_t distributaryTribC::bootBuildTree(void)
 
 		if (dInodeTmp == NULL)
 		{
-			__kprintf(NOTICE DTRIBTRIB"Failed to create dtrib "
+			printf(NOTICE DTRIBTRIB"Failed to create dtrib "
 				"inode for \"%s\".\n",
 				currDesc->name);
 
@@ -94,7 +94,7 @@ error_t distributaryTribC::bootBuildTree(void)
 			dvfs::tagC		*cTagTmp, *dTagTmp;
 			dvfs::categoryInodeC	*cInodeTmp;
 
-			__kprintf(CC"\tCategory: %s.",
+			printf(CC"\tCategory: %s.",
 				currDesc->categories[j].name);
 
 			// See if the category container exists already.
@@ -116,16 +116,16 @@ error_t distributaryTribC::bootBuildTree(void)
 
 				if (cTagTmp == NULL)
 				{
-					__kprintf(CC" Creation failed.\n");
+					printf(CC" Creation failed.\n");
 					delete cInodeTmp;
 					continue;
 				};
 
-				__kprintf(CC" Done.\n");
+				printf(CC" Done.\n");
 			}
 			else
 			{
-				__kprintf(CC" Already exists.\n");
+				printf(CC" Already exists.\n");
 
 				/* Check to ensure that the distributary isn't
 				 * being added to the same category twice.
@@ -158,7 +158,7 @@ error_t distributaryTribC::bootBuildTree(void)
 				if (cTagTmp->getCInode()->getLeafTag(
 					CC"default") != NULL)
 				{
-					__kprintf(FATAL DTRIBTRIB"Distributary "
+					printf(FATAL DTRIBTRIB"Distributary "
 						"\"%s\" is default for "
 						"category \"%s\",\n"
 						"\tbut a default already "
@@ -175,7 +175,7 @@ error_t distributaryTribC::bootBuildTree(void)
 
 				if (dTagTmp == NULL)
 				{
-					__kprintf(ERROR DTRIBTRIB"Failed to "
+					printf(ERROR DTRIBTRIB"Failed to "
 						"set dtrib %s as default for "
 						"category %s.\n",
 						currDesc->name,
@@ -183,7 +183,7 @@ error_t distributaryTribC::bootBuildTree(void)
 				}
 				else
 				{
-					__kprintf(NOTICE DTRIBTRIB"Set dtrib "
+					printf(NOTICE DTRIBTRIB"Set dtrib "
 						"%s as default for category %s."
 						"\n", currDesc->name,
 						currDesc->categories[j].name);

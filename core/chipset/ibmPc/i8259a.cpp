@@ -121,7 +121,7 @@ void i8259aPicC::chipsetEventNotification(ubit8 event, uarch_t)
 
 		interruptTrib.registerIrqPins(16, irqPinList);
 		__kpinBase = irqPinList[0].__kid;
-		__kprintf(NOTICE i8259a"Registered for __kpins. Base: %d.\n",
+		printf(NOTICE i8259a"Registered for __kpins. Base: %d.\n",
 			__kpinBase);
 
 		break;

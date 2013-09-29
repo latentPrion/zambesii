@@ -68,7 +68,7 @@ error_t bitmapC::initialize(
 
 void bitmapC::dump(void)
 {
-	__kprintf(NOTICE BITMAP"@0x%p: %d bits, %s (%dB), array @0x%p.\n",
+	printf(NOTICE BITMAP"@0x%p: %d bits, %s (%dB), array @0x%p.\n",
 		this,
 		bmp.rsrc.nBits,
 		(preAllocated) ? "pre-allocated" : "dyn-allocated",

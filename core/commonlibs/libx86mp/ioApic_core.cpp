@@ -48,7 +48,7 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 
 	if (status < 1)
 	{
-		__kprintf(ERROR x86IOAPIC"%d: Failed to map: v:0x%p, p:0x%P.\n",
+		printf(ERROR x86IOAPIC"%d: Failed to map: v:0x%p, p:0x%P.\n",
 			paddr, ret);
 
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
@@ -109,7 +109,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	irqPinList = new zkcmIrqPinS[nPins];
 	if (irqPinList == NULL)
 	{
-		__kprintf(ERROR x86IOAPIC"%d: Failed to allocate IRQ pin list."
+		printf(ERROR x86IOAPIC"%d: Failed to allocate IRQ pin list."
 			"\n", id);
 
 		return ERROR_MEMORY_NOMEM;
@@ -153,7 +153,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	interruptTrib.registerIrqPins(nPins, irqPinList);
 	__kpinBase = irqPinList[0].__kid;
 
-	__kprintf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x,\n"
+	printf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x,\n"
 		"\tnPins %d, Girqbase %d, vectorBase %d.\n",
 		id, vaddr.rsrc, paddr, version, nPins,
 		acpiGirqBase, vectorBase);

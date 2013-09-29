@@ -25,7 +25,7 @@ void memoryStreamC::cut(void)
 
 void memoryStreamC::dump(void)
 {
-	__kprintf(NOTICE MEMORYSTREAM"%d: Dumping.\n", id);
+	printf(NOTICE MEMORYSTREAM"%d: Dumping.\n", id);
 }
 
 void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
@@ -86,7 +86,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 
 			if (nMapped < nFrames)
 			{
-				__kprintf(WARNING MEMORYSTREAM"0x%x: "
+				printf(WARNING MEMORYSTREAM"0x%x: "
 					"WPR failed to map %d pages for alloc "
 					"of %d frames.\n",
 					this->id, nFrames, nPages);
@@ -100,7 +100,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 			nTries++;
 			if (nTries >= 4)
 			{
-				__kprintf(NOTICE MEMORYSTREAM"%d: memAlloc(%d):"
+				printf(NOTICE MEMORYSTREAM"%d: memAlloc(%d):"
 					" with commit nFrames %d: No pmem.\n",
 					this->id, nPages, commit);
 
@@ -124,7 +124,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 
 		if (nMapped < static_cast<sarch_t>( nPages ) - totalFrames)
 		{
-			__kprintf(WARNING MEMORYSTREAM"0x%X: WPR failed to "
+			printf(WARNING MEMORYSTREAM"0x%X: WPR failed to "
 				"fakemap %d pages for alloc of %d pages.\n",
 				this->id, nPages - totalFrames, nPages);
 

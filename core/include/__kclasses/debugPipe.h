@@ -114,14 +114,14 @@ private:
 	sharedResourceGroupC<waitLockC, uarch_t>	devices;
 };
 
-void __kprintf(const utf8Char *str, ...);
+void printf(const utf8Char *str, ...);
 
 // The kernel deliberately does not provide sprintf.
 extern "C" sarch_t snprintf(
 	utf8Char *buff, uarch_t maxLength, utf8Char *format, ...);
 
 // Used for debugging, see above.
-void __kprintf(sharedResourceGroupC<waitLockC, void *> *buff,
+void printf(sharedResourceGroupC<waitLockC, void *> *buff,
 	uarch_t buffSize, utf8Char *str, ...);
 
 extern debugPipeC	__kdebug;

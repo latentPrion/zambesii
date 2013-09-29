@@ -65,7 +65,7 @@ static status_t amdBrandStringEnum(void)
 	brandString = new utf8Char[49];
 	if (brandString == NULL)
 	{
-		__kprintf(ERROR AMDENUM"Unable to alloc mem brandstring.\n");
+		printf(ERROR AMDENUM"Unable to alloc mem brandstring.\n");
 		return CPUENUM_CPU_MODEL_UNKNOWN;
 	};
 
@@ -118,7 +118,7 @@ static status_t amdSignatureEnum(void)
 
 	edx = AMDENUM_SIG_GET_REV(eax);
 	// For now just display the values you've got. Debug on real hardware.
-	__kprintf(NOTICE AMDENUM"Family low: 0x%x.\nTaken family value: 0x%x."
+	printf(NOTICE AMDENUM"Family low: 0x%x.\nTaken family value: 0x%x."
 		"Taken model value: 0x%x.\nTaken revision: 0x%x.\n",
 		AMDENUM_SIG_GET_FAMILY_LOW(eax),
 		ebx, ecx, edx);
@@ -138,7 +138,7 @@ status_t x86CpuEnumeration::amd(void)
 	execCpuid(0x80000000, &eax, &ebx, &ecx, &edx);
 	if (eax >= 0x80000004)
 	{
-		// __kprintf(NOTICE AMDENUM"CPUID brand string supported.\n");
+		// printf(NOTICE AMDENUM"CPUID brand string supported.\n");
 		if (amdBrandStringEnum() == ERROR_SUCCESS) {
 			return ERROR_SUCCESS;
 		};
@@ -148,13 +148,13 @@ status_t x86CpuEnumeration::amd(void)
 	execCpuid(0x1, &eax, &ebx, &ecx, &edx);
 	if (eax >= 0x1)
 	{
-		__kprintf(NOTICE AMDENUM"CPU signature supported.\n");
+		printf(NOTICE AMDENUM"CPU signature supported.\n");
 		if (amdSignatureEnum() == ERROR_SUCCESS) {
 			return ERROR_SUCCESS;
 		};
 	};
 
-__kprintf(NOTICE AMDENUM"Support for AMD Brand ID and Signature CPUID identification is currently unimplemented.\n");
+printf(NOTICE AMDENUM"Support for AMD Brand ID and Signature CPUID identification is currently unimplemented.\n");
 	strcpy8(
 		cpuTrib.getCurrentCpuStream()->cpuFeatures.cpuModel,
 		unknownCpu);

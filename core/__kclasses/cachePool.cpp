@@ -29,13 +29,13 @@ cachePoolC::~cachePoolC(void)
 
 void cachePoolC::dump(void)
 {
-	__kprintf(NOTICE CACHEPOOL"Dumping.\t\tNCaches: %d.\n", nCaches);
+	printf(NOTICE CACHEPOOL"Dumping.\t\tNCaches: %d.\n", nCaches);
 
 	head.lock.acquire();
 
 	for (cachePoolNodeS *cur = head.rsrc; cur != NULL; cur = cur->next)
 	{
-		__kprintf(NOTICE CACHEPOOL"Node: 0x%p, Item 0x%p, size 0x%p.\n",
+		printf(NOTICE CACHEPOOL"Node: 0x%p, Item 0x%p, size 0x%p.\n",
 			cur, cur->item, cur->item->objectSize);
 	};
 

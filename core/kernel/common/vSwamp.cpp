@@ -8,24 +8,24 @@
 
 void vSwampC::dump(void)
 {
-	__kprintf(NOTICE"vSwamp: base: 0x%p, size: 0x%x, ", baseAddr, size);
+	printf(NOTICE"vSwamp: base: 0x%p, size: 0x%x, ", baseAddr, size);
 
 	state.lock.acquire();
 
 	if (state.rsrc.head == NULL)
 	{
-		__kprintf(CC"invalid.\n");
+		printf(CC"invalid.\n");
 		state.lock.release();
 		return;
 	};
 
-	__kprintf(CC"valid\n");
+	printf(CC"valid\n");
 
 	for (swampInfoNodeC *tmp = state.rsrc.head;
 		tmp != NULL;
 		tmp = tmp->next)
 	{
-		__kprintf(CC"\tNode (v0x%p): baseAddr 0x%p, nPages 0x%x.\n",
+		printf(CC"\tNode (v0x%p): baseAddr 0x%p, nPages 0x%x.\n",
 			tmp, tmp->baseAddr, tmp->nPages);
 	};
 
@@ -89,7 +89,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 		|| reinterpret_cast<uarch_t>( vaddr ) & PAGING_BASE_MASK_LOW
 		|| nPages == 0)
 	{
-		__kprintf(WARNING OPTS(NOLOG)
+		printf(WARNING OPTS(NOLOG)
 			"vSwamp: ReleasePages with non-page "
 			"aligned vaddr 0x%p.\n", vaddr);
 
