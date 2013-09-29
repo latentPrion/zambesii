@@ -55,7 +55,7 @@ public:
 	void *publicAllocate(uarch_t nBytes);
 	void publicFree(void *mem);
 
-	// Returns a handle to the created pool, __KNULL if it failed.
+	// Returns a handle to the created pool, NULL if it failed.
 	void *createPool(uarch_t poolSize);
 	void releasePool(void *poolHandle);
 

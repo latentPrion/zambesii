@@ -37,7 +37,7 @@ inline sarch_t wrapAroundCounterC::getNextValue(void **arr, ubit8 secondTry)
 
 	for (sarch_t i=nextVal.rsrc; i<=maxVal;	i++)
 	{
-		if (arr[i] == __KNULL)
+		if (arr[i] == NULL)
 		{
 			ret = i;
 			nextVal.rsrc = i + 1;

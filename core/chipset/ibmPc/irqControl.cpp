@@ -67,7 +67,7 @@ status_t zkcmIrqControlModC::identifyActiveIrq(
 		};
 
 		ioApic = x86IoApic::getIoApicByVector(vector);
-		if (ioApic == __KNULL) {
+		if (ioApic == NULL) {
 			return IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE;
 		};
 

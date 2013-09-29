@@ -116,7 +116,7 @@ static void ibmPc_isaBpm_smpMode_acpi_setIsaDefaults(void)
 			ioApic = x86IoApic::getIoApicFor(
 				isaBusPinMappings[girq].__kpin);
 
-			assert_fatal(ioApic != __KNULL);
+			assert_fatal(ioApic != NULL);
 
 			ioApic->lookupPinBy__kid(
 				isaBusPinMappings[girq].__kpin, &pin);
@@ -175,7 +175,7 @@ void dumpSmpIsaPins(void)
 		// ISA-GIRQ -> __kpin.
 		x86IoApic::get__kpinFor(girq, &__kpin);
 		ioApic = x86IoApic::getIoApicFor(__kpin);
-		assert_fatal(ioApic != __KNULL);
+		assert_fatal(ioApic != NULL);
 
 		ioApic->lookupPinBy__kid(__kpin, &pin);
 		enabled = ioApic->getPinState(
@@ -202,10 +202,10 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 
 	rsdt = acpi::getRsdt();
 
-	handle = context = __KNULL;
+	handle = context = NULL;
 	// We'll only use the first MADT we encounter.
 	madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
-	if (madt == __KNULL)
+	if (madt == NULL)
 	{
 		__kprintf(WARNING IBMPCBPM"ISA: No MADTs found.\n");
 		return ERROR_UNSUPPORTED;
@@ -223,10 +223,10 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 	 * assume that on this chipset, all ISA IRQs are identity
 	 * mapped to the IO-APIC IRQ pins (0-15).
 	 **/
-	handle2 = __KNULL;
+	handle2 = NULL;
 	irqOverride = acpiRMadt::getNextIrqSourceOverrideEntry(madt, &handle2);	
 	for (;
-		irqOverride != __KNULL;
+		irqOverride != NULL;
 		irqOverride = acpiRMadt::getNextIrqSourceOverrideEntry(
 			madt, &handle2))
 	{
@@ -260,7 +260,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 		ioApic = x86IoApic::getIoApicFor(
 			isaBusPinMappings[irqOverride->irqNo].__kpin);
 
-		if (ioApic == __KNULL)
+		if (ioApic == NULL)
 		{
 			__kprintf(FATAL IBMPCBPM"ISA: LibIO-APIC claims to "
 				"have a __kpin mapping\n"
@@ -370,10 +370,10 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 	__kprintf(NOTICE IBMPCBPM"x86MP ISA BUS ID: %d.\n", isaBusId);
 
 	pos = 0;
-	handle = __KNULL;
+	handle = NULL;
 	irqSourceEntry = x86Mp::getNextIrqSourceEntry(&pos, &handle);
 
-	for (; irqSourceEntry != __KNULL;
+	for (; irqSourceEntry != NULL;
 		irqSourceEntry = x86Mp::getNextIrqSourceEntry(&pos, &handle))
 	{
 		ubit8		cpu, dummy, polarity, triggerMode;
@@ -403,7 +403,7 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 		 *	  isaBusPinMapping[] array.
 		 **/
 		ioApic = x86IoApic::getIoApic(irqSourceEntry->destIoApicId);
-		if (ioApic == __KNULL)
+		if (ioApic == NULL)
 		{
 			__kprintf(FATAL IBMPCBPM"x86MP: Serious: MP Tables "
 				"speak of an IO-APIC %d, but\n\tthe kernel "
@@ -579,7 +579,7 @@ useRsdt:
 
 tryMpTables:
 	x86Mp::initializeCache();
-	if (x86Mp::findMpFp() == __KNULL)
+	if (x86Mp::findMpFp() == NULL)
 	{
 		__kprintf(FATAL IBMPCBPM"Anomaly:\n"
 			"\tYour chipset claims to support IO-APICs and SMP\n"
@@ -591,7 +591,7 @@ tryMpTables:
 		panic(ERROR_UNKNOWN);
 	};
 
-	if (x86Mp::mapMpConfigTable() == __KNULL)
+	if (x86Mp::mapMpConfigTable() == NULL)
 	{
 		panic(ERROR IBMPCBPM"Failed to map MP Config table. There "
 			"is a possibility that\n\tthere was bus->pin mapping "

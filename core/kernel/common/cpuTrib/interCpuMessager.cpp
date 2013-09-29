@@ -10,7 +10,7 @@ cpuStreamC::interCpuMessagerC::interCpuMessagerC(cpuStreamC *parent)
 :
 parent(parent)
 {
-	cache = __KNULL;
+	cache = NULL;
 	statusFlag.rsrc = NOT_TAKING_REQUESTS;
 }
 
@@ -20,10 +20,10 @@ error_t cpuStreamC::interCpuMessagerC::initialize(void)
 
 	// Create an object cache for the messages.
 	cache = cachePool.getCache(sizeof(messageS));
-	if (cache == __KNULL)
+	if (cache == NULL)
 	{
 		cache = cachePool.createCache(sizeof(messageS));
-		if (cache == __KNULL)
+		if (cache == NULL)
 		{
 			__kprintf(ERROR CPUMSG"%d: initialize(): Failed "
 				"to create an object cache for messages.\n",
@@ -81,7 +81,7 @@ error_t cpuStreamC::interCpuMessagerC::dispatch(void)
 	setStatus(PROCESSING);
 
 	msg = messageQueue.pop();
-	while (msg != __KNULL)
+	while (msg != NULL)
 	{
 		switch (msg->type)
 		{

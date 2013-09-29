@@ -8,7 +8,7 @@ cachePoolC::cachePoolC(void)
 :
 poolNodeCache(sizeof(cachePoolNodeS))
 {
-	head.rsrc = __KNULL;
+	head.rsrc = NULL;
 	nCaches = 0;
 }
 
@@ -18,7 +18,7 @@ cachePoolC::~cachePoolC(void)
 
 	head.lock.acquire();
 
-	for (cur = head.rsrc; cur != __KNULL; )
+	for (cur = head.rsrc; cur != NULL; )
 	{
 		delete cur->item;
 		tmp = cur;
@@ -33,7 +33,7 @@ void cachePoolC::dump(void)
 
 	head.lock.acquire();
 
-	for (cachePoolNodeS *cur = head.rsrc; cur != __KNULL; cur = cur->next)
+	for (cachePoolNodeS *cur = head.rsrc; cur != NULL; cur = cur->next)
 	{
 		__kprintf(NOTICE CACHEPOOL"Node: 0x%p, Item 0x%p, size 0x%p.\n",
 			cur, cur->item, cur->item->objectSize);
@@ -46,15 +46,15 @@ status_t cachePoolC::insert(cachePoolNodeS *node)
 {
 	cachePoolNodeS		*cur, *prev;
 
-	prev = __KNULL;
+	prev = NULL;
 
 	head.lock.acquire();
 
 	// No items in list.
-	if (head.rsrc == __KNULL)
+	if (head.rsrc == NULL)
 	{
 		head.rsrc = node;
-		node->next = __KNULL;
+		node->next = NULL;
 		nCaches++;
 
 		head.lock.release();
@@ -62,12 +62,12 @@ status_t cachePoolC::insert(cachePoolNodeS *node)
 	};
 
 	cur = head.rsrc;
-	for (; cur != __KNULL; )
+	for (; cur != NULL; )
 	{
 		if (node->item->objectSize < cur->item->objectSize)
 		{
 			// If adding before first item in list.
-			if (prev != __KNULL) {
+			if (prev != NULL) {
 				prev->next = node;
 			}
 			// Else adding in middle.
@@ -93,10 +93,10 @@ status_t cachePoolC::insert(cachePoolNodeS *node)
 	};
 
 	// Adding at end of list.
-	if (prev != __KNULL)
+	if (prev != NULL)
 	{
 		prev->next = node;
-		node->next = __KNULL;
+		node->next = NULL;
 		nCaches++;
 
 		head.lock.release();
@@ -113,12 +113,12 @@ void cachePoolC::remove(uarch_t objSize)
 	cachePoolNodeS		*cur, *prev;
 
 	objSize = CACHEPOOL_SIZE_ROUNDUP(objSize);
-	prev = __KNULL;
+	prev = NULL;
 
 	head.lock.acquire();
 
 	cur = head.rsrc;
-	for (; cur != __KNULL; )
+	for (; cur != NULL; )
 	{
 		if (cur->item->objectSize > objSize)
 		{
@@ -130,7 +130,7 @@ void cachePoolC::remove(uarch_t objSize)
 		if (cur->item->objectSize == objSize)
 		{
 			// If removing first item in list.
-			if (prev == __KNULL)
+			if (prev == NULL)
 			{
 				head.rsrc = cur->next;
 				nCaches--;
@@ -170,7 +170,7 @@ slamCacheC *cachePoolC::getCache(uarch_t objSize)
 	head.lock.acquire();
 
 	cur = head.rsrc;
-	for (; cur != __KNULL; cur = cur->next)
+	for (; cur != NULL; cur = cur->next)
 	{
 		if (cur->item->objectSize == objSize)
 		{
@@ -180,7 +180,7 @@ slamCacheC *cachePoolC::getCache(uarch_t objSize)
 	};
 
 	head.lock.release();
-	return __KNULL;
+	return NULL;
 }
 
 slamCacheC *cachePoolC::createCache(uarch_t objSize)
@@ -192,14 +192,14 @@ slamCacheC *cachePoolC::createCache(uarch_t objSize)
 	objSize = CACHEPOOL_SIZE_ROUNDUP(objSize);
 
 	node = new (poolNodeCache.allocate()) cachePoolNodeS;
-	if (node == __KNULL) {
-		return __KNULL;
+	if (node == NULL) {
+		return NULL;
 	};
 
 	node->item = new slamCacheC(objSize);
-	if (node->item == __KNULL)
+	if (node->item == NULL)
 	{
-		ret = __KNULL;
+		ret = NULL;
 		goto releaseNode;
 	};
 
@@ -207,7 +207,7 @@ slamCacheC *cachePoolC::createCache(uarch_t objSize)
 	status = insert(node);
 	if (status < 0)
 	{
-		ret = __KNULL;
+		ret = NULL;
 		goto releaseCache;
 	};
 

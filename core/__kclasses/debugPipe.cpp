@@ -14,7 +14,7 @@
 
 debugPipeC::debugPipeC(void)
 {
-	convBuff.rsrc = __KNULL;
+	convBuff.rsrc = NULL;
 	devices.rsrc = 0;
 }
 
@@ -37,7 +37,7 @@ error_t debugPipeC::initialize(void)
 	mem = new (buffMem) utf8Char;
 #endif
 
-	if (mem == __KNULL) {
+	if (mem == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -83,7 +83,7 @@ uarch_t debugPipeC::tieTo(uarch_t device)
 		if (__KBIT_TEST(device, i))
 		{
 			mod = zkcmCore.debug[i];
-			if (mod != __KNULL)
+			if (mod != NULL)
 			{
 				err = mod->initialize();
 				if (err == ERROR_SUCCESS) {
@@ -155,7 +155,7 @@ void debugPipeC::refresh(void)
 
 	handle = debugBuff.lock();
 
-	for (buff = debugBuff.extract(&handle, &len); buff != __KNULL; )
+	for (buff = debugBuff.extract(&handle, &len); buff != NULL; )
 	{
 		for (ubit8 i=0; i<4; i++)
 		{
@@ -495,7 +495,7 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	convBuff.lock.acquire();
 
 	// Make sure we're not printing to an unallocated buffer.
-	if (convBuff.rsrc == __KNULL)
+	if (convBuff.rsrc == NULL)
 	{
 		convBuff.lock.release();
 		return;
@@ -541,7 +541,7 @@ void debugPipeC::printf(
 	buff->lock.acquire();
 
 	// Make sure we're not printing to an unallocated buffer.
-	if (buff->rsrc == __KNULL)
+	if (buff->rsrc == NULL)
 	{
 		buff->lock.release();
 		return;

@@ -18,7 +18,7 @@ public pointerDoubleListC<void>
 public:
 	singleWaiterQueueC(void)
 	:
-	thread(__KNULL)
+	thread(NULL)
 	{}
 
 	error_t initialize(void)

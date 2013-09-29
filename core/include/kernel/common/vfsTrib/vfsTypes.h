@@ -82,7 +82,7 @@ namespace vfs
 			utf8Char *name,
 			tagTypeE type,
 			tagC *parent,
-			inodeC *inode=__KNULL)
+			inodeC *inode=NULL)
 		:
 		inode(inode), parent(parent), flags(0), type(type)
 		{
@@ -245,47 +245,47 @@ tagType *vfs::dirInodeC<tagType>::createDirTag(
 {
 	tagType	*ret;
 
-	if (name == __KNULL || err == __KNULL || parent == __KNULL)
+	if (name == NULL || err == NULL || parent == NULL)
 	{
-		if (err != __KNULL) { *err = ERROR_INVALID_ARG; };
-		return __KNULL;
+		if (err != NULL) { *err = ERROR_INVALID_ARG; };
+		return NULL;
 	};
 
 	if (type == vfs::FILE || type == vfs::SYMLINK)
 	{
-		if (err != __KNULL) { *err = ERROR_UNSUPPORTED; }
-		return __KNULL;
+		if (err != NULL) { *err = ERROR_UNSUPPORTED; }
+		return NULL;
 	};
 
 	// Only utf8 can be used for VFS node names.
 	if (name[0] == '\0')
 	{
 		*err = ERROR_INVALID_ARG_VAL;
-		return __KNULL;
+		return NULL;
 	};
 
 	/* FIXME:
 	 * Can't use object caching because of the structure of the VFS classes.
 	 **/
 	ret = new tagType(name, type, parent, inode);
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		*err = ERROR_MEMORY_NOMEM;
-		return __KNULL;
+		return NULL;
 	};
 
 	*err = ret->initialize();
 	if (*err != ERROR_SUCCESS)
 	{
 		delete ret;
-		return __KNULL;
+		return NULL;
 	};
 
 	*err = dirs.insert(ret);
 	if (*err != ERROR_SUCCESS)
 	{
 		delete ret;
-		return __KNULL;
+		return NULL;
 	};
 
 	nDirs++;
@@ -303,46 +303,46 @@ tagType *vfs::dirInodeC<tagType>::createLeafTag(
 {
 	tagType	*ret;
 
-	if (name == __KNULL || parent == __KNULL || err == __KNULL)
+	if (name == NULL || parent == NULL || err == NULL)
 	{
-		if (err != __KNULL) { *err = ERROR_INVALID_ARG; };
-		return __KNULL;
+		if (err != NULL) { *err = ERROR_INVALID_ARG; };
+		return NULL;
 	};
 
 	if (type == vfs::DIR || type == vfs::MOUNTPOINT)
 	{
-		if (err != __KNULL) { *err = ERROR_UNSUPPORTED; }
-		return __KNULL;
+		if (err != NULL) { *err = ERROR_UNSUPPORTED; }
+		return NULL;
 	};
 
 	if (name[0] == '\0')
 	{
 		*err = ERROR_INVALID_ARG_VAL;
-		return __KNULL;
+		return NULL;
 	};
 
 	/**	FIXME:
 	 * Can't use object caching due to the class hierarchy.
 	 **/
 	ret = new tagType(name, type, parent, inode);
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		*err = ERROR_MEMORY_NOMEM;
-		return __KNULL;
+		return NULL;
 	};
 
 	*err = ret->initialize();
 	if (*err != ERROR_SUCCESS)
 	{
 		delete ret;
-		return __KNULL;
+		return NULL;
 	};
 
 	*err = leaves.insert(ret);
 	if (*err != ERROR_SUCCESS)
 	{
 		delete ret;
-		return __KNULL;
+		return NULL;
 	};
 
 	nLeaves++;
@@ -355,12 +355,12 @@ sarch_t vfs::dirInodeC<tagType>::removeDirTag(utf8Char *name)
 	void			*handle;
 	tagType		*currItem;
 
-	if (name == __KNULL || name[0] == '\0') { return 0; };
+	if (name == NULL || name[0] == '\0') { return 0; };
 
-	handle = __KNULL;
+	handle = NULL;
 	dirs.lock();
 	currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != __KNULL;
+	for (; currItem != NULL;
 		currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
 		if (strncmp8(
@@ -386,12 +386,12 @@ sarch_t vfs::dirInodeC<tagType>::removeLeafTag(utf8Char *name)
 	void		*handle;
 	tagType	*currItem;
 
-	if (name == __KNULL || name[0] == '\0') { return 0; };
+	if (name == NULL || name[0] == '\0') { return 0; };
 
-	handle = __KNULL;
+	handle = NULL;
 	leaves.lock();
 	currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != __KNULL;
+	for (; currItem != NULL;
 		currItem = leaves.getNextItem(
 			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
@@ -420,12 +420,12 @@ tagType *vfs::dirInodeC<tagType>::getDirTag(
 	void			*handle;
 	tagType		*currItem;
 
-	if (name == __KNULL || name[0] == '\0') { return __KNULL; };
+	if (name == NULL || name[0] == '\0') { return NULL; };
 
-	handle = __KNULL;
+	handle = NULL;
 	dirs.lock();
 	currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != __KNULL;
+	for (; currItem != NULL;
 		currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
 		if (strncmp8(
@@ -441,7 +441,7 @@ tagType *vfs::dirInodeC<tagType>::getDirTag(
 	};
 
 	dirs.unlock();
-	return __KNULL;
+	return NULL;
 }
 
 template <class tagType>
@@ -452,12 +452,12 @@ tagType *vfs::dirInodeC<tagType>::getLeafTag(
 	void			*handle;
 	tagType		*currItem;
 
-	if (name == __KNULL || name[0] == '\0') { return __KNULL; };
+	if (name == NULL || name[0] == '\0') { return NULL; };
 
-	handle = __KNULL;
+	handle = NULL;
 	leaves.lock();
 	currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != __KNULL;
+	for (; currItem != NULL;
 		currItem = leaves.getNextItem(
 			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
@@ -474,7 +474,7 @@ tagType *vfs::dirInodeC<tagType>::getLeafTag(
 	};
 
 	leaves.unlock();
-	return __KNULL;
+	return NULL;
 }
 
 template <class tagType>
@@ -484,10 +484,10 @@ void vfs::dirInodeC<tagType>::dumpDirs(void)
 	tagType		*currItem;
 
 	__kprintf(NOTICE"vfs::dirInode: dumping dirs (%d total).\n", nDirs);
-	handle = __KNULL;
+	handle = NULL;
 	dirs.lock();
 	currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != __KNULL;
+	for (; currItem != NULL;
 		currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
 		__kprintf(CC"\tname: %s. Parent 0x%p.\n",
@@ -504,10 +504,10 @@ void vfs::dirInodeC<tagType>::dumpLeaves(void)
 	tagType		*currItem;
 
 	__kprintf(NOTICE"vfs::dirInode: dumping leaves (%d total).\n", nLeaves);
-	handle = __KNULL;
+	handle = NULL;
 	leaves.lock();
 	currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != __KNULL;
+	for (; currItem != NULL;
 		currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
 		__kprintf(CC"\tname: %s. Parent 0x%p.\n",
@@ -522,7 +522,7 @@ void vfs::dirInodeC<tagType>::dumpLeaves(void)
 template <ubit16 maxNameLength>
 error_t vfs::tagC<maxNameLength>::rename(utf8Char *name)
 {
-	if (name == __KNULL) { return ERROR_INVALID_ARG; };
+	if (name == NULL) { return ERROR_INVALID_ARG; };
 	if (name[0] == '\0') { return ERROR_INVALID_ARG_VAL; };
 
 	strncpy8(this->name, name, maxNameLength);

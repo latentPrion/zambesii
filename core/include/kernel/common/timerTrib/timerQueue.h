@@ -53,7 +53,7 @@ private:
 	timerQueueC(ubit32 nativePeriod)
 	:
 	currentPeriod(nativePeriod), nativePeriod(nativePeriod),
-	device(__KNULL), clockRoutineInstalled(0)
+	device(NULL), clockRoutineInstalled(0)
 	{}
 
 	error_t initialize(void) { return requestQueue.initialize(); }
@@ -62,7 +62,7 @@ private:
 private:
 	error_t latch(zkcmTimerDeviceC *device);
 	void unlatch(void);
-	sarch_t isLatched(void) { return device != __KNULL; };
+	sarch_t isLatched(void) { return device != NULL; };
 	zkcmTimerDeviceC *getDevice(void) { return device; };
 
 	error_t insert(timerStreamC::requestS *obj);

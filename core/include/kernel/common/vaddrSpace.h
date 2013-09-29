@@ -13,9 +13,9 @@ class vaddrSpaceC
 {
 public:
 	vaddrSpaceC(void)
-	: level0Paddr((paddr_t)__KNULL)
+	: level0Paddr((paddr_t)NULL)
 	{
-		vaddrSpaceC::level0Accessor.rsrc = __KNULL;
+		vaddrSpaceC::level0Accessor.rsrc = NULL;
 	}
 
 	error_t initialize(numaBankId_t boundBankId);

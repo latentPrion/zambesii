@@ -53,7 +53,7 @@ x86IoApic::ioApicC *x86IoApic::getIoApicByVector(ubit8 vector)
 
 	it = cache.ioApics.begin();
 	for (ioApic = (ioApicC *)it++;
-		ioApic != __KNULL; ioApic = (ioApicC *)it++)
+		ioApic != NULL; ioApic = (ioApicC *)it++)
 	{
 		if (ioApic->getVectorBase() <= vector
 			&& (ioApic->getVectorBase() + ioApic->getNIrqs())
@@ -63,7 +63,7 @@ x86IoApic::ioApicC *x86IoApic::getIoApicByVector(ubit8 vector)
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 void x86IoApic::dump(void)
@@ -106,14 +106,14 @@ static error_t rsdtDetectIoApics(void)
 	 * etc and get info on IO-APICs.
 	 **/
 	rsdt = acpi::getRsdt();
-	handle = context = __KNULL;
+	handle = context = NULL;
 	madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
-	for (; madt != __KNULL;
+	for (; madt != NULL;
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle))
 	{
-		handle2 = __KNULL;
+		handle2 = NULL;
 		ioApicEntry = acpiRMadt::getNextIoApicEntry(madt, &handle2);
-		for (; ioApicEntry != __KNULL;
+		for (; ioApicEntry != NULL;
 			ioApicEntry =
 				acpiRMadt::getNextIoApicEntry(madt, &handle2))
 		{
@@ -122,7 +122,7 @@ static error_t rsdtDetectIoApics(void)
 				ioApicEntry->ioApicPaddr,
 				ioApicEntry->globalIrqBase);
 
-			if (tmp == __KNULL) { return ERROR_MEMORY_NOMEM; };
+			if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 
 			ret = tmp->initialize();
 			if (ret != ERROR_SUCCESS)
@@ -203,13 +203,13 @@ tryMpTables:
 	x86Mp::initializeCache();
 	if (!x86Mp::mpConfigTableIsMapped())
 	{
-		if (x86Mp::findMpFp() == __KNULL)
+		if (x86Mp::findMpFp() == NULL)
 		{
 			__kprintf(WARNING x86IOAPIC"Failed to find MP FP.\n");
 			return ERROR_GENERAL;
 		};
 
-		if (x86Mp::mapMpConfigTable() == __KNULL)
+		if (x86Mp::mapMpConfigTable() == NULL)
 		{
 			__kprintf(WARNING x86IOAPIC"Failed to map MP config "
 				"table.\n");
@@ -218,9 +218,9 @@ tryMpTables:
 		};
 	};
 
-	pos = 0; handle = __KNULL;
+	pos = 0; handle = NULL;
 	ioApicEntry = x86Mp::getNextIoApicEntry(&pos, &handle);
-	for (; ioApicEntry != __KNULL;
+	for (; ioApicEntry != NULL;
 		ioApicEntry = x86Mp::getNextIoApicEntry(&pos, &handle))
 	{
 		if (!__KFLAG_TEST(
@@ -275,7 +275,7 @@ x86IoApic::ioApicC *x86IoApic::getIoApicFor(ubit16 __kpin)
 	context = cache.ioApics.prepareForLoop();
 	ret = reinterpret_cast<ioApicC*>( cache.ioApics.getLoopItem(&context) );
 
-	for (; ret != __KNULL;
+	for (; ret != NULL;
 		ret = (ioApicC *)cache.ioApics.getLoopItem(&context))
 	{
 		if (__kpin >= ret->get__kpinBase()
@@ -286,7 +286,7 @@ x86IoApic::ioApicC *x86IoApic::getIoApicFor(ubit16 __kpin)
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 void x86IoApic::maskAll(void)
@@ -297,7 +297,7 @@ void x86IoApic::maskAll(void)
 	context = cache.ioApics.prepareForLoop();
 	ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context);
 
-	for (; ioApic != __KNULL;
+	for (; ioApic != NULL;
 		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
 	{
 		ioApic->maskAll();
@@ -312,7 +312,7 @@ void x86IoApic::unmaskAll(void)
 	context = cache.ioApics.prepareForLoop();
 	ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context);
 
-	for (; ioApic != __KNULL;
+	for (; ioApic != NULL;
 		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
 	{
 		ioApic->unmaskAll();
@@ -335,7 +335,7 @@ error_t x86IoApic::get__kpinFor(uarch_t girqNo, ubit16 *__kpin)
 	context = cache.ioApics.prepareForLoop();
 	ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context);
 
-	for (; ioApic != __KNULL;
+	for (; ioApic != NULL;
 		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
 	{
 		if (ioApic->get__kpinFor(girqNo, __kpin) == ERROR_SUCCESS) {

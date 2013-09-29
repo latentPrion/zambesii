@@ -13,7 +13,7 @@
 memoryBogC::memoryBogC(uarch_t bogSize)
 {
 	blockSize = bogSize;
-	head.rsrc = __KNULL;
+	head.rsrc = NULL;
 }
 
 error_t memoryBogC::initialize(void)
@@ -63,13 +63,13 @@ void memoryBogC::dump(void)
 		blockSize, head.rsrc);
 
 	block = head.rsrc;
-	for (; block != __KNULL; block = block->next)
+	for (; block != NULL; block = block->next)
 	{
 		__kprintf((utf8Char *)"\tBlock: 0x%X, refCount %d 1stObj 0x%X."
 			"\n", block, block->refCount, block->firstObject);
 
 		obj = block->firstObject;
-		for (; obj != __KNULL; obj = obj->next)
+		for (; obj != NULL; obj = obj->next)
 		{
 			__kprintf((utf8Char *)"\t\tFree object: "
 				"Addr 0x%X, nBytes 0x%X.\n",
@@ -86,7 +86,7 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 	freeObjectS	*ret=0, *objTmp, *objTmpPrev;
 
 	if (nBytes == 0) {
-		return __KNULL;
+		return NULL;
 	};
 	nBytes = MEMORYBOG_SIZE_ROUNDUP(nBytes);
 
@@ -96,23 +96,23 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 	head.lock.acquire();
 
 	// If swamp is empty, allocate new block.
-	if (head.rsrc == __KNULL)
+	if (head.rsrc == NULL)
 	{
 		head.rsrc = getNewBlock();
-		if (head.rsrc == __KNULL)
+		if (head.rsrc == NULL)
 		{
 			head.lock.release();
-			return __KNULL;
+			return NULL;
 		};
 	};
 
 	// head.rsrc now points to a block of usable memory.
 	blockTmp = head.rsrc;
-	for (; blockTmp != __KNULL; blockTmp = blockTmp->next)
+	for (; blockTmp != NULL; blockTmp = blockTmp->next)
 	{
 		objTmpPrev = 0;
 		objTmp = blockTmp->firstObject;
-		for (; objTmp != __KNULL; )
+		for (; objTmp != NULL; )
 		{
 			// If our allocation can come from this node.
 			if (objTmp->nBytes >= nBytes)
@@ -166,10 +166,10 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 	if (!__KFLAG_TEST(flags, MEMBOG_NO_EXPAND_ON_FAIL))
 	{
 		blockTmp = getNewBlock();
-		if (blockTmp == __KNULL)
+		if (blockTmp == NULL)
 		{
 			head.lock.release();
-			return __KNULL;
+			return NULL;
 		};
 
 		blockTmp->next = head.rsrc;
@@ -182,7 +182,7 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 			{
 				nBytes = objTmp->nBytes;
 				ret = objTmp;
-				blockTmp->firstObject = __KNULL;
+				blockTmp->firstObject = NULL;
 			}
 			else
 			{
@@ -205,7 +205,7 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 	};
 
 	head.lock.release();
-	return __KNULL;
+	return NULL;
 }
 
 void memoryBogC::free(void *_mem)
@@ -223,7 +223,7 @@ void memoryBogC::free(void *_mem)
 	mem = reinterpret_cast<allocHeaderS *>(
 		reinterpret_cast<uarch_t>( _mem ) - sizeof(allocHeaderS) );
 
-	if (mem == __KNULL) {
+	if (mem == NULL) {
 		return;
 	};
 
@@ -239,10 +239,10 @@ void memoryBogC::free(void *_mem)
 
 	head.lock.acquire();
 
-	prevObj = __KNULL;
+	prevObj = NULL;
 	objTmp = block->firstObject;
 
-	for (; objTmp != __KNULL; )
+	for (; objTmp != NULL; )
 	{
 		if ((void *)mem < (void *)objTmp)
 		{
@@ -261,7 +261,7 @@ void memoryBogC::free(void *_mem)
 				R_CAST(freeObjectS *, mem)->next = objTmp->next;
 			};
 
-			if (prevObj != __KNULL)
+			if (prevObj != NULL)
 			{
 				prevObj->next = R_CAST(freeObjectS *, mem);
 
@@ -294,12 +294,12 @@ void memoryBogC::free(void *_mem)
 	 * object list, and in the middle. This next bit of code will handle
 	 * case where we add at the end of the list or the list is empty.
 	 **/
-	if (prevObj != __KNULL)
+	if (prevObj != NULL)
 	{
 		// Adding at the end of the list.
 		nBytesTmp = mem->nBytes;
 		prevObj->next = (freeObjectS *)mem;
-		R_CAST(freeObjectS *, mem)->next = __KNULL;
+		R_CAST(freeObjectS *, mem)->next = NULL;
 		R_CAST(freeObjectS *, mem)->nBytes = nBytesTmp;
 
 		if ((R_CAST(uarch_t, prevObj) + prevObj->nBytes)
@@ -318,7 +318,7 @@ void memoryBogC::free(void *_mem)
 		// List is empty. Just add and terminal 'next' ptr.
 		nBytesTmp = mem->nBytes;
 		R_CAST(freeObjectS *, mem)->nBytes = nBytesTmp;
-		R_CAST(freeObjectS *, mem)->next = __KNULL;
+		R_CAST(freeObjectS *, mem)->next = NULL;
 		block->firstObject = R_CAST(freeObjectS *, mem);
 		block->refCount--;
 
@@ -336,17 +336,17 @@ memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 			blockSize + sizeof(bogBlockS)),
 		MEMALLOC_PURE_VIRTUAL)) bogBlockS;
 
-	if (ret == __KNULL) {
-		return __KNULL;
+	if (ret == NULL) {
+		return NULL;
 	};
 
-	ret->next = __KNULL;
+	ret->next = NULL;
 	ret->refCount = 0;
 	ret->firstObject = R_CAST(freeObjectS *,
 		( R_CAST(uarch_t, ret) + sizeof(bogBlockS)) );
 
 	ret->firstObject->nBytes = blockSize;
-	ret->firstObject->next = __KNULL;
+	ret->firstObject->next = NULL;
 
 	__kprintf(NOTICE MEMBOG"New bog block @v 0x%p, 1stObj 0x%p, 1stObj "
 		"nBytes 0x%x.\n",

@@ -43,7 +43,7 @@ error_t dvfs::currenttC::getPath(
 	tagC			*currTag, *dTag;
 	uarch_t			segmentLen;
 
-	if (fullName == __KNULL || tag == __KNULL)
+	if (fullName == NULL || tag == NULL)
 		{ return ERROR_INVALID_ARG; };
 
 	// Discard preceding slashes and VFS prefix.
@@ -64,7 +64,7 @@ error_t dvfs::currenttC::getPath(
 				if (currTag->getType() == vfs::DIR)
 				{
 					currTag = getDefaultDtrib(currTag);
-					if (currTag == __KNULL) {
+					if (currTag == NULL) {
 						return ERROR_INVALID_ARG_VAL;
 					};
 				};
@@ -77,7 +77,7 @@ error_t dvfs::currenttC::getPath(
 		};
 
 		nextSlash = strnchr8(&fullName[i], DVFS_TAG_NAME_MAXLEN, '/');
-		if (nextSlash == __KNULL)
+		if (nextSlash == NULL)
 		{
 			// If no further slashes:
 			segmentLen = strnlen8(
@@ -97,11 +97,11 @@ error_t dvfs::currenttC::getPath(
 		buff[segmentLen] = '\0';
 
 		// Only check leaves if it's the last component(no more slashes)
-		if (nextSlash == __KNULL)
+		if (nextSlash == NULL)
 		{
 			// If it was a leaf node, return it.
 			dTag = currTag->getCInode()->getLeafTag(buff);
-			if (dTag != __KNULL)
+			if (dTag != NULL)
 			{
 				*tag = dTag;
 				return ERROR_SUCCESS;
@@ -109,7 +109,7 @@ error_t dvfs::currenttC::getPath(
 		};
 
 		currTag = currTag->getCInode()->getDirTag(buff);
-		if (currTag == __KNULL) {
+		if (currTag == NULL) {
 			return ERROR_NOT_FOUND;
 		};
 
@@ -117,10 +117,10 @@ error_t dvfs::currenttC::getPath(
 		 * distributary for this category. If none exists, return
 		 * INVALID_ARG_VAL.
 		 **/
-		if (nextSlash == __KNULL)
+		if (nextSlash == NULL)
 		{
 			dTag = getDefaultDtrib(currTag);
-			if (dTag == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+			if (dTag == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 			*tag = dTag;
 			return ERROR_SUCCESS;

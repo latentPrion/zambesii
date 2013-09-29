@@ -77,7 +77,7 @@ private:
 template <class T>
 __kequalizerListC<T>::__kequalizerListC(void)
 {
-	head.rsrc = __KNULL;
+	head.rsrc = NULL;
 }
 
 template <class T>
@@ -85,7 +85,7 @@ __kequalizerListC<T>::~__kequalizerListC(void)
 {
 	__kpageBlockC<T>	*tmp;
 
-	while (head.rsrc != __KNULL)
+	while (head.rsrc != NULL)
 	{
 		tmp = head.rsrc;
 		head.rsrc = head.rsrc->header.next;
@@ -102,7 +102,7 @@ void __kequalizerListC<T>::dump(void)
 	head.lock.acquire();
 
 	for (__kpageBlockC<T> *tmp=head.rsrc;
-		tmp != __KNULL;
+		tmp != NULL;
 		tmp = tmp->header.next)
 	{
 		uarch_t		nEntries;
@@ -120,20 +120,20 @@ T *__kequalizerListC<T>::addEntry(T *item)
 	__kpageBlockC<T>	*insertionBlock;
 	uarch_t			insEntry=0, copyStart;
 
-	if (item == __KNULL) {
-		return __KNULL;
+	if (item == NULL) {
+		return NULL;
 	};
 
 	head.lock.acquire();
 
 	insertionBlock = findInsertionBlock();
-	if (insertionBlock == __KNULL)
+	if (insertionBlock == NULL)
 	{
 		insertionBlock = getNewBlock(head.rsrc);
-		if (insertionBlock == __KNULL)
+		if (insertionBlock == NULL)
 		{
 			head.lock.release();
-			return __KNULL;
+			return NULL;
 		};
 
 		// Link the new block to the rest of the list.
@@ -167,15 +167,15 @@ T *__kequalizerListC<T>::addEntry(T *item)
 template <class T>
 T *__kequalizerListC<T>::find(T *item)
 {
-	if (item == __KNULL) {
-		return __KNULL;
+	if (item == NULL) {
+		return NULL;
 	};
 
 	head.lock.acquire();
 
 	// Just run through every block and search for the item.
 	for (__kpageBlockC<T> *current = head.rsrc;
-		current != __KNULL;
+		current != NULL;
 		current = current->header.next)
 	{
 		for (uarch_t i=0;
@@ -193,7 +193,7 @@ T *__kequalizerListC<T>::find(T *item)
 	};
 
 	head.lock.release();
-	return __KNULL;
+	return NULL;
 }
 
 // fine.
@@ -203,14 +203,14 @@ void __kequalizerListC<T>::removeEntry(T *item)
 	__kpageBlockC<T>	*block;
 	uarch_t			entry;
 
-	if (item == __KNULL) {
+	if (item == NULL) {
 		return;
 	};
 
 	head.lock.acquire();
 
 	block = findDeletionEntry(item, &entry);
-	if (block == __KNULL)
+	if (block == NULL)
 	{
 		head.lock.release();
 		return;
@@ -235,7 +235,7 @@ template <class T>
 __kpageBlockC<T> *__kequalizerListC<T>::findInsertionBlock(void)
 {
 	for (__kpageBlockC<T> *current = head.rsrc;
-		current != __KNULL;
+		current != NULL;
 		current = current->header.next)
 	{
 		if (current->header.nFreeEntries > 0) {
@@ -243,7 +243,7 @@ __kpageBlockC<T> *__kequalizerListC<T>::findInsertionBlock(void)
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 // The lock must already be held before calling this.
@@ -268,7 +268,7 @@ __kpageBlockC<T> *__kequalizerListC<T>::findDeletionEntry(
 	T *item, uarch_t *entry
 	)
 {
-	for (__kpageBlockC<T> *current = head.rsrc; current != __KNULL;
+	for (__kpageBlockC<T> *current = head.rsrc; current != NULL;
 		current = current->header.next)
 	{
 		uarch_t			i;
@@ -290,7 +290,7 @@ __kpageBlockC<T> *__kequalizerListC<T>::findDeletionEntry(
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 // The lock must already be held before calling this.
@@ -300,8 +300,8 @@ __kpageBlockC<T> *__kequalizerListC<T>::getNewBlock(__kpageBlockC<T> *joinTo)
 	__kpageBlockC<T>	*ret;
 
 	ret = new (rawMemAlloc(1, 0)) __kpageBlockC<T>;
-	if (ret == __KNULL) {
-		return __KNULL;
+	if (ret == NULL) {
+		return NULL;
 	};
 
 	ret->header.nFreeEntries = PAGEBLOCK_NENTRIES(T);

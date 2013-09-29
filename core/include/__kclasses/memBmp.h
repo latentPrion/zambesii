@@ -35,7 +35,7 @@ friend class numaMemoryBankC;
 
 public:
 	memBmpC(paddr_t baseAddr, paddr_t size);
-	error_t initialize(void *preAllocated=__KNULL);
+	error_t initialize(void *preAllocated=NULL);
 
 	~memBmpC(void);
 

@@ -30,7 +30,7 @@ status_t walkerPageRanger::lookup(
 #endif
 	status_t	ret;
 
-	if (vaddrSpace == __KNULL || paddr == __KNULL || flags == __KNULL) {
+	if (vaddrSpace == NULL || paddr == NULL || flags == NULL) {
 		return WPRANGER_STATUS_UNMAPPED;
 	};
 
@@ -183,13 +183,13 @@ void *walkerPageRanger::createMappingTo(
 	ret = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
 		nPages);
 
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		__kprintf(ERROR WPRANGER"createMappingTo(0x%P, %d): Failed to "
 			"alloc vmem.\n",
 			paddr, nPages);
 
-		return __KNULL;
+		return NULL;
 	};
 
 	// Map vmem to paddr.
@@ -206,7 +206,7 @@ void *walkerPageRanger::createMappingTo(
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			ret, nPages);
 
-		return __KNULL;
+		return NULL;
 	};
 
 	return ret;

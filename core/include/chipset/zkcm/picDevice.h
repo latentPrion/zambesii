@@ -13,7 +13,7 @@ public:
 	zkcmPicDeviceC(ubit16 nPins, zkcmDeviceC *device)
 	:
 	zkcmDeviceBaseC(device),
-	nPins(nPins), irqPinList(__KNULL),
+	nPins(nPins), irqPinList(NULL),
 	__kpinBase(0)
 	{}
 

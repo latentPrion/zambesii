@@ -90,7 +90,7 @@ namespace x86IoApic
 			CC"Unknown vendor", CC"N/A"),
 		paddr(paddr), id(id), acpiGirqBase(acpiGirqBase), vectorBase(0)
 		{
-			vaddr.rsrc = __KNULL;
+			vaddr.rsrc = NULL;
 			version = 0;
 		}
 
@@ -289,7 +289,7 @@ sarch_t x86IoApic::irqIsEnabled(ubit16 __kpin)
 	ioApicC		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
-	if (ioApic != __KNULL) {
+	if (ioApic != NULL) {
 		return ioApic->irqIsEnabled(__kpin);
 	};
 
@@ -308,7 +308,7 @@ status_t x86IoApic::getIrqStatus(
 	ioApicC		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
-	if (ioApic != __KNULL)
+	if (ioApic != NULL)
 	{
 		return ioApic->getIrqStatus(
 			__kpin, cpu, vector, triggerMode, polarity);
@@ -328,7 +328,7 @@ status_t x86IoApic::setIrqStatus(
 	ioApicC		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
-	if (ioApic != __KNULL) {
+	if (ioApic != NULL) {
 		return ioApic->setIrqStatus(__kpin, cpu, vector, enabled);
 	};
 
@@ -344,7 +344,7 @@ void x86IoApic::maskIrq(ubit16 __kpin)
 	ioApicC		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
-	if (ioApic != __KNULL)
+	if (ioApic != NULL)
 	{
 		ioApic->maskIrq(__kpin);
 		return;
@@ -360,7 +360,7 @@ void x86IoApic::unmaskIrq(ubit16 __kpin)
 	ioApicC		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
-	if (ioApic != __KNULL)
+	if (ioApic != NULL)
 	{
 		ioApic->unmaskIrq(__kpin);
 		return;

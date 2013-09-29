@@ -189,7 +189,7 @@ zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerDevices(
 	void			*owner;
 
 	for (source = timers.getNextItem(handle);
-		source != __KNULL;
+		source != NULL;
 		source = timers.getNextItem(handle))
 	{
 		// Must meet all of the criteria passed to us.
@@ -213,7 +213,7 @@ zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerDevices(
 		return source;
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 static utf8Char *timerDevTypes[] = { CC"Per-cpu", CC"chipset" };

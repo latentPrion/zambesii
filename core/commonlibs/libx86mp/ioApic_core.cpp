@@ -11,15 +11,15 @@
 
 x86IoApic::ioApicC::~ioApicC(void)
 {
-	if (vaddr.rsrc != __KNULL)
+	if (vaddr.rsrc != NULL)
 		{ unmapIoApic(vaddr.rsrc); };
 
-	vaddr.rsrc = __KNULL;
+	vaddr.rsrc = NULL;
 
-	if (irqPinList != __KNULL)
+	if (irqPinList != NULL)
 		{ delete [] irqPinList; };
 
-	irqPinList = __KNULL;
+	irqPinList = NULL;
 }
 
 x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
@@ -35,7 +35,7 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 	ret = (ioApicRegspaceS *)processTrib.__kgetStream()
 		->getVaddrSpaceStream()->getPages(1);
 
-	if (ret == __KNULL) { return ret; };
+	if (ret == NULL) { return ret; };
 
 	/* Now map the page to the paddr passed as an arg. It is worth noting
 	 * that Linux maps the APICs as uncacheable.
@@ -54,7 +54,7 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			ret, 1);
 
-		return __KNULL;
+		return NULL;
 	};
 
 	ret = WPRANGER_ADJUST_VADDR(ret, paddr, ioApicRegspaceS *);
@@ -92,7 +92,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 
 	// Map the IO-APIC into the kernel vaddrspace.
 	vaddr.rsrc = mapIoApic(paddr);
-	if (vaddr.rsrc == __KNULL) { return ERROR_MEMORY_VIRTUAL_PAGEMAP; };
+	if (vaddr.rsrc == NULL) { return ERROR_MEMORY_VIRTUAL_PAGEMAP; };
 
 	// Get version and number of pins.
 	vaddr.lock.acquire(); 
@@ -107,7 +107,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 
 	// Allocate irqPinList.
 	irqPinList = new zkcmIrqPinS[nPins];
-	if (irqPinList == __KNULL)
+	if (irqPinList == NULL)
 	{
 		__kprintf(ERROR x86IOAPIC"%d: Failed to allocate IRQ pin list."
 			"\n", id);

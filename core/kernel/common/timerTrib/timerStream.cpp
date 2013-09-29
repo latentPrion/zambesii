@@ -32,7 +32,7 @@ error_t timerStreamC::createOneshotEvent(
 	currCpu = cpuTrib.getCurrentCpuStream();
 
 	request = new requestS;
-	if (request == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	request->type = ONESHOT;
 	request->header.privateData = privateData;
@@ -62,7 +62,7 @@ error_t timerStreamC::createOneshotEvent(
 	{
 		cpuStreamC	*tmp;
 
-		tmp = (wakeTarget == __KNULL)
+		tmp = (wakeTarget == NULL)
 			? currCpu : (cpuStreamC *)wakeTarget;
 
 		request->header.targetId = (processId_t)tmp->cpuId;
@@ -71,7 +71,7 @@ error_t timerStreamC::createOneshotEvent(
 	{
 		threadC		*tmp;
 
-		tmp = (wakeTarget == __KNULL)
+		tmp = (wakeTarget == NULL)
 			? (threadC *)currCpu->taskStream.getCurrentTask()
 			: (threadC *)wakeTarget;
 
@@ -102,7 +102,7 @@ error_t timerStreamC::createOneshotEvent(
 	tmp = requests.getHead();
 
 	// If the request queue was empty:
-	if (tmp == __KNULL)
+	if (tmp == NULL)
 	{
 		ret = requests.addItem(request, request->expirationStamp);
 		unlockRequestQueue();
@@ -191,7 +191,7 @@ void *timerStreamC::timerRequestTimeoutNotification(
 		cpuStreamC	*cs;
 
 		cs = cpuTrib.getStream((cpu_t)request->header.targetId);
-		if (cs == __KNULL) { return __KNULL; };
+		if (cs == NULL) { return NULL; };
 		taskContext = cs->getTaskContext();
 	}
 	else
@@ -199,12 +199,12 @@ void *timerStreamC::timerRequestTimeoutNotification(
 		threadC		*t;
 
 		t = parent->getThread(request->header.targetId);
-		if (t == __KNULL) { return __KNULL; };
+		if (t == NULL) { return NULL; };
 		taskContext = t->getTaskContext();
 	};
 
 	event = new eventS;
-	if (event == __KNULL)
+	if (event == NULL)
 	{
 		__kprintf(ERROR TIMERSTREAM"%d: Failed to allocate event for "
 			"expired request.\n",
@@ -276,7 +276,7 @@ void timerStreamC::timerRequestTimeoutNotification(void)
 	nextRequest = requests.popFromHead();
 	unlockRequestQueue();
 
-	if (nextRequest == __KNULL)
+	if (nextRequest == NULL)
 	{
 		__kprintf(FATAL TIMERSTREAM"0x%x: corrupt timer request list:\n"
 			"\tpopFromHead() returned NULL when trying to remove "
@@ -293,7 +293,7 @@ void timerStreamC::timerRequestTimeoutNotification(void)
 	 **/
 
 	nextRequest = requests.getHead();
-	if (nextRequest == __KNULL) { return; };
+	if (nextRequest == NULL) { return; };
 
 	if (timerTrib.insertTimerQueueRequestObject(nextRequest)
 		!= ERROR_SUCCESS)

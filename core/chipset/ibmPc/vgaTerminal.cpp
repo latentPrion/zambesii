@@ -7,7 +7,7 @@
 ibmPcVgaTerminalC		ibmPcVgaTerminal(ibmPcVgaTerminalC::TERMINAL);
 
 // Static member variable.
-ubit8	*ibmPcVgaTerminalC::bda=__KNULL;
+ubit8	*ibmPcVgaTerminalC::bda=NULL;
 
 error_t ibmPcVgaTerminalC::initialize(void)
 {
@@ -38,7 +38,7 @@ error_t ibmPcVgaTerminalC::initialize(void)
 
 error_t ibmPcVgaTerminalC::shutdown(void)
 {
-	buff = __KNULL;
+	buff = NULL;
 	return ERROR_SUCCESS;
 }
 
@@ -54,7 +54,7 @@ error_t ibmPcVgaTerminalC::restore(void)
 
 sarch_t ibmPcVgaTerminalC::isInitialized(void)
 {
-	if (buff == __KNULL) {
+	if (buff == NULL) {
 		return 0;
 	}
 	else {
@@ -81,7 +81,7 @@ void ibmPcVgaTerminalC::syphon(const utf8Char *str, uarch_t len)
 {
 	// FIXME: Remember to do utf-8 expansion here.
 
-	if (buff == __KNULL || str == __KNULL) {
+	if (buff == NULL || str == NULL) {
 		return;
 	};
 

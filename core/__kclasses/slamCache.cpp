@@ -21,8 +21,8 @@ allocator(allocator)
 	perPageExcess = PAGING_BASE_SIZE % objectSize;
 	perPageBlocks = PAGING_BASE_SIZE / objectSize;
 
-	partialList.rsrc = __KNULL;
-	freeList.rsrc = __KNULL;
+	partialList.rsrc = NULL;
+	freeList.rsrc = NULL;
 }
 
 slamCacheC::~slamCacheC(void)
@@ -52,7 +52,7 @@ void *slamCacheC::getNewPage(sarch_t localFlush)
 
 		dump();
 		panic(ERROR_INVALID_ARG);
-		return __KNULL;
+		return NULL;
 	};
 }
 
@@ -94,7 +94,7 @@ void slamCacheC::dump(void)
 
 	freeList.lock.acquire();
 
-	for (obj = freeList.rsrc; obj != __KNULL; obj = obj->next, count++) {
+	for (obj = freeList.rsrc; obj != NULL; obj = obj->next, count++) {
 		__kprintf((utf8Char *)"v %X ", obj);
 	};
 
@@ -107,7 +107,7 @@ void slamCacheC::dump(void)
 
 	partialList.lock.acquire();
 
-	for (obj = partialList.rsrc; obj != __KNULL; obj = obj->next, count++) {
+	for (obj = partialList.rsrc; obj != NULL; obj = obj->next, count++) {
 		__kprintf((utf8Char *)"v %X, ", obj);
 	};
 	
@@ -134,7 +134,7 @@ status_t slamCacheC::flush(void)
 	freeList.lock.acquire();
 
 	current  = freeList.rsrc;
-	while (current != __KNULL)
+	while (current != NULL)
 	{
 		tmp = current;
 		current = current->next;
@@ -149,7 +149,7 @@ status_t slamCacheC::flush(void)
 void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 {
 	void			*ret;
-	objectS			*tmp=__KNULL;
+	objectS			*tmp=NULL;
 	sarch_t			localFlush;
 
 	localFlush = __KFLAG_TEST(flags, SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY);
@@ -157,11 +157,11 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 	partialList.lock.acquire();
 
 	ret = partialList.rsrc;
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		freeList.lock.acquire();
 
-		if (freeList.rsrc != __KNULL)
+		if (freeList.rsrc != NULL)
 		{
 			tmp = freeList.rsrc;
 			freeList.rsrc = freeList.rsrc->next;
@@ -169,18 +169,18 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 
 		freeList.lock.release();
 
-		if (tmp == __KNULL)
+		if (tmp == NULL)
 		{
-			if (requiredNewPage != __KNULL) {
+			if (requiredNewPage != NULL) {
 				*requiredNewPage = 1;
 			};
 
 			tmp = new (getNewPage(localFlush)) objectS;
 
-			if (tmp == __KNULL)
+			if (tmp == NULL)
 			{
 				partialList.lock.release();
-				return __KNULL;
+				return NULL;
 			};
 		};
 
@@ -194,7 +194,7 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 
 			tmp = tmp->next;
 		};
-		tmp->next = __KNULL;
+		tmp->next = NULL;
 	};
 
 	ret = partialList.rsrc;
@@ -205,7 +205,7 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 
 void slamCacheC::free(void *obj)
 {
-	if (obj == __KNULL) {
+	if (obj == NULL) {
 		return;
 	};
 

@@ -18,7 +18,7 @@ public:
 	hardwareIdListC(void);
 
 	error_t initialize(
-		void *preallocatedMem=__KNULL, ubit16 preallocatedSize=0);
+		void *preallocatedMem=NULL, ubit16 preallocatedSize=0);
 
 public:
 	typedef class iteratorC
@@ -27,12 +27,12 @@ public:
 	public:
 		iteratorC(void)
 		:
-		cursor(0), list(__KNULL)
+		cursor(0), list(NULL)
 		{}
 
 		void *operator++(int)
 		{
-			if (list == __KNULL) { return __KNULL; };
+			if (list == NULL) { return NULL; };
 			return list->getLoopItem(&cursor);
 		}
 
@@ -66,7 +66,7 @@ public:
 	 * the current value of the index in the iterator and advance it to the
 	 * next valid index for reading.
 	 *
-	 * Repeat until getLoopItem() returns __KNULL.
+	 * Repeat until getLoopItem() returns NULL.
 	 **/
 	iteratorC begin(void)
 	{

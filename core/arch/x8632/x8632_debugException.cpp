@@ -22,7 +22,7 @@ status_t __attribute__((noreturn)) x8632_debug(registerContextC *regs, ubit8)
 			? cpuTrib.getCurrentCpuStream()->perCpuThreadStack
 			: ((threadC *)currTask)->stack0,
 		(currTask->getType() == task::UNIQUE)
-			? ((threadC *)currTask)->stack1 : __KNULL,
+			? ((threadC *)currTask)->stack1 : NULL,
 		regs->esi, regs->edi,
 		regs->eax, regs->ebx, regs->ecx, regs->edx);
 

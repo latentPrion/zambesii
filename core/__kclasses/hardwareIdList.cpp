@@ -13,14 +13,14 @@ hardwareIdListC::hardwareIdListC(void)
 	arr.rsrc.maxIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.maxAllocatedIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.firstValidIndex = HWIDLIST_INDEX_INVALID;
-	arr.rsrc.arr = __KNULL;
+	arr.rsrc.arr = NULL;
 }
 
 error_t hardwareIdListC::initialize(
 	void *preallocatedMem, ubit16 preallocatedSize
 	)
 {
-	if (preallocatedMem == __KNULL) { return ERROR_SUCCESS; };
+	if (preallocatedMem == NULL) { return ERROR_SUCCESS; };
 
 	preAllocated = 1;
 	arr.rsrc.maxAllocatedIndex = (preallocatedSize / sizeof(arrayNodeS) > 0)
@@ -59,14 +59,14 @@ void hardwareIdListC::dump(void)
 void *hardwareIdListC::getItem(sarch_t id)
 {
 	uarch_t		rwFlags;
-	void		*ret=__KNULL;
+	void		*ret=NULL;
 
 	arr.lock.readAcquire(&rwFlags);
 
 	if (id > arr.rsrc.maxIndex || id < arr.rsrc.firstValidIndex)
 	{
 		arr.lock.readRelease(rwFlags);
-		return __KNULL;
+		return NULL;
 	};
 
 	if (__KFLAG_TEST(arr.rsrc.arr[id].flags, HWIDLIST_FLAGS_INDEX_VALID)) {
@@ -118,7 +118,7 @@ void *hardwareIdListC::getLoopItem(sarch_t *context)
 	void		*ret;
 
 	if (*context < 0) {
-		return __KNULL;
+		return NULL;
 	};
 
 	// 'context' is an index into the array.
@@ -128,7 +128,7 @@ void *hardwareIdListC::getLoopItem(sarch_t *context)
 		arr.rsrc.arr[*context].flags, HWIDLIST_FLAGS_INDEX_VALID))
 	{
 		arr.lock.readRelease(rwFlags);
-		return __KNULL;
+		return NULL;
 	};
 
 	ret = arr.rsrc.arr[*context].item;
@@ -160,7 +160,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 			MEMALLOC_NO_FAKEMAP))
 				arrayNodeS;
 
-		if (tmp == __KNULL)
+		if (tmp == NULL)
 		{
 			__kprintf(ERROR HWIDLIST"addItem(%d,0x%p): failed to "
 				"resize array.\n",
@@ -206,7 +206,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 		arr.lock.writeRelease();
 
 		// Free the old array mem.
-		if (!preAllocated && old != __KNULL) {
+		if (!preAllocated && old != NULL) {
 			processTrib.__kgetStream()->memoryStream.memFree(old);
 		};
 

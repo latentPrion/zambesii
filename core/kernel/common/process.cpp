@@ -54,7 +54,7 @@ error_t processStreamC::initialize(
 	// N-n-next split n-n-next split...
 	ret = generateArguments(&commandLineString[argumentsStartIndex]);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	if (environmentString != __KNULL)
+	if (environmentString != NULL)
 	{
 		ret = generateEnvironment(environmentString);
 		if (ret != ERROR_SUCCESS) { return ret; };
@@ -64,7 +64,7 @@ error_t processStreamC::initialize(
 	ret = initializeBitmaps();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	if (cpuAffinityBmp != __KNULL)
+	if (cpuAffinityBmp != NULL)
 	{
 		bitmapC		cpuAffinityTmp;
 
@@ -278,7 +278,7 @@ error_t processStreamC::generateFullName(
 	else
 	{
 		fullName = new utf8Char[length + 1];
-		if (fullName == __KNULL) { return ERROR_MEMORY_NOMEM; };
+		if (fullName == NULL) { return ERROR_MEMORY_NOMEM; };
 	};
 
 	/* Can't just strncpy() here; have to consume the backslashes in the
@@ -345,7 +345,7 @@ error_t processStreamC::generateArguments(const utf8Char *argumentString)
 	else
 	{
 		arguments = new utf8Char[length + 1];
-		if (arguments == __KNULL) { return ERROR_MEMORY_NOMEM; };
+		if (arguments == NULL) { return ERROR_MEMORY_NOMEM; };
 	};
 
 	strncpy8(arguments, argumentString, length);
@@ -473,7 +473,7 @@ error_t processStreamC::generateEnvironment(const utf8Char *environmentString)
 		else
 		{
 			environment = new environmentVarS[nVars];
-			if (environment == __KNULL)
+			if (environment == NULL)
 				{ return ERROR_MEMORY_NOMEM; };
 		};
 
@@ -488,7 +488,7 @@ void processStreamC::getInitializationBlockSizeInfo(
 	initializationBlockSizeInfoS *ret
 	)
 {
-	if (ret == __KNULL) { return; };
+	if (ret == NULL) { return; };
 
 	ret->fullNameSize = strnlen8(fullName, PROCESS_FULLNAME_MAXLEN) + 1;
 	ret->workingDirectorySize = 1;
@@ -497,16 +497,16 @@ void processStreamC::getInitializationBlockSizeInfo(
 
 void processStreamC::getInitializationBlock(initializationBlockS *ret)
 {
-	if (ret == __KNULL) { return; };
+	if (ret == NULL) { return; };
 
-	if (ret->fullName != __KNULL) { strcpy8(ret->fullName, fullName); };
+	if (ret->fullName != NULL) { strcpy8(ret->fullName, fullName); };
 
-	if (ret->workingDirectory != __KNULL) {
+	if (ret->workingDirectory != NULL) {
 		//strcpy8(ret->workingDirectory, workingDirectory);
 		ret->workingDirectory[0] = '\0';
 	};
 
-	if (ret->arguments != __KNULL) {
+	if (ret->arguments != NULL) {
 		strcpy8(ret->arguments, arguments);
 	};
 
@@ -536,7 +536,7 @@ error_t processStreamC::spawnThread(
 	error_t		ret;
 	processId_t	newThreadId;
 
-	if (newThread == __KNULL) { return ERROR_INVALID_ARG; };
+	if (newThread == NULL) { return ERROR_INVALID_ARG; };
 	// For now, per-cpu threads are not allowed to spawn new threads.
 	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
 		->getType() == task::PER_CPU)
@@ -553,7 +553,7 @@ error_t processStreamC::spawnThread(
 
 	// Allocate new thread if ID was available.
 	*newThread = allocateNewThread(newThreadId);
-	if (*newThread == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (*newThread == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	// Allocate internal sub-structures (context, etc.).
 	ret = (*newThread)->initialize();
@@ -600,7 +600,7 @@ threadC *processStreamC::allocateNewThread(processId_t newThreadId)
 	threadC		*ret;
 
 	ret = new threadC(newThreadId, this);
-	if (ret == __KNULL) { return __KNULL; };
+	if (ret == NULL) { return NULL; };
 
 	taskLock.writeAcquire();
 
@@ -616,10 +616,10 @@ void processStreamC::removeThread(processId_t threadId)
 {
 	taskLock.writeAcquire();
 
-	if (tasks[PROCID_THREAD(threadId)] != __KNULL)
+	if (tasks[PROCID_THREAD(threadId)] != NULL)
 	{
 		delete tasks[PROCID_THREAD(threadId)];
-		tasks[PROCID_THREAD(threadId)] = __KNULL;
+		tasks[PROCID_THREAD(threadId)] = NULL;
 	};
 
 	nTasks--;

@@ -23,8 +23,8 @@ memoryTribC::memoryTribC(void)
 {
 	for (uarch_t i=0; i<CHIPSET_MEMORY_NREGIONS; i++)
 	{
-		memRegions[i].info = __KNULL;
-		memRegions[i].memBmp = __KNULL;
+		memRegions[i].info = NULL;
+		memRegions[i].memBmp = NULL;
 	};
 
 #if __SCALING__ < SCALING_CC_NUMA
@@ -60,7 +60,7 @@ void memoryTribC::dump(void)
 
 	it = memoryBanks.begin();
 	for (nmb = (numaMemoryBankC *)it++;
-		nmb != __KNULL;
+		nmb != NULL;
 		nmb = (numaMemoryBankC *)it++)
 	{
 		nmb->dump();
@@ -92,7 +92,7 @@ error_t memoryTribC::memRegionInit(void)
 	 * are contained in a special region will be left marked as allocatable.
 	 **/
 	// If there are no memory regions, just exit.
-	if (chipsetRegionMap == __KNULL) { return ERROR_SUCCESS; };
+	if (chipsetRegionMap == NULL) { return ERROR_SUCCESS; };
 
 	/* We want to run through each chipsetRegionMapEntryS entry and for
 	 * each one, generate a BMP at runtime. The bitmaps for the chipset
@@ -109,7 +109,7 @@ error_t memoryTribC::memRegionInit(void)
 		memRegions[i].memBmp = new (rawMemAlloc(1, 0)) memBmpC(
 			currBase, currSize);
 
-		if (memRegions[i].memBmp == __KNULL) {
+		if (memRegions[i].memBmp == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
 
@@ -117,7 +117,7 @@ error_t memoryTribC::memRegionInit(void)
 		if (ret != ERROR_SUCCESS) { return ret; };
 
 		// If there are any hardcoded reserved ranges, mark them used.
-		if (currReserved != __KNULL)
+		if (currReserved != NULL)
 		{
 			for (uarch_t j=0; i<currEntry->nReservedEntries; i++)
 			{
@@ -133,7 +133,7 @@ error_t memoryTribC::memRegionInit(void)
 
 	// Next step is to overlay the memory regions with chipset memory map.
 	memMap = zkcmCore.memoryDetection.getMemoryMap();
-	if (memMap == __KNULL) { return ERROR_SUCCESS; };
+	if (memMap == NULL) { return ERROR_SUCCESS; };
 
 	for (ubit32 i=0; i<chipsetRegionMap->nEntries; i++)
 	{
@@ -166,8 +166,8 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t flags)
 	ret = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
 		nPages);
 
-	if (ret == __KNULL) {
-		return __KNULL;
+	if (ret == NULL) {
+		return NULL;
 	};
 
 	/* memoryTribC::rawMemAlloc() has no allocTable. Therefore it is
@@ -228,7 +228,7 @@ returnFailure:
 			* PAGING_BASE_SIZE)),
 		nPages - (totalFrames + nMapped));
 
-	return __KNULL;
+	return NULL;
 }
 
 void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages, uarch_t flags)

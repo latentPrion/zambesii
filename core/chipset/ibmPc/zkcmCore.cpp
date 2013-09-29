@@ -15,7 +15,7 @@ zkcmCoreC::zkcmCoreC(utf8Char *chipsetName, utf8Char *chipsetVendor)
 	strcpy8(zkcmCoreC::chipsetVendor, chipsetVendor);
 
 	debug[0] = &ibmPcVgaTerminal;
-	debug[1] = debug[2] = debug[3] = __KNULL;
+	debug[1] = debug[2] = debug[3] = NULL;
 }
 
 error_t zkcmCoreC::initialize(void) { return ERROR_SUCCESS; }
@@ -38,7 +38,7 @@ void zkcmCoreC::newCpuIdNotification(cpu_t newCpuId)
 
 	// Re-size the sleepstack array.
 	newArray = new void*[newCpuId + 1];
-	if (newArray == __KNULL)
+	if (newArray == NULL)
 	{
 		panic(FATAL"zkcmCore::highestCpuIdNotification: Failed to "
 			"allocate sleepstack pointer array.\n");

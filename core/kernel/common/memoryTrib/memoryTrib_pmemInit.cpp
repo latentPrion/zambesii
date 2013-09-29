@@ -79,9 +79,9 @@ static void sortNumaMapByAddress(zkcmNumaMapS *map)
 error_t memoryTribC::pmemInit(void)
 {
 	error_t			ret;
-	zkcmMemConfigS		*memConfig=__KNULL;
-	zkcmMemMapS		*memMap=__KNULL;
-	zkcmNumaMapS		*numaMap=__KNULL;
+	zkcmMemConfigS		*memConfig=NULL;
+	zkcmMemMapS		*memMap=NULL;
+	zkcmNumaMapS		*numaMap=NULL;
 	numaMemoryBankC		*nmb;
 	// __kspaceBool is used to determine whether or not to kill __kspace.
 	sarch_t			pos, __kspaceBool=0;
@@ -91,7 +91,7 @@ error_t memoryTribC::pmemInit(void)
 	// Get NUMA map from chipset.
 	numaMap = zkcmCore.memoryDetection.getNumaMap();
 
-	if (numaMap != __KNULL && numaMap->nMemEntries > 0)
+	if (numaMap != NULL && numaMap->nMemEntries > 0)
 	{
 		__kprintf(NOTICE MEMTRIB"pmemInit: Chipset NUMA Map: %d "
 			"entries.\n",
@@ -121,7 +121,7 @@ error_t memoryTribC::pmemInit(void)
 	// Get memory config from the chipset.
 	memConfig = zkcmCore.memoryDetection.getMemoryConfig();
 
-	if (memConfig != __KNULL && memConfig->memSize > 0)
+	if (memConfig != NULL && memConfig->memSize > 0)
 	{
 		__kprintf(NOTICE MEMTRIB"pmemInit: Chipset Mem Config: memsize "
 			"0x%P.\n",
@@ -136,7 +136,7 @@ error_t memoryTribC::pmemInit(void)
 			goto parseMemoryMap;
 		};
 
-		if (numaMap != __KNULL && numaMap->nMemEntries > 1)
+		if (numaMap != NULL && numaMap->nMemEntries > 1)
 		{
 			init2_generateShbankFromNumaMap(
 				memConfig, numaMap, &__kspaceBool);
@@ -176,7 +176,7 @@ parseMemoryMap:
 	// Get the Memory Map from the chipset code.
 	memMap = zkcmCore.memoryDetection.getMemoryMap();
 
-	if (memMap != __KNULL && memMap->nEntries > 0)
+	if (memMap != NULL && memMap->nEntries > 0)
 	{
 		__kprintf(NOTICE MEMTRIB"pmemInit: Chipset Mem map: %d entries."
 			"\n", memMap->nEntries);
@@ -193,7 +193,7 @@ parseMemoryMap:
 
 		pos = memoryBanks.prepareForLoop();
 		nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos);
-		for (; nmb != __KNULL;
+		for (; nmb != NULL;
 			nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos))
 		{
 			for (uarch_t i=0; i<memMap->nEntries; i++)
@@ -219,7 +219,7 @@ parseMemoryMap:
 	// Next merge all banks with __kspace.
 	pos = memoryBanks.prepareForLoop();
 	nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos);
-	for (; nmb != __KNULL;
+	for (; nmb != NULL;
 		nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos))
 	{
 		if (nmb == getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID)) {
@@ -235,11 +235,11 @@ parseMemoryMap:
 		nSet);
 
 	// Then apply the Memory Tributary's Memory Regions to all banks.
-	if (chipsetRegionMap != __KNULL)
+	if (chipsetRegionMap != NULL)
 	{
 		pos = memoryBanks.prepareForLoop();
 		nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos);
-		for (; nmb != __KNULL;
+		for (; nmb != NULL;
 			nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos))
 		{
 			for (uarch_t i=0; i<chipsetRegionMap->nEntries; i++)
@@ -304,7 +304,7 @@ void memoryTribC::init2_spawnNumaStreams(zkcmNumaMapS *map)
 
 	for (uarch_t i=0; i<map->nMemEntries; i++)
 	{
-		if (getBank(map->memEntries[i].bankId) != __KNULL) {
+		if (getBank(map->memEntries[i].bankId) != NULL) {
 			continue;
 		};
 
@@ -335,7 +335,7 @@ void memoryTribC::init2_generateNumaMemoryRanges(
 	for (uarch_t i=0; i<map->nMemEntries; i++)
 	{
 		nmb = getBank(map->memEntries[i].bankId);
-		if (nmb == __KNULL)
+		if (nmb == NULL)
 		{
 			__kprintf(ERROR MEMTRIB"Bank %d found in NUMA map, "
 				"but no bank obj in mem trib list.\n",

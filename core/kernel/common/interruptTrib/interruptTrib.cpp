@@ -19,7 +19,7 @@ pinIrqTableCounter(0)
 {
 	for (ubit32 i=0; i<ARCH_INTERRUPTS_NVECTORS; i++)
 	{
-		msiIrqTable[i].exception = __KNULL;
+		msiIrqTable[i].exception = NULL;
 		msiIrqTable[i].flags = 0;
 		msiIrqTable[i].nUnhandled = 0;
 		msiIrqTable[i].type = vectorDescriptorS::UNCLAIMED;
@@ -147,7 +147,7 @@ void interruptTribC::pinIrqMain(registerContextC *regs)
 	};
 
 	pinDescriptor = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
-	if (pinDescriptor == __KNULL)
+	if (pinDescriptor == NULL)
 	{
 		__kprintf(WARNING INTTRIB"handlePinIrq: __kpin %d: No such "
 			"__kpin descriptor.\n",
@@ -168,11 +168,11 @@ void interruptTribC::pinIrqMain(registerContextC *regs)
 				? "level" : "edge");
 	};
 
-	handle = __KNULL;
+	handle = NULL;
 	atomicAsm::set(&pinDescriptor->inService, 1);
 
 	isrDescriptor = pinDescriptor->isrList.getNextItem(&handle);
-	for (; isrDescriptor != __KNULL;
+	for (; isrDescriptor != NULL;
 		isrDescriptor = pinDescriptor->isrList.getNextItem(&handle))
 	{
 		// For now only ZKCM.
@@ -254,7 +254,7 @@ void interruptTribC::exceptionMain(registerContextC *regs)
 void interruptTribC::installException(
 	uarch_t vector, __kexceptionFn *exception, uarch_t flags)
 {
-	if (exception == __KNULL) { return; };
+	if (exception == NULL) { return; };
 	if (msiIrqTable[vector].type != vectorDescriptorS::UNCLAIMED)
 	{
 		__kprintf(FATAL INTTRIB"installException: Vector %d is already "
@@ -286,12 +286,12 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 	 *
 	 * Need an rwlock.
 	 **/
-	if (dev == __KNULL || isr == __KNULL) { return ERROR_INVALID_ARG; };
+	if (dev == NULL || isr == NULL) { return ERROR_INVALID_ARG; };
 
 	pinDesc = (irqPinDescriptorS *)interruptTrib.pinIrqTable
 		.getItem(__kpin);
 
-	if (pinDesc == __KNULL)
+	if (pinDesc == NULL)
 	{
 		__kprintf(ERROR INTTRIB"registerPinIsr: Invalid __kpin %d.\n",
 			__kpin);
@@ -310,7 +310,7 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 
 	// Constructor zeroes it out.
 	isrDesc = new isrDescriptorS(interruptTribC::isrDescriptorS::ZKCM);
-	if (isrDesc == __KNULL)
+	if (isrDesc == NULL)
 	{
 		__kprintf(ERROR INTTRIB"registerPinIsr: Failed to alloc "
 			"isrDescriptorS object.\n");
@@ -348,12 +348,12 @@ sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 	 *
 	 * Need an rwlock.
 	 **/
-	if (isr == __KNULL) { return 0; };
+	if (isr == NULL) { return 0; };
 
 	pinDesc = (irqPinDescriptorS *)interruptTrib.pinIrqTable
 		.getItem(__kpin);
 
-	if (pinDesc == __KNULL)
+	if (pinDesc == NULL)
 	{
 		__kprintf(ERROR INTTRIB"retirePinIsr: Invalid __kpin %d.\n",
 			__kpin);
@@ -370,9 +370,9 @@ sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 		return 0;
 	};
 
-	handle = __KNULL;
+	handle = NULL;
 	for (isrDesc = (isrDescriptorS *)pinDesc->isrList.getNextItem(&handle);
-		isrDesc != __KNULL;
+		isrDesc != NULL;
 		isrDesc = (isrDescriptorS *)pinDesc->isrList
 			.getNextItem(&handle))
 	{
@@ -406,7 +406,7 @@ error_t interruptTribC::__kpinEnable(ubit16 __kpin)
 	irqPinDescriptorS	*pinDesc;
 
 	pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
-	if (pinDesc == __KNULL)
+	if (pinDesc == NULL)
 	{
 		__kprintf(ERROR INTTRIB"__kpinEnable: Invalid __kpin %d.\n",
 			__kpin);
@@ -432,7 +432,7 @@ sarch_t interruptTribC::__kpinDisable(ubit16 __kpin)
 	irqPinDescriptorS	*pinDesc;
 
 	pinDesc = (irqPinDescriptorS *)pinIrqTable.getItem(__kpin);
-	if (pinDesc == __KNULL)
+	if (pinDesc == NULL)
 	{
 		__kprintf(ERROR INTTRIB"__kpinEnable: Invalid __kpin %d.\n",
 			__kpin);
@@ -465,7 +465,7 @@ void interruptTribC::removeException(uarch_t vector)
 		return;
 	};
 
-	msiIrqTable[vector].exception = __KNULL;
+	msiIrqTable[vector].exception = NULL;
 	msiIrqTable[vector].flags = 0;
 	msiIrqTable[vector].type = vectorDescriptorS::UNCLAIMED;
 }
@@ -479,7 +479,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 	{
 		tmp = new irqPinDescriptorS;
 		tmp->isrList.initialize();
-		if (tmp == __KNULL)
+		if (tmp == NULL)
 		{
 			__kprintf(FATAL INTTRIB"registerIrqPins(): Failed to "
 				"alloc mem for pin %d.\n",
@@ -654,7 +654,7 @@ void interruptTribC::dumpIrqPins(void)
 
 	prev = it = pinIrqTable.begin();
 	tmp = reinterpret_cast<irqPinDescriptorS *>( it++ );
-	while (tmp != __KNULL)
+	while (tmp != NULL)
 	{
 		__kprintf(CC"\t__kpin %d: %d devices.\n",
 			prev.cursor, tmp->isrList.getNItems());

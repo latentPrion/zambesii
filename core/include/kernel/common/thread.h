@@ -89,7 +89,7 @@ public:
 	:
 	contextType(contextType),
 	runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
-	nLocksHeld(0), context(__KNULL),
+	nLocksHeld(0), context(NULL),
 
 	/**	CAVEAT:
 	 * When this class is instantiated as part of a per-cpu-thread
@@ -181,8 +181,8 @@ public:
 	:
 	taskC(parent),
 	id(id),
-	currentCpu(__KNULL),
-	stack0(__KNULL), stack1(__KNULL),
+	currentCpu(NULL),
+	stack0(NULL), stack1(NULL),
 	// For a normal thread, "currentCpu" and "stack0" start as NULL. 
 	taskContext(task::UNIQUE, this)
 	{}

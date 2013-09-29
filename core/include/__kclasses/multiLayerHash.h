@@ -78,7 +78,7 @@ template <class T>
 error_t multiLayerHashC<T>::initialize(void)
 {
 	top.rsrc = new (getNewLayer()) mlHashLayerU;
-	if (top.rsrc == __KNULL) {
+	if (top.rsrc == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 	return ERROR_SUCCESS;
@@ -90,8 +90,8 @@ void *multiLayerHashC<T>::getNewLayer(void)
 	mlHashLayerU		*ret;
 
 	ret = new mlHashLayerU;
-	if (ret == __KNULL) {
-		return __KNULL;
+	if (ret == NULL) {
+		return NULL;
 	};
 
 	memset(ret, 0, sizeof(mlHashLayerU));
@@ -116,12 +116,12 @@ error_t multiLayerHashC<T>::insert(ubit32 key, T *item)
 		// If we're at a non-leaf layer:
 		if (i < 2)
 		{
-			if (curLayer->layer[idx[i]] == __KNULL)
+			if (curLayer->layer[idx[i]] == NULL)
 			{
 				curLayer->layer[idx[i]] = new (getNewLayer())
 					mlHashLayerU;
 
-				if (curLayer->layer[idx[i]] == __KNULL)
+				if (curLayer->layer[idx[i]] == NULL)
 				{
 					top.lock.release();
 					return ERROR_MEMORY_NOMEM;
@@ -159,7 +159,7 @@ error_t multiLayerHashC<T>::get(ubit32 key, T **ret)
 		if (i < 2)
 		{
 			// If tree doesn't go that far down,
-			if (curLayer->layer[idx[i]] == __KNULL)
+			if (curLayer->layer[idx[i]] == NULL)
 			{
 				top.lock.release();
 				// Item doesn't exist.
@@ -196,7 +196,7 @@ void multiLayerHashC<T>::erase(ubit32 key)
 		if (i < 2)
 		{
 			// If tree doesn't go that far down,
-			if (curLayer->layer[idx[i]] == __KNULL)
+			if (curLayer->layer[idx[i]] == NULL)
 			{
 				top.lock.release();
 				// Item doesn't exist.
@@ -207,7 +207,7 @@ void multiLayerHashC<T>::erase(ubit32 key)
 		};
 
 		// Now we're at a leaf layer. Get return value.
-		curLayer->leaf[idx[i]] = __KNULL;
+		curLayer->leaf[idx[i]] = NULL;
 	};
 
 	top.lock.release();

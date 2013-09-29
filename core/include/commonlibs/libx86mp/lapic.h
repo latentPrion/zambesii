@@ -239,7 +239,7 @@ public:
 		cacheS(void)
 		:
 		magic(x86LAPIC_MAGIC),
-		v(__KNULL)
+		v(NULL)
 		{
 			memset(&p, 0, sizeof(p));
 		}

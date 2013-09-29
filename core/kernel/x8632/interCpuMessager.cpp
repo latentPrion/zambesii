@@ -10,7 +10,7 @@
 error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages)
 {
 	error_t		err;
-	messageS	*msg, *msg2=__KNULL;
+	messageS	*msg, *msg2=NULL;
 	statusE		needToIpi;
 	ubit8		extraFlushNeeded=0;
 
@@ -27,7 +27,7 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 	msg = new (cache->allocate(
 		SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY, &extraFlushNeeded)) messageS;
 
-	if (msg == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	set(
 		msg, CPUMESSAGE_TYPE_TLBFLUSH,
@@ -38,7 +38,7 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 		msg2 = new (cache->allocate(SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY))
 			messageS;
 
-		if (msg2 == __KNULL)
+		if (msg2 == NULL)
 		{
 			cache->free(msg);
 			return ERROR_MEMORY_NOMEM;

@@ -32,12 +32,12 @@ public:
 	error_t schedule(threadC *thread);
 	void yield(void);
 	// Used to prevent race conditions. See comments in definition.
-	void block(lockC::operationDescriptorS *unlockDescriptor=__KNULL);
+	void block(lockC::operationDescriptorS *unlockDescriptor=NULL);
 
 	// Back ends.
-	error_t dormant(taskC *task, taskContextC *perCpuContext=__KNULL);
-	error_t wake(taskC *task, taskContextC *perCpuContext=__KNULL);
-	error_t unblock(taskC *task, taskContextC *perCpuContext=__KNULL);
+	error_t dormant(taskC *task, taskContextC *perCpuContext=NULL);
+	error_t wake(taskC *task, taskContextC *perCpuContext=NULL);
+	error_t unblock(taskC *task, taskContextC *perCpuContext=NULL);
 
 	/* These next few overloads are front-ends for the back ends that take
 	 * pointers. The front-ends take IDs (either a CPU ID or a process ID)
@@ -50,7 +50,7 @@ public:
 		taskC		*task;
 
 		proc = processTrib.getStream(tid);
-		if (proc == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 		task = proc->getTask(tid);
 		return dormant(task);
@@ -68,7 +68,7 @@ public:
 		cpuStreamC	*cpuStream;
 
 		cpuStream = cpuTrib.getStream(cid);
-		if (cpuStream == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 		return dormant(cpuStream);
 	}
@@ -79,7 +79,7 @@ public:
 		taskC		*task;
 
 		proc = processTrib.getStream(tid);
-		if (proc == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 		task = proc->getTask(tid);
 		return wake(task);
@@ -97,7 +97,7 @@ public:
 		cpuStreamC	*cpuStream;
 
 		cpuStream = cpuTrib.getStream(cid);
-		if (cpuStream == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 		return wake(cpuStream);
 	}
@@ -108,7 +108,7 @@ public:
 		taskC		*task;
 
 		proc = processTrib.getStream(tid);
-		if (proc == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 		task = proc->getTask(tid);
 		return unblock(task);
@@ -126,7 +126,7 @@ public:
 		cpuStreamC	*cpuStream;
 
 		cpuStream = cpuTrib.getStream(cid);
-		if (cpuStream == __KNULL) { return ERROR_INVALID_ARG_VAL; };
+		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 		return unblock(cpuStream);
 	}

@@ -28,8 +28,8 @@ executableParserS *execTribC::identify(void *buff)
 {
 	for (uarch_t i=0; i<EXECTRIB_MAX_NPARSERS; i++)
 	{
-		if (parsers[i].desc == __KNULL) {
-			return __KNULL;
+		if (parsers[i].desc == NULL) {
+			return NULL;
 		};
 
 		if ((*parsers[i].desc->identify)(buff)) {
@@ -37,6 +37,6 @@ executableParserS *execTribC::identify(void *buff)
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 

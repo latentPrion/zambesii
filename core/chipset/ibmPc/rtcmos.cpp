@@ -299,9 +299,9 @@ static sarch_t getCenturyOffset(ubit8 *ret)
 
 		rsdt = acpi::getRsdt();
 
-		context = handle = __KNULL;
+		context = handle = NULL;
 		fadt = acpiRsdt::getNextFadt(rsdt, &context, &handle);
-		if (fadt != __KNULL)
+		if (fadt != NULL)
 		{
 			// Literal value temporarily used. Taken from Linux.
 			if (fadt->hdr.revision < 3 || !fadt->cmosCentury)

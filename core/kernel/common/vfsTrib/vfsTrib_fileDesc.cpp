@@ -7,10 +7,10 @@
 
 vfsFileC::vfsFileC(void)
 {
-	name = __KNULL;
-	parent = __KNULL;
-	next = __KNULL;
-	desc = __KNULL;
+	name = NULL;
+	parent = NULL;
+	next = NULL;
+	desc = NULL;
 
 	type = VFSDESC_TYPE_FILE;
 	flags = 0;
@@ -19,9 +19,9 @@ vfsFileC::vfsFileC(void)
 
 vfsFileC::vfsFileC(vfsFileInodeC *inode)
 {
-	name = __KNULL;
-	parent = __KNULL;
-	next = __KNULL;
+	name = NULL;
+	parent = NULL;
+	next = NULL;
 	desc = inode;
 
 	type = VFSDESC_TYPE_FILE;
@@ -44,7 +44,7 @@ error_t vfsFileC::initialize(
 	};
 
 	name = new utf8Char[nameLen + 1];
-	if (name == __KNULL) {
+	if (name == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -52,10 +52,10 @@ error_t vfsFileC::initialize(
 	name[nameLen] = '\0';
 
 	// Allocate inode.
-	if (desc == __KNULL)
+	if (desc == NULL)
 	{
 		desc = new vfsFileInodeC(inodeHigh, inodeLow, fileSize);
-		if (desc == __KNULL) {
+		if (desc == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
 	};
@@ -66,14 +66,14 @@ error_t vfsFileC::initialize(
 	};
 
 	delete desc;
-	desc = __KNULL;
+	desc = NULL;
 	return ret;
 }
 
 vfsFileC::~vfsFileC(void)
 {
 	delete name;
-	if (desc != __KNULL && desc->refCount <= 0) {
+	if (desc != NULL && desc->refCount <= 0) {
 		delete desc;
 	};
 }

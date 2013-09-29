@@ -16,14 +16,14 @@ status_t vfsTribC::createFolder(vfsDirC *dir, utf8Char *name, uarch_t)
 		return ret;
 	};
 	// Make sure folder/file with same name doesn't already exist.
-	if (dir->desc->getDirDesc(name) != __KNULL
-		|| dir->desc->getFileDesc(name) != __KNULL)
+	if (dir->desc->getDirDesc(name) != NULL
+		|| dir->desc->getFileDesc(name) != NULL)
 	{
 		return ERROR_INVALID_ARG_VAL;
 	};
 
 	newDir = new (dirDescCache->allocate()) vfsDirC;
-	if (newDir == __KNULL) {
+	if (newDir == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 	if ((ret = newDir->initialize(name)) != ERROR_SUCCESS)

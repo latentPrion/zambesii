@@ -35,9 +35,9 @@ static void rDumpSrat(void)
 	rsdt = acpi::getRsdt();
 	__kprintf(NOTICE"RSDT mapped to 0x%p.\n", rsdt);
 
-	context = handle = __KNULL;
+	context = handle = NULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
-	for (nSrats=0; srat != __KNULL;
+	for (nSrats=0; srat != NULL;
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle), nSrats++)
 	{
 		acpi_rSratCpuS		*cpuEntry;
@@ -47,9 +47,9 @@ static void rDumpSrat(void)
 		__kprintf(NOTICE"Srat #%d, at vaddr 0x%p. CPU entries:\n",
 			nSrats, srat);
 
-		handle2 = __KNULL;
+		handle2 = NULL;
 		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
-		for (nCpuEntries=0; cpuEntry != __KNULL;
+		for (nCpuEntries=0; cpuEntry != NULL;
 			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2),
 				nCpuEntries++)
 		{
@@ -72,9 +72,9 @@ static void rDumpSrat(void)
 		acpi_rSratMemS		*memEntry;
 		uarch_t			nMemEntries;
 
-		handle2 = __KNULL;
+		handle2 = NULL;
 		memEntry = acpiRSrat::getNextMemEntry(srat, &handle2);
-		for (nMemEntries=0; memEntry != __KNULL;
+		for (nMemEntries=0; memEntry != NULL;
 			memEntry = acpiRSrat::getNextMemEntry(srat, &handle2),
 				nMemEntries++)
 		{
@@ -177,7 +177,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 		initialize(
 			CC"@h:boot/zambesii/zambesii.zxe",
 			CC"__KRAMDISK_NAME=:__kramdisk\0",
-			__KNULL),
+			NULL),
 		ret);
 
 	/* Initialize __kspace level physical memory management, then the
@@ -220,8 +220,8 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(
 		__kprocess,
 		spawnThread(
-			(void (*)(void *))&__korientationMain, __KNULL,
-			__KNULL,
+			(void (*)(void *))&__korientationMain, NULL,
+			NULL,
 			taskC::ROUND_ROBIN,
 			0,
 			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
@@ -288,15 +288,15 @@ void __korientationMain(void)
 	distributaryProcessC		*dp;
 
 	/*ret = processTrib.spawnDriver(
-		CC"by-id/2/1/1", __KNULL,
+		CC"by-id/2/1/1", NULL,
 		taskC::ROUND_ROBIN, 0,
-		SPAWNPROC_FLAGS_DORMANT, __KNULL, (processStreamC **)&kdp);*/
+		SPAWNPROC_FLAGS_DORMANT, NULL, (processStreamC **)&kdp);*/
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
 
 	ret = processTrib.spawnDistributary(
-		CC"///@d//././udi-driver-indexer//./.", __KNULL,
+		CC"///@d//././udi-driver-indexer//./.", NULL,
 		NUMABANKID_INVALID,
-		0, 0, __KNULL,
+		0, 0, NULL,
 		&dp);
 
 	if (ret != ERROR_SUCCESS) {
@@ -336,7 +336,7 @@ dormant:
 		DO_OR_DIE(
 			processTrib,
 			spawnDistributary(
-				CC"@d/storage/cisternn", __KNULL,
+				CC"@d/storage/cisternn", NULL,
 				NUMABANKID_INVALID, 0, 0,
 				(void *)i,
 				&dtribs[i]),
@@ -347,7 +347,7 @@ dormant:
 
 	sarch_t		waitForTimeout=1;
 	ret = self->parent->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 3, 0), __KNULL, __KNULL, 0);
+		timestampS(0, 3, 0), NULL, NULL, 0);
 
 	if (ret != ERROR_SUCCESS)
 	{

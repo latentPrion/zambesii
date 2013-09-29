@@ -98,7 +98,7 @@ void i8259aPicC::chipsetEventNotification(ubit8 event, uarch_t)
 
 		// Allocate and zero memory for the __kpin mapping list.
 		irqPinList = new zkcmIrqPinS[16];
-		if (irqPinList == __KNULL)
+		if (irqPinList == NULL)
 		{
 			panic(FATAL i8259a"Failed to allocate memory for "
 				"internal __kpin mapping array.\n");
@@ -132,7 +132,7 @@ void i8259aPicC::chipsetEventNotification(ubit8 event, uarch_t)
 		 * list, because on IBM-PC, when symmetric multiprocessing mode
 		 * is activated, we use only the IO-APICs and not mixed mode.
 		 **/
-		if (irqPinList != __KNULL) {
+		if (irqPinList != NULL) {
 			interruptTrib.removeIrqPins(16, irqPinList);
 		};
 
@@ -148,7 +148,7 @@ error_t i8259aPicC::get__kpinFor(ubit8 pinNo, ubit16 *__kpin)
 {
 	if (pinNo > 15) { return ERROR_UNSUPPORTED; };
 	// Return immediately if the array hasn't yet been allocated.
-	if (irqPinList == __KNULL) { return ERROR_RESOURCE_UNAVAILABLE; };
+	if (irqPinList == NULL) { return ERROR_RESOURCE_UNAVAILABLE; };
 
 	*__kpin = irqPinList[pinNo].__kid;
 	return ERROR_SUCCESS;
@@ -176,7 +176,7 @@ status_t i8259aPicC::identifyActiveIrq(
 	 * it is impossible for them to interrupt any CPU other than the BSP. An
 	 * IO-APIC in virtual-wire mode will also emulate this behaviour.
 	 **/
-	if (irqPinList == __KNULL) {
+	if (irqPinList == NULL) {
 		return IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE;
 	};
 
@@ -241,7 +241,7 @@ status_t i8259aPicC::getIrqStatus(
 	err = lookupPinBy__kid(__kpin, &pin);
 	if (err != ERROR_SUCCESS) { return IRQCTL_GETIRQSTATUS_INEXISTENT; };
 	// Return immediately if the array hasn't been allocated.
-	if (irqPinList == __KNULL) { return IRQCTL_GETIRQSTATUS_INEXISTENT; };
+	if (irqPinList == NULL) { return IRQCTL_GETIRQSTATUS_INEXISTENT; };
 
 	*cpu = irqPinList[pin].cpu;
 	*vector = irqPinList[pin].vector;
@@ -287,7 +287,7 @@ void i8259aPicC::maskAll(void)
 	io::write8(PIC_PIC1_DATA, 0xFF);
 	io::write8(PIC_PIC2_DATA, 0xFF);
 
-	if (irqPinList != __KNULL)
+	if (irqPinList != NULL)
 	{
 		for (ubit8 i=0; i<16; i++)
 		{
@@ -303,7 +303,7 @@ void i8259aPicC::unmaskAll(void)
 	io::write8(PIC_PIC1_DATA, 0x0);
 	io::write8(PIC_PIC2_DATA, 0x0);
 
-	if (irqPinList != __KNULL)
+	if (irqPinList != NULL)
 	{
 		for (ubit8 i=0; i<16; i++)
 		{
@@ -352,7 +352,7 @@ void i8259aPicC::maskIrq(ubit16 __kpin)
 		io::write8(PIC_PIC2_DATA, mask);
 	};
 
-	if (irqPinList != __KNULL) {
+	if (irqPinList != NULL) {
 		__KFLAG_UNSET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 	};
 }
@@ -380,7 +380,7 @@ void i8259aPicC::unmaskIrq(ubit16 __kpin)
 		io::write8(PIC_PIC2_DATA, mask);
 	};
 
-	if (irqPinList != __KNULL) {
+	if (irqPinList != NULL) {
 		__KFLAG_SET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 	};
 }

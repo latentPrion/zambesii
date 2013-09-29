@@ -54,7 +54,7 @@ public:
 	virtual ~slamCacheC(void);
 
 public:
-	virtual void *allocate(uarch_t flags=0, ubit8 *requiredNewPage=__KNULL);
+	virtual void *allocate(uarch_t flags=0, ubit8 *requiredNewPage=NULL);
 	virtual void free(void *ptr);
 
 	status_t detangle(void);

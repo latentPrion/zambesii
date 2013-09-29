@@ -14,8 +14,8 @@ numaMemoryBankC::numaMemoryBankC(numaBankId_t id)
 :
 id(id), rangePtrCache(sizeof(numaMemoryBankC::rangePtrS))
 {
-	ranges.rsrc = __KNULL;
-	defRange.rsrc = __KNULL;
+	ranges.rsrc = NULL;
+	defRange.rsrc = NULL;
 }
 
 numaMemoryBankC::~numaMemoryBankC(void)
@@ -27,13 +27,13 @@ numaMemoryBankC::~numaMemoryBankC(void)
 		ranges.lock.writeAcquire();
 
 		tmp = ranges.rsrc;
-		if (tmp != __KNULL) {
+		if (tmp != NULL) {
 			ranges.rsrc = ranges.rsrc->next;
 		};
 
 		ranges.lock.writeRelease();
 
-		if (tmp == __KNULL) {
+		if (tmp == NULL) {
 			return;
 		};
 
@@ -60,7 +60,7 @@ void numaMemoryBankC::dump(void)
 
 	defRange.lock.readRelease(rwFlags2);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
+	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		__kprintf((utf8Char *)"\tMem range: base 0x%X, size 0x%X.\n",
 			cur->range->baseAddr, cur->range->size);
@@ -94,7 +94,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 		MEMALLOC_NO_FAKEMAP))
 			numaMemoryRangeC(baseAddr, size);
 
-	if (memRange == __KNULL) {
+	if (memRange == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -106,7 +106,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	};
 
 	tmpNode = new (rangePtrCache.allocate()) rangePtrS;
-	if (tmpNode == __KNULL)
+	if (tmpNode == NULL)
 	{
 		processTrib.__kgetStream()->memoryStream.memFree(memRange);
 		return ERROR_MEMORY_NOMEM;
@@ -122,7 +122,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	defRange.lock.writeAcquire();
 
 	// If the bank had no ranges before we got here:
-	if (defRange.rsrc == __KNULL) {
+	if (defRange.rsrc == NULL) {
 		defRange.rsrc = memRange;
 	};
 
@@ -138,18 +138,18 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 
 error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 {
-	rangePtrS		*cur, *prev=__KNULL;
+	rangePtrS		*cur, *prev=NULL;
 
 	ranges.lock.writeAcquire();
 
-	for (cur = ranges.rsrc; cur != __KNULL; )
+	for (cur = ranges.rsrc; cur != NULL; )
 	{
 		if (cur->range->identifyPaddr(baseAddr))
 		{
 			defRange.lock.writeAcquire();
 
 			if (defRange.rsrc == cur->range) {
-				defRange.rsrc = __KNULL;
+				defRange.rsrc = NULL;
 			};
 
 			defRange.lock.writeRelease();
@@ -201,12 +201,12 @@ error_t numaMemoryBankC::contiguousGetFrames(
 
 	defRange.lock.readAcquire(&rwFlags);
 
-	if (defRange.rsrc == __KNULL)
+	if (defRange.rsrc == NULL)
 	{
 		// Check and see if any new ranges have been added recently.
 		ranges.lock.readAcquire(&rwFlags2);
 
-		if (ranges.rsrc == __KNULL)
+		if (ranges.rsrc == NULL)
 		{
 			// This bank has no associated ranges of memory.
 			ranges.lock.readRelease(rwFlags2);
@@ -236,7 +236,7 @@ error_t numaMemoryBankC::contiguousGetFrames(
 	ranges.lock.readAcquire(&rwFlags2);
 
 	// We now hold both locks.
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
+	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		// Don't waste time re-trying the same range.
 		if (cur->range == defRange.rsrc) {
@@ -268,12 +268,12 @@ status_t numaMemoryBankC::fragmentedGetFrames(
 
 	defRange.lock.readAcquire(&rwFlags);
 
-	if (defRange.rsrc == __KNULL)
+	if (defRange.rsrc == NULL)
 	{
 		// Check and see if any new ranges have been added recently.
 		ranges.lock.readAcquire(&rwFlags2);
 
-		if (ranges.rsrc == __KNULL)
+		if (ranges.rsrc == NULL)
 		{
 			// This bank has no associated ranges of memory.
 			ranges.lock.readRelease(rwFlags2);
@@ -301,7 +301,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(
 	// Default has no mem. Below we'll scan all the other ranges.
 	ranges.lock.readAcquire(&rwFlags2);
 	// We now hold both locks.
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
+	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		// Don't waste time re-trying the same range.
 		if (cur->range == defRange.rsrc) {
@@ -332,7 +332,7 @@ void numaMemoryBankC::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
+	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		if (cur->range->identifyPaddr(basePaddr))
 		{
@@ -355,7 +355,7 @@ sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
+	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		/* A paddr can only correspond to ONE memory range. We never
 		 * hand out pmem allocations spanning multiple discontiguous
@@ -379,7 +379,7 @@ sarch_t numaMemoryBankC::identifyPaddrRange(paddr_t basePaddr, paddr_t nBytes)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
+	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		if (cur->range->identifyPaddrRange(basePaddr, nBytes))
 		{
@@ -397,7 +397,7 @@ void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next) {
+	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next) {
 		cur->range->mapMemUsed(baseAddr, nFrames);
 	};
 	ranges.lock.readRelease(rwFlags);
@@ -409,7 +409,7 @@ void numaMemoryBankC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next) {
+	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next) {
 		cur->range->mapMemUnused(baseAddr, nFrames);
 	};
 
@@ -424,9 +424,9 @@ status_t numaMemoryBankC::merge(numaMemoryBankC *nmb)
 	ranges.lock.readAcquire(&rwFlags);
 	nmb->ranges.lock.readAcquire(&rwFlags2);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != __KNULL; cur = cur->next)
+	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
-		for (rangePtrS *cur2 = nmb->ranges.rsrc; cur2 != __KNULL;
+		for (rangePtrS *cur2 = nmb->ranges.rsrc; cur2 != NULL;
 			cur2 = cur2->next)
 		{
 			ret += cur->range->merge(cur2->range);

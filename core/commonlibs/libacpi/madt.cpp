@@ -6,9 +6,9 @@ acpi_rMadtCpuS *acpiRMadt::getNextCpuEntry(
 	acpi_rMadtS *madt, void **const handle
 	)
 {
-	acpi_rMadtCpuS		*ret=__KNULL;
+	acpi_rMadtCpuS		*ret=NULL;
 
-	if (*handle == __KNULL) {
+	if (*handle == NULL) {
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
 	};
 
@@ -33,16 +33,16 @@ acpi_rMadtCpuS *acpiRMadt::getNextCpuEntry(
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 acpi_rMadtIoApicS *acpiRMadt::getNextIoApicEntry(
 	acpi_rMadtS *madt, void **const handle
 	)
 {
-	acpi_rMadtIoApicS	*ret=__KNULL;
+	acpi_rMadtIoApicS	*ret=NULL;
 
-	if (*handle == __KNULL) {
+	if (*handle == NULL) {
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
 	};
 
@@ -66,16 +66,16 @@ acpi_rMadtIoApicS *acpiRMadt::getNextIoApicEntry(
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 acpi_rMadtLapicNmiS *acpiRMadt::getNextLapicNmiEntry(
 	acpi_rMadtS *madt, void **const handle
 	)
 {
-	acpi_rMadtLapicNmiS	*ret=__KNULL;
+	acpi_rMadtLapicNmiS	*ret=NULL;
 
-	if (*handle == __KNULL) {
+	if (*handle == NULL) {
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
 	};
 
@@ -99,16 +99,16 @@ acpi_rMadtLapicNmiS *acpiRMadt::getNextLapicNmiEntry(
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 acpi_rMadtIrqSourceOverS *acpiRMadt::getNextIrqSourceOverrideEntry(
 	acpi_rMadtS *madt, void **const handle
 	)
 {
-	acpi_rMadtIrqSourceOverS	*ret=__KNULL;
+	acpi_rMadtIrqSourceOverS	*ret=NULL;
 
-	if (*handle == __KNULL) {
+	if (*handle == NULL) {
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
 	};
 
@@ -132,6 +132,6 @@ acpi_rMadtIrqSourceOverS *acpiRMadt::getNextIrqSourceOverrideEntry(
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 

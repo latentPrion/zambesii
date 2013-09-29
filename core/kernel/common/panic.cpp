@@ -32,7 +32,7 @@ void panic(error_t err, utf8Char *str)
 		__kprintf(FATAL"Kernel panic: ERROR_SUCCESS (...?).\n");
 	};
 
-	if (str != __KNULL) {
+	if (str != NULL) {
 		__kprintf(str);
 	};
 

@@ -18,7 +18,7 @@ typedef int8_t		sbit8;
 typedef int16_t		sbit16;
 typedef int32_t		sbit32;
 typedef int64_t		sbit64;
-	
+
 typedef uint8_t		ubit8;
 typedef uint16_t	ubit16;
 typedef uint32_t	ubit32;
@@ -40,8 +40,6 @@ typedef sarch_t		status_t;
 typedef ubit8		utf8Char;
 typedef ubit16		utf16Char;
 typedef ubit32		unicodePoint;
-
-#define __KNULL		NULL
 
 const utf8Char *strerror(error_t err);
 

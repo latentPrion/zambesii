@@ -21,9 +21,9 @@ error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 	uarch_t			i=0;
 	uarch_t			segmentLen;
 
-	if (path == __KNULL || ret == __KNULL) { return ERROR_INVALID_ARG; };
+	if (path == NULL || ret == NULL) { return ERROR_INVALID_ARG; };
 
-	*ret = __KNULL;
+	*ret = NULL;
 
 	// Discard preceding slashes.
 	for (; path[i] == '/'; i++) {};
@@ -53,7 +53,7 @@ error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 
 		// Find next slash, if any.
 		nextSlash = strnchr8(&path[i], FVFS_TAG_NAME_MAXLEN, '/');
-		if (nextSlash != __KNULL)
+		if (nextSlash != NULL)
 		{
 			// If there was a slash, copy until the slash.
 			segmentLen = nextSlash - &path[i];
@@ -77,10 +77,10 @@ error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 
 		// tmpBuff now holds the next segment.
 		currTag = currTag->getChild(tmpBuff);
-		if (currTag == __KNULL) { return ERROR_NOT_FOUND; };
+		if (currTag == NULL) { return ERROR_NOT_FOUND; };
 
 		// If there were no more slashes, this is the last segment.
-		if (nextSlash == __KNULL)
+		if (nextSlash == NULL)
 		{
 			*ret = currTag;
 			return ERROR_SUCCESS;

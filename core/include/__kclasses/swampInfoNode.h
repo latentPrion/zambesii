@@ -7,8 +7,8 @@ class swampInfoNodeC
 {
 public:
 	swampInfoNodeC(
-		void *baseAddr=__KNULL, uarch_t nPages=0,
-		swampInfoNodeC *prev=__KNULL, swampInfoNodeC *next=__KNULL)
+		void *baseAddr=NULL, uarch_t nPages=0,
+		swampInfoNodeC *prev=NULL, swampInfoNodeC *next=NULL)
 	:
 	baseAddr(baseAddr), nPages(nPages),
 	prev(prev), next(next)

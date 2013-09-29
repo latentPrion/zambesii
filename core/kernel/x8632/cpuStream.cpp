@@ -29,7 +29,7 @@ static x86ManufacturerEntryS		x86Manufacturers[] =
 	{CC"GenuineIntel", &x86CpuEnumeration::intel},
 	{CC"AuthenticAMD", &x86CpuEnumeration::amd},
 	{CC"AMDisbetter!", &x86CpuEnumeration::amd},
-	{__KNULL, __KNULL}
+	{NULL, NULL}
 /*	{CC"CyrixInstead"},
 	{CC"TransmetaCPU"},
 	{CC"CentaurHauls"},
@@ -112,7 +112,7 @@ status_t cpuStreamC::enumerate(void)
 	strncpy8(&cpuSignature[8], reinterpret_cast<utf8Char *>( &ecx ), 4);
 	cpuSignature[12] = '\0';
 
-	for (uarch_t i=0; x86Manufacturers[i].name != __KNULL; i++)
+	for (uarch_t i=0; x86Manufacturers[i].name != NULL; i++)
 	{
 		if (!strcmp8(cpuSignature, x86Manufacturers[i].name)) {
 			return (*x86Manufacturers[i].func)();

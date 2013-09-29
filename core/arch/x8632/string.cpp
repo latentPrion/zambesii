@@ -6,7 +6,7 @@
 
 void *memset(void *_ptr, int value, size_t count)
 {
-	if (_ptr == __KNULL)
+	if (_ptr == NULL)
 	{
 		__kprintf(FATAL"memset: dest 0x%p, caller 0x%x.\n",
 			_ptr, __builtin_return_address(0));
@@ -22,7 +22,7 @@ void *memset(void *_ptr, int value, size_t count)
 
 void *memcpy(void *dest, void *src, size_t count)
 {
-	if (dest == __KNULL || src == __KNULL)
+	if (dest == NULL || src == NULL)
 	{
 		__kprintf(FATAL"memcpy: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
@@ -40,7 +40,7 @@ int strcmp(const char *str1, const char *str2)
 {
 	if (str1 == str2) { return 0; };
 
-	if (str1 == __KNULL || str2 == __KNULL)
+	if (str1 == NULL || str2 == NULL)
 	{
 		__kprintf(FATAL"strcmp: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
@@ -65,7 +65,7 @@ int strncmp(const char *str1, const char *str2, int count)
 {
 	if (str1 == str2) { return 0; };
 
-	if (str1 == __KNULL || str2 == __KNULL)
+	if (str1 == NULL || str2 == NULL)
 	{
 		__kprintf(FATAL"strncmp: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
@@ -97,7 +97,7 @@ size_t strnlen(const char *str1, size_t maxLen)
 {
 	size_t		len;
 
-	if (str1 == __KNULL)
+	if (str1 == NULL)
 	{
 		__kprintf(FATAL"strnlen: str1 0x%p, caller 0x%x.\n",
 			str1, __builtin_return_address(0));

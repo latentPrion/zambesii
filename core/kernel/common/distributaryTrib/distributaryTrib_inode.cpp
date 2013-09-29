@@ -25,20 +25,20 @@ distributaryTribC::categoryInodeC::createDistributaryTag(
 	distributaryTagC	*newTag;
 	categoryTagC		*tmpCat;
 
-	if (name == __KNULL) { return __KNULL; };
+	if (name == NULL) { return NULL; };
 
 	// First check to see if it exists already:
 	newTag = getDistributaryTag(name);
-	if (newTag != __KNULL) { return newTag; };
+	if (newTag != NULL) { return newTag; };
 	tmpCat = getCategory(name);
-	if (tmpCat != __KNULL) { return __KNULL; };
+	if (tmpCat != NULL) { return NULL; };
 
 	newTag = new (distributaryTrib.dtribTagCache->allocate())
 		distributaryTagC(name, inode);
 
-	if (newTag == __KNULL) { return __KNULL; };
+	if (newTag == NULL) { return NULL; };
 	// Add the tag to the list.
-	if (distributaries.insert(newTag) != ERROR_SUCCESS) { return __KNULL; };
+	if (distributaries.insert(newTag) != ERROR_SUCCESS) { return NULL; };
 	return newTag;
 }
 
@@ -47,14 +47,14 @@ sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(utf8Char *name)
 	void			*handle;
 	distributaryTagC	*curr;
 
-	if (name == __KNULL) { return 0; };
+	if (name == NULL) { return 0; };
 
 	distributaries.lock();
 
-	handle = __KNULL;
+	handle = NULL;
 	// Pass NO_AUTOLOCK because we've explicitly locked the list ourselves.
 	curr = distributaries.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; curr != __KNULL;
+	for (; curr != NULL;
 		curr = distributaries.getNextItem(
 			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
@@ -80,7 +80,7 @@ sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(
 	distributaryTagC *inode
 	)
 {
-	if (inode == __KNULL) { return 0; };
+	if (inode == NULL) { return 0; };
 
 	return distributaries.remove(inode);
 }
@@ -91,13 +91,13 @@ distributaryTribC::categoryInodeC::getDistributaryTag(utf8Char *name)
 	distributaryTagC	*curr;
 	void			*handle;
 
-	if (name == __KNULL) { return __KNULL; };
+	if (name == NULL) { return NULL; };
 
 	distributaries.lock();
 
-	handle = __KNULL;
+	handle = NULL;
 	curr = distributaries.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; curr != __KNULL;
+	for (; curr != NULL;
 		curr = distributaries.getNextItem(
 			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
@@ -114,7 +114,7 @@ distributaryTribC::categoryInodeC::getDistributaryTag(utf8Char *name)
 	};
 
 	distributaries.unlock();
-	return __KNULL;
+	return NULL;
 }
 
 distributaryTribC::dvfsTagC<distributaryTribC::categoryInodeC> *
@@ -123,26 +123,26 @@ distributaryTribC::categoryInodeC::createCategory(utf8Char *name)
 	categoryTagC		*newTag;
 	distributaryTagC	*tmpDtrib;
 
-	if (name == __KNULL) { return __KNULL; };
+	if (name == NULL) { return NULL; };
 
 	// First check to see if it already exists.
 	newTag = getCategory(name);
-	if (newTag != __KNULL) { return newTag; };
+	if (newTag != NULL) { return newTag; };
 	tmpDtrib = getDistributaryTag(name);
-	if (tmpDtrib != __KNULL) { return __KNULL; };
+	if (tmpDtrib != NULL) { return NULL; };
 
 	// Allocate the new tag.
 	newTag = new (distributaryTrib.dtribTagCache->allocate())
 		categoryTagC(name);
 
-	if (newTag == __KNULL) { return __KNULL; };
+	if (newTag == NULL) { return NULL; };
 
 	// Now allocate and initialize the inode to go with it.
 	newTag->setInode(new categoryInodeC);
-	if (newTag->getInode() == __KNULL)
+	if (newTag->getInode() == NULL)
 	{
 		delete newTag;
-		return __KNULL;
+		return NULL;
 	};
 
 	if (newTag->getInode()->initialize() != ERROR_SUCCESS
@@ -150,7 +150,7 @@ distributaryTribC::categoryInodeC::createCategory(utf8Char *name)
 	{
 		delete newTag->getInode();
 		delete newTag;
-		return __KNULL;
+		return NULL;
 	};
 
 	return newTag;
@@ -161,14 +161,14 @@ sarch_t distributaryTribC::categoryInodeC::removeCategory(utf8Char *name)
 	void		*handle;
 	categoryTagC	*curr;
 
-	if (name == __KNULL) { return 0; };
+	if (name == NULL) { return 0; };
 
-	handle = __KNULL;
+	handle = NULL;
 
 	categories.lock();
 
 	curr = categories.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; curr != __KNULL;
+	for (; curr != NULL;
 		curr = categories.getNextItem(
 			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
@@ -192,7 +192,7 @@ sarch_t distributaryTribC::categoryInodeC::removeCategory(
 	categoryTagC *inode
 	)
 {
-	if (inode == __KNULL) { return 0; };
+	if (inode == NULL) { return 0; };
 
 	return categories.remove(inode);
 }
@@ -203,14 +203,14 @@ distributaryTribC::categoryInodeC::getCategory(utf8Char *name)
 	categoryTagC	*curr;
 	void		*handle;
 
-	if (name == __KNULL) { return __KNULL; };
+	if (name == NULL) { return NULL; };
 
-	handle = __KNULL;
+	handle = NULL;
 
 	categories.lock();
 
 	curr = categories.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; curr != __KNULL; 
+	for (; curr != NULL; 
 		curr = categories.getNextItem(
 			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
@@ -227,7 +227,7 @@ distributaryTribC::categoryInodeC::getCategory(utf8Char *name)
 	};
 
 	categories.unlock();
-	return __KNULL;
+	return NULL;
 }
 
 

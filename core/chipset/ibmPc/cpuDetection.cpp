@@ -64,20 +64,20 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 		__kprintf(NOTICE CPUMOD"getNumaMap(): Failed to map in the "
 			"RSDT.\n");
 
-		return __KNULL;
+		return NULL;
 	};
 
 	rsdt = acpi::getRsdt();
 
 	// Get the SRAT (all if multiple).
-	context = handle = __KNULL;
+	context = handle = NULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
-	while (srat != __KNULL)
+	while (srat != NULL)
 	{
 		// For each SRAT (if multiple), get the LAPIC entries.
-		handle2 = __KNULL;
+		handle2 = NULL;
 		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
-		for (; cpuEntry != __KNULL;
+		for (; cpuEntry != NULL;
 			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2))
 		{
 			// Count the number of entries there are in all.
@@ -92,36 +92,36 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 		nEntries);
 
 	// If there are no NUMA CPUs, return.
-	if (nEntries == 0) { return __KNULL; };
+	if (nEntries == 0) { return NULL; };
 
 	// Now we know how many entries exist. Allocate map and reparse.
 	ret = new zkcmNumaMapS;
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		__kprintf(ERROR CPUMOD"getNumaMap(): Failed to allocate room "
 			"for CPU NUMA map, or 0 entries found.\n");
 
-		return __KNULL;
+		return NULL;
 	};
 
 	ret->cpuEntries = new numaCpuMapEntryS[nEntries];
-	if (ret->cpuEntries == __KNULL)
+	if (ret->cpuEntries == NULL)
 	{
 		delete ret;
 		__kprintf(ERROR CPUMOD"getNumaMap(): Failed to alloc "
 			"NUMA CPU map entries.\n");
 
-		return __KNULL;
+		return NULL;
 	};
 
 	// Reparse entries and create generic kernel CPU map.
-	context = handle = __KNULL;
+	context = handle = NULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
-	while (srat != __KNULL)
+	while (srat != NULL)
 	{
-		handle2 = __KNULL;
+		handle2 = NULL;
 		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
-		for (; cpuEntry != __KNULL;
+		for (; cpuEntry != NULL;
 			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2),
 			i++)
 		{
@@ -169,14 +169,14 @@ zkcmNumaMapS *zkcmCpuDetectionModC::getNumaMap(void)
 	 * We just call on the kernel's libacpi and then return the map. As
 	 * simple as that.
 	 **/
-	if (acpi::findRsdp() != ERROR_SUCCESS) { return __KNULL; };
+	if (acpi::findRsdp() != ERROR_SUCCESS) { return NULL; };
 
 // Use XSDT on everything but 32-bit, since XSDT has 64-bit physical addresses.
 #ifndef __32_BIT__
 	if (acpi::testForXsdt())
 	{
 		ret = ibmPc_cm_xGnm();
-		if (ret != __KNULL) { return ret; };
+		if (ret != NULL) { return ret; };
 	};
 #endif
 	if (acpi::testForRsdt())
@@ -185,7 +185,7 @@ zkcmNumaMapS *zkcmCpuDetectionModC::getNumaMap(void)
 		return ibmPc_cm_rGnm();
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
@@ -245,14 +245,14 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 
 	// Now look for an MADT.
 	rsdt = acpi::getRsdt();
-	context = handle = __KNULL;
+	context = handle = NULL;
 	nEntries = 0;
 	madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
-	while (madt != __KNULL)
+	while (madt != NULL)
 	{
-		handle2 = __KNULL;
+		handle2 = NULL;
 		for (madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2);
-			madtCpu != __KNULL;
+			madtCpu != NULL;
 			madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2))
 		{
 			if (__KFLAG_TEST(
@@ -270,30 +270,30 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 		nEntries);
 
 	ret = new zkcmSmpMapS;
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map.\n");
-		return __KNULL;
+		return NULL;
 	};
 
 	ret->entries = new zkcmSmpMapEntryS[nEntries];
-	if (ret->entries == __KNULL)
+	if (ret->entries == NULL)
 	{
 		delete ret;
 		__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map "
 			"entries.\n");
 
-		return __KNULL;
+		return NULL;
 	};
 
 	i=0;
-	context = handle = __KNULL;
+	context = handle = NULL;
 	madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
-	while (madt != __KNULL)
+	while (madt != NULL)
 	{
-		handle2 = __KNULL;
+		handle2 = NULL;
 		for (madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2);
-			madtCpu != __KNULL;
+			madtCpu != NULL;
 			madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2))
 		{
 			if (__KFLAG_TEST(
@@ -325,25 +325,25 @@ tryMpTables:
 	x86Mp::initializeCache();
 	if (!x86Mp::mpFpFound())
 	{
-		if (x86Mp::findMpFp() == __KNULL)
+		if (x86Mp::findMpFp() == NULL)
 		{
 			__kprintf(NOTICE SMPINFO"getSmpMap: No MP tables.\n");
-			return __KNULL;
+			return NULL;
 		};
 
-		if (x86Mp::mapMpConfigTable() == __KNULL)
+		if (x86Mp::mapMpConfigTable() == NULL)
 		{
 			__kprintf(ERROR SMPINFO"getSmpMap: Unable to map MP "
 				"Config tables.\n");
 
-			return __KNULL;
+			return NULL;
 		};
 
 		// Parse x86 MP table info and discover how many CPUs there are.
 		nEntries = 0;
-		handle = __KNULL;
+		handle = NULL;
 		mpCpu = x86Mp::getNextCpuEntry(&pos, &handle);
-		for (; mpCpu != __KNULL;
+		for (; mpCpu != NULL;
 			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle))
 		{
 			if (__KFLAG_TEST(
@@ -357,29 +357,29 @@ tryMpTables:
 			"config tables.\n", nEntries);
 
 		ret = new zkcmSmpMapS;
-		if (ret == __KNULL)
+		if (ret == NULL)
 		{
 			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
 				"Map.\n");
 
-			return __KNULL;
+			return NULL;
 		};
 
 		ret->entries = new zkcmSmpMapEntryS[nEntries];
-		if (ret->entries == __KNULL)
+		if (ret->entries == NULL)
 		{
 			__kprintf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
 				"map entries.\n");
 
 			delete ret;
-			return __KNULL;
+			return NULL;
 		};
 
 		// Iterate one more time and fill in SMP map.
 		pos = 0;
-		handle = __KNULL;
+		handle = NULL;
 		mpCpu = x86Mp::getNextCpuEntry(&pos, &handle);
-		for (i=0; mpCpu != __KNULL;
+		for (i=0; mpCpu != NULL;
 			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle))
 		{
 			if (!__KFLAG_TEST(
@@ -410,7 +410,7 @@ tryMpTables:
 		return ret;
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
@@ -479,18 +479,18 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 
 		// Now check for the presence of an MADT, and warn if none.
 		rsdt = acpi::getRsdt();
-		handle = context = __KNULL;
+		handle = context = NULL;
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 		// Warn if no MADT.
-		if (madt == __KNULL) {
+		if (madt == NULL) {
 			__kprintf(WARNING CPUMOD"checkSmpSanity: No MADT.\n");
 		}
 		else
 		{
 			// Check for at least one IO-APIC entry in the MADT.
-			handle2 = __KNULL;
+			handle2 = NULL;
 			if (acpiRMadt::getNextIoApicEntry(madt, &handle2)
-				!= __KNULL)
+				!= NULL)
 			{
 				haveAcpiIoApics = 1;
 			}
@@ -507,15 +507,15 @@ sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
 
 checkForMpTables:
 	x86Mp::initializeCache();
-	if (x86Mp::findMpFp() == __KNULL) {
+	if (x86Mp::findMpFp() == NULL) {
 		__kprintf(WARNING CPUMOD"checkSmpSanity(): No MP tables.\n");
 	};
 
 	// Now check for at least one MP table platform interrupt source entry.
-	handle = __KNULL;
+	handle = NULL;
 	pos = 0;
 	mpCfgIrqSource = x86Mp::getNextIrqSourceEntry(&pos, &handle);
-	if (mpCfgIrqSource != __KNULL) {
+	if (mpCfgIrqSource != NULL) {
 		haveMpTableIrqSources = 1;
 	}
 	else
@@ -524,7 +524,7 @@ checkForMpTables:
 			"source entries.\n");
 	};
 
-	if (x86Mp::getNextIoApicEntry(&pos, &handle) != __KNULL) {
+	if (x86Mp::getNextIoApicEntry(&pos, &handle) != NULL) {
 		haveMpTableIoApics = 1;
 	}
 	else
@@ -719,7 +719,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	 * wire mode.
 	 **/
 	mpFp = x86Mp::findMpFp();
-	if (mpFp != __KNULL
+	if (mpFp != NULL
 		&& __KFLAG_TEST(mpFp->features[1], x86_MPFP_FEAT1_FLAG_PICMODE))
 	{
 		ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_UNIPROCESSOR;

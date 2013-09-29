@@ -11,7 +11,7 @@ public:
 	ibmPcVgaTerminalC(deviceTypeE devType)
 	:
 	zkcmDebugDeviceC(devType, &baseDeviceInfo),
-	buff(__KNULL),
+	buff(NULL),
 	baseDeviceInfo(
 		0,
 		CC"ibmpc-vga-term", CC"IBM PC compatible VGA card in text mode",

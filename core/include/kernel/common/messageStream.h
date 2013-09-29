@@ -70,7 +70,7 @@ private:
 	messageQueueC *getSubsystemQueue(ubit16 subsystemId)
 	{
 		if (subsystemId > ZMESSAGE_SUBSYSTEM_MAXVAL)
-			{ return __KNULL; }
+			{ return NULL; }
 
 		return &queues[subsystemId];
 	}

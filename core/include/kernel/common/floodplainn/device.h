@@ -42,11 +42,11 @@ namespace fplainn
 	public:
 		deviceC(ubit16 id, utf8Char *shortName)
 		:
-		id(id), driver(__KNULL), driverInstance(__KNULL),
+		id(id), driver(NULL), driverInstance(NULL),
 		nEnumerationAttribs(0), nInstanceAttribs(0),
-		enumeration(__KNULL), instance(__KNULL)
+		enumeration(NULL), instance(NULL)
 		{
-			if (shortName != __KNULL)
+			if (shortName != NULL)
 			{
 				strncpy8(
 					this->shortName, shortName,
@@ -93,8 +93,8 @@ namespace fplainn
 		:
 		nModules(0), nRegions(0), nChannels(0), nMetalanguages(0),
 		allMetalanguagesSatisfied(0), childEnumerationAttribSize(0),
-		moduleInfo(__KNULL), regionInfo(__KNULL), channelInfo(__KNULL),
-		metalanguageInfo(__KNULL)
+		moduleInfo(NULL), regionInfo(NULL), channelInfo(NULL),
+		metalanguageInfo(NULL)
 		{}
 
 		error_t initialize(void){ return ERROR_SUCCESS; }

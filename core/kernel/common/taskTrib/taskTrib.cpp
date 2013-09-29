@@ -18,7 +18,7 @@ taskTribC::taskTribC(void)
 #if __SCALING__ >= SCALING_SMP
 error_t taskTribC::schedule(threadC *task)
 {
-	cpuStreamC	*cs, *bestCandidate=__KNULL;
+	cpuStreamC	*cs, *bestCandidate=NULL;
 
 	for (cpu_t i=0;
 		i<(signed)task->getTaskContext()->cpuAffinity.getNBits(); i++)
@@ -29,7 +29,7 @@ error_t taskTribC::schedule(threadC *task)
 		{
 			cs = cpuTrib.getStream(i);
 
-			if (bestCandidate == __KNULL)
+			if (bestCandidate == NULL)
 			{
 				bestCandidate = cs;
 				continue;
@@ -43,7 +43,7 @@ error_t taskTribC::schedule(threadC *task)
 		};
 	};
 
-	if (bestCandidate == __KNULL) { return ERROR_UNKNOWN; };
+	if (bestCandidate == NULL) { return ERROR_UNKNOWN; };
 	return bestCandidate->taskStream.schedule(task);
 }
 #endif
@@ -126,8 +126,8 @@ error_t taskTribC::dormant(taskC *task, taskContextC *perCpuContext)
 	 * have its execution resumed.
 	 **/
 
-	if (task == __KNULL) { return ERROR_INVALID_ARG; };
-	if (task->getType() == task::PER_CPU && perCpuContext == __KNULL) {
+	if (task == NULL) { return ERROR_INVALID_ARG; };
+	if (task->getType() == task::PER_CPU && perCpuContext == NULL) {
 		return ERROR_INVALID_ARG;
 	};
 
@@ -174,7 +174,7 @@ error_t taskTribC::dormant(taskC *task, taskContextC *perCpuContext)
 		if (task == cpuTrib.getCurrentCpuStream()->taskStream
 			.getCurrentTask())
 		{
-			// TODO: Set this CPU's currentTask to __KNULL here.
+			// TODO: Set this CPU's currentTask to NULL here.
 			saveContextAndCallPull(
 				&taskCurrentCpu->schedStack[
 					sizeof(taskCurrentCpu->schedStack)]);
@@ -191,9 +191,9 @@ error_t taskTribC::wake(taskC *task, taskContextC *perCpuContext)
 	taskContextC	*tmpContext;
 	threadC		*thread;
 
-	if (task == __KNULL) { return ERROR_INVALID_ARG; };
+	if (task == NULL) { return ERROR_INVALID_ARG; };
 
-	if (task->getType() == task::PER_CPU && perCpuContext == __KNULL) {
+	if (task->getType() == task::PER_CPU && perCpuContext == NULL) {
 		return ERROR_INVALID_ARG;
 	};
 
@@ -240,7 +240,7 @@ void taskTribC::yield(void)
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	cpuTrib.getCurrentCpuStream()->taskStream.yield(currTask);
 
-	// TODO: Set this CPU's currentTask to __KNULL here.
+	// TODO: Set this CPU's currentTask to NULL here.
 	saveContextAndCallPull(
 		&cpuTrib.getCurrentCpuStream()->schedStack[
 			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
@@ -293,9 +293,9 @@ void taskTribC::block(lockC::operationDescriptorS *unlockDescriptor)
 	 * Be sure to pass in the correct 'lockType' value, and for multiple-
 	 * reader locks, the correct 'unlockOp' value.
 	 **/
-	if (unlockDescriptor != __KNULL) { unlockDescriptor->execute(); };
+	if (unlockDescriptor != NULL) { unlockDescriptor->execute(); };
 
-	// TODO: Set this CPU's currentTask to __KNULL here.
+	// TODO: Set this CPU's currentTask to NULL here.
 	saveContextAndCallPull(
 		&cpuTrib.getCurrentCpuStream()->schedStack[
 			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
@@ -311,8 +311,8 @@ error_t taskTribC::unblock(taskC *task, taskContextC *perCpuContext)
 	taskContextC	*tmpContext;
 	threadC		*thread;
 
-	if (task == __KNULL) { return ERROR_INVALID_ARG; };
-	if (task->getType() == task::PER_CPU && perCpuContext == __KNULL) {
+	if (task == NULL) { return ERROR_INVALID_ARG; };
+	if (task->getType() == task::PER_CPU && perCpuContext == NULL) {
 		return ERROR_INVALID_ARG;
 	};
 

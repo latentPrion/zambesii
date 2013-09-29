@@ -32,7 +32,7 @@
  **/
 // STINHERIT by default.
 #define SPAWNTHREAD_FLAGS_AFFINITY_STINHERIT	(0)
-// Implied if the cpuAffinity BMP != __KNULL && !PINHERIT
+// Implied if the cpuAffinity BMP != NULL && !PINHERIT
 #define SPAWNTHREAD_FLAGS_AFFINITY_SET		(0)
 #define SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT	(1<<1)
 
@@ -76,10 +76,10 @@ public:
 			(processId == __KPROCESSID) ? 1 : 0),
 		nTasks(0),
 
-		fullName(__KNULL), workingDirectory(__KNULL),
-		arguments(__KNULL),
+		fullName(NULL), workingDirectory(NULL),
+		arguments(NULL),
 		nEnvVars(0),
-		environment(__KNULL),
+		environment(NULL),
 
 		execDomain(execDomain),
 
@@ -306,7 +306,7 @@ public:
 		PROCESS_EXECDOMAIN_KERNEL,
 		NUMABANKID_INVALID,
 		vaddrSpaceBaseAddr, vaddrSpaceSize,
-		__KNULL)
+		NULL)
 	{}
 
 	error_t initialize(

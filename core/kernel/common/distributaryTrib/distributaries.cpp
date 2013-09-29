@@ -80,6 +80,6 @@ const dvfs::distributaryDescriptorS
 #endif
 	&floodplainnIndexer,
 	// Null entry to terminate the array. Do not remove.
-	__KNULL
+	NULL
 };
 

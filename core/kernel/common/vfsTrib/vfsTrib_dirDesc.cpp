@@ -8,9 +8,9 @@
 vfsDirC::vfsDirC(vfsDirInodeC *inode)
 {
 	desc = inode;
-	next = __KNULL;	
-	parent = __KNULL;
-	name = __KNULL;
+	next = NULL;	
+	parent = NULL;
+	name = NULL;
 
 	type = VFSDESC_TYPE_DIR;
 	refCount = 0;
@@ -19,10 +19,10 @@ vfsDirC::vfsDirC(vfsDirInodeC *inode)
 
 vfsDirC::vfsDirC(void)
 {
-	desc = __KNULL;
-	next = __KNULL;	
-	parent = __KNULL;
-	name = __KNULL;
+	desc = NULL;
+	next = NULL;	
+	parent = NULL;
+	name = NULL;
 
 	type = VFSDESC_TYPE_DIR;
 	refCount = 0;
@@ -43,17 +43,17 @@ error_t vfsDirC::initialize(
 	};
 
 	name = new utf8Char[nameLen + 1];
-	if (name == __KNULL) {
+	if (name == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 	strncpy8(name, dirName, nameLen);
 	name[nameLen] = '\0';
 
 	// Allocate a new inode if needed.
-	if (desc == __KNULL)
+	if (desc == NULL)
 	{
 		desc = new vfsDirInodeC(inodeHigh, inodeLow);
-		if (desc == __KNULL) {
+		if (desc == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
 	};
@@ -64,7 +64,7 @@ error_t vfsDirC::initialize(
 	};
 
 	delete desc;
-	desc = __KNULL;
+	desc = NULL;
 	return ret;
 }
 
@@ -83,7 +83,7 @@ status_t vfsDirC::rename(utf8Char *newName)
 	};
 
 	mem = new utf8Char[newNameLen + 1];
-	if (mem == __KNULL) {
+	if (mem == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -101,7 +101,7 @@ vfsDirC::~vfsDirC(void)
 {
 	delete name;
 
-	if (desc != __KNULL && desc->refCount <= 0) {
+	if (desc != NULL && desc->refCount <= 0) {
 		delete desc;
 	};
 }

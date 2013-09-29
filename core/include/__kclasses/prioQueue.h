@@ -20,7 +20,7 @@ class prioQueueC
 public:
 	prioQueueC(ubit16 nPriorities)
 	:
-	nodeCache(__KNULL), nPrios(nPriorities), queues(__KNULL)
+	nodeCache(NULL), nPrios(nPriorities), queues(NULL)
 	{
 		headQueue.rsrc = -1;
 	}
@@ -63,7 +63,7 @@ private:
 
 			q.lock.acquire();
 
-			for (curr = q.rsrc.head; curr != __KNULL; )
+			for (curr = q.rsrc.head; curr != NULL; )
 			{
 				tmp = curr;
 				curr = curr->next;
@@ -103,7 +103,7 @@ private:
 		{
 			queueStateS(void)
 			:
-			nItems(0), head(__KNULL), tail(__KNULL)
+			nItems(0), head(NULL), tail(NULL)
 			{}
 
 			uarch_t		nItems;
@@ -137,11 +137,11 @@ error_t prioQueueC<T>::initialize(void)
 	nodeCache = cachePool.createCache(
 		sizeof(struct queueC<T>::queueNodeS));
 
-	if (nodeCache == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (nodeCache == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	// Allocate internal array.
 	queues = (queueC<T> *) new ubit8[sizeof(queueC<T>) * nPrios];
-	if (queues == __KNULL)
+	if (queues == NULL)
 	{
 		cachePool.destroyCache(nodeCache);
 		return ERROR_MEMORY_NOMEM;
@@ -198,7 +198,7 @@ T *prioQueueC<T>::pop(void)
 	if (headQueue.rsrc == -1)
 	{
 		headQueue.lock.release();
-		return __KNULL;
+		return NULL;
 	};
 
 	qId = headQueue.rsrc;
@@ -280,7 +280,7 @@ error_t prioQueueC<T>::queueC<T2>::insert(T2 *item, ubit32 opt)
 	queueNodeS	*tmp;
 
 	tmp = (queueNodeS *)nodeCache->allocate();
-	if (tmp == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 	tmp->item = item;
 
 	q.lock.acquire();
@@ -290,15 +290,15 @@ error_t prioQueueC<T>::queueC<T2>::insert(T2 *item, ubit32 opt)
 		// safe.
 		tmp->next = q.rsrc.head;
 		q.rsrc.head = tmp;
-		if (q.rsrc.tail == __KNULL) {
+		if (q.rsrc.tail == NULL) {
 			q.rsrc.tail = tmp;
 		};
 	}
 	else
 	{
 		// safe.
-		tmp->next = __KNULL;
-		if (q.rsrc.tail != __KNULL) {
+		tmp->next = NULL;
+		if (q.rsrc.tail != NULL) {
 			q.rsrc.tail->next = tmp;
 		} else {
 			q.rsrc.head = tmp;
@@ -317,16 +317,16 @@ template <class T> template <class T2>
 T2 *prioQueueC<T>::queueC<T2>::pop(void)
 {
 	queueNodeS	*tmp;
-	T2		*ret=__KNULL;
+	T2		*ret=NULL;
 
 	q.lock.acquire();
 
 	tmp = q.rsrc.head;
 	if (q.rsrc.head == q.rsrc.tail) {
-		q.rsrc.tail = __KNULL;
+		q.rsrc.tail = NULL;
 	};
 
-	if (q.rsrc.head != __KNULL)
+	if (q.rsrc.head != NULL)
 	{
 		q.rsrc.head = q.rsrc.head->next;
 		q.rsrc.nItems--;
@@ -334,7 +334,7 @@ T2 *prioQueueC<T>::queueC<T2>::pop(void)
 
 	q.lock.release();
 
-	if (tmp != __KNULL) {
+	if (tmp != NULL) {
 		ret = tmp->item;
 	};
 
@@ -346,22 +346,22 @@ T2 *prioQueueC<T>::queueC<T2>::pop(void)
 template <class T> template <class T2>
 void prioQueueC<T>::queueC<T2>::remove(T2 *item)
 {
-	queueNodeS	*tmp, *prev=__KNULL;
+	queueNodeS	*tmp, *prev=NULL;
 
 	q.lock.acquire();
 
-	for (tmp=q.rsrc.head; tmp != __KNULL; prev = tmp, tmp = tmp->next)
+	for (tmp=q.rsrc.head; tmp != NULL; prev = tmp, tmp = tmp->next)
 	{
 		// Skip until we find the item.
 		if (tmp->item != item) { continue; };
 
-		if (prev == __KNULL) {
+		if (prev == NULL) {
 			q.rsrc.head = tmp->next;
 		} else {
 			prev->next = tmp->next;
 		};
 
-		if (tmp->next == __KNULL) {
+		if (tmp->next == NULL) {
 			q.rsrc.tail = prev;
 		};
 
@@ -386,9 +386,9 @@ void prioQueueC<T>::queueC<T2>::dump(void)
 
 	__kprintf(CC"\tQueue %d, head 0x%p, tail 0x%p, %d items:\n%s",
 		prio, q.rsrc.head, q.rsrc.tail, q.rsrc.nItems,
-		(q.rsrc.head == __KNULL) ? "" : "\t");
+		(q.rsrc.head == NULL) ? "" : "\t");
 
-	for (tmp = q.rsrc.head; tmp != __KNULL; tmp = tmp->next, flipFlop++)
+	for (tmp = q.rsrc.head; tmp != NULL; tmp = tmp->next, flipFlop++)
 	{
 		if (flipFlop > 5)
 		{

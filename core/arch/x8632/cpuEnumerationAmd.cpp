@@ -26,32 +26,32 @@
 /*
 static utf8Char		*amdFamily0FCpus[] =
 {
-	__KNULL
+	NULL
 };
 
 static utf8Char		*amdFamily10Cpus[] =
 {
-	__KNULL
+	NULL
 };
 
 static utf8Char		*amdFamily11Cpus[] =
 {
-	__KNULL
+	NULL
 };
 
 static utf8Char		*amdFamily12Cpus[] =
 {
-	__KNULL
+	NULL
 };
 
 static utf8Char		*amdFamily14Cpus[] =
 {
-	__KNULL
+	NULL
 };
 
 static utf8Char		*amdFamily15Cpus[] =
 {
-	__KNULL
+	NULL
 };
 */
 
@@ -63,7 +63,7 @@ static status_t amdBrandStringEnum(void)
 	utf8Char	*brandString;
 
 	brandString = new utf8Char[49];
-	if (brandString == __KNULL)
+	if (brandString == NULL)
 	{
 		__kprintf(ERROR AMDENUM"Unable to alloc mem brandstring.\n");
 		return CPUENUM_CPU_MODEL_UNKNOWN;

@@ -184,7 +184,7 @@ void processTribC::commonEntry(void *)
 	 * Only in the case of an IN_KERNEL distributary does this function
 	 * jump and begin the new process immediately.
 	 **/
-	jumpAddress = __KNULL;
+	jumpAddress = NULL;
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
@@ -194,7 +194,7 @@ void processTribC::commonEntry(void *)
 
 	// Allocate the callback message memory.
 	callbackMessage = new zmessage::headerS;
-	if (callbackMessage == __KNULL)
+	if (callbackMessage == NULL)
 	{
 		__kprintf(FATAL PROCTRIB"commonEntry: process 0x%x:\n",
 			self->getFullId());
@@ -379,7 +379,7 @@ error_t processTribC::spawnDriver(
 	threadC			*parentThread, *firstThread;
 	fplainn::deviceC	*dev;
 
-	if (commandLine == __KNULL || newProcess == __KNULL)
+	if (commandLine == NULL || newProcess == NULL)
 		{ return ERROR_INVALID_ARG; };
 
 	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
@@ -411,7 +411,7 @@ error_t processTribC::spawnDriver(
 	*newProcess = new kernelDriverProcessC(
 		newProcessId, parentThread->getFullId(), privateData);
 
-	if (*newProcess == __KNULL)
+	if (*newProcess == NULL)
 	{
 		__kprintf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
 		return ERROR_MEMORY_NOMEM;
@@ -424,7 +424,7 @@ error_t processTribC::spawnDriver(
 	// Get the device's object
 	// Get its bankId
 	// ncb = cpuTrib.getBank(deviceBankId);
-	// if (ncb == __KNULL) { fail or something; };
+	// if (ncb == NULL) { fail or something; };
 	// Then set the affinity below to merge with ncb->cpus.
 	ret = affinity.initialize(cpuTrib.onlineCpus.getNBits());
 	if (ret != ERROR_SUCCESS) { delete *newProcess; return ret; };
@@ -441,7 +441,7 @@ error_t processTribC::spawnDriver(
 	if (!deviceExists((*newProcess)->fullName, &dev))
 		{ delete *newProcess; return ERROR_RESOURCE_UNAVAILABLE; };
 
-	if (dev->driver == __KNULL)
+	if (dev->driver == NULL)
 		{ delete *newProcess; return SPAWNDRIVER_STATUS_NO_DRIVER; };
 
 	if (!dev->driver->allMetalanguagesSatisfied) {
@@ -460,7 +460,7 @@ error_t processTribC::spawnDriver(
 	};
 
 	ret = (*(kernelDriverProcessC **)newProcess)->spawnThread(
-		&processTribC::commonEntry, __KNULL,
+		&processTribC::commonEntry, NULL,
 		&(*(kernelDriverProcessC **)newProcess)->cpuAffinity,
 		schedPolicy, prio,
 		flags | SPAWNTHREAD_FLAGS_AFFINITY_SET | SPAWNTHREAD_FLAGS_FIRST_THREAD,
@@ -494,7 +494,7 @@ error_t processTribC::spawnDistributary(
 	processId_t		newProcessId;
 	threadC			*parentThread, *firstTask;
 
-	if (commandLine == __KNULL || newProcess == __KNULL)
+	if (commandLine == NULL || newProcess == NULL)
 		{ return ERROR_INVALID_ARG; };
 
 	// Per-CPU threads are not allowed to spawn new processes.
@@ -519,7 +519,7 @@ error_t processTribC::spawnDistributary(
 		newProcessId, parentThread->getFullId(),
 		addrSpaceBinding, privateData);
 
-	if (*newProcess == __KNULL)
+	if (*newProcess == NULL)
 	{
 		__kprintf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
 		return ERROR_MEMORY_NOMEM;
@@ -537,7 +537,7 @@ error_t processTribC::spawnDistributary(
 
 	// Spawn the first thread.
 	ret = (*newProcess)->spawnThread(
-		&processTribC::commonEntry, __KNULL,
+		&processTribC::commonEntry, NULL,
 		&(*newProcess)->cpuAffinity,
 		taskC::ROUND_ROBIN, 0,
 		SPAWNTHREAD_FLAGS_AFFINITY_SET
@@ -576,7 +576,7 @@ error_t *processTribC::spawnStream(
 	processId_t		newId, parentId;
 	sbit32			newIdTmp;
 	uarch_t			rwFlags;
-	processStreamC		*newProc=__KNULL;
+	processStreamC		*newProc=NULL;
 	utf8Char		*fileName, *workingDir;
 	/**	NOTES:
 	 * This routine will essentially be the guiding hand to starting up
@@ -616,7 +616,7 @@ error_t *processTribC::spawnStream(
 	{
 		__kprintf(WARNING PROCTRIB"Out of process IDs.\n");
 		*err = ERROR_GENERAL;
-		return __KNULL;
+		return NULL;
 	};
 
 	newId = newIdTmp << PROCID_PROCESS_SHIFT;
@@ -629,7 +629,7 @@ error_t *processTribC::spawnStream(
 	if (*err != ERROR_SUCCESS)
 	{
 		delete newProc;
-		return __KNULL;
+		return NULL;
 	};
 
 	// Add the new process to the global process array.
@@ -660,7 +660,7 @@ error_t *processTribC::spawnStream(
 	else
 	{
 		// If affinity argument is valid:
-		if (cpuAffinity != __KNULL)
+		if (cpuAffinity != NULL)
 		{
 			*err = resizeAndMergeBitmaps(
 				&newProc->cpuAffinity, cpuAffinity);
@@ -674,7 +674,7 @@ error_t *processTribC::spawnStream(
 			*err = resizeAndMergeBitmaps(
 				&newProc->cpuAffinity, &cpuTrib.onlineCpus);
 
-			if (*err != ERROR_SUCCESS) { return __KNULL; };
+			if (*err != ERROR_SUCCESS) { return NULL; };
 		};
 	};
 

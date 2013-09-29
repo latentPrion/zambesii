@@ -19,7 +19,7 @@ error_t messageStreamC::enqueueOnThread(
 		 * per-CPU thread.
 		 **/
 		cs = cpuTrib.getStream((cpu_t)targetStreamId);
-		if (cs == __KNULL) { return ERROR_INVALID_RESOURCE_NAME; };
+		if (cs == NULL) { return ERROR_INVALID_RESOURCE_NAME; };
 
 		targetStream = &cs->getTaskContext()->messageStream;
 	}
@@ -32,12 +32,12 @@ error_t messageStreamC::enqueueOnThread(
 		 * normal unique-context thread.
 		 **/
 		targetProcess = processTrib.getStream(targetStreamId);
-		if (targetProcess == __KNULL) {
+		if (targetProcess == NULL) {
 			return ERROR_INVALID_RESOURCE_NAME;
 		};
 
 		targetThread = targetProcess->getThread(targetStreamId);
-		if (targetThread == __KNULL) {
+		if (targetThread == NULL) {
 			return ERROR_INVALID_RESOURCE_NAME;
 		};
 
@@ -54,7 +54,7 @@ error_t messageStreamC::pullFrom(
 {
 	zmessage::headerS	*tmp;
 
-	if (callback == __KNULL) { return ERROR_INVALID_ARG; };
+	if (callback == NULL) { return ERROR_INVALID_ARG; };
 	if (subsystemQueue > ZMESSAGE_SUBSYSTEM_MAXVAL)
 		{ return ERROR_INVALID_ARG_VAL; };
 
@@ -96,7 +96,7 @@ error_t messageStreamC::pull(
 {
 	zmessage::headerS	*tmp;
 
-	if (callback == __KNULL) { return ERROR_INVALID_ARG; };
+	if (callback == NULL) { return ERROR_INVALID_ARG; };
 
 	for (;;)
 	{
@@ -136,7 +136,7 @@ error_t	messageStreamC::enqueue(ubit16 queueId, zmessage::headerS *callback)
 {
 	error_t		ret;
 
-	if (callback == __KNULL) { return ERROR_INVALID_ARG; };
+	if (callback == NULL) { return ERROR_INVALID_ARG; };
 	if (queueId > ZMESSAGE_SUBSYSTEM_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
 	};

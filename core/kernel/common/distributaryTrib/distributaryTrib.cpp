@@ -17,7 +17,7 @@
 error_t distributaryTribC::initialize(void)
 {
 	tagCache = cachePool.createCache(sizeof(dvfs::tagC));
-	if (tagCache == __KNULL) { return ERROR_UNKNOWN; };
+	if (tagCache == NULL) { return ERROR_UNKNOWN; };
 
 	return bootBuildTree();
 }
@@ -31,7 +31,7 @@ singleWaiterQueueC *distributaryTribC::getControlQueue(void)
 	// Calling thread can only be from a distributary process.
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	if (currTask->parent->getType() != processStreamC::DISTRIBUTARY) {
-		return __KNULL;
+		return NULL;
 	};
 
 	/* Get the distributary inode for this process; Can get a path to the
@@ -40,12 +40,12 @@ singleWaiterQueueC *distributaryTribC::getControlQueue(void)
 	ret = vfsTrib.getDvfs()->getPath(
 		currTask->parent->fullName, &callerTag);
 
-	if (ret != ERROR_SUCCESS) { return __KNULL; };
+	if (ret != ERROR_SUCCESS) { return NULL; };
 
 	if (callerTag->getType() != vfs::DIR)
 	{
 		callerTag = callerTag->getCInode()->getLeafTag(CC"default");
-		if (callerTag == __KNULL) { return __KNULL; };
+		if (callerTag == NULL) { return NULL; };
 	};
 
 	// We now have the tag for this distributary; return its qeueue.
@@ -60,11 +60,11 @@ error_t distributaryTribC::bootBuildTree(void)
 	error_t					ret;
 
 	rootTag = vfsTrib.dvfsCurrentt.getRoot();
-	assert_fatal(rootTag != __KNULL);
-	assert_fatal(rootTag->getInode() != __KNULL);
+	assert_fatal(rootTag != NULL);
+	assert_fatal(rootTag->getInode() != NULL);
 
 	for (i=0, currDesc = distributaryDescriptors[i];
-		currDesc != __KNULL;
+		currDesc != NULL;
 		i++, currDesc = distributaryDescriptors[i])
 	{
 		sarch_t				inodeWasUsed=0;
@@ -80,7 +80,7 @@ error_t distributaryTribC::bootBuildTree(void)
 		dInodeTmp = new dvfs::distributaryInodeC(
 			currDesc, dvfs::distributaryInodeC::IN_KERNEL);
 
-		if (dInodeTmp == __KNULL)
+		if (dInodeTmp == NULL)
 		{
 			__kprintf(NOTICE DTRIBTRIB"Failed to create dtrib "
 				"inode for \"%s\".\n",
@@ -102,10 +102,10 @@ error_t distributaryTribC::bootBuildTree(void)
 				currDesc->categories[j].name);
 
 			// If not, create it, and an inode for it.
-			if (cTagTmp == __KNULL)
+			if (cTagTmp == NULL)
 			{
 				cInodeTmp = new dvfs::categoryInodeC;
-				if (cInodeTmp == __KNULL) { continue; };
+				if (cInodeTmp == NULL) { continue; };
 				if (cInodeTmp->initialize() != ERROR_SUCCESS)
 					{ continue; };
 
@@ -114,7 +114,7 @@ error_t distributaryTribC::bootBuildTree(void)
 						vfs::DIR,
 						rootTag, cInodeTmp, &ret);
 
-				if (cTagTmp == __KNULL)
+				if (cTagTmp == NULL)
 				{
 					__kprintf(CC" Creation failed.\n");
 					delete cInodeTmp;
@@ -133,7 +133,7 @@ error_t distributaryTribC::bootBuildTree(void)
 				dTagTmp = cTagTmp->getCInode()
 					->getLeafTag(currDesc->name);
 
-				if (dTagTmp != __KNULL)
+				if (dTagTmp != NULL)
 				{
 					panic(FATAL"Distributary cannot have "
 						"the same category listed "
@@ -148,7 +148,7 @@ error_t distributaryTribC::bootBuildTree(void)
 				currDesc->name, vfs::FILE,
 				cTagTmp, dInodeTmp, &ret);
 
-			if (dTagTmp != __KNULL) {
+			if (dTagTmp != NULL) {
 				inodeWasUsed = 1;
 			};
 
@@ -156,7 +156,7 @@ error_t distributaryTribC::bootBuildTree(void)
 			if (currDesc->categories[j].isDefault)
 			{
 				if (cTagTmp->getCInode()->getLeafTag(
-					CC"default") != __KNULL)
+					CC"default") != NULL)
 				{
 					__kprintf(FATAL DTRIBTRIB"Distributary "
 						"\"%s\" is default for "
@@ -173,7 +173,7 @@ error_t distributaryTribC::bootBuildTree(void)
 						CC"default", vfs::FILE,
 						cTagTmp, dInodeTmp, &ret);
 
-				if (dTagTmp == __KNULL)
+				if (dTagTmp == NULL)
 				{
 					__kprintf(ERROR DTRIBTRIB"Failed to "
 						"set dtrib %s as default for "

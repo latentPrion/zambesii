@@ -12,8 +12,8 @@
 
 memReservoirC::memReservoirC(void)
 {
-	__kbog = __KNULL;
-	bogs.rsrc.ptrs = __KNULL;
+	__kbog = NULL;
+	bogs.rsrc.ptrs = NULL;
 	bogs.rsrc.nBogs = 0;
 }
 
@@ -26,7 +26,7 @@ error_t memReservoirC::initialize(void)
 			1, MEMALLOC_NO_FAKEMAP))
 		memoryBogC(CHIPSET_MEMORY___KBOG_SIZE);
 
-	if (__kbog == __KNULL)
+	if (__kbog == NULL)
 	{
 		__kprintf(ERROR RESERVOIR"Unable to allocate a bog for "
 			"general kernel use.\n");
@@ -42,7 +42,7 @@ error_t memReservoirC::initialize(void)
 			1, MEMALLOC_NO_FAKEMAP))
 		memoryBogC*;
 
-	if (bogs.rsrc.ptrs == __KNULL)
+	if (bogs.rsrc.ptrs == NULL)
 	{
 		__kprintf(ERROR RESERVOIR"Unable to allocate a page to hold "
 			"the array of custom bog allocators.\n");
@@ -87,7 +87,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 	reservoirHeaderS	*ret;
 
 	if (nBytes == 0) {
-		return __KNULL;
+		return NULL;
 	};
 
 	nBytes += sizeof(reservoirHeaderS);
@@ -97,7 +97,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 	 * cause for great alarm, we shouldn't kill all allocations simply
 	 * because of that: still try to allocate off of a stream.
 	 **/
-	if (__kbog == __KNULL) {
+	if (__kbog == NULL) {
 		goto tryStream;
 	};
 
@@ -106,7 +106,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 		ret = reinterpret_cast<reservoirHeaderS *>(
 			__kbog->allocate(nBytes, flags) );
 
-		if (ret != __KNULL)
+		if (ret != NULL)
 		{
 			/* Copy the bog header down so we don't overwrite it
 			 * with the reservoir header.
@@ -127,7 +127,7 @@ tryStream:
 		processTrib.__kgetStream()->memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(nBytes), 0)) reservoirHeaderS;
 
-	if (ret != __KNULL)
+	if (ret != NULL)
 	{
 		ret->magic = RESERVOIR_MAGIC | RESERVOIR_FLAGS_STREAM;
 		return reinterpret_cast<reservoirHeaderS *>(
@@ -136,14 +136,14 @@ tryStream:
 	};
 
 	// If we're still here, then it means allocation completely failed.
-	return __KNULL;
+	return NULL;
 }
 
 void memReservoirC::free(void *_mem)
 {
 	reservoirHeaderS	*mem;
 
-	if (_mem == __KNULL) {
+	if (_mem == NULL) {
 		return;
 	};
 
@@ -168,7 +168,7 @@ void memReservoirC::free(void *_mem)
 	if (__KFLAG_TEST(
 		(mem->magic & RESERVOIR_FLAGS_MASK), RESERVOIR_FLAGS___KBOG))
 	{
-		if (__kbog == __KNULL) {
+		if (__kbog == NULL) {
 			return;
 		};
 

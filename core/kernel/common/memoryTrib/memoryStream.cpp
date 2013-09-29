@@ -36,7 +36,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	ubit8		fKernel;
 	void		*ret;
 
-	if (nPages == 0) { return __KNULL; };
+	if (nPages == 0) { return NULL; };
 
 	if (__KFLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY)) { localFlush = 1; };
 
@@ -61,7 +61,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	};
 
 	ret = parent->getVaddrSpaceStream()->getPages(nPages);
-	if (ret == __KNULL) { return __KNULL; };
+	if (ret == NULL) { return NULL; };
 
 	fKernel = (parent->execDomain == PROCESS_EXECDOMAIN_KERNEL) ? 1 : 0;
 
@@ -164,7 +164,7 @@ releaseAndUnmap:
 	};
 
 	parent->getVaddrSpaceStream()->releasePages(ret, nPages);
-	return __KNULL;
+	return NULL;
 }
 
 void memoryStreamC::memFree(void *vaddr)
@@ -175,7 +175,7 @@ void memoryStreamC::memFree(void *vaddr)
 	uarch_t		nPages, _nPages, tracker, unmapFlags;
 	ubit8		flags;
 
-	if (vaddr == __KNULL) { return; };
+	if (vaddr == NULL) { return; };
 
 	/* FIXME: Be careful when freeing a process: it is possible to double
 	 * free a memory area if it is pushed into the alloc cache.

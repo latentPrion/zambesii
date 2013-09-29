@@ -72,7 +72,7 @@ status_t vfsTraverse::getRelativePath(
 		};
 
 		retDir = dir->desc->getDirDesc(path);
-		if (retDir == __KNULL)
+		if (retDir == NULL)
 		{
 			if (idx >= 0)
 			{
@@ -82,7 +82,7 @@ status_t vfsTraverse::getRelativePath(
 
 			// Else is last segment in path, could be file name.
 			file = dir->desc->getFileDesc(path);
-			if (file == __KNULL) {
+			if (file == NULL) {
 				return VFSPATH_INVALID;
 			};
 

@@ -42,7 +42,7 @@ sarch_t allocTableEntryC::operator ==(allocTableEntryC &ate)
 sarch_t allocTableEntryC::operator ==(int v)
 {
 	if (v == 0) {
-		return vaddr == __KNULL;
+		return vaddr == NULL;
 	};
 	return 0;
 }
@@ -50,7 +50,7 @@ sarch_t allocTableEntryC::operator ==(int v)
 sarch_t allocTableEntryC::operator !=(int v)
 {
 	if (v == 0) {
-		return vaddr != __KNULL;
+		return vaddr != NULL;
 	};
 	return 0;
 }

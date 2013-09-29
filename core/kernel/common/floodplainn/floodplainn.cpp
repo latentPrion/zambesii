@@ -68,7 +68,7 @@ error_t floodplainnC::createDevice(
 	 *
 	 * The path here must be a by-id path.
 	 **/
-	if (parentId == __KNULL || device == __KNULL)
+	if (parentId == NULL || device == NULL)
 		{ return ERROR_INVALID_ARG; };
 
 	if (!isByIdPath(parentId)) { return ERROR_INVALID_ARG_VAL; };
@@ -77,8 +77,8 @@ error_t floodplainnC::createDevice(
 	ret = vfsTrib.getFvfs()->getPath(parentId, &parentTag);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	newDev = new fplainn::deviceC(childId, __KNULL);
-	if (newDev == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	newDev = new fplainn::deviceC(childId, NULL);
+	if (newDev == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	utf8Char	tmpBuff[FVFS_TAG_NAME_MAXLEN];
 
@@ -101,7 +101,7 @@ error_t floodplainnC::removeDevice(
 	 * parentId must be a by-id path.
 	 **/
 
-	if (parentId == __KNULL) { return ERROR_INVALID_ARG; };
+	if (parentId == NULL) { return ERROR_INVALID_ARG; };
 
 	if (!isByIdPath(parentId)) { return ERROR_INVALID_ARG_VAL; };
 	ret = vfsTrib.getFvfs()->getPath(parentId, &parentTag);
@@ -112,7 +112,7 @@ error_t floodplainnC::removeDevice(
 	// Get the child tag.
 	snprintf(tmpBuff, FVFS_TAG_NAME_MAXLEN, CC"%d", childId);
 	childTag = parentTag->getChild(tmpBuff);
-	if (childTag == __KNULL) { return ERROR_NOT_FOUND; };
+	if (childTag == NULL) { return ERROR_NOT_FOUND; };
 
 	// Don't remove the child if it has children.
 	if (childTag->nDirs > 0) { return ERROR_INVALID_OPERATION; };
@@ -157,7 +157,7 @@ error_t floodplainnC::loadDriver(
 
 	// Allocate and queue the new request.
 	request = new driverIndexRequestS(devicePath, indexLevel);
-	if (request == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	if (currTask->getType() == task::PER_CPU)
 	{
@@ -170,7 +170,7 @@ error_t floodplainnC::loadDriver(
 			((threadC *)currTask)->getFullId();
 	};
 		
-	request->header.privateData = __KNULL;
+	request->header.privateData = NULL;
 	request->header.flags = 0;
 	request->header.size = sizeof(*request);
 	request->header.subsystem = indexerQueueId;

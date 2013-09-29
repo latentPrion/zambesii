@@ -17,7 +17,7 @@ public:
 	virtual ~heapCacheC(void) {}
 
 public:
-	//virtual void *allocate(void) { return __KNULL; };
+	//virtual void *allocate(void) { return NULL; };
 	virtual void free(void *) {};
 
 public:

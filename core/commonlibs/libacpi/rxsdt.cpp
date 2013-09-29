@@ -15,13 +15,13 @@ static void *acpi_tmpMapSdt(void **const context, paddr_t p)
 {
 	status_t	nMapped;
 
-	if (*context == __KNULL)
+	if (*context == NULL)
 	{
 		*context = processTrib.__kgetStream()->getVaddrSpaceStream()
 			->getPages(2);
 
-		if (*context == __KNULL) {
-			return __KNULL;
+		if (*context == NULL) {
+			return NULL;
 		};
 	};
 
@@ -31,7 +31,7 @@ static void *acpi_tmpMapSdt(void **const context, paddr_t p)
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
 	if (nMapped < 2) {
-		return __KNULL;
+		return NULL;
 	};
 
 	*context = WPRANGER_ADJUST_VADDR((*context), p, void *);
@@ -43,7 +43,7 @@ void acpiRsdt::destroyContext(void **const context)
 	paddr_t		p;
 	uarch_t		f;
 
-	if (*context == __KNULL) { return; };
+	if (*context == NULL) { return; };
 
 	walkerPageRanger::unmap(
 		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
@@ -52,7 +52,7 @@ void acpiRsdt::destroyContext(void **const context)
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		(void *)((uintptr_t)(*context) & PAGING_BASE_MASK_HIGH), 2);
 
-	*context = __KNULL;
+	*context = NULL;
 }
 
 static void *acpi_mapTable(paddr_t p, uarch_t nPages)
@@ -63,8 +63,8 @@ static void *acpi_mapTable(paddr_t p, uarch_t nPages)
 	ret = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
 		nPages);
 
-	if (ret == __KNULL) {
-		return __KNULL;
+	if (ret == NULL) {
+		return NULL;
 	};
 
 	nMapped = walkerPageRanger::mapInc(
@@ -77,7 +77,7 @@ static void *acpi_mapTable(paddr_t p, uarch_t nPages)
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			ret, nPages);
 
-		return __KNULL;
+		return NULL;
 	};
 
 	ret = WPRANGER_ADJUST_VADDR(ret, p, void *);
@@ -102,9 +102,9 @@ acpi_rSratS *acpiRsdt::getNextSrat(
 	)
 {
 	acpi_sdtS	*sdt;
-	acpi_rSratS	*ret=__KNULL;
+	acpi_rSratS	*ret=NULL;
 
-	if (*handle == __KNULL) {
+	if (*handle == NULL) {
 		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
 	};
 
@@ -129,7 +129,7 @@ acpi_rSratS *acpiRsdt::getNextSrat(
 		};
 
 		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
-		if (ret != __KNULL) {
+		if (ret != NULL) {
 			return ret;
 		};
 	};
@@ -143,9 +143,9 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 	)
 {
 	acpi_sdtS	*sdt;
-	acpi_rMadtS	*ret=__KNULL;
+	acpi_rMadtS	*ret=NULL;
 
-	if (*handle == __KNULL) {
+	if (*handle == NULL) {
 		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
 	};
 
@@ -169,7 +169,7 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 		};
 
 		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
-		if (ret != __KNULL) {
+		if (ret != NULL) {
 			return ret;
 		};
 	};
@@ -183,9 +183,9 @@ acpi_rFadtS *acpiRsdt::getNextFadt(
 	)
 {
 	acpi_sdtS	*sdt;
-	acpi_rFadtS	*ret=__KNULL;
+	acpi_rFadtS	*ret=NULL;
 
-	if (*handle == __KNULL) {
+	if (*handle == NULL) {
 		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
 	};
 
@@ -209,7 +209,7 @@ acpi_rFadtS *acpiRsdt::getNextFadt(
 		};
 
 		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
-		if (ret != __KNULL) {
+		if (ret != NULL) {
 			return ret;
 		};
 	};
@@ -224,7 +224,7 @@ void acpiRsdt::destroySdt(acpi_sdtS *sdt)
 	uarch_t		nPages, f;
 	paddr_t		p;
 
-	if (sdt == __KNULL) {
+	if (sdt == NULL) {
 		return;
 	};
 

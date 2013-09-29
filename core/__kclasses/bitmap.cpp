@@ -11,7 +11,7 @@ bitmapC::bitmapC(void)
 {
 	preAllocated = 0;
 	preAllocatedSize = 0;
-	bmp.rsrc.bmp = __KNULL;
+	bmp.rsrc.bmp = NULL;
 	bmp.rsrc.nBits = 0;
 }
 
@@ -32,25 +32,25 @@ error_t bitmapC::initialize(
 	nIndexes = __KMATH_NELEMENTS(
 		nBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__));
 
-	if (preAllocatedMemory != __KNULL)
+	if (preAllocatedMemory != NULL)
 	{
 		preAllocated = 1;
 		preAllocatedSize = preAllocatedMemorySize;
 	};
 
-	bmp.rsrc.bmp = (preAllocatedMemory != __KNULL)
+	bmp.rsrc.bmp = (preAllocatedMemory != NULL)
 		? new (preAllocatedMemory) uarch_t[nIndexes]
 		: new uarch_t[nIndexes];
 
-	if (bmp.rsrc.bmp == __KNULL && nBits != 0)
+	if (bmp.rsrc.bmp == NULL && nBits != 0)
 	{
 		bmp.rsrc.nBits = 0;
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	bmp.rsrc.nBits = nBits;
-	// Don't pass __KNULL to memset when BMP is initialized to 0 bits.
-	if (bmp.rsrc.bmp != __KNULL)
+	// Don't pass NULL to memset when BMP is initialized to 0 bits.
+	if (bmp.rsrc.bmp != NULL)
 	{
 		if (!preAllocated)
 		{
@@ -95,7 +95,7 @@ void bitmapC::merge(bitmapC *b)
 
 bitmapC::~bitmapC(void)
 {
-	if (!preAllocated && bmp.rsrc.bmp != __KNULL) {
+	if (!preAllocated && bmp.rsrc.bmp != NULL) {
 		delete bmp.rsrc.bmp;
 	};
 
@@ -175,12 +175,12 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 	{
 		bmp.lock.acquire();
 
-		if (!preAllocated && bmp.rsrc.bmp != __KNULL) {
+		if (!preAllocated && bmp.rsrc.bmp != NULL) {
 			delete bmp.rsrc.bmp;
 		};
 
 		preAllocated = 0;
-		bmp.rsrc.bmp = __KNULL;
+		bmp.rsrc.bmp = NULL;
 		bmp.rsrc.nBits = 0;
 
 		bmp.lock.release();
@@ -209,14 +209,14 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 
 	tmp = new uarch_t[nIndexes];
 
-	if (tmp == __KNULL) {
+	if (tmp == NULL) {
 		ret = ERROR_MEMORY_NOMEM;
 	}
 	else
 	{
 		bmp.lock.acquire();
 		// Copy the old array's state into the new.
-		if (bmp.rsrc.bmp != __KNULL)
+		if (bmp.rsrc.bmp != NULL)
 		{
 			memcpy(
 				tmp, bmp.rsrc.bmp,
@@ -227,7 +227,7 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 		bmp.rsrc.nBits = nBits;
 		bmp.lock.release();
 
-		if (!preAllocated && oldmem != __KNULL) { delete oldmem; };
+		if (!preAllocated && oldmem != NULL) { delete oldmem; };
 		preAllocated = 0;
 
 		ret = ERROR_SUCCESS;

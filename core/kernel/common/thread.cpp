@@ -36,17 +36,17 @@ void taskContextC::initializeRegisterContext(
 	 * stack0 or stack1.
 	 *
 	 * For kernel threads and per-cpu threads, only "stack0" will be passed,
-	 * and stack1 will be __KNULL.
+	 * and stack1 will be NULL.
 	 *
 	 * For threads of processes other than the kernel, stack1 shall not be
-	 * __KNULL, and it will be used as the context stack if it is not null.
+	 * NULL, and it will be used as the context stack if it is not null.
 	 * The only exception is if 'isFirstThread' is set. In that case, the
 	 * context pointer will be initialized on stack0 instead and the
 	 * register context will be built in the stack0 stack, because the first
 	 * thread in every process actually begins running in kernel domain and
 	 * not in user domain.
 	 **/
-	if (stack1 != __KNULL && !isFirstThread)
+	if (stack1 != NULL && !isFirstThread)
 	{
 		// Use stack1.
 		stackIndex = 1;
@@ -134,7 +134,7 @@ error_t taskContextC::inheritAffinity(bitmapC *cpuAffinity, uarch_t flags)
 	 * PINHERIT:
 	 *	Indicated by SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT.
 	 * SET:
-	 *	Implied if cpuAffinity != __KNULL.
+	 *	Implied if cpuAffinity != NULL.
 	 *
 	 *	CAVEAT:
 	 * For per-CPU-threads, cpuAffinity is always set to be ONLY the cpu
@@ -151,7 +151,7 @@ error_t taskContextC::inheritAffinity(bitmapC *cpuAffinity, uarch_t flags)
 		return ERROR_SUCCESS;
 	};
 
-	if (cpuAffinity == __KNULL)
+	if (cpuAffinity == NULL)
 	{
 		bitmapC		*sourceBitmap;
 
@@ -292,7 +292,7 @@ error_t threadC::allocateStacks(void)
 	stack0 = processTrib.__kgetStream()->memoryStream.memAlloc(
 		CHIPSET_MEMORY___KSTACK_NPAGES, MEMALLOC_NO_FAKEMAP);
 
-	if (stack0 == __KNULL)
+	if (stack0 == NULL)
 	{
 		__kprintf(ERROR TASK"0x%x: kernel stack alloc failed.\n", id);
 		return ERROR_MEMORY_NOMEM;
@@ -304,7 +304,7 @@ error_t threadC::allocateStacks(void)
 
 	// Allocate the stack from the parent process' memory stream.
 	stack1 = parent->memoryStream.memAlloc(CHIPSET_MEMORY_USERSTACK_NPAGES);
-	if (stack1 == __KNULL)
+	if (stack1 == NULL)
 	{
 		processTrib.__kgetStream()->memoryStream.memFree(stack0);
 		__kprintf(ERROR TASK"0x%x: failed to alloc user stack.\n", id);

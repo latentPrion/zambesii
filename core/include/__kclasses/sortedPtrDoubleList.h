@@ -48,7 +48,7 @@ protected:
 	{
 		listStateS(void)
 		:
-		head(__KNULL), tail(__KNULL), nItems(0)
+		head(NULL), tail(NULL), nItems(0)
 		{}
 
 		listNodeS	*head, *tail;
@@ -92,7 +92,7 @@ void sortedPointerDoubleListC<T, criterionType>::dump(void)
 	list.lock.acquire();
 
 	curr = head;
-	for (; curr != __KNULL; curr = curr->next, flipFlop++)
+	for (; curr != NULL; curr = curr->next, flipFlop++)
 	{
 		if (flipFlop < 4) {
 			__kprintf(CC"\t0x%p(%d) ", curr->item, curr->criterion);
@@ -126,7 +126,7 @@ error_t sortedPointerDoubleListC<T, criterionType>::addItem(
 	};
 
 	newNode = new listNodeS;
-	if (newNode == __KNULL)
+	if (newNode == NULL)
 	{
 		__kprintf(ERROR SRT_PTRDBLLIST"addItem(0x%p,%s): Failed "
 			"to alloc mem for new node.\n",
@@ -142,11 +142,11 @@ error_t sortedPointerDoubleListC<T, criterionType>::addItem(
 	list.lock.acquire();
 
 	// If list is empty:
-	if (list.rsrc.head == __KNULL)
+	if (list.rsrc.head == NULL)
 	{
 		list.rsrc.head = list.rsrc.tail = newNode;
-		newNode->prev = __KNULL;
-		newNode->next = __KNULL;
+		newNode->prev = NULL;
+		newNode->next = NULL;
 		list.rsrc.nItems++;
 
 		list.lock.release();
@@ -160,13 +160,13 @@ error_t sortedPointerDoubleListC<T, criterionType>::addItem(
 		if (newNode->criterion >= list.rsrc.head->criterion)
 		{
 			newNode->prev = list.rsrc.head;
-			newNode->next = __KNULL;
+			newNode->next = NULL;
 			list.rsrc.head->next = newNode;
 			list.rsrc.tail = newNode;
 		}
 		else
 		{
-			newNode->prev = __KNULL;
+			newNode->prev = NULL;
 			newNode->next = list.rsrc.head;
 			list.rsrc.head->prev = newNode;
 			list.rsrc.head = newNode;
@@ -180,7 +180,7 @@ error_t sortedPointerDoubleListC<T, criterionType>::addItem(
 	// If inserting at head of list:
 	if (list.rsrc.head->criterion > newNode->criterion)
 	{
-		newNode->prev = __KNULL;
+		newNode->prev = NULL;
 		newNode->next = list.rsrc.head;
 		list.rsrc.head->prev = newNode;
 		list.rsrc.head = newNode;
@@ -194,7 +194,7 @@ error_t sortedPointerDoubleListC<T, criterionType>::addItem(
 	if (list.rsrc.tail->criterion <= newNode->criterion)
 	{
 		newNode->prev = list.rsrc.tail;
-		newNode->next = __KNULL;
+		newNode->next = NULL;
 		list.rsrc.tail->next = newNode;
 		list.rsrc.tail = newNode;
 		list.rsrc.nItems++;
@@ -204,7 +204,7 @@ error_t sortedPointerDoubleListC<T, criterionType>::addItem(
 	};
 
 	// Every other case, inserting in the middle of two other nodes.
-	for (curr = list.rsrc.head; curr != __KNULL; curr = curr->next)
+	for (curr = list.rsrc.head; curr != NULL; curr = curr->next)
 	{
 		if (newNode->criterion >= curr->criterion)
 		{
@@ -229,15 +229,15 @@ void sortedPointerDoubleListC<T, criterionType>::removeItem(T *item)
 
 	list.lock.acquire();
 	// Just run through until we find it, then remove it.
-	for (curr = list.rsrc.head; curr != __KNULL; curr = curr->next)
+	for (curr = list.rsrc.head; curr != NULL; curr = curr->next)
 	{
 		if (curr->item == item)
 		{
 			if (list.rsrc.head == curr)
 			{
 				list.rsrc.head = curr->next;
-				if (list.rsrc.head != __KNULL) {
-					curr->next->prev = __KNULL;
+				if (list.rsrc.head != NULL) {
+					curr->next->prev = NULL;
 				};
 			}
 			else { curr->prev->next = curr->next; };
@@ -245,8 +245,8 @@ void sortedPointerDoubleListC<T, criterionType>::removeItem(T *item)
 			if (list.rsrc.tail == curr)
 			{
 				list.rsrc.tail = curr->prev;
-				if (list.rsrc.tail != __KNULL) {
-					curr->prev->next = __KNULL;
+				if (list.rsrc.tail != NULL) {
+					curr->prev->next = NULL;
 				};
 			}
 			else { curr->next->prev = curr->prev; };
@@ -265,19 +265,19 @@ void sortedPointerDoubleListC<T, criterionType>::removeItem(T *item)
 template <class T, class criterionType>
 T *sortedPointerDoubleListC<T, criterionType>::popFromHead(void)
 {
-	T		*ret=__KNULL;
+	T		*ret=NULL;
 	listNodeS	*tmp;
 
 	list.lock.acquire();
 
 	// If removing last item:
-	if (list.rsrc.tail == list.rsrc.head) { list.rsrc.tail = __KNULL; };
+	if (list.rsrc.tail == list.rsrc.head) { list.rsrc.tail = NULL; };
 
-	if (list.rsrc.head != __KNULL)
+	if (list.rsrc.head != NULL)
 	{
 		tmp = list.rsrc.head;
-		if (list.rsrc.head->next != __KNULL) {
-			list.rsrc.head->next->prev = __KNULL;
+		if (list.rsrc.head->next != NULL) {
+			list.rsrc.head->next->prev = NULL;
 		};
 
 		list.rsrc.head = list.rsrc.head->next;
@@ -292,26 +292,26 @@ T *sortedPointerDoubleListC<T, criterionType>::popFromHead(void)
 	else
 	{
 		list.lock.release();
-		return __KNULL;
+		return NULL;
 	};
 }
 
 template <class T, class criterionType>
 T *sortedPointerDoubleListC<T, criterionType>::popFromTail(void)
 {
-	T		*ret=__KNULL;
+	T		*ret=NULL;
 	listNodeS	*tmp;
 
 	list.lock.acquire();
 
 	// If removing last item:
-	if (list.rsrc.head == list.rsrc.tail) { list.rsrc.head = __KNULL; };
+	if (list.rsrc.head == list.rsrc.tail) { list.rsrc.head = NULL; };
 
-	if (list.rsrc.tail != __KNULL)
+	if (list.rsrc.tail != NULL)
 	{
 		tmp = list.rsrc.tail;
-		if (list.rsrc.tail->prev != __KNULL) {
-			list.rsrc.tail->prev->next = __KNULL;
+		if (list.rsrc.tail->prev != NULL) {
+			list.rsrc.tail->prev->next = NULL;
 		};
 
 		list.rsrc.tail = list.rsrc.tail->prev;
@@ -326,18 +326,18 @@ T *sortedPointerDoubleListC<T, criterionType>::popFromTail(void)
 	else
 	{
 		list.lock.release();
-		return __KNULL;
+		return NULL;
 	};
 }
 
 template <class T, class criterionType>
 T *sortedPointerDoubleListC<T, criterionType>::getHead(void)
 {
-	T	*ret=__KNULL;
+	T	*ret=NULL;
 
 	list.lock.acquire();
 
-	if (list.rsrc.head != __KNULL) {
+	if (list.rsrc.head != NULL) {
 		ret = list.rsrc.head->item;
 	};
 
@@ -349,11 +349,11 @@ T *sortedPointerDoubleListC<T, criterionType>::getHead(void)
 template <class T, class criterionType>
 T *sortedPointerDoubleListC<T, criterionType>::getTail(void)
 {
-	T	*ret=__KNULL;
+	T	*ret=NULL;
 
 	list.lock.acquire();
 
-	if (list.rsrc.tail != __KNULL) {
+	if (list.rsrc.tail != NULL) {
 		ret = list.rsrc.tail->item;
 	};
 

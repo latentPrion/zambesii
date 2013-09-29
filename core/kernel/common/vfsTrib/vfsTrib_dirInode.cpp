@@ -14,8 +14,8 @@ inodeLow(_inodeLow), inodeHigh(_inodeHigh)
 	nSubDirs = nFiles = 0;
 	refCount = 0;
 
-	files.rsrc = __KNULL;
-	subDirs.rsrc = __KNULL;
+	files.rsrc = NULL;
+	subDirs.rsrc = NULL;
 }
 
 error_t vfsDirInodeC::initialize(void)
@@ -30,7 +30,7 @@ void vfsDirInodeC::dumpSubDirs(void)
 	subDirs.lock.acquire();
 
 	__kprintf(NOTICE"Subdirs: %d.\n", nSubDirs);
-	for (curDir = subDirs.rsrc; curDir != __KNULL; curDir = curDir->next)
+	for (curDir = subDirs.rsrc; curDir != NULL; curDir = curDir->next)
 	{
 		__kprintf(NOTICE"\tName: %s, Refcount: %d.\n",
 			curDir->name, curDir->refCount);
@@ -46,7 +46,7 @@ void vfsDirInodeC::dumpFiles(void)
 	files.lock.acquire();
 
 	__kprintf(NOTICE"Files: %d.\n", nFiles);
-	for (curFile = files.rsrc; curFile != __KNULL; curFile = curFile->next)
+	for (curFile = files.rsrc; curFile != NULL; curFile = curFile->next)
 	{
 		__kprintf(NOTICE"\tName: %s, Refcount: %d.\n",
 			curFile->name, curFile->refCount);
@@ -57,7 +57,7 @@ void vfsDirInodeC::dumpFiles(void)
 
 void vfsDirInodeC::addFileDesc(vfsFileC *newFile)
 {
-	if (newFile == __KNULL) { return; };
+	if (newFile == NULL) { return; };
 
 	// Pretty much linked list manipulation. Nothing interesting.
 	files.lock.acquire();
@@ -71,7 +71,7 @@ void vfsDirInodeC::addFileDesc(vfsFileC *newFile)
 
 void vfsDirInodeC::addDirDesc(vfsDirC *newDir)
 {
-	if (newDir == __KNULL) { return; };
+	if (newDir == NULL) { return; };
 
 	// Same here.
 	subDirs.lock.acquire();
@@ -87,17 +87,17 @@ status_t vfsDirInodeC::removeFileDesc(utf8Char *name)
 {
 	vfsFileC		*curFile, *prevFile;
 
-	prevFile = __KNULL;
+	prevFile = NULL;
 
 	files.lock.acquire();
 
 	curFile = files.rsrc;
-	for (; curFile != __KNULL; )
+	for (; curFile != NULL; )
 	{
 		// If the folder exists:
 		if (strcmp8(curFile->name, name) == 0)
 		{
-			if (prevFile != __KNULL) {
+			if (prevFile != NULL) {
 				prevFile->next = curFile->next;
 			}
 			else {
@@ -125,17 +125,17 @@ status_t vfsDirInodeC::removeDirDesc(utf8Char *name)
 {
 	vfsDirC		*curDir, *prevDir;
 
-	prevDir = __KNULL;
+	prevDir = NULL;
 
 	subDirs.lock.acquire();
 
 	curDir = subDirs.rsrc;
-	for (; curDir != __KNULL; )
+	for (; curDir != NULL; )
 	{
 		// If the folder exists:
 		if (strcmp8(curDir->name, name) == 0)
 		{
-			if (prevDir != __KNULL) {
+			if (prevDir != NULL) {
 				prevDir->next = curDir->next;
 			}
 			else {
@@ -166,7 +166,7 @@ vfsFileC *vfsDirInodeC::getFileDesc(utf8Char *name)
 	files.lock.acquire();
 
 	curFile = files.rsrc;
-	for (uarch_t i=0; i<nFiles && curFile != __KNULL; i++)
+	for (uarch_t i=0; i<nFiles && curFile != NULL; i++)
 	{
 		if (strcmp8(curFile->name, name) == 0)
 		{
@@ -178,7 +178,7 @@ vfsFileC *vfsDirInodeC::getFileDesc(utf8Char *name)
 
 	// File doesn't exist on this inode.
 	files.lock.release();
-	return __KNULL;
+	return NULL;
 }
 
 vfsDirC *vfsDirInodeC::getDirDesc(utf8Char *name)
@@ -188,7 +188,7 @@ vfsDirC *vfsDirInodeC::getDirDesc(utf8Char *name)
 	subDirs.lock.acquire();
 
 	curDir = subDirs.rsrc;
-	for (; curDir != __KNULL; )
+	for (; curDir != NULL; )
 	{
 		if (strcmp8(curDir->name, name) == 0)
 		{
@@ -200,7 +200,7 @@ vfsDirC *vfsDirInodeC::getDirDesc(utf8Char *name)
 
 	// Subfolder doesn't exist.
 	subDirs.lock.release();
-	return __KNULL;
+	return NULL;
 }
 
 vfsDirInodeC::~vfsDirInodeC(void)

@@ -17,7 +17,7 @@ extern "C" void taskStream_pull(registerContextC *savedContext)
 
 	// XXX: We are operating on the CPU's sleep stack.
 	currTaskStream = &cpuTrib.getCurrentCpuStream()->taskStream;
-	if (savedContext != __KNULL) {
+	if (savedContext != NULL) {
 		currTaskStream->getCurrentTaskContext()->context = savedContext;
 	};
 
@@ -28,7 +28,7 @@ taskStreamC::taskStreamC(cpuStreamC *parent)
 :
 streamC(0),
 load(0), capacity(0),
-currentPerCpuThread(__KNULL),
+currentPerCpuThread(NULL),
 roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
 parentCpu(parent)
 {
@@ -224,12 +224,12 @@ void taskStreamC::pull(void)
 	for (;;)
 	{
 		newTask = pullRealTimeQ();
-		if (newTask != __KNULL) {
+		if (newTask != NULL) {
 			break;
 		};
 
 		newTask = pullRoundRobinQ();
-		if (newTask != __KNULL) {
+		if (newTask != NULL) {
 			break;
 		};
 
@@ -277,8 +277,8 @@ taskC* taskStreamC::pullRealTimeQ(void)
 	do
 	{
 		ret = static_cast<taskC*>( realTimeQ.pop() );
-		if (ret == __KNULL) {
-			return __KNULL;
+		if (ret == NULL) {
+			return NULL;
 		};
 
 		// Make sure the scheduler isn't waiting for this task.
@@ -301,8 +301,8 @@ taskC* taskStreamC::pullRoundRobinQ(void)
 	do
 	{
 		ret = static_cast<taskC*>( roundRobinQ.pop() );
-		if (ret == __KNULL) {
-			return __KNULL;
+		if (ret == NULL) {
+			return NULL;
 		};
 
 		// Make sure the scheduler isn't waiting for this task.
@@ -339,7 +339,7 @@ void taskStreamC::updateCapacity(ubit8 action, uarch_t val)
 	};
 
 	ncb = cpuTrib.getBank(parentCpu->bankId);
-	if (ncb == __KNULL) { return; };
+	if (ncb == NULL) { return; };
 
 	ncb->updateCapacity(action, val);
 }
@@ -366,7 +366,7 @@ void taskStreamC::updateLoad(ubit8 action, uarch_t val)
 	};
 
 	ncb = cpuTrib.getBank(parentCpu->bankId);
-	if (ncb == __KNULL) { return; };
+	if (ncb == NULL) { return; };
 
 	ncb->updateLoad(action, val);
 }

@@ -15,7 +15,7 @@ error_t allocTableC::addEntry(
 		| (attrib & ALLOCTABLE_ATTRIB_MASK);
 
 	result = allocTable.addEntry(&tmp);
-	if (result == __KNULL) {
+	if (result == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 	return ERROR_SUCCESS;
@@ -45,7 +45,7 @@ error_t allocTableC::lookup(
 	void *vaddr, uarch_t *nPages, ubit8 *attrib
 	)
 {
-	if (nPages == __KNULL || attrib == __KNULL) {
+	if (nPages == NULL || attrib == NULL) {
 		return ERROR_INVALID_ARG;
 	};
 
@@ -56,7 +56,7 @@ error_t allocTableC::lookup(
 	allocTableEntryC	*ret;
 
 	ret = allocTable.find(&tmp);
-	if (ret == __KNULL) {
+	if (ret == NULL) {
 		return ERROR_GENERAL;
 	};
 

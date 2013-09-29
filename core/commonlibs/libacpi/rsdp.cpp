@@ -30,7 +30,7 @@ error_t acpi::findRsdp(void)
 
 	// Call on chipset code to find ACPI RSDP.
 	cache.rsdp = static_cast<acpi_rsdpS *>( chipset_findAcpiRsdp() );
-	if (cache.rsdp == __KNULL) {
+	if (cache.rsdp == NULL) {
 		return ERROR_GENERAL;
 	};
 	return ERROR_SUCCESS;
@@ -38,7 +38,7 @@ error_t acpi::findRsdp(void)
 
 sarch_t acpi::rsdpFound(void)
 {
-	if (cache.rsdp != __KNULL) {
+	if (cache.rsdp != NULL) {
 		return 1;
 	};
 	return 0;
@@ -93,7 +93,7 @@ error_t acpi::mapRsdt(void)
 	if (!acpi::rsdpFound() || !acpi::testForRsdt()) {
 		return ERROR_GENERAL;
 	};
-	if (acpi::getRsdt() != __KNULL) {
+	if (acpi::getRsdt() != NULL) {
 		return ERROR_SUCCESS;
 	};
 
@@ -101,7 +101,7 @@ error_t acpi::mapRsdt(void)
 		cache.rsdp->rsdtPaddr, 2,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
-	if (rsdt == __KNULL)
+	if (rsdt == NULL)
 	{
 		__kprintf(ERROR ACPI"Failed to temp map RSDT.\n");
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
@@ -128,7 +128,7 @@ error_t acpi::mapRsdt(void)
 		cache.rsdp->rsdtPaddr, rsdtNPages,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
-	if (rsdt == __KNULL)
+	if (rsdt == NULL)
 	{
 		__kprintf(ERROR ACPI"Failed to map RSDT.\n");
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
@@ -142,7 +142,7 @@ error_t acpi::mapRsdt(void)
 acpi_rsdtS *acpi::getRsdt(void)
 {
 	if (!acpi::rsdpFound() || !acpi::testForRsdt()) {
-		return __KNULL;
+		return NULL;
 	};
 
 	return cache.rsdt;

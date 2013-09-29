@@ -63,10 +63,10 @@ private:
 template <class T>
 ptrListC<T>::ptrListC(sarch_t useCache)
 :
-cache(__KNULL), usingCache(useCache)
+cache(NULL), usingCache(useCache)
 {
 	head.rsrc.nItems = 0;
-	head.rsrc.ptr = __KNULL;
+	head.rsrc.ptr = NULL;
 }
 
 template <class T>
@@ -75,7 +75,7 @@ error_t ptrListC<T>::initialize(void)
 	if (usingCache)
 	{
 		cache = cachePool.createCache(sizeof(ptrListNodeS));
-		if (cache == __KNULL) {
+		if (cache == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
 	};
@@ -88,7 +88,7 @@ ptrListC<T>::~ptrListC(void)
 {
 	ptrListNodeS		*cur, *tmp;
 
-	for (cur = head.rsrc.ptr; cur != __KNULL; )
+	for (cur = head.rsrc.ptr; cur != NULL; )
 	{
 		tmp = cur;
 		cur = cur->next;
@@ -108,7 +108,7 @@ void ptrListC<T>::dump(void)
 		"Dumping.\n",
 		this, head.rsrc.nItems, head.rsrc.ptr);
 
-	for (; tmp != __KNULL; tmp = tmp->next)
+	for (; tmp != NULL; tmp = tmp->next)
 	{
 		__kprintf(NOTICE PTRLIST"Node @0x%p, item: 0x%p, next: 0x%p.\n",
 			tmp, tmp->item, tmp->next);
@@ -125,7 +125,7 @@ sarch_t ptrListC<T>::checkForItem(T *item)
 
 	head.lock.acquire();
 
-	for (tmp = head.rsrc.ptr; tmp != __KNULL; tmp = tmp->next)
+	for (tmp = head.rsrc.ptr; tmp != NULL; tmp = tmp->next)
 	{
 		if (tmp->item == item) {
 			head.lock.release();
@@ -158,7 +158,7 @@ error_t ptrListC<T>::insert(T *item)
 		? new (cache->allocate()) ptrListNodeS
 		: new ptrListNodeS;
 
-	if (node == __KNULL) {
+	if (node == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 	node->magic = PTRLIST_MAGIC;
@@ -178,17 +178,17 @@ error_t ptrListC<T>::insert(T *item)
 template <class T>
 sarch_t ptrListC<T>::remove(T *item)
 {
-	ptrListNodeS		*cur, *prev=__KNULL, *tmp;
+	ptrListNodeS		*cur, *prev=NULL, *tmp;
 
 	head.lock.acquire();
 
 	cur = head.rsrc.ptr;
-	for (; cur != __KNULL; )
+	for (; cur != NULL; )
 	{
 		if (cur->item == item)
 		{
 			tmp = cur;
-			if (prev != __KNULL) {
+			if (prev != NULL) {
 				prev->next = cur->next;
 			}
 			else {
@@ -230,26 +230,26 @@ T *ptrListC<T>::getItem(ubit32 num)
 	head.lock.acquire();
 	// Cycle through until the counter is 0, or the list ends.
 	for (tmp = head.rsrc.ptr;
-		tmp != __KNULL && num > 0;
+		tmp != NULL && num > 0;
 		tmp = tmp->next, num--)
 	{};
 	
 	head.lock.release();
 
 	// If the list ended before the counter ran out, return an error value.
-	return (num > 0) ? __KNULL : tmp->item;
+	return (num > 0) ? NULL : tmp->item;
 }
 
 template <class T>
 T *ptrListC<T>::getNextItem(void **handle, ubit32 flags)
 {
 	ptrListNodeS	*tmp = reinterpret_cast<ptrListNodeS *>( *handle );
-	T		*ret=__KNULL;
+	T		*ret=NULL;
 
 	// Don't allow arbitrary kernel memory reads.
-	if (*handle != __KNULL
+	if (*handle != NULL
 		&& ((ptrListNodeS *)(*handle))->magic != PTRLIST_MAGIC) {
-		return __KNULL;
+		return NULL;
 	};
 
 	if (!__KFLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
@@ -257,10 +257,10 @@ T *ptrListC<T>::getNextItem(void **handle, ubit32 flags)
 	};
 
 	// If starting a new walk:
-	if (*handle == __KNULL)
+	if (*handle == NULL)
 	{
 		*handle = head.rsrc.ptr;
-		if (head.rsrc.ptr != __KNULL) { ret = head.rsrc.ptr->item; };
+		if (head.rsrc.ptr != NULL) { ret = head.rsrc.ptr->item; };
 		if (!__KFLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
 			head.lock.release();
 		};
@@ -277,7 +277,7 @@ T *ptrListC<T>::getNextItem(void **handle, ubit32 flags)
 	 * Another caller can possibly remove the item and free the memory,
 	 * and then this next portion would be accessing illegal memory.
 	 **/
-	if (tmp->next != __KNULL)
+	if (tmp->next != NULL)
 	{
 		*handle = tmp->next;
 
@@ -292,7 +292,7 @@ T *ptrListC<T>::getNextItem(void **handle, ubit32 flags)
 		head.lock.release();
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 #endif

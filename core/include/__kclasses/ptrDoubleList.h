@@ -22,9 +22,9 @@ class pointerDoubleListC
 public:
 	pointerDoubleListC(void)
 	:
-	objectCache(__KNULL)
+	objectCache(NULL)
 	{
-		list.rsrc.head = list.rsrc.tail = __KNULL;
+		list.rsrc.head = list.rsrc.tail = NULL;
 		list.rsrc.nItems = 0;
 	}
 
@@ -39,7 +39,7 @@ public:
 			PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE))
 		{
 			objectCache = cachePool.createCache(sizeof(listNodeS));
-			if (objectCache == __KNULL) {
+			if (objectCache == NULL) {
 				return ERROR_MEMORY_NOMEM;
 			};
 		};
@@ -110,7 +110,7 @@ void pointerDoubleListC<T>::dump(void)
 	list.lock.acquire();
 
 	curr = head;
-	for (; curr != __KNULL; curr = curr->next, flipFlop++)
+	for (; curr != NULL; curr = curr->next, flipFlop++)
 	{
 		if (flipFlop < 4) { __kprintf(CC"\t0x%p ", curr->item); }
 		else
@@ -129,11 +129,11 @@ error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
 {
 	listNodeS	*newNode;
 
-	newNode = (objectCache == __KNULL)
+	newNode = (objectCache == NULL)
 		? new listNodeS
 		: new (objectCache->allocate()) listNodeS;
 
-	if (newNode == __KNULL)
+	if (newNode == NULL)
 	{
 		__kprintf(ERROR PTRDBLLIST"addItem(0x%p,%s): Failed to alloc "
 			"mem for new node.\n",
@@ -147,12 +147,12 @@ error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
 	switch (mode)
 	{
 	case PTRDBLLIST_ADD_HEAD:
-		newNode->prev = __KNULL;
+		newNode->prev = NULL;
 		
 		list.lock.acquire();
 
 		newNode->next = list.rsrc.head;
-		if (list.rsrc.head != __KNULL) {
+		if (list.rsrc.head != NULL) {
 			list.rsrc.head->prev = newNode;
 		}
 		else { list.rsrc.tail = newNode; };
@@ -163,12 +163,12 @@ error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
 		break;
 
 	case PTRDBLLIST_ADD_TAIL:
-		newNode->next = __KNULL;
+		newNode->next = NULL;
 
 		list.lock.acquire();
 
 		newNode->prev = list.rsrc.tail;
-		if (list.rsrc.tail != __KNULL) {
+		if (list.rsrc.tail != NULL) {
 			list.rsrc.tail->next = newNode;
 		}
 		else { list.rsrc.head = newNode; };
@@ -195,15 +195,15 @@ void pointerDoubleListC<T>::removeItem(T *item)
 
 	list.lock.acquire();
 	// Just run through until we find it, then remove it.
-	for (curr = list.rsrc.head; curr != __KNULL; curr = curr->next)
+	for (curr = list.rsrc.head; curr != NULL; curr = curr->next)
 	{
 		if (curr->item == item)
 		{
 			if (list.rsrc.head == curr)
 			{
 				list.rsrc.head = curr->next;
-				if (list.rsrc.head != __KNULL) {
-					curr->next->prev = __KNULL;
+				if (list.rsrc.head != NULL) {
+					curr->next->prev = NULL;
 				};
 			}
 			else { curr->prev->next = curr->next; };
@@ -211,8 +211,8 @@ void pointerDoubleListC<T>::removeItem(T *item)
 			if (list.rsrc.tail == curr)
 			{
 				list.rsrc.tail = curr->prev;
-				if (list.rsrc.tail != __KNULL) {
-					curr->prev->next = __KNULL;
+				if (list.rsrc.tail != NULL) {
+					curr->prev->next = NULL;
 				};
 			}
 			else { curr->next->prev = curr->prev; };
@@ -220,7 +220,7 @@ void pointerDoubleListC<T>::removeItem(T *item)
 			list.rsrc.nItems--;
 			list.lock.release();
 
-			if (objectCache == __KNULL) { delete curr; }
+			if (objectCache == NULL) { delete curr; }
 			else { objectCache->free(curr); };
 			return;
 		};
@@ -232,19 +232,19 @@ void pointerDoubleListC<T>::removeItem(T *item)
 template <class T>
 T *pointerDoubleListC<T>::popFromHead(void)
 {
-	T		*ret=__KNULL;
+	T		*ret=NULL;
 	listNodeS	*tmp;
 
 	list.lock.acquire();
 
 	// If removing last item:
-	if (list.rsrc.tail == list.rsrc.head) { list.rsrc.tail = __KNULL; };
+	if (list.rsrc.tail == list.rsrc.head) { list.rsrc.tail = NULL; };
 
-	if (list.rsrc.head != __KNULL)
+	if (list.rsrc.head != NULL)
 	{
 		tmp = list.rsrc.head;
-		if (list.rsrc.head->next != __KNULL) {
-			list.rsrc.head->next->prev = __KNULL;
+		if (list.rsrc.head->next != NULL) {
+			list.rsrc.head->next->prev = NULL;
 		};
 
 		list.rsrc.head = list.rsrc.head->next;
@@ -254,33 +254,33 @@ T *pointerDoubleListC<T>::popFromHead(void)
 
 		ret = tmp->item;
 
-		if (objectCache == __KNULL) { delete tmp; }
+		if (objectCache == NULL) { delete tmp; }
 		else { objectCache->free(tmp); };
 		return ret;
 	}
 	else
 	{
 		list.lock.release();
-		return __KNULL;
+		return NULL;
 	};
 }
 
 template <class T>
 T *pointerDoubleListC<T>::popFromTail(void)
 {
-	T		*ret=__KNULL;
+	T		*ret=NULL;
 	listNodeS	*tmp;
 
 	list.lock.acquire();
 
 	// If removing last item:
-	if (list.rsrc.head == list.rsrc.tail) { list.rsrc.head = __KNULL; };
+	if (list.rsrc.head == list.rsrc.tail) { list.rsrc.head = NULL; };
 
-	if (list.rsrc.tail != __KNULL)
+	if (list.rsrc.tail != NULL)
 	{
 		tmp = list.rsrc.tail;
-		if (list.rsrc.tail->prev != __KNULL) {
-			list.rsrc.tail->prev->next = __KNULL;
+		if (list.rsrc.tail->prev != NULL) {
+			list.rsrc.tail->prev->next = NULL;
 		};
 
 		list.rsrc.tail = list.rsrc.tail->prev;
@@ -290,25 +290,25 @@ T *pointerDoubleListC<T>::popFromTail(void)
 
 		ret = tmp->item;
 
-		if (objectCache == __KNULL) { delete tmp; }
+		if (objectCache == NULL) { delete tmp; }
 		else { objectCache->free(tmp); };
 		return ret;
 	}
 	else
 	{
 		list.lock.release();
-		return __KNULL;
+		return NULL;
 	};
 }
 
 template <class T>
 T *pointerDoubleListC<T>::getHead(void)
 {
-	T	*ret=__KNULL;
+	T	*ret=NULL;
 
 	list.lock.acquire();
 
-	if (list.rsrc.head != __KNULL) {
+	if (list.rsrc.head != NULL) {
 		ret = list.rsrc.head->item;
 	};
 
@@ -320,11 +320,11 @@ T *pointerDoubleListC<T>::getHead(void)
 template <class T>
 T *pointerDoubleListC<T>::getTail(void)
 {
-	T	*ret=__KNULL;
+	T	*ret=NULL;
 
 	list.lock.acquire();
 
-	if (list.rsrc.tail != __KNULL) {
+	if (list.rsrc.tail != NULL) {
 		ret = list.rsrc.tail->item;
 	};
 

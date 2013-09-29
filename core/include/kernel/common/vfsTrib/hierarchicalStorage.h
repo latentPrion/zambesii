@@ -234,7 +234,7 @@ namespace hvfs
 		{
 			defaultTreeInfoS(void)
 			:
-			tag(__KNULL)
+			tag(NULL)
 			{
 				name[0] = '\0';
 			}

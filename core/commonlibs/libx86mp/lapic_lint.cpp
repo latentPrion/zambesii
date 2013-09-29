@@ -9,9 +9,9 @@ static void lintParseRMadtForEntries(acpi_rMadtS *rmadt, cpuStreamC *parent)
 	void			*handle;
 	acpi_rMadtLapicNmiS	*nmiEntry;
 
-	handle = __KNULL;
+	handle = NULL;
 	nmiEntry = acpiRMadt::getNextLapicNmiEntry(rmadt, &handle);
-	while (nmiEntry != __KNULL)
+	while (nmiEntry != NULL)
 	{
 		// If this entry pertains to this CPU:
 		if (nmiEntry->acpiLapicId == parent->cpuAcpiId
@@ -44,11 +44,11 @@ void x86LapicC::lintS::rsdtSetupLints(cpuStreamC *parent)
 	void			*context, *handle;
 
 	rsdt = acpi::getRsdt();
-	context = handle = __KNULL;
+	context = handle = NULL;
 	rmadt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 
 int	i=0;
-	while (rmadt != __KNULL)
+	while (rmadt != NULL)
 	{
 i++;
 if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
@@ -81,19 +81,19 @@ error_t x86LapicC::lintS::setupLints(cpuStreamC *parent)
 	 * we want both sets of information.
 	 **/
 	x86Mp::initializeCache();
-	if (x86Mp::findMpFp() == __KNULL)
+	if (x86Mp::findMpFp() == NULL)
 	{
 		goto useAcpi;
 	};
 
-	if (x86Mp::mapMpConfigTable() == __KNULL)
+	if (x86Mp::mapMpConfigTable() == NULL)
 	{
 		__kprintf(WARNING x86LAPIC"Failed to map MP config table.\n");
 		goto useAcpi;
 	};
 
 	lintEntry = x86Mp::getNextLocalIrqSourceEntry(&pos, &handle);
-	while (lintEntry != __KNULL)
+	while (lintEntry != NULL)
 	{
 		// If the entry pertains to this CPU:
 		if (lintEntry->destLapicId == parent->cpuId

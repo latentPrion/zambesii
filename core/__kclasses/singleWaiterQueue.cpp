@@ -12,7 +12,7 @@ error_t singleWaiterQueueC::addItem(void *item)
 	// Prevent lost wakeups from race conditions.
 	lock.acquire();
 
-	if (thread == __KNULL)
+	if (thread == NULL)
 	{
 		lock.release();
 		return ERROR_UNINITIALIZED;
@@ -59,7 +59,7 @@ error_t singleWaiterQueueC::pop(void **item, uarch_t flags)
 		lock.acquire();
 
 		*item = pointerDoubleListC<void>::popFromHead();
-		if (*item != __KNULL)
+		if (*item != NULL)
 		{
 			lock.release();
 			return ERROR_SUCCESS;
@@ -81,10 +81,10 @@ error_t singleWaiterQueueC::pop(void **item, uarch_t flags)
 
 error_t singleWaiterQueueC::setWaitingThread(threadC *newThread)
 {
-	if (newThread == __KNULL) { return ERROR_INVALID_ARG; };
+	if (newThread == NULL) { return ERROR_INVALID_ARG; };
 
 	// Only allow threads from the currently owning process to wait.
-	if (thread != __KNULL
+	if (thread != NULL
 		&& thread->parent->id != newThread->parent->id)
 	{
 		__kprintf(WARNING SWAITQ"Failed to allow task 0x%x to "

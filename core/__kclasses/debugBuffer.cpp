@@ -16,7 +16,7 @@
 
 debugBufferC::debugBufferC(void)
 {
-	buff.rsrc.head = buff.rsrc.cur = buff.rsrc.tail = __KNULL;
+	buff.rsrc.head = buff.rsrc.cur = buff.rsrc.tail = NULL;
 	buff.rsrc.index = buff.rsrc.buffNPages = 0;
 }
 
@@ -38,7 +38,7 @@ error_t debugBufferC::initialize(void)
 	mem = new (buffMem) debugBufferC::buffPageS;
 #endif
 
-	if (mem == __KNULL) {
+	if (mem == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -61,7 +61,7 @@ error_t debugBufferC::initialize(void)
 		mem2->next = new (&buffMem[i * PAGING_BASE_SIZE]) buffPageS;
 #endif
 
-		if (mem2->next == __KNULL) {
+		if (mem2->next == NULL) {
 			break;
 		};
 		mem2 = mem2->next;
@@ -87,7 +87,7 @@ error_t debugBufferC::shutdown(void)
 		buff.lock.acquire();
 
 		// Manually bound-checking here allows for finer grained locking.
-		if (buff.rsrc.head == __KNULL)
+		if (buff.rsrc.head == NULL)
 		{
 			buff.lock.release();
 			break;
@@ -124,8 +124,8 @@ utf8Char *debugBufferC::extract(void **handle, uarch_t *len)
 {
 	utf8Char	*ret;
 
-	if (handle == __KNULL || *handle == __KNULL || len == 0) {
-		return __KNULL;
+	if (handle == NULL || *handle == NULL || len == 0) {
+		return NULL;
 	};
 
 	if (*reinterpret_cast<debugBufferC::buffPageS **>( handle )
@@ -141,7 +141,7 @@ utf8Char *debugBufferC::extract(void **handle, uarch_t *len)
 		ret = &(reinterpret_cast<buffPageS *>( *handle )->data[0]);
 
 		// Don't allow the caller to advance any further.
-		*handle = __KNULL;
+		*handle = NULL;
 	};
 
 	return ret;
@@ -156,7 +156,7 @@ void debugBufferC::syphon(utf8Char *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
 
-	if (buff.rsrc.head == __KNULL)
+	if (buff.rsrc.head == NULL)
 	{
 		buff.lock.release();
 		return;
@@ -170,7 +170,7 @@ void debugBufferC::syphon(utf8Char *str, uarch_t buffLen)
 			buff.rsrc.index = 0;
 		};
 
-		if (buff.rsrc.cur == __KNULL)
+		if (buff.rsrc.cur == NULL)
 		{
 			buff.rsrc.cur = scrollBuff(
 				&buff.rsrc.index,
@@ -212,7 +212,7 @@ debugBufferC::buffPageS *debugBufferC::scrollBuff(
 	};
 	tmp2 = tmp2->next;
 
-	for (; tmp2 != __KNULL; )
+	for (; tmp2 != NULL; )
 	{
 		for (uarch_t i=bound, j=0; i<DEBUGBUFFER_PAGE_NCHARS;
 			i++, j++)

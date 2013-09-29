@@ -192,7 +192,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	device->sendEoi();
 
 	// Invoke the system clock update routine if installed on this device.
-	if (device->clockRoutine != __KNULL)
+	if (device->clockRoutine != NULL)
 	{
 		// Accesses state without the lock. Safe.
 		(*device->clockRoutine)(
@@ -208,7 +208,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 
 	irqEvent = device->allocateIrqEvent();
 	// Note well, this is faultable memory being allocated.
-	if (irqEvent == __KNULL)
+	if (irqEvent == NULL)
 	{
 		__kprintf(WARNING i8254"isr: Couldn't allocate IRQ event.\n");
 		// FIXME: I don't like this return value.

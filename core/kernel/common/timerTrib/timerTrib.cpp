@@ -26,7 +26,7 @@ clockQueueId(-1)
 		&watchdog.rsrc.nextFeedTime, 0,
 		sizeof(watchdog.rsrc.nextFeedTime));
 
-	watchdog.rsrc.isr = __KNULL;
+	watchdog.rsrc.isr = NULL;
 
 	// Initialize the timer queue pointer array.
 	timerQueues[0] = &period1s;
@@ -71,7 +71,7 @@ void timerTribC::initializeAllQueues(void)
 {
 	error_t			ret;
 	zkcmTimerDeviceC	*dev;
-	void			*handle=__KNULL;
+	void			*handle=NULL;
 
 	/**	EXPLANATION:
 	 * First call initialize() on each timerQueueC object, then proceed:
@@ -103,7 +103,7 @@ void timerTribC::initializeAllQueues(void)
 		| TIMERCTL_FILTER_FLAGS_SKIP_LATCHED,
 		&handle);
 
-	for (; dev != __KNULL;
+	for (; dev != NULL;
 		dev = zkcmCore.timerControl.filterTimerDevices(
 			zkcmTimerDeviceC::CHIPSET,
 			0,
@@ -222,7 +222,7 @@ error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
 		eventProcessorS::messageS::QUEUE_LATCHED,
 		queue);
 
-	if (msg == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	return eventProcessor.controlQueue.addItem(msg);
 }
@@ -230,7 +230,7 @@ error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
 error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *request)
 {
 	error_t		ret;
-	timerQueueC	*suboptimal=__KNULL;
+	timerQueueC	*suboptimal=NULL;
 
 	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
 	{
@@ -266,7 +266,7 @@ error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *reques
 		return ret;
 	};
 
-	if (suboptimal == __KNULL)
+	if (suboptimal == NULL)
 	{
 		__kprintf(FATAL TIMERTRIB"No timer queues are latched.\n");
 		return ERROR_FATAL;
@@ -340,8 +340,8 @@ error_t timerTribC::initialize(void)
 
 	// Spawn the timer event dequeueing thread.
 	ret = processTrib.__kgetStream()->spawnThread(
-		&timerTribC::eventProcessorS::thread, __KNULL,
-		__KNULL,
+		&timerTribC::eventProcessorS::thread, NULL,
+		NULL,
 		taskC::REAL_TIME,
 		PRIOCLASS_CRITICAL,
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
@@ -389,7 +389,7 @@ sarch_t timerTribC::eventProcessorS::getFreeWaitSlot(ubit8 *ret)
 {
 	for (*ret=0; *ret<6; *ret += 1)
 	{
-		if (waitSlots[*ret].eventQueue == __KNULL) {
+		if (waitSlots[*ret].eventQueue == NULL) {
 			return 1;
 		};
 	};
@@ -456,7 +456,7 @@ void timerTribC::sendMessage(void)
 
 	// Posts an artificial message to the control queue.
 	msg = new eventProcessorS::messageS(
-		eventProcessorS::messageS::EXIT_THREAD, __KNULL);
+		eventProcessorS::messageS::EXIT_THREAD, NULL);
 
 	eventProcessor.controlQueue.addItem(msg);
 }
@@ -533,7 +533,7 @@ void timerTribC::eventProcessorS::thread(void *)
 		{
 			// Skip blank slots.
 			if (timerTrib.eventProcessor.waitSlots[i].eventQueue
-				== __KNULL)
+				== NULL)
 			{
 				continue;
 			};
@@ -569,7 +569,7 @@ void timerTribC::dump(void)
 	__kprintf(NOTICE TIMERTRIB"Dumping.\n");
 
 	__kprintf(NOTICE"\tWatchdog: ");
-		if (watchdog.rsrc.isr == __KNULL) {
+		if (watchdog.rsrc.isr == NULL) {
 			__kprintf((utf8Char *)"No.\n");
 		}
 		else
@@ -584,14 +584,14 @@ void timerTribC::dump(void)
 
 status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, timeS interval)
 {
-	if (isr == __KNULL) { return ERROR_INVALID_ARG; };
+	if (isr == NULL) { return ERROR_INVALID_ARG; };
 	if ((interval.seconds == 0) && (interval.nseconds == 0)) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 
 	watchdog.lock.acquire();
 
-	if (watchdog.rsrc.isr != __KNULL)
+	if (watchdog.rsrc.isr != NULL)
 	{
 		watchdog.lock.release();
 		return TIMERTRIB_WATCHDOG_ALREADY_REGISTERED;
@@ -627,14 +627,14 @@ void timerTribC::unregisterWatchdogIsr(void)
 {
 	watchdog.lock.acquire();
 
-	if (watchdog.rsrc.isr == __KNULL)
+	if (watchdog.rsrc.isr == NULL)
 	{
 		watchdog.lock.release();
 		return;
 	}
 	else
 	{
-		watchdog.rsrc.isr = __KNULL;
+		watchdog.rsrc.isr = NULL;
 
 		memset(
 			&watchdog.rsrc.interval, 0,

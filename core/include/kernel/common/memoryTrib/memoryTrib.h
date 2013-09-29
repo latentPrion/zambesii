@@ -41,7 +41,7 @@ public:
 
 	numaMemoryBankC *getBank(numaBankId_t bankId);
 	error_t createBank(
-		numaBankId_t bankId, numaMemoryBankC *preAllocated=__KNULL);
+		numaBankId_t bankId, numaMemoryBankC *preAllocated=NULL);
 
 	void destroyBank(numaBankId_t bankId);
 
@@ -135,7 +135,7 @@ inline numaMemoryBankC *memoryTribC::getBank(numaBankId_t bankId)
 			memoryBanks.getItem(bankId) );
 	}
 	else {
-		return __KNULL;
+		return NULL;
 	};
 }
 #endif

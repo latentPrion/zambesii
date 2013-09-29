@@ -109,7 +109,7 @@ void memBmpC::dump(void)
  **/
 error_t memBmpC::initialize(void *preAllocated)
 {
-	if (preAllocated != __KNULL) {
+	if (preAllocated != NULL) {
 		bmp.rsrc.bmp = new (preAllocated) uarch_t[nIndexes];
 	}
 	else
@@ -121,7 +121,7 @@ error_t memBmpC::initialize(void *preAllocated)
 					MEMALLOC_NO_FAKEMAP))
 			uarch_t[nIndexes];
 
-		if (bmp.rsrc.bmp == __KNULL) {
+		if (bmp.rsrc.bmp == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
 
@@ -206,7 +206,7 @@ error_t memBmpC::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
 	uarch_t	bitLimit=__KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 	if (_nFrames == 0) { return ERROR_INVALID_ARG_VAL; };
-	if (paddr == __KNULL) { return ERROR_INVALID_ARG; };
+	if (paddr == NULL) { return ERROR_INVALID_ARG; };
 
 	bmp.lock.acquire();
 
@@ -308,7 +308,7 @@ status_t memBmpC::fragmentedGetFrames(uarch_t _nFrames, paddr_t *paddr)
 	uarch_t		bitLimit=__KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 	if (_nFrames == 0) { return ERROR_INVALID_ARG_VAL; };
-	if (paddr == __KNULL) { return ERROR_INVALID_ARG; };
+	if (paddr == NULL) { return ERROR_INVALID_ARG; };
 
 	bmp.lock.acquire();
 

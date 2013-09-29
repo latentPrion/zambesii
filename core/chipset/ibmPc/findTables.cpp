@@ -34,7 +34,7 @@ void *chipset_findx86MpFp(void)
 	if (chipsetMemAreas::mapArea(CHIPSET_MEMAREA_LOWMEM) != ERROR_SUCCESS)
 	{
 		__kprintf(ERROR FINDTABLES"MPFP: Failed to map lowmem.\n");
-		return __KNULL;
+		return NULL;
 	};
 
 	lowmem = reinterpret_cast<ubit8 *>(
@@ -65,7 +65,7 @@ void *chipset_findx86MpFp(void)
 	__kprintf(WARNING OPTS(LOGONCE(LOGONCE_FINDTABLES(0))) FINDTABLES
 		"MPFP: No MP FP found.\n");
 
-	return __KNULL;
+	return NULL;
 }
 	#endif
 #endif
@@ -83,7 +83,7 @@ void *chipset_findAcpiRsdp(void)
 	if (chipsetMemAreas::mapArea(CHIPSET_MEMAREA_LOWMEM) != ERROR_SUCCESS)
 	{
 		__kprintf(ERROR FINDTABLES"RSDP: Failed to map lowmem.\n");
-		return __KNULL;
+		return NULL;
 	};
 
 	lowmem = reinterpret_cast<ubit8 *>(
@@ -114,6 +114,6 @@ void *chipset_findAcpiRsdp(void)
 	__kprintf(WARNING OPTS(LOGONCE(LOGONCE_FINDTABLES(1))) FINDTABLES
 		"RSDP: No RSDP found.\n");
 
-	return __KNULL;
+	return NULL;
 }
 

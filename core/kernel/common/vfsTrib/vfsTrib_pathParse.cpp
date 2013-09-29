@@ -26,7 +26,7 @@ status_t vfsTribC::getPath(utf8Char *path, ubit8 *type, void **ret)
 		{
 			*ret = vfsTrib.getTree(path);
 			*type = VFSPATH_TYPE_DIR;
-			if (*ret != __KNULL) {
+			if (*ret != NULL) {
 				return ERROR_SUCCESS;
 			};
 		}
@@ -35,7 +35,7 @@ status_t vfsTribC::getPath(utf8Char *path, ubit8 *type, void **ret)
 		path[idx - 1] = '\0';
 		dir = vfsTrib.getTree(path);
 		path[idx - 1] = '/';
-		if (dir == __KNULL) {
+		if (dir == NULL) {
 			return VFSPATH_INVALID;
 		};
 		goto parseRelative;
@@ -45,7 +45,7 @@ status_t vfsTribC::getPath(utf8Char *path, ubit8 *type, void **ret)
 	{
 		// Get default tree, then do vfsTraverse::getNextSegmentIndex().
 		dir = getDefaultTree();
-		if (dir == __KNULL) {
+		if (dir == NULL) {
 			return VFSPATH_INVALID;
 		};
 

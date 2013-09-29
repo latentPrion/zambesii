@@ -12,7 +12,7 @@ void vSwampC::dump(void)
 
 	state.lock.acquire();
 
-	if (state.rsrc.head == __KNULL)
+	if (state.rsrc.head == NULL)
 	{
 		__kprintf(CC"invalid.\n");
 		state.lock.release();
@@ -22,7 +22,7 @@ void vSwampC::dump(void)
 	__kprintf(CC"valid\n");
 
 	for (swampInfoNodeC *tmp = state.rsrc.head;
-		tmp != __KNULL;
+		tmp != NULL;
 		tmp = tmp->next)
 	{
 		__kprintf(CC"\tNode (v0x%p): baseAddr 0x%p, nPages 0x%x.\n",
@@ -38,7 +38,7 @@ void *vSwampC::getPages(uarch_t nPages, ubit32)
 
 	state.lock.acquire();
 	for (swampInfoNodeC *currentNode = state.rsrc.head;
-		currentNode != __KNULL;
+		currentNode != NULL;
 		currentNode = currentNode->next)
 	{
 		if (currentNode->nPages >= nPages)
@@ -77,7 +77,7 @@ void *vSwampC::getPages(uarch_t nPages, ubit32)
 	};
 
 	state.lock.release();
-	return __KNULL;
+	return NULL;
 }
 
 void vSwampC::releasePages(void *vaddr, uarch_t nPages)
@@ -85,7 +85,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 	swampInfoNodeC	*insertionNode;
 	status_t	status;
 
-	if (vaddr == __KNULL 
+	if (vaddr == NULL 
 		|| reinterpret_cast<uarch_t>( vaddr ) & PAGING_BASE_MASK_LOW
 		|| nPages == 0)
 	{
@@ -101,7 +101,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 	insertionNode = findInsertionNode(vaddr, &status);
 
 	// If the data structure is empty (all the process' vmem was exhausted):
-	if (insertionNode == __KNULL)
+	if (insertionNode == NULL)
 	{
 
 		state.lock.release();
@@ -119,7 +119,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 			insertionNode->baseAddr = vaddr;
 			insertionNode->nPages += nPages;
 
-			if (insertionNode->prev == __KNULL) { goto out; };
+			if (insertionNode->prev == NULL) { goto out; };
 
 			/* Check to see if this free also allows us to
 			 * defragment the swamp even more by concatenating the
@@ -152,7 +152,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 				vaddr, nPages,
 				insertionNode->prev, insertionNode);
 
-			if (newNode == __KNULL)
+			if (newNode == NULL)
 			{
 				// This is essentially a virtual memory leak.
 				goto out;
@@ -172,12 +172,12 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 	else
 	{
 		// Inserting at end of swamp, or list is empty.
-		if (state.rsrc.head == __KNULL)
+		if (state.rsrc.head == NULL)
 		{
 			// List is empty; re-use the init-node.
 			initSwampNode.baseAddr = vaddr;
 			initSwampNode.nPages = nPages;
-			initSwampNode.prev = initSwampNode.next = __KNULL;
+			initSwampNode.prev = initSwampNode.next = NULL;
 
 			state.rsrc.head = state.rsrc.tail = &initSwampNode;
 		}
@@ -185,7 +185,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 		{
 			// Allocate a new node and append it.
 			insertionNode->next = getNewSwampNode(
-				vaddr, nPages, insertionNode, __KNULL
+				vaddr, nPages, insertionNode, NULL
 			);
 
 			state.rsrc.tail = insertionNode->next;
@@ -222,10 +222,10 @@ out:
  **/
 swampInfoNodeC *vSwampC::findInsertionNode(void *vaddr, status_t *status)
 {
-	swampInfoNodeC		*altNode=__KNULL;
+	swampInfoNodeC		*altNode=NULL;
 
 	for (swampInfoNodeC *currentNode = state.rsrc.head;
-		currentNode != __KNULL;
+		currentNode != NULL;
 		currentNode = currentNode->next)
 	{
 		// If the current node is the insertion point:
@@ -245,7 +245,7 @@ swampInfoNodeC *vSwampC::findInsertionNode(void *vaddr, status_t *status)
 //You must already hold the lock before calling this.
 void vSwampC::deleteSwampNode(swampInfoNodeC *node)
 {
-	if (node ==__KNULL) {
+	if (node ==NULL) {
 		return;
 	};
 
@@ -275,8 +275,8 @@ swampInfoNodeC *vSwampC::getNewSwampNode(
 	ret = new (swampNodeList.allocate()) swampInfoNodeC(
 		startAddr, nPages, prev, next);
 
-	if (ret == __KNULL) {
-		return __KNULL;
+	if (ret == NULL) {
+		return NULL;
 	};
 
 	/* // Initialize it.

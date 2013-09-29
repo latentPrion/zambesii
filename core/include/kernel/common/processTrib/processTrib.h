@@ -21,7 +21,7 @@
  **/
 // STINHERIT by default.
 #define SPAWNPROC_FLAGS_AFFINITY_STINHERIT	SPAWNTHREAD_FLAGS_AFFINITY_STINHERIT
-// Implied if the cpuAffinity BMP != __KNULL && !PINHERIT
+// Implied if the cpuAffinity BMP != NULL && !PINHERIT
 #define SPAWNPROC_FLAGS_AFFINITY_SET		SPAWNTHREAD_FLAGS_AFFINITY_SET
 #define SPAWNPROC_FLAGS_AFFINITY_PINHERIT	SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
 
@@ -190,7 +190,7 @@ private:
 		void clearSlot(processId_t pid)
 		{
 			lock.writeAcquire();
-			rsrc[PROCID_PROCESS(pid)] = __KNULL;
+			rsrc[PROCID_PROCESS(pid)] = NULL;
 			lock.writeRelease();
 		}
 

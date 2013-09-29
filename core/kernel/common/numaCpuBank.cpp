@@ -28,7 +28,7 @@ error_t numaCpuBankC::initialize(uarch_t nBits)
 error_t numaCpuBankC::schedule(threadC *thread)
 {
 	ubit32		lowestLoad = 0xFFFFFFFF;
-	cpuStreamC	*bestCpu=__KNULL, *curCpu;
+	cpuStreamC	*bestCpu=NULL, *curCpu;
 
 	for (uarch_t i=0;
 		i<thread->getTaskContext()->cpuAffinity.getNBits(); i++)
@@ -36,7 +36,7 @@ error_t numaCpuBankC::schedule(threadC *thread)
 		if (thread->getTaskContext()->cpuAffinity.testSingle(i))
 		{
 			curCpu = cpuTrib.getStream(i);
-			if (curCpu == __KNULL) { continue; };
+			if (curCpu == NULL) { continue; };
 			if (curCpu->taskStream.getLoad() < lowestLoad)
 			{
 				bestCpu = curCpu;
@@ -45,7 +45,7 @@ error_t numaCpuBankC::schedule(threadC *thread)
 		};
 	};
 
-	if (bestCpu == __KNULL) {
+	if (bestCpu == NULL) {
 		return ERROR_UNKNOWN;
 	};
 

@@ -34,7 +34,7 @@ friend class memoryTribC;
 public:
 	memoryRegionC(void)
 	:
-	info(__KNULL), memBmp(__KNULL)
+	info(NULL), memBmp(NULL)
 	{};
 
 public:

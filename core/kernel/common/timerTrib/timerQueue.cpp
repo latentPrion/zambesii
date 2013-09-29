@@ -28,7 +28,7 @@ error_t timerQueueC::latch(zkcmTimerDeviceC *dev)
 {
 	error_t		ret;
 
-	if (dev == __KNULL) { return ERROR_INVALID_ARG; };
+	if (dev == NULL) { return ERROR_INVALID_ARG; };
 
 	ret = dev->latch(&processTrib.__kgetStream()->floodplainnStream);
 	if (ret != ERROR_SUCCESS)
@@ -53,7 +53,7 @@ void timerQueueC::unlatch(void)
 
 	disable();
 	device->unlatch();
-	device = __KNULL;
+	device = NULL;
 
 	__kprintf(NOTICE TIMERQUEUE"%dus: unlatch: unlatched device \"%s\".\n",
 		getNativePeriod() / 1000);
@@ -109,7 +109,7 @@ error_t timerQueueC::insert(timerStreamC::requestS *request)
 	ret = requestQueue.addItem(request, request->expirationStamp);
 	if (ret != ERROR_SUCCESS)
 	{
-		request->currentQueue = __KNULL;
+		request->currentQueue = NULL;
 		return ret;
 	};
 
@@ -128,7 +128,7 @@ sarch_t timerQueueC::cancel(timerStreamC::requestS *request)
 	 * Sadly, the list class doesn't return a value from removeItem().
 	 **/
 	requestQueue.removeItem(request);
-	request->currentQueue = __KNULL;
+	request->currentQueue = NULL;
 	if (requestQueue.getNItems() == 0) { disable(); };
 
 	return 1;
@@ -167,7 +167,7 @@ static processStreamC *getTargetProcess(timerStreamC::requestS *request)
 void timerQueueC::tick(zkcmTimerEventS *event)
 {
 	timerStreamC::requestS	*request;
-	void			*targetObject=__KNULL;
+	void			*targetObject=NULL;
 	processStreamC		*targetProcess, *creatorProcess;
 	sarch_t			requestQueueWasEmpty=1;
 
@@ -197,7 +197,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 	lockRequestQueue();
 	request = requestQueue.getHead();
 
-	while (request != __KNULL)
+	while (request != NULL)
 	{
 
 		if (request->expirationStamp > event->irqStamp)
@@ -214,7 +214,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 
 		// Can occur if the process exited before its object expired.
 		targetProcess = getTargetProcess(request);
-		if (targetProcess != __KNULL)
+		if (targetProcess != NULL)
 		{
 			/* Queue new event on wake-target process' Timer Stream.
 			 * "TargetObject" could end up being NULL if the target
@@ -248,7 +248,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		}
 		else { creatorProcess = targetProcess; };
 
-		if (creatorProcess == __KNULL)
+		if (creatorProcess == NULL)
 		{
 			__kprintf(WARNING TIMERQUEUE"%dus: Inexistent creator "
 				"process 0x%x for timer queue request.\n",
@@ -262,7 +262,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 				.timerRequestTimeoutNotification();
 		};
 
-		if (targetProcess != __KNULL && targetObject != __KNULL)
+		if (targetProcess != NULL && targetObject != NULL)
 		{
 			// Unblock the target thread/CPU.
 			if (isPerCpuTarget(request)) {
@@ -279,7 +279,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		request = requestQueue.getHead();
 
 		// Disable the queue if it's empty; halt unnecessary IRQ load.
-		if (request == __KNULL) { disable(); };
+		if (request == NULL) { disable(); };
 	};
 
 	unlockRequestQueue();

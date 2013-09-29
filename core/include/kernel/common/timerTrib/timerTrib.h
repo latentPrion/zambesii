@@ -154,7 +154,7 @@ private:
 	{
 		eventProcessorS(void)
 		:
-		tid(0), task(__KNULL)
+		tid(0), task(NULL)
 		{
 			memset(waitSlots, 0, sizeof(waitSlots));
 		}
@@ -165,8 +165,8 @@ private:
 		void releaseWaitSlotFor(timerQueueC *timerQueue);
 		void releaseWaitSlot(ubit8 slot)
 		{
-			waitSlots[slot].timerQueue = __KNULL;
-			waitSlots[slot].eventQueue = __KNULL;
+			waitSlots[slot].timerQueue = NULL;
+			waitSlots[slot].eventQueue = NULL;
 		}
 
 		struct messageS

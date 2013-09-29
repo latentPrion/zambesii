@@ -11,7 +11,7 @@ chipsetMemAreas::areaS		memAreas[CHIPSET_MEMAREA_NAREAS] =
 	{
 		CC"Low Memory (0x0-0xFFFFF, 1MB)",
 		0x0, 0x100000,
-		__KNULL
+		NULL
 	}
 };
 
@@ -24,7 +24,7 @@ error_t chipsetMemAreas::mapArea(ubit16 index)
 	status_t	status;
 
 	if (index >= CHIPSET_MEMAREA_NAREAS) { return ERROR_INVALID_ARG_VAL; };
-	if (memAreas[index].vaddr != __KNULL) { return ERROR_SUCCESS; };
+	if (memAreas[index].vaddr != NULL) { return ERROR_SUCCESS; };
 
 #ifdef CONFIG_DEBUGPIPE_STATIC
 	if (index == CHIPSET_MEMAREA_LOWMEM) { vaddr = (void *)0xCF800000; };
@@ -36,7 +36,7 @@ error_t chipsetMemAreas::mapArea(ubit16 index)
 #ifdef CONFIG_DEBUGPIPE_STATIC
 skipVmemAlloc:
 #endif
-	if (vaddr == __KNULL) { return ERROR_MEMORY_NOMEM_VIRTUAL; };
+	if (vaddr == NULL) { return ERROR_MEMORY_NOMEM_VIRTUAL; };
 
 	// Have vmem to play with. Map it to the memory area requested.
 	status = walkerPageRanger::mapInc(
@@ -67,7 +67,7 @@ error_t chipsetMemAreas::unmapArea(ubit16 index)
 	uarch_t		f;
 
 	if (index >= CHIPSET_MEMAREA_NAREAS) { return ERROR_INVALID_ARG_VAL; };
-	if (memAreas[index].vaddr == __KNULL) { return ERROR_SUCCESS; };
+	if (memAreas[index].vaddr == NULL) { return ERROR_SUCCESS; };
 
 	walkerPageRanger::unmap(
 		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
@@ -80,19 +80,19 @@ error_t chipsetMemAreas::unmapArea(ubit16 index)
 		memAreas[index].vaddr,
 		PAGING_BYTES_TO_PAGES(memAreas[index].size));
 
-	memAreas[index].vaddr = __KNULL;
+	memAreas[index].vaddr = NULL;
 	return ERROR_SUCCESS;
 }
 		
 void *chipsetMemAreas::getArea(ubit16 index)
 {
-	if (index >= CHIPSET_MEMAREA_NAREAS) { return __KNULL; };
+	if (index >= CHIPSET_MEMAREA_NAREAS) { return NULL; };
 	return memAreas[index].vaddr;
 }
 
 chipsetMemAreas::areaS *chipsetMemAreas::getAreaInfo(ubit16 index)
 {
-	if (index >= CHIPSET_MEMAREA_NAREAS) { return __KNULL; };
+	if (index >= CHIPSET_MEMAREA_NAREAS) { return NULL; };
 	return &memAreas[index];
 }
 

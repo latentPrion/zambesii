@@ -44,7 +44,7 @@ namespace fvfs
 		 **/
 		tagC(
 			utf8Char *name, vfs::tagTypeE,
-			tagC *parent, vfs::inodeC *inode=__KNULL)
+			tagC *parent, vfs::inodeC *inode=NULL)
 		:
 		vfs::tagC<FVFS_TAG_NAME_MAXLEN>(
 			name, vfs::DEVICE, parent, inode)
@@ -76,11 +76,11 @@ namespace fvfs
 		{
 			error_t		ret;
 
-			if (tag == __KNULL) { return ERROR_INVALID_ARG; };
+			if (tag == NULL) { return ERROR_INVALID_ARG; };
 
 			*tag = createDirTag(
 				name, vfs::DEVICE, this,
-				/*(vfs::dirInodeC<tagC> *)__KNULL,*/ &ret);
+				/*(vfs::dirInodeC<tagC> *)NULL,*/ &ret);
 
 			if (ret == ERROR_SUCCESS) { (*tag)->device = device; };
 			return ret;
@@ -102,7 +102,7 @@ namespace fvfs
 			tagC		*ret;
 
 			ret = vfs::dirInodeC<tagC>::createDirTag(
-				name, type, parent, __KNULL, err);
+				name, type, parent, NULL, err);
 
 			if (*err == ERROR_SUCCESS) { ret->inode = ret; };
 			return ret;
@@ -124,11 +124,11 @@ namespace fvfs
 			vfs::inodeC *, error_t *err)
 		{
 			*err = ERROR_UNIMPLEMENTED;
-			return __KNULL;
+			return NULL;
 		}
 
 		sarch_t removeLeafTag(utf8Char *) { return 0; }
-		tagC *getLeafTag(utf8Char *) { return __KNULL; }
+		tagC *getLeafTag(utf8Char *) { return NULL; }
 
 	public:
 		fplainn::deviceC	*device;

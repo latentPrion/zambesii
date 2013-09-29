@@ -7,9 +7,9 @@ acpi_rSratCpuS *acpiRSrat::getNextCpuEntry(
 	acpi_rSratS *srat, void **const handle
 	)
 {
-	acpi_rSratCpuS		*ret=__KNULL;
+	acpi_rSratCpuS		*ret=NULL;
 
-	if (*handle == __KNULL) {
+	if (*handle == NULL) {
 		*handle = ACPI_SRAT_GET_FIRST_ENTRY(srat);
 	};
 
@@ -33,16 +33,16 @@ acpi_rSratCpuS *acpiRSrat::getNextCpuEntry(
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 
 acpi_rSratMemS *acpiRSrat::getNextMemEntry(
 	acpi_rSratS *srat, void **const handle
 	)
 {
-	acpi_rSratMemS		*ret=__KNULL;
+	acpi_rSratMemS		*ret=NULL;
 
-	if (*handle == __KNULL) {
+	if (*handle == NULL) {
 		*handle = ACPI_SRAT_GET_FIRST_ENTRY(srat);
 	};
 
@@ -66,6 +66,6 @@ acpi_rSratMemS *acpiRSrat::getNextMemEntry(
 		};
 	};
 
-	return __KNULL;
+	return NULL;
 }
 

@@ -42,7 +42,7 @@ error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 		->memoryStream.memAlloc(2, MEMALLOC_NO_FAKEMAP);
 #endif
 
-	if (level0Accessor.rsrc == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (level0Accessor.rsrc == NULL) { return ERROR_MEMORY_NOMEM; };
 	memset(level0Accessor.rsrc, 0, sizeof(*level0Accessor.rsrc));
 
 	/**	TODO:
@@ -122,5 +122,5 @@ vaddrSpaceC::~vaddrSpaceC(void)
 			level0Accessor.rsrc);
 	};
 
-	level0Accessor.rsrc = __KNULL;
+	level0Accessor.rsrc = NULL;
 }

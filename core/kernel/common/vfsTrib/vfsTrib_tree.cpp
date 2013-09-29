@@ -17,7 +17,7 @@ void vfsTribC::dumpTrees(void)
 	trees->subDirs.lock.acquire();
 
 	curDir = trees->subDirs.rsrc;
-	for (uarch_t i=0; i<trees->nSubDirs && curDir != __KNULL;
+	for (uarch_t i=0; i<trees->nSubDirs && curDir != NULL;
 		curDir = curDir->next, i++)
 	{
 		__kprintf(NOTICE"\tTree %d: inode: %u name: :%s.\n",
@@ -58,7 +58,7 @@ error_t vfsTribC::createTree(utf8Char *name, uarch_t)
 
 	// Make sure that tree doesn't already exist.
 	dirDesc = trees->getDirDesc(name);
-	if (dirDesc != __KNULL) {
+	if (dirDesc != NULL) {
 		return ERROR_SUCCESS;
 	};
 
@@ -82,7 +82,7 @@ error_t vfsTribC::deleteTree(utf8Char *name)
 		trees->subDirs.lock.acquire();
 
 		cur = trees->subDirs.rsrc;
-		for (; cur != __KNULL; cur = cur->next)
+		for (; cur != NULL; cur = cur->next)
 		{
 			if (cur == curDef) {
 				continue;
@@ -122,7 +122,7 @@ error_t vfsTribC::setDefaultTree(utf8Char *name)
 	};
 
 	dir = trees->getDirDesc(name);
-	if (dir == __KNULL) {
+	if (dir == NULL) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 

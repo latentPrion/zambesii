@@ -54,7 +54,7 @@ sarch_t x86LapicC::cpuHasLapic(void)
 
 sarch_t x86LapicC::lapicMemIsMapped(void)
 {
-	if (cache.magic == x86LAPIC_MAGIC && cache.v != __KNULL) {
+	if (cache.magic == x86LAPIC_MAGIC && cache.v != NULL) {
 		return 1;
 	};
 
@@ -79,7 +79,7 @@ error_t x86LapicC::mapLapicMem(void)
 		PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE | PAGEATTRIB_SUPERVISOR
 		| PAGEATTRIB_CACHE_DISABLED);
 
-	if (v == __KNULL)
+	if (v == NULL)
 	{
 		__kprintf(ERROR x86LAPIC"Failed to map LAPIC paddr.\n");
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
@@ -116,10 +116,10 @@ error_t x86LapicC::detectPaddr(void)
 		if (acpi::mapRsdt() != ERROR_SUCCESS) { goto tryMpTables; };
 		
 		rsdt = acpi::getRsdt();
-		context = handle = __KNULL;
+		context = handle = NULL;
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 
-		if (madt == __KNULL) { goto tryMpTables; };
+		if (madt == NULL) { goto tryMpTables; };
 		tmp = (paddr_t)madt->lapicPaddr;
 
 		acpiRsdt::destroyContext(&context);
@@ -143,7 +143,7 @@ tryMpTables:
 			goto useDefaultPaddr;
 		};
 
-		if (x86Mp::mapMpConfigTable() == __KNULL) {
+		if (x86Mp::mapMpConfigTable() == NULL) {
 			goto useDefaultPaddr;
 		};
 	};

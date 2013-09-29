@@ -32,7 +32,7 @@ public tributaryC
 public:
 	distributaryTribC(void)
 	:
-	tagCache(__KNULL)
+	tagCache(NULL)
 	{}
 
 	// Builds the Dtrib VFS tree of compiled-in kernel distributaries.

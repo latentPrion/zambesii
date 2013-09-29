@@ -70,7 +70,7 @@ private:
 
 template <class T> ptrlessListC<T>::ptrlessListC(void)
 {
-	list.rsrc.head = list.rsrc.tail = __KNULL;
+	list.rsrc.head = list.rsrc.tail = NULL;
 	list.rsrc.nItems = 0;
 }
 
@@ -81,11 +81,11 @@ template <class T> error_t ptrlessListC<T>::initialize(void)
 
 template <class T> void ptrlessListC<T>::insert(T *item)
 {
-	item->listHeader.next = __KNULL;
+	item->listHeader.next = NULL;
 
 	list.lock.acquire();
 
-	if (list.rsrc.tail == __KNULL) {
+	if (list.rsrc.tail == NULL) {
 		list.rsrc.head = list.rsrc.tail = item;
 	}
 	else
@@ -105,14 +105,14 @@ template <class T> T *ptrlessListC<T>::pop(void)
 
 	list.lock.acquire();
 
-	if (list.rsrc.head == __KNULL)
+	if (list.rsrc.head == NULL)
 	{
 		list.lock.release();
-		return __KNULL;
+		return NULL;
 	};
 
 	if (list.rsrc.tail == list.rsrc.head) {
-		list.rsrc.tail = __KNULL;
+		list.rsrc.tail = NULL;
 	};
 
 	ret = list.rsrc.head;
@@ -137,7 +137,7 @@ template <class T> void ptrlessListC<T>::dump(void)
 		list.rsrc.nItems, list.rsrc.head, list.rsrc.tail);
 
 	for (T *curr = list.rsrc.head;
-		curr != __KNULL;
+		curr != NULL;
 		curr = curr->listHeader.next, count--)
 	{
 		if (count == 0) { __kprintf(CC"\n\t"); count = 4; };
@@ -155,7 +155,7 @@ template <class T> T *ptrlessListC<T>::getItem(ubit32 num)
 	list.lock.acquire();
 
 	for (curr = list.rsrc.head;
-		curr != __KNULL && num > 0;
+		curr != NULL && num > 0;
 		curr = curr->listHeader.next, num--)
 	{};
 

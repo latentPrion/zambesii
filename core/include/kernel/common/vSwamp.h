@@ -37,7 +37,7 @@ public:
 
 		initSwampNode.baseAddr = baseAddr;
 		initSwampNode.nPages = PAGING_BYTES_TO_PAGES(size);
-		initSwampNode.prev = initSwampNode.next = __KNULL;
+		initSwampNode.prev = initSwampNode.next = NULL;
 
 		state.rsrc.head = state.rsrc.tail = &initSwampNode;
 		return swampNodeList.initialize();
@@ -71,7 +71,7 @@ private:
 	{
 		swampStateS(void)
 		:
-		head(__KNULL), tail(__KNULL)
+		head(NULL), tail(NULL)
 		{}
 
 		/* The tail pointer will become necessary when we implement

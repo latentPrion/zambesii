@@ -141,7 +141,7 @@ error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// Note the MEMALLOC_NO_FAKEMAP flag: MM code/data must never pgfault.
-	if (preAllocated == __KNULL)
+	if (preAllocated == NULL)
 	{
 		nmb = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(numaMemoryBankC)),
@@ -152,7 +152,7 @@ error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
 		nmb = new (preAllocated) numaMemoryBankC(id);
 	};
 
-	if (nmb == __KNULL) {
+	if (nmb == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -162,7 +162,7 @@ error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
 	ret = memoryBanks.addItem(id, nmb);
 	if (ret != ERROR_SUCCESS)
 	{
-		if (preAllocated != __KNULL) {
+		if (preAllocated != NULL) {
 			processTrib.__kgetStream()->memoryStream.memFree(nmb);
 		};
 	};
@@ -180,7 +180,7 @@ void memoryTribC::destroyBank(numaBankId_t id)
 	nmb = getBank(id);
 	memoryBanks.removeItem(id);
 	nBanks--;
-	if (id != CHIPSET_MEMORY_NUMA___KSPACE_BANKID && nmb != __KNULL) {
+	if (id != CHIPSET_MEMORY_NUMA___KSPACE_BANKID && nmb != NULL) {
 		processTrib.__kgetStream()->memoryStream.memFree(nmb);
 	};
 }
@@ -202,7 +202,7 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	cur = memoryBanks.prepareForLoop();
 	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur);
 
-	for (; currBank != __KNULL;
+	for (; currBank != NULL;
 		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur))
 	{
 		if (currBank->identifyPaddr(paddr))
@@ -242,7 +242,7 @@ error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	 * initialization the kernel is currently at.
 	 **/
 	currBank = getBank(defaultMemoryBank.rsrc);
-	if (currBank != __KNULL)
+	if (currBank != NULL)
 	{
 		ret = currBank->contiguousGetFrames(nPages, paddr);
 		if (ret == ERROR_SUCCESS) {
@@ -264,7 +264,7 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	 * initialization the kernel is currently at.
 	 **/
 	currBank = getBank(defaultMemoryBank.rsrc);
-	if (currBank != __KNULL)
+	if (currBank != NULL)
 	{
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
 		if (ret > 0) {
@@ -295,7 +295,7 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	taskContext->defaultMemoryBank.lock.readRelease(rwFlags);
 
 	currBank = getBank(def);
-	if (currBank != __KNULL)
+	if (currBank != NULL)
 	{
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
 		if (ret > 0) {
@@ -314,7 +314,7 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	def = cur = memoryBanks.prepareForLoop();
 	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def);
 
-	for (; currBank != __KNULL;
+	for (; currBank != NULL;
 		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def))
 	{
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
@@ -346,7 +346,7 @@ void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 	cur = memoryBanks.prepareForLoop();
 	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur);
 
-	for (; currBank != __KNULL;
+	for (; currBank != NULL;
 		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur))
 	{
 		/* We can most likely afford this small speed bump since ranges
@@ -358,7 +358,7 @@ void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 	};
 #else
 	currBank = getBank(defaultMemoryBank.rsrc);
-	if (currBank != __KNULL) {
+	if (currBank != NULL) {
 		currBank->mapMemUsed(baseAddr, nPages);
 	}
 	else
@@ -382,7 +382,7 @@ void memoryTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 	cur = memoryBanks.prepareForLoop();
 	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur);
 	
-	for (; currBank != __KNULL;
+	for (; currBank != NULL;
 		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur))
 	{
 		/* We can most likely afford this small speed bump since ranges
@@ -394,7 +394,7 @@ void memoryTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 	};
 #else
 	currBank = getBank(defaultMemoryBank.rsrc);
-	if (currBank != __KNULL) {
+	if (currBank != NULL) {
 		currBank->mapMemUnused(baseAddr, nPages);
 	}
 	else

@@ -6,7 +6,7 @@
 
 void *memset8(void *_ptr, int value, size_t count)
 {
-	if (_ptr == __KNULL)
+	if (_ptr == NULL)
 	{
 		__kprintf(FATAL"memset8: dest 0x%p, caller 0x%x.\n",
 			_ptr, __builtin_return_address(0));
@@ -22,7 +22,7 @@ void *memset8(void *_ptr, int value, size_t count)
 
 void *memcpy8(void *dest, void *src, size_t count)
 {
-	if (dest == __KNULL || src == __KNULL)
+	if (dest == NULL || src == NULL)
 	{
 		__kprintf(FATAL"memcpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
@@ -40,7 +40,7 @@ utf8Char *strcpy8(utf8Char *dest, const utf8Char *src)
 {
 	uarch_t		i=0;
 
-	if (dest == __KNULL || src == __KNULL)
+	if (dest == NULL || src == NULL)
 	{
 		__kprintf(FATAL"strcpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
@@ -58,7 +58,7 @@ utf8Char *strcpy8(utf8Char *dest, const utf8Char *src)
 
 utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count)
 {
-	if (dest == __KNULL || src == __KNULL)
+	if (dest == NULL || src == NULL)
 	{
 		__kprintf(FATAL"strncpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
@@ -82,7 +82,7 @@ size_t strlen8(const utf8Char *str)
 {
 	uarch_t		len=0;
 
-	if (str == __KNULL)
+	if (str == NULL)
 	{
 		__kprintf(FATAL"strlen8: str 0x%p, caller 0x%x.\n",
 			str, __builtin_return_address(0));
@@ -98,7 +98,7 @@ int strcmp8(const utf8Char *str1, const utf8Char *str2)
 {
 	if (str1 == str2) { return 0; };
 
-	if (str1 == __KNULL || str2 == __KNULL)
+	if (str1 == NULL || str2 == NULL)
 	{
 		__kprintf(FATAL"strcmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
@@ -124,7 +124,7 @@ int strncmp8(const utf8Char *str1, const utf8Char *str2, int count)
 {
 	if (str1 == str2) { return 0; };
 
-	if (str1 == __KNULL || str2 == __KNULL)
+	if (str1 == NULL || str2 == NULL)
 	{
 		__kprintf(FATAL"strncmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
@@ -156,7 +156,7 @@ size_t strnlen8(const utf8Char *str1, size_t maxLen)
 {
 	size_t		len;
 
-	if (str1 == __KNULL)
+	if (str1 == NULL)
 	{
 		__kprintf(FATAL"strnlen8: str1 0x%p, caller 0x%x.\n",
 			str1, __builtin_return_address(0));
@@ -181,6 +181,6 @@ utf8Char *strnchr8(const utf8Char *str, size_t n, const utf8Char chr)
 	 * used to obtain a pointer to the end of the string.
 	 **/
 	if (chr == '\0') { return (utf8Char *)&str[i]; };
-	return __KNULL;
+	return NULL;
 }
 

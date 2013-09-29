@@ -6,7 +6,7 @@
 
 void *memset16(void *_ptr, int value, size_t count)
 {
-	if (_ptr == __KNULL)
+	if (_ptr == NULL)
 	{
 		__kprintf(FATAL"memset16: dest 0x%p, caller 0x%x.\n",
 			_ptr, __builtin_return_address(0));
@@ -22,7 +22,7 @@ void *memset16(void *_ptr, int value, size_t count)
 
 void *memcpy16(void *dest, void *src, size_t count)
 {
-	if (dest == __KNULL || src == __KNULL)
+	if (dest == NULL || src == NULL)
 	{
 		__kprintf(FATAL"memcpy16: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
@@ -40,7 +40,7 @@ utf16Char *strcpy16(utf16Char *dest, const utf16Char *src)
 {
 	uarch_t		i=0;
 
-	if (dest == __KNULL || src == __KNULL)
+	if (dest == NULL || src == NULL)
 	{
 		__kprintf(FATAL"strcpy16: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
@@ -57,7 +57,7 @@ utf16Char *strcpy16(utf16Char *dest, const utf16Char *src)
 
 utf16Char *strncpy16(utf16Char *dest, const utf16Char *src, size_t count)
 {
-	if (dest == __KNULL || src == __KNULL)
+	if (dest == NULL || src == NULL)
 	{
 		__kprintf(FATAL"strncpy16: dest 0x%p, src 0x%p, caller 0x%x.\n",
 			dest, src, __builtin_return_address(0));
@@ -78,7 +78,7 @@ size_t strlen16(const utf16Char *str)
 {
 	uarch_t		len=0;
 
-	if (str == __KNULL)
+	if (str == NULL)
 	{
 		__kprintf(FATAL"strlen16: str 0x%p, caller 0x%x.\n",
 			str, __builtin_return_address(0));
@@ -94,7 +94,7 @@ int strcmp16(const utf16Char *str1, const utf16Char *str2)
 {
 	if (str1 == str2) { return 0; };
 
-	if (str1 == __KNULL || str2 == __KNULL)
+	if (str1 == NULL || str2 == NULL)
 	{
 		__kprintf(FATAL"strcmp16: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
@@ -119,7 +119,7 @@ int strncmp16(const utf16Char *str1, const utf16Char *str2, int count)
 {
 	if (str1 == str2) { return 0; };
 
-	if (str1 == __KNULL || str2 == __KNULL)
+	if (str1 == NULL || str2 == NULL)
 	{
 		__kprintf(FATAL"strcpy16: str1 0x%p, str2 0x%p, caller 0x%x.\n",
 			str1, str2, __builtin_return_address(0));
@@ -148,7 +148,7 @@ size_t strnlen16(const utf16Char *str1, size_t maxLen)
 {
 	size_t		len;
 
-	if (str1 == __KNULL)
+	if (str1 == NULL)
 	{
 		__kprintf(FATAL"strnlen16: str1 0x%p, caller 0x%x.\n",
 			str1, __builtin_return_address(0));
@@ -173,6 +173,6 @@ utf16Char *strnchr16(const utf16Char *str, size_t n, const utf16Char chr)
 	 * used to obtain a pointer to the end of the string.
 	 **/
 	if (chr == '\0') { return (utf16Char *)&str[i]; };
-	return __KNULL;
+	return NULL;
 }
 

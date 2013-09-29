@@ -10,7 +10,7 @@ status_t vfsTribC::createFile(vfsDirC *dir, utf8Char *name, uarch_t)
 
 	// Allocate and initialize the new file descriptor.
 	newFile = new vfsFileC;
-	if (newFile == __KNULL) {
+	if (newFile == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 

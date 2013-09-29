@@ -123,8 +123,8 @@ private:
 		:
 		driverType(driverType), flags(0), nHandled(0)
 		{
-			api.udi.isr = __KNULL;
-			api.zkcm.isr = __KNULL;
+			api.udi.isr = NULL;
+			api.zkcm.isr = NULL;
 		}
 
 		driverTypeE	driverType;
@@ -157,7 +157,7 @@ private:
 		vectorDescriptorS(void)
 		:
 		flags(0), nUnhandled(0),
-		exception(__KNULL)
+		exception(NULL)
 		{}
 
 		enum vectorTypeE

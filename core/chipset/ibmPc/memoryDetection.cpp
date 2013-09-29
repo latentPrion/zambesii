@@ -27,8 +27,8 @@ struct e820EntryS
 };
 
 static e820EntryS		*e820Ptr;
-static zkcmMemMapS		*_mmap=__KNULL;
-static zkcmMemConfigS		*_mcfg=__KNULL;
+static zkcmMemMapS		*_mmap=NULL;
+static zkcmMemConfigS		*_mcfg=NULL;
 
 error_t zkcmMemoryDetectionModC::initialize(void)
 {
@@ -70,18 +70,18 @@ static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 	 **/
 
 	// LibACPI has determined that there is an RSDT present.
-	if (acpi::mapRsdt() != ERROR_SUCCESS) {	return __KNULL; };
+	if (acpi::mapRsdt() != ERROR_SUCCESS) {	return NULL; };
 	rsdt = acpi::getRsdt();
 
 	// Now look for an SRAT entry in the RSDT.
-	context = handle = __KNULL;
+	context = handle = NULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	// First run: find out how many entries exist.
-	while (srat != __KNULL) 
+	while (srat != NULL) 
 	{
-		sratHandle = __KNULL;
+		sratHandle = NULL;
 		memEntry = acpiRSrat::getNextMemEntry(srat, &sratHandle);
-		for (; memEntry != __KNULL;
+		for (; memEntry != NULL;
 			memEntry = acpiRSrat::getNextMemEntry(
 				srat, &sratHandle))
 		{
@@ -93,26 +93,26 @@ static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 	};
 
 	ret = new zkcmNumaMapS;
-	if (ret == __KNULL) { return __KNULL; };
+	if (ret == NULL) { return NULL; };
 	ret->nCpuEntries = 0;
-	ret->cpuEntries = __KNULL;
+	ret->cpuEntries = NULL;
 
 	ret->memEntries = new numaMemMapEntryS[nEntries];
-	if (ret->memEntries == __KNULL)
+	if (ret->memEntries == NULL)
 	{
 		delete ret;
-		return __KNULL;
+		return NULL;
 	};
 
-	context = handle = __KNULL;
+	context = handle = NULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 
 	// Second run: Fill out kernel NUMA map.
-	while (srat != __KNULL)
+	while (srat != NULL)
 	{
-		sratHandle = __KNULL;
+		sratHandle = NULL;
 		memEntry = acpiRSrat::getNextMemEntry(srat, &sratHandle);
-		for (; memEntry != __KNULL && currEntry < nEntries;
+		for (; memEntry != NULL && currEntry < nEntries;
 			memEntry = acpiRSrat::getNextMemEntry(
 				srat, &sratHandle))
 		{
@@ -177,7 +177,7 @@ zkcmNumaMapS *zkcmMemoryDetectionModC::getNumaMap(void)
 	// Get NUMA map from ACPI.
 	acpi::initializeCache();
 	err = acpi::findRsdp();
-	if (err != ERROR_SUCCESS) { return __KNULL; };
+	if (err != ERROR_SUCCESS) { return NULL; };
 
 // Only try to use XSDT for 64-bit and upwards.
 #ifndef __32_BIT__
@@ -186,7 +186,7 @@ zkcmNumaMapS *zkcmMemoryDetectionModC::getNumaMap(void)
 		__kprintf(NOTICE"getNumaMap: Using XSDT.\n");
 		// Prefer XSDT to RSDT if found.
 		ret = ibmPc_mMod_gnm_xGnm();
-		if (ret != __KNULL) { return ret; };
+		if (ret != NULL) { return ret; };
 	}; */
 #endif
 	// Else use RSDT.
@@ -228,13 +228,13 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 	 * back.
 	 **/
 	// If memory map was previously obtained, return the cached one.
-	if (_mmap != __KNULL) { return _mmap; };
+	if (_mmap != NULL) { return _mmap; };
 
 	ret = new zkcmMemMapS;
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		__kprintf(ERROR"Failed to alloc memMap main structure.\n");	
-		return __KNULL;
+		return NULL;
 	};
 
 	// Find out how many E820 entries there are.
@@ -268,11 +268,11 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 
 	// Allocate enough space to hold them all, plus the extra 3.
 	ret->entries = new zkcmMemMapEntryS[nEntries + 3];
-	if (ret->entries == __KNULL)
+	if (ret->entries == NULL)
 	{
 		__kprintf(ERROR"Failed to alloc space for mem map entries.\n");
 		delete ret;
-		return __KNULL;
+		return NULL;
 	};
 
 	// Generate the kernel's generic map from the E820.
@@ -370,18 +370,18 @@ zkcmMemConfigS *zkcmMemoryDetectionModC::getMemoryConfig(void)
 	 * Prefer to derive the size of memory from the E820 map. If you can't
 	 * get an E820 map, then use the firmware's INT 0x15(AH=0x0000E801).
 	 **/
-	if (_mcfg != __KNULL) { return _mcfg; };
+	if (_mcfg != NULL) { return _mcfg; };
 	ret = new zkcmMemConfigS;
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		__kprintf(ERROR"getMemoryConfig: Failed to alloc config.\n");
-		return __KNULL;
+		return NULL;
 	};
 
-	if (_mmap == __KNULL)
+	if (_mmap == NULL)
 	{
 		getMemoryMap();
-		if (_mmap == __KNULL) { goto useE801; };
+		if (_mmap == NULL) { goto useE801; };
 	};
 
 	for (ubit32 i=0; i<_mmap->nEntries; i++)

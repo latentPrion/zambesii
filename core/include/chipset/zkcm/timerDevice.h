@@ -174,8 +174,8 @@ public:
 	{
 		sarch_t		ret;
 
-		ret = clockRoutine != __KNULL;
-		atomicAsm::set((uarch_t *)&clockRoutine, (uarch_t)__KNULL);
+		ret = clockRoutine != NULL;
+		atomicAsm::set((uarch_t *)&clockRoutine, (uarch_t)NULL);
 		return ret;
 
 	}

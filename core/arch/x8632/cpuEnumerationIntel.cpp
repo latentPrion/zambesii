@@ -42,27 +42,27 @@ utf8Char	*oemFamily4Signatures[] =
 	CC"Intel 486 DX2",
 	CC"Intel 486 SL",
 	CC"Intel SX2",
-	__KNULL,
+	NULL,
 	CC"Intel Enhanced DX2",
 	CC"Intel DX4 series"
 };
 
 utf8Char	*oemFamily5Signatures[] =
 {
-	__KNULL,
+	NULL,
 	CC"Intel Pentium series",
 	CC"Intel Pentium series",
-	__KNULL,
+	NULL,
 	CC"Intel Pentium CPU with MMX"
 };
 
 utf8Char	*oemFamily6Signatures[] =
 {
-	__KNULL,
+	NULL,
 	CC"Intel Pentium Pro",
-	__KNULL,
+	NULL,
 	CC"Intel Pentium 2",
-	__KNULL,
+	NULL,
 	CC"Intel Pentium 2 Xeon",
 	CC"Intel Celeron",
 	CC"Intel Pentium 3",
@@ -70,43 +70,43 @@ utf8Char	*oemFamily6Signatures[] =
 	CC"Intel Pentium M",
 	CC"Intel Pentium 3 Xeon",
 	CC"Intel Pentium 3+",
-	__KNULL,
+	NULL,
 	CC"Intel Pentium M",
 	CC"Intel Core Solo/Duo series",
 	CC"Intel Core2 Solo/Duo series",
 
 	// Model > 0xF && extended model == 0x1
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	CC"Intel EP80579 series",
 	CC"Intel Celeron (Model 0x16)",
 	CC"Intel Core2 Extreme",
-	__KNULL,
-	__KNULL,
+	NULL,
+	NULL,
 	CC"Intel Core i7",
-	__KNULL,
+	NULL,
 	CC"Intel Atom",
 	CC"Intel Xeon",
 	CC"Intel Core i5/i7 or Intel Core i5/i7 mobile",
 
 	// Model > 0xF && Extended model == 0x2
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	CC"Intel Core i3",
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	CC"Intel Core i7",
-	__KNULL,
+	NULL,
 	CC"Intel Core i7",
-	__KNULL,
+	NULL,
 	CC"Intel Xeon MP",
 	CC"Intel Xeon MP"
 };
@@ -118,26 +118,26 @@ utf8Char	*oemFamily15Signatures[] =
 	CC"Mobile Intel Pentium 4",
 	CC"Intel Pentium 4 / Intel Celeron D",
 	CC"Intel Pentium 4 Extreme Edition",
-	__KNULL,
+	NULL,
 	CC"Intel Pentium D"
 };
 
 utf8Char	*overdriveFamily4Signatures[] =
 {
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
-	__KNULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	CC"Intel DX4 Overdrive"
 };
 
 utf8Char	*overdriveFamily5Signatures[] =
 {
-	__KNULL,
+	NULL,
 	CC"Pentium (i586) Overdrive",
 	CC"Pentium (i586) Overdrive",
 	CC"Pentium (i486) Overdrive",
@@ -146,20 +146,20 @@ utf8Char	*overdriveFamily5Signatures[] =
 
 utf8Char	*overdriveFamily6Signatures[] =
 {
-	__KNULL,
-	__KNULL,
-	__KNULL,
+	NULL,
+	NULL,
+	NULL,
 	CC"Intel Pentium 2 Overdrive"
 };
 
 utf8Char	*brandIds[] =
 {
-	__KNULL,
+	NULL,
 	CC"Intel Celeron",
 	CC"Intel Pentium 3",
 	CC"Intel Pentium 3 Xeon",
 	CC"Intel Pentium 3",
-	__KNULL,
+	NULL,
 	CC"Mobile Intel Pentium 3 Processor-M",
 	CC"Mobile Intel Celeron",
 	CC"Intel Pentium 4",
@@ -167,10 +167,10 @@ utf8Char	*brandIds[] =
 	CC"Intel Celeron",
 	CC"Intel Xeon",
 	CC"Intel Xeon MP",
-	__KNULL,
+	NULL,
 	CC"Mobile Intel Pentium 4 Processor-M",
 	CC"Mobile Intel Celeron",
-	__KNULL,
+	NULL,
 	CC"Mobile Genuine Intel",
 	CC"Intel Celeron M",
 	CC"Mobile Intel Celeron",
@@ -182,7 +182,7 @@ utf8Char	*brandIds[] =
 
 static status_t intelSignatureLookup(utf8Char **cpuNames, ubit32 sigLowModel)
 {
-	if (cpuNames[sigLowModel] == __KNULL)
+	if (cpuNames[sigLowModel] == NULL)
 	{
 		__kprintf(ERROR INTELENUM"%d: CPU name unclear.\n",
 			cpuTrib.getCurrentCpuStream()->cpuId);
@@ -283,7 +283,7 @@ static status_t intelSignatureEnum(ubit32 sig)
 
 static status_t intelBrandIdEnum(ubit32 brandId)
 {
-	if (brandIds[brandId] == __KNULL)
+	if (brandIds[brandId] == NULL)
 	{
 		__kprintf(ERROR INTELENUM"Invalid CPU brand ID %d.\n", brandId);
 		return CPUENUM_CPU_MODEL_UNKNOWN;
@@ -302,7 +302,7 @@ status_t intelBrandStringEnum(void)
 	utf8Char	*brandString;
 
 	brandString = new utf8Char[49];
-	if (brandString == __KNULL)
+	if (brandString == NULL)
 	{
 		__kprintf(ERROR INTELENUM"Unable to allocate room for brand "
 			"string.\n");

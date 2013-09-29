@@ -40,7 +40,7 @@ private:
 template <class T>
 arrayStackC<T>::arrayStackC(ubit32 nItems)
 {
-	stack.rsrc.arr = __KNULL;
+	stack.rsrc.arr = NULL;
 	stack.rsrc.cursor = -1;
 	arrayStackC::nItems = nItems;
 }
@@ -49,7 +49,7 @@ template <class T>
 error_t arrayStackC<T>::initialize(void)
 {
 	stack.rsrc.arr = new T[nItems];
-	if (stack.rsrc.arr == __KNULL) {
+	if (stack.rsrc.arr == NULL) {
 		return ERROR_MEMORY_NOMEM;
 	};
 	return ERROR_SUCCESS;

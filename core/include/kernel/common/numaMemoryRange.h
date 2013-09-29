@@ -20,7 +20,7 @@ friend class numaMemoryBankC;
 
 public:
 	numaMemoryRangeC(paddr_t baseAddr, paddr_t size);
-	error_t initialize(void *initMem=__KNULL);
+	error_t initialize(void *initMem=NULL);
 	~numaMemoryRangeC(void);
 
 	void dump(void);

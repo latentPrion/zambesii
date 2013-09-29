@@ -104,7 +104,7 @@ error_t cpuTribC::initializeBspCpuStream(void)
 	zkcmNumaMapS	*numaMap;
 
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
-	if (numaMap != __KNULL && numaMap->nCpuEntries != 0)
+	if (numaMap != NULL && numaMap->nCpuEntries != 0)
 	{
 		for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
 		{
@@ -229,7 +229,7 @@ error_t cpuTribC::initializeAllCpus(void)
 	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
-	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
+	if (numaMap != NULL && numaMap->nCpuEntries > 0)
 	{
 		getHighestId(
 			highestBankId, numaMap, cpuEntries,
@@ -247,7 +247,7 @@ error_t cpuTribC::initializeAllCpus(void)
 
 #if __SCALING__ == SCALING_SMP || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
-	if (smpMap != __KNULL && smpMap->nEntries > 0)
+	if (smpMap != NULL && smpMap->nEntries > 0)
 	{
 		getHighestId(
 			highestCpuId, smpMap, entries, cpuId, smpMap->nEntries);
@@ -436,7 +436,7 @@ error_t cpuTribC::numaInit(void)
 	if (!usingChipsetSmpMode()) { return ERROR_UNSUPPORTED; };
 
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
-	if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
+	if (numaMap != NULL && numaMap->nCpuEntries > 0)
 	{
 		bootParseNumaMap(numaMap);
 		bootConfirmNumaCpusBooted(numaMap);
@@ -454,7 +454,7 @@ error_t cpuTribC::numaInit(void)
 #if defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)				\
 	&& defined(CHIPSET_CPU_NUMA_SHBANKID)
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
-	if (smpMap != __KNULL && smpMap->nEntries > 0)
+	if (smpMap != NULL && smpMap->nEntries > 0)
 	{
 		/**	EXPLANATION:
 		 * On a NUMA build, there are two cases in which this code will
@@ -471,7 +471,7 @@ error_t cpuTribC::numaInit(void)
 		__kprintf(NOTICE CPUTRIB"numaInit: Using shared CPU bank; ");
 
 		// Case 1 from above.
-		if (numaMap != __KNULL && numaMap->nCpuEntries > 0)
+		if (numaMap != NULL && numaMap->nCpuEntries > 0)
 		{
 			// Filter out the CPUs which need to be in shared bank.
 			__kprintf(CC"Filtering out NUMA CPUs.\n");
@@ -502,7 +502,7 @@ error_t cpuTribC::numaInit(void)
 	else
 	{
 		// No SMP map. If also no NUMA map, then assume single CPU.
-		if (numaMap == __KNULL || numaMap->nCpuEntries == 0)
+		if (numaMap == NULL || numaMap->nCpuEntries == 0)
 		{
 			__kprintf(WARNING CPUTRIB"numaInit: Falling back to "
 				"uniprocessor mode.\n");
@@ -573,7 +573,7 @@ error_t cpuTribC::smpInit(void)
 	if (!usingChipsetSmpMode()) { return ERROR_UNSUPPORTED; };
 	
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
-	if (smpMap != __KNULL && smpMap->nEntries > 0)
+	if (smpMap != NULL && smpMap->nEntries > 0)
 	{
 		bootParseSmpMap(smpMap);
 		bootConfirmSmpCpusBooted(smpMap);
@@ -715,7 +715,7 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 #endif
 	};
 
-	if (cs == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (cs == NULL) { return ERROR_MEMORY_NOMEM; };
 	ret = cs->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -758,7 +758,7 @@ void cpuTribC::destroyStream(cpu_t cid)
 	 * unplug/physical removal.
 	 **/
 	cs = getStream(cid);
-	if (cs == __KNULL) { return; };
+	if (cs == NULL) { return; };
 
 	// Now remove it from the list of CPUs and free the mem.
 	cpuStreams.removeItem(cid);
@@ -768,7 +768,7 @@ void cpuTribC::destroyStream(cpu_t cid)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	ncb = getBank(cs->bankId);
-	if (ncb != __KNULL) {
+	if (ncb != NULL) {
 		ncb->cpus.unsetSingle(cid);
 	};
 #endif
@@ -780,7 +780,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 	error_t			err;
 	numaCpuBankC		*ncb;
 
-	if ((ncb = getBank(bankId)) != __KNULL) {
+	if ((ncb = getBank(bankId)) != NULL) {
 		return ERROR_SUCCESS;
 	};
 
@@ -795,7 +795,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 		MEMALLOC_NO_FAKEMAP))
 			numaCpuBankC;
 
-	if (ncb == __KNULL) { return ERROR_MEMORY_NOMEM; };
+	if (ncb == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	err = cpuBanks.addItem(bankId, ncb);
 	if (err != ERROR_SUCCESS)
@@ -820,7 +820,7 @@ void cpuTribC::destroyBank(numaBankId_t bid)
 	numaCpuBankC		*ncb;
 
 	ncb = getBank(bid);
-	if (ncb == __KNULL) { return; };
+	if (ncb == NULL) { return; };
 
 	availableBanks.unsetSingle(bid);
 	cpuBanks.removeItem(bid);

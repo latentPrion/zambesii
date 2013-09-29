@@ -26,7 +26,7 @@ public:
 	 **/
 	error_t initialize(
 		ubit32 nBits,
-		void *preAllocatedMemory=__KNULL,
+		void *preAllocatedMemory=NULL,
 		ubit16 preAllocatedMemorySize=0);
 
 	~bitmapC(void);

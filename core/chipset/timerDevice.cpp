@@ -8,7 +8,7 @@
 error_t zkcmTimerDeviceC::initialize(void)
 {
 	irqEventCache = cachePool.createCache(sizeof(zkcmTimerEventS));
-	if (irqEventCache == __KNULL)
+	if (irqEventCache == NULL)
 	{
 		__kprintf(WARNING"ZKCM-Timer: Creating obj cache "
 			"failed for device \"%s\".\n",

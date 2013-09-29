@@ -75,7 +75,7 @@ namespace dvfs
 			utf8Char *name,
 			vfs::tagTypeE type,
 			tagC *parent,
-			vfs::inodeC *inode=__KNULL)
+			vfs::inodeC *inode=NULL)
 		:
 		vfs::tagC<DVFS_TAG_NAME_MAXLEN>(name, type, parent, inode)
 		{}
@@ -194,7 +194,7 @@ namespace dvfs
 		rootTag(
 			CC"Zambesii Distributary VFS", vfs::DIR,
 			&rootTag, &rootCategory),
-		tagCache(__KNULL)
+		tagCache(NULL)
 		{}
 
 		error_t initialize(void)

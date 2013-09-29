@@ -39,12 +39,12 @@ x86_mpFpS *x86Mp::findMpFp(void)
 	 *
 	 * This function should not fail if there is MP on the board.
 	 **/
-	if (cache.fp != __KNULL) {
+	if (cache.fp != NULL) {
 		return cache.fp;
 	};
 
 	ret = (struct x86_mpFpS *)chipset_findx86MpFp();
-	if (ret != __KNULL) {
+	if (ret != NULL) {
 		cache.fp = ret;
 	}
 
@@ -57,7 +57,7 @@ sarch_t x86Mp::mpFpFound(void)
 		return 0;
 	};
 
-	if (cache.fp == __KNULL) {
+	if (cache.fp == NULL) {
 		return 0;
 	};
 
@@ -83,10 +83,10 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	x86_mpCfgS	*ret;
 
 	if (!x86Mp::mpFpFound()) {
-		return __KNULL;
+		return NULL;
 	};
 
-	if (cache.cfg != __KNULL) {
+	if (cache.cfg != NULL) {
 		return cache.cfg;
 	};
 
@@ -107,10 +107,10 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	ret = (x86_mpCfgS *)walkerPageRanger::createMappingTo(
 		cfgPaddr, 1, PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		__kprintf(ERROR x86MP"mapMpCfgTable: Failed to map.\n");
-		return __KNULL;
+		return NULL;
 	};
 
 	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86_mpCfgS *);
@@ -123,7 +123,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			ret, 1);
 
-		return __KNULL;
+		return NULL;
 	};
 
 	// Free the temporary mapping and its mem, then re-map the cfg table.
@@ -134,10 +134,10 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 		cfgPaddr, cfgNPages,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
-	if (ret == __KNULL)
+	if (ret == NULL)
 	{
 		__kprintf(ERROR x86MP"mapMpCfgTable: Failed to map.\n");
-		return __KNULL;
+		return NULL;
 	};
 
 	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86_mpCfgS *);
@@ -158,7 +158,7 @@ void x86Mp::unmapMpConfigTable(void)
 	uarch_t		nPages, f;
 	paddr_t		p;
 
-	if (!mpFpFound() || cache.cfg == __KNULL || cache.fp->features[0] != 0)
+	if (!mpFpFound() || cache.cfg == NULL || cache.fp->features[0] != 0)
 	{
 		return;
 	};
@@ -172,12 +172,12 @@ void x86Mp::unmapMpConfigTable(void)
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		(void *)((uintptr_t)cache.cfg & PAGING_BASE_MASK_HIGH), nPages);
 
-	cache.cfg = __KNULL;
+	cache.cfg = NULL;
 }
 
 sarch_t x86Mp::mpConfigTableIsMapped(void)
 {
-	if (!mpFpFound() || cache.cfg == __KNULL) {
+	if (!mpFpFound() || cache.cfg == NULL) {
 		return 0;
 	};
 
@@ -203,7 +203,7 @@ status_t x86Mp::getChipsetDefaultConfig(void)
 
 ubit32 x86Mp::getLapicPaddr(void)
 {
-	if (x86Mp::getMpCfg() == __KNULL) {
+	if (x86Mp::getMpCfg() == NULL) {
 		return 0;
 	};
 
@@ -213,7 +213,7 @@ ubit32 x86Mp::getLapicPaddr(void)
 x86_mpFpS *x86Mp::getMpFp(void)
 {
 	if (cache.magic != x86_MPCACHE_MAGIC) {
-		return __KNULL;
+		return NULL;
 	};
 
 	return cache.fp;
@@ -222,7 +222,7 @@ x86_mpFpS *x86Mp::getMpFp(void)
 x86_mpCfgS *x86Mp::getMpCfg(void)
 {
 	if (!x86Mp::mpFpFound()) {
-		return __KNULL;
+		return NULL;
 	};
 
 	return x86Mp::mapMpConfigTable();
@@ -235,10 +235,10 @@ sbit8 x86Mp::getBusIdFor(const char *bus)
 	uarch_t			pos;
 
 	pos = 0;
-	handle = __KNULL;
+	handle = NULL;
 	busEntry = x86Mp::getNextBusEntry(&pos, &handle);
 
-	while (busEntry != __KNULL)
+	while (busEntry != NULL)
 	{
 		if (strncmp(busEntry->busString, bus, 6) == 0) {
 			return busEntry->busId;
@@ -252,10 +252,10 @@ sbit8 x86Mp::getBusIdFor(const char *bus)
 
 x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 {
-	x86_mpCfgCpuS	*ret=__KNULL;
+	x86_mpCfgCpuS	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
-		return __KNULL;
+		return NULL;
 	};
 
 	if (*pos == 0)
@@ -266,7 +266,7 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
 	{
-		if (ret != __KNULL) {
+		if (ret != NULL) {
 			break;
 		};
 
@@ -312,7 +312,7 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
-			return __KNULL;
+			return NULL;
 		};
 	};
 
@@ -321,10 +321,10 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 
 x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 {
-	x86_mpCfgBusS	*ret=__KNULL;
+	x86_mpCfgBusS	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
-		return __KNULL;
+		return NULL;
 	};
 
 	if (*pos == 0)
@@ -335,7 +335,7 @@ x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
 	{
-		if (ret != __KNULL) {
+		if (ret != NULL) {
 			break;
 		};
 
@@ -381,7 +381,7 @@ x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
-			return __KNULL;
+			return NULL;
 		};
 	};
 
@@ -390,10 +390,10 @@ x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 
 x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 {
-	x86_mpCfgIoApicS	*ret=__KNULL;
+	x86_mpCfgIoApicS	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
-		return __KNULL;
+		return NULL;
 	};
 
 	if (*pos == 0)
@@ -404,7 +404,7 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
 	{
-		if (ret != __KNULL) {
+		if (ret != NULL) {
 			break;
 		};
 
@@ -450,7 +450,7 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
-			return __KNULL;
+			return NULL;
 		};
 	};
 
@@ -461,10 +461,10 @@ x86_mpCfgLocalIrqSourceS *x86Mp::getNextLocalIrqSourceEntry(
 	uarch_t *pos, void **const handle
 	)
 {
-	x86_mpCfgLocalIrqSourceS	*ret=__KNULL;
+	x86_mpCfgLocalIrqSourceS	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
-		return __KNULL;
+		return NULL;
 	};
 
 	if (*pos == 0)
@@ -475,7 +475,7 @@ x86_mpCfgLocalIrqSourceS *x86Mp::getNextLocalIrqSourceEntry(
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
 	{
-		if (ret != __KNULL) {
+		if (ret != NULL) {
 			break;
 		};
 
@@ -521,7 +521,7 @@ x86_mpCfgLocalIrqSourceS *x86Mp::getNextLocalIrqSourceEntry(
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
-			return __KNULL;
+			return NULL;
 		};
 	};
 
@@ -532,10 +532,10 @@ x86_mpCfgIrqSourceS *x86Mp::getNextIrqSourceEntry(
 	uarch_t *pos, void **const handle
 	)
 {
-	x86_mpCfgIrqSourceS	*ret=__KNULL;
+	x86_mpCfgIrqSourceS	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
-		return __KNULL;
+		return NULL;
 	};
 
 	if (*pos == 0)
@@ -546,7 +546,7 @@ x86_mpCfgIrqSourceS *x86Mp::getNextIrqSourceEntry(
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
 	{
-		if (ret != __KNULL) {
+		if (ret != NULL) {
 			break;
 		};
 
@@ -592,7 +592,7 @@ x86_mpCfgIrqSourceS *x86Mp::getNextIrqSourceEntry(
 				"unknown type 0x%X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
-			return __KNULL;
+			return NULL;
 		};
 	};
 

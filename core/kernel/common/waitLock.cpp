@@ -14,7 +14,7 @@ static utf8Char		buffers[16][1024];
 
 void lockC::operationDescriptorS::execute()
 {
-	if (lock == __KNULL) { panic(FATAL"execute: lock is NULL.\n"); };
+	if (lock == NULL) { panic(FATAL"execute: lock is NULL.\n"); };
 
 	switch (type)
 	{
