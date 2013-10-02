@@ -147,7 +147,8 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 }
 
 error_t floodplainnC::loadDriver(
-	utf8Char *devicePath, indexLevelE indexLevel, ubit32 /*flags*/
+	utf8Char *devicePath, indexLevelE indexLevel, processId_t targetId,
+	ubit32 flags
 	)
 {
 	driverIndexRequestS		*request;
@@ -158,20 +159,33 @@ error_t floodplainnC::loadDriver(
 	// Allocate and queue the new request.
 	request = new driverIndexRequestS(devicePath, indexLevel);
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
+	request->header.flags = 0;
 
 	if (currTask->getType() == task::PER_CPU)
 	{
-		request->header.sourceId = request->header.targetId =
-			cpuTrib.getCurrentCpuStream()->cpuId;
+		__KFLAG_SET(request->header.flags, ZMESSAGE_FLAGS_CPU_SOURCE);
+		request->header.sourceId = cpuTrib.getCurrentCpuStream()->cpuId;
+	}
+	else {
+		request->header.sourceId = ((threadC *)currTask)->getFullId();
+	};
+
+	if (__KFLAG_TEST(flags, FPLAINN_LOADDRIVER_FLAGS_CPU_TARGET))
+	{
+		__KFLAG_SET(request->header.flags, ZMESSAGE_FLAGS_CPU_TARGET);
+		request->header.targetId = targetId;
 	}
 	else
 	{
-		request->header.sourceId = request->header.targetId =
-			((threadC *)currTask)->getFullId();
+		// If it's unset, the target is implicitly the source thread.
+		if (targetId == 0) {
+			request->header.targetId = request->header.sourceId;
+		} else {
+			request->header.targetId = targetId;
+		};
 	};
-		
+
 	request->header.privateData = NULL;
-	request->header.flags = 0;
 	request->header.size = sizeof(*request);
 	request->header.subsystem = indexerQueueId;
 	request->header.function = ZMESSAGE_FPLAINN_LOADDRIVER;

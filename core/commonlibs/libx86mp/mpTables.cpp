@@ -27,7 +27,7 @@ void x86Mp::initializeCache(void)
 
 void x86Mp::flushCache(void)
 {
-	memset8(&cache, 0, sizeof(cache));
+	memset(&cache, 0, sizeof(cache));
 }
 
 x86_mpFpS *x86Mp::findMpFp(void)
@@ -240,7 +240,7 @@ sbit8 x86Mp::getBusIdFor(const char *bus)
 
 	while (busEntry != NULL)
 	{
-		if (strncmp(busEntry->busString, bus, 6) == 0) {
+		if (strncmp8(CC busEntry->busString, CC bus, 6) == 0) {
 			return busEntry->busId;
 		};
 

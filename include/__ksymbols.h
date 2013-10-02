@@ -34,7 +34,18 @@ EXTERN ubit8		chipset_udi_index_driver_headers,
 			chipset_udi_index_messages,
 			chipset_udi_index_disaster_messages,
 			chipset_udi_index_message_files,
-			chipset_udi_index_readable_files;
+			chipset_udi_index_readable_files,
+			chipset_udi_index_provisions,
+			chipset_udi_index_driver_headers_end,
+			chipset_udi_index_driver_data_end,
+			chipset_udi_index_regions_end,
+			chipset_udi_index_devices_end,
+			chipset_udi_index_ranks_end,
+			chipset_udi_index_messages_end,
+			chipset_udi_index_disaster_messages_end,
+			chipset_udi_index_message_files_end,
+			chipset_udi_index_readable_files_end,
+			chipset_udi_index_provisions_end;
 
 #undef EXTERN
 

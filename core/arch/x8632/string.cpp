@@ -36,76 +36,27 @@ void *memcpy(void *dest, void *src, size_t count)
 	return dest;
 }
 
-int strcmp(const char *str1, const char *str2)
+int memcmp(const void *ptr1, const void *ptr2, size_t n)
 {
-	if (str1 == str2) { return 0; };
+	size_t			i;
+	const ubit8		*p1=(const ubit8 *)ptr1,
+				*p2=(const ubit8 *)ptr2;
 
-	if (str1 == NULL || str2 == NULL)
+	if (ptr1 == NULL || ptr2 == NULL)
 	{
-		printf(FATAL"strcmp: str1 0x%p, str2 0x%p, caller 0x%x.\n",
-			str1, str2, __builtin_return_address(0));
+		printf(FATAL"memcmp: ptr1 0x%p, ptr2 0x%p, caller 0x%x.\n",
+			ptr1, ptr2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
 	};
 
-	for (; (*str1 && *str2); str1++, str2++)
-	{
-		if (*str1 != *str2) {
-			return ((*str1 > *str2) ? 1 : -1);
-		};
-	};
-	if (*str1 != *str2) {
-		return ((*str1 > *str2) ? 1 : -1);
+	if (ptr1 == ptr2) { return 0; };
+	if (n == 0) { return 0; };
+
+	for (i=0; i<n; i++) {
+		if (p1[i] != p2[i]) { break; };
 	};
 
-	return 0;
-}
-
-int strncmp(const char *str1, const char *str2, int count)
-{
-	if (str1 == str2) { return 0; };
-
-	if (str1 == NULL || str2 == NULL)
-	{
-		printf(FATAL"strncmp: str1 0x%p, str2 0x%p, caller 0x%x.\n",
-			str1, str2, __builtin_return_address(0));
-
-		panic(ERROR_CRITICAL);
-	};
-
-	uarch_t		n=0;
-
-	for (; count > 0; count--, n++)
-	{
-		if (!str1[n] || !str2[n]) { break; };
-		if (str1[n] != str2[n]) {
-			return ((str1[n] > str2[n]) ? 1 : -1);
-		};
-	};
-
-	if (count)
-	{
-		if ((str1[n] && (!str2[n])) || ((!str1[n]) && str2[n])) {
-			return (str1[n] > str2[n]) ? 1 : -1;
-		};
-	};
-
-	return 0;
-}
-
-size_t strnlen(const char *str1, size_t maxLen)
-{
-	size_t		len;
-
-	if (str1 == NULL)
-	{
-		printf(FATAL"strnlen: str1 0x%p, caller 0x%x.\n",
-			str1, __builtin_return_address(0));
-
-		panic(ERROR_CRITICAL);
-	};
-
-	for (len=0; len < maxLen && str1[len] != '\0'; len++) {};
-	return len;
+	return p1[i] - p2[i];
 }
 

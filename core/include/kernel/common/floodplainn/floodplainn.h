@@ -13,6 +13,8 @@
 
 #define FPLAINNIDX					"FplainnIndex: "
 
+#define FPLAINN_LOADDRIVER_FLAGS_CPU_TARGET	ZMESSAGE_FLAGS_CPU_TARGET
+
 class floodplainnC
 :
 public tributaryC//, public vfs::directoryOperationsC
@@ -89,7 +91,8 @@ public:
 	 **/
 	#define ZMESSAGE_FPLAINN_LOADDRIVER		(0)
 	error_t loadDriver(
-		utf8Char *devicePath, indexLevelE indexLevel, ubit32 flags);
+		utf8Char *devicePath, indexLevelE indexLevel,
+		processId_t targetId, ubit32 flags);
 
 	/* FVFS listing functions. These allow the device tree to be treated
 	 * like a VFS with "files" that can be listed.
@@ -147,6 +150,14 @@ public:
 	static void driverIndexerEntry(void);
 
 public:
+	struct driverIndexResponseS
+	{
+		zmessage::headerS	header;
+
+		utf8Char		deviceName[
+			DRIVERINDEX_REQUEST_DEVNAME_MAXLEN];
+	};
+
 	struct driverIndexRequestS
 	{
 		driverIndexRequestS(utf8Char *name, indexLevelE indexLevel)

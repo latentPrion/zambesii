@@ -9,7 +9,7 @@
 #include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/assert.h>
-#include <__kstdlib/__kclib/string8.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/libacpi.h>
@@ -665,7 +665,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 		"to 0x%p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
-	memcpy8(destAddr, srcAddr, copySize);
+	memcpy(destAddr, srcAddr, copySize);
 
 	srcAddr = (void *)(((uarch_t)&__kcpuPowerOnDataStart
 		- x8632_IBMPC_POWERON_PADDR_BASE)
@@ -679,7 +679,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 		"to 0x%p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
-	memcpy8(destAddr, srcAddr, copySize);
+	memcpy(destAddr, srcAddr, copySize);
 
 	x86IoApic::initializeCache();
 	if (!x86IoApic::ioApicsAreDetected())

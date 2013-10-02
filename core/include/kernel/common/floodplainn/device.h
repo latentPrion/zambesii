@@ -21,6 +21,7 @@
 #define DEVICE_LONGNAME_MAXLEN			DRIVER_LONGNAME_MAXLEN
 #define DEVICE_VENDORNAME_MAXLEN		DRIVER_VENDORNAME_MAXLEN
 #define DEVICE_VENDORCONTACT_MAXLEN		DRIVER_VENDORCONTACT_MAXLEN
+#define DEVICE_DRIVERNAME_MAXLEN		(128)
 
 #define DEVICE_CLASS_MAXLEN			(48)
 
@@ -74,10 +75,10 @@ namespace fplainn
 
 		numaBankId_t		bankId;
 		driverC			*driver;
+		utf8Char		driverFullName[DEVICE_DRIVERNAME_MAXLEN];
 		driverInstanceC		*driverInstance;
 		ubit8			nEnumerationAttribs, nInstanceAttribs;
-		zudiIndexDeviceS::zudiIndexDeviceDataS
-					**enumeration, **instance;
+		zudiIndex_deviceDataS	**enumeration, **instance;
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
 	};
 

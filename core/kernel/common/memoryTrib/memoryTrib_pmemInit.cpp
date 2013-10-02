@@ -3,7 +3,7 @@
 #include <chipset/memory.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kclib/assert.h>
-#include <__kstdlib/__kclib/string8.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/numaMemoryBank.h>
@@ -57,15 +57,15 @@ static void sortNumaMapByAddress(zkcmNumaMapS *map)
 	{		
 		if (map->memEntries[i].baseAddr > map->memEntries[i+1].baseAddr)
 		{
-			memcpy8(
+			memcpy(
 				&tmp, &map->memEntries[i],
 				sizeof(numaMemMapEntryS));
 
-			memcpy8(
+			memcpy(
 				&map->memEntries[i], &map->memEntries[i+1],
 				sizeof(numaMemMapEntryS));
 
-			memcpy8(
+			memcpy(
 				&map->memEntries[i+1], &tmp,
 				sizeof(numaMemMapEntryS));
 

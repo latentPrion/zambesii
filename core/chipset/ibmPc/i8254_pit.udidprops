@@ -16,10 +16,10 @@ requires	udi 0x101
 requires	zudi_gio 0x101
 requires	zbz_timer 0x1
 requires	zudi_physio 0x101
-requires	zbz_pcisa 0x1
+requires	udi_pci 0x101
 
 meta		1 zbz_timer
-meta		2 zbz_pcisa
+meta		2 udi_pci
 meta		3 zudi_gio
 
 # child_bind_ops	1 0 # Unknown ops_idx for now.
@@ -28,8 +28,9 @@ meta		3 zudi_gio
 
 message		4 IBM-PC compatible i8254 PIT
 device		4 2 \
-	bus_type string pcisa \
-	pcisa_device_name string i8254-pit \
+	bus_type string pci \
+	pci_vendor_id ubit32 0x1234 \
+	pci_device_id ubit32 0x5678
 
 module i8254_pit
 # Primary region handles the channel 0 timer.

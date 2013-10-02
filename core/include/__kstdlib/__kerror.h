@@ -32,6 +32,7 @@
 	#define ERROR_WOULD_BLOCK			(-50)
 	#define ERROR_NOT_FOUND				(-51)
 	#define ERROR_LIMIT_OVERFLOWED			(-52)
+	#define ERROR_NO_MATCH				(-53)
 
 	#define UNIMPLEMENTED(__funcName)		\
 		printf(ERROR"Unimplemented: %s on line %d of file %s.\n", \

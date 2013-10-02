@@ -40,7 +40,7 @@
  * in the kernel).
  **/
 // Keep this up to date.
-#define ZMESSAGE_SUBSYSTEM_MAXVAL		(0x7)
+#define ZMESSAGE_SUBSYSTEM_MAXVAL		(0x8)
 // Actual subsystem values.
 #define ZMESSAGE_SUBSYSTEM_TIMER		(0x0)
 #define ZMESSAGE_SUBSYSTEM_PROCESS		(0x1)
@@ -50,6 +50,7 @@
 #define ZMESSAGE_SUBSYSTEM_USER3		(0x5)
 #define ZMESSAGE_SUBSYSTEM_REQ0			(0x6)
 #define ZMESSAGE_SUBSYSTEM_REQ1			(0x7)
+#define ZMESSAGE_SUBSYSTEM_FLOODPLAINN		(0x8)
 
 #define ZMESSAGE_USERQ(num)			(ZMESSAGE_SUBSYSTEM_USER0 + num)
 #define ZMESSAGE_REQQ(num)			(ZMESSAGE_SUBSYSTEM_REQ0 + num)

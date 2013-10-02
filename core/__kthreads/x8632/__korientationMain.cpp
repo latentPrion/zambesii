@@ -21,7 +21,7 @@
 
 #include <arch/cpuControl.h>
 
-
+zudiIndex_deviceDataS		*attribPtr[3], attribs[3];
 int oo=0, pp=0, qq=0, rr=0;
 
 #include <commonlibs/libacpi/libacpi.h>
@@ -306,9 +306,40 @@ void __korientationMain(void)
 	ret = self->getTaskContext()->messageStream.pull(&iMessage);
 	printf(NOTICE"Ret from callback is %s.\n", strerror(iMessage.header.error));
 
+	ret = floodplainn.getDevice(CC"by-id/2/1", &sysbusDev);
+	if (ret != ERROR_SUCCESS) { goto dormant; };
+	sysbusDev->enumeration = attribPtr;
+	sysbusDev->enumeration[0] = &attribs[0];
+	sysbusDev->enumeration[1] = &attribs[1];
+	sysbusDev->enumeration[2] = &attribs[2];
+	sysbusDev->nEnumerationAttribs = 3;
+
+	{
+		strcpy8(CC sysbusDev->enumeration[0]->name, CC"bus_type");
+		sysbusDev->enumeration[0]->type = ZUDI_DEVICE_ATTR_STRING;
+		strcpy8(CC sysbusDev->enumeration[0]->value.string, CC"pci");
+	}
+	{
+		strcpy8(CC sysbusDev->enumeration[1]->name, CC"pci_vendor_id");
+		sysbusDev->enumeration[1]->type = ZUDI_DEVICE_ATTR_UBIT32;
+		sysbusDev->enumeration[1]->value.unsigned32 = 0x1234;
+	}
+	{
+		strcpy8(CC sysbusDev->enumeration[2]->name, CC"pci_device_id");
+		sysbusDev->enumeration[2]->type = ZUDI_DEVICE_ATTR_UBIT32;
+		sysbusDev->enumeration[2]->value.unsigned32 = 0x5678;
+	}
+
+	for (uarch_t i=0; i<sysbusDev->nEnumerationAttribs; i++)
+	{
+		printf(NOTICE"Attr: name %s, type %d, 0x%x.\n",
+			sysbusDev->enumeration[i]->name,
+			sysbusDev->enumeration[i]->type,
+			sysbusDev->enumeration[i]->value.unsigned32);
+	};
 dormant:
 	printf(NOTICE ORIENT"loadDriver: ret %d.\n",
-		floodplainn.loadDriver(CC"foo/bar", floodplainnC::CHIPSET_LIST, 0));
+		floodplainn.loadDriver(CC"by-id/2/1", floodplainnC::CHIPSET_LIST, 0, 0));
 
 	printf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());

@@ -16,10 +16,7 @@ extern "C" {
 void *memset(void *ptr, int value, size_t count);
 void *memcpy(void *dest, void *src, size_t count);
 char *strcpy(char *dest, const char *src);
-/*size_t strlen(const char *str);*/
-int strcmp(const char *str1, const char *str2);
-int strncmp(const char *str1, const char *str2, int count);
-size_t strnlen(const char *str1, size_t maxLen);
+int memcmp(const void *ptr1, const void *ptr2, size_t n);
 
 #ifdef __cplusplus
 }

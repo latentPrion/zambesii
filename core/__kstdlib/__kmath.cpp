@@ -50,8 +50,8 @@ static const utf8Char *const strErrorTable[] =
 	CC"RESOURCE_BUSY", CC"RESOURCE_UNAVAILABLE", CC"RESOURCE_EXHAUSTED",
 		CC"", CC"", CC"", CC"", CC"", CC"", CC"",
 
-	CC"WOULD_BLOCK", CC"NOT_FOUND", CC"LIMIT_OVERFLOWED",
-		CC"", CC"", CC"", CC"", CC"", CC"", CC""
+	CC"WOULD_BLOCK", CC"NOT_FOUND", CC"LIMIT_OVERFLOWED", CC"NO_MATCH",
+		CC"", CC"", CC"", CC"", CC"", CC""
 };
 
 static const utf8Char		*unknownError = CC"<Unknown error>";

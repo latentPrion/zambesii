@@ -21,7 +21,7 @@ void acpi::initializeCache(void)
 
 void acpi::flushCache(void)
 {
-	memset8(&cache, 0, sizeof(cache));
+	memset(&cache, 0, sizeof(cache));
 }
 
 error_t acpi::findRsdp(void)

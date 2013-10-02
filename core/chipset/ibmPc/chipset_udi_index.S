@@ -14,6 +14,11 @@ ASM_GLOBAL_DATA(chipset_udi_index_driver_data)
 ASM_END_DATA(chipset_udi_index_driver_data)
 ASM_GLOBAL_DATA(chipset_udi_index_driver_data_end)
 
+ASM_GLOBAL_DATA(chipset_udi_index_provisions)
+.incbin "provisions.zudi-index"
+ASM_END_DATA(chipset_udi_index_provisions)
+ASM_GLOBAL_DATA(chipset_udi_index_provisions_end)
+
 ASM_GLOBAL_DATA(chipset_udi_index_regions)
 .incbin "regions.zudi-index"
 ASM_END_DATA(chipset_udi_index_regions)
@@ -32,20 +37,20 @@ ASM_GLOBAL_DATA(chipset_udi_index_ranks_end)
 ASM_GLOBAL_DATA(chipset_udi_index_messages)
 .incbin "messages.zudi-index"
 ASM_END_DATA(chipset_udi_index_messages)
-ASM_GLOBAL_DATA(chipset_udi_index_device_messages_end)
+ASM_GLOBAL_DATA(chipset_udi_index_messages_end)
 
 ASM_GLOBAL_DATA(chipset_udi_index_disaster_messages)
 .incbin "disaster-messages.zudi-index"
 ASM_END_DATA(chipset_udi_index_disaster_messages)
-ASM_GLOBAL_DATA(chipset_udi_index_device_disaster_messages_end)
+ASM_GLOBAL_DATA(chipset_udi_index_disaster_messages_end)
 
 ASM_GLOBAL_DATA(chipset_udi_index_message_files)
 .incbin "message-files.zudi-index"
 ASM_END_DATA(chipset_udi_index_message_files)
-ASM_GLOBAL_DATA(chipset_udi_index_device_message_files_end)
+ASM_GLOBAL_DATA(chipset_udi_index_message_files_end)
 
 ASM_GLOBAL_DATA(chipset_udi_index_readable_files)
 .incbin "readable-files.zudi-index"
 ASM_END_DATA(chipset_udi_index_readable_files)
-ASM_GLOBAL_DATA(chipset_udi_index_device_readable_files_end)
+ASM_GLOBAL_DATA(chipset_udi_index_readable_files_end)
 

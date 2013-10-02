@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-void *memset8(void *ptr, int value, size_t count);
-void *memcpy8(void *dest, void *src, size_t count);
 utf8Char *strcpy8(utf8Char *dest, const utf8Char *src);
 utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count);
 size_t strlen8(const utf8Char *str);

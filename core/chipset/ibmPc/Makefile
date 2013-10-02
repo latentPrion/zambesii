@@ -16,6 +16,8 @@ udi_index:
 	zudiindex -c le -i .
 	@echo "Adding drivers to index."
 	zudiindex-addall -drivers . .
+	@echo "Adding metalanguages to index."
+	zudiindex-addall -metas . .
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
