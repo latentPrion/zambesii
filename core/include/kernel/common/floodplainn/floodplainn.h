@@ -13,7 +13,7 @@
 
 #define FPLAINNIDX					"FplainnIndex: "
 
-#define FPLAINN_LOADDRIVER_FLAGS_CPU_TARGET	ZMESSAGE_FLAGS_CPU_TARGET
+#define FPLAINN_DETECTDRIVER_FLAGS_CPU_TARGET	ZMESSAGE_FLAGS_CPU_TARGET
 
 class floodplainnC
 :
@@ -89,8 +89,8 @@ public:
 	 *	If this check fails, the kernel assumes that no suitable driver
 	 *	could be found and returns error.
 	 **/
-	#define ZMESSAGE_FPLAINN_LOADDRIVER		(0)
-	error_t loadDriver(
+	#define ZMESSAGE_FPLAINN_DETECTDRIVER		(0)
+	error_t detectDriver(
 		utf8Char *devicePath, indexLevelE indexLevel,
 		processId_t targetId, ubit32 flags);
 

@@ -80,6 +80,7 @@ namespace fplainn
 		ubit8			nEnumerationAttribs, nInstanceAttribs;
 		zudiIndex_deviceDataS	**enumeration, **instance;
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
+		sbit8			driverDetected, isKernelDriver;
 	};
 
 	class driverC

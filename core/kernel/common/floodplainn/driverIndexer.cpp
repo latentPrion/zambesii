@@ -87,7 +87,7 @@ namespace zudiIndex
 		+ sizeof(*(__r)) \
 		+ (sizeof(zudiIndex_rankDataS) * (__r)->nAttributes)))
 
-static status_t fplainnIndexer_loadDriver_compareEnumerationAttributes(
+static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
 	fplainn::deviceC *device, zudiIndex_deviceHeaderS *devline,
 	zudiIndex_rankHeaderS *const ranks,
 	zudiIndex_driverHeaderS *metaHeader
@@ -220,7 +220,7 @@ static status_t fplainnIndexer_loadDriver_compareEnumerationAttributes(
 	(zudiIndex_deviceHeaderS *)((uintptr_t)(&__dh[1]) \
 		+ ((__dh)->nAttributes * sizeof(zudiIndex_deviceDataS)))
 
-static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
+static void fplainnIndexer_detectDriver(zmessage::iteratorS *gmsg)
 {
 	threadC					*self;
 	error_t					err;
@@ -240,7 +240,7 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 	response = new floodplainnC::driverIndexResponseS;
 	if (response == NULL)
 	{
-		printf(FATAL FPLAINNIDX"loadDriver: No heap mem for response "
+		printf(FATAL FPLAINNIDX"detectDriver: No heap mem for response "
 			"message.\n");
 
 		// This is actually panic() worthy.
@@ -251,17 +251,17 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 	response->header.targetId = request->header.targetId;
 	response->header.size = sizeof(*response);
 	response->header.subsystem = ZMESSAGE_SUBSYSTEM_FLOODPLAINN;
-	response->header.function = ZMESSAGE_FPLAINN_LOADDRIVER;
+	response->header.function = ZMESSAGE_FPLAINN_DETECTDRIVER;
 	strcpy8(response->deviceName, request->deviceName);
 
-	printf(NOTICE FPLAINNIDX"loadDriver: devname %s. Src 0x%x, target 0x%x."
+	printf(NOTICE FPLAINNIDX"detectDriver: devname %s. Src 0x%x, target 0x%x."
 		"\n", request->deviceName,
 		request->header.sourceId, request->header.targetId);
 
 	err = floodplainn.getDevice(request->deviceName, &dev);
 	if (err != ERROR_SUCCESS)
 	{
-		printf(NOTICE FPLAINNIDX"loadDriver: invalid device %s.\n",
+		printf(NOTICE FPLAINNIDX"detectDriver: invalid device %s.\n",
 			request->deviceName);
 
 		response->header.error = ERROR_INVALID_RESOURCE_NAME;
@@ -293,7 +293,7 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 
 		if (driverHeader == NULL)
 		{
-			printf(FATAL FPLAINNIDX"loadDriver: index DEVICE has "
+			printf(FATAL FPLAINNIDX"detectDriver: index DEVICE has "
 				"invalid driverId %d. Skipping.\n",
 				devlineHeader->driverId);
 
@@ -305,7 +305,7 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 
 		if (devlineName == NULL)
 		{
-			printf(FATAL FPLAINNIDX"loadDriver: index DEVICE has "
+			printf(FATAL FPLAINNIDX"detectDriver: index DEVICE has "
 				"invalid device name msg_idx %d.\n",
 				devlineHeader->messageIndex);
 
@@ -318,7 +318,7 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 
 		if (devlineMetalanguage == NULL)
 		{
-			printf(FATAL FPLAINNIDX"loadDriver: index DEVICE has "
+			printf(FATAL FPLAINNIDX"detectDriver: index DEVICE has "
 				"invalid meta_idx %d. Skipping.\n",
 				devlineHeader->metaIndex);
 
@@ -330,7 +330,7 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 
 		if (metaHeader == NULL)
 		{
-			printf(FATAL FPLAINNIDX"loadDriver: DEVICE line refers "
+			printf(FATAL FPLAINNIDX"detectDriver: DEVICE line refers "
 				"to inexistent metalanguage %s.\n",
 				devlineMetalanguage->name);
 
@@ -340,7 +340,7 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 		devlineRanks = zudiIndex::getRanks(metaHeader);
 		if (devlineRanks == NULL)
 		{
-			printf(FATAL FPLAINNIDX"loadDriver: DEVICE line refers "
+			printf(FATAL FPLAINNIDX"detectDriver: DEVICE line refers "
 				"to a meta with no ranks.\n");
 
 			continue;
@@ -349,7 +349,7 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 		/* Now compare the device line attributes to the actual device's
 		 * attributes.
 		 **/
-		rank = fplainnIndexer_loadDriver_compareEnumerationAttributes(
+		rank = fplainnIndexer_detectDriver_compareEnumerationAttributes(
 			dev, devlineHeader, devlineRanks, metaHeader);
 
 		if (rank >= 0 && rank > bestRank)
@@ -361,7 +361,7 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 			err = matchingDevices.initialize();
 			if (err != ERROR_SUCCESS)
 			{
-				printf(ERROR FPLAINNIDX"loadDriver: Failed to "
+				printf(ERROR FPLAINNIDX"detectDriver: Failed to "
 					"initialize matchingDevices list.\n");
 
 				continue;
@@ -375,14 +375,14 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 			err = matchingDevices.insert(devlineHeader);
 			if (err != ERROR_SUCCESS)
 			{
-				printf(ERROR FPLAINNIDX"loadDriver: Failed to "
+				printf(ERROR FPLAINNIDX"detectDriver: Failed to "
 					"insert device line into "
 					"matchingDevices.\n");
 
 				continue;
 			};
 
-			printf(NOTICE FPLAINNIDX"loadDriver: Devnode \"%s\" "
+			printf(NOTICE FPLAINNIDX"detectDriver: Devnode \"%s\" "
 				"ranks %d, matching device\n\t\"%s\"\n",
 				request->deviceName, rank,
 				devlineName->message);
@@ -398,7 +398,7 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 
 		if (matchingDevices.getNItems() > 1)
 		{
-			printf(WARNING FPLAINNIDX"loadDriver: %s: Multiple "
+			printf(WARNING FPLAINNIDX"detectDriver: %s: Multiple "
 				"viable matches. Choosing first.\n",
 				request->deviceName);
 		};
@@ -410,11 +410,15 @@ static void fplainnIndexer_loadDriver(zmessage::iteratorS *gmsg)
 		driverHeader = zudiIndex::getDriverHeader(
 			devlineHeader->driverId);
 
-		strcpy8(dev->driverFullName, CC driverHeader->basePath);
+		/* strcpy8(dev->driverFullName, CC driverHeader->basePath);
 		strcpy8(
 			&dev->driverFullName[
 				strlen8(CC driverHeader->basePath)],
-			CC driverHeader->shortName);
+			CC driverHeader->shortName); */
+
+		strcpy8(dev->driverFullName, CC driverHeader->shortName);
+		dev->driverDetected = 1;
+		dev->isKernelDriver = 1;
 	};
 
 	messageStreamC::enqueueOnThread(
@@ -449,8 +453,8 @@ void floodplainnC::driverIndexerEntry(void)
 		case ZMESSAGE_SUBSYSTEM_REQ0:
 			switch (gcb.header.function)
 			{
-			case ZMESSAGE_FPLAINN_LOADDRIVER:
-				fplainnIndexer_loadDriver(&gcb);
+			case ZMESSAGE_FPLAINN_DETECTDRIVER:
+				fplainnIndexer_detectDriver(&gcb);
 				break;
 
 			default:
@@ -575,7 +579,8 @@ zudiIndex_messageS *zudiIndex::getMessage(
 	for (; ret < (zudiIndex_messageS *)&chipset_udi_index_messages_end;
 		ret++)
 	{
-		if (ret->index == index) { return ret; };
+		if (ret->driverId == driverHeader->id && ret->index == index)
+			{ return ret; };
 	};
 
 	return NULL;

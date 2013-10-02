@@ -39,7 +39,7 @@ void floodplainnC::__kdriverEntry(void)
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
-	printf(NOTICE"!!!Kernel driver running. About to dormant.\n");
+	printf(NOTICE"Kernel driver: %s. Executing.\n", self->parent->fullName);
 	taskTrib.dormant(self->getFullId());
 }
 
@@ -146,7 +146,7 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 	return ERROR_SUCCESS;
 }
 
-error_t floodplainnC::loadDriver(
+error_t floodplainnC::detectDriver(
 	utf8Char *devicePath, indexLevelE indexLevel, processId_t targetId,
 	ubit32 flags
 	)
@@ -170,7 +170,7 @@ error_t floodplainnC::loadDriver(
 		request->header.sourceId = ((threadC *)currTask)->getFullId();
 	};
 
-	if (__KFLAG_TEST(flags, FPLAINN_LOADDRIVER_FLAGS_CPU_TARGET))
+	if (__KFLAG_TEST(flags, FPLAINN_DETECTDRIVER_FLAGS_CPU_TARGET))
 	{
 		__KFLAG_SET(request->header.flags, ZMESSAGE_FLAGS_CPU_TARGET);
 		request->header.targetId = targetId;
@@ -188,7 +188,7 @@ error_t floodplainnC::loadDriver(
 	request->header.privateData = NULL;
 	request->header.size = sizeof(*request);
 	request->header.subsystem = indexerQueueId;
-	request->header.function = ZMESSAGE_FPLAINN_LOADDRIVER;
+	request->header.function = ZMESSAGE_FPLAINN_DETECTDRIVER;
 
 	return messageStreamC::enqueueOnThread(
 		indexerThreadId, &request->header);

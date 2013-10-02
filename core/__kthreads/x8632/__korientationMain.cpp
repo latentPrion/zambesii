@@ -266,31 +266,11 @@ void __korientationMain(void)
 	DO_OR_DIE(vfsTrib, getDvfs()->initialize(), ret);
 	DO_OR_DIE(floodplainn, initialize(), ret);
 	DO_OR_DIE(floodplainn, createDevice(CC"by-id", 0, 0, &sysbusDev), ret);
-
-	ret = floodplainn.createDevice(CC"by-id", 0, 0, &sysbusDev);
 	printf(NOTICE"ret is %s.\n", strerror(ret));
-	ret = floodplainn.createDevice(CC"by-id", 1, 0, &sysbusDev);
-	printf(NOTICE"ret is %s.\n", strerror(ret));
-	ret = floodplainn.createDevice(CC"by-id", 2, 0, &sysbusDev);
-	printf(NOTICE"ret is %s.\n", strerror(ret));
-	ret = floodplainn.createDevice(CC"by-id/2", 0, 0, &sysbusDev);
-	printf(NOTICE"ret is %s.\n", strerror(ret));
-	ret = floodplainn.createDevice(CC"by-id/2", 1, 0, &sysbusDev);
-	printf(NOTICE"ret is %s.\n", strerror(ret));
-	ret = floodplainn.createDevice(CC"by-id/2/1", 0, 0, &sysbusDev);
-	printf(NOTICE"ret is %s.\n", strerror(ret));
-	ret = floodplainn.createDevice(CC"by-id/2/1", 1, 0, &sysbusDev);
-	sysbusDev->driver = new fplainn::driverC;
-	sysbusDev->driver->allMetalanguagesSatisfied = 1;
-	printf(NOTICE"ret is %s; done creating nodes.\n", strerror(ret));
 
 	zmessage::iteratorS		iMessage;
 	distributaryProcessC		*dp;
 
-	/*ret = processTrib.spawnDriver(
-		CC"by-id/2/1/1", NULL,
-		taskC::ROUND_ROBIN, 0,
-		SPAWNPROC_FLAGS_DORMANT, NULL, (processStreamC **)&kdp);*/
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
 
 	ret = processTrib.spawnDistributary(
@@ -300,13 +280,18 @@ void __korientationMain(void)
 		&dp);
 
 	if (ret != ERROR_SUCCESS) {
-		printf(ERROR"Failed to spawn driver; ret is %s(%d).\n", strerror(ret), ret); goto dormant;
+		printf(ERROR"Failed to spawn driver-indexer dtrib; ret is %s(%d).\n", strerror(ret), ret); goto dormant;
 	};
 
-	ret = self->getTaskContext()->messageStream.pull(&iMessage);
-	printf(NOTICE"Ret from callback is %s.\n", strerror(iMessage.header.error));
+	/*ret = processTrib.spawnDriver(
+		CC"by-id/2/1/1", NULL,
+		taskC::ROUND_ROBIN, 0,
+		SPAWNPROC_FLAGS_DORMANT, NULL, (processStreamC **)&kdp);*/
 
-	ret = floodplainn.getDevice(CC"by-id/2/1", &sysbusDev);
+	ret = self->getTaskContext()->messageStream.pull(&iMessage);
+	printf(NOTICE"Ret from spawnDistributary is %s.\n", strerror(iMessage.header.error));
+
+	ret = floodplainn.getDevice(CC"by-id/0", &sysbusDev);
 	if (ret != ERROR_SUCCESS) { goto dormant; };
 	sysbusDev->enumeration = attribPtr;
 	sysbusDev->enumeration[0] = &attribs[0];
@@ -330,17 +315,13 @@ void __korientationMain(void)
 		sysbusDev->enumeration[2]->value.unsigned32 = 0x5678;
 	}
 
-	for (uarch_t i=0; i<sysbusDev->nEnumerationAttribs; i++)
-	{
-		printf(NOTICE"Attr: name %s, type %d, 0x%x.\n",
-			sysbusDev->enumeration[i]->name,
-			sysbusDev->enumeration[i]->type,
-			sysbusDev->enumeration[i]->value.unsigned32);
-	};
 dormant:
-	printf(NOTICE ORIENT"loadDriver: ret %d.\n",
-		floodplainn.loadDriver(CC"by-id/2/1", floodplainnC::CHIPSET_LIST, 0, 0));
+	printf(NOTICE ORIENT"detectDriver: ret %s.\n",
+		strerror(floodplainn.detectDriver(CC"by-id/0", floodplainnC::CHIPSET_LIST, 0, 0)));
 
+	ret = self->getTaskContext()->messageStream.pull(&iMessage);
+	printf(NOTICE ORIENT"ret from detectDriver is %s. Dev's driverFullName is %s.\n",
+		strerror(iMessage.header.error), sysbusDev->driverFullName);
 	printf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 

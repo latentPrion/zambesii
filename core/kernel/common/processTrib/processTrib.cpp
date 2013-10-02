@@ -314,7 +314,7 @@ void processTribC::commonEntry(void *)
 
 	// If the process was spawned with DORMANT set, dormant it now.
 	if (__KFLAG_TEST(self->parent->flags, PROCESS_FLAGS_SPAWNED_DORMANT))
-		{ printf(NOTICE"Dormant process.\n"); taskTrib.dormant(self->getFullId()); };
+		{ taskTrib.dormant(self->getFullId()); };
 
 	loadContextAndJump(&context);
 }
@@ -441,12 +441,8 @@ error_t processTribC::spawnDriver(
 	if (!deviceExists((*newProcess)->fullName, &dev))
 		{ delete *newProcess; return ERROR_RESOURCE_UNAVAILABLE; };
 
-	if (dev->driver == NULL)
+	if (!dev->driverDetected)
 		{ delete *newProcess; return SPAWNDRIVER_STATUS_NO_DRIVER; };
-
-	if (!dev->driver->allMetalanguagesSatisfied) {
-		delete *newProcess; return SPAWNDRIVER_STATUS_METAS_MISSING;
-	};
 
 	// Add the new process to the process list.
 	processes.setSlot(newProcessId, *newProcess);
