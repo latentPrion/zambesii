@@ -82,29 +82,29 @@ typedef udi_ubit8_t udi_gio_op_t;
 /*
  * Control block definitions.
  */
-typedef struct {
+typedef struct _udi_gio_bind_cb_t {
 	udi_cb_t gcb;
 	udi_xfer_constraints_t xfer_constraints;
 } udi_gio_bind_cb_t;
 
-typedef struct {
+typedef struct _udi_gio_xfer_cb_t {
 	udi_cb_t gcb;
 	udi_gio_op_t op;
 	void *tr_params;
 	udi_buf_t *data_buf;
 } udi_gio_xfer_cb_t;
 
-typedef struct {
+typedef struct _udi_gio_rw_params_t {
 	udi_ubit32_t offset_lo;
 	udi_ubit32_t offset_hi;
 } udi_gio_rw_params_t;
 
-typedef struct {
+typedef struct _udi_gio_diag_params_t {
 	udi_ubit8_t test_num;
 	udi_ubit8_t test_params_size;
 } udi_gio_diag_params_t;
 
-typedef struct {
+typedef struct _udi_gio_event_cb_t {
 	udi_cb_t gcb;
 	udi_ubit8_t event_code;
 	void *event_params;
@@ -141,7 +141,7 @@ typedef void udi_gio_event_res_op_t(
 /*
  * Interface operations vectors.
  */
-typedef const struct {
+typedef const struct _udi_gio_client_ops_t {
 	udi_channel_event_ind_op_t *channel_event_ind_op;
 	udi_gio_bind_ack_op_t *gio_bind_ack_op;
 	udi_gio_unbind_ack_op_t *gio_unbind_ack_op;
@@ -150,7 +150,7 @@ typedef const struct {
 	udi_gio_event_ind_op_t *gio_event_ind_op;
 } udi_gio_client_ops_t;
 
-typedef const struct {
+typedef const struct _udi_gio_provider_ops_t {
 	udi_channel_event_ind_op_t *channel_event_ind_op;
 	udi_gio_bind_req_op_t *gio_bind_req_op;
 	udi_gio_unbind_req_op_t *gio_unbind_req_op;

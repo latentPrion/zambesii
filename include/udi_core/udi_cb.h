@@ -75,7 +75,7 @@ typedef _UDI_HANDLE udi_origin_t;
 /*
  * Generic, least-common-denominator control block 
  */
-typedef struct {
+typedef struct _udi_cb_t {
 	udi_channel_t channel;
 	void *context;
 	void *scratch;

@@ -51,6 +51,8 @@ static zudiIndex_messageFileS				*__kmessageFileIndex=
 static zudiIndex_provisionS				*__kprovisionIndex=
 	(zudiIndex_provisionS *)&chipset_udi_index_provisions;
 
+static floodplainnC::newDeviceActionE		newDeviceAction;
+
 static void *getEsp(void)
 {
 	void		*esp;
@@ -143,6 +145,9 @@ static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
 					continue;
 				};
 
+				/* Even if they have the same name, if the types
+				 * differ, we can't consider it a match.
+				 **/
 				if (device->enumeration[k]->type
 					!= devlineData->type)
 				{
@@ -208,6 +213,10 @@ static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
 			if (attrMatched) { nAttributesMatched++; };
 		};
 
+		/* If all the attributes in this rankline matched, and this
+		 * rankline's rank value is higher than the previous ranking,
+		 * set this to be the new rank.
+		 **/
 		if (nAttributesMatched == currRank->nAttributes) {
 			if (ret < currRank->rank) { ret = currRank->rank; };
 		};
@@ -250,6 +259,8 @@ static void fplainnIndexer_detectDriver(zmessage::iteratorS *gmsg)
 	response->header.sourceId = request->header.sourceId;
 	response->header.targetId = request->header.targetId;
 	response->header.size = sizeof(*response);
+	response->header.flags = request->header.flags;
+	response->header.privateData = request->header.privateData;
 	response->header.subsystem = ZMESSAGE_SUBSYSTEM_FLOODPLAINN;
 	response->header.function = ZMESSAGE_FPLAINN_DETECTDRIVER;
 	strcpy8(response->deviceName, request->deviceName);
@@ -352,26 +363,31 @@ static void fplainnIndexer_detectDriver(zmessage::iteratorS *gmsg)
 		rank = fplainnIndexer_detectDriver_compareEnumerationAttributes(
 			dev, devlineHeader, devlineRanks, metaHeader);
 
-		if (rank >= 0 && rank > bestRank)
-		{
-			matchingDevices.~ptrListC();
-			new (&matchingDevices)
-				ptrListC<zudiIndex_deviceHeaderS *>;
-
-			err = matchingDevices.initialize();
-			if (err != ERROR_SUCCESS)
-			{
-				printf(ERROR FPLAINNIDX"detectDriver: Failed to "
-					"initialize matchingDevices list.\n");
-
-				continue;
-			};
-
-			bestRank = rank;
-		};
-
+		// If the driver was a match:
 		if (rank >= 0)
 		{
+			// If the match outranks the current best match:
+			if (rank > bestRank)
+			{
+				// Clear the list and restart.
+				matchingDevices.~ptrListC();
+				new (&matchingDevices)
+					ptrListC<zudiIndex_deviceHeaderS>;
+
+				err = matchingDevices.initialize();
+				if (err != ERROR_SUCCESS)
+				{
+					printf(ERROR FPLAINNIDX"detectDriver: "
+						"Failed to initialize "
+						"matchingDevices list.\n");
+
+					continue;
+				};
+
+				// New highest rank found.
+				bestRank = rank;
+			};
+
 			err = matchingDevices.insert(devlineHeader);
 			if (err != ERROR_SUCCESS)
 			{
@@ -389,17 +405,34 @@ static void fplainnIndexer_detectDriver(zmessage::iteratorS *gmsg)
 		};
 	};
 
-	if (matchingDevices.getNItems() == 0) {
+	if (matchingDevices.getNItems() == 0)
+	{
+		/* If a device previously had a driver detected for it, and
+		 * detectDriver() is called on it a second time, but this time
+		 * no driver is found, the previously detected driver is not
+		 * left behind.
+		 *
+		 * This enables detectDriver() to be used as a sort of "flush"
+		 * operation when the driver index is updated to remove an
+		 * undesired driver, should the user so choose to do so.
+		 **/
 		response->header.error = ERROR_NO_MATCH;
+		dev->driverFullName[0] = '\0';
+		dev->driverDetected = 0;
+		dev->isKernelDriver = 0;
 	}
 	else
 	{
 		void		*handle=NULL;
+		uarch_t		basePathLen;
 
+		/* If more than one driver matches, warn the user that we are
+		 * about to make an arbitrary decision.
+		 **/
 		if (matchingDevices.getNItems() > 1)
 		{
 			printf(WARNING FPLAINNIDX"detectDriver: %s: Multiple "
-				"viable matches. Choosing first.\n",
+				"viable matches. Arbitratily choosing first.\n",
 				request->deviceName);
 		};
 
@@ -410,15 +443,55 @@ static void fplainnIndexer_detectDriver(zmessage::iteratorS *gmsg)
 		driverHeader = zudiIndex::getDriverHeader(
 			devlineHeader->driverId);
 
-		/* strcpy8(dev->driverFullName, CC driverHeader->basePath);
-		strcpy8(
-			&dev->driverFullName[
-				strlen8(CC driverHeader->basePath)],
-			CC driverHeader->shortName); */
+		strcpy8(dev->driverFullName, CC driverHeader->basePath);
+		basePathLen = strlen8(CC driverHeader->basePath);
+		// Ensure there's a '/' between the basepath and the shortname.
+		if (dev->driverFullName[0]
+			&& dev->driverFullName[basePathLen - 1] != '/')
+		{
+			strcpy8(&dev->driverFullName[basePathLen], CC"/");
+			basePathLen++;
+		};
 
-		strcpy8(dev->driverFullName, CC driverHeader->shortName);
+		strcpy8(
+			&dev->driverFullName[basePathLen],
+			CC driverHeader->shortName);
+
 		dev->driverDetected = 1;
 		dev->isKernelDriver = 1;
+	};
+
+	messageStreamC::enqueueOnThread(
+		response->header.targetId, &response->header);
+}
+
+static void fplainnIndexer_newDeviceAction(zmessage::iteratorS *gmsg)
+{
+	floodplainnC::newDeviceActionRequestS	*request;
+	floodplainnC::newDeviceActionResponseS	*response;
+
+	request = (floodplainnC::newDeviceActionRequestS *)gmsg;
+
+	response = new floodplainnC::newDeviceActionResponseS;
+
+	response->header.sourceId = request->header.sourceId;
+	response->header.targetId = request->header.targetId;
+	response->header.size = sizeof(*response);
+	response->header.flags = request->header.flags;
+	response->header.privateData = request->header.privateData;
+	response->header.subsystem = ZMESSAGE_SUBSYSTEM_FLOODPLAINN;
+
+	response->previousAction = ::newDeviceAction;
+	if (request->header.function == ZMESSAGE_FPLAINN_SET_NEWDEVICE_ACTION)
+	{
+		newDeviceAction = request->action;
+		response->header.function =
+			ZMESSAGE_FPLAINN_SET_NEWDEVICE_ACTION;
+	}
+	else
+	{
+		response->header.function =
+			ZMESSAGE_FPLAINN_GET_NEWDEVICE_ACTION;
 	};
 
 	messageStreamC::enqueueOnThread(
@@ -455,6 +528,11 @@ void floodplainnC::driverIndexerEntry(void)
 			{
 			case ZMESSAGE_FPLAINN_DETECTDRIVER:
 				fplainnIndexer_detectDriver(&gcb);
+				break;
+
+			case ZMESSAGE_FPLAINN_GET_NEWDEVICE_ACTION:
+			case ZMESSAGE_FPLAINN_SET_NEWDEVICE_ACTION:
+				fplainnIndexer_newDeviceAction(&gcb);
 				break;
 
 			default:

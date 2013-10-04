@@ -120,7 +120,7 @@
 /*
  * Enumeration filter element structure.
  */
-typedef struct {
+typedef struct _udi_filter_element_t {
 	char attr_name[UDI_MAX_ATTR_NAMELEN];
 	udi_ubit8_t attr_min[UDI_MAX_ATTR_SIZE];
 	udi_ubit8_t attr_min_len;
@@ -133,19 +133,19 @@ typedef struct {
 /*
  * Control Blocks.
  */
-typedef struct {
+typedef struct _udi_region_attach_cb_t {
 	udi_cb_t gcb;
 	udi_index_t region_idx;
 	udi_channel_t channel_to_secondary;
 } udi_region_attach_cb_t;
 
-typedef struct {
+typedef struct _udi_bind_cb_t {
 	udi_cb_t gcb;
 	udi_channel_t bind_channel;
 	udi_index_t meta_idx;
 } udi_bind_cb_t;
 
-typedef struct {
+typedef struct _udi_enumerate_cb_t {
 	udi_cb_t gcb;
 	udi_ubit32_t child_ID;
 	void *child_data;
@@ -159,11 +159,11 @@ typedef struct {
 /* Special parent_ID filter values */
 #define UDI_ANY_PARENT_ID		0
 
-typedef struct {
+typedef struct _udi_mgmt_cb_t {
 	udi_cb_t gcb;
 } udi_mgmt_cb_t;
 
-typedef struct {
+typedef struct _udi_usage_cb_t {
 	udi_cb_t gcb;
 	udi_trevent_t trace_mask;
 	udi_index_t meta_idx;
@@ -233,7 +233,7 @@ udi_enumerate_req_op_t udi_enumerate_no_children;
 /*
  * Channel event control block
  */
-typedef struct {
+typedef struct _udi_channel_event_cb_t {
 	udi_cb_t gcb;
 	udi_ubit8_t event;
 	union {

@@ -148,7 +148,7 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 
 error_t floodplainnC::detectDriver(
 	utf8Char *devicePath, indexLevelE indexLevel, processId_t targetId,
-	ubit32 flags
+	void *privateData, ubit32 flags
 	)
 {
 	driverIndexRequestS		*request;
@@ -159,38 +159,75 @@ error_t floodplainnC::detectDriver(
 	// Allocate and queue the new request.
 	request = new driverIndexRequestS(devicePath, indexLevel);
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
+
 	request->header.flags = 0;
+	request->header.sourceId = zmessage::determineSourceThreadId(
+		currTask, &request->header.flags);
 
-	if (currTask->getType() == task::PER_CPU)
-	{
-		__KFLAG_SET(request->header.flags, ZMESSAGE_FLAGS_CPU_SOURCE);
-		request->header.sourceId = cpuTrib.getCurrentCpuStream()->cpuId;
-	}
-	else {
-		request->header.sourceId = ((threadC *)currTask)->getFullId();
-	};
+	request->header.targetId = zmessage::determineTargetThreadId(
+		targetId, request->header.sourceId,
+		flags, &request->header.flags);
 
-	if (__KFLAG_TEST(flags, FPLAINN_DETECTDRIVER_FLAGS_CPU_TARGET))
-	{
-		__KFLAG_SET(request->header.flags, ZMESSAGE_FLAGS_CPU_TARGET);
-		request->header.targetId = targetId;
-	}
-	else
-	{
-		// If it's unset, the target is implicitly the source thread.
-		if (targetId == 0) {
-			request->header.targetId = request->header.sourceId;
-		} else {
-			request->header.targetId = targetId;
-		};
-	};
-
-	request->header.privateData = NULL;
+	request->header.privateData = privateData;
 	request->header.size = sizeof(*request);
 	request->header.subsystem = indexerQueueId;
 	request->header.function = ZMESSAGE_FPLAINN_DETECTDRIVER;
 
 	return messageStreamC::enqueueOnThread(
+		indexerThreadId, &request->header);
+}
+
+void floodplainnC::setNewDeviceAction(
+	newDeviceActionE action, void *privateData
+	)
+{
+	newDeviceActionRequestS	*request;
+	taskC			*currTask;
+
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+
+	request = new newDeviceActionRequestS;
+	if (request == NULL) { return; };
+
+	request->action = action;
+
+	request->header.flags = 0;
+	request->header.sourceId = zmessage::determineSourceThreadId(
+		currTask, &request->header.flags);
+
+	request->header.targetId = request->header.sourceId;
+
+	request->header.privateData = privateData;
+	request->header.size = sizeof(*request);
+	request->header.subsystem = indexerQueueId;
+	request->header.function = ZMESSAGE_FPLAINN_SET_NEWDEVICE_ACTION;
+
+	messageStreamC::enqueueOnThread(
+		indexerThreadId, &request->header);
+}
+
+void floodplainnC::getNewDeviceAction(void *privateData)
+{
+	newDeviceActionRequestS	*request;
+	taskC			*currTask;
+
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+
+	request = new newDeviceActionRequestS;
+	if (request == NULL) { return; };
+
+	request->header.flags = 0;
+	request->header.sourceId = zmessage::determineSourceThreadId(
+		currTask, &request->header.flags);
+
+	request->header.targetId = request->header.sourceId;
+
+	request->header.privateData = privateData;
+	request->header.size = sizeof(*request);
+	request->header.subsystem = indexerQueueId;
+	request->header.function = ZMESSAGE_FPLAINN_GET_NEWDEVICE_ACTION;
+
+	messageStreamC::enqueueOnThread(
 		indexerThreadId, &request->header);
 }
 

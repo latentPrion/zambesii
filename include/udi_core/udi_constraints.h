@@ -78,7 +78,7 @@ typedef _UDI_HANDLE	udi_dma_constraints_t;
  */
 #define UDI_DMA_CONSTRAINTS_COPY	(1U<<0)
 
-typedef struct {
+typedef struct _udi_dma_constraints_attr_spec_t {
 	udi_dma_constraints_attr_t attr_type;
 	udi_ubit32_t attr_value;
 } udi_dma_constraints_attr_spec_t;
@@ -111,7 +111,7 @@ void udi_dma_constraints_free(
 
 struct __udi_buf;
 
-typedef struct {
+typedef struct _udi_xfer_constraints_t {
 	udi_ubit32_t udi_xfer_max;
 	udi_ubit32_t udi_xfer_typical;
 	udi_ubit32_t udi_xfer_granularity;

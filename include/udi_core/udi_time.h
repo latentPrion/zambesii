@@ -65,7 +65,7 @@
  * Timer Services
  */
 
-typedef struct {
+typedef struct _udi_time_t {
 	udi_ubit32_t seconds;
 	udi_ubit32_t nanoseconds;
 } udi_time_t;

@@ -92,7 +92,16 @@ public:
 	#define ZMESSAGE_FPLAINN_DETECTDRIVER		(0)
 	error_t detectDriver(
 		utf8Char *devicePath, indexLevelE indexLevel,
-		processId_t targetId, ubit32 flags);
+		processId_t targetId, void *privateData, ubit32 flags);
+
+	enum newDeviceActionE {
+		NDACTION_NOTHING=0, NDACTION_DETECT_DRIVER,
+		NDACTION_LOAD_DRIVER, NDACTION_INSTANTIATE };
+
+	#define ZMESSAGE_FPLAINN_SET_NEWDEVICE_ACTION	(1)
+	void setNewDeviceAction(newDeviceActionE action, void *privateData);
+	#define ZMESSAGE_FPLAINN_GET_NEWDEVICE_ACTION	(2)
+	void getNewDeviceAction(void *privateData);
 
 	/* FVFS listing functions. These allow the device tree to be treated
 	 * like a VFS with "files" that can be listed.
@@ -150,12 +159,26 @@ public:
 	static void driverIndexerEntry(void);
 
 public:
+	struct newDeviceActionResponseS
+	{
+		zmessage::headerS	header;
+
+		newDeviceActionE	previousAction;
+	};
+
 	struct driverIndexResponseS
 	{
 		zmessage::headerS	header;
 
 		utf8Char		deviceName[
 			DRIVERINDEX_REQUEST_DEVNAME_MAXLEN];
+	};
+
+	struct newDeviceActionRequestS
+	{
+		zmessage::headerS	header;
+
+		newDeviceActionE	action;
 	};
 
 	struct driverIndexRequestS

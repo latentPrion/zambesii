@@ -55,6 +55,8 @@
 #define ZMESSAGE_USERQ(num)			(ZMESSAGE_SUBSYSTEM_USER0 + num)
 #define ZMESSAGE_REQQ(num)			(ZMESSAGE_SUBSYSTEM_REQ0 + num)
 
+class taskC;
+
 namespace zmessage
 {
 	#define ZMESSAGE_FLAGS_CPU_SOURCE		(1<<0)
@@ -76,6 +78,11 @@ namespace zmessage
 		headerS		header;
 		ubit8		_padding_[256];
 	};
+
+	processId_t determineSourceThreadId(taskC *caller, ubit16 *flags);
+	processId_t determineTargetThreadId(
+		processId_t targetId, processId_t sourceId,
+		uarch_t callerFlags, ubit16 *messageFlags);
 }
 
 #endif

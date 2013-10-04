@@ -75,7 +75,7 @@ struct __udi_mgmt_ops;
 /*
  * Platform specific allocation and access limits
  */
-typedef struct {
+typedef struct _udi_limits_t {
 	udi_size_t max_legal_alloc;
 	udi_size_t max_safe_alloc;
 	udi_size_t max_trace_log_formatted_len;
@@ -87,7 +87,7 @@ typedef struct {
 /* 
  * Primary region initialization structure
  */
-typedef const struct {
+typedef const struct _udi_primary_init_t {
 	udi_mgmt_ops_t *mgmt_ops;
 	const udi_ubit8_t *mgmt_op_flags;
 	udi_size_t mgmt_scratch_requirement;
@@ -100,7 +100,7 @@ typedef const struct {
 /*
  * Secondary region initialization structure
  */
-typedef const struct {
+typedef const struct _udi_secondary_init_t {
 	udi_index_t region_idx;
 	udi_size_t rdata_size;
 } udi_secondary_init_t;
@@ -111,7 +111,7 @@ typedef const struct {
  */
 typedef void udi_op_t(void);
 typedef udi_op_t * const udi_ops_vector_t;
-typedef const struct {
+typedef const struct _udi_ops_init_t {
 	udi_index_t ops_idx;
 	udi_index_t meta_idx;
 	udi_index_t meta_ops_num;
@@ -128,7 +128,7 @@ typedef const struct {
 /*
  * Control block initialization structure
  */
-typedef const struct {
+typedef const struct _udi_cb_init_t {
 	udi_index_t cb_idx;
 	udi_index_t meta_idx;
 	udi_index_t meta_cb_num;
@@ -140,7 +140,7 @@ typedef const struct {
 /*
  * Control block selections for incoming channel ops
  */
-typedef const struct {
+typedef const struct _udi_cb_select_t {
 	udi_index_t ops_idx;
 	udi_index_t cb_idx;
 } udi_cb_select_t;
@@ -148,7 +148,7 @@ typedef const struct {
 /*
  * Generic control block initialization properties
  */
-typedef const struct {
+typedef const struct _udi_gcb_init_t {
 	udi_index_t cb_idx;
 	udi_size_t scratch_requirement;
 } udi_gcb_init_t;
@@ -156,7 +156,7 @@ typedef const struct {
 /* 
  *  Module initialization structure
  */
-typedef const struct {
+typedef const struct _udi_init_t {
 	udi_primary_init_t *primary_init_info;
 	udi_secondary_init_t *secondary_init_list;
 	udi_ops_init_t *ops_init_list;
@@ -172,7 +172,7 @@ typedef const struct {
 /*
  * Initial context for new regions.
  */
-typedef struct {
+typedef struct _udi_init_context_t {
 	udi_index_t region_idx;
 	udi_limits_t limits;
 } udi_init_context_t;
@@ -180,14 +180,14 @@ typedef struct {
 /*
  * Initial context for bind channels
  */
-typedef struct {
+typedef struct _udi_chan_context_t {
 	void *rdata;
 } udi_chan_context_t;
 
 /*
  * Initial context for child-bind channels
  */
-typedef struct {
+typedef struct _udi_child_chan_context_t {
 	void *rdata;
 	udi_ubit32_t	child_ID;
 } udi_child_chan_context_t;

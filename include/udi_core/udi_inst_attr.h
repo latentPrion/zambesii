@@ -79,7 +79,7 @@ typedef udi_ubit8_t  udi_instance_attr_type_t;
 /*
  * Enumeration instance attribute list.
  */
-typedef struct {
+typedef struct _udi_instance_attr_list_t {
 	char attr_name[UDI_MAX_ATTR_NAMELEN];
 	udi_ubit8_t attr_value[UDI_MAX_ATTR_SIZE];
 	udi_ubit8_t attr_length;

@@ -317,7 +317,7 @@ void __korientationMain(void)
 
 dormant:
 	printf(NOTICE ORIENT"detectDriver: ret %s.\n",
-		strerror(floodplainn.detectDriver(CC"by-id/0", floodplainnC::CHIPSET_LIST, 0, 0)));
+		strerror(floodplainn.detectDriver(CC"by-id/0", floodplainnC::CHIPSET_LIST, 0, NULL, 0)));
 
 	ret = self->getTaskContext()->messageStream.pull(&iMessage);
 	printf(NOTICE ORIENT"ret from detectDriver is %s. Dev's driverFullName is %s.\n",

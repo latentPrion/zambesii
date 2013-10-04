@@ -201,7 +201,7 @@ typedef udi_ubit32_t udi_tagtype_t;
 #define UDI_BUFTAG_DRIVER8 (1U<<31)
 
 /* Buffer tag structure */
-typedef struct {
+typedef struct _udi_buf_tag_t {
 	udi_tagtype_t tag_type;
 	udi_ubit32_t tag_value;
 	udi_size_t tag_off;

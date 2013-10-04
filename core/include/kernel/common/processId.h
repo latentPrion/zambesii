@@ -45,6 +45,7 @@ typedef uarch_t		processId_t;
 #endif
 
 #define __KPROCESSID		(0x1 << PROCID_PROCESS_SHIFT)
+#define CPU_PROCESSID		(0x0 << PROCID_PROCESS_SHIFT)
 
 #define PROCID_PROCESS(__id)				\
 	(((__id) >> PROCID_PROCESS_SHIFT) & PROCID_PROCESS_MASK)

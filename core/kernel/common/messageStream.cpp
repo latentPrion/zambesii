@@ -5,6 +5,33 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 
+
+processId_t zmessage::determineSourceThreadId(taskC *caller, ubit16 *flags)
+{
+	if (caller->getType() == task::PER_CPU)
+	{
+		__KFLAG_SET(*flags, ZMESSAGE_FLAGS_CPU_SOURCE);
+		return cpuTrib.getCurrentCpuStream()->cpuId;
+	}
+	else { return ((threadC *)caller)->getFullId(); };
+}
+
+processId_t zmessage::determineTargetThreadId(
+	processId_t targetId, processId_t sourceId,
+	uarch_t callerFlags, ubit16 *messageFlags
+	)
+{
+	// If target thread is a CPU:
+	if (__KFLAG_TEST(callerFlags, ZMESSAGE_FLAGS_CPU_TARGET))
+	{
+		__KFLAG_SET(*messageFlags, ZMESSAGE_FLAGS_CPU_TARGET);
+		return targetId;
+	};
+
+	if (targetId == 0) { return sourceId; };
+	return targetId;
+}
+
 error_t messageStreamC::enqueueOnThread(
 	processId_t targetStreamId, zmessage::headerS *header
 	)
