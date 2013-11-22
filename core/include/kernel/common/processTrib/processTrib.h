@@ -95,7 +95,7 @@ public:
 	 * to spawnStream() are redundant for creating distributary processes.
 	 **/
 	// Callback uses genericCallbackS.
-	#define ZMESSAGE_PROCESS_SPAWN_DISTRIBUTARY	(0)
+	#define MSGSTREAM_PROCESS_SPAWN_DISTRIBUTARY	(0)
 	error_t spawnDistributary(
 		utf8Char *commandLine,
 		utf8Char *environment,
@@ -125,7 +125,7 @@ public:
 	 * device itself. Privilege elevation for any device is determined by
 	 * the kernel and current security policy.
 	 **/
-	#define ZMESSAGE_PROCESS_SPAWN_DRIVER		(2)
+	#define MSGSTREAM_PROCESS_SPAWN_DRIVER		(2)
 	error_t spawnDriver(
 		utf8Char *commandLine,
 		utf8Char *environment,
@@ -136,7 +136,7 @@ public:
 		processStreamC **ret);
 
 	// Callback uses genericCallbackS.
-	#define ZMESSAGE_PROCESS_SPAWN_STREAM		(1)
+	#define MSGSTREAM_PROCESS_SPAWN_STREAM		(1)
 	error_t spawnStream(
 		utf8Char *commandLine,
 		utf8Char *environment,

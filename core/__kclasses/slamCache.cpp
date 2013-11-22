@@ -9,6 +9,8 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
+slamCacheC	*asyncContextCache;
+
 slamCacheC::slamCacheC(uarch_t objectSize, allocatorE allocator)
 :
 allocator(allocator)
@@ -110,7 +112,7 @@ void slamCacheC::dump(void)
 	for (obj = partialList.rsrc; obj != NULL; obj = obj->next, count++) {
 		printf((utf8Char *)"v %X, ", obj);
 	};
-	
+
 	partialList.lock.release();
 
 	printf((utf8Char *)"\n\t%d in all.\n", count);

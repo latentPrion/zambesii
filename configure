@@ -233,6 +233,7 @@ echo "Generating config.h."
 echo "#ifndef _CONFIG_H" >include/config.h
 echo "	#define _CONFIG_H" >>include/config.h;
 echo "" >>include/config.h
+echo "#define __ZAMBESII_KERNEL_SOURCE__" >>include/config.h
 if [ $arch == 'x8632' ]; then echo "#define CONFIG_ARCH_x86_32" >>include/config.h; fi
 if [ $chipset == 'ibmPc' ]; then echo "#define CONFIG_CHIPSET_IBM_PC" >>include/config.h; fi
 if [ $firmware == 'ibmPcBios' ]; then echo "#define CONFIG_FIRMWARE_IBM_PC_BIOS" >>include/config.h; fi

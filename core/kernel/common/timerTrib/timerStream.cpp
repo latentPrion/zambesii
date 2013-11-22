@@ -37,14 +37,14 @@ error_t timerStreamC::createOneshotEvent(
 	request->type = ONESHOT;
 	request->header.privateData = privateData;
 	request->header.flags = 0;
-	request->header.subsystem = ZMESSAGE_SUBSYSTEM_TIMER;
-	request->header.function = ZMESSAGE_TIMER_CREATE_ONESHOT_EVENT;
+	request->header.subsystem = MSGSTREAM_SUBSYSTEM_TIMER;
+	request->header.function = MSGSTREAM_TIMER_CREATE_ONESHOT_EVENT;
 
 	// Set the creator ID.
 	if (currCpu->taskStream.getCurrentTask()->getType() == task::PER_CPU)
 	{
 		request->header.sourceId = (processId_t)currCpu->cpuId;
-		__KFLAG_SET(request->header.flags, ZMESSAGE_FLAGS_CPU_SOURCE);
+		__KFLAG_SET(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 	}
 	else
 	{
@@ -58,7 +58,7 @@ error_t timerStreamC::createOneshotEvent(
 	 * Security check required here, for when the event is set to wake a
 	 * thread in a foreign process.
 	 **/
-	if (__KFLAG_TEST(flags, ZMESSAGE_FLAGS_CPU_TARGET))
+	if (__KFLAG_TEST(flags, MSGSTREAM_FLAGS_CPU_TARGET))
 	{
 		cpuStreamC	*tmp;
 
@@ -145,8 +145,8 @@ error_t timerStreamC::pullEvent(
 	 */
 	ret = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTaskContext()->messageStream.pullFrom(
-			ZMESSAGE_SUBSYSTEM_TIMER,
-			(zmessage::iteratorS *)event,
+			MSGSTREAM_SUBSYSTEM_TIMER,
+			(messageStreamC::iteratorS *)event,
 			__KFLAG_TEST(
 				flags, TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK)
 					? ZCALLBACK_PULL_FLAGS_DONT_BLOCK : 0);
@@ -157,12 +157,12 @@ error_t timerStreamC::pullEvent(
 
 static sarch_t isPerCpuCreator(timerStreamC::requestS *request)
 {
-	return __KFLAG_TEST(request->header.flags, ZMESSAGE_FLAGS_CPU_SOURCE);
+	return __KFLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 }
 
 static inline sarch_t isPerCpuTarget(timerStreamC::requestS *request)
 {
-	return __KFLAG_TEST(request->header.flags, ZMESSAGE_FLAGS_CPU_TARGET);
+	return __KFLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
 void *timerStreamC::timerRequestTimeoutNotification(
@@ -227,11 +227,11 @@ void *timerStreamC::timerRequestTimeoutNotification(
 	event->header.size = sizeof(*event);
 
 	if (isPerCpuCreator(request)) {
-		__KFLAG_SET(event->header.flags, ZMESSAGE_FLAGS_CPU_SOURCE);
+		__KFLAG_SET(event->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 	};
 
 	if (isPerCpuTarget(request)) {
-		__KFLAG_SET(event->header.flags, ZMESSAGE_FLAGS_CPU_TARGET);
+		__KFLAG_SET(event->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 	};
 
 	// Queue event.

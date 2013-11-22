@@ -7,6 +7,7 @@
 	#include <zudiIndex.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
+	#include <__kstdlib/__kclib/string.h>
 	#include <kernel/common/numaTypes.h>
 
 /**	deviceC:
@@ -64,7 +65,12 @@ namespace fplainn
 			{ return driverInstance; }
 
 		error_t addClass(utf8Char *name);
-		error_t addEnumerationAttribute(utf8Char *name);
+		error_t getEnumerationAttribute(
+			utf8Char *name, udi_instance_attr_list_t **attrib);
+
+		error_t setEnumerationAttribute(udi_instance_attr_list_t *attrib);
+
+		void dumpEnumerationAttributes(void);
 
 	public:
 		ubit16		id;
@@ -78,7 +84,8 @@ namespace fplainn
 		utf8Char		driverFullName[DEVICE_DRIVERNAME_MAXLEN];
 		driverInstanceC		*driverInstance;
 		ubit8			nEnumerationAttribs, nInstanceAttribs;
-		zudiIndex_deviceDataS	**enumeration, **instance;
+		udi_instance_attr_list_t
+					**enumeration, **instance;
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
 		sbit8			driverDetected, isKernelDriver;
 	};
@@ -87,7 +94,7 @@ namespace fplainn
 	{
 	public:
 		struct metalanguageS;
-		struct moduleS;
+		struct moduleC;
 		struct regionS;
 		struct channelS;
 
@@ -95,29 +102,41 @@ namespace fplainn
 		:
 		nModules(0), nRegions(0), nChannels(0), nMetalanguages(0),
 		allMetalanguagesSatisfied(0), childEnumerationAttribSize(0),
-		moduleInfo(NULL), regionInfo(NULL), channelInfo(NULL),
-		metalanguageInfo(NULL)
+		modules(NULL), regions(NULL), channels(NULL),
+		metalanguages(NULL)
 		{}
 
 		error_t initialize(void){ return ERROR_SUCCESS; }
 		~driverC(void){}
 
 	public:
-		error_t addMetalanguage(ubit16 index, utf8Char *name);
-		error_t addModule(ubit16 index);
-		error_t addRegion(ubit16 moduleIndex, ubit16 regionIndex);
-		error_t addChannel(ubit16 regionIndex, ubit16 index);
-
-		moduleS *getModule(ubit16 index);
-		regionS *getRegion(ubit16 index);
-		channelS *getChannel(ubit16 index);
-
-	public:
-		struct moduleS
+		struct moduleC
 		{
+		public:
+			moduleC(void)
+			:
+			index(0), nAttachedRegions(0),
+			regionIndexes(NULL)
+			{
+				filename[0] = '\0';
+			}
+
+			moduleC(utf8Char *filename, ubit16 index)
+			:
+			index(index), nAttachedRegions(0),
+			regionIndexes(NULL)
+			{
+				strcpy8(this->filename, filename);
+			}
+
+		public:
+			error_t addAttachedRegion(ubit16 index);
+
+		public:
 			ubit16		index, nAttachedRegions;
 			// Array of region indexes belonging to this module.
 			ubit16		*regionIndexes;
+			utf8Char	filename[ZUDI_FILENAME_MAXLEN];
 		};
 
 		struct regionS
@@ -153,25 +172,54 @@ namespace fplainn
 			sarch_t		isSatisfied;
 		};
 
+	public:
+		error_t addMetalanguage(ubit16 index, utf8Char *name);
+		error_t addModule(ubit16 index, utf8Char *name);
+		error_t addRegion(ubit16 moduleIndex, ubit16 regionIndex);
+		error_t addChannel(ubit16 regionIndex, ubit16 index);
+
+		moduleC *getModule(ubit16 index)
+		{
+			for (uarch_t i=0; i<nModules; i++)
+			{
+				if (modules[i].index == index)
+					{ return &modules[i]; };
+			};
+
+			return NULL;
+		};
+
+		regionS *getRegion(ubit16 index)
+		{
+			for (uarch_t i=0; i<nRegions; i++)
+			{
+				if (regions[i].index == index)
+					{ return &regions[i]; };
+			};
+
+			return NULL;
+		}
+
+		channelS *getChannel(ubit16 index);
+
 		// Kernel doesn't need to know about control block information.
 
 	public:
+		utf8Char	fullName[DEVICE_DRIVERNAME_MAXLEN];
 		ubit16		nModules, nRegions, nChannels, nMetalanguages,
 				nControlBlocks;
 		sbit8		allMetalanguagesSatisfied;
 
 		uarch_t		childEnumerationAttribSize;
 		// Modules for this driver, and their indexes.
-		moduleS		*moduleInfo;
+		moduleC		*modules;
 		// Regions in this driver and their indexes/module indexes, etc.
-		regionS		*regionInfo;
+		regionS		*regions;
 		// Driver's channels and their indexes, channel indexes, etc.
-		channelS	*channelInfo;
+		channelS	*channels;
 		// Metalanguage indexes, dependency satisfaction, etc.
-		metalanguageS	*metalanguageInfo;
+		metalanguageS	*metalanguages;
 	};
-
-	
 }
 
 #endif

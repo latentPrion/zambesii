@@ -3,25 +3,36 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
+	#include <__kclasses/ptrList.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/zmessage.h>
+	#include <kernel/common/messageStream.h>
 	#include <kernel/common/floodplainn/floodplainn.h>
 	#include <kernel/common/floodplainn/device.h>
+	#include <kernel/common/floodplainn/index.h>
 	#include <kernel/common/vfsTrib/commonOperations.h>
 
 #define DRIVERINDEX_REQUEST_DEVNAME_MAXLEN		(128)
 
+#define FPLAINN						"Fplainn: "
 #define FPLAINNIDX					"FplainnIndex: "
 
-#define FPLAINN_DETECTDRIVER_FLAGS_CPU_TARGET	ZMESSAGE_FLAGS_CPU_TARGET
+#define FPLAINN_DETECTDRIVER_FLAGS_CPU_TARGET	MSGSTREAM_FLAGS_CPU_TARGET
 
 class floodplainnC
 :
 public tributaryC//, public vfs::directoryOperationsC
 {
 public:
-	floodplainnC(void) {}
-	error_t initialize(void);
+	floodplainnC(void)
+	{
+		new (&zudiIndexes[0]) zudiIndexC(zudiIndexC::SOURCE_KERNEL);
+		new (&zudiIndexes[1]) zudiIndexC(zudiIndexC::SOURCE_RAMDISK);
+		new (&zudiIndexes[2]) zudiIndexC(zudiIndexC::SOURCE_EXTERNAL);
+	}
+
+	typedef void (initializeReqCallF)(error_t ret);
+	error_t initializeReq(initializeReqCallF *callback);
+
 	~floodplainnC(void) {}
 
 public:
@@ -43,7 +54,10 @@ public:
 	 *	drivers that are available on disk. This is the slowest
 	 *	level of searching that can be done.
 	 **/
-	enum indexLevelE { CHIPSET_LIST=0, MRU_LIST, DISK };
+	enum indexLevelE {
+		INDEX_KERNEL=zudiIndexC::SOURCE_KERNEL,
+		INDEX_RAMDISK=zudiIndexC::SOURCE_RAMDISK,
+		INDEX_EXTERNAL=zudiIndexC::SOURCE_EXTERNAL };
 
 	/* Creates a child device under a given parent and returns it to the
 	 * caller.
@@ -89,19 +103,25 @@ public:
 	 *	If this check fails, the kernel assumes that no suitable driver
 	 *	could be found and returns error.
 	 **/
-	#define ZMESSAGE_FPLAINN_DETECTDRIVER		(0)
-	error_t detectDriver(
+	#define MSGSTREAM_FPLAINN_DETECTDRIVER_REQ		(0)
+	error_t detectDriverReq(
 		utf8Char *devicePath, indexLevelE indexLevel,
 		processId_t targetId, void *privateData, ubit32 flags);
+
+	#define MSGSTREAM_FPLAINN_LOADDRIVER_REQ		(3)
+	error_t loadDriverReq(utf8Char *devicePath, void *privateData);
+
+	#define MSGSTREAM_FPLAINN_NEWDEVICE_IND			(4)
+	void newDeviceInd(utf8Char *devicePath, void *privateData);
 
 	enum newDeviceActionE {
 		NDACTION_NOTHING=0, NDACTION_DETECT_DRIVER,
 		NDACTION_LOAD_DRIVER, NDACTION_INSTANTIATE };
 
-	#define ZMESSAGE_FPLAINN_SET_NEWDEVICE_ACTION	(1)
-	void setNewDeviceAction(newDeviceActionE action, void *privateData);
-	#define ZMESSAGE_FPLAINN_GET_NEWDEVICE_ACTION	(2)
-	void getNewDeviceAction(void *privateData);
+	#define MSGSTREAM_FPLAINN_SET_NEWDEVICE_ACTION_REQ	(1)
+	void setNewDeviceActionReq(newDeviceActionE action, void *privateData);
+	#define MSGSTREAM_FPLAINN_GET_NEWDEVICE_ACTION_REQ	(2)
+	void getNewDeviceActionReq(void *privateData);
 
 	/* FVFS listing functions. These allow the device tree to be treated
 	 * like a VFS with "files" that can be listed.
@@ -155,35 +175,16 @@ public:
 		utf8Char *deviceName, utf8Char *metalanguageName,
 		void *outputMem);
 
+	typedef void (createRootDeviceReqCallF)(error_t);
+	error_t createRootDeviceReq(createRootDeviceReqCallF *callback);
+
 	static void __kdriverEntry(void);
 	static void driverIndexerEntry(void);
 
 public:
-	struct newDeviceActionResponseS
+	struct driverIndexMsgS
 	{
-		zmessage::headerS	header;
-
-		newDeviceActionE	previousAction;
-	};
-
-	struct driverIndexResponseS
-	{
-		zmessage::headerS	header;
-
-		utf8Char		deviceName[
-			DRIVERINDEX_REQUEST_DEVNAME_MAXLEN];
-	};
-
-	struct newDeviceActionRequestS
-	{
-		zmessage::headerS	header;
-
-		newDeviceActionE	action;
-	};
-
-	struct driverIndexRequestS
-	{
-		driverIndexRequestS(utf8Char *name, indexLevelE indexLevel)
+		driverIndexMsgS(utf8Char *name, indexLevelE indexLevel)
 		:
 		indexLevel(indexLevel)
 		{
@@ -192,15 +193,35 @@ public:
 				DRIVERINDEX_REQUEST_DEVNAME_MAXLEN);
 		}
 
-		zmessage::headerS	header;
+		messageStreamC::headerS	header;
+		indexLevelE		indexLevel;
 		utf8Char		deviceName[
 			DRIVERINDEX_REQUEST_DEVNAME_MAXLEN];
-
-		indexLevelE		indexLevel;
 	};
 
-	processId_t		indexerThreadId;
-	ubit16			indexerQueueId;
+	struct newDeviceActionMsgS
+	{
+		messageStreamC::headerS	header;
+		newDeviceActionE	action;
+	};
+
+	struct newDeviceMsgS
+	{
+		messageStreamC::headerS	header;
+		newDeviceActionE	lastCompletedAction;
+		utf8Char		deviceName[
+			DRIVERINDEX_REQUEST_DEVNAME_MAXLEN];
+	};
+
+	processId_t			indexerThreadId;
+	ubit16				indexerQueueId;
+
+	ptrListC<fplainn::driverC>	driverList;
+
+	zudiIndexC			zudiIndexes[3];
+
+private:
+	static syscallbackFuncF initializeReq1;
 };
 
 extern floodplainnC		floodplainn;

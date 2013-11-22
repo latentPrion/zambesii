@@ -115,26 +115,26 @@ error_t processTribC::getExecutableFormat(
 }
 
 static void initializeSpawnProcessCallback(
-	zmessage::headerS *message, threadC *self
+	messageStreamC::headerS *message, threadC *self
 	)
 {
 	message->sourceId = self->getFullId();
 	message->privateData = self->parent->privateData;
-	message->subsystem = ZMESSAGE_SUBSYSTEM_PROCESS;
+	message->subsystem = MSGSTREAM_SUBSYSTEM_PROCESS;
 	message->flags = 0;
 	message->size = sizeof(*message);
 	switch (self->parent->getType())
 	{
 	case processStreamC::DISTRIBUTARY:
-		message->function = ZMESSAGE_PROCESS_SPAWN_DISTRIBUTARY;
+		message->function = MSGSTREAM_PROCESS_SPAWN_DISTRIBUTARY;
 		break;
 
 	case processStreamC::KERNEL_DRIVER:
-		message->function = ZMESSAGE_PROCESS_SPAWN_DRIVER;
+		message->function = MSGSTREAM_PROCESS_SPAWN_DRIVER;
 		break;
 
 	default:
-		message->function = ZMESSAGE_PROCESS_SPAWN_STREAM;
+		message->function = MSGSTREAM_PROCESS_SPAWN_STREAM;
 	};
 }
 
@@ -166,7 +166,7 @@ void processTribC::commonEntry(void *)
 	processStreamC::initializationBlockSizeInfoS	initBlockSizes;
 	processStreamC::initializationBlockS		*initBlock;
 	processStreamC::executableFormatE		executableFormat;
-	zmessage::headerS				*callbackMessage;
+	messageStreamC::headerS				*callbackMessage;
 	uarch_t						initBlockNPages;
 	error_t						err;
 	void						(*jumpAddress)(void);
@@ -193,7 +193,7 @@ void processTribC::commonEntry(void *)
 		self->parent->getType());
 
 	// Allocate the callback message memory.
-	callbackMessage = new zmessage::headerS;
+	callbackMessage = new messageStreamC::headerS;
 	if (callbackMessage == NULL)
 	{
 		printf(FATAL PROCTRIB"commonEntry: process 0x%x:\n",

@@ -30,6 +30,8 @@ void *memcpy(void *dest, void *src, size_t count)
 		panic(ERROR_CRITICAL);
 	};
 
+	if (count <= 0) { return dest; };
+
 	for (; count; count--) {
 		((ubit8 *)dest)[count - 1] = ((ubit8 *)src)[count - 1];
 	};

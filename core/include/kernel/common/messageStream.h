@@ -6,7 +6,6 @@
 	#include <__kclasses/ptrDoubleList.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/stream.h>
-	#include <kernel/common/zmessage.h>
 
 /**	EXPLANATION:
  * Per-thread kernel API callback queue manager that enqueues callbacks for the
@@ -23,13 +22,87 @@
  **/
 #define ZCALLBACK_PULL_FLAGS_DONT_BLOCK		(1<<0)
 
+#define MSGSTREAM_FLAGS_CPU_SOURCE		(1<<0)
+#define MSGSTREAM_FLAGS_CPU_TARGET		(1<<1)
+
+/**	EXPLANATION:
+ * All of these structures must remain POD (plain-old-data) types. They are used
+ * as part of the userspace ABI. In general, meaning of the header members is
+ * as follows:
+ *
+ * sourceId:
+ *	ID of the CPU or thread that made the asynch call-in that prompted this
+ *	asynch round-trip.
+ * targetId (only for zrequest::headerS).
+ *	ID of the target CPU or thread that the callback/response for this
+ *	asynch round-trip must be sent to.
+ * flags: (common subset):
+ *	Z*_FLAGS_CPU_SOURCE: The source object was a CPU and not a thread.
+ *	Z*_FLAGS_CPU_TARGET: The target object is a CPU and not a thread.
+ * privateData:
+ *	Opaque storage (sizeof(void *)) that is uninterpeted by the kernel
+ *	subsystem that processes the request; this will be copied from the
+ *	request object and into the callback object.
+ * subsystem + function:
+ *	Used by the source thread to determine which function call the callback
+ *	is for. Most subsystems will not have more than 0xFFFF functions and
+ *	those that do can overlap their functions into a new subsystem ID, such
+ *	that they use more than one subsystem ID (while remaining a single
+ *	subsystem).
+ *
+ *	Also, since every new subsystem ID implies a separate, fresh queue,
+ *	subsystems which wish to isolate specific groups of functions into their
+ *	own queues can overlap those functions into a new subsystem ID if so
+ *	desired.
+ **/
+
+/**	Values for zrequest::headerS::subsystem & zcallback::headerS::subsystem.
+ * Subsystem IDs are basically implicitly queue IDs (to the kernel; externally
+ * no assumptions should be made about the mapping of subsystem IDs to queues
+ * in the kernel).
+ **/
+// Keep this up to date.
+#define MSGSTREAM_SUBSYSTEM_MAXVAL		(0x8)
+// Actual subsystem values.
+#define MSGSTREAM_SUBSYSTEM_TIMER		(0x0)
+#define MSGSTREAM_SUBSYSTEM_PROCESS		(0x1)
+#define MSGSTREAM_SUBSYSTEM_USER0		(0x2)
+#define MSGSTREAM_SUBSYSTEM_USER1		(0x3)
+#define MSGSTREAM_SUBSYSTEM_USER2		(0x4)
+#define MSGSTREAM_SUBSYSTEM_USER3		(0x5)
+#define MSGSTREAM_SUBSYSTEM_REQ0			(0x6)
+#define MSGSTREAM_SUBSYSTEM_REQ1			(0x7)
+#define MSGSTREAM_SUBSYSTEM_FLOODPLAINN		(0x8)
+
+#define MSGSTREAM_USERQ(num)			(MSGSTREAM_SUBSYSTEM_USER0 + num)
+#define MSGSTREAM_REQQ(num)			(MSGSTREAM_SUBSYSTEM_REQ0 + num)
+
 class taskContextC;
+class taskC;
 
 class messageStreamC
 {
 public:
-	typedef pointerDoubleListC<zmessage::headerS>	messageQueueC;
+	// Common header contained within all messages.
+	struct headerS
+	{
+		processId_t	sourceId, targetId;
+		void		*privateData;
+		error_t		error;
+		ubit16		subsystem, flags;
+		ubit32		function;
+		uarch_t		size;
+	};
 
+	struct iteratorS
+	{
+		headerS		header;
+		ubit8		_padding_[256];
+	};
+
+	typedef pointerDoubleListC<messageStreamC::headerS>	messageQueueC;
+
+public:
 	messageStreamC(taskContextC *parent)
 	:
 	parent(parent)
@@ -39,7 +112,7 @@ public:
 	{
 		error_t		ret;
 
-		for (ubit16 i=0; i<ZMESSAGE_SUBSYSTEM_MAXVAL + 1; i++)
+		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
 		{
 			ret = queues[i].initialize(
 				PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE);
@@ -48,35 +121,42 @@ public:
 		};
 
 		return pendingSubsystems.initialize(
-			ZMESSAGE_SUBSYSTEM_MAXVAL + 1);
+			MSGSTREAM_SUBSYSTEM_MAXVAL + 1);
 	};
 
 	~messageStreamC(void) {};
 
 public:
-	error_t pull(zmessage::iteratorS *callback, ubit32 flags=0);
+	error_t pull(messageStreamC::iteratorS *callback, ubit32 flags=0);
 	error_t pullFrom(
-		ubit16 subsystemQueue, zmessage::iteratorS *callback,
+		ubit16 subsystemQueue, messageStreamC::iteratorS *callback,
 		ubit32 flags=0);
 
-	error_t	enqueue(ubit16 queueId, zmessage::headerS *callback);
+	error_t	enqueue(ubit16 queueId, messageStreamC::headerS *callback);
 
-	// Utility function exported for other subsystems to use.
+	// Utility functions exported for other subsystems to use.
 	static error_t enqueueOnThread(
 		processId_t targetCallbackStream,
-		zmessage::headerS *header);
+		messageStreamC::headerS *header);
+
+	static processId_t determineSourceThreadId(
+		taskC *caller, ubit16 *flags);
+
+	static processId_t determineTargetThreadId(
+		processId_t targetId, processId_t sourceId,
+		uarch_t callerFlags, ubit16 *messageFlags);
 
 private:
 	messageQueueC *getSubsystemQueue(ubit16 subsystemId)
 	{
-		if (subsystemId > ZMESSAGE_SUBSYSTEM_MAXVAL)
+		if (subsystemId > MSGSTREAM_SUBSYSTEM_MAXVAL)
 			{ return NULL; }
 
 		return &queues[subsystemId];
 	}
 
 private:
-	messageQueueC	queues[ZMESSAGE_SUBSYSTEM_MAXVAL + 1];
+	messageQueueC	queues[MSGSTREAM_SUBSYSTEM_MAXVAL + 1];
 
 	/* Bitmap of all subsystem queues which have messages in them. The lock
 	 * on this bitmap is also used as the serializing lock that minimizes
@@ -89,6 +169,56 @@ private:
 	bitmapC				pendingSubsystems;
 	taskContextC			*parent;
 };
+
+typedef void (voidF)(void);
+typedef void (syscallbackFuncF)(messageStreamC::iteratorS *msg, void (*func)());
+typedef void (syscallbackDataF)(messageStreamC::iteratorS *msg, void *data);
+
+class syscallbackC
+{
+public:
+	syscallbackC(syscallbackDataF *syscallback)
+	:
+	func(NULL), data(NULL)
+		{ this->syscallback.dataOverloadedForm = syscallback; }
+
+	syscallbackC(syscallbackFuncF *syscallback, void (*func)())
+	:
+	func(func), data(NULL)
+		{ this->syscallback.funcOverloadedForm = syscallback; }
+
+	syscallbackC(syscallbackDataF *syscallback, void *data)
+	:
+	func(NULL), data(data)
+		{ this->syscallback.dataOverloadedForm = syscallback; }
+
+	void operator ()(messageStreamC::iteratorS *msg)
+	{
+		/* If there is no function to call, just exit. This comparison
+		 * may be unportable because it doesn't also compare the
+		 * funcOverloadedForm member of the union.
+		 */
+		if (syscallback.dataOverloadedForm == NULL) { return; };
+
+		// The order of the conditions is important here.
+		if ((data == NULL && func == NULL) || data != NULL)
+			{ syscallback.dataOverloadedForm(msg, NULL); return; };
+
+		syscallback.funcOverloadedForm(msg, func);
+	}
+
+private:
+	union
+	{
+		syscallbackFuncF	*funcOverloadedForm;
+		syscallbackDataF	*dataOverloadedForm;
+	} syscallback;
+	void		(*func)();
+	void		*data;
+};
+
+class slamCacheC;
+extern slamCacheC	*asyncContextCache;
 
 #endif
 

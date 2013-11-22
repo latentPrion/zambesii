@@ -246,6 +246,8 @@ T *ptrListC<T>::getNextItem(void **handle, ubit32 flags)
 	ptrListNodeS	*tmp = reinterpret_cast<ptrListNodeS *>( *handle );
 	T		*ret=NULL;
 
+	if (handle == NULL) { return NULL; };
+
 	// Don't allow arbitrary kernel memory reads.
 	if (*handle != NULL
 		&& ((ptrListNodeS *)(*handle))->magic != PTRLIST_MAGIC) {

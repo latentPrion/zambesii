@@ -20,6 +20,18 @@
 			ORIENT_QUOTE(__method)".\n"); \
 	}
 
+#define DIE_ON(__ret)					\
+	do { \
+		if ((__ret) != ERROR_SUCCESS) \
+		{ \
+			panic( \
+				__ret, \
+				FATAL"Orientation: " \
+					ORIENT_QUOTE(__func__) \
+					": Asynch caller failed.\n"); \
+		}; \
+	} while(0);
+
 #define ORIENT				"Orientation: "
 
 extern "C" void __korientationInit(ubit32 mbMagic, multibootDataS *mbData);

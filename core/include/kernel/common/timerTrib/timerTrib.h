@@ -11,6 +11,7 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/processId.h>
+	#include <kernel/common/messageStream.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 	#include <kernel/common/timerTrib/timerQueue.h>
 	#include <kernel/common/timerTrib/timerStream.h>

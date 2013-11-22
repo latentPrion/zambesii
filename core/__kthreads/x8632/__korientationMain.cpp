@@ -21,7 +21,7 @@
 
 #include <arch/cpuControl.h>
 
-zudiIndex_deviceDataS		*attribPtr[3], attribs[3];
+zudi::device::attrDataS		*attribPtr[3], attribs[3];
 int oo=0, pp=0, qq=0, rr=0;
 
 #include <commonlibs/libacpi/libacpi.h>
@@ -202,9 +202,18 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 //	dumpSrat();
 
 	/* Initialize the kernel Memory Reservoir (heap) and object cache pool.
+	 * Create the global asyncContext object cache.
 	 **/
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
+	asyncContextCache = cachePool.createCache(sizeof(syscallbackC));
+	if (asyncContextCache == NULL)
+	{
+		printf(FATAL ORIENT"Main: Failed to create asynch context "
+			"object cache. Halting.\n");
+
+		panic(ERROR_UNKNOWN);
+	};
 
 	/* Initialize the CPU Tributary's internal BMPs etc, then initialize the
 	 * BSP CPU's scheduler to co-op level scheduling capability, and
@@ -246,11 +255,12 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
  * kernel is initialized with an emphasis on getting the timers initialized
  * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
  **/
+
+void __korientationMain1(void);
 void __korientationMain(void)
 {
-	error_t			ret;
 	threadC			*self;
-	fplainn::deviceC	*sysbusDev;
+	sarch_t			exitLoop=0;
 
 	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
@@ -258,66 +268,94 @@ void __korientationMain(void)
 	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
 		self->getFullId(), self);
 
-	/* Initialize the VFS roots and Floodplainn. From there, enumerate the
-	 * chipset's first device (sysbus) before moving on.
-	 **/
+	__korientationMain1();
+	for (; !exitLoop;)
+	{
+		messageStreamC::iteratorS	iMessage;
+		syscallbackC		*messageCallback;
+
+		self->getTaskContext()->messageStream.pull(&iMessage);
+		messageCallback = (syscallbackC *)iMessage.header.privateData;
+
+		switch (iMessage.header.subsystem)
+		{
+		default:
+			// Discard message if it has no callback.
+			if (messageCallback == NULL) { break; };
+
+			(*messageCallback)(&iMessage);
+			asyncContextCache->free(messageCallback);
+			break;
+		};
+	};
+
+	printf(NOTICE ORIENT"Main: Exited asynch loop. Dormanting.\n");
+	taskTrib.dormant(self->getFullId());
+}
+
+syscallbackDataF __korientationMain2;
+void __korientationMain1(void)
+{
+	error_t			ret;
+	distributaryProcessC	*dp;
+	syscallbackC		*acxt;
+
+	// Initialize the VFS roots.
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, getFvfs()->initialize(), ret);
 	DO_OR_DIE(vfsTrib, getDvfs()->initialize(), ret);
-	DO_OR_DIE(floodplainn, initialize(), ret);
-	DO_OR_DIE(floodplainn, createDevice(CC"by-id", 0, 0, &sysbusDev), ret);
-	printf(NOTICE"ret is %s.\n", strerror(ret));
 
-	zmessage::iteratorS		iMessage;
-	distributaryProcessC		*dp;
-
+	/* Initialize the Distributary Trib and start up the UDI driver indexer
+	 * dtrib to allow us to search the kernel driver index.
+	 **/
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
+	acxt = new (asyncContextCache->allocate()) syscallbackC(
+		&__korientationMain2);
 
-	ret = processTrib.spawnDistributary(
-		CC"///@d//././udi-driver-indexer//./.", NULL,
-		NUMABANKID_INVALID,
-		0, 0, NULL,
-		&dp);
+	DO_OR_DIE(
+		processTrib, spawnDistributary(
+			CC"///@d//././udi-driver-indexer//./.", NULL,
+			NUMABANKID_INVALID,
+			0, 0, acxt,
+			&dp),
+		ret);
+}
 
-	if (ret != ERROR_SUCCESS) {
-		printf(ERROR"Failed to spawn driver-indexer dtrib; ret is %s(%d).\n", strerror(ret), ret); goto dormant;
-	};
+floodplainnC::initializeReqCallF __korientationMain3;
+void __korientationMain2(messageStreamC::iteratorS *msg, void *)
+{
+	error_t		ret;
 
-	/*ret = processTrib.spawnDriver(
-		CC"by-id/2/1/1", NULL,
-		taskC::ROUND_ROBIN, 0,
-		SPAWNPROC_FLAGS_DORMANT, NULL, (processStreamC **)&kdp);*/
+	DIE_ON(msg->header.error);
+	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
+}
 
-	ret = self->getTaskContext()->messageStream.pull(&iMessage);
-	printf(NOTICE"Ret from spawnDistributary is %s.\n", strerror(iMessage.header.error));
+floodplainnC::createRootDeviceReqCallF __korientationMain4;
+void __korientationMain3(error_t ret)
+{
+	DIE_ON(ret);
 
-	ret = floodplainn.getDevice(CC"by-id/0", &sysbusDev);
-	if (ret != ERROR_SUCCESS) { goto dormant; };
-	sysbusDev->enumeration = attribPtr;
-	sysbusDev->enumeration[0] = &attribs[0];
-	sysbusDev->enumeration[1] = &attribs[1];
-	sysbusDev->enumeration[2] = &attribs[2];
-	sysbusDev->nEnumerationAttribs = 3;
+	/* Start the chipset up.
+	 **/
+	DO_OR_DIE(floodplainn, createRootDeviceReq(&__korientationMain4), ret);
+}
 
-	{
-		strcpy8(CC sysbusDev->enumeration[0]->name, CC"bus_type");
-		sysbusDev->enumeration[0]->type = ZUDI_DEVICE_ATTR_STRING;
-		strcpy8(CC sysbusDev->enumeration[0]->value.string, CC"pci");
-	}
-	{
-		strcpy8(CC sysbusDev->enumeration[1]->name, CC"pci_vendor_id");
-		sysbusDev->enumeration[1]->type = ZUDI_DEVICE_ATTR_UBIT32;
-		sysbusDev->enumeration[1]->value.unsigned32 = 0x1234;
-	}
-	{
-		strcpy8(CC sysbusDev->enumeration[2]->name, CC"pci_device_id");
-		sysbusDev->enumeration[2]->type = ZUDI_DEVICE_ATTR_UBIT32;
-		sysbusDev->enumeration[2]->value.unsigned32 = 0x5678;
-	}
+void __korientationMain4(error_t ret)
+{
+	threadC		*self;
+
+	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask() );
+
+	DIE_ON(ret);
 
 dormant:
+	fplainn::deviceC		*sysbusDev;
+	messageStreamC::iteratorS		iMessage;
+
+	floodplainn.getDevice(CC"by-id/0", &sysbusDev);
 	printf(NOTICE ORIENT"detectDriver: ret %s.\n",
-		strerror(floodplainn.detectDriver(CC"by-id/0", floodplainnC::CHIPSET_LIST, 0, NULL, 0)));
+		strerror(floodplainn.detectDriverReq(CC"by-id/0", floodplainnC::INDEX_KERNEL, 0, NULL, 0)));
 
 	ret = self->getTaskContext()->messageStream.pull(&iMessage);
 	printf(NOTICE ORIENT"ret from detectDriver is %s. Dev's driverFullName is %s.\n",
@@ -369,13 +407,13 @@ dormant:
 
 	for (ubit8 i=0; i<((waitForTimeout) ? 0xFF : 3); i++)
 	{
-		zmessage::iteratorS	iMessage;
+		messageStreamC::iteratorS	iMessage;
 
 		self->getTaskContext()->messageStream.pull(&iMessage);
 
 		switch (iMessage.header.subsystem)
 		{
-		case ZMESSAGE_SUBSYSTEM_PROCESS:
+		case MSGSTREAM_SUBSYSTEM_PROCESS:
 			printf(NOTICE ORIENT"pulled %dth callback: err %d. "
 				"New process' ID: 0x%x.\n",
 				iMessage.header.privateData,
@@ -384,7 +422,7 @@ dormant:
 
 			break;
 
-		case ZMESSAGE_SUBSYSTEM_TIMER:
+		case MSGSTREAM_SUBSYSTEM_TIMER:
 			timerStreamC::eventS	*timerEvent;
 
 			timerEvent = (timerStreamC::eventS *)&iMessage;

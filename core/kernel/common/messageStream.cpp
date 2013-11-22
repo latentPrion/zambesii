@@ -6,25 +6,27 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-processId_t zmessage::determineSourceThreadId(taskC *caller, ubit16 *flags)
+processId_t messageStreamC::determineSourceThreadId(
+	taskC *caller, ubit16 *flags
+	)
 {
 	if (caller->getType() == task::PER_CPU)
 	{
-		__KFLAG_SET(*flags, ZMESSAGE_FLAGS_CPU_SOURCE);
+		__KFLAG_SET(*flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 		return cpuTrib.getCurrentCpuStream()->cpuId;
 	}
 	else { return ((threadC *)caller)->getFullId(); };
 }
 
-processId_t zmessage::determineTargetThreadId(
+processId_t messageStreamC::determineTargetThreadId(
 	processId_t targetId, processId_t sourceId,
 	uarch_t callerFlags, ubit16 *messageFlags
 	)
 {
 	// If target thread is a CPU:
-	if (__KFLAG_TEST(callerFlags, ZMESSAGE_FLAGS_CPU_TARGET))
+	if (__KFLAG_TEST(callerFlags, MSGSTREAM_FLAGS_CPU_TARGET))
 	{
-		__KFLAG_SET(*messageFlags, ZMESSAGE_FLAGS_CPU_TARGET);
+		__KFLAG_SET(*messageFlags, MSGSTREAM_FLAGS_CPU_TARGET);
 		return targetId;
 	};
 
@@ -33,12 +35,12 @@ processId_t zmessage::determineTargetThreadId(
 }
 
 error_t messageStreamC::enqueueOnThread(
-	processId_t targetStreamId, zmessage::headerS *header
+	processId_t targetStreamId, messageStreamC::headerS *header
 	)
 {
 	messageStreamC	*targetStream;
 
-	if (__KFLAG_TEST(header->flags, ZMESSAGE_FLAGS_CPU_TARGET))
+	if (__KFLAG_TEST(header->flags, MSGSTREAM_FLAGS_CPU_TARGET))
 	{
 		cpuStreamC		*cs;
 
@@ -75,14 +77,14 @@ error_t messageStreamC::enqueueOnThread(
 }
 
 error_t messageStreamC::pullFrom(
-	ubit16 subsystemQueue, zmessage::iteratorS *callback,
+	ubit16 subsystemQueue, messageStreamC::iteratorS *callback,
 	ubit32 flags
 	)
 {
-	zmessage::headerS	*tmp;
+	messageStreamC::headerS	*tmp;
 
 	if (callback == NULL) { return ERROR_INVALID_ARG; };
-	if (subsystemQueue > ZMESSAGE_SUBSYSTEM_MAXVAL)
+	if (subsystemQueue > MSGSTREAM_SUBSYSTEM_MAXVAL)
 		{ return ERROR_INVALID_ARG_VAL; };
 
 	for (;;)
@@ -118,10 +120,10 @@ error_t messageStreamC::pullFrom(
 }
 
 error_t messageStreamC::pull(
-	zmessage::iteratorS *callback, ubit32 flags
+	messageStreamC::iteratorS *callback, ubit32 flags
 	)
 {
-	zmessage::headerS	*tmp;
+	messageStreamC::headerS	*tmp;
 
 	if (callback == NULL) { return ERROR_INVALID_ARG; };
 
@@ -129,7 +131,7 @@ error_t messageStreamC::pull(
 	{
 		pendingSubsystems.lock();
 
-		for (ubit16 i=0; i<ZMESSAGE_SUBSYSTEM_MAXVAL + 1; i++)
+		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
 		{
 			if (pendingSubsystems.test(i))
 			{
@@ -159,12 +161,12 @@ error_t messageStreamC::pull(
 	};
 }
 
-error_t	messageStreamC::enqueue(ubit16 queueId, zmessage::headerS *callback)
+error_t	messageStreamC::enqueue(ubit16 queueId, messageStreamC::headerS *callback)
 {
 	error_t		ret;
 
 	if (callback == NULL) { return ERROR_INVALID_ARG; };
-	if (queueId > ZMESSAGE_SUBSYSTEM_MAXVAL) {
+	if (queueId > MSGSTREAM_SUBSYSTEM_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 
