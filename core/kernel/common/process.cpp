@@ -105,6 +105,8 @@ error_t processStreamC::initialize(
 		if (ret != ERROR_SUCCESS) { return ret; };
 		ret = floodplainnStream.initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
+		ret = zasyncStream.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
 	};
 
 	return ERROR_SUCCESS;

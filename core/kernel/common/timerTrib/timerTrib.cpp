@@ -227,7 +227,7 @@ error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
 	return eventProcessor.controlQueue.addItem(msg);
 }
 
-error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *request)
+error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::timerMsgS *request)
 {
 	error_t		ret;
 	timerQueueC	*suboptimal=NULL;
@@ -279,7 +279,7 @@ error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::requestS *reques
 }
 
 // Called by Timer Streams to cancel Timer Request objects from Qs.
-sarch_t timerTribC::cancelTimerQueueRequestObject(timerStreamC::requestS *request)
+sarch_t timerTribC::cancelTimerQueueRequestObject(timerStreamC::timerMsgS *request)
 {
 	sarch_t		ret;
 	timerQueueC	*targetQueue;

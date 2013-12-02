@@ -101,7 +101,7 @@ void timerQueueC::disable(void)
 	else { device->disable(); };
 }
 
-error_t timerQueueC::insert(timerStreamC::requestS *request)
+error_t timerQueueC::insert(timerStreamC::timerMsgS *request)
 {
 	error_t		ret;
 
@@ -117,7 +117,7 @@ error_t timerQueueC::insert(timerStreamC::requestS *request)
 	return ERROR_SUCCESS;
 }
 
-sarch_t timerQueueC::cancel(timerStreamC::requestS *request)
+sarch_t timerQueueC::cancel(timerStreamC::timerMsgS *request)
 {
 	/**	FIXME:
 	 * This function is intended to return 1 if the item being canceled was
@@ -134,12 +134,12 @@ sarch_t timerQueueC::cancel(timerStreamC::requestS *request)
 	return 1;
 }
 
-static sarch_t isPerCpuCreator(timerStreamC::requestS *request)
+static sarch_t isPerCpuCreator(timerStreamC::timerMsgS *request)
 {
 	return __KFLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 }
 
-static processStreamC *getCreatorProcess(timerStreamC::requestS *request)
+static processStreamC *getCreatorProcess(timerStreamC::timerMsgS *request)
 {
 	// If creator was a per-cpu thread, the creator process is the kernel.
 	if (isPerCpuCreator(request)) {
@@ -150,12 +150,12 @@ static processStreamC *getCreatorProcess(timerStreamC::requestS *request)
 	return processTrib.getStream(request->header.sourceId);
 }
 
-inline static sarch_t isPerCpuTarget(timerStreamC::requestS *request)
+inline static sarch_t isPerCpuTarget(timerStreamC::timerMsgS *request)
 {
 	return __KFLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
-static processStreamC *getTargetProcess(timerStreamC::requestS *request)
+static processStreamC *getTargetProcess(timerStreamC::timerMsgS *request)
 {
 	if (isPerCpuTarget(request)) {
 		return processTrib.__kgetStream();
@@ -166,7 +166,7 @@ static processStreamC *getTargetProcess(timerStreamC::requestS *request)
 
 void timerQueueC::tick(zkcmTimerEventS *event)
 {
-	timerStreamC::requestS	*request;
+	timerStreamC::timerMsgS	*request;
 	void			*targetObject=NULL;
 	processStreamC		*targetProcess, *creatorProcess;
 	sarch_t			requestQueueWasEmpty=1;

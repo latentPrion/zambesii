@@ -34,7 +34,7 @@ ubit16 getShiftFor(uarch_t num)
 static const utf8Char *const strErrorTable[] =
 {
 	CC"SUCCESS", CC"GENERAL", CC"UNKNOWN", CC"CRITICAL", CC"FATAL",
-		CC"", CC"", CC"", CC"", CC"",
+		CC"DUPLICATE", CC"", CC"", CC"", CC"",
 
 	CC"INVALID_ARG", CC"INVALID_ARG_VAL", CC"INVALID_OPERATION",
 		CC"INVALID_RESOUCE_FORMAT", CC"INVALID_FORMAT",

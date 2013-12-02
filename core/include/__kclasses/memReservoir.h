@@ -37,17 +37,13 @@ public:
 	void *allocate(uarch_t nBytes, uarch_t flags=0);
 	// Allocates from the bog with the handle passed.
 	void *allocate(void *bogHandle, uarch_t nBytes, uarch_t flags=0);
+	void *reallocate(void *old, uarch_t nBytes, uarch_t flags=0);
 	void free(void *mem);
 	void free(void *bogHandle, void *mem);
 
 	void dump(void);
 
 private:
-	struct allocHeaderS
-	{
-		uarch_t		size;
-		uarch_t		magic;
-	};
 	struct bogStateS
 	{
 		memoryBogC	**ptrs;

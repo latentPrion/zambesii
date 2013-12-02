@@ -6,6 +6,7 @@
 	#define ERROR_UNKNOWN				(-2)
 	#define ERROR_CRITICAL				(-3)
 	#define ERROR_FATAL				(-4)
+	#define ERROR_DUPLICATE				(-5)
 
 	#define ERROR_INVALID_ARG			(-10)
 	#define ERROR_INVALID_ARG_VAL			(-11)

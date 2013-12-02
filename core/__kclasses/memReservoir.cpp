@@ -147,8 +147,8 @@ void memReservoirC::free(void *_mem)
 		return;
 	};
 
-	mem = reinterpret_cast<reservoirHeaderS *>(
-		reinterpret_cast<uarch_t>( _mem ) - sizeof(reservoirHeaderS) );
+	mem = reinterpret_cast<reservoirHeaderS *>( _mem );
+	mem--;
 
 	if ((mem->magic >> 4) != (RESERVOIR_MAGIC >> 4))
 	{

@@ -184,14 +184,12 @@ public:
 public:
 	struct driverIndexMsgS
 	{
-		driverIndexMsgS(utf8Char *name, indexLevelE indexLevel)
+		driverIndexMsgS(
+			processId_t targetPid, ubit16 subsystem, ubit16 function,
+			uarch_t size, uarch_t flags, void *privateData)
 		:
-		indexLevel(indexLevel)
-		{
-			strncpy8(
-				deviceName, name,
-				DRIVERINDEX_REQUEST_DEVNAME_MAXLEN);
-		}
+		header(targetPid, subsystem, function, size, flags, privateData)
+		{}
 
 		messageStreamC::headerS	header;
 		indexLevelE		indexLevel;
@@ -201,12 +199,26 @@ public:
 
 	struct newDeviceActionMsgS
 	{
+		newDeviceActionMsgS(
+			processId_t targetPid, ubit16 subsystem, ubit16 function,
+			uarch_t size, uarch_t flags, void *privateData)
+		:
+		header(targetPid, subsystem, function, size, flags, privateData)
+		{}
+
 		messageStreamC::headerS	header;
 		newDeviceActionE	action;
 	};
 
 	struct newDeviceMsgS
 	{
+		newDeviceMsgS(
+			processId_t targetPid, ubit16 subsystem, ubit16 function,
+			uarch_t size, uarch_t flags, void *privateData)
+		:
+		header(targetPid, subsystem, function, size, flags, privateData)
+		{}
+
 		messageStreamC::headerS	header;
 		newDeviceActionE	lastCompletedAction;
 		utf8Char		deviceName[

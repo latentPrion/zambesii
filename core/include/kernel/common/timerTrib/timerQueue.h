@@ -65,8 +65,8 @@ private:
 	sarch_t isLatched(void) { return device != NULL; };
 	zkcmTimerDeviceC *getDevice(void) { return device; };
 
-	error_t insert(timerStreamC::requestS *obj);
-	sarch_t cancel(timerStreamC::requestS *obj);
+	error_t insert(timerStreamC::timerMsgS *obj);
+	sarch_t cancel(timerStreamC::timerMsgS *obj);
 
 	ubit32 getCurrentPeriod(void) { return currentPeriod; };
 	status_t setCurrentPeriod(ubit32 p) { currentPeriod = p; return 0; };
@@ -158,7 +158,7 @@ private:
 	ubit32		currentPeriod, nativePeriod;
 
 	// The actual internal queue instance for timer request objects.
-	sortedPointerDoubleListC<timerStreamC::requestS, timestampS>
+	sortedPointerDoubleListC<timerStreamC::timerMsgS, timestampS>
 		requestQueue;
 
 	// Used to prevent a series of race conditions.

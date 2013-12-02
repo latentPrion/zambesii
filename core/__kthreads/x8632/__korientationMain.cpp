@@ -279,6 +279,13 @@ void __korientationMain(void)
 
 		switch (iMessage.header.subsystem)
 		{
+		case MSGSTREAM_SUBSYSTEM_ZASYNC:
+			printf(NOTICE ORIENT"Got ZASYNC subsys message. func "
+				"is %d.\n",
+				iMessage.header.function);
+
+			break;
+
 		default:
 			// Discard message if it has no callback.
 			if (messageCallback == NULL) { break; };
@@ -311,6 +318,11 @@ void __korientationMain1(void)
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
 	acxt = new (asyncContextCache->allocate()) syscallbackC(
 		&__korientationMain2);
+
+processTrib.__kgetStream()->zasyncStream.listen(((threadC *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask())->getFullId());
+ret = processTrib.__kgetStream()->zasyncStream.connect(((threadC *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask())->getFullId(), 0);
+printf(NOTICE"ret is %s.\n", strerror(ret));
+return;
 
 	DO_OR_DIE(
 		processTrib, spawnDistributary(
@@ -397,7 +409,7 @@ dormant:
 
 	sarch_t		waitForTimeout=1;
 	ret = self->parent->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 3, 0), NULL, NULL, 0);
+		timestampS(0, 3, 0), 0, 0, NULL);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -423,13 +435,13 @@ dormant:
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_TIMER:
-			timerStreamC::eventS	*timerEvent;
+			timerStreamC::timerMsgS	*timerEvent;
 
-			timerEvent = (timerStreamC::eventS *)&iMessage;
+			timerEvent = (timerStreamC::timerMsgS *)&iMessage;
 			printf(NOTICE ORIENT"pulled timer timeout. "
 				"Actual expiration: %d:%dns.\n",
-				timerEvent->actualStamp.time.seconds,
-				timerEvent->actualStamp.time.nseconds);
+				timerEvent->actualExpirationStamp.time.seconds,
+				timerEvent->actualExpirationStamp.time.nseconds);
 
 			printf(NOTICE ORIENT"Kernel should meet scheduler now, and be halted.\n");
 			break;

@@ -38,20 +38,20 @@ public:
 public:
 	enum requestTypeE { PERIODIC=1, ONESHOT };
 	// Used to represent timer service requests.
-	struct requestS
+	struct timerMsgS
 	{
-		messageStreamC::headerS	header;
-		requestTypeE		type;
-		timestampS		expirationStamp, placementStamp;
-		timerQueueC		*currentQueue;
-	};
+		timerMsgS(
+			processId_t targetPid, ubit16 subsystem, ubit16 function,
+			uarch_t size, uarch_t flags, void *privateData)
+		:
+		header(targetPid, subsystem, function, size, flags, privateData)
+		{}
 
-	// Used to represent expired timer request events.
-	struct eventS
-	{
 		messageStreamC::headerS	header;
 		requestTypeE		type;
-		timestampS		dueStamp, actualStamp;
+		timestampS		placementStamp, expirationStamp,
+					actualExpirationStamp;
+		timerQueueC		*currentQueue;
 	};
 
 	// sarch_t nanosleep(ubit32 delay);
@@ -60,21 +60,21 @@ public:
 	// sarch_t sleep(timeS delay);
 
 	error_t createAbsoluteOneshotEvent(
-		timestampS stamp, void *wakeTarget,
-		void *privateData, ubit32 flags)
+		timestampS stamp, processId_t targetPid,
+		ubit32 flags, void *privateData)
 	{
 		return createOneshotEvent(
 			stamp, TIMERSTREAM_CREATEONESHOT_TYPE_ABSOLUTE,
-			wakeTarget, privateData, flags);
+			targetPid, flags, privateData);
 	}
 
 	error_t createRelativeOneshotEvent(
-		timestampS stamp, void *wakeTarget,
-		void *privateData, ubit32 flags)
+		timestampS stamp, processId_t targetPid,
+		ubit32 flags, void *privateData)
 	{
 		return createOneshotEvent(
 			stamp, TIMERSTREAM_CREATEONESHOT_TYPE_RELATIVE,
-			wakeTarget, privateData, flags);
+			targetPid, flags, privateData);
 	}
 
 	/* wakeTarget:
@@ -101,17 +101,16 @@ public:
 	 **/
 	#define MSGSTREAM_TIMER_CREATE_ONESHOT_EVENT	(0)
 	error_t createOneshotEvent(
-		timestampS stamp, ubit8 type, void *wakeTarget,
-		void *privateData, ubit32 flags);
+		timestampS stamp, ubit8 type, processId_t targetPid,
+		ubit32 flags, void *privateData);
 
 	#define MSGSTREAM_TIMER_CREATE_PERIODIC_EVENT	(1)
 	error_t createPeriodicEvent(
-		timeS interval,
-		void *wakeTarget,
-		void *privateData, ubit32 flags);
+		timeS interval, processId_t targetPid,
+		ubit32 flags, void *privateData);
 
 	// Pulls an event from the expired events list.
-	error_t pullEvent(ubit32 flags, eventS *ret);
+	error_t pullEvent(ubit32 flags, timerMsgS *ret);
 
 private:
 	/* Used by the Timer Tributary's dequeueing thread to lock the stream
@@ -127,13 +126,13 @@ private:
 	 * after queueing the new callback.
 	 **/
 	void *timerRequestTimeoutNotification(
-		requestS *request, timestampS *eventStamp);
+		timerMsgS *request, timestampS *eventStamp);
 
 	// Causes this stream to insert its next request into the timer queues.
 	void timerRequestTimeoutNotification(void);
 
 private:
-	sortedPointerDoubleListC<requestS, timestampS>	requests;
+	sortedPointerDoubleListC<timerMsgS, timestampS>	requests;
 	/* Used to prevent race conditions while requests from this process are
 	 * being expired.
 	 **/

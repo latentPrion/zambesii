@@ -17,11 +17,11 @@ error_t timerStreamC::initialize(void)
 
 error_t timerStreamC::createOneshotEvent(
 	timestampS stamp, ubit8 type,
-	void *wakeTarget,
-	void *privateData, ubit32 flags
+	processId_t targetPid,
+	uarch_t flags, void *privateData
 	)
 {
-	requestS	*request, *tmp;
+	timerMsgS	*request, *tmp;
 	error_t		ret;
 	cpuStreamC	*currCpu;
 
@@ -31,52 +31,19 @@ error_t timerStreamC::createOneshotEvent(
 
 	currCpu = cpuTrib.getCurrentCpuStream();
 
-	request = new requestS;
+	request = new timerMsgS(
+		targetPid,
+		MSGSTREAM_SUBSYSTEM_TIMER, MSGSTREAM_TIMER_CREATE_ONESHOT_EVENT,
+		sizeof(*request), flags, privateData);
+
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	request->type = ONESHOT;
-	request->header.privateData = privateData;
-	request->header.flags = 0;
-	request->header.subsystem = MSGSTREAM_SUBSYSTEM_TIMER;
-	request->header.function = MSGSTREAM_TIMER_CREATE_ONESHOT_EVENT;
-
-	// Set the creator ID.
-	if (currCpu->taskStream.getCurrentTask()->getType() == task::PER_CPU)
-	{
-		request->header.sourceId = (processId_t)currCpu->cpuId;
-		__KFLAG_SET(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
-	}
-	else
-	{
-		threadC		*tmp;
-
-		tmp = (threadC *)currCpu->taskStream.getCurrentTask();
-		request->header.sourceId = tmp->getFullId();
-	};
 
 	/*	FIXME:
 	 * Security check required here, for when the event is set to wake a
 	 * thread in a foreign process.
 	 **/
-	if (__KFLAG_TEST(flags, MSGSTREAM_FLAGS_CPU_TARGET))
-	{
-		cpuStreamC	*tmp;
-
-		tmp = (wakeTarget == NULL)
-			? currCpu : (cpuStreamC *)wakeTarget;
-
-		request->header.targetId = (processId_t)tmp->cpuId;
-	}
-	else
-	{
-		threadC		*tmp;
-
-		tmp = (wakeTarget == NULL)
-			? (threadC *)currCpu->taskStream.getCurrentTask()
-			: (threadC *)wakeTarget;
-
-		request->header.targetId = tmp->getFullId();
-	};
 
 	timerTrib.getCurrentDateTime(&request->placementStamp);
 
@@ -93,9 +60,12 @@ error_t timerStreamC::createOneshotEvent(
 	/**	NOTE:
 	 * It might have been expedient to do an error check here for the case
 	 * where a request asks for an expiry time that expires in the past and
-	 * reject such a request, but it is probably very possible, and probably
+	 * reject such a request, but it is probably very normal, and probably
 	 * very common for this to happen in applications, so that might be
 	 * unreasonable.
+	 *
+	 * In the current implementation, such a request would just expire as
+	 * soon as the next timer event fires.
 	 **/
 
 	lockRequestQueue();
@@ -130,7 +100,7 @@ error_t timerStreamC::createOneshotEvent(
 }
 
 error_t timerStreamC::pullEvent(
-	ubit32 flags, eventS *event
+	ubit32 flags, timerMsgS *event
 	)
 {
 	error_t			ret;
@@ -155,21 +125,16 @@ error_t timerStreamC::pullEvent(
 	return ERROR_SUCCESS;
 }
 
-static sarch_t isPerCpuCreator(timerStreamC::requestS *request)
-{
-	return __KFLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
-}
-
-static inline sarch_t isPerCpuTarget(timerStreamC::requestS *request)
+static inline sarch_t isPerCpuTarget(timerStreamC::timerMsgS *request)
 {
 	return __KFLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
 void *timerStreamC::timerRequestTimeoutNotification(
-	requestS *request, timestampS *eventStamp
+	timerMsgS *request, timestampS *timerMsgStamp
 	)
 {
-	eventS		*event;
+	timerMsgS	*event;
 	error_t		ret;
 	taskContextC	*taskContext;
 
@@ -203,7 +168,7 @@ void *timerStreamC::timerRequestTimeoutNotification(
 		taskContext = t->getTaskContext();
 	};
 
-	event = new eventS;
+	event = new timerMsgS(*request);
 	if (event == NULL)
 	{
 		printf(ERROR TIMERSTREAM"%d: Failed to allocate event for "
@@ -216,23 +181,7 @@ void *timerStreamC::timerRequestTimeoutNotification(
 			: (void *)taskContext->parent.thread;
 	};
 
-	event->type = request->type;
-	event->dueStamp = request->expirationStamp;
-	event->actualStamp = *eventStamp;
-	event->header.sourceId = request->header.sourceId;
-	event->header.privateData = request->header.privateData;
-	event->header.subsystem = request->header.subsystem;
-	event->header.function = request->header.function;
-	event->header.flags = 0;
-	event->header.size = sizeof(*event);
-
-	if (isPerCpuCreator(request)) {
-		__KFLAG_SET(event->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
-	};
-
-	if (isPerCpuTarget(request)) {
-		__KFLAG_SET(event->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
-	};
+	event->actualExpirationStamp = *timerMsgStamp;
 
 	// Queue event.
 	ret = taskContext->messageStream.enqueue(
@@ -256,7 +205,7 @@ void *timerStreamC::timerRequestTimeoutNotification(
 
 void timerStreamC::timerRequestTimeoutNotification(void)
 {
-	requestS	*nextRequest;
+	timerMsgS	*nextRequest;
 
 	/* Lock the request queue against insertions from the process to prevent
 	 * a race condition. If a process is trying to insert a request into its

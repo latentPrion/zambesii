@@ -231,8 +231,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
 	request = (floodplainnC::driverIndexMsgS *)gmsg;
-	response = new floodplainnC::driverIndexMsgS(
-		request->deviceName, request->indexLevel);
+	response = new floodplainnC::driverIndexMsgS(*request);
 
 	if (response == NULL)
 	{
@@ -243,7 +242,6 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 		return;
 	};
 
-	*response = *request;
 	response->header.subsystem = MSGSTREAM_SUBSYSTEM_FLOODPLAINN;
 
 	devlineName = new utf8Char[ZUDI_MESSAGE_MAXLEN];
@@ -497,7 +495,7 @@ static void fplainnIndexer_newDeviceActionReq(messageStreamC::iteratorS *gmsg)
 
 	request = (floodplainnC::newDeviceActionMsgS *)gmsg;
 
-	response = new floodplainnC::newDeviceActionMsgS;
+	response = new floodplainnC::newDeviceActionMsgS(*request);
 	if (response == NULL)
 	{
 		printf(ERROR FPLAINNIDX"newDeviceActionReq: "
@@ -508,7 +506,6 @@ static void fplainnIndexer_newDeviceActionReq(messageStreamC::iteratorS *gmsg)
 		return;
 	};
 
-	*response = *request;
 	response->header.subsystem = MSGSTREAM_SUBSYSTEM_FLOODPLAINN;
 	response->action = ::newDeviceAction;
 
@@ -656,7 +653,7 @@ static void fplainnIndexer_newDeviceInd(messageStreamC::iteratorS *gmsg)
 	 **/
 	request = (floodplainnC::newDeviceMsgS *)gmsg;
 
-	originContext = new floodplainnC::newDeviceMsgS;
+	originContext = new floodplainnC::newDeviceMsgS(*request);
 	if (originContext == NULL)
 	{
 		printf(ERROR FPLAINNIDX"newDeviceInd: "
@@ -667,8 +664,6 @@ static void fplainnIndexer_newDeviceInd(messageStreamC::iteratorS *gmsg)
 		return;
 	};
 
-	// Save the original request.
-	*originContext = *request;
 	// Set the last completed action to default of "nothing".
 	originContext->lastCompletedAction = floodplainnC::NDACTION_NOTHING;
 	originContext->header.subsystem = MSGSTREAM_SUBSYSTEM_FLOODPLAINN;
@@ -749,7 +744,7 @@ static void handleUnknownRequest(messageStreamC::headerS *request)
 	// Just send a response with an error value.
 	messageStreamC::headerS	*response;
 
-	response = new messageStreamC::headerS;
+	response = new messageStreamC::headerS(*request);
 	if (response == NULL)
 	{
 		printf(ERROR FPLAINNIDX"HandleUnknownRequest: "
@@ -760,7 +755,6 @@ static void handleUnknownRequest(messageStreamC::headerS *request)
 		return;
 	};
 
-	*response = *request;
 	response->subsystem = MSGSTREAM_SUBSYSTEM_FLOODPLAINN;
 	response->error = ERROR_UNKNOWN;
 	messageStreamC::enqueueOnThread(response->targetId, response);

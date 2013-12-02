@@ -6,6 +6,21 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
+messageStreamC::headerS::headerS(
+	processId_t targetPid, ubit16 subsystem, ubit16 function,
+	uarch_t size, uarch_t flags, void *privateData)
+:
+privateData(privateData),
+subsystem(subsystem), flags(0), function(function), size(size)
+{
+	sourceId = determineSourceThreadId(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask(),
+		&this->flags);
+
+	targetId = determineTargetThreadId(
+		targetPid, sourceId, flags, &this->flags);
+}
+
 processId_t messageStreamC::determineSourceThreadId(
 	taskC *caller, ubit16 *flags
 	)

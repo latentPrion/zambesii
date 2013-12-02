@@ -122,9 +122,9 @@ private:
 	sarch_t uninstallClockRoutine(void);
 
 	// Called by Timer Streams to add new Timer Request objects to timer Qs.
-	error_t insertTimerQueueRequestObject(timerStreamC::requestS *request);
+	error_t insertTimerQueueRequestObject(timerStreamC::timerMsgS *request);
 	// Called by Timer Streams to cancel Timer Request objects from Qs.
-	sarch_t cancelTimerQueueRequestObject(timerStreamC::requestS *request);
+	sarch_t cancelTimerQueueRequestObject(timerStreamC::timerMsgS *request);
 
 private:
 	// The watchdog timer for the chipset, if it exists.

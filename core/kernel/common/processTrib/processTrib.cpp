@@ -114,27 +114,16 @@ error_t processTribC::getExecutableFormat(
 	return ERROR_UNSUPPORTED;
 }
 
-static void initializeSpawnProcessCallback(
-	messageStreamC::headerS *message, threadC *self
-	)
+static ubit32 getCallbackFunctionNo(threadC *self)
 {
-	message->sourceId = self->getFullId();
-	message->privateData = self->parent->privateData;
-	message->subsystem = MSGSTREAM_SUBSYSTEM_PROCESS;
-	message->flags = 0;
-	message->size = sizeof(*message);
 	switch (self->parent->getType())
 	{
 	case processStreamC::DISTRIBUTARY:
-		message->function = MSGSTREAM_PROCESS_SPAWN_DISTRIBUTARY;
-		break;
-
+		return MSGSTREAM_PROCESS_SPAWN_DISTRIBUTARY;
 	case processStreamC::KERNEL_DRIVER:
-		message->function = MSGSTREAM_PROCESS_SPAWN_DRIVER;
-		break;
-
+		return MSGSTREAM_PROCESS_SPAWN_DRIVER;
 	default:
-		message->function = MSGSTREAM_PROCESS_SPAWN_STREAM;
+		return MSGSTREAM_PROCESS_SPAWN_STREAM;
 	};
 }
 
@@ -193,7 +182,11 @@ void processTribC::commonEntry(void *)
 		self->parent->getType());
 
 	// Allocate the callback message memory.
-	callbackMessage = new messageStreamC::headerS;
+	callbackMessage = new messageStreamC::headerS(
+		self->parent->parentThreadId,
+		MSGSTREAM_SUBSYSTEM_PROCESS, getCallbackFunctionNo(self),
+		sizeof(*callbackMessage), 0, self->parent->privateData);
+
 	if (callbackMessage == NULL)
 	{
 		printf(FATAL PROCTRIB"commonEntry: process 0x%x:\n",
@@ -201,8 +194,6 @@ void processTribC::commonEntry(void *)
 
 		panic(CC"\tFailed to allocate callback message.\n");
 	};
-
-	initializeSpawnProcessCallback(callbackMessage, self);
 
 	self->parent->getInitializationBlockSizeInfo(&initBlockSizes);
 	initBlockNPages = PAGING_BYTES_TO_PAGES(

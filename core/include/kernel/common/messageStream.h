@@ -62,7 +62,7 @@
  * in the kernel).
  **/
 // Keep this up to date.
-#define MSGSTREAM_SUBSYSTEM_MAXVAL		(0x8)
+#define MSGSTREAM_SUBSYSTEM_MAXVAL		(0x9)
 // Actual subsystem values.
 #define MSGSTREAM_SUBSYSTEM_TIMER		(0x0)
 #define MSGSTREAM_SUBSYSTEM_PROCESS		(0x1)
@@ -73,6 +73,7 @@
 #define MSGSTREAM_SUBSYSTEM_REQ0		(0x6)
 #define MSGSTREAM_SUBSYSTEM_REQ1		(0x7)
 #define MSGSTREAM_SUBSYSTEM_FLOODPLAINN		(0x8)
+#define MSGSTREAM_SUBSYSTEM_ZASYNC		(0x9)
 
 #define MSGSTREAM_USERQ(num)			(MSGSTREAM_SUBSYSTEM_USER0 + num)
 #define MSGSTREAM_REQQ(num)			(MSGSTREAM_SUBSYSTEM_REQ0 + num)
@@ -86,6 +87,11 @@ public:
 	// Common header contained within all messages.
 	struct headerS
 	{
+		headerS(
+			processId_t targetPid,
+			ubit16 subsystem, ubit16 function,
+	 		uarch_t size, uarch_t flags, void *privateData);
+
 		processId_t	sourceId, targetId;
 		void		*privateData;
 		error_t		error;
@@ -96,6 +102,11 @@ public:
 
 	struct iteratorS
 	{
+		iteratorS(void)
+		:
+		header(0, 0, 0, 0, 0, NULL)
+		{}
+
 		headerS		header;
 		ubit8		_padding_[256];
 	};

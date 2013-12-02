@@ -193,24 +193,21 @@ error_t floodplainnC::detectDriverReq(
 	driverIndexMsgS			*request;
 	taskC				*currTask;
 
+	if (strnlen8(devicePath, DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
+		>= DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
+		{ return ERROR_LIMIT_OVERFLOWED; };
+
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
 	// Allocate and queue the new request.
-	request = new driverIndexMsgS(devicePath, indexLevel);
+	request = new driverIndexMsgS(
+		targetId, indexerQueueId, MSGSTREAM_FPLAINN_DETECTDRIVER_REQ,
+		sizeof(*request), flags, privateData);
+
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	request->header.flags = 0;
-	request->header.sourceId = messageStreamC::determineSourceThreadId(
-		currTask, &request->header.flags);
-
-	request->header.targetId = messageStreamC::determineTargetThreadId(
-		targetId, request->header.sourceId,
-		flags, &request->header.flags);
-
-	request->header.privateData = privateData;
-	request->header.size = sizeof(*request);
-	request->header.subsystem = indexerQueueId;
-	request->header.function = MSGSTREAM_FPLAINN_DETECTDRIVER_REQ;
+	strcpy8(request->deviceName, devicePath);
+	request->indexLevel = indexLevel;
 
 	return messageStreamC::enqueueOnThread(
 		indexerThreadId, &request->header);
@@ -221,25 +218,21 @@ error_t floodplainnC::loadDriverReq(utf8Char *devicePath, void *privateData)
 	floodplainnC::driverIndexMsgS		*request;
 	taskC					*currTask;
 
+	if (strnlen8(devicePath, DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
+		>= DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
+		{ return ERROR_LIMIT_OVERFLOWED; };
+
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new driverIndexMsgS(devicePath, INDEX_KERNEL);
+	request = new driverIndexMsgS(
+		0, indexerQueueId, MSGSTREAM_FPLAINN_LOADDRIVER_REQ,
+		sizeof(*request), 0, privateData);
+
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	request->header.flags = 0;
-	request->header.sourceId = messageStreamC::determineSourceThreadId(
-		currTask, &request->header.flags);
-
-	request->header.targetId = messageStreamC::determineTargetThreadId(
-		request->header.sourceId, request->header.sourceId,
-		0, &request->header.flags);
+	strcpy8(request->deviceName, devicePath);
 
 printf(NOTICE"sourceId for loadDriver: 0x%x, targetId 0x%x.\n", request->header.sourceId, request->header.targetId);
-	request->header.privateData = privateData;
-	request->header.size = sizeof(*request);
-	request->header.subsystem = indexerQueueId;
-	request->header.function = MSGSTREAM_FPLAINN_LOADDRIVER_REQ;
-
 	return messageStreamC::enqueueOnThread(
 		indexerThreadId, &request->header);
 }
@@ -253,21 +246,13 @@ void floodplainnC::setNewDeviceActionReq(
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new newDeviceActionMsgS;
+	request = new newDeviceActionMsgS(
+		0, indexerQueueId, MSGSTREAM_FPLAINN_SET_NEWDEVICE_ACTION_REQ,
+		sizeof(*request), 0, privateData);
+
 	if (request == NULL) { return; };
 
 	request->action = action;
-
-	request->header.flags = 0;
-	request->header.sourceId = messageStreamC::determineSourceThreadId(
-		currTask, &request->header.flags);
-
-	request->header.targetId = request->header.sourceId;
-
-	request->header.privateData = privateData;
-	request->header.size = sizeof(*request);
-	request->header.subsystem = indexerQueueId;
-	request->header.function = MSGSTREAM_FPLAINN_SET_NEWDEVICE_ACTION_REQ;
 
 	messageStreamC::enqueueOnThread(
 		indexerThreadId, &request->header);
@@ -280,20 +265,11 @@ void floodplainnC::getNewDeviceActionReq(void *privateData)
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new newDeviceActionMsgS;
+	request = new newDeviceActionMsgS(
+		0, indexerQueueId, MSGSTREAM_FPLAINN_GET_NEWDEVICE_ACTION_REQ,
+		sizeof(*request), 0, privateData);
+
 	if (request == NULL) { return; };
-
-	request->header.flags = 0;
-	request->header.sourceId = messageStreamC::determineSourceThreadId(
-		currTask, &request->header.flags);
-
-	request->header.targetId = request->header.sourceId;
-
-	request->header.privateData = privateData;
-	request->header.size = sizeof(*request);
-	request->header.subsystem = indexerQueueId;
-	request->header.function = MSGSTREAM_FPLAINN_GET_NEWDEVICE_ACTION_REQ;
-
 	messageStreamC::enqueueOnThread(
 		indexerThreadId, &request->header);
 }
@@ -303,25 +279,22 @@ void floodplainnC::newDeviceInd(utf8Char *name, void *privateData)
 	newDeviceMsgS		*request;
 	taskC			*currTask;
 
+	if (strnlen8(name, DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
+		>= DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
+	{
+		printf(ERROR FPLAINN"newDeviceInd: device name too long.\n");
+		return;
+	};
+
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new newDeviceMsgS;
+	request = new newDeviceMsgS(
+		0, indexerQueueId, MSGSTREAM_FPLAINN_NEWDEVICE_IND,
+		sizeof(*request), 0, privateData);
+
 	if (request == NULL) { return; };
 
-	strncpy8(request->deviceName, name, DRIVERINDEX_REQUEST_DEVNAME_MAXLEN);
-	request->deviceName[DRIVERINDEX_REQUEST_DEVNAME_MAXLEN - 1] = '\0';
-
-	request->header.flags = 0;
-	request->header.sourceId = messageStreamC::determineSourceThreadId(
-		currTask, &request->header.flags);
-
-	request->header.targetId = request->header.sourceId;
-
-	request->header.privateData = privateData;
-	request->header.size = sizeof(*request);
-	request->header.subsystem = indexerQueueId;
-	request->header.function = MSGSTREAM_FPLAINN_NEWDEVICE_IND;
-
+	strcpy8(request->deviceName, name);
 	messageStreamC::enqueueOnThread(
 		indexerThreadId, &request->header);
 }

@@ -12,6 +12,7 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/execDomain.h>
+	#include <kernel/common/zasyncStream.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
 	#include <kernel/common/timerTrib/timerStream.h>
 	#include <kernel/common/floodplainn/floodplainnStream.h>
@@ -85,7 +86,8 @@ public:
 
 		memoryStream(processId, this),
 		timerStream(processId, this),
-		floodplainnStream(processId, this)
+		floodplainnStream(processId, this),
+		zasyncStream(processId, this)
 	{
 		memset(tasks, 0, sizeof(tasks));
 		defaultMemoryBank.rsrc = NUMABANKID_INVALID;
@@ -193,6 +195,7 @@ public:
 	memoryStreamC		memoryStream;
 	timerStreamC		timerStream;
 	floodplainnStreamC	floodplainnStream;
+	zasyncStreamC		zasyncStream;
 
 private:
 	error_t getNewThreadId(processId_t *ret);
