@@ -171,6 +171,47 @@ error_t zasyncStreamC::connect(processId_t targetPid, uarch_t flags)
 		request->header.targetId, &request->header);
 }
 
+error_t zasyncStreamC::respond(
+	processId_t initiatorPid,
+	connectReplyE reply, processId_t pairTid, uarch_t flags
+	)
+{
+	error_t			ret;
+	zasyncMsgS		*response;
+
+	response = new zasyncMsgS(
+		initiatorPid,
+		MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_RESPOND,
+		sizeof(*response), flags, NULL);
+
+	if (response == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	response->boundTid = pairTid;
+	response->reply = reply;
+
+	if (reply == CONNREPLY_YES)
+	{
+		processStreamC		*initiatorProcess;
+
+		// Add both processes to each other's "connections" list.
+
+		initiatorProcess = processTrib.getStream(initiatorPid);
+		if (initiatorProcess == NULL)
+			{ delete response; return ERROR_NOT_FOUND; };
+
+		ret = initiatorProcess->zasyncStream.addConnection(
+			response->header.sourceId);
+
+		if (ret != ERROR_SUCCESS) { delete response; return ret; };
+
+		ret = addConnection(initiatorPid);
+		if (ret != ERROR_SUCCESS) { delete response; return ret; };
+	};
+
+	return messageStreamC::enqueueOnThread(
+		response->header.targetId, &response->header);
+}
+
 void zasyncStreamC::close(processId_t)
 {
 }

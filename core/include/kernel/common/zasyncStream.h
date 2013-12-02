@@ -18,7 +18,7 @@ class zasyncStreamC
 public streamC
 {
 public:
-	enum connectResponseE { CONNRES_YES, CONNRES_NO };
+	enum connectReplyE { CONNREPLY_YES, CONNREPLY_NO, CONNREPLY_CLOSED };
 
 	zasyncStreamC(processId_t parentPid, processStreamC *parent)
 	:
@@ -56,6 +56,7 @@ public:
 		 **/
 		processId_t			boundTid;
 		void				*dataHandle;
+		connectReplyE			reply;
 	};
 
 public:
@@ -69,7 +70,7 @@ public:
 	#define MSGSTREAM_ZASYNC_RESPOND		(1)
 	error_t respond(
 		processId_t initiatorPid,
-		connectResponseE response, processId_t pairTid, uarch_t flags);
+		connectReplyE reply, processId_t pairTid, uarch_t flags);
 
 	#define MSGSTREAM_ZASYNC_SEND		(2)
 	error_t send(

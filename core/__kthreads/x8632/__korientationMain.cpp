@@ -284,6 +284,12 @@ void __korientationMain(void)
 				"is %d.\n",
 				iMessage.header.function);
 
+			// Send response.
+processTrib.__kgetStream()->zasyncStream.respond(
+	iMessage.header.sourceId, zasyncStreamC::CONNREPLY_YES,
+	self->getFullId(),
+	0);
+
 			break;
 
 		default:
