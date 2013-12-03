@@ -80,7 +80,7 @@ public:
 	error_t send(
 		processId_t bindTid, void *data, uarch_t nBytes, uarch_t flags);
 
-	void receive(void *msgHandle, void *buffer, uarch_t flags);
+	error_t receive(void *dataHandle, void *buffer, uarch_t flags);
 	void close(processId_t pid);
 
 	processId_t getHandlerTid(void) { return handlerTid; };
@@ -108,9 +108,14 @@ private:
 		uarch_t		nConnections;
 	};
 
+	struct messageHeaderS
+	{
+		uarch_t		nBytes;
+	};
+
 	sharedResourceGroupC<waitLockC, stateS>	connections;
-	ptrListC<ubit8>		messages;
-	processStreamC		*parent;
+	ptrListC<messageHeaderS>	messages;
+	processStreamC			*parent;
 };
 
 #endif

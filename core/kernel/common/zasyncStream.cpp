@@ -11,7 +11,7 @@ zasyncStreamC::~zasyncStreamC(void)
 	processId_t		*tmp=NULL;
 	uarch_t			nConnections;
 	void			*handle;
-	ubit8			*msgTmp;
+	messageHeaderS		*msgTmp;
 
 	connections.lock.acquire();
 
@@ -231,7 +231,8 @@ error_t zasyncStreamC::send(
 	)
 {
 	zasyncMsgS		*message;
-	processStreamC		*targetProcess'
+	processStreamC		*targetProcess;
+	messageHeaderS		*dataHeader;
 	ubit8			*dataBuff;
 	error_t			ret;
 
@@ -241,8 +242,10 @@ error_t zasyncStreamC::send(
 	targetProcess = processTrib.getStream(bindTid);
 	if (targetProcess == NULL) { return ERROR_INVALID_RESOURCE_NAME; };
 
-	dataBuff = new ubit8[nBytes];
+	dataBuff = new ubit8[sizeof(messageHeaderS) + nBytes];
 	if (dataBuff == NULL) { return ERROR_MEMORY_NOMEM; };
+	dataHeader = (messageHeaderS *)dataBuff;
+	dataBuff = &dataBuff[sizeof(messageHeaderS)];
 
 	message = new zasyncMsgS(
 		bindTid,
@@ -251,16 +254,33 @@ error_t zasyncStreamC::send(
 
 	if (message == NULL) { delete[] dataBuff; return ERROR_MEMORY_NOMEM; };
 
-	ret = targetProcess->zasyncStream.messages.insert(dataBuff);
+	ret = targetProcess->zasyncStream.messages.insert(dataHeader);
 	if (ret != ERROR_SUCCESS)
 		{ delete[] dataBuff; delete message; return ret; };
 
+	dataHeader->nBytes = nBytes;
 	memcpy(dataBuff, data, nBytes);
 	message->dataNBytes = nBytes;
 	message->dataHandle = dataBuff;
 
 	return messageStreamC::enqueueOnThread(
 		message->header.targetId, &message->header);
+}
+
+error_t zasyncStreamC::receive(void *dataHandle, void *buffer, uarch_t)
+{
+	messageHeaderS		*dataHeader;
+
+	if (dataHandle == NULL || buffer == NULL) { return ERROR_INVALID_ARG; };
+
+	dataHeader = (messageHeaderS *)dataHandle;
+	if (!messages.checkForItem(dataHeader))
+		{ return ERROR_INVALID_RESOURCE_HANDLE; };
+
+	// Copy the data and remove the message from the list.
+	memcpy(buffer, &dataHeader[1], dataHeader->nBytes);
+	messages.remove(dataHeader);
+	return ERROR_SUCCESS;
 }
 
 void zasyncStreamC::close(processId_t)
