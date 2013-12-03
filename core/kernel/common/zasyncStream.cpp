@@ -124,7 +124,8 @@ sarch_t zasyncStreamC::findConnection(processId_t pid)
 	return ret;
 }
 
-error_t zasyncStreamC::connect(processId_t targetPid, uarch_t flags)
+error_t zasyncStreamC::connect(
+	processId_t targetPid, processId_t sourceBindTid, uarch_t flags)
 {
 	processStreamC		*targetProcess;
 	taskC			*targetTask;
@@ -149,9 +150,11 @@ error_t zasyncStreamC::connect(processId_t targetPid, uarch_t flags)
 	};
 
 	targetProcess = processTrib.getStream(targetPid);
-	if (targetProcess == NULL) { return ERROR_NOT_FOUND; };
+	if (targetProcess == NULL) { return ERROR_INVALID_RESOURCE_NAME; };
 
-	if (targetProcess->zasyncStream.getHandlerTid() == PROCID_INVALID)
+	// Ensure both processes are listening for IPC API calls.
+	if (targetProcess->zasyncStream.getHandlerTid() == PROCID_INVALID
+		|| getHandlerTid() == PROCID_INVALID)
 		{ return ERROR_UNINITIALIZED; };
 
 	targetTask = targetProcess->getTask(
@@ -162,22 +165,33 @@ error_t zasyncStreamC::connect(processId_t targetPid, uarch_t flags)
 		{ return ERROR_INVALID_OPERATION; };
 
 	request = new zasyncMsgS(
-		targetPid, MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_CONNECT,
+		targetProcess->zasyncStream.getHandlerTid(),
+		MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_CONNECT,
 		sizeof(*request), flags, NULL);
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
+	request->bindTid = sourceBindTid;
 	return messageStreamC::enqueueOnThread(
 		request->header.targetId, &request->header);
 }
 
 error_t zasyncStreamC::respond(
 	processId_t initiatorPid,
-	connectReplyE reply, processId_t pairTid, uarch_t flags
+	connectReplyE reply, processId_t bindTid, uarch_t flags
 	)
 {
 	error_t			ret;
 	zasyncMsgS		*response;
+	processStreamC		*initiatorProcess;
+
+	initiatorProcess = processTrib.getStream(initiatorPid);
+	if (initiatorProcess == NULL) { return ERROR_INVALID_RESOURCE_NAME; };
+
+	// Ensure both processes are listening for IPC API calls.
+	if (initiatorProcess->zasyncStream.getHandlerTid() == PROCID_INVALID
+		|| getHandlerTid() == PROCID_INVALID)
+		{ return ERROR_UNINITIALIZED; };
 
 	response = new zasyncMsgS(
 		initiatorPid,
@@ -186,7 +200,7 @@ error_t zasyncStreamC::respond(
 
 	if (response == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	response->boundTid = pairTid;
+	response->bindTid = bindTid;
 	response->reply = reply;
 
 	if (reply == CONNREPLY_YES)
@@ -210,6 +224,43 @@ error_t zasyncStreamC::respond(
 
 	return messageStreamC::enqueueOnThread(
 		response->header.targetId, &response->header);
+}
+
+error_t zasyncStreamC::send(
+	processId_t bindTid, void *data, uarch_t nBytes, uarch_t flags
+	)
+{
+	zasyncMsgS		*message;
+	processStreamC		*targetProcess'
+	ubit8			*dataBuff;
+	error_t			ret;
+
+	if (data == NULL) { return ERROR_INVALID_ARG; };
+	if (!findConnection(bindTid)) { return ERROR_UNINITIALIZED; };
+
+	targetProcess = processTrib.getStream(bindTid);
+	if (targetProcess == NULL) { return ERROR_INVALID_RESOURCE_NAME; };
+
+	dataBuff = new ubit8[nBytes];
+	if (dataBuff == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	message = new zasyncMsgS(
+		bindTid,
+		MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_SEND,
+		sizeof(*message), flags, NULL);
+
+	if (message == NULL) { delete[] dataBuff; return ERROR_MEMORY_NOMEM; };
+
+	ret = targetProcess->zasyncStream.messages.insert(dataBuff);
+	if (ret != ERROR_SUCCESS)
+		{ delete[] dataBuff; delete message; return ret; };
+
+	memcpy(dataBuff, data, nBytes);
+	message->dataNBytes = nBytes;
+	message->dataHandle = dataBuff;
+
+	return messageStreamC::enqueueOnThread(
+		message->header.targetId, &message->header);
 }
 
 void zasyncStreamC::close(processId_t)

@@ -326,7 +326,10 @@ void __korientationMain1(void)
 		&__korientationMain2);
 
 processTrib.__kgetStream()->zasyncStream.listen(((threadC *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask())->getFullId());
-ret = processTrib.__kgetStream()->zasyncStream.connect(((threadC *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask())->getFullId(), 0);
+ret = processTrib.__kgetStream()->zasyncStream.connect(
+	__KPROCESSID,
+	((threadC *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask())->getFullId(),
+	0);
 printf(NOTICE"ret is %s.\n", strerror(ret));
 return;
 

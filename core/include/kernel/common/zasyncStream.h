@@ -54,9 +54,10 @@ public:
 		 * to that thread. Any kind of recovery should be negotiated
 		 * by the involved processes using some custom arrangement.
 		 **/
-		processId_t			boundTid;
-		void				*dataHandle;
+		processId_t			bindTid;
 		connectReplyE			reply;
+		void				*dataHandle;
+		uarch_t				dataNBytes;
 	};
 
 public:
@@ -65,16 +66,19 @@ public:
 
 	// Called by the initiator to establish a connection with the target.
 	#define MSGSTREAM_ZASYNC_CONNECT		(0)
-	error_t connect(processId_t targetPid, uarch_t flags);
+	error_t connect(
+		processId_t targetPid, processId_t sourceBindTid,
+		uarch_t flags);
+
 	// Called by target to allow/deny a connect request from the initiator.
 	#define MSGSTREAM_ZASYNC_RESPOND		(1)
 	error_t respond(
 		processId_t initiatorPid,
-		connectReplyE reply, processId_t pairTid, uarch_t flags);
+		connectReplyE reply, processId_t bindTid, uarch_t flags);
 
-	#define MSGSTREAM_ZASYNC_SEND		(2)
+	#define MSGSTREAM_ZASYNC_SEND			(2)
 	error_t send(
-		processId_t pairTid, void *data, uarch_t nBytes, uarch_t flags);
+		processId_t bindTid, void *data, uarch_t nBytes, uarch_t flags);
 
 	void receive(void *msgHandle, void *buffer, uarch_t flags);
 	void close(processId_t pid);
