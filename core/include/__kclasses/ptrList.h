@@ -104,9 +104,10 @@ void ptrListC<T>::dump(void)
 
 	head.lock.acquire();
 	tmp = head.rsrc.ptr;
-	printf(NOTICE PTRLIST"List obj @0x%p, %d items, 1st item @0x%p: "
+	printf(NOTICE PTRLIST"List obj @0x%p, usingCache? %d, cache @0x%p; "
+		"%d items, 1st item @0x%p: "
 		"Dumping.\n",
-		this, head.rsrc.nItems, head.rsrc.ptr);
+		this, usingCache, cache, head.rsrc.nItems, head.rsrc.ptr);
 
 	for (; tmp != NULL; tmp = tmp->next)
 	{

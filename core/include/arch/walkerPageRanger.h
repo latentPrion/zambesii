@@ -102,6 +102,11 @@ namespace walkerPageRanger
 	 * WPRANGER_ADJUST_VADDR().
 	 **/
 	void *createMappingTo(paddr_t paddr, uarch_t nPages, uarch_t flags);
+	void *createSharedMappingTo(
+		vaddrSpaceC *vaddrSpace, void *vaddr, uarch_t nPages,
+		uarch_t flags, void *placementAddress=NULL);
+
+	void destroyNonsharedMapping(void *vaddr, uarch_t nPages);
 
 	void swapMap(
 		vaddrSpaceC *vaddrSpace,

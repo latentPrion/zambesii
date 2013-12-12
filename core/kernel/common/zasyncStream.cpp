@@ -11,7 +11,7 @@ zasyncStreamC::~zasyncStreamC(void)
 	processId_t		*tmp=NULL;
 	uarch_t			nConnections;
 	void			*handle;
-	messageHeaderS		*msgTmp;
+	ipc::dataHeaderS	*msgTmp;
 
 	connections.lock.acquire();
 
@@ -170,8 +170,8 @@ error_t zasyncStreamC::connect(
 		sizeof(*request), flags, NULL);
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
-
 	request->bindTid = sourceBindTid;
+
 	return messageStreamC::enqueueOnThread(
 		request->header.targetId, &request->header);
 }
@@ -199,7 +199,6 @@ error_t zasyncStreamC::respond(
 		sizeof(*response), flags, NULL);
 
 	if (response == NULL) { return ERROR_MEMORY_NOMEM; };
-
 	response->bindTid = bindTid;
 	response->reply = reply;
 
@@ -227,41 +226,40 @@ error_t zasyncStreamC::respond(
 }
 
 error_t zasyncStreamC::send(
-	processId_t bindTid, void *data, uarch_t nBytes, uarch_t flags
+	processId_t bindTid, void *data, uarch_t nBytes, ipc::methodE method,
+	uarch_t flags, void *privateData
 	)
 {
 	zasyncMsgS		*message;
 	processStreamC		*targetProcess;
-	messageHeaderS		*dataHeader;
-	ubit8			*dataBuff;
+	ipc::dataHeaderS	*dataHeader;
 	error_t			ret;
 
 	if (data == NULL) { return ERROR_INVALID_ARG; };
 	if (!findConnection(bindTid)) { return ERROR_UNINITIALIZED; };
 
 	targetProcess = processTrib.getStream(bindTid);
-	if (targetProcess == NULL) { return ERROR_INVALID_RESOURCE_NAME; };
+	if (targetProcess == NULL) { return ERROR_INVALID_RESOURCE_ID; };
+	
 
-	dataBuff = new ubit8[sizeof(messageHeaderS) + nBytes];
-	if (dataBuff == NULL) { return ERROR_MEMORY_NOMEM; };
-	dataHeader = (messageHeaderS *)dataBuff;
-	dataBuff = &dataBuff[sizeof(messageHeaderS)];
+	dataHeader = new (ipc::createDataHeader(data, nBytes, method))
+		ipc::dataHeaderS;
+
+	if (dataHeader == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	message = new zasyncMsgS(
 		bindTid,
 		MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_SEND,
-		sizeof(*message), flags, NULL);
+		sizeof(*message), flags, privateData);
 
-	if (message == NULL) { delete[] dataBuff; return ERROR_MEMORY_NOMEM; };
+	if (message == NULL) { delete dataHeader; return ERROR_MEMORY_NOMEM; };
+	message->dataHandle = dataHeader;
+	message->dataNBytes = dataHeader->nBytes;
+	message->method = dataHeader->method;
 
 	ret = targetProcess->zasyncStream.messages.insert(dataHeader);
 	if (ret != ERROR_SUCCESS)
-		{ delete[] dataBuff; delete message; return ret; };
-
-	dataHeader->nBytes = nBytes;
-	memcpy(dataBuff, data, nBytes);
-	message->dataNBytes = nBytes;
-	message->dataHandle = dataBuff;
+		{ delete dataHeader; delete message; return ret; };
 
 	return messageStreamC::enqueueOnThread(
 		message->header.targetId, &message->header);
@@ -269,18 +267,58 @@ error_t zasyncStreamC::send(
 
 error_t zasyncStreamC::receive(void *dataHandle, void *buffer, uarch_t)
 {
-	messageHeaderS		*dataHeader;
+	ipc::dataHeaderS		*dataHeader;
+	error_t				ret;
 
 	if (dataHandle == NULL || buffer == NULL) { return ERROR_INVALID_ARG; };
 
-	dataHeader = (messageHeaderS *)dataHandle;
+	dataHeader = (ipc::dataHeaderS *)dataHandle;
 	if (!messages.checkForItem(dataHeader))
 		{ return ERROR_INVALID_RESOURCE_HANDLE; };
 
-	// Copy the data and remove the message from the list.
-	memcpy(buffer, &dataHeader[1], dataHeader->nBytes);
-	messages.remove(dataHeader);
+	// Dispatch the data.
+	ret = ipc::dispatchDataHeader(dataHeader, buffer);
+	if (ret != ERROR_SUCCESS) { return ret; };
 	return ERROR_SUCCESS;
+}
+
+void zasyncStreamC::acknowledge(void *dataHandle, void *buffer, void *privateData)
+{
+	ipc::dataHeaderS		*dataHeader;
+	ipc::methodE			method;
+	processId_t			sourceTid;
+	zasyncMsgS			*response;
+
+	if (dataHandle == NULL) { return; };
+
+	dataHeader = (ipc::dataHeaderS *)dataHandle;
+
+	if (!messages.checkForItem(dataHeader)) { return; };
+
+	method = dataHeader->method;
+	sourceTid = dataHeader->foreignTid;
+	ipc::destroyDataHeader(dataHeader, buffer);
+
+	// For BUFFER, there is nothing else to do here.
+	if (method == ipc::METHOD_BUFFER) { return; };
+
+	// Send a notification to the sender.
+	response = new zasyncMsgS(
+		sourceTid,
+		MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_ACKNOWLEDGE,
+		sizeof(*response), 0, privateData);
+
+	if (response == NULL)
+	{
+		printf(ERROR ZASYNC"0x%x: response message alloc failed; "
+			"async sender 0x%x may be halted indefinitely.\n",
+			this->id, sourceTid);
+
+		return;
+	};
+
+	messageStreamC::enqueueOnThread(
+		response->header.targetId, &response->header);
 }
 
 void zasyncStreamC::close(processId_t)

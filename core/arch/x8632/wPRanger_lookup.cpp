@@ -212,3 +212,68 @@ void *walkerPageRanger::createMappingTo(
 	return ret;
 }
 
+void walkerPageRanger::destroyNonsharedMapping(void *vaddr, uarch_t nPages)
+{
+	vaddrSpaceStreamC	*vaddrSpaceStream;
+	paddr_t			p;
+	uarch_t			f;
+
+	vaddrSpaceStream = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask()->parent->getVaddrSpaceStream();
+
+	unmap(&vaddrSpaceStream->vaddrSpace, vaddr, &p, nPages, &f);
+	vaddrSpaceStream->releasePages(vaddr, nPages);
+}
+
+void *walkerPageRanger::createSharedMappingTo(
+	vaddrSpaceC *srcVaddrSpace, void *srcVaddr, uarch_t nPages,
+	uarch_t flags, void *placementAddress
+	)
+{
+	vaddrSpaceStreamC	*vaddrSpaceStream;
+	void			*ret, *tmpVaddr;
+
+	if (nPages == 0 || srcVaddr == NULL) { return NULL; };
+
+	vaddrSpaceStream = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask()->parent->getVaddrSpaceStream();
+
+	// If no placement addr, allocate loose pages.
+	if (placementAddress != NULL) { ret = placementAddress; }
+	else { ret = vaddrSpaceStream->getPages(nPages); };
+
+	if (ret == NULL) { return NULL; };
+
+	// Now map the loose pages to the addr range in the source addrspace.
+	tmpVaddr = ret;
+	for (uarch_t i=0; i<nPages;
+		i++,
+		srcVaddr = (void *)((uintptr_t)srcVaddr + PAGING_BASE_SIZE),
+		tmpVaddr = (void *)((uintptr_t)tmpVaddr + PAGING_BASE_SIZE))
+	{
+		paddr_t			p;
+		uarch_t			f;
+		status_t		nMapped;
+
+		lookup(srcVaddrSpace, srcVaddr, &p, &f);
+		nMapped = mapInc(
+			&vaddrSpaceStream->vaddrSpace, tmpVaddr, p, 1, flags);
+
+		if (nMapped < 1)
+		{
+			/* If we were given a placement address, it means we
+			 * didn't allocate the loose page mapping space
+			 * ourselves; In that case, we also shouldn't free it
+			 * either.
+			 **/
+			if (placementAddress != NULL) {
+				vaddrSpaceStream->releasePages(ret, nPages);
+			};
+
+			return NULL;
+		};
+	};
+
+	return ret;
+}
+

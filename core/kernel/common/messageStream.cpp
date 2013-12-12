@@ -1,10 +1,270 @@
 
+#include <arch/walkerPageRanger.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kcxxlib/new>
+#include <kernel/common/process.h>
 #include <kernel/common/messageStream.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 
+
+ipc::dataHeaderS *ipc::createDataHeader(
+	void *data, uarch_t nBytes, methodE method
+	)
+{
+	dataHeaderS		*ret;
+
+	if (method == METHOD_BUFFER) {
+		ret = new (new ubit8[sizeof(*ret) + nBytes]) dataHeaderS;
+	} else {
+		ret = new dataHeaderS;
+	};
+
+	if (ret == NULL) { return NULL; };
+
+	ret->method = method;
+	ret->nBytes = nBytes;
+	if (method == METHOD_BUFFER)
+	{
+		// For a kernel buffered copy, just set state and memcpy.
+		ret->foreignVaddr = &ret[1];
+		memcpy(ret->foreignVaddr, data, nBytes);
+		return ret;
+	};
+
+	ret->foreignVaddr = data;
+	ret->foreignTid =
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskId();
+
+	return ret;
+}
+
+inline static sarch_t is__kvaddrspaceProcess(processId_t pid)
+{
+	if (PROCID_PROCESS(pid) == __KPROCESSID
+		|| PROCID_PROCESS(pid) == 0)
+		{ return 1; };
+
+	return 0;
+}
+
+#if 0
+static error_t createSharedMapping(
+	vaddrSpaceStreamC *targetVas, void *targetVaddrStart,
+	vaddrSpaceStreamC *sourceVas, void *sourceVaddrStart,
+	uarch_t nPages)
+{
+	for (uarch_t pageCounter=0; pageCounter < nPages;
+		pageCounter++,
+		sourceVaddrStart = (void *)((uintptr_t)sourceVaddrStart
+			+ PAGING_BASE_SIZE),
+		targetVaddrStart = (void *)((uintptr_t)targetVaddrStart
+			+ PAGING_BASE_SIZE))
+	{
+		paddr_t		p;
+		uarch_t		f;
+		status_t	nMapped;
+
+		walkerPageRanger::lookup(
+			&sourceVas->vaddrSpace, sourceVaddrStart, &p, &f);
+
+		nMapped = walkerPageRanger::mapInc(
+			&targetVas->vaddrSpace, targetVaddrStart, p, 1, f);
+
+		if (nMapped < 1) { return ERROR_MEMORY_VIRTUAL_PAGEMAP; };
+	};
+
+	return ERROR_SUCCESS;
+}
+#endif
+
+static sarch_t vaddrRangeIsLoose(
+	vaddrSpaceStreamC *vas, void *vaddr, uarch_t nPages
+	)
+{
+	for (uarch_t i=0; i<nPages;
+		i++,
+		vaddr = (void *)((uintptr_t)vaddr + PAGING_BASE_SIZE))
+	{
+		paddr_t		p;
+		uarch_t		f;
+
+		if (walkerPageRanger::lookup(&vas->vaddrSpace, vaddr, &p, &f)
+			!= WPRANGER_STATUS_UNMAPPED)
+		{
+			return 0;
+		};
+	};
+
+	return 1;
+}
+
+error_t ipc::dispatchDataHeader(dataHeaderS *header, void *buffer)
+{
+	processStreamC	*currProcess, *sourceProcess;
+	void		*targetMapping, *sourceMapping;
+	uarch_t		sourceMappingNPages;
+	processId_t	currTid;
+
+	if (header->method == METHOD_BUFFER)
+	{
+		memcpy(buffer, header->foreignVaddr, header->nBytes);
+		return ERROR_SUCCESS;
+	};
+
+	// targetMapping = shared mapping to be created within target process.
+	targetMapping = NULL;
+	// Calculate offsets and number of pages to be mapped.
+	sourceMapping =
+		(void *)((uintptr_t)header->foreignVaddr
+			& PAGING_BASE_MASK_HIGH);
+
+	sourceMappingNPages =
+		PAGING_BYTES_TO_PAGES(header->nBytes);
+
+	if ((uintptr_t)header->foreignVaddr & PAGING_BASE_MASK_LOW)
+		{ sourceMappingNPages++; };
+
+	if (header->nBytes & PAGING_BASE_MASK_LOW)
+		{ sourceMappingNPages++; };
+
+	sourceProcess = processTrib.getStream(header->foreignTid);
+	if (sourceProcess == NULL) { return ERROR_NOT_FOUND; };
+
+	currTid = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskId();
+	currProcess = cpuTrib.getCurrentCpuStream()
+		->taskStream.getCurrentTask()->parent;
+
+	if (header->method == METHOD_MAP_AND_COPY)
+	{
+		/**	EXPLANATION:
+		 * For MAP_AND_COPY, the caller just passes the address of a
+		 * buffer area s/he wishes for the kernel to copy the data into.
+		 * The kernel takes on the burden of creating the temporary
+		 * shared mapping to the source process, and tearing it down
+		 * afterward.
+		 *
+		 **	NOTES:
+		 * If both processes actually live in the same address
+		 * space, we don't need to map the source memory range into the
+		 * target process' addrspace, because the source data is already
+		 * accessible. We need only copy, and then we can return.
+		 **/
+		if ((is__kvaddrspaceProcess(header->foreignTid)
+				&& is__kvaddrspaceProcess(currTid))
+			|| (currProcess->getVaddrSpaceStream()
+				== sourceProcess->getVaddrSpaceStream()))
+		{
+			memcpy(buffer, header->foreignVaddr, header->nBytes);
+			return ERROR_SUCCESS;
+		};
+	};
+
+	if (header->method == ipc::METHOD_MAP_AND_READ)
+	{
+		/**	EXPLANATION:
+		 * For MAP_AND_READ, the caller passes a range of loose pages
+		 * when calling receive(). That range is passed here as the
+		 * variable "buffer".
+		 *
+		 * 1. Check the vaddr range provided with the vaddrSpaceStream
+		 *    for the receiving process to ensure that it has been
+		 *    previously handed out by the kernel.
+		 * 2. Check the vaddr range provided to ensure that it is
+		 *    indeed loose (unmapped) vmem.
+		 * 3. Map the page range from the source process into the
+		 *    receiving process' addrspace.
+		 * 4. Return and wait for the release() call.
+		 *
+		 **	FIXME:
+		 * Make sure to check to see whether or not the target process'
+		 * loose-page range has been previously handed out by the
+		 * process' VaddrSpace Stream (step 1).
+		 **/
+		targetMapping = buffer;
+
+		// The target vmem *must* be loose (unmapped) vmem.
+		if (!vaddrRangeIsLoose(
+			currProcess->getVaddrSpaceStream(),
+			targetMapping, sourceMappingNPages))
+		{ return ERROR_INVALID_OPERATION; };
+	};
+
+	// Allocate vmem region to map to foreign vmem region.
+	targetMapping = walkerPageRanger::createSharedMappingTo(
+		&sourceProcess->getVaddrSpaceStream()->vaddrSpace,
+		sourceMapping, sourceMappingNPages,
+		PAGEATTRIB_PRESENT
+		| ((currProcess->execDomain == PROCESS_EXECDOMAIN_KERNEL)
+			? PAGEATTRIB_SUPERVISOR : 0),
+		targetMapping);
+
+	if (targetMapping == NULL)
+	{
+		printf(FATAL"ipc::dispatchDataHeader: Failed to create shared "
+			"mapping.\n");
+
+		return ERROR_UNKNOWN;
+	};
+
+	// Adjust the vaddr to re-add the offset.
+	targetMapping = WPRANGER_ADJUST_VADDR(
+		targetMapping,
+		(uintptr_t)header->foreignVaddr, void *);
+
+	// For MAP_AND_READ, we're now done.
+	if (header->method == METHOD_MAP_AND_READ) { return ERROR_SUCCESS; };
+
+	/* Else it was MAP_AND_COPY between two processes in different
+	 * vaddrspaces. So now we must copy, then unmap.
+	 **/
+	paddr_t		p;
+	uarch_t		f;
+
+	memcpy(buffer, targetMapping, header->nBytes);
+	walkerPageRanger::unmap(
+		&currProcess->getVaddrSpaceStream()->vaddrSpace,
+		targetMapping, &p, sourceMappingNPages, &f);
+
+	currProcess->getVaddrSpaceStream()->releasePages(
+		targetMapping, sourceMappingNPages);
+
+	return ERROR_SUCCESS;
+}
+
+void ipc::destroyDataHeader(dataHeaderS *header, void *buffer)
+{
+	/**	EXPLANATION:
+	 * For BUFFER, we don't have to do anything.
+	 * For MAP_AND_COPY, we don't have to do anything.
+	 * For MAP_AND_READ, we have to unmap the loose page range.
+	 **/
+	if (header->method == METHOD_MAP_AND_READ)
+	{
+		paddr_t		p;
+		uarch_t		f, sourceMappingNPages;
+
+		sourceMappingNPages =
+			PAGING_BYTES_TO_PAGES(header->nBytes);
+
+		if ((uintptr_t)header->foreignVaddr & PAGING_BASE_MASK_LOW)
+			{ sourceMappingNPages++; };
+
+		if (header->nBytes & PAGING_BASE_MASK_LOW)
+			{ sourceMappingNPages++; };
+
+		walkerPageRanger::unmap(
+			&cpuTrib.getCurrentCpuStream()->taskStream
+				.getCurrentTask()->parent->getVaddrSpaceStream()
+				->vaddrSpace,
+			buffer, &p, sourceMappingNPages, &f);
+	};
+
+	delete header;
+}
 
 messageStreamC::headerS::headerS(
 	processId_t targetPid, ubit16 subsystem, ubit16 function,

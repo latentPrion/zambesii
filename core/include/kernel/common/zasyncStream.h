@@ -27,7 +27,7 @@ public:
 	parent(parent)
 	{}
 
-	error_t initialize(void) { return ERROR_SUCCESS; };
+	error_t initialize(void) { return messages.initialize(); };
 	~zasyncStreamC(void);
 
 public:
@@ -55,6 +55,7 @@ public:
 		 * by the involved processes using some custom arrangement.
 		 **/
 		processId_t			bindTid;
+		ipc::methodE			method;
 		connectReplyE			reply;
 		void				*dataHandle;
 		uarch_t				dataNBytes;
@@ -78,9 +79,13 @@ public:
 
 	#define MSGSTREAM_ZASYNC_SEND			(2)
 	error_t send(
-		processId_t bindTid, void *data, uarch_t nBytes, uarch_t flags);
+		processId_t bindTid, void *data, uarch_t nBytes,
+		ipc::methodE method, uarch_t flags,
+		void *privateData);
 
 	error_t receive(void *dataHandle, void *buffer, uarch_t flags);
+	#define MSGSTREAM_ZASYNC_ACKNOWLEDGE		(3)
+	void acknowledge(void *dataHandle, void *buffer, void *privateData);
 	void close(processId_t pid);
 
 	processId_t getHandlerTid(void) { return handlerTid; };
@@ -108,13 +113,8 @@ private:
 		uarch_t		nConnections;
 	};
 
-	struct messageHeaderS
-	{
-		uarch_t		nBytes;
-	};
-
 	sharedResourceGroupC<waitLockC, stateS>	connections;
-	ptrListC<messageHeaderS>	messages;
+	ptrListC<ipc::dataHeaderS>	messages;
 	processStreamC			*parent;
 };
 

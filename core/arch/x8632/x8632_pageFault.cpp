@@ -110,9 +110,16 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 		break;
 
 	case WPRANGER_STATUS_FAKEMAPPED_DYNAMIC:
-		for (status = 0; status < 1; ) {
+		uarch_t nTries;
+
+		for (nTries=0, status = 0;
+			nTries < 4 && status < 1;
+			nTries++)
+		{
 			status = memoryTrib.fragmentedGetFrames(1, &pmap);
 		};
+
+		if (status < 1) { panic(FATAL"Out of pmem.\n");	};
 
 		// Map new frame to fakemapped page.
 		walkerPageRanger::remapInc(

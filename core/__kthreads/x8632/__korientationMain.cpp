@@ -206,6 +206,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	 **/
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
+	DO_OR_DIE(__kprocess.zasyncStream, initialize(), ret);
 	asyncContextCache = cachePool.createCache(sizeof(syscallbackC));
 	if (asyncContextCache == NULL)
 	{
@@ -256,11 +257,13 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
  * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
  **/
 
+const char *buf[512];
 void __korientationMain1(void);
 void __korientationMain(void)
 {
 	threadC			*self;
 	sarch_t			exitLoop=0;
+	error_t			err;
 
 	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
@@ -277,18 +280,82 @@ void __korientationMain(void)
 		self->getTaskContext()->messageStream.pull(&iMessage);
 		messageCallback = (syscallbackC *)iMessage.header.privateData;
 
+		const char *str="Chaos is not a pit; chaos is a ladder.";
 		switch (iMessage.header.subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_ZASYNC:
+			zasyncStreamC::zasyncMsgS	*msg;
+
+			msg = (zasyncStreamC::zasyncMsgS *)&iMessage;
 			printf(NOTICE ORIENT"Got ZASYNC subsys message. func "
 				"is %d.\n",
 				iMessage.header.function);
 
 			// Send response.
-processTrib.__kgetStream()->zasyncStream.respond(
-	iMessage.header.sourceId, zasyncStreamC::CONNREPLY_YES,
-	self->getFullId(),
-	0);
+			switch (iMessage.header.function)
+			{
+			case MSGSTREAM_ZASYNC_CONNECT:
+				printf(NOTICE ORIENT"connect: req from "
+					"0x%x; source bindTid 0x%x.\n",
+					msg->header.sourceId, msg->bindTid);
+
+				processTrib.__kgetStream()->zasyncStream.respond(
+					iMessage.header.sourceId,
+					zasyncStreamC::CONNREPLY_YES,
+					self->getFullId(), 0);
+
+				break;
+
+			case MSGSTREAM_ZASYNC_RESPOND:
+				printf(NOTICE ORIENT"respond: ack from 0x%x; "
+					"source bindTid 0x%x.\n",
+					msg->header.sourceId, msg->bindTid);
+
+				err = processTrib.__kgetStream()->zasyncStream.send(
+					(processId_t)0x10001,
+					(void *)str, strlen8(CC str) + 1,
+					ipc::METHOD_MAP_AND_COPY, 0, NULL);
+
+				if (err != ERROR_SUCCESS) {
+					printf(ERROR ORIENT"send() failed, because %s.\n", strerror(err));
+				};
+				break;
+
+			case MSGSTREAM_ZASYNC_SEND:
+				printf(NOTICE ORIENT"send: ind from 0x%x; "
+					"method %d, dataHandle 0x%p, %dB.\n",
+					msg->header.sourceId,
+					msg->method,
+					msg->dataHandle, msg->dataNBytes);
+
+				if (msg->method == ipc::METHOD_MAP_AND_READ)
+				{
+					void		*rbuf;
+
+					rbuf = self->parent->getVaddrSpaceStream()->getPages(2);
+					self->parent->zasyncStream.receive(msg->dataHandle, rbuf, 0);
+					printf(NOTICE ORIENT"\tMsg: %s.\n", rbuf);
+					self->parent->zasyncStream.acknowledge(
+						msg->dataHandle, rbuf, msg->header.privateData);
+					self->parent->getVaddrSpaceStream()->releasePages(rbuf, 2);
+				}
+				else
+				{
+					err = self->parent->zasyncStream.receive(msg->dataHandle, buf, 0);
+					printf(NOTICE ORIENT"\tMsg: %s.\n", buf);
+					self->parent->zasyncStream.acknowledge(
+						msg->dataHandle, buf, msg->header.privateData);
+				};
+
+				break;
+
+			case MSGSTREAM_ZASYNC_ACKNOWLEDGE:
+				printf(NOTICE ORIENT"ack: Process 0x%x "
+					"acknowledges receipt.\n",
+					msg->header.sourceId);
+
+				break;
+			};
 
 			break;
 
@@ -325,7 +392,10 @@ void __korientationMain1(void)
 	acxt = new (asyncContextCache->allocate()) syscallbackC(
 		&__korientationMain2);
 
+// Listen.
 processTrib.__kgetStream()->zasyncStream.listen(((threadC *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask())->getFullId());
+
+// Connect.
 ret = processTrib.__kgetStream()->zasyncStream.connect(
 	__KPROCESSID,
 	((threadC *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask())->getFullId(),

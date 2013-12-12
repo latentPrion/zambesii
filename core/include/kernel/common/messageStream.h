@@ -22,6 +22,8 @@
  **/
 #define ZCALLBACK_PULL_FLAGS_DONT_BLOCK		(1<<0)
 
+#define MSGSTREAM				"MsgStream "
+
 #define MSGSTREAM_FLAGS_CPU_SOURCE		(1<<0)
 #define MSGSTREAM_FLAGS_CPU_TARGET		(1<<1)
 
@@ -80,6 +82,30 @@
 
 class taskContextC;
 class taskC;
+
+namespace ipc
+{
+	enum methodE {
+		METHOD_BUFFER, METHOD_MAP_AND_COPY, METHOD_MAP_AND_READ };
+
+	struct dataHeaderS
+	{
+		methodE		method;
+		void		*foreignVaddr;
+		uarch_t		nBytes;
+		/* This next attribute is only needed for MAP_AND_COPY and
+		 * MAP_AND_READ.
+		 **/
+		processId_t	foreignTid;
+	};
+
+	dataHeaderS *createDataHeader(
+		void *data, uarch_t nBytes, methodE method);
+
+	// Does *NOT* delete the header before returning.
+	error_t dispatchDataHeader(dataHeaderS *header, void *buffer);
+	void destroyDataHeader(dataHeaderS *header, void *buffer);
+}
 
 class messageStreamC
 {
