@@ -22,36 +22,6 @@ error_t distributaryTribC::initialize(void)
 	return bootBuildTree();
 }
 
-singleWaiterQueueC *distributaryTribC::getControlQueue(void)
-{
-	taskC		*currTask;
-	dvfs::tagC	*callerTag;
-	error_t		ret;
-
-	// Calling thread can only be from a distributary process.
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	if (currTask->parent->getType() != processStreamC::DISTRIBUTARY) {
-		return NULL;
-	};
-
-	/* Get the distributary inode for this process; Can get a path to the
-	 * tag in the process' fullName.
-	 **/
-	ret = vfsTrib.getDvfs()->getPath(
-		currTask->parent->fullName, &callerTag);
-
-	if (ret != ERROR_SUCCESS) { return NULL; };
-
-	if (callerTag->getType() != vfs::DIR)
-	{
-		callerTag = callerTag->getCInode()->getLeafTag(CC"default");
-		if (callerTag == NULL) { return NULL; };
-	};
-
-	// We now have the tag for this distributary; return its qeueue.
-	return callerTag->getDInode()->getControlQueue();
-}
-
 error_t distributaryTribC::bootBuildTree(void)
 {
 	const dvfs::distributaryDescriptorS	*currDesc;

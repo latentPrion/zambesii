@@ -26,8 +26,6 @@ flags(descriptor->flags), entryAddress(descriptor->entryAddress)
 	strncpy8(
 		description, descriptor->description,
 		DVFS_DINODE_DESCRIPTION_MAXLEN);
-
-	fullName[0] = '\0';
 }
 
 static inline dvfs::tagC *getDefaultDtrib(dvfs::tagC *cTag)

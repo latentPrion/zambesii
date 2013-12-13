@@ -118,7 +118,6 @@ namespace dvfs
 
 			ret = vfs::inodeC::initialize();
 			if (ret != ERROR_SUCCESS) { return ret; };
-			return controlQueue.initialize();
 		}
 
 		~distributaryInodeC(void) {}
@@ -127,15 +126,11 @@ namespace dvfs
 		sarch_t isCurrentlyRunning(void) { return currentlyRunning; }
 		typeE getType(void) { return type; }
 		void (*getEntryAddress(void))(void) { return entryAddress; }
-		utf8Char *getFullName(void) { return fullName; }
 		void getVersion(ubit8 *major, ubit8 *minor, ubit16 *patch);
-		singleWaiterQueueC *getControlQueue(void)
-			{ return &controlQueue; }
 
 	private:
 		typeE			type;
 		sarch_t			currentlyRunning;
-		singleWaiterQueueC	controlQueue;
 
 		// Mirror members for distributaryDescriptorS.
 		utf8Char	name[DVFS_TAG_NAME_MAXLEN],
@@ -145,10 +140,7 @@ namespace dvfs
 		ubit16		patchVersion;
 		ubit32		flags;
 
-		// Only valid for IN_KERNEL dtribs.
 		void		(*entryAddress)(void);
-		// Only valid for OUT_OF_KERNEL dtribs.
-		utf8Char	fullName[256];
 	};
 
 	/**	categoryInodeC:
