@@ -11,3 +11,6 @@ libacpi.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd commonlibs/libacpi; make
 
+libzudiIndexParser.o: commonlibs/libzudiIndexParser.cpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c $<
+

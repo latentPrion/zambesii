@@ -6,6 +6,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/zudiIndexServer.h>
 
 #define ZUDIIDX		"ZUDI-Idx: "
 
@@ -16,31 +17,28 @@
 
 class floodplainnC;
 
-class zudiIndexC
+class zudiIndexParserC
 {
 friend class floodplainnC;
-public:	enum sourceE { SOURCE_KERNEL=0, SOURCE_RAMDISK, SOURCE_EXTERNAL };
-private:
-	// This constructor is only for use by floodplainnC.
-	zudiIndexC(void)
-	:
-	source(SOURCE_KERNEL), indexPath(NULL),
-	driverIndex(PAGING_BASE_SIZE), dataIndex(PAGING_BASE_SIZE),
-	deviceIndex(PAGING_BASE_SIZE), rankIndex(PAGING_BASE_SIZE),
-	provisionIndex(PAGING_BASE_SIZE), stringIndex(PAGING_BASE_SIZE)
-	{}
+public:	enum sourceE {
+	SOURCE_KERNEL=zudiIndexServer::INDEX_KERNEL,
+	SOURCE_RAMDISK=zudiIndexServer::INDEX_RAMDISK,
+	SOURCE_EXTERNAL=zudiIndexServer::INDEX_EXTERNAL };
 
 public:
-	zudiIndexC(sourceE source)
+	zudiIndexParserC(sourceE source)
 	:
 	source(source), indexPath(NULL),
-	driverIndex(PAGING_BASE_SIZE), dataIndex(PAGING_BASE_SIZE),
-	deviceIndex(PAGING_BASE_SIZE), rankIndex(PAGING_BASE_SIZE),
-	provisionIndex(PAGING_BASE_SIZE), stringIndex(PAGING_BASE_SIZE)
+	driverIndex(source, PAGING_BASE_SIZE),
+	dataIndex(source, PAGING_BASE_SIZE),
+	deviceIndex(source, PAGING_BASE_SIZE),
+	rankIndex(source, PAGING_BASE_SIZE),
+	provisionIndex(source, PAGING_BASE_SIZE),
+	stringIndex(source, PAGING_BASE_SIZE)
 	{}
 
 	error_t initialize(utf8Char *indexPath);
-	~zudiIndexC(void) {}
+	~zudiIndexParserC(void) {}
 
 public:
 	error_t getHeader(zudi::headerS *ret)
@@ -92,23 +90,15 @@ private:
 	class randomAccessBufferC
 	{
 	public:
-		randomAccessBufferC(uarch_t bufferSize)
+		randomAccessBufferC(sourceE source, uarch_t bufferSize)
 		:
-		fullName(NULL), bufferSize(bufferSize)
+		fullName(NULL), bufferSize(bufferSize), source(source)
 		{
 			buffer.rsrc.buffer = buffer.rsrc.bufferEnd = NULL;
 		}
 
-		error_t initialize(
-			utf8Char *indexPath=NULL, utf8Char *fileName=NULL);
-
-		error_t initialize(void *source, void *sourceEnd)
-		{
-			bufferSize = 0;
-			buffer.rsrc.buffer = (ubit8 *)source;
-			buffer.rsrc.bufferEnd = (ubit8 *)sourceEnd;
-			return ERROR_SUCCESS;
-		}
+		error_t initialize(void *source, void *sourceEnd);
+		error_t initialize(utf8Char *indexPath, utf8Char *fileName);
 
 		~randomAccessBufferC(void) {}
 
@@ -136,7 +126,8 @@ private:
 		 * buffering data from a file-system instance, but rather just
 		 * an abstracted layer on top of the in-kernel UDI index.
 		 **/
-		uarch_t		bufferSize;
+		uarch_t				bufferSize;
+		zudiIndexParserC::sourceE	source;
 	};
 
 	sourceE			source;

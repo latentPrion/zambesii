@@ -62,8 +62,23 @@ public:
 	};
 
 public:
-	void listen(processId_t handlerTid)
-		{ this->handlerTid = handlerTid; }
+	sarch_t connectionlessListenEnabled(void)
+	{
+		sarch_t		ret;
+
+		connections.lock.acquire();
+		ret = connections.rsrc.connectionlessListen;
+		connections.lock.release();
+		return ret;
+	}
+
+	void listen(processId_t handlerTid, sarch_t connectionless=0)
+	{
+		this->handlerTid = handlerTid;
+		connections.lock.acquire();
+		connections.rsrc.connectionlessListen = connectionless;
+		connections.lock.release();
+	}
 
 	// Called by the initiator to establish a connection with the target.
 	#define MSGSTREAM_ZASYNC_CONNECT		(0)
@@ -106,11 +121,12 @@ private:
 	{
 		stateS(void)
 		:
-		pids(NULL), nConnections(0)
+		pids(NULL), nConnections(0), connectionlessListen(0)
 		{}
 
 		processId_t	*pids;
 		uarch_t		nConnections;
+		sarch_t		connectionlessListen;
 	};
 
 	sharedResourceGroupC<waitLockC, stateS>	connections;

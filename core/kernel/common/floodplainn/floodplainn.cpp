@@ -3,6 +3,7 @@
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/zudiIndexServer.h>
 #include <kernel/common/floodplainn/floodplainn.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -37,20 +38,12 @@ error_t floodplainnC::initializeReq(initializeReqCallF *callback)
 	ret = root->createChild(CC"by-path", &byPath, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-printf(NOTICE"fp init: before.\n");
-	ret = zudiIndexes[0].initialize(NULL);
-	if (ret != ERROR_SUCCESS) { return ret; };
-printf(NOTICE"fp init: after.\n");
-	ret = zudiIndexes[0].initialize(CC"@h:__kramdisk/drivers32");
-	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = zudiIndexes[0].initialize(CC"@h:__kroot/zambesii/drivers32");
-	if (ret != ERROR_SUCCESS) { return ret; };
-
 	actxt = new (asyncContextCache->allocate()) syscallbackC(
 		&floodplainnC::initializeReq1, (void (*)())callback);
 
 	if (actxt == NULL) { return ERROR_MEMORY_NOMEM; };
-	setNewDeviceActionReq(NDACTION_INSTANTIATE, actxt);
+	zudiIndexServer::setNewDeviceActionReq(
+		zudiIndexServer::NDACTION_INSTANTIATE, actxt);
 
 	return ERROR_SUCCESS;
 }
@@ -185,120 +178,6 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 	return ERROR_SUCCESS;
 }
 
-error_t floodplainnC::detectDriverReq(
-	utf8Char *devicePath, indexLevelE indexLevel, processId_t targetId,
-	void *privateData, ubit32 flags
-	)
-{
-	driverIndexMsgS			*request;
-	taskC				*currTask;
-
-	if (strnlen8(devicePath, DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
-		>= DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
-		{ return ERROR_LIMIT_OVERFLOWED; };
-
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-
-	// Allocate and queue the new request.
-	request = new driverIndexMsgS(
-		targetId, indexerQueueId, MSGSTREAM_FPLAINN_DETECTDRIVER_REQ,
-		sizeof(*request), flags, privateData);
-
-	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
-
-	strcpy8(request->deviceName, devicePath);
-	request->indexLevel = indexLevel;
-
-	return messageStreamC::enqueueOnThread(
-		indexerThreadId, &request->header);
-}
-
-error_t floodplainnC::loadDriverReq(utf8Char *devicePath, void *privateData)
-{
-	floodplainnC::driverIndexMsgS		*request;
-	taskC					*currTask;
-
-	if (strnlen8(devicePath, DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
-		>= DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
-		{ return ERROR_LIMIT_OVERFLOWED; };
-
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-
-	request = new driverIndexMsgS(
-		0, indexerQueueId, MSGSTREAM_FPLAINN_LOADDRIVER_REQ,
-		sizeof(*request), 0, privateData);
-
-	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
-
-	strcpy8(request->deviceName, devicePath);
-
-printf(NOTICE"sourceId for loadDriver: 0x%x, targetId 0x%x.\n", request->header.sourceId, request->header.targetId);
-	return messageStreamC::enqueueOnThread(
-		indexerThreadId, &request->header);
-}
-
-void floodplainnC::setNewDeviceActionReq(
-	newDeviceActionE action, void *privateData
-	)
-{
-	newDeviceActionMsgS	*request;
-	taskC			*currTask;
-
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-
-	request = new newDeviceActionMsgS(
-		0, indexerQueueId, MSGSTREAM_FPLAINN_SET_NEWDEVICE_ACTION_REQ,
-		sizeof(*request), 0, privateData);
-
-	if (request == NULL) { return; };
-
-	request->action = action;
-
-	messageStreamC::enqueueOnThread(
-		indexerThreadId, &request->header);
-}
-
-void floodplainnC::getNewDeviceActionReq(void *privateData)
-{
-	newDeviceActionMsgS	*request;
-	taskC			*currTask;
-
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-
-	request = new newDeviceActionMsgS(
-		0, indexerQueueId, MSGSTREAM_FPLAINN_GET_NEWDEVICE_ACTION_REQ,
-		sizeof(*request), 0, privateData);
-
-	if (request == NULL) { return; };
-	messageStreamC::enqueueOnThread(
-		indexerThreadId, &request->header);
-}
-
-void floodplainnC::newDeviceInd(utf8Char *name, void *privateData)
-{
-	newDeviceMsgS		*request;
-	taskC			*currTask;
-
-	if (strnlen8(name, DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
-		>= DRIVERINDEX_REQUEST_DEVNAME_MAXLEN)
-	{
-		printf(ERROR FPLAINN"newDeviceInd: device name too long.\n");
-		return;
-	};
-
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-
-	request = new newDeviceMsgS(
-		0, indexerQueueId, MSGSTREAM_FPLAINN_NEWDEVICE_IND,
-		sizeof(*request), 0, privateData);
-
-	if (request == NULL) { return; };
-
-	strcpy8(request->deviceName, name);
-	messageStreamC::enqueueOnThread(
-		indexerThreadId, &request->header);
-}
-
 syscallbackFuncF floodplainn_createRootDeviceReq1;
 error_t floodplainnC::createRootDeviceReq(createRootDeviceReqCallF *callback)
 {
@@ -350,7 +229,10 @@ error_t floodplainnC::createRootDeviceReq(createRootDeviceReqCallF *callback)
 	syscallback = new (asyncContextCache->allocate()) syscallbackC(
 		&floodplainn_createRootDeviceReq1, (voidF *)callback);
 
-	floodplainn.newDeviceInd(CC"by-id/0", (void *)syscallback);
+	zudiIndexServer::newDeviceInd(
+		CC"by-id/0", zudiIndexServer::INDEX_KERNEL,
+		(void *)syscallback);
+
 	return ret;
 }
 
@@ -359,14 +241,13 @@ void floodplainn_createRootDeviceReq1(
 	)
 {
 	floodplainnC::createRootDeviceReqCallF	*_callback;
-	floodplainnC::newDeviceMsgS		*msg;
+	floodplainnC::zudiIndexMsgS		*msg;
 	error_t					ret=ERROR_SUCCESS;
 
-	msg = (floodplainnC::newDeviceMsgS *)gmsg;
+	msg = (floodplainnC::zudiIndexMsgS *)gmsg;
 
 	if (msg->header.error != ERROR_SUCCESS
-		|| msg->lastCompletedAction
-			!= floodplainnC::NDACTION_INSTANTIATE)
+		|| msg->action != zudiIndexServer::NDACTION_INSTANTIATE)
 	{
 		ret = ERROR_FATAL;
 		printf(FATAL FPLAINN"createRootDevice: Failed to instantiate "

@@ -236,11 +236,16 @@ error_t zasyncStreamC::send(
 	error_t			ret;
 
 	if (data == NULL) { return ERROR_INVALID_ARG; };
-	if (!findConnection(bindTid)) { return ERROR_UNINITIALIZED; };
 
 	targetProcess = processTrib.getStream(bindTid);
 	if (targetProcess == NULL) { return ERROR_INVALID_RESOURCE_ID; };
-	
+
+	/* First check to see if the target is connectionless. If the target
+	 * is not listening connectionless, then the sender must be connected.
+	 **/
+	if (!targetProcess->zasyncStream.connectionlessListenEnabled()
+		&& !findConnection(bindTid))
+	{ return ERROR_UNINITIALIZED; };
 
 	dataHeader = new (ipc::createDataHeader(data, nBytes, method))
 		ipc::dataHeaderS;

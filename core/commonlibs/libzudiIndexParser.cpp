@@ -4,15 +4,16 @@
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/floodplainn/index.h>
+#include <commonlibs/libzudiIndexParser.h>
 
 
-error_t zudiIndexC::randomAccessBufferC::initialize(
+error_t zudiIndexParserC::randomAccessBufferC::initialize(
 	utf8Char *indexPath, utf8Char *fileName
 	)
 {
 	uarch_t		strLen, indexPathLen;
 
+	if (source == SOURCE_KERNEL) { return ERROR_INVALID_OPERATION; };
 	if (bufferSize == 0) { return ERROR_INVALID_ARG_VAL; };
 
 	indexPathLen = strlen8(indexPath);
@@ -37,11 +38,21 @@ error_t zudiIndexC::randomAccessBufferC::initialize(
 	return ERROR_SUCCESS;
 }
 
-error_t zudiIndexC::randomAccessBufferC::readString(
+error_t zudiIndexParserC::randomAccessBufferC::initialize(
+	void *source, void *sourceEnd
+	)
+{
+	buffer.rsrc.buffer = (ubit8 *)source;
+	buffer.rsrc.bufferEnd = (ubit8 *)sourceEnd;
+	bufferSize = buffer.rsrc.bufferEnd - buffer.rsrc.buffer;
+	return ERROR_SUCCESS;
+}
+
+error_t zudiIndexParserC::randomAccessBufferC::readString(
 	utf8Char *buff, uarch_t offset
 	)
 {
-	if (bufferSize == 0)
+	if (source == SOURCE_KERNEL)
 	{
 		buffer.lock.acquire();
 		strcpy8(buff, CC &buffer.rsrc.buffer[offset]);
@@ -49,14 +60,14 @@ error_t zudiIndexC::randomAccessBufferC::readString(
 		return ERROR_SUCCESS;
 	};
 
-	UNIMPLEMENTED("zudiIndexC::randomAccessBufferC::read")
+	UNIMPLEMENTED("zudiIndexParserC::randomAccessBufferC::read")
 	return ERROR_UNIMPLEMENTED;
 }
 
-error_t zudiIndexC::randomAccessBufferC::read(
+error_t zudiIndexParserC::randomAccessBufferC::read(
 	void *buff, uarch_t offset, uarch_t nBytes)
 {
-	if (bufferSize == 0)
+	if (source == SOURCE_KERNEL)
 	{
 		buffer.lock.acquire();
 
@@ -79,24 +90,23 @@ error_t zudiIndexC::randomAccessBufferC::read(
 		};
 
 		memcpy(buff, &buffer.rsrc.buffer[offset], nBytes);
-
 		buffer.lock.release();
 		return ERROR_SUCCESS;
 	};
 
-	UNIMPLEMENTED("zudiIndexC::randomAccessBufferC::read")
+	UNIMPLEMENTED("zudiIndexParserC::randomAccessBufferC::read")
 	return ERROR_UNIMPLEMENTED;
 }
 
-void zudiIndexC::randomAccessBufferC::discardBuffer(void)
+void zudiIndexParserC::randomAccessBufferC::discardBuffer(void)
 {
-	if (bufferSize == 0) { return; }
+	if (source == SOURCE_KERNEL) { return; }
 
 	buffer.rsrc.buffer = buffer.rsrc.bufferEnd = NULL;
-	UNIMPLEMENTED("zudiIndexC::randomAccessBufferC::discardBuffer")
+	UNIMPLEMENTED("zudiIndexParserC::randomAccessBufferC::discardBuffer")
 }
 
-error_t zudiIndexC::initialize(utf8Char *indexPath)
+error_t zudiIndexParserC::initialize(utf8Char *indexPath)
 {
 	error_t		ret;
 
@@ -108,39 +118,36 @@ error_t zudiIndexC::initialize(utf8Char *indexPath)
 		return ERROR_INVALID_ARG;
 	};
 
-	if (source == SOURCE_KERNEL && indexPath != NULL)
-	{
-		printf(WARNING ZUDIIDX"initialize: indexPath should be NULL "
-			"for KERNEL index. Ignoring.\n");
-	};
+	this->indexPath = new utf8Char[strlen8(indexPath) + 1];
+	if (this->indexPath == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	strcpy8(this->indexPath, indexPath);
 
 	if (source == SOURCE_KERNEL)
 	{
 		driverIndex.initialize(
-			&__kudi_index_drivers,
-			&__kudi_index_drivers_end);
+			(void *)&__kudi_index_drivers,
+			(void *)&__kudi_index_drivers_end);
 
 		dataIndex.initialize(
-			&__kudi_index_data,
-			&__kudi_index_data_end);
+			(void *)&__kudi_index_data,
+			(void *)&__kudi_index_data_end);
 
 		deviceIndex.initialize(
-			&__kudi_index_devices,
-			&__kudi_index_devices_end);
+			(void *)&__kudi_index_devices,
+			(void *)&__kudi_index_devices_end);
 
 		provisionIndex.initialize(
-			&__kudi_index_provisions,
-			&__kudi_index_provisions_end);
+			(void *)&__kudi_index_provisions,
+			(void *)&__kudi_index_provisions_end);
 
 		rankIndex.initialize(
-			&__kudi_index_ranks,
-			&__kudi_index_ranks_end);
+			(void *)&__kudi_index_ranks,
+			(void *)&__kudi_index_ranks_end);
 
 		stringIndex.initialize(
-			&__kudi_index_strings,
-			&__kudi_index_strings_end);
+			(void *)&__kudi_index_strings,
+			(void *)&__kudi_index_strings_end);
 	}
 	else
 	{
@@ -163,7 +170,7 @@ error_t zudiIndexC::initialize(utf8Char *indexPath)
 	return ERROR_SUCCESS;
 }
 
-error_t zudiIndexC::getDriverHeader(ubit16 id, zudi::driver::headerS *retobj)
+error_t zudiIndexParserC::getDriverHeader(ubit16 id, zudi::driver::headerS *retobj)
 {
 	for (uarch_t i=0;
 		driverIndex.read(
@@ -179,7 +186,7 @@ error_t zudiIndexC::getDriverHeader(ubit16 id, zudi::driver::headerS *retobj)
 	return ERROR_NO_MATCH;
 }
 
-error_t zudiIndexC::findMetalanguage(
+error_t zudiIndexParserC::findMetalanguage(
 	utf8Char *metaName, zudi::driver::headerS *retobj
 	)
 {
@@ -214,7 +221,7 @@ error_t zudiIndexC::findMetalanguage(
 	return ERROR_NOT_FOUND;
 }
 
-error_t zudiIndexC::findDriver(
+error_t zudiIndexParserC::findDriver(
 	utf8Char *fullName, zudi::driver::headerS *retobj
 	)
 {
@@ -261,7 +268,7 @@ error_t zudiIndexC::findDriver(
 	return ERROR_NOT_FOUND;
 }
 
-error_t zudiIndexC::findDeviceData(
+error_t zudiIndexParserC::findDeviceData(
 	zudi::device::headerS *devHeader, utf8Char *attrName,
 	zudi::device::attrDataS *retobj
 	)
@@ -283,7 +290,7 @@ error_t zudiIndexC::findDeviceData(
 	return ERROR_NOT_FOUND;
 }
 
-error_t zudiIndexC::indexedGetDeviceData(
+error_t zudiIndexParserC::indexedGetDeviceData(
 	zudi::device::headerS *devHeader, ubit16 idx,
 	zudi::device::attrDataS *retobj
 	)
@@ -293,7 +300,7 @@ error_t zudiIndexC::indexedGetDeviceData(
 		sizeof(*retobj));
 }
 
-error_t zudiIndexC::getMessage(
+error_t zudiIndexParserC::getMessage(
 	zudi::driver::headerS *drvHeader,
 	ubit16 index, zudi::driver::messageS *retobj
 	)
@@ -315,7 +322,7 @@ error_t zudiIndexC::getMessage(
 	return ERROR_NO_MATCH;
 }
 
-error_t zudiIndexC::getMessageString(
+error_t zudiIndexParserC::getMessageString(
 	zudi::driver::headerS *drvHeader,
 	ubit16 index, utf8Char *string
 	)
@@ -329,7 +336,7 @@ error_t zudiIndexC::getMessageString(
 	return stringIndex.readString(string, msg.messageOff);
 }
 
-error_t zudiIndexC::getMetalanguage(
+error_t zudiIndexParserC::getMetalanguage(
 	zudi::driver::headerS *drvHeader, ubit16 index,
 	zudi::driver::metalanguageS *retobj
 	)
@@ -350,7 +357,7 @@ error_t zudiIndexC::getMetalanguage(
 	return ERROR_NO_MATCH;
 }
 
-error_t zudiIndexC::indexedGetRank(
+error_t zudiIndexParserC::indexedGetRank(
 	zudi::driver::headerS *metaHeader, uarch_t index,
 	zudi::rank::headerS *retobj
 	)
@@ -360,7 +367,7 @@ error_t zudiIndexC::indexedGetRank(
 		sizeof(*retobj));
 }
 
-error_t zudiIndexC::indexedGetRankAttrString(
+error_t zudiIndexParserC::indexedGetRankAttrString(
 	zudi::rank::headerS *rankHeader, uarch_t idx, utf8Char *retstr
 	)
 {

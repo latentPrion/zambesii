@@ -1,6 +1,7 @@
 .PHONY=
 DELIVERABLE=../../../floodplainn.a
-OBJFILES=device.o floodplainn.o fvfs.o index.o driverIndexer.o
+OBJFILES=device.o fvfs.o floodplainn_zudiIndexServer_frontEnd.o \
+	floodplainn_zudiIndexServer_backEnd.o floodplainn.o
 
 all: Makefile $(DELIVERABLE)
 

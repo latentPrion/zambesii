@@ -62,7 +62,7 @@ const dvfs::distributaryDescriptorS	floodplainnIndexer=
 	},
 	1,		// Provides only one category.
 	0, 0, 0,	// v0.00.000.
-	&floodplainnC::driverIndexerEntry,
+	&floodplainnC::indexReaderEntry,
 	0
 };
 

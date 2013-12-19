@@ -263,7 +263,6 @@ void __korientationMain(void)
 {
 	threadC			*self;
 	sarch_t			exitLoop=0;
-	error_t			err;
 
 	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
@@ -280,85 +279,8 @@ void __korientationMain(void)
 		self->getTaskContext()->messageStream.pull(&iMessage);
 		messageCallback = (syscallbackC *)iMessage.header.privateData;
 
-		const char *str="Chaos is not a pit; chaos is a ladder.";
 		switch (iMessage.header.subsystem)
 		{
-		case MSGSTREAM_SUBSYSTEM_ZASYNC:
-			zasyncStreamC::zasyncMsgS	*msg;
-
-			msg = (zasyncStreamC::zasyncMsgS *)&iMessage;
-			printf(NOTICE ORIENT"Got ZASYNC subsys message. func "
-				"is %d.\n",
-				iMessage.header.function);
-
-			// Send response.
-			switch (iMessage.header.function)
-			{
-			case MSGSTREAM_ZASYNC_CONNECT:
-				printf(NOTICE ORIENT"connect: req from "
-					"0x%x; source bindTid 0x%x.\n",
-					msg->header.sourceId, msg->bindTid);
-
-				processTrib.__kgetStream()->zasyncStream.respond(
-					iMessage.header.sourceId,
-					zasyncStreamC::CONNREPLY_YES,
-					self->getFullId(), 0);
-
-				break;
-
-			case MSGSTREAM_ZASYNC_RESPOND:
-				printf(NOTICE ORIENT"respond: ack from 0x%x; "
-					"source bindTid 0x%x.\n",
-					msg->header.sourceId, msg->bindTid);
-
-				err = processTrib.__kgetStream()->zasyncStream.send(
-					(processId_t)0x10001,
-					(void *)str, strlen8(CC str) + 1,
-					ipc::METHOD_MAP_AND_COPY, 0, NULL);
-
-				if (err != ERROR_SUCCESS) {
-					printf(ERROR ORIENT"send() failed, because %s.\n", strerror(err));
-				};
-				break;
-
-			case MSGSTREAM_ZASYNC_SEND:
-				printf(NOTICE ORIENT"send: ind from 0x%x; "
-					"method %d, dataHandle 0x%p, %dB.\n",
-					msg->header.sourceId,
-					msg->method,
-					msg->dataHandle, msg->dataNBytes);
-
-				if (msg->method == ipc::METHOD_MAP_AND_READ)
-				{
-					void		*rbuf;
-
-					rbuf = self->parent->getVaddrSpaceStream()->getPages(2);
-					self->parent->zasyncStream.receive(msg->dataHandle, rbuf, 0);
-					printf(NOTICE ORIENT"\tMsg: %s.\n", rbuf);
-					self->parent->zasyncStream.acknowledge(
-						msg->dataHandle, rbuf, msg->header.privateData);
-					self->parent->getVaddrSpaceStream()->releasePages(rbuf, 2);
-				}
-				else
-				{
-					err = self->parent->zasyncStream.receive(msg->dataHandle, buf, 0);
-					printf(NOTICE ORIENT"\tMsg: %s.\n", buf);
-					self->parent->zasyncStream.acknowledge(
-						msg->dataHandle, buf, msg->header.privateData);
-				};
-
-				break;
-
-			case MSGSTREAM_ZASYNC_ACKNOWLEDGE:
-				printf(NOTICE ORIENT"ack: Process 0x%x "
-					"acknowledges receipt.\n",
-					msg->header.sourceId);
-
-				break;
-			};
-
-			break;
-
 		default:
 			// Discard message if it has no callback.
 			if (messageCallback == NULL) { break; };
@@ -392,17 +314,6 @@ void __korientationMain1(void)
 	acxt = new (asyncContextCache->allocate()) syscallbackC(
 		&__korientationMain2);
 
-// Listen.
-processTrib.__kgetStream()->zasyncStream.listen(((threadC *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask())->getFullId());
-
-// Connect.
-ret = processTrib.__kgetStream()->zasyncStream.connect(
-	__KPROCESSID,
-	((threadC *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask())->getFullId(),
-	0);
-printf(NOTICE"ret is %s.\n", strerror(ret));
-return;
-
 	DO_OR_DIE(
 		processTrib, spawnDistributary(
 			CC"///@d//././udi-driver-indexer//./.", NULL,
@@ -412,20 +323,36 @@ return;
 		ret);
 }
 
+#include <__kstdlib/cleanup.h>
 floodplainnC::initializeReqCallF __korientationMain3;
 void __korientationMain2(messageStreamC::iteratorS *msg, void *)
 {
 	error_t		ret;
 
 	DIE_ON(msg->header.error);
-	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
+/*asyncResponseC		myResponse;
+messageStreamC::headerS		*m;
+
+m=new messageStreamC::headerS(
+	0x20000, MSGSTREAM_SUBSYSTEM_ZASYNC, 0,
+	sizeof(*m), 0, NULL);
+myResponse(m);
+myResponse(ERROR_SUCCESS);*/
+
+/*fplainn::deviceC	*dev;
+if (floodplainn.createDevice(CC"ggdev", 0, 0, &dev) != ERROR_SUCCESS)
+	{ printf(NOTICE"failed to createDevice.\n"); };
+
+zudiIndexServer::detectDriverReq(CC"ggdev", zudiIndexServer::INDEX_KERNEL, NULL, 0);*/
+
+//	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
 }
 
 floodplainnC::createRootDeviceReqCallF __korientationMain4;
 void __korientationMain3(error_t ret)
 {
 	DIE_ON(ret);
-
+printf(NOTICE"main3\n");
 	/* Start the chipset up.
 	 **/
 	DO_OR_DIE(floodplainn, createRootDeviceReq(&__korientationMain4), ret);
@@ -440,13 +367,12 @@ void __korientationMain4(error_t ret)
 
 	DIE_ON(ret);
 
-dormant:
 	fplainn::deviceC		*sysbusDev;
 	messageStreamC::iteratorS		iMessage;
 
 	floodplainn.getDevice(CC"by-id/0", &sysbusDev);
-	printf(NOTICE ORIENT"detectDriver: ret %s.\n",
-		strerror(floodplainn.detectDriverReq(CC"by-id/0", floodplainnC::INDEX_KERNEL, 0, NULL, 0)));
+//	printf(NOTICE ORIENT"detectDriver: ret %s.\n",
+//		strerror(floodplainn.detectDriverReq(CC"by-id/0", floodplainnC::INDEX_KERNEL, 0, NULL, 0)));
 
 	ret = self->getTaskContext()->messageStream.pull(&iMessage);
 	printf(NOTICE ORIENT"ret from detectDriver is %s. Dev's driverFullName is %s.\n",

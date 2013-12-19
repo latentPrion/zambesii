@@ -1,25 +1,39 @@
 
 #include <__ksymbols.h>
 #include <zudiIndex.h>
+#include <__kstdlib/cleanup.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kclasses/ptrList.h>
+#include <commonlibs/libzudiIndexParser.h>
+#include <kernel/common/zudiIndexServer.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/floodplainn/floodplainn.h>
 
 
 /**	EXPLANATION:
- * This process is responsible for keeping an index of all drivers available
- * and answers requests from the kernel:
+ * The ZUDI Index reader service reads and manages the ZUDI indexes in the
+ * kernel image, the kernel ramdisk and off the external disk into RAM and
+ * provides driver detection and support services.
  *
- * MSGSTREAM_FLOODPLAINN_LOAD_DRIVER
- *	This message causes the driver indexer to seek out a driver for the
- *	device argument passed in the request message.
+ * Is an implementation of the ZUDI Reader API. The current revision of the API
+ * can be found in /core/kernel/common/zudiReader.h.
  **/
 
 
-static floodplainnC::newDeviceActionE		newDeviceAction;
+static zudiIndexServer::newDeviceActionE		newDeviceAction;
+
+zudiIndexParserC		kernelIndex(zudiIndexParserC::SOURCE_KERNEL),
+				ramdiskIndex(zudiIndexParserC::SOURCE_RAMDISK),
+				externalIndex(zudiIndexParserC::SOURCE_EXTERNAL);
+
+zudiIndexParserC		*zudiIndexes[3] =
+{
+	&kernelIndex,
+	&ramdiskIndex,
+	&externalIndex
+};
 
 static void *getEsp(void)
 {
@@ -32,12 +46,7 @@ static void *getEsp(void)
 	return esp;
 }
 
-#define GET_NEXT_RANK(__r)			\
-	((zudi::rank::headerS *)((uintptr_t)(__r) \
-		+ sizeof(*(__r)) \
-		+ (sizeof(zudi::rank::rankAttrS) * (__r)->nAttributes)))
-
-static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
+static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 	fplainn::deviceC *device, zudi::device::headerS *devline,
 	zudi::driver::headerS *metaHeader
 	)
@@ -53,7 +62,7 @@ static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
 	// Run through all the rank lines for the relevant metalanguage.
 	for (uarch_t i=0;
 		i<metaHeader->nRanks
-		&& floodplainn.zudiIndexes[0].indexedGetRank(
+		&& zudiIndexes[0]->indexedGetRank(
 			metaHeader, i, &currRank) == ERROR_SUCCESS;
 		i++)
 	{
@@ -77,7 +86,7 @@ static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
 			utf8Char			currRankAttrName[
 				UDI_MAX_ATTR_NAMELEN];
 
-			if (floodplainn.zudiIndexes[0].indexedGetRankAttrString(
+			if (zudiIndexes[0]->indexedGetRankAttrString(
 				&currRank, j, currRankAttrName)
 				!= ERROR_SUCCESS)
 			{
@@ -91,7 +100,7 @@ static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
 			/* If the device props line doesn't have the attrib,
 			 * skip this rank props line.
 			 **/
-			if (floodplainn.zudiIndexes[0].findDeviceData(
+			if (zudiIndexes[0]->findDeviceData(
 				devline, currRankAttrName, &devlineData)
 				!= ERROR_SUCCESS)
 			{ break; };
@@ -119,11 +128,9 @@ static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
 				{
 				case UDI_ATTR_STRING:
 					// Get the string from the index.
-					if (floodplainn.zudiIndexes[0]
-						.getString(
-							devlineData
-								.attr_valueOff,
-							attrValueTmp)
+					if (zudiIndexes[0]->getString(
+						devlineData.attr_valueOff,
+						attrValueTmp)
 						!= ERROR_SUCCESS)
 					{ break; };
 
@@ -160,9 +167,8 @@ static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
 						break;
 					};
 
-					if (floodplainn.zudiIndexes[0]
-						.getArray(devlineData
-							.attr_valueOff,
+					if (zudiIndexes[0]->getArray(
+						devlineData.attr_valueOff,
 						devlineData.attr_length,
 						(ubit8 *)attrValueTmp)
 						!= ERROR_SUCCESS)
@@ -205,16 +211,15 @@ static status_t fplainnIndexer_detectDriver_compareEnumerationAttributes(
 	return ret;
 }
 
-
-#define GET_NEXT_DEVICE_HEADER_OFFSET(__dh)			\
-	(zudi::device::headerS *)((uintptr_t)(&__dh[1]) \
-		+ ((__dh)->nAttributes * sizeof(zudiIndex_deviceDataS)))
-
-static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
+static void fplainnIndexServer_detectDriverReq(
+	zasyncStreamC::zasyncMsgS *gmsg,
+	zudiIndexServer::zudiIndexMsgS *requestData
+	)
 {
 	threadC					*self;
 	error_t					err;
-	floodplainnC::driverIndexMsgS		*request, *response;
+	zasyncStreamC::zasyncMsgS		*request;
+	floodplainnC::zudiIndexMsgS		*response;
 	fplainn::deviceC			*dev;
 	zudi::device::headerS			devlineHeader,
 						*currDevlineHeader;
@@ -223,6 +228,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 	// FIXME: big memory leak on this list within this function.
 	ptrListC<zudi::device::headerS>		matchingDevices;
 	status_t				bestRank=-1;
+	asyncResponseC				myResponse;
 
 	/** FIXME: Memory leaks all over this function.
 	 **/
@@ -230,8 +236,12 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 	self = static_cast<threadC *>(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
-	request = (floodplainnC::driverIndexMsgS *)gmsg;
-	response = new floodplainnC::driverIndexMsgS(*request);
+	request = (zasyncStreamC::zasyncMsgS *)gmsg;
+	response = new floodplainnC::zudiIndexMsgS(
+		request->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_FLOODPLAINN, ZUDIIDX_SERVER_DETECTDRIVER_REQ,
+		sizeof(*response),
+		request->header.flags, request->header.privateData);
 
 	if (response == NULL)
 	{
@@ -242,34 +252,29 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 		return;
 	};
 
-	response->header.subsystem = MSGSTREAM_SUBSYSTEM_FLOODPLAINN;
-
+	myResponse(response);
+	// Allocate all necessary memory at once.
 	devlineName = new utf8Char[ZUDI_MESSAGE_MAXLEN];
 	driverHeader = new zudi::driver::headerS;
+
 	if (devlineName == NULL || driverHeader == NULL)
 	{
 		printf(WARNING FPLAINNIDX"detectDriver: no heap memory.\n");
-		response->header.error = ERROR_MEMORY_NOMEM;
-		messageStreamC::enqueueOnThread(
-			response->header.targetId, &response->header);
-
+		myResponse(ERROR_MEMORY_NOMEM);
 		return;
 	};
 
 	printf(NOTICE FPLAINNIDX"detectDriver: devname %s. Src 0x%x, target 0x%x."
-		"\n", request->deviceName,
+		"\n", requestData->path,
 		request->header.sourceId, request->header.targetId);
 
-	err = floodplainn.getDevice(request->deviceName, &dev);
+	err = floodplainn.getDevice(requestData->path, &dev);
 	if (err != ERROR_SUCCESS)
 	{
 		printf(ERROR FPLAINNIDX"detectDriver: invalid device %s.\n",
-			request->deviceName);
+			requestData->path);
 
-		response->header.error = ERROR_INVALID_RESOURCE_NAME;
-		messageStreamC::enqueueOnThread(
-			response->header.targetId, &response->header);
-
+		myResponse(ERROR_INVALID_RESOURCE_NAME);
 		return;
 	};
 
@@ -282,7 +287,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 	 **/
 	
 	for (uarch_t i=0;
-		floodplainn.zudiIndexes[0].indexedGetDevice(i, &devlineHeader)
+		zudiIndexes[0]->indexedGetDevice(i, &devlineHeader)
 			== ERROR_SUCCESS;
 		i++)
 	{
@@ -293,7 +298,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 			ZUDI_DRIVER_METALANGUAGE_MAXLEN];
 
 
-		if (floodplainn.zudiIndexes[0].getDriverHeader(
+		if (zudiIndexes[0]->getDriverHeader(
 			devlineHeader.driverId, driverHeader) != ERROR_SUCCESS)
 		{
 			printf(FATAL FPLAINNIDX"detectDriver: index DEVICE has "
@@ -303,7 +308,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 			continue;
 		};
 
-		if (floodplainn.zudiIndexes[0].getMessageString(
+		if (zudiIndexes[0]->getMessageString(
 			driverHeader, devlineHeader.messageIndex, devlineName)
 			!= ERROR_SUCCESS)
 		{
@@ -315,7 +320,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 		};
 
 		// Now get the metalanguage for this device props line.
-		if (floodplainn.zudiIndexes[0].getMetalanguage(
+		if (zudiIndexes[0]->getMetalanguage(
 			driverHeader, devlineHeader.metaIndex,
 			&devlineMetalanguage) != ERROR_SUCCESS)
 		{
@@ -326,7 +331,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 			continue;
 		};
 
-		if (floodplainn.zudiIndexes[0].getString(
+		if (zudiIndexes[0]->getString(
 			devlineMetalanguage.nameOff, devlineMetaName)
 			!= ERROR_SUCCESS)
 		{
@@ -336,7 +341,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 			continue;
 		};
 
-		if (floodplainn.zudiIndexes[0].findMetalanguage(
+		if (zudiIndexes[0]->findMetalanguage(
 			devlineMetaName, &metaHeader) != ERROR_SUCCESS)
 		{
 			printf(FATAL FPLAINNIDX"detectDriver: DEVICE line refers "
@@ -349,7 +354,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 		/* Now compare the device line attributes to the actual device's
 		 * attributes.
 		 **/
-		rank = fplainnIndexer_detectDriver_compareEnumerationAttributes(
+		rank = fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 			dev, &devlineHeader, &metaHeader);
 
 		// If the driver was a match:
@@ -410,7 +415,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 
 			printf(NOTICE FPLAINNIDX"detectDriver: Devnode \"%s\" "
 				"ranks %d, matching device\n\t\"%s\"\n",
-				request->deviceName, rank,
+				requestData->path, rank,
 				devlineName);
 		};
 	};
@@ -426,7 +431,7 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 		 * operation when the driver index is updated to remove an
 		 * undesired driver, should the user so choose to do so.
 		 **/
-		response->header.error = ERROR_NO_MATCH;
+		myResponse(ERROR_NO_MATCH);
 		dev->driverFullName[0] = '\0';
 		dev->driverDetected = 0;
 		dev->isKernelDriver = 0;
@@ -443,28 +448,25 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 		{
 			printf(WARNING FPLAINNIDX"detectDriver: %s: Multiple "
 				"viable matches. Arbitratily choosing first.\n",
-				request->deviceName);
+				requestData->path);
 		};
 
 		// Shouldn't need to error check this call.
 		currDevlineHeader = matchingDevices.getNextItem(&handle);
 
-		response->header.error = floodplainn.zudiIndexes[0]
-			.getDriverHeader(
-				currDevlineHeader->driverId, driverHeader);
+		response->header.error = zudiIndexes[0]->getDriverHeader(
+			currDevlineHeader->driverId, driverHeader);
 
 		if (response->header.error != ERROR_SUCCESS)
 		{
 			printf(ERROR FPLAINNIDX"detectDriver: getDriverHeader "
 				"failed for the chosen driver.\n");
 
-			messageStreamC::enqueueOnThread(
-				response->header.targetId, &response->header);
-
+			myResponse(response->header.error);
 			return;
 		};
 
-		response->header.error = ERROR_SUCCESS;
+		myResponse(ERROR_SUCCESS);
 
 		strcpy8(dev->driverFullName, CC driverHeader->basePath);
 		basePathLen = strlen8(CC driverHeader->basePath);
@@ -483,19 +485,25 @@ static void fplainnIndexer_detectDriverReq(messageStreamC::iteratorS *gmsg)
 		dev->driverDetected = 1;
 		dev->isKernelDriver = 1;
 	};
-
-	messageStreamC::enqueueOnThread(
-		response->header.targetId, &response->header);
 }
 
-static void fplainnIndexer_newDeviceActionReq(messageStreamC::iteratorS *gmsg)
+static void fplainnIndexServer_newDeviceActionReq(
+	zasyncStreamC::zasyncMsgS *gmsg,
+	zudiIndexServer::zudiIndexMsgS *requestData
+	)
 {
-	floodplainnC::newDeviceActionMsgS	*request;
-	floodplainnC::newDeviceActionMsgS	*response;
+	zasyncStreamC::zasyncMsgS		*request;
+	floodplainnC::zudiIndexMsgS		*response;
+	asyncResponseC				myResponse;
 
-	request = (floodplainnC::newDeviceActionMsgS *)gmsg;
+	request = (zasyncStreamC::zasyncMsgS *)gmsg;
 
-	response = new floodplainnC::newDeviceActionMsgS(*request);
+	response = new floodplainnC::zudiIndexMsgS(
+		request->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_FLOODPLAINN, 0,
+		sizeof(*response),
+		request->header.flags, request->header.privateData);
+
 	if (response == NULL)
 	{
 		printf(ERROR FPLAINNIDX"newDeviceActionReq: "
@@ -506,33 +514,30 @@ static void fplainnIndexer_newDeviceActionReq(messageStreamC::iteratorS *gmsg)
 		return;
 	};
 
-	response->header.subsystem = MSGSTREAM_SUBSYSTEM_FLOODPLAINN;
+	myResponse(response);
+	response->header.function = requestData->command;
 	response->action = ::newDeviceAction;
 
-	if (request->header.function
-		== MSGSTREAM_FPLAINN_SET_NEWDEVICE_ACTION_REQ)
-	{
-		::newDeviceAction = request->action;
-	};
+	if (requestData->command == ZUDIIDX_SERVER_SET_NEWDEVICE_ACTION_REQ)
+		{ ::newDeviceAction = requestData->action; };
 
-	messageStreamC::enqueueOnThread(
-		response->header.targetId, &response->header);
+	myResponse(ERROR_SUCCESS);
 }
 
 #if 0
-static void flplainnIndexer_loadDriverReq(messageStreamC::iteratorS *gmsg)
+static void flplainnIndexer_loadDriverReq(zasyncStreamC::zasyncMsgS *gmsg)
 {
-	floodplainnC::driverIndexMsgS		*request, *response;
+	floodplainnC::zudiIndexMsgS		*request, *response;
 	void					*handle;
 	fplainn::driverC			*driverTmp, *driver;
 	fplainn::deviceC			*device;
 	error_t					err;
 
 printf(NOTICE"Just entered loadDriverReq handler.\n");
-	request = (floodplainnC::driverIndexMsgS *)gmsg;
+	request = (floodplainnC::zudiIndexMsgS *)gmsg;
 
-	response = new floodplainnC::driverIndexMsgS(
-		request->deviceName, floodplainnC::INDEX_KERNEL);
+	response = new floodplainnC::zudiIndexMsgS(
+		requestData->path, floodplainnC::INDEX_KERNEL);
 
 	if (response == NULL)
 	{
@@ -553,12 +558,12 @@ printf(NOTICE"Just entered loadDriverReq handler.\n");
 	 * may not be necessary. That said, it's only a spinlock acquire and
 	 * release, so not really an issue.
 	 **/
-	err = floodplainn.getDevice(request->deviceName, &device);
+	err = floodplainn.getDevice(requestData->path, &device);
 	if (err != ERROR_SUCCESS) {
 		response->header.error = ERROR_SUCCESS; goto sendResponse;
 	};
 
-printf(NOTICE"Got device on %s.\n", request->deviceName);
+printf(NOTICE"Got device on %s.\n", requestData->path);
 	handle = NULL;
 	driver = NULL;
 	driverTmp = floodplainn.driverList.getNextItem(&handle);
@@ -631,11 +636,16 @@ sendResponse:
 }
 #endif
 
-static void fplainnIndexer_newDeviceInd(messageStreamC::iteratorS *gmsg)
+static void fplainnIndexServer_newDeviceInd(
+	zasyncStreamC::zasyncMsgS *gmsg,
+	zudiIndexServer::zudiIndexMsgS *requestData
+	)
 {
 	// The originContext /is/ the response that will eventually be sent.
-	floodplainnC::newDeviceMsgS		*request, *originContext;
+	zasyncStreamC::zasyncMsgS		*request;
+	floodplainnC::zudiIndexMsgS		*originContext;
 	error_t					err;
+	asyncResponseC				myResponse;
 
 	/**	EXPLANATION:
 	 * Based on the current new-device-action setting, we will do a series
@@ -651,9 +661,15 @@ static void fplainnIndexer_newDeviceInd(messageStreamC::iteratorS *gmsg)
 	 * of the caller, so we have to copy the caller's request message before
 	 * making any extra calls.
 	 **/
-	request = (floodplainnC::newDeviceMsgS *)gmsg;
+	request = (zasyncStreamC::zasyncMsgS *)gmsg;
 
-	originContext = new floodplainnC::newDeviceMsgS(*request);
+	originContext = new floodplainnC::zudiIndexMsgS(
+		request->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_FLOODPLAINN,
+		ZUDIIDX_SERVER_NEWDEVICE_IND,
+		sizeof(*originContext),
+		request->header.flags, request->header.privateData);
+
 	if (originContext == NULL)
 	{
 		printf(ERROR FPLAINNIDX"newDeviceInd: "
@@ -664,51 +680,49 @@ static void fplainnIndexer_newDeviceInd(messageStreamC::iteratorS *gmsg)
 		return;
 	};
 
-	// Set the last completed action to default of "nothing".
-	originContext->lastCompletedAction = floodplainnC::NDACTION_NOTHING;
-	originContext->header.subsystem = MSGSTREAM_SUBSYSTEM_FLOODPLAINN;
+	myResponse(originContext);
+	originContext->set(
+		requestData->command, requestData->path,
+		requestData->index, zudiIndexServer::NDACTION_NOTHING);
 
 	// If the currently set action is "do nothing", just exit immediately.
-	if (::newDeviceAction == floodplainnC::NDACTION_NOTHING) {
-		originContext->header.error = ERROR_SUCCESS; goto sendResponse;
-	};
-	
-	err = floodplainn.detectDriverReq(
-		originContext->deviceName, floodplainnC::INDEX_KERNEL,
-		0, originContext, 0);
-
-	if (err != ERROR_SUCCESS) {
-		originContext->header.error = err; goto sendResponse;
+	if (::newDeviceAction == zudiIndexServer::NDACTION_NOTHING) {
+		myResponse(ERROR_SUCCESS); return;
 	};
 
-	return;
+	err = zudiIndexServer::detectDriverReq(
+		originContext->path, originContext->index,
+		originContext, 0);
 
-sendResponse:
-	messageStreamC::enqueueOnThread(
-		originContext->header.targetId, &originContext->header);
+	if (err != ERROR_SUCCESS) { myResponse(err); return; };
+	myResponse(DONT_SEND_RESPONSE);
 }
 
-static void fplainnIndexer_newDeviceInd1(messageStreamC::iteratorS *gmsg)
+static void fplainnIndexServer_newDeviceInd1(messageStreamC::iteratorS *gmsg)
 {
-	floodplainnC::driverIndexMsgS		*response;
-	floodplainnC::newDeviceMsgS		*originContext;
+	floodplainnC::zudiIndexMsgS		*response, *originContext;
+	asyncResponseC				myResponse;
 //	error_t					err;
 
-	response = (floodplainnC::driverIndexMsgS *)gmsg;
-	originContext = (floodplainnC::newDeviceMsgS *)gmsg->header.privateData;
+	/**	EXPLANATION:
+	 * The "request" we're dealing with is actually a response message from
+	 * a syscall we ourselves performed; we name it accordingly ("response")
+	 * for aided readability.
+	 **/
+	response = (floodplainnC::zudiIndexMsgS *)gmsg;
+	originContext = (floodplainnC::zudiIndexMsgS *)gmsg->header.privateData;
+	myResponse(originContext);
 
 	if (response->header.error != ERROR_SUCCESS)
 	{
-		originContext->header.error = response->header.error;
-		goto sendResponse;
+		myResponse(response->header.error);
+		return;
 	};
 
-	originContext->lastCompletedAction =
-		floodplainnC::NDACTION_DETECT_DRIVER;
+	originContext->action = zudiIndexServer::NDACTION_DETECT_DRIVER;
 	// If newDeviceAction is detect-and-stop, stop and send response now.
-	if (::newDeviceAction == floodplainnC::NDACTION_DETECT_DRIVER) {
-		response->header.error = ERROR_SUCCESS; goto sendResponse;
-	};
+	if (::newDeviceAction == zudiIndexServer::NDACTION_DETECT_DRIVER)
+		{ myResponse(ERROR_SUCCESS); return; };
 
 #if 0
 	// Else we continue. Next we do a loadDriver() call.
@@ -721,126 +735,184 @@ printf(NOTICE"here.\n");
 	return;
 #endif
 
-sendResponse:
-	messageStreamC::enqueueOnThread(
-		originContext->header.targetId, &originContext->header);
+	myResponse(ERROR_SUCCESS);
 }
 
-static void fplainnIndexer_newDeviceInd2(messageStreamC::iteratorS *gmsg)
+static void fplainnIndexServer_newDeviceInd2(messageStreamC::iteratorS *gmsg)
 {
-	floodplainnC::driverIndexMsgS	*response;
-	floodplainnC::newDeviceMsgS	*originContext;
+	floodplainnC::zudiIndexMsgS	*response, *originContext;
+	asyncResponseC			myResponse;
 
-	response = (floodplainnC::driverIndexMsgS *)gmsg;
-	originContext = (floodplainnC::newDeviceMsgS *)gmsg->header.privateData;
+	response = (floodplainnC::zudiIndexMsgS *)gmsg;
+	originContext = (floodplainnC::zudiIndexMsgS *)gmsg->header.privateData;
+	myResponse(originContext);
 
-	originContext->lastCompletedAction = floodplainnC::NDACTION_LOAD_DRIVER;
-	messageStreamC::enqueueOnThread(
-		originContext->header.targetId, &originContext->header);
+	originContext->action = zudiIndexServer::NDACTION_LOAD_DRIVER;
+	myResponse(ERROR_SUCCESS);
 }
 
-static void handleUnknownRequest(messageStreamC::headerS *request)
+static void handleUnknownRequest(zasyncStreamC::zasyncMsgS *request)
 {
+	asyncResponseC		myResponse;
+
 	// Just send a response with an error value.
 	messageStreamC::headerS	*response;
 
-	response = new messageStreamC::headerS(*request);
+	response = new messageStreamC::headerS(request->header);
 	if (response == NULL)
 	{
 		printf(ERROR FPLAINNIDX"HandleUnknownRequest: "
 			"unable to allocate response message.\n"
 			"\tSender thread 0x%x may be frozen indefinitely.\n",
-			request->sourceId);
+			request->header.sourceId);
 
 		return;
 	};
 
 	response->subsystem = MSGSTREAM_SUBSYSTEM_FLOODPLAINN;
-	response->error = ERROR_UNKNOWN;
-	messageStreamC::enqueueOnThread(response->targetId, response);
+	myResponse(response);
+	myResponse(ERROR_UNKNOWN);
 }
 
-void floodplainnC::driverIndexerEntry(void)
+void fplainnIndexServer_handleRequest(
+	zasyncStreamC::zasyncMsgS *msg,
+	zudiIndexServer::zudiIndexMsgS *requestData, threadC *self
+	)
+{
+	error_t		err;
+
+	err = self->parent->zasyncStream.receive(
+		msg->dataHandle, requestData, 0);
+
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINNIDX"handleRequest: receive() failed "
+			"because %s.\n",
+			strerror(err));
+
+		return;
+	};
+
+	switch (requestData->command)
+	{
+	case ZUDIIDX_SERVER_DETECTDRIVER_REQ:
+		fplainnIndexServer_detectDriverReq(
+			(zasyncStreamC::zasyncMsgS *)msg, requestData);
+		break;
+
+	case ZUDIIDX_SERVER_LOADDRIVER_REQ:
+//		flplainnIndexer_loadDriverReq(
+//			(zasyncStreamC::zasyncMsgS *)msg, requestData);
+
+printf(WARNING FPLAINNIDX"Main loop: loadDriver request found.\n");
+		break;
+
+	case ZUDIIDX_SERVER_GET_NEWDEVICE_ACTION_REQ:
+	case ZUDIIDX_SERVER_SET_NEWDEVICE_ACTION_REQ:
+		fplainnIndexServer_newDeviceActionReq(
+			(zasyncStreamC::zasyncMsgS *)msg, requestData);
+
+		break;
+
+	case ZUDIIDX_SERVER_NEWDEVICE_IND:
+		fplainnIndexServer_newDeviceInd(
+			(zasyncStreamC::zasyncMsgS *)msg, requestData);
+
+		break;
+
+	default:
+		printf(ERROR FPLAINNIDX"Unknown command request %d.\n",
+			requestData->command);
+
+		handleUnknownRequest(msg);
+		break;
+	};
+}
+
+void floodplainnC::indexReaderEntry(void)
 {
 	threadC				*self;
-	messageStreamC::iteratorS	gcb;
+	messageStreamC::iteratorS	*gcb;
+	zudiIndexServer::zudiIndexMsgS	*requestData;
 	zudi::headerS			__kindexHeader;
+	class myCleanupC : public cleanupC<2>
+	{
+	public: ~myCleanupC(void) { heapFree(0); heapFree(1); }
+	} cleanup;
 
 	self = static_cast<threadC *>(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
-	floodplainn.indexerThreadId = self->getFullId();
-	floodplainn.indexerQueueId = MSGSTREAM_SUBSYSTEM_REQ0;
+	cleanup[0] = gcb = new messageStreamC::iteratorS;
+	cleanup[1] = requestData = new zudiIndexServer::zudiIndexMsgS(
+		0, NULL, zudiIndexServer::INDEX_KERNEL);
+
+	if (zudiIndexes[0]->initialize(CC"[__kindex]") != ERROR_SUCCESS)
+		{ panic(ERROR_UNINITIALIZED); };
+
+	if (zudiIndexes[1]->initialize(CC"@h:__kramdisk/drivers32")
+		!= ERROR_SUCCESS)
+	{ panic(ERROR_UNINITIALIZED); };
+
+	if (zudiIndexes[2]->initialize(CC"@h:__kroot/zambesii/drivers32")
+		!= ERROR_SUCCESS)
+	{ panic(ERROR_UNINITIALIZED); };
+
+	floodplainn.zudiIndexServerTid = self->getFullId();
+	self->parent->zasyncStream.listen(self->getFullId());
 
 	printf(NOTICE FPLAINNIDX"Floodplainn-indexer executing;\n"
-		"\tprocess ID: 0x%x. ESP: 0x%p. RequestQ ID: %d. Dormanting.\n",
-		self->getFullId(), getEsp(),
-		floodplainn.indexerQueueId);
+		"\tprocess ID: 0x%x. ESP: 0x%p. Listening; dormanting.\n",
+		self->getFullId(), getEsp());
 
-	floodplainn.zudiIndexes[0].getHeader(&__kindexHeader);
-	printf(NOTICE FPLAINNIDX"Index: Version %d.%d. (%s), holds %d drivers.\n",
+	zudiIndexes[0]->getHeader(&__kindexHeader);
+	printf(NOTICE FPLAINNIDX"KERNEL_INDEX: Version %d.%d. (%s), holds %d "
+		"drivers.\n",
 		__kindexHeader.majorVersion, __kindexHeader.minorVersion,
 		__kindexHeader.endianness, __kindexHeader.nRecords);
 
 	for (;;)
 	{
-		self->getTaskContext()->messageStream.pull(&gcb);
+		self->getTaskContext()->messageStream.pull(gcb);
 
 		// If some thread is forwarding syscall responses to us:
-		if (gcb.header.subsystem != MSGSTREAM_SUBSYSTEM_REQ0
-			&& gcb.header.sourceId != self->getFullId())
+		if ((gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_FLOODPLAINN
+			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_ZASYNC)
+			&& gcb->header.sourceId != self->getFullId())
 		{
 			printf(ERROR FPLAINNIDX"Syscall response message "
-				"forwarded to this thread by thread 0x%x.\n"
-				"\tPossible exploit attempt. Rejecting.\n",
-				gcb.header.sourceId);
+				"forwarded to this thread.\n\tFrom TID 0x%x. "
+				"Possible exploit attempt. Rejecting.\n",
+				gcb->header.sourceId);
 
 			// Reject the message.
 			continue;
 		};
 
-		switch (gcb.header.subsystem)
+		switch (gcb->header.subsystem)
 		{
-		case MSGSTREAM_SUBSYSTEM_REQ0:
-			switch (gcb.header.function)
+		case MSGSTREAM_SUBSYSTEM_ZASYNC:
+			switch (gcb->header.function)
 			{
-			case MSGSTREAM_FPLAINN_DETECTDRIVER_REQ:
-				fplainnIndexer_detectDriverReq(&gcb);
-				break;
+			case MSGSTREAM_ZASYNC_SEND:
+				fplainnIndexServer_handleRequest(
+					(zasyncStreamC::zasyncMsgS *)gcb,
+					requestData, self);
 
-			case MSGSTREAM_FPLAINN_LOADDRIVER_REQ:
-//				flplainnIndexer_loadDriverReq(&gcb);
-				printf(WARNING FPLAINNIDX"Main loop: loadDriver request found.\n");
-				break;
-
-			case MSGSTREAM_FPLAINN_GET_NEWDEVICE_ACTION_REQ:
-			case MSGSTREAM_FPLAINN_SET_NEWDEVICE_ACTION_REQ:
-				fplainnIndexer_newDeviceActionReq(&gcb);
-				break;
-
-			case MSGSTREAM_FPLAINN_NEWDEVICE_IND:
-				fplainnIndexer_newDeviceInd(&gcb);
-				break;
-
-			default:
-				printf(ERROR FPLAINNIDX"Unknown request %d.\n",
-					gcb.header.function);
-
-				handleUnknownRequest(&gcb.header);
 				break;
 			};
 
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_FLOODPLAINN:
-			switch (gcb.header.function)
+			switch (gcb->header.function)
 			{
-			case MSGSTREAM_FPLAINN_DETECTDRIVER_REQ:
-				fplainnIndexer_newDeviceInd1(&gcb);
+			case ZUDIIDX_SERVER_DETECTDRIVER_REQ:
+				fplainnIndexServer_newDeviceInd1(gcb);
 				break;
 
-			case MSGSTREAM_FPLAINN_LOADDRIVER_REQ:
-				fplainnIndexer_newDeviceInd2(&gcb);
+			case ZUDIIDX_SERVER_LOADDRIVER_REQ:
+				fplainnIndexServer_newDeviceInd2(gcb);
 				break;
 			};
 			break;
