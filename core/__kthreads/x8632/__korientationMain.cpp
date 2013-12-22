@@ -5,6 +5,7 @@
 #include <__kstdlib/compiler/cxxrtl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
 #include <__kthreads/__korientation.h>
@@ -241,66 +242,11 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 }
 
-/**	EXPLANATION:
- * This function is entered after __korientationInit() so it has access to
- * memory management (__kspace level), cooperative scheduling on the BSP,
- * thread spawning and process spawning, along with exceptions and IRQs.
- *
- * Certain chipsets may need to do extra work inside of __korientationMain to
- * have IRQs etc up to speed, but that is the general initialization state at
- * this point.
- *
- * The rest of this function guides the kernel through the bootstrap sequence
- * (timers, VFS, drivers, etc). Generally the floodplainn VFS is initialized
- * first, and then populated with the ZKCM devices, and then the rest of the
- * kernel is initialized with an emphasis on getting the timers initialized
- * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
- **/
-
-const char *buf[512];
-void __korientationMain1(void);
-void __korientationMain(void)
-{
-	threadC			*self;
-	sarch_t			exitLoop=0;
-
-	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask() );
-
-	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
-		self->getFullId(), self);
-
-	__korientationMain1();
-	for (; !exitLoop;)
-	{
-		messageStreamC::iteratorS	iMessage;
-		syscallbackC		*messageCallback;
-
-		self->getTaskContext()->messageStream.pull(&iMessage);
-		messageCallback = (syscallbackC *)iMessage.header.privateData;
-
-		switch (iMessage.header.subsystem)
-		{
-		default:
-			// Discard message if it has no callback.
-			if (messageCallback == NULL) { break; };
-
-			(*messageCallback)(&iMessage);
-			asyncContextCache->free(messageCallback);
-			break;
-		};
-	};
-
-	printf(NOTICE ORIENT"Main: Exited asynch loop. Dormanting.\n");
-	taskTrib.dormant(self->getFullId());
-}
-
 syscallbackDataF __korientationMain2;
 void __korientationMain1(void)
 {
 	error_t			ret;
 	distributaryProcessC	*dp;
-	syscallbackC		*acxt;
 
 	// Initialize the VFS roots.
 	DO_OR_DIE(vfsTrib, initialize(), ret);
@@ -311,41 +257,25 @@ void __korientationMain1(void)
 	 * dtrib to allow us to search the kernel driver index.
 	 **/
 	DO_OR_DIE(distributaryTrib, initialize(), ret);
-	acxt = new (asyncContextCache->allocate()) syscallbackC(
-		&__korientationMain2);
-
 	DO_OR_DIE(
 		processTrib, spawnDistributary(
 			CC"///@d//././udi-driver-indexer//./.", NULL,
 			NUMABANKID_INVALID,
-			0, 0, acxt,
+			0, 0, newSyscallback(&__korientationMain2),
 			&dp),
 		ret);
+
+	floodplainn.setZudiIndexServerTid(dp->id);
 }
 
-#include <__kstdlib/cleanup.h>
 floodplainnC::initializeReqCallF __korientationMain3;
 void __korientationMain2(messageStreamC::iteratorS *msg, void *)
 {
 	error_t		ret;
 
 	DIE_ON(msg->header.error);
-/*asyncResponseC		myResponse;
-messageStreamC::headerS		*m;
-
-m=new messageStreamC::headerS(
-	0x20000, MSGSTREAM_SUBSYSTEM_ZASYNC, 0,
-	sizeof(*m), 0, NULL);
-myResponse(m);
-myResponse(ERROR_SUCCESS);*/
-
-/*fplainn::deviceC	*dev;
-if (floodplainn.createDevice(CC"ggdev", 0, 0, &dev) != ERROR_SUCCESS)
-	{ printf(NOTICE"failed to createDevice.\n"); };
-
-zudiIndexServer::detectDriverReq(CC"ggdev", zudiIndexServer::INDEX_KERNEL, NULL, 0);*/
-
-//	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
+	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
+printf(NOTICE"main2!\n");
 }
 
 floodplainnC::createRootDeviceReqCallF __korientationMain4;
@@ -455,5 +385,58 @@ void __korientationMain4(error_t ret)
 
 	printf(NOTICE ORIENT"Halting unfavourably.\n");
 	for (;;) { asm volatile("hlt\n\t"); };
+}
+
+/**	EXPLANATION:
+ * This function is entered after __korientationInit() so it has access to
+ * memory management (__kspace level), cooperative scheduling on the BSP,
+ * thread spawning and process spawning, along with exceptions and IRQs.
+ *
+ * Certain chipsets may need to do extra work inside of __korientationMain to
+ * have IRQs etc up to speed, but that is the general initialization state at
+ * this point.
+ *
+ * The rest of this function guides the kernel through the bootstrap sequence
+ * (timers, VFS, drivers, etc). Generally the floodplainn VFS is initialized
+ * first, and then populated with the ZKCM devices, and then the rest of the
+ * kernel is initialized with an emphasis on getting the timers initialized
+ * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
+ **/
+
+void __korientationMain1(void);
+void __korientationMain(void)
+{
+	threadC			*self;
+	sarch_t			exitLoop=0;
+
+	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask() );
+
+	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
+		self->getFullId(), self);
+
+	__korientationMain1();
+	for (; !exitLoop;)
+	{
+		messageStreamC::iteratorS	iMessage;
+		syscallbackC			*messageCallback;
+
+		self->getTaskContext()->messageStream.pull(&iMessage);
+		messageCallback = (syscallbackC *)iMessage.header.privateData;
+
+		switch (iMessage.header.subsystem)
+		{
+		default:
+			// Discard message if it has no callback.
+			if (messageCallback == NULL) { break; };
+
+			(*messageCallback)(&iMessage);
+			asyncContextCache->free(messageCallback);
+			break;
+		};
+	};
+
+	printf(NOTICE ORIENT"Main: Exited asynch loop. Dormanting.\n");
+	taskTrib.dormant(self->getFullId());
 }
 

@@ -57,7 +57,7 @@ void zudiIndexServer::setNewDeviceActionReq(
 	newDeviceActionE action, void *privateData
 	)
 {
-	zudiIndexMsgS	*request;
+	zudiIndexMsgS		*request;
 	taskC			*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();

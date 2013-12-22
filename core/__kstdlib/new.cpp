@@ -8,17 +8,7 @@ void *operator new (size_t nBytes)
 	return memReservoir.allocate(nBytes);
 }
 
-void *operator new[](size_t nBytes)
-{
-	return memReservoir.allocate(nBytes);
-}
-
 void operator delete (void *mem)
-{
-	if (mem == NULL) { return; };
-	memReservoir.free(mem);
-}
-void operator delete[](void *mem)
 {
 	if (mem == NULL) { return; };
 	memReservoir.free(mem);

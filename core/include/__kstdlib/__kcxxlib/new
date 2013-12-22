@@ -4,22 +4,56 @@
 	#include <stddef.h>
 	#include <__kstdlib/__ktypes.h>
 
+// Placement new and placement new[].
+inline void *operator new(size_t, void *ptr) { return ptr; }
+inline void *operator new[](size_t, void *ptr) { return ptr; }
+
 void *operator new(size_t size);
-void *operator new[](size_t size);
-inline void *operator new(size_t, void *ptr) {
-	return ptr;
-}
-inline void *operator new[](size_t, void *ptr) {
-	return ptr;
+inline void *operator new[](size_t nBytes)
+{
+	/**	EXPLANATION:
+	 * Internally, the compiler inserts the following code here:
+	 *
+	 * nBytes += sizeof(void *);
+	 **/
+	return ::operator new(nBytes);
+	/**	EXPLANATION:
+	 * And after the call, it takes the pointer that is to be returned,
+	 * (represented as 'ret') and inserts this code here:
+	 *
+	 * *(void **)ret = NUM_OBJECTS_ALLOCATED;
+	 * ret = (void *)((uintptr_t)ret + sizeof(void *));
+	 *
+	 * // Construct all objects.
+	 * for (int i=0; i<NUM_OBJECTS_ALLOCATED; i++) {
+	 *	new (&ret[i]) OBJECT_TYPE;
+	 * };
+	 * return ret;
+	 **/
 }
 
+// Placement delete and placement delete[].
+inline void operator delete(void *, void *) {}
+inline void operator delete[](void *, void *) {}
+
 void operator delete(void *ptr);
-void operator delete[](void *ptr);
-inline void operator delete(void *, void *)
+inline void operator delete[](void *mem)
 {
-}
-inline void operator delete[](void *, void *)
-{
+	/**	EXPLANATION:
+	 * Internally, the compiler inserts the following code here:
+	 *
+	 * void		**tmp = mem;
+	 * tmp--;
+	 * int		numObjects = *(int *)tmp;
+	 *
+	 * // Call destructor for each object.
+	 * for (int i=0; i<numObjects; i++) {
+	 *	mem[i].~OBJECT_TYPE_DESTRUCTOR();
+	 * };
+	 *
+	 * mem = (void *)tmp;
+	 **/
+	::operator delete(mem);
 }
 
 #endif

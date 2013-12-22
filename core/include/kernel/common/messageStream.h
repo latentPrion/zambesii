@@ -204,6 +204,48 @@ private:
 	taskContextC			*parent;
 };
 
+#define DONT_SEND_RESPONSE		((void *)NULL)
+
+/**	EXPLANATION:
+ * Basically, you give this class a pointer to a block of memory which holds
+ * an asynchronous response message. The message will automatically be sent when
+ * the an instance of the class destructs, UNLESS the internal pointer is
+ * NULL. If the internal pointer is NULL, the message will not be sent.
+ *
+ * To set the internal message pointer, use:
+ *	object.setMessage(POINTER_TO_BLOCK_OF_MEMORY).
+ * To set the error value that is set in the message's header, use:
+ *	object.setMessage(YOUR_CHOSEN_ERROR_VALUE).
+ *
+ * You can also use operator() as a shorthand:
+ *	object(POINTER_TO_BLOCK_OF_MEMORY) or,
+ *	object(YOUR_CHOSEN_ERROR_VALUE).
+ *
+ * If you already have a message pointer stored internally from a previous
+ * setMessage(), you can clear it by calling:
+ *	setMessage(DONT_SEND_RESPONSE), which is the same as
+ *	setMessage((void *)NULL);
+ **/
+class asyncResponseC
+{
+public:
+	asyncResponseC(void) : msgHeader(NULL) {}
+	~asyncResponseC(void);
+
+	void operator() (error_t e) { setMessage(e); }
+	void operator() (void *msg) { setMessage(msg); }
+
+	void setMessage(error_t e)
+		{ err = e; }
+
+	void setMessage(void *msg)
+		{ msgHeader = msg; }
+
+private:
+	void		*msgHeader;
+	error_t		err;
+};
+
 typedef void (voidF)(void);
 typedef void (syscallbackFuncF)(messageStreamC::iteratorS *msg, void (*func)());
 typedef void (syscallbackDataF)(messageStreamC::iteratorS *msg, void *data);
@@ -250,6 +292,9 @@ private:
 	void		(*func)();
 	void		*data;
 };
+
+syscallbackC *newSyscallback(syscallbackDataF *fn, void *data=NULL);
+syscallbackC *newSyscallback(syscallbackFuncF *fn, void (*func)()=NULL);
 
 class slamCacheC;
 extern slamCacheC	*asyncContextCache;

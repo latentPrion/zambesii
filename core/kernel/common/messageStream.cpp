@@ -11,6 +11,35 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
+asyncResponseC::~asyncResponseC(void)
+{
+	messageStreamC::headerS		*msg;
+	error_t				ret;
+
+	msg = (messageStreamC::headerS *)msgHeader;
+
+	if (msg == NULL) { return; };
+	msg->error = err;
+	ret = messageStreamC::enqueueOnThread(msg->targetId, msg);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(FATAL"asyncCleanup: Failed to send msg from 0x%x to "
+			"0x%x, with error %s because %s.\n",
+			msg->sourceId, msg->targetId, strerror(msg->error),
+			strerror(ret));
+	};
+}
+
+syscallbackC *newSyscallback(syscallbackDataF *fn, void *data)
+{
+	return new (asyncContextCache->allocate()) syscallbackC(fn, data);
+}
+
+syscallbackC *newSyscallback(syscallbackFuncF *fn, void (*func)())
+{
+	return new (asyncContextCache->allocate()) syscallbackC(fn, func);
+}
+
 ipc::dataHeaderS *ipc::createDataHeader(
 	void *data, uarch_t nBytes, methodE method
 	)

@@ -1,0 +1,168 @@
+#ifndef ___K_CXX_LIB_POINTER_H
+	#define ___K_CXX_LIB_POINTER_H
+
+	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kcxxlib/new>
+
+class memoryStreamC;
+class vaddrSpaceStreamC;
+
+namespace pointer
+{
+	void vmemUnmapAndFree(
+		void *vaddr, uarch_t nPages, status_t nMapped,
+		vaddrSpaceStreamC *vasStream);
+
+	void streamFree(void *vaddr, memoryStreamC *memStream);
+}
+
+template <class type>
+class ptrC
+{
+protected:
+	ptrC(type *_p=NULL) : p(_p) {}
+	~ptrC(void) { reset(); }
+
+public:	ptrC &operator =(ptrC &_p) { reset(_p.release()); };
+
+public:
+	// Equivalent to std::unique_ptr<>::get().
+	type *get(void) { return p; }
+	// Equivalent to std::unique_ptr<>::reset(void *=NULL).
+	void reset(type *_p=NULL) { p = _p; }
+	// Equivalent to std::unique_ptr<>::release().
+	type *release(void)
+	{
+		type	*tmp=p;	
+		p = NULL;
+		return tmp;
+	}
+
+	type *operator ->() { return p; }
+	type &operator *() { return *p; }
+	type &operator [](int i) { return p[i]; }
+	ptrC &operator =(type *_p) { p = _p; return *this; }
+	int operator ==(type *_p) { return p == _p; }
+	int operator >(type *_p) { return p > _p; }
+	int operator <(type *_p) { return p < _p; }
+	ptrC &operator++(void) { ++p; return *this; }
+	ptrC &operator--(void) { --p; return *this; }
+
+	// We refuse to provide operators + and -. Use array indexing instead.
+
+protected:
+	type	*p;
+};
+
+#include <__kclasses/debugPipe.h>
+template <class type>
+class heapPtrC
+:
+public ptrC<type>
+{
+public:
+	heapPtrC(type *_p=NULL) : ptrC<type>(_p), useArrayDelete(0) {}
+	~heapPtrC(void) { reset(); }
+
+	heapPtrC &operator =(heapPtrC &_p)
+		{ reset(_p.release(), _p.useArrayDelete); return *this; }
+
+public:
+	heapPtrC &operator =(type *_p)
+		{ ptrC<type>::operator =(_p); return *this; }
+
+	void reset(type *_p=NULL, sarch_t _useArrayDelete=0)
+	{
+		if (this->get() != NULL)
+		{
+printf(NOTICE"heapPtrC::reset: deleting%s mem @0x%p.\n",
+	(useArrayDelete) ? "[]" : "", this->get());
+			if (useArrayDelete) { delete[] this->get(); }
+			else { delete this->get(); };
+		};
+
+		useArrayDelete = _useArrayDelete;
+		ptrC<type>::reset(_p);
+	};
+
+public:
+	sarch_t		useArrayDelete;
+};
+
+template <class type>
+class loosePagePtrC
+:
+public ptrC<type>
+{
+public:
+	loosePagePtrC(type *_p=NULL)
+	:
+	ptrC<type>(_p), nPages(0), nMapped(0),  vasStream(NULL)
+	{}
+
+	~loosePagePtrC(void) { reset(); }
+
+	loosePagePtrC &operator =(loosePagePtrC &_p)
+	{
+		reset(_p.release(), _p.nPages, _p.nMapped, _p.vasStream);
+		return *this;
+	}
+
+public:
+	loosePagePtrC &operator =(type *_p)
+		{ ptrC<type>::operator =(_p); return *this; }
+
+	void reset(
+		type *_p=NULL, uarch_t _nPages=0, status_t _nMapped=0,
+		vaddrSpaceStreamC *_vasStream=NULL)
+	{
+		if (this->get() != NULL && nPages > 0)
+		{
+			pointer::vmemUnmapAndFree(
+				this->get(), nPages, nMapped, vasStream);
+		};
+
+		nPages = _nPages;
+		nMapped = _nMapped;
+		vasStream = _vasStream;
+		ptrC<type>::reset(_p);
+	};
+
+public:
+	vaddrSpaceStreamC	*vasStream;
+	uarch_t			nPages;
+	status_t		nMapped;
+};
+
+template <class type>
+class streamMemPtrC
+:
+public ptrC<type>
+{
+public:
+	streamMemPtrC(type *_p=NULL) : ptrC<type>(_p), memStream(NULL) {}
+	~streamMemPtrC(void) { reset(); }
+
+	streamMemPtrC &operator =(streamMemPtrC &_p)
+		{ reset(_p.release(), _p.memStream); return *this; }
+
+public:
+	streamMemPtrC &operator =(type *_p)
+		{ ptrC<type>::operator =(_p); return *this; }
+
+	void reset(type *_p=NULL, memoryStreamC *_memStream=NULL)
+	{
+		if (this->get() != NULL) {
+			pointer::streamFree(this->get(), memStream);
+		};
+
+		memStream = _memStream;
+		ptrC<type>::reset(_p);
+	}
+
+public:
+	memoryStreamC		*memStream;
+};
+
+#endif
+

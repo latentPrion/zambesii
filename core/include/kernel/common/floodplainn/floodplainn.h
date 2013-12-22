@@ -23,7 +23,10 @@ class floodplainnC
 public tributaryC//, public vfs::directoryOperationsC
 {
 public:
-	floodplainnC(void) {}
+	floodplainnC(void)
+	:
+	zudiIndexServerTid(PROCID_INVALID)
+	{}
 
 	typedef void (initializeReqCallF)(error_t ret);
 	error_t initializeReq(initializeReqCallF *callback);
@@ -32,17 +35,13 @@ public:
 
 public:
 	struct zudiIndexMsgS
-	:
-	public zudiIndexServer::zudiIndexMsgS
 	{
 		zudiIndexMsgS(
 			processId_t targetPid, ubit16 subsystem, ubit16 function,
 			uarch_t size, uarch_t flags, void *privateData)
 		:
-		zudiIndexServer::zudiIndexMsgS(
-			0, NULL, zudiIndexServer::INDEX_KERNEL),
-
-		header(targetPid, subsystem, function, size, flags, privateData)
+		header(targetPid, subsystem, function, size, flags, privateData),
+		info(0, NULL, zudiIndexServer::INDEX_KERNEL)
 		{}
 
 		void set(
@@ -51,22 +50,23 @@ public:
 			zudiIndexServer::newDeviceActionE action=
 				zudiIndexServer::NDACTION_NOTHING)
 		{
-			this->command = command;
-			this->index = index;
-			this->action = action;
+			this->info.command = command;
+			this->info.index = index;
+			this->info.action = action;
 			if (path != NULL)
 			{
 				strncpy8(
-					this->path, path,
+					this->info.path, path,
 					ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN);
 
-				this->path[
+				this->info.path[
 					ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN
 						- 1] = '\0';
 			};
 		}
 
 		messageStreamC::headerS		header;
+		zudiIndexServer::zudiIndexMsgS	info;
 	};
 
 	/* Creates a child device under a given parent and returns it to the
@@ -144,6 +144,8 @@ public:
 
 	static void __kdriverEntry(void);
 	static void indexReaderEntry(void);
+	void setZudiIndexServerTid(processId_t tid)
+		{ zudiIndexServerTid = tid; }
 
 public:
 	ptrListC<fplainn::driverC>	driverList;

@@ -19,7 +19,6 @@ error_t floodplainnC::initializeReq(initializeReqCallF *callback)
 {
 	fvfs::tagC		*root, *tmp;
 	error_t			ret;
-	syscallbackC		*actxt;
 
 	/**	EXPLANATION:
 	 * Create the four sub-trees and then exit.
@@ -38,12 +37,10 @@ error_t floodplainnC::initializeReq(initializeReqCallF *callback)
 	ret = root->createChild(CC"by-path", &byPath, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	actxt = new (asyncContextCache->allocate()) syscallbackC(
-		&floodplainnC::initializeReq1, (void (*)())callback);
-
-	if (actxt == NULL) { return ERROR_MEMORY_NOMEM; };
 	zudiIndexServer::setNewDeviceActionReq(
-		zudiIndexServer::NDACTION_INSTANTIATE, actxt);
+		zudiIndexServer::NDACTION_INSTANTIATE,
+		newSyscallback(
+			&floodplainnC::initializeReq1, (void (*)())callback));
 
 	return ERROR_SUCCESS;
 }
@@ -247,7 +244,7 @@ void floodplainn_createRootDeviceReq1(
 	msg = (floodplainnC::zudiIndexMsgS *)gmsg;
 
 	if (msg->header.error != ERROR_SUCCESS
-		|| msg->action != zudiIndexServer::NDACTION_INSTANTIATE)
+		|| msg->info.action != zudiIndexServer::NDACTION_INSTANTIATE)
 	{
 		ret = ERROR_FATAL;
 		printf(FATAL FPLAINN"createRootDevice: Failed to instantiate "
