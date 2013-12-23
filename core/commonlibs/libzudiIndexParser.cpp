@@ -77,7 +77,7 @@ error_t zudiIndexParserC::randomAccessBufferC::read(
 		{
 			buffer.lock.release();
 
-			printf(ERROR ZUDIIDX"RAB::read: Overflow: bufferEnd "
+			printf(WARNING ZUDIIDX"RAB::read: Overflow: bufferEnd "
 				"0x%p, read would have accessed up to 0x%p.\n",
 				buffer.rsrc.bufferEnd,
 				&buffer.rsrc.buffer[offset + nBytes - 1]);
@@ -170,12 +170,15 @@ error_t zudiIndexParserC::initialize(utf8Char *indexPath)
 	return ERROR_SUCCESS;
 }
 
-error_t zudiIndexParserC::getDriverHeader(ubit16 id, zudi::driver::headerS *retobj)
+error_t zudiIndexParserC::getDriverHeader(
+	zudi::headerS *hdr, ubit16 id, zudi::driver::headerS *retobj
+	)
 {
 	for (uarch_t i=0;
-		driverIndex.read(
+		i < hdr->nRecords
+		&& driverIndex.read(
 			retobj,
-			sizeof(zudi::driver::headerS) + (sizeof(*retobj) * i),
+			sizeof(zudi::headerS) + (sizeof(*retobj) * i),
 			sizeof(*retobj))
 			== ERROR_SUCCESS;
 		i++)
@@ -187,13 +190,14 @@ error_t zudiIndexParserC::getDriverHeader(ubit16 id, zudi::driver::headerS *reto
 }
 
 error_t zudiIndexParserC::findMetalanguage(
-	utf8Char *metaName, zudi::driver::headerS *retobj
+	zudi::headerS *hdr, utf8Char *metaName, zudi::driver::headerS *retobj
 	)
 {
 	zudi::driver::provisionS	currProvision;
 
 	for (uarch_t i=0;
-		provisionIndex.indexedRead(&currProvision, i) == ERROR_SUCCESS;
+		i < hdr->nRecords && provisionIndex.indexedRead(
+			&currProvision, i) == ERROR_SUCCESS;
 		i++)
 	{
 		utf8Char	currProvName[ZUDI_DRIVER_METALANGUAGE_MAXLEN];
@@ -209,7 +213,7 @@ error_t zudiIndexParserC::findMetalanguage(
 		/* Found a provider for the required metalanguage. Return the
 		 * driver-header whose ID it holds.
 		 **/
-		if (getDriverHeader(currProvision.driverId, retobj)
+		if (getDriverHeader(hdr, currProvision.driverId, retobj)
 			!= ERROR_SUCCESS)
 		{
 			continue;
@@ -222,7 +226,7 @@ error_t zudiIndexParserC::findMetalanguage(
 }
 
 error_t zudiIndexParserC::findDriver(
-	utf8Char *fullName, zudi::driver::headerS *retobj
+	zudi::headerS *hdr, utf8Char *fullName, zudi::driver::headerS *retobj
 	)
 {
 	utf8Char		*nameTmp;
@@ -236,7 +240,8 @@ error_t zudiIndexParserC::findDriver(
 	if (nameTmp == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	for (uarch_t i=0;
-		driverIndex.read(
+		i < hdr->nRecords
+		&& driverIndex.read(
 			retobj, base + sizeof(*retobj) * i,
 			sizeof(*retobj)) == ERROR_SUCCESS;
 		i++)
@@ -346,7 +351,7 @@ error_t zudiIndexParserC::getMetalanguage(
 	metaBase = drvHeader->metalanguagesOffset;
 	for (uarch_t i=0;
 		dataIndex.read(
-			retobj, metaBase + sizeof(*retobj) * index,
+			retobj, metaBase + sizeof(*retobj) * i,
 			sizeof(*retobj)) == ERROR_SUCCESS
 		&& i<drvHeader->nMetalanguages;
 		i++)

@@ -1,4 +1,5 @@
 
+#include <__kstdlib/__kcxxlib/memory>
 #include <kernel/common/thread.h>
 #include <kernel/common/process.h>
 #include <kernel/common/zudiIndexServer.h>
@@ -11,7 +12,7 @@ error_t zudiIndexServer::detectDriverReq(
 	void *privateData, ubit32 flags
 	)
 {
-	zudiIndexMsgS			*request;
+	heapPtrC<zudiIndexMsgS>		request;
 	taskC				*currTask;
 
 	if (strnlen8(devicePath, ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
@@ -27,14 +28,14 @@ error_t zudiIndexServer::detectDriverReq(
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	return currTask->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request, sizeof(*request),
+		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, flags, privateData);
 }
 
 error_t zudiIndexServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 {
-	zudiIndexServer::zudiIndexMsgS		*request;
-	taskC					*currTask;
+	heapPtrC<zudiIndexServer::zudiIndexMsgS>	request;
+	taskC						*currTask;
 
 	if (strnlen8(devicePath, ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
 		>= ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
@@ -49,7 +50,7 @@ error_t zudiIndexServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	return currTask->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request, sizeof(*request),
+		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
@@ -57,7 +58,7 @@ void zudiIndexServer::setNewDeviceActionReq(
 	newDeviceActionE action, void *privateData
 	)
 {
-	zudiIndexMsgS		*request;
+	heapPtrC<zudiIndexMsgS>	request;
 	taskC			*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
@@ -69,13 +70,13 @@ void zudiIndexServer::setNewDeviceActionReq(
 	if (request == NULL) { return; };
 
 	currTask->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request, sizeof(*request),
+		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
 void zudiIndexServer::getNewDeviceActionReq(void *privateData)
 {
-	zudiIndexMsgS		*request;
+	heapPtrC<zudiIndexMsgS>	request;
 	taskC			*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
@@ -87,7 +88,7 @@ void zudiIndexServer::getNewDeviceActionReq(void *privateData)
 	if (request == NULL) { return; };
 
 	currTask->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request, sizeof(*request),
+		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
@@ -95,7 +96,7 @@ void zudiIndexServer::newDeviceInd(
 	utf8Char *path, indexE index, void *privateData
 	)
 {
-	zudiIndexMsgS		*request;
+	heapPtrC<zudiIndexMsgS>	request;
 	taskC			*currTask;
 
 	if (strnlen8(path, ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
@@ -113,7 +114,7 @@ void zudiIndexServer::newDeviceInd(
 	if (request == NULL) { return; };
 
 	currTask->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request, sizeof(*request),
+		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 

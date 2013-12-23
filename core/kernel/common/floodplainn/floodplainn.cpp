@@ -181,7 +181,6 @@ error_t floodplainnC::createRootDeviceReq(createRootDeviceReqCallF *callback)
 	error_t				ret;
 	fplainn::deviceC		*dev;
 	udi_instance_attr_list_t	tmp;
-	syscallbackC			*syscallback;
 
 	ret = createDevice(CC"by-id", 0, 0, &dev);
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -223,12 +222,10 @@ error_t floodplainnC::createRootDeviceReq(createRootDeviceReqCallF *callback)
 	tmp.attr_value[0] = '\0';
 	ret = dev->setEnumerationAttribute(&tmp);
 
-	syscallback = new (asyncContextCache->allocate()) syscallbackC(
-		&floodplainn_createRootDeviceReq1, (voidF *)callback);
-
 	zudiIndexServer::newDeviceInd(
 		CC"by-id/0", zudiIndexServer::INDEX_KERNEL,
-		(void *)syscallback);
+		newSyscallback(
+			&floodplainn_createRootDeviceReq1, (voidF *)callback));
 
 	return ret;
 }

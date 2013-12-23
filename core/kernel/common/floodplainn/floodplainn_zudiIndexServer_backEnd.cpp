@@ -225,6 +225,7 @@ static void fplainnIndexServer_detectDriverReq(
 	zudi::device::headerS			devlineHdr,
 						*currDevlineHdr;
 	heapPtrC<utf8Char>			devlineName;
+	heapPtrC<zudi::headerS>			indexHdr;
 	heapPtrC<zudi::driver::headerS>		driverHdr, metaHdr;
 	// FIXME: big memory leak on this list within this function.
 	ptrListC<zudi::device::headerS>		matchingDevices;
@@ -257,10 +258,12 @@ static void fplainnIndexServer_detectDriverReq(
 	// Allocate all necessary memory at once.
 	devlineName = new utf8Char[ZUDI_MESSAGE_MAXLEN];
 	devlineName.useArrayDelete = 1;
+	indexHdr = new zudi::headerS;
 	driverHdr = new zudi::driver::headerS;
 	metaHdr = new zudi::driver::headerS;
 
-	if (devlineName == NULL || driverHdr == NULL || metaHdr == NULL)
+	if (devlineName == NULL || indexHdr == NULL || driverHdr == NULL
+		|| metaHdr == NULL)
 	{
 		printf(WARNING FPLAINNIDX"detectDriver: no heap memory.\n");
 		myResponse(ERROR_MEMORY_NOMEM);
@@ -281,6 +284,16 @@ static void fplainnIndexServer_detectDriverReq(
 		return;
 	};
 
+	// Get the index header for the current selected index.
+	err = zudiIndexes[0]->getHeader(indexHdr.get());
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINNIDX"detectDriver: Failed to get index "
+			"header.\n");
+
+		myResponse(err); return;
+	};
+
 	/**	EXPLANATION:
 	 * Search through the device index. For each device record, use its
 	 * metalanguage-index to find the corresponding metalanguage and its
@@ -299,7 +312,8 @@ static void fplainnIndexServer_detectDriverReq(
 			ZUDI_DRIVER_METALANGUAGE_MAXLEN];
 
 		if (zudiIndexes[0]->getDriverHeader(
-			devlineHdr.driverId, driverHdr.get()) != ERROR_SUCCESS)
+			indexHdr.get(), devlineHdr.driverId, driverHdr.get())
+			!= ERROR_SUCCESS)
 		{
 			printf(FATAL FPLAINNIDX"detectDriver: index DEVICE has "
 				"invalid driverId %d. Skipping.\n",
@@ -318,9 +332,9 @@ static void fplainnIndexServer_detectDriverReq(
 
 			continue;
 		};
-
-printf(NOTICE FPLAINNIDX"Current device line: %s,\n\tprovided by driver: %s.\n",
-	devlineName.get(), driverHdr->shortName);
+printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
+	devlineHdr.driverId, driverHdr->shortName, devlineName.get(),
+	devlineHdr.messageIndex, devlineHdr.metaIndex, devlineHdr.nAttributes);
 
 		// Now get the metalanguage for this device props line.
 		if (zudiIndexes[0]->getMetalanguage(
@@ -345,7 +359,8 @@ printf(NOTICE FPLAINNIDX"Current device line: %s,\n\tprovided by driver: %s.\n",
 		};
 
 		if (zudiIndexes[0]->findMetalanguage(
-			devlineMetaName, metaHdr.get()) != ERROR_SUCCESS)
+			indexHdr.get(), devlineMetaName, metaHdr.get())
+			!= ERROR_SUCCESS)
 		{
 			printf(FATAL FPLAINNIDX"detectDriver: DEVICE line refers "
 				"to inexistent metalanguage %s.\n",
@@ -458,7 +473,8 @@ printf(NOTICE FPLAINNIDX"Current device line: %s,\n\tprovided by driver: %s.\n",
 		currDevlineHdr = matchingDevices.getNextItem(&handle);
 
 		response->header.error = zudiIndexes[0]->getDriverHeader(
-			currDevlineHdr->driverId, driverHdr.get());
+			indexHdr.get(), currDevlineHdr->driverId,
+			driverHdr.get());
 
 		if (response->header.error != ERROR_SUCCESS)
 		{

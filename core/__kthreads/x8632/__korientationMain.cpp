@@ -275,17 +275,16 @@ void __korientationMain2(messageStreamC::iteratorS *msg, void *)
 
 	DIE_ON(msg->header.error);
 	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
-printf(NOTICE"main2!\n");
 }
 
 floodplainnC::createRootDeviceReqCallF __korientationMain4;
 void __korientationMain3(error_t ret)
 {
 	DIE_ON(ret);
-printf(NOTICE"main3\n");
 	/* Start the chipset up.
 	 **/
 	DO_OR_DIE(floodplainn, createRootDeviceReq(&__korientationMain4), ret);
+printf(NOTICE"main3\n");
 }
 
 void __korientationMain4(error_t ret)

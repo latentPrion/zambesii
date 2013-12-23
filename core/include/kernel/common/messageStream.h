@@ -209,7 +209,7 @@ private:
 /**	EXPLANATION:
  * Basically, you give this class a pointer to a block of memory which holds
  * an asynchronous response message. The message will automatically be sent when
- * the an instance of the class destructs, UNLESS the internal pointer is
+ * an instance of the class destructs, UNLESS the internal pointer is
  * NULL. If the internal pointer is NULL, the message will not be sent.
  *
  * To set the internal message pointer, use:

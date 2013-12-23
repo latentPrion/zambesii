@@ -54,7 +54,6 @@ protected:
 	type	*p;
 };
 
-#include <__kclasses/debugPipe.h>
 template <class type>
 class heapPtrC
 :
@@ -75,8 +74,6 @@ public:
 	{
 		if (this->get() != NULL)
 		{
-printf(NOTICE"heapPtrC::reset: deleting%s mem @0x%p.\n",
-	(useArrayDelete) ? "[]" : "", this->get());
 			if (useArrayDelete) { delete[] this->get(); }
 			else { delete this->get(); };
 		};

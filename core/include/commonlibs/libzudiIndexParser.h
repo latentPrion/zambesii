@@ -44,10 +44,16 @@ public:
 	error_t getHeader(zudi::headerS *ret)
 		{ return driverIndex.read(ret, 0, sizeof(*ret)); }
 
-	error_t findDriver(utf8Char *fullName, zudi::driver::headerS *ret);
-	error_t findMetalanguage(utf8Char *metaName, zudi::driver::headerS *ret);
+	error_t findDriver(
+		zudi::headerS *hdr, utf8Char *fullName,
+		zudi::driver::headerS *ret);
 
-	error_t getDriverHeader(ubit16 id, zudi::driver::headerS *ret);
+	error_t findMetalanguage(
+		zudi::headerS *hdr, utf8Char *metaName,
+		zudi::driver::headerS *ret);
+
+	error_t getDriverHeader(
+		zudi::headerS *hdr, ubit16 id, zudi::driver::headerS *ret);
 
 	error_t indexedGetDevice(uarch_t index, zudi::device::headerS *mem)
 		{ return deviceIndex.indexedRead(mem, index); }
