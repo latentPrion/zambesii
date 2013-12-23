@@ -231,6 +231,7 @@ static void fplainnIndexServer_detectDriverReq(
 	ptrListC<zudi::device::headerS>		matchingDevices;
 	status_t				bestRank=-1;
 	asyncResponseC				myResponse;
+	void					*handle;
 
 	/** FIXME: Memory leaks all over this function.
 	 **/
@@ -381,7 +382,6 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			// If the match outranks the current best match:
 			if (rank > bestRank)
 			{
-				void		*handle;
 
 				// Clear the list and restart.
 				// FIXME: memory leak here.
@@ -456,7 +456,6 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 	}
 	else
 	{
-		void		*handle=NULL;
 		uarch_t		basePathLen;
 
 		/* If more than one driver matches, warn the user that we are
@@ -470,6 +469,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		};
 
 		// Shouldn't need to error check this call.
+		handle = NULL;
 		currDevlineHdr = matchingDevices.getNextItem(&handle);
 
 		response->header.error = zudiIndexes[0]->getDriverHeader(
@@ -504,6 +504,11 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		dev->driverDetected = 1;
 		dev->isKernelDriver = 1;
 	};
+
+	// Free the list.
+	handle = NULL;
+	while ((currDevlineHdr = matchingDevices.getNextItem(&handle)))
+		{ delete currDevlineHdr; };
 }
 
 static void fplainnIndexServer_newDeviceActionReq(
