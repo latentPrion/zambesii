@@ -44,10 +44,21 @@ public:
 	error_t getHeader(zudi::headerS *ret)
 		{ return driverIndex.read(ret, 0, sizeof(*ret)); }
 
+	/* Finds a driver by the combination of its basepath+shortname
+	 * concatenated (i.e, its fullname). If we were to search by shortname
+	 * only, then there would be no way to distinguish between potentially
+	 * different drivers with the same shortname which exist in multiple
+	 * ZUDI index DBs.
+	 */
 	error_t findDriver(
 		zudi::headerS *hdr, utf8Char *fullName,
 		zudi::driver::headerS *ret);
 
+	/* Finds a metalanguage by its name. Not the "shortname" of the
+	 * metalanguage library, but rather the "provides" line name of the
+	 * metalanguage API. If there are multiple candidates that provide a
+	 * particular interface, we just return the first result we find.
+	 **/
 	error_t findMetalanguage(
 		zudi::headerS *hdr, utf8Char *metaName,
 		zudi::driver::headerS *ret);

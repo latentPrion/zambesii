@@ -20,7 +20,7 @@ template <class type>
 class ptrC
 {
 protected:
-	ptrC(type *_p=NULL) : p(_p) {}
+	explicit ptrC(type *_p=NULL) : p(_p) {}
 	~ptrC(void) { reset(); }
 
 public:	ptrC &operator =(ptrC &_p) { reset(_p.release()); };
@@ -60,7 +60,7 @@ class heapPtrC
 public ptrC<type>
 {
 public:
-	heapPtrC(type *_p=NULL) : ptrC<type>(_p), useArrayDelete(0) {}
+	explicit heapPtrC(type *_p=NULL) : ptrC<type>(_p), useArrayDelete(0) {}
 	~heapPtrC(void) { reset(); }
 
 	heapPtrC &operator =(heapPtrC &_p)
@@ -92,7 +92,7 @@ class loosePagePtrC
 public ptrC<type>
 {
 public:
-	loosePagePtrC(type *_p=NULL)
+	explicit loosePagePtrC(type *_p=NULL)
 	:
 	ptrC<type>(_p), nPages(0), nMapped(0),  vasStream(NULL)
 	{}
@@ -137,7 +137,7 @@ class streamMemPtrC
 public ptrC<type>
 {
 public:
-	streamMemPtrC(type *_p=NULL) : ptrC<type>(_p), memStream(NULL) {}
+	explicit streamMemPtrC(type *_p=NULL) : ptrC<type>(_p), memStream(NULL) {}
 	~streamMemPtrC(void) { reset(); }
 
 	streamMemPtrC &operator =(streamMemPtrC &_p)

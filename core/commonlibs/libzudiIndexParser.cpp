@@ -2,7 +2,7 @@
 #include <__ksymbols.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/string8.h>
-#include <__kstdlib/__kcxxlib/new>
+#include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libzudiIndexParser.h>
 
@@ -229,11 +229,12 @@ error_t zudiIndexParserC::findDriver(
 	zudi::headerS *hdr, utf8Char *fullName, zudi::driver::headerS *retobj
 	)
 {
-	utf8Char		*nameTmp;
+	heapPtrC<utf8Char>	nameTmp;
 	uarch_t			base;
 
 	base = sizeof(zudi::headerS);
 
+	nameTmp.useArrayDelete = 1;
 	nameTmp = new utf8Char[
 		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_DRIVER_SHORTNAME_MAXLEN];
 
@@ -252,7 +253,7 @@ error_t zudiIndexParserC::findDriver(
 		 * a '/' character.
 		 **/
 		basePathLen = strlen8(CC retobj->basePath);
-		strcpy8(nameTmp, CC retobj->basePath);
+		strcpy8(nameTmp.get(), CC retobj->basePath);
 		if (basePathLen > 0 && retobj->basePath[basePathLen - 1] != '/')
 		{
 			strcpy8(&nameTmp[basePathLen], CC "/");
@@ -262,14 +263,10 @@ error_t zudiIndexParserC::findDriver(
 		strcpy8(&nameTmp[basePathLen], CC retobj->shortName);
 
 		// Now we can compare.
-		if (strcmp8(nameTmp, fullName) == 0)
-		{
-			delete[] nameTmp;
-			return ERROR_SUCCESS;
-		};
+		if (strcmp8(nameTmp.get(), fullName) == 0)
+			{ return ERROR_SUCCESS; };
 	};
 
-	delete[] nameTmp;
 	return ERROR_NOT_FOUND;
 }
 

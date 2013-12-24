@@ -245,7 +245,8 @@ void floodplainn_createRootDeviceReq1(
 	{
 		ret = ERROR_FATAL;
 		printf(FATAL FPLAINN"createRootDevice: Failed to instantiate "
-			"root device.\n");
+			"root device.\n\tError is %s; got as far as %d.\n",
+			strerror(msg->header.error), msg->info.action);
 	};
 
 	_callback = (floodplainnC::createRootDeviceReqCallF *)callback;
