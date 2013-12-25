@@ -39,6 +39,7 @@ namespace fplainn
 	 **********************************************************************/
 	class driverC;
 	class driverInstanceC;
+
 	class deviceC
 	{
 	public:
@@ -100,16 +101,27 @@ namespace fplainn
 
 		driverC(void)
 		:
-		nModules(0), nRegions(0), nChannels(0), nMetalanguages(0),
+		nModules(0), nRegions(0), nMetalanguages(0),
 		allMetalanguagesSatisfied(0), childEnumerationAttribSize(0),
-		modules(NULL), regions(NULL), channels(NULL),
-		metalanguages(NULL)
+		modules(NULL), regions(NULL), metalanguages(NULL)
 		{}
 
-		error_t initialize(void){ return ERROR_SUCCESS; }
+		error_t initialize(utf8Char *fullName)
+		{
+			return ERROR_SUCCESS;
+		}
+
 		~driverC(void){}
 
 	public:
+		error_t preallocateModules(uarch_t nModules);
+		error_t preallocateRegions(uarch_t nRegions);
+		error_t preallocateRequirements(uarch_t nRequirements);
+		error_t preallocateMetalanguages(uarch_t nMetalanguages);
+		error_t preallocateChildBops(uarch_t nChildBops);
+		error_t preallocateParentBops(uarch_t nParentBops);
+		error_t preallocateInternalBops(uarch_t nInternalBops);
+
 		struct moduleC
 		{
 		public:
@@ -151,13 +163,6 @@ namespace fplainn
 			ubit32		flags;
 		};
 
-		struct channelS
-		{
-			// 'regionIndex' is this channel's region's index.
-			ubit16		index, regionIndex,
-					metalanguageIndex;
-		};
-
 		struct metalanguageS
 		{
 			metalanguageS(void)
@@ -176,7 +181,6 @@ namespace fplainn
 		error_t addMetalanguage(ubit16 index, utf8Char *name);
 		error_t addModule(ubit16 index, utf8Char *name);
 		error_t addRegion(ubit16 moduleIndex, ubit16 regionIndex);
-		error_t addChannel(ubit16 regionIndex, ubit16 index);
 
 		moduleC *getModule(ubit16 index)
 		{
@@ -200,13 +204,11 @@ namespace fplainn
 			return NULL;
 		}
 
-		channelS *getChannel(ubit16 index);
-
 		// Kernel doesn't need to know about control block information.
 
 	public:
 		utf8Char	fullName[DEVICE_DRIVERNAME_MAXLEN];
-		ubit16		nModules, nRegions, nChannels, nMetalanguages,
+		ubit16		nModules, nRegions, nMetalanguages,
 				nControlBlocks;
 		sbit8		allMetalanguagesSatisfied;
 
@@ -215,8 +217,6 @@ namespace fplainn
 		moduleC		*modules;
 		// Regions in this driver and their indexes/module indexes, etc.
 		regionS		*regions;
-		// Driver's channels and their indexes, channel indexes, etc.
-		channelS	*channels;
 		// Metalanguage indexes, dependency satisfaction, etc.
 		metalanguageS	*metalanguages;
 	};

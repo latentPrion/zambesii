@@ -36,8 +36,8 @@
  * kernel for a NUMA supporting PC compatible, and you do not want a shared bank
  * you can comment this out though.
  *
- * Do not comment this out on a non-NUMA build. Shared bank must be generated on
- * non-NUMA builds.
+ * Do not comment this out on a NON-NUMA build. Shared bank MUST be generated on
+ * NON-NUMA builds.
  **/
 #define CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
 

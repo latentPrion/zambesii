@@ -102,6 +102,92 @@ public:
 	error_t indexedGetRankAttrString(
 		zudi::rank::headerS *rankHeader, uarch_t idx, utf8Char *retstr);
 
+	error_t indexedGetModule(
+		zudi::driver::headerS *drvHeader, uarch_t idx,
+		zudi::driver::moduleS *retobj)
+	{
+		return dataIndex.read(
+			retobj,
+			drvHeader->modulesOffset + sizeof(*retobj) * idx,
+			sizeof(*retobj));
+	}
+
+	error_t getModuleString(zudi::driver::moduleS *module, utf8Char *retstr)
+	{
+		return stringIndex.readString(retstr, module->fileNameOff);
+	}
+
+	error_t indexedGetRegion(
+		zudi::driver::headerS *drvHeader, uarch_t idx,
+		zudi::driver::regionS *retobj)
+	{
+		return dataIndex.read(
+			retobj,
+			drvHeader->regionsOffset + sizeof(*retobj) * idx,
+			sizeof(*retobj));
+	}
+
+	error_t indexedGetRequirement(
+		zudi::driver::headerS *drvHeader, uarch_t idx,
+		zudi::driver::requirementS *retobj)
+	{
+		return dataIndex.read(
+			retobj,
+			drvHeader->requirementsOffset + sizeof(*retobj) * idx,
+			sizeof(*retobj));
+	}
+
+	error_t getRequirementString(
+		zudi::driver::requirementS *requirement, utf8Char *retstr)
+	{
+		return stringIndex.readString(retstr, requirement->nameOff);
+	}
+
+	error_t indexedGetMetalanguage(
+		zudi::driver::headerS *drvHdr, uarch_t idx,
+		zudi::driver::metalanguageS *retobj)
+	{
+		return dataIndex.read(
+			retobj,
+			drvHdr->metalanguagesOffset + sizeof(*retobj) * idx,
+			sizeof(*retobj));
+	}
+
+	error_t getMetalanguageString(
+		zudi::driver::metalanguageS *metalanguage, utf8Char *retstr)
+	{
+		return stringIndex.readString(retstr, metalanguage->nameOff);
+	}
+
+	error_t indexedGetChildBop(
+		zudi::driver::headerS *drvHdr, uarch_t idx,
+		zudi::driver::childBopS *retobj)
+	{
+		return dataIndex.read(
+			retobj,
+			drvHdr->childBopsOffset + sizeof(*retobj) * idx,
+			sizeof(*retobj));
+	}
+
+	error_t indexedGetParentBop(
+		zudi::driver::headerS *drvHdr, uarch_t idx,
+		zudi::driver::parentBopS *retobj)
+	{
+		return dataIndex.read(
+			retobj,
+			drvHdr->parentBopsOffset + sizeof(*retobj) * idx,
+			sizeof(*retobj));
+	}
+
+	error_t indexedGetInternalBop(
+		zudi::driver::headerS *drvHdr, uarch_t idx,
+		zudi::driver::internalBopS *retobj)
+	{
+		return dataIndex.read(
+			retobj,
+			drvHdr->internalBopsOffset + sizeof(*retobj) * idx,
+			sizeof(*retobj));
+	}
 
 private:
 	class randomAccessBufferC
