@@ -176,3 +176,12 @@ utf16Char *strnchr16(const utf16Char *str, size_t n, const utf16Char chr)
 	return NULL;
 }
 
+utf16Char *strcat16(utf16Char *dest, const utf16Char *src)
+{
+	uarch_t		len;
+
+	len = strlen16(dest);
+	strcpy16(&dest[len], src);
+	return dest;
+}
+

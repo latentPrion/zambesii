@@ -156,3 +156,12 @@ utf8Char *strnchr8(const utf8Char *str, size_t n, const utf8Char chr)
 	return NULL;
 }
 
+utf8Char *strcat8(utf8Char *dest, const utf8Char *src)
+{
+	uarch_t		len;
+
+	len = strlen8(dest);
+	strcpy8(&dest[len], src);
+	return dest;
+}
+

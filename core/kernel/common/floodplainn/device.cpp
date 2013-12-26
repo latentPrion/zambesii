@@ -1,10 +1,67 @@
 
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/string8.h>
-#include <__kstdlib/__kcxxlib/new>
+#include <__kstdlib/__kclib/stdlib.h>
+#include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/floodplainn/device.h>
 
+
+error_t fplainn::driverC::preallocateModules(uarch_t nModules)
+{
+	modules = new moduleS[nModules];
+	if (modules == NULL) { return ERROR_MEMORY_NOMEM; };
+	this->nModules = nModules;
+	return ERROR_SUCCESS;
+}
+
+error_t fplainn::driverC::preallocateRegions(uarch_t nRegions)
+{
+	regions = new regionS[nRegions];
+	if (regions == NULL) { return ERROR_MEMORY_NOMEM; };
+	this->nRegions = nRegions;
+	return ERROR_SUCCESS;
+}
+
+error_t fplainn::driverC::preallocateRequirements(uarch_t nRequirements)
+{
+	requirements = new requirementS[nRequirements];
+	if (requirements == NULL) { return ERROR_MEMORY_NOMEM; };
+	this->nRequirements = nRequirements;
+	return ERROR_SUCCESS;
+}
+
+error_t fplainn::driverC::preallocateMetalanguages(uarch_t nMetalanguages)
+{
+	metalanguages = new metalanguageS[nMetalanguages];
+	if (metalanguages == NULL) { return ERROR_MEMORY_NOMEM; };
+	this->nMetalanguages = nMetalanguages;
+	return ERROR_SUCCESS;
+}
+
+error_t fplainn::driverC::preallocateChildBops(uarch_t nChildBops)
+{
+	childBops = new childBopS[nChildBops];
+	if (childBops == NULL) { return ERROR_MEMORY_NOMEM; };
+	this->nChildBops = nChildBops;
+	return ERROR_SUCCESS;
+}
+
+error_t fplainn::driverC::preallocateParentBops(uarch_t nParentBops)
+{
+	parentBops = new parentBopS[nParentBops];
+	if (parentBops == NULL) { return ERROR_MEMORY_NOMEM; };
+	this->nParentBops = nParentBops;
+	return ERROR_SUCCESS;
+}
+
+error_t fplainn::driverC::preallocateInternalBops(uarch_t nInternalBops)
+{
+	internalBops = new internalBopS[nInternalBops];
+	if (internalBops == NULL) { return ERROR_MEMORY_NOMEM; };
+	this->nInternalBops = nInternalBops;
+	return ERROR_SUCCESS;
+}
 
 void fplainn::deviceC::dumpEnumerationAttributes(void)
 {
@@ -39,7 +96,7 @@ void fplainn::deviceC::dumpEnumerationAttributes(void)
 }
 
 error_t fplainn::deviceC::getEnumerationAttribute(
-	utf8Char *name, udi_instance_attr_list_t **attrib
+	utf8Char *name, udi_instance_attr_list_t *attrib
 	)
 {
 	// Simple search for an attribute with the name supplied.
@@ -47,7 +104,7 @@ error_t fplainn::deviceC::getEnumerationAttribute(
 	{
 		if (strcmp8(CC enumeration[i]->attr_name, CC name) == 0)
 		{
-			*attrib = enumeration[i];
+			*attrib = *enumeration[i];
 			return ERROR_SUCCESS;
 		};
 	};
@@ -59,27 +116,27 @@ error_t fplainn::deviceC::setEnumerationAttribute(
 	udi_instance_attr_list_t *attrib
 	)
 {
-	error_t				ret;
-	udi_instance_attr_list_t	*destAttrMem, **attrArrayMem, **tmp;
+	error_t					ret;
+	udi_instance_attr_list_t		**attrArrayMem, **tmp;
+	heapPtrC<udi_instance_attr_list_t>	destAttrMem;
+	sarch_t					releaseAttrMem=0;
 
 	if (attrib == NULL) { return ERROR_INVALID_ARG; };
+
+	destAttrMem = new udi_instance_attr_list_t;
+	if (destAttrMem == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	// Can do other checks, such as checks on supplied attr's "type" etc.
 
 	// Check to see if the attrib already exists.
-	ret = getEnumerationAttribute(CC attrib->attr_name, &destAttrMem);
+	ret = getEnumerationAttribute(CC attrib->attr_name, destAttrMem.get());
 	if (ret != ERROR_SUCCESS)
 	{
-		// If it doesn't exist, allocate mem for a new attribute.
-		destAttrMem = new udi_instance_attr_list_t;
-		if (destAttrMem == NULL) { return ERROR_MEMORY_NOMEM; };
-
-		// And also mem to resize the array of pointers.
+		// Allocate mem for the new array of pointers to attribs.
 		attrArrayMem = new udi_instance_attr_list_t *[
 			nEnumerationAttribs + 1];
 
-		if (attrArrayMem == NULL)
-			{ delete destAttrMem; return ERROR_MEMORY_NOMEM; };
+		if (attrArrayMem == NULL) { return ERROR_MEMORY_NOMEM; };
 
 		if (nEnumerationAttribs > 0)
 		{
@@ -88,7 +145,13 @@ error_t fplainn::deviceC::setEnumerationAttribute(
 				sizeof(*enumeration) * nEnumerationAttribs);
 		};
 
-		attrArrayMem[nEnumerationAttribs] = destAttrMem;
+		attrArrayMem[nEnumerationAttribs] = destAttrMem.get();
+		/* Since we have to use the allocated memory to store the new
+		 * attribute permanently, we have to call release() on the
+		 * pointer management object later on. Set this bool to indicate
+		 * that.
+		 **/
+		releaseAttrMem = 1;
 		tmp = enumeration;
 		enumeration = attrArrayMem;
 		nEnumerationAttribs++;
@@ -96,29 +159,18 @@ error_t fplainn::deviceC::setEnumerationAttribute(
 		delete tmp;
 	};
 
-	memcpy(destAttrMem, attrib, sizeof(*attrib));
+	memcpy(destAttrMem.get(), attrib, sizeof(*attrib));
+	if (releaseAttrMem) { destAttrMem.release(); };
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverC::addModule(ubit16 index, utf8Char *filename)
+error_t fplainn::driverC::moduleS::addAttachedRegion(ubit16 regionIndex)
 {
-	moduleC		*old;
+	regionIndexes = new (realloc(regionIndexes, nAttachedRegions + 1))
+		ubit16;
 
-	if (strnlen8(filename, ZUDI_FILENAME_MAXLEN) >= ZUDI_FILENAME_MAXLEN)
-		{ return ERROR_INVALID_RESOURCE_NAME; };
-
-	old = modules;
-	modules = new moduleC[nModules + 1];
-	if (modules == NULL) { return ERROR_MEMORY_NOMEM; };
-
-	if (nModules > 0)
-		{ memcpy(modules, old, sizeof(*old) * nModules); };
-
-	new (&modules[nModules]) moduleC(filename, index);
-
-	// Now add the regions that pertain to this module.
-	// for () {};
-
+	if (regionIndexes == NULL) { return ERROR_MEMORY_NOMEM; };
+	regionIndexes[nAttachedRegions++] = regionIndex;
 	return ERROR_SUCCESS;
 }
 

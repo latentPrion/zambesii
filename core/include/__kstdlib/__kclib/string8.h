@@ -20,6 +20,7 @@ int strcmp8(const utf8Char *str1, const utf8Char *str2);
 int strncmp8(const utf8Char *str1, const utf8Char *str2, int count);
 size_t strnlen8(const utf8Char *str1, size_t maxLen);
 utf8Char *strnchr8(const utf8Char *str, size_t n, const utf8Char chr);
+utf8Char *strcat8(utf8Char *dest, const utf8Char *src);
 
 #ifdef __cplusplus
 }

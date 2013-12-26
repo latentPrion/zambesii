@@ -499,6 +499,20 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			&dev->driverFullName[basePathLen],
 			CC driverHdr->shortName);
 
+		strcpy8(dev->shortName, CC driverHdr->shortName);
+
+		/* If these next two readString calls fail, it's fine. We don't
+		 * need to rollback the whole operation just because we couldn't
+		 * obtain information on the supplier and supplier contact info.
+		 **/
+		zudiIndexes[0]->getMessageString(
+			driverHdr.get(), driverHdr->supplierIndex,
+			dev->vendorName);
+
+		zudiIndexes[0]->getMessageString(
+			driverHdr.get(), driverHdr->contactIndex,
+			dev->vendorContactInfo);
+
 		dev->driverDetected = 1;
 		dev->isKernelDriver = 1;
 	};
@@ -589,6 +603,11 @@ printf(NOTICE"Just entered loadDriverReq handler.\n");
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };
 printf(NOTICE"Got device on %s. Driver fullname %s.\n", requestData->path, device->driverFullName);
 
+	tmpString = new utf8Char[
+		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_FILENAME_MAXLEN];
+
+	if (tmpString == NULL) { myResponse(ERROR_MEMORY_NOMEM); return; };
+
 	handle = NULL;
 	floodplainn.driverList.lock();
 	driver = floodplainn.driverList.getNextItem(
@@ -598,7 +617,16 @@ printf(NOTICE"Got device on %s. Driver fullname %s.\n", requestData->path, devic
 		driver = floodplainn.driverList.getNextItem(
 			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
 	{
-		if (strcmp8(driver->fullName, device->driverFullName) == 0)
+		uarch_t		len;
+
+		strcpy8(tmpString.get(), driver->basePath);
+		len = strlen8(tmpString.get());
+		if (len > 0 && tmpString[len - 1] != '/') {
+			strcat8(tmpString.get(), CC"/");
+		};
+
+		strcat8(tmpString.get(), driver->shortName);
+		if (strcmp8(tmpString.get(), device->driverFullName) == 0)
 		{
 			// Driver is already loaded; no need to do any work.
 			floodplainn.driverList.unlock();
@@ -614,14 +642,11 @@ printf(NOTICE"Driver not found in loaded list.\n");
 	/* Else, the driver wasn't loaded already. Proceed to fill out the
 	 * driver information object.
 	 **/
-	driver = new fplainn::driverC();
+	driver = new fplainn::driverC;
 	indexHdr = new zudi::headerS;
 	driverHdr = new zudi::driver::headerS;
-	tmpString = new utf8Char[
-		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_FILENAME_MAXLEN];
 
-	if (driver == NULL || indexHdr == NULL || driverHdr == NULL
-		|| tmpString == NULL)
+	if (driver == NULL || indexHdr == NULL || driverHdr == NULL)
 		{ myResponse(ERROR_MEMORY_NOMEM); return; };
 
 	err = zudiIndexes[0]->getHeader(indexHdr.get());
@@ -633,114 +658,123 @@ printf(NOTICE"Driver not found in loaded list.\n");
 
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };
 
-printf(NOTICE"Got driver header; ID %d.\n", driverHdr->id);
-
 	// Copy all the module information:
+	err = driver->preallocateModules(driverHdr->nModules);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
 	for (uarch_t i=0; i<driverHdr->nModules; i++)
 	{
 		zudi::driver::moduleS		currModule;
 
 		if (zudiIndexes[0]->indexedGetModule(
 			driverHdr.get(), i, &currModule) != ERROR_SUCCESS)
-			{ break; };
+			{ myResponse(ERROR_NOT_FOUND); return; };
 
 		if (zudiIndexes[0]->getModuleString(
 			&currModule, tmpString.get()) != ERROR_SUCCESS)
-			{ break; };
-printf(NOTICE"Module %s for driver %s. Adding.\n", tmpString.get(), driverHdr->shortName);
-/*		err = driver->addModule(
-			currModule->index, currModule->filename);
+			{ myResponse(ERROR_UNKNOWN); return; };
 
-		if (err != ERROR_SUCCESS)
-		{
-			response->header.error = err;
-			goto sendResponse;
-		}; */
+		new (&driver->modules[i]) fplainn::driverC::moduleS(
+			currModule.index, tmpString.get());
 	};
 
 	// Now copy all the region information:
+	err = driver->preallocateRegions(driverHdr->nRegions);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
 	for (uarch_t i=0; i<driverHdr->nRegions; i++)
 	{
 		zudi::driver::regionS		currRegion;
 
 		if (zudiIndexes[0]->indexedGetRegion(
 			driverHdr.get(), i, &currRegion) != ERROR_SUCCESS)
-			{ break; };
+			{ myResponse(ERROR_NOT_FOUND); return; };
 
-printf(NOTICE"Region %d for driver %s; flags 0x%x. Adding.\n",
-	currRegion.index, driverHdr->shortName, currRegion.flags);
+		new (&driver->regions[i]) fplainn::driverC::regionS(
+			currRegion.index, currRegion.moduleIndex,
+			currRegion.flags);
 	};
 
 	// Now copy all the requirements information:
+	err = driver->preallocateRequirements(driverHdr->nRequirements);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
 	for (uarch_t i=0; i<driverHdr->nRequirements; i++)
 	{
 		zudi::driver::requirementS	currRequirement;
 
 		if (zudiIndexes[0]->indexedGetRequirement(
 			driverHdr.get(), i, &currRequirement) != ERROR_SUCCESS)
-			{ break; };
+			{ myResponse(ERROR_NOT_FOUND); return; };
 
 		if (zudiIndexes[0]->getRequirementString(
 			&currRequirement, tmpString.get()) != ERROR_SUCCESS)
-			{ break; };
+			{ myResponse(ERROR_UNKNOWN); return; };
 
-printf(NOTICE"Requirement %s for driver %s; version 0x%x.\n",
-	tmpString.get(), driverHdr->shortName, currRequirement.version);
+		new (&driver->requirements[i]) fplainn::driverC::requirementS(
+			tmpString.get(), currRequirement.version);
 	};
 
 	// Next, metalanguage index information.
+	err = driver->preallocateMetalanguages(driverHdr->nMetalanguages);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
 	for (uarch_t i=0; i<driverHdr->nMetalanguages; i++)
 	{
 		zudi::driver::metalanguageS	currMetalanguage;
 
 		if (zudiIndexes[0]->indexedGetMetalanguage(
 			driverHdr.get(), i, &currMetalanguage) != ERROR_SUCCESS)
-			{ break; };
+			{ myResponse(ERROR_NOT_FOUND); return; };
 
 		if (zudiIndexes[0]->getMetalanguageString(
 			&currMetalanguage, tmpString.get()) != ERROR_SUCCESS)
-			{ break; };
+			{ myResponse(ERROR_UNKNOWN); return; };
 
-printf(NOTICE"Meta: %s (index %d) for driver %s.\n",
-	tmpString.get(), currMetalanguage.index, driverHdr->shortName);
+		new (&driver->metalanguages[i]) fplainn::driverC::metalanguageS(
+			currMetalanguage.index, tmpString.get());
 	};
 
+	err = driver->preallocateChildBops(driverHdr->nChildBops);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
 	for (uarch_t i=0; i<driverHdr->nChildBops; i++)
 	{
 		zudi::driver::childBopS		currBop;
 
 		if (zudiIndexes[0]->indexedGetChildBop(
 			driverHdr.get(), i, &currBop) != ERROR_SUCCESS)
-			{ break; };
+			{ myResponse(ERROR_NOT_FOUND); return; };
 
-printf(NOTICE"Child bop: meta %d, region %d, ops_idx %d.\n",
-	currBop.metaIndex, currBop.regionIndex, currBop.opsIndex);
+		new (&driver->childBops[i]) fplainn::driverC::childBopS(
+			currBop.metaIndex, currBop.regionIndex,
+			currBop.opsIndex);
 	};
 
+	err = driver->preallocateParentBops(driverHdr->nParentBops);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
 	for (uarch_t i=0; i<driverHdr->nParentBops; i++)
 	{
 		zudi::driver::parentBopS	currBop;
 
 		if (zudiIndexes[0]->indexedGetParentBop(
 			driverHdr.get(), i, &currBop) != ERROR_SUCCESS)
-			{ break; };
+			{ myResponse(ERROR_NOT_FOUND); return; };
 
-printf(NOTICE"Parent bop: meta %d, region %d, ops_idx %d, bind_cb_idx %d.\n",
-	currBop.metaIndex, currBop.regionIndex, currBop.opsIndex,
-	currBop.bindCbIndex);
+		new (&driver->parentBops[i]) fplainn::driverC::parentBopS(
+			currBop.metaIndex, currBop.regionIndex,
+			currBop.opsIndex, currBop.bindCbIndex);
 	};
 
+	err = driver->preallocateInternalBops(driverHdr->nInternalBops);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
 	for (uarch_t i=0; i<driverHdr->nInternalBops; i++)
 	{
 		zudi::driver::internalBopS	currBop;
 
 		if (zudiIndexes[0]->indexedGetInternalBop(
 			driverHdr.get(), i, &currBop) != ERROR_SUCCESS)
-			{ break; };
+			{ myResponse(ERROR_NOT_FOUND); return; };
 
-printf(NOTICE"Internal bop: meta %d, region %d, ops_idx0 %d, ops_idx1 %d, bind_cb_idx %d.\n",
-	currBop.metaIndex, currBop.regionIndex, currBop.opsIndex0, currBop.opsIndex1,
-	currBop.bindCbIndex);
+		new (&driver->internalBops[i]) fplainn::driverC::internalBopS(
+			currBop.metaIndex, currBop.regionIndex,
+			currBop.opsIndex0, currBop.opsIndex1,
+			currBop.bindCbIndex);
 	};
 
 	myResponse(ERROR_SUCCESS);
@@ -950,6 +984,14 @@ void floodplainnC::indexReaderEntry(void)
 	gcb = new messageStreamC::iteratorS;
 	requestData = new zudiIndexServer::zudiIndexMsgS(
 		0, NULL, zudiIndexServer::INDEX_KERNEL);
+
+	if (gcb.get() == NULL || requestData.get() == NULL)
+	{
+		printf(FATAL"Failed to allocate heap mem for message loop.\n"
+			"\tDormanting forever.\n");
+
+		taskTrib.dormant(self->getFullId());
+	};
 
 	if (zudiIndexes[0]->initialize(CC"[__kindex]") != ERROR_SUCCESS)
 		{ panic(ERROR_UNINITIALIZED); };

@@ -17,19 +17,18 @@
  *
  * Each device has a name and a unique ID.
  **/
+#define DRIVER_LONGNAME_MAXLEN			ZUDI_MESSAGE_MAXLEN
+#define DRIVER_VENDORNAME_MAXLEN		ZUDI_MESSAGE_MAXLEN
+#define DRIVER_VENDORCONTACT_MAXLEN		ZUDI_MESSAGE_MAXLEN
+#define DRIVER_FULLNAME_MAXLEN			\
+	(ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_DRIVER_SHORTNAME_MAXLEN)
 
 #define DEVICE_SHORTNAME_MAXLEN			DRIVER_SHORTNAME_MAXLEN
 #define DEVICE_LONGNAME_MAXLEN			DRIVER_LONGNAME_MAXLEN
 #define DEVICE_VENDORNAME_MAXLEN		DRIVER_VENDORNAME_MAXLEN
 #define DEVICE_VENDORCONTACT_MAXLEN		DRIVER_VENDORCONTACT_MAXLEN
-#define DEVICE_DRIVERNAME_MAXLEN		(128)
-
+#define DEVICE_DRIVER_FULLNAME_MAXLEN		DRIVER_FULLNAME_MAXLEN
 #define DEVICE_CLASS_MAXLEN			(48)
-
-#define DRIVER_SHORTNAME_MAXLEN			(16)
-#define DRIVER_LONGNAME_MAXLEN			(48)
-#define DRIVER_VENDORNAME_MAXLEN		(24)
-#define DRIVER_VENDORCONTACT_MAXLEN		(96)
 
 namespace fplainn
 {
@@ -47,13 +46,19 @@ namespace fplainn
 		:
 		id(id), driver(NULL), driverInstance(NULL),
 		nEnumerationAttribs(0), nInstanceAttribs(0),
-		enumeration(NULL), instance(NULL)
+		enumeration(NULL), instance(NULL), classes(NULL),
+		driverDetected(0), isKernelDriver(0)
 		{
+			this->shortName[0] = this->longName[0]
+				= this->vendorName[0]
+				= this->vendorContactInfo[0]
+				= this->driverFullName[0] = '\0';
+
 			if (shortName != NULL)
 			{
 				strncpy8(
 					this->shortName, shortName,
-					DEVICE_SHORTNAME_MAXLEN);
+					ZUDI_DRIVER_SHORTNAME_MAXLEN);
 			};
 		}
 
@@ -67,7 +72,7 @@ namespace fplainn
 
 		error_t addClass(utf8Char *name);
 		error_t getEnumerationAttribute(
-			utf8Char *name, udi_instance_attr_list_t **attrib);
+			utf8Char *name, udi_instance_attr_list_t *attrib);
 
 		error_t setEnumerationAttribute(udi_instance_attr_list_t *attrib);
 
@@ -75,15 +80,15 @@ namespace fplainn
 
 	public:
 		ubit16		id;
-		utf8Char	shortName[DEVICE_SHORTNAME_MAXLEN],
-				longName[DEVICE_LONGNAME_MAXLEN],
-				vendorName[DEVICE_VENDORNAME_MAXLEN],
-				vendorContactInfo[DEVICE_VENDORCONTACT_MAXLEN];
+		utf8Char	shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
+				longName[ZUDI_MESSAGE_MAXLEN],
+				vendorName[ZUDI_MESSAGE_MAXLEN],
+				vendorContactInfo[ZUDI_MESSAGE_MAXLEN];
 
 		numaBankId_t		bankId;
 		driverC			*driver;
-		utf8Char		driverFullName[DEVICE_DRIVERNAME_MAXLEN];
 		driverInstanceC		*driverInstance;
+		utf8Char		driverFullName[DRIVER_FULLNAME_MAXLEN];
 		ubit8			nEnumerationAttribs, nInstanceAttribs;
 		udi_instance_attr_list_t
 					**enumeration, **instance;
@@ -91,23 +96,38 @@ namespace fplainn
 		sbit8			driverDetected, isKernelDriver;
 	};
 
+	/**	driverC:
+	 * driverC represents a UDI driver in the kernel's metadata. It stores
+	 * enough information about a driver to enable the kernel to instantiate
+	 * a process for devices which are driven by that driver.
+	 **********************************************************************/
 	class driverC
 	{
 	public:
-		struct metalanguageS;
-		struct moduleC;
+		struct moduleS;
 		struct regionS;
-		struct channelS;
+		struct requirementS;
+		struct metalanguageS;
+		struct childBopS;
+		struct parentBopS;
+		struct internalBopS;
 
 		driverC(void)
 		:
-		nModules(0), nRegions(0), nMetalanguages(0),
-		allMetalanguagesSatisfied(0), childEnumerationAttribSize(0),
-		modules(NULL), regions(NULL), metalanguages(NULL)
-		{}
-
-		error_t initialize(utf8Char *fullName)
+		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
+		nChildBops(0), nParentBops(0), nInternalBops(0),
+		childEnumerationAttrSize(0),
+		modules(NULL), regions(NULL), requirements(NULL),
+		metalanguages(NULL), childBops(NULL), parentBops(NULL),
+		internalBops(NULL)
 		{
+			basePath[0] = shortName[0] = longName[0] = '\0';
+		}
+
+		error_t initialize(utf8Char *basePath, utf8Char *shortName)
+		{
+			strcpy8(this->basePath, basePath);
+			strcpy8(this->shortName, shortName);
 			return ERROR_SUCCESS;
 		}
 
@@ -122,38 +142,43 @@ namespace fplainn
 		error_t preallocateParentBops(uarch_t nParentBops);
 		error_t preallocateInternalBops(uarch_t nInternalBops);
 
-		struct moduleC
+		struct moduleS
 		{
-		public:
-			moduleC(void)
+			moduleS(ubit16 index, utf8Char *filename)
 			:
-			index(0), nAttachedRegions(0),
-			regionIndexes(NULL)
+			index(index), nAttachedRegions(0), regionIndexes(NULL)
 			{
-				filename[0] = '\0';
+				if (filename != NULL)
+					{ strcpy8(this->filename, filename); }
+				else { filename[0] = '\0'; };
 			}
 
-			moduleC(utf8Char *filename, ubit16 index)
-			:
-			index(index), nAttachedRegions(0),
-			regionIndexes(NULL)
-			{
-				strcpy8(this->filename, filename);
-			}
+			error_t addAttachedRegion(ubit16 regionIndex);
 
-		public:
-			error_t addAttachedRegion(ubit16 index);
-
-		public:
 			ubit16		index, nAttachedRegions;
 			// Array of region indexes belonging to this module.
 			ubit16		*regionIndexes;
 			utf8Char	filename[ZUDI_FILENAME_MAXLEN];
+
+		private:
+			friend class fplainn::driverC;
+			moduleS(void)
+			:
+			index(0), nAttachedRegions(0), regionIndexes(NULL)
+			{
+				filename[0] = '\0';
+			}
 		};
 
 		struct regionS
 		{
-		public:
+			regionS(ubit16 index, ubit16 moduleIndex, ubit32 flags)
+			:
+			index(index), moduleIndex(moduleIndex),
+			nAttachedChannels(0), channelIndexes(NULL),
+			dataSize(0), flags(flags)
+			{}
+
 			// 'moduleIndex' is this region's module's index.
 			ubit16		index, moduleIndex,
 					nAttachedChannels;
@@ -161,28 +186,130 @@ namespace fplainn
 			ubit16		*channelIndexes;
 			uarch_t		dataSize;
 			ubit32		flags;
+
+		private:
+			friend class fplainn::driverC;
+			regionS(void)
+			:
+			index(0), moduleIndex(0),
+			nAttachedChannels(0), channelIndexes(NULL),
+			dataSize(0), flags(0)
+			{}
+		};
+
+		struct requirementS
+		{
+			requirementS(utf8Char *name, ubit32 version)
+			:
+			version(version)
+			{
+				strcpy8(this->name, name);
+			}
+
+			utf8Char	name[ZUDI_DRIVER_REQUIREMENT_MAXLEN];
+			ubit32		version;
+
+		private:
+			friend class fplainn::driverC;
+			requirementS(void)
+			:
+			version(0)
+			{
+				name[0] = '\0';
+			}
 		};
 
 		struct metalanguageS
 		{
-			metalanguageS(void)
+			metalanguageS(ubit16 index, utf8Char *name)
 			:
-			isSatisfied(0)
+			index(index)
 			{
-				name[0] = '\0';
+				strcpy8(this->name, name);
 			}
 
 			ubit16		index;
-			utf8Char	name[16];
-			sarch_t		isSatisfied;
+			utf8Char	name[ZUDI_DRIVER_METALANGUAGE_MAXLEN];
+
+		private:
+			friend class fplainn::driverC;
+			metalanguageS(void)
+			:
+			index(0)
+			{
+				name[0] = '\0';
+			}
+		};
+
+		struct childBopS
+		{
+			childBopS(
+				ubit16 metaIndex, ubit16 regionIndex,
+				ubit16 opsIndex)
+			:
+			metaIndex(metaIndex), regionIndex(regionIndex),
+			opsIndex(opsIndex)
+			{}
+
+			ubit16		metaIndex, regionIndex, opsIndex;
+
+		private:
+			friend class fplainn::driverC;
+			childBopS(void)
+			:
+			metaIndex(0), regionIndex(0), opsIndex(0)
+			{}
+		};
+
+		struct parentBopS
+		{
+			parentBopS(
+				ubit16 metaIndex, ubit16 regionIndex,
+				ubit16 opsIndex, ubit16 bindCbIndex)
+			:
+			metaIndex(metaIndex), regionIndex(regionIndex),
+			opsIndex(opsIndex), bindCbIndex(bindCbIndex)
+			{}
+
+			ubit16		metaIndex, regionIndex, opsIndex,
+					bindCbIndex;
+
+		private:
+			friend class fplainn::driverC;
+			parentBopS(void)
+			:
+			metaIndex(0), regionIndex(0), opsIndex(0),
+			bindCbIndex(0)
+			{}
+		};
+
+		struct internalBopS
+		{
+			internalBopS(
+				ubit16 metaIndex, ubit16 regionIndex,
+				ubit16 opsIndex0, ubit16 opsIndex1,
+				ubit16 bindCbIndex)
+			:
+			metaIndex(metaIndex), regionIndex(regionIndex),
+			opsIndex0(opsIndex0), opsIndex1(opsIndex1),
+			bindCbIndex(bindCbIndex)
+			{}
+
+			ubit16		metaIndex, regionIndex,
+					opsIndex0, opsIndex1,
+					bindCbIndex;
+
+		private:
+			friend class fplainn::driverC;
+			internalBopS(void)
+			:
+			metaIndex(0), regionIndex(0),
+			opsIndex0(0), opsIndex1(0), bindCbIndex(0)
+			{}
 		};
 
 	public:
-		error_t addMetalanguage(ubit16 index, utf8Char *name);
-		error_t addModule(ubit16 index, utf8Char *name);
-		error_t addRegion(ubit16 moduleIndex, ubit16 regionIndex);
-
-		moduleC *getModule(ubit16 index)
+		moduleS *getModule(ubit16 index)
 		{
 			for (uarch_t i=0; i<nModules; i++)
 			{
@@ -207,18 +334,25 @@ namespace fplainn
 		// Kernel doesn't need to know about control block information.
 
 	public:
-		utf8Char	fullName[DEVICE_DRIVERNAME_MAXLEN];
-		ubit16		nModules, nRegions, nMetalanguages,
-				nControlBlocks;
-		sbit8		allMetalanguagesSatisfied;
+		utf8Char	basePath[ZUDI_DRIVER_BASEPATH_MAXLEN],
+				shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
+				longName[ZUDI_MESSAGE_MAXLEN];
+		ubit16		nModules, nRegions, nRequirements,
+				nMetalanguages, nChildBops, nParentBops,
+				nInternalBops;
 
-		uarch_t		childEnumerationAttribSize;
+		uarch_t		childEnumerationAttrSize;
 		// Modules for this driver, and their indexes.
-		moduleC		*modules;
+		moduleS		*modules;
 		// Regions in this driver and their indexes/module indexes, etc.
 		regionS		*regions;
+		// All metalanguage required libraries for this driver.
+		requirementS	*requirements;
 		// Metalanguage indexes, dependency satisfaction, etc.
 		metalanguageS	*metalanguages;
+		childBopS	*childBops;
+		parentBopS	*parentBops;
+		internalBopS	*internalBops;
 	};
 }
 

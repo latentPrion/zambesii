@@ -50,7 +50,7 @@ void *malloc(uarch_t nBytes)
 
 void *realloc(void *mem, uarch_t nBytes)
 {
-	memReservoir.free(mem);
+	if (mem != NULL) { memReservoir.free(mem); };
 	return memReservoir.allocate(nBytes);
 }
 

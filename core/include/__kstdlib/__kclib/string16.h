@@ -21,6 +21,7 @@ int strcmp16(const utf16Char *str1, const utf16Char *str2);
 int strncmp16(const utf16Char *str1, const utf16Char *str2, int count);
 size_t strnlen16(const utf16Char *str1, size_t maxLen);
 utf16Char *strnchr16(const utf16Char *str, size_t n, const utf16Char chr);
+utf16Char *strcat16(utf16Char *dest, const utf16Char *src);
 
 #ifdef __cplusplus
 }
