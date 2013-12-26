@@ -919,6 +919,16 @@ void fplainnIndexServer_handleRequest(
 {
 	error_t		err;
 
+	// Ensure that no process is sending us bogus request data.
+	if (msg->dataNBytes != sizeof(zudiIndexServer::zudiIndexMsgS))
+	{
+		printf(WARNING FPLAINNIDX"Thread 0x%x is sending spoofed "
+			"request data.\n",
+			msg->header.sourceId);
+
+		return;
+	};
+
 	err = self->parent->zasyncStream.receive(
 		msg->dataHandle, requestData, 0);
 
