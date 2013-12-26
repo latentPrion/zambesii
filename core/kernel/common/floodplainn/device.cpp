@@ -174,3 +174,13 @@ error_t fplainn::driverC::moduleS::addAttachedRegion(ubit16 regionIndex)
 	return ERROR_SUCCESS;
 }
 
+void fplainn::driverC::dump(void)
+{
+	printf(NOTICE"Driver: %s/%s\n\t(%s).\n\tSupplier %s; Contact %s.\n"
+		"%d mods, %d rgns, %d req's, %d metas, %d cbops, %d pbops, "
+		"%d ibops.\n",
+		basePath, shortName, longName, supplier, supplierContact,
+		nModules, nRegions, nRequirements, nMetalanguages,
+		nChildBops, nParentBops, nInternalBops);
+}
+

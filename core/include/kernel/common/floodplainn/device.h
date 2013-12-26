@@ -143,6 +143,8 @@ namespace fplainn
 		error_t preallocateParentBops(uarch_t nParentBops);
 		error_t preallocateInternalBops(uarch_t nInternalBops);
 
+		void dump(void);
+
 		struct moduleS
 		{
 			moduleS(ubit16 index, utf8Char *filename)
@@ -155,6 +157,8 @@ namespace fplainn
 			}
 
 			error_t addAttachedRegion(ubit16 regionIndex);
+
+			void dump(void);
 
 			ubit16		index, nAttachedRegions;
 			// Array of region indexes belonging to this module.
@@ -179,6 +183,8 @@ namespace fplainn
 			nAttachedChannels(0), channelIndexes(NULL),
 			dataSize(0), flags(flags)
 			{}
+
+			void dump(void);
 
 			// 'moduleIndex' is this region's module's index.
 			ubit16		index, moduleIndex,
@@ -207,6 +213,8 @@ namespace fplainn
 				strcpy8(this->name, name);
 			}
 
+			void dump(void);
+
 			utf8Char	name[ZUDI_DRIVER_REQUIREMENT_MAXLEN];
 			ubit32		version;
 
@@ -228,6 +236,8 @@ namespace fplainn
 			{
 				strcpy8(this->name, name);
 			}
+
+			void dump(void);
 
 			ubit16		index;
 			utf8Char	name[ZUDI_DRIVER_METALANGUAGE_MAXLEN];
@@ -252,6 +262,8 @@ namespace fplainn
 			opsIndex(opsIndex)
 			{}
 
+			void dump(void);
+
 			ubit16		metaIndex, regionIndex, opsIndex;
 
 		private:
@@ -271,6 +283,8 @@ namespace fplainn
 			metaIndex(metaIndex), regionIndex(regionIndex),
 			opsIndex(opsIndex), bindCbIndex(bindCbIndex)
 			{}
+
+			void dump(void);
 
 			ubit16		metaIndex, regionIndex, opsIndex,
 					bindCbIndex;
@@ -295,6 +309,8 @@ namespace fplainn
 			opsIndex0(opsIndex0), opsIndex1(opsIndex1),
 			bindCbIndex(bindCbIndex)
 			{}
+
+			void dump(void);
 
 			ubit16		metaIndex, regionIndex,
 					opsIndex0, opsIndex1,

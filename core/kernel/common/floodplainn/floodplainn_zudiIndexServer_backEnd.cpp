@@ -566,7 +566,6 @@ static void flplainnIndexer_loadDriverReq(
 	fplainn::deviceC			*device;
 	error_t					err;
 
-printf(NOTICE"Just entered loadDriverReq handler.\n");
 	response = new floodplainnC::zudiIndexMsgS(
 		request->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_FLOODPLAINN, requestData->command,
@@ -596,7 +595,6 @@ printf(NOTICE"Just entered loadDriverReq handler.\n");
 	 **/
 	err = floodplainn.getDevice(requestData->path, &device);
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };
-printf(NOTICE"Got device on %s. Driver fullname %s.\n", requestData->path, device->driverFullName);
 
 	tmpString = new utf8Char[
 		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_FILENAME_MAXLEN];
@@ -633,7 +631,6 @@ printf(NOTICE"Got device on %s. Driver fullname %s.\n", requestData->path, devic
 
 	floodplainn.driverList.unlock();
 
-printf(NOTICE"Driver not found in loaded list.\n");
 	/* Else, the driver wasn't loaded already. Proceed to fill out the
 	 * driver information object.
 	 **/
@@ -652,6 +649,22 @@ printf(NOTICE"Driver not found in loaded list.\n");
 		indexHdr.get(), device->driverFullName, driverHdr.get());
 
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };
+
+	// Fill out the strings. Not going to error check these.
+	err = driver->initialize(
+		CC driverHdr->basePath, CC driverHdr->shortName);
+
+	if (err != ERROR_SUCCESS) { myResponse(err); return; };
+
+	err = zudiIndexes[0]->getMessageString(
+		driverHdr.get(), driverHdr->supplierIndex, driver->supplier);
+
+	err = zudiIndexes[0]->getMessageString(
+		driverHdr.get(), driverHdr->contactIndex,
+		driver->supplierContact);
+
+	err = zudiIndexes[0]->getMessageString(
+		driverHdr.get(), driverHdr->nameIndex, driver->longName);
 
 	// Copy all the module information:
 	err = driver->preallocateModules(driverHdr->nModules);
@@ -772,6 +785,10 @@ printf(NOTICE"Driver not found in loaded list.\n");
 			currBop.bindCbIndex);
 	};
 
+	driver->dump();
+	// Release the managed memory as well when inserting.
+	err = floodplainn.driverList.insert(driver.release());
+	if (err != ERROR_SUCCESS) { myResponse(err); return; };
 	myResponse(ERROR_SUCCESS);
 }
 
