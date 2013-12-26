@@ -658,7 +658,9 @@ printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
 
 	// Copy all the module information:
 	err = driver->preallocateModules(driverHdr->nModules);
-	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	if (driverHdr->nModules > 0 && err != ERROR_SUCCESS)
+		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+
 	for (uarch_t i=0; i<driverHdr->nModules; i++)
 	{
 		zudi::driver::moduleS		currModule;
@@ -677,7 +679,9 @@ printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
 
 	// Now copy all the region information:
 	err = driver->preallocateRegions(driverHdr->nRegions);
-	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	if (driverHdr->nRegions > 0 && err != ERROR_SUCCESS)
+		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+
 	for (uarch_t i=0; i<driverHdr->nRegions; i++)
 	{
 		zudi::driver::regionS		currRegion;
@@ -693,7 +697,9 @@ printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
 
 	// Now copy all the requirements information:
 	err = driver->preallocateRequirements(driverHdr->nRequirements);
-	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	if (driverHdr->nRequirements > 0 && err != ERROR_SUCCESS)
+		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+
 	for (uarch_t i=0; i<driverHdr->nRequirements; i++)
 	{
 		zudi::driver::requirementS	currRequirement;
@@ -712,7 +718,9 @@ printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
 
 	// Next, metalanguage index information.
 	err = driver->preallocateMetalanguages(driverHdr->nMetalanguages);
-	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	if (driverHdr->nMetalanguages > 0 && err != ERROR_SUCCESS)
+		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+
 	for (uarch_t i=0; i<driverHdr->nMetalanguages; i++)
 	{
 		zudi::driver::metalanguageS	currMetalanguage;
@@ -730,7 +738,9 @@ printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
 	};
 
 	err = driver->preallocateChildBops(driverHdr->nChildBops);
-	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	if (driverHdr->nChildBops > 0 && err != ERROR_SUCCESS)
+		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+
 	for (uarch_t i=0; i<driverHdr->nChildBops; i++)
 	{
 		zudi::driver::childBopS		currBop;
@@ -745,7 +755,9 @@ printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
 	};
 
 	err = driver->preallocateParentBops(driverHdr->nParentBops);
-	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	if (driver->nParentBops > 0 && err != ERROR_SUCCESS)
+		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+
 	for (uarch_t i=0; i<driverHdr->nParentBops; i++)
 	{
 		zudi::driver::parentBopS	currBop;
@@ -760,7 +772,9 @@ printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
 	};
 
 	err = driver->preallocateInternalBops(driverHdr->nInternalBops);
-	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	if (driverHdr->nInternalBops > 0 && err != ERROR_SUCCESS)
+		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+
 	for (uarch_t i=0; i<driverHdr->nInternalBops; i++)
 	{
 		zudi::driver::internalBopS	currBop;

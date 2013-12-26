@@ -1,0 +1,20 @@
+properties_version	0x101
+
+name		1
+supplier	2
+contact		3
+shortname	zbz_root
+release		1 v0.00.000
+
+message	1	Zambesii root bus metalanguage library
+message	2	Zambesii
+message	3	N/A
+
+requires	udi 0x101
+provides	zbz_root 0x0
+
+module	main
+
+rank 1	bus_type zbz_root_chipset_short_name
+rank 2	bus_type zbz_root_chipset_short_name zbz_root_chipset_long_name
+

@@ -219,50 +219,53 @@ syscallbackFuncF floodplainn_createRootDeviceReq1;
 error_t floodplainnC::createRootDeviceReq(createRootDeviceReqCallF *callback)
 {
 	error_t				ret;
-	fplainn::deviceC		*dev;
+	fplainn::deviceC		*chipset, *ramdisk;
 	udi_instance_attr_list_t	tmp;
 
-	ret = createDevice(CC"by-id", 0, 0, &dev);
+	ret = createDevice(CC"by-id", 0, 0, &chipset);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = createDevice(CC"by-id", 1, 0, &ramdisk);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	strcpy8(CC tmp.attr_name, CC"bus_type");
 	tmp.attr_type = UDI_ATTR_STRING;
-	strcpy8(CC tmp.attr_value, CC"zbz-root");
-	ret = dev->setEnumerationAttribute(&tmp);
+	strcpy8(CC tmp.attr_value, CC"zbz_root");
+	ret = chipset->setEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	strcpy8(CC tmp.attr_name, CC"rootbus_chipset_short_name");
+	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_short_name");
 	tmp.attr_type = UDI_ATTR_STRING;
 	// strcpy8(CC tmp.attr_value, CC CHIPSET_SHORT_STRING);
 	strcpy8(CC tmp.attr_value, CC"IBM-PC");
-	ret = dev->setEnumerationAttribute(&tmp);
+	ret = chipset->setEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	strcpy8(CC tmp.attr_name, CC"rootbus_chipset_long_name");
+	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_long_name");
 	tmp.attr_type = UDI_ATTR_STRING;
 	// strcpy8(CC tmp.attr_value, CC CHIPSET_LONG_STRING);
 	strcpy8(CC tmp.attr_value, CC"IBM-PC-compatible-chipset");
-	ret = dev->setEnumerationAttribute(&tmp);
+	ret = chipset->setEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	strcpy8(CC tmp.attr_name, CC"rootbus_chipset_using_smp");
+	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_using_smp");
 	tmp.attr_type = UDI_ATTR_BOOLEAN;
 	tmp.attr_value[0] = cpuTrib.usingChipsetSmpMode();
-	ret = dev->setEnumerationAttribute(&tmp);
+	ret = chipset->setEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	strcpy8(CC tmp.attr_name, CC"rootbus_chipset_info0");
+	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_info0");
 	tmp.attr_type = UDI_ATTR_STRING;
 	tmp.attr_value[0] = '\0';
-	ret = dev->setEnumerationAttribute(&tmp);
+	ret = chipset->setEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	strcpy8(CC tmp.attr_name, CC"rootbus_chipset_info1");
+	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_info1");
 	tmp.attr_type = UDI_ATTR_STRING;
 	tmp.attr_value[0] = '\0';
-	ret = dev->setEnumerationAttribute(&tmp);
+	ret = chipset->setEnumerationAttribute(&tmp);
 
-	dev->bankId = CHIPSET_MEMORY_NUMA_SHBANKID;
+	chipset->bankId = CHIPSET_MEMORY_NUMA_SHBANKID;
 	zudiIndexServer::newDeviceInd(
 		CC"by-id/0", zudiIndexServer::INDEX_KERNEL,
 		newSyscallback(

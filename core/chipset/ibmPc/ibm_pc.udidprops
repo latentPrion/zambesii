@@ -3,29 +3,25 @@ properties_version	0x101
 name		1
 supplier	2
 contact		3
-shortname	ibmpc_rt
+shortname	pc_chpst
 release		1 v0.00.000
 
-message	1	IBM-PC compatible chipset root-bus driver
+message	1	IBM-PC compatible chipset driver
 message	2	Zambesii
 message	3	N/A
 
 requires	udi 0x101
-requires	zbz_root 0x00012
+requires	zbz_root 0x0
+requires	zudi_bridge 0x101
 
 meta 1		zbz_root
 
-child_bind_ops		1 0 1
-parent_bind_ops		1 0 1 1
-internal_bind_ops	1 1 2 3 4
-
 module main
 region 0
-region 1
 
 message 100	IBM-PC compatible chipset
 device 100 1 \
-	bus_type string zbz-root \
-	rootbus_chipset_short_name string IBM-PC \
-	rootbus_chipset_long_name string IBM-PC-compatible-chipset
+	bus_type string zbz_root \
+	zbz_root_chipset_short_name string IBM-PC \
+	zbz_root_chipset_long_name string IBM-PC-compatible-chipset
 

@@ -15,7 +15,8 @@ EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a firmwareCore.a \
 	timerTrib.a cpuTrib.a processTrib.a vfsTrib.a taskTrib.a debugTrib.a \
 	floodplainn.a \
 	platformCore.a chipset.a chipsetCore.a archCore.a firmwareCore.a \
-	__kclasses.a __kstdlib.a __kcxxabi.a libx86mp.a libacpi.a 
+	__kclasses.a __kstdlib.a __kcxxabi.a libx86mp.a libacpi.a \
+	libzudiIndexParser.o udi_index.o
 
 GOAL=../core.o
 
@@ -31,6 +32,19 @@ include clean.mk
 include __kstdlib/__kstdlib.mk
 include kernel/common/tribs.mk
 include commonlibs/libs.mk
+
+udi_index.o: generate_udi_index udi_indexTmp.s
+udi_indexTmp.s: udi_index.S
+	$(CPP) $(CPPFLAGS) $< >$@
+generate_udi_index:
+	@echo "Creating driver index."
+	zudiindex -c le -i .
+	@echo "Adding chipset specific drivers to index."
+	zudiindex-addall -drivers chipset/$(ZCHIPSET) .
+	@echo "Adding chipset specific metalanguages to index."
+	zudiindex-addall -metas chipset/$(ZCHIPSET) .
+	@echo "Adding common metalanguages to index."
+	zudiindex-addall -metas commonlibs/metalanguages .
 
 archCore.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

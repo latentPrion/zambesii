@@ -32,7 +32,7 @@ clean: fonyphile
 	cd kernel/common/floodplainn; make clean
 
 aclean:
-	rm -f *.a *.o __klinkScript.ld
+	rm -f *.a *.o *.s __klinkScript.ld *.zudi-index
 
 fonyphile:
 	rm -f clean
