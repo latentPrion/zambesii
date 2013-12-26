@@ -447,6 +447,7 @@ error_t messageStreamC::pull(
 				pendingSubsystems.unlock();
 
 				memcpy(callback, tmp, tmp->size);
+				delete tmp;
 				return ERROR_SUCCESS;
 			};
 		};

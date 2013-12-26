@@ -28,16 +28,6 @@ utf8Char	__kprocessArgStringMem
 ubit8		__kprocessPreallocatedBmpMem[3][32];
 #endif
 
-kernelDriverProcessC::kernelDriverProcessC(
-	processId_t processId, processId_t parentProcessId, void *privateData
-	)
-:
-containedProcessC(
-	processId, parentProcessId,
-	PROCESS_EXECDOMAIN_KERNEL, processTrib.__kgetStream(),
-	privateData)
-{}
-
 error_t processStreamC::initialize(
 	const utf8Char *commandLineString, const utf8Char *environmentString,
 	bitmapC *cpuAffinityBmp

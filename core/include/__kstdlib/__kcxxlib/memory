@@ -28,6 +28,7 @@ public:	ptrC &operator =(ptrC &_p) { reset(_p.release()); };
 public:
 	// Equivalent to std::unique_ptr<>::get().
 	type *get(void) { return p; }
+	type **addressOf(void) { return &p; }
 	// Equivalent to std::unique_ptr<>::reset(void *=NULL).
 	void reset(type *_p=NULL) { p = _p; }
 	// Equivalent to std::unique_ptr<>::release().

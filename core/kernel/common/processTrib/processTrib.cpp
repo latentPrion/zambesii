@@ -1,6 +1,6 @@
 
 #include <chipset/memory.h>
-#include <__kstdlib/__kcxxlib/new>
+#include <__kstdlib/__kcxxlib/memory>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
@@ -362,15 +362,17 @@ error_t processTribC::spawnDriver(
 	ubit8 prio,
 	uarch_t flags,
 	void *privateData,
-	processStreamC **newProcess
+	driverProcessC **retProcess
 	)
 {
-	error_t			ret;
-	processId_t		newProcessId;
-	threadC			*parentThread, *firstThread;
-	fplainn::deviceC	*dev;
+	error_t				ret;
+	processId_t			newProcessId;
+	threadC				*parentThread, *firstThread;
+	fplainn::deviceC		*dev;
+	fplainn::driverC		*drv;
+	heapPtrC<driverProcessC>	newProcess;
 
-	if (commandLine == NULL || newProcess == NULL)
+	if (commandLine == NULL || retProcess == NULL)
 		{ return ERROR_INVALID_ARG; };
 
 	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
@@ -399,10 +401,19 @@ error_t processTribC::spawnDriver(
 	 * For now, we just always spawn a kernelspace process because we don't
 	 * even support userspace driver processes as yet anyway.
 	 **/
-	*newProcess = new kernelDriverProcessC(
-		newProcessId, parentThread->getFullId(), privateData);
+	// Verify that the device exists.
+	if (!deviceExists(commandLine, &dev))
+		{ return ERROR_RESOURCE_UNAVAILABLE; };
 
-	if (*newProcess == NULL)
+	newProcess = new driverProcessC(
+		newProcessId, parentThread->getFullId(),
+		(dev->isKernelDriver)
+			? PROCESS_EXECDOMAIN_KERNEL
+			: PROCESS_EXECDOMAIN_USER,
+		dev->bankId,
+		privateData);
+
+	if (newProcess.get() == NULL)
 	{
 		printf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
 		return ERROR_MEMORY_NOMEM;
@@ -418,52 +429,61 @@ error_t processTribC::spawnDriver(
 	// if (ncb == NULL) { fail or something; };
 	// Then set the affinity below to merge with ncb->cpus.
 	ret = affinity.initialize(cpuTrib.onlineCpus.getNBits());
-	if (ret != ERROR_SUCCESS) { delete *newProcess; return ret; };
+	if (ret != ERROR_SUCCESS) { return ret; };
 	affinity.merge(&cpuTrib.onlineCpus);
 
-	ret = (*(kernelDriverProcessC **)newProcess)->initialize(
-		commandLine, environment, &affinity);
+	ret = newProcess->initialize(commandLine, environment, &affinity);
+	if (ret != ERROR_SUCCESS) { return ret; };
 
-	if (ret != ERROR_SUCCESS) { delete *newProcess; return ret; };
+	// Verify that a driver has been detected for the device.
+	if (!dev->driverDetected) { return SPAWNDRIVER_STATUS_NO_DRIVER; };
+	// Verify that a driver has been loaded for the device.
+	if (dev->driver == NULL)
+	{
+		// Force caller to call loadDriverReq() first.
+		if (floodplainn.findDriver(dev->driverFullName, &drv)
+			!= ERROR_SUCCESS)
+		{
+			printf(WARNING PROCTRIB"spawnDriver: %s: Must "
+				"call loadDriver first.\n",
+				commandLine);
 
-	/* Verify that the device exists, a driver is loaded for it, and all
-	 * of that driver's metalanguage dependencies are satisfied.
-	 **/
-	if (!deviceExists((*newProcess)->fullName, &dev))
-		{ delete *newProcess; return ERROR_RESOURCE_UNAVAILABLE; };
+			return ERROR_UNINITIALIZED;
+		};
 
-	if (!dev->driverDetected)
-		{ delete *newProcess; return SPAWNDRIVER_STATUS_NO_DRIVER; };
+		dev->driver = drv;
+	};
 
 	// Add the new process to the process list.
-	processes.setSlot(newProcessId, *newProcess);
+	processes.setSlot(newProcessId, newProcess.get());
 
 	// Spawn the first thread. Pass on the DORMANT flag if set.
 	if (__KFLAG_TEST(flags, SPAWNPROC_FLAGS_DORMANT))
 	{
 		__KFLAG_SET(
-			(*newProcess)->flags,
+			newProcess->flags,
 			PROCESS_FLAGS_SPAWNED_DORMANT);
 	};
 
-	ret = (*(kernelDriverProcessC **)newProcess)->spawnThread(
+	ret = newProcess->spawnThread(
 		&processTribC::commonEntry, NULL,
-		&(*(kernelDriverProcessC **)newProcess)->cpuAffinity,
+		&newProcess->cpuAffinity,
 		schedPolicy, prio,
-		flags | SPAWNTHREAD_FLAGS_AFFINITY_SET | SPAWNTHREAD_FLAGS_FIRST_THREAD,
+		flags | SPAWNTHREAD_FLAGS_AFFINITY_SET
+		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
 		&firstThread);
 
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(NOTICE"Failed to spawn thread for new driver.\n");
 		processes.clearSlot(newProcessId);
-		delete *newProcess;
 		return ret;
 	};
 
 	printf(NOTICE"New driver spawned, tid = 0x%x.\n",
 		firstThread->getFullId());
 
+	*retProcess = newProcess.release();
 	return ERROR_SUCCESS;
 }
 

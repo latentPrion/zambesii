@@ -1,7 +1,7 @@
 
 #include <chipset/chipset.h>
 #include <__kstdlib/__kclib/string8.h>
-#include <__kstdlib/__kcxxlib/new>
+#include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/zudiIndexServer.h>
 #include <kernel/common/floodplainn/floodplainn.h>
@@ -59,6 +59,46 @@ void floodplainnC::initializeReq1(
 
 	_callback = (initializeReqCallF *)callback;
 	_callback(res->header.error);
+}
+
+error_t floodplainnC::findDriver(utf8Char *fullName, fplainn::driverC **retDrv)
+{
+	heapPtrC<utf8Char>	tmpStr;
+	void			*handle;
+	fplainn::driverC	*tmpDrv;
+
+	tmpStr.useArrayDelete = 1;
+	tmpStr = new utf8Char[
+		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_DRIVER_SHORTNAME_MAXLEN];
+
+	if (tmpStr.get() == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	handle = NULL;
+	driverList.lock();
+	tmpDrv = driverList.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
+	for (; tmpDrv != NULL;
+		tmpDrv = driverList.getNextItem(
+			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
+	{
+		uarch_t		len;
+
+		len = strlen8(tmpDrv->basePath);
+		strcpy8(tmpStr.get(), tmpDrv->basePath);
+		if (len > 0 && tmpStr[len - 1] != '/')
+			{ strcat8(tmpStr.get(), CC"/"); };
+
+		strcat8(tmpStr.get(), tmpDrv->shortName);
+
+		if (strcmp8(tmpStr.get(), fullName) == 0)
+		{
+			driverList.unlock();
+			*retDrv = tmpDrv;
+			return ERROR_SUCCESS;
+		};
+	};
+
+	driverList.unlock();
+	return ERROR_NO_MATCH;
 }
 
 void floodplainnC::__kdriverEntry(void)
@@ -222,6 +262,7 @@ error_t floodplainnC::createRootDeviceReq(createRootDeviceReqCallF *callback)
 	tmp.attr_value[0] = '\0';
 	ret = dev->setEnumerationAttribute(&tmp);
 
+	dev->bankId = CHIPSET_MEMORY_NUMA_SHBANKID;
 	zudiIndexServer::newDeviceInd(
 		CC"by-id/0", zudiIndexServer::INDEX_KERNEL,
 		newSyscallback(

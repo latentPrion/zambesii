@@ -47,6 +47,7 @@ namespace zudiIndexServer
 		ubit8			command;
 		indexE			index;
 		newDeviceActionE	action;
+		processId_t		processId;
 		utf8Char		path[
 			ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
 	};

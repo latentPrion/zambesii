@@ -69,6 +69,9 @@ public:
 		zudiIndexServer::zudiIndexMsgS	info;
 	};
 
+public:
+	error_t findDriver(utf8Char *fullName, fplainn::driverC **ret);
+
 	/* Creates a child device under a given parent and returns it to the
 	 * caller.
 	 **/

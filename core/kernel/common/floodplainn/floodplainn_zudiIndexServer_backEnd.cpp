@@ -507,7 +507,15 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			driverHdr.get(), driverHdr->nameIndex,
 			dev->longName);
 
-		dev->driver = NULL;
+		fplainn::driverC		*drvTmp;
+
+		if (floodplainn.findDriver(dev->driverFullName, &drvTmp)
+			== ERROR_SUCCESS)
+		{
+			dev->driver = drvTmp;
+		}
+		else { dev->driver = NULL; };
+
 		dev->driverDetected = 1;
 		dev->isKernelDriver = 1;
 	};
@@ -558,7 +566,6 @@ static void flplainnIndexer_loadDriverReq(
 {
 	floodplainnC::zudiIndexMsgS		*response;
 	asyncResponseC				myResponse;
-	void					*handle;
 	heapPtrC<fplainn::driverC>		driver;
 	heapPtrC<zudi::headerS> 		indexHdr;
 	heapPtrC<zudi::driver::headerS>		driverHdr;
@@ -596,40 +603,18 @@ static void flplainnIndexer_loadDriverReq(
 	err = floodplainn.getDevice(requestData->path, &device);
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };
 
-	tmpString = new utf8Char[
-		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_FILENAME_MAXLEN];
-
-	if (tmpString == NULL) { myResponse(ERROR_MEMORY_NOMEM); return; };
-
-	handle = NULL;
-	floodplainn.driverList.lock();
-	driver = floodplainn.driverList.getNextItem(
-		&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-
-	for (; driver.get() != NULL;
-		driver = floodplainn.driverList.getNextItem(
-			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
+	if (floodplainn.findDriver(device->driverFullName, driver.addressOf())
+		== ERROR_SUCCESS)
 	{
-		uarch_t		len;
-
-		strcpy8(tmpString.get(), driver->basePath);
-		len = strlen8(tmpString.get());
-		if (len > 0 && tmpString[len - 1] != '/') {
-			strcat8(tmpString.get(), CC"/");
-		};
-
-		strcat8(tmpString.get(), driver->shortName);
-		if (strcmp8(tmpString.get(), device->driverFullName) == 0)
-		{
-			// Driver is already loaded; no need to do any work.
-			floodplainn.driverList.unlock();
+printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
+			/* "Driver" currently points to an object that was in
+			 * the loaded driver list, and should not yet be freed.
+			 * We release() the memory it points to before leaving.
+			 **/
 			driver.release();
 			myResponse(ERROR_SUCCESS);
 			return;
-		};
 	};
-
-	floodplainn.driverList.unlock();
 
 	/* Else, the driver wasn't loaded already. Proceed to fill out the
 	 * driver information object.
@@ -637,8 +622,12 @@ static void flplainnIndexer_loadDriverReq(
 	driver = new fplainn::driverC;
 	indexHdr = new zudi::headerS;
 	driverHdr = new zudi::driver::headerS;
+	tmpString.useArrayDelete = 1;
+	tmpString = new utf8Char[
+		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_FILENAME_MAXLEN];
 
-	if (driver == NULL || indexHdr == NULL || driverHdr == NULL)
+	if (driver == NULL || indexHdr == NULL || driverHdr == NULL
+		|| tmpString.get() == NULL)
 		{ myResponse(ERROR_MEMORY_NOMEM); return; };
 
 	err = zudiIndexes[0]->getHeader(indexHdr.get());
@@ -896,14 +885,63 @@ static void fplainnIndexServer_newDeviceInd2(
 {
 	floodplainnC::zudiIndexMsgS	*originContext;
 	asyncResponseC			myResponse;
+	error_t				err;
+	driverProcessC			*newProcess;
 
 	originContext = (floodplainnC::zudiIndexMsgS *)response->header
 		.privateData;
 
 	myResponse(originContext);
 
-	myResponse(response->header.error);
+	if (response->header.error != ERROR_SUCCESS)
+	{
+		myResponse(response->header.error);
+		return;
+	};
+
 	originContext->info.action = zudiIndexServer::NDACTION_LOAD_DRIVER;
+	if (::newDeviceAction == zudiIndexServer::NDACTION_LOAD_DRIVER)
+		{ myResponse(ERROR_SUCCESS); return; };
+
+	// Else now we spawn the driver process.
+	err = processTrib.spawnDriver(
+		originContext->info.path, NULL,
+		taskC::ROUND_ROBIN, PRIOCLASS_DEFAULT,
+		0, originContext,
+		&newProcess);
+
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINNIDX"spawnDriver: failed because %s.\n",
+			strerror(err));
+
+		myResponse(err);
+		return;
+	};
+
+	originContext->info.processId = newProcess->id;
+	printf(NOTICE FPLAINNIDX"spawnDriver: new driver processId 0x%x.\n",
+		originContext->info.processId);
+
+	myResponse(DONT_SEND_RESPONSE);
+}
+
+static void fplainnIndexServer_newDeviceInd3(messageStreamC::headerS *response)
+{
+	floodplainnC::zudiIndexMsgS	*originContext;
+	asyncResponseC			myResponse;
+
+	originContext = (floodplainnC::zudiIndexMsgS *)response->privateData;
+	myResponse(originContext);
+
+	if (response->error != ERROR_SUCCESS)
+	{
+		myResponse(response->error);
+		return;
+	};
+
+	originContext->info.action = zudiIndexServer::NDACTION_INSTANTIATE;
+	myResponse(ERROR_SUCCESS);
 }
 
 static void handleUnknownRequest(zasyncStreamC::zasyncMsgS *request)
@@ -1090,6 +1128,19 @@ void floodplainnC::indexReaderEntry(void)
 				break;
 			};
 			break;
+
+		case MSGSTREAM_SUBSYSTEM_PROCESS:
+			if (gcb->header.function
+				!= MSGSTREAM_PROCESS_SPAWN_DRIVER)
+			{
+				break;
+			};
+
+			fplainnIndexServer_newDeviceInd3(
+					(messageStreamC::headerS *)gcb.get());
+
+			break;
+
 		default:
 			printf(NOTICE FPLAINNIDX"Unknown message.\n");
 		};

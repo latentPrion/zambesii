@@ -362,7 +362,7 @@ public:
 	typeE getType(void) { return DISTRIBUTARY; }
 };
 
-/**	driverProcessC, kernelDriverProcessC.
+/**	driverProcessC.
  ******************************************************************************/
 
 class driverProcessC
@@ -372,12 +372,13 @@ public containerProcessC
 public:
 	driverProcessC(
 		processId_t processId, processId_t parentProcessId,
+		ubit8 execDomain,
 		numaBankId_t numaAddrSpaceBinding,
 		void *privateData)
 	:
 	containerProcessC(
 		processId, parentProcessId,
-		PROCESS_EXECDOMAIN_USER,	// Always kernel domain.
+		execDomain,
 		numaAddrSpaceBinding,
 		(void *)0x100000,
 		ARCH_MEMORY___KLOAD_VADDR_BASE - 0x100000 - 0x1000,
@@ -396,30 +397,6 @@ public:
 
 public:
 	typeE getType(void) { return DRIVER; }
-};
-
-class kernelDriverProcessC
-:
-public containedProcessC
-{
-public:
-	// Sets container process to kernel process automatically.
-	kernelDriverProcessC(
-		processId_t processId, processId_t parentProcessId,
-		void *privateData);
-
-	error_t initialize(
-		const utf8Char *commandLine, const utf8Char *environment,
-		bitmapC *affinity)
-	{
-		return containedProcessC::initialize(
-			commandLine, environment, affinity);
-	}
-
-	~kernelDriverProcessC(void) {}
-
-public:
-	typeE getType(void) { return KERNEL_DRIVER; }
 };
 
 /**	Inline Methods:

@@ -124,7 +124,13 @@ public:
 	 * There is no need for addrspace binding or CPU affinity arguments
 	 * because those things are determined by the NUMA affinity of the
 	 * device itself. Privilege elevation for any device is determined by
-	 * the kernel and current security policy.
+	 * the kernel and current security policy. There is also no need for
+	 * an execDomain argument to this function, because the execDomain of
+	 * the driver is decided based on the driver which has been detected
+	 * for the device.
+	 *
+	 * This call will fail if there is no driver detected for the target
+	 * device.
 	 **/
 	#define MSGSTREAM_PROCESS_SPAWN_DRIVER		(2)
 	error_t spawnDriver(
@@ -134,7 +140,7 @@ public:
 		ubit8 prio,
 		uarch_t flags,
 		void *privateData,
-		processStreamC **ret);
+		driverProcessC **ret);
 
 	// Callback uses genericCallbackS.
 	#define MSGSTREAM_PROCESS_SPAWN_STREAM		(1)
