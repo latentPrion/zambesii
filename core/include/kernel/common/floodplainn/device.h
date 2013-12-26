@@ -50,8 +50,6 @@ namespace fplainn
 		driverDetected(0), isKernelDriver(0)
 		{
 			this->shortName[0] = this->longName[0]
-				= this->vendorName[0]
-				= this->vendorContactInfo[0]
 				= this->driverFullName[0] = '\0';
 
 			if (shortName != NULL)
@@ -81,9 +79,11 @@ namespace fplainn
 	public:
 		ubit16		id;
 		utf8Char	shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
-				longName[ZUDI_MESSAGE_MAXLEN],
-				vendorName[ZUDI_MESSAGE_MAXLEN],
-				vendorContactInfo[ZUDI_MESSAGE_MAXLEN];
+				longName[ZUDI_MESSAGE_MAXLEN];
+
+		/* Vendor name and contact info should be retrieved from the
+		 * driver object, instead of unnecessarily being duplicated.
+		 **/
 
 		numaBankId_t		bankId;
 		driverC			*driver;
@@ -121,7 +121,8 @@ namespace fplainn
 		metalanguages(NULL), childBops(NULL), parentBops(NULL),
 		internalBops(NULL)
 		{
-			basePath[0] = shortName[0] = longName[0] = '\0';
+			basePath[0] = shortName[0] = longName[0]
+				= supplier[0] = supplierContact[0] = '\0';
 		}
 
 		error_t initialize(utf8Char *basePath, utf8Char *shortName)
@@ -336,7 +337,9 @@ namespace fplainn
 	public:
 		utf8Char	basePath[ZUDI_DRIVER_BASEPATH_MAXLEN],
 				shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
-				longName[ZUDI_MESSAGE_MAXLEN];
+				longName[ZUDI_MESSAGE_MAXLEN],
+				supplier[ZUDI_MESSAGE_MAXLEN],
+				supplierContact[ZUDI_MESSAGE_MAXLEN];
 		ubit16		nModules, nRegions, nRequirements,
 				nMetalanguages, nChildBops, nParentBops,
 				nInternalBops;

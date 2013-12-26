@@ -448,6 +448,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		 * undesired driver, should the user so choose to do so.
 		 **/
 		myResponse(ERROR_NO_MATCH);
+		dev->driver = NULL;
 		dev->driverFullName[0] = '\0';
 		dev->driverDetected = 0;
 		dev->isKernelDriver = 0;
@@ -501,18 +502,12 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 
 		strcpy8(dev->shortName, CC driverHdr->shortName);
 
-		/* If these next two readString calls fail, it's fine. We don't
-		 * need to rollback the whole operation just because we couldn't
-		 * obtain information on the supplier and supplier contact info.
-		 **/
+		// If this next readString fails, it's fine, kind of.
 		zudiIndexes[0]->getMessageString(
-			driverHdr.get(), driverHdr->supplierIndex,
-			dev->vendorName);
+			driverHdr.get(), driverHdr->nameIndex,
+			dev->longName);
 
-		zudiIndexes[0]->getMessageString(
-			driverHdr.get(), driverHdr->contactIndex,
-			dev->vendorContactInfo);
-
+		dev->driver = NULL;
 		dev->driverDetected = 1;
 		dev->isKernelDriver = 1;
 	};
