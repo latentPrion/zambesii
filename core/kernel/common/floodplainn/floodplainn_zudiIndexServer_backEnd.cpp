@@ -301,7 +301,8 @@ static void fplainnIndexServer_detectDriverReq(
 	 * asked to locate a driver for.
 	 **/
 	for (uarch_t i=0;
-		zudiIndexes[0]->indexedGetDevice(i, &devlineHdr)
+		i < indexHdr->nSupportedDevices
+		&& zudiIndexes[0]->indexedGetDevice(i, &devlineHdr)
 			== ERROR_SUCCESS;
 		i++)
 	{
@@ -1083,7 +1084,8 @@ void floodplainnC::indexReaderEntry(void)
 
 		// If some thread is forwarding syscall responses to us:
 		if ((gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_FLOODPLAINN
-			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_ZASYNC)
+			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_ZASYNC
+			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_PROCESS)
 			&& gcb->header.sourceId != self->getFullId())
 		{
 			printf(ERROR FPLAINNIDX"Syscall response message "

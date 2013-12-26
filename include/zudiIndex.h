@@ -27,6 +27,7 @@ namespace zudi
 		char		endianness[4];
 		uint16_t	majorVersion, minorVersion;
 		uint32_t	nRecords, nextDriverId;
+		uint32_t	nSupportedDevices;
 		uint8_t		reserved[64];
 	};
 
@@ -90,7 +91,7 @@ namespace zudi
 			uint32_t	requiredUdiVersion;
 			char		basePath[ZUDI_DRIVER_BASEPATH_MAXLEN];
 
-			/* dataFileOffset is the offset within driver-data.zudi-index.
+			/* dataFileOffset is the offset within data.zudi-index.
 			 * rankFileOffset is the offset within ranks.zudi-index.
 			 **/
 			uint32_t	dataFileOffset, rankFileOffset,
