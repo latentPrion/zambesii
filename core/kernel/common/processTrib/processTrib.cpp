@@ -4,6 +4,7 @@
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
+#include <commonlibs/libzbzcore/libzbzcore.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/messageStream.h>
 #include <kernel/common/timerTrib/timerTrib.h>
@@ -73,7 +74,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(ERROR"Proc 0x%x: command line invalid; "
+		printf(ERROR PROCTRIB"Proc 0x%x: command line invalid; "
 			"distributary doesn't exist.\n",
 			self->getFullId());
 
@@ -83,18 +84,43 @@ error_t processTribC::getDistributaryExecutableFormat(
 	if (tag->getDInode()->getType() == dvfs::distributaryInodeC::IN_KERNEL)
 	{
 		// IN_KERNEL dtribs are raw embedded code in the kernel image.
-		*entryPoint = tag->getDInode()->getEntryAddress();
+		// *entryPoint = tag->getDInode()->getEntryAddress();
+		*entryPoint = &__klibzbzcoreEntry;
+		return ERROR_SUCCESS;
 	}
 	else
 	{
 		// OUT_OF_KERNEL distributaries can only be ELF.
-		*executableFormat = processStreamC::ELF;
-		printf(WARNING"Proc 0x%x: out-of-kernel dtribs are "
+		printf(WARNING PROCTRIB"Proc 0x%x: out-of-kernel dtribs are "
 			"not yet supported.\n",
 			self->getFullId());
+
+		return getExecutableFormat(fullName, executableFormat);
+	};
+}
+
+error_t processTribC::getDriverExecutableFormat(
+	utf8Char *fullName, processStreamC::executableFormatE *retfmt,
+	void (**retEntryPoint)(void)
+	)
+{
+	error_t			ret;
+	fplainn::deviceC	*tmpDev;
+
+	ret = floodplainn.getDevice(fullName, &tmpDev);
+	if (ret != ERROR_SUCCESS) { return ERROR_UNKNOWN; };
+
+	if (!tmpDev->driverDetected || tmpDev->driver == NULL)
+		{ return ERROR_UNINITIALIZED; };
+
+	if (tmpDev->isKernelDriver)
+	{
+		*retfmt = processStreamC::RAW;
+		*retEntryPoint = &__klibzbzcoreEntry;
+		return ERROR_SUCCESS;
 	};
 
-	return ERROR_SUCCESS;
+	return getExecutableFormat(fullName, retfmt);
 }
 
 error_t processTribC::getExecutableFormat(
@@ -120,7 +146,7 @@ static ubit32 getCallbackFunctionNo(threadC *self)
 	{
 	case processStreamC::DISTRIBUTARY:
 		return MSGSTREAM_PROCESS_SPAWN_DISTRIBUTARY;
-	case processStreamC::KERNEL_DRIVER:
+	case processStreamC::DRIVER:
 		return MSGSTREAM_PROCESS_SPAWN_DRIVER;
 	default:
 		return MSGSTREAM_PROCESS_SPAWN_STREAM;
@@ -159,6 +185,7 @@ void processTribC::commonEntry(void *)
 	uarch_t						initBlockNPages;
 	error_t						err;
 	void						(*jumpAddress)(void);
+	asyncResponseC					myResponse;
 
 	/**	EXPLANATION:
 	 * Purpose of this common entry routine is to detect the executable
@@ -177,7 +204,7 @@ void processTribC::commonEntry(void *)
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
-	printf(NOTICE"New process running. ID=0x%x type=%d.\n",
+	printf(NOTICE PROCTRIB"New process running. ID=0x%x type=%d.\n",
 		self->getFullId(),
 		self->parent->getType());
 
@@ -195,6 +222,9 @@ void processTribC::commonEntry(void *)
 		panic(CC"\tFailed to allocate callback message.\n");
 	};
 
+	myResponse(callbackMessage);
+
+	// Allocate initialization block memory.
 	self->parent->getInitializationBlockSizeInfo(&initBlockSizes);
 	initBlockNPages = PAGING_BYTES_TO_PAGES(
 		sizeof(processStreamC::initializationBlockS)
@@ -229,37 +259,44 @@ void processTribC::commonEntry(void *)
 
 		break;
 
-	case (ubit8)processStreamC::KERNEL_DRIVER:
-		// Common kernel driver entry point is provided by Floodplainn.
-		err = ERROR_SUCCESS;
-		executableFormat = processStreamC::RAW;
-		jumpAddress = &floodplainnC::__kdriverEntry;
+	case (ubit8)processStreamC::DRIVER:
+		err = getDriverExecutableFormat(
+			initBlock->fullName, &executableFormat, &jumpAddress);
+
 		break;
 
 	default:
-		printf(FATAL"Proc 0x%x: Currently unsupported process type "
-			"%d.\n",
+		err = ERROR_UNSUPPORTED;
+		printf(FATAL PROCTRIB"Proc 0x%x: Currently unsupported process "
+			"type %d.\n",
 			self->getFullId(), initBlock->type);
 
-		panic(ERROR_UNSUPPORTED);
-		break;
+		myResponse(err);
+		// Prematurely destroy the object to force-send the message.
+		myResponse.~asyncResponseC();
+		taskTrib.dormant(self->getFullId());
+	};
+
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR PROCTRIB"Proc 0x%x: Failed to detect process' "
+			"executable format.\n",
+			self->getFullId());
+
+		myResponse(ERROR_UNSUPPORTED);
+		myResponse.~asyncResponseC();
+		taskTrib.dormant(self->getFullId());
 	};
 
 	if (executableFormat != processStreamC::RAW)
 	{
 		// Load the confluence lib and extract its entry point addr.
-		printf(FATAL"Proc 0x%x: Currently unsupported executable "
-			"format %d.\n",
+		printf(FATAL PROCTRIB"Proc 0x%x: Currently unsupported "
+			"executable format %d.\n",
 			self->getFullId(), executableFormat);
 
-		callbackMessage->error = ERROR_UNSUPPORTED;
-		err = messageStreamC::enqueueOnThread(
-			self->parent->parentThreadId, callbackMessage);
-
-		if (err != ERROR_SUCCESS) {
-			panic(FATAL"commonEntry: Failed to queue callback\n");
-		};
-
+		myResponse(ERROR_UNSUPPORTED);
+		myResponse.~asyncResponseC();
 		// Until we have a destroyStream(), we just dormant it.
 		taskTrib.dormant(self->getFullId());
 	};
@@ -282,7 +319,16 @@ void processTribC::commonEntry(void *)
 	registerContextC		context(self->parent->execDomain);
 
 	err = context.initialize();
-	if (err != ERROR_SUCCESS) { for (;;) { asm volatile("hlt\n\t"); }; };
+	if (err != ERROR_SUCCESS)
+	{
+		printf(FATAL PROCTRIB"Proc 0x%x: Failed to initialize reg "
+			"context; unable to jump to rawsyslib entry.\n",
+			self->getFullId());
+
+		myResponse(err);
+		myResponse.~asyncResponseC();
+		taskTrib.dormant(self->getFullId());
+	};
 
 	/* Kernel domain processes must use kernel space stack; user domain
 	 * processes must use userspace stack.
@@ -292,16 +338,19 @@ void processTribC::commonEntry(void *)
 		self->stack0, self->stack1,
 		(self->parent->execDomain == PROCESS_EXECDOMAIN_USER) ? 1 : 0);
 
-	callbackMessage->error = ERROR_SUCCESS;
-	err = messageStreamC::enqueueOnThread(
-		self->parent->parentThreadId, callbackMessage);
-
-	if (err != ERROR_SUCCESS)
-	{
-		panic(FATAL"commonEntry: Failed to queue callback.\n");
-		// Until we have a destroyStream(), we just dormant it.
-		taskTrib.dormant(self->getFullId());
-	};
+	/* Now we set the response message to the variable in the process's PCB.
+	 * We do not yet know whether or not the process will be loaded
+	 * correctly after we hand off to the syslib. It could well happen that,
+	 * for example, libzbzcore may fail to find one of the libraries
+	 * required by this new process.
+	 *
+	 * So we just store the response message away, and when the syslib is
+	 * sure that it has loaded the process correctly, it will syscall into
+	 * the kernel and tell the kernel to send the response message to the
+	 * parent process.
+	 **/
+	self->parent->responseMessage = callbackMessage;
+	myResponse(DONT_SEND_RESPONSE);
 
 	// If the process was spawned with DORMANT set, dormant it now.
 	if (__KFLAG_TEST(self->parent->flags, PROCESS_FLAGS_SPAWNED_DORMANT))
@@ -415,7 +464,7 @@ error_t processTribC::spawnDriver(
 
 	if (newProcess.get() == NULL)
 	{
-		printf(NOTICE PROCTRIB"Failed to alloc dtrib process.\n");
+		printf(NOTICE PROCTRIB"Failed to alloc driver process.\n");
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -475,12 +524,12 @@ error_t processTribC::spawnDriver(
 
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(NOTICE"Failed to spawn thread for new driver.\n");
+		printf(NOTICE PROCTRIB"Failed to spawn thread for new driver.\n");
 		processes.clearSlot(newProcessId);
 		return ret;
 	};
 
-	printf(NOTICE"New driver spawned, tid = 0x%x.\n",
+	printf(NOTICE PROCTRIB"spawnDriver: New driver spawned, tid = 0x%x.\n",
 		firstThread->getFullId());
 
 	*retProcess = newProcess.release();

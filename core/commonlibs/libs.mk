@@ -11,6 +11,12 @@ libacpi.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd commonlibs/libacpi; make
 
+libzbzcore.a:
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	@echo Building commonlibs/libacpi/ dir.
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd commonlibs/libzbzcore; make
+
 libzudiIndexParser.o: commonlibs/libzudiIndexParser.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c $<
 

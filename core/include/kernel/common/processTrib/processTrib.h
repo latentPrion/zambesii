@@ -172,7 +172,8 @@ private:
 
 	static error_t getDriverExecutableFormat(
 		utf8Char *fullName,
-		processStreamC::executableFormatE *executableFormat);
+		processStreamC::executableFormatE *executableFormat,
+		void (**entryPoint)(void));
 
 	static error_t getApplicationExecutableFormat(
 		utf8Char *fullName,

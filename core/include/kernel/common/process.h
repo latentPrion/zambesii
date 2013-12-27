@@ -69,7 +69,7 @@ public:
 		id(processId), parentThreadId(parentThreadId),
 		executableFormat(RAW),
 		flags(0),
-		privateData(privateData),
+		privateData(privateData), responseMessage(NULL),
 
 		// Kernel process hands out thread IDs from 1 since 0 is taken.
 		nextTaskId(
@@ -145,6 +145,8 @@ public:
 	void getInitializationBlockSizeInfo(initializationBlockSizeInfoS *ret);
 	void getInitializationBlock(initializationBlockS *ret);
 
+	void sendResponse(error_t err);
+
 	// I am very reluctant to have this "argument" parameter.
 	error_t spawnThread(
 		void (*entryPoint)(void *),
@@ -166,6 +168,7 @@ public:
 	uarch_t			flags;
 	// Only used once, but w/e, only 4-8 bytes.
 	void			*privateData;
+	messageStreamC::headerS	*responseMessage;
 
 	multipleReaderLockC	taskLock;
 	wrapAroundCounterC	nextTaskId;

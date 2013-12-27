@@ -289,23 +289,17 @@ printf(NOTICE"main3\n");
 
 void __korientationMain4(error_t ret)
 {
-	threadC		*self;
+	threadC				*self;
+	fplainn::deviceC		*chipsetDev;
 
 	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
 
 	DIE_ON(ret);
 
-	fplainn::deviceC		*sysbusDev;
-	messageStreamC::iteratorS		iMessage;
+//	floodplainn.getDevice(CC"by-id/0", &chipsetDev);
+//	chipsetDev->driver->dump();
 
-	floodplainn.getDevice(CC"by-id/0", &sysbusDev);
-//	printf(NOTICE ORIENT"detectDriver: ret %s.\n",
-//		strerror(floodplainn.detectDriverReq(CC"by-id/0", floodplainnC::INDEX_KERNEL, 0, NULL, 0)));
-
-	ret = self->getTaskContext()->messageStream.pull(&iMessage);
-	printf(NOTICE ORIENT"ret from detectDriver is %s. Dev's driverFullName is %s.\n",
-		strerror(iMessage.header.error), sysbusDev->driverFullName);
 	printf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 

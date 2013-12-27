@@ -476,6 +476,27 @@ error_t processStreamC::generateEnvironment(const utf8Char *environmentString)
 	return ERROR_SUCCESS;
 }
 
+void processStreamC::sendResponse(error_t err)
+{
+	error_t				tmpErr;
+	messageStreamC::headerS		*msg;
+
+	// This syscall should only work once throughout the process' lifetime.
+	if (this->responseMessage == NULL) { return; };
+
+	msg = this->responseMessage;
+	this->responseMessage = NULL;
+
+	msg->error = err;
+	tmpErr = messageStreamC::enqueueOnThread(msg->targetId, msg);
+	if (tmpErr != ERROR_SUCCESS)
+	{
+		printf(FATAL"processStreamC::sendResponse(%d): proc 0x%x: "
+			"Failed because %d.\n",
+			err, this->id, tmpErr);
+	};
+}
+
 void processStreamC::getInitializationBlockSizeInfo(
 	initializationBlockSizeInfoS *ret
 	)

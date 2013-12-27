@@ -935,9 +935,6 @@ static void fplainnIndexServer_newDeviceInd2(
 	};
 
 	originContext->info.processId = newProcess->id;
-	printf(NOTICE FPLAINNIDX"spawnDriver: new driver processId 0x%x.\n",
-		originContext->info.processId);
-
 	myResponse(DONT_SEND_RESPONSE);
 }
 

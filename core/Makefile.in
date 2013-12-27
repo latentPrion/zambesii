@@ -16,7 +16,7 @@ EXECOBJS=__kthreads.a __karchThreads.a kernel.a archKernel.a firmwareCore.a \
 	floodplainn.a \
 	platformCore.a chipset.a chipsetCore.a archCore.a firmwareCore.a \
 	__kclasses.a __kstdlib.a __kcxxabi.a libx86mp.a libacpi.a \
-	libzudiIndexParser.o udi_index.o
+	libzudiIndexParser.o libzbzcore.a udi_index.o
 
 GOAL=../core.o
 

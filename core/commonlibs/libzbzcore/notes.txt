@@ -7,8 +7,8 @@ to cross the CPU's privilege barrier.
 In addition to providing the syscall code for processes, these libraries also
 provide the process' entry point. The key purpose of a syslib is to:
 	1. Provide an entry point for the process.
-	2. Load the process' executable image into memory, do any dynamic
-	   relocation needed, and then jump into the process image.
+	2. Provide an executable format parser for the type of process it is
+	   meant to relocate.
 	3. Provide syscall support code for when the process wishes to call into
 	   the kernel.
 
@@ -17,17 +17,21 @@ stored in. Zambesii processes can be ELF, PE, Mach-o, A.OUT, or whatever else
 exists. The kernel itself does not have any executable format parsing code. It
 delegates that functionality to the syslib. As such, the kernel will usually be
 "installed" with multiple syslibs: one for each format supported by the host OS
-environment.
+environment, generally named in the form:
+	libzbzcore.<executable-format-extension>.
 
 	__ksyslib: The kernel-internal "syslib":
 This syslib is used by in-kernel-image code that is executed in its own process.
-Examples include distributaries and in-kernel drivers. The difference between
-the kernelspace syslib code and the userspace syslib code is that kernel-space
-syslib code:
-	1. Does not need to load an executable image from the disk.
-	2. Does not need to relocate the code for its process, since code in
+Examples include distributaries and in-kernel drivers. The kernel syslib is
+essentially a raw binary syslib. That is, it is used to host processes with no
+executable format. These types of processes are only allowed in to be executed
+in the kernel domain, however. They are essentially just processes that run
+a certain portion of the kernel's own code within a separate address space. As
+a result of this, they:
+	1. Do not need to load an executable image from the disk.
+	2. Do not need to relocate the code for its process, since code in
 	   the kernel image is directly linked to the kernel.
-	3. Does not need to provide syscall support code since kernel-image
+	3. Do not need to provide syscall support code since kernel-image
 	   code does not need to syscall to cross a privilege barrier; such code
 	   calls directly on other code in the kernel image.
 
