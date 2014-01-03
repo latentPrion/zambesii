@@ -54,6 +54,28 @@ error_t zudiIndexServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
+void zudiIndexServer::loadDriverRequirementsReq(
+	utf8Char *devicePath, void *privateData
+	)
+{
+	heapPtrC<zudiIndexMsgS>	request;
+	taskC			*currTask;
+
+	if (devicePath == NULL) { return; };
+
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+
+	request = new zudiIndexMsgS(
+		ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ, devicePath,
+		zudiIndexServer::INDEX_KERNEL);
+
+	if (request == NULL) { return; };
+
+	currTask->parent->zasyncStream.send(
+		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
+		ipc::METHOD_BUFFER, 0, privateData);
+}
+
 void zudiIndexServer::setNewDeviceActionReq(
 	newDeviceActionE action, void *privateData
 	)

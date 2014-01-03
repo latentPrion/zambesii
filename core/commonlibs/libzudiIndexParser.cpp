@@ -196,7 +196,7 @@ error_t zudiIndexParserC::findMetalanguage(
 	zudi::driver::provisionS	currProvision;
 
 	for (uarch_t i=0;
-		i < hdr->nRecords && provisionIndex.indexedRead(
+		i < hdr->nSupportedMetas && provisionIndex.indexedRead(
 			&currProvision, i) == ERROR_SUCCESS;
 		i++)
 	{

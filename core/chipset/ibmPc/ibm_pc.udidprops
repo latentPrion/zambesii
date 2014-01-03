@@ -12,7 +12,7 @@ message	3	N/A
 
 requires	udi 0x101
 requires	zbz_root 0x0
-requires	zudi_bridge 0x101
+#requires	zudi_bridge 0x101
 
 meta 1		zbz_root
 

@@ -16,4 +16,5 @@ provides	zbz_chipset 0x0
 module main
 
 rank 1	bus_type zbz_chpst_bus_name
+rank 2	identifier
 

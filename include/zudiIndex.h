@@ -27,8 +27,8 @@ namespace zudi
 		char		endianness[4];
 		uint16_t	majorVersion, minorVersion;
 		uint32_t	nRecords, nextDriverId;
-		uint32_t	nSupportedDevices;
-		uint8_t		reserved[64];
+		uint32_t	nSupportedDevices, nSupportedMetas;
+		uint8_t		reserved[60];
 	};
 
 	namespace device
@@ -101,7 +101,7 @@ namespace zudi
 					nModules, nRequirements,
 					nMessages, nDisasterMessages,
 					nMessageFiles, nReadableFiles, nRegions,
-					nDevices, nRanks, nProvides;
+					nDevices, nRanks, nProvisions;
 
 			uint32_t	requirementsOffset, metalanguagesOffset,
 					childBopsOffset, parentBopsOffset,

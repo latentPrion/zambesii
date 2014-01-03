@@ -215,19 +215,75 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 	return ERROR_SUCCESS;
 }
 
-syscallbackFuncF floodplainn_createRootDeviceReq1;
-error_t floodplainnC::createRootDeviceReq(createRootDeviceReqCallF *callback)
+error_t floodplainnC::enumerateBaseDevices(void)
 {
 	error_t				ret;
-	fplainn::deviceC		*chipset, *ramdisk;
+	fplainn::deviceC		*vchipset, *ramdisk;
 	udi_instance_attr_list_t	tmp;
 
-	ret = createDevice(CC"by-id", 0, 0, &chipset);
+	ret = createDevice(CC"by-id", 0, 0, &ramdisk);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = createDevice(CC"by-id", 1, 0, &ramdisk);
+	ret = createDevice(CC"by-id", 1, 0, &vchipset);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
+	/* Create the attributes for the ramdisk.
+	 */
+	strcpy8(CC tmp.attr_name, CC"identifier");
+	tmp.attr_type = UDI_ATTR_STRING;
+	strcpy8(CC tmp.attr_value, CC"__kramdisk");
+	ret = ramdisk->setEnumerationAttribute(&tmp);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	strcpy8(CC tmp.attr_name, CC"address_locator");
+	tmp.attr_type = UDI_ATTR_STRING;
+	strcpy8(CC tmp.attr_value, CC"__kramdisk0");
+	ret = ramdisk->setEnumerationAttribute(&tmp);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	/* Create the attributes for the virtual-chipset.
+	 */
+	strcpy8(CC tmp.attr_name, CC"identifier");
+	tmp.attr_type = UDI_ATTR_STRING;
+	strcpy8(CC tmp.attr_value, CC"__kvirtual-chipset");
+	ret = vchipset->setEnumerationAttribute(&tmp);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	strcpy8(CC tmp.attr_name, CC"address_locator");
+	tmp.attr_type = UDI_ATTR_STRING;
+	strcpy8(CC tmp.attr_value, CC"__kvchipset0");
+	ret = vchipset->setEnumerationAttribute(&tmp);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ramdisk->bankId = vchipset->bankId = CHIPSET_MEMORY_NUMA_SHBANKID;
+	return ERROR_SUCCESS;
+}
+
+error_t floodplainnC::enumerateChipsets(void)
+{
+	error_t				ret;
+	fplainn::deviceC		*chipset;
+	udi_instance_attr_list_t	tmp;
+
+	ret = createDevice(CC"by-id", 2, 0, &chipset);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	/* Generic enumeration attributes.
+	 **/
+	strcpy8(CC tmp.attr_name, CC"identifier");
+	tmp.attr_type = UDI_ATTR_STRING;
+	strcpy8(CC tmp.attr_value, CC"ibm-pc");
+	ret = chipset->setEnumerationAttribute(&tmp);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	strcpy8(CC tmp.attr_name, CC"address_locator");
+	tmp.attr_type = UDI_ATTR_STRING;
+	strcpy8(CC tmp.attr_value, CC"chipset0");
+	ret = chipset->setEnumerationAttribute(&tmp);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	/* zbz_root enumeration attributes.
+	 **/
 	strcpy8(CC tmp.attr_name, CC"bus_type");
 	tmp.attr_type = UDI_ATTR_STRING;
 	strcpy8(CC tmp.attr_value, CC"zbz_root");
@@ -266,34 +322,28 @@ error_t floodplainnC::createRootDeviceReq(createRootDeviceReqCallF *callback)
 	ret = chipset->setEnumerationAttribute(&tmp);
 
 	chipset->bankId = CHIPSET_MEMORY_NUMA_SHBANKID;
-	zudiIndexServer::newDeviceInd(
-		CC"by-id/0", zudiIndexServer::INDEX_KERNEL,
-		newSyscallback(
-			&floodplainn_createRootDeviceReq1, (voidF *)callback));
-
-	return ret;
+	return ERROR_SUCCESS;
 }
 
-void floodplainn_createRootDeviceReq1(
-	messageStreamC::iteratorS *gmsg, void (*callback)()
-	)
+const driverInitEntryS *floodplainnC::findDriverInitInfo(utf8Char *shortName)
 {
-	floodplainnC::createRootDeviceReqCallF	*_callback;
-	floodplainnC::zudiIndexMsgS		*msg;
-	error_t					ret=ERROR_SUCCESS;
+	const driverInitEntryS	*tmp;
 
-	msg = (floodplainnC::zudiIndexMsgS *)gmsg;
-
-	if (msg->header.error != ERROR_SUCCESS
-		|| msg->info.action != zudiIndexServer::NDACTION_INSTANTIATE)
-	{
-		ret = ERROR_FATAL;
-		printf(FATAL FPLAINN"createRootDevice: Failed to instantiate "
-			"root device.\n\tError is %s; got as far as %d.\n",
-			strerror(msg->header.error), msg->info.action);
+	for (tmp=driverInitInfo; tmp->udi_init_info != NULL; tmp++) {
+		if (!strcmp8(tmp->shortName, shortName)) { return tmp; };
 	};
 
-	_callback = (floodplainnC::createRootDeviceReqCallF *)callback;
-	_callback(ret);
+	return NULL;
+}
+
+const metaInitEntryS *floodplainnC::findMetaInitInfo(utf8Char *shortName)
+{
+	const metaInitEntryS		*tmp;
+
+	for (tmp=metaInitInfo; tmp->udi_meta_info != NULL; tmp++) {
+		if (!strcmp8(tmp->shortName, shortName)) { return tmp; };
+	};
+
+	return NULL;
 }
 

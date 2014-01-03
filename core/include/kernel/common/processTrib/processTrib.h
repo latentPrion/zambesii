@@ -136,7 +136,6 @@ public:
 	error_t spawnDriver(
 		utf8Char *commandLine,
 		utf8Char *environment,
-		taskC::schedPolicyE schedPolicy,
 		ubit8 prio,
 		uarch_t flags,
 		void *privateData,

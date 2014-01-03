@@ -9,6 +9,7 @@
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kstdlib/__kclib/string.h>
 	#include <kernel/common/numaTypes.h>
+	#include <kernel/common/zudiIndexServer.h>
 
 /**	deviceC:
  * Base type for a device in general. The type of driver used to instantiate
@@ -74,6 +75,8 @@ namespace fplainn
 
 		error_t setEnumerationAttribute(udi_instance_attr_list_t *attrib);
 
+		error_t preallocateRequirements(uarch_t nRequirements);
+
 		void dumpEnumerationAttributes(void);
 
 	public:
@@ -88,6 +91,10 @@ namespace fplainn
 		numaBankId_t		bankId;
 		driverC			*driver;
 		driverInstanceC		*driverInstance;
+		// The index which enumerated this device's driver.
+		zudiIndexServer::indexE	driverIndex;
+		utf8Char		**requirements;
+		ubit16			nRequirements;
 		utf8Char		driverFullName[DRIVER_FULLNAME_MAXLEN];
 		ubit8			nEnumerationAttribs, nInstanceAttribs;
 		udi_instance_attr_list_t

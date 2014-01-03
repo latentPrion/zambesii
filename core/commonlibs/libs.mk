@@ -17,6 +17,18 @@ libzbzcore.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	cd commonlibs/libzbzcore; make
 
+drivers.a:
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	@echo Building common drivers.
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd commonlibs/drivers; make
+
+metalanguages.a:
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	@echo Building common metalanguages.
+	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	cd commonlibs/metalanguages; make
+		
 libzudiIndexParser.o: commonlibs/libzudiIndexParser.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ -c $<
 

@@ -407,7 +407,6 @@ static sarch_t deviceExists(utf8Char *devPath, fplainn::deviceC **dev)
 error_t processTribC::spawnDriver(
 	utf8Char *commandLine,
 	utf8Char *environment,
-	taskC::schedPolicyE schedPolicy,
 	ubit8 prio,
 	uarch_t flags,
 	void *privateData,
@@ -514,10 +513,11 @@ error_t processTribC::spawnDriver(
 			PROCESS_FLAGS_SPAWNED_DORMANT);
 	};
 
+	// All drivers are inherently realtime.
 	ret = newProcess->spawnThread(
 		&processTribC::commonEntry, NULL,
 		&newProcess->cpuAffinity,
-		schedPolicy, prio,
+		taskC::REAL_TIME, prio,
 		flags | SPAWNTHREAD_FLAGS_AFFINITY_SET
 		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
 		&firstThread);

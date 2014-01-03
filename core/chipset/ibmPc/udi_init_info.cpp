@@ -3,6 +3,7 @@
 #include <udi.h>
 #undef UDI_VERSION
 #include <__kstdlib/__ktypes.h>
+#include <kernel/common/floodplainn/floodplainn.h>
 
 /**	EXPLANATION:
  * In this file, every UDI driver and library provided by this chipset shall
@@ -15,18 +16,17 @@
 /**	XXX:
  * Place your udi_init_info declaration here.
  **/
-extern udi_init_t		i8254_pit_init_info;
+extern udi_init_t	zramdisk_init_info;
 
-struct udiInitEntryS
+const driverInitEntryS		driverInitInfo[] =
 {
-	utf8Char	*shortname;
-	udi_init_t	*udi_init_info;
+	{ CC"zramdisk", &zramdisk_init_info },
+	// Shall always be terminated with the NULL entry.
+	{ NULL, NULL }
 };
 
-udiInitEntryS		udiInitInfo[] =
+const metaInitEntryS		metaInitInfo[] =
 {
-	{ CC"i8254pit", &i8254_pit_init_info },
-	// Shall always be terminated with the NULL entry.
-	{ NULL, NULL}
+	{ NULL, NULL }
 };
 

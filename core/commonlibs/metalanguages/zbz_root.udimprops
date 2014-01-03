@@ -17,4 +17,5 @@ module	main
 
 rank 1	bus_type zbz_root_chipset_short_name
 rank 2	bus_type zbz_root_chipset_short_name zbz_root_chipset_long_name
+rank 3	identifier
 

@@ -519,6 +519,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 
 		dev->driverDetected = 1;
 		dev->isKernelDriver = 1;
+		dev->driverIndex = zudiIndexServer::INDEX_KERNEL;
 	};
 
 	// Free the list.
@@ -560,7 +561,7 @@ static void fplainnIndexServer_newDeviceActionReq(
 	myResponse(ERROR_SUCCESS);
 }
 
-static void flplainnIndexer_loadDriverReq(
+static void fplainnIndexer_loadDriverReq(
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
 	)
@@ -607,7 +608,6 @@ static void flplainnIndexer_loadDriverReq(
 	if (floodplainn.findDriver(device->driverFullName, driver.addressOf())
 		== ERROR_SUCCESS)
 	{
-printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
 			/* "Driver" currently points to an object that was in
 			 * the loaded driver list, and should not yet be freed.
 			 * We release() the memory it points to before leaving.
@@ -796,6 +796,156 @@ printf(NOTICE"Driver is already loaded; Driver iterator mem: 0x%p.\n");
 	myResponse(ERROR_SUCCESS);
 }
 
+static void fplainnIndexServer_loadRequirementsReq(
+	zasyncStreamC::zasyncMsgS *request,
+	zudiIndexServer::zudiIndexMsgS *requestData
+	)
+{
+	floodplainnC::zudiIndexMsgS	*response;
+	asyncResponseC			myResponse;
+	fplainn::deviceC		*dev;
+	error_t				err;
+	heapPtrC<zudi::headerS>		indexHdr;
+	heapPtrC<zudi::driver::headerS>	metaHdr;
+	heapPtrC<utf8Char>		tmpName;
+
+	response = new floodplainnC::zudiIndexMsgS(
+		request->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_FLOODPLAINN, requestData->command,
+		sizeof(*response), 0, request->header.privateData);
+
+	if (response == NULL)
+	{
+		printf(ERROR FPLAINNIDX"loadRequirementReq: "
+			"unable to allocate response.\n"
+			"\tSender thread 0x%x may be frozen indefinitely.\n",
+			request->header.sourceId);
+
+		return;
+	};
+
+	myResponse(response);
+	response->set(
+		requestData->command, requestData->path, requestData->index);
+
+	indexHdr = new zudi::headerS;
+	metaHdr = new zudi::driver::headerS;
+	tmpName.useArrayDelete = 1;
+	tmpName = new utf8Char[
+		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_DRIVER_SHORTNAME_MAXLEN];
+
+	if (indexHdr.get() == NULL || metaHdr.get() == NULL
+		|| tmpName.get() == NULL)
+		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+
+	err = zudiIndexes[0]->getHeader(indexHdr.get());
+	if (err != ERROR_SUCCESS)
+	{
+		printf(NOTICE FPLAINNIDX"loadReqmReq: Failed to get ZUDI index "
+			"header.\n");
+
+		myResponse(err); return;
+	};
+
+	err = floodplainn.getDevice(requestData->path, &dev);
+	if (err != ERROR_SUCCESS) { myResponse(err); return; };
+
+	/* We can assume that if this function is called on a particular
+	 * device, that that device should have had a driver detected and loaded
+	 * for it.
+	 **/
+	if (!dev->driverDetected || dev->driver == NULL)
+		{ myResponse(ERROR_UNINITIALIZED); return; };
+
+	err = dev->preallocateRequirements(dev->driver->nRequirements);
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINNIDX"loadReqmReq: Failed to preallocate "
+			"requirements array.\n");
+
+		myResponse(ERROR_MEMORY_NOMEM);
+		return;
+	};
+
+	for (uarch_t i=0; i<dev->driver->nRequirements; i++)
+	{
+		zudi::driver::provisionS	currProv;
+		sarch_t				isSatisfied=0;
+
+		for (uarch_t j=0;
+			j<indexHdr->nSupportedMetas
+			&& zudiIndexes[0]->indexedGetProvision(j, &currProv)
+				== ERROR_SUCCESS;
+			j++)
+		{
+			uarch_t		bPathLen;
+			utf8Char	provName[
+				ZUDI_DRIVER_METALANGUAGE_MAXLEN];
+
+			zudiIndexes[0]->getProvisionString(&currProv, provName);
+
+			/* Compare string against driver requirement.
+			 * If match, get the meta lib header that corresponds,
+			 * and copy its fullname into the device's
+			 * requirements array.
+			 **/
+			if (strcmp8(
+				dev->driver->requirements[i].name,
+				provName) != 0)
+			{
+				continue;
+			};
+
+			/* Found a provision for the required meta. Get the
+			 * driver header for the meta, and fill in the meta's
+			 * fullname.
+			 **/
+			err = zudiIndexes[0]->getDriverHeader(
+				indexHdr.get(), currProv.driverId,
+				metaHdr.get());
+
+			if (err != ERROR_SUCCESS)
+			{
+				printf(ERROR FPLAINNIDX"loadReqmReq: "
+					"provision's driverId %d references "
+					"inexistent driver header.\n",
+					currProv.driverId);
+
+				break;
+			};
+
+			bPathLen = strlen8(CC metaHdr->basePath);
+			dev->requirements[i] = new utf8Char[
+				bPathLen + strlen8(CC metaHdr->shortName) + 2];
+
+			strcpy8(dev->requirements[i], CC metaHdr->basePath);
+			if (bPathLen > 0
+				&& dev->requirements[i][bPathLen - 1] != '/')
+				{ strcat8(dev->requirements[i], CC "/"); };
+
+			strcat8(dev->requirements[i], CC metaHdr->shortName);
+
+			isSatisfied = 1;
+			break;
+		};
+
+		if (!isSatisfied)
+		{
+			printf(ERROR FPLAINNIDX"loadReqmReq: meta requirement "
+				"%s for device %s (using driver %s) could not "
+				"be satisfied.\n",
+				dev->driver->requirements[i].name,
+				dev->longName,
+				dev->driver->shortName);
+
+			myResponse(ERROR_NOT_FOUND);
+			return;
+		};
+	};
+
+	myResponse(ERROR_SUCCESS);
+}
+
 static void fplainnIndexServer_newDeviceInd(
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
@@ -822,8 +972,7 @@ static void fplainnIndexServer_newDeviceInd(
 	 **/
 	originContext = new floodplainnC::zudiIndexMsgS(
 		request->header.sourceId,
-		MSGSTREAM_SUBSYSTEM_FLOODPLAINN,
-		ZUDIIDX_SERVER_NEWDEVICE_IND,
+		MSGSTREAM_SUBSYSTEM_FLOODPLAINN, requestData->command,
 		sizeof(*originContext),
 		request->header.flags, request->header.privateData);
 
@@ -921,7 +1070,7 @@ static void fplainnIndexServer_newDeviceInd2(
 	// Else now we spawn the driver process.
 	err = processTrib.spawnDriver(
 		originContext->info.path, NULL,
-		taskC::ROUND_ROBIN, PRIOCLASS_DEFAULT,
+		PRIOCLASS_DEFAULT,
 		0, originContext,
 		&newProcess);
 
@@ -1015,8 +1164,14 @@ void fplainnIndexServer_handleRequest(
 			(zasyncStreamC::zasyncMsgS *)msg, requestData);
 		break;
 
+	case ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ:
+		fplainnIndexServer_loadRequirementsReq(
+			(zasyncStreamC::zasyncMsgS *)msg, requestData);
+
+		break;
+
 	case ZUDIIDX_SERVER_LOADDRIVER_REQ:
-		flplainnIndexer_loadDriverReq(
+		fplainnIndexer_loadDriverReq(
 			(zasyncStreamC::zasyncMsgS *)msg, requestData);
 
 		break;
@@ -1085,9 +1240,11 @@ void floodplainnC::indexReaderEntry(void)
 
 	zudiIndexes[0]->getHeader(&__kindexHeader);
 	printf(NOTICE FPLAINNIDX"KERNEL_INDEX: Version %d.%d. (%s), holds %d "
-		"drivers.\n",
+		"drivers, %d provisions, %d devices.\n",
 		__kindexHeader.majorVersion, __kindexHeader.minorVersion,
-		__kindexHeader.endianness, __kindexHeader.nRecords);
+		__kindexHeader.endianness, __kindexHeader.nRecords,
+		__kindexHeader.nSupportedMetas,
+		__kindexHeader.nSupportedDevices);
 
 	for (;;)
 	{

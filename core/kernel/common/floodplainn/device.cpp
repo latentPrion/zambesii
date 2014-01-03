@@ -63,6 +63,14 @@ error_t fplainn::driverC::preallocateInternalBops(uarch_t nInternalBops)
 	return ERROR_SUCCESS;
 }
 
+error_t fplainn::deviceC::preallocateRequirements(uarch_t nRequirements)
+{
+	requirements = new utf8Char *[nRequirements];
+	if (requirements == NULL) { return ERROR_MEMORY_NOMEM; };
+	this->nRequirements = nRequirements;
+	return ERROR_SUCCESS;
+}
+
 void fplainn::deviceC::dumpEnumerationAttributes(void)
 {
 	utf8Char		*fmtChar;

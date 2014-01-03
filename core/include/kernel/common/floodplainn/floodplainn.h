@@ -18,6 +18,18 @@
 
 #define FPLAINN_DETECTDRIVER_FLAGS_CPU_TARGET	MSGSTREAM_FLAGS_CPU_TARGET
 
+struct driverInitEntryS
+{
+	utf8Char	*shortName;
+	udi_init_t	*udi_init_info;
+};
+
+struct metaInitEntryS
+{
+	utf8Char	*shortName;
+	udi_mei_init_t	*udi_meta_info;
+};
+
 class floodplainnC
 :
 public tributaryC//, public vfs::directoryOperationsC
@@ -70,6 +82,9 @@ public:
 	};
 
 public:
+	const driverInitEntryS *findDriverInitInfo(utf8Char *shortName);
+	const metaInitEntryS *findMetaInitInfo(utf8Char *shortName);
+
 	error_t findDriver(utf8Char *fullName, fplainn::driverC **ret);
 
 	/* Creates a child device under a given parent and returns it to the
@@ -142,8 +157,8 @@ public:
 		utf8Char *deviceName, utf8Char *metalanguageName,
 		void *outputMem);
 
-	typedef void (createRootDeviceReqCallF)(error_t);
-	error_t createRootDeviceReq(createRootDeviceReqCallF *callback);
+	error_t enumerateBaseDevices(void);
+	error_t enumerateChipsets(void);
 
 	static void __kdriverEntry(void);
 	static void indexReaderEntry(void);
@@ -159,6 +174,9 @@ private:
 };
 
 extern floodplainnC		floodplainn;
+
+extern const driverInitEntryS	driverInitInfo[];
+extern const metaInitEntryS	metaInitInfo[];
 
 #endif
 

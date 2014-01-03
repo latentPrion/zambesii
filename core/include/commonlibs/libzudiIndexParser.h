@@ -102,6 +102,19 @@ public:
 	error_t indexedGetRankAttrString(
 		zudi::rank::headerS *rankHeader, uarch_t idx, utf8Char *retstr);
 
+	error_t indexedGetProvision(
+		uarch_t idx, zudi::driver::provisionS *retobj)
+	{
+		return provisionIndex.read(
+			retobj, sizeof(*retobj) * idx, sizeof(*retobj));
+	}
+
+	error_t getProvisionString(
+		zudi::driver::provisionS *prov, utf8Char *retstr)
+	{
+		return stringIndex.readString(retstr, prov->nameOff);
+	}
+
 	error_t indexedGetModule(
 		zudi::driver::headerS *drvHeader, uarch_t idx,
 		zudi::driver::moduleS *retobj)

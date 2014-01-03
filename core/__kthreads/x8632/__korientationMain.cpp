@@ -277,25 +277,37 @@ void __korientationMain2(messageStreamC::iteratorS *msg, void *)
 	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
 }
 
-floodplainnC::createRootDeviceReqCallF __korientationMain4;
+syscallbackDataF __korientationMain4;
 void __korientationMain3(error_t ret)
 {
 	DIE_ON(ret);
+
 	/* Start the chipset up.
 	 **/
-	DO_OR_DIE(floodplainn, createRootDeviceReq(&__korientationMain4), ret);
-printf(NOTICE"main3\n");
+	DO_OR_DIE(floodplainn, enumerateBaseDevices(), ret);
+	zudiIndexServer::newDeviceInd(
+		CC"by-id/0", zudiIndexServer::INDEX_KERNEL,
+		newSyscallback(&__korientationMain4));
 }
 
-void __korientationMain4(error_t ret)
+void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 {
 	threadC				*self;
 	fplainn::deviceC		*chipsetDev;
+	error_t				ret;
+	floodplainnC::zudiIndexMsgS	*msg;
 
+	msg = (floodplainnC::zudiIndexMsgS *)msgIt;
 	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
 
-	DIE_ON(ret);
+	DIE_ON(msg->header.error);
+	if (msg->info.action != zudiIndexServer::NDACTION_INSTANTIATE)
+	{
+		printf(FATAL ORIENT"Failed to instantiate "
+			"root device.\n\tError is %s; got as far as %d.\n",
+			strerror(msg->header.error), msg->info.action);
+	};
 
 //	floodplainn.getDevice(CC"by-id/0", &chipsetDev);
 //	chipsetDev->driver->dump();

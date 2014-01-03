@@ -6,10 +6,12 @@
 #include <commonlibs/libzbzcore/libzbzcore.h>
 
 
+void driverPath0(threadC *self);
 void __klibzbzcoreDriverPath(threadC *self)
 {
 //	fplainn::driverC				*driver;
 	streamMemPtrC<messageStreamC::iteratorS>	msgIt;
+	syscallbackC					*callback;
 
 	/**	EXPLANATION:
 	 * This is essentially like a kind of udi_core lib.
@@ -34,13 +36,73 @@ void __klibzbzcoreDriverPath(threadC *self)
 		taskTrib.dormant(self->getFullId());
 	};
 
-	// This should not be here in the final implementation.
-	self->parent->sendResponse(ERROR_SUCCESS);
+	driverPath0(self);
 
 	for (;;)
 	{
 		self->getTaskContext()->messageStream.pull(msgIt.get());
-		printf(NOTICE LZBZCORE"driverPath: proc 0x%x: got message.\n",
-			self->getFullId());
+		callback = (syscallbackC *)msgIt->header.privateData;
+
+		switch (msgIt->header.subsystem)
+		{
+		default:
+			if (callback == NULL)
+			{
+				printf(WARNING LZBZCORE"driverPath: message "
+					"with no callback continuation.\n");
+
+				break;
+			};
+
+			(*callback)(msgIt.get());
+			asyncContextCache->free(callback);
+			break;
+		};
 	};
 }
+
+static syscallbackDataF driverPath1;
+void driverPath0(threadC *self)
+{
+	zudiIndexServer::loadDriverRequirementsReq(
+		self->parent->fullName, newSyscallback(&driverPath1));
+
+}
+
+void driverPath1(messageStreamC::iteratorS *msgIt, void *)
+{
+	threadC			*self;
+	const driverInitEntryS	*driverInit;
+	fplainn::deviceC	*dev;
+
+	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask();
+
+	// Not error checking this.
+	floodplainn.getDevice(self->parent->fullName, &dev);
+	printf(NOTICE LZBZCORE"driverPath1: Ret from loadRequirementsReq: %s "
+		"(%d).\n",
+		strerror(msgIt->header.error), msgIt->header.error);
+
+	/**	EXPLANATION:
+	 * In the userspace libzbzcore, we would have to make calls to the VFS
+	 * to load and link all of the metalanguage libraries, as well as the
+	 * driver module itself.
+	 *
+	 * However, since this is the kernel syslib, we can skip all of that,
+	 * and move directly into getting the udi_init_t structures for all of
+	 * the components involved.
+	 **/
+	driverInit = floodplainn.findDriverInitInfo(dev->driver->shortName);
+	if (driverInit == NULL)
+	{
+		printf(NOTICE LZBZCORE"Failed to find udi_init_info for %s.\n",
+			dev->driver->shortName);
+
+		return;
+	};
+
+	
+	self->parent->sendResponse(msgIt->header.error);
+}
+

@@ -7,7 +7,7 @@
 
 namespace zudiIndexServer
 {
-	enum indexE { INDEX_KERNEL, INDEX_RAMDISK, INDEX_EXTERNAL };
+	enum indexE { INDEX_KERNEL=0, INDEX_RAMDISK, INDEX_EXTERNAL };
 	enum newDeviceActionE {
 		NDACTION_NOTHING=0, NDACTION_DETECT_DRIVER,
 		NDACTION_LOAD_DRIVER, NDACTION_INSTANTIATE };
@@ -42,6 +42,7 @@ namespace zudiIndexServer
 		#define ZUDIIDX_SERVER_GET_NEWDEVICE_ACTION_REQ		(1)
 		#define ZUDIIDX_SERVER_DETECTDRIVER_REQ			(2)
 		#define ZUDIIDX_SERVER_LOADDRIVER_REQ			(3)
+		#define ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ		(7)
 		#define ZUDIIDX_SERVER_NEWDEVICE_IND			(4)
 
 		ubit8			command;
@@ -79,6 +80,8 @@ namespace zudiIndexServer
 		void *privateData, ubit32 flags);
 
 	error_t loadDriverReq(utf8Char *devicePath, void *privateData);
+	void loadDriverRequirementsReq(utf8Char *devicePath, void *privateData);
+
 	void newDeviceInd(
 		utf8Char *devicePath, indexE index, void *privateData);
 
