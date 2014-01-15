@@ -23,7 +23,14 @@ error_t floodplainnC::zudi_sys_channel_spawn(
 	void *channelContext1
 	)
 {
-	
+	(void)	regionId0;
+	(void)	opsVector0;
+	(void)	channelContext0;
+	(void)	regionId1;
+	(void)	opsVector1;
+	(void)	channelContext1;
+
+	return ERROR_SUCCESS;
 }
 
 void udi_mei_call(
