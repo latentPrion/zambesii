@@ -37,6 +37,7 @@
 #define MEMBOG				"Memory Bog: "
 
 class memReserviorC;
+class memoryStreamC;
 
 class memoryBogC
 :
@@ -44,7 +45,7 @@ public allocClassC
 {
 friend class memReservoirC;
 public:
-	memoryBogC(uarch_t bogSize);
+	memoryBogC(uarch_t bogSize, memoryStreamC *sourceStream);
 	error_t initialize(void);
 	~memoryBogC(void);
 
@@ -81,6 +82,7 @@ private:
 
 	bogBlockS *getNewBlock(void);
 
+	memoryStreamC		*sourceStream;
 	sharedResourceGroupC<waitLockC, bogBlockS *>	head;
 };
 

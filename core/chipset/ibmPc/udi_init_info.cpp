@@ -17,6 +17,7 @@
  * Place your udi_init_info declaration here.
  **/
 extern udi_init_t	zramdisk_init_info;
+extern udi_mei_init_t	udi_gio_meta_info;
 
 const driverInitEntryS		driverInitInfo[] =
 {
@@ -27,6 +28,7 @@ const driverInitEntryS		driverInitInfo[] =
 
 const metaInitEntryS		metaInitInfo[] =
 {
+	{ CC"udi_gio", &udi_gio_meta_info },
 	{ NULL, NULL }
 };
 

@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../metalanguages.a
-OBJFILES=
+OBJFILES=udi_gio.o
 
 all: Makefile $(DELIVERABLE)
 

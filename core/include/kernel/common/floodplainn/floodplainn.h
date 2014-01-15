@@ -160,6 +160,29 @@ public:
 	error_t enumerateBaseDevices(void);
 	error_t enumerateChipsets(void);
 
+	/**	EXPLANATION:
+	 * When spawning internal bind channels, all anchoring is done
+	 * immediately.
+	 *
+	 *	Child-bind channels:
+	 * The kernel does not understand the idea of parent-bind operations.
+	 * Whenever a channel is to be constructed between parent and child,
+	 * it is done as a child bind operation.
+	 *
+	 * Every device, upon instantiation, exports to the kernel the address
+	 * of its parent bind ops vector. This way, the kernel can establish
+	 * child bind channels without consulting the parent, thus reducing the
+	 * number of address space switches involved.
+	 *
+	 * Effectively then, devices that do not have child bind ops don't
+	 * need to expose any parent bind ops information to the kernel.
+	 **/
+	error_t zudi_sys_channel_spawn(
+		processId_t regionId0, udi_ops_vector_t *opsVector0,
+		void *channelContext0,
+		processId_t regionId1, udi_ops_vector_t *opsVector1,
+		void *channelContext1);
+
 	static void __kdriverEntry(void);
 	static void indexReaderEntry(void);
 	void setZudiIndexServerTid(processId_t tid)

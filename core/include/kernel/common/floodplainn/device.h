@@ -8,6 +8,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kstdlib/__kclib/string.h>
+	#include <__kclasses/ptrlessList.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/zudiIndexServer.h>
 
@@ -80,6 +81,44 @@ namespace fplainn
 		void dumpEnumerationAttributes(void);
 
 	public:
+		struct regionS
+		{
+			ubit16			index;
+			processId_t		tid;
+			udi_init_context_t	*rdata;
+		};
+
+		struct channelS
+		{
+			struct endpointS
+			{
+				channelS	*parent;
+				processId_t	regionId;
+				void		*opsVector, *channelContext;
+			} endpoints[2];
+
+			struct incompleteChannelS
+			{
+				ptrlessListC<incompleteChannelS>::headerS
+					listHeader;
+
+				udi_index_t	spawnIndex;
+				channelS	*channel;
+			};
+
+			/**	EXPLANATION:
+			 * This is a list of all incomplete spawn operations
+			 * that are taking place across this channel. The
+			 * spawn_idx is recorded until two udi_channel_spawn()
+			 * operations are paired up. At that point, a channel
+			 * spawn is completed and the spawn_idx is removed from
+			 * this list.
+			 **/
+			ptrlessListC<incompleteChannelS>
+				incompleteChannels;
+		};
+
+	public:
 		ubit16		id;
 		utf8Char	shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
 				longName[ZUDI_MESSAGE_MAXLEN];
@@ -93,8 +132,9 @@ namespace fplainn
 		driverInstanceC		*driverInstance;
 		// The index which enumerated this device's driver.
 		zudiIndexServer::indexE	driverIndex;
-		utf8Char		**requirements;
 		ubit16			nRequirements;
+		utf8Char		**requirements;
+		regionS			*regions;
 		utf8Char		driverFullName[DRIVER_FULLNAME_MAXLEN];
 		ubit8			nEnumerationAttribs, nInstanceAttribs;
 		udi_instance_attr_list_t

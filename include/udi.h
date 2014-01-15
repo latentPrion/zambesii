@@ -61,7 +61,11 @@
 #error "Unsupported UDI_VERSION."
 #endif
 
+#include <extern.h>
+
 /* Note: The order of inclusion below is very sensitive to dependencies */
+
+CPPEXTERN_START
 
 #define _UDI_H_INSIDE
 #include <udi_core/udi_types.h>
@@ -81,5 +85,7 @@
 #include <udi_core/udi_mgmt.h>
 #include <udi_core/udi_gio.h>
 #undef _UDI_H_INSIDE
+
+CPPEXTERN_END
 
 #endif /* _UDI_H */

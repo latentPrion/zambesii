@@ -10,7 +10,9 @@
 #define MEMORYBOG_SIZE_ROUNDUP(__size)			\
 	((__size + sizeof(uarch_t)) & (~(sizeof(uarch_t) - 1)))
 
-memoryBogC::memoryBogC(uarch_t bogSize)
+memoryBogC::memoryBogC(uarch_t bogSize, memoryStreamC *sourceStream)
+:
+sourceStream(sourceStream)
 {
 	blockSize = bogSize;
 	head.rsrc = NULL;
@@ -331,10 +333,10 @@ memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
 {
 	bogBlockS	*ret;
 
-	ret = new (processTrib.__kgetStream()->memoryStream.memAlloc(
+	ret = new (sourceStream->memAlloc(
 		PAGING_BYTES_TO_PAGES(
-			blockSize + sizeof(bogBlockS)),
-		MEMALLOC_PURE_VIRTUAL)) bogBlockS;
+			blockSize + sizeof(bogBlockS)), MEMALLOC_PURE_VIRTUAL))
+		bogBlockS;
 
 	if (ret == NULL) {
 		return NULL;

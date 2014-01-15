@@ -61,7 +61,11 @@ class heapPtrC
 public ptrC<type>
 {
 public:
-	explicit heapPtrC(type *_p=NULL) : ptrC<type>(_p), useArrayDelete(0) {}
+	explicit heapPtrC(type *_p=NULL)
+	:
+	ptrC<type>(_p), useArrayDelete(0)
+	{}
+
 	~heapPtrC(void) { reset(); }
 
 	heapPtrC &operator =(heapPtrC &_p)
@@ -71,7 +75,8 @@ public:
 	heapPtrC &operator =(type *_p)
 		{ ptrC<type>::operator =(_p); return *this; }
 
-	void reset(type *_p=NULL, sarch_t _useArrayDelete=0)
+	void reset(
+		type *_p=NULL, sarch_t _useArrayDelete=0)
 	{
 		if (this->get() != NULL)
 		{

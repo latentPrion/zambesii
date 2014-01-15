@@ -27,7 +27,7 @@ timerTribC		timerTrib;
 interruptTribC		interruptTrib;
 memoryTribC		memoryTrib;
 debugTribC		debugTrib;
-memReservoirC		memReservoir;
+memReservoirC		memReservoir(&processTrib.__kgetStream()->memoryStream);
 cpuTribC		cpuTrib;
 debugPipeC		__kdebug;
 taskTribC		taskTrib;

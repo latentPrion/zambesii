@@ -14,3 +14,13 @@ void operator delete (void *mem)
 	memReservoir.free(mem);
 }
 
+void *operator new (size_t nBytes, memReservoirC *heap)
+{
+	return heap->allocate(nBytes);
+}
+
+void operator delete(void *mem, memReservoirC *heap)
+{
+	if (mem == NULL) { return; };
+	heap->free(mem);
+}

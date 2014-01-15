@@ -12,13 +12,18 @@ message 3	N/A
 
 requires	udi 0x101
 requires	zbz_root 0x0
+requires	udi_gio 0x101
 #requires	udi_bridge 0x101
 #requires	udi_disk 0x101
 
 meta 1 zbz_root
+meta 2 udi_gio
 
 module main
 region 0
+region 1
+
+internal_bind_ops	2 1 1 2 1
 
 message 100	Zambesii kernel RAM-disk device
 

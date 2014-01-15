@@ -25,6 +25,9 @@ clean: fonyphile
 	cd kernel/common/taskTrib; make clean
 	cd commonlibs/libx86mp; make clean
 	cd commonlibs/libacpi; make clean
+	cd commonlibs/drivers; make clean
+	cd commonlibs/metalanguages; make clean
+	cd commonlibs/libzbzcore; make clean
 	cd kernel/common/execTrib; make clean
 	cd kernel/common/vfsTrib; make clean
 	cd kernel/common/debugTrib; make clean

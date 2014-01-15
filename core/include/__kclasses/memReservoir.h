@@ -25,10 +25,12 @@
 #define RESERVOIR_MAX_NBOGS		(PAGING_BASE_SIZE / sizeof(void *))
 #define RESERVOIR			"Mem Reservoir: "
 
+class memoryStreamC;
+
 class memReservoirC
 {
 public:
-	memReservoirC(void);
+	memReservoirC(memoryStreamC *sourceStream);
 	error_t initialize(void);
 	~memReservoirC(void);
 
@@ -54,6 +56,7 @@ private:
 		uarch_t		magic;
 	};
 	memoryBogC	*__kbog;
+	memoryStreamC	*sourceStream;
 	sharedResourceGroupC<multipleReaderLockC, bogStateS>	bogs;
 };
 

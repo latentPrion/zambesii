@@ -31,10 +31,64 @@ public:
 public:
 	// Inserts an element at the front of the list.
 	void insert(T *item);
+	sarch_t remove(T *item);
 	// Removes the item at the end of the list and returns its pointer.
 	T *pop(void);
 	// Returns a pointer to the Nth item.
-	T *getItem(ubit32 num);
+	T *getItem(ubit32 num) const;
+
+	// Iterator methods.
+	void lock(void) { list.lock.acquire(); }
+	void unlock(void) { list.lock.release(); }
+
+	class iteratorC
+	{
+	friend class ptrlessListC;
+	public:
+		iteratorC(void) : list(NULL), currItem(NULL) {}
+
+		void operator ++(void)
+		{
+			if (currItem == NULL) { return; };
+			currItem = currItem->listHeader.next;
+		}
+
+		T *operator *(void) const
+		{
+			return currItem;
+		}
+
+		int operator !=(iteratorC &it) const
+		{
+			if (it.currItem == NULL)
+			{
+				if (currItem == NULL) { return 0; };
+				return 1;
+			};
+		}
+
+	private:
+		ptrlessListC<T>		*list;
+		T			*currItem;
+	};
+
+	iteratorC begin(void) const
+	{
+		iteratorC	it;
+
+		it.list = this;
+		it.currItem = list.rsrc.head;
+		return it;
+	}
+
+	iteratorC end(void) const
+	{
+		iteratorC	it;
+
+		it.list = this;
+		it.currItem = NULL;
+		return it;
+	}
 
 	ubit32 getNItems(void)
 	{
@@ -99,6 +153,43 @@ template <class T> void ptrlessListC<T>::insert(T *item)
 	list.lock.release();
 }
 
+template <class T> sarch_t ptrlessListC<T>::remove(T *item)
+{
+	iteratorC	it, prev;
+
+	lock();
+
+	for (it = begin(); it != end(); prev = it, ++it)
+	{
+		if (*it != item) { continue; };
+
+		// If target item is the only one in the list:
+		if (list.rsrc.head == list.rsrc.tail) {
+			list.rsrc.head = list.rsrc.tail = NULL;
+		}
+		// If target item is first in the list, advance head pointer.
+		else if (prev == end()) {
+			list.rsrc.head = list.rsrc.head->listHeader.next;
+		}
+		else
+		{
+			if (item == list.rsrc.tail) {
+				list.rsrc.tail = prev.currItem;
+			};
+
+			prev.currItem->listHeader.next =
+				it.currItem->listHeader.next;
+		};
+
+		list.rsrc.nItems--;
+		unlock();
+		return 1;
+	}
+
+	unlock();
+	return 0;
+}
+
 template <class T> T *ptrlessListC<T>::pop(void)
 {
 	T	*ret;
@@ -148,7 +239,7 @@ template <class T> void ptrlessListC<T>::dump(void)
 	list.lock.release();
 }
 
-template <class T> T *ptrlessListC<T>::getItem(ubit32 num)
+template <class T> T *ptrlessListC<T>::getItem(ubit32 num) const
 {
 	T		*curr;
 

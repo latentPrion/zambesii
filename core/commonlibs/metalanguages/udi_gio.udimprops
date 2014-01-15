@@ -1,0 +1,94 @@
+#
+# File: meta/gio/udiprops.txt
+#
+# Static properties definitions for the GIO Metalanguage.
+#
+
+#
+#  Copyright udi_reference:
+# 
+#    Copyright (c) 2001 Unisys, Inc.  All rights reserved.
+#    Copyright (c) 1995-2001; Compaq Computer Corporation; Hewlett-Packard
+#    Company; Interphase Corporation; The Santa Cruz Operation, Inc;
+#    Software Technologies Group, Inc; and Sun Microsystems, Inc
+#    (collectively, the "Copyright Holders").  All rights reserved.
+# 
+#    Redistribution and use in source and binary forms, with or without
+#    modification, are permitted provided that the conditions are met:
+# 
+#            Redistributions of source code must retain the above
+#            copyright notice, this list of conditions and the following
+#            disclaimer.
+# 
+#            Redistributions in binary form must reproduce the above
+#            copyright notice, this list of conditions and the following
+#            disclaimers in the documentation and/or other materials
+#            provided with the distribution.
+# 
+#            Neither the name of Project UDI nor the names of its
+#            contributors may be used to endorse or promote products
+#            derived from this software without specific prior written
+#            permission.
+# 
+#    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#    "AS IS," AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+#    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+#    HOLDERS OR ANY CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+#    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+#    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+#    OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+#    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+#    USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+#    DAMAGE.
+# 
+#    THIS SOFTWARE IS BASED ON SOURCE CODE PROVIDED AS A SAMPLE REFERENCE
+#    IMPLEMENTATION FOR VERSION 1.01 OF THE UDI CORE SPECIFICATION AND/OR
+#    RELATED UDI SPECIFICATIONS. USE OF THIS SOFTWARE DOES NOT IN AND OF
+#    ITSELF CONSTITUTE CONFORMANCE WITH THIS OR ANY OTHER VERSION OF ANY
+#    UDI SPECIFICATION.
+# 
+# 
+#
+properties_version 0x101
+
+message 1 Project UDI
+message 2 http://www.project-UDI.org/participants.html
+message 3 GIO Metalanguage
+message 4 Miscellaneous
+
+supplier	1
+contact		2
+name		3
+category	4
+
+requires udi		0x101
+requires udi_mei	0x101
+shortname udi_gio
+
+release 3 1.01
+
+#
+# Build instructions.
+#
+module udi_gio
+provides udi_gio	0x101
+
+symbols udi_gio_bind_ack
+symbols udi_gio_bind_req
+symbols udi_gio_event_ind
+symbols udi_gio_event_ind_unused
+symbols udi_gio_event_res
+symbols udi_gio_event_res_unused
+symbols udi_gio_unbind_ack
+symbols udi_gio_unbind_req
+symbols udi_gio_xfer_ack
+symbols udi_gio_xfer_nak
+symbols udi_gio_xfer_req
+
+source_files udi_gio.c udi_gioP.h
+
+rank 1 gio_type
+rank 2 gio_type gio_instance
+
