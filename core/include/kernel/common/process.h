@@ -3,6 +3,7 @@
 
 	#include <scaling.h>
 	#include <arch/memory.h>
+	#include <chipset/chipset.h>
 	#include <chipset/memory.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
@@ -96,11 +97,11 @@ public:
 
 		if (id == __KPROCESSID)
 		{
-			__KFLAG_SET(flags, PROCESS_FLAGS___KPROCESS);
+			FLAG_SET(flags, PROCESS_FLAGS___KPROCESS);
 			nTasks = 1;
 			tasks[0] = &__korientationThread;
 			defaultMemoryBank.rsrc =
-				CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+				CHIPSET_NUMA___KSPACE_BANKID;
 		};
 	}
 
@@ -381,6 +382,7 @@ public:
 		processId_t processId, processId_t parentProcessId,
 		ubit8 execDomain,
 		numaBankId_t numaAddrSpaceBinding,
+		fplainn::driverC *driver,
 		void *privateData)
 	:
 	containerProcessC(
@@ -389,7 +391,8 @@ public:
 		numaAddrSpaceBinding,
 		(void *)0x100000,
 		ARCH_MEMORY___KLOAD_VADDR_BASE - 0x100000 - 0x1000,
-		privateData)
+		privateData),
+	driver(driver)
 	{}
 
 	error_t initialize(

@@ -5,6 +5,8 @@
 	#include <udi.h>
 	#undef UDI_VERSION
 	#include <zudiIndex.h>
+	#include <chipset/chipset.h>
+	#include <chipset/memory.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kstdlib/__kclib/string.h>
@@ -34,21 +36,22 @@
 
 namespace fplainn
 {
+	class driverC;
+	class deviceInstanceC;
+	class driverInstanceC;
+
 	/**	deviceC:
 	 * Data type used to represent a single device in the kernel's device
 	 * tree.
 	 **********************************************************************/
-	class driverC;
-	class driverInstanceC;
-
 	class deviceC
 	{
 	public:
-		deviceC(ubit16 id, utf8Char *shortName)
+		deviceC(numaBankId_t bid, ubit16 id, utf8Char *shortName)
 		:
-		id(id), driver(NULL), driverInstance(NULL),
-		nEnumerationAttribs(0), nInstanceAttribs(0),
-		enumeration(NULL), instance(NULL), classes(NULL),
+		id(id), bankId(bid), driverInstance(NULL), instance(NULL),
+		nEnumerationAttrs(0), nInstanceAttrs(0),
+		enumerationAttrs(NULL), instanceAttrs(NULL), classes(NULL),
 		driverDetected(0), isKernelDriver(0)
 		{
 			this->shortName[0] = this->longName[0]
@@ -66,10 +69,6 @@ namespace fplainn
 		~deviceC(void) {};
 
 	public:
-		driverC *getDriver(void) { return driver; }
-		driverInstanceC *getDriverInstance(void)
-			{ return driverInstance; }
-
 		error_t addClass(utf8Char *name);
 		error_t getEnumerationAttribute(
 			utf8Char *name, udi_instance_attr_list_t *attrib);
@@ -126,22 +125,23 @@ namespace fplainn
 		/* Vendor name and contact info should be retrieved from the
 		 * driver object, instead of unnecessarily being duplicated.
 		 **/
-
 		numaBankId_t		bankId;
-		driverC			*driver;
 		driverInstanceC		*driverInstance;
+		deviceInstanceC		*instance;
 		// The index which enumerated this device's driver.
 		zudiIndexServer::indexE	driverIndex;
 		ubit16			nRequirements;
 		utf8Char		**requirements;
 		regionS			*regions;
 		utf8Char		driverFullName[DRIVER_FULLNAME_MAXLEN];
-		ubit8			nEnumerationAttribs, nInstanceAttribs;
+		ubit8			nEnumerationAttrs, nInstanceAttrs;
 		udi_instance_attr_list_t
-					**enumeration, **instance;
+					**enumerationAttrs, **instanceAttrs;
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
 		sbit8			driverDetected, isKernelDriver;
 	};
+
+	class driverInstanceC;
 
 	/**	driverC:
 	 * driverC represents a UDI driver in the kernel's metadata. It stores
@@ -161,9 +161,10 @@ namespace fplainn
 
 		driverC(void)
 		:
+		bankId(CHIPSET_NUMA_SHBANKID),
 		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
-		nChildBops(0), nParentBops(0), nInternalBops(0),
-		childEnumerationAttrSize(0),
+		nChildBops(0), nParentBops(0), nInternalBops(0), nInstances(0),
+		instances(NULL), childEnumerationAttrSize(0),
 		modules(NULL), regions(NULL), requirements(NULL),
 		metalanguages(NULL), childBops(NULL), parentBops(NULL),
 		internalBops(NULL)
@@ -189,6 +190,8 @@ namespace fplainn
 		error_t preallocateChildBops(uarch_t nChildBops);
 		error_t preallocateParentBops(uarch_t nParentBops);
 		error_t preallocateInternalBops(uarch_t nInternalBops);
+
+		driverInstanceC *addInstance(numaBankId_t bid, processId_t pid);
 
 		void dump(void);
 
@@ -398,6 +401,7 @@ namespace fplainn
 		// Kernel doesn't need to know about control block information.
 
 	public:
+		numaBankId_t	bankId;
 		utf8Char	basePath[ZUDI_DRIVER_BASEPATH_MAXLEN],
 				shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
 				longName[ZUDI_MESSAGE_MAXLEN],
@@ -405,7 +409,19 @@ namespace fplainn
 				supplierContact[ZUDI_MESSAGE_MAXLEN];
 		ubit16		nModules, nRegions, nRequirements,
 				nMetalanguages, nChildBops, nParentBops,
-				nInternalBops;
+				nInternalBops, nInstances;
+
+		/**	NOTES:
+		 * Zambesii's definition of "driver instances" is not conformant
+		 * to the UDI definition. We use "device instance" to cover what
+		 * UDI defines as a "driver instance".
+		 *
+		 * Driver instances in Zambesii are driver process address
+		 * spaces. A driver instance does not imply a separate device
+		 * instance, and in fact most driver instances will host
+		 * multiple devices.
+		 **/
+		driverInstanceC	*instances;
 
 		uarch_t		childEnumerationAttrSize;
 		// Modules for this driver, and their indexes.
@@ -419,6 +435,39 @@ namespace fplainn
 		childBopS	*childBops;
 		parentBopS	*parentBops;
 		internalBopS	*internalBops;
+	};
+
+	/**	driverInstanceC
+	 * Represents a driver process that has been instantiated. When a driver
+	 * has device instances that span multiple NUMA domains, the kernel will
+	 * have to create a new driver process per NUMA domain.
+	 *
+	 * This will facilitate the proper implementation of per-device NUMA
+	 * locality optimization, since the threads for device instances of
+	 * each driver instance (each of which is in its own NUMA domain) will
+	 * be bound to CPUs within that domain. Furthermore, since the driver
+	 * instance is its own process, the kernel can set its NUMA allocation
+	 * policy to allocate from its bank. NUMA address space binding also
+	 * gets used to its full extent.
+	 **/
+	class driverInstanceC
+	{
+	public:
+		driverInstanceC(void)
+		: bankId(NUMABANKID_INVALID), pid(PROCID_INVALID),
+		parentBopVector(NULL)
+		{}
+
+		driverInstanceC(
+			driverC *driver, numaBankId_t bid, processId_t pid)
+		: driver(driver), bankId(bid), pid(pid), parentBopVector(NULL)
+		{}
+
+	public:
+		driverC			*driver;
+		numaBankId_t		bankId;
+		processId_t		pid;
+		udi_ops_vector_t	*parentBopVector;
 	};
 }
 

@@ -243,7 +243,7 @@ void interruptTribC::exceptionMain(registerContextC *regs)
 	(*msiIrqTable[regs->vectorNo].exception)(regs, 0);
 
 	// Check to see if the exception requires a "postcall".
-	if (__KFLAG_TEST(
+	if (FLAG_TEST(
 			msiIrqTable[regs->vectorNo].flags,
 			INTTRIB_EXCEPTION_FLAGS_POSTCALL))
 	{

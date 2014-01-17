@@ -45,7 +45,7 @@ lapic(this),
 #endif
 perCpuTaskContext(task::PER_CPU, this)
 {
-	if (this == &bspCpu) { __KFLAG_SET(flags, CPUSTREAM_FLAGS_BSP); };
+	if (this == &bspCpu) { FLAG_SET(flags, CPUSTREAM_FLAGS_BSP); };
 
 	/* We don't need to acquire the __kcpuPowerOnSleepStacksLock lock before
 	 * editing this CPU's index in the array, because a race condition can
@@ -60,7 +60,7 @@ perCpuTaskContext(task::PER_CPU, this)
 	 * need to change this behaviour, or else just explicitly set the
 	 * BSP CPU's sleep stack in the power management code.
 	 **/
-	if (!__KFLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
+	if (!FLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
 	{
 		__kcpuPowerOnSleepStacks[cpuId] = &perCpuThreadStack[
 			sizeof(perCpuThreadStack) - sizeof(void *)];
@@ -85,10 +85,10 @@ error_t cpuStreamC::initializeBspCpuLocking(void)
 	__korientationThread.parent = processTrib.__kgetStream();
 	// Init cpuConfig and numaConfig BMPs later.
 	__korientationThread.getTaskContext()->defaultMemoryBank.rsrc =
-		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+		CHIPSET_NUMA___KSPACE_BANKID;
 
 	// Let the CPU know that it is the BSP.
-	__KFLAG_SET(flags, CPUSTREAM_FLAGS_BSP);
+	FLAG_SET(flags, CPUSTREAM_FLAGS_BSP);
 	// Set the BSP's currentTask to __korientation.
 	taskStream.currentTask = &__korientationThread;
 

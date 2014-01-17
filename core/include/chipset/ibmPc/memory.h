@@ -13,39 +13,15 @@
 // The maximum number of threads per process.
 #define CHIPSET_MEMORY_MAX_NTASKS		(256)
 
-
 #ifdef CONFIG_ARCH_x86_32
-// x86-32 stack size for PC is 2 pages.
-#define CHIPSET_MEMORY___KSTACK_NPAGES				2
-#define CHIPSET_MEMORY_USERSTACK_NPAGES				8
+	// x86-32 stack size for PC is 2 pages.
+	#define CHIPSET_MEMORY___KSTACK_NPAGES				2
+	#define CHIPSET_MEMORY_USERSTACK_NPAGES				8
 #endif
 
 // Absolute load address of the kernel in physical memory.
 #define CHIPSET_MEMORY___KLOAD_PADDR_BASE		(0x100000)
 #define CHIPSET_MEMORY___KBOG_SIZE			(0x200000)
-
-#if __SCALING__ >= SCALING_CC_NUMA
-	// For a NUMA build, set __kspace bank to a nice high number.
-	#define CHIPSET_MEMORY_NUMA___KSPACE_BANKID	32
-#else
-	// On non-NUMA there will only be __kspace & shbank. Set __kspace to 1.
-	#define CHIPSET_MEMORY_NUMA___KSPACE_BANKID	1
-#endif
-
-/* Shared bank is always generated for IBM-PC. If you are building a custom
- * kernel for a NUMA supporting PC compatible, and you do not want a shared bank
- * you can comment this out though.
- *
- * Do not comment this out on a NON-NUMA build. Shared bank MUST be generated on
- * NON-NUMA builds.
- **/
-#define CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
-
-#if __SCALING__ >= SCALING_CC_NUMA
-	#define CHIPSET_MEMORY_NUMA_SHBANKID			31
-#else
-	#define CHIPSET_MEMORY_NUMA_SHBANKID			0
-#endif
 
 #endif
 

@@ -37,7 +37,7 @@ error_t x86LapicC::ipiS::sendPhysicalIpi(
 		| (x86LAPIC_IPI_TRIGG_EDGE << x86LAPIC_IPI_TRIGG_SHIFT)
 		| (shortDest << x86LAPIC_IPI_SHORTDEST_SHIFT));
 
-	while (__KFLAG_TEST(
+	while (FLAG_TEST(
 		lapic->read32(x86LAPIC_REG_INT_CMD0),
 		x86LAPIC_IPI_DELIVERY_STATUS_PENDING) && timeout != 0)
 	{

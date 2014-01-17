@@ -223,7 +223,7 @@ tryMpTables:
 	for (; ioApicEntry != NULL;
 		ioApicEntry = x86Mp::getNextIoApicEntry(&pos, &handle))
 	{
-		if (!__KFLAG_TEST(
+		if (!FLAG_TEST(
 			ioApicEntry->flags, x86_MPCFG_IOAPIC_FLAGS_ENABLED))
 		{
 			printf(NOTICE x86IOAPIC"Skipping unsafe IO APIC %d."

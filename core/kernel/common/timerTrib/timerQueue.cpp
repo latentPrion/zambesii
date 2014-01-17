@@ -136,7 +136,7 @@ sarch_t timerQueueC::cancel(timerStreamC::timerMsgS *request)
 
 static sarch_t isPerCpuCreator(timerStreamC::timerMsgS *request)
 {
-	return __KFLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
+	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 }
 
 static processStreamC *getCreatorProcess(timerStreamC::timerMsgS *request)
@@ -152,7 +152,7 @@ static processStreamC *getCreatorProcess(timerStreamC::timerMsgS *request)
 
 inline static sarch_t isPerCpuTarget(timerStreamC::timerMsgS *request)
 {
-	return __KFLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
+	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
 static processStreamC *getTargetProcess(timerStreamC::timerMsgS *request)

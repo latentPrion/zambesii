@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 void *malloc(uarch_t nBytes);
-void *realloc(void *oldMem, uarch_t newSize);
+// void *realloc(void *oldMem, uarch_t newSize);
 void *calloc(uarch_t objSize, uarch_t nObjs);
 void free(void *mem);
 

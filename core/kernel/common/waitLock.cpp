@@ -58,7 +58,7 @@ void waitLockC::acquire(void)
 
 	if (cpuControl::interruptsEnabled())
 	{
-		__KFLAG_SET(contenderFlags, LOCK_FLAGS_IRQS_WERE_ENABLED);
+		FLAG_SET(contenderFlags, LOCK_FLAGS_IRQS_WERE_ENABLED);
 		cpuControl::disableInterrupts();
 	};
 
@@ -101,9 +101,9 @@ void waitLockC::release(void)
 	uarch_t		enableIrqs=0;
 #endif
 
-	if (__KFLAG_TEST(flags, LOCK_FLAGS_IRQS_WERE_ENABLED))
+	if (FLAG_TEST(flags, LOCK_FLAGS_IRQS_WERE_ENABLED))
 	{
-		__KFLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
+		FLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
 #if __SCALING__ >= SCALING_SMP
 		enableIrqs = 1;
 	};
@@ -121,7 +121,7 @@ void waitLockC::release(void)
 
 void waitLockC::releaseNoIrqs(void)
 {
-	__KFLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
+	FLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
 #if __SCALING__ >= SCALING_SMP
 	atomicAsm::set(&lock, 0);
 #endif

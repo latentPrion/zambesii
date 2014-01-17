@@ -53,13 +53,13 @@ status_t x86IoApic::ioApicC::setIrqStatus(
 	if (enabled && (!isEnabled))
 	{
 		unmaskPin(pin);
-		__KFLAG_SET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+		FLAG_SET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 	};
 
 	if ((!enabled) && isEnabled)
 	{
 		maskPin(pin);
-		__KFLAG_UNSET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+		FLAG_UNSET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 	};
 
 	irqPinList[pin].cpu = cpu;
@@ -87,7 +87,7 @@ status_t x86IoApic::ioApicC::getIrqStatus(
 	*polarity = (irqPinList[pin].triggerMode == IRQCTL_IRQPIN_POLARITY_LOW)
 		? x86IOAPIC_POLARITY_LOW : x86IOAPIC_POLARITY_HIGH;
 
-	return __KFLAG_TEST(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED)
+	return FLAG_TEST(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED)
 		? IRQCTL_GETIRQSTATUS_ENABLED : IRQCTL_GETIRQSTATUS_DISABLED;
 }
 
@@ -100,7 +100,7 @@ void x86IoApic::ioApicC::maskIrq(ubit16 __kpin)
 	if (err != ERROR_SUCCESS) { return; };
 
 	maskPin(pin);
-	__KFLAG_UNSET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+	FLAG_UNSET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 }
 
 void x86IoApic::ioApicC::unmaskIrq(ubit16 __kpin)
@@ -112,7 +112,7 @@ void x86IoApic::ioApicC::unmaskIrq(ubit16 __kpin)
 	if (err != ERROR_SUCCESS) { return; };
 
 	unmaskPin(pin);
-	__KFLAG_SET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+	FLAG_SET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 }
 
 sarch_t x86IoApic::ioApicC::irqIsEnabled(ubit16 __kpin)
@@ -123,7 +123,7 @@ sarch_t x86IoApic::ioApicC::irqIsEnabled(ubit16 __kpin)
 	err = lookupPinBy__kid(__kpin, &pin);
 	if (err != ERROR_SUCCESS) { return 0; };
 
-	return __KFLAG_TEST(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+	return FLAG_TEST(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 }
 
 void x86IoApic::ioApicC::maskAll(void)
@@ -131,7 +131,7 @@ void x86IoApic::ioApicC::maskAll(void)
 	for (ubit8 i=0; i<nPins; i++)
 	{
 		maskPin(i);
-		__KFLAG_UNSET(irqPinList[i].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+		FLAG_UNSET(irqPinList[i].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 	}
 }
 
@@ -140,7 +140,7 @@ void x86IoApic::ioApicC::unmaskAll(void)
 	for (ubit8 i=0; i<nPins; i++)
 	{
 		unmaskPin(i);
-		__KFLAG_SET(irqPinList[i].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+		FLAG_SET(irqPinList[i].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 	}
 }
 

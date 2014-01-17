@@ -143,10 +143,10 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 				| (cpuEntry->domain1 & 0xFFFFFF00);
 
 			ret->cpuEntries[i].flags = 0;
-			if (__KFLAG_TEST(
+			if (FLAG_TEST(
 				cpuEntry->flags, ACPI_SRAT_CPU_FLAGS_ENABLED))
 			{
-				__KFLAG_SET(
+				FLAG_SET(
 					ret->cpuEntries[i].flags,
 					NUMACPUMAP_FLAGS_ONLINE);
 			};
@@ -255,7 +255,7 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 			madtCpu != NULL;
 			madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2))
 		{
-			if (__KFLAG_TEST(
+			if (FLAG_TEST(
 				madtCpu->flags, ACPI_MADT_CPU_FLAGS_ENABLED))
 			{
 				nEntries++;
@@ -296,7 +296,7 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 			madtCpu != NULL;
 			madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2))
 		{
-			if (__KFLAG_TEST(
+			if (FLAG_TEST(
 				madtCpu->flags, ACPI_MADT_CPU_FLAGS_ENABLED))
 			{
 				ret->entries[i].cpuId = madtCpu->lapicId;
@@ -346,7 +346,7 @@ tryMpTables:
 		for (; mpCpu != NULL;
 			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle))
 		{
-			if (__KFLAG_TEST(
+			if (FLAG_TEST(
 				mpCpu->flags, x86_MPCFG_CPU_FLAGS_ENABLED))
 			{
 				nEntries++;
@@ -382,19 +382,19 @@ tryMpTables:
 		for (i=0; mpCpu != NULL;
 			mpCpu = x86Mp::getNextCpuEntry(&pos, &handle))
 		{
-			if (!__KFLAG_TEST(
+			if (!FLAG_TEST(
 				mpCpu->flags, x86_MPCFG_CPU_FLAGS_ENABLED))
 			{
-				__KFLAG_SET(
+				FLAG_SET(
 					ret->entries[i].flags,
 					ZKCM_SMPMAP_FLAGS_BADCPU);
 
 				ret->entries[i].cpuId = mpCpu->lapicId;
 
-				if (__KFLAG_TEST(
+				if (FLAG_TEST(
 					mpCpu->flags, x86_MPCFG_CPU_FLAGS_BSP))
 				{
-					__KFLAG_SET(
+					FLAG_SET(
 						ret->entries[i].flags,
 						ZKCM_SMPMAP_FLAGS_BSP);
 				};
@@ -720,7 +720,7 @@ error_t zkcmCpuDetectionModC::setSmpMode(void)
 	 **/
 	mpFp = x86Mp::findMpFp();
 	if (mpFp != NULL
-		&& __KFLAG_TEST(mpFp->features[1], x86_MPFP_FEAT1_FLAG_PICMODE))
+		&& FLAG_TEST(mpFp->features[1], x86_MPFP_FEAT1_FLAG_PICMODE))
 	{
 		ibmPcState.smpInfo.chipsetOriginalState = SMPSTATE_UNIPROCESSOR;
 

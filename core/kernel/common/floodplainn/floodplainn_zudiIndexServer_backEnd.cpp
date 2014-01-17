@@ -107,10 +107,10 @@ static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 			{ break; };
 
 			// Compare each attrib against the device's enum attribs
-			for (uarch_t k=0; k<device->nEnumerationAttribs; k++)
+			for (uarch_t k=0; k<device->nEnumerationAttrs; k++)
 			{
 				if (strcmp8(
-					CC device->enumeration[k]->attr_name,
+					CC device->enumerationAttrs[k]->attr_name,
 					currRankAttrName) != 0)
 				{
 					continue;
@@ -119,13 +119,13 @@ static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 				/* Even if they have the same name, if the types
 				 * differ, we can't consider it a match.
 				 **/
-				if (device->enumeration[k]->attr_type
+				if (device->enumerationAttrs[k]->attr_type
 					!= devlineData.attr_type)
 				{
 					break;
 				};
 
-				switch (device->enumeration[k]->attr_type)
+				switch (device->enumerationAttrs[k]->attr_type)
 				{
 				case UDI_ATTR_STRING:
 					// Get the string from the index.
@@ -136,7 +136,7 @@ static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 					{ break; };
 
 					if (!strcmp8(
-						CC device->enumeration[k]
+						CC device->enumerationAttrs[k]
 							->attr_value,
 						attrValueTmp.get()))
 					{
@@ -145,7 +145,7 @@ static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 
 					break;
 				case UDI_ATTR_UBIT32:
-					if (UDI_ATTR32_GET(device->enumeration[k]->attr_value)
+					if (UDI_ATTR32_GET(device->enumerationAttrs[k]->attr_value)
 						== UDI_ATTR32_GET((ubit8 *)&devlineData.attr_valueOff))
 					{
 						attrMatched = 1;
@@ -153,7 +153,7 @@ static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 
 					break;
 				case UDI_ATTR_BOOLEAN:
-					if (device->enumeration[k]->attr_value[0]
+					if (device->enumerationAttrs[k]->attr_value[0]
 						== *(ubit8 *)&devlineData
 							.attr_valueOff)
 					{
@@ -162,7 +162,7 @@ static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 
 					break;
 				case UDI_ATTR_ARRAY8:
-					if (device->enumeration[k]->attr_length
+					if (device->enumerationAttrs[k]->attr_length
 						!= devlineData.attr_length)
 					{
 						break;
@@ -178,7 +178,7 @@ static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 					};
 
 					if (!memcmp(
-						device->enumeration[k]
+						device->enumerationAttrs[k]
 							->attr_value,
 						attrValueTmp.get(),
 						devlineData.attr_length))
@@ -449,7 +449,6 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		 * undesired driver, should the user so choose to do so.
 		 **/
 		myResponse(ERROR_NO_MATCH);
-		dev->driver = NULL;
 		dev->driverFullName[0] = '\0';
 		dev->driverDetected = 0;
 		dev->isKernelDriver = 0;
@@ -508,19 +507,13 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			driverHdr.get(), driverHdr->nameIndex,
 			dev->longName);
 
-		fplainn::driverC		*drvTmp;
-
-		if (floodplainn.findDriver(dev->driverFullName, &drvTmp)
-			== ERROR_SUCCESS)
-		{
-			dev->driver = drvTmp;
-		}
-		else { dev->driver = NULL; };
-
 		dev->driverDetected = 1;
 		dev->isKernelDriver = 1;
 		dev->driverIndex = zudiIndexServer::INDEX_KERNEL;
 	};
+
+	// In both cases, driverInstance should be NULL.
+	dev->driverInstance = NULL;
 
 	// Free the list.
 	handle = NULL;
@@ -804,6 +797,7 @@ static void fplainnIndexServer_loadRequirementsReq(
 	floodplainnC::zudiIndexMsgS	*response;
 	asyncResponseC			myResponse;
 	fplainn::deviceC		*dev;
+	fplainn::driverC		*drv;
 	error_t				err;
 	heapPtrC<zudi::headerS>		indexHdr;
 	heapPtrC<zudi::driver::headerS>	metaHdr;
@@ -851,13 +845,15 @@ static void fplainnIndexServer_loadRequirementsReq(
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };
 
 	/* We can assume that if this function is called on a particular
-	 * device, that that device should have had a driver detected and loaded
-	 * for it.
+	 * device, that that device should have had a driver detected and
+	 * instantiated for it.
 	 **/
-	if (!dev->driverDetected || dev->driver == NULL)
+	if (!dev->driverDetected || dev->driverInstance == NULL)
 		{ myResponse(ERROR_UNINITIALIZED); return; };
 
-	err = dev->preallocateRequirements(dev->driver->nRequirements);
+	drv = dev->driverInstance->driver;
+
+	err = dev->preallocateRequirements(drv->nRequirements);
 	if (err != ERROR_SUCCESS)
 	{
 		printf(ERROR FPLAINNIDX"loadReqmReq: Failed to preallocate "
@@ -867,7 +863,7 @@ static void fplainnIndexServer_loadRequirementsReq(
 		return;
 	};
 
-	for (uarch_t i=0; i<dev->driver->nRequirements; i++)
+	for (uarch_t i=0; i<drv->nRequirements; i++)
 	{
 		zudi::driver::provisionS	currProv;
 		sarch_t				isSatisfied=0;
@@ -889,12 +885,8 @@ static void fplainnIndexServer_loadRequirementsReq(
 			 * and copy its fullname into the device's
 			 * requirements array.
 			 **/
-			if (strcmp8(
-				dev->driver->requirements[i].name,
-				provName) != 0)
-			{
-				continue;
-			};
+			if (strcmp8(drv->requirements[i].name, provName) != 0)
+				{ continue; };
 
 			/* Found a provision for the required meta. Get the
 			 * driver header for the meta, and fill in the meta's
@@ -934,9 +926,9 @@ static void fplainnIndexServer_loadRequirementsReq(
 			printf(ERROR FPLAINNIDX"loadReqmReq: meta requirement "
 				"%s for device %s (using driver %s) could not "
 				"be satisfied.\n",
-				dev->driver->requirements[i].name,
+				drv->requirements[i].name,
 				dev->longName,
-				dev->driver->shortName);
+				drv->shortName);
 
 			myResponse(ERROR_NOT_FOUND);
 			return;

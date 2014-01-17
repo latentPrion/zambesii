@@ -172,7 +172,7 @@ void x86LapicC::softEnable(void)
 
 	// Set the enabled flag in the spurious int vector reg.
 	outval = read32(x86LAPIC_REG_SPURIOUS_VECT);
-	__KFLAG_SET(outval, x86LAPIC_FLAG_SOFT_ENABLE);
+	FLAG_SET(outval, x86LAPIC_FLAG_SOFT_ENABLE);
 	write32(x86LAPIC_REG_SPURIOUS_VECT, outval);
 }
 
@@ -181,7 +181,7 @@ void x86LapicC::softDisable(void)
 	ubit32		outval;
 
 	outval = read32(x86LAPIC_REG_SPURIOUS_VECT);
-	__KFLAG_UNSET(outval, x86LAPIC_FLAG_SOFT_ENABLE);
+	FLAG_UNSET(outval, x86LAPIC_FLAG_SOFT_ENABLE);
 	write32(x86LAPIC_REG_SPURIOUS_VECT, outval);
 }
 
@@ -190,7 +190,7 @@ sarch_t x86LapicC::isSoftEnabled(void)
 	ubit32		regVal;
 
 	regVal = read32(x86LAPIC_REG_SPURIOUS_VECT);
-	return __KFLAG_TEST(regVal, x86LAPIC_FLAG_SOFT_ENABLE);
+	return FLAG_TEST(regVal, x86LAPIC_FLAG_SOFT_ENABLE);
 }
 
 void x86LapicC::sendEoi(void)

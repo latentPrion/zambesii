@@ -176,7 +176,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	// Small state machine cleanup for oneshot mode: unset the ENABLED flag.
 	if (mode == ONESHOT)
 	{
-		__KFLAG_UNSET(
+		FLAG_UNSET(
 			device->state.rsrc.flags,
 			ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
 			| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
@@ -185,7 +185,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	device->state.lock.release();
 
 	// Don't claim the IRQ if the timer hadn't been enabled.
-	if (!__KFLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED)) {
+	if (!FLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED)) {
 		return ZKCM_ISR_NOT_MY_IRQ;
 	};
 
@@ -202,7 +202,7 @@ status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
 	};
 
 	// Create an event.
-	if (!__KFLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED)) {
+	if (!FLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED)) {
 		return ZKCM_ISR_SUCCESS;
 	};
 
@@ -368,7 +368,7 @@ void i8254PitC::disable(void)
 	atomicAsm::memoryBarrier();
 	io::write8(i8254_CHAN0_IO_COUNTER, disableDelayClks & 0xFF);
 	io::write8(i8254_CHAN0_IO_COUNTER, disableDelayClks >> 8);
-	__KFLAG_UNSET(
+	FLAG_UNSET(
 		state.rsrc.flags,
 		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
 		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
@@ -522,7 +522,7 @@ void i8254PitC::writeOneshotIo(void)
 		i8254_CHAN0_IO_COUNTER,
 		i8254State.currentTimeoutClks >> 8);
 
-	__KFLAG_SET(
+	FLAG_SET(
 		state.rsrc.flags,
 		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
 		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
@@ -551,7 +551,7 @@ void i8254PitC::writePeriodicIo(void)
 		i8254_CHAN0_IO_COUNTER,
 		i8254State.currentIntervalClks >> 8);
 
-	__KFLAG_SET(
+	FLAG_SET(
 		state.rsrc.flags,
 		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
 		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);

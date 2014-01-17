@@ -26,7 +26,7 @@ void walkerPageRanger::remapNoInc(
 
 	if (nPages == 0) { return; };
 
-	localFlush = __KFLAG_TEST(__kflags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
+	localFlush = FLAG_TEST(__kflags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
 	vaddr = reinterpret_cast<void *>(
 		(uarch_t)vaddr & PAGING_BASE_MASK_HIGH );
 
@@ -83,7 +83,7 @@ void walkerPageRanger::remapNoInc(
 				{
 				case WPRANGER_OP_SET:
 				{
-					__KFLAG_SET(
+					FLAG_SET(
 						level2Accessor
 							->entries[l2Current],
 						archFlags);
@@ -92,7 +92,7 @@ void walkerPageRanger::remapNoInc(
 				};
 				case WPRANGER_OP_CLEAR:
 				{
-					__KFLAG_UNSET(
+					FLAG_UNSET(
 						level2Accessor
 							->entries[l2Current],
 						archFlags);
@@ -101,7 +101,7 @@ void walkerPageRanger::remapNoInc(
 				};
 				case WPRANGER_OP_SET_PRESENT:
 				{
-					__KFLAG_SET(
+					FLAG_SET(
 						level2Accessor
 							->entries[l2Current],
 						PAGING_L2_PRESENT);
@@ -110,7 +110,7 @@ void walkerPageRanger::remapNoInc(
 				};
 				case WPRANGER_OP_CLEAR_PRESENT:
 				{
-					__KFLAG_UNSET(
+					FLAG_UNSET(
 						level2Accessor
 							->entries[l2Current],
 						PAGING_L2_PRESENT);
@@ -119,7 +119,7 @@ void walkerPageRanger::remapNoInc(
 				};
 				case WPRANGER_OP_SET_WRITE:
 				{
-					__KFLAG_SET(
+					FLAG_SET(
 						level2Accessor
 							->entries[l2Current],
 						PAGING_L2_WRITE);
@@ -128,7 +128,7 @@ void walkerPageRanger::remapNoInc(
 				};
 				case WPRANGER_OP_CLEAR_WRITE:
 				{
-					__KFLAG_UNSET(
+					FLAG_UNSET(
 						level2Accessor
 							->entries[l2Current],
 						PAGING_L2_WRITE);
@@ -149,7 +149,7 @@ void walkerPageRanger::remapNoInc(
 			{
 			case WPRANGER_OP_SET:
 			{
-				__KFLAG_SET(
+				FLAG_SET(
 					level1Accessor->entries[l1Current],
 					archFlags);
 
@@ -157,7 +157,7 @@ void walkerPageRanger::remapNoInc(
 			};
 			case WPRANGER_OP_CLEAR:
 			{
-				__KFLAG_UNSET(
+				FLAG_UNSET(
 					level1Accessor->entries[l1Current],
 					archFlags);
 
@@ -165,7 +165,7 @@ void walkerPageRanger::remapNoInc(
 			};
 			case WPRANGER_OP_SET_PRESENT:
 			{
-				__KFLAG_SET(
+				FLAG_SET(
 					level1Accessor
 						->entries[l1Current],
 					PAGING_L1_PRESENT);
@@ -174,7 +174,7 @@ void walkerPageRanger::remapNoInc(
 			};
 			case WPRANGER_OP_CLEAR_PRESENT:
 			{
-				__KFLAG_UNSET(
+				FLAG_UNSET(
 					level1Accessor
 						->entries[l1Current],
 					PAGING_L1_PRESENT);
@@ -183,7 +183,7 @@ void walkerPageRanger::remapNoInc(
 			};
 			case WPRANGER_OP_SET_WRITE:
 			{
-				__KFLAG_SET(
+				FLAG_SET(
 					level1Accessor
 						->entries[l1Current],
 					PAGING_L1_WRITE);
@@ -192,7 +192,7 @@ void walkerPageRanger::remapNoInc(
 			};
 			case WPRANGER_OP_CLEAR_WRITE:
 			{
-				__KFLAG_UNSET(
+				FLAG_UNSET(
 					level1Accessor
 						->entries[l1Current],
 					PAGING_L1_WRITE);

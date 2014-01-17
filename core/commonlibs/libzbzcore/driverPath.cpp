@@ -75,6 +75,7 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 {
 	threadC				*self;
 	const driverInitEntryS		*driverInit;
+	fplainn::driverC		*drv;
 	fplainn::deviceC		*dev;
 	fplainn::deviceC::regionS	*myRegion=NULL;
 	error_t				err;
@@ -86,6 +87,7 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	assert_fatal(floodplainn.getDevice(self->parent->fullName, &dev)
 		== ERROR_SUCCESS);
 
+	drv = dev->driverInstance->driver;
 	printf(NOTICE LZBZCORE"driverPath1: Ret from loadRequirementsReq: %s "
 		"(%d).\n",
 		strerror(msgIt->header.error), msgIt->header.error);
@@ -99,12 +101,12 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	 * and move directly into getting the udi_init_t structures for all of
 	 * the components involved.
 	 **/
-	driverInit = floodplainn.findDriverInitInfo(dev->driver->shortName);
+	driverInit = floodplainn.findDriverInitInfo(drv->shortName);
 	if (driverInit == NULL)
 	{
 		printf(NOTICE LZBZCORE"driverPath1: Failed to find "
 			"udi_init_info for %s.\n",
-			dev->driver->shortName);
+			drv->shortName);
 
 		return;
 	};
@@ -112,7 +114,7 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	/* Initialize regions first; this is the simplest implementation path
 	 * to follow.
 	 **/
-	dev->regions = new fplainn::deviceC::regionS[dev->driver->nRegions];
+	dev->regions = new fplainn::deviceC::regionS[drv->nRegions];
 	if (dev->regions == NULL)
 	{
 		printf(ERROR LZBZCORE"driverPath1: Failed to allocate device "
@@ -122,14 +124,14 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	};
 
 	// Now we create threads for all the other regions.
-	for (uarch_t i=0; i<dev->driver->nRegions; i++)
+	for (uarch_t i=0; i<drv->nRegions; i++)
 	{
 		threadC		*newThread;
 
 		/* No need to spawn a new thread for the primary region. This
 		 * thread will become its thread soon.
 		 **/
-		if (dev->driver->regions[i].index != 0)
+		if (drv->regions[i].index != 0)
 		{
 			err = self->parent->spawnThread(
 				&regionThreadEntry, NULL,
@@ -141,7 +143,7 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 				printf(ERROR LZBZCORE"driverPath1: failed to "
 					"spawn thread for region %d because "
 					"%s(%d).\n",
-					dev->driver->regions[i].index,
+					drv->regions[i].index,
 					strerror(err), err);
 
 				return;
@@ -160,15 +162,15 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 		};
 
 		// Store the TID in the device's region metadata.
-		dev->regions[i].index = dev->driver->regions[i].index;
-		dev->regions[i].tid = (dev->driver->regions[i].index == 0)
+		dev->regions[i].index = drv->regions[i].index;
+		dev->regions[i].tid = (drv->regions[i].index == 0)
 			? self->getFullId()
 			: newThread->getFullId();
 	};
 
 	assert_fatal(myRegion != NULL);
 
-	for (uarch_t i=0; i<dev->driver->nRegions; i++)
+	for (uarch_t i=0; i<drv->nRegions; i++)
 	{
 		printf(NOTICE LZBZCORE"driverPath1: Region %d, TID 0x%x.\n",
 			dev->regions[i].index, dev->regions[i].tid);
@@ -178,26 +180,26 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	 * internal_bind_ops meta_idx region_idx ops0_idx ops1_idx bind_cb_idx.
 	 * Small sanity check here before moving on.
 	 **/
-	if (dev->driver->nInternalBops != dev->driver->nRegions - 1)
+	if (drv->nInternalBops != drv->nRegions - 1)
 	{
 		printf(NOTICE LZBZCORE"driverPath1: driver has %d ibops, "
 			"but %d regions.\n",
-			dev->driver->nInternalBops, dev->driver->nRegions);
+			drv->nInternalBops, drv->nRegions);
 
 		self->parent->sendResponse(ERROR_INVALID_ARG_VAL);
 		return;
 	};
 
-	for (uarch_t i=0; i<dev->driver->nInternalBops; i++)
+	for (uarch_t i=0; i<drv->nInternalBops; i++)
 	{
 		fplainn::driverC::internalBopS	*currBop;
 		fplainn::deviceC::regionS	*targetRegion=NULL;
 		udi_ops_vector_t		*opsVector0=NULL,
 						*opsVector1=NULL;
 
-		currBop = &dev->driver->internalBops[i];
+		currBop = &drv->internalBops[i];
 		// Get the region metadata for the target region.
-		for (uarch_t i=0; i<dev->driver->nRegions; i++)
+		for (uarch_t i=0; i<drv->nRegions; i++)
 		{
 			if (dev->regions[i].index == currBop->regionIndex) {
 				targetRegion = &dev->regions[i];
@@ -236,6 +238,7 @@ void regionThreadEntry(void *)
 {
 	threadC					*self;
 	heapPtrC<messageStreamC::iteratorS>	msgIt;
+	fplainn::driverC			*drv;
 	fplainn::deviceC			*dev;
 	ubit16					regionId=0;
 
@@ -243,9 +246,13 @@ void regionThreadEntry(void *)
 		.getCurrentTask();
 
 	// Not error checking this.
-	floodplainn.getDevice(self->parent->fullName, &dev);
+	assert_fatal(
+		floodplainn.getDevice(self->parent->fullName, &dev)
+		== ERROR_SUCCESS);
+
+	drv = dev->driverInstance->driver;
 	// Find out which region this thread is servicing.
-	for (uarch_t i=0; i<dev->driver->nRegions; i++)
+	for (uarch_t i=0; i<drv->nRegions; i++)
 	{
 		if (dev->regions[i].tid == self->getFullId())
 		{

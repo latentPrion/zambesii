@@ -249,7 +249,7 @@ status_t i8259aPicC::getIrqStatus(
 	// FIXME: Not sure what polarity ISA IRQs are.
 	*polarity = irqPinList[pin].polarity;
 
-	return (__KFLAG_TEST(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED))
+	return (FLAG_TEST(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED))
 		? IRQCTL_GETIRQSTATUS_ENABLED
 		: IRQCTL_GETIRQSTATUS_DISABLED;
 }
@@ -291,7 +291,7 @@ void i8259aPicC::maskAll(void)
 	{
 		for (ubit8 i=0; i<16; i++)
 		{
-			__KFLAG_UNSET(
+			FLAG_UNSET(
 				irqPinList[i].flags,
 				IRQCTL_IRQPIN_FLAGS_ENABLED);
 		};
@@ -307,7 +307,7 @@ void i8259aPicC::unmaskAll(void)
 	{
 		for (ubit8 i=0; i<16; i++)
 		{
-			__KFLAG_SET(
+			FLAG_SET(
 				irqPinList[i].flags,
 				IRQCTL_IRQPIN_FLAGS_ENABLED);
 		};
@@ -353,7 +353,7 @@ void i8259aPicC::maskIrq(ubit16 __kpin)
 	};
 
 	if (irqPinList != NULL) {
-		__KFLAG_UNSET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+		FLAG_UNSET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 	};
 }
 
@@ -381,7 +381,7 @@ void i8259aPicC::unmaskIrq(ubit16 __kpin)
 	};
 
 	if (irqPinList != NULL) {
-		__KFLAG_SET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
+		FLAG_SET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 	};
 }
 

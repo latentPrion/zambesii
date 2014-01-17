@@ -125,7 +125,7 @@ error_t memBmpC::initialize(void *preAllocated)
 			return ERROR_MEMORY_NOMEM;
 		};
 
-		__KFLAG_SET(flags, MEMBMP_FLAGS_DYNAMIC);
+		FLAG_SET(flags, MEMBMP_FLAGS_DYNAMIC);
 	};
 	memset(bmp.rsrc.bmp, 0, bmpSize);
 
@@ -142,7 +142,7 @@ error_t memBmpC::initialize(void *preAllocated)
 
 memBmpC::~memBmpC(void)
 {
-	if (__KFLAG_TEST(flags, MEMBMP_FLAGS_DYNAMIC))
+	if (FLAG_TEST(flags, MEMBMP_FLAGS_DYNAMIC))
 	{
 		processTrib.__kgetStream()->memoryStream.memFree(bmp.rsrc.bmp);
 	};

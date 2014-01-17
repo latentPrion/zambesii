@@ -255,7 +255,7 @@ T *ptrListC<T>::getNextItem(void **handle, ubit32 flags)
 		return NULL;
 	};
 
-	if (!__KFLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
+	if (!FLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
 		head.lock.acquire();
 	};
 
@@ -264,7 +264,7 @@ T *ptrListC<T>::getNextItem(void **handle, ubit32 flags)
 	{
 		*handle = head.rsrc.ptr;
 		if (head.rsrc.ptr != NULL) { ret = head.rsrc.ptr->item; };
-		if (!__KFLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
+		if (!FLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
 			head.lock.release();
 		};
 
@@ -284,14 +284,14 @@ T *ptrListC<T>::getNextItem(void **handle, ubit32 flags)
 	{
 		*handle = tmp->next;
 
-		if (!__KFLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
+		if (!FLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
 			head.lock.release();
 		};
 
 		return tmp->next->item;
 	};
 
-	if (!__KFLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
+	if (!FLAG_TEST(flags, PTRLIST_FLAGS_NO_AUTOLOCK)) {
 		head.lock.release();
 	};
 

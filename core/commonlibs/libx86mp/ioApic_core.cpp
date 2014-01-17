@@ -184,7 +184,7 @@ sarch_t x86IoApic::ioApicC::getPinState(
 	*polarity = x86IOAPIC_IRQTABLE_GETPOLARITY(low);
 	*triggMode = x86IOAPIC_IRQTABLE_GETTRIGGMODE(low);
 
-	ret = !__KFLAG_TEST(low, x86IOAPIC_IRQSTATE_MASKED);
+	ret = !FLAG_TEST(low, x86IOAPIC_IRQSTATE_MASKED);
 	return ret;
 }
 
@@ -228,7 +228,7 @@ void x86IoApic::ioApicC::maskPin(ubit8 irq)
 	vaddr.lock.acquire();
 	writeIoRegSel(x86IOAPIC_REG_IRQTABLE(irq, 0));
 	low = readIoWin();
-	__KFLAG_SET(low, x86IOAPIC_IRQSTATE_MASKED);
+	FLAG_SET(low, x86IOAPIC_IRQSTATE_MASKED);
 	writeIoWin(low);
 	vaddr.lock.release();
 }
@@ -241,7 +241,7 @@ void x86IoApic::ioApicC::unmaskPin(ubit8 irq)
 	vaddr.lock.acquire();
 	writeIoRegSel(x86IOAPIC_REG_IRQTABLE(irq, 0));
 	low = readIoWin();
-	__KFLAG_UNSET(low, x86IOAPIC_IRQSTATE_MASKED);
+	FLAG_UNSET(low, x86IOAPIC_IRQSTATE_MASKED);
 	writeIoWin(low);
 	vaddr.lock.release();
 }

@@ -156,7 +156,7 @@ error_t taskContextC::inheritAffinity(bitmapC *cpuAffinity, uarch_t flags)
 		bitmapC		*sourceBitmap;
 
 		// PINHERIT.
-		if (__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT)) {
+		if (FLAG_TEST(flags, SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT)) {
 			sourceBitmap = &parent.thread->parent->cpuAffinity;
 		}
 		else
@@ -229,24 +229,24 @@ void taskC::inheritSchedPrio(prio_t prio, uarch_t flags)
 	 * SET:
 	 *	if SPAWNTHREAD_FLAGS_SCHEDPRIO_SET.
 	 **/
-	if (__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_SCHEDPRIO_SET))
+	if (FLAG_TEST(flags, SPAWNTHREAD_FLAGS_SCHEDPRIO_SET))
 	{
-		__KFLAG_SET(this->flags, TASK_FLAGS_CUSTPRIO);
+		FLAG_SET(this->flags, TASK_FLAGS_CUSTPRIO);
 		internalPrio.prio = prio;
 		schedPrio = &internalPrio;
 		return;
 	};
 
-	if (__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_SCHEDPRIO_STINHERIT))
+	if (FLAG_TEST(flags, SPAWNTHREAD_FLAGS_SCHEDPRIO_STINHERIT))
 	{
 		taskC		*spawningThread;
 
 		spawningThread = cpuTrib.getCurrentCpuStream()->taskStream
 			.getCurrentTask();
 
-		if (__KFLAG_TEST(spawningThread->flags, TASK_FLAGS_CUSTPRIO))
+		if (FLAG_TEST(spawningThread->flags, TASK_FLAGS_CUSTPRIO))
 		{
-			__KFLAG_SET(this->flags, TASK_FLAGS_CUSTPRIO);
+			FLAG_SET(this->flags, TASK_FLAGS_CUSTPRIO);
 			internalPrio.prio = spawningThread->internalPrio.prio;
 			schedPrio = &internalPrio;
 		}
@@ -257,7 +257,7 @@ void taskC::inheritSchedPrio(prio_t prio, uarch_t flags)
 		return;
 	};
 
-	if (__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET)
+	if (FLAG_TEST(flags, SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET)
 		&& prio < PRIOCLASS_NCLASSES)
 	{
 		schedPrio = &prioClasses[prio];

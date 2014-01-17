@@ -76,11 +76,11 @@ void fplainn::deviceC::dumpEnumerationAttributes(void)
 	utf8Char		*fmtChar;
 
 	printf(NOTICE"Device: @0x%p, id %d, %d enum attrs.\n\tlongname %s.\n",
-		this, id, nEnumerationAttribs, longName);
+		this, id, nEnumerationAttrs, longName);
 
-	for (uarch_t i=0; i<nEnumerationAttribs; i++)
+	for (uarch_t i=0; i<nEnumerationAttrs; i++)
 	{
-		switch (enumeration[i]->attr_type)
+		switch (enumerationAttrs[i]->attr_type)
 		{
 		case UDI_ATTR_STRING: fmtChar = CC"%s"; break;
 		case UDI_ATTR_UBIT32: fmtChar = CC"0x%x"; break;
@@ -88,18 +88,18 @@ void fplainn::deviceC::dumpEnumerationAttributes(void)
 		case UDI_ATTR_BOOLEAN: fmtChar = CC"%x"; break;
 		default:
 			printf(ERROR"Unknown device attr type %d.\n",
-				enumeration[i]->attr_type);
+				enumerationAttrs[i]->attr_type);
 			return;
 		};
 
 		// This recursive %s feature is actually pretty nice.
 		printf(NOTICE"Attr: name %s, type %d, val %r.\n",
-			enumeration[i]->attr_name, enumeration[i]->attr_type,
+			enumerationAttrs[i]->attr_name, enumerationAttrs[i]->attr_type,
 			fmtChar,
 			(!strcmp8(fmtChar, CC"%s"))
-				? (void *)enumeration[i]->attr_value
+				? (void *)enumerationAttrs[i]->attr_value
 				: (void *)(uintptr_t)UDI_ATTR32_GET(
-					enumeration[i]->attr_value));
+					enumerationAttrs[i]->attr_value));
 	};
 }
 
@@ -108,11 +108,11 @@ error_t fplainn::deviceC::getEnumerationAttribute(
 	)
 {
 	// Simple search for an attribute with the name supplied.
-	for (uarch_t i=0; i<nEnumerationAttribs; i++)
+	for (uarch_t i=0; i<nEnumerationAttrs; i++)
 	{
-		if (strcmp8(CC enumeration[i]->attr_name, CC name) == 0)
+		if (strcmp8(CC enumerationAttrs[i]->attr_name, CC name) == 0)
 		{
-			*attrib = *enumeration[i];
+			*attrib = *enumerationAttrs[i];
 			return ERROR_SUCCESS;
 		};
 	};
@@ -142,27 +142,27 @@ error_t fplainn::deviceC::setEnumerationAttribute(
 	{
 		// Allocate mem for the new array of pointers to attribs.
 		attrArrayMem = new udi_instance_attr_list_t *[
-			nEnumerationAttribs + 1];
+			nEnumerationAttrs + 1];
 
 		if (attrArrayMem == NULL) { return ERROR_MEMORY_NOMEM; };
 
-		if (nEnumerationAttribs > 0)
+		if (nEnumerationAttrs > 0)
 		{
 			memcpy(
-				attrArrayMem, enumeration,
-				sizeof(*enumeration) * nEnumerationAttribs);
+				attrArrayMem, enumerationAttrs,
+				sizeof(*enumerationAttrs) * nEnumerationAttrs);
 		};
 
-		attrArrayMem[nEnumerationAttribs] = destAttrMem.get();
+		attrArrayMem[nEnumerationAttrs] = destAttrMem.get();
 		/* Since we have to use the allocated memory to store the new
 		 * attribute permanently, we have to call release() on the
 		 * pointer management object later on. Set this bool to indicate
 		 * that.
 		 **/
 		releaseAttrMem = 1;
-		tmp = enumeration;
-		enumeration = attrArrayMem;
-		nEnumerationAttribs++;
+		tmp = enumerationAttrs;
+		enumerationAttrs = attrArrayMem;
+		nEnumerationAttrs++;
 
 		delete tmp;
 	};
@@ -174,12 +174,40 @@ error_t fplainn::deviceC::setEnumerationAttribute(
 
 error_t fplainn::driverC::moduleS::addAttachedRegion(ubit16 regionIndex)
 {
-	regionIndexes = new (realloc(regionIndexes, nAttachedRegions + 1))
-		ubit16;
+	ubit16		*old;
 
+	old = regionIndexes;
+	regionIndexes = new ubit16[nAttachedRegions + 1];
 	if (regionIndexes == NULL) { return ERROR_MEMORY_NOMEM; };
+	if (nAttachedRegions > 0)
+	{
+		memcpy(
+			regionIndexes, old,
+			nAttachedRegions * sizeof(*regionIndexes));
+	};
+
+	delete[] old;
+
 	regionIndexes[nAttachedRegions++] = regionIndex;
 	return ERROR_SUCCESS;
+}
+
+fplainn::driverInstanceC *fplainn::driverC::addInstance(
+	numaBankId_t bid, processId_t pid
+	)
+{
+	driverInstanceC		*old;
+
+	old = instances;
+	instances = new driverInstanceC[nInstances + 1];
+	if (instances == NULL) { return NULL; };
+	if (nInstances > 0)
+		{ memcpy(instances, old, nInstances * sizeof(*instances)); };
+
+	delete[] old;
+
+	new (&instances[nInstances++]) driverInstanceC(this, bid, pid);
+	return &instances[nInstances - 1];
 }
 
 void fplainn::driverC::dump(void)

@@ -65,7 +65,7 @@ error_t singleWaiterQueueC::pop(void **item, uarch_t flags)
 			return ERROR_SUCCESS;
 		};
 
-		if (__KFLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_DONTBLOCK))
+		if (FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_DONTBLOCK))
 		{
 			lock.release();
 			return ERROR_WOULD_BLOCK;

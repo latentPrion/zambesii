@@ -1,4 +1,5 @@
 
+#include <chipset/chipset.h>
 #include <chipset/regionMap.h>
 #include <chipset/memory.h>
 #include <chipset/zkcm/zkcmCore.h>
@@ -117,7 +118,7 @@ error_t memoryTribC::pmemInit(void)
 	};
 #endif
 
-#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
+#ifdef CHIPSET_NUMA_GENERATE_SHBANK
 	// Get memory config from the chipset.
 	memConfig = zkcmCore.memoryDetection.getMemoryConfig();
 
@@ -127,7 +128,7 @@ error_t memoryTribC::pmemInit(void)
 			"0x%P.\n",
 			memConfig->memSize);
 
-		ret = createBank(CHIPSET_MEMORY_NUMA_SHBANKID);
+		ret = createBank(CHIPSET_NUMA_SHBANKID);
 		if (ret != ERROR_SUCCESS)
 		{
 			printf(ERROR MEMTRIB"pmemInit: Failed to spawn "
@@ -144,7 +145,7 @@ error_t memoryTribC::pmemInit(void)
 		else
 		{
 
-			ret = getBank(CHIPSET_MEMORY_NUMA_SHBANKID)
+			ret = getBank(CHIPSET_NUMA_SHBANKID)
 				->addMemoryRange(
 					memConfig->memBase, memConfig->memSize);
 
@@ -222,12 +223,12 @@ parseMemoryMap:
 	for (; nmb != NULL;
 		nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos))
 	{
-		if (nmb == getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID)) {
+		if (nmb == getBank(CHIPSET_NUMA___KSPACE_BANKID)) {
 			continue;
 		};
 
 		nSet += nmb->merge(
-			getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
+			getBank(CHIPSET_NUMA___KSPACE_BANKID));
 	};
 
 	printf(NOTICE MEMTRIB"pmemInit: %d frames merged from __kspace into "
@@ -277,17 +278,17 @@ parseMemoryMap:
 	 * numaTrib.cpp should auto-determine which bank to set as the
 	 * new default.
 	 **/
-	destroyBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
+	destroyBank(CHIPSET_NUMA___KSPACE_BANKID);
 	printf(NOTICE MEMTRIB"pmemInit: Removed __kspace. Ret is 0x%p.\n",
-		getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID));
+		getBank(CHIPSET_NUMA___KSPACE_BANKID));
 
-#ifdef CHIPSET_MEMORY_NUMA_GENERATE_SHBANK
+#ifdef CHIPSET_NUMA_GENERATE_SHBANK
 	#if __SCALING__ < SCALING_CC_NUMA
-	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
+	defaultMemoryBank.rsrc = CHIPSET_NUMA_SHBANKID;
 	printf(NOTICE MEMTRIB"pmemInit: MemTrib using shbank as default.\n");
 	#else
 	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
-		->defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA_SHBANKID;
+		->defaultMemoryBank.rsrc = CHIPSET_NUMA_SHBANKID;
 
 	printf(NOTICE MEMTRIB"pmemInit: Orientation using shbank as default."
 		"\n");
@@ -449,7 +450,7 @@ void memoryTribC::init2_generateShbankFromNumaMap(
 				tmpBase, tmpSize);
 #endif
 
-			ret = getBank(CHIPSET_MEMORY_NUMA_SHBANKID)
+			ret = getBank(CHIPSET_NUMA_SHBANKID)
 				->addMemoryRange(tmpBase, tmpSize);
 
 			if (ret != ERROR_SUCCESS)

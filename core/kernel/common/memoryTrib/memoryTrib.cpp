@@ -15,7 +15,7 @@
 
 static ubit8				memoryTribAvailableBanksBmpMem[64];
 static hardwareIdListC::arrayNodeS	memoryTribMemoryBanksListMem[
-	CHIPSET_MEMORY_NUMA___KSPACE_BANKID + 1];
+	CHIPSET_NUMA___KSPACE_BANKID + 1];
 
 memoryTribC::memoryTribC(void)
 :
@@ -180,7 +180,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t flags)
 	 * frames. But if there is no alloc table, then the #PF will occur, and
 	 * then we end up knowing nothing about the allocation.
 	 **/
-	fLocalFlush = __KFLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY) ? 1 : 0;
+	fLocalFlush = FLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY) ? 1 : 0;
 
 	for (totalFrames = 0; totalFrames < nPages; )
 	{
@@ -248,8 +248,8 @@ void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages, uarch_t flags)
 	{
 		uarch_t		__kflags=0;
 
-		if (__KFLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY)) {
-			__KFLAG_SET(__kflags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
+		if (FLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY)) {
+			FLAG_SET(__kflags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
 		};
 
 		status = walkerPageRanger::unmap(

@@ -26,7 +26,7 @@ status_t walkerPageRanger::unmap(
 
 	if (nPages == 0) { return WPRANGER_STATUS_UNMAPPED; };
 
-	localFlush = __KFLAG_TEST(*flags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
+	localFlush = FLAG_TEST(*flags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
 	vaddr = reinterpret_cast<void *>(
 		(uarch_t)vaddr & PAGING_BASE_MASK_HIGH );
 
@@ -112,7 +112,7 @@ status_t walkerPageRanger::unmap(
 					*paddr = (l2Entry >> 12);
 					*paddr <<= 12;
 
-					if (!__KFLAG_TEST(
+					if (!FLAG_TEST(
 						*flags, PAGEATTRIB_PRESENT))
 					{
 						switch ((*paddr
@@ -161,7 +161,7 @@ status_t walkerPageRanger::unmap(
 				*paddr = (l1Entry >> 12);
 				*paddr <<= 12;
 				
-				if (!__KFLAG_TEST(*flags, PAGEATTRIB_PRESENT))
+				if (!FLAG_TEST(*flags, PAGEATTRIB_PRESENT))
 				{
 					switch ((*paddr
 						>> PAGING_PAGESTATUS_SHIFT)

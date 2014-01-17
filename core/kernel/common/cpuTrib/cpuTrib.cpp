@@ -27,8 +27,8 @@
 static cpu_t		highestCpuId=0;
 #endif
 #if __SCALING__ >= SCALING_CC_NUMA
-	#ifdef CHIPSET_CPU_NUMA_GENERATE_SHBANK
-static numaBankId_t	highestBankId=CHIPSET_CPU_NUMA_SHBANKID;
+	#ifdef CHIPSET_NUMA_GENERATE_SHBANK
+static numaBankId_t	highestBankId=CHIPSET_NUMA_SHBANKID;
 	#else
 static numaBankId_t	highestBankId=0;
 	#endif
@@ -100,7 +100,7 @@ error_t cpuTribC::initializeBspCpuStream(void)
 	 * the NUMA map, or no NUMA map is obtained, we place the BSP CPU into
 	 * the shared bank.
 	 **/
-	numaBankId_t	bspBankId=CHIPSET_CPU_NUMA_SHBANKID;
+	numaBankId_t	bspBankId=CHIPSET_NUMA_SHBANKID;
 	zkcmNumaMapS	*numaMap;
 
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
@@ -119,11 +119,11 @@ error_t cpuTribC::initializeBspCpuStream(void)
 	};
 #endif
 
-	if (bspBankId == CHIPSET_CPU_NUMA_SHBANKID)
+	if (bspBankId == CHIPSET_NUMA_SHBANKID)
 	{
 		printf(WARNING CPUTRIB"initializeBspStream: Unable to "
 			"determine BSP bank ID.\n\tUsing SHBANKID (%d).\n",
-			CHIPSET_CPU_NUMA_SHBANKID);
+			CHIPSET_NUMA_SHBANKID);
 	};
 
 	ret = bootCpuNotification(
@@ -157,7 +157,7 @@ error_t cpuTribC::initializeAllCpus(void)
 #if __SCALING__ >= SCALING_CC_NUMA
 	zkcmNumaMapS		*numaMap;
 #endif
-#if __SCALING__ == SCALING_SMP || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
+#if __SCALING__ == SCALING_SMP || defined(CHIPSET_NUMA_GENERATE_SHBANK)
 	zkcmSmpMapS		*smpMap;
 #endif
 
@@ -245,7 +245,7 @@ error_t cpuTribC::initializeAllCpus(void)
 #endif
 #endif
 
-#if __SCALING__ == SCALING_SMP || defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)
+#if __SCALING__ == SCALING_SMP || defined(CHIPSET_NUMA_GENERATE_SHBANK)
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != NULL && smpMap->nEntries > 0)
 	{
@@ -369,7 +369,7 @@ void cpuTribC::bootParseNumaMap(
 		// If the CPU is not an extra, don't process it.
 		if (found) { continue; };
 		err = bootCpuNotification(
-			CHIPSET_CPU_NUMA_SHBANKID,
+			CHIPSET_NUMA_SHBANKID,
 			smpMap->entries[i].cpuId,
 			smpMap->entries[i].cpuId);
 
@@ -419,7 +419,7 @@ void cpuTribC::bootConfirmNumaCpusBooted(
 error_t cpuTribC::numaInit(void)
 {
 	zkcmNumaMapS		*numaMap;
-#ifdef CHIPSET_CPU_NUMA_GENERATE_SHBANK
+#ifdef CHIPSET_NUMA_GENERATE_SHBANK
 	zkcmSmpMapS		*smpMap;
 #endif
 
@@ -444,15 +444,15 @@ error_t cpuTribC::numaInit(void)
 	else
 	{
 		printf(WARNING CPUTRIB"numaInit: NUMA build, but CPU mod "
-#ifndef CHIPSET_CPU_NUMA_GENERATE_SHBANK
+#ifndef CHIPSET_NUMA_GENERATE_SHBANK
 			"reports no NUMA CPUs, and no shbank configured.\n");
 #else
 			"reports no NUMA CPUs.\n");
 #endif
 	};
 
-#if defined(CHIPSET_CPU_NUMA_GENERATE_SHBANK)				\
-	&& defined(CHIPSET_CPU_NUMA_SHBANKID)
+#if defined(CHIPSET_NUMA_GENERATE_SHBANK)				\
+	&& defined(CHIPSET_NUMA_SHBANKID)
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != NULL && smpMap->nEntries > 0)
 	{
@@ -527,7 +527,7 @@ void cpuTribC::bootParseSmpMap(zkcmSmpMapS *smpMap)
 
 		err = bootCpuNotification(
 #if __SCALING__ >= SCALING_CC_NUMA
-			CHIPSET_CPU_NUMA_SHBANKID,
+			CHIPSET_NUMA_SHBANKID,
 #endif
 			smpMap->entries[i].cpuId,
 			smpMap->entries[i].cpuAcpiId);

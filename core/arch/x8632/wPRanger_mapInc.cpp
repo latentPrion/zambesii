@@ -42,7 +42,7 @@ status_t walkerPageRanger::mapInc(
 
 	if (nPages == 0) { return ret; };
 
-	localFlush = __KFLAG_TEST(__kflags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
+	localFlush = FLAG_TEST(__kflags, PAGEATTRIB_LOCAL_FLUSH_ONLY);
 	vaddr = reinterpret_cast<void *>(
 		(uarch_t)vaddr & PAGING_BASE_MASK_HIGH );
 

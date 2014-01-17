@@ -38,10 +38,10 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 
 	if (nPages == 0) { return NULL; };
 
-	if (__KFLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY)) { localFlush = 1; };
+	if (FLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY)) { localFlush = 1; };
 
 	// Try alloc cache.
-	if (!__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)
+	if (!FLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)
 		&& (allocCache.pop(nPages, (void **)&ret) == ERROR_SUCCESS))
 	{
 		walkerPageRanger::setAttributes(
@@ -53,9 +53,9 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	};
 
 	// Calculate the number of frames to commit before fakemapping.
-	if (__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)) { commit = 0; };
-	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)
-		&& !__KFLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL))
+	if (FLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)) { commit = 0; };
+	if (!FLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)
+		&& !FLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL))
 	{
 		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
 	};
@@ -110,7 +110,7 @@ void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
 	};
 
 	// Now see how many frames we must fake map. 'totalFrames' holds this.
-	if (!__KFLAG_TEST(flags, MEMALLOC_NO_FAKEMAP))
+	if (!FLAG_TEST(flags, MEMALLOC_NO_FAKEMAP))
 	{
 		nMapped = walkerPageRanger::mapNoInc(
 			&parent->getVaddrSpaceStream()->vaddrSpace,
@@ -149,7 +149,7 @@ releaseAndUnmap:
 		/**	FIXME: Analyse this.
 		**/
 		f = 0;
-		if (localFlush){ __KFLAG_SET(f, PAGEATTRIB_LOCAL_FLUSH_ONLY); };
+		if (localFlush){ FLAG_SET(f, PAGEATTRIB_LOCAL_FLUSH_ONLY); };
 		nMapped = walkerPageRanger::unmap(
 			&parent->getVaddrSpaceStream()->vaddrSpace,
 			pos,

@@ -316,7 +316,7 @@ processId_t messageStreamC::determineSourceThreadId(
 {
 	if (caller->getType() == task::PER_CPU)
 	{
-		__KFLAG_SET(*flags, MSGSTREAM_FLAGS_CPU_SOURCE);
+		FLAG_SET(*flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 		return cpuTrib.getCurrentCpuStream()->cpuId;
 	}
 	else { return ((threadC *)caller)->getFullId(); };
@@ -328,9 +328,9 @@ processId_t messageStreamC::determineTargetThreadId(
 	)
 {
 	// If target thread is a CPU:
-	if (__KFLAG_TEST(callerFlags, MSGSTREAM_FLAGS_CPU_TARGET))
+	if (FLAG_TEST(callerFlags, MSGSTREAM_FLAGS_CPU_TARGET))
 	{
-		__KFLAG_SET(*messageFlags, MSGSTREAM_FLAGS_CPU_TARGET);
+		FLAG_SET(*messageFlags, MSGSTREAM_FLAGS_CPU_TARGET);
 		return targetId;
 	};
 
@@ -344,7 +344,7 @@ error_t messageStreamC::enqueueOnThread(
 {
 	messageStreamC	*targetStream;
 
-	if (__KFLAG_TEST(header->flags, MSGSTREAM_FLAGS_CPU_TARGET))
+	if (FLAG_TEST(header->flags, MSGSTREAM_FLAGS_CPU_TARGET))
 	{
 		cpuStreamC		*cs;
 
@@ -409,7 +409,7 @@ error_t messageStreamC::pullFrom(
 			return ERROR_SUCCESS;
 		};
 
-		if (__KFLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
+		if (FLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
 		{
 			pendingSubsystems.unlock();
 			return ERROR_WOULD_BLOCK;
@@ -452,7 +452,7 @@ error_t messageStreamC::pull(
 			};
 		};
 
-		if (__KFLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
+		if (FLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
 		{
 			pendingSubsystems.unlock();
 			return ERROR_WOULD_BLOCK;

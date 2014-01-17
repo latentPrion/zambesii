@@ -35,7 +35,7 @@ public:
 
 	error_t initialize(ubit32 flags=0)
 	{
-		if (__KFLAG_TEST(flags,
+		if (FLAG_TEST(flags,
 			PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE))
 		{
 			objectCache = cachePool.createCache(sizeof(listNodeS));

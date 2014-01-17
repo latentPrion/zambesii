@@ -193,7 +193,7 @@ zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerDevices(
 		source = timers.getNextItem(handle))
 	{
 		// Must meet all of the criteria passed to us.
-		if (__KFLAG_TEST(flags, TIMERCTL_FILTER_FLAGS_SKIP_LATCHED))
+		if (FLAG_TEST(flags, TIMERCTL_FILTER_FLAGS_SKIP_LATCHED))
 		{
 			if (source->getLatchState((floodplainnStreamC **)&owner)) {
 				continue;
@@ -275,7 +275,7 @@ error_t zkcmTimerControlModC::unregisterTimerDevice(
 {
 	void	**latchedStream;
 
-	if (!__KFLAG_TEST(flags, TIMERCTL_UNREGISTER_FLAGS_FORCE))
+	if (!FLAG_TEST(flags, TIMERCTL_UNREGISTER_FLAGS_FORCE))
 	{
 		if (timer->getLatchState((floodplainnStreamC **)&latchedStream))
 		{

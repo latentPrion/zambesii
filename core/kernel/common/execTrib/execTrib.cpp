@@ -20,7 +20,7 @@ error_t execTribC::initialize(void)
 	};
 
 	parsers[0].desc = &elfParser;
-	__KFLAG_SET(parsers[0].flags, EXECTRIB_PARSER_FLAGS_STATIC);
+	FLAG_SET(parsers[0].flags, EXECTRIB_PARSER_FLAGS_STATIC);
 	return ERROR_SUCCESS;
 }
 

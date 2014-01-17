@@ -154,7 +154,7 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 	objectS			*tmp=NULL;
 	sarch_t			localFlush;
 
-	localFlush = __KFLAG_TEST(flags, SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY);
+	localFlush = FLAG_TEST(flags, SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY);
 
 	partialList.lock.acquire();
 

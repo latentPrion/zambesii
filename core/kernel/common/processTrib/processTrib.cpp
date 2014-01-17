@@ -110,7 +110,7 @@ error_t processTribC::getDriverExecutableFormat(
 	ret = floodplainn.getDevice(fullName, &tmpDev);
 	if (ret != ERROR_SUCCESS) { return ERROR_UNKNOWN; };
 
-	if (!tmpDev->driverDetected || tmpDev->driver == NULL)
+	if (!tmpDev->driverDetected || tmpDev->driverInstance == NULL)
 		{ return ERROR_UNINITIALIZED; };
 
 	if (tmpDev->isKernelDriver)
@@ -353,7 +353,7 @@ void processTribC::commonEntry(void *)
 	myResponse(DONT_SEND_RESPONSE);
 
 	// If the process was spawned with DORMANT set, dormant it now.
-	if (__KFLAG_TEST(self->parent->flags, PROCESS_FLAGS_SPAWNED_DORMANT))
+	if (FLAG_TEST(self->parent->flags, PROCESS_FLAGS_SPAWNED_DORMANT))
 		{ taskTrib.dormant(self->getFullId()); };
 
 	loadContextAndJump(&context);
@@ -441,24 +441,51 @@ error_t processTribC::spawnDriver(
 	};
 
 	/**	FIXME:
-	 * In reality, we are supposed to call on the driver search service to
-	 * first determine if a driver can be found for this device, and if so,
-	 * whether the driver needs to be spawned as a userspace or kernelspace
-	 * process, and then allocate the correct type of PCB object.
-	 *
-	 * For now, we just always spawn a kernelspace process because we don't
-	 * even support userspace driver processes as yet anyway.
+	 * Problem here is that "commandLine" could contain components other
+	 * than the device's VFS path, such as...actual command line arguments.
+	 * Solution would be to isolate the command line parsing code out of
+	 * the process object, so we can call it in other code modules as well.
 	 **/
 	// Verify that the device exists.
 	if (!deviceExists(commandLine, &dev))
 		{ return ERROR_RESOURCE_UNAVAILABLE; };
 
+	// Verify that a driver has been detected for the device.
+	if (!dev->driverDetected) { return SPAWNDRIVER_STATUS_NO_DRIVER; };
+	// Verify that caller has called loadDriverReq() first.
+	if (floodplainn.findDriver(dev->driverFullName, &drv) != ERROR_SUCCESS)
+	{
+		printf(WARNING PROCTRIB"spawnDriver: %s: Must successfully "
+			"call loadDriver first.\n",
+			commandLine);
+
+		return ERROR_UNINITIALIZED;
+	};
+
+	/* Look through the instances attached to the driver for a
+	 * driver instance that matches the NUMA domain of the device. If we
+	 * find one, it means that the driver process has already been spawned.
+	 **/
+	for (uarch_t i=0; i<drv->nInstances; i++)
+	{
+		if (drv->instances[i].bankId == dev->bankId)
+		{
+			// Set driverInstance.
+			dev->driverInstance = &drv->instances[i];
+			*retProcess = (driverProcessC *)processTrib.getStream(
+				dev->driverInstance->pid);
+
+			return ERROR_SUCCESS;
+		};
+	};
+
+	// Else, we should proceed to spawn a process for the driver.
 	newProcess = new driverProcessC(
 		newProcessId, parentThread->getFullId(),
 		(dev->isKernelDriver)
 			? PROCESS_EXECDOMAIN_KERNEL
 			: PROCESS_EXECDOMAIN_USER,
-		dev->bankId,
+		dev->bankId, drv,
 		privateData);
 
 	if (newProcess.get() == NULL)
@@ -467,8 +494,8 @@ error_t processTribC::spawnDriver(
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	bitmapC		affinity;
-	//numaCpuBankC	*ncb;
+	bitmapC			affinity;
+	//numaCpuBankC		*ncb;
 
 	// FIXME: Initialize the BMP to the device's affine bank.
 	// Get the device's object
@@ -483,35 +510,12 @@ error_t processTribC::spawnDriver(
 	ret = newProcess->initialize(commandLine, environment, &affinity);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	// Verify that a driver has been detected for the device.
-	if (!dev->driverDetected) { return SPAWNDRIVER_STATUS_NO_DRIVER; };
-	// Verify that a driver has been loaded for the device.
-	if (dev->driver == NULL)
-	{
-		// Force caller to call loadDriverReq() first.
-		if (floodplainn.findDriver(dev->driverFullName, &drv)
-			!= ERROR_SUCCESS)
-		{
-			printf(WARNING PROCTRIB"spawnDriver: %s: Must "
-				"call loadDriver first.\n",
-				commandLine);
-
-			return ERROR_UNINITIALIZED;
-		};
-
-		dev->driver = drv;
-	};
-
 	// Add the new process to the process list.
 	processes.setSlot(newProcessId, newProcess.get());
 
 	// Spawn the first thread. Pass on the DORMANT flag if set.
-	if (__KFLAG_TEST(flags, SPAWNPROC_FLAGS_DORMANT))
-	{
-		__KFLAG_SET(
-			newProcess->flags,
-			PROCESS_FLAGS_SPAWNED_DORMANT);
-	};
+	if (FLAG_TEST(flags, SPAWNPROC_FLAGS_DORMANT))
+		{ FLAG_SET(newProcess->flags, PROCESS_FLAGS_SPAWNED_DORMANT); };
 
 	// All drivers are inherently realtime.
 	ret = newProcess->spawnThread(
@@ -528,6 +532,10 @@ error_t processTribC::spawnDriver(
 		processes.clearSlot(newProcessId);
 		return ret;
 	};
+
+	// Add new driver instance to driver's instance list.
+	dev->driverInstance = drv->addInstance(
+		dev->bankId, firstThread->getFullId());
 
 	printf(NOTICE PROCTRIB"spawnDriver: New driver spawned, tid = 0x%x.\n",
 		firstThread->getFullId());
@@ -697,7 +705,7 @@ error_t *processTribC::spawnStream(
 	newProc->execDomain = execDomain;
 
 	// Deal with affinity for the new process.
-	if (__KFLAG_TEST(flags, PROCESSTRIB_SPAWN_FLAGS_PINHERIT_AFFINITY))
+	if (FLAG_TEST(flags, PROCESSTRIB_SPAWN_FLAGS_PINHERIT_AFFINITY))
 	{
 		// Inherit affinity from spawning process.
 		*err = resizeAndMergeBitmaps(
@@ -705,7 +713,7 @@ error_t *processTribC::spawnStream(
 			&cpuTrib.getCurrentCpuStream()
 				->taskStream.getCurrentTask()->parent->cpuAffinity);
 	}
-	else if (__KFLAG_TEST(flags, PROCESSTRIB_SPAWN_FLAGS_STINHERIT_AFFINITY))
+	else if (FLAG_TEST(flags, PROCESSTRIB_SPAWN_FLAGS_STINHERIT_AFFINITY))
 	{
 		// Inherit affinity from spawning thread.
 		*err = resizeAndMergeBitmaps(

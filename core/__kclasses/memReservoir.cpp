@@ -157,14 +157,14 @@ void memReservoirC::free(void *_mem)
 		return;
 	};
 
-	if (__KFLAG_TEST(
+	if (FLAG_TEST(
 		(mem->magic & RESERVOIR_FLAGS_MASK), RESERVOIR_FLAGS_STREAM))
 	{
 		sourceStream->memFree(mem);
 		return;
 	};
 
-	if (__KFLAG_TEST(
+	if (FLAG_TEST(
 		(mem->magic & RESERVOIR_FLAGS_MASK), RESERVOIR_FLAGS___KBOG))
 	{
 		if (__kbog == NULL) {

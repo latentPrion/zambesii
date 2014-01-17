@@ -60,7 +60,7 @@
 #define x86IOAPIC_TRIGGMODE_EDGE		0x0
 #define x86IOAPIC_TRIGGMODE_LEVEL		0x1
 
-// Just set with __KFLAG_SET()/__KFLAG_UNSET().
+// Just set with FLAG_SET()/FLAG_UNSET().
 #define x86IOAPIC_IRQSTATE_MASKED		(1<<16)
 
 #define x86IOAPIC_IRQTABLE_SETDEST(__d)		(__d << 24)

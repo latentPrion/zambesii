@@ -43,11 +43,11 @@ void recursiveLockC::acquire(void)
 			 * lock's acquire.
 			 **/
 #endif
-			if (__KFLAG_TEST(
+			if (FLAG_TEST(
 				taskId.lock.flags,
 				LOCK_FLAGS_IRQS_WERE_ENABLED))
 			{
-				__KFLAG_SET(
+				FLAG_SET(
 					flags,
 					LOCK_FLAGS_IRQS_WERE_ENABLED);
 			};
@@ -98,9 +98,9 @@ void recursiveLockC::release(void)
 	// If we're releasing the lock completely, open it up for other tasks.
 	if (lock == 0)
 	{
-		if (__KFLAG_TEST(flags, LOCK_FLAGS_IRQS_WERE_ENABLED))
+		if (FLAG_TEST(flags, LOCK_FLAGS_IRQS_WERE_ENABLED))
 		{
-			__KFLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
+			FLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
 #if __SCALING__ >= SCALING_SMP
 			enableIrqs = 1;
 		};

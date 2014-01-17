@@ -60,7 +60,7 @@ static void rDumpSrat(void)
 				cpuEntry->domain0
 					| (cpuEntry->domain1 & 0xFFFFFF00),
 				cpuEntry->lapicId,
-				((__KFLAG_TEST(
+				((FLAG_TEST(
 					cpuEntry->flags,
 					ACPI_SRAT_CPU_FLAGS_ENABLED))
 					? "yes" : "no"));
@@ -85,11 +85,11 @@ static void rDumpSrat(void)
 				nMemEntries,
 				memEntry->domain0
 				| (memEntry->domain1 << 16),
-				((__KFLAG_TEST(
+				((FLAG_TEST(
 					memEntry->flags,
 					ACPI_SRAT_MEM_FLAGS_ENABLED))
 					? "yes" : "no"),
-				((__KFLAG_TEST(
+				((FLAG_TEST(
 					memEntry->flags,
 					ACPI_SRAT_MEM_FLAGS_HOTPLUG))
 					? "yes" : "no"),
@@ -192,7 +192,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	 **/
 	DO_OR_DIE(__kdebug, initialize(), ret);
 	devMask = __kdebug.tieTo(/*DEBUGPIPE_DEVICE_BUFFER |*/ DEBUGPIPE_DEVICE1);
-	if (!__KFLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
+	if (!FLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
 		printf(WARNING ORIENT"No debug buffer allocated.\n");
 	};
 

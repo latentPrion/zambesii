@@ -51,7 +51,7 @@ int	i=0;
 	while (rmadt != NULL)
 	{
 i++;
-if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
+if (!FLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
 {
 	printf(NOTICE"CPU %d: madt at 0x%p.\n", cpuTrib.getCurrentCpuStream()->cpuId, rmadt);
 };
@@ -61,7 +61,7 @@ if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
 		rmadt = acpiRsdt::getNextMadt(
 			rsdt, &context, &handle);
 	};
-if (!__KFLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
+if (!FLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
 {
 	asm volatile("cli\n\thlt\n\t");
 };
@@ -255,7 +255,7 @@ void x86LapicC::lintS::lintEnable(cpuStreamC *parent, ubit8 lint)
 		(lint == 0) ? x86LAPIC_REG_LVT_LINT0 : x86LAPIC_REG_LVT_LINT1);
 
 	// Just unset the mask bit and rewrite what was already there.
-	__KFLAG_UNSET(outval, x86LAPIC_LVT_FLAGS_DISABLED);
+	FLAG_UNSET(outval, x86LAPIC_LVT_FLAGS_DISABLED);
 
 	parent->lapic.write32(
 		(lint == 0) ? x86LAPIC_REG_LVT_LINT0 : x86LAPIC_REG_LVT_LINT1,
@@ -271,7 +271,7 @@ void x86LapicC::lintS::lintDisable(cpuStreamC *parent, ubit8 lint)
 		(lint == 0) ? x86LAPIC_REG_LVT_LINT0 : x86LAPIC_REG_LVT_LINT1);
 
 	// Just set the mask bit and rewrite what was already there.
-	__KFLAG_SET(outval, x86LAPIC_LVT_FLAGS_DISABLED);
+	FLAG_SET(outval, x86LAPIC_LVT_FLAGS_DISABLED);
 
 	parent->lapic.write32(
 		(lint == 0) ? x86LAPIC_REG_LVT_LINT0 : x86LAPIC_REG_LVT_LINT1,

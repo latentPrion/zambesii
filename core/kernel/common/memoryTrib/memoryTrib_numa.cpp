@@ -41,7 +41,7 @@
 
 // The __kspace allocatable memory range's containing memory bank.
 static numaMemoryBankC			__kspaceMemoryBank(
-	CHIPSET_MEMORY_NUMA___KSPACE_BANKID);
+	CHIPSET_NUMA___KSPACE_BANKID);
 
 // The pointer node on the __kspace bank that points to the __kspace mem range.
 static numaMemoryBankC::rangePtrS	__kspaceRangePtrMem;
@@ -71,15 +71,15 @@ error_t memoryTribC::__kspaceInitialize(void)
 	 * bank. Then we add the __kspace memory region to the bank.
 	 **/
 #if __SCALING__ < SCALING_CC_NUMA
-	defaultMemoryBank.rsrc = CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+	defaultMemoryBank.rsrc = CHIPSET_NUMA___KSPACE_BANKID;
 #else
 	__korientationThread.getTaskContext()->defaultMemoryBank.rsrc =
-		CHIPSET_MEMORY_NUMA___KSPACE_BANKID;
+		CHIPSET_NUMA___KSPACE_BANKID;
 #endif
 
 	// Next give it the pre-allocated __kspace memory bank.
 	ret = createBank(
-		CHIPSET_MEMORY_NUMA___KSPACE_BANKID, &__kspaceMemoryBank);
+		CHIPSET_NUMA___KSPACE_BANKID, &__kspaceMemoryBank);
 
 	if (ret != ERROR_SUCCESS) {
 		return ret;
@@ -93,7 +93,7 @@ error_t memoryTribC::__kspaceInitialize(void)
 	 * Do not explicitly call initialize() on the numaMemoryRangeC object
 	 * before giving it to the __kspace numaMemoryBankC object.
 	 **/
-	ret = getBank(CHIPSET_MEMORY_NUMA___KSPACE_BANKID)
+	ret = getBank(CHIPSET_NUMA___KSPACE_BANKID)
 		->__kspaceAddMemoryRange(
 			&__kspaceRangePtrMem,
 			&__kspaceMemoryRange,
@@ -180,7 +180,7 @@ void memoryTribC::destroyBank(numaBankId_t id)
 	nmb = getBank(id);
 	memoryBanks.removeItem(id);
 	nBanks--;
-	if (id != CHIPSET_MEMORY_NUMA___KSPACE_BANKID && nmb != NULL) {
+	if (id != CHIPSET_NUMA___KSPACE_BANKID && nmb != NULL) {
 		processTrib.__kgetStream()->memoryStream.memFree(nmb);
 	};
 }

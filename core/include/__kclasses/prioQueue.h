@@ -285,7 +285,7 @@ error_t prioQueueC<T>::queueC<T2>::insert(T2 *item, ubit32 opt)
 
 	q.lock.acquire();
 
-	if (__KFLAG_TEST(opt, PRIOQUEUE_INSERT_FRONT))
+	if (FLAG_TEST(opt, PRIOQUEUE_INSERT_FRONT))
 	{
 		// safe.
 		tmp->next = q.rsrc.head;

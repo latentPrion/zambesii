@@ -35,7 +35,7 @@ parentCpu(parent)
 	/* Ensure that the BSP CPU's pointer to __korientation isn't trampled
 	 * by the general case constructor.
 	 **/
-	if (!__KFLAG_TEST(parentCpu->flags, CPUSTREAM_FLAGS_BSP)) {
+	if (!FLAG_TEST(parentCpu->flags, CPUSTREAM_FLAGS_BSP)) {
 		currentTask = &__kcpuPowerOnThread;
 	};
 }
@@ -234,7 +234,7 @@ void taskStreamC::pull(void)
 		};
 
 		// Else set the CPU to a low power state.
-		if (/*!__KFLAG_TEST(parentCpu->flags, CPUSTREAM_FLAGS_BSP)*/ 0)
+		if (/*!FLAG_TEST(parentCpu->flags, CPUSTREAM_FLAGS_BSP)*/ 0)
 		{
 			printf(NOTICE TASKSTREAM"%d: Entering C1.\n",
 				parentCpu->cpuId);
@@ -282,7 +282,7 @@ taskC* taskStreamC::pullRealTimeQ(void)
 		};
 
 		// Make sure the scheduler isn't waiting for this task.
-		if (__KFLAG_TEST(
+		if (FLAG_TEST(
 			ret->schedFlags, TASK_SCHEDFLAGS_SCHED_WAITING))
 		{
 			status = schedule(ret);
@@ -306,7 +306,7 @@ taskC* taskStreamC::pullRoundRobinQ(void)
 		};
 
 		// Make sure the scheduler isn't waiting for this task.
-		if (__KFLAG_TEST(
+		if (FLAG_TEST(
 			ret->schedFlags, TASK_SCHEDFLAGS_SCHED_WAITING))
 		{
 			status = schedule(ret);

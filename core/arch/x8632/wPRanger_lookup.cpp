@@ -80,7 +80,7 @@ status_t walkerPageRanger::lookup(
 				*paddr = (l2Entry >> 12);
 				*paddr <<= 12;
 
-				if (__KFLAG_TEST(*flags, PAGEATTRIB_PRESENT)) {
+				if (FLAG_TEST(*flags, PAGEATTRIB_PRESENT)) {
 					ret = WPRANGER_STATUS_BACKED;
 				}
 				else
@@ -116,7 +116,7 @@ status_t walkerPageRanger::lookup(
 			*paddr = (l1Entry >> 12);
 			*paddr <<= 12;
 
-			if (__KFLAG_TEST(*flags, PAGEATTRIB_PRESENT)) {
+			if (FLAG_TEST(*flags, PAGEATTRIB_PRESENT)) {
 				ret = WPRANGER_STATUS_BACKED;
 			}
 			else

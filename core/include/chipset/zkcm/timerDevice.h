@@ -90,7 +90,7 @@ public:
 		if (!isEnabled()) { return enable(); };
 
 		state.lock.acquire();
-		__KFLAG_SET(
+		FLAG_SET(
 			state.rsrc.flags,
 			ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
 
@@ -103,7 +103,7 @@ public:
 	void softDisable(void)
 	{
 		state.lock.acquire();
-		__KFLAG_UNSET(
+		FLAG_UNSET(
 			state.rsrc.flags,
 			ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
 
@@ -118,7 +118,7 @@ public:
 		flags = state.rsrc.flags;
 		state.lock.release();
 
-		return __KFLAG_TEST(flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
+		return FLAG_TEST(flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
 	}
 
 	sarch_t isSoftEnabled(void)
@@ -129,7 +129,7 @@ public:
 		flags = state.rsrc.flags;
 		state.lock.release();
 
-		return __KFLAG_TEST(
+		return FLAG_TEST(
 			flags, ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
 	}
 	// Call disable() before setting timer options, then enable() again.

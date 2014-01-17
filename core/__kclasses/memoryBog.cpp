@@ -165,7 +165,7 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 	};
 
 	// If we reach here, there isn't enough space. Get new pool, try again.
-	if (!__KFLAG_TEST(flags, MEMBOG_NO_EXPAND_ON_FAIL))
+	if (!FLAG_TEST(flags, MEMBOG_NO_EXPAND_ON_FAIL))
 	{
 		blockTmp = getNewBlock();
 		if (blockTmp == NULL)

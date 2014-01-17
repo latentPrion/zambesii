@@ -24,7 +24,7 @@ error_t zkcmTimerDeviceC::latch(class floodplainnStreamC *stream)
 {
 	state.lock.acquire();
 
-	if (__KFLAG_TEST(
+	if (FLAG_TEST(
 		state.rsrc.flags,
 		ZKCM_TIMERDEV_STATE_FLAGS_LATCHED))
 	{
@@ -33,7 +33,7 @@ error_t zkcmTimerDeviceC::latch(class floodplainnStreamC *stream)
 	};
 
 	state.rsrc.latchedStream = stream;
-	__KFLAG_SET(
+	FLAG_SET(
 		state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_LATCHED);
 
 	state.lock.release();
@@ -53,7 +53,7 @@ void zkcmTimerDeviceC::unlatch(void)
 	{
 		state.lock.acquire();
 
-		__KFLAG_UNSET(
+		FLAG_UNSET(
 			state.rsrc.flags,
 			ZKCM_TIMERDEV_STATE_FLAGS_LATCHED);
 
@@ -65,7 +65,7 @@ sarch_t zkcmTimerDeviceC::getLatchState(class floodplainnStreamC **latchedStream
 {
 	state.lock.acquire();
 
-	if (__KFLAG_TEST(
+	if (FLAG_TEST(
 		state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_LATCHED))
 	{
 		*latchedStream = state.rsrc.latchedStream;

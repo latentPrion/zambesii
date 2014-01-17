@@ -10,10 +10,12 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
-fplainn::deviceC		byId(0, CC"by-id-tree"),
-				byName(0, CC"by-name-tree"),
-				byClass(0, CC"by-class-tree"),
-				byPath(0, CC"by-path-tree");
+fplainn::deviceC		byId(NUMABANKID_INVALID, 0, CC"by-id-tree"),
+				byName(NUMABANKID_INVALID, 0, CC"by-name-tree"),
+				byPath(NUMABANKID_INVALID, 0, CC"by-path-tree"),
+				byClass(
+					NUMABANKID_INVALID, 0,
+					CC"by-class-tree");
 
 error_t floodplainnC::initializeReq(initializeReqCallF *callback)
 {
@@ -123,7 +125,7 @@ static inline sarch_t isByIdPath(utf8Char *path)
 }
 
 error_t floodplainnC::createDevice(
-	utf8Char *parentId, ubit16 childId, ubit32 /*flags*/,
+	utf8Char *parentId, numaBankId_t bid, ubit16 childId, ubit32 /*flags*/,
 	fplainn::deviceC **device
 	)
 {
@@ -146,7 +148,7 @@ error_t floodplainnC::createDevice(
 	ret = vfsTrib.getFvfs()->getPath(parentId, &parentTag);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	newDev = new fplainn::deviceC(childId, NULL);
+	newDev = new fplainn::deviceC(bid, childId, NULL);
 	if (newDev == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	utf8Char	tmpBuff[FVFS_TAG_NAME_MAXLEN];
@@ -221,10 +223,14 @@ error_t floodplainnC::enumerateBaseDevices(void)
 	fplainn::deviceC		*vchipset, *ramdisk;
 	udi_instance_attr_list_t	tmp;
 
-	ret = createDevice(CC"by-id", 0, 0, &ramdisk);
+	ret = createDevice(
+		CC"by-id", CHIPSET_NUMA_SHBANKID, 0, 0, &ramdisk);
+
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = createDevice(CC"by-id", 1, 0, &vchipset);
+	ret = createDevice(
+		CC"by-id", CHIPSET_NUMA_SHBANKID, 1, 0, &vchipset);
+
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	/* Create the attributes for the ramdisk.
@@ -255,7 +261,7 @@ error_t floodplainnC::enumerateBaseDevices(void)
 	ret = vchipset->setEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ramdisk->bankId = vchipset->bankId = CHIPSET_MEMORY_NUMA_SHBANKID;
+	ramdisk->bankId = vchipset->bankId = CHIPSET_NUMA_SHBANKID;
 	return ERROR_SUCCESS;
 }
 
@@ -265,7 +271,9 @@ error_t floodplainnC::enumerateChipsets(void)
 	fplainn::deviceC		*chipset;
 	udi_instance_attr_list_t	tmp;
 
-	ret = createDevice(CC"by-id", 2, 0, &chipset);
+	ret = createDevice(
+		CC"by-id", CHIPSET_NUMA_SHBANKID, 2, 0, &chipset);
+
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	/* Generic enumeration attributes.
@@ -321,7 +329,7 @@ error_t floodplainnC::enumerateChipsets(void)
 	tmp.attr_value[0] = '\0';
 	ret = chipset->setEnumerationAttribute(&tmp);
 
-	chipset->bankId = CHIPSET_MEMORY_NUMA_SHBANKID;
+	chipset->bankId = CHIPSET_NUMA_SHBANKID;
 	return ERROR_SUCCESS;
 }
 

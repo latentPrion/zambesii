@@ -227,7 +227,7 @@ error_t ibmPc_rtc_initialize(void)
 	rtccmos::writeAddressRegister(RTC_REG_STATUS1);
 	status1 = rtccmos::readDataRegister();
 	// Clear all IRQs.
-	__KFLAG_UNSET(status1,
+	FLAG_UNSET(status1,
 		RTC_STATUS1_FLAGS_PERIODIC_IRQ_ENABLED
 		| RTC_STATUS1_FLAGS_ALARM_IRQ_ENABLED
 		| RTC_STATUS1_FLAGS_UPDATEEND_IRQ_ENABLED);
@@ -240,14 +240,14 @@ error_t ibmPc_rtc_initialize(void)
 
 
 	rtccmos24HourTime =
-		__KFLAG_TEST(status1, RTC_STATUS1_FLAGS_TIME_FORMAT_24HRS);
+		FLAG_TEST(status1, RTC_STATUS1_FLAGS_TIME_FORMAT_24HRS);
 
 	if (!rtccmos24HourTime) {
 		printf(ERROR RTCCMOS"Chip reports 12 hour format time.\n");
 	};
 
 	rtccmosBcdDateTime =
-		!__KFLAG_TEST(status1, RTC_STATUS1_FLAGS_DATETIME_FORMAT_BIN);
+		!FLAG_TEST(status1, RTC_STATUS1_FLAGS_DATETIME_FORMAT_BIN);
 
 	if (!rtccmosBcdDateTime)
 	{

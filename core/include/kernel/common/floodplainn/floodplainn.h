@@ -91,8 +91,8 @@ public:
 	 * caller.
 	 **/
 	error_t createDevice(
-		utf8Char *parentId, ubit16 childId, ubit32 flags,
-		fplainn::deviceC **device);
+		utf8Char *parentId, numaBankId_t bid, ubit16 childId,
+		ubit32 flags, fplainn::deviceC **device);
 
 	// Removes a given child from a given parent.
 	error_t removeDevice(utf8Char *parentId, ubit32 childId, ubit32 flags);

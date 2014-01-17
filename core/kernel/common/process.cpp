@@ -592,15 +592,15 @@ error_t processStreamC::spawnThread(
 		(*newThread)->stack0,
 		(*newThread)->stack1,
 		this->execDomain,
-		__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD));
+		FLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD));
 
 	/* First thread in a process is always scheduled immediately; DORMANT
 	 * is handled by the kernel's common entry point for such threads. For
 	 * other threads (which do not pass through the common entry point),
 	 * DORMANT is handled right here.
 	 **/
-	if (!__KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_DORMANT)
-		|| __KFLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD))
+	if (!FLAG_TEST(flags, SPAWNTHREAD_FLAGS_DORMANT)
+		|| FLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD))
 	{
 		return taskTrib.schedule(*newThread);
 	} else {

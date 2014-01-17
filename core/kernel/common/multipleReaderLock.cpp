@@ -32,7 +32,7 @@ void multipleReaderLockC::readRelease(uarch_t _flags)
 {
 #if __SCALING__ >= SCALING_SMP
 	// See if there is a writer waiting on the lock.
-	if (!__KFLAG_TEST(
+	if (!FLAG_TEST(
 		atomicAsm::read(&flags), MRLOCK_FLAGS_WRITE_REQUEST))
 	{
 		/* If there is no writer waiting, acquire the lock and then
@@ -53,7 +53,7 @@ void multipleReaderLockC::readRelease(uarch_t _flags)
 		->nLocksHeld--;
 
 	// Test the flags and see whether or not to enable IRQs.
-	if (__KFLAG_TEST(_flags, LOCK_FLAGS_IRQS_WERE_ENABLED)) {
+	if (FLAG_TEST(_flags, LOCK_FLAGS_IRQS_WERE_ENABLED)) {
 		cpuControl::enableInterrupts();
 	};
 }
@@ -64,7 +64,7 @@ void multipleReaderLockC::writeAcquire(void)
 	readerCount.lock.acquire();
 
 #if __SCALING__ >= SCALING_SMP
-	__KFLAG_SET(flags, MRLOCK_FLAGS_WRITE_REQUEST);
+	FLAG_SET(flags, MRLOCK_FLAGS_WRITE_REQUEST);
 
 	/* Spin on reader count until there are no readers left on the
 	 * shared resource.
@@ -85,7 +85,7 @@ void multipleReaderLockC::writeRelease(void)
 	 * the write request flag and release the lock.
 	 **/
 #if __SCALING__ >= SCALING_SMP
-	__KFLAG_UNSET(flags, MRLOCK_FLAGS_WRITE_REQUEST);
+	FLAG_UNSET(flags, MRLOCK_FLAGS_WRITE_REQUEST);
 #endif
 
 	readerCount.lock.release();
@@ -99,7 +99,7 @@ void multipleReaderLockC::readReleaseWriteAcquire(uarch_t rwFlags)
 	readerCount.lock.acquire();
 
 #if __SCALING__ >= SCALING_SMP
-	__KFLAG_SET(flags, MRLOCK_FLAGS_WRITE_REQUEST);
+	FLAG_SET(flags, MRLOCK_FLAGS_WRITE_REQUEST);
 	// Decrement reader count.
 	readerCount.rsrc--;
 

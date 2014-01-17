@@ -140,20 +140,20 @@ static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 				memEntry->domain0
 				| (memEntry->domain1 << 16);
 
-			if (__KFLAG_TEST(
+			if (FLAG_TEST(
 				memEntry->flags,
 				ACPI_SRAT_MEM_FLAGS_ENABLED))
 			{
-				__KFLAG_SET(
+				FLAG_SET(
 					ret->memEntries[currEntry].flags,
 					NUMAMEMMAP_FLAGS_ONLINE);
 			};
 
-			if (__KFLAG_TEST(
+			if (FLAG_TEST(
 				memEntry->flags,
 				ACPI_SRAT_MEM_FLAGS_HOTPLUG))
 			{
-				__KFLAG_SET(
+				FLAG_SET(
 					ret->memEntries[currEntry].flags,
 					NUMAMEMMAP_FLAGS_HOTPLUG);
 			};
@@ -251,7 +251,7 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 	ibmPcBios::executeInterrupt(0x15);
 
 	while ((ibmPcBios_regs::getEax() == 0x534D4150)
-		&& !__KFLAG_TEST(ibmPcBios_regs::getEflags(), (1<<0)))
+		&& !FLAG_TEST(ibmPcBios_regs::getEflags(), (1<<0)))
 	{
 		nEntries++;
 		if (ibmPcBios_regs::getEbx() == 0) {

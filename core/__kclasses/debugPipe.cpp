@@ -69,12 +69,12 @@ uarch_t debugPipeC::tieTo(uarch_t device)
 	error_t			err;
 	uarch_t			ret;
 
-	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
+	if (FLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
 	{
 		if (debugBuff.initialize() == ERROR_SUCCESS)
 		{
 			devices.lock.acquire();
-			__KFLAG_SET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
+			FLAG_SET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
 			devices.lock.release();
 		};
 	};
@@ -104,28 +104,28 @@ uarch_t debugPipeC::untieFrom(uarch_t device)
 	uarch_t		ret;
 	error_t		err;
 
-	if (__KFLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
+	if (FLAG_TEST(device, DEBUGPIPE_DEVICE_BUFFER))
 	{
 		if (debugBuff.shutdown() == ERROR_SUCCESS)
 		{
 			devices.lock.acquire();
-			__KFLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
+			FLAG_UNSET(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER);
 			devices.lock.release();
 		};
 	};
 
 	for (ubit8 i=0; i<4; i++)
 	{
-		if (__KFLAG_TEST(device, (1<<i)))
+		if (FLAG_TEST(device, (1<<i)))
 		{
-			if (!__KFLAG_TEST(devices.rsrc, (1<<i))) {
+			if (!FLAG_TEST(devices.rsrc, (1<<i))) {
 				continue;
 			};
 
 			// Assume that mod exists if its bit is set.
 			err = zkcmCore.debug[i]->shutdown();
 			if (err == ERROR_SUCCESS) {
-				__KFLAG_UNSET(devices.rsrc, (1<<i));
+				FLAG_UNSET(devices.rsrc, (1<<i));
 			}
 			else {
 				// Find some way to warn the user.
@@ -148,7 +148,7 @@ void debugPipeC::refresh(void)
 	// Clear "screen" on each device, whatever that means to that device.
 	for (ubit8 i=0; i<4; i++)
 	{
-		if (__KFLAG_TEST(devices.rsrc, (1<<i))) {
+		if (FLAG_TEST(devices.rsrc, (1<<i))) {
 			zkcmCore.debug[i]->clear();
 		};
 	};
@@ -159,7 +159,7 @@ void debugPipeC::refresh(void)
 	{
 		for (ubit8 i=0; i<4; i++)
 		{
-			if (__KFLAG_TEST(devices.rsrc, (1<<i))) {
+			if (FLAG_TEST(devices.rsrc, (1<<i))) {
 				zkcmCore.debug[i]->syphon(buff, len);
 			};
 		};
@@ -446,7 +446,7 @@ static sarch_t expandPrintfFormatting(
 				switch (*str)
 				{
 				case 'n':
-					__KFLAG_SET(
+					FLAG_SET(
 						*printfFlags,
 						DEBUGPIPE_FLAGS_NOLOG);
 					break;
@@ -514,15 +514,15 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 		return;
 	};
 
-	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
-		&& !__KFLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
+	if (FLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
+		&& !FLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
 	{
 		debugBuff.syphon(convBuff.rsrc, buffLen);
 	};
 
 	for (ubit8 i=0; i<4; i++)
 	{
-		if (__KFLAG_TEST(devices.rsrc, (1<<i))) {
+		if (FLAG_TEST(devices.rsrc, (1<<i))) {
 			zkcmCore.debug[i]->syphon(convBuff.rsrc, buffLen);
 		};
 	};
@@ -560,8 +560,8 @@ void debugPipeC::printf(
 		return;
 	};
 
-	if (__KFLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
-		&& !__KFLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
+	if (FLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
+		&& !FLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
 	{
 		debugBuff.syphon(
 			static_cast<utf8Char *>( buff->rsrc ), buffLen);
@@ -569,7 +569,7 @@ void debugPipeC::printf(
 
 	for (ubit8 i=0; i<4; i++)
 	{
-		if (__KFLAG_TEST(devices.rsrc, (1<<i)))
+		if (FLAG_TEST(devices.rsrc, (1<<i)))
 		{
 			zkcmCore.debug[i]->syphon(
 				static_cast<utf8Char *>( buff->rsrc ), buffLen);

@@ -69,7 +69,7 @@ void *hardwareIdListC::getItem(sarch_t id)
 		return NULL;
 	};
 
-	if (__KFLAG_TEST(arr.rsrc.arr[id].flags, HWIDLIST_FLAGS_INDEX_VALID)) {
+	if (FLAG_TEST(arr.rsrc.arr[id].flags, HWIDLIST_FLAGS_INDEX_VALID)) {
 		ret = arr.rsrc.arr[id].item;
 	};
 
@@ -87,7 +87,7 @@ error_t hardwareIdListC::findFreeIndex(uarch_t *id)
 		i<static_cast<uarch_t>( arr.rsrc.maxAllocatedIndex + 1 );
 		i++)
 	{
-		if (!__KFLAG_TEST(
+		if (!FLAG_TEST(
 			arr.rsrc.arr[i].flags, HWIDLIST_FLAGS_INDEX_VALID))
 		{
 			arr.lock.readRelease(rwFlags);
@@ -124,7 +124,7 @@ void *hardwareIdListC::getLoopItem(sarch_t *context)
 	// 'context' is an index into the array.
 	arr.lock.readAcquire(&rwFlags);
 
-	if (!__KFLAG_TEST(
+	if (!FLAG_TEST(
 		arr.rsrc.arr[*context].flags, HWIDLIST_FLAGS_INDEX_VALID))
 	{
 		arr.lock.readRelease(rwFlags);
@@ -199,7 +199,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 		arr.rsrc.maxIndex = arr.rsrc.maxAllocatedIndex = index;
 		arr.rsrc.arr[index].next = HWIDLIST_INDEX_INVALID;
 		arr.rsrc.arr[index].item = item;
-		__KFLAG_SET(
+		FLAG_SET(
 			arr.rsrc.arr[index].flags,
 			HWIDLIST_FLAGS_INDEX_VALID);
 
@@ -252,7 +252,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 	};
 
 	arr.rsrc.arr[index].item = item;
-	__KFLAG_SET(arr.rsrc.arr[index].flags, HWIDLIST_FLAGS_INDEX_VALID);
+	FLAG_SET(arr.rsrc.arr[index].flags, HWIDLIST_FLAGS_INDEX_VALID);
 
 	arr.lock.writeRelease();
 	return ERROR_SUCCESS;
@@ -282,7 +282,7 @@ void hardwareIdListC::removeItem(sarch_t id)
 			arr.rsrc.maxIndex = HWIDLIST_INDEX_INVALID;
 		};
 
-		__KFLAG_UNSET(
+		FLAG_UNSET(
 			arr.rsrc.arr[id].flags, HWIDLIST_FLAGS_INDEX_VALID);
 
 		arr.lock.writeRelease();
@@ -299,7 +299,7 @@ void hardwareIdListC::removeItem(sarch_t id)
 			};
 
 			arr.rsrc.arr[i].next = arr.rsrc.arr[id].next;
-			__KFLAG_UNSET(
+			FLAG_UNSET(
 				arr.rsrc.arr[id].flags,
 				HWIDLIST_FLAGS_INDEX_VALID);
 

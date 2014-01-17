@@ -17,7 +17,7 @@ void debug::enableDebugExtensions(void)
 		movl	%eax, %cr4\n\t \
 		popl	%eax\n\t");
 
-	__KFLAG_SET(debuggerC::flags, DEBUG_FLAGS_ENABLED);
+	FLAG_SET(debuggerC::flags, DEBUG_FLAGS_ENABLED);
 }
 
 void debug::disableDebugExtensions(void)
@@ -29,12 +29,12 @@ void debug::disableDebugExtensions(void)
 		movl	%eax, %cr4\n\t \
 		popl	%eax\n\t");
 
-	__KFLAG_UNSET(debuggerC::flags, DEBUG_FLAGS_ENABLED);
+	FLAG_UNSET(debuggerC::flags, DEBUG_FLAGS_ENABLED);
 }
 
 sarch_t debug::debugExtensionsEnabled(void)
 {
-	return __KFLAG_TEST(debuggerC::flags, DEBUG_FLAGS_ENABLED);
+	return FLAG_TEST(debuggerC::flags, DEBUG_FLAGS_ENABLED);
 }
 
 static const ubit8 rwxShiftTable[4] = { 16, 20, 24, 28 };
@@ -48,7 +48,7 @@ static void __attribute__((noinline)) setRwxBits(ubit8 breakpoint, ubit8 rwx)
 	 * Converts the rwx flags into flags as specified by the Intel manuals
 	 * for DR7.RW<n>.
 	 **/
-	if (!__KFLAG_TEST(rwx, DEBUG_BREAKPOINT_READ))
+	if (!FLAG_TEST(rwx, DEBUG_BREAKPOINT_READ))
 	{
 		switch (rwx)
 		{

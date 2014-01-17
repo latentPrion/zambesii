@@ -117,7 +117,7 @@ error_t timerStreamC::pullEvent(
 		.getCurrentTaskContext()->messageStream.pullFrom(
 			MSGSTREAM_SUBSYSTEM_TIMER,
 			(messageStreamC::iteratorS *)event,
-			__KFLAG_TEST(
+			FLAG_TEST(
 				flags, TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK)
 					? ZCALLBACK_PULL_FLAGS_DONT_BLOCK : 0);
 
@@ -127,7 +127,7 @@ error_t timerStreamC::pullEvent(
 
 static inline sarch_t isPerCpuTarget(timerStreamC::timerMsgS *request)
 {
-	return __KFLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
+	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
 void *timerStreamC::timerRequestTimeoutNotification(

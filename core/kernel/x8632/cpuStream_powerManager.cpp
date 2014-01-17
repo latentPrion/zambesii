@@ -69,7 +69,7 @@ static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 		if (cpu->lapicId != cpuId) { continue; };
 
 		// Check for on-chip APIC.
-		if (!__KFLAG_TEST(cpu->featureFlags, (1<<9))
+		if (!FLAG_TEST(cpu->featureFlags, (1<<9))
 			&& !(cpu->lapicVersion & 0xF0))
 		{
 			isNewerCpu = 0;

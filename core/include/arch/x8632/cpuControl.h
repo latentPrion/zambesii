@@ -88,7 +88,7 @@ inline sarch_t cpuControl::interruptsEnabled(void)
 		popl %0"
 		:"=g" (flags)
 		);
-	return __KFLAG_TEST(flags, x8632_CPUFLAGS_IF);
+	return FLAG_TEST(flags, x8632_CPUFLAGS_IF);
 }
 
 #endif

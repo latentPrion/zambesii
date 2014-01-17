@@ -58,7 +58,7 @@ void cpuStreamC::baseInit(void)
 		:
 		: "r" (this));
 
-	if (!__KFLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
+	if (!FLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
 	{
 		// Load kernel's main GDT:
 		asm volatile ("lgdt	(x8632GdtPtr)");
