@@ -63,11 +63,24 @@ error_t fplainn::driverC::preallocateInternalBops(uarch_t nInternalBops)
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::deviceC::preallocateRequirements(uarch_t nRequirements)
+error_t fplainn::driverInstanceC::initialize(void)
 {
-	requirements = new utf8Char *[nRequirements];
-	if (requirements == NULL) { return ERROR_MEMORY_NOMEM; };
-	this->nRequirements = nRequirements;
+	if (driver->nParentBops > 0)
+	{
+		parentBopVectors = new parentBopS[driver->nParentBops];
+		if (parentBopVectors == NULL) { return ERROR_MEMORY_NOMEM; };
+
+		memset(
+			parentBopVectors, 0,
+			sizeof(*parentBopVectors) * driver->nParentBops);
+
+		for (uarch_t i=0; i<driver->nParentBops; i++)
+		{
+			parentBopVectors[i].metaIndex =
+				driver->parentBops[i].metaIndex;
+		};
+	};
+
 	return ERROR_SUCCESS;
 }
 
@@ -192,22 +205,25 @@ error_t fplainn::driverC::moduleS::addAttachedRegion(ubit16 regionIndex)
 	return ERROR_SUCCESS;
 }
 
-fplainn::driverInstanceC *fplainn::driverC::addInstance(
-	numaBankId_t bid, processId_t pid
-	)
+error_t fplainn::driverC::addInstance(numaBankId_t bid, processId_t pid)
 {
 	driverInstanceC		*old;
+	error_t			ret;
 
 	old = instances;
 	instances = new driverInstanceC[nInstances + 1];
-	if (instances == NULL) { return NULL; };
+	if (instances == NULL) { printf(CC"huehueue\n");return ERROR_MEMORY_NOMEM; };
 	if (nInstances > 0)
 		{ memcpy(instances, old, nInstances * sizeof(*instances)); };
 
 	delete[] old;
 
-	new (&instances[nInstances++]) driverInstanceC(this, bid, pid);
-	return &instances[nInstances - 1];
+	new (&instances[nInstances]) driverInstanceC(this, bid, pid);
+	ret = instances[nInstances].initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	nInstances++;
+	return ERROR_SUCCESS;
 }
 
 void fplainn::driverC::dump(void)

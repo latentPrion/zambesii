@@ -50,9 +50,11 @@ namespace fplainn
 		deviceC(numaBankId_t bid, ubit16 id, utf8Char *shortName)
 		:
 		id(id), bankId(bid), driverInstance(NULL), instance(NULL),
-		nEnumerationAttrs(0), nInstanceAttrs(0),
+		nEnumerationAttrs(0), nInstanceAttrs(0), nClasses(0),
 		enumerationAttrs(NULL), instanceAttrs(NULL), classes(NULL),
-		driverDetected(0), isKernelDriver(0)
+		driverDetected(0),
+		driverIndex(zudiIndexServer::INDEX_KERNEL),
+		requestedIndex(zudiIndexServer::INDEX_KERNEL)
 		{
 			this->shortName[0] = this->longName[0]
 				= this->driverFullName[0] = '\0';
@@ -75,9 +77,41 @@ namespace fplainn
 
 		error_t setEnumerationAttribute(udi_instance_attr_list_t *attrib);
 
-		error_t preallocateRequirements(uarch_t nRequirements);
-
 		void dumpEnumerationAttributes(void);
+
+	public:
+		ubit16		id;
+		utf8Char	shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
+				longName[ZUDI_MESSAGE_MAXLEN],
+				driverFullName[DRIVER_FULLNAME_MAXLEN];
+
+		/* Vendor name and contact info should be retrieved from the
+		 * driver object, instead of unnecessarily being duplicated.
+		 **/
+		numaBankId_t		bankId;
+		driverInstanceC		*driverInstance;
+		deviceInstanceC		*instance;
+		ubit8			nEnumerationAttrs, nInstanceAttrs,
+					nClasses;
+		udi_instance_attr_list_t
+					**enumerationAttrs, **instanceAttrs;
+		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
+		sbit8			driverDetected;
+		// The index which enumerated this device's driver.
+		zudiIndexServer::indexE	driverIndex, requestedIndex;
+	};
+
+	/**	deviceInstanceC:
+	 * Device-instance specific attributes.
+	 **********************************************************************/
+	class deviceInstanceC
+	{
+	public:
+		deviceInstanceC(deviceC *dev)
+		:
+		device(dev),
+		regions(NULL), channels(NULL)
+		{}
 
 	public:
 		struct regionS
@@ -118,27 +152,9 @@ namespace fplainn
 		};
 
 	public:
-		ubit16		id;
-		utf8Char	shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
-				longName[ZUDI_MESSAGE_MAXLEN];
-
-		/* Vendor name and contact info should be retrieved from the
-		 * driver object, instead of unnecessarily being duplicated.
-		 **/
-		numaBankId_t		bankId;
-		driverInstanceC		*driverInstance;
-		deviceInstanceC		*instance;
-		// The index which enumerated this device's driver.
-		zudiIndexServer::indexE	driverIndex;
-		ubit16			nRequirements;
-		utf8Char		**requirements;
+		deviceC			*device;
 		regionS			*regions;
-		utf8Char		driverFullName[DRIVER_FULLNAME_MAXLEN];
-		ubit8			nEnumerationAttrs, nInstanceAttrs;
-		udi_instance_attr_list_t
-					**enumerationAttrs, **instanceAttrs;
-		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
-		sbit8			driverDetected, isKernelDriver;
+		channelS		*channels;
 	};
 
 	class driverInstanceC;
@@ -164,7 +180,8 @@ namespace fplainn
 		bankId(CHIPSET_NUMA_SHBANKID),
 		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
 		nChildBops(0), nParentBops(0), nInternalBops(0), nInstances(0),
-		instances(NULL), childEnumerationAttrSize(0),
+		instances(NULL), allRequirementsSatisfied(0),
+		childEnumerationAttrSize(0),
 		modules(NULL), regions(NULL), requirements(NULL),
 		metalanguages(NULL), childBops(NULL), parentBops(NULL),
 		internalBops(NULL)
@@ -191,7 +208,7 @@ namespace fplainn
 		error_t preallocateParentBops(uarch_t nParentBops);
 		error_t preallocateInternalBops(uarch_t nInternalBops);
 
-		driverInstanceC *addInstance(numaBankId_t bid, processId_t pid);
+		error_t addInstance(numaBankId_t bid, processId_t pid);
 
 		void dump(void);
 
@@ -258,14 +275,15 @@ namespace fplainn
 		{
 			requirementS(utf8Char *name, ubit32 version)
 			:
-			version(version)
+			fullName(NULL), version(version)
 			{
 				strcpy8(this->name, name);
 			}
 
 			void dump(void);
 
-			utf8Char	name[ZUDI_DRIVER_REQUIREMENT_MAXLEN];
+			utf8Char	name[ZUDI_DRIVER_REQUIREMENT_MAXLEN],
+					*fullName;
 			ubit32		version;
 
 		private:
@@ -423,6 +441,7 @@ namespace fplainn
 		 **/
 		driverInstanceC	*instances;
 
+		sbit8		allRequirementsSatisfied;
 		uarch_t		childEnumerationAttrSize;
 		// Modules for this driver, and their indexes.
 		moduleS		*modules;
@@ -454,20 +473,48 @@ namespace fplainn
 	{
 	public:
 		driverInstanceC(void)
-		: bankId(NUMABANKID_INVALID), pid(PROCID_INVALID),
-		parentBopVector(NULL)
+		:
+		bankId(NUMABANKID_INVALID), pid(PROCID_INVALID),
+		parentBopVectors(NULL)
 		{}
 
 		driverInstanceC(
 			driverC *driver, numaBankId_t bid, processId_t pid)
-		: driver(driver), bankId(bid), pid(pid), parentBopVector(NULL)
+		:
+		driver(driver), bankId(bid), pid(pid), parentBopVectors(NULL)
 		{}
+
+		error_t initialize(void);
+
+	public:
+		void setParentBopVector(
+			ubit16 metaIndex, udi_ops_vector_t *vaddr)
+		{
+			for (uarch_t i=0; i<driver->nParentBops; i++)
+			{
+				if (parentBopVectors[i].metaIndex != metaIndex)
+					{ continue; };
+
+				parentBopVectors[i].opsVector = vaddr;
+				return;
+			};
+		}
+
+	public:
+		struct parentBopS
+		{
+			/* Parent BOps can only be uniquely identified by their
+			 * metalanguage indexes.
+			 **/
+			ubit16			metaIndex;
+			udi_ops_vector_t	*opsVector;
+		};
 
 	public:
 		driverC			*driver;
 		numaBankId_t		bankId;
 		processId_t		pid;
-		udi_ops_vector_t	*parentBopVector;
+		parentBopS		*parentBopVectors;
 	};
 }
 

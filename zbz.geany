@@ -1,0 +1,35 @@
+[file_prefs]
+final_new_line=true
+ensure_convert_new_lines=false
+strip_trailing_spaces=true
+replace_tabs=false
+
+[indentation]
+indent_width=8
+indent_type=1
+indent_hard_tab_width=8
+detect_indent=false
+detect_indent_width=false
+indent_mode=2
+
+[project]
+name=zbz
+base_path=/media/hddExtended/cygwin/osdev/zbz
+description=Zambesii kernel.
+file_patterns=
+
+[long line marker]
+long_line_behaviour=2
+long_line_column=80
+
+[files]
+current_page=5
+FILE_NAME_0=1655;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Fdevice.h;0;8
+FILE_NAME_1=5451;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2Fdevice.cpp;0;8
+FILE_NAME_2=24251;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2Ffloodplainn_zudiIndexServer_backEnd.cpp;0;8
+FILE_NAME_3=2307;C;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FprocessTrib%2FprocessTrib.h;0;8
+FILE_NAME_4=16182;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2FprocessTrib%2FprocessTrib.cpp;0;8
+FILE_NAME_5=0;None;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Flibraries%2Flibzbzcore%2Flibzbzcore.S;0;8
+
+[VTE]
+last_dir=/home/latentprion

@@ -283,6 +283,9 @@ static void fplainnIndexServer_detectDriverReq(
 		return;
 	};
 
+	// Set the requested index
+	dev->requestedIndex = requestData->index;
+
 	// Get the index header for the current selected index.
 	err = zudiIndexes[0]->getHeader(indexHdr.get());
 	if (err != ERROR_SUCCESS)
@@ -451,7 +454,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		myResponse(ERROR_NO_MATCH);
 		dev->driverFullName[0] = '\0';
 		dev->driverDetected = 0;
-		dev->isKernelDriver = 0;
+		dev->driverIndex = zudiIndexServer::INDEX_KERNEL;
 	}
 	else
 	{
@@ -508,7 +511,6 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			dev->longName);
 
 		dev->driverDetected = 1;
-		dev->isKernelDriver = 1;
 		dev->driverIndex = zudiIndexServer::INDEX_KERNEL;
 	};
 
@@ -851,9 +853,12 @@ static void fplainnIndexServer_loadRequirementsReq(
 	if (!dev->driverDetected || dev->driverInstance == NULL)
 		{ myResponse(ERROR_UNINITIALIZED); return; };
 
+	// If all the requirements have been loaded for this
 	drv = dev->driverInstance->driver;
+	if (drv->allRequirementsSatisfied)
+		{ myResponse(ERROR_SUCCESS); return; };
 
-	err = dev->preallocateRequirements(drv->nRequirements);
+	/*err = drvInst->preallocateRequirements();
 	if (err != ERROR_SUCCESS)
 	{
 		printf(ERROR FPLAINNIDX"loadReqmReq: Failed to preallocate "
@@ -861,7 +866,7 @@ static void fplainnIndexServer_loadRequirementsReq(
 
 		myResponse(ERROR_MEMORY_NOMEM);
 		return;
-	};
+	};*/
 
 	for (uarch_t i=0; i<drv->nRequirements; i++)
 	{
@@ -907,15 +912,34 @@ static void fplainnIndexServer_loadRequirementsReq(
 			};
 
 			bPathLen = strlen8(CC metaHdr->basePath);
-			dev->requirements[i] = new utf8Char[
+			drv->requirements[i].fullName = new utf8Char[
 				bPathLen + strlen8(CC metaHdr->shortName) + 2];
 
-			strcpy8(dev->requirements[i], CC metaHdr->basePath);
-			if (bPathLen > 0
-				&& dev->requirements[i][bPathLen - 1] != '/')
-				{ strcat8(dev->requirements[i], CC "/"); };
+			/* We choose to continue to the next requirement
+			 * instead of just returning immediately.
+			 *
+			 * This is because it may be useful to the caller to
+			 * see which requirements /can/ be satisfied, even if
+			 * some inexplicable error occurs before we can process
+			 * all of the requirements.
+			 **/
+			if (drv->requirements[i].fullName == NULL)
+				{ continue; };
 
-			strcat8(dev->requirements[i], CC metaHdr->shortName);
+			strcpy8(
+				drv->requirements[i].fullName,
+				CC metaHdr->basePath);
+
+			if (bPathLen > 0
+				&& drv->requirements[i].fullName[bPathLen -1]
+					!= '/')
+			{
+				strcat8(drv->requirements[i].fullName, CC "/");
+			};
+
+			strcat8(
+				drv->requirements[i].fullName,
+				CC metaHdr->shortName);
 
 			isSatisfied = 1;
 			break;
@@ -935,6 +959,7 @@ static void fplainnIndexServer_loadRequirementsReq(
 		};
 	};
 
+	drv->allRequirementsSatisfied = 1;
 	myResponse(ERROR_SUCCESS);
 }
 

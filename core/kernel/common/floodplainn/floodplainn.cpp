@@ -217,6 +217,35 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 	return ERROR_SUCCESS;
 }
 
+error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
+{
+	instantiateDeviceMsgS		*request;
+	fplainn::deviceC		*dev;
+	error_t				ret;
+
+	if (strlen8(path) >= ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
+		{ return ERROR_INVALID_RESOURCE_NAME; };
+
+	ret = getDevice(path, &dev);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	// Ensure that spawnDriver() has been called beforehand.
+	if (!dev->driverDetected || dev->driverInstance == NULL)
+		{ return ERROR_UNINITIALIZED; };
+
+	request = new instantiateDeviceMsgS(
+		dev->driverInstance->pid,
+		MSGSTREAM_SUBSYSTEM_FLOODPLAINN,
+		MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ,
+		sizeof(*request), 0, privateData);
+
+	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	strcpy8(request->path, path);
+	return messageStreamC::enqueueOnThread(
+		request->header.targetId, &request->header);
+}
+
 error_t floodplainnC::enumerateBaseDevices(void)
 {
 	error_t				ret;

@@ -5,7 +5,7 @@
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 	#include <kernel/common/floodplainn/device.h>
 
-#define FVFS_TAG_NAME_MAXLEN		(16)
+#define FVFS_TAG_NAME_MAXLEN		(32)
 
 /**	EXPLANATION:
  * The Floodplainn VFS is the abstraction used to provide a namespace of

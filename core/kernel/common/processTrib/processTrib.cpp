@@ -113,7 +113,7 @@ error_t processTribC::getDriverExecutableFormat(
 	if (!tmpDev->driverDetected || tmpDev->driverInstance == NULL)
 		{ return ERROR_UNINITIALIZED; };
 
-	if (tmpDev->isKernelDriver)
+	if (tmpDev->driverIndex == zudiIndexServer::INDEX_KERNEL)
 	{
 		*retfmt = processStreamC::RAW;
 		*retEntryPoint = &__klibzbzcoreEntry;
@@ -470,8 +470,6 @@ error_t processTribC::spawnDriver(
 	{
 		if (drv->instances[i].bankId == dev->bankId)
 		{
-			// Set driverInstance.
-			dev->driverInstance = &drv->instances[i];
 			*retProcess = (driverProcessC *)processTrib.getStream(
 				dev->driverInstance->pid);
 
@@ -482,7 +480,7 @@ error_t processTribC::spawnDriver(
 	// Else, we should proceed to spawn a process for the driver.
 	newProcess = new driverProcessC(
 		newProcessId, parentThread->getFullId(),
-		(dev->isKernelDriver)
+		(dev->driverIndex == zudiIndexServer::INDEX_KERNEL)
 			? PROCESS_EXECDOMAIN_KERNEL
 			: PROCESS_EXECDOMAIN_USER,
 		dev->bankId, drv,
@@ -513,6 +511,17 @@ error_t processTribC::spawnDriver(
 	// Add the new process to the process list.
 	processes.setSlot(newProcessId, newProcess.get());
 
+	// Add new driver instance to driver's instance list.
+	ret = drv->addInstance(dev->bankId, newProcessId);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	// Set driver process instance for the device.
+	for (uarch_t i=0; i<drv->nInstances; i++)
+	{
+		if (drv->instances[i].bankId == dev->bankId)
+			{ dev->driverInstance = &drv->instances[i]; };
+	};
+
 	// Spawn the first thread. Pass on the DORMANT flag if set.
 	if (FLAG_TEST(flags, SPAWNPROC_FLAGS_DORMANT))
 		{ FLAG_SET(newProcess->flags, PROCESS_FLAGS_SPAWNED_DORMANT); };
@@ -532,10 +541,6 @@ error_t processTribC::spawnDriver(
 		processes.clearSlot(newProcessId);
 		return ret;
 	};
-
-	// Add new driver instance to driver's instance list.
-	dev->driverInstance = drv->addInstance(
-		dev->bankId, firstThread->getFullId());
 
 	printf(NOTICE PROCTRIB"spawnDriver: New driver spawned, tid = 0x%x.\n",
 		firstThread->getFullId());
@@ -744,7 +749,7 @@ error_t *processTribC::spawnStream(
 
 	// TODO: Handle elevation.
 
-	// 
+	//
 	return newProc;
 }
 #endif

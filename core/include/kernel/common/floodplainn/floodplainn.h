@@ -81,6 +81,24 @@ public:
 		zudiIndexServer::zudiIndexMsgS	info;
 	};
 
+	struct instantiateDeviceMsgS
+	{
+		instantiateDeviceMsgS(
+			processId_t targetPid, ubit16 subsystem, ubit16 function,
+			uarch_t size, uarch_t flags, void *privateData)
+		:
+		header(
+			targetPid, subsystem, function,
+			size, flags, privateData)
+		{
+			path[0] = '\0';
+		}
+
+		messageStreamC::headerS		header;
+		utf8Char			path[
+			ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
+	};
+
 public:
 	const driverInitEntryS *findDriverInitInfo(utf8Char *shortName);
 	const metaInitEntryS *findMetaInitInfo(utf8Char *shortName);
@@ -104,6 +122,10 @@ public:
 	 * by-class or by-path path.
 	 **/
 	error_t getDevice(utf8Char *path, fplainn::deviceC **device);
+
+	// Create an instance of a device in its driver instance's addrspace.
+	#define MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ	(32)
+	error_t instantiateDeviceReq(utf8Char *path, void *privateData);
 
 	/* FVFS listing functions. These allow the device tree to be treated
 	 * like a VFS with "files" that can be listed.

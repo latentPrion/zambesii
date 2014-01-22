@@ -46,6 +46,10 @@ void __klibzbzcoreDriverPath(threadC *self)
 
 		switch (msgIt->header.subsystem)
 		{
+		case MSGSTREAM_SUBSYSTEM_FLOODPLAINN:
+			printf(NOTICE LZBZCORE"instantiateDevice() call.\n");
+			break;
+
 		default:
 			if (callback == NULL)
 			{
@@ -67,18 +71,15 @@ void driverPath0(threadC *self)
 {
 	zudiIndexServer::loadDriverRequirementsReq(
 		self->parent->fullName, newSyscallback(&driverPath1));
-
 }
 
 static void regionThreadEntry(void *);
 void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 {
-	threadC				*self;
-	const driverInitEntryS		*driverInit;
-	fplainn::driverC		*drv;
-	fplainn::deviceC		*dev;
-	fplainn::deviceC::regionS	*myRegion=NULL;
-	error_t				err;
+	threadC					*self;
+	const driverInitEntryS			*driverInit;
+	fplainn::driverC			*drv;
+	fplainn::deviceC			*dev;
 
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
@@ -111,10 +112,96 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 		return;
 	};
 
+	// Set parent bind ops vectors.
+	for (uarch_t i=0; i<drv->nParentBops; i++)
+	{
+		udi_ops_init_t		*tmp;
+		udi_ops_vector_t	*opsVector=NULL;
+
+		for (tmp =driverInit->udi_init_info->ops_init_list;
+			tmp->ops_idx != 0;
+			tmp++)
+		{
+			if (tmp->ops_idx == drv->parentBops[i].opsIndex)
+				{ opsVector = tmp->ops_vector; };
+		};
+
+		if (opsVector == NULL)
+		{
+			printf(ERROR LZBZCORE"driverPath1: Failed to obtain "
+				"ops vector addr for parent bop with meta idx "
+				"%d.\n",
+				drv->parentBops[i].metaIndex);
+
+			return;
+		};
+
+		dev->driverInstance->setParentBopVector(
+			drv->parentBops[i].metaIndex, opsVector);
+	};
+
+	for (uarch_t i=0; i<drv->nParentBops; i++)
+	{
+		printf(NOTICE LZBZCORE"driverPath1: pid 0x%x: pbop meta %d, ops vec 0x%p.\n",
+			self->getFullId(),
+			dev->driverInstance->parentBopVectors[i].metaIndex,
+			dev->driverInstance->parentBopVectors[i].opsVector);
+	};
+
+	self->parent->sendResponse(msgIt->header.error);
+}
+
+void regionThreadEntry(void *)
+{
+	threadC					*self;
+	heapPtrC<messageStreamC::iteratorS>	msgIt;
+	fplainn::driverC			*drv;
+	fplainn::deviceC			*dev;
+	ubit16					regionId=0;
+
+	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask();
+
+	// Not error checking this.
+	assert_fatal(
+		floodplainn.getDevice(self->parent->fullName, &dev)
+		== ERROR_SUCCESS);
+
+	drv = dev->driverInstance->driver;
+	// Find out which region this thread is servicing.
+	for (uarch_t i=0; i<drv->nRegions; i++)
+	{
+		if (dev->instance->regions[i].tid == self->getFullId())
+		{
+			regionId = dev->instance->regions[i].index;
+			break;
+		};
+	};
+
+	msgIt = new messageStreamC::iteratorS;
+	if (msgIt == NULL)
+	{
+		printf(ERROR LZBZCORE"region %d: Failed to allocate msg "
+			"iterator.\n",
+			regionId);
+	};
+
+	printf(NOTICE LZBZCORE"region %d: running, TID 0x%x. Dormanting.\n",
+		regionId, self->getFullId());
+
+	for (;;)
+	{
+		self->getTaskContext()->messageStream.pull(msgIt.get());
+	};
+
+	taskTrib.dormant(self->getFullId());
+}
+
+#if 0
 	/* Initialize regions first; this is the simplest implementation path
 	 * to follow.
 	 **/
-	dev->regions = new fplainn::deviceC::regionS[drv->nRegions];
+	dev->instance->regions = new fplainn::deviceInstanceC::regionS[drv->nRegions];
 	if (dev->regions == NULL)
 	{
 		printf(ERROR LZBZCORE"driverPath1: Failed to allocate device "
@@ -231,54 +318,4 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 			targetRegion->tid, opsVector1, NULL);
 	};
 
-	self->parent->sendResponse(msgIt->header.error);
-}
-
-void regionThreadEntry(void *)
-{
-	threadC					*self;
-	heapPtrC<messageStreamC::iteratorS>	msgIt;
-	fplainn::driverC			*drv;
-	fplainn::deviceC			*dev;
-	ubit16					regionId=0;
-
-	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
-
-	// Not error checking this.
-	assert_fatal(
-		floodplainn.getDevice(self->parent->fullName, &dev)
-		== ERROR_SUCCESS);
-
-	drv = dev->driverInstance->driver;
-	// Find out which region this thread is servicing.
-	for (uarch_t i=0; i<drv->nRegions; i++)
-	{
-		if (dev->regions[i].tid == self->getFullId())
-		{
-			regionId = dev->regions[i].index;
-			break;
-		};
-	};
-
-	assert_fatal(regionId != 0);
-
-	msgIt = new messageStreamC::iteratorS;
-	if (msgIt == NULL)
-	{
-		printf(ERROR LZBZCORE"region %d: Failed to allocate msg "
-			"iterator.\n",
-			regionId);
-	};
-
-	printf(NOTICE LZBZCORE"region %d: running, TID 0x%x. Dormanting.\n",
-		regionId, self->getFullId());
-
-	for (;;)
-	{
-		self->getTaskContext()->messageStream.pull(msgIt.get());
-	};
-
-	taskTrib.dormant(self->getFullId());
-}
-
+#endif
