@@ -246,6 +246,35 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 		request->header.targetId, &request->header);
 }
 
+void floodplainnC::instantiateDeviceAck(
+	processId_t targetId, utf8Char *path, error_t err, void *privateData
+	)
+{
+	threadC					*currThread;
+	floodplainnC::instantiateDeviceMsgS	*response;
+
+	currThread = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask();
+
+	// Only driver processes can call this.
+	if (currThread->parent->getType() != processStreamC::DRIVER)
+		{ return; };
+
+	response = new instantiateDeviceMsgS(
+		targetId,
+		MSGSTREAM_SUBSYSTEM_FLOODPLAINN,
+		MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ,
+		sizeof(*response), 0, privateData);
+
+	if (response == NULL) { return; };
+
+	strcpy8(response->path, path);
+	response->header.error = err;
+
+	messageStreamC::enqueueOnThread(
+		response->header.targetId, &response->header);
+}
+
 error_t floodplainnC::enumerateBaseDevices(void)
 {
 	error_t				ret;

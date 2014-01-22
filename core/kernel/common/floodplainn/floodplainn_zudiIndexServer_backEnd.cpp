@@ -1093,8 +1093,9 @@ static void fplainnIndexServer_newDeviceInd2(
 
 	if (err != ERROR_SUCCESS)
 	{
-		printf(ERROR FPLAINNIDX"spawnDriver: failed because %s.\n",
-			strerror(err));
+		printf(ERROR FPLAINNIDX"newDeviceInd2: spawnDriver failed "
+			"because %s (%d).\n",
+			strerror(err), err);
 
 		myResponse(err);
 		return;
@@ -1108,6 +1109,7 @@ static void fplainnIndexServer_newDeviceInd3(messageStreamC::headerS *response)
 {
 	floodplainnC::zudiIndexMsgS	*originContext;
 	asyncResponseC			myResponse;
+	error_t				err;
 
 	originContext = (floodplainnC::zudiIndexMsgS *)response->privateData;
 	myResponse(originContext);
@@ -1115,6 +1117,44 @@ static void fplainnIndexServer_newDeviceInd3(messageStreamC::headerS *response)
 	if (response->error != ERROR_SUCCESS)
 	{
 		myResponse(response->error);
+		return;
+	};
+
+	originContext->info.action = zudiIndexServer::NDACTION_SPAWN_DRIVER;
+	if (::newDeviceAction == zudiIndexServer::NDACTION_SPAWN_DRIVER)
+		{ myResponse(ERROR_SUCCESS); return; };
+
+	// Finally, we instantiate the device.
+	err = floodplainn.instantiateDeviceReq(
+		originContext->info.path, originContext);
+
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINNIDX"newDeviceInd3: instantiateDevReq "
+			"failed because %s (%d).\n",
+			strerror(err), err);
+
+		myResponse(err); return;
+	};
+
+	myResponse(DONT_SEND_RESPONSE);
+}
+
+static void fplainnIndexServer_newDeviceInd4(
+	floodplainnC::instantiateDeviceMsgS *response
+	)
+{
+
+	floodplainnC::zudiIndexMsgS	*originContext;
+	asyncResponseC			myResponse;
+	originContext =
+		(floodplainnC::zudiIndexMsgS *)response->header.privateData;
+
+	myResponse(originContext);
+
+	if (response->header.error != ERROR_SUCCESS)
+	{
+		myResponse(response->header.error);
 		return;
 	};
 
@@ -1310,6 +1350,13 @@ void floodplainnC::indexReaderEntry(void)
 			case ZUDIIDX_SERVER_LOADDRIVER_REQ:
 				fplainnIndexServer_newDeviceInd2(
 					(floodplainnC::zudiIndexMsgS *)
+						gcb.get());
+
+				break;
+
+			case MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ:
+				fplainnIndexServer_newDeviceInd4(
+					(floodplainnC::instantiateDeviceMsgS *)
 						gcb.get());
 
 				break;

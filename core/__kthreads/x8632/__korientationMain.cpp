@@ -308,7 +308,6 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 			"root device.\n\tError is %s; got as far as %d.\n",
 			strerror(msg->header.error), msg->info.action);
 	};
-
 //	floodplainn.getDevice(CC"by-id/0", &chipsetDev);
 //	chipsetDev->driver->dump();
 

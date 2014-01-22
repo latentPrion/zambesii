@@ -126,6 +126,10 @@ public:
 	// Create an instance of a device in its driver instance's addrspace.
 	#define MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ	(32)
 	error_t instantiateDeviceReq(utf8Char *path, void *privateData);
+	// Called by driver processes to send response after instantiating.
+	void instantiateDeviceAck(
+		processId_t targetId, utf8Char *path, error_t err,
+		void *privateData);
 
 	/* FVFS listing functions. These allow the device tree to be treated
 	 * like a VFS with "files" that can be listed.

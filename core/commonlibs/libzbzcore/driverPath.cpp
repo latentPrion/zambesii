@@ -47,8 +47,28 @@ void __klibzbzcoreDriverPath(threadC *self)
 		switch (msgIt->header.subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_FLOODPLAINN:
-			printf(NOTICE LZBZCORE"instantiateDevice() call.\n");
-			break;
+			switch (msgIt->header.function)
+			{
+			case MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ:
+				floodplainnC::instantiateDeviceMsgS	*msg;
+
+				msg = (floodplainnC::instantiateDeviceMsgS *)
+					msgIt.get();
+
+				printf(NOTICE LZBZCORE"instantiateDevice() "
+					"call (function %d).\n",
+					msg->header.function);
+
+				floodplainn.instantiateDeviceAck(
+					msg->header.sourceId, msg->path,
+					ERROR_SUCCESS,
+					msg->header.privateData);
+
+				continue;
+
+			default:
+				break; // NOP and fallthrough.
+			};
 
 		default:
 			if (callback == NULL)
