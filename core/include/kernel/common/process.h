@@ -55,7 +55,11 @@
 
 #define SPAWNTHREAD_STATUS_NO_PIDS		0x1
 
-namespace fplainn { class driverC; }
+namespace fplainn
+{
+	class driverC;
+	class driverInstanceC;
+}
 
 class processStreamC
 {
@@ -143,7 +147,8 @@ public:
 
 	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)=0;
 	virtual typeE getType(void)=0;
-	virtual fplainn::driverC *getDriver(void) { return NULL; }
+	virtual fplainn::driverInstanceC *getDriverInstance(void)
+		{ return NULL; }
 
 	executableFormatE getExecutableFormat(void) { return executableFormat; }
 
@@ -382,7 +387,7 @@ public:
 		processId_t processId, processId_t parentProcessId,
 		ubit8 execDomain,
 		numaBankId_t numaAddrSpaceBinding,
-		fplainn::driverC *driver,
+		fplainn::driverInstanceC *driverInstance,
 		void *privateData)
 	:
 	containerProcessC(
@@ -392,7 +397,7 @@ public:
 		(void *)0x100000,
 		ARCH_MEMORY___KLOAD_VADDR_BASE - 0x100000 - 0x1000,
 		privateData),
-	driver(driver)
+	driverInstance(driverInstance)
 	{}
 
 	error_t initialize(
@@ -407,10 +412,11 @@ public:
 
 public:
 	virtual typeE getType(void) { return DRIVER; }
-	virtual fplainn::driverC *getDriver(void) { return driver; }
+	virtual fplainn::driverInstanceC *getDriverInstance(void)
+		{ return driverInstance; }
 
 private:
-	fplainn::driverC	*driver;
+	fplainn::driverInstanceC	*driverInstance;
 };
 
 /**	Inline Methods:

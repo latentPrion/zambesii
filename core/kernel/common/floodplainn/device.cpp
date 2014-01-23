@@ -207,19 +207,26 @@ error_t fplainn::driverC::moduleS::addAttachedRegion(ubit16 regionIndex)
 
 error_t fplainn::driverC::addInstance(numaBankId_t bid, processId_t pid)
 {
-	driverInstanceC		*old;
+	driverInstanceC		*old, *newInstance;
 	error_t			ret;
 
-	old = instances;
-	instances = new driverInstanceC[nInstances + 1];
-	if (instances == NULL) { printf(CC"huehueue\n");return ERROR_MEMORY_NOMEM; };
-	if (nInstances > 0)
-		{ memcpy(instances, old, nInstances * sizeof(*instances)); };
+	newInstance = getInstance(bid);
+	if (newInstance == NULL)
+	{
+		old = instances;
+		instances = new driverInstanceC[nInstances + 1];
+		if (instances == NULL) { return ERROR_MEMORY_NOMEM; };
+		if (nInstances > 0) {
+			memcpy(instances, old, nInstances * sizeof(*instances));
+		};
 
-	delete[] old;
+		delete[] old;
 
-	new (&instances[nInstances]) driverInstanceC(this, bid, pid);
-	ret = instances[nInstances].initialize();
+		newInstance = &instances[nInstances];
+	};
+
+	new (newInstance) driverInstanceC(this, bid, pid);
+	ret = newInstance->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	nInstances++;
@@ -228,7 +235,8 @@ error_t fplainn::driverC::addInstance(numaBankId_t bid, processId_t pid)
 
 void fplainn::driverC::dump(void)
 {
-	printf(NOTICE"Driver: %s/%s\n\t(%s).\n\tSupplier %s; Contact %s.\n"
+	printf(NOTICE"Driver: index %d: %s/%s\n\t(%s).\n\tSupplier %s; "
+		"Contact %s.\n"
 		"%d mods, %d rgns, %d req's, %d metas, %d cbops, %d pbops, "
 		"%d ibops.\n",
 		basePath, shortName, longName, supplier, supplierContact,

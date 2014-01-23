@@ -615,7 +615,7 @@ static void fplainnIndexer_loadDriverReq(
 	/* Else, the driver wasn't loaded already. Proceed to fill out the
 	 * driver information object.
 	 **/
-	driver = new fplainn::driverC;
+	driver = new fplainn::driverC(device->driverIndex);
 	indexHdr = new zudi::headerS;
 	driverHdr = new zudi::driver::headerS;
 	tmpString.useArrayDelete = 1;
@@ -798,7 +798,6 @@ static void fplainnIndexServer_loadRequirementsReq(
 {
 	floodplainnC::zudiIndexMsgS	*response;
 	asyncResponseC			myResponse;
-	fplainn::deviceC		*dev;
 	fplainn::driverC		*drv;
 	error_t				err;
 	heapPtrC<zudi::headerS>		indexHdr;
@@ -843,30 +842,11 @@ static void fplainnIndexServer_loadRequirementsReq(
 		myResponse(err); return;
 	};
 
-	err = floodplainn.getDevice(requestData->path, &dev);
-	if (err != ERROR_SUCCESS) { myResponse(err); return; };
+	err = floodplainn.findDriver(requestData->path, &drv);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_UNINITIALIZED); return; };
 
-	/* We can assume that if this function is called on a particular
-	 * device, that that device should have had a driver detected and
-	 * instantiated for it.
-	 **/
-	if (!dev->driverDetected || dev->driverInstance == NULL)
-		{ myResponse(ERROR_UNINITIALIZED); return; };
-
-	// If all the requirements have been loaded for this
-	drv = dev->driverInstance->driver;
 	if (drv->allRequirementsSatisfied)
 		{ myResponse(ERROR_SUCCESS); return; };
-
-	/*err = drvInst->preallocateRequirements();
-	if (err != ERROR_SUCCESS)
-	{
-		printf(ERROR FPLAINNIDX"loadReqmReq: Failed to preallocate "
-			"requirements array.\n");
-
-		myResponse(ERROR_MEMORY_NOMEM);
-		return;
-	};*/
 
 	for (uarch_t i=0; i<drv->nRequirements; i++)
 	{
@@ -948,10 +928,9 @@ static void fplainnIndexServer_loadRequirementsReq(
 		if (!isSatisfied)
 		{
 			printf(ERROR FPLAINNIDX"loadReqmReq: meta requirement "
-				"%s for device %s (using driver %s) could not "
+				"%s for driver %s could not "
 				"be satisfied.\n",
 				drv->requirements[i].name,
-				dev->longName,
 				drv->shortName);
 
 			myResponse(ERROR_NOT_FOUND);

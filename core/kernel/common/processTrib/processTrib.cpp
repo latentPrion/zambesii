@@ -105,15 +105,12 @@ error_t processTribC::getDriverExecutableFormat(
 	)
 {
 	error_t			ret;
-	fplainn::deviceC	*tmpDev;
+	fplainn::driverC	*tmpDrv;
 
-	ret = floodplainn.getDevice(fullName, &tmpDev);
-	if (ret != ERROR_SUCCESS) { return ERROR_UNKNOWN; };
+	ret = floodplainn.findDriver(fullName, &tmpDrv);
+	if (ret != ERROR_SUCCESS) { return ERROR_UNINITIALIZED; };
 
-	if (!tmpDev->driverDetected || tmpDev->driverInstance == NULL)
-		{ return ERROR_UNINITIALIZED; };
-
-	if (tmpDev->driverIndex == zudiIndexServer::INDEX_KERNEL)
+	if (tmpDrv->index == zudiIndexServer::INDEX_KERNEL)
 	{
 		*retfmt = processStreamC::RAW;
 		*retEntryPoint = &__klibzbzcoreEntry;
@@ -418,6 +415,7 @@ error_t processTribC::spawnDriver(
 	threadC				*parentThread, *firstThread;
 	fplainn::deviceC		*dev;
 	fplainn::driverC		*drv;
+	fplainn::driverInstanceC	*drvInstance;
 	heapPtrC<driverProcessC>	newProcess;
 
 	if (commandLine == NULL || retProcess == NULL)
@@ -466,24 +464,29 @@ error_t processTribC::spawnDriver(
 	 * driver instance that matches the NUMA domain of the device. If we
 	 * find one, it means that the driver process has already been spawned.
 	 **/
-	for (uarch_t i=0; i<drv->nInstances; i++)
+	drvInstance = drv->getInstance(dev->bankId);
+	if (drvInstance != NULL)
 	{
-		if (drv->instances[i].bankId == dev->bankId)
-		{
-			*retProcess = (driverProcessC *)processTrib.getStream(
-				dev->driverInstance->pid);
+		*retProcess = (driverProcessC *)processTrib.getStream(
+			drvInstance->pid);
 
-			return ERROR_SUCCESS;
-		};
+		return ERROR_SUCCESS;
 	};
 
-	// Else, we should proceed to spawn a process for the driver.
+	/* Else, we should proceed to spawn a process for the driver. Start by
+	 * adding a new driver instance to driver's instance list.
+	 **/
+	ret = drv->addInstance(dev->bankId, newProcessId);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	drvInstance = drv->getInstance(dev->bankId);
+
 	newProcess = new driverProcessC(
 		newProcessId, parentThread->getFullId(),
-		(dev->driverIndex == zudiIndexServer::INDEX_KERNEL)
+		(drv->index == zudiIndexServer::INDEX_KERNEL)
 			? PROCESS_EXECDOMAIN_KERNEL
 			: PROCESS_EXECDOMAIN_USER,
-		dev->bankId, drv,
+		dev->bankId, drvInstance,
 		privateData);
 
 	if (newProcess.get() == NULL)
@@ -505,22 +508,14 @@ error_t processTribC::spawnDriver(
 	if (ret != ERROR_SUCCESS) { return ret; };
 	affinity.merge(&cpuTrib.onlineCpus);
 
-	ret = newProcess->initialize(commandLine, environment, &affinity);
+	ret = newProcess->initialize(dev->driverFullName, environment, &affinity);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// Add the new process to the process list.
 	processes.setSlot(newProcessId, newProcess.get());
 
-	// Add new driver instance to driver's instance list.
-	ret = drv->addInstance(dev->bankId, newProcessId);
-	if (ret != ERROR_SUCCESS) { return ret; };
-
 	// Set driver process instance for the device.
-	for (uarch_t i=0; i<drv->nInstances; i++)
-	{
-		if (drv->instances[i].bankId == dev->bankId)
-			{ dev->driverInstance = &drv->instances[i]; };
-	};
+	dev->driverInstance = drv->getInstance(dev->bankId);
 
 	// Spawn the first thread. Pass on the DORMANT flag if set.
 	if (FLAG_TEST(flags, SPAWNPROC_FLAGS_DORMANT))

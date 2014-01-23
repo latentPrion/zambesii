@@ -7,7 +7,9 @@
 #include <commonlibs/libzbzcore/libzbzcore.h>
 
 
-void driverPath0(threadC *self);
+static void driverPath0(threadC *self);
+static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg);
+
 void __klibzbzcoreDriverPath(threadC *self)
 {
 //	fplainn::driverC				*driver;
@@ -51,6 +53,7 @@ void __klibzbzcoreDriverPath(threadC *self)
 			{
 			case MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ:
 				floodplainnC::instantiateDeviceMsgS	*msg;
+				error_t					reterr;
 
 				msg = (floodplainnC::instantiateDeviceMsgS *)
 					msgIt.get();
@@ -59,9 +62,11 @@ void __klibzbzcoreDriverPath(threadC *self)
 					"call (function %d).\n",
 					msg->header.function);
 
+				reterr = instantiateDevice(msg);
+
 				floodplainn.instantiateDeviceAck(
 					msg->header.sourceId, msg->path,
-					ERROR_SUCCESS,
+					reterr,
 					msg->header.privateData);
 
 				continue;
@@ -87,28 +92,33 @@ void __klibzbzcoreDriverPath(threadC *self)
 }
 
 static syscallbackDataF driverPath1;
-void driverPath0(threadC *self)
+static void driverPath0(threadC * /*self*/)
 {
 	zudiIndexServer::loadDriverRequirementsReq(
-		self->parent->fullName, newSyscallback(&driverPath1));
+		newSyscallback(&driverPath1));
 }
 
-static void regionThreadEntry(void *);
-void driverPath1(messageStreamC::iteratorS *msgIt, void *)
+static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 {
 	threadC					*self;
+	driverProcessC				*selfProcess;
 	const driverInitEntryS			*driverInit;
 	fplainn::driverC			*drv;
-	fplainn::deviceC			*dev;
+	fplainn::driverInstanceC		*drvInstance;
 
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
+	selfProcess = (driverProcessC *)self->parent;
+
 	// Get the device.
-	assert_fatal(floodplainn.getDevice(self->parent->fullName, &dev)
+	assert_fatal(floodplainn.findDriver(self->parent->fullName, &drv)
 		== ERROR_SUCCESS);
 
-	drv = dev->driverInstance->driver;
+	assert_fatal(
+		(drvInstance = drv->getInstance(
+			selfProcess->addrSpaceBinding)) != NULL);
+
 	printf(NOTICE LZBZCORE"driverPath1: Ret from loadRequirementsReq: %s "
 		"(%d).\n",
 		strerror(msgIt->header.error), msgIt->header.error);
@@ -156,7 +166,7 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 			return;
 		};
 
-		dev->driverInstance->setParentBopVector(
+		drvInstance->setParentBopVector(
 			drv->parentBops[i].metaIndex, opsVector);
 	};
 
@@ -164,14 +174,15 @@ void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	{
 		printf(NOTICE LZBZCORE"driverPath1: pid 0x%x: pbop meta %d, ops vec 0x%p.\n",
 			self->getFullId(),
-			dev->driverInstance->parentBopVectors[i].metaIndex,
-			dev->driverInstance->parentBopVectors[i].opsVector);
+			drvInstance->parentBopVectors[i].metaIndex,
+			drvInstance->parentBopVectors[i].opsVector);
 	};
 
 	self->parent->sendResponse(msgIt->header.error);
 }
 
-void regionThreadEntry(void *)
+static void regionThreadEntry(void *);
+static void regionThreadEntry(void *)
 {
 	threadC					*self;
 	heapPtrC<messageStreamC::iteratorS>	msgIt;
@@ -215,6 +226,12 @@ void regionThreadEntry(void *)
 	};
 
 	taskTrib.dormant(self->getFullId());
+}
+
+static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg)
+{
+	(void)msg;
+	return ERROR_SUCCESS;
 }
 
 #if 0

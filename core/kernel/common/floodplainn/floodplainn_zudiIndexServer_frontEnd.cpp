@@ -54,19 +54,18 @@ error_t zudiIndexServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
-void zudiIndexServer::loadDriverRequirementsReq(
-	utf8Char *devicePath, void *privateData
-	)
+void zudiIndexServer::loadDriverRequirementsReq(void *privateData)
 {
 	heapPtrC<zudiIndexMsgS>	request;
 	taskC			*currTask;
 
-	if (devicePath == NULL) { return; };
-
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	if (currTask->parent->getType() != processStreamC::DRIVER)
+		{ return; };
 
 	request = new zudiIndexMsgS(
-		ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ, devicePath,
+		ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ,
+		currTask->parent->fullName,
 		zudiIndexServer::INDEX_KERNEL);
 
 	if (request == NULL) { return; };

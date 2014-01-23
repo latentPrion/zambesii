@@ -175,9 +175,9 @@ namespace fplainn
 		struct parentBopS;
 		struct internalBopS;
 
-		driverC(void)
+		driverC(zudiIndexServer::indexE index)
 		:
-		bankId(CHIPSET_NUMA_SHBANKID),
+		index(index),
 		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
 		nChildBops(0), nParentBops(0), nInternalBops(0), nInstances(0),
 		instances(NULL), allRequirementsSatisfied(0),
@@ -209,6 +209,7 @@ namespace fplainn
 		error_t preallocateInternalBops(uarch_t nInternalBops);
 
 		error_t addInstance(numaBankId_t bid, processId_t pid);
+		driverInstanceC *getInstance(numaBankId_t bid);
 
 		void dump(void);
 
@@ -247,17 +248,14 @@ namespace fplainn
 			regionS(ubit16 index, ubit16 moduleIndex, ubit32 flags)
 			:
 			index(index), moduleIndex(moduleIndex),
-			nAttachedChannels(0), channelIndexes(NULL),
 			dataSize(0), flags(flags)
 			{}
 
 			void dump(void);
 
 			// 'moduleIndex' is this region's module's index.
-			ubit16		index, moduleIndex,
-					nAttachedChannels;
+			ubit16		index, moduleIndex;
 			// Array of channel indexes belonging to this region.
-			ubit16		*channelIndexes;
 			uarch_t		dataSize;
 			ubit32		flags;
 
@@ -266,7 +264,6 @@ namespace fplainn
 			regionS(void)
 			:
 			index(0), moduleIndex(0),
-			nAttachedChannels(0), channelIndexes(NULL),
 			dataSize(0), flags(0)
 			{}
 		};
@@ -419,7 +416,8 @@ namespace fplainn
 		// Kernel doesn't need to know about control block information.
 
 	public:
-		numaBankId_t	bankId;
+		zudiIndexServer::indexE		index;
+
 		utf8Char	basePath[ZUDI_DRIVER_BASEPATH_MAXLEN],
 				shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
 				longName[ZUDI_MESSAGE_MAXLEN],
@@ -517,6 +515,21 @@ namespace fplainn
 		parentBopS		*parentBopVectors;
 	};
 }
+
+
+/**	Inline methods.
+ ******************************************************************************/
+inline fplainn::driverInstanceC *fplainn::driverC::getInstance(numaBankId_t bid)
+{
+	for (uarch_t i=0; i<nInstances; i++)
+	{
+		if (instances[i].bankId == bid)
+			{ return &instances[i]; };
+	};
+
+	return NULL;
+}
+
 
 #endif
 

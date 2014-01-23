@@ -81,7 +81,7 @@ namespace zudiIndexServer
 		void *privateData, ubit32 flags);
 
 	error_t loadDriverReq(utf8Char *devicePath, void *privateData);
-	void loadDriverRequirementsReq(utf8Char *devicePath, void *privateData);
+	void loadDriverRequirementsReq(void *privateData);
 
 	void newDeviceInd(
 		utf8Char *devicePath, indexE index, void *privateData);
