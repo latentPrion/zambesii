@@ -556,6 +556,58 @@ static void fplainnIndexServer_newDeviceActionReq(
 	myResponse(ERROR_SUCCESS);
 }
 
+static udi_mei_init_t *__kindex_getMetaInfoFor(
+	utf8Char *metaName, zudi::headerS *indexHdr
+	)
+{
+	heapPtrC<zudi::driver::headerS>	metaHdr;
+	zudi::driver::provisionS	provTmp;
+	ubit8				indexNo=
+		(int)zudiIndexServer::INDEX_KERNEL;
+
+	metaHdr = new zudi::driver::headerS;
+	if (metaHdr == NULL) { return NULL; };
+
+	for (uarch_t i=0;
+		i<indexHdr->nSupportedMetas
+		&& zudiIndexes[indexNo]->indexedGetProvision(i, &provTmp)
+			== ERROR_SUCCESS;
+		i++)
+	{
+		utf8Char	provName[ZUDI_DRIVER_METALANGUAGE_MAXLEN];
+		const metaInitEntryS	*metaInitInfo;
+
+		zudiIndexes[indexNo]->getProvisionString(&provTmp, provName);
+		if (strcmp8(metaName, provName) != 0) { continue; };
+
+		/* If we find a provision that matches the requested meta name,
+		 * we get the driver header for the metalanguage that provides
+		 * that meta name.
+		 *
+		 * Then we look up that meta's shortname in the meta init info
+		 * list embedded in the kernel.
+		 **/
+		if (zudiIndexes[indexNo]->getDriverHeader(
+			indexHdr, provTmp.driverId, metaHdr.get()))
+		{
+			printf(ERROR FPLAINNIDX"loadDriver: provision %s "
+				"refers to inexistent driver-ID %d.\n",
+				provName, provTmp.driverId);
+
+			return NULL;
+		};
+
+		// Now look up the meta's shortname in the init info list.
+		metaInitInfo = floodplainn.findMetaInitInfo(
+			CC metaHdr->shortName);
+
+		if (metaInitInfo != NULL)
+			{ return metaInitInfo->udi_meta_info; };
+	};
+
+	return NULL;
+}
+
 static void fplainnIndexer_loadDriverReq(
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
@@ -569,6 +621,7 @@ static void fplainnIndexer_loadDriverReq(
 	heapPtrC<utf8Char>			tmpString;
 	fplainn::deviceC			*device;
 	error_t					err;
+	const driverInitEntryS			*driverInitEntry;
 
 	response = new floodplainnC::zudiIndexMsgS(
 		request->header.sourceId,
@@ -651,6 +704,29 @@ static void fplainnIndexer_loadDriverReq(
 	err = zudiIndexes[0]->getMessageString(
 		driverHdr.get(), driverHdr->nameIndex, driver->longName);
 
+	if (driver->index == zudiIndexServer::INDEX_KERNEL)
+	{
+		/* Only needed for kernel-index drivers. Others will have their
+		 * udi_init_info provided by their driver binaries in userspace.
+		 * Kernel-index drivers are embedded in the kernel image, and
+		 * have their init_info structs embedded as well, so we must
+		 * fill this out for them.
+		 **/
+		driverInitEntry = floodplainn.findDriverInitInfo(
+			driver->shortName);
+
+		if (driverInitEntry == NULL)
+		{
+			printf(ERROR FPLAINNIDX"loadDriver: failed to find "
+				"init_info for driver %s.\n",
+				driver->shortName);
+
+			return;
+		};
+
+		driver->driverInitInfo = driverInitEntry->udi_init_info;
+	};
+
 	// Copy all the module information:
 	err = driver->preallocateModules(driverHdr->nModules);
 	if (driverHdr->nModules > 0 && err != ERROR_SUCCESS)
@@ -719,6 +795,7 @@ static void fplainnIndexer_loadDriverReq(
 	for (uarch_t i=0; i<driverHdr->nMetalanguages; i++)
 	{
 		zudi::driver::metalanguageS	currMetalanguage;
+		udi_mei_init_t			*metaInfo=NULL;
 
 		if (zudiIndexes[0]->indexedGetMetalanguage(
 			driverHdr.get(), i, &currMetalanguage) != ERROR_SUCCESS)
@@ -728,8 +805,25 @@ static void fplainnIndexer_loadDriverReq(
 			&currMetalanguage, tmpString.get()) != ERROR_SUCCESS)
 			{ myResponse(ERROR_UNKNOWN); return; };
 
+		if (driver->index == zudiIndexServer::INDEX_KERNEL)
+		{
+			metaInfo = __kindex_getMetaInfoFor(
+				tmpString.get(), indexHdr.get());
+
+			if (metaInfo == NULL)
+			{
+				printf(ERROR FPLAINNIDX"loadDriver: "
+					"(kernel driver %s):\n\tFailed to find "
+					"a udi_meta_info struct in kernel for "
+					"metalanguage %s.\n",
+					driver->shortName, tmpString.get());
+
+				return;
+			};
+		};
+
 		new (&driver->metalanguages[i]) fplainn::driverC::metalanguageS(
-			currMetalanguage.index, tmpString.get());
+			currMetalanguage.index, tmpString.get(), metaInfo);
 	};
 
 	err = driver->preallocateChildBops(driverHdr->nChildBops);

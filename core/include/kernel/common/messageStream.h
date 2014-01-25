@@ -63,8 +63,9 @@
  * no assumptions should be made about the mapping of subsystem IDs to queues
  * in the kernel).
  **/
-// Keep this up to date.
+// Keep these two up to date.
 #define MSGSTREAM_SUBSYSTEM_MAXVAL		(0x7)
+#define MSGSTREAM_USERQ_MAXVAL			(0x3)
 // Actual subsystem values.
 #define MSGSTREAM_SUBSYSTEM_USER0		(0x0)
 #define MSGSTREAM_SUBSYSTEM_USER1		(0x1)
@@ -167,6 +168,9 @@ public:
 		ubit32 flags=0);
 
 	error_t	enqueue(ubit16 queueId, messageStreamC::headerS *callback);
+	error_t postMessage(
+		processId_t tid, ubit16 userQueueId,
+		ubit16 messageNo, void *data);
 
 	// Utility functions exported for other subsystems to use.
 	static error_t enqueueOnThread(

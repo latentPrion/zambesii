@@ -84,6 +84,60 @@ error_t fplainn::driverInstanceC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
+error_t fplainn::driverInstanceC::addHostedDevice(deviceC *dev)
+{
+	deviceC		**tmp, **old;
+
+	for (uarch_t i=0; i<nHostedDevices; i++) {
+		if (hostedDevices[i] == dev) { return ERROR_SUCCESS; };
+	};
+
+	tmp = new deviceC*[nHostedDevices + 1];
+	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	if (nHostedDevices > 0)
+	{
+		memcpy(tmp, hostedDevices,
+			sizeof(*hostedDevices) * nHostedDevices);
+	};
+
+	tmp[nHostedDevices] = dev;
+	old = hostedDevices;
+	hostedDevices = tmp;
+	nHostedDevices++;
+
+	delete[] old;
+	return ERROR_SUCCESS;
+}
+
+void fplainn::driverInstanceC::removeHostedDevice(deviceC *dev)
+{
+	for (uarch_t i=0; i<nHostedDevices; i++)
+	{
+		if (hostedDevices[i] != dev) { continue; };
+		memmove(
+			&hostedDevices[i], &hostedDevices[i+1],
+			sizeof(*hostedDevices) * (nHostedDevices - i - 1));
+
+		nHostedDevices--;
+		return;
+	};
+}
+
+error_t fplainn::deviceInstanceC::initialize(void)
+{
+	regions = new regionS[device->driverInstance->driver->nRegions];
+	if (regions == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
+	{
+		regions[i].index = device->driverInstance->driver->regions[i]
+			.index;
+	};
+
+	return ERROR_SUCCESS;
+}
+
 void fplainn::deviceC::dumpEnumerationAttributes(void)
 {
 	utf8Char		*fmtChar;

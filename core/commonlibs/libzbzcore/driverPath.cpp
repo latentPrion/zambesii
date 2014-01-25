@@ -7,14 +7,53 @@
 #include <commonlibs/libzbzcore/libzbzcore.h>
 
 
+#define DRIVERPATH_U0_GET_THREAD_DEVICE		(0)
+
 static void driverPath0(threadC *self);
 static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg);
+static error_t getThreadDevice(
+	fplainn::driverInstanceC *drvInst, processId_t tid,
+	fplainn::deviceC **dev
+	)
+{
+	/**	EXPLANATION:
+	 * Newly started threads will not know which device they belong to.
+	 * They will send a request to the main thread, asking it which device
+	 * they should be servicing.
+	 *
+	 * The main thread will use the source thread's ID to search through all
+	 * the devices hosted by this driver instance, and find out which
+	 * device has a region with the source thread's TID.
+	 **/
+	for (uarch_t i=0; i<drvInst->nHostedDevices; i++)
+	{
+		fplainn::deviceC	*currDev=drvInst->hostedDevices[i];
+
+		for (uarch_t j=0; j<drvInst->driver->nRegions; j++)
+		{
+			ubit16			idx;
+			udi_init_context_t	*ic;
+
+			if (currDev->instance->getRegionInfo(tid, &idx, &ic)
+				!= ERROR_SUCCESS)
+				{ continue; };
+
+			*dev = currDev;
+			return ERROR_SUCCESS;
+		};
+	};
+
+	return ERROR_NOT_FOUND;
+}
 
 void __klibzbzcoreDriverPath(threadC *self)
 {
 //	fplainn::driverC				*driver;
 	streamMemPtrC<messageStreamC::iteratorS>	msgIt;
 	syscallbackC					*callback;
+	fplainn::driverInstanceC			*drvInst;
+
+	drvInst = self->parent->getDriverInstance();
 
 	/**	EXPLANATION:
 	 * This is essentially like a kind of udi_core lib.
@@ -48,6 +87,32 @@ void __klibzbzcoreDriverPath(threadC *self)
 
 		switch (msgIt->header.subsystem)
 		{
+		case MSGSTREAM_SUBSYSTEM_USER0:
+			switch (msgIt->header.function)
+			{
+			case DRIVERPATH_U0_GET_THREAD_DEVICE:
+				fplainn::deviceC	*dev;
+
+				assert_fatal(
+					getThreadDevice(
+						drvInst,
+						msgIt->header.sourceId, &dev)
+						== ERROR_SUCCESS);
+
+				self->getTaskContext()->messageStream
+					.postMessage(
+					msgIt->header.sourceId,
+					MSGSTREAM_SUBSYSTEM_USER0,
+					DRIVERPATH_U0_GET_THREAD_DEVICE,
+					dev);
+
+				break;
+
+			default:
+				break;
+			};
+			break;
+
 		case MSGSTREAM_SUBSYSTEM_FLOODPLAINN:
 			switch (msgIt->header.function)
 			{
@@ -57,10 +122,6 @@ void __klibzbzcoreDriverPath(threadC *self)
 
 				msg = (floodplainnC::instantiateDeviceMsgS *)
 					msgIt.get();
-
-				printf(NOTICE LZBZCORE"instantiateDevice() "
-					"call (function %d).\n",
-					msg->header.function);
 
 				reterr = instantiateDevice(msg);
 
@@ -102,23 +163,16 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 {
 	threadC					*self;
 	driverProcessC				*selfProcess;
-	const driverInitEntryS			*driverInit;
-	fplainn::driverC			*drv;
-	fplainn::driverInstanceC		*drvInstance;
+	fplainn::driverInstanceC		*drvInst;
+	const udi_init_t			*driverInitInfo;
 
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	selfProcess = (driverProcessC *)self->parent;
+	drvInst = self->parent->getDriverInstance();
 
-	// Get the device.
-	assert_fatal(floodplainn.findDriver(self->parent->fullName, &drv)
-		== ERROR_SUCCESS);
-
-	assert_fatal(
-		(drvInstance = drv->getInstance(
-			selfProcess->addrSpaceBinding)) != NULL);
-
+	driverInitInfo = drvInst->driver->driverInitInfo;
 	printf(NOTICE LZBZCORE"driverPath1: Ret from loadRequirementsReq: %s "
 		"(%d).\n",
 		strerror(msgIt->header.error), msgIt->header.error);
@@ -128,32 +182,23 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	 * to load and link all of the metalanguage libraries, as well as the
 	 * driver module itself.
 	 *
-	 * However, since this is the kernel syslib, we can skip all of that,
-	 * and move directly into getting the udi_init_t structures for all of
-	 * the components involved.
+	 * However, since this is the kernel syslib, we can skip all of that.
 	 **/
-	driverInit = floodplainn.findDriverInitInfo(drv->shortName);
-	if (driverInit == NULL)
-	{
-		printf(NOTICE LZBZCORE"driverPath1: Failed to find "
-			"udi_init_info for %s.\n",
-			drv->shortName);
-
-		return;
-	};
-
 	// Set parent bind ops vectors.
-	for (uarch_t i=0; i<drv->nParentBops; i++)
+	for (uarch_t i=0; i<drvInst->driver->nParentBops; i++)
 	{
 		udi_ops_init_t		*tmp;
 		udi_ops_vector_t	*opsVector=NULL;
 
-		for (tmp =driverInit->udi_init_info->ops_init_list;
+		for (tmp=driverInitInfo->ops_init_list;
 			tmp->ops_idx != 0;
 			tmp++)
 		{
-			if (tmp->ops_idx == drv->parentBops[i].opsIndex)
-				{ opsVector = tmp->ops_vector; };
+			if (tmp->ops_idx == drvInst->driver
+				->parentBops[i].opsIndex)
+			{
+				opsVector = tmp->ops_vector;
+			};
 		};
 
 		if (opsVector == NULL)
@@ -161,136 +206,126 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 			printf(ERROR LZBZCORE"driverPath1: Failed to obtain "
 				"ops vector addr for parent bop with meta idx "
 				"%d.\n",
-				drv->parentBops[i].metaIndex);
+				drvInst->driver->parentBops[i].metaIndex);
 
 			return;
 		};
 
-		drvInstance->setParentBopVector(
-			drv->parentBops[i].metaIndex, opsVector);
+		drvInst->setParentBopVector(
+			drvInst->driver->parentBops[i].metaIndex, opsVector);
 	};
 
-	for (uarch_t i=0; i<drv->nParentBops; i++)
-	{
-		printf(NOTICE LZBZCORE"driverPath1: pid 0x%x: pbop meta %d, ops vec 0x%p.\n",
-			self->getFullId(),
-			drvInstance->parentBopVectors[i].metaIndex,
-			drvInstance->parentBopVectors[i].opsVector);
-	};
+	printf(NOTICE LZBZCORE"spawnDriver(%s, NUMA%d): done. PID 0x%x.\n",
+		drvInst->driver->shortName,
+		drvInst->bankId, selfProcess->id);
 
 	self->parent->sendResponse(msgIt->header.error);
 }
 
 static void regionThreadEntry(void *);
+static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg)
+{
+	fplainn::deviceC		*dev;
+	fplainn::driverC		*drv;
+	threadC				*self;
+	error_t				err;
+
+	self = (threadC *)cpuTrib.getCurrentCpuStream()
+		->taskStream.getCurrentTask();
+
+	drv = self->parent->getDriverInstance()->driver;
+	assert_fatal(floodplainn.getDevice(msg->path, &dev)
+		== ERROR_SUCCESS);
+
+	printf(NOTICE LZBZCORE"instantiateDevice(%s).\n", msg->path);
+
+	/**	EXPLANATION:
+	 * 1. Spawn region threads.
+	 * 2. Spawn channels.
+	 * 3. Should be fine from there for now.
+	 **/
+	// Now we create threads for all the regions.
+	for (uarch_t i=0; i<drv->nRegions; i++)
+	{
+		threadC				*newThread;
+		heapPtrC<udi_init_context_t>	rdata;
+
+		// The +1 is to ensure the allocation size isn't 0.
+		rdata = (udi_init_context_t *)new ubit8[
+			drv->driverInitInfo->primary_init_info->rdata_size + 1];
+
+		err = self->parent->spawnThread(
+			&regionThreadEntry, NULL,
+			NULL, (taskC::schedPolicyE)0, 0,
+			0, &newThread);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"driverPath1: failed to "
+				"spawn thread for region %d because "
+				"%s(%d).\n",
+				drv->regions[i].index,
+				strerror(err), err);
+
+			return err;
+		};
+
+		// Store the TID in the device's region metadata.
+		dev->instance->setRegionInfo(
+			drv->regions[i].index, newThread->getFullId(),
+			rdata.get());
+	};
+
+	return ERROR_SUCCESS;
+}
+
 static void regionThreadEntry(void *)
 {
 	threadC					*self;
 	heapPtrC<messageStreamC::iteratorS>	msgIt;
-	fplainn::driverC			*drv;
 	fplainn::deviceC			*dev;
-	ubit16					regionId=0;
+	ubit16					regionIndex;
+	udi_init_context_t			*rdata;
 
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
-	// Not error checking this.
-	assert_fatal(
-		floodplainn.getDevice(self->parent->fullName, &dev)
-		== ERROR_SUCCESS);
-
-	drv = dev->driverInstance->driver;
-	// Find out which region this thread is servicing.
-	for (uarch_t i=0; i<drv->nRegions; i++)
-	{
-		if (dev->instance->regions[i].tid == self->getFullId())
-		{
-			regionId = dev->instance->regions[i].index;
-			break;
-		};
-	};
-
 	msgIt = new messageStreamC::iteratorS;
 	if (msgIt == NULL)
 	{
-		printf(ERROR LZBZCORE"region %d: Failed to allocate msg "
-			"iterator.\n",
-			regionId);
+		printf(ERROR LZBZCORE"regionEntry: Failed to allocate msg "
+			"iterator.\n");
+
+		taskTrib.dormant(self->getFullId());
 	};
 
-	printf(NOTICE LZBZCORE"region %d: running, TID 0x%x. Dormanting.\n",
-		regionId, self->getFullId());
+	// Ask the main thread to tell us which device we are.
+	self->getTaskContext()->messageStream.postMessage(
+		self->parent->id, 0, DRIVERPATH_U0_GET_THREAD_DEVICE,
+		NULL);
+
+	// Get response.
+	self->getTaskContext()->messageStream.pull(msgIt.get());
+	dev = (fplainn::deviceC *)msgIt->header.privateData;
+	assert_fatal(
+		dev->instance->getRegionInfo(
+			self->getFullId(), &regionIndex, &rdata)
+			== ERROR_SUCCESS);
+
+	printf(NOTICE LZBZCORE"Region thread running: index %d, rdata 0x%x.\n",
+		regionIndex, rdata);
 
 	for (;;)
 	{
 		self->getTaskContext()->messageStream.pull(msgIt.get());
+		printf(NOTICE"%s dev, region %d, got a message.\n",
+			dev->driverInstance->driver->longName, regionIndex);
 	};
 
 	taskTrib.dormant(self->getFullId());
 }
 
-static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg)
-{
-	(void)msg;
-	return ERROR_SUCCESS;
-}
-
 #if 0
-	/* Initialize regions first; this is the simplest implementation path
-	 * to follow.
-	 **/
-	dev->instance->regions = new fplainn::deviceInstanceC::regionS[drv->nRegions];
-	if (dev->regions == NULL)
-	{
-		printf(ERROR LZBZCORE"driverPath1: Failed to allocate device "
-			"region metadata.\n");
-
-		return;
-	};
-
-	// Now we create threads for all the other regions.
-	for (uarch_t i=0; i<drv->nRegions; i++)
-	{
-		threadC		*newThread;
-
-		/* No need to spawn a new thread for the primary region. This
-		 * thread will become its thread soon.
-		 **/
-		if (drv->regions[i].index != 0)
-		{
-			err = self->parent->spawnThread(
-				&regionThreadEntry, NULL,
-				NULL, (taskC::schedPolicyE)0, 0,
-				0, &newThread);
-
-			if (err != ERROR_SUCCESS)
-			{
-				printf(ERROR LZBZCORE"driverPath1: failed to "
-					"spawn thread for region %d because "
-					"%s(%d).\n",
-					drv->regions[i].index,
-					strerror(err), err);
-
-				return;
-			};
-		}
-		else
-		{
-			// Set myRegion.
-			myRegion = &dev->regions[i];
-			// Allocate primary region's region data.
-			myRegion->rdata = (udi_init_context_t *)new ubit8[
-				driverInit->udi_init_info
-					->primary_init_info->rdata_size + 1];
-
-			assert_fatal(myRegion->rdata != NULL);
-		};
-
-		// Store the TID in the device's region metadata.
-		dev->regions[i].index = drv->regions[i].index;
-		dev->regions[i].tid = (drv->regions[i].index == 0)
-			? self->getFullId()
-			: newThread->getFullId();
-	};
 
 	assert_fatal(myRegion != NULL);
 

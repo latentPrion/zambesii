@@ -219,9 +219,10 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 
 error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 {
-	instantiateDeviceMsgS		*request;
-	fplainn::deviceC		*dev;
-	error_t				ret;
+	instantiateDeviceMsgS			*request;
+	fplainn::deviceC			*dev;
+	error_t					ret;
+	heapPtrC<fplainn::deviceInstanceC>	devInst;
 
 	if (strlen8(path) >= ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
 		{ return ERROR_INVALID_RESOURCE_NAME; };
@@ -233,15 +234,36 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 	if (!dev->driverDetected || dev->driverInstance == NULL)
 		{ return ERROR_UNINITIALIZED; };
 
+	if (dev->instance == NULL)
+	{
+		// Allocate the device instance.
+		devInst = new fplainn::deviceInstanceC(dev);
+		if (devInst == NULL) { return ERROR_MEMORY_NOMEM; };
+
+		ret = devInst->initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+
+		ret = dev->driverInstance->addHostedDevice(dev);
+		if (ret != ERROR_SUCCESS) { return ret; };
+
+	};
+
 	request = new instantiateDeviceMsgS(
 		dev->driverInstance->pid,
 		MSGSTREAM_SUBSYSTEM_FLOODPLAINN,
 		MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ,
 		sizeof(*request), 0, privateData);
 
-	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
+	if (request == NULL)
+	{
+		dev->driverInstance->removeHostedDevice(dev);
+		return ERROR_MEMORY_NOMEM;
+	};
 
 	strcpy8(request->path, path);
+
+	// Assign the device instance to dev->instance and release the mem.
+	if (dev->instance == NULL) { dev->instance = devInst.release(); };
 	return messageStreamC::enqueueOnThread(
 		request->header.targetId, &request->header);
 }
@@ -252,6 +274,7 @@ void floodplainnC::instantiateDeviceAck(
 {
 	threadC					*currThread;
 	floodplainnC::instantiateDeviceMsgS	*response;
+	fplainn::deviceC			*dev;
 
 	currThread = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
@@ -259,6 +282,25 @@ void floodplainnC::instantiateDeviceAck(
 	// Only driver processes can call this.
 	if (currThread->parent->getType() != processStreamC::DRIVER)
 		{ return; };
+
+	// If the instantiation didn't work, delete the instance object.
+	if (err != ERROR_SUCCESS)
+	{
+		if (floodplainn.getDevice(path, &dev) != ERROR_SUCCESS)
+		{
+			printf(ERROR FPLAINN"instantiateDevAck: getDevice "
+				"failed on %s.\n\tUnable to unset "
+				"device->instance pointer.\n",
+				path);
+
+			return;
+		};
+
+		dev->driverInstance->removeHostedDevice(dev);
+		// Set the dev->instance pointer to NULL.
+		delete dev->instance;
+		dev->instance = NULL;
+	};
 
 	response = new instantiateDeviceMsgS(
 		targetId,

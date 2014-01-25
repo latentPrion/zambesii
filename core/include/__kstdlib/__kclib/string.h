@@ -14,9 +14,10 @@ extern "C" {
 #endif
 
 void *memset(void *ptr, int value, size_t count);
-void *memcpy(void *dest, void *src, size_t count);
+void *memcpy(void *dest, const void *src, size_t count);
 //char *strcpy(char *dest, const char *src);
 int memcmp(const void *ptr1, const void *ptr2, size_t n);
+void *memmove(void *dest, const void *src, size_t n);
 
 #ifdef __cplusplus
 }

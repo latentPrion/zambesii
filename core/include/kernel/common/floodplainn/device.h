@@ -34,6 +34,18 @@
 #define DEVICE_DRIVER_FULLNAME_MAXLEN		DRIVER_FULLNAME_MAXLEN
 #define DEVICE_CLASS_MAXLEN			(48)
 
+struct driverInitEntryS
+{
+	utf8Char	*shortName;
+	udi_init_t	*udi_init_info;
+};
+
+struct metaInitEntryS
+{
+	utf8Char	*shortName;
+	udi_mei_init_t	*udi_meta_info;
+};
+
 namespace fplainn
 {
 	class driverC;
@@ -109,9 +121,21 @@ namespace fplainn
 	public:
 		deviceInstanceC(deviceC *dev)
 		:
+		nChannels(0),
 		device(dev),
 		regions(NULL), channels(NULL)
 		{}
+
+		error_t initialize(void);
+
+	public:
+		void setRegionInfo(
+			ubit16 index,
+			processId_t tid, udi_init_context_t *rdata);
+
+		sbit8 getRegionInfo(
+			processId_t tid, ubit16 *index,
+			udi_init_context_t **rdata);
 
 	public:
 		struct regionS
@@ -123,15 +147,32 @@ namespace fplainn
 
 		struct channelS
 		{
+			channelS(void)
+			{
+				new (&endpoints[0]) endpointS(this);
+				new (&endpoints[1]) endpointS(this);
+			}
+
 			struct endpointS
 			{
+				endpointS(channelS *parent=NULL)
+				:
+				parent(parent), regionId(PROCID_INVALID),
+				opsVector(NULL), channelContext(NULL)
+				{}
+
 				channelS	*parent;
 				processId_t	regionId;
 				void		*opsVector, *channelContext;
-			} endpoints[2];
+			};
 
 			struct incompleteChannelS
 			{
+				incompleteChannelS(void)
+				:
+				spawnIndex(-1), channel(NULL)
+				{}
+
 				ptrlessListC<incompleteChannelS>::headerS
 					listHeader;
 
@@ -147,11 +188,12 @@ namespace fplainn
 			 * spawn is completed and the spawn_idx is removed from
 			 * this list.
 			 **/
-			ptrlessListC<incompleteChannelS>
-				incompleteChannels;
+			ptrlessListC<incompleteChannelS> incompleteChannels;
+			endpointS				endpoints[2];
 		};
 
 	public:
+		ubit16			nChannels;
 		deviceC			*device;
 		regionS			*regions;
 		channelS		*channels;
@@ -194,6 +236,7 @@ namespace fplainn
 		{
 			strcpy8(this->basePath, basePath);
 			strcpy8(this->shortName, shortName);
+
 			return ERROR_SUCCESS;
 		}
 
@@ -295,9 +338,11 @@ namespace fplainn
 
 		struct metalanguageS
 		{
-			metalanguageS(ubit16 index, utf8Char *name)
+			metalanguageS(
+				ubit16 index, utf8Char *name,
+				udi_mei_init_t *udi_meta_info)
 			:
-			index(index)
+			index(index), udi_meta_info(udi_meta_info)
 			{
 				strcpy8(this->name, name);
 			}
@@ -306,12 +351,14 @@ namespace fplainn
 
 			ubit16		index;
 			utf8Char	name[ZUDI_DRIVER_METALANGUAGE_MAXLEN];
+			// XXX: Only used by the kernel for kernelspace drivers.
+			const udi_mei_init_t	*udi_meta_info;
 
 		private:
 			friend class fplainn::driverC;
 			metalanguageS(void)
 			:
-			index(0)
+			index(0), udi_meta_info(NULL)
 			{
 				name[0] = '\0';
 			}
@@ -413,6 +460,19 @@ namespace fplainn
 			return NULL;
 		}
 
+		// XXX: Only used by kernel for kernelspace drivers.
+		const udi_mei_init_t *getMetaInitInfo(const utf8Char *name)
+		{
+			for (uarch_t i=0; i<nMetalanguages; i++)
+			{
+				if (!strcmp8(metalanguages[i].name, name)) {
+					return metalanguages[i].udi_meta_info;
+				};
+			};
+
+			return NULL;
+		}
+
 		// Kernel doesn't need to know about control block information.
 
 	public:
@@ -445,13 +505,16 @@ namespace fplainn
 		moduleS		*modules;
 		// Regions in this driver and their indexes/module indexes, etc.
 		regionS		*regions;
-		// All metalanguage required libraries for this driver.
+		// All required libraries for this driver.
 		requirementS	*requirements;
-		// Metalanguage indexes, dependency satisfaction, etc.
+		// Metalanguage indexes, names, etc.
 		metalanguageS	*metalanguages;
 		childBopS	*childBops;
 		parentBopS	*parentBops;
 		internalBopS	*internalBops;
+
+		// XXX: ONLY for use by libzbzcore, and ONLY in kernel-space.
+		const udi_init_t	*driverInitInfo;
 	};
 
 	/**	driverInstanceC
@@ -479,7 +542,8 @@ namespace fplainn
 		driverInstanceC(
 			driverC *driver, numaBankId_t bid, processId_t pid)
 		:
-		driver(driver), bankId(bid), pid(pid), parentBopVectors(NULL)
+		driver(driver), bankId(bid), pid(pid), parentBopVectors(NULL),
+		nHostedDevices(0), hostedDevices(NULL)
 		{}
 
 		error_t initialize(void);
@@ -498,6 +562,9 @@ namespace fplainn
 			};
 		}
 
+		// XXX: These two are used only by kernel libzbzcore.
+		error_t addHostedDevice(deviceC *dev);
+		void removeHostedDevice(deviceC *dev);
 	public:
 		struct parentBopS
 		{
@@ -513,12 +580,45 @@ namespace fplainn
 		numaBankId_t		bankId;
 		processId_t		pid;
 		parentBopS		*parentBopVectors;
+		// XXX: Used only by kernel libzbzcore.
+		uarch_t			nHostedDevices;
+		deviceC			**hostedDevices;
 	};
 }
 
 
 /**	Inline methods.
  ******************************************************************************/
+
+inline void fplainn::deviceInstanceC::setRegionInfo(
+	ubit16 index, processId_t tid, udi_init_context_t *rdata
+	)
+{
+	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
+	{
+		if (regions[i].index != index) { continue; };
+
+		regions[i].tid = tid;
+		regions[i].rdata = rdata;
+		return;
+	};
+}
+
+inline sbit8 fplainn::deviceInstanceC::getRegionInfo(
+	processId_t tid, ubit16 *index, udi_init_context_t **rdata
+	)
+{
+	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
+	{
+		if (regions[i].tid != tid) { continue; };
+		*index = regions[i].index;
+		*rdata = regions[i].rdata;
+		return ERROR_SUCCESS;
+	};
+
+	return ERROR_NOT_FOUND;
+}
+
 inline fplainn::driverInstanceC *fplainn::driverC::getInstance(numaBankId_t bid)
 {
 	for (uarch_t i=0; i<nInstances; i++)
@@ -530,6 +630,4 @@ inline fplainn::driverInstanceC *fplainn::driverC::getInstance(numaBankId_t bid)
 	return NULL;
 }
 
-
 #endif
-

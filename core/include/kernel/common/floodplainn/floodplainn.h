@@ -18,18 +18,6 @@
 
 #define FPLAINN_DETECTDRIVER_FLAGS_CPU_TARGET	MSGSTREAM_FLAGS_CPU_TARGET
 
-struct driverInitEntryS
-{
-	utf8Char	*shortName;
-	udi_init_t	*udi_init_info;
-};
-
-struct metaInitEntryS
-{
-	utf8Char	*shortName;
-	udi_mei_init_t	*udi_meta_info;
-};
-
 class floodplainnC
 :
 public tributaryC//, public vfs::directoryOperationsC

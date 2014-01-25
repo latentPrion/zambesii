@@ -29,6 +29,7 @@ const driverInitEntryS		driverInitInfo[] =
 const metaInitEntryS		metaInitInfo[] =
 {
 	{ CC"udi_gio", &udi_gio_meta_info },
+	{ CC"zbz_root", &udi_gio_meta_info },
 	{ NULL, NULL }
 };
 

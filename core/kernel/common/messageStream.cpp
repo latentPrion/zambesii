@@ -466,6 +466,30 @@ error_t messageStreamC::pull(
 	};
 }
 
+error_t messageStreamC::postMessage(
+	processId_t tid, ubit16 userQId, ubit16 messageNo, void *data
+	)
+{
+	messageStreamC::headerS		*message;
+	processId_t			currTid;
+
+	currTid = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskId();
+
+	if (userQId > MSGSTREAM_USERQ_MAXVAL)
+		{ return ERROR_LIMIT_OVERFLOWED; };
+
+	if (PROCID_PROCESS(tid) != PROCID_PROCESS(currTid))
+		{ return ERROR_UNAUTHORIZED; };
+
+	message = new messageStreamC::headerS(
+		tid, MSGSTREAM_USERQ(userQId), messageNo,
+		sizeof(*message), 0, data);
+
+	if (message == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	return enqueueOnThread(tid, message);
+}
+
 error_t	messageStreamC::enqueue(ubit16 queueId, messageStreamC::headerS *callback)
 {
 	error_t		ret;
