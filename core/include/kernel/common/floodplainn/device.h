@@ -562,9 +562,9 @@ namespace fplainn
 			};
 		}
 
-		// XXX: These two are used only by kernel libzbzcore.
 		error_t addHostedDevice(deviceC *dev);
 		void removeHostedDevice(deviceC *dev);
+
 	public:
 		struct parentBopS
 		{
@@ -580,7 +580,6 @@ namespace fplainn
 		numaBankId_t		bankId;
 		processId_t		pid;
 		parentBopS		*parentBopVectors;
-		// XXX: Used only by kernel libzbzcore.
 		uarch_t			nHostedDevices;
 		deviceC			**hostedDevices;
 	};

@@ -276,6 +276,11 @@ static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg)
 			rdata.get());
 	};
 
+	printf(NOTICE"driverC %d, driverInst %d, deviceC %d, deviceInst %d.\n",
+		sizeof(*dev->driverInstance->driver),
+		sizeof(*dev->driverInstance),
+		sizeof(*dev), sizeof(*dev->instance));
+
 	return ERROR_SUCCESS;
 }
 
@@ -326,15 +331,6 @@ static void regionThreadEntry(void *)
 }
 
 #if 0
-
-	assert_fatal(myRegion != NULL);
-
-	for (uarch_t i=0; i<drv->nRegions; i++)
-	{
-		printf(NOTICE LZBZCORE"driverPath1: Region %d, TID 0x%x.\n",
-			dev->regions[i].index, dev->regions[i].tid);
-	};
-
 	/* Next, we spawn all internal bind channels.
 	 * internal_bind_ops meta_idx region_idx ops0_idx ops1_idx bind_cb_idx.
 	 * Small sanity check here before moving on.
