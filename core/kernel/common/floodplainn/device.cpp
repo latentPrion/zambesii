@@ -84,42 +84,56 @@ error_t fplainn::driverInstanceC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverInstanceC::addHostedDevice(deviceC *dev)
+error_t fplainn::driverInstanceC::addHostedDevice(utf8Char *path)
 {
-	deviceC		**tmp, **old;
+	heapPtrC<utf8Char*>	tmp;
+	utf8Char		**old;
+	heapPtrC<utf8Char>	str;
+	uarch_t			len;
 
 	for (uarch_t i=0; i<nHostedDevices; i++) {
-		if (hostedDevices[i] == dev) { return ERROR_SUCCESS; };
+		if (!strcmp8(hostedDevices[i], path)) { return ERROR_SUCCESS; };
 	};
 
-	tmp = new deviceC*[nHostedDevices + 1];
-	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
+	len = strlen8(path);
+
+	tmp = new utf8Char*[nHostedDevices + 1];
+	str = new utf8Char[len + 1];
+	tmp.useArrayDelete = str.useArrayDelete = 1;
+
+	if (tmp == NULL || str == NULL) { return ERROR_MEMORY_NOMEM; };
+	strcpy8(str.get(), path);
 
 	if (nHostedDevices > 0)
 	{
-		memcpy(tmp, hostedDevices,
+		memcpy(tmp.get(), hostedDevices,
 			sizeof(*hostedDevices) * nHostedDevices);
 	};
 
-	tmp[nHostedDevices] = dev;
+	tmp[nHostedDevices] = str.release();
 	old = hostedDevices;
-	hostedDevices = tmp;
+	hostedDevices = tmp.release();
 	nHostedDevices++;
 
 	delete[] old;
 	return ERROR_SUCCESS;
 }
 
-void fplainn::driverInstanceC::removeHostedDevice(deviceC *dev)
+void fplainn::driverInstanceC::removeHostedDevice(utf8Char *path)
 {
+	utf8Char	*tmp;
+
 	for (uarch_t i=0; i<nHostedDevices; i++)
 	{
-		if (hostedDevices[i] != dev) { continue; };
+		if (strcmp8(hostedDevices[i], path) != 0) { continue; };
+
+		tmp = hostedDevices[i];
 		memmove(
 			&hostedDevices[i], &hostedDevices[i+1],
 			sizeof(*hostedDevices) * (nHostedDevices - i - 1));
 
 		nHostedDevices--;
+		delete[] tmp;
 		return;
 	};
 }
@@ -136,6 +150,38 @@ error_t fplainn::deviceInstanceC::initialize(void)
 	};
 
 	return ERROR_SUCCESS;
+}
+
+error_t fplainn::deviceInstanceC::addChannel(channelS *newChan)
+{
+	channelS		**tmp, **old;
+
+	tmp = new channelS*[nChannels + 1];
+	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	if (nChannels > 0)
+		{ memcpy(tmp, channels, sizeof(*channels) * nChannels); };
+
+	tmp[nChannels] = newChan;
+	old = channels;
+	channels = tmp;
+	nChannels++;
+	return ERROR_SUCCESS;
+}
+
+void fplainn::deviceInstanceC::removeChannel(channelS *chan)
+{
+	for (uarch_t i=0; i<nChannels; i++)
+	{
+		if (channels[i] != chan) { continue; };
+
+		memmove(
+			&channels[i], &channels[i+1],
+			sizeof(*channels) * (nChannels - i - 1));
+
+		nChannels--;
+		return;
+	};
 }
 
 void fplainn::deviceC::dumpEnumerationAttributes(void)

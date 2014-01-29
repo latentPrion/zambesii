@@ -7,15 +7,16 @@
 #include <commonlibs/libzbzcore/libzbzcore.h>
 
 
-#define DRIVERPATH_U0_GET_THREAD_DEVICE		(0)
+#define DRIVERPATH_U0_GET_THREAD_DEVICE_PATH		(0)
 
 static void driverPath0(threadC *self);
 static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg);
-static error_t getThreadDevice(
-	fplainn::driverInstanceC *drvInst, processId_t tid,
-	fplainn::deviceC **dev
+static error_t getThreadDevicePath(
+	fplainn::driverInstanceC *drvInst, processId_t tid, utf8Char *path
 	)
 {
+	error_t		ret;
+
 	/**	EXPLANATION:
 	 * Newly started threads will not know which device they belong to.
 	 * They will send a request to the main thread, asking it which device
@@ -27,7 +28,12 @@ static error_t getThreadDevice(
 	 **/
 	for (uarch_t i=0; i<drvInst->nHostedDevices; i++)
 	{
-		fplainn::deviceC	*currDev=drvInst->hostedDevices[i];
+		utf8Char		*currDevPath=drvInst->hostedDevices[i];
+		fplainn::deviceC	*currDev;
+
+		ret = floodplainn.getDevice(currDevPath, &currDev);
+		// Odd, but keep searching anyway.
+		if (ret != ERROR_SUCCESS) { continue; };
 
 		for (uarch_t j=0; j<drvInst->driver->nRegions; j++)
 		{
@@ -38,7 +44,7 @@ static error_t getThreadDevice(
 				!= ERROR_SUCCESS)
 				{ continue; };
 
-			*dev = currDev;
+			strcpy8(path, currDevPath);
 			return ERROR_SUCCESS;
 		};
 	};
@@ -90,21 +96,21 @@ void __klibzbzcoreDriverPath(threadC *self)
 		case MSGSTREAM_SUBSYSTEM_USER0:
 			switch (msgIt->header.function)
 			{
-			case DRIVERPATH_U0_GET_THREAD_DEVICE:
-				fplainn::deviceC	*dev;
-
+			case DRIVERPATH_U0_GET_THREAD_DEVICE_PATH:
 				assert_fatal(
-					getThreadDevice(
+					getThreadDevicePath(
 						drvInst,
-						msgIt->header.sourceId, &dev)
+						msgIt->header.sourceId,
+						(utf8Char *)msgIt->header
+							.privateData)
 						== ERROR_SUCCESS);
 
 				self->getTaskContext()->messageStream
 					.postMessage(
 					msgIt->header.sourceId,
 					MSGSTREAM_SUBSYSTEM_USER0,
-					DRIVERPATH_U0_GET_THREAD_DEVICE,
-					dev);
+					DRIVERPATH_U0_GET_THREAD_DEVICE_PATH,
+					NULL);
 
 				break;
 
@@ -276,11 +282,6 @@ static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg)
 			rdata.get());
 	};
 
-	printf(NOTICE"driverC %d, driverInst %d, deviceC %d, deviceInst %d.\n",
-		sizeof(*dev->driverInstance->driver),
-		sizeof(*dev->driverInstance),
-		sizeof(*dev), sizeof(*dev->instance));
-
 	return ERROR_SUCCESS;
 }
 
@@ -288,13 +289,17 @@ static void regionThreadEntry(void *)
 {
 	threadC					*self;
 	heapPtrC<messageStreamC::iteratorS>	msgIt;
+	utf8Char				devPath[96];
 	fplainn::deviceC			*dev;
 	ubit16					regionIndex;
 	udi_init_context_t			*rdata;
+	error_t					err;
+	udi_init_t				*init_info;
 
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
+	init_info = self->parent->getDriverInstance()->driver->driverInitInfo;
 	msgIt = new messageStreamC::iteratorS;
 	if (msgIt == NULL)
 	{
@@ -306,20 +311,98 @@ static void regionThreadEntry(void *)
 
 	// Ask the main thread to tell us which device we are.
 	self->getTaskContext()->messageStream.postMessage(
-		self->parent->id, 0, DRIVERPATH_U0_GET_THREAD_DEVICE,
-		NULL);
+		self->parent->id, 0, DRIVERPATH_U0_GET_THREAD_DEVICE_PATH,
+		devPath);
 
 	// Get response.
 	self->getTaskContext()->messageStream.pull(msgIt.get());
-	dev = (fplainn::deviceC *)msgIt->header.privateData;
+	err = floodplainn.getDevice(devPath, &dev);
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR LZBZCORE"regionEntry: Device path %s returned "
+			"from main thread failed to resolve.\n",
+			devPath);
+
+		taskTrib.dormant(self->getFullId());
+	};
+
 	assert_fatal(
 		dev->instance->getRegionInfo(
 			self->getFullId(), &regionIndex, &rdata)
 			== ERROR_SUCCESS);
 
-	printf(NOTICE LZBZCORE"Region thread running: index %d, rdata 0x%x.\n",
-		regionIndex, rdata);
+	printf(NOTICE LZBZCORE"Device %s, region %d running: rdata 0x%x.\n",
+		devPath, regionIndex, rdata);
 
+	/* Next, we spawn all internal bind channels.
+	 * internal_bind_ops meta_idx region_idx ops0_idx ops1_idx1 bind_cb_idx.
+	 * Small sanity check here before moving on.
+	 **/
+	if (dev->driverInstance->driver->nInternalBops
+		!= dev->driverInstance->driver->nRegions - 1)
+	{
+		printf(NOTICE LZBZCORE"regionEntry %d: driver has %d ibops, "
+			"but %d regions.\n",
+			regionIndex,
+			dev->driverInstance->driver->nInternalBops,
+			dev->driverInstance->driver->nRegions);
+
+		taskTrib.dormant(self->getFullId());
+	};
+
+	// Now spawn this region's internal bind channel.
+	if (regionIndex != 0)
+	{
+		ubit16			opsIndex0, opsIndex1;
+		udi_ops_vector_t	*opsVector0=NULL, *opsVector1=NULL;
+		udi_ops_init_t		*ops_info_tmp;
+
+		err = floodplainn.getInternalBopVectorIndexes(
+			regionIndex, &opsIndex0, &opsIndex1);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"regionEntry %d: Failed to get "
+				"internal bops vector indexes.\n",
+				regionIndex);
+
+			taskTrib.dormant(self->getFullId());
+		};
+
+		ops_info_tmp = init_info->ops_init_list;
+		for (; ops_info_tmp->ops_idx != 0; ops_info_tmp++)
+		{
+			if (ops_info_tmp->ops_idx == opsIndex0)
+				{ opsVector0 = ops_info_tmp->ops_vector; };
+
+			if (ops_info_tmp->ops_idx == opsIndex1)
+				{ opsVector1 = ops_info_tmp->ops_vector; };
+		};
+
+		if (opsVector0 == NULL || opsVector1 == NULL)
+		{
+			printf(ERROR LZBZCORE"regionEntry %d: Failed to get "
+				"ops vector addresses for intern. bind chan.\n",
+				regionIndex);
+
+			taskTrib.dormant(self->getFullId());
+		};
+
+		err = floodplainn.spawnInternalBindChannel(
+			devPath, regionIndex, opsVector0, opsVector1);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"regionEntry %d: Failed to spawn "
+				"internal bind channel because %s(%d).\n",
+				regionIndex, strerror(err), err);
+
+			taskTrib.dormant(self->getFullId());
+		};
+	};
+
+	printf(NOTICE LZBZCORE"Region %d, dev %s: Entering event loop.\n",
+		regionIndex, devPath);
 	for (;;)
 	{
 		self->getTaskContext()->messageStream.pull(msgIt.get());
@@ -329,61 +412,3 @@ static void regionThreadEntry(void *)
 
 	taskTrib.dormant(self->getFullId());
 }
-
-#if 0
-	/* Next, we spawn all internal bind channels.
-	 * internal_bind_ops meta_idx region_idx ops0_idx ops1_idx bind_cb_idx.
-	 * Small sanity check here before moving on.
-	 **/
-	if (drv->nInternalBops != drv->nRegions - 1)
-	{
-		printf(NOTICE LZBZCORE"driverPath1: driver has %d ibops, "
-			"but %d regions.\n",
-			drv->nInternalBops, drv->nRegions);
-
-		self->parent->sendResponse(ERROR_INVALID_ARG_VAL);
-		return;
-	};
-
-	for (uarch_t i=0; i<drv->nInternalBops; i++)
-	{
-		fplainn::driverC::internalBopS	*currBop;
-		fplainn::deviceC::regionS	*targetRegion=NULL;
-		udi_ops_vector_t		*opsVector0=NULL,
-						*opsVector1=NULL;
-
-		currBop = &drv->internalBops[i];
-		// Get the region metadata for the target region.
-		for (uarch_t i=0; i<drv->nRegions; i++)
-		{
-			if (dev->regions[i].index == currBop->regionIndex) {
-				targetRegion = &dev->regions[i];
-			};
-		};
-
-		assert_fatal(targetRegion != NULL);
-
-		for (udi_ops_init_t *tmp=driverInit->udi_init_info->ops_init_list;
-			tmp->ops_idx != 0; tmp++)
-		{
-			if (tmp->ops_idx == currBop->opsIndex0)
-				{ opsVector0 = tmp->ops_vector; };
-
-			if (tmp->ops_idx == currBop->opsIndex1)
-				{ opsVector1 = tmp->ops_vector; };
-		};
-
-		assert_fatal(opsVector0 != NULL && opsVector1 != NULL);
-
-		printf(NOTICE LZBZCORE"About to sys spawn internal bind chan:\n"
-			"\tto: [r%d, ops%d ctx0x%d], using ops%d.\n",
-			currBop->regionIndex,
-			currBop->opsIndex0, targetRegion->rdata,
-			currBop->opsIndex1);
-
-		floodplainn.zudi_sys_channel_spawn(
-			myRegion->tid, opsVector0, NULL,
-			targetRegion->tid, opsVector1, NULL);
-	};
-
-#endif

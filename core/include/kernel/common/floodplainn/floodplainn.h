@@ -107,9 +107,10 @@ public:
 		utf8Char *parentId, ubit32 childId, ubit32 flags);
 
 	/* Retrieves a device by its path. This may be a by-id, by-name,
-	 * by-class or by-path path.
+	 * by-class or by-path path. Consider renaming this to getDeviceHandle.
 	 **/
 	error_t getDevice(utf8Char *path, fplainn::deviceC **device);
+	error_t getDeviceFullName(fplainn::deviceC *dev, utf8Char *retname);
 
 	// Create an instance of a device in its driver instance's addrspace.
 	#define MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ	(32)
@@ -171,6 +172,9 @@ public:
 		utf8Char *deviceName, utf8Char *metalanguageName,
 		void *outputMem);
 
+	error_t getInternalBopVectorIndexes(
+		ubit16 regionIndex, ubit16 *opsIndex0, ubit16 *opsIndex1);
+
 	error_t enumerateBaseDevices(void);
 	error_t enumerateChipsets(void);
 
@@ -191,16 +195,28 @@ public:
 	 * Effectively then, devices that do not have child bind ops don't
 	 * need to expose any parent bind ops information to the kernel.
 	 **/
-	error_t zudi_sys_channel_spawn(
-		processId_t regionId0, udi_ops_vector_t *opsVector0,
-		void *channelContext0,
-		processId_t regionId1, udi_ops_vector_t *opsVector1,
-		void *channelContext1);
+	error_t spawnInternalBindChannel(
+		utf8Char *devicePath, ubit16 regionIndex,
+		udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1);
+
+	error_t spawnChildBindChannel(
+		utf8Char *devicePath, utf8Char *metaName,
+		udi_ops_vector_t *opsVector,
+		udi_init_context_t *channelContext);
 
 	static void __kdriverEntry(void);
 	static void indexReaderEntry(void);
 	void setZudiIndexServerTid(processId_t tid)
 		{ zudiIndexServerTid = tid; }
+
+private:
+	error_t spawnChannel(
+		fplainn::deviceC *dev0, threadC *thread0,
+		udi_ops_vector_t *opsVector0,
+		udi_init_context_t *channelContext0,
+		fplainn::deviceC *dev1, threadC *thread1,
+		udi_ops_vector_t *opsVector1,
+		udi_init_context_t *channelContext1);
 
 public:
 	ptrListC<fplainn::driverC>	driverList;

@@ -243,7 +243,7 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 		ret = devInst->initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
 
-		ret = dev->driverInstance->addHostedDevice(dev);
+		ret = dev->driverInstance->addHostedDevice(path);
 		if (ret != ERROR_SUCCESS) { return ret; };
 
 	};
@@ -256,7 +256,7 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 
 	if (request == NULL)
 	{
-		dev->driverInstance->removeHostedDevice(dev);
+		dev->driverInstance->removeHostedDevice(path);
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -296,7 +296,7 @@ void floodplainnC::instantiateDeviceAck(
 			return;
 		};
 
-		dev->driverInstance->removeHostedDevice(dev);
+		dev->driverInstance->removeHostedDevice(path);
 		// Set the dev->instance pointer to NULL.
 		delete dev->instance;
 		dev->instance = NULL;

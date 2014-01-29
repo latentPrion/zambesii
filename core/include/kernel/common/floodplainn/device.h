@@ -11,6 +11,7 @@
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kstdlib/__kclib/string.h>
 	#include <__kclasses/ptrlessList.h>
+	#include <kernel/common/thread.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/zudiIndexServer.h>
 
@@ -133,8 +134,12 @@ namespace fplainn
 			ubit16 index,
 			processId_t tid, udi_init_context_t *rdata);
 
-		sbit8 getRegionInfo(
+		error_t getRegionInfo(
 			processId_t tid, ubit16 *index,
+			udi_init_context_t **rdata);
+
+		error_t getRegionInfo(
+			ubit16 index, processId_t *tid,
 			udi_init_context_t **rdata);
 
 	public:
@@ -147,23 +152,40 @@ namespace fplainn
 
 		struct channelS
 		{
-			channelS(void)
+			channelS(
+				threadC *t0, udi_ops_vector_t *opsVec0,
+				udi_init_context_t *chanContext0,
+				threadC *t1, udi_ops_vector_t *opsVec1,
+				udi_init_context_t *chanContext1)
 			{
-				new (&endpoints[0]) endpointS(this);
-				new (&endpoints[1]) endpointS(this);
+				new (&endpoints[0]) endpointS(
+					this, t0, opsVec0, chanContext0);
+
+				new (&endpoints[1]) endpointS(
+					this, t1, opsVec1, chanContext1);
 			}
 
 			struct endpointS
 			{
-				endpointS(channelS *parent=NULL)
+				friend class fplainn::deviceInstanceC::channelS;
+				// Private, void constructor that does nothing.
+				endpointS(void) {}
+
+			public:
+				endpointS(
+					channelS *parent, threadC *thread,
+					udi_ops_vector_t *opsVector,
+					udi_init_context_t *chanContext)
 				:
-				parent(parent), regionId(PROCID_INVALID),
-				opsVector(NULL), channelContext(NULL)
+				parent(parent), thread(thread),
+				opsVector(opsVector),
+				channelContext(chanContext)
 				{}
 
-				channelS	*parent;
-				processId_t	regionId;
-				void		*opsVector, *channelContext;
+				channelS		*parent;
+				threadC			*thread;
+				udi_ops_vector_t	*opsVector;
+				udi_init_context_t	*channelContext;
 			};
 
 			struct incompleteChannelS
@@ -192,11 +214,14 @@ namespace fplainn
 			endpointS				endpoints[2];
 		};
 
+		error_t addChannel(channelS *newChan);
+		void removeChannel(channelS *chan);
+
 	public:
 		ubit16			nChannels;
 		deviceC			*device;
 		regionS			*regions;
-		channelS		*channels;
+		channelS		**channels;
 	};
 
 	class driverInstanceC;
@@ -460,6 +485,17 @@ namespace fplainn
 			return NULL;
 		}
 
+		internalBopS *getInternalBop(ubit16 regionIndex)
+		{
+			for (uarch_t i=0; i<nInternalBops; i++)
+			{
+				if (internalBops[i].regionIndex == regionIndex)
+					{ return &internalBops[i]; };
+			};
+
+			return NULL;
+		}
+
 		// XXX: Only used by kernel for kernelspace drivers.
 		const udi_mei_init_t *getMetaInitInfo(const utf8Char *name)
 		{
@@ -562,8 +598,8 @@ namespace fplainn
 			};
 		}
 
-		error_t addHostedDevice(deviceC *dev);
-		void removeHostedDevice(deviceC *dev);
+		error_t addHostedDevice(utf8Char *path);
+		void removeHostedDevice(utf8Char *path);
 
 	public:
 		struct parentBopS
@@ -581,7 +617,7 @@ namespace fplainn
 		processId_t		pid;
 		parentBopS		*parentBopVectors;
 		uarch_t			nHostedDevices;
-		deviceC			**hostedDevices;
+		utf8Char		**hostedDevices;
 	};
 }
 
@@ -603,7 +639,7 @@ inline void fplainn::deviceInstanceC::setRegionInfo(
 	};
 }
 
-inline sbit8 fplainn::deviceInstanceC::getRegionInfo(
+inline error_t fplainn::deviceInstanceC::getRegionInfo(
 	processId_t tid, ubit16 *index, udi_init_context_t **rdata
 	)
 {
@@ -611,6 +647,21 @@ inline sbit8 fplainn::deviceInstanceC::getRegionInfo(
 	{
 		if (regions[i].tid != tid) { continue; };
 		*index = regions[i].index;
+		*rdata = regions[i].rdata;
+		return ERROR_SUCCESS;
+	};
+
+	return ERROR_NOT_FOUND;
+}
+
+inline error_t fplainn::deviceInstanceC::getRegionInfo(
+	ubit16 index, processId_t *tid, udi_init_context_t **rdata
+	)
+{
+	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
+	{
+		if (regions[i].index != index) { continue; };
+		*tid = regions[i].tid;
 		*rdata = regions[i].rdata;
 		return ERROR_SUCCESS;
 	};
