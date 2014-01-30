@@ -571,29 +571,30 @@ namespace fplainn
 	public:
 		driverInstanceC(void)
 		:
-		bankId(NUMABANKID_INVALID), pid(PROCID_INVALID),
-		parentBopVectors(NULL)
+		driver(NULL), bankId(NUMABANKID_INVALID), pid(PROCID_INVALID),
+		childBopVectors(NULL),
+		nHostedDevices(0), hostedDevices(NULL)
 		{}
 
 		driverInstanceC(
 			driverC *driver, numaBankId_t bid, processId_t pid)
 		:
-		driver(driver), bankId(bid), pid(pid), parentBopVectors(NULL),
+		driver(driver), bankId(bid), pid(pid), childBopVectors(NULL),
 		nHostedDevices(0), hostedDevices(NULL)
 		{}
 
 		error_t initialize(void);
 
 	public:
-		void setParentBopVector(
+		void setChildBopVector(
 			ubit16 metaIndex, udi_ops_vector_t *vaddr)
 		{
-			for (uarch_t i=0; i<driver->nParentBops; i++)
+			for (uarch_t i=0; i<driver->nChildBops; i++)
 			{
-				if (parentBopVectors[i].metaIndex != metaIndex)
+				if (childBopVectors[i].metaIndex != metaIndex)
 					{ continue; };
 
-				parentBopVectors[i].opsVector = vaddr;
+				childBopVectors[i].opsVector = vaddr;
 				return;
 			};
 		}
@@ -602,7 +603,7 @@ namespace fplainn
 		void removeHostedDevice(utf8Char *path);
 
 	public:
-		struct parentBopS
+		struct childBopS
 		{
 			/* Parent BOps can only be uniquely identified by their
 			 * metalanguage indexes.
@@ -615,7 +616,7 @@ namespace fplainn
 		driverC			*driver;
 		numaBankId_t		bankId;
 		processId_t		pid;
-		parentBopS		*parentBopVectors;
+		childBopS		*childBopVectors;
 		uarch_t			nHostedDevices;
 		utf8Char		**hostedDevices;
 	};

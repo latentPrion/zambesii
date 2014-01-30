@@ -65,19 +65,19 @@ error_t fplainn::driverC::preallocateInternalBops(uarch_t nInternalBops)
 
 error_t fplainn::driverInstanceC::initialize(void)
 {
-	if (driver->nParentBops > 0)
+	if (driver->nChildBops > 0)
 	{
-		parentBopVectors = new parentBopS[driver->nParentBops];
-		if (parentBopVectors == NULL) { return ERROR_MEMORY_NOMEM; };
+		childBopVectors = new childBopS[driver->nChildBops];
+		if (childBopVectors == NULL) { return ERROR_MEMORY_NOMEM; };
 
 		memset(
-			parentBopVectors, 0,
-			sizeof(*parentBopVectors) * driver->nParentBops);
+			childBopVectors, 0,
+			sizeof(*childBopVectors) * driver->nChildBops);
 
-		for (uarch_t i=0; i<driver->nParentBops; i++)
+		for (uarch_t i=0; i<driver->nChildBops; i++)
 		{
-			parentBopVectors[i].metaIndex =
-				driver->parentBops[i].metaIndex;
+			childBopVectors[i].metaIndex =
+				driver->childBops[i].metaIndex;
 		};
 	};
 

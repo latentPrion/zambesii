@@ -190,8 +190,8 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	 *
 	 * However, since this is the kernel syslib, we can skip all of that.
 	 **/
-	// Set parent bind ops vectors.
-	for (uarch_t i=0; i<drvInst->driver->nParentBops; i++)
+	// Set child bind ops vectors.
+	for (uarch_t i=0; i<drvInst->driver->nChildBops; i++)
 	{
 		udi_ops_init_t		*tmp;
 		udi_ops_vector_t	*opsVector=NULL;
@@ -201,7 +201,7 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 			tmp++)
 		{
 			if (tmp->ops_idx == drvInst->driver
-				->parentBops[i].opsIndex)
+				->childBops[i].opsIndex)
 			{
 				opsVector = tmp->ops_vector;
 			};
@@ -210,15 +210,15 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 		if (opsVector == NULL)
 		{
 			printf(ERROR LZBZCORE"driverPath1: Failed to obtain "
-				"ops vector addr for parent bop with meta idx "
+				"ops vector addr for child bop with meta idx "
 				"%d.\n",
-				drvInst->driver->parentBops[i].metaIndex);
+				drvInst->driver->childBops[i].metaIndex);
 
 			return;
 		};
 
-		drvInst->setParentBopVector(
-			drvInst->driver->parentBops[i].metaIndex, opsVector);
+		drvInst->setChildBopVector(
+			drvInst->driver->childBops[i].metaIndex, opsVector);
 	};
 
 	printf(NOTICE LZBZCORE"spawnDriver(%s, NUMA%d): done. PID 0x%x.\n",
