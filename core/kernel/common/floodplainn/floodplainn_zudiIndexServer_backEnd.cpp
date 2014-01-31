@@ -878,6 +878,9 @@ static void fplainnIndexer_loadDriverReq(
 			currBop.bindCbIndex);
 	};
 
+	err = driver->detectClasses();
+	if (err != ERROR_SUCCESS) { myResponse(err); return; };
+
 	driver->dump();
 	// Release the managed memory as well when inserting.
 	err = floodplainn.driverList.insert(driver.release());

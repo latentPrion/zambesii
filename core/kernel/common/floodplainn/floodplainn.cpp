@@ -245,7 +245,6 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 
 		ret = dev->driverInstance->addHostedDevice(path);
 		if (ret != ERROR_SUCCESS) { return ret; };
-
 	};
 
 	request = new instantiateDeviceMsgS(

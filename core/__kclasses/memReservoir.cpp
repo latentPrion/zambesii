@@ -7,6 +7,7 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/processTrib/processTrib.h>
 
 
@@ -64,7 +65,7 @@ memReservoirC::~memReservoirC(void)
 
 void memReservoirC::dump(void)
 {
-	
+
 	printf(NOTICE RESERVOIR"Dumping.\n");
 	printf(NOTICE RESERVOIR"__kbog v 0x%X, bogs array 0x%X, nBogs %d.\n",
 		__kbog, bogs.rsrc.ptrs, bogs.rsrc.nBogs);
@@ -85,8 +86,12 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 {
 	reservoirHeaderS	*ret;
 
-	if (nBytes == 0) {
-		return NULL;
+	if (nBytes == 0)
+	{
+		printf(WARNING RESERVOIR"Caller 0x%p.\n",
+			__builtin_return_address(1));
+
+		panic(WARNING RESERVOIR"Allocation with size=0.\n");
 	};
 
 	nBytes += sizeof(reservoirHeaderS);

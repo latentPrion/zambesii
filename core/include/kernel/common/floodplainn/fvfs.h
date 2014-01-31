@@ -3,7 +3,6 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
-	#include <kernel/common/floodplainn/device.h>
 
 #define FVFS_TAG_NAME_MAXLEN		(32)
 
@@ -24,6 +23,7 @@
  * Every node in the FVFS has (1) a name-string, (2) a device object that it
  * points to and (3) a list of child nodes.
  **/
+namespace fplainn { class deviceC; }
 
 namespace fvfs
 {

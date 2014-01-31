@@ -7,8 +7,52 @@
 #include <kernel/common/floodplainn/device.h>
 
 
+/**	EXPLANATION:
+ * Global array of device classes recognized by the kernel. This array is used
+ * to initialize the device classes in the by-class tree ofthe floodplainn VFS.
+ *
+ * The second array below maps UDI metalanguage names to kernel device class
+ * names. We use it to detect what classes of functionality a device exports.
+ **/
+utf8Char		*driverClasses[] =
+{
+	CC"unknown",		// 0
+	CC"unrecognized",	// 1
+	CC"bus",		// 2
+	CC"network",		// 3
+	CC"generic-io",		// 4
+	CC"scsi-hba",		// 5
+	CC"audio-output",	// 6
+	CC"audio-input",	// 7
+	CC"video-output",	// 8
+	CC"video-input",	// 9
+	CC"storage",		// 10
+	CC"character-input",	// 11
+	CC"coordinate-input",	// 12
+	CC"battery",		// 13
+	CC"gpio",		// 14
+	CC"biometric-input",	// 15
+	CC"printer",		// 16
+	CC"scanner",		// 17
+	CC"irq-controller",	// 18
+	CC"timer",		// 19
+	CC"clock",		// 20
+	CC"card-reader",	// 21
+	NULL
+};
+
+driverClassMapEntryS	driverClassMap[] =
+{
+	{ CC"udi_bridge", 2 },
+	{ CC"udi_nic", 3 },
+	{ CC"udi_gio", 4 },
+	{ CC"udi_scsi", 5 },
+	{ NULL, 0 }
+};
+
 error_t fplainn::driverC::preallocateModules(uarch_t nModules)
 {
+	if (nModules == 0) { return ERROR_SUCCESS; };
 	modules = new moduleS[nModules];
 	if (modules == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nModules = nModules;
@@ -17,6 +61,7 @@ error_t fplainn::driverC::preallocateModules(uarch_t nModules)
 
 error_t fplainn::driverC::preallocateRegions(uarch_t nRegions)
 {
+	if (nRegions == 0) { return ERROR_SUCCESS; };
 	regions = new regionS[nRegions];
 	if (regions == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nRegions = nRegions;
@@ -25,6 +70,7 @@ error_t fplainn::driverC::preallocateRegions(uarch_t nRegions)
 
 error_t fplainn::driverC::preallocateRequirements(uarch_t nRequirements)
 {
+	if (nRequirements == 0) { return ERROR_SUCCESS; };
 	requirements = new requirementS[nRequirements];
 	if (requirements == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nRequirements = nRequirements;
@@ -33,6 +79,7 @@ error_t fplainn::driverC::preallocateRequirements(uarch_t nRequirements)
 
 error_t fplainn::driverC::preallocateMetalanguages(uarch_t nMetalanguages)
 {
+	if (nMetalanguages == 0) { return ERROR_SUCCESS; };
 	metalanguages = new metalanguageS[nMetalanguages];
 	if (metalanguages == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nMetalanguages = nMetalanguages;
@@ -41,6 +88,7 @@ error_t fplainn::driverC::preallocateMetalanguages(uarch_t nMetalanguages)
 
 error_t fplainn::driverC::preallocateChildBops(uarch_t nChildBops)
 {
+	if (nChildBops == 0) { return ERROR_SUCCESS; };
 	childBops = new childBopS[nChildBops];
 	if (childBops == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nChildBops = nChildBops;
@@ -49,6 +97,7 @@ error_t fplainn::driverC::preallocateChildBops(uarch_t nChildBops)
 
 error_t fplainn::driverC::preallocateParentBops(uarch_t nParentBops)
 {
+	if (nParentBops == 0) { return ERROR_SUCCESS; };
 	parentBops = new parentBopS[nParentBops];
 	if (parentBops == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nParentBops = nParentBops;
@@ -57,9 +106,107 @@ error_t fplainn::driverC::preallocateParentBops(uarch_t nParentBops)
 
 error_t fplainn::driverC::preallocateInternalBops(uarch_t nInternalBops)
 {
+	if (nInternalBops == 0) { return ERROR_SUCCESS; };
 	internalBops = new internalBopS[nInternalBops];
 	if (internalBops == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nInternalBops = nInternalBops;
+	return ERROR_SUCCESS;
+}
+
+static inline void noop(void) { }
+
+static sbit8 fillInClass(
+	utf8Char (*classes)[DRIVER_CLASS_MAXLEN], ubit16 insertionIndex,
+	utf8Char *className
+	)
+{
+	for (uarch_t i=0; i<insertionIndex; i++)
+	{
+		// Check for duplicate classes.
+		if (strcmp8(classes[i], className) != 0) { continue; };
+		// If duplicate, don't allow nClasses to be incremented.
+		return 0;
+	};
+
+	strcpy8(classes[insertionIndex], className);
+	return 1;
+}
+
+error_t fplainn::driverC::detectClasses(void)
+{
+	uarch_t		nRecognizedClasses=0;
+	metalanguageS	*metalanguage;
+
+	/* Making 2 passes. First pass establishes the number of metalanguages
+	 * the kernel recognizes; second pass allocates the array of classes
+	 * for the driver, and fills it in.
+	 **/
+	for (ubit8 pass=1; pass <= 2; pass++)
+	{
+		for (uarch_t i=0; i<nChildBops; i++)
+		{
+			ubit16		currMetaIndex;
+
+			currMetaIndex = childBops[i].metaIndex;
+			metalanguage = getMetalanguage(currMetaIndex);
+			if (metalanguage == NULL)
+			{
+				// Don't repeat the warning on the 2nd pass.
+				(pass == 1)
+				? printf(WARNING"driverC::detectClasses: drv "
+					"%s/%s:\n",
+					"\tMeta index %d in child bops doesn't "
+					"map to any meta declaration.\n",
+					basePath, shortName, currMetaIndex)
+				: noop();
+
+				continue;
+			};
+
+			/* Search through all the metalanguages that the driver
+			 * exports as child_bind_ops, and see if the kernel can
+			 * recognize any of them.
+			 **/
+			for (driverClassMapEntryS *tmp=driverClassMap;
+				tmp->metaName != NULL;
+				tmp++)
+			{
+				if (strcmp8(metalanguage->name, tmp->metaName))
+					{ continue; };
+
+				if (pass == 1) { nRecognizedClasses++; }
+				else
+				{
+					nClasses += fillInClass(
+						classes, nClasses,
+						driverClasses[tmp->classIndex]);
+				};
+
+				break;
+			};
+		};
+
+		// Don't execute anything beyond here on 2nd pass.
+		if (pass == 2) { break; };
+
+		/* If we couldn't recognize any of the metalanguage interfaces
+		 * it exports, just class it as "unknown".
+		 **/
+		if (nRecognizedClasses == 0)
+		{
+			classes = new utf8Char[1][DRIVER_CLASS_MAXLEN];
+			if (classes == NULL) { return ERROR_MEMORY_NOMEM; };
+
+			// driver class 1 is set in stone as "unrecognized".
+			strcpy8(classes[0], driverClasses[1]);
+			nClasses = 1;
+			return ERROR_SUCCESS;
+		};
+
+		classes = new utf8Char[nRecognizedClasses][DRIVER_CLASS_MAXLEN];
+		if (classes == NULL) { return ERROR_MEMORY_NOMEM; };
+	};
+
 	return ERROR_SUCCESS;
 }
 

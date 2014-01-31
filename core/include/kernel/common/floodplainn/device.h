@@ -14,6 +14,7 @@
 	#include <kernel/common/thread.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/zudiIndexServer.h>
+	#include <kernel/common/floodplainn/fvfs.h>	// FVFS_TAG_NAME_MAXLEN
 
 /**	deviceC:
  * Base type for a device in general. The type of driver used to instantiate
@@ -27,13 +28,15 @@
 #define DRIVER_VENDORCONTACT_MAXLEN		ZUDI_MESSAGE_MAXLEN
 #define DRIVER_FULLNAME_MAXLEN			\
 	(ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_DRIVER_SHORTNAME_MAXLEN)
+#define DRIVER_CLASS_MAXLEN			FVFS_TAG_NAME_MAXLEN
 
 #define DEVICE_SHORTNAME_MAXLEN			DRIVER_SHORTNAME_MAXLEN
 #define DEVICE_LONGNAME_MAXLEN			DRIVER_LONGNAME_MAXLEN
 #define DEVICE_VENDORNAME_MAXLEN		DRIVER_VENDORNAME_MAXLEN
 #define DEVICE_VENDORCONTACT_MAXLEN		DRIVER_VENDORCONTACT_MAXLEN
 #define DEVICE_DRIVER_FULLNAME_MAXLEN		DRIVER_FULLNAME_MAXLEN
-#define DEVICE_CLASS_MAXLEN			(48)
+#define DEVICE_CLASS_MAXLEN			DRIVER_CLASS_MAXLEN
+
 
 struct driverInitEntryS
 {
@@ -46,6 +49,14 @@ struct metaInitEntryS
 	utf8Char	*shortName;
 	udi_mei_init_t	*udi_meta_info;
 };
+
+struct driverClassMapEntryS
+{
+	utf8Char	*metaName;
+	uarch_t		classIndex;
+} extern driverClassMap[];
+
+extern utf8Char		*driverClasses[];
 
 namespace fplainn
 {
@@ -247,11 +258,12 @@ namespace fplainn
 		index(index),
 		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
 		nChildBops(0), nParentBops(0), nInternalBops(0), nInstances(0),
+		nClasses(0),
 		instances(NULL), allRequirementsSatisfied(0),
 		childEnumerationAttrSize(0),
 		modules(NULL), regions(NULL), requirements(NULL),
 		metalanguages(NULL), childBops(NULL), parentBops(NULL),
-		internalBops(NULL)
+		internalBops(NULL), classes(NULL)
 		{
 			basePath[0] = shortName[0] = longName[0]
 				= supplier[0] = supplierContact[0] = '\0';
@@ -275,6 +287,7 @@ namespace fplainn
 		error_t preallocateChildBops(uarch_t nChildBops);
 		error_t preallocateParentBops(uarch_t nParentBops);
 		error_t preallocateInternalBops(uarch_t nInternalBops);
+		error_t detectClasses(void);
 
 		error_t addInstance(numaBankId_t bid, processId_t pid);
 		driverInstanceC *getInstance(numaBankId_t bid);
@@ -463,6 +476,17 @@ namespace fplainn
 		};
 
 	public:
+		metalanguageS *getMetalanguage(ubit16 index)
+		{
+			for (uarch_t i=0; i<nMetalanguages; i++)
+			{
+				if (metalanguages[i].index == index)
+					{ return &metalanguages[i]; };
+			};
+
+			return NULL;
+		}
+
 		moduleS *getModule(ubit16 index)
 		{
 			for (uarch_t i=0; i<nModules; i++)
@@ -521,7 +545,7 @@ namespace fplainn
 				supplierContact[ZUDI_MESSAGE_MAXLEN];
 		ubit16		nModules, nRegions, nRequirements,
 				nMetalanguages, nChildBops, nParentBops,
-				nInternalBops, nInstances;
+				nInternalBops, nInstances, nClasses;
 
 		/**	NOTES:
 		 * Zambesii's definition of "driver instances" is not conformant
@@ -548,6 +572,7 @@ namespace fplainn
 		childBopS	*childBops;
 		parentBopS	*parentBops;
 		internalBopS	*internalBops;
+		utf8Char	(*classes)[DRIVER_CLASS_MAXLEN];
 
 		// XXX: ONLY for use by libzbzcore, and ONLY in kernel-space.
 		const udi_init_t	*driverInitInfo;

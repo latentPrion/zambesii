@@ -40,7 +40,7 @@ error_t bitmapC::initialize(
 
 	bmp.rsrc.bmp = (preAllocatedMemory != NULL)
 		? new (preAllocatedMemory) uarch_t[nIndexes]
-		: new uarch_t[nIndexes];
+		: (nIndexes == 0 ) ? NULL : new uarch_t[nIndexes];
 
 	if (bmp.rsrc.bmp == NULL && nBits != 0)
 	{
@@ -50,7 +50,7 @@ error_t bitmapC::initialize(
 
 	bmp.rsrc.nBits = nBits;
 	// Don't pass NULL to memset when BMP is initialized to 0 bits.
-	if (bmp.rsrc.bmp != NULL)
+	if (nIndexes > 0)
 	{
 		if (!preAllocated)
 		{
@@ -64,7 +64,7 @@ error_t bitmapC::initialize(
 	};
 
 	return ERROR_SUCCESS;
-}	
+}
 
 void bitmapC::dump(void)
 {
@@ -115,7 +115,7 @@ void bitmapC::unlock(void)
 
 void bitmapC::set(ubit32 bit)
 {
-	/* Don't acquire the lock. We expect the user to call lock() before 
+	/* Don't acquire the lock. We expect the user to call lock() before
 	 * calling this method.
 	 **/
 	if (bit < bmp.rsrc.nBits)
@@ -128,7 +128,7 @@ void bitmapC::set(ubit32 bit)
 
 void bitmapC::unset(ubit32 bit)
 {
-	/* Don't acquire the lock. We expect the user to call lock() before 
+	/* Don't acquire the lock. We expect the user to call lock() before
 	 * calling this method.
 	 **/
 	if (bit < bmp.rsrc.nBits)
@@ -141,7 +141,7 @@ void bitmapC::unset(ubit32 bit)
 
 sarch_t bitmapC::test(ubit32 bit)
 {
-	/* Don't acquire the lock. We expect the user to call lock() before 
+	/* Don't acquire the lock. We expect the user to call lock() before
 	 * calling this method.
 	 **/
 	if (bit < bmp.rsrc.nBits)
