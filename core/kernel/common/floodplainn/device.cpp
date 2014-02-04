@@ -19,9 +19,9 @@ utf8Char		*driverClasses[] =
 	CC"unknown",		// 0
 	CC"unrecognized",	// 1
 	CC"bus",		// 2
-	CC"network",		// 3
+	CC"io-controller",	// 3
 	CC"generic-io",		// 4
-	CC"scsi-hba",		// 5
+	CC"network",		// 5
 	CC"audio-output",	// 6
 	CC"audio-input",	// 7
 	CC"video-output",	// 8
@@ -44,9 +44,9 @@ utf8Char		*driverClasses[] =
 driverClassMapEntryS	driverClassMap[] =
 {
 	{ CC"udi_bridge", 2 },
-	{ CC"udi_nic", 3 },
+	{ CC"udi_nic", 5 },
 	{ CC"udi_gio", 4 },
-	{ CC"udi_scsi", 5 },
+	{ CC"udi_scsi", 3 },
 	{ NULL, 0 }
 };
 
@@ -329,6 +329,24 @@ void fplainn::deviceInstanceC::removeChannel(channelS *chan)
 		nChannels--;
 		return;
 	};
+}
+
+error_t fplainn::deviceC::addParentTag(fvfs::tagC *tag, ubit16 *newId)
+{
+	parentTagS		*tmp, *old;
+
+	tmp = new parentTagS[nParentTags + 1];
+	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	if (nParentTags > 0)
+		{ memcpy(tmp, parentTags, sizeof(*parentTags) * nParentTags); };
+
+	new (&tmp[nParentTags]) parentTagS(parentTagCounter++, tag);
+	*newId = tmp[nParentTags].id;
+	old = parentTags;
+	parentTags = tmp;
+	nParentTags++;
+	return ERROR_SUCCESS;
 }
 
 void fplainn::deviceC::dumpEnumerationAttributes(void)

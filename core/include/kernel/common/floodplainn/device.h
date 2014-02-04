@@ -75,10 +75,12 @@ namespace fplainn
 		:
 		id(id), bankId(bid), driverInstance(NULL), instance(NULL),
 		nEnumerationAttrs(0), nInstanceAttrs(0), nClasses(0),
+		nParentTags(0),
 		enumerationAttrs(NULL), instanceAttrs(NULL), classes(NULL),
 		driverDetected(0),
 		driverIndex(zudiIndexServer::INDEX_KERNEL),
-		requestedIndex(zudiIndexServer::INDEX_KERNEL)
+		requestedIndex(zudiIndexServer::INDEX_KERNEL),
+		parentTags(NULL), parentTagCounter(0)
 		{
 			this->shortName[0] = this->longName[0]
 				= this->driverFullName[0] = '\0';
@@ -95,11 +97,42 @@ namespace fplainn
 		~deviceC(void) {};
 
 	public:
+		struct parentTagS
+		{
+			parentTagS(void)
+			:
+			id(0), tag(NULL)
+			{}
+
+			parentTagS(ubit16 id, fvfs::tagC *tag)
+			:
+			id(id), tag(tag)
+			{}
+
+			/* Each parent device will have a device-relative ID.
+			 * This ID is used as the UDI parent ID number.
+			 *
+			 * We don't care about being prudent with our allocation
+			 * of these IDs. We just hand them out from a counter,
+			 * not checking for collisions, because it's a very
+			 * unlikely thing that a device will have parents bound
+			 * and unbound to it so much that it will overflow even
+			 * a 16 bit counter;
+			 *
+			 * Talk much less about a 32 bit counter.
+			 **/
+			ubit16		id;
+			fvfs::tagC	*tag;
+		};
+
 		error_t addClass(utf8Char *name);
 		error_t getEnumerationAttribute(
 			utf8Char *name, udi_instance_attr_list_t *attrib);
 
 		error_t setEnumerationAttribute(udi_instance_attr_list_t *attrib);
+
+		error_t addParentTag(fvfs::tagC *tag, ubit16 *newIdRetval);
+		void removeParentTag(fvfs::tagC *tag);
 
 		void dumpEnumerationAttributes(void);
 
@@ -116,13 +149,15 @@ namespace fplainn
 		driverInstanceC		*driverInstance;
 		deviceInstanceC		*instance;
 		ubit8			nEnumerationAttrs, nInstanceAttrs,
-					nClasses;
+					nClasses, nParentTags;
 		udi_instance_attr_list_t
 					**enumerationAttrs, **instanceAttrs;
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
 		sbit8			driverDetected;
 		// The index which enumerated this device's driver.
 		zudiIndexServer::indexE	driverIndex, requestedIndex;
+		parentTagS		*parentTags;
+		uarch_t			parentTagCounter;
 	};
 
 	/**	deviceInstanceC:

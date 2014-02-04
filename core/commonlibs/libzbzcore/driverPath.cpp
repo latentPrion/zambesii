@@ -403,6 +403,7 @@ static void regionThreadEntry(void *)
 
 	printf(NOTICE LZBZCORE"Region %d, dev %s: Entering event loop.\n",
 		regionIndex, devPath);
+
 	for (;;)
 	{
 		self->getTaskContext()->messageStream.pull(msgIt.get());
