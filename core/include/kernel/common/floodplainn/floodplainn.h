@@ -204,6 +204,9 @@ public:
 		udi_ops_vector_t *opsVector,
 		udi_init_context_t *channelContext);
 
+	error_t spawnManagementChannel(
+		utf8Char *devicePath, udi_ops_vector_t *mgtOpsVector);
+
 	static void __kdriverEntry(void);
 	static void indexReaderEntry(void);
 	void setZudiIndexServerTid(processId_t tid)

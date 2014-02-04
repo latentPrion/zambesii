@@ -176,10 +176,8 @@ namespace fplainn
 				name, type, parent, dev, err);
 		}
 
-		sarch_t removeDirTag(utf8Char *name)
-		{
-			return vfs::dirInodeC<fvfs::tagC>::removeDirTag(name);
-		}
+		sarch_t removeDirTag(utf8Char *n)
+			{ return vfs::dirInodeC<fvfs::tagC>::removeDirTag(n); }
 
 		fvfs::tagC *getDirTag(utf8Char *name)
 			{ return vfs::dirInodeC<fvfs::tagC>::getDirTag(name); }
@@ -324,6 +322,11 @@ namespace fplainn
 
 		error_t addChannel(channelS *newChan);
 		void removeChannel(channelS *chan);
+
+		void udi_usage_ind(udi_ubit8_t usageLevel);
+		void udi_enumerate_req(udi_ubit8_t enumerateLevel);
+		void udi_devmgmt_req(udi_ubit8_t op, udi_ubit8_t parentId);
+		void udi_final_cleanup_req(void);
 
 	public:
 		ubit16			nChannels;
@@ -708,6 +711,18 @@ namespace fplainn
 		error_t initialize(void);
 
 	public:
+		struct managementChannelS
+		{
+			managementChannelS(void)
+			:
+			opsVector(NULL), scratchSize(0)
+			{}
+
+			udi_mgmt_ops_t		*opsVector;
+			uarch_t			scratchSize;
+			udi_ubit32_t		opFlags;
+		};
+
 		void setChildBopVector(
 			ubit16 metaIndex, udi_ops_vector_t *vaddr)
 		{
@@ -719,6 +734,16 @@ namespace fplainn
 				childBopVectors[i].opsVector = vaddr;
 				return;
 			};
+		}
+
+		void setMgmtChannelInfo(
+			udi_mgmt_ops_t *mgmtOpsVector,
+			uarch_t scratchSize,
+			udi_ubit32_t opFlags)
+		{
+			managementChannel.opsVector = mgmtOpsVector;
+			managementChannel.scratchSize = scratchSize;
+			managementChannel.opFlags = opFlags;
 		}
 
 		error_t addHostedDevice(utf8Char *path);
@@ -741,6 +766,7 @@ namespace fplainn
 		childBopS		*childBopVectors;
 		uarch_t			nHostedDevices;
 		utf8Char		**hostedDevices;
+		managementChannelS	managementChannel;
 	};
 }
 

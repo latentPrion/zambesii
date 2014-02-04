@@ -190,6 +190,12 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	 *
 	 * However, since this is the kernel syslib, we can skip all of that.
 	 **/
+	// Set management op vector and scratch, etc.
+	drvInst->setMgmtChannelInfo(
+		driverInitInfo->primary_init_info->mgmt_ops,
+		driverInitInfo->primary_init_info->mgmt_scratch_requirement,
+		*driverInitInfo->primary_init_info->mgmt_op_flags);
+
 	// Set child bind ops vectors.
 	for (uarch_t i=0; i<drvInst->driver->nChildBops; i++)
 	{
