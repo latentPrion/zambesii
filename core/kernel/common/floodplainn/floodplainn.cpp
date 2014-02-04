@@ -10,12 +10,7 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
-fplainn::deviceC		byId(NUMABANKID_INVALID, 0, CC"by-id-tree"),
-				byName(NUMABANKID_INVALID, 0, CC"by-name-tree"),
-				byPath(NUMABANKID_INVALID, 0, CC"by-path-tree"),
-				byClass(
-					NUMABANKID_INVALID, 0,
-					CC"by-class-tree");
+static fplainn::deviceC		treeDev(CHIPSET_NUMA_SHBANKID);
 
 error_t floodplainnC::initializeReq(initializeReqCallF *callback)
 {
@@ -28,15 +23,18 @@ error_t floodplainnC::initializeReq(initializeReqCallF *callback)
 	ret = driverList.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
+	ret = treeDev.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
 	root = vfsTrib.getFvfs()->getRoot();
 
-	ret = root->createChild(CC"by-id", &byId, &tmp);
+	ret = root->getInode()->createChild(CC"by-id", root, &treeDev, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = root->createChild(CC"by-name", &byName, &tmp);
+	ret = root->getInode()->createChild(CC"by-name", root, &treeDev, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = root->createChild(CC"by-class", &byClass, &tmp);
+	ret = root->getInode()->createChild(CC"by-class", root, &treeDev, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = root->createChild(CC"by-path", &byPath, &tmp);
+	ret = root->getInode()->createChild(CC"by-path", root, &treeDev, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	zudiIndexServer::setNewDeviceActionReq(
@@ -148,14 +146,18 @@ error_t floodplainnC::createDevice(
 	ret = vfsTrib.getFvfs()->getPath(parentId, &parentTag);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	newDev = new fplainn::deviceC(bid, childId, NULL);
+	newDev = new fplainn::deviceC(bid);
 	if (newDev == NULL) { return ERROR_MEMORY_NOMEM; };
+	ret = newDev->initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	utf8Char	tmpBuff[FVFS_TAG_NAME_MAXLEN];
 
 	// Add the new device node to the parent node.
 	snprintf(tmpBuff, FVFS_TAG_NAME_MAXLEN, CC"%d", childId);
-	ret = parentTag->createChild(tmpBuff, newDev, &childTag);
+	ret = parentTag->getInode()->createChild(
+		tmpBuff, parentTag, newDev, &childTag);
+
 	if (ret != ERROR_SUCCESS) { delete newDev; };
 	*device = newDev;
 	return ERROR_SUCCESS;
@@ -182,15 +184,16 @@ error_t floodplainnC::removeDevice(
 
 	// Get the child tag.
 	snprintf(tmpBuff, FVFS_TAG_NAME_MAXLEN, CC"%d", childId);
-	childTag = parentTag->getChild(tmpBuff);
+	childTag = parentTag->getInode()->getChild(tmpBuff);
 	if (childTag == NULL) { return ERROR_NOT_FOUND; };
 
 	// Don't remove the child if it has children.
-	if (childTag->nDirs > 0) { return ERROR_INVALID_OPERATION; };
+	if (childTag->getInode()->dirs.getNItems() > 0)
+		{ return ERROR_INVALID_OPERATION; };
 
 	// Delete the device object it points to, then delete the child tag.
-	delete childTag->getDevice();
-	parentTag->removeChild(tmpBuff);
+	delete childTag->getInode();
+	parentTag->getInode()->removeChild(tmpBuff);
 
 	return ERROR_SUCCESS;
 }
@@ -206,14 +209,9 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 	/* Do not allow callers to "getDevice" on the by-* containers.
 	 * e.g: "by-id", "/by-id", "@f/by-id", etc.
 	 **/
-	if (tag->getDevice() == &byId || tag->getDevice() == &byName
-		|| tag->getDevice() == &byClass
-		|| tag->getDevice() == &byPath)
-	{
-		return ERROR_UNAUTHORIZED;
-	};
+	if (tag->getInode() == &treeDev) { return ERROR_UNAUTHORIZED; };
 
-	*device = tag->getDevice();
+	*device = tag->getInode();
 	return ERROR_SUCCESS;
 }
 

@@ -353,8 +353,8 @@ void fplainn::deviceC::dumpEnumerationAttributes(void)
 {
 	utf8Char		*fmtChar;
 
-	printf(NOTICE"Device: @0x%p, id %d, %d enum attrs.\n\tlongname %s.\n",
-		this, id, nEnumerationAttrs, longName);
+	printf(NOTICE"Device: @0x%p, bid %d, %d enum attrs.\n\tlongname %s.\n",
+		this, bankId, nEnumerationAttrs, longName);
 
 	for (uarch_t i=0; i<nEnumerationAttrs; i++)
 	{

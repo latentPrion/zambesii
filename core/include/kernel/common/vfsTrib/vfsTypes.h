@@ -71,7 +71,7 @@ namespace vfs
 	 * value is used to tell the correct type to cast the inode pointer to.
 	 **********************************************************************/
 	class inodeC;
-	
+
 	template <ubit16 maxNameLength>
 	class tagC
 	:
@@ -151,10 +151,7 @@ namespace vfs
 	public inodeC
 	{
 	public:
-		dirInodeC(void)
-		:
-		nDirs(0), nLeaves(0)
-		{}
+		dirInodeC(void) {}
 
 		error_t initialize(void);
 		~dirInodeC(void) {};
@@ -186,8 +183,6 @@ namespace vfs
 	public:
 		ptrListC<tagType>		dirs;
 		ptrListC<tagType>		leaves;
-		ubit32				nDirs;
-		ubit32				nLeaves;
 	};
 
 	/**	EXPLANATION:
@@ -288,7 +283,6 @@ tagType *vfs::dirInodeC<tagType>::createDirTag(
 		return NULL;
 	};
 
-	nDirs++;
 	return ret;
 }
 
@@ -345,7 +339,6 @@ tagType *vfs::dirInodeC<tagType>::createLeafTag(
 		return NULL;
 	};
 
-	nLeaves++;
 	return ret;
 }
 
@@ -371,7 +364,6 @@ sarch_t vfs::dirInodeC<tagType>::removeDirTag(utf8Char *name)
 		};
 
 		// Found it.
-		nDirs--;
 		dirs.unlock();
 		return dirs.remove(currItem);
 	};
@@ -403,7 +395,6 @@ sarch_t vfs::dirInodeC<tagType>::removeLeafTag(utf8Char *name)
 		};
 
 		// Found it.
-		nLeaves--;
 		leaves.unlock();
 		return leaves.remove(currItem);
 	};
@@ -483,7 +474,9 @@ void vfs::dirInodeC<tagType>::dumpDirs(void)
 	void			*handle;
 	tagType		*currItem;
 
-	printf(NOTICE"vfs::dirInode: dumping dirs (%d total).\n", nDirs);
+	printf(NOTICE"vfs::dirInode: dumping dirs (%d total).\n",
+		dirs.getNItems());
+
 	handle = NULL;
 	dirs.lock();
 	currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
@@ -503,7 +496,9 @@ void vfs::dirInodeC<tagType>::dumpLeaves(void)
 	void			*handle;
 	tagType		*currItem;
 
-	printf(NOTICE"vfs::dirInode: dumping leaves (%d total).\n", nLeaves);
+	printf(NOTICE"vfs::dirInode: dumping leaves (%d total).\n",
+		leaves.getNItems());
+
 	handle = NULL;
 	leaves.lock();
 	currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);

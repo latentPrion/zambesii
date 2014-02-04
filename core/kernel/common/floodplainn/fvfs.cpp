@@ -1,8 +1,31 @@
 
+#include <kernel/common/floodplainn/device.h>
 #include <kernel/common/floodplainn/fvfs.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
+fplainn::deviceC		rootDevice(CHIPSET_NUMA_SHBANKID);
+
+fvfs::currenttC::currenttC(void)
+:
+vfs::currenttC(static_cast<utf8Char>('f')),
+rootTag(CC"FVFS root tag", vfs::DEVICE, &rootTag, &rootDevice)
+{
+}
+
+error_t fvfs::currenttC::initialize(void)
+{
+	error_t		ret;
+
+	ret = vfs::currenttC::initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+	ret = rootDevice.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+	return rootTag.initialize();
+}
+
+#include <__kstdlib/__kclib/assert.h>
+#include <kernel/common/panic.h>
 error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 {
 	/**	EXPLANATION:
@@ -34,8 +57,8 @@ error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 	currTag = vfsTrib.getFvfs()->getRoot();
 	for (;; i += segmentLen + 1)
 	{
-		utf8Char	tmpBuff[FVFS_TAG_NAME_MAXLEN+1];
-		utf8Char	*nextSlash;
+		utf8Char		tmpBuff[FVFS_TAG_NAME_MAXLEN+1];
+		utf8Char		*nextSlash;
 
 		/* If the path ends in "/", such as "@f/foo/bar/", and a node
 		 * was found up to "bar" such that the loop went into the next
@@ -67,7 +90,7 @@ error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 		{
 			// If no slash, check strlen, then copy until EOString.
 			segmentLen = strnlen8(&path[i], FVFS_TAG_NAME_MAXLEN);
-			if (segmentLen == FVFS_TAG_NAME_MAXLEN) {
+			if (segmentLen >= FVFS_TAG_NAME_MAXLEN) {
 				return ERROR_INVALID_RESOURCE_NAME;
 			};
 
@@ -75,8 +98,9 @@ error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 			strcpy8(tmpBuff, &path[i]);
 		};
 
-		// tmpBuff now holds the next segment.
-		currTag = currTag->getChild(tmpBuff);
+		assert_fatal(currTag->getInode() != NULL);
+		// tmpBuff now holds the next segment's tagname.
+		currTag = currTag->getInode()->getChild(tmpBuff);
 		if (currTag == NULL) { return ERROR_NOT_FOUND; };
 
 		// If there were no more slashes, this is the last segment.
@@ -87,6 +111,6 @@ error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 		};
 	};
 
-	return ERROR_NOT_FOUND;	
+	return ERROR_NOT_FOUND;
 }
 

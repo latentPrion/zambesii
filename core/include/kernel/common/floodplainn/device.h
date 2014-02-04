@@ -69,11 +69,13 @@ namespace fplainn
 	 * tree.
 	 **********************************************************************/
 	class deviceC
+	:
+	public vfs::dirInodeC<fvfs::tagC>
 	{
 	public:
-		deviceC(numaBankId_t bid, ubit16 id, utf8Char *shortName)
+		deviceC(numaBankId_t bid)
 		:
-		id(id), bankId(bid), driverInstance(NULL), instance(NULL),
+		bankId(bid), driverInstance(NULL), instance(NULL),
 		nEnumerationAttrs(0), nInstanceAttrs(0), nClasses(0),
 		nParentTags(0),
 		enumerationAttrs(NULL), instanceAttrs(NULL), classes(NULL),
@@ -82,19 +84,44 @@ namespace fplainn
 		requestedIndex(zudiIndexServer::INDEX_KERNEL),
 		parentTags(NULL), parentTagCounter(0)
 		{
-			this->shortName[0] = this->longName[0]
+			this->longName[0]
 				= this->driverFullName[0] = '\0';
-
-			if (shortName != NULL)
-			{
-				strncpy8(
-					this->shortName, shortName,
-					ZUDI_DRIVER_SHORTNAME_MAXLEN);
-			};
 		}
 
-		error_t initialize(void) { return ERROR_SUCCESS; }
+		error_t initialize(void)
+		{
+			return vfs::dirInodeC<fvfs::tagC>::initialize();
+		}
+
 		~deviceC(void) {};
+
+	public:
+		/**	EXPLANATION:
+		 * These are the publicly exposed wrappers around the underlying
+		 * vfs::dirInodeC:: namespace methods. We hid the *DirTag()
+		 * functions with overloads, and then "renamed" them to
+		 * *Child() so we could have more intuitive naming, and more
+		 * suitable function prototypes.
+		 **/
+		error_t createChild(
+			utf8Char *name, fvfs::tagC *parent,
+			deviceC *device, fvfs::tagC **tag)
+		{
+			error_t		ret;
+
+			if (name == NULL || tag == NULL || device == NULL)
+				{ return ERROR_INVALID_ARG; };
+
+			*tag = createDirTag(
+				name, vfs::DEVICE, parent, device, &ret);
+
+			if (ret != ERROR_SUCCESS) { return ret; };
+			return ERROR_SUCCESS;
+		}
+
+		fvfs::tagC *getChild(utf8Char *name) { return getDirTag(name); }
+		sarch_t removeChild(utf8Char *name)
+			{ return removeDirTag(name); }
 
 	public:
 		struct parentTagS
@@ -136,10 +163,45 @@ namespace fplainn
 
 		void dumpEnumerationAttributes(void);
 
+	private:
+		/* Not meant to be used by callers. Used only internally as
+		 * wrapper functions. Deliberately made private.
+		 **/
+		fvfs::tagC *createDirTag(
+			utf8Char *name, vfs::tagTypeE type,
+			fvfs::tagC *parent, vfs::dirInodeC<fvfs::tagC> *dev,
+			error_t *err)
+		{
+			return vfs::dirInodeC<fvfs::tagC>::createDirTag(
+				name, type, parent, dev, err);
+		}
+
+		sarch_t removeDirTag(utf8Char *name)
+		{
+			return vfs::dirInodeC<fvfs::tagC>::removeDirTag(name);
+		}
+
+		fvfs::tagC *getDirTag(utf8Char *name)
+			{ return vfs::dirInodeC<fvfs::tagC>::getDirTag(name); }
+
+		/* The leaf functions are not meant to be used at all by anyone;
+		 * not even internals within this class, and they override the
+		 * base-class functions of the same name, returning error
+		 * unconditionally.
+		 **/
+		fvfs::tagC *createLeafTag(
+			utf8Char *, vfs::tagTypeE, fvfs::tagC *,
+			vfs::inodeC *, error_t *err)
+		{
+			*err = ERROR_UNIMPLEMENTED;
+			return NULL;
+		}
+
+		sarch_t removeLeafTag(utf8Char *) { return 0; }
+		fvfs::tagC *getLeafTag(utf8Char *) { return NULL; }
+
 	public:
-		ubit16		id;
-		utf8Char	shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
-				longName[ZUDI_MESSAGE_MAXLEN],
+		utf8Char	longName[ZUDI_MESSAGE_MAXLEN],
 				driverFullName[DRIVER_FULLNAME_MAXLEN];
 
 		/* Vendor name and contact info should be retrieved from the

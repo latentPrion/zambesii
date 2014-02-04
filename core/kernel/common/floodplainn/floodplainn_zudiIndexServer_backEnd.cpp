@@ -503,8 +503,6 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			&dev->driverFullName[basePathLen],
 			CC driverHdr->shortName);
 
-		strcpy8(dev->shortName, CC driverHdr->shortName);
-
 		// If this next readString fails, it's fine, kind of.
 		zudiIndexes[0]->getMessageString(
 			driverHdr.get(), driverHdr->nameIndex,
