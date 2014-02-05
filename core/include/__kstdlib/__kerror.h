@@ -7,6 +7,7 @@
 	#define ERROR_CRITICAL				((error_t)-3)
 	#define ERROR_FATAL				((error_t)-4)
 	#define ERROR_DUPLICATE				((error_t)-5)
+	#define ERROR_NON_CONFORMANT			((error_t)-6)
 
 	#define ERROR_INVALID_ARG			((error_t)-10)
 	#define ERROR_INVALID_ARG_VAL			((error_t)-11)

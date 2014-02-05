@@ -587,6 +587,17 @@ namespace fplainn
 			return NULL;
 		}
 
+		metalanguageS *getMetalanguage(utf8Char *name)
+		{
+			for (uarch_t i=0; i<nMetalanguages; i++)
+			{
+				if (!strcmp8(metalanguages[i].name, name))
+					{ return &metalanguages[i]; };
+			};
+
+			return NULL;
+		}
+
 		moduleS *getModule(ubit16 index)
 		{
 			for (uarch_t i=0; i<nModules; i++)
@@ -604,6 +615,28 @@ namespace fplainn
 			{
 				if (regions[i].index == index)
 					{ return &regions[i]; };
+			};
+
+			return NULL;
+		}
+
+		childBopS *getChildBop(ubit16 metaIndex)
+		{
+			for (uarch_t i=0; i<nChildBops; i++)
+			{
+				if (childBops[i].metaIndex == metaIndex)
+					{ return &childBops[i]; };
+			};
+
+			return NULL;
+		}
+
+		parentBopS *getParentBop(ubit16 metaIndex)
+		{
+			for (uarch_t i=0; i<nParentBops; i++)
+			{
+				if (parentBops[i].metaIndex == metaIndex)
+					{ return &parentBops[i]; };
 			};
 
 			return NULL;
@@ -711,6 +744,15 @@ namespace fplainn
 		error_t initialize(void);
 
 	public:
+		struct childBopS
+		{
+			/* Parent BOps can only be uniquely identified by their
+			 * metalanguage indexes.
+			 **/
+			ubit16			metaIndex;
+			udi_ops_vector_t	*opsVector;
+		};
+
 		struct managementChannelS
 		{
 			managementChannelS(void)
@@ -723,6 +765,7 @@ namespace fplainn
 			udi_ubit32_t		opFlags;
 		};
 
+	public:
 		void setChildBopVector(
 			ubit16 metaIndex, udi_ops_vector_t *vaddr)
 		{
@@ -734,6 +777,17 @@ namespace fplainn
 				childBopVectors[i].opsVector = vaddr;
 				return;
 			};
+		}
+
+		childBopS *getChildBop(ubit16 metaIndex)
+		{
+			for (uarch_t i=0; i<driver->nChildBops; i++)
+			{
+				if (childBopVectors[i].metaIndex == metaIndex)
+					{ return &childBopVectors[i]; };
+			};
+
+			return NULL;
 		}
 
 		void setMgmtChannelInfo(
@@ -748,16 +802,6 @@ namespace fplainn
 
 		error_t addHostedDevice(utf8Char *path);
 		void removeHostedDevice(utf8Char *path);
-
-	public:
-		struct childBopS
-		{
-			/* Parent BOps can only be uniquely identified by their
-			 * metalanguage indexes.
-			 **/
-			ubit16			metaIndex;
-			udi_ops_vector_t	*opsVector;
-		};
 
 	public:
 		driverC			*driver;

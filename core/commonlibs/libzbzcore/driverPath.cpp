@@ -285,8 +285,13 @@ static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg)
 		// Store the TID in the device's region metadata.
 		dev->instance->setRegionInfo(
 			drv->regions[i].index, newThread->getFullId(),
-			rdata.get());
+			rdata.release());
 	};
+
+	// Spawn the parent bind channel meanwhile.
+	floodplainn.spawnChildBindChannel(
+		CC"by-id/0", msg->path, CC"zbz_root",
+		(udi_ops_vector_t *)0xF00115);
 
 	return ERROR_SUCCESS;
 }

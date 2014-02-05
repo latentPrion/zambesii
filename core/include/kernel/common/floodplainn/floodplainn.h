@@ -200,12 +200,9 @@ public:
 		udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1);
 
 	error_t spawnChildBindChannel(
-		utf8Char *devicePath, utf8Char *metaName,
-		udi_ops_vector_t *opsVector,
-		udi_init_context_t *channelContext);
-
-	error_t spawnManagementChannel(
-		utf8Char *devicePath, udi_ops_vector_t *mgtOpsVector);
+		utf8Char *parentDevPath, utf8Char *selfDevPath,
+		utf8Char *metaName,
+		udi_ops_vector_t *opsVector);
 
 	static void __kdriverEntry(void);
 	static void indexReaderEntry(void);
