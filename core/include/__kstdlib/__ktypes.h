@@ -11,6 +11,7 @@
 
 // "CC" below stands for "kernel char cast".
 #define CC				(utf8Char *)
+#define FOREVER				(1)
 
 #ifndef __ASM__
 
@@ -23,7 +24,7 @@ typedef uint8_t		ubit8;
 typedef uint16_t	ubit16;
 typedef uint32_t	ubit32;
 typedef uint64_t	ubit64;
-	
+
 // Define Zambesii's integral types.
 #ifdef __64_BIT__
 typedef uint64_t	uarch_t;

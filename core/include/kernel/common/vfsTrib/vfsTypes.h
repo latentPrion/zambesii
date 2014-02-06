@@ -3,6 +3,7 @@
 
 	#include <arch/cpuControl.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/string.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kclasses/ptrList.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
@@ -98,8 +99,10 @@ namespace vfs
 		inodeC *getInode(void) { return inode; }
 		utf8Char *getName(void) { return name; }
 		tagC *getParent(void) { return parent; }
-		ubit16 getMaxNameLength(void) { return maxNameLength; }
 		tagTypeE getType(void) { return type; }
+
+		ubit16 getMaxNameLength(void) { return maxNameLength; }
+		error_t getFullName(utf8Char *strmem, uarch_t strlen);
 
 	public:
 		inodeC			*inode;
@@ -524,5 +527,71 @@ error_t vfs::tagC<maxNameLength>::rename(utf8Char *name)
 	this->name[maxNameLength-1] = '\0';
 }
 
-#endif
+template <ubit16 maxNameLength>
+error_t vfs::tagC<maxNameLength>::getFullName(
+	utf8Char *buffer, uarch_t maxBuffLen
+	)
+{
+	tagC		*currTag;
+	uarch_t		index, totalRequiredMem, segmentLen;
+	sbit8		maxBuffLenExceeded;
 
+	/**	EXPLANATION:
+	 * Given a tag, traverse backward through the VFS and incrementally
+	 * build the full path of the tag.
+	 *
+	 * What we do is we start at the end of the supplied output buffer,
+	 * and copy the tag names, tacking them on leftwards. This will produce,
+	 * at the end of the operation, a string with a big gap at its front,
+	 * and the actual filename all the way at the end of the buffer. Then we
+	 * just move the filename back to the beginning of the buffer, and
+	 * return.
+	 **/
+	// We can't work with a 0 length buffer.
+	if (maxBuffLen == 0) { return ERROR_INVALID_ARG; };
+
+	// Start by null terminating the buffer.
+	buffer[maxBuffLen - 1] = '\0';
+	index = maxBuffLen - 1;
+
+	totalRequiredMem = 1;
+	maxBuffLenExceeded = 0;
+
+	for (currTag = this; currTag->parent != currTag;
+		currTag = currTag->parent, index -= segmentLen + 1)
+	{
+		segmentLen = strlen8(currTag->name);
+		totalRequiredMem += segmentLen + 1;
+		if (maxBuffLenExceeded) { continue; };
+
+		/* If the current tag's strlen is greater than the amount of
+		 * buffer space we have left, set a flag stating that the
+		 * operation has exceeded its buffer.
+		 *
+		 * When this flag is set, we no longer continue building the
+		 * string, but our aim changes to tallying the total amount of
+		 * memory required to successfully complete this function call.
+		 * We then return that total amount to the caller at the end.
+		 ***/
+		if (segmentLen + 1 > index)
+			{ maxBuffLenExceeded = 1; continue; };
+
+		if (segmentLen > 0)
+		{
+			buffer[index - segmentLen - 1] =  '/';
+			strncpy8(
+				&buffer[index - segmentLen],
+				currTag->name, segmentLen);
+		};
+	};
+
+	if (maxBuffLenExceeded) { return (signed)totalRequiredMem; }
+	else
+	{
+		// Now we move the name up to the start of the buffer.
+		memmove(buffer, &buffer[index], maxBuffLen - index);
+		return ERROR_SUCCESS;
+	};
+}
+
+#endif

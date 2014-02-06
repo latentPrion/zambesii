@@ -285,6 +285,7 @@ void __korientationMain3(error_t ret)
 	/* Start the chipset up.
 	 **/
 	DO_OR_DIE(floodplainn, enumerateBaseDevices(), ret);
+
 	zudiIndexServer::newDeviceInd(
 		CC"by-id/0", zudiIndexServer::INDEX_KERNEL,
 		newSyscallback(&__korientationMain4));
