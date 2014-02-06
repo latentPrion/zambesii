@@ -219,6 +219,7 @@ error_t floodplainnC::spawnChannel(
 		return ERROR_UNKNOWN;
 	};
 
+	chan.release();
 	return ERROR_SUCCESS;
 }
 

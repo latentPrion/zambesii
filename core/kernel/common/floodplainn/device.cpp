@@ -398,7 +398,7 @@ error_t fplainn::deviceC::getEnumerationAttribute(
 	return ERROR_NOT_FOUND;
 }
 
-error_t fplainn::deviceC::setEnumerationAttribute(
+error_t fplainn::deviceC::addEnumerationAttribute(
 	udi_instance_attr_list_t *attrib
 	)
 {
@@ -442,7 +442,7 @@ error_t fplainn::deviceC::setEnumerationAttribute(
 		enumerationAttrs = attrArrayMem;
 		nEnumerationAttrs++;
 
-		delete tmp;
+		delete[] tmp;
 	};
 
 	memcpy(destAttrMem.get(), attrib, sizeof(*attrib));

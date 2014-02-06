@@ -335,13 +335,13 @@ error_t floodplainnC::enumerateBaseDevices(void)
 	strcpy8(CC tmp.attr_name, CC"identifier");
 	tmp.attr_type = UDI_ATTR_STRING;
 	strcpy8(CC tmp.attr_value, CC"__kramdisk");
-	ret = ramdisk->setEnumerationAttribute(&tmp);
+	ret = ramdisk->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	strcpy8(CC tmp.attr_name, CC"address_locator");
 	tmp.attr_type = UDI_ATTR_STRING;
 	strcpy8(CC tmp.attr_value, CC"__kramdisk0");
-	ret = ramdisk->setEnumerationAttribute(&tmp);
+	ret = ramdisk->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	/* Create the attributes for the virtual-chipset.
@@ -349,13 +349,13 @@ error_t floodplainnC::enumerateBaseDevices(void)
 	strcpy8(CC tmp.attr_name, CC"identifier");
 	tmp.attr_type = UDI_ATTR_STRING;
 	strcpy8(CC tmp.attr_value, CC"__kvirtual-chipset");
-	ret = vchipset->setEnumerationAttribute(&tmp);
+	ret = vchipset->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	strcpy8(CC tmp.attr_name, CC"address_locator");
 	tmp.attr_type = UDI_ATTR_STRING;
 	strcpy8(CC tmp.attr_value, CC"__kvchipset0");
-	ret = vchipset->setEnumerationAttribute(&tmp);
+	ret = vchipset->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	ramdisk->bankId = vchipset->bankId = CHIPSET_NUMA_SHBANKID;
@@ -378,13 +378,13 @@ error_t floodplainnC::enumerateChipsets(void)
 	strcpy8(CC tmp.attr_name, CC"identifier");
 	tmp.attr_type = UDI_ATTR_STRING;
 	strcpy8(CC tmp.attr_value, CC"ibm-pc");
-	ret = chipset->setEnumerationAttribute(&tmp);
+	ret = chipset->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	strcpy8(CC tmp.attr_name, CC"address_locator");
 	tmp.attr_type = UDI_ATTR_STRING;
 	strcpy8(CC tmp.attr_value, CC"chipset0");
-	ret = chipset->setEnumerationAttribute(&tmp);
+	ret = chipset->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	/* zbz_root enumeration attributes.
@@ -392,39 +392,39 @@ error_t floodplainnC::enumerateChipsets(void)
 	strcpy8(CC tmp.attr_name, CC"bus_type");
 	tmp.attr_type = UDI_ATTR_STRING;
 	strcpy8(CC tmp.attr_value, CC"zbz_root");
-	ret = chipset->setEnumerationAttribute(&tmp);
+	ret = chipset->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_short_name");
 	tmp.attr_type = UDI_ATTR_STRING;
 	// strcpy8(CC tmp.attr_value, CC CHIPSET_SHORT_STRING);
 	strcpy8(CC tmp.attr_value, CC"IBM-PC");
-	ret = chipset->setEnumerationAttribute(&tmp);
+	ret = chipset->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_long_name");
 	tmp.attr_type = UDI_ATTR_STRING;
 	// strcpy8(CC tmp.attr_value, CC CHIPSET_LONG_STRING);
 	strcpy8(CC tmp.attr_value, CC"IBM-PC-compatible-chipset");
-	ret = chipset->setEnumerationAttribute(&tmp);
+	ret = chipset->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_using_smp");
 	tmp.attr_type = UDI_ATTR_BOOLEAN;
 	tmp.attr_value[0] = cpuTrib.usingChipsetSmpMode();
-	ret = chipset->setEnumerationAttribute(&tmp);
+	ret = chipset->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_info0");
 	tmp.attr_type = UDI_ATTR_STRING;
 	tmp.attr_value[0] = '\0';
-	ret = chipset->setEnumerationAttribute(&tmp);
+	ret = chipset->addEnumerationAttribute(&tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	strcpy8(CC tmp.attr_name, CC"zbz_root_chipset_info1");
 	tmp.attr_type = UDI_ATTR_STRING;
 	tmp.attr_value[0] = '\0';
-	ret = chipset->setEnumerationAttribute(&tmp);
+	ret = chipset->addEnumerationAttribute(&tmp);
 
 	chipset->bankId = CHIPSET_NUMA_SHBANKID;
 	return ERROR_SUCCESS;

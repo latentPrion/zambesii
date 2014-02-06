@@ -153,10 +153,9 @@ namespace fplainn
 		};
 
 		error_t addClass(utf8Char *name);
+		error_t addEnumerationAttribute(udi_instance_attr_list_t *attrib);
 		error_t getEnumerationAttribute(
 			utf8Char *name, udi_instance_attr_list_t *attrib);
-
-		error_t setEnumerationAttribute(udi_instance_attr_list_t *attrib);
 
 		error_t addParentTag(fvfs::tagC *tag, ubit16 *newIdRetval);
 		void removeParentTag(fvfs::tagC *tag);
@@ -265,10 +264,12 @@ namespace fplainn
 				udi_init_context_t *chanContext1)
 			{
 				new (&endpoints[0]) endpointS(
-					this, t0, opsVec0, chanContext0);
+					this, &endpoints[1],
+					t0, opsVec0, chanContext0);
 
 				new (&endpoints[1]) endpointS(
-					this, t1, opsVec1, chanContext1);
+					this, &endpoints[0],
+					t1, opsVec1, chanContext1);
 			}
 
 			struct endpointS
@@ -279,16 +280,19 @@ namespace fplainn
 
 			public:
 				endpointS(
-					channelS *parent, threadC *thread,
+					channelS *parent, endpointS *otherEnd,
+					threadC *thread,
 					udi_ops_vector_t *opsVector,
 					udi_init_context_t *chanContext)
 				:
-				parent(parent), thread(thread),
+				parent(parent), otherEnd(otherEnd),
+				thread(thread),
 				opsVector(opsVector),
 				channelContext(chanContext)
 				{}
 
 				channelS		*parent;
+				endpointS		*otherEnd;
 				threadC			*thread;
 				udi_ops_vector_t	*opsVector;
 				udi_init_context_t	*channelContext;
