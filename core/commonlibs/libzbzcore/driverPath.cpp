@@ -7,7 +7,8 @@
 #include <commonlibs/libzbzcore/libzbzcore.h>
 
 
-#define DRIVERPATH_U0_GET_THREAD_DEVICE_PATH		(0)
+#define DRIVERPATH_U0_GET_THREAD_DEVICE_PATH_REQ		(0)
+#define DRIVERPATH_U0_REGION_INIT_COMPLETE_IND			(1)
 
 static void driverPath0(threadC *self);
 static error_t instantiateDevice(floodplainnC::zudiNotificationMsgS *msg);
@@ -52,6 +53,7 @@ static error_t getThreadDevicePath(
 	return ERROR_NOT_FOUND;
 }
 
+static void instantiateDevice1(utf8Char *devPath, fplainn::deviceC *dev);
 void __klibzbzcoreDriverPath(threadC *self)
 {
 //	fplainn::driverC				*driver;
@@ -96,7 +98,7 @@ void __klibzbzcoreDriverPath(threadC *self)
 		case MSGSTREAM_SUBSYSTEM_USER0:
 			switch (msgIt->header.function)
 			{
-			case DRIVERPATH_U0_GET_THREAD_DEVICE_PATH:
+			case DRIVERPATH_U0_GET_THREAD_DEVICE_PATH_REQ:
 				assert_fatal(
 					getThreadDevicePath(
 						drvInst,
@@ -109,8 +111,29 @@ void __klibzbzcoreDriverPath(threadC *self)
 					.postMessage(
 					msgIt->header.sourceId,
 					MSGSTREAM_SUBSYSTEM_USER0,
-					DRIVERPATH_U0_GET_THREAD_DEVICE_PATH,
+					DRIVERPATH_U0_GET_THREAD_DEVICE_PATH_REQ,
 					NULL);
+
+				break;
+
+			case DRIVERPATH_U0_REGION_INIT_COMPLETE_IND:
+				fplainn::deviceC		*dev;
+
+				assert_fatal(
+					floodplainn.getDevice(
+						(utf8Char *)msgIt->header.privateData,
+						&dev)
+					== ERROR_SUCCESS);
+
+				dev->instance->nRegionsInitialized++;
+				if (dev->instance->nRegionsInitialized
+					== dev->driverInstance->driver->nRegions)
+				{
+					// All regions initialized; proceed.
+					instantiateDevice1(
+						(utf8Char *)msgIt->header.privateData,
+						dev);
+				};
 
 				break;
 
@@ -235,7 +258,6 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 }
 
 static void regionThreadEntry(void *);
-static syscallbackDataF instantiateDevice1;
 static error_t instantiateDevice(floodplainnC::zudiNotificationMsgS *msg)
 {
 	fplainn::deviceC		*dev;
@@ -295,19 +317,21 @@ static error_t instantiateDevice(floodplainnC::zudiNotificationMsgS *msg)
 		(udi_ops_vector_t *)0xF00115);
 
 	/* At this point, all regions are spawned, and all channels too.
-	 * Begin initializing the driver instance.
+	 * We now need to wait for the region threads to finish initializing.
+	 * They will each send a completion notification to this main thread
+	 * when they are done. We can exit and wait.
 	 **/
-	floodplainn.udi_usage_ind(
+	/*floodplainn.udi_usage_ind(
 		msg->path, UDI_RESOURCES_NORMAL,
-		newSyscallback(&instantiateDevice1));
+		newSyscallback(&instantiateDevice1));*/
 
 	return ERROR_SUCCESS;
 }
 
-static void instantiateDevice1(messageStreamC::iteratorS *msgIt, void *)
+static void instantiateDevice1(utf8Char *devPath, fplainn::deviceC *)
 {
-	printf(NOTICE LZBZCORE"dpath2: ret from usage_ind: %d.\n",
-		msgIt->header.error);
+	printf(NOTICE LZBZCORE"instDev: dev %s: all regions done.\n",
+		devPath);
 }
 
 static void regionThreadEntry(void *)
@@ -336,7 +360,7 @@ static void regionThreadEntry(void *)
 
 	// Ask the main thread to tell us which device we are.
 	self->getTaskContext()->messageStream.postMessage(
-		self->parent->id, 0, DRIVERPATH_U0_GET_THREAD_DEVICE_PATH,
+		self->parent->id, 0, DRIVERPATH_U0_GET_THREAD_DEVICE_PATH_REQ,
 		devPath);
 
 	// Get response.
@@ -426,6 +450,11 @@ static void regionThreadEntry(void *)
 		};
 	};
 
+	// Send a message to the main thread, letting it know we're done here.
+	self->getTaskContext()->messageStream.postMessage(
+		self->parent->id, 0,
+		DRIVERPATH_U0_REGION_INIT_COMPLETE_IND, devPath);
+
 	printf(NOTICE LZBZCORE"Region %d, dev %s: Entering event loop.\n",
 		regionIndex, devPath);
 
@@ -434,6 +463,15 @@ static void regionThreadEntry(void *)
 		self->getTaskContext()->messageStream.pull(msgIt.get());
 		printf(NOTICE"%s dev, region %d, got a message.\n",
 			dev->driverInstance->driver->longName, regionIndex);
+
+		switch (msgIt->header.subsystem)
+		{
+		case MSGSTREAM_SUBSYSTEM_ZUDI:
+			printf(NOTICE"dev %s, region %d: ZUDI message.\n",
+				devPath, regionIndex);
+
+			break;
+		};
 	};
 
 	taskTrib.dormant(self->getFullId());
