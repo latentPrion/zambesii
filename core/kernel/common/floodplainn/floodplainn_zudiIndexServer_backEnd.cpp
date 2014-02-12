@@ -1215,7 +1215,7 @@ static void fplainnIndexServer_newDeviceInd3(messageStreamC::headerS *response)
 }
 
 static void fplainnIndexServer_newDeviceInd4(
-	floodplainnC::instantiateDeviceMsgS *response
+	floodplainnC::zudiNotificationMsgS *response
 	)
 {
 
@@ -1384,7 +1384,8 @@ void floodplainnC::indexReaderEntry(void)
 		// If some thread is forwarding syscall responses to us:
 		if ((gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_FLOODPLAINN
 			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_ZASYNC
-			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_PROCESS)
+			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_PROCESS
+			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_ZUDI)
 			&& gcb->header.sourceId != self->getFullId())
 		{
 			printf(ERROR FPLAINNIDX"Syscall response message "
@@ -1427,10 +1428,15 @@ void floodplainnC::indexReaderEntry(void)
 						gcb.get());
 
 				break;
+			};
+			break;
 
-			case MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ:
+		case MSGSTREAM_SUBSYSTEM_ZUDI:
+			switch (gcb->header.function)
+			{
+			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
 				fplainnIndexServer_newDeviceInd4(
-					(floodplainnC::instantiateDeviceMsgS *)
+					(floodplainnC::zudiNotificationMsgS *)
 						gcb.get());
 
 				break;

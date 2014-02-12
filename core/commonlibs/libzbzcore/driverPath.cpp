@@ -10,7 +10,7 @@
 #define DRIVERPATH_U0_GET_THREAD_DEVICE_PATH		(0)
 
 static void driverPath0(threadC *self);
-static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg);
+static error_t instantiateDevice(floodplainnC::zudiNotificationMsgS *msg);
 static error_t getThreadDevicePath(
 	fplainn::driverInstanceC *drvInst, processId_t tid, utf8Char *path
 	)
@@ -119,14 +119,14 @@ void __klibzbzcoreDriverPath(threadC *self)
 			};
 			break;
 
-		case MSGSTREAM_SUBSYSTEM_FLOODPLAINN:
+		case MSGSTREAM_SUBSYSTEM_ZUDI:
 			switch (msgIt->header.function)
 			{
-			case MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ:
-				floodplainnC::instantiateDeviceMsgS	*msg;
+			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
+				floodplainnC::zudiNotificationMsgS	*msg;
 				error_t					reterr;
 
-				msg = (floodplainnC::instantiateDeviceMsgS *)
+				msg = (floodplainnC::zudiNotificationMsgS *)
 					msgIt.get();
 
 				reterr = instantiateDevice(msg);
@@ -235,7 +235,8 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 }
 
 static void regionThreadEntry(void *);
-static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg)
+static syscallbackDataF instantiateDevice1;
+static error_t instantiateDevice(floodplainnC::zudiNotificationMsgS *msg)
 {
 	fplainn::deviceC		*dev;
 	fplainn::driverC		*drv;
@@ -293,7 +294,20 @@ static error_t instantiateDevice(floodplainnC::instantiateDeviceMsgS *msg)
 		CC"by-id/0", msg->path, CC"zbz_root",
 		(udi_ops_vector_t *)0xF00115);
 
+	/* At this point, all regions are spawned, and all channels too.
+	 * Begin initializing the driver instance.
+	 **/
+	floodplainn.udi_usage_ind(
+		msg->path, UDI_RESOURCES_NORMAL,
+		newSyscallback(&instantiateDevice1));
+
 	return ERROR_SUCCESS;
+}
+
+static void instantiateDevice1(messageStreamC::iteratorS *msgIt, void *)
+{
+	printf(NOTICE LZBZCORE"dpath2: ret from usage_ind: %d.\n",
+		msgIt->header.error);
 }
 
 static void regionThreadEntry(void *)

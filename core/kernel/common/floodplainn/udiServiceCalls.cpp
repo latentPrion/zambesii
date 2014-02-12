@@ -189,12 +189,6 @@ error_t floodplainnC::spawnChannel(
 	 * during device instantiation. It is meant to be used to establish
 	 * channels which are spawned before the driver begins actively
 	 * executing.
-	 *
-	 * There are a few steps it takes in summary:
-	 * 	* Allocate a new channel object.
-	 * Region 0:
-	 * 	* Get a handle to the regions' threads.
-	 * 	*
 	 **/
 	if (opsVector0 == NULL || opsVector1 == NULL
 		|| channelContext0 == NULL || channelContext1 == NULL

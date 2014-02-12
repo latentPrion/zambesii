@@ -5,6 +5,7 @@
 #include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/floodplainn/device.h>
+#include <kernel/common/floodplainn/floodplainn.h>
 
 
 /**	EXPLANATION:
@@ -508,4 +509,3 @@ void fplainn::driverC::dump(void)
 		nModules, nRegions, nRequirements, nMetalanguages,
 		nChildBops, nParentBops, nInternalBops);
 }
-

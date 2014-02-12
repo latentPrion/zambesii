@@ -11,7 +11,7 @@
 	#include <kernel/common/floodplainn/device.h>
 	#include <kernel/common/vfsTrib/commonOperations.h>
 
-#define DRIVERINDEX_REQUEST_DEVNAME_MAXLEN		(128)
+//#define DRIVERINDEX_REQUEST_DEVNAME_MAXLEN		(128)
 
 #define FPLAINN						"Fplainn: "
 #define FPLAINNIDX					"FplainnIndex: "
@@ -34,6 +34,87 @@ public:
 	~floodplainnC(void) {}
 
 public:
+	struct zudiNotificationMsgS
+	{
+		enum mgmtOperationE {
+			MGMTOP_USAGE, MGMTOP_ENUMERATE, MGMTOP_DEVMGMT,
+			MGMTOP_FINAL_CLEANUP };
+
+		enum __kcallOperationE {
+			__KOP_NEW_PARENT, __KOP_INSTANTIATE_DEVICE };
+
+		zudiNotificationMsgS(
+			utf8Char *path,
+			processId_t targetPid, ubit16 subsystem, ubit16 function,
+			uarch_t size, uarch_t flags, void *privateData)
+		:
+		header(
+			targetPid, subsystem, function,
+			size, flags, privateData),
+		cb(NULL)
+		{
+			if (path != NULL
+				&& strnlen8(
+					path,
+					ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
+					< ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
+				{ strcpy8(this->path, path); };
+		}
+
+		messageStreamC::headerS	header;
+		udi_cb_t		*cb;
+		utf8Char		path[
+			ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
+
+		union
+		{
+			struct
+			{
+				void set_usage_ind(udi_ubit8_t usageLevel)
+				{
+					mgmtOp = MGMTOP_ENUMERATE;
+					this->usageLevel = usageLevel;
+				}
+
+				void set_devmgmt_req(
+					udi_ubit8_t op, udi_ubit8_t parentId)
+				{
+					mgmtOp = MGMTOP_ENUMERATE;
+					this->op = op;
+					this->parentId = parentId;
+				}
+
+				void set_enumerate_req(udi_ubit8_t enumLvl)
+				{
+					mgmtOp = MGMTOP_ENUMERATE;
+					this->enumerateLevel = enumLvl;
+				}
+
+				void set_final_cleanup_req(void)
+					{ mgmtOp = MGMTOP_FINAL_CLEANUP; }
+
+				mgmtOperationE	mgmtOp;
+				udi_ubit8_t	usageLevel;
+				udi_ubit8_t	enumerateLevel;
+				udi_ubit8_t	op, parentId;
+				union
+				{
+					udi_mgmt_cb_t		mcb;
+					udi_usage_cb_t		ucb;
+					udi_enumerate_cb_t	ecb;
+				} cb;
+			} mgmtCall;
+			struct
+			{
+				void set(__kcallOperationE __kop)
+					{ this->__kop = __kop; };
+
+				__kcallOperationE	__kop;
+			} __kcall;
+			struct {} serviceCall, meiCall;
+		} u;
+	};
+
 	struct zudiIndexMsgS
 	{
 		zudiIndexMsgS(
@@ -69,24 +150,6 @@ public:
 		zudiIndexServer::zudiIndexMsgS	info;
 	};
 
-	struct instantiateDeviceMsgS
-	{
-		instantiateDeviceMsgS(
-			processId_t targetPid, ubit16 subsystem, ubit16 function,
-			uarch_t size, uarch_t flags, void *privateData)
-		:
-		header(
-			targetPid, subsystem, function,
-			size, flags, privateData)
-		{
-			path[0] = '\0';
-		}
-
-		messageStreamC::headerS		header;
-		utf8Char			path[
-			ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
-	};
-
 public:
 	const driverInitEntryS *findDriverInitInfo(utf8Char *shortName);
 	const metaInitEntryS *findMetaInitInfo(utf8Char *shortName);
@@ -113,11 +176,25 @@ public:
 	error_t getDeviceFullName(fplainn::deviceC *dev, utf8Char *retname);
 
 	// Create an instance of a device in its driver instance's addrspace.
-	#define MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ	(32)
+	#define MSGSTREAM_FPLAINN_ZUDI___KCALL		(0)
 	error_t instantiateDeviceReq(utf8Char *path, void *privateData);
 	// Called by driver processes to send response after instantiating.
 	void instantiateDeviceAck(
 		processId_t targetId, utf8Char *path, error_t err,
+		void *privateData);
+
+	#define MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL	(1)
+	void udi_final_cleanup_req(utf8Char *devicePath, void *privateData);
+	void udi_usage_ind(
+		utf8Char *devicePath, udi_ubit8_t usageLevel,
+		void *privateData);
+
+	void udi_enumerate_req(
+		utf8Char *devicePath, udi_ubit8_t enumerateLevel,
+		void *privateData);
+
+	void udi_devmgmt_req(
+		utf8Char *devicePath, udi_ubit8_t op, udi_ubit8_t parentId,
 		void *privateData);
 
 	/* FVFS listing functions. These allow the device tree to be treated

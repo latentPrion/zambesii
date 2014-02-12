@@ -327,16 +327,12 @@ namespace fplainn
 		error_t addChannel(channelS *newChan);
 		void removeChannel(channelS *chan);
 
-		void udi_usage_ind(udi_ubit8_t usageLevel);
-		void udi_enumerate_req(udi_ubit8_t enumerateLevel);
-		void udi_devmgmt_req(udi_ubit8_t op, udi_ubit8_t parentId);
-		void udi_final_cleanup_req(void);
-
 	public:
 		ubit16			nChannels;
 		deviceC			*device;
 		regionS			*regions;
 		channelS		**channels;
+		udi_init_context_t	*mgmtChannelContext;
 	};
 
 	class driverInstanceC;

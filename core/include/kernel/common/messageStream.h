@@ -64,7 +64,7 @@
  * in the kernel).
  **/
 // Keep these two up to date.
-#define MSGSTREAM_SUBSYSTEM_MAXVAL		(0x7)
+#define MSGSTREAM_SUBSYSTEM_MAXVAL		(0x8)
 #define MSGSTREAM_USERQ_MAXVAL			(0x3)
 // Actual subsystem values.
 #define MSGSTREAM_SUBSYSTEM_USER0		(0x0)
@@ -75,6 +75,7 @@
 #define MSGSTREAM_SUBSYSTEM_PROCESS		(0x5)
 #define MSGSTREAM_SUBSYSTEM_FLOODPLAINN		(0x6)
 #define MSGSTREAM_SUBSYSTEM_ZASYNC		(0x7)
+#define MSGSTREAM_SUBSYSTEM_ZUDI			(0x8)
 
 #define MSGSTREAM_USERQ(num)			(MSGSTREAM_SUBSYSTEM_USER0 + num)
 

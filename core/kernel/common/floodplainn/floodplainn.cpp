@@ -217,11 +217,12 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 
 error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 {
-	instantiateDeviceMsgS			*request;
+	zudiNotificationMsgS				*request;
 	fplainn::deviceC			*dev;
 	error_t					ret;
 	heapPtrC<fplainn::deviceInstanceC>	devInst;
 
+	if (path == NULL) { return ERROR_INVALID_ARG; };
 	if (strlen8(path) >= ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
 		{ return ERROR_INVALID_RESOURCE_NAME; };
 
@@ -245,10 +246,10 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 		if (ret != ERROR_SUCCESS) { return ret; };
 	};
 
-	request = new instantiateDeviceMsgS(
-		dev->driverInstance->pid,
-		MSGSTREAM_SUBSYSTEM_FLOODPLAINN,
-		MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ,
+	request = new zudiNotificationMsgS(
+		path, dev->driverInstance->pid,
+		MSGSTREAM_SUBSYSTEM_ZUDI,
+		MSGSTREAM_FPLAINN_ZUDI___KCALL,
 		sizeof(*request), 0, privateData);
 
 	if (request == NULL)
@@ -257,9 +258,8 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	strcpy8(request->path, path);
-
 	// Assign the device instance to dev->instance and release the mem.
+	request->u.__kcall.set(zudiNotificationMsgS::__KOP_INSTANTIATE_DEVICE);
 	if (dev->instance == NULL) { dev->instance = devInst.release(); };
 	return messageStreamC::enqueueOnThread(
 		request->header.targetId, &request->header);
@@ -270,7 +270,7 @@ void floodplainnC::instantiateDeviceAck(
 	)
 {
 	threadC					*currThread;
-	floodplainnC::instantiateDeviceMsgS	*response;
+	floodplainnC::zudiNotificationMsgS		*response;
 	fplainn::deviceC			*dev;
 
 	currThread = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
@@ -299,15 +299,15 @@ void floodplainnC::instantiateDeviceAck(
 		dev->instance = NULL;
 	};
 
-	response = new instantiateDeviceMsgS(
-		targetId,
-		MSGSTREAM_SUBSYSTEM_FLOODPLAINN,
-		MSGSTREAM_FPLAINN_INSTANTIATE_DEVICE_REQ,
+	response = new zudiNotificationMsgS(
+		path, targetId,
+		MSGSTREAM_SUBSYSTEM_ZUDI,
+		MSGSTREAM_FPLAINN_ZUDI___KCALL,
 		sizeof(*response), 0, privateData);
 
 	if (response == NULL) { return; };
 
-	strcpy8(response->path, path);
+	response->u.__kcall.set(zudiNotificationMsgS::__KOP_INSTANTIATE_DEVICE);
 	response->header.error = err;
 
 	messageStreamC::enqueueOnThread(
@@ -452,3 +452,90 @@ const metaInitEntryS *floodplainnC::findMetaInitInfo(utf8Char *shortName)
 	return NULL;
 }
 
+static error_t udi_mgmt_calls_prep(
+	utf8Char *callerName, utf8Char *devPath, fplainn::deviceC **dev,
+	heapPtrC<floodplainnC::zudiNotificationMsgS> *request,
+	void *privateData
+	)
+{
+	processId_t		primaryRegionTid=PROCID_INVALID;
+	udi_init_context_t	*dummy;
+
+	if (floodplainn.getDevice(devPath, dev) != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINN"%s: device %s doesn't exist.\n",
+			callerName, devPath);
+
+		return ERROR_INVALID_RESOURCE_NAME;
+	};
+
+	if (!(*dev)->driverDetected
+		|| (*dev)->driverInstance == NULL || (*dev)->instance == NULL)
+		{ return ERROR_UNINITIALIZED; };
+
+	(*dev)->instance->getRegionInfo(0, &primaryRegionTid, &dummy);
+
+	*request = new floodplainnC::zudiNotificationMsgS(
+		devPath, primaryRegionTid,
+		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL,
+		sizeof(*request), 0, privateData);
+
+	if (request->get() == NULL)
+	{
+		printf(ERROR FPLAINN"%s: Failed to alloc request.\n",
+			callerName);
+
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	return ERROR_SUCCESS;
+}
+
+static void udi_usage_gcb_prep(udi_cb_t *cb, fplainn::deviceC *dev)
+{
+	cb->channel = NULL;
+	cb->context = dev->instance->mgmtChannelContext;
+	cb->scratch = NULL;
+	cb->initiator_context = NULL;
+	cb->origin = NULL;
+}
+
+void floodplainnC::udi_usage_ind(
+	utf8Char *devPath, udi_ubit8_t usageLevel, void *privateData
+	)
+{
+	heapPtrC<zudiNotificationMsgS>		request;
+	udi_usage_cb_t				*cb;
+	fplainn::deviceC			*dev;
+
+	if (udi_mgmt_calls_prep(
+		CC"udi_usage_ind", devPath, &dev, &request, privateData)
+		!= ERROR_SUCCESS)
+		{ return; };
+
+	// Set the request block's parameters.
+	request->u.mgmtCall.set_usage_ind(usageLevel);
+
+	// Next, fill in the control block.
+	cb = &request->u.mgmtCall.cb.ucb;
+	cb->trace_mask = 0;
+	cb->meta_idx = 0;
+
+	udi_usage_gcb_prep(&cb->gcb, dev);
+	// Now send the request.
+	if (messageStreamC::enqueueOnThread(
+		request->header.targetId, &request->header) == ERROR_SUCCESS)
+		{ request.release(); };
+}
+
+void udi_enumerate_req(udi_ubit8_t enumerateLevel, void *privateData)
+{
+}
+
+void udi_devmgmt_req(udi_ubit8_t op, udi_ubit8_t parentId, void *privateData)
+{
+}
+
+void udi_final_cleanup_req(void *privateData)
+{
+}
