@@ -18,16 +18,27 @@ class bitmapC
 {
 friend class messageStreamC;
 public:
-	bitmapC(ubit32 nBits);
+	struct preallocatedMemoryS
+	{
+		preallocatedMemoryS(void *ptr=NULL, ubit16 size=0)
+		:
+		vaddr(ptr), size(size)
+		{}
+
+		preallocatedMemoryS operator =(int)
+			{ return *this; }
+
+		void		*vaddr;
+		ubit16		size;
+	};
+
 	bitmapC(void);
 
 	/* Used to inialize BMPs which would have been constructed in the
 	 * absence of dynamic memory allocation.
 	 **/
 	error_t initialize(
-		ubit32 nBits,
-		void *preAllocatedMemory=NULL,
-		ubit16 preAllocatedMemorySize=0);
+		ubit32 nBits, preallocatedMemoryS preallocatedMemory=0);
 
 	~bitmapC(void);
 

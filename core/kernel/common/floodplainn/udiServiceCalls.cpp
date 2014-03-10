@@ -230,4 +230,3 @@ void udi_mei_call(
 	va_start(args, vec_idx);
 	va_end(args);
 }
-

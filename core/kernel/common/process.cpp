@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/atomic.h>
 #include <chipset/chipset.h>
 #include <__kstdlib/__kflagManipulation.h>
@@ -109,17 +110,26 @@ error_t processStreamC::initializeBitmaps(void)
 	if (id == __KPROCESSID)
 	{
 #if __SCALING__ >= SCALING_SMP
-		cpuTrace.initialize(0, __kprocessPreallocatedBmpMem[0], 32);
-		cpuAffinity.initialize(0, __kprocessPreallocatedBmpMem[1], 32);
+		cpuTrace.initialize(
+			0,
+			bitmapC::preallocatedMemoryS(
+				__kprocessPreallocatedBmpMem[0], 32));
+
+		cpuAffinity.initialize(
+			0,
+			bitmapC::preallocatedMemoryS(
+				__kprocessPreallocatedBmpMem[1], 32));
 #endif
 		pendingEvents.initialize(
-			0, __kprocessPreallocatedBmpMem[2], 32);
+			0,
+			bitmapC::preallocatedMemoryS(
+				__kprocessPreallocatedBmpMem[2], 32));
 	}
 	else
 	{
 #if __SCALING__ >= SCALING_SMP
 		ret = cpuTrace.initialize(cpuTrib.availableCpus.getNBits());
-		if (ret != ERROR_SUCCESS) { return ret; }; 
+		if (ret != ERROR_SUCCESS) { return ret; };
 		ret = cpuAffinity.initialize(cpuTrib.availableCpus.getNBits());
 		if (ret != ERROR_SUCCESS) { return ret; };
 #endif

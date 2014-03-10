@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <__ksymbols.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/string8.h>
@@ -11,40 +12,40 @@ error_t zudiIndexParserC::randomAccessBufferC::initialize(
 	utf8Char *indexPath, utf8Char *fileName
 	)
 {
-	uarch_t		strLen, indexPathLen;
+	uarch_t		strLen, indexPathLen, fileNameLen;
 
 	if (source == SOURCE_KERNEL) { return ERROR_INVALID_OPERATION; };
 	if (bufferSize == 0) { return ERROR_INVALID_ARG_VAL; };
 
 	indexPathLen = strlen8(indexPath);
-	strLen = indexPathLen + strlen8(fileName) + 1;
-	fullName = new utf8Char[strLen];
+	fileNameLen = strlen8(fileName);
+	strLen = indexPathLen + fileNameLen;
+
+	// Extra byte is for the potential '/' separator char.
+	fullName = new utf8Char[strLen + 1 + 1];
 	if (fullName == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	strcpy8(fullName, indexPath);
 	// Ensure there is a '/' between path and filename.
-	if (indexPath[indexPathLen - 1] != '/')
-	{
-		strcpy8(&fullName[indexPathLen], CC"/");
-		indexPathLen++;
-	};
+	if (fullName[indexPathLen - 1] != '/')
+		{ strcat8(fullName, CC"/"); };
 
-	strcpy8(&fullName[indexPathLen], fileName);
+	strcat8(fullName, fileName);
 
 	buffer.rsrc.buffer = new ubit8[bufferSize];
 	if (buffer.rsrc.buffer == NULL) { return ERROR_MEMORY_NOMEM; };
-	buffer.rsrc.bufferEnd = &buffer.rsrc.buffer[bufferSize];
+	buffer.rsrc.bufferEof = &buffer.rsrc.buffer[bufferSize];
 
 	return ERROR_SUCCESS;
 }
 
 error_t zudiIndexParserC::randomAccessBufferC::initialize(
-	void *source, void *sourceEnd
+	void *source, void *sourceEof
 	)
 {
 	buffer.rsrc.buffer = (ubit8 *)source;
-	buffer.rsrc.bufferEnd = (ubit8 *)sourceEnd;
-	bufferSize = buffer.rsrc.bufferEnd - buffer.rsrc.buffer;
+	buffer.rsrc.bufferEof = (ubit8 *)sourceEof;
+	bufferSize = buffer.rsrc.bufferEof - buffer.rsrc.buffer;
 	return ERROR_SUCCESS;
 }
 
@@ -67,19 +68,22 @@ error_t zudiIndexParserC::randomAccessBufferC::readString(
 error_t zudiIndexParserC::randomAccessBufferC::read(
 	void *buff, uarch_t offset, uarch_t nBytes)
 {
+	// Guarantee that nBytes > 0.
+	if (nBytes <= 0) { return ERROR_SUCCESS; };
+
 	if (source == SOURCE_KERNEL)
 	{
 		buffer.lock.acquire();
 
 		// Check for read overflows.
-		if (&buffer.rsrc.buffer[offset + nBytes]
-			> buffer.rsrc.bufferEnd)
+		if (&buffer.rsrc.buffer[offset + nBytes - 1]
+			>= buffer.rsrc.bufferEof)
 		{
 			buffer.lock.release();
 
-			printf(WARNING ZUDIIDX"RAB::read: Overflow: bufferEnd "
+			printf(WARNING ZUDIIDX"RAB::read: Overflow: bufferEof "
 				"0x%p, read would have accessed up to 0x%p.\n",
-				buffer.rsrc.bufferEnd,
+				buffer.rsrc.bufferEof,
 				&buffer.rsrc.buffer[offset + nBytes - 1]);
 
 			/* Beware when changing this return value. A caller
@@ -102,7 +106,7 @@ void zudiIndexParserC::randomAccessBufferC::discardBuffer(void)
 {
 	if (source == SOURCE_KERNEL) { return; }
 
-	buffer.rsrc.buffer = buffer.rsrc.bufferEnd = NULL;
+	buffer.rsrc.buffer = buffer.rsrc.bufferEof = NULL;
 	UNIMPLEMENTED("zudiIndexParserC::randomAccessBufferC::discardBuffer")
 }
 
@@ -255,16 +259,14 @@ error_t zudiIndexParserC::findDriver(
 		basePathLen = strlen8(CC retobj->basePath);
 		strcpy8(nameTmp.get(), CC retobj->basePath);
 		if (basePathLen > 0 && retobj->basePath[basePathLen - 1] != '/')
-		{
-			strcpy8(&nameTmp[basePathLen], CC "/");
-			basePathLen++;
-		};
+			{ strcat8(nameTmp.get(), CC "/"); };
 
-		strcpy8(&nameTmp[basePathLen], CC retobj->shortName);
-
+		strcat8(nameTmp.get(), CC retobj->shortName);
 		// Now we can compare.
 		if (strcmp8(nameTmp.get(), fullName) == 0)
-			{ return ERROR_SUCCESS; };
+		{
+			 return ERROR_SUCCESS;
+		};
 	};
 
 	return ERROR_NOT_FOUND;

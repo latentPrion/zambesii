@@ -1,6 +1,10 @@
 
+#include <debug.h>
+#include <stddef.h>
 #include <arch/paging.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/__kclib/assert.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/memoryBog.h>
 #include <__kclasses/debugPipe.h>
@@ -148,11 +152,15 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 
 				head.lock.release();
 
-				R_CAST(allocHeaderS *, ret)->magic =
-					MEMBOG_MAGIC;
+				strncpy8(
+					R_CAST(allocHeaderS *, ret)->magic,
+					MEMBOG_MAGIC,
+					strlen8(MEMBOG_MAGIC));
 
 				R_CAST(allocHeaderS *, ret)->nBytes = nBytes;
 				R_CAST(allocHeaderS *, ret)->parent = blockTmp;
+				R_CAST(allocHeaderS *, ret)->allocatedBy =
+					__builtin_return_address(2);
 
 				return R_CAST(
 					void *,
@@ -198,9 +206,15 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 
 			head.lock.release();
 
-			((allocHeaderS *)ret)->magic = MEMBOG_MAGIC;
+			strncpy8(
+				((allocHeaderS *)ret)->magic,
+				MEMBOG_MAGIC, strlen8(MEMBOG_MAGIC));
+
 			((allocHeaderS *)ret)->nBytes = nBytes;
 			((allocHeaderS *)ret)->parent = blockTmp;
+			R_CAST(allocHeaderS *, ret)->allocatedBy =
+				__builtin_return_address(2);
+
 			return reinterpret_cast<void *>(
 				R_CAST(uarch_t, ret) + sizeof(allocHeaderS) );
 		};
@@ -229,12 +243,27 @@ void memoryBogC::free(void *_mem)
 		return;
 	};
 
-	if (mem->magic != MEMBOG_MAGIC)
+	if (strncmp8(mem->magic, MEMBOG_MAGIC, strlen8(MEMBOG_MAGIC)) != 0)
 	{
+		mem->magic[sizeof(mem->magic) - 1] = '\0';
 		printf(WARNING MEMBOG"Corrupt memory or bad free at 0x%X, "
-			"magic was 0x%X.\n", mem, mem->magic);
+			"magic was 0x%s.\n", mem, mem->magic);
 
 		return;
+	};
+
+	// Erase the magic, so that freed blocks don't contain it any longer.
+	memset(mem->magic, 0, strlen8(MEMBOG_MAGIC));
+
+	if (mem->nBytes < 1)
+	{
+		printf(FATAL MEMBOG"free: Free'd block size is 0!\n"
+			"\tAllocated by: 0x%p.\n",
+			mem->allocatedBy);
+
+//		dump();
+//		DEBUG_ON(1);
+		//panic(FATAL"Heap corruption.\n");
 	};
 
 	block = mem->parent;
@@ -327,6 +356,71 @@ void memoryBogC::free(void *_mem)
 		head.lock.release();
 		return;
 	};
+}
+
+error_t memoryBogC::checkAllocations(sarch_t nBytes)
+{
+	error_t		ret=ERROR_SUCCESS;
+
+	head.lock.acquire();
+
+	for (bogBlockS *currBlock=head.rsrc;
+		currBlock != NULL;
+		currBlock = currBlock->next)
+	{
+		ubit8			*start, *end;
+		union
+		{
+			ubit8		*byte;
+			allocHeaderS	*allocation;
+		} cursor;
+
+		/**	EXPLANATION:
+		 * We actually go through the heap, byte by byte, looking for
+		 * the magic number.
+		 *
+		 * We're looking through current allocations, trying to find
+		 * any that look suspicious. We have to locate all alloc headers
+		 * and check them.
+		 **/
+		start = &((ubit8 *)currBlock)[blockSize - sizeof(allocHeaderS)];
+		end = start - (nBytes - sizeof(allocHeaderS));
+
+		// Remember we're actually progressing backwards in memory.
+		for (cursor.byte=start;
+			cursor.byte >= end;
+			cursor.byte--)
+		{
+			if (strncmp8(
+				cursor.byte,
+				MEMBOG_MAGIC, strlen8(MEMBOG_MAGIC)) != 0)
+				{ continue; };
+
+			cursor.byte -= offsetof(allocHeaderS, magic);
+			if (strncmp8(cursor.byte, MEMBOG_MAGIC, strlen8(MEMBOG_MAGIC))==0)
+			{
+				printf(NOTICE"Problem!\n");
+			};
+
+			cursor.allocation->magic[sizeof(cursor.allocation->magic) - 1] = '\0';
+			printf(NOTICE"Found alloc: %d bytes @ 0x%p, %s.\n",
+				cursor.allocation->nBytes, cursor.allocation, cursor.allocation->magic);
+
+			if (cursor.allocation->parent != currBlock)
+			{
+				printf(FATAL"Parent block is not currently "
+					"scrutinized block!. Val 0x%p, should "
+					"be 0x%p.\n",
+					cursor.allocation->parent,
+					currBlock);
+
+				ret = ERROR_UNKNOWN;
+			};
+		};
+	};
+
+	head.lock.release();
+	return ret;
 }
 
 memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)

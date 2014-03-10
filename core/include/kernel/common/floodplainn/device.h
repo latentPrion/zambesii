@@ -229,7 +229,8 @@ namespace fplainn
 		:
 		nChannels(0),
 		device(dev),
-		regions(NULL), channels(NULL), nRegionsInitialized(0)
+		regions(NULL), channels(NULL),
+		nRegionsInitialized(0), nRegionsFailed(0)
 		{}
 
 		error_t initialize(void);
@@ -335,7 +336,7 @@ namespace fplainn
 		udi_init_context_t	*mgmtChannelContext;
 
 		// XXX: ONLY to be used by __klibzbzcore.
-		uarch_t			nRegionsInitialized;
+		uarch_t			nRegionsInitialized, nRegionsFailed;
 	};
 
 	class driverInstanceC;
@@ -471,7 +472,7 @@ namespace fplainn
 			friend class fplainn::driverC;
 			requirementS(void)
 			:
-			version(0)
+			fullName(NULL), version(0)
 			{
 				name[0] = '\0';
 			}

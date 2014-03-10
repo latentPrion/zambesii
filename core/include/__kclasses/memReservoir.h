@@ -5,7 +5,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/__kequalizerList.h>
 	#include <__kclasses/slamCache.h>
-	#include <__kclasses/memoryBog.h>
+	#include <__kclasses/heap.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 
@@ -43,21 +43,30 @@ public:
 	void free(void *mem);
 	void free(void *bogHandle, void *mem);
 
+	error_t checkBogAllocations(sarch_t nBytes);
+	error_t checkHeapAllocations(void)
+	{
+		return __kheap.checkAllocations();
+	}
+
+	heapC *__kgetHeap(void) { return &__kheap; }
 	void dump(void);
 
 private:
 	struct bogStateS
 	{
-		memoryBogC	**ptrs;
-		uarch_t		nBogs;
+		heapC		**ptrs;
+		uarch_t		nHeaps;
 	};
 	struct reservoirHeaderS
 	{
+		// Modifying this has consequences in the heap.
 		uarch_t		magic;
 	};
-	memoryBogC	*__kbog;
-	memoryStreamC	*sourceStream;
-	sharedResourceGroupC<multipleReaderLockC, bogStateS>	bogs;
+
+	heapC			__kheap;
+	memoryStreamC		*sourceStream;
+	sharedResourceGroupC<multipleReaderLockC, bogStateS>	heaps;
 };
 
 extern memReservoirC		memReservoir;

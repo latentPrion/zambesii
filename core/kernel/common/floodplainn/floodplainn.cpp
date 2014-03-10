@@ -1,4 +1,5 @@
 
+#include <arch/debug.h>
 #include <chipset/chipset.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/memory>
@@ -478,7 +479,7 @@ static error_t udi_mgmt_calls_prep(
 	*request = new floodplainnC::zudiNotificationMsgS(
 		devPath, primaryRegionTid,
 		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL,
-		sizeof(*request), 0, privateData);
+		sizeof(**request), 0, privateData);
 
 	if (request->get() == NULL)
 	{

@@ -2,8 +2,10 @@
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/process.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/messageStream.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
@@ -308,6 +310,19 @@ subsystem(subsystem), flags(0), function(function), size(size)
 
 	targetId = determineTargetThreadId(
 		targetPid, sourceId, flags, &this->flags);
+
+	if (size > sizeof(iteratorS))
+	{
+		printf(FATAL MSGSTREAM"headerS con: size %d exceeds "
+			"sizeof(iteratorS) (%d)\n"
+			"\tCaller 0x%p: subsystem %d, function %d, from T0x%x "
+			"to T0x%x\n",
+			size, sizeof(iteratorS),
+			__builtin_return_address(0),
+			subsystem, function, sourceId, targetId);
+
+		panic(ERROR_LIMIT_OVERFLOWED);
+	};
 }
 
 processId_t messageStreamC::determineSourceThreadId(
@@ -446,7 +461,13 @@ error_t messageStreamC::pull(
 
 				pendingSubsystems.unlock();
 
+				// Very useful checks here for sanity.
+				assert_fatal(tmp->size >= sizeof(*tmp));
+				assert_fatal(
+					tmp->size <= sizeof(messageStreamC::iteratorS));
+
 				memcpy(callback, tmp, tmp->size);
+
 				delete tmp;
 				return ERROR_SUCCESS;
 			};
@@ -497,6 +518,20 @@ error_t	messageStreamC::enqueue(ubit16 queueId, messageStreamC::headerS *callbac
 	if (callback == NULL) { return ERROR_INVALID_ARG; };
 	if (queueId > MSGSTREAM_SUBSYSTEM_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
+	};
+
+	if (callback->size > sizeof(iteratorS))
+	{
+		printf(FATAL MSGSTREAM"headerS con: size %d exceeds "
+			"sizeof(iteratorS) (%d)\n"
+			"\tCaller 0x%p: subsystem %d, function %d, from T0x%x "
+			"to T0x%x\n",
+			callback->size, sizeof(iteratorS),
+			__builtin_return_address(0),
+			callback->subsystem, callback->function,
+			callback->sourceId, callback->targetId);
+
+		panic(ERROR_LIMIT_OVERFLOWED);
 	};
 
 	/**	TODO:

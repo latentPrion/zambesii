@@ -35,8 +35,10 @@ memoryTribC::memoryTribC(void)
 error_t memoryTribC::initialize(void)
 {
 	availableBanks.initialize(
-		0, memoryTribAvailableBanksBmpMem,
-		sizeof(memoryTribAvailableBanksBmpMem));
+		0,
+		bitmapC::preallocatedMemoryS(
+			memoryTribAvailableBanksBmpMem,
+			sizeof(memoryTribAvailableBanksBmpMem)));
 
 	memoryBanks.initialize(
 		memoryTribMemoryBanksListMem,

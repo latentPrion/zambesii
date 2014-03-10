@@ -3,6 +3,7 @@
 #include <arch/paging.h>
 #include <arch/walkerPageRanger.h>
 #include <arch/tlbControl.h>
+#include <arch/debug.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
@@ -24,7 +25,7 @@ static inline void *getCr2(void)
 }
 
 static sarch_t __kpropagateTopLevelVaddrSpaceChanges(void *faultAddr)
-{	
+{
 #ifndef CONFIG_ARCH_x86_32_PAE
 	vaddrSpaceC		*__kvaddrSpace, *vaddrSpace;
 
@@ -92,9 +93,15 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 	void			*faultAddr = getCr2();
 	paddr_t			pmap;
 	uarch_t			__kflags;
+	taskC			*currTask;
+	threadC			*currThread=NULL;
+	sbit8			panicWorthy=0, traceStack=0, printArgs=0;
 
-	vaddrSpaceStream = cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentTask()->parent->getVaddrSpaceStream();
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	if (currTask->getType() != task::PER_CPU)
+		{ currThread = (threadC *)currTask; };
+
+	vaddrSpaceStream = currTask->parent->getVaddrSpaceStream();
 
 	if (faultAddr >= (void *)ARCH_MEMORY___KLOAD_VADDR_BASE)
 		{ __kpropagateTopLevelVaddrSpaceChanges(faultAddr); };
@@ -105,10 +112,6 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 
 	switch (status)
 	{
-	case WPRANGER_STATUS_BACKED:
-		// Either COW, or simple access perms violation.
-		break;
-
 	case WPRANGER_STATUS_FAKEMAPPED_DYNAMIC:
 		uarch_t nTries;
 
@@ -138,20 +141,26 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 
 		break;
 
-	case WPRANGER_STATUS_FAKEMAPPED_STATIC:
-		break;
+	case WPRANGER_STATUS_HEAP_GUARDPAGE:
+		panicWorthy = 1;
+		traceStack = 1;
 
-	case WPRANGER_STATUS_GUARDPAGE:
-		break;
+		printf(FATAL"Encountered a heap guardpage; heap corrupted\n"
+			"\tVaddr: 0x%p, EIP 0x%p\n"
+			"\tFault was caused by a %s, and %s an instruction "
+			"fetch\n",
+			faultAddr, regs->eip,
+			(regs->errorCode & 0x2) ? "write" : "read",
+			(regs->errorCode & 0x10) ? "was" : "was not");
 
-	case WPRANGER_STATUS_SWAPPED:
-		// Not implemented.
-		printf(FATAL"Encountered swapped page. at %X.\n", faultAddr);
-		panic(ERROR_GENERAL);
 		break;
 
 	case WPRANGER_STATUS_UNMAPPED:
-		uarch_t esp;
+		uarch_t		esp;
+
+		panicWorthy = 1;
+		traceStack = 1;
+
 		asm volatile(
 			"movl %%esp, %0\n\t"
 			: "=r" (esp));
@@ -164,8 +173,30 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 			&cpuTrib.getCurrentCpuStream()->schedStack[
 				sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 
-		panic(ERROR_UNKNOWN);
 		break;
+
+	case WPRANGER_STATUS_BACKED:
+		// Either COW, or simple access perms violation.
+		panicWorthy = 1;
+		traceStack = 1;
+		printf(FATAL"Kernel faulted on a backed page. Probably access "
+			"perms violation, or unintentional COW\n");
+
+		break;
+
+	case WPRANGER_STATUS_FAKEMAPPED_STATIC:
+	case WPRANGER_STATUS_GUARDPAGE:
+		panicWorthy = 1;
+		traceStack = 1;
+		break;
+
+	case WPRANGER_STATUS_SWAPPED:
+		panicWorthy = 1;
+		traceStack = 1;
+		// Not implemented.
+		printf(FATAL"Encountered swapped page. at %X.\n", faultAddr);
+		break;
+
 	default:
 		printf(FATAL"Encountered page with unknown status at %X.\n",
 			faultAddr);
@@ -174,6 +205,33 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 		break;
 	};
 
+	if (traceStack)
+	{
+		debug::stackDescriptorS		currStackDesc;
+
+		debug::getCurrentStackInfo(&currStackDesc);
+		if (currThread != NULL)
+		{
+			printf(NOTICE"This is a normal thread.\n");
+			debug::printStackTrace(
+				(void *)regs->ebp, &currStackDesc);
+		}
+		else
+		{
+			printf(NOTICE"This is a per-cpu thread.\n");
+			debug::printStackTrace(
+				(void *)regs->ebp, &currStackDesc);
+		};
+	};
+
+	if (printArgs)
+	{
+		// Doesn't work properly.
+		debug::printStackArguments(
+			(void *)regs->ebp, (void *)regs->dummyEsp);
+	};
+
+	if (panicWorthy) { panic(ERROR_FATAL); };
 	return ERROR_SUCCESS;
 }
 

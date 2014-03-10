@@ -210,10 +210,10 @@ private:
 		:
 		fullName(NULL), bufferSize(bufferSize), source(source)
 		{
-			buffer.rsrc.buffer = buffer.rsrc.bufferEnd = NULL;
+			buffer.rsrc.buffer = buffer.rsrc.bufferEof = NULL;
 		}
 
-		error_t initialize(void *source, void *sourceEnd);
+		error_t initialize(void *source, void *sourceEof);
 		error_t initialize(utf8Char *indexPath, utf8Char *fileName);
 
 		~randomAccessBufferC(void) {}
@@ -234,7 +234,7 @@ private:
 		// Pointers to the buffer in memory and its end.
 		struct bufferStateS
 		{
-			ubit8		*buffer, *bufferEnd;
+			ubit8		*buffer, *bufferEof;
 		};
 
 		sharedResourceGroupC<waitLockC, bufferStateS>	buffer;

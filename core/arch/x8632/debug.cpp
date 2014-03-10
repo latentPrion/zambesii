@@ -1,12 +1,80 @@
 
-#include <arch/x8632/debug.h>
+#include <arch/debug.h>
 #include <arch/x8632/cpuFlags.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
+#include <kernel/common/thread.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 
 
 // Static data member.
 uarch_t debug::debuggerC::flags = 0;
+
+void debug::getCurrentStackInfo(stackDescriptorS *desc)
+{
+	taskC		*currTask;
+	threadC		*currThread=NULL;
+
+	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	if (currTask->getType() != task::PER_CPU)
+		{ currThread = (threadC *)currTask; };
+
+	if (currThread != NULL)
+	{
+		desc->nBytes = CHIPSET_MEMORY___KSTACK_NPAGES * PAGING_BASE_SIZE;
+		desc->start = currThread->stack0;
+		desc->eof = (ubit8 *)currThread->stack0
+			+ desc->nBytes;
+	}
+	else
+	{
+		desc->nBytes = sizeof(cpuStreamC::schedStack);
+		desc->start = cpuTrib.getCurrentCpuStream()->schedStack;
+		desc->eof = &cpuTrib.getCurrentCpuStream()->schedStack[
+			desc->nBytes];
+	};
+}
+
+void debug::printStackTrace(void *startFrame, stackDescriptorS *stack)
+{
+	struct x8632StackFrameS
+	{
+		// aka, "EBP" that was pushed on the stack.
+		x8632StackFrameS	*prevFrame;
+		// aka, "EIP" that was pushed on the stack.
+		void			(*caller)(void);
+	} *currFrame;
+
+	printf(NOTICE"Stack: bounds: low 0x%p, high 0x%p. Start frame 0x%p\n",
+		stack->start, stack->eof, startFrame);
+
+	currFrame = (x8632StackFrameS *)startFrame;
+	do
+	{
+		printf(NOTICE"Stack: frame @0x%p, called by: 0x%p\n",
+			currFrame, currFrame->caller);
+
+		if (currFrame->prevFrame >= stack->eof
+			|| currFrame->prevFrame < stack->start)
+			{ break; };
+
+		currFrame = currFrame->prevFrame;
+	} while (FOREVER);
+}
+
+void debug::printStackArguments(void *stackFrame, void *stackPointer)
+{
+	void		**currArg;
+
+	currArg = (void **)stackPointer;
+	printf(NOTICE"%d args, EBP 0x%p, ESP 0x%p\n",
+		(void**)stackPointer - (void **)stackFrame,
+		stackFrame, stackPointer);
+
+	for (uarch_t i=0; currArg < stackFrame; i++, currArg++) {
+		printf(NOTICE"Stack args: %d: 0x%x\n", i, *currArg);
+	};
+}
 
 void debug::enableDebugExtensions(void)
 {
@@ -109,7 +177,8 @@ static void __attribute__((noinline)) setOpSize(ubit8 breakpoint, ubit8 opSize)
 	default: dr7Value = 0; break;
 	};
 
-	dr7Value = opSize << opSizeShiftTable[breakpoint];
+	dr7Value <<= opSizeShiftTable[breakpoint];
+
 	asm volatile(
 		"movl	%%dr7, %%eax\n\t \
 		orl	%0, %%eax\n\t \

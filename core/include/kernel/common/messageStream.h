@@ -132,8 +132,9 @@ public:
 		header(0, 0, 0, 0, 0, NULL)
 		{}
 
-		headerS		header;
-		ubit8		_padding_[256];
+		static const ubit16	paddingSize = 512;
+		headerS			header;
+		ubit8			_padding_[paddingSize];
 	};
 
 	typedef pointerDoubleListC<messageStreamC::headerS>	messageQueueC;

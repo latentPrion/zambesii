@@ -2,6 +2,7 @@
 	#define _POINTERLESS_LIST_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/sharedResourceGroup.h>
 
@@ -20,7 +21,6 @@
 	 * The object class to be used with this list must have the header
 	 * inside of itself, with the member name "listHeader".
 	 **/
-
 template <class T>
 class ptrlessListC
 {
@@ -29,13 +29,18 @@ public:
 	error_t initialize(void);
 
 public:
+	const static ubit32		OP_FLAGS_UNLOCKED=(1<<0);
+
 	// Inserts an element at the front of the list.
-	void insert(T *item);
+	void insert(T *item, ubit32 flags=0);
+	// Requires:
+	void sortedInsert(T *item, ubit32 flags=0);
 	sarch_t remove(T *item);
 	// Removes the item at the end of the list and returns its pointer.
 	T *pop(void);
 	// Returns a pointer to the Nth item.
 	T *getItem(ubit32 num) const;
+	sbit8 find(T *item, ubit32 flags=0);
 
 	// Iterator methods.
 	void lock(void) { list.lock.acquire(); }
@@ -58,13 +63,26 @@ public:
 			return currItem;
 		}
 
-		int operator !=(iteratorC &it) const
+		int operator !=(ptrlessListC<T>::iteratorC it)
 		{
 			if (it.currItem == NULL)
 			{
 				if (currItem == NULL) { return 0; };
 				return 1;
 			};
+
+			return 0;
+		}
+
+		int operator ==(ptrlessListC<T>::iteratorC it)
+		{
+			if (it.currItem == NULL)
+			{
+				if (currItem == NULL) { return 1; };
+				return 0;
+			};
+
+			return 0;
 		}
 
 	private:
@@ -72,7 +90,7 @@ public:
 		T			*currItem;
 	};
 
-	iteratorC begin(void) const
+	iteratorC begin(void)
 	{
 		iteratorC	it;
 
@@ -81,7 +99,7 @@ public:
 		return it;
 	}
 
-	iteratorC end(void) const
+	iteratorC end(void)
 	{
 		iteratorC	it;
 
@@ -90,13 +108,13 @@ public:
 		return it;
 	}
 
-	ubit32 getNItems(void)
+	ubit32 getNItems(ubit32 flags=0)
 	{
 		ubit32		ret;
 
-		list.lock.acquire();
+		if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { lock(); };
 		ret = list.rsrc.nItems;
-		list.lock.release();
+		if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { unlock(); };
 		return ret;
 	};
 
@@ -105,6 +123,11 @@ public:
 public:
 	struct headerS
 	{
+		friend class ptrlessListC;
+		void setNextItem(T *next) { this->next = next; }
+		T *getNextItem(void) const { return this->next; }
+
+	private:
 		T	*next;
 	};
 
@@ -133,11 +156,11 @@ template <class T> error_t ptrlessListC<T>::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-template <class T> void ptrlessListC<T>::insert(T *item)
+template <class T> void ptrlessListC<T>::insert(T *item, ubit32 flags)
 {
 	item->listHeader.next = NULL;
 
-	list.lock.acquire();
+	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { lock(); };
 
 	if (list.rsrc.tail == NULL) {
 		list.rsrc.head = list.rsrc.tail = item;
@@ -150,7 +173,52 @@ template <class T> void ptrlessListC<T>::insert(T *item)
 
 	list.rsrc.nItems++;
 
-	list.lock.release();
+	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { unlock(); };
+}
+
+template <class T>
+void ptrlessListC<T>::sortedInsert(T *item, ubit32 flags)
+{
+	iteratorC	curr, prev;
+
+	item->listHeader.next = NULL;
+
+	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { lock(); };
+
+	if (list.rsrc.tail == NULL)
+	{
+		list.rsrc.tail = list.rsrc.head = item;
+		list.rsrc.nItems++;
+
+		if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { unlock(); };
+		return;
+	};
+
+	prev = end();
+	for (curr=begin(); curr != end(); prev=curr, ++curr)
+	{
+		// For duplicates, we insert it the same way.
+		if (item <= *curr)
+		{
+			item->listHeader.setNextItem(*curr);
+			if (prev == end()) {
+				list.rsrc.head = item;
+			} else {
+				(*prev)->listHeader.setNextItem(item);
+			};
+
+			list.rsrc.nItems++;
+			if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { unlock(); };
+			return;
+		};
+	};
+
+	// If we got all the way here, the item belongs at the end of the list.
+	list.rsrc.tail->listHeader.setNextItem(item);
+	list.rsrc.tail = item;
+	list.rsrc.nItems++;
+
+	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { unlock(); };
 }
 
 template <class T> sarch_t ptrlessListC<T>::remove(T *item)
@@ -174,11 +242,11 @@ template <class T> sarch_t ptrlessListC<T>::remove(T *item)
 		else
 		{
 			if (item == list.rsrc.tail) {
-				list.rsrc.tail = prev.currItem;
+				list.rsrc.tail = *prev;
 			};
 
-			prev.currItem->listHeader.next =
-				it.currItem->listHeader.next;
+			(*prev)->listHeader.setNextItem(
+				(*it)->listHeader.getNextItem());
 		};
 
 		list.rsrc.nItems--;
@@ -253,6 +321,28 @@ template <class T> T *ptrlessListC<T>::getItem(ubit32 num) const
 	list.lock.release();
 
 	return curr;
+}
+
+template <class T>
+sbit8 ptrlessListC<T>::find(T *item, ubit32 flags)
+{
+	iteratorC	it;
+	sbit8		ret=0;
+
+	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { list.lock.acquire(); };
+
+	for (it=begin(); it != end(); ++it)
+	{
+		T		*currItem;
+
+		currItem = *it;
+		if (currItem != item) { continue; };
+		ret = 1;
+		break;
+	};
+
+	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { list.lock.release(); };
+	return ret;
 }
 
 #endif

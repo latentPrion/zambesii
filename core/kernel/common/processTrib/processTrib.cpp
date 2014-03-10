@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <chipset/memory.h>
 #include <__kstdlib/__kcxxlib/memory>
 #include <__kstdlib/__kclib/string.h>
@@ -590,7 +591,6 @@ error_t processTribC::spawnDistributary(
 	};
 
 	bitmapC		affinity;
-
 	ret = affinity.initialize(cpuTrib.onlineCpus.getNBits());
 	if (ret != ERROR_SUCCESS) { return ret; };
 	affinity.merge(&cpuTrib.onlineCpus);
@@ -626,7 +626,7 @@ error_t processTribC::spawnDistributary(
 #if 0
 error_t *processTribC::spawnStream(
 	numaBankId_t,				// NUMA addrspace binding.
-	bitmapC *cpuAffinity,			// Ocean/NUMA/SMP affinity.
+	bitmapC *cpuAffinity,			// Oceann/NUMA/SMP affinity.
 	void */*elevation*/,			// Privileges.
 	ubit8 execDomain,			// Kernel mode vs. User mode.
 	uarch_t flags,				// Process spawn flags.

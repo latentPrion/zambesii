@@ -30,6 +30,10 @@ void panic(error_t err, utf8Char *str)
 		break;
 	case ERROR_SUCCESS:
 		printf(FATAL"Kernel panic: ERROR_SUCCESS (...?).\n");
+		break;
+	default:
+		printf(FATAL"Kernel panic: error is %d\n", err);
+		break;
 	};
 
 	if (str != NULL) {

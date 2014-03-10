@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kclib/stdlib.h>

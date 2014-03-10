@@ -57,12 +57,14 @@
 
 class memoryTribC;
 class processStreamC;
+class heapC;
 
 class memoryStreamC
 :
 public streamC
 {
 friend class memoryTribC;
+friend class heapC;
 
 public:
 	memoryStreamC(processId_t id, processStreamC *parent)

@@ -22,16 +22,10 @@
  *
  * To free, the list is traversed until the freed memory's rightful position is
  * found. The memory is placed into its slot, and linked back into a larger
- * node if necessary, and 
+ * node if necessary, and
  **/
 
-#ifdef __32_BIT__
-	// SWAM ('111' is both a W and an M).
-	#define MEMBOG_MAGIC			(0x5111A111)
-#elif defined (__64_BIT__)
-	// SWAMPALLOCS
-	#define MEMBOG_MAGIC			(0x5111A1111DA110C5)
-#endif
+#define MEMBOG_MAGIC			(CC"##Zambesii Memory Bog Allocation.##")
 
 #define MEMBOG_NO_EXPAND_ON_FAIL	(1<<0)
 #define MEMBOG				"Memory Bog: "
@@ -56,6 +50,7 @@ public:
 	static void moveHeaderDown(void *hdr, uarch_t nBytes);
 	static void moveHeaderUp(void *hdr, uarch_t nBytes);
 
+	error_t checkAllocations(sarch_t nBytes);
 	void dump(void);
 
 public:
@@ -66,6 +61,8 @@ private:
 	{
 		freeObjectS	*next;
 		uarch_t		nBytes;
+		// Address offset of the function that freed the block.
+		void		*freedBy;
 	};
 	struct bogBlockS
 	{
@@ -77,7 +74,9 @@ private:
 	{
 		uarch_t		nBytes;
 		bogBlockS	*parent;
-		uarch_t		magic;
+		utf8Char	magic[48];
+		// Address offset of the function that allocated the block.
+		void		*allocatedBy;
 	};
 
 	bogBlockS *getNewBlock(void);

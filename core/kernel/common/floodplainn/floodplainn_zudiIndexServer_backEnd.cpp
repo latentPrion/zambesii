@@ -1,10 +1,12 @@
 
+#include <debug.h>
 #include <__ksymbols.h>
 #include <zudiIndex.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/ptrList.h>
+#include <__kclasses/memReservoir.h>
 #include <commonlibs/libzudiIndexParser.h>
 #include <kernel/common/zudiIndexServer.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -22,7 +24,7 @@
  **/
 
 
-static zudiIndexServer::newDeviceActionE		newDeviceAction;
+ zudiIndexServer::newDeviceActionE		newDeviceAction;
 
 zudiIndexParserC		kernelIndex(zudiIndexParserC::SOURCE_KERNEL),
 				ramdiskIndex(zudiIndexParserC::SOURCE_RAMDISK),
@@ -35,7 +37,7 @@ zudiIndexParserC		*zudiIndexes[3] =
 	&externalIndex
 };
 
-static void *getEsp(void)
+ void *getEsp(void)
 {
 	void		*esp;
 
@@ -46,7 +48,8 @@ static void *getEsp(void)
 	return esp;
 }
 
-static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
+ status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes
+(
 	fplainn::deviceC *device, zudi::device::headerS *devline,
 	zudi::driver::headerS *metaHdr
 	)
@@ -212,7 +215,8 @@ static status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 	return ret;
 }
 
-static void fplainnIndexServer_detectDriverReq(
+ void fplainnIndexServer_detectDriverReq
+(
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
 	)
@@ -234,7 +238,6 @@ static void fplainnIndexServer_detectDriverReq(
 
 	/** FIXME: Memory leaks all over this function.
 	 **/
-
 	self = static_cast<threadC *>(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
@@ -280,6 +283,16 @@ static void fplainnIndexServer_detectDriverReq(
 			requestData->path);
 
 		myResponse(ERROR_INVALID_RESOURCE_NAME);
+		return;
+	};
+
+	err = matchingDevices.initialize();
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINNIDX"detectDriver: Failed to initialize "
+			"matchingDevices list.\n");
+
+		myResponse(err);
 		return;
 	};
 
@@ -384,7 +397,6 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			// If the match outranks the current best match:
 			if (rank > bestRank)
 			{
-
 				// Clear the list and restart.
 				// FIXME: memory leak here.
 				handle = NULL;
@@ -521,7 +533,8 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		{ delete currDevlineHdr; };
 }
 
-static void fplainnIndexServer_newDeviceActionReq(
+ void fplainnIndexServer_newDeviceActionReq
+(
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
 	)
@@ -554,7 +567,7 @@ static void fplainnIndexServer_newDeviceActionReq(
 	myResponse(ERROR_SUCCESS);
 }
 
-static udi_mei_init_t *__kindex_getMetaInfoFor(
+ udi_mei_init_t *__kindex_getMetaInfoFor(
 	utf8Char *metaName, zudi::headerS *indexHdr
 	)
 {
@@ -606,7 +619,8 @@ static udi_mei_init_t *__kindex_getMetaInfoFor(
 	return NULL;
 }
 
-static void fplainnIndexer_loadDriverReq(
+ void fplainnIndexer_loadDriverReq
+(
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
 	)
@@ -681,6 +695,7 @@ static void fplainnIndexer_loadDriverReq(
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };
 
 	// Find the driver in the index using its basepath+shortname.
+
 	err = zudiIndexes[0]->findDriver(
 		indexHdr.get(), device->driverFullName, driverHdr.get());
 
@@ -886,7 +901,8 @@ static void fplainnIndexer_loadDriverReq(
 	myResponse(ERROR_SUCCESS);
 }
 
-static void fplainnIndexServer_loadRequirementsReq(
+ void fplainnIndexServer_loadRequirementsReq
+(
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
 	)
@@ -1037,7 +1053,8 @@ static void fplainnIndexServer_loadRequirementsReq(
 	myResponse(ERROR_SUCCESS);
 }
 
-static void fplainnIndexServer_newDeviceInd(
+ void fplainnIndexServer_newDeviceInd
+(
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
 	)
@@ -1095,7 +1112,8 @@ static void fplainnIndexServer_newDeviceInd(
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-static void fplainnIndexServer_newDeviceInd1(
+ void fplainnIndexServer_newDeviceInd1
+(
 	floodplainnC::zudiIndexMsgS *response
 	)
 {
@@ -1134,7 +1152,8 @@ static void fplainnIndexServer_newDeviceInd1(
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-static void fplainnIndexServer_newDeviceInd2(
+ void fplainnIndexServer_newDeviceInd2
+(
 	floodplainnC::zudiIndexMsgS *response
 	)
 {
@@ -1179,7 +1198,8 @@ static void fplainnIndexServer_newDeviceInd2(
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-static void fplainnIndexServer_newDeviceInd3(messageStreamC::headerS *response)
+ void fplainnIndexServer_newDeviceInd3
+(messageStreamC::headerS *response)
 {
 	floodplainnC::zudiIndexMsgS	*originContext;
 	asyncResponseC			myResponse;
@@ -1214,7 +1234,8 @@ static void fplainnIndexServer_newDeviceInd3(messageStreamC::headerS *response)
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-static void fplainnIndexServer_newDeviceInd4(
+ void fplainnIndexServer_newDeviceInd4
+(
 	floodplainnC::zudiNotificationMsgS *response
 	)
 {
@@ -1236,7 +1257,8 @@ static void fplainnIndexServer_newDeviceInd4(
 	myResponse(ERROR_SUCCESS);
 }
 
-static void handleUnknownRequest(zasyncStreamC::zasyncMsgS *request)
+ void handleUnknownRequest
+(zasyncStreamC::zasyncMsgS *request)
 {
 	asyncResponseC		myResponse;
 
@@ -1259,7 +1281,8 @@ static void handleUnknownRequest(zasyncStreamC::zasyncMsgS *request)
 	myResponse(ERROR_UNKNOWN);
 }
 
-void fplainnIndexServer_handleRequest(
+void fplainnIndexServer_handleRequest
+(
 	zasyncStreamC::zasyncMsgS *msg,
 	zudiIndexServer::zudiIndexMsgS *requestData, threadC *self
 	)
@@ -1293,6 +1316,7 @@ void fplainnIndexServer_handleRequest(
 	case ZUDIIDX_SERVER_DETECTDRIVER_REQ:
 		fplainnIndexServer_detectDriverReq(
 			(zasyncStreamC::zasyncMsgS *)msg, requestData);
+
 		break;
 
 	case ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ:
@@ -1356,11 +1380,11 @@ void floodplainnC::indexReaderEntry(void)
 
 	if (zudiIndexes[1]->initialize(CC"@h:__kramdisk/drivers32")
 		!= ERROR_SUCCESS)
-	{ panic(ERROR_UNINITIALIZED); };
+		{ panic(ERROR_UNINITIALIZED); };
 
 	if (zudiIndexes[2]->initialize(CC"@h:__kroot/zambesii/drivers32")
 		!= ERROR_SUCCESS)
-	{ panic(ERROR_UNINITIALIZED); };
+		{ panic(ERROR_UNINITIALIZED); };
 
 	floodplainn.zudiIndexServerTid = self->getFullId();
 	self->parent->zasyncStream.listen(self->getFullId(), 1);
@@ -1419,6 +1443,7 @@ void floodplainnC::indexReaderEntry(void)
 				fplainnIndexServer_newDeviceInd1(
 					(floodplainnC::zudiIndexMsgS *)
 						gcb.get());
+
 
 				break;
 

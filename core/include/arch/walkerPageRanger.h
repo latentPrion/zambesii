@@ -14,7 +14,8 @@
 #define WPRANGER_STATUS_FAKEMAPPED_STATIC	(2)
 #define WPRANGER_STATUS_FAKEMAPPED_DYNAMIC	(3)
 #define WPRANGER_STATUS_GUARDPAGE		(4)
-#define WPRANGER_STATUS_UNMAPPED		(5)
+#define WPRANGER_STATUS_HEAP_GUARDPAGE		(5)
+#define WPRANGER_STATUS_UNMAPPED		(6)
 
 // Generic operations on attributes.
 #define WPRANGER_OP_SET			(1)
@@ -152,7 +153,7 @@ namespace walkerPageRanger
 
 	// Architecture specific kernel flag converter.
 	uarch_t decodeFlags(uarch_t flags);
-	uarch_t encodeFlags(uarch_t flags);	
+	uarch_t encodeFlags(uarch_t flags);
 }
 
 

@@ -147,6 +147,7 @@ static void dumpSrat(void)
  *
  * We then pass control to __korientationMain().
  **/
+void do_stuff(char);
 extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -275,6 +276,7 @@ void __korientationMain2(messageStreamC::iteratorS *msg, void *)
 
 	DIE_ON(msg->header.error);
 	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
+
 }
 
 syscallbackDataF __korientationMain4;

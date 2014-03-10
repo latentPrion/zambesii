@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kbitManipulation.h>
 #include <__kstdlib/__kclib/string.h>
@@ -15,16 +16,8 @@ bitmapC::bitmapC(void)
 	bmp.rsrc.nBits = 0;
 }
 
-bitmapC::bitmapC(ubit32 nBits)
-{
-	preAllocated = 0;
-	preAllocatedSize = 0;
-	initialize(nBits);
-}
-
 error_t bitmapC::initialize(
-	ubit32 nBits,
-	void *preAllocatedMemory, ubit16 preAllocatedMemorySize
+	ubit32 nBits, preallocatedMemoryS preAllocatedMemory
 	)
 {
 	ubit32		nIndexes;
@@ -32,14 +25,17 @@ error_t bitmapC::initialize(
 	nIndexes = __KMATH_NELEMENTS(
 		nBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__));
 
-	if (preAllocatedMemory != NULL)
+	if (preAllocatedMemory.vaddr != NULL)
 	{
+		if (nBits > preAllocatedMemory.size * __BITS_PER_BYTE__)
+			{ return ERROR_LIMIT_OVERFLOWED; };
+
 		preAllocated = 1;
-		preAllocatedSize = preAllocatedMemorySize;
+		preAllocatedSize = preAllocatedMemory.size;
 	};
 
-	bmp.rsrc.bmp = (preAllocatedMemory != NULL)
-		? new (preAllocatedMemory) uarch_t[nIndexes]
+	bmp.rsrc.bmp = (preAllocated)
+		? new (preAllocatedMemory.vaddr) uarch_t[nIndexes]
 		: (nIndexes == 0 ) ? NULL : new uarch_t[nIndexes];
 
 	if (bmp.rsrc.bmp == NULL && nBits != 0)

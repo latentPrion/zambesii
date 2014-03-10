@@ -13,36 +13,30 @@
 
 memReservoirC::memReservoirC(memoryStreamC *sourceStream)
 :
+__kheap(
+	CHIPSET_MEMORY___KBOG_SIZE, sourceStream,
+	0
+	| heapC::OPT_GUARD_PAGED
+	| heapC::OPT_CHECK_ALLOCS_ON_FREE
+	| heapC::OPT_CHECK_BLOCK_MAGIC_PASSIVELY
+	| heapC::OPT_CHECK_HEAP_RANGES_ON_FREE),
 sourceStream(sourceStream)
 {
-	__kbog = NULL;
-	bogs.rsrc.ptrs = NULL;
-	bogs.rsrc.nBogs = 0;
+	heaps.rsrc.ptrs = NULL;
+	heaps.rsrc.nHeaps = 0;
 }
 
 error_t memReservoirC::initialize(void)
 {
 	error_t		ret;
 
-	__kbog = new (
-		sourceStream->memAlloc(1, MEMALLOC_NO_FAKEMAP))
-		memoryBogC(CHIPSET_MEMORY___KBOG_SIZE, sourceStream);
-
-	if (__kbog == NULL)
-	{
-		printf(ERROR RESERVOIR"Unable to allocate a bog for "
-			"general kernel use.\n");
-
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	ret = __kbog->initialize();
+	ret = __kheap.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	bogs.rsrc.ptrs = new (
-		sourceStream->memAlloc(1, MEMALLOC_NO_FAKEMAP)) memoryBogC*;
+	heaps.rsrc.ptrs = new (
+		sourceStream->memAlloc(1, MEMALLOC_NO_FAKEMAP)) heapC*;
 
-	if (bogs.rsrc.ptrs == NULL)
+	if (heaps.rsrc.ptrs == NULL)
 	{
 		printf(ERROR RESERVOIR"Unable to allocate a page to hold "
 			"the array of custom bog allocators.\n");
@@ -50,11 +44,11 @@ error_t memReservoirC::initialize(void)
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	memset(bogs.rsrc.ptrs, 0, PAGING_BASE_SIZE);
+	memset(heaps.rsrc.ptrs, 0, PAGING_BASE_SIZE);
 
-	printf(NOTICE RESERVOIR"initialize(): Done. __kbog v 0x%X, size "
-		"0x%X, custom bogs array 0x%X.\n",
-		__kbog, __kbog->blockSize, bogs.rsrc.ptrs);
+	printf(NOTICE RESERVOIR"initialize(): Done. __kheap chunk size 0x%x, "
+		"custom bogs array 0x%p.\n",
+		__kheap.getChunkSize(), heaps.rsrc.ptrs);
 
 	return ERROR_SUCCESS;
 }
@@ -67,22 +61,28 @@ void memReservoirC::dump(void)
 {
 
 	printf(NOTICE RESERVOIR"Dumping.\n");
-	printf(NOTICE RESERVOIR"__kbog v 0x%X, bogs array 0x%X, nBogs %d.\n",
-		__kbog, bogs.rsrc.ptrs, bogs.rsrc.nBogs);
+	printf(NOTICE RESERVOIR"bogs array 0x%X, nHeaps %d.\n",
+		heaps.rsrc.ptrs, heaps.rsrc.nHeaps);
 
-	printf(NOTICE RESERVOIR"Dumping __kbog.\n");
-	__kbog->dump();
+	printf(NOTICE RESERVOIR"Dumping __kheap.\n");
+	__kheap.dump();
 
-	for (uarch_t i=0; i<bogs.rsrc.nBogs; i++)
+	for (uarch_t i=0; i<heaps.rsrc.nHeaps; i++)
 	{
 		printf(NOTICE RESERVOIR"Dumping bog %d @ v %X.\n",
-			i, bogs.rsrc.ptrs[i]);
+			i, heaps.rsrc.ptrs[i]);
 
-		bogs.rsrc.ptrs[i]->dump();
+		heaps.rsrc.ptrs[i]->dump();
 	};
 }
 
-void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
+error_t memReservoirC::checkBogAllocations(sarch_t)
+{
+	__kheap.dumpAllocations();
+	return ERROR_SUCCESS;
+}
+
+void *memReservoirC::allocate(uarch_t nBytes, uarch_t)
 {
 	reservoirHeaderS	*ret;
 
@@ -96,36 +96,21 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t flags)
 
 	nBytes += sizeof(reservoirHeaderS);
 
-	/**	NOTES:
-	 * Even though the very fact that the kernel's bog is unavailable is
-	 * cause for great alarm, we shouldn't kill all allocations simply
-	 * because of that: still try to allocate off of a stream.
-	 **/
-	if (__kbog == NULL) {
-		goto tryStream;
-	};
-
-	if (nBytes <= __kbog->blockSize)
+	if (nBytes <= __kheap.getChunkSize())
 	{
-		ret = reinterpret_cast<reservoirHeaderS *>(
-			__kbog->allocate(nBytes, flags) );
+		ret = new (__kheap.malloc(
+			nBytes, __builtin_return_address(1))) reservoirHeaderS;
 
 		if (ret != NULL)
 		{
-			/* Copy the bog header down so we don't overwrite it
-			 * with the reservoir header.
-			 **/
-			memoryBogC::moveHeaderDown(
-				ret, sizeof(reservoirHeaderS));
+			ret->magic =
+				RESERVOIR_MAGIC | RESERVOIR_FLAGS___KBOG;
 
-			ret->magic = RESERVOIR_MAGIC | RESERVOIR_FLAGS___KBOG;
-			return reinterpret_cast<reservoirHeaderS *>(
-				reinterpret_cast<uarch_t>( ret )
-					+ sizeof(reservoirHeaderS) );
+			ret++;
+			return ret;
 		};
 	};
 
-tryStream:
 	// Unable to allocate from the kernel bog. Stream allocate.
 	ret = new (
 		sourceStream->memAlloc(
@@ -134,9 +119,7 @@ tryStream:
 	if (ret != NULL)
 	{
 		ret->magic = RESERVOIR_MAGIC | RESERVOIR_FLAGS_STREAM;
-		return reinterpret_cast<reservoirHeaderS *>(
-			reinterpret_cast<uarch_t>( ret )
-				+ sizeof(reservoirHeaderS) );
+		return ret + 1;
 	};
 
 	// If we're still here, then it means allocation completely failed.
@@ -172,12 +155,7 @@ void memReservoirC::free(void *_mem)
 	if (FLAG_TEST(
 		(mem->magic & RESERVOIR_FLAGS_MASK), RESERVOIR_FLAGS___KBOG))
 	{
-		if (__kbog == NULL) {
-			return;
-		};
-
-		memoryBogC::moveHeaderUp(mem, sizeof(reservoirHeaderS));
-		__kbog->free(mem);
+		__kheap.free(mem, __builtin_return_address(1));
 		return;
 	};
 

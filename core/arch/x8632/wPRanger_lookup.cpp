@@ -97,6 +97,10 @@ status_t walkerPageRanger::lookup(
 						ret = WPRANGER_STATUS_GUARDPAGE;
 						break;
 
+					case PAGESTATUS_HEAP_GUARDPAGE:
+						ret = WPRANGER_STATUS_HEAP_GUARDPAGE;
+						break;
+
 					case PAGESTATUS_FAKEMAPPED_STATIC:
 						ret = WPRANGER_STATUS_FAKEMAPPED_STATIC;
 						break;
@@ -130,6 +134,10 @@ status_t walkerPageRanger::lookup(
 
 				case PAGESTATUS_GUARDPAGE:
 					ret = WPRANGER_STATUS_GUARDPAGE;
+					break;
+
+				case PAGESTATUS_HEAP_GUARDPAGE:
+					ret = WPRANGER_STATUS_HEAP_GUARDPAGE;
 					break;
 
 				case PAGESTATUS_FAKEMAPPED_STATIC:
