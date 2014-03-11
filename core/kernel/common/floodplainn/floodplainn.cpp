@@ -218,7 +218,7 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 
 error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 {
-	zudiNotificationMsgS				*request;
+	zudiKernelCallMsgS			*request;
 	fplainn::deviceC			*dev;
 	error_t					ret;
 	heapPtrC<fplainn::deviceInstanceC>	devInst;
@@ -247,8 +247,8 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 		if (ret != ERROR_SUCCESS) { return ret; };
 	};
 
-	request = new zudiNotificationMsgS(
-		path, dev->driverInstance->pid,
+	request = new zudiKernelCallMsgS(
+		dev->driverInstance->pid,
 		MSGSTREAM_SUBSYSTEM_ZUDI,
 		MSGSTREAM_FPLAINN_ZUDI___KCALL,
 		sizeof(*request), 0, privateData);
@@ -260,7 +260,7 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 	};
 
 	// Assign the device instance to dev->instance and release the mem.
-	request->u.__kcall.set(zudiNotificationMsgS::__KOP_INSTANTIATE_DEVICE);
+	request->set(path, zudiKernelCallMsgS::CMD_INSTANTIATE_DEVICE);
 	if (dev->instance == NULL) { dev->instance = devInst.release(); };
 	return messageStreamC::enqueueOnThread(
 		request->header.targetId, &request->header);
@@ -271,7 +271,7 @@ void floodplainnC::instantiateDeviceAck(
 	)
 {
 	threadC					*currThread;
-	floodplainnC::zudiNotificationMsgS		*response;
+	floodplainnC::zudiKernelCallMsgS	*response;
 	fplainn::deviceC			*dev;
 
 	currThread = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
@@ -300,15 +300,15 @@ void floodplainnC::instantiateDeviceAck(
 		dev->instance = NULL;
 	};
 
-	response = new zudiNotificationMsgS(
-		path, targetId,
+	response = new zudiKernelCallMsgS(
+		targetId,
 		MSGSTREAM_SUBSYSTEM_ZUDI,
 		MSGSTREAM_FPLAINN_ZUDI___KCALL,
 		sizeof(*response), 0, privateData);
 
 	if (response == NULL) { return; };
 
-	response->u.__kcall.set(zudiNotificationMsgS::__KOP_INSTANTIATE_DEVICE);
+	response->set(path, zudiKernelCallMsgS::CMD_INSTANTIATE_DEVICE);
 	response->header.error = err;
 
 	messageStreamC::enqueueOnThread(
@@ -455,7 +455,7 @@ const metaInitEntryS *floodplainnC::findMetaInitInfo(utf8Char *shortName)
 
 static error_t udi_mgmt_calls_prep(
 	utf8Char *callerName, utf8Char *devPath, fplainn::deviceC **dev,
-	heapPtrC<floodplainnC::zudiNotificationMsgS> *request,
+	heapPtrC<floodplainnC::zudiMgmtCallMsgS> *request,
 	void *privateData
 	)
 {
@@ -476,7 +476,7 @@ static error_t udi_mgmt_calls_prep(
 
 	(*dev)->instance->getRegionInfo(0, &primaryRegionTid, &dummy);
 
-	*request = new floodplainnC::zudiNotificationMsgS(
+	*request = new floodplainnC::zudiMgmtCallMsgS(
 		devPath, primaryRegionTid,
 		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL,
 		sizeof(**request), 0, privateData);
@@ -505,7 +505,7 @@ void floodplainnC::udi_usage_ind(
 	utf8Char *devPath, udi_ubit8_t usageLevel, void *privateData
 	)
 {
-	heapPtrC<zudiNotificationMsgS>		request;
+	heapPtrC<zudiMgmtCallMsgS>		request;
 	udi_usage_cb_t				*cb;
 	fplainn::deviceC			*dev;
 
@@ -515,10 +515,10 @@ void floodplainnC::udi_usage_ind(
 		{ return; };
 
 	// Set the request block's parameters.
-	request->u.mgmtCall.set_usage_ind(usageLevel);
+	request->set_usage_ind(usageLevel);
 
 	// Next, fill in the control block.
-	cb = &request->u.mgmtCall.cb.ucb;
+	cb = &request->cb.ucb;
 	cb->trace_mask = 0;
 	cb->meta_idx = 0;
 

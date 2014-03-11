@@ -215,7 +215,7 @@ zudiIndexParserC		*zudiIndexes[3] =
 	return ret;
 }
 
- void fplainnIndexServer_detectDriverReq
+void fplainnIndexServer_detectDriverReq
 (
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
@@ -533,7 +533,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		{ delete currDevlineHdr; };
 }
 
- void fplainnIndexServer_newDeviceActionReq
+void fplainnIndexServer_newDeviceActionReq
 (
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
@@ -619,7 +619,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 	return NULL;
 }
 
- void fplainnIndexer_loadDriverReq
+void fplainnIndexer_loadDriverReq
 (
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
@@ -901,7 +901,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 	myResponse(ERROR_SUCCESS);
 }
 
- void fplainnIndexServer_loadRequirementsReq
+void fplainnIndexServer_loadRequirementsReq
 (
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
@@ -1053,7 +1053,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 	myResponse(ERROR_SUCCESS);
 }
 
- void fplainnIndexServer_newDeviceInd
+void fplainnIndexServer_newDeviceInd
 (
 	zasyncStreamC::zasyncMsgS *request,
 	zudiIndexServer::zudiIndexMsgS *requestData
@@ -1112,7 +1112,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 	myResponse(DONT_SEND_RESPONSE);
 }
 
- void fplainnIndexServer_newDeviceInd1
+void fplainnIndexServer_newDeviceInd1
 (
 	floodplainnC::zudiIndexMsgS *response
 	)
@@ -1152,7 +1152,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 	myResponse(DONT_SEND_RESPONSE);
 }
 
- void fplainnIndexServer_newDeviceInd2
+void fplainnIndexServer_newDeviceInd2
 (
 	floodplainnC::zudiIndexMsgS *response
 	)
@@ -1198,7 +1198,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 	myResponse(DONT_SEND_RESPONSE);
 }
 
- void fplainnIndexServer_newDeviceInd3
+void fplainnIndexServer_newDeviceInd3
 (messageStreamC::headerS *response)
 {
 	floodplainnC::zudiIndexMsgS	*originContext;
@@ -1234,12 +1234,11 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 	myResponse(DONT_SEND_RESPONSE);
 }
 
- void fplainnIndexServer_newDeviceInd4
+void fplainnIndexServer_newDeviceInd4
 (
-	floodplainnC::zudiNotificationMsgS *response
+	floodplainnC::zudiKernelCallMsgS *response
 	)
 {
-
 	floodplainnC::zudiIndexMsgS	*originContext;
 	asyncResponseC			myResponse;
 	originContext =
@@ -1461,7 +1460,7 @@ void floodplainnC::indexReaderEntry(void)
 			{
 			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
 				fplainnIndexServer_newDeviceInd4(
-					(floodplainnC::zudiNotificationMsgS *)
+					(floodplainnC::zudiKernelCallMsgS *)
 						gcb.get());
 
 				break;

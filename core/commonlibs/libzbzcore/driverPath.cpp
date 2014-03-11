@@ -15,7 +15,7 @@
 
 struct instantiateDeviceCallerContextS
 {
-	instantiateDeviceCallerContextS(floodplainnC::zudiNotificationMsgS *z)
+	instantiateDeviceCallerContextS(floodplainnC::zudiKernelCallMsgS *z)
 	:
 	sourceTid(z->header.sourceId),
 	privateData(z->header.privateData),
@@ -155,13 +155,13 @@ printf(NOTICE"Just called floodplainn.usage_ind on dev %s.\n", msgIt->header.pri
 }
 
 static error_t instantiateDevice(instantiateDeviceCallerContextS *ctxt);
-static void processKernelCall(floodplainnC::zudiNotificationMsgS *msg)
+static void processKernelCall(floodplainnC::zudiKernelCallMsgS *msg)
 {
 	error_t			err;
 
-	switch (msg->u.__kcall.__kop)
+	switch (msg->command)
 	{
-	case floodplainnC::zudiNotificationMsgS::__KOP_INSTANTIATE_DEVICE:
+	case floodplainnC::zudiKernelCallMsgS::CMD_INSTANTIATE_DEVICE:
 		instantiateDeviceCallerContextS		*callerContext;
 
 		/* Sent by the kernel when it wishes to create a new instance
@@ -196,11 +196,11 @@ static void processKernelCall(floodplainnC::zudiNotificationMsgS *msg)
 
 	break;
 
-	case floodplainnC::zudiNotificationMsgS::__KOP_NEW_PARENT:
+	case floodplainnC::zudiKernelCallMsgS::CMD_NEW_PARENT:
 	default:
 		printf(WARNING LZBZCORE"drvPath: process__kcall: Unknown "
-			"message %d.\n",
-			msg->u.__kcall.__kop);
+			"command %d.\n",
+			msg->command);
 	};
 }
 
@@ -255,7 +255,7 @@ void __klibzbzcoreDriverPath(threadC *self)
 			{
 			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
 				processKernelCall(
-					(floodplainnC::zudiNotificationMsgS *)
+					(floodplainnC::zudiKernelCallMsgS *)
 						msgIt.get());
 
 				break;
@@ -423,7 +423,7 @@ static error_t instantiateDevice(instantiateDeviceCallerContextS *ctxt)
 	};
 
 	// Spawn the parent bind channel meanwhile.
-	floodplainn.spawnChildBindChannel(
+	return floodplainn.spawnChildBindChannel(
 		CC"by-id/0", ctxt->devicePath, CC"zbz_root",
 		(udi_ops_vector_t *)0xF00115);
 
@@ -432,8 +432,6 @@ static error_t instantiateDevice(instantiateDeviceCallerContextS *ctxt)
 	 * They will each send a completion notification to this main thread
 	 * when they are done. We can exit and wait.
 	 **/
-
-	return ERROR_SUCCESS;
 }
 
 static error_t instantiateDevice1(instantiateDeviceCallerContextS *ctxt)
@@ -442,6 +440,15 @@ static error_t instantiateDevice1(instantiateDeviceCallerContextS *ctxt)
 		ctxt->devicePath);
 
 	return ERROR_SUCCESS;
+}
+
+namespace regionThread
+{
+	error_t handleMgmtCall(
+		floodplainnC::zudiMgmtCallMsgS *, fplainn::deviceC *, ubit16);
+
+	error_t handleServiceCallAck();
+	error_t handleMeiCallMsg();
 }
 
 static void regionThreadEntry(void *)
@@ -569,12 +576,47 @@ static void regionThreadEntry(void *)
 		switch (msgIt->header.subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_ZUDI:
-			printf(NOTICE"dev %s, region %d: ZUDI message.\n",
-				devPath, regionIndex);
+			switch (msgIt->header.function)
+			{
+			case MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL:
+				regionThread::handleMgmtCall(
+					(floodplainnC::zudiMgmtCallMsgS *)
+						msgIt.get(),
+					dev, regionIndex);
+
+				break;
+			};
 
 			break;
+
+		default:
+			printf(NOTICE"dev %s, rgn %d: unknown subsystem %d\n",
+				msgIt->header.subsystem);
 		};
 	};
 
 	taskTrib.dormant(self->getFullId());
+}
+
+error_t regionThread::handleMgmtCall(
+	floodplainnC::zudiMgmtCallMsgS *msg,
+	fplainn::deviceC *, ubit16 regionIndex
+	)
+{
+	switch (msg->mgmtOp)
+	{
+	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_USAGE:
+		printf(NOTICE"%s, rgn %d: udi_usage_ind call received!\n",
+			msg->path, regionIndex);
+
+		break;
+
+	default:
+		printf(NOTICE"dev %s, rgn %d: unknown command %d!\n",
+			msg->path, regionIndex);
+
+		break;
+	};
+
+	return ERROR_SUCCESS;
 }

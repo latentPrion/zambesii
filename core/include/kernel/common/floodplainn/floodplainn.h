@@ -34,85 +34,97 @@ public:
 	~floodplainnC(void) {}
 
 public:
-	struct zudiNotificationMsgS
+	struct zudiKernelCallMsgS
 	{
-		enum mgmtOperationE {
-			MGMTOP_USAGE, MGMTOP_ENUMERATE, MGMTOP_DEVMGMT,
-			MGMTOP_FINAL_CLEANUP };
+		enum commandE { CMD_INSTANTIATE_DEVICE, CMD_NEW_PARENT };
 
-		enum __kcallOperationE {
-			__KOP_NEW_PARENT, __KOP_INSTANTIATE_DEVICE };
-
-		zudiNotificationMsgS(
-			utf8Char *path,
+		zudiKernelCallMsgS(
 			processId_t targetPid, ubit16 subsystem, ubit16 function,
 			uarch_t size, uarch_t flags, void *privateData)
 		:
 		header(
 			targetPid, subsystem, function,
 			size, flags, privateData),
-		cb(NULL)
+		command(CMD_INSTANTIATE_DEVICE)
 		{
-			if (path != NULL
-				&& strnlen8(
-					path,
-					ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
-					< ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
-				{ strcpy8(this->path, path); };
+			path[0] = '\0';
+		}
+
+		void set(utf8Char *devicePath, commandE command)
+		{
+			strncpy8(
+				this->path, devicePath,
+				ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN);
+
+			this->path[ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN - 1] = '\0';
+			this->command = command;
 		}
 
 		messageStreamC::headerS	header;
-		udi_cb_t		*cb;
+		commandE		command;
 		utf8Char		path[
 			ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
+	};
 
+	struct zudiMgmtCallMsgS
+	{
+		enum mgmtOperationE {
+			MGMTOP_USAGE, MGMTOP_ENUMERATE, MGMTOP_DEVMGMT,
+			MGMTOP_FINAL_CLEANUP };
+
+		zudiMgmtCallMsgS(
+			utf8Char *path,
+			processId_t targetPid, ubit16 subsystem, ubit16 function,
+			uarch_t size, uarch_t flags, void *privateData)
+		:
+		header(
+			targetPid, subsystem, function,
+			size, flags, privateData)
+		{
+			strncpy8(
+				this->path, path,
+				ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN);
+
+			this->path[ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN - 1] = '\0';
+			memset(&cb, 0, sizeof(cb));
+		}
+
+		void set_usage_ind(udi_ubit8_t usageLevel)
+		{
+			mgmtOp = MGMTOP_USAGE;
+			this->usageLevel = usageLevel;
+		}
+
+		void set_devmgmt_req(
+			udi_ubit8_t op, udi_ubit8_t parentId)
+		{
+			mgmtOp = MGMTOP_DEVMGMT;
+			this->op = op;
+			this->parentId = parentId;
+		}
+
+		void set_enumerate_req(udi_ubit8_t enumLvl)
+		{
+			mgmtOp = MGMTOP_ENUMERATE;
+			this->enumerateLevel = enumLvl;
+		}
+
+		void set_final_cleanup_req(void)
+			{ mgmtOp = MGMTOP_FINAL_CLEANUP; }
+
+		messageStreamC::headerS	header;
+		mgmtOperationE		mgmtOp;
+		udi_ubit8_t		usageLevel;
+		udi_ubit8_t		enumerateLevel;
+		udi_ubit8_t		op, parentId;
+		utf8Char		path[
+			ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
 		union
 		{
-			struct
-			{
-				void set_usage_ind(udi_ubit8_t usageLevel)
-				{
-					mgmtOp = MGMTOP_ENUMERATE;
-					this->usageLevel = usageLevel;
-				}
-
-				void set_devmgmt_req(
-					udi_ubit8_t op, udi_ubit8_t parentId)
-				{
-					mgmtOp = MGMTOP_ENUMERATE;
-					this->op = op;
-					this->parentId = parentId;
-				}
-
-				void set_enumerate_req(udi_ubit8_t enumLvl)
-				{
-					mgmtOp = MGMTOP_ENUMERATE;
-					this->enumerateLevel = enumLvl;
-				}
-
-				void set_final_cleanup_req(void)
-					{ mgmtOp = MGMTOP_FINAL_CLEANUP; }
-
-				mgmtOperationE	mgmtOp;
-				udi_ubit8_t	usageLevel;
-				udi_ubit8_t	enumerateLevel;
-				udi_ubit8_t	op, parentId;
-				union
-				{
-					udi_mgmt_cb_t		mcb;
-					udi_usage_cb_t		ucb;
-					udi_enumerate_cb_t	ecb;
-				} cb;
-			} mgmtCall;
-			struct
-			{
-				void set(__kcallOperationE __kop)
-					{ this->__kop = __kop; };
-
-				__kcallOperationE	__kop;
-			} __kcall;
-			struct {} serviceCall, meiCall;
-		} u;
+			udi_mgmt_cb_t		mcb;
+			udi_usage_cb_t		ucb;
+			udi_enumerate_cb_t	ecb;
+		} cb;
 	};
 
 	struct zudiIndexMsgS

@@ -302,8 +302,6 @@ void heapC::chunkC::prependAndCoalesce(
 	newBlock->~blockC();
 }
 
-
-
 void heapC::chunkC::free(allocationC *alloc, void *freedBy)
 {
 	ptrlessListC<blockC>::iteratorC		it, prev;

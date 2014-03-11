@@ -504,9 +504,13 @@ void fplainn::driverC::dump(void)
 {
 	printf(NOTICE"Driver: index %d: %s/%s\n\t(%s).\n\tSupplier %s; "
 		"Contact %s.\n"
-		"%d mods, %d rgns, %d req's, %d metas, %d cbops, %d pbops, "
-		"%d ibops.\n",
-		basePath, shortName, longName, supplier, supplierContact,
+		"\t%d mods, %d rgns, %d req's, %d metas, %d cbops, %d pbops, "
+		"%d ibops, %d classes.\n",
+		index, basePath, shortName, longName, supplier, supplierContact,
 		nModules, nRegions, nRequirements, nMetalanguages,
-		nChildBops, nParentBops, nInternalBops);
+		nChildBops, nParentBops, nInternalBops, nClasses);
+
+	for (uarch_t i=0; i<nClasses; i++) {
+		printf(NOTICE"\tdriver: class %s\n", classes[i]);
+	};
 }
