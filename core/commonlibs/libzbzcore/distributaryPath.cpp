@@ -7,7 +7,7 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
-void __klibzbzcoreDistributaryPath(threadC *self)
+error_t __klzbzcore::distributary::main(threadC *self)
 {
 	dvfs::tagC		*tmpTag;
 	error_t			ret;
@@ -20,12 +20,12 @@ void __klibzbzcoreDistributaryPath(threadC *self)
 			"\n\t(%s).\n",
 			self->parent->fullName);
 
-		self->parent->sendResponse(ret);
-		taskTrib.dormant(self->getFullId());
+		return ret;
 	};
 
 	self->parent->sendResponse(ERROR_SUCCESS);
 	jumpAddress = tmpTag->getDInode()->getEntryAddress();
 	(*jumpAddress)();
+	return ERROR_SUCCESS;
 }
 

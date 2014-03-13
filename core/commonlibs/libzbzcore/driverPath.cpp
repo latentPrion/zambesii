@@ -9,28 +9,7 @@
 #include <commonlibs/libzbzcore/libzbzcore.h>
 
 
-#define DRIVERPATH_U0_GET_THREAD_DEVICE_PATH_REQ		(0)
-#define DRIVERPATH_U0_REGION_INIT_COMPLETE_IND			(1)
-#define DRIVERPATH_U0_REGION_INIT_FAILURE_IND			(2)
-
-struct instantiateDeviceCallerContextS
-{
-	instantiateDeviceCallerContextS(floodplainnC::zudiKernelCallMsgS *z)
-	:
-	sourceTid(z->header.sourceId),
-	privateData(z->header.privateData),
-	err(0)
-	{
-		strcpy8(devicePath, z->path);
-	}
-
-	processId_t		sourceTid;
-	utf8Char		devicePath[ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
-	void			*privateData;
-	error_t			err;
-};
-
-static error_t getThreadDevicePath(
+error_t __klzbzcore::driver::u0::getThreadDevicePath(
 	fplainn::driverInstanceC *drvInst, processId_t tid, utf8Char *path
 	)
 {
@@ -71,22 +50,70 @@ static error_t getThreadDevicePath(
 	return ERROR_NOT_FOUND;
 }
 
-static error_t instantiateDevice1(instantiateDeviceCallerContextS *ctxt);
-static void processUser0Message(
+error_t __klzbzcore::driver::u0::regionInitInd(
+	__klzbzcore::driver::__kcall::callerContextS *ctxt, ubit32 function
+	)
+{
+	fplainn::deviceC		*dev;
+	uarch_t				totalNotifications,
+					totalSuccesses;
+
+	/* This message is sent by the regions of a newly
+	 * instantiated device when they have finished
+	 * initializing. We could the number of regions that
+	 * have finished, and when all are done, if they all
+	 * finish successfully, we send a response message to
+	 * the device to proceed with calling udi_usage_ind.
+	 **/
+	assert_fatal(
+		floodplainn.getDevice(ctxt->devicePath, &dev) == ERROR_SUCCESS);
+
+	if (function == __klzbzcore::driver::MAINTHREAD_U0_REGION_INIT_COMPLETE_IND)
+		{ dev->instance->nRegionsInitialized++; }
+	else
+		{ dev->instance->nRegionsFailed++; };
+
+	totalSuccesses = dev->instance->nRegionsInitialized;
+	totalNotifications = dev->instance->nRegionsInitialized
+		+ dev->instance->nRegionsFailed;
+
+	// If all regions haven't sent notifications yet, wait for them.
+	if (totalNotifications != dev->driverInstance->driver->nRegions)
+		{ return ERROR_SUCCESS; };
+
+	if (totalSuccesses != totalNotifications) {
+		return ERROR_INITIALIZATION_FAILURE;
+	};
+
+	/* If all regions succeeded, ask the kernel to post a
+	 * udi_usage_ind message to the primary region thread of the
+	 * new device.
+	 **/
+	floodplainn.udi_usage_ind(
+		ctxt->devicePath, UDI_RESOURCES_NORMAL, ctxt);
+
+printf(NOTICE"Just called floodplainn.usage_ind on dev %s.\n",
+	ctxt->devicePath);
+	return ERROR_SUCCESS;
+}
+
+void __klzbzcore::driver::main_handleU0Request(
 	messageStreamC::iteratorS *msgIt, fplainn::driverInstanceC *drvInst,
 	threadC *self
 	)
 {
+	error_t			err;
+
 	switch (msgIt->header.function)
 	{
-	case DRIVERPATH_U0_GET_THREAD_DEVICE_PATH_REQ:
+	case MAINTHREAD_U0_GET_THREAD_DEVICE_PATH_REQ:
 		/* This message is sent by the region threads of a newly
 		 * instantiated device while they are initializing. The threads
 		 * send a message asking the main thread which device they
 		 * pertain to. We respond with the name of their device.
 		 **/
 		assert_fatal(
-			getThreadDevicePath(
+			u0::getThreadDevicePath(
 				drvInst,
 				msgIt->header.sourceId,
 				(utf8Char *)msgIt->header.privateData)
@@ -95,74 +122,51 @@ static void processUser0Message(
 		self->getTaskContext()->messageStream.postMessage(
 			msgIt->header.sourceId,
 			MSGSTREAM_SUBSYSTEM_USER0,
-			DRIVERPATH_U0_GET_THREAD_DEVICE_PATH_REQ,
+			MAINTHREAD_U0_GET_THREAD_DEVICE_PATH_REQ,
 			NULL);
 
 		return;
 
-	case DRIVERPATH_U0_REGION_INIT_COMPLETE_IND:
-	case DRIVERPATH_U0_REGION_INIT_FAILURE_IND:
-		fplainn::deviceC		*dev;
-		uarch_t				totalNotifications,
-						totalSuccesses;
+	case MAINTHREAD_U0_REGION_INIT_COMPLETE_IND:
+	case MAINTHREAD_U0_REGION_INIT_FAILURE_IND:
+		__kcall::callerContextS		*ctxt;
 
-		/* This message is sent by the regions of a newly
-		 * instantiated device when they have finished
-		 * initializing. We could the number of regions that
-		 * have finished, and when all are done, if they all
-		 * finish successfully, we send a response message to
-		 * the device to proceed with calling udi_usage_ind.
+		/* u0::regionInitInd() calls the device's udi_usage_ind()
+		 * if all the regions successfully initialize.
 		 **/
-		assert_fatal(
-			floodplainn.getDevice(
-				(utf8Char *)msgIt->header.privateData, &dev)
-			== ERROR_SUCCESS);
+		ctxt = (__kcall::callerContextS *)msgIt->header.privateData;
+		err = u0::regionInitInd(
+			ctxt, msgIt->header.function);
 
-		if (msgIt->header.function
-			== DRIVERPATH_U0_REGION_INIT_COMPLETE_IND)
-			{ dev->instance->nRegionsInitialized++; }
-		else { dev->instance->nRegionsFailed++; };
+		if (err != ERROR_SUCCESS)
+		{
+			printf(NOTICE LZBZCORE"dev %s: not all regions "
+				"initialized successfully! Killing\n",
+				msgIt->header.privateData);
 
-		totalSuccesses = dev->instance->nRegionsInitialized;
-		totalNotifications = dev->instance->nRegionsInitialized
-			+ dev->instance->nRegionsFailed;
-
-		// If all regions haven't sent notifications yet, wait for them.
-		if (totalNotifications != dev->driverInstance->driver->nRegions)
-			{ return; };
-
-		if (totalSuccesses != totalNotifications) {
-			// FIXME: Shut the device instance down.
+			floodplainn.instantiateDeviceAck(
+				ctxt->sourceTid, ctxt->devicePath, err,
+				ctxt->privateData);
 		};
 
-		/* If all regions succeeded, ask the kernel to post a
-		 * udi_usage_ind message to the primary region thread of the
-		 * new device.
-		 **/
-		floodplainn.udi_usage_ind(
-			(utf8Char *)msgIt->header.privateData,
-			UDI_RESOURCES_NORMAL,
-			NULL);
-
-printf(NOTICE"Just called floodplainn.usage_ind on dev %s.\n", msgIt->header.privateData);
 		return;
 
 	default:
 		printf(WARNING LZBZCORE"drv: user0 Q: unknown message %d.\n",
 			msgIt->header.function);
 	};
-
 }
 
-static error_t instantiateDevice(instantiateDeviceCallerContextS *ctxt);
-static void processKernelCall(floodplainnC::zudiKernelCallMsgS *msg)
+void __klzbzcore::driver::main_handleKernelCall(
+	floodplainnC::zudiKernelCallMsgS *msg
+	)
 {
 	error_t			err;
 
 	switch (msg->command)
 	{
 	case floodplainnC::zudiKernelCallMsgS::CMD_INSTANTIATE_DEVICE:
-		instantiateDeviceCallerContextS		*callerContext;
+		__kcall::callerContextS		*callerContext;
 
 		/* Sent by the kernel when it wishes to create a new instance
 		 * of a device that is to be serviced by this driver process.
@@ -173,7 +177,7 @@ static void processKernelCall(floodplainnC::zudiKernelCallMsgS *msg)
 		 * correct source thread, with its privateData info preserved.
 		 **/
 		// TODO: remove, artifact.
-		callerContext = new instantiateDeviceCallerContextS(msg);
+		callerContext = new __kcall::callerContextS(msg);
 		if (callerContext == NULL)
 		{
 			printf(ERROR LZBZCORE"drvPath: process__kcall: "
@@ -184,33 +188,37 @@ static void processKernelCall(floodplainnC::zudiKernelCallMsgS *msg)
 			return;
 		};
 
-		err = instantiateDevice(callerContext);
-		delete callerContext;
+		err = __kcall::instantiateDevice(callerContext);
 		if (err != ERROR_SUCCESS)
 		{
 			// TODO: Kill all the region threads that were spawned.
 			floodplainn.instantiateDeviceAck(
-				msg->header.sourceId, msg->path, err,
-				msg->header.privateData);
+				callerContext->sourceTid,
+				callerContext->devicePath,
+				err,
+				callerContext->privateData);
+
+			delete callerContext;
 		};
 
-	break;
+		break;
 
-	case floodplainnC::zudiKernelCallMsgS::CMD_NEW_PARENT:
 	default:
 		printf(WARNING LZBZCORE"drvPath: process__kcall: Unknown "
 			"command %d.\n",
 			msg->command);
+
+		break;
 	};
 }
 
-static void driverPath0(threadC *self);
-void __klibzbzcoreDriverPath(threadC *self)
+static error_t driverPath0(threadC *self);
+error_t __klzbzcore::driver::main(threadC *self)
 {
-//	fplainn::driverC				*driver;
 	streamMemPtrC<messageStreamC::iteratorS>	msgIt;
 	syscallbackC					*callback;
 	fplainn::driverInstanceC			*drvInst;
+	error_t						ret;
 
 	drvInst = self->parent->getDriverInstance();
 
@@ -233,11 +241,15 @@ void __klibzbzcoreDriverPath(threadC *self)
 			"mem for msg iterator.\n",
 			self->getFullId());
 
-		self->parent->sendResponse(ERROR_MEMORY_NOMEM);
-		taskTrib.dormant(self->getFullId());
+		return ERROR_MEMORY_NOMEM;
 	};
 
-	driverPath0(self);
+	ret = driverPath0(self);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR LZBZCORE"driverPath0 failed!\n");
+		return ret;
+	};
 
 	for (;;)
 	{
@@ -247,14 +259,14 @@ void __klibzbzcoreDriverPath(threadC *self)
 		switch (msgIt->header.subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_USER0:
-			processUser0Message(msgIt.get(), drvInst, self);
+			main_handleU0Request(msgIt.get(), drvInst, self);
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_ZUDI:
 			switch (msgIt->header.function)
 			{
 			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
-				processKernelCall(
+				main_handleKernelCall(
 					(floodplainnC::zudiKernelCallMsgS *)
 						msgIt.get());
 
@@ -281,22 +293,33 @@ void __klibzbzcoreDriverPath(threadC *self)
 	};
 }
 
-static syscallbackDataF driverPath1;
-static void driverPath0(threadC * /*self*/)
+static syscallbackDataF driverPath1_wrapper;
+static error_t driverPath0(threadC * /*self*/)
 {
 	zudiIndexServer::loadDriverRequirementsReq(
-		newSyscallback(&driverPath1));
+		newSyscallback(&driverPath1_wrapper));
+
+	return ERROR_SUCCESS;
 }
 
-static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
+static error_t driverPath1(messageStreamC::iteratorS *msgIt, threadC *self);
+static void driverPath1_wrapper(messageStreamC::iteratorS *msgIt, void *)
 {
-	threadC					*self;
-	driverProcessC				*selfProcess;
-	fplainn::driverInstanceC		*drvInst;
-	const udi_init_t			*driverInitInfo;
+	error_t			err;
+	threadC			*self;
 
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
+
+	err = driverPath1(msgIt, self);
+	self->parent->sendResponse(err);
+}
+
+static error_t driverPath1(messageStreamC::iteratorS *msgIt, threadC *self)
+{
+	driverProcessC				*selfProcess;
+	fplainn::driverInstanceC		*drvInst;
+	const udi_init_t			*driverInitInfo;
 
 	selfProcess = (driverProcessC *)self->parent;
 	drvInst = self->parent->getDriverInstance();
@@ -305,6 +328,10 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 	printf(NOTICE LZBZCORE"driverPath1: Ret from loadRequirementsReq: %s "
 		"(%d).\n",
 		strerror(msgIt->header.error), msgIt->header.error);
+
+	if (msgIt->header.error != ERROR_SUCCESS) {
+		return msgIt->header.error;
+	};
 
 	/**	EXPLANATION:
 	 * In the userspace libzbzcore, we would have to make calls to the VFS
@@ -327,7 +354,7 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 			drvInst->driver->nInternalBops,
 			drvInst->driver->nRegions);
 
-		taskTrib.dormant(self->getFullId());
+		return ERROR_INVALID_STATE;
 	};
 
 	// Set child bind ops vectors.
@@ -354,269 +381,18 @@ static void driverPath1(messageStreamC::iteratorS *msgIt, void *)
 				"%d.\n",
 				drvInst->driver->childBops[i].metaIndex);
 
-			return;
+			return ERROR_INVALID_STATE;
 		};
 
 		drvInst->setChildBopVector(
 			drvInst->driver->childBops[i].metaIndex, opsVector);
 	};
 
+	// Done with the spawnDriver syscall at this point.
 	printf(NOTICE LZBZCORE"spawnDriver(%s, NUMA%d): done. PID 0x%x.\n",
 		drvInst->driver->shortName,
 		drvInst->bankId, selfProcess->id);
 
-	self->parent->sendResponse(msgIt->header.error);
-}
-
-static void regionThreadEntry(void *);
-static error_t instantiateDevice(instantiateDeviceCallerContextS *ctxt)
-{
-	fplainn::deviceC			*dev;
-	fplainn::driverC			*drv;
-	threadC					*self;
-	error_t					err;
-
-	self = (threadC *)cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentTask();
-
-	drv = self->parent->getDriverInstance()->driver;
-	assert_fatal(floodplainn.getDevice(ctxt->devicePath, &dev)
-		== ERROR_SUCCESS);
-
-	printf(NOTICE LZBZCORE"instantiateDevice(%s).\n", ctxt->devicePath);
-
-	/**	EXPLANATION:
-	 * 1. Spawn region threads.
-	 * 2. Spawn channels.
-	 * 3. Should be fine from there for now.
-	 **/
-	// Now we create threads for all the regions.
-	for (uarch_t i=0; i<drv->nRegions; i++)
-	{
-		threadC				*newThread;
-		heapPtrC<udi_init_context_t>	rdata;
-
-		// The +1 is to ensure the allocation size isn't 0.
-		rdata = (udi_init_context_t *)new ubit8[
-			drv->driverInitInfo->primary_init_info->rdata_size + 1];
-
-		err = self->parent->spawnThread(
-			&regionThreadEntry, NULL,
-			NULL, (taskC::schedPolicyE)0, 0,
-			0, &newThread);
-
-		if (err != ERROR_SUCCESS)
-		{
-			printf(ERROR LZBZCORE"driverPath1: failed to "
-				"spawn thread for region %d because "
-				"%s(%d).\n",
-				drv->regions[i].index,
-				strerror(err), err);
-
-			return err;
-		};
-
-		// Store the TID in the device's region metadata.
-		dev->instance->setRegionInfo(
-			drv->regions[i].index, newThread->getFullId(),
-			rdata.release());
-	};
-
-	// Spawn the parent bind channel meanwhile.
-	return floodplainn.spawnChildBindChannel(
-		CC"by-id/0", ctxt->devicePath, CC"zbz_root",
-		(udi_ops_vector_t *)0xF00115);
-
-	/* At this point, all regions are spawned, and all channels too.
-	 * We now need to wait for the region threads to finish initializing.
-	 * They will each send a completion notification to this main thread
-	 * when they are done. We can exit and wait.
-	 **/
-}
-
-static error_t instantiateDevice1(instantiateDeviceCallerContextS *ctxt)
-{
-	printf(NOTICE LZBZCORE"instDev: dev %s: all regions done.\n",
-		ctxt->devicePath);
-
 	return ERROR_SUCCESS;
 }
 
-namespace regionThread
-{
-	error_t handleMgmtCall(
-		floodplainnC::zudiMgmtCallMsgS *, fplainn::deviceC *, ubit16);
-
-	error_t handleServiceCallAck();
-	error_t handleMeiCallMsg();
-}
-
-static void regionThreadEntry(void *)
-{
-	threadC					*self;
-	heapPtrC<messageStreamC::iteratorS>	msgIt;
-	utf8Char				devPath[96];
-	fplainn::deviceC			*dev;
-	ubit16					regionIndex;
-	udi_init_context_t			*rdata;
-	error_t					err;
-	udi_init_t				*init_info;
-
-	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
-
-	init_info = self->parent->getDriverInstance()->driver->driverInitInfo;
-	msgIt = new messageStreamC::iteratorS;
-	if (msgIt == NULL)
-	{
-		printf(ERROR LZBZCORE"regionEntry: Failed to allocate msg "
-			"iterator.\n");
-
-		taskTrib.dormant(self->getFullId());
-	};
-
-	// Ask the main thread to tell us which device we are.
-	self->getTaskContext()->messageStream.postMessage(
-		self->parent->id, 0, DRIVERPATH_U0_GET_THREAD_DEVICE_PATH_REQ,
-		devPath);
-
-	// Get response.
-	self->getTaskContext()->messageStream.pull(msgIt.get());
-	err = floodplainn.getDevice(devPath, &dev);
-	if (err != ERROR_SUCCESS)
-	{
-		printf(ERROR LZBZCORE"regionEntry: Device path %s returned "
-			"from main thread failed to resolve.\n",
-			devPath);
-
-		taskTrib.dormant(self->getFullId());
-	};
-
-	assert_fatal(
-		dev->instance->getRegionInfo(
-			self->getFullId(), &regionIndex, &rdata)
-			== ERROR_SUCCESS);
-
-	printf(NOTICE LZBZCORE"Device %s, region %d running: rdata 0x%x.\n",
-		devPath, regionIndex, rdata);
-
-	/* Next, we spawn all internal bind channels.
-	 * internal_bind_ops meta_idx region_idx ops0_idx ops1_idx1 bind_cb_idx.
-	 * Small sanity check here before moving on.
-	 **/
-
-	// Now spawn this region's internal bind channel.
-	if (regionIndex != 0)
-	{
-		ubit16			opsIndex0, opsIndex1;
-		udi_ops_vector_t	*opsVector0=NULL, *opsVector1=NULL;
-		udi_ops_init_t		*ops_info_tmp;
-
-		err = floodplainn.getInternalBopVectorIndexes(
-			regionIndex, &opsIndex0, &opsIndex1);
-
-		if (err != ERROR_SUCCESS)
-		{
-			printf(ERROR LZBZCORE"regionEntry %d: Failed to get "
-				"internal bops vector indexes.\n",
-				regionIndex);
-
-			taskTrib.dormant(self->getFullId());
-		};
-
-		ops_info_tmp = init_info->ops_init_list;
-		for (; ops_info_tmp->ops_idx != 0; ops_info_tmp++)
-		{
-			if (ops_info_tmp->ops_idx == opsIndex0)
-				{ opsVector0 = ops_info_tmp->ops_vector; };
-
-			if (ops_info_tmp->ops_idx == opsIndex1)
-				{ opsVector1 = ops_info_tmp->ops_vector; };
-		};
-
-		if (opsVector0 == NULL || opsVector1 == NULL)
-		{
-			printf(ERROR LZBZCORE"regionEntry %d: Failed to get "
-				"ops vector addresses for intern. bind chan.\n",
-				regionIndex);
-
-			taskTrib.dormant(self->getFullId());
-		};
-
-		err = floodplainn.spawnInternalBindChannel(
-			devPath, regionIndex, opsVector0, opsVector1);
-
-		if (err != ERROR_SUCCESS)
-		{
-			printf(ERROR LZBZCORE"regionEntry %d: Failed to spawn "
-				"internal bind channel because %s(%d).\n",
-				regionIndex, strerror(err), err);
-
-			taskTrib.dormant(self->getFullId());
-		};
-	};
-
-	// Send a message to the main thread, letting it know we're done here.
-	self->getTaskContext()->messageStream.postMessage(
-		self->parent->id, 0,
-		DRIVERPATH_U0_REGION_INIT_COMPLETE_IND, devPath);
-
-	printf(NOTICE LZBZCORE"Region %d, dev %s: Entering event loop.\n",
-		regionIndex, devPath);
-
-	for (;;)
-	{
-		self->getTaskContext()->messageStream.pull(msgIt.get());
-		printf(NOTICE"%s dev, region %d, got a message.\n"
-			"\tsubsys %d, func %d, sourcetid 0x%x targettid 0x%x\n",
-			dev->driverInstance->driver->longName, regionIndex,
-			msgIt->header.subsystem, msgIt->header.function,
-			msgIt->header.sourceId, msgIt->header.targetId);
-
-		switch (msgIt->header.subsystem)
-		{
-		case MSGSTREAM_SUBSYSTEM_ZUDI:
-			switch (msgIt->header.function)
-			{
-			case MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL:
-				regionThread::handleMgmtCall(
-					(floodplainnC::zudiMgmtCallMsgS *)
-						msgIt.get(),
-					dev, regionIndex);
-
-				break;
-			};
-
-			break;
-
-		default:
-			printf(NOTICE"dev %s, rgn %d: unknown subsystem %d\n",
-				msgIt->header.subsystem);
-		};
-	};
-
-	taskTrib.dormant(self->getFullId());
-}
-
-error_t regionThread::handleMgmtCall(
-	floodplainnC::zudiMgmtCallMsgS *msg,
-	fplainn::deviceC *, ubit16 regionIndex
-	)
-{
-	switch (msg->mgmtOp)
-	{
-	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_USAGE:
-		printf(NOTICE"%s, rgn %d: udi_usage_ind call received!\n",
-			msg->path, regionIndex);
-
-		break;
-
-	default:
-		printf(NOTICE"dev %s, rgn %d: unknown command %d!\n",
-			msg->path, regionIndex);
-
-		break;
-	};
-
-	return ERROR_SUCCESS;
-}

@@ -549,7 +549,7 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 }
 
 error_t processStreamC::spawnThread(
-	void (*entryPoint)(void *), void * /*argument*/,
+	void (*entryPoint)(void *), void *argument,
 	bitmapC * cpuAffinity,
 	taskC::schedPolicyE schedPolicy,
 	ubit8 prio, uarch_t flags,
@@ -575,7 +575,7 @@ error_t processStreamC::spawnThread(
 	newThreadId = id | newThreadId;
 
 	// Allocate new thread if ID was available.
-	*newThread = allocateNewThread(newThreadId);
+	*newThread = allocateNewThread(newThreadId, argument);
 	if (*newThread == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	// Allocate internal sub-structures (context, etc.).
@@ -618,11 +618,11 @@ error_t processStreamC::spawnThread(
 	};
 }
 
-threadC *processStreamC::allocateNewThread(processId_t newThreadId)
+threadC *processStreamC::allocateNewThread(processId_t newThreadId, void *privateData)
 {
 	threadC		*ret;
 
-	ret = new threadC(newThreadId, this);
+	ret = new threadC(newThreadId, this, privateData);
 	if (ret == NULL) { return NULL; };
 
 	taskLock.writeAcquire();

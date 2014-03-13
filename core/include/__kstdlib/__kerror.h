@@ -16,6 +16,7 @@
 	#define ERROR_INVALID_FORMAT			((error_t)-14)
 	#define ERROR_INVALID_RESOURCE_HANDLE		((error_t)-15)
 	#define ERROR_INVALID_RESOURCE_ID		((error_t)-16)
+	#define ERROR_INVALID_STATE			((error_t)-17)
 
 	#define ERROR_MEMORY_NOMEM			((error_t)-20)
 	#define ERROR_MEMORY_NOMEM_VIRTUAL		((error_t)-21)
@@ -28,6 +29,7 @@
 	#define ERROR_UNSUPPORTED			((error_t)-31)
 	#define ERROR_UNINITIALIZED			((error_t)-32)
 	#define ERROR_UNAUTHORIZED			((error_t)-33)
+	#define ERROR_INITIALIZATION_FAILURE		((error_t)-34)
 
 	#define ERROR_RESOURCE_BUSY			((error_t)-40)
 	#define ERROR_RESOURCE_UNAVAILABLE		((error_t)-41)

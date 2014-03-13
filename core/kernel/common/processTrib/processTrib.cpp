@@ -86,7 +86,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 	{
 		// IN_KERNEL dtribs are raw embedded code in the kernel image.
 		// *entryPoint = tag->getDInode()->getEntryAddress();
-		*entryPoint = &__klibzbzcoreEntry;
+		*entryPoint = &__klzbzcore::main;
 		return ERROR_SUCCESS;
 	}
 	else
@@ -114,7 +114,7 @@ error_t processTribC::getDriverExecutableFormat(
 	if (tmpDrv->index == zudiIndexServer::INDEX_KERNEL)
 	{
 		*retfmt = processStreamC::RAW;
-		*retEntryPoint = &__klibzbzcoreEntry;
+		*retEntryPoint = &__klzbzcore::main;
 		return ERROR_SUCCESS;
 	};
 

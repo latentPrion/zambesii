@@ -15,9 +15,10 @@
  *	b. Distributary process: Enter the distributary.
  **/
 
-void __klibzbzcoreEntry()
+void __klzbzcore::main()
 {
 	threadC		*self;
+	error_t		err;
 
 	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
@@ -28,24 +29,24 @@ void __klibzbzcoreEntry()
 	switch (self->parent->getType())
 	{
 	case processStreamC::DISTRIBUTARY:
-		__klibzbzcoreDistributaryPath(self);
+		err = __klzbzcore::distributary::main(self);
 		break;
 
 	case processStreamC::DRIVER:
-		__klibzbzcoreDriverPath(self);
+		err = __klzbzcore::driver::main(self);
 		break;
 
 	default:
+		err = ERROR_UNKNOWN;
 		printf(NOTICE LZBZCORE"Proc 0x%x: Process type not supported. "
 			"Dormanting.\n",
 			self->getFullId());
 
-		taskTrib.dormant(self->getFullId());
 		break;
 	};
 
-	printf(NOTICE LZBZCORE"Proc 0x%x: Fell out of path. "
-		"Dormanting.\n",
+	self->parent->sendResponse(err);
+	printf(NOTICE LZBZCORE"Proc 0x%x: Done executing. Dormanting.\n",
 		self->getFullId());
 
 	taskTrib.dormant(self->getFullId());

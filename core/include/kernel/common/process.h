@@ -212,7 +212,7 @@ public:
 
 private:
 	error_t getNewThreadId(processId_t *ret);
-	threadC *allocateNewThread(processId_t newThreadId);
+	threadC *allocateNewThread(processId_t newThreadId, void *privateData);
 	void removeThread(processId_t id);
 
 	error_t allocateInternals(void);

@@ -32,9 +32,9 @@ friend class processStreamC;
 public:
 	enum schedPolicyE { INVALID=0, ROUND_ROBIN, REAL_TIME };
 
-	taskC(processStreamC *parent)
+	taskC(processStreamC *parent, void *privateData)
 	:
-	parent(parent), flags(0),
+	parent(parent), flags(0), privateData(privateData),
 
 	// Usually overridden immediately by inheritSchedPrio(), though.
 	schedPrio(&internalPrio),
@@ -47,6 +47,7 @@ public:
 public:
 	// virtual processId_t getFullId(void)=0;
 	virtual task::typeE getType(void)=0;
+	void *getPrivateData(void) { return privateData; }
 
 private:
 	void inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t flags);
@@ -56,6 +57,7 @@ public:
 	// General.
 	processStreamC		*parent;
 	uarch_t			flags;
+	void			*privateData;
 
 	// Scheduler related.
 	prioClassS		*schedPrio, internalPrio;
@@ -177,13 +179,13 @@ public taskC
 {
 friend class processStreamC;
 public:
-	threadC(processId_t id, processStreamC *parent)
+	threadC(processId_t id, processStreamC *parent, void *privateData)
 	:
-	taskC(parent),
+	taskC(parent, privateData),
 	id(id),
 	currentCpu(NULL),
 	stack0(NULL), stack1(NULL),
-	// For a normal thread, "currentCpu" and "stack0" start as NULL. 
+	// For a normal thread, "currentCpu" and "stack0" start as NULL.
 	taskContext(task::UNIQUE, this)
 	{}
 
@@ -222,9 +224,9 @@ class perCpuThreadC
 public taskC
 {
 public:
-	perCpuThreadC(processStreamC *parent)
+	perCpuThreadC(processStreamC *parent, void *privateData)
 	:
-	taskC(parent)
+	taskC(parent, privateData)
 	{}
 
 	error_t initialize(void) { return taskC::initialize(); }
