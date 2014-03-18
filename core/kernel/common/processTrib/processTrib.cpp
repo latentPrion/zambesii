@@ -111,7 +111,7 @@ error_t processTribC::getDriverExecutableFormat(
 	ret = floodplainn.findDriver(fullName, &tmpDrv);
 	if (ret != ERROR_SUCCESS) { return ERROR_UNINITIALIZED; };
 
-	if (tmpDrv->index == zudiIndexServer::INDEX_KERNEL)
+	if (tmpDrv->index == zuiServer::INDEX_KERNEL)
 	{
 		*retfmt = processStreamC::RAW;
 		*retEntryPoint = &__klzbzcore::main;
@@ -417,7 +417,7 @@ error_t processTribC::spawnDriver(
 	fplainn::deviceC		*dev;
 	fplainn::driverC		*drv;
 	fplainn::driverInstanceC	*drvInstance;
-	heapPtrC<driverProcessC>	newProcess;
+	heapObjC<driverProcessC>	newProcess;
 
 	if (commandLine == NULL || retProcess == NULL)
 		{ return ERROR_INVALID_ARG; };
@@ -484,7 +484,7 @@ error_t processTribC::spawnDriver(
 
 	newProcess = new driverProcessC(
 		newProcessId, parentThread->getFullId(),
-		(drv->index == zudiIndexServer::INDEX_KERNEL)
+		(drv->index == zuiServer::INDEX_KERNEL)
 			? PROCESS_EXECDOMAIN_KERNEL
 			: PROCESS_EXECDOMAIN_USER,
 		dev->bankId, drvInstance,

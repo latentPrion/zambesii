@@ -4,8 +4,9 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <kernel/common/processId.h>
+	#include <kernel/common/floodplainn/fvfs.h> // FVFS_PATH_MAXLEN
 
-namespace zudiIndexServer
+namespace zuiServer
 {
 	enum indexE { INDEX_KERNEL=0, INDEX_RAMDISK, INDEX_EXTERNAL };
 	enum newDeviceActionE {
@@ -13,12 +14,10 @@ namespace zudiIndexServer
 		NDACTION_LOAD_DRIVER, NDACTION_SPAWN_DRIVER,
 		NDACTION_INSTANTIATE };
 
-	#define ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN			(256)
-
-	struct zudiIndexMsgS
+	struct indexMsgS
 	{
 	public:
-		zudiIndexMsgS(
+		indexMsgS(
 			ubit8 command, utf8Char *path,
 			indexE index, newDeviceActionE action=NDACTION_NOTHING)
 		:
@@ -27,31 +26,26 @@ namespace zudiIndexServer
 			if (path != NULL)
 			{
 				strncpy8(
-					this->path, path,
-					ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN
-						- 1);
+					this->path, path, FVFS_PATH_MAXLEN);
 
-				this->path[
-					ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN
-						- 1] = '\0';
+				this->path[FVFS_PATH_MAXLEN - 1] = '\0';
 			};
 		}
 
-		#define ZUDIIDX_SERVER_ADDINDEX_REQ			(0)
-		#define ZUDIIDX_SERVER_REMOVEINDEX_REQ			(1)
-		#define ZUDIIDX_SERVER_SET_NEWDEVICE_ACTION_REQ		(2)
-		#define ZUDIIDX_SERVER_GET_NEWDEVICE_ACTION_REQ		(3)
-		#define ZUDIIDX_SERVER_DETECTDRIVER_REQ			(4)
-		#define ZUDIIDX_SERVER_LOADDRIVER_REQ			(5)
-		#define ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ		(6)
-		#define ZUDIIDX_SERVER_NEWDEVICE_IND			(7)
+		#define ZUISERVER_ADDINDEX_REQ			(0)
+		#define ZUISERVER_REMOVEINDEX_REQ			(1)
+		#define ZUISERVER_SET_NEWDEVICE_ACTION_REQ		(2)
+		#define ZUISERVER_GET_NEWDEVICE_ACTION_REQ		(3)
+		#define ZUISERVER_DETECTDRIVER_REQ			(4)
+		#define ZUISERVER_LOADDRIVER_REQ			(5)
+		#define ZUISERVER_LOAD_REQUIREMENTS_REQ		(6)
+		#define ZUISERVER_NEWDEVICE_IND			(7)
 
 		ubit8			command;
 		indexE			index;
 		newDeviceActionE	action;
 		processId_t		processId;
-		utf8Char		path[
-			ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
+		utf8Char		path[FVFS_PATH_MAXLEN];
 	};
 
 	/**	EXPLANATION:

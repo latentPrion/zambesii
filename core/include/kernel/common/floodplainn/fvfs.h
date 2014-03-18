@@ -5,6 +5,7 @@
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 
 #define FVFS_TAG_NAME_MAXLEN		(32)
+#define FVFS_PATH_MAXLEN		(192)
 
 /**	EXPLANATION:
  * The Floodplainn VFS is the abstraction used to provide a namespace of

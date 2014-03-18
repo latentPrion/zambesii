@@ -1,0 +1,352 @@
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Building core/
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building __kthreads/ dir.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building arch __kthreads dir.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building kernel/common/ dir.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building arch kernel dir.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building firmware core dir.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building platform core dir.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Generating platform specific linker script.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Memory Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Interrupt Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Executable Format Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Distributary Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Timer Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building CPU Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Process Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building VFS Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Task Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Debug Tributary.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building Floodplainn.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from floodplainn_zudiIndexServer_backEnd.cpp:10:0:
+/home/latentprion/zbz/./core/include/commonlibs/libzudiIndexParser.h:24:16: error: 'zudiIndexServer' has not been declared
+/home/latentprion/zbz/./core/include/commonlibs/libzudiIndexParser.h:25:17: error: 'zudiIndexServer' has not been declared
+/home/latentprion/zbz/./core/include/commonlibs/libzudiIndexParser.h:26:18: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:27:2: error: 'zudiIndexServer' does not name a type
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(fplainn::deviceC*, zui::device::headerS*, zui::driver::headerS*)':
+floodplainn_zudiIndexServer_backEnd.cpp:60:19: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:60:34: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:62:15: error: request for member 'useArrayDelete' in 'attrValueTmp', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:63:44: error: invalid conversion from 'ubit8*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:64:22: warning: NULL used in arithmetic
+floodplainn_zudiIndexServer_backEnd.cpp:137:20: error: request for member 'get' in 'attrValueTmp', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:144:20: error: request for member 'get' in 'attrValueTmp', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:177:29: error: request for member 'get' in 'attrValueTmp', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:186:20: error: request for member 'get' in 'attrValueTmp', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp: At global scope:
+floodplainn_zudiIndexServer_backEnd.cpp:221:2: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:221:33: error: expected ',' or '...' before '*' token
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexServer_detectDriverReq(zasyncStreamC::zasyncMsgS*, int)':
+floodplainn_zudiIndexServer_backEnd.cpp:230:19: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:230:34: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:231:23: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:231:35: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:232:31: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:232:43: error: invalid type in declaration before ',' token
+floodplainn_zudiIndexServer_backEnd.cpp:246:36: error: 'requestData' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:261:51: error: invalid conversion from 'utf8Char*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:262:14: error: request for member 'useArrayDelete' in 'devlineName', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:263:22: error: invalid conversion from 'zui::headerS*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:264:31: error: invalid conversion from 'zui::driver::headerS*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:265:29: error: invalid conversion from 'zui::driver::headerS*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:267:21: warning: NULL used in arithmetic
+floodplainn_zudiIndexServer_backEnd.cpp:267:41: warning: NULL used in arithmetic
+floodplainn_zudiIndexServer_backEnd.cpp:267:62: warning: NULL used in arithmetic
+floodplainn_zudiIndexServer_backEnd.cpp:268:17: warning: NULL used in arithmetic
+floodplainn_zudiIndexServer_backEnd.cpp:303:43: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:320:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:331:13: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:331:51: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:342:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:343:16: error: request for member 'get' in 'devlineName', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:352:32: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:352:57: error: request for member 'get' in 'devlineName', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:357:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:378:13: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:378:45: error: request for member 'get' in 'metaHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:392:30: error: request for member 'get' in 'metaHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:451:17: error: request for member 'get' in 'devlineName', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:469:22: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:490:13: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:491:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:504:44: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:505:37: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:516:16: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:520:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:520:30: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:524:22: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp: At global scope:
+floodplainn_zudiIndexServer_backEnd.cpp:218:6: warning: unused parameter 'zudiIndexMsgS'
+floodplainn_zudiIndexServer_backEnd.cpp:539:2: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:539:33: error: expected ',' or '...' before '*' token
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexServer_newDeviceActionReq(zasyncStreamC::zasyncMsgS*, int)':
+floodplainn_zudiIndexServer_backEnd.cpp:547:36: error: 'requestData' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:562:26: error: '::newDeviceAction' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:564:30: error: 'ZUDIIDX_SERVER_SET_NEWDEVICE_ACTION_REQ' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:565:5: error: '::newDeviceAction' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp: At global scope:
+floodplainn_zudiIndexServer_backEnd.cpp:536:6: warning: unused parameter 'zudiIndexMsgS'
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'const udi_mei_init_t* __kindex_getMetaInfoFor(utf8Char*, zui::headerS*)':
+floodplainn_zudiIndexServer_backEnd.cpp:574:31: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:574:40: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:577:8: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:579:29: error: invalid conversion from 'zui::driver::headerS*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:580:17: warning: NULL used in arithmetic
+floodplainn_zudiIndexServer_backEnd.cpp:602:40: error: request for member 'get' in 'metaHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:613:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp: At global scope:
+floodplainn_zudiIndexServer_backEnd.cpp:625:2: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:625:33: error: expected ',' or '...' before '*' token
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexer_loadDriverReq(zasyncStreamC::zasyncMsgS*, int)':
+floodplainn_zudiIndexServer_backEnd.cpp:630:27: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:630:36: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:631:23: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:631:35: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:632:31: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:632:43: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:633:19: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:633:32: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:640:36: error: 'requestData' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:668:60: error: request for member 'addressOf' in 'driver', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:675:11: error: request for member 'release' in 'driver', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:683:51: error: invalid conversion from 'fplainn::driverC*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:684:22: error: invalid conversion from 'zui::headerS*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:685:31: error: invalid conversion from 'zui::driver::headerS*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:686:12: error: request for member 'useArrayDelete' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:687:49: error: invalid conversion from 'utf8Char*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:689:16: warning: NULL used in arithmetic
+floodplainn_zudiIndexServer_backEnd.cpp:689:36: warning: NULL used in arithmetic
+floodplainn_zudiIndexServer_backEnd.cpp:689:57: warning: NULL used in arithmetic
+floodplainn_zudiIndexServer_backEnd.cpp:690:16: error: request for member 'get' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:693:43: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:699:12: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:699:53: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:704:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:705:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:705:39: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:710:13: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:710:29: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:710:52: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:713:13: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:713:29: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:714:9: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:717:13: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:717:29: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:717:48: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:719:12: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:719:23: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:728:10: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:734:11: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:739:9: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:743:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:743:44: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:744:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:747:31: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:752:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:756:27: error: request for member 'get' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:759:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:760:32: error: request for member 'get' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:764:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:764:44: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:765:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:768:31: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:773:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:776:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:782:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:782:49: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:783:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:786:31: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:791:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:795:32: error: request for member 'get' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:798:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:799:14: error: request for member 'get' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:803:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:803:50: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:804:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:807:31: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:813:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:817:33: error: request for member 'get' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:820:13: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:820:24: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:823:15: error: request for member 'get' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:823:31: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:831:12: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:831:35: error: request for member 'get' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:837:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:838:38: error: request for member 'get' in 'tmpString', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:841:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:841:46: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:842:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:845:31: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:850:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:853:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:858:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:858:47: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:859:12: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:862:31: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:867:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:870:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:875:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:875:49: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:876:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:879:31: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:884:14: error: request for member 'get' in 'driverHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:887:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:893:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:896:8: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:898:45: error: request for member 'release' in 'driver', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp: At global scope:
+floodplainn_zudiIndexServer_backEnd.cpp:622:6: warning: unused parameter 'zudiIndexMsgS'
+floodplainn_zudiIndexServer_backEnd.cpp:906:2: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:906:33: error: expected ',' or '...' before '*' token
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexServer_loadRequirementsReq(zasyncStreamC::zasyncMsgS*, int)':
+floodplainn_zudiIndexServer_backEnd.cpp:913:23: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:913:34: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:914:31: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:914:40: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:915:19: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:915:29: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:919:36: error: 'requestData' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:936:22: error: invalid conversion from 'zui::headerS*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:937:29: error: invalid conversion from 'zui::driver::headerS*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:938:10: error: request for member 'useArrayDelete' in 'tmpName', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:939:47: error: invalid conversion from 'utf8Char*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:941:15: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:941:40: error: request for member 'get' in 'metaHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:942:14: error: request for member 'get' in 'tmpName', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:945:43: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:966:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:989:14: error: request for member 'get' in 'indexHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:990:13: error: request for member 'get' in 'metaHdr', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1002:33: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1004:34: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1019:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1030:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp: At global scope:
+floodplainn_zudiIndexServer_backEnd.cpp:903:6: warning: unused parameter 'zudiIndexMsgS'
+floodplainn_zudiIndexServer_backEnd.cpp:1056:2: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1056:33: error: expected ',' or '...' before '*' token
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexServer_newDeviceInd(zasyncStreamC::zasyncMsgS*, int)':
+floodplainn_zudiIndexServer_backEnd.cpp:1080:36: error: 'requestData' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1097:23: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1100:6: error: '::newDeviceAction' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1100:27: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1104:8: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp: At global scope:
+floodplainn_zudiIndexServer_backEnd.cpp:1053:6: warning: unused parameter 'zudiIndexMsgS'
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexServer_newDeviceInd1(floodplainnC::zudiIndexMsgS*)':
+floodplainn_zudiIndexServer_backEnd.cpp:1137:31: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1139:6: error: '::newDeviceAction' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1139:27: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1143:8: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexServer_newDeviceInd2(floodplainnC::zudiIndexMsgS*)':
+floodplainn_zudiIndexServer_backEnd.cpp:1173:31: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1174:6: error: '::newDeviceAction' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1174:27: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexServer_newDeviceInd3(messageStreamC::headerS*)':
+floodplainn_zudiIndexServer_backEnd.cpp:1214:31: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1215:6: error: '::newDeviceAction' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1215:27: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexServer_newDeviceInd4(floodplainnC::zudiKernelCallMsgS*)':
+floodplainn_zudiIndexServer_backEnd.cpp:1252:31: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp: At global scope:
+floodplainn_zudiIndexServer_backEnd.cpp:1283:2: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1283:33: error: expected ',' or '...' before '*' token
+floodplainn_zudiIndexServer_backEnd.cpp: In function 'void fplainnIndexServer_handleRequest(zasyncStreamC::zasyncMsgS*, int)':
+floodplainn_zudiIndexServer_backEnd.cpp:1289:32: error: 'zudiIndexServer' has not been declared
+floodplainn_zudiIndexServer_backEnd.cpp:1298:8: error: 'self' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1299:20: error: 'requestData' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1312:7: error: 'ZUDIIDX_SERVER_DETECTDRIVER_REQ' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1318:7: error: 'ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1324:7: error: 'ZUDIIDX_SERVER_LOADDRIVER_REQ' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1330:7: error: 'ZUDIIDX_SERVER_GET_NEWDEVICE_ACTION_REQ' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1331:7: error: 'ZUDIIDX_SERVER_SET_NEWDEVICE_ACTION_REQ' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1337:7: error: 'ZUDIIDX_SERVER_NEWDEVICE_IND' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp: At global scope:
+floodplainn_zudiIndexServer_backEnd.cpp:1280:6: warning: unused parameter 'zudiIndexMsgS'
+floodplainn_zudiIndexServer_backEnd.cpp: In static member function 'static void floodplainnC::indexReaderEntry()':
+floodplainn_zudiIndexServer_backEnd.cpp:1355:36: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:1355:42: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:1356:11: error: 'zudiIndexServer' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1356:41: error: wrong number of template arguments (1, should be 2)
+/home/latentprion/zbz/./core/include/__kstdlib/__kcxxlib/memory:64:7: error: provided for 'template<class type, class deleter> class heapPtrC'
+floodplainn_zudiIndexServer_backEnd.cpp:1356:54: error: invalid type in declaration before ';' token
+floodplainn_zudiIndexServer_backEnd.cpp:1362:28: error: invalid conversion from 'messageStreamC::iteratorS*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1363:20: error: expected type-specifier before 'zudiIndexServer'
+floodplainn_zudiIndexServer_backEnd.cpp:1363:35: error: invalid conversion from 'int*' to 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1363:20: error: expected ';' before 'zudiIndexServer'
+floodplainn_zudiIndexServer_backEnd.cpp:1366:10: error: request for member 'get' in 'gcb', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1366:39: error: request for member 'get' in 'requestData', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1402:50: error: request for member 'get' in 'gcb', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1405:11: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1406:10: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1407:10: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1408:10: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1409:10: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1414:8: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1420:14: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1423:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1427:39: error: request for member 'get' in 'gcb', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1428:18: error: request for member 'get' in 'requestData', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1436:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1438:9: error: 'ZUDIIDX_SERVER_DETECTDRIVER_REQ' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1441:11: error: request for member 'get' in 'gcb', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1446:9: error: 'ZUDIIDX_SERVER_LOADDRIVER_REQ' was not declared in this scope
+floodplainn_zudiIndexServer_backEnd.cpp:1449:11: error: request for member 'get' in 'gcb', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1456:15: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1461:11: error: request for member 'get' in 'gcb', which is of non-class type 'int'
+floodplainn_zudiIndexServer_backEnd.cpp:1468:11: error: base operand of '->' is not a pointer
+floodplainn_zudiIndexServer_backEnd.cpp:1475:37: error: request for member 'get' in 'gcb', which is of non-class type 'int'
+make[2]: *** [floodplainn_zudiIndexServer_backEnd.o] Error 1
+make[1]: *** [floodplainn.a] Error 2
+make: *** [core.o] Error 2

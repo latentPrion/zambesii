@@ -4,12 +4,13 @@
 	#define UDI_VERSION	0x101
 	#include <udi.h>
 	#undef UDI_VERSION
-	#include <zudiIndex.h>
+	#include <zui.h>
 	#include <chipset/chipset.h>
 	#include <chipset/memory.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kstdlib/__kclib/string.h>
+	#include <__kstdlib/__kcxxlib/memory>
 	#include <__kclasses/ptrlessList.h>
 	#include <kernel/common/thread.h>
 	#include <kernel/common/numaTypes.h>
@@ -23,15 +24,23 @@
  *
  * Each device has a name and a unique ID.
  **/
-#define DRIVER_LONGNAME_MAXLEN			ZUDI_MESSAGE_MAXLEN
-#define DRIVER_VENDORNAME_MAXLEN		ZUDI_MESSAGE_MAXLEN
-#define DRIVER_VENDORCONTACT_MAXLEN		ZUDI_MESSAGE_MAXLEN
+#define DRIVER_BASEPATH_MAXLEN			ZUI_DRIVER_BASEPATH_MAXLEN
+#define DRIVER_SHORTNAME_MAXLEN			ZUI_DRIVER_SHORTNAME_MAXLEN
+#define DRIVER_LONGNAME_MAXLEN			ZUI_MESSAGE_MAXLEN
 #define DRIVER_FULLNAME_MAXLEN			\
-	(ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_DRIVER_SHORTNAME_MAXLEN)
+	(DRIVER_BASEPATH_MAXLEN + DRIVER_SHORTNAME_MAXLEN)
+#define DRIVER_VENDORNAME_MAXLEN		ZUI_MESSAGE_MAXLEN
+#define DRIVER_VENDORCONTACT_MAXLEN		ZUI_MESSAGE_MAXLEN
+#define DRIVER_SUPPLIER_MAXLEN			(ZUI_MESSAGE_MAXLEN)
+#define DRIVER_CONTACT_MAXLEN			(ZUI_MESSAGE_MAXLEN)
+#define DRIVER_FILENAME_MAXLEN			(128)
 #define DRIVER_CLASS_MAXLEN			FVFS_TAG_NAME_MAXLEN
+#define DRIVER_METALANGUAGE_MAXLEN		(ZUI_DRIVER_METALANGUAGE_MAXLEN)
+#define DRIVER_REQUIREMENT_MAXLEN		(ZUI_DRIVER_METALANGUAGE_MAXLEN)
 
 #define DEVICE_SHORTNAME_MAXLEN			DRIVER_SHORTNAME_MAXLEN
 #define DEVICE_LONGNAME_MAXLEN			DRIVER_LONGNAME_MAXLEN
+#define DEVICE_FULLNAME_MAXLEN			(DRIVER_FULLNAME_MAXLEN)
 #define DEVICE_VENDORNAME_MAXLEN		DRIVER_VENDORNAME_MAXLEN
 #define DEVICE_VENDORCONTACT_MAXLEN		DRIVER_VENDORCONTACT_MAXLEN
 #define DEVICE_DRIVER_FULLNAME_MAXLEN		DRIVER_FULLNAME_MAXLEN
@@ -80,8 +89,8 @@ namespace fplainn
 		nParentTags(0),
 		enumerationAttrs(NULL), instanceAttrs(NULL), classes(NULL),
 		driverDetected(0),
-		driverIndex(zudiIndexServer::INDEX_KERNEL),
-		requestedIndex(zudiIndexServer::INDEX_KERNEL),
+		driverIndex(zuiServer::INDEX_KERNEL),
+		requestedIndex(zuiServer::INDEX_KERNEL),
 		parentTags(NULL), parentTagCounter(0)
 		{
 			this->longName[0]
@@ -196,10 +205,12 @@ namespace fplainn
 
 		sarch_t removeLeafTag(utf8Char *) { return 0; }
 		fvfs::tagC *getLeafTag(utf8Char *) { return NULL; }
+		error_t findEnumerationAttribute(
+			utf8Char *name, udi_instance_attr_list_t **attr);
 
 	public:
-		utf8Char	longName[ZUDI_MESSAGE_MAXLEN],
-				driverFullName[DRIVER_FULLNAME_MAXLEN];
+		utf8Char	longName[DEVICE_LONGNAME_MAXLEN],
+				driverFullName[DEVICE_FULLNAME_MAXLEN];
 
 		/* Vendor name and contact info should be retrieved from the
 		 * driver object, instead of unnecessarily being duplicated.
@@ -209,12 +220,12 @@ namespace fplainn
 		deviceInstanceC		*instance;
 		ubit8			nEnumerationAttrs, nInstanceAttrs,
 					nClasses, nParentTags;
-		udi_instance_attr_list_t
-					**enumerationAttrs, **instanceAttrs;
+		heapArrC<heapObjC<udi_instance_attr_list_t> >
+					enumerationAttrs, instanceAttrs;
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
 		sbit8			driverDetected;
 		// The index which enumerated this device's driver.
-		zudiIndexServer::indexE	driverIndex, requestedIndex;
+		zuiServer::indexE	driverIndex, requestedIndex;
 		parentTagS		*parentTags;
 		uarch_t			parentTagCounter;
 	};
@@ -357,7 +368,7 @@ namespace fplainn
 		struct parentBopS;
 		struct internalBopS;
 
-		driverC(zudiIndexServer::indexE index)
+		driverC(zuiServer::indexE index)
 		:
 		index(index),
 		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
@@ -416,7 +427,7 @@ namespace fplainn
 			ubit16		index, nAttachedRegions;
 			// Array of region indexes belonging to this module.
 			ubit16		*regionIndexes;
-			utf8Char	filename[ZUDI_FILENAME_MAXLEN];
+			utf8Char	filename[DRIVER_SHORTNAME_MAXLEN];
 
 		private:
 			friend class fplainn::driverC;
@@ -464,7 +475,7 @@ namespace fplainn
 
 			void dump(void);
 
-			utf8Char	name[ZUDI_DRIVER_REQUIREMENT_MAXLEN],
+			utf8Char	name[DRIVER_REQUIREMENT_MAXLEN],
 					*fullName;
 			ubit32		version;
 
@@ -492,7 +503,7 @@ namespace fplainn
 			void dump(void);
 
 			ubit16		index;
-			utf8Char	name[ZUDI_DRIVER_METALANGUAGE_MAXLEN];
+			utf8Char	name[DRIVER_METALANGUAGE_MAXLEN];
 			// XXX: Only used by the kernel for kernelspace drivers.
 			const udi_mei_init_t	*udi_meta_info;
 
@@ -673,13 +684,13 @@ namespace fplainn
 		// Kernel doesn't need to know about control block information.
 
 	public:
-		zudiIndexServer::indexE		index;
+		zuiServer::indexE		index;
 
-		utf8Char	basePath[ZUDI_DRIVER_BASEPATH_MAXLEN],
-				shortName[ZUDI_DRIVER_SHORTNAME_MAXLEN],
-				longName[ZUDI_MESSAGE_MAXLEN],
-				supplier[ZUDI_MESSAGE_MAXLEN],
-				supplierContact[ZUDI_MESSAGE_MAXLEN];
+		utf8Char	basePath[DRIVER_BASEPATH_MAXLEN],
+				shortName[DRIVER_SHORTNAME_MAXLEN],
+				longName[DRIVER_LONGNAME_MAXLEN],
+				supplier[DRIVER_SUPPLIER_MAXLEN],
+				supplierContact[DRIVER_CONTACT_MAXLEN];
 		ubit16		nModules, nRegions, nRequirements,
 				nMetalanguages, nChildBops, nParentBops,
 				nInternalBops, nInstances, nClasses;
@@ -808,13 +819,13 @@ namespace fplainn
 		void removeHostedDevice(utf8Char *path);
 
 	public:
-		driverC			*driver;
-		numaBankId_t		bankId;
-		processId_t		pid;
-		childBopS		*childBopVectors;
-		uarch_t			nHostedDevices;
-		utf8Char		**hostedDevices;
-		managementChannelS	managementChannel;
+		driverC				*driver;
+		numaBankId_t			bankId;
+		processId_t			pid;
+		childBopS			*childBopVectors;
+		uarch_t				nHostedDevices;
+		heapArrC<heapArrC<utf8Char> >	hostedDevices;
+		managementChannelS		managementChannel;
 	};
 }
 

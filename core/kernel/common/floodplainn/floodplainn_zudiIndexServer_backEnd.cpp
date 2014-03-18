@@ -1,7 +1,7 @@
 
 #include <debug.h>
 #include <__ksymbols.h>
-#include <zudiIndex.h>
+#include <zui.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/memory>
@@ -24,7 +24,7 @@
  **/
 
 
- zudiIndexServer::newDeviceActionE		newDeviceAction;
+zuiServer::newDeviceActionE	newDeviceAction;
 
 zudiIndexParserC		kernelIndex(zudiIndexParserC::SOURCE_KERNEL),
 				ramdiskIndex(zudiIndexParserC::SOURCE_RAMDISK),
@@ -48,18 +48,16 @@ zudiIndexParserC		*zudiIndexes[3] =
 	return esp;
 }
 
- status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes
-(
-	fplainn::deviceC *device, zudi::device::headerS *devline,
-	zudi::driver::headerS *metaHdr
+status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
+	fplainn::deviceC *device, zui::device::headerS *devline,
+	zui::driver::headerS *metaHdr
 	)
 {
 	// Return value is the rank of the driver.
 	status_t			ret=ERROR_NO_MATCH;
-	zudi::rank::headerS		currRank;
-	heapPtrC<utf8Char>		attrValueTmp;
+	zui::rank::headerS		currRank;
+	heapArrC<utf8Char>		attrValueTmp;
 
-	attrValueTmp.useArrayDelete = 1;
 	attrValueTmp = new ubit8[UDI_MAX_ATTR_SIZE];
 	if (attrValueTmp == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -85,7 +83,7 @@ zudiIndexParserC		*zudiIndexes[3] =
 		nAttributesMatched = 0;
 		for (uarch_t j=0; j<currRank.nAttributes; j++)
 		{
-			zudi::device::attrDataS		devlineData;
+			zui::device::attrDataS		devlineData;
 			sarch_t				attrMatched=0;
 			utf8Char			currRankAttrName[
 				UDI_MAX_ATTR_NAMELEN];
@@ -215,23 +213,22 @@ zudiIndexParserC		*zudiIndexes[3] =
 	return ret;
 }
 
-void fplainnIndexServer_detectDriverReq
-(
+void fplainnIndexServer_detectDriverReq(
 	zasyncStreamC::zasyncMsgS *request,
-	zudiIndexServer::zudiIndexMsgS *requestData
+	zuiServer::indexMsgS *requestData
 	)
 {
 	threadC					*self;
 	error_t					err;
 	floodplainnC::zudiIndexMsgS		*response;
 	fplainn::deviceC			*dev;
-	zudi::device::headerS			devlineHdr,
+	zui::device::headerS			devlineHdr,
 						*currDevlineHdr;
-	heapPtrC<utf8Char>			devlineName;
-	heapPtrC<zudi::headerS>			indexHdr;
-	heapPtrC<zudi::driver::headerS>		driverHdr, metaHdr;
+	heapArrC<utf8Char>			devlineName;
+	heapObjC<zui::headerS>			indexHdr;
+	heapObjC<zui::driver::headerS>		driverHdr, metaHdr;
 	// FIXME: big memory leak on this list within this function.
-	ptrListC<zudi::device::headerS>		matchingDevices;
+	ptrListC<zui::device::headerS>		matchingDevices;
 	status_t				bestRank=-1;
 	asyncResponseC				myResponse;
 	void					*handle;
@@ -258,11 +255,10 @@ void fplainnIndexServer_detectDriverReq
 
 	myResponse(response);
 	// Allocate all necessary memory at once.
-	devlineName = new utf8Char[ZUDI_MESSAGE_MAXLEN];
-	devlineName.useArrayDelete = 1;
-	indexHdr = new zudi::headerS;
-	driverHdr = new zudi::driver::headerS;
-	metaHdr = new zudi::driver::headerS;
+	devlineName = new utf8Char[DRIVER_LONGNAME_MAXLEN];
+	indexHdr = new zui::headerS;
+	driverHdr = new zui::driver::headerS;
+	metaHdr = new zui::driver::headerS;
 
 	if (devlineName == NULL || indexHdr == NULL || driverHdr == NULL
 		|| metaHdr == NULL)
@@ -322,10 +318,10 @@ void fplainnIndexServer_detectDriverReq
 			== ERROR_SUCCESS;
 		i++)
 	{
-		zudi::driver::metalanguageS		devlineMetalanguage;
+		zui::driver::metalanguageS		devlineMetalanguage;
 		status_t				rank;
 		utf8Char				devlineMetaName[
-			ZUDI_DRIVER_METALANGUAGE_MAXLEN];
+			DRIVER_METALANGUAGE_MAXLEN];
 
 		if (zudiIndexes[0]->getDriverHeader(
 			indexHdr.get(), devlineHdr.driverId, driverHdr.get())
@@ -408,7 +404,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 
 				matchingDevices.~ptrListC();
 				new (&matchingDevices)
-					ptrListC<zudi::device::headerS>;
+					ptrListC<zui::device::headerS>;
 
 				err = matchingDevices.initialize();
 				if (err != ERROR_SUCCESS)
@@ -424,7 +420,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 				bestRank = rank;
 			};
 
-			currDevlineHdr = new zudi::device::headerS;
+			currDevlineHdr = new zui::device::headerS;
 			if (currDevlineHdr == NULL)
 			{
 				printf(ERROR FPLAINNIDX"detectDriver: failed to "
@@ -466,7 +462,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		myResponse(ERROR_NO_MATCH);
 		dev->driverFullName[0] = '\0';
 		dev->driverDetected = 0;
-		dev->driverIndex = zudiIndexServer::INDEX_KERNEL;
+		dev->driverIndex = zuiServer::INDEX_KERNEL;
 	}
 	else
 	{
@@ -521,7 +517,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			dev->longName);
 
 		dev->driverDetected = 1;
-		dev->driverIndex = zudiIndexServer::INDEX_KERNEL;
+		dev->driverIndex = zuiServer::INDEX_KERNEL;
 	};
 
 	// In both cases, driverInstance should be NULL.
@@ -536,7 +532,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 void fplainnIndexServer_newDeviceActionReq
 (
 	zasyncStreamC::zasyncMsgS *request,
-	zudiIndexServer::zudiIndexMsgS *requestData
+	zuiServer::indexMsgS *requestData
 	)
 {
 	floodplainnC::zudiIndexMsgS		*response;
@@ -561,22 +557,21 @@ void fplainnIndexServer_newDeviceActionReq
 	myResponse(response);
 	response->info.action = ::newDeviceAction;
 
-	if (requestData->command == ZUDIIDX_SERVER_SET_NEWDEVICE_ACTION_REQ)
+	if (requestData->command == ZUISERVER_SET_NEWDEVICE_ACTION_REQ)
 		{ ::newDeviceAction = requestData->action; };
 
 	myResponse(ERROR_SUCCESS);
 }
 
  udi_mei_init_t *__kindex_getMetaInfoFor(
-	utf8Char *metaName, zudi::headerS *indexHdr
+	utf8Char *metaName, zui::headerS *indexHdr
 	)
 {
-	heapPtrC<zudi::driver::headerS>	metaHdr;
-	zudi::driver::provisionS	provTmp;
-	ubit8				indexNo=
-		(int)zudiIndexServer::INDEX_KERNEL;
+	heapObjC<zui::driver::headerS>	metaHdr;
+	zui::driver::provisionS		provTmp;
+	ubit8				indexNo=(int)zuiServer::INDEX_KERNEL;
 
-	metaHdr = new zudi::driver::headerS;
+	metaHdr = new zui::driver::headerS;
 	if (metaHdr == NULL) { return NULL; };
 
 	for (uarch_t i=0;
@@ -585,7 +580,7 @@ void fplainnIndexServer_newDeviceActionReq
 			== ERROR_SUCCESS;
 		i++)
 	{
-		utf8Char	provName[ZUDI_DRIVER_METALANGUAGE_MAXLEN];
+		utf8Char		provName[DRIVER_METALANGUAGE_MAXLEN];
 		const metaInitEntryS	*metaInitInfo;
 
 		zudiIndexes[indexNo]->getProvisionString(&provTmp, provName);
@@ -622,15 +617,15 @@ void fplainnIndexServer_newDeviceActionReq
 void fplainnIndexer_loadDriverReq
 (
 	zasyncStreamC::zasyncMsgS *request,
-	zudiIndexServer::zudiIndexMsgS *requestData
+	zuiServer::indexMsgS *requestData
 	)
 {
 	floodplainnC::zudiIndexMsgS		*response;
 	asyncResponseC				myResponse;
-	heapPtrC<fplainn::driverC>		driver;
-	heapPtrC<zudi::headerS> 		indexHdr;
-	heapPtrC<zudi::driver::headerS>		driverHdr;
-	heapPtrC<utf8Char>			tmpString;
+	heapObjC<fplainn::driverC>		driver;
+	heapObjC<zui::headerS> 			indexHdr;
+	heapObjC<zui::driver::headerS>		driverHdr;
+	heapArrC<utf8Char>			tmpString;
 	fplainn::deviceC			*device;
 	error_t					err;
 	const driverInitEntryS			*driverInitEntry;
@@ -681,11 +676,9 @@ void fplainnIndexer_loadDriverReq
 	 * driver information object.
 	 **/
 	driver = new fplainn::driverC(device->driverIndex);
-	indexHdr = new zudi::headerS;
-	driverHdr = new zudi::driver::headerS;
-	tmpString.useArrayDelete = 1;
-	tmpString = new utf8Char[
-		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_FILENAME_MAXLEN];
+	indexHdr = new zui::headerS;
+	driverHdr = new zui::driver::headerS;
+	tmpString = new utf8Char[DRIVER_FULLNAME_MAXLEN];
 
 	if (driver == NULL || indexHdr == NULL || driverHdr == NULL
 		|| tmpString.get() == NULL)
@@ -717,7 +710,7 @@ void fplainnIndexer_loadDriverReq
 	err = zudiIndexes[0]->getMessageString(
 		driverHdr.get(), driverHdr->nameIndex, driver->longName);
 
-	if (driver->index == zudiIndexServer::INDEX_KERNEL)
+	if (driver->index == zuiServer::INDEX_KERNEL)
 	{
 		/* Only needed for kernel-index drivers. Others will have their
 		 * udi_init_info provided by their driver binaries in userspace.
@@ -747,7 +740,7 @@ void fplainnIndexer_loadDriverReq
 
 	for (uarch_t i=0; i<driverHdr->nModules; i++)
 	{
-		zudi::driver::moduleS		currModule;
+		zui::driver::moduleS		currModule;
 
 		if (zudiIndexes[0]->indexedGetModule(
 			driverHdr.get(), i, &currModule) != ERROR_SUCCESS)
@@ -768,7 +761,7 @@ void fplainnIndexer_loadDriverReq
 
 	for (uarch_t i=0; i<driverHdr->nRegions; i++)
 	{
-		zudi::driver::regionS		currRegion;
+		zui::driver::regionS		currRegion;
 
 		if (zudiIndexes[0]->indexedGetRegion(
 			driverHdr.get(), i, &currRegion) != ERROR_SUCCESS)
@@ -786,7 +779,7 @@ void fplainnIndexer_loadDriverReq
 
 	for (uarch_t i=0; i<driverHdr->nRequirements; i++)
 	{
-		zudi::driver::requirementS	currRequirement;
+		zui::driver::requirementS	currRequirement;
 
 		if (zudiIndexes[0]->indexedGetRequirement(
 			driverHdr.get(), i, &currRequirement) != ERROR_SUCCESS)
@@ -807,7 +800,7 @@ void fplainnIndexer_loadDriverReq
 
 	for (uarch_t i=0; i<driverHdr->nMetalanguages; i++)
 	{
-		zudi::driver::metalanguageS	currMetalanguage;
+		zui::driver::metalanguageS	currMetalanguage;
 		udi_mei_init_t			*metaInfo=NULL;
 
 		if (zudiIndexes[0]->indexedGetMetalanguage(
@@ -818,7 +811,7 @@ void fplainnIndexer_loadDriverReq
 			&currMetalanguage, tmpString.get()) != ERROR_SUCCESS)
 			{ myResponse(ERROR_UNKNOWN); return; };
 
-		if (driver->index == zudiIndexServer::INDEX_KERNEL)
+		if (driver->index == zuiServer::INDEX_KERNEL)
 		{
 			metaInfo = __kindex_getMetaInfoFor(
 				tmpString.get(), indexHdr.get());
@@ -845,7 +838,7 @@ void fplainnIndexer_loadDriverReq
 
 	for (uarch_t i=0; i<driverHdr->nChildBops; i++)
 	{
-		zudi::driver::childBopS		currBop;
+		zui::driver::childBopS		currBop;
 
 		if (zudiIndexes[0]->indexedGetChildBop(
 			driverHdr.get(), i, &currBop) != ERROR_SUCCESS)
@@ -862,7 +855,7 @@ void fplainnIndexer_loadDriverReq
 
 	for (uarch_t i=0; i<driverHdr->nParentBops; i++)
 	{
-		zudi::driver::parentBopS	currBop;
+		zui::driver::parentBopS	currBop;
 
 		if (zudiIndexes[0]->indexedGetParentBop(
 			driverHdr.get(), i, &currBop) != ERROR_SUCCESS)
@@ -879,7 +872,7 @@ void fplainnIndexer_loadDriverReq
 
 	for (uarch_t i=0; i<driverHdr->nInternalBops; i++)
 	{
-		zudi::driver::internalBopS	currBop;
+		zui::driver::internalBopS	currBop;
 
 		if (zudiIndexes[0]->indexedGetInternalBop(
 			driverHdr.get(), i, &currBop) != ERROR_SUCCESS)
@@ -904,16 +897,16 @@ void fplainnIndexer_loadDriverReq
 void fplainnIndexServer_loadRequirementsReq
 (
 	zasyncStreamC::zasyncMsgS *request,
-	zudiIndexServer::zudiIndexMsgS *requestData
+	zuiServer::indexMsgS *requestData
 	)
 {
 	floodplainnC::zudiIndexMsgS	*response;
 	asyncResponseC			myResponse;
 	fplainn::driverC		*drv;
 	error_t				err;
-	heapPtrC<zudi::headerS>		indexHdr;
-	heapPtrC<zudi::driver::headerS>	metaHdr;
-	heapPtrC<utf8Char>		tmpName;
+	heapObjC<zui::headerS>		indexHdr;
+	heapObjC<zui::driver::headerS>	metaHdr;
+	heapArrC<utf8Char>		tmpName;
 
 	response = new floodplainnC::zudiIndexMsgS(
 		request->header.sourceId,
@@ -934,11 +927,9 @@ void fplainnIndexServer_loadRequirementsReq
 	response->set(
 		requestData->command, requestData->path, requestData->index);
 
-	indexHdr = new zudi::headerS;
-	metaHdr = new zudi::driver::headerS;
-	tmpName.useArrayDelete = 1;
-	tmpName = new utf8Char[
-		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_DRIVER_SHORTNAME_MAXLEN];
+	indexHdr = new zui::headerS;
+	metaHdr = new zui::driver::headerS;
+	tmpName = new utf8Char[DRIVER_FULLNAME_MAXLEN];
 
 	if (indexHdr.get() == NULL || metaHdr.get() == NULL
 		|| tmpName.get() == NULL)
@@ -961,7 +952,7 @@ void fplainnIndexServer_loadRequirementsReq
 
 	for (uarch_t i=0; i<drv->nRequirements; i++)
 	{
-		zudi::driver::provisionS	currProv;
+		zui::driver::provisionS	currProv;
 		sarch_t				isSatisfied=0;
 
 		for (uarch_t j=0;
@@ -971,8 +962,7 @@ void fplainnIndexServer_loadRequirementsReq
 			j++)
 		{
 			uarch_t		bPathLen;
-			utf8Char	provName[
-				ZUDI_DRIVER_METALANGUAGE_MAXLEN];
+			utf8Char	provName[DRIVER_METALANGUAGE_MAXLEN];
 
 			zudiIndexes[0]->getProvisionString(&currProv, provName);
 
@@ -1056,7 +1046,7 @@ void fplainnIndexServer_loadRequirementsReq
 void fplainnIndexServer_newDeviceInd
 (
 	zasyncStreamC::zasyncMsgS *request,
-	zudiIndexServer::zudiIndexMsgS *requestData
+	zuiServer::indexMsgS *requestData
 	)
 {
 	// The originContext /is/ the response that will eventually be sent.
@@ -1097,14 +1087,14 @@ void fplainnIndexServer_newDeviceInd
 	myResponse(originContext);
 	originContext->set(
 		requestData->command, requestData->path,
-		requestData->index, zudiIndexServer::NDACTION_NOTHING);
+		requestData->index, zuiServer::NDACTION_NOTHING);
 
 	// If the currently set action is "do nothing", just exit immediately.
-	if (::newDeviceAction == zudiIndexServer::NDACTION_NOTHING) {
+	if (::newDeviceAction == zuiServer::NDACTION_NOTHING) {
 		myResponse(ERROR_SUCCESS); return;
 	};
 
-	err = zudiIndexServer::detectDriverReq(
+	err = zuiServer::detectDriverReq(
 		originContext->info.path, originContext->info.index,
 		originContext, 0);
 
@@ -1137,13 +1127,13 @@ void fplainnIndexServer_newDeviceInd1
 		return;
 	};
 
-	originContext->info.action = zudiIndexServer::NDACTION_DETECT_DRIVER;
+	originContext->info.action = zuiServer::NDACTION_DETECT_DRIVER;
 	// If newDeviceAction is detect-and-stop, stop and send response now.
-	if (::newDeviceAction == zudiIndexServer::NDACTION_DETECT_DRIVER)
+	if (::newDeviceAction == zuiServer::NDACTION_DETECT_DRIVER)
 		{ myResponse(ERROR_SUCCESS); return; };
 
 	// Else we continue. Next we do a loadDriver() call.
-	err = zudiIndexServer::loadDriverReq(
+	err = zuiServer::loadDriverReq(
 		originContext->info.path, originContext);
 
 	if (err != ERROR_SUCCESS)
@@ -1173,8 +1163,8 @@ void fplainnIndexServer_newDeviceInd2
 		return;
 	};
 
-	originContext->info.action = zudiIndexServer::NDACTION_LOAD_DRIVER;
-	if (::newDeviceAction == zudiIndexServer::NDACTION_LOAD_DRIVER)
+	originContext->info.action = zuiServer::NDACTION_LOAD_DRIVER;
+	if (::newDeviceAction == zuiServer::NDACTION_LOAD_DRIVER)
 		{ myResponse(ERROR_SUCCESS); return; };
 
 	// Else now we spawn the driver process.
@@ -1214,8 +1204,8 @@ void fplainnIndexServer_newDeviceInd3
 		return;
 	};
 
-	originContext->info.action = zudiIndexServer::NDACTION_SPAWN_DRIVER;
-	if (::newDeviceAction == zudiIndexServer::NDACTION_SPAWN_DRIVER)
+	originContext->info.action = zuiServer::NDACTION_SPAWN_DRIVER;
+	if (::newDeviceAction == zuiServer::NDACTION_SPAWN_DRIVER)
 		{ myResponse(ERROR_SUCCESS); return; };
 
 	// Finally, we instantiate the device.
@@ -1252,7 +1242,7 @@ void fplainnIndexServer_newDeviceInd4
 		return;
 	};
 
-	originContext->info.action = zudiIndexServer::NDACTION_INSTANTIATE;
+	originContext->info.action = zuiServer::NDACTION_INSTANTIATE;
 	myResponse(ERROR_SUCCESS);
 }
 
@@ -1283,13 +1273,13 @@ void fplainnIndexServer_newDeviceInd4
 void fplainnIndexServer_handleRequest
 (
 	zasyncStreamC::zasyncMsgS *msg,
-	zudiIndexServer::zudiIndexMsgS *requestData, threadC *self
+	zuiServer::indexMsgS *requestData, threadC *self
 	)
 {
 	error_t		err;
 
 	// Ensure that no process is sending us bogus request data.
-	if (msg->dataNBytes != sizeof(zudiIndexServer::zudiIndexMsgS))
+	if (msg->dataNBytes != sizeof(zuiServer::indexMsgS))
 	{
 		printf(WARNING FPLAINNIDX"Thread 0x%x is sending spoofed "
 			"request data.\n",
@@ -1312,32 +1302,32 @@ void fplainnIndexServer_handleRequest
 
 	switch (requestData->command)
 	{
-	case ZUDIIDX_SERVER_DETECTDRIVER_REQ:
+	case ZUISERVER_DETECTDRIVER_REQ:
 		fplainnIndexServer_detectDriverReq(
 			(zasyncStreamC::zasyncMsgS *)msg, requestData);
 
 		break;
 
-	case ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ:
+	case ZUISERVER_LOAD_REQUIREMENTS_REQ:
 		fplainnIndexServer_loadRequirementsReq(
 			(zasyncStreamC::zasyncMsgS *)msg, requestData);
 
 		break;
 
-	case ZUDIIDX_SERVER_LOADDRIVER_REQ:
+	case ZUISERVER_LOADDRIVER_REQ:
 		fplainnIndexer_loadDriverReq(
 			(zasyncStreamC::zasyncMsgS *)msg, requestData);
 
 		break;
 
-	case ZUDIIDX_SERVER_GET_NEWDEVICE_ACTION_REQ:
-	case ZUDIIDX_SERVER_SET_NEWDEVICE_ACTION_REQ:
+	case ZUISERVER_GET_NEWDEVICE_ACTION_REQ:
+	case ZUISERVER_SET_NEWDEVICE_ACTION_REQ:
 		fplainnIndexServer_newDeviceActionReq(
 			(zasyncStreamC::zasyncMsgS *)msg, requestData);
 
 		break;
 
-	case ZUDIIDX_SERVER_NEWDEVICE_IND:
+	case ZUISERVER_NEWDEVICE_IND:
 		fplainnIndexServer_newDeviceInd(
 			(zasyncStreamC::zasyncMsgS *)msg, requestData);
 
@@ -1355,16 +1345,16 @@ void fplainnIndexServer_handleRequest
 void floodplainnC::indexReaderEntry(void)
 {
 	threadC						*self;
-	heapPtrC<messageStreamC::iteratorS>		gcb;
-	heapPtrC<zudiIndexServer::zudiIndexMsgS>	requestData;
-	zudi::headerS					__kindexHeader;
+	heapObjC<messageStreamC::iteratorS>		gcb;
+	heapObjC<zuiServer::indexMsgS>			requestData;
+	zui::headerS					__kindexHeader;
 
 	self = static_cast<threadC *>(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
 	gcb = new messageStreamC::iteratorS;
-	requestData = new zudiIndexServer::zudiIndexMsgS(
-		0, NULL, zudiIndexServer::INDEX_KERNEL);
+	requestData = new zuiServer::indexMsgS(
+		0, NULL, zuiServer::INDEX_KERNEL);
 
 	if (gcb.get() == NULL || requestData.get() == NULL)
 	{
@@ -1438,7 +1428,7 @@ void floodplainnC::indexReaderEntry(void)
 		case MSGSTREAM_SUBSYSTEM_FLOODPLAINN:
 			switch (gcb->header.function)
 			{
-			case ZUDIIDX_SERVER_DETECTDRIVER_REQ:
+			case ZUISERVER_DETECTDRIVER_REQ:
 				fplainnIndexServer_newDeviceInd1(
 					(floodplainnC::zudiIndexMsgS *)
 						gcb.get());
@@ -1446,7 +1436,7 @@ void floodplainnC::indexReaderEntry(void)
 
 				break;
 
-			case ZUDIIDX_SERVER_LOADDRIVER_REQ:
+			case ZUISERVER_LOADDRIVER_REQ:
 				fplainnIndexServer_newDeviceInd2(
 					(floodplainnC::zudiIndexMsgS *)
 						gcb.get());

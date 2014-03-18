@@ -11,8 +11,6 @@
 	#include <kernel/common/floodplainn/device.h>
 	#include <kernel/common/vfsTrib/commonOperations.h>
 
-//#define DRIVERINDEX_REQUEST_DEVNAME_MAXLEN		(128)
-
 #define FPLAINN						"Fplainn: "
 #define FPLAINNIDX					"FplainnIndex: "
 
@@ -52,18 +50,14 @@ public:
 
 		void set(utf8Char *devicePath, commandE command)
 		{
-			strncpy8(
-				this->path, devicePath,
-				ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN);
-
-			this->path[ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN - 1] = '\0';
+			strncpy8(this->path, devicePath, FVFS_PATH_MAXLEN);
+			this->path[FVFS_PATH_MAXLEN - 1] = '\0';
 			this->command = command;
 		}
 
 		messageStreamC::headerS	header;
 		commandE		command;
-		utf8Char		path[
-			ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
+		utf8Char		path[FVFS_PATH_MAXLEN];
 	};
 
 	struct zudiMgmtCallMsgS
@@ -81,11 +75,8 @@ public:
 			targetPid, subsystem, function,
 			size, flags, privateData)
 		{
-			strncpy8(
-				this->path, path,
-				ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN);
-
-			this->path[ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN - 1] = '\0';
+			strncpy8(this->path, path, FVFS_PATH_MAXLEN);
+			this->path[FVFS_PATH_MAXLEN - 1] = '\0';
 			memset(&cb, 0, sizeof(cb));
 		}
 
@@ -117,8 +108,7 @@ public:
 		udi_ubit8_t		usageLevel;
 		udi_ubit8_t		enumerateLevel;
 		udi_ubit8_t		op, parentId;
-		utf8Char		path[
-			ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
+		utf8Char		path[FVFS_PATH_MAXLEN];
 		union
 		{
 			udi_mgmt_cb_t		mcb;
@@ -134,14 +124,14 @@ public:
 			uarch_t size, uarch_t flags, void *privateData)
 		:
 		header(targetPid, subsystem, function, size, flags, privateData),
-		info(0, NULL, zudiIndexServer::INDEX_KERNEL)
+		info(0, NULL, zuiServer::INDEX_KERNEL)
 		{}
 
 		void set(
 			ubit8 command, utf8Char *path,
-			zudiIndexServer::indexE index,
-			zudiIndexServer::newDeviceActionE action=
-				zudiIndexServer::NDACTION_NOTHING)
+			zuiServer::indexE index,
+			zuiServer::newDeviceActionE action=
+				zuiServer::NDACTION_NOTHING)
 		{
 			this->info.command = command;
 			this->info.index = index;
@@ -149,17 +139,14 @@ public:
 			if (path != NULL)
 			{
 				strncpy8(
-					this->info.path, path,
-					ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN);
+					this->info.path, path, FVFS_PATH_MAXLEN);
 
-				this->info.path[
-					ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN
-						- 1] = '\0';
+				this->info.path[FVFS_PATH_MAXLEN - 1] = '\0';
 			};
 		}
 
 		messageStreamC::headerS		header;
-		zudiIndexServer::zudiIndexMsgS	info;
+		zuiServer::indexMsgS		info;
 	};
 
 public:
@@ -200,6 +187,10 @@ public:
 	void udi_usage_ind(
 		utf8Char *devicePath, udi_ubit8_t usageLevel,
 		void *privateData);
+
+	void udi_usage_res(
+		utf8Char *devicePath,
+		processId_t targetTid, void *privateData);
 
 	void udi_enumerate_req(
 		utf8Char *devicePath, udi_ubit8_t enumerateLevel,

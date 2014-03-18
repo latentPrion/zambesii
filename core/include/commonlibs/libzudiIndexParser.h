@@ -1,7 +1,7 @@
 #ifndef _ZUDI_INDEX_H
 	#define _ZUDI_INDEX_H
 
-	#include <zudiIndex.h>
+	#include <zui.h>
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/sharedResourceGroup.h>
@@ -21,9 +21,9 @@ class zudiIndexParserC
 {
 friend class floodplainnC;
 public:	enum sourceE {
-	SOURCE_KERNEL=zudiIndexServer::INDEX_KERNEL,
-	SOURCE_RAMDISK=zudiIndexServer::INDEX_RAMDISK,
-	SOURCE_EXTERNAL=zudiIndexServer::INDEX_EXTERNAL };
+	SOURCE_KERNEL=zuiServer::INDEX_KERNEL,
+	SOURCE_RAMDISK=zuiServer::INDEX_RAMDISK,
+	SOURCE_EXTERNAL=zuiServer::INDEX_EXTERNAL };
 
 public:
 	zudiIndexParserC(sourceE source)
@@ -41,7 +41,7 @@ public:
 	~zudiIndexParserC(void) {}
 
 public:
-	error_t getHeader(zudi::headerS *ret)
+	error_t getHeader(zui::headerS *ret)
 		{ return driverIndex.read(ret, 0, sizeof(*ret)); }
 
 	/* Finds a driver by the combination of its basepath+shortname
@@ -51,8 +51,8 @@ public:
 	 * ZUDI index DBs.
 	 */
 	error_t findDriver(
-		zudi::headerS *hdr, utf8Char *fullName,
-		zudi::driver::headerS *ret);
+		zui::headerS *hdr, utf8Char *fullName,
+		zui::driver::headerS *ret);
 
 	/* Finds a metalanguage by its name. Not the "shortname" of the
 	 * metalanguage library, but rather the "provides" line name of the
@@ -60,22 +60,22 @@ public:
 	 * particular interface, we just return the first result we find.
 	 **/
 	error_t findMetalanguage(
-		zudi::headerS *hdr, utf8Char *metaName,
-		zudi::driver::headerS *ret);
+		zui::headerS *hdr, utf8Char *metaName,
+		zui::driver::headerS *ret);
 
 	error_t getDriverHeader(
-		zudi::headerS *hdr, ubit16 id, zudi::driver::headerS *ret);
+		zui::headerS *hdr, ubit16 id, zui::driver::headerS *ret);
 
-	error_t indexedGetDevice(uarch_t index, zudi::device::headerS *mem)
+	error_t indexedGetDevice(uarch_t index, zui::device::headerS *mem)
 		{ return deviceIndex.indexedRead(mem, index); }
 
 	error_t indexedGetDeviceData(
-		zudi::device::headerS *devHeader, ubit16 index,
-		zudi::device::attrDataS *retobj);
+		zui::device::headerS *devHeader, ubit16 index,
+		zui::device::attrDataS *retobj);
 
 	error_t findDeviceData(
-		zudi::device::headerS *devHeader, utf8Char *attrName,
-		zudi::device::attrDataS *retobj);
+		zui::device::headerS *devHeader, utf8Char *attrName,
+		zui::device::attrDataS *retobj);
 
 	error_t getString(uarch_t offset, utf8Char *retmsg)
 		{ return stringIndex.readString(retmsg, offset); }
@@ -84,40 +84,40 @@ public:
 		{ return stringIndex.read(ret, offset, len); }
 
 	error_t getMessage(
-		zudi::driver::headerS *drvHeader, ubit16 index,
-		zudi::driver::messageS *ret);
+		zui::driver::headerS *drvHeader, ubit16 index,
+		zui::driver::messageS *ret);
 
 	error_t getMessageString(
-		zudi::driver::headerS *drvHeader, ubit16 index,
+		zui::driver::headerS *drvHeader, ubit16 index,
 		utf8Char *ret);
 
 	error_t getMetalanguage(
-		zudi::driver::headerS *drvHeader, ubit16 index,
-		zudi::driver::metalanguageS *ret);
+		zui::driver::headerS *drvHeader, ubit16 index,
+		zui::driver::metalanguageS *ret);
 
 	error_t indexedGetRank(
-		zudi::driver::headerS *metaHeader, uarch_t idx,
-		zudi::rank::headerS *retobj);
+		zui::driver::headerS *metaHeader, uarch_t idx,
+		zui::rank::headerS *retobj);
 
 	error_t indexedGetRankAttrString(
-		zudi::rank::headerS *rankHeader, uarch_t idx, utf8Char *retstr);
+		zui::rank::headerS *rankHeader, uarch_t idx, utf8Char *retstr);
 
 	error_t indexedGetProvision(
-		uarch_t idx, zudi::driver::provisionS *retobj)
+		uarch_t idx, zui::driver::provisionS *retobj)
 	{
 		return provisionIndex.read(
 			retobj, sizeof(*retobj) * idx, sizeof(*retobj));
 	}
 
 	error_t getProvisionString(
-		zudi::driver::provisionS *prov, utf8Char *retstr)
+		zui::driver::provisionS *prov, utf8Char *retstr)
 	{
 		return stringIndex.readString(retstr, prov->nameOff);
 	}
 
 	error_t indexedGetModule(
-		zudi::driver::headerS *drvHeader, uarch_t idx,
-		zudi::driver::moduleS *retobj)
+		zui::driver::headerS *drvHeader, uarch_t idx,
+		zui::driver::moduleS *retobj)
 	{
 		return dataIndex.read(
 			retobj,
@@ -125,14 +125,14 @@ public:
 			sizeof(*retobj));
 	}
 
-	error_t getModuleString(zudi::driver::moduleS *module, utf8Char *retstr)
+	error_t getModuleString(zui::driver::moduleS *module, utf8Char *retstr)
 	{
 		return stringIndex.readString(retstr, module->fileNameOff);
 	}
 
 	error_t indexedGetRegion(
-		zudi::driver::headerS *drvHeader, uarch_t idx,
-		zudi::driver::regionS *retobj)
+		zui::driver::headerS *drvHeader, uarch_t idx,
+		zui::driver::regionS *retobj)
 	{
 		return dataIndex.read(
 			retobj,
@@ -141,8 +141,8 @@ public:
 	}
 
 	error_t indexedGetRequirement(
-		zudi::driver::headerS *drvHeader, uarch_t idx,
-		zudi::driver::requirementS *retobj)
+		zui::driver::headerS *drvHeader, uarch_t idx,
+		zui::driver::requirementS *retobj)
 	{
 		return dataIndex.read(
 			retobj,
@@ -151,14 +151,14 @@ public:
 	}
 
 	error_t getRequirementString(
-		zudi::driver::requirementS *requirement, utf8Char *retstr)
+		zui::driver::requirementS *requirement, utf8Char *retstr)
 	{
 		return stringIndex.readString(retstr, requirement->nameOff);
 	}
 
 	error_t indexedGetMetalanguage(
-		zudi::driver::headerS *drvHdr, uarch_t idx,
-		zudi::driver::metalanguageS *retobj)
+		zui::driver::headerS *drvHdr, uarch_t idx,
+		zui::driver::metalanguageS *retobj)
 	{
 		return dataIndex.read(
 			retobj,
@@ -167,14 +167,14 @@ public:
 	}
 
 	error_t getMetalanguageString(
-		zudi::driver::metalanguageS *metalanguage, utf8Char *retstr)
+		zui::driver::metalanguageS *metalanguage, utf8Char *retstr)
 	{
 		return stringIndex.readString(retstr, metalanguage->nameOff);
 	}
 
 	error_t indexedGetChildBop(
-		zudi::driver::headerS *drvHdr, uarch_t idx,
-		zudi::driver::childBopS *retobj)
+		zui::driver::headerS *drvHdr, uarch_t idx,
+		zui::driver::childBopS *retobj)
 	{
 		return dataIndex.read(
 			retobj,
@@ -183,8 +183,8 @@ public:
 	}
 
 	error_t indexedGetParentBop(
-		zudi::driver::headerS *drvHdr, uarch_t idx,
-		zudi::driver::parentBopS *retobj)
+		zui::driver::headerS *drvHdr, uarch_t idx,
+		zui::driver::parentBopS *retobj)
 	{
 		return dataIndex.read(
 			retobj,
@@ -193,8 +193,8 @@ public:
 	}
 
 	error_t indexedGetInternalBop(
-		zudi::driver::headerS *drvHdr, uarch_t idx,
-		zudi::driver::internalBopS *retobj)
+		zui::driver::headerS *drvHdr, uarch_t idx,
+		zui::driver::internalBopS *retobj)
 	{
 		return dataIndex.read(
 			retobj,

@@ -175,14 +175,14 @@ error_t zudiIndexParserC::initialize(utf8Char *indexPath)
 }
 
 error_t zudiIndexParserC::getDriverHeader(
-	zudi::headerS *hdr, ubit16 id, zudi::driver::headerS *retobj
+	zui::headerS *hdr, ubit16 id, zui::driver::headerS *retobj
 	)
 {
 	for (uarch_t i=0;
 		i < hdr->nRecords
 		&& driverIndex.read(
 			retobj,
-			sizeof(zudi::headerS) + (sizeof(*retobj) * i),
+			sizeof(zui::headerS) + (sizeof(*retobj) * i),
 			sizeof(*retobj))
 			== ERROR_SUCCESS;
 		i++)
@@ -194,17 +194,17 @@ error_t zudiIndexParserC::getDriverHeader(
 }
 
 error_t zudiIndexParserC::findMetalanguage(
-	zudi::headerS *hdr, utf8Char *metaName, zudi::driver::headerS *retobj
+	zui::headerS *hdr, utf8Char *metaName, zui::driver::headerS *retobj
 	)
 {
-	zudi::driver::provisionS	currProvision;
+	zui::driver::provisionS	currProvision;
 
 	for (uarch_t i=0;
 		i < hdr->nSupportedMetas && provisionIndex.indexedRead(
 			&currProvision, i) == ERROR_SUCCESS;
 		i++)
 	{
-		utf8Char	currProvName[ZUDI_DRIVER_METALANGUAGE_MAXLEN];
+		utf8Char	currProvName[ZUI_DRIVER_METALANGUAGE_MAXLEN];
 
 		if (getString(currProvision.nameOff, currProvName)
 			!= ERROR_SUCCESS)
@@ -230,17 +230,16 @@ error_t zudiIndexParserC::findMetalanguage(
 }
 
 error_t zudiIndexParserC::findDriver(
-	zudi::headerS *hdr, utf8Char *fullName, zudi::driver::headerS *retobj
+	zui::headerS *hdr, utf8Char *fullName, zui::driver::headerS *retobj
 	)
 {
-	heapPtrC<utf8Char>	nameTmp;
+	heapArrC<utf8Char>	nameTmp;
 	uarch_t			base;
 
-	base = sizeof(zudi::headerS);
+	base = sizeof(zui::headerS);
 
-	nameTmp.useArrayDelete = 1;
 	nameTmp = new utf8Char[
-		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_DRIVER_SHORTNAME_MAXLEN];
+		ZUI_DRIVER_BASEPATH_MAXLEN + ZUI_DRIVER_SHORTNAME_MAXLEN];
 
 	if (nameTmp == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -273,8 +272,8 @@ error_t zudiIndexParserC::findDriver(
 }
 
 error_t zudiIndexParserC::findDeviceData(
-	zudi::device::headerS *devHeader, utf8Char *attrName,
-	zudi::device::attrDataS *retobj
+	zui::device::headerS *devHeader, utf8Char *attrName,
+	zui::device::attrDataS *retobj
 	)
 {
 	error_t			ret;
@@ -295,8 +294,8 @@ error_t zudiIndexParserC::findDeviceData(
 }
 
 error_t zudiIndexParserC::indexedGetDeviceData(
-	zudi::device::headerS *devHeader, ubit16 idx,
-	zudi::device::attrDataS *retobj
+	zui::device::headerS *devHeader, ubit16 idx,
+	zui::device::attrDataS *retobj
 	)
 {
 	return dataIndex.read(
@@ -305,8 +304,8 @@ error_t zudiIndexParserC::indexedGetDeviceData(
 }
 
 error_t zudiIndexParserC::getMessage(
-	zudi::driver::headerS *drvHeader,
-	ubit16 index, zudi::driver::messageS *retobj
+	zui::driver::headerS *drvHeader,
+	ubit16 index, zui::driver::messageS *retobj
 	)
 {
 	uarch_t		messageBase;
@@ -327,12 +326,12 @@ error_t zudiIndexParserC::getMessage(
 }
 
 error_t zudiIndexParserC::getMessageString(
-	zudi::driver::headerS *drvHeader,
+	zui::driver::headerS *drvHeader,
 	ubit16 index, utf8Char *string
 	)
 {
 	error_t			ret;
-	zudi::driver::messageS	msg;
+	zui::driver::messageS	msg;
 
 	ret = getMessage(drvHeader, index, &msg);
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -341,8 +340,8 @@ error_t zudiIndexParserC::getMessageString(
 }
 
 error_t zudiIndexParserC::getMetalanguage(
-	zudi::driver::headerS *drvHeader, ubit16 index,
-	zudi::driver::metalanguageS *retobj
+	zui::driver::headerS *drvHeader, ubit16 index,
+	zui::driver::metalanguageS *retobj
 	)
 {
 	uarch_t		metaBase;
@@ -362,8 +361,8 @@ error_t zudiIndexParserC::getMetalanguage(
 }
 
 error_t zudiIndexParserC::indexedGetRank(
-	zudi::driver::headerS *metaHeader, uarch_t index,
-	zudi::rank::headerS *retobj
+	zui::driver::headerS *metaHeader, uarch_t index,
+	zui::rank::headerS *retobj
 	)
 {
 	return rankIndex.read(
@@ -372,11 +371,11 @@ error_t zudiIndexParserC::indexedGetRank(
 }
 
 error_t zudiIndexParserC::indexedGetRankAttrString(
-	zudi::rank::headerS *rankHeader, uarch_t idx, utf8Char *retstr
+	zui::rank::headerS *rankHeader, uarch_t idx, utf8Char *retstr
 	)
 {
 	error_t			ret;
-	zudi::rank::rankAttrS	attr;
+	zui::rank::rankAttrS	attr;
 
 	ret = dataIndex.read(
 		&attr, rankHeader->dataOff + sizeof(attr) * idx, sizeof(attr));

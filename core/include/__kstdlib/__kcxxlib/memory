@@ -34,7 +34,7 @@ public:
 	// Equivalent to std::unique_ptr<>::release().
 	type *release(void)
 	{
-		type	*tmp=p;	
+		type	*tmp=p;
 		p = NULL;
 		return tmp;
 	}
@@ -50,12 +50,17 @@ public:
 	ptrC &operator--(void) { --p; return *this; }
 
 	// We refuse to provide operators + and -. Use array indexing instead.
+private:
+	virtual void _(void) = 0;
 
 protected:
 	type	*p;
 };
 
-template <class type>
+class default_deleterC {};
+class array_deleterC {};
+
+template <class type, class deleter>
 class heapPtrC
 :
 public ptrC<type>
@@ -63,56 +68,107 @@ public ptrC<type>
 public:
 	explicit heapPtrC(type *_p=NULL)
 	:
-	ptrC<type>(_p), useArrayDelete(0)
+	ptrC<type>(_p)
 	{}
 
 	~heapPtrC(void) { reset(); }
 
 	heapPtrC &operator =(heapPtrC &_p)
-		{ reset(_p.release(), _p.useArrayDelete); return *this; }
+		{ reset(_p.release()); return *this; }
 
 public:
 	heapPtrC &operator =(type *_p)
 		{ ptrC<type>::operator =(_p); return *this; }
 
-	void reset(
-		type *_p=NULL, sarch_t _useArrayDelete=0)
-	{
-		if (this->get() != NULL)
-		{
-			if (useArrayDelete) { delete[] this->get(); }
-			else { delete this->get(); };
-		};
+	void reset(type *_p=NULL) { ptrC<type>::reset(_p); }
 
-		useArrayDelete = _useArrayDelete;
-		ptrC<type>::reset(_p);
-	};
-
-public:
-	sarch_t		useArrayDelete;
+private:
+	virtual void _(void) = 0;
 };
 
 template <class type>
-class loosePagePtrC
+class heapObjC
+:
+public heapPtrC<type, default_deleterC>
+{
+public:
+	explicit heapObjC(type *_p=NULL)
+	:
+	heapPtrC<type, default_deleterC>(_p)
+	{}
+
+	~heapObjC(void) { reset(); }
+
+	heapObjC &operator =(heapObjC &_p)
+		{ reset(_p.release()); return *this; };
+
+public:
+	heapObjC &operator =(type *_p) {
+		heapPtrC<type, default_deleterC>::operator =(_p); return *this;
+	}
+
+	void reset(type *_p=NULL)
+	{
+		if (this->get() != NULL) { delete this->get(); };
+		heapPtrC<type, default_deleterC>::reset(_p);
+	};
+
+private:
+	virtual void _(void) {}
+};
+
+template <class type>
+class heapArrC
+:
+public heapPtrC<type, array_deleterC>
+{
+public:
+	explicit heapArrC(type *_p=NULL)
+	:
+	heapPtrC<type, array_deleterC>(_p)
+	{}
+
+	~heapArrC(void) { reset(); }
+
+	heapArrC &operator =(heapArrC &_p)
+		{ reset(_p.release()); return *this; };
+
+public:
+	heapArrC &operator =(type *_p) {
+		heapPtrC<type, array_deleterC>::operator =(_p); return *this;
+	}
+
+	void reset(type *_p=NULL)
+	{
+		if (this->get() != NULL) { delete[] this->get(); };
+		heapPtrC<type, array_deleterC>::reset(_p);
+	};
+
+private:
+	virtual void _(void) {}
+};
+
+template <class type>
+class loosePageC
 :
 public ptrC<type>
 {
 public:
-	explicit loosePagePtrC(type *_p=NULL)
+	explicit loosePageC(type *_p=NULL)
 	:
 	ptrC<type>(_p), nPages(0), nMapped(0),  vasStream(NULL)
 	{}
 
-	~loosePagePtrC(void) { reset(); }
+	~loosePageC(void) { reset(); }
 
-	loosePagePtrC &operator =(loosePagePtrC &_p)
+	loosePageC &operator =(loosePageC &_p)
 	{
 		reset(_p.release(), _p.nPages, _p.nMapped, _p.vasStream);
 		return *this;
 	}
 
 public:
-	loosePagePtrC &operator =(type *_p)
+	loosePageC &operator =(type *_p)
 		{ ptrC<type>::operator =(_p); return *this; }
 
 	void reset(
@@ -131,6 +187,9 @@ public:
 		ptrC<type>::reset(_p);
 	};
 
+private:
+	virtual void _(void) {}
+
 public:
 	vaddrSpaceStreamC	*vasStream;
 	uarch_t			nPages;
@@ -138,19 +197,19 @@ public:
 };
 
 template <class type>
-class streamMemPtrC
+class streamMemC
 :
 public ptrC<type>
 {
 public:
-	explicit streamMemPtrC(type *_p=NULL) : ptrC<type>(_p), memStream(NULL) {}
-	~streamMemPtrC(void) { reset(); }
+	explicit streamMemC(type *_p=NULL) : ptrC<type>(_p), memStream(NULL) {}
+	~streamMemC(void) { reset(); }
 
-	streamMemPtrC &operator =(streamMemPtrC &_p)
+	streamMemC &operator =(streamMemC &_p)
 		{ reset(_p.release(), _p.memStream); return *this; }
 
 public:
-	streamMemPtrC &operator =(type *_p)
+	streamMemC &operator =(type *_p)
 		{ ptrC<type>::operator =(_p); return *this; }
 
 	void reset(type *_p=NULL, memoryStreamC *_memStream=NULL)
@@ -162,6 +221,9 @@ public:
 		memStream = _memStream;
 		ptrC<type>::reset(_p);
 	}
+
+private:
+	virtual void _(void) {}
 
 public:
 	memoryStreamC		*memStream;

@@ -46,6 +46,7 @@ static void zramdisk_usage_ind(udi_usage_cb_t *cb, udi_ubit8_t resource_level)
 {
 	(void)cb; (void)resource_level;
 	printf(NOTICE"Is that driver code?\?!\n");
+	udi_usage_res(cb);
 }
 
 static void zramdisk_enumerate_req(

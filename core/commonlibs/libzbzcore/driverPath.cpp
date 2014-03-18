@@ -26,8 +26,9 @@ error_t __klzbzcore::driver::u0::getThreadDevicePath(
 	 **/
 	for (uarch_t i=0; i<drvInst->nHostedDevices; i++)
 	{
-		utf8Char		*currDevPath=drvInst->hostedDevices[i];
 		fplainn::deviceC	*currDev;
+		utf8Char		*currDevPath=
+			drvInst->hostedDevices[i].get();
 
 		ret = floodplainn.getDevice(currDevPath, &currDev);
 		// Odd, but keep searching anyway.
@@ -85,16 +86,10 @@ error_t __klzbzcore::driver::u0::regionInitInd(
 		return ERROR_INITIALIZATION_FAILURE;
 	};
 
-	/* If all regions succeeded, ask the kernel to post a
-	 * udi_usage_ind message to the primary region thread of the
-	 * new device.
+	/* If all regions succeeded, continue executing instantiateDevice at
+	 * instantiateDevice1.
 	 **/
-	floodplainn.udi_usage_ind(
-		ctxt->devicePath, UDI_RESOURCES_NORMAL, ctxt);
-
-printf(NOTICE"Just called floodplainn.usage_ind on dev %s.\n",
-	ctxt->devicePath);
-	return ERROR_SUCCESS;
+	return __klzbzcore::driver::__kcall::instantiateDevice1(ctxt);
 }
 
 void __klzbzcore::driver::main_handleU0Request(
@@ -106,8 +101,17 @@ void __klzbzcore::driver::main_handleU0Request(
 
 	switch (msgIt->header.function)
 	{
+	case MAINTHREAD_U0_SYNC:
+		// Just a force-sync operation.
+		self->getTaskContext()->messageStream.postMessage(
+			msgIt->header.sourceId,
+			0, MAINTHREAD_U0_SYNC, NULL);
+
+		return;
+
 	case MAINTHREAD_U0_GET_THREAD_DEVICE_PATH_REQ:
-		/* This message is sent by the region threads of a newly
+		/**	DEPRECATED.
+		 * This message is sent by the region threads of a newly
 		 * instantiated device while they are initializing. The threads
 		 * send a message asking the main thread which device they
 		 * pertain to. We respond with the name of their device.
@@ -121,8 +125,7 @@ void __klzbzcore::driver::main_handleU0Request(
 
 		self->getTaskContext()->messageStream.postMessage(
 			msgIt->header.sourceId,
-			MSGSTREAM_SUBSYSTEM_USER0,
-			MAINTHREAD_U0_GET_THREAD_DEVICE_PATH_REQ,
+			0, MAINTHREAD_U0_GET_THREAD_DEVICE_PATH_REQ,
 			NULL);
 
 		return;
@@ -131,7 +134,7 @@ void __klzbzcore::driver::main_handleU0Request(
 	case MAINTHREAD_U0_REGION_INIT_FAILURE_IND:
 		__kcall::callerContextS		*ctxt;
 
-		/* u0::regionInitInd() calls the device's udi_usage_ind()
+		/* u0::regionInitInd() calls instantiateDevice1()
 		 * if all the regions successfully initialize.
 		 **/
 		ctxt = (__kcall::callerContextS *)msgIt->header.privateData;
@@ -212,10 +215,36 @@ void __klzbzcore::driver::main_handleKernelCall(
 	};
 }
 
+void __klzbzcore::driver::main_handleMgmtCall(
+	floodplainnC::zudiMgmtCallMsgS *msg
+	)
+{
+	error_t		err;
+
+	switch (msg->mgmtOp)
+	{
+	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_USAGE:
+		err = __kcall::instantiateDevice2(
+			(__klzbzcore::driver::__kcall::callerContextS *)
+				msg->header.privateData);
+
+		break;
+	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_ENUMERATE:
+	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_DEVMGMT:
+	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_FINAL_CLEANUP:
+	default:
+		printf(WARNING LZBZCORE"drvPath: handleMgmtCall: unknown "
+			"management op %d\n",
+			msg->mgmtOp);
+
+		break;
+	};
+}
+
 static error_t driverPath0(threadC *self);
 error_t __klzbzcore::driver::main(threadC *self)
 {
-	streamMemPtrC<messageStreamC::iteratorS>	msgIt;
+	streamMemC<messageStreamC::iteratorS>		msgIt;
 	syscallbackC					*callback;
 	fplainn::driverInstanceC			*drvInst;
 	error_t						ret;
@@ -272,6 +301,13 @@ error_t __klzbzcore::driver::main(threadC *self)
 
 				break;
 
+			case MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL:
+				main_handleMgmtCall(
+					(floodplainnC::zudiMgmtCallMsgS *)
+						msgIt.get());
+
+				break;
+
 			default:
 				break; // NOP and fallthrough.
 			};
@@ -296,7 +332,7 @@ error_t __klzbzcore::driver::main(threadC *self)
 static syscallbackDataF driverPath1_wrapper;
 static error_t driverPath0(threadC * /*self*/)
 {
-	zudiIndexServer::loadDriverRequirementsReq(
+	zuiServer::loadDriverRequirementsReq(
 		newSyscallback(&driverPath1_wrapper));
 
 	return ERROR_SUCCESS;

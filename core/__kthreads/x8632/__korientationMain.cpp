@@ -22,7 +22,6 @@
 
 #include <arch/cpuControl.h>
 
-zudi::device::attrDataS		*attribPtr[3], attribs[3];
 int oo=0, pp=0, qq=0, rr=0;
 
 #include <commonlibs/libacpi/libacpi.h>
@@ -288,8 +287,8 @@ void __korientationMain3(error_t ret)
 	 **/
 	DO_OR_DIE(floodplainn, enumerateBaseDevices(), ret);
 
-	zudiIndexServer::newDeviceInd(
-		CC"by-id/0", zudiIndexServer::INDEX_KERNEL,
+	zuiServer::newDeviceInd(
+		CC"by-id/0", zuiServer::INDEX_KERNEL,
 		newSyscallback(&__korientationMain4));
 }
 
@@ -304,13 +303,14 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
 
-	DIE_ON(msg->header.error);
-	if (msg->info.action != zudiIndexServer::NDACTION_INSTANTIATE)
+	if (msg->info.action != zuiServer::NDACTION_INSTANTIATE)
 	{
 		printf(FATAL ORIENT"Failed to instantiate "
 			"root device.\n\tError is %s; got as far as %d.\n",
 			strerror(msg->header.error), msg->info.action);
 	};
+
+	DIE_ON(msg->header.error);
 //	floodplainn.getDevice(CC"by-id/0", &chipsetDev);
 //	chipsetDev->driver->dump();
 

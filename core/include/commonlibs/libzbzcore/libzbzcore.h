@@ -21,7 +21,9 @@ namespace __klzbzcore
 	{
 		const ubit32 	MAINTHREAD_U0_GET_THREAD_DEVICE_PATH_REQ=0,
 				MAINTHREAD_U0_REGION_INIT_COMPLETE_IND=1,
-				MAINTHREAD_U0_REGION_INIT_FAILURE_IND=2;
+				MAINTHREAD_U0_REGION_INIT_FAILURE_IND=2,
+				MAINTHREAD_U0_SYNC=3;
+
 
 		error_t main(threadC *self);
 		void main_handleU0Request(
@@ -31,6 +33,9 @@ namespace __klzbzcore
 
 		void main_handleKernelCall(
 			floodplainnC::zudiKernelCallMsgS *msg);
+
+		void main_handleMgmtCall(
+			floodplainnC::zudiMgmtCallMsgS *msg);
 
 		namespace __kcall
 		{
@@ -50,10 +55,13 @@ namespace __klzbzcore
 				void			*privateData;
 				error_t			error;
 				utf8Char		devicePath[
-					ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN];
+					FVFS_PATH_MAXLEN];
 			};
 
 			error_t instantiateDevice(callerContextS *ctxt);
+			error_t instantiateDevice1(callerContextS *ctxt);
+			error_t instantiateDevice2(callerContextS *ctxt);
+
 			error_t destroyDevice(callerContextS *ctxt);
 		}
 

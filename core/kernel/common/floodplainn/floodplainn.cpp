@@ -38,8 +38,8 @@ error_t floodplainnC::initializeReq(initializeReqCallF *callback)
 	ret = root->getInode()->createChild(CC"by-path", root, &treeDev, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	zudiIndexServer::setNewDeviceActionReq(
-		zudiIndexServer::NDACTION_INSTANTIATE,
+	zuiServer::setNewDeviceActionReq(
+		zuiServer::NDACTION_INSTANTIATE,
 		newSyscallback(
 			&floodplainnC::initializeReq1, (void (*)())callback));
 
@@ -64,13 +64,11 @@ void floodplainnC::initializeReq1(
 
 error_t floodplainnC::findDriver(utf8Char *fullName, fplainn::driverC **retDrv)
 {
-	heapPtrC<utf8Char>	tmpStr;
+	heapArrC<utf8Char>	tmpStr;
 	void			*handle;
 	fplainn::driverC	*tmpDrv;
 
-	tmpStr.useArrayDelete = 1;
-	tmpStr = new utf8Char[
-		ZUDI_DRIVER_BASEPATH_MAXLEN + ZUDI_DRIVER_SHORTNAME_MAXLEN];
+	tmpStr = new utf8Char[DRIVER_FULLNAME_MAXLEN];
 
 	if (tmpStr.get() == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -221,10 +219,10 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 	zudiKernelCallMsgS			*request;
 	fplainn::deviceC			*dev;
 	error_t					ret;
-	heapPtrC<fplainn::deviceInstanceC>	devInst;
+	heapObjC<fplainn::deviceInstanceC>	devInst;
 
 	if (path == NULL) { return ERROR_INVALID_ARG; };
-	if (strlen8(path) >= ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
+	if (strnlen8(path, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 		{ return ERROR_INVALID_RESOURCE_NAME; };
 
 	ret = getDevice(path, &dev);
@@ -455,7 +453,7 @@ const metaInitEntryS *floodplainnC::findMetaInitInfo(utf8Char *shortName)
 
 static error_t udi_mgmt_calls_prep(
 	utf8Char *callerName, utf8Char *devPath, fplainn::deviceC **dev,
-	heapPtrC<floodplainnC::zudiMgmtCallMsgS> *request,
+	heapObjC<floodplainnC::zudiMgmtCallMsgS> *request,
 	void *privateData
 	)
 {
@@ -492,12 +490,14 @@ static error_t udi_mgmt_calls_prep(
 	return ERROR_SUCCESS;
 }
 
-static void udi_usage_gcb_prep(udi_cb_t *cb, fplainn::deviceC *dev)
+static void udi_usage_gcb_prep(
+	udi_cb_t *cb, fplainn::deviceC *dev, void *privateData
+	)
 {
 	cb->channel = NULL;
 	cb->context = dev->instance->mgmtChannelContext;
 	cb->scratch = NULL;
-	cb->initiator_context = NULL;
+	cb->initiator_context = privateData;
 	cb->origin = NULL;
 }
 
@@ -505,7 +505,7 @@ void floodplainnC::udi_usage_ind(
 	utf8Char *devPath, udi_ubit8_t usageLevel, void *privateData
 	)
 {
-	heapPtrC<zudiMgmtCallMsgS>		request;
+	heapObjC<zudiMgmtCallMsgS>		request;
 	udi_usage_cb_t				*cb;
 	fplainn::deviceC			*dev;
 
@@ -522,21 +522,61 @@ void floodplainnC::udi_usage_ind(
 	cb->trace_mask = 0;
 	cb->meta_idx = 0;
 
-	udi_usage_gcb_prep(&cb->gcb, dev);
+	/** FIXME:
+	 * In this part here, we use the initiator_context member of the UDI
+	 * control block to store very important continuation information for
+	 * the driver process.
+	 *
+	 * A malicious driver can crash a whole driver process (and the device
+	 * instances in it) by modifying this pointer. We need to find a way
+	 * to make the kernel less dependent on this context pointer.
+	 **/
+	udi_usage_gcb_prep(&cb->gcb, dev, privateData);
 	// Now send the request.
 	if (messageStreamC::enqueueOnThread(
 		request->header.targetId, &request->header) == ERROR_SUCCESS)
 		{ request.release(); };
 }
 
-void udi_enumerate_req(udi_ubit8_t enumerateLevel, void *privateData)
+void floodplainnC::udi_usage_res(
+	utf8Char *devicePath, processId_t targetTid, void *privateData
+	)
+{
+	fplainn::deviceC		*dev;
+	floodplainnC::zudiMgmtCallMsgS	*response;
+
+	response = new zudiMgmtCallMsgS(
+		devicePath, targetTid,
+		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL,
+		sizeof(*response), 0, privateData);
+
+	if (response == NULL)
+	{
+		printf(FATAL FPLAINN"usage_res: failed to alloc response "
+			"message. Thread 0x%x may be stalled waiting for ever\n",
+			targetTid);
+
+		return;
+	};
+
+	if (messageStreamC::enqueueOnThread(
+		response->header.targetId, &response->header) != ERROR_SUCCESS)
+		{ delete response; };
+}
+
+void floodplainnC::udi_enumerate_req(
+	utf8Char *, udi_ubit8_t /*enumerateLevel*/, void * /*privateData*/
+	)
 {
 }
 
-void udi_devmgmt_req(udi_ubit8_t op, udi_ubit8_t parentId, void *privateData)
+void floodplainnC::udi_devmgmt_req(
+	utf8Char *, udi_ubit8_t /*op*/, udi_ubit8_t /*parentId*/,
+	void * /*privateData*/
+	)
 {
 }
 
-void udi_final_cleanup_req(void *privateData)
+void floodplainnC::udi_final_cleanup_req(utf8Char *, void * /*privateData*/)
 {
 }

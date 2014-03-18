@@ -7,23 +7,22 @@
 #include <kernel/common/floodplainn/floodplainn.h>
 
 
-error_t zudiIndexServer::detectDriverReq(
+error_t zuiServer::detectDriverReq(
 	utf8Char *devicePath, indexE index,
 	void *privateData, ubit32 flags
 	)
 {
-	heapPtrC<zudiIndexMsgS>		request;
+	heapObjC<zuiServer::indexMsgS>	request;
 	taskC				*currTask;
 
-	if (strnlen8(devicePath, ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
-		>= ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
+	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 		{ return ERROR_LIMIT_OVERFLOWED; };
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
 	// Allocate and queue the new request.
-	request = new zudiIndexMsgS(
-		ZUDIIDX_SERVER_DETECTDRIVER_REQ, devicePath, index);
+	request = new zuiServer::indexMsgS(
+		ZUISERVER_DETECTDRIVER_REQ, devicePath, index);
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -32,20 +31,19 @@ error_t zudiIndexServer::detectDriverReq(
 		ipc::METHOD_BUFFER, flags, privateData);
 }
 
-error_t zudiIndexServer::loadDriverReq(utf8Char *devicePath, void *privateData)
+error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 {
-	heapPtrC<zudiIndexServer::zudiIndexMsgS>	request;
-	taskC						*currTask;
+	heapObjC<zuiServer::indexMsgS>	request;
+	taskC				*currTask;
 
-	if (strnlen8(devicePath, ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
-		>= ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
+	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 		{ return ERROR_LIMIT_OVERFLOWED; };
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new zudiIndexMsgS(
-		ZUDIIDX_SERVER_LOADDRIVER_REQ, devicePath,
-		zudiIndexServer::INDEX_KERNEL);
+	request = new zuiServer::indexMsgS(
+		ZUISERVER_LOADDRIVER_REQ, devicePath,
+		zuiServer::INDEX_KERNEL);
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -54,19 +52,19 @@ error_t zudiIndexServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
-void zudiIndexServer::loadDriverRequirementsReq(void *privateData)
+void zuiServer::loadDriverRequirementsReq(void *privateData)
 {
-	heapPtrC<zudiIndexMsgS>	request;
-	taskC			*currTask;
+	heapObjC<zuiServer::indexMsgS>	request;
+	taskC				*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	if (currTask->parent->getType() != processStreamC::DRIVER)
 		{ return; };
 
-	request = new zudiIndexMsgS(
-		ZUDIIDX_SERVER_LOAD_REQUIREMENTS_REQ,
+	request = new zuiServer::indexMsgS(
+		ZUISERVER_LOAD_REQUIREMENTS_REQ,
 		currTask->parent->fullName,
-		zudiIndexServer::INDEX_KERNEL);
+		zuiServer::INDEX_KERNEL);
 
 	if (request == NULL) { return; };
 
@@ -75,18 +73,18 @@ void zudiIndexServer::loadDriverRequirementsReq(void *privateData)
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
-void zudiIndexServer::setNewDeviceActionReq(
+void zuiServer::setNewDeviceActionReq(
 	newDeviceActionE action, void *privateData
 	)
 {
-	heapPtrC<zudiIndexMsgS>	request;
+	heapObjC<zuiServer::indexMsgS>	request;
 	taskC			*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new zudiIndexMsgS(
-		ZUDIIDX_SERVER_SET_NEWDEVICE_ACTION_REQ, NULL,
-		zudiIndexServer::INDEX_KERNEL, action);
+	request = new zuiServer::indexMsgS(
+		ZUISERVER_SET_NEWDEVICE_ACTION_REQ, NULL,
+		zuiServer::INDEX_KERNEL, action);
 
 	if (request == NULL) { return; };
 
@@ -95,16 +93,16 @@ void zudiIndexServer::setNewDeviceActionReq(
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
-void zudiIndexServer::getNewDeviceActionReq(void *privateData)
+void zuiServer::getNewDeviceActionReq(void *privateData)
 {
-	heapPtrC<zudiIndexMsgS>	request;
-	taskC			*currTask;
+	heapObjC<zuiServer::indexMsgS>	request;
+	taskC				*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new zudiIndexMsgS(
-		ZUDIIDX_SERVER_GET_NEWDEVICE_ACTION_REQ, NULL,
-		zudiIndexServer::INDEX_KERNEL);
+	request = new zuiServer::indexMsgS(
+		ZUISERVER_GET_NEWDEVICE_ACTION_REQ, NULL,
+		zuiServer::INDEX_KERNEL);
 
 	if (request == NULL) { return; };
 
@@ -113,15 +111,14 @@ void zudiIndexServer::getNewDeviceActionReq(void *privateData)
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
-void zudiIndexServer::newDeviceInd(
+void zuiServer::newDeviceInd(
 	utf8Char *path, indexE index, void *privateData
 	)
 {
-	heapPtrC<zudiIndexMsgS>	request;
-	taskC			*currTask;
+	heapObjC<zuiServer::indexMsgS>	request;
+	taskC				*currTask;
 
-	if (strnlen8(path, ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
-		>= ZUDIIDX_SERVER_MSG_DEVICEPATH_MAXLEN)
+	if (strnlen8(path, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 	{
 		printf(ERROR FPLAINN"newDeviceInd: device name too long.\n");
 		return;
@@ -129,8 +126,8 @@ void zudiIndexServer::newDeviceInd(
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new zudiIndexMsgS(
-		ZUDIIDX_SERVER_NEWDEVICE_IND, path, index);
+	request = new zuiServer::indexMsgS(
+		ZUISERVER_NEWDEVICE_IND, path, index);
 
 	if (request == NULL) { return; };
 

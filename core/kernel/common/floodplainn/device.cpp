@@ -235,54 +235,53 @@ error_t fplainn::driverInstanceC::initialize(void)
 
 error_t fplainn::driverInstanceC::addHostedDevice(utf8Char *path)
 {
-	heapPtrC<utf8Char*>	tmp;
-	utf8Char		**old;
-	heapPtrC<utf8Char>	str;
-	uarch_t			len;
+	heapArrC<heapArrC<utf8Char> >	tmp, old;
+	uarch_t				len;
 
-	for (uarch_t i=0; i<nHostedDevices; i++) {
-		if (!strcmp8(hostedDevices[i], path)) { return ERROR_SUCCESS; };
+	for (uarch_t i=0; i<nHostedDevices; i++)
+	{
+		if (!strcmp8(hostedDevices[i].get(), path))
+			{ return ERROR_SUCCESS; };
 	};
 
 	len = strlen8(path);
 
-	tmp = new utf8Char*[nHostedDevices + 1];
-	str = new utf8Char[len + 1];
-	tmp.useArrayDelete = str.useArrayDelete = 1;
+	tmp = new heapArrC<utf8Char>[nHostedDevices + 1];
+	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
+	tmp[nHostedDevices] = new utf8Char[len + 1];
+	if (tmp[nHostedDevices] == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	if (tmp == NULL || str == NULL) { return ERROR_MEMORY_NOMEM; };
-	strcpy8(str.get(), path);
+	strcpy8(tmp[nHostedDevices].get(), path);
 
 	if (nHostedDevices > 0)
 	{
-		memcpy(tmp.get(), hostedDevices,
+		memcpy(tmp.get(), hostedDevices.get(),
 			sizeof(*hostedDevices) * nHostedDevices);
 	};
 
-	tmp[nHostedDevices] = str.release();
 	old = hostedDevices;
-	hostedDevices = tmp.release();
+	hostedDevices = tmp;
+	for (uarch_t i=0; i<nHostedDevices; i++) { old[i].release(); };
 	nHostedDevices++;
 
-	delete[] old;
 	return ERROR_SUCCESS;
 }
 
 void fplainn::driverInstanceC::removeHostedDevice(utf8Char *path)
 {
-	utf8Char	*tmp;
+	heapArrC<utf8Char>	tmp;
 
 	for (uarch_t i=0; i<nHostedDevices; i++)
 	{
-		if (strcmp8(hostedDevices[i], path) != 0) { continue; };
+		if (strcmp8(hostedDevices[i].get(), path) != 0) { continue; };
 
+		// tmp will auto delete the mem on exit.
 		tmp = hostedDevices[i];
 		memmove(
 			&hostedDevices[i], &hostedDevices[i+1],
 			sizeof(*hostedDevices) * (nHostedDevices - i - 1));
 
 		nHostedDevices--;
-		delete[] tmp;
 		return;
 	};
 }
@@ -383,21 +382,35 @@ void fplainn::deviceC::dumpEnumerationAttributes(void)
 	};
 }
 
+error_t fplainn::deviceC::findEnumerationAttribute(
+	utf8Char *name, udi_instance_attr_list_t **attr
+	)
+{
+	for (uarch_t i=0; i<nEnumerationAttrs; i++)
+	{
+		if (strcmp8(CC enumerationAttrs[i]->attr_name, name) != 0)
+			{ continue; };
+
+		*attr = enumerationAttrs[i].get();
+		return ERROR_SUCCESS;
+	};
+
+	return ERROR_NOT_FOUND;
+}
+
 error_t fplainn::deviceC::getEnumerationAttribute(
 	utf8Char *name, udi_instance_attr_list_t *attrib
 	)
 {
-	// Simple search for an attribute with the name supplied.
-	for (uarch_t i=0; i<nEnumerationAttrs; i++)
-	{
-		if (strcmp8(CC enumerationAttrs[i]->attr_name, CC name) == 0)
-		{
-			*attrib = *enumerationAttrs[i];
-			return ERROR_SUCCESS;
-		};
-	};
+	error_t				ret;
+	udi_instance_attr_list_t	*tmp;
 
-	return ERROR_NOT_FOUND;
+	// Simple search for an attribute with the name supplied.
+	ret = findEnumerationAttribute(name, &tmp);
+	if (ret != ERROR_SUCCESS) { return ERROR_NOT_FOUND; };
+
+	memcpy(attrib, tmp, sizeof(*tmp));
+	return ERROR_SUCCESS;
 }
 
 error_t fplainn::deviceC::addEnumerationAttribute(
@@ -405,50 +418,38 @@ error_t fplainn::deviceC::addEnumerationAttribute(
 	)
 {
 	error_t					ret;
-	udi_instance_attr_list_t		**attrArrayMem, **tmp;
-	heapPtrC<udi_instance_attr_list_t>	destAttrMem;
-	sarch_t					releaseAttrMem=0;
+	udi_instance_attr_list_t		*attrTmp;
+	heapArrC<heapObjC<udi_instance_attr_list_t> >
+						newArray, oldArray;
 
-	if (attrib == NULL) { return ERROR_INVALID_ARG; };
+	if (attrib == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	destAttrMem = new udi_instance_attr_list_t;
-	if (destAttrMem == NULL) { return ERROR_MEMORY_NOMEM; };
-
-	// Can do other checks, such as checks on supplied attr's "type" etc.
-
-	// Check to see if the attrib already exists.
-	ret = getEnumerationAttribute(CC attrib->attr_name, destAttrMem.get());
-	if (ret != ERROR_SUCCESS)
+	ret = findEnumerationAttribute(CC attrib->attr_name, &attrTmp);
+	if (ret == ERROR_SUCCESS)
 	{
-		// Allocate mem for the new array of pointers to attribs.
-		attrArrayMem = new udi_instance_attr_list_t *[
-			nEnumerationAttrs + 1];
-
-		if (attrArrayMem == NULL) { return ERROR_MEMORY_NOMEM; };
-
-		if (nEnumerationAttrs > 0)
-		{
-			memcpy(
-				attrArrayMem, enumerationAttrs,
-				sizeof(*enumerationAttrs) * nEnumerationAttrs);
-		};
-
-		attrArrayMem[nEnumerationAttrs] = destAttrMem.get();
-		/* Since we have to use the allocated memory to store the new
-		 * attribute permanently, we have to call release() on the
-		 * pointer management object later on. Set this bool to indicate
-		 * that.
-		 **/
-		releaseAttrMem = 1;
-		tmp = enumerationAttrs;
-		enumerationAttrs = attrArrayMem;
-		nEnumerationAttrs++;
-
-		delete[] tmp;
+		// If the attribute already exists, just overwrite its value.
+		memcpy(attrTmp, attrib, sizeof(*attrib));
+		return ERROR_SUCCESS;
 	};
 
-	memcpy(destAttrMem.get(), attrib, sizeof(*attrib));
-	if (releaseAttrMem) { destAttrMem.release(); };
+	newArray = new heapObjC<udi_instance_attr_list_t>[nEnumerationAttrs + 1];
+	if (newArray == NULL) { return ERROR_MEMORY_NOMEM; };
+
+	newArray[nEnumerationAttrs] = new udi_instance_attr_list_t;
+	if (newArray[nEnumerationAttrs] == NULL) { return ERROR_MEMORY_NOMEM; };
+	memcpy(newArray[nEnumerationAttrs].get(), attrib, sizeof(*attrib));
+
+	if (nEnumerationAttrs > 0)
+	{
+		memcpy(
+			newArray.get(), enumerationAttrs.get(),
+			sizeof(*enumerationAttrs) * nEnumerationAttrs);
+	};
+
+	oldArray = enumerationAttrs;
+	enumerationAttrs = newArray;
+	for (uarch_t i=0; i<nEnumerationAttrs; i++) { oldArray[i].release(); };
+	nEnumerationAttrs++;
 	return ERROR_SUCCESS;
 }
 
