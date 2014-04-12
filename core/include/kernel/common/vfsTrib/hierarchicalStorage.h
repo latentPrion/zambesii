@@ -5,7 +5,8 @@
 	#include <__kstdlib/__kclib/string8.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 
-#define HVFS_TAG_NAME_MAXLEN	(256)
+#define HVFS_TAG_NAME_MAXLEN		(256)
+#define HVFS_PATH_MAXLEN		(256)
 
 namespace hvfs
 {
@@ -190,7 +191,7 @@ namespace hvfs
 		:
 		vfs::currenttC(static_cast<utf8Char>( 'h' )),
 		rootTag(
-			CC"Zambesii Hierarchical VFS Currentt", vfs::DIR, 
+			CC"Zambesii Hierarchical VFS Currentt", vfs::DIR,
 			&rootTag, &rootInode),
 
 		rootInode(
@@ -245,7 +246,7 @@ namespace hvfs
 
 		class slamCacheC	*tagCache;
 		tagC			rootTag;
-		dirInodeC		rootInode;			
+		dirInodeC		rootInode;
 		sharedResourceGroupC<multipleReaderLockC, defaultTreeInfoS>
 			defaultTree;
 	};

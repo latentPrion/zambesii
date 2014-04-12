@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/paging.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -11,13 +12,13 @@
 
 slamCacheC	*asyncContextCache;
 
-slamCacheC::slamCacheC(uarch_t objectSize, allocatorE allocator)
+slamCacheC::slamCacheC(uarch_t _objectSize, allocatorE allocator)
 :
 allocator(allocator)
 {
-	heapCacheC::objectSize = (objectSize < sizeof(objectS))
+	objectSize = (_objectSize < sizeof(objectS))
 		? sizeof(objectS)
-		: objectSize;
+		: _objectSize;
 
 	// Calculate the excess on each page allocated.
 	perPageExcess = PAGING_BASE_SIZE % objectSize;
@@ -25,11 +26,19 @@ allocator(allocator)
 
 	partialList.rsrc = NULL;
 	freeList.rsrc = NULL;
+
+	if (this == (void*)0xC0061394) { rr = 3; };
 }
 
 slamCacheC::~slamCacheC(void)
 {
 	//FIXME: Find a way to destroy these things...
+}
+
+error_t slamCacheC::debugCheck(void)
+{
+	if (perPageBlocks == 0) { return ERROR_UNKNOWN; };
+	return ERROR_SUCCESS;
 }
 
 void *slamCacheC::getNewPage(sarch_t localFlush)
@@ -85,12 +94,12 @@ void slamCacheC::dump(void)
 	objectS		*obj;
 	uarch_t		count;
 
-	printf(NOTICE SLAMCACHE"Dumping; locks @ F: 0x%p/P: 0x%p.\n",
-		&freeList.lock, &partialList.lock);
+	printf(NOTICE SLAMCACHE"@0x%p: Dumping; locks @ F: 0x%p/P: 0x%p.\n",
+		this, &freeList.lock, &partialList.lock);
 
-	printf(NOTICE SLAMCACHE"Object size: %X, ppb %d, ppexcess %d, "
+	printf(NOTICE SLAMCACHE"@0x%p: Object size: %X, ppb %d, ppexcess %d, "
 		"FreeList: Pages:\n\t",
-		objectSize, perPageBlocks, perPageExcess);
+		this, objectSize, perPageBlocks, perPageExcess);
 
 	count = 0;
 
@@ -189,6 +198,7 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 		partialList.rsrc = tmp;
 
 		// Break up the new block from the free list.
+printf(NOTICE"New block @0x%p, will be broken into %d blocks, %dB each\n", tmp, perPageBlocks, objectSize);
 		for (uarch_t i=perPageBlocks-1; i>0; i--)
 		{
 			tmp->next = reinterpret_cast<objectS *>(

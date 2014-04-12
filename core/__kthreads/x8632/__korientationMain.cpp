@@ -146,7 +146,6 @@ static void dumpSrat(void)
  *
  * We then pass control to __korientationMain().
  **/
-void do_stuff(char);
 extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t		ret;
@@ -207,7 +206,6 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	 **/
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
-	DO_OR_DIE(__kprocess.zasyncStream, initialize(), ret);
 	asyncContextCache = cachePool.createCache(sizeof(syscallbackC));
 	if (asyncContextCache == NULL)
 	{
@@ -221,6 +219,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	 * BSP CPU's scheduler to co-op level scheduling capability, and
 	 * spawn the __korientationMain thread, ending __korientationInit.
 	 **/
+	DO_OR_DIE(__kprocess.zasyncStream, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);

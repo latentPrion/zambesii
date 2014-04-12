@@ -6,10 +6,10 @@
 
 cachePoolC::cachePoolC(void)
 :
-poolNodeCache(sizeof(cachePoolNodeS))
+nCaches(0), poolNodeCache(sizeof(cachePoolNodeS))
 {
 	head.rsrc = NULL;
-	nCaches = 0;
+	if (debugCheck() != ERROR_SUCCESS) { *(int*)0 = 0; };
 }
 
 cachePoolC::~cachePoolC(void)
@@ -27,9 +27,17 @@ cachePoolC::~cachePoolC(void)
 	};
 }
 
+error_t cachePoolC::debugCheck(void)
+{
+	return poolNodeCache.debugCheck();
+}
+
 void cachePoolC::dump(void)
 {
-	printf(NOTICE CACHEPOOL"Dumping.\t\tNCaches: %d.\n", nCaches);
+	printf(NOTICE CACHEPOOL"Dumping. nCaches: %d. Dump nodecache:\n",
+		nCaches);
+
+	poolNodeCache.dump();
 
 	head.lock.acquire();
 
@@ -183,6 +191,7 @@ slamCacheC *cachePoolC::getCache(uarch_t objSize)
 	return NULL;
 }
 
+#include <__kclasses/memReservoir.h>
 slamCacheC *cachePoolC::createCache(uarch_t objSize)
 {
 	cachePoolNodeS	*node;
@@ -197,6 +206,7 @@ slamCacheC *cachePoolC::createCache(uarch_t objSize)
 	};
 
 	node->item = new slamCacheC(objSize);
+
 	if (node->item == NULL)
 	{
 		ret = NULL;

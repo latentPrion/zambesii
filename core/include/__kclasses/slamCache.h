@@ -61,6 +61,7 @@ public:
 	status_t flush(void);
 
 	void dump(void);
+	error_t debugCheck(void);
 
 private:
 	struct objectS

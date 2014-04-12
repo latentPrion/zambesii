@@ -42,10 +42,11 @@ private:
 
 public:
 	cachePoolC(void);
-	error_t initialize(void) { return ERROR_SUCCESS; };
+	error_t initialize(void) { return poolNodeCache.initialize(); };
 	~cachePoolC(void);
 
 	void dump(void);
+	error_t debugCheck(void);
 
 public:
 	slamCacheC *getCache(uarch_t objSize);

@@ -11,8 +11,8 @@ iso9660: zambesii.iso
 
 # For my personal use. (~lp).
 imm:
-	cp -f zambesii.zxe /media/hddExtended/zambesii.zxe
-	cp -f zambesii.iso /media/hddExtended/zambesii.iso
+	cp -f zambesii.zxe /media/dv6-e01/zambesii.zxe
+	cp -f zambesii.iso /media/dv6-e01/zambesii.iso
 
 zambesii.iso: exec
 

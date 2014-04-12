@@ -7,6 +7,7 @@
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 
 #define DVFS_TAG_NAME_MAXLEN			(48)
+#define DVFS_PATH_MAXLEN			(128)
 
 #define DVFS_DINODE_VENDOR_MAXLEN		(64)
 #define DVFS_DINODE_VENDORCONTACT_MAXLEN	(128)

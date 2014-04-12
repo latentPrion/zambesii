@@ -1,0 +1,89 @@
+Security is achieved in Zambesii through a combination of components.
+	* Levee perms API:
+		Controls the actions a process may perform at a fine level of
+		granularity. This is a configurable bitmask of actions that a
+		program may or may not perform.
+
+		Levee API determines what /actions/ can be performed by a
+		process, while clearance determines what /data/ can be read
+		by a process.
+
+		Each account has a set of "operating" perms, and "potential"
+		perms. The potential perms are represented by the bitmask value
+		that describes the most permissive state that can be achieved
+		by a process running under that user's session.
+
+		The operating perms are the subset of the user's *potential*
+		perms which s/he has decided that the kernel should allow
+		applications to exercise without ASKING first.
+
+		This enables a highly privileged user to put up safeguards on
+		their usage of the system, while having the expressiveness and
+		power of a high-privilege account at their fingertips.
+
+	* User accounts:
+		User accounts identify a user, enabling user-based policy to be
+		implemented and enforced.
+		The kernel only cares about accounts, and it does not care about
+		credentials. The kernel does not know about any credential
+		scheme, and accounts do not imply a username+password credential
+		scheme.
+
+		Each user accounts has a clearance level and a set of levee
+		perms for which privileged actions it can take on resources.
+
+		A higher-privileged user may choose to "Vouch" a lower
+		privileged user for a particular operation. In this scenario,
+		the vouched user gains temporary access of a certain level
+		for a certain amount of time. The voucher is required to
+		authenticate their credentials in order to vouch.
+
+	* Authentication credentials:
+		Credentials and the authentication of the same, are not handled
+		by the kernel, but by separate processes. These processes are
+		configured within the kernel's initrd configuration.
+		The credentials processes are servers for a particular
+		type of credentials and their authentication.
+
+		For example, username+password challenge-response login is one
+		type of authentication criterion, and a password credential
+		authenticator would be assigned to listen for attempts to log-in
+		via the username-password method.
+
+		Fingerprint scanning is another, eye-scans, etc, etc all are
+		different authentication methods.
+
+		An interesting side-effect of this way of thinking is that
+		PROGRAMS can be authenticated based on credentials as well. E.g,
+		an important program such as a web server will usually need to
+		"log in" as a particular user, usually with some level of
+		elevated privilege to perform its functions.
+
+		If such programs are required to log-in via an MD5 hash check of
+		their binary, the security of the system is greatly increased.
+
+	* Confidentiality levels:
+		These are applied to files. Every file has a confidentiality
+		level attached to it, and only users who have clearance
+		privileges greater than or equal to the clearance level of the
+		file can access it.
+
+		A file may also have a policy that allows users of a certain
+		clearance to *read* their data, but not to *modify* it.
+		Files have READ, WRITE and EXECUTE confidentiality levels.
+
+		A system-critical program for example, may have a low EXECUTE
+		confidentiality, but high READ and WRITE confidentiality.
+
+	* Clearance levels:
+		Each user has both potential and operating clearance levels.
+		The potential clearance level is the highest level of
+		clearance the user has. The operating clearance level is the
+		maximum level of confidential access that should be allowed
+		without ASKING the user first. This enables the user to set
+		a low operating clearance level, while having a high *potential*
+		clearance level.
+
+		User clearance levels are three-fold: READ clearance, WRITE
+		clearance and EXECUTE clearance. That is, a user may have a
+		high EXEC clearance, but a low READ and WRITE clearance.
