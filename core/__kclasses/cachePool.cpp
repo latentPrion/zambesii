@@ -9,7 +9,6 @@ cachePoolC::cachePoolC(void)
 nCaches(0), poolNodeCache(sizeof(cachePoolNodeS))
 {
 	head.rsrc = NULL;
-	if (debugCheck() != ERROR_SUCCESS) { *(int*)0 = 0; };
 }
 
 cachePoolC::~cachePoolC(void)
@@ -25,11 +24,6 @@ cachePoolC::~cachePoolC(void)
 		cur = cur->next;
 		poolNodeCache.free(tmp);
 	};
-}
-
-error_t cachePoolC::debugCheck(void)
-{
-	return poolNodeCache.debugCheck();
 }
 
 void cachePoolC::dump(void)

@@ -18,6 +18,9 @@ class bitmapC
 {
 friend class messageStreamC;
 public:
+	/* Used to inialize BMPs which must be initialized in the absence of
+	 * dynamic memory allocation.
+	 **/
 	struct preallocatedMemoryS
 	{
 		preallocatedMemoryS(void *ptr=NULL, ubit16 size=0)
@@ -34,9 +37,6 @@ public:
 
 	bitmapC(void);
 
-	/* Used to inialize BMPs which would have been constructed in the
-	 * absence of dynamic memory allocation.
-	 **/
 	error_t initialize(
 		ubit32 nBits, preallocatedMemoryS preallocatedMemory=0);
 

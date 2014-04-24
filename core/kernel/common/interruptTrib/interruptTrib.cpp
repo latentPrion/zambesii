@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <arch/cpuControl.h>
 #include <arch/atomic.h>
@@ -24,7 +25,6 @@ pinIrqTableCounter(0)
 		msiIrqTable[i].nUnhandled = 0;
 		msiIrqTable[i].type = vectorDescriptorS::UNCLAIMED;
 	};
-
 }
 
 error_t interruptTribC::initializeExceptions(void)
@@ -386,7 +386,7 @@ sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 		pinDesc->isrList.remove(isrDesc);
 		delete isrDesc;
 
-		// If there are now no more ISRs on this __kpin, mask it off. 
+		// If there are now no more ISRs on this __kpin, mask it off.
 		if (pinDesc->isrList.getNItems() == 0)
 		{
 			interruptTrib.__kpinDisable(__kpin);

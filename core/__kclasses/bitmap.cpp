@@ -59,6 +59,7 @@ error_t bitmapC::initialize(
 		};
 	};
 
+
 	return ERROR_SUCCESS;
 }
 

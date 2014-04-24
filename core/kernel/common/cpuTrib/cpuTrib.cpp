@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <scaling.h>
 #include <chipset/cpus.h>
 #include <chipset/zkcm/zkcmCore.h>
@@ -571,7 +572,7 @@ error_t cpuTribC::smpInit(void)
 
 	// Return error, because this shouldn't be called in this case.
 	if (!usingChipsetSmpMode()) { return ERROR_UNSUPPORTED; };
-	
+
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != NULL && smpMap->nEntries > 0)
 	{

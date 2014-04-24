@@ -28,7 +28,7 @@ void debug::getCurrentStackInfo(stackDescriptorS *desc)
 	}
 	else
 	{
-		desc->nBytes = sizeof(cpuStreamC::schedStack);
+		desc->nBytes = sizeof(cpuTrib.getCurrentCpuStream()->schedStack);
 		desc->start = cpuTrib.getCurrentCpuStream()->schedStack;
 		desc->eof = &cpuTrib.getCurrentCpuStream()->schedStack[
 			desc->nBytes];

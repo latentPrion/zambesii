@@ -1,6 +1,8 @@
 
+#include <debug.h>
 #include <chipset/chipset.h>
 #include <__kclasses/debugPipe.h>
+#include <__kclasses/cachePool.h>
 #include <kernel/common/debugTrib/debugTrib.h>
 
 
@@ -20,7 +22,7 @@ void debugTribC::enterNoIrq(void)
 	cpuCount.lock.release();
 
 	for (ubit16 i=0; i<DEBUGTRIB_ENTER_DELAY; i++) {};
-	
+
 	__kdebug.untieFrom(CHIPSET_DEBUG_DEVICE_TERMINAL_MASK);
 }
 

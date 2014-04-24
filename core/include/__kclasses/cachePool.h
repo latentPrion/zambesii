@@ -46,7 +46,6 @@ public:
 	~cachePoolC(void);
 
 	void dump(void);
-	error_t debugCheck(void);
 
 public:
 	slamCacheC *getCache(uarch_t objSize);

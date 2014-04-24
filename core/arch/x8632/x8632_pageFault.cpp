@@ -178,9 +178,11 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 	case WPRANGER_STATUS_BACKED:
 		// Either COW, or simple access perms violation.
 		panicWorthy = 1;
-		traceStack = 1;
+		// traceStack = 1; Temporarily disabled.
 		printf(FATAL"Kernel faulted on a backed page. Probably access "
-			"perms violation, or unintentional COW\n");
+			"perms violation, or unintentional COW\n"
+			"Vaddr: 0x%p. EIP 0x%p.\n",
+			faultAddr, regs->eip);
 
 		break;
 

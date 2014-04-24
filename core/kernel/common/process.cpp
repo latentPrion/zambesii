@@ -109,21 +109,25 @@ error_t processStreamC::initializeBitmaps(void)
 
 	if (id == __KPROCESSID)
 	{
+rr=4;
 #if __SCALING__ >= SCALING_SMP
 		cpuTrace.initialize(
 			0,
 			bitmapC::preallocatedMemoryS(
-				__kprocessPreallocatedBmpMem[0], 32));
+				__kprocessPreallocatedBmpMem[0],
+				sizeof(__kprocessPreallocatedBmpMem[0])));
 
 		cpuAffinity.initialize(
 			0,
 			bitmapC::preallocatedMemoryS(
-				__kprocessPreallocatedBmpMem[1], 32));
+				__kprocessPreallocatedBmpMem[1],
+				sizeof(__kprocessPreallocatedBmpMem[1])));
 #endif
 		pendingEvents.initialize(
 			0,
 			bitmapC::preallocatedMemoryS(
-				__kprocessPreallocatedBmpMem[2], 32));
+				__kprocessPreallocatedBmpMem[2],
+				sizeof(__kprocessPreallocatedBmpMem[2])));
 	}
 	else
 	{

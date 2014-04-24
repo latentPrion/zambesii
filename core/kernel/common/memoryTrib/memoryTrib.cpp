@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/walkerPageRanger.h>
 #include <chipset/memory.h>
 #include <chipset/zkcm/memoryMap.h>

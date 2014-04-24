@@ -1,13 +1,15 @@
 
+#include <debug.h>
 #include <arch/arch.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kclasses/cachePool.h>
 #include <__kstdlib/__kclib/string.h>
 #include <kernel/common/execTrib/execTrib.h>
 
 
 execTribC::execTribC(void)
 {
-	memset(parsers, 0, sizeof(executableParserS) * EXECTRIB_MAX_NPARSERS);
+	memset(parsers, 0, sizeof(*parsers) * EXECTRIB_MAX_NPARSERS);
 }
 
 error_t execTribC::initialize(void)

@@ -75,7 +75,7 @@ void ibmPcVgaTerminalC::scrollDown(void)
 	for (; i<bound; i++) {
 		*(ubit16 *)&buff[i] = 0;
 	};
-}	
+}
 
 void ibmPcVgaTerminalC::syphon(const utf8Char *str, uarch_t len)
 {

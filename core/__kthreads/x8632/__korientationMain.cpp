@@ -171,6 +171,13 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(zkcmCore, initialize(), ret);
 	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
 	zkcmCore.irqControl.maskAll();
+
+	DO_OR_DIE(__kdebug, initialize(), ret);
+	devMask = __kdebug.tieTo(/*DEBUGPIPE_DEVICE_BUFFER |*/ DEBUGPIPE_DEVICE1);
+//	if (!FLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
+//		printf(WARNING ORIENT"No debug buffer allocated.\n");
+//	};
+
 	DO_OR_DIE(processTrib, initialize(), ret);
 	DO_OR_DIE(
 		__kprocess,
@@ -189,11 +196,6 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 
 	/* Initialize the kernel debug pipe for boot logging, etc.
 	 **/
-	DO_OR_DIE(__kdebug, initialize(), ret);
-	devMask = __kdebug.tieTo(/*DEBUGPIPE_DEVICE_BUFFER |*/ DEBUGPIPE_DEVICE1);
-	if (!FLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
-		printf(WARNING ORIENT"No debug buffer allocated.\n");
-	};
 
 	// __kdebug.refresh();
 	printf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "

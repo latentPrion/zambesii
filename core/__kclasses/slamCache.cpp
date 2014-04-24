@@ -1,10 +1,10 @@
 
-#include <debug.h>
 #include <arch/paging.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/slamCache.h>
 #include <__kclasses/debugPipe.h>
+#include <__kclasses/cachePool.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
@@ -26,19 +26,11 @@ allocator(allocator)
 
 	partialList.rsrc = NULL;
 	freeList.rsrc = NULL;
-
-	if (this == (void*)0xC0061394) { rr = 3; };
 }
 
 slamCacheC::~slamCacheC(void)
 {
 	//FIXME: Find a way to destroy these things...
-}
-
-error_t slamCacheC::debugCheck(void)
-{
-	if (perPageBlocks == 0) { return ERROR_UNKNOWN; };
-	return ERROR_SUCCESS;
 }
 
 void *slamCacheC::getNewPage(sarch_t localFlush)
@@ -198,7 +190,6 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 		partialList.rsrc = tmp;
 
 		// Break up the new block from the free list.
-printf(NOTICE"New block @0x%p, will be broken into %d blocks, %dB each\n", tmp, perPageBlocks, objectSize);
 		for (uarch_t i=perPageBlocks-1; i>0; i--)
 		{
 			tmp->next = reinterpret_cast<objectS *>(

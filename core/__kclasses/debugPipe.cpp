@@ -27,7 +27,6 @@ error_t debugPipeC::initialize(void)
 	uarch_t		bound;
 	utf8Char	*mem;
 
-	devices.rsrc = 0;
 	// Allocate four pages for UTF-8 expansion buffer.
 #ifndef CONFIG_DEBUGPIPE_STATIC
 	mem = new (processTrib.__kgetStream()->memoryStream.memAlloc(
@@ -57,7 +56,7 @@ error_t debugPipeC::initialize(void)
 
 debugPipeC::~debugPipeC(void)
 {
-	untieFrom(DEBUGPIPE_DEVICE_BUFFER);     
+	untieFrom(DEBUGPIPE_DEVICE_BUFFER);
 	untieFrom(
 		DEBUGPIPE_DEVICE1 | DEBUGPIPE_DEVICE2 | DEBUGPIPE_DEVICE3
 		| DEBUGPIPE_DEVICE4);
@@ -465,7 +464,7 @@ static sarch_t expandPrintfFormatting(
 		default:
 			unum = va_arg(args, uarch_t);
 			break;
-		};	
+		};
 	};
 
 	return buffIndex;
