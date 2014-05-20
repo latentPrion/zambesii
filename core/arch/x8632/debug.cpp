@@ -10,6 +10,13 @@
 // Static data member.
 uarch_t debug::debuggerC::flags = 0;
 
+
+void debug::stackDescriptorS::dump(void)
+{
+	printf(NOTICE"stackDescriptor: @0x%p: start 0x%p, eof 0x%p. %d bytes\n",
+		this, start, eof, nBytes);
+}
+
 void debug::getCurrentStackInfo(stackDescriptorS *desc)
 {
 	taskC		*currTask;

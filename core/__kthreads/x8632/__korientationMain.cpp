@@ -148,9 +148,9 @@ static void dumpSrat(void)
  **/
 extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
-	error_t		ret;
-	uarch_t		devMask;
-	threadC		*mainTask;
+	error_t			ret;
+	uarch_t			devMask;
+	threadC			*mainTask;
 	containerProcessC	&__kprocess = *processTrib.__kgetStream();
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
@@ -169,14 +169,23 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	 **/
 	DO_OR_DIE(interruptTrib, initializeExceptions(), ret);
 	DO_OR_DIE(zkcmCore, initialize(), ret);
+
+	/* Initialize the kernel debug pipe for boot logging, etc.
+	 **/
+	DO_OR_DIE(__kdebug, initialize(), ret);
+	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
+	if (!FLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
+		printf(WARNING ORIENT"No debug buffer allocated.\n");
+	};
+
+	// __kdebug.refresh();
+	printf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
+		"DEVICE1.\n");
+
+	/* Initialize IRQs.
+	 **/
 	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
 	zkcmCore.irqControl.maskAll();
-
-	DO_OR_DIE(__kdebug, initialize(), ret);
-	devMask = __kdebug.tieTo(/*DEBUGPIPE_DEVICE_BUFFER |*/ DEBUGPIPE_DEVICE1);
-//	if (!FLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
-//		printf(WARNING ORIENT"No debug buffer allocated.\n");
-//	};
 
 	DO_OR_DIE(processTrib, initialize(), ret);
 	DO_OR_DIE(
@@ -193,15 +202,8 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(memoryTrib, initialize(), ret);
 	DO_OR_DIE(memoryTrib, __kspaceInitialize(), ret);
 	DO_OR_DIE(processTrib.__kgetStream()->memoryStream, initialize(), ret);
-
-	/* Initialize the kernel debug pipe for boot logging, etc.
-	 **/
-
-	// __kdebug.refresh();
-	printf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
-		"DEVICE1.\n");
-
-//	dumpSrat();
+	zkcmCore.irqControl.chipsetEventNotification(
+		IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL, 0);
 
 	/* Initialize the kernel Memory Reservoir (heap) and object cache pool.
 	 * Create the global asyncContext object cache.

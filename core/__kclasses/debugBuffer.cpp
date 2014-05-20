@@ -14,67 +14,25 @@
  * to hold the current request.
  **/
 
+static ubit8	buffMem[PAGING_BASE_SIZE * DEBUGBUFFER_INIT_NPAGES];
+
 debugBufferC::debugBufferC(void)
 {
-	buff.rsrc.head = buff.rsrc.cur = buff.rsrc.tail = NULL;
-	buff.rsrc.index = buff.rsrc.buffNPages = 0;
-}
+	debugBufferC::buffPageS		*tmp;
 
-#ifdef CONFIG_DEBUGPIPE_STATIC
-static ubit8	buffMem[PAGING_BASE_SIZE * (DEBUGBUFFER_INIT_NPAGES-1)];
-#endif
+	buff.rsrc.head = buff.rsrc.cur = new (buffMem) buffPageS;
+	buff.rsrc.index = 0;
+
+	tmp = buff.rsrc.head;
+	for (uarch_t i=1; i<DEBUGBUFFER_INIT_NPAGES; i++, tmp = tmp->next) {
+		tmp->next = new (&buffMem[i * PAGING_BASE_SIZE]) buffPageS;
+	};
+
+	buff.rsrc.buffNPages = DEBUGBUFFER_INIT_NPAGES;
+}
 
 error_t debugBufferC::initialize(void)
 {
-	debugBufferC::buffPageS		*mem, *mem2;
-	uarch_t				pageCount = 0;
-
-#ifndef CONFIG_DEBUGPIPE_STATIC
-	mem = new (
-		processTrib.__kgetStream()->memoryStream.memAlloc(
-			1, MEMALLOC_NO_FAKEMAP))
-		debugBufferC::buffPageS;
-#else
-	mem = new (buffMem) debugBufferC::buffPageS;
-#endif
-
-	if (mem == NULL) {
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	buff.lock.acquire();
-
-	buff.rsrc.cur = buff.rsrc.tail = buff.rsrc.head = mem;
-	buff.rsrc.buffNPages = 1;
-	buff.rsrc.index = 0;
-
-	buff.lock.release();
-
-	mem2 = mem;
-	for (uarch_t i=0; i<DEBUGBUFFER_INIT_NPAGES-1; i++)
-	{
-#ifndef CONFIG_DEBUGPIPE_STATIC
-		mem2->next = new (processTrib.__kgetStream()->memoryStream.memAlloc(
-			1, MEMALLOC_NO_FAKEMAP))
-				debugBufferC::buffPageS;
-#else
-		mem2->next = new (&buffMem[i * PAGING_BASE_SIZE]) buffPageS;
-#endif
-
-		if (mem2->next == NULL) {
-			break;
-		};
-		mem2 = mem2->next;
-		pageCount++;
-	};
-
-	buff.lock.acquire();
-
-	buff.rsrc.tail = mem2;
-	buff.rsrc.buffNPages += pageCount;
-
-	buff.lock.release();
-
 	return ERROR_SUCCESS;
 }
 
@@ -116,7 +74,7 @@ error_t debugBufferC::awake(void)
 void *debugBufferC::lock(void)
 {
 	buff.lock.acquire();
-	return buff.rsrc.head;		
+	return buff.rsrc.head;
 }
 
 // This expects the caller to call lock() before beforehand, and unlock() after.
@@ -152,7 +110,7 @@ void debugBufferC::unlock(void)
 	buff.lock.release();
 }
 
-void debugBufferC::syphon(utf8Char *str, uarch_t buffLen)
+void debugBufferC::write(utf8Char *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
 

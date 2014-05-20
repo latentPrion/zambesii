@@ -150,6 +150,73 @@ sarch_t bitmapC::test(ubit32 bit)
 	return 0;
 }
 
+error_t bitmapC::resizeTo(ubit32 _nBits)
+{
+	uarch_t		bitCapacity, *tmp, *old;
+	sbit8		wasPreAllocated;
+
+	bmp.lock.acquire();
+
+	// If _nBits == 0, deallocate all mem.
+	if (_nBits == 0)
+	{
+		bmp.rsrc.nBits = 0;
+		old = bmp.rsrc.bmp;
+		bmp.rsrc.bmp = NULL;
+		wasPreAllocated = preAllocated;
+		preAllocated = 0;
+
+		bmp.lock.release();
+
+		if (!wasPreAllocated) { delete[] old; };
+		return ERROR_SUCCESS;;
+	};
+
+	if (preAllocated) {
+		bitCapacity = preAllocatedSize * __BITS_PER_BYTE__;
+	}
+	else
+	{
+		bitCapacity = __KMATH_NELEMENTS(
+			bmp.rsrc.nBits, __BITS_PER_BYTE__) * __BITS_PER_BYTE__;
+	};
+
+	// If we don't need to resize upwards:
+	if (_nBits < bitCapacity)
+	{
+		bmp.rsrc.nBits = _nBits;
+		bmp.lock.release();
+		return ERROR_SUCCESS;
+	};
+
+	// Else:
+	tmp = (uarch_t *)new ubit8[_nBits];
+	if (tmp == NULL)
+	{
+		bmp.lock.release();
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	old = bmp.rsrc.bmp;
+	if (old != NULL)
+	{
+		memcpy(
+			tmp, old,
+			__KMATH_NELEMENTS(bmp.rsrc.nBits, __BITS_PER_BYTE__));
+	};
+
+	bmp.rsrc.nBits = _nBits;
+	bmp.rsrc.bmp = tmp;
+	wasPreAllocated = preAllocated;
+	preAllocated = 0;
+
+	bmp.lock.release();
+
+	if (wasPreAllocated) { delete[] old; };
+	return ERROR_SUCCESS;
+}
+
+#if 0
 error_t bitmapC::resizeTo(ubit32 nBits)
 {
 	uarch_t		*tmp, *oldmem;
@@ -232,6 +299,7 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 
 	return ret;
 }
+#endif
 
 void bitmapC::setSingle(ubit32 bit)
 {

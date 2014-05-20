@@ -114,7 +114,7 @@ error_t x86LapicC::detectPaddr(void)
 	if (acpi::testForRsdt())
 	{
 		if (acpi::mapRsdt() != ERROR_SUCCESS) { goto tryMpTables; };
-		
+
 		rsdt = acpi::getRsdt();
 		context = handle = NULL;
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);

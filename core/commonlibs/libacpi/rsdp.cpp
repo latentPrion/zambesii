@@ -4,6 +4,7 @@
 #include <arch/walkerPageRanger.h>
 #include <chipset/findTables.h>
 #include <__kstdlib/__kclib/string8.h>
+#include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/debugPipe.h>
 #include <commonlibs/libacpi/rsdp.h>
 #include <kernel/common/processTrib/processTrib.h>
@@ -87,15 +88,13 @@ static sarch_t checksumIsValid(acpi_rsdtS *rsdt)
 
 error_t acpi::mapRsdt(void)
 {
-	acpi_rsdtS	*rsdt;
-	uarch_t		rsdtNPages;
+	loosePageC<acpi_rsdtS>	rsdt;
+	uarch_t			rsdtNPages;
 
-	if (!acpi::rsdpFound() || !acpi::testForRsdt()) {
-		return ERROR_GENERAL;
-	};
-	if (acpi::getRsdt() != NULL) {
-		return ERROR_SUCCESS;
-	};
+	if (!acpi::rsdpFound() || !acpi::testForRsdt())
+		{ return ERROR_GENERAL; };
+
+	if (acpi::getRsdt() != NULL) { return ERROR_SUCCESS; };
 
 	rsdt = (acpi_rsdtS *)walkerPageRanger::createMappingTo(
 		cache.rsdp->rsdtPaddr, 2,
@@ -107,21 +106,24 @@ error_t acpi::mapRsdt(void)
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
-	rsdt = WPRANGER_ADJUST_VADDR(rsdt, cache.rsdp->rsdtPaddr, acpi_rsdtS *);
+	rsdt.nPages = rsdt.nMapped = 2;
+	rsdt.vasStream = processTrib.__kgetStream()->getVaddrSpaceStream();
+
+	rsdt = WPRANGER_ADJUST_VADDR(
+		rsdt.get(), cache.rsdp->rsdtPaddr, acpi_rsdtS *);
+
 	// Ensure that the table is valid: compute checksum.
-	if (!checksumIsValid(rsdt))
+	if (!checksumIsValid(rsdt.get()))
 	{
 		printf(WARNING ACPI"RSDT has invalid checksum.\n");
-		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
-			rsdt, 2);
-
+		rsdt = WPRANGER_UNADJUST_VADDR(rsdt.get(), acpi_rsdtS *);
 		return ERROR_GENERAL;
 	};
 
 	// Find out the RSDT's real size.
 	rsdtNPages = PAGING_BYTES_TO_PAGES(rsdt->hdr.tableLength) + 1;
-	processTrib.__kgetStream()->getVaddrSpaceStream()
-		->releasePages(rsdt, 2);
+	rsdt = WPRANGER_UNADJUST_VADDR(rsdt.get(), acpi_rsdtS *);
+	rsdt.reset();
 
 	// Reallocate vmem.
 	rsdt = (acpi_rsdtS *)walkerPageRanger::createMappingTo(
@@ -134,8 +136,11 @@ error_t acpi::mapRsdt(void)
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
-	rsdt = WPRANGER_ADJUST_VADDR(rsdt, cache.rsdp->rsdtPaddr, acpi_rsdtS *);
-	cache.rsdt = rsdt;
+	rsdt.nPages = rsdt.nMapped = rsdtNPages;
+	rsdt = WPRANGER_ADJUST_VADDR(
+		rsdt.get(), cache.rsdp->rsdtPaddr, acpi_rsdtS *);
+
+	cache.rsdt = rsdt.release();
 	return ERROR_SUCCESS;
 }
 

@@ -8,6 +8,7 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include "i8259a.h"
+#include "vgaTerminal.h"
 #include "zkcmIbmPcState.h"
 
 
@@ -94,6 +95,10 @@ void zkcmIrqControlModC::chipsetEventNotification(ubit8 event, uarch_t flags)
 {
 	switch (event)
 	{
+	case IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL:
+		ibmPcVgaTerminal.chipsetEventNotification(event, flags);
+		break;
+
 	case IRQCTL_EVENT_MEMMGT_AVAIL:
 		/**	EXPLANATION:
 		 * Tell the i8259 code to advertise its IRQ pins to the kernel.

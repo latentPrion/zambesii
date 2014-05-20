@@ -14,43 +14,12 @@
 
 debugPipeC::debugPipeC(void)
 {
-	convBuff.rsrc = NULL;
+	memset(convBuff.rsrc, 0, sizeof(convBuff.rsrc));
 	devices.rsrc = 0;
 }
 
-#ifdef CONFIG_DEBUGPIPE_STATIC
-static ubit8	buffMem[DEBUGPIPE_CONVERSION_BUFF_NPAGES * PAGING_BASE_SIZE];
-#endif
-
 error_t debugPipeC::initialize(void)
 {
-	uarch_t		bound;
-	utf8Char	*mem;
-
-	// Allocate four pages for UTF-8 expansion buffer.
-#ifndef CONFIG_DEBUGPIPE_STATIC
-	mem = new (processTrib.__kgetStream()->memoryStream.memAlloc(
-			DEBUGPIPE_CONVERSION_BUFF_NPAGES, MEMALLOC_NO_FAKEMAP))
-			utf8Char;
-#else
-	mem = new (buffMem) utf8Char;
-#endif
-
-	if (mem == NULL) {
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	bound = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
-		/ sizeof(utf8Char);
-
-	convBuff.lock.acquire();
-
-	convBuff.rsrc = mem;
-	for (uarch_t i=0; i<bound; i++) {
-		convBuff.rsrc[i] = 0;
-	};
-
-	convBuff.lock.release();
 	return ERROR_SUCCESS;
 }
 
@@ -500,8 +469,7 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 		return;
 	};
 
-	buffMax = (PAGING_BASE_SIZE * DEBUGPIPE_CONVERSION_BUFF_NPAGES)
-		/ sizeof(utf8Char);
+	buffMax = DEBUGPIPE_CONVERSION_BUFF_NBYTES;
 
 	// Expand printf formatting into convBuff.
 	buffLen = expandPrintfFormatting(
@@ -516,7 +484,7 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	if (FLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
 		&& !FLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
 	{
-		debugBuff.syphon(convBuff.rsrc, buffLen);
+		debugBuff.write(convBuff.rsrc, buffLen);
 	};
 
 	for (ubit8 i=0; i<4; i++)
@@ -562,7 +530,7 @@ void debugPipeC::printf(
 	if (FLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
 		&& !FLAG_TEST(printfFlags, DEBUGPIPE_FLAGS_NOLOG))
 	{
-		debugBuff.syphon(
+		debugBuff.write(
 			static_cast<utf8Char *>( buff->rsrc ), buffLen);
 	};
 

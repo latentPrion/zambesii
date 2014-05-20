@@ -40,13 +40,13 @@
  * to relinquish all of its pages to the kernel.
  **/
 
-#define DEBUGPIPE_DEVICE1		(1<<0)
-#define DEBUGPIPE_DEVICE2		(1<<1)
-#define DEBUGPIPE_DEVICE3		(1<<2)
-#define DEBUGPIPE_DEVICE4		(1<<3)
-#define DEBUGPIPE_DEVICE_BUFFER		(1<<4)
+#define DEBUGPIPE_DEVICE1			(1<<0)
+#define DEBUGPIPE_DEVICE2			(1<<1)
+#define DEBUGPIPE_DEVICE3			(1<<2)
+#define DEBUGPIPE_DEVICE4			(1<<3)
+#define DEBUGPIPE_DEVICE_BUFFER			(1<<4)
 
-#define DEBUGPIPE_CONVERSION_BUFF_NPAGES	4
+#define DEBUGPIPE_CONVERSION_BUFF_NBYTES	(4096)
 
 #define NOTICE				CC"N: "
 #define WARNING				CC"W: "
@@ -57,7 +57,7 @@
 #define NOLOG				"n"
 
 #define LOGONCE(__id)			NOLOG
-#define LOGONCE_FINDTABLES(__id)	
+#define LOGONCE_FINDTABLES(__id)
 
 class debugPipeC
 {
@@ -110,7 +110,10 @@ private:
 
 	debugBufferC		debugBuff;
 	// 'convBuff' is used to expand the printf formatting.
-	sharedResourceGroupC<waitLockC, utf8Char *>	convBuff;
+	sharedResourceGroupC<
+		waitLockC,
+		utf8Char[DEBUGPIPE_CONVERSION_BUFF_NBYTES]>	convBuff;
+
 	sharedResourceGroupC<waitLockC, uarch_t>	devices;
 };
 

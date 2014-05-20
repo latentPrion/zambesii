@@ -26,7 +26,7 @@ void pointer::vmemUnmapAndFree(
 		uarch_t			f;
 
 		walkerPageRanger::unmap(
-			&vasStream->vaddrSpace, vaddr, &p, nPages, &f);
+			&vasStream->vaddrSpace, vaddr, &p, nMapped, &f);
 	};
 
 	vasStream->releasePages(vaddr, nPages);

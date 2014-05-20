@@ -90,8 +90,9 @@ struct zkcmIrqPinS
 #define IRQCTL_BPM_NO_MAPPINGS_FOUND			(2)
 
 // The Kernel sends these event notifications to the IRQ Control mod.
-#define IRQCTL_EVENT_MEMMGT_AVAIL	0x0
-#define IRQCTL_EVENT_SMP_MODE_SWITCH	0x1
+#define IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL	0x0
+#define IRQCTL_EVENT_MEMMGT_AVAIL		0x1
+#define IRQCTL_EVENT_SMP_MODE_SWITCH		0x2
 
 /* Return values for getIrqStatus.
  **/

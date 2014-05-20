@@ -8,6 +8,8 @@ namespace debug
 {
 	struct stackDescriptorS
 	{
+		void dump(void);
+
 		void		*start, *eof;
 		uarch_t		nBytes;
 	};

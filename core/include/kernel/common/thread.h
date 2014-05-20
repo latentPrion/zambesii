@@ -8,6 +8,8 @@
 	#include <kernel/common/taskTrib/prio.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/messageStream.h>
+	#include <__kthreads/__korientation.h>
+
 
 #define TASK				"Task "
 
@@ -187,7 +189,13 @@ public:
 	stack0(NULL), stack1(NULL),
 	// For a normal thread, "currentCpu" and "stack0" start as NULL.
 	taskContext(task::UNIQUE, this)
-	{}
+	{
+		if (this != &__korientationThread) { return; }
+
+		// Set some hardcoded state in the orientation thread.
+		stack0 = __korientationStack;
+		//currentCpu = &bspCpu;
+	}
 
 	error_t initialize(void)
 	{

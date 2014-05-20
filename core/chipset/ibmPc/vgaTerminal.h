@@ -29,6 +29,8 @@ public:
 	virtual void syphon(const utf8Char *str, uarch_t len);
 	virtual void clear(void);
 
+	void chipsetEventNotification(ubit8 event, uarch_t flags);
+
 private:
 	void scrollDown(void);
 

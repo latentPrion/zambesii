@@ -1,6 +1,9 @@
 
+#include <arch/walkerPageRanger.h>
 #include <chipset/memoryAreas.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include "vgaTerminal.h"
 
 
@@ -11,13 +14,33 @@ ubit8	*ibmPcVgaTerminalC::bda=NULL;
 
 error_t ibmPcVgaTerminalC::initialize(void)
 {
+	// The memoryAreas API maps ranges as PAGEATTRIB_CACHE_WRITE_THROUGH.
+	origBuff = buff = reinterpret_cast<ibmPc_terminalMod_fbS *>(
+		(void *)0xB8000 );
+
+	row = col = 0;
+
+	bda = (ubit8*)0xB8000;
+	maxRow = 25;
+	maxCol = 80;
+
+	// If we're still here, then the range should be mapped in.
+	return ERROR_SUCCESS;
+}
+
+void ibmPcVgaTerminalC::chipsetEventNotification(ubit8, uarch_t)
+{
 	error_t		ret;
 	ubit8		*lowmem;
 
 	// The memoryAreas API maps ranges as PAGEATTRIB_CACHE_WRITE_THROUGH.
 	ret = chipsetMemAreas::mapArea(CHIPSET_MEMAREA_LOWMEM);
-	if (ret != ERROR_SUCCESS) {
-		return ret;
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(FATAL"ibmPcVga: chipsetEventNotification: "
+			"__KSPACE_AVAIL: Failed to map lowmem area.\n");
+
+		return;
 	};
 
 	lowmem = reinterpret_cast<ubit8 *>(
@@ -26,14 +49,19 @@ error_t ibmPcVgaTerminalC::initialize(void)
 	origBuff = buff = reinterpret_cast<ibmPc_terminalMod_fbS *>(
 		&lowmem[0xB8000] );
 
-	row = col = 0;
+	//row = col = 0;
 
 	bda = lowmem;
 	maxRow = bda[0x484] + 1;
 	maxCol = *(ubit16 *)&bda[0x44A];
 
-	// If we're still here, then the range should be mapped in.
-	return ERROR_SUCCESS;
+	// Also, unmap the old identity mapping.
+	paddr_t		p;
+	uarch_t		f;
+
+	walkerPageRanger::unmap(
+		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
+		(void *)0xB8000, &p, 1, &f);
 }
 
 error_t ibmPcVgaTerminalC::shutdown(void)

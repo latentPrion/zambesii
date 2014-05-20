@@ -1,6 +1,9 @@
 
 #include <in_asm.h>
 #include <assembler.h>
+#include <arch/paging.h>
+#include <chipset/memory.h>
+
 
 .extern __korientationInit, __korientationStack
 .extern __kpagingLevel0Tables
@@ -23,7 +26,7 @@ ASM_GLOBAL_FUNCTION(__korientationEntry)
 	movl %ecx, %cr0
 
 	/* Jump to the virtual offset now. */
-	movl $__korientationVirtualStart, %ecx	
+	movl $__korientationVirtualStart, %ecx
 	jmp *%ecx
 ASM_END_FUNCTION(__korientationEntry)
 
@@ -31,7 +34,7 @@ ASM_SECTION(.__korientationText)
 
 ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	/* Load the stack pointer for the Orientation thread. */
-	movl $__korientationStack+4096, %esp
+	movl $__korientationStack+(PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES), %esp
 	/* Clear the CPU flags */
 	pushl $0
 	popfl
@@ -47,7 +50,7 @@ ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	ljmp	$0x08, $.loadAX
 
 .loadAX:
-	
+
 	/* This is a security trick. We push the address of an infinite loop,
 	 * and if the kernel manages to return from the orientation thread
 	 * somehow, we manipulate the return address to point to this infinite

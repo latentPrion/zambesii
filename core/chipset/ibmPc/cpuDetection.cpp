@@ -583,6 +583,7 @@ cpu_t zkcmCpuDetectionModC::getBspId(void)
 			return ibmPcState.bspInfo.bspId;
 		};
 
+
 		if (!x86LapicC::lapicMemIsMapped())
 		{
 			// Not safe, but detectPaddr() never returns error.

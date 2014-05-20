@@ -12,6 +12,30 @@
 #define BITMAP_OFFSET(__bit)			\
 	((__bit) % (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__))
 
+/* Args:
+ * __pb = pointer to the bitmapC object to be checked.
+ * __n = the bit number which the bitmap should be able to hold. For example,
+ *	 if the bit number is 32, then the BMP will be checked for 33 bit
+ *	 capacity or higher, since 0-31 = 32 bits, and bit 32 would be the 33rd
+ *	 bit.
+ * __ret = pointer to variable to return the error code from the operation in.
+ * __fn = The name of the function this macro was called inside.
+ * __bn = the human recognizible name of the bitmapC instance being checked.
+ *
+ * The latter two are used to print out a more useful error message should an
+ * error occur.
+ **/
+#define CHECK_AND_RESIZE_BMP(__pb,__n,__ret,__fn,__bn)			\
+	do { \
+		*(__ret) = (__pb)->resizeTo((__n) + 1); \
+		if (*(__ret) != ERROR_SUCCESS) \
+		{ \
+			printf(ERROR"%s: resize failed on %s with " \
+				"required capacity = %d.\n", \
+				__fn, __bn, __n); \
+		}; \
+	} while (0)
+
 class messageStreamC;
 
 class bitmapC

@@ -449,7 +449,7 @@ void heapC::releaseChunk(chunkC *chunk) const
 
 void *heapC::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 {
-	//size_t					origSz=sz;
+	//size_t				origSz=sz;
 	error_t					err;
 	ptrlessListC<chunkC>::iteratorC		it;
 	chunkC					*currChunk;

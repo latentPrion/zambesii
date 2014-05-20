@@ -191,9 +191,9 @@ private:
 	virtual void _(void) {}
 
 public:
-	vaddrSpaceStreamC	*vasStream;
 	uarch_t			nPages;
 	status_t		nMapped;
+	vaddrSpaceStreamC	*vasStream;
 };
 
 template <class type>

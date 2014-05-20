@@ -109,7 +109,6 @@ error_t processStreamC::initializeBitmaps(void)
 
 	if (id == __KPROCESSID)
 	{
-rr=4;
 #if __SCALING__ >= SCALING_SMP
 		cpuTrace.initialize(
 			0,

@@ -23,7 +23,10 @@ ASM_GLOBAL_DATA(__kpagingLevel1Tables)
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	/* This entry ID maps VGA textmode buffer (0xB8000-0xB8FFF) */
+	.long	(0xB8000) + PAGING_L1_PRESENT + PAGING_L1_WRITE + PAGING_L1_CACHE_WRITE_THROUGH
+	.long	0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
@@ -1877,10 +1880,10 @@ ASM_GLOBAL_DATA(__kpagingLevel1Tables)
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	.long	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	/* 0xFFFFD000: Kernel Page directory virtual pointer. */
-	.long	(__kpagingLevel0Tables) + PAGING_L1_PRESENT + PAGING_L1_WRITE
+	.long	(__kpagingLevel0Tables) + PAGING_L1_PRESENT + PAGING_L1_WRITE + PAGING_L1_CACHE_WRITE_THROUGH
 	/* 0xFFFFE000: Modifier loopback entry. */
-	.long	(__kpagingLevel1Tables + (4096 * (3 -1))) + PAGING_L1_PRESENT + PAGING_L1_WRITE
+	.long	(__kpagingLevel1Tables + (4096 * (3 -1))) + PAGING_L1_PRESENT + PAGING_L1_WRITE + PAGING_L1_CACHE_WRITE_THROUGH
 	/* 0xFFFFF000: Level 1 Accessor. */
-	.long	0 + PAGING_L1_PRESENT + PAGING_L1_WRITE
+	.long	0 + PAGING_L1_PRESENT + PAGING_L1_WRITE + PAGING_L1_CACHE_WRITE_THROUGH
 ASM_END_DATA(__kpagingLevel1Tables)
 

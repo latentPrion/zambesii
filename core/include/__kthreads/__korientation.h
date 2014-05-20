@@ -5,7 +5,6 @@
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/panic.h>
-	#include <kernel/common/thread.h>
 
 #define ORIENT_QUOTE(x)			#x
 
@@ -36,6 +35,8 @@
 
 extern "C" void __korientationInit(ubit32 mbMagic, multibootDataS *mbData);
 extern "C" void __korientationMain(void);
+
+class threadC;
 
 extern threadC		__korientationThread;
 extern ubit8		__korientationStack[];

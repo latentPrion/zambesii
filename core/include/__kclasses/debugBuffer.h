@@ -3,6 +3,7 @@
 
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/string.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
@@ -30,7 +31,7 @@
  **/
 
 #define DEBUGBUFFER_PAGE_NCHARS				\
-	(PAGING_BASE_SIZE - sizeof(void *)) / sizeof(utf8Char)
+	((PAGING_BASE_SIZE - sizeof(void *)) / sizeof(utf8Char))
 
 #define DEBUGBUFFER_INIT_NPAGES			(8)
 
@@ -46,7 +47,7 @@ public:
 
 public:
 	// String of raw, expanded unicode characters.
-	void syphon(utf8Char *str, uarch_t buffLen);
+	void write(utf8Char *str, uarch_t buffLen);
 	// Calling 'clear' will reset the buffer to the 1st page, index 0.
 	void clear(void);
 	// Calling 'flush' will deallocate all pages in the buffer.
@@ -56,18 +57,29 @@ public:
 	utf8Char *extract(void **handle, uarch_t *len);
 	void unlock(void);
 
+	// Used to query/set the amount of memory in use by the buffer.
+	uarch_t getBufferNPages(void);
+	error_t setBufferNPages(uarch_t nPages);
+
 private:
 	buffPageS *scrollBuff(uarch_t *index, uarch_t buffLen);
 
 	struct buffPageS
 	{
+		buffPageS(void)
+		:
+		next(NULL)
+		{
+			memset(data, 0, sizeof(data));
+		}
+
 		buffPageS	*next;
 		// This member should always be 32-bit aligned.
 		utf8Char	data[DEBUGBUFFER_PAGE_NCHARS];
 	};
 	struct buffPtrStateS
 	{
-		buffPageS	*head, *tail, *cur;
+		buffPageS	*head, *cur;
 		uarch_t		index, buffNPages;
 	};
 	sharedResourceGroupC<waitLockC, buffPtrStateS>	buff;

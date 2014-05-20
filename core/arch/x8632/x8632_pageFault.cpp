@@ -178,7 +178,7 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 	case WPRANGER_STATUS_BACKED:
 		// Either COW, or simple access perms violation.
 		panicWorthy = 1;
-		// traceStack = 1; Temporarily disabled.
+		//traceStack = 1;
 		printf(FATAL"Kernel faulted on a backed page. Probably access "
 			"perms violation, or unintentional COW\n"
 			"Vaddr: 0x%p. EIP 0x%p.\n",
@@ -213,17 +213,12 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 
 		debug::getCurrentStackInfo(&currStackDesc);
 		if (currThread != NULL)
-		{
-			printf(NOTICE"This is a normal thread.\n");
-			debug::printStackTrace(
-				(void *)regs->ebp, &currStackDesc);
-		}
+			{ printf(NOTICE"This is a normal thread.\n"); }
 		else
-		{
-			printf(NOTICE"This is a per-cpu thread.\n");
-			debug::printStackTrace(
-				(void *)regs->ebp, &currStackDesc);
-		};
+			{ printf(NOTICE"This is a per-cpu thread.\n"); };
+
+		debug::printStackTrace(
+			(void *)regs->ebp, &currStackDesc);
 	};
 
 	if (printArgs)
