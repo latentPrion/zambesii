@@ -8,7 +8,7 @@
 #include <kernel/common/timerTrib/timerStream.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
- 
+
 
 error_t timerStreamC::initialize(void)
 {
@@ -23,13 +23,10 @@ error_t timerStreamC::createOneshotEvent(
 {
 	timerMsgS	*request, *tmp;
 	error_t		ret;
-	cpuStreamC	*currCpu;
 
 	if (type > TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
 	};
-
-	currCpu = cpuTrib.getCurrentCpuStream();
 
 	request = new timerMsgS(
 		targetPid,

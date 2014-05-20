@@ -46,6 +46,8 @@ public:
 
 	error_t initialize(void) { return ERROR_SUCCESS; }
 
+	virtual ~taskC(void) {}
+
 public:
 	// virtual processId_t getFullId(void)=0;
 	virtual task::typeE getType(void)=0;

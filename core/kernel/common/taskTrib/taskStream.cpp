@@ -246,6 +246,7 @@ taskC* taskStreamC::pullRealTimeQ(void)
 	taskC		*ret;
 	status_t	status;
 
+	(void)status;
 	do
 	{
 		ret = static_cast<taskC*>( realTimeQ.pop() );
@@ -270,6 +271,7 @@ taskC* taskStreamC::pullRoundRobinQ(void)
 	taskC		*ret;
 	status_t	status;
 
+	(void)status;
 	do
 	{
 		ret = static_cast<taskC*>( roundRobinQ.pop() );

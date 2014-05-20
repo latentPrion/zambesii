@@ -224,7 +224,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 	 * mapped to the IO-APIC IRQ pins (0-15).
 	 **/
 	handle2 = NULL;
-	irqOverride = acpiRMadt::getNextIrqSourceOverrideEntry(madt, &handle2);	
+	irqOverride = acpiRMadt::getNextIrqSourceOverrideEntry(madt, &handle2);
 	for (;
 		irqOverride != NULL;
 		irqOverride = acpiRMadt::getNextIrqSourceOverrideEntry(
@@ -336,7 +336,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 			"%d to __kpin %d (girq: %d).\n",
 			irqOverride->irqNo,
 			isaBusPinMappings[irqOverride->irqNo].__kpin,
-			irqOverride->globalIrq);		
+			irqOverride->globalIrq);
 	};
 
 	acpiRsdt::destroySdt((acpi_sdtS *)madt);
@@ -347,17 +347,13 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 
 static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 {
-	x86_mpCfgS		*cfg;
 	x86_mpCfgIrqSourceS	*irqSourceEntry;
 	uarch_t			pos;
 	void			*handle;
 	x86IoApic::ioApicC	*ioApic;
 	sbit8			isaBusId;
 	// sbit8		eisaBusId;
-	error_t			ret;
 
-	ret = ERROR_SUCCESS;
-	cfg = x86Mp::getMpCfg();
 	isaBusId = x86Mp::getBusIdFor(x86_MPCFG_BUS_ISA);
 	if (isaBusId < 0)
 	{
@@ -493,7 +489,7 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 			isaBusPinMappings[irqSourceEntry->sourceBusIrq].__kpin,
 			irqSourceEntry->destIoApicId,
 			irqSourceEntry->destIoApicPin);
-	};		 
+	};
 
 	return ERROR_SUCCESS;
 }
@@ -521,7 +517,7 @@ status_t ibmPc_isaBpm_smpMode_loadBusPinMappings(void)
 #if !defined(__32_BIT__) || defined(CONFIG_ARCH_x86_32_PAE)
 	if (rsdp::testForXsdt())
 	{
-		ret = rsdp::mapXsdt();		
+		ret = rsdp::mapXsdt();
 		if (ret != ERROR_SUCCESS)
 		{
 			printf(NOTICE IBMPCBPM"ISA: Failed to map XSDT.\n"
@@ -572,7 +568,7 @@ useRsdt:
 		}
 		else
 		{
-			loadedSmpIsaBusPinMappingsAlready = 1;				
+			loadedSmpIsaBusPinMappingsAlready = 1;
 			return ret;
 		};
 	};
@@ -609,7 +605,7 @@ tryMpTables:
 
 	loadedSmpIsaBusPinMappingsAlready = 1;
 	return ERROR_SUCCESS;
-}	
+}
 
 status_t ibmPcBpm::isa::loadBusPinMappings(void)
 {

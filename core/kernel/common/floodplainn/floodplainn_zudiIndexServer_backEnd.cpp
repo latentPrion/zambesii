@@ -218,7 +218,6 @@ void fplainnIndexServer_detectDriverReq(
 	zuiServer::indexMsgS *requestData
 	)
 {
-	threadC					*self;
 	error_t					err;
 	floodplainnC::zudiIndexMsgS		*response;
 	fplainn::deviceC			*dev;
@@ -235,9 +234,6 @@ void fplainnIndexServer_detectDriverReq(
 
 	/** FIXME: Memory leaks all over this function.
 	 **/
-	self = static_cast<threadC *>(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
-
 	response = new floodplainnC::zudiIndexMsgS(
 		request->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_FLOODPLAINN, requestData->command,

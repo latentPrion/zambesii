@@ -542,7 +542,6 @@ void floodplainnC::udi_usage_res(
 	utf8Char *devicePath, processId_t targetTid, void *privateData
 	)
 {
-	fplainn::deviceC		*dev;
 	floodplainnC::zudiMgmtCallMsgS	*response;
 
 	response = new zudiMgmtCallMsgS(

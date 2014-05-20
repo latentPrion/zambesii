@@ -314,6 +314,7 @@ error_t fplainn::deviceInstanceC::addChannel(channelS *newChan)
 	old = channels;
 	channels = tmp;
 	nChannels++;
+	delete[] old;
 	return ERROR_SUCCESS;
 }
 
@@ -347,6 +348,7 @@ error_t fplainn::deviceC::addParentTag(fvfs::tagC *tag, ubit16 *newId)
 	old = parentTags;
 	parentTags = tmp;
 	nParentTags++;
+	delete[] old;
 	return ERROR_SUCCESS;
 }
 

@@ -113,7 +113,7 @@ public:
 		const utf8Char *commandLine, const utf8Char *environment,
 		bitmapC *cpuAffinity);
 
-	~processStreamC(void);
+	virtual ~processStreamC(void);
 
 public:
 	// Must remain a POD data type.

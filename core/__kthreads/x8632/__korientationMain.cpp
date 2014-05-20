@@ -345,7 +345,7 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 			spawnDistributary(
 				CC"@d/storage/cisternn", NULL,
 				NUMABANKID_INVALID, 0, 0,
-				(void *)i,
+				(void *)(uintptr_t)i,
 				&dtribs[i]),
 			ret);
 

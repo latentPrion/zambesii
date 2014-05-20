@@ -74,11 +74,12 @@ inline void cpuControl::safeDisableInterrupts(uarch_t *f)
 		popl	%%ebx \n\t \
 		popl	%%eax \n\t"
 		:
-		: "r" (f));
+		: "r" (f)
+		: "memory");
 
 	disableInterrupts();
 }
-		
+
 inline sarch_t cpuControl::interruptsEnabled(void)
 {
 	uarch_t		flags;

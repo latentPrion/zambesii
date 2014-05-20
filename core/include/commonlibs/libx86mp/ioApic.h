@@ -99,7 +99,7 @@ namespace x86IoApic
 		virtual error_t shutdown(void) { return ERROR_SUCCESS; };
 		virtual error_t suspend(void) { return ERROR_SUCCESS; };
 		virtual error_t restore(void) { return ERROR_SUCCESS; };
-		~ioApicC(void);
+		virtual ~ioApicC(void);
 
 	public:
 		ubit8 getNIrqs(void) { return nPins; }
@@ -126,7 +126,7 @@ namespace x86IoApic
 		{
 			// We just map the vector value to a __kpin value.
 			*__kpin = irqPinList[vector - vectorBase].__kid;
-			*triggerMode = 
+			*triggerMode =
 				irqPinList[vector - vectorBase].triggerMode;
 
 			return ERROR_SUCCESS;
@@ -369,7 +369,7 @@ void x86IoApic::unmaskIrq(ubit16 __kpin)
 	printf(ERROR x86IOAPIC"LibIoApic relay: unmaskIrq: __kpin %d "
 		"doesn't map to any known IO-APIC.\n",
 		__kpin);
-}	
+}
 
 #endif
 

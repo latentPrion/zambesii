@@ -221,6 +221,7 @@ void __klzbzcore::driver::main_handleMgmtCall(
 {
 	error_t		err;
 
+	(void)err;
 	switch (msg->mgmtOp)
 	{
 	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_USAGE:

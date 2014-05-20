@@ -115,10 +115,7 @@ namespace dvfs
 
 		error_t initialize(void)
 		{
-			error_t		ret;
-
-			ret = vfs::inodeC::initialize();
-			if (ret != ERROR_SUCCESS) { return ret; };
+			return vfs::inodeC::initialize();
 		}
 
 		~distributaryInodeC(void) {}

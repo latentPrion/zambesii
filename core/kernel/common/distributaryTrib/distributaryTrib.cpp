@@ -37,7 +37,6 @@ error_t distributaryTribC::bootBuildTree(void)
 		currDesc != NULL;
 		i++, currDesc = distributaryDescriptors[i])
 	{
-		sarch_t				inodeWasUsed=0;
 		dvfs::distributaryInodeC	*dInodeTmp;
 
 		printf(NOTICE DTRIBTRIB"Desc: name \"%s\", vendor \"%s\", "
@@ -118,8 +117,15 @@ error_t distributaryTribC::bootBuildTree(void)
 				currDesc->name, vfs::FILE,
 				cTagTmp, dInodeTmp, &ret);
 
-			if (dTagTmp != NULL) {
-				inodeWasUsed = 1;
+			if (dTagTmp == NULL)
+			{
+				printf(ERROR DTRIBTRIB"bootBuildTree: "
+					"dtrib %s: failed to add dtrib to "
+					"category %s.\n",
+					currDesc->name,
+					cTagTmp->getName());
+
+				continue;
 			};
 
 			// If the distributary is also default, link it as such.

@@ -17,6 +17,8 @@ public:
 	__kpinBase(0)
 	{}
 
+	virtual ~zkcmPicDeviceC(void) {}
+
 public:
 	virtual error_t initialize(void)=0;
 	virtual error_t shutdown(void)=0;
@@ -29,7 +31,7 @@ public:
 	}
 
 	virtual error_t identifyActiveIrq(
-		cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode);
+		cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode)=0;
 
 	virtual status_t getIrqStatus(
 		uarch_t __kpin, cpu_t *cpu, uarch_t *vector,

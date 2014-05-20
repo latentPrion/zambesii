@@ -286,7 +286,7 @@ namespace fplainn
 
 			struct endpointS
 			{
-				friend class fplainn::deviceInstanceC::channelS;
+				friend struct fplainn::deviceInstanceC::channelS;
 				// Private, void constructor that does nothing.
 				endpointS(void) {}
 
