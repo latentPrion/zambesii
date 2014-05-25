@@ -231,4 +231,3 @@ status_t x8632_page_fault(registerContextC *regs, ubit8)
 	if (panicWorthy) { panic(ERROR_FATAL); };
 	return ERROR_SUCCESS;
 }
-

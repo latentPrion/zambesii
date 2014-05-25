@@ -31,4 +31,3 @@ child_bind_ops		1 0 1
 message 100	Zambesii kernel RAM-disk device
 
 device 100 1 identifier string __kramdisk
-

@@ -46,6 +46,8 @@ generate_udi_index:
 	zudiindex-addall -metas chipset/$(ZCHIPSET) .
 	@echo "Adding common metalanguages to index."
 	zudiindex-addall -metas commonlibs/metalanguages .
+	@echo "Adding common drivers to index."
+	zudiindex-addall -drivers commonlibs/drivers .
 
 archCore.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
