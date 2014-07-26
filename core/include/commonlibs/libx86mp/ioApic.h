@@ -69,22 +69,22 @@
 
 namespace x86IoApic
 {
-	class ioApicC
+	class IoApic
 	:
-	public zkcmPicDeviceC
+	public ZkcmPicDevice
 	{
 	/**	EXPLANATION:
-	 * Class ioApicC is a device driver which can be instantiated, and
+	 * Class IoApic is a device driver which can be instantiated, and
 	 * it provides the ZKCM PIC driver interface to the kernel.
 	 **/
 	friend error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void);
 	friend error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void);
 	public:
-		ioApicC(ubit8 id, paddr_t paddr, sarch_t acpiGirqBase)
+		IoApic(ubit8 id, paddr_t paddr, sarch_t acpiGirqBase)
 		:
 		// Set nPins to 0 until we know how many there are.
-		zkcmPicDeviceC(0, &baseDeviceInfo),
-		// Set "childId" in zkcmDeviceC to the IO-APIC ID.
+		ZkcmPicDevice(0, &baseDeviceInfo),
+		// Set "childId" in ZkcmDevice to the IO-APIC ID.
 		baseDeviceInfo(
 			id, CC"IO-APIC", CC"Intel MP Compliant IO-APIC chip",
 			CC"Unknown vendor", CC"N/A"),
@@ -99,7 +99,7 @@ namespace x86IoApic
 		virtual error_t shutdown(void) { return ERROR_SUCCESS; };
 		virtual error_t suspend(void) { return ERROR_SUCCESS; };
 		virtual error_t restore(void) { return ERROR_SUCCESS; };
-		virtual ~ioApicC(void);
+		virtual ~IoApic(void);
 
 	public:
 		ubit8 getNIrqs(void) { return nPins; }
@@ -152,15 +152,15 @@ namespace x86IoApic
 
 		virtual void maskIrqsByPriority(
 			ubit16, cpu_t, uarch_t *)
-		{UNIMPLEMENTED("ioApic::ioApicC::maskIrqsByPriority");}
+		{UNIMPLEMENTED("ioApic::IoApic::maskIrqsByPriority");}
 
 		virtual void unmaskIrqsByPriority(
 			ubit16, cpu_t, uarch_t)
-		{UNIMPLEMENTED("ioApic::ioApicC::unmaskIrqsByPriority");}
+		{UNIMPLEMENTED("ioApic::IoApic::unmaskIrqsByPriority");}
 
 		// This function should never be called.
 		virtual void sendEoi(ubit16)
-		{UNIMPLEMENTED("ioApic::ioApicC::sendEoi");}
+		{UNIMPLEMENTED("ioApic::IoApic::sendEoi");}
 
 
 	private:
@@ -175,7 +175,7 @@ namespace x86IoApic
 		void unmapIoApic(ioApicRegspaceS *vaddr);
 
 	private:
-		zkcmDeviceC		baseDeviceInfo;
+		ZkcmDevice		baseDeviceInfo;
 		struct ioApicRegspaceS
 		{
 			// All writes to this reg must be 32-bit.
@@ -191,18 +191,18 @@ namespace x86IoApic
 		 * value to indicate that it is not valid.
 		 **/
 		sarch_t			acpiGirqBase;
-		sharedResourceGroupC<waitLockC, ioApicRegspaceS *>	vaddr;
+		SharedResourceGroup<WaitLock, ioApicRegspaceS *>	vaddr;
 		ubit8			vectorBase;
 	};
 
-	struct cacheS
+	struct sCache
 	{
 		ubit32			magic;
 		sarch_t			mapped;
 		ubit8			nIoApics;
 
 		// List of IO APIC objects.
-		hardwareIdListC		ioApics;
+		HardwareIdList		ioApics;
 
 		/* The counter used to allocate new vector bases. Initial value
 		 * hardcoded and set in flushCache().
@@ -218,8 +218,8 @@ namespace x86IoApic
 	error_t detectIoApics(void);
 	ubit16 getNIoApics(void);
 
-	ioApicC *getIoApic(ubit8 id);
-	ioApicC *getIoApicFor(ubit16 __kpin);
+	IoApic *getIoApic(ubit8 id);
+	IoApic *getIoApicFor(ubit16 __kpin);
 	// Looks up an ACPI Girq number and returns its registered __kpin ID.
 	error_t get__kpinFor(uarch_t girqId, ubit16 *__kpin);
 
@@ -239,45 +239,45 @@ namespace x86IoApic
 	// void maskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t *mask0);
 	// void unmaskIrqsByPriority(ubit16 __kpin, cpu_t cpuId, uarch_t mask0);
 
-	error_t allocateVectorBaseFor(ioApicC *ioApic, ubit8 *ret);
-	ioApicC *getIoApicByVector(ubit8 vector);
+	error_t allocateVectorBaseFor(IoApic *ioApic, ubit8 *ret);
+	IoApic *getIoApicByVector(ubit8 vector);
 }
 
 
 /**	Inline methods
  *****************************************************************************/
 
-void x86IoApic::ioApicC::writeIoRegSel(ubit8 val)
+void x86IoApic::IoApic::writeIoRegSel(ubit8 val)
 {
 	assert_fatal(!((val > 0x2 && val < 0x10) || val > 0x3f));
 	vaddr.rsrc->ioRegSel[0] = val;
 	asm volatile ("":::"memory");
 }
 
-ubit32 x86IoApic::ioApicC::readIoWin(void)
+ubit32 x86IoApic::IoApic::readIoWin(void)
 {
 	return vaddr.rsrc->ioWin[0];
 }
 
-void x86IoApic::ioApicC::readIoWin(ubit32 *high, ubit32 *low)
+void x86IoApic::IoApic::readIoWin(ubit32 *high, ubit32 *low)
 {
 	*high = vaddr.rsrc->ioWin[1];
 	*low = vaddr.rsrc->ioWin[0];
 }
 
-void x86IoApic::ioApicC::writeIoWin(ubit32 val)
+void x86IoApic::IoApic::writeIoWin(ubit32 val)
 {
 	vaddr.rsrc->ioWin[0] = val;
 	asm volatile("":::"memory");
 }
 
-void x86IoApic::ioApicC::writeIoWin(ubit32 high, ubit32 low)
+void x86IoApic::IoApic::writeIoWin(ubit32 high, ubit32 low)
 {
 	vaddr.rsrc->ioWin[1] = high;
 	vaddr.rsrc->ioWin[0] = low;
 }
 
-error_t x86IoApic::ioApicC::lookupPinBy__kid(ubit16 __kid, ubit8 *pin)
+error_t x86IoApic::IoApic::lookupPinBy__kid(ubit16 __kid, ubit8 *pin)
 {
 	*pin = __kid - __kpinBase;
 	if (*pin >= nPins) { return ERROR_INVALID_ARG_VAL; };
@@ -286,7 +286,7 @@ error_t x86IoApic::ioApicC::lookupPinBy__kid(ubit16 __kid, ubit8 *pin)
 
 sarch_t x86IoApic::irqIsEnabled(ubit16 __kpin)
 {
-	ioApicC		*ioApic;
+	IoApic		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
 	if (ioApic != NULL) {
@@ -305,7 +305,7 @@ status_t x86IoApic::getIrqStatus(
 	ubit8 *triggerMode, ubit8 *polarity
 	)
 {
-	ioApicC		*ioApic;
+	IoApic		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
 	if (ioApic != NULL)
@@ -325,7 +325,7 @@ status_t x86IoApic::setIrqStatus(
 	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
 	)
 {
-	ioApicC		*ioApic;
+	IoApic		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
 	if (ioApic != NULL) {
@@ -341,7 +341,7 @@ status_t x86IoApic::setIrqStatus(
 
 void x86IoApic::maskIrq(ubit16 __kpin)
 {
-	ioApicC		*ioApic;
+	IoApic		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
 	if (ioApic != NULL)
@@ -357,7 +357,7 @@ void x86IoApic::maskIrq(ubit16 __kpin)
 
 void x86IoApic::unmaskIrq(ubit16 __kpin)
 {
-	ioApicC		*ioApic;
+	IoApic		*ioApic;
 
 	ioApic = getIoApicFor(__kpin);
 	if (ioApic != NULL)

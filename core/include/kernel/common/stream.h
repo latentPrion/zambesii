@@ -28,10 +28,10 @@
  * related stream cuts it off from all networking activity, for example.
  **/
 
-class streamC
+class Stream
 {
 public:
-	explicit streamC(processId_t id)
+	explicit Stream(processId_t id)
 	:
 	id(id), streamFlags(0)
 	{
@@ -48,7 +48,7 @@ public:
 	ubit32		streamFlags;
 
 protected:
-	sharedResourceGroupC<waitLockC, ubit8>	binding;
+	SharedResourceGroup<WaitLock, ubit8>	binding;
 };
 
 #endif

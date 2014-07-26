@@ -9,21 +9,21 @@
 #include "vgaTerminal.h"
 
 
-zkcmCoreC::zkcmCoreC(utf8Char *chipsetName, utf8Char *chipsetVendor)
+ZkcmCore::ZkcmCore(utf8Char *chipsetName, utf8Char *chipsetVendor)
 {
-	strcpy8(zkcmCoreC::chipsetName, chipsetName);
-	strcpy8(zkcmCoreC::chipsetVendor, chipsetVendor);
+	strcpy8(ZkcmCore::chipsetName, chipsetName);
+	strcpy8(ZkcmCore::chipsetVendor, chipsetVendor);
 
 	debug[0] = &ibmPcVgaTerminal;
 	debug[1] = debug[2] = debug[3] = NULL;
 }
 
-error_t zkcmCoreC::initialize(void) { return ERROR_SUCCESS; }
-error_t zkcmCoreC::shutdown(void) { return ERROR_SUCCESS; }
-error_t zkcmCoreC::suspend(void) { return ERROR_SUCCESS; }
-error_t zkcmCoreC::restore(void) { return ERROR_SUCCESS; }
+error_t ZkcmCore::initialize(void) { return ERROR_SUCCESS; }
+error_t ZkcmCore::shutdown(void) { return ERROR_SUCCESS; }
+error_t ZkcmCore::suspend(void) { return ERROR_SUCCESS; }
+error_t ZkcmCore::restore(void) { return ERROR_SUCCESS; }
 
-void zkcmCoreC::newCpuIdNotification(cpu_t newCpuId)
+void ZkcmCore::newCpuIdNotification(cpu_t newCpuId)
 {
 	void		**newArray, **oldArray;
 
@@ -62,5 +62,5 @@ void zkcmCoreC::newCpuIdNotification(cpu_t newCpuId)
 	delete oldArray;
 }
 
-zkcmCoreC		zkcmCore(CC"IBM PC compatible", CC"Unknown");
+ZkcmCore		zkcmCore(CC"IBM PC compatible", CC"Unknown");
 

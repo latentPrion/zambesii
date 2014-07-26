@@ -13,11 +13,11 @@
 #define SRT_PTRDBLLIST_ADD_DESCENDING		0x1
 
 template <class T, class criterionType>
-class sortedPointerDoubleListC
+class SortedPtrDblList
 {
 public:
-	sortedPointerDoubleListC(void) {}
-	~sortedPointerDoubleListC(void) {};
+	SortedPtrDblList(void) {}
+	~SortedPtrDblList(void) {};
 
 	error_t initialize(void) { return ERROR_SUCCESS; };
 
@@ -44,9 +44,9 @@ protected:
 		listNodeS	*prev, *next;
 	};
 
-	struct listStateS
+	struct sListState
 	{
-		listStateS(void)
+		sListState(void)
 		:
 		head(NULL), tail(NULL), nItems(0)
 		{}
@@ -55,7 +55,7 @@ protected:
 		uarch_t		nItems;
 	};
 
-	sharedResourceGroupC<waitLockC, listStateS>	list;
+	SharedResourceGroup<WaitLock, sListState>	list;
 };
 
 
@@ -63,7 +63,7 @@ protected:
  ******************************************************************************/
 
 template <class T, class criterionType>
-uarch_t sortedPointerDoubleListC<T, criterionType>::getNItems(void)
+uarch_t SortedPtrDblList<T, criterionType>::getNItems(void)
 {
 	uarch_t		ret;
 
@@ -75,7 +75,7 @@ uarch_t sortedPointerDoubleListC<T, criterionType>::getNItems(void)
 }
 
 template <class T, class criterionType>
-void sortedPointerDoubleListC<T, criterionType>::dump(void)
+void SortedPtrDblList<T, criterionType>::dump(void)
 {
 	listNodeS	*curr, *head, *tail;
 	sbit8		flipFlop=0;
@@ -109,7 +109,7 @@ void sortedPointerDoubleListC<T, criterionType>::dump(void)
 }
 
 template <class T, class criterionType>
-error_t sortedPointerDoubleListC<T, criterionType>::addItem(
+error_t SortedPtrDblList<T, criterionType>::addItem(
 	T *item, criterionType criterion, ubit8 mode
 	)
 {
@@ -223,7 +223,7 @@ error_t sortedPointerDoubleListC<T, criterionType>::addItem(
 }
 
 template <class T, class criterionType>
-void sortedPointerDoubleListC<T, criterionType>::removeItem(T *item)
+void SortedPtrDblList<T, criterionType>::removeItem(T *item)
 {
 	listNodeS	*curr;
 
@@ -263,7 +263,7 @@ void sortedPointerDoubleListC<T, criterionType>::removeItem(T *item)
 }
 
 template <class T, class criterionType>
-T *sortedPointerDoubleListC<T, criterionType>::popFromHead(void)
+T *SortedPtrDblList<T, criterionType>::popFromHead(void)
 {
 	T		*ret=NULL;
 	listNodeS	*tmp;
@@ -297,7 +297,7 @@ T *sortedPointerDoubleListC<T, criterionType>::popFromHead(void)
 }
 
 template <class T, class criterionType>
-T *sortedPointerDoubleListC<T, criterionType>::popFromTail(void)
+T *SortedPtrDblList<T, criterionType>::popFromTail(void)
 {
 	T		*ret=NULL;
 	listNodeS	*tmp;
@@ -331,7 +331,7 @@ T *sortedPointerDoubleListC<T, criterionType>::popFromTail(void)
 }
 
 template <class T, class criterionType>
-T *sortedPointerDoubleListC<T, criterionType>::getHead(void)
+T *SortedPtrDblList<T, criterionType>::getHead(void)
 {
 	T	*ret=NULL;
 
@@ -347,7 +347,7 @@ T *sortedPointerDoubleListC<T, criterionType>::getHead(void)
 }
 
 template <class T, class criterionType>
-T *sortedPointerDoubleListC<T, criterionType>::getTail(void)
+T *SortedPtrDblList<T, criterionType>::getTail(void)
 {
 	T	*ret=NULL;
 

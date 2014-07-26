@@ -23,12 +23,12 @@
  **/
 #define MRLOCK_FLAGS_WRITE_REQUEST	(1<<5)
 
-class multipleReaderLockC
+class MultipleReaderLock
 :
-public lockC
+public Lock
 {
 public:
-	multipleReaderLockC(void)
+	MultipleReaderLock(void)
 	{
 		readerCount.rsrc = 0;
 	};
@@ -44,7 +44,7 @@ public:
 
 private:
 	// An atomic counter for the number of current readers.
-	sharedResourceGroupC<waitLockC, volatile sarch_t>	readerCount;
+	SharedResourceGroup<WaitLock, volatile sarch_t>	readerCount;
 };
 
 #endif

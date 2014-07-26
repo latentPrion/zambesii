@@ -12,15 +12,15 @@ namespace acpiRsdt
 {
 	// Returns the next SRAT. The lib provides for more than one.
 	acpi_rSratS *getNextSrat(
-		acpi_rsdtS *r, void **const context, void **const handle);
+		acpi_sRsdt *r, void **const context, void **const handle);
 
 	// Returns the next MADT. The lib provides for more than one.
 	acpi_rMadtS *getNextMadt(
-		acpi_rsdtS *r, void **const context, void **const handle);
+		acpi_sRsdt *r, void **const context, void **const handle);
 
 	// Returns the next FACP.
 	acpi_rFadtS *getNextFadt(
-		acpi_rsdtS *r, void **const context, void **const handle);
+		acpi_sRsdt *r, void **const context, void **const handle);
 
 	/**	EXPLANATION:
 	 * These two functions are the garbage collection for the lib.

@@ -40,10 +40,10 @@
 #define MLHASH_GET_IDX3()	(key & 0x00000FFF)
 
 template <class T>
-class multiLayerHashC
+class MultiLayerHash
 {
 public:
-	multiLayerHashC(void);
+	MultiLayerHash(void);
 	error_t initialize(void);
 
 public:
@@ -58,7 +58,7 @@ private:
 		mlHashLayerU	*layer[MLHASH_PTRS_PER_LAYER];
 	};
 
-	sharedResourceGroupC<waitLockC, mlHashLayerU *>	top;
+	SharedResourceGroup<WaitLock, mlHashLayerU *>	top;
 
 private:
 	void *getNewLayer(void);
@@ -69,13 +69,13 @@ private:
  *****************************************************************************/
 
 template <class T>
-multiLayerHashC<T>::multiLayerHashC(void)
+MultiLayerHash<T>::MultiLayerHash(void)
 {
 	top.rsrc = 0;
 }
 
 template <class T>
-error_t multiLayerHashC<T>::initialize(void)
+error_t MultiLayerHash<T>::initialize(void)
 {
 	top.rsrc = new (getNewLayer()) mlHashLayerU;
 	if (top.rsrc == NULL) {
@@ -85,7 +85,7 @@ error_t multiLayerHashC<T>::initialize(void)
 }
 
 template <class T>
-void *multiLayerHashC<T>::getNewLayer(void)
+void *MultiLayerHash<T>::getNewLayer(void)
 {
 	mlHashLayerU		*ret;
 
@@ -99,7 +99,7 @@ void *multiLayerHashC<T>::getNewLayer(void)
 }
 
 template <class T>
-error_t multiLayerHashC<T>::insert(ubit32 key, T *item)
+error_t MultiLayerHash<T>::insert(ubit32 key, T *item)
 {
 	ubit16		idx[MLHASH_NLAYERS];
 	mlHashLayerU	*curLayer;
@@ -141,7 +141,7 @@ error_t multiLayerHashC<T>::insert(ubit32 key, T *item)
 }
 
 template <class T>
-error_t multiLayerHashC<T>::get(ubit32 key, T **ret)
+error_t MultiLayerHash<T>::get(ubit32 key, T **ret)
 {
 	ubit16		idx[MLHASH_NLAYERS];
 	mlHashLayerU	*curLayer;
@@ -178,7 +178,7 @@ error_t multiLayerHashC<T>::get(ubit32 key, T **ret)
 }
 
 template <class T>
-void multiLayerHashC<T>::erase(ubit32 key)
+void MultiLayerHash<T>::erase(ubit32 key)
 {
 	ubit16		idx[MLHASH_NLAYERS];
 	mlHashLayerU	*curLayer;

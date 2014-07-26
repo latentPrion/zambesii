@@ -32,10 +32,10 @@ uarch_t getEip(void)
 	return eip;
 }
 
-extern "C" void getRegs(registerContextC *t);
-//registerContextC		y(0);
+extern "C" void getRegs(RegisterContext *t);
+//RegisterContext		y(0);
 
-void __kcpuPowerOnMain(cpuStreamC *self)
+void __kcpuPowerOnMain(cpuStream *self)
 {
 	error_t		err;
 
@@ -55,7 +55,7 @@ void __kcpuPowerOnMain(cpuStreamC *self)
 	 * crash.
 	 **/
 	self->baseInit();
-	self->powerManager.setPowerStatus(cpuStreamC::powerManagerC::C0);
+	self->powerManager.setPowerStatus(cpuStream::PowerManager::C0);
 
 	// After "bind", the CPU will be able to allocate, etc. normally.
 	err = self->bind();
@@ -73,7 +73,7 @@ void __kcpuPowerOnMain(cpuStreamC *self)
 		y.cs, y.ds, y.es, y.fs, y.gs, y.ss, y.eip, y.eflags);*/
 
 	/* Halt the CPU here. This will be replaced with a call to
-	 * taskStreamC::pull() eventually.
+	 * TaskStream::pull() eventually.
 	 **/
 	self->taskStream.cooperativeBind();
 	self->taskStream.pull();

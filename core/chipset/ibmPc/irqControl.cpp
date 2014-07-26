@@ -18,7 +18,7 @@
 
 #define IBMPCIRQCTL		"IBMPC Irq-Ctl: "
 
-error_t zkcmIrqControlModC::initialize(void)
+error_t ZkcmIrqControlMod::initialize(void)
 {
 	/**	EXPLANATION:
 	 * At this point, we would like to initialize the i8259 PICs and mask
@@ -31,26 +31,26 @@ error_t zkcmIrqControlModC::initialize(void)
 	return i8259aPic.initialize();
 }
 
-error_t zkcmIrqControlModC::shutdown(void)
+error_t ZkcmIrqControlMod::shutdown(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t zkcmIrqControlModC::suspend(void)
+error_t ZkcmIrqControlMod::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t zkcmIrqControlModC::restore(void)
+error_t ZkcmIrqControlMod::restore(void)
 {
 	return ERROR_SUCCESS;
 }
 
-status_t zkcmIrqControlModC::identifyActiveIrq(
+status_t ZkcmIrqControlMod::identifyActiveIrq(
 	cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode
 	)
 {
-	x86IoApic::ioApicC	*ioApic;
+	x86IoApic::IoApic	*ioApic;
 
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
 	{
@@ -82,16 +82,16 @@ status_t zkcmIrqControlModC::identifyActiveIrq(
 	};
 }
 
-error_t zkcmIrqControlModC::registerIrqController(void)
+error_t ZkcmIrqControlMod::registerIrqController(void)
 {
 	return ERROR_SUCCESS;
 }
 
-void zkcmIrqControlModC::destroyIrqController(void)
+void ZkcmIrqControlMod::destroyIrqController(void)
 {
 }
 
-void zkcmIrqControlModC::chipsetEventNotification(ubit8 event, uarch_t flags)
+void ZkcmIrqControlMod::chipsetEventNotification(ubit8 event, uarch_t flags)
 {
 	switch (event)
 	{
@@ -124,7 +124,7 @@ void zkcmIrqControlModC::chipsetEventNotification(ubit8 event, uarch_t flags)
 	};
 }
 
-status_t zkcmIrqControlModC::getIrqStatus(
+status_t ZkcmIrqControlMod::getIrqStatus(
 	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
 	ubit8 *triggerMode, ubit8 *polarity
 	)
@@ -141,7 +141,7 @@ status_t zkcmIrqControlModC::getIrqStatus(
 	};
 }
 
-status_t zkcmIrqControlModC::setIrqStatus(
+status_t ZkcmIrqControlMod::setIrqStatus(
 	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
 	)
 {
@@ -155,7 +155,7 @@ status_t zkcmIrqControlModC::setIrqStatus(
 	};
 }
 
-void zkcmIrqControlModC::maskIrq(ubit16 __kpin)
+void ZkcmIrqControlMod::maskIrq(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		x86IoApic::maskIrq(__kpin);
@@ -165,7 +165,7 @@ void zkcmIrqControlModC::maskIrq(ubit16 __kpin)
 	};
 }
 
-void zkcmIrqControlModC::unmaskIrq(ubit16 __kpin)
+void ZkcmIrqControlMod::unmaskIrq(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		x86IoApic::unmaskIrq(__kpin);
@@ -175,7 +175,7 @@ void zkcmIrqControlModC::unmaskIrq(ubit16 __kpin)
 	};
 }
 
-void zkcmIrqControlModC::maskAll(void)
+void ZkcmIrqControlMod::maskAll(void)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		x86IoApic::maskAll();
@@ -185,7 +185,7 @@ void zkcmIrqControlModC::maskAll(void)
 	};
 }
 
-void zkcmIrqControlModC::unmaskAll(void)
+void ZkcmIrqControlMod::unmaskAll(void)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		x86IoApic::unmaskAll();
@@ -195,7 +195,7 @@ void zkcmIrqControlModC::unmaskAll(void)
 	};
 }
 
-sarch_t zkcmIrqControlModC::irqIsEnabled(ubit16 __kpin)
+sarch_t ZkcmIrqControlMod::irqIsEnabled(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP) {
 		return x86IoApic::irqIsEnabled(__kpin);
@@ -205,7 +205,7 @@ sarch_t zkcmIrqControlModC::irqIsEnabled(ubit16 __kpin)
 	};
 }
 
-void zkcmIrqControlModC::maskIrqsByPriority(
+void ZkcmIrqControlMod::maskIrqsByPriority(
 	ubit16 __kpin, cpu_t cpuId, uarch_t *mask
 	)
 {
@@ -220,7 +220,7 @@ void zkcmIrqControlModC::maskIrqsByPriority(
 	};
 }
 
-void zkcmIrqControlModC::unmaskIrqsByPriority(
+void ZkcmIrqControlMod::unmaskIrqsByPriority(
 	ubit16 __kpin, cpu_t cpu, uarch_t mask
 	)
 {
@@ -235,7 +235,7 @@ void zkcmIrqControlModC::unmaskIrqsByPriority(
 	};
 }
 
-void zkcmIrqControlModC::sendEoi(ubit16 __kpin)
+void ZkcmIrqControlMod::sendEoi(ubit16 __kpin)
 {
 	if (ibmPcState.smpInfo.chipsetState == SMPSTATE_SMP)
 	{

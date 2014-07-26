@@ -9,7 +9,7 @@ namespace vfsTraverse
 	sarch_t isUnixRoot(utf8Char *path);
 
 	sbit32 getNextSegmentIndex(utf8Char *path);
-	status_t validateSegment(utf8Char *path);
+	status_t valisDateegment(utf8Char *path);
 
 	status_t getRelativePath(
 		void *dir, utf8Char *path, ubit8 *type, void **ret);

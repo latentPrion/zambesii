@@ -22,29 +22,29 @@
 
 #define TIMERTRIB_TIMERQS_NQUEUES		(10)
 
-class timerTribC
+class TimerTrib
 :
-public tributaryC
+public Tributary
 {
-friend class zkcmTimerControlModC;
-friend class timerStreamC;
+friend class ZkcmTimerControlMod;
+friend class TimerStream;
 public:
-	timerTribC(void);
+	TimerTrib(void);
 	error_t initialize(void);
-	~timerTribC(void);
+	~TimerTrib(void);
 
 public:
-	status_t registerWatchdogIsr(zkcmIsrFn *, timeS interval);
-	void updateWatchdogInterval(timeS interval);
+	status_t registerWatchdogIsr(zkcmIsrFn *, sTime interval);
+	void updateWatchdogInterval(sTime interval);
 	void unregisterWatchdogIsr(void);
 
 	/**	Deprecated in lieu of redesign.
 	void updateContinuousClock(void);
-	void updateScheduledClock(uarch_t sourceId); */
+	void upsDatecheduledClock(uarch_t sourceId); */
 
-	void getCurrentTime(timeS *t);
-	void getCurrentDate(dateS *d);
-	void getCurrentDateTime(timestampS *stamp);
+	void getCurrentTime(sTime *t);
+	void getCurrentDate(sDate *d);
+	void getCurrentDateTime(sTimestamp *stamp);
 
 	/**	EXPLANATION:
 	 * Called by timer device drivers from IRQ context to let the kernel
@@ -56,7 +56,7 @@ public:
 	 * "pullTimerEvent()" on its Timer Stream so that it can read timer
 	 * events and respond to them.
 	 **/
-	// void timerDeviceTimeoutEvent(zkcmTimerDeviceC *dev);
+	// void timerDeviceTimeoutEvent(ZkcmTimerDevice *dev);
 
 	/**	Input value is any multiple of 10 up to 1,000,000,000, where
 	 * "1" indicates 1ns and 1,000,000,000 represents 1 second. So, to
@@ -70,9 +70,9 @@ public:
 	 *	ERROR_INVALID_ARG_VAL if an invalid arg is supplied.
 	 **/
 	error_t enableWaitingOnQueue(ubit32 nanos);
-	error_t enableWaitingOnQueue(timerQueueC *queue);
+	error_t enableWaitingOnQueue(TimerQueue *queue);
 	error_t disableWaitingOnQueue(ubit32 nanos);
-	error_t disableWaitingOnQueue(timerQueueC *queue);
+	error_t disableWaitingOnQueue(TimerQueue *queue);
 
 	/**	Pending redesign.
 	mstime_t	getCurrentTickMs(void);
@@ -90,7 +90,7 @@ public:
 
 private:
 	// Called by ZKCM Timer Control when a new timer device is detected.
-	void newTimerDeviceNotification(zkcmTimerDeviceC *dev);
+	void newTimerDeviceNotification(ZkcmTimerDevice *dev);
 
 	/* Called by ZKCM Timer Control to ask the chipset for a mask of latched
 	 * timer queues. This is only called by chipsets which emulate
@@ -115,40 +115,40 @@ private:
 
 	error_t installClockRoutine(
 		ubit32 chosenTimerQueue,
-		// This typedef is declared in the timerQueueC header.
-		zkcmTimerDeviceC::clockRoutineFn *routine);
+		// This typedef is declared in the TimerQueue header.
+		ZkcmTimerDevice::clockRoutineFn *routine);
 
 	// Returns 1 if a routine was installed and actually removed.
 	sarch_t uninstallClockRoutine(void);
 
 	// Called by Timer Streams to add new Timer Request objects to timer Qs.
-	error_t insertTimerQueueRequestObject(timerStreamC::timerMsgS *request);
+	error_t insertTimerQueueRequestObject(TimerStream::timerMsgS *request);
 	// Called by Timer Streams to cancel Timer Request objects from Qs.
-	sarch_t cancelTimerQueueRequestObject(timerStreamC::timerMsgS *request);
+	sarch_t cancelTimerQueueRequestObject(TimerStream::timerMsgS *request);
 
 private:
 	// The watchdog timer for the chipset, if it exists.
 	struct watchdogIsrS
 	{
 		zkcmIsrFn	*isr;
-		timestampS	nextFeedTime;
-		timeS		interval;
+		sTimestamp	nextFeedTime;
+		sTime		interval;
 	};
 
 
 	// Timestamp value for when this kernel instance was booted.
-	timestampS	bootTimestamp;
+	sTimestamp	bootTimestamp;
 
-	timerQueueC	period1s, period100ms, period10ms, period1ms,
+	TimerQueue	period1s, period100ms, period10ms, period1ms,
 			period100us, period10us, period1us,
 			period100ns, period10ns, period1ns;
-	timerQueueC	*timerQueues[TIMERTRIB_TIMERQS_NQUEUES];
+	TimerQueue	*timerQueues[TIMERTRIB_TIMERQS_NQUEUES];
 	ubit32		safePeriodMask;
 	ubit32		latchedPeriodMask;
 
 	uarch_t		flags;
 	sbit32		clockQueueId;
-	sharedResourceGroupC<waitLockC, watchdogIsrS>	watchdog;
+	SharedResourceGroup<WaitLock, watchdogIsrS>	watchdog;
 
 	// All of the event processing thread's state information.
 	struct eventProcessorS
@@ -163,41 +163,41 @@ private:
 		// Entry point for the event processing thread.
 		static void thread(void *);
 		sarch_t getFreeWaitSlot(ubit8 *ret);
-		void releaseWaitSlotFor(timerQueueC *timerQueue);
+		void releaseWaitSlotFor(TimerQueue *timerQueue);
 		void releaseWaitSlot(ubit8 slot)
 		{
 			waitSlots[slot].timerQueue = NULL;
 			waitSlots[slot].eventQueue = NULL;
 		}
 
-		struct messageS
+		struct Message
 		{
 			enum typeE {
 				QUEUE_LATCHED=1, QUEUE_UNLATCHED, EXIT_THREAD };
 
-			messageS(void)
+			Message(void)
 			:
 			type(static_cast<typeE>( 0 ))
 			{}
 
-			messageS(typeE type, timerQueueC *timerQueue)
+			Message(typeE type, TimerQueue *timerQueue)
 			:
 			type(type), timerQueue(timerQueue)
 			{}
 
 			typeE		type;
-			timerQueueC	*timerQueue;
+			TimerQueue	*timerQueue;
 		};
 
-		void processQueueLatchedMessage(messageS *msg);
-		void processQueueUnlatchedMessage(messageS *msg);
-		void processExitMessage(messageS *);
+		void processQueueLatchedMessage(Message *msg);
+		void processQueueUnlatchedMessage(Message *msg);
+		void processExitMessage(Message *);
 
-		// PID and Pointer to event processing thread's taskC struct.
+		// PID and Pointer to event processing thread's Task struct.
 		processId_t		tid;
-		threadC			*task;
+		Thread			*task;
 		// Control queue used to send signals to the processing thread.
-		singleWaiterQueueC	controlQueue;
+		SingleWaiterQueue	controlQueue;
 		/* Array of wait queues for each of the timerQueues which are
 		 * usable on this chipset. When a timer device is bound to a
 		 * queue (newTimerDeviceNotification() -> initializeQueue()),
@@ -205,19 +205,19 @@ private:
 		 * queue, which causes the thread to begin checking that
 		 * timerQueue's wait queue.
 		 **/
-		struct waitSlotS
+		struct sWaitSlot
 		{
-			timerQueueC		*timerQueue;
-			singleWaiterQueueC	*eventQueue;
+			TimerQueue		*timerQueue;
+			SingleWaiterQueue	*eventQueue;
 		} waitSlots[6];
 	} eventProcessor;
 
 private:
-	void initializeQueue(timerQueueC *queue, ubit32 ns);
+	void initializeQueue(TimerQueue *queue, ubit32 ns);
 	void initializeAllQueues(void);
 };
 
-extern timerTribC		timerTrib;
+extern TimerTrib		timerTrib;
 
 #endif
 

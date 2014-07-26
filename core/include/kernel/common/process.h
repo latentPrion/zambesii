@@ -30,7 +30,7 @@
 #define PROCESS_FLAGS___KPROCESS	(1<<0)
 #define PROCESS_FLAGS_SPAWNED_DORMANT	(1<<1)
 
-/**	Flags for processStreamC::spawnThread().
+/**	Flags for ProcessStream::spawnThread().
  **/
 // STINHERIT by default.
 #define SPAWNTHREAD_FLAGS_AFFINITY_STINHERIT	(0)
@@ -57,11 +57,11 @@
 
 namespace fplainn
 {
-	class driverC;
-	class driverInstanceC;
+	class Driver;
+	class DriverInstance;
 }
 
-class processStreamC
+class ProcessStream
 {
 public:
 	enum typeE {
@@ -69,7 +69,7 @@ public:
 
 	enum executableFormatE { RAW=0, ELF, PE, MACHO };
 
-	processStreamC(
+	ProcessStream(
 		processId_t processId, processId_t parentThreadId,
 		ubit8 execDomain, void *privateData)
 	:
@@ -111,9 +111,9 @@ public:
 
 	error_t initialize(
 		const utf8Char *commandLine, const utf8Char *environment,
-		bitmapC *cpuAffinity);
+		Bitmap *cpuAffinity);
 
-	virtual ~processStreamC(void);
+	virtual ~ProcessStream(void);
 
 public:
 	// Must remain a POD data type.
@@ -130,14 +130,14 @@ public:
 		utf8Char		*fullName;
 		utf8Char		*workingDirectory;
 		utf8Char		*arguments;
-		// enum processStreamC::typeE.
+		// enum ProcessStream::typeE.
 		ubit8			type;
 		ubit8			execDomain;
 	};
 
 public:
-	threadC *getTask(processId_t processId);
-	threadC *getThread(processId_t processId) { return getTask(processId); }
+	Thread *getTask(processId_t processId);
+	Thread *getThread(processId_t processId) { return getTask(processId); }
 
 	ubit32 getProcessFullNameMaxLength(void)
 		{ return PROCESS_FULLNAME_MAXLEN; }
@@ -145,9 +145,9 @@ public:
 	ubit32 getProcessArgumentsMaxLength(void)
 		{ return PROCESS_ARGUMENTS_MAXLEN; }
 
-	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)=0;
+	virtual VaddrSpaceStream *getVaddrSpaceStream(void)=0;
 	virtual typeE getType(void)=0;
-	virtual fplainn::driverInstanceC *getDriverInstance(void)
+	virtual fplainn::DriverInstance *getDriverInstance(void)
 		{ return NULL; }
 
 	executableFormatE getExecutableFormat(void) { return executableFormat; }
@@ -161,10 +161,10 @@ public:
 	error_t spawnThread(
 		void (*entryPoint)(void *),
 		void *argument,
-		bitmapC *cpuAffinity,
-		taskC::schedPolicyE schedPolicy, ubit8 prio,
+		Bitmap *cpuAffinity,
+		Task::schedPolicyE schedPolicy, ubit8 prio,
 		uarch_t flags,
-		threadC **ret);
+		Thread **ret);
 
 public:
 	struct environmentVarS
@@ -178,12 +178,12 @@ public:
 	uarch_t			flags;
 	// Only used once, but w/e, only 4-8 bytes.
 	void			*privateData;
-	messageStreamC::headerS	*responseMessage;
+	MessageStream::sHeader	*responseMessage;
 
-	multipleReaderLockC	taskLock;
-	wrapAroundCounterC	nextTaskId;
+	MultipleReaderLock	taskLock;
+	WrapAroundCounter	nextTaskId;
 	uarch_t			nTasks;
-	threadC			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
+	Thread			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
 
 	utf8Char		*fullName, *workingDirectory, *arguments;
 	ubit8			nEnvVars;
@@ -194,25 +194,25 @@ public:
 
 #if __SCALING__ >= SCALING_SMP
 	// Tells us which CPUs this process has run on.
-	bitmapC			cpuTrace;
-	bitmapC			cpuAffinity;
+	Bitmap			cpuTrace;
+	Bitmap			cpuAffinity;
 #endif
 #if __SCALING__ >= SCALING_CC_NUMA
-	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+	SharedResourceGroup<MultipleReaderLock, numaBankId_t>
 		defaultMemoryBank;
 #endif
 
 	// Events which have been queued on this process.
-	bitmapC			pendingEvents;
+	Bitmap			pendingEvents;
 
-	memoryStreamC		memoryStream;
-	timerStreamC		timerStream;
-	floodplainnStreamC	floodplainnStream;
-	zasyncStreamC		zasyncStream;
+	MemoryStream		memoryStream;
+	TimerStream		timerStream;
+	FloodplainnStream	floodplainnStream;
+	ZAsyncStream		zasyncStream;
 
 private:
 	error_t getNewThreadId(processId_t *ret);
-	threadC *allocateNewThread(processId_t newThreadId, void *privateData);
+	Thread *allocateNewThread(processId_t newThreadId, void *privateData);
 	void removeThread(processId_t id);
 
 	error_t allocateInternals(void);
@@ -224,21 +224,21 @@ private:
 	error_t initializeBitmaps(void);
 };
 
-/**	ContainerProcessC and containedProcessC.
+/**	ContainerProcessC and ContainedProcess.
  ******************************************************************************/
 
-class containerProcessC
+class ContainerProcess
 :
-public processStreamC
+public ProcessStream
 {
 public:
-	containerProcessC(
+	ContainerProcess(
 		processId_t processId, processId_t parentProcessId,
 		ubit8 execDomain, numaBankId_t numaAddrSpaceBinding,
 		void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize,
 		void *privateData)
 	:
-	processStreamC(processId, parentProcessId, execDomain, privateData),
+	ProcessStream(processId, parentProcessId, execDomain, privateData),
 	addrSpaceBinding(numaAddrSpaceBinding),
 	vaddrSpaceStream(
 		processId, this,
@@ -247,77 +247,77 @@ public:
 
 	error_t initialize(
 		const utf8Char *commandLine, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
 		error_t		ret;
 
-		ret = processStreamC::initialize(
+		ret = ProcessStream::initialize(
 			commandLine, environment, affinity);
 
 		if (ret != ERROR_SUCCESS) { return ret; };
 		return vaddrSpaceStream.initialize();
 	}
 
-	~containerProcessC(void) {}
+	~ContainerProcess(void) {}
 
 public:
-	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)
+	virtual VaddrSpaceStream *getVaddrSpaceStream(void)
 		{ return &vaddrSpaceStream; }
 
 public:
 	numaBankId_t		addrSpaceBinding;
 
 private:
-	vaddrSpaceStreamC	vaddrSpaceStream;
+	VaddrSpaceStream	vaddrSpaceStream;
 };
 
-class containedProcessC
+class ContainedProcess
 :
-public processStreamC
+public ProcessStream
 {
 public:
-	containedProcessC(
+	ContainedProcess(
 		processId_t processId, processId_t parentProcessId,
 		ubit8 execDomain,
-		containerProcessC *containerProcess,
+		ContainerProcess *containerProcess,
 		void *privateData)
 	:
-	processStreamC(processId, parentProcessId, execDomain, privateData),
+	ProcessStream(processId, parentProcessId, execDomain, privateData),
 	containerProcess(containerProcess)
 	{}
 
 	error_t initialize(
 		const utf8Char *commandLine, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
-		return processStreamC::initialize(
+		return ProcessStream::initialize(
 			commandLine, environment,affinity);
 	}
 
-	~containedProcessC(void) {}
+	~ContainedProcess(void) {}
 
 public:
-	containerProcessC *getContainerProcess(void)
+	ContainerProcess *getContainerProcess(void)
 		{ return containerProcess; }
 
-	virtual vaddrSpaceStreamC *getVaddrSpaceStream(void)
+	virtual VaddrSpaceStream *getVaddrSpaceStream(void)
 		{ return containerProcess->getVaddrSpaceStream(); }
 
 private:
-	containerProcessC	*containerProcess;
+	ContainerProcess	*containerProcess;
 };
 
-/**	kernelProcessC
+/**	KernelProcess
  ******************************************************************************/
 
-class kernelProcessC
+class KernelProcess
 :
-public containerProcessC
+public ContainerProcess
 {
 public:
-	kernelProcessC(void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
+	KernelProcess(void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
 	:
-	containerProcessC(
+	ContainerProcess(
 		__KPROCESSID, __KPROCESSID,
 		PROCESS_EXECDOMAIN_KERNEL,
 		NUMABANKID_INVALID,
@@ -327,32 +327,32 @@ public:
 
 	error_t initialize(
 		const utf8Char *fullName, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
-		return containerProcessC::initialize(
+		return ContainerProcess::initialize(
 			fullName, environment, affinity);
 	}
 
-	~kernelProcessC(void) {}
+	~KernelProcess(void) {}
 
 public:
 	virtual typeE getType(void) { return KERNEL; }
 };
 
-/**	distributaryProcessC
+/**	DistributaryProcess
  ******************************************************************************/
 
-class distributaryProcessC
+class DistributaryProcess
 :
-public containerProcessC
+public ContainerProcess
 {
 public:
-	distributaryProcessC(
+	DistributaryProcess(
 		processId_t processId, processId_t parentProcessId,
 		numaBankId_t numaAddrSpaceBinding,
 		void *privateData)
 	:
-	containerProcessC(
+	ContainerProcess(
 		processId, parentProcessId,
 		PROCESS_EXECDOMAIN_KERNEL,	// Always kernel domain.
 		numaAddrSpaceBinding,
@@ -363,34 +363,34 @@ public:
 
 	error_t initialize(
 		const utf8Char *fullName, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
-		return containerProcessC::initialize(
+		return ContainerProcess::initialize(
 			fullName, environment, affinity);
 	}
 
-	~distributaryProcessC(void) {}
+	~DistributaryProcess(void) {}
 
 public:
 	virtual typeE getType(void) { return DISTRIBUTARY; }
 };
 
-/**	driverProcessC.
+/**	DriverProcess.
  ******************************************************************************/
 
-class driverProcessC
+class DriverProcess
 :
-public containerProcessC
+public ContainerProcess
 {
 public:
-	driverProcessC(
+	DriverProcess(
 		processId_t processId, processId_t parentProcessId,
 		ubit8 execDomain,
 		numaBankId_t numaAddrSpaceBinding,
-		fplainn::driverInstanceC *driverInstance,
+		fplainn::DriverInstance *driverInstance,
 		void *privateData)
 	:
-	containerProcessC(
+	ContainerProcess(
 		processId, parentProcessId,
 		execDomain,
 		numaAddrSpaceBinding,
@@ -402,29 +402,29 @@ public:
 
 	error_t initialize(
 		const utf8Char *fullName, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
-		return containerProcessC::initialize(
+		return ContainerProcess::initialize(
 			fullName, environment, affinity);
 	}
 
-	~driverProcessC(void) {}
+	~DriverProcess(void) {}
 
 public:
 	virtual typeE getType(void) { return DRIVER; }
-	virtual fplainn::driverInstanceC *getDriverInstance(void)
+	virtual fplainn::DriverInstance *getDriverInstance(void)
 		{ return driverInstance; }
 
 private:
-	fplainn::driverInstanceC	*driverInstance;
+	fplainn::DriverInstance	*driverInstance;
 };
 
 /**	Inline Methods:
  ******************************************************************************/
 
-inline threadC *processStreamC::getTask(processId_t id)
+inline Thread *ProcessStream::getTask(processId_t id)
 {
-	threadC		*ret;
+	Thread		*ret;
 	uarch_t		rwFlags;
 
 	taskLock.readAcquire(&rwFlags);
@@ -434,7 +434,7 @@ inline threadC *processStreamC::getTask(processId_t id)
 	return ret;
 }
 
-inline error_t processStreamC::getNewThreadId(processId_t *newThreadId)
+inline error_t ProcessStream::getNewThreadId(processId_t *newThreadId)
 {
 	sarch_t		nextVal;
 

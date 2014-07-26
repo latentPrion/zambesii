@@ -4,7 +4,7 @@
 	#include <arch/registerContext.h>
 
 typedef status_t
-	(__kexceptionFn)(class registerContextC *regs, ubit8 postcall);
+	(__kexceptionFn)(class RegisterContext *regs, ubit8 postcall);
 
 #endif
 

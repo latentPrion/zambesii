@@ -5,7 +5,7 @@
 
 namespace vfs
 {
-	class directoryOperationsC
+	class DirectoryOperations
 	{
 	public:
 		virtual error_t openDirectory(utf8Char *name, void **handle)=0;

@@ -6,7 +6,7 @@ dequeue a subset of its subscribed events if necessary. This is useful for
 implementing crude event prioritization in userspace, for example.
 
 To subscribe to events, thread-global subscribeTo() function is provided; it
-takes a bitmapC object as an argument. This object is a bitmask of all the
+takes a Bitmap object as an argument. This object is a bitmask of all the
 events the thread wants to subscribe to. Subscription is a persistent per-thread
 kernel-metadata bitmap that tells the kernel whether or not it should
 queue a given event on a given thread.
@@ -14,7 +14,7 @@ queue a given event on a given thread.
 A subsequent call to the "thread-global" pullEvent() function will pull the next
 event from one of the subscribed queues.
 
-	bitmapC		myBitmap;
+	Bitmap		myBitmap;
 	eventS		newEvent;
 
 	myBitmap.initialize();
@@ -46,7 +46,7 @@ that event.
 This mechanism can be used for implementing event prioritization from userspace.
 An example is shown below:
 
-	bitmapC		myBitmap;
+	Bitmap		myBitmap;
 	eventS		newEvent;
 
 	myBitmap.initialize();

@@ -43,12 +43,12 @@
  **/
 
 template <class T>
-class __kequalizerListC
+class __kEqualizerList
 {
 public:
-	__kequalizerListC(void);
+	__kEqualizerList(void);
 	error_t initialize(void) { return ERROR_SUCCESS; }
-	~__kequalizerListC(void);
+	~__kEqualizerList(void);
 
 public:
 	T *addEntry(T *item);
@@ -58,16 +58,16 @@ public:
 	void dump(void);
 
 private:
-	__kpageBlockC<T> *findInsertionBlock(void);
+	__kpageBLock<T> *findInsertionBlock(void);
 	void findInsertionEntry(
-		__kpageBlockC<T> *block, T *item, uarch_t *entry);
+		__kpageBLock<T> *block, T *item, uarch_t *entry);
 
-	__kpageBlockC<T> *findDeletionEntry(T *item, uarch_t *entry);
-	__kpageBlockC<T> *getNewBlock(__kpageBlockC<T> *joinTo);
-	void deleteBlock(__kpageBlockC<T> *block);
+	__kpageBLock<T> *findDeletionEntry(T *item, uarch_t *entry);
+	__kpageBLock<T> *getNewBlock(__kpageBLock<T> *joinTo);
+	void deleteBlock(__kpageBLock<T> *block);
 
 private:
-	sharedResourceGroupC<waitLockC, __kpageBlockC<T> *>	head;
+	SharedResourceGroup<WaitLock, __kpageBLock<T> *>	head;
 };
 
 
@@ -75,15 +75,15 @@ private:
  ****************************************************************************/
 
 template <class T>
-__kequalizerListC<T>::__kequalizerListC(void)
+__kEqualizerList<T>::__kEqualizerList(void)
 {
 	head.rsrc = NULL;
 }
 
 template <class T>
-__kequalizerListC<T>::~__kequalizerListC(void)
+__kEqualizerList<T>::~__kEqualizerList(void)
 {
-	__kpageBlockC<T>	*tmp;
+	__kpageBLock<T>	*tmp;
 
 	while (head.rsrc != NULL)
 	{
@@ -94,14 +94,14 @@ __kequalizerListC<T>::~__kequalizerListC(void)
 }
 
 template <class T>
-void __kequalizerListC<T>::dump(void)
+void __kEqualizerList<T>::dump(void)
 {
 	printf(NOTICE"eqList: @0x%p, head 0x%p, %d entries per block.\n",
 		this, head.rsrc, PAGEBLOCK_NENTRIES(T));
 
 	head.lock.acquire();
 
-	for (__kpageBlockC<T> *tmp=head.rsrc;
+	for (__kpageBLock<T> *tmp=head.rsrc;
 		tmp != NULL;
 		tmp = tmp->header.next)
 	{
@@ -115,9 +115,9 @@ void __kequalizerListC<T>::dump(void)
 }
 
 template <class T>
-T *__kequalizerListC<T>::addEntry(T *item)
+T *__kEqualizerList<T>::addEntry(T *item)
 {
-	__kpageBlockC<T>	*insertionBlock;
+	__kpageBLock<T>	*insertionBlock;
 	uarch_t			insEntry=0, copyStart;
 
 	if (item == NULL) {
@@ -165,7 +165,7 @@ T *__kequalizerListC<T>::addEntry(T *item)
 }
 
 template <class T>
-T *__kequalizerListC<T>::find(T *item)
+T *__kEqualizerList<T>::find(T *item)
 {
 	if (item == NULL) {
 		return NULL;
@@ -174,7 +174,7 @@ T *__kequalizerListC<T>::find(T *item)
 	head.lock.acquire();
 
 	// Just run through every block and search for the item.
-	for (__kpageBlockC<T> *current = head.rsrc;
+	for (__kpageBLock<T> *current = head.rsrc;
 		current != NULL;
 		current = current->header.next)
 	{
@@ -198,9 +198,9 @@ T *__kequalizerListC<T>::find(T *item)
 
 // fine.
 template <class T>
-void __kequalizerListC<T>::removeEntry(T *item)
+void __kEqualizerList<T>::removeEntry(T *item)
 {
-	__kpageBlockC<T>	*block;
+	__kpageBLock<T>	*block;
 	uarch_t			entry;
 
 	if (item == NULL) {
@@ -232,9 +232,9 @@ void __kequalizerListC<T>::removeEntry(T *item)
 
 // The lock must already be held before calling this.
 template <class T>
-__kpageBlockC<T> *__kequalizerListC<T>::findInsertionBlock(void)
+__kpageBLock<T> *__kEqualizerList<T>::findInsertionBlock(void)
 {
-	for (__kpageBlockC<T> *current = head.rsrc;
+	for (__kpageBLock<T> *current = head.rsrc;
 		current != NULL;
 		current = current->header.next)
 	{
@@ -248,8 +248,8 @@ __kpageBlockC<T> *__kequalizerListC<T>::findInsertionBlock(void)
 
 // The lock must already be held before calling this.
 template <class T>
-void __kequalizerListC<T>::findInsertionEntry(
-	__kpageBlockC<T> *block, T *item, uarch_t *entry
+void __kEqualizerList<T>::findInsertionEntry(
+	__kpageBLock<T> *block, T *item, uarch_t *entry
 	)
 {
 	for (uarch_t i=0; i<PAGEBLOCK_NENTRIES(T); i++)
@@ -264,11 +264,11 @@ void __kequalizerListC<T>::findInsertionEntry(
 
 // The lock must already be held before calling this.
 template <class T>
-__kpageBlockC<T> *__kequalizerListC<T>::findDeletionEntry(
+__kpageBLock<T> *__kEqualizerList<T>::findDeletionEntry(
 	T *item, uarch_t *entry
 	)
 {
-	for (__kpageBlockC<T> *current = head.rsrc; current != NULL;
+	for (__kpageBLock<T> *current = head.rsrc; current != NULL;
 		current = current->header.next)
 	{
 		uarch_t			i;
@@ -295,11 +295,11 @@ __kpageBlockC<T> *__kequalizerListC<T>::findDeletionEntry(
 
 // The lock must already be held before calling this.
 template <class T>
-__kpageBlockC<T> *__kequalizerListC<T>::getNewBlock(__kpageBlockC<T> *joinTo)
+__kpageBLock<T> *__kEqualizerList<T>::getNewBlock(__kpageBLock<T> *joinTo)
 {
-	__kpageBlockC<T>	*ret;
+	__kpageBLock<T>	*ret;
 
-	ret = new (rawMemAlloc(1, 0)) __kpageBlockC<T>;
+	ret = new (rawMemAlloc(1, 0)) __kpageBLock<T>;
 	if (ret == NULL) {
 		return NULL;
 	};

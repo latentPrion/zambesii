@@ -21,15 +21,15 @@
 #define VFSPATH_INVALID			15
 #define VFSPATH_INVALID_CHAR		16
 
-class distributaryTribC;
+class DistributaryTrib;
 
-class vfsTribC
+class VfsTrib
 :
-public tributaryC
+public Tributary
 {
-friend class distributaryTribC;
+friend class DistributaryTrib;
 public:
-	vfsTribC(void) {}
+	VfsTrib(void) {}
 	error_t initialize(void)
 	{
 		error_t		ret;
@@ -39,22 +39,22 @@ public:
 		return hvfsCurrentt.initialize();
 	}
 
-	~vfsTribC(void) {}
+	~VfsTrib(void) {}
 
 public:
-	dvfs::currenttC *getDvfs(void) { return &dvfsCurrentt; }
-	hvfs::currenttC *getHvfs(void) { return &hvfsCurrentt; }
-	fvfs::currenttC *getFvfs(void) { return &fvfsCurrentt; }
+	dvfs::Currentt *getDvfs(void) { return &dvfsCurrentt; }
+	hvfs::Currentt *getHvfs(void) { return &hvfsCurrentt; }
+	fvfs::Currentt *getFvfs(void) { return &fvfsCurrentt; }
 
 	void dumpCurrentts(void);
 
 private:
-	hvfs::currenttC		hvfsCurrentt;
-	dvfs::currenttC		dvfsCurrentt;
-	fvfs::currenttC		fvfsCurrentt;
+	hvfs::Currentt		hvfsCurrentt;
+	dvfs::Currentt		dvfsCurrentt;
+	fvfs::Currentt		fvfsCurrentt;
 };
 
-extern vfsTribC		vfsTrib;
+extern VfsTrib		vfsTrib;
 
 #endif
 

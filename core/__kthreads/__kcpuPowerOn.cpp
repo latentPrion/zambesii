@@ -17,7 +17,7 @@
  * On this stack, pushed by the kernel before the CPU was powered on, is the
  * address of the CPU's CPU Stream.
  **/
-waitLockC	__kcpuPowerOnSleepStacksLock;
+WaitLock	__kcpuPowerOnSleepStacksLock;
 uarch_t		__kcpuPowerOnSleepStacksLength=0;
 void		**__kcpuPowerOnSleepStacks=0;
 ubit8		*__kcpuPowerOnLapicVaddr=0;
@@ -28,9 +28,9 @@ ubit8		*__kcpuPowerOnLapicVaddr=0;
  *
  * This is what the waking CPU's stream will point to as its "currentTask". Its
  * members are initialized by the CPU Tributary before any CPUs are awakened in
- * cpuTribC::initialize2().
+ * CpuTrib::initialize2().
  **/
-perCpuThreadC	__kcpuPowerOnThread(processTrib.__kgetStream(), NULL);
+PerCpuThread	__kcpuPowerOnThread(processTrib.__kgetStream(), NULL);
 
 // Part of __koptimizationHacks.cpp.
 void (*__kcpuPowerOnInit(void))()

@@ -11,7 +11,7 @@
 
 void pointer::vmemUnmapAndFree(
 	void *vaddr, uarch_t nPages, status_t nMapped,
-	vaddrSpaceStreamC *vasStream
+	VaddrSpaceStream *vasStream
 	)
 {
 	if (vasStream == NULL)
@@ -32,7 +32,7 @@ void pointer::vmemUnmapAndFree(
 	vasStream->releasePages(vaddr, nPages);
 }
 
-void pointer::streamFree(void *vaddr, memoryStreamC *memStream)
+void pointer::streamFree(void *vaddr, MemoryStream *memStream)
 {
 	if (memStream == NULL)
 	{

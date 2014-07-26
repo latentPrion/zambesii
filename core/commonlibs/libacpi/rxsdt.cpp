@@ -98,7 +98,7 @@ static sarch_t checksumIsValid(acpi_sdtS *sdt)
 
 
 acpi_rSratS *acpiRsdt::getNextSrat(
-	acpi_rsdtS *rsdt, void **const context, void **const handle
+	acpi_sRsdt *rsdt, void **const context, void **const handle
 	)
 {
 	acpi_sdtS	*sdt;
@@ -139,7 +139,7 @@ acpi_rSratS *acpiRsdt::getNextSrat(
 }
 
 acpi_rMadtS *acpiRsdt::getNextMadt(
-	acpi_rsdtS *rsdt, void **const context, void **const handle
+	acpi_sRsdt *rsdt, void **const context, void **const handle
 	)
 {
 	acpi_sdtS	*sdt;
@@ -179,7 +179,7 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 }
 
 acpi_rFadtS *acpiRsdt::getNextFadt(
-	acpi_rsdtS *rsdt, void **const context, void **const handle
+	acpi_sRsdt *rsdt, void **const context, void **const handle
 	)
 {
 	acpi_sdtS	*sdt;

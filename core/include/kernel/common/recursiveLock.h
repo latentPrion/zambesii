@@ -9,16 +9,16 @@
 
 /**	EXPLANATION:
  * Standard recursive non-sleeping lock. Use only where unavoidable. Introduces
- * a bit of overhead due to the contained waitLockC which must be acquired
+ * a bit of overhead due to the contained WaitLock which must be acquired
  * before a read to the current task id.
  **/
 
-class recursiveLockC
+class RecursiveLock
 :
-public lockC
+public Lock
 {
 public:
-	recursiveLockC(void)
+	RecursiveLock(void)
 	{
 		taskId.rsrc = PROCID_INVALID;
 	}
@@ -28,7 +28,7 @@ public:
 	void release(void);
 
 private:
-	sharedResourceGroupC<waitLockC, processId_t>	taskId;
+	SharedResourceGroup<WaitLock, processId_t>	taskId;
 };
 
 #endif

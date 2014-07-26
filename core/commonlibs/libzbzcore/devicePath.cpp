@@ -11,11 +11,11 @@ namespace region
 {
 	void main_wrapper(void *);
 	error_t main(
-		threadC *self,
+		Thread *self,
 		__klzbzcore::driver::__kcall::callerContextS *ctxt);
 
 	error_t main_handleMgmtCall(
-		floodplainnC::zudiMgmtCallMsgS *, fplainn::deviceC *, ubit16);
+		Floodplainn::zudiMgmtCallMsgS *, fplainn::Device *, ubit16);
 
 	error_t main_handleServiceCallAck();
 	error_t main_handleMeiCallMsg();
@@ -23,12 +23,12 @@ namespace region
 
 error_t __klzbzcore::driver::__kcall::instantiateDevice(callerContextS *ctxt)
 {
-	fplainn::deviceC			*dev;
-	fplainn::driverC			*drv;
-	threadC					*self;
+	fplainn::Device			*dev;
+	fplainn::Driver			*drv;
+	Thread					*self;
 	error_t					err;
 
-	self = (threadC *)cpuTrib.getCurrentCpuStream()
+	self = (Thread *)cpuTrib.getCurrentCpuStream()
 		->taskStream.getCurrentTask();
 
 	drv = self->parent->getDriverInstance()->driver;
@@ -45,8 +45,8 @@ error_t __klzbzcore::driver::__kcall::instantiateDevice(callerContextS *ctxt)
 	// Now we create threads for all the regions.
 	for (uarch_t i=0; i<drv->nRegions; i++)
 	{
-		threadC				*newThread;
-		heapObjC<udi_init_context_t>	rdata;
+		Thread				*newThread;
+		HeapObject<udi_init_context_t>	rdata;
 
 		// The +1 is to ensure the allocation size isn't 0.
 		rdata = (udi_init_context_t *)new ubit8[
@@ -55,7 +55,7 @@ error_t __klzbzcore::driver::__kcall::instantiateDevice(callerContextS *ctxt)
 		// We pass the context to each thread.
 		err = self->parent->spawnThread(
 			&region::main_wrapper, ctxt,
-			NULL, (taskC::schedPolicyE)0, 0,
+			NULL, (Task::schedPolicyE)0, 0,
 			0, &newThread);
 
 		if (err != ERROR_SUCCESS)
@@ -127,10 +127,10 @@ printf(NOTICE LZBZCORE"HERE! 0x%p\n", ctxt);
 void region::main_wrapper(void *)
 {
 	error_t						err;
-	threadC						*self;
+	Thread						*self;
 	__klzbzcore::driver::__kcall::callerContextS	*ctxt;
 
-	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	ctxt = (__klzbzcore::driver::__kcall::callerContextS *)
@@ -149,18 +149,18 @@ void region::main_wrapper(void *)
 }
 
 error_t region::main(
-	threadC *self, __klzbzcore::driver::__kcall::callerContextS *ctxt
+	Thread *self, __klzbzcore::driver::__kcall::callerContextS *ctxt
 	)
 {
-	heapObjC<messageStreamC::iteratorS>		msgIt;
-	fplainn::deviceC				*dev;
+	HeapObject<MessageStream::sIterator>		msgIt;
+	fplainn::Device				*dev;
 	ubit16						regionIndex;
 	udi_init_context_t				*rdata;
 	error_t						err;
 	udi_init_t					*init_info;
 
 	init_info = self->parent->getDriverInstance()->driver->driverInitInfo;
-	msgIt = new messageStreamC::iteratorS;
+	msgIt = new MessageStream::sIterator;
 	if (msgIt == NULL)
 	{
 		printf(ERROR LZBZCORE"regionEntry: Failed to allocate msg "
@@ -283,7 +283,7 @@ error_t region::main(
 			{
 			case MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL:
 				region::main_handleMgmtCall(
-					(floodplainnC::zudiMgmtCallMsgS *)
+					(Floodplainn::zudiMgmtCallMsgS *)
 						msgIt.get(),
 					dev, regionIndex);
 
@@ -303,7 +303,7 @@ error_t region::main(
 
 struct udi_mgmt_contextBlockS
 {
-	udi_mgmt_contextBlockS(floodplainnC::zudiMgmtCallMsgS *msg)
+	udi_mgmt_contextBlockS(Floodplainn::zudiMgmtCallMsgS *msg)
 	:
 	privateData(msg->header.privateData), sourceTid(msg->header.sourceId)
 	{
@@ -316,8 +316,8 @@ struct udi_mgmt_contextBlockS
 };
 
 error_t region::main_handleMgmtCall(
-	floodplainnC::zudiMgmtCallMsgS *msg,
-	fplainn::deviceC *dev, ubit16 regionIndex
+	Floodplainn::zudiMgmtCallMsgS *msg,
+	fplainn::Device *dev, ubit16 regionIndex
 	)
 {
 	udi_init_t		*initInfo;
@@ -350,7 +350,7 @@ error_t region::main_handleMgmtCall(
 
 	switch (msg->mgmtOp)
 	{
-	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_USAGE:
+	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_USAGE:
 		printf(NOTICE"%s, rgn %d: udi_usage_ind call received!\n",
 			msg->path, regionIndex);
 

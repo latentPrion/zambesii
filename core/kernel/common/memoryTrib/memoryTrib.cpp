@@ -15,10 +15,10 @@
 
 
 static ubit8				memoryTribAvailableBanksBmpMem[64];
-static hardwareIdListC::arrayNodeS	memoryTribMemoryBanksListMem[
+static HardwareIdList::arrayNodeS	memoryTribMemoryBanksListMem[
 	CHIPSET_NUMA___KSPACE_BANKID + 1];
 
-memoryTribC::memoryTribC(void)
+MemoryTrib::MemoryTrib(void)
 :
 	nBanks(0)
 {
@@ -33,11 +33,11 @@ memoryTribC::memoryTribC(void)
 #endif
 }
 
-error_t memoryTribC::initialize(void)
+error_t MemoryTrib::initialize(void)
 {
 	availableBanks.initialize(
 		0,
-		bitmapC::preallocatedMemoryS(
+		Bitmap::preallocatedMemoryS(
 			memoryTribAvailableBanksBmpMem,
 			sizeof(memoryTribAvailableBanksBmpMem)));
 
@@ -48,10 +48,10 @@ error_t memoryTribC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-void memoryTribC::dump(void)
+void MemoryTrib::dump(void)
 {
-	hardwareIdListC::iterator	it;
-	numaMemoryBankC			*nmb;
+	HardwareIdList::iterator	it;
+	NumaMemoryBank			*nmb;
 
 	printf(NOTICE MEMTRIB"Dumping: %d banks."
 #if __SCALING__ < SCALING_CC_NUMA
@@ -62,15 +62,15 @@ void memoryTribC::dump(void)
 #endif
 
 	it = memoryBanks.begin();
-	for (nmb = (numaMemoryBankC *)it++;
+	for (nmb = (NumaMemoryBank *)it++;
 		nmb != NULL;
-		nmb = (numaMemoryBankC *)it++)
+		nmb = (NumaMemoryBank *)it++)
 	{
 		nmb->dump();
 	};
 }
 
-error_t memoryTribC::memRegionInit(void)
+error_t MemoryTrib::memRegionInit(void)
 {
 	chipsetRegionMapEntryS		*currEntry;
 	chipsetRegionReservedS		*currReserved;
@@ -109,7 +109,7 @@ error_t memoryTribC::memRegionInit(void)
 		currBase = currEntry->baseAddr;
 		currSize = currEntry->size;
 
-		memRegions[i].memBmp = new (rawMemAlloc(1, 0)) memBmpC(
+		memRegions[i].memBmp = new (rawMemAlloc(1, 0)) MemoryBmp(
 			currBase, currSize);
 
 		if (memRegions[i].memBmp == NULL) {
@@ -158,7 +158,7 @@ error_t memoryTribC::memRegionInit(void)
 }
 
 // TODO: This function can be greatly optimized. KAGS, you are needed.
-void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t flags)
+void *MemoryTrib::rawMemAlloc(uarch_t nPages, uarch_t flags)
 {
 	void		*ret;
 	paddr_t		paddr;
@@ -173,7 +173,7 @@ void *memoryTribC::rawMemAlloc(uarch_t nPages, uarch_t flags)
 		return NULL;
 	};
 
-	/* memoryTribC::rawMemAlloc() has no allocTable. Therefore it is
+	/* MemoryTrib::rawMemAlloc() has no allocTable. Therefore it is
 	 * impossible to do lazy allocation using fakemapped pages. This is
 	 * due to the fact that lazy allocation requires a #PF to occur on a
 	 * page which has not yet been backed with pmem.
@@ -234,7 +234,7 @@ returnFailure:
 	return NULL;
 }
 
-void memoryTribC::rawMemFree(void *vaddr, uarch_t nPages, uarch_t flags)
+void MemoryTrib::rawMemFree(void *vaddr, uarch_t nPages, uarch_t flags)
 {
 	/* rawMemFree() will look up every paddr for every page since there is
 	 * no alloc table for rawMemFree().

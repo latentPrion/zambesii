@@ -10,7 +10,7 @@
 
 
 error_t __klzbzcore::driver::u0::getThreadDevicePath(
-	fplainn::driverInstanceC *drvInst, processId_t tid, utf8Char *path
+	fplainn::DriverInstance *drvInst, processId_t tid, utf8Char *path
 	)
 {
 	error_t		ret;
@@ -26,7 +26,7 @@ error_t __klzbzcore::driver::u0::getThreadDevicePath(
 	 **/
 	for (uarch_t i=0; i<drvInst->nHostedDevices; i++)
 	{
-		fplainn::deviceC	*currDev;
+		fplainn::Device	*currDev;
 		utf8Char		*currDevPath=
 			drvInst->hostedDevices[i].get();
 
@@ -55,7 +55,7 @@ error_t __klzbzcore::driver::u0::regionInitInd(
 	__klzbzcore::driver::__kcall::callerContextS *ctxt, ubit32 function
 	)
 {
-	fplainn::deviceC		*dev;
+	fplainn::Device		*dev;
 	uarch_t				totalNotifications,
 					totalSuccesses;
 
@@ -93,8 +93,8 @@ error_t __klzbzcore::driver::u0::regionInitInd(
 }
 
 void __klzbzcore::driver::main_handleU0Request(
-	messageStreamC::iteratorS *msgIt, fplainn::driverInstanceC *drvInst,
-	threadC *self
+	MessageStream::sIterator *msgIt, fplainn::DriverInstance *drvInst,
+	Thread *self
 	)
 {
 	error_t			err;
@@ -161,14 +161,14 @@ void __klzbzcore::driver::main_handleU0Request(
 }
 
 void __klzbzcore::driver::main_handleKernelCall(
-	floodplainnC::zudiKernelCallMsgS *msg
+	Floodplainn::zudiKernelCallMsgS *msg
 	)
 {
 	error_t			err;
 
 	switch (msg->command)
 	{
-	case floodplainnC::zudiKernelCallMsgS::CMD_INSTANTIATE_DEVICE:
+	case Floodplainn::zudiKernelCallMsgS::CMD_INSTANTIATE_DEVICE:
 		__kcall::callerContextS		*callerContext;
 
 		/* Sent by the kernel when it wishes to create a new instance
@@ -216,7 +216,7 @@ void __klzbzcore::driver::main_handleKernelCall(
 }
 
 void __klzbzcore::driver::main_handleMgmtCall(
-	floodplainnC::zudiMgmtCallMsgS *msg
+	Floodplainn::zudiMgmtCallMsgS *msg
 	)
 {
 	error_t		err;
@@ -224,15 +224,15 @@ void __klzbzcore::driver::main_handleMgmtCall(
 	(void)err;
 	switch (msg->mgmtOp)
 	{
-	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_USAGE:
+	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_USAGE:
 		err = __kcall::instantiateDevice2(
 			(__klzbzcore::driver::__kcall::callerContextS *)
 				msg->header.privateData);
 
 		break;
-	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_ENUMERATE:
-	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_DEVMGMT:
-	case floodplainnC::zudiMgmtCallMsgS::MGMTOP_FINAL_CLEANUP:
+	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_ENUMERATE:
+	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_DEVMGMT:
+	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_FINAL_CLEANUP:
 	default:
 		printf(WARNING LZBZCORE"drvPath: handleMgmtCall: unknown "
 			"management op %d\n",
@@ -242,12 +242,12 @@ void __klzbzcore::driver::main_handleMgmtCall(
 	};
 }
 
-static error_t driverPath0(threadC *self);
-error_t __klzbzcore::driver::main(threadC *self)
+static error_t driverPath0(Thread *self);
+error_t __klzbzcore::driver::main(Thread *self)
 {
-	streamMemC<messageStreamC::iteratorS>		msgIt;
-	syscallbackC					*callback;
-	fplainn::driverInstanceC			*drvInst;
+	StreamMem<MessageStream::sIterator>		msgIt;
+	Syscallback					*callback;
+	fplainn::DriverInstance			*drvInst;
 	error_t						ret;
 
 	drvInst = self->parent->getDriverInstance();
@@ -263,7 +263,7 @@ error_t __klzbzcore::driver::main(threadC *self)
 
 	msgIt = new (self->parent->memoryStream.memAlloc(
 		PAGING_BYTES_TO_PAGES(sizeof(*msgIt))))
-		messageStreamC::iteratorS;
+		MessageStream::sIterator;
 
 	if (msgIt.get() == NULL)
 	{
@@ -284,7 +284,7 @@ error_t __klzbzcore::driver::main(threadC *self)
 	for (;;)
 	{
 		self->getTaskContext()->messageStream.pull(msgIt.get());
-		callback = (syscallbackC *)msgIt->header.privateData;
+		callback = (Syscallback *)msgIt->header.privateData;
 
 		switch (msgIt->header.subsystem)
 		{
@@ -297,14 +297,14 @@ error_t __klzbzcore::driver::main(threadC *self)
 			{
 			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
 				main_handleKernelCall(
-					(floodplainnC::zudiKernelCallMsgS *)
+					(Floodplainn::zudiKernelCallMsgS *)
 						msgIt.get());
 
 				break;
 
 			case MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL:
 				main_handleMgmtCall(
-					(floodplainnC::zudiMgmtCallMsgS *)
+					(Floodplainn::zudiMgmtCallMsgS *)
 						msgIt.get());
 
 				break;
@@ -331,7 +331,7 @@ error_t __klzbzcore::driver::main(threadC *self)
 }
 
 static syscallbackDataF driverPath1_wrapper;
-static error_t driverPath0(threadC * /*self*/)
+static error_t driverPath0(Thread * /*self*/)
 {
 	zuiServer::loadDriverRequirementsReq(
 		newSyscallback(&driverPath1_wrapper));
@@ -339,26 +339,26 @@ static error_t driverPath0(threadC * /*self*/)
 	return ERROR_SUCCESS;
 }
 
-static error_t driverPath1(messageStreamC::iteratorS *msgIt, threadC *self);
-static void driverPath1_wrapper(messageStreamC::iteratorS *msgIt, void *)
+static error_t driverPath1(MessageStream::sIterator *msgIt, Thread *self);
+static void driverPath1_wrapper(MessageStream::sIterator *msgIt, void *)
 {
 	error_t			err;
-	threadC			*self;
+	Thread			*self;
 
-	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	err = driverPath1(msgIt, self);
 	self->parent->sendResponse(err);
 }
 
-static error_t driverPath1(messageStreamC::iteratorS *msgIt, threadC *self)
+static error_t driverPath1(MessageStream::sIterator *msgIt, Thread *self)
 {
-	driverProcessC				*selfProcess;
-	fplainn::driverInstanceC		*drvInst;
+	DriverProcess				*selfProcess;
+	fplainn::DriverInstance		*drvInst;
 	const udi_init_t			*driverInitInfo;
 
-	selfProcess = (driverProcessC *)self->parent;
+	selfProcess = (DriverProcess *)self->parent;
 	drvInst = self->parent->getDriverInstance();
 
 	driverInitInfo = drvInst->driver->driverInitInfo;

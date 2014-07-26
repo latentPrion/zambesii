@@ -3,16 +3,16 @@
 #include <__kclasses/pageTableCache.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
-pageTableCacheC::pageTableCacheC(void)
+PageTableCache::PageTableCache(void)
 {
 	stackPtr.rsrc = PTCACHE_STACK_EMPTY;
 }
 
-pageTableCacheC::~pageTableCacheC(void)
+PageTableCache::~PageTableCache(void)
 {
 }
 
-void pageTableCacheC::push(paddr_t paddr)
+void PageTableCache::push(paddr_t paddr)
 {
 	stackPtr.lock.acquire();
 
@@ -31,7 +31,7 @@ void pageTableCacheC::push(paddr_t paddr)
 	stackPtr.lock.release();
 }
 
-error_t pageTableCacheC::pop(paddr_t *paddr)
+error_t PageTableCache::pop(paddr_t *paddr)
 {
 	stackPtr.lock.acquire();
 
@@ -55,7 +55,7 @@ error_t pageTableCacheC::pop(paddr_t *paddr)
 	return ERROR_SUCCESS;
 }
 
-void pageTableCacheC::flush(void)
+void PageTableCache::flush(void)
 {
 	stackPtr.lock.acquire();
 

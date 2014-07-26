@@ -22,7 +22,7 @@
  **/
 
 status_t walkerPageRanger::mapInc(
-	vaddrSpaceC *vaddrSpace,
+	VaddrSpace *vaddrSpace,
 	void *vaddr, paddr_t paddr,
 	uarch_t nPages, uarch_t __kflags
 	)

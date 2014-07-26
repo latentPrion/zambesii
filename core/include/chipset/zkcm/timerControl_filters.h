@@ -6,16 +6,16 @@
 
 namespace timerFilters
 {
-	sarch_t modes(zkcmTimerDeviceC *dev, ubit32 criteria, ubit32 flags);
+	sarch_t modes(ZkcmTimerDevice *dev, ubit32 criteria, ubit32 flags);
 	sarch_t resolutions(
-		zkcmTimerDeviceC *dev, ubit32 criteria, ubit32 flags);
+		ZkcmTimerDevice *dev, ubit32 criteria, ubit32 flags);
 
 	sarch_t ioLatency(
-		zkcmTimerDeviceC *dev, zkcmTimerDeviceC::ioLatencyE criteria,
+		ZkcmTimerDevice *dev, ZkcmTimerDevice::ioLatencyE criteria,
 		ubit32 flags);
 
 	sarch_t precision(
-		zkcmTimerDeviceC *dev, zkcmTimerDeviceC::precisionE criteria,
+		ZkcmTimerDevice *dev, ZkcmTimerDevice::precisionE criteria,
 		ubit32 flags);
 }
 

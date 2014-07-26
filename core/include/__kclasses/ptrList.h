@@ -16,12 +16,12 @@
 #define PTRLIST_FLAGS_NO_AUTOLOCK	(1<<0)
 
 template <class T>
-class ptrListC
+class PtrList
 {
 public:
-	ptrListC(sarch_t useCache=1);
+	PtrList(sarch_t useCache=1);
 	error_t initialize(void);
-	~ptrListC(void);
+	~PtrList(void);
 
 public:
 	error_t insert(T *item);
@@ -51,8 +51,8 @@ private:
 		ubit32		nItems;
 	};
 
-	sharedResourceGroupC<waitLockC, ptrListStateS>	head;
-	slamCacheC		*cache;
+	SharedResourceGroup<WaitLock, ptrListStateS>	head;
+	SlamCache		*cache;
 	sarch_t			usingCache;
 };
 
@@ -61,7 +61,7 @@ private:
  ******************************************************************************/
 
 template <class T>
-ptrListC<T>::ptrListC(sarch_t useCache)
+PtrList<T>::PtrList(sarch_t useCache)
 :
 cache(NULL), usingCache(useCache)
 {
@@ -70,7 +70,7 @@ cache(NULL), usingCache(useCache)
 }
 
 template <class T>
-error_t ptrListC<T>::initialize(void)
+error_t PtrList<T>::initialize(void)
 {
 	if (usingCache)
 	{
@@ -84,7 +84,7 @@ error_t ptrListC<T>::initialize(void)
 }
 
 template <class T>
-ptrListC<T>::~ptrListC(void)
+PtrList<T>::~PtrList(void)
 {
 	ptrListNodeS		*cur, *tmp;
 
@@ -98,7 +98,7 @@ ptrListC<T>::~ptrListC(void)
 }
 
 template <class T>
-void ptrListC<T>::dump(void)
+void PtrList<T>::dump(void)
 {
 	ptrListNodeS	*tmp;
 
@@ -120,7 +120,7 @@ void ptrListC<T>::dump(void)
 
 
 template <class T>
-sarch_t ptrListC<T>::checkForItem(T *item)
+sarch_t PtrList<T>::checkForItem(T *item)
 {
 	ptrListNodeS		*tmp;
 
@@ -139,7 +139,7 @@ sarch_t ptrListC<T>::checkForItem(T *item)
 }
 
 template <class T>
-ubit32 ptrListC<T>::getNItems(void)
+ubit32 PtrList<T>::getNItems(void)
 {
 	ubit32		ret;
 
@@ -151,7 +151,7 @@ ubit32 ptrListC<T>::getNItems(void)
 }
 
 template <class T>
-error_t ptrListC<T>::insert(T *item)
+error_t PtrList<T>::insert(T *item)
 {
 	ptrListNodeS		*node;
 
@@ -177,7 +177,7 @@ error_t ptrListC<T>::insert(T *item)
 }
 
 template <class T>
-sarch_t ptrListC<T>::remove(T *item)
+sarch_t PtrList<T>::remove(T *item)
 {
 	ptrListNodeS		*cur, *prev=NULL, *tmp;
 
@@ -212,19 +212,19 @@ sarch_t ptrListC<T>::remove(T *item)
 }
 
 template <class T>
-void ptrListC<T>::lock(void)
+void PtrList<T>::lock(void)
 {
 	head.lock.acquire();
 }
 
 template <class T>
-void ptrListC<T>::unlock(void)
+void PtrList<T>::unlock(void)
 {
 	head.lock.release();
 }
 
 template <class T>
-T *ptrListC<T>::getItem(ubit32 num)
+T *PtrList<T>::getItem(ubit32 num)
 {
 	ptrListNodeS	*tmp;
 
@@ -242,7 +242,7 @@ T *ptrListC<T>::getItem(ubit32 num)
 }
 
 template <class T>
-T *ptrListC<T>::getNextItem(void **handle, ubit32 flags)
+T *PtrList<T>::getNextItem(void **handle, ubit32 flags)
 {
 	ptrListNodeS	*tmp = reinterpret_cast<ptrListNodeS *>( *handle );
 	T		*ret=NULL;

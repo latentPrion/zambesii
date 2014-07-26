@@ -14,7 +14,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-interruptTribC::interruptTribC(void)
+InterruptTrib::InterruptTrib(void)
 :
 pinIrqTableCounter(0)
 {
@@ -27,7 +27,7 @@ pinIrqTableCounter(0)
 	};
 }
 
-error_t interruptTribC::initializeExceptions(void)
+error_t InterruptTrib::initializeExceptions(void)
 {
 	/**	EXPLANATION:
 	 * Installs the architecture specific exception handlers and initializes
@@ -48,7 +48,7 @@ error_t interruptTribC::initializeExceptions(void)
 	return ERROR_SUCCESS;
 }
 
-error_t interruptTribC::initializeIrqManagement(void)
+error_t InterruptTrib::initializeIrqManagement(void)
 {
 	error_t		ret;
 
@@ -105,7 +105,7 @@ error_t interruptTribC::initializeIrqManagement(void)
 	return ERROR_SUCCESS;
 }
 
-void interruptTribC::pinIrqMain(registerContextC *regs)
+void InterruptTrib::pinIrqMain(RegisterContext *regs)
 {
 	irqPinDescriptorS	*pinDescriptor;
 	isrDescriptorS		*isrDescriptor, (*isrRetireList[4]);
@@ -228,7 +228,7 @@ void interruptTribC::pinIrqMain(registerContextC *regs)
 	};
 }
 
-void interruptTribC::exceptionMain(registerContextC *regs)
+void InterruptTrib::exceptionMain(RegisterContext *regs)
 {
 	if (msiIrqTable[regs->vectorNo].type == vectorDescriptorS::UNCLAIMED)
 	{
@@ -251,7 +251,7 @@ void interruptTribC::exceptionMain(registerContextC *regs)
 	};
 }
 
-void interruptTribC::installException(
+void InterruptTrib::installException(
 	uarch_t vector, __kexceptionFn *exception, uarch_t flags)
 {
 	if (exception == NULL) { return; };
@@ -271,8 +271,8 @@ void interruptTribC::installException(
 	msiIrqTable[vector].flags = flags;
 }
 
-error_t interruptTribC::zkcmS::registerPinIsr(
-	ubit16 __kpin, zkcmDeviceBaseC *dev, zkcmIsrFn *isr, uarch_t /*flags*/
+error_t InterruptTrib::sZkcm::registerPinIsr(
+	ubit16 __kpin, ZkcmDeviceBase *dev, zkcmIsrFn *isr, uarch_t /*flags*/
 	)
 {
 	irqPinDescriptorS	*pinDesc;
@@ -309,7 +309,7 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 	};
 
 	// Constructor zeroes it out.
-	isrDesc = new isrDescriptorS(interruptTribC::isrDescriptorS::ZKCM);
+	isrDesc = new isrDescriptorS(InterruptTrib::isrDescriptorS::ZKCM);
 	if (isrDesc == NULL)
 	{
 		printf(ERROR INTTRIB"registerPinIsr: Failed to alloc "
@@ -325,7 +325,7 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR INTTRIB"registerPinIsr: Failed to add new ISR "
-			"on __kpin %d.\n\tzkcmDeviceC obj 0x%p, ISR 0x%p.\n",
+			"on __kpin %d.\n\tZkcmDevice obj 0x%p, ISR 0x%p.\n",
 			__kpin, dev, isr);
 
 		delete isrDesc;
@@ -335,7 +335,7 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 	return ERROR_SUCCESS;
 }
 
-sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
+sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 {
 	irqPinDescriptorS	*pinDesc;
 	isrDescriptorS		*isrDesc;
@@ -401,7 +401,7 @@ sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 	return 0;
 }
 
-error_t interruptTribC::__kpinEnable(ubit16 __kpin)
+error_t InterruptTrib::__kpinEnable(ubit16 __kpin)
 {
 	irqPinDescriptorS	*pinDesc;
 
@@ -427,7 +427,7 @@ error_t interruptTribC::__kpinEnable(ubit16 __kpin)
 	return ERROR_SUCCESS;
 }
 
-sarch_t interruptTribC::__kpinDisable(ubit16 __kpin)
+sarch_t InterruptTrib::__kpinDisable(ubit16 __kpin)
 {
 	irqPinDescriptorS	*pinDesc;
 
@@ -454,7 +454,7 @@ sarch_t interruptTribC::__kpinDisable(ubit16 __kpin)
 	return 1;
 }
 
-void interruptTribC::removeException(uarch_t vector)
+void InterruptTrib::removeException(uarch_t vector)
 {
 	if (msiIrqTable[vector].type != vectorDescriptorS::EXCEPTION)
 	{
@@ -470,7 +470,7 @@ void interruptTribC::removeException(uarch_t vector)
 	msiIrqTable[vector].type = vectorDescriptorS::UNCLAIMED;
 }
 
-void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
+void InterruptTrib::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 {
 	irqPinDescriptorS	*tmp;
 	error_t			err;
@@ -512,7 +512,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 
 		/**	NOTE: 2012-05-27.
 		 * There used to be conditional code here which made use of
-		 * hardwareIdListC::findFreeIndex() to re-use indexes in the
+		 * HardwareIdList::findFreeIndex() to re-use indexes in the
 		 * __kpin array which were left blank when __kpins were removed
 		 * by the chipset code. An example of such an occasion is when
 		 * the IBM-PC is switched into multiprocessor mode, and the
@@ -555,7 +555,7 @@ void interruptTribC::registerIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 	};
 }
 
-void interruptTribC::removeIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
+void InterruptTrib::removeIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 {
 	irqPinDescriptorS		*tmp;
 
@@ -570,7 +570,7 @@ void interruptTribC::removeIrqPins(ubit16 nPins, zkcmIrqPinS *pinList)
 	};
 }
 
-void interruptTribC::dumpExceptions(void)
+void InterruptTrib::dumpExceptions(void)
 {
 	ubit8		flipFlop=0;
 
@@ -591,9 +591,9 @@ void interruptTribC::dumpExceptions(void)
 	if (flipFlop != 0) { printf(CC"\n"); };
 }
 
-void dumpIsrDescriptor(ubit16 num, interruptTribC::isrDescriptorS *desc)
+void dumpIsrDescriptor(ubit16 num, InterruptTrib::isrDescriptorS *desc)
 {
-	if (desc->driverType == interruptTribC::isrDescriptorS::ZKCM)
+	if (desc->driverType == InterruptTrib::isrDescriptorS::ZKCM)
 	{
 		printf(CC"\t%d (is ZKCM): nHandled %d,"
 			"\n\tisr @0x%p, device base @0x%p.\n",
@@ -602,7 +602,7 @@ void dumpIsrDescriptor(ubit16 num, interruptTribC::isrDescriptorS *desc)
 	};
 }
 
-void interruptTribC::dumpMsiIrqs(void)
+void InterruptTrib::dumpMsiIrqs(void)
 {
 	ubit32		nItems;
 	isrDescriptorS	*tmp;
@@ -624,7 +624,7 @@ void interruptTribC::dumpMsiIrqs(void)
 	};
 }
 
-void interruptTribC::dumpUnusedVectors(void)
+void InterruptTrib::dumpUnusedVectors(void)
 {
 	ubit8	flipFlop=0;
 
@@ -645,9 +645,9 @@ void interruptTribC::dumpUnusedVectors(void)
 	if (flipFlop != 0) { printf(CC"\n"); };
 }
 
-void interruptTribC::dumpIrqPins(void)
+void InterruptTrib::dumpIrqPins(void)
 {
-	hardwareIdListC::iterator	it, prev;
+	HardwareIdList::iterator	it, prev;
 	irqPinDescriptorS		*tmp;
 
 	printf(NOTICE INTTRIB"dumpIrqPins:\n");

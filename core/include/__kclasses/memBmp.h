@@ -25,19 +25,19 @@
 #define MEMBMP_BIT(__pfn,__basePfn,__bmp)			\
 	(MEMBMP_OFFSET(__pfn,__basePfn) % __KBIT_NBITS_IN(__bmp))
 
-class numaMemoryBankC;
+class NumaMemoryBank;
 
-class memBmpC
+class MemoryBmp
 :
-public allocClassC
+public AllocatorBase
 {
-friend class numaMemoryBankC;
+friend class NumaMemoryBank;
 
 public:
-	memBmpC(paddr_t baseAddr, paddr_t size);
+	MemoryBmp(paddr_t baseAddr, paddr_t size);
 	error_t initialize(void *preAllocated=NULL);
 
-	~memBmpC(void);
+	~MemoryBmp(void);
 
 	void dump(void);
 
@@ -57,7 +57,7 @@ public:
 	 * Returns the number of bits that were set in "this" bmp due to the OR
 	 * with the other one.
 	 **/
-	status_t merge(memBmpC *bmp);
+	status_t merge(MemoryBmp *bmp);
 
 public:
 	inline void setFrame(uarch_t pfn);
@@ -73,28 +73,28 @@ public:
 	{
 		uarch_t		*bmp, lastAllocIndex;
 	};
-	sharedResourceGroupC<waitLockC, bmpPtrsS>	bmp;
+	SharedResourceGroup<WaitLock, bmpPtrsS>	bmp;
 };
 
 
 /**	Inline Methods
  ******************************************************************************/
 
-inline void memBmpC::setFrame(uarch_t pfn)
+inline void MemoryBmp::setFrame(uarch_t pfn)
 {
 	__KBIT_SET(
 		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],
 		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp));
 }
 
-inline void memBmpC::unsetFrame(uarch_t pfn)
+inline void MemoryBmp::unsetFrame(uarch_t pfn)
 {	
 	__KBIT_UNSET(
 		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],
 		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp));
 }
 
-inline sarch_t memBmpC::testFrame(uarch_t pfn)
+inline sarch_t MemoryBmp::testFrame(uarch_t pfn)
 {
 	return __KBIT_TEST(
 		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],

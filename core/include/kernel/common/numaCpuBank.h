@@ -12,12 +12,12 @@
 
 // This class is only used in NUMA builds of the kernel.
 #if __SCALING__ >= SCALING_CC_NUMA
-class threadC;
+class Thread;
 
-class numaCpuBankC
+class NumaCpuBank
 {
 public:
-	numaCpuBankC(void);
+	NumaCpuBank(void);
 	error_t initialize(uarch_t nCpuBits);
 	// Used to set up the fake __kspace NUMA bank.
 	void __kspaceInitialize(void);
@@ -29,7 +29,7 @@ public:
 
 public:
 	// Chooses the best CPU on this bank to schedule the new task to.
-	error_t schedule(threadC *thread);
+	error_t schedule(Thread *thread);
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };
@@ -37,19 +37,19 @@ public:
 	void updateCapacity(ubit8 action, ubit32 val);
 
 	error_t addProximityInfo(
-		numaBankId_t bankId, timeS latency, sbit32 acpiProximityFactor);
+		numaBankId_t bankId, sTime latency, sbit32 acpiProximityFactor);
 
 	void removeProximityInfo(numaBankId_t bankId);
 
 public:
 	// A bitmap of all the CPUs on the bank. Initialize with initialize().
-	bitmapC		cpus;
+	Bitmap		cpus;
 
 	struct memProximityEntryS
 	{
 		numaBankId_t	bankId;
 		sbit32		acpiProximityFactor;
-		timeS		latency;
+		sTime		latency;
 	};
 
 	/*	EXPLANATION:
@@ -57,7 +57,7 @@ public:
 	 * latency. The implication is that banks that aren't reachable aren't
 	 * listed.
 	 **/
-	sortedPointerDoubleListC<memProximityEntryS, timeS>
+	SortedPtrDblList<memProximityEntryS, sTime>
 		memProximityMatrix;
 
 	ubit32		capacity;
@@ -65,7 +65,7 @@ public:
 
 private:
 	// Count of the number of tasks on this bank for load balancing.
-	sharedResourceGroupC<waitLockC, uarch_t>	nTasks;
+	SharedResourceGroup<WaitLock, uarch_t>	nTasks;
 };
 
 #endif /* if __SCALING__ >= SCALING_CC_NUMA */

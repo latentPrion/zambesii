@@ -56,10 +56,10 @@ A thread is scheduled to begin executing as soon as it is created.
 
 	3.1. Process spawning.
 
-processTribC::spawnProcess() / processStreamC::pullEvent().
+ProcessTrib::spawnProcess() / ProcessStream::pullEvent().
 
 Process spawning is asynchronous. The kernel allocates a process control block
-(processStreamC), an all that comes with it (address space, etc) then spawns the
+(ProcessStream), an all that comes with it (address space, etc) then spawns the
 new process' first thread at a fixed entry point address, which is the
 common-entry for all processes of its type. This common-entry code proceeds to
 open file descriptors for the process as needed parse its executable image,
@@ -79,10 +79,10 @@ successful.
 Thread spawning is synchronous since it is impossible for it to block in any
 way.
 
-processStreamC::spawnThread(
+ProcessStream::spawnThread(
 	void *entryPoint,
 	void *argument,
-	bitmapC *cpuAffinity,
+	Bitmap *cpuAffinity,
 	schedPolicyE schedPolicy, prio_t prio, uarch_t flags,
 	processId_t *ret):
 

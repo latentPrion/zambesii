@@ -29,22 +29,22 @@
 #define CPUMOD		"CPU Mod: "
 
 
-error_t zkcmCpuDetectionModC::initialize(void)
+error_t ZkcmCpuDetectionMod::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t zkcmCpuDetectionModC::shutdown(void)
+error_t ZkcmCpuDetectionMod::shutdown(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t zkcmCpuDetectionModC::suspend(void)
+error_t ZkcmCpuDetectionMod::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t zkcmCpuDetectionModC::restore(void)
+error_t ZkcmCpuDetectionMod::restore(void)
 {
 	return ERROR_SUCCESS;
 }
@@ -52,7 +52,7 @@ error_t zkcmCpuDetectionModC::restore(void)
 zkcmNumaMapS *ibmPc_cm_rGnm(void)
 {
 	zkcmNumaMapS		*ret;
-	acpi_rsdtS		*rsdt;
+	acpi_sRsdt		*rsdt;
 	acpi_rSratS		*srat;
 	acpi_rSratCpuS		*cpuEntry;
 	void			*handle, *handle2, *context;
@@ -160,7 +160,7 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 	return ret;
 }
 
-zkcmNumaMapS *zkcmCpuDetectionModC::getNumaMap(void)
+zkcmNumaMapS *ZkcmCpuDetectionMod::getNumaMap(void)
 {
 	/**	EXPLANATION:
 	 * For the IBM-PC, a NUMA map of all CPUs is essentially obtained by
@@ -188,13 +188,13 @@ zkcmNumaMapS *zkcmCpuDetectionModC::getNumaMap(void)
 	return NULL;
 }
 
-zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
+sZkcmmpMapS *ZkcmCpuDetectionMod::getSmpMap(void)
 {
 	x86_mpCfgCpuS	*mpCpu;
 	void		*handle, *handle2, *context;
 	uarch_t		pos=0, nEntries, i;
-	zkcmSmpMapS	*ret;
-	acpi_rsdtS	*rsdt;
+	sZkcmmpMapS	*ret;
+	acpi_sRsdt	*rsdt;
 	acpi_rMadtS	*madt;
 	acpi_rMadtCpuS	*madtCpu;
 
@@ -269,14 +269,14 @@ zkcmSmpMapS *zkcmCpuDetectionModC::getSmpMap(void)
 	printf(NOTICE SMPINFO"getSmpMap: ACPI: %d valid CPU entries.\n",
 		nEntries);
 
-	ret = new zkcmSmpMapS;
+	ret = new sZkcmmpMapS;
 	if (ret == NULL)
 	{
 		printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map.\n");
 		return NULL;
 	};
 
-	ret->entries = new zkcmSmpMapEntryS[nEntries];
+	ret->entries = new sZkcmmpMapEntryS[nEntries];
 	if (ret->entries == NULL)
 	{
 		delete ret;
@@ -356,7 +356,7 @@ tryMpTables:
 		printf(NOTICE SMPINFO"getSmpMap: %d valid CPU entries in MP "
 			"config tables.\n", nEntries);
 
-		ret = new zkcmSmpMapS;
+		ret = new sZkcmmpMapS;
 		if (ret == NULL)
 		{
 			printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
@@ -365,7 +365,7 @@ tryMpTables:
 			return NULL;
 		};
 
-		ret->entries = new zkcmSmpMapEntryS[nEntries];
+		ret->entries = new sZkcmmpMapEntryS[nEntries];
 		if (ret->entries == NULL)
 		{
 			printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
@@ -413,9 +413,9 @@ tryMpTables:
 	return NULL;
 }
 
-sarch_t zkcmCpuDetectionModC::checkSmpSanity(void)
+sarch_t ZkcmCpuDetectionMod::checkSmpSanity(void)
 {
-	acpi_rsdtS		*rsdt;
+	acpi_sRsdt		*rsdt;
 	acpi_rMadtS		*madt;
 	x86_mpCfgIrqSourceS	*mpCfgIrqSource;
 	void			*context, *handle, *handle2;
@@ -565,7 +565,7 @@ checkForMpTables:
 	return 1;
 }
 
-cpu_t zkcmCpuDetectionModC::getBspId(void)
+cpu_t ZkcmCpuDetectionMod::getBspId(void)
 {
 	x86LapicC	*lapic;
 
@@ -608,7 +608,7 @@ cpu_t zkcmCpuDetectionModC::getBspId(void)
 	return ibmPcState.bspInfo.bspId;
 }
 
-error_t zkcmCpuDetectionModC::setSmpMode(void)
+error_t ZkcmCpuDetectionMod::setSmpMode(void)
 {
 	error_t		ret;
 	ubit8		*lowmem;

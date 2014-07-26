@@ -12,7 +12,7 @@
  *
  * Get rid of these whenever next there is a freeze period.
  **/
-void multipleReaderLockC::readAcquire(uarch_t *_flags)
+void MultipleReaderLock::readAcquire(uarch_t *_flags)
 {
 	readerCount.lock.acquire();
 
@@ -28,7 +28,7 @@ void multipleReaderLockC::readAcquire(uarch_t *_flags)
 		->nLocksHeld++;
 }
 
-void multipleReaderLockC::readRelease(uarch_t _flags)
+void MultipleReaderLock::readRelease(uarch_t _flags)
 {
 #if __SCALING__ >= SCALING_SMP
 	// See if there is a writer waiting on the lock.
@@ -58,7 +58,7 @@ void multipleReaderLockC::readRelease(uarch_t _flags)
 	};
 }
 
-void multipleReaderLockC::writeAcquire(void)
+void MultipleReaderLock::writeAcquire(void)
 {
 	// Acquire the readerCount lock.
 	readerCount.lock.acquire();
@@ -79,7 +79,7 @@ void multipleReaderLockC::writeAcquire(void)
 #endif
 }
 
-void multipleReaderLockC::writeRelease(void)
+void MultipleReaderLock::writeRelease(void)
 {
 	/* Do not attempt to acquire the lock. We already hold it. Just unset
 	 * the write request flag and release the lock.
@@ -91,7 +91,7 @@ void multipleReaderLockC::writeRelease(void)
 	readerCount.lock.release();
 }
 
-void multipleReaderLockC::readReleaseWriteAcquire(uarch_t rwFlags)
+void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 {
 	/* Acquire the lock, set the writer flag, decrement the reader count,
 	 * wait for readers to exit. Return.

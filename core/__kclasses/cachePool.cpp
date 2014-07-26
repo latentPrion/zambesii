@@ -4,14 +4,14 @@
 #include <__kclasses/debugPipe.h>
 
 
-cachePoolC::cachePoolC(void)
+CachePool::CachePool(void)
 :
 nCaches(0), poolNodeCache(sizeof(cachePoolNodeS))
 {
 	head.rsrc = NULL;
 }
 
-cachePoolC::~cachePoolC(void)
+CachePool::~CachePool(void)
 {
 	cachePoolNodeS		*cur, *tmp;
 
@@ -26,7 +26,7 @@ cachePoolC::~cachePoolC(void)
 	};
 }
 
-void cachePoolC::dump(void)
+void CachePool::dump(void)
 {
 	printf(NOTICE CACHEPOOL"Dumping. nCaches: %d. Dump nodecache:\n",
 		nCaches);
@@ -38,13 +38,13 @@ void cachePoolC::dump(void)
 	for (cachePoolNodeS *cur = head.rsrc; cur != NULL; cur = cur->next)
 	{
 		printf(NOTICE CACHEPOOL"Node: 0x%p, Item 0x%p, size 0x%p.\n",
-			cur, cur->item, cur->item->objectSize);
+			cur, cur->item, cur->item->sObjectize);
 	};
 
 	head.lock.release();
 }
 
-status_t cachePoolC::insert(cachePoolNodeS *node)
+status_t CachePool::insert(cachePoolNodeS *node)
 {
 	cachePoolNodeS		*cur, *prev;
 
@@ -66,7 +66,7 @@ status_t cachePoolC::insert(cachePoolNodeS *node)
 	cur = head.rsrc;
 	for (; cur != NULL; )
 	{
-		if (node->item->objectSize < cur->item->objectSize)
+		if (node->item->sObjectize < cur->item->sObjectize)
 		{
 			// If adding before first item in list.
 			if (prev != NULL) {
@@ -83,7 +83,7 @@ status_t cachePoolC::insert(cachePoolNodeS *node)
 			return ERROR_SUCCESS;
 		};
 
-		if (cur->item->objectSize == node->item->objectSize)
+		if (cur->item->sObjectize == node->item->sObjectize)
 		{
 			// Cache already exists. Release lock and exit.
 			head.lock.release();
@@ -110,7 +110,7 @@ status_t cachePoolC::insert(cachePoolNodeS *node)
 	return ERROR_UNKNOWN;
 }
 
-void cachePoolC::remove(uarch_t objSize)
+void CachePool::remove(uarch_t objSize)
 {
 	cachePoolNodeS		*cur, *prev;
 
@@ -122,14 +122,14 @@ void cachePoolC::remove(uarch_t objSize)
 	cur = head.rsrc;
 	for (; cur != NULL; )
 	{
-		if (cur->item->objectSize > objSize)
+		if (cur->item->sObjectize > objSize)
 		{
 			// Cache size doesn't exist.
 			head.lock.release();
 			return;
 		};
 
-		if (cur->item->objectSize == objSize)
+		if (cur->item->sObjectize == objSize)
 		{
 			// If removing first item in list.
 			if (prev == NULL)
@@ -163,7 +163,7 @@ void cachePoolC::remove(uarch_t objSize)
 	head.lock.release();
 }
 
-slamCacheC *cachePoolC::getCache(uarch_t objSize)
+SlamCache *CachePool::getCache(uarch_t objSize)
 {
 	cachePoolNodeS		*cur;
 
@@ -174,7 +174,7 @@ slamCacheC *cachePoolC::getCache(uarch_t objSize)
 	cur = head.rsrc;
 	for (; cur != NULL; cur = cur->next)
 	{
-		if (cur->item->objectSize == objSize)
+		if (cur->item->sObjectize == objSize)
 		{
 			head.lock.release();
 			return cur->item;
@@ -186,11 +186,11 @@ slamCacheC *cachePoolC::getCache(uarch_t objSize)
 }
 
 #include <__kclasses/memReservoir.h>
-slamCacheC *cachePoolC::createCache(uarch_t objSize)
+SlamCache *CachePool::createCache(uarch_t objSize)
 {
 	cachePoolNodeS	*node;
 	status_t	status;
-	slamCacheC	*ret;
+	SlamCache	*ret;
 
 	objSize = CACHEPOOL_SIZE_ROUNDUP(objSize);
 
@@ -199,7 +199,7 @@ slamCacheC *cachePoolC::createCache(uarch_t objSize)
 		return NULL;
 	};
 
-	node->item = new slamCacheC(objSize);
+	node->item = new SlamCache(objSize);
 
 	if (node->item == NULL)
 	{
@@ -225,8 +225,8 @@ releaseNode:
 	return ret;
 }
 
-void cachePoolC::destroyCache(slamCacheC *cache)
+void CachePool::destroyCache(SlamCache *cache)
 {
-	remove(CACHEPOOL_SIZE_ROUNDUP(cache->objectSize));
+	remove(CACHEPOOL_SIZE_ROUNDUP(cache->sObjectize));
 }
 

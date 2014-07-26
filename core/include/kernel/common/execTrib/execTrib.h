@@ -37,12 +37,12 @@
 
 #define EXECTRIB_PARSER_FLAGS_STATIC	(1<<0)
 
-class execTribC
+class ExecTrib
 :
-public tributaryC
+public Tributary
 {
 public:
-	execTribC(void);
+	ExecTrib(void);
 	error_t initialize(void);
 
 public:
@@ -57,7 +57,7 @@ private:
 	executableFormatS	parsers[EXECTRIB_MAX_NPARSERS];
 };
 
-extern execTribC		execTrib;
+extern ExecTrib		execTrib;
 
 #endif
 

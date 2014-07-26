@@ -33,24 +33,24 @@
 		(((s) + sizeof(uarch_t)) & (~(sizeof(uarch_t) - 1))) \
 		: (s))
 
-class cachePoolC
+class CachePool
 :
-public allocClassC
+public AllocatorBase
 {
 private:
 	struct cachePoolNodeS;
 
 public:
-	cachePoolC(void);
+	CachePool(void);
 	error_t initialize(void) { return poolNodeCache.initialize(); };
-	~cachePoolC(void);
+	~CachePool(void);
 
 	void dump(void);
 
 public:
-	slamCacheC *getCache(uarch_t objSize);
-	slamCacheC *createCache(uarch_t objSize);
-	void destroyCache(slamCacheC *cache);
+	SlamCache *getCache(uarch_t objSize);
+	SlamCache *createCache(uarch_t objSize);
+	void destroyCache(SlamCache *cache);
 
 private:
 	status_t insert(cachePoolNodeS *node);
@@ -60,15 +60,15 @@ private:
 	struct cachePoolNodeS
 	{
 		cachePoolNodeS	*next;
-		slamCacheC	*item;
+		SlamCache	*item;
 	};
 
-	sharedResourceGroupC<waitLockC, cachePoolNodeS *>	head;
+	SharedResourceGroup<WaitLock, cachePoolNodeS *>	head;
 	uarch_t		nCaches;
-	slamCacheC	poolNodeCache;
+	SlamCache	poolNodeCache;
 };
 
-extern cachePoolC	cachePool;
+extern CachePool	cachePool;
 
 #endif
 

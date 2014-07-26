@@ -14,12 +14,12 @@
 
 #define TASKTRIB		"Task Trib: "
 
-class taskTribC
+class TaskTrib
 :
-public tributaryC
+public Tributary
 {
 public:
-	taskTribC(void);
+	TaskTrib(void);
 
 	void dump(void);
 
@@ -29,15 +29,15 @@ public:
 	 * when wake() is called on them, the target CPU's perCpuContext will be
 	 * passed to wake().
 	 **/
-	error_t schedule(threadC *thread);
+	error_t schedule(Thread *thread);
 	void yield(void);
 	// Used to prevent race conditions. See comments in definition.
-	void block(lockC::operationDescriptorS *unlockDescriptor=NULL);
+	void block(Lock::operationDescriptorS *unlockDescriptor=NULL);
 
 	// Back ends.
-	error_t dormant(taskC *task, taskContextC *perCpuContext=NULL);
-	error_t wake(taskC *task, taskContextC *perCpuContext=NULL);
-	error_t unblock(taskC *task, taskContextC *perCpuContext=NULL);
+	error_t dormant(Task *task, TaskContext *perCpuContext=NULL);
+	error_t wake(Task *task, TaskContext *perCpuContext=NULL);
+	error_t unblock(Task *task, TaskContext *perCpuContext=NULL);
 
 	/* These next few overloads are front-ends for the back ends that take
 	 * pointers. The front-ends take IDs (either a CPU ID or a process ID)
@@ -46,8 +46,8 @@ public:
 	 **/
 	error_t dormant(processId_t tid)
 	{
-		processStreamC	*proc;
-		taskC		*task;
+		ProcessStream	*proc;
+		Task		*task;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -56,7 +56,7 @@ public:
 		return dormant(task);
 	}
 
-	error_t dormant(cpuStreamC *cpuStream)
+	error_t dormant(cpuStream *cpuStream)
 	{
 		return dormant(
 			cpuStream->taskStream.getCurrentPerCpuTask(),
@@ -65,7 +65,7 @@ public:
 
 	error_t dormant(cpu_t cid)
 	{
-		cpuStreamC	*cpuStream;
+		cpuStream	*cpuStream;
 
 		cpuStream = cpuTrib.getStream(cid);
 		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -75,8 +75,8 @@ public:
 
 	error_t wake(processId_t tid)
 	{
-		processStreamC	*proc;
-		taskC		*task;
+		ProcessStream	*proc;
+		Task		*task;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -85,7 +85,7 @@ public:
 		return wake(task);
 	}
 
-	error_t wake(cpuStreamC *cpuStream)
+	error_t wake(cpuStream *cpuStream)
 	{
 		return wake(
 			cpuStream->taskStream.getCurrentPerCpuTask(),
@@ -94,7 +94,7 @@ public:
 
 	error_t wake(cpu_t cid)
 	{
-		cpuStreamC	*cpuStream;
+		cpuStream	*cpuStream;
 
 		cpuStream = cpuTrib.getStream(cid);
 		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -104,8 +104,8 @@ public:
 
 	error_t unblock(processId_t tid)
 	{
-		processStreamC	*proc;
-		taskC		*task;
+		ProcessStream	*proc;
+		Task		*task;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -114,7 +114,7 @@ public:
 		return unblock(task);
 	}
 
-	error_t unblock(cpuStreamC *cpuStream)
+	error_t unblock(cpuStream *cpuStream)
 	{
 		return unblock(
 			cpuStream->taskStream.getCurrentPerCpuTask(),
@@ -123,7 +123,7 @@ public:
 
 	error_t unblock(cpu_t cid)
 	{
-		cpuStreamC	*cpuStream;
+		cpuStream	*cpuStream;
 
 		cpuStream = cpuTrib.getStream(cid);
 		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -142,21 +142,21 @@ public:
 	void setClassQuantum(sarch_t qc, prio_t softPrio);
 
 private:
-	sharedResourceGroupC<waitLockC, taskQNodeS *>	deadQ;
+	SharedResourceGroup<WaitLock, taskQNodeS *>	deadQ;
 
 	// Global machine scheduling statistics. Used for Oceann Zambesii.
 	ubit32		load;
 	ubit32		capacity;
 };
 
-extern taskTribC	taskTrib;
+extern TaskTrib	taskTrib;
 
 
 /**	Inline methods:
  *****************************************************************************/
 
 #if __SCALING__ == SCALING_UNIPROCESSOR
-inline error_t taskTribC::schedule(taskC *task)
+inline error_t TaskTrib::schedule(Task *task)
 {
 	return cpuTrib.getCurrentCpuStream()->taskStream.schedule(task);
 }

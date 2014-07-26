@@ -9,12 +9,12 @@
 
 class i8259aPicC
 :
-public zkcmPicDeviceC
+public ZkcmPicDevice
 {
 public:
 	i8259aPicC(ubit16 nPins)
 	:
-	zkcmPicDeviceC(nPins, &baseDeviceInfo),
+	ZkcmPicDevice(nPins, &baseDeviceInfo),
 	baseDeviceInfo(
 		0, CC"i8259a", CC"IBM-PC Compatible i8259a PIC chain",
 		CC"Unknown vendor", CC"N/A")
@@ -56,7 +56,7 @@ public:
 	void chipsetEventNotification(ubit8 event, uarch_t);
 
 private:
-	zkcmDeviceC	baseDeviceInfo;
+	ZkcmDevice	baseDeviceInfo;
 };
 
 extern i8259aPicC	i8259aPic;

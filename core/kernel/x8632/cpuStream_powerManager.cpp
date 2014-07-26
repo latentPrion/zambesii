@@ -83,7 +83,7 @@ static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 }
 
 #include <arch/cpuControl.h>
-status_t cpuStreamC::powerManagerC::bootPowerOn(ubit32)
+status_t cpuStream::PowerManager::bootPowerOn(ubit32)
 {
 	error_t		ret;
 
@@ -119,15 +119,15 @@ status_t cpuStreamC::powerManagerC::bootPowerOn(ubit32)
 	 **/
 	// Set a 10 millisecond timeout.
 	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 0, 10000000), 0, 0, parent);
+		sTimestamp(0, 0, 10000000), 0, 0, parent);
 
 	return ERROR_SUCCESS;
 }
 
-void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
+void cpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 {
-	messageStreamC::iteratorS	event;
-	cpuStreamC			*cs;
+	MessageStream::sIterator	event;
+	cpuStream			*cs;
 	sarch_t				loopAgain;
 	uarch_t				sipiVector;
 	error_t				err;
@@ -139,9 +139,9 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 		loopAgain = 0;
 
 		processTrib.__kgetStream()->timerStream.pullEvent(
-			0, (timerStreamC::timerMsgS *)&event);
+			0, (TimerStream::timerMsgS *)&event);
 
-		cs = reinterpret_cast<cpuStreamC *>( event.header.privateData );
+		cs = reinterpret_cast<cpuStream *>( event.header.privateData );
 
 		switch (cs->powerManager.getPowerStatus())
 		{
@@ -180,7 +180,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 
 				processTrib.__kgetStream()->timerStream
 					.createRelativeOneshotEvent(
-						timestampS(0, 0, 200000),
+						sTimestamp(0, 0, 200000),
 						0, 0, cs);
 
 				loopAgain = 1;
@@ -208,7 +208,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 
 			processTrib.__kgetStream()->timerStream
 				.createRelativeOneshotEvent(
-					timestampS(0, 0, 200000),
+					sTimestamp(0, 0, 200000),
 					0, 0, cs);
 
 			loopAgain = 1;

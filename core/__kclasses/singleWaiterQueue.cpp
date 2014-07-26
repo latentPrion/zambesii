@@ -5,7 +5,7 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
-error_t singleWaiterQueueC::addItem(void *item)
+error_t SingleWaiterQueue::addItem(void *item)
 {
 	error_t		ret;
 
@@ -18,7 +18,7 @@ error_t singleWaiterQueueC::addItem(void *item)
 		return ERROR_UNINITIALIZED;
 	};
 
-	ret = pointerDoubleListC<void>::addItem(item);
+	ret = PtrDblList<void>::addItem(item);
 	if (ret != ERROR_SUCCESS)
 	{
 		lock.release();
@@ -27,13 +27,13 @@ error_t singleWaiterQueueC::addItem(void *item)
 
 	ubit32		nItems;
 
-	nItems = pointerDoubleListC<void>::getNItems();
+	nItems = PtrDblList<void>::getNItems();
 	if (nItems == 1)
 	{
 		ret = taskTrib.unblock(thread);
 		if (ret != ERROR_SUCCESS)
 		{
-			pointerDoubleListC<void>::removeItem(item);
+			PtrDblList<void>::removeItem(item);
 
 			lock.release();
 
@@ -51,14 +51,14 @@ error_t singleWaiterQueueC::addItem(void *item)
 	return ERROR_SUCCESS;
 }
 
-error_t singleWaiterQueueC::pop(void **item, uarch_t flags)
+error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 {
 	for (;;)
 	{
 		// Prevent lost wakeups from race conditions.
 		lock.acquire();
 
-		*item = pointerDoubleListC<void>::popFromHead();
+		*item = PtrDblList<void>::popFromHead();
 		if (*item != NULL)
 		{
 			lock.release();
@@ -71,15 +71,15 @@ error_t singleWaiterQueueC::pop(void **item, uarch_t flags)
 			return ERROR_WOULD_BLOCK;
 		};
 
-		lockC::operationDescriptorS	unlockDescriptor(
+		Lock::operationDescriptorS	unlockDescriptor(
 			&lock,
-			lockC::operationDescriptorS::WAIT);
+			Lock::operationDescriptorS::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
 	};
 }
 
-error_t singleWaiterQueueC::setWaitingThread(threadC *newThread)
+error_t SingleWaiterQueue::setWaitingThread(Thread *newThread)
 {
 	if (newThread == NULL) { return ERROR_INVALID_ARG; };
 

@@ -3,37 +3,37 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryRange.h>
 
-numaMemoryRangeC::numaMemoryRangeC(paddr_t baseAddr, paddr_t size)
+NumaMemoryRange::NumaMemoryRange(paddr_t baseAddr, paddr_t size)
 :
 baseAddr(baseAddr), size(size), bmp(baseAddr, size)
 {
 }
 
-error_t numaMemoryRangeC::initialize(void *initMem)
+error_t NumaMemoryRange::initialize(void *initMem)
 {
 	return bmp.initialize(initMem);
 }
 
-void numaMemoryRangeC::dump(void)
+void NumaMemoryRange::dump(void)
 {
 	bmp.dump();
 }
 
-numaMemoryRangeC::~numaMemoryRangeC(void)
+NumaMemoryRange::~NumaMemoryRange(void)
 {
 }
 
-sarch_t numaMemoryRangeC::identifyPaddr(paddr_t baseAddr)
+sarch_t NumaMemoryRange::identifyPaddr(paddr_t baseAddr)
 {
-	if ((baseAddr >= numaMemoryRangeC::baseAddr)
-		&& baseAddr <= (numaMemoryRangeC::baseAddr + (size-1)))
+	if ((baseAddr >= NumaMemoryRange::baseAddr)
+		&& baseAddr <= (NumaMemoryRange::baseAddr + (size-1)))
 	{
 		return 1;
 	};
 	return 0;
 }
 
-sarch_t numaMemoryRangeC::identifyPaddrRange(paddr_t paddr, paddr_t nBytes)
+sarch_t NumaMemoryRange::identifyPaddrRange(paddr_t paddr, paddr_t nBytes)
 {
 	paddr_t		callerEndPaddr;
 	paddr_t		rangeEndPaddr;
@@ -50,7 +50,7 @@ sarch_t numaMemoryRangeC::identifyPaddrRange(paddr_t paddr, paddr_t nBytes)
 	return 0;
 }
 
-void numaMemoryRangeC::releaseFrames(paddr_t paddr, uarch_t nFrames)
+void NumaMemoryRange::releaseFrames(paddr_t paddr, uarch_t nFrames)
 {
 	if (frameCache.push(nFrames, paddr) == ERROR_SUCCESS) {
 		return;
@@ -60,7 +60,7 @@ void numaMemoryRangeC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	bmp.releaseFrames(paddr, nFrames);
 }
 
-error_t numaMemoryRangeC::contiguousGetFrames(
+error_t NumaMemoryRange::contiguousGetFrames(
 	uarch_t nFrames, paddr_t *paddr, ubit32
 	)
 {
@@ -73,7 +73,7 @@ error_t numaMemoryRangeC::contiguousGetFrames(
 	return bmp.contiguousGetFrames(nFrames, paddr);
 }
 
-error_t numaMemoryRangeC::fragmentedGetFrames(
+error_t NumaMemoryRange::fragmentedGetFrames(
 	uarch_t nFrames, paddr_t *paddr, ubit32
 	)
 {
@@ -86,9 +86,9 @@ error_t numaMemoryRangeC::fragmentedGetFrames(
 	return bmp.fragmentedGetFrames(nFrames, paddr);
 }
 
-error_t numaMemoryRangeC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
+error_t NumaMemoryRange::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 {
-	/* For a numaMemoryRangeC, to map memory used is bit more complex than
+	/* For a NumaMemoryRange, to map memory used is bit more complex than
 	 * one would think. You need to flush all of the frames from the
 	 * frame cache, otherwise there may be left-over frames from the
 	 * reserved range in the cache that could be handed out to applications.
@@ -102,7 +102,7 @@ error_t numaMemoryRangeC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 	return ERROR_SUCCESS;
 }
 
-error_t numaMemoryRangeC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
+error_t NumaMemoryRange::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 {
 	/* To map frames unused for a numaMemoryRange, you can just map, and
 	 * not flush the frame cache.
@@ -115,7 +115,7 @@ error_t numaMemoryRangeC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 	return ERROR_SUCCESS;
 }
 
-status_t numaMemoryRangeC::merge(numaMemoryRangeC *nmr)
+status_t NumaMemoryRange::merge(NumaMemoryRange *nmr)
 {
 	frameCache.flush(&bmp);
 	return bmp.merge(&nmr->bmp);

@@ -14,7 +14,7 @@
 #define MEMORYBOG_SIZE_ROUNDUP(__size)			\
 	((__size + sizeof(uarch_t)) & (~(sizeof(uarch_t) - 1)))
 
-memoryBogC::memoryBogC(uarch_t bogSize, memoryStreamC *sourceStream)
+MemoryBog::MemoryBog(uarch_t bogSize, MemoryStream *sourceStream)
 :
 sourceStream(sourceStream)
 {
@@ -22,42 +22,42 @@ sourceStream(sourceStream)
 	head.rsrc = NULL;
 }
 
-error_t memoryBogC::initialize(void)
+error_t MemoryBog::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-memoryBogC::~memoryBogC(void)
+MemoryBog::~MemoryBog(void)
 {
 	// Free all blocks.
 }
 
 // Transparent method of copying headers.
-void memoryBogC::moveHeaderDown(void *hdr, uarch_t nBytes)
+void MemoryBog::moveHeaderDown(void *hdr, uarch_t nBytes)
 {
-	memoryBogC::allocHeaderS	tmp;
+	MemoryBog::allocHeaderS	tmp;
 
-	memcpy(&tmp, hdr, sizeof(memoryBogC::allocHeaderS));
+	memcpy(&tmp, hdr, sizeof(MemoryBog::allocHeaderS));
 	memcpy(
 		reinterpret_cast<void *>(
 			(uarch_t)hdr + nBytes ),
 		&tmp,
-		sizeof(memoryBogC::allocHeaderS));
+		sizeof(MemoryBog::allocHeaderS));
 }
 
-void memoryBogC::moveHeaderUp(void *hdr, uarch_t nBytes)
+void MemoryBog::moveHeaderUp(void *hdr, uarch_t nBytes)
 {
-	memoryBogC::allocHeaderS	tmp;
+	MemoryBog::allocHeaderS	tmp;
 
 	memcpy(
 		&tmp,
 		reinterpret_cast<void *>( (uarch_t)hdr + nBytes ),
-		sizeof(memoryBogC::allocHeaderS));
+		sizeof(MemoryBog::allocHeaderS));
 
-	memcpy(hdr, &tmp, sizeof(memoryBogC::allocHeaderS));
+	memcpy(hdr, &tmp, sizeof(MemoryBog::allocHeaderS));
 }
 
-void memoryBogC::dump(void)
+void MemoryBog::dump(void)
 {
 	bogBlockS	*block;
 	freeObjectS	*obj;
@@ -86,7 +86,7 @@ void memoryBogC::dump(void)
 	head.lock.release();
 }
 
-void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
+void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 {
 	bogBlockS	*blockTmp;
 	freeObjectS	*ret=0, *objTmp, *objTmpPrev;
@@ -224,7 +224,7 @@ void *memoryBogC::allocate(uarch_t nBytes, uarch_t flags)
 	return NULL;
 }
 
-void memoryBogC::free(void *_mem)
+void MemoryBog::free(void *_mem)
 {
 	allocHeaderS	*mem;
 	bogBlockS	*block;
@@ -358,7 +358,7 @@ void memoryBogC::free(void *_mem)
 	};
 }
 
-error_t memoryBogC::checkAllocations(sarch_t nBytes)
+error_t MemoryBog::checkAllocations(sarch_t nBytes)
 {
 	error_t		ret=ERROR_SUCCESS;
 
@@ -423,7 +423,7 @@ error_t memoryBogC::checkAllocations(sarch_t nBytes)
 	return ret;
 }
 
-memoryBogC::bogBlockS *memoryBogC::getNewBlock(void)
+MemoryBog::bogBlockS *MemoryBog::getNewBlock(void)
 {
 	bogBlockS	*ret;
 

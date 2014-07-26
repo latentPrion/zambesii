@@ -16,12 +16,12 @@
 
 #define FPLAINN_DETECTDRIVER_FLAGS_CPU_TARGET	MSGSTREAM_FLAGS_CPU_TARGET
 
-class floodplainnC
+class Floodplainn
 :
-public tributaryC//, public vfs::directoryOperationsC
+public Tributary//, public vfs::DirectoryOperations
 {
 public:
-	floodplainnC(void)
+	Floodplainn(void)
 	:
 	zudiIndexServerTid(PROCID_INVALID)
 	{}
@@ -29,7 +29,7 @@ public:
 	typedef void (initializeReqCallF)(error_t ret);
 	error_t initializeReq(initializeReqCallF *callback);
 
-	~floodplainnC(void) {}
+	~Floodplainn(void) {}
 
 public:
 	struct zudiKernelCallMsgS
@@ -55,7 +55,7 @@ public:
 			this->command = command;
 		}
 
-		messageStreamC::headerS	header;
+		MessageStream::sHeader	header;
 		commandE		command;
 		utf8Char		path[FVFS_PATH_MAXLEN];
 	};
@@ -103,7 +103,7 @@ public:
 		void set_final_cleanup_req(void)
 			{ mgmtOp = MGMTOP_FINAL_CLEANUP; }
 
-		messageStreamC::headerS	header;
+		MessageStream::sHeader	header;
 		mgmtOperationE		mgmtOp;
 		udi_ubit8_t		usageLevel;
 		udi_ubit8_t		enumerateLevel;
@@ -145,7 +145,7 @@ public:
 			};
 		}
 
-		messageStreamC::headerS		header;
+		MessageStream::sHeader		header;
 		zuiServer::indexMsgS		info;
 	};
 
@@ -153,14 +153,14 @@ public:
 	const driverInitEntryS *findDriverInitInfo(utf8Char *shortName);
 	const metaInitEntryS *findMetaInitInfo(utf8Char *shortName);
 
-	error_t findDriver(utf8Char *fullName, fplainn::driverC **ret);
+	error_t findDriver(utf8Char *fullName, fplainn::Driver **ret);
 
 	/* Creates a child device under a given parent and returns it to the
 	 * caller.
 	 **/
 	error_t createDevice(
 		utf8Char *parentId, numaBankId_t bid, ubit16 childId,
-		ubit32 flags, fplainn::deviceC **device);
+		ubit32 flags, fplainn::Device **device);
 
 	// Removes a given child from a given parent.
 	error_t removeDevice(utf8Char *parentId, ubit32 childId, ubit32 flags);
@@ -171,8 +171,8 @@ public:
 	/* Retrieves a device by its path. This may be a by-id, by-name,
 	 * by-class or by-path path. Consider renaming this to getDeviceHandle.
 	 **/
-	error_t getDevice(utf8Char *path, fplainn::deviceC **device);
-	error_t getDeviceFullName(fplainn::deviceC *dev, utf8Char *retname);
+	error_t getDevice(utf8Char *path, fplainn::Device **device);
+	error_t getDeviceFullName(fplainn::Device *dev, utf8Char *retname);
 
 	// Create an instance of a device in its driver instance's addrspace.
 	#define MSGSTREAM_FPLAINN_ZUDI___KCALL		(0)
@@ -291,22 +291,22 @@ public:
 
 private:
 	error_t spawnChannel(
-		fplainn::deviceC *dev0, threadC *thread0,
+		fplainn::Device *dev0, Thread *thread0,
 		udi_ops_vector_t *opsVector0,
 		udi_init_context_t *channelContext0,
-		fplainn::deviceC *dev1, threadC *thread1,
+		fplainn::Device *dev1, Thread *thread1,
 		udi_ops_vector_t *opsVector1,
 		udi_init_context_t *channelContext1);
 
 public:
-	ptrListC<fplainn::driverC>	driverList;
+	PtrList<fplainn::Driver>	driverList;
 	processId_t			zudiIndexServerTid;
 
 private:
 	static syscallbackFuncF initializeReq1;
 };
 
-extern floodplainnC		floodplainn;
+extern Floodplainn		floodplainn;
 
 extern const driverInitEntryS	driverInitInfo[];
 extern const metaInitEntryS	metaInitInfo[];

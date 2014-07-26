@@ -4,10 +4,10 @@
 	#include <__kstdlib/__ktypes.h>
 
 template <class T>
-class waitQueueC
+class WaitQueue
 {
 public:
-	waitQueueC(void);
+	WaitQueue(void);
 	error_t initialize(void);
 
 	uarch_t getNItems(void);

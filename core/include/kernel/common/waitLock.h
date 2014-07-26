@@ -9,15 +9,15 @@
  * the lock is acquired.
  **/
 
-class recursiveLockC;
-class multipleReaderLockC;
+class RecursiveLock;
+class MultipleReaderLock;
 
-class waitLockC
+class WaitLock
 :
-public lockC
+public Lock
 {
-friend class recursiveLockC;
-friend class multipleReaderLockC;
+friend class RecursiveLock;
+friend class MultipleReaderLock;
 
 public:
 	void acquire();

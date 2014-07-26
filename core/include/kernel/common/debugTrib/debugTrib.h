@@ -9,10 +9,10 @@
 
 #define DEBUGTRIB_ENTER_DELAY		2000
 
-class debugTribC
+class DebugTrib
 {
 public:
-	debugTribC(void);
+	DebugTrib(void);
 
 public:
 	void enterFromIrq(void);
@@ -21,7 +21,7 @@ public:
 
 private:
 	// The number of CPUs currently inside of the debugger.
-	sharedResourceGroupC<waitLockC, ubit16>	cpuCount;
+	SharedResourceGroup<WaitLock, ubit16>	cpuCount;
 };
 
 #endif

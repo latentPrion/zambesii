@@ -5,8 +5,8 @@
 
 /**	EXPLANATION:
  * In order to lessen the number of circular dependencies in the kernel, these
- * wrapper functions around memoryTribC::rawMemAlloc() and
- * memoryTribC::rawMemFree() have been implemented. Their sole purpose is to
+ * wrapper functions around MemoryTrib::rawMemAlloc() and
+ * MemoryTrib::rawMemFree() have been implemented. Their sole purpose is to
  * allow circumnavigation of the need to include memoryTrib.h where it causes
  * an #include circular chaotic hell.
  **/

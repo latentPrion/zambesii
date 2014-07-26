@@ -11,7 +11,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-static x86IoApic::cacheS	cache;
+static x86IoApic::sCache	cache;
 
 void x86IoApic::initializeCache(void)
 {
@@ -32,7 +32,7 @@ void x86IoApic::flushCache(void)
 	cache.vectorBaseCounter = ARCH_INTERRUPTS_VECTOR_PIN_START;
 }
 
-error_t x86IoApic::allocateVectorBaseFor(ioApicC *ioApic, ubit8 *vectorBase)
+error_t x86IoApic::allocateVectorBaseFor(IoApic *ioApic, ubit8 *vectorBase)
 {
 	// Make sure we haven't maxed out on interrupt vectors.
 	if (cache.vectorBaseCounter + ioApic->getNIrqs()
@@ -46,14 +46,14 @@ error_t x86IoApic::allocateVectorBaseFor(ioApicC *ioApic, ubit8 *vectorBase)
 	return ERROR_SUCCESS;
 }
 
-x86IoApic::ioApicC *x86IoApic::getIoApicByVector(ubit8 vector)
+x86IoApic::IoApic *x86IoApic::getIoApicByVector(ubit8 vector)
 {
-	hardwareIdListC::iterator	it;
-	ioApicC				*ioApic;
+	HardwareIdList::iterator	it;
+	IoApic				*ioApic;
 
 	it = cache.ioApics.begin();
-	for (ioApic = (ioApicC *)it++;
-		ioApic != NULL; ioApic = (ioApicC *)it++)
+	for (ioApic = (IoApic *)it++;
+		ioApic != NULL; ioApic = (IoApic *)it++)
 	{
 		if (ioApic->getVectorBase() <= vector
 			&& (ioApic->getVectorBase() + ioApic->getNIrqs())
@@ -87,16 +87,16 @@ ubit16 x86IoApic::getNIoApics(void)
 	return cache.nIoApics;
 }
 
-x86IoApic::ioApicC *x86IoApic::getIoApic(ubit8 id)
+x86IoApic::IoApic *x86IoApic::getIoApic(ubit8 id)
 {
-	return reinterpret_cast<ioApicC *>( cache.ioApics.getItem(id) );
+	return reinterpret_cast<IoApic *>( cache.ioApics.getItem(id) );
 }
 
 static error_t rsdtDetectIoApics(void)
 {
 	error_t			ret;
-	x86IoApic::ioApicC	*tmp;
-	acpi_rsdtS		*rsdt;
+	x86IoApic::IoApic	*tmp;
+	acpi_sRsdt		*rsdt;
 	acpi_rMadtS		*madt;
 	acpi_rMadtIoApicS	*ioApicEntry;
 	void			*handle, *handle2, *context;
@@ -117,7 +117,7 @@ static error_t rsdtDetectIoApics(void)
 			ioApicEntry =
 				acpiRMadt::getNextIoApicEntry(madt, &handle2))
 		{
-			tmp = new x86IoApic::ioApicC(
+			tmp = new x86IoApic::IoApic(
 				ioApicEntry->ioApicId,
 				ioApicEntry->ioApicPaddr,
 				ioApicEntry->globalIrqBase);
@@ -165,7 +165,7 @@ error_t x86IoApic::detectIoApics(void)
 	uarch_t			pos;
 	void			*handle;
 	ubit8			nIoApics=0;
-	ioApicC			*tmp;
+	IoApic			*tmp;
 
 	if (cache.magic != x86IOAPIC_MAGIC) { return ERROR_INVALID_ARG; };
 	if (ioApicsAreDetected()) { return ERROR_SUCCESS; };
@@ -233,7 +233,7 @@ tryMpTables:
 		};
 
 		// Used MP tables to discover it, so no ACPI Global ID info.
-		tmp = new ioApicC(
+		tmp = new IoApic(
 			ioApicEntry->ioApicId, ioApicEntry->ioApicPaddr,
 			IRQCTL_IRQPIN_ACPIID_INVALID);
 
@@ -267,16 +267,16 @@ tryMpTables:
 	return ERROR_SUCCESS;
 }
 
-x86IoApic::ioApicC *x86IoApic::getIoApicFor(ubit16 __kpin)
+x86IoApic::IoApic *x86IoApic::getIoApicFor(ubit16 __kpin)
 {
 	sarch_t		context;
-	ioApicC		*ret;
+	IoApic		*ret;
 
 	context = cache.ioApics.prepareForLoop();
-	ret = reinterpret_cast<ioApicC*>( cache.ioApics.getLoopItem(&context) );
+	ret = reinterpret_cast<IoApic*>( cache.ioApics.getLoopItem(&context) );
 
 	for (; ret != NULL;
-		ret = (ioApicC *)cache.ioApics.getLoopItem(&context))
+		ret = (IoApic *)cache.ioApics.getLoopItem(&context))
 	{
 		if (__kpin >= ret->get__kpinBase()
 			&& __kpin < (ret->get__kpinBase() + ret->getNIrqs())
@@ -291,14 +291,14 @@ x86IoApic::ioApicC *x86IoApic::getIoApicFor(ubit16 __kpin)
 
 void x86IoApic::maskAll(void)
 {
-	ioApicC		*ioApic;
+	IoApic		*ioApic;
 	sarch_t		context;
 
 	context = cache.ioApics.prepareForLoop();
-	ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context);
+	ioApic = (IoApic *)cache.ioApics.getLoopItem(&context);
 
 	for (; ioApic != NULL;
-		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
+		ioApic = (IoApic *)cache.ioApics.getLoopItem(&context))
 	{
 		ioApic->maskAll();
 	};
@@ -306,14 +306,14 @@ void x86IoApic::maskAll(void)
 
 void x86IoApic::unmaskAll(void)
 {
-	ioApicC		*ioApic;
+	IoApic		*ioApic;
 	sarch_t		context;
 
 	context = cache.ioApics.prepareForLoop();
-	ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context);
+	ioApic = (IoApic *)cache.ioApics.getLoopItem(&context);
 
 	for (; ioApic != NULL;
-		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
+		ioApic = (IoApic *)cache.ioApics.getLoopItem(&context))
 	{
 		ioApic->unmaskAll();
 	};
@@ -322,7 +322,7 @@ void x86IoApic::unmaskAll(void)
 error_t x86IoApic::get__kpinFor(uarch_t girqNo, ubit16 *__kpin)
 {
 	sarch_t		context;
-	ioApicC		*ioApic;
+	IoApic		*ioApic;
 
 	/* Truth be told, the only way to know for this case is by using
 	 * the ACPI IDs.
@@ -333,10 +333,10 @@ error_t x86IoApic::get__kpinFor(uarch_t girqNo, ubit16 *__kpin)
 	 * assume the pin doesn't exist.
 	 **/
 	context = cache.ioApics.prepareForLoop();
-	ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context);
+	ioApic = (IoApic *)cache.ioApics.getLoopItem(&context);
 
 	for (; ioApic != NULL;
-		ioApic = (ioApicC *)cache.ioApics.getLoopItem(&context))
+		ioApic = (IoApic *)cache.ioApics.getLoopItem(&context))
 	{
 		if (ioApic->get__kpinFor(girqNo, __kpin) == ERROR_SUCCESS) {
 			return ERROR_SUCCESS;

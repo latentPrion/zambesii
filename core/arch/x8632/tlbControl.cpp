@@ -20,11 +20,11 @@ void tlbControl::flushSingleEntry(void *vaddr)
 	);
 }
 
-void tlbControl::saveContext(vaddrSpaceC *)
+void tlbControl::saveContext(VaddrSpace *)
 {
 }
 
-void tlbControl::loadContext(vaddrSpaceC *context)
+void tlbControl::loadContext(VaddrSpace *context)
 {
 	asm volatile("movl	%0, %%cr3\n\t"
 		:
@@ -53,7 +53,7 @@ void tlbControl::flushEntryRange(void *vaddr, uarch_t nPages)
 
 void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 {
-	bitmapC		*bmp;
+	Bitmap		*bmp;
 
 	/**	EXPLANATION:
 	 * There are two cases for SMP range flushing:

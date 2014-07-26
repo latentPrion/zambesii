@@ -17,20 +17,20 @@
 #define TIMERSTREAM_CREATEONESHOT_TYPE_RELATIVE		(0x1)
 #define TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL		(0x1)
 
-class timerQueueC;
-class processStreamC;
-class threadC;
+class TimerQueue;
+class ProcessStream;
+class Thread;
 
-class timerStreamC
+class TimerStream
 :
-public streamC
+public Stream
 {
-friend class timerTribC;
-friend class timerQueueC;
+friend class TimerTrib;
+friend class TimerQueue;
 public:
-	timerStreamC(processId_t id, processStreamC *parent)
+	TimerStream(processId_t id, ProcessStream *parent)
 	:
-	streamC(id), parent(parent)
+	Stream(id), parent(parent)
 	{}
 
 	error_t initialize(void);
@@ -47,20 +47,20 @@ public:
 		header(targetPid, subsystem, function, size, flags, privateData)
 		{}
 
-		messageStreamC::headerS	header;
+		MessageStream::sHeader	header;
 		requestTypeE		type;
-		timestampS		placementStamp, expirationStamp,
+		sTimestamp		placementStamp, expirationStamp,
 					actualExpirationStamp;
-		timerQueueC		*currentQueue;
+		TimerQueue		*currentQueue;
 	};
 
 	// sarch_t nanosleep(ubit32 delay);
 	// sarch_t microsleep(ubit32 delay);
 	// sarch_t millisleep(ubit32 delay);
-	// sarch_t sleep(timeS delay);
+	// sarch_t sleep(sTime delay);
 
 	error_t createAbsoluteOneshotEvent(
-		timestampS stamp, processId_t targetPid,
+		sTimestamp stamp, processId_t targetPid,
 		ubit32 flags, void *privateData)
 	{
 		return createOneshotEvent(
@@ -69,7 +69,7 @@ public:
 	}
 
 	error_t createRelativeOneshotEvent(
-		timestampS stamp, processId_t targetPid,
+		sTimestamp stamp, processId_t targetPid,
 		ubit32 flags, void *privateData)
 	{
 		return createOneshotEvent(
@@ -78,7 +78,7 @@ public:
 	}
 
 	/* wakeTarget:
-	 *	Target thread (threadC) or cpu (cpuStreamC) which must be
+	 *	Target thread (Thread) or cpu (cpuStream) which must be
 	 *	awakened by this timer, and on whose messageStream the
 	 *	notification message will be queued.
 	 *
@@ -86,14 +86,14 @@ public:
 	 *		* If wakeTarget is NULL, the target CPU to wake is
 	 *		  assumed to be the current CPU. The behaviour is the
 	 *		  same as passing the current CPU's cpuStream pointer.
-	 *		* If wakeTarget is set, it is assumed to be a cpuStreamC
+	 *		* If wakeTarget is set, it is assumed to be a cpuStream
 	 *		  pointer for the CPU on which to queue the callback and
 	 *		  wake on event expiry.
 	 *	If MSGSTREAM_FLAGS_CPU_TARGET is not set, then:
 	 *		* If wakeTarget is NULL, the target thread is assumed to
 	 *		  be the calling thread. The behaviour is the same as
 	 *		  the calling thread passing itself as an argument.
-	 *		* If wakeTarget is set, it is assumed to be a threadC
+	 *		* If wakeTarget is set, it is assumed to be a Thread
 	 *		  pointer for the thread to queue the callback on, and
 	 *		  wake when the event expires.
 	 *
@@ -101,12 +101,12 @@ public:
 	 **/
 	#define MSGSTREAM_TIMER_CREATE_ONESHOT_EVENT	(0)
 	error_t createOneshotEvent(
-		timestampS stamp, ubit8 type, processId_t targetPid,
+		sTimestamp stamp, ubit8 type, processId_t targetPid,
 		ubit32 flags, void *privateData);
 
 	#define MSGSTREAM_TIMER_CREATE_PERIODIC_EVENT	(1)
 	error_t createPeriodicEvent(
-		timeS interval, processId_t targetPid,
+		sTime interval, processId_t targetPid,
 		ubit32 flags, void *privateData);
 
 	// Pulls an event from the expired events list.
@@ -122,22 +122,22 @@ private:
 
 	/* Queues a timer request expiry event on this stream and returns a
 	 * pointer to the object that it unblocked. That is, it returns a
-	 * pointer to the threadC or cpuStreamC object that it unblocked
+	 * pointer to the Thread or cpuStream object that it unblocked
 	 * after queueing the new callback.
 	 **/
 	void *timerRequestTimeoutNotification(
-		timerMsgS *request, timestampS *eventStamp);
+		timerMsgS *request, sTimestamp *eventStamp);
 
 	// Causes this stream to insert its next request into the timer queues.
 	void timerRequestTimeoutNotification(void);
 
 private:
-	sortedPointerDoubleListC<timerMsgS, timestampS>	requests;
+	SortedPtrDblList<timerMsgS, sTimestamp>	requests;
 	/* Used to prevent race conditions while requests from this process are
 	 * being expired.
 	 **/
-	waitLockC					requestQueueLock;
-	processStreamC					*parent;
+	WaitLock					requestQueueLock;
+	ProcessStream					*parent;
 };
 
 #endif

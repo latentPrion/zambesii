@@ -6,16 +6,16 @@
 #include <kernel/common/debugTrib/debugTrib.h>
 
 
-debugTribC::debugTribC(void)
+DebugTrib::DebugTrib(void)
 {
 	cpuCount.rsrc = 0;
 }
 
-void debugTribC::enterFromIrq(void)
+void DebugTrib::enterFromIrq(void)
 {
 }
 
-void debugTribC::enterNoIrq(void)
+void DebugTrib::enterNoIrq(void)
 {
 	cpuCount.lock.acquire();
 	cpuCount.rsrc++;
@@ -26,7 +26,7 @@ void debugTribC::enterNoIrq(void)
 	__kdebug.untieFrom(CHIPSET_DEBUG_DEVICE_TERMINAL_MASK);
 }
 
-void debugTribC::exit(void)
+void DebugTrib::exit(void)
 {
 	ubit16		nCpus;
 

@@ -10,7 +10,7 @@
 /**	EXPLANATION:
  * Alloc Table is the kernel's assurance of recollection of dynamically
  * allocated pmem from a process when it is killed. Every process has an
- * allocTableC, including the kernel itself. AllocTableC ONLY tracks _dynamic_
+ * AllocTable, including the kernel itself. AllocTableC ONLY tracks _dynamic_
  * allocations.
  *
  * Static executable sections such as .text, .data, .rodata etc do not require
@@ -26,10 +26,10 @@
  *	4. Memory mapped file allocation.: SWAP, RW, FAKE
  *	5. Memory Region allocation.	 : NOSWAP, RW, NOFAKE
  *
- * 1, 2: Handled by memoryStreamC::memAlloc().
- * 3: Handled by memoryStreamC::sharedMemoryAlloc().
- * 4: Handled by memoryStreamC::memoryMappedFileAlloc().
- * 5: Handled by memoryStreamC::memoryRegionAlloc().
+ * 1, 2: Handled by MemoryStream::memAlloc().
+ * 3: Handled by MemoryStream::sharedMemoryAlloc().
+ * 4: Handled by MemoryStream::memoryMappedFileAlloc().
+ * 5: Handled by MemoryStream::memoryRegionAlloc().
  **/
 
 #define ALLOCTABLE_ATTRIB_NOSWAP	(1<<0)
@@ -38,10 +38,10 @@
 
 #define ALLOCTABLE_NPAGES_SHIFT		4
 
-class allocTableC
+class AllocTable
 {
 public:
-	allocTableC(void) {}
+	AllocTable(void) {}
 	error_t initialize(void) { return allocTable.initialize(); }
 
 public:
@@ -50,8 +50,8 @@ public:
 	void removeEntry(void *vaddr);
 
 private:
-	// allocTableC is nothing more than a wrapper around __kequalizerListC.
-	__kequalizerListC<allocTableEntryC>	allocTable;
+	// AllocTable is nothing more than a wrapper around __kEqualizerList.
+	__kEqualizerList<AllocTableEntry>	allocTable;
 };
 
 #endif

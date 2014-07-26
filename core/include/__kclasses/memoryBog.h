@@ -16,7 +16,7 @@
  *
  * From there, things are very simple: To allocate, the memoryBog class
  * will traverse a list of nodes of variable sizes (this is very similar to
- * vSwampC, and was inspired by vSwampC.) until a node of suitable size has been
+ * VSwamp, and was inspired by VSwamp.) until a node of suitable size has been
  * found. This node's size will be decremented, and a pointer to the found
  * memory will be returned.
  *
@@ -30,18 +30,18 @@
 #define MEMBOG_NO_EXPAND_ON_FAIL	(1<<0)
 #define MEMBOG				"Memory Bog: "
 
-class memReserviorC;
-class memoryStreamC;
+class MemReservoir;
+class MemoryStream;
 
-class memoryBogC
+class MemoryBog
 :
-public allocClassC
+public AllocatorBase
 {
-friend class memReservoirC;
+friend class MemReservoir;
 public:
-	memoryBogC(uarch_t bogSize, memoryStreamC *sourceStream);
+	MemoryBog(uarch_t bogSize, MemoryStream *sourceStream);
 	error_t initialize(void);
-	~memoryBogC(void);
+	~MemoryBog(void);
 
 public:
 	void *allocate(uarch_t nBytes, uarch_t flags=0);
@@ -81,8 +81,8 @@ private:
 
 	bogBlockS *getNewBlock(void);
 
-	memoryStreamC		*sourceStream;
-	sharedResourceGroupC<waitLockC, bogBlockS *>	head;
+	MemoryStream		*sourceStream;
+	SharedResourceGroup<WaitLock, bogBlockS *>	head;
 };
 
 #endif

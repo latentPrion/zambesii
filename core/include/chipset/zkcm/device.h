@@ -5,10 +5,10 @@
 	#include <__kstdlib/__kclib/string8.h>
 
 // Chipset device classes should instantiate one of these per device object.
-class zkcmDeviceC
+class ZkcmDevice
 {
 public:
-	inline zkcmDeviceC(
+	inline ZkcmDevice(
 		ubit32 childId,
 		utf8Char *shortName, utf8Char *longName,
 		utf8Char *vendorName, utf8Char *vendorContact);
@@ -26,25 +26,25 @@ public:
 };
 
 // Inherited by all kernel device API classes.
-class zkcmDeviceBaseC
+class ZkcmDeviceBase
 {
 public:
-	zkcmDeviceC *getBaseDevice(void) { return device; }
+	ZkcmDevice *getBaseDevice(void) { return device; }
 
 protected:
-	zkcmDeviceBaseC(zkcmDeviceC *device)
+	ZkcmDeviceBase(ZkcmDevice *device)
 	:
 	device(device)
 	{}
 
 private:
-	zkcmDeviceC	*device;
+	ZkcmDevice	*device;
 };
 
 /**	Inline methods.
  ******************************************************************************/
 
-zkcmDeviceC::zkcmDeviceC(
+ZkcmDevice::ZkcmDevice(
 	ubit32 childId,
 	utf8Char *shortName, utf8Char *longName,
 	utf8Char *vendorName, utf8Char *vendorContact
@@ -52,10 +52,10 @@ zkcmDeviceC::zkcmDeviceC(
 :
 childId(childId)
 {
-	strcpy8(zkcmDeviceC::shortName, shortName);
-	strcpy8(zkcmDeviceC::longName, longName);
-	strcpy8(zkcmDeviceC::vendorName, vendorName);
-	strcpy8(zkcmDeviceC::vendorContact, vendorContact);
+	strcpy8(ZkcmDevice::shortName, shortName);
+	strcpy8(ZkcmDevice::longName, longName);
+	strcpy8(ZkcmDevice::vendorName, vendorName);
+	strcpy8(ZkcmDevice::vendorContact, vendorContact);
 }
 
 #endif

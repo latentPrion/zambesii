@@ -7,7 +7,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-hardwareIdListC::hardwareIdListC(void)
+HardwareIdList::HardwareIdList(void)
 {
 	preAllocated = 0;
 	arr.rsrc.maxIndex = HWIDLIST_INDEX_INVALID;
@@ -16,7 +16,7 @@ hardwareIdListC::hardwareIdListC(void)
 	arr.rsrc.arr = NULL;
 }
 
-error_t hardwareIdListC::initialize(
+error_t HardwareIdList::initialize(
 	void *preallocatedMem, ubit16 preallocatedSize
 	)
 {
@@ -32,7 +32,7 @@ error_t hardwareIdListC::initialize(
 	return ERROR_SUCCESS;
 }
 
-void hardwareIdListC::dump(void)
+void HardwareIdList::dump(void)
 {
 	uarch_t		rwFlags;
 
@@ -56,7 +56,7 @@ void hardwareIdListC::dump(void)
 	arr.lock.readRelease(rwFlags);
 }
 
-void *hardwareIdListC::getItem(sarch_t id)
+void *HardwareIdList::getItem(sarch_t id)
 {
 	uarch_t		rwFlags;
 	void		*ret=NULL;
@@ -77,7 +77,7 @@ void *hardwareIdListC::getItem(sarch_t id)
 	return ret;
 }
 
-error_t hardwareIdListC::findFreeIndex(uarch_t *id)
+error_t HardwareIdList::findFreeIndex(uarch_t *id)
 {
 	uarch_t		rwFlags;
 
@@ -100,7 +100,7 @@ error_t hardwareIdListC::findFreeIndex(uarch_t *id)
 	return ERROR_GENERAL;
 }
 
-sarch_t hardwareIdListC::prepareForLoop(void)
+sarch_t HardwareIdList::prepareForLoop(void)
 {
 	uarch_t		rwFlags;
 	sarch_t		ret;
@@ -112,7 +112,7 @@ sarch_t hardwareIdListC::prepareForLoop(void)
 	return ret;
 }
 
-void *hardwareIdListC::getLoopItem(sarch_t *context)
+void *HardwareIdList::getLoopItem(sarch_t *context)
 {
 	uarch_t		rwFlags;
 	void		*ret;
@@ -138,7 +138,7 @@ void *hardwareIdListC::getLoopItem(sarch_t *context)
 	return ret;
 }
 
-error_t hardwareIdListC::addItem(sarch_t index, void *item)
+error_t HardwareIdList::addItem(sarch_t index, void *item)
 {
 	uarch_t		rwFlags;
 	sarch_t		maxIndex, maxAllocatedIndex;
@@ -258,7 +258,7 @@ error_t hardwareIdListC::addItem(sarch_t index, void *item)
 	return ERROR_SUCCESS;
 }
 
-void hardwareIdListC::removeItem(sarch_t id)
+void HardwareIdList::removeItem(sarch_t id)
 {
 	uarch_t		rwFlags;
 	sarch_t		maxIndex;

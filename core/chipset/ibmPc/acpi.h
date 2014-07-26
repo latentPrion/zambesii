@@ -6,7 +6,7 @@
 
 #define IBMPCNMAP
 
-struct rsdpS
+struct sRsdp
 {
 	ubit8		sig[8];
 	ubit8		checksum;
@@ -32,19 +32,19 @@ struct sdtHeaderS
 	ubit32		creatorRevision;
 };
 
-struct rsdtS
+struct sRsdt
 {
 	struct sdtHeaderS	header;
 	ubit32			entries;
 };
 
-struct xsdtS
+struct sXsdt
 {
 	struct sdtHeaderS	header;
 	ubit32			entries[][2];
 };
 
-struct sratS
+struct sSrat
 {
 	struct sdtHeaderS	header;
 	ubit8			reserved[12];
@@ -81,7 +81,7 @@ struct sratMemS
 };
 
 struct chipsetNumaMapS *ibmPc_mi_getNumaMap(void);
-struct sratS *ibmPc_mi_findSrat(ubit32 sdtPaddr);
+struct sSrat *ibmPc_mi_findSrat(ubit32 sdtPaddr);
 
 #endif
 

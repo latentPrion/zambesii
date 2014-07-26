@@ -8,7 +8,7 @@
 
 
 // Static data member.
-uarch_t debug::debuggerC::flags = 0;
+uarch_t debug::Debugger::flags = 0;
 
 
 void debug::stackDescriptorS::dump(void)
@@ -19,12 +19,12 @@ void debug::stackDescriptorS::dump(void)
 
 void debug::getCurrentStackInfo(stackDescriptorS *desc)
 {
-	taskC		*currTask;
-	threadC		*currThread=NULL;
+	Task		*currTask;
+	Thread		*currThread=NULL;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	if (currTask->getType() != task::PER_CPU)
-		{ currThread = (threadC *)currTask; };
+		{ currThread = (Thread *)currTask; };
 
 	if (currThread != NULL)
 	{
@@ -92,7 +92,7 @@ void debug::enableDebugExtensions(void)
 		movl	%eax, %cr4\n\t \
 		popl	%eax\n\t");
 
-	FLAG_SET(debuggerC::flags, DEBUG_FLAGS_ENABLED);
+	FLAG_SET(Debugger::flags, DEBUG_FLAGS_ENABLED);
 }
 
 void debug::disableDebugExtensions(void)
@@ -104,12 +104,12 @@ void debug::disableDebugExtensions(void)
 		movl	%eax, %cr4\n\t \
 		popl	%eax\n\t");
 
-	FLAG_UNSET(debuggerC::flags, DEBUG_FLAGS_ENABLED);
+	FLAG_UNSET(Debugger::flags, DEBUG_FLAGS_ENABLED);
 }
 
 sarch_t debug::debugExtensionsEnabled(void)
 {
-	return FLAG_TEST(debuggerC::flags, DEBUG_FLAGS_ENABLED);
+	return FLAG_TEST(Debugger::flags, DEBUG_FLAGS_ENABLED);
 }
 
 static const ubit8 rwxShiftTable[4] = { 16, 20, 24, 28 };
@@ -136,7 +136,7 @@ static void __attribute__((noinline)) setRwxBits(ubit8 breakpoint, ubit8 rwx)
 				"\tDisabling breakpoint.\n",
 				rwx, breakpoint);
 
-			debug::debuggerC	debugger;
+			debug::Debugger	debugger;
 			debugger.disableBreakpoint(breakpoint);
 			return;
 		};
@@ -171,7 +171,7 @@ static void __attribute__((noinline)) setOpSize(ubit8 breakpoint, ubit8 opSize)
 			"Disabling breakpoint.\n",
 			opSize, breakpoint);
 
-		debug::debuggerC	debugger;
+		debug::Debugger	debugger;
 		debugger.disableBreakpoint(breakpoint);
 		return;
 	};
@@ -244,7 +244,7 @@ static void (*const breakpointFuncs[])(void *, ubit8, ubit8) =
 	&setBreakpoint0, &setBreakpoint1, &setBreakpoint2, &setBreakpoint3
 };
 
-void debug::debuggerC::setBreakpoint(
+void debug::Debugger::setBreakpoint(
 	ubit8 breakpoint, void *addr, ubit8 opSize, ubit8 rwx
 	)
 {
@@ -259,7 +259,7 @@ void debug::debuggerC::setBreakpoint(
 	(*breakpointFuncs[breakpoint])(addr, opSize, rwx);
 }
 
-void debug::debuggerC::enableBreakpoint(ubit8 breakpoint)
+void debug::Debugger::enableBreakpoint(ubit8 breakpoint)
 {
 	/**	EXPLANATION:
 	 * Sets the G<n> flag to globally enable the breakpoint. No support for
@@ -285,7 +285,7 @@ void debug::debuggerC::enableBreakpoint(ubit8 breakpoint)
 		: "%eax");
 }
 
-void debug::debuggerC::disableBreakpoint(ubit8 breakpoint)
+void debug::Debugger::disableBreakpoint(ubit8 breakpoint)
 {
 	/**	EXPLANATION:
 	 * Unsets the G<n> flag to globally disable the breakpoint. No support
@@ -312,7 +312,7 @@ void debug::debuggerC::disableBreakpoint(ubit8 breakpoint)
 		: "%eax");
 }
 
-sarch_t debug::debuggerC::breakpointEnabled(ubit8 breakpoint)
+sarch_t debug::Debugger::breakpointEnabled(ubit8 breakpoint)
 {
 	if (breakpoint > 3)
 	{

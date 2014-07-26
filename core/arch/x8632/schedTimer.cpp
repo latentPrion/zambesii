@@ -4,7 +4,7 @@
 
 
 // If this doesn't return ERROR_SUCCESS, that's a lot of trouble.
-error_t schedTimerC::initialize(void)
+error_t SchedTimer::initialize(void)
 {
 	/**	EXPLANATION:
 	 * Detect LAPIC. If it exists, initialize it to a known state and

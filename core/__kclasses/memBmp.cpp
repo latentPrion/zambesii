@@ -16,10 +16,10 @@
 #define MEMBMP_FULL_SLOT		(~((uarch_t)0))
 #define MEMBMP_ALLOC_UNSUCCESSFUL	(~((uarch_t)0))
 
-memBmpC::memBmpC(paddr_t baseAddr, paddr_t size)
+MemoryBmp::MemoryBmp(paddr_t baseAddr, paddr_t size)
 {
 	flags = 0;
-	memBmpC::baseAddr = baseAddr;
+	MemoryBmp::baseAddr = baseAddr;
 	endAddr = baseAddr + (size - 1);
 
 	basePfn = baseAddr >> PAGING_BASE_SHIFT;
@@ -35,7 +35,7 @@ memBmpC::memBmpC(paddr_t baseAddr, paddr_t size)
 #define MEMBMP_DUMP_STRETCHTYPE_FREE		0
 #define MEMBMP_DUMP_STRETCHTYPE_USED		1
 
-void memBmpC::dump(void)
+void MemoryBmp::dump(void)
 {
 	ubit32		nFree=0, nUsed=0;
 	sbit32		stretch=0, sc;
@@ -107,7 +107,7 @@ void memBmpC::dump(void)
  *
  * This is to prevent conflicts between BMPs.
  **/
-error_t memBmpC::initialize(void *preAllocated)
+error_t MemoryBmp::initialize(void *preAllocated)
 {
 	if (preAllocated != NULL) {
 		bmp.rsrc.bmp = new (preAllocated) uarch_t[nIndexes];
@@ -140,7 +140,7 @@ error_t memBmpC::initialize(void *preAllocated)
 	return ERROR_SUCCESS;
 }
 
-memBmpC::~memBmpC(void)
+MemoryBmp::~MemoryBmp(void)
 {
 	if (FLAG_TEST(flags, MEMBMP_FLAGS_DYNAMIC))
 	{
@@ -148,7 +148,7 @@ memBmpC::~memBmpC(void)
 	};
 }
 
-status_t memBmpC::merge(memBmpC *b)
+status_t MemoryBmp::merge(MemoryBmp *b)
 {
 	uarch_t		loopMaxPfn, loopStartPfn;
 	status_t	ret=0;
@@ -188,7 +188,7 @@ status_t memBmpC::merge(memBmpC *b)
 	return ret;
 }
 
-error_t memBmpC::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
+error_t MemoryBmp::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
 {
 	/* FIXME: bmp.rsrc.lastAllocIndex should be reset and the whole thing
 	 * done over once more if it reaches the last bit and no memory was
@@ -296,7 +296,7 @@ success:
 	return ERROR_SUCCESS;
 }
 
-status_t memBmpC::fragmentedGetFrames(uarch_t _nFrames, paddr_t *paddr)
+status_t MemoryBmp::fragmentedGetFrames(uarch_t _nFrames, paddr_t *paddr)
 {
 	/* FIXME: bmp.rsrc.lastAllocIndex should be reset and the whole thing
 	 * done over once more if it reaches the last bit and no memory was
@@ -389,7 +389,7 @@ out:
 	return nFound;
 }	
 
-void memBmpC::releaseFrames(paddr_t frameAddr, uarch_t _nFrames)
+void MemoryBmp::releaseFrames(paddr_t frameAddr, uarch_t _nFrames)
 {
 	uarch_t		rangeStartPfn = frameAddr >> PAGING_BASE_SHIFT;
 	uarch_t		rangeEndPfn = rangeStartPfn + _nFrames;
@@ -409,7 +409,7 @@ void memBmpC::releaseFrames(paddr_t frameAddr, uarch_t _nFrames)
 	bmp.lock.release();
 }
 
-void memBmpC::mapMemUsed(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
+void MemoryBmp::mapMemUsed(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 {
 	uarch_t		rangeStartPfn=basePfn;
 	uarch_t		rangeEndPfn;
@@ -432,7 +432,7 @@ void memBmpC::mapMemUsed(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 	bmp.lock.release();
 }
 
-void memBmpC::mapMemUnused(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
+void MemoryBmp::mapMemUnused(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 {
 	uarch_t		rangeStartPfn=basePfn;
 	uarch_t		rangeEndPfn;

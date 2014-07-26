@@ -7,13 +7,13 @@
 	#include <kernel/common/cpuTrib/cpuTrib.h>
 
 extern "C" void __kcpuPowerOnEntry(void);
-extern "C" void __kcpuPowerOnMain(cpuStreamC *self);
+extern "C" void __kcpuPowerOnMain(cpuStream *self);
 
 extern "C" ubit8	*__kcpuPowerOnLapicVaddr;
 extern "C" void		**__kcpuPowerOnSleepStacks;
 extern uarch_t		__kcpuPowerOnSleepStacksLength;
-extern waitLockC	__kcpuPowerOnSleepStacksLock;
-extern perCpuThreadC	__kcpuPowerOnThread;
+extern WaitLock	__kcpuPowerOnSleepStacksLock;
+extern PerCpuThread	__kcpuPowerOnThread;
 
 #endif
 

@@ -17,10 +17,10 @@
 
 void __klzbzcore::main()
 {
-	threadC		*self;
+	Thread		*self;
 	error_t		err;
 
-	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	printf(NOTICE LZBZCORE"New process entered. Pid 0x%x, type %d.\n",
@@ -28,11 +28,11 @@ void __klzbzcore::main()
 
 	switch (self->parent->getType())
 	{
-	case processStreamC::DISTRIBUTARY:
+	case ProcessStream::DISTRIBUTARY:
 		err = __klzbzcore::distributary::main(self);
 		break;
 
-	case processStreamC::DRIVER:
+	case ProcessStream::DRIVER:
 		err = __klzbzcore::driver::main(self);
 		break;
 

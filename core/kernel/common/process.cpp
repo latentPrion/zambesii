@@ -25,13 +25,13 @@ utf8Char	__kprocessArgStringMem
 
 
 #if __SCALING__ >= SCALING_SMP
-// Preallocated mem space for the internals of the __kprocess bitmapC objects.
+// Preallocated mem space for the internals of the __kprocess Bitmap objects.
 ubit8		__kprocessPreallocatedBmpMem[3][32];
 #endif
 
-error_t processStreamC::initialize(
+error_t ProcessStream::initialize(
 	const utf8Char *commandLineString, const utf8Char *environmentString,
-	bitmapC *cpuAffinityBmp
+	Bitmap *cpuAffinityBmp
 	)
 {
 	error_t		ret;
@@ -57,7 +57,7 @@ error_t processStreamC::initialize(
 
 	if (cpuAffinityBmp != NULL)
 	{
-		bitmapC		cpuAffinityTmp;
+		Bitmap		cpuAffinityTmp;
 
 		ret = cpuAffinityTmp.initialize(cpuAffinityBmp->getNBits());
 		if (ret != ERROR_SUCCESS) { return ret; };
@@ -103,7 +103,7 @@ error_t processStreamC::initialize(
 	return ERROR_SUCCESS;
 }
 
-error_t processStreamC::initializeBitmaps(void)
+error_t ProcessStream::initializeBitmaps(void)
 {
 	error_t		ret;
 
@@ -112,19 +112,19 @@ error_t processStreamC::initializeBitmaps(void)
 #if __SCALING__ >= SCALING_SMP
 		cpuTrace.initialize(
 			0,
-			bitmapC::preallocatedMemoryS(
+			Bitmap::preallocatedMemoryS(
 				__kprocessPreallocatedBmpMem[0],
 				sizeof(__kprocessPreallocatedBmpMem[0])));
 
 		cpuAffinity.initialize(
 			0,
-			bitmapC::preallocatedMemoryS(
+			Bitmap::preallocatedMemoryS(
 				__kprocessPreallocatedBmpMem[1],
 				sizeof(__kprocessPreallocatedBmpMem[1])));
 #endif
 		pendingEvents.initialize(
 			0,
-			bitmapC::preallocatedMemoryS(
+			Bitmap::preallocatedMemoryS(
 				__kprocessPreallocatedBmpMem[2],
 				sizeof(__kprocessPreallocatedBmpMem[2])));
 	}
@@ -143,7 +143,7 @@ error_t processStreamC::initializeBitmaps(void)
 	return ERROR_SUCCESS;
 }
 
-processStreamC::~processStreamC(void)
+ProcessStream::~ProcessStream(void)
 {
 }
 
@@ -151,7 +151,7 @@ processStreamC::~processStreamC(void)
  * never actually be that long anyway.
  **/
 static utf8Char		__kprocessFullNameMem[256+1];
-error_t processStreamC::generateFullName(
+error_t ProcessStream::generateFullName(
 	const utf8Char *_commandLine, ubit16 *argumentsStartIndex
 	)
 {
@@ -325,7 +325,7 @@ error_t processStreamC::generateFullName(
 }
 
 static utf8Char		__kprocessArgumentsMem[2048+1];
-error_t processStreamC::generateArguments(const utf8Char *argumentString)
+error_t ProcessStream::generateArguments(const utf8Char *argumentString)
 {
 	ubit16		length;
 	const ubit16	maxLength = (id == __KPROCESSID)
@@ -358,8 +358,8 @@ error_t processStreamC::generateArguments(const utf8Char *argumentString)
 	return ERROR_SUCCESS;
 }
 
-static processStreamC::environmentVarS		__kprocessEnvironmentMem[16];
-error_t processStreamC::generateEnvironment(const utf8Char *environmentString)
+static ProcessStream::environmentVarS		__kprocessEnvironmentMem[16];
+error_t ProcessStream::generateEnvironment(const utf8Char *environmentString)
 {
 	error_t			ret;
 	ubit16			strIndex, nameLen, valueLen;
@@ -489,10 +489,10 @@ error_t processStreamC::generateEnvironment(const utf8Char *environmentString)
 	return ERROR_SUCCESS;
 }
 
-void processStreamC::sendResponse(error_t err)
+void ProcessStream::sendResponse(error_t err)
 {
 	error_t				tmpErr;
-	messageStreamC::headerS		*msg;
+	MessageStream::sHeader		*msg;
 
 	// This syscall should only work once throughout the process' lifetime.
 	if (this->responseMessage == NULL) { return; };
@@ -501,16 +501,16 @@ void processStreamC::sendResponse(error_t err)
 	this->responseMessage = NULL;
 
 	msg->error = err;
-	tmpErr = messageStreamC::enqueueOnThread(msg->targetId, msg);
+	tmpErr = MessageStream::enqueueOnThread(msg->targetId, msg);
 	if (tmpErr != ERROR_SUCCESS)
 	{
-		printf(FATAL"processStreamC::sendResponse(%d): proc 0x%x: "
+		printf(FATAL"ProcessStream::sendResponse(%d): proc 0x%x: "
 			"Failed because %d.\n",
 			err, this->id, tmpErr);
 	};
 }
 
-void processStreamC::getInitializationBlockSizeInfo(
+void ProcessStream::getInitializationBlockSizeInfo(
 	initializationBlockSizeInfoS *ret
 	)
 {
@@ -521,7 +521,7 @@ void processStreamC::getInitializationBlockSizeInfo(
 	ret->argumentsSize = strnlen8(arguments, PROCESS_ARGUMENTS_MAXLEN) + 1;
 }
 
-void processStreamC::getInitializationBlock(initializationBlockS *ret)
+void ProcessStream::getInitializationBlock(initializationBlockS *ret)
 {
 	if (ret == NULL) { return; };
 
@@ -540,7 +540,7 @@ void processStreamC::getInitializationBlock(initializationBlockS *ret)
 	ret->execDomain = execDomain;
 }
 
-static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
+static inline error_t resizeAndMergeBitmaps(Bitmap *dest, Bitmap *src)
 {
 	error_t		ret;
 
@@ -551,12 +551,12 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 	return ERROR_SUCCESS;
 }
 
-error_t processStreamC::spawnThread(
+error_t ProcessStream::spawnThread(
 	void (*entryPoint)(void *), void *argument,
-	bitmapC * cpuAffinity,
-	taskC::schedPolicyE schedPolicy,
+	Bitmap * cpuAffinity,
+	Task::schedPolicyE schedPolicy,
 	ubit8 prio, uarch_t flags,
-	threadC **const newThread
+	Thread **const newThread
 	)
 {
 	error_t		ret;
@@ -621,11 +621,11 @@ error_t processStreamC::spawnThread(
 	};
 }
 
-threadC *processStreamC::allocateNewThread(processId_t newThreadId, void *privateData)
+Thread *ProcessStream::allocateNewThread(processId_t newThreadId, void *privateData)
 {
-	threadC		*ret;
+	Thread		*ret;
 
-	ret = new threadC(newThreadId, this, privateData);
+	ret = new Thread(newThreadId, this, privateData);
 	if (ret == NULL) { return NULL; };
 
 	taskLock.writeAcquire();
@@ -638,7 +638,7 @@ threadC *processStreamC::allocateNewThread(processId_t newThreadId, void *privat
 	return ret;
 }
 
-void processStreamC::removeThread(processId_t threadId)
+void ProcessStream::removeThread(processId_t threadId)
 {
 	taskLock.writeAcquire();
 

@@ -15,17 +15,17 @@
 
 #define VSWAMP_RESERVE_FLAGS_FORCE	(1<<0)
 
-class vSwampC
+class VSwamp
 :
-public allocClassC
+public AllocatorBase
 {
 public:
-	vSwampC(void *swampStart, uarch_t swampSize)
+	VSwamp(void *swampStart, uarch_t swampSize)
 	:
 	baseAddr((void *)PAGING_BASE_ALIGN_FORWARD((uintptr_t)swampStart)),
 	size(PAGING_BASE_ALIGN_TRUNCATED(swampSize)),
 	flags(0),
-	swampNodeList(sizeof(swampInfoNodeC), slamCacheC::RAW)
+	swampNodeList(sizeof(SwampInfoNode), SlamCache::RAW)
 	{}
 
 	error_t initialize(void)
@@ -43,7 +43,7 @@ public:
 		return swampNodeList.initialize();
 	}
 
-	~vSwampC(void) {}
+	~VSwamp(void) {}
 
 public:
 	// Use the algorithm to allocate currently free vmem.
@@ -57,19 +57,19 @@ public:
 	void dump(void);
 
 private:
-	swampInfoNodeC *getNewSwampNode(
+	SwampInfoNode *getNewSwampNode(
 		void *baseAddr, uarch_t size,
-		swampInfoNodeC *prev, swampInfoNodeC *next);
+		SwampInfoNode *prev, SwampInfoNode *next);
 
-	void deleteSwampNode(swampInfoNodeC *node);
+	void deleteSwampNode(SwampInfoNode *node);
 
-	swampInfoNodeC *findInsertionNode(
+	SwampInfoNode *findInsertionNode(
 		void *vaddr, status_t *status);
 
 private:
-	struct swampStateS
+	struct sSwampState
 	{
-		swampStateS(void)
+		sSwampState(void)
 		:
 		head(NULL), tail(NULL)
 		{}
@@ -79,17 +79,17 @@ private:
 		 * so as to get pages as high up in the address space as
 		 * possible.
 		 **/
-		swampInfoNodeC	*head, *tail;
+		SwampInfoNode	*head, *tail;
 	};
 
 	void		*baseAddr;
 	uarch_t		size;
 	uarch_t		flags;
-	sharedResourceGroupC<recursiveLockC, swampStateS>	state;
+	SharedResourceGroup<RecursiveLock, sSwampState>	state;
 
 	// Object allocator for swamp list nodes.
-	// __kequalizerListC<swampInfoNodeC>		swampNodeList;
-	slamCacheC	swampNodeList;
+	// __kEqualizerList<SwampInfoNode>		swampNodeList;
+	SlamCache	swampNodeList;
 
 	/* This is a placeholder list node which is used when initializing the
 	 * address space. If we try to dynamically allocate the first node, when
@@ -98,7 +98,7 @@ private:
 	 *
 	 * We have to provide the first node ourselves, so this is how we do it.
 	 **/
-	swampInfoNodeC		initSwampNode;
+	SwampInfoNode		initSwampNode;
 };
 
 #endif

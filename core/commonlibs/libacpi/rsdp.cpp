@@ -30,7 +30,7 @@ error_t acpi::findRsdp(void)
 	if (acpi::rsdpFound()) { return ERROR_SUCCESS; };
 
 	// Call on chipset code to find ACPI RSDP.
-	cache.rsdp = static_cast<acpi_rsdpS *>( chipset_findAcpiRsdp() );
+	cache.rsdp = static_cast<acpi_sRsdp *>( chipset_findAcpiRsdp() );
 	if (cache.rsdp == NULL) {
 		return ERROR_GENERAL;
 	};
@@ -45,7 +45,7 @@ sarch_t acpi::rsdpFound(void)
 	return 0;
 }
 
-acpi_rsdpS *acpi::getRsdp(void)
+acpi_sRsdp *acpi::getRsdp(void)
 {
 	return cache.rsdp;
 }
@@ -74,7 +74,7 @@ sarch_t acpi::testForXsdt(void)
 	return 0;
 }
 
-static sarch_t checksumIsValid(acpi_rsdtS *rsdt)
+static sarch_t checksumIsValid(acpi_sRsdt *rsdt)
 {
 	ubit8		checksum=0;
 	ubit8		*table=reinterpret_cast<ubit8 *>( rsdt );
@@ -88,7 +88,7 @@ static sarch_t checksumIsValid(acpi_rsdtS *rsdt)
 
 error_t acpi::mapRsdt(void)
 {
-	loosePageC<acpi_rsdtS>	rsdt;
+	LoosePage<acpi_sRsdt>	rsdt;
 	uarch_t			rsdtNPages;
 
 	if (!acpi::rsdpFound() || !acpi::testForRsdt())
@@ -96,7 +96,7 @@ error_t acpi::mapRsdt(void)
 
 	if (acpi::getRsdt() != NULL) { return ERROR_SUCCESS; };
 
-	rsdt = (acpi_rsdtS *)walkerPageRanger::createMappingTo(
+	rsdt = (acpi_sRsdt *)walkerPageRanger::createMappingTo(
 		cache.rsdp->rsdtPaddr, 2,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
@@ -110,23 +110,23 @@ error_t acpi::mapRsdt(void)
 	rsdt.vasStream = processTrib.__kgetStream()->getVaddrSpaceStream();
 
 	rsdt = WPRANGER_ADJUST_VADDR(
-		rsdt.get(), cache.rsdp->rsdtPaddr, acpi_rsdtS *);
+		rsdt.get(), cache.rsdp->rsdtPaddr, acpi_sRsdt *);
 
 	// Ensure that the table is valid: compute checksum.
 	if (!checksumIsValid(rsdt.get()))
 	{
 		printf(WARNING ACPI"RSDT has invalid checksum.\n");
-		rsdt = WPRANGER_UNADJUST_VADDR(rsdt.get(), acpi_rsdtS *);
+		rsdt = WPRANGER_UNADJUST_VADDR(rsdt.get(), acpi_sRsdt *);
 		return ERROR_GENERAL;
 	};
 
 	// Find out the RSDT's real size.
 	rsdtNPages = PAGING_BYTES_TO_PAGES(rsdt->hdr.tableLength) + 1;
-	rsdt = WPRANGER_UNADJUST_VADDR(rsdt.get(), acpi_rsdtS *);
+	rsdt = WPRANGER_UNADJUST_VADDR(rsdt.get(), acpi_sRsdt *);
 	rsdt.reset();
 
 	// Reallocate vmem.
-	rsdt = (acpi_rsdtS *)walkerPageRanger::createMappingTo(
+	rsdt = (acpi_sRsdt *)walkerPageRanger::createMappingTo(
 		cache.rsdp->rsdtPaddr, rsdtNPages,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
@@ -138,13 +138,13 @@ error_t acpi::mapRsdt(void)
 
 	rsdt.nPages = rsdt.nMapped = rsdtNPages;
 	rsdt = WPRANGER_ADJUST_VADDR(
-		rsdt.get(), cache.rsdp->rsdtPaddr, acpi_rsdtS *);
+		rsdt.get(), cache.rsdp->rsdtPaddr, acpi_sRsdt *);
 
 	cache.rsdt = rsdt.release();
 	return ERROR_SUCCESS;
 }
 
-acpi_rsdtS *acpi::getRsdt(void)
+acpi_sRsdt *acpi::getRsdt(void)
 {
 	if (!acpi::rsdpFound() || !acpi::testForRsdt()) {
 		return NULL;

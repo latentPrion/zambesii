@@ -6,12 +6,12 @@
 #include <kernel/common/vfsTrib/vfsTraverse.h>
 
 
-status_t vfsTribC::createFolder(vfsDirC *dir, utf8Char *name, uarch_t)
+status_t VfsTrib::createFolder(vfsDirC *dir, utf8Char *name, uarch_t)
 {
 	status_t	ret;
 	vfsDirC		*newDir;
 
-	ret = vfsTraverse::validateSegment(name);
+	ret = vfsTraverse::valisDateegment(name);
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};
@@ -39,7 +39,7 @@ status_t vfsTribC::createFolder(vfsDirC *dir, utf8Char *name, uarch_t)
 	return ERROR_SUCCESS;
 }
 
-status_t vfsTribC::deleteFolder(vfsDirInodeC *inode, utf8Char *name)
+status_t VfsTrib::deleteFolder(vfsDirINode *inode, utf8Char *name)
 {
 	return inode->removeDirDesc(name);
 }

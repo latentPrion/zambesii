@@ -55,21 +55,21 @@
 
 #define MEMORYSTREAM		"Memory Stream "
 
-class memoryTribC;
-class processStreamC;
-class heapC;
+class MemoryTrib;
+class ProcessStream;
+class Heap;
 
-class memoryStreamC
+class MemoryStream
 :
-public streamC
+public Stream
 {
-friend class memoryTribC;
-friend class heapC;
+friend class MemoryTrib;
+friend class Heap;
 
 public:
-	memoryStreamC(processId_t id, processStreamC *parent)
+	MemoryStream(processId_t id, ProcessStream *parent)
 	:
-	streamC(id), parent(parent)
+	Stream(id), parent(parent)
 	{}
 
 	error_t initialize(void)
@@ -86,7 +86,7 @@ public:
 	void *memAlloc(uarch_t nPages, uarch_t flags=0);
 	void memFree(void *vaddr);
 
-	// These two make use of the allocTableC to store nPages.
+	// These two make use of the AllocTable to store nPages.
 	void *memoryRegionAlloc(
 		ubit8 regionId, uarch_t nPages, uarch_t flags=0);
 
@@ -99,9 +99,9 @@ public:
 	void dump(void);
 
 private:
-	processStreamC		*parent;
-	stackCacheC<void *>	allocCache;
-	allocTableC		allocTable;
+	ProcessStream		*parent;
+	StackCache<void *>	allocCache;
+	AllocTable		allocTable;
 };
 
 #endif

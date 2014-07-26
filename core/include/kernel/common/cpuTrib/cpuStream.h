@@ -41,19 +41,19 @@
 
 #define CPUMESSAGE_TYPE_TLBFLUSH	0x0
 
-class cpuStreamC
+class cpuStream
 {
 public:
 #if __SCALING__ >= SCALING_CC_NUMA
-	cpuStreamC(numaBankId_t bid, cpu_t id, ubit32 acpiId);
+	cpuStream(numaBankId_t bid, cpu_t id, ubit32 acpiId);
 #else
-	cpuStreamC(cpu_t id, ubit32 cpuAcpiId);
+	cpuStream(cpu_t id, ubit32 cpuAcpiId);
 #endif
 
 	void baseInit(void);
 	error_t initialize(void);
 	sarch_t isInitialized(void);
-	~cpuStreamC(void);
+	~cpuStream(void);
 
 	error_t initializeBspCpuLocking(void);
 
@@ -63,11 +63,11 @@ public:
 public:
 	status_t enumerate(void);
 	cpuFeaturesS *getCpuFeatureBlock(void);
-	taskContextC *getTaskContext(void)
+	TaskContext *getTaskContext(void)
 		{ return &perCpuTaskContext; }
 
 public:
-	class powerManagerC
+	class PowerManager
 	{
 	public:
 		enum powerStatusE {
@@ -76,12 +76,12 @@ public:
 			GOING_TO_SLEEP, WAKING,
 			FAILED_BOOT };
 
-		powerManagerC(cpuStreamC *parentStream)
+		PowerManager(cpuStream *parentStream)
 		:
 		parent(parentStream)
 			{ powerStatus.rsrc = OFF; }
 
-		~powerManagerC(void)
+		~PowerManager(void)
 			{ powerStatus.rsrc = OFF; }
 
 		powerStatusE getPowerStatus(void)
@@ -111,19 +111,19 @@ public:
 		void bootWaitForCpuToPowerOn(void);
 
 	private:
-		sharedResourceGroupC<multipleReaderLockC, powerStatusE>
+		SharedResourceGroup<MultipleReaderLock, powerStatusE>
 			powerStatus;
 
-		cpuStreamC	*parent;
+		cpuStream	*parent;
 	};
 
 private:
 #if __SCALING__ >= SCALING_SMP
-	class interCpuMessagerC
+	class InterCpuMessager
 	{
-	private: struct messageS;
+	private: struct Message;
 	public:
-		interCpuMessagerC(cpuStreamC *parent);
+		InterCpuMessager(cpuStream *parent);
 		error_t initialize(void);
 
 		error_t bind(void);
@@ -137,7 +137,7 @@ private:
 		enum statusE {
 			NOT_TAKING_REQUESTS=0, NOT_PROCESSING, PROCESSING };
 
-		void set(messageS *msg, ubit8 type,
+		void set(Message *msg, ubit8 type,
 			uarch_t val0=0, uarch_t val1=0,
 			uarch_t val2=0, uarch_t val3=0);
 
@@ -160,19 +160,19 @@ private:
 		}
 
 	private:
-		struct messageS
+		struct Message
 		{
-			ptrlessListC<messageS>::headerS	listHeader;
+			ListC<Message>::sHeader	listHeader;
 			volatile ubit8			type;
 			volatile uarch_t		val0;
 			volatile uarch_t		val1;
 			volatile uarch_t		val2;
 			volatile uarch_t		val3;
 		};
-		ptrlessListC<messageS>		messageQueue;
-		slamCacheC			*cache;
-		sharedResourceGroupC<waitLockC, statusE> statusFlag;
-		cpuStreamC	*parent;
+		ListC<Message>		messageQueue;
+		SlamCache			*cache;
+		SharedResourceGroup<WaitLock, statusE> statusFlag;
+		cpuStream	*parent;
 	};
 #endif
 
@@ -184,26 +184,26 @@ public:
 #endif
 	cpuFeaturesS		cpuFeatures;
 	// Per CPU scheduler.
-	taskStreamC		taskStream;
+	TaskStream		taskStream;
 
 	ubit32			flags;
 	// Small stack used for scheduler task switching.
 	ubit8			schedStack[PAGING_BASE_SIZE / 2];
 	// Small stack used by the per-cpu currently thread running on this CPU.
 	ubit8			perCpuThreadStack[PAGING_BASE_SIZE / 2];
-	powerManagerC		powerManager;
+	PowerManager		powerManager;
 #if __SCALING__ >= SCALING_SMP
-	interCpuMessagerC	interCpuMessager;
+	InterCpuMessager	interCpuMessager;
 #endif
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
 	class x86LapicC		lapic;
 #endif
 private:
-	taskContextC		perCpuTaskContext;
+	TaskContext		perCpuTaskContext;
 };
 
 // The hardcoded stream for the BSP CPU.
-extern cpuStreamC	bspCpu;
+extern cpuStream	bspCpu;
 
 #endif
 

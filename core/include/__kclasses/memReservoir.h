@@ -25,14 +25,14 @@
 #define RESERVOIR_MAX_NBOGS		(PAGING_BASE_SIZE / sizeof(void *))
 #define RESERVOIR			"Mem Reservoir: "
 
-class memoryStreamC;
+class MemoryStream;
 
-class memReservoirC
+class MemReservoir
 {
 public:
-	memReservoirC(memoryStreamC *sourceStream);
+	MemReservoir(MemoryStream *sourceStream);
 	error_t initialize(void);
-	~memReservoirC(void);
+	~MemReservoir(void);
 
 public:
 	// Allocates from the default bog.
@@ -49,13 +49,13 @@ public:
 		return __kheap.checkAllocations();
 	}
 
-	heapC *__kgetHeap(void) { return &__kheap; }
+	Heap *__kgetHeap(void) { return &__kheap; }
 	void dump(void);
 
 private:
-	struct bogStateS
+	struct sBogState
 	{
-		heapC		**ptrs;
+		Heap		**ptrs;
 		uarch_t		nHeaps;
 	};
 	struct reservoirHeaderS
@@ -64,12 +64,12 @@ private:
 		uarch_t		magic;
 	};
 
-	heapC			__kheap;
-	memoryStreamC		*sourceStream;
-	sharedResourceGroupC<multipleReaderLockC, bogStateS>	heaps;
+	Heap			__kheap;
+	MemoryStream		*sourceStream;
+	SharedResourceGroup<MultipleReaderLock, sBogState>	heaps;
 };
 
-extern memReservoirC		memReservoir;
+extern MemReservoir		memReservoir;
 
 #endif
 

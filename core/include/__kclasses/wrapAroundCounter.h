@@ -5,10 +5,10 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
-class wrapAroundCounterC
+class WrapAroundCounter
 {
 public:
-	wrapAroundCounterC(uarch_t maxVal, uarch_t startVal=0)
+	WrapAroundCounter(uarch_t maxVal, uarch_t startVal=0)
 	:
 		maxVal((sarch_t)maxVal)
 	{
@@ -22,14 +22,14 @@ public:
 
 private:
 	sarch_t		maxVal;
-	sharedResourceGroupC<waitLockC, sarch_t>	nextVal;
+	SharedResourceGroup<WaitLock, sarch_t>	nextVal;
 };
 
 
 /**	Inline methods.
  ****************************************************************************/
 
-inline sarch_t wrapAroundCounterC::getNextValue(void **arr, ubit8 secondTry)
+inline sarch_t WrapAroundCounter::getNextValue(void **arr, ubit8 secondTry)
 {
 	sarch_t		ret;
 

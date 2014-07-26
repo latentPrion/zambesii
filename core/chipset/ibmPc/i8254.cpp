@@ -88,7 +88,7 @@ error_t i8254PitC::initialize(void)
 	sendEoi();
 
 	// Initialize the base class members.
-	zkcmTimerDeviceC::initialize();
+	ZkcmTimerDevice::initialize();
 
 	// Expose the i8254 channel 0 timer source to the Timer Control mod.
 	ret = zkcmCore.timerControl.registerNewTimerDevice(this);
@@ -132,7 +132,7 @@ void i8254PitC::sendEoi(void)
 	cpuControl::safeEnableInterrupts(flags);
 }
 
-status_t i8254PitC::isr(zkcmDeviceBaseC *self, ubit32 flags)
+status_t i8254PitC::isr(ZkcmDeviceBase *self, ubit32 flags)
 {
 	(void)		flags;
 	ubit32		devFlags;
@@ -379,7 +379,7 @@ void i8254PitC::disable(void)
 	// We unregister the ISR, etc in the ISR when the final IRQ comes in.
 }
 
-static inline sarch_t validateTimevalLimit(timeS time)
+static inline sarch_t validateTimevalLimit(sTime time)
 {
 	/**	EXPLANATION:
 	 * The i8254's input frequency is a 1,193,180Hz CLK source. This means
@@ -399,7 +399,7 @@ static inline sarch_t validateTimevalLimit(timeS time)
 	 * Even these values are rounded off, and do not guarantee perfect
 	 * precision. However, they are as precise as it gets.
 	 *
-	 * The user can specify any number of nano/micro-seconds in the timeS
+	 * The user can specify any number of nano/micro-seconds in the sTime
 	 * structure passed as an argument to setOneshotMode(). However, the
 	 * i8254 cannot physically time any number of nanoseconds, because its
 	 * input frequency is microsecond granular, and the COUNTER reg
@@ -460,7 +460,7 @@ inline static ubit16 nanosecondsToClks(ubit32 ns)
 	return ret;
 }
 
-status_t i8254PitC::setPeriodicMode(struct timeS interval)
+status_t i8254PitC::setPeriodicMode(struct sTime interval)
 {
 	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
 	// Make sure the requested periodic interval is supported by the i8254.
@@ -478,7 +478,7 @@ status_t i8254PitC::setPeriodicMode(struct timeS interval)
 	return ERROR_SUCCESS;
 }
 
-status_t i8254PitC::setOneshotMode(struct timeS timeout)
+status_t i8254PitC::setOneshotMode(struct sTime timeout)
 {
 	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
 	// Make sure the requested timeout is supported by the i8254.

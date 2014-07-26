@@ -106,13 +106,13 @@ namespace walkerPageRanger
 	 **/
 	void *createMappingTo(paddr_t paddr, uarch_t nPages, uarch_t flags);
 	void *createSharedMappingTo(
-		vaddrSpaceC *vaddrSpace, void *vaddr, uarch_t nPages,
+		VaddrSpace *vaddrSpace, void *vaddr, uarch_t nPages,
 		uarch_t flags, void *placementAddress=NULL);
 
 	void destroyNonsharedMapping(void *vaddr, uarch_t nPages);
 
 	void swapMap(
-		vaddrSpaceC *vaddrSpace,
+		VaddrSpace *vaddrSpace,
 		void *vaddr, uarch_t nPages);
 
 	/**	EXPLANATION:
@@ -123,34 +123,34 @@ namespace walkerPageRanger
 	 * using them.
 	 **/
 	status_t mapInc(
-		vaddrSpaceC *vaddrSpace,
+		VaddrSpace *vaddrSpace,
 		void *vaddr, paddr_t paddr, uarch_t nPages, uarch_t flags);
 
 	status_t mapNoInc(
-		vaddrSpaceC *vaddrSpace,
+		VaddrSpace *vaddrSpace,
 		void *vaddr, paddr_t paddr, uarch_t nPages, uarch_t flags);
 
 	void remapInc(
-		vaddrSpaceC *vaddrSpace,
+		VaddrSpace *vaddrSpace,
 		void *vaddr, paddr_t paddr, uarch_t nPages,
 		ubit8 op, uarch_t flags);
 
 	void remapNoInc(
-		vaddrSpaceC *vaddrSpace,
+		VaddrSpace *vaddrSpace,
 		void *vaddr, paddr_t paddr, uarch_t nPages,
 		ubit8 op, uarch_t flags);
 
 	void setAttributes(
-		vaddrSpaceC *vaddrSpace,
+		VaddrSpace *vaddrSpace,
 		void *vaddr, uarch_t nPages,
 		ubit8 op, uarch_t flags);
 
 	status_t lookup(
-		vaddrSpaceC *vaddrSpace,
+		VaddrSpace *vaddrSpace,
 		void *vaddr, paddr_t *paddr, uarch_t *flags);
 
 	status_t unmap(
-		vaddrSpaceC *vaddrSpace,
+		VaddrSpace *vaddrSpace,
 		void *vaddr, paddr_t *paddr, uarch_t nPages, uarch_t *flags);
 
 	// Architecture specific kernel flag converter.
@@ -163,7 +163,7 @@ namespace walkerPageRanger
  *************************************************************************/
 
 inline void walkerPageRanger::swapMap(
-	vaddrSpaceC *vaddrSpace,
+	VaddrSpace *vaddrSpace,
 	void *vaddr, uarch_t nPages
 	)
 {

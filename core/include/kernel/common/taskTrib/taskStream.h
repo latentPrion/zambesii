@@ -15,15 +15,15 @@
 
 #define TASK_SCHEDULE_TRY_AGAIN		0x1
 
-class cpuStreamC;
-class taskStreamC
+class cpuStream;
+class TaskStream
 :
-public streamC
+public Stream
 {
-friend class cpuStreamC;
+friend class cpuStream;
 public:
 
-	taskStreamC(cpuStreamC *parentCpu);
+	TaskStream(cpuStream *parentCpu);
 
 	/* Allocates internal queues, etc.
 	 *	XXX:
@@ -46,37 +46,37 @@ public:
 	void updateLoad(ubit8 action, ubit32 val);
 	void updateCapacity(ubit8 action, ubit32 val);
 
-	taskC *getCurrentTask(void) { return currentTask; }
-	perCpuThreadC *getCurrentPerCpuTask(void) { return currentPerCpuThread; }
-	taskContextC *getCurrentTaskContext(void);
+	Task *getCurrentTask(void) { return currentTask; }
+	PerCpuThread *getCurrentPerCpuTask(void) { return currentPerCpuThread; }
+	TaskContext *getCurrentTaskContext(void);
 	processId_t getCurrentTaskId(void);
 
-	error_t schedule(taskC* task);
+	error_t schedule(Task* task);
 
-	void yield(taskC *task);
-	error_t wake(taskC *task);
-	void dormant(taskC *task);
-	void block(taskC *task);
-	error_t unblock(taskC *task);
+	void yield(Task *task);
+	error_t wake(Task *task);
+	void dormant(Task *task);
+	void block(Task *task);
+	error_t unblock(Task *task);
 
 	void dump(void);
 
 private:
-	taskC *pullRealTimeQ(void);
-	taskC *pullRoundRobinQ(void);
+	Task *pullRealTimeQ(void);
+	Task *pullRoundRobinQ(void);
 
 public:
 	ubit32		load;
 	ubit32		capacity;
 
 private:
-	taskC		*currentTask;
-	perCpuThreadC	*currentPerCpuThread;
+	Task		*currentTask;
+	PerCpuThread	*currentPerCpuThread;
 
 public:
 	// Three queues on each CPU: rr, rt and sleep.
-	prioQueueC<taskC>	roundRobinQ, realTimeQ;
-	cpuStreamC		*parentCpu;
+	PrioQueue<Task>	roundRobinQ, realTimeQ;
+	cpuStream		*parentCpu;
 };
 
 #endif

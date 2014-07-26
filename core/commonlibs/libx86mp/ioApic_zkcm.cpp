@@ -4,7 +4,7 @@
 #include <commonlibs/libx86mp/lapic.h>
 
 
-error_t x86IoApic::ioApicC::get__kpinFor(uarch_t girqNo, ubit16 *__kpin)
+error_t x86IoApic::IoApic::get__kpinFor(uarch_t girqNo, ubit16 *__kpin)
 {
 	/**	EXPLANATION:
 	 * We assume that any caller of this function is calling to ask for
@@ -30,7 +30,7 @@ error_t x86IoApic::ioApicC::get__kpinFor(uarch_t girqNo, ubit16 *__kpin)
 	return ERROR_INVALID_ARG_VAL;
 }
 
-status_t x86IoApic::ioApicC::setIrqStatus(
+status_t x86IoApic::IoApic::setIrqStatus(
 	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
 	)
 {
@@ -68,7 +68,7 @@ status_t x86IoApic::ioApicC::setIrqStatus(
 	return ERROR_SUCCESS;
 }
 
-status_t x86IoApic::ioApicC::getIrqStatus(
+status_t x86IoApic::IoApic::getIrqStatus(
 	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
 	ubit8 *triggerMode, ubit8 *polarity
 	)
@@ -91,7 +91,7 @@ status_t x86IoApic::ioApicC::getIrqStatus(
 		? IRQCTL_GETIRQSTATUS_ENABLED : IRQCTL_GETIRQSTATUS_DISABLED;
 }
 
-void x86IoApic::ioApicC::maskIrq(ubit16 __kpin)
+void x86IoApic::IoApic::maskIrq(ubit16 __kpin)
 {
 	error_t		err;
 	ubit8		pin;
@@ -103,7 +103,7 @@ void x86IoApic::ioApicC::maskIrq(ubit16 __kpin)
 	FLAG_UNSET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 }
 
-void x86IoApic::ioApicC::unmaskIrq(ubit16 __kpin)
+void x86IoApic::IoApic::unmaskIrq(ubit16 __kpin)
 {
 	error_t		err;
 	ubit8		pin;
@@ -115,7 +115,7 @@ void x86IoApic::ioApicC::unmaskIrq(ubit16 __kpin)
 	FLAG_SET(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 }
 
-sarch_t x86IoApic::ioApicC::irqIsEnabled(ubit16 __kpin)
+sarch_t x86IoApic::IoApic::irqIsEnabled(ubit16 __kpin)
 {
 	error_t		err;
 	ubit8		pin;
@@ -126,7 +126,7 @@ sarch_t x86IoApic::ioApicC::irqIsEnabled(ubit16 __kpin)
 	return FLAG_TEST(irqPinList[pin].flags, IRQCTL_IRQPIN_FLAGS_ENABLED);
 }
 
-void x86IoApic::ioApicC::maskAll(void)
+void x86IoApic::IoApic::maskAll(void)
 {
 	for (ubit8 i=0; i<nPins; i++)
 	{
@@ -135,7 +135,7 @@ void x86IoApic::ioApicC::maskAll(void)
 	}
 }
 
-void x86IoApic::ioApicC::unmaskAll(void)
+void x86IoApic::IoApic::unmaskAll(void)
 {
 	for (ubit8 i=0; i<nPins; i++)
 	{

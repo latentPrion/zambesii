@@ -20,13 +20,13 @@
 #define PTCACHE_STACK_EMPTY	(-1)
 #define PTCACHE_STACK_FULL	(PTCACHE_NENTRIES - 1)
 
-class pageTableCacheC
+class PageTableCache
 :
-public allocClassC
+public AllocatorBase
 {
 public:
-	pageTableCacheC(void);
-	~pageTableCacheC(void);
+	PageTableCache(void);
+	~PageTableCache(void);
 
 public:
 	error_t pop(paddr_t *paddr);
@@ -37,7 +37,7 @@ public:
 
 private:
 	paddr_t		stack[PTCACHE_NENTRIES];
-	sharedResourceGroupC<waitLockC, sarch_t>	stackPtr;
+	SharedResourceGroup<WaitLock, sarch_t>	stackPtr;
 };
 
 #endif

@@ -8,7 +8,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 status_t walkerPageRanger::unmap(
-	vaddrSpaceC *vaddrSpace,
+	VaddrSpace *vaddrSpace,
 	void *vaddr, paddr_t *paddr,
 	uarch_t nPages, uarch_t *flags
 	)

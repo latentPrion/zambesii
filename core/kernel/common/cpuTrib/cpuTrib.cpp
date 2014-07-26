@@ -35,7 +35,7 @@ static numaBankId_t	highestBankId=0;
 	#endif
 #endif
 
-cpuTribC::cpuTribC(void)
+CpuTrib::CpuTrib(void)
 :
 _usingChipsetSmpMode(0),
 bspId(CPUID_INVALID)
@@ -55,12 +55,12 @@ bspId(CPUID_INVALID)
 	 **/
 }
 
-cpuTribC::~cpuTribC(void)
+CpuTrib::~CpuTrib(void)
 {
 }
 
 #include <__kclasses/memReservoir.h>
-error_t cpuTribC::initialize(void)
+error_t CpuTrib::initialize(void)
 {
 	error_t		ret;
 
@@ -86,7 +86,7 @@ oo=26;
 	return ERROR_SUCCESS;
 }
 
-error_t cpuTribC::initializeBspCpuStream(void)
+error_t CpuTrib::initializeBspCpuStream(void)
 {
 	error_t		ret;
 
@@ -143,7 +143,7 @@ error_t cpuTribC::initializeBspCpuStream(void)
 	return bspCpu.taskStream.cooperativeBind();
 }
 
-error_t cpuTribC::displayUpOperationOnMpBuildMessage(void)
+error_t CpuTrib::displayUpOperationOnMpBuildMessage(void)
 {
 	printf(WARNING"The kernel is operating with only one CPU on a\n"
 		"\tmultiprocessor build;\n\t%s\n.",
@@ -154,14 +154,14 @@ error_t cpuTribC::displayUpOperationOnMpBuildMessage(void)
 	return ERROR_SUCCESS;
 }
 
-error_t cpuTribC::initializeAllCpus(void)
+error_t CpuTrib::initializeAllCpus(void)
 {
 	error_t			ret;
 #if __SCALING__ >= SCALING_CC_NUMA
 	zkcmNumaMapS		*numaMap;
 #endif
 #if __SCALING__ == SCALING_SMP || defined(CHIPSET_NUMA_GENERATE_SHBANK)
-	zkcmSmpMapS		*smpMap;
+	sZkcmmpMapS		*smpMap;
 #endif
 
 	/**	EXPLANATION:
@@ -281,9 +281,9 @@ error_t cpuTribC::initializeAllCpus(void)
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t cpuTribC::bootCpuNotification(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
+error_t CpuTrib::bootCpuNotification(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
 #elif __SCALING__ == SCALING_SMP
-error_t cpuTribC::bootCpuNotification(cpu_t cid, ubit32 acpiId)
+error_t CpuTrib::bootCpuNotification(cpu_t cid, ubit32 acpiId)
 #endif
 {
 	error_t			ret;
@@ -313,7 +313,7 @@ error_t cpuTribC::bootCpuNotification(cpu_t cid, ubit32 acpiId)
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
-void cpuTribC::bootParseNumaMap(zkcmNumaMapS *numaMap)
+void CpuTrib::bootParseNumaMap(zkcmNumaMapS *numaMap)
 {
 	error_t		err;
 
@@ -337,7 +337,7 @@ void cpuTribC::bootParseNumaMap(zkcmNumaMapS *numaMap)
 	};
 }
 
-void cpuTribC::bootConfirmNumaCpusBooted(zkcmNumaMapS *numaMap)
+void CpuTrib::bootConfirmNumaCpusBooted(zkcmNumaMapS *numaMap)
 {
 	for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
 	{
@@ -347,8 +347,8 @@ void cpuTribC::bootConfirmNumaCpusBooted(zkcmNumaMapS *numaMap)
 	};
 }
 
-void cpuTribC::bootParseNumaMap(
-	zkcmNumaMapS *numaMap, zkcmSmpMapS *smpMap
+void CpuTrib::bootParseNumaMap(
+	zkcmNumaMapS *numaMap, sZkcmmpMapS *smpMap
 	)
 {
 	error_t		err;
@@ -389,8 +389,8 @@ void cpuTribC::bootParseNumaMap(
 	};
 }
 
-void cpuTribC::bootConfirmNumaCpusBooted(
-	zkcmNumaMapS *numaMap, zkcmSmpMapS *smpMap
+void CpuTrib::bootConfirmNumaCpusBooted(
+	zkcmNumaMapS *numaMap, sZkcmmpMapS *smpMap
 	)
 {
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
@@ -419,11 +419,11 @@ void cpuTribC::bootConfirmNumaCpusBooted(
 #endif
 
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t cpuTribC::numaInit(void)
+error_t CpuTrib::numaInit(void)
 {
 	zkcmNumaMapS		*numaMap;
 #ifdef CHIPSET_NUMA_GENERATE_SHBANK
-	zkcmSmpMapS		*smpMap;
+	sZkcmmpMapS		*smpMap;
 #endif
 
 	/**	EXPLANATION:
@@ -520,7 +520,7 @@ error_t cpuTribC::numaInit(void)
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-void cpuTribC::bootParseSmpMap(zkcmSmpMapS *smpMap)
+void CpuTrib::bootParseSmpMap(sZkcmmpMapS *smpMap)
 {
 	error_t		err;
 
@@ -548,7 +548,7 @@ void cpuTribC::bootParseSmpMap(zkcmSmpMapS *smpMap)
 	};
 }
 
-void cpuTribC::bootConfirmSmpCpusBooted(zkcmSmpMapS *smpMap)
+void CpuTrib::bootConfirmSmpCpusBooted(sZkcmmpMapS *smpMap)
 {
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
 	{
@@ -562,10 +562,10 @@ void cpuTribC::bootConfirmSmpCpusBooted(zkcmSmpMapS *smpMap)
 #endif
 
 #if __SCALING__ == SCALING_SMP
-error_t cpuTribC::smpInit(void)
+error_t CpuTrib::smpInit(void)
 {
 	error_t			ret;
-	zkcmSmpMapS		*smpMap;
+	sZkcmmpMapS		*smpMap;
 
 	/**	EXPLANATION:
 	 * Quite simple: look for an SMP map, and if none exists, return success
@@ -590,7 +590,7 @@ error_t cpuTribC::smpInit(void)
 #endif
 
 #if __SCALING__ == SCALING_UNIPROCESSOR
-error_t cpuTribC::uniProcessorInit(void)
+error_t CpuTrib::uniProcessorInit(void)
 {
 	/**	EXPLANATION:
 	 * Base setup for a UP build. Nothing very interesting. It just makes
@@ -608,16 +608,16 @@ error_t cpuTribC::uniProcessorInit(void)
 
 
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t cpuTribC::spawnStream(numaBankId_t bid, cpu_t cid, ubit32 cpuAcpiId)
+error_t CpuTrib::spawnStream(numaBankId_t bid, cpu_t cid, ubit32 cpuAcpiId)
 #else
-error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
+error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 #endif
 {
 	error_t		ret;
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaCpuBankC	*ncb;
+	NumaCpuBank	*ncb;
 #endif
-	cpuStreamC	*cs;
+	cpuStream	*cs;
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	if (bid == NUMABANKID_INVALID || cid == CPUID_INVALID) {
@@ -672,22 +672,22 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		cs = new (processTrib.__kgetStream()->memoryStream.memAlloc(
-			PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
+			PAGING_BYTES_TO_PAGES(sizeof(cpuStream)),
 			MEMALLOC_NO_FAKEMAP))
-				cpuStreamC(bid, cid, cpuAcpiId);
+				cpuStream(bid, cid, cpuAcpiId);
 #else
 		cs = new (processTrib.__kgetStream()->memoryStream.*memAlloc(
-			PAGING_BYTES_TO_PAGES(sizeof(cpuStreamC)),
+			PAGING_BYTES_TO_PAGES(sizeof(cpuStream)),
 			MEMALLOC_NO_FAKEMAP))
-				cpuStreamC(cid, cpuAcpiId);
+				cpuStream(cid, cpuAcpiId);
 #endif
 	}
 	else
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new (&bspCpu) cpuStreamC(bid, cid, cpuAcpiId);
+		cs = new (&bspCpu) cpuStream(bid, cid, cpuAcpiId);
 #else
-		cs = new (&bspCpu) cpuStreamC(cid, cpuAcpiId);
+		cs = new (&bspCpu) cpuStream(cid, cpuAcpiId);
 #endif
 	};
 
@@ -722,12 +722,12 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	return ERROR_SUCCESS;
 }
 
-void cpuTribC::destroyStream(cpu_t cid)
+void CpuTrib::destroyStream(cpu_t cid)
 {
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaCpuBankC		*ncb;
+	NumaCpuBank		*ncb;
 #endif
-	cpuStreamC		*cs;
+	cpuStream		*cs;
 
 	/**	NOTE:
 	 * This will probably never be called on most machines. Called on CPU
@@ -739,7 +739,7 @@ void cpuTribC::destroyStream(cpu_t cid)
 	// Now remove it from the list of CPUs and free the mem.
 	cpuStreams.removeItem(cid);
 	__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_REMOVE);
-	cs->~cpuStreamC();
+	cs->~cpuStream();
 	processTrib.__kgetStream()->memoryStream.memFree(cs);
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -751,10 +751,10 @@ void cpuTribC::destroyStream(cpu_t cid)
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t cpuTribC::createBank(numaBankId_t bankId)
+error_t CpuTrib::createBank(numaBankId_t bankId)
 {
 	error_t			err;
-	numaCpuBankC		*ncb;
+	NumaCpuBank		*ncb;
 
 	if ((ncb = getBank(bankId)) != NULL) {
 		return ERROR_SUCCESS;
@@ -767,9 +767,9 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 	if (err != ERROR_SUCCESS) { return err; };
 
 	ncb = new (processTrib.__kgetStream()->memoryStream.memAlloc(
-		PAGING_BYTES_TO_PAGES(sizeof(numaCpuBankC)),
+		PAGING_BYTES_TO_PAGES(sizeof(NumaCpuBank)),
 		MEMALLOC_NO_FAKEMAP))
-			numaCpuBankC;
+			NumaCpuBank;
 
 	if (ncb == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -779,7 +779,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 		printf(ERROR CPUTRIB"createBank(%d): Failed to add to list."
 			"\n", bankId);
 
-		ncb->~numaCpuBankC();
+		ncb->~NumaCpuBank();
 		processTrib.__kgetStream()->memoryStream.memFree(ncb);
 		return err;
 	}
@@ -791,21 +791,21 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 #endif
 
 #if __SCALING__ >= SCALING_CC_NUMA
-void cpuTribC::destroyBank(numaBankId_t bid)
+void CpuTrib::destroyBank(numaBankId_t bid)
 {
-	numaCpuBankC		*ncb;
+	NumaCpuBank		*ncb;
 
 	ncb = getBank(bid);
 	if (ncb == NULL) { return; };
 
 	availableBanks.unsetSingle(bid);
 	cpuBanks.removeItem(bid);
-	ncb->~numaCpuBankC();
+	ncb->~NumaCpuBank();
 	processTrib.__kgetStream()->memoryStream.memFree(ncb);
 }
 #endif
 
-error_t cpuTribC::__kupdateAffinity(cpu_t cid, ubit8 action)
+error_t CpuTrib::__kupdateAffinity(cpu_t cid, ubit8 action)
 {
 	error_t		ret;
 

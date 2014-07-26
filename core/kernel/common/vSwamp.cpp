@@ -6,7 +6,7 @@
 #include <kernel/common/vSwamp.h>
 
 
-void vSwampC::dump(void)
+void VSwamp::dump(void)
 {
 	printf(NOTICE"vSwamp: base: 0x%p, size: 0x%x, ", baseAddr, size);
 
@@ -21,7 +21,7 @@ void vSwampC::dump(void)
 
 	printf(CC"valid\n");
 
-	for (swampInfoNodeC *tmp = state.rsrc.head;
+	for (SwampInfoNode *tmp = state.rsrc.head;
 		tmp != NULL;
 		tmp = tmp->next)
 	{
@@ -32,12 +32,12 @@ void vSwampC::dump(void)
 	state.lock.release();
 }
 
-void *vSwampC::getPages(uarch_t nPages, ubit32)
+void *VSwamp::getPages(uarch_t nPages, ubit32)
 {
 	void		*ret;
 
 	state.lock.acquire();
-	for (swampInfoNodeC *currentNode = state.rsrc.head;
+	for (SwampInfoNode *currentNode = state.rsrc.head;
 		currentNode != NULL;
 		currentNode = currentNode->next)
 	{
@@ -80,9 +80,9 @@ void *vSwampC::getPages(uarch_t nPages, ubit32)
 	return NULL;
 }
 
-void vSwampC::releasePages(void *vaddr, uarch_t nPages)
+void VSwamp::releasePages(void *vaddr, uarch_t nPages)
 {
-	swampInfoNodeC	*insertionNode;
+	SwampInfoNode	*insertionNode;
 	status_t	status;
 
 	if (vaddr == NULL 
@@ -113,7 +113,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 		if ((void *)((uarch_t)vaddr + (nPages << PAGING_BASE_SHIFT))
 			== insertionNode->baseAddr)
 		{
-			swampInfoNodeC		*prevNode;
+			SwampInfoNode		*prevNode;
 
 			// We can free directly to the existing insertion node.
 			insertionNode->baseAddr = vaddr;
@@ -145,7 +145,7 @@ void vSwampC::releasePages(void *vaddr, uarch_t nPages)
 		}
 		else
 		{
-			swampInfoNodeC		*newNode;
+			SwampInfoNode		*newNode;
 
 			// Couldn't free to an existing swamp info node.
 			newNode = getNewSwampNode(
@@ -220,11 +220,11 @@ out:
  *
  * Both conditions have their associated handling requirements.
  **/
-swampInfoNodeC *vSwampC::findInsertionNode(void *vaddr, status_t *status)
+SwampInfoNode *VSwamp::findInsertionNode(void *vaddr, status_t *status)
 {
-	swampInfoNodeC		*altNode=NULL;
+	SwampInfoNode		*altNode=NULL;
 
-	for (swampInfoNodeC *currentNode = state.rsrc.head;
+	for (SwampInfoNode *currentNode = state.rsrc.head;
 		currentNode != NULL;
 		currentNode = currentNode->next)
 	{
@@ -243,7 +243,7 @@ swampInfoNodeC *vSwampC::findInsertionNode(void *vaddr, status_t *status)
 }
 
 //You must already hold the lock before calling this.
-void vSwampC::deleteSwampNode(swampInfoNodeC *node)
+void VSwamp::deleteSwampNode(SwampInfoNode *node)
 {
 	if (node ==NULL) {
 		return;
@@ -262,17 +262,17 @@ void vSwampC::deleteSwampNode(swampInfoNodeC *node)
 	swampNodeList.free(node);
 }
 
-swampInfoNodeC *vSwampC::getNewSwampNode(
-	void *startAddr, uarch_t nPages, swampInfoNodeC *prev,
-	swampInfoNodeC *next
+SwampInfoNode *VSwamp::getNewSwampNode(
+	void *startAddr, uarch_t nPages, SwampInfoNode *prev,
+	SwampInfoNode *next
 	)
 {
-	swampInfoNodeC		*ret;
-	/* swampInfoNodeC		tmp(startAddr, nPages, prev, next); */
+	SwampInfoNode		*ret;
+	/* SwampInfoNode		tmp(startAddr, nPages, prev, next); */
 
 	// Allocate a new node from the equalizer.
 	/* ret = swampNodeList.addEntry(&tmp); */
-	ret = new (swampNodeList.allocate()) swampInfoNodeC(
+	ret = new (swampNodeList.allocate()) SwampInfoNode(
 		startAddr, nPages, prev, next);
 
 	if (ret == NULL) {

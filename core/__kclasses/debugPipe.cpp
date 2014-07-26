@@ -12,18 +12,18 @@
 
 #define DEBUGPIPE_FLAGS_NOLOG		(1<<0)
 
-debugPipeC::debugPipeC(void)
+DebugPipe::DebugPipe(void)
 {
 	memset(convBuff.rsrc, 0, sizeof(convBuff.rsrc));
 	devices.rsrc = 0;
 }
 
-error_t debugPipeC::initialize(void)
+error_t DebugPipe::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-debugPipeC::~debugPipeC(void)
+DebugPipe::~DebugPipe(void)
 {
 	untieFrom(DEBUGPIPE_DEVICE_BUFFER);
 	untieFrom(
@@ -31,7 +31,7 @@ debugPipeC::~debugPipeC(void)
 		| DEBUGPIPE_DEVICE4);
 }
 
-uarch_t debugPipeC::tieTo(uarch_t device)
+uarch_t DebugPipe::tieTo(uarch_t device)
 {
 	zkcmDebugDeviceC	*mod;
 	error_t			err;
@@ -67,7 +67,7 @@ uarch_t debugPipeC::tieTo(uarch_t device)
 	return ret;
 }
 
-uarch_t debugPipeC::untieFrom(uarch_t device)
+uarch_t DebugPipe::untieFrom(uarch_t device)
 {
 	uarch_t		ret;
 	error_t		err;
@@ -107,7 +107,7 @@ uarch_t debugPipeC::untieFrom(uarch_t device)
 	return ret;
 }
 
-void debugPipeC::refresh(void)
+void DebugPipe::refresh(void)
 {
 	utf8Char	*buff;
 	void		*handle;
@@ -248,7 +248,7 @@ void printf(const utf8Char *str, ...)
 }
 
 void printf(
-	sharedResourceGroupC<waitLockC, void *> *buff, uarch_t buffSize,
+	SharedResourceGroup<WaitLock, void *> *buff, uarch_t buffSize,
 	utf8Char *str, ...
 	)
 {
@@ -455,7 +455,7 @@ sarch_t snprintf(utf8Char *buff, uarch_t maxLength, utf8Char *format, ...)
 	return nPrinted;
 }
 
-void debugPipeC::printf(const utf8Char *str, va_list args)
+void DebugPipe::printf(const utf8Char *str, va_list args)
 {
 	sarch_t		buffLen=0, buffMax;
 	uarch_t		printfFlags=0;
@@ -497,8 +497,8 @@ void debugPipeC::printf(const utf8Char *str, va_list args)
 	convBuff.lock.release();
 }
 
-void debugPipeC::printf(
-	sharedResourceGroupC<waitLockC, void *> *buff, uarch_t buffSize,
+void DebugPipe::printf(
+	SharedResourceGroup<WaitLock, void *> *buff, uarch_t buffSize,
 	utf8Char *str, va_list args
 	)
 {

@@ -27,7 +27,7 @@ int oo=0, pp=0, qq=0, rr=0;
 #include <commonlibs/libacpi/libacpi.h>
 static void rDumpSrat(void)
 {
-	acpi_rsdtS	*rsdt;
+	acpi_sRsdt	*rsdt;
 	acpi_rSratS	*srat;
 	void		*context, *handle;
 	uarch_t		nSrats;
@@ -150,8 +150,8 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t			ret;
 	uarch_t			devMask;
-	threadC			*mainTask;
-	containerProcessC	&__kprocess = *processTrib.__kgetStream();
+	Thread			*mainTask;
+	ContainerProcess	&__kprocess = *processTrib.__kgetStream();
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
 	 * pointer to the BSP CPU Stream into the BSP CPU; then we can call all
@@ -161,7 +161,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 	DO_OR_DIE(bspCpu, initializeBspCpuLocking(), ret);
 	cxxrtl::callGlobalConstructors();
-	bspCpu.powerManager.setPowerStatus(cpuStreamC::powerManagerC::C0);
+	bspCpu.powerManager.setPowerStatus(cpuStream::PowerManager::C0);
 
 	/* Initialize exception handling, then do chipset-wide early init.
 	 * Finally, initialize the irqControl mod, and mask all IRQs off to
@@ -210,7 +210,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	 **/
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
-	asyncContextCache = cachePool.createCache(sizeof(syscallbackC));
+	asyncContextCache = cachePool.createCache(sizeof(Syscallback));
 	if (asyncContextCache == NULL)
 	{
 		printf(FATAL ORIENT"Main: Failed to create asynch context "
@@ -239,7 +239,7 @@ asm volatile ("cli\n\thlt\n\t");
 		spawnThread(
 			(void (*)(void *))&__korientationMain, NULL,
 			NULL,
-			taskC::ROUND_ROBIN,
+			Task::ROUND_ROBIN,
 			0,
 			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
 			&mainTask),
@@ -252,7 +252,7 @@ syscallbackDataF __korientationMain2;
 void __korientationMain1(void)
 {
 	error_t			ret;
-	distributaryProcessC	*dp;
+	DistributaryProcess	*dp;
 
 	// Initialize the VFS roots.
 	DO_OR_DIE(vfsTrib, initialize(), ret);
@@ -274,8 +274,8 @@ void __korientationMain1(void)
 	floodplainn.setZudiIndexServerTid(dp->id);
 }
 
-floodplainnC::initializeReqCallF __korientationMain3;
-void __korientationMain2(messageStreamC::iteratorS *msg, void *)
+Floodplainn::initializeReqCallF __korientationMain3;
+void __korientationMain2(MessageStream::sIterator *msg, void *)
 {
 	error_t		ret;
 
@@ -298,15 +298,15 @@ void __korientationMain3(error_t ret)
 		newSyscallback(&__korientationMain4));
 }
 
-void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
+void __korientationMain4(MessageStream::sIterator *msgIt, void *)
 {
-	threadC				*self;
-	fplainn::deviceC		*chipsetDev;
+	Thread				*self;
+	fplainn::Device		*chipsetDev;
 	error_t				ret;
-	floodplainnC::zudiIndexMsgS	*msg;
+	Floodplainn::zudiIndexMsgS	*msg;
 
-	msg = (floodplainnC::zudiIndexMsgS *)msgIt;
-	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
+	msg = (Floodplainn::zudiIndexMsgS *)msgIt;
+	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
 
 	if (msg->info.action != zuiServer::NDACTION_INSTANTIATE)
@@ -339,7 +339,7 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
 
-	distributaryProcessC		*dtribs[3];
+	DistributaryProcess		*dtribs[3];
 
 	for (ubit8 i=0; i<3; i++)
 	{
@@ -357,7 +357,7 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 
 	sarch_t		waitForTimeout=1;
 	ret = self->parent->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 3, 0), 0, 0, NULL);
+		sTimestamp(0, 3, 0), 0, 0, NULL);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -367,7 +367,7 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 
 	for (ubit8 i=0; i<((waitForTimeout) ? 0xFF : 3); i++)
 	{
-		messageStreamC::iteratorS	iMessage;
+		MessageStream::sIterator	iMessage;
 
 		self->getTaskContext()->messageStream.pull(&iMessage);
 
@@ -383,9 +383,9 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_TIMER:
-			timerStreamC::timerMsgS	*timerEvent;
+			TimerStream::timerMsgS	*timerEvent;
 
-			timerEvent = (timerStreamC::timerMsgS *)&iMessage;
+			timerEvent = (TimerStream::timerMsgS *)&iMessage;
 			printf(NOTICE ORIENT"pulled timer timeout. "
 				"Actual expiration: %d:%dns.\n",
 				timerEvent->actualExpirationStamp.time.seconds,
@@ -419,10 +419,10 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 void __korientationMain1(void);
 void __korientationMain(void)
 {
-	threadC			*self;
+	Thread			*self;
 	sarch_t			exitLoop=0;
 
-	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
+	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
 
 	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
@@ -431,11 +431,11 @@ void __korientationMain(void)
 	__korientationMain1();
 	for (; !exitLoop;)
 	{
-		messageStreamC::iteratorS	iMessage;
-		syscallbackC			*messageCallback;
+		MessageStream::sIterator	iMessage;
+		Syscallback			*messageCallback;
 
 		self->getTaskContext()->messageStream.pull(&iMessage);
-		messageCallback = (syscallbackC *)iMessage.header.privateData;
+		messageCallback = (Syscallback *)iMessage.header.privateData;
 
 		switch (iMessage.header.subsystem)
 		{

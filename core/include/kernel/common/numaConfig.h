@@ -25,10 +25,10 @@
 struct numaConfigS
 {
 	// Simple bitmap for bank config.
-	bitmapC		memBanks;
+	Bitmap		memBanks;
 	// Last bank to which this task was scheduled.
 	numaBankId_t	last;
-	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>	def;
+	SharedResourceGroup<MultipleReaderLock, numaBankId_t>	def;
 };
 
 #endif

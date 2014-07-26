@@ -14,8 +14,8 @@
 
 #define IBMPC_TIMERCTL		"Timer Control: "
 
-static ptrListC<zkcmTimerDeviceC>	timers;
-static sharedResourceGroupC<multipleReaderLockC, timestampS>	systemTime;
+static PtrList<ZkcmTimerDevice>	timers;
+static SharedResourceGroup<MultipleReaderLock, sTimestamp>	systemTime;
 static const ubit32			ibmPcSafePeriodMask =
 	/*TIMERCTL_1S_SAFE
 	|*/ TIMERCTL_100MS_SAFE | TIMERCTL_10MS_SAFE /*| TIMERCTL_1MS_SAFE*/;
@@ -23,7 +23,7 @@ static const ubit32			ibmPcSafePeriodMask =
 static const ubit8 daysInMonth[12] =
 	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-static void updateSystemTime(ubit32 tickGranularity)
+static void upsDateystemTime(ubit32 tickGranularity)
 {
 	systemTime.lock.writeAcquire();
 	systemTime.rsrc.time.nseconds += tickGranularity;
@@ -58,7 +58,7 @@ static void updateSystemTime(ubit32 tickGranularity)
 	systemTime.lock.writeRelease();
 }
 
-status_t zkcmTimerControlModC::getCurrentDate(dateS *date)
+status_t ZkcmTimerControlMod::getCurrentDate(sDate *date)
 {
 	uarch_t		rwFlags;
 
@@ -69,7 +69,7 @@ status_t zkcmTimerControlModC::getCurrentDate(dateS *date)
 	return ERROR_SUCCESS;
 }
 
-status_t zkcmTimerControlModC::getCurrentTime(timeS *time)
+status_t ZkcmTimerControlMod::getCurrentTime(sTime *time)
 {
 	uarch_t		rwFlags;
 
@@ -80,7 +80,7 @@ status_t zkcmTimerControlModC::getCurrentTime(timeS *time)
 	return ERROR_SUCCESS;
 }
 
-status_t zkcmTimerControlModC::getCurrentDateTime(timestampS *stamp)
+status_t ZkcmTimerControlMod::getCurrentDateTime(sTimestamp *stamp)
 {
 	uarch_t		rwFlags;
 
@@ -91,12 +91,12 @@ status_t zkcmTimerControlModC::getCurrentDateTime(timestampS *stamp)
 	return ERROR_SUCCESS;
 }
 
-void zkcmTimerControlModC::flushCachedSystemDateTime(void)
+void ZkcmTimerControlMod::flushCachedSystemDateTime(void)
 {
-	UNIMPLEMENTED("zkcmTimerControlModC::flushCachedSystemTime()");
+	UNIMPLEMENTED("ZkcmTimerControlMod::flushCachedSystemTime()");
 }
 
-void zkcmTimerControlModC::refreshCachedSystemDateTime(void)
+void ZkcmTimerControlMod::refreshCachedSystemDateTime(void)
 {
 	systemTime.lock.writeAcquire();
 
@@ -106,7 +106,7 @@ void zkcmTimerControlModC::refreshCachedSystemDateTime(void)
 	systemTime.lock.writeRelease();
 }
 
-void zkcmTimerControlModC::timerQueuesInitializedNotification(void)
+void ZkcmTimerControlMod::timerQueuesInitializedNotification(void)
 {
 	ubit32		latchedQueueMask;
 
@@ -125,7 +125,7 @@ void zkcmTimerControlModC::timerQueuesInitializedNotification(void)
 	{
 		if (!__KBIT_TEST(latchedQueueMask, i)) { continue; };
 
-		timerTrib.installClockRoutine((1<<i), &updateSystemTime);
+		timerTrib.installClockRoutine((1<<i), &upsDateystemTime);
 		printf(NOTICE IBMPC_TIMERCTL"System timekeeper routine "
 			"installed on timer queue %d.\n",
 			i);
@@ -137,7 +137,7 @@ void zkcmTimerControlModC::timerQueuesInitializedNotification(void)
 		"this chipset.\n");
 }
 
-error_t zkcmTimerControlModC::initialize(void)
+error_t ZkcmTimerControlMod::initialize(void)
 {
 	error_t		ret;
 
@@ -150,22 +150,22 @@ error_t zkcmTimerControlModC::initialize(void)
 	return i8254Pit.initialize();
 }
 
-error_t zkcmTimerControlModC::shutdown(void)
+error_t ZkcmTimerControlMod::shutdown(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t zkcmTimerControlModC::suspend(void)
+error_t ZkcmTimerControlMod::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t zkcmTimerControlModC::restore(void)
+error_t ZkcmTimerControlMod::restore(void)
 {
 	return ERROR_SUCCESS;
 }
 
-ubit32 zkcmTimerControlModC::getChipsetSafeTimerPeriods(void)
+ubit32 ZkcmTimerControlMod::getChipsetSafeTimerPeriods(void)
 {
 	/** EXPLANATION:
 	 * For IBM-PC, safe timer periods are 1s, 100ms, 10ms and 1ms. The
@@ -175,17 +175,17 @@ ubit32 zkcmTimerControlModC::getChipsetSafeTimerPeriods(void)
 	return ibmPcSafePeriodMask;
 }
 
-zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerDevices(
-	zkcmTimerDeviceC::timerTypeE type,	// PER_CPU or CHIPSET.
+ZkcmTimerDevice *ZkcmTimerControlMod::filterTimerDevices(
+	ZkcmTimerDevice::timerTypeE type,	// PER_CPU or CHIPSET.
 	ubit32 modes,				// PERIODIC | ONESHOT.
-	zkcmTimerDeviceC::ioLatencyE ioLatency,	// LOW, MODERATE or HIGH
-	zkcmTimerDeviceC::precisionE precision,	// EXACT, NEGLIGABLE,
+	ZkcmTimerDevice::ioLatencyE ioLatency,	// LOW, MODERATE or HIGH
+	ZkcmTimerDevice::precisionE precision,	// EXACT, NEGLIGABLE,
 						// OVERFLOW or UNDERFLOW
 	ubit32 flags,
 	void **handle
 	)
 {
-	zkcmTimerDeviceC	*source;
+	ZkcmTimerDevice	*source;
 	void			*owner;
 
 	for (source = timers.getNextItem(handle);
@@ -195,7 +195,7 @@ zkcmTimerDeviceC *zkcmTimerControlModC::filterTimerDevices(
 		// Must meet all of the criteria passed to us.
 		if (FLAG_TEST(flags, TIMERCTL_FILTER_FLAGS_SKIP_LATCHED))
 		{
-			if (source->getLatchState((floodplainnStreamC **)&owner)) {
+			if (source->getLatchState((FloodplainnStream **)&owner)) {
 				continue;
 			};
 		};
@@ -229,7 +229,7 @@ static utf8Char *timerDevPrecisions[] =
 
 static utf8Char *timerDevIoLatencies[] = { CC"Low", CC"Moderate", CC"High" };
 
-static void dumpTimerDeviceInfo(zkcmTimerDeviceC *dev)
+static void dumpTimerDeviceInfo(ZkcmTimerDevice *dev)
 {
 	printf(NOTICE"ZKCM Timer Device: (childId %d) \"%s\"\n"
 		"\t%s\n"
@@ -243,7 +243,7 @@ static void dumpTimerDeviceInfo(zkcmTimerDeviceC *dev)
 		timerDevIoLatencies[dev->capabilities.ioLatency]);
 }	
 
-error_t zkcmTimerControlModC::registerNewTimerDevice(zkcmTimerDeviceC *timer)
+error_t ZkcmTimerControlMod::registerNewTimerDevice(ZkcmTimerDevice *timer)
 {
 	error_t		ret;
 
@@ -269,15 +269,15 @@ error_t zkcmTimerControlModC::registerNewTimerDevice(zkcmTimerDeviceC *timer)
 	return ERROR_INVALID_ARG_VAL;
 }
 
-error_t zkcmTimerControlModC::unregisterTimerDevice(
-	zkcmTimerDeviceC *timer, uarch_t flags
+error_t ZkcmTimerControlMod::unregisterTimerDevice(
+	ZkcmTimerDevice *timer, uarch_t flags
 	)
 {
 	void	**latchedStream;
 
 	if (!FLAG_TEST(flags, TIMERCTL_UNREGISTER_FLAGS_FORCE))
 	{
-		if (timer->getLatchState((floodplainnStreamC **)&latchedStream))
+		if (timer->getLatchState((FloodplainnStream **)&latchedStream))
 		{
 			printf(ERROR IBMPC_TIMERCTL"unregisterTimerDevice: "
 				"Device is latched.\n");

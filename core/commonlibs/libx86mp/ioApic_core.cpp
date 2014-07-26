@@ -9,7 +9,7 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
 
-x86IoApic::ioApicC::~ioApicC(void)
+x86IoApic::IoApic::~IoApic(void)
 {
 	if (vaddr.rsrc != NULL)
 		{ unmapIoApic(vaddr.rsrc); };
@@ -22,7 +22,7 @@ x86IoApic::ioApicC::~ioApicC(void)
 	irqPinList = NULL;
 }
 
-x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
+x86IoApic::IoApic::ioApicRegspaceS *x86IoApic::IoApic::mapIoApic(
 	paddr_t paddr
 	)
 {
@@ -61,7 +61,7 @@ x86IoApic::ioApicC::ioApicRegspaceS *x86IoApic::ioApicC::mapIoApic(
 	return ret;
 }
 
-void x86IoApic::ioApicC::unmapIoApic(ioApicRegspaceS *ioApic)
+void x86IoApic::IoApic::unmapIoApic(ioApicRegspaceS *ioApic)
 {
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(ioApic, 1);
 }
@@ -86,7 +86,7 @@ static void sortListBy__kids(ubit8 nPins, zkcmIrqPinS *const list)
 }
 */
 
-error_t x86IoApic::ioApicC::initialize(void)
+error_t x86IoApic::IoApic::initialize(void)
 {
 	error_t		err;
 
@@ -101,7 +101,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	nPins = ((readIoWin() >> 16) & 0xFF) + 1;
 	vaddr.lock.release();
 
-	// Get vector base. See zkcmIrqControlModC::identifyActiveIrq().
+	// Get vector base. See ZkcmIrqControlMod::identifyActiveIrq().
 	err = x86IoApic::allocateVectorBaseFor(this, &vectorBase);
 	if (err != ERROR_SUCCESS) { return err; };
 
@@ -161,7 +161,7 @@ error_t x86IoApic::ioApicC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-sarch_t x86IoApic::ioApicC::getPinState(
+sarch_t x86IoApic::IoApic::getPinState(
 	ubit8 irq, ubit8 *cpu, ubit8 *vector,
 	ubit8 *deliveryMode, ubit8 *destMode,
 	ubit8 *polarity, ubit8 *triggMode
@@ -188,7 +188,7 @@ sarch_t x86IoApic::ioApicC::getPinState(
 	return ret;
 }
 
-void x86IoApic::ioApicC::setPinState(
+void x86IoApic::IoApic::setPinState(
 	ubit8 irq, ubit8 cpu, ubit8 vector,
 	ubit8 deliveryMode, ubit8 destMode,
 	ubit8 polarity, ubit8 triggMode
@@ -220,7 +220,7 @@ void x86IoApic::ioApicC::setPinState(
 	vaddr.lock.release();
 }
 
-void x86IoApic::ioApicC::maskPin(ubit8 irq)
+void x86IoApic::IoApic::maskPin(ubit8 irq)
 {
 	ubit32		low;
 
@@ -233,7 +233,7 @@ void x86IoApic::ioApicC::maskPin(ubit8 irq)
 	vaddr.lock.release();
 }
 
-void x86IoApic::ioApicC::unmaskPin(ubit8 irq)
+void x86IoApic::IoApic::unmaskPin(ubit8 irq)
 {
 	ubit32		low;
 

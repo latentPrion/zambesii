@@ -2,10 +2,10 @@ tlbState.h
 
 Must define the following class, with the following API:
 
-class tlbStateC
+class TlbState
 {
 	public:
-		void switchVaddrSpace(vaddrSpaceC *vaddrSpace)
+		void switchVaddrSpace(VaddrSpace *vaddrSpace)
 
 		[void localFlushSpotless(void);]
 
@@ -22,7 +22,7 @@ class tlbStateC
 Any additional helper functinos, etc are perfectly okay and allowed, as usual
 with class definitions. Inlines are allowed wherever senible.
 
-tlbStateC::switchVaddrSpace(vaddrSpaceC *vaddrspace)
+TlbState::switchVaddrSpace(VaddrSpace *vaddrspace)
 	Takes a vaddrspaceC * and uses that to load the TLB with entries from a new
 	vaddrSpace. In time, this API may change toa llow the kernel to save TLB
 	state per process on context switch so we avoid having to manually
@@ -36,7 +36,7 @@ tlbStateC::switchVaddrSpace(vaddrSpaceC *vaddrspace)
 	is loaded, we restore its previous caching, and when it is switched away,
 	we save its TLB state before the switch.
 
-tlbStateC::localFlushSpotless(void)
+TlbState::localFlushSpotless(void)
 	Flush all tlb cache entries on the local logical CPU. On an architecture
 	with manual TLB management, this may be used to completely flush the TLB.
 
@@ -44,23 +44,23 @@ tlbStateC::localFlushSpotless(void)
 
 	Avoid using this function.
 
-tlbStateC::localFlushVaddrSpace(void)
+TlbState::localFlushVaddrSpace(void)
 	Will flush all entries currently in the TLB associated with the current
 	vaddrSpace. Pretty expensive, so avoid where possible. Most of the time,
 	a simple localFlushsingleEntry() or localFlushEntryRange() should be more
 	than adequate.
 
-tlbStateC::localFlushSingleEntry(void *vaddr)
+TlbState::localFlushSingleEntry(void *vaddr)
 	Will flush the TLB entry associated with 'vaddr' out of the TLB on the
 	current CPU. Used mostly after altering a virt-phys translation in the
 	process's vaddrSpace.
 
-tlbStateC::localFlushEntryRange(void *vaddr, uarch_t nPages)
+TlbState::localFlushEntryRange(void *vaddr, uarch_t nPages)
 	Will flush the range of entries from:
 		vaddr to vaddr + (nPages * PAGING_BASE_SIZE) - 1
 	from the local TLB.
 
-sarch_t tlbStateC::fetchTranslation(void *vaddr)
+sarch_t TlbState::fetchTranslation(void *vaddr)
 	On an arch with hardware assisted TLB managament, this is not necessary.
 	In fact, it may even be pre-processed or optimized out.
 

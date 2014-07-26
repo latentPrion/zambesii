@@ -10,13 +10,13 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-error_t timerStreamC::initialize(void)
+error_t TimerStream::initialize(void)
 {
 	return requests.initialize();
 }
 
-error_t timerStreamC::createOneshotEvent(
-	timestampS stamp, ubit8 type,
+error_t TimerStream::createOneshotEvent(
+	sTimestamp stamp, ubit8 type,
 	processId_t targetPid,
 	uarch_t flags, void *privateData
 	)
@@ -96,7 +96,7 @@ error_t timerStreamC::createOneshotEvent(
 	};
 }
 
-error_t timerStreamC::pullEvent(
+error_t TimerStream::pullEvent(
 	ubit32 flags, timerMsgS *event
 	)
 {
@@ -113,7 +113,7 @@ error_t timerStreamC::pullEvent(
 	ret = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTaskContext()->messageStream.pullFrom(
 			MSGSTREAM_SUBSYSTEM_TIMER,
-			(messageStreamC::iteratorS *)event,
+			(MessageStream::sIterator *)event,
 			FLAG_TEST(
 				flags, TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK)
 					? ZCALLBACK_PULL_FLAGS_DONT_BLOCK : 0);
@@ -122,18 +122,18 @@ error_t timerStreamC::pullEvent(
 	return ERROR_SUCCESS;
 }
 
-static inline sarch_t isPerCpuTarget(timerStreamC::timerMsgS *request)
+static inline sarch_t isPerCpuTarget(TimerStream::timerMsgS *request)
 {
 	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
-void *timerStreamC::timerRequestTimeoutNotification(
-	timerMsgS *request, timestampS *timerMsgStamp
+void *TimerStream::timerRequestTimeoutNotification(
+	timerMsgS *request, sTimestamp *timerMsgStamp
 	)
 {
 	timerMsgS	*event;
 	error_t		ret;
-	taskContextC	*taskContext;
+	TaskContext	*taskContext;
 
 	if (isPerCpuTarget(request) && parent->id != __KPROCESSID)
 	{
@@ -141,16 +141,16 @@ void *timerStreamC::timerRequestTimeoutNotification(
 			"process' timer stream.\n");
 	};
 
-	/* Need to get the correct taskContextC object; this could be a context
-	 * object that is part of a threadC object, or a context object that
-	 * is embedded within a cpuStreamC object.
+	/* Need to get the correct TaskContext object; this could be a context
+	 * object that is part of a Thread object, or a context object that
+	 * is embedded within a cpuStream object.
 	 *
 	 * If TIMERSTREAM_CREATE*_FLAGS_CPU_TARGET is set, then the target
 	 * context is a per-CPU context. Else, it is a normal thread context.
 	 **/
 	if (isPerCpuTarget(request))
 	{
-		cpuStreamC	*cs;
+		cpuStream	*cs;
 
 		cs = cpuTrib.getStream((cpu_t)request->header.targetId);
 		if (cs == NULL) { return NULL; };
@@ -158,7 +158,7 @@ void *timerStreamC::timerRequestTimeoutNotification(
 	}
 	else
 	{
-		threadC		*t;
+		Thread		*t;
 
 		t = parent->getThread(request->header.targetId);
 		if (t == NULL) { return NULL; };
@@ -200,7 +200,7 @@ void *timerStreamC::timerRequestTimeoutNotification(
 			: (void *)taskContext->parent.thread;
 }
 
-void timerStreamC::timerRequestTimeoutNotification(void)
+void TimerStream::timerRequestTimeoutNotification(void)
 {
 	timerMsgS	*nextRequest;
 

@@ -9,38 +9,38 @@
 
 #define SINGLEWAITERQ_POP_FLAGS_DONTBLOCK	(1<<0)
 
-class threadC;
+class Thread;
 
-class singleWaiterQueueC
+class SingleWaiterQueue
 :
-public pointerDoubleListC<void>
+public PtrDblList<void>
 {
 public:
-	singleWaiterQueueC(void)
+	SingleWaiterQueue(void)
 	:
 	thread(NULL)
 	{}
 
 	error_t initialize(void)
 	{
-		return pointerDoubleListC<void>::initialize();
+		return PtrDblList<void>::initialize();
 	};
 
-	~singleWaiterQueueC(void) {}
+	~SingleWaiterQueue(void) {}
 
 public:
 	error_t addItem(void *item);
-	// pointerDoubleListC::remove() is sufficient, needs no extending.
-	// pointerDoubleListC::getHead() is sufficient, needs no extending.
-	// pointerDoubleListC::getNItems() is sufficient, needs no extending.
+	// PtrDblList::remove() is sufficient, needs no extending.
+	// PtrDblList::getHead() is sufficient, needs no extending.
+	// PtrDblList::getNItems() is sufficient, needs no extending.
 	error_t pop(void **ret, uarch_t flags=0);
-	error_t setWaitingThread(threadC *thread);
+	error_t setWaitingThread(Thread *thread);
 
-	threadC *getThread(void) { return thread; }
+	Thread *getThread(void) { return thread; }
 
 private:
-	threadC		*thread;
-	waitLockC	lock;
+	Thread		*thread;
+	WaitLock	lock;
 };
 
 #endif

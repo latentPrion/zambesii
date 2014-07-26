@@ -14,19 +14,19 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
-error_t distributaryTribC::initialize(void)
+error_t DistributaryTrib::initialize(void)
 {
-	tagCache = cachePool.createCache(sizeof(dvfs::tagC));
-	if (tagCache == NULL) { return ERROR_UNKNOWN; };
+	Tagache = cachePool.createCache(sizeof(dvfs::Tag));
+	if (Tagache == NULL) { return ERROR_UNKNOWN; };
 
 	return bootBuildTree();
 }
 
-error_t distributaryTribC::bootBuildTree(void)
+error_t DistributaryTrib::bootBuildTree(void)
 {
 	const dvfs::distributaryDescriptorS	*currDesc;
 	uarch_t					i;
-	dvfs::tagC				*rootTag;
+	dvfs::Tag				*rootTag;
 	error_t					ret;
 
 	rootTag = vfsTrib.dvfsCurrentt.getRoot();
@@ -37,7 +37,7 @@ error_t distributaryTribC::bootBuildTree(void)
 		currDesc != NULL;
 		i++, currDesc = distributaryDescriptors[i])
 	{
-		dvfs::distributaryInodeC	*dInodeTmp;
+		dvfs::distributaryINode	*dInodeTmp;
 
 		printf(NOTICE DTRIBTRIB"Desc: name \"%s\", vendor \"%s\", "
 			"%d categories.\n"
@@ -46,8 +46,8 @@ error_t distributaryTribC::bootBuildTree(void)
 			currDesc->nCategories,
 			currDesc->description);
 
-		dInodeTmp = new dvfs::distributaryInodeC(
-			currDesc, dvfs::distributaryInodeC::IN_KERNEL);
+		dInodeTmp = new dvfs::distributaryINode(
+			currDesc, dvfs::distributaryINode::IN_KERNEL);
 
 		if (dInodeTmp == NULL)
 		{
@@ -60,8 +60,8 @@ error_t distributaryTribC::bootBuildTree(void)
 
 		for (uarch_t j=0; j<currDesc->nCategories; j++)
 		{
-			dvfs::tagC		*cTagTmp, *dTagTmp;
-			dvfs::categoryInodeC	*cInodeTmp;
+			dvfs::Tag		*cTagTmp, *dTagTmp;
+			dvfs::categoryINode	*cInodeTmp;
 
 			printf(CC"\tCategory: %s.",
 				currDesc->categories[j].name);
@@ -73,7 +73,7 @@ error_t distributaryTribC::bootBuildTree(void)
 			// If not, create it, and an inode for it.
 			if (cTagTmp == NULL)
 			{
-				cInodeTmp = new dvfs::categoryInodeC;
+				cInodeTmp = new dvfs::categoryINode;
 				if (cInodeTmp == NULL) { continue; };
 				if (cInodeTmp->initialize() != ERROR_SUCCESS)
 					{ continue; };

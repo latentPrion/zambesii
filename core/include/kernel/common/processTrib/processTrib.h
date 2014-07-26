@@ -17,7 +17,7 @@
 #define PROCESSTRIB_UPDATE_SUBTRACT	0x1
 #define PROCESSTRIB_UPDATE_SET		0x2
 
-/**	Flag values for processTribC::spawnProcess().
+/**	Flag values for ProcessTrib::spawnProcess().
  **/
 // STINHERIT by default.
 #define SPAWNPROC_FLAGS_AFFINITY_STINHERIT	SPAWNTHREAD_FLAGS_AFFINITY_STINHERIT
@@ -37,18 +37,18 @@
 
 #define SPAWNPROC_FLAGS_DORMANT			SPAWNTHREAD_FLAGS_DORMANT
 
-/**	Return values for processTribC::spawnProcess().
+/**	Return values for ProcessTrib::spawnProcess().
  **/
 #define SPAWNPROC_STATUS_INVALID_FILE_NAME	(0x1)
 #define SPAWNDRIVER_STATUS_NO_DRIVER		(0x2)
 #define SPAWNDRIVER_STATUS_METAS_MISSING	(0x3)
 
-class processTribC
+class ProcessTrib
 :
-public tributaryC
+public Tributary
 {
 public:
-	processTribC(void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
+	ProcessTrib(void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
 	:
 	__kprocess(vaddrSpaceBaseAddr, vaddrSpaceSize),
 	// Kernel occupies process ID 1; we begin handing process IDs from 2.
@@ -66,7 +66,7 @@ public:
 		 * index with garbage. We then expect that should this index
 		 * ever be dereferenced we should get a page fault of some kind.
 		 **/
-		processes.rsrc[0] = (processStreamC *)0xFEEDBEEF;
+		processes.rsrc[0] = (ProcessStream *)0xFEEDBEEF;
 		processes.rsrc[PROCID_PROCESS(__KPROCESSID)] = &__kprocess;
 
 		fillOutPrioClasses();
@@ -81,9 +81,9 @@ public:
 	}
 
 public:
-	containerProcessC *__kgetStream(void) { return &__kprocess; };
-	processStreamC *getStream(processId_t id);
-	inline taskC *getThread(processId_t tid);
+	ContainerProcess *__kgetStream(void) { return &__kprocess; };
+	ProcessStream *getStream(processId_t id);
+	inline Task *getThread(processId_t tid);
 
 	/**	EXPLANATION:
 	 * Distributaries are by nature high privilege processes with high
@@ -104,7 +104,7 @@ public:
 		ubit8 schedPrio,
 		uarch_t flags,
 		void *privateData,
-		distributaryProcessC **ret);
+		DistributaryProcess **ret);
 
 	/**	EXPLANATION:
 	 * Driver processes can be either kernel processes that share and live
@@ -139,7 +139,7 @@ public:
 		ubit8 prio,
 		uarch_t flags,
 		void *privateData,
-		driverProcessC **ret);
+		DriverProcess **ret);
 
 	// Callback uses genericCallbackS.
 	#define MSGSTREAM_PROCESS_SPAWN_STREAM		(1)
@@ -147,14 +147,14 @@ public:
 		utf8Char *commandLine,
 		utf8Char *environment,
 		numaBankId_t addrSpaceBinding,	// NUMA addrspace binding.
-		bitmapC *cpuAffinity,		// Ocean/NUMA/SMP affinity.
+		Bitmap *cpuAffinity,		// Ocean/NUMA/SMP affinity.
 		void *elevation,		// Privileges.
 		ubit8 execDomain,		// Kernel mode vs. User mode.
 		ubit8 schedPolicy,		// Sched policy of 1st thread.
 		ubit8 prio,			// Sched prio of 1st thread.
 		uarch_t flags,			// proc + 1st thread spawn flags
 		void *privateData,
-		processStreamC **ret);		// Returned error value.
+		ProcessStream **ret);		// Returned error value.
 
 	error_t destroyStream(void);
 
@@ -166,28 +166,28 @@ private:
 	static void commonEntry(void *);
 	static error_t getDistributaryExecutableFormat(
 		utf8Char *fullName,
-		processStreamC::executableFormatE *executableFormat,
+		ProcessStream::executableFormatE *executableFormat,
 		void (**entryPoint)(void));
 
 	static error_t getDriverExecutableFormat(
 		utf8Char *fullName,
-		processStreamC::executableFormatE *executableFormat,
+		ProcessStream::executableFormatE *executableFormat,
 		void (**entryPoint)(void));
 
 	static error_t getApplicationExecutableFormat(
 		utf8Char *fullName,
-		processStreamC::executableFormatE *executableFormat);
+		ProcessStream::executableFormatE *executableFormat);
 
 	static error_t getExecutableFormat(
 		ubit8 *buffer,
-		processStreamC::executableFormatE *executableFormat);
+		ProcessStream::executableFormatE *executableFormat);
 
 private:
-	kernelProcessC		__kprocess;
-	wrapAroundCounterC	nextProcId;
+	KernelProcess		__kprocess;
+	WrapAroundCounter	nextProcId;
 	struct
 	{
-		void setSlot(processId_t pid, processStreamC *newProc)
+		void setSlot(processId_t pid, ProcessStream *newProc)
 		{
 			lock.writeAcquire();
 			rsrc[PROCID_PROCESS(pid)] = newProc;
@@ -201,19 +201,19 @@ private:
 			lock.writeRelease();
 		}
 
-		multipleReaderLockC	lock;
-		processStreamC		*rsrc[CHIPSET_MEMORY_MAX_NPROCESSES];
+		MultipleReaderLock	lock;
+		ProcessStream		*rsrc[CHIPSET_MEMORY_MAX_NPROCESSES];
 	} processes;
 };
 
-extern processTribC	processTrib;
+extern ProcessTrib	processTrib;
 
 /**	Inline Methods
  *****************************************************************************/
 
-taskC *processTribC::getThread(processId_t tid)
+Task *ProcessTrib::getThread(processId_t tid)
 {
-	processStreamC		*proc;
+	ProcessStream		*proc;
 
 	proc = getStream(tid);
 	if (proc == NULL) { return NULL; };

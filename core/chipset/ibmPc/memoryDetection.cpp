@@ -12,7 +12,7 @@
 #include <commonlibs/libacpi/libacpi.h>
 
 
-// E820 definitions for zkcmMemoryDetectionModC::getMemoryMap().
+// E820 definitions for ZkcmMemoryDetectionMod::getMemoryMap().
 #define E820_USABLE		0x1
 #define E820_RECLAIMABLE	0x3
 
@@ -30,22 +30,22 @@ static e820EntryS		*e820Ptr;
 static zkcmMemMapS		*_mmap=NULL;
 static zkcmMemConfigS		*_mcfg=NULL;
 
-error_t zkcmMemoryDetectionModC::initialize(void)
+error_t ZkcmMemoryDetectionMod::initialize(void)
 {
 	return ibmPcBios::initialize();
 }
 
-error_t zkcmMemoryDetectionModC::shutdown(void)
+error_t ZkcmMemoryDetectionMod::shutdown(void)
 {
 	return ibmPcBios::shutdown();
 }
 
-error_t zkcmMemoryDetectionModC::suspend(void)
+error_t ZkcmMemoryDetectionMod::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t zkcmMemoryDetectionModC::restore(void)
+error_t ZkcmMemoryDetectionMod::restore(void)
 {
 	return ERROR_SUCCESS;
 }
@@ -53,7 +53,7 @@ error_t zkcmMemoryDetectionModC::restore(void)
 static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 {
 	zkcmNumaMapS		*ret;
-	acpi_rsdtS		*rsdt;
+	acpi_sRsdt		*rsdt;
 	acpi_rSratS		*srat;
 	acpi_rSratMemS		*memEntry;
 	void			*handle, *sratHandle, *context;
@@ -169,7 +169,7 @@ static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 	return ret;
 }
 
-zkcmNumaMapS *zkcmMemoryDetectionModC::getNumaMap(void)
+zkcmNumaMapS *ZkcmMemoryDetectionMod::getNumaMap(void)
 {
 	error_t		err;
 	zkcmNumaMapS	*ret=0;
@@ -212,7 +212,7 @@ zkcmNumaMapS *zkcmMemoryDetectionModC::getNumaMap(void)
 	#define IBMPCMMAP_ADDRHIGH_BADMASK	0
 #endif
 
-zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
+zkcmMemMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
 {
 	zkcmMemMapS		*ret;
 	ubit32			nEntries=0, nBadEntries, i, j;
@@ -360,7 +360,7 @@ zkcmMemMapS *zkcmMemoryDetectionModC::getMemoryMap(void)
 	return ret;
 }
 
-zkcmMemConfigS *zkcmMemoryDetectionModC::getMemoryConfig(void)
+zkcmMemConfigS *ZkcmMemoryDetectionMod::getMemoryConfig(void)
 {
 	zkcmMemConfigS		*ret;
 	uarch_t			ax, bx, cx, dx;

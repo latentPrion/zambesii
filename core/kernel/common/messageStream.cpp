@@ -13,16 +13,16 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-asyncResponseC::~asyncResponseC(void)
+AsyncResponse::~AsyncResponse(void)
 {
-	messageStreamC::headerS		*msg;
+	MessageStream::sHeader		*msg;
 	error_t				ret;
 
-	msg = (messageStreamC::headerS *)msgHeader;
+	msg = (MessageStream::sHeader *)msgHeader;
 
 	if (msg == NULL) { return; };
 	msg->error = err;
-	ret = messageStreamC::enqueueOnThread(msg->targetId, msg);
+	ret = MessageStream::enqueueOnThread(msg->targetId, msg);
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(FATAL"asyncCleanup: Failed to send msg from 0x%x to "
@@ -32,14 +32,14 @@ asyncResponseC::~asyncResponseC(void)
 	};
 }
 
-syscallbackC *newSyscallback(syscallbackDataF *fn, void *data)
+Syscallback *newSyscallback(syscallbackDataF *fn, void *data)
 {
-	return new (asyncContextCache->allocate()) syscallbackC(fn, data);
+	return new (asyncContextCache->allocate()) Syscallback(fn, data);
 }
 
-syscallbackC *newSyscallback(syscallbackFuncF *fn, void (*func)())
+Syscallback *newSyscallback(syscallbackFuncF *fn, void (*func)())
 {
-	return new (asyncContextCache->allocate()) syscallbackC(fn, func);
+	return new (asyncContextCache->allocate()) Syscallback(fn, func);
 }
 
 ipc::dataHeaderS *ipc::createDataHeader(
@@ -84,8 +84,8 @@ inline static sarch_t is__kvaddrspaceProcess(processId_t pid)
 
 #if 0
 static error_t createSharedMapping(
-	vaddrSpaceStreamC *targetVas, void *targetVaddrStart,
-	vaddrSpaceStreamC *sourceVas, void *sourceVaddrStart,
+	VaddrSpaceStream *targetVas, void *targetVaddrStart,
+	VaddrSpaceStream *sourceVas, void *sourceVaddrStart,
 	uarch_t nPages)
 {
 	for (uarch_t pageCounter=0; pageCounter < nPages;
@@ -113,7 +113,7 @@ static error_t createSharedMapping(
 #endif
 
 static sarch_t vaddrRangeIsLoose(
-	vaddrSpaceStreamC *vas, void *vaddr, uarch_t nPages
+	VaddrSpaceStream *vas, void *vaddr, uarch_t nPages
 	)
 {
 	for (uarch_t i=0; i<nPages;
@@ -135,7 +135,7 @@ static sarch_t vaddrRangeIsLoose(
 
 error_t ipc::dispatchDataHeader(dataHeaderS *header, void *buffer)
 {
-	processStreamC	*currProcess, *sourceProcess;
+	ProcessStream	*currProcess, *sourceProcess;
 	void		*targetMapping, *sourceMapping;
 	uarch_t		sourceMappingNPages;
 	processId_t	currTid;
@@ -297,7 +297,7 @@ void ipc::destroyDataHeader(dataHeaderS *header, void *buffer)
 	delete header;
 }
 
-messageStreamC::headerS::headerS(
+MessageStream::sHeader::sHeader(
 	processId_t targetPid, ubit16 subsystem, ubit16 function,
 	uarch_t size, uarch_t flags, void *privateData)
 :
@@ -311,13 +311,13 @@ subsystem(subsystem), flags(0), function(function), size(size)
 	targetId = determineTargetThreadId(
 		targetPid, sourceId, flags, &this->flags);
 
-	if (size > sizeof(iteratorS))
+	if (size > sizeof(sIterator))
 	{
-		printf(FATAL MSGSTREAM"headerS con: size %d exceeds "
-			"sizeof(iteratorS) (%d)\n"
+		printf(FATAL MSGSTREAM"sHeader con: size %d exceeds "
+			"sizeof(sIterator) (%d)\n"
 			"\tCaller 0x%p: subsystem %d, function %d, from T0x%x "
 			"to T0x%x\n",
-			size, sizeof(iteratorS),
+			size, sizeof(sIterator),
 			__builtin_return_address(0),
 			subsystem, function, sourceId, targetId);
 
@@ -325,8 +325,8 @@ subsystem(subsystem), flags(0), function(function), size(size)
 	};
 }
 
-processId_t messageStreamC::determineSourceThreadId(
-	taskC *caller, ubit16 *flags
+processId_t MessageStream::determineSourceThreadId(
+	Task *caller, ubit16 *flags
 	)
 {
 	if (caller->getType() == task::PER_CPU)
@@ -334,10 +334,10 @@ processId_t messageStreamC::determineSourceThreadId(
 		FLAG_SET(*flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 		return cpuTrib.getCurrentCpuStream()->cpuId;
 	}
-	else { return ((threadC *)caller)->getFullId(); };
+	else { return ((Thread *)caller)->getFullId(); };
 }
 
-processId_t messageStreamC::determineTargetThreadId(
+processId_t MessageStream::determineTargetThreadId(
 	processId_t targetId, processId_t sourceId,
 	uarch_t callerFlags, ubit16 *messageFlags
 	)
@@ -353,15 +353,15 @@ processId_t messageStreamC::determineTargetThreadId(
 	return targetId;
 }
 
-error_t messageStreamC::enqueueOnThread(
-	processId_t targetStreamId, messageStreamC::headerS *header
+error_t MessageStream::enqueueOnThread(
+	processId_t targetStreamId, MessageStream::sHeader *header
 	)
 {
-	messageStreamC	*targetStream;
+	MessageStream	*targetStream;
 
 	if (FLAG_TEST(header->flags, MSGSTREAM_FLAGS_CPU_TARGET))
 	{
-		cpuStreamC		*cs;
+		cpuStream		*cs;
 
 		/* Dealing with an asynchronous response to an API call from a
 		 * per-CPU thread.
@@ -373,8 +373,8 @@ error_t messageStreamC::enqueueOnThread(
 	}
 	else
 	{
-		processStreamC		*targetProcess;
-		threadC			*targetThread;
+		ProcessStream		*targetProcess;
+		Thread			*targetThread;
 
 		/* Dealing with an asynchronous response to an API call from a
 		 * normal unique-context thread.
@@ -395,12 +395,12 @@ error_t messageStreamC::enqueueOnThread(
 	return targetStream->enqueue(header->subsystem, header);
 }
 
-error_t messageStreamC::pullFrom(
-	ubit16 subsystemQueue, messageStreamC::iteratorS *callback,
+error_t MessageStream::pullFrom(
+	ubit16 subsystemQueue, MessageStream::sIterator *callback,
 	ubit32 flags
 	)
 {
-	messageStreamC::headerS	*tmp;
+	MessageStream::sHeader	*tmp;
 
 	if (callback == NULL) { return ERROR_INVALID_ARG; };
 	if (subsystemQueue > MSGSTREAM_SUBSYSTEM_MAXVAL)
@@ -430,19 +430,19 @@ error_t messageStreamC::pullFrom(
 			return ERROR_WOULD_BLOCK;
 		};
 
-		lockC::operationDescriptorS	unlockDescriptor(
+		Lock::operationDescriptorS	unlockDescriptor(
 			&pendingSubsystems.bmp.lock,
-			lockC::operationDescriptorS::WAIT);
+			Lock::operationDescriptorS::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
 	};
 }
 
-error_t messageStreamC::pull(
-	messageStreamC::iteratorS *callback, ubit32 flags
+error_t MessageStream::pull(
+	MessageStream::sIterator *callback, ubit32 flags
 	)
 {
-	messageStreamC::headerS	*tmp;
+	MessageStream::sHeader	*tmp;
 
 	if (callback == NULL) { return ERROR_INVALID_ARG; };
 
@@ -464,7 +464,7 @@ error_t messageStreamC::pull(
 				// Very useful checks here for sanity.
 				assert_fatal(tmp->size >= sizeof(*tmp));
 				assert_fatal(
-					tmp->size <= sizeof(messageStreamC::iteratorS));
+					tmp->size <= sizeof(MessageStream::sIterator));
 
 				memcpy(callback, tmp, tmp->size);
 
@@ -479,19 +479,19 @@ error_t messageStreamC::pull(
 			return ERROR_WOULD_BLOCK;
 		};
 
-		lockC::operationDescriptorS	unlockDescriptor(
+		Lock::operationDescriptorS	unlockDescriptor(
 			&pendingSubsystems.bmp.lock,
-			lockC::operationDescriptorS::WAIT);
+			Lock::operationDescriptorS::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
 	};
 }
 
-error_t messageStreamC::postMessage(
+error_t MessageStream::postMessage(
 	processId_t tid, ubit16 userQId, ubit16 messageNo, void *data
 	)
 {
-	messageStreamC::headerS		*message;
+	MessageStream::sHeader		*message;
 	processId_t			currTid;
 
 	currTid = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskId();
@@ -502,7 +502,7 @@ error_t messageStreamC::postMessage(
 	if (PROCID_PROCESS(tid) != PROCID_PROCESS(currTid))
 		{ return ERROR_UNAUTHORIZED; };
 
-	message = new messageStreamC::headerS(
+	message = new MessageStream::sHeader(
 		tid, MSGSTREAM_USERQ(userQId), messageNo,
 		sizeof(*message), 0, data);
 
@@ -511,7 +511,7 @@ error_t messageStreamC::postMessage(
 	return enqueueOnThread(tid, message);
 }
 
-error_t	messageStreamC::enqueue(ubit16 queueId, messageStreamC::headerS *callback)
+error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 {
 	error_t		ret;
 
@@ -520,13 +520,13 @@ error_t	messageStreamC::enqueue(ubit16 queueId, messageStreamC::headerS *callbac
 		return ERROR_INVALID_ARG_VAL;
 	};
 
-	if (callback->size > sizeof(iteratorS))
+	if (callback->size > sizeof(sIterator))
 	{
-		printf(FATAL MSGSTREAM"headerS con: size %d exceeds "
-			"sizeof(iteratorS) (%d)\n"
+		printf(FATAL MSGSTREAM"sHeader con: size %d exceeds "
+			"sizeof(sIterator) (%d)\n"
 			"\tCaller 0x%p: subsystem %d, function %d, from T0x%x "
 			"to T0x%x\n",
-			callback->size, sizeof(iteratorS),
+			callback->size, sizeof(sIterator),
 			__builtin_return_address(0),
 			callback->subsystem, callback->function,
 			callback->sourceId, callback->targetId);

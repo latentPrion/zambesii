@@ -5,7 +5,7 @@
 #include <kernel/common/timerTrib/timeTypes.h>
 
 
-vfsDirC::vfsDirC(vfsDirInodeC *inode)
+vfsDirC::vfsDirC(vfsDirINode *inode)
 {
 	desc = inode;
 	next = NULL;	
@@ -52,7 +52,7 @@ error_t vfsDirC::initialize(
 	// Allocate a new inode if needed.
 	if (desc == NULL)
 	{
-		desc = new vfsDirInodeC(inodeHigh, inodeLow);
+		desc = new vfsDirINode(inodeHigh, inodeLow);
 		if (desc == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};

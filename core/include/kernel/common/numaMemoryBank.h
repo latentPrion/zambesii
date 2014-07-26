@@ -38,18 +38,18 @@
 #define NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP	(1<<0)
 #define NUMAMEMBANK			"Numa Memory Bank "
 
-class numaMemoryBankC
+class NumaMemoryBank
 {
 public:
-	numaMemoryBankC(numaBankId_t id);
+	NumaMemoryBank(numaBankId_t id);
 	error_t initialize(void) { return rangePtrCache.initialize(); }
-	~numaMemoryBankC(void);
+	~NumaMemoryBank(void);
 
 public:
 	// Adds __kspace to the memory ranges on a memory bank.
 	error_t __kspaceAddMemoryRange(
 		void *arrayMem,
-		numaMemoryRangeC *__kspace, void *__kspaceInitMem);
+		NumaMemoryRange *__kspace, void *__kspaceInitMem);
 
 	error_t addMemoryRange(paddr_t baseAddr, paddr_t size);
 	error_t removeMemoryRange(paddr_t baseAddr);
@@ -69,11 +69,11 @@ public:
 
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
 
-	// Is a wrapper around numaMemoryRangeC::mapMemU*sed().
+	// Is a wrapper around NumaMemoryRange::mapMemU*sed().
 	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
 	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);
 
-	status_t merge(numaMemoryBankC *nmb);
+	status_t merge(NumaMemoryBank *nmb);
 
 	sarch_t identifyPaddr(paddr_t paddr);
 	sarch_t identifyPaddrRange(paddr_t base, paddr_t nBytes);
@@ -81,16 +81,16 @@ public:
 public:
 	struct rangePtrS
 	{
-		numaMemoryRangeC	*range;
+		NumaMemoryRange	*range;
 		rangePtrS		*next;
 	};
 
 	numaBankId_t	id;
 
 private:
-	sharedResourceGroupC<multipleReaderLockC, rangePtrS *>	ranges;
-	sharedResourceGroupC<multipleReaderLockC, numaMemoryRangeC *> defRange;
-	slamCacheC	rangePtrCache;
+	SharedResourceGroup<MultipleReaderLock, rangePtrS *>	ranges;
+	SharedResourceGroup<MultipleReaderLock, NumaMemoryRange *> defRange;
+	SlamCache	rangePtrCache;
 };
 
 #endif

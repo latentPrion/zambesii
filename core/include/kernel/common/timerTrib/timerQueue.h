@@ -11,7 +11,7 @@
 	 * The subject of Zambesii timer source management as a whole will
 	 * deliberately not be discussed here.
 	 *
-	 * Each instance of the timerQueueC class represents a single queue
+	 * Each instance of the TimerQueue class represents a single queue
 	 * within the Timer Trib. Each queue has a native period, and a 
 	 * current period.
 	 *
@@ -43,30 +43,30 @@
 #define TIMERQUEUE		"timerQ "
 
 struct zkcmTimerEventS;
-class timerTribC;
+class TimerTrib;
 
-class timerQueueC
+class TimerQueue
 {
-friend class zkcmTimerControlModC;
-friend class timerTribC;
+friend class ZkcmTimerControlMod;
+friend class TimerTrib;
 private:
-	timerQueueC(ubit32 nativePeriod)
+	TimerQueue(ubit32 nativePeriod)
 	:
 	currentPeriod(nativePeriod), nativePeriod(nativePeriod),
 	device(NULL), clockRoutineInstalled(0)
 	{}
 
 	error_t initialize(void) { return requestQueue.initialize(); }
-	~timerQueueC(void) {}
+	~TimerQueue(void) {}
 
 private:
-	error_t latch(zkcmTimerDeviceC *device);
+	error_t latch(ZkcmTimerDevice *device);
 	void unlatch(void);
 	sarch_t isLatched(void) { return device != NULL; };
-	zkcmTimerDeviceC *getDevice(void) { return device; };
+	ZkcmTimerDevice *getDevice(void) { return device; };
 
-	error_t insert(timerStreamC::timerMsgS *obj);
-	sarch_t cancel(timerStreamC::timerMsgS *obj);
+	error_t insert(TimerStream::timerMsgS *obj);
+	sarch_t cancel(TimerStream::timerMsgS *obj);
 
 	ubit32 getCurrentPeriod(void) { return currentPeriod; };
 	status_t setCurrentPeriod(ubit32 p) { currentPeriod = p; return 0; };
@@ -76,9 +76,9 @@ private:
 	/* Called by the kernel to ask this timer queue if the device "dev" is
 	 * suitable for use with this timer queue.
 	 **/
-	sarch_t testTimerDeviceSuitability(zkcmTimerDeviceC *dev)
+	sarch_t testTimerDeviceSuitability(ZkcmTimerDevice *dev)
 	{
-		timeS		min, max;
+		sTime		min, max;
 
 		dev->getPeriodicModeMinMaxPeriod(&min, &max);
 		if (nativePeriod < min.nseconds || nativePeriod > max.nseconds)
@@ -97,9 +97,9 @@ private:
 	 **/
 	void tick(zkcmTimerEventS *timerIrqEvent);
 
-	/* These two are back-ends for the methods declared in timerTribC.
+	/* These two are back-ends for the methods declared in TimerTrib.
 	 **/
-	error_t installClockRoutine(zkcmTimerDeviceC::clockRoutineFn *routine)
+	error_t installClockRoutine(ZkcmTimerDevice::clockRoutineFn *routine)
 	{
 		error_t		ret;
 
@@ -158,12 +158,12 @@ private:
 	ubit32		currentPeriod, nativePeriod;
 
 	// The actual internal queue instance for timer request objects.
-	sortedPointerDoubleListC<timerStreamC::timerMsgS, timestampS>
+	SortedPtrDblList<TimerStream::timerMsgS, sTimestamp>
 		requestQueue;
 
 	// Used to prevent a series of race conditions.
-	waitLockC		requestQueueLock;
-	zkcmTimerDeviceC	*device;
+	WaitLock		requestQueueLock;
+	ZkcmTimerDevice	*device;
 	sarch_t			clockRoutineInstalled;
 };
 

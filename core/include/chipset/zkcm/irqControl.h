@@ -112,7 +112,7 @@ struct zkcmIrqPinS
 // Underlying PIC chip doesn't support given polarity.
 #define IRQCTL_SETIRQSTATUS_POLARITY_UNSUPPORTED	0x4
 
-class zkcmIrqControlModC
+class ZkcmIrqControlMod
 {
 public:
 	error_t initialize(void);
@@ -165,7 +165,7 @@ public:
 	void chipsetEventNotification(ubit8 event, uarch_t flags);
 
 	// Bus-Pin Mapping API calls.
-	class bpmC
+	class Bpm
 	{
 	public:
 		status_t loadBusPinMappings(utf8Char *bus);

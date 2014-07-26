@@ -8,9 +8,9 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
+error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 {
-	vaddrSpaceStreamC	*boundVaddrSpaceStream;
+	VaddrSpaceStream	*boundVaddrSpaceStream;
 #ifdef CONFIG_ARCH_x86_32_PAE
 	const ubit16		startEntry=3, nEntries=1;
 #else
@@ -112,7 +112,7 @@ error_t vaddrSpaceC::initialize(numaBankId_t boundBankId)
 	return ERROR_SUCCESS;
 }
 
-vaddrSpaceC::~vaddrSpaceC(void)
+VaddrSpace::~VaddrSpace(void)
 {
 	// Only try to free if it's not the kernel vaddrspace.
 	if (this != &processTrib.__kgetStream()->getVaddrSpaceStream()

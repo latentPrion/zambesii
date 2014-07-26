@@ -3,12 +3,12 @@
 
 	#include <chipset/zkcm/debugDevice.h>
 
-class ibmPcVgaTerminalC
+class IbmPcVgaTerminal
 :
 public zkcmDebugDeviceC
 {
 public:
-	ibmPcVgaTerminalC(deviceTypeE devType)
+	IbmPcVgaTerminal(deviceTypeE devType)
 	:
 	zkcmDebugDeviceC(devType, &baseDeviceInfo),
 	buff(NULL),
@@ -24,7 +24,7 @@ public:
 	virtual error_t	suspend(void);
 	virtual error_t	restore(void);
 
-	// Interface to take input from debugPipeC::printf().
+	// Interface to take input from DebugPipe::printf().
 	virtual sarch_t isInitialized(void);
 	virtual void syphon(const utf8Char *str, uarch_t len);
 	virtual void clear(void);
@@ -45,10 +45,10 @@ private:
 	uarch_t				row, col, maxRow, maxCol;
 	static ubit8			*bda;
 
-	zkcmDeviceC			baseDeviceInfo;
+	ZkcmDevice			baseDeviceInfo;
 };
 
-extern ibmPcVgaTerminalC		ibmPcVgaTerminal;
+extern IbmPcVgaTerminal		ibmPcVgaTerminal;
 
 #endif
 

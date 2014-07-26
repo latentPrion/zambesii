@@ -7,10 +7,10 @@
 // 10C1CO1C -> "lockOk". I'm not good with these magic numbers.
 #define LOCK_MAGIC				0x10C1C01C
 
-class lockC
+class Lock
 {
 public:
-	lockC(void)
+	Lock(void)
 	{
 		lock = 0;
 		flags = 0;
@@ -22,13 +22,13 @@ public:
 		enum typeE { WAIT=0, RECURSIVE, MULTIPLE_READER };
 		enum unlockOperationE { READ=0, WRITE };
 
-		operationDescriptorS(lockC *lock, typeE type=WAIT)
+		operationDescriptorS(Lock *lock, typeE type=WAIT)
 		:
 		lock(lock), type(type)
 		{}
 
 		operationDescriptorS(
-			lockC *lock, typeE type,
+			Lock *lock, typeE type,
 			unlockOperationE op, uarch_t rwFlags)
 		:
 		lock(lock), type(type), operation(op), rwFlags(rwFlags)
@@ -36,7 +36,7 @@ public:
 
 		void execute(void);
 
-		lockC			*lock;
+		Lock			*lock;
 		typeE			type;
 		unlockOperationE	operation;
 		uarch_t			rwFlags;

@@ -78,7 +78,7 @@ static ubit8 loadedSmpIsaBusPinMappingsAlready=0;
 
 static void ibmPc_isaBpm_smpMode_acpi_setIsaDefaults(void)
 {
-	x86IoApic::ioApicC	*ioApic;
+	x86IoApic::IoApic	*ioApic;
 	ubit8			cpu, dummy;
 
 	/**	EXPLANATION:
@@ -167,7 +167,7 @@ void dumpSmpIsaPins(void)
 	for (uarch_t girq=0; girq<16; girq++)
 	{
 		ubit16			__kpin;
-		x86IoApic::ioApicC	*ioApic;
+		x86IoApic::IoApic	*ioApic;
 		ubit8			enabled;
 		ubit8			pin, cpu, vector, polarity, triggMode,
 					destMode, deliveryMode;
@@ -192,7 +192,7 @@ void dumpSmpIsaPins(void)
 
 static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 {
-	acpi_rsdtS			*rsdt;
+	acpi_sRsdt			*rsdt;
 	acpi_rMadtS			*madt;
 	acpi_rMadtIrqSourceOverS	*irqOverride;
 	void				*context, *handle, *handle2;
@@ -231,7 +231,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 			madt, &handle2))
 	{
 		ubit8			pin, cpu, dummy, polarity, triggerMode;
-		x86IoApic::ioApicC	*ioApic;
+		x86IoApic::IoApic	*ioApic;
 
 		nOverrides++;
 
@@ -350,7 +350,7 @@ static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 	x86_mpCfgIrqSourceS	*irqSourceEntry;
 	uarch_t			pos;
 	void			*handle;
-	x86IoApic::ioApicC	*ioApic;
+	x86IoApic::IoApic	*ioApic;
 	sbit8			isaBusId;
 	// sbit8		eisaBusId;
 

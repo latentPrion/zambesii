@@ -18,17 +18,17 @@
 // The exception on the vector must be called again just before executing IRET.
 #define INTTRIB_EXCEPTION_FLAGS_POSTCALL	(1<<3)
 
-class interruptTribC
+class InterruptTrib
 :
-public tributaryC
+public Tributary
 {
 public:
-	interruptTribC(void);
+	InterruptTrib(void);
 	// Sets up arch-specific exception handling and masks off ALL IRQ pins.
 	error_t initializeExceptions(void);
 	// Initializes the ZKCM IRQ Control mod, bus-pin mappings and IRQs.
 	error_t initializeIrqManagement(void);
-	~interruptTribC(void) {};
+	~InterruptTrib(void) {};
 
 public:
 	void installException(
@@ -37,7 +37,7 @@ public:
 	void removeException(uarch_t vector);
 
 	// Containing namespace for the ZKCM sub-API.
-	struct zkcmS
+	struct sZkcm
 	{
 		/**	NOTES:
 		 * These functions deal with the registration and retire of
@@ -77,13 +77,13 @@ public:
 		 *	upon completion.
 		 **/
 		error_t registerPinIsr(
-			ubit16 __kpin, zkcmDeviceBaseC *dev, zkcmIsrFn *isr,
+			ubit16 __kpin, ZkcmDeviceBase *dev, zkcmIsrFn *isr,
 			uarch_t flags);
 
 		sarch_t retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr);
 
 		error_t registerMsiIsr(
-			uarch_t vector, zkcmDeviceBaseC *dev, zkcmIsrFn *isr,
+			uarch_t vector, ZkcmDeviceBase *dev, zkcmIsrFn *isr,
 			uarch_t flags);
 
 		sarch_t retireMsiIsr(uarch_t vector, zkcmIsrFn *isr);
@@ -104,10 +104,10 @@ public:
 	void dumpMsiIrqs(void);
 	void dumpUnusedVectors(void);
 
-	void pinIrqMain(registerContextC *regs);
-	void msiIrqMain(registerContextC *regs);
-	void swiMain(registerContextC *regs);
-	void exceptionMain(registerContextC *regs);
+	void pinIrqMain(RegisterContext *regs);
+	void msiIrqMain(RegisterContext *regs);
+	void swiMain(RegisterContext *regs);
+	void exceptionMain(RegisterContext *regs);
 
 private:
 	// These two are architecture specific.
@@ -137,7 +137,7 @@ private:
 			struct
 			{
 				zkcmIsrFn	*isr;
-				zkcmDeviceBaseC	*device;
+				ZkcmDeviceBase	*device;
 			} zkcm;
 
 			struct
@@ -197,7 +197,7 @@ private:
 		 * time the kernel will be augmented with the ability to balance
 		 * the number of devices mapped to signal on the same vector.
 		 **/
-		ptrListC<isrDescriptorS>	isrList;
+		PtrList<isrDescriptorS>	isrList;
 	};
 
 	struct irqPinDescriptorS
@@ -215,19 +215,19 @@ private:
 		 * __kpin, but the kernel will eventually be equipped with the
 		 * ability to balance the number of IRQs mapped to the same pin.
 		 **/
-		ptrListC<isrDescriptorS>	isrList;
+		PtrList<isrDescriptorS>	isrList;
 	};
 
 	// Array of vector descriptors. See above.
 	vectorDescriptorS	msiIrqTable[ARCH_INTERRUPTS_NVECTORS];
 	// Dynamic array of __kpin descriptors. See above.
-	hardwareIdListC		pinIrqTable;
+	HardwareIdList		pinIrqTable;
 	// Counter for allocating __kpin IDs.
 	ubit16			pinIrqTableCounter;
 };
 
-extern interruptTribC		interruptTrib;
-extern "C" void interruptTrib_interruptEntry(registerContextC *regs);
+extern InterruptTrib		interruptTrib;
+extern "C" void interruptTrib_interruptEntry(RegisterContext *regs);
 
 #endif
 

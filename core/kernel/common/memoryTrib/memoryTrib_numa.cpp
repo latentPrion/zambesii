@@ -40,13 +40,13 @@
  **/
 
 // The __kspace allocatable memory range's containing memory bank.
-static numaMemoryBankC			__kspaceMemoryBank(
+static NumaMemoryBank			__kspaceMemoryBank(
 	CHIPSET_NUMA___KSPACE_BANKID);
 
 // The pointer node on the __kspace bank that points to the __kspace mem range.
-static numaMemoryBankC::rangePtrS	__kspaceRangePtrMem;
+static NumaMemoryBank::rangePtrS	__kspaceRangePtrMem;
 // The __kspace mem range, which has a frame cache and a BMP.
-static numaMemoryRangeC			__kspaceMemoryRange(
+static NumaMemoryRange			__kspaceMemoryRange(
 	CHIPSET_MEMORY___KSPACE_BASE,
 	CHIPSET_MEMORY___KSPACE_SIZE);
 
@@ -56,7 +56,7 @@ static uarch_t		__kspaceInitMem[
 		(CHIPSET_MEMORY___KSPACE_SIZE / PAGING_BASE_SIZE),
 		(sizeof(uarch_t) * __BITS_PER_BYTE__))];
 
-error_t memoryTribC::__kspaceInitialize(void)
+error_t MemoryTrib::__kspaceInitialize(void)
 {
 	error_t		ret;
 
@@ -87,11 +87,11 @@ error_t memoryTribC::__kspaceInitialize(void)
 
 	/* Next give it the pre-allocated __kspace memory range object.
 	 *
-	 * NOTE: numaMemoryBankC already calls initialize() on a
-	 * numaMemoryRangeC object when it's adding it to its internal list.
+	 * NOTE: NumaMemoryBank already calls initialize() on a
+	 * NumaMemoryRange object when it's adding it to its internal list.
 	 *
-	 * Do not explicitly call initialize() on the numaMemoryRangeC object
-	 * before giving it to the __kspace numaMemoryBankC object.
+	 * Do not explicitly call initialize() on the NumaMemoryRange object
+	 * before giving it to the __kspace NumaMemoryBank object.
 	 **/
 	ret = getBank(CHIPSET_NUMA___KSPACE_BANKID)
 		->__kspaceAddMemoryRange(
@@ -102,10 +102,10 @@ error_t memoryTribC::__kspaceInitialize(void)
 	return ret;
 }
 
-error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
+error_t MemoryTrib::createBank(numaBankId_t id, NumaMemoryBank *preAllocated)
 {
 	error_t			ret;
-	numaMemoryBankC		*nmb;
+	NumaMemoryBank		*nmb;
 
 	CHECK_AND_RESIZE_BMP(
 		&availableBanks, id, &ret, "createBank", "availableBanks");
@@ -116,12 +116,12 @@ error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
 	if (preAllocated == NULL)
 	{
 		nmb = new (processTrib.__kgetStream()->memoryStream.memAlloc(
-			PAGING_BYTES_TO_PAGES(sizeof(numaMemoryBankC)),
+			PAGING_BYTES_TO_PAGES(sizeof(NumaMemoryBank)),
 			MEMALLOC_NO_FAKEMAP))
-				numaMemoryBankC(id);
+				NumaMemoryBank(id);
 	}
 	else {
-		nmb = new (preAllocated) numaMemoryBankC(id);
+		nmb = new (preAllocated) NumaMemoryBank(id);
 	};
 
 	if (nmb == NULL) {
@@ -144,9 +144,9 @@ error_t memoryTribC::createBank(numaBankId_t id, numaMemoryBankC *preAllocated)
 	return ret;
 }
 
-void memoryTribC::destroyBank(numaBankId_t id)
+void MemoryTrib::destroyBank(numaBankId_t id)
 {
-	numaMemoryBankC		*nmb;
+	NumaMemoryBank		*nmb;
 
 	availableBanks.unsetSingle(id);
 	nmb = getBank(id);
@@ -157,14 +157,14 @@ void memoryTribC::destroyBank(numaBankId_t id)
 	};
 }
 
-void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
+void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 {
-	numaMemoryBankC	*currBank;
+	NumaMemoryBank	*currBank;
 	numaBankId_t	cur;
 
 	/**	EXPLANATION:
 	 * Here we have the result of a trade-off. For a reduction in the size
-	 * of each entry in allocTableC and better design overall, and smaller
+	 * of each entry in AllocTable and better design overall, and smaller
 	 * memory footprint, we traded off speed on memory frees.
 	 *
 	 * The kernel now has to decipher which bank a range of pmem belongs to
@@ -172,10 +172,10 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
 	cur = memoryBanks.prepareForLoop();
-	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur);
+	currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur);
 
 	for (; currBank != NULL;
-		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur))
+		currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur))
 	{
 		if (currBank->identifyPaddr(paddr))
 		{
@@ -204,10 +204,10 @@ void memoryTribC::releaseFrames(paddr_t paddr, uarch_t nFrames)
 }
 
 #if __SCALING__ < SCALING_CC_NUMA
-error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
+error_t MemoryTrib::contiguousGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 {
 	error_t			ret;
-	numaMemoryBankC		*currBank;
+	NumaMemoryBank		*currBank;
 
 	/* Allocate from the current default bank, which is either __kspace or
 	 * shared-bank, depending on which stage of memory management
@@ -226,10 +226,10 @@ error_t memoryTribC::contiguousGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 
-error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
+error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 {
 	error_t			ret;
-	numaMemoryBankC		*currBank;
+	NumaMemoryBank		*currBank;
 
 	/* Allocate from the current default bank, which is either __kspace or
 	 * shared-bank, depending on which stage of memory management
@@ -250,13 +250,13 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 #endif /* if __SCALING__ < SCALING_CC_NUMA */
 
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
+error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 {
 	numaBankId_t		def, cur;
-	numaMemoryBankC		*currBank;
+	NumaMemoryBank		*currBank;
 	error_t			ret;
 	uarch_t			rwFlags;
-	taskContextC		*taskContext;
+	TaskContext		*taskContext;
 
 	taskContext = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTaskContext();
@@ -284,10 +284,10 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 
 	// Allocation from the default bank failed. Find another default bank.
 	def = cur = memoryBanks.prepareForLoop();
-	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def);
+	currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&def);
 
 	for (; currBank != NULL;
-		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&def))
+		currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&def))
 	{
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
 		if (ret > 0)
@@ -307,19 +307,19 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 }
 #endif /* if __SCALING__ >= SCALING_CC_NUMA */
 
-void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
+void MemoryTrib::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 {
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaBankId_t	cur;
 #endif
-	numaMemoryBankC	*currBank;
+	NumaMemoryBank	*currBank;
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	cur = memoryBanks.prepareForLoop();
-	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur);
+	currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur);
 
 	for (; currBank != NULL;
-		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur))
+		currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur))
 	{
 		/* We can most likely afford this small speed bump since ranges
 		 * of physical RAM are not often mapped or unmapped as used at
@@ -342,20 +342,20 @@ void memoryTribC::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 #endif
 }
 
-void memoryTribC::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
+void MemoryTrib::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 {
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaBankId_t	cur;
 #endif
-	numaMemoryBankC	*currBank;
+	NumaMemoryBank	*currBank;
 
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	cur = memoryBanks.prepareForLoop();
-	currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur);
+	currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur);
 
 	for (; currBank != NULL;
-		currBank = (numaMemoryBankC *)memoryBanks.getLoopItem(&cur))
+		currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur))
 	{
 		/* We can most likely afford this small speed bump since ranges
 		 * of physical RAM are not often mapped or unmapped as used at

@@ -5,19 +5,19 @@
 	#include <chipset/zkcm/irqControl.h>
 	#include <__kstdlib/__ktypes.h>
 
-class zkcmPicDeviceC
+class ZkcmPicDevice
 :
-public zkcmDeviceBaseC
+public ZkcmDeviceBase
 {
 public:
-	zkcmPicDeviceC(ubit16 nPins, zkcmDeviceC *device)
+	ZkcmPicDevice(ubit16 nPins, ZkcmDevice *device)
 	:
-	zkcmDeviceBaseC(device),
+	ZkcmDeviceBase(device),
 	nPins(nPins), irqPinList(NULL),
 	__kpinBase(0)
 	{}
 
-	virtual ~zkcmPicDeviceC(void) {}
+	virtual ~ZkcmPicDevice(void) {}
 
 public:
 	virtual error_t initialize(void)=0;

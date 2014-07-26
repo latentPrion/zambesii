@@ -37,7 +37,7 @@ struct multibootHeaderS
 };
 
 //The symbol table for a.out.
-struct aoutSymbolTableS
+struct sAoutSymbolTable
 {
 	ubit32	tabsize;
 	ubit32	strsize;
@@ -46,7 +46,7 @@ struct aoutSymbolTableS
 };
 
 //The section header table for ELF.
-struct elfSectionHeaderTableS
+struct sElfSectionHeaderTable
 {
 	ubit32	num;
 	ubit32	size;
@@ -66,15 +66,15 @@ struct multibootDataS
 	ubit32	mods_addr;
 	union
 	{
-		aoutSymbolTableS aout_sym;
-		elfSectionHeaderTableS elf_sec;
+		sAoutSymbolTable aout_sym;
+		sElfSectionHeaderTable elf_sec;
 	} u;
 	ubit32	mmap_length;
 	ubit32	mmap_addr;
 };
 
 // The module structure.
-struct moduleS
+struct Module
 {
 	ubit32	mod_start;
 	ubit32	mod_end;

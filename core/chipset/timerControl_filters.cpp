@@ -5,7 +5,7 @@
 
 
 sarch_t timerFilters::modes(
-	zkcmTimerDeviceC *dev, ubit32 criteria, ubit32 flags
+	ZkcmTimerDevice *dev, ubit32 criteria, ubit32 flags
 	)
 {
 	flags &= TIMERCTL_FILTER_MODE_MASK << TIMERCTL_FILTER_MODE_SHIFT;
@@ -33,7 +33,7 @@ sarch_t timerFilters::modes(
 }
 
 sarch_t timerFilters::ioLatency(
-	zkcmTimerDeviceC *dev, zkcmTimerDeviceC::ioLatencyE criteria,
+	ZkcmTimerDevice *dev, ZkcmTimerDevice::ioLatencyE criteria,
 	ubit32 flags
 	)
 {
@@ -53,7 +53,7 @@ sarch_t timerFilters::ioLatency(
 }
 
 sarch_t timerFilters::precision(
-	zkcmTimerDeviceC *dev, zkcmTimerDeviceC::precisionE criteria,
+	ZkcmTimerDevice *dev, ZkcmTimerDevice::precisionE criteria,
 	ubit32 flags
 	)
 {

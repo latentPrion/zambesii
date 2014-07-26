@@ -12,22 +12,22 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-memReservoirC::memReservoirC(memoryStreamC *sourceStream)
+MemReservoir::MemReservoir(MemoryStream *sourceStream)
 :
 __kheap(
 	CHIPSET_MEMORY___KBOG_SIZE, sourceStream,
 	0
-	| heapC::OPT_GUARD_PAGED
-	| heapC::OPT_CHECK_ALLOCS_ON_FREE
-	| heapC::OPT_CHECK_BLOCK_MAGIC_PASSIVELY
-	| heapC::OPT_CHECK_HEAP_RANGES_ON_FREE),
+	| Heap::OPT_GUARD_PAGED
+	| Heap::OPT_CHECK_ALLOCS_ON_FREE
+	| Heap::OPT_CHECK_BLOCK_MAGIC_PASSIVELY
+	| Heap::OPT_CHECK_HEAP_RANGES_ON_FREE),
 sourceStream(sourceStream)
 {
 	heaps.rsrc.ptrs = NULL;
 	heaps.rsrc.nHeaps = 0;
 }
 
-error_t memReservoirC::initialize(void)
+error_t MemReservoir::initialize(void)
 {
 	error_t		ret;
 
@@ -35,7 +35,7 @@ error_t memReservoirC::initialize(void)
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	heaps.rsrc.ptrs = new (
-		sourceStream->memAlloc(1, MEMALLOC_NO_FAKEMAP)) heapC*;
+		sourceStream->memAlloc(1, MEMALLOC_NO_FAKEMAP)) Heap*;
 
 	if (heaps.rsrc.ptrs == NULL)
 	{
@@ -54,11 +54,11 @@ error_t memReservoirC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-memReservoirC::~memReservoirC(void)
+MemReservoir::~MemReservoir(void)
 {
 }
 
-void memReservoirC::dump(void)
+void MemReservoir::dump(void)
 {
 
 	printf(NOTICE RESERVOIR"Dumping.\n");
@@ -77,13 +77,13 @@ void memReservoirC::dump(void)
 	};
 }
 
-error_t memReservoirC::checkBogAllocations(sarch_t)
+error_t MemReservoir::checkBogAllocations(sarch_t)
 {
 	__kheap.dumpAllocations();
 	return ERROR_SUCCESS;
 }
 
-void *memReservoirC::allocate(uarch_t nBytes, uarch_t)
+void *MemReservoir::allocate(uarch_t nBytes, uarch_t)
 {
 	reservoirHeaderS	*ret;
 
@@ -127,7 +127,7 @@ void *memReservoirC::allocate(uarch_t nBytes, uarch_t)
 	return NULL;
 }
 
-void memReservoirC::free(void *_mem)
+void MemReservoir::free(void *_mem)
 {
 	reservoirHeaderS	*mem;
 

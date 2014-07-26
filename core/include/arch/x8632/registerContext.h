@@ -6,12 +6,12 @@
 	#include <kernel/common/execDomain.h>
 	#include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 
-class taskC;
+class Task;
 
-class registerContextC
+class RegisterContext
 {
 public:
-	registerContextC(ubit8 execDomain);
+	RegisterContext(ubit8 execDomain);
 	error_t initialize(void) { return ERROR_SUCCESS; };
 
 	/**	EXPLANATION:

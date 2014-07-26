@@ -4,7 +4,7 @@
 #include <__kclasses/debugPipe.h>
 #include "exceptions.h"
 
-status_t x8632_gpf(registerContextC *regs, ubit8)
+status_t x8632_gpf(RegisterContext *regs, ubit8)
 {
 	printf(NOTICE OPTS(NOLOG)
 		"#GPF: Culprit selector 0x%x. Halting.\n",

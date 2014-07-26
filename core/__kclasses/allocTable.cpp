@@ -1,12 +1,12 @@
 
 #include <__kclasses/allocTable.h>
 
-error_t allocTableC::addEntry(
+error_t AllocTable::addEntry(
 	void *vaddr, uarch_t nPages, ubit8 attrib
 	)
 {
-	allocTableEntryC	*result;
-	allocTableEntryC	tmp;
+	AllocTableEntry	*result;
+	AllocTableEntry	tmp;
 
 	tmp.vaddr = vaddr;
 
@@ -21,9 +21,9 @@ error_t allocTableC::addEntry(
 	return ERROR_SUCCESS;
 }
 
-void allocTableC::removeEntry(void *vaddr)
+void AllocTable::removeEntry(void *vaddr)
 {
-	allocTableEntryC	tmp =
+	AllocTableEntry	tmp =
 	{
 		vaddr, 0
 	};
@@ -37,11 +37,11 @@ void allocTableC::removeEntry(void *vaddr)
  * the address that the real internal allocTable returns, so that the calling
  * function can then pass the direct address to removeEntry.
  *
- * This would require an implementation of removeEntry in __kequalizerListC<>
+ * This would require an implementation of removeEntry in __kEqualizerList<>
  * that can remove an entry by its address directly. Doing this would *greatly*
  * speed up deallocations from alloc table enabled allocation methods.
  **/
-error_t allocTableC::lookup(
+error_t AllocTable::lookup(
 	void *vaddr, uarch_t *nPages, ubit8 *attrib
 	)
 {
@@ -49,11 +49,11 @@ error_t allocTableC::lookup(
 		return ERROR_INVALID_ARG;
 	};
 
-	allocTableEntryC	tmp =
+	AllocTableEntry	tmp =
 	{
 		vaddr, 0
 	};
-	allocTableEntryC	*ret;
+	AllocTableEntry	*ret;
 
 	ret = allocTable.find(&tmp);
 	if (ret == NULL) {

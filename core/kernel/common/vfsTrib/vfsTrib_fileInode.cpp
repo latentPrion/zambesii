@@ -37,7 +37,7 @@
  * 
  **/
 
-vfsFileInodeC::vfsFileInodeC(
+vfsFileINode::vfsFileINode(
 	ubit32 _inodeHigh, ubit32 _inodeLow, uarch_t _fileSize
 	)
 :
@@ -47,12 +47,12 @@ inodeLow(_inodeLow), inodeHigh(_inodeHigh)
 	fileSize = _fileSize;
 }
 
-error_t vfsFileInodeC::initialize(void)
+error_t vfsFileINode::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-vfsFileInodeC::~vfsFileInodeC(void)
+vfsFileINode::~vfsFileINode(void)
 {
 }
 

@@ -2,7 +2,7 @@
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
 
 
-const distributaryTribC::distributaryDescriptorS	cisternnDescriptor=
+const DistributaryTrib::distributaryDescriptorS	cisternnDescriptor=
 {
 	"storage", "cisternn",
 	"The Cisternn storage distributary for the Zambesii kernel."

@@ -17,7 +17,7 @@
 #define ZKCM_ISR_ACK_SHUTDOWN_POSSIBLE	(6)
 #define ZKCM_ISR_ACK_RESET_POSSIBLE	(7)
 
-typedef status_t (zkcmIsrFn)(zkcmDeviceBaseC *self, ubit32 flags);
+typedef status_t (zkcmIsrFn)(ZkcmDeviceBase *self, ubit32 flags);
 
 #endif
 

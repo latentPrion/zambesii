@@ -174,7 +174,7 @@ ASM_END_FUNCTION(saveContextAndCallPull)
 
 ASM_GLOBAL_FUNCTION(loadContextAndJump)
 	/**	EXPLANATION:
-	 * void loadContextAndJump(registerContextC *context);
+	 * void loadContextAndJump(RegisterContext *context);
 	 **/
 	/* At this point, ESP+0=retAddr, ESP+4=context. */
 	movl	0x4(%esp), %esp

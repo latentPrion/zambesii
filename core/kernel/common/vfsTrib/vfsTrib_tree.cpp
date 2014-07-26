@@ -5,7 +5,7 @@
 #include <kernel/common/vfsTrib/vfsTraverse.h>
 
 
-void vfsTribC::dumpTrees(void)
+void VfsTrib::dumpTrees(void)
 {
 	vfsDirC		*curDir;
 
@@ -27,7 +27,7 @@ void vfsTribC::dumpTrees(void)
 	trees->subDirs.lock.release();
 }
 
-vfsDirC *vfsTribC::getDefaultTree(void)
+vfsDirC *VfsTrib::getDefaultTree(void)
 {
 	vfsDirC		*ret;
 	uarch_t		rwFlags;
@@ -39,7 +39,7 @@ vfsDirC *vfsTribC::getDefaultTree(void)
 	return ret;
 }
 
-vfsDirC *vfsTribC::getTree(utf8Char *name)
+vfsDirC *VfsTrib::getTree(utf8Char *name)
 {
 	if (name[0] == ':') {
 		name++;
@@ -47,7 +47,7 @@ vfsDirC *vfsTribC::getTree(utf8Char *name)
 	return trees->getDirDesc(name);
 }
 
-error_t vfsTribC::createTree(utf8Char *name, uarch_t)
+error_t VfsTrib::createTree(utf8Char *name, uarch_t)
 {
 	vfsDirC		*dirDesc;
 	error_t		ret;
@@ -66,7 +66,7 @@ error_t vfsTribC::createTree(utf8Char *name, uarch_t)
 	return ret;
 }
 
-error_t vfsTribC::deleteTree(utf8Char *name)
+error_t VfsTrib::deleteTree(utf8Char *name)
 {
 	vfsDirC		*curDef, *cur;
 	ubit8		foundNewDefault=0;
@@ -113,7 +113,7 @@ error_t vfsTribC::deleteTree(utf8Char *name)
 	return ERROR_CRITICAL;
 }
 
-error_t vfsTribC::setDefaultTree(utf8Char *name)
+error_t VfsTrib::setDefaultTree(utf8Char *name)
 {
 	vfsDirC		*dir;
 

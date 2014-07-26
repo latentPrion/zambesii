@@ -4,20 +4,20 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
-fplainn::deviceC		rootDevice(CHIPSET_NUMA_SHBANKID);
+fplainn::Device		rootDevice(CHIPSET_NUMA_SHBANKID);
 
-fvfs::currenttC::currenttC(void)
+fvfs::Currentt::Currentt(void)
 :
-vfs::currenttC(static_cast<utf8Char>('f')),
+vfs::Currentt(static_cast<utf8Char>('f')),
 rootTag(CC"FVFS root tag", vfs::DEVICE, &rootTag, &rootDevice)
 {
 }
 
-error_t fvfs::currenttC::initialize(void)
+error_t fvfs::Currentt::initialize(void)
 {
 	error_t		ret;
 
-	ret = vfs::currenttC::initialize();
+	ret = vfs::Currentt::initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ret = rootDevice.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -26,10 +26,10 @@ error_t fvfs::currenttC::initialize(void)
 
 #include <__kstdlib/__kclib/assert.h>
 #include <kernel/common/panic.h>
-error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
+error_t fvfs::Currentt::getPath(utf8Char *path, fvfs::Tag **ret)
 {
 	/**	EXPLANATION:
-	 * Returns the deviceC object for a particular device path. The path
+	 * Returns the Device object for a particular device path. The path
 	 * may be prefixed with "/", like a unix absolute path, may carry no
 	 * prefix at all, or may be prefixed with "@f/".
 	 *
@@ -40,7 +40,7 @@ error_t fvfs::currenttC::getPath(utf8Char *path, fvfs::tagC **ret)
 	 *
 	 * Consecutive slashes (e.g.: "///0///1/2//3") are skipped.
 	 **/
-	fvfs::tagC		*currTag;
+	fvfs::Tag		*currTag;
 	uarch_t			i=0;
 	uarch_t			segmentLen;
 

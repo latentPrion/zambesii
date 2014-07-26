@@ -3,12 +3,12 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-class swampInfoNodeC
+class SwampInfoNode
 {
 public:
-	swampInfoNodeC(
+	SwampInfoNode(
 		void *baseAddr=NULL, uarch_t nPages=0,
-		swampInfoNodeC *prev=NULL, swampInfoNodeC *next=NULL)
+		SwampInfoNode *prev=NULL, SwampInfoNode *next=NULL)
 	:
 	baseAddr(baseAddr), nPages(nPages),
 	prev(prev), next(next)
@@ -17,7 +17,7 @@ public:
 public:
 	void			*baseAddr;
 	uarch_t			nPages;
-	swampInfoNodeC		*prev, *next;
+	SwampInfoNode		*prev, *next;
 };
 
 #endif

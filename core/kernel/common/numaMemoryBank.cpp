@@ -10,15 +10,15 @@
 
 #define NUMAMEMBANK_DEFINDEX_NONE	(-1)
 
-numaMemoryBankC::numaMemoryBankC(numaBankId_t id)
+NumaMemoryBank::NumaMemoryBank(numaBankId_t id)
 :
-id(id), rangePtrCache(sizeof(numaMemoryBankC::rangePtrS))
+id(id), rangePtrCache(sizeof(NumaMemoryBank::rangePtrS))
 {
 	ranges.rsrc = NULL;
 	defRange.rsrc = NULL;
 }
 
-numaMemoryBankC::~numaMemoryBankC(void)
+NumaMemoryBank::~NumaMemoryBank(void)
 {
 	rangePtrS	*tmp;
 
@@ -48,7 +48,7 @@ numaMemoryBankC::~numaMemoryBankC(void)
 	} while (1);
 }
 
-void numaMemoryBankC::dump(void)
+void NumaMemoryBank::dump(void)
 {
 	uarch_t		rwFlags, rwFlags2;
 
@@ -71,8 +71,8 @@ void numaMemoryBankC::dump(void)
 	ranges.lock.readRelease(rwFlags);
 }
 
-error_t numaMemoryBankC::__kspaceAddMemoryRange(
-	void *ptrNodeMem, numaMemoryRangeC *__kspace, void *__kspaceInitMem
+error_t NumaMemoryBank::__kspaceAddMemoryRange(
+	void *ptrNodeMem, NumaMemoryRange *__kspace, void *__kspaceInitMem
 	)
 {
 	ranges.rsrc = static_cast<rangePtrS *>( ptrNodeMem );
@@ -82,17 +82,17 @@ error_t numaMemoryBankC::__kspaceAddMemoryRange(
 	return ranges.rsrc->range->initialize(__kspaceInitMem);
 }
 
-error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
+error_t NumaMemoryBank::addMemoryRange(paddr_t baseAddr, paddr_t size)
 {
-	numaMemoryRangeC	*memRange;
+	NumaMemoryRange	*memRange;
 	rangePtrS		*tmpNode;
 	error_t			err;
 
 	// Allocate a new bmp allocator.
 	memRange = new (processTrib.__kgetStream()->memoryStream.memAlloc(
-		PAGING_BYTES_TO_PAGES(sizeof(numaMemoryRangeC)),
+		PAGING_BYTES_TO_PAGES(sizeof(NumaMemoryRange)),
 		MEMALLOC_NO_FAKEMAP))
-			numaMemoryRangeC(baseAddr, size);
+			NumaMemoryRange(baseAddr, size);
 
 	if (memRange == NULL) {
 		return ERROR_MEMORY_NOMEM;
@@ -136,7 +136,7 @@ error_t numaMemoryBankC::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	return ERROR_SUCCESS;
 }
 
-error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
+error_t NumaMemoryBank::removeMemoryRange(paddr_t baseAddr)
 {
 	rangePtrS		*cur, *prev=NULL;
 
@@ -193,7 +193,7 @@ error_t numaMemoryBankC::removeMemoryRange(paddr_t baseAddr)
 	return ERROR_INVALID_ARG_VAL;
 }
 
-error_t numaMemoryBankC::contiguousGetFrames(
+error_t NumaMemoryBank::contiguousGetFrames(
 	uarch_t nFrames, paddr_t *paddr, ubit32)
 {
 	uarch_t		rwFlags, rwFlags2;
@@ -260,7 +260,7 @@ error_t numaMemoryBankC::contiguousGetFrames(
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }			
 
-status_t numaMemoryBankC::fragmentedGetFrames(
+status_t NumaMemoryBank::fragmentedGetFrames(
 	uarch_t nFrames, paddr_t *paddr, ubit32)
 {
 	uarch_t		rwFlags, rwFlags2;
@@ -326,7 +326,7 @@ status_t numaMemoryBankC::fragmentedGetFrames(
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 
-void numaMemoryBankC::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
+void NumaMemoryBank::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 {
 	uarch_t		rwFlags;
 
@@ -349,7 +349,7 @@ void numaMemoryBankC::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 		id, basePaddr, nFrames);
 }
 
-sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
+sarch_t NumaMemoryBank::identifyPaddr(paddr_t paddr)
 {
 	uarch_t		rwFlags;
 
@@ -373,7 +373,7 @@ sarch_t numaMemoryBankC::identifyPaddr(paddr_t paddr)
 	return 0;
 }
 
-sarch_t numaMemoryBankC::identifyPaddrRange(paddr_t basePaddr, paddr_t nBytes)
+sarch_t NumaMemoryBank::identifyPaddrRange(paddr_t basePaddr, paddr_t nBytes)
 {
 	uarch_t		rwFlags;
 
@@ -391,7 +391,7 @@ sarch_t numaMemoryBankC::identifyPaddrRange(paddr_t basePaddr, paddr_t nBytes)
 	return 0;
 }
 
-void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
+void NumaMemoryBank::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 {
 	uarch_t		rwFlags;
 
@@ -403,7 +403,7 @@ void numaMemoryBankC::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 	ranges.lock.readRelease(rwFlags);
 }
 
-void numaMemoryBankC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
+void NumaMemoryBank::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 {
 	uarch_t		rwFlags;
 
@@ -416,7 +416,7 @@ void numaMemoryBankC::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 	ranges.lock.readRelease(rwFlags);
 }
 
-status_t numaMemoryBankC::merge(numaMemoryBankC *nmb)
+status_t NumaMemoryBank::merge(NumaMemoryBank *nmb)
 {
 	uarch_t		rwFlags, rwFlags2;
 	status_t	ret=0;

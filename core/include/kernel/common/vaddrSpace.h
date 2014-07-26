@@ -9,22 +9,22 @@
 
 #define VADDRSPACE		"vaddrSpace: "
 
-class vaddrSpaceC
+class VaddrSpace
 {
 public:
-	vaddrSpaceC(void)
+	VaddrSpace(void)
 	: level0Paddr((paddr_t)NULL)
 	{
-		vaddrSpaceC::level0Accessor.rsrc = NULL;
+		VaddrSpace::level0Accessor.rsrc = NULL;
 	}
 
 	error_t initialize(numaBankId_t boundBankId);
 
-	~vaddrSpaceC(void);
+	~VaddrSpace(void);
 
 public:
 	// Uses a recursive lock, take note.
-	sharedResourceGroupC<recursiveLockC, pagingLevel0S *>	level0Accessor;
+	SharedResourceGroup<RecursiveLock, pagingLevel0S *>	level0Accessor;
 #ifdef CONFIG_ARCH_x86_32_PAE
 	pagingLevel1S	*extraPages;
 #endif

@@ -4,6 +4,6 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-processTribC		processTrib(
+ProcessTrib		processTrib(
 	(void *)(ARCH_MEMORY___KLOAD_VADDR_BASE + 0x400000), 0x3FBFF000);
 

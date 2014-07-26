@@ -8,7 +8,7 @@
 #include <__kclasses/bitmap.h>
 
 
-bitmapC::bitmapC(void)
+Bitmap::Bitmap(void)
 {
 	preAllocated = 0;
 	preAllocatedSize = 0;
@@ -16,7 +16,7 @@ bitmapC::bitmapC(void)
 	bmp.rsrc.nBits = 0;
 }
 
-error_t bitmapC::initialize(
+error_t Bitmap::initialize(
 	ubit32 nBits, preallocatedMemoryS preAllocatedMemory
 	)
 {
@@ -63,7 +63,7 @@ error_t bitmapC::initialize(
 	return ERROR_SUCCESS;
 }
 
-void bitmapC::dump(void)
+void Bitmap::dump(void)
 {
 	printf(NOTICE BITMAP"@0x%p: %d bits, %s (%dB), array @0x%p.\n",
 		this,
@@ -73,7 +73,7 @@ void bitmapC::dump(void)
 		bmp.rsrc.bmp);
 }
 
-void bitmapC::merge(bitmapC *b)
+void Bitmap::merge(Bitmap *b)
 {
 	// ORs this bmp with the one passed as an argument.
 	lock();
@@ -90,7 +90,7 @@ void bitmapC::merge(bitmapC *b)
 	unlock();
 }
 
-bitmapC::~bitmapC(void)
+Bitmap::~Bitmap(void)
 {
 	if (!preAllocated && bmp.rsrc.bmp != NULL) {
 		delete bmp.rsrc.bmp;
@@ -100,17 +100,17 @@ bitmapC::~bitmapC(void)
 	preAllocated = 0;
 }
 
-void bitmapC::lock(void)
+void Bitmap::lock(void)
 {
 	bmp.lock.acquire();
 }
 
-void bitmapC::unlock(void)
+void Bitmap::unlock(void)
 {
 	bmp.lock.release();
 }
 
-void bitmapC::set(ubit32 bit)
+void Bitmap::set(ubit32 bit)
 {
 	/* Don't acquire the lock. We expect the user to call lock() before
 	 * calling this method.
@@ -123,7 +123,7 @@ void bitmapC::set(ubit32 bit)
 	};
 }
 
-void bitmapC::unset(ubit32 bit)
+void Bitmap::unset(ubit32 bit)
 {
 	/* Don't acquire the lock. We expect the user to call lock() before
 	 * calling this method.
@@ -136,7 +136,7 @@ void bitmapC::unset(ubit32 bit)
 	};
 }
 
-sarch_t bitmapC::test(ubit32 bit)
+sarch_t Bitmap::test(ubit32 bit)
 {
 	/* Don't acquire the lock. We expect the user to call lock() before
 	 * calling this method.
@@ -150,7 +150,7 @@ sarch_t bitmapC::test(ubit32 bit)
 	return 0;
 }
 
-error_t bitmapC::resizeTo(ubit32 _nBits)
+error_t Bitmap::resizeTo(ubit32 _nBits)
 {
 	uarch_t		bitCapacity, *tmp, *old;
 	sbit8		wasPreAllocated;
@@ -217,7 +217,7 @@ error_t bitmapC::resizeTo(ubit32 _nBits)
 }
 
 #if 0
-error_t bitmapC::resizeTo(ubit32 nBits)
+error_t Bitmap::resizeTo(ubit32 nBits)
 {
 	uarch_t		*tmp, *oldmem;
 	ubit32		currentBits, nIndexes;
@@ -301,7 +301,7 @@ error_t bitmapC::resizeTo(ubit32 nBits)
 }
 #endif
 
-void bitmapC::setSingle(ubit32 bit)
+void Bitmap::setSingle(ubit32 bit)
 {
 	bmp.lock.acquire();
 
@@ -315,7 +315,7 @@ void bitmapC::setSingle(ubit32 bit)
 	bmp.lock.release();
 }
 
-void bitmapC::unsetSingle(ubit32 bit)
+void Bitmap::unsetSingle(ubit32 bit)
 {
 	bmp.lock.acquire();
 
@@ -329,7 +329,7 @@ void bitmapC::unsetSingle(ubit32 bit)
 	bmp.lock.release();
 }
 
-sarch_t bitmapC::testSingle(ubit32 bit)
+sarch_t Bitmap::testSingle(ubit32 bit)
 {
 	sarch_t		ret;
 

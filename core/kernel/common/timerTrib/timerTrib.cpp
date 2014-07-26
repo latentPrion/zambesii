@@ -12,7 +12,7 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
-timerTribC::timerTribC(void)
+TimerTrib::TimerTrib(void)
 :
 period1s(1000000000),
 period100ms(100000000), period10ms(10000000), period1ms(1000000),
@@ -42,12 +42,12 @@ clockQueueId(-1)
 	timerQueues[9] = &period1ns;
 }
 
-timerTribC::~timerTribC(void)
+TimerTrib::~TimerTrib(void)
 {
 }
 
-error_t timerTribC::installClockRoutine(
-	ubit32 chosenTimerQueue, zkcmTimerDeviceC::clockRoutineFn *routine
+error_t TimerTrib::installClockRoutine(
+	ubit32 chosenTimerQueue, ZkcmTimerDevice::clockRoutineFn *routine
 	)
 {
 	for (ubit8 i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
@@ -61,21 +61,21 @@ error_t timerTribC::installClockRoutine(
 	return ERROR_FATAL;
 }
 
-sarch_t timerTribC::uninstallClockRoutine(void)
+sarch_t TimerTrib::uninstallClockRoutine(void)
 {
 	if (clockQueueId == -1) { return 0; };
 
 	return timerQueues[clockQueueId]->uninstallClockRoutine();
 }
 
-void timerTribC::initializeAllQueues(void)
+void TimerTrib::initializeAllQueues(void)
 {
 	error_t			ret;
-	zkcmTimerDeviceC	*dev;
+	ZkcmTimerDevice	*dev;
 	void			*handle=NULL;
 
 	/**	EXPLANATION:
-	 * First call initialize() on each timerQueueC object, then proceed:
+	 * First call initialize() on each TimerQueue object, then proceed:
 	 * for each timer available from the Timer Control mod, we call the
 	 * notification event function, and allow it to check whether or not
 	 * the timer can be consumed by the kernel.
@@ -94,10 +94,10 @@ void timerTribC::initializeAllQueues(void)
 	};
 
 	dev = zkcmCore.timerControl.filterTimerDevices(
-		zkcmTimerDeviceC::CHIPSET,
+		ZkcmTimerDevice::CHIPSET,
 		0,
-		(zkcmTimerDeviceC::ioLatencyE)0,
-		(zkcmTimerDeviceC::precisionE)0,
+		(ZkcmTimerDevice::ioLatencyE)0,
+		(ZkcmTimerDevice::precisionE)0,
 		TIMERCTL_FILTER_MODE_ANY
 		| TIMERCTL_FILTER_IO_ANY
 		| TIMERCTL_FILTER_PREC_ANY
@@ -106,10 +106,10 @@ void timerTribC::initializeAllQueues(void)
 
 	for (; dev != NULL;
 		dev = zkcmCore.timerControl.filterTimerDevices(
-			zkcmTimerDeviceC::CHIPSET,
+			ZkcmTimerDevice::CHIPSET,
 			0,
-			(zkcmTimerDeviceC::ioLatencyE)0,
-			(zkcmTimerDeviceC::precisionE)0,
+			(ZkcmTimerDevice::ioLatencyE)0,
+			(ZkcmTimerDevice::precisionE)0,
 			TIMERCTL_FILTER_MODE_ANY
 			| TIMERCTL_FILTER_IO_ANY
 			| TIMERCTL_FILTER_PREC_ANY
@@ -120,9 +120,9 @@ void timerTribC::initializeAllQueues(void)
 	};
 }
 
-void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
+void TimerTrib::newTimerDeviceNotification(ZkcmTimerDevice *dev)
 {
-	timeS		min, max;
+	sTime		min, max;
 
 	/**	EXPLANATION:
 	 * Checks to see if the new timer device can be consumed by any of the
@@ -160,9 +160,9 @@ void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 
 }
 
-error_t timerTribC::enableWaitingOnQueue(ubit32 nanos)
+error_t TimerTrib::enableWaitingOnQueue(ubit32 nanos)
 {
-	timerQueueC			*queue;
+	TimerQueue			*queue;
 
 	switch (nanos)
 	{
@@ -213,14 +213,14 @@ error_t timerTribC::enableWaitingOnQueue(ubit32 nanos)
 	return enableWaitingOnQueue(queue);
 }
 
-error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
+error_t TimerTrib::enableWaitingOnQueue(TimerQueue *queue)
 {
-	eventProcessorS::messageS	*msg;
+	eventProcessorS::Message	*msg;
 
 	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
 
-	msg = new eventProcessorS::messageS(
-		eventProcessorS::messageS::QUEUE_LATCHED,
+	msg = new eventProcessorS::Message(
+		eventProcessorS::Message::QUEUE_LATCHED,
 		queue);
 
 	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
@@ -228,10 +228,10 @@ error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
 	return eventProcessor.controlQueue.addItem(msg);
 }
 
-error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::timerMsgS *request)
+error_t TimerTrib::insertTimerQueueRequestObject(TimerStream::timerMsgS *request)
 {
 	error_t		ret;
-	timerQueueC	*suboptimal=NULL;
+	TimerQueue	*suboptimal=NULL;
 
 	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
 	{
@@ -280,10 +280,10 @@ error_t timerTribC::insertTimerQueueRequestObject(timerStreamC::timerMsgS *reque
 }
 
 // Called by Timer Streams to cancel Timer Request objects from Qs.
-sarch_t timerTribC::cancelTimerQueueRequestObject(timerStreamC::timerMsgS *request)
+sarch_t TimerTrib::cancelTimerQueueRequestObject(TimerStream::timerMsgS *request)
 {
 	sarch_t		ret;
-	timerQueueC	*targetQueue;
+	TimerQueue	*targetQueue;
 
 	targetQueue = request->currentQueue;
 
@@ -293,7 +293,7 @@ sarch_t timerTribC::cancelTimerQueueRequestObject(timerStreamC::timerMsgS *reque
 	return ret;
 }
 
-error_t timerTribC::initialize(void)
+error_t TimerTrib::initialize(void)
 {
 	ubit8			h, m, s;
 	error_t			ret;
@@ -341,9 +341,9 @@ error_t timerTribC::initialize(void)
 
 	// Spawn the timer event dequeueing thread.
 	ret = processTrib.__kgetStream()->spawnThread(
-		&timerTribC::eventProcessorS::thread, NULL,
+		&TimerTrib::eventProcessorS::thread, NULL,
 		NULL,
-		taskC::REAL_TIME,
+		Task::REAL_TIME,
 		PRIOCLASS_CRITICAL,
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
 		| SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET
@@ -371,22 +371,22 @@ error_t timerTribC::initialize(void)
 	return processTrib.__kgetStream()->timerStream.initialize();
 }
 
-void timerTribC::getCurrentTime(timeS *t)
+void TimerTrib::getCurrentTime(sTime *t)
 {
 	zkcmCore.timerControl.getCurrentTime(t);
 }
 
-void timerTribC::getCurrentDate(dateS *d)
+void TimerTrib::getCurrentDate(sDate *d)
 {
 	zkcmCore.timerControl.getCurrentDate(d);
 }
 
-void timerTribC::getCurrentDateTime(timestampS *stamp)
+void TimerTrib::getCurrentDateTime(sTimestamp *stamp)
 {
 	zkcmCore.timerControl.getCurrentDateTime(stamp);
 }
 
-sarch_t timerTribC::eventProcessorS::getFreeWaitSlot(ubit8 *ret)
+sarch_t TimerTrib::eventProcessorS::getFreeWaitSlot(ubit8 *ret)
 {
 	for (*ret=0; *ret<6; *ret += 1)
 	{
@@ -398,7 +398,7 @@ sarch_t timerTribC::eventProcessorS::getFreeWaitSlot(ubit8 *ret)
 	return 0;
 }
 
-void timerTribC::eventProcessorS::releaseWaitSlotFor(timerQueueC *timerQueue)
+void TimerTrib::eventProcessorS::releaseWaitSlotFor(TimerQueue *timerQueue)
 {
 	for (ubit8 i=0; i<6; i++)
 	{
@@ -408,7 +408,7 @@ void timerTribC::eventProcessorS::releaseWaitSlotFor(timerQueueC *timerQueue)
 	};
 }
 
-void timerTribC::eventProcessorS::processQueueLatchedMessage(messageS *msg)
+void TimerTrib::eventProcessorS::processQueueLatchedMessage(Message *msg)
 {
 	ubit8		slot;
 
@@ -434,7 +434,7 @@ void timerTribC::eventProcessorS::processQueueLatchedMessage(messageS *msg)
 		waitSlots[slot].timerQueue->getNativePeriod() / 1000, slot);
 }
 
-void timerTribC::eventProcessorS::processQueueUnlatchedMessage(messageS *msg)
+void TimerTrib::eventProcessorS::processQueueUnlatchedMessage(Message *msg)
 {
 	// Stop waiting on the specified queue.
 	releaseWaitSlotFor(msg->timerQueue);
@@ -443,26 +443,26 @@ void timerTribC::eventProcessorS::processQueueUnlatchedMessage(messageS *msg)
 		msg->timerQueue->getNativePeriod() / 1000);
 }
 
-void timerTribC::eventProcessorS::processExitMessage(messageS *)
+void TimerTrib::eventProcessorS::processExitMessage(Message *)
 {
 	printf(WARNING TIMERTRIB"event DQer: Got EXIT_THREAD message.\n");
 	/*UNIMPLEMENTED(
-		"timerTribC::"
+		"TimerTrib::"
 		"eventProcessorS::processExitMessage");*/
 }
 
-void timerTribC::sendMessage(void)
+void TimerTrib::sendMessage(void)
 {
-	eventProcessorS::messageS	*msg;
+	eventProcessorS::Message	*msg;
 
 	// Posts an artificial message to the control queue.
-	msg = new eventProcessorS::messageS(
-		eventProcessorS::messageS::EXIT_THREAD, NULL);
+	msg = new eventProcessorS::Message(
+		eventProcessorS::Message::EXIT_THREAD, NULL);
 
 	eventProcessor.controlQueue.addItem(msg);
 }
 
-void timerTribC::sendQMessage(void)
+void TimerTrib::sendQMessage(void)
 {
 	zkcmTimerEventS		*irqEvent;
 
@@ -475,9 +475,9 @@ void timerTribC::sendQMessage(void)
 	period10ms.getDevice()->getEventQueue()->addItem(irqEvent);
 }
 
-void timerTribC::eventProcessorS::thread(void *)
+void TimerTrib::eventProcessorS::thread(void *)
 {
-	eventProcessorS::messageS	*currMsg;
+	eventProcessorS::Message	*currMsg;
 	sarch_t				messagesWereFound;
 	error_t				err;
 
@@ -495,18 +495,18 @@ void timerTribC::eventProcessorS::thread(void *)
 			messagesWereFound = 1;
 			switch (currMsg->type)
 			{
-			case eventProcessorS::messageS::EXIT_THREAD:
+			case eventProcessorS::Message::EXIT_THREAD:
 				timerTrib.eventProcessor.processExitMessage(
 					currMsg);
 				break;
 
-			case eventProcessorS::messageS::QUEUE_LATCHED:
+			case eventProcessorS::Message::QUEUE_LATCHED:
 				timerTrib.eventProcessor
 					.processQueueLatchedMessage(currMsg);
 
 				break;
 
-			case eventProcessorS::messageS::QUEUE_UNLATCHED:
+			case eventProcessorS::Message::QUEUE_UNLATCHED:
 				timerTrib.eventProcessor
 					.processQueueUnlatchedMessage(currMsg);
 
@@ -565,7 +565,7 @@ void timerTribC::eventProcessorS::thread(void *)
 	};
 }
 
-void timerTribC::dump(void)
+void TimerTrib::dump(void)
 {
 	printf(NOTICE TIMERTRIB"Dumping.\n");
 
@@ -583,7 +583,7 @@ void timerTribC::dump(void)
 		};
 }
 
-status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, timeS interval)
+status_t TimerTrib::registerWatchdogIsr(zkcmIsrFn *isr, sTime interval)
 {
 	if (isr == NULL) { return ERROR_INVALID_ARG; };
 	if ((interval.seconds == 0) && (interval.nseconds == 0)) {
@@ -615,7 +615,7 @@ status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, timeS interval)
 	};
 }
 
-void timerTribC::updateWatchdogInterval(timeS interval)
+void TimerTrib::updateWatchdogInterval(sTime interval)
 {
 	if (interval.seconds == 0 && interval.nseconds == 0) { return; };
 
@@ -624,7 +624,7 @@ void timerTribC::updateWatchdogInterval(timeS interval)
 	watchdog.lock.release();
 }
 
-void timerTribC::unregisterWatchdogIsr(void)
+void TimerTrib::unregisterWatchdogIsr(void)
 {
 	watchdog.lock.acquire();
 

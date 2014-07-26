@@ -23,7 +23,7 @@
  * pool size before pools of that maximum size can be used.
  *
  * Generally, the Zambesii memory reservoir (what people call a heap) is managed
- * by a wrapping class, memReservoirC. memReservoir automatically directs all
+ * by a wrapping class, MemReservoir. memReservoir automatically directs all
  * allocations < PAGING_BASE_SIZE to the object caches.
  *
  * All allocations larger than PAGING_BASE_SIZE are directed here. If this
@@ -41,15 +41,15 @@
  * When the creator has no use for the pool, it would be very nice if they would
  * release it.
  **/
-class poolAllocatorC
+class PoolAllocator
 :
-public allocClassC
+public AllocatorBase
 {
 public:
-	poolAllocatorC(void);
+	PoolAllocator(void);
 	// initialize() will chain-call initialize() on the public pool.
 	error_t initialize(uarch_t poolSize);
-	~poolAllocatorC(void);
+	~PoolAllocator(void);
 
 public:
 	void *publicAllocate(uarch_t nBytes);

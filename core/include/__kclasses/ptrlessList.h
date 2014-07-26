@@ -22,10 +22,10 @@
 	 * inside of itself, with the member name "listHeader".
 	 **/
 template <class T>
-class ptrlessListC
+class ListC
 {
 public:
-	ptrlessListC(void);
+	ListC(void);
 	error_t initialize(void);
 
 public:
@@ -46,11 +46,11 @@ public:
 	void lock(void) { list.lock.acquire(); }
 	void unlock(void) { list.lock.release(); }
 
-	class iteratorC
+	class Iterator
 	{
-	friend class ptrlessListC;
+	friend class ListC;
 	public:
-		iteratorC(void) : list(NULL), currItem(NULL) {}
+		Iterator(void) : list(NULL), currItem(NULL) {}
 
 		void operator ++(void)
 		{
@@ -63,7 +63,7 @@ public:
 			return currItem;
 		}
 
-		int operator !=(ptrlessListC<T>::iteratorC it)
+		int operator !=(ListC<T>::Iterator it)
 		{
 			if (it.currItem == NULL)
 			{
@@ -74,7 +74,7 @@ public:
 			return 0;
 		}
 
-		int operator ==(ptrlessListC<T>::iteratorC it)
+		int operator ==(ListC<T>::Iterator it)
 		{
 			if (it.currItem == NULL)
 			{
@@ -86,22 +86,22 @@ public:
 		}
 
 	private:
-		ptrlessListC<T>		*list;
+		ListC<T>		*list;
 		T			*currItem;
 	};
 
-	iteratorC begin(void)
+	Iterator begin(void)
 	{
-		iteratorC	it;
+		Iterator	it;
 
 		it.list = this;
 		it.currItem = list.rsrc.head;
 		return it;
 	}
 
-	iteratorC end(void)
+	Iterator end(void)
 	{
-		iteratorC	it;
+		Iterator	it;
 
 		it.list = this;
 		it.currItem = NULL;
@@ -121,9 +121,9 @@ public:
 	void dump(void);
 
 public:
-	struct headerS
+	struct sHeader
 	{
-		friend class ptrlessListC;
+		friend class ListC;
 		void setNextItem(T *next) { this->next = next; }
 		T *getNextItem(void) const { return this->next; }
 
@@ -132,31 +132,31 @@ public:
 	};
 
 private:
-	struct listStateS
+	struct sListState
 	{
 		T		*head, *tail;
 		ubit32		nItems;
 	};
 
-	sharedResourceGroupC<waitLockC, listStateS>	list;
+	SharedResourceGroup<WaitLock, sListState>	list;
 };
 
 
 /**	Template Definition
  ******************************************************************************/
 
-template <class T> ptrlessListC<T>::ptrlessListC(void)
+template <class T> ListC<T>::ListC(void)
 {
 	list.rsrc.head = list.rsrc.tail = NULL;
 	list.rsrc.nItems = 0;
 }
 
-template <class T> error_t ptrlessListC<T>::initialize(void)
+template <class T> error_t ListC<T>::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-template <class T> void ptrlessListC<T>::insert(T *item, ubit32 flags)
+template <class T> void ListC<T>::insert(T *item, ubit32 flags)
 {
 	item->listHeader.next = NULL;
 
@@ -177,9 +177,9 @@ template <class T> void ptrlessListC<T>::insert(T *item, ubit32 flags)
 }
 
 template <class T>
-void ptrlessListC<T>::sortedInsert(T *item, ubit32 flags)
+void ListC<T>::sortedInsert(T *item, ubit32 flags)
 {
-	iteratorC	curr, prev;
+	Iterator	curr, prev;
 
 	item->listHeader.next = NULL;
 
@@ -221,9 +221,9 @@ void ptrlessListC<T>::sortedInsert(T *item, ubit32 flags)
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { unlock(); };
 }
 
-template <class T> sarch_t ptrlessListC<T>::remove(T *item)
+template <class T> sarch_t ListC<T>::remove(T *item)
 {
-	iteratorC	it, prev;
+	Iterator	it, prev;
 
 	lock();
 
@@ -258,7 +258,7 @@ template <class T> sarch_t ptrlessListC<T>::remove(T *item)
 	return 0;
 }
 
-template <class T> T *ptrlessListC<T>::pop(void)
+template <class T> T *ListC<T>::pop(void)
 {
 	T	*ret;
 
@@ -283,7 +283,7 @@ template <class T> T *ptrlessListC<T>::pop(void)
 	return ret;
 }
 
-template <class T> void ptrlessListC<T>::dump(void)
+template <class T> void ListC<T>::dump(void)
 {
 
 	ubit32		count=4;
@@ -307,7 +307,7 @@ template <class T> void ptrlessListC<T>::dump(void)
 	list.lock.release();
 }
 
-template <class T> T *ptrlessListC<T>::getItem(ubit32 num) const
+template <class T> T *ListC<T>::getItem(ubit32 num) const
 {
 	T		*curr;
 
@@ -324,9 +324,9 @@ template <class T> T *ptrlessListC<T>::getItem(ubit32 num) const
 }
 
 template <class T>
-sbit8 ptrlessListC<T>::find(T *item, ubit32 flags)
+sbit8 ListC<T>::find(T *item, ubit32 flags)
 {
-	iteratorC	it;
+	Iterator	it;
 	sbit8		ret=0;
 
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { list.lock.acquire(); };

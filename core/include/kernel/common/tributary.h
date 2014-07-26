@@ -20,7 +20,7 @@
  * instance. This applies generally only for singleton kernel classes.
  **/
 
-class tributaryC
+class Tributary
 {
 };
 

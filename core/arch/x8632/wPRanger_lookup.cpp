@@ -18,7 +18,7 @@
  * The function considers an entry with a value of ZERO to be unmapped.
  **/
 status_t walkerPageRanger::lookup(
-	vaddrSpaceC *vaddrSpace,
+	VaddrSpace *vaddrSpace,
 	void *vaddr, paddr_t *paddr, uarch_t *flags
 	)
 {
@@ -222,7 +222,7 @@ void *walkerPageRanger::createMappingTo(
 
 void walkerPageRanger::destroyNonsharedMapping(void *vaddr, uarch_t nPages)
 {
-	vaddrSpaceStreamC	*vaddrSpaceStream;
+	VaddrSpaceStream	*vaddrSpaceStream;
 	paddr_t			p;
 	uarch_t			f;
 
@@ -234,11 +234,11 @@ void walkerPageRanger::destroyNonsharedMapping(void *vaddr, uarch_t nPages)
 }
 
 void *walkerPageRanger::createSharedMappingTo(
-	vaddrSpaceC *srcVaddrSpace, void *srcVaddr, uarch_t nPages,
+	VaddrSpace *srcVaddrSpace, void *srcVaddr, uarch_t nPages,
 	uarch_t flags, void *placementAddress
 	)
 {
-	vaddrSpaceStreamC	*vaddrSpaceStream;
+	VaddrSpaceStream	*vaddrSpaceStream;
 	void			*ret, *tmpVaddr;
 
 	if (nPages == 0 || srcVaddr == NULL) { return NULL; };

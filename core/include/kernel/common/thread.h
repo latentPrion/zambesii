@@ -17,24 +17,24 @@
 
 #define TASK_SCHEDFLAGS_SCHED_WAITING	(1<<0)
 
-class cpuStreamC;
-class processStreamC;
-class registerContextC;
-class taskContextC;
+class cpuStream;
+class ProcessStream;
+class RegisterContext;
+class TaskContext;
 
-// taskC and taskContextC instances can be unique or per-cpu.
+// Task and TaskContext instances can be unique or per-cpu.
 namespace task { enum typeE { UNIQUE=1, PER_CPU }; }
 
-/**	Base class with scheduling info: taskC.
+/**	Base class with scheduling info: Task.
  ******************************************************************************/
 
-class taskC
+class Task
 {
-friend class processStreamC;
+friend class ProcessStream;
 public:
 	enum schedPolicyE { INVALID=0, ROUND_ROBIN, REAL_TIME };
 
-	taskC(processStreamC *parent, void *privateData)
+	Task(ProcessStream *parent, void *privateData)
 	:
 	parent(parent), flags(0), privateData(privateData),
 
@@ -46,7 +46,7 @@ public:
 
 	error_t initialize(void) { return ERROR_SUCCESS; }
 
-	virtual ~taskC(void) {}
+	virtual ~Task(void) {}
 
 public:
 	// virtual processId_t getFullId(void)=0;
@@ -59,7 +59,7 @@ private:
 
 public:
 	// General.
-	processStreamC		*parent;
+	ProcessStream		*parent;
 	uarch_t			flags;
 	void			*privateData;
 
@@ -71,7 +71,7 @@ public:
 };
 
 /**	EXPLANATION:
- * taskContextC holds the information that would enable a thread to be
+ * TaskContext holds the information that would enable a thread to be
  * split such that its code can be executed on multiple CPUs, as
  * per-cpu-threads.
  *
@@ -81,17 +81,17 @@ public:
  * us to have multiple CPUs executing a single thread without any risk
  * of all those CPUs trampling that single thread's contextual data.
  ******************************************************************************/
-class threadC;
+class Thread;
 
-class taskContextC
+class TaskContext
 {
-friend class processStreamC;
+friend class ProcessStream;
 public:
 	enum runStateE { UNSCHEDULED=1, RUNNABLE, RUNNING, STOPPED };
 	enum blockStateE {
 		BLOCKED_UNSCHEDULED=1, PREEMPTED, DORMANT, BLOCKED };
 
-	taskContextC(task::typeE contextType, void *parent)
+	TaskContext(task::typeE contextType, void *parent)
 	:
 	contextType(contextType),
 	runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
@@ -109,9 +109,9 @@ public:
 	messageStream(this)
 	{
 		if (contextType == task::UNIQUE) {
-			this->parent.thread = (threadC *)parent;
+			this->parent.thread = (Thread *)parent;
 		} else {
-			this->parent.cpu = (cpuStreamC *)parent;
+			this->parent.cpu = (cpuStream *)parent;
 		};
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -128,7 +128,7 @@ private:
 		sarch_t isFirstThread);
 
 #if __SCALING__ >= SCALING_SMP
-	error_t inheritAffinity(bitmapC *cpuAffinity, uarch_t flags);
+	error_t inheritAffinity(Bitmap *cpuAffinity, uarch_t flags);
 #endif
 
 public:
@@ -144,8 +144,8 @@ public:
 	task::typeE		contextType;
 	union
 	{
-		cpuStreamC	*cpu;
-		threadC		*thread;
+		cpuStream	*cpu;
+		Thread		*thread;
 	} parent;
 
 	// Scheduler related.
@@ -154,56 +154,56 @@ public:
 
 	// Miscellaneous.
 	ubit16			nLocksHeld;
-	registerContextC	*context;
+	RegisterContext	*context;
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	tlbContextS		tlbContext;
 #endif
 #if __SCALING__ >= SCALING_SMP
-	bitmapC			cpuAffinity;
+	Bitmap			cpuAffinity;
 #endif
 #if __SCALING__ >= SCALING_CC_NUMA
 	/* Denotes the default memory bank for this thread. When a thread is
 	 * asks for memory, the kernel assigns it a default memory bank based
 	 * on its CPU affinity. This is generally memory that is NUMA local.
 	 **/
-	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+	SharedResourceGroup<MultipleReaderLock, numaBankId_t>
 		defaultMemoryBank;
 #endif
 
 	// Asynchronous API callback queues for this thread.
-	messageStreamC		messageStream;
+	MessageStream		messageStream;
 };
 
-/**	Class threadC, a normal thread.
+/**	Class Thread, a normal thread.
  ******************************************************************************/
 
-class threadC
+class Thread
 :
-public taskC
+public Task
 {
-friend class processStreamC;
+friend class ProcessStream;
 public:
-	threadC(processId_t id, processStreamC *parent, void *privateData)
+	Thread(processId_t id, ProcessStream *parent, void *privateData)
 	:
-	taskC(parent, privateData),
+	Task(parent, privateData),
 	id(id),
-	currentCpu(NULL),
+	Currenttpu(NULL),
 	stack0(NULL), stack1(NULL),
-	// For a normal thread, "currentCpu" and "stack0" start as NULL.
+	// For a normal thread, "Currenttpu" and "stack0" start as NULL.
 	taskContext(task::UNIQUE, this)
 	{
 		if (this != &__korientationThread) { return; }
 
 		// Set some hardcoded state in the orientation thread.
 		stack0 = __korientationStack;
-		//currentCpu = &bspCpu;
+		//Currenttpu = &bspCpu;
 	}
 
 	error_t initialize(void)
 	{
 		error_t		ret;
 
-		ret = taskC::initialize();
+		ret = Task::initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
 
 		return taskContext.initialize();
@@ -211,7 +211,7 @@ public:
 
 public:
 	processId_t getFullId(void) { return id; }
-	taskContextC *getTaskContext(void) { return &taskContext; }
+	TaskContext *getTaskContext(void) { return &taskContext; }
 	virtual task::typeE getType(void) { return task::UNIQUE; }
 
 private:
@@ -219,27 +219,27 @@ private:
 	error_t allocateStacks(void);
 
 private:processId_t		id;
-public:	cpuStreamC		*currentCpu;
+public:	cpuStream		*Currenttpu;
 	void			*stack0, *stack1;
 
 private:
-	taskContextC		taskContext;
+	TaskContext		taskContext;
 };
 
-/**	Class perCpuThreadC, an abstraction of per-cpu threads.
+/**	Class PerCpuThread, an abstraction of per-cpu threads.
  ******************************************************************************/
 
-class perCpuThreadC
+class PerCpuThread
 :
-public taskC
+public Task
 {
 public:
-	perCpuThreadC(processStreamC *parent, void *privateData)
+	PerCpuThread(ProcessStream *parent, void *privateData)
 	:
-	taskC(parent, privateData)
+	Task(parent, privateData)
 	{}
 
-	error_t initialize(void) { return taskC::initialize(); }
+	error_t initialize(void) { return Task::initialize(); }
 
 public:
 	virtual task::typeE getType(void) { return task::PER_CPU; }

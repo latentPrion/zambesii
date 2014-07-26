@@ -105,7 +105,7 @@
 static ubit8		rtccmosIsPowered=0;
 static ubit8		rtccmos24HourTime=0;
 static ubit8		rtccmosBcdDateTime=0;
-waitLockC		rtccmosLock;
+WaitLock		rtccmosLock;
 static ubit8		rtccmosDateCenturyChecked=0;
 static ubit8		rtccmosDateCenturyOffset=0;
 
@@ -270,7 +270,7 @@ static inline ubit8 bcd8ToUbit8(ubit8 bcdVal)
 static sarch_t getCenturyOffset(ubit8 *ret)
 {
 	error_t		err;
-	acpi_rsdtS	*rsdt;
+	acpi_sRsdt	*rsdt;
 	acpi_rFadtS	*fadt;
 	void		*handle, *context;
 
@@ -332,7 +332,7 @@ static sarch_t getCenturyOffset(ubit8 *ret)
 }
 
 
-status_t ibmPc_rtc_getHardwareDate(dateS *ret)
+status_t ibmPc_rtc_getHardwareDate(sDate *ret)
 {
 	ubit8	century=0x20;
 
@@ -378,7 +378,7 @@ status_t ibmPc_rtc_getHardwareDate(dateS *ret)
 	return ERROR_SUCCESS;
 }
 
-status_t ibmPc_rtc_getHardwareTime(timeS *time)
+status_t ibmPc_rtc_getHardwareTime(sTime *time)
 {
 	ubit8	hour, min, sec;
 

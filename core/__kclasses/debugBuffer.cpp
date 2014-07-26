@@ -16,9 +16,9 @@
 
 static ubit8	buffMem[PAGING_BASE_SIZE * DEBUGBUFFER_INIT_NPAGES];
 
-debugBufferC::debugBufferC(void)
+DebugBuffer::DebugBuffer(void)
 {
-	debugBufferC::buffPageS		*tmp;
+	DebugBuffer::buffPageS		*tmp;
 
 	buff.rsrc.head = buff.rsrc.cur = new (buffMem) buffPageS;
 	buff.rsrc.index = 0;
@@ -31,14 +31,14 @@ debugBufferC::debugBufferC(void)
 	buff.rsrc.buffNPages = DEBUGBUFFER_INIT_NPAGES;
 }
 
-error_t debugBufferC::initialize(void)
+error_t DebugBuffer::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t debugBufferC::shutdown(void)
+error_t DebugBuffer::shutdown(void)
 {
-	debugBufferC::buffPageS		*tmp;
+	DebugBuffer::buffPageS		*tmp;
 
 	for (;;)
 	{
@@ -61,24 +61,24 @@ error_t debugBufferC::shutdown(void)
 	return ERROR_SUCCESS;
 }
 
-error_t debugBufferC::suspend(void)
+error_t DebugBuffer::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t debugBufferC::awake(void)
+error_t DebugBuffer::awake(void)
 {
 	return ERROR_SUCCESS;
 }
 
-void *debugBufferC::lock(void)
+void *DebugBuffer::lock(void)
 {
 	buff.lock.acquire();
 	return buff.rsrc.head;
 }
 
 // This expects the caller to call lock() before beforehand, and unlock() after.
-utf8Char *debugBufferC::extract(void **handle, uarch_t *len)
+utf8Char *DebugBuffer::extract(void **handle, uarch_t *len)
 {
 	utf8Char	*ret;
 
@@ -86,7 +86,7 @@ utf8Char *debugBufferC::extract(void **handle, uarch_t *len)
 		return NULL;
 	};
 
-	if (*reinterpret_cast<debugBufferC::buffPageS **>( handle )
+	if (*reinterpret_cast<DebugBuffer::buffPageS **>( handle )
 		!= buff.rsrc.cur)
 	{
 		*len = DEBUGBUFFER_PAGE_NCHARS;
@@ -105,12 +105,12 @@ utf8Char *debugBufferC::extract(void **handle, uarch_t *len)
 	return ret;
 }
 
-void debugBufferC::unlock(void)
+void DebugBuffer::unlock(void)
 {
 	buff.lock.release();
 }
 
-void debugBufferC::write(utf8Char *str, uarch_t buffLen)
+void DebugBuffer::write(utf8Char *str, uarch_t buffLen)
 {
 	buff.lock.acquire();
 
@@ -143,11 +143,11 @@ void debugBufferC::write(utf8Char *str, uarch_t buffLen)
 }
 
 // Expects the lock to be held when called.
-debugBufferC::buffPageS *debugBufferC::scrollBuff(
+DebugBuffer::buffPageS *DebugBuffer::scrollBuff(
 	uarch_t *index, uarch_t buffLen
 	)
 {
-	debugBufferC::buffPageS		*tmp1, *tmp2;
+	DebugBuffer::buffPageS		*tmp1, *tmp2;
 	uarch_t				bound, nWholePages, nCharsExcess;
 
 	if (buffLen >= buff.rsrc.buffNPages * DEBUGBUFFER_PAGE_NCHARS)

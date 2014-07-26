@@ -77,13 +77,13 @@ static void sortNumaMapByAddress(zkcmNumaMapS *map)
 	};
 }
 
-error_t memoryTribC::pmemInit(void)
+error_t MemoryTrib::pmemInit(void)
 {
 	error_t			ret;
 	zkcmMemConfigS		*memConfig=NULL;
 	zkcmMemMapS		*memMap=NULL;
 	zkcmNumaMapS		*numaMap=NULL;
-	numaMemoryBankC		*nmb;
+	NumaMemoryBank		*nmb;
 	// __kspaceBool is used to determine whether or not to kill __kspace.
 	sarch_t			pos, __kspaceBool=0;
 	status_t		nSet=0;
@@ -193,9 +193,9 @@ parseMemoryMap:
 		};
 
 		pos = memoryBanks.prepareForLoop();
-		nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos);
+		nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos);
 		for (; nmb != NULL;
-			nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos))
+			nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos))
 		{
 			for (uarch_t i=0; i<memMap->nEntries; i++)
 			{
@@ -219,9 +219,9 @@ parseMemoryMap:
 
 	// Next merge all banks with __kspace.
 	pos = memoryBanks.prepareForLoop();
-	nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos);
+	nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos);
 	for (; nmb != NULL;
-		nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos))
+		nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos))
 	{
 		if (nmb == getBank(CHIPSET_NUMA___KSPACE_BANKID)) {
 			continue;
@@ -239,9 +239,9 @@ parseMemoryMap:
 	if (chipsetRegionMap != NULL)
 	{
 		pos = memoryBanks.prepareForLoop();
-		nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos);
+		nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos);
 		for (; nmb != NULL;
-			nmb = (numaMemoryBankC *)memoryBanks.getLoopItem(&pos))
+			nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos))
 		{
 			for (uarch_t i=0; i<chipsetRegionMap->nEntries; i++)
 			{
@@ -299,7 +299,7 @@ parseMemoryMap:
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
-void memoryTribC::init2_spawnNumaStreams(zkcmNumaMapS *map)
+void MemoryTrib::init2_spawnNumaStreams(zkcmNumaMapS *map)
 {
 	error_t		ret;
 
@@ -326,12 +326,12 @@ void memoryTribC::init2_spawnNumaStreams(zkcmNumaMapS *map)
 #endif
 
 #if __SCALING__ >= SCALING_CC_NUMA
-void memoryTribC::init2_generateNumaMemoryRanges(
+void MemoryTrib::init2_generateNumaMemoryRanges(
 	zkcmNumaMapS *map, sarch_t *__kspaceBool
 	)
 {
 	error_t			ret;
-	numaMemoryBankC		*nmb;
+	NumaMemoryBank		*nmb;
 
 	for (uarch_t i=0; i<map->nMemEntries; i++)
 	{
@@ -374,7 +374,7 @@ static utf8Char		*overlappingMessage =
 	"\tOverlapping entries base 0x%P, size 0x%X, base 0x%P, size 0x%X.\n"
 	"\tHalting generation of shbank due to non-sane NUMA map.\n";
 
-void memoryTribC::init2_generateShbankFromNumaMap(
+void MemoryTrib::init2_generateShbankFromNumaMap(
 	zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool
 	)
 {

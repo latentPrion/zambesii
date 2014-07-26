@@ -7,12 +7,12 @@
 #include "vgaTerminal.h"
 
 
-ibmPcVgaTerminalC		ibmPcVgaTerminal(ibmPcVgaTerminalC::TERMINAL);
+IbmPcVgaTerminal		ibmPcVgaTerminal(IbmPcVgaTerminal::TERMINAL);
 
 // Static member variable.
-ubit8	*ibmPcVgaTerminalC::bda=NULL;
+ubit8	*IbmPcVgaTerminal::bda=NULL;
 
-error_t ibmPcVgaTerminalC::initialize(void)
+error_t IbmPcVgaTerminal::initialize(void)
 {
 	// The memoryAreas API maps ranges as PAGEATTRIB_CACHE_WRITE_THROUGH.
 	origBuff = buff = reinterpret_cast<ibmPc_terminalMod_fbS *>(
@@ -28,7 +28,7 @@ error_t ibmPcVgaTerminalC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-void ibmPcVgaTerminalC::chipsetEventNotification(ubit8, uarch_t)
+void IbmPcVgaTerminal::chipsetEventNotification(ubit8, uarch_t)
 {
 	error_t		ret;
 	ubit8		*lowmem;
@@ -64,23 +64,23 @@ void ibmPcVgaTerminalC::chipsetEventNotification(ubit8, uarch_t)
 		(void *)0xB8000, &p, 1, &f);
 }
 
-error_t ibmPcVgaTerminalC::shutdown(void)
+error_t IbmPcVgaTerminal::shutdown(void)
 {
 	buff = NULL;
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPcVgaTerminalC::suspend(void)
+error_t IbmPcVgaTerminal::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t ibmPcVgaTerminalC::restore(void)
+error_t IbmPcVgaTerminal::restore(void)
 {
 	return ERROR_SUCCESS;
 }
 
-sarch_t ibmPcVgaTerminalC::isInitialized(void)
+sarch_t IbmPcVgaTerminal::isInitialized(void)
 {
 	if (buff == NULL) {
 		return 0;
@@ -90,7 +90,7 @@ sarch_t ibmPcVgaTerminalC::isInitialized(void)
 	};
 }
 
-void ibmPcVgaTerminalC::scrollDown(void)
+void IbmPcVgaTerminal::scrollDown(void)
 {
 	uarch_t		i;
 	uarch_t		bound=(maxRow * maxCol) - maxCol;
@@ -105,7 +105,7 @@ void ibmPcVgaTerminalC::scrollDown(void)
 	};
 }
 
-void ibmPcVgaTerminalC::syphon(const utf8Char *str, uarch_t len)
+void IbmPcVgaTerminal::syphon(const utf8Char *str, uarch_t len)
 {
 	// FIXME: Remember to do utf-8 expansion here.
 
@@ -161,7 +161,7 @@ void ibmPcVgaTerminalC::syphon(const utf8Char *str, uarch_t len)
 	};
 }
 
-void ibmPcVgaTerminalC::clear(void)
+void IbmPcVgaTerminal::clear(void)
 {
 	uarch_t		i, bound=(maxRow * maxCol);
 

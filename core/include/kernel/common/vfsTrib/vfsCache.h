@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-class vfsCacheC
+class VfsCache
 {
 };
 

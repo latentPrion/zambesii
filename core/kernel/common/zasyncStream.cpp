@@ -6,7 +6,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-zasyncStreamC::~zasyncStreamC(void)
+ZAsyncStream::~ZAsyncStream(void)
 {
 	processId_t		*tmp=NULL;
 	uarch_t			nConnections;
@@ -45,7 +45,7 @@ zasyncStreamC::~zasyncStreamC(void)
 		{ delete[] msgTmp; };
 }
 
-error_t zasyncStreamC::addConnection(processId_t pid)
+error_t ZAsyncStream::addConnection(processId_t pid)
 {
 	processId_t		*old;
 
@@ -80,7 +80,7 @@ error_t zasyncStreamC::addConnection(processId_t pid)
 	return ERROR_SUCCESS;
 }
 
-void zasyncStreamC::removeConnection(processId_t pid)
+void ZAsyncStream::removeConnection(processId_t pid)
 {
 	connections.lock.acquire();
 
@@ -104,7 +104,7 @@ void zasyncStreamC::removeConnection(processId_t pid)
 	connections.lock.release();
 }
 
-sarch_t zasyncStreamC::findConnection(processId_t pid)
+sarch_t ZAsyncStream::findConnection(processId_t pid)
 {
 	sarch_t		ret=0;
 
@@ -124,11 +124,11 @@ sarch_t zasyncStreamC::findConnection(processId_t pid)
 	return ret;
 }
 
-error_t zasyncStreamC::connect(
+error_t ZAsyncStream::connect(
 	processId_t targetPid, processId_t sourceBindTid, uarch_t flags)
 {
-	processStreamC		*targetProcess;
-	taskC			*targetTask;
+	ProcessStream		*targetProcess;
+	Task			*targetTask;
 	zasyncMsgS		*request;
 
 	/**	EXPLANATION:
@@ -172,18 +172,18 @@ error_t zasyncStreamC::connect(
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 	request->bindTid = sourceBindTid;
 
-	return messageStreamC::enqueueOnThread(
+	return MessageStream::enqueueOnThread(
 		request->header.targetId, &request->header);
 }
 
-error_t zasyncStreamC::respond(
+error_t ZAsyncStream::respond(
 	processId_t initiatorPid,
 	connectReplyE reply, processId_t bindTid, uarch_t flags
 	)
 {
 	error_t			ret;
 	zasyncMsgS		*response;
-	processStreamC		*initiatorProcess;
+	ProcessStream		*initiatorProcess;
 
 	initiatorProcess = processTrib.getStream(initiatorPid);
 	if (initiatorProcess == NULL) { return ERROR_INVALID_RESOURCE_NAME; };
@@ -204,7 +204,7 @@ error_t zasyncStreamC::respond(
 
 	if (reply == CONNREPLY_YES)
 	{
-		processStreamC		*initiatorProcess;
+		ProcessStream		*initiatorProcess;
 
 		// Add both processes to each other's "connections" list.
 
@@ -221,17 +221,17 @@ error_t zasyncStreamC::respond(
 		if (ret != ERROR_SUCCESS) { delete response; return ret; };
 	};
 
-	return messageStreamC::enqueueOnThread(
+	return MessageStream::enqueueOnThread(
 		response->header.targetId, &response->header);
 }
 
-error_t zasyncStreamC::send(
+error_t ZAsyncStream::send(
 	processId_t bindTid, void *data, uarch_t nBytes, ipc::methodE method,
 	uarch_t flags, void *privateData
 	)
 {
 	zasyncMsgS		*message;
-	processStreamC		*targetProcess;
+	ProcessStream		*targetProcess;
 	ipc::dataHeaderS	*dataHeader;
 	error_t			ret;
 
@@ -266,11 +266,11 @@ error_t zasyncStreamC::send(
 	if (ret != ERROR_SUCCESS)
 		{ delete dataHeader; delete message; return ret; };
 
-	return messageStreamC::enqueueOnThread(
+	return MessageStream::enqueueOnThread(
 		message->header.targetId, &message->header);
 }
 
-error_t zasyncStreamC::receive(void *dataHandle, void *buffer, uarch_t)
+error_t ZAsyncStream::receive(void *dataHandle, void *buffer, uarch_t)
 {
 	ipc::dataHeaderS		*dataHeader;
 	error_t				ret;
@@ -287,7 +287,7 @@ error_t zasyncStreamC::receive(void *dataHandle, void *buffer, uarch_t)
 	return ERROR_SUCCESS;
 }
 
-void zasyncStreamC::acknowledge(void *dataHandle, void *buffer, void *privateData)
+void ZAsyncStream::acknowledge(void *dataHandle, void *buffer, void *privateData)
 {
 	ipc::dataHeaderS		*dataHeader;
 	ipc::methodE			method;
@@ -322,11 +322,11 @@ void zasyncStreamC::acknowledge(void *dataHandle, void *buffer, void *privateDat
 		return;
 	};
 
-	messageStreamC::enqueueOnThread(
+	MessageStream::enqueueOnThread(
 		response->header.targetId, &response->header);
 }
 
-void zasyncStreamC::close(processId_t)
+void ZAsyncStream::close(processId_t)
 {
 }
 

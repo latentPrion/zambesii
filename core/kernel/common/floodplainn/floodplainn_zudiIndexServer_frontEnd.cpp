@@ -12,8 +12,8 @@ error_t zuiServer::detectDriverReq(
 	void *privateData, ubit32 flags
 	)
 {
-	heapObjC<zuiServer::indexMsgS>	request;
-	taskC				*currTask;
+	HeapObject<zuiServer::indexMsgS>	request;
+	Task				*currTask;
 
 	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 		{ return ERROR_LIMIT_OVERFLOWED; };
@@ -33,8 +33,8 @@ error_t zuiServer::detectDriverReq(
 
 error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 {
-	heapObjC<zuiServer::indexMsgS>	request;
-	taskC				*currTask;
+	HeapObject<zuiServer::indexMsgS>	request;
+	Task				*currTask;
 
 	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 		{ return ERROR_LIMIT_OVERFLOWED; };
@@ -54,11 +54,11 @@ error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 
 void zuiServer::loadDriverRequirementsReq(void *privateData)
 {
-	heapObjC<zuiServer::indexMsgS>	request;
-	taskC				*currTask;
+	HeapObject<zuiServer::indexMsgS>	request;
+	Task				*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	if (currTask->parent->getType() != processStreamC::DRIVER)
+	if (currTask->parent->getType() != ProcessStream::DRIVER)
 		{ return; };
 
 	request = new zuiServer::indexMsgS(
@@ -77,8 +77,8 @@ void zuiServer::setNewDeviceActionReq(
 	newDeviceActionE action, void *privateData
 	)
 {
-	heapObjC<zuiServer::indexMsgS>	request;
-	taskC			*currTask;
+	HeapObject<zuiServer::indexMsgS>	request;
+	Task			*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
@@ -95,8 +95,8 @@ void zuiServer::setNewDeviceActionReq(
 
 void zuiServer::getNewDeviceActionReq(void *privateData)
 {
-	heapObjC<zuiServer::indexMsgS>	request;
-	taskC				*currTask;
+	HeapObject<zuiServer::indexMsgS>	request;
+	Task				*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
@@ -115,8 +115,8 @@ void zuiServer::newDeviceInd(
 	utf8Char *path, indexE index, void *privateData
 	)
 {
-	heapObjC<zuiServer::indexMsgS>	request;
-	taskC				*currTask;
+	HeapObject<zuiServer::indexMsgS>	request;
+	Task				*currTask;
 
 	if (strnlen8(path, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 	{

@@ -18,7 +18,7 @@
  **/
 
 status_t walkerPageRanger::mapNoInc(
-	vaddrSpaceC *vaddrSpace,
+	VaddrSpace *vaddrSpace,
 	void *vaddr, paddr_t paddr,
 	uarch_t nPages, uarch_t __kflags
 	)

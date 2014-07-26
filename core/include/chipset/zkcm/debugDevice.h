@@ -6,7 +6,7 @@
 
 struct zkcmDebugDeviceC
 :
-public zkcmDeviceBaseC
+public ZkcmDeviceBase
 {
 public:
 	enum deviceTypeE
@@ -16,10 +16,10 @@ public:
 
 	zkcmDebugDeviceC(
 		deviceTypeE devType,
-		zkcmDeviceC *device
+		ZkcmDevice *device
 		)
 	:
-	zkcmDeviceBaseC(device),
+	ZkcmDeviceBase(device),
 	deviceType(devType)
 	{}
 
@@ -30,7 +30,7 @@ public:
 	virtual error_t	suspend(void);
 	virtual error_t	restore(void);
 
-	// Interface to take input from debugPipeC::printf().
+	// Interface to take input from DebugPipe::printf().
 	virtual sarch_t isInitialized(void);
 	virtual void syphon(const utf8Char *str, uarch_t len);
 	virtual void clear(void);

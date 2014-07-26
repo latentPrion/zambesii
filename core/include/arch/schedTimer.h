@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-class schedTimerC
+class SchedTimer
 {
 public:
 	error_t initialize(void);

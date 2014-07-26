@@ -12,10 +12,10 @@ error_t ibmPc_rtc_initialize(void);
 error_t ibmPc_rtc_suspend(void);
 error_t ibmPc_rtc_restore(void);*/
 
-/*status_t ibmPc_rtc_getCurrentDate(dateS *date);
-status_t ibmPc_rtc_getCurrentTime(timeS *time);*/
-status_t ibmPc_rtc_getHardwareDate(dateS *ret);
-status_t ibmPc_rtc_getHardwareTime(timeS *ret);
+/*status_t ibmPc_rtc_getCurrentDate(sDate *date);
+status_t ibmPc_rtc_getCurrentTime(sTime *time);*/
+status_t ibmPc_rtc_getHardwareDate(sDate *ret);
+status_t ibmPc_rtc_getHardwareTime(sTime *ret);
 /*void ibmPc_rtc_refreshCachedSystemTime(void);
 void ibmPc_rtc_flushCachedSystemTime(void); */
 

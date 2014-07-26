@@ -15,20 +15,20 @@
 
 // We make a global cpuStream for the bspCpu.
 #if __SCALING__ >= SCALING_CC_NUMA
-cpuStreamC		bspCpu(NUMABANKID_INVALID, CPUID_INVALID, 0);
+cpuStream		bspCpu(NUMABANKID_INVALID, CPUID_INVALID, 0);
 #elif __SCALING__ == SCALING_SMP
-cpuStreamC		bspCpu(CPUID_INVALID, 0);
+cpuStream		bspCpu(CPUID_INVALID, 0);
 #else
-cpuStreamC		bspCpu(0, 0);
+cpuStream		bspCpu(0, 0);
 #endif
 
 /**	NOTE:
  * A lot of preprocessing in here: It looks quite ugly I suppose.
  **/
 #if __SCALING__ >= SCALING_CC_NUMA
-cpuStreamC::cpuStreamC(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
+cpuStream::cpuStream(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
 #else
-cpuStreamC::cpuStreamC(cpu_t cid, ubit32 acpiId)
+cpuStream::cpuStream(cpu_t cid, ubit32 acpiId)
 #endif
 :
 cpuId(cid), cpuAcpiId(acpiId),
@@ -69,12 +69,12 @@ perCpuTaskContext(task::PER_CPU, this)
 		 * CPU can obtain it as if it was passed as an argument to
 		 * __kcpuPowerOnMain.
 		 **/
-		*reinterpret_cast<cpuStreamC **>( 
+		*reinterpret_cast<cpuStream **>( 
 			__kcpuPowerOnSleepStacks[cpuId] ) = this;
 	};
 }
 
-error_t cpuStreamC::initializeBspCpuLocking(void)
+error_t cpuStream::initializeBspCpuLocking(void)
 {
 	/**	EXPLANATION:
 	 * This gets called before global constructors get called. In here we
@@ -97,7 +97,7 @@ error_t cpuStreamC::initializeBspCpuLocking(void)
 	return ERROR_SUCCESS;
 }
 
-error_t cpuStreamC::initialize(void)
+error_t cpuStream::initialize(void)
 {
 	error_t		ret;
 
@@ -112,12 +112,12 @@ error_t cpuStreamC::initialize(void)
 	return taskStream.initialize();
 }
 
-void cpuStreamC::cut(void)
+void cpuStream::cut(void)
 {
 	// Probably won't need to do much here.
 }
 
-cpuStreamC::~cpuStreamC(void)
+cpuStream::~cpuStream(void)
 {
 }
 

@@ -48,12 +48,12 @@
 #define CPUTRIB___KUPDATEAFFINITY_ADD			0
 #define CPUTRIB___KUPDATEAFFINITY_REMOVE		1
 
-class cpuTribC
+class CpuTrib
 :
-public tributaryC
+public Tributary
 {
 public:
-	cpuTribC(void);
+	CpuTrib(void);
 	error_t initializeBspCpuStream(void);
 	error_t initialize(void);
 	error_t initializeAllCpus(void);
@@ -65,7 +65,7 @@ public:
 	error_t smpInit(void);
 #endif
 	error_t uniProcessorInit(void);
-	~cpuTribC(void);
+	~CpuTrib(void);
 
 public:
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -75,13 +75,13 @@ public:
 #endif
 	void destroyStream(cpu_t cpuId);
 	// Gets the Stream for 'cpu'.
-	cpuStreamC *getStream(cpu_t cpu);
+	cpuStream *getStream(cpu_t cpu);
 
 	// Quickly acquires the current CPU's Stream.
-	cpuStreamC *getCurrentCpuStream(void);
+	cpuStream *getCurrentCpuStream(void);
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaCpuBankC *getBank(numaBankId_t bankId);
+	NumaCpuBank *getBank(numaBankId_t bankId);
 	error_t createBank(numaBankId_t id);
 	void destroyBank(numaBankId_t id);
 #endif
@@ -98,64 +98,64 @@ private:
 
 	void bootParseNumaMap(struct zkcmNumaMapS *numaMap);
 	void bootParseNumaMap(
-		struct zkcmNumaMapS *numaMap, struct zkcmSmpMapS *smpMap);
+		struct zkcmNumaMapS *numaMap, struct sZkcmmpMapS *smpMap);
 
 	void bootConfirmNumaCpusBooted(struct zkcmNumaMapS *numaMap);
 	void bootConfirmNumaCpusBooted(
-		struct zkcmNumaMapS *numaMap, struct zkcmSmpMapS *smpMap);
+		struct zkcmNumaMapS *numaMap, struct sZkcmmpMapS *smpMap);
 #elif __SCALING__ == SCALING_SMP
 	error_t newCpuNotification(cpu_t cid, ubit32 acpiId);
 	error_t bootCpuNotification(cpu_t cid, ubit32 acpiId);
 #endif
 #if __SCALING__ >= SCALING_SMP
-	void bootParseSmpMap(struct zkcmSmpMapS *smpMap);
-	void bootConfirmSmpCpusBooted(struct zkcmSmpMapS *smpMap);
+	void bootParseSmpMap(struct sZkcmmpMapS *smpMap);
+	void bootConfirmSmpCpusBooted(struct sZkcmmpMapS *smpMap);
 #endif
 
 public:
 #if __SCALING__ >= SCALING_CC_NUMA
-	bitmapC			availableBanks;
+	Bitmap			availableBanks;
 #endif
 #if __SCALING__ >= SCALING_SMP
-	bitmapC			availableCpus, onlineCpus;
+	Bitmap			availableCpus, onlineCpus;
 	ubit8			_usingChipsetSmpMode;
 #endif
 	cpu_t			bspId;
 
 private:
 #if __SCALING__ >= SCALING_CC_NUMA
-	hardwareIdListC		cpuBanks;
+	HardwareIdList		cpuBanks;
 #endif
 #if __SCALING__ >= SCALING_SMP
-	hardwareIdListC		cpuStreams;
+	HardwareIdList		cpuStreams;
 #else
-	cpuStreamC		*cpu;
+	cpuStream		*cpu;
 #endif
 };
 
-extern cpuTribC		cpuTrib;
+extern CpuTrib		cpuTrib;
 
 
 /**	Inline Methods
  **************************************************************************/
 
 #if __SCALING__ >= SCALING_CC_NUMA
-inline numaCpuBankC *cpuTribC::getBank(numaBankId_t id)
+inline NumaCpuBank *CpuTrib::getBank(numaBankId_t id)
 {
-	return static_cast<numaCpuBankC *>( cpuBanks.getItem(id) );
+	return static_cast<NumaCpuBank *>( cpuBanks.getItem(id) );
 }
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-inline cpuStreamC *cpuTribC::getStream(cpu_t cpu)
+inline cpuStream *CpuTrib::getStream(cpu_t cpu)
 {
 	/* This should be okay for now. We can reshuffle the pointers when we
 	 * have the hardware IDs of the CPUs.
 	 **/
-	return static_cast<cpuStreamC *>( cpuStreams.getItem(cpu) );
+	return static_cast<cpuStream *>( cpuStreams.getItem(cpu) );
 }
 #else
-inline cpuStreamC *cpuTribC::getStream(cpu_t)
+inline cpuStream *CpuTrib::getStream(cpu_t)
 {
 	return cpu;
 }

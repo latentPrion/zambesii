@@ -7,9 +7,9 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
-error_t __klzbzcore::distributary::main(threadC *self)
+error_t __klzbzcore::distributary::main(Thread *self)
 {
-	dvfs::tagC		*tmpTag;
+	dvfs::Tag		*tmpTag;
 	error_t			ret;
 	void			(*jumpAddress)(void);
 

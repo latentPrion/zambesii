@@ -23,17 +23,17 @@
  * The order in which they are placed here does not matter. Of course,
  * initializing in order is preferable.
  **/
-timerTribC		timerTrib;
-interruptTribC		interruptTrib;
-memoryTribC		memoryTrib;
-debugTribC		debugTrib;
-memReservoirC		memReservoir(&processTrib.__kgetStream()->memoryStream);
-cpuTribC		cpuTrib;
-debugPipeC		__kdebug;
-taskTribC		taskTrib;
-cachePoolC		cachePool;
-execTribC		execTrib;
-vfsTribC		vfsTrib;
-distributaryTribC	distributaryTrib;
-floodplainnC		floodplainn;
+TimerTrib		timerTrib;
+InterruptTrib		interruptTrib;
+MemoryTrib		memoryTrib;
+DebugTrib		debugTrib;
+MemReservoir		memReservoir(&processTrib.__kgetStream()->memoryStream);
+CpuTrib		cpuTrib;
+DebugPipe		__kdebug;
+TaskTrib		taskTrib;
+CachePool		cachePool;
+ExecTrib		execTrib;
+VfsTrib		vfsTrib;
+DistributaryTrib	distributaryTrib;
+Floodplainn		floodplainn;
 

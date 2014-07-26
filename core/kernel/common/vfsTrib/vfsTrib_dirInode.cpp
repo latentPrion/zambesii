@@ -6,7 +6,7 @@
 #include <kernel/common/timerTrib/timeTypes.h>
 
 
-vfsDirInodeC::vfsDirInodeC(ubit32 _inodeHigh, ubit32 _inodeLow)
+vfsDirINode::vfsDirINode(ubit32 _inodeHigh, ubit32 _inodeLow)
 :
 inodeLow(_inodeLow), inodeHigh(_inodeHigh)
 {
@@ -18,12 +18,12 @@ inodeLow(_inodeLow), inodeHigh(_inodeHigh)
 	subDirs.rsrc = NULL;
 }
 
-error_t vfsDirInodeC::initialize(void)
+error_t vfsDirINode::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-void vfsDirInodeC::dumpSubDirs(void)
+void vfsDirINode::dumpSubDirs(void)
 {
 	vfsDirC		*curDir;
 
@@ -39,7 +39,7 @@ void vfsDirInodeC::dumpSubDirs(void)
 	subDirs.lock.release();
 }
 
-void vfsDirInodeC::dumpFiles(void)
+void vfsDirINode::dumpFiles(void)
 {
 	vfsFileC	*curFile;
 
@@ -55,7 +55,7 @@ void vfsDirInodeC::dumpFiles(void)
 	files.lock.release();
 }
 
-void vfsDirInodeC::addFileDesc(vfsFileC *newFile)
+void vfsDirINode::addFileDesc(vfsFileC *newFile)
 {
 	if (newFile == NULL) { return; };
 
@@ -69,7 +69,7 @@ void vfsDirInodeC::addFileDesc(vfsFileC *newFile)
 	files.lock.release();
 }
 
-void vfsDirInodeC::addDirDesc(vfsDirC *newDir)
+void vfsDirINode::addDirDesc(vfsDirC *newDir)
 {
 	if (newDir == NULL) { return; };
 
@@ -83,7 +83,7 @@ void vfsDirInodeC::addDirDesc(vfsDirC *newDir)
 	subDirs.lock.release();
 }
 
-status_t vfsDirInodeC::removeFileDesc(utf8Char *name)
+status_t vfsDirINode::removeFileDesc(utf8Char *name)
 {
 	vfsFileC		*curFile, *prevFile;
 
@@ -121,7 +121,7 @@ status_t vfsDirInodeC::removeFileDesc(utf8Char *name)
 	return VFSPATH_INVALID;
 }
 
-status_t vfsDirInodeC::removeDirDesc(utf8Char *name)
+status_t vfsDirINode::removeDirDesc(utf8Char *name)
 {
 	vfsDirC		*curDir, *prevDir;
 
@@ -159,7 +159,7 @@ status_t vfsDirInodeC::removeDirDesc(utf8Char *name)
 	return VFSPATH_INVALID;
 }
 
-vfsFileC *vfsDirInodeC::getFileDesc(utf8Char *name)
+vfsFileC *vfsDirINode::getFileDesc(utf8Char *name)
 {
 	vfsFileC	*curFile;
 
@@ -181,7 +181,7 @@ vfsFileC *vfsDirInodeC::getFileDesc(utf8Char *name)
 	return NULL;
 }
 
-vfsDirC *vfsDirInodeC::getDirDesc(utf8Char *name)
+vfsDirC *vfsDirINode::getDirDesc(utf8Char *name)
 {
 	vfsDirC		*curDir;
 
@@ -203,7 +203,7 @@ vfsDirC *vfsDirInodeC::getDirDesc(utf8Char *name)
 	return NULL;
 }
 
-vfsDirInodeC::~vfsDirInodeC(void)
+vfsDirINode::~vfsDirINode(void)
 {
 }
 

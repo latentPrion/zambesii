@@ -8,7 +8,7 @@
 	#include <kernel/common/waitLock.h>
 
 /**	EXPLANATION:
- * The Debug Pipe Buffer takes all the raw code points from the debugPipeC
+ * The Debug Pipe Buffer takes all the raw code points from the DebugPipe
  * object and stores them, uninterpreted, into itself.
  *
  * The idea behind this buffer is such that the kernel debug output can be kept
@@ -35,11 +35,11 @@
 
 #define DEBUGBUFFER_INIT_NPAGES			(8)
 
-class debugBufferC
+class DebugBuffer
 {
 struct buffPageS;
 public:
-	debugBufferC(void);
+	DebugBuffer(void);
 	error_t initialize(void);
 	error_t shutdown(void);
 	error_t suspend(void);
@@ -82,7 +82,7 @@ private:
 		buffPageS	*head, *cur;
 		uarch_t		index, buffNPages;
 	};
-	sharedResourceGroupC<waitLockC, buffPtrStateS>	buff;
+	SharedResourceGroup<WaitLock, buffPtrStateS>	buff;
 };
 
 #endif

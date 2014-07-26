@@ -9,16 +9,16 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-taskTribC::taskTribC(void)
+TaskTrib::TaskTrib(void)
 {
 	capacity = 0;
 	load = 0;
 }
 
 #if __SCALING__ >= SCALING_SMP
-error_t taskTribC::schedule(threadC *task)
+error_t TaskTrib::schedule(Thread *task)
 {
-	cpuStreamC	*cs, *bestCandidate=NULL;
+	cpuStream	*cs, *bestCandidate=NULL;
 
 	for (cpu_t i=0;
 		i<(signed)task->getTaskContext()->cpuAffinity.getNBits(); i++)
@@ -48,7 +48,7 @@ error_t taskTribC::schedule(threadC *task)
 }
 #endif
 
-void taskTribC::updateCapacity(ubit8 action, uarch_t val)
+void TaskTrib::updateCapacity(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
@@ -68,7 +68,7 @@ void taskTribC::updateCapacity(ubit8 action, uarch_t val)
 	};
 }
 
-void taskTribC::updateLoad(ubit8 action, uarch_t val)
+void TaskTrib::updateLoad(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
@@ -88,11 +88,11 @@ void taskTribC::updateLoad(ubit8 action, uarch_t val)
 	};
 }
 
-error_t taskTribC::dormant(taskC *task, taskContextC *perCpuContext)
+error_t TaskTrib::dormant(Task *task, TaskContext *perCpuContext)
 {
-	cpuStreamC	*taskCurrentCpu;
-	taskContextC	*tmpContext;
-	threadC		*thread;
+	cpuStream	*TaskurrentCpu;
+	TaskContext	*tmpContext;
+	Thread		*thread;
 
 	/**	FIXME:
 	 * The following inconsistent behaviour arises:
@@ -131,14 +131,14 @@ error_t taskTribC::dormant(taskC *task, taskContextC *perCpuContext)
 		return ERROR_INVALID_ARG;
 	};
 
-	thread = static_cast<threadC *>( task );
+	thread = static_cast<Thread *>( task );
 
 	if (task->getType() == task::PER_CPU) { tmpContext = perCpuContext; }
 	else { tmpContext = thread->getTaskContext(); };
 
-	if (tmpContext->runState == taskContextC::UNSCHEDULED
-		|| (tmpContext->runState == taskContextC::STOPPED
-			&& tmpContext->blockState == taskContextC::DORMANT))
+	if (tmpContext->runState == TaskContext::UNSCHEDULED
+		|| (tmpContext->runState == TaskContext::STOPPED
+			&& tmpContext->blockState == TaskContext::DORMANT))
 	{
 		return ERROR_SUCCESS;
 	};
@@ -146,20 +146,20 @@ error_t taskTribC::dormant(taskC *task, taskContextC *perCpuContext)
 	if (task->getType() == task::PER_CPU)
 	{
 		tmpContext->parent.cpu->taskStream.dormant(task);
-		taskCurrentCpu = tmpContext->parent.cpu;
+		TaskurrentCpu = tmpContext->parent.cpu;
 	}
 	else
 	{
-		thread->currentCpu->taskStream.dormant(task);
-		taskCurrentCpu = thread->currentCpu;
+		thread->Currenttpu->taskStream.dormant(task);
+		TaskurrentCpu = thread->Currenttpu;
 	};
 
-	/* At this point, taskCurrentCpu points to the CPU on which the
+	/* At this point, TaskurrentCpu points to the CPU on which the
 	 * particular unique thread or per-cpu thread that was our target, is
 	 * currently scheduled to. For a per-cpu thread, it points to the
 	 * particular CPU whose per-cpu thread was acted on.
 	 **/
-	if (taskCurrentCpu != cpuTrib.getCurrentCpuStream())
+	if (TaskurrentCpu != cpuTrib.getCurrentCpuStream())
 	{
 		/* Message the foreign CPU to preempt and choose another thread.
 		 * Should probably take an argument for the thread to be
@@ -176,8 +176,8 @@ error_t taskTribC::dormant(taskC *task, taskContextC *perCpuContext)
 		{
 			// TODO: Set this CPU's currentTask to NULL here.
 			saveContextAndCallPull(
-				&taskCurrentCpu->schedStack[
-					sizeof(taskCurrentCpu->schedStack)]);
+				&TaskurrentCpu->schedStack[
+					sizeof(TaskurrentCpu->schedStack)]);
 
 			// Unreachable.
 		};
@@ -186,10 +186,10 @@ error_t taskTribC::dormant(taskC *task, taskContextC *perCpuContext)
 	return ERROR_SUCCESS;
 }
 
-error_t taskTribC::wake(taskC *task, taskContextC *perCpuContext)
+error_t TaskTrib::wake(Task *task, TaskContext *perCpuContext)
 {
-	taskContextC	*tmpContext;
-	threadC		*thread;
+	TaskContext	*tmpContext;
+	Thread		*thread;
 
 	if (task == NULL) { return ERROR_INVALID_ARG; };
 
@@ -197,7 +197,7 @@ error_t taskTribC::wake(taskC *task, taskContextC *perCpuContext)
 		return ERROR_INVALID_ARG;
 	};
 
-	thread = static_cast<threadC *>( task );
+	thread = static_cast<Thread *>( task );
 
 	if (task->getType() == task::PER_CPU) {
 		tmpContext = perCpuContext;
@@ -205,16 +205,16 @@ error_t taskTribC::wake(taskC *task, taskContextC *perCpuContext)
 		tmpContext = thread->getTaskContext();
 	};
 
-	if (tmpContext->runState != taskContextC::UNSCHEDULED
-		&& (tmpContext->runState != taskContextC::STOPPED
-			&& tmpContext->blockState != taskContextC::DORMANT))
+	if (tmpContext->runState != TaskContext::UNSCHEDULED
+		&& (tmpContext->runState != TaskContext::STOPPED
+			&& tmpContext->blockState != TaskContext::DORMANT))
 	{
 		return ERROR_SUCCESS;
 	};
 
 	if (task->getType() == task::PER_CPU)
 	{
-		if (tmpContext->runState == taskContextC::UNSCHEDULED)
+		if (tmpContext->runState == TaskContext::UNSCHEDULED)
 		{
 			return tmpContext->parent.cpu->taskStream
 				.schedule(task);
@@ -223,16 +223,16 @@ error_t taskTribC::wake(taskC *task, taskContextC *perCpuContext)
 	}
 	else
 	{
-		if (tmpContext->runState == taskContextC::UNSCHEDULED) {
+		if (tmpContext->runState == TaskContext::UNSCHEDULED) {
 			return schedule(thread);
 		}
-		else { return thread->currentCpu->taskStream.wake(task); };
+		else { return thread->Currenttpu->taskStream.wake(task); };
 	};
 }
 
-void taskTribC::yield(void)
+void TaskTrib::yield(void)
 {
-	taskC		*currTask;
+	Task		*currTask;
 
 	/* Yield() and block() are always called by the current thread, and
 	 * they always act on the thread that called them.
@@ -246,9 +246,9 @@ void taskTribC::yield(void)
 			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 }
 
-void taskTribC::block(lockC::operationDescriptorS *unlockDescriptor)
+void TaskTrib::block(Lock::operationDescriptorS *unlockDescriptor)
 {
-	taskC		*currTask;
+	Task		*currTask;
 
 	/* Yield() and block() are always called by the current thread, and
 	 * they always act on the thread that called them.
@@ -306,17 +306,17 @@ static utf8Char		*runStates[5] =
 	CC"invalid", CC"unscheduled", CC"runnable", CC"running", CC"stopped"
 };
 
-error_t taskTribC::unblock(taskC *task, taskContextC *perCpuContext)
+error_t TaskTrib::unblock(Task *task, TaskContext *perCpuContext)
 {
-	taskContextC	*tmpContext;
-	threadC		*thread;
+	TaskContext	*tmpContext;
+	Thread		*thread;
 
 	if (task == NULL) { return ERROR_INVALID_ARG; };
 	if (task->getType() == task::PER_CPU && perCpuContext == NULL) {
 		return ERROR_INVALID_ARG;
 	};
 
-	thread = static_cast<threadC *>( task );
+	thread = static_cast<Thread *>( task );
 
 	if (task->getType() == task::PER_CPU) {
 		tmpContext = perCpuContext;
@@ -324,14 +324,14 @@ error_t taskTribC::unblock(taskC *task, taskContextC *perCpuContext)
 		tmpContext = thread->getTaskContext();
 	};
 
-	if (tmpContext->runState == taskContextC::RUNNABLE
-		|| tmpContext->runState == taskContextC::RUNNING)
+	if (tmpContext->runState == TaskContext::RUNNABLE
+		|| tmpContext->runState == TaskContext::RUNNING)
 	{
 		return ERROR_SUCCESS;
 	};
 
-	if (!(tmpContext->runState == taskContextC::STOPPED
-		&& tmpContext->blockState == taskContextC::BLOCKED))
+	if (!(tmpContext->runState == TaskContext::STOPPED
+		&& tmpContext->blockState == TaskContext::BLOCKED))
 	{
 		printf(NOTICE TASKTRIB"unblock(0x%x): Invalid run state."
 			"runState is %s.\n",
@@ -346,6 +346,6 @@ error_t taskTribC::unblock(taskC *task, taskContextC *perCpuContext)
 	if (task->getType() == task::PER_CPU)
 		{ return tmpContext->parent.cpu->taskStream.unblock(task); }
 	else
-		{ return thread->currentCpu->taskStream.unblock(task); };
+		{ return thread->Currenttpu->taskStream.unblock(task); };
 }
 

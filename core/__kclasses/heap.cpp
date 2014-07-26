@@ -9,9 +9,9 @@
 #include <kernel/common/process.h>
 
 
-uintptr_t heapC::pageSize=0;
+uintptr_t Heap::pageSize=0;
 
-error_t heapC::initialize(void)
+error_t Heap::initialize(void)
 {
 	error_t		ret;
 
@@ -26,12 +26,12 @@ error_t heapC::initialize(void)
 	return chunkList.initialize();
 }
 
-sbit8 heapC::checkGuardPage(void *)
+sbit8 Heap::checkGuardPage(void *)
 {
 	return 1;
 }
 
-error_t heapC::setGuardPage(void *vaddr)
+error_t Heap::setGuardPage(void *vaddr)
 {
 #ifndef __ZAMBESII_KERNEL_SOURCE__
 	// Map it unaccessible.
@@ -85,7 +85,7 @@ error_t heapC::setGuardPage(void *vaddr)
 #endif
 }
 
-error_t heapC::unsetGuardPage(void *vaddr)
+error_t Heap::unsetGuardPage(void *vaddr)
 {
 #ifndef __ZAMBESII_KERNEL_SOURCE__
 	// Unprotect the allocation.
@@ -125,20 +125,20 @@ error_t heapC::unsetGuardPage(void *vaddr)
 #endif
 }
 
-heapC::allocationC *heapC::chunkC::malloc(
-	heapC *heap, size_t sz, void *allocatedBy, utf8Char *desc
+Heap::Allocation *Heap::Chunk::malloc(
+	Heap *heap, size_t sz, void *allocatedBy, utf8Char *desc
 	)
 {
-	ptrlessListC<blockC>::iteratorC		it;
-	blockC					*currBlock;
-	allocationC				*ret;
+	ListC<Block>::Iterator		it;
+	Block					*currBlock;
+	Allocation				*ret;
 	uintptr_t				gapRequirement;
 
 	/**	EXPLANATION:
 	 * Iterate through all the blocks, and if any is able to satisfy
 	 * the allocation, we will use it.
 	 **/
-	if (heap->options & heapC::OPT_GUARD_PAGED)
+	if (heap->options & Heap::OPT_GUARD_PAGED)
 	{
 		gapRequirement = sz & (heap->pageSize - 1);
 		gapRequirement = heap->pageSize - gapRequirement;
@@ -148,10 +148,10 @@ heapC::allocationC *heapC::chunkC::malloc(
 	{
 		currBlock = *it;
 
-		if (heap->options & heapC::OPT_GUARD_PAGED
+		if (heap->options & Heap::OPT_GUARD_PAGED
 			&& (uintptr_t)currBlock & (heap->pageSize - 1))
 		{
-			printf(ERROR HEAP"chunkC::malloc: found non-page "
+			printf(ERROR HEAP"Chunk::malloc: found non-page "
 				"aligned block, with GUARD_PAGED set\n");
 
 			panic(ERROR_UNKNOWN);
@@ -159,14 +159,14 @@ heapC::allocationC *heapC::chunkC::malloc(
 
 		if (currBlock->parent != this)
 		{
-			printf(ERROR HEAP"chunkC::malloc: corrupt block. Invalid parent.\n");
+			printf(ERROR HEAP"Chunk::malloc: corrupt block. Invalid parent.\n");
 			panic(ERROR_UNKNOWN);
 		};
 
-		if (heap->options & heapC::OPT_CHECK_BLOCK_MAGIC_PASSIVELY
+		if (heap->options & Heap::OPT_CHECK_BLOCK_MAGIC_PASSIVELY
 			&& !currBlock->magicIsValid())
 		{
-			printf(ERROR HEAP"chunkC::malloc: Corrupt block. Invalid magic.\n");
+			printf(ERROR HEAP"Chunk::malloc: Corrupt block. Invalid magic.\n");
 			panic(ERROR_UNKNOWN);
 		};
 
@@ -181,7 +181,7 @@ heapC::allocationC *heapC::chunkC::malloc(
 		 * give the whole block away.
 		 **/
 
-		if (currBlock->nBytes - sizeof(blockC) <= gapRequirement + sz)
+		if (currBlock->nBytes - sizeof(Block) <= gapRequirement + sz)
 		{
 			/* If the allocation can occupy this whole block,
 			 * we just give away the whole block; add the
@@ -197,7 +197,7 @@ heapC::allocationC *heapC::chunkC::malloc(
 		else
 		{
 			ubit8			*newBlockDest;
-			blockC			*newBlock;
+			Block			*newBlock;
 
 			newBlockDest = (ubit8 *)currBlock
 				+ (gapRequirement + sz);
@@ -206,7 +206,7 @@ heapC::allocationC *heapC::chunkC::malloc(
 				&& (uintptr_t)newBlockDest
 					& (heap->pageSize - 1))
 			{
-				printf(ERROR HEAP"chunkC::malloc: GUARD_PAGED "
+				printf(ERROR HEAP"Chunk::malloc: GUARD_PAGED "
 					"set, but for alloc of %dB, "
 					"after alloc, new block destination "
 					"0x%p is not page aligned\n",
@@ -215,7 +215,7 @@ heapC::allocationC *heapC::chunkC::malloc(
 				panic(ERROR_UNKNOWN);
 			};
 
-			newBlock = new (newBlockDest) blockC(
+			newBlock = new (newBlockDest) Block(
 				this, currBlock->nBytes - gapRequirement - sz,
 				currBlock->freedBy);
 
@@ -224,7 +224,7 @@ heapC::allocationC *heapC::chunkC::malloc(
 		};
 
 		ret = new ((ubit8 *)currBlock + gapRequirement)
-			allocationC(
+			Allocation(
 				this, gapRequirement, sz,
 				allocatedBy, desc);
 
@@ -235,14 +235,14 @@ heapC::allocationC *heapC::chunkC::malloc(
 	return NULL;
 }
 
-void heapC::chunkC::appendAndCoalesce(blockC *block, allocationC *alloc)
+void Heap::Chunk::appendAndCoalesce(Block *block, Allocation *alloc)
 {
 	ubit8			*blockEnd;
-	blockC			*nextBlock;
+	Block			*nextBlock;
 
 	// Just need to add the allocation's bytes to the target block's.
 	block->nBytes += alloc->gapSize + alloc->nBytes;
-	alloc->~allocationC();
+	alloc->~Allocation();
 
 	// Now coalesce, if possible.
 	nextBlock = block->listHeader.getNextItem();
@@ -255,25 +255,25 @@ void heapC::chunkC::appendAndCoalesce(blockC *block, allocationC *alloc)
 
 	block->nBytes += nextBlock->nBytes;
 	blocks.remove(nextBlock);
-	nextBlock->~blockC();
+	nextBlock->~Block();
 }
 
-void heapC::chunkC::prependAndCoalesce(
-	blockC *block, blockC *prevBlock, allocationC *alloc,
+void Heap::Chunk::prependAndCoalesce(
+	Block *block, Block *prevBlock, Allocation *alloc,
 	void *freedBy
 	)
 {
-	blockC		*newBlock;
+	Block		*newBlock;
 	ubit8		*prevBlockEnd;
 
 	// Construct new block header where allocation currently is.
-	newBlock = new ((ubit8 *)alloc - alloc->gapSize) blockC(
+	newBlock = new ((ubit8 *)alloc - alloc->gapSize) Block(
 		this,
 		alloc->gapSize + alloc->nBytes + block->nBytes,
 		freedBy);
 
 	blocks.remove(block);
-	block->~blockC();
+	block->~Block();
 
 	/* Return early if prepending to first block in chunk, because
 	 * there is no previous block in that case. We do need to modify
@@ -299,12 +299,12 @@ void heapC::chunkC::prependAndCoalesce(
 
 	// Else, coalesce and exit.
 	prevBlock->nBytes += newBlock->nBytes;
-	newBlock->~blockC();
+	newBlock->~Block();
 }
 
-void heapC::chunkC::free(allocationC *alloc, void *freedBy)
+void Heap::Chunk::free(Allocation *alloc, void *freedBy)
 {
-	ptrlessListC<blockC>::iteratorC		it, prev;
+	ListC<Block>::Iterator		it, prev;
 	ubit8					*allocEnd;
 
 	/**	EXPLANATION:
@@ -317,7 +317,7 @@ void heapC::chunkC::free(allocationC *alloc, void *freedBy)
 		it != blocks.end();
 		prev=it, ++it)
 	{
-		blockC		*currBlock, *prevBlock;
+		Block		*currBlock, *prevBlock;
 		ubit8		*currBlockEnd, *prevBlockEnd=NULL;
 
 		currBlock = *it;
@@ -361,21 +361,21 @@ void heapC::chunkC::free(allocationC *alloc, void *freedBy)
 	/* Else just construct a new block header at the alloc location,
 	 * and make sure to set the preceding block to point to it.
 	 **/
-	blockC			*newBlock;
+	Block			*newBlock;
 
 	newBlock = new ((ubit8 *)alloc - alloc->gapSize)
-		blockC(this, alloc->gapSize + alloc->nBytes, freedBy);
+		Block(this, alloc->gapSize + alloc->nBytes, freedBy);
 
 	blocks.sortedInsert(newBlock);
 	nAllocations--;
 	return;
 }
 
-error_t heapC::getNewChunk(chunkC **retchunk) const
+error_t Heap::getNewChunk(Chunk **retchunk) const
 {
 	error_t		ret;
-	blockC		*firstBlock;
-	chunkC		*tmpchunk;
+	Block		*firstBlock;
+	Chunk		*tmpchunk;
 
 	if (memoryStream == NULL) { return ERROR_UNINITIALIZED; };
 
@@ -390,7 +390,7 @@ error_t heapC::getNewChunk(chunkC **retchunk) const
 				chunkSize),
 			MEMALLOC_PURE_VIRTUAL))
 #endif
-		chunkC;
+		Chunk;
 
 	if (tmpchunk == NULL)
 	{
@@ -406,7 +406,7 @@ error_t heapC::getNewChunk(chunkC **retchunk) const
 		return ret;
 	};
 
-	firstBlock = (blockC *)&tmpchunk[1];
+	firstBlock = (Block *)&tmpchunk[1];
 	if (options & OPT_GUARD_PAGED)
 	{
 		uintptr_t		tmpBlock;
@@ -418,13 +418,13 @@ error_t heapC::getNewChunk(chunkC **retchunk) const
 			tmpBlock &= ~(pageSize - 1);
 		};
 
-		firstBlock = (blockC *)tmpBlock;
+		firstBlock = (Block *)tmpBlock;
 	};
 
 	/* We have to subtract the size of the chunk header from the
 	 * first block's header.
 	 **/
-	new (firstBlock) blockC(
+	new (firstBlock) Block(
 		tmpchunk,
 		chunkSize - ((ubit8*)firstBlock - (ubit8*)tmpchunk),
 		NULL);
@@ -436,9 +436,9 @@ printf(NOTICE"getNewChunk: chunk 0x%p: first block @0x%p, %d bytes.\n",
 	return ERROR_SUCCESS;
 }
 
-void heapC::releaseChunk(chunkC *chunk) const
+void Heap::releaseChunk(Chunk *chunk) const
 {
-	chunk->~chunkC();
+	chunk->~Chunk();
 
 #ifndef __ZAMBESII_KERNEL_SOURCE__
 	munmap(chunk, chunkSize);
@@ -447,13 +447,13 @@ void heapC::releaseChunk(chunkC *chunk) const
 #endif
 }
 
-void *heapC::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
+void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 {
 	//size_t				origSz=sz;
 	error_t					err;
-	ptrlessListC<chunkC>::iteratorC		it;
-	chunkC					*currChunk;
-	allocationC				*ret;
+	ListC<Chunk>::Iterator		it;
+	Chunk					*currChunk;
+	Allocation				*ret;
 
 	if (sz == 0)
 	{
@@ -463,7 +463,7 @@ void *heapC::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 		panic(ERROR_UNKNOWN);
 	};
 
-	sz += sizeof(allocationC);
+	sz += sizeof(Allocation);
 
 	if (options & OPT_GUARD_PAGED)
 	{
@@ -550,7 +550,7 @@ void *heapC::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 		// Add the new chunk to the chunks list and retry.
 		chunkList.insert(
 			currChunk,
-			ptrlessListC<chunkC>::OP_FLAGS_UNLOCKED);
+			ListC<Chunk>::OP_FLAGS_UNLOCKED);
 	};
 
 	// If both passes yielded nothing, return NULL.
@@ -558,10 +558,10 @@ void *heapC::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 	return NULL;
 }
 
-void heapC::free(void *_p, void *freedBy)
+void Heap::free(void *_p, void *freedBy)
 {
-	allocationC				*alloc=(allocationC *)_p;
-	ptrlessListC<chunkC>::iteratorC		chunkIt;
+	Allocation				*alloc=(Allocation *)_p;
+	ListC<Chunk>::Iterator		chunkIt;
 	sbit8					isWithinHeap=0;
 
 	// Move backward in memory to get to the start of the header.
@@ -682,19 +682,19 @@ void heapC::free(void *_p, void *freedBy)
 	chunkList.unlock();
 }
 
-void heapC::dumpChunks(ubit32 flags)
+void Heap::dumpChunks(ubit32 flags)
 {
-	ptrlessListC<chunkC>::iteratorC		it;
+	ListC<Chunk>::Iterator		it;
 
 	printf(NOTICE"dumpChunks: %u chunks, chunk size %u, dumping chunks.\n",
-		chunkList.getNItems(ptrlessListC<chunkC>::OP_FLAGS_UNLOCKED),
+		chunkList.getNItems(ListC<Chunk>::OP_FLAGS_UNLOCKED),
 		chunkSize);
 
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { chunkList.lock(); };
 
 	for (it = chunkList.begin(); it != chunkList.end(); ++it)
 	{
-		chunkC		*currChunk;
+		Chunk		*currChunk;
 
 		currChunk = *it;
 		currChunk->dump();
@@ -703,19 +703,19 @@ void heapC::dumpChunks(ubit32 flags)
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { chunkList.unlock(); };
 }
 
-void heapC::dumpAllocations(ubit32 flags)
+void Heap::dumpAllocations(ubit32 flags)
 {
-	ptrlessListC<allocationC>::iteratorC	it;
+	ListC<Allocation>::Iterator	it;
 
 	printf(NOTICE"dumpAllocs: %u allocs, spanning %u chunks\n",
-		allocationList.getNItems(ptrlessListC<allocationC>::OP_FLAGS_UNLOCKED),
-		chunkList.getNItems(ptrlessListC<chunkC>::OP_FLAGS_UNLOCKED));
+		allocationList.getNItems(ListC<Allocation>::OP_FLAGS_UNLOCKED),
+		chunkList.getNItems(ListC<Chunk>::OP_FLAGS_UNLOCKED));
 
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { allocationList.lock(); };
 
 	for (it=allocationList.begin(); it != allocationList.end(); ++it)
 	{
-		allocationC		*currAlloc;
+		Allocation		*currAlloc;
 
 		currAlloc = *it;
 		currAlloc->dump();
@@ -724,25 +724,25 @@ void heapC::dumpAllocations(ubit32 flags)
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { allocationList.unlock(); };
 }
 
-void heapC::dumpBlocks(ubit32 flags)
+void Heap::dumpBlocks(ubit32 flags)
 {
-	ptrlessListC<chunkC>::iteratorC		it;
+	ListC<Chunk>::Iterator		it;
 
 	printf(NOTICE"dumpBlocks: spanning %u chunks\n",
-		chunkList.getNItems(ptrlessListC<chunkC>::OP_FLAGS_UNLOCKED));
+		chunkList.getNItems(ListC<Chunk>::OP_FLAGS_UNLOCKED));
 
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { chunkList.lock(); };
 
 	for (it=chunkList.begin(); it != chunkList.end(); ++it)
 	{
-		chunkC					*currChunk;
-		ptrlessListC<blockC>::iteratorC		it2;
+		Chunk					*currChunk;
+		ListC<Block>::Iterator		it2;
 
 		currChunk = *it;
 		for (it2=currChunk->blocks.begin();
 			it2 != currChunk->blocks.end(); ++it2)
 		{
-			blockC		*currBlock;
+			Block		*currBlock;
 
 			currBlock = *it2;
 			currBlock->dump();
@@ -752,14 +752,14 @@ void heapC::dumpBlocks(ubit32 flags)
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { chunkList.unlock(); };
 }
 
-sbit8 heapC::allocIsWithinHeap(void *alloc, chunkC **parentChunk)
+sbit8 Heap::allocIsWithinHeap(void *alloc, Chunk **parentChunk)
 {
-	ptrlessListC<chunkC>::iteratorC		iChunks;
+	ListC<Chunk>::Iterator		iChunks;
 
 	iChunks = chunkList.begin();
 	for (; iChunks != chunkList.end(); ++iChunks)
 	{
-		chunkC		*chunk;
+		Chunk		*chunk;
 		ubit8		*chunkEof;
 
 		chunk = *iChunks;
@@ -773,20 +773,20 @@ sbit8 heapC::allocIsWithinHeap(void *alloc, chunkC **parentChunk)
 	return 0;
 }
 
-error_t heapC::checkBlocks(void)
+error_t Heap::checkBlocks(void)
 {
-	ptrlessListC<chunkC>::iteratorC		iChunks;
+	ListC<Chunk>::Iterator		iChunks;
 
-	class localAutoUnlockerC
+	class LocalAutoUnlocker
 	{
-		ptrlessListC<chunkC>		*list;
+		ListC<Chunk>		*list;
 
 	public:
-		~localAutoUnlockerC(void)
+		~LocalAutoUnlocker(void)
 		{
 			list->unlock();
 		}
-		localAutoUnlockerC(ptrlessListC<chunkC> *list)
+		LocalAutoUnlocker(ListC<Chunk> *list)
 		:
 		list(list)
 		{}
@@ -804,8 +804,8 @@ error_t heapC::checkBlocks(void)
 	iChunks = chunkList.begin();
 	for (; iChunks != chunkList.end(); ++iChunks)
 	{
-		ptrlessListC<blockC>::iteratorC	iBlocks, iBlocksPrev;
-		chunkC				*currChunk;
+		ListC<Block>::Iterator	iBlocks, iBlocksPrev;
+		Chunk				*currChunk;
 		ubit8				*currChunkEnd;
 
 		currChunk = *iChunks;
@@ -817,7 +817,7 @@ error_t heapC::checkBlocks(void)
 		for (; iBlocks != currChunk->blocks.end();
 			iBlocksPrev=iBlocks, ++iBlocks)
 		{
-			blockC		*currBlock, *prevBlock;
+			Block		*currBlock, *prevBlock;
 			ubit8		*currBlockEnd, *prevBlockEnd;
 
 			currBlock = *iBlocks;
@@ -901,11 +901,11 @@ error_t heapC::checkBlocks(void)
 	return ERROR_SUCCESS;
 }
 
-error_t heapC::checkAllocations(void)
+error_t Heap::checkAllocations(void)
 {
 	uarch_t					totalAllocs, nAllocsInList;
-	ptrlessListC<chunkC>::iteratorC		iChunks;
-	ptrlessListC<allocationC>::iteratorC	iAllocs;
+	ListC<Chunk>::Iterator		iChunks;
+	ListC<Allocation>::Iterator	iAllocs;
 
 	/**	EXPLANATION:
 	 * First, get the total number of allocations across all chunks.
@@ -924,7 +924,7 @@ error_t heapC::checkAllocations(void)
 	iChunks = chunkList.begin();
 	for (totalAllocs=0; iChunks != chunkList.end(); ++iChunks)
 	{
-		chunkC		*currChunk;
+		Chunk		*currChunk;
 
 		currChunk = *iChunks;
 
@@ -946,8 +946,8 @@ error_t heapC::checkAllocations(void)
 	iAllocs = allocationList.begin();
 	for (; iAllocs != allocationList.end(); ++iAllocs, nAllocsInList++)
 	{
-		allocationC		*alloc;
-		chunkC			*detectedParent;
+		Allocation		*alloc;
+		Chunk			*detectedParent;
 
 		alloc = *iAllocs;
 
@@ -974,7 +974,7 @@ error_t heapC::checkAllocations(void)
 		};
 
 		if (!chunkList.find(
-			alloc->parent, ptrlessListC<chunkC>::OP_FLAGS_UNLOCKED)
+			alloc->parent, ListC<Chunk>::OP_FLAGS_UNLOCKED)
 			|| alloc->parent != detectedParent)
 		{
 			printf(FATAL HEAP"checkAllocs: alloc 0x%p: invalid "

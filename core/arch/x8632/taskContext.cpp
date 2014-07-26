@@ -7,7 +7,7 @@
 #include <kernel/common/panic.h>
 
 
-registerContextC::registerContextC(ubit8 execDomain)
+RegisterContext::RegisterContext(ubit8 execDomain)
 {
 	memset(this, 0, sizeof(*this));
 
@@ -25,12 +25,12 @@ registerContextC::registerContextC(ubit8 execDomain)
 	};
 }
 
-void registerContextC::setStacks(
+void RegisterContext::setStacks(
 	void *stack0, void *stack1, ubit8 initialStackIndex
 	)
 {
 	if (initialStackIndex > 1) {
-		panic(CC"registerContextC::setStacks(): illegal stack index.\n");
+		panic(CC"RegisterContext::setStacks(): illegal stack index.\n");
 	};
 
 	if (initialStackIndex == 0)

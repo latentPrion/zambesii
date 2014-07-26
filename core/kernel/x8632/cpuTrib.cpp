@@ -6,7 +6,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 #if __SCALING__ >= SCALING_SMP
-cpuStreamC *cpuTribC::getCurrentCpuStream(void)
+cpuStream *CpuTrib::getCurrentCpuStream(void)
 {
 	uarch_t		dr0;
 	// Read the current cpu's struct from the dr0 register.
@@ -15,7 +15,7 @@ cpuStreamC *cpuTribC::getCurrentCpuStream(void)
 		: "=r" (dr0)
 	);
 
-	return reinterpret_cast<cpuStreamC *>( dr0 );
+	return reinterpret_cast<cpuStream *>( dr0 );
 }
 #endif
 

@@ -22,41 +22,41 @@
 
 #define DTRIBTRIB_TAG_NAME_MAX_NCHARS		(48)
 
-class singlerWaiterQueueC;
-class slamCacheC;
+class SingleWaiterQueue;
+class SlamCache;
 
-class distributaryTribC
+class DistributaryTrib
 :
-public tributaryC
+public Tributary
 {
 public:
-	distributaryTribC(void)
+	DistributaryTrib(void)
 	:
-	tagCache(NULL)
+	Tagache(NULL)
 	{}
 
 	// Builds the Dtrib VFS tree of compiled-in kernel distributaries.
 	error_t initialize(void);
-	~distributaryTribC(void) {};
+	~DistributaryTrib(void) {};
 
 public:
 	/* Gets the control queue for the current dtrib process. Returns NULL
 	 * if the calling process is not a dtrib process.
 	 **/
-	singleWaiterQueueC *getControlQueue(void);
+	SingleWaiterQueue *getControlQueue(void);
 
 private:
 	// Called at boot to construct the distributary VFS tree.
 	error_t bootBuildTree(void);
 
 private:
-	slamCacheC			*tagCache;
+	SlamCache			*Tagache;
 
 	static const dvfs::distributaryDescriptorS
 		*const distributaryDescriptors[];
 };
 
-extern distributaryTribC	distributaryTrib;
+extern DistributaryTrib	distributaryTrib;
 
 #endif
 

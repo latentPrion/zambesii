@@ -8,10 +8,10 @@
 // The first stack in the cache stores page blocks of size 1 page large.
 #define STACKCACHE_STACK1_SIZE		1
 
-class numaMemoryBankC;
+class NumaMemoryBank;
 
 /**	EXPLANATION:
- * stackCacheC is a simple class which acts as a caching mechanism for items of
+ * StackCache is a simple class which acts as a caching mechanism for items of
  * integral type.
  *
  * Its use is confined to the Memory Stream for the caching of virtual addresses
@@ -25,22 +25,22 @@ class numaMemoryBankC;
  **/
 
 template <class T>
-class stackCacheC
+class StackCache
 {
-friend class numaMemoryBankC;
+friend class NumaMemoryBank;
 
 public:
-	stackCacheC(void);
+	StackCache(void);
 	error_t initialize(void) { return ERROR_SUCCESS; }
 
 public:
 	error_t push(uarch_t category, T item);
 	error_t pop(uarch_t category, T *item);
 
-	void flush(memBmpC *bmp);
+	void flush(MemoryBmp *bmp);
 
 private:
-	cacheStackC<T>		stacks[STACKCACHE_NSTACKS];
+	CacheStack<T>		stacks[STACKCACHE_NSTACKS];
 };
 
 
@@ -48,13 +48,13 @@ private:
  ***************************************************************************/
 
 template <class T>
-stackCacheC<T>::stackCacheC(void)
+StackCache<T>::StackCache(void)
 {
 	stacks[0].stackSize = STACKCACHE_STACK1_SIZE;
 }
 
 template <class T>
-error_t stackCacheC<T>::push(uarch_t category, T item)
+error_t StackCache<T>::push(uarch_t category, T item)
 {
 	for (sarch_t i=0; i<STACKCACHE_NSTACKS; i++)
 	{
@@ -66,7 +66,7 @@ error_t stackCacheC<T>::push(uarch_t category, T item)
 }
 
 template <class T>
-error_t stackCacheC<T>::pop(uarch_t category, T *item)
+error_t StackCache<T>::pop(uarch_t category, T *item)
 {
 	for (sarch_t i=0; i<STACKCACHE_NSTACKS; i++)
 	{
@@ -78,7 +78,7 @@ error_t stackCacheC<T>::pop(uarch_t category, T *item)
 }
 
 template <class T>
-void stackCacheC<T>::flush(memBmpC *bmp)
+void StackCache<T>::flush(MemoryBmp *bmp)
 {
 	for (sarch_t i=0; i<STACKCACHE_NSTACKS; i++) {
 		stacks[i].flush(bmp);

@@ -10,7 +10,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 void walkerPageRanger::remapNoInc(
-	vaddrSpaceC *vaddrSpace,
+	VaddrSpace *vaddrSpace,
 	void *vaddr, paddr_t paddr, uarch_t nPages,
 	ubit8 op, uarch_t __kflags
 	)

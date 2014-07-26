@@ -30,7 +30,7 @@
  * continue until the ekfs is loaded, at which point, the kernel unties from all
  * devices except for the buffer.
  *
- * The buffer is provided by the debugPipeC class itself, and maintained within
+ * The buffer is provided by the DebugPipe class itself, and maintained within
  * the class. It is resized in page-sized increments and it allocates these
  * from the kernel memory stream.
  *
@@ -59,12 +59,12 @@
 #define LOGONCE(__id)			NOLOG
 #define LOGONCE_FINDTABLES(__id)
 
-class debugPipeC
+class DebugPipe
 {
 public:
-	debugPipeC(void);
+	DebugPipe(void);
 	error_t initialize(void);
-	~debugPipeC(void);
+	~DebugPipe(void);
 
 public:
 	// Zambesii only supports UTF-8 strings in the kernel.
@@ -82,7 +82,7 @@ public:
 	 * passed as an argument. This may cause a race condition on the kernel
 	 * debug log, but seeing some output is better than seeing none.
 	 **/
-	void printf(sharedResourceGroupC<waitLockC, void *> *buff,
+	void printf(SharedResourceGroup<WaitLock, void *> *buff,
 		uarch_t buffSize, utf8Char *str, va_list v);
 
 	/**	EXPLANATION:
@@ -108,13 +108,13 @@ private:
 	void numToStrHexLower(uarch_t num, uarch_t *len, utf8Char *buff);
 	void paddrToStrHex(paddr_t num, uarch_t *len, utf8Char *buff);*/
 
-	debugBufferC		debugBuff;
+	DebugBuffer		debugBuff;
 	// 'convBuff' is used to expand the printf formatting.
-	sharedResourceGroupC<
-		waitLockC,
+	SharedResourceGroup<
+		WaitLock,
 		utf8Char[DEBUGPIPE_CONVERSION_BUFF_NBYTES]>	convBuff;
 
-	sharedResourceGroupC<waitLockC, uarch_t>	devices;
+	SharedResourceGroup<WaitLock, uarch_t>	devices;
 };
 
 void printf(const utf8Char *str, ...);
@@ -124,10 +124,10 @@ extern "C" sarch_t snprintf(
 	utf8Char *buff, uarch_t maxLength, utf8Char *format, ...);
 
 // Used for debugging, see above.
-void printf(sharedResourceGroupC<waitLockC, void *> *buff,
+void printf(SharedResourceGroup<WaitLock, void *> *buff,
 	uarch_t buffSize, utf8Char *str, ...);
 
-extern debugPipeC	__kdebug;
+extern DebugPipe	__kdebug;
 
 #endif
 

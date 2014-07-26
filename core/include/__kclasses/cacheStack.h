@@ -9,7 +9,7 @@
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 
-// This is the number of pages used for each instance of cacheStackC.
+// This is the number of pages used for each instance of CacheStack.
 #define CACHESTACK_NPAGES_PER_STACK		(1)
 #define CACHESTACK_MAX_NITEMS(__t)		\
 	((PAGING_BASE_SIZE *CACHESTACK_NPAGES_PER_STACK) / sizeof(__t))
@@ -18,27 +18,27 @@
 #define CACHESTACK_EMPTY			(-1)
 
 template <class T>
-class cacheStackC
+class CacheStack
 {
 public:
-	cacheStackC(void);
+	CacheStack(void);
 
 public:
 	error_t push(T item);
 	error_t pop(T *item);
 
-	void flush(memBmpC *bmp);
+	void flush(MemoryBmp *bmp);
 
 public:
 	uarch_t	stackSize;
 
 private:
-	struct stackStateS
+	struct sStackState
 	{
 		T		stack[CACHESTACK_MAX_NITEMS(T)];
 		int		stackPtr;
 	};
-	sharedResourceGroupC<waitLockC, stackStateS>	stack;
+	SharedResourceGroup<WaitLock, sStackState>	stack;
 };
 
 
@@ -46,7 +46,7 @@ private:
  *****************************************************************************/
 
 template <class T>
-cacheStackC<T>::cacheStackC(void)
+CacheStack<T>::CacheStack(void)
 {
 	memset(
 		stack.rsrc.stack, 0,
@@ -56,7 +56,7 @@ cacheStackC<T>::cacheStackC(void)
 }
 
 template <class T>
-error_t cacheStackC<T>::push(T item)
+error_t CacheStack<T>::push(T item)
 {
 	stack.lock.acquire();
 
@@ -74,7 +74,7 @@ error_t cacheStackC<T>::push(T item)
 }
 
 template <class T>
-error_t cacheStackC<T>::pop(T *item)
+error_t CacheStack<T>::pop(T *item)
 {
 	stack.lock.acquire();
 
@@ -92,7 +92,7 @@ error_t cacheStackC<T>::pop(T *item)
 }
 
 template <class T>
-void cacheStackC<T>::flush(memBmpC *bmp)
+void CacheStack<T>::flush(MemoryBmp *bmp)
 {
 	stack.lock.acquire();
 

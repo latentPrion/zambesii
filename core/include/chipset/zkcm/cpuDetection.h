@@ -6,7 +6,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
 
-class zkcmCpuDetectionModC
+class ZkcmCpuDetectionMod
 {
 public:
 	error_t initialize(void);
@@ -17,7 +17,7 @@ public:
 	sarch_t checkSmpSanity(void);
 	error_t setSmpMode(void);
 	cpu_t getBspId(void);
-	struct zkcmSmpMapS *getSmpMap(void);
+	struct sZkcmmpMapS *getSmpMap(void);
 	struct zkcmNumaMapS *getNumaMap(void);
 	status_t powerControl(cpu_t cpuId, ubit8 command, uarch_t flags);
 };

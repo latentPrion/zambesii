@@ -24,7 +24,7 @@
  * chipset can have a timer running at 100Hz and remain stable, for example.
  **/
 
-error_t timerQueueC::latch(zkcmTimerDeviceC *dev)
+error_t TimerQueue::latch(ZkcmTimerDevice *dev)
 {
 	error_t		ret;
 
@@ -47,7 +47,7 @@ error_t timerQueueC::latch(zkcmTimerDeviceC *dev)
 	return ERROR_SUCCESS;
 }
 
-void timerQueueC::unlatch(void)
+void TimerQueue::unlatch(void)
 {
 	if (!isLatched()) { return; };
 
@@ -59,16 +59,16 @@ void timerQueueC::unlatch(void)
 		getNativePeriod() / 1000);
 }
 
-error_t timerQueueC::enable(void)
+error_t TimerQueue::enable(void)
 {
 	error_t		ret;
-	timeS		stamp;
+	sTime		stamp;
 
 	if (!isLatched()) {
 		return ERROR_UNINITIALIZED;
 	};
 
-	ret = device->setPeriodicMode(timeS(0, nativePeriod));
+	ret = device->setPeriodicMode(sTime(0, nativePeriod));
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR TIMERQUEUE"%dus: Failed to set periodic mode "
@@ -91,7 +91,7 @@ error_t timerQueueC::enable(void)
 	return ERROR_SUCCESS;
 }
 
-void timerQueueC::disable(void)
+void TimerQueue::disable(void)
 {
 	/** FIXME: Should first check to see if there are objects left, and wait
 	 * for them to expire before physically disabling the timer source.
@@ -101,7 +101,7 @@ void timerQueueC::disable(void)
 	else { device->disable(); };
 }
 
-error_t timerQueueC::insert(timerStreamC::timerMsgS *request)
+error_t TimerQueue::insert(TimerStream::timerMsgS *request)
 {
 	error_t		ret;
 
@@ -113,11 +113,11 @@ error_t timerQueueC::insert(timerStreamC::timerMsgS *request)
 		return ret;
 	};
 
-	if (!device->isSoftEnabled()) { return timerQueueC::enable(); };
+	if (!device->isSoftEnabled()) { return TimerQueue::enable(); };
 	return ERROR_SUCCESS;
 }
 
-sarch_t timerQueueC::cancel(timerStreamC::timerMsgS *request)
+sarch_t TimerQueue::cancel(TimerStream::timerMsgS *request)
 {
 	/**	FIXME:
 	 * This function is intended to return 1 if the item being canceled was
@@ -134,12 +134,12 @@ sarch_t timerQueueC::cancel(timerStreamC::timerMsgS *request)
 	return 1;
 }
 
-static sarch_t isPerCpuCreator(timerStreamC::timerMsgS *request)
+static sarch_t isPerCpuCreator(TimerStream::timerMsgS *request)
 {
 	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 }
 
-static processStreamC *getCreatorProcess(timerStreamC::timerMsgS *request)
+static ProcessStream *getCreatorProcess(TimerStream::timerMsgS *request)
 {
 	// If creator was a per-cpu thread, the creator process is the kernel.
 	if (isPerCpuCreator(request)) {
@@ -150,12 +150,12 @@ static processStreamC *getCreatorProcess(timerStreamC::timerMsgS *request)
 	return processTrib.getStream(request->header.sourceId);
 }
 
-inline static sarch_t isPerCpuTarget(timerStreamC::timerMsgS *request)
+inline static sarch_t isPerCpuTarget(TimerStream::timerMsgS *request)
 {
 	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
-static processStreamC *getTargetProcess(timerStreamC::timerMsgS *request)
+static ProcessStream *getTargetProcess(TimerStream::timerMsgS *request)
 {
 	if (isPerCpuTarget(request)) {
 		return processTrib.__kgetStream();
@@ -164,11 +164,11 @@ static processStreamC *getTargetProcess(timerStreamC::timerMsgS *request)
 	return processTrib.getStream(request->header.targetId);
 }
 
-void timerQueueC::tick(zkcmTimerEventS *event)
+void TimerQueue::tick(zkcmTimerEventS *event)
 {
-	timerStreamC::timerMsgS	*request;
+	TimerStream::timerMsgS	*request;
 	void			*targetObject=NULL;
-	processStreamC		*targetProcess, *creatorProcess;
+	ProcessStream		*targetProcess, *creatorProcess;
 	sarch_t			requestQueueWasEmpty=1;
 
 	/**	EXPLANATION
@@ -266,9 +266,9 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 		{
 			// Unblock the target thread/CPU.
 			if (isPerCpuTarget(request)) {
-				taskTrib.unblock((cpuStreamC *)targetObject);
+				taskTrib.unblock((cpuStream *)targetObject);
 			} else {
-				taskTrib.unblock((threadC *)targetObject);
+				taskTrib.unblock((Thread *)targetObject);
 			};
 		};
 

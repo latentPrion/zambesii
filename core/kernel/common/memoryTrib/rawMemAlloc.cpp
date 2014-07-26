@@ -17,7 +17,7 @@ void rawMemFree(void *vaddr, uarch_t nPages)
 error_t memoryTribPmm::contiguousGetFrames(uarch_t, paddr_t *)
 {
 	// return memoryTrib.contiguousGetFrames(nFrames, paddr);
-	UNIMPLEMENTED("memoryTribC::contiguousGetFrames()");
+	UNIMPLEMENTED("MemoryTrib::contiguousGetFrames()");
 	return ERROR_UNIMPLEMENTED;
 }
 

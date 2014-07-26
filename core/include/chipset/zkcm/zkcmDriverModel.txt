@@ -9,10 +9,10 @@ of that driver's device.
 Example of a kernel API class:
 
 // Defines a standard API package for all NIC drivers.
-class zkcmNetworkDriverC
+class ZkcmNetworkDriver
 {
 public:
-	zkcmNetworkDriverC(zkcmDeviceC *device, void *self);
+	ZkcmNetworkDriver(ZkcmDevice *device, void *self);
 
 public:
 	virtual sendFrame(int size, void *buff)=0;
@@ -21,13 +21,13 @@ public:
 
 Example of a specific network driver:
 
-// NE2000 driver, inherits from zkcmNetworkDriverC.
+// NE2000 driver, inherits from ZkcmNetworkDriver.
 class ibmPcNe2000
 :
-public zkcmNetworkDriverC
+public ZkcmNetworkDriver
 {
 public:
-	ibmPcNe2000(zkcmDeviceC *device, void *self);
+	ibmPcNe2000(ZkcmDevice *device, void *self);
 
 public:
 	virtual sendFrame(int size, void *buff) { do_stuff(); }
@@ -44,7 +44,7 @@ In the above example class hierarchy, the kernel will always take the base class
 as an argument, and will never care about the derived class attributes that
 have been added on. C++ polymorphism will ensure that the correct method from
 the class ibmPcNe2000 is called when the kernel does things like this:
-	zkcmNetworkDriverC	*device;
+	ZkcmNetworkDriver	*device;
 	device->send(strlen("hello world!"), "hello world!");
 
 ---------------
@@ -60,7 +60,7 @@ public:
 
 public:
 	ibmPcNe2000	net;
-	zkcmDeviceC	device;
+	ZkcmDevice	device;
 } ne2k0, ne2k1;
 
 

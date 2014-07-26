@@ -5,7 +5,7 @@
 #include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 
 
-error_t vaddrSpaceStreamC::initialize(void)
+error_t VaddrSpaceStream::initialize(void)
 {
 	error_t		ret;
 
@@ -16,16 +16,16 @@ error_t vaddrSpaceStreamC::initialize(void)
 	return vSwamp.initialize();
 }
 
-error_t vaddrSpaceStreamC::bind(void)
+error_t VaddrSpaceStream::bind(void)
 {
 	return ERROR_SUCCESS;
 }
 
-void vaddrSpaceStreamC::cut(void)
+void VaddrSpaceStream::cut(void)
 {
 }
 
-void vaddrSpaceStreamC::dump(void)
+void VaddrSpaceStream::dump(void)
 {
 	printf(NOTICE"VaddrSpaceStream %X: Level0: v: %p, p: %p\n",
 		id, vaddrSpace.level0Accessor.rsrc,
@@ -37,7 +37,7 @@ void vaddrSpaceStreamC::dump(void)
 	vSwamp.dump();
 }
 
-void *vaddrSpaceStreamC::getPages(uarch_t nPages)
+void *VaddrSpaceStream::getPages(uarch_t nPages)
 {
 	void		*ret = 0;
 
@@ -52,7 +52,7 @@ void *vaddrSpaceStreamC::getPages(uarch_t nPages)
 	return vSwamp.getPages(nPages);
 }
 
-void vaddrSpaceStreamC::releasePages(void *vaddr, uarch_t nPages)
+void VaddrSpaceStream::releasePages(void *vaddr, uarch_t nPages)
 {
 	// First try to free to the page cache.
 	if (pageCache.push(nPages, vaddr) == ERROR_SUCCESS) {

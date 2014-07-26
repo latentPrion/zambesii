@@ -12,20 +12,20 @@
 
 #define HWIDLIST_FLAGS_INDEX_VALID	(1<<0)
 
-class hardwareIdListC
+class HardwareIdList
 {
 public:
-	hardwareIdListC(void);
+	HardwareIdList(void);
 
 	error_t initialize(
 		void *preallocatedMem=NULL, ubit16 preallocatedSize=0);
 
 public:
-	typedef class iteratorC
+	typedef class Iterator
 	{
-	friend class hardwareIdListC;
+	friend class HardwareIdList;
 	public:
-		iteratorC(void)
+		Iterator(void)
 		:
 		cursor(0), list(NULL)
 		{}
@@ -39,7 +39,7 @@ public:
 		// Allow "cursor" to be read.
 		sarch_t		cursor;
 	private:
-		hardwareIdListC	*list;
+		HardwareIdList	*list;
 	} iterator;
 
 	// Retrieves an item's pointer by its hardware ID.
@@ -68,9 +68,9 @@ public:
 	 *
 	 * Repeat until getLoopItem() returns NULL.
 	 **/
-	iteratorC begin(void)
+	Iterator begin(void)
 	{
-		iteratorC	it;
+		Iterator	it;
 
 		it.cursor = prepareForLoop();
 		it.list = this;
@@ -93,7 +93,7 @@ public:
 private:
 	ubit8		preAllocated;
 
-	struct arrayStateS
+	struct sArrayState
 	{
 		arrayNodeS	*arr;
 		/**	EXPLANATION:
@@ -107,7 +107,7 @@ private:
 		 **/
 		sarch_t		maxIndex, maxAllocatedIndex, firstValidIndex;
 	};
-	sharedResourceGroupC<multipleReaderLockC, arrayStateS>	arr;
+	SharedResourceGroup<MultipleReaderLock, sArrayState>	arr;
 };
 
 #endif

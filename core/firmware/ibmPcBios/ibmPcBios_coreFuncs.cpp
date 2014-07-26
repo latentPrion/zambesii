@@ -15,7 +15,7 @@
 #define FWFWS			"IBMPC BIOS: "
 
 
-waitLockC		ibmPcBiosLock;
+WaitLock		ibmPcBiosLock;
 static ubit32		ibmPcBios_initialized=0;
 static error_t		ibmPcBios_initState;
 

@@ -34,7 +34,7 @@
  * a very awesome optimization if you ask me.
  **/
 
-class vaddrSpaceC;
+class VaddrSpace;
 
 namespace tlbControl
 {
@@ -52,8 +52,8 @@ namespace tlbControl
 	error_t loadTranslation(void *vaddr);
 
 	// Used to load and save a TLB context on the local CPU.
-	void loadContext(vaddrSpaceC *vaddrSpace);
-	void saveContext(vaddrSpaceC *vaddrSpace);
+	void loadContext(VaddrSpace *vaddrSpace);
+	void saveContext(VaddrSpace *vaddrSpace);
 }
 
 #endif

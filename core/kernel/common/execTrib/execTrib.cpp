@@ -7,12 +7,12 @@
 #include <kernel/common/execTrib/execTrib.h>
 
 
-execTribC::execTribC(void)
+ExecTrib::ExecTrib(void)
 {
 	memset(parsers, 0, sizeof(*parsers) * EXECTRIB_MAX_NPARSERS);
 }
 
-error_t execTribC::initialize(void)
+error_t ExecTrib::initialize(void)
 {
 	error_t		ret;
 
@@ -26,7 +26,7 @@ error_t execTribC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-executableParserS *execTribC::identify(void *buff)
+executableParserS *ExecTrib::identify(void *buff)
 {
 	for (uarch_t i=0; i<EXECTRIB_MAX_NPARSERS; i++)
 	{

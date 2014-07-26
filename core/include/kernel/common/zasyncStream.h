@@ -11,24 +11,24 @@
 
 #define ZASYNC			"ZAsync "
 
-class processStreamC;
+class ProcessStream;
 
-class zasyncStreamC
+class ZAsyncStream
 :
-public streamC
+public Stream
 {
 public:
 	enum connectReplyE { CONNREPLY_YES, CONNREPLY_NO, CONNREPLY_CLOSED };
 
-	zasyncStreamC(processId_t parentPid, processStreamC *parent)
+	ZAsyncStream(processId_t parentPid, ProcessStream *parent)
 	:
-	streamC(parentPid),
+	Stream(parentPid),
 	handlerTid(PROCID_INVALID),
 	parent(parent)
 	{}
 
 	error_t initialize(void) { return messages.initialize(); };
-	~zasyncStreamC(void);
+	~ZAsyncStream(void);
 
 public:
 	struct zasyncMsgS
@@ -40,7 +40,7 @@ public:
 		header(targetPid, subsystem, function, size, flags, privateData)
 		{}
 
-		messageStreamC::headerS		header;
+		MessageStream::sHeader		header;
 		/* When a process calls respond(), it must pass in the ID of one
 		 * of its threads which it intends for the initiator to send its
 		 * messages to. The initiator is expected to save this thread's
@@ -117,9 +117,9 @@ private:
 	/* Array of PIDs of processes to which this process has been
 	 * successfully connected, whether it was the initiator or not.
 	 **/
-	struct stateS
+	struct sState
 	{
-		stateS(void)
+		sState(void)
 		:
 		pids(NULL), nConnections(0), connectionlessListen(0)
 		{}
@@ -129,9 +129,9 @@ private:
 		sarch_t		connectionlessListen;
 	};
 
-	sharedResourceGroupC<waitLockC, stateS>	connections;
-	ptrListC<ipc::dataHeaderS>	messages;
-	processStreamC			*parent;
+	SharedResourceGroup<WaitLock, sState>	connections;
+	PtrList<ipc::dataHeaderS>	messages;
+	ProcessStream			*parent;
 };
 
 #endif

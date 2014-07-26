@@ -9,34 +9,34 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-static sharedResourceGroupC<waitLockC, void *>	buffDescriptors[16];
+static SharedResourceGroup<WaitLock, void *>	buffDescriptors[16];
 static utf8Char		buffers[16][1024];
 
-void lockC::operationDescriptorS::execute()
+void Lock::operationDescriptorS::execute()
 {
 	if (lock == NULL) { panic(FATAL"execute: lock is NULL.\n"); };
 
 	switch (type)
 	{
 	case WAIT:
-		static_cast<waitLockC *>( lock )->release();
+		static_cast<WaitLock *>( lock )->release();
 		break;
 
 	case RECURSIVE:
-		static_cast<recursiveLockC *>( lock )->release();
+		static_cast<RecursiveLock *>( lock )->release();
 		break;
 
 	case MULTIPLE_READER:
 		switch (operation)
 		{
 		case READ:
-			static_cast<multipleReaderLockC *>( lock )
+			static_cast<MultipleReaderLock *>( lock )
 				->readRelease(rwFlags);
 
 			break;
 
 		case WRITE:
-			static_cast<multipleReaderLockC *>( lock )
+			static_cast<MultipleReaderLock *>( lock )
 				->writeRelease();
 
 			break;
@@ -50,7 +50,7 @@ void lockC::operationDescriptorS::execute()
 	};
 }
 
-void waitLockC::acquire(void)
+void WaitLock::acquire(void)
 {
 	uarch_t	nTries = 0xF00000;
 	cpu_t	cid;
@@ -95,7 +95,7 @@ void waitLockC::acquire(void)
 		->nLocksHeld++;
 }
 
-void waitLockC::release(void)
+void WaitLock::release(void)
 {
 #if __SCALING__ >= SCALING_SMP
 	uarch_t		enableIrqs=0;
@@ -119,7 +119,7 @@ void waitLockC::release(void)
 		->nLocksHeld--;
 }
 
-void waitLockC::releaseNoIrqs(void)
+void WaitLock::releaseNoIrqs(void)
 {
 	FLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
 #if __SCALING__ >= SCALING_SMP

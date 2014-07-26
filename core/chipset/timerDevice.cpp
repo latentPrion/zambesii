@@ -5,7 +5,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-error_t zkcmTimerDeviceC::initialize(void)
+error_t ZkcmTimerDevice::initialize(void)
 {
 	irqEventCache = cachePool.createCache(sizeof(zkcmTimerEventS));
 	if (irqEventCache == NULL)
@@ -20,7 +20,7 @@ error_t zkcmTimerDeviceC::initialize(void)
 	return irqEventQueue.initialize();
 }
 
-error_t zkcmTimerDeviceC::latch(class floodplainnStreamC *stream)
+error_t ZkcmTimerDevice::latch(class FloodplainnStream *stream)
 {
 	state.lock.acquire();
 
@@ -40,9 +40,9 @@ error_t zkcmTimerDeviceC::latch(class floodplainnStreamC *stream)
 	return ERROR_SUCCESS;
 }
 
-void zkcmTimerDeviceC::unlatch(void)
+void ZkcmTimerDevice::unlatch(void)
 {
-	cpuStreamC	*currCpu;
+	cpuStream	*currCpu;
 
 	// If it's not the owning process, deny the attempt.
 	currCpu = cpuTrib.getCurrentCpuStream();
@@ -61,7 +61,7 @@ void zkcmTimerDeviceC::unlatch(void)
 	};
 }
 
-sarch_t zkcmTimerDeviceC::getLatchState(class floodplainnStreamC **latchedStream)
+sarch_t ZkcmTimerDevice::getLatchState(class FloodplainnStream **latchedStream)
 {
 	state.lock.acquire();
 
@@ -78,10 +78,10 @@ sarch_t zkcmTimerDeviceC::getLatchState(class floodplainnStreamC **latchedStream
 	return 0;
 }
 
-sarch_t zkcmTimerDeviceC::validateCallerIsLatched(void)
+sarch_t ZkcmTimerDevice::validateCallerIsLatched(void)
 {
-	floodplainnStreamC	*stream;
-	taskC			*currTask;
+	FloodplainnStream	*stream;
+	Task			*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()
 		->taskStream.getCurrentTask();

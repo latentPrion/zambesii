@@ -107,14 +107,14 @@
 #ifndef __ASM__
 class x86LapicC
 :
-public zkcmDeviceC
+public ZkcmDevice
 {
 public:
-	x86LapicC(class cpuStreamC *parent);
+	x86LapicC(class cpuStream *parent);
 	error_t initialize(void) { return ERROR_SUCCESS; }
 	~x86LapicC(void) {}
 
-	// zkcmTimerDeviceC *getTimer(void) { return &timer; }
+	// ZkcmTimerDevice *getTimer(void) { return &timer; }
 
 public:
 	// Used to set up LAPICs on each CPU when they are booted.
@@ -169,9 +169,9 @@ public:
 	void write32(ubit32 regOffset, ubit32 value);
 
 	// IPI-related functions.
-	struct ipiS
+	struct sIpi
 	{
-		error_t setupIpis(class cpuStreamC *parent);
+		error_t setupIpis(class cpuStream *parent);
 
 		error_t sendPhysicalIpi(
 			ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest);
@@ -187,16 +187,16 @@ public:
 		static sarch_t		handlerIsInstalled;
 	} ipi;
 
-	struct lintS
+	struct sLint
 	{
-		error_t setupLints(class cpuStreamC *parent);
+		error_t setupLints(class cpuStream *parent);
 
-		void lintSetup(
-			class cpuStreamC *parent,
+		void sLintetup(
+			class cpuStream *parent,
 			ubit8 lint, ubit8 intType, ubit32 flags, ubit8 vector);
 
-		void lintEnable(class cpuStreamC *parent, ubit8 lint);
-		void lintDisable(class cpuStreamC *parent, ubit8 lint);
+		void lintEnable(class cpuStream *parent, ubit8 lint);
+		void lintDisable(class cpuStream *parent, ubit8 lint);
 
 		/* LINT pin related functions.
 		 *
@@ -209,14 +209,14 @@ public:
 		static ubit32 lintConvertAcpiFlags(ubit32);
 
 	private:
-		void rsdtSetupLints(class cpuStreamC *parent);
-		void xsdtSetupLints(class cpuStreamC *parent);
+		void sRsdtetupLints(class cpuStream *parent);
+		void sXsdtetupLints(class cpuStream *parent);
 	} lint;
 
 	// This must always be 0xHF, where H is any hex digit, and F is fixed.
-	struct spuriousS
+	struct sSpurious
 	{
-		error_t setupSpuriousVector(class cpuStreamC *parent);
+		error_t setupSpuriousVector(class cpuStream *parent);
 
 	private:
 		void installHandler(void);
@@ -224,9 +224,9 @@ public:
 		static sarch_t		handlerIsInstalled;
 	} spurious;
 
-	struct errorS
+	struct sError
 	{
-		error_t setupLvtError(class cpuStreamC *parent);
+		error_t setupLvtError(class cpuStream *parent);
 
 	private:
 		void installHandler(void);
@@ -234,9 +234,9 @@ public:
 		static sarch_t		handlerIsInstalled;
 	} error;	
 
-	struct cacheS
+	struct sCache
 	{
-		cacheS(void)
+		sCache(void)
 		:
 		magic(x86LAPIC_MAGIC),
 		v(NULL)
@@ -250,8 +250,8 @@ public:
 	};
 
 private:
-	static cacheS		cache;
-	class cpuStreamC	*parent;
+	static sCache		cache;
+	class cpuStream	*parent;
 	// lapicTimerC		timer;
 };
 #endif

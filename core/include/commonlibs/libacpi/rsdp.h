@@ -12,9 +12,9 @@
 struct acpi_sdtCacheS
 {
 	ubit32		magic;
-	acpi_rsdpS	*rsdp;
-	acpi_rsdtS	*rsdt;
-	acpi_xsdtS	*xsdt;
+	acpi_sRsdp	*rsdp;
+	acpi_sRsdt	*rsdt;
+	acpi_sXsdt	*xsdt;
 };
 
 #ifdef __cplusplus
@@ -30,15 +30,15 @@ namespace acpi
 
 	error_t findRsdp(void);
 	sarch_t rsdpFound(void);
-	acpi_rsdpS *getRsdp(void);
+	acpi_sRsdp *getRsdp(void);
 
 	sarch_t testForRsdt(void);
 	sarch_t testForXsdt(void);
 
 	error_t mapRsdt(void);
-	acpi_rsdtS *getRsdt(void);
+	acpi_sRsdt *getRsdt(void);
 	error_t mapXsdt(void);
-	acpi_xsdtS *getXsdt(void);
+	acpi_sXsdt *getXsdt(void);
 
 	void flushCache(void);
 }

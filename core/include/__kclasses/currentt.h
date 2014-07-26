@@ -7,10 +7,10 @@
 namespace currentt
 {
 	template <ubit16 maxNameLength>
-	class vfsTagC
+	class VfsTag
 	{
 	protected:
-		vfsTagC(utf8Char *name)
+		VfsTag(utf8Char *name)
 		:
 		flags(0)
 		{
@@ -20,7 +20,7 @@ namespace currentt
 
 		error_t initialize(void) { return ERROR_SUCCESS; }
 
-		~vfsTagC(void) {};
+		~VfsTag(void) {};
 
 	public:
 		utf8Char *getName(void) { return name; }
@@ -33,7 +33,7 @@ namespace currentt
 		ubit32			flags;
 	};
 
-	class vfsInodeC
+	class vfsINode
 	{
 	protected:
 		error_t initialize(void) { return ERROR_SUCCESS; }

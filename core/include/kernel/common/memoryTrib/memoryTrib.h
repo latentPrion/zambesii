@@ -20,12 +20,12 @@
 
 #define MEMTRIB_GETFRAMES_FLAGS_NOSLEEP		(1<<0)
 
-class memoryTribC
+class MemoryTrib
 :
-public tributaryC
+public Tributary
 {
 public:
-	memoryTribC(void);
+	MemoryTrib(void);
 
 	error_t initialize(void);
 	error_t __kspaceInitialize(void);
@@ -39,15 +39,15 @@ public:
 	error_t pageTablePop(paddr_t *paddr);
 	void pageTablePush(paddr_t paddr);
 
-	numaMemoryBankC *getBank(numaBankId_t bankId);
+	NumaMemoryBank *getBank(numaBankId_t bankId);
 	error_t createBank(
-		numaBankId_t bankId, numaMemoryBankC *preAllocated=NULL);
+		numaBankId_t bankId, NumaMemoryBank *preAllocated=NULL);
 
 	void destroyBank(numaBankId_t bankId);
 
 	/* NOTE:
 	 * These next few functions are an exposure of the underlying
-	 * numaMemoryBankC interfaces on each bank. The kernel can efficiently
+	 * NumaMemoryBank interfaces on each bank. The kernel can efficiently
 	 * tell how best to serve an allocation most of the time. Therefore
 	 * developers are encouraged to use these top-level functions and let
 	 * the implementation logic behind the Memory Trib decide what's best.
@@ -78,11 +78,11 @@ private:
 		zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool);
 
 public:
-	bitmapC			availableBanks;
+	Bitmap			availableBanks;
 
 private:
-	memoryRegionC		memRegions[CHIPSET_MEMORY_NREGIONS];
-	pageTableCacheC		pageTableCache;
+	MemoryRegion		memRegions[CHIPSET_MEMORY_NREGIONS];
+	PageTableCache		pageTableCache;
 
 	/* "defaultMemoryBank" is the bank that the kernel is currently using
 	 * for general allocations.
@@ -97,41 +97,41 @@ private:
 	 * one bank (the shared bank) and add all pmem to that bank.
 	 **/
 	ubit32			nBanks;
-	hardwareIdListC		memoryBanks;
+	HardwareIdList		memoryBanks;
 #if __SCALING__ < SCALING_CC_NUMA
-	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
+	SharedResourceGroup<MultipleReaderLock, numaBankId_t>
 		defaultMemoryBank;
 #endif
 };
 
-extern memoryTribC		memoryTrib;
+extern MemoryTrib		memoryTrib;
 
 
 /**	Inline Methods
  ****************************************************************************/
 
-inline error_t memoryTribC::pageTablePop(paddr_t *paddr)
+inline error_t MemoryTrib::pageTablePop(paddr_t *paddr)
 {
 	return pageTableCache.pop(paddr);
 }
 
-inline void memoryTribC::pageTablePush(paddr_t paddr)
+inline void MemoryTrib::pageTablePush(paddr_t paddr)
 {
 	pageTableCache.push(paddr);
 }
 
 #if __SCALING__ < SCALING_CC_NUMA
-inline numaMemoryBankC *memoryTribC::getBank(numaBankId_t bankId)
+inline NumaMemoryBank *MemoryTrib::getBank(numaBankId_t bankId)
 {
-	return static_cast<numaMemoryBankC *>(
+	return static_cast<NumaMemoryBank *>(
 		memoryBanks.getItem(defaultMemoryBank.rsrc) );
 }
 #else
-inline numaMemoryBankC *memoryTribC::getBank(numaBankId_t bankId)
+inline NumaMemoryBank *MemoryTrib::getBank(numaBankId_t bankId)
 {
 	if (bankId != NUMABANKID_INVALID)
 	{
-		return static_cast<numaMemoryBankC *>(
+		return static_cast<NumaMemoryBank *>(
 			memoryBanks.getItem(bankId) );
 	}
 	else {

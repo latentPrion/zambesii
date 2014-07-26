@@ -33,20 +33,20 @@
 
 class i8254PitC
 :
-public zkcmTimerDeviceC
+public ZkcmTimerDevice
 {
-friend class zkcmCpuDetectionModC;
+friend class ZkcmCpuDetectionMod;
 public:
 	explicit i8254PitC(ubit32 childId)
 	:
-	zkcmTimerDeviceC(
-		zkcmTimerDeviceC::CHIPSET,
+	ZkcmTimerDevice(
+		ZkcmTimerDevice::CHIPSET,
 		ZKCM_TIMERDEV_CAP_MODE_PERIODIC
 			| ZKCM_TIMERDEV_CAP_MODE_ONESHOT,
 		i8254_MIN_NS, i8254_MAX_NS,
 		i8254_MIN_NS, i8254_MAX_NS,
-		zkcmTimerDeviceC::MODERATE,
-		zkcmTimerDeviceC::NEGLIGABLE,
+		ZkcmTimerDevice::MODERATE,
+		ZkcmTimerDevice::NEGLIGABLE,
 		&baseDeviceInfo),
 	baseDeviceInfo(
 		childId,
@@ -63,8 +63,8 @@ public:
 	virtual status_t enable(void);
 	virtual void disable(void);
 	// Call disable() before setting timer options, then enable() again.
-	virtual status_t setPeriodicMode(struct timeS interval);
-	virtual status_t setOneshotMode(struct timeS timeout);
+	virtual status_t setPeriodicMode(struct sTime interval);
+	virtual status_t setOneshotMode(struct sTime timeout);
 	virtual uarch_t getPrecisionDiscrepancyForPeriod(ubit32 /*period*/) { return 0; };
 
 	// IRQ Handler ISR for the i8254 PIT.
@@ -79,7 +79,7 @@ private:
 	void unsetSmpModeSwitchFlag(void);
 
 private:
-	zkcmDeviceC		baseDeviceInfo;
+	ZkcmDevice		baseDeviceInfo;
 
 	struct i8254StateS
 	{

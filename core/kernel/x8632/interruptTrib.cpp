@@ -12,7 +12,7 @@
 
 static void noop(void) {}
 
-void interruptTrib_interruptEntry(registerContextC *regs)
+void interruptTrib_interruptEntry(RegisterContext *regs)
 {
 	ubit8		makeNoise;
 
@@ -80,7 +80,7 @@ out:
 	// This point should never be reached. Fooey if it is.
 }
 
-void interruptTribC::installHardwareVectorTable(void)
+void InterruptTrib::installHardwareVectorTable(void)
 {
 	/* We have a table of vectors. Run through and initialize the IDT with
 	 * each pointer.
@@ -105,7 +105,7 @@ void interruptTribC::installHardwareVectorTable(void)
 	asm volatile("lidt	(x8632IdtPtr)\n\t");
 }
 
-void interruptTribC::installExceptions(void)
+void InterruptTrib::installExceptions(void)
 {
 	// Register all of the exceptions with the Interrupt Trib.
 	for (uarch_t i=0; i<19; i++) {

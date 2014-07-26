@@ -28,19 +28,19 @@
  * responsible for committing changes to a virtual address space.
  **/
 
-class containerProcessC;
+class ContainerProcess;
 
-class vaddrSpaceStreamC
+class VaddrSpaceStream
 :
-public streamC
+public Stream
 {
 public:
 	// This constructor must be used to initialize userspace streams.
-	vaddrSpaceStreamC(
-		uarch_t id, containerProcessC *parent,
+	VaddrSpaceStream(
+		uarch_t id, ContainerProcess *parent,
 		void *swampStart, uarch_t swampSize)
 	:
-	streamC(id), parent(parent),
+	Stream(id), parent(parent),
 	vSwamp(swampStart, swampSize)
 	{}
 
@@ -57,10 +57,10 @@ public:
 	void dump(void);
 
 public:
-	containerProcessC	*parent;
-	vaddrSpaceC		vaddrSpace;
-	stackCacheC<void *>	pageCache;
-	vSwampC			vSwamp;
+	ContainerProcess	*parent;
+	VaddrSpace		vaddrSpace;
+	StackCache<void *>	pageCache;
+	VSwamp			vSwamp;
 };
 
 #endif

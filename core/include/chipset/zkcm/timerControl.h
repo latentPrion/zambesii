@@ -20,7 +20,7 @@
 	 * provide more than one timer source.
 	 **/
 
-/**	Constants used with zkcmTimerControlModC and the Timer Control Mod API.
+/**	Constants used with ZkcmTimerControlMod and the Timer Control Mod API.
  **/
 // Values for bitfield returned by getChipsetSafeTimerPeriods().
 #define TIMERCTL_1S_SAFE		(1<<0)
@@ -54,7 +54,7 @@
 
 #define TIMERCTL_UNREGISTER_FLAGS_FORCE	(1<<0)
 
-class zkcmTimerControlModC
+class ZkcmTimerControlMod
 {
 public:
 
@@ -81,9 +81,9 @@ public:
 	 **/
 	ubit32 getChipsetSafeTimerPeriods(void);
 
-	status_t getCurrentDate(dateS *date);
-	status_t getCurrentTime(timeS *currTime);
-	status_t getCurrentDateTime(timestampS *stamp);
+	status_t getCurrentDate(sDate *date);
+	status_t getCurrentTime(sTime *currTime);
+	status_t getCurrentDateTime(sTimestamp *stamp);
 
 	/* The chipset may cache the sytem time in RAM, and not actually be
 	 * reading from the hardware clock on time API calls. This updates the
@@ -118,11 +118,11 @@ public:
 	 *
 	 * See include/chipset/zkcm/timerSource.h for preprocessor constants.
 	 **/
-	zkcmTimerDeviceC *filterTimerDevices(
-		zkcmTimerDeviceC::timerTypeE type,	// PER_CPU or CHIPSET.
+	ZkcmTimerDevice *filterTimerDevices(
+		ZkcmTimerDevice::timerTypeE type,	// PER_CPU or CHIPSET.
 		ubit32 modes,				// PERIODIC | ONESHOT.
-		zkcmTimerDeviceC::ioLatencyE ioLatency,	// LOW, MODERATE or HIGH
-		zkcmTimerDeviceC::precisionE precision,	// EXACT, NEGLIGABLE,
+		ZkcmTimerDevice::ioLatencyE ioLatency,	// LOW, MODERATE or HIGH
+		ZkcmTimerDevice::precisionE precision,	// EXACT, NEGLIGABLE,
 							// OVERFLOW or UNDERFLOW
 		ubit32 flags,
 		void **handle);
@@ -132,8 +132,8 @@ public:
 	 * they are detected. They are then added to the list that is searchable
 	 * by filterTimerSources.
 	 **/
-	error_t registerNewTimerDevice(zkcmTimerDeviceC *device);
-	error_t unregisterTimerDevice(zkcmTimerDeviceC *device, uarch_t flags);
+	error_t registerNewTimerDevice(ZkcmTimerDevice *device);
+	error_t unregisterTimerDevice(ZkcmTimerDevice *device, uarch_t flags);
 
 	void timerQueuesInitializedNotification(void);
 };

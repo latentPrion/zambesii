@@ -17,9 +17,9 @@
  * acquire and decrement it on release.
  **/
 
-void recursiveLockC::acquire(void)
+void RecursiveLock::acquire(void)
 {
-	taskContextC	*taskContext;
+	TaskContext	*taskContext;
 
 	taskContext = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTaskContext();
@@ -78,7 +78,7 @@ void recursiveLockC::acquire(void)
 #endif
 }
 
-void recursiveLockC::release(void)
+void RecursiveLock::release(void)
 {
 	/* We make the assumption that a task will only call release() if it
 	 * already holds the lock. this is pretty logical. Anyone who does

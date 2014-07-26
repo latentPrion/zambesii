@@ -13,11 +13,11 @@
 
 /**	Constants used with struct zkcmTimerSourceS.
  **/
-// Values for zkcmTimerDeviceC.capabilities.modes.
+// Values for ZkcmTimerDevice.capabilities.modes.
 #define ZKCM_TIMERDEV_CAP_MODE_PERIODIC		(1<<0)
 #define ZKCM_TIMERDEV_CAP_MODE_ONESHOT		(1<<1)
 
-// Values for zkcmTimerDeviceC.state.flags.
+// Values for ZkcmTimerDevice.state.flags.
 /* Enabled is the state where the device is set to raise IRQs AND queue messages
  * on its IRQ event queue when its ISR is called to process one of its IRQs.
  **/
@@ -42,20 +42,20 @@
  **/
 #define ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED	(1<<2)
 
-class zkcmTimerDeviceC;
+class ZkcmTimerDevice;
 
 struct zkcmTimerEventS
 {
-	zkcmTimerDeviceC		*device;
-	class floodplainnStreamC	*latchedStream;
-	timestampS			irqStamp;
+	ZkcmTimerDevice		*device;
+	class FloodplainnStream	*latchedStream;
+	sTimestamp			irqStamp;
 };
 
-class zkcmTimerDeviceC
+class ZkcmTimerDevice
 :
-public zkcmDeviceBaseC
+public ZkcmDeviceBase
 {
-friend class timerTribC;
+friend class TimerTrib;
 
 public:
 	enum timerTypeE { PER_CPU=0, CHIPSET };
@@ -63,14 +63,14 @@ public:
 	enum precisionE { EXACT=0, NEGLIGABLE, OVERFLOW, UNDERFLOW };
 	enum modeE { PERIODIC=0, ONESHOT, UNINITIALIZED };
 
-	zkcmTimerDeviceC(
+	ZkcmTimerDevice(
 		timerTypeE type, ubit32 modes,
 		ubit32 periodicMinPeriod, ubit32 periodicMaxPeriod,
 		ubit32 oneshotMinTimeout, ubit32 oneshotMaxTimeout,
 		ioLatencyE ioLatency, precisionE precision,
-		zkcmDeviceC *device)
+		ZkcmDevice *device)
 	:
-	zkcmDeviceBaseC(device),
+	ZkcmDeviceBase(device),
 	capabilities(
 		type, modes,
 		periodicMinPeriod, periodicMaxPeriod,
@@ -133,15 +133,15 @@ public:
 			flags, ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
 	}
 	// Call disable() before setting timer options, then enable() again.
-	virtual status_t setPeriodicMode(struct timeS interval)=0;
-	virtual status_t setOneshotMode(struct timeS timeout)=0;
-	virtual void getOneshotModeMinMaxTimeout(timeS *min, timeS *max)
+	virtual status_t setPeriodicMode(struct sTime interval)=0;
+	virtual status_t setOneshotMode(struct sTime timeout)=0;
+	virtual void getOneshotModeMinMaxTimeout(sTime *min, sTime *max)
 	{
 		min->nseconds = capabilities.oneshotMinTimeout;
 		max->nseconds = capabilities.oneshotMaxTimeout; 
 	}
 	
-	virtual void getPeriodicModeMinMaxPeriod(timeS *min, timeS *max)
+	virtual void getPeriodicModeMinMaxPeriod(sTime *min, sTime *max)
 	{
 		min->nseconds = capabilities.periodicMinPeriod;
 		max->nseconds = capabilities.periodicMaxPeriod;
@@ -180,22 +180,22 @@ public:
 
 	}
 
-	singleWaiterQueueC *getEventQueue(void)
+	SingleWaiterQueue *getEventQueue(void)
 	{
 		return &irqEventQueue;
 	}
 
-	error_t latch(class floodplainnStreamC *stream);
+	error_t latch(class FloodplainnStream *stream);
 	void unlatch(void);
 	// Returns 1 if latched, 0 if not latched.
-	sarch_t getLatchState(class floodplainnStreamC **latchedStream);
+	sarch_t getLatchState(class FloodplainnStream **latchedStream);
 	sarch_t validateCallerIsLatched(void);
 
 public:
 
-	struct capabilitiesS
+	struct sCapabilities
 	{
-		capabilitiesS(
+		sCapabilities(
 			timerTypeE type, ubit32 modes,
 			ubit32 periodicMinPeriod, ubit32 periodicMaxPeriod,
 			ubit32 oneshotMinTimeout, ubit32 oneshotMaxTimeout,
@@ -230,28 +230,28 @@ protected:
 	}
 
 protected:
-	struct stateS
+	struct sState
 	{
-		stateS(void)
+		sState(void)
 		:
 		flags(0), latchedStream(0), mode(UNINITIALIZED), period(0)
 		{}
 
 		ubit32			flags;
 		// Floodplain Stream for the process using this timer device.
-		floodplainnStreamC	*latchedStream;
+		FloodplainnStream	*latchedStream;
 		// Current mode: periodic/oneshot. Valid if FLAGS_ENABLED set.
 		modeE			mode;
 		// For periodic mode: stores the current timer period in ns.
 		ubit32			period;
 		// For oneshot mode: stores the current timeout date and time.
-		timeS			currentTimeout;
-		timeS			currentInterval;
+		sTime			currentTimeout;
+		sTime			currentInterval;
 	};
 
-	sharedResourceGroupC<waitLockC, stateS>	state;
-	singleWaiterQueueC			irqEventQueue;
-	slamCacheC				*irqEventCache;
+	SharedResourceGroup<WaitLock, sState>	state;
+	SingleWaiterQueue			irqEventQueue;
+	SlamCache				*irqEventCache;
 	clockRoutineFn				*clockRoutine;
 };
 

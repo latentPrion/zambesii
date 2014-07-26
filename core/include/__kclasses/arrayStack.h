@@ -11,10 +11,10 @@
 #define ARRAYSTACK_IS_FULL(__c,__n)		(__c > (__n - 1))
 
 template <class T>
-class arrayStackC
+class ArrayStack
 {
 public:
-	arrayStackC(ubit32 nItems);
+	ArrayStack(ubit32 nItems);
 	error_t initialize(void);
 
 public:
@@ -24,12 +24,12 @@ public:
 	error_t pop2(T *, T *);
 
 private:
-	struct stackStateS
+	struct sStackState
 	{
 		T	*arr;
 		sbit32	cursor;
 	};
-	sharedResourceGroupC<waitLockC, stackStateS>	stack;
+	SharedResourceGroup<WaitLock, sStackState>	stack;
 	ubit32	nItems;
 };
 
@@ -38,15 +38,15 @@ private:
  *****************************************************************************/
 
 template <class T>
-arrayStackC<T>::arrayStackC(ubit32 nItems)
+ArrayStack<T>::ArrayStack(ubit32 nItems)
 {
 	stack.rsrc.arr = NULL;
 	stack.rsrc.cursor = -1;
-	arrayStackC::nItems = nItems;
+	ArrayStack::nItems = nItems;
 }
 
 template <class T>
-error_t arrayStackC<T>::initialize(void)
+error_t ArrayStack<T>::initialize(void)
 {
 	stack.rsrc.arr = new T[nItems];
 	if (stack.rsrc.arr == NULL) {
@@ -56,7 +56,7 @@ error_t arrayStackC<T>::initialize(void)
 }
 
 template <class T>
-error_t arrayStackC<T>::push(T item)
+error_t ArrayStack<T>::push(T item)
 {
 	stack.lock.acquire();
 
@@ -75,7 +75,7 @@ error_t arrayStackC<T>::push(T item)
 }
 
 template <class T>
-error_t arrayStackC<T>::push2(T item, T item2)
+error_t ArrayStack<T>::push2(T item, T item2)
 {
 	stack.lock.acquire();
 
@@ -96,7 +96,7 @@ error_t arrayStackC<T>::push2(T item, T item2)
 }
 
 template <class T>
-error_t arrayStackC<T>::pop(T *item)
+error_t ArrayStack<T>::pop(T *item)
 {
 	stack.lock.acquire();
 
@@ -114,7 +114,7 @@ error_t arrayStackC<T>::pop(T *item)
 }
 
 template <class T>
-error_t arrayStackC<T>::pop2(T *item1, T *item2)
+error_t ArrayStack<T>::pop2(T *item1, T *item2)
 {
 	stack.lock.acquire();
 

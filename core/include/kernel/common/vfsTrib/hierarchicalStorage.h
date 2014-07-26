@@ -10,18 +10,18 @@
 
 namespace hvfs
 {
-	/**	inodeIdC:
+	/**	InodeId:
 	 * Represents a concrete inode ID on a concrete filesystem instance.
 	 **********************************************************************/
-	class inodeIdC
+	class InodeId
 	{
 	public:
-		inodeIdC(uarch_t high, uarch_t low)
+		InodeId(uarch_t high, uarch_t low)
 		:
 		high(high), low(low)
 		{}
 
-		~inodeIdC(void) {}
+		~InodeId(void) {}
 
 	private:
 		uarch_t		high, low;
@@ -29,21 +29,21 @@ namespace hvfs
 
 	/**	Tag typedefs.
 	 **********************************************************************/
-	typedef vfs::tagC<HVFS_TAG_NAME_MAXLEN>		tagC;
+	typedef vfs::Tag<HVFS_TAG_NAME_MAXLEN>		Tag;
 
-	/**	inodeC:
+	/**	iNode:
 	 * Basic class with the common-denominator inode members: dates and
 	 * sizes, and the concrete inode ID.
 	 **********************************************************************/
-	class inodeC
+	class iNode
 	{
 	public:
-		class fileSizeC;
+		class FileSize;
 
-		inodeC(
-			inodeIdC concreteId, fileSizeC size,
-			timestampS createdTime, timestampS modifiedTime,
-			timestampS accessedTime)
+		iNode(
+			InodeId concreteId, FileSize size,
+			sTimestamp createdTime, sTimestamp modifiedTime,
+			sTimestamp accessedTime)
 		:
 		concreteId(concreteId), size(size),
 		createdTime(createdTime), modifiedTime(modifiedTime),
@@ -51,55 +51,55 @@ namespace hvfs
 		{}
 
 		error_t initialize(void) { return ERROR_SUCCESS; }
-		~inodeC(void) {}
+		~iNode(void) {}
 
 	public:
-		/**	inodeC::fileSizeC:
+		/**	iNode::FileSize:
 		 * Basic abstraction of a file size. Uses uarch_t so it can
 		 * automagically scale based on target architecture.
 		 **************************************************************/
-		class fileSizeC
+		class FileSize
 		{
 		public:
-			fileSizeC(uarch_t high, uarch_t med, uarch_t low)
+			FileSize(uarch_t high, uarch_t med, uarch_t low)
 			:
 			low(low), med(med), high(high)
 			{}
 
 			// Doesn't need an initialize().
 			// error_t initialize(void) {}
-			fileSizeC(void) {}
+			FileSize(void) {}
 
 		private:
 			uarch_t		low, med, high;
 		};
 
-		fileSizeC getSize(void) { return size; }
-		inodeIdC getConcreteId(void) { return concreteId; }
-		timestampS getCreatedTime(void) { return createdTime; }
-		timestampS getModifiedTime(void) { return modifiedTime; }
-		timestampS getAccessedTime(void) { return accessedTime; }
+		FileSize getSize(void) { return size; }
+		InodeId getConcreteId(void) { return concreteId; }
+		sTimestamp getCreatedTime(void) { return createdTime; }
+		sTimestamp getModifiedTime(void) { return modifiedTime; }
+		sTimestamp getAccessedTime(void) { return accessedTime; }
 
 	private:
-		inodeIdC		concreteId;
-		fileSizeC		size;
-		timestampS		createdTime, modifiedTime, accessedTime;
+		InodeId		concreteId;
+		FileSize		size;
+		sTimestamp		createdTime, modifiedTime, accessedTime;
 	};
 
-	/**	fileInodeC:
+	/**	fileINode:
 	 * Abstraction of a file inode for the storage VFS.
 	 **********************************************************************/
-	class fileInodeC
+	class fileINode
 	:
-	public vfs::inodeC, public inodeC
+	public vfs::iNode, public iNode
 	{
 	public:
-		fileInodeC(
-			inodeIdC concreteId, fileSizeC size,
-			timestampS createdTime, timestampS modifiedTime,
-			timestampS accessedTime)
+		fileINode(
+			InodeId concreteId, FileSize size,
+			sTimestamp createdTime, sTimestamp modifiedTime,
+			sTimestamp accessedTime)
 		:
-		hvfs::inodeC(
+		hvfs::iNode(
 			concreteId, size,
 			createdTime, modifiedTime, accessedTime)
 		{}
@@ -108,29 +108,29 @@ namespace hvfs
 		{
 			error_t		ret;
 
-			ret = vfs::inodeC::initialize();
+			ret = vfs::iNode::initialize();
 			if (ret != ERROR_SUCCESS) { return ret; }
-			return hvfs::inodeC::initialize();
+			return hvfs::iNode::initialize();
 		}
 
-		~fileInodeC(void) {}
+		~fileINode(void) {}
 	};
 
-	/**	symlinkInodeC:
-	 * Abstraction of a symlink inode. Basically a fileInodeC with a string
+	/**	symlinkINode:
+	 * Abstraction of a symlink inode. Basically a fileINode with a string
 	 * inside of it.
 	 **********************************************************************/
-	class symlinkInodeC
+	class symlinkINode
 	:
-	public fileInodeC
+	public fileINode
 	{
 	public:
-		symlinkInodeC(
-			inodeIdC concreteId, fileSizeC size,
-			timestampS createdTime, timestampS modifiedTime,
-			timestampS accessedTime)
+		symlinkINode(
+			InodeId concreteId, FileSize size,
+			sTimestamp createdTime, sTimestamp modifiedTime,
+			sTimestamp accessedTime)
 		:
-		fileInodeC(
+		fileINode(
 			concreteId, size,
 			createdTime, modifiedTime, accessedTime)
 		{
@@ -141,8 +141,8 @@ namespace hvfs
 			this->fullName[symlinkFullNameMaxLength - 1] = '\0';
 		}
 
-		error_t initialize(void) { return fileInodeC::initialize(); }
-		~symlinkInodeC(void) {}
+		error_t initialize(void) { return fileINode::initialize(); }
+		~symlinkINode(void) {}
 
 	public:
 		const utf8Char *getFullName(void) { return fullName; }
@@ -152,76 +152,76 @@ namespace hvfs
 		utf8Char		fullName[symlinkFullNameMaxLength];
 	};
 
-	/**	dirInodeC:
-	 * Storage VFS layer abstraction of a dirInodeC with creation date
+	/**	dirINode:
+	 * Storage VFS layer abstraction of a dirINode with creation date
 	 * size, etc. attached.
 	 **********************************************************************/
-	class dirInodeC
+	class dirINode
 	:
-	public vfs::dirInodeC<tagC>, public hvfs::inodeC
+	public vfs::dirINode<Tag>, public hvfs::iNode
 	{
 	public:
-		dirInodeC(
-			inodeIdC concreteId, fileSizeC size,
-			timestampS createdTime, timestampS modifiedTime,
-			timestampS accessedTime)
+		dirINode(
+			InodeId concreteId, FileSize size,
+			sTimestamp createdTime, sTimestamp modifiedTime,
+			sTimestamp accessedTime)
 		:
-		hvfs::inodeC(
+		hvfs::iNode(
 			concreteId, size,
 			createdTime, modifiedTime, accessedTime)
 		{}
 
 		error_t initialize(void)
-			{ return vfs::dirInodeC<tagC>::initialize(); }
+			{ return vfs::dirINode<Tag>::initialize(); }
 
-		~dirInodeC(void) {}
+		~dirINode(void) {}
 
 	private:
 	};
 
-	/**	currenttC:
+	/**	Currentt:
 	 * HVFS Currentt type.
 	 **********************************************************************/
-	class currenttC
+	class Currentt
 	:
-	public vfs::currenttC
+	public vfs::Currentt
 	{
 	public:
-		currenttC(void)
+		Currentt(void)
 		:
-		vfs::currenttC(static_cast<utf8Char>( 'h' )),
+		vfs::Currentt(static_cast<utf8Char>( 'h' )),
 		rootTag(
 			CC"Zambesii Hierarchical VFS Currentt", vfs::DIR,
 			&rootTag, &rootInode),
 
 		rootInode(
-			inodeIdC(0, 0), hvfs::inodeC::fileSizeC(0, 0, 0),
-			timestampS(0, 0, 0),
-			timestampS(0, 0, 0),
-			timestampS(0, 0, 0))
+			InodeId(0, 0), hvfs::iNode::FileSize(0, 0, 0),
+			sTimestamp(0, 0, 0),
+			sTimestamp(0, 0, 0),
+			sTimestamp(0, 0, 0))
 		{}
 
 		error_t initialize(void)
-			{ return vfs::currenttC::initialize(); }
+			{ return vfs::Currentt::initialize(); }
 
-		~currenttC(void) {}
+		~Currentt(void) {}
 
 	public:
-		tagC *getRoot(void) { return &rootTag; }
+		Tag *getRoot(void) { return &rootTag; }
 		/*// VFS path traversal.
 		status_t getPath(utf8Char *path, ubit8 *type, void **ret);
 
 		// Folder manipulation.
 		error_t createFolder(vfsDirC *dir, utf8Char *name, uarch_t flags=0);
-		error_t deleteFolder(vfsDirInodeC *inode, utf8Char *name);
+		error_t deleteFolder(vfsDirINode *inode, utf8Char *name);
 		status_t renameFolder(
-			vfsDirInodeC *inode, utf8Char *oldName, utf8Char *newName);
+			vfsDirINode *inode, utf8Char *oldName, utf8Char *newName);
 
 		// File manipulation.
 		error_t createFile(vfsDirC *dir, utf8Char *name, uarch_t flags=0);
-		error_t deleteFile(vfsDirInodeC *inode, utf8Char *name);
+		error_t deleteFile(vfsDirINode *inode, utf8Char *name);
 		status_t renameFile(
-			vfsDirInodeC *inode, utf8Char *oldName, utf8Char *newName);
+			vfsDirINode *inode, utf8Char *oldName, utf8Char *newName);
 
 		// Tree manipulation.
 		vfsDirC *getDefaultTree(void);
@@ -241,13 +241,13 @@ namespace hvfs
 			}
 
 			utf8Char	name[HVFS_TAG_NAME_MAXLEN];
-			tagC		*tag;
+			Tag		*tag;
 		};
 
-		class slamCacheC	*tagCache;
-		tagC			rootTag;
-		dirInodeC		rootInode;
-		sharedResourceGroupC<multipleReaderLockC, defaultTreeInfoS>
+		class SlamCache	*Tagache;
+		Tag			rootTag;
+		dirINode		rootInode;
+		SharedResourceGroup<MultipleReaderLock, defaultTreeInfoS>
 			defaultTree;
 	};
 }

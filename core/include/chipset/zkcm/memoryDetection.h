@@ -6,7 +6,7 @@
 	#include <chipset/zkcm/memoryMap.h>
 	#include <__kstdlib/__ktypes.h>
 
-class zkcmMemoryDetectionModC
+class ZkcmMemoryDetectionMod
 {
 public:
 	error_t initialize(void);

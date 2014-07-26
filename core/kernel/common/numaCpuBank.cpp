@@ -8,14 +8,14 @@
 
 
 #if __SCALING__ >= SCALING_CC_NUMA
-numaCpuBankC::numaCpuBankC(void)
+NumaCpuBank::NumaCpuBank(void)
 :
 capacity(0), load(0)
 {
 	nTasks.rsrc = 0;
 }
 
-error_t numaCpuBankC::initialize(uarch_t nBits)
+error_t NumaCpuBank::initialize(uarch_t nBits)
 {
 	error_t		ret;
 
@@ -25,10 +25,10 @@ error_t numaCpuBankC::initialize(uarch_t nBits)
 }
 
 #if __SCALING__ >= SCALING_SMP
-error_t numaCpuBankC::schedule(threadC *thread)
+error_t NumaCpuBank::schedule(Thread *thread)
 {
 	ubit32		lowestLoad = 0xFFFFFFFF;
-	cpuStreamC	*bestCpu=NULL, *curCpu;
+	cpuStream	*bestCpu=NULL, *curCpu;
 
 	for (uarch_t i=0;
 		i<thread->getTaskContext()->cpuAffinity.getNBits(); i++)
@@ -53,7 +53,7 @@ error_t numaCpuBankC::schedule(threadC *thread)
 }
 #endif
 
-void numaCpuBankC::updateCapacity(ubit8 action, uarch_t val)
+void NumaCpuBank::updateCapacity(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
@@ -75,7 +75,7 @@ void numaCpuBankC::updateCapacity(ubit8 action, uarch_t val)
 	taskTrib.updateCapacity(action, val);
 }
 
-void numaCpuBankC::updateLoad(ubit8 action, uarch_t val)
+void NumaCpuBank::updateLoad(ubit8 action, uarch_t val)
 {
 	switch (action)
 	{
@@ -97,7 +97,7 @@ void numaCpuBankC::updateLoad(ubit8 action, uarch_t val)
 	taskTrib.updateLoad(action, val);
 }
 
-void numaCpuBankC::__kspaceInitialize(void)
+void NumaCpuBank::__kspaceInitialize(void)
 {
 	/**	EXPLANATION:
 	 * On a NUMA build, __kspace's CPU Bank should hold the __kspace

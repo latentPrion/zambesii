@@ -14,21 +14,21 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-error_t memoryStreamC::bind(void)
+error_t MemoryStream::bind(void)
 {
 	return ERROR_SUCCESS;
 }
 
-void memoryStreamC::cut(void)
+void MemoryStream::cut(void)
 {
 }
 
-void memoryStreamC::dump(void)
+void MemoryStream::dump(void)
 {
 	printf(NOTICE MEMORYSTREAM"%d: Dumping.\n", id);
 }
 
-void *memoryStreamC::memAlloc(uarch_t nPages, uarch_t flags)
+void *MemoryStream::memAlloc(uarch_t nPages, uarch_t flags)
 {
 	uarch_t		commit=nPages, f, nTries, localFlush=0;
 	status_t	totalFrames, nFrames, nMapped;
@@ -167,7 +167,7 @@ releaseAndUnmap:
 	return NULL;
 }
 
-void memoryStreamC::memFree(void *vaddr)
+void MemoryStream::memFree(void *vaddr)
 {
 	paddr_t		paddr;
 	error_t		err;

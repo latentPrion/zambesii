@@ -12,7 +12,7 @@
 	 **/
 
 template <class lockType, class resourceType>
-class sharedResourceGroupC
+class SharedResourceGroup
 {
 public:
 	lockType	lock;

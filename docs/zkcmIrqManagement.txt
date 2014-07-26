@@ -3,7 +3,7 @@ Int Trib API:
 	 * of handlers on that __kpin.
 	 **/
 	status_t zkcm::registerPinIsr(
-		__kpin, zkcmDeviceC *device, void *handler, uarch_t flags);
+		__kpin, ZkcmDevice *device, void *handler, uarch_t flags);
 
 	/* DOES mask the pin off if there is no other handler left on it.
 	 * Returns 1 if the physical pin was masked off as a result of this
@@ -15,7 +15,7 @@ Int Trib API:
 	sarch_t __kpinDisable(__kpin);
 
 	status_t zkcm::registerMsiIsr(
-		uarch_t vector, zkcmDeviceC *device, void *handler,
+		uarch_t vector, ZkcmDevice *device, void *handler,
 		uarch_t flags);
 
 	sarch_t zkcm::retireMsiIsr(uarch_t vector, void *handle)

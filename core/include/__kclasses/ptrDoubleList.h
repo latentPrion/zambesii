@@ -17,10 +17,10 @@
 #define PTRDBLLIST_ADD_TAIL		0x1
 
 template <class T>
-class pointerDoubleListC
+class PtrDblList
 {
 public:
-	pointerDoubleListC(void)
+	PtrDblList(void)
 	:
 	objectCache(NULL)
 	{
@@ -28,7 +28,7 @@ public:
 		list.rsrc.nItems = 0;
 	}
 
-	~pointerDoubleListC(void)
+	~PtrDblList(void)
 	{
 		cachePool.destroyCache(objectCache);
 	};
@@ -66,14 +66,14 @@ protected:
 		listNodeS	*prev, *next;
 	};
 
-	struct listStateS
+	struct sListState
 	{
 		listNodeS	*head, *tail;
 		uarch_t		nItems;
 	};
 
-	sharedResourceGroupC<waitLockC, listStateS>	list;
-	slamCacheC		*objectCache;
+	SharedResourceGroup<WaitLock, sListState>	list;
+	SlamCache		*objectCache;
 };
 
 
@@ -81,7 +81,7 @@ protected:
  ******************************************************************************/
 
 template <class T>
-uarch_t pointerDoubleListC<T>::getNItems(void)
+uarch_t PtrDblList<T>::getNItems(void)
 {
 	uarch_t		ret;
 
@@ -93,7 +93,7 @@ uarch_t pointerDoubleListC<T>::getNItems(void)
 }
 
 template <class T>
-void pointerDoubleListC<T>::dump(void)
+void PtrDblList<T>::dump(void)
 {
 	listNodeS	*curr, *head, *tail;
 	sbit8		flipFlop=0;
@@ -125,7 +125,7 @@ void pointerDoubleListC<T>::dump(void)
 }
 
 template <class T>
-error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
+error_t PtrDblList<T>::addItem(T *item, ubit8 mode)
 {
 	listNodeS	*newNode;
 
@@ -189,7 +189,7 @@ error_t pointerDoubleListC<T>::addItem(T *item, ubit8 mode)
 }
 
 template <class T>
-void pointerDoubleListC<T>::removeItem(T *item)
+void PtrDblList<T>::removeItem(T *item)
 {
 	listNodeS	*curr;
 
@@ -230,7 +230,7 @@ void pointerDoubleListC<T>::removeItem(T *item)
 }
 
 template <class T>
-T *pointerDoubleListC<T>::popFromHead(void)
+T *PtrDblList<T>::popFromHead(void)
 {
 	T		*ret=NULL;
 	listNodeS	*tmp;
@@ -266,7 +266,7 @@ T *pointerDoubleListC<T>::popFromHead(void)
 }
 
 template <class T>
-T *pointerDoubleListC<T>::popFromTail(void)
+T *PtrDblList<T>::popFromTail(void)
 {
 	T		*ret=NULL;
 	listNodeS	*tmp;
@@ -302,7 +302,7 @@ T *pointerDoubleListC<T>::popFromTail(void)
 }
 
 template <class T>
-T *pointerDoubleListC<T>::getHead(void)
+T *PtrDblList<T>::getHead(void)
 {
 	T	*ret=NULL;
 
@@ -318,7 +318,7 @@ T *pointerDoubleListC<T>::getHead(void)
 }
 
 template <class T>
-T *pointerDoubleListC<T>::getTail(void)
+T *PtrDblList<T>::getTail(void)
 {
 	T	*ret=NULL;
 

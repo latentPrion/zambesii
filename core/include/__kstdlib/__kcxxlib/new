@@ -4,14 +4,14 @@
 	#include <stddef.h>
 	#include <__kstdlib/__ktypes.h>
 
-class memReservoirC;
+class MemReservoir;
 
 // Placement new and placement new[].
 inline void *operator new(size_t, void *ptr) { return ptr; }
 inline void *operator new[](size_t, void *ptr) { return ptr; }
 
-void *operator new(size_t size, memReservoirC *heap);
-inline void *operator new[](size_t nBytes, memReservoirC *heap)
+void *operator new(size_t size, MemReservoir *heap);
+inline void *operator new[](size_t nBytes, MemReservoir *heap)
 {
 	return ::operator new(nBytes, heap);
 }
@@ -44,8 +44,8 @@ inline void *operator new[](size_t nBytes)
 inline void operator delete(void *, void *) {}
 inline void operator delete[](void *, void *) {}
 
-void operator delete(void *ptr, memReservoirC *heap);
-inline void operator delete[](void *ptr, memReservoirC *heap)
+void operator delete(void *ptr, MemReservoir *heap);
+inline void operator delete[](void *ptr, MemReservoir *heap)
 {
 	::operator delete(ptr, heap);
 }
