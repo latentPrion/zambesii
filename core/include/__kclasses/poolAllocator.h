@@ -43,7 +43,7 @@
  **/
 class poolAllocatorC
 :
-public allocClassC
+public AllocatorBase
 {
 public:
 	poolAllocatorC(void);

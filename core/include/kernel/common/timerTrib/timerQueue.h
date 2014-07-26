@@ -78,7 +78,7 @@ private:
 	 **/
 	sarch_t testTimerDeviceSuitability(zkcmTimerDeviceC *dev)
 	{
-		timeS		min, max;
+		sTime		min, max;
 
 		dev->getPeriodicModeMinMaxPeriod(&min, &max);
 		if (nativePeriod < min.nseconds || nativePeriod > max.nseconds)
@@ -158,7 +158,7 @@ private:
 	ubit32		currentPeriod, nativePeriod;
 
 	// The actual internal queue instance for timer request objects.
-	sortedPointerDoubleListC<timerStreamC::timerMsgS, timestampS>
+	sortedPointerDoubleListC<timerStreamC::timerMsgS, sTimestamp>
 		requestQueue;
 
 	// Used to prevent a series of race conditions.

@@ -36,9 +36,9 @@
 extern "C" void __korientationInit(ubit32 mbMagic, multibootDataS *mbData);
 extern "C" void __korientationMain(void);
 
-class threadC;
+class Thread;
 
-extern threadC		__korientationThread;
+extern Thread		__korientationThread;
 extern ubit8		__korientationStack[];
 extern ubit8		__korientationPreallocatedBmpMem[][64];
 

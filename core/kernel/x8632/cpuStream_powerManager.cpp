@@ -119,14 +119,14 @@ status_t cpuStreamC::powerManagerC::bootPowerOn(ubit32)
 	 **/
 	// Set a 10 millisecond timeout.
 	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 0, 10000000), 0, 0, parent);
+		sTimestamp(0, 0, 10000000), 0, 0, parent);
 
 	return ERROR_SUCCESS;
 }
 
 void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 {
-	messageStreamC::iteratorS	event;
+	messageStreamC::sIterator	event;
 	cpuStreamC			*cs;
 	sarch_t				loopAgain;
 	uarch_t				sipiVector;
@@ -180,7 +180,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 
 				processTrib.__kgetStream()->timerStream
 					.createRelativeOneshotEvent(
-						timestampS(0, 0, 200000),
+						sTimestamp(0, 0, 200000),
 						0, 0, cs);
 
 				loopAgain = 1;
@@ -208,7 +208,7 @@ void cpuStreamC::powerManagerC::bootWaitForCpuToPowerOn(void)
 
 			processTrib.__kgetStream()->timerStream
 				.createRelativeOneshotEvent(
-					timestampS(0, 0, 200000),
+					sTimestamp(0, 0, 200000),
 					0, 0, cs);
 
 			loopAgain = 1;

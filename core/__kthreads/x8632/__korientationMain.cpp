@@ -27,7 +27,7 @@ int oo=0, pp=0, qq=0, rr=0;
 #include <commonlibs/libacpi/libacpi.h>
 static void rDumpSrat(void)
 {
-	acpi_rsdtS	*rsdt;
+	acpi_sRsdt	*rsdt;
 	acpi_rSratS	*srat;
 	void		*context, *handle;
 	uarch_t		nSrats;
@@ -150,7 +150,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 {
 	error_t			ret;
 	uarch_t			devMask;
-	threadC			*mainTask;
+	Thread			*mainTask;
 	containerProcessC	&__kprocess = *processTrib.__kgetStream();
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
@@ -210,7 +210,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	 **/
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
-	asyncContextCache = cachePool.createCache(sizeof(syscallbackC));
+	asyncContextCache = cachePool.createCache(sizeof(Syscallback));
 	if (asyncContextCache == NULL)
 	{
 		printf(FATAL ORIENT"Main: Failed to create asynch context "
@@ -228,6 +228,9 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
 
+	printf(NOTICE"Hello, Metal Industries!\n");
+asm volatile ("cli\n\thlt\n\t");
+
 	/* Spawn the new thread for __korientationMain. There is no need to
 	 * unschedule __korientationInit() because it will never be scheduled.
 	**/
@@ -236,7 +239,7 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 		spawnThread(
 			(void (*)(void *))&__korientationMain, NULL,
 			NULL,
-			taskC::ROUND_ROBIN,
+			Task::ROUND_ROBIN,
 			0,
 			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
 			&mainTask),
@@ -271,8 +274,8 @@ void __korientationMain1(void)
 	floodplainn.setZudiIndexServerTid(dp->id);
 }
 
-floodplainnC::initializeReqCallF __korientationMain3;
-void __korientationMain2(messageStreamC::iteratorS *msg, void *)
+Floodplainn::initializeReqCallF __korientationMain3;
+void __korientationMain2(messageStreamC::sIterator *msg, void *)
 {
 	error_t		ret;
 
@@ -295,15 +298,15 @@ void __korientationMain3(error_t ret)
 		newSyscallback(&__korientationMain4));
 }
 
-void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
+void __korientationMain4(messageStreamC::sIterator *msgIt, void *)
 {
-	threadC				*self;
-	fplainn::deviceC		*chipsetDev;
+	Thread				*self;
+	fplainn::Device		*chipsetDev;
 	error_t				ret;
-	floodplainnC::zudiIndexMsgS	*msg;
+	Floodplainn::zudiIndexMsgS	*msg;
 
-	msg = (floodplainnC::zudiIndexMsgS *)msgIt;
-	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
+	msg = (Floodplainn::zudiIndexMsgS *)msgIt;
+	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
 
 	if (msg->info.action != zuiServer::NDACTION_INSTANTIATE)
@@ -354,7 +357,7 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 
 	sarch_t		waitForTimeout=1;
 	ret = self->parent->timerStream.createRelativeOneshotEvent(
-		timestampS(0, 3, 0), 0, 0, NULL);
+		sTimestamp(0, 3, 0), 0, 0, NULL);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -364,7 +367,7 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 
 	for (ubit8 i=0; i<((waitForTimeout) ? 0xFF : 3); i++)
 	{
-		messageStreamC::iteratorS	iMessage;
+		messageStreamC::sIterator	iMessage;
 
 		self->getTaskContext()->messageStream.pull(&iMessage);
 
@@ -416,10 +419,10 @@ void __korientationMain4(messageStreamC::iteratorS *msgIt, void *)
 void __korientationMain1(void);
 void __korientationMain(void)
 {
-	threadC			*self;
+	Thread			*self;
 	sarch_t			exitLoop=0;
 
-	self = static_cast<threadC *>( cpuTrib.getCurrentCpuStream()->taskStream
+	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
 
 	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
@@ -428,11 +431,11 @@ void __korientationMain(void)
 	__korientationMain1();
 	for (; !exitLoop;)
 	{
-		messageStreamC::iteratorS	iMessage;
-		syscallbackC			*messageCallback;
+		messageStreamC::sIterator	iMessage;
+		Syscallback			*messageCallback;
 
 		self->getTaskContext()->messageStream.pull(&iMessage);
-		messageCallback = (syscallbackC *)iMessage.header.privateData;
+		messageCallback = (Syscallback *)iMessage.header.privateData;
 
 		switch (iMessage.header.subsystem)
 		{

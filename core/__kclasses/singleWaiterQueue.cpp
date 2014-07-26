@@ -71,15 +71,15 @@ error_t singleWaiterQueueC::pop(void **item, uarch_t flags)
 			return ERROR_WOULD_BLOCK;
 		};
 
-		lockC::operationDescriptorS	unlockDescriptor(
+		Lock::operationDescriptorS	unlockDescriptor(
 			&lock,
-			lockC::operationDescriptorS::WAIT);
+			Lock::operationDescriptorS::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
 	};
 }
 
-error_t singleWaiterQueueC::setWaitingThread(threadC *newThread)
+error_t singleWaiterQueueC::setWaitingThread(Thread *newThread)
 {
 	if (newThread == NULL) { return ERROR_INVALID_ARG; };
 

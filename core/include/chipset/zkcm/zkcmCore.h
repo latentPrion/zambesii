@@ -10,10 +10,10 @@
 	#include <chipset/pkg/watchdogMod.h>
 	#include <kernel/common/smpTypes.h>
 
-class zkcmCoreC
+class ZkcmCore
 {
 public:
-	zkcmCoreC(utf8Char *chipsetName, utf8Char *chipsetVendor);
+	ZkcmCore(utf8Char *chipsetName, utf8Char *chipsetVendor);
 
 public:
 	error_t initialize(void);
@@ -25,7 +25,7 @@ public:
 	utf8Char	chipsetVendor[96];
 
 	zkcmMemoryDetectionModC		memoryDetection;
-	zkcmCpuDetectionModC		cpuDetection;
+	ZkcmCpuDetectionMod		cpuDetection;
 
 	// XXX: Still to be updated.
 	watchdogModS			watchdog;
@@ -37,7 +37,7 @@ public:
 	void newCpuIdNotification(cpu_t highestCpuId);
 };
 
-extern zkcmCoreC		zkcmCore;
+extern ZkcmCore		zkcmCore;
 
 #endif
 

@@ -256,7 +256,7 @@ error_t memoryTribC::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	numaMemoryBankC		*currBank;
 	error_t			ret;
 	uarch_t			rwFlags;
-	taskContextC		*taskContext;
+	TaskContext		*taskContext;
 
 	taskContext = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTaskContext();

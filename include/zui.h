@@ -20,7 +20,7 @@
 
 namespace zui
 {
-	struct headerS
+	struct sHeader
 	{
 		// Version of the record format used in this index file.
 		// "endianness" is a NULL-terminated string of either "le" or "be".
@@ -33,7 +33,7 @@ namespace zui
 
 	namespace device
 	{
-		struct headerS
+		struct sHeader
 		{
 			uint32_t	driverId;
 			uint16_t	index;
@@ -66,7 +66,7 @@ namespace zui
 				FILE *strings);
 #endif
 
-			struct headerS		h;
+			struct sHeader		h;
 			struct _attrDataS	d[ZUI_DEVICE_MAX_NATTRS];
 		};
 	}
@@ -78,7 +78,7 @@ namespace zui
 	{
 		enum typeE	{ DRIVERTYPE_DRIVER, DRIVERTYPE_METALANGUAGE };
 
-		struct headerS
+		struct sHeader
 		{
 			// TODO: Add support for custom attributes.
 			uint32_t	id, type;
@@ -122,13 +122,13 @@ namespace zui
 		#define ZUI_DRIVER_REQUIREMENT_MAXLEN		\
 					(ZUI_DRIVER_METALANGUAGE_MAXLEN)
 
-		struct requirementS
+		struct sRequirement
 		{
 			uint32_t	version;
 			uint32_t	nameOff;
 		};
 
-		struct _requirementS
+		struct _sRequirement
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -138,13 +138,13 @@ namespace zui
 			char		name[ZUI_DRIVER_REQUIREMENT_MAXLEN];
 		};
 
-		struct metalanguageS
+		struct sMetalanguage
 		{
 			uint16_t	index;
 			uint32_t	nameOff;
 		};
 
-		struct _metalanguageS
+		struct _sMetalanguage
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -171,13 +171,13 @@ namespace zui
 					opsIndex0, opsIndex1, bindCbIndex;
 		};
 
-		struct moduleS
+		struct Module
 		{
 			uint16_t	index;
 			uint32_t	fileNameOff;
 		};
 
-		struct _moduleS
+		struct _Module
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -198,7 +198,7 @@ namespace zui
 		#define	ZUI_REGION_FLAGS_FP		(1<<0)
 		#define	ZUI_REGION_FLAGS_DYNAMIC	(1<<1)
 		#define	ZUI_REGION_FLAGS_INTERRUPT	(1<<2)
-		struct regionS
+		struct sRegion
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -211,14 +211,14 @@ namespace zui
 			uint32_t	flags;
 		};
 
-		struct messageS
+		struct Message
 		{
 			uint32_t	driverId;
 			uint16_t	index;
 			uint32_t	messageOff;
 		};
 
-		struct _messageS
+		struct _Message
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -281,7 +281,7 @@ namespace zui
 			char		fileName[ZUI_FILENAME_MAXLEN];
 		};
 
-		struct provisionS
+		struct Provision
 		{
 			uint32_t	driverId;
 			uint32_t	version;
@@ -289,7 +289,7 @@ namespace zui
 		};
 
 		#define ZUI_PROVISION_NAME_MAXLEN	(ZUI_DRIVER_METALANGUAGE_MAXLEN)
-		struct _provisionS
+		struct _Provision
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -300,13 +300,13 @@ namespace zui
 			char		name[ZUI_PROVISION_NAME_MAXLEN];
 		};
 
-		struct driverS
+		struct Driver
 		{
-			struct zui::driver::headerS	h;
-			struct _requirementS		requirements[
+			struct zui::driver::sHeader	h;
+			struct _sRequirement		requirements[
 				ZUI_DRIVER_MAX_NREQUIREMENTS];
 
-			struct _metalanguageS		metalanguages[
+			struct _sMetalanguage		metalanguages[
 				ZUI_DRIVER_MAX_NMETALANGUAGES];
 
 			struct childBopS		childBops[
@@ -318,7 +318,7 @@ namespace zui
 			struct internalBopS		internalBops[
 				ZUI_DRIVER_MAX_NINTERNAL_BOPS];
 
-			struct _moduleS			modules[
+			struct _Module			modules[
 				ZUI_DRIVER_MAX_NMODULES];
 		};
 	}
@@ -326,7 +326,7 @@ namespace zui
 	namespace rank
 	{
 		#define ZUI_RANK_MAX_NATTRS		(ZUI_DEVICE_MAX_NATTRS)
-		struct headerS
+		struct sHeader
 		{
 			uint32_t	driverId;
 			uint8_t		nAttributes, rank;
@@ -353,7 +353,7 @@ namespace zui
 			int writeOut(FILE *rankF, FILE *dataF, FILE *stringF);
 #endif
 
-			struct zui::rank::headerS	h;
+			struct zui::rank::sHeader	h;
 			struct zui::rank::_rankAttrS	d[ZUI_RANK_MAX_NATTRS];
 		};
 	}

@@ -11,7 +11,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-static x86IoApic::cacheS	cache;
+static x86IoApic::sCache	cache;
 
 void x86IoApic::initializeCache(void)
 {
@@ -96,7 +96,7 @@ static error_t rsdtDetectIoApics(void)
 {
 	error_t			ret;
 	x86IoApic::ioApicC	*tmp;
-	acpi_rsdtS		*rsdt;
+	acpi_sRsdt		*rsdt;
 	acpi_rMadtS		*madt;
 	acpi_rMadtIoApicS	*ioApicEntry;
 	void			*handle, *handle2, *context;

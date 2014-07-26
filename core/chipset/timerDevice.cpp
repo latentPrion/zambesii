@@ -81,7 +81,7 @@ sarch_t zkcmTimerDeviceC::getLatchState(class floodplainnStreamC **latchedStream
 sarch_t zkcmTimerDeviceC::validateCallerIsLatched(void)
 {
 	floodplainnStreamC	*stream;
-	taskC			*currTask;
+	Task			*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()
 		->taskStream.getCurrentTask();

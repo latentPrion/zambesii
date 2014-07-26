@@ -17,7 +17,7 @@
 	#include <kernel/common/zudiIndexServer.h>
 	#include <kernel/common/floodplainn/fvfs.h>	// FVFS_TAG_NAME_MAXLEN
 
-/**	deviceC:
+/**	Device:
  * Base type for a device in general. The type of driver used to instantiate
  * the device is independent of this class; both the driver instance and the
  * driver are simply pointed to by the device.
@@ -59,30 +59,30 @@ struct metaInitEntryS
 	udi_mei_init_t	*udi_meta_info;
 };
 
-struct driverClassMapEntryS
+struct DriverlassMapEntryS
 {
 	utf8Char	*metaName;
 	uarch_t		classIndex;
-} extern driverClassMap[];
+} extern DriverlassMap[];
 
-extern utf8Char		*driverClasses[];
+extern utf8Char		*Driverlasses[];
 
 namespace fplainn
 {
-	class driverC;
+	class Driver;
 	class deviceInstanceC;
 	class driverInstanceC;
 
-	/**	deviceC:
+	/**	Device:
 	 * Data type used to represent a single device in the kernel's device
 	 * tree.
 	 **********************************************************************/
-	class deviceC
+	class Device
 	:
-	public vfs::dirInodeC<fvfs::tagC>
+	public vfs::dirINode<fvfs::Tag>
 	{
 	public:
-		deviceC(numaBankId_t bid)
+		Device(numaBankId_t bid)
 		:
 		bankId(bid), driverInstance(NULL), instance(NULL),
 		nEnumerationAttrs(0), nInstanceAttrs(0), nClasses(0),
@@ -99,22 +99,22 @@ namespace fplainn
 
 		error_t initialize(void)
 		{
-			return vfs::dirInodeC<fvfs::tagC>::initialize();
+			return vfs::dirINode<fvfs::Tag>::initialize();
 		}
 
-		~deviceC(void) {};
+		~Device(void) {};
 
 	public:
 		/**	EXPLANATION:
 		 * These are the publicly exposed wrappers around the underlying
-		 * vfs::dirInodeC:: namespace methods. We hid the *DirTag()
+		 * vfs::dirINode:: namespace methods. We hid the *DirTag()
 		 * functions with overloads, and then "renamed" them to
 		 * *Child() so we could have more intuitive naming, and more
 		 * suitable function prototypes.
 		 **/
 		error_t createChild(
-			utf8Char *name, fvfs::tagC *parent,
-			deviceC *device, fvfs::tagC **tag)
+			utf8Char *name, fvfs::Tag *parent,
+			Device *device, fvfs::Tag **tag)
 		{
 			error_t		ret;
 
@@ -128,7 +128,7 @@ namespace fplainn
 			return ERROR_SUCCESS;
 		}
 
-		fvfs::tagC *getChild(utf8Char *name) { return getDirTag(name); }
+		fvfs::Tag *getChild(utf8Char *name) { return getDirTag(name); }
 		sarch_t removeChild(utf8Char *name)
 			{ return removeDirTag(name); }
 
@@ -140,7 +140,7 @@ namespace fplainn
 			id(0), tag(NULL)
 			{}
 
-			parentTagS(ubit16 id, fvfs::tagC *tag)
+			parentTagS(ubit16 id, fvfs::Tag *tag)
 			:
 			id(id), tag(tag)
 			{}
@@ -158,7 +158,7 @@ namespace fplainn
 			 * Talk much less about a 32 bit counter.
 			 **/
 			ubit16		id;
-			fvfs::tagC	*tag;
+			fvfs::Tag	*tag;
 		};
 
 		error_t addClass(utf8Char *name);
@@ -166,8 +166,8 @@ namespace fplainn
 		error_t getEnumerationAttribute(
 			utf8Char *name, udi_instance_attr_list_t *attrib);
 
-		error_t addParentTag(fvfs::tagC *tag, ubit16 *newIdRetval);
-		void removeParentTag(fvfs::tagC *tag);
+		error_t addParentTag(fvfs::Tag *tag, ubit16 *newIdRetval);
+		void removeParentTag(fvfs::Tag *tag);
 
 		void dumpEnumerationAttributes(void);
 
@@ -175,36 +175,36 @@ namespace fplainn
 		/* Not meant to be used by callers. Used only internally as
 		 * wrapper functions. Deliberately made private.
 		 **/
-		fvfs::tagC *createDirTag(
+		fvfs::Tag *createDirTag(
 			utf8Char *name, vfs::tagTypeE type,
-			fvfs::tagC *parent, vfs::dirInodeC<fvfs::tagC> *dev,
+			fvfs::Tag *parent, vfs::dirINode<fvfs::Tag> *dev,
 			error_t *err)
 		{
-			return vfs::dirInodeC<fvfs::tagC>::createDirTag(
+			return vfs::dirINode<fvfs::Tag>::createDirTag(
 				name, type, parent, dev, err);
 		}
 
 		sarch_t removeDirTag(utf8Char *n)
-			{ return vfs::dirInodeC<fvfs::tagC>::removeDirTag(n); }
+			{ return vfs::dirINode<fvfs::Tag>::removeDirTag(n); }
 
-		fvfs::tagC *getDirTag(utf8Char *name)
-			{ return vfs::dirInodeC<fvfs::tagC>::getDirTag(name); }
+		fvfs::Tag *getDirTag(utf8Char *name)
+			{ return vfs::dirINode<fvfs::Tag>::getDirTag(name); }
 
 		/* The leaf functions are not meant to be used at all by anyone;
 		 * not even internals within this class, and they override the
 		 * base-class functions of the same name, returning error
 		 * unconditionally.
 		 **/
-		fvfs::tagC *createLeafTag(
-			utf8Char *, vfs::tagTypeE, fvfs::tagC *,
-			vfs::inodeC *, error_t *err)
+		fvfs::Tag *createLeafTag(
+			utf8Char *, vfs::tagTypeE, fvfs::Tag *,
+			vfs::iNode *, error_t *err)
 		{
 			*err = ERROR_UNIMPLEMENTED;
 			return NULL;
 		}
 
 		sarch_t removeLeafTag(utf8Char *) { return 0; }
-		fvfs::tagC *getLeafTag(utf8Char *) { return NULL; }
+		fvfs::Tag *getLeafTag(utf8Char *) { return NULL; }
 		error_t findEnumerationAttribute(
 			utf8Char *name, udi_instance_attr_list_t **attr);
 
@@ -236,7 +236,7 @@ namespace fplainn
 	class deviceInstanceC
 	{
 	public:
-		deviceInstanceC(deviceC *dev)
+		deviceInstanceC(Device *dev)
 		:
 		nChannels(0),
 		device(dev),
@@ -260,40 +260,40 @@ namespace fplainn
 			udi_init_context_t **rdata);
 
 	public:
-		struct regionS
+		struct sRegion
 		{
 			ubit16			index;
 			processId_t		tid;
 			udi_init_context_t	*rdata;
 		};
 
-		struct channelS
+		struct sChannel
 		{
-			channelS(
-				threadC *t0, udi_ops_vector_t *opsVec0,
+			sChannel(
+				Thread *t0, udi_ops_vector_t *opsVec0,
 				udi_init_context_t *chanContext0,
-				threadC *t1, udi_ops_vector_t *opsVec1,
+				Thread *t1, udi_ops_vector_t *opsVec1,
 				udi_init_context_t *chanContext1)
 			{
-				new (&endpoints[0]) endpointS(
+				new (&endpoints[0]) sEndpoint(
 					this, &endpoints[1],
 					t0, opsVec0, chanContext0);
 
-				new (&endpoints[1]) endpointS(
+				new (&endpoints[1]) sEndpoint(
 					this, &endpoints[0],
 					t1, opsVec1, chanContext1);
 			}
 
-			struct endpointS
+			struct sEndpoint
 			{
-				friend struct fplainn::deviceInstanceC::channelS;
+				friend struct fplainn::deviceInstanceC::sChannel;
 				// Private, void constructor that does nothing.
-				endpointS(void) {}
+				sEndpoint(void) {}
 
 			public:
-				endpointS(
-					channelS *parent, endpointS *otherEnd,
-					threadC *thread,
+				sEndpoint(
+					sChannel *parent, sEndpoint *otherEnd,
+					Thread *thread,
 					udi_ops_vector_t *opsVector,
 					udi_init_context_t *chanContext)
 				:
@@ -303,9 +303,9 @@ namespace fplainn
 				channelContext(chanContext)
 				{}
 
-				channelS		*parent;
-				endpointS		*otherEnd;
-				threadC			*thread;
+				sChannel		*parent;
+				sEndpoint		*otherEnd;
+				Thread			*thread;
 				udi_ops_vector_t	*opsVector;
 				udi_init_context_t	*channelContext;
 			};
@@ -317,11 +317,11 @@ namespace fplainn
 				spawnIndex(-1), channel(NULL)
 				{}
 
-				ptrlessListC<incompleteChannelS>::headerS
+				ptrlessListC<incompleteChannelS>::sHeader
 					listHeader;
 
 				udi_index_t	spawnIndex;
-				channelS	*channel;
+				sChannel	*channel;
 			};
 
 			/**	EXPLANATION:
@@ -333,17 +333,17 @@ namespace fplainn
 			 * this list.
 			 **/
 			ptrlessListC<incompleteChannelS> incompleteChannels;
-			endpointS				endpoints[2];
+			sEndpoint				endpoints[2];
 		};
 
-		error_t addChannel(channelS *newChan);
-		void removeChannel(channelS *chan);
+		error_t addChannel(sChannel *newChan);
+		void removeChannel(sChannel *chan);
 
 	public:
 		ubit16			nChannels;
-		deviceC			*device;
-		regionS			*regions;
-		channelS		**channels;
+		Device			*device;
+		sRegion			*regions;
+		sChannel		**channels;
 		udi_init_context_t	*mgmtChannelContext;
 
 		// XXX: ONLY to be used by __klibzbzcore.
@@ -352,23 +352,23 @@ namespace fplainn
 
 	class driverInstanceC;
 
-	/**	driverC:
-	 * driverC represents a UDI driver in the kernel's metadata. It stores
+	/**	Driver:
+	 * Driver represents a UDI driver in the kernel's metadata. It stores
 	 * enough information about a driver to enable the kernel to instantiate
 	 * a process for devices which are driven by that driver.
 	 **********************************************************************/
-	class driverC
+	class Driver
 	{
 	public:
-		struct moduleS;
-		struct regionS;
-		struct requirementS;
-		struct metalanguageS;
+		struct Module;
+		struct sRegion;
+		struct sRequirement;
+		struct sMetalanguage;
 		struct childBopS;
 		struct parentBopS;
 		struct internalBopS;
 
-		driverC(zuiServer::indexE index)
+		Driver(zuiServer::indexE index)
 		:
 		index(index),
 		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
@@ -392,7 +392,7 @@ namespace fplainn
 			return ERROR_SUCCESS;
 		}
 
-		~driverC(void){}
+		~Driver(void){}
 
 	public:
 		error_t preallocateModules(uarch_t nModules);
@@ -409,9 +409,9 @@ namespace fplainn
 
 		void dump(void);
 
-		struct moduleS
+		struct Module
 		{
-			moduleS(ubit16 index, utf8Char *filename)
+			Module(ubit16 index, utf8Char *filename)
 			:
 			index(index), nAttachedRegions(0), regionIndexes(NULL)
 			{
@@ -430,8 +430,8 @@ namespace fplainn
 			utf8Char	filename[DRIVER_SHORTNAME_MAXLEN];
 
 		private:
-			friend class fplainn::driverC;
-			moduleS(void)
+			friend class fplainn::Driver;
+			Module(void)
 			:
 			index(0), nAttachedRegions(0), regionIndexes(NULL)
 			{
@@ -439,9 +439,9 @@ namespace fplainn
 			}
 		};
 
-		struct regionS
+		struct sRegion
 		{
-			regionS(ubit16 index, ubit16 moduleIndex, ubit32 flags)
+			sRegion(ubit16 index, ubit16 moduleIndex, ubit32 flags)
 			:
 			index(index), moduleIndex(moduleIndex),
 			dataSize(0), flags(flags)
@@ -456,17 +456,17 @@ namespace fplainn
 			ubit32		flags;
 
 		private:
-			friend class fplainn::driverC;
-			regionS(void)
+			friend class fplainn::Driver;
+			sRegion(void)
 			:
 			index(0), moduleIndex(0),
 			dataSize(0), flags(0)
 			{}
 		};
 
-		struct requirementS
+		struct sRequirement
 		{
-			requirementS(utf8Char *name, ubit32 version)
+			sRequirement(utf8Char *name, ubit32 version)
 			:
 			fullName(NULL), version(version)
 			{
@@ -480,8 +480,8 @@ namespace fplainn
 			ubit32		version;
 
 		private:
-			friend class fplainn::driverC;
-			requirementS(void)
+			friend class fplainn::Driver;
+			sRequirement(void)
 			:
 			fullName(NULL), version(0)
 			{
@@ -489,9 +489,9 @@ namespace fplainn
 			}
 		};
 
-		struct metalanguageS
+		struct sMetalanguage
 		{
-			metalanguageS(
+			sMetalanguage(
 				ubit16 index, utf8Char *name,
 				udi_mei_init_t *udi_meta_info)
 			:
@@ -508,8 +508,8 @@ namespace fplainn
 			const udi_mei_init_t	*udi_meta_info;
 
 		private:
-			friend class fplainn::driverC;
-			metalanguageS(void)
+			friend class fplainn::Driver;
+			sMetalanguage(void)
 			:
 			index(0), udi_meta_info(NULL)
 			{
@@ -532,7 +532,7 @@ namespace fplainn
 			ubit16		metaIndex, regionIndex, opsIndex;
 
 		private:
-			friend class fplainn::driverC;
+			friend class fplainn::Driver;
 			childBopS(void)
 			:
 			metaIndex(0), regionIndex(0), opsIndex(0)
@@ -555,7 +555,7 @@ namespace fplainn
 					bindCbIndex;
 
 		private:
-			friend class fplainn::driverC;
+			friend class fplainn::Driver;
 			parentBopS(void)
 			:
 			metaIndex(0), regionIndex(0), opsIndex(0),
@@ -582,7 +582,7 @@ namespace fplainn
 					bindCbIndex;
 
 		private:
-			friend class fplainn::driverC;
+			friend class fplainn::Driver;
 			internalBopS(void)
 			:
 			metaIndex(0), regionIndex(0),
@@ -591,7 +591,7 @@ namespace fplainn
 		};
 
 	public:
-		metalanguageS *getMetalanguage(ubit16 index)
+		sMetalanguage *getMetalanguage(ubit16 index)
 		{
 			for (uarch_t i=0; i<nMetalanguages; i++)
 			{
@@ -602,7 +602,7 @@ namespace fplainn
 			return NULL;
 		}
 
-		metalanguageS *getMetalanguage(utf8Char *name)
+		sMetalanguage *getMetalanguage(utf8Char *name)
 		{
 			for (uarch_t i=0; i<nMetalanguages; i++)
 			{
@@ -613,7 +613,7 @@ namespace fplainn
 			return NULL;
 		}
 
-		moduleS *getModule(ubit16 index)
+		Module *getModule(ubit16 index)
 		{
 			for (uarch_t i=0; i<nModules; i++)
 			{
@@ -624,7 +624,7 @@ namespace fplainn
 			return NULL;
 		};
 
-		regionS *getRegion(ubit16 index)
+		sRegion *getRegion(ubit16 index)
 		{
 			for (uarch_t i=0; i<nRegions; i++)
 			{
@@ -710,13 +710,13 @@ namespace fplainn
 		sbit8		allRequirementsSatisfied;
 		uarch_t		childEnumerationAttrSize;
 		// Modules for this driver, and their indexes.
-		moduleS		*modules;
+		Module		*modules;
 		// Regions in this driver and their indexes/module indexes, etc.
-		regionS		*regions;
+		sRegion		*regions;
 		// All required libraries for this driver.
-		requirementS	*requirements;
+		sRequirement	*requirements;
 		// Metalanguage indexes, names, etc.
-		metalanguageS	*metalanguages;
+		sMetalanguage	*metalanguages;
 		childBopS	*childBops;
 		parentBopS	*parentBops;
 		internalBopS	*internalBops;
@@ -750,7 +750,7 @@ namespace fplainn
 		{}
 
 		driverInstanceC(
-			driverC *driver, numaBankId_t bid, processId_t pid)
+			Driver *driver, numaBankId_t bid, processId_t pid)
 		:
 		driver(driver), bankId(bid), pid(pid), childBopVectors(NULL),
 		nHostedDevices(0), hostedDevices(NULL)
@@ -819,7 +819,7 @@ namespace fplainn
 		void removeHostedDevice(utf8Char *path);
 
 	public:
-		driverC				*driver;
+		Driver				*driver;
 		numaBankId_t			bankId;
 		processId_t			pid;
 		childBopS			*childBopVectors;
@@ -877,7 +877,7 @@ inline error_t fplainn::deviceInstanceC::getRegionInfo(
 	return ERROR_NOT_FOUND;
 }
 
-inline fplainn::driverInstanceC *fplainn::driverC::getInstance(numaBankId_t bid)
+inline fplainn::driverInstanceC *fplainn::Driver::getInstance(numaBankId_t bid)
 {
 	for (uarch_t i=0; i<nInstances; i++)
 	{

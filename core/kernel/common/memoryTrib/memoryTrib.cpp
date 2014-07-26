@@ -37,7 +37,7 @@ error_t memoryTribC::initialize(void)
 {
 	availableBanks.initialize(
 		0,
-		bitmapC::preallocatedMemoryS(
+		Bitmap::preallocatedMemoryS(
 			memoryTribAvailableBanksBmpMem,
 			sizeof(memoryTribAvailableBanksBmpMem)));
 

@@ -21,7 +21,7 @@ struct timerRDataS
 	timerApiStatusE		apiStatus;
 	timerModeE		timerMode;
 	// The current value programmed into the counter register.
-	timer_clk_t		currentClkVal;
+	timer_clk_t		CurrenttlkVal;
 	// The current microsecond time requested by the bound child.
 	udi_time_t		currentTimeoutVal;
 };

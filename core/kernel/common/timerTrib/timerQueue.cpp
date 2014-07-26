@@ -62,13 +62,13 @@ void timerQueueC::unlatch(void)
 error_t timerQueueC::enable(void)
 {
 	error_t		ret;
-	timeS		stamp;
+	sTime		stamp;
 
 	if (!isLatched()) {
 		return ERROR_UNINITIALIZED;
 	};
 
-	ret = device->setPeriodicMode(timeS(0, nativePeriod));
+	ret = device->setPeriodicMode(sTime(0, nativePeriod));
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR TIMERQUEUE"%dus: Failed to set periodic mode "
@@ -268,7 +268,7 @@ void timerQueueC::tick(zkcmTimerEventS *event)
 			if (isPerCpuTarget(request)) {
 				taskTrib.unblock((cpuStreamC *)targetObject);
 			} else {
-				taskTrib.unblock((threadC *)targetObject);
+				taskTrib.unblock((Thread *)targetObject);
 			};
 		};
 

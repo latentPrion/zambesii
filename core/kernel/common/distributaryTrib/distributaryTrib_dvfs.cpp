@@ -6,7 +6,7 @@
 #include <kernel/common/distributaryTrib/dvfs.h>
 
 
-dvfs::distributaryInodeC::distributaryInodeC(
+dvfs::distributaryINode::distributaryINode(
 	const distributaryDescriptorS *descriptor, typeE type
 	)
 :
@@ -28,17 +28,17 @@ flags(descriptor->flags), entryAddress(descriptor->entryAddress)
 		DVFS_DINODE_DESCRIPTION_MAXLEN);
 }
 
-static inline dvfs::tagC *getDefaultDtrib(dvfs::tagC *cTag)
+static inline dvfs::Tag *getDefaultDtrib(dvfs::Tag *cTag)
 {
 	return cTag->getCInode()->getLeafTag(CC"default");
 }
 
-error_t dvfs::currenttC::getPath(
-	utf8Char *fullName, tagC **tag
+error_t dvfs::Currentt::getPath(
+	utf8Char *fullName, Tag **tag
 	)
 {
 	uarch_t			i=0;
-	tagC			*currTag, *dTag;
+	Tag			*currTag, *dTag;
 	uarch_t			segmentLen;
 
 	if (fullName == NULL || tag == NULL)

@@ -16,7 +16,7 @@ error_t timerStreamC::initialize(void)
 }
 
 error_t timerStreamC::createOneshotEvent(
-	timestampS stamp, ubit8 type,
+	sTimestamp stamp, ubit8 type,
 	processId_t targetPid,
 	uarch_t flags, void *privateData
 	)
@@ -113,7 +113,7 @@ error_t timerStreamC::pullEvent(
 	ret = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTaskContext()->messageStream.pullFrom(
 			MSGSTREAM_SUBSYSTEM_TIMER,
-			(messageStreamC::iteratorS *)event,
+			(messageStreamC::sIterator *)event,
 			FLAG_TEST(
 				flags, TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK)
 					? ZCALLBACK_PULL_FLAGS_DONT_BLOCK : 0);
@@ -128,12 +128,12 @@ static inline sarch_t isPerCpuTarget(timerStreamC::timerMsgS *request)
 }
 
 void *timerStreamC::timerRequestTimeoutNotification(
-	timerMsgS *request, timestampS *timerMsgStamp
+	timerMsgS *request, sTimestamp *timerMsgStamp
 	)
 {
 	timerMsgS	*event;
 	error_t		ret;
-	taskContextC	*taskContext;
+	TaskContext	*taskContext;
 
 	if (isPerCpuTarget(request) && parent->id != __KPROCESSID)
 	{
@@ -141,8 +141,8 @@ void *timerStreamC::timerRequestTimeoutNotification(
 			"process' timer stream.\n");
 	};
 
-	/* Need to get the correct taskContextC object; this could be a context
-	 * object that is part of a threadC object, or a context object that
+	/* Need to get the correct TaskContext object; this could be a context
+	 * object that is part of a Thread object, or a context object that
 	 * is embedded within a cpuStreamC object.
 	 *
 	 * If TIMERSTREAM_CREATE*_FLAGS_CPU_TARGET is set, then the target
@@ -158,7 +158,7 @@ void *timerStreamC::timerRequestTimeoutNotification(
 	}
 	else
 	{
-		threadC		*t;
+		Thread		*t;
 
 		t = parent->getThread(request->header.targetId);
 		if (t == NULL) { return NULL; };

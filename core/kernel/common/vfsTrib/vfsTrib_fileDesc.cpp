@@ -17,7 +17,7 @@ vfsFileC::vfsFileC(void)
 	refCount = 0;
 }
 
-vfsFileC::vfsFileC(vfsFileInodeC *inode)
+vfsFileC::vfsFileC(vfsFileINode *inode)
 {
 	name = NULL;
 	parent = NULL;
@@ -54,7 +54,7 @@ error_t vfsFileC::initialize(
 	// Allocate inode.
 	if (desc == NULL)
 	{
-		desc = new vfsFileInodeC(inodeHigh, inodeLow, fileSize);
+		desc = new vfsFileINode(inodeHigh, inodeLow, fileSize);
 		if (desc == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};

@@ -128,7 +128,7 @@ error_t zasyncStreamC::connect(
 	processId_t targetPid, processId_t sourceBindTid, uarch_t flags)
 {
 	processStreamC		*targetProcess;
-	taskC			*targetTask;
+	Task			*targetTask;
 	zasyncMsgS		*request;
 
 	/**	EXPLANATION:

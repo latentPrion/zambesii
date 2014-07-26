@@ -7,10 +7,10 @@
 
 
 #if __SCALING__ >= SCALING_SMP
-error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages)
+error_t cpuStreamC::InterCpuMessager::flushTlbRange(void *vaddr, uarch_t nPages)
 {
 	error_t		err;
-	messageS	*msg, *msg2=NULL;
+	Message	*msg, *msg2=NULL;
 	statusE		needToIpi;
 	ubit8		extraFlushNeeded=0;
 
@@ -25,7 +25,7 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 	};
 
 	msg = new (cache->allocate(
-		SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY, &extraFlushNeeded)) messageS;
+		SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY, &extraFlushNeeded)) Message;
 
 	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -36,7 +36,7 @@ error_t cpuStreamC::interCpuMessagerC::flushTlbRange(void *vaddr, uarch_t nPages
 	if (extraFlushNeeded)
 	{
 		msg2 = new (cache->allocate(SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY))
-			messageS;
+			Message;
 
 		if (msg2 == NULL)
 		{

@@ -14,7 +14,7 @@ class multipleReaderLockC;
 
 class waitLockC
 :
-public lockC
+public Lock
 {
 friend class recursiveLockC;
 friend class multipleReaderLockC;

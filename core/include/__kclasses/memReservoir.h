@@ -49,13 +49,13 @@ public:
 		return __kheap.checkAllocations();
 	}
 
-	heapC *__kgetHeap(void) { return &__kheap; }
+	Heap *__kgetHeap(void) { return &__kheap; }
 	void dump(void);
 
 private:
-	struct bogStateS
+	struct sBogState
 	{
-		heapC		**ptrs;
+		Heap		**ptrs;
 		uarch_t		nHeaps;
 	};
 	struct reservoirHeaderS
@@ -64,9 +64,9 @@ private:
 		uarch_t		magic;
 	};
 
-	heapC			__kheap;
+	Heap			__kheap;
 	memoryStreamC		*sourceStream;
-	sharedResourceGroupC<multipleReaderLockC, bogStateS>	heaps;
+	sharedResourceGroupC<multipleReaderLockC, sBogState>	heaps;
 };
 
 extern memReservoirC		memReservoir;

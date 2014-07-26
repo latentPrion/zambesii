@@ -82,7 +82,7 @@ way.
 processStreamC::spawnThread(
 	void *entryPoint,
 	void *argument,
-	bitmapC *cpuAffinity,
+	Bitmap *cpuAffinity,
 	schedPolicyE schedPolicy, prio_t prio, uarch_t flags,
 	processId_t *ret):
 

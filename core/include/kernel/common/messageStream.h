@@ -35,7 +35,7 @@
  * sourceId:
  *	ID of the CPU or thread that made the asynch call-in that prompted this
  *	asynch round-trip.
- * targetId (only for zrequest::headerS).
+ * targetId (only for zrequest::sHeader).
  *	ID of the target CPU or thread that the callback/response for this
  *	asynch round-trip must be sent to.
  * flags: (common subset):
@@ -58,7 +58,7 @@
  *	desired.
  **/
 
-/**	Values for zrequest::headerS::subsystem & zcallback::headerS::subsystem.
+/**	Values for zrequest::sHeader::subsystem & zcallback::sHeader::subsystem.
  * Subsystem IDs are basically implicitly queue IDs (to the kernel; externally
  * no assumptions should be made about the mapping of subsystem IDs to queues
  * in the kernel).
@@ -79,8 +79,8 @@
 
 #define MSGSTREAM_USERQ(num)			(MSGSTREAM_SUBSYSTEM_USER0 + num)
 
-class taskContextC;
-class taskC;
+class TaskContext;
+class Task;
 
 namespace ipc
 {
@@ -110,9 +110,9 @@ class messageStreamC
 {
 public:
 	// Common header contained within all messages.
-	struct headerS
+	struct sHeader
 	{
-		headerS(
+		sHeader(
 			processId_t targetPid,
 			ubit16 subsystem, ubit16 function,
 	 		uarch_t size, uarch_t flags, void *privateData);
@@ -125,22 +125,22 @@ public:
 		uarch_t		size;
 	};
 
-	struct iteratorS
+	struct sIterator
 	{
-		iteratorS(void)
+		sIterator(void)
 		:
 		header(0, 0, 0, 0, 0, NULL)
 		{}
 
 		static const ubit16	paddingSize = 512;
-		headerS			header;
+		sHeader			header;
 		ubit8			_padding_[paddingSize];
 	};
 
-	typedef pointerDoubleListC<messageStreamC::headerS>	messageQueueC;
+	typedef pointerDoubleListC<messageStreamC::sHeader>	messageQueueC;
 
 public:
-	messageStreamC(taskContextC *parent)
+	messageStreamC(TaskContext *parent)
 	:
 	parent(parent)
 	{}
@@ -164,12 +164,12 @@ public:
 	~messageStreamC(void) {};
 
 public:
-	error_t pull(messageStreamC::iteratorS *callback, ubit32 flags=0);
+	error_t pull(messageStreamC::sIterator *callback, ubit32 flags=0);
 	error_t pullFrom(
-		ubit16 subsystemQueue, messageStreamC::iteratorS *callback,
+		ubit16 subsystemQueue, messageStreamC::sIterator *callback,
 		ubit32 flags=0);
 
-	error_t	enqueue(ubit16 queueId, messageStreamC::headerS *callback);
+	error_t	enqueue(ubit16 queueId, messageStreamC::sHeader *callback);
 	error_t postMessage(
 		processId_t tid, ubit16 userQueueId,
 		ubit16 messageNo, void *data);
@@ -177,10 +177,10 @@ public:
 	// Utility functions exported for other subsystems to use.
 	static error_t enqueueOnThread(
 		processId_t targetCallbackStream,
-		messageStreamC::headerS *header);
+		messageStreamC::sHeader *header);
 
 	static processId_t determineSourceThreadId(
-		taskC *caller, ubit16 *flags);
+		Task *caller, ubit16 *flags);
 
 	static processId_t determineTargetThreadId(
 		processId_t targetId, processId_t sourceId,
@@ -206,8 +206,8 @@ private:
 	 * in any queue, and they hold it until they have inserted the
 	 * new message.
 	 **/
-	bitmapC				pendingSubsystems;
-	taskContextC			*parent;
+	Bitmap				pendingSubsystems;
+	TaskContext			*parent;
 };
 
 #define DONT_SEND_RESPONSE		((void *)NULL)
@@ -253,28 +253,28 @@ private:
 };
 
 typedef void (voidF)(void);
-typedef void (syscallbackFuncF)(messageStreamC::iteratorS *msg, void (*func)());
-typedef void (syscallbackDataF)(messageStreamC::iteratorS *msg, void *data);
+typedef void (syscallbackFuncF)(messageStreamC::sIterator *msg, void (*func)());
+typedef void (syscallbackDataF)(messageStreamC::sIterator *msg, void *data);
 
-class syscallbackC
+class Syscallback
 {
 public:
-	syscallbackC(syscallbackDataF *syscallback)
+	Syscallback(syscallbackDataF *syscallback)
 	:
 	func(NULL), data(NULL)
 		{ this->syscallback.dataOverloadedForm = syscallback; }
 
-	syscallbackC(syscallbackFuncF *syscallback, void (*func)())
+	Syscallback(syscallbackFuncF *syscallback, void (*func)())
 	:
 	func(func), data(NULL)
 		{ this->syscallback.funcOverloadedForm = syscallback; }
 
-	syscallbackC(syscallbackDataF *syscallback, void *data)
+	Syscallback(syscallbackDataF *syscallback, void *data)
 	:
 	func(NULL), data(data)
 		{ this->syscallback.dataOverloadedForm = syscallback; }
 
-	void operator ()(messageStreamC::iteratorS *msg)
+	void operator ()(messageStreamC::sIterator *msg)
 	{
 		/* If there is no function to call, just exit. This comparison
 		 * may be unportable because it doesn't also compare the
@@ -299,11 +299,11 @@ private:
 	void		*data;
 };
 
-syscallbackC *newSyscallback(syscallbackDataF *fn, void *data=NULL);
-syscallbackC *newSyscallback(syscallbackFuncF *fn, void (*func)()=NULL);
+Syscallback *newSyscallback(syscallbackDataF *fn, void *data=NULL);
+Syscallback *newSyscallback(syscallbackFuncF *fn, void (*func)()=NULL);
 
-class slamCacheC;
-extern slamCacheC	*asyncContextCache;
+class SlamCache;
+extern SlamCache	*asyncContextCache;
 
 #endif
 

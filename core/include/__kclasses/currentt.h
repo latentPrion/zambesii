@@ -33,7 +33,7 @@ namespace currentt
 		ubit32			flags;
 	};
 
-	class vfsInodeC
+	class vfsINode
 	{
 	protected:
 		error_t initialize(void) { return ERROR_SUCCESS; }

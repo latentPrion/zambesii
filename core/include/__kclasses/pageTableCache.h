@@ -22,7 +22,7 @@
 
 class pageTableCacheC
 :
-public allocClassC
+public AllocatorBase
 {
 public:
 	pageTableCacheC(void);

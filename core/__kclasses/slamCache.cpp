@@ -10,30 +10,30 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-slamCacheC	*asyncContextCache;
+SlamCache	*asyncContextCache;
 
-slamCacheC::slamCacheC(uarch_t _objectSize, allocatorE allocator)
+SlamCache::SlamCache(uarch_t _sObjectize, allocatorE allocator)
 :
 allocator(allocator)
 {
-	objectSize = (_objectSize < sizeof(objectS))
-		? sizeof(objectS)
-		: _objectSize;
+	sObjectize = (_sObjectize < sizeof(sObject))
+		? sizeof(sObject)
+		: _sObjectize;
 
 	// Calculate the excess on each page allocated.
-	perPageExcess = PAGING_BASE_SIZE % objectSize;
-	perPageBlocks = PAGING_BASE_SIZE / objectSize;
+	perPageExcess = PAGING_BASE_SIZE % sObjectize;
+	perPageBlocks = PAGING_BASE_SIZE / sObjectize;
 
 	partialList.rsrc = NULL;
 	freeList.rsrc = NULL;
 }
 
-slamCacheC::~slamCacheC(void)
+SlamCache::~SlamCache(void)
 {
 	//FIXME: Find a way to destroy these things...
 }
 
-void *slamCacheC::getNewPage(sarch_t localFlush)
+void *SlamCache::getNewPage(sarch_t localFlush)
 {
 	switch (allocator)
 	{
@@ -59,7 +59,7 @@ void *slamCacheC::getNewPage(sarch_t localFlush)
 	};
 }
 
-void slamCacheC::releasePage(void *vaddr)
+void SlamCache::releasePage(void *vaddr)
 {
 	switch (allocator)
 	{
@@ -81,9 +81,9 @@ void slamCacheC::releasePage(void *vaddr)
 	};
 }
 
-void slamCacheC::dump(void)
+void SlamCache::dump(void)
 {
-	objectS		*obj;
+	sObject		*obj;
 	uarch_t		count;
 
 	printf(NOTICE SLAMCACHE"@0x%p: Dumping; locks @ F: 0x%p/P: 0x%p.\n",
@@ -91,7 +91,7 @@ void slamCacheC::dump(void)
 
 	printf(NOTICE SLAMCACHE"@0x%p: Object size: %X, ppb %d, ppexcess %d, "
 		"FreeList: Pages:\n\t",
-		this, objectSize, perPageBlocks, perPageExcess);
+		this, sObjectize, perPageBlocks, perPageExcess);
 
 	count = 0;
 
@@ -124,14 +124,14 @@ void slamCacheC::dump(void)
  * this function will not cause the pages which were restored to be free()d to
  * the kernel memory stream. They will just remain on the free list.
  **/
-status_t slamCacheC::detangle(void)
+status_t SlamCache::detangle(void)
 {
 	return 0;
 }
 
-status_t slamCacheC::flush(void)
+status_t SlamCache::flush(void)
 {
-	slamCacheC::objectS	*current, *tmp;
+	SlamCache::sObject	*current, *tmp;
 	uarch_t			ret=0;
 
 	freeList.lock.acquire();
@@ -149,10 +149,10 @@ status_t slamCacheC::flush(void)
 	return ret;
 }
 
-void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
+void *SlamCache::allocate(uarch_t flags, ubit8 *requiredNewPage)
 {
 	void			*ret;
-	objectS			*tmp=NULL;
+	sObject			*tmp=NULL;
 	sarch_t			localFlush;
 
 	localFlush = FLAG_TEST(flags, SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY);
@@ -178,7 +178,7 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 				*requiredNewPage = 1;
 			};
 
-			tmp = new (getNewPage(localFlush)) objectS;
+			tmp = new (getNewPage(localFlush)) sObject;
 
 			if (tmp == NULL)
 			{
@@ -192,8 +192,8 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 		// Break up the new block from the free list.
 		for (uarch_t i=perPageBlocks-1; i>0; i--)
 		{
-			tmp->next = reinterpret_cast<objectS *>(
-				(uintptr_t)tmp + this->objectSize );
+			tmp->next = reinterpret_cast<sObject *>(
+				(uintptr_t)tmp + this->sObjectize );
 
 			tmp = tmp->next;
 		};
@@ -206,7 +206,7 @@ void *slamCacheC::allocate(uarch_t flags, ubit8 *requiredNewPage)
 	return ret;
 }
 
-void slamCacheC::free(void *obj)
+void SlamCache::free(void *obj)
 {
 	if (obj == NULL) {
 		return;
@@ -214,8 +214,8 @@ void slamCacheC::free(void *obj)
 
 	partialList.lock.acquire();
 
-	static_cast<objectS *>( obj )->next = partialList.rsrc;
-	partialList.rsrc = static_cast<objectS *>( obj );
+	static_cast<sObject *>( obj )->next = partialList.rsrc;
+	partialList.rsrc = static_cast<sObject *>( obj );
 
 	partialList.lock.release();
 }

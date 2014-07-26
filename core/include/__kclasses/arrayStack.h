@@ -24,12 +24,12 @@ public:
 	error_t pop2(T *, T *);
 
 private:
-	struct stackStateS
+	struct sStackState
 	{
 		T	*arr;
 		sbit32	cursor;
 	};
-	sharedResourceGroupC<waitLockC, stackStateS>	stack;
+	sharedResourceGroupC<waitLockC, sStackState>	stack;
 	ubit32	nItems;
 };
 

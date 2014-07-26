@@ -25,7 +25,7 @@ class distributaryTribC;
 
 class vfsTribC
 :
-public tributaryC
+public Tributary
 {
 friend class distributaryTribC;
 public:
@@ -42,16 +42,16 @@ public:
 	~vfsTribC(void) {}
 
 public:
-	dvfs::currenttC *getDvfs(void) { return &dvfsCurrentt; }
-	hvfs::currenttC *getHvfs(void) { return &hvfsCurrentt; }
-	fvfs::currenttC *getFvfs(void) { return &fvfsCurrentt; }
+	dvfs::Currentt *getDvfs(void) { return &dvfsCurrentt; }
+	hvfs::Currentt *getHvfs(void) { return &hvfsCurrentt; }
+	fvfs::Currentt *getFvfs(void) { return &fvfsCurrentt; }
 
 	void dumpCurrentts(void);
 
 private:
-	hvfs::currenttC		hvfsCurrentt;
-	dvfs::currenttC		dvfsCurrentt;
-	fvfs::currenttC		fvfsCurrentt;
+	hvfs::Currentt		hvfsCurrentt;
+	dvfs::Currentt		dvfsCurrentt;
+	fvfs::Currentt		fvfsCurrentt;
 };
 
 extern vfsTribC		vfsTrib;

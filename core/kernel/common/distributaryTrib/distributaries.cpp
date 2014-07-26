@@ -21,9 +21,9 @@ static void *getEsp(void)
 
 static void cisternnEntry(void)
 {
-	threadC		*self;
+	Thread		*self;
 
-	self = static_cast<threadC *>(
+	self = static_cast<Thread *>(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
 	printf(NOTICE"Cisternn executing; process ID: 0x%x. ESP: 0x%p. "
@@ -62,7 +62,7 @@ const dvfs::distributaryDescriptorS	floodplainnIndexer=
 	},
 	1,		// Provides only one category.
 	0, 0, 0,	// v0.00.000.
-	&floodplainnC::indexReaderEntry,
+	&Floodplainn::indexReaderEntry,
 	0
 };
 

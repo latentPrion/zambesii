@@ -6,7 +6,7 @@
 
 #define LZBZCORE	"lzbzcore: "
 
-class threadC;
+class Thread;
 
 namespace __klzbzcore
 {
@@ -14,7 +14,7 @@ namespace __klzbzcore
 
 	namespace distributary
 	{
-		error_t main(threadC *self);
+		error_t main(Thread *self);
 	}
 
 	namespace driver
@@ -25,24 +25,24 @@ namespace __klzbzcore
 				MAINTHREAD_U0_SYNC=3;
 
 
-		error_t main(threadC *self);
+		error_t main(Thread *self);
 		void main_handleU0Request(
-			messageStreamC::iteratorS *msgIt,
+			messageStreamC::sIterator *msgIt,
 			fplainn::driverInstanceC *drvInst,
-			threadC *self);
+			Thread *self);
 
 		void main_handleKernelCall(
-			floodplainnC::zudiKernelCallMsgS *msg);
+			Floodplainn::zudiKernelCallMsgS *msg);
 
 		void main_handleMgmtCall(
-			floodplainnC::zudiMgmtCallMsgS *msg);
+			Floodplainn::zudiMgmtCallMsgS *msg);
 
 		namespace __kcall
 		{
 			struct callerContextS
 			{
 				callerContextS(
-					floodplainnC::zudiKernelCallMsgS *z)
+					Floodplainn::zudiKernelCallMsgS *z)
 				:
 				sourceTid(z->header.sourceId),
 				privateData(z->header.privateData),

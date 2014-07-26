@@ -57,19 +57,19 @@
 
 class memoryTribC;
 class processStreamC;
-class heapC;
+class Heap;
 
 class memoryStreamC
 :
-public streamC
+public Stream
 {
 friend class memoryTribC;
-friend class heapC;
+friend class Heap;
 
 public:
 	memoryStreamC(processId_t id, processStreamC *parent)
 	:
-	streamC(id), parent(parent)
+	Stream(id), parent(parent)
 	{}
 
 	error_t initialize(void)
@@ -100,7 +100,7 @@ public:
 
 private:
 	processStreamC		*parent;
-	stackCacheC<void *>	allocCache;
+	StackCache<void *>	allocCache;
 	allocTableC		allocTable;
 };
 

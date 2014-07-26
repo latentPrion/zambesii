@@ -64,61 +64,61 @@ namespace dvfs
 
 	/* A few typedefs for easier typename access.
 	 **********************************************************************/
-	class distributaryInodeC;
-	class categoryInodeC;
+	class distributaryINode;
+	class categoryINode;
 
-	class tagC
+	class Tag
 	:
-	public vfs::tagC<DVFS_TAG_NAME_MAXLEN>
+	public vfs::Tag<DVFS_TAG_NAME_MAXLEN>
 	{
 	public:
-		tagC(
+		Tag(
 			utf8Char *name,
 			vfs::tagTypeE type,
-			tagC *parent,
-			vfs::inodeC *inode=NULL)
+			Tag *parent,
+			vfs::iNode *inode=NULL)
 		:
-		vfs::tagC<DVFS_TAG_NAME_MAXLEN>(name, type, parent, inode)
+		vfs::Tag<DVFS_TAG_NAME_MAXLEN>(name, type, parent, inode)
 		{}
 
 		error_t initialize(void)
 		{
-			return vfs::tagC<DVFS_TAG_NAME_MAXLEN>::initialize();
+			return vfs::Tag<DVFS_TAG_NAME_MAXLEN>::initialize();
 		}
 
-		~tagC(void) {}
+		~Tag(void) {}
 
 	public:
-		distributaryInodeC *getDInode(void)
-			{ return (distributaryInodeC *)getInode(); }
+		distributaryINode *getDInode(void)
+			{ return (distributaryINode *)getInode(); }
 
-		categoryInodeC *getCInode(void)
-			{ return (categoryInodeC *)getInode(); }
+		categoryINode *getCInode(void)
+			{ return (categoryINode *)getInode(); }
 	};
 
-	/**	distributaryInodeC:
+	/**	distributaryINode:
 	 * The metadata structure used to store information about distributaries
 	 * available for execution by the kernel. The metadata is implicitly
 	 * also a VFS tree of named objects so that userspace (and kernelspace)
 	 * can easily query the status of distributaries, and manage them.
 	 **********************************************************************/
-	class distributaryInodeC
+	class distributaryINode
 	:
-	public vfs::inodeC
+	public vfs::iNode
 	{
 	public:
 		// Can be either in the kernel image, or loaded from elsewhere.
 		enum typeE { IN_KERNEL=1, OUT_OF_KERNEL };
 
-		distributaryInodeC(
+		distributaryINode(
 			const distributaryDescriptorS *descriptor, typeE type);
 
 		error_t initialize(void)
 		{
-			return vfs::inodeC::initialize();
+			return vfs::iNode::initialize();
 		}
 
-		~distributaryInodeC(void) {}
+		~distributaryINode(void) {}
 
 	public:
 		sarch_t isCurrentlyRunning(void) { return currentlyRunning; }
@@ -141,7 +141,7 @@ namespace dvfs
 		void		(*entryAddress)(void);
 	};
 
-	/**	categoryInodeC:
+	/**	categoryINode:
 	 * Categories are really directories, but they can be "executed" or
 	 * can act like leaf nodes when a caller does not specify one of their
 	 * leaf nodes. More specifically, they hold a pointer to one of their
@@ -157,34 +157,34 @@ namespace dvfs
 	 * the "network" provider would work as well, and can be done by asking
 	 * it to start "@d:/network", which will fall-through to Aqueductt.
 	 **********************************************************************/
-	class categoryInodeC
+	class categoryINode
 	:
-	public vfs::dirInodeC<tagC>
+	public vfs::dirINode<Tag>
 	{
 	public:
-		categoryInodeC(void) {}
+		categoryINode(void) {}
 		error_t initialize(void)
-			{ return vfs::dirInodeC<tagC>::initialize(); }
+			{ return vfs::dirINode<Tag>::initialize(); }
 
-		~categoryInodeC(void) {}
+		~categoryINode(void) {}
 	};
 
-	/* The currenttC derived type for the DVFS currentt. Essentially
+	/* The Currentt derived type for the DVFS currentt. Essentially
 	 * represents the whole of the Distributary VFS tree.
 	 **/
-	class currenttC
+	class Currentt
 	:
-	public vfs::currenttC
+	public vfs::Currentt
 	{
 	friend class distributaryTribC;
 	public:
-		currenttC(void)
+		Currentt(void)
 		:
-		vfs::currenttC(static_cast<utf8Char>( 'd' )),
+		vfs::Currentt(static_cast<utf8Char>( 'd' )),
 		rootTag(
 			CC"Zambesii Distributary VFS", vfs::DIR,
 			&rootTag, &rootCategory),
-		tagCache(NULL)
+		Tagache(NULL)
 		{}
 
 		error_t initialize(void)
@@ -196,32 +196,32 @@ namespace dvfs
 			return rootCategory.initialize();
 		}
 
-		~currenttC(void) {}
+		~Currentt(void) {}
 
 	public:
-		tagC *getRoot(void) { return &rootTag; }
+		Tag *getRoot(void) { return &rootTag; }
 
 		// Both categories and dtribs can be returned.
-		error_t getPath(utf8Char *fullName, tagC **ret);
+		error_t getPath(utf8Char *fullName, Tag **ret);
 
 	private:
-		tagC			rootTag;
-		categoryInodeC		rootCategory;
-		slamCacheC		*tagCache;
+		Tag			rootTag;
+		categoryINode		rootCategory;
+		SlamCache		*Tagache;
 
-		struct stateS
+		struct sState
 		{
-			stateS(void)
+			sState(void)
 			:
 			nDistributaries(0), nCategories(0)
 			{}
 
-			~stateS(void) {}
+			~sState(void) {}
 
 			ubit16		nDistributaries, nCategories;
 		};
 
-		sharedResourceGroupC<waitLockC, stateS>	state;
+		sharedResourceGroupC<waitLockC, sState>	state;
 	};
 }
 

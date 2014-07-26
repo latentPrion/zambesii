@@ -5,7 +5,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-error_t taskContextC::initialize(void)
+error_t TaskContext::initialize(void)
 {
 	error_t		ret;
 
@@ -23,7 +23,7 @@ error_t taskContextC::initialize(void)
 	return messageStream.initialize();
 }
 
-void taskContextC::initializeRegisterContext(
+void TaskContext::initializeRegisterContext(
 	void (*entryPoint)(void *), void *stack0, void *stack1,
 	ubit8 execDomain,
 	sarch_t isFirstThread
@@ -50,7 +50,7 @@ void taskContextC::initializeRegisterContext(
 	{
 		// Use stack1.
 		stackIndex = 1;
-		context = (registerContextC *)((uintptr_t)stack1
+		context = (RegisterContext *)((uintptr_t)stack1
 			+ CHIPSET_MEMORY_USERSTACK_NPAGES * PAGING_BASE_SIZE);
 	}
 	else
@@ -65,19 +65,19 @@ void taskContextC::initializeRegisterContext(
 		stackIndex = 0;
 		if (contextType == task::PER_CPU)
 		{
-			context = (registerContextC *)&parent.cpu
+			context = (RegisterContext *)&parent.cpu
 				->perCpuThreadStack[sizeof(
 					parent.cpu->perCpuThreadStack)];
 		}
 		else
 		{
-			context = (registerContextC *)((uintptr_t)stack0
+			context = (RegisterContext *)((uintptr_t)stack0
 				+ CHIPSET_MEMORY___KSTACK_NPAGES
 					* PAGING_BASE_SIZE);
 		};
 	};
 
-	// Context -= sizeof(registerContextC);
+	// Context -= sizeof(RegisterContext);
 	context--;
 
 	/* For the very first thread in a process, we execute a short sequence
@@ -87,7 +87,7 @@ void taskContextC::initializeRegisterContext(
 	 * For every subsequent thread in a process, we initialize the register
 	 * context with the parent process' exec domain.
 	 **/
-	new (context) registerContextC(
+	new (context) RegisterContext(
 		(isFirstThread)
 			? PROCESS_EXECDOMAIN_KERNEL
 			: execDomain);
@@ -97,7 +97,7 @@ void taskContextC::initializeRegisterContext(
 	context->setEntryPoint(entryPoint);
 }
 
-static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
+static inline error_t resizeAndMergeBitmaps(Bitmap *dest, Bitmap *src)
 {
 	error_t		ret;
 
@@ -109,7 +109,7 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 }
 
 #if __SCALING__ >= SCALING_SMP
-error_t taskContextC::inheritAffinity(bitmapC *cpuAffinity, uarch_t flags)
+error_t TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 {
 	error_t		ret;
 
@@ -153,7 +153,7 @@ error_t taskContextC::inheritAffinity(bitmapC *cpuAffinity, uarch_t flags)
 
 	if (cpuAffinity == NULL)
 	{
-		bitmapC		*sourceBitmap;
+		Bitmap		*sourceBitmap;
 
 		// PINHERIT.
 		if (FLAG_TEST(flags, SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT)) {
@@ -179,7 +179,7 @@ error_t taskContextC::inheritAffinity(bitmapC *cpuAffinity, uarch_t flags)
 			 * can safely assume therefore that the calling CPU's
 			 * current thread is a unique-context thread.
 			 **/
-			sourceBitmap = &static_cast<threadC *>(
+			sourceBitmap = &static_cast<Thread *>(
 				cpuTrib.getCurrentCpuStream()->taskStream
 					.getCurrentTask() )
 				->getTaskContext()->cpuAffinity;
@@ -198,7 +198,7 @@ error_t taskContextC::inheritAffinity(bitmapC *cpuAffinity, uarch_t flags)
 }
 #endif
 
-void taskC::inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t /*flags*/)
+void Task::inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t /*flags*/)
 {
 	/**	EXPLANATION:
 	 * Sched policy is STINHERITed by default. Overrides are:
@@ -218,7 +218,7 @@ void taskC::inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t /*flags*/)
 	};
 }
 
-void taskC::inheritSchedPrio(prio_t prio, uarch_t flags)
+void Task::inheritSchedPrio(prio_t prio, uarch_t flags)
 {
 	/**	EXPLANATION:
 	 * Schedprio defaults to PRIOCLASS_DEFAULT. Overrides are:
@@ -239,7 +239,7 @@ void taskC::inheritSchedPrio(prio_t prio, uarch_t flags)
 
 	if (FLAG_TEST(flags, SPAWNTHREAD_FLAGS_SCHEDPRIO_STINHERIT))
 	{
-		taskC		*spawningThread;
+		Task		*spawningThread;
 
 		spawningThread = cpuTrib.getCurrentCpuStream()->taskStream
 			.getCurrentTask();
@@ -266,7 +266,7 @@ void taskC::inheritSchedPrio(prio_t prio, uarch_t flags)
 	};
 }
 
-error_t threadC::allocateStacks(void)
+error_t Thread::allocateStacks(void)
 {
 	/**	NOTES:
 	 * There are 3 separate cases for consideration here:

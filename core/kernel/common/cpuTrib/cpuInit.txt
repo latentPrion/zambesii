@@ -31,9 +31,9 @@ shall be as follows:
 2.  Every identified NUMA bank on the chipset is recorded in the availableBanks
     bmp.
 3.  Every NUMA bank has its own BMP of member CPUs (regardless of state of
-    operation) in its numaCpuBankC object.
+    operation) in its NumaCpuBank object.
 4.  Every CPU which is a member of a particular bank has its bit set in that
-    bank's numaCpuBankC object's available CPUs BMP regardless of state of
+    bank's NumaCpuBank object's available CPUs BMP regardless of state of
     operation.
 5.  Therefore, The CPU trib holds a permanently coherent state list of all
     inserted CPUs and NUMA banks, and each NUMA bank object holds a list of all

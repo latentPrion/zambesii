@@ -24,61 +24,61 @@
  * Every node in the FVFS has (1) a name-string, (2) a device object that it
  * points to and (3) a list of child nodes.
  **/
-namespace fplainn { class deviceC; }
+namespace fplainn { class Device; }
 
 namespace fvfs
 {
-	class currenttC;
+	class Currentt;
 
-	/**	hvfs::tagC:
+	/**	hvfs::Tag:
 	 * Base type for a device that has child devices.
 	 **********************************************************************/
-	class tagC
+	class Tag
 	:
-	public vfs::tagC<FVFS_TAG_NAME_MAXLEN>
+	public vfs::Tag<FVFS_TAG_NAME_MAXLEN>
 	{
-	friend class vfs::dirInodeC<tagC>;
-	friend class currenttC;
-		/* Private constructor only for use within vfs::dirInodeC.
-		 * It is used to allow vfs::dirInodeC::create*Tag() to
+	friend class vfs::dirINode<Tag>;
+	friend class Currentt;
+		/* Private constructor only for use within vfs::dirINode.
+		 * It is used to allow vfs::dirINode::create*Tag() to
 		 * generically create new tags of this type.
 		 **/
-		tagC(
+		Tag(
 			utf8Char *name, vfs::tagTypeE,
-			tagC *parent, vfs::inodeC *inode=NULL)
+			Tag *parent, vfs::iNode *inode=NULL)
 		:
-		vfs::tagC<FVFS_TAG_NAME_MAXLEN>(
+		vfs::Tag<FVFS_TAG_NAME_MAXLEN>(
 			name, vfs::DEVICE, parent, inode)
 		{}
 
 		error_t initialize(void)
 		{
-			return vfs::tagC<FVFS_TAG_NAME_MAXLEN>::initialize();
+			return vfs::Tag<FVFS_TAG_NAME_MAXLEN>::initialize();
 		}
 
-		~tagC(void) {}
+		~Tag(void) {}
 
 	public:
-		fplainn::deviceC *getInode(void)
-			{ return (fplainn::deviceC *)inode; }
+		fplainn::Device *getInode(void)
+			{ return (fplainn::Device *)inode; }
 	};
 
-	class currenttC
+	class Currentt
 	:
-	public vfs::currenttC
+	public vfs::Currentt
 	{
 	public:
-		currenttC(void);
+		Currentt(void);
 		error_t initialize(void);
-		~currenttC(void) {}
+		~Currentt(void) {}
 
 	public:
-		tagC *getRoot(void) { return &rootTag; }
+		Tag *getRoot(void) { return &rootTag; }
 
-		error_t getPath(utf8Char *path, tagC **ret);
+		error_t getPath(utf8Char *path, Tag **ret);
 
 	private:
-		tagC		rootTag;
+		Tag		rootTag;
 	};
 }
 

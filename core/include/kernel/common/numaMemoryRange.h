@@ -45,7 +45,7 @@ public:
 private:
 	paddr_t			baseAddr, size;
 	memBmpC			bmp;
-	stackCacheC<paddr_t>	frameCache;
+	StackCache<paddr_t>	frameCache;
 };
 
 #endif

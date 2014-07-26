@@ -195,7 +195,7 @@ namespace x86IoApic
 		ubit8			vectorBase;
 	};
 
-	struct cacheS
+	struct sCache
 	{
 		ubit32			magic;
 		sarch_t			mapped;

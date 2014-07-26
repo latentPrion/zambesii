@@ -28,7 +28,7 @@ void processTribC::fillOutPrioClasses(void)
 	new (&prioClasses[4]) prioClassS(CC"Critical", 16);
 }
 
-static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
+static inline error_t resizeAndMergeBitmaps(Bitmap *dest, Bitmap *src)
 {
 	error_t		ret;
 
@@ -44,9 +44,9 @@ error_t processTribC::getDistributaryExecutableFormat(
 	void (**entryPoint)(void)
 	)
 {
-	dvfs::tagC			*tag;
+	dvfs::Tag			*tag;
 	error_t				ret;
-	threadC				*self;
+	Thread				*self;
 
 	/**	EXPLANATION:
 	 * For Distributaries, there are IN_KERNEL and OUT_OF_KERNEL dtribs.
@@ -68,7 +68,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 	 * its executable format.
 	 **/
 	*executableFormat = processStreamC::RAW;
-	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	ret = vfsTrib.getDvfs()->getPath(fullName, &tag);
@@ -82,7 +82,7 @@ error_t processTribC::getDistributaryExecutableFormat(
 		return SPAWNPROC_STATUS_INVALID_FILE_NAME;
 	};
 
-	if (tag->getDInode()->getType() == dvfs::distributaryInodeC::IN_KERNEL)
+	if (tag->getDInode()->getType() == dvfs::distributaryINode::IN_KERNEL)
 	{
 		// IN_KERNEL dtribs are raw embedded code in the kernel image.
 		// *entryPoint = tag->getDInode()->getEntryAddress();
@@ -106,7 +106,7 @@ error_t processTribC::getDriverExecutableFormat(
 	)
 {
 	error_t			ret;
-	fplainn::driverC	*tmpDrv;
+	fplainn::Driver	*tmpDrv;
 
 	ret = floodplainn.findDriver(fullName, &tmpDrv);
 	if (ret != ERROR_SUCCESS) { return ERROR_UNINITIALIZED; };
@@ -138,7 +138,7 @@ error_t processTribC::getExecutableFormat(
 	return ERROR_UNSUPPORTED;
 }
 
-static ubit32 getCallbackFunctionNo(threadC *self)
+static ubit32 getCallbackFunctionNo(Thread *self)
 {
 	switch (self->parent->getType())
 	{
@@ -175,11 +175,11 @@ static ubit32 getCallbackFunctionNo(threadC *self)
  **/
 void processTribC::commonEntry(void *)
 {
-	threadC						*self;
+	Thread						*self;
 	processStreamC::initializationBlockSizeInfoS	initBlockSizes;
 	processStreamC::initializationBlockS		*initBlock;
 	processStreamC::executableFormatE		executableFormat;
-	messageStreamC::headerS				*callbackMessage;
+	messageStreamC::sHeader				*callbackMessage;
 	uarch_t						initBlockNPages;
 	error_t						err;
 	void						(*jumpAddress)(void);
@@ -199,7 +199,7 @@ void processTribC::commonEntry(void *)
 	 * jump and begin the new process immediately.
 	 **/
 	jumpAddress = NULL;
-	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	printf(NOTICE PROCTRIB"New process running. ID=0x%x type=%d.\n",
@@ -207,7 +207,7 @@ void processTribC::commonEntry(void *)
 		self->parent->getType());
 
 	// Allocate the callback message memory.
-	callbackMessage = new messageStreamC::headerS(
+	callbackMessage = new messageStreamC::sHeader(
 		self->parent->parentThreadId,
 		MSGSTREAM_SUBSYSTEM_PROCESS, getCallbackFunctionNo(self),
 		sizeof(*callbackMessage), 0, self->parent->privateData);
@@ -314,7 +314,7 @@ void processTribC::commonEntry(void *)
 	 * stack if we wish; this is simpler as well since there is no
 	 * risk of trampling.
 	 **/
-	registerContextC		context(self->parent->execDomain);
+	RegisterContext		context(self->parent->execDomain);
 
 	err = context.initialize();
 	if (err != ERROR_SUCCESS)
@@ -393,7 +393,7 @@ error_t processTribC::getNewProcessId(processId_t *ret)
 	return ERROR_SUCCESS;
 }
 
-static sarch_t deviceExists(utf8Char *devPath, fplainn::deviceC **dev)
+static sarch_t deviceExists(utf8Char *devPath, fplainn::Device **dev)
 {
 	error_t			ret;
 
@@ -413,9 +413,9 @@ error_t processTribC::spawnDriver(
 {
 	error_t				ret;
 	processId_t			newProcessId;
-	threadC				*parentThread, *firstThread;
-	fplainn::deviceC		*dev;
-	fplainn::driverC		*drv;
+	Thread				*parentThread, *firstThread;
+	fplainn::Device		*dev;
+	fplainn::Driver		*drv;
 	fplainn::driverInstanceC	*drvInstance;
 	heapObjC<driverProcessC>	newProcess;
 
@@ -429,7 +429,7 @@ error_t processTribC::spawnDriver(
 			"thread.\n");
 	};
 
-	parentThread = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	parentThread = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	ret = getNewProcessId(&newProcessId);
@@ -496,8 +496,8 @@ error_t processTribC::spawnDriver(
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	bitmapC			affinity;
-	//numaCpuBankC		*ncb;
+	Bitmap			affinity;
+	//NumaCpuBank		*ncb;
 
 	// FIXME: Initialize the BMP to the device's affine bank.
 	// Get the device's object
@@ -526,7 +526,7 @@ error_t processTribC::spawnDriver(
 	ret = newProcess->spawnThread(
 		&processTribC::commonEntry, NULL,
 		&newProcess->cpuAffinity,
-		taskC::REAL_TIME, prio,
+		Task::REAL_TIME, prio,
 		flags | SPAWNTHREAD_FLAGS_AFFINITY_SET
 		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
 		&firstThread);
@@ -557,7 +557,7 @@ error_t processTribC::spawnDistributary(
 {
 	error_t			ret;
 	processId_t		newProcessId;
-	threadC			*parentThread, *firstTask;
+	Thread			*parentThread, *firstTask;
 
 	if (commandLine == NULL || newProcess == NULL)
 		{ return ERROR_INVALID_ARG; };
@@ -570,7 +570,7 @@ error_t processTribC::spawnDistributary(
 			"thread.\n");
 	};
 
-	parentThread = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	parentThread = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	ret = getNewProcessId(&newProcessId);
@@ -590,7 +590,7 @@ error_t processTribC::spawnDistributary(
 		return ERROR_MEMORY_NOMEM;
 	};
 
-	bitmapC		affinity;
+	Bitmap		affinity;
 	ret = affinity.initialize(cpuTrib.onlineCpus.getNBits());
 	if (ret != ERROR_SUCCESS) { return ret; };
 	affinity.merge(&cpuTrib.onlineCpus);
@@ -603,7 +603,7 @@ error_t processTribC::spawnDistributary(
 	ret = (*newProcess)->spawnThread(
 		&processTribC::commonEntry, NULL,
 		&(*newProcess)->cpuAffinity,
-		taskC::ROUND_ROBIN, 0,
+		Task::ROUND_ROBIN, 0,
 		SPAWNTHREAD_FLAGS_AFFINITY_SET
 		| SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
 		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
@@ -626,7 +626,7 @@ error_t processTribC::spawnDistributary(
 #if 0
 error_t *processTribC::spawnStream(
 	numaBankId_t,				// NUMA addrspace binding.
-	bitmapC *cpuAffinity,			// Oceann/NUMA/SMP affinity.
+	Bitmap *cpuAffinity,			// Oceann/NUMA/SMP affinity.
 	void */*elevation*/,			// Privileges.
 	ubit8 execDomain,			// Kernel mode vs. User mode.
 	uarch_t flags,				// Process spawn flags.

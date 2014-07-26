@@ -30,7 +30,7 @@ ubit8		*__kcpuPowerOnLapicVaddr=0;
  * members are initialized by the CPU Tributary before any CPUs are awakened in
  * cpuTribC::initialize2().
  **/
-perCpuThreadC	__kcpuPowerOnThread(processTrib.__kgetStream(), NULL);
+PerCpuThread	__kcpuPowerOnThread(processTrib.__kgetStream(), NULL);
 
 // Part of __koptimizationHacks.cpp.
 void (*__kcpuPowerOnInit(void))()

@@ -5,7 +5,7 @@
 
 struct taskQNodeS
 {
-	taskC		*task;
+	Task		*task;
 	taskQNodeS	*prev, *next;
 };	
 

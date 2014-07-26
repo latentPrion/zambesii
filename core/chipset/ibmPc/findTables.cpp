@@ -99,7 +99,7 @@ void *chipset_findAcpiRsdp(void)
 
 		printf(NOTICE FINDTABLES"RSDP: Checksum was %d, result was "
 			"%d. %s checksum.\n",
-			((acpi_rsdpS *)tmp)->checksum,
+			((acpi_sRsdp *)tmp)->checksum,
 			checksum,
 			(checksum) ? "Invalid" : "Valid");
 

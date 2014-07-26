@@ -19,7 +19,7 @@
 
 void recursiveLockC::acquire(void)
 {
-	taskContextC	*taskContext;
+	TaskContext	*taskContext;
 
 	taskContext = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTaskContext();

@@ -5,14 +5,14 @@
 #include "exceptions.h"
 
 
-status_t __attribute__((noreturn)) x8632_breakpoint(registerContextC *regs, ubit8)
+status_t __attribute__((noreturn)) x8632_breakpoint(RegisterContext *regs, ubit8)
 {
-	taskC		*currTask;
-	threadC		*currThread=NULL;
+	Task		*currTask;
+	Thread		*currThread=NULL;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	if (currTask->getType() != task::PER_CPU) {
-		currThread = (threadC *)currTask;
+		currThread = (Thread *)currTask;
 	};
 
 	printf(NOTICE"Breakpoint exception on CPU %d (%s thread).\n"
@@ -26,9 +26,9 @@ status_t __attribute__((noreturn)) x8632_breakpoint(registerContextC *regs, ubit
 		regs->esp, regs->ebp,
 		(currTask->getType() == task::PER_CPU)
 			? cpuTrib.getCurrentCpuStream()->perCpuThreadStack
-			: ((threadC *)currTask)->stack0,
+			: ((Thread *)currTask)->stack0,
 		(currTask->getType() == task::UNIQUE)
-			? ((threadC *)currTask)->stack1 : NULL,
+			? ((Thread *)currTask)->stack1 : NULL,
 		regs->esi, regs->edi,
 		regs->eax, regs->ebx, regs->ecx, regs->edx);
 

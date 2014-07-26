@@ -22,7 +22,7 @@
 
 class memoryTribC
 :
-public tributaryC
+public Tributary
 {
 public:
 	memoryTribC(void);
@@ -78,7 +78,7 @@ private:
 		zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool);
 
 public:
-	bitmapC			availableBanks;
+	Bitmap			availableBanks;
 
 private:
 	memoryRegionC		memRegions[CHIPSET_MEMORY_NREGIONS];

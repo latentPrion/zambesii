@@ -17,7 +17,7 @@
 
 class vSwampC
 :
-public allocClassC
+public AllocatorBase
 {
 public:
 	vSwampC(void *swampStart, uarch_t swampSize)
@@ -25,7 +25,7 @@ public:
 	baseAddr((void *)PAGING_BASE_ALIGN_FORWARD((uintptr_t)swampStart)),
 	size(PAGING_BASE_ALIGN_TRUNCATED(swampSize)),
 	flags(0),
-	swampNodeList(sizeof(swampInfoNodeC), slamCacheC::RAW)
+	swampNodeList(sizeof(swampInfoNodeC), SlamCache::RAW)
 	{}
 
 	error_t initialize(void)
@@ -67,9 +67,9 @@ private:
 		void *vaddr, status_t *status);
 
 private:
-	struct swampStateS
+	struct sSwampState
 	{
-		swampStateS(void)
+		sSwampState(void)
 		:
 		head(NULL), tail(NULL)
 		{}
@@ -85,11 +85,11 @@ private:
 	void		*baseAddr;
 	uarch_t		size;
 	uarch_t		flags;
-	sharedResourceGroupC<recursiveLockC, swampStateS>	state;
+	sharedResourceGroupC<recursiveLockC, sSwampState>	state;
 
 	// Object allocator for swamp list nodes.
 	// __kequalizerListC<swampInfoNodeC>		swampNodeList;
-	slamCacheC	swampNodeList;
+	SlamCache	swampNodeList;
 
 	/* This is a placeholder list node which is used when initializing the
 	 * address space. If we try to dynamically allocate the first node, when

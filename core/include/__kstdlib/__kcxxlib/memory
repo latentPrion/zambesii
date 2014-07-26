@@ -17,13 +17,13 @@ namespace pointer
 }
 
 template <class type>
-class ptrC
+class Pointer
 {
 protected:
-	explicit ptrC(type *_p=NULL) : p(_p) {}
-	~ptrC(void) { reset(); }
+	explicit Pointer(type *_p=NULL) : p(_p) {}
+	~Pointer(void) { reset(); }
 
-public:	ptrC &operator =(ptrC &_p) { reset(_p.release()); };
+public:	Pointer &operator =(Pointer &_p) { reset(_p.release()); };
 
 public:
 	// Equivalent to std::unique_ptr<>::get().
@@ -42,12 +42,12 @@ public:
 	type *operator ->() { return p; }
 	type &operator *() { return *p; }
 	type &operator [](int i) { return p[i]; }
-	ptrC &operator =(type *_p) { p = _p; return *this; }
+	Pointer &operator =(type *_p) { p = _p; return *this; }
 	int operator ==(type *_p) { return p == _p; }
 	int operator >(type *_p) { return p > _p; }
 	int operator <(type *_p) { return p < _p; }
-	ptrC &operator++(void) { ++p; return *this; }
-	ptrC &operator--(void) { --p; return *this; }
+	Pointer &operator++(void) { ++p; return *this; }
+	Pointer &operator--(void) { --p; return *this; }
 
 	// We refuse to provide operators + and -. Use array indexing instead.
 private:
@@ -57,18 +57,18 @@ protected:
 	type	*p;
 };
 
-class default_deleterC {};
-class array_deleterC {};
+class DefaultDeleter {};
+class ArrayDeleter {};
 
 template <class type, class deleter>
 class heapPtrC
 :
-public ptrC<type>
+public Pointer<type>
 {
 public:
 	explicit heapPtrC(type *_p=NULL)
 	:
-	ptrC<type>(_p)
+	Pointer<type>(_p)
 	{}
 
 	~heapPtrC(void) { reset(); }
@@ -78,9 +78,9 @@ public:
 
 public:
 	heapPtrC &operator =(type *_p)
-		{ ptrC<type>::operator =(_p); return *this; }
+		{ Pointer<type>::operator =(_p); return *this; }
 
-	void reset(type *_p=NULL) { ptrC<type>::reset(_p); }
+	void reset(type *_p=NULL) { Pointer<type>::reset(_p); }
 
 private:
 	virtual void _(void) = 0;
@@ -89,12 +89,12 @@ private:
 template <class type>
 class heapObjC
 :
-public heapPtrC<type, default_deleterC>
+public heapPtrC<type, DefaultDeleter>
 {
 public:
 	explicit heapObjC(type *_p=NULL)
 	:
-	heapPtrC<type, default_deleterC>(_p)
+	heapPtrC<type, DefaultDeleter>(_p)
 	{}
 
 	~heapObjC(void) { reset(); }
@@ -104,13 +104,13 @@ public:
 
 public:
 	heapObjC &operator =(type *_p) {
-		heapPtrC<type, default_deleterC>::operator =(_p); return *this;
+		heapPtrC<type, DefaultDeleter>::operator =(_p); return *this;
 	}
 
 	void reset(type *_p=NULL)
 	{
 		if (this->get() != NULL) { delete this->get(); };
-		heapPtrC<type, default_deleterC>::reset(_p);
+		heapPtrC<type, DefaultDeleter>::reset(_p);
 	};
 
 private:
@@ -120,12 +120,12 @@ private:
 template <class type>
 class heapArrC
 :
-public heapPtrC<type, array_deleterC>
+public heapPtrC<type, ArrayDeleter>
 {
 public:
 	explicit heapArrC(type *_p=NULL)
 	:
-	heapPtrC<type, array_deleterC>(_p)
+	heapPtrC<type, ArrayDeleter>(_p)
 	{}
 
 	~heapArrC(void) { reset(); }
@@ -135,13 +135,13 @@ public:
 
 public:
 	heapArrC &operator =(type *_p) {
-		heapPtrC<type, array_deleterC>::operator =(_p); return *this;
+		heapPtrC<type, ArrayDeleter>::operator =(_p); return *this;
 	}
 
 	void reset(type *_p=NULL)
 	{
 		if (this->get() != NULL) { delete[] this->get(); };
-		heapPtrC<type, array_deleterC>::reset(_p);
+		heapPtrC<type, ArrayDeleter>::reset(_p);
 	};
 
 private:
@@ -151,12 +151,12 @@ private:
 template <class type>
 class loosePageC
 :
-public ptrC<type>
+public Pointer<type>
 {
 public:
 	explicit loosePageC(type *_p=NULL)
 	:
-	ptrC<type>(_p), nPages(0), nMapped(0),  vasStream(NULL)
+	Pointer<type>(_p), nPages(0), nMapped(0),  vasStream(NULL)
 	{}
 
 	~loosePageC(void) { reset(); }
@@ -169,7 +169,7 @@ public:
 
 public:
 	loosePageC &operator =(type *_p)
-		{ ptrC<type>::operator =(_p); return *this; }
+		{ Pointer<type>::operator =(_p); return *this; }
 
 	void reset(
 		type *_p=NULL, uarch_t _nPages=0, status_t _nMapped=0,
@@ -184,7 +184,7 @@ public:
 		nPages = _nPages;
 		nMapped = _nMapped;
 		vasStream = _vasStream;
-		ptrC<type>::reset(_p);
+		Pointer<type>::reset(_p);
 	};
 
 private:
@@ -199,10 +199,10 @@ public:
 template <class type>
 class streamMemC
 :
-public ptrC<type>
+public Pointer<type>
 {
 public:
-	explicit streamMemC(type *_p=NULL) : ptrC<type>(_p), memStream(NULL) {}
+	explicit streamMemC(type *_p=NULL) : Pointer<type>(_p), memStream(NULL) {}
 	~streamMemC(void) { reset(); }
 
 	streamMemC &operator =(streamMemC &_p)
@@ -210,7 +210,7 @@ public:
 
 public:
 	streamMemC &operator =(type *_p)
-		{ ptrC<type>::operator =(_p); return *this; }
+		{ Pointer<type>::operator =(_p); return *this; }
 
 	void reset(type *_p=NULL, memoryStreamC *_memStream=NULL)
 	{
@@ -219,7 +219,7 @@ public:
 		};
 
 		memStream = _memStream;
-		ptrC<type>::reset(_p);
+		Pointer<type>::reset(_p);
 	}
 
 private:

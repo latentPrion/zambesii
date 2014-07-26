@@ -14,10 +14,10 @@
 
 class memoryStreamC;
 class memReservoirC;
-class heapC
+class Heap
 {
 public:
-	heapC(
+	Heap(
 		uintptr_t chunkSize, memoryStreamC *sourceStream,
 		uint32_t options=0)
 	:
@@ -27,7 +27,7 @@ public:
 
 	error_t initialize(void);
 
-	~heapC(void) {};
+	~Heap(void) {};
 
 public:
 	void *malloc(size_t sz, void *allocatedBy, utf8Char *desc=NULL);
@@ -43,7 +43,7 @@ public:
 	{
 		printf(NOTICE HEAP"dump: typesizes: chunk %dB, block %dB "
 			"alloc %dB\n",
-			sizeof(chunkC), sizeof(blockC), sizeof(allocationC));
+			sizeof(Chunk), sizeof(Block), sizeof(Allocation));
 
 		dumpChunks();
 		dumpBlocks();
@@ -72,13 +72,13 @@ private:
 
 	static const uint32_t	MAGIC_MAXLEN=24;
 
-	class blockC;
-	class allocationC;
+	class Block;
+	class Allocation;
 
-	class chunkC
+	class Chunk
 	{
 	public:
-		chunkC(void)
+		Chunk(void)
 		:
 		nAllocations(0)
 		{
@@ -88,7 +88,7 @@ private:
 		error_t initialize(void)
 			{ return blocks.initialize(); }
 
-		~chunkC(void)
+		~Chunk(void)
 		{
 			memset(magic, 0, MAGIC_MAXLEN);
 		}
@@ -99,9 +99,9 @@ private:
 			return 0;
 		}
 
-		void free(allocationC *alloc, void *freedBy);
-		allocationC *malloc(
-			heapC *heap, size_t sz, void *allocatedBy,
+		void free(Allocation *alloc, void *freedBy);
+		Allocation *malloc(
+			Heap *heap, size_t sz, void *allocatedBy,
 			utf8Char *desc=NULL);
 
 		void dump(void)
@@ -114,29 +114,29 @@ private:
 		}
 
 	private:
-		void appendAndCoalesce(blockC *block, allocationC *alloc);
+		void appendAndCoalesce(Block *block, Allocation *alloc);
 		void prependAndCoalesce(
-			blockC *block, blockC *prevBlock,
-			allocationC *alloc, void *freedBy);
+			Block *block, Block *prevBlock,
+			Allocation *alloc, void *freedBy);
 
 	public:
-		ptrlessListC<chunkC>::headerS	listHeader;
+		ptrlessListC<Chunk>::sHeader	listHeader;
 		uarch_t				nAllocations;
-		ptrlessListC<blockC>		blocks;
+		ptrlessListC<Block>		blocks;
 		utf8Char			magic[MAGIC_MAXLEN];
 	};
 
-	class blockC
+	class Block
 	{
 	public:
-		blockC(chunkC *parent, uarch_t nBytes, void *freedBy)
+		Block(Chunk *parent, uarch_t nBytes, void *freedBy)
 		:
 		parent(parent), freedBy(freedBy), nBytes(nBytes)
 		{
 			strcpy8(magic, HEAP_BLOCK_MAGIC);
 		};
 
-		~blockC(void)
+		~Block(void)
 		{
 			memset(magic, 0, MAGIC_MAXLEN);
 		}
@@ -160,19 +160,19 @@ private:
 		}
 
 	public:
-		ptrlessListC<blockC>::headerS	listHeader;
-		chunkC				*parent;
+		ptrlessListC<Block>::sHeader	listHeader;
+		Chunk				*parent;
 		void				*freedBy;
 		// Size of the block, including its block header.
 		uarch_t				nBytes;
 		utf8Char			magic[MAGIC_MAXLEN];
 	};
 
-	class allocationC
+	class Allocation
 	{
 	public:
-		allocationC(
-			chunkC *parent, uarch_t gapSize, uarch_t nBytes,
+		Allocation(
+			Chunk *parent, uarch_t gapSize, uarch_t nBytes,
 			void *allocatedBy, utf8Char *desc=NULL)
 		:
 		allocatedBy(allocatedBy), parent(parent),
@@ -193,7 +193,7 @@ private:
 			};
 		}
 
-		~allocationC(void)
+		~Allocation(void)
 		{
 			memset(magic, 0, MAGIC_MAXLEN);
 		}
@@ -211,7 +211,7 @@ private:
 				(void*)&this[1], (void*)allocatedBy,
 				(void*)parent,
 				nBytes,
-				nBytes - sizeof(allocationC),
+				nBytes - sizeof(Allocation),
 				strcmp8(magic, HEAP_ALLOC_MAGIC) == 0
 					? "valid"
 					: "invalid",
@@ -220,28 +220,28 @@ private:
 
 	public:
 		static const ubit8			descriptionMaxlen=32;
-		ptrlessListC<allocationC>::headerS	listHeader;
+		ptrlessListC<Allocation>::sHeader	listHeader;
 		void					*allocatedBy;
 		utf8Char				description[
 			descriptionMaxlen];
-		chunkC					*parent;
+		Chunk					*parent;
 		// Size of the allocation, including its allocation header.
 		uintptr_t				nBytes;
 		uintptr_t				gapSize;
 		utf8Char				magic[MAGIC_MAXLEN];
 	};
 
-	error_t getNewChunk(chunkC **retchunk) const;
-	void releaseChunk(chunkC *chunk) const;
+	error_t getNewChunk(Chunk **retchunk) const;
+	void releaseChunk(Chunk *chunk) const;
 	error_t setGuardPage(void *vaddr);
 	error_t unsetGuardPage(void *vaddr);
 	sbit8 checkGuardPage(void *vaddr);
 
-	sbit8 allocIsWithinHeap(void *alloc, chunkC **parentChunk=NULL);
+	sbit8 allocIsWithinHeap(void *alloc, Chunk **parentChunk=NULL);
 
 	memoryStreamC			*memoryStream;
-	ptrlessListC<allocationC>	allocationList;
-	ptrlessListC<chunkC>		chunkList;
+	ptrlessListC<Allocation>	allocationList;
+	ptrlessListC<Chunk>		chunkList;
 };
 
 #endif

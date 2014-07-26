@@ -29,7 +29,7 @@ class numaMemoryBankC;
 
 class memBmpC
 :
-public allocClassC
+public AllocatorBase
 {
 friend class numaMemoryBankC;
 

@@ -50,7 +50,7 @@
 
 class cpuTribC
 :
-public tributaryC
+public Tributary
 {
 public:
 	cpuTribC(void);
@@ -81,7 +81,7 @@ public:
 	cpuStreamC *getCurrentCpuStream(void);
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaCpuBankC *getBank(numaBankId_t bankId);
+	NumaCpuBank *getBank(numaBankId_t bankId);
 	error_t createBank(numaBankId_t id);
 	void destroyBank(numaBankId_t id);
 #endif
@@ -98,26 +98,26 @@ private:
 
 	void bootParseNumaMap(struct zkcmNumaMapS *numaMap);
 	void bootParseNumaMap(
-		struct zkcmNumaMapS *numaMap, struct zkcmSmpMapS *smpMap);
+		struct zkcmNumaMapS *numaMap, struct sZkcmmpMapS *smpMap);
 
 	void bootConfirmNumaCpusBooted(struct zkcmNumaMapS *numaMap);
 	void bootConfirmNumaCpusBooted(
-		struct zkcmNumaMapS *numaMap, struct zkcmSmpMapS *smpMap);
+		struct zkcmNumaMapS *numaMap, struct sZkcmmpMapS *smpMap);
 #elif __SCALING__ == SCALING_SMP
 	error_t newCpuNotification(cpu_t cid, ubit32 acpiId);
 	error_t bootCpuNotification(cpu_t cid, ubit32 acpiId);
 #endif
 #if __SCALING__ >= SCALING_SMP
-	void bootParseSmpMap(struct zkcmSmpMapS *smpMap);
-	void bootConfirmSmpCpusBooted(struct zkcmSmpMapS *smpMap);
+	void bootParseSmpMap(struct sZkcmmpMapS *smpMap);
+	void bootConfirmSmpCpusBooted(struct sZkcmmpMapS *smpMap);
 #endif
 
 public:
 #if __SCALING__ >= SCALING_CC_NUMA
-	bitmapC			availableBanks;
+	Bitmap			availableBanks;
 #endif
 #if __SCALING__ >= SCALING_SMP
-	bitmapC			availableCpus, onlineCpus;
+	Bitmap			availableCpus, onlineCpus;
 	ubit8			_usingChipsetSmpMode;
 #endif
 	cpu_t			bspId;
@@ -140,9 +140,9 @@ extern cpuTribC		cpuTrib;
  **************************************************************************/
 
 #if __SCALING__ >= SCALING_CC_NUMA
-inline numaCpuBankC *cpuTribC::getBank(numaBankId_t id)
+inline NumaCpuBank *cpuTribC::getBank(numaBankId_t id)
 {
-	return static_cast<numaCpuBankC *>( cpuBanks.getItem(id) );
+	return static_cast<NumaCpuBank *>( cpuBanks.getItem(id) );
 }
 #endif
 

@@ -33,9 +33,9 @@
 
 class memReservoirC;
 
-class slamCacheC
+class SlamCache
 :
-public heapCacheC
+public HeapCache
 {
 friend class memReservoirC;
 public:
@@ -48,10 +48,10 @@ public:
 	 * to.
 	 **/
 	enum allocatorE { RAW, STREAM };
-	slamCacheC(uarch_t objectSize, allocatorE allocator=STREAM);
+	SlamCache(uarch_t sObjectize, allocatorE allocator=STREAM);
 
 	error_t initialize(void) { return ERROR_SUCCESS; }
-	virtual ~slamCacheC(void);
+	virtual ~SlamCache(void);
 
 public:
 	virtual void *allocate(uarch_t flags=0, ubit8 *requiredNewPage=NULL);
@@ -64,16 +64,16 @@ public:
 	error_t debugCheck(void);
 
 private:
-	struct objectS
+	struct sObject
 	{
-		objectS(void)
+		sObject(void)
 #ifdef CONFIG_HEAP_SLAM_DEBUG
 		:
 		magic(SLAMCACHE_MAGIC),
 #endif
 		{}
 
-		~objectS(void)
+		~sObject(void)
 		{
 #ifdef CONFIG_HEAP_SLAM_DEBUG
 			magic = 0;
@@ -83,7 +83,7 @@ private:
 #ifdef CONFIG_HEAP_SLAM_DEBUG
 		uarch_t		magic;
 #endif
-		objectS		*next;
+		sObject		*next;
 	};
 
 	void *getNewPage(sarch_t localFlush);
@@ -94,7 +94,7 @@ private:
 	ubit32		perPageBlocks;
 	allocatorE	allocator;
 
-	sharedResourceGroupC<waitLockC, objectS *>	partialList, freeList;
+	sharedResourceGroupC<waitLockC, sObject *>	partialList, freeList;
 };
 
 #endif

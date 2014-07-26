@@ -52,12 +52,12 @@ class processStreamC;
 
 class floodplainnStreamC
 :
-public streamC
+public Stream
 {
 public:
 	floodplainnStreamC(processId_t id, processStreamC *parent)
 	:
-	streamC(id), parent(parent)
+	Stream(id), parent(parent)
 	{};
 
 	error_t initialize(void) { return ERROR_SUCCESS; }

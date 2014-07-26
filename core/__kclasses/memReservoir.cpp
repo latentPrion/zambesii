@@ -17,10 +17,10 @@ memReservoirC::memReservoirC(memoryStreamC *sourceStream)
 __kheap(
 	CHIPSET_MEMORY___KBOG_SIZE, sourceStream,
 	0
-	| heapC::OPT_GUARD_PAGED
-	| heapC::OPT_CHECK_ALLOCS_ON_FREE
-	| heapC::OPT_CHECK_BLOCK_MAGIC_PASSIVELY
-	| heapC::OPT_CHECK_HEAP_RANGES_ON_FREE),
+	| Heap::OPT_GUARD_PAGED
+	| Heap::OPT_CHECK_ALLOCS_ON_FREE
+	| Heap::OPT_CHECK_BLOCK_MAGIC_PASSIVELY
+	| Heap::OPT_CHECK_HEAP_RANGES_ON_FREE),
 sourceStream(sourceStream)
 {
 	heaps.rsrc.ptrs = NULL;
@@ -35,7 +35,7 @@ error_t memReservoirC::initialize(void)
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	heaps.rsrc.ptrs = new (
-		sourceStream->memAlloc(1, MEMALLOC_NO_FAKEMAP)) heapC*;
+		sourceStream->memAlloc(1, MEMALLOC_NO_FAKEMAP)) Heap*;
 
 	if (heaps.rsrc.ptrs == NULL)
 	{

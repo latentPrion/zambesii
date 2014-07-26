@@ -122,7 +122,7 @@ void timerTribC::initializeAllQueues(void)
 
 void timerTribC::newTimerDeviceNotification(zkcmTimerDeviceC *dev)
 {
-	timeS		min, max;
+	sTime		min, max;
 
 	/**	EXPLANATION:
 	 * Checks to see if the new timer device can be consumed by any of the
@@ -215,12 +215,12 @@ error_t timerTribC::enableWaitingOnQueue(ubit32 nanos)
 
 error_t timerTribC::enableWaitingOnQueue(timerQueueC *queue)
 {
-	eventProcessorS::messageS	*msg;
+	eventProcessorS::Message	*msg;
 
 	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
 
-	msg = new eventProcessorS::messageS(
-		eventProcessorS::messageS::QUEUE_LATCHED,
+	msg = new eventProcessorS::Message(
+		eventProcessorS::Message::QUEUE_LATCHED,
 		queue);
 
 	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
@@ -343,7 +343,7 @@ error_t timerTribC::initialize(void)
 	ret = processTrib.__kgetStream()->spawnThread(
 		&timerTribC::eventProcessorS::thread, NULL,
 		NULL,
-		taskC::REAL_TIME,
+		Task::REAL_TIME,
 		PRIOCLASS_CRITICAL,
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
 		| SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET
@@ -371,17 +371,17 @@ error_t timerTribC::initialize(void)
 	return processTrib.__kgetStream()->timerStream.initialize();
 }
 
-void timerTribC::getCurrentTime(timeS *t)
+void timerTribC::getCurrentTime(sTime *t)
 {
 	zkcmCore.timerControl.getCurrentTime(t);
 }
 
-void timerTribC::getCurrentDate(dateS *d)
+void timerTribC::getCurrentDate(sDate *d)
 {
 	zkcmCore.timerControl.getCurrentDate(d);
 }
 
-void timerTribC::getCurrentDateTime(timestampS *stamp)
+void timerTribC::getCurrentDateTime(sTimestamp *stamp)
 {
 	zkcmCore.timerControl.getCurrentDateTime(stamp);
 }
@@ -408,7 +408,7 @@ void timerTribC::eventProcessorS::releaseWaitSlotFor(timerQueueC *timerQueue)
 	};
 }
 
-void timerTribC::eventProcessorS::processQueueLatchedMessage(messageS *msg)
+void timerTribC::eventProcessorS::processQueueLatchedMessage(Message *msg)
 {
 	ubit8		slot;
 
@@ -434,7 +434,7 @@ void timerTribC::eventProcessorS::processQueueLatchedMessage(messageS *msg)
 		waitSlots[slot].timerQueue->getNativePeriod() / 1000, slot);
 }
 
-void timerTribC::eventProcessorS::processQueueUnlatchedMessage(messageS *msg)
+void timerTribC::eventProcessorS::processQueueUnlatchedMessage(Message *msg)
 {
 	// Stop waiting on the specified queue.
 	releaseWaitSlotFor(msg->timerQueue);
@@ -443,7 +443,7 @@ void timerTribC::eventProcessorS::processQueueUnlatchedMessage(messageS *msg)
 		msg->timerQueue->getNativePeriod() / 1000);
 }
 
-void timerTribC::eventProcessorS::processExitMessage(messageS *)
+void timerTribC::eventProcessorS::processExitMessage(Message *)
 {
 	printf(WARNING TIMERTRIB"event DQer: Got EXIT_THREAD message.\n");
 	/*UNIMPLEMENTED(
@@ -453,11 +453,11 @@ void timerTribC::eventProcessorS::processExitMessage(messageS *)
 
 void timerTribC::sendMessage(void)
 {
-	eventProcessorS::messageS	*msg;
+	eventProcessorS::Message	*msg;
 
 	// Posts an artificial message to the control queue.
-	msg = new eventProcessorS::messageS(
-		eventProcessorS::messageS::EXIT_THREAD, NULL);
+	msg = new eventProcessorS::Message(
+		eventProcessorS::Message::EXIT_THREAD, NULL);
 
 	eventProcessor.controlQueue.addItem(msg);
 }
@@ -477,7 +477,7 @@ void timerTribC::sendQMessage(void)
 
 void timerTribC::eventProcessorS::thread(void *)
 {
-	eventProcessorS::messageS	*currMsg;
+	eventProcessorS::Message	*currMsg;
 	sarch_t				messagesWereFound;
 	error_t				err;
 
@@ -495,18 +495,18 @@ void timerTribC::eventProcessorS::thread(void *)
 			messagesWereFound = 1;
 			switch (currMsg->type)
 			{
-			case eventProcessorS::messageS::EXIT_THREAD:
+			case eventProcessorS::Message::EXIT_THREAD:
 				timerTrib.eventProcessor.processExitMessage(
 					currMsg);
 				break;
 
-			case eventProcessorS::messageS::QUEUE_LATCHED:
+			case eventProcessorS::Message::QUEUE_LATCHED:
 				timerTrib.eventProcessor
 					.processQueueLatchedMessage(currMsg);
 
 				break;
 
-			case eventProcessorS::messageS::QUEUE_UNLATCHED:
+			case eventProcessorS::Message::QUEUE_UNLATCHED:
 				timerTrib.eventProcessor
 					.processQueueUnlatchedMessage(currMsg);
 
@@ -583,7 +583,7 @@ void timerTribC::dump(void)
 		};
 }
 
-status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, timeS interval)
+status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, sTime interval)
 {
 	if (isr == NULL) { return ERROR_INVALID_ARG; };
 	if ((interval.seconds == 0) && (interval.nseconds == 0)) {
@@ -615,7 +615,7 @@ status_t timerTribC::registerWatchdogIsr(zkcmIsrFn *isr, timeS interval)
 	};
 }
 
-void timerTribC::updateWatchdogInterval(timeS interval)
+void timerTribC::updateWatchdogInterval(sTime interval)
 {
 	if (interval.seconds == 0 && interval.nseconds == 0) { return; };
 

@@ -13,7 +13,7 @@ extern "C" ubit8	*__kcpuPowerOnLapicVaddr;
 extern "C" void		**__kcpuPowerOnSleepStacks;
 extern uarch_t		__kcpuPowerOnSleepStacksLength;
 extern waitLockC	__kcpuPowerOnSleepStacksLock;
-extern perCpuThreadC	__kcpuPowerOnThread;
+extern PerCpuThread	__kcpuPowerOnThread;
 
 #endif
 

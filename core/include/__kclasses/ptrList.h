@@ -52,7 +52,7 @@ private:
 	};
 
 	sharedResourceGroupC<waitLockC, ptrListStateS>	head;
-	slamCacheC		*cache;
+	SlamCache		*cache;
 	sarch_t			usingCache;
 };
 

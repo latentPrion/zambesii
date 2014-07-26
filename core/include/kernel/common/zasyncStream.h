@@ -15,14 +15,14 @@ class processStreamC;
 
 class zasyncStreamC
 :
-public streamC
+public Stream
 {
 public:
 	enum connectReplyE { CONNREPLY_YES, CONNREPLY_NO, CONNREPLY_CLOSED };
 
 	zasyncStreamC(processId_t parentPid, processStreamC *parent)
 	:
-	streamC(parentPid),
+	Stream(parentPid),
 	handlerTid(PROCID_INVALID),
 	parent(parent)
 	{}
@@ -40,7 +40,7 @@ public:
 		header(targetPid, subsystem, function, size, flags, privateData)
 		{}
 
-		messageStreamC::headerS		header;
+		messageStreamC::sHeader		header;
 		/* When a process calls respond(), it must pass in the ID of one
 		 * of its threads which it intends for the initiator to send its
 		 * messages to. The initiator is expected to save this thread's
@@ -117,9 +117,9 @@ private:
 	/* Array of PIDs of processes to which this process has been
 	 * successfully connected, whether it was the initiator or not.
 	 **/
-	struct stateS
+	struct sState
 	{
-		stateS(void)
+		sState(void)
 		:
 		pids(NULL), nConnections(0), connectionlessListen(0)
 		{}
@@ -129,7 +129,7 @@ private:
 		sarch_t		connectionlessListen;
 	};
 
-	sharedResourceGroupC<waitLockC, stateS>	connections;
+	sharedResourceGroupC<waitLockC, sState>	connections;
 	ptrListC<ipc::dataHeaderS>	messages;
 	processStreamC			*parent;
 };

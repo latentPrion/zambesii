@@ -35,7 +35,7 @@ class i8254PitC
 :
 public zkcmTimerDeviceC
 {
-friend class zkcmCpuDetectionModC;
+friend class ZkcmCpuDetectionMod;
 public:
 	explicit i8254PitC(ubit32 childId)
 	:
@@ -63,8 +63,8 @@ public:
 	virtual status_t enable(void);
 	virtual void disable(void);
 	// Call disable() before setting timer options, then enable() again.
-	virtual status_t setPeriodicMode(struct timeS interval);
-	virtual status_t setOneshotMode(struct timeS timeout);
+	virtual status_t setPeriodicMode(struct sTime interval);
+	virtual status_t setOneshotMode(struct sTime timeout);
 	virtual uarch_t getPrecisionDiscrepancyForPeriod(ubit32 /*period*/) { return 0; };
 
 	// IRQ Handler ISR for the i8254 PIT.

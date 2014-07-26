@@ -6,7 +6,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-chipsetMemAreas::areaS		memAreas[CHIPSET_MEMAREA_NAREAS] =
+chipsetMemAreas::sArea		memAreas[CHIPSET_MEMAREA_NAREAS] =
 {
 	{
 		CC"Low Memory (0x0-0xFFFFF, 1MB)",
@@ -90,7 +90,7 @@ void *chipsetMemAreas::getArea(ubit16 index)
 	return memAreas[index].vaddr;
 }
 
-chipsetMemAreas::areaS *chipsetMemAreas::getAreaInfo(ubit16 index)
+chipsetMemAreas::sArea *chipsetMemAreas::getAreaInfo(ubit16 index)
 {
 	if (index >= CHIPSET_MEMAREA_NAREAS) { return NULL; };
 	return &memAreas[index];

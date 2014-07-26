@@ -11,11 +11,11 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
-static fplainn::deviceC		treeDev(CHIPSET_NUMA_SHBANKID);
+static fplainn::Device		treeDev(CHIPSET_NUMA_SHBANKID);
 
-error_t floodplainnC::initializeReq(initializeReqCallF *callback)
+error_t Floodplainn::initializeReq(initializeReqCallF *callback)
 {
-	fvfs::tagC		*root, *tmp;
+	fvfs::Tag		*root, *tmp;
 	error_t			ret;
 
 	/**	EXPLANATION:
@@ -41,13 +41,13 @@ error_t floodplainnC::initializeReq(initializeReqCallF *callback)
 	zuiServer::setNewDeviceActionReq(
 		zuiServer::NDACTION_INSTANTIATE,
 		newSyscallback(
-			&floodplainnC::initializeReq1, (void (*)())callback));
+			&Floodplainn::initializeReq1, (void (*)())callback));
 
 	return ERROR_SUCCESS;
 }
 
-void floodplainnC::initializeReq1(
-	messageStreamC::iteratorS *res, void (*callback)()
+void Floodplainn::initializeReq1(
+	messageStreamC::sIterator *res, void (*callback)()
 	)
 {
 	initializeReqCallF	*_callback;
@@ -62,11 +62,11 @@ void floodplainnC::initializeReq1(
 	_callback(res->header.error);
 }
 
-error_t floodplainnC::findDriver(utf8Char *fullName, fplainn::driverC **retDrv)
+error_t Floodplainn::findDriver(utf8Char *fullName, fplainn::Driver **retDrv)
 {
 	heapArrC<utf8Char>	tmpStr;
 	void			*handle;
-	fplainn::driverC	*tmpDrv;
+	fplainn::Driver	*tmpDrv;
 
 	tmpStr = new utf8Char[DRIVER_FULLNAME_MAXLEN];
 
@@ -100,11 +100,11 @@ error_t floodplainnC::findDriver(utf8Char *fullName, fplainn::driverC **retDrv)
 	return ERROR_NO_MATCH;
 }
 
-void floodplainnC::__kdriverEntry(void)
+void Floodplainn::__kdriverEntry(void)
 {
-	threadC		*self;
+	Thread		*self;
 
-	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	printf(NOTICE"Kernel driver: %s. Executing.\n", self->parent->fullName);
@@ -121,14 +121,14 @@ static inline sarch_t isByIdPath(utf8Char *path)
 	return 1;
 }
 
-error_t floodplainnC::createDevice(
+error_t Floodplainn::createDevice(
 	utf8Char *parentId, numaBankId_t bid, ubit16 childId, ubit32 /*flags*/,
-	fplainn::deviceC **device
+	fplainn::Device **device
 	)
 {
 	error_t			ret;
-	fvfs::tagC		*parentTag, *childTag;
-	fplainn::deviceC	*newDev;
+	fvfs::Tag		*parentTag, *childTag;
+	fplainn::Device	*newDev;
 
 	/**	EXPLANATION:
 	 * This function both creates the device, and creates its nodes in the
@@ -145,7 +145,7 @@ error_t floodplainnC::createDevice(
 	ret = vfsTrib.getFvfs()->getPath(parentId, &parentTag);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	newDev = new fplainn::deviceC(bid);
+	newDev = new fplainn::Device(bid);
 	if (newDev == NULL) { return ERROR_MEMORY_NOMEM; };
 	ret = newDev->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -162,11 +162,11 @@ error_t floodplainnC::createDevice(
 	return ERROR_SUCCESS;
 }
 
-error_t floodplainnC::removeDevice(
+error_t Floodplainn::removeDevice(
 	utf8Char *parentId, ubit32 childId, ubit32 /*flags*/
 	)
 {
-	fvfs::tagC		*parentTag, *childTag;
+	fvfs::Tag		*parentTag, *childTag;
 	error_t			ret;
 
 	/**	EXPLANATION:
@@ -197,10 +197,10 @@ error_t floodplainnC::removeDevice(
 	return ERROR_SUCCESS;
 }
 
-error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
+error_t Floodplainn::getDevice(utf8Char *path, fplainn::Device **device)
 {
 	error_t		ret;
-	fvfs::tagC	*tag;
+	fvfs::Tag	*tag;
 
 	ret = vfsTrib.getFvfs()->getPath(path, &tag);
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -214,10 +214,10 @@ error_t floodplainnC::getDevice(utf8Char *path, fplainn::deviceC **device)
 	return ERROR_SUCCESS;
 }
 
-error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
+error_t Floodplainn::instantiateDeviceReq(utf8Char *path, void *privateData)
 {
 	zudiKernelCallMsgS			*request;
-	fplainn::deviceC			*dev;
+	fplainn::Device			*dev;
 	error_t					ret;
 	heapObjC<fplainn::deviceInstanceC>	devInst;
 
@@ -264,15 +264,15 @@ error_t floodplainnC::instantiateDeviceReq(utf8Char *path, void *privateData)
 		request->header.targetId, &request->header);
 }
 
-void floodplainnC::instantiateDeviceAck(
+void Floodplainn::instantiateDeviceAck(
 	processId_t targetId, utf8Char *path, error_t err, void *privateData
 	)
 {
-	threadC					*currThread;
-	floodplainnC::zudiKernelCallMsgS	*response;
-	fplainn::deviceC			*dev;
+	Thread					*currThread;
+	Floodplainn::zudiKernelCallMsgS	*response;
+	fplainn::Device			*dev;
 
-	currThread = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	currThread = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	// Only driver processes can call this.
@@ -313,10 +313,10 @@ void floodplainnC::instantiateDeviceAck(
 		response->header.targetId, &response->header);
 }
 
-error_t floodplainnC::enumerateBaseDevices(void)
+error_t Floodplainn::enumerateBaseDevices(void)
 {
 	error_t				ret;
-	fplainn::deviceC		*vchipset, *ramdisk;
+	fplainn::Device		*vchipset, *ramdisk;
 	udi_instance_attr_list_t	tmp;
 
 	ret = createDevice(
@@ -361,10 +361,10 @@ error_t floodplainnC::enumerateBaseDevices(void)
 	return ERROR_SUCCESS;
 }
 
-error_t floodplainnC::enumerateChipsets(void)
+error_t Floodplainn::enumerateChipsets(void)
 {
 	error_t				ret;
-	fplainn::deviceC		*chipset;
+	fplainn::Device		*chipset;
 	udi_instance_attr_list_t	tmp;
 
 	ret = createDevice(
@@ -429,7 +429,7 @@ error_t floodplainnC::enumerateChipsets(void)
 	return ERROR_SUCCESS;
 }
 
-const driverInitEntryS *floodplainnC::findDriverInitInfo(utf8Char *shortName)
+const driverInitEntryS *Floodplainn::findDriverInitInfo(utf8Char *shortName)
 {
 	const driverInitEntryS	*tmp;
 
@@ -440,7 +440,7 @@ const driverInitEntryS *floodplainnC::findDriverInitInfo(utf8Char *shortName)
 	return NULL;
 }
 
-const metaInitEntryS *floodplainnC::findMetaInitInfo(utf8Char *shortName)
+const metaInitEntryS *Floodplainn::findMetaInitInfo(utf8Char *shortName)
 {
 	const metaInitEntryS		*tmp;
 
@@ -452,8 +452,8 @@ const metaInitEntryS *floodplainnC::findMetaInitInfo(utf8Char *shortName)
 }
 
 static error_t udi_mgmt_calls_prep(
-	utf8Char *callerName, utf8Char *devPath, fplainn::deviceC **dev,
-	heapObjC<floodplainnC::zudiMgmtCallMsgS> *request,
+	utf8Char *callerName, utf8Char *devPath, fplainn::Device **dev,
+	heapObjC<Floodplainn::zudiMgmtCallMsgS> *request,
 	void *privateData
 	)
 {
@@ -474,7 +474,7 @@ static error_t udi_mgmt_calls_prep(
 
 	(*dev)->instance->getRegionInfo(0, &primaryRegionTid, &dummy);
 
-	*request = new floodplainnC::zudiMgmtCallMsgS(
+	*request = new Floodplainn::zudiMgmtCallMsgS(
 		devPath, primaryRegionTid,
 		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL,
 		sizeof(**request), 0, privateData);
@@ -491,7 +491,7 @@ static error_t udi_mgmt_calls_prep(
 }
 
 static void udi_usage_gcb_prep(
-	udi_cb_t *cb, fplainn::deviceC *dev, void *privateData
+	udi_cb_t *cb, fplainn::Device *dev, void *privateData
 	)
 {
 	cb->channel = NULL;
@@ -501,13 +501,13 @@ static void udi_usage_gcb_prep(
 	cb->origin = NULL;
 }
 
-void floodplainnC::udi_usage_ind(
+void Floodplainn::udi_usage_ind(
 	utf8Char *devPath, udi_ubit8_t usageLevel, void *privateData
 	)
 {
 	heapObjC<zudiMgmtCallMsgS>		request;
 	udi_usage_cb_t				*cb;
-	fplainn::deviceC			*dev;
+	fplainn::Device			*dev;
 
 	if (udi_mgmt_calls_prep(
 		CC"udi_usage_ind", devPath, &dev, &request, privateData)
@@ -538,11 +538,11 @@ void floodplainnC::udi_usage_ind(
 		{ request.release(); };
 }
 
-void floodplainnC::udi_usage_res(
+void Floodplainn::udi_usage_res(
 	utf8Char *devicePath, processId_t targetTid, void *privateData
 	)
 {
-	floodplainnC::zudiMgmtCallMsgS	*response;
+	Floodplainn::zudiMgmtCallMsgS	*response;
 
 	response = new zudiMgmtCallMsgS(
 		devicePath, targetTid,
@@ -563,19 +563,19 @@ void floodplainnC::udi_usage_res(
 		{ delete response; };
 }
 
-void floodplainnC::udi_enumerate_req(
+void Floodplainn::udi_enumerate_req(
 	utf8Char *, udi_ubit8_t /*enumerateLevel*/, void * /*privateData*/
 	)
 {
 }
 
-void floodplainnC::udi_devmgmt_req(
+void Floodplainn::udi_devmgmt_req(
 	utf8Char *, udi_ubit8_t /*op*/, udi_ubit8_t /*parentId*/,
 	void * /*privateData*/
 	)
 {
 }
 
-void floodplainnC::udi_final_cleanup_req(utf8Char *, void * /*privateData*/)
+void Floodplainn::udi_final_cleanup_req(utf8Char *, void * /*privateData*/)
 {
 }

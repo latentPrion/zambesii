@@ -57,7 +57,7 @@
 
 namespace fplainn
 {
-	class driverC;
+	class Driver;
 	class driverInstanceC;
 }
 
@@ -111,7 +111,7 @@ public:
 
 	error_t initialize(
 		const utf8Char *commandLine, const utf8Char *environment,
-		bitmapC *cpuAffinity);
+		Bitmap *cpuAffinity);
 
 	virtual ~processStreamC(void);
 
@@ -136,8 +136,8 @@ public:
 	};
 
 public:
-	threadC *getTask(processId_t processId);
-	threadC *getThread(processId_t processId) { return getTask(processId); }
+	Thread *getTask(processId_t processId);
+	Thread *getThread(processId_t processId) { return getTask(processId); }
 
 	ubit32 getProcessFullNameMaxLength(void)
 		{ return PROCESS_FULLNAME_MAXLEN; }
@@ -161,10 +161,10 @@ public:
 	error_t spawnThread(
 		void (*entryPoint)(void *),
 		void *argument,
-		bitmapC *cpuAffinity,
-		taskC::schedPolicyE schedPolicy, ubit8 prio,
+		Bitmap *cpuAffinity,
+		Task::schedPolicyE schedPolicy, ubit8 prio,
 		uarch_t flags,
-		threadC **ret);
+		Thread **ret);
 
 public:
 	struct environmentVarS
@@ -178,12 +178,12 @@ public:
 	uarch_t			flags;
 	// Only used once, but w/e, only 4-8 bytes.
 	void			*privateData;
-	messageStreamC::headerS	*responseMessage;
+	messageStreamC::sHeader	*responseMessage;
 
 	multipleReaderLockC	taskLock;
 	wrapAroundCounterC	nextTaskId;
 	uarch_t			nTasks;
-	threadC			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
+	Thread			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
 
 	utf8Char		*fullName, *workingDirectory, *arguments;
 	ubit8			nEnvVars;
@@ -194,8 +194,8 @@ public:
 
 #if __SCALING__ >= SCALING_SMP
 	// Tells us which CPUs this process has run on.
-	bitmapC			cpuTrace;
-	bitmapC			cpuAffinity;
+	Bitmap			cpuTrace;
+	Bitmap			cpuAffinity;
 #endif
 #if __SCALING__ >= SCALING_CC_NUMA
 	sharedResourceGroupC<multipleReaderLockC, numaBankId_t>
@@ -203,7 +203,7 @@ public:
 #endif
 
 	// Events which have been queued on this process.
-	bitmapC			pendingEvents;
+	Bitmap			pendingEvents;
 
 	memoryStreamC		memoryStream;
 	timerStreamC		timerStream;
@@ -212,7 +212,7 @@ public:
 
 private:
 	error_t getNewThreadId(processId_t *ret);
-	threadC *allocateNewThread(processId_t newThreadId, void *privateData);
+	Thread *allocateNewThread(processId_t newThreadId, void *privateData);
 	void removeThread(processId_t id);
 
 	error_t allocateInternals(void);
@@ -247,7 +247,7 @@ public:
 
 	error_t initialize(
 		const utf8Char *commandLine, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
 		error_t		ret;
 
@@ -288,7 +288,7 @@ public:
 
 	error_t initialize(
 		const utf8Char *commandLine, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
 		return processStreamC::initialize(
 			commandLine, environment,affinity);
@@ -327,7 +327,7 @@ public:
 
 	error_t initialize(
 		const utf8Char *fullName, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
 		return containerProcessC::initialize(
 			fullName, environment, affinity);
@@ -363,7 +363,7 @@ public:
 
 	error_t initialize(
 		const utf8Char *fullName, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
 		return containerProcessC::initialize(
 			fullName, environment, affinity);
@@ -402,7 +402,7 @@ public:
 
 	error_t initialize(
 		const utf8Char *fullName, const utf8Char *environment,
-		bitmapC *affinity)
+		Bitmap *affinity)
 	{
 		return containerProcessC::initialize(
 			fullName, environment, affinity);
@@ -422,9 +422,9 @@ private:
 /**	Inline Methods:
  ******************************************************************************/
 
-inline threadC *processStreamC::getTask(processId_t id)
+inline Thread *processStreamC::getTask(processId_t id)
 {
-	threadC		*ret;
+	Thread		*ret;
 	uarch_t		rwFlags;
 
 	taskLock.readAcquire(&rwFlags);

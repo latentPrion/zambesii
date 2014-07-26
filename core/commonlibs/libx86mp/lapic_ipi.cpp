@@ -8,9 +8,9 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
 
-sarch_t		x86LapicC::ipiS::handlerIsInstalled=0;
+sarch_t		x86LapicC::sIpi::handlerIsInstalled=0;
 
-error_t x86LapicC::ipiS::sendPhysicalIpi(
+error_t x86LapicC::sIpi::sendPhysicalIpi(
 	ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest
 	)
 {
@@ -49,26 +49,26 @@ error_t x86LapicC::ipiS::sendPhysicalIpi(
 	return (timeout != 0) ? ERROR_SUCCESS : ERROR_UNKNOWN;
 }
 
-error_t x86LapicC::ipiS::setupIpis(cpuStreamC *)
+error_t x86LapicC::sIpi::setupIpis(cpuStreamC *)
 {
 	installHandler();
 	return ERROR_SUCCESS;
 }
 
-void x86LapicC::ipiS::installHandler(void)
+void x86LapicC::sIpi::installHandler(void)
 {
 	if (handlerIsInstalled) { return; };
 
 	// Ask the Interrupt Trib to take our handler.
 	interruptTrib.installException(
 		x86LAPIC_VECTOR_IPI,
-		(__kexceptionFn *)&x86LapicC::ipiS::exceptionHandler,
+		(__kexceptionFn *)&x86LapicC::sIpi::exceptionHandler,
 		INTTRIB_EXCEPTION_FLAGS_POSTCALL);
 
 	handlerIsInstalled = 1;
 }
 
-status_t x86LapicC::ipiS::exceptionHandler(registerContextC *, ubit8 postcall)
+status_t x86LapicC::sIpi::exceptionHandler(RegisterContext *, ubit8 postcall)
 {
 	// Check messager and see why we got an IPI.
 	if (!postcall)

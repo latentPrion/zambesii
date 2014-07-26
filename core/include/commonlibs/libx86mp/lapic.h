@@ -169,7 +169,7 @@ public:
 	void write32(ubit32 regOffset, ubit32 value);
 
 	// IPI-related functions.
-	struct ipiS
+	struct sIpi
 	{
 		error_t setupIpis(class cpuStreamC *parent);
 
@@ -187,11 +187,11 @@ public:
 		static sarch_t		handlerIsInstalled;
 	} ipi;
 
-	struct lintS
+	struct sLint
 	{
 		error_t setupLints(class cpuStreamC *parent);
 
-		void lintSetup(
+		void sLintetup(
 			class cpuStreamC *parent,
 			ubit8 lint, ubit8 intType, ubit32 flags, ubit8 vector);
 
@@ -209,12 +209,12 @@ public:
 		static ubit32 lintConvertAcpiFlags(ubit32);
 
 	private:
-		void rsdtSetupLints(class cpuStreamC *parent);
-		void xsdtSetupLints(class cpuStreamC *parent);
+		void sRsdtetupLints(class cpuStreamC *parent);
+		void sXsdtetupLints(class cpuStreamC *parent);
 	} lint;
 
 	// This must always be 0xHF, where H is any hex digit, and F is fixed.
-	struct spuriousS
+	struct sSpurious
 	{
 		error_t setupSpuriousVector(class cpuStreamC *parent);
 
@@ -224,7 +224,7 @@ public:
 		static sarch_t		handlerIsInstalled;
 	} spurious;
 
-	struct errorS
+	struct sError
 	{
 		error_t setupLvtError(class cpuStreamC *parent);
 
@@ -234,9 +234,9 @@ public:
 		static sarch_t		handlerIsInstalled;
 	} error;	
 
-	struct cacheS
+	struct sCache
 	{
-		cacheS(void)
+		sCache(void)
 		:
 		magic(x86LAPIC_MAGIC),
 		v(NULL)
@@ -250,7 +250,7 @@ public:
 	};
 
 private:
-	static cacheS		cache;
+	static sCache		cache;
 	class cpuStreamC	*parent;
 	// lapicTimerC		timer;
 };

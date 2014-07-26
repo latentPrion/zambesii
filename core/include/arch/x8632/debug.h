@@ -19,7 +19,7 @@ namespace debug
 	void disableDebugExtensions(void);
 	sarch_t debugExtensionsEnabled(void);
 
-	class debuggerC
+	class Debugger
 	{
 	friend void debug::enableDebugExtensions(void);
 	friend void debug::disableDebugExtensions(void);

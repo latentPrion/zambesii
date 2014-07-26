@@ -16,7 +16,7 @@
  * The second array below maps UDI metalanguage names to kernel device class
  * names. We use it to detect what classes of functionality a device exports.
  **/
-utf8Char		*driverClasses[] =
+utf8Char		*Driverlasses[] =
 {
 	CC"unknown",		// 0
 	CC"unrecognized",	// 1
@@ -43,7 +43,7 @@ utf8Char		*driverClasses[] =
 	NULL
 };
 
-driverClassMapEntryS	driverClassMap[] =
+DriverlassMapEntryS	DriverlassMap[] =
 {
 	{ CC"udi_bridge", 2 },
 	{ CC"udi_nic", 5 },
@@ -52,43 +52,43 @@ driverClassMapEntryS	driverClassMap[] =
 	{ NULL, 0 }
 };
 
-error_t fplainn::driverC::preallocateModules(uarch_t nModules)
+error_t fplainn::Driver::preallocateModules(uarch_t nModules)
 {
 	if (nModules == 0) { return ERROR_SUCCESS; };
-	modules = new moduleS[nModules];
+	modules = new Module[nModules];
 	if (modules == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nModules = nModules;
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverC::preallocateRegions(uarch_t nRegions)
+error_t fplainn::Driver::preallocateRegions(uarch_t nRegions)
 {
 	if (nRegions == 0) { return ERROR_SUCCESS; };
-	regions = new regionS[nRegions];
+	regions = new sRegion[nRegions];
 	if (regions == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nRegions = nRegions;
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverC::preallocateRequirements(uarch_t nRequirements)
+error_t fplainn::Driver::preallocateRequirements(uarch_t nRequirements)
 {
 	if (nRequirements == 0) { return ERROR_SUCCESS; };
-	requirements = new requirementS[nRequirements];
+	requirements = new sRequirement[nRequirements];
 	if (requirements == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nRequirements = nRequirements;
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverC::preallocateMetalanguages(uarch_t nMetalanguages)
+error_t fplainn::Driver::preallocateMetalanguages(uarch_t nMetalanguages)
 {
 	if (nMetalanguages == 0) { return ERROR_SUCCESS; };
-	metalanguages = new metalanguageS[nMetalanguages];
+	metalanguages = new sMetalanguage[nMetalanguages];
 	if (metalanguages == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nMetalanguages = nMetalanguages;
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverC::preallocateChildBops(uarch_t nChildBops)
+error_t fplainn::Driver::preallocateChildBops(uarch_t nChildBops)
 {
 	if (nChildBops == 0) { return ERROR_SUCCESS; };
 	childBops = new childBopS[nChildBops];
@@ -97,7 +97,7 @@ error_t fplainn::driverC::preallocateChildBops(uarch_t nChildBops)
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverC::preallocateParentBops(uarch_t nParentBops)
+error_t fplainn::Driver::preallocateParentBops(uarch_t nParentBops)
 {
 	if (nParentBops == 0) { return ERROR_SUCCESS; };
 	parentBops = new parentBopS[nParentBops];
@@ -106,7 +106,7 @@ error_t fplainn::driverC::preallocateParentBops(uarch_t nParentBops)
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverC::preallocateInternalBops(uarch_t nInternalBops)
+error_t fplainn::Driver::preallocateInternalBops(uarch_t nInternalBops)
 {
 	if (nInternalBops == 0) { return ERROR_SUCCESS; };
 	internalBops = new internalBopS[nInternalBops];
@@ -134,10 +134,10 @@ static sbit8 fillInClass(
 	return 1;
 }
 
-error_t fplainn::driverC::detectClasses(void)
+error_t fplainn::Driver::detectClasses(void)
 {
 	uarch_t		nRecognizedClasses=0;
-	metalanguageS	*metalanguage;
+	sMetalanguage	*metalanguage;
 
 	/* Making 2 passes. First pass establishes the number of metalanguages
 	 * the kernel recognizes; second pass allocates the array of classes
@@ -155,7 +155,7 @@ error_t fplainn::driverC::detectClasses(void)
 			{
 				// Don't repeat the warning on the 2nd pass.
 				(pass == 1)
-				? printf(WARNING"driverC::detectClasses: drv "
+				? printf(WARNING"Driver::detectClasses: drv "
 					"%s/%s:\n",
 					"\tMeta index %d in child bops doesn't "
 					"map to any meta declaration.\n",
@@ -169,7 +169,7 @@ error_t fplainn::driverC::detectClasses(void)
 			 * exports as child_bind_ops, and see if the kernel can
 			 * recognize any of them.
 			 **/
-			for (driverClassMapEntryS *tmp=driverClassMap;
+			for (DriverlassMapEntryS *tmp=DriverlassMap;
 				tmp->metaName != NULL;
 				tmp++)
 			{
@@ -181,7 +181,7 @@ error_t fplainn::driverC::detectClasses(void)
 				{
 					nClasses += fillInClass(
 						classes, nClasses,
-						driverClasses[tmp->classIndex]);
+						Driverlasses[tmp->classIndex]);
 				};
 
 				break;
@@ -200,7 +200,7 @@ error_t fplainn::driverC::detectClasses(void)
 			if (classes == NULL) { return ERROR_MEMORY_NOMEM; };
 
 			// driver class 1 is set in stone as "unrecognized".
-			strcpy8(classes[0], driverClasses[1]);
+			strcpy8(classes[0], Driverlasses[1]);
 			nClasses = 1;
 			return ERROR_SUCCESS;
 		};
@@ -288,7 +288,7 @@ void fplainn::driverInstanceC::removeHostedDevice(utf8Char *path)
 
 error_t fplainn::deviceInstanceC::initialize(void)
 {
-	regions = new regionS[device->driverInstance->driver->nRegions];
+	regions = new sRegion[device->driverInstance->driver->nRegions];
 	if (regions == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
@@ -300,11 +300,11 @@ error_t fplainn::deviceInstanceC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::deviceInstanceC::addChannel(channelS *newChan)
+error_t fplainn::deviceInstanceC::addChannel(sChannel *newChan)
 {
-	channelS		**tmp, **old;
+	sChannel		**tmp, **old;
 
-	tmp = new channelS*[nChannels + 1];
+	tmp = new sChannel*[nChannels + 1];
 	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	if (nChannels > 0)
@@ -318,7 +318,7 @@ error_t fplainn::deviceInstanceC::addChannel(channelS *newChan)
 	return ERROR_SUCCESS;
 }
 
-void fplainn::deviceInstanceC::removeChannel(channelS *chan)
+void fplainn::deviceInstanceC::removeChannel(sChannel *chan)
 {
 	for (uarch_t i=0; i<nChannels; i++)
 	{
@@ -333,7 +333,7 @@ void fplainn::deviceInstanceC::removeChannel(channelS *chan)
 	};
 }
 
-error_t fplainn::deviceC::addParentTag(fvfs::tagC *tag, ubit16 *newId)
+error_t fplainn::Device::addParentTag(fvfs::Tag *tag, ubit16 *newId)
 {
 	parentTagS		*tmp, *old;
 
@@ -352,7 +352,7 @@ error_t fplainn::deviceC::addParentTag(fvfs::tagC *tag, ubit16 *newId)
 	return ERROR_SUCCESS;
 }
 
-void fplainn::deviceC::dumpEnumerationAttributes(void)
+void fplainn::Device::dumpEnumerationAttributes(void)
 {
 	utf8Char		*fmtChar;
 
@@ -384,7 +384,7 @@ void fplainn::deviceC::dumpEnumerationAttributes(void)
 	};
 }
 
-error_t fplainn::deviceC::findEnumerationAttribute(
+error_t fplainn::Device::findEnumerationAttribute(
 	utf8Char *name, udi_instance_attr_list_t **attr
 	)
 {
@@ -400,7 +400,7 @@ error_t fplainn::deviceC::findEnumerationAttribute(
 	return ERROR_NOT_FOUND;
 }
 
-error_t fplainn::deviceC::getEnumerationAttribute(
+error_t fplainn::Device::getEnumerationAttribute(
 	utf8Char *name, udi_instance_attr_list_t *attrib
 	)
 {
@@ -415,7 +415,7 @@ error_t fplainn::deviceC::getEnumerationAttribute(
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::deviceC::addEnumerationAttribute(
+error_t fplainn::Device::addEnumerationAttribute(
 	udi_instance_attr_list_t *attrib
 	)
 {
@@ -455,7 +455,7 @@ error_t fplainn::deviceC::addEnumerationAttribute(
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverC::moduleS::addAttachedRegion(ubit16 regionIndex)
+error_t fplainn::Driver::Module::addAttachedRegion(ubit16 regionIndex)
 {
 	ubit16		*old;
 
@@ -475,7 +475,7 @@ error_t fplainn::driverC::moduleS::addAttachedRegion(ubit16 regionIndex)
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::driverC::addInstance(numaBankId_t bid, processId_t pid)
+error_t fplainn::Driver::addInstance(numaBankId_t bid, processId_t pid)
 {
 	driverInstanceC		*old, *newInstance;
 	error_t			ret;
@@ -503,7 +503,7 @@ error_t fplainn::driverC::addInstance(numaBankId_t bid, processId_t pid)
 	return ERROR_SUCCESS;
 }
 
-void fplainn::driverC::dump(void)
+void fplainn::Driver::dump(void)
 {
 	printf(NOTICE"Driver: index %d: %s/%s\n\t(%s).\n\tSupplier %s; "
 		"Contact %s.\n"

@@ -20,7 +20,7 @@
 
 class interruptTribC
 :
-public tributaryC
+public Tributary
 {
 public:
 	interruptTribC(void);
@@ -37,7 +37,7 @@ public:
 	void removeException(uarch_t vector);
 
 	// Containing namespace for the ZKCM sub-API.
-	struct zkcmS
+	struct sZkcm
 	{
 		/**	NOTES:
 		 * These functions deal with the registration and retire of
@@ -104,10 +104,10 @@ public:
 	void dumpMsiIrqs(void);
 	void dumpUnusedVectors(void);
 
-	void pinIrqMain(registerContextC *regs);
-	void msiIrqMain(registerContextC *regs);
-	void swiMain(registerContextC *regs);
-	void exceptionMain(registerContextC *regs);
+	void pinIrqMain(RegisterContext *regs);
+	void msiIrqMain(RegisterContext *regs);
+	void swiMain(RegisterContext *regs);
+	void exceptionMain(RegisterContext *regs);
 
 private:
 	// These two are architecture specific.
@@ -227,7 +227,7 @@ private:
 };
 
 extern interruptTribC		interruptTrib;
-extern "C" void interruptTrib_interruptEntry(registerContextC *regs);
+extern "C" void interruptTrib_interruptEntry(RegisterContext *regs);
 
 #endif
 

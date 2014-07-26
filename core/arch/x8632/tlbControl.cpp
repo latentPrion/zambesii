@@ -53,7 +53,7 @@ void tlbControl::flushEntryRange(void *vaddr, uarch_t nPages)
 
 void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 {
-	bitmapC		*bmp;
+	Bitmap		*bmp;
 
 	/**	EXPLANATION:
 	 * There are two cases for SMP range flushing:

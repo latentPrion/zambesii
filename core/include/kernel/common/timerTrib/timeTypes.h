@@ -27,38 +27,38 @@
 	 * microsecond or nanosecond.
 	 **/
 
-struct dateS
+struct sDate
 {
-	dateS(sbit32 year=0, ubit8 month=0, ubit8 day=0, sbit8 weekDay=0)
+	sDate(sbit32 year=0, ubit8 month=0, ubit8 day=0, sbit8 weekDay=0)
 	:
 	year(year), month(month), day(day), weekDay(weekDay)
 	{}
 
-	inline int operator ==(dateS &d)
+	inline int operator ==(sDate &d)
 	{
 		return year == d.year && month == d.month && day == d.day;
 	}
 
-	inline int operator >(dateS &d)
+	inline int operator >(sDate &d)
 	{
 		return year > d.year
 			|| (year == d.year && month > d.month)
 			|| (year == d.year && month == d.month && day > d.day);
 	}
 
-	inline int operator >=(dateS &d)
+	inline int operator >=(sDate &d)
 	{
 		return *this == d || *this > d;
 	}
 
-	inline int operator <(dateS &d)
+	inline int operator <(sDate &d)
 	{
 		return year < d.year
 			|| (year == d.year && month < d.month)
 			|| (year == d.year && month == d.month && day < d.day);
 	}
 
-	inline int operator <=(dateS &d)
+	inline int operator <=(sDate &d)
 	{
 		return *this == d || *this < d;
 	}
@@ -71,7 +71,7 @@ struct dateS
  * The kernel stores time as the number of seconds elapsed since the start of
  * the current day.
  *
- * Timestamps are a combination of a dateS and a timeS, which together give
+ * Timestamps are a combination of a sDate and a sTime, which together give
  * an absolute value for the current date and time, along with a nanosecond
  * magnitude value for up to nanosecond time precision.
  *
@@ -84,7 +84,7 @@ struct dateS
  * same 64 bits I was going to use anyway. Usage should be intuitive.
  *
  *	USAGE:
- * timeS	myTime = { 0, 0 };
+ * sTime	myTime = { 0, 0 };
  * ubit8	h, m, s;
  *
  * myTime.seconds = 12345;
@@ -96,42 +96,42 @@ struct dateS
  * printf(NOTICE"Current time %02d:%02d:%02d, %dns.",
  *	h, m, s, myTime.nseconds);
  **/
-struct timeS
+struct sTime
 {
 #ifdef __cplusplus
-	timeS(void)
+	sTime(void)
 	:
 	nseconds(0), seconds(0)
 	{}
 
-	timeS(ubit32 seconds, ubit32 nseconds)
+	sTime(ubit32 seconds, ubit32 nseconds)
 	:
 	nseconds(nseconds), seconds(seconds)
 	{}
 
-	inline int operator ==(timeS &t)
+	inline int operator ==(sTime &t)
 	{
 		return (seconds == t.seconds) && (nseconds == t.nseconds);
 	}
 
-	inline int operator >(timeS &t)
+	inline int operator >(sTime &t)
 	{
 		return (seconds > t.seconds)
 			|| ((nseconds > t.nseconds) && (seconds >= t.seconds));
 	}
 
-	inline int operator >=(timeS &t)
+	inline int operator >=(sTime &t)
 	{
 		return (*this == t) || (*this > t);
 	}
 
-	inline int operator <(timeS &t)
+	inline int operator <(sTime &t)
 	{
 		return (seconds < t.seconds)
 			|| ((nseconds < t.nseconds) && (seconds <= t.seconds));
 	}
 
-	inline int operator <=(timeS &t)
+	inline int operator <=(sTime &t)
 	{
 		return (*this == t) || (*this < t);
 	}
@@ -140,59 +140,59 @@ struct timeS
 	ubit32		nseconds, seconds;
 };
 
-struct timestampS
+struct sTimestamp
 {
 #ifdef __cplusplus
-	timestampS(void)
+	sTimestamp(void)
 	:
 	time(0, 0), date(0)
 	{}
 
-	timestampS(ubit32 date, ubit32 sec, ubit32 nsec)
+	sTimestamp(ubit32 date, ubit32 sec, ubit32 nsec)
 	:
 	time(sec, nsec), date(date)
 	{}
 
-	timestampS(ubit32 date)
+	sTimestamp(ubit32 date)
 	:
 	date(date)
 	{}
 
-	timestampS(ubit32 sec, ubit32 nsec)
+	sTimestamp(ubit32 sec, ubit32 nsec)
 	:
 	time(sec, nsec), date(0)
 	{}
 
-	inline int operator ==(timestampS &t)
+	inline int operator ==(sTimestamp &t)
 	{
 		return (date == t.date) && (time == t.time);
 	}
 
-	inline int operator >(timestampS &t)
+	inline int operator >(sTimestamp &t)
 	{
 		return (date > t.date)
 			|| ((time > t.time) && (date >= t.date));
 	}
 
-	inline int operator >=(timestampS &t)
+	inline int operator >=(sTimestamp &t)
 	{
 		return (*this == t) || (*this > t);
 	}
 
-	inline int operator <(timestampS &t)
+	inline int operator <(sTimestamp &t)
 	{
 		return (date < t.date)
 			|| ((time < t.time) && (date <= t.date));
 	}
 
-	inline int operator <=(timestampS &t)
+	inline int operator <=(sTimestamp &t)
 	{
 		return (*this == t) || (*this < t);
 	}
 #endif
 
-	timeS	time;
-	dateS	date;
+	sTime	time;
+	sDate	date;
 };
 
 #endif

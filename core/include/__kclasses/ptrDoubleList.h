@@ -66,14 +66,14 @@ protected:
 		listNodeS	*prev, *next;
 	};
 
-	struct listStateS
+	struct sListState
 	{
 		listNodeS	*head, *tail;
 		uarch_t		nItems;
 	};
 
-	sharedResourceGroupC<waitLockC, listStateS>	list;
-	slamCacheC		*objectCache;
+	sharedResourceGroupC<waitLockC, sListState>	list;
+	SlamCache		*objectCache;
 };
 
 

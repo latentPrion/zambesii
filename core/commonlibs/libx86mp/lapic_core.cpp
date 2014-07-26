@@ -16,7 +16,7 @@
 
 #define x86LAPIC_NPAGES		4
 
-x86LapicC::cacheS		x86LapicC::cache;
+x86LapicC::sCache		x86LapicC::cache;
 
 x86LapicC::x86LapicC(cpuStreamC *parent)
 :
@@ -93,7 +93,7 @@ error_t x86LapicC::mapLapicMem(void)
 error_t x86LapicC::detectPaddr(void)
 {
 	x86_mpCfgS		*cfgTable;
-	acpi_rsdtS		*rsdt;
+	acpi_sRsdt		*rsdt;
 	acpi_rMadtS		*madt;
 	void			*handle, *context;
 	paddr_t			tmp;
@@ -201,7 +201,7 @@ void x86LapicC::sendEoi(void)
 
 #define x86LAPIC_LVT_ERR_FLAGS_DISABLE	(1<<16)
 
-error_t x86LapicC::errorS::setupLvtError(cpuStreamC *parent)
+error_t x86LapicC::sError::setupLvtError(cpuStreamC *parent)
 {
 	parent->lapic.write32(
 		x86LAPIC_REG_LVT_ERR, 0 | x86LAPIC_VECTOR_LVT_ERROR);
@@ -210,14 +210,14 @@ error_t x86LapicC::errorS::setupLvtError(cpuStreamC *parent)
 	return ERROR_SUCCESS;
 }
 
-void x86LapicC::errorS::installHandler(void)
+void x86LapicC::sError::installHandler(void)
 {
 	if (handlerIsInstalled) { return; };
 }
 
 #define x86LAPIC_SPURIOUS_VECTOR_FLAGS_DISABLE		(1<<8)
 
-error_t x86LapicC::spuriousS::setupSpuriousVector(cpuStreamC *parent)
+error_t x86LapicC::sSpurious::setupSpuriousVector(cpuStreamC *parent)
 {
 	ubit32		outval;
 
@@ -228,7 +228,7 @@ error_t x86LapicC::spuriousS::setupSpuriousVector(cpuStreamC *parent)
 	return ERROR_SUCCESS;
 }
 
-void x86LapicC::spuriousS::installHandler(void)
+void x86LapicC::sSpurious::installHandler(void)
 {
 	if (handlerIsInstalled) { return; };
 }

@@ -48,7 +48,7 @@ struct zkcmTimerEventS
 {
 	zkcmTimerDeviceC		*device;
 	class floodplainnStreamC	*latchedStream;
-	timestampS			irqStamp;
+	sTimestamp			irqStamp;
 };
 
 class zkcmTimerDeviceC
@@ -133,15 +133,15 @@ public:
 			flags, ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
 	}
 	// Call disable() before setting timer options, then enable() again.
-	virtual status_t setPeriodicMode(struct timeS interval)=0;
-	virtual status_t setOneshotMode(struct timeS timeout)=0;
-	virtual void getOneshotModeMinMaxTimeout(timeS *min, timeS *max)
+	virtual status_t setPeriodicMode(struct sTime interval)=0;
+	virtual status_t setOneshotMode(struct sTime timeout)=0;
+	virtual void getOneshotModeMinMaxTimeout(sTime *min, sTime *max)
 	{
 		min->nseconds = capabilities.oneshotMinTimeout;
 		max->nseconds = capabilities.oneshotMaxTimeout; 
 	}
 	
-	virtual void getPeriodicModeMinMaxPeriod(timeS *min, timeS *max)
+	virtual void getPeriodicModeMinMaxPeriod(sTime *min, sTime *max)
 	{
 		min->nseconds = capabilities.periodicMinPeriod;
 		max->nseconds = capabilities.periodicMaxPeriod;
@@ -193,9 +193,9 @@ public:
 
 public:
 
-	struct capabilitiesS
+	struct sCapabilities
 	{
-		capabilitiesS(
+		sCapabilities(
 			timerTypeE type, ubit32 modes,
 			ubit32 periodicMinPeriod, ubit32 periodicMaxPeriod,
 			ubit32 oneshotMinTimeout, ubit32 oneshotMaxTimeout,
@@ -230,9 +230,9 @@ protected:
 	}
 
 protected:
-	struct stateS
+	struct sState
 	{
-		stateS(void)
+		sState(void)
 		:
 		flags(0), latchedStream(0), mode(UNINITIALIZED), period(0)
 		{}
@@ -245,13 +245,13 @@ protected:
 		// For periodic mode: stores the current timer period in ns.
 		ubit32			period;
 		// For oneshot mode: stores the current timeout date and time.
-		timeS			currentTimeout;
-		timeS			currentInterval;
+		sTime			currentTimeout;
+		sTime			currentInterval;
 	};
 
-	sharedResourceGroupC<waitLockC, stateS>	state;
+	sharedResourceGroupC<waitLockC, sState>	state;
 	singleWaiterQueueC			irqEventQueue;
-	slamCacheC				*irqEventCache;
+	SlamCache				*irqEventCache;
 	clockRoutineFn				*clockRoutine;
 };
 

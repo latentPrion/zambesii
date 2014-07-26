@@ -192,7 +192,7 @@ void dumpSmpIsaPins(void)
 
 static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 {
-	acpi_rsdtS			*rsdt;
+	acpi_sRsdt			*rsdt;
 	acpi_rMadtS			*madt;
 	acpi_rMadtIrqSourceOverS	*irqOverride;
 	void				*context, *handle, *handle2;

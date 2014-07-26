@@ -1,55 +1,93 @@
 //List of TODO:s.
 
-ATTENTION:
-	You have to go through the kernel's initialization sequence from start
-	to end, from constructor to constructor and determine which bits of
-	code need to go into which constructors.
-
-	Do this *BEFORE* you move on with any further work, please. Too many
-	bugs where initialization is concerned. It is best, in the end, to
-	depend on what the compiler gives and not try to work around the
-	language's features. Again, use the language to your advantage, reaven.
-
-//__kclasses
-* Decide properly how to get the interface for the alloc table to work in a 
-  uniform, clean fashion.
-
-//memoryTrib
-
-//numaTrib
-* Add some more fancy stuff for informative purposes, such as current status
-  of banks, etc.
-* Add a 'dump()' function.
-
-//cpuTrib
-
 // VSwamp:
 * Implement backward linking of swamp info nodes. Right now when you free to
   the swamp, the kernel will only join adjacent nodes forward. If there are
   adjacent nodes behind you, it will not join them up, and thus will cause
   fragmentation.
 
-//__kthreads
-* Deal with the issue of how to unify the different architecture setups.
+Portions of the C++11 Stdlib that we will port to the kernel:
+	* <atomic>
+	* <memory>
+	* <functional>
+	* <new>
+	* <iterator>
+	* <bitset>
+	* <__kcallbacks>
 
-// PMM:
+Messages:
+	Unify all request and response messages, such that we potentially no
+	longer have to delete the request message and create a new response
+	message every time.
+	
+	This basically means that we no longer copy the messages when pulling
+	in messageStreamC::pull(), but we hand out pointers as they are.
+	
+	This is safe because: if the address spaces are different, it will
+	only matter if the processes are userspace. Kernel-domain source
+	threads can (and should) directly allocate their buffers.
+	Kernel-domain target threads can (and should) directly use the kernel
+	buffer.
+	
+	Should kernel domain targets be made to use the userspace syscall
+	entry stubs? No. Even for the case where we intended (and we don't
+	anymore, mind you) to have kernel-domain services, we were going to
+	have them use jump-buffers to directly access kernel data and code
+	for modifying stream metadata. So we would have just exposed the
+	direct kernel entry points to them via the jump buffers, and not the
+	syscall stubs.
+	
+	The only downside to not copying the messages to the target is that
+	the target can directly modify the message that the source sent.
+	
+	To a degree, we will still need to do some small copying, since for
+	most servers, they will need to create a copy of the request message
+	on their stack before they reuse it as the response.
 
-// General fixes: Continuation for when you resume:
-* Refine include/__kstdlib/compiler
-* Run through all PMM code.
-* Run through all locking code and optimize for the NUMA, SMP, and UP cases.
-* Re-implement all allocation functions in the Memory Tributary.
-* From there, all you need to do is take about a week and run through every
-  line of code in the kernel and make sure that the constructores are in order,
-  then ensure the initialize() sequence is sane.
-* Then test the kernel, and ensure it's fine, and bump it up to v0.00.002.
+__kcallbacks:
+	We need a way to allow threads to spin on one queue, while specifying
+	their callbacks in a clean, easily readable way.
+	
+	baseclass: __kCallback:
+		class __kCallback
+		{
+			__kCallback(void(*)(void));
+			__kCallback(void(*)(...));
+		};
 
+Eliminating per-cpu threads:
+	We should give each CPU its own power thread of sorts. This is the
+	thread it executes in while waking up, and which it uses for
+	power events. This thread also leads it to the scheduler's pull()
+	method.
+	
+	By doing this, we eliminate the need for per-CPU threads, and can
+	unify a lot of code. It also leaves CPUs addressable. This means
+	that while CPUs are waking up, their threads will have unique IDs,
+	so the problem we had 2 or so years back with multiple CPUs being
+	able to acquire a lot simultaneously (because they all had the same
+	TID to the lock) cannot occur.
+	
+	#2: Solution #2 is to add special case handling code to the locking
+	code in the kernel, such that we check the IDs of threads on
+	acquire. If the ID of the thread is within the CPU namespace, we
+	store the ID of the CPU instead of the ID of the thread. Very simple,
+	and it eliminates the idea of per-cpu threads entirely.
+	
+	A problem arises, where if the threadId is not unique, AP CPUs running
+	the same power thread will be unaddressable. This means they will be
+	unable to receive messages from kernel services. We can solve this
+	using a getThreadId() method on Thread. It will return the current
+	CPU ID if the thread is a power thread, or else its own hardcoded ID.
+	
+Kernel-server thread IPC/ITC mechanism:
 
-// Plans for v0.00.003:
-* Implement the Interrupt Tributary.
-* Stub out some hack interface for emulated firmware printing services.
-
-// Plans for v0.00.004:
-* Design the Firmware Tributary.
-* Re-work the print stub from v0.00.002 to use the emulated print service.
-
+Establishing specific "ID" nomenclature:
+	We should no longer have any classes with members named "id". All
+	"id" members should be given more specific names (cpuId, threadId,
+	processId, etc).
+	
+Rename classes:
+	Classes will no longer have names of the form classC, but rather,
+	we will follow the Java convention of calling classes Class with an
+	upper camel case name.

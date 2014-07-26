@@ -45,7 +45,7 @@
 
 class processTribC
 :
-public tributaryC
+public Tributary
 {
 public:
 	processTribC(void *vaddrSpaceBaseAddr, uarch_t vaddrSpaceSize)
@@ -83,7 +83,7 @@ public:
 public:
 	containerProcessC *__kgetStream(void) { return &__kprocess; };
 	processStreamC *getStream(processId_t id);
-	inline taskC *getThread(processId_t tid);
+	inline Task *getThread(processId_t tid);
 
 	/**	EXPLANATION:
 	 * Distributaries are by nature high privilege processes with high
@@ -147,7 +147,7 @@ public:
 		utf8Char *commandLine,
 		utf8Char *environment,
 		numaBankId_t addrSpaceBinding,	// NUMA addrspace binding.
-		bitmapC *cpuAffinity,		// Ocean/NUMA/SMP affinity.
+		Bitmap *cpuAffinity,		// Ocean/NUMA/SMP affinity.
 		void *elevation,		// Privileges.
 		ubit8 execDomain,		// Kernel mode vs. User mode.
 		ubit8 schedPolicy,		// Sched policy of 1st thread.
@@ -211,7 +211,7 @@ extern processTribC	processTrib;
 /**	Inline Methods
  *****************************************************************************/
 
-taskC *processTribC::getThread(processId_t tid)
+Task *processTribC::getThread(processId_t tid)
 {
 	processStreamC		*proc;
 

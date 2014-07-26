@@ -24,7 +24,7 @@
 
 class timerTribC
 :
-public tributaryC
+public Tributary
 {
 friend class zkcmTimerControlModC;
 friend class timerStreamC;
@@ -34,17 +34,17 @@ public:
 	~timerTribC(void);
 
 public:
-	status_t registerWatchdogIsr(zkcmIsrFn *, timeS interval);
-	void updateWatchdogInterval(timeS interval);
+	status_t registerWatchdogIsr(zkcmIsrFn *, sTime interval);
+	void updateWatchdogInterval(sTime interval);
 	void unregisterWatchdogIsr(void);
 
 	/**	Deprecated in lieu of redesign.
 	void updateContinuousClock(void);
-	void updateScheduledClock(uarch_t sourceId); */
+	void upsDatecheduledClock(uarch_t sourceId); */
 
-	void getCurrentTime(timeS *t);
-	void getCurrentDate(dateS *d);
-	void getCurrentDateTime(timestampS *stamp);
+	void getCurrentTime(sTime *t);
+	void getCurrentDate(sDate *d);
+	void getCurrentDateTime(sTimestamp *stamp);
 
 	/**	EXPLANATION:
 	 * Called by timer device drivers from IRQ context to let the kernel
@@ -131,13 +131,13 @@ private:
 	struct watchdogIsrS
 	{
 		zkcmIsrFn	*isr;
-		timestampS	nextFeedTime;
-		timeS		interval;
+		sTimestamp	nextFeedTime;
+		sTime		interval;
 	};
 
 
 	// Timestamp value for when this kernel instance was booted.
-	timestampS	bootTimestamp;
+	sTimestamp	bootTimestamp;
 
 	timerQueueC	period1s, period100ms, period10ms, period1ms,
 			period100us, period10us, period1us,
@@ -170,17 +170,17 @@ private:
 			waitSlots[slot].eventQueue = NULL;
 		}
 
-		struct messageS
+		struct Message
 		{
 			enum typeE {
 				QUEUE_LATCHED=1, QUEUE_UNLATCHED, EXIT_THREAD };
 
-			messageS(void)
+			Message(void)
 			:
 			type(static_cast<typeE>( 0 ))
 			{}
 
-			messageS(typeE type, timerQueueC *timerQueue)
+			Message(typeE type, timerQueueC *timerQueue)
 			:
 			type(type), timerQueue(timerQueue)
 			{}
@@ -189,13 +189,13 @@ private:
 			timerQueueC	*timerQueue;
 		};
 
-		void processQueueLatchedMessage(messageS *msg);
-		void processQueueUnlatchedMessage(messageS *msg);
-		void processExitMessage(messageS *);
+		void processQueueLatchedMessage(Message *msg);
+		void processQueueUnlatchedMessage(Message *msg);
+		void processExitMessage(Message *);
 
-		// PID and Pointer to event processing thread's taskC struct.
+		// PID and Pointer to event processing thread's Task struct.
 		processId_t		tid;
-		threadC			*task;
+		Thread			*task;
 		// Control queue used to send signals to the processing thread.
 		singleWaiterQueueC	controlQueue;
 		/* Array of wait queues for each of the timerQueues which are
@@ -205,7 +205,7 @@ private:
 		 * queue, which causes the thread to begin checking that
 		 * timerQueue's wait queue.
 		 **/
-		struct waitSlotS
+		struct sWaitSlot
 		{
 			timerQueueC		*timerQueue;
 			singleWaiterQueueC	*eventQueue;

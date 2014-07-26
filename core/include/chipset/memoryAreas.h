@@ -11,7 +11,7 @@
 
 namespace chipsetMemAreas
 {
-	struct areaS
+	struct sArea
 	{
 		utf8Char	*name;
 		paddr_t		basePaddr;
@@ -22,7 +22,7 @@ namespace chipsetMemAreas
 	error_t mapArea(ubit16 index);
 	error_t unmapArea(ubit16 index);
 	void *getArea(ubit16 index);
-	struct areaS *getAreaInfo(ubit16 index);
+	struct sArea *getAreaInfo(ubit16 index);
 }
 
 #endif

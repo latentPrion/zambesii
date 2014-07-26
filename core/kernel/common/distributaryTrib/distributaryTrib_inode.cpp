@@ -4,11 +4,11 @@
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
 
 
-error_t distributaryTribC::categoryInodeC::initialize(void)
+error_t distributaryTribC::categoryINode::initialize(void)
 {
 	error_t		ret;
 
-	ret = currentt::vfsInodeC::initialize();
+	ret = currentt::vfsINode::initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	ret = distributaries.initialize();
@@ -17,9 +17,9 @@ error_t distributaryTribC::categoryInodeC::initialize(void)
 	return categories.initialize();
 }
 
-distributaryTribC::dvfsTagC<distributaryTribC::distributaryInodeC> *
-distributaryTribC::categoryInodeC::createDistributaryTag(
-	utf8Char *name, distributaryInodeC *inode
+distributaryTribC::dvfsTagC<distributaryTribC::distributaryINode> *
+distributaryTribC::categoryINode::createDistributaryTag(
+	utf8Char *name, distributaryINode *inode
 	)
 {
 	distributaryTagC	*newTag;
@@ -42,7 +42,7 @@ distributaryTribC::categoryInodeC::createDistributaryTag(
 	return newTag;
 }
 
-sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(utf8Char *name)
+sarch_t distributaryTribC::categoryINode::removeDistributaryTag(utf8Char *name)
 {
 	void			*handle;
 	distributaryTagC	*curr;
@@ -76,7 +76,7 @@ sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(utf8Char *name)
 	return 0;
 }
 
-sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(
+sarch_t distributaryTribC::categoryINode::removeDistributaryTag(
 	distributaryTagC *inode
 	)
 {
@@ -85,8 +85,8 @@ sarch_t distributaryTribC::categoryInodeC::removeDistributaryTag(
 	return distributaries.remove(inode);
 }
 
-distributaryTribC::dvfsTagC<distributaryTribC::distributaryInodeC> *
-distributaryTribC::categoryInodeC::getDistributaryTag(utf8Char *name)
+distributaryTribC::dvfsTagC<distributaryTribC::distributaryINode> *
+distributaryTribC::categoryINode::getDistributaryTag(utf8Char *name)
 {
 	distributaryTagC	*curr;
 	void			*handle;
@@ -117,8 +117,8 @@ distributaryTribC::categoryInodeC::getDistributaryTag(utf8Char *name)
 	return NULL;
 }
 
-distributaryTribC::dvfsTagC<distributaryTribC::categoryInodeC> *
-distributaryTribC::categoryInodeC::createCategory(utf8Char *name)
+distributaryTribC::dvfsTagC<distributaryTribC::categoryINode> *
+distributaryTribC::categoryINode::createCategory(utf8Char *name)
 {
 	categoryTagC		*newTag;
 	distributaryTagC	*tmpDtrib;
@@ -138,7 +138,7 @@ distributaryTribC::categoryInodeC::createCategory(utf8Char *name)
 	if (newTag == NULL) { return NULL; };
 
 	// Now allocate and initialize the inode to go with it.
-	newTag->setInode(new categoryInodeC);
+	newTag->setInode(new categoryINode);
 	if (newTag->getInode() == NULL)
 	{
 		delete newTag;
@@ -156,7 +156,7 @@ distributaryTribC::categoryInodeC::createCategory(utf8Char *name)
 	return newTag;
 }
 
-sarch_t distributaryTribC::categoryInodeC::removeCategory(utf8Char *name)
+sarch_t distributaryTribC::categoryINode::removeCategory(utf8Char *name)
 {
 	void		*handle;
 	categoryTagC	*curr;
@@ -188,7 +188,7 @@ sarch_t distributaryTribC::categoryInodeC::removeCategory(utf8Char *name)
 	return 0;
 }
 
-sarch_t distributaryTribC::categoryInodeC::removeCategory(
+sarch_t distributaryTribC::categoryINode::removeCategory(
 	categoryTagC *inode
 	)
 {
@@ -197,8 +197,8 @@ sarch_t distributaryTribC::categoryInodeC::removeCategory(
 	return categories.remove(inode);
 }
 
-distributaryTribC::dvfsTagC<distributaryTribC::categoryInodeC> *
-distributaryTribC::categoryInodeC::getCategory(utf8Char *name)
+distributaryTribC::dvfsTagC<distributaryTribC::categoryINode> *
+distributaryTribC::categoryINode::getCategory(utf8Char *name)
 {
 	categoryTagC	*curr;
 	void		*handle;

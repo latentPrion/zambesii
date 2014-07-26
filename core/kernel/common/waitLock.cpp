@@ -12,7 +12,7 @@
 static sharedResourceGroupC<waitLockC, void *>	buffDescriptors[16];
 static utf8Char		buffers[16][1024];
 
-void lockC::operationDescriptorS::execute()
+void Lock::operationDescriptorS::execute()
 {
 	if (lock == NULL) { panic(FATAL"execute: lock is NULL.\n"); };
 

@@ -39,7 +39,7 @@
 
 class execTribC
 :
-public tributaryC
+public Tributary
 {
 public:
 	execTribC(void);

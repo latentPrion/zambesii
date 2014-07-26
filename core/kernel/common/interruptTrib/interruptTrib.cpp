@@ -105,7 +105,7 @@ error_t interruptTribC::initializeIrqManagement(void)
 	return ERROR_SUCCESS;
 }
 
-void interruptTribC::pinIrqMain(registerContextC *regs)
+void interruptTribC::pinIrqMain(RegisterContext *regs)
 {
 	irqPinDescriptorS	*pinDescriptor;
 	isrDescriptorS		*isrDescriptor, (*isrRetireList[4]);
@@ -228,7 +228,7 @@ void interruptTribC::pinIrqMain(registerContextC *regs)
 	};
 }
 
-void interruptTribC::exceptionMain(registerContextC *regs)
+void interruptTribC::exceptionMain(RegisterContext *regs)
 {
 	if (msiIrqTable[regs->vectorNo].type == vectorDescriptorS::UNCLAIMED)
 	{
@@ -271,7 +271,7 @@ void interruptTribC::installException(
 	msiIrqTable[vector].flags = flags;
 }
 
-error_t interruptTribC::zkcmS::registerPinIsr(
+error_t interruptTribC::sZkcm::registerPinIsr(
 	ubit16 __kpin, zkcmDeviceBaseC *dev, zkcmIsrFn *isr, uarch_t /*flags*/
 	)
 {
@@ -335,7 +335,7 @@ error_t interruptTribC::zkcmS::registerPinIsr(
 	return ERROR_SUCCESS;
 }
 
-sarch_t interruptTribC::zkcmS::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
+sarch_t interruptTribC::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 {
 	irqPinDescriptorS	*pinDesc;
 	isrDescriptorS		*isrDesc;

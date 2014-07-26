@@ -25,7 +25,7 @@
 
 struct smpConfigS
 {
-	bitmapC		cpus;
+	Bitmap		cpus;
 	// Id of the CPU to which this task was last scheduled.
 	cpu_t		last;
 	uarch_t		flags;

@@ -28,12 +28,12 @@ status_t vfsTribC::createFile(vfsDirC *dir, utf8Char *name, uarch_t)
 	return ERROR_SUCCESS;
 }
 
-error_t vfsTribC::deleteFile(vfsDirInodeC *inode, utf8Char *name)
+error_t vfsTribC::deleteFile(vfsDirINode *inode, utf8Char *name)
 {
 	return inode->removeFileDesc(name);
 }
 
-status_t vfsTribC::renameFile(vfsDirInodeC *, utf8Char *, utf8Char *)
+status_t vfsTribC::renameFile(vfsDirINode *, utf8Char *, utf8Char *)
 {
 	return ERROR_UNIMPLEMENTED;
 }

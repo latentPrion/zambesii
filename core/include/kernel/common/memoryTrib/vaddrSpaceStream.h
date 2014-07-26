@@ -32,7 +32,7 @@ class containerProcessC;
 
 class vaddrSpaceStreamC
 :
-public streamC
+public Stream
 {
 public:
 	// This constructor must be used to initialize userspace streams.
@@ -40,7 +40,7 @@ public:
 		uarch_t id, containerProcessC *parent,
 		void *swampStart, uarch_t swampSize)
 	:
-	streamC(id), parent(parent),
+	Stream(id), parent(parent),
 	vSwamp(swampStart, swampSize)
 	{}
 
@@ -59,7 +59,7 @@ public:
 public:
 	containerProcessC	*parent;
 	vaddrSpaceC		vaddrSpace;
-	stackCacheC<void *>	pageCache;
+	StackCache<void *>	pageCache;
 	vSwampC			vSwamp;
 };
 

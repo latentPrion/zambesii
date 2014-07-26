@@ -15,7 +15,7 @@
 #define IBMPC_TIMERCTL		"Timer Control: "
 
 static ptrListC<zkcmTimerDeviceC>	timers;
-static sharedResourceGroupC<multipleReaderLockC, timestampS>	systemTime;
+static sharedResourceGroupC<multipleReaderLockC, sTimestamp>	systemTime;
 static const ubit32			ibmPcSafePeriodMask =
 	/*TIMERCTL_1S_SAFE
 	|*/ TIMERCTL_100MS_SAFE | TIMERCTL_10MS_SAFE /*| TIMERCTL_1MS_SAFE*/;
@@ -23,7 +23,7 @@ static const ubit32			ibmPcSafePeriodMask =
 static const ubit8 daysInMonth[12] =
 	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-static void updateSystemTime(ubit32 tickGranularity)
+static void upsDateystemTime(ubit32 tickGranularity)
 {
 	systemTime.lock.writeAcquire();
 	systemTime.rsrc.time.nseconds += tickGranularity;
@@ -58,7 +58,7 @@ static void updateSystemTime(ubit32 tickGranularity)
 	systemTime.lock.writeRelease();
 }
 
-status_t zkcmTimerControlModC::getCurrentDate(dateS *date)
+status_t zkcmTimerControlModC::getCurrentDate(sDate *date)
 {
 	uarch_t		rwFlags;
 
@@ -69,7 +69,7 @@ status_t zkcmTimerControlModC::getCurrentDate(dateS *date)
 	return ERROR_SUCCESS;
 }
 
-status_t zkcmTimerControlModC::getCurrentTime(timeS *time)
+status_t zkcmTimerControlModC::getCurrentTime(sTime *time)
 {
 	uarch_t		rwFlags;
 
@@ -80,7 +80,7 @@ status_t zkcmTimerControlModC::getCurrentTime(timeS *time)
 	return ERROR_SUCCESS;
 }
 
-status_t zkcmTimerControlModC::getCurrentDateTime(timestampS *stamp)
+status_t zkcmTimerControlModC::getCurrentDateTime(sTimestamp *stamp)
 {
 	uarch_t		rwFlags;
 
@@ -125,7 +125,7 @@ void zkcmTimerControlModC::timerQueuesInitializedNotification(void)
 	{
 		if (!__KBIT_TEST(latchedQueueMask, i)) { continue; };
 
-		timerTrib.installClockRoutine((1<<i), &updateSystemTime);
+		timerTrib.installClockRoutine((1<<i), &upsDateystemTime);
 		printf(NOTICE IBMPC_TIMERCTL"System timekeeper routine "
 			"installed on timer queue %d.\n",
 			i);

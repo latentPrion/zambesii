@@ -19,7 +19,7 @@ sbit32 vfsTraverse::getNextSegmentIndex(utf8Char *path)
 	return -1;
 }
 
-status_t vfsTraverse::validateSegment(utf8Char *segment)
+status_t vfsTraverse::valisDateegment(utf8Char *segment)
 {
 	/**	EXPLANATION:
 	 * VFS only reserves '\0', ':' and '/'. Underlying filesystems are

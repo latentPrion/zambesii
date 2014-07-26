@@ -35,19 +35,19 @@ namespace vfs
 	status_t getIndexOfNext(
 		utf8Char *path, utf8Char splitChar, uarch_t maxLength);
 
-	/**	nodeC:
+	/**	Node:
 	 * Base type for all the vfs namespace types.
 	 **********************************************************************/
-	class nodeC
+	class Node
 	{
 	public:
-		nodeC(void)
+		Node(void)
 		:
 		refCount(0)
 		{}
 
 		error_t initialize(void) { return ERROR_SUCCESS; }
-		~nodeC(void) {}
+		~Node(void) {}
 
 	public:
 		void incrementRefCountBy(ubit32 amount)
@@ -63,7 +63,7 @@ namespace vfs
 		ubit32		refCount;
 	};
 
-	/**	tagC:
+	/**	Tag:
 	 * Base type for all tag types, can be used in derived classes as the
 	 * base for implementation.
 	 *
@@ -71,19 +71,19 @@ namespace vfs
 	 * The inode type that it points to remains the same, but the 'type'
 	 * value is used to tell the correct type to cast the inode pointer to.
 	 **********************************************************************/
-	class inodeC;
+	class iNode;
 
 	template <ubit16 maxNameLength>
-	class tagC
+	class Tag
 	:
-	public nodeC
+	public Node
 	{
 	public:
-		tagC(
+		Tag(
 			utf8Char *name,
 			tagTypeE type,
-			tagC *parent,
-			inodeC *inode=NULL)
+			Tag *parent,
+			iNode *inode=NULL)
 		:
 		inode(inode), parent(parent), flags(0), type(type)
 		{
@@ -91,24 +91,24 @@ namespace vfs
 			this->name[maxNameLength-1] = '\0';
 		}
 
-		error_t initialize(void) { return nodeC::initialize(); }
-		~tagC(void) {};
+		error_t initialize(void) { return Node::initialize(); }
+		~Tag(void) {};
 
 	public:
 		error_t rename(utf8Char *newName);
-		inodeC *getInode(void) { return inode; }
+		iNode *getInode(void) { return inode; }
 		utf8Char *getName(void) { return name; }
-		tagC *getParent(void) { return parent; }
+		Tag *getParent(void) { return parent; }
 		tagTypeE getType(void) { return type; }
 
 		ubit16 getMaxNameLength(void) { return maxNameLength; }
 		error_t getFullName(utf8Char *strmem, uarch_t strlen);
 
 	public:
-		inodeC			*inode;
+		iNode			*inode;
 
 	private:
-		tagC			*parent;
+		Tag			*parent;
 		ubit32			flags;
 		tagTypeE		type;
 		/**	XXX:
@@ -119,7 +119,7 @@ namespace vfs
 		 * to iterate through the nodes in any of the VFSs in the kernel
 		 * regardless of which VFS it is (storage VFS, device VFS, etc).
 		 *
-		 * In order to iterate through the tags in a "dirInodeC"'s list
+		 * In order to iterate through the tags in a "dirINode"'s list
 		 * of sub-tags, we must choose a tag template with a
 		 * "maxNameLength" that is sufficient to generically fit all the
 		 * different VFS' max tag name lengths. This will probably be
@@ -132,45 +132,45 @@ namespace vfs
 		utf8Char		name[maxNameLength];
 	};
 
-	/**	inodeC:
+	/**	iNode:
 	 * Base inode type.
 	 **********************************************************************/
-	class inodeC
+	class iNode
 	:
-	public nodeC
+	public Node
 	{
 	public:
-		inodeC(void) {}
-		error_t initialize(void) { return nodeC::initialize(); }
-		~inodeC(void) {}
+		iNode(void) {}
+		error_t initialize(void) { return Node::initialize(); }
+		~iNode(void) {}
 	};
 
-	/**	dirInodeC:
+	/**	dirINode:
 	 * Base directory inode type. Holds a list of child tags.
 	 **********************************************************************/
 	template <class tagType>
-	class dirInodeC
+	class dirINode
 	:
-	public inodeC
+	public iNode
 	{
 	public:
-		dirInodeC(void) {}
+		dirINode(void) {}
 
 		error_t initialize(void);
-		~dirInodeC(void) {};
+		~dirINode(void) {};
 
 	public:
 		tagType *createDirTag(
 			utf8Char *name,
 			tagTypeE type,
 			tagType *parent,
-			dirInodeC *inode, error_t *err);
+			dirINode *inode, error_t *err);
 
 		tagType *createLeafTag(
 			utf8Char *name,
 			tagTypeE type,
 			tagType *parent,
-			inodeC *inode, error_t *err);
+			iNode *inode, error_t *err);
 
 		sarch_t removeDirTag(utf8Char *name);
 		sarch_t removeLeafTag(utf8Char *name);
@@ -198,16 +198,16 @@ namespace vfs
 	 * storage VFS, but it is more likely that we will create a new
 	 * currentt for them.
 	 **********************************************************************/
-	class currenttC
+	class Currentt
 	{
 	public:
-		currenttC(utf8Char prefix)
+		Currentt(utf8Char prefix)
 		:
 		prefix(prefix)
 		{}
 
 		error_t initialize(void) { return ERROR_SUCCESS; }
-		~currenttC(void) {}
+		~Currentt(void) {}
 
 	public:
 		utf8Char getPrefix(void);
@@ -218,14 +218,14 @@ namespace vfs
 }
 
 
-/**	Template definitions for vfs::dirInodeC.
+/**	Template definitions for vfs::dirINode.
  ******************************************************************************/
 template <class tagType>
-error_t vfs::dirInodeC<tagType>::initialize(void)
+error_t vfs::dirINode<tagType>::initialize(void)
 {
 	error_t		ret;
 
-	ret = nodeC::initialize();
+	ret = Node::initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ret = dirs.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -233,11 +233,11 @@ error_t vfs::dirInodeC<tagType>::initialize(void)
 }
 
 template <class tagType>
-tagType *vfs::dirInodeC<tagType>::createDirTag(
+tagType *vfs::dirINode<tagType>::createDirTag(
 	utf8Char *name,
 	tagTypeE type,
 	tagType *parent,
-	dirInodeC<tagType> *inode,
+	dirINode<tagType> *inode,
 	error_t *err
 	)
 {
@@ -290,11 +290,11 @@ tagType *vfs::dirInodeC<tagType>::createDirTag(
 }
 
 template <class tagType>
-tagType *vfs::dirInodeC<tagType>::createLeafTag(
+tagType *vfs::dirINode<tagType>::createLeafTag(
 	utf8Char *name,
 	tagTypeE type,
 	tagType *parent,
-	inodeC *inode,
+	iNode *inode,
 	error_t *err
 	)
 {
@@ -346,7 +346,7 @@ tagType *vfs::dirInodeC<tagType>::createLeafTag(
 }
 
 template <class tagType>
-sarch_t vfs::dirInodeC<tagType>::removeDirTag(utf8Char *name)
+sarch_t vfs::dirINode<tagType>::removeDirTag(utf8Char *name)
 {
 	void			*handle;
 	tagType		*currItem;
@@ -376,7 +376,7 @@ sarch_t vfs::dirInodeC<tagType>::removeDirTag(utf8Char *name)
 }
 
 template <class tagType>
-sarch_t vfs::dirInodeC<tagType>::removeLeafTag(utf8Char *name)
+sarch_t vfs::dirINode<tagType>::removeLeafTag(utf8Char *name)
 {
 	void		*handle;
 	tagType	*currItem;
@@ -407,7 +407,7 @@ sarch_t vfs::dirInodeC<tagType>::removeLeafTag(utf8Char *name)
 }
 
 template <class tagType>
-tagType *vfs::dirInodeC<tagType>::getDirTag(
+tagType *vfs::dirINode<tagType>::getDirTag(
 	utf8Char *name
 	)
 {
@@ -439,7 +439,7 @@ tagType *vfs::dirInodeC<tagType>::getDirTag(
 }
 
 template <class tagType>
-tagType *vfs::dirInodeC<tagType>::getLeafTag(
+tagType *vfs::dirINode<tagType>::getLeafTag(
 	utf8Char *name
 	)
 {
@@ -472,7 +472,7 @@ tagType *vfs::dirInodeC<tagType>::getLeafTag(
 }
 
 template <class tagType>
-void vfs::dirInodeC<tagType>::dumpDirs(void)
+void vfs::dirINode<tagType>::dumpDirs(void)
 {
 	void			*handle;
 	tagType		*currItem;
@@ -494,7 +494,7 @@ void vfs::dirInodeC<tagType>::dumpDirs(void)
 }
 
 template <class tagType>
-void vfs::dirInodeC<tagType>::dumpLeaves(void)
+void vfs::dirINode<tagType>::dumpLeaves(void)
 {
 	void			*handle;
 	tagType		*currItem;
@@ -515,10 +515,10 @@ void vfs::dirInodeC<tagType>::dumpLeaves(void)
 	leaves.unlock();
 }
 
-/**	Template definitions for vfs::tagC.
+/**	Template definitions for vfs::Tag.
  ******************************************************************************/
 template <ubit16 maxNameLength>
-error_t vfs::tagC<maxNameLength>::rename(utf8Char *name)
+error_t vfs::Tag<maxNameLength>::rename(utf8Char *name)
 {
 	if (name == NULL) { return ERROR_INVALID_ARG; };
 	if (name[0] == '\0') { return ERROR_INVALID_ARG_VAL; };
@@ -528,11 +528,11 @@ error_t vfs::tagC<maxNameLength>::rename(utf8Char *name)
 }
 
 template <ubit16 maxNameLength>
-error_t vfs::tagC<maxNameLength>::getFullName(
+error_t vfs::Tag<maxNameLength>::getFullName(
 	utf8Char *buffer, uarch_t maxBuffLen
 	)
 {
-	tagC		*currTag;
+	Tag		*currTag;
 	uarch_t		index, totalRequiredMem, segmentLen;
 	sbit8		maxBuffLenExceeded;
 

@@ -17,10 +17,10 @@
 
 void __klzbzcore::main()
 {
-	threadC		*self;
+	Thread		*self;
 	error_t		err;
 
-	self = (threadC *)cpuTrib.getCurrentCpuStream()->taskStream
+	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
 	printf(NOTICE LZBZCORE"New process entered. Pid 0x%x, type %d.\n",

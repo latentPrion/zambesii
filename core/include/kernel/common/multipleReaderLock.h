@@ -25,7 +25,7 @@
 
 class multipleReaderLockC
 :
-public lockC
+public Lock
 {
 public:
 	multipleReaderLockC(void)

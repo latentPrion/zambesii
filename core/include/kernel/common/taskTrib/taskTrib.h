@@ -16,7 +16,7 @@
 
 class taskTribC
 :
-public tributaryC
+public Tributary
 {
 public:
 	taskTribC(void);
@@ -29,15 +29,15 @@ public:
 	 * when wake() is called on them, the target CPU's perCpuContext will be
 	 * passed to wake().
 	 **/
-	error_t schedule(threadC *thread);
+	error_t schedule(Thread *thread);
 	void yield(void);
 	// Used to prevent race conditions. See comments in definition.
-	void block(lockC::operationDescriptorS *unlockDescriptor=NULL);
+	void block(Lock::operationDescriptorS *unlockDescriptor=NULL);
 
 	// Back ends.
-	error_t dormant(taskC *task, taskContextC *perCpuContext=NULL);
-	error_t wake(taskC *task, taskContextC *perCpuContext=NULL);
-	error_t unblock(taskC *task, taskContextC *perCpuContext=NULL);
+	error_t dormant(Task *task, TaskContext *perCpuContext=NULL);
+	error_t wake(Task *task, TaskContext *perCpuContext=NULL);
+	error_t unblock(Task *task, TaskContext *perCpuContext=NULL);
 
 	/* These next few overloads are front-ends for the back ends that take
 	 * pointers. The front-ends take IDs (either a CPU ID or a process ID)
@@ -47,7 +47,7 @@ public:
 	error_t dormant(processId_t tid)
 	{
 		processStreamC	*proc;
-		taskC		*task;
+		Task		*task;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -76,7 +76,7 @@ public:
 	error_t wake(processId_t tid)
 	{
 		processStreamC	*proc;
-		taskC		*task;
+		Task		*task;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -105,7 +105,7 @@ public:
 	error_t unblock(processId_t tid)
 	{
 		processStreamC	*proc;
-		taskC		*task;
+		Task		*task;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -156,7 +156,7 @@ extern taskTribC	taskTrib;
  *****************************************************************************/
 
 #if __SCALING__ == SCALING_UNIPROCESSOR
-inline error_t taskTribC::schedule(taskC *task)
+inline error_t taskTribC::schedule(Task *task)
 {
 	return cpuTrib.getCurrentCpuStream()->taskStream.schedule(task);
 }

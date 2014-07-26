@@ -44,9 +44,9 @@ protected:
 		listNodeS	*prev, *next;
 	};
 
-	struct listStateS
+	struct sListState
 	{
-		listStateS(void)
+		sListState(void)
 		:
 		head(NULL), tail(NULL), nItems(0)
 		{}
@@ -55,7 +55,7 @@ protected:
 		uarch_t		nItems;
 	};
 
-	sharedResourceGroupC<waitLockC, listStateS>	list;
+	sharedResourceGroupC<waitLockC, sListState>	list;
 };
 
 

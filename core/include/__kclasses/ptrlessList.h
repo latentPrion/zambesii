@@ -46,11 +46,11 @@ public:
 	void lock(void) { list.lock.acquire(); }
 	void unlock(void) { list.lock.release(); }
 
-	class iteratorC
+	class Iterator
 	{
 	friend class ptrlessListC;
 	public:
-		iteratorC(void) : list(NULL), currItem(NULL) {}
+		Iterator(void) : list(NULL), currItem(NULL) {}
 
 		void operator ++(void)
 		{
@@ -63,7 +63,7 @@ public:
 			return currItem;
 		}
 
-		int operator !=(ptrlessListC<T>::iteratorC it)
+		int operator !=(ptrlessListC<T>::Iterator it)
 		{
 			if (it.currItem == NULL)
 			{
@@ -74,7 +74,7 @@ public:
 			return 0;
 		}
 
-		int operator ==(ptrlessListC<T>::iteratorC it)
+		int operator ==(ptrlessListC<T>::Iterator it)
 		{
 			if (it.currItem == NULL)
 			{
@@ -90,18 +90,18 @@ public:
 		T			*currItem;
 	};
 
-	iteratorC begin(void)
+	Iterator begin(void)
 	{
-		iteratorC	it;
+		Iterator	it;
 
 		it.list = this;
 		it.currItem = list.rsrc.head;
 		return it;
 	}
 
-	iteratorC end(void)
+	Iterator end(void)
 	{
-		iteratorC	it;
+		Iterator	it;
 
 		it.list = this;
 		it.currItem = NULL;
@@ -121,7 +121,7 @@ public:
 	void dump(void);
 
 public:
-	struct headerS
+	struct sHeader
 	{
 		friend class ptrlessListC;
 		void setNextItem(T *next) { this->next = next; }
@@ -132,13 +132,13 @@ public:
 	};
 
 private:
-	struct listStateS
+	struct sListState
 	{
 		T		*head, *tail;
 		ubit32		nItems;
 	};
 
-	sharedResourceGroupC<waitLockC, listStateS>	list;
+	sharedResourceGroupC<waitLockC, sListState>	list;
 };
 
 
@@ -179,7 +179,7 @@ template <class T> void ptrlessListC<T>::insert(T *item, ubit32 flags)
 template <class T>
 void ptrlessListC<T>::sortedInsert(T *item, ubit32 flags)
 {
-	iteratorC	curr, prev;
+	Iterator	curr, prev;
 
 	item->listHeader.next = NULL;
 
@@ -223,7 +223,7 @@ void ptrlessListC<T>::sortedInsert(T *item, ubit32 flags)
 
 template <class T> sarch_t ptrlessListC<T>::remove(T *item)
 {
-	iteratorC	it, prev;
+	Iterator	it, prev;
 
 	lock();
 
@@ -326,7 +326,7 @@ template <class T> T *ptrlessListC<T>::getItem(ubit32 num) const
 template <class T>
 sbit8 ptrlessListC<T>::find(T *item, ubit32 flags)
 {
-	iteratorC	it;
+	Iterator	it;
 	sbit8		ret=0;
 
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { list.lock.acquire(); };

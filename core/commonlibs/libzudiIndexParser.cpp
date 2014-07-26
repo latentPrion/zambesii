@@ -175,14 +175,14 @@ error_t zudiIndexParserC::initialize(utf8Char *indexPath)
 }
 
 error_t zudiIndexParserC::getDriverHeader(
-	zui::headerS *hdr, ubit16 id, zui::driver::headerS *retobj
+	zui::sHeader *hdr, ubit16 id, zui::driver::sHeader *retobj
 	)
 {
 	for (uarch_t i=0;
 		i < hdr->nRecords
 		&& driverIndex.read(
 			retobj,
-			sizeof(zui::headerS) + (sizeof(*retobj) * i),
+			sizeof(zui::sHeader) + (sizeof(*retobj) * i),
 			sizeof(*retobj))
 			== ERROR_SUCCESS;
 		i++)
@@ -194,10 +194,10 @@ error_t zudiIndexParserC::getDriverHeader(
 }
 
 error_t zudiIndexParserC::findMetalanguage(
-	zui::headerS *hdr, utf8Char *metaName, zui::driver::headerS *retobj
+	zui::sHeader *hdr, utf8Char *metaName, zui::driver::sHeader *retobj
 	)
 {
-	zui::driver::provisionS	currProvision;
+	zui::driver::Provision	currProvision;
 
 	for (uarch_t i=0;
 		i < hdr->nSupportedMetas && provisionIndex.indexedRead(
@@ -230,13 +230,13 @@ error_t zudiIndexParserC::findMetalanguage(
 }
 
 error_t zudiIndexParserC::findDriver(
-	zui::headerS *hdr, utf8Char *fullName, zui::driver::headerS *retobj
+	zui::sHeader *hdr, utf8Char *fullName, zui::driver::sHeader *retobj
 	)
 {
 	heapArrC<utf8Char>	nameTmp;
 	uarch_t			base;
 
-	base = sizeof(zui::headerS);
+	base = sizeof(zui::sHeader);
 
 	nameTmp = new utf8Char[
 		ZUI_DRIVER_BASEPATH_MAXLEN + ZUI_DRIVER_SHORTNAME_MAXLEN];
@@ -272,7 +272,7 @@ error_t zudiIndexParserC::findDriver(
 }
 
 error_t zudiIndexParserC::findDeviceData(
-	zui::device::headerS *devHeader, utf8Char *attrName,
+	zui::device::sHeader *devHeader, utf8Char *attrName,
 	zui::device::attrDataS *retobj
 	)
 {
@@ -294,7 +294,7 @@ error_t zudiIndexParserC::findDeviceData(
 }
 
 error_t zudiIndexParserC::indexedGetDeviceData(
-	zui::device::headerS *devHeader, ubit16 idx,
+	zui::device::sHeader *devHeader, ubit16 idx,
 	zui::device::attrDataS *retobj
 	)
 {
@@ -304,8 +304,8 @@ error_t zudiIndexParserC::indexedGetDeviceData(
 }
 
 error_t zudiIndexParserC::getMessage(
-	zui::driver::headerS *drvHeader,
-	ubit16 index, zui::driver::messageS *retobj
+	zui::driver::sHeader *drvHeader,
+	ubit16 index, zui::driver::Message *retobj
 	)
 {
 	uarch_t		messageBase;
@@ -326,12 +326,12 @@ error_t zudiIndexParserC::getMessage(
 }
 
 error_t zudiIndexParserC::getMessageString(
-	zui::driver::headerS *drvHeader,
+	zui::driver::sHeader *drvHeader,
 	ubit16 index, utf8Char *string
 	)
 {
 	error_t			ret;
-	zui::driver::messageS	msg;
+	zui::driver::Message	msg;
 
 	ret = getMessage(drvHeader, index, &msg);
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -340,8 +340,8 @@ error_t zudiIndexParserC::getMessageString(
 }
 
 error_t zudiIndexParserC::getMetalanguage(
-	zui::driver::headerS *drvHeader, ubit16 index,
-	zui::driver::metalanguageS *retobj
+	zui::driver::sHeader *drvHeader, ubit16 index,
+	zui::driver::sMetalanguage *retobj
 	)
 {
 	uarch_t		metaBase;
@@ -361,8 +361,8 @@ error_t zudiIndexParserC::getMetalanguage(
 }
 
 error_t zudiIndexParserC::indexedGetRank(
-	zui::driver::headerS *metaHeader, uarch_t index,
-	zui::rank::headerS *retobj
+	zui::driver::sHeader *metaHeader, uarch_t index,
+	zui::rank::sHeader *retobj
 	)
 {
 	return rankIndex.read(
@@ -371,7 +371,7 @@ error_t zudiIndexParserC::indexedGetRank(
 }
 
 error_t zudiIndexParserC::indexedGetRankAttrString(
-	zui::rank::headerS *rankHeader, uarch_t idx, utf8Char *retstr
+	zui::rank::sHeader *rankHeader, uarch_t idx, utf8Char *retstr
 	)
 {
 	error_t			ret;

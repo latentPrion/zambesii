@@ -53,7 +53,7 @@ error_t zkcmMemoryDetectionModC::restore(void)
 static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 {
 	zkcmNumaMapS		*ret;
-	acpi_rsdtS		*rsdt;
+	acpi_sRsdt		*rsdt;
 	acpi_rSratS		*srat;
 	acpi_rSratMemS		*memEntry;
 	void			*handle, *sratHandle, *context;

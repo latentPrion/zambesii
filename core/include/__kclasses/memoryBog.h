@@ -35,7 +35,7 @@ class memoryStreamC;
 
 class memoryBogC
 :
-public allocClassC
+public AllocatorBase
 {
 friend class memReservoirC;
 public:

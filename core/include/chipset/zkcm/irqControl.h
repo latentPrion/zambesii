@@ -165,7 +165,7 @@ public:
 	void chipsetEventNotification(ubit8 event, uarch_t flags);
 
 	// Bus-Pin Mapping API calls.
-	class bpmC
+	class Bpm
 	{
 	public:
 		status_t loadBusPinMappings(utf8Char *bus);

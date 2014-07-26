@@ -63,7 +63,7 @@ public:
 public:
 	status_t enumerate(void);
 	cpuFeaturesS *getCpuFeatureBlock(void);
-	taskContextC *getTaskContext(void)
+	TaskContext *getTaskContext(void)
 		{ return &perCpuTaskContext; }
 
 public:
@@ -119,11 +119,11 @@ public:
 
 private:
 #if __SCALING__ >= SCALING_SMP
-	class interCpuMessagerC
+	class InterCpuMessager
 	{
-	private: struct messageS;
+	private: struct Message;
 	public:
-		interCpuMessagerC(cpuStreamC *parent);
+		InterCpuMessager(cpuStreamC *parent);
 		error_t initialize(void);
 
 		error_t bind(void);
@@ -137,7 +137,7 @@ private:
 		enum statusE {
 			NOT_TAKING_REQUESTS=0, NOT_PROCESSING, PROCESSING };
 
-		void set(messageS *msg, ubit8 type,
+		void set(Message *msg, ubit8 type,
 			uarch_t val0=0, uarch_t val1=0,
 			uarch_t val2=0, uarch_t val3=0);
 
@@ -160,17 +160,17 @@ private:
 		}
 
 	private:
-		struct messageS
+		struct Message
 		{
-			ptrlessListC<messageS>::headerS	listHeader;
+			ptrlessListC<Message>::sHeader	listHeader;
 			volatile ubit8			type;
 			volatile uarch_t		val0;
 			volatile uarch_t		val1;
 			volatile uarch_t		val2;
 			volatile uarch_t		val3;
 		};
-		ptrlessListC<messageS>		messageQueue;
-		slamCacheC			*cache;
+		ptrlessListC<Message>		messageQueue;
+		SlamCache			*cache;
 		sharedResourceGroupC<waitLockC, statusE> statusFlag;
 		cpuStreamC	*parent;
 	};
@@ -193,13 +193,13 @@ public:
 	ubit8			perCpuThreadStack[PAGING_BASE_SIZE / 2];
 	powerManagerC		powerManager;
 #if __SCALING__ >= SCALING_SMP
-	interCpuMessagerC	interCpuMessager;
+	InterCpuMessager	interCpuMessager;
 #endif
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
 	class x86LapicC		lapic;
 #endif
 private:
-	taskContextC		perCpuTaskContext;
+	TaskContext		perCpuTaskContext;
 };
 
 // The hardcoded stream for the BSP CPU.

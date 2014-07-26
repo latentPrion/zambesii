@@ -11,7 +11,7 @@
 class numaMemoryBankC;
 
 /**	EXPLANATION:
- * stackCacheC is a simple class which acts as a caching mechanism for items of
+ * StackCache is a simple class which acts as a caching mechanism for items of
  * integral type.
  *
  * Its use is confined to the Memory Stream for the caching of virtual addresses
@@ -25,12 +25,12 @@ class numaMemoryBankC;
  **/
 
 template <class T>
-class stackCacheC
+class StackCache
 {
 friend class numaMemoryBankC;
 
 public:
-	stackCacheC(void);
+	StackCache(void);
 	error_t initialize(void) { return ERROR_SUCCESS; }
 
 public:
@@ -48,13 +48,13 @@ private:
  ***************************************************************************/
 
 template <class T>
-stackCacheC<T>::stackCacheC(void)
+StackCache<T>::StackCache(void)
 {
 	stacks[0].stackSize = STACKCACHE_STACK1_SIZE;
 }
 
 template <class T>
-error_t stackCacheC<T>::push(uarch_t category, T item)
+error_t StackCache<T>::push(uarch_t category, T item)
 {
 	for (sarch_t i=0; i<STACKCACHE_NSTACKS; i++)
 	{
@@ -66,7 +66,7 @@ error_t stackCacheC<T>::push(uarch_t category, T item)
 }
 
 template <class T>
-error_t stackCacheC<T>::pop(uarch_t category, T *item)
+error_t StackCache<T>::pop(uarch_t category, T *item)
 {
 	for (sarch_t i=0; i<STACKCACHE_NSTACKS; i++)
 	{
@@ -78,7 +78,7 @@ error_t stackCacheC<T>::pop(uarch_t category, T *item)
 }
 
 template <class T>
-void stackCacheC<T>::flush(memBmpC *bmp)
+void StackCache<T>::flush(memBmpC *bmp)
 {
 	for (sarch_t i=0; i<STACKCACHE_NSTACKS; i++) {
 		stacks[i].flush(bmp);

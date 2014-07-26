@@ -25,13 +25,13 @@ utf8Char	__kprocessArgStringMem
 
 
 #if __SCALING__ >= SCALING_SMP
-// Preallocated mem space for the internals of the __kprocess bitmapC objects.
+// Preallocated mem space for the internals of the __kprocess Bitmap objects.
 ubit8		__kprocessPreallocatedBmpMem[3][32];
 #endif
 
 error_t processStreamC::initialize(
 	const utf8Char *commandLineString, const utf8Char *environmentString,
-	bitmapC *cpuAffinityBmp
+	Bitmap *cpuAffinityBmp
 	)
 {
 	error_t		ret;
@@ -57,7 +57,7 @@ error_t processStreamC::initialize(
 
 	if (cpuAffinityBmp != NULL)
 	{
-		bitmapC		cpuAffinityTmp;
+		Bitmap		cpuAffinityTmp;
 
 		ret = cpuAffinityTmp.initialize(cpuAffinityBmp->getNBits());
 		if (ret != ERROR_SUCCESS) { return ret; };
@@ -112,19 +112,19 @@ error_t processStreamC::initializeBitmaps(void)
 #if __SCALING__ >= SCALING_SMP
 		cpuTrace.initialize(
 			0,
-			bitmapC::preallocatedMemoryS(
+			Bitmap::preallocatedMemoryS(
 				__kprocessPreallocatedBmpMem[0],
 				sizeof(__kprocessPreallocatedBmpMem[0])));
 
 		cpuAffinity.initialize(
 			0,
-			bitmapC::preallocatedMemoryS(
+			Bitmap::preallocatedMemoryS(
 				__kprocessPreallocatedBmpMem[1],
 				sizeof(__kprocessPreallocatedBmpMem[1])));
 #endif
 		pendingEvents.initialize(
 			0,
-			bitmapC::preallocatedMemoryS(
+			Bitmap::preallocatedMemoryS(
 				__kprocessPreallocatedBmpMem[2],
 				sizeof(__kprocessPreallocatedBmpMem[2])));
 	}
@@ -492,7 +492,7 @@ error_t processStreamC::generateEnvironment(const utf8Char *environmentString)
 void processStreamC::sendResponse(error_t err)
 {
 	error_t				tmpErr;
-	messageStreamC::headerS		*msg;
+	messageStreamC::sHeader		*msg;
 
 	// This syscall should only work once throughout the process' lifetime.
 	if (this->responseMessage == NULL) { return; };
@@ -540,7 +540,7 @@ void processStreamC::getInitializationBlock(initializationBlockS *ret)
 	ret->execDomain = execDomain;
 }
 
-static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
+static inline error_t resizeAndMergeBitmaps(Bitmap *dest, Bitmap *src)
 {
 	error_t		ret;
 
@@ -553,10 +553,10 @@ static inline error_t resizeAndMergeBitmaps(bitmapC *dest, bitmapC *src)
 
 error_t processStreamC::spawnThread(
 	void (*entryPoint)(void *), void *argument,
-	bitmapC * cpuAffinity,
-	taskC::schedPolicyE schedPolicy,
+	Bitmap * cpuAffinity,
+	Task::schedPolicyE schedPolicy,
 	ubit8 prio, uarch_t flags,
-	threadC **const newThread
+	Thread **const newThread
 	)
 {
 	error_t		ret;
@@ -621,11 +621,11 @@ error_t processStreamC::spawnThread(
 	};
 }
 
-threadC *processStreamC::allocateNewThread(processId_t newThreadId, void *privateData)
+Thread *processStreamC::allocateNewThread(processId_t newThreadId, void *privateData)
 {
-	threadC		*ret;
+	Thread		*ret;
 
-	ret = new threadC(newThreadId, this, privateData);
+	ret = new Thread(newThreadId, this, privateData);
 	if (ret == NULL) { return NULL; };
 
 	taskLock.writeAcquire();

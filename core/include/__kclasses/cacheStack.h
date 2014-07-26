@@ -33,12 +33,12 @@ public:
 	uarch_t	stackSize;
 
 private:
-	struct stackStateS
+	struct sStackState
 	{
 		T		stack[CACHESTACK_MAX_NITEMS(T)];
 		int		stackPtr;
 	};
-	sharedResourceGroupC<waitLockC, stackStateS>	stack;
+	sharedResourceGroupC<waitLockC, sStackState>	stack;
 };
 
 

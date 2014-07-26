@@ -16,7 +16,7 @@
 #define ACPI_RSDP_SIG			CC"RSD PTR "
 #define ACPI_RSDP_SIGLEN		8
 
-struct acpi_rsdpS
+struct acpi_sRsdp
 {
 	utf8Char	sig[ACPI_RSDP_SIGLEN];
 	ubit8		checksum;
@@ -72,7 +72,7 @@ struct acpi_sdtS
 #define ACPI_RSDT_GET_NENTRIES(_rsdt)			\
 	(((_rsdt)->hdr.tableLength - sizeof(acpi_sdtS)) / 4)
 
-struct acpi_rsdtS
+struct acpi_sRsdt
 {
 	struct acpi_sdtS	hdr;
 	// N 4-byte physical pointers come below here.
@@ -82,7 +82,7 @@ struct acpi_rsdtS
 #define ACPI_XSDT_GET_NENTRIES(_xsdt)			\
 	(((_xsdt)->hdr.tableLength - sizeof(acpi_sdtS)) / 8)
 
-struct acpi_xsdtS
+struct acpi_sXsdt
 {
 	struct acpi_sdtS	hdr;
 	// N 8-byte physical pointers from here on.

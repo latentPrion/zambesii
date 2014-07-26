@@ -21,11 +21,11 @@ public:
 		void *preallocatedMem=NULL, ubit16 preallocatedSize=0);
 
 public:
-	typedef class iteratorC
+	typedef class Iterator
 	{
 	friend class hardwareIdListC;
 	public:
-		iteratorC(void)
+		Iterator(void)
 		:
 		cursor(0), list(NULL)
 		{}
@@ -68,9 +68,9 @@ public:
 	 *
 	 * Repeat until getLoopItem() returns NULL.
 	 **/
-	iteratorC begin(void)
+	Iterator begin(void)
 	{
-		iteratorC	it;
+		Iterator	it;
 
 		it.cursor = prepareForLoop();
 		it.list = this;
@@ -93,7 +93,7 @@ public:
 private:
 	ubit8		preAllocated;
 
-	struct arrayStateS
+	struct sArrayState
 	{
 		arrayNodeS	*arr;
 		/**	EXPLANATION:
@@ -107,7 +107,7 @@ private:
 		 **/
 		sarch_t		maxIndex, maxAllocatedIndex, firstValidIndex;
 	};
-	sharedResourceGroupC<multipleReaderLockC, arrayStateS>	arr;
+	sharedResourceGroupC<multipleReaderLockC, sArrayState>	arr;
 };
 
 #endif

@@ -20,15 +20,15 @@ void __udi_assert(const char *expr, const char *file, int line)
 	assert_fatal(0);
 }
 
-error_t floodplainnC::getInternalBopVectorIndexes(
+error_t Floodplainn::getInternalBopVectorIndexes(
 	ubit16 regionIndex, ubit16 *opsIndex0, ubit16 *opsIndex1
 	)
 {
-	threadC				*self;
+	Thread				*self;
 	fplainn::driverInstanceC	*drvInst;
-	fplainn::driverC::internalBopS	*iBop;
+	fplainn::Driver::internalBopS	*iBop;
 
-	self = (threadC *)cpuTrib.getCurrentCpuStream()
+	self = (Thread *)cpuTrib.getCurrentCpuStream()
 		->taskStream.getCurrentTask();
 
 	drvInst = self->parent->getDriverInstance();
@@ -41,14 +41,14 @@ error_t floodplainnC::getInternalBopVectorIndexes(
 	return ERROR_SUCCESS;
 }
 
-error_t floodplainnC::spawnInternalBindChannel(
+error_t Floodplainn::spawnInternalBindChannel(
 	utf8Char *devPath, ubit16 regionIndex,
 	udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1)
 {
-	threadC				*thread0, *thread1;
+	Thread				*thread0, *thread1;
 	udi_init_context_t		*rdata0=NULL, *rdata1=NULL;
 	processId_t			region0Tid=PROCID_INVALID, dummy;
-	fplainn::deviceC		*dev;
+	fplainn::Device		*dev;
 	error_t				ret;
 
 printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
@@ -56,7 +56,7 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 	/* Thread1 is always the caller because internal bind channels are
 	 * spawned by the secondary region thread.
 	 **/
-	thread1 = (threadC *)cpuTrib.getCurrentCpuStream()
+	thread1 = (Thread *)cpuTrib.getCurrentCpuStream()
 		->taskStream.getCurrentTask();
 
 	ret = getDevice(devPath, &dev);
@@ -71,23 +71,23 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 		dev->instance->getRegionInfo(0, &region0Tid, &rdata0)
 		== ERROR_SUCCESS);
 
-	thread0 = (threadC *)thread1->parent->getThread(region0Tid);
+	thread0 = (Thread *)thread1->parent->getThread(region0Tid);
 
 	return spawnChannel(
 		dev, thread0, opsVector0, rdata0,
 		dev, thread1, opsVector1, rdata1);
 }
 
-error_t floodplainnC::spawnChildBindChannel(
+error_t Floodplainn::spawnChildBindChannel(
 	utf8Char *parentDevPath, utf8Char *childDevPath, utf8Char *metaName,
 	udi_ops_vector_t *opsVector
 	)
 {
-	fplainn::deviceC		*parentDev, *childDev;
-	fplainn::driverC::metalanguageS	*parentMeta, *childMeta;
-	fplainn::driverC::childBopS	*parentCBop;
-	fplainn::driverC::parentBopS	*childPBop;
-	threadC				*parentThread, *childThread;
+	fplainn::Device		*parentDev, *childDev;
+	fplainn::Driver::sMetalanguage	*parentMeta, *childMeta;
+	fplainn::Driver::childBopS	*parentCBop;
+	fplainn::Driver::parentBopS	*childPBop;
+	Thread				*parentThread, *childThread;
 	processId_t			parentTid, childTid;
 	udi_init_context_t		*parentRdata, *childRdata;
 	fplainn::driverInstanceC::childBopS *parentInstCBop;
@@ -146,8 +146,8 @@ error_t floodplainnC::spawnChildBindChannel(
 	};
 
 	// Now get the thread objects using their thread IDs.
-	parentThread = (threadC *)processTrib.getThread(parentTid);
-	childThread = (threadC *)processTrib.getThread(childTid);
+	parentThread = (Thread *)processTrib.getThread(parentTid);
+	childThread = (Thread *)processTrib.getThread(childTid);
 	if (parentThread == NULL || childThread == NULL)
 	{
 		printf(ERROR FPLAINN"spawnCBindChan: Either parent or child's "
@@ -174,14 +174,14 @@ error_t floodplainnC::spawnChildBindChannel(
 		childDev, childThread, opsVector, childRdata);
 }
 
-error_t floodplainnC::spawnChannel(
-	fplainn::deviceC *dev0, threadC *thread0, udi_ops_vector_t *opsVector0,
+error_t Floodplainn::spawnChannel(
+	fplainn::Device *dev0, Thread *thread0, udi_ops_vector_t *opsVector0,
 	udi_init_context_t *channelContext0,
-	fplainn::deviceC *dev1, threadC *thread1, udi_ops_vector_t *opsVector1,
+	fplainn::Device *dev1, Thread *thread1, udi_ops_vector_t *opsVector1,
 	udi_init_context_t *channelContext1
 	)
 {
-	heapObjC<fplainn::deviceInstanceC::channelS>	chan;
+	heapObjC<fplainn::deviceInstanceC::sChannel>	chan;
 	error_t						ret0, ret1;
 
 	/**	EXPLANATION:
@@ -195,7 +195,7 @@ error_t floodplainnC::spawnChannel(
 		|| thread0 == NULL || thread1 == NULL)
 		{ return ERROR_INVALID_ARG; };
 
-	chan = new fplainn::deviceInstanceC::channelS(
+	chan = new fplainn::deviceInstanceC::sChannel(
 		thread0, opsVector0, channelContext0,
 		thread1, opsVector1, channelContext1);
 

@@ -20,7 +20,7 @@ class prioQueueC
 public:
 	prioQueueC(ubit16 nPriorities)
 	:
-	nodeCache(NULL), nPrios(nPriorities), queues(NULL)
+	Nodeache(NULL), nPrios(nPriorities), queues(NULL)
 	{
 		headQueue.rsrc = -1;
 	}
@@ -31,7 +31,7 @@ public:
 	{
 		headQueue.rsrc = -1;
 		delete[] queues;
-		cachePool.destroyCache(nodeCache);
+		cachePool.destroyCache(Nodeache);
 	}
 
 public:
@@ -43,21 +43,21 @@ public:
 
 private:
 	template <class T2>
-	class queueC
+	class Queue
 	{
 	friend class prioQueueC;
 	public:
 		// fine.
-		queueC(ubit16 prio, slamCacheC *cache)
+		Queue(ubit16 prio, SlamCache *cache)
 		:
-		prio(prio), nodeCache(cache)
+		prio(prio), Nodeache(cache)
 		{}
 
 		// fine.
 		error_t initialize(void) { return ERROR_SUCCESS; }
 
 		// fine.
-		~queueC(void)
+		~Queue(void)
 		{
 			queueNodeS	*tmp, *curr;
 
@@ -67,7 +67,7 @@ private:
 			{
 				tmp = curr;
 				curr = curr->next;
-				nodeCache->free(tmp);
+				Nodeache->free(tmp);
 			};
 
 			q.lock.release();
@@ -99,9 +99,9 @@ private:
 			queueNodeS	*next;
 		};
 
-		struct queueStateS
+		struct sQueueState
 		{
-			queueStateS(void)
+			sQueueState(void)
 			:
 			nItems(0), head(NULL), tail(NULL)
 			{}
@@ -111,14 +111,14 @@ private:
 		};
 
 		ubit16 prio;
-		sharedResourceGroupC<waitLockC, queueStateS>	q;
-		slamCacheC		*nodeCache;
+		sharedResourceGroupC<waitLockC, sQueueState>	q;
+		SlamCache		*Nodeache;
 	};
 
-	slamCacheC	*nodeCache;
+	SlamCache	*Nodeache;
 	// Locking isn't needed; state is only modified once at instance init.
 	ubit16		nPrios;
-	queueC<T>	*queues;
+	Queue<T>	*queues;
 	// Q number of the first queue with items in it. -1 if all Qs empty.
 	sharedResourceGroupC<waitLockC, sbit16>	headQueue;
 };
@@ -134,28 +134,28 @@ error_t prioQueueC<T>::initialize(void)
 	error_t		ret;
 
 	// Allocate a node Cache:
-	nodeCache = cachePool.createCache(
-		sizeof(struct queueC<T>::queueNodeS));
+	Nodeache = cachePool.createCache(
+		sizeof(struct Queue<T>::queueNodeS));
 
-	if (nodeCache == NULL) { return ERROR_MEMORY_NOMEM; };
+	if (Nodeache == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	// Allocate internal array.
-	queues = (queueC<T> *) new ubit8[sizeof(queueC<T>) * nPrios];
+	queues = (Queue<T> *) new ubit8[sizeof(Queue<T>) * nPrios];
 	if (queues == NULL)
 	{
-		cachePool.destroyCache(nodeCache);
+		cachePool.destroyCache(Nodeache);
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	for (uarch_t i=0; i<nPrios; i++)
 	{
 		// Re-construct the item using placement new.
-		new (&queues[i]) queueC<T>(i, nodeCache);
+		new (&queues[i]) Queue<T>(i, Nodeache);
 		ret = queues[i].initialize();
 		if (ret != ERROR_SUCCESS)
 		{
 			delete[] queues;
-			cachePool.destroyCache(nodeCache);
+			cachePool.destroyCache(Nodeache);
 			return ret;
 		};
 	};
@@ -264,22 +264,22 @@ inline void prioQueueC<T>::dump(void)
 {
 	printf(NOTICE PRIOQUEUE"%d prios, cache @0x%p, first valid q %d: "
 		"dumping.\n",
-		nPrios, nodeCache, headQueue.rsrc);
+		nPrios, Nodeache, headQueue.rsrc);
 
 	for (ubit16 i=0; i<nPrios; i++) {
 		queues[i].dump();
 	};
 }
 
-/** Template definition and methods for prioQueueC::queueC.
+/** Template definition and methods for prioQueueC::Queue.
  ******************************************************************************/
 // safe.
 template <class T> template <class T2>
-error_t prioQueueC<T>::queueC<T2>::insert(T2 *item, ubit32 opt)
+error_t prioQueueC<T>::Queue<T2>::insert(T2 *item, ubit32 opt)
 {
 	queueNodeS	*tmp;
 
-	tmp = (queueNodeS *)nodeCache->allocate();
+	tmp = (queueNodeS *)Nodeache->allocate();
 	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 	tmp->item = item;
 
@@ -314,7 +314,7 @@ error_t prioQueueC<T>::queueC<T2>::insert(T2 *item, ubit32 opt)
 
 // safe.
 template <class T> template <class T2>
-T2 *prioQueueC<T>::queueC<T2>::pop(void)
+T2 *prioQueueC<T>::Queue<T2>::pop(void)
 {
 	queueNodeS	*tmp;
 	T2		*ret=NULL;
@@ -338,13 +338,13 @@ T2 *prioQueueC<T>::queueC<T2>::pop(void)
 		ret = tmp->item;
 	};
 
-	nodeCache->free(tmp);
+	Nodeache->free(tmp);
 	return ret;
 }
 
 // safe.
 template <class T> template <class T2>
-void prioQueueC<T>::queueC<T2>::remove(T2 *item)
+void prioQueueC<T>::Queue<T2>::remove(T2 *item)
 {
 	queueNodeS	*tmp, *prev=NULL;
 
@@ -377,7 +377,7 @@ void prioQueueC<T>::queueC<T2>::remove(T2 *item)
 }
 
 template <class T> template <class T2>
-void prioQueueC<T>::queueC<T2>::dump(void)
+void prioQueueC<T>::Queue<T2>::dump(void)
 {
 	queueNodeS	*tmp;
 	ubit8		flipFlop=0;

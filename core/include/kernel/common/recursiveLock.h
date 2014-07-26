@@ -15,7 +15,7 @@
 
 class recursiveLockC
 :
-public lockC
+public Lock
 {
 public:
 	recursiveLockC(void)

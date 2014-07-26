@@ -1,27 +1,27 @@
 #ifndef _HEAP_CACHE_H
 	#define _HEAP_CACHE_H
 
-class heapCacheC
+class HeapCache
 {
 public:
-	heapCacheC(void)
+	HeapCache(void)
 	:
-	objectSize(0)
+	sObjectize(0)
 	{};
 
-	heapCacheC(uarch_t objectSize)
+	HeapCache(uarch_t sObjectize)
 	:
-	objectSize(objectSize)
+	sObjectize(sObjectize)
 	{};
 
-	virtual ~heapCacheC(void) {}
+	virtual ~HeapCache(void) {}
 
 public:
 	//virtual void *allocate(void) { return NULL; };
 	virtual void free(void *) {};
 
 public:
-	uarch_t objectSize;
+	uarch_t sObjectize;
 };
 
 #endif

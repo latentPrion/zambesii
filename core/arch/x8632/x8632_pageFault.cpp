@@ -86,20 +86,20 @@ static sarch_t __kpropagateTopLevelVaddrSpaceChanges(void *faultAddr)
 	return 0;
 }
 
-status_t x8632_page_fault(registerContextC *regs, ubit8)
+status_t x8632_page_fault(RegisterContext *regs, ubit8)
 {
 	status_t		status;
 	vaddrSpaceStreamC	*vaddrSpaceStream;
 	void			*faultAddr = getCr2();
 	paddr_t			pmap;
 	uarch_t			__kflags;
-	taskC			*currTask;
-	threadC			*currThread=NULL;
+	Task			*currTask;
+	Thread			*currThread=NULL;
 	sbit8			panicWorthy=0, traceStack=0, printArgs=0;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	if (currTask->getType() != task::PER_CPU)
-		{ currThread = (threadC *)currTask; };
+		{ currThread = (Thread *)currTask; };
 
 	vaddrSpaceStream = currTask->parent->getVaddrSpaceStream();
 

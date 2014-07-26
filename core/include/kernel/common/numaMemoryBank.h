@@ -90,7 +90,7 @@ public:
 private:
 	sharedResourceGroupC<multipleReaderLockC, rangePtrS *>	ranges;
 	sharedResourceGroupC<multipleReaderLockC, numaMemoryRangeC *> defRange;
-	slamCacheC	rangePtrCache;
+	SlamCache	rangePtrCache;
 };
 
 #endif

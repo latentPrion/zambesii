@@ -7,7 +7,7 @@
 
 #include "busPinMappings.h"
 
-status_t zkcmIrqControlModC::bpmC::loadBusPinMappings(utf8Char *bus)
+status_t zkcmIrqControlModC::Bpm::loadBusPinMappings(utf8Char *bus)
 {
 	if (strcmp8(bus, CC"isa") == 0) {
 		return ibmPcBpm::isa::loadBusPinMappings();
@@ -25,7 +25,7 @@ status_t zkcmIrqControlModC::bpmC::loadBusPinMappings(utf8Char *bus)
 	return IRQCTL_BPM_UNSUPPORTED_BUS;
 }
 
-error_t zkcmIrqControlModC::bpmC::get__kpinFor(
+error_t zkcmIrqControlModC::Bpm::get__kpinFor(
 	utf8Char *bus, ubit32 busIrqId, ubit16 *__kpin
 	)
 {
@@ -49,7 +49,7 @@ error_t zkcmIrqControlModC::bpmC::get__kpinFor(
 /* Deprecated in favour of forcing all calls to maskIrq() and unmaskIrq() to
  * go through Interrupt Trib and the IRQ Control module.
  **/
-status_t zkcmIrqControlModC::bpmC::maskIrq(utf8Char *bus, ubit32 busIrqId)
+status_t zkcmIrqControlModC::Bpm::maskIrq(utf8Char *bus, ubit32 busIrqId)
 {
 	if (strcmp8(bus, CC"isa") == 0) {
 		return ibmPcBpm::isa::maskIrq(busIrqId);
@@ -67,7 +67,7 @@ status_t zkcmIrqControlModC::bpmC::maskIrq(utf8Char *bus, ubit32 busIrqId)
 	return IRQCTL_BPM_UNSUPPORTED_BUS;
 }
 
-status_t zkcmIrqControlModC::bpmC::unmaskIrq(utf8Char *bus, ubit32 busIrqId)
+status_t zkcmIrqControlModC::Bpm::unmaskIrq(utf8Char *bus, ubit32 busIrqId)
 {
 	if (strcmp8(bus, CC"isa") == 0) {
 		return ibmPcBpm::isa::unmaskIrq(busIrqId);

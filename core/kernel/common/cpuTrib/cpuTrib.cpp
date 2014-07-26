@@ -161,7 +161,7 @@ error_t cpuTribC::initializeAllCpus(void)
 	zkcmNumaMapS		*numaMap;
 #endif
 #if __SCALING__ == SCALING_SMP || defined(CHIPSET_NUMA_GENERATE_SHBANK)
-	zkcmSmpMapS		*smpMap;
+	sZkcmmpMapS		*smpMap;
 #endif
 
 	/**	EXPLANATION:
@@ -348,7 +348,7 @@ void cpuTribC::bootConfirmNumaCpusBooted(zkcmNumaMapS *numaMap)
 }
 
 void cpuTribC::bootParseNumaMap(
-	zkcmNumaMapS *numaMap, zkcmSmpMapS *smpMap
+	zkcmNumaMapS *numaMap, sZkcmmpMapS *smpMap
 	)
 {
 	error_t		err;
@@ -390,7 +390,7 @@ void cpuTribC::bootParseNumaMap(
 }
 
 void cpuTribC::bootConfirmNumaCpusBooted(
-	zkcmNumaMapS *numaMap, zkcmSmpMapS *smpMap
+	zkcmNumaMapS *numaMap, sZkcmmpMapS *smpMap
 	)
 {
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
@@ -423,7 +423,7 @@ error_t cpuTribC::numaInit(void)
 {
 	zkcmNumaMapS		*numaMap;
 #ifdef CHIPSET_NUMA_GENERATE_SHBANK
-	zkcmSmpMapS		*smpMap;
+	sZkcmmpMapS		*smpMap;
 #endif
 
 	/**	EXPLANATION:
@@ -520,7 +520,7 @@ error_t cpuTribC::numaInit(void)
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-void cpuTribC::bootParseSmpMap(zkcmSmpMapS *smpMap)
+void cpuTribC::bootParseSmpMap(sZkcmmpMapS *smpMap)
 {
 	error_t		err;
 
@@ -548,7 +548,7 @@ void cpuTribC::bootParseSmpMap(zkcmSmpMapS *smpMap)
 	};
 }
 
-void cpuTribC::bootConfirmSmpCpusBooted(zkcmSmpMapS *smpMap)
+void cpuTribC::bootConfirmSmpCpusBooted(sZkcmmpMapS *smpMap)
 {
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
 	{
@@ -565,7 +565,7 @@ void cpuTribC::bootConfirmSmpCpusBooted(zkcmSmpMapS *smpMap)
 error_t cpuTribC::smpInit(void)
 {
 	error_t			ret;
-	zkcmSmpMapS		*smpMap;
+	sZkcmmpMapS		*smpMap;
 
 	/**	EXPLANATION:
 	 * Quite simple: look for an SMP map, and if none exists, return success
@@ -615,7 +615,7 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 {
 	error_t		ret;
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaCpuBankC	*ncb;
+	NumaCpuBank	*ncb;
 #endif
 	cpuStreamC	*cs;
 
@@ -725,7 +725,7 @@ error_t cpuTribC::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 void cpuTribC::destroyStream(cpu_t cid)
 {
 #if __SCALING__ >= SCALING_CC_NUMA
-	numaCpuBankC		*ncb;
+	NumaCpuBank		*ncb;
 #endif
 	cpuStreamC		*cs;
 
@@ -754,7 +754,7 @@ void cpuTribC::destroyStream(cpu_t cid)
 error_t cpuTribC::createBank(numaBankId_t bankId)
 {
 	error_t			err;
-	numaCpuBankC		*ncb;
+	NumaCpuBank		*ncb;
 
 	if ((ncb = getBank(bankId)) != NULL) {
 		return ERROR_SUCCESS;
@@ -767,9 +767,9 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 	if (err != ERROR_SUCCESS) { return err; };
 
 	ncb = new (processTrib.__kgetStream()->memoryStream.memAlloc(
-		PAGING_BYTES_TO_PAGES(sizeof(numaCpuBankC)),
+		PAGING_BYTES_TO_PAGES(sizeof(NumaCpuBank)),
 		MEMALLOC_NO_FAKEMAP))
-			numaCpuBankC;
+			NumaCpuBank;
 
 	if (ncb == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -779,7 +779,7 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 		printf(ERROR CPUTRIB"createBank(%d): Failed to add to list."
 			"\n", bankId);
 
-		ncb->~numaCpuBankC();
+		ncb->~NumaCpuBank();
 		processTrib.__kgetStream()->memoryStream.memFree(ncb);
 		return err;
 	}
@@ -793,14 +793,14 @@ error_t cpuTribC::createBank(numaBankId_t bankId)
 #if __SCALING__ >= SCALING_CC_NUMA
 void cpuTribC::destroyBank(numaBankId_t bid)
 {
-	numaCpuBankC		*ncb;
+	NumaCpuBank		*ncb;
 
 	ncb = getBank(bid);
 	if (ncb == NULL) { return; };
 
 	availableBanks.unsetSingle(bid);
 	cpuBanks.removeItem(bid);
-	ncb->~numaCpuBankC();
+	ncb->~NumaCpuBank();
 	processTrib.__kgetStream()->memoryStream.memFree(ncb);
 }
 #endif
