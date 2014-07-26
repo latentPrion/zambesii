@@ -228,6 +228,9 @@ extern "C" void __korientationInit(ubit32, multibootDataS *)
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
 
+	printf(NOTICE"Hello, Metal Industries!\n");
+asm volatile ("cli\n\thlt\n\t");
+
 	/* Spawn the new thread for __korientationMain. There is no need to
 	 * unschedule __korientationInit() because it will never be scheduled.
 	**/

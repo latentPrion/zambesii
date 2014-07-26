@@ -411,6 +411,15 @@ static error_t driverPath1(messageStreamC::iteratorS *msgIt, threadC *self)
 			};
 		};
 
+		// Skip the MGMT meta's child bop for now.
+		if (drvInst->driver->childBops[i].metaIndex == 0)
+		{
+			// drvInst->setChildBopVector(
+			//	0, driverInitInfo->primary_init_info->mgmt_ops);
+
+			continue;
+		};
+
 		if (opsVector == NULL)
 		{
 			printf(ERROR LZBZCORE"driverPath1: Failed to obtain "

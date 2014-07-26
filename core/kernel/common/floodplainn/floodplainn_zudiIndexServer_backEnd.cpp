@@ -789,10 +789,14 @@ void fplainnIndexer_loadDriverReq
 			tmpString.get(), currRequirement.version);
 	};
 
-	// Next, metalanguage index information.
-	err = driver->preallocateMetalanguages(driverHdr->nMetalanguages);
-	if (driverHdr->nMetalanguages > 0 && err != ERROR_SUCCESS)
-		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+	/* Next, metalanguage index information.
+	 * We always allocate room for one more, because we insinuate the MGMT
+	 * metalanguage as an implicit child_bind_op meta for every driver.
+	 **/
+	err = driver->preallocateMetalanguages(driverHdr->nMetalanguages + 1);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	new (&driver->metalanguages[0]) fplainn::driverC::metalanguageS(
+		0, CC"udi_mgmt", NULL);
 
 	for (uarch_t i=0; i<driverHdr->nMetalanguages; i++)
 	{
@@ -824,13 +828,15 @@ void fplainnIndexer_loadDriverReq
 			};
 		};
 
-		new (&driver->metalanguages[i]) fplainn::driverC::metalanguageS(
+		// Place it at the position i + 1; index 0 is always MGMT.
+		new (&driver->metalanguages[i + 1]) fplainn::driverC::metalanguageS(
 			currMetalanguage.index, tmpString.get(), metaInfo);
 	};
 
-	err = driver->preallocateChildBops(driverHdr->nChildBops);
-	if (driverHdr->nChildBops > 0 && err != ERROR_SUCCESS)
-		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+	// We also preallocate an extra childBop for the MGMT meta.
+	err = driver->preallocateChildBops(driverHdr->nChildBops + 1);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	new (&driver->childBops[0]) fplainn::driverC::childBopS(0, 0, 0);
 
 	for (uarch_t i=0; i<driverHdr->nChildBops; i++)
 	{
@@ -840,7 +846,7 @@ void fplainnIndexer_loadDriverReq
 			driverHdr.get(), i, &currBop) != ERROR_SUCCESS)
 			{ myResponse(ERROR_NOT_FOUND); return; };
 
-		new (&driver->childBops[i]) fplainn::driverC::childBopS(
+		new (&driver->childBops[i + 1]) fplainn::driverC::childBopS(
 			currBop.metaIndex, currBop.regionIndex,
 			currBop.opsIndex);
 	};
