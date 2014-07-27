@@ -7,6 +7,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/interruptTrib/__kexceptionFn.h>
+	#include <commonlibs/libacpi/baseTables.h>
 	#include "mpTables.h"
 #endif
 
@@ -191,7 +192,7 @@ public:
 	{
 		error_t setupLints(class cpuStream *parent);
 
-		void sLintetup(
+		void lintSetup(
 			class cpuStream *parent,
 			ubit8 lint, ubit8 intType, ubit32 flags, ubit8 vector);
 
@@ -209,8 +210,8 @@ public:
 		static ubit32 lintConvertAcpiFlags(ubit32);
 
 	private:
-		void sRsdtetupLints(class cpuStream *parent);
-		void sXsdtetupLints(class cpuStream *parent);
+		void rsdtSetupLints(class cpuStream *parent);
+		void xsdtSetupLints(class cpuStream *parent);
 	} lint;
 
 	// This must always be 0xHF, where H is any hex digit, and F is fixed.
@@ -232,7 +233,7 @@ public:
 		void installHandler(void);
 		static __kexceptionFn	exceptionHandler;
 		static sarch_t		handlerIsInstalled;
-	} error;	
+	} error;
 
 	struct sCache
 	{

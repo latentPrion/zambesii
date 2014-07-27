@@ -43,7 +43,7 @@ utf8Char		*Driverlasses[] =
 	NULL
 };
 
-DriverlassMapEntryS	DriverlassMap[] =
+sDriverClassMapEntry	driverClassMap[] =
 {
 	{ CC"udi_bridge", 2 },
 	{ CC"udi_nic", 5 },
@@ -55,7 +55,7 @@ DriverlassMapEntryS	DriverlassMap[] =
 error_t fplainn::Driver::preallocateModules(uarch_t nModules)
 {
 	if (nModules == 0) { return ERROR_SUCCESS; };
-	modules = new Module[nModules];
+	modules = new sModule[nModules];
 	if (modules == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nModules = nModules;
 	return ERROR_SUCCESS;
@@ -169,7 +169,7 @@ error_t fplainn::Driver::detectClasses(void)
 			 * exports as child_bind_ops, and see if the kernel can
 			 * recognize any of them.
 			 **/
-			for (DriverlassMapEntryS *tmp=DriverlassMap;
+			for (sDriverClassMapEntry *tmp=driverClassMap;
 				tmp->metaName != NULL;
 				tmp++)
 			{
@@ -455,7 +455,7 @@ error_t fplainn::Device::addEnumerationAttribute(
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::Driver::Module::addAttachedRegion(ubit16 regionIndex)
+error_t fplainn::Driver::sModule::addAttachedRegion(ubit16 regionIndex)
 {
 	ubit16		*old;
 

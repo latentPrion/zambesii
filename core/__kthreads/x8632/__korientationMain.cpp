@@ -27,8 +27,8 @@ int oo=0, pp=0, qq=0, rr=0;
 #include <commonlibs/libacpi/libacpi.h>
 static void rDumpSrat(void)
 {
-	acpi_sRsdt	*rsdt;
-	acpi_rSratS	*srat;
+	acpi::sRsdt	*rsdt;
+	acpiR::sSrat	*srat;
 	void		*context, *handle;
 	uarch_t		nSrats;
 
@@ -40,7 +40,7 @@ static void rDumpSrat(void)
 	for (nSrats=0; srat != NULL;
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle), nSrats++)
 	{
-		acpi_rSratCpuS		*cpuEntry;
+		acpiR::srat::sCpu		*cpuEntry;
 		void			*handle2;
 		uarch_t			nCpuEntries;
 
@@ -48,9 +48,9 @@ static void rDumpSrat(void)
 			nSrats, srat);
 
 		handle2 = NULL;
-		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
+		cpuEntry = acpiR::srat::getNextCpuEntry(srat, &handle2);
 		for (nCpuEntries=0; cpuEntry != NULL;
-			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2),
+			cpuEntry = acpiR::srat::getNextCpuEntry(srat, &handle2),
 				nCpuEntries++)
 		{
 			printf(NOTICE"Entry %d: bank %d cpuid %d "
@@ -69,13 +69,13 @@ static void rDumpSrat(void)
 			"N: Memory range entries:\n",
 			nCpuEntries);
 
-		acpi_rSratMemS		*memEntry;
+		acpiR::srat::sMem		*memEntry;
 		uarch_t			nMemEntries;
 
 		handle2 = NULL;
-		memEntry = acpiRSrat::getNextMemEntry(srat, &handle2);
+		memEntry = acpiR::srat::getNextMemEntry(srat, &handle2);
 		for (nMemEntries=0; memEntry != NULL;
-			memEntry = acpiRSrat::getNextMemEntry(srat, &handle2),
+			memEntry = acpiR::srat::getNextMemEntry(srat, &handle2),
 				nMemEntries++)
 		{
 			printf(NOTICE"Entry %d: bank %d, firmware-enabled? "

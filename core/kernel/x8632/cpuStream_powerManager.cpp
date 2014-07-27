@@ -27,7 +27,7 @@
 
 static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 {
-	x86_mpCfgCpuS	*cpu;
+	x86Mp::sCpuConfig	*cpu;
 	void		*handle=0;
 	uarch_t		pos=0;
 	sarch_t		isNewerCpu=1;

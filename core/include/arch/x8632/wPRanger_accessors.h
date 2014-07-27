@@ -11,9 +11,9 @@
  **/
 
 // Accessors.
-extern volatile pagingLevel1S	*const level1Accessor;
+extern volatile sPagingLevel1	*const level1Accessor;
 #ifdef CONFIG_ARCH_x86_32_PAE
-extern volatile pagingLevel2S	*const level2Accessor;
+extern volatile sPagingLevel2	*const level2Accessor;
 #endif
 
 // Modifiers.

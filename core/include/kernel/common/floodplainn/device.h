@@ -59,11 +59,11 @@ struct sMetaInitEntry
 	udi_mei_init_t	*udi_meta_info;
 };
 
-struct DriverlassMapEntryS
+struct sDriverClassMapEntry
 {
 	utf8Char	*metaName;
 	uarch_t		classIndex;
-} extern DriverlassMap[];
+} extern driverClassMap[];
 
 extern utf8Char		*Driverlasses[];
 
@@ -360,7 +360,7 @@ namespace fplainn
 	class Driver
 	{
 	public:
-		struct Module;
+		struct sModule;
 		struct sRegion;
 		struct sRequirement;
 		struct sMetalanguage;
@@ -409,9 +409,9 @@ namespace fplainn
 
 		void dump(void);
 
-		struct Module
+		struct sModule
 		{
-			Module(ubit16 index, utf8Char *filename)
+			sModule(ubit16 index, utf8Char *filename)
 			:
 			index(index), nAttachedRegions(0), regionIndexes(NULL)
 			{
@@ -431,7 +431,7 @@ namespace fplainn
 
 		private:
 			friend class fplainn::Driver;
-			Module(void)
+			sModule(void)
 			:
 			index(0), nAttachedRegions(0), regionIndexes(NULL)
 			{
@@ -613,7 +613,7 @@ namespace fplainn
 			return NULL;
 		}
 
-		Module *getModule(ubit16 index)
+		sModule *getModule(ubit16 index)
 		{
 			for (uarch_t i=0; i<nModules; i++)
 			{
@@ -710,7 +710,7 @@ namespace fplainn
 		sbit8		allRequirementsSatisfied;
 		uarch_t		childEnumerationAttrSize;
 		// Modules for this driver, and their indexes.
-		Module		*modules;
+		sModule		*modules;
 		// Regions in this driver and their indexes/module indexes, etc.
 		sRegion		*regions;
 		// All required libraries for this driver.

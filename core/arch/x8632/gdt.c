@@ -14,7 +14,7 @@
  * GDT entries as seen in here, your build will fail to run.
  **/
 
-struct x8632GdtEntryS		x8632Gdt[] =
+struct sX8632GdtEntry		x8632Gdt[] =
 {
 	{0, 0, 0, 0, 0, 0},
 	// Kernel descriptors.
@@ -30,9 +30,9 @@ struct x8632GdtEntryS		x8632Gdt[] =
 	{0,0,0,0,0, 0}
 };
 
-struct x8632GdtPtrS		x8632GdtPtr =
+struct sX8632GdtPtr		x8632GdtPtr =
 {
-	(sizeof(struct x8632GdtEntryS) * 9) - 1,
+	(sizeof(struct sX8632GdtEntry) * 9) - 1,
 	x8632Gdt
 };
 

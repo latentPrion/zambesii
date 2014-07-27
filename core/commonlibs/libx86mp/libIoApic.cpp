@@ -96,9 +96,9 @@ static error_t rsdtDetectIoApics(void)
 {
 	error_t			ret;
 	x86IoApic::IoApic	*tmp;
-	acpi_sRsdt		*rsdt;
-	acpi_rMadtS		*madt;
-	acpi_rMadtIoApicS	*ioApicEntry;
+	acpi::sRsdt		*rsdt;
+	acpiR::sMadt		*madt;
+	acpiR::madt::sIoApic	*ioApicEntry;
 	void			*handle, *handle2, *context;
 	ubit8			nIoApics=0;
 
@@ -112,10 +112,10 @@ static error_t rsdtDetectIoApics(void)
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle))
 	{
 		handle2 = NULL;
-		ioApicEntry = acpiRMadt::getNextIoApicEntry(madt, &handle2);
+		ioApicEntry = acpiR::madt::getNextIoApicEntry(madt, &handle2);
 		for (; ioApicEntry != NULL;
 			ioApicEntry =
-				acpiRMadt::getNextIoApicEntry(madt, &handle2))
+				acpiR::madt::getNextIoApicEntry(madt, &handle2))
 		{
 			tmp = new x86IoApic::IoApic(
 				ioApicEntry->ioApicId,
@@ -147,10 +147,10 @@ static error_t rsdtDetectIoApics(void)
 			};
 
 			nIoApics++;
-			ioApicEntry = acpiRMadt::getNextIoApicEntry(
+			ioApicEntry = acpiR::madt::getNextIoApicEntry(
 				madt, &handle2);
 		};
-		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
+		acpiRsdt::destroySdt(reinterpret_cast<acpi::sSdt *>( madt ));
 	};
 
 	cache.mapped = 1;
@@ -161,7 +161,7 @@ static error_t rsdtDetectIoApics(void)
 error_t x86IoApic::detectIoApics(void)
 {
 	error_t			ret;
-	x86_mpCfgIoApicS	*ioApicEntry;
+	x86Mp::sIoApicConfig	*ioApicEntry;
 	uarch_t			pos;
 	void			*handle;
 	ubit8			nIoApics=0;

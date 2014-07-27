@@ -3,7 +3,10 @@
 
 	#include "mpTables.h"
 
-extern struct x86_mpCfgS	*x86_mpCfgDefaults[7];
+namespace x86Mp
+{
+	extern struct sConfig	*configDefaults[7];
+}
 
 #endif
 

@@ -52,9 +52,9 @@ error_t ZkcmCpuDetectionMod::restore(void)
 sZkcmNumaMap *ibmPc_cm_rGnm(void)
 {
 	sZkcmNumaMap		*ret;
-	acpi_sRsdt		*rsdt;
-	acpi_rSratS		*srat;
-	acpi_rSratCpuS		*cpuEntry;
+	acpi::sRsdt		*rsdt;
+	acpiR::sSrat		*srat;
+	acpiR::srat::sCpu		*cpuEntry;
 	void			*handle, *handle2, *context;
 	ubit32			nEntries=0, i=0;
 
@@ -76,15 +76,15 @@ sZkcmNumaMap *ibmPc_cm_rGnm(void)
 	{
 		// For each SRAT (if multiple), get the LAPIC entries.
 		handle2 = NULL;
-		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
+		cpuEntry = acpiR::srat::getNextCpuEntry(srat, &handle2);
 		for (; cpuEntry != NULL;
-			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2))
+			cpuEntry = acpiR::srat::getNextCpuEntry(srat, &handle2))
 		{
 			// Count the number of entries there are in all.
 			nEntries++;
 		};
 
-		acpiRsdt::destroySdt((acpi_sdtS *)srat);
+		acpiRsdt::destroySdt((acpi::sSdt *)srat);
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
@@ -120,9 +120,9 @@ sZkcmNumaMap *ibmPc_cm_rGnm(void)
 	while (srat != NULL)
 	{
 		handle2 = NULL;
-		cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2);
+		cpuEntry = acpiR::srat::getNextCpuEntry(srat, &handle2);
 		for (; cpuEntry != NULL;
-			cpuEntry = acpiRSrat::getNextCpuEntry(srat, &handle2),
+			cpuEntry = acpiR::srat::getNextCpuEntry(srat, &handle2),
 			i++)
 		{
 			/**	FIXME
@@ -152,7 +152,7 @@ sZkcmNumaMap *ibmPc_cm_rGnm(void)
 			};
 		};
 
-		acpiRsdt::destroySdt((acpi_sdtS *)srat);
+		acpiRsdt::destroySdt((acpi::sSdt *)srat);
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
@@ -190,13 +190,13 @@ sZkcmNumaMap *ZkcmCpuDetectionMod::getNumaMap(void)
 
 sZkcmSmpMap *ZkcmCpuDetectionMod::getSmpMap(void)
 {
-	x86_mpCfgCpuS	*mpCpu;
+	x86Mp::sCpuConfig	*mpCpu;
 	void		*handle, *handle2, *context;
 	uarch_t		pos=0, nEntries, i;
 	sZkcmSmpMap	*ret;
-	acpi_sRsdt	*rsdt;
-	acpi_rMadtS	*madt;
-	acpi_rMadtCpuS	*madtCpu;
+	acpi::sRsdt	*rsdt;
+	acpiR::sMadt	*madt;
+	acpiR::madt::sCpu	*madtCpu;
 
 	/**	NOTES:
 	 *  This function will return a structure describing all CPUs at boot,
@@ -251,9 +251,9 @@ sZkcmSmpMap *ZkcmCpuDetectionMod::getSmpMap(void)
 	while (madt != NULL)
 	{
 		handle2 = NULL;
-		for (madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2);
+		for (madtCpu = acpiR::madt::getNextCpuEntry(madt, &handle2);
 			madtCpu != NULL;
-			madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2))
+			madtCpu = acpiR::madt::getNextCpuEntry(madt, &handle2))
 		{
 			if (FLAG_TEST(
 				madtCpu->flags, ACPI_MADT_CPU_FLAGS_ENABLED))
@@ -262,7 +262,7 @@ sZkcmSmpMap *ZkcmCpuDetectionMod::getSmpMap(void)
 			};
 		};
 
-		acpiRsdt::destroySdt((acpi_sdtS *)madt);
+		acpiRsdt::destroySdt((acpi::sSdt *)madt);
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 	};
 
@@ -292,9 +292,9 @@ sZkcmSmpMap *ZkcmCpuDetectionMod::getSmpMap(void)
 	while (madt != NULL)
 	{
 		handle2 = NULL;
-		for (madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2);
+		for (madtCpu = acpiR::madt::getNextCpuEntry(madt, &handle2);
 			madtCpu != NULL;
-			madtCpu = acpiRMadt::getNextCpuEntry(madt, &handle2))
+			madtCpu = acpiR::madt::getNextCpuEntry(madt, &handle2))
 		{
 			if (FLAG_TEST(
 				madtCpu->flags, ACPI_MADT_CPU_FLAGS_ENABLED))
@@ -312,7 +312,7 @@ sZkcmSmpMap *ZkcmCpuDetectionMod::getSmpMap(void)
 				madtCpu->lapicId, madtCpu->acpiLapicId);
 		};
 
-		acpiRsdt::destroySdt((acpi_sdtS *)madt);
+		acpiRsdt::destroySdt((acpi::sSdt *)madt);
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 	};
 
@@ -415,9 +415,9 @@ tryMpTables:
 
 sarch_t ZkcmCpuDetectionMod::checkSmpSanity(void)
 {
-	acpi_sRsdt		*rsdt;
-	acpi_rMadtS		*madt;
-	x86_mpCfgIrqSourceS	*mpCfgIrqSource;
+	acpi::sRsdt		*rsdt;
+	acpiR::sMadt		*madt;
+	x86Mp::sIrqSourceConfig	*mpCfgIrqSource;
 	void			*context, *handle, *handle2;
 	uarch_t			pos;
 	sarch_t			haveMpTableIrqSources=0, haveAcpiIrqSources=0,
@@ -489,7 +489,7 @@ sarch_t ZkcmCpuDetectionMod::checkSmpSanity(void)
 		{
 			// Check for at least one IO-APIC entry in the MADT.
 			handle2 = NULL;
-			if (acpiRMadt::getNextIoApicEntry(madt, &handle2)
+			if (acpiR::madt::getNextIoApicEntry(madt, &handle2)
 				!= NULL)
 			{
 				haveAcpiIoApics = 1;
@@ -501,7 +501,7 @@ sarch_t ZkcmCpuDetectionMod::checkSmpSanity(void)
 			};
 		};
 
-		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
+		acpiRsdt::destroySdt(reinterpret_cast<acpi::sSdt *>( madt ));
 		acpiRsdt::destroyContext(&context);
 	};
 
@@ -614,7 +614,7 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 	ubit8		*lowmem;
 	void		*srcAddr, *destAddr;
 	uarch_t		copySize, cpuFlags;
-	x86_mpFpS	*mpFp;
+	x86Mp::sFloatingPtr	*mpFp;
 	ubit8		i8254WasEnabled=0, i8254WasSoftEnabled=0;
 
 	/**	EXPLANATION:

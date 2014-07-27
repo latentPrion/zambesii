@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-struct x8632IdtEntryS
+struct sX8632IdtEntry
 {
 	ubit16		baseLow;
 	ubit16		seg;
@@ -12,14 +12,14 @@ struct x8632IdtEntryS
 	ubit16		baseHigh;
 } __attribute__((packed));
 
-struct x8632IdtPtrS
+struct sX8632IdtPtr
 {
 	ubit16			limit;
-	struct x8632IdtEntryS	*idt;
+	struct sX8632IdtEntry	*idt;
 } __attribute__((packed));
 
-extern struct x8632IdtEntryS		x8632Idt[];
-extern struct x8632IdtPtrS		x8632IdtPtr;
+extern struct sX8632IdtEntry		x8632Idt[];
+extern struct sX8632IdtPtr		x8632IdtPtr;
 
 #endif
 

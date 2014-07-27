@@ -92,9 +92,9 @@ error_t x86LapicC::mapLapicMem(void)
 
 error_t x86LapicC::detectPaddr(void)
 {
-	x86_mpCfgS		*cfgTable;
-	acpi_sRsdt		*rsdt;
-	acpi_rMadtS		*madt;
+	x86Mp::sConfig		*cfgTable;
+	acpi::sRsdt		*rsdt;
+	acpiR::sMadt		*madt;
 	void			*handle, *context;
 	paddr_t			tmp;
 
@@ -123,7 +123,7 @@ error_t x86LapicC::detectPaddr(void)
 		tmp = (paddr_t)madt->lapicPaddr;
 
 		acpiRsdt::destroyContext(&context);
-		acpiRsdt::destroySdt(reinterpret_cast<acpi_sdtS *>( madt ));
+		acpiRsdt::destroySdt(reinterpret_cast<acpi::sSdt *>( madt ));
 
 		// Have the LAPIC paddr. Move on.
 		goto initLibLapic;

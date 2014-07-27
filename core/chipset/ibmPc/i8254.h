@@ -81,10 +81,10 @@ private:
 private:
 	ZkcmDevice		baseDeviceInfo;
 
-	struct i8254StateS
+	struct sI8254State
 	{
 		enum irqStateE { DISABLED=1, ENABLED, DISABLING };
-		i8254StateS(void)
+		sI8254State(void)
 		:
 		currentTimeoutClks(0), currentIntervalClks(0),
 		isrRegistered(0), __kpinId(0), irqState(DISABLED),

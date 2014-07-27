@@ -33,7 +33,7 @@ DebugPipe::~DebugPipe(void)
 
 uarch_t DebugPipe::tieTo(uarch_t device)
 {
-	zkcmDebugDeviceC	*mod;
+	ZkcmDebugDevice	*mod;
 	error_t			err;
 	uarch_t			ret;
 

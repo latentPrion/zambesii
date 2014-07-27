@@ -4,7 +4,7 @@
 	#include <chipset/zkcm/device.h>
 	#include <__kstdlib/__ktypes.h>
 
-struct zkcmDebugDeviceC
+class ZkcmDebugDevice
 :
 public ZkcmDeviceBase
 {
@@ -14,7 +14,7 @@ public:
 		TERMINAL=0, SERIAL, NETWORK, ROM, RAMBUFFER, OTHER
 	} deviceType;
 
-	zkcmDebugDeviceC(
+	ZkcmDebugDevice(
 		deviceTypeE devType,
 		ZkcmDevice *device
 		)

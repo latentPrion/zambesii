@@ -79,7 +79,7 @@ Must define the following macros:
 
 Must define the following C/C++ types:
 
-struct pagingLevel0S
+struct sPagingLevel0
 {
 	paddr_t		entries[PAGING_L0_NENTRIES];
 } __attribute__(( aligned(ALIGNMENT) ));

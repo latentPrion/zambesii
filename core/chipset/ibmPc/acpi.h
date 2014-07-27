@@ -6,7 +6,7 @@
 
 #define IBMPCNMAP
 
-struct sRsdp
+struct acpi::sRsdp
 {
 	ubit8		sig[8];
 	ubit8		checksum;
@@ -19,7 +19,7 @@ struct sRsdp
 	ubit8		reserved[3];
 } __attribute__((packed));
 
-struct sSdtHeader
+struct acpi::sSdtHeader
 {
 	char		sig[4];
 	ubit32		tableLength;
@@ -32,21 +32,21 @@ struct sSdtHeader
 	ubit32		creatorRevision;
 };
 
-struct sRsdt
+struct acpi::sRsdt
 {
-	struct sSdtHeader	header;
+	struct acpi::sSdtHeader	header;
 	ubit32			entries;
 };
 
-struct sXsdt
+struct acpi::sXsdt
 {
-	struct sSdtHeader	header;
+	struct acpi::sSdtHeader	header;
 	ubit32			entries[][2];
 };
 
 struct sSrat
 {
-	struct sSdtHeader	header;
+	struct acpi::sSdtHeader	header;
 	ubit8			reserved[12];
 	ubit8			sratType;
 };

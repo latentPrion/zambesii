@@ -74,7 +74,7 @@ struct sMultibootData
 };
 
 // The module structure.
-struct Module
+struct sModule
 {
 	ubit32	mod_start;
 	ubit32	mod_end;

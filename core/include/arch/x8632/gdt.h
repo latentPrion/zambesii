@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-struct x8632GdtEntryS
+struct sX8632GdtEntry
 {
 	ubit16	limitLow;
 	ubit16	baseLow;
@@ -13,12 +13,12 @@ struct x8632GdtEntryS
 	ubit8	baseHigh;
 } __attribute__((packed));
 
-struct x8632GdtPtrS
+struct sX8632GdtPtr
 {
 	ubit16		limit;
-	struct x8632GdtEntryS	*baseAddr;
+	struct sX8632GdtEntry	*baseAddr;
 } __attribute__((packed));
 
-extern struct x8632GdtPtrS	x8632GdtPtr;
+extern struct sX8632GdtPtr	x8632GdtPtr;
 #endif
 

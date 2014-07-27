@@ -270,8 +270,8 @@ static inline ubit8 bcd8ToUbit8(ubit8 bcdVal)
 static sarch_t getCenturyOffset(ubit8 *ret)
 {
 	error_t		err;
-	acpi_sRsdt	*rsdt;
-	acpi_rFadtS	*fadt;
+	acpi::sRsdt	*rsdt;
+	acpiR::sFadt	*fadt;
 	void		*handle, *context;
 
 	/* This function used to return CMOS_REG_DATE_CENTURY on error, to make
@@ -313,7 +313,7 @@ static sarch_t getCenturyOffset(ubit8 *ret)
 			};
 
 			*ret = fadt->cmosCentury;
-			acpiRsdt::destroySdt((acpi_sdtS *)fadt);
+			acpiRsdt::destroySdt((acpi::sSdt *)fadt);
 			acpiRsdt::destroyContext(&context);
 			printf(NOTICE RTCCMOS"getCenturyOffset: ACPI: "
 				"Offset is %d.\n", *ret);

@@ -19,10 +19,10 @@ error_t cpuStream::InterCpuMessager::initialize(void)
 	messageQueue.initialize();
 
 	// Create an object cache for the messages.
-	cache = cachePool.getCache(sizeof(Message));
+	cache = cachePool.getCache(sizeof(sMessage));
 	if (cache == NULL)
 	{
-		cache = cachePool.createCache(sizeof(Message));
+		cache = cachePool.createCache(sizeof(sMessage));
 		if (cache == NULL)
 		{
 			printf(ERROR CPUMSG"%d: initialize(): Failed "
@@ -63,7 +63,7 @@ void cpuStream::InterCpuMessager::cut(void)
 }
 
 void cpuStream::InterCpuMessager::set(
-	Message *msg, ubit8 type,
+	sMessage *msg, ubit8 type,
 	uarch_t val0, uarch_t val1, uarch_t val2, uarch_t val3
 	)
 {
@@ -76,7 +76,7 @@ void cpuStream::InterCpuMessager::set(
 
 error_t cpuStream::InterCpuMessager::dispatch(void)
 {
-	Message	*msg;
+	sMessage	*msg;
 
 	setStatus(PROCESSING);
 

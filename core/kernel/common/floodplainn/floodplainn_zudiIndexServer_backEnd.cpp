@@ -746,7 +746,7 @@ void fplainnIndexer_loadDriverReq
 			&currModule, tmpString.get()) != ERROR_SUCCESS)
 			{ myResponse(ERROR_UNKNOWN); return; };
 
-		new (&driver->modules[i]) fplainn::Driver::Module(
+		new (&driver->modules[i]) fplainn::Driver::sModule(
 			currModule.index, tmpString.get());
 	};
 

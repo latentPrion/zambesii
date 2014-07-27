@@ -44,10 +44,10 @@ void debug::getCurrentStackInfo(sStackDescriptor *desc)
 
 void debug::printStackTrace(void *startFrame, sStackDescriptor *stack)
 {
-	struct x8632StackFrameS
+	struct sX8632StackFrame
 	{
 		// aka, "EBP" that was pushed on the stack.
-		x8632StackFrameS	*prevFrame;
+		sX8632StackFrame	*prevFrame;
 		// aka, "EIP" that was pushed on the stack.
 		void			(*caller)(void);
 	} *currFrame;
@@ -55,7 +55,7 @@ void debug::printStackTrace(void *startFrame, sStackDescriptor *stack)
 	printf(NOTICE"Stack: bounds: low 0x%p, high 0x%p. Start frame 0x%p\n",
 		stack->start, stack->eof, startFrame);
 
-	currFrame = (x8632StackFrameS *)startFrame;
+	currFrame = (sX8632StackFrame *)startFrame;
 	do
 	{
 		printf(NOTICE"Stack: frame @0x%p, called by: 0x%p\n",

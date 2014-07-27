@@ -12,7 +12,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-static struct x86_mpCacheS	cache;
+static struct x86Mp::sCache	cache;
 
 void x86Mp::initializeCache(void)
 {
@@ -30,9 +30,9 @@ void x86Mp::flushCache(void)
 	memset(&cache, 0, sizeof(cache));
 }
 
-x86_mpFpS *x86Mp::findMpFp(void)
+x86Mp::sFloatingPtr *x86Mp::findMpFp(void)
 {
-	x86_mpFpS	*ret;
+	x86Mp::sFloatingPtr	*ret;
 
 	/* This function must call on the chipset for help. The chipset must
 	 * scan for the MP FP structure in its own chipset specific manner.
@@ -43,7 +43,7 @@ x86_mpFpS *x86Mp::findMpFp(void)
 		return cache.fp;
 	};
 
-	ret = (struct x86_mpFpS *)chipset_findx86MpFp();
+	ret = (struct x86Mp::sFloatingPtr *)chipset_findx86MpFp();
 	if (ret != NULL) {
 		cache.fp = ret;
 	}
@@ -64,7 +64,7 @@ sarch_t x86Mp::mpFpFound(void)
 	return 1;
 }
 
-static sarch_t checksumIsValid(x86_mpCfgS *cfg)
+static sarch_t checksumIsValid(x86Mp::sConfig *cfg)
 {
 	ubit8		checksum=0;
 	ubit8		*table=reinterpret_cast<ubit8 *>( cfg );
@@ -76,11 +76,11 @@ static sarch_t checksumIsValid(x86_mpCfgS *cfg)
 	return (checksum == 0) ? 1 : 0;
 }
 
-x86_mpCfgS *x86Mp::mapMpConfigTable(void)
+x86Mp::sConfig *x86Mp::mapMpConfigTable(void)
 {
 	ubit32		cfgPaddr;
 	ubit32		cfgNPages;
-	x86_mpCfgS	*ret;
+	x86Mp::sConfig	*ret;
 
 	if (!x86Mp::mpFpFound()) {
 		return NULL;
@@ -96,7 +96,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 		printf(NOTICE x86MP"MP FP indicates default config %d.\n",
 			cache.fp->features[0]);
 
-		cache.cfg = x86_mpCfgDefaults[cache.fp->features[0]];
+		cache.cfg = configDefaults[cache.fp->features[0]];
 		cache.defaultConfig = cache.fp->features[0];
 		cache.nCfgEntries = cache.cfg->nEntries;
 		cache.lapicPaddr = cache.cfg->lapicPaddr;
@@ -104,7 +104,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	};
 
 	cfgPaddr = cache.fp->cfgTablePaddr;
-	ret = (x86_mpCfgS *)walkerPageRanger::createMappingTo(
+	ret = (x86Mp::sConfig *)walkerPageRanger::createMappingTo(
 		cfgPaddr, 1, PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
 	if (ret == NULL)
@@ -113,7 +113,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 		return NULL;
 	};
 
-	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86_mpCfgS *);
+	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86Mp::sConfig *);
 	cfgNPages = PAGING_BYTES_TO_PAGES(ret->length) + 1;
 
 	// First ensure that the table's checksum is valid.
@@ -130,7 +130,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		(void *)((uarch_t)ret & PAGING_BASE_MASK_HIGH), 1);
 
-	ret = (x86_mpCfgS *)walkerPageRanger::createMappingTo(
+	ret = (x86Mp::sConfig *)walkerPageRanger::createMappingTo(
 		cfgPaddr, cfgNPages,
 		PAGEATTRIB_PRESENT | PAGEATTRIB_SUPERVISOR);
 
@@ -140,7 +140,7 @@ x86_mpCfgS *x86Mp::mapMpConfigTable(void)
 		return NULL;
 	};
 
-	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86_mpCfgS *);
+	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86Mp::sConfig *);
 	cache.cfg = ret;
 	cache.lapicPaddr = cache.cfg->lapicPaddr;
 	cache.nCfgEntries = ret->nEntries;
@@ -210,7 +210,7 @@ ubit32 x86Mp::getLapicPaddr(void)
 	return cache.lapicPaddr;
 }
 
-x86_mpFpS *x86Mp::getMpFp(void)
+x86Mp::sFloatingPtr *x86Mp::getMpFp(void)
 {
 	if (cache.magic != x86_MPCACHE_MAGIC) {
 		return NULL;
@@ -219,7 +219,7 @@ x86_mpFpS *x86Mp::getMpFp(void)
 	return cache.fp;
 }
 
-x86_mpCfgS *x86Mp::getMpCfg(void)
+x86Mp::sConfig *x86Mp::getMpCfg(void)
 {
 	if (!x86Mp::mpFpFound()) {
 		return NULL;
@@ -230,7 +230,7 @@ x86_mpCfgS *x86Mp::getMpCfg(void)
 
 sbit8 x86Mp::getBusIdFor(const char *bus)
 {
-	x86_mpCfgBusS		*busEntry;
+	x86Mp::sBusConfig		*busEntry;
 	void			*handle;
 	uarch_t			pos;
 
@@ -250,9 +250,9 @@ sbit8 x86Mp::getBusIdFor(const char *bus)
 	return -1;
 }
 
-x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
+x86Mp::sCpuConfig *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 {
-	x86_mpCfgCpuS	*ret=NULL;
+	x86Mp::sCpuConfig	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
 		return NULL;
@@ -261,7 +261,7 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 	if (*pos == 0)
 	{
 		// Caller wants a fresh iteration.
-		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86_mpCfgS));
+		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86Mp::sConfig));
 	};
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
@@ -271,39 +271,39 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 		};
 
 		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_CPU) {
-			ret = (x86_mpCfgCpuS *)*handle;
+			ret = (x86Mp::sCpuConfig *)*handle;
 		};
 
 		switch (*(ubit8 *)*handle)
 		{
 		case x86_MPCFG_TYPE_CPU:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+				(uarch_t)*handle + sizeof(x86Mp::sCpuConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_BUS:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgBusS));
+				(uarch_t)*handle + sizeof(x86Mp::sBusConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IOAPIC:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIoApicS));
+				(uarch_t)*handle + sizeof(x86Mp::sIoApicConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IRQSOURCE:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIrqSourceS));
+				(uarch_t)*handle + sizeof(x86Mp::sIrqSourceConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
 			*handle = (void *)(
 				(uarch_t)*handle
-				+ sizeof(x86_mpCfgLocalIrqSourceS));
+				+ sizeof(x86Mp::sLocalIrqSourceConfig));
 
 			break;
 
@@ -319,9 +319,9 @@ x86_mpCfgCpuS *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 	return ret;
 }
 
-x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
+x86Mp::sBusConfig *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 {
-	x86_mpCfgBusS	*ret=NULL;
+	x86Mp::sBusConfig	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
 		return NULL;
@@ -330,7 +330,7 @@ x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 	if (*pos == 0)
 	{
 		// Caller wants a fresh iteration.
-		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86_mpCfgS));
+		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86Mp::sConfig));
 	};
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
@@ -340,39 +340,39 @@ x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 		};
 
 		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_BUS) {
-			ret = (x86_mpCfgBusS *)*handle;
+			ret = (x86Mp::sBusConfig *)*handle;
 		};
 
 		switch (*(ubit8 *)*handle)
 		{
 		case x86_MPCFG_TYPE_CPU:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+				(uarch_t)*handle + sizeof(x86Mp::sCpuConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_BUS:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgBusS));
+				(uarch_t)*handle + sizeof(x86Mp::sBusConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IOAPIC:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIoApicS));
+				(uarch_t)*handle + sizeof(x86Mp::sIoApicConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IRQSOURCE:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIrqSourceS));
+				(uarch_t)*handle + sizeof(x86Mp::sIrqSourceConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
 			*handle = (void *)(
 				(uarch_t)*handle
-				+ sizeof(x86_mpCfgLocalIrqSourceS));
+				+ sizeof(x86Mp::sLocalIrqSourceConfig));
 
 			break;
 
@@ -388,9 +388,11 @@ x86_mpCfgBusS *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 	return ret;
 }
 
-x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
+x86Mp::sIoApicConfig *x86Mp::getNextIoApicEntry(
+	uarch_t *pos, void **const handle
+	)
 {
-	x86_mpCfgIoApicS	*ret=NULL;
+	x86Mp::sIoApicConfig	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
 		return NULL;
@@ -399,7 +401,7 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 	if (*pos == 0)
 	{
 		// Caller wants a fresh iteration.
-		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86_mpCfgS));
+		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86Mp::sConfig));
 	};
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
@@ -409,39 +411,39 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 		};
 
 		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_IOAPIC) {
-			ret = (x86_mpCfgIoApicS *)*handle;
+			ret = (x86Mp::sIoApicConfig *)*handle;
 		};
 
 		switch (*(ubit8 *)*handle)
 		{
 		case x86_MPCFG_TYPE_CPU:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+				(uarch_t)*handle + sizeof(x86Mp::sCpuConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_BUS:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgBusS));
+				(uarch_t)*handle + sizeof(x86Mp::sBusConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IOAPIC:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIoApicS));
+				(uarch_t)*handle + sizeof(x86Mp::sIoApicConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IRQSOURCE:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIrqSourceS));
+				(uarch_t)*handle + sizeof(x86Mp::sIrqSourceConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
 			*handle = (void *)(
 				(uarch_t)*handle
-				+ sizeof(x86_mpCfgLocalIrqSourceS));
+				+ sizeof(x86Mp::sLocalIrqSourceConfig));
 
 			break;
 
@@ -457,11 +459,11 @@ x86_mpCfgIoApicS *x86Mp::getNextIoApicEntry(uarch_t *pos, void **const handle)
 	return ret;
 }
 
-x86_mpCfgLocalIrqSourceS *x86Mp::getNextLocalIrqSourceEntry(
+x86Mp::sLocalIrqSourceConfig *x86Mp::getNextLocalIrqSourceEntry(
 	uarch_t *pos, void **const handle
 	)
 {
-	x86_mpCfgLocalIrqSourceS	*ret=NULL;
+	x86Mp::sLocalIrqSourceConfig	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
 		return NULL;
@@ -470,7 +472,7 @@ x86_mpCfgLocalIrqSourceS *x86Mp::getNextLocalIrqSourceEntry(
 	if (*pos == 0)
 	{
 		// Caller wants a fresh iteration.
-		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86_mpCfgS));
+		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86Mp::sConfig));
 	};
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
@@ -480,39 +482,39 @@ x86_mpCfgLocalIrqSourceS *x86Mp::getNextLocalIrqSourceEntry(
 		};
 
 		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_LOCALIRQSOURCE) {
-			ret = (x86_mpCfgLocalIrqSourceS *)*handle;
+			ret = (x86Mp::sLocalIrqSourceConfig *)*handle;
 		};
 
 		switch (*(ubit8 *)*handle)
 		{
 		case x86_MPCFG_TYPE_CPU:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+				(uarch_t)*handle + sizeof(x86Mp::sCpuConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_BUS:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgBusS));
+				(uarch_t)*handle + sizeof(x86Mp::sBusConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IOAPIC:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIoApicS));
+				(uarch_t)*handle + sizeof(x86Mp::sIoApicConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IRQSOURCE:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIrqSourceS));
+				(uarch_t)*handle + sizeof(x86Mp::sIrqSourceConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
 			*handle = (void *)(
 				(uarch_t)*handle
-				+ sizeof(x86_mpCfgLocalIrqSourceS));
+				+ sizeof(x86Mp::sLocalIrqSourceConfig));
 
 			break;
 
@@ -528,11 +530,11 @@ x86_mpCfgLocalIrqSourceS *x86Mp::getNextLocalIrqSourceEntry(
 	return ret;
 }
 
-x86_mpCfgIrqSourceS *x86Mp::getNextIrqSourceEntry(
+x86Mp::sIrqSourceConfig *x86Mp::getNextIrqSourceEntry(
 	uarch_t *pos, void **const handle
 	)
 {
-	x86_mpCfgIrqSourceS	*ret=NULL;
+	x86Mp::sIrqSourceConfig	*ret=NULL;
 
 	if (!x86Mp::getMpCfg()) {
 		return NULL;
@@ -541,7 +543,7 @@ x86_mpCfgIrqSourceS *x86Mp::getNextIrqSourceEntry(
 	if (*pos == 0)
 	{
 		// Caller wants a fresh iteration.
-		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86_mpCfgS));
+		*handle = (void *)((uarch_t)cache.cfg + sizeof(x86Mp::sConfig));
 	};
 
 	for (; *pos < cache.nCfgEntries; *pos += 1)
@@ -551,39 +553,39 @@ x86_mpCfgIrqSourceS *x86Mp::getNextIrqSourceEntry(
 		};
 
 		if (*((ubit8 *)*handle) == x86_MPCFG_TYPE_IRQSOURCE) {
-			ret = (x86_mpCfgIrqSourceS *)*handle;
+			ret = (x86Mp::sIrqSourceConfig *)*handle;
 		};
 
 		switch (*(ubit8 *)*handle)
 		{
 		case x86_MPCFG_TYPE_CPU:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgCpuS));
+				(uarch_t)*handle + sizeof(x86Mp::sCpuConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_BUS:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgBusS));
+				(uarch_t)*handle + sizeof(x86Mp::sBusConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IOAPIC:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIoApicS));
+				(uarch_t)*handle + sizeof(x86Mp::sIoApicConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_IRQSOURCE:
 			*handle = (void *)(
-				(uarch_t)*handle + sizeof(x86_mpCfgIrqSourceS));
+				(uarch_t)*handle + sizeof(x86Mp::sIrqSourceConfig));
 
 			break;
 
 		case x86_MPCFG_TYPE_LOCALIRQSOURCE:
 			*handle = (void *)(
 				(uarch_t)*handle
-				+ sizeof(x86_mpCfgLocalIrqSourceS));
+				+ sizeof(x86Mp::sLocalIrqSourceConfig));
 
 			break;
 

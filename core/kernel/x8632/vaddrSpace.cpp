@@ -25,9 +25,9 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 		->vaddrSpace)
 	{
 #ifdef CONFIG_ARCH_x86_32_PAE
-		level0Accessor.rsrc = (pagingLevel0S *)0xFFFFC000;
+		level0Accessor.rsrc = (sPagingLevel0 *)0xFFFFC000;
 #else
-		level0Accessor.rsrc = (pagingLevel0S *)0xFFFFD000;
+		level0Accessor.rsrc = (sPagingLevel0 *)0xFFFFD000;
 #endif
 		level0Paddr = paddr_t(&__kpagingLevel0Tables);
 		return ERROR_SUCCESS;
@@ -38,7 +38,7 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 	 **/
 #ifdef CONFIG_ARCH_x86_32_PAE
 #else
-	level0Accessor.rsrc = (pagingLevel0S *)processTrib.__kgetStream()
+	level0Accessor.rsrc = (sPagingLevel0 *)processTrib.__kgetStream()
 		->memoryStream.memAlloc(2, MEMALLOC_NO_FAKEMAP);
 #endif
 
@@ -66,7 +66,7 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 		sizeof(level0Accessor.rsrc->entries[0]) * nEntries);
 
 	uarch_t			__kflags;
-	pagingLevel1S		*level1Table;
+	sPagingLevel1		*level1Table;
 	paddr_t			level1TablePaddr;
 
 	walkerPageRanger::lookup(
@@ -74,7 +74,7 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 		level0Accessor.rsrc, &level0Paddr, &__kflags);
 
 	// Now set up the jail-window mapping.
-	level1Table = (pagingLevel1S *)(
+	level1Table = (sPagingLevel1 *)(
 		(uarch_t)level0Accessor.rsrc + PAGING_BASE_SIZE);
 
 	walkerPageRanger::lookup(

@@ -155,10 +155,10 @@ status_t i8254PitC::isr(ZkcmDeviceBase *self, ubit32 flags)
 	mode = device->state.rsrc.mode;
 
 	// If this is the "disabling" final cleanup IRQ:
-	if (device->i8254State.irqState == i8254StateS::DISABLING)
+	if (device->i8254State.irqState == sI8254State::DISABLING)
 	{
 		device->i8254State.isrRegistered = 0;
-		device->i8254State.irqState = i8254StateS::DISABLED;
+		device->i8254State.irqState = sI8254State::DISABLED;
 
 		device->state.lock.release();
 
@@ -290,14 +290,14 @@ error_t i8254PitC::enable(void)
 		};
 
 		i8254State.isrRegistered = 1;
-		i8254State.irqState = i8254StateS::ENABLED;
+		i8254State.irqState = sI8254State::ENABLED;
 
 		state.lock.release();
 	}
 	else
 	{
 		state.lock.acquire();
-		i8254State.irqState = i8254StateS::ENABLED;
+		i8254State.irqState = sI8254State::ENABLED;
 		state.lock.release();
 	};
 
@@ -373,7 +373,7 @@ void i8254PitC::disable(void)
 		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
 		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
 
-	i8254State.irqState = i8254StateS::DISABLING;
+	i8254State.irqState = sI8254State::DISABLING;
 
 	state.lock.release();
 	// We unregister the ISR, etc in the ISR when the final IRQ comes in.

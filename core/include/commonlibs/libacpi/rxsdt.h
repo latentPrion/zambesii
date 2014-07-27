@@ -11,16 +11,16 @@
 namespace acpiRsdt
 {
 	// Returns the next SRAT. The lib provides for more than one.
-	acpi_rSratS *getNextSrat(
-		acpi_sRsdt *r, void **const context, void **const handle);
+	acpiR::sSrat *getNextSrat(
+		acpi::sRsdt *r, void **const context, void **const handle);
 
 	// Returns the next MADT. The lib provides for more than one.
-	acpi_rMadtS *getNextMadt(
-		acpi_sRsdt *r, void **const context, void **const handle);
+	acpiR::sMadt *getNextMadt(
+		acpi::sRsdt *r, void **const context, void **const handle);
 
 	// Returns the next FACP.
-	acpi_rFadtS *getNextFadt(
-		acpi_sRsdt *r, void **const context, void **const handle);
+	acpiR::sFadt *getNextFadt(
+		acpi::sRsdt *r, void **const context, void **const handle);
 
 	/**	EXPLANATION:
 	 * These two functions are the garbage collection for the lib.
@@ -57,7 +57,7 @@ namespace acpiRsdt
 	 *	It should be called right after you call destroySdt().
 	 **/
 	// Unmaps an ACPI table.
-	void destroySdt(acpi_sdtS *sdt);
+	void destroySdt(acpi::sSdt *sdt);
 	// Will *usually* not need to be used since it is called internally.
 	void destroyContext(void **const context);
 }

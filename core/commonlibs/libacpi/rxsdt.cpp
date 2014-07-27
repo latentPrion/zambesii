@@ -84,7 +84,7 @@ static void *acpi_mapTable(paddr_t p, uarch_t nPages)
 	return ret;
 }
 
-static sarch_t checksumIsValid(acpi_sdtS *sdt)
+static sarch_t checksumIsValid(acpi::sSdt *sdt)
 {
 	ubit8		checksum=0;
 	ubit8		*table=reinterpret_cast<ubit8 *>( sdt );
@@ -97,12 +97,12 @@ static sarch_t checksumIsValid(acpi_sdtS *sdt)
 }
 
 
-acpi_rSratS *acpiRsdt::getNextSrat(
-	acpi_sRsdt *rsdt, void **const context, void **const handle
+acpiR::sSrat *acpiRsdt::getNextSrat(
+	acpi::sRsdt *rsdt, void **const context, void **const handle
 	)
 {
-	acpi_sdtS	*sdt;
-	acpi_rSratS	*ret=NULL;
+	acpi::sSdt	*sdt;
+	acpiR::sSrat	*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
@@ -110,12 +110,12 @@ acpi_rSratS *acpiRsdt::getNextSrat(
 
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
-		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
+		sdt = (acpi::sSdt *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
 
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_SRAT, 4) == 0)
 			&& checksumIsValid(sdt))
 		{
-			ret = (acpi_rSratS *)acpi_mapTable(
+			ret = (acpiR::sSrat *)acpi_mapTable(
 				*(paddr_t *)*handle,
 				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
 		};
@@ -138,12 +138,12 @@ acpi_rSratS *acpiRsdt::getNextSrat(
 	return ret;
 }
 
-acpi_rMadtS *acpiRsdt::getNextMadt(
-	acpi_sRsdt *rsdt, void **const context, void **const handle
+acpiR::sMadt *acpiRsdt::getNextMadt(
+	acpi::sRsdt *rsdt, void **const context, void **const handle
 	)
 {
-	acpi_sdtS	*sdt;
-	acpi_rMadtS	*ret=NULL;
+	acpi::sSdt	*sdt;
+	acpiR::sMadt	*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
@@ -151,11 +151,11 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
-		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
+		sdt = (acpi::sSdt *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
 			&& checksumIsValid(sdt))
 		{
-			ret = (acpi_rMadtS *)acpi_mapTable(
+			ret = (acpiR::sMadt *)acpi_mapTable(
 				*(paddr_t *)*handle,
 				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
 		};
@@ -178,12 +178,12 @@ acpi_rMadtS *acpiRsdt::getNextMadt(
 	return ret;
 }
 
-acpi_rFadtS *acpiRsdt::getNextFadt(
-	acpi_sRsdt *rsdt, void **const context, void **const handle
+acpiR::sFadt *acpiRsdt::getNextFadt(
+	acpi::sRsdt *rsdt, void **const context, void **const handle
 	)
 {
-	acpi_sdtS	*sdt;
-	acpi_rFadtS	*ret=NULL;
+	acpi::sSdt	*sdt;
+	acpiR::sFadt	*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
@@ -191,11 +191,11 @@ acpi_rFadtS *acpiRsdt::getNextFadt(
 
 	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
 	{
-		sdt = (acpi_sdtS *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
+		sdt = (acpi::sSdt *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
 		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
 			&& checksumIsValid(sdt))
 		{
-			ret = (acpi_rFadtS *)acpi_mapTable(
+			ret = (acpiR::sFadt *)acpi_mapTable(
 				*(paddr_t *)*handle,
 				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
 		};
@@ -219,7 +219,7 @@ acpi_rFadtS *acpiRsdt::getNextFadt(
 }
 
 #include <kernel/common/cpuTrib/cpuTrib.h>
-void acpiRsdt::destroySdt(acpi_sdtS *sdt)
+void acpiRsdt::destroySdt(acpi::sSdt *sdt)
 {
 	uarch_t		nPages, f;
 	paddr_t		p;

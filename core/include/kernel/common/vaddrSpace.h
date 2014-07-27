@@ -24,9 +24,9 @@ public:
 
 public:
 	// Uses a recursive lock, take note.
-	SharedResourceGroup<RecursiveLock, pagingLevel0S *>	level0Accessor;
+	SharedResourceGroup<RecursiveLock, sPagingLevel0 *>	level0Accessor;
 #ifdef CONFIG_ARCH_x86_32_PAE
-	pagingLevel1S	*extraPages;
+	sPagingLevel1	*extraPages;
 #endif
 	paddr_t		level0Paddr;
 };

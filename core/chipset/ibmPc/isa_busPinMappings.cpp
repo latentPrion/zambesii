@@ -192,9 +192,9 @@ void dumpSmpIsaPins(void)
 
 static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 {
-	acpi_sRsdt			*rsdt;
-	acpi_rMadtS			*madt;
-	acpi_rMadtIrqSourceOverS	*irqOverride;
+	acpi::sRsdt			*rsdt;
+	acpiR::sMadt			*madt;
+	acpiR::madt::sIrqSourceOver	*irqOverride;
 	void				*context, *handle, *handle2;
 	ubit32				nOverrides=0;
 
@@ -224,10 +224,10 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 	 * mapped to the IO-APIC IRQ pins (0-15).
 	 **/
 	handle2 = NULL;
-	irqOverride = acpiRMadt::getNextIrqSourceOverrideEntry(madt, &handle2);
+	irqOverride = acpiR::madt::getNextIrqSourceOverrideEntry(madt, &handle2);
 	for (;
 		irqOverride != NULL;
-		irqOverride = acpiRMadt::getNextIrqSourceOverrideEntry(
+		irqOverride = acpiR::madt::getNextIrqSourceOverrideEntry(
 			madt, &handle2))
 	{
 		ubit8			pin, cpu, dummy, polarity, triggerMode;
@@ -339,7 +339,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 			irqOverride->globalIrq);
 	};
 
-	acpiRsdt::destroySdt((acpi_sdtS *)madt);
+	acpiRsdt::destroySdt((acpi::sSdt *)madt);
 	acpiRsdt::destroyContext(&context);
 
 	return ERROR_SUCCESS;
@@ -347,7 +347,7 @@ static error_t ibmPc_isaBpm_smpMode_rsdt_loadBusPinMappings(void)
 
 static error_t ibmPc_isaBpm_smpMode_x86Mp_loadBusPinMappings(void)
 {
-	x86_mpCfgIrqSourceS	*irqSourceEntry;
+	x86Mp::sIrqSourceConfig	*irqSourceEntry;
 	uarch_t			pos;
 	void			*handle;
 	x86IoApic::IoApic	*ioApic;

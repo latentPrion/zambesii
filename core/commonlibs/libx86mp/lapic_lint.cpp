@@ -4,13 +4,13 @@
 #include <kernel/common/cpuTrib/cpuStream.h>
 
 
-static void lintParseRMadtForEntries(acpi_rMadtS *rmadt, cpuStream *parent)
+static void lintParseRMadtForEntries(acpiR::sMadt *rmadt, cpuStream *parent)
 {
 	void			*handle;
-	acpi_rMadtLapicNmiS	*nmiEntry;
+	acpiR::madt::sLapicNmi	*nmiEntry;
 
 	handle = NULL;
-	nmiEntry = acpiRMadt::getNextLapicNmiEntry(rmadt, &handle);
+	nmiEntry = acpiR::madt::getNextLapicNmiEntry(rmadt, &handle);
 	while (nmiEntry != NULL)
 	{
 		// If this entry pertains to this CPU:
@@ -20,7 +20,7 @@ static void lintParseRMadtForEntries(acpi_rMadtS *rmadt, cpuStream *parent)
 			printf(NOTICE CPUSTREAM"%d: ACPI NMI: lint %d.\n",
 				parent->cpuId, nmiEntry->lapicLint);
 
-			parent->lapic.lint.sLintetup(
+			parent->lapic.lint.lintSetup(
 				parent,
 				nmiEntry->lapicLint,
 				x86LAPIC_LINT_TYPE_NMI,
@@ -32,47 +32,36 @@ static void lintParseRMadtForEntries(acpi_rMadtS *rmadt, cpuStream *parent)
 				parent, nmiEntry->lapicLint);
 		};
 
-		nmiEntry = acpiRMadt::getNextLapicNmiEntry(rmadt, &handle);
+		nmiEntry = acpiR::madt::getNextLapicNmiEntry(rmadt, &handle);
 	};
 }
 
 #include <kernel/common/cpuTrib/cpuTrib.h>
-void x86LapicC::sLint::sRsdtetupLints(cpuStream *parent)
+void x86LapicC::sLint::rsdtSetupLints(cpuStream *parent)
 {
-	acpi_sRsdt		*rsdt;
-	acpi_rMadtS		*rmadt;
+	acpi::sRsdt		*rsdt;
+	acpiR::sMadt		*rmadt;
 	void			*context, *handle;
 
 	rsdt = acpi::getRsdt();
 	context = handle = NULL;
 	rmadt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 
-int	i=0;
 	while (rmadt != NULL)
 	{
-i++;
-if (!FLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
-{
-	printf(NOTICE"CPU %d: madt at 0x%p.\n", cpuTrib.getCurrentCpuStream()->cpuId, rmadt);
-};
 		lintParseRMadtForEntries(rmadt, parent);
 
-		acpiRsdt::destroySdt((acpi_sdtS *)rmadt);
+		acpiRsdt::destroySdt((acpi::sSdt *)rmadt);
 		rmadt = acpiRsdt::getNextMadt(
 			rsdt, &context, &handle);
 	};
-if (!FLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP))
-{
-	asm volatile("cli\n\thlt\n\t");
-};
 }
 
-#include <debug.h>
 error_t x86LapicC::sLint::setupLints(cpuStream *parent)
 {
 	uarch_t				pos=0;
 	void				*handle;
-	x86_mpCfgLocalIrqSourceS	*lintEntry;
+	x86Mp::sLocalIrqSourceConfig	*lintEntry;
 
 	/**	EXPLANATION:
 	 * We actually use both the MP Tables and the APIC MADT to set up the
@@ -104,7 +93,7 @@ error_t x86LapicC::sLint::setupLints(cpuStream *parent)
 				lintEntry->destLapicLint,
 				lintEntry->intType);
 
-			parent->lapic.lint.sLintetup(
+			parent->lapic.lint.lintSetup(
 				parent,
 				lintEntry->destLapicLint,
 				x86LapicC::sLint::lintConvertMpCfgType(
@@ -142,7 +131,7 @@ useAcpi:
 				return ERROR_SUCCESS;
 			};
 
-			sRsdtetupLints(parent);
+			rsdtSetupLints(parent);
 			return ERROR_SUCCESS;
 		};
 	};
@@ -200,7 +189,7 @@ ubit32 x86LapicC::sLint::lintConvertAcpiFlags(ubit32 acpiFlagField)
 #define x86LAPIC_LVT_TRIGGERMODE_EDGE		0x0
 #define x86LAPIC_LVT_TRIGGERMODE_LEVEL		0x1
 
-static inline ubit8 sLintetup_lvtConvertType(ubit8 type)
+static inline ubit8 lintSetup_lvtConvertType(ubit8 type)
 {
 	switch (type)
 	{
@@ -212,7 +201,7 @@ static inline ubit8 sLintetup_lvtConvertType(ubit8 type)
 	}
 }
 
-static inline ubit8 sLintetup_lvtConvertPolarity(ubit32 flags)
+static inline ubit8 lintSetup_lvtConvertPolarity(ubit32 flags)
 {
 	// Polarity is in the first 2 bits.
 	switch (flags & 0x3)
@@ -229,7 +218,7 @@ static inline ubit8 sLintetup_lvtConvertPolarity(ubit32 flags)
 	}
 }
 
-static inline ubit8 sLintetup_lvtConvertTriggerMode(ubit32 flags)
+static inline ubit8 lintSetup_lvtConvertTriggerMode(ubit32 flags)
 {
 	switch ((flags >> 2) & 0x3)
 	{
@@ -278,7 +267,7 @@ void x86LapicC::sLint::lintDisable(cpuStream *parent, ubit8 lint)
 		outval);
 }
 
-void x86LapicC::sLint::sLintetup(
+void x86LapicC::sLint::lintSetup(
 	cpuStream *parent,
 	ubit8 lint, ubit8 deliveryMode, ubit32 flags, ubit8 vector
 	)
@@ -287,10 +276,10 @@ void x86LapicC::sLint::sLintetup(
 
 	if (lint > 1) { return; };
 
-	outval |= sLintetup_lvtConvertType(deliveryMode)
+	outval |= lintSetup_lvtConvertType(deliveryMode)
 		<< x86LAPIC_LVT_INTTYPE_SHIFT;
 
-	outval |= sLintetup_lvtConvertPolarity(flags)
+	outval |= lintSetup_lvtConvertPolarity(flags)
 		<< x86LAPIC_LVT_POLARITY_SHIFT;
 
 	/* "Selects the trigger mode for the local LINT0 and LINT1 pins:
@@ -307,7 +296,7 @@ void x86LapicC::sLint::sLintetup(
 	case x86LAPIC_LINT_TYPE_INT:
 		// Vector and trigger mode only apply for fixed interrupts.
 		outval |= vector;
-		outval |= sLintetup_lvtConvertTriggerMode(flags)
+		outval |= lintSetup_lvtConvertTriggerMode(flags)
 			<< x86LAPIC_LVT_TRIGGERMODE_SHIFT;
 
 		break;

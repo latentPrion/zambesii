@@ -3,8 +3,8 @@
 
 	#include <arch/paging.h>
 
-extern "C" pagingLevel0S	__kpagingLevel0Tables;
-extern "C" pagingLevel1S	__kpagingLevel1Tables[];
+extern "C" sPagingLevel0	__kpagingLevel0Tables;
+extern "C" sPagingLevel1	__kpagingLevel1Tables[];
 
 #endif
 

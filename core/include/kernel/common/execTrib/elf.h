@@ -96,7 +96,7 @@ void elfheader_dump(struct sElfHeader *ehdr);
 #define ESHDR_FLAGS_EXECINSTR	(1<<2)
 #define ESHDR_FLAGS_PROC_MASK	0xF0000000
 
-struct elf32_shdrEntryS
+struct sElf32_shdrEntry
 {
 	// Index of name in string table.
 	ubit32		name;
@@ -129,7 +129,7 @@ struct elf32_shdrEntryS
 #define ESYMTAB_INFO_TYPE_LOPROC	13
 #define ESYMTAB_INFO_TYPE_HIPROC	15
 
-struct elf32_symTabEntryS
+struct sElf32_symTabEntry
 {
 	ubit32		name;
 	ubit32		value;

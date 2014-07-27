@@ -170,17 +170,17 @@ private:
 			waitSlots[slot].eventQueue = NULL;
 		}
 
-		struct Message
+		struct sMessage
 		{
 			enum typeE {
 				QUEUE_LATCHED=1, QUEUE_UNLATCHED, EXIT_THREAD };
 
-			Message(void)
+			sMessage(void)
 			:
 			type(static_cast<typeE>( 0 ))
 			{}
 
-			Message(typeE type, TimerQueue *timerQueue)
+			sMessage(typeE type, TimerQueue *timerQueue)
 			:
 			type(type), timerQueue(timerQueue)
 			{}
@@ -189,9 +189,9 @@ private:
 			TimerQueue	*timerQueue;
 		};
 
-		void processQueueLatchedMessage(Message *msg);
-		void processQueueUnlatchedMessage(Message *msg);
-		void processExitMessage(Message *);
+		void processQueueLatchedMessage(sMessage *msg);
+		void processQueueUnlatchedMessage(sMessage *msg);
+		void processExitMessage(sMessage *);
 
 		// PID and Pointer to event processing thread's Task struct.
 		processId_t		tid;

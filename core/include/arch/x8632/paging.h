@@ -115,8 +115,8 @@
 
 #ifndef __ASM__
 
-//pagingLevel0S: x86 Top level paging structure, aka the Page Directory.
-struct pagingLevel0S
+//sPagingLevel0: x86 Top level paging structure, aka the Page Directory.
+struct sPagingLevel0
 {
 	paddr_t		entries[PAGING_L0_NENTRIES];
 #ifdef CONFIG_ARCH_x86_32_PAE
@@ -126,13 +126,13 @@ struct pagingLevel0S
 } __attribute__(( packed, aligned(PAGING_BASE_SIZE) ));
 #endif
 
-struct pagingLevel1S
+struct sPagingLevel1
 {
 	paddr_t		entries[PAGING_L1_NENTRIES];
 } __attribute__(( packed, aligned(PAGING_BASE_SIZE) ));
 
 #ifdef CONFIG_ARCH_x86_32_PAE
-struct pagingLevel2S
+struct sPagingLevel2
 {
 	paddr_t		entries[PAGING_L2_NENTRIES];
 } __attribute__(( packed, aligned(PAGING_BASE_SIZE) ));

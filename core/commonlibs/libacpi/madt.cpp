@@ -2,11 +2,11 @@
 #include <commonlibs/libacpi/madt.h>
 
 
-acpi_rMadtCpuS *acpiRMadt::getNextCpuEntry(
-	acpi_rMadtS *madt, void **const handle
+acpiR::madt::sCpu *acpiR::madt::getNextCpuEntry(
+	acpiR::sMadt *madt, void **const handle
 	)
 {
-	acpi_rMadtCpuS		*ret=NULL;
+	acpiR::madt::sCpu		*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
@@ -17,9 +17,9 @@ acpi_rMadtCpuS *acpiRMadt::getNextCpuEntry(
 		switch (ACPI_MADT_GET_TYPE(*handle))
 		{
 		case ACPI_MADT_TYPE_LAPIC:
-			ret = static_cast<acpi_rMadtCpuS *>( *handle );
+			ret = static_cast<acpiR::madt::sCpu *>( *handle );
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+				*handle, ((acpiR::madt::sCpu *)*handle)->length);
 
 			return ret;
 
@@ -27,7 +27,7 @@ acpi_rMadtCpuS *acpiRMadt::getNextCpuEntry(
 		default:
 			// Use the 'length' member to skip over all others.
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+				*handle, ((acpiR::madt::sCpu *)*handle)->length);
 
 			break;
 		};
@@ -36,11 +36,11 @@ acpi_rMadtCpuS *acpiRMadt::getNextCpuEntry(
 	return NULL;
 }
 
-acpi_rMadtIoApicS *acpiRMadt::getNextIoApicEntry(
-	acpi_rMadtS *madt, void **const handle
+acpiR::madt::sIoApic *acpiR::madt::getNextIoApicEntry(
+	acpiR::sMadt *madt, void **const handle
 	)
 {
-	acpi_rMadtIoApicS	*ret=NULL;
+	acpiR::madt::sIoApic	*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
@@ -51,16 +51,16 @@ acpi_rMadtIoApicS *acpiRMadt::getNextIoApicEntry(
 		switch (ACPI_MADT_GET_TYPE(*handle))
 		{
 		case ACPI_MADT_TYPE_IOAPIC:
-			ret = static_cast<acpi_rMadtIoApicS *>( *handle );
+			ret = static_cast<acpiR::madt::sIoApic *>( *handle );
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+				*handle, ((acpiR::madt::sCpu *)*handle)->length);
 
 			return ret;
 
 		default:
 			// Use the 'length' member to skip over all others.
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+				*handle, ((acpiR::madt::sCpu *)*handle)->length);
 
 			break;
 		};
@@ -69,11 +69,11 @@ acpi_rMadtIoApicS *acpiRMadt::getNextIoApicEntry(
 	return NULL;
 }
 
-acpi_rMadtLapicNmiS *acpiRMadt::getNextLapicNmiEntry(
-	acpi_rMadtS *madt, void **const handle
+acpiR::madt::sLapicNmi *acpiR::madt::getNextLapicNmiEntry(
+	acpiR::sMadt *madt, void **const handle
 	)
 {
-	acpi_rMadtLapicNmiS	*ret=NULL;
+	acpiR::madt::sLapicNmi	*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
@@ -84,16 +84,16 @@ acpi_rMadtLapicNmiS *acpiRMadt::getNextLapicNmiEntry(
 		switch (ACPI_MADT_GET_TYPE(*handle))
 		{
 		case ACPI_MADT_TYPE_LAPIC_NMI:
-			ret = static_cast<acpi_rMadtLapicNmiS *>( *handle );
+			ret = static_cast<acpiR::madt::sLapicNmi *>( *handle );
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+				*handle, ((acpiR::madt::sCpu *)*handle)->length);
 
 			return ret;
 
 		default:
 			// Use the 'length' member to skip over all others.
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+				*handle, ((acpiR::madt::sCpu *)*handle)->length);
 
 			break;
 		};
@@ -102,11 +102,11 @@ acpi_rMadtLapicNmiS *acpiRMadt::getNextLapicNmiEntry(
 	return NULL;
 }
 
-acpi_rMadtIrqSourceOverS *acpiRMadt::getNextIrqSourceOverrideEntry(
-	acpi_rMadtS *madt, void **const handle
+acpiR::madt::sIrqSourceOver *acpiR::madt::getNextIrqSourceOverrideEntry(
+	acpiR::sMadt *madt, void **const handle
 	)
 {
-	acpi_rMadtIrqSourceOverS	*ret=NULL;
+	acpiR::madt::sIrqSourceOver	*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_MADT_GET_FIRST_ENTRY(madt);
@@ -117,16 +117,16 @@ acpi_rMadtIrqSourceOverS *acpiRMadt::getNextIrqSourceOverrideEntry(
 		switch (ACPI_MADT_GET_TYPE(*handle))
 		{
 		case ACPI_MADT_TYPE_IRQSOURCE_OVERRIDE:
-			ret = static_cast<acpi_rMadtIrqSourceOverS*>( *handle );
+			ret = static_cast<acpiR::madt::sIrqSourceOver*>( *handle );
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+				*handle, ((acpiR::madt::sCpu *)*handle)->length);
 
 			return ret;
 
 		default:
 			// Use the 'length' member to skip over all others.
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rMadtCpuS *)*handle)->length);
+				*handle, ((acpiR::madt::sCpu *)*handle)->length);
 
 			break;
 		};

@@ -5,12 +5,12 @@
 
 class IbmPcVgaTerminal
 :
-public zkcmDebugDeviceC
+public ZkcmDebugDevice
 {
 public:
 	IbmPcVgaTerminal(deviceTypeE devType)
 	:
-	zkcmDebugDeviceC(devType, &baseDeviceInfo),
+	ZkcmDebugDevice(devType, &baseDeviceInfo),
 	buff(NULL),
 	baseDeviceInfo(
 		0,

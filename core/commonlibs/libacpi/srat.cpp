@@ -3,11 +3,11 @@
 #include <commonlibs/libacpi/srat.h>
 
 
-acpi_rSratCpuS *acpiRSrat::getNextCpuEntry(
-	acpi_rSratS *srat, void **const handle
+acpiR::srat::sCpu *acpiR::srat::getNextCpuEntry(
+	acpiR::sSrat *srat, void **const handle
 	)
 {
-	acpi_rSratCpuS		*ret=NULL;
+	acpiR::srat::sCpu		*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_SRAT_GET_FIRST_ENTRY(srat);
@@ -18,16 +18,16 @@ acpi_rSratCpuS *acpiRSrat::getNextCpuEntry(
 		switch (ACPI_SRAT_GET_TYPE(*handle))
 		{
 		case ACPI_SRAT_TYPE_CPU:
-			ret = static_cast<acpi_rSratCpuS *>( *handle );
+			ret = static_cast<acpiR::srat::sCpu *>( *handle );
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rSratMemS *)*handle)->length);
+				*handle, ((acpiR::srat::sMem *)*handle)->length);
 
 			return ret;
 
 		default:
 			// Use the 'length' member to skip over all others.
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rSratMemS *)*handle)->length);
+				*handle, ((acpiR::srat::sMem *)*handle)->length);
 
 			break;
 		};
@@ -36,11 +36,11 @@ acpi_rSratCpuS *acpiRSrat::getNextCpuEntry(
 	return NULL;
 }
 
-acpi_rSratMemS *acpiRSrat::getNextMemEntry(
-	acpi_rSratS *srat, void **const handle
+acpiR::srat::sMem *acpiR::srat::getNextMemEntry(
+	acpiR::sSrat *srat, void **const handle
 	)
 {
-	acpi_rSratMemS		*ret=NULL;
+	acpiR::srat::sMem		*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_SRAT_GET_FIRST_ENTRY(srat);
@@ -51,16 +51,16 @@ acpi_rSratMemS *acpiRSrat::getNextMemEntry(
 		switch (ACPI_SRAT_GET_TYPE(*handle))
 		{
 		case ACPI_SRAT_TYPE_MEM:
-			ret = static_cast<acpi_rSratMemS *>( *handle );
+			ret = static_cast<acpiR::srat::sMem *>( *handle );
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rSratMemS *)*handle)->length);
+				*handle, ((acpiR::srat::sMem *)*handle)->length);
 
 			return ret;
 
 		default:
 			// Use the 'length' member to skip over all others.
 			*handle = ACPI_PTR_INC_BY(
-				*handle, ((acpi_rSratMemS *)*handle)->length);
+				*handle, ((acpiR::srat::sMem *)*handle)->length);
 
 			break;
 		};

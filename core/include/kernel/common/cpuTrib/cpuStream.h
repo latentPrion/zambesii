@@ -121,7 +121,7 @@ private:
 #if __SCALING__ >= SCALING_SMP
 	class InterCpuMessager
 	{
-	private: struct Message;
+	private: struct sMessage;
 	public:
 		InterCpuMessager(cpuStream *parent);
 		error_t initialize(void);
@@ -137,7 +137,8 @@ private:
 		enum statusE {
 			NOT_TAKING_REQUESTS=0, NOT_PROCESSING, PROCESSING };
 
-		void set(Message *msg, ubit8 type,
+		void set(
+			sMessage *msg, ubit8 type,
 			uarch_t val0=0, uarch_t val1=0,
 			uarch_t val2=0, uarch_t val3=0);
 
@@ -160,16 +161,16 @@ private:
 		}
 
 	private:
-		struct Message
+		struct sMessage
 		{
-			ListC<Message>::sHeader	listHeader;
+			ListC<sMessage>::sHeader	listHeader;
 			volatile ubit8			type;
 			volatile uarch_t		val0;
 			volatile uarch_t		val1;
 			volatile uarch_t		val2;
 			volatile uarch_t		val3;
 		};
-		ListC<Message>		messageQueue;
+		ListC<sMessage>		messageQueue;
 		SlamCache			*cache;
 		SharedResourceGroup<WaitLock, statusE> statusFlag;
 		cpuStream	*parent;

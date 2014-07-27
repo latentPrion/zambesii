@@ -47,11 +47,11 @@ void *chipset_findx86MpFp(void)
 	{
 		if (strncmp8(CC(tmp), CC"_MP_", 4) != 0) { continue; };
 
-		checksum = mpFpChecksum(tmp, ((x86_mpFpS *)tmp)->length * 16);
+		checksum = mpFpChecksum(tmp, ((x86Mp::sFloatingPtr *)tmp)->length * 16);
 
 		printf(NOTICE FINDTABLES"MPFP: checksum was: %d, result was "
 			"%d. %s checksum.\n",
-			((x86_mpFpS *)tmp)->checksum, checksum,
+			((x86Mp::sFloatingPtr *)tmp)->checksum, checksum,
 			((checksum == 0) ? "Valid" : "Invalid"));
 
 		if (checksum != 0) { continue; };
@@ -99,7 +99,7 @@ void *chipset_findAcpiRsdp(void)
 
 		printf(NOTICE FINDTABLES"RSDP: Checksum was %d, result was "
 			"%d. %s checksum.\n",
-			((acpi_sRsdp *)tmp)->checksum,
+			((acpi::sRsdp *)tmp)->checksum,
 			checksum,
 			(checksum) ? "Invalid" : "Valid");
 

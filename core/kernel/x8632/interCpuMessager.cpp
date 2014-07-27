@@ -10,7 +10,7 @@
 error_t cpuStream::InterCpuMessager::flushTlbRange(void *vaddr, uarch_t nPages)
 {
 	error_t		err;
-	Message	*msg, *msg2=NULL;
+	sMessage	*msg, *msg2=NULL;
 	statusE		needToIpi;
 	ubit8		extraFlushNeeded=0;
 
@@ -25,7 +25,7 @@ error_t cpuStream::InterCpuMessager::flushTlbRange(void *vaddr, uarch_t nPages)
 	};
 
 	msg = new (cache->allocate(
-		SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY, &extraFlushNeeded)) Message;
+		SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY, &extraFlushNeeded)) sMessage;
 
 	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -36,7 +36,7 @@ error_t cpuStream::InterCpuMessager::flushTlbRange(void *vaddr, uarch_t nPages)
 	if (extraFlushNeeded)
 	{
 		msg2 = new (cache->allocate(SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY))
-			Message;
+			sMessage;
 
 		if (msg2 == NULL)
 		{

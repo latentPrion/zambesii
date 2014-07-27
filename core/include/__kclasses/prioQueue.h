@@ -135,7 +135,7 @@ error_t PrioQueue<T>::initialize(void)
 
 	// Allocate a node Cache:
 	Nodeache = cachePool.createCache(
-		sizeof(struct Queue<T>::sQueueNode));
+		sizeof(class Queue<T>::sQueueNode));
 
 	if (Nodeache == NULL) { return ERROR_MEMORY_NOMEM; };
 

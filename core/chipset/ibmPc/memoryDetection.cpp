@@ -16,7 +16,7 @@
 #define E820_USABLE		0x1
 #define E820_RECLAIMABLE	0x3
 
-struct e820EntryS
+struct sE820Entry
 {
 	ubit32	baseLow;
 	ubit32	baseHigh;
@@ -26,7 +26,7 @@ struct e820EntryS
 	ubit32	acpiExt;
 };
 
-static e820EntryS		*e820Ptr;
+static sE820Entry		*e820Ptr;
 static sZkcmMemoryMapS		*_mmap=NULL;
 static sZkcmMemoryConfig		*_mcfg=NULL;
 
@@ -53,9 +53,9 @@ error_t ZkcmMemoryDetectionMod::restore(void)
 static sZkcmNumaMap *ibmPc_mMod_gnm_rGnm(void)
 {
 	sZkcmNumaMap		*ret;
-	acpi_sRsdt		*rsdt;
-	acpi_rSratS		*srat;
-	acpi_rSratMemS		*memEntry;
+	acpi::sRsdt		*rsdt;
+	acpiR::sSrat		*srat;
+	acpiR::srat::sMem		*memEntry;
 	void			*handle, *sratHandle, *context;
 	ubit32			nEntries=0, currEntry=0;
 
@@ -80,15 +80,15 @@ static sZkcmNumaMap *ibmPc_mMod_gnm_rGnm(void)
 	while (srat != NULL) 
 	{
 		sratHandle = NULL;
-		memEntry = acpiRSrat::getNextMemEntry(srat, &sratHandle);
+		memEntry = acpiR::srat::getNextMemEntry(srat, &sratHandle);
 		for (; memEntry != NULL;
-			memEntry = acpiRSrat::getNextMemEntry(
+			memEntry = acpiR::srat::getNextMemEntry(
 				srat, &sratHandle))
 		{
 			nEntries++;
 		};
 
-		acpiRsdt::destroySdt((acpi_sdtS *)srat);
+		acpiRsdt::destroySdt((acpi::sSdt *)srat);
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
@@ -111,9 +111,9 @@ static sZkcmNumaMap *ibmPc_mMod_gnm_rGnm(void)
 	while (srat != NULL)
 	{
 		sratHandle = NULL;
-		memEntry = acpiRSrat::getNextMemEntry(srat, &sratHandle);
+		memEntry = acpiR::srat::getNextMemEntry(srat, &sratHandle);
 		for (; memEntry != NULL && currEntry < nEntries;
-			memEntry = acpiRSrat::getNextMemEntry(
+			memEntry = acpiR::srat::getNextMemEntry(
 				srat, &sratHandle))
 		{
 #ifdef __32_BIT__
@@ -161,7 +161,7 @@ static sZkcmNumaMap *ibmPc_mMod_gnm_rGnm(void)
 			currEntry++;
 		};
 
-		acpiRsdt::destroySdt((acpi_sdtS *)srat);
+		acpiRsdt::destroySdt((acpi::sSdt *)srat);
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
@@ -241,7 +241,7 @@ sZkcmMemoryMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
 	ibmPcBios::acquireLock();
 
 	// Buffer is placed into 0x1000 in lowmem.
-	e820Ptr = (struct e820EntryS *)(M.mem_base + 0x1000);
+	e820Ptr = (struct sE820Entry *)(M.mem_base + 0x1000);
 	ibmPcBios_regs::setEdi(0x00001000);
 	ibmPcBios_regs::setEax(0x0000E820);
 	ibmPcBios_regs::setEbx(0);

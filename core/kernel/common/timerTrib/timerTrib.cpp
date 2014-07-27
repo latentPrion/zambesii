@@ -215,12 +215,12 @@ error_t TimerTrib::enableWaitingOnQueue(ubit32 nanos)
 
 error_t TimerTrib::enableWaitingOnQueue(TimerQueue *queue)
 {
-	sEventProcessor::Message	*msg;
+	sEventProcessor::sMessage	*msg;
 
 	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
 
-	msg = new sEventProcessor::Message(
-		sEventProcessor::Message::QUEUE_LATCHED,
+	msg = new sEventProcessor::sMessage(
+		sEventProcessor::sMessage::QUEUE_LATCHED,
 		queue);
 
 	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
@@ -408,7 +408,7 @@ void TimerTrib::sEventProcessor::releaseWaitSlotFor(TimerQueue *timerQueue)
 	};
 }
 
-void TimerTrib::sEventProcessor::processQueueLatchedMessage(Message *msg)
+void TimerTrib::sEventProcessor::processQueueLatchedMessage(sMessage *msg)
 {
 	ubit8		slot;
 
@@ -434,7 +434,7 @@ void TimerTrib::sEventProcessor::processQueueLatchedMessage(Message *msg)
 		waitSlots[slot].timerQueue->getNativePeriod() / 1000, slot);
 }
 
-void TimerTrib::sEventProcessor::processQueueUnlatchedMessage(Message *msg)
+void TimerTrib::sEventProcessor::processQueueUnlatchedMessage(sMessage *msg)
 {
 	// Stop waiting on the specified queue.
 	releaseWaitSlotFor(msg->timerQueue);
@@ -443,7 +443,7 @@ void TimerTrib::sEventProcessor::processQueueUnlatchedMessage(Message *msg)
 		msg->timerQueue->getNativePeriod() / 1000);
 }
 
-void TimerTrib::sEventProcessor::processExitMessage(Message *)
+void TimerTrib::sEventProcessor::processExitMessage(sMessage *)
 {
 	printf(WARNING TIMERTRIB"event DQer: Got EXIT_THREAD message.\n");
 	/*UNIMPLEMENTED(
@@ -453,11 +453,11 @@ void TimerTrib::sEventProcessor::processExitMessage(Message *)
 
 void TimerTrib::sendMessage(void)
 {
-	sEventProcessor::Message	*msg;
+	sEventProcessor::sMessage	*msg;
 
 	// Posts an artificial message to the control queue.
-	msg = new sEventProcessor::Message(
-		sEventProcessor::Message::EXIT_THREAD, NULL);
+	msg = new sEventProcessor::sMessage(
+		sEventProcessor::sMessage::EXIT_THREAD, NULL);
 
 	eventProcessor.controlQueue.addItem(msg);
 }
@@ -477,7 +477,7 @@ void TimerTrib::sendQMessage(void)
 
 void TimerTrib::sEventProcessor::thread(void *)
 {
-	sEventProcessor::Message	*currMsg;
+	sEventProcessor::sMessage	*currMsg;
 	sarch_t				messagesWereFound;
 	error_t				err;
 
@@ -495,18 +495,18 @@ void TimerTrib::sEventProcessor::thread(void *)
 			messagesWereFound = 1;
 			switch (currMsg->type)
 			{
-			case sEventProcessor::Message::EXIT_THREAD:
+			case sEventProcessor::sMessage::EXIT_THREAD:
 				timerTrib.eventProcessor.processExitMessage(
 					currMsg);
 				break;
 
-			case sEventProcessor::Message::QUEUE_LATCHED:
+			case sEventProcessor::sMessage::QUEUE_LATCHED:
 				timerTrib.eventProcessor
 					.processQueueLatchedMessage(currMsg);
 
 				break;
 
-			case sEventProcessor::Message::QUEUE_UNLATCHED:
+			case sEventProcessor::sMessage::QUEUE_UNLATCHED:
 				timerTrib.eventProcessor
 					.processQueueUnlatchedMessage(currMsg);
 

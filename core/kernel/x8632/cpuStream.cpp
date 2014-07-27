@@ -17,14 +17,14 @@
 #include <__kthreads/__kcpuPowerOn.h>
 
 
-struct x86ManufacturerEntryS
+struct sX86ManufacturerEntry
 {
 	utf8Char	*name;
 	status_t	(*func)(void);
 };
 
 // XXX: Always ensure that this array is terminated with a null entry.
-static x86ManufacturerEntryS		x86Manufacturers[] =
+static sX86ManufacturerEntry		x86Manufacturers[] =
 {
 	{CC"GenuineIntel", &x86CpuEnumeration::intel},
 	{CC"AuthenticAMD", &x86CpuEnumeration::amd},

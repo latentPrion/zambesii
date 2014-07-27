@@ -32,7 +32,7 @@ public:
 	ZkcmIrqControlMod		irqControl;
 	ZkcmTimerControlMod		timerControl;
 
-	zkcmDebugDeviceC		*debug[4];
+	ZkcmDebugDevice		*debug[4];
 
 	void newCpuIdNotification(cpu_t highestCpuId);
 };

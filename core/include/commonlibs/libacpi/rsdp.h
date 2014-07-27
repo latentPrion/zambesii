@@ -9,18 +9,18 @@
 #define ACPI			"ACPI: "
 #define ACPI_CACHE_MAGIC	0xAC1D101C
 
-struct acpi_sdtCacheS
-{
-	ubit32		magic;
-	acpi_sRsdp	*rsdp;
-	acpi_sRsdt	*rsdt;
-	acpi_sXsdt	*xsdt;
-};
-
 #ifdef __cplusplus
 
 namespace acpi
 {
+	struct sSdtCache
+	{
+		ubit32		magic;
+		acpi::sRsdp	*rsdp;
+		acpi::sRsdt	*rsdt;
+		acpi::sXsdt	*xsdt;
+	};
+
 	// Call before using, every time.
 	void initializeCache(void);
 
@@ -30,15 +30,15 @@ namespace acpi
 
 	error_t findRsdp(void);
 	sarch_t rsdpFound(void);
-	acpi_sRsdp *getRsdp(void);
+	acpi::sRsdp *getRsdp(void);
 
 	sarch_t testForRsdt(void);
 	sarch_t testForXsdt(void);
 
 	error_t mapRsdt(void);
-	acpi_sRsdt *getRsdt(void);
+	acpi::sRsdt *getRsdt(void);
 	error_t mapXsdt(void);
-	acpi_sXsdt *getXsdt(void);
+	acpi::sXsdt *getXsdt(void);
 
 	void flushCache(void);
 }
