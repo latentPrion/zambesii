@@ -59,7 +59,7 @@ private:
 		// fine.
 		~Queue(void)
 		{
-			queueNodeS	*tmp, *curr;
+			sQueueNode	*tmp, *curr;
 
 			q.lock.acquire();
 
@@ -93,10 +93,10 @@ private:
 		void dump(void);
 
 	private:
-		struct queueNodeS
+		struct sQueueNode
 		{
 			T2		*item;
-			queueNodeS	*next;
+			sQueueNode	*next;
 		};
 
 		struct sQueueState
@@ -107,7 +107,7 @@ private:
 			{}
 
 			uarch_t		nItems;
-			queueNodeS	*head, *tail;
+			sQueueNode	*head, *tail;
 		};
 
 		ubit16 prio;
@@ -135,7 +135,7 @@ error_t PrioQueue<T>::initialize(void)
 
 	// Allocate a node Cache:
 	Nodeache = cachePool.createCache(
-		sizeof(struct Queue<T>::queueNodeS));
+		sizeof(struct Queue<T>::sQueueNode));
 
 	if (Nodeache == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -277,9 +277,9 @@ inline void PrioQueue<T>::dump(void)
 template <class T> template <class T2>
 error_t PrioQueue<T>::Queue<T2>::insert(T2 *item, ubit32 opt)
 {
-	queueNodeS	*tmp;
+	sQueueNode	*tmp;
 
-	tmp = (queueNodeS *)Nodeache->allocate();
+	tmp = (sQueueNode *)Nodeache->allocate();
 	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 	tmp->item = item;
 
@@ -316,7 +316,7 @@ error_t PrioQueue<T>::Queue<T2>::insert(T2 *item, ubit32 opt)
 template <class T> template <class T2>
 T2 *PrioQueue<T>::Queue<T2>::pop(void)
 {
-	queueNodeS	*tmp;
+	sQueueNode	*tmp;
 	T2		*ret=NULL;
 
 	q.lock.acquire();
@@ -346,7 +346,7 @@ T2 *PrioQueue<T>::Queue<T2>::pop(void)
 template <class T> template <class T2>
 void PrioQueue<T>::Queue<T2>::remove(T2 *item)
 {
-	queueNodeS	*tmp, *prev=NULL;
+	sQueueNode	*tmp, *prev=NULL;
 
 	q.lock.acquire();
 
@@ -379,7 +379,7 @@ void PrioQueue<T>::Queue<T2>::remove(T2 *item)
 template <class T> template <class T2>
 void PrioQueue<T>::Queue<T2>::dump(void)
 {
-	queueNodeS	*tmp;
+	sQueueNode	*tmp;
 	ubit8		flipFlop=0;
 
 	q.lock.acquire();

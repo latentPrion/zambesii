@@ -23,7 +23,7 @@
  * are much finer grained.
  **/
 
-struct smpConfigS
+struct sSmpConfig
 {
 	Bitmap		cpus;
 	// Id of the CPU to which this task was last scheduled.

@@ -122,13 +122,13 @@ private:
 	sarch_t uninstallClockRoutine(void);
 
 	// Called by Timer Streams to add new Timer Request objects to timer Qs.
-	error_t insertTimerQueueRequestObject(TimerStream::timerMsgS *request);
+	error_t insertTimerQueueRequestObject(TimerStream::sTimerMsg *request);
 	// Called by Timer Streams to cancel Timer Request objects from Qs.
-	sarch_t cancelTimerQueueRequestObject(TimerStream::timerMsgS *request);
+	sarch_t cancelTimerQueueRequestObject(TimerStream::sTimerMsg *request);
 
 private:
 	// The watchdog timer for the chipset, if it exists.
-	struct watchdogIsrS
+	struct sWatchdogIsr
 	{
 		zkcmIsrFn	*isr;
 		sTimestamp	nextFeedTime;
@@ -148,12 +148,12 @@ private:
 
 	uarch_t		flags;
 	sbit32		clockQueueId;
-	SharedResourceGroup<WaitLock, watchdogIsrS>	watchdog;
+	SharedResourceGroup<WaitLock, sWatchdogIsr>	watchdog;
 
 	// All of the event processing thread's state information.
-	struct eventProcessorS
+	struct sEventProcessor
 	{
-		eventProcessorS(void)
+		sEventProcessor(void)
 		:
 		tid(0), task(NULL)
 		{

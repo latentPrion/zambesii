@@ -170,13 +170,13 @@ namespace x86IoApic
 		inline void writeIoWin(ubit32 val);
 		inline void writeIoWin(ubit32 high, ubit32 low);
 
-		struct ioApicRegspaceS;
-		ioApicRegspaceS *mapIoApic(paddr_t paddr);
-		void unmapIoApic(ioApicRegspaceS *vaddr);
+		struct sIoApicRegspace;
+		sIoApicRegspace *mapIoApic(paddr_t paddr);
+		void unmapIoApic(sIoApicRegspace *vaddr);
 
 	private:
 		ZkcmDevice		baseDeviceInfo;
-		struct ioApicRegspaceS
+		struct sIoApicRegspace
 		{
 			// All writes to this reg must be 32-bit.
 			ubit32			ioRegSel[4];
@@ -191,7 +191,7 @@ namespace x86IoApic
 		 * value to indicate that it is not valid.
 		 **/
 		sarch_t			acpiGirqBase;
-		SharedResourceGroup<WaitLock, ioApicRegspaceS *>	vaddr;
+		SharedResourceGroup<WaitLock, sIoApicRegspace *>	vaddr;
 		ubit8			vectorBase;
 	};
 

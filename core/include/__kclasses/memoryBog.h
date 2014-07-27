@@ -57,32 +57,32 @@ public:
 	uarch_t		blockSize;
 
 private:
-	struct freeObjectS
+	struct sFreeObject
 	{
-		freeObjectS	*next;
+		sFreeObject	*next;
 		uarch_t		nBytes;
 		// Address offset of the function that freed the block.
 		void		*freedBy;
 	};
-	struct bogBlockS
+	struct sBogBlock
 	{
-		bogBlockS	*next;
+		sBogBlock	*next;
 		uarch_t		refCount;
-		freeObjectS	*firstObject;
+		sFreeObject	*firstObject;
 	};
-	struct allocHeaderS
+	struct sAllocHeader
 	{
 		uarch_t		nBytes;
-		bogBlockS	*parent;
+		sBogBlock	*parent;
 		utf8Char	magic[48];
 		// Address offset of the function that allocated the block.
 		void		*allocatedBy;
 	};
 
-	bogBlockS *getNewBlock(void);
+	sBogBlock *getNewBlock(void);
 
 	MemoryStream		*sourceStream;
-	SharedResourceGroup<WaitLock, bogBlockS *>	head;
+	SharedResourceGroup<WaitLock, sBogBlock *>	head;
 };
 
 #endif

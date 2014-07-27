@@ -209,7 +209,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 
 	if (traceStack)
 	{
-		debug::stackDescriptorS		currStackDesc;
+		debug::sStackDescriptor		currStackDesc;
 
 		debug::getCurrentStackInfo(&currStackDesc);
 		if (currThread != NULL)

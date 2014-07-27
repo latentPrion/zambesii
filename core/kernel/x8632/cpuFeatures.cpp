@@ -2,7 +2,7 @@
 #include <kernel/common/cpuTrib/cpuFeatures.h>
 
 
-cpuFeaturesS		x8632Cpus[] =
+sCpuFeatures		x8632Cpus[] =
 {
 	{
 		"Pre-P6", "Intel 80486" /*,

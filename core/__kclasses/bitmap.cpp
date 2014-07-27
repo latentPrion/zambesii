@@ -17,7 +17,7 @@ Bitmap::Bitmap(void)
 }
 
 error_t Bitmap::initialize(
-	ubit32 nBits, preallocatedMemoryS preAllocatedMemory
+	ubit32 nBits, sPreallocatedMemory preAllocatedMemory
 	)
 {
 	ubit32		nIndexes;

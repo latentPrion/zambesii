@@ -26,7 +26,7 @@ error_t Floodplainn::getInternalBopVectorIndexes(
 {
 	Thread				*self;
 	fplainn::DriverInstance	*drvInst;
-	fplainn::Driver::internalBopS	*iBop;
+	fplainn::Driver::sInternalBop	*iBop;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()
 		->taskStream.getCurrentTask();
@@ -85,12 +85,12 @@ error_t Floodplainn::spawnChildBindChannel(
 {
 	fplainn::Device		*parentDev, *childDev;
 	fplainn::Driver::sMetalanguage	*parentMeta, *childMeta;
-	fplainn::Driver::childBopS	*parentCBop;
-	fplainn::Driver::parentBopS	*childPBop;
+	fplainn::Driver::sChildBop	*parentCBop;
+	fplainn::Driver::sParentBop	*childPBop;
 	Thread				*parentThread, *childThread;
 	processId_t			parentTid, childTid;
 	udi_init_context_t		*parentRdata, *childRdata;
-	fplainn::DriverInstance::childBopS *parentInstCBop;
+	fplainn::DriverInstance::sChildBop *parentInstCBop;
 
 	if (getDevice(parentDevPath, &parentDev) != ERROR_SUCCESS
 		|| getDevice(childDevPath, &childDev) != ERROR_SUCCESS)

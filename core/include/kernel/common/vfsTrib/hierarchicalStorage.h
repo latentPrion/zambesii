@@ -231,9 +231,9 @@ namespace hvfs
 		error_t setDefaultTree(utf8Char *name);*/
 
 	private:
-		struct defaultTreeInfoS
+		struct sDefaultTreeInfo
 		{
-			defaultTreeInfoS(void)
+			sDefaultTreeInfo(void)
 			:
 			tag(NULL)
 			{
@@ -247,7 +247,7 @@ namespace hvfs
 		class SlamCache	*Tagache;
 		Tag			rootTag;
 		dirINode		rootInode;
-		SharedResourceGroup<MultipleReaderLock, defaultTreeInfoS>
+		SharedResourceGroup<MultipleReaderLock, sDefaultTreeInfo>
 			defaultTree;
 	};
 }

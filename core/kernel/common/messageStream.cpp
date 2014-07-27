@@ -42,16 +42,16 @@ Syscallback *newSyscallback(syscallbackFuncF *fn, void (*func)())
 	return new (asyncContextCache->allocate()) Syscallback(fn, func);
 }
 
-ipc::dataHeaderS *ipc::createDataHeader(
+ipc::sDataHeader *ipc::createDataHeader(
 	void *data, uarch_t nBytes, methodE method
 	)
 {
-	dataHeaderS		*ret;
+	sDataHeader		*ret;
 
 	if (method == METHOD_BUFFER) {
-		ret = new (new ubit8[sizeof(*ret) + nBytes]) dataHeaderS;
+		ret = new (new ubit8[sizeof(*ret) + nBytes]) sDataHeader;
 	} else {
-		ret = new dataHeaderS;
+		ret = new sDataHeader;
 	};
 
 	if (ret == NULL) { return NULL; };
@@ -133,7 +133,7 @@ static sarch_t vaddrRangeIsLoose(
 	return 1;
 }
 
-error_t ipc::dispatchDataHeader(dataHeaderS *header, void *buffer)
+error_t ipc::dispatchDataHeader(sDataHeader *header, void *buffer)
 {
 	ProcessStream	*currProcess, *sourceProcess;
 	void		*targetMapping, *sourceMapping;
@@ -266,7 +266,7 @@ error_t ipc::dispatchDataHeader(dataHeaderS *header, void *buffer)
 	return ERROR_SUCCESS;
 }
 
-void ipc::destroyDataHeader(dataHeaderS *header, void *buffer)
+void ipc::destroyDataHeader(sDataHeader *header, void *buffer)
 {
 	/**	EXPLANATION:
 	 * For BUFFER, we don't have to do anything.
@@ -430,9 +430,9 @@ error_t MessageStream::pullFrom(
 			return ERROR_WOULD_BLOCK;
 		};
 
-		Lock::operationDescriptorS	unlockDescriptor(
+		Lock::sOperationDescriptor	unlockDescriptor(
 			&pendingSubsystems.bmp.lock,
-			Lock::operationDescriptorS::WAIT);
+			Lock::sOperationDescriptor::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
 	};
@@ -479,9 +479,9 @@ error_t MessageStream::pull(
 			return ERROR_WOULD_BLOCK;
 		};
 
-		Lock::operationDescriptorS	unlockDescriptor(
+		Lock::sOperationDescriptor	unlockDescriptor(
 			&pendingSubsystems.bmp.lock,
-			Lock::operationDescriptorS::WAIT);
+			Lock::sOperationDescriptor::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
 	};

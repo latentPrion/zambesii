@@ -104,7 +104,7 @@ error_t CpuTrib::initializeBspCpuStream(void)
 	 * the shared bank.
 	 **/
 	numaBankId_t	bspBankId=CHIPSET_NUMA_SHBANKID;
-	zkcmNumaMapS	*numaMap;
+	sZkcmNumaMap	*numaMap;
 
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
 	if (numaMap != NULL && numaMap->nCpuEntries != 0)
@@ -158,10 +158,10 @@ error_t CpuTrib::initializeAllCpus(void)
 {
 	error_t			ret;
 #if __SCALING__ >= SCALING_CC_NUMA
-	zkcmNumaMapS		*numaMap;
+	sZkcmNumaMap		*numaMap;
 #endif
 #if __SCALING__ == SCALING_SMP || defined(CHIPSET_NUMA_GENERATE_SHBANK)
-	sZkcmmpMapS		*smpMap;
+	sZkcmSmpMap		*smpMap;
 #endif
 
 	/**	EXPLANATION:
@@ -313,7 +313,7 @@ error_t CpuTrib::bootCpuNotification(cpu_t cid, ubit32 acpiId)
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
-void CpuTrib::bootParseNumaMap(zkcmNumaMapS *numaMap)
+void CpuTrib::bootParseNumaMap(sZkcmNumaMap *numaMap)
 {
 	error_t		err;
 
@@ -337,7 +337,7 @@ void CpuTrib::bootParseNumaMap(zkcmNumaMapS *numaMap)
 	};
 }
 
-void CpuTrib::bootConfirmNumaCpusBooted(zkcmNumaMapS *numaMap)
+void CpuTrib::bootConfirmNumaCpusBooted(sZkcmNumaMap *numaMap)
 {
 	for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
 	{
@@ -348,7 +348,7 @@ void CpuTrib::bootConfirmNumaCpusBooted(zkcmNumaMapS *numaMap)
 }
 
 void CpuTrib::bootParseNumaMap(
-	zkcmNumaMapS *numaMap, sZkcmmpMapS *smpMap
+	sZkcmNumaMap *numaMap, sZkcmSmpMap *smpMap
 	)
 {
 	error_t		err;
@@ -390,7 +390,7 @@ void CpuTrib::bootParseNumaMap(
 }
 
 void CpuTrib::bootConfirmNumaCpusBooted(
-	zkcmNumaMapS *numaMap, sZkcmmpMapS *smpMap
+	sZkcmNumaMap *numaMap, sZkcmSmpMap *smpMap
 	)
 {
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
@@ -421,9 +421,9 @@ void CpuTrib::bootConfirmNumaCpusBooted(
 #if __SCALING__ >= SCALING_CC_NUMA
 error_t CpuTrib::numaInit(void)
 {
-	zkcmNumaMapS		*numaMap;
+	sZkcmNumaMap		*numaMap;
 #ifdef CHIPSET_NUMA_GENERATE_SHBANK
-	sZkcmmpMapS		*smpMap;
+	sZkcmSmpMap		*smpMap;
 #endif
 
 	/**	EXPLANATION:
@@ -520,7 +520,7 @@ error_t CpuTrib::numaInit(void)
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-void CpuTrib::bootParseSmpMap(sZkcmmpMapS *smpMap)
+void CpuTrib::bootParseSmpMap(sZkcmSmpMap *smpMap)
 {
 	error_t		err;
 
@@ -548,7 +548,7 @@ void CpuTrib::bootParseSmpMap(sZkcmmpMapS *smpMap)
 	};
 }
 
-void CpuTrib::bootConfirmSmpCpusBooted(sZkcmmpMapS *smpMap)
+void CpuTrib::bootConfirmSmpCpusBooted(sZkcmSmpMap *smpMap)
 {
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
 	{
@@ -565,7 +565,7 @@ void CpuTrib::bootConfirmSmpCpusBooted(sZkcmmpMapS *smpMap)
 error_t CpuTrib::smpInit(void)
 {
 	error_t			ret;
-	sZkcmmpMapS		*smpMap;
+	sZkcmSmpMap		*smpMap;
 
 	/**	EXPLANATION:
 	 * Quite simple: look for an SMP map, and if none exists, return success

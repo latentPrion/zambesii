@@ -52,7 +52,7 @@ private:
 private:
 	SlamCache			*Tagache;
 
-	static const dvfs::distributaryDescriptorS
+	static const dvfs::sDistributaryDescriptor
 		*const distributaryDescriptors[];
 };
 

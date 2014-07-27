@@ -32,17 +32,17 @@ namespace __klzbzcore
 			Thread *self);
 
 		void main_handleKernelCall(
-			Floodplainn::zudiKernelCallMsgS *msg);
+			Floodplainn::sZudiKernelCallMsg *msg);
 
 		void main_handleMgmtCall(
-			Floodplainn::zudiMgmtCallMsgS *msg);
+			Floodplainn::sZudiMgmtCallMsg *msg);
 
 		namespace __kcall
 		{
-			struct callerContextS
+			struct sCallerContext
 			{
-				callerContextS(
-					Floodplainn::zudiKernelCallMsgS *z)
+				sCallerContext(
+					Floodplainn::sZudiKernelCallMsg *z)
 				:
 				sourceTid(z->header.sourceId),
 				privateData(z->header.privateData),
@@ -58,11 +58,11 @@ namespace __klzbzcore
 					FVFS_PATH_MAXLEN];
 			};
 
-			error_t instantiateDevice(callerContextS *ctxt);
-			error_t instantiateDevice1(callerContextS *ctxt);
-			error_t instantiateDevice2(callerContextS *ctxt);
+			error_t instantiateDevice(sCallerContext *ctxt);
+			error_t instantiateDevice1(sCallerContext *ctxt);
+			error_t instantiateDevice2(sCallerContext *ctxt);
 
-			error_t destroyDevice(callerContextS *ctxt);
+			error_t destroyDevice(sCallerContext *ctxt);
 		}
 
 		namespace u0
@@ -73,7 +73,7 @@ namespace __klzbzcore
 				utf8Char *path);
 
 			error_t regionInitInd(
-				__klzbzcore::driver::__kcall::callerContextS *ctxt,
+				__klzbzcore::driver::__kcall::sCallerContext *ctxt,
 				ubit32 function);
 		}
 

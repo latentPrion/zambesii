@@ -19,7 +19,7 @@ struct sRsdp
 	ubit8		reserved[3];
 } __attribute__((packed));
 
-struct sdtHeaderS
+struct sSdtHeader
 {
 	char		sig[4];
 	ubit32		tableLength;
@@ -34,24 +34,24 @@ struct sdtHeaderS
 
 struct sRsdt
 {
-	struct sdtHeaderS	header;
+	struct sSdtHeader	header;
 	ubit32			entries;
 };
 
 struct sXsdt
 {
-	struct sdtHeaderS	header;
+	struct sSdtHeader	header;
 	ubit32			entries[][2];
 };
 
 struct sSrat
 {
-	struct sdtHeaderS	header;
+	struct sSdtHeader	header;
 	ubit8			reserved[12];
 	ubit8			sratType;
 };
 
-struct sratCpuS
+struct sSratCpu
 {
 	ubit8		sratType;
 	ubit8		length;
@@ -64,7 +64,7 @@ struct sratCpuS
 	ubit8		reserved[4];
 };
 
-struct sratMemS
+struct sSratMem
 {
 	ubit8		sratType;
 	ubit8		length;
@@ -80,7 +80,7 @@ struct sratMemS
 	ubit8		reserved1[8];
 };
 
-struct chipsetNumaMapS *ibmPc_mi_getNumaMap(void);
+struct sChipsetNumaMap *ibmPc_mi_getNumaMap(void);
 struct sSrat *ibmPc_mi_findSrat(ubit32 sdtPaddr);
 
 #endif

@@ -71,11 +71,11 @@ public:
 
 	error_t indexedGetDeviceData(
 		zui::device::sHeader *devHeader, ubit16 index,
-		zui::device::attrDataS *retobj);
+		zui::device::sAttrData *retobj);
 
 	error_t findDeviceData(
 		zui::device::sHeader *devHeader, utf8Char *attrName,
-		zui::device::attrDataS *retobj);
+		zui::device::sAttrData *retobj);
 
 	error_t getString(uarch_t offset, utf8Char *retmsg)
 		{ return stringIndex.readString(retmsg, offset); }
@@ -174,7 +174,7 @@ public:
 
 	error_t indexedGetChildBop(
 		zui::driver::sHeader *drvHdr, uarch_t idx,
-		zui::driver::childBopS *retobj)
+		zui::driver::sChildBop *retobj)
 	{
 		return dataIndex.read(
 			retobj,
@@ -184,7 +184,7 @@ public:
 
 	error_t indexedGetParentBop(
 		zui::driver::sHeader *drvHdr, uarch_t idx,
-		zui::driver::parentBopS *retobj)
+		zui::driver::sParentBop *retobj)
 	{
 		return dataIndex.read(
 			retobj,
@@ -194,7 +194,7 @@ public:
 
 	error_t indexedGetInternalBop(
 		zui::driver::sHeader *drvHdr, uarch_t idx,
-		zui::driver::internalBopS *retobj)
+		zui::driver::sInternalBop *retobj)
 	{
 		return dataIndex.read(
 			retobj,

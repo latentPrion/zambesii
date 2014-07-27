@@ -39,9 +39,9 @@ error_t elf_initialize(utf8Char *archString, ubit16 wordSize)
 
 sarch_t elf_identify(void *buff)
 {
-	struct elfHeaderS	*ehdr;
+	struct sElfHeader	*ehdr;
 
-	ehdr = (struct elfHeaderS *)buff;
+	ehdr = (struct sElfHeader *)buff;
 	if (strncmp8((utf8Char *)ehdr->ident, CC EHDR_ID_MAGIC, 4) == 0) {
 		return 1;
 	};
@@ -50,9 +50,9 @@ sarch_t elf_identify(void *buff)
 
 sarch_t elf_isLocalArch(void *buff)
 {
-	struct elfHeaderS	*ehdr;
+	struct sElfHeader	*ehdr;
 
-	ehdr = (struct elfHeaderS *)buff;
+	ehdr = (struct sElfHeader *)buff;
 	if (ehdr->arch == elfModuleState.elfArch
 		&& ehdr->ident[EHDR_ID_CLASS_IDX] == elfModuleState.elfWordSize
 		&& ehdr->ident[EHDR_ID_DATA_IDX]

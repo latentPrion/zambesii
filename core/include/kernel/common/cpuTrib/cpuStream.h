@@ -62,7 +62,7 @@ public:
 
 public:
 	status_t enumerate(void);
-	cpuFeaturesS *getCpuFeatureBlock(void);
+	sCpuFeatures *getCpuFeatureBlock(void);
 	TaskContext *getTaskContext(void)
 		{ return &perCpuTaskContext; }
 
@@ -182,7 +182,7 @@ public:
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaBankId_t		bankId;
 #endif
-	cpuFeaturesS		cpuFeatures;
+	sCpuFeatures		cpuFeatures;
 	// Per CPU scheduler.
 	TaskStream		taskStream;
 

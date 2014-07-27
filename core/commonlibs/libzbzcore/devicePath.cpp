@@ -12,16 +12,16 @@ namespace region
 	void main_wrapper(void *);
 	error_t main(
 		Thread *self,
-		__klzbzcore::driver::__kcall::callerContextS *ctxt);
+		__klzbzcore::driver::__kcall::sCallerContext *ctxt);
 
 	error_t main_handleMgmtCall(
-		Floodplainn::zudiMgmtCallMsgS *, fplainn::Device *, ubit16);
+		Floodplainn::sZudiMgmtCallMsg *, fplainn::Device *, ubit16);
 
 	error_t main_handleServiceCallAck();
 	error_t main_handleMeiCallMsg();
 }
 
-error_t __klzbzcore::driver::__kcall::instantiateDevice(callerContextS *ctxt)
+error_t __klzbzcore::driver::__kcall::instantiateDevice(sCallerContext *ctxt)
 {
 	fplainn::Device			*dev;
 	fplainn::Driver			*drv;
@@ -83,7 +83,7 @@ error_t __klzbzcore::driver::__kcall::instantiateDevice(callerContextS *ctxt)
 	return ERROR_SUCCESS;
 }
 
-error_t __klzbzcore::driver::__kcall::instantiateDevice1(callerContextS *ctxt)
+error_t __klzbzcore::driver::__kcall::instantiateDevice1(sCallerContext *ctxt)
 {
 	error_t		ret;
 
@@ -118,7 +118,7 @@ printf(NOTICE"Just called floodplainn.usage_ind on dev %s.\n",
 	return ERROR_SUCCESS;
 }
 
-error_t __klzbzcore::driver::__kcall::instantiateDevice2(callerContextS *ctxt)
+error_t __klzbzcore::driver::__kcall::instantiateDevice2(sCallerContext *ctxt)
 {
 printf(NOTICE LZBZCORE"HERE! 0x%p\n", ctxt);
 	return ERROR_SUCCESS;
@@ -128,12 +128,12 @@ void region::main_wrapper(void *)
 {
 	error_t						err;
 	Thread						*self;
-	__klzbzcore::driver::__kcall::callerContextS	*ctxt;
+	__klzbzcore::driver::__kcall::sCallerContext	*ctxt;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
 
-	ctxt = (__klzbzcore::driver::__kcall::callerContextS *)
+	ctxt = (__klzbzcore::driver::__kcall::sCallerContext *)
 		self->getPrivateData();
 
 	err = region::main(self, ctxt);
@@ -149,7 +149,7 @@ void region::main_wrapper(void *)
 }
 
 error_t region::main(
-	Thread *self, __klzbzcore::driver::__kcall::callerContextS *ctxt
+	Thread *self, __klzbzcore::driver::__kcall::sCallerContext *ctxt
 	)
 {
 	HeapObject<MessageStream::sIterator>		msgIt;
@@ -283,7 +283,7 @@ error_t region::main(
 			{
 			case MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL:
 				region::main_handleMgmtCall(
-					(Floodplainn::zudiMgmtCallMsgS *)
+					(Floodplainn::sZudiMgmtCallMsg *)
 						msgIt.get(),
 					dev, regionIndex);
 
@@ -301,9 +301,9 @@ error_t region::main(
 	taskTrib.dormant(self->getFullId());
 }
 
-struct udi_mgmt_contextBlockS
+struct sUdi_Mgmt_ContextBlock
 {
-	udi_mgmt_contextBlockS(Floodplainn::zudiMgmtCallMsgS *msg)
+	sUdi_Mgmt_ContextBlock(Floodplainn::sZudiMgmtCallMsg *msg)
 	:
 	privateData(msg->header.privateData), sourceTid(msg->header.sourceId)
 	{
@@ -316,18 +316,18 @@ struct udi_mgmt_contextBlockS
 };
 
 error_t region::main_handleMgmtCall(
-	Floodplainn::zudiMgmtCallMsgS *msg,
+	Floodplainn::sZudiMgmtCallMsg *msg,
 	fplainn::Device *dev, ubit16 regionIndex
 	)
 {
 	udi_init_t		*initInfo;
 	udi_mgmt_ops_t		*mgmtOps;
-	udi_mgmt_contextBlockS	*contextBlock;
+	sUdi_Mgmt_ContextBlock	*contextBlock;
 
 	initInfo = dev->driverInstance->driver->driverInitInfo;
 	mgmtOps = initInfo->primary_init_info->mgmt_ops;
 
-	contextBlock = new udi_mgmt_contextBlockS(msg);
+	contextBlock = new sUdi_Mgmt_ContextBlock(msg);
 	if (contextBlock == NULL)
 	{
 		return ERROR_MEMORY_NOMEM;
@@ -350,7 +350,7 @@ error_t region::main_handleMgmtCall(
 
 	switch (msg->mgmtOp)
 	{
-	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_USAGE:
+	case Floodplainn::sZudiMgmtCallMsg::MGMTOP_USAGE:
 		printf(NOTICE"%s, rgn %d: udi_usage_ind call received!\n",
 			msg->path, regionIndex);
 
@@ -370,7 +370,7 @@ error_t region::main_handleMgmtCall(
 
 void udi_usage_res(udi_usage_cb_t *cb)
 {
-	udi_mgmt_contextBlockS		*contextBlock;
+	sUdi_Mgmt_ContextBlock		*contextBlock;
 
 	/**	EXPLANATION:
 	 * Basically, the driver will eventually call udi_usage_res(). This is
@@ -386,7 +386,7 @@ void udi_usage_res(udi_usage_cb_t *cb)
 	 * call the kernel with the _res operation.
 	 **/
 printf(NOTICE"in res\n");
-	contextBlock = (udi_mgmt_contextBlockS *)cb->gcb.initiator_context;
+	contextBlock = (sUdi_Mgmt_ContextBlock *)cb->gcb.initiator_context;
 
 	floodplainn.udi_usage_res(
 		contextBlock->devicePath,

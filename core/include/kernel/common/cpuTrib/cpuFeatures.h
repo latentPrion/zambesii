@@ -15,9 +15,9 @@
 #define CPUFEAT_BITWIDTH_32		(1<<3)
 #define CPUFEAT_BITWIDTH_64		(1<<4)
 
-struct cpuFeaturesS
+struct sCpuFeatures
 {
-	cpuFeaturesS(void)
+	sCpuFeatures(void)
 	{
 		memset(this, 0, sizeof(*this));
 	}
@@ -29,7 +29,7 @@ struct cpuFeaturesS
 	ubit8			cacheLineSize;
 	ubit8			bitWidth;
 	// Arch specific CPU features.
-	archCpuFeaturesS	archFeatures;
+	sArchCpuFeatures	archFeatures;
 };
 
 #endif

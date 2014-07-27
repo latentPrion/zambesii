@@ -39,19 +39,19 @@ public:
 	void dump(void);
 
 private:
-	struct ptrListNodeS
+	struct sPtrListNode
 	{
 		T		*item;
-		ptrListNodeS	*next;
+		sPtrListNode	*next;
 		ubit32		magic;
 	};
-	struct ptrListStateS
+	struct sPtrListState
 	{
-		ptrListNodeS	*ptr;
+		sPtrListNode	*ptr;
 		ubit32		nItems;
 	};
 
-	SharedResourceGroup<WaitLock, ptrListStateS>	head;
+	SharedResourceGroup<WaitLock, sPtrListState>	head;
 	SlamCache		*cache;
 	sarch_t			usingCache;
 };
@@ -74,7 +74,7 @@ error_t PtrList<T>::initialize(void)
 {
 	if (usingCache)
 	{
-		cache = cachePool.createCache(sizeof(ptrListNodeS));
+		cache = cachePool.createCache(sizeof(sPtrListNode));
 		if (cache == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
@@ -86,7 +86,7 @@ error_t PtrList<T>::initialize(void)
 template <class T>
 PtrList<T>::~PtrList(void)
 {
-	ptrListNodeS		*cur, *tmp;
+	sPtrListNode		*cur, *tmp;
 
 	for (cur = head.rsrc.ptr; cur != NULL; )
 	{
@@ -100,7 +100,7 @@ PtrList<T>::~PtrList(void)
 template <class T>
 void PtrList<T>::dump(void)
 {
-	ptrListNodeS	*tmp;
+	sPtrListNode	*tmp;
 
 	head.lock.acquire();
 	tmp = head.rsrc.ptr;
@@ -122,7 +122,7 @@ void PtrList<T>::dump(void)
 template <class T>
 sarch_t PtrList<T>::checkForItem(T *item)
 {
-	ptrListNodeS		*tmp;
+	sPtrListNode		*tmp;
 
 	head.lock.acquire();
 
@@ -153,11 +153,11 @@ ubit32 PtrList<T>::getNItems(void)
 template <class T>
 error_t PtrList<T>::insert(T *item)
 {
-	ptrListNodeS		*node;
+	sPtrListNode		*node;
 
 	node = (usingCache)
-		? new (cache->allocate()) ptrListNodeS
-		: new ptrListNodeS;
+		? new (cache->allocate()) sPtrListNode
+		: new sPtrListNode;
 
 	if (node == NULL) {
 		return ERROR_MEMORY_NOMEM;
@@ -179,7 +179,7 @@ error_t PtrList<T>::insert(T *item)
 template <class T>
 sarch_t PtrList<T>::remove(T *item)
 {
-	ptrListNodeS		*cur, *prev=NULL, *tmp;
+	sPtrListNode		*cur, *prev=NULL, *tmp;
 
 	head.lock.acquire();
 
@@ -226,7 +226,7 @@ void PtrList<T>::unlock(void)
 template <class T>
 T *PtrList<T>::getItem(ubit32 num)
 {
-	ptrListNodeS	*tmp;
+	sPtrListNode	*tmp;
 
 	head.lock.acquire();
 	// Cycle through until the counter is 0, or the list ends.
@@ -244,14 +244,14 @@ T *PtrList<T>::getItem(ubit32 num)
 template <class T>
 T *PtrList<T>::getNextItem(void **handle, ubit32 flags)
 {
-	ptrListNodeS	*tmp = reinterpret_cast<ptrListNodeS *>( *handle );
+	sPtrListNode	*tmp = reinterpret_cast<sPtrListNode *>( *handle );
 	T		*ret=NULL;
 
 	if (handle == NULL) { return NULL; };
 
 	// Don't allow arbitrary kernel memory reads.
 	if (*handle != NULL
-		&& ((ptrListNodeS *)(*handle))->magic != PTRLIST_MAGIC) {
+		&& ((sPtrListNode *)(*handle))->magic != PTRLIST_MAGIC) {
 		return NULL;
 	};
 
@@ -272,7 +272,7 @@ T *PtrList<T>::getNextItem(void **handle, ubit32 flags)
 	};
 
 	/**	FIXME:
-	 * Optimally, each ptrListNodeS object should have a magic number to
+	 * Optimally, each sPtrListNode object should have a magic number to
 	 * distinguish between valid and discarded objects; this API allows
 	 * for the caller to take and use items inside of it without locking
 	 * the list off for the duration of their use.

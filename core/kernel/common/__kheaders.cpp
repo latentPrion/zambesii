@@ -14,7 +14,7 @@
 #define MULTIBOOT_HEADER_FLAGS \
 	(MULTIBOOT_HEADER_NEED_MODULES_ALIGNED | MULTIBOOT_HEADER_NEED_MEMORY_MAP)
 
-multibootHeaderS __attribute__(( section(".__kheaders"), aligned(4) ))
+sMultibootHeader __attribute__(( section(".__kheaders"), aligned(4) ))
 multibootHeader =
 {
 	MULTIBOOT_HEADER_MAGIC,
@@ -32,7 +32,7 @@ multibootHeader =
  * the .__kheaders section out of the kernel file.
  **/
 void __kheadersInit(void) {
-	multibootHeaderS	*volatile mbheader = &multibootHeader;
+	sMultibootHeader	*volatile mbheader = &multibootHeader;
 	while (mbheader) {return;};
 	return;
 }

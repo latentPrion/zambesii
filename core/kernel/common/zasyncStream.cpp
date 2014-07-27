@@ -11,7 +11,7 @@ ZAsyncStream::~ZAsyncStream(void)
 	processId_t		*tmp=NULL;
 	uarch_t			nConnections;
 	void			*handle;
-	ipc::dataHeaderS	*msgTmp;
+	ipc::sDataHeader	*msgTmp;
 
 	connections.lock.acquire();
 
@@ -129,7 +129,7 @@ error_t ZAsyncStream::connect(
 {
 	ProcessStream		*targetProcess;
 	Task			*targetTask;
-	zasyncMsgS		*request;
+	sZAsyncMsg		*request;
 
 	/**	EXPLANATION:
 	 * We want to queue a message on the target. It is up to the target
@@ -164,7 +164,7 @@ error_t ZAsyncStream::connect(
 	if (targetTask->getType() != task::UNIQUE)
 		{ return ERROR_INVALID_OPERATION; };
 
-	request = new zasyncMsgS(
+	request = new sZAsyncMsg(
 		targetProcess->zasyncStream.getHandlerTid(),
 		MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_CONNECT,
 		sizeof(*request), flags, NULL);
@@ -182,7 +182,7 @@ error_t ZAsyncStream::respond(
 	)
 {
 	error_t			ret;
-	zasyncMsgS		*response;
+	sZAsyncMsg		*response;
 	ProcessStream		*initiatorProcess;
 
 	initiatorProcess = processTrib.getStream(initiatorPid);
@@ -193,7 +193,7 @@ error_t ZAsyncStream::respond(
 		|| getHandlerTid() == PROCID_INVALID)
 		{ return ERROR_UNINITIALIZED; };
 
-	response = new zasyncMsgS(
+	response = new sZAsyncMsg(
 		initiatorPid,
 		MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_RESPOND,
 		sizeof(*response), flags, NULL);
@@ -230,9 +230,9 @@ error_t ZAsyncStream::send(
 	uarch_t flags, void *privateData
 	)
 {
-	zasyncMsgS		*message;
+	sZAsyncMsg		*message;
 	ProcessStream		*targetProcess;
-	ipc::dataHeaderS	*dataHeader;
+	ipc::sDataHeader	*dataHeader;
 	error_t			ret;
 
 	if (data == NULL) { return ERROR_INVALID_ARG; };
@@ -248,11 +248,11 @@ error_t ZAsyncStream::send(
 	{ return ERROR_UNINITIALIZED; };
 
 	dataHeader = new (ipc::createDataHeader(data, nBytes, method))
-		ipc::dataHeaderS;
+		ipc::sDataHeader;
 
 	if (dataHeader == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	message = new zasyncMsgS(
+	message = new sZAsyncMsg(
 		bindTid,
 		MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_SEND,
 		sizeof(*message), flags, privateData);
@@ -272,12 +272,12 @@ error_t ZAsyncStream::send(
 
 error_t ZAsyncStream::receive(void *dataHandle, void *buffer, uarch_t)
 {
-	ipc::dataHeaderS		*dataHeader;
+	ipc::sDataHeader		*dataHeader;
 	error_t				ret;
 
 	if (dataHandle == NULL || buffer == NULL) { return ERROR_INVALID_ARG; };
 
-	dataHeader = (ipc::dataHeaderS *)dataHandle;
+	dataHeader = (ipc::sDataHeader *)dataHandle;
 	if (!messages.checkForItem(dataHeader))
 		{ return ERROR_INVALID_RESOURCE_HANDLE; };
 
@@ -289,14 +289,14 @@ error_t ZAsyncStream::receive(void *dataHandle, void *buffer, uarch_t)
 
 void ZAsyncStream::acknowledge(void *dataHandle, void *buffer, void *privateData)
 {
-	ipc::dataHeaderS		*dataHeader;
+	ipc::sDataHeader		*dataHeader;
 	ipc::methodE			method;
 	processId_t			sourceTid;
-	zasyncMsgS			*response;
+	sZAsyncMsg			*response;
 
 	if (dataHandle == NULL) { return; };
 
-	dataHeader = (ipc::dataHeaderS *)dataHandle;
+	dataHeader = (ipc::sDataHeader *)dataHandle;
 
 	if (!messages.checkForItem(dataHeader)) { return; };
 
@@ -308,7 +308,7 @@ void ZAsyncStream::acknowledge(void *dataHandle, void *buffer, void *privateData
 	if (method == ipc::METHOD_BUFFER) { return; };
 
 	// Send a notification to the sender.
-	response = new zasyncMsgS(
+	response = new sZAsyncMsg(
 		sourceTid,
 		MSGSTREAM_SUBSYSTEM_ZASYNC, MSGSTREAM_ZASYNC_ACKNOWLEDGE,
 		sizeof(*response), 0, privateData);

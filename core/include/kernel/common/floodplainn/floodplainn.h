@@ -32,11 +32,11 @@ public:
 	~Floodplainn(void) {}
 
 public:
-	struct zudiKernelCallMsgS
+	struct sZudiKernelCallMsg
 	{
 		enum commandE { CMD_INSTANTIATE_DEVICE, CMD_NEW_PARENT };
 
-		zudiKernelCallMsgS(
+		sZudiKernelCallMsg(
 			processId_t targetPid, ubit16 subsystem, ubit16 function,
 			uarch_t size, uarch_t flags, void *privateData)
 		:
@@ -60,13 +60,13 @@ public:
 		utf8Char		path[FVFS_PATH_MAXLEN];
 	};
 
-	struct zudiMgmtCallMsgS
+	struct sZudiMgmtCallMsg
 	{
 		enum mgmtOperationE {
 			MGMTOP_USAGE, MGMTOP_ENUMERATE, MGMTOP_DEVMGMT,
 			MGMTOP_FINAL_CLEANUP };
 
-		zudiMgmtCallMsgS(
+		sZudiMgmtCallMsg(
 			utf8Char *path,
 			processId_t targetPid, ubit16 subsystem, ubit16 function,
 			uarch_t size, uarch_t flags, void *privateData)
@@ -117,9 +117,9 @@ public:
 		} cb;
 	};
 
-	struct zudiIndexMsgS
+	struct sZudiIndexMsg
 	{
-		zudiIndexMsgS(
+		sZudiIndexMsg(
 			processId_t targetPid, ubit16 subsystem, ubit16 function,
 			uarch_t size, uarch_t flags, void *privateData)
 		:
@@ -146,12 +146,12 @@ public:
 		}
 
 		MessageStream::sHeader		header;
-		zuiServer::indexMsgS		info;
+		zuiServer::sIndexMsg		info;
 	};
 
 public:
-	const driverInitEntryS *findDriverInitInfo(utf8Char *shortName);
-	const metaInitEntryS *findMetaInitInfo(utf8Char *shortName);
+	const sDriverInitEntry *findDriverInitInfo(utf8Char *shortName);
+	const sMetaInitEntry *findMetaInitInfo(utf8Char *shortName);
 
 	error_t findDriver(utf8Char *fullName, fplainn::Driver **ret);
 
@@ -308,8 +308,8 @@ private:
 
 extern Floodplainn		floodplainn;
 
-extern const driverInitEntryS	driverInitInfo[];
-extern const metaInitEntryS	metaInitInfo[];
+extern const sDriverInitEntry	driverInitInfo[];
+extern const sMetaInitEntry	metaInitInfo[];
 
 #endif
 

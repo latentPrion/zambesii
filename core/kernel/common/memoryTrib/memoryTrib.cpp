@@ -15,7 +15,7 @@
 
 
 static ubit8				memoryTribAvailableBanksBmpMem[64];
-static HardwareIdList::arrayNodeS	memoryTribMemoryBanksListMem[
+static HardwareIdList::sArrayNode	memoryTribMemoryBanksListMem[
 	CHIPSET_NUMA___KSPACE_BANKID + 1];
 
 MemoryTrib::MemoryTrib(void)
@@ -37,7 +37,7 @@ error_t MemoryTrib::initialize(void)
 {
 	availableBanks.initialize(
 		0,
-		Bitmap::preallocatedMemoryS(
+		Bitmap::sPreallocatedMemory(
 			memoryTribAvailableBanksBmpMem,
 			sizeof(memoryTribAvailableBanksBmpMem)));
 
@@ -72,9 +72,9 @@ void MemoryTrib::dump(void)
 
 error_t MemoryTrib::memRegionInit(void)
 {
-	chipsetRegionMapEntryS		*currEntry;
-	chipsetRegionReservedS		*currReserved;
-	zkcmMemMapS			*memMap;
+	sChipsetRegionMapEntry		*currEntry;
+	sReservedChipsetRegion		*currReserved;
+	sZkcmMemoryMapS			*memMap;
 	paddr_t				currBase, currSize;
 	error_t				ret;
 
@@ -97,7 +97,7 @@ error_t MemoryTrib::memRegionInit(void)
 	// If there are no memory regions, just exit.
 	if (chipsetRegionMap == NULL) { return ERROR_SUCCESS; };
 
-	/* We want to run through each chipsetRegionMapEntryS entry and for
+	/* We want to run through each sChipsetRegionMapEntry entry and for
 	 * each one, generate a BMP at runtime. The bitmaps for the chipset
 	 * memory regions are allocated from Kernel Space.
 	 **/

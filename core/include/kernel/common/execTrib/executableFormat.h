@@ -13,14 +13,14 @@
  * size. This should be enough for the module to use to 
  **/
 
-struct executableParserS
+struct sExecutableParser
 {
 	error_t (*initialize)(const char *archString, ubit16 wordSize);
 	sarch_t (*identify)(void *buff);
 	sarch_t (*isLocalArch)(void *buff);
 };
 
-extern struct executableParserS		elfParser;
+extern struct sExecutableParser		elfParser;
 
 #endif
 

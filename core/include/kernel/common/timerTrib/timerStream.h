@@ -38,9 +38,9 @@ public:
 public:
 	enum requestTypeE { PERIODIC=1, ONESHOT };
 	// Used to represent timer service requests.
-	struct timerMsgS
+	struct sTimerMsg
 	{
-		timerMsgS(
+		sTimerMsg(
 			processId_t targetPid, ubit16 subsystem, ubit16 function,
 			uarch_t size, uarch_t flags, void *privateData)
 		:
@@ -110,7 +110,7 @@ public:
 		ubit32 flags, void *privateData);
 
 	// Pulls an event from the expired events list.
-	error_t pullEvent(ubit32 flags, timerMsgS *ret);
+	error_t pullEvent(ubit32 flags, sTimerMsg *ret);
 
 private:
 	/* Used by the Timer Tributary's dequeueing thread to lock the stream
@@ -126,13 +126,13 @@ private:
 	 * after queueing the new callback.
 	 **/
 	void *timerRequestTimeoutNotification(
-		timerMsgS *request, sTimestamp *eventStamp);
+		sTimerMsg *request, sTimestamp *eventStamp);
 
 	// Causes this stream to insert its next request into the timer queues.
 	void timerRequestTimeoutNotification(void);
 
 private:
-	SortedPtrDblList<timerMsgS, sTimestamp>	requests;
+	SortedPtrDblList<sTimerMsg, sTimestamp>	requests;
 	/* Used to prevent race conditions while requests from this process are
 	 * being expired.
 	 **/

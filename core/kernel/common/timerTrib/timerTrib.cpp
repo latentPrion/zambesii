@@ -215,12 +215,12 @@ error_t TimerTrib::enableWaitingOnQueue(ubit32 nanos)
 
 error_t TimerTrib::enableWaitingOnQueue(TimerQueue *queue)
 {
-	eventProcessorS::Message	*msg;
+	sEventProcessor::Message	*msg;
 
 	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
 
-	msg = new eventProcessorS::Message(
-		eventProcessorS::Message::QUEUE_LATCHED,
+	msg = new sEventProcessor::Message(
+		sEventProcessor::Message::QUEUE_LATCHED,
 		queue);
 
 	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
@@ -228,7 +228,7 @@ error_t TimerTrib::enableWaitingOnQueue(TimerQueue *queue)
 	return eventProcessor.controlQueue.addItem(msg);
 }
 
-error_t TimerTrib::insertTimerQueueRequestObject(TimerStream::timerMsgS *request)
+error_t TimerTrib::insertTimerQueueRequestObject(TimerStream::sTimerMsg *request)
 {
 	error_t		ret;
 	TimerQueue	*suboptimal=NULL;
@@ -280,7 +280,7 @@ error_t TimerTrib::insertTimerQueueRequestObject(TimerStream::timerMsgS *request
 }
 
 // Called by Timer Streams to cancel Timer Request objects from Qs.
-sarch_t TimerTrib::cancelTimerQueueRequestObject(TimerStream::timerMsgS *request)
+sarch_t TimerTrib::cancelTimerQueueRequestObject(TimerStream::sTimerMsg *request)
 {
 	sarch_t		ret;
 	TimerQueue	*targetQueue;
@@ -341,7 +341,7 @@ error_t TimerTrib::initialize(void)
 
 	// Spawn the timer event dequeueing thread.
 	ret = processTrib.__kgetStream()->spawnThread(
-		&TimerTrib::eventProcessorS::thread, NULL,
+		&TimerTrib::sEventProcessor::thread, NULL,
 		NULL,
 		Task::REAL_TIME,
 		PRIOCLASS_CRITICAL,
@@ -386,7 +386,7 @@ void TimerTrib::getCurrentDateTime(sTimestamp *stamp)
 	zkcmCore.timerControl.getCurrentDateTime(stamp);
 }
 
-sarch_t TimerTrib::eventProcessorS::getFreeWaitSlot(ubit8 *ret)
+sarch_t TimerTrib::sEventProcessor::getFreeWaitSlot(ubit8 *ret)
 {
 	for (*ret=0; *ret<6; *ret += 1)
 	{
@@ -398,7 +398,7 @@ sarch_t TimerTrib::eventProcessorS::getFreeWaitSlot(ubit8 *ret)
 	return 0;
 }
 
-void TimerTrib::eventProcessorS::releaseWaitSlotFor(TimerQueue *timerQueue)
+void TimerTrib::sEventProcessor::releaseWaitSlotFor(TimerQueue *timerQueue)
 {
 	for (ubit8 i=0; i<6; i++)
 	{
@@ -408,7 +408,7 @@ void TimerTrib::eventProcessorS::releaseWaitSlotFor(TimerQueue *timerQueue)
 	};
 }
 
-void TimerTrib::eventProcessorS::processQueueLatchedMessage(Message *msg)
+void TimerTrib::sEventProcessor::processQueueLatchedMessage(Message *msg)
 {
 	ubit8		slot;
 
@@ -434,7 +434,7 @@ void TimerTrib::eventProcessorS::processQueueLatchedMessage(Message *msg)
 		waitSlots[slot].timerQueue->getNativePeriod() / 1000, slot);
 }
 
-void TimerTrib::eventProcessorS::processQueueUnlatchedMessage(Message *msg)
+void TimerTrib::sEventProcessor::processQueueUnlatchedMessage(Message *msg)
 {
 	// Stop waiting on the specified queue.
 	releaseWaitSlotFor(msg->timerQueue);
@@ -443,28 +443,28 @@ void TimerTrib::eventProcessorS::processQueueUnlatchedMessage(Message *msg)
 		msg->timerQueue->getNativePeriod() / 1000);
 }
 
-void TimerTrib::eventProcessorS::processExitMessage(Message *)
+void TimerTrib::sEventProcessor::processExitMessage(Message *)
 {
 	printf(WARNING TIMERTRIB"event DQer: Got EXIT_THREAD message.\n");
 	/*UNIMPLEMENTED(
 		"TimerTrib::"
-		"eventProcessorS::processExitMessage");*/
+		"sEventProcessor::processExitMessage");*/
 }
 
 void TimerTrib::sendMessage(void)
 {
-	eventProcessorS::Message	*msg;
+	sEventProcessor::Message	*msg;
 
 	// Posts an artificial message to the control queue.
-	msg = new eventProcessorS::Message(
-		eventProcessorS::Message::EXIT_THREAD, NULL);
+	msg = new sEventProcessor::Message(
+		sEventProcessor::Message::EXIT_THREAD, NULL);
 
 	eventProcessor.controlQueue.addItem(msg);
 }
 
 void TimerTrib::sendQMessage(void)
 {
-	zkcmTimerEventS		*irqEvent;
+	sZkcmTimerEvent		*irqEvent;
 
 	irqEvent = period10ms.getDevice()->allocateIrqEvent();
 	irqEvent->device = period10ms.getDevice();
@@ -475,9 +475,9 @@ void TimerTrib::sendQMessage(void)
 	period10ms.getDevice()->getEventQueue()->addItem(irqEvent);
 }
 
-void TimerTrib::eventProcessorS::thread(void *)
+void TimerTrib::sEventProcessor::thread(void *)
 {
-	eventProcessorS::Message	*currMsg;
+	sEventProcessor::Message	*currMsg;
 	sarch_t				messagesWereFound;
 	error_t				err;
 
@@ -495,18 +495,18 @@ void TimerTrib::eventProcessorS::thread(void *)
 			messagesWereFound = 1;
 			switch (currMsg->type)
 			{
-			case eventProcessorS::Message::EXIT_THREAD:
+			case sEventProcessor::Message::EXIT_THREAD:
 				timerTrib.eventProcessor.processExitMessage(
 					currMsg);
 				break;
 
-			case eventProcessorS::Message::QUEUE_LATCHED:
+			case sEventProcessor::Message::QUEUE_LATCHED:
 				timerTrib.eventProcessor
 					.processQueueLatchedMessage(currMsg);
 
 				break;
 
-			case eventProcessorS::Message::QUEUE_UNLATCHED:
+			case sEventProcessor::Message::QUEUE_UNLATCHED:
 				timerTrib.eventProcessor
 					.processQueueUnlatchedMessage(currMsg);
 
@@ -529,7 +529,7 @@ void TimerTrib::eventProcessorS::thread(void *)
 		};
 
 		// Wait for the other queues here.
-		zkcmTimerEventS		*currIrqEvent;
+		sZkcmTimerEvent		*currIrqEvent;
 		for (ubit8 i=0; i<6; i++)
 		{
 			// Skip blank slots.

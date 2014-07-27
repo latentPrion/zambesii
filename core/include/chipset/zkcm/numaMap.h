@@ -17,7 +17,7 @@
 #define NUMACPUMAP_FLAGS_HOTPLUG	(1<<0)
 #define NUMACPUMAP_FLAGS_ONLINE		(1<<1)
 
-struct numaCpuMapEntryS
+struct sNumaCpuMapEntry
 {
 	numaBankId_t	bankId;
 	cpu_t		cpuId;
@@ -25,17 +25,17 @@ struct numaCpuMapEntryS
 	uarch_t		flags;
 };
 
-struct numaMemMapEntryS
+struct sNumaMemoryMapEntry
 {
 	paddr_t		baseAddr, size;
 	numaBankId_t	bankId;
 	uarch_t		flags;
 };
 
-struct zkcmNumaMapS
+struct sZkcmNumaMap
 {
-	struct numaCpuMapEntryS	*cpuEntries;
-	struct numaMemMapEntryS	*memEntries;
+	struct sNumaCpuMapEntry	*cpuEntries;
+	struct sNumaMemoryMapEntry	*memEntries;
 	ubit8			nMemEntries, nCpuEntries;
 };
 

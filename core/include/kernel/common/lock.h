@@ -17,17 +17,17 @@ public:
 		magic = LOCK_MAGIC;
 	};
 
-	struct operationDescriptorS
+	struct sOperationDescriptor
 	{
 		enum typeE { WAIT=0, RECURSIVE, MULTIPLE_READER };
 		enum unlockOperationE { READ=0, WRITE };
 
-		operationDescriptorS(Lock *lock, typeE type=WAIT)
+		sOperationDescriptor(Lock *lock, typeE type=WAIT)
 		:
 		lock(lock), type(type)
 		{}
 
-		operationDescriptorS(
+		sOperationDescriptor(
 			Lock *lock, typeE type,
 			unlockOperationE op, uarch_t rwFlags)
 		:

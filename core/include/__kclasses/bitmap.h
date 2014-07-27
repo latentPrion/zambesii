@@ -45,14 +45,14 @@ public:
 	/* Used to inialize BMPs which must be initialized in the absence of
 	 * dynamic memory allocation.
 	 **/
-	struct preallocatedMemoryS
+	struct sPreallocatedMemory
 	{
-		preallocatedMemoryS(void *ptr=NULL, ubit16 size=0)
+		sPreallocatedMemory(void *ptr=NULL, ubit16 size=0)
 		:
 		vaddr(ptr), size(size)
 		{}
 
-		preallocatedMemoryS operator =(int)
+		sPreallocatedMemory operator =(int)
 			{ return *this; }
 
 		void		*vaddr;
@@ -62,7 +62,7 @@ public:
 	Bitmap(void);
 
 	error_t initialize(
-		ubit32 nBits, preallocatedMemoryS preallocatedMemory=0);
+		ubit32 nBits, sPreallocatedMemory preallocatedMemory=0);
 
 	~Bitmap(void);
 

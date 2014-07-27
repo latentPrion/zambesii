@@ -45,9 +45,9 @@
  *	   get rid of it.
  **/
 
-static void sortNumaMapByAddress(zkcmNumaMapS *map)
+static void sortNumaMapByAddress(sZkcmNumaMap *map)
 {
-	numaMemMapEntryS	tmp;
+	sNumaMemoryMapEntry	tmp;
 
 	/** EXPLANATION:
 	 * Simple one-pass swap sort algorithm. Recurses backward while sorting
@@ -60,15 +60,15 @@ static void sortNumaMapByAddress(zkcmNumaMapS *map)
 		{
 			memcpy(
 				&tmp, &map->memEntries[i],
-				sizeof(numaMemMapEntryS));
+				sizeof(sNumaMemoryMapEntry));
 
 			memcpy(
 				&map->memEntries[i], &map->memEntries[i+1],
-				sizeof(numaMemMapEntryS));
+				sizeof(sNumaMemoryMapEntry));
 
 			memcpy(
 				&map->memEntries[i+1], &tmp,
-				sizeof(numaMemMapEntryS));
+				sizeof(sNumaMemoryMapEntry));
 
 			if (i != 0) { i--; };
 			continue;
@@ -80,9 +80,9 @@ static void sortNumaMapByAddress(zkcmNumaMapS *map)
 error_t MemoryTrib::pmemInit(void)
 {
 	error_t			ret;
-	zkcmMemConfigS		*memConfig=NULL;
-	zkcmMemMapS		*memMap=NULL;
-	zkcmNumaMapS		*numaMap=NULL;
+	sZkcmMemoryConfig		*memConfig=NULL;
+	sZkcmMemoryMapS		*memMap=NULL;
+	sZkcmNumaMap		*numaMap=NULL;
 	NumaMemoryBank		*nmb;
 	// __kspaceBool is used to determine whether or not to kill __kspace.
 	sarch_t			pos, __kspaceBool=0;
@@ -299,7 +299,7 @@ parseMemoryMap:
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
-void MemoryTrib::init2_spawnNumaStreams(zkcmNumaMapS *map)
+void MemoryTrib::init2_spawnNumaStreams(sZkcmNumaMap *map)
 {
 	error_t		ret;
 
@@ -327,7 +327,7 @@ void MemoryTrib::init2_spawnNumaStreams(zkcmNumaMapS *map)
 
 #if __SCALING__ >= SCALING_CC_NUMA
 void MemoryTrib::init2_generateNumaMemoryRanges(
-	zkcmNumaMapS *map, sarch_t *__kspaceBool
+	sZkcmNumaMap *map, sarch_t *__kspaceBool
 	)
 {
 	error_t			ret;
@@ -375,7 +375,7 @@ static utf8Char		*overlappingMessage =
 	"\tHalting generation of shbank due to non-sane NUMA map.\n";
 
 void MemoryTrib::init2_generateShbankFromNumaMap(
-	zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool
+	sZkcmMemoryConfig *cfg, sZkcmNumaMap *map, sarch_t *__kspaceBool
 	)
 {
 	error_t		ret;

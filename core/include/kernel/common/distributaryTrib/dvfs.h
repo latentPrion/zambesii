@@ -19,11 +19,11 @@ class DistributaryTrib;
 
 namespace dvfs
 {
-	/**	distributaryDescriptorS:
+	/**	sDistributaryDescriptor:
 	 * Exported by every distributary packaged with the kernel. Used by
 	 * the kernel to create the Distributary VFS.
 	 **********************************************************************/
-	struct distributaryDescriptorS
+	struct sDistributaryDescriptor
 	{
 		/**	EXPLANATION:
 		 * The macro constant that determines the maximum length of each
@@ -111,7 +111,7 @@ namespace dvfs
 		enum typeE { IN_KERNEL=1, OUT_OF_KERNEL };
 
 		distributaryINode(
-			const distributaryDescriptorS *descriptor, typeE type);
+			const sDistributaryDescriptor *descriptor, typeE type);
 
 		error_t initialize(void)
 		{
@@ -130,7 +130,7 @@ namespace dvfs
 		typeE			type;
 		sarch_t			currentlyRunning;
 
-		// Mirror members for distributaryDescriptorS.
+		// Mirror members for sDistributaryDescriptor.
 		utf8Char	name[DVFS_TAG_NAME_MAXLEN],
 				vendor[DVFS_DINODE_VENDOR_MAXLEN],
 				description[DVFS_DINODE_DESCRIPTION_MAXLEN];

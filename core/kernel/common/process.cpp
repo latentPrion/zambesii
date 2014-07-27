@@ -112,19 +112,19 @@ error_t ProcessStream::initializeBitmaps(void)
 #if __SCALING__ >= SCALING_SMP
 		cpuTrace.initialize(
 			0,
-			Bitmap::preallocatedMemoryS(
+			Bitmap::sPreallocatedMemory(
 				__kprocessPreallocatedBmpMem[0],
 				sizeof(__kprocessPreallocatedBmpMem[0])));
 
 		cpuAffinity.initialize(
 			0,
-			Bitmap::preallocatedMemoryS(
+			Bitmap::sPreallocatedMemory(
 				__kprocessPreallocatedBmpMem[1],
 				sizeof(__kprocessPreallocatedBmpMem[1])));
 #endif
 		pendingEvents.initialize(
 			0,
-			Bitmap::preallocatedMemoryS(
+			Bitmap::sPreallocatedMemory(
 				__kprocessPreallocatedBmpMem[2],
 				sizeof(__kprocessPreallocatedBmpMem[2])));
 	}
@@ -358,7 +358,7 @@ error_t ProcessStream::generateArguments(const utf8Char *argumentString)
 	return ERROR_SUCCESS;
 }
 
-static ProcessStream::environmentVarS		__kprocessEnvironmentMem[16];
+static ProcessStream::sEnvironmentVar		__kprocessEnvironmentMem[16];
 error_t ProcessStream::generateEnvironment(const utf8Char *environmentString)
 {
 	error_t			ret;
@@ -477,7 +477,7 @@ error_t ProcessStream::generateEnvironment(const utf8Char *environmentString)
 		}
 		else
 		{
-			environment = new environmentVarS[nVars];
+			environment = new sEnvironmentVar[nVars];
 			if (environment == NULL)
 				{ return ERROR_MEMORY_NOMEM; };
 		};
@@ -511,7 +511,7 @@ void ProcessStream::sendResponse(error_t err)
 }
 
 void ProcessStream::getInitializationBlockSizeInfo(
-	initializationBlockSizeInfoS *ret
+	sInitializationBlockizeInfoS *ret
 	)
 {
 	if (ret == NULL) { return; };
@@ -521,7 +521,7 @@ void ProcessStream::getInitializationBlockSizeInfo(
 	ret->argumentsSize = strnlen8(arguments, PROCESS_ARGUMENTS_MAXLEN) + 1;
 }
 
-void ProcessStream::getInitializationBlock(initializationBlockS *ret)
+void ProcessStream::getInitializationBlock(sInitializationBlock *ret)
 {
 	if (ret == NULL) { return; };
 

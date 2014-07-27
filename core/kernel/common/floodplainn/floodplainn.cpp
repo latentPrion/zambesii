@@ -216,7 +216,7 @@ error_t Floodplainn::getDevice(utf8Char *path, fplainn::Device **device)
 
 error_t Floodplainn::instantiateDeviceReq(utf8Char *path, void *privateData)
 {
-	zudiKernelCallMsgS			*request;
+	sZudiKernelCallMsg			*request;
 	fplainn::Device			*dev;
 	error_t					ret;
 	HeapObject<fplainn::DeviceInstance>	devInst;
@@ -245,7 +245,7 @@ error_t Floodplainn::instantiateDeviceReq(utf8Char *path, void *privateData)
 		if (ret != ERROR_SUCCESS) { return ret; };
 	};
 
-	request = new zudiKernelCallMsgS(
+	request = new sZudiKernelCallMsg(
 		dev->driverInstance->pid,
 		MSGSTREAM_SUBSYSTEM_ZUDI,
 		MSGSTREAM_FPLAINN_ZUDI___KCALL,
@@ -258,7 +258,7 @@ error_t Floodplainn::instantiateDeviceReq(utf8Char *path, void *privateData)
 	};
 
 	// Assign the device instance to dev->instance and release the mem.
-	request->set(path, zudiKernelCallMsgS::CMD_INSTANTIATE_DEVICE);
+	request->set(path, sZudiKernelCallMsg::CMD_INSTANTIATE_DEVICE);
 	if (dev->instance == NULL) { dev->instance = devInst.release(); };
 	return MessageStream::enqueueOnThread(
 		request->header.targetId, &request->header);
@@ -269,7 +269,7 @@ void Floodplainn::instantiateDeviceAck(
 	)
 {
 	Thread					*currThread;
-	Floodplainn::zudiKernelCallMsgS	*response;
+	Floodplainn::sZudiKernelCallMsg	*response;
 	fplainn::Device			*dev;
 
 	currThread = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
@@ -298,7 +298,7 @@ void Floodplainn::instantiateDeviceAck(
 		dev->instance = NULL;
 	};
 
-	response = new zudiKernelCallMsgS(
+	response = new sZudiKernelCallMsg(
 		targetId,
 		MSGSTREAM_SUBSYSTEM_ZUDI,
 		MSGSTREAM_FPLAINN_ZUDI___KCALL,
@@ -306,7 +306,7 @@ void Floodplainn::instantiateDeviceAck(
 
 	if (response == NULL) { return; };
 
-	response->set(path, zudiKernelCallMsgS::CMD_INSTANTIATE_DEVICE);
+	response->set(path, sZudiKernelCallMsg::CMD_INSTANTIATE_DEVICE);
 	response->header.error = err;
 
 	MessageStream::enqueueOnThread(
@@ -429,9 +429,9 @@ error_t Floodplainn::enumerateChipsets(void)
 	return ERROR_SUCCESS;
 }
 
-const driverInitEntryS *Floodplainn::findDriverInitInfo(utf8Char *shortName)
+const sDriverInitEntry *Floodplainn::findDriverInitInfo(utf8Char *shortName)
 {
-	const driverInitEntryS	*tmp;
+	const sDriverInitEntry	*tmp;
 
 	for (tmp=driverInitInfo; tmp->udi_init_info != NULL; tmp++) {
 		if (!strcmp8(tmp->shortName, shortName)) { return tmp; };
@@ -440,9 +440,9 @@ const driverInitEntryS *Floodplainn::findDriverInitInfo(utf8Char *shortName)
 	return NULL;
 }
 
-const metaInitEntryS *Floodplainn::findMetaInitInfo(utf8Char *shortName)
+const sMetaInitEntry *Floodplainn::findMetaInitInfo(utf8Char *shortName)
 {
-	const metaInitEntryS		*tmp;
+	const sMetaInitEntry		*tmp;
 
 	for (tmp=metaInitInfo; tmp->udi_meta_info != NULL; tmp++) {
 		if (!strcmp8(tmp->shortName, shortName)) { return tmp; };
@@ -453,7 +453,7 @@ const metaInitEntryS *Floodplainn::findMetaInitInfo(utf8Char *shortName)
 
 static error_t udi_mgmt_calls_prep(
 	utf8Char *callerName, utf8Char *devPath, fplainn::Device **dev,
-	HeapObject<Floodplainn::zudiMgmtCallMsgS> *request,
+	HeapObject<Floodplainn::sZudiMgmtCallMsg> *request,
 	void *privateData
 	)
 {
@@ -474,7 +474,7 @@ static error_t udi_mgmt_calls_prep(
 
 	(*dev)->instance->getRegionInfo(0, &primaryRegionTid, &dummy);
 
-	*request = new Floodplainn::zudiMgmtCallMsgS(
+	*request = new Floodplainn::sZudiMgmtCallMsg(
 		devPath, primaryRegionTid,
 		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL,
 		sizeof(**request), 0, privateData);
@@ -505,7 +505,7 @@ void Floodplainn::udi_usage_ind(
 	utf8Char *devPath, udi_ubit8_t usageLevel, void *privateData
 	)
 {
-	HeapObject<zudiMgmtCallMsgS>		request;
+	HeapObject<sZudiMgmtCallMsg>		request;
 	udi_usage_cb_t				*cb;
 	fplainn::Device			*dev;
 
@@ -542,9 +542,9 @@ void Floodplainn::udi_usage_res(
 	utf8Char *devicePath, processId_t targetTid, void *privateData
 	)
 {
-	Floodplainn::zudiMgmtCallMsgS	*response;
+	Floodplainn::sZudiMgmtCallMsg	*response;
 
-	response = new zudiMgmtCallMsgS(
+	response = new sZudiMgmtCallMsg(
 		devicePath, targetTid,
 		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL,
 		sizeof(*response), 0, privateData);

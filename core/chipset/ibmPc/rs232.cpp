@@ -53,7 +53,7 @@ static sarch_t ibmPc_rs232_isInitialized(void)
 	return (initialized);
 }
 
-struct debugRivS	ibmPc_rs232 =
+struct sDebugRiv	ibmPc_rs232 =
 {
 	&ibmPc_rs232_initialize,
 	&ibmPc_rs232_shutdown,

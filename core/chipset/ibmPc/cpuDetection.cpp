@@ -49,9 +49,9 @@ error_t ZkcmCpuDetectionMod::restore(void)
 	return ERROR_SUCCESS;
 }
 
-zkcmNumaMapS *ibmPc_cm_rGnm(void)
+sZkcmNumaMap *ibmPc_cm_rGnm(void)
 {
-	zkcmNumaMapS		*ret;
+	sZkcmNumaMap		*ret;
 	acpi_sRsdt		*rsdt;
 	acpi_rSratS		*srat;
 	acpi_rSratCpuS		*cpuEntry;
@@ -95,7 +95,7 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 	if (nEntries == 0) { return NULL; };
 
 	// Now we know how many entries exist. Allocate map and reparse.
-	ret = new zkcmNumaMapS;
+	ret = new sZkcmNumaMap;
 	if (ret == NULL)
 	{
 		printf(ERROR CPUMOD"getNumaMap(): Failed to allocate room "
@@ -104,7 +104,7 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 		return NULL;
 	};
 
-	ret->cpuEntries = new numaCpuMapEntryS[nEntries];
+	ret->cpuEntries = new sNumaCpuMapEntry[nEntries];
 	if (ret->cpuEntries == NULL)
 	{
 		delete ret;
@@ -160,7 +160,7 @@ zkcmNumaMapS *ibmPc_cm_rGnm(void)
 	return ret;
 }
 
-zkcmNumaMapS *ZkcmCpuDetectionMod::getNumaMap(void)
+sZkcmNumaMap *ZkcmCpuDetectionMod::getNumaMap(void)
 {
 	/**	EXPLANATION:
 	 * For the IBM-PC, a NUMA map of all CPUs is essentially obtained by
@@ -188,12 +188,12 @@ zkcmNumaMapS *ZkcmCpuDetectionMod::getNumaMap(void)
 	return NULL;
 }
 
-sZkcmmpMapS *ZkcmCpuDetectionMod::getSmpMap(void)
+sZkcmSmpMap *ZkcmCpuDetectionMod::getSmpMap(void)
 {
 	x86_mpCfgCpuS	*mpCpu;
 	void		*handle, *handle2, *context;
 	uarch_t		pos=0, nEntries, i;
-	sZkcmmpMapS	*ret;
+	sZkcmSmpMap	*ret;
 	acpi_sRsdt	*rsdt;
 	acpi_rMadtS	*madt;
 	acpi_rMadtCpuS	*madtCpu;
@@ -269,14 +269,14 @@ sZkcmmpMapS *ZkcmCpuDetectionMod::getSmpMap(void)
 	printf(NOTICE SMPINFO"getSmpMap: ACPI: %d valid CPU entries.\n",
 		nEntries);
 
-	ret = new sZkcmmpMapS;
+	ret = new sZkcmSmpMap;
 	if (ret == NULL)
 	{
 		printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP map.\n");
 		return NULL;
 	};
 
-	ret->entries = new sZkcmmpMapEntryS[nEntries];
+	ret->entries = new sZkcmMemMapEntry[nEntries];
 	if (ret->entries == NULL)
 	{
 		delete ret;
@@ -356,7 +356,7 @@ tryMpTables:
 		printf(NOTICE SMPINFO"getSmpMap: %d valid CPU entries in MP "
 			"config tables.\n", nEntries);
 
-		ret = new sZkcmmpMapS;
+		ret = new sZkcmSmpMap;
 		if (ret == NULL)
 		{
 			printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "
@@ -365,7 +365,7 @@ tryMpTables:
 			return NULL;
 		};
 
-		ret->entries = new sZkcmmpMapEntryS[nEntries];
+		ret->entries = new sZkcmMemMapEntry[nEntries];
 		if (ret->entries == NULL)
 		{
 			printf(ERROR SMPINFO"getSmpMap: Failed to alloc SMP "

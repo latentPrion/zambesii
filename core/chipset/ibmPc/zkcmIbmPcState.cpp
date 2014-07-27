@@ -1,5 +1,5 @@
 
 #include "zkcmIbmPcState.h"
 
-ibmPcChipsetStateS		ibmPcState;
+sIbmPcChipsetState		ibmPcState;
 

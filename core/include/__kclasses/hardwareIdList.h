@@ -83,7 +83,7 @@ public:
 	void dump(void);
 
 public:
-	struct arrayNodeS
+	struct sArrayNode
 	{
 		sarch_t		next;
 		uarch_t		flags;
@@ -95,7 +95,7 @@ private:
 
 	struct sArrayState
 	{
-		arrayNodeS	*arr;
+		sArrayNode	*arr;
 		/**	EXPLANATION:
 		 * maxIndex: Current last valid (occupied) index in the array.
 		 * firstValidIndex: current first valid index in the array.

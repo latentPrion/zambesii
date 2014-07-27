@@ -6,7 +6,7 @@
 
 namespace debug
 {
-	struct stackDescriptorS
+	struct sStackDescriptor
 	{
 		void dump(void);
 
@@ -14,8 +14,8 @@ namespace debug
 		uarch_t		nBytes;
 	};
 
-	void getCurrentStackInfo(stackDescriptorS *desc);
-	void printStackTrace(void *startFrame, stackDescriptorS *desc);
+	void getCurrentStackInfo(sStackDescriptor *desc);
+	void printStackTrace(void *startFrame, sStackDescriptor *desc);
 	void printStackArguments(void *stackFrame, void *stackPointer);
 }
 

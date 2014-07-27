@@ -31,9 +31,9 @@ public:
 	~ZAsyncStream(void);
 
 public:
-	struct zasyncMsgS
+	struct sZAsyncMsg
 	{
-		zasyncMsgS(
+		sZAsyncMsg(
 			processId_t targetPid, ubit16 subsystem, ubit16 function,
 			uarch_t size, uarch_t flags, void *privateData)
 		:
@@ -130,7 +130,7 @@ private:
 	};
 
 	SharedResourceGroup<WaitLock, sState>	connections;
-	PtrList<ipc::dataHeaderS>	messages;
+	PtrList<ipc::sDataHeader>	messages;
 	ProcessStream			*parent;
 };
 

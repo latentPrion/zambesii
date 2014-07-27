@@ -95,8 +95,8 @@ public:
 	sarch_t disableMsiVector(uarch_t vector);
 
 	// Called only by ZKCM IRQ Control module related code.
-	void registerIrqPins(ubit16 nPins, zkcmIrqPinS *list);
-	void removeIrqPins(ubit16 nPins, zkcmIrqPinS *list);
+	void registerIrqPins(ubit16 nPins, sZkcmIrqPin *list);
+	void removeIrqPins(ubit16 nPins, sZkcmIrqPin *list);
 
 	// For debugging.
 	void dumpIrqPins(void);
@@ -115,11 +115,11 @@ private:
 	void installExceptions(void);
 
 private:
-	struct isrDescriptorS
+	struct sIsrDescriptor
 	{
 		enum driverTypeE { ZKCM=0, UDI };
 
-		isrDescriptorS(driverTypeE driverType)
+		sIsrDescriptor(driverTypeE driverType)
 		:
 		driverType(driverType), flags(0), nHandled(0)
 		{
@@ -150,11 +150,11 @@ private:
 		} api;
 	};
 
-	friend void dumpIsrDescriptor(ubit16, isrDescriptorS *);
+	friend void dumpIsrDescriptor(ubit16, sIsrDescriptor *);
 
-	struct vectorDescriptorS
+	struct sVectorDescriptor
 	{
-		vectorDescriptorS(void)
+		sVectorDescriptor(void)
 		:
 		flags(0), nUnhandled(0),
 		exception(NULL)
@@ -197,12 +197,12 @@ private:
 		 * time the kernel will be augmented with the ability to balance
 		 * the number of devices mapped to signal on the same vector.
 		 **/
-		PtrList<isrDescriptorS>	isrList;
+		PtrList<sIsrDescriptor>	isrList;
 	};
 
-	struct irqPinDescriptorS
+	struct sIrqPinDescriptor
 	{
-		irqPinDescriptorS(void)
+		sIrqPinDescriptor(void)
 		:
 		flags(0), nUnhandled(0), inService(0)
 		{}
@@ -215,11 +215,11 @@ private:
 		 * __kpin, but the kernel will eventually be equipped with the
 		 * ability to balance the number of IRQs mapped to the same pin.
 		 **/
-		PtrList<isrDescriptorS>	isrList;
+		PtrList<sIsrDescriptor>	isrList;
 	};
 
 	// Array of vector descriptors. See above.
-	vectorDescriptorS	msiIrqTable[ARCH_INTERRUPTS_NVECTORS];
+	sVectorDescriptor	msiIrqTable[ARCH_INTERRUPTS_NVECTORS];
 	// Dynamic array of __kpin descriptors. See above.
 	HardwareIdList		pinIrqTable;
 	// Counter for allocating __kpin IDs.

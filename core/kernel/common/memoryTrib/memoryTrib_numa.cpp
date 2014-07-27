@@ -44,7 +44,7 @@ static NumaMemoryBank			__kspaceMemoryBank(
 	CHIPSET_NUMA___KSPACE_BANKID);
 
 // The pointer node on the __kspace bank that points to the __kspace mem range.
-static NumaMemoryBank::rangePtrS	__kspaceRangePtrMem;
+static NumaMemoryBank::sRangePtr	__kspaceRangePtrMem;
 // The __kspace mem range, which has a frame cache and a BMP.
 static NumaMemoryRange			__kspaceMemoryRange(
 	CHIPSET_MEMORY___KSPACE_BASE,

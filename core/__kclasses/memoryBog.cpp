@@ -35,32 +35,32 @@ MemoryBog::~MemoryBog(void)
 // Transparent method of copying headers.
 void MemoryBog::moveHeaderDown(void *hdr, uarch_t nBytes)
 {
-	MemoryBog::allocHeaderS	tmp;
+	MemoryBog::sAllocHeader	tmp;
 
-	memcpy(&tmp, hdr, sizeof(MemoryBog::allocHeaderS));
+	memcpy(&tmp, hdr, sizeof(MemoryBog::sAllocHeader));
 	memcpy(
 		reinterpret_cast<void *>(
 			(uarch_t)hdr + nBytes ),
 		&tmp,
-		sizeof(MemoryBog::allocHeaderS));
+		sizeof(MemoryBog::sAllocHeader));
 }
 
 void MemoryBog::moveHeaderUp(void *hdr, uarch_t nBytes)
 {
-	MemoryBog::allocHeaderS	tmp;
+	MemoryBog::sAllocHeader	tmp;
 
 	memcpy(
 		&tmp,
 		reinterpret_cast<void *>( (uarch_t)hdr + nBytes ),
-		sizeof(MemoryBog::allocHeaderS));
+		sizeof(MemoryBog::sAllocHeader));
 
-	memcpy(hdr, &tmp, sizeof(MemoryBog::allocHeaderS));
+	memcpy(hdr, &tmp, sizeof(MemoryBog::sAllocHeader));
 }
 
 void MemoryBog::dump(void)
 {
-	bogBlockS	*block;
-	freeObjectS	*obj;
+	sBogBlock	*block;
+	sFreeObject	*obj;
 
 	printf(NOTICE MEMBOG"Dumping.\n");
 
@@ -88,8 +88,8 @@ void MemoryBog::dump(void)
 
 void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 {
-	bogBlockS	*blockTmp;
-	freeObjectS	*ret=0, *objTmp, *objTmpPrev;
+	sBogBlock	*blockTmp;
+	sFreeObject	*ret=0, *objTmp, *objTmpPrev;
 
 	if (nBytes == 0) {
 		return NULL;
@@ -97,7 +97,7 @@ void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 	nBytes = MEMORYBOG_SIZE_ROUNDUP(nBytes);
 
 	// Size of the alloc must accommodate the alloc header.
-	nBytes += sizeof(allocHeaderS);
+	nBytes += sizeof(sAllocHeader);
 
 	head.lock.acquire();
 
@@ -125,7 +125,7 @@ void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 			{
 				// Just give out the whole space in this case.
 				if ((objTmp->nBytes - nBytes)
-					<= sizeof(freeObjectS))
+					<= sizeof(sFreeObject))
 				{
 					nBytes = objTmp->nBytes;
 					if (objTmpPrev) {
@@ -143,7 +143,7 @@ void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 				{
 					objTmp->nBytes -= nBytes;
 					ret = R_CAST(
-						freeObjectS *,
+						sFreeObject *,
 						R_CAST(uarch_t, objTmp)
 							+ objTmp->nBytes );
 				};
@@ -153,19 +153,19 @@ void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 				head.lock.release();
 
 				strncpy8(
-					R_CAST(allocHeaderS *, ret)->magic,
+					R_CAST(sAllocHeader *, ret)->magic,
 					MEMBOG_MAGIC,
 					strlen8(MEMBOG_MAGIC));
 
-				R_CAST(allocHeaderS *, ret)->nBytes = nBytes;
-				R_CAST(allocHeaderS *, ret)->parent = blockTmp;
-				R_CAST(allocHeaderS *, ret)->allocatedBy =
+				R_CAST(sAllocHeader *, ret)->nBytes = nBytes;
+				R_CAST(sAllocHeader *, ret)->parent = blockTmp;
+				R_CAST(sAllocHeader *, ret)->allocatedBy =
 					__builtin_return_address(2);
 
 				return R_CAST(
 					void *,
 					R_CAST(uarch_t, ret)
-						+ sizeof(allocHeaderS) );
+						+ sizeof(sAllocHeader) );
 			};
 			objTmpPrev = objTmp;
 			objTmp = objTmp->next;
@@ -188,7 +188,7 @@ void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 
 		if (objTmp->nBytes >= nBytes)
 		{
-			if (objTmp->nBytes - nBytes <= sizeof(freeObjectS))
+			if (objTmp->nBytes - nBytes <= sizeof(sFreeObject))
 			{
 				nBytes = objTmp->nBytes;
 				ret = objTmp;
@@ -198,7 +198,7 @@ void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 			{
 				objTmp->nBytes -= nBytes;
 				ret = R_CAST(
-					freeObjectS *,
+					sFreeObject *,
 					R_CAST(uarch_t, objTmp)
 						+ objTmp->nBytes );
 			};
@@ -207,16 +207,16 @@ void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 			head.lock.release();
 
 			strncpy8(
-				((allocHeaderS *)ret)->magic,
+				((sAllocHeader *)ret)->magic,
 				MEMBOG_MAGIC, strlen8(MEMBOG_MAGIC));
 
-			((allocHeaderS *)ret)->nBytes = nBytes;
-			((allocHeaderS *)ret)->parent = blockTmp;
-			R_CAST(allocHeaderS *, ret)->allocatedBy =
+			((sAllocHeader *)ret)->nBytes = nBytes;
+			((sAllocHeader *)ret)->parent = blockTmp;
+			R_CAST(sAllocHeader *, ret)->allocatedBy =
 				__builtin_return_address(2);
 
 			return reinterpret_cast<void *>(
-				R_CAST(uarch_t, ret) + sizeof(allocHeaderS) );
+				R_CAST(uarch_t, ret) + sizeof(sAllocHeader) );
 		};
 	};
 
@@ -226,9 +226,9 @@ void *MemoryBog::allocate(uarch_t nBytes, uarch_t flags)
 
 void MemoryBog::free(void *_mem)
 {
-	allocHeaderS	*mem;
-	bogBlockS	*block;
-	freeObjectS	*objTmp, *prevObj;
+	sAllocHeader	*mem;
+	sBogBlock	*block;
+	sFreeObject	*objTmp, *prevObj;
 	uarch_t		nBytesTmp;
 
 	/**	EXPLANATION:
@@ -236,8 +236,8 @@ void MemoryBog::free(void *_mem)
 	 * been corrupted, or the memory isn't a bad free, then as quickly as
 	 * possible, locate the insertion point for the object and free.
 	 **/
-	mem = reinterpret_cast<allocHeaderS *>(
-		reinterpret_cast<uarch_t>( _mem ) - sizeof(allocHeaderS) );
+	mem = reinterpret_cast<sAllocHeader *>(
+		reinterpret_cast<uarch_t>( _mem ) - sizeof(sAllocHeader) );
 
 	if (mem == NULL) {
 		return;
@@ -278,39 +278,39 @@ void MemoryBog::free(void *_mem)
 		if ((void *)mem < (void *)objTmp)
 		{
 			nBytesTmp = mem->nBytes;
-			((freeObjectS *)mem)->next = objTmp;
-			((freeObjectS *)mem)->nBytes = nBytesTmp;
+			((sFreeObject *)mem)->next = objTmp;
+			((sFreeObject *)mem)->nBytes = nBytesTmp;
 
 			// Concatenate forward.
 			if ((R_CAST(uarch_t, mem)
-				+ R_CAST(freeObjectS*, mem)->nBytes)
+				+ R_CAST(sFreeObject*, mem)->nBytes)
 				== R_CAST(uarch_t, objTmp))
 			{
-				R_CAST(freeObjectS *, mem)->nBytes +=
+				R_CAST(sFreeObject *, mem)->nBytes +=
 					objTmp->nBytes;
 
-				R_CAST(freeObjectS *, mem)->next = objTmp->next;
+				R_CAST(sFreeObject *, mem)->next = objTmp->next;
 			};
 
 			if (prevObj != NULL)
 			{
-				prevObj->next = R_CAST(freeObjectS *, mem);
+				prevObj->next = R_CAST(sFreeObject *, mem);
 
 				// Concatenate backward.
 				if ((R_CAST(uarch_t, prevObj) + prevObj->nBytes)
 					== R_CAST(uarch_t, mem))
 				{
 					prevObj->nBytes +=
-						R_CAST(freeObjectS *, mem)
+						R_CAST(sFreeObject *, mem)
 							->nBytes;
 
 					prevObj->next =
-						R_CAST(freeObjectS *, mem)
+						R_CAST(sFreeObject *, mem)
 							->next;
 				};
 			}
 			else {
-				block->firstObject = R_CAST(freeObjectS *, mem);
+				block->firstObject = R_CAST(sFreeObject *, mem);
 			};
 			block->refCount--;
 
@@ -329,15 +329,15 @@ void MemoryBog::free(void *_mem)
 	{
 		// Adding at the end of the list.
 		nBytesTmp = mem->nBytes;
-		prevObj->next = (freeObjectS *)mem;
-		R_CAST(freeObjectS *, mem)->next = NULL;
-		R_CAST(freeObjectS *, mem)->nBytes = nBytesTmp;
+		prevObj->next = (sFreeObject *)mem;
+		R_CAST(sFreeObject *, mem)->next = NULL;
+		R_CAST(sFreeObject *, mem)->nBytes = nBytesTmp;
 
 		if ((R_CAST(uarch_t, prevObj) + prevObj->nBytes)
 			== R_CAST(uarch_t, mem))
 		{
-			prevObj->nBytes += R_CAST(freeObjectS *, mem)->nBytes;
-			prevObj->next = R_CAST(freeObjectS *, mem)->next;
+			prevObj->nBytes += R_CAST(sFreeObject *, mem)->nBytes;
+			prevObj->next = R_CAST(sFreeObject *, mem)->next;
 		}
 		block->refCount--;
 
@@ -348,9 +348,9 @@ void MemoryBog::free(void *_mem)
 	{
 		// List is empty. Just add and terminal 'next' ptr.
 		nBytesTmp = mem->nBytes;
-		R_CAST(freeObjectS *, mem)->nBytes = nBytesTmp;
-		R_CAST(freeObjectS *, mem)->next = NULL;
-		block->firstObject = R_CAST(freeObjectS *, mem);
+		R_CAST(sFreeObject *, mem)->nBytes = nBytesTmp;
+		R_CAST(sFreeObject *, mem)->next = NULL;
+		block->firstObject = R_CAST(sFreeObject *, mem);
 		block->refCount--;
 
 		head.lock.release();
@@ -364,7 +364,7 @@ error_t MemoryBog::checkAllocations(sarch_t nBytes)
 
 	head.lock.acquire();
 
-	for (bogBlockS *currBlock=head.rsrc;
+	for (sBogBlock *currBlock=head.rsrc;
 		currBlock != NULL;
 		currBlock = currBlock->next)
 	{
@@ -372,7 +372,7 @@ error_t MemoryBog::checkAllocations(sarch_t nBytes)
 		union
 		{
 			ubit8		*byte;
-			allocHeaderS	*allocation;
+			sAllocHeader	*allocation;
 		} cursor;
 
 		/**	EXPLANATION:
@@ -383,8 +383,8 @@ error_t MemoryBog::checkAllocations(sarch_t nBytes)
 		 * any that look suspicious. We have to locate all alloc headers
 		 * and check them.
 		 **/
-		start = &((ubit8 *)currBlock)[blockSize - sizeof(allocHeaderS)];
-		end = start - (nBytes - sizeof(allocHeaderS));
+		start = &((ubit8 *)currBlock)[blockSize - sizeof(sAllocHeader)];
+		end = start - (nBytes - sizeof(sAllocHeader));
 
 		// Remember we're actually progressing backwards in memory.
 		for (cursor.byte=start;
@@ -396,7 +396,7 @@ error_t MemoryBog::checkAllocations(sarch_t nBytes)
 				MEMBOG_MAGIC, strlen8(MEMBOG_MAGIC)) != 0)
 				{ continue; };
 
-			cursor.byte -= offsetof(allocHeaderS, magic);
+			cursor.byte -= offsetof(sAllocHeader, magic);
 			if (strncmp8(cursor.byte, MEMBOG_MAGIC, strlen8(MEMBOG_MAGIC))==0)
 			{
 				printf(NOTICE"Problem!\n");
@@ -423,14 +423,14 @@ error_t MemoryBog::checkAllocations(sarch_t nBytes)
 	return ret;
 }
 
-MemoryBog::bogBlockS *MemoryBog::getNewBlock(void)
+MemoryBog::sBogBlock *MemoryBog::getNewBlock(void)
 {
-	bogBlockS	*ret;
+	sBogBlock	*ret;
 
 	ret = new (sourceStream->memAlloc(
 		PAGING_BYTES_TO_PAGES(
-			blockSize + sizeof(bogBlockS)), MEMALLOC_PURE_VIRTUAL))
-		bogBlockS;
+			blockSize + sizeof(sBogBlock)), MEMALLOC_PURE_VIRTUAL))
+		sBogBlock;
 
 	if (ret == NULL) {
 		return NULL;
@@ -438,8 +438,8 @@ MemoryBog::bogBlockS *MemoryBog::getNewBlock(void)
 
 	ret->next = NULL;
 	ret->refCount = 0;
-	ret->firstObject = R_CAST(freeObjectS *,
-		( R_CAST(uarch_t, ret) + sizeof(bogBlockS)) );
+	ret->firstObject = R_CAST(sFreeObject *,
+		( R_CAST(uarch_t, ret) + sizeof(sBogBlock)) );
 
 	ret->firstObject->nBytes = blockSize;
 	ret->firstObject->next = NULL;

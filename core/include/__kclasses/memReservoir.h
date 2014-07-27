@@ -58,7 +58,7 @@ private:
 		Heap		**ptrs;
 		uarch_t		nHeaps;
 	};
-	struct reservoirHeaderS
+	struct sReservoirHeader
 	{
 		// Modifying this has consequences in the heap.
 		uarch_t		magic;

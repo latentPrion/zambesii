@@ -19,14 +19,14 @@
 extern udi_init_t	zramdisk_init_info;
 extern udi_mei_init_t	udi_gio_meta_info;
 
-const driverInitEntryS		driverInitInfo[] =
+const sDriverInitEntry		driverInitInfo[] =
 {
 	{ CC"zramdisk", &zramdisk_init_info },
 	// Shall always be terminated with the NULL entry.
 	{ NULL, NULL }
 };
 
-const metaInitEntryS		metaInitInfo[] =
+const sMetaInitEntry		metaInitInfo[] =
 {
 	{ CC"udi_gio", &udi_gio_meta_info },
 	{ CC"zbz_root", &udi_gio_meta_info },

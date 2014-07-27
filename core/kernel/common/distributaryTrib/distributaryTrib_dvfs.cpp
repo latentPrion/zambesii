@@ -7,7 +7,7 @@
 
 
 dvfs::distributaryINode::distributaryINode(
-	const distributaryDescriptorS *descriptor, typeE type
+	const sDistributaryDescriptor *descriptor, typeE type
 	)
 :
 type(type), currentlyRunning(0),

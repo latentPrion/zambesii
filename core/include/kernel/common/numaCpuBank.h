@@ -45,7 +45,7 @@ public:
 	// A bitmap of all the CPUs on the bank. Initialize with initialize().
 	Bitmap		cpus;
 
-	struct memProximityEntryS
+	struct sMemProximityEntry
 	{
 		numaBankId_t	bankId;
 		sbit32		acpiProximityFactor;
@@ -57,7 +57,7 @@ public:
 	 * latency. The implication is that banks that aren't reachable aren't
 	 * listed.
 	 **/
-	SortedPtrDblList<memProximityEntryS, sTime>
+	SortedPtrDblList<sMemProximityEntry, sTime>
 		memProximityMatrix;
 
 	ubit32		capacity;

@@ -136,7 +136,7 @@ status_t i8254PitC::isr(ZkcmDeviceBase *self, ubit32 flags)
 {
 	(void)		flags;
 	ubit32		devFlags;
-	zkcmTimerEventS	*irqEvent;
+	sZkcmTimerEvent	*irqEvent;
 	i8254PitC	*device;
 	error_t		err;
 	modeE		mode;

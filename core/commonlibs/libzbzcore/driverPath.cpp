@@ -52,7 +52,7 @@ error_t __klzbzcore::driver::u0::getThreadDevicePath(
 }
 
 error_t __klzbzcore::driver::u0::regionInitInd(
-	__klzbzcore::driver::__kcall::callerContextS *ctxt, ubit32 function
+	__klzbzcore::driver::__kcall::sCallerContext *ctxt, ubit32 function
 	)
 {
 	fplainn::Device		*dev;
@@ -132,12 +132,12 @@ void __klzbzcore::driver::main_handleU0Request(
 
 	case MAINTHREAD_U0_REGION_INIT_COMPLETE_IND:
 	case MAINTHREAD_U0_REGION_INIT_FAILURE_IND:
-		__kcall::callerContextS		*ctxt;
+		__kcall::sCallerContext		*ctxt;
 
 		/* u0::regionInitInd() calls instantiateDevice1()
 		 * if all the regions successfully initialize.
 		 **/
-		ctxt = (__kcall::callerContextS *)msgIt->header.privateData;
+		ctxt = (__kcall::sCallerContext *)msgIt->header.privateData;
 		err = u0::regionInitInd(
 			ctxt, msgIt->header.function);
 
@@ -161,15 +161,15 @@ void __klzbzcore::driver::main_handleU0Request(
 }
 
 void __klzbzcore::driver::main_handleKernelCall(
-	Floodplainn::zudiKernelCallMsgS *msg
+	Floodplainn::sZudiKernelCallMsg *msg
 	)
 {
 	error_t			err;
 
 	switch (msg->command)
 	{
-	case Floodplainn::zudiKernelCallMsgS::CMD_INSTANTIATE_DEVICE:
-		__kcall::callerContextS		*callerContext;
+	case Floodplainn::sZudiKernelCallMsg::CMD_INSTANTIATE_DEVICE:
+		__kcall::sCallerContext		*callerContext;
 
 		/* Sent by the kernel when it wishes to create a new instance
 		 * of a device that is to be serviced by this driver process.
@@ -180,7 +180,7 @@ void __klzbzcore::driver::main_handleKernelCall(
 		 * correct source thread, with its privateData info preserved.
 		 **/
 		// TODO: remove, artifact.
-		callerContext = new __kcall::callerContextS(msg);
+		callerContext = new __kcall::sCallerContext(msg);
 		if (callerContext == NULL)
 		{
 			printf(ERROR LZBZCORE"drvPath: process__kcall: "
@@ -216,7 +216,7 @@ void __klzbzcore::driver::main_handleKernelCall(
 }
 
 void __klzbzcore::driver::main_handleMgmtCall(
-	Floodplainn::zudiMgmtCallMsgS *msg
+	Floodplainn::sZudiMgmtCallMsg *msg
 	)
 {
 	error_t		err;
@@ -224,15 +224,15 @@ void __klzbzcore::driver::main_handleMgmtCall(
 	(void)err;
 	switch (msg->mgmtOp)
 	{
-	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_USAGE:
+	case Floodplainn::sZudiMgmtCallMsg::MGMTOP_USAGE:
 		err = __kcall::instantiateDevice2(
-			(__klzbzcore::driver::__kcall::callerContextS *)
+			(__klzbzcore::driver::__kcall::sCallerContext *)
 				msg->header.privateData);
 
 		break;
-	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_ENUMERATE:
-	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_DEVMGMT:
-	case Floodplainn::zudiMgmtCallMsgS::MGMTOP_FINAL_CLEANUP:
+	case Floodplainn::sZudiMgmtCallMsg::MGMTOP_ENUMERATE:
+	case Floodplainn::sZudiMgmtCallMsg::MGMTOP_DEVMGMT:
+	case Floodplainn::sZudiMgmtCallMsg::MGMTOP_FINAL_CLEANUP:
 	default:
 		printf(WARNING LZBZCORE"drvPath: handleMgmtCall: unknown "
 			"management op %d\n",
@@ -297,14 +297,14 @@ error_t __klzbzcore::driver::main(Thread *self)
 			{
 			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
 				main_handleKernelCall(
-					(Floodplainn::zudiKernelCallMsgS *)
+					(Floodplainn::sZudiKernelCallMsg *)
 						msgIt.get());
 
 				break;
 
 			case MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL:
 				main_handleMgmtCall(
-					(Floodplainn::zudiMgmtCallMsgS *)
+					(Floodplainn::sZudiMgmtCallMsg *)
 						msgIt.get());
 
 				break;

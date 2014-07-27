@@ -17,8 +17,8 @@ public:
 	sarch_t checkSmpSanity(void);
 	error_t setSmpMode(void);
 	cpu_t getBspId(void);
-	struct sZkcmmpMapS *getSmpMap(void);
-	struct zkcmNumaMapS *getNumaMap(void);
+	struct sZkcmSmpMap *getSmpMap(void);
+	struct sZkcmNumaMap *getNumaMap(void);
 	status_t powerControl(cpu_t cpuId, ubit8 command, uarch_t flags);
 };
 

@@ -15,7 +15,7 @@
 
 #ifndef __ASM__
 
-struct multibootHeaderS
+struct sMultibootHeader
 {
 	//Must be MULTIBOOT_MAGIC - see above.
 	ubit32 magic;
@@ -55,7 +55,7 @@ struct sElfSectionHeaderTable
 };
 
 //This is the structure of the data the Multiboot Bootloader passes to the OS.
-struct multibootDataS
+struct sMultibootData
 {
 	ubit32 flags;
 	ubit32	mem_lower;
@@ -85,7 +85,7 @@ struct Module
 /* The memory map. Be careful that the offset 0 is base_addr_low
  * but no size.
  **/
-struct memoryMapS
+struct sMemoryMap
 {
 	ubit32	size;
 	ubit32	base_addr_low;

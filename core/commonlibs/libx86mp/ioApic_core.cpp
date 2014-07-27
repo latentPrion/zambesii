@@ -22,17 +22,17 @@ x86IoApic::IoApic::~IoApic(void)
 	irqPinList = NULL;
 }
 
-x86IoApic::IoApic::ioApicRegspaceS *x86IoApic::IoApic::mapIoApic(
+x86IoApic::IoApic::sIoApicRegspace *x86IoApic::IoApic::mapIoApic(
 	paddr_t paddr
 	)
 {
-	ioApicRegspaceS		*ret;
+	sIoApicRegspace		*ret;
 	status_t		status;
 
 	/* Allocates a page and maps it to the paddr of an IO APIC.
 	 **/
 	// IO-APICs are always 1KB aligned.
-	ret = (ioApicRegspaceS *)processTrib.__kgetStream()
+	ret = (sIoApicRegspace *)processTrib.__kgetStream()
 		->getVaddrSpaceStream()->getPages(1);
 
 	if (ret == NULL) { return ret; };
@@ -57,19 +57,19 @@ x86IoApic::IoApic::ioApicRegspaceS *x86IoApic::IoApic::mapIoApic(
 		return NULL;
 	};
 
-	ret = WPRANGER_ADJUST_VADDR(ret, paddr, ioApicRegspaceS *);
+	ret = WPRANGER_ADJUST_VADDR(ret, paddr, sIoApicRegspace *);
 	return ret;
 }
 
-void x86IoApic::IoApic::unmapIoApic(ioApicRegspaceS *ioApic)
+void x86IoApic::IoApic::unmapIoApic(sIoApicRegspace *ioApic)
 {
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(ioApic, 1);
 }
 
 /*
-static zkcmIrqPinS		tmp;
+static sZkcmIrqPin		tmp;
 
-static void sortListBy__kids(ubit8 nPins, zkcmIrqPinS *const list)
+static void sortListBy__kids(ubit8 nPins, sZkcmIrqPin *const list)
 {
 	for (ubit8 i=0; i<nPins-1; )
 	{
@@ -106,7 +106,7 @@ error_t x86IoApic::IoApic::initialize(void)
 	if (err != ERROR_SUCCESS) { return err; };
 
 	// Allocate irqPinList.
-	irqPinList = new zkcmIrqPinS[nPins];
+	irqPinList = new sZkcmIrqPin[nPins];
 	if (irqPinList == NULL)
 	{
 		printf(ERROR x86IOAPIC"%d: Failed to allocate IRQ pin list."

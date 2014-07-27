@@ -56,7 +56,7 @@ public:
 
 public:
 	ubit16		nPins;
-	zkcmIrqPinS	*irqPinList;
+	sZkcmIrqPin	*irqPinList;
 	ubit16		__kpinBase;
 };
 

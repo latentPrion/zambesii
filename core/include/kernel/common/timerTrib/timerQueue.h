@@ -42,7 +42,7 @@
 
 #define TIMERQUEUE		"timerQ "
 
-struct zkcmTimerEventS;
+struct sZkcmTimerEvent;
 class TimerTrib;
 
 class TimerQueue
@@ -65,8 +65,8 @@ private:
 	sarch_t isLatched(void) { return device != NULL; };
 	ZkcmTimerDevice *getDevice(void) { return device; };
 
-	error_t insert(TimerStream::timerMsgS *obj);
-	sarch_t cancel(TimerStream::timerMsgS *obj);
+	error_t insert(TimerStream::sTimerMsg *obj);
+	sarch_t cancel(TimerStream::sTimerMsg *obj);
 
 	ubit32 getCurrentPeriod(void) { return currentPeriod; };
 	status_t setCurrentPeriod(ubit32 p) { currentPeriod = p; return 0; };
@@ -95,7 +95,7 @@ private:
 	 * PCB, before waking the thread that registered to listen for the
 	 * event (if any).
 	 **/
-	void tick(zkcmTimerEventS *timerIrqEvent);
+	void tick(sZkcmTimerEvent *timerIrqEvent);
 
 	/* These two are back-ends for the methods declared in TimerTrib.
 	 **/
@@ -158,7 +158,7 @@ private:
 	ubit32		currentPeriod, nativePeriod;
 
 	// The actual internal queue instance for timer request objects.
-	SortedPtrDblList<TimerStream::timerMsgS, sTimestamp>
+	SortedPtrDblList<TimerStream::sTimerMsg, sTimestamp>
 		requestQueue;
 
 	// Used to prevent a series of race conditions.

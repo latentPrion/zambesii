@@ -3,7 +3,7 @@
 #include <__kstdlib/__ktypes.h>
 
 
-static chipsetRegionMapEntryS	chipsetRegions[] =
+static sChipsetRegionMapEntry	chipsetRegions[] =
 {
 	{
 		// DMA region. We reserve 2MB.
@@ -21,11 +21,11 @@ static chipsetRegionMapEntryS	chipsetRegions[] =
 #endif
 };
 
-static chipsetRegionMapS	_chipsetRegionMap =
+static sChipsetRegionMap	_chipsetRegionMap =
 {
 	chipsetRegions,
 	CHIPSET_MEMORY_NREGIONS
 };
 
-chipsetRegionMapS		*chipsetRegionMap = &_chipsetRegionMap;
+sChipsetRegionMap		*chipsetRegionMap = &_chipsetRegionMap;
 

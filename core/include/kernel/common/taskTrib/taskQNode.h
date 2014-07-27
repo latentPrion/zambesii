@@ -3,10 +3,10 @@
 
 	#include <kernel/common/thread.h>
 
-struct taskQNodeS
+struct sTaskQueueNode
 {
 	Task		*task;
-	taskQNodeS	*prev, *next;
+	sTaskQueueNode	*prev, *next;
 };	
 
 #endif

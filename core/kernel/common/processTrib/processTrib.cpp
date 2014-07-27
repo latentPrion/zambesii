@@ -17,15 +17,15 @@
 #include <__kthreads/__korientation.h>
 
 
-prioClassS	prioClasses[PRIOCLASS_NCLASSES];
+sPriorityClass	prioClasses[PRIOCLASS_NCLASSES];
 
 void ProcessTrib::fillOutPrioClasses(void)
 {
-	new (&prioClasses[0]) prioClassS(CC"Idle", 0);
-	new (&prioClasses[1]) prioClassS(CC"Low", 4);
-	new (&prioClasses[2]) prioClassS(CC"Moderate", 8);
-	new (&prioClasses[3]) prioClassS(CC"High", 12);
-	new (&prioClasses[4]) prioClassS(CC"Critical", 16);
+	new (&prioClasses[0]) sPriorityClass(CC"Idle", 0);
+	new (&prioClasses[1]) sPriorityClass(CC"Low", 4);
+	new (&prioClasses[2]) sPriorityClass(CC"Moderate", 8);
+	new (&prioClasses[3]) sPriorityClass(CC"High", 12);
+	new (&prioClasses[4]) sPriorityClass(CC"Critical", 16);
 }
 
 static inline error_t resizeAndMergeBitmaps(Bitmap *dest, Bitmap *src)
@@ -176,8 +176,8 @@ static ubit32 getCallbackFunctionNo(Thread *self)
 void ProcessTrib::commonEntry(void *)
 {
 	Thread						*self;
-	ProcessStream::initializationBlockSizeInfoS	initBlockSizes;
-	ProcessStream::initializationBlockS		*initBlock;
+	ProcessStream::sInitializationBlockizeInfoS	initBlockSizes;
+	ProcessStream::sInitializationBlock		*initBlock;
 	ProcessStream::executableFormatE		executableFormat;
 	MessageStream::sHeader				*callbackMessage;
 	uarch_t						initBlockNPages;
@@ -225,14 +225,14 @@ void ProcessTrib::commonEntry(void *)
 	// Allocate initialization block memory.
 	self->parent->getInitializationBlockSizeInfo(&initBlockSizes);
 	initBlockNPages = PAGING_BYTES_TO_PAGES(
-		sizeof(ProcessStream::initializationBlockS)
+		sizeof(ProcessStream::sInitializationBlock)
 			+ initBlockSizes.fullNameSize + 1
 			+ initBlockSizes.workingDirectorySize + 1
 			+ initBlockSizes.argumentsSize + 1);
 
 	initBlock = new (
 		self->parent->memoryStream.memAlloc(initBlockNPages))
-		ProcessStream::initializationBlockS;
+		ProcessStream::sInitializationBlock;
 
 	initBlock->fullName = (utf8Char *)&initBlock[1];
 	initBlock->workingDirectory =

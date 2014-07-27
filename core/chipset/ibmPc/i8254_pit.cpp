@@ -9,7 +9,7 @@
  **/
 typedef udi_ubit16_t	timer_clk_t;
 
-struct timerRDataS
+struct sTimerRData
 {
 	enum timerIrqStatusE { IRQ_DISABLED, IRQ_ENABLED };
 	enum timerApiStatusE { API_DISABLED, API_ENABLED };
@@ -26,7 +26,7 @@ struct timerRDataS
 	udi_time_t		currentTimeoutVal;
 };
 
-struct speakerRDataS
+struct sSpeakerRData
 {
 };
 

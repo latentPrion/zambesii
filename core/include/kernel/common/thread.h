@@ -64,7 +64,7 @@ public:
 	void			*privateData;
 
 	// Scheduler related.
-	prioClassS		*schedPrio, internalPrio;
+	sPriorityClass		*schedPrio, internalPrio;
 	schedPolicyE		schedPolicy;
 	ubit8			schedOptions;
 	ubit8			schedFlags;
@@ -156,7 +156,7 @@ public:
 	ubit16			nLocksHeld;
 	RegisterContext	*context;
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
-	tlbContextS		tlbContext;
+	sTlbContext		tlbContext;
 #endif
 #if __SCALING__ >= SCALING_SMP
 	Bitmap			cpuAffinity;

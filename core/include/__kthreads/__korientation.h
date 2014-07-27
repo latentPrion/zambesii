@@ -33,7 +33,7 @@
 
 #define ORIENT				"Orientation: "
 
-extern "C" void __korientationInit(ubit32 mbMagic, multibootDataS *mbData);
+extern "C" void __korientationInit(ubit32 mbMagic, sMultibootData *mbData);
 extern "C" void __korientationMain(void);
 
 class Thread;

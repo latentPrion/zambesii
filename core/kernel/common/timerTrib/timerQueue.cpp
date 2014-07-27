@@ -101,7 +101,7 @@ void TimerQueue::disable(void)
 	else { device->disable(); };
 }
 
-error_t TimerQueue::insert(TimerStream::timerMsgS *request)
+error_t TimerQueue::insert(TimerStream::sTimerMsg *request)
 {
 	error_t		ret;
 
@@ -117,7 +117,7 @@ error_t TimerQueue::insert(TimerStream::timerMsgS *request)
 	return ERROR_SUCCESS;
 }
 
-sarch_t TimerQueue::cancel(TimerStream::timerMsgS *request)
+sarch_t TimerQueue::cancel(TimerStream::sTimerMsg *request)
 {
 	/**	FIXME:
 	 * This function is intended to return 1 if the item being canceled was
@@ -134,12 +134,12 @@ sarch_t TimerQueue::cancel(TimerStream::timerMsgS *request)
 	return 1;
 }
 
-static sarch_t isPerCpuCreator(TimerStream::timerMsgS *request)
+static sarch_t isPerCpuCreator(TimerStream::sTimerMsg *request)
 {
 	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
 }
 
-static ProcessStream *getCreatorProcess(TimerStream::timerMsgS *request)
+static ProcessStream *getCreatorProcess(TimerStream::sTimerMsg *request)
 {
 	// If creator was a per-cpu thread, the creator process is the kernel.
 	if (isPerCpuCreator(request)) {
@@ -150,12 +150,12 @@ static ProcessStream *getCreatorProcess(TimerStream::timerMsgS *request)
 	return processTrib.getStream(request->header.sourceId);
 }
 
-inline static sarch_t isPerCpuTarget(TimerStream::timerMsgS *request)
+inline static sarch_t isPerCpuTarget(TimerStream::sTimerMsg *request)
 {
 	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
-static ProcessStream *getTargetProcess(TimerStream::timerMsgS *request)
+static ProcessStream *getTargetProcess(TimerStream::sTimerMsg *request)
 {
 	if (isPerCpuTarget(request)) {
 		return processTrib.__kgetStream();
@@ -164,9 +164,9 @@ static ProcessStream *getTargetProcess(TimerStream::timerMsgS *request)
 	return processTrib.getStream(request->header.targetId);
 }
 
-void TimerQueue::tick(zkcmTimerEventS *event)
+void TimerQueue::tick(sZkcmTimerEvent *event)
 {
-	TimerStream::timerMsgS	*request;
+	TimerStream::sTimerMsg	*request;
 	void			*targetObject=NULL;
 	ProcessStream		*targetProcess, *creatorProcess;
 	sarch_t			requestQueueWasEmpty=1;

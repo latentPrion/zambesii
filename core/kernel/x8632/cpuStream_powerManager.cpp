@@ -139,7 +139,7 @@ void cpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 		loopAgain = 0;
 
 		processTrib.__kgetStream()->timerStream.pullEvent(
-			0, (TimerStream::timerMsgS *)&event);
+			0, (TimerStream::sTimerMsg *)&event);
 
 		cs = reinterpret_cast<cpuStream *>( event.header.privateData );
 

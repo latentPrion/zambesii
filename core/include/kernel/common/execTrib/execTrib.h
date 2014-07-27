@@ -46,15 +46,15 @@ public:
 	error_t initialize(void);
 
 public:
-	executableParserS *identify(void *buff);
+	sExecutableParser *identify(void *buff);
 
 private:
-	struct executableFormatS
+	struct sExecutableFormat
 	{
-		executableParserS	*desc;
+		sExecutableParser	*desc;
 		uarch_t			flags;
 	};
-	executableFormatS	parsers[EXECTRIB_MAX_NPARSERS];
+	sExecutableFormat	parsers[EXECTRIB_MAX_NPARSERS];
 };
 
 extern ExecTrib		execTrib;

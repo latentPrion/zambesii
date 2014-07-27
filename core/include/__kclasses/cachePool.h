@@ -38,7 +38,7 @@ class CachePool
 public AllocatorBase
 {
 private:
-	struct cachePoolNodeS;
+	struct sCachePoolNode;
 
 public:
 	CachePool(void);
@@ -53,17 +53,17 @@ public:
 	void destroyCache(SlamCache *cache);
 
 private:
-	status_t insert(cachePoolNodeS *node);
+	status_t insert(sCachePoolNode *node);
 	void remove(uarch_t objSize);
 
 private:
-	struct cachePoolNodeS
+	struct sCachePoolNode
 	{
-		cachePoolNodeS	*next;
+		sCachePoolNode	*next;
 		SlamCache	*item;
 	};
 
-	SharedResourceGroup<WaitLock, cachePoolNodeS *>	head;
+	SharedResourceGroup<WaitLock, sCachePoolNode *>	head;
 	uarch_t		nCaches;
 	SlamCache	poolNodeCache;
 };

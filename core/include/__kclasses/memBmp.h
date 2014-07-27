@@ -69,11 +69,11 @@ public:
 	uarch_t		bmpSize;
 	paddr_t		baseAddr, endAddr;
 
-	struct bmpPtrsS
+	struct sBmpState
 	{
 		uarch_t		*bmp, lastAllocIndex;
 	};
-	SharedResourceGroup<WaitLock, bmpPtrsS>	bmp;
+	SharedResourceGroup<WaitLock, sBmpState>	bmp;
 };
 
 

@@ -8,7 +8,7 @@
  * at compile time.
  **/
 
-struct zkcmMemConfigS
+struct sZkcmMemoryConfig
 {
 	// Just in case some chipset doesn't have memory starting at paddr 0x0.
 	paddr_t		memBase;

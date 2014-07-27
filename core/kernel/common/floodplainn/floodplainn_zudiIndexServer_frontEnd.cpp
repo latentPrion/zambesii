@@ -12,7 +12,7 @@ error_t zuiServer::detectDriverReq(
 	void *privateData, ubit32 flags
 	)
 {
-	HeapObject<zuiServer::indexMsgS>	request;
+	HeapObject<zuiServer::sIndexMsg>	request;
 	Task				*currTask;
 
 	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
@@ -21,7 +21,7 @@ error_t zuiServer::detectDriverReq(
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
 	// Allocate and queue the new request.
-	request = new zuiServer::indexMsgS(
+	request = new zuiServer::sIndexMsg(
 		ZUISERVER_DETECTDRIVER_REQ, devicePath, index);
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
@@ -33,7 +33,7 @@ error_t zuiServer::detectDriverReq(
 
 error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 {
-	HeapObject<zuiServer::indexMsgS>	request;
+	HeapObject<zuiServer::sIndexMsg>	request;
 	Task				*currTask;
 
 	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
@@ -41,7 +41,7 @@ error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new zuiServer::indexMsgS(
+	request = new zuiServer::sIndexMsg(
 		ZUISERVER_LOADDRIVER_REQ, devicePath,
 		zuiServer::INDEX_KERNEL);
 
@@ -54,14 +54,14 @@ error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 
 void zuiServer::loadDriverRequirementsReq(void *privateData)
 {
-	HeapObject<zuiServer::indexMsgS>	request;
+	HeapObject<zuiServer::sIndexMsg>	request;
 	Task				*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 	if (currTask->parent->getType() != ProcessStream::DRIVER)
 		{ return; };
 
-	request = new zuiServer::indexMsgS(
+	request = new zuiServer::sIndexMsg(
 		ZUISERVER_LOAD_REQUIREMENTS_REQ,
 		currTask->parent->fullName,
 		zuiServer::INDEX_KERNEL);
@@ -77,12 +77,12 @@ void zuiServer::setNewDeviceActionReq(
 	newDeviceActionE action, void *privateData
 	)
 {
-	HeapObject<zuiServer::indexMsgS>	request;
+	HeapObject<zuiServer::sIndexMsg>	request;
 	Task			*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new zuiServer::indexMsgS(
+	request = new zuiServer::sIndexMsg(
 		ZUISERVER_SET_NEWDEVICE_ACTION_REQ, NULL,
 		zuiServer::INDEX_KERNEL, action);
 
@@ -95,12 +95,12 @@ void zuiServer::setNewDeviceActionReq(
 
 void zuiServer::getNewDeviceActionReq(void *privateData)
 {
-	HeapObject<zuiServer::indexMsgS>	request;
+	HeapObject<zuiServer::sIndexMsg>	request;
 	Task				*currTask;
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new zuiServer::indexMsgS(
+	request = new zuiServer::sIndexMsg(
 		ZUISERVER_GET_NEWDEVICE_ACTION_REQ, NULL,
 		zuiServer::INDEX_KERNEL);
 
@@ -115,7 +115,7 @@ void zuiServer::newDeviceInd(
 	utf8Char *path, indexE index, void *privateData
 	)
 {
-	HeapObject<zuiServer::indexMsgS>	request;
+	HeapObject<zuiServer::sIndexMsg>	request;
 	Task				*currTask;
 
 	if (strnlen8(path, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
@@ -126,7 +126,7 @@ void zuiServer::newDeviceInd(
 
 	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
 
-	request = new zuiServer::indexMsgS(
+	request = new zuiServer::sIndexMsg(
 		ZUISERVER_NEWDEVICE_IND, path, index);
 
 	if (request == NULL) { return; };

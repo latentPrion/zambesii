@@ -14,10 +14,10 @@ namespace zuiServer
 		NDACTION_LOAD_DRIVER, NDACTION_SPAWN_DRIVER,
 		NDACTION_INSTANTIATE };
 
-	struct indexMsgS
+	struct sIndexMsg
 	{
 	public:
-		indexMsgS(
+		sIndexMsg(
 			ubit8 command, utf8Char *path,
 			indexE index, newDeviceActionE action=NDACTION_NOTHING)
 		:

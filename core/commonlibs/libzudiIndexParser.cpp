@@ -273,7 +273,7 @@ error_t ZudiIndexParser::findDriver(
 
 error_t ZudiIndexParser::findDeviceData(
 	zui::device::sHeader *devHeader, utf8Char *attrName,
-	zui::device::attrDataS *retobj
+	zui::device::sAttrData *retobj
 	)
 {
 	error_t			ret;
@@ -295,7 +295,7 @@ error_t ZudiIndexParser::findDeviceData(
 
 error_t ZudiIndexParser::indexedGetDeviceData(
 	zui::device::sHeader *devHeader, ubit16 idx,
-	zui::device::attrDataS *retobj
+	zui::device::sAttrData *retobj
 	)
 {
 	return dataIndex.read(
@@ -375,7 +375,7 @@ error_t ZudiIndexParser::indexedGetRankAttrString(
 	)
 {
 	error_t			ret;
-	zui::rank::rankAttrS	attr;
+	zui::rank::sRankAttr	attr;
 
 	ret = dataIndex.read(
 		&attr, rankHeader->dataOff + sizeof(attr) * idx, sizeof(attr));

@@ -23,11 +23,11 @@ error_t HardwareIdList::initialize(
 	if (preallocatedMem == NULL) { return ERROR_SUCCESS; };
 
 	preAllocated = 1;
-	arr.rsrc.maxAllocatedIndex = (preallocatedSize / sizeof(arrayNodeS) > 0)
-		? preallocatedSize / sizeof(arrayNodeS) - 1
+	arr.rsrc.maxAllocatedIndex = (preallocatedSize / sizeof(sArrayNode) > 0)
+		? preallocatedSize / sizeof(sArrayNode) - 1
 		: arr.rsrc.maxAllocatedIndex;
 
-	arr.rsrc.arr = reinterpret_cast<arrayNodeS *>( preallocatedMem );
+	arr.rsrc.arr = reinterpret_cast<sArrayNode *>( preallocatedMem );
 	memset(arr.rsrc.arr, 0, preallocatedSize);
 	return ERROR_SUCCESS;
 }
@@ -142,7 +142,7 @@ error_t HardwareIdList::addItem(sarch_t index, void *item)
 {
 	uarch_t		rwFlags;
 	sarch_t		maxIndex, maxAllocatedIndex;
-	arrayNodeS	*tmp, *old;
+	sArrayNode	*tmp, *old;
 
 	arr.lock.readAcquire(&rwFlags);
 	maxIndex = arr.rsrc.maxIndex;
@@ -155,10 +155,10 @@ error_t HardwareIdList::addItem(sarch_t index, void *item)
 	{
 		tmp = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(
-				sizeof(arrayNodeS)
+				sizeof(sArrayNode)
 					* (index + 1)),
 			MEMALLOC_NO_FAKEMAP))
-				arrayNodeS;
+				sArrayNode;
 
 		if (tmp == NULL)
 		{
@@ -176,13 +176,13 @@ error_t HardwareIdList::addItem(sarch_t index, void *item)
 		{
 			memcpy(
 				tmp, arr.rsrc.arr,
-				sizeof(arrayNodeS) * (maxAllocatedIndex + 1));
+				sizeof(sArrayNode) * (maxAllocatedIndex + 1));
 		}
 		else
 		{
 			memset(
 				tmp, 0,
-				sizeof(arrayNodeS) * (maxAllocatedIndex + 1));
+				sizeof(sArrayNode) * (maxAllocatedIndex + 1));
 		};
 
 		old = arr.rsrc.arr;

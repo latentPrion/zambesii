@@ -12,7 +12,7 @@
 #define SMPSTATE_UNIPROCESSOR	0x0
 #define SMPSTATE_SMP		0x1
 
-struct ibmPcChipsetStateS
+struct sIbmPcChipsetState
 {
 	struct
 	{
@@ -31,7 +31,7 @@ struct ibmPcChipsetStateS
 	paddr_t		lapicPaddr;
 };
 
-extern ibmPcChipsetStateS	ibmPcState;
+extern sIbmPcChipsetState	ibmPcState;
 
 #endif
 

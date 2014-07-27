@@ -33,7 +33,7 @@ static void cisternnEntry(void)
 	taskTrib.dormant(self->getFullId());
 }
 
-const dvfs::distributaryDescriptorS	cisternnDescriptor=
+const dvfs::sDistributaryDescriptor	cisternnDescriptor=
 {
 	CC"cisternn", CC"Zambesii",
 	CC"Cisternn storage distributary for Zambesii",
@@ -53,7 +53,7 @@ const dvfs::distributaryDescriptorS	cisternnDescriptor=
 	0
 };
 
-const dvfs::distributaryDescriptorS	floodplainnIndexer=
+const dvfs::sDistributaryDescriptor	floodplainnIndexer=
 {
 	CC"floodplainn-indexer", CC"Zambesii",
 	CC"UDI Driver indexer and search service for Zambesii",
@@ -66,7 +66,7 @@ const dvfs::distributaryDescriptorS	floodplainnIndexer=
 	0
 };
 
-const dvfs::distributaryDescriptorS
+const dvfs::sDistributaryDescriptor
 	* const DistributaryTrib::distributaryDescriptors[] =
 {
 #ifdef CONFIG_DTRIB_CISTERNN

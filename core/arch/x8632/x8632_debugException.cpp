@@ -32,7 +32,7 @@ status_t __attribute__((noreturn)) x8632_debug(RegisterContext *regs, ubit8)
 		regs->esi, regs->edi,
 		regs->eax, regs->ebx, regs->ecx, regs->edx);
 
-	debug::stackDescriptorS		currStackDesc;
+	debug::sStackDescriptor		currStackDesc;
 
 	debug::getCurrentStackInfo(&currStackDesc);
 	if (currThread != NULL)

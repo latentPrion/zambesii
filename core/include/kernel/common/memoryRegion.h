@@ -43,7 +43,7 @@ public:
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
 
 private:
-	chipsetRegionMapEntryS	*info;
+	sChipsetRegionMapEntry	*info;
 	MemoryBmp			*memBmp;
 	AllocTable		allocTable;
 };

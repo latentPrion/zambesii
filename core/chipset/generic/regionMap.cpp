@@ -1,5 +1,5 @@
 
 #include <chipset/regionMap.h>
 
-chipsetRegionMapS	*chipsetRegionMap = 0;
+sChipsetRegionMap	*chipsetRegionMap = 0;
 

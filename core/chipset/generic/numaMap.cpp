@@ -1,4 +1,4 @@
 
 #include <chipset/numaMap.h>
 
-chipsetNumaMapS		*chipsetNumaMap = 0;
+sChipsetNumaMap		*chipsetNumaMap = 0;

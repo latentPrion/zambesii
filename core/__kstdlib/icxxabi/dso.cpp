@@ -5,7 +5,7 @@
 
 #define CXXABI_ATEXIT_MAX_NFUNCS 64
 
-struct atexitFuncTableEntryS
+struct sAtexitFuncTableEntry
 {
 	void (*func)(void *);
 	void *arg, *dsoHandle;

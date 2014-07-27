@@ -79,16 +79,16 @@ public:
 	sarch_t identifyPaddrRange(paddr_t base, paddr_t nBytes);
 
 public:
-	struct rangePtrS
+	struct sRangePtr
 	{
 		NumaMemoryRange	*range;
-		rangePtrS		*next;
+		sRangePtr		*next;
 	};
 
 	numaBankId_t	id;
 
 private:
-	SharedResourceGroup<MultipleReaderLock, rangePtrS *>	ranges;
+	SharedResourceGroup<MultipleReaderLock, sRangePtr *>	ranges;
 	SharedResourceGroup<MultipleReaderLock, NumaMemoryRange *> defRange;
 	SlamCache	rangePtrCache;
 };

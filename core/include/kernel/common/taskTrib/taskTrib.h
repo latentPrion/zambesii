@@ -32,7 +32,7 @@ public:
 	error_t schedule(Thread *thread);
 	void yield(void);
 	// Used to prevent race conditions. See comments in definition.
-	void block(Lock::operationDescriptorS *unlockDescriptor=NULL);
+	void block(Lock::sOperationDescriptor *unlockDescriptor=NULL);
 
 	// Back ends.
 	error_t dormant(Task *task, TaskContext *perCpuContext=NULL);
@@ -142,7 +142,7 @@ public:
 	void setClassQuantum(sarch_t qc, prio_t softPrio);
 
 private:
-	SharedResourceGroup<WaitLock, taskQNodeS *>	deadQ;
+	SharedResourceGroup<WaitLock, sTaskQueueNode *>	deadQ;
 
 	// Global machine scheduling statistics. Used for Oceann Zambesii.
 	ubit32		load;

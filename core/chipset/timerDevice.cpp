@@ -7,7 +7,7 @@
 
 error_t ZkcmTimerDevice::initialize(void)
 {
-	irqEventCache = cachePool.createCache(sizeof(zkcmTimerEventS));
+	irqEventCache = cachePool.createCache(sizeof(sZkcmTimerEvent));
 	if (irqEventCache == NULL)
 	{
 		printf(WARNING"ZKCM-Timer: Creating obj cache "

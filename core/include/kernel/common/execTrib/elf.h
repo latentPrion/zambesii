@@ -43,7 +43,7 @@
 #define EHDR_ID_VERSION_IDX	0x6
 #define EHDR_ID_PAD		0x7
 
-struct elfHeaderS
+struct sElfHeader
 {
 	ubit8		ident[16];
 	ubit16		type;
@@ -62,7 +62,7 @@ struct elfHeaderS
 	ubit16		shdrStrTableIndex;
 };
 
-void elfheader_dump(struct elfHeaderS *ehdr);
+void elfheader_dump(struct sElfHeader *ehdr);
 
 
 #define ESHDR_IDX_UNDEF		(0)
@@ -140,7 +140,7 @@ struct elf32_symTabEntryS
 };
 
 // This describes the machine on which the parser has been loaded.
-struct elfModuleStateS
+struct sElfModuleState
 {
 	// String passed by the kernel on initialize().
 	utf8Char	*__karchString;
@@ -153,7 +153,7 @@ struct elfModuleStateS
 	ubit32		elfWordSize;
 };
 
-extern struct elfModuleStateS	elfModuleState;
+extern struct sElfModuleState	elfModuleState;
 
 #endif
 

@@ -21,14 +21,14 @@ error_t TimerStream::createOneshotEvent(
 	uarch_t flags, void *privateData
 	)
 {
-	timerMsgS	*request, *tmp;
+	sTimerMsg	*request, *tmp;
 	error_t		ret;
 
 	if (type > TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 
-	request = new timerMsgS(
+	request = new sTimerMsg(
 		targetPid,
 		MSGSTREAM_SUBSYSTEM_TIMER, MSGSTREAM_TIMER_CREATE_ONESHOT_EVENT,
 		sizeof(*request), flags, privateData);
@@ -97,7 +97,7 @@ error_t TimerStream::createOneshotEvent(
 }
 
 error_t TimerStream::pullEvent(
-	ubit32 flags, timerMsgS *event
+	ubit32 flags, sTimerMsg *event
 	)
 {
 	error_t			ret;
@@ -122,16 +122,16 @@ error_t TimerStream::pullEvent(
 	return ERROR_SUCCESS;
 }
 
-static inline sarch_t isPerCpuTarget(TimerStream::timerMsgS *request)
+static inline sarch_t isPerCpuTarget(TimerStream::sTimerMsg *request)
 {
 	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
 void *TimerStream::timerRequestTimeoutNotification(
-	timerMsgS *request, sTimestamp *timerMsgStamp
+	sTimerMsg *request, sTimestamp *sTimerMsgtamp
 	)
 {
-	timerMsgS	*event;
+	sTimerMsg	*event;
 	error_t		ret;
 	TaskContext	*taskContext;
 
@@ -165,7 +165,7 @@ void *TimerStream::timerRequestTimeoutNotification(
 		taskContext = t->getTaskContext();
 	};
 
-	event = new timerMsgS(*request);
+	event = new sTimerMsg(*request);
 	if (event == NULL)
 	{
 		printf(ERROR TIMERSTREAM"%d: Failed to allocate event for "
@@ -178,7 +178,7 @@ void *TimerStream::timerRequestTimeoutNotification(
 			: (void *)taskContext->parent.thread;
 	};
 
-	event->actualExpirationStamp = *timerMsgStamp;
+	event->actualExpirationStamp = *sTimerMsgtamp;
 
 	// Queue event.
 	ret = taskContext->messageStream.enqueue(
@@ -202,7 +202,7 @@ void *TimerStream::timerRequestTimeoutNotification(
 
 void TimerStream::timerRequestTimeoutNotification(void)
 {
-	timerMsgS	*nextRequest;
+	sTimerMsg	*nextRequest;
 
 	/* Lock the request queue against insertions from the process to prevent
 	 * a race condition. If a process is trying to insert a request into its

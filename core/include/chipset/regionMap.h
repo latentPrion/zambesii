@@ -25,21 +25,21 @@
  * there are no memory regions.
  **/
 
-struct chipsetRegionReservedS
+struct sReservedChipsetRegion
 {
 	paddr_t		baseAddr, size;
 };
 
-struct chipsetRegionMapEntryS
+struct sChipsetRegionMapEntry
 {
 	paddr_t				baseAddr, size;
-	chipsetRegionReservedS		*reservedMap;
+	sReservedChipsetRegion		*reservedMap;
 	ubit8				nReservedEntries;
 };
 
-struct chipsetRegionMapS
+struct sChipsetRegionMap
 {
-	chipsetRegionMapEntryS		*entries;
+	sChipsetRegionMapEntry		*entries;
 	ubit8				nEntries;
 };
 
@@ -49,7 +49,7 @@ struct chipsetRegionMapS
  **/
 #include CHIPSET_INCLUDE(regionMap.h)
 
-extern chipsetRegionMapS		*chipsetRegionMap;
+extern sChipsetRegionMap		*chipsetRegionMap;
 
 #endif
 

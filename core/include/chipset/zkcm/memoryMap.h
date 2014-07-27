@@ -24,16 +24,16 @@
 #define ZKCM_MMAP_TYPE_MMIO			3
 #define ZKCM_MMAP_TYPE_FIRMWARE			4
 
-struct zkcmMemMapEntryS
+struct sZkcmMemoryMapEntryS
 {
 	paddr_t		baseAddr, size;
 	// Must be signed so it can hold the values defined above.
 	sbit8		memType;
 };
 
-struct zkcmMemMapS
+struct sZkcmMemoryMapS
 {
-	struct zkcmMemMapEntryS		*entries;
+	struct sZkcmMemoryMapEntryS		*entries;
 	ubit32				nEntries;
 };
 

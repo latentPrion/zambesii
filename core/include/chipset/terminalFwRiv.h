@@ -3,15 +3,15 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-struct ibmPc_terminalBuffS
+struct sIbmPc_TerminalBuff
 {
 	ubit8	ch;
 	ubit8	attr;
 };
 
-struct terminalFwRivS
+struct sTerminalFwRiv
 {
-	ibmPc_terminalBuffS	*buffPtr;
+	sIbmPc_TerminalBuff	*buffPtr;
 };
 
 #endif

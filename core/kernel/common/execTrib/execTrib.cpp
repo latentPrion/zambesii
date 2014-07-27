@@ -26,7 +26,7 @@ error_t ExecTrib::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-executableParserS *ExecTrib::identify(void *buff)
+sExecutableParser *ExecTrib::identify(void *buff)
 {
 	for (uarch_t i=0; i<EXECTRIB_MAX_NPARSERS; i++)
 	{

@@ -6,14 +6,14 @@
 
 CachePool::CachePool(void)
 :
-nCaches(0), poolNodeCache(sizeof(cachePoolNodeS))
+nCaches(0), poolNodeCache(sizeof(sCachePoolNode))
 {
 	head.rsrc = NULL;
 }
 
 CachePool::~CachePool(void)
 {
-	cachePoolNodeS		*cur, *tmp;
+	sCachePoolNode		*cur, *tmp;
 
 	head.lock.acquire();
 
@@ -35,7 +35,7 @@ void CachePool::dump(void)
 
 	head.lock.acquire();
 
-	for (cachePoolNodeS *cur = head.rsrc; cur != NULL; cur = cur->next)
+	for (sCachePoolNode *cur = head.rsrc; cur != NULL; cur = cur->next)
 	{
 		printf(NOTICE CACHEPOOL"Node: 0x%p, Item 0x%p, size 0x%p.\n",
 			cur, cur->item, cur->item->sObjectize);
@@ -44,9 +44,9 @@ void CachePool::dump(void)
 	head.lock.release();
 }
 
-status_t CachePool::insert(cachePoolNodeS *node)
+status_t CachePool::insert(sCachePoolNode *node)
 {
-	cachePoolNodeS		*cur, *prev;
+	sCachePoolNode		*cur, *prev;
 
 	prev = NULL;
 
@@ -112,7 +112,7 @@ status_t CachePool::insert(cachePoolNodeS *node)
 
 void CachePool::remove(uarch_t objSize)
 {
-	cachePoolNodeS		*cur, *prev;
+	sCachePoolNode		*cur, *prev;
 
 	objSize = CACHEPOOL_SIZE_ROUNDUP(objSize);
 	prev = NULL;
@@ -165,7 +165,7 @@ void CachePool::remove(uarch_t objSize)
 
 SlamCache *CachePool::getCache(uarch_t objSize)
 {
-	cachePoolNodeS		*cur;
+	sCachePoolNode		*cur;
 
 	objSize = CACHEPOOL_SIZE_ROUNDUP(objSize);
 
@@ -188,13 +188,13 @@ SlamCache *CachePool::getCache(uarch_t objSize)
 #include <__kclasses/memReservoir.h>
 SlamCache *CachePool::createCache(uarch_t objSize)
 {
-	cachePoolNodeS	*node;
+	sCachePoolNode	*node;
 	status_t	status;
 	SlamCache	*ret;
 
 	objSize = CACHEPOOL_SIZE_ROUNDUP(objSize);
 
-	node = new (poolNodeCache.allocate()) cachePoolNodeS;
+	node = new (poolNodeCache.allocate()) sCachePoolNode;
 	if (node == NULL) {
 		return NULL;
 	};

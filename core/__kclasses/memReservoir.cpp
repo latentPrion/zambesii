@@ -85,7 +85,7 @@ error_t MemReservoir::checkBogAllocations(sarch_t)
 
 void *MemReservoir::allocate(uarch_t nBytes, uarch_t)
 {
-	reservoirHeaderS	*ret;
+	sReservoirHeader	*ret;
 
 	if (nBytes == 0)
 	{
@@ -95,12 +95,12 @@ void *MemReservoir::allocate(uarch_t nBytes, uarch_t)
 		panic(WARNING RESERVOIR"Allocation with size=0.\n");
 	};
 
-	nBytes += sizeof(reservoirHeaderS);
+	nBytes += sizeof(sReservoirHeader);
 
 	if (nBytes <= __kheap.getChunkSize())
 	{
 		ret = new (__kheap.malloc(
-			nBytes, __builtin_return_address(1))) reservoirHeaderS;
+			nBytes, __builtin_return_address(1))) sReservoirHeader;
 
 		if (ret != NULL)
 		{
@@ -115,7 +115,7 @@ void *MemReservoir::allocate(uarch_t nBytes, uarch_t)
 	// Unable to allocate from the kernel bog. Stream allocate.
 	ret = new (
 		sourceStream->memAlloc(
-			PAGING_BYTES_TO_PAGES(nBytes), 0)) reservoirHeaderS;
+			PAGING_BYTES_TO_PAGES(nBytes), 0)) sReservoirHeader;
 
 	if (ret != NULL)
 	{
@@ -129,13 +129,13 @@ void *MemReservoir::allocate(uarch_t nBytes, uarch_t)
 
 void MemReservoir::free(void *_mem)
 {
-	reservoirHeaderS	*mem;
+	sReservoirHeader	*mem;
 
 	if (_mem == NULL) {
 		return;
 	};
 
-	mem = reinterpret_cast<reservoirHeaderS *>( _mem );
+	mem = reinterpret_cast<sReservoirHeader *>( _mem );
 	mem--;
 
 	if ((mem->magic >> 4) != (RESERVOIR_MAGIC >> 4))

@@ -29,21 +29,21 @@
  * associates metadata with these pins internally.
  **/
 
-/* Values used for zkcmIrqPinS.triggerMode.
+/* Values used for sZkcmIrqPin.triggerMode.
  **/
 #define IRQCTL_IRQPIN_TRIGGMODE_LEVEL		0
 #define IRQCTL_IRQPIN_TRIGGMODE_EDGE		1
 
-/* Values for zkcmIrqPinS.polarity.
+/* Values for sZkcmIrqPin.polarity.
  **/
 #define IRQCTL_IRQPIN_POLARITY_HIGH		0
 #define IRQCTL_IRQPIN_POLARITY_LOW		1
 
-/* Values for zkcmIrqPinS.flags.
+/* Values for sZkcmIrqPin.flags.
  **/
 #define IRQCTL_IRQPIN_FLAGS_ENABLED		(1<<0)
 
-/* Values for zkcmIrqPinS.intelMpId and zkcmIrqPinS.acpiId.
+/* Values for sZkcmIrqPin.intelMpId and sZkcmIrqPin.acpiId.
  * These two values are used for when the chipset does not know the mappings
  * between IRQ Pins and the pins described by the ACPI/MP tables.
  **/
@@ -71,7 +71,7 @@
 #define IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS			(1)
 #define IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE		(2)
 
-struct zkcmIrqPinS
+struct sZkcmIrqPin
 {
 	ubit32		physId;
 	sbit32		acpiId;

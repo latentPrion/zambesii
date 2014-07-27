@@ -18,14 +18,14 @@ static ubit8	buffMem[PAGING_BASE_SIZE * DEBUGBUFFER_INIT_NPAGES];
 
 DebugBuffer::DebugBuffer(void)
 {
-	DebugBuffer::buffPageS		*tmp;
+	DebugBuffer::sBuffPage		*tmp;
 
-	buff.rsrc.head = buff.rsrc.cur = new (buffMem) buffPageS;
+	buff.rsrc.head = buff.rsrc.cur = new (buffMem) sBuffPage;
 	buff.rsrc.index = 0;
 
 	tmp = buff.rsrc.head;
 	for (uarch_t i=1; i<DEBUGBUFFER_INIT_NPAGES; i++, tmp = tmp->next) {
-		tmp->next = new (&buffMem[i * PAGING_BASE_SIZE]) buffPageS;
+		tmp->next = new (&buffMem[i * PAGING_BASE_SIZE]) sBuffPage;
 	};
 
 	buff.rsrc.buffNPages = DEBUGBUFFER_INIT_NPAGES;
@@ -38,7 +38,7 @@ error_t DebugBuffer::initialize(void)
 
 error_t DebugBuffer::shutdown(void)
 {
-	DebugBuffer::buffPageS		*tmp;
+	DebugBuffer::sBuffPage		*tmp;
 
 	for (;;)
 	{
@@ -86,17 +86,17 @@ utf8Char *DebugBuffer::extract(void **handle, uarch_t *len)
 		return NULL;
 	};
 
-	if (*reinterpret_cast<DebugBuffer::buffPageS **>( handle )
+	if (*reinterpret_cast<DebugBuffer::sBuffPage **>( handle )
 		!= buff.rsrc.cur)
 	{
 		*len = DEBUGBUFFER_PAGE_NCHARS;
-		ret = &(reinterpret_cast<buffPageS *>( *handle )->data[0]);
-		*handle = reinterpret_cast<buffPageS *>( *handle )->next;
+		ret = &(reinterpret_cast<sBuffPage *>( *handle )->data[0]);
+		*handle = reinterpret_cast<sBuffPage *>( *handle )->next;
 	}
 	else
 	{
 		*len = buff.rsrc.index;
-		ret = &(reinterpret_cast<buffPageS *>( *handle )->data[0]);
+		ret = &(reinterpret_cast<sBuffPage *>( *handle )->data[0]);
 
 		// Don't allow the caller to advance any further.
 		*handle = NULL;
@@ -143,11 +143,11 @@ void DebugBuffer::write(utf8Char *str, uarch_t buffLen)
 }
 
 // Expects the lock to be held when called.
-DebugBuffer::buffPageS *DebugBuffer::scrollBuff(
+DebugBuffer::sBuffPage *DebugBuffer::scrollBuff(
 	uarch_t *index, uarch_t buffLen
 	)
 {
-	DebugBuffer::buffPageS		*tmp1, *tmp2;
+	DebugBuffer::sBuffPage		*tmp1, *tmp2;
 	uarch_t				bound, nWholePages, nCharsExcess;
 
 	if (buffLen >= buff.rsrc.buffNPages * DEBUGBUFFER_PAGE_NCHARS)

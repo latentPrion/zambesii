@@ -22,7 +22,7 @@
  * This reduces the amount of lock contention on the bitmap of NUMA banks.
  **/
 
-struct numaConfigS
+struct sNumaConfig
 {
 	// Simple bitmap for bank config.
 	Bitmap		memBanks;

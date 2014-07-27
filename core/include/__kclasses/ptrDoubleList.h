@@ -38,7 +38,7 @@ public:
 		if (FLAG_TEST(flags,
 			PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE))
 		{
-			objectCache = cachePool.createCache(sizeof(listNodeS));
+			objectCache = cachePool.createCache(sizeof(sListNode));
 			if (objectCache == NULL) {
 				return ERROR_MEMORY_NOMEM;
 			};
@@ -60,15 +60,15 @@ public:
 	uarch_t	getNItems(void);
 
 protected:
-	struct listNodeS
+	struct sListNode
 	{
 		T		*item;
-		listNodeS	*prev, *next;
+		sListNode	*prev, *next;
 	};
 
 	struct sListState
 	{
-		listNodeS	*head, *tail;
+		sListNode	*head, *tail;
 		uarch_t		nItems;
 	};
 
@@ -95,7 +95,7 @@ uarch_t PtrDblList<T>::getNItems(void)
 template <class T>
 void PtrDblList<T>::dump(void)
 {
-	listNodeS	*curr, *head, *tail;
+	sListNode	*curr, *head, *tail;
 	sbit8		flipFlop=0;
 
 	list.lock.acquire();
@@ -127,11 +127,11 @@ void PtrDblList<T>::dump(void)
 template <class T>
 error_t PtrDblList<T>::addItem(T *item, ubit8 mode)
 {
-	listNodeS	*newNode;
+	sListNode	*newNode;
 
 	newNode = (objectCache == NULL)
-		? new listNodeS
-		: new (objectCache->allocate()) listNodeS;
+		? new sListNode
+		: new (objectCache->allocate()) sListNode;
 
 	if (newNode == NULL)
 	{
@@ -191,7 +191,7 @@ error_t PtrDblList<T>::addItem(T *item, ubit8 mode)
 template <class T>
 void PtrDblList<T>::removeItem(T *item)
 {
-	listNodeS	*curr;
+	sListNode	*curr;
 
 	list.lock.acquire();
 	// Just run through until we find it, then remove it.
@@ -233,7 +233,7 @@ template <class T>
 T *PtrDblList<T>::popFromHead(void)
 {
 	T		*ret=NULL;
-	listNodeS	*tmp;
+	sListNode	*tmp;
 
 	list.lock.acquire();
 
@@ -269,7 +269,7 @@ template <class T>
 T *PtrDblList<T>::popFromTail(void)
 {
 	T		*ret=NULL;
-	listNodeS	*tmp;
+	sListNode	*tmp;
 
 	list.lock.acquire();
 

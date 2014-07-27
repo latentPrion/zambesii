@@ -14,9 +14,9 @@ public:
 	error_t suspend(void);
 	error_t restore(void);
 
-	zkcmMemConfigS *getMemoryConfig(void);
-	zkcmNumaMapS *getNumaMap(void);
-	zkcmMemMapS *getMemoryMap(void);
+	sZkcmMemoryConfig *getMemoryConfig(void);
+	sZkcmNumaMap *getNumaMap(void);
+	sZkcmMemoryMapS *getMemoryMap(void);
 
 	// Memory hotplug API design proposed for a later date.
 };

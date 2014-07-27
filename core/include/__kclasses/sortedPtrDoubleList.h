@@ -37,11 +37,11 @@ public:
 	uarch_t	getNItems(void);
 
 protected:
-	struct listNodeS
+	struct sListNode
 	{
 		criterionType	criterion;
 		T		*item;
-		listNodeS	*prev, *next;
+		sListNode	*prev, *next;
 	};
 
 	struct sListState
@@ -51,7 +51,7 @@ protected:
 		head(NULL), tail(NULL), nItems(0)
 		{}
 
-		listNodeS	*head, *tail;
+		sListNode	*head, *tail;
 		uarch_t		nItems;
 	};
 
@@ -77,7 +77,7 @@ uarch_t SortedPtrDblList<T, criterionType>::getNItems(void)
 template <class T, class criterionType>
 void SortedPtrDblList<T, criterionType>::dump(void)
 {
-	listNodeS	*curr, *head, *tail;
+	sListNode	*curr, *head, *tail;
 	sbit8		flipFlop=0;
 
 	list.lock.acquire();
@@ -113,7 +113,7 @@ error_t SortedPtrDblList<T, criterionType>::addItem(
 	T *item, criterionType criterion, ubit8 mode
 	)
 {
-	listNodeS	*newNode, *curr;
+	sListNode	*newNode, *curr;
 
 	if (mode == SRT_PTRDBLLIST_ADD_DESCENDING)
 	{
@@ -125,7 +125,7 @@ error_t SortedPtrDblList<T, criterionType>::addItem(
 		return ERROR_UNIMPLEMENTED;
 	};
 
-	newNode = new listNodeS;
+	newNode = new sListNode;
 	if (newNode == NULL)
 	{
 		printf(ERROR SRT_PTRDBLLIST"addItem(0x%p,%s): Failed "
@@ -225,7 +225,7 @@ error_t SortedPtrDblList<T, criterionType>::addItem(
 template <class T, class criterionType>
 void SortedPtrDblList<T, criterionType>::removeItem(T *item)
 {
-	listNodeS	*curr;
+	sListNode	*curr;
 
 	list.lock.acquire();
 	// Just run through until we find it, then remove it.
@@ -266,7 +266,7 @@ template <class T, class criterionType>
 T *SortedPtrDblList<T, criterionType>::popFromHead(void)
 {
 	T		*ret=NULL;
-	listNodeS	*tmp;
+	sListNode	*tmp;
 
 	list.lock.acquire();
 
@@ -300,7 +300,7 @@ template <class T, class criterionType>
 T *SortedPtrDblList<T, criterionType>::popFromTail(void)
 {
 	T		*ret=NULL;
-	listNodeS	*tmp;
+	sListNode	*tmp;
 
 	list.lock.acquire();
 

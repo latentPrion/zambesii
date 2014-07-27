@@ -12,7 +12,7 @@
 
 NumaMemoryBank::NumaMemoryBank(numaBankId_t id)
 :
-id(id), rangePtrCache(sizeof(NumaMemoryBank::rangePtrS))
+id(id), rangePtrCache(sizeof(NumaMemoryBank::sRangePtr))
 {
 	ranges.rsrc = NULL;
 	defRange.rsrc = NULL;
@@ -20,7 +20,7 @@ id(id), rangePtrCache(sizeof(NumaMemoryBank::rangePtrS))
 
 NumaMemoryBank::~NumaMemoryBank(void)
 {
-	rangePtrS	*tmp;
+	sRangePtr	*tmp;
 
 	do
 	{
@@ -60,7 +60,7 @@ void NumaMemoryBank::dump(void)
 
 	defRange.lock.readRelease(rwFlags2);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		printf((utf8Char *)"\tMem range: base 0x%X, size 0x%X.\n",
 			cur->range->baseAddr, cur->range->size);
@@ -75,7 +75,7 @@ error_t NumaMemoryBank::__kspaceAddMemoryRange(
 	void *ptrNodeMem, NumaMemoryRange *__kspace, void *__kspaceInitMem
 	)
 {
-	ranges.rsrc = static_cast<rangePtrS *>( ptrNodeMem );
+	ranges.rsrc = static_cast<sRangePtr *>( ptrNodeMem );
 	ranges.rsrc->range = __kspace;
 	defRange.rsrc = __kspace;
 
@@ -85,7 +85,7 @@ error_t NumaMemoryBank::__kspaceAddMemoryRange(
 error_t NumaMemoryBank::addMemoryRange(paddr_t baseAddr, paddr_t size)
 {
 	NumaMemoryRange	*memRange;
-	rangePtrS		*tmpNode;
+	sRangePtr		*tmpNode;
 	error_t			err;
 
 	// Allocate a new bmp allocator.
@@ -105,7 +105,7 @@ error_t NumaMemoryBank::addMemoryRange(paddr_t baseAddr, paddr_t size)
 		return err;
 	};
 
-	tmpNode = new (rangePtrCache.allocate()) rangePtrS;
+	tmpNode = new (rangePtrCache.allocate()) sRangePtr;
 	if (tmpNode == NULL)
 	{
 		processTrib.__kgetStream()->memoryStream.memFree(memRange);
@@ -138,7 +138,7 @@ error_t NumaMemoryBank::addMemoryRange(paddr_t baseAddr, paddr_t size)
 
 error_t NumaMemoryBank::removeMemoryRange(paddr_t baseAddr)
 {
-	rangePtrS		*cur, *prev=NULL;
+	sRangePtr		*cur, *prev=NULL;
 
 	ranges.lock.writeAcquire();
 
@@ -236,7 +236,7 @@ error_t NumaMemoryBank::contiguousGetFrames(
 	ranges.lock.readAcquire(&rwFlags2);
 
 	// We now hold both locks.
-	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		// Don't waste time re-trying the same range.
 		if (cur->range == defRange.rsrc) {
@@ -301,7 +301,7 @@ status_t NumaMemoryBank::fragmentedGetFrames(
 	// Default has no mem. Below we'll scan all the other ranges.
 	ranges.lock.readAcquire(&rwFlags2);
 	// We now hold both locks.
-	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		// Don't waste time re-trying the same range.
 		if (cur->range == defRange.rsrc) {
@@ -332,7 +332,7 @@ void NumaMemoryBank::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		if (cur->range->identifyPaddr(basePaddr))
 		{
@@ -355,7 +355,7 @@ sarch_t NumaMemoryBank::identifyPaddr(paddr_t paddr)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		/* A paddr can only correspond to ONE memory range. We never
 		 * hand out pmem allocations spanning multiple discontiguous
@@ -379,7 +379,7 @@ sarch_t NumaMemoryBank::identifyPaddrRange(paddr_t basePaddr, paddr_t nBytes)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		if (cur->range->identifyPaddrRange(basePaddr, nBytes))
 		{
@@ -397,7 +397,7 @@ void NumaMemoryBank::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next) {
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next) {
 		cur->range->mapMemUsed(baseAddr, nFrames);
 	};
 	ranges.lock.readRelease(rwFlags);
@@ -409,7 +409,7 @@ void NumaMemoryBank::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 
 	ranges.lock.readAcquire(&rwFlags);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next) {
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next) {
 		cur->range->mapMemUnused(baseAddr, nFrames);
 	};
 
@@ -424,9 +424,9 @@ status_t NumaMemoryBank::merge(NumaMemoryBank *nmb)
 	ranges.lock.readAcquire(&rwFlags);
 	nmb->ranges.lock.readAcquire(&rwFlags2);
 
-	for (rangePtrS *cur = ranges.rsrc; cur != NULL; cur = cur->next)
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
-		for (rangePtrS *cur2 = nmb->ranges.rsrc; cur2 != NULL;
+		for (sRangePtr *cur2 = nmb->ranges.rsrc; cur2 != NULL;
 			cur2 = cur2->next)
 		{
 			ret += cur->range->merge(cur2->range);

@@ -42,13 +42,13 @@ namespace zui
 			uint32_t	dataOff;
 		};
 
-		struct attrDataS
+		struct sAttrData
 		{
 			uint8_t		attr_type, attr_length;
 			uint32_t	attr_nameOff, attr_valueOff;
 		};
 
-		struct _attrDataS
+		struct _sAttrData
 		:
 		public udi_instance_attr_list_t
 		{
@@ -67,7 +67,7 @@ namespace zui
 #endif
 
 			struct sHeader		h;
-			struct _attrDataS	d[ZUI_DEVICE_MAX_NATTRS];
+			struct _sAttrData	d[ZUI_DEVICE_MAX_NATTRS];
 		};
 	}
 
@@ -154,18 +154,18 @@ namespace zui
 			char		name[ZUI_DRIVER_METALANGUAGE_MAXLEN];
 		};
 
-		struct childBopS
+		struct sChildBop
 		{
 			uint16_t	metaIndex, regionIndex, opsIndex;
 		};
 
-		struct parentBopS
+		struct sParentBop
 		{
 			uint16_t	metaIndex, regionIndex, opsIndex,
 					bindCbIndex;
 		};
 
-		struct internalBopS
+		struct sInternalBop
 		{
 			uint16_t	metaIndex, regionIndex,
 					opsIndex0, opsIndex1, bindCbIndex;
@@ -229,14 +229,14 @@ namespace zui
 			char		message[ZUI_MESSAGE_MAXLEN];
 		};
 
-		struct disasterMessageS
+		struct sDisasterMessage
 		{
 			uint32_t	driverId;
 			uint16_t	index;
 			uint32_t	messageOff;
 		};
 
-		struct _disasterMessageS
+		struct _sDisasterMessage
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -247,14 +247,14 @@ namespace zui
 			char		message[ZUI_MESSAGE_MAXLEN];
 		};
 
-		struct messageFileS
+		struct sMessageFile
 		{
 			uint32_t	driverId;
 			uint16_t	index;
 			uint32_t	fileNameOff;
 		};
 
-		struct _messageFileS
+		struct _sMessageFile
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -265,13 +265,13 @@ namespace zui
 			char		fileName[ZUI_FILENAME_MAXLEN];
 		};
 
-		struct readableFileS
+		struct sReadableFile
 		{
 			uint16_t	driverId, index;
 			uint32_t	fileNameOff;
 		};
 
-		struct _readableFileS
+		struct _sReadableFile
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -309,13 +309,13 @@ namespace zui
 			struct _sMetalanguage		metalanguages[
 				ZUI_DRIVER_MAX_NMETALANGUAGES];
 
-			struct childBopS		childBops[
+			struct sChildBop		childBops[
 				ZUI_DRIVER_MAX_NCHILD_BOPS];
 
-			struct parentBopS		parentBops[
+			struct sParentBop		parentBops[
 				ZUI_DRIVER_MAX_NPARENT_BOPS];
 
-			struct internalBopS		internalBops[
+			struct sInternalBop		internalBops[
 				ZUI_DRIVER_MAX_NINTERNAL_BOPS];
 
 			struct _Module			modules[
@@ -333,12 +333,12 @@ namespace zui
 			uint32_t	dataOff;
 		};
 
-		struct rankAttrS
+		struct sRankAttr
 		{
 			uint32_t	nameOff;
 		};
 
-		struct _rankAttrS
+		struct _sRankAttr
 		{
 #if !__IS_KERNEL_SOURCE__
 			int writeOut(FILE *dataF, FILE *stringF);
@@ -354,7 +354,7 @@ namespace zui
 #endif
 
 			struct zui::rank::sHeader	h;
-			struct zui::rank::_rankAttrS	d[ZUI_RANK_MAX_NATTRS];
+			struct zui::rank::_sRankAttr	d[ZUI_RANK_MAX_NATTRS];
 		};
 	}
 }

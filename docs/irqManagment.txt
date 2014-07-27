@@ -81,14 +81,14 @@ necessary, to request to take-down of specific __kpins. The following necessary
 Interrupt Trib entry points are provided for exclusive use by the chipset's
 IRQ management code:
 
-registerNewIrqPins(ubit32 nPins, zkcmIrqPinS *pins):
+registerNewIrqPins(ubit32 nPins, sZkcmIrqPin *pins):
 	This function directly hands the kernel the chipset's own internal
 	structure for the representation of an IRQ pin. The kernel is expected
 	to assign a __kpin ID to each pin presented and directly write that ID
 	into the slot provided for each pin, then return after it has
 	spawned its own metadata for each pin.
 
-destroyIrqPins(ubit32 nPins, zkcmIrqPinS *pins):
+destroyIrqPins(ubit32 nPins, sZkcmIrqPin *pins):
 	This function directly passes to the kernel the chipset's own internal
 	metadata structure for the specific pins to be destroyed. The kernel is
 	expected to simply read the __kpin ID from each entry and destroy

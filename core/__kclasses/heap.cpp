@@ -631,7 +631,7 @@ void Heap::free(void *_p, void *freedBy)
 		if (!allocationList.find(alloc))
 		{
 			void				*ebp;
-			debug::stackDescriptorS		currStack;
+			debug::sStackDescriptor		currStack;
 
 			debug::getCurrentStackInfo(&currStack);
 			asm volatile(

@@ -13,9 +13,9 @@
 #define x8632_CPUFEAT_SSE2		2
 #define x8632_CPUFEAT_SSE3		3
 
-struct archCpuFeaturesS
+struct sArchCpuFeatures
 {
-	archCpuFeaturesS(void)
+	sArchCpuFeatures(void)
 	{
 		memset(this, 0, sizeof(*this));
 	}

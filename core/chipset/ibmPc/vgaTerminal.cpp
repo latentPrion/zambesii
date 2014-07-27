@@ -15,7 +15,7 @@ ubit8	*IbmPcVgaTerminal::bda=NULL;
 error_t IbmPcVgaTerminal::initialize(void)
 {
 	// The memoryAreas API maps ranges as PAGEATTRIB_CACHE_WRITE_THROUGH.
-	origBuff = buff = reinterpret_cast<ibmPc_terminalMod_fbS *>(
+	origBuff = buff = reinterpret_cast<sIbmPc_TerminalMod_Fb *>(
 		(void *)0xB8000 );
 
 	row = col = 0;
@@ -46,7 +46,7 @@ void IbmPcVgaTerminal::chipsetEventNotification(ubit8, uarch_t)
 	lowmem = reinterpret_cast<ubit8 *>(
 		chipsetMemAreas::getArea(CHIPSET_MEMAREA_LOWMEM) );
 
-	origBuff = buff = reinterpret_cast<ibmPc_terminalMod_fbS *>(
+	origBuff = buff = reinterpret_cast<sIbmPc_TerminalMod_Fb *>(
 		&lowmem[0xB8000] );
 
 	//row = col = 0;

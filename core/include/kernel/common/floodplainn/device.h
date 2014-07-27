@@ -47,13 +47,13 @@
 #define DEVICE_CLASS_MAXLEN			DRIVER_CLASS_MAXLEN
 
 
-struct driverInitEntryS
+struct sDriverInitEntry
 {
 	utf8Char	*shortName;
 	udi_init_t	*udi_init_info;
 };
 
-struct metaInitEntryS
+struct sMetaInitEntry
 {
 	utf8Char	*shortName;
 	udi_mei_init_t	*udi_meta_info;
@@ -133,14 +133,14 @@ namespace fplainn
 			{ return removeDirTag(name); }
 
 	public:
-		struct parentTagS
+		struct sParentTag
 		{
-			parentTagS(void)
+			sParentTag(void)
 			:
 			id(0), tag(NULL)
 			{}
 
-			parentTagS(ubit16 id, fvfs::Tag *tag)
+			sParentTag(ubit16 id, fvfs::Tag *tag)
 			:
 			id(id), tag(tag)
 			{}
@@ -226,7 +226,7 @@ namespace fplainn
 		sbit8			driverDetected;
 		// The index which enumerated this device's driver.
 		zuiServer::indexE	driverIndex, requestedIndex;
-		parentTagS		*parentTags;
+		sParentTag		*parentTags;
 		uarch_t			parentTagCounter;
 	};
 
@@ -310,14 +310,14 @@ namespace fplainn
 				udi_init_context_t	*channelContext;
 			};
 
-			struct incompleteChannelS
+			struct sIncompleteChannel
 			{
-				incompleteChannelS(void)
+				sIncompleteChannel(void)
 				:
 				spawnIndex(-1), channel(NULL)
 				{}
 
-				ListC<incompleteChannelS>::sHeader
+				ListC<sIncompleteChannel>::sHeader
 					listHeader;
 
 				udi_index_t	spawnIndex;
@@ -332,7 +332,7 @@ namespace fplainn
 			 * spawn is completed and the spawn_idx is removed from
 			 * this list.
 			 **/
-			ListC<incompleteChannelS> incompleteChannels;
+			ListC<sIncompleteChannel> incompleteChannels;
 			sEndpoint				endpoints[2];
 		};
 
@@ -364,9 +364,9 @@ namespace fplainn
 		struct sRegion;
 		struct sRequirement;
 		struct sMetalanguage;
-		struct childBopS;
-		struct parentBopS;
-		struct internalBopS;
+		struct sChildBop;
+		struct sParentBop;
+		struct sInternalBop;
 
 		Driver(zuiServer::indexE index)
 		:
@@ -517,9 +517,9 @@ namespace fplainn
 			}
 		};
 
-		struct childBopS
+		struct sChildBop
 		{
-			childBopS(
+			sChildBop(
 				ubit16 metaIndex, ubit16 regionIndex,
 				ubit16 opsIndex)
 			:
@@ -533,15 +533,15 @@ namespace fplainn
 
 		private:
 			friend class fplainn::Driver;
-			childBopS(void)
+			sChildBop(void)
 			:
 			metaIndex(0), regionIndex(0), opsIndex(0)
 			{}
 		};
 
-		struct parentBopS
+		struct sParentBop
 		{
-			parentBopS(
+			sParentBop(
 				ubit16 metaIndex, ubit16 regionIndex,
 				ubit16 opsIndex, ubit16 bindCbIndex)
 			:
@@ -556,16 +556,16 @@ namespace fplainn
 
 		private:
 			friend class fplainn::Driver;
-			parentBopS(void)
+			sParentBop(void)
 			:
 			metaIndex(0), regionIndex(0), opsIndex(0),
 			bindCbIndex(0)
 			{}
 		};
 
-		struct internalBopS
+		struct sInternalBop
 		{
-			internalBopS(
+			sInternalBop(
 				ubit16 metaIndex, ubit16 regionIndex,
 				ubit16 opsIndex0, ubit16 opsIndex1,
 				ubit16 bindCbIndex)
@@ -583,7 +583,7 @@ namespace fplainn
 
 		private:
 			friend class fplainn::Driver;
-			internalBopS(void)
+			sInternalBop(void)
 			:
 			metaIndex(0), regionIndex(0),
 			opsIndex0(0), opsIndex1(0), bindCbIndex(0)
@@ -635,7 +635,7 @@ namespace fplainn
 			return NULL;
 		}
 
-		childBopS *getChildBop(ubit16 metaIndex)
+		sChildBop *getChildBop(ubit16 metaIndex)
 		{
 			for (uarch_t i=0; i<nChildBops; i++)
 			{
@@ -646,7 +646,7 @@ namespace fplainn
 			return NULL;
 		}
 
-		parentBopS *getParentBop(ubit16 metaIndex)
+		sParentBop *getParentBop(ubit16 metaIndex)
 		{
 			for (uarch_t i=0; i<nParentBops; i++)
 			{
@@ -657,7 +657,7 @@ namespace fplainn
 			return NULL;
 		}
 
-		internalBopS *getInternalBop(ubit16 regionIndex)
+		sInternalBop *getInternalBop(ubit16 regionIndex)
 		{
 			for (uarch_t i=0; i<nInternalBops; i++)
 			{
@@ -717,9 +717,9 @@ namespace fplainn
 		sRequirement	*requirements;
 		// Metalanguage indexes, names, etc.
 		sMetalanguage	*metalanguages;
-		childBopS	*childBops;
-		parentBopS	*parentBops;
-		internalBopS	*internalBops;
+		sChildBop	*childBops;
+		sParentBop	*parentBops;
+		sInternalBop	*internalBops;
 		utf8Char	(*classes)[DRIVER_CLASS_MAXLEN];
 
 		// XXX: ONLY for use by libzbzcore, and ONLY in kernel-space.
@@ -759,7 +759,7 @@ namespace fplainn
 		error_t initialize(void);
 
 	public:
-		struct childBopS
+		struct sChildBop
 		{
 			/* Parent BOps can only be uniquely identified by their
 			 * metalanguage indexes.
@@ -768,9 +768,9 @@ namespace fplainn
 			udi_ops_vector_t	*opsVector;
 		};
 
-		struct managementChannelS
+		struct sManagementChannel
 		{
-			managementChannelS(void)
+			sManagementChannel(void)
 			:
 			opsVector(NULL), scratchSize(0)
 			{}
@@ -794,7 +794,7 @@ namespace fplainn
 			};
 		}
 
-		childBopS *getChildBop(ubit16 metaIndex)
+		sChildBop *getChildBop(ubit16 metaIndex)
 		{
 			for (uarch_t i=0; i<driver->nChildBops; i++)
 			{
@@ -822,10 +822,10 @@ namespace fplainn
 		Driver				*driver;
 		numaBankId_t			bankId;
 		processId_t			pid;
-		childBopS			*childBopVectors;
+		sChildBop			*childBopVectors;
 		uarch_t				nHostedDevices;
 		HeapArray<HeapArray<utf8Char> >	hostedDevices;
-		managementChannelS		managementChannel;
+		sManagementChannel		managementChannel;
 	};
 }
 

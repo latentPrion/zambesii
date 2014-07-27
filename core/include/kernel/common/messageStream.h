@@ -87,7 +87,7 @@ namespace ipc
 	enum methodE {
 		METHOD_BUFFER, METHOD_MAP_AND_COPY, METHOD_MAP_AND_READ };
 
-	struct dataHeaderS
+	struct sDataHeader
 	{
 		methodE		method;
 		void		*foreignVaddr;
@@ -98,12 +98,12 @@ namespace ipc
 		processId_t	foreignTid;
 	};
 
-	dataHeaderS *createDataHeader(
+	sDataHeader *createDataHeader(
 		void *data, uarch_t nBytes, methodE method);
 
 	// Does *NOT* delete the header before returning.
-	error_t dispatchDataHeader(dataHeaderS *header, void *buffer);
-	void destroyDataHeader(dataHeaderS *header, void *buffer);
+	error_t dispatchDataHeader(sDataHeader *header, void *buffer);
+	void destroyDataHeader(sDataHeader *header, void *buffer);
 }
 
 class MessageStream

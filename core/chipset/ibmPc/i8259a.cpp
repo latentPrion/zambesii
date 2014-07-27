@@ -97,7 +97,7 @@ void i8259aPicC::chipsetEventNotification(ubit8 event, uarch_t)
 	case IRQCTL_EVENT_MEMMGT_AVAIL:
 
 		// Allocate and zero memory for the __kpin mapping list.
-		irqPinList = new zkcmIrqPinS[16];
+		irqPinList = new sZkcmIrqPin[16];
 		if (irqPinList == NULL)
 		{
 			panic(FATAL i8259a"Failed to allocate memory for "

@@ -146,7 +146,7 @@ static void dumpSrat(void)
  *
  * We then pass control to __korientationMain().
  **/
-extern "C" void __korientationInit(ubit32, multibootDataS *)
+extern "C" void __korientationInit(ubit32, sMultibootData *)
 {
 	error_t			ret;
 	uarch_t			devMask;
@@ -303,9 +303,9 @@ void __korientationMain4(MessageStream::sIterator *msgIt, void *)
 	Thread				*self;
 	fplainn::Device		*chipsetDev;
 	error_t				ret;
-	Floodplainn::zudiIndexMsgS	*msg;
+	Floodplainn::sZudiIndexMsg	*msg;
 
-	msg = (Floodplainn::zudiIndexMsgS *)msgIt;
+	msg = (Floodplainn::sZudiIndexMsg *)msgIt;
 	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask() );
 
@@ -383,9 +383,9 @@ void __korientationMain4(MessageStream::sIterator *msgIt, void *)
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_TIMER:
-			TimerStream::timerMsgS	*timerEvent;
+			TimerStream::sTimerMsg	*timerEvent;
 
-			timerEvent = (TimerStream::timerMsgS *)&iMessage;
+			timerEvent = (TimerStream::sTimerMsg *)&iMessage;
 			printf(NOTICE ORIENT"pulled timer timeout. "
 				"Actual expiration: %d:%dns.\n",
 				timerEvent->actualExpirationStamp.time.seconds,

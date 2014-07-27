@@ -44,7 +44,7 @@
 
 class ZkcmTimerDevice;
 
-struct zkcmTimerEventS
+struct sZkcmTimerEvent
 {
 	ZkcmTimerDevice		*device;
 	class FloodplainnStream	*latchedStream;
@@ -219,12 +219,12 @@ public:
 	} capabilities;
 
 protected:
-	zkcmTimerEventS *allocateIrqEvent(void)
+	sZkcmTimerEvent *allocateIrqEvent(void)
 	{
-		return (zkcmTimerEventS *)irqEventCache->allocate();
+		return (sZkcmTimerEvent *)irqEventCache->allocate();
 	};
 
-	void freeIrqEvent(zkcmTimerEventS *event)
+	void freeIrqEvent(sZkcmTimerEvent *event)
 	{
 		irqEventCache->free(event);
 	}

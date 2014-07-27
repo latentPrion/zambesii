@@ -4,9 +4,9 @@
 #include "elfFuncs.h"
 
 
-struct elfModuleStateS		elfModuleState;
+struct sElfModuleState		elfModuleState;
 
-struct executableParserS	elfParser =
+struct sExecutableParser	elfParser =
 {
 	&elf_initialize,
 	&elf_identify,

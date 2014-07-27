@@ -71,9 +71,9 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 			return ERROR_WOULD_BLOCK;
 		};
 
-		Lock::operationDescriptorS	unlockDescriptor(
+		Lock::sOperationDescriptor	unlockDescriptor(
 			&lock,
-			Lock::operationDescriptorS::WAIT);
+			Lock::sOperationDescriptor::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
 	};

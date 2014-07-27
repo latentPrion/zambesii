@@ -47,10 +47,10 @@
 
 typedef ubit16		prio_t;
 
-struct prioClassS
+struct sPriorityClass
 {
-	prioClassS(void) {}
-	prioClassS(const utf8Char *name, prio_t prio)
+	sPriorityClass(void) {}
+	sPriorityClass(const utf8Char *name, prio_t prio)
 	{
 		strcpy8(this->name, name);
 		this->prio = prio;
@@ -60,7 +60,7 @@ struct prioClassS
 	prio_t		prio;
 };
 
-extern prioClassS	prioClasses[];
+extern sPriorityClass	prioClasses[];
 
 #endif
 

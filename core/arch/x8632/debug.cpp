@@ -11,13 +11,13 @@
 uarch_t debug::Debugger::flags = 0;
 
 
-void debug::stackDescriptorS::dump(void)
+void debug::sStackDescriptor::dump(void)
 {
 	printf(NOTICE"stackDescriptor: @0x%p: start 0x%p, eof 0x%p. %d bytes\n",
 		this, start, eof, nBytes);
 }
 
-void debug::getCurrentStackInfo(stackDescriptorS *desc)
+void debug::getCurrentStackInfo(sStackDescriptor *desc)
 {
 	Task		*currTask;
 	Thread		*currThread=NULL;
@@ -42,7 +42,7 @@ void debug::getCurrentStackInfo(stackDescriptorS *desc)
 	};
 }
 
-void debug::printStackTrace(void *startFrame, stackDescriptorS *stack)
+void debug::printStackTrace(void *startFrame, sStackDescriptor *stack)
 {
 	struct x8632StackFrameS
 	{

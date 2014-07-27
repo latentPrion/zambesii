@@ -68,7 +68,7 @@
  *	  IO-APICs.
  **/
 
-struct isaBusPinMappingS
+struct sIsaBusPinMapping
 {
 	ubit8		isValid;
 	ubit16		__kpin;

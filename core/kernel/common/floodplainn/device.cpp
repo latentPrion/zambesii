@@ -91,7 +91,7 @@ error_t fplainn::Driver::preallocateMetalanguages(uarch_t nMetalanguages)
 error_t fplainn::Driver::preallocateChildBops(uarch_t nChildBops)
 {
 	if (nChildBops == 0) { return ERROR_SUCCESS; };
-	childBops = new childBopS[nChildBops];
+	childBops = new sChildBop[nChildBops];
 	if (childBops == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nChildBops = nChildBops;
 	return ERROR_SUCCESS;
@@ -100,7 +100,7 @@ error_t fplainn::Driver::preallocateChildBops(uarch_t nChildBops)
 error_t fplainn::Driver::preallocateParentBops(uarch_t nParentBops)
 {
 	if (nParentBops == 0) { return ERROR_SUCCESS; };
-	parentBops = new parentBopS[nParentBops];
+	parentBops = new sParentBop[nParentBops];
 	if (parentBops == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nParentBops = nParentBops;
 	return ERROR_SUCCESS;
@@ -109,7 +109,7 @@ error_t fplainn::Driver::preallocateParentBops(uarch_t nParentBops)
 error_t fplainn::Driver::preallocateInternalBops(uarch_t nInternalBops)
 {
 	if (nInternalBops == 0) { return ERROR_SUCCESS; };
-	internalBops = new internalBopS[nInternalBops];
+	internalBops = new sInternalBop[nInternalBops];
 	if (internalBops == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nInternalBops = nInternalBops;
 	return ERROR_SUCCESS;
@@ -216,7 +216,7 @@ error_t fplainn::DriverInstance::initialize(void)
 {
 	if (driver->nChildBops > 0)
 	{
-		childBopVectors = new childBopS[driver->nChildBops];
+		childBopVectors = new sChildBop[driver->nChildBops];
 		if (childBopVectors == NULL) { return ERROR_MEMORY_NOMEM; };
 
 		memset(
@@ -335,15 +335,15 @@ void fplainn::DeviceInstance::removeChannel(sChannel *chan)
 
 error_t fplainn::Device::addParentTag(fvfs::Tag *tag, ubit16 *newId)
 {
-	parentTagS		*tmp, *old;
+	sParentTag		*tmp, *old;
 
-	tmp = new parentTagS[nParentTags + 1];
+	tmp = new sParentTag[nParentTags + 1];
 	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	if (nParentTags > 0)
 		{ memcpy(tmp, parentTags, sizeof(*parentTags) * nParentTags); };
 
-	new (&tmp[nParentTags]) parentTagS(parentTagCounter++, tag);
+	new (&tmp[nParentTags]) sParentTag(parentTagCounter++, tag);
 	*newId = tmp[nParentTags].id;
 	old = parentTags;
 	parentTags = tmp;

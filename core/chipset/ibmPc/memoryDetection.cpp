@@ -27,8 +27,8 @@ struct e820EntryS
 };
 
 static e820EntryS		*e820Ptr;
-static zkcmMemMapS		*_mmap=NULL;
-static zkcmMemConfigS		*_mcfg=NULL;
+static sZkcmMemoryMapS		*_mmap=NULL;
+static sZkcmMemoryConfig		*_mcfg=NULL;
 
 error_t ZkcmMemoryDetectionMod::initialize(void)
 {
@@ -50,9 +50,9 @@ error_t ZkcmMemoryDetectionMod::restore(void)
 	return ERROR_SUCCESS;
 }
 
-static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
+static sZkcmNumaMap *ibmPc_mMod_gnm_rGnm(void)
 {
-	zkcmNumaMapS		*ret;
+	sZkcmNumaMap		*ret;
 	acpi_sRsdt		*rsdt;
 	acpi_rSratS		*srat;
 	acpi_rSratMemS		*memEntry;
@@ -92,12 +92,12 @@ static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
 
-	ret = new zkcmNumaMapS;
+	ret = new sZkcmNumaMap;
 	if (ret == NULL) { return NULL; };
 	ret->nCpuEntries = 0;
 	ret->cpuEntries = NULL;
 
-	ret->memEntries = new numaMemMapEntryS[nEntries];
+	ret->memEntries = new sNumaMemoryMapEntry[nEntries];
 	if (ret->memEntries == NULL)
 	{
 		delete ret;
@@ -169,10 +169,10 @@ static zkcmNumaMapS *ibmPc_mMod_gnm_rGnm(void)
 	return ret;
 }
 
-zkcmNumaMapS *ZkcmMemoryDetectionMod::getNumaMap(void)
+sZkcmNumaMap *ZkcmMemoryDetectionMod::getNumaMap(void)
 {
 	error_t		err;
-	zkcmNumaMapS	*ret=0;
+	sZkcmNumaMap	*ret=0;
 
 	// Get NUMA map from ACPI.
 	acpi::initializeCache();
@@ -212,9 +212,9 @@ zkcmNumaMapS *ZkcmMemoryDetectionMod::getNumaMap(void)
 	#define IBMPCMMAP_ADDRHIGH_BADMASK	0
 #endif
 
-zkcmMemMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
+sZkcmMemoryMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
 {
-	zkcmMemMapS		*ret;
+	sZkcmMemoryMapS		*ret;
 	ubit32			nEntries=0, nBadEntries, i, j;
 
 	/**	EXPLANATION:
@@ -230,7 +230,7 @@ zkcmMemMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
 	// If memory map was previously obtained, return the cached one.
 	if (_mmap != NULL) { return _mmap; };
 
-	ret = new zkcmMemMapS;
+	ret = new sZkcmMemoryMapS;
 	if (ret == NULL)
 	{
 		printf(ERROR"Failed to alloc memMap main structure.\n");	
@@ -267,7 +267,7 @@ zkcmMemMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
 	ibmPcBios::releaseLock();
 
 	// Allocate enough space to hold them all, plus the extra 3.
-	ret->entries = new zkcmMemMapEntryS[nEntries + 3];
+	ret->entries = new sZkcmMemoryMapEntryS[nEntries + 3];
 	if (ret->entries == NULL)
 	{
 		printf(ERROR"Failed to alloc space for mem map entries.\n");
@@ -360,9 +360,9 @@ zkcmMemMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
 	return ret;
 }
 
-zkcmMemConfigS *ZkcmMemoryDetectionMod::getMemoryConfig(void)
+sZkcmMemoryConfig *ZkcmMemoryDetectionMod::getMemoryConfig(void)
 {
-	zkcmMemConfigS		*ret;
+	sZkcmMemoryConfig		*ret;
 	uarch_t			ax, bx, cx, dx;
 	ubit32			highest=0;
 
@@ -371,7 +371,7 @@ zkcmMemConfigS *ZkcmMemoryDetectionMod::getMemoryConfig(void)
 	 * get an E820 map, then use the firmware's INT 0x15(AH=0x0000E801).
 	 **/
 	if (_mcfg != NULL) { return _mcfg; };
-	ret = new zkcmMemConfigS;
+	ret = new sZkcmMemoryConfig;
 	if (ret == NULL)
 	{
 		printf(ERROR"getMemoryConfig: Failed to alloc config.\n");

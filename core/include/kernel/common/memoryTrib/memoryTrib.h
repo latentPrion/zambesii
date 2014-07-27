@@ -70,12 +70,12 @@ public:
 
 private:
 
-	void init2_spawnNumaStreams(zkcmNumaMapS *map);
+	void init2_spawnNumaStreams(sZkcmNumaMap *map);
 	void init2_generateNumaMemoryRanges(
-		zkcmNumaMapS *map, sarch_t *__kspaceBool);
+		sZkcmNumaMap *map, sarch_t *__kspaceBool);
 
 	void init2_generateShbankFromNumaMap(
-		zkcmMemConfigS *cfg, zkcmNumaMapS *map, sarch_t *__kspaceBool);
+		sZkcmMemoryConfig *cfg, sZkcmNumaMap *map, sarch_t *__kspaceBool);
 
 public:
 	Bitmap			availableBanks;

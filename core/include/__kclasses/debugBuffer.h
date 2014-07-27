@@ -37,7 +37,7 @@
 
 class DebugBuffer
 {
-struct buffPageS;
+struct sBuffPage;
 public:
 	DebugBuffer(void);
 	error_t initialize(void);
@@ -62,27 +62,27 @@ public:
 	error_t setBufferNPages(uarch_t nPages);
 
 private:
-	buffPageS *scrollBuff(uarch_t *index, uarch_t buffLen);
+	sBuffPage *scrollBuff(uarch_t *index, uarch_t buffLen);
 
-	struct buffPageS
+	struct sBuffPage
 	{
-		buffPageS(void)
+		sBuffPage(void)
 		:
 		next(NULL)
 		{
 			memset(data, 0, sizeof(data));
 		}
 
-		buffPageS	*next;
+		sBuffPage	*next;
 		// This member should always be 32-bit aligned.
 		utf8Char	data[DEBUGBUFFER_PAGE_NCHARS];
 	};
-	struct buffPtrStateS
+	struct sBuffState
 	{
-		buffPageS	*head, *cur;
+		sBuffPage	*head, *cur;
 		uarch_t		index, buffNPages;
 	};
-	SharedResourceGroup<WaitLock, buffPtrStateS>	buff;
+	SharedResourceGroup<WaitLock, sBuffState>	buff;
 };
 
 #endif

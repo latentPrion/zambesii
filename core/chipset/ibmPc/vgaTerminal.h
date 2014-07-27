@@ -35,13 +35,13 @@ private:
 	void scrollDown(void);
 
 private:
-	struct ibmPc_terminalMod_fbS
+	struct sIbmPc_TerminalMod_Fb
 	{
 		ubit8	ch;
 		ubit8	attr;
 	};
 
-	struct ibmPc_terminalMod_fbS	*buff, *origBuff;
+	struct sIbmPc_TerminalMod_Fb	*buff, *origBuff;
 	uarch_t				row, col, maxRow, maxCol;
 	static ubit8			*bda;
 

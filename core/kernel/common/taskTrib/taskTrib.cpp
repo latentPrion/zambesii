@@ -246,7 +246,7 @@ void TaskTrib::yield(void)
 			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 }
 
-void TaskTrib::block(Lock::operationDescriptorS *unlockDescriptor)
+void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 {
 	Task		*currTask;
 

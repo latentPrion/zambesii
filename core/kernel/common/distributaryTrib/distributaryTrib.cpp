@@ -24,7 +24,7 @@ error_t DistributaryTrib::initialize(void)
 
 error_t DistributaryTrib::bootBuildTree(void)
 {
-	const dvfs::distributaryDescriptorS	*currDesc;
+	const dvfs::sDistributaryDescriptor	*currDesc;
 	uarch_t					i;
 	dvfs::Tag				*rootTag;
 	error_t					ret;

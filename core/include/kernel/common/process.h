@@ -117,7 +117,7 @@ public:
 
 public:
 	// Must remain a POD data type.
-	struct initializationBlockSizeInfoS
+	struct sInitializationBlockizeInfoS
 	{
 		uarch_t			fullNameSize;
 		uarch_t			workingDirectorySize;
@@ -125,7 +125,7 @@ public:
 	};
 
 	// Must remain a POD data type.
-	struct initializationBlockS
+	struct sInitializationBlock
 	{
 		utf8Char		*fullName;
 		utf8Char		*workingDirectory;
@@ -152,8 +152,8 @@ public:
 
 	executableFormatE getExecutableFormat(void) { return executableFormat; }
 
-	void getInitializationBlockSizeInfo(initializationBlockSizeInfoS *ret);
-	void getInitializationBlock(initializationBlockS *ret);
+	void getInitializationBlockSizeInfo(sInitializationBlockizeInfoS *ret);
+	void getInitializationBlock(sInitializationBlock *ret);
 
 	void sendResponse(error_t err);
 
@@ -167,7 +167,7 @@ public:
 		Thread **ret);
 
 public:
-	struct environmentVarS
+	struct sEnvironmentVar
 	{
 		utf8Char	name[PROCESS_ENV_NAME_MAXLEN],
 				value[PROCESS_ENV_VALUE_MAXLEN];
@@ -187,7 +187,7 @@ public:
 
 	utf8Char		*fullName, *workingDirectory, *arguments;
 	ubit8			nEnvVars;
-	environmentVarS		*environment;
+	sEnvironmentVar		*environment;
 
 	// Execution domain and privilege elevation information.
 	ubit8			execDomain;

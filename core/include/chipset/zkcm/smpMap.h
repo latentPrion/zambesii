@@ -29,17 +29,17 @@
 #define ZKCM_SMPMAP_FLAGS_BADCPU		(1<<0)
 #define ZKCM_SMPMAP_FLAGS_BSP			(1<<1)
 
-struct sZkcmmpMapEntryS
+struct sZkcmMemMapEntry
 {
 	cpu_t		cpuId;
 	ubit32		cpuAcpiId;
 	uarch_t		flags;
 };
 
-struct sZkcmmpMapS
+struct sZkcmSmpMap
 {
 	uarch_t				nEntries;
-	struct sZkcmmpMapEntryS		*entries;
+	struct sZkcmMemMapEntry		*entries;
 };
 
 #endif
