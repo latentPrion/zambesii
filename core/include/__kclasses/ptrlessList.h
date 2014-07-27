@@ -22,10 +22,10 @@
 	 * inside of itself, with the member name "listHeader".
 	 **/
 template <class T>
-class ListC
+class List
 {
 public:
-	ListC(void);
+	List(void);
 	error_t initialize(void);
 
 public:
@@ -48,7 +48,7 @@ public:
 
 	class Iterator
 	{
-	friend class ListC;
+	friend class List;
 	public:
 		Iterator(void) : list(NULL), currItem(NULL) {}
 
@@ -63,7 +63,7 @@ public:
 			return currItem;
 		}
 
-		int operator !=(ListC<T>::Iterator it)
+		int operator !=(List<T>::Iterator it)
 		{
 			if (it.currItem == NULL)
 			{
@@ -74,7 +74,7 @@ public:
 			return 0;
 		}
 
-		int operator ==(ListC<T>::Iterator it)
+		int operator ==(List<T>::Iterator it)
 		{
 			if (it.currItem == NULL)
 			{
@@ -86,7 +86,7 @@ public:
 		}
 
 	private:
-		ListC<T>		*list;
+		List<T>		*list;
 		T			*currItem;
 	};
 
@@ -123,7 +123,7 @@ public:
 public:
 	struct sHeader
 	{
-		friend class ListC;
+		friend class List;
 		void setNextItem(T *next) { this->next = next; }
 		T *getNextItem(void) const { return this->next; }
 
@@ -145,18 +145,18 @@ private:
 /**	Template Definition
  ******************************************************************************/
 
-template <class T> ListC<T>::ListC(void)
+template <class T> List<T>::List(void)
 {
 	list.rsrc.head = list.rsrc.tail = NULL;
 	list.rsrc.nItems = 0;
 }
 
-template <class T> error_t ListC<T>::initialize(void)
+template <class T> error_t List<T>::initialize(void)
 {
 	return ERROR_SUCCESS;
 }
 
-template <class T> void ListC<T>::insert(T *item, ubit32 flags)
+template <class T> void List<T>::insert(T *item, ubit32 flags)
 {
 	item->listHeader.next = NULL;
 
@@ -177,7 +177,7 @@ template <class T> void ListC<T>::insert(T *item, ubit32 flags)
 }
 
 template <class T>
-void ListC<T>::sortedInsert(T *item, ubit32 flags)
+void List<T>::sortedInsert(T *item, ubit32 flags)
 {
 	Iterator	curr, prev;
 
@@ -221,7 +221,7 @@ void ListC<T>::sortedInsert(T *item, ubit32 flags)
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { unlock(); };
 }
 
-template <class T> sarch_t ListC<T>::remove(T *item)
+template <class T> sarch_t List<T>::remove(T *item)
 {
 	Iterator	it, prev;
 
@@ -258,7 +258,7 @@ template <class T> sarch_t ListC<T>::remove(T *item)
 	return 0;
 }
 
-template <class T> T *ListC<T>::pop(void)
+template <class T> T *List<T>::pop(void)
 {
 	T	*ret;
 
@@ -283,7 +283,7 @@ template <class T> T *ListC<T>::pop(void)
 	return ret;
 }
 
-template <class T> void ListC<T>::dump(void)
+template <class T> void List<T>::dump(void)
 {
 
 	ubit32		count=4;
@@ -307,7 +307,7 @@ template <class T> void ListC<T>::dump(void)
 	list.lock.release();
 }
 
-template <class T> T *ListC<T>::getItem(ubit32 num) const
+template <class T> T *List<T>::getItem(ubit32 num) const
 {
 	T		*curr;
 
@@ -324,7 +324,7 @@ template <class T> T *ListC<T>::getItem(ubit32 num) const
 }
 
 template <class T>
-sbit8 ListC<T>::find(T *item, ubit32 flags)
+sbit8 List<T>::find(T *item, ubit32 flags)
 {
 	Iterator	it;
 	sbit8		ret=0;

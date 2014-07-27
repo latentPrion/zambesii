@@ -7,12 +7,12 @@
 
 #define i8259a			"IBMPC-8259: "
 
-class i8259aPicC
+class I8259APic
 :
 public ZkcmPicDevice
 {
 public:
-	i8259aPicC(ubit16 nPins)
+	I8259APic(ubit16 nPins)
 	:
 	ZkcmPicDevice(nPins, &baseDeviceInfo),
 	baseDeviceInfo(
@@ -59,13 +59,13 @@ private:
 	ZkcmDevice	baseDeviceInfo;
 };
 
-extern i8259aPicC	i8259aPic;
+extern I8259APic	i8259aPic;
 
 
 /**	Inline methods.
  ******************************************************************************/
 
-inline error_t i8259aPicC::lookupPinBy__kid(ubit16 __kpin, ubit8 *pin)
+inline error_t I8259APic::lookupPinBy__kid(ubit16 __kpin, ubit8 *pin)
 {
 	*pin = __kpin - __kpinBase;
 	if (*pin > 15) { return ERROR_INVALID_ARG_VAL; };

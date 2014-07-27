@@ -617,7 +617,7 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 #if __SCALING__ >= SCALING_CC_NUMA
 	NumaCpuBank	*ncb;
 #endif
-	cpuStream	*cs;
+	CpuStream	*cs;
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	if (bid == NUMABANKID_INVALID || cid == CPUID_INVALID) {
@@ -672,22 +672,22 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		cs = new (processTrib.__kgetStream()->memoryStream.memAlloc(
-			PAGING_BYTES_TO_PAGES(sizeof(cpuStream)),
+			PAGING_BYTES_TO_PAGES(sizeof(CpuStream)),
 			MEMALLOC_NO_FAKEMAP))
-				cpuStream(bid, cid, cpuAcpiId);
+				CpuStream(bid, cid, cpuAcpiId);
 #else
 		cs = new (processTrib.__kgetStream()->memoryStream.*memAlloc(
-			PAGING_BYTES_TO_PAGES(sizeof(cpuStream)),
+			PAGING_BYTES_TO_PAGES(sizeof(CpuStream)),
 			MEMALLOC_NO_FAKEMAP))
-				cpuStream(cid, cpuAcpiId);
+				CpuStream(cid, cpuAcpiId);
 #endif
 	}
 	else
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new (&bspCpu) cpuStream(bid, cid, cpuAcpiId);
+		cs = new (&bspCpu) CpuStream(bid, cid, cpuAcpiId);
 #else
-		cs = new (&bspCpu) cpuStream(cid, cpuAcpiId);
+		cs = new (&bspCpu) CpuStream(cid, cpuAcpiId);
 #endif
 	};
 
@@ -727,7 +727,7 @@ void CpuTrib::destroyStream(cpu_t cid)
 #if __SCALING__ >= SCALING_CC_NUMA
 	NumaCpuBank		*ncb;
 #endif
-	cpuStream		*cs;
+	CpuStream		*cs;
 
 	/**	NOTE:
 	 * This will probably never be called on most machines. Called on CPU
@@ -739,7 +739,7 @@ void CpuTrib::destroyStream(cpu_t cid)
 	// Now remove it from the list of CPUs and free the mem.
 	cpuStreams.removeItem(cid);
 	__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_REMOVE);
-	cs->~cpuStream();
+	cs->~CpuStream();
 	processTrib.__kgetStream()->memoryStream.memFree(cs);
 
 #if __SCALING__ >= SCALING_CC_NUMA

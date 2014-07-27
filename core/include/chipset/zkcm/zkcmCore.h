@@ -28,7 +28,7 @@ public:
 	ZkcmCpuDetectionMod		cpuDetection;
 
 	// XXX: Still to be updated.
-	watchdogModS			watchdog;
+	WatchdogMod			watchdog;
 	ZkcmIrqControlMod		irqControl;
 	ZkcmTimerControlMod		timerControl;
 

@@ -41,19 +41,19 @@
 
 #define CPUMESSAGE_TYPE_TLBFLUSH	0x0
 
-class cpuStream
+class CpuStream
 {
 public:
 #if __SCALING__ >= SCALING_CC_NUMA
-	cpuStream(numaBankId_t bid, cpu_t id, ubit32 acpiId);
+	CpuStream(numaBankId_t bid, cpu_t id, ubit32 acpiId);
 #else
-	cpuStream(cpu_t id, ubit32 cpuAcpiId);
+	CpuStream(cpu_t id, ubit32 cpuAcpiId);
 #endif
 
 	void baseInit(void);
 	error_t initialize(void);
 	sarch_t isInitialized(void);
-	~cpuStream(void);
+	~CpuStream(void);
 
 	error_t initializeBspCpuLocking(void);
 
@@ -76,7 +76,7 @@ public:
 			GOING_TO_SLEEP, WAKING,
 			FAILED_BOOT };
 
-		PowerManager(cpuStream *parentStream)
+		PowerManager(CpuStream *parentStream)
 		:
 		parent(parentStream)
 			{ powerStatus.rsrc = OFF; }
@@ -114,7 +114,7 @@ public:
 		SharedResourceGroup<MultipleReaderLock, powerStatusE>
 			powerStatus;
 
-		cpuStream	*parent;
+		CpuStream	*parent;
 	};
 
 private:
@@ -123,7 +123,7 @@ private:
 	{
 	private: struct sMessage;
 	public:
-		InterCpuMessager(cpuStream *parent);
+		InterCpuMessager(CpuStream *parent);
 		error_t initialize(void);
 
 		error_t bind(void);
@@ -163,17 +163,17 @@ private:
 	private:
 		struct sMessage
 		{
-			ListC<sMessage>::sHeader	listHeader;
+			List<sMessage>::sHeader	listHeader;
 			volatile ubit8			type;
 			volatile uarch_t		val0;
 			volatile uarch_t		val1;
 			volatile uarch_t		val2;
 			volatile uarch_t		val3;
 		};
-		ListC<sMessage>		messageQueue;
+		List<sMessage>		messageQueue;
 		SlamCache			*cache;
 		SharedResourceGroup<WaitLock, statusE> statusFlag;
-		cpuStream	*parent;
+		CpuStream	*parent;
 	};
 #endif
 
@@ -197,14 +197,14 @@ public:
 	InterCpuMessager	interCpuMessager;
 #endif
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
-	class x86LapicC		lapic;
+	class X86Lapic		lapic;
 #endif
 private:
 	TaskContext		perCpuTaskContext;
 };
 
 // The hardcoded stream for the BSP CPU.
-extern cpuStream	bspCpu;
+extern CpuStream	bspCpu;
 
 #endif
 

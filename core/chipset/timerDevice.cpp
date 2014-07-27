@@ -42,7 +42,7 @@ error_t ZkcmTimerDevice::latch(class FloodplainnStream *stream)
 
 void ZkcmTimerDevice::unlatch(void)
 {
-	cpuStream	*currCpu;
+	CpuStream	*currCpu;
 
 	// If it's not the owning process, deny the attempt.
 	currCpu = cpuTrib.getCurrentCpuStream();

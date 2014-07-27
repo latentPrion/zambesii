@@ -120,9 +120,9 @@ private:
 			Allocation *alloc, void *freedBy);
 
 	public:
-		ListC<Chunk>::sHeader	listHeader;
+		List<Chunk>::sHeader	listHeader;
 		uarch_t				nAllocations;
-		ListC<Block>		blocks;
+		List<Block>		blocks;
 		utf8Char			magic[MAGIC_MAXLEN];
 	};
 
@@ -160,7 +160,7 @@ private:
 		}
 
 	public:
-		ListC<Block>::sHeader	listHeader;
+		List<Block>::sHeader	listHeader;
 		Chunk				*parent;
 		void				*freedBy;
 		// Size of the block, including its block header.
@@ -220,7 +220,7 @@ private:
 
 	public:
 		static const ubit8			descriptionMaxlen=32;
-		ListC<Allocation>::sHeader	listHeader;
+		List<Allocation>::sHeader	listHeader;
 		void					*allocatedBy;
 		utf8Char				description[
 			descriptionMaxlen];
@@ -240,8 +240,8 @@ private:
 	sbit8 allocIsWithinHeap(void *alloc, Chunk **parentChunk=NULL);
 
 	MemoryStream			*memoryStream;
-	ListC<Allocation>	allocationList;
-	ListC<Chunk>		chunkList;
+	List<Allocation>	allocationList;
+	List<Chunk>		chunkList;
 };
 
 #endif

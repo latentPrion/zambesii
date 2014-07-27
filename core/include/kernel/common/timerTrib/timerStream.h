@@ -78,14 +78,14 @@ public:
 	}
 
 	/* wakeTarget:
-	 *	Target thread (Thread) or cpu (cpuStream) which must be
+	 *	Target thread (Thread) or cpu (CpuStream) which must be
 	 *	awakened by this timer, and on whose messageStream the
 	 *	notification message will be queued.
 	 *
 	 *	If MSGSTREAM_FLAGS_CPU_TARGET is set, then:
 	 *		* If wakeTarget is NULL, the target CPU to wake is
 	 *		  assumed to be the current CPU. The behaviour is the
-	 *		  same as passing the current CPU's cpuStream pointer.
+	 *		  same as passing the current CPU's CpuStream pointer.
 	 *		* If wakeTarget is set, it is assumed to be a cpuStream
 	 *		  pointer for the CPU on which to queue the callback and
 	 *		  wake on event expiry.

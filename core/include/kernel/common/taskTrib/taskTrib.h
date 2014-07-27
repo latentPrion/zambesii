@@ -56,7 +56,7 @@ public:
 		return dormant(task);
 	}
 
-	error_t dormant(cpuStream *cpuStream)
+	error_t dormant(CpuStream *cpuStream)
 	{
 		return dormant(
 			cpuStream->taskStream.getCurrentPerCpuTask(),
@@ -65,7 +65,7 @@ public:
 
 	error_t dormant(cpu_t cid)
 	{
-		cpuStream	*cpuStream;
+		CpuStream	*cpuStream;
 
 		cpuStream = cpuTrib.getStream(cid);
 		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -85,7 +85,7 @@ public:
 		return wake(task);
 	}
 
-	error_t wake(cpuStream *cpuStream)
+	error_t wake(CpuStream *cpuStream)
 	{
 		return wake(
 			cpuStream->taskStream.getCurrentPerCpuTask(),
@@ -94,7 +94,7 @@ public:
 
 	error_t wake(cpu_t cid)
 	{
-		cpuStream	*cpuStream;
+		CpuStream	*cpuStream;
 
 		cpuStream = cpuTrib.getStream(cid);
 		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
@@ -114,7 +114,7 @@ public:
 		return unblock(task);
 	}
 
-	error_t unblock(cpuStream *cpuStream)
+	error_t unblock(CpuStream *cpuStream)
 	{
 		return unblock(
 			cpuStream->taskStream.getCurrentPerCpuTask(),
@@ -123,7 +123,7 @@ public:
 
 	error_t unblock(cpu_t cid)
 	{
-		cpuStream	*cpuStream;
+		CpuStream	*cpuStream;
 
 		cpuStream = cpuTrib.getStream(cid);
 		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };

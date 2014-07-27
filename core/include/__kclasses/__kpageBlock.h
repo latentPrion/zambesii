@@ -4,16 +4,16 @@
 	#include <arch/paging.h>
 
 #define PAGEBLOCK_NENTRIES(__type)				\
-	((PAGING_BASE_SIZE - sizeof(typename __kpageBLock<T>::sHeader)) \
+	((PAGING_BASE_SIZE - sizeof(typename __kPageBlock<T>::sHeader)) \
 		/sizeof(__type))
 
 template <class T>
-class __kpageBLock
+class __kPageBlock
 {
 public:
 	struct sHeader
 	{
-		__kpageBLock<T>	*next;
+		__kPageBlock<T>	*next;
 		// ubit32: We assume page sizes won't be reaching 4GB soon.
 		ubit32			nFreeEntries;
 	} header;

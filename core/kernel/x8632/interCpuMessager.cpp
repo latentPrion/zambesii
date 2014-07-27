@@ -7,7 +7,7 @@
 
 
 #if __SCALING__ >= SCALING_SMP
-error_t cpuStream::InterCpuMessager::flushTlbRange(void *vaddr, uarch_t nPages)
+error_t CpuStream::InterCpuMessager::flushTlbRange(void *vaddr, uarch_t nPages)
 {
 	error_t		err;
 	sMessage	*msg, *msg2=NULL;

@@ -64,7 +64,7 @@ namespace dvfs
 
 	/* A few typedefs for easier typename access.
 	 **********************************************************************/
-	class distributaryINode;
+	class DistributaryInode;
 	class categoryINode;
 
 	class Tag
@@ -76,7 +76,7 @@ namespace dvfs
 			utf8Char *name,
 			vfs::tagTypeE type,
 			Tag *parent,
-			vfs::iNode *inode=NULL)
+			vfs::Inode *inode=NULL)
 		:
 		vfs::Tag<DVFS_TAG_NAME_MAXLEN>(name, type, parent, inode)
 		{}
@@ -89,36 +89,36 @@ namespace dvfs
 		~Tag(void) {}
 
 	public:
-		distributaryINode *getDInode(void)
-			{ return (distributaryINode *)getInode(); }
+		DistributaryInode *getDInode(void)
+			{ return (DistributaryInode *)getInode(); }
 
 		categoryINode *getCInode(void)
 			{ return (categoryINode *)getInode(); }
 	};
 
-	/**	distributaryINode:
+	/**	DistributaryInode:
 	 * The metadata structure used to store information about distributaries
 	 * available for execution by the kernel. The metadata is implicitly
 	 * also a VFS tree of named objects so that userspace (and kernelspace)
 	 * can easily query the status of distributaries, and manage them.
 	 **********************************************************************/
-	class distributaryINode
+	class DistributaryInode
 	:
-	public vfs::iNode
+	public vfs::Inode
 	{
 	public:
 		// Can be either in the kernel image, or loaded from elsewhere.
 		enum typeE { IN_KERNEL=1, OUT_OF_KERNEL };
 
-		distributaryINode(
+		DistributaryInode(
 			const sDistributaryDescriptor *descriptor, typeE type);
 
 		error_t initialize(void)
 		{
-			return vfs::iNode::initialize();
+			return vfs::Inode::initialize();
 		}
 
-		~distributaryINode(void) {}
+		~DistributaryInode(void) {}
 
 	public:
 		sarch_t isCurrentlyRunning(void) { return currentlyRunning; }
@@ -159,12 +159,12 @@ namespace dvfs
 	 **********************************************************************/
 	class categoryINode
 	:
-	public vfs::dirINode<Tag>
+	public vfs::DirInode<Tag>
 	{
 	public:
 		categoryINode(void) {}
 		error_t initialize(void)
-			{ return vfs::dirINode<Tag>::initialize(); }
+			{ return vfs::DirInode<Tag>::initialize(); }
 
 		~categoryINode(void) {}
 	};

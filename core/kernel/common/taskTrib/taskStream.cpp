@@ -24,7 +24,7 @@ extern "C" void taskStream_pull(RegisterContext *savedContext)
 	currTaskStream->pull();
 }
 
-TaskStream::TaskStream(cpuStream *parent)
+TaskStream::TaskStream(CpuStream *parent)
 :
 Stream(0),
 load(0), capacity(0),

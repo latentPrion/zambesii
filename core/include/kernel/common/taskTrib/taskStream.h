@@ -15,15 +15,15 @@
 
 #define TASK_SCHEDULE_TRY_AGAIN		0x1
 
-class cpuStream;
+class CpuStream;
 class TaskStream
 :
 public Stream
 {
-friend class cpuStream;
+friend class CpuStream;
 public:
 
-	TaskStream(cpuStream *parentCpu);
+	TaskStream(CpuStream *parentCpu);
 
 	/* Allocates internal queues, etc.
 	 *	XXX:
@@ -76,7 +76,7 @@ private:
 public:
 	// Three queues on each CPU: rr, rt and sleep.
 	PrioQueue<Task>	roundRobinQ, realTimeQ;
-	cpuStream		*parentCpu;
+	CpuStream		*parentCpu;
 };
 
 #endif

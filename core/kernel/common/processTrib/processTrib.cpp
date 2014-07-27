@@ -82,7 +82,7 @@ error_t ProcessTrib::getDistributaryExecutableFormat(
 		return SPAWNPROC_STATUS_INVALID_FILE_NAME;
 	};
 
-	if (tag->getDInode()->getType() == dvfs::distributaryINode::IN_KERNEL)
+	if (tag->getDInode()->getType() == dvfs::DistributaryInode::IN_KERNEL)
 	{
 		// IN_KERNEL dtribs are raw embedded code in the kernel image.
 		// *entryPoint = tag->getDInode()->getEntryAddress();
@@ -417,7 +417,7 @@ error_t ProcessTrib::spawnDriver(
 	fplainn::Device		*dev;
 	fplainn::Driver		*drv;
 	fplainn::DriverInstance	*drvInstance;
-	HeapObject<DriverProcess>	newProcess;
+	HeapObj<DriverProcess>	newProcess;
 
 	if (commandLine == NULL || retProcess == NULL)
 		{ return ERROR_INVALID_ARG; };

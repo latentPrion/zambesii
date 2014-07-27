@@ -56,7 +56,7 @@ status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 	// Return value is the rank of the driver.
 	status_t			ret=ERROR_NO_MATCH;
 	zui::rank::sHeader		currRank;
-	HeapArray<utf8Char>		attrValueTmp;
+	HeapArr<utf8Char>		attrValueTmp;
 
 	attrValueTmp = new ubit8[UDI_MAX_ATTR_SIZE];
 	if (attrValueTmp == NULL) { return ERROR_MEMORY_NOMEM; };
@@ -223,9 +223,9 @@ void fplainnIndexServer_detectDriverReq(
 	fplainn::Device			*dev;
 	zui::device::sHeader			devlineHdr,
 						*currDevlineHdr;
-	HeapArray<utf8Char>			devlineName;
-	HeapObject<zui::sHeader>			indexHdr;
-	HeapObject<zui::driver::sHeader>		driverHdr, metaHdr;
+	HeapArr<utf8Char>			devlineName;
+	HeapObj<zui::sHeader>			indexHdr;
+	HeapObj<zui::driver::sHeader>		driverHdr, metaHdr;
 	// FIXME: big memory leak on this list within this function.
 	PtrList<zui::device::sHeader>		matchingDevices;
 	status_t				bestRank=-1;
@@ -563,7 +563,7 @@ void fplainnIndexServer_newDeviceActionReq
 	utf8Char *metaName, zui::sHeader *indexHdr
 	)
 {
-	HeapObject<zui::driver::sHeader>	metaHdr;
+	HeapObj<zui::driver::sHeader>	metaHdr;
 	zui::driver::Provision		provTmp;
 	ubit8				indexNo=(int)zuiServer::INDEX_KERNEL;
 
@@ -618,10 +618,10 @@ void fplainnIndexer_loadDriverReq
 {
 	Floodplainn::sZudiIndexMsg		*response;
 	AsyncResponse				myResponse;
-	HeapObject<fplainn::Driver>		driver;
-	HeapObject<zui::sHeader> 			indexHdr;
-	HeapObject<zui::driver::sHeader>		driverHdr;
-	HeapArray<utf8Char>			tmpString;
+	HeapObj<fplainn::Driver>		driver;
+	HeapObj<zui::sHeader> 			indexHdr;
+	HeapObj<zui::driver::sHeader>		driverHdr;
+	HeapArr<utf8Char>			tmpString;
 	fplainn::Device			*device;
 	error_t					err;
 	const sDriverInitEntry			*driverInitEntry;
@@ -906,9 +906,9 @@ void fplainnIndexServer_loadRequirementsReq
 	AsyncResponse			myResponse;
 	fplainn::Driver		*drv;
 	error_t				err;
-	HeapObject<zui::sHeader>		indexHdr;
-	HeapObject<zui::driver::sHeader>	metaHdr;
-	HeapArray<utf8Char>		tmpName;
+	HeapObj<zui::sHeader>		indexHdr;
+	HeapObj<zui::driver::sHeader>	metaHdr;
+	HeapArr<utf8Char>		tmpName;
 
 	response = new Floodplainn::sZudiIndexMsg(
 		request->header.sourceId,
@@ -1347,8 +1347,8 @@ void fplainnIndexServer_handleRequest
 void Floodplainn::indexReaderEntry(void)
 {
 	Thread						*self;
-	HeapObject<MessageStream::sIterator>		gcb;
-	HeapObject<zuiServer::sIndexMsg>			requestData;
+	HeapObj<MessageStream::sIterator>		gcb;
+	HeapObj<zuiServer::sIndexMsg>			requestData;
 	zui::sHeader					__kindexHeader;
 
 	self = static_cast<Thread *>(

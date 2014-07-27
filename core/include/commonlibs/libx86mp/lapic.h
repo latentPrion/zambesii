@@ -106,14 +106,14 @@
 
 
 #ifndef __ASM__
-class x86LapicC
+class X86Lapic
 :
 public ZkcmDevice
 {
 public:
-	x86LapicC(class cpuStream *parent);
+	X86Lapic(class CpuStream *parent);
 	error_t initialize(void) { return ERROR_SUCCESS; }
-	~x86LapicC(void) {}
+	~X86Lapic(void) {}
 
 	// ZkcmTimerDevice *getTimer(void) { return &timer; }
 
@@ -172,7 +172,7 @@ public:
 	// IPI-related functions.
 	struct sIpi
 	{
-		error_t setupIpis(class cpuStream *parent);
+		error_t setupIpis(class CpuStream *parent);
 
 		error_t sendPhysicalIpi(
 			ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest);
@@ -190,14 +190,14 @@ public:
 
 	struct sLint
 	{
-		error_t setupLints(class cpuStream *parent);
+		error_t setupLints(class CpuStream *parent);
 
 		void lintSetup(
-			class cpuStream *parent,
+			class CpuStream *parent,
 			ubit8 lint, ubit8 intType, ubit32 flags, ubit8 vector);
 
-		void lintEnable(class cpuStream *parent, ubit8 lint);
-		void lintDisable(class cpuStream *parent, ubit8 lint);
+		void lintEnable(class CpuStream *parent, ubit8 lint);
+		void lintDisable(class CpuStream *parent, ubit8 lint);
 
 		/* LINT pin related functions.
 		 *
@@ -210,14 +210,14 @@ public:
 		static ubit32 lintConvertAcpiFlags(ubit32);
 
 	private:
-		void rsdtSetupLints(class cpuStream *parent);
-		void xsdtSetupLints(class cpuStream *parent);
+		void rsdtSetupLints(class CpuStream *parent);
+		void xsdtSetupLints(class CpuStream *parent);
 	} lint;
 
 	// This must always be 0xHF, where H is any hex digit, and F is fixed.
 	struct sSpurious
 	{
-		error_t setupSpuriousVector(class cpuStream *parent);
+		error_t setupSpuriousVector(class CpuStream *parent);
 
 	private:
 		void installHandler(void);
@@ -227,7 +227,7 @@ public:
 
 	struct sError
 	{
-		error_t setupLvtError(class cpuStream *parent);
+		error_t setupLvtError(class CpuStream *parent);
 
 	private:
 		void installHandler(void);
@@ -252,7 +252,7 @@ public:
 
 private:
 	static sCache		cache;
-	class cpuStream	*parent;
+	class CpuStream	*parent;
 	// lapicTimerC		timer;
 };
 #endif

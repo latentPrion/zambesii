@@ -42,7 +42,7 @@ public:
 	virtual error_t bind(void) { return ERROR_SUCCESS; };
 	virtual void cut(void) {};
 
-// jumpListC interface.
+// jumpList interface.
 public:
 	processId_t	id;
 	ubit32		streamFlags;

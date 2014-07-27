@@ -361,7 +361,7 @@ error_t MessageStream::enqueueOnThread(
 
 	if (FLAG_TEST(header->flags, MSGSTREAM_FLAGS_CPU_TARGET))
 	{
-		cpuStream		*cs;
+		CpuStream		*cs;
 
 		/* Dealing with an asynchronous response to an API call from a
 		 * per-CPU thread.

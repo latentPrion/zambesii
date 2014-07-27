@@ -83,11 +83,11 @@ static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 }
 
 #include <arch/cpuControl.h>
-status_t cpuStream::PowerManager::bootPowerOn(ubit32)
+status_t CpuStream::PowerManager::bootPowerOn(ubit32)
 {
 	error_t		ret;
 
-	if (!x86LapicC::lapicMemIsMapped()) { return ERROR_UNINITIALIZED; };
+	if (!X86Lapic::lapicMemIsMapped()) { return ERROR_UNINITIALIZED; };
 
 	if (!cpuTrib.usingChipsetSmpMode())
 	{
@@ -124,10 +124,10 @@ status_t cpuStream::PowerManager::bootPowerOn(ubit32)
 	return ERROR_SUCCESS;
 }
 
-void cpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
+void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 {
 	MessageStream::sIterator	event;
-	cpuStream			*cs;
+	CpuStream			*cs;
 	sarch_t				loopAgain;
 	uarch_t				sipiVector;
 	error_t				err;
@@ -141,7 +141,7 @@ void cpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 		processTrib.__kgetStream()->timerStream.pullEvent(
 			0, (TimerStream::sTimerMsg *)&event);
 
-		cs = reinterpret_cast<cpuStream *>( event.header.privateData );
+		cs = reinterpret_cast<CpuStream *>( event.header.privateData );
 
 		switch (cs->powerManager.getPowerStatus())
 		{

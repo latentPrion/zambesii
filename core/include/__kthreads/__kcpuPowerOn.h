@@ -7,7 +7,7 @@
 	#include <kernel/common/cpuTrib/cpuTrib.h>
 
 extern "C" void __kcpuPowerOnEntry(void);
-extern "C" void __kcpuPowerOnMain(cpuStream *self);
+extern "C" void __kcpuPowerOnMain(CpuStream *self);
 
 extern "C" ubit8	*__kcpuPowerOnLapicVaddr;
 extern "C" void		**__kcpuPowerOnSleepStacks;

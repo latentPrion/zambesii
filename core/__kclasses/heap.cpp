@@ -129,7 +129,7 @@ Heap::Allocation *Heap::Chunk::malloc(
 	Heap *heap, size_t sz, void *allocatedBy, utf8Char *desc
 	)
 {
-	ListC<Block>::Iterator		it;
+	List<Block>::Iterator		it;
 	Block					*currBlock;
 	Allocation				*ret;
 	uintptr_t				gapRequirement;
@@ -304,7 +304,7 @@ void Heap::Chunk::prependAndCoalesce(
 
 void Heap::Chunk::free(Allocation *alloc, void *freedBy)
 {
-	ListC<Block>::Iterator		it, prev;
+	List<Block>::Iterator		it, prev;
 	ubit8					*allocEnd;
 
 	/**	EXPLANATION:
@@ -451,7 +451,7 @@ void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 {
 	//size_t				origSz=sz;
 	error_t					err;
-	ListC<Chunk>::Iterator		it;
+	List<Chunk>::Iterator		it;
 	Chunk					*currChunk;
 	Allocation				*ret;
 
@@ -550,7 +550,7 @@ void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 		// Add the new chunk to the chunks list and retry.
 		chunkList.insert(
 			currChunk,
-			ListC<Chunk>::OP_FLAGS_UNLOCKED);
+			List<Chunk>::OP_FLAGS_UNLOCKED);
 	};
 
 	// If both passes yielded nothing, return NULL.
@@ -561,7 +561,7 @@ void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 void Heap::free(void *_p, void *freedBy)
 {
 	Allocation				*alloc=(Allocation *)_p;
-	ListC<Chunk>::Iterator		chunkIt;
+	List<Chunk>::Iterator		chunkIt;
 	sbit8					isWithinHeap=0;
 
 	// Move backward in memory to get to the start of the header.
@@ -684,10 +684,10 @@ void Heap::free(void *_p, void *freedBy)
 
 void Heap::dumpChunks(ubit32 flags)
 {
-	ListC<Chunk>::Iterator		it;
+	List<Chunk>::Iterator		it;
 
 	printf(NOTICE"dumpChunks: %u chunks, chunk size %u, dumping chunks.\n",
-		chunkList.getNItems(ListC<Chunk>::OP_FLAGS_UNLOCKED),
+		chunkList.getNItems(List<Chunk>::OP_FLAGS_UNLOCKED),
 		chunkSize);
 
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { chunkList.lock(); };
@@ -705,11 +705,11 @@ void Heap::dumpChunks(ubit32 flags)
 
 void Heap::dumpAllocations(ubit32 flags)
 {
-	ListC<Allocation>::Iterator	it;
+	List<Allocation>::Iterator	it;
 
 	printf(NOTICE"dumpAllocs: %u allocs, spanning %u chunks\n",
-		allocationList.getNItems(ListC<Allocation>::OP_FLAGS_UNLOCKED),
-		chunkList.getNItems(ListC<Chunk>::OP_FLAGS_UNLOCKED));
+		allocationList.getNItems(List<Allocation>::OP_FLAGS_UNLOCKED),
+		chunkList.getNItems(List<Chunk>::OP_FLAGS_UNLOCKED));
 
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { allocationList.lock(); };
 
@@ -726,17 +726,17 @@ void Heap::dumpAllocations(ubit32 flags)
 
 void Heap::dumpBlocks(ubit32 flags)
 {
-	ListC<Chunk>::Iterator		it;
+	List<Chunk>::Iterator		it;
 
 	printf(NOTICE"dumpBlocks: spanning %u chunks\n",
-		chunkList.getNItems(ListC<Chunk>::OP_FLAGS_UNLOCKED));
+		chunkList.getNItems(List<Chunk>::OP_FLAGS_UNLOCKED));
 
 	if (!FLAG_TEST(flags, OP_FLAGS_UNLOCKED)) { chunkList.lock(); };
 
 	for (it=chunkList.begin(); it != chunkList.end(); ++it)
 	{
 		Chunk					*currChunk;
-		ListC<Block>::Iterator		it2;
+		List<Block>::Iterator		it2;
 
 		currChunk = *it;
 		for (it2=currChunk->blocks.begin();
@@ -754,7 +754,7 @@ void Heap::dumpBlocks(ubit32 flags)
 
 sbit8 Heap::allocIsWithinHeap(void *alloc, Chunk **parentChunk)
 {
-	ListC<Chunk>::Iterator		iChunks;
+	List<Chunk>::Iterator		iChunks;
 
 	iChunks = chunkList.begin();
 	for (; iChunks != chunkList.end(); ++iChunks)
@@ -775,18 +775,18 @@ sbit8 Heap::allocIsWithinHeap(void *alloc, Chunk **parentChunk)
 
 error_t Heap::checkBlocks(void)
 {
-	ListC<Chunk>::Iterator		iChunks;
+	List<Chunk>::Iterator		iChunks;
 
 	class LocalAutoUnlocker
 	{
-		ListC<Chunk>		*list;
+		List<Chunk>		*list;
 
 	public:
 		~LocalAutoUnlocker(void)
 		{
 			list->unlock();
 		}
-		LocalAutoUnlocker(ListC<Chunk> *list)
+		LocalAutoUnlocker(List<Chunk> *list)
 		:
 		list(list)
 		{}
@@ -804,7 +804,7 @@ error_t Heap::checkBlocks(void)
 	iChunks = chunkList.begin();
 	for (; iChunks != chunkList.end(); ++iChunks)
 	{
-		ListC<Block>::Iterator	iBlocks, iBlocksPrev;
+		List<Block>::Iterator	iBlocks, iBlocksPrev;
 		Chunk				*currChunk;
 		ubit8				*currChunkEnd;
 
@@ -904,8 +904,8 @@ error_t Heap::checkBlocks(void)
 error_t Heap::checkAllocations(void)
 {
 	uarch_t					totalAllocs, nAllocsInList;
-	ListC<Chunk>::Iterator		iChunks;
-	ListC<Allocation>::Iterator	iAllocs;
+	List<Chunk>::Iterator		iChunks;
+	List<Allocation>::Iterator	iAllocs;
 
 	/**	EXPLANATION:
 	 * First, get the total number of allocations across all chunks.
@@ -974,7 +974,7 @@ error_t Heap::checkAllocations(void)
 		};
 
 		if (!chunkList.find(
-			alloc->parent, ListC<Chunk>::OP_FLAGS_UNLOCKED)
+			alloc->parent, List<Chunk>::OP_FLAGS_UNLOCKED)
 			|| alloc->parent != detectedParent)
 		{
 			printf(FATAL HEAP"checkAllocs: alloc 0x%p: invalid "

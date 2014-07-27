@@ -35,7 +35,7 @@ uarch_t getEip(void)
 extern "C" void getRegs(RegisterContext *t);
 //RegisterContext		y(0);
 
-void __kcpuPowerOnMain(cpuStream *self)
+void __kcpuPowerOnMain(CpuStream *self)
 {
 	error_t		err;
 
@@ -55,7 +55,7 @@ void __kcpuPowerOnMain(cpuStream *self)
 	 * crash.
 	 **/
 	self->baseInit();
-	self->powerManager.setPowerStatus(cpuStream::PowerManager::C0);
+	self->powerManager.setPowerStatus(CpuStream::PowerManager::C0);
 
 	// After "bind", the CPU will be able to allocate, etc. normally.
 	err = self->bind();

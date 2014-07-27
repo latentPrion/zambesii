@@ -233,7 +233,7 @@ error_t ZudiIndexParser::findDriver(
 	zui::sHeader *hdr, utf8Char *fullName, zui::driver::sHeader *retobj
 	)
 {
-	HeapArray<utf8Char>	nameTmp;
+	HeapArr<utf8Char>	nameTmp;
 	uarch_t			base;
 
 	base = sizeof(zui::sHeader);

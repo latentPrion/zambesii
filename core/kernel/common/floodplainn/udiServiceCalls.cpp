@@ -181,7 +181,7 @@ error_t Floodplainn::spawnChannel(
 	udi_init_context_t *channelContext1
 	)
 {
-	HeapObject<fplainn::DeviceInstance::sChannel>	chan;
+	HeapObj<fplainn::DeviceInstance::sChannel>	chan;
 	error_t						ret0, ret1;
 
 	/**	EXPLANATION:

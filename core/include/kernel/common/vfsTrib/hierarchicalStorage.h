@@ -31,16 +31,16 @@ namespace hvfs
 	 **********************************************************************/
 	typedef vfs::Tag<HVFS_TAG_NAME_MAXLEN>		Tag;
 
-	/**	iNode:
+	/**	Inode:
 	 * Basic class with the common-denominator inode members: dates and
 	 * sizes, and the concrete inode ID.
 	 **********************************************************************/
-	class iNode
+	class Inode
 	{
 	public:
 		class FileSize;
 
-		iNode(
+		Inode(
 			InodeId concreteId, FileSize size,
 			sTimestamp createdTime, sTimestamp modifiedTime,
 			sTimestamp accessedTime)
@@ -51,10 +51,10 @@ namespace hvfs
 		{}
 
 		error_t initialize(void) { return ERROR_SUCCESS; }
-		~iNode(void) {}
+		~Inode(void) {}
 
 	public:
-		/**	iNode::FileSize:
+		/**	Inode::FileSize:
 		 * Basic abstraction of a file size. Uses uarch_t so it can
 		 * automagically scale based on target architecture.
 		 **************************************************************/
@@ -86,20 +86,20 @@ namespace hvfs
 		sTimestamp		createdTime, modifiedTime, accessedTime;
 	};
 
-	/**	fileINode:
+	/**	FileInode:
 	 * Abstraction of a file inode for the storage VFS.
 	 **********************************************************************/
-	class fileINode
+	class FileInode
 	:
-	public vfs::iNode, public iNode
+	public vfs::Inode, public Inode
 	{
 	public:
-		fileINode(
+		FileInode(
 			InodeId concreteId, FileSize size,
 			sTimestamp createdTime, sTimestamp modifiedTime,
 			sTimestamp accessedTime)
 		:
-		hvfs::iNode(
+		hvfs::Inode(
 			concreteId, size,
 			createdTime, modifiedTime, accessedTime)
 		{}
@@ -108,29 +108,29 @@ namespace hvfs
 		{
 			error_t		ret;
 
-			ret = vfs::iNode::initialize();
+			ret = vfs::Inode::initialize();
 			if (ret != ERROR_SUCCESS) { return ret; }
-			return hvfs::iNode::initialize();
+			return hvfs::Inode::initialize();
 		}
 
-		~fileINode(void) {}
+		~FileInode(void) {}
 	};
 
-	/**	symlinkINode:
-	 * Abstraction of a symlink inode. Basically a fileINode with a string
+	/**	SymlinkInode:
+	 * Abstraction of a symlink inode. Basically a FileInode with a string
 	 * inside of it.
 	 **********************************************************************/
-	class symlinkINode
+	class SymlinkInode
 	:
-	public fileINode
+	public FileInode
 	{
 	public:
-		symlinkINode(
+		SymlinkInode(
 			InodeId concreteId, FileSize size,
 			sTimestamp createdTime, sTimestamp modifiedTime,
 			sTimestamp accessedTime)
 		:
-		fileINode(
+		FileInode(
 			concreteId, size,
 			createdTime, modifiedTime, accessedTime)
 		{
@@ -141,8 +141,8 @@ namespace hvfs
 			this->fullName[symlinkFullNameMaxLength - 1] = '\0';
 		}
 
-		error_t initialize(void) { return fileINode::initialize(); }
-		~symlinkINode(void) {}
+		error_t initialize(void) { return FileInode::initialize(); }
+		~SymlinkInode(void) {}
 
 	public:
 		const utf8Char *getFullName(void) { return fullName; }
@@ -152,29 +152,29 @@ namespace hvfs
 		utf8Char		fullName[symlinkFullNameMaxLength];
 	};
 
-	/**	dirINode:
-	 * Storage VFS layer abstraction of a dirINode with creation date
+	/**	DirInode:
+	 * Storage VFS layer abstraction of a DirInode with creation date
 	 * size, etc. attached.
 	 **********************************************************************/
-	class dirINode
+	class DirInode
 	:
-	public vfs::dirINode<Tag>, public hvfs::iNode
+	public vfs::DirInode<Tag>, public hvfs::Inode
 	{
 	public:
-		dirINode(
+		DirInode(
 			InodeId concreteId, FileSize size,
 			sTimestamp createdTime, sTimestamp modifiedTime,
 			sTimestamp accessedTime)
 		:
-		hvfs::iNode(
+		hvfs::Inode(
 			concreteId, size,
 			createdTime, modifiedTime, accessedTime)
 		{}
 
 		error_t initialize(void)
-			{ return vfs::dirINode<Tag>::initialize(); }
+			{ return vfs::DirInode<Tag>::initialize(); }
 
-		~dirINode(void) {}
+		~DirInode(void) {}
 
 	private:
 	};
@@ -195,7 +195,7 @@ namespace hvfs
 			&rootTag, &rootInode),
 
 		rootInode(
-			InodeId(0, 0), hvfs::iNode::FileSize(0, 0, 0),
+			InodeId(0, 0), hvfs::Inode::FileSize(0, 0, 0),
 			sTimestamp(0, 0, 0),
 			sTimestamp(0, 0, 0),
 			sTimestamp(0, 0, 0))
@@ -246,7 +246,7 @@ namespace hvfs
 
 		class SlamCache	*Tagache;
 		Tag			rootTag;
-		dirINode		rootInode;
+		DirInode		rootInode;
 		SharedResourceGroup<MultipleReaderLock, sDefaultTreeInfo>
 			defaultTree;
 	};

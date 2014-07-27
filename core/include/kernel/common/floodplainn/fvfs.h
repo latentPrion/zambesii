@@ -37,15 +37,15 @@ namespace fvfs
 	:
 	public vfs::Tag<FVFS_TAG_NAME_MAXLEN>
 	{
-	friend class vfs::dirINode<Tag>;
+	friend class vfs::DirInode<Tag>;
 	friend class Currentt;
-		/* Private constructor only for use within vfs::dirINode.
-		 * It is used to allow vfs::dirINode::create*Tag() to
+		/* Private constructor only for use within vfs::DirInode.
+		 * It is used to allow vfs::DirInode::create*Tag() to
 		 * generically create new tags of this type.
 		 **/
 		Tag(
 			utf8Char *name, vfs::tagTypeE,
-			Tag *parent, vfs::iNode *inode=NULL)
+			Tag *parent, vfs::Inode *inode=NULL)
 		:
 		vfs::Tag<FVFS_TAG_NAME_MAXLEN>(
 			name, vfs::DEVICE, parent, inode)

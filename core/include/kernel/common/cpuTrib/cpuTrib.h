@@ -36,9 +36,9 @@
  *	      controllable state.
  *	   -> cpuInfo(CPUSTREAM_INFO_ENUMERATE): Obtain information on CPU.
  *	-> Prepare the new CPU for scheduler use.
- *	   -> cpuStream->taskStream->Initialize(): Prepare the scheduler object
+ *	   -> CpuStream->taskStream->Initialize(): Prepare the scheduler object
  *	      to be used.
- *	   -> cpuStream->taskStream->attach(): Cause the CPU to advertise itself
+ *	   -> CpuStream->taskStream->attach(): Cause the CPU to advertise itself
  *	      as a candidate for new threads to be scheduled to and for load
  *	      balancing.
  **/
@@ -75,10 +75,10 @@ public:
 #endif
 	void destroyStream(cpu_t cpuId);
 	// Gets the Stream for 'cpu'.
-	cpuStream *getStream(cpu_t cpu);
+	CpuStream *getStream(cpu_t cpu);
 
 	// Quickly acquires the current CPU's Stream.
-	cpuStream *getCurrentCpuStream(void);
+	CpuStream *getCurrentCpuStream(void);
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	NumaCpuBank *getBank(numaBankId_t bankId);
@@ -129,7 +129,7 @@ private:
 #if __SCALING__ >= SCALING_SMP
 	HardwareIdList		cpuStreams;
 #else
-	cpuStream		*cpu;
+	CpuStream		*cpu;
 #endif
 };
 
@@ -147,15 +147,15 @@ inline NumaCpuBank *CpuTrib::getBank(numaBankId_t id)
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-inline cpuStream *CpuTrib::getStream(cpu_t cpu)
+inline CpuStream *CpuTrib::getStream(cpu_t cpu)
 {
 	/* This should be okay for now. We can reshuffle the pointers when we
 	 * have the hardware IDs of the CPUs.
 	 **/
-	return static_cast<cpuStream *>( cpuStreams.getItem(cpu) );
+	return static_cast<CpuStream *>( cpuStreams.getItem(cpu) );
 }
 #else
-inline cpuStream *CpuTrib::getStream(cpu_t)
+inline CpuStream *CpuTrib::getStream(cpu_t)
 {
 	return cpu;
 }

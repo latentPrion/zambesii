@@ -31,13 +31,13 @@
 #define i8254_US2CLK_10			(12)
 #define i8254_US2CLK_1			(1)
 
-class i8254PitC
+class I8254Pit
 :
 public ZkcmTimerDevice
 {
 friend class ZkcmCpuDetectionMod;
 public:
-	explicit i8254PitC(ubit32 childId)
+	explicit I8254Pit(ubit32 childId)
 	:
 	ZkcmTimerDevice(
 		ZkcmTimerDevice::CHIPSET,
@@ -105,7 +105,7 @@ private:
 	} i8254State;
 };
 
-extern i8254PitC	i8254Pit;
+extern I8254Pit	i8254Pit;
 
 #endif
 

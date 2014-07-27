@@ -46,7 +46,7 @@ error_t __klzbzcore::driver::__kcall::instantiateDevice(sCallerContext *ctxt)
 	for (uarch_t i=0; i<drv->nRegions; i++)
 	{
 		Thread				*newThread;
-		HeapObject<udi_init_context_t>	rdata;
+		HeapObj<udi_init_context_t>	rdata;
 
 		// The +1 is to ensure the allocation size isn't 0.
 		rdata = (udi_init_context_t *)new ubit8[
@@ -152,7 +152,7 @@ error_t region::main(
 	Thread *self, __klzbzcore::driver::__kcall::sCallerContext *ctxt
 	)
 {
-	HeapObject<MessageStream::sIterator>		msgIt;
+	HeapObj<MessageStream::sIterator>		msgIt;
 	fplainn::Device				*dev;
 	ubit16						regionIndex;
 	udi_init_context_t				*rdata;

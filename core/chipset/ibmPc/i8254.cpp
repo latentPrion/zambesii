@@ -37,7 +37,7 @@
  * reason for this is that I do not believe that Linux uses mode 0
  **/
 
-i8254PitC		i8254Pit(0);
+I8254Pit		i8254Pit(0);
 
 // Chan 0 and 2 counters are 16bit, chan 3 counter is 8bit.
 #define i8254_CHAN0_IO_COUNTER		(0x40)
@@ -79,7 +79,7 @@ i8254PitC		i8254Pit(0);
 #define i8254_CHAN3_CONTROL_COUNTER_RWLOW	(0x1<<4)
 
 
-error_t i8254PitC::initialize(void)
+error_t I8254Pit::initialize(void)
 {
 	error_t		ret;
 
@@ -104,7 +104,7 @@ error_t i8254PitC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-error_t i8254PitC::shutdown(void)
+error_t I8254Pit::shutdown(void)
 {
 	error_t		ret;
 
@@ -120,7 +120,7 @@ error_t i8254PitC::shutdown(void)
 	return ERROR_SUCCESS;
 }
 
-void i8254PitC::sendEoi(void)
+void I8254Pit::sendEoi(void)
 {
 	uarch_t		flags;
 	ubit8		val;
@@ -132,12 +132,12 @@ void i8254PitC::sendEoi(void)
 	cpuControl::safeEnableInterrupts(flags);
 }
 
-status_t i8254PitC::isr(ZkcmDeviceBase *self, ubit32 flags)
+status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 {
 	(void)		flags;
 	ubit32		devFlags;
 	sZkcmTimerEvent	*irqEvent;
-	i8254PitC	*device;
+	I8254Pit	*device;
 	error_t		err;
 	modeE		mode;
 
@@ -147,7 +147,7 @@ status_t i8254PitC::isr(ZkcmDeviceBase *self, ubit32 flags)
 	 *    disabling IRQ, unregister the ISR and exit.
 	 * 2. If this is not a disabling IRQ, queue an event and exit.
 	 **/
-	device = static_cast<i8254PitC *>( self );
+	device = static_cast<I8254Pit *>( self );
 
 	device->state.lock.acquire();
 
@@ -233,7 +233,7 @@ status_t i8254PitC::isr(ZkcmDeviceBase *self, ubit32 flags)
 	return ZKCM_ISR_SUCCESS;
 }
 
-error_t i8254PitC::enable(void)
+error_t I8254Pit::enable(void)
 {
 	error_t		ret;
 
@@ -322,18 +322,18 @@ error_t i8254PitC::enable(void)
 	return ERROR_SUCCESS;
 }
 
-void i8254PitC::setSmpModeSwitchFlag(processId_t wakeTargetThread)
+void I8254Pit::setSmpModeSwitchFlag(processId_t wakeTargetThread)
 {
 	i8254State.smpModeSwitchInProgress = 1;
 	i8254State.smpModeSwitchThread = wakeTargetThread;
 }
 
-void i8254PitC::unsetSmpModeSwitchFlag(void)
+void I8254Pit::unsetSmpModeSwitchFlag(void)
 {
 	i8254State.smpModeSwitchInProgress = 0;
 }
 
-void i8254PitC::disable(void)
+void I8254Pit::disable(void)
 {
 	ubit16		disableDelayClks=1000;
 
@@ -460,7 +460,7 @@ inline static ubit16 nanosecondsToClks(ubit32 ns)
 	return ret;
 }
 
-status_t i8254PitC::setPeriodicMode(struct sTime interval)
+status_t I8254Pit::setPeriodicMode(struct sTime interval)
 {
 	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
 	// Make sure the requested periodic interval is supported by the i8254.
@@ -478,7 +478,7 @@ status_t i8254PitC::setPeriodicMode(struct sTime interval)
 	return ERROR_SUCCESS;
 }
 
-status_t i8254PitC::setOneshotMode(struct sTime timeout)
+status_t I8254Pit::setOneshotMode(struct sTime timeout)
 {
 	if (!validateCallerIsLatched()) { return ERROR_RESOURCE_BUSY; };
 	// Make sure the requested timeout is supported by the i8254.
@@ -496,7 +496,7 @@ status_t i8254PitC::setOneshotMode(struct sTime timeout)
 	return ERROR_SUCCESS;
 }
 
-void i8254PitC::writeOneshotIo(void)
+void I8254Pit::writeOneshotIo(void)
 {
 	/**	NOTE:
 	 * Interesting note here, Linux seems to use mode 4 for the oneshot
@@ -530,7 +530,7 @@ void i8254PitC::writeOneshotIo(void)
 	state.lock.release();
 }
 
-void i8254PitC::writePeriodicIo(void)
+void I8254Pit::writePeriodicIo(void)
 {
 	state.lock.acquire();
 
@@ -559,6 +559,6 @@ void i8254PitC::writePeriodicIo(void)
 	state.lock.release();
 }
 
-/*uarch_t i8254PitC::getPrecisionDiscrepancyForPeriod(ubit32 period) { return 0; }*/
+/*uarch_t I8254Pit::getPrecisionDiscrepancyForPeriod(ubit32 period) { return 0; }*/
 
 

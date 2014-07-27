@@ -11,7 +11,7 @@ MultiLayerHash<vfsFileINode>		fileInodeHash;
 ArrayStack<ubit32>	inodeStack;
 // Object caches for the descriptors.
 
-ubit32			iNodeounter;
+ubit32			Inodeounter;
 
 // VFS Inode allocation.
 error_t VfsTrib::getNewInode(ubit32 *inodeLow)
@@ -22,11 +22,11 @@ error_t VfsTrib::getNewInode(ubit32 *inodeLow)
 	};
 
 	// Else use the inode counter.
-	if (iNodeounter == 0xFFFFFFFF) {
+	if (Inodeounter == 0xFFFFFFFF) {
 		return ERROR_CRITICAL;
 	};
 
-	*inodeLow = iNodeounter++;
+	*inodeLow = Inodeounter++;
 	return ERROR_SUCCESS;
 }
 

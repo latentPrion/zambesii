@@ -235,7 +235,7 @@ error_t fplainn::DriverInstance::initialize(void)
 
 error_t fplainn::DriverInstance::addHostedDevice(utf8Char *path)
 {
-	HeapArray<HeapArray<utf8Char> >	tmp, old;
+	HeapArr<HeapArr<utf8Char> >	tmp, old;
 	uarch_t				len;
 
 	for (uarch_t i=0; i<nHostedDevices; i++)
@@ -246,7 +246,7 @@ error_t fplainn::DriverInstance::addHostedDevice(utf8Char *path)
 
 	len = strlen8(path);
 
-	tmp = new HeapArray<utf8Char>[nHostedDevices + 1];
+	tmp = new HeapArr<utf8Char>[nHostedDevices + 1];
 	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 	tmp[nHostedDevices] = new utf8Char[len + 1];
 	if (tmp[nHostedDevices] == NULL) { return ERROR_MEMORY_NOMEM; };
@@ -269,7 +269,7 @@ error_t fplainn::DriverInstance::addHostedDevice(utf8Char *path)
 
 void fplainn::DriverInstance::removeHostedDevice(utf8Char *path)
 {
-	HeapArray<utf8Char>	tmp;
+	HeapArr<utf8Char>	tmp;
 
 	for (uarch_t i=0; i<nHostedDevices; i++)
 	{
@@ -421,7 +421,7 @@ error_t fplainn::Device::addEnumerationAttribute(
 {
 	error_t					ret;
 	udi_instance_attr_list_t		*attrTmp;
-	HeapArray<HeapObject<udi_instance_attr_list_t> >
+	HeapArr<HeapObj<udi_instance_attr_list_t> >
 						newArray, oldArray;
 
 	if (attrib == NULL) { return ERROR_MEMORY_NOMEM; };
@@ -434,7 +434,7 @@ error_t fplainn::Device::addEnumerationAttribute(
 		return ERROR_SUCCESS;
 	};
 
-	newArray = new HeapObject<udi_instance_attr_list_t>[nEnumerationAttrs + 1];
+	newArray = new HeapObj<udi_instance_attr_list_t>[nEnumerationAttrs + 1];
 	if (newArray == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	newArray[nEnumerationAttrs] = new udi_instance_attr_list_t;

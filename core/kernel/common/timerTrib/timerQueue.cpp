@@ -209,7 +209,7 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 		// Remove the item.
 		request = requestQueue.popFromHead();
 		unlockRequestQueue();
-	
+
 		requestQueueWasEmpty = 0;
 
 		// Can occur if the process exited before its object expired.
@@ -266,7 +266,7 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 		{
 			// Unblock the target thread/CPU.
 			if (isPerCpuTarget(request)) {
-				taskTrib.unblock((cpuStream *)targetObject);
+				taskTrib.unblock((CpuStream *)targetObject);
 			} else {
 				taskTrib.unblock((Thread *)targetObject);
 			};

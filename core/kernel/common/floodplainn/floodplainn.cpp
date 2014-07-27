@@ -64,7 +64,7 @@ void Floodplainn::initializeReq1(
 
 error_t Floodplainn::findDriver(utf8Char *fullName, fplainn::Driver **retDrv)
 {
-	HeapArray<utf8Char>	tmpStr;
+	HeapArr<utf8Char>	tmpStr;
 	void			*handle;
 	fplainn::Driver	*tmpDrv;
 
@@ -219,7 +219,7 @@ error_t Floodplainn::instantiateDeviceReq(utf8Char *path, void *privateData)
 	sZudiKernelCallMsg			*request;
 	fplainn::Device			*dev;
 	error_t					ret;
-	HeapObject<fplainn::DeviceInstance>	devInst;
+	HeapObj<fplainn::DeviceInstance>	devInst;
 
 	if (path == NULL) { return ERROR_INVALID_ARG; };
 	if (strnlen8(path, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
@@ -453,7 +453,7 @@ const sMetaInitEntry *Floodplainn::findMetaInitInfo(utf8Char *shortName)
 
 static error_t udi_mgmt_calls_prep(
 	utf8Char *callerName, utf8Char *devPath, fplainn::Device **dev,
-	HeapObject<Floodplainn::sZudiMgmtCallMsg> *request,
+	HeapObj<Floodplainn::sZudiMgmtCallMsg> *request,
 	void *privateData
 	)
 {
@@ -505,7 +505,7 @@ void Floodplainn::udi_usage_ind(
 	utf8Char *devPath, udi_ubit8_t usageLevel, void *privateData
 	)
 {
-	HeapObject<sZudiMgmtCallMsg>		request;
+	HeapObj<sZudiMgmtCallMsg>		request;
 	udi_usage_cb_t				*cb;
 	fplainn::Device			*dev;
 

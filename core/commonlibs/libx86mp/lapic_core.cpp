@@ -16,9 +16,9 @@
 
 #define x86LAPIC_NPAGES		4
 
-x86LapicC::sCache		x86LapicC::cache;
+X86Lapic::sCache		X86Lapic::cache;
 
-x86LapicC::x86LapicC(cpuStream *parent)
+X86Lapic::X86Lapic(CpuStream *parent)
 :
 ZkcmDevice(
 	(ubit32)parent->cpuId,
@@ -34,7 +34,7 @@ parent(parent)
 	this)*/
 {}
 
-sarch_t x86LapicC::cpuHasLapic(void)
+sarch_t X86Lapic::cpuHasLapic(void)
 {
 	uarch_t			eax, ebx, ecx, edx;
 
@@ -52,7 +52,7 @@ sarch_t x86LapicC::cpuHasLapic(void)
 	return 1;
 }
 
-sarch_t x86LapicC::lapicMemIsMapped(void)
+sarch_t X86Lapic::lapicMemIsMapped(void)
 {
 	if (cache.magic == x86LAPIC_MAGIC && cache.v != NULL) {
 		return 1;
@@ -61,7 +61,7 @@ sarch_t x86LapicC::lapicMemIsMapped(void)
 	return 0;
 }
 
-error_t x86LapicC::mapLapicMem(void)
+error_t X86Lapic::mapLapicMem(void)
 {
 	paddr_t		p;
 	void		*v;
@@ -90,7 +90,7 @@ error_t x86LapicC::mapLapicMem(void)
 	return ERROR_SUCCESS;
 }
 
-error_t x86LapicC::detectPaddr(void)
+error_t X86Lapic::detectPaddr(void)
 {
 	x86Mp::sConfig		*cfgTable;
 	acpi::sRsdt		*rsdt;
@@ -160,13 +160,13 @@ initLibLapic:
 	printf(NOTICE x86LAPIC"detectPaddr: LAPIC paddr: 0x%P.\n",
 		tmp);
 
-	x86LapicC::setPaddr(tmp);
+	X86Lapic::setPaddr(tmp);
 	return ERROR_SUCCESS;
 }
 
 #define x86LAPIC_FLAG_SOFT_ENABLE		(1<<8)
 
-void x86LapicC::softEnable(void)
+void X86Lapic::softEnable(void)
 {
 	ubit32		outval;
 
@@ -176,7 +176,7 @@ void x86LapicC::softEnable(void)
 	write32(x86LAPIC_REG_SPURIOUS_VECT, outval);
 }
 
-void x86LapicC::softDisable(void)
+void X86Lapic::softDisable(void)
 {
 	ubit32		outval;
 
@@ -185,7 +185,7 @@ void x86LapicC::softDisable(void)
 	write32(x86LAPIC_REG_SPURIOUS_VECT, outval);
 }
 
-sarch_t x86LapicC::isSoftEnabled(void)
+sarch_t X86Lapic::isSoftEnabled(void)
 {
 	ubit32		regVal;
 
@@ -193,7 +193,7 @@ sarch_t x86LapicC::isSoftEnabled(void)
 	return FLAG_TEST(regVal, x86LAPIC_FLAG_SOFT_ENABLE);
 }
 
-void x86LapicC::sendEoi(void)
+void X86Lapic::sendEoi(void)
 {
 	assert_fatal(cpuTrib.getCurrentCpuStream()->cpuId == parent->cpuId);
 	write32(x86LAPIC_REG_EOI, 0);
@@ -201,7 +201,7 @@ void x86LapicC::sendEoi(void)
 
 #define x86LAPIC_LVT_ERR_FLAGS_DISABLE	(1<<16)
 
-error_t x86LapicC::sError::setupLvtError(cpuStream *parent)
+error_t X86Lapic::sError::setupLvtError(CpuStream *parent)
 {
 	parent->lapic.write32(
 		x86LAPIC_REG_LVT_ERR, 0 | x86LAPIC_VECTOR_LVT_ERROR);
@@ -210,14 +210,14 @@ error_t x86LapicC::sError::setupLvtError(cpuStream *parent)
 	return ERROR_SUCCESS;
 }
 
-void x86LapicC::sError::installHandler(void)
+void X86Lapic::sError::installHandler(void)
 {
 	if (handlerIsInstalled) { return; };
 }
 
 #define x86LAPIC_SPURIOUS_VECTOR_FLAGS_DISABLE		(1<<8)
 
-error_t x86LapicC::sSpurious::setupSpuriousVector(cpuStream *parent)
+error_t X86Lapic::sSpurious::setupSpuriousVector(CpuStream *parent)
 {
 	ubit32		outval;
 
@@ -228,18 +228,18 @@ error_t x86LapicC::sSpurious::setupSpuriousVector(cpuStream *parent)
 	return ERROR_SUCCESS;
 }
 
-void x86LapicC::sSpurious::installHandler(void)
+void X86Lapic::sSpurious::installHandler(void)
 {
 	if (handlerIsInstalled) { return; };
 }
 
-ubit32 x86LapicC::read32(ubit32 offset)
+ubit32 X86Lapic::read32(ubit32 offset)
 {
 	assert_fatal(cpuTrib.getCurrentCpuStream()->cpuId == parent->cpuId);
 	return *reinterpret_cast<volatile ubit32*>( (uarch_t)cache.v + offset );
 }
 
-void x86LapicC::write32(ubit32 offset, ubit32 val)
+void X86Lapic::write32(ubit32 offset, ubit32 val)
 {
 	assert_fatal(cpuTrib.getCurrentCpuStream()->cpuId == parent->cpuId);
 	// Linux uses XCHG to write to the LAPIC for certain hardware.
@@ -247,7 +247,7 @@ void x86LapicC::write32(ubit32 offset, ubit32 val)
 }
 
 #include <debug.h>
-error_t x86LapicC::setupLapic(void)
+error_t X86Lapic::setupLapic(void)
 {
 	/**	EXPLANATION:
 	 * Basically, ensure that the LAPIC is in a sane, predefined state
@@ -289,7 +289,7 @@ error_t x86LapicC::setupLapic(void)
 	 * LAPIC is soft-enabled before trying to set up the rest of the LAPIC
 	 * operating state.
 	 **/
-	if (x86LapicC::mapLapicMem() != ERROR_SUCCESS)
+	if (X86Lapic::mapLapicMem() != ERROR_SUCCESS)
 	{
 		panic(FATAL CPUSTREAM"%d: setupLapic(): Failed to map LAPIC.\n",
 			parent->cpuId);

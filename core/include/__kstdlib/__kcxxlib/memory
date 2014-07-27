@@ -87,23 +87,23 @@ private:
 };
 
 template <class type>
-class HeapObject
+class HeapObj
 :
 public HeapPtr<type, DefaultDeleter>
 {
 public:
-	explicit HeapObject(type *_p=NULL)
+	explicit HeapObj(type *_p=NULL)
 	:
 	HeapPtr<type, DefaultDeleter>(_p)
 	{}
 
-	~HeapObject(void) { reset(); }
+	~HeapObj(void) { reset(); }
 
-	HeapObject &operator =(HeapObject &_p)
+	HeapObj &operator =(HeapObj &_p)
 		{ reset(_p.release()); return *this; };
 
 public:
-	HeapObject &operator =(type *_p) {
+	HeapObj &operator =(type *_p) {
 		HeapPtr<type, DefaultDeleter>::operator =(_p); return *this;
 	}
 
@@ -118,23 +118,23 @@ private:
 };
 
 template <class type>
-class HeapArray
+class HeapArr
 :
 public HeapPtr<type, ArrayDeleter>
 {
 public:
-	explicit HeapArray(type *_p=NULL)
+	explicit HeapArr(type *_p=NULL)
 	:
 	HeapPtr<type, ArrayDeleter>(_p)
 	{}
 
-	~HeapArray(void) { reset(); }
+	~HeapArr(void) { reset(); }
 
-	HeapArray &operator =(HeapArray &_p)
+	HeapArr &operator =(HeapArr &_p)
 		{ reset(_p.release()); return *this; };
 
 public:
-	HeapArray &operator =(type *_p) {
+	HeapArr &operator =(type *_p) {
 		HeapPtr<type, ArrayDeleter>::operator =(_p); return *this;
 	}
 

@@ -71,7 +71,7 @@ namespace vfs
 	 * The inode type that it points to remains the same, but the 'type'
 	 * value is used to tell the correct type to cast the inode pointer to.
 	 **********************************************************************/
-	class iNode;
+	class Inode;
 
 	template <ubit16 maxNameLength>
 	class Tag
@@ -83,7 +83,7 @@ namespace vfs
 			utf8Char *name,
 			tagTypeE type,
 			Tag *parent,
-			iNode *inode=NULL)
+			Inode *inode=NULL)
 		:
 		inode(inode), parent(parent), flags(0), type(type)
 		{
@@ -96,7 +96,7 @@ namespace vfs
 
 	public:
 		error_t rename(utf8Char *newName);
-		iNode *getInode(void) { return inode; }
+		Inode *getInode(void) { return inode; }
 		utf8Char *getName(void) { return name; }
 		Tag *getParent(void) { return parent; }
 		tagTypeE getType(void) { return type; }
@@ -105,7 +105,7 @@ namespace vfs
 		error_t getFullName(utf8Char *strmem, uarch_t strlen);
 
 	public:
-		iNode			*inode;
+		Inode			*inode;
 
 	private:
 		Tag			*parent;
@@ -119,7 +119,7 @@ namespace vfs
 		 * to iterate through the nodes in any of the VFSs in the kernel
 		 * regardless of which VFS it is (storage VFS, device VFS, etc).
 		 *
-		 * In order to iterate through the tags in a "dirINode"'s list
+		 * In order to iterate through the tags in a "DirInode"'s list
 		 * of sub-tags, we must choose a tag template with a
 		 * "maxNameLength" that is sufficient to generically fit all the
 		 * different VFS' max tag name lengths. This will probably be
@@ -132,45 +132,45 @@ namespace vfs
 		utf8Char		name[maxNameLength];
 	};
 
-	/**	iNode:
+	/**	Inode:
 	 * Base inode type.
 	 **********************************************************************/
-	class iNode
+	class Inode
 	:
 	public Node
 	{
 	public:
-		iNode(void) {}
+		Inode(void) {}
 		error_t initialize(void) { return Node::initialize(); }
-		~iNode(void) {}
+		~Inode(void) {}
 	};
 
-	/**	dirINode:
+	/**	DirInode:
 	 * Base directory inode type. Holds a list of child tags.
 	 **********************************************************************/
 	template <class tagType>
-	class dirINode
+	class DirInode
 	:
-	public iNode
+	public Inode
 	{
 	public:
-		dirINode(void) {}
+		DirInode(void) {}
 
 		error_t initialize(void);
-		~dirINode(void) {};
+		~DirInode(void) {};
 
 	public:
 		tagType *createDirTag(
 			utf8Char *name,
 			tagTypeE type,
 			tagType *parent,
-			dirINode *inode, error_t *err);
+			DirInode *inode, error_t *err);
 
 		tagType *createLeafTag(
 			utf8Char *name,
 			tagTypeE type,
 			tagType *parent,
-			iNode *inode, error_t *err);
+			Inode *inode, error_t *err);
 
 		sarch_t removeDirTag(utf8Char *name);
 		sarch_t removeLeafTag(utf8Char *name);
@@ -218,10 +218,10 @@ namespace vfs
 }
 
 
-/**	Template definitions for vfs::dirINode.
+/**	Template definitions for vfs::DirInode.
  ******************************************************************************/
 template <class tagType>
-error_t vfs::dirINode<tagType>::initialize(void)
+error_t vfs::DirInode<tagType>::initialize(void)
 {
 	error_t		ret;
 
@@ -233,11 +233,11 @@ error_t vfs::dirINode<tagType>::initialize(void)
 }
 
 template <class tagType>
-tagType *vfs::dirINode<tagType>::createDirTag(
+tagType *vfs::DirInode<tagType>::createDirTag(
 	utf8Char *name,
 	tagTypeE type,
 	tagType *parent,
-	dirINode<tagType> *inode,
+	DirInode<tagType> *inode,
 	error_t *err
 	)
 {
@@ -290,11 +290,11 @@ tagType *vfs::dirINode<tagType>::createDirTag(
 }
 
 template <class tagType>
-tagType *vfs::dirINode<tagType>::createLeafTag(
+tagType *vfs::DirInode<tagType>::createLeafTag(
 	utf8Char *name,
 	tagTypeE type,
 	tagType *parent,
-	iNode *inode,
+	Inode *inode,
 	error_t *err
 	)
 {
@@ -346,7 +346,7 @@ tagType *vfs::dirINode<tagType>::createLeafTag(
 }
 
 template <class tagType>
-sarch_t vfs::dirINode<tagType>::removeDirTag(utf8Char *name)
+sarch_t vfs::DirInode<tagType>::removeDirTag(utf8Char *name)
 {
 	void			*handle;
 	tagType		*currItem;
@@ -376,7 +376,7 @@ sarch_t vfs::dirINode<tagType>::removeDirTag(utf8Char *name)
 }
 
 template <class tagType>
-sarch_t vfs::dirINode<tagType>::removeLeafTag(utf8Char *name)
+sarch_t vfs::DirInode<tagType>::removeLeafTag(utf8Char *name)
 {
 	void		*handle;
 	tagType	*currItem;
@@ -407,7 +407,7 @@ sarch_t vfs::dirINode<tagType>::removeLeafTag(utf8Char *name)
 }
 
 template <class tagType>
-tagType *vfs::dirINode<tagType>::getDirTag(
+tagType *vfs::DirInode<tagType>::getDirTag(
 	utf8Char *name
 	)
 {
@@ -439,7 +439,7 @@ tagType *vfs::dirINode<tagType>::getDirTag(
 }
 
 template <class tagType>
-tagType *vfs::dirINode<tagType>::getLeafTag(
+tagType *vfs::DirInode<tagType>::getLeafTag(
 	utf8Char *name
 	)
 {
@@ -472,7 +472,7 @@ tagType *vfs::dirINode<tagType>::getLeafTag(
 }
 
 template <class tagType>
-void vfs::dirINode<tagType>::dumpDirs(void)
+void vfs::DirInode<tagType>::dumpDirs(void)
 {
 	void			*handle;
 	tagType		*currItem;
@@ -494,7 +494,7 @@ void vfs::dirINode<tagType>::dumpDirs(void)
 }
 
 template <class tagType>
-void vfs::dirINode<tagType>::dumpLeaves(void)
+void vfs::DirInode<tagType>::dumpLeaves(void)
 {
 	void			*handle;
 	tagType		*currItem;

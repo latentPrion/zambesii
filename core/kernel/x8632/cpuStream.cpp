@@ -42,7 +42,7 @@ static sX86ManufacturerEntry		x86Manufacturers[] =
 	{CC"RiseRiseRise"} */
 };
 
-void cpuStream::baseInit(void)
+void CpuStream::baseInit(void)
 {
 	debug::disableDebugExtensions();
 
@@ -70,7 +70,7 @@ void cpuStream::baseInit(void)
 	};
 }
 
-error_t cpuStream::bind(void)
+error_t CpuStream::bind(void)
 {
 	error_t		ret;
 
@@ -100,7 +100,7 @@ error_t cpuStream::bind(void)
 	return ERROR_SUCCESS;
 }
 
-status_t cpuStream::enumerate(void)
+status_t CpuStream::enumerate(void)
 {
 	ubit32			eax, ebx, ecx, edx;
 	utf8Char		cpuSignature[13];

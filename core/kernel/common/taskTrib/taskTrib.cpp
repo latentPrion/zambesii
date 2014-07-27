@@ -18,7 +18,7 @@ TaskTrib::TaskTrib(void)
 #if __SCALING__ >= SCALING_SMP
 error_t TaskTrib::schedule(Thread *task)
 {
-	cpuStream	*cs, *bestCandidate=NULL;
+	CpuStream	*cs, *bestCandidate=NULL;
 
 	for (cpu_t i=0;
 		i<(signed)task->getTaskContext()->cpuAffinity.getNBits(); i++)
@@ -90,7 +90,7 @@ void TaskTrib::updateLoad(ubit8 action, uarch_t val)
 
 error_t TaskTrib::dormant(Task *task, TaskContext *perCpuContext)
 {
-	cpuStream	*TaskurrentCpu;
+	CpuStream	*taskCurrentCpu;
 	TaskContext	*tmpContext;
 	Thread		*thread;
 
@@ -146,20 +146,20 @@ error_t TaskTrib::dormant(Task *task, TaskContext *perCpuContext)
 	if (task->getType() == task::PER_CPU)
 	{
 		tmpContext->parent.cpu->taskStream.dormant(task);
-		TaskurrentCpu = tmpContext->parent.cpu;
+		taskCurrentCpu = tmpContext->parent.cpu;
 	}
 	else
 	{
 		thread->Currenttpu->taskStream.dormant(task);
-		TaskurrentCpu = thread->Currenttpu;
+		taskCurrentCpu = thread->Currenttpu;
 	};
 
-	/* At this point, TaskurrentCpu points to the CPU on which the
+	/* At this point, taskCurrentCpu points to the CPU on which the
 	 * particular unique thread or per-cpu thread that was our target, is
 	 * currently scheduled to. For a per-cpu thread, it points to the
 	 * particular CPU whose per-cpu thread was acted on.
 	 **/
-	if (TaskurrentCpu != cpuTrib.getCurrentCpuStream())
+	if (taskCurrentCpu != cpuTrib.getCurrentCpuStream())
 	{
 		/* Message the foreign CPU to preempt and choose another thread.
 		 * Should probably take an argument for the thread to be
@@ -176,8 +176,8 @@ error_t TaskTrib::dormant(Task *task, TaskContext *perCpuContext)
 		{
 			// TODO: Set this CPU's currentTask to NULL here.
 			saveContextAndCallPull(
-				&TaskurrentCpu->schedStack[
-					sizeof(TaskurrentCpu->schedStack)]);
+				&taskCurrentCpu->schedStack[
+					sizeof(taskCurrentCpu->schedStack)]);
 
 			// Unreachable.
 		};

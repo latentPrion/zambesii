@@ -79,7 +79,7 @@ namespace fplainn
 	 **********************************************************************/
 	class Device
 	:
-	public vfs::dirINode<fvfs::Tag>
+	public vfs::DirInode<fvfs::Tag>
 	{
 	public:
 		Device(numaBankId_t bid)
@@ -99,7 +99,7 @@ namespace fplainn
 
 		error_t initialize(void)
 		{
-			return vfs::dirINode<fvfs::Tag>::initialize();
+			return vfs::DirInode<fvfs::Tag>::initialize();
 		}
 
 		~Device(void) {};
@@ -107,7 +107,7 @@ namespace fplainn
 	public:
 		/**	EXPLANATION:
 		 * These are the publicly exposed wrappers around the underlying
-		 * vfs::dirINode:: namespace methods. We hid the *DirTag()
+		 * vfs::DirInode:: namespace methods. We hid the *DirTag()
 		 * functions with overloads, and then "renamed" them to
 		 * *Child() so we could have more intuitive naming, and more
 		 * suitable function prototypes.
@@ -177,18 +177,18 @@ namespace fplainn
 		 **/
 		fvfs::Tag *createDirTag(
 			utf8Char *name, vfs::tagTypeE type,
-			fvfs::Tag *parent, vfs::dirINode<fvfs::Tag> *dev,
+			fvfs::Tag *parent, vfs::DirInode<fvfs::Tag> *dev,
 			error_t *err)
 		{
-			return vfs::dirINode<fvfs::Tag>::createDirTag(
+			return vfs::DirInode<fvfs::Tag>::createDirTag(
 				name, type, parent, dev, err);
 		}
 
 		sarch_t removeDirTag(utf8Char *n)
-			{ return vfs::dirINode<fvfs::Tag>::removeDirTag(n); }
+			{ return vfs::DirInode<fvfs::Tag>::removeDirTag(n); }
 
 		fvfs::Tag *getDirTag(utf8Char *name)
-			{ return vfs::dirINode<fvfs::Tag>::getDirTag(name); }
+			{ return vfs::DirInode<fvfs::Tag>::getDirTag(name); }
 
 		/* The leaf functions are not meant to be used at all by anyone;
 		 * not even internals within this class, and they override the
@@ -197,7 +197,7 @@ namespace fplainn
 		 **/
 		fvfs::Tag *createLeafTag(
 			utf8Char *, vfs::tagTypeE, fvfs::Tag *,
-			vfs::iNode *, error_t *err)
+			vfs::Inode *, error_t *err)
 		{
 			*err = ERROR_UNIMPLEMENTED;
 			return NULL;
@@ -220,7 +220,7 @@ namespace fplainn
 		DeviceInstance		*instance;
 		ubit8			nEnumerationAttrs, nInstanceAttrs,
 					nClasses, nParentTags;
-		HeapArray<HeapObject<udi_instance_attr_list_t> >
+		HeapArr<HeapObj<udi_instance_attr_list_t> >
 					enumerationAttrs, instanceAttrs;
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
 		sbit8			driverDetected;
@@ -317,7 +317,7 @@ namespace fplainn
 				spawnIndex(-1), channel(NULL)
 				{}
 
-				ListC<sIncompleteChannel>::sHeader
+				List<sIncompleteChannel>::sHeader
 					listHeader;
 
 				udi_index_t	spawnIndex;
@@ -332,7 +332,7 @@ namespace fplainn
 			 * spawn is completed and the spawn_idx is removed from
 			 * this list.
 			 **/
-			ListC<sIncompleteChannel> incompleteChannels;
+			List<sIncompleteChannel> incompleteChannels;
 			sEndpoint				endpoints[2];
 		};
 
@@ -824,7 +824,7 @@ namespace fplainn
 		processId_t			pid;
 		sChildBop			*childBopVectors;
 		uarch_t				nHostedDevices;
-		HeapArray<HeapArray<utf8Char> >	hostedDevices;
+		HeapArr<HeapArr<utf8Char> >	hostedDevices;
 		sManagementChannel		managementChannel;
 	};
 }

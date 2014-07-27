@@ -6,7 +6,7 @@
 #include <kernel/common/distributaryTrib/dvfs.h>
 
 
-dvfs::distributaryINode::distributaryINode(
+dvfs::DistributaryInode::DistributaryInode(
 	const sDistributaryDescriptor *descriptor, typeE type
 	)
 :

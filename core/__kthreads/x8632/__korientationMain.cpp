@@ -161,7 +161,7 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 	DO_OR_DIE(bspCpu, initializeBspCpuLocking(), ret);
 	cxxrtl::callGlobalConstructors();
-	bspCpu.powerManager.setPowerStatus(cpuStream::PowerManager::C0);
+	bspCpu.powerManager.setPowerStatus(CpuStream::PowerManager::C0);
 
 	/* Initialize exception handling, then do chipset-wide early init.
 	 * Finally, initialize the irqControl mod, and mask all IRQs off to

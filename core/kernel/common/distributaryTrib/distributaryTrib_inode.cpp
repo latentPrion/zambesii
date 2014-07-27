@@ -17,9 +17,9 @@ error_t DistributaryTrib::categoryINode::initialize(void)
 	return categories.initialize();
 }
 
-DistributaryTrib::dVfsTag<DistributaryTrib::distributaryINode> *
+DistributaryTrib::dVfsTag<DistributaryTrib::DistributaryInode> *
 DistributaryTrib::categoryINode::createDistributaryTag(
-	utf8Char *name, distributaryINode *inode
+	utf8Char *name, DistributaryInode *inode
 	)
 {
 	distributaryTagC	*newTag;
@@ -85,7 +85,7 @@ sarch_t DistributaryTrib::categoryINode::removeDistributaryTag(
 	return distributaries.remove(inode);
 }
 
-DistributaryTrib::dVfsTag<DistributaryTrib::distributaryINode> *
+DistributaryTrib::dVfsTag<DistributaryTrib::DistributaryInode> *
 DistributaryTrib::categoryINode::getDistributaryTag(utf8Char *name)
 {
 	distributaryTagC	*curr;

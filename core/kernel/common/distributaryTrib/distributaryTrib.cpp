@@ -37,7 +37,7 @@ error_t DistributaryTrib::bootBuildTree(void)
 		currDesc != NULL;
 		i++, currDesc = distributaryDescriptors[i])
 	{
-		dvfs::distributaryINode	*dInodeTmp;
+		dvfs::DistributaryInode	*dInodeTmp;
 
 		printf(NOTICE DTRIBTRIB"Desc: name \"%s\", vendor \"%s\", "
 			"%d categories.\n"
@@ -46,8 +46,8 @@ error_t DistributaryTrib::bootBuildTree(void)
 			currDesc->nCategories,
 			currDesc->description);
 
-		dInodeTmp = new dvfs::distributaryINode(
-			currDesc, dvfs::distributaryINode::IN_KERNEL);
+		dInodeTmp = new dvfs::DistributaryInode(
+			currDesc, dvfs::DistributaryInode::IN_KERNEL);
 
 		if (dInodeTmp == NULL)
 		{

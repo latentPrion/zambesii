@@ -6,7 +6,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 #if __SCALING__ >= SCALING_SMP
-cpuStream::InterCpuMessager::InterCpuMessager(cpuStream *parent)
+CpuStream::InterCpuMessager::InterCpuMessager(CpuStream *parent)
 :
 parent(parent)
 {
@@ -14,7 +14,7 @@ parent(parent)
 	statusFlag.rsrc = NOT_TAKING_REQUESTS;
 }
 
-error_t cpuStream::InterCpuMessager::initialize(void)
+error_t CpuStream::InterCpuMessager::initialize(void)
 {
 	messageQueue.initialize();
 
@@ -36,7 +36,7 @@ error_t cpuStream::InterCpuMessager::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-error_t cpuStream::InterCpuMessager::bind(void)
+error_t CpuStream::InterCpuMessager::bind(void)
 {
 	/*	NOTE:
 	 * Signifies that this CPU is now "in synch" with the kernel and usable.
@@ -55,14 +55,14 @@ error_t cpuStream::InterCpuMessager::bind(void)
 	return ERROR_SUCCESS;
 }
 
-void cpuStream::InterCpuMessager::cut(void)
+void CpuStream::InterCpuMessager::cut(void)
 {
 	// TODO: Send a signal to the CPU to dispatch any remaining messages.
 	printf(NOTICE CPUMSG"%d: Cut.\n", parent->cpuId);
 	setStatus(NOT_TAKING_REQUESTS);
 }
 
-void cpuStream::InterCpuMessager::set(
+void CpuStream::InterCpuMessager::set(
 	sMessage *msg, ubit8 type,
 	uarch_t val0, uarch_t val1, uarch_t val2, uarch_t val3
 	)
@@ -74,7 +74,7 @@ void cpuStream::InterCpuMessager::set(
 	msg->val3 = val3;
 }
 
-error_t cpuStream::InterCpuMessager::dispatch(void)
+error_t CpuStream::InterCpuMessager::dispatch(void)
 {
 	sMessage	*msg;
 

@@ -17,7 +17,7 @@
 
 #define TASK_SCHEDFLAGS_SCHED_WAITING	(1<<0)
 
-class cpuStream;
+class CpuStream;
 class ProcessStream;
 class RegisterContext;
 class TaskContext;
@@ -111,7 +111,7 @@ public:
 		if (contextType == task::UNIQUE) {
 			this->parent.thread = (Thread *)parent;
 		} else {
-			this->parent.cpu = (cpuStream *)parent;
+			this->parent.cpu = (CpuStream *)parent;
 		};
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -144,7 +144,7 @@ public:
 	task::typeE		contextType;
 	union
 	{
-		cpuStream	*cpu;
+		CpuStream	*cpu;
 		Thread		*thread;
 	} parent;
 
@@ -219,7 +219,7 @@ private:
 	error_t allocateStacks(void);
 
 private:processId_t		id;
-public:	cpuStream		*Currenttpu;
+public:	CpuStream		*Currenttpu;
 	void			*stack0, *stack1;
 
 private:

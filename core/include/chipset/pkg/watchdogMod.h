@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-class watchdogModS
+class WatchdogMod
 {
 public:
 	error_t initialize(void);

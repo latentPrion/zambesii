@@ -4,7 +4,7 @@
 #include <kernel/common/cpuTrib/cpuStream.h>
 
 
-static void lintParseRMadtForEntries(acpiR::sMadt *rmadt, cpuStream *parent)
+static void lintParseRMadtForEntries(acpiR::sMadt *rmadt, CpuStream *parent)
 {
 	void			*handle;
 	acpiR::madt::sLapicNmi	*nmiEntry;
@@ -24,7 +24,7 @@ static void lintParseRMadtForEntries(acpiR::sMadt *rmadt, cpuStream *parent)
 				parent,
 				nmiEntry->lapicLint,
 				x86LAPIC_LINT_TYPE_NMI,
-				x86LapicC::sLint::lintConvertAcpiFlags(
+				X86Lapic::sLint::lintConvertAcpiFlags(
 					nmiEntry->flags),
 				0);
 
@@ -37,7 +37,7 @@ static void lintParseRMadtForEntries(acpiR::sMadt *rmadt, cpuStream *parent)
 }
 
 #include <kernel/common/cpuTrib/cpuTrib.h>
-void x86LapicC::sLint::rsdtSetupLints(cpuStream *parent)
+void X86Lapic::sLint::rsdtSetupLints(CpuStream *parent)
 {
 	acpi::sRsdt		*rsdt;
 	acpiR::sMadt		*rmadt;
@@ -57,7 +57,7 @@ void x86LapicC::sLint::rsdtSetupLints(cpuStream *parent)
 	};
 }
 
-error_t x86LapicC::sLint::setupLints(cpuStream *parent)
+error_t X86Lapic::sLint::setupLints(CpuStream *parent)
 {
 	uarch_t				pos=0;
 	void				*handle;
@@ -96,9 +96,9 @@ error_t x86LapicC::sLint::setupLints(cpuStream *parent)
 			parent->lapic.lint.lintSetup(
 				parent,
 				lintEntry->destLapicLint,
-				x86LapicC::sLint::lintConvertMpCfgType(
+				X86Lapic::sLint::lintConvertMpCfgType(
 					lintEntry->intType),
-				x86LapicC::sLint::lintConvertMpCfgFlags(
+				X86Lapic::sLint::lintConvertMpCfgFlags(
 					lintEntry->flags),
 				0);
 
@@ -139,7 +139,7 @@ useAcpi:
 	return ERROR_SUCCESS;
 }
 
-ubit8 x86LapicC::sLint::lintConvertMpCfgType(ubit8 mpTypeField)
+ubit8 X86Lapic::sLint::lintConvertMpCfgType(ubit8 mpTypeField)
 {
 	switch (mpTypeField)
 	{
@@ -160,12 +160,12 @@ ubit8 x86LapicC::sLint::lintConvertMpCfgType(ubit8 mpTypeField)
 }
 
 // Both ACPI and MP tables use the same flag bit positions, so we will too.
-ubit32 x86LapicC::sLint::lintConvertMpCfgFlags(ubit32 mpFlagField)
+ubit32 X86Lapic::sLint::lintConvertMpCfgFlags(ubit32 mpFlagField)
 {
 	return mpFlagField;
 }
 
-ubit32 x86LapicC::sLint::lintConvertAcpiFlags(ubit32 acpiFlagField)
+ubit32 X86Lapic::sLint::lintConvertAcpiFlags(ubit32 acpiFlagField)
 {
 	return acpiFlagField;
 }
@@ -234,7 +234,7 @@ static inline ubit8 lintSetup_lvtConvertTriggerMode(ubit32 flags)
 	}
 }
 
-void x86LapicC::sLint::lintEnable(cpuStream *parent, ubit8 lint)
+void X86Lapic::sLint::lintEnable(CpuStream *parent, ubit8 lint)
 {
 	ubit32		outval;
 
@@ -251,7 +251,7 @@ void x86LapicC::sLint::lintEnable(cpuStream *parent, ubit8 lint)
 		outval);
 }
 
-void x86LapicC::sLint::lintDisable(cpuStream *parent, ubit8 lint)
+void X86Lapic::sLint::lintDisable(CpuStream *parent, ubit8 lint)
 {
 	ubit32		outval;
 
@@ -267,8 +267,8 @@ void x86LapicC::sLint::lintDisable(cpuStream *parent, ubit8 lint)
 		outval);
 }
 
-void x86LapicC::sLint::lintSetup(
-	cpuStream *parent,
+void X86Lapic::sLint::lintSetup(
+	CpuStream *parent,
 	ubit8 lint, ubit8 deliveryMode, ubit32 flags, ubit8 vector
 	)
 {

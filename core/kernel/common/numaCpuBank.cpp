@@ -28,7 +28,7 @@ error_t NumaCpuBank::initialize(uarch_t nBits)
 error_t NumaCpuBank::schedule(Thread *thread)
 {
 	ubit32		lowestLoad = 0xFFFFFFFF;
-	cpuStream	*bestCpu=NULL, *curCpu;
+	CpuStream	*bestCpu=NULL, *curCpu;
 
 	for (uarch_t i=0;
 		i<thread->getTaskContext()->cpuAffinity.getNBits(); i++)

@@ -24,9 +24,9 @@
 #define PIC_IO_DELAY(v,x)	for (v=0; v<x; v++) {}
 
 
-i8259aPicC		i8259aPic(16);
+I8259APic		i8259aPic(16);
 
-error_t i8259aPicC::initialize(void)
+error_t I8259APic::initialize(void)
 {
 	ubit8		i;
 
@@ -75,22 +75,22 @@ error_t i8259aPicC::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-error_t i8259aPicC::shutdown(void)
+error_t I8259APic::shutdown(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t i8259aPicC::suspend(void)
+error_t I8259APic::suspend(void)
 {
 	return ERROR_SUCCESS;
 }
 
-error_t i8259aPicC::restore(void)
+error_t I8259APic::restore(void)
 {
 	return ERROR_SUCCESS;
 }
 
-void i8259aPicC::chipsetEventNotification(ubit8 event, uarch_t)
+void I8259APic::chipsetEventNotification(ubit8 event, uarch_t)
 {
 	switch (event)
 	{
@@ -144,7 +144,7 @@ void i8259aPicC::chipsetEventNotification(ubit8 event, uarch_t)
 }
 
 
-error_t i8259aPicC::get__kpinFor(ubit8 pinNo, ubit16 *__kpin)
+error_t I8259APic::get__kpinFor(ubit8 pinNo, ubit16 *__kpin)
 {
 	if (pinNo > 15) { return ERROR_UNSUPPORTED; };
 	// Return immediately if the array hasn't yet been allocated.
@@ -154,7 +154,7 @@ error_t i8259aPicC::get__kpinFor(ubit8 pinNo, ubit16 *__kpin)
 	return ERROR_SUCCESS;
 }
 
-status_t i8259aPicC::identifyActiveIrq(
+status_t I8259APic::identifyActiveIrq(
 	cpu_t cpu, uarch_t vector, ubit16 *__kpin, ubit8 *triggerMode
 	)
 {
@@ -230,7 +230,7 @@ status_t i8259aPicC::identifyActiveIrq(
 	return IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE;
 }
 
-status_t i8259aPicC::getIrqStatus(
+status_t I8259APic::getIrqStatus(
 	uarch_t __kpin, cpu_t *cpu, uarch_t *vector,
 	ubit8 *triggerMode, ubit8 *polarity
 	)
@@ -254,7 +254,7 @@ status_t i8259aPicC::getIrqStatus(
 		: IRQCTL_GETIRQSTATUS_DISABLED;
 }
 
-status_t i8259aPicC::setIrqStatus(
+status_t I8259APic::setIrqStatus(
 	uarch_t __kpin, cpu_t cpu, uarch_t vector, ubit8 enabled
 	)
 {
@@ -262,7 +262,7 @@ status_t i8259aPicC::setIrqStatus(
 	 * The i8259s don't support IRQ routing to any CPU other than the BSP.
 	 * Additionally, to make implementation simpler, we just don't allow
 	 * i8259a IRQs to be set to vectors other than the ones they were set
-	 * to in i8259aPicC::initialize().
+	 * to in I8259APic::initialize().
 	 **/
 
 	if (cpu != ibmPcState.bspInfo.bspId) {
@@ -282,7 +282,7 @@ status_t i8259aPicC::setIrqStatus(
 	return ERROR_SUCCESS;
 }
 
-void i8259aPicC::maskAll(void)
+void I8259APic::maskAll(void)
 {
 	io::write8(PIC_PIC1_DATA, 0xFF);
 	io::write8(PIC_PIC2_DATA, 0xFF);
@@ -298,7 +298,7 @@ void i8259aPicC::maskAll(void)
 	};
 }
 	
-void i8259aPicC::unmaskAll(void)
+void I8259APic::unmaskAll(void)
 {
 	io::write8(PIC_PIC1_DATA, 0x0);
 	io::write8(PIC_PIC2_DATA, 0x0);
@@ -315,7 +315,7 @@ void i8259aPicC::unmaskAll(void)
 
 }
 
-void i8259aPicC::sendEoi(ubit16 __kid)
+void I8259APic::sendEoi(ubit16 __kid)
 {
 	error_t		err;
 	ubit8		pin;
@@ -329,7 +329,7 @@ void i8259aPicC::sendEoi(ubit16 __kid)
 	io::write8(PIC_PIC1_CMD, 0x20);
 }
 
-void i8259aPicC::maskIrq(ubit16 __kpin)
+void I8259APic::maskIrq(ubit16 __kpin)
 {
 	ubit8		mask;
 	error_t		err;
@@ -357,7 +357,7 @@ void i8259aPicC::maskIrq(ubit16 __kpin)
 	};
 }
 
-void i8259aPicC::unmaskIrq(ubit16 __kpin)
+void I8259APic::unmaskIrq(ubit16 __kpin)
 {
 	ubit8		mask;
 	error_t		err;
@@ -385,7 +385,7 @@ void i8259aPicC::unmaskIrq(ubit16 __kpin)
 	};
 }
 
-void i8259aPicC::maskIrqsByPriority(ubit16 __kid, cpu_t, uarch_t *mask)
+void I8259APic::maskIrqsByPriority(ubit16 __kid, cpu_t, uarch_t *mask)
 {
 	ubit8		irqNo;
 	ubit16		newMask=0;
@@ -415,14 +415,14 @@ void i8259aPicC::maskIrqsByPriority(ubit16 __kid, cpu_t, uarch_t *mask)
 		{ io::write8(PIC_PIC2_DATA, newMask >> 8); };
 }
 
-void i8259aPicC::unmaskIrqsByPriority(ubit16, cpu_t, uarch_t mask)
+void I8259APic::unmaskIrqsByPriority(ubit16, cpu_t, uarch_t mask)
 {
 	// Just write the old mask out unconditionally.
 	io::write8(PIC_PIC1_DATA, mask & 0xFF);
 	io::write8(PIC_PIC2_DATA, mask >> 8);
 }
 
-sarch_t i8259aPicC::irqIsEnabled(ubit16 __kid)
+sarch_t I8259APic::irqIsEnabled(ubit16 __kid)
 {
 	error_t		err;
 	ubit8		pin;

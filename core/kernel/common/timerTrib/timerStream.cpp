@@ -143,14 +143,14 @@ void *TimerStream::timerRequestTimeoutNotification(
 
 	/* Need to get the correct TaskContext object; this could be a context
 	 * object that is part of a Thread object, or a context object that
-	 * is embedded within a cpuStream object.
+	 * is embedded within a CpuStream object.
 	 *
 	 * If TIMERSTREAM_CREATE*_FLAGS_CPU_TARGET is set, then the target
 	 * context is a per-CPU context. Else, it is a normal thread context.
 	 **/
 	if (isPerCpuTarget(request))
 	{
-		cpuStream	*cs;
+		CpuStream	*cs;
 
 		cs = cpuTrib.getStream((cpu_t)request->header.targetId);
 		if (cs == NULL) { return NULL; };

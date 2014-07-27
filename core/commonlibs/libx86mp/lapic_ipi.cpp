@@ -8,15 +8,15 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
 
-sarch_t		x86LapicC::sIpi::handlerIsInstalled=0;
+sarch_t		X86Lapic::sIpi::handlerIsInstalled=0;
 
-error_t x86LapicC::sIpi::sendPhysicalIpi(
+error_t X86Lapic::sIpi::sendPhysicalIpi(
 	ubit8 type, ubit8 vector, ubit8 shortDest, cpu_t dest
 	)
 {
 	// Timeout value is the one used by Linux.
 	ubit32		timeout=1000;
-	x86LapicC	*lapic;
+	X86Lapic	*lapic;
 
 	lapic = &cpuTrib.getCurrentCpuStream()->lapic;
 
@@ -49,26 +49,26 @@ error_t x86LapicC::sIpi::sendPhysicalIpi(
 	return (timeout != 0) ? ERROR_SUCCESS : ERROR_UNKNOWN;
 }
 
-error_t x86LapicC::sIpi::setupIpis(cpuStream *)
+error_t X86Lapic::sIpi::setupIpis(CpuStream *)
 {
 	installHandler();
 	return ERROR_SUCCESS;
 }
 
-void x86LapicC::sIpi::installHandler(void)
+void X86Lapic::sIpi::installHandler(void)
 {
 	if (handlerIsInstalled) { return; };
 
 	// Ask the Interrupt Trib to take our handler.
 	interruptTrib.installException(
 		x86LAPIC_VECTOR_IPI,
-		(__kexceptionFn *)&x86LapicC::sIpi::exceptionHandler,
+		(__kexceptionFn *)&X86Lapic::sIpi::exceptionHandler,
 		INTTRIB_EXCEPTION_FLAGS_POSTCALL);
 
 	handlerIsInstalled = 1;
 }
 
-status_t x86LapicC::sIpi::exceptionHandler(RegisterContext *, ubit8 postcall)
+status_t X86Lapic::sIpi::exceptionHandler(RegisterContext *, ubit8 postcall)
 {
 	// Check messager and see why we got an IPI.
 	if (!postcall)

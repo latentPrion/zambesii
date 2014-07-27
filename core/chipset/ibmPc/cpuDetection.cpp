@@ -422,7 +422,7 @@ sarch_t ZkcmCpuDetectionMod::checkSmpSanity(void)
 	uarch_t			pos;
 	sarch_t			haveMpTableIrqSources=0, haveAcpiIrqSources=0,
 				haveMpTableIoApics=0, haveAcpiIoApics=0;
-	x86LapicC		*lapic;
+	X86Lapic		*lapic;
 
 	/**	EXPLANATION:
 	 * This function is supposed to be called during the kernel's initial
@@ -567,7 +567,7 @@ checkForMpTables:
 
 cpu_t ZkcmCpuDetectionMod::getBspId(void)
 {
-	x86LapicC	*lapic;
+	X86Lapic	*lapic;
 
 	lapic = &cpuTrib.getCurrentCpuStream()->lapic;
 	if (!ibmPcState.bspInfo.bspIdRequestedAlready)
@@ -584,14 +584,14 @@ cpu_t ZkcmCpuDetectionMod::getBspId(void)
 		};
 
 
-		if (!x86LapicC::lapicMemIsMapped())
+		if (!X86Lapic::lapicMemIsMapped())
 		{
 			// Not safe, but detectPaddr() never returns error.
-			if (x86LapicC::detectPaddr() != ERROR_SUCCESS) {
+			if (X86Lapic::detectPaddr() != ERROR_SUCCESS) {
 				return 0;
 			};
 
-			if (x86LapicC::mapLapicMem() != ERROR_SUCCESS)
+			if (X86Lapic::mapLapicMem() != ERROR_SUCCESS)
 			{
 				panic(ERROR CPUMOD"getBspId: Failed to map LAPIC "
 					"into kernel vaddrspace.\n");

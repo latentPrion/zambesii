@@ -87,7 +87,7 @@ Establishing specific "ID" nomenclature:
 	"id" members should be given more specific names (cpuId, threadId,
 	processId, etc).
 
-Rename classes:
+Rename classes: Done.
 	Classes will no longer have names of the form classC, but rather,
 	we will follow the Java convention of calling classes Class with an
 	upper camel case name.
