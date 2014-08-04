@@ -237,6 +237,9 @@ void TaskStream::pull(void)
 
 	newTaskContext->runState = TaskContext::RUNNING;
 	currentTask = newTask;
+printf(NOTICE TASKSTREAM"%d: Switching to task 0x%x.\n",
+	parentCpu->cpuId,
+	((newTask->getType() == task::PER_CPU) ? parentCpu->cpuId : ((Thread *)newTask)->getFullId()));
 	loadContextAndJump(newTaskContext->context);
 }
 

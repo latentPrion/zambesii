@@ -14,11 +14,12 @@
  *	a. Driver process: Enter lib __kudi.
  *	b. Distributary process: Enter the distributary.
  **/
+static void driverMain1(Thread *self, error_t ret);
+static void distributaryMain1(Thread *self, error_t ret);
 
 void __klzbzcore::main()
 {
 	Thread		*self;
-	error_t		err;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTask();
@@ -29,26 +30,50 @@ void __klzbzcore::main()
 	switch (self->parent->getType())
 	{
 	case ProcessStream::DISTRIBUTARY:
-		err = __klzbzcore::distributary::main(self);
+		__klzbzcore::distributary::main(self, &::distributaryMain1);
 		break;
 
 	case ProcessStream::DRIVER:
-		err = __klzbzcore::driver::main(self);
+		__klzbzcore::driver::main(self, &::driverMain1);
 		break;
 
 	default:
-		err = ERROR_UNKNOWN;
 		printf(NOTICE LZBZCORE"Proc 0x%x: Process type not supported. "
 			"Dormanting.\n",
 			self->getFullId());
 
+		self->parent->sendResponse(ERROR_INVALID_FORMAT);
 		break;
 	};
 
-	self->parent->sendResponse(err);
-	printf(NOTICE LZBZCORE"Proc 0x%x: Done executing. Dormanting.\n",
+	/* Can only reach here if the message loop in driver::main or
+	 * distributary::main exits.
+	 **/
+	printf(FATAL LZBZCORE"Proc 0x%x: Fell through to end of "
+		"__klzbzcore:main. Killing.\n",
 		self->getFullId());
 
-	taskTrib.dormant(self->getFullId());
+	taskTrib.kill(self->getFullId());
 }
 
+static void driverMain1(Thread *self, error_t ret)
+{
+	self->parent->sendResponse(ret);
+	printf(NOTICE LZBZCORE"Driver Proc 0x%x: Done executing. Killing.\n",
+		self->getFullId());
+
+	if (ret != ERROR_SUCCESS) {
+		taskTrib.kill(self->getFullId());
+	};
+}
+
+static void distributaryMain1(Thread *self, error_t ret)
+{
+	self->parent->sendResponse(ret);
+	printf(NOTICE LZBZCORE"Dtrib Proc 0x%x: Done executing. Killing.\n",
+		self->getFullId());
+
+	if (ret != ERROR_SUCCESS) {
+		taskTrib.kill(self->getFullId());
+	};
+}

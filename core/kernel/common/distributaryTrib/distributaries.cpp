@@ -27,10 +27,10 @@ static void cisternnEntry(void)
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
 	printf(NOTICE"Cisternn executing; process ID: 0x%x. ESP: 0x%p. "
-		"Dormanting.\n",
+		"Killing.\n",
 		self->getFullId(), getEsp());
 
-	taskTrib.dormant(self->getFullId());
+	taskTrib.kill(self->getFullId());
 }
 
 const dvfs::sDistributaryDescriptor	cisternnDescriptor=

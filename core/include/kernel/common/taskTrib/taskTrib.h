@@ -38,6 +38,8 @@ public:
 	error_t dormant(Task *task, TaskContext *perCpuContext=NULL);
 	error_t wake(Task *task, TaskContext *perCpuContext=NULL);
 	error_t unblock(Task *task, TaskContext *perCpuContext=NULL);
+	void kill(Task *task, TaskContext *perCpuContext=NULL)
+		{ dormant(task, perCpuContext); }
 
 	/* These next few overloads are front-ends for the back ends that take
 	 * pointers. The front-ends take IDs (either a CPU ID or a process ID)
@@ -129,6 +131,35 @@ public:
 		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 		return unblock(cpuStream);
+	}
+
+	void kill(processId_t tid)
+	{
+		ProcessStream	*proc;
+		Task		*task;
+
+		proc = processTrib.getStream(tid);
+		if (proc == NULL) { return; };
+
+		task = proc->getTask(tid);
+		kill(task);
+	}
+
+	void kill(CpuStream *cpuStream)
+	{
+		kill(
+			cpuStream->taskStream.getCurrentPerCpuTask(),
+			cpuStream->getTaskContext());
+	}
+
+	void kill(cpu_t cid)
+	{
+		CpuStream	*cpuStream;
+
+		cpuStream = cpuTrib.getStream(cid);
+		if (cpuStream == NULL) { return; };
+
+		kill(cpuStream);
 	}
 
 	ubit32 getLoad(void) { return load; };

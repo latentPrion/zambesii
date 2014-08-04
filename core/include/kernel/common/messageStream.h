@@ -1,5 +1,5 @@
-#ifndef _CALLBACK_STREAM_H
-	#define _CALLBACK_STREAM_H
+#ifndef _MESSAGE_STREAM_H
+	#define _MESSAGE_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/bitmap.h>
@@ -16,6 +16,17 @@
  * This class also makes it very easy for us to allow CPUs to be the targets
  * of callbacks, and for CPUs to be able to make calls to kernel asynchronous
  * APIs.
+ *
+ *	CAVEAT:
+ * Because of the way we must handle garbage collection of messages in non-
+ * handshaken APIs, we have to require that under no circumstances should
+ * processes be allowed to "peek" into the MessageStream of a thread in another
+ * process.
+ *
+ * This is because if a kernel-domain process calls a receive() operation on a
+ * the MessageStream of a user-domain process' thread, it will cause a
+ * double-free. This is because the user-domain wrapper for MessageStream::pull
+ * automatically calls ::delete on the message.
  **/
 
 /**	Flags for MessageStream::pull().
@@ -33,11 +44,11 @@
  * as follows:
  *
  * sourceId:
- *	ID of the CPU or thread that made the asynch call-in that prompted this
- *	asynch round-trip.
+ *	ID of the CPU or thread that made the async call-in that prompted this
+ *	async round-trip.
  * targetId (only for zrequest::sHeader).
  *	ID of the target CPU or thread that the callback/response for this
- *	asynch round-trip must be sent to.
+ *	async round-trip must be sent to.
  * flags: (common subset):
  *	Z*_FLAGS_CPU_SOURCE: The source object was a CPU and not a thread.
  *	Z*_FLAGS_CPU_TARGET: The target object is a CPU and not a thread.
@@ -91,6 +102,11 @@ namespace ipc
 	{
 		methodE		method;
 		void		*foreignVaddr;
+		/* We use this to ensure garbage collection of the request
+		 * message. C++ doesn't allow us to forward declare member
+		 * structs, so this unfortunately, has to be untyped.
+		 **/
+		void		*requestMessage;
 		uarch_t		nBytes;
 		/* This next attribute is only needed for MAP_AND_COPY and
 		 * MAP_AND_READ.
@@ -125,19 +141,7 @@ public:
 		uarch_t		size;
 	};
 
-	struct sIterator
-	{
-		sIterator(void)
-		:
-		header(0, 0, 0, 0, 0, NULL)
-		{}
-
-		static const ubit16	paddingSize = 512;
-		sHeader			header;
-		ubit8			_padding_[paddingSize];
-	};
-
-	typedef PtrDblList<MessageStream::sHeader>	messageQueueC;
+	typedef PtrDblList<MessageStream::sHeader>	MessageQueue;
 
 public:
 	MessageStream(TaskContext *parent)
@@ -164,19 +168,20 @@ public:
 	~MessageStream(void) {};
 
 public:
-	error_t pull(MessageStream::sIterator *callback, ubit32 flags=0);
+	error_t pull(MessageStream::sHeader **message, ubit32 flags=0);
 	error_t pullFrom(
-		ubit16 subsystemQueue, MessageStream::sIterator *callback,
+		ubit16 subsystemQueue, MessageStream::sHeader **message,
 		ubit32 flags=0);
 
-	error_t	enqueue(ubit16 queueId, MessageStream::sHeader *callback);
+	error_t	enqueue(ubit16 queueId, MessageStream::sHeader *message);
 	error_t postMessage(
 		processId_t tid, ubit16 userQueueId,
-		ubit16 messageNo, void *data);
+		ubit16 messageNo, void *data,
+		error_t errorVal=ERROR_SUCCESS);
 
 	// Utility functions exported for other subsystems to use.
 	static error_t enqueueOnThread(
-		processId_t targetCallbackStream,
+		processId_t targetMessageStream,
 		MessageStream::sHeader *header);
 
 	static processId_t determineSourceThreadId(
@@ -187,7 +192,7 @@ public:
 		uarch_t callerFlags, ubit16 *messageFlags);
 
 private:
-	messageQueueC *getSubsystemQueue(ubit16 subsystemId)
+	MessageQueue *getSubsystemQueue(ubit16 subsystemId)
 	{
 		if (subsystemId > MSGSTREAM_SUBSYSTEM_MAXVAL)
 			{ return NULL; }
@@ -196,7 +201,7 @@ private:
 	}
 
 private:
-	messageQueueC	queues[MSGSTREAM_SUBSYSTEM_MAXVAL + 1];
+	MessageQueue	queues[MSGSTREAM_SUBSYSTEM_MAXVAL + 1];
 
 	/* Bitmap of all subsystem queues which have messages in them. The lock
 	 * on this bitmap is also used as the serializing lock that minimizes
@@ -251,59 +256,6 @@ private:
 	void		*msgHeader;
 	error_t		err;
 };
-
-typedef void (voidF)(void);
-typedef void (syscallbackFuncF)(MessageStream::sIterator *msg, void (*func)());
-typedef void (syscallbackDataF)(MessageStream::sIterator *msg, void *data);
-
-class Syscallback
-{
-public:
-	Syscallback(syscallbackDataF *syscallback)
-	:
-	func(NULL), data(NULL)
-		{ this->syscallback.dataOverloadedForm = syscallback; }
-
-	Syscallback(syscallbackFuncF *syscallback, void (*func)())
-	:
-	func(func), data(NULL)
-		{ this->syscallback.funcOverloadedForm = syscallback; }
-
-	Syscallback(syscallbackDataF *syscallback, void *data)
-	:
-	func(NULL), data(data)
-		{ this->syscallback.dataOverloadedForm = syscallback; }
-
-	void operator ()(MessageStream::sIterator *msg)
-	{
-		/* If there is no function to call, just exit. This comparison
-		 * may be unportable because it doesn't also compare the
-		 * funcOverloadedForm member of the union.
-		 */
-		if (syscallback.dataOverloadedForm == NULL) { return; };
-
-		// The order of the conditions is important here.
-		if ((data == NULL && func == NULL) || data != NULL)
-			{ syscallback.dataOverloadedForm(msg, NULL); return; };
-
-		syscallback.funcOverloadedForm(msg, func);
-	}
-
-private:
-	union
-	{
-		syscallbackFuncF	*funcOverloadedForm;
-		syscallbackDataF	*dataOverloadedForm;
-	} syscallback;
-	void		(*func)();
-	void		*data;
-};
-
-Syscallback *newSyscallback(syscallbackDataF *fn, void *data=NULL);
-Syscallback *newSyscallback(syscallbackFuncF *fn, void (*func)()=NULL);
-
-class SlamCache;
-extern SlamCache	*asyncContextCache;
 
 #endif
 

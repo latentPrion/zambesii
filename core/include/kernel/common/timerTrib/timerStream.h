@@ -110,7 +110,7 @@ public:
 		ubit32 flags, void *privateData);
 
 	// Pulls an event from the expired events list.
-	error_t pullEvent(ubit32 flags, sTimerMsg *ret);
+	error_t pullEvent(ubit32 flags, sTimerMsg **ret);
 
 private:
 	/* Used by the Timer Tributary's dequeueing thread to lock the stream

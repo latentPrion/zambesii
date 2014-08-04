@@ -1,9 +1,11 @@
 
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__kflagManipulation.h>
+#include <__kstdlib/callback.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/messageStream.h>
@@ -30,16 +32,6 @@ AsyncResponse::~AsyncResponse(void)
 			msg->sourceId, msg->targetId, strerror(msg->error),
 			strerror(ret));
 	};
-}
-
-Syscallback *newSyscallback(syscallbackDataF *fn, void *data)
-{
-	return new (asyncContextCache->allocate()) Syscallback(fn, data);
-}
-
-Syscallback *newSyscallback(syscallbackFuncF *fn, void (*func)())
-{
-	return new (asyncContextCache->allocate()) Syscallback(fn, func);
 }
 
 ipc::sDataHeader *ipc::createDataHeader(
@@ -311,18 +303,20 @@ subsystem(subsystem), flags(0), function(function), size(size)
 	targetId = determineTargetThreadId(
 		targetPid, sourceId, flags, &this->flags);
 
+#if 0
 	if (size > sizeof(sIterator))
 	{
 		printf(FATAL MSGSTREAM"sHeader con: size %d exceeds "
-			"sizeof(sIterator) (%d)\n"
+			"sizeof(sHeader) (%d)\n"
 			"\tCaller 0x%p: subsystem %d, function %d, from T0x%x "
 			"to T0x%x\n",
-			size, sizeof(sIterator),
+			size, sizeof(sHeader),
 			__builtin_return_address(0),
 			subsystem, function, sourceId, targetId);
 
 		panic(ERROR_LIMIT_OVERFLOWED);
 	};
+#endif
 }
 
 processId_t MessageStream::determineSourceThreadId(
@@ -396,13 +390,13 @@ error_t MessageStream::enqueueOnThread(
 }
 
 error_t MessageStream::pullFrom(
-	ubit16 subsystemQueue, MessageStream::sIterator *callback,
+	ubit16 subsystemQueue, MessageStream::sHeader **message,
 	ubit32 flags
 	)
 {
 	MessageStream::sHeader	*tmp;
 
-	if (callback == NULL) { return ERROR_INVALID_ARG; };
+	if (message == NULL) { return ERROR_INVALID_ARG; };
 	if (subsystemQueue > MSGSTREAM_SUBSYSTEM_MAXVAL)
 		{ return ERROR_INVALID_ARG_VAL; };
 
@@ -419,8 +413,7 @@ error_t MessageStream::pullFrom(
 
 			pendingSubsystems.unlock();
 
-			memcpy(callback, tmp, tmp->size);
-			delete tmp;
+			*message = tmp;
 			return ERROR_SUCCESS;
 		};
 
@@ -438,13 +431,11 @@ error_t MessageStream::pullFrom(
 	};
 }
 
-error_t MessageStream::pull(
-	MessageStream::sIterator *callback, ubit32 flags
-	)
+error_t MessageStream::pull(MessageStream::sHeader **message, ubit32 flags)
 {
 	MessageStream::sHeader	*tmp;
 
-	if (callback == NULL) { return ERROR_INVALID_ARG; };
+	if (message == NULL) { return ERROR_INVALID_ARG; };
 
 	for (;;)
 	{
@@ -463,12 +454,12 @@ error_t MessageStream::pull(
 
 				// Very useful checks here for sanity.
 				assert_fatal(tmp->size >= sizeof(*tmp));
+#if 0
 				assert_fatal(
-					tmp->size <= sizeof(MessageStream::sIterator));
+					tmp->size <= sizeof(MessageStream::sHeader));
+#endif
 
-				memcpy(callback, tmp, tmp->size);
-
-				delete tmp;
+				*message = tmp;
 				return ERROR_SUCCESS;
 			};
 		};
@@ -488,7 +479,8 @@ error_t MessageStream::pull(
 }
 
 error_t MessageStream::postMessage(
-	processId_t tid, ubit16 userQId, ubit16 messageNo, void *data
+	processId_t tid, ubit16 userQId, ubit16 messageNo, void *data,
+	error_t errorVal
 	)
 {
 	MessageStream::sHeader		*message;
@@ -507,6 +499,7 @@ error_t MessageStream::postMessage(
 		sizeof(*message), 0, data);
 
 	if (message == NULL) { return ERROR_MEMORY_NOMEM; };
+	message->error = errorVal;
 
 	return enqueueOnThread(tid, message);
 }
@@ -520,19 +513,21 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 		return ERROR_INVALID_ARG_VAL;
 	};
 
-	if (callback->size > sizeof(sIterator))
+#if 0
+	if (callback->size > sizeof(sHeader))
 	{
 		printf(FATAL MSGSTREAM"sHeader con: size %d exceeds "
-			"sizeof(sIterator) (%d)\n"
+			"sizeof(sHeader) (%d)\n"
 			"\tCaller 0x%p: subsystem %d, function %d, from T0x%x "
 			"to T0x%x\n",
-			callback->size, sizeof(sIterator),
+			callback->size, sizeof(sHeader),
 			__builtin_return_address(0),
 			callback->subsystem, callback->function,
 			callback->sourceId, callback->targetId);
 
 		panic(ERROR_LIMIT_OVERFLOWED);
 	};
+#endif
 
 	/**	TODO:
 	 * Think about this type of situation and determine whether or not it's

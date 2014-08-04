@@ -126,7 +126,7 @@ status_t CpuStream::PowerManager::bootPowerOn(ubit32)
 
 void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 {
-	MessageStream::sIterator	event;
+	MessageStream::sHeader		*event;
 	CpuStream			*cs;
 	sarch_t				loopAgain;
 	uarch_t				sipiVector;
@@ -139,9 +139,9 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 		loopAgain = 0;
 
 		processTrib.__kgetStream()->timerStream.pullEvent(
-			0, (TimerStream::sTimerMsg *)&event);
+			0, (TimerStream::sTimerMsg **)&event);
 
-		cs = reinterpret_cast<CpuStream *>( event.header.privateData );
+		cs = reinterpret_cast<CpuStream *>( event->privateData );
 
 		switch (cs->powerManager.getPowerStatus())
 		{

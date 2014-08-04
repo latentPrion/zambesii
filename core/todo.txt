@@ -15,10 +15,10 @@ Portions of the C++11 Stdlib that we will port to the kernel:
 	* <bitset>
 	* <__kcallbacks>
 
-Messages:
+Messages: Done
 	Unify all request and response messages, such that we potentially no
 	longer have to delete the request message and create a new response
-	message every time.
+	message every time (for kernel-domain servers at least).
 
 	This basically means that we no longer copy the messages when pulling
 	in MessageStream::pull(), but we hand out pointers as they are.
@@ -44,7 +44,7 @@ Messages:
 	most servers, they will need to create a copy of the request message
 	on their stack before they reuse it as the response.
 
-__kcallbacks:
+__kcallbacks: Designed and implemented. Integrating.
 	We need a way to allow threads to spin on one queue, while specifying
 	their callbacks in a clean, easily readable way.
 

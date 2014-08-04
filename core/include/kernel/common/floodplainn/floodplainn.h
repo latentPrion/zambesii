@@ -2,10 +2,10 @@
 	#define _FLOODPLAINN_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/callback.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kclasses/ptrList.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/messageStream.h>
 	#include <kernel/common/zudiIndexServer.h>
 	#include <kernel/common/floodplainn/floodplainn.h>
 	#include <kernel/common/floodplainn/device.h>
@@ -26,15 +26,17 @@ public:
 	zudiIndexServerTid(PROCID_INVALID)
 	{}
 
-	typedef void (initializeReqCallF)(error_t ret);
-	error_t initializeReq(initializeReqCallF *callback);
+	typedef void (initializeReqCbFn)(error_t ret);
+	error_t initializeReq(initializeReqCbFn *callback);
 
 	~Floodplainn(void) {}
 
 public:
 	struct sZudiKernelCallMsg
 	{
-		enum commandE { CMD_INSTANTIATE_DEVICE, CMD_NEW_PARENT };
+		enum commandE {
+			CMD_INSTANTIATE_DEVICE, CMD_DESTROY_DEVICE,
+			CMD_NEW_PARENT };
 
 		sZudiKernelCallMsg(
 			processId_t targetPid, ubit16 subsystem, ubit16 function,
@@ -284,7 +286,6 @@ public:
 		utf8Char *metaName,
 		udi_ops_vector_t *opsVector);
 
-	static void __kdriverEntry(void);
 	static void indexReaderEntry(void);
 	void setZudiIndexServerTid(processId_t tid)
 		{ zudiIndexServerTid = tid; }
@@ -303,7 +304,11 @@ public:
 	processId_t			zudiIndexServerTid;
 
 private:
-	static syscallbackFuncF initializeReq1;
+	class InitializeReqCb;
+	typedef void (__kinitializeReqCbFn)(
+		MessageStream::sHeader *m, initializeReqCbFn callerCb);
+
+	static __kinitializeReqCbFn	initializeReq1;
 };
 
 extern Floodplainn		floodplainn;

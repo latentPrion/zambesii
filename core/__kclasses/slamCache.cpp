@@ -10,7 +10,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
-SlamCache	*asyncContextCache;
+SlamCache	*__kcallbackCache;
 
 SlamCache::SlamCache(uarch_t _sObjectize, allocatorE allocator)
 :

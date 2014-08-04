@@ -13,7 +13,24 @@
 
 static fplainn::Device		treeDev(CHIPSET_NUMA_SHBANKID);
 
-error_t Floodplainn::initializeReq(initializeReqCallF *callback)
+class Floodplainn::InitializeReqCb
+: public _Callback<Floodplainn::__kinitializeReqCbFn>
+{
+	Floodplainn::initializeReqCbFn	*callerCb;
+
+public:
+	InitializeReqCb(
+		Floodplainn::__kinitializeReqCbFn *__kcb,
+		Floodplainn::initializeReqCbFn *ccb)
+	: _Callback<Floodplainn::__kinitializeReqCbFn>(__kcb),
+	callerCb(ccb)
+	{}
+
+	virtual void operator()(MessageStream::sHeader *msg)
+		{ (*function)(msg, callerCb); }
+};
+
+error_t Floodplainn::initializeReq(initializeReqCbFn *callback)
 {
 	fvfs::Tag		*root, *tmp;
 	error_t			ret;
@@ -40,26 +57,22 @@ error_t Floodplainn::initializeReq(initializeReqCallF *callback)
 
 	zuiServer::setNewDeviceActionReq(
 		zuiServer::NDACTION_INSTANTIATE,
-		newSyscallback(
-			&Floodplainn::initializeReq1, (void (*)())callback));
+		new InitializeReqCb(&Floodplainn::initializeReq1, callback));
 
 	return ERROR_SUCCESS;
 }
 
 void Floodplainn::initializeReq1(
-	MessageStream::sIterator *res, void (*callback)()
+	MessageStream::sHeader *res, initializeReqCbFn *callback
 	)
 {
-	initializeReqCallF	*_callback;
-
-	if (res->header.error != ERROR_SUCCESS)
+	if (res->error != ERROR_SUCCESS)
 	{
 		printf(ERROR FPLAINN"initialize: Failed to set new-device "
 			"action.\n");
 	};
 
-	_callback = (initializeReqCallF *)callback;
-	_callback(res->header.error);
+	callback(res->error);
 }
 
 error_t Floodplainn::findDriver(utf8Char *fullName, fplainn::Driver **retDrv)
@@ -98,17 +111,6 @@ error_t Floodplainn::findDriver(utf8Char *fullName, fplainn::Driver **retDrv)
 
 	driverList.unlock();
 	return ERROR_NO_MATCH;
-}
-
-void Floodplainn::__kdriverEntry(void)
-{
-	Thread		*self;
-
-	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
-
-	printf(NOTICE"Kernel driver: %s. Executing.\n", self->parent->fullName);
-	taskTrib.dormant(self->getFullId());
 }
 
 static inline sarch_t isByIdPath(utf8Char *path)

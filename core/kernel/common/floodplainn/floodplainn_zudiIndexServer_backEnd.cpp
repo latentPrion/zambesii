@@ -2,6 +2,7 @@
 #include <debug.h>
 #include <__ksymbols.h>
 #include <zui.h>
+#include <__kstdlib/callback.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/memory>
@@ -214,8 +215,7 @@ status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 }
 
 void fplainnIndexServer_detectDriverReq(
-	ZAsyncStream::sZAsyncMsg *request,
-	zuiServer::sIndexMsg *requestData
+	ZAsyncStream::sZAsyncMsg *request, zuiServer::sIndexMsg *requestData
 	)
 {
 	error_t					err;
@@ -525,10 +525,8 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		{ delete currDevlineHdr; };
 }
 
-void fplainnIndexServer_newDeviceActionReq
-(
-	ZAsyncStream::sZAsyncMsg *request,
-	zuiServer::sIndexMsg *requestData
+void fplainnIndexServer_newDeviceActionReq(
+	ZAsyncStream::sZAsyncMsg *request, zuiServer::sIndexMsg *requestData
 	)
 {
 	Floodplainn::sZudiIndexMsg		*response;
@@ -610,10 +608,8 @@ void fplainnIndexServer_newDeviceActionReq
 	return NULL;
 }
 
-void fplainnIndexer_loadDriverReq
-(
-	ZAsyncStream::sZAsyncMsg *request,
-	zuiServer::sIndexMsg *requestData
+void fplainnIndexer_loadDriverReq(
+	ZAsyncStream::sZAsyncMsg *request, zuiServer::sIndexMsg *requestData
 	)
 {
 	Floodplainn::sZudiIndexMsg		*response;
@@ -896,10 +892,8 @@ void fplainnIndexer_loadDriverReq
 	myResponse(ERROR_SUCCESS);
 }
 
-void fplainnIndexServer_loadRequirementsReq
-(
-	ZAsyncStream::sZAsyncMsg *request,
-	zuiServer::sIndexMsg *requestData
+void fplainnIndexServer_loadRequirementsReq(
+	ZAsyncStream::sZAsyncMsg *request, zuiServer::sIndexMsg *requestData
 	)
 {
 	Floodplainn::sZudiIndexMsg	*response;
@@ -1045,10 +1039,8 @@ void fplainnIndexServer_loadRequirementsReq
 	myResponse(ERROR_SUCCESS);
 }
 
-void fplainnIndexServer_newDeviceInd
-(
-	ZAsyncStream::sZAsyncMsg *request,
-	zuiServer::sIndexMsg *requestData
+void fplainnIndexServer_newDeviceInd(
+	ZAsyncStream::sZAsyncMsg *request, zuiServer::sIndexMsg *requestData
 	)
 {
 	// The originContext /is/ the response that will eventually be sent.
@@ -1104,10 +1096,7 @@ void fplainnIndexServer_newDeviceInd
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-void fplainnIndexServer_newDeviceInd1
-(
-	Floodplainn::sZudiIndexMsg *response
-	)
+void fplainnIndexServer_newDeviceInd1(Floodplainn::sZudiIndexMsg *response)
 {
 	Floodplainn::sZudiIndexMsg		*originContext;
 	AsyncResponse				myResponse;
@@ -1144,10 +1133,7 @@ void fplainnIndexServer_newDeviceInd1
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-void fplainnIndexServer_newDeviceInd2
-(
-	Floodplainn::sZudiIndexMsg *response
-	)
+void fplainnIndexServer_newDeviceInd2(Floodplainn::sZudiIndexMsg *response)
 {
 	Floodplainn::sZudiIndexMsg	*originContext;
 	AsyncResponse			myResponse;
@@ -1190,8 +1176,7 @@ void fplainnIndexServer_newDeviceInd2
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-void fplainnIndexServer_newDeviceInd3
-(MessageStream::sHeader *response)
+void fplainnIndexServer_newDeviceInd3(MessageStream::sHeader *response)
 {
 	Floodplainn::sZudiIndexMsg	*originContext;
 	AsyncResponse			myResponse;
@@ -1226,10 +1211,7 @@ void fplainnIndexServer_newDeviceInd3
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-void fplainnIndexServer_newDeviceInd4
-(
-	Floodplainn::sZudiKernelCallMsg *response
-	)
+void fplainnIndexServer_newDeviceInd4(Floodplainn::sZudiKernelCallMsg *response)
 {
 	Floodplainn::sZudiIndexMsg	*originContext;
 	AsyncResponse			myResponse;
@@ -1248,8 +1230,7 @@ void fplainnIndexServer_newDeviceInd4
 	myResponse(ERROR_SUCCESS);
 }
 
- void handleUnknownRequest
-(ZAsyncStream::sZAsyncMsg *request)
+void handleUnknownRequest(ZAsyncStream::sZAsyncMsg *request)
 {
 	AsyncResponse		myResponse;
 
@@ -1272,8 +1253,7 @@ void fplainnIndexServer_newDeviceInd4
 	myResponse(ERROR_UNKNOWN);
 }
 
-void fplainnIndexServer_handleRequest
-(
+void fplainnIndexServer_handleRequest(
 	ZAsyncStream::sZAsyncMsg *msg,
 	zuiServer::sIndexMsg *requestData, Thread *self
 	)
@@ -1347,23 +1327,22 @@ void fplainnIndexServer_handleRequest
 void Floodplainn::indexReaderEntry(void)
 {
 	Thread						*self;
-	HeapObj<MessageStream::sIterator>		gcb;
+	MessageStream::sHeader				*gcb;
 	HeapObj<zuiServer::sIndexMsg>			requestData;
 	zui::sHeader					__kindexHeader;
 
 	self = static_cast<Thread *>(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
 
-	gcb = new MessageStream::sIterator;
 	requestData = new zuiServer::sIndexMsg(
 		0, NULL, zuiServer::INDEX_KERNEL);
 
-	if (gcb.get() == NULL || requestData.get() == NULL)
+	if (requestData.get() == NULL)
 	{
-		printf(FATAL"Failed to allocate heap mem for message loop.\n"
-			"\tDormanting forever.\n");
+		printf(FATAL"Failed to allocate heap mem for request data "
+			"buffer.\n\tAborting.\n");
 
-		taskTrib.dormant(self->getFullId());
+		return;
 	};
 
 	if (zudiIndexes[0]->initialize(CC"[__kindex]") != ERROR_SUCCESS)
@@ -1394,32 +1373,32 @@ void Floodplainn::indexReaderEntry(void)
 
 	for (;;)
 	{
-		self->getTaskContext()->messageStream.pull(gcb.get());
+		self->getTaskContext()->messageStream.pull(&gcb);
 
 		// If some thread is forwarding syscall responses to us:
-		if ((gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_FLOODPLAINN
-			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_ZASYNC
-			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_PROCESS
-			&& gcb->header.subsystem != MSGSTREAM_SUBSYSTEM_ZUDI)
-			&& gcb->header.sourceId != self->getFullId())
+		if ((gcb->subsystem != MSGSTREAM_SUBSYSTEM_FLOODPLAINN
+			&& gcb->subsystem != MSGSTREAM_SUBSYSTEM_ZASYNC
+			&& gcb->subsystem != MSGSTREAM_SUBSYSTEM_PROCESS
+			&& gcb->subsystem != MSGSTREAM_SUBSYSTEM_ZUDI)
+			&& gcb->sourceId != self->getFullId())
 		{
 			printf(ERROR FPLAINNIDX"Syscall response message "
 				"forwarded to this thread.\n\tFrom TID 0x%x. "
 				"Possible exploit attempt. Rejecting.\n",
-				gcb->header.sourceId);
+				gcb->sourceId);
 
 			// Reject the message.
 			continue;
 		};
 
-		switch (gcb->header.subsystem)
+		switch (gcb->subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_ZASYNC:
-			switch (gcb->header.function)
+			switch (gcb->function)
 			{
 			case MSGSTREAM_ZASYNC_SEND:
 				fplainnIndexServer_handleRequest(
-					(ZAsyncStream::sZAsyncMsg *)gcb.get(),
+					(ZAsyncStream::sZAsyncMsg *)gcb,
 					requestData.get(), self);
 
 				break;
@@ -1428,46 +1407,40 @@ void Floodplainn::indexReaderEntry(void)
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_FLOODPLAINN:
-			switch (gcb->header.function)
+			switch (gcb->function)
 			{
 			case ZUISERVER_DETECTDRIVER_REQ:
 				fplainnIndexServer_newDeviceInd1(
-					(Floodplainn::sZudiIndexMsg *)
-						gcb.get());
+					(Floodplainn::sZudiIndexMsg *)gcb);
 
 
 				break;
 
 			case ZUISERVER_LOADDRIVER_REQ:
 				fplainnIndexServer_newDeviceInd2(
-					(Floodplainn::sZudiIndexMsg *)
-						gcb.get());
+					(Floodplainn::sZudiIndexMsg *)gcb);
 
 				break;
 			};
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_ZUDI:
-			switch (gcb->header.function)
+			switch (gcb->function)
 			{
 			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
 				fplainnIndexServer_newDeviceInd4(
-					(Floodplainn::sZudiKernelCallMsg *)
-						gcb.get());
+					(Floodplainn::sZudiKernelCallMsg *)gcb);
 
 				break;
 			};
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_PROCESS:
-			if (gcb->header.function
-				!= MSGSTREAM_PROCESS_SPAWN_DRIVER)
-			{
-				break;
-			};
+			if (gcb->function != MSGSTREAM_PROCESS_SPAWN_DRIVER)
+				{ break; };
 
 			fplainnIndexServer_newDeviceInd3(
-					(MessageStream::sHeader *)gcb.get());
+					(MessageStream::sHeader *)gcb);
 
 			break;
 

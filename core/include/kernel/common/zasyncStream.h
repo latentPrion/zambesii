@@ -11,6 +11,11 @@
 
 #define ZASYNC			"ZAsync "
 
+/**	CAVEAT:
+ * The threads of a process other than the target process should never be
+ * allowed to interact with the target process' ZAsyncStream.
+ **/
+
 class ProcessStream;
 
 class ZAsyncStream

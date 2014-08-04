@@ -96,9 +96,7 @@ error_t TimerStream::createOneshotEvent(
 	};
 }
 
-error_t TimerStream::pullEvent(
-	ubit32 flags, sTimerMsg *event
-	)
+error_t TimerStream::pullEvent(ubit32 flags, sTimerMsg **event)
 {
 	error_t			ret;
 
@@ -113,7 +111,7 @@ error_t TimerStream::pullEvent(
 	ret = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentTaskContext()->messageStream.pullFrom(
 			MSGSTREAM_SUBSYSTEM_TIMER,
-			(MessageStream::sIterator *)event,
+			(MessageStream::sHeader **)event,
 			FLAG_TEST(
 				flags, TIMERSTREAM_PULLEVENT_FLAGS_DONT_BLOCK)
 					? ZCALLBACK_PULL_FLAGS_DONT_BLOCK : 0);

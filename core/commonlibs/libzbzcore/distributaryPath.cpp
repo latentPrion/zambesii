@@ -7,7 +7,7 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 
 
-error_t __klzbzcore::distributary::main(Thread *self)
+void __klzbzcore::distributary::main(Thread *self, mainCbFn *callback)
 {
 	dvfs::Tag		*tmpTag;
 	error_t			ret;
@@ -19,13 +19,10 @@ error_t __klzbzcore::distributary::main(Thread *self)
 		printf(ERROR LZBZCORE"dtribPath: Failed to resolve dtrib name. "
 			"\n\t(%s).\n",
 			self->parent->fullName);
-
-		return ret;
 	};
 
-	self->parent->sendResponse(ERROR_SUCCESS);
+	callback(self, ret);
+
 	jumpAddress = tmpTag->getDInode()->getEntryAddress();
 	(*jumpAddress)();
-	return ERROR_SUCCESS;
 }
-

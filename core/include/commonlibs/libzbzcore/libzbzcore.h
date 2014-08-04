@@ -10,74 +10,112 @@ class Thread;
 
 namespace __klzbzcore
 {
-	void main(void);
-
 	namespace distributary
 	{
-		error_t main(Thread *self);
+		typedef void (mainCbFn)(Thread *self, error_t);
+		void main(Thread *self, mainCbFn *callback);
+	}
+
+	namespace region
+	{
+		void main(void *);
+
+	// PRIVATE:
+		typedef void (__kmainCbFn)(
+			Floodplainn::sZudiKernelCallMsg *ctxt,
+			Thread *self, fplainn::Device *dev);
+
+		__kmainCbFn	main1;
+
+		namespace mei
+		{
+			void handler(void);
+		}
+
+		// Will probably be deprecated soon.
+		namespace mgmt
+		{
+			error_t handler(
+				Floodplainn::sZudiMgmtCallMsg *msg,
+				fplainn::Device *dev, ubit16 regionIndex);
+		}
 	}
 
 	namespace driver
 	{
-		const ubit32 	MAINTHREAD_U0_GET_THREAD_DEVICE_PATH_REQ=0,
-				MAINTHREAD_U0_REGION_INIT_COMPLETE_IND=1,
-				MAINTHREAD_U0_REGION_INIT_FAILURE_IND=2,
-				MAINTHREAD_U0_SYNC=3;
+		typedef void (mainCbFn)(Thread *self, error_t);
 
+		void main(Thread *self, mainCbFn *callback);
 
-		error_t main(Thread *self);
-		void main_handleU0Request(
-			MessageStream::sIterator *msgIt,
-			fplainn::DriverInstance *drvInst,
-			Thread *self);
+	// PRIVATE:
+		class MainCb;
+		typedef void (__kmainCbFn)(
+			MessageStream::sHeader *msg, Thread *self,
+			mainCbFn *callerCb);
 
-		void main_handleKernelCall(
-			Floodplainn::sZudiKernelCallMsg *msg);
+		__kmainCbFn	main1;
 
-		void main_handleMgmtCall(
-			Floodplainn::sZudiMgmtCallMsg *msg);
-
-		namespace __kcall
+		namespace __kcontrol
 		{
-			struct sCallerContext
-			{
-				sCallerContext(
-					Floodplainn::sZudiKernelCallMsg *z)
-				:
-				sourceTid(z->header.sourceId),
-				privateData(z->header.privateData),
-				error(0)
-				{
-					strcpy8(devicePath, z->path);
-				}
+			const ubit32	INSTANTIATE_DEVICE=0,
+					DESTROY_DEVICE=1;
 
-				processId_t		sourceTid;
-				void			*privateData;
-				error_t			error;
-				utf8Char		devicePath[
-					FVFS_PATH_MAXLEN];
-			};
+			typedef void (instantiateDeviceReqCbFn)(
+				Floodplainn::sZudiKernelCallMsg *, error_t);
+			typedef instantiateDeviceReqCbFn destroyDeviceReqCbFn;
 
-			error_t instantiateDevice(sCallerContext *ctxt);
-			error_t instantiateDevice1(sCallerContext *ctxt);
-			error_t instantiateDevice2(sCallerContext *ctxt);
+			void handler(Floodplainn::sZudiKernelCallMsg *msg);
 
-			error_t destroyDevice(sCallerContext *ctxt);
+			void instantiateDeviceReq(
+				Floodplainn::sZudiKernelCallMsg *ctxt);
+
+			void destroyDeviceReq(
+				Floodplainn::sZudiKernelCallMsg *ctxt);
+
+		// PRIVATE:
+			typedef void (__kinstantiateDeviceReqCbFn)(
+				MessageStream::sHeader *msg,
+				Floodplainn::sZudiKernelCallMsg *ctxt);
+			typedef __kinstantiateDeviceReqCbFn
+				__kdestroyDeviceReqCbFn;
+
+			class InstantiateDeviceReqCb;
+			typedef InstantiateDeviceReqCb DestroyDeviceReqCb;
+			void instantiateDeviceReq1(Floodplainn::sZudiKernelCallMsg *);
+			void instantiateDeviceReq2(Floodplainn::sZudiKernelCallMsg *);
+
+			instantiateDeviceReqCbFn	instantiateDeviceAck;
+			destroyDeviceReqCbFn		destroyDeviceAck;
 		}
 
-		namespace u0
+		namespace localService
 		{
-			error_t getThreadDevicePath(
+			const ubit32	USERQID=0;
+
+			const ubit32	REGION_INIT_SYNC_REQ=0,
+					REGION_INIT_IND=1,
+					GET_THREAD_DEVICE_PATH_REQ=2;
+
+			void handler(
+				MessageStream::sHeader *msgIt,
+				fplainn::DriverInstance *drvInst,
+				Thread *self);
+
+			// Deprecated.
+			error_t getThreadDevicePathReq(
 				fplainn::DriverInstance *drvInst,
 				processId_t tid,
 				utf8Char *path);
 
-			error_t regionInitInd(
-				__klzbzcore::driver::__kcall::sCallerContext *ctxt,
-				ubit32 function);
+			void regionInitInd(
+				Floodplainn::sZudiKernelCallMsg *ctxt,
+				error_t error);
 		}
-
 	}
+
+	void main(void);
+	distributary::mainCbFn	distributaryMain1;
+	driver::mainCbFn	driverMain1;
 }
 
 #endif

@@ -58,6 +58,9 @@ public:
 	void dormant(Task *task);
 	void block(Task *task);
 	error_t unblock(Task *task);
+	/**	Unimplemented.
+	 * void kill(Task *task);
+	 **/
 
 	void dump(void);
 
@@ -75,7 +78,7 @@ private:
 
 public:
 	// Three queues on each CPU: rr, rt and sleep.
-	PrioQueue<Task>	roundRobinQ, realTimeQ;
+	PrioQueue<Task>		roundRobinQ, realTimeQ;
 	CpuStream		*parentCpu;
 };
 

@@ -2,6 +2,7 @@
 #include <__ksymbols.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__ktypes.h>
+#include <__kstdlib/callback.h>
 #include <__kstdlib/compiler/cxxrtl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kclib/string.h>
@@ -24,6 +25,11 @@
 
 int oo=0, pp=0, qq=0, rr=0;
 
+static void				__korientationMain1(void);
+static __kcbFn				__korientationMain2;
+static Floodplainn::initializeReqCbFn	__korientationMain3;
+static __kcbFn				__korientationMain4;
+
 #include <commonlibs/libacpi/libacpi.h>
 static void rDumpSrat(void)
 {
@@ -40,7 +46,7 @@ static void rDumpSrat(void)
 	for (nSrats=0; srat != NULL;
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle), nSrats++)
 	{
-		acpiR::srat::sCpu		*cpuEntry;
+		acpiR::srat::sCpu	*cpuEntry;
 		void			*handle2;
 		uarch_t			nCpuEntries;
 
@@ -69,7 +75,7 @@ static void rDumpSrat(void)
 			"N: Memory range entries:\n",
 			nCpuEntries);
 
-		acpiR::srat::sMem		*memEntry;
+		acpiR::srat::sMem	*memEntry;
 		uarch_t			nMemEntries;
 
 		handle2 = NULL;
@@ -102,6 +108,8 @@ static void rDumpSrat(void)
 
 static void dumpSrat(void)
 {
+	(void)dumpSrat;
+
 	acpi::initializeCache();
 
 	if (acpi::findRsdp() != ERROR_SUCCESS)
@@ -210,10 +218,10 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 	 **/
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
-	asyncContextCache = cachePool.createCache(sizeof(Syscallback));
-	if (asyncContextCache == NULL)
+	__kcallbackCache = cachePool.createCache(sizeof(__kCallback));
+	if (__kcallbackCache == NULL)
 	{
-		printf(FATAL ORIENT"Main: Failed to create asynch context "
+		printf(FATAL ORIENT"Main: Failed to create async context "
 			"object cache. Halting.\n");
 
 		panic(ERROR_UNKNOWN);
@@ -227,9 +235,6 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
-
-	printf(NOTICE"Hello, Metal Industries!\n");
-asm volatile ("cli\n\thlt\n\t");
 
 	/* Spawn the new thread for __korientationMain. There is no need to
 	 * unschedule __korientationInit() because it will never be scheduled.
@@ -248,7 +253,6 @@ asm volatile ("cli\n\thlt\n\t");
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 }
 
-syscallbackDataF __korientationMain2;
 void __korientationMain1(void)
 {
 	error_t			ret;
@@ -267,24 +271,22 @@ void __korientationMain1(void)
 		processTrib, spawnDistributary(
 			CC"///@d//././udi-driver-indexer//./.", NULL,
 			NUMABANKID_INVALID,
-			0, 0, newSyscallback(&__korientationMain2),
+			0, 0, new __kCallback(&__korientationMain2),
 			&dp),
 		ret);
 
 	floodplainn.setZudiIndexServerTid(dp->id);
 }
 
-Floodplainn::initializeReqCallF __korientationMain3;
-void __korientationMain2(MessageStream::sIterator *msg, void *)
+void __korientationMain2(MessageStream::sHeader *msg)
 {
 	error_t		ret;
 
-	DIE_ON(msg->header.error);
+	DIE_ON(msg->error);
 	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
 
 }
 
-syscallbackDataF __korientationMain4;
 void __korientationMain3(error_t ret)
 {
 	DIE_ON(ret);
@@ -295,13 +297,13 @@ void __korientationMain3(error_t ret)
 
 	zuiServer::newDeviceInd(
 		CC"by-id/0", zuiServer::INDEX_KERNEL,
-		newSyscallback(&__korientationMain4));
+		new __kCallback(&__korientationMain4));
 }
 
-void __korientationMain4(MessageStream::sIterator *msgIt, void *)
+void __korientationMain4(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
-	fplainn::Device		*chipsetDev;
+	fplainn::Device			*chipsetDev; (void)chipsetDev;
 	error_t				ret;
 	Floodplainn::sZudiIndexMsg	*msg;
 
@@ -367,18 +369,18 @@ void __korientationMain4(MessageStream::sIterator *msgIt, void *)
 
 	for (ubit8 i=0; i<((waitForTimeout) ? 0xFF : 3); i++)
 	{
-		MessageStream::sIterator	iMessage;
+		MessageStream::sHeader	*iMessage;
 
 		self->getTaskContext()->messageStream.pull(&iMessage);
 
-		switch (iMessage.header.subsystem)
+		switch (iMessage->subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_PROCESS:
 			printf(NOTICE ORIENT"pulled %dth callback: err %d. "
 				"New process' ID: 0x%x.\n",
-				iMessage.header.privateData,
-				iMessage.header.error,
-				iMessage.header.sourceId);
+				iMessage->privateData,
+				iMessage->error,
+				iMessage->sourceId);
 
 			break;
 
@@ -416,7 +418,6 @@ void __korientationMain4(MessageStream::sIterator *msgIt, void *)
  * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
  **/
 
-void __korientationMain1(void);
 void __korientationMain(void)
 {
 	Thread			*self;
@@ -431,25 +432,25 @@ void __korientationMain(void)
 	__korientationMain1();
 	for (; !exitLoop;)
 	{
-		MessageStream::sIterator	iMessage;
-		Syscallback			*messageCallback;
+		MessageStream::sHeader		*iMessage;
+		Callback			*callback;
 
 		self->getTaskContext()->messageStream.pull(&iMessage);
-		messageCallback = (Syscallback *)iMessage.header.privateData;
+		callback = (Callback *)iMessage->privateData;
 
-		switch (iMessage.header.subsystem)
+		switch (iMessage->subsystem)
 		{
 		default:
 			// Discard message if it has no callback.
-			if (messageCallback == NULL) { break; };
+			if (callback == NULL) { break; };
 
-			(*messageCallback)(&iMessage);
-			asyncContextCache->free(messageCallback);
+			(*callback)(iMessage);
+			delete callback;
 			break;
 		};
 	};
 
-	printf(NOTICE ORIENT"Main: Exited asynch loop. Dormanting.\n");
-	taskTrib.dormant(self->getFullId());
+	printf(NOTICE ORIENT"Main: Exited async loop. Killing.\n");
+	taskTrib.kill(self->getFullId());
 }
 
