@@ -270,7 +270,7 @@ void Floodplainn::instantiateDeviceAck(
 	processId_t targetId, utf8Char *path, error_t err, void *privateData
 	)
 {
-	Thread					*currThread;
+	Thread				*currThread;
 	Floodplainn::sZudiKernelCallMsg	*response;
 	fplainn::Device			*dev;
 

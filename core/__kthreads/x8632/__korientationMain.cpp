@@ -253,6 +253,58 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 }
 
+/**	EXPLANATION:
+ * This function is entered after __korientationInit() so it has access to
+ * memory management (__kspace level), cooperative scheduling on the BSP,
+ * thread spawning and process spawning, along with exceptions and IRQs.
+ *
+ * Certain chipsets may need to do extra work inside of __korientationMain to
+ * have IRQs etc up to speed, but that is the general initialization state at
+ * this point.
+ *
+ * The rest of this function guides the kernel through the bootstrap sequence
+ * (timers, VFS, drivers, etc). Generally the floodplainn VFS is initialized
+ * first, and then populated with the ZKCM devices, and then the rest of the
+ * kernel is initialized with an emphasis on getting the timers initialized
+ * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
+ **/
+
+void __korientationMain(void)
+{
+	Thread			*self;
+	sarch_t			exitLoop=0;
+
+	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentTask() );
+
+	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
+		self->getFullId(), self);
+
+	__korientationMain1();
+	for (; !exitLoop;)
+	{
+		MessageStream::sHeader		*iMessage;
+		Callback			*callback;
+
+		self->getTaskContext()->messageStream.pull(&iMessage);
+		callback = (Callback *)iMessage->privateData;
+
+		switch (iMessage->subsystem)
+		{
+		default:
+			// Discard message if it has no callback.
+			if (callback == NULL) { break; };
+
+			(*callback)(iMessage);
+			delete callback;
+			break;
+		};
+	};
+
+	printf(NOTICE ORIENT"Main: Exited async loop. Killing.\n");
+	taskTrib.kill(self->getFullId());
+}
+
 void __korientationMain1(void)
 {
 	error_t			ret;
@@ -400,57 +452,5 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 
 	printf(NOTICE ORIENT"Halting unfavourably.\n");
 	for (;;) { asm volatile("hlt\n\t"); };
-}
-
-/**	EXPLANATION:
- * This function is entered after __korientationInit() so it has access to
- * memory management (__kspace level), cooperative scheduling on the BSP,
- * thread spawning and process spawning, along with exceptions and IRQs.
- *
- * Certain chipsets may need to do extra work inside of __korientationMain to
- * have IRQs etc up to speed, but that is the general initialization state at
- * this point.
- *
- * The rest of this function guides the kernel through the bootstrap sequence
- * (timers, VFS, drivers, etc). Generally the floodplainn VFS is initialized
- * first, and then populated with the ZKCM devices, and then the rest of the
- * kernel is initialized with an emphasis on getting the timers initialized
- * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
- **/
-
-void __korientationMain(void)
-{
-	Thread			*self;
-	sarch_t			exitLoop=0;
-
-	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask() );
-
-	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
-		self->getFullId(), self);
-
-	__korientationMain1();
-	for (; !exitLoop;)
-	{
-		MessageStream::sHeader		*iMessage;
-		Callback			*callback;
-
-		self->getTaskContext()->messageStream.pull(&iMessage);
-		callback = (Callback *)iMessage->privateData;
-
-		switch (iMessage->subsystem)
-		{
-		default:
-			// Discard message if it has no callback.
-			if (callback == NULL) { break; };
-
-			(*callback)(iMessage);
-			delete callback;
-			break;
-		};
-	};
-
-	printf(NOTICE ORIENT"Main: Exited async loop. Killing.\n");
-	taskTrib.kill(self->getFullId());
 }
 
