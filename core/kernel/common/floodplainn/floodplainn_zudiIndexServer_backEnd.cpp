@@ -1039,12 +1039,38 @@ void fplainnIndexServer_loadRequirementsReq(
 	myResponse(ERROR_SUCCESS);
 }
 
+typedef void (__knewDeviceIndCbFn)(
+	MessageStream::sHeader *msg, Floodplainn::sZudiIndexMsg *originCtxt);
+
+class NewDeviceIndCb
+: public _Callback<__knewDeviceIndCbFn>
+{
+public:
+	Floodplainn::sZudiIndexMsg	*originCtxt;
+
+public:
+	NewDeviceIndCb(
+		__knewDeviceIndCbFn *kcb,
+		Floodplainn::sZudiIndexMsg *originCtxt)
+	: _Callback<__knewDeviceIndCbFn>(kcb),
+	originCtxt(originCtxt)
+	{}
+
+	virtual void operator()(MessageStream::sHeader *msg)
+		{ (*function)(msg, originCtxt); }
+};
+
+static __knewDeviceIndCbFn	fplainnIndexServer_newDeviceInd1;
+static __knewDeviceIndCbFn	fplainnIndexServer_newDeviceInd2;
+static __knewDeviceIndCbFn	fplainnIndexServer_newDeviceInd3;
+static __knewDeviceIndCbFn	fplainnIndexServer_newDeviceInd4;
+
 void fplainnIndexServer_newDeviceInd(
 	ZAsyncStream::sZAsyncMsg *request, zuiServer::sIndexMsg *requestData
 	)
 {
-	// The originContext /is/ the response that will eventually be sent.
-	Floodplainn::sZudiIndexMsg		*originContext;
+	// The originCtxt /is/ the response that will eventually be sent.
+	Floodplainn::sZudiIndexMsg		*originCtxt;
 	error_t					err;
 	AsyncResponse				myResponse;
 
@@ -1062,13 +1088,13 @@ void fplainnIndexServer_newDeviceInd(
 	 * of the caller, so we have to copy the caller's request message before
 	 * making any extra calls.
 	 **/
-	originContext = new Floodplainn::sZudiIndexMsg(
+	originCtxt = new Floodplainn::sZudiIndexMsg(
 		request->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_FLOODPLAINN, requestData->command,
-		sizeof(*originContext),
+		sizeof(*originCtxt),
 		request->header.flags, request->header.privateData);
 
-	if (originContext == NULL)
+	if (originCtxt == NULL)
 	{
 		printf(ERROR FPLAINNIDX"newDeviceInd: "
 			"unable to allocate response, or origin context.\n"
@@ -1078,8 +1104,8 @@ void fplainnIndexServer_newDeviceInd(
 		return;
 	};
 
-	myResponse(originContext);
-	originContext->set(
+	myResponse(originCtxt);
+	originCtxt->set(
 		requestData->command, requestData->path,
 		requestData->index, zuiServer::NDACTION_NOTHING);
 
@@ -1089,16 +1115,20 @@ void fplainnIndexServer_newDeviceInd(
 	};
 
 	err = zuiServer::detectDriverReq(
-		originContext->info.path, originContext->info.index,
-		originContext, 0);
+		originCtxt->info.path, originCtxt->info.index,
+		new NewDeviceIndCb(
+			&fplainnIndexServer_newDeviceInd1, originCtxt),
+		0);
 
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-void fplainnIndexServer_newDeviceInd1(Floodplainn::sZudiIndexMsg *response)
+static void fplainnIndexServer_newDeviceInd1(
+	MessageStream::sHeader *_response, Floodplainn::sZudiIndexMsg *originCtxt
+	)
 {
-	Floodplainn::sZudiIndexMsg		*originContext;
+	Floodplainn::sZudiIndexMsg		*response;
 	AsyncResponse				myResponse;
 	error_t					err;
 
@@ -1107,10 +1137,9 @@ void fplainnIndexServer_newDeviceInd1(Floodplainn::sZudiIndexMsg *response)
 	 * a syscall we ourselves performed; we name it accordingly ("response")
 	 * for aided readability.
 	 **/
-	originContext = (Floodplainn::sZudiIndexMsg *)response->header
-		.privateData;
 
-	myResponse(originContext);
+	response = (Floodplainn::sZudiIndexMsg *)_response;
+	myResponse(originCtxt);
 
 	if (response->header.error != ERROR_SUCCESS)
 	{
@@ -1118,14 +1147,16 @@ void fplainnIndexServer_newDeviceInd1(Floodplainn::sZudiIndexMsg *response)
 		return;
 	};
 
-	originContext->info.action = zuiServer::NDACTION_DETECT_DRIVER;
+	originCtxt->info.action = zuiServer::NDACTION_DETECT_DRIVER;
 	// If newDeviceAction is detect-and-stop, stop and send response now.
 	if (::newDeviceAction == zuiServer::NDACTION_DETECT_DRIVER)
 		{ myResponse(ERROR_SUCCESS); return; };
 
 	// Else we continue. Next we do a loadDriver() call.
 	err = zuiServer::loadDriverReq(
-		originContext->info.path, originContext);
+		originCtxt->info.path,
+		new NewDeviceIndCb(
+			fplainnIndexServer_newDeviceInd2, originCtxt));
 
 	if (err != ERROR_SUCCESS)
 		{ myResponse(err); return; };
@@ -1133,33 +1164,34 @@ void fplainnIndexServer_newDeviceInd1(Floodplainn::sZudiIndexMsg *response)
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-void fplainnIndexServer_newDeviceInd2(Floodplainn::sZudiIndexMsg *response)
+static void fplainnIndexServer_newDeviceInd2(
+	MessageStream::sHeader *_response, Floodplainn::sZudiIndexMsg *originCtxt
+	)
 {
-	Floodplainn::sZudiIndexMsg	*originContext;
+	Floodplainn::sZudiIndexMsg	*response;
 	AsyncResponse			myResponse;
 	error_t				err;
 	DriverProcess			*newProcess;
 
-	originContext = (Floodplainn::sZudiIndexMsg *)response->header
-		.privateData;
+	myResponse(originCtxt);
 
-	myResponse(originContext);
-
+	response = (Floodplainn::sZudiIndexMsg *)_response;
 	if (response->header.error != ERROR_SUCCESS)
 	{
 		myResponse(response->header.error);
 		return;
 	};
 
-	originContext->info.action = zuiServer::NDACTION_LOAD_DRIVER;
+	originCtxt->info.action = zuiServer::NDACTION_LOAD_DRIVER;
 	if (::newDeviceAction == zuiServer::NDACTION_LOAD_DRIVER)
 		{ myResponse(ERROR_SUCCESS); return; };
 
 	// Else now we spawn the driver process.
 	err = processTrib.spawnDriver(
-		originContext->info.path, NULL,
+		originCtxt->info.path, NULL,
 		PRIOCLASS_DEFAULT,
-		0, originContext,
+		0,
+		new NewDeviceIndCb(fplainnIndexServer_newDeviceInd3, originCtxt),
 		&newProcess);
 
 	if (err != ERROR_SUCCESS)
@@ -1172,18 +1204,18 @@ void fplainnIndexServer_newDeviceInd2(Floodplainn::sZudiIndexMsg *response)
 		return;
 	};
 
-	originContext->info.processId = newProcess->id;
+	originCtxt->info.processId = newProcess->id;
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-void fplainnIndexServer_newDeviceInd3(MessageStream::sHeader *response)
+static void fplainnIndexServer_newDeviceInd3(
+	MessageStream::sHeader *response, Floodplainn::sZudiIndexMsg *originCtxt
+	)
 {
-	Floodplainn::sZudiIndexMsg	*originContext;
 	AsyncResponse			myResponse;
 	error_t				err;
 
-	originContext = (Floodplainn::sZudiIndexMsg *)response->privateData;
-	myResponse(originContext);
+	myResponse(originCtxt);
 
 	if (response->error != ERROR_SUCCESS)
 	{
@@ -1191,13 +1223,15 @@ void fplainnIndexServer_newDeviceInd3(MessageStream::sHeader *response)
 		return;
 	};
 
-	originContext->info.action = zuiServer::NDACTION_SPAWN_DRIVER;
+	originCtxt->info.action = zuiServer::NDACTION_SPAWN_DRIVER;
 	if (::newDeviceAction == zuiServer::NDACTION_SPAWN_DRIVER)
 		{ myResponse(ERROR_SUCCESS); return; };
 
 	// Finally, we instantiate the device.
 	err = floodplainn.instantiateDeviceReq(
-		originContext->info.path, originContext);
+		originCtxt->info.path,
+		new NewDeviceIndCb(
+			fplainnIndexServer_newDeviceInd4, originCtxt));
 
 	if (err != ERROR_SUCCESS)
 	{
@@ -1211,22 +1245,23 @@ void fplainnIndexServer_newDeviceInd3(MessageStream::sHeader *response)
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-void fplainnIndexServer_newDeviceInd4(Floodplainn::sZudiKernelCallMsg *response)
+static void fplainnIndexServer_newDeviceInd4(
+	MessageStream::sHeader *_response, Floodplainn::sZudiIndexMsg *originCtxt
+	)
 {
-	Floodplainn::sZudiIndexMsg	*originContext;
-	AsyncResponse			myResponse;
-	originContext =
-		(Floodplainn::sZudiIndexMsg *)response->header.privateData;
+	Floodplainn::sZudiKernelCallMsg		*response;
+	AsyncResponse				myResponse;
 
-	myResponse(originContext);
+	myResponse(originCtxt);
 
+	response = (Floodplainn::sZudiKernelCallMsg *)_response;
 	if (response->header.error != ERROR_SUCCESS)
 	{
 		myResponse(response->header.error);
 		return;
 	};
 
-	originContext->info.action = zuiServer::NDACTION_INSTANTIATE;
+	originCtxt->info.action = zuiServer::NDACTION_INSTANTIATE;
 	myResponse(ERROR_SUCCESS);
 }
 
@@ -1406,46 +1441,21 @@ void Floodplainn::indexReaderEntry(void)
 
 			break;
 
-		case MSGSTREAM_SUBSYSTEM_FLOODPLAINN:
-			switch (gcb->function)
-			{
-			case ZUISERVER_DETECTDRIVER_REQ:
-				fplainnIndexServer_newDeviceInd1(
-					(Floodplainn::sZudiIndexMsg *)gcb);
-
-
-				break;
-
-			case ZUISERVER_LOADDRIVER_REQ:
-				fplainnIndexServer_newDeviceInd2(
-					(Floodplainn::sZudiIndexMsg *)gcb);
-
-				break;
-			};
-			break;
-
-		case MSGSTREAM_SUBSYSTEM_ZUDI:
-			switch (gcb->function)
-			{
-			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
-				fplainnIndexServer_newDeviceInd4(
-					(Floodplainn::sZudiKernelCallMsg *)gcb);
-
-				break;
-			};
-			break;
-
-		case MSGSTREAM_SUBSYSTEM_PROCESS:
-			if (gcb->function != MSGSTREAM_PROCESS_SPAWN_DRIVER)
-				{ break; };
-
-			fplainnIndexServer_newDeviceInd3(
-					(MessageStream::sHeader *)gcb);
-
-			break;
-
 		default:
-			printf(NOTICE FPLAINNIDX"Unknown message.\n");
+			Callback		*callback;
+
+			callback = (Callback *)gcb->privateData;
+			if (callback == NULL)
+			{
+				printf(NOTICE FPLAINNIDX"Unknown message with "
+					"no callback.\n");
+
+				break;
+			};
+
+			(*callback)(gcb);
+			delete gcb;
+			break;
 		};
 	};
 }

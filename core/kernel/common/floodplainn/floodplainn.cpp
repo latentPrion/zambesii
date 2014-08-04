@@ -318,7 +318,7 @@ void Floodplainn::instantiateDeviceAck(
 error_t Floodplainn::enumerateBaseDevices(void)
 {
 	error_t				ret;
-	fplainn::Device		*vchipset, *ramdisk;
+	fplainn::Device			*vchipset, *ramdisk;
 	udi_instance_attr_list_t	tmp;
 
 	ret = createDevice(

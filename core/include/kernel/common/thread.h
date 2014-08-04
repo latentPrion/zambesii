@@ -170,7 +170,7 @@ public:
 		defaultMemoryBank;
 #endif
 
-	// Asynchronous API callback queues for this thread.
+	// Asynchronous API message queues for this thread.
 	MessageStream		messageStream;
 };
 

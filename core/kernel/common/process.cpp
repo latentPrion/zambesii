@@ -511,7 +511,7 @@ void ProcessStream::sendResponse(error_t err)
 }
 
 void ProcessStream::getInitializationBlockSizeInfo(
-	sInitializationBlockizeInfoS *ret
+	sInitializationBlockizeInfo *ret
 	)
 {
 	if (ret == NULL) { return; };

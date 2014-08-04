@@ -176,7 +176,7 @@ static ubit32 getCallbackFunctionNo(Thread *self)
 void ProcessTrib::commonEntry(void *)
 {
 	Thread						*self;
-	ProcessStream::sInitializationBlockizeInfoS	initBlockSizes;
+	ProcessStream::sInitializationBlockizeInfo	initBlockSizes;
 	ProcessStream::sInitializationBlock		*initBlock;
 	ProcessStream::executableFormatE		executableFormat;
 	MessageStream::sHeader				*callbackMessage;

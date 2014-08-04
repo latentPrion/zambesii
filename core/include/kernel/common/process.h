@@ -117,7 +117,7 @@ public:
 
 public:
 	// Must remain a POD data type.
-	struct sInitializationBlockizeInfoS
+	struct sInitializationBlockizeInfo
 	{
 		uarch_t			fullNameSize;
 		uarch_t			workingDirectorySize;
@@ -152,7 +152,7 @@ public:
 
 	executableFormatE getExecutableFormat(void) { return executableFormat; }
 
-	void getInitializationBlockSizeInfo(sInitializationBlockizeInfoS *ret);
+	void getInitializationBlockSizeInfo(sInitializationBlockizeInfo *ret);
 	void getInitializationBlock(sInitializationBlock *ret);
 
 	void sendResponse(error_t err);

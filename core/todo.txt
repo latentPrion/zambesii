@@ -44,6 +44,11 @@ Messages: Done
 	most servers, they will need to create a copy of the request message
 	on their stack before they reuse it as the response.
 
+Rename classes: Done.
+	Classes will no longer have names of the form classC, but rather,
+	we will follow the Java convention of calling classes Class with an
+	upper camel case name.
+
 __kcallbacks: Designed and implemented. Integrating.
 	We need a way to allow threads to spin on one queue, while specifying
 	their callbacks in a clean, easily readable way.
@@ -80,14 +85,40 @@ Eliminating per-cpu threads:
 	using a getThreadId() method on Thread. It will return the current
 	CPU ID if the thread is a power thread, or else its own hardcoded ID.
 
+	Problem with this approach is that CPUs are not messageable. So we cannot
+	make async syscalls and get the responses back using this approach,
+	unless we split some amount of the per-cpu context among CPUs.
+
+	This is essentially what we've done now. There is no good way to
+	implement this approach. The memory saving isn't worth the nastiness.
+	Making it polymorphic is too hard and requires too many functions.
+
+	Approach #1 is the only reasonable method we can employ.
+
+	The good thing about approach #1 is that it may inherently also solve
+	the current untidy situation where we have to start a new thread in the
+	middle of __korientation because we can't safely use the kernel's
+	boot thread with confidence due to loose ends in its state.
+
+	If we use a solid single-type Thread based approach, with a separate
+	thread on each CPU, we'll probably end up with greater benefits in the
+	long run.
+
+	Since this is the next thing we'll be fixing, I'd recommend you give it
+	some deep thought.
+
 Kernel-server thread IPC/ITC mechanism:
+
+Isolate the ipc:: namespace code into its own .cpp file:
 
 Establishing specific "ID" nomenclature:
 	We should no longer have any classes with members named "id". All
 	"id" members should be given more specific names (cpuId, threadId,
 	processId, etc).
 
-Rename classes: Done.
-	Classes will no longer have names of the form classC, but rather,
-	we will follow the Java convention of calling classes Class with an
-	upper camel case name.
+fplainn:: namespace:
+	* Concurrency protect Device.
+	* Concurrency protect Driver.
+	* Concurrency protect DeviceInstance.
+	* Concurrency protect DriverInstance.
+

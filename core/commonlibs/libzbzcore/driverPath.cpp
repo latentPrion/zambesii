@@ -229,14 +229,6 @@ void __klzbzcore::driver::localService::handler(
 	case REGION_INIT_IND:
 		Floodplainn::sZudiKernelCallMsg		*ctxt;
 
-		/**	EXPLANATION:
-		 * Each time a region thread finishes intializing, it sends
-		 * a message here. We track these and increment a counter
-		 * until we know we have responses from all of the threads.
-		 *
-		 * Whether or not all threads have successfully initialized,
-		 * we then call instantiateDeviceReq1().
-		 **/
 		ctxt = (Floodplainn::sZudiKernelCallMsg *)iMsg->privateData;
 		regionInitInd(ctxt, iMsg->error);
 		return;
@@ -298,12 +290,13 @@ void __klzbzcore::driver::localService::regionInitInd(
 				totalSuccesses;
 	error_t			err;
 
-	/* This message is sent by the regions of a newly
-	 * instantiated device when they have finished
-	 * initializing. We could the number of regions that
-	 * have finished, and when all are done, if they all
-	 * finish successfully, we send a response message to
-	 * the device to proceed with calling udi_usage_ind.
+	/**	EXPLANATION:
+	 * Each time a region thread finishes intializing, it sends
+	 * a message here. We track these and increment a counter
+	 * until we know we have responses from all of the threads.
+	 *
+	 * Whether or not all threads have successfully initialized,
+	 * we then call instantiateDeviceReq1().
 	 **/
 	err = floodplainn.getDevice(ctxt->path, &dev);
 	if (err != ERROR_SUCCESS)
@@ -370,11 +363,29 @@ void __klzbzcore::driver::localService::regionInitInd(
 
 void __klzbzcore::driver::__kcontrol::handler(Floodplainn::sZudiKernelCallMsg *msg)
 {
+	Floodplainn::sZudiKernelCallMsg		*copy;
+
+	copy = new Floodplainn::sZudiKernelCallMsg(
+		msg->header.targetId,
+		msg->header.subsystem, msg->header.function,
+		msg->header.size, msg->header.flags,
+		msg->header.privateData);
+
+	if (copy != NULL) {
+		copy->set(msg->path, msg->command);
+	}
+	else
+	{
+		printf(ERROR LZBZCORE"drvPath: process__kcall: "
+			"__KOP_INST_DEV: failed to alloc caller "
+			"context block.\n\tCaller 0x%x, device %s.\n",
+			msg->header.sourceId, msg->path);
+	};
+
+
 	switch (msg->command)
 	{
 	case Floodplainn::sZudiKernelCallMsg::CMD_INSTANTIATE_DEVICE:
-		Floodplainn::sZudiKernelCallMsg		*copy;
-
 		/* Sent by the kernel when it wishes to create a new instance
 		 * of a device that is to be serviced by this driver process.
 		 *
@@ -383,19 +394,11 @@ void __klzbzcore::driver::__kcontrol::handler(Floodplainn::sZudiKernelCallMsg *m
 		 * to call instantiateDeviceAck(), we can send the ack to the
 		 * correct source thread, with its privateData info preserved.
 		 **/
-		copy = new Floodplainn::sZudiKernelCallMsg(
-			msg->header.targetId,
-			msg->header.subsystem, msg->header.function,
-			msg->header.size, msg->header.flags,
-			msg->header.privateData);
-
 		if (copy == NULL)
 		{
-			printf(ERROR LZBZCORE"drvPath: process__kcall: "
-				"__KOP_INST_DEV: failed to alloc caller "
-				"context block.\n\tCaller 0x%x, device %s.\n",
-				msg->header.sourceId, msg->path);
-
+			/* Have to call the Floodplainn method directly.
+			 * Local ack also deletes the message (double free).
+			 **/
 			floodplainn.instantiateDeviceAck(
 				msg->header.sourceId, msg->path,
 				ERROR_MEMORY_NOMEM,
@@ -404,7 +407,6 @@ void __klzbzcore::driver::__kcontrol::handler(Floodplainn::sZudiKernelCallMsg *m
 			return;
 		};
 
-		copy->set(msg->path, msg->command);
 		instantiateDeviceReq(copy);
 		break;
 
@@ -528,10 +530,31 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 		instantiateDeviceAck(ctxt, ret); return;
 	};
 
-	/* At this point, all regions are spawned, and all channels too.
-	 * We now need to wait for the region threads to finish initializing.
-	 * They will each send a completion notification to this main thread
-	 * when they are done. We can exit and wait.
+	/**	EXPLANATION:
+	 * At this point the parent bind channel has been spawned. All of the
+	 * region threads have also spawned their child bind channel and are
+	 * dormanting on their queues.
+	 *
+	 * All we need to do now is execute a metalanguage connect() to the
+	 * "udi_mgmt" metalanguage of the device. With our connection handle,
+	 * we can then send udi_usage_ind() followed by udi_channel_event_ind(),
+	 * etc to all of the new device's internal bind channels, and finally
+	 * launch the device.
+	 *
+	 * Since we connect to the device on behalf of the kernel, we must also
+	 * be ready to intercept all kernel mgmt meta calls in our __kcontrol
+	 * handler. So the sequence looks something like (paraphrased):
+	 *
+	 *	self->parent->floodplainnStream.connect(
+	 *		ctxt->path, "udi_mgmt", &mgmtHandle);
+	 *
+	 *	mgmtCb = udi_cb_alloc(CB_IDX);
+	 *	udi_usage_ind(mgmtCb, UDI_USAGE_NORMAL);
+	 *	for (each; region; other; than; primary; region) {
+	 *		udi_channel_event_ind()
+	 *	};
+	 *
+	 *	udi_channel_event_ind(parent_bind_channel);
 	 **/
 //	floodplainn.udi_usage_ind(
 //		ctxt->devicePath, UDI_RESOURCES_NORMAL, ctxt);
