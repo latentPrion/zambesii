@@ -10,7 +10,7 @@ status_t x8632_gpf(RegisterContext *regs, ubit8)
 		"#GPF: Culprit selector 0x%x. Halting.\n",
 		regs->errorCode);
 
-	for (;;)
+	for (;FOREVER;)
 	{
 		cpuControl::disableInterrupts();
 		cpuControl::halt();

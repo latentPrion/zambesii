@@ -22,7 +22,7 @@ void __klzbzcore::main()
 	Thread		*self;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
+		.getCurrentThread();
 
 	printf(NOTICE LZBZCORE"New process entered. Pid 0x%x, type %d.\n",
 		self->getFullId(), self->parent->getType());

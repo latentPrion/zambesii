@@ -86,7 +86,7 @@ void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 	{
 		// Flushing userspace process range. Pass cpuTrace BMP.
 		bmp = &cpuTrib.getCurrentCpuStream()
-			->taskStream.getCurrentTask()->parent->cpuTrace;
+			->taskStream.getCurrentThread()->parent->cpuTrace;
 	};
 
 	bmp->lock();

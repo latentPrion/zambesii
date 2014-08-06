@@ -51,7 +51,7 @@ status_t walkerPageRanger::lookup(
 
 	// They'll know we're SRS when we lock off the address spaces.
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->parent
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.acquire();
 
@@ -161,7 +161,7 @@ status_t walkerPageRanger::lookup(
 	};
 
 	// Release both locks. Done with the SRS BSNS.
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->parent
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
 
@@ -227,7 +227,7 @@ void walkerPageRanger::destroyNonsharedMapping(void *vaddr, uarch_t nPages)
 	uarch_t			f;
 
 	vaddrSpaceStream = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask()->parent->getVaddrSpaceStream();
+		.getCurrentThread()->parent->getVaddrSpaceStream();
 
 	unmap(&vaddrSpaceStream->vaddrSpace, vaddr, &p, nPages, &f);
 	vaddrSpaceStream->releasePages(vaddr, nPages);
@@ -244,7 +244,7 @@ void *walkerPageRanger::createSharedMappingTo(
 	if (nPages == 0 || srcVaddr == NULL) { return NULL; };
 
 	vaddrSpaceStream = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask()->parent->getVaddrSpaceStream();
+		.getCurrentThread()->parent->getVaddrSpaceStream();
 
 	// If no placement addr, allocate loose pages.
 	if (placementAddress != NULL) { ret = placementAddress; }

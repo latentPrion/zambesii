@@ -40,7 +40,7 @@ error_t DebugBuffer::shutdown(void)
 {
 	DebugBuffer::sBuffPage		*tmp;
 
-	for (;;)
+	for (;FOREVER;)
 	{
 		buff.lock.acquire();
 

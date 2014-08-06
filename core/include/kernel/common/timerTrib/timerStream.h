@@ -125,7 +125,7 @@ private:
 	 * pointer to the Thread or cpuStream object that it unblocked
 	 * after queueing the new callback.
 	 **/
-	void *timerRequestTimeoutNotification(
+	Thread *timerRequestTimeoutNotification(
 		sTimerMsg *request, sTimestamp *eventStamp);
 
 	// Causes this stream to insert its next request into the timer queues.

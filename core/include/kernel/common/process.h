@@ -79,10 +79,10 @@ public:
 		privateData(privateData), responseMessage(NULL),
 
 		// Kernel process hands out thread IDs from 1 since 0 is taken.
-		nextTaskId(
+		nextThreadId(
 			CHIPSET_MEMORY_MAX_NTASKS - 1,
 			(processId == __KPROCESSID) ? 1 : 0),
-		nTasks(0),
+		nThreads(0),
 
 		fullName(NULL), workingDirectory(NULL),
 		arguments(NULL),
@@ -96,14 +96,14 @@ public:
 		floodplainnStream(processId, this),
 		zasyncStream(processId, this)
 	{
-		memset(tasks, 0, sizeof(tasks));
+		memset(threads, 0, sizeof(threads));
 		defaultMemoryBank.rsrc = NUMABANKID_INVALID;
 
 		if (id == __KPROCESSID)
 		{
 			FLAG_SET(flags, PROCESS_FLAGS___KPROCESS);
-			nTasks = 1;
-			tasks[0] = &__korientationThread;
+			nThreads = 1;
+			threads[0] = &__korientationThread;
 			defaultMemoryBank.rsrc =
 				CHIPSET_NUMA___KSPACE_BANKID;
 		};
@@ -136,8 +136,7 @@ public:
 	};
 
 public:
-	Thread *getTask(processId_t processId);
-	Thread *getThread(processId_t processId) { return getTask(processId); }
+	Thread *getThread(processId_t processId);
 
 	ubit32 getProcessFullNameMaxLength(void)
 		{ return PROCESS_FULLNAME_MAXLEN; }
@@ -162,7 +161,7 @@ public:
 		void (*entryPoint)(void *),
 		void *argument,
 		Bitmap *cpuAffinity,
-		Task::schedPolicyE schedPolicy, ubit8 prio,
+		Thread::schedPolicyE schedPolicy, ubit8 prio,
 		uarch_t flags,
 		Thread **ret);
 
@@ -180,10 +179,10 @@ public:
 	void			*privateData;
 	MessageStream::sHeader	*responseMessage;
 
-	MultipleReaderLock	taskLock;
-	WrapAroundCounter	nextTaskId;
-	uarch_t			nTasks;
-	Thread			*tasks[CHIPSET_MEMORY_MAX_NTASKS];
+	MultipleReaderLock	threadLock;
+	WrapAroundCounter	nextThreadId;
+	uarch_t			nThreads;
+	Thread			*threads[CHIPSET_MEMORY_MAX_NTASKS];
 
 	utf8Char		*fullName, *workingDirectory, *arguments;
 	ubit8			nEnvVars;
@@ -422,23 +421,11 @@ private:
 /**	Inline Methods:
  ******************************************************************************/
 
-inline Thread *ProcessStream::getTask(processId_t id)
-{
-	Thread		*ret;
-	uarch_t		rwFlags;
-
-	taskLock.readAcquire(&rwFlags);
-	ret = tasks[PROCID_TASK(id)];
-	taskLock.readRelease(rwFlags);
-
-	return ret;
-}
-
 inline error_t ProcessStream::getNewThreadId(processId_t *newThreadId)
 {
 	sarch_t		nextVal;
 
-	nextVal = nextTaskId.getNextValue(reinterpret_cast<void **>( tasks ));
+	nextVal = nextThreadId.getNextValue(reinterpret_cast<void **>( threads ));
 	if (nextVal < 0) { return ERROR_RESOURCE_EXHAUSTED; };
 
 	*newThreadId = nextVal;

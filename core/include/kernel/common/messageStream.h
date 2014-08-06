@@ -90,8 +90,7 @@
 
 #define MSGSTREAM_USERQ(num)			(MSGSTREAM_SUBSYSTEM_USER0 + num)
 
-class TaskContext;
-class Task;
+class Thread;
 
 namespace ipc
 {
@@ -144,7 +143,7 @@ public:
 	typedef PtrDblList<MessageStream::sHeader>	MessageQueue;
 
 public:
-	MessageStream(TaskContext *parent)
+	MessageStream(Thread *parent)
 	:
 	parent(parent)
 	{}
@@ -185,7 +184,7 @@ public:
 		MessageStream::sHeader *header);
 
 	static processId_t determineSourceThreadId(
-		Task *caller, ubit16 *flags);
+		Thread *caller, ubit16 *flags);
 
 	static processId_t determineTargetThreadId(
 		processId_t targetId, processId_t sourceId,
@@ -211,8 +210,8 @@ private:
 	 * in any queue, and they hold it until they have inserted the
 	 * new message.
 	 **/
-	Bitmap				pendingSubsystems;
-	TaskContext			*parent;
+	Bitmap			pendingSubsystems;
+	Thread			*parent;
 };
 
 #define DONT_SEND_RESPONSE		((void *)NULL)

@@ -19,27 +19,14 @@ void debug::sStackDescriptor::dump(void)
 
 void debug::getCurrentStackInfo(sStackDescriptor *desc)
 {
-	Task		*currTask;
 	Thread		*currThread=NULL;
 
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	if (currTask->getType() != task::PER_CPU)
-		{ currThread = (Thread *)currTask; };
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	if (currThread != NULL)
-	{
-		desc->nBytes = CHIPSET_MEMORY___KSTACK_NPAGES * PAGING_BASE_SIZE;
-		desc->start = currThread->stack0;
-		desc->eof = (ubit8 *)currThread->stack0
-			+ desc->nBytes;
-	}
-	else
-	{
-		desc->nBytes = sizeof(cpuTrib.getCurrentCpuStream()->schedStack);
-		desc->start = cpuTrib.getCurrentCpuStream()->schedStack;
-		desc->eof = &cpuTrib.getCurrentCpuStream()->schedStack[
-			desc->nBytes];
-	};
+	desc->nBytes = CHIPSET_MEMORY___KSTACK_NPAGES * PAGING_BASE_SIZE;
+	desc->start = currThread->stack0;
+	desc->eof = (ubit8 *)currThread->stack0
+		+ desc->nBytes;
 }
 
 void debug::printStackTrace(void *startFrame, sStackDescriptor *stack)

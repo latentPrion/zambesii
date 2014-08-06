@@ -701,7 +701,7 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 
 	i8254Pit.setSmpModeSwitchFlag(
 		cpuTrib.getCurrentCpuStream()
-			->taskStream.getCurrentTaskId());
+			->taskStream.getCurrentThread()->getFullId());
 
 	printf(NOTICE CPUMOD"setSmpMode: Waiting for devices to disable.\n");
 	if (i8254WasEnabled)

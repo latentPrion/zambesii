@@ -40,7 +40,7 @@ void panic(error_t err, utf8Char *str)
 		printf(str);
 	};
 
-	for (;;)
+	for (;FOREVER;)
 	{
 		cpuControl::disableInterrupts();
 		cpuControl::halt();

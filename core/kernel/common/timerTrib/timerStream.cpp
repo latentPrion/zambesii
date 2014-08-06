@@ -109,7 +109,7 @@ error_t TimerStream::pullEvent(ubit32 flags, sTimerMsg **event)
 	 * sleeps the process.
 	 */
 	ret = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTaskContext()->messageStream.pullFrom(
+		.getCurrentThread()->messageStream.pullFrom(
 			MSGSTREAM_SUBSYSTEM_TIMER,
 			(MessageStream::sHeader **)event,
 			FLAG_TEST(
@@ -125,19 +125,13 @@ static inline sarch_t isPerCpuTarget(TimerStream::sTimerMsg *request)
 	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
 }
 
-void *TimerStream::timerRequestTimeoutNotification(
+Thread *TimerStream::timerRequestTimeoutNotification(
 	sTimerMsg *request, sTimestamp *sTimerMsgtamp
 	)
 {
 	sTimerMsg	*event;
 	error_t		ret;
-	TaskContext	*taskContext;
-
-	if (isPerCpuTarget(request) && parent->id != __KPROCESSID)
-	{
-		panic(FATAL TIMERSTREAM"per-cpu request targeting non-kernel "
-			"process' timer stream.\n");
-	};
+	Thread		*thread;
 
 	/* Need to get the correct TaskContext object; this could be a context
 	 * object that is part of a Thread object, or a context object that
@@ -146,22 +140,8 @@ void *TimerStream::timerRequestTimeoutNotification(
 	 * If TIMERSTREAM_CREATE*_FLAGS_CPU_TARGET is set, then the target
 	 * context is a per-CPU context. Else, it is a normal thread context.
 	 **/
-	if (isPerCpuTarget(request))
-	{
-		CpuStream	*cs;
-
-		cs = cpuTrib.getStream((cpu_t)request->header.targetId);
-		if (cs == NULL) { return NULL; };
-		taskContext = cs->getTaskContext();
-	}
-	else
-	{
-		Thread		*t;
-
-		t = parent->getThread(request->header.targetId);
-		if (t == NULL) { return NULL; };
-		taskContext = t->getTaskContext();
-	};
+	thread = parent->getThread(request->header.targetId);
+	if (thread == NULL) { return NULL; };
 
 	event = new sTimerMsg(*request);
 	if (event == NULL)
@@ -170,32 +150,24 @@ void *TimerStream::timerRequestTimeoutNotification(
 			"expired request.\n",
 			id);
 
-		// Tbh, it doesn't matter which union member we return.
-		return (taskContext->contextType == task::PER_CPU)
-			? (void *)taskContext->parent.cpu
-			: (void *)taskContext->parent.thread;
+		return thread;
 	};
 
 	event->actualExpirationStamp = *sTimerMsgtamp;
 
 	// Queue event.
-	ret = taskContext->messageStream.enqueue(
+	ret = thread->messageStream.enqueue(
 		event->header.subsystem, &event->header);
 
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR TIMERSTREAM"%d: Failed to add expired event to "
 			"thread 0x%x's queue.\n",
-			id,
-			(taskContext->contextType == task::PER_CPU)
-				? taskContext->parent.cpu->cpuId
-				: taskContext->parent.thread->getFullId());
+			id, thread->getFullId());
 	};
 
 	// Tbh, it doesn't matter which union member we return.
-	return (taskContext->contextType == task::PER_CPU)
-			? (void *)taskContext->parent.cpu
-			: (void *)taskContext->parent.thread;
+	return thread;
 }
 
 void TimerStream::timerRequestTimeoutNotification(void)

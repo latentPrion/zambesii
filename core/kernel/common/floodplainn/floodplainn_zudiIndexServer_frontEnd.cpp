@@ -13,12 +13,12 @@ error_t zuiServer::detectDriverReq(
 	)
 {
 	HeapObj<zuiServer::sIndexMsg>	request;
-	Task				*currTask;
+	Thread				*currThread;
 
 	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 		{ return ERROR_LIMIT_OVERFLOWED; };
 
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	// Allocate and queue the new request.
 	request = new zuiServer::sIndexMsg(
@@ -26,7 +26,7 @@ error_t zuiServer::detectDriverReq(
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	return currTask->parent->zasyncStream.send(
+	return currThread->parent->zasyncStream.send(
 		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, flags, privateData);
 }
@@ -34,12 +34,12 @@ error_t zuiServer::detectDriverReq(
 error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 {
 	HeapObj<zuiServer::sIndexMsg>	request;
-	Task				*currTask;
+	Thread				*currThread;
 
 	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 		{ return ERROR_LIMIT_OVERFLOWED; };
 
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	request = new zuiServer::sIndexMsg(
 		ZUISERVER_LOADDRIVER_REQ, devicePath,
@@ -47,7 +47,7 @@ error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	return currTask->parent->zasyncStream.send(
+	return currThread->parent->zasyncStream.send(
 		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
@@ -55,20 +55,20 @@ error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 void zuiServer::loadDriverRequirementsReq(void *privateData)
 {
 	HeapObj<zuiServer::sIndexMsg>	request;
-	Task				*currTask;
+	Thread				*currThread;
 
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	if (currTask->parent->getType() != ProcessStream::DRIVER)
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	if (currThread->parent->getType() != ProcessStream::DRIVER)
 		{ return; };
 
 	request = new zuiServer::sIndexMsg(
 		ZUISERVER_LOAD_REQUIREMENTS_REQ,
-		currTask->parent->fullName,
+		currThread->parent->fullName,
 		zuiServer::INDEX_KERNEL);
 
 	if (request == NULL) { return; };
 
-	currTask->parent->zasyncStream.send(
+	currThread->parent->zasyncStream.send(
 		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
@@ -78,9 +78,9 @@ void zuiServer::setNewDeviceActionReq(
 	)
 {
 	HeapObj<zuiServer::sIndexMsg>	request;
-	Task			*currTask;
+	Thread			*currThread;
 
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	request = new zuiServer::sIndexMsg(
 		ZUISERVER_SET_NEWDEVICE_ACTION_REQ, NULL,
@@ -88,7 +88,7 @@ void zuiServer::setNewDeviceActionReq(
 
 	if (request == NULL) { return; };
 
-	currTask->parent->zasyncStream.send(
+	currThread->parent->zasyncStream.send(
 		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
@@ -96,9 +96,9 @@ void zuiServer::setNewDeviceActionReq(
 void zuiServer::getNewDeviceActionReq(void *privateData)
 {
 	HeapObj<zuiServer::sIndexMsg>	request;
-	Task				*currTask;
+	Thread				*currThread;
 
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	request = new zuiServer::sIndexMsg(
 		ZUISERVER_GET_NEWDEVICE_ACTION_REQ, NULL,
@@ -106,7 +106,7 @@ void zuiServer::getNewDeviceActionReq(void *privateData)
 
 	if (request == NULL) { return; };
 
-	currTask->parent->zasyncStream.send(
+	currThread->parent->zasyncStream.send(
 		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
@@ -116,7 +116,7 @@ void zuiServer::newDeviceInd(
 	)
 {
 	HeapObj<zuiServer::sIndexMsg>	request;
-	Task				*currTask;
+	Thread				*currThread;
 
 	if (strnlen8(path, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
 	{
@@ -124,14 +124,14 @@ void zuiServer::newDeviceInd(
 		return;
 	};
 
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	request = new zuiServer::sIndexMsg(
 		ZUISERVER_NEWDEVICE_IND, path, index);
 
 	if (request == NULL) { return; };
 
-	currTask->parent->zasyncStream.send(
+	currThread->parent->zasyncStream.send(
 		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }

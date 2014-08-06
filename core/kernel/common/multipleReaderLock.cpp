@@ -24,7 +24,7 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 
 	readerCount.lock.releaseNoIrqs();
 
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
 		->nLocksHeld++;
 }
 
@@ -49,7 +49,7 @@ void MultipleReaderLock::readRelease(uarch_t _flags)
 	};
 #endif
 
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
 		->nLocksHeld--;
 
 	// Test the flags and see whether or not to enable IRQs.
@@ -109,7 +109,7 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 	};
 #endif
 
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
 		->nLocksHeld--;
 
 	/* It doesn't matter whether or not IRQs were enabled before the

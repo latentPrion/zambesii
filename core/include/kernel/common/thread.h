@@ -20,21 +20,17 @@
 class CpuStream;
 class ProcessStream;
 class RegisterContext;
-class TaskContext;
-
-// Task and TaskContext instances can be unique or per-cpu.
-namespace task { enum typeE { UNIQUE=1, PER_CPU }; }
 
 /**	Base class with scheduling info: Task.
  ******************************************************************************/
 
-class Task
+class _Task
 {
 friend class ProcessStream;
 public:
 	enum schedPolicyE { INVALID=0, ROUND_ROBIN, REAL_TIME };
 
-	Task(ProcessStream *parent, void *privateData)
+	_Task(ProcessStream *parent, void *privateData)
 	:
 	parent(parent), flags(0), privateData(privateData),
 
@@ -46,11 +42,10 @@ public:
 
 	error_t initialize(void) { return ERROR_SUCCESS; }
 
-	virtual ~Task(void) {}
+	virtual ~_Task(void) {}
 
 public:
 	// virtual processId_t getFullId(void)=0;
-	virtual task::typeE getType(void)=0;
 	void *getPrivateData(void) { return privateData; }
 
 private:
@@ -83,7 +78,7 @@ public:
  ******************************************************************************/
 class Thread;
 
-class TaskContext
+class _TaskContext
 {
 friend class ProcessStream;
 public:
@@ -91,9 +86,10 @@ public:
 	enum blockStateE {
 		BLOCKED_UNSCHEDULED=1, PREEMPTED, DORMANT, BLOCKED };
 
-	TaskContext(task::typeE contextType, void *parent)
+protected:
+	_TaskContext(Thread *parent)
 	:
-	contextType(contextType),
+	parentThread(parent),
 	runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
 	nLocksHeld(0), context(NULL),
 
@@ -106,14 +102,8 @@ public:
 	 * (A CPU will only ever have one per-cpu-thread scheduled to
 	 * it at a time.)
 	 **/
-	messageStream(this)
+	messageStream(parent)
 	{
-		if (contextType == task::UNIQUE) {
-			this->parent.thread = (Thread *)parent;
-		} else {
-			this->parent.cpu = (CpuStream *)parent;
-		};
-
 #if __SCALING__ >= SCALING_CC_NUMA
 		defaultMemoryBank.rsrc = NUMABANKID_INVALID;
 #endif
@@ -131,30 +121,16 @@ private:
 	error_t inheritAffinity(Bitmap *cpuAffinity, uarch_t flags);
 #endif
 
-public:
 	// General.
-	/* If this is per-cpu context, then 'parentCpu' is valid and
-	 * 'parentTask' is invalid. If this is thread context, then
-	 * 'parentCpu' is invalid and 'parentTask' is valid.
-	 **/
-	/* Whether this object is embedded in a schedulable unique
-	 * thread object, or in a CPU Stream object (as per-cpu thread
-	 * context).
-	 **/
-	task::typeE		contextType;
-	union
-	{
-		CpuStream	*cpu;
-		Thread		*thread;
-	} parent;
-
+private:Thread			*parentThread;
+public:
 	// Scheduler related.
 	runStateE		runState;
 	blockStateE		blockState;
 
 	// Miscellaneous.
 	ubit16			nLocksHeld;
-	RegisterContext	*context;
+	RegisterContext		*context;
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	sTlbContext		tlbContext;
 #endif
@@ -179,70 +155,43 @@ public:
 
 class Thread
 :
-public Task
+public _Task, public _TaskContext
 {
 friend class ProcessStream;
 public:
 	Thread(processId_t id, ProcessStream *parent, void *privateData)
-	:
-	Task(parent, privateData),
+	: _Task(parent, privateData), _TaskContext(this),
 	id(id),
-	Currenttpu(NULL),
-	stack0(NULL), stack1(NULL),
-	// For a normal thread, "Currenttpu" and "stack0" start as NULL.
-	taskContext(task::UNIQUE, this)
+	currentCpu(NULL),
+	stack0(NULL), stack1(NULL)
 	{
+		// For a normal thread, "currentCpu" and "stack0" start as NULL.
 		if (this != &__korientationThread) { return; }
 
 		// Set some hardcoded state in the orientation thread.
 		stack0 = __korientationStack;
-		//Currenttpu = &bspCpu;
+		//currentCpu = &bspCpu;
 	}
 
 	error_t initialize(void)
 	{
 		error_t		ret;
 
-		ret = Task::initialize();
+		ret = _Task::initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
-
-		return taskContext.initialize();
+		return _TaskContext::initialize();
 	}
 
 public:
 	processId_t getFullId(void) { return id; }
-	TaskContext *getTaskContext(void) { return &taskContext; }
-	virtual task::typeE getType(void) { return task::UNIQUE; }
 
 private:
 	// Allocates stacks for kernelspace and userspace (if necessary).
 	error_t allocateStacks(void);
 
 private:processId_t		id;
-public:	CpuStream		*Currenttpu;
+public:	CpuStream		*currentCpu;
 	void			*stack0, *stack1;
-
-private:
-	TaskContext		taskContext;
-};
-
-/**	Class PerCpuThread, an abstraction of per-cpu threads.
- ******************************************************************************/
-
-class PerCpuThread
-:
-public Task
-{
-public:
-	PerCpuThread(ProcessStream *parent, void *privateData)
-	:
-	Task(parent, privateData)
-	{}
-
-	error_t initialize(void) { return Task::initialize(); }
-
-public:
-	virtual task::typeE getType(void) { return task::PER_CPU; }
 };
 
 #endif

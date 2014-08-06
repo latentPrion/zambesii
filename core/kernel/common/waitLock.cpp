@@ -91,7 +91,7 @@ void WaitLock::acquire(void)
 	/* On a non-SMP build, this just indicates the number of critical
 	 * sections deep into the kernel this thread has currently traveled.
 	 **/
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
 		->nLocksHeld++;
 }
 
@@ -115,7 +115,7 @@ void WaitLock::release(void)
 		cpuControl::enableInterrupts();
 	};
 
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
 		->nLocksHeld--;
 }
 
@@ -126,7 +126,7 @@ void WaitLock::releaseNoIrqs(void)
 	atomicAsm::set(&lock, 0);
 #endif
 
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
 		->nLocksHeld--;
 }
 

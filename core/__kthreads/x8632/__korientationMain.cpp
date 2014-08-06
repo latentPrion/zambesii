@@ -158,7 +158,7 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 {
 	error_t			ret;
 	uarch_t			devMask;
-	Thread			*mainTask;
+	Thread			*mainThread;
 	ContainerProcess	&__kprocess = *processTrib.__kgetStream();
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
@@ -244,10 +244,10 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 		spawnThread(
 			(void (*)(void *))&__korientationMain, NULL,
 			NULL,
-			Task::ROUND_ROBIN,
+			Thread::ROUND_ROBIN,
 			0,
 			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
-			&mainTask),
+			&mainThread),
 		ret);
 
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
@@ -272,21 +272,20 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 void __korientationMain(void)
 {
 	Thread			*self;
-	sarch_t			exitLoop=0;
 
 	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask() );
+		.getCurrentThread() );
 
 	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
 		self->getFullId(), self);
 
 	__korientationMain1();
-	for (; !exitLoop;)
+	for (;FOREVER;)
 	{
 		MessageStream::sHeader		*iMessage;
 		Callback			*callback;
 
-		self->getTaskContext()->messageStream.pull(&iMessage);
+		self->messageStream.pull(&iMessage);
 		callback = (Callback *)iMessage->privateData;
 
 		switch (iMessage->subsystem)
@@ -336,7 +335,6 @@ void __korientationMain2(MessageStream::sHeader *msg)
 
 	DIE_ON(msg->error);
 	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
-
 }
 
 void __korientationMain3(error_t ret)
@@ -361,7 +359,7 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 
 	msg = (Floodplainn::sZudiIndexMsg *)msgIt;
 	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask() );
+		.getCurrentThread() );
 
 	if (msg->info.action != zuiServer::NDACTION_INSTANTIATE)
 	{
@@ -423,7 +421,7 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	{
 		MessageStream::sHeader	*iMessage;
 
-		self->getTaskContext()->messageStream.pull(&iMessage);
+		self->messageStream.pull(&iMessage);
 
 		switch (iMessage->subsystem)
 		{

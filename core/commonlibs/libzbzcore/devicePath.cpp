@@ -11,7 +11,7 @@ static void postRegionInitInd(
 	Thread *self, Floodplainn::sZudiKernelCallMsg *ctxt, error_t err
 	)
 {
-	self->getTaskContext()->messageStream.postMessage(
+	self->messageStream.postMessage(
 		self->parent->id, 0,
 		__klzbzcore::driver::localService::REGION_INIT_IND,
 		ctxt, err);
@@ -28,7 +28,7 @@ void __klzbzcore::region::main(void *)
 	Floodplainn::sZudiKernelCallMsg		*ctxt;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
+		.getCurrentThread();
 
 	ctxt = (Floodplainn::sZudiKernelCallMsg *)self->getPrivateData();
 
@@ -50,7 +50,7 @@ void __klzbzcore::region::main(void *)
 	 * Otherwise it will be filled with garbage and we will read garbage
 	 * data.
 	 **/
-	self->getTaskContext()->messageStream.postMessage(
+	self->messageStream.postMessage(
 		self->parent->id,
 		0, __klzbzcore::driver::localService::REGION_INIT_SYNC_REQ,
 		ctxt);
@@ -65,7 +65,7 @@ void __klzbzcore::region::main(void *)
 
 	for (;FOREVER;)
 	{
-		self->getTaskContext()->messageStream.pull(&iMsg);
+		self->messageStream.pull(&iMsg);
 		printf(NOTICE"%s dev, region %d, got a message.\n"
 			"\tsubsys %d, func %d, sourcetid 0x%x targettid 0x%x\n",
 			dev->driverInstance->driver->longName, regionIndex,

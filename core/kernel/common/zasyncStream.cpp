@@ -128,7 +128,6 @@ error_t ZAsyncStream::connect(
 	processId_t targetPid, processId_t sourceBindTid, uarch_t flags)
 {
 	ProcessStream		*targetProcess;
-	Task			*targetTask;
 	sZAsyncMsg		*request;
 
 	/**	EXPLANATION:
@@ -156,13 +155,6 @@ error_t ZAsyncStream::connect(
 	if (targetProcess->zasyncStream.getHandlerTid() == PROCID_INVALID
 		|| getHandlerTid() == PROCID_INVALID)
 		{ return ERROR_UNINITIALIZED; };
-
-	targetTask = targetProcess->getTask(
-		targetProcess->zasyncStream.getHandlerTid());
-
-	// Don't allow IPC connections to CPUs.
-	if (targetTask->getType() != task::UNIQUE)
-		{ return ERROR_INVALID_OPERATION; };
 
 	request = new sZAsyncMsg(
 		targetProcess->zasyncStream.getHandlerTid(),
@@ -284,7 +276,7 @@ error_t ZAsyncStream::receive(void *dataHandle, void *buffer, uarch_t)
 		{ return ERROR_INVALID_RESOURCE_HANDLE; };
 
 	receivingProcess = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask()->parent;
+		.getCurrentThread()->parent;
 
 	// Garbage collect the request message.
 	if (receivingProcess->execDomain == PROCESS_EXECDOMAIN_KERNEL
@@ -318,7 +310,7 @@ void ZAsyncStream::acknowledge(void *dataHandle, void *buffer, void *privateData
 	if (!messages.checkForItem(dataHeader)) { return; };
 
 	ackingProcess = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask()->parent;
+		.getCurrentThread()->parent;
 
 	// Garbage collect the request message if it hasn't already been done.
 	if (ackingProcess->execDomain == PROCESS_EXECDOMAIN_KERNEL

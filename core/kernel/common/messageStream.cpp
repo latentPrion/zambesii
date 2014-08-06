@@ -60,7 +60,8 @@ ipc::sDataHeader *ipc::createDataHeader(
 
 	ret->foreignVaddr = data;
 	ret->foreignTid =
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskId();
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+			->getFullId();
 
 	return ret;
 }
@@ -157,9 +158,11 @@ error_t ipc::dispatchDataHeader(sDataHeader *header, void *buffer)
 	sourceProcess = processTrib.getStream(header->foreignTid);
 	if (sourceProcess == NULL) { return ERROR_NOT_FOUND; };
 
-	currTid = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskId();
+	currTid = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->getFullId();
+
 	currProcess = cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentTask()->parent;
+		->taskStream.getCurrentThread()->parent;
 
 	if (header->method == METHOD_MAP_AND_COPY)
 	{
@@ -281,8 +284,8 @@ void ipc::destroyDataHeader(sDataHeader *header, void *buffer)
 
 		walkerPageRanger::unmap(
 			&cpuTrib.getCurrentCpuStream()->taskStream
-				.getCurrentTask()->parent->getVaddrSpaceStream()
-				->vaddrSpace,
+				.getCurrentThread()->parent
+				->getVaddrSpaceStream()->vaddrSpace,
 			buffer, &p, sourceMappingNPages, &f);
 	};
 
@@ -297,7 +300,7 @@ privateData(privateData),
 subsystem(subsystem), flags(0), function(function), size(size)
 {
 	sourceId = determineSourceThreadId(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask(),
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread(),
 		&this->flags);
 
 	targetId = determineTargetThreadId(
@@ -319,16 +322,9 @@ subsystem(subsystem), flags(0), function(function), size(size)
 #endif
 }
 
-processId_t MessageStream::determineSourceThreadId(
-	Task *caller, ubit16 *flags
-	)
+processId_t MessageStream::determineSourceThreadId(Thread *caller, ubit16 *)
 {
-	if (caller->getType() == task::PER_CPU)
-	{
-		FLAG_SET(*flags, MSGSTREAM_FLAGS_CPU_SOURCE);
-		return cpuTrib.getCurrentCpuStream()->cpuId;
-	}
-	else { return ((Thread *)caller)->getFullId(); };
+	return caller->getFullId();
 }
 
 processId_t MessageStream::determineTargetThreadId(
@@ -351,42 +347,14 @@ error_t MessageStream::enqueueOnThread(
 	processId_t targetStreamId, MessageStream::sHeader *header
 	)
 {
-	MessageStream	*targetStream;
+	Thread			*targetThread;
 
-	if (FLAG_TEST(header->flags, MSGSTREAM_FLAGS_CPU_TARGET))
-	{
-		CpuStream		*cs;
-
-		/* Dealing with an asynchronous response to an API call from a
-		 * per-CPU thread.
-		 **/
-		cs = cpuTrib.getStream((cpu_t)targetStreamId);
-		if (cs == NULL) { return ERROR_INVALID_RESOURCE_NAME; };
-
-		targetStream = &cs->getTaskContext()->messageStream;
-	}
-	else
-	{
-		ProcessStream		*targetProcess;
-		Thread			*targetThread;
-
-		/* Dealing with an asynchronous response to an API call from a
-		 * normal unique-context thread.
-		 **/
-		targetProcess = processTrib.getStream(targetStreamId);
-		if (targetProcess == NULL) {
-			return ERROR_INVALID_RESOURCE_NAME;
-		};
-
-		targetThread = targetProcess->getThread(targetStreamId);
-		if (targetThread == NULL) {
-			return ERROR_INVALID_RESOURCE_NAME;
-		};
-
-		targetStream = &targetThread->getTaskContext()->messageStream;
+	targetThread = processTrib.getThread(targetStreamId);
+	if (targetThread == NULL) {
+		return ERROR_INVALID_RESOURCE_NAME;
 	};
 
-	return targetStream->enqueue(header->subsystem, header);
+	return targetThread->messageStream.enqueue(header->subsystem, header);
 }
 
 error_t MessageStream::pullFrom(
@@ -400,7 +368,7 @@ error_t MessageStream::pullFrom(
 	if (subsystemQueue > MSGSTREAM_SUBSYSTEM_MAXVAL)
 		{ return ERROR_INVALID_ARG_VAL; };
 
-	for (;;)
+	for (;FOREVER;)
 	{
 		pendingSubsystems.lock();
 
@@ -437,7 +405,7 @@ error_t MessageStream::pull(MessageStream::sHeader **message, ubit32 flags)
 
 	if (message == NULL) { return ERROR_INVALID_ARG; };
 
-	for (;;)
+	for (;FOREVER;)
 	{
 		pendingSubsystems.lock();
 
@@ -486,11 +454,21 @@ error_t MessageStream::postMessage(
 	MessageStream::sHeader		*message;
 	processId_t			currTid;
 
-	currTid = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskId();
+	currTid = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->getFullId();
 
 	if (userQId > MSGSTREAM_USERQ_MAXVAL)
 		{ return ERROR_LIMIT_OVERFLOWED; };
 
+	/**	NOTE:
+	 * I thought about removing this restriction when we made CPUs have
+	 * their own threads, but then CPUs shouldn't be using the postMessage()
+	 * facility to post messages to kernel threads, and vice-versa.
+	 *
+	 * postMessage() when used by kernel threads should be used to post
+	 * messages between *related* groups of kernel threads. CPUs should only
+	 * use postMessage() to post messages to *other* CPUs.
+	 **/
 	if (PROCID_PROCESS(tid) != PROCID_PROCESS(currTid))
 		{ return ERROR_UNAUTHORIZED; };
 
@@ -542,18 +520,8 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	if (ret == ERROR_SUCCESS)
 	{
 		pendingSubsystems.set(queueId);
-		/* Unblock the thread. This may be a normal thread, or a per-cpu
-		 * thread. In the case of it being a normal thread, no extra
-		 * work is required: just unblock() it.
-		 *
-		 * If it's a per-CPU thread, we need to unblock it /on the
-		 * target CPU/.
-		 **/
-		if (parent->contextType == task::PER_CPU) {
-			taskTrib.unblock(parent->parent.cpu);
-		} else {
-			taskTrib.unblock(parent->parent.thread);
-		};
+		// Unblock the thread.
+		taskTrib.unblock(parent);
 	};
 
 	pendingSubsystems.unlock();

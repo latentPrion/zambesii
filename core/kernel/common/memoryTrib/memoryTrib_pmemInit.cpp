@@ -55,7 +55,7 @@ static void sortNumaMapByAddress(sZkcmNumaMap *map)
 	 **/
 
 	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries - 1 ); )
-	{		
+	{
 		if (map->memEntries[i].baseAddr > map->memEntries[i+1].baseAddr)
 		{
 			memcpy(
@@ -287,7 +287,7 @@ parseMemoryMap:
 	defaultMemoryBank.rsrc = CHIPSET_NUMA_SHBANKID;
 	printf(NOTICE MEMTRIB"pmemInit: MemTrib using shbank as default.\n");
 	#else
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTaskContext()
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
 		->defaultMemoryBank.rsrc = CHIPSET_NUMA_SHBANKID;
 
 	printf(NOTICE MEMTRIB"pmemInit: Orientation using shbank as default."
@@ -369,7 +369,7 @@ void MemoryTrib::init2_generateNumaMemoryRanges(
 }
 #endif
 
-static utf8Char		*overlappingMessage = 
+static utf8Char		*overlappingMessage =
 	ERROR MEMTRIB"Error generating shbank holes:\n"
 	"\tOverlapping entries base 0x%P, size 0x%X, base 0x%P, size 0x%X.\n"
 	"\tHalting generation of shbank due to non-sane NUMA map.\n";
@@ -397,7 +397,7 @@ void MemoryTrib::init2_generateShbankFromNumaMap(
 	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries ) - 1; i++)
 	{
 		/* Shbank is only for where holes intersect with memoryConfig.
-		 * i.e., if memSize is reported to be 256MB, and there are 
+		 * i.e., if memSize is reported to be 256MB, and there are
 		 * holes in the NUMA map higher up, those holes are ignored.
 		 *
 		 * Only holes that are below the memSize mark will get a shbank

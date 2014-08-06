@@ -35,11 +35,10 @@ public:
 	void block(Lock::sOperationDescriptor *unlockDescriptor=NULL);
 
 	// Back ends.
-	error_t dormant(Task *task, TaskContext *perCpuContext=NULL);
-	error_t wake(Task *task, TaskContext *perCpuContext=NULL);
-	error_t unblock(Task *task, TaskContext *perCpuContext=NULL);
-	void kill(Task *task, TaskContext *perCpuContext=NULL)
-		{ dormant(task, perCpuContext); }
+	error_t dormant(Thread *thread);
+	error_t wake(Thread *thread);
+	error_t unblock(Thread *thread);
+	void kill(Thread *thread) { dormant(thread); }
 
 	/* These next few overloads are front-ends for the back ends that take
 	 * pointers. The front-ends take IDs (either a CPU ID or a process ID)
@@ -49,15 +48,16 @@ public:
 	error_t dormant(processId_t tid)
 	{
 		ProcessStream	*proc;
-		Task		*task;
+		Thread		*thread;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
 
-		task = proc->getTask(tid);
-		return dormant(task);
+		thread = proc->getThread(tid);
+		return dormant(thread);
 	}
 
+#if 0
 	error_t dormant(CpuStream *cpuStream)
 	{
 		return dormant(
@@ -74,19 +74,21 @@ public:
 
 		return dormant(cpuStream);
 	}
+#endif
 
 	error_t wake(processId_t tid)
 	{
 		ProcessStream	*proc;
-		Task		*task;
+		Thread		*thread;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
 
-		task = proc->getTask(tid);
-		return wake(task);
+		thread = proc->getThread(tid);
+		return wake(thread);
 	}
 
+#if 0
 	error_t wake(CpuStream *cpuStream)
 	{
 		return wake(
@@ -103,19 +105,21 @@ public:
 
 		return wake(cpuStream);
 	}
+#endif
 
 	error_t unblock(processId_t tid)
 	{
 		ProcessStream	*proc;
-		Task		*task;
+		Thread		*thread;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
 
-		task = proc->getTask(tid);
-		return unblock(task);
+		thread = proc->getThread(tid);
+		return unblock(thread);
 	}
 
+#if 0
 	error_t unblock(CpuStream *cpuStream)
 	{
 		return unblock(
@@ -132,19 +136,21 @@ public:
 
 		return unblock(cpuStream);
 	}
+#endif
 
 	void kill(processId_t tid)
 	{
 		ProcessStream	*proc;
-		Task		*task;
+		Thread		*thread;
 
 		proc = processTrib.getStream(tid);
 		if (proc == NULL) { return; };
 
-		task = proc->getTask(tid);
-		kill(task);
+		thread = proc->getThread(tid);
+		kill(thread);
 	}
 
+#if 0
 	void kill(CpuStream *cpuStream)
 	{
 		kill(
@@ -161,6 +167,7 @@ public:
 
 		kill(cpuStream);
 	}
+#endif
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };
@@ -169,11 +176,11 @@ public:
 
 	// Create, alter and assign quantum classes.
 	status_t createQuantumClass(utf8Char *name, prio_t softPrio);
-	void setTaskQuantumClass(processId_t id, sarch_t qc);
+	void setThreadQuantumClass(processId_t id, sarch_t qc);
 	void setClassQuantum(sarch_t qc, prio_t softPrio);
 
 private:
-	SharedResourceGroup<WaitLock, sTaskQueueNode *>	deadQ;
+	SharedResourceGroup<WaitLock, sThreadQueueNode *>	deadQ;
 
 	// Global machine scheduling statistics. Used for Oceann Zambesii.
 	ubit32		load;
@@ -187,9 +194,9 @@ extern TaskTrib	taskTrib;
  *****************************************************************************/
 
 #if __SCALING__ == SCALING_UNIPROCESSOR
-inline error_t TaskTrib::schedule(Task *task)
+inline error_t TaskTrib::schedule(Thread *thread)
 {
-	return cpuTrib.getCurrentCpuStream()->taskStream.schedule(task);
+	return cpuTrib.getCurrentCpuStream()->taskStream.schedule(thread);
 }
 #endif
 

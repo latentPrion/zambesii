@@ -44,7 +44,7 @@ error_t SingleWaiterQueue::addItem(void *item)
 		};
 
 		lock.release();
-		return ret;		
+		return ret;
 	};
 
 	lock.release();
@@ -53,7 +53,7 @@ error_t SingleWaiterQueue::addItem(void *item)
 
 error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 {
-	for (;;)
+	for (;FOREVER;)
 	{
 		// Prevent lost wakeups from race conditions.
 		lock.acquire();

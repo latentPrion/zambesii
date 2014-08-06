@@ -43,7 +43,7 @@ status_t walkerPageRanger::unmap(
 	);
 
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->parent
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.acquire();
 
@@ -160,7 +160,7 @@ status_t walkerPageRanger::unmap(
 
 				*paddr = (l1Entry >> 12);
 				*paddr <<= 12;
-				
+
 				if (!FLAG_TEST(*flags, PAGEATTRIB_PRESENT))
 				{
 					switch ((*paddr
@@ -207,7 +207,7 @@ status_t walkerPageRanger::unmap(
 	tlbControl::flushEntryRange(vaddr, nPages);
 #endif
 
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->parent
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
 

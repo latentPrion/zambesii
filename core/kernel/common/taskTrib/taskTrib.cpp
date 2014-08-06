@@ -20,11 +20,9 @@ error_t TaskTrib::schedule(Thread *task)
 {
 	CpuStream	*cs, *bestCandidate=NULL;
 
-	for (cpu_t i=0;
-		i<(signed)task->getTaskContext()->cpuAffinity.getNBits(); i++)
+	for (cpu_t i=0; i<(signed)task->cpuAffinity.getNBits(); i++)
 	{
-		if (task->getTaskContext()->
-		cpuAffinity.testSingle(i)
+		if (task->cpuAffinity.testSingle(i)
 			&& cpuTrib.onlineCpus.testSingle(i))
 		{
 			cs = cpuTrib.getStream(i);
@@ -88,11 +86,9 @@ void TaskTrib::updateLoad(ubit8 action, uarch_t val)
 	};
 }
 
-error_t TaskTrib::dormant(Task *task, TaskContext *perCpuContext)
+error_t TaskTrib::dormant(Thread *thread)
 {
-	CpuStream	*taskCurrentCpu;
-	TaskContext	*tmpContext;
-	Thread		*thread;
+	CpuStream	*threadCurrentCpu;
 
 	/**	FIXME:
 	 * The following inconsistent behaviour arises:
@@ -126,40 +122,24 @@ error_t TaskTrib::dormant(Task *task, TaskContext *perCpuContext)
 	 * have its execution resumed.
 	 **/
 
-	if (task == NULL) { return ERROR_INVALID_ARG; };
-	if (task->getType() == task::PER_CPU && perCpuContext == NULL) {
-		return ERROR_INVALID_ARG;
-	};
+	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
-	thread = static_cast<Thread *>( task );
-
-	if (task->getType() == task::PER_CPU) { tmpContext = perCpuContext; }
-	else { tmpContext = thread->getTaskContext(); };
-
-	if (tmpContext->runState == TaskContext::UNSCHEDULED
-		|| (tmpContext->runState == TaskContext::STOPPED
-			&& tmpContext->blockState == TaskContext::DORMANT))
+	if (thread->runState == Thread::UNSCHEDULED
+		|| (thread->runState == Thread::STOPPED
+			&& thread->blockState == Thread::DORMANT))
 	{
 		return ERROR_SUCCESS;
 	};
 
-	if (task->getType() == task::PER_CPU)
-	{
-		tmpContext->parent.cpu->taskStream.dormant(task);
-		taskCurrentCpu = tmpContext->parent.cpu;
-	}
-	else
-	{
-		thread->Currenttpu->taskStream.dormant(task);
-		taskCurrentCpu = thread->Currenttpu;
-	};
+	thread->currentCpu->taskStream.dormant(thread);
+	threadCurrentCpu = thread->currentCpu;
 
-	/* At this point, taskCurrentCpu points to the CPU on which the
+	/* At this point, taskCurrentCpu points to the CPU which the
 	 * particular unique thread or per-cpu thread that was our target, is
 	 * currently scheduled to. For a per-cpu thread, it points to the
 	 * particular CPU whose per-cpu thread was acted on.
 	 **/
-	if (taskCurrentCpu != cpuTrib.getCurrentCpuStream())
+	if (threadCurrentCpu != cpuTrib.getCurrentCpuStream())
 	{
 		/* Message the foreign CPU to preempt and choose another thread.
 		 * Should probably take an argument for the thread to be
@@ -171,13 +151,13 @@ error_t TaskTrib::dormant(Task *task, TaskContext *perCpuContext)
 		/* If the task is both on the current CPU and currently being
 		 * executed, force the current CPU to context switch.
 		 **/
-		if (task == cpuTrib.getCurrentCpuStream()->taskStream
-			.getCurrentTask())
+		if (thread == cpuTrib.getCurrentCpuStream()->taskStream
+			.getCurrentThread())
 		{
 			// TODO: Set this CPU's currentTask to NULL here.
 			saveContextAndCallPull(
-				&taskCurrentCpu->schedStack[
-					sizeof(taskCurrentCpu->schedStack)]);
+				&threadCurrentCpu->schedStack[
+					sizeof(threadCurrentCpu->schedStack)]);
 
 			// Unreachable.
 		};
@@ -186,59 +166,34 @@ error_t TaskTrib::dormant(Task *task, TaskContext *perCpuContext)
 	return ERROR_SUCCESS;
 }
 
-error_t TaskTrib::wake(Task *task, TaskContext *perCpuContext)
+error_t TaskTrib::wake(Thread *thread)
 {
-	TaskContext	*tmpContext;
-	Thread		*thread;
+	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
-	if (task == NULL) { return ERROR_INVALID_ARG; };
-
-	if (task->getType() == task::PER_CPU && perCpuContext == NULL) {
-		return ERROR_INVALID_ARG;
-	};
-
-	thread = static_cast<Thread *>( task );
-
-	if (task->getType() == task::PER_CPU) {
-		tmpContext = perCpuContext;
-	} else {
-		tmpContext = thread->getTaskContext();
-	};
-
-	if (tmpContext->runState != TaskContext::UNSCHEDULED
-		&& (tmpContext->runState != TaskContext::STOPPED
-			&& tmpContext->blockState != TaskContext::DORMANT))
+	if (thread->runState != Thread::UNSCHEDULED
+		&& (thread->runState != Thread::STOPPED
+			&& thread->blockState != Thread::DORMANT))
 	{
 		return ERROR_SUCCESS;
 	};
 
-	if (task->getType() == task::PER_CPU)
-	{
-		if (tmpContext->runState == TaskContext::UNSCHEDULED)
-		{
-			return tmpContext->parent.cpu->taskStream
-				.schedule(task);
-		}
-		else { return tmpContext->parent.cpu->taskStream.wake(task); };
+	if (thread->runState == Thread::UNSCHEDULED) {
+		return schedule(thread);
 	}
-	else
-	{
-		if (tmpContext->runState == TaskContext::UNSCHEDULED) {
-			return schedule(thread);
-		}
-		else { return thread->Currenttpu->taskStream.wake(task); };
-	};
+	else { return thread->currentCpu->taskStream.wake(thread); };
 }
 
 void TaskTrib::yield(void)
 {
-	Task		*currTask;
+	Thread		*currThread;
 
 	/* Yield() and block() are always called by the current thread, and
 	 * they always act on the thread that called them.
 	 **/
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	cpuTrib.getCurrentCpuStream()->taskStream.yield(currTask);
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	cpuTrib.getCurrentCpuStream()->taskStream.yield(currThread);
 
 	// TODO: Set this CPU's currentTask to NULL here.
 	saveContextAndCallPull(
@@ -248,7 +203,7 @@ void TaskTrib::yield(void)
 
 void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 {
-	Task		*currTask;
+	Thread		*currThread;
 
 	/* Yield() and block() are always called by the current thread, and
 	 * they always act on the thread that called them.
@@ -262,8 +217,10 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	 * After placing a task into a waitqueue, call this function to
 	 * place it into a "blocked" state.
 	 **/
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	cpuTrib.getCurrentCpuStream()->taskStream.block(currTask);
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	cpuTrib.getCurrentCpuStream()->taskStream.block(currThread);
 
 	/**	EXPLANATION:
 	 * This bit here completely purges the problem of lost wakeups
@@ -306,46 +263,27 @@ static utf8Char		*runStates[5] =
 	CC"invalid", CC"unscheduled", CC"runnable", CC"running", CC"stopped"
 };
 
-error_t TaskTrib::unblock(Task *task, TaskContext *perCpuContext)
+error_t TaskTrib::unblock(Thread *thread)
 {
-	TaskContext	*tmpContext;
-	Thread		*thread;
+	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
-	if (task == NULL) { return ERROR_INVALID_ARG; };
-	if (task->getType() == task::PER_CPU && perCpuContext == NULL) {
-		return ERROR_INVALID_ARG;
-	};
-
-	thread = static_cast<Thread *>( task );
-
-	if (task->getType() == task::PER_CPU) {
-		tmpContext = perCpuContext;
-	} else {
-		tmpContext = thread->getTaskContext();
-	};
-
-	if (tmpContext->runState == TaskContext::RUNNABLE
-		|| tmpContext->runState == TaskContext::RUNNING)
+	if (thread->runState == Thread::RUNNABLE
+		|| thread->runState == Thread::RUNNING)
 	{
 		return ERROR_SUCCESS;
 	};
 
-	if (!(tmpContext->runState == TaskContext::STOPPED
-		&& tmpContext->blockState == TaskContext::BLOCKED))
+	if (!(thread->runState == Thread::STOPPED
+		&& thread->blockState == Thread::BLOCKED))
 	{
 		printf(NOTICE TASKTRIB"unblock(0x%x): Invalid run state."
 			"runState is %s.\n",
-			(task->getType() == task::PER_CPU)
-				? tmpContext->parent.cpu->cpuId
-				: thread->getFullId(),
-			runStates[tmpContext->runState]);
+			thread->getFullId(),
+			runStates[thread->runState]);
 
 		return ERROR_INVALID_OPERATION;
 	};
 
-	if (task->getType() == task::PER_CPU)
-		{ return tmpContext->parent.cpu->taskStream.unblock(task); }
-	else
-		{ return thread->Currenttpu->taskStream.unblock(task); };
+	return thread->currentCpu->taskStream.unblock(thread);
 }
 

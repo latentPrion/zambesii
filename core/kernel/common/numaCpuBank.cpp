@@ -30,10 +30,9 @@ error_t NumaCpuBank::schedule(Thread *thread)
 	ubit32		lowestLoad = 0xFFFFFFFF;
 	CpuStream	*bestCpu=NULL, *curCpu;
 
-	for (uarch_t i=0;
-		i<thread->getTaskContext()->cpuAffinity.getNBits(); i++)
+	for (uarch_t i=0; i<thread->cpuAffinity.getNBits(); i++)
 	{
-		if (thread->getTaskContext()->cpuAffinity.testSingle(i))
+		if (thread->cpuAffinity.testSingle(i))
 		{
 			curCpu = cpuTrib.getStream(i);
 			if (curCpu == NULL) { continue; };

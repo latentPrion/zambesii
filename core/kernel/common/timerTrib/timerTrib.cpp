@@ -343,7 +343,7 @@ error_t TimerTrib::initialize(void)
 	ret = processTrib.__kgetStream()->spawnThread(
 		&TimerTrib::sEventProcessor::thread, NULL,
 		NULL,
-		Task::REAL_TIME,
+		Thread::REAL_TIME,
 		PRIOCLASS_CRITICAL,
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
 		| SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET
@@ -482,7 +482,7 @@ void TimerTrib::sEventProcessor::thread(void *)
 	error_t				err;
 
 	printf(NOTICE TIMERTRIB"Event DQer thread has begun executing.\n");
-	for (;;)
+	for (;FOREVER;)
 	{
 		messagesWereFound = 0;
 

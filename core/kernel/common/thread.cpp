@@ -5,7 +5,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
-error_t TaskContext::initialize(void)
+error_t _TaskContext::initialize(void)
 {
 	error_t		ret;
 
@@ -23,7 +23,7 @@ error_t TaskContext::initialize(void)
 	return messageStream.initialize();
 }
 
-void TaskContext::initializeRegisterContext(
+void _TaskContext::initializeRegisterContext(
 	void (*entryPoint)(void *), void *stack0, void *stack1,
 	ubit8 execDomain,
 	sarch_t isFirstThread
@@ -35,7 +35,7 @@ void TaskContext::initializeRegisterContext(
 	 * This is used to initialize context on one of the stacks passed as
 	 * stack0 or stack1.
 	 *
-	 * For kernel threads and per-cpu threads, only "stack0" will be passed,
+	 * For kernel threads and power threads, only "stack0" will be passed,
 	 * and stack1 will be NULL.
 	 *
 	 * For threads of processes other than the kernel, stack1 shall not be
@@ -55,26 +55,12 @@ void TaskContext::initializeRegisterContext(
 	}
 	else
 	{
-		/* Use stack0.
-		 *
-		 * For per-cpu threads, the stack size isn't __KSTACK_NPAGES,
-		 * but a custom size, so we need to be sure we don't trample
-		 * kernel data by initializing the register context in the
-		 * wrong memory location.
+		/* Use stack0 for everything that is not a userspace thread,
+		 * AND also not that userspace process' first thread.
 		 **/
 		stackIndex = 0;
-		if (contextType == task::PER_CPU)
-		{
-			context = (RegisterContext *)&parent.cpu
-				->perCpuThreadStack[sizeof(
-					parent.cpu->perCpuThreadStack)];
-		}
-		else
-		{
-			context = (RegisterContext *)((uintptr_t)stack0
-				+ CHIPSET_MEMORY___KSTACK_NPAGES
-					* PAGING_BASE_SIZE);
-		};
+		context = (RegisterContext *)((uintptr_t)stack0
+			+ CHIPSET_MEMORY___KSTACK_NPAGES * PAGING_BASE_SIZE);
 	};
 
 	// Context -= sizeof(RegisterContext);
@@ -109,7 +95,7 @@ static inline error_t resizeAndMergeBitmaps(Bitmap *dest, Bitmap *src)
 }
 
 #if __SCALING__ >= SCALING_SMP
-error_t TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
+error_t _TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 {
 	error_t		ret;
 
@@ -137,17 +123,22 @@ error_t TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 	 *	Implied if cpuAffinity != NULL.
 	 *
 	 *	CAVEAT:
-	 * For per-CPU-threads, cpuAffinity is always set to be ONLY the cpu
-	 * itself. So for a per-cpu task context on CPU0, the cpuAffinity on
-	 * that task context will only have bit 0 set.
+	 * For power-threads, cpuAffinity is always set to be ONLY the cpu
+	 * itself. So for a power thread on CPU0, the cpuAffinity on
+	 * that task context will only have bit 0 set (because we cannot allow
+	 * power threads to migrate, obviously...).
 	 **/
-	if (contextType == task::PER_CPU)
+	if (PROCID_PROCESS(parentThread->getFullId()) == CPU_PROCESSID)
 	{
-		ret = this->cpuAffinity.initialize(parent.cpu->cpuId + 1);
+		ret = this->cpuAffinity.initialize(
+			PROCID_THREAD(parentThread->getFullId()) + 1);
+
 		if (ret != ERROR_SUCCESS) { return ret; };
 
 		// Set the containing CPU's bit.
-		this->cpuAffinity.setSingle(parent.cpu->cpuId);
+		this->cpuAffinity.setSingle(
+			PROCID_THREAD(parentThread->getFullId()));
+
 		return ERROR_SUCCESS;
 	};
 
@@ -157,7 +148,7 @@ error_t TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 
 		// PINHERIT.
 		if (FLAG_TEST(flags, SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT)) {
-			sourceBitmap = &parent.thread->parent->cpuAffinity;
+			sourceBitmap = &parentThread->parent->cpuAffinity;
 		}
 		else
 		{
@@ -181,8 +172,7 @@ error_t TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 			 **/
 			sourceBitmap = &static_cast<Thread *>(
 				cpuTrib.getCurrentCpuStream()->taskStream
-					.getCurrentTask() )
-				->getTaskContext()->cpuAffinity;
+					.getCurrentThread() )->cpuAffinity;
 		};
 
 		ret = resizeAndMergeBitmaps(&this->cpuAffinity, sourceBitmap);
@@ -198,7 +188,7 @@ error_t TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 }
 #endif
 
-void Task::inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t /*flags*/)
+void _Task::inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t /*flags*/)
 {
 	/**	EXPLANATION:
 	 * Sched policy is STINHERITed by default. Overrides are:
@@ -214,11 +204,11 @@ void Task::inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t /*flags*/)
 	{
 		// STINHERIT.
 		this->schedPolicy = cpuTrib.getCurrentCpuStream()->taskStream
-			.getCurrentTask()->schedPolicy;
+			.getCurrentThread()->schedPolicy;
 	};
 }
 
-void Task::inheritSchedPrio(prio_t prio, uarch_t flags)
+void _Task::inheritSchedPrio(prio_t prio, uarch_t flags)
 {
 	/**	EXPLANATION:
 	 * Schedprio defaults to PRIOCLASS_DEFAULT. Overrides are:
@@ -239,10 +229,10 @@ void Task::inheritSchedPrio(prio_t prio, uarch_t flags)
 
 	if (FLAG_TEST(flags, SPAWNTHREAD_FLAGS_SCHEDPRIO_STINHERIT))
 	{
-		Task		*spawningThread;
+		Thread		*spawningThread;
 
 		spawningThread = cpuTrib.getCurrentCpuStream()->taskStream
-			.getCurrentTask();
+			.getCurrentThread();
 
 		if (FLAG_TEST(spawningThread->flags, TASK_FLAGS_CUSTPRIO))
 		{

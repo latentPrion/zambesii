@@ -220,7 +220,7 @@ void fplainnIndexServer_detectDriverReq(
 {
 	error_t					err;
 	Floodplainn::sZudiIndexMsg		*response;
-	fplainn::Device			*dev;
+	fplainn::Device				*dev;
 	zui::device::sHeader			devlineHdr,
 						*currDevlineHdr;
 	HeapArr<utf8Char>			devlineName;
@@ -898,7 +898,7 @@ void fplainnIndexServer_loadRequirementsReq(
 {
 	Floodplainn::sZudiIndexMsg	*response;
 	AsyncResponse			myResponse;
-	fplainn::Driver		*drv;
+	fplainn::Driver			*drv;
 	error_t				err;
 	HeapObj<zui::sHeader>		indexHdr;
 	HeapObj<zui::driver::sHeader>	metaHdr;
@@ -1367,7 +1367,7 @@ void Floodplainn::indexReaderEntry(void)
 	zui::sHeader					__kindexHeader;
 
 	self = static_cast<Thread *>(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread() );
 
 	requestData = new zuiServer::sIndexMsg(
 		0, NULL, zuiServer::INDEX_KERNEL);
@@ -1406,9 +1406,9 @@ void Floodplainn::indexReaderEntry(void)
 		__kindexHeader.nSupportedMetas,
 		__kindexHeader.nSupportedDevices);
 
-	for (;;)
+	for (;FOREVER;)
 	{
-		self->getTaskContext()->messageStream.pull(&gcb);
+		self->messageStream.pull(&gcb);
 
 		// If some thread is forwarding syscall responses to us:
 		if ((gcb->subsystem != MSGSTREAM_SUBSYSTEM_FLOODPLAINN

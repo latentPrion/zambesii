@@ -17,7 +17,7 @@ void pointer::vmemUnmapAndFree(
 	if (vasStream == NULL)
 	{
 		vasStream = cpuTrib.getCurrentCpuStream()->taskStream
-			.getCurrentTask()->parent->getVaddrSpaceStream();
+			.getCurrentThread()->parent->getVaddrSpaceStream();
 	};
 
 	if (nMapped > 0)
@@ -37,7 +37,7 @@ void pointer::streamFree(void *vaddr, MemoryStream *memStream)
 	if (memStream == NULL)
 	{
 		memStream = &cpuTrib.getCurrentCpuStream()->taskStream
-			.getCurrentTask()->parent->memoryStream;
+			.getCurrentThread()->parent->memoryStream;
 	};
 
 	memStream->memFree(vaddr);

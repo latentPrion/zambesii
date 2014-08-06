@@ -1,0 +1,50 @@
+Right now, we have to re-structure threading such that we give each CPU its own
+thread, apart from having general threads creatable by processes. We have
+chosen this approach because it is significantly cleaner than the alternative
+which we'd been applying up to now, which is to try and save memory by cloning
+the absolute minimum amount of thread-specific state across CPUs.
+
+This though, caused us to have to do a huge amount of roundabout complexity when
+trying to allow CPUs to be addressed for messaging by kernel APIs. To wit, we
+would have to do a lot of case handling between standard threads and per-cpu
+threads.
+
+With the new approach I have in mind, we just take the memory usage hit, and
+give each CPU an actual thread of its own. This thread will of course be
+addressable. So in this manner, we will eliminate the need for all of that
+case handling for standard/pcpu threads.
+
+	Lock acquisition and race prevention:
+As we remember well, we had a bug about 2 years ago where when booting up AP
+CPUs, multiple AP CPUs would be able to enter the memory manager at the same
+time while booting and allocate the same virtual address upon doing so.
+
+This was caused by the fact that all AP CPUs ran the same thread (which had the
+same ID on all CPUs). The kernel's locking system stores the ID of the current
+owner of the lock, and for recursive locks, it will allow the owning thread to
+re-acquire the lock recursively any number of times.
+
+Since all the AP CPUs had the same thread ID, multiple CPUs could enter the same
+lock at the same time, because the lock thought that they were a single thread
+recursing, when in fact they were multiple different CPUs stampeding on the
+lock.
+
+This new approach solves this problem by giving a separate thread altogether to
+each CPU, and not having them share a thread. So unique IDs will be stored in
+locks.
+
+	Addressability for messaging:
+As each CPU will have its own thread, it will also have its own MessageQueue
+instance. This will inherently allow the CPU to be addressable, and to wait on
+messages. CPUs can have a message loop like any other thread.
+
+	Behavioural characteristics of the per-cpu thread:
+This thread will wait on its MessageStream for messages. When a message is
+posted on the thread, the task trib will wake up the parent CPU, as it does
+right now.
+
+It seems the arrangement will be the same is it is now: CPUs retain their
+schedstack, and the per-cpu thread is naught but a power thread, and for the
+case of our new design, also a per-CPU message processor.
+
+This leaves us with nothing but maybe Task + Thread.

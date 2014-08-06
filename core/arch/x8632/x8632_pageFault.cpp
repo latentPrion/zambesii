@@ -41,8 +41,8 @@ static sarch_t __kpropagateTopLevelVaddrSpaceChanges(void *faultAddr)
 	__kvaddrSpace = &processTrib.__kgetStream()->getVaddrSpaceStream()
 		->vaddrSpace;
 
-	vaddrSpace = &cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
-		->parent->getVaddrSpaceStream()->vaddrSpace;
+	vaddrSpace = &cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->parent->getVaddrSpaceStream()->vaddrSpace;
 
 	if (vaddrSpace != __kvaddrSpace)
 	{
@@ -93,15 +93,11 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 	void			*faultAddr = getCr2();
 	paddr_t			pmap;
 	uarch_t			__kflags;
-	Task			*currTask;
 	Thread			*currThread=NULL;
 	sbit8			panicWorthy=0, traceStack=0, printArgs=0;
 
-	currTask = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask();
-	if (currTask->getType() != task::PER_CPU)
-		{ currThread = (Thread *)currTask; };
-
-	vaddrSpaceStream = currTask->parent->getVaddrSpaceStream();
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	vaddrSpaceStream = currThread->parent->getVaddrSpaceStream();
 
 	if (faultAddr >= (void *)ARCH_MEMORY___KLOAD_VADDR_BASE)
 		{ __kpropagateTopLevelVaddrSpaceChanges(faultAddr); };

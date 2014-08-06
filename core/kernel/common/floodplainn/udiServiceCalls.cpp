@@ -29,7 +29,7 @@ error_t Floodplainn::getInternalBopVectorIndexes(
 	fplainn::Driver::sInternalBop	*iBop;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentTask();
+		->taskStream.getCurrentThread();
 
 	drvInst = self->parent->getDriverInstance();
 
@@ -57,7 +57,7 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 	 * spawned by the secondary region thread.
 	 **/
 	thread1 = (Thread *)cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentTask();
+		->taskStream.getCurrentThread();
 
 	ret = getDevice(devPath, &dev);
 	if (ret != ERROR_SUCCESS) { return ret; };

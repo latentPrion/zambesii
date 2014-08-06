@@ -22,6 +22,8 @@ CpuStream		bspCpu(CPUID_INVALID, 0);
 CpuStream		bspCpu(0, 0);
 #endif
 
+extern "C" ubit8	*const bspCpuPowerStack = bspCpu.powerStack;
+
 /**	NOTE:
  * A lot of preprocessing in here: It looks quite ugly I suppose.
  **/
@@ -43,11 +45,11 @@ interCpuMessager(this),
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
 lapic(this),
 #endif
-perCpuTaskContext(task::PER_CPU, this)
+powerThread(cpuId, processTrib.__kgetStream(), NULL)
 {
 	if (this == &bspCpu) { FLAG_SET(flags, CPUSTREAM_FLAGS_BSP); };
 
-	/* We don't need to acquire the __kcpuPowerOnSleepStacksLock lock before
+	/* We don't need to acquire the __kcpuPowerStacksLock lock before
 	 * editing this CPU's index in the array, because a race condition can
 	 * never occur here. No other writer will ever write to any other CPU's
 	 * index, so the operation of writing a sleep stack pointer to the
@@ -62,15 +64,15 @@ perCpuTaskContext(task::PER_CPU, this)
 	 **/
 	if (!FLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
 	{
-		__kcpuPowerOnSleepStacks[cpuId] = &perCpuThreadStack[
-			sizeof(perCpuThreadStack) - sizeof(void *)];
+		__kcpuPowerStacks[cpuId] = &powerStack[
+			sizeof(powerStack) - sizeof(void *)];
 
 		/* Push the CPU Stream address to the sleep stack so the waking
 		 * CPU can obtain it as if it was passed as an argument to
 		 * __kcpuPowerOnMain.
 		 **/
 		*reinterpret_cast<CpuStream **>(
-			__kcpuPowerOnSleepStacks[cpuId] ) = this;
+			__kcpuPowerStacks[cpuId] ) = this;
 	};
 }
 
@@ -81,16 +83,16 @@ error_t CpuStream::initializeBspCpuLocking(void)
 	 * set the CPUSTREAM_FLAGS_BSP flag on the BSP CPU Stream so that when
 	 * its constructor is executed it doesn't trample itself.
 	 **/
-	__korientationThread.getTaskContext()->nLocksHeld = 0;
+	__korientationThread.nLocksHeld = 0;
 	__korientationThread.parent = processTrib.__kgetStream();
 	// Init cpuConfig and numaConfig BMPs later.
-	__korientationThread.getTaskContext()->defaultMemoryBank.rsrc =
+	__korientationThread.defaultMemoryBank.rsrc =
 		CHIPSET_NUMA___KSPACE_BANKID;
 
 	// Let the CPU know that it is the BSP.
 	FLAG_SET(flags, CPUSTREAM_FLAGS_BSP);
 	// Set the BSP's currentTask to __korientation.
-	taskStream.currentTask = &__korientationThread;
+	taskStream.currentThread = &__korientationThread;
 
 	baseInit();
 
@@ -100,6 +102,9 @@ error_t CpuStream::initializeBspCpuLocking(void)
 error_t CpuStream::initialize(void)
 {
 	error_t		ret;
+
+	ret = powerThread.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	ret = interCpuMessager.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };

@@ -275,7 +275,7 @@ void Floodplainn::instantiateDeviceAck(
 	fplainn::Device			*dev;
 
 	currThread = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
+		.getCurrentThread();
 
 	// Only driver processes can call this.
 	if (currThread->parent->getType() != ProcessStream::DRIVER)

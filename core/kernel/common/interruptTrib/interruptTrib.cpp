@@ -139,7 +139,7 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 				regs->vectorNo);
 		};
 
-		for (;;)
+		for (;FOREVER;)
 		{
 			cpuControl::disableInterrupts();
 			cpuControl::halt();

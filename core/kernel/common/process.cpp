@@ -29,6 +29,30 @@ utf8Char	__kprocessArgStringMem
 ubit8		__kprocessPreallocatedBmpMem[3][32];
 #endif
 
+Thread *ProcessStream::getThread(processId_t id)
+{
+	Thread		*ret;
+	uarch_t		rwFlags;
+	CpuStream	*cs;
+
+	if (PROCID_PROCESS(id) == CPU_PROCESSID)
+	{
+		cs = cpuTrib.getCurrentCpuStream();
+		if ((unsigned)cs->cpuId == PROCID_THREAD(id))
+			{ return &cs->powerThread; };
+
+		cs = cpuTrib.getStream(PROCID_THREAD(id));
+		if (cs == NULL) { return NULL; };
+		return &cs->powerThread;
+	};
+
+	threadLock.readAcquire(&rwFlags);
+	ret = threads[PROCID_TASK(id)];
+	threadLock.readRelease(rwFlags);
+
+	return ret;
+}
+
 error_t ProcessStream::initialize(
 	const utf8Char *commandLineString, const utf8Char *environmentString,
 	Bitmap *cpuAffinityBmp
@@ -37,7 +61,7 @@ error_t ProcessStream::initialize(
 	error_t		ret;
 	ubit16		argumentsStartIndex;
 
-	ret = nextTaskId.initialize();
+	ret = nextThreadId.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	ret = generateFullName(commandLineString, &argumentsStartIndex);
@@ -554,7 +578,7 @@ static inline error_t resizeAndMergeBitmaps(Bitmap *dest, Bitmap *src)
 error_t ProcessStream::spawnThread(
 	void (*entryPoint)(void *), void *argument,
 	Bitmap * cpuAffinity,
-	Task::schedPolicyE schedPolicy,
+	_Task::schedPolicyE schedPolicy,
 	ubit8 prio, uarch_t flags,
 	Thread **const newThread
 	)
@@ -563,12 +587,6 @@ error_t ProcessStream::spawnThread(
 	processId_t	newThreadId;
 
 	if (newThread == NULL) { return ERROR_INVALID_ARG; };
-	// For now, per-cpu threads are not allowed to spawn new threads.
-	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
-		->getType() == task::PER_CPU)
-	{
-		panic(FATAL"spawnThread: Called by a per-cpu thread.\n");
-	};
 
 	// Check for a free thread ID in this process's thread ID space.
 	ret = getNewThreadId(&newThreadId);
@@ -590,9 +608,7 @@ error_t ProcessStream::spawnThread(
 
 #if __SCALING__ >= SCALING_SMP
 	// Do affinity inheritance.
-	ret = (*newThread)->getTaskContext()->inheritAffinity(
-		cpuAffinity, flags);
-
+	ret = (*newThread)->inheritAffinity(cpuAffinity, flags);
 	if (ret != ERROR_SUCCESS) { return ret; };
 #endif
 
@@ -600,7 +616,7 @@ error_t ProcessStream::spawnThread(
 	(*newThread)->inheritSchedPrio(prio, flags);
 
 	// Now everything is allocated; just initialize the register context.
-	(*newThread)->getTaskContext()->initializeRegisterContext(
+	(*newThread)->initializeRegisterContext(
 		entryPoint,
 		(*newThread)->stack0,
 		(*newThread)->stack1,
@@ -628,27 +644,31 @@ Thread *ProcessStream::allocateNewThread(processId_t newThreadId, void *privateD
 	ret = new Thread(newThreadId, this, privateData);
 	if (ret == NULL) { return NULL; };
 
-	taskLock.writeAcquire();
+	threadLock.writeAcquire();
 
 	// Add the new thread to the process's task array.
-	tasks[PROCID_THREAD(newThreadId)] = ret;
-	nTasks++;
+	threads[PROCID_THREAD(newThreadId)] = ret;
+	nThreads++;
 
-	taskLock.writeRelease();
+	threadLock.writeRelease();
 	return ret;
 }
 
 void ProcessStream::removeThread(processId_t threadId)
 {
-	taskLock.writeAcquire();
+	Thread			*thread;
 
-	if (tasks[PROCID_THREAD(threadId)] != NULL)
+	threadLock.writeAcquire();
+
+
+	thread = threads[PROCID_THREAD(threadId)];
+	if (thread != NULL)
 	{
-		delete tasks[PROCID_THREAD(threadId)];
-		tasks[PROCID_THREAD(threadId)] = NULL;
+		threads[PROCID_THREAD(threadId)] = NULL;
+		nThreads--;
 	};
 
-	nTasks--;
-	taskLock.writeRelease();
+	threadLock.writeRelease();
+	delete thread;
 }
 

@@ -41,8 +41,11 @@
 
 #define CPUMESSAGE_TYPE_TLBFLUSH	0x0
 
+class ProcessStream;
+
 class CpuStream
 {
+friend class ProcessStream;
 public:
 #if __SCALING__ >= SCALING_CC_NUMA
 	CpuStream(numaBankId_t bid, cpu_t id, ubit32 acpiId);
@@ -63,8 +66,6 @@ public:
 public:
 	status_t enumerate(void);
 	sCpuFeatures *getCpuFeatureBlock(void);
-	TaskContext *getTaskContext(void)
-		{ return &perCpuTaskContext; }
 
 public:
 	class PowerManager
@@ -190,8 +191,10 @@ public:
 	ubit32			flags;
 	// Small stack used for scheduler task switching.
 	ubit8			schedStack[PAGING_BASE_SIZE / 2];
-	// Small stack used by the per-cpu currently thread running on this CPU.
-	ubit8			perCpuThreadStack[PAGING_BASE_SIZE / 2];
+	// Stack for the CPU's power thread.
+	ubit8			powerStack[
+		PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES];
+
 	PowerManager		powerManager;
 #if __SCALING__ >= SCALING_SMP
 	InterCpuMessager	interCpuMessager;
@@ -200,7 +203,7 @@ public:
 	class X86Lapic		lapic;
 #endif
 private:
-	TaskContext		perCpuTaskContext;
+	Thread			powerThread;
 };
 
 // The hardcoded stream for the BSP CPU.

@@ -42,7 +42,7 @@ void walkerPageRanger::remapNoInc(
 
 	// This is SRS BSNS. Lock off both address spaces.
 	vaddrSpace->level0Accessor.lock.acquire();
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->parent
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.acquire();
 
@@ -220,7 +220,7 @@ void walkerPageRanger::remapNoInc(
 #endif
 
 	vaddrSpace->level0Accessor.lock.release();
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->parent
+	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
 

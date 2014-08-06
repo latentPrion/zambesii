@@ -23,7 +23,7 @@ event from one of the subscribed queues.
 	myBitmap.set(...);
 
 	myThread->events.subscribeTo(&myBitmap);
-	for (;;)
+	for (;FOREVER;)
 	{
 		myThread->events.pullEvent(&newEvent, 0);
 		switch (newEvent->type)
@@ -56,7 +56,7 @@ An example is shown below:
 	myBitmap.set(NETWORK_EVENT_3);
 
 	myThread->events.waitOnEvents(&myBitmap);
-	for (;;)
+	for (;FOREVER;)
 	{
 		status_t	status;
 		bool		netEventPulled=FALSE, otherEventsPulled=FALSE;

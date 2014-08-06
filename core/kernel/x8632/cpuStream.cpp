@@ -66,7 +66,7 @@ void CpuStream::baseInit(void)
 		asm volatile ("lidt	(x8632IdtPtr)");
 
 		// Load the __kcpuPowerOnThread into the currentTask holder.
-		taskStream.currentTask = &__kcpuPowerOnThread;
+		taskStream.currentThread = &__kcpuPowerOnThread;
 	};
 }
 

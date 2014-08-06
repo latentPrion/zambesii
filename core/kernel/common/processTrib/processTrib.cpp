@@ -69,7 +69,7 @@ error_t ProcessTrib::getDistributaryExecutableFormat(
 	 **/
 	*executableFormat = ProcessStream::RAW;
 	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
+		.getCurrentThread();
 
 	ret = vfsTrib.getDvfs()->getPath(fullName, &tag);
 
@@ -200,7 +200,7 @@ void ProcessTrib::commonEntry(void *)
 	 **/
 	jumpAddress = NULL;
 	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
+		.getCurrentThread();
 
 	printf(NOTICE PROCTRIB"New process running. ID=0x%x type=%d.\n",
 		self->getFullId(),
@@ -362,8 +362,8 @@ ProcessStream *ProcessTrib::getStream(processId_t id)
 	ProcessStream	*ret;
 	uarch_t		rwFlags;
 
-	if (PROCID_PROCESS(id) == 0) {
-		panic(FATAL PROCTRIB"getStream: Attempt to get process 0.\n");
+	if (PROCID_PROCESS(id) == CPU_PROCESSID) {
+		return __kgetStream();
 	};
 
 	processes.lock.readAcquire(&rwFlags);
@@ -422,15 +422,8 @@ error_t ProcessTrib::spawnDriver(
 	if (commandLine == NULL || retProcess == NULL)
 		{ return ERROR_INVALID_ARG; };
 
-	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
-		->getType() == task::PER_CPU)
-	{
-		panic(FATAL PROCTRIB"spawnDriver: called from per-cpu "
-			"thread.\n");
-	};
-
 	parentThread = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
+		.getCurrentThread();
 
 	ret = getNewProcessId(&newProcessId);
 	if (ret != ERROR_SUCCESS)
@@ -526,7 +519,7 @@ error_t ProcessTrib::spawnDriver(
 	ret = newProcess->spawnThread(
 		&ProcessTrib::commonEntry, NULL,
 		&newProcess->cpuAffinity,
-		Task::REAL_TIME, prio,
+		Thread::REAL_TIME, prio,
 		flags | SPAWNTHREAD_FLAGS_AFFINITY_SET
 		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
 		&firstThread);
@@ -562,16 +555,8 @@ error_t ProcessTrib::spawnDistributary(
 	if (commandLine == NULL || newProcess == NULL)
 		{ return ERROR_INVALID_ARG; };
 
-	// Per-CPU threads are not allowed to spawn new processes.
-	if (cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()
-		->getType() == task::PER_CPU)
-	{
-		panic(FATAL PROCTRIB"spawnDistributary: called from per-cpu "
-			"thread.\n");
-	};
-
 	parentThread = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTask();
+		.getCurrentThread();
 
 	ret = getNewProcessId(&newProcessId);
 	if (ret != ERROR_SUCCESS)
@@ -603,7 +588,7 @@ error_t ProcessTrib::spawnDistributary(
 	ret = (*newProcess)->spawnThread(
 		&ProcessTrib::commonEntry, NULL,
 		&(*newProcess)->cpuAffinity,
-		Task::ROUND_ROBIN, 0,
+		Thread::ROUND_ROBIN, 0,
 		SPAWNTHREAD_FLAGS_AFFINITY_SET
 		| SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
 		| SPAWNTHREAD_FLAGS_FIRST_THREAD,

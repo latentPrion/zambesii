@@ -48,7 +48,7 @@ void ZkcmTimerDevice::unlatch(void)
 	currCpu = cpuTrib.getCurrentCpuStream();
 
 	// This condition needs to check the floodplain binding.
-	if (currCpu->taskStream.getCurrentTask()->parent->id
+	if (currCpu->taskStream.getCurrentThread()->parent->id
 		== state.rsrc.latchedStream->id)
 	{
 		state.lock.acquire();
@@ -81,13 +81,13 @@ sarch_t ZkcmTimerDevice::getLatchState(class FloodplainnStream **latchedStream)
 sarch_t ZkcmTimerDevice::validateCallerIsLatched(void)
 {
 	FloodplainnStream	*stream;
-	Task			*currTask;
+	Thread			*currThread;
 
-	currTask = cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentTask();
+	currThread = cpuTrib.getCurrentCpuStream()
+		->taskStream.getCurrentThread();
 
 	// Replace with floodplain binding check.
-	if (getLatchState(&stream) && (stream->id == currTask->parent->id)) {
+	if (getLatchState(&stream) && (stream->id == currThread->parent->id)) {
 		return 1;
 	} else {
 		return 0;

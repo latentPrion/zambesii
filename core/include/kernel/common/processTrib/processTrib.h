@@ -83,7 +83,7 @@ public:
 public:
 	ContainerProcess *__kgetStream(void) { return &__kprocess; };
 	ProcessStream *getStream(processId_t id);
-	inline Task *getThread(processId_t tid);
+	inline Thread *getThread(processId_t tid);
 
 	/**	EXPLANATION:
 	 * Distributaries are by nature high privilege processes with high
@@ -211,13 +211,13 @@ extern ProcessTrib	processTrib;
 /**	Inline Methods
  *****************************************************************************/
 
-Task *ProcessTrib::getThread(processId_t tid)
+Thread *ProcessTrib::getThread(processId_t tid)
 {
 	ProcessStream		*proc;
 
 	proc = getStream(tid);
 	if (proc == NULL) { return NULL; };
-	return proc->getTask(tid);
+	return proc->getThread(tid);
 }
 
 #endif

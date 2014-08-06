@@ -27,14 +27,14 @@ void ZkcmCore::newCpuIdNotification(cpu_t newCpuId)
 {
 	void		**newArray, **oldArray;
 
-	__kcpuPowerOnSleepStacksLock.acquire();
+	__kcpuPowerStacksLock.acquire();
 	// If the current array is already large enough, exit.
-	if (__kcpuPowerOnSleepStacksLength >= (unsigned)newCpuId + 1)
+	if (__kcpuPowerStacksLength >= (unsigned)newCpuId + 1)
 	{
-		__kcpuPowerOnSleepStacksLock.release();
+		__kcpuPowerStacksLock.release();
 		return;
 	};
-	__kcpuPowerOnSleepStacksLock.release();
+	__kcpuPowerStacksLock.release();
 
 	// Re-size the sleepstack array.
 	newArray = new void*[newCpuId + 1];
@@ -44,20 +44,20 @@ void ZkcmCore::newCpuIdNotification(cpu_t newCpuId)
 			"allocate sleepstack pointer array.\n");
 	};
 
-	__kcpuPowerOnSleepStacksLock.acquire();
+	__kcpuPowerStacksLock.acquire();
 
-	if (__kcpuPowerOnSleepStacksLength > 0)
+	if (__kcpuPowerStacksLength > 0)
 	{
 		memcpy(
-			newArray, __kcpuPowerOnSleepStacks,
-			__kcpuPowerOnSleepStacksLength * sizeof(void *));
+			newArray, __kcpuPowerStacks,
+			__kcpuPowerStacksLength * sizeof(void *));
 	};
 
-	oldArray = __kcpuPowerOnSleepStacks;
-	__kcpuPowerOnSleepStacks = newArray;
-	__kcpuPowerOnSleepStacksLength = newCpuId + 1;
+	oldArray = __kcpuPowerStacks;
+	__kcpuPowerStacks = newArray;
+	__kcpuPowerStacksLength = newCpuId + 1;
 
-	__kcpuPowerOnSleepStacksLock.release();
+	__kcpuPowerStacksLock.release();
 
 	delete oldArray;
 }

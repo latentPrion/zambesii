@@ -43,12 +43,12 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 	zuiServer::loadDriverRequirementsReq(
 		new MainCb(&main1, self, callerCb));
 
-	for (;;)
+	for (;FOREVER;)
 	{
 		MessageStream::sHeader		*iMsg;
 		Callback			*callback;
 
-		self->getTaskContext()->messageStream.pull(&iMsg);
+		self->messageStream.pull(&iMsg);
 		callback = (Callback *)iMsg->privateData;
 
 		switch (iMsg->subsystem)
@@ -200,7 +200,7 @@ void __klzbzcore::driver::localService::handler(
 	{
 	case REGION_INIT_SYNC_REQ:
 		// Just a force-sync operation.
-		self->getTaskContext()->messageStream.postMessage(
+		self->messageStream.postMessage(
 			iMsg->sourceId, 0, REGION_INIT_SYNC_REQ,
 			iMsg->privateData);
 
@@ -219,7 +219,7 @@ void __klzbzcore::driver::localService::handler(
 			(utf8Char *)iMsg->privateData)
 			== ERROR_SUCCESS);
 
-		self->getTaskContext()->messageStream.postMessage(
+		self->messageStream.postMessage(
 			iMsg->sourceId,
 			0, GET_THREAD_DEVICE_PATH_REQ,
 			NULL);
@@ -443,7 +443,7 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 	error_t				err;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentTask();
+		->taskStream.getCurrentThread();
 
 	drv = self->parent->getDriverInstance()->driver;
 	err = floodplainn.getDevice(ctxt->path, &dev);
@@ -475,7 +475,7 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 		// We pass the context to each thread.
 		err = self->parent->spawnThread(
 			&::__klzbzcore::region::main, ctxt,
-			NULL, (Task::schedPolicyE)0, 0,
+			NULL, (Thread::schedPolicyE)0, 0,
 			0, &newThread);
 
 		if (err != ERROR_SUCCESS)

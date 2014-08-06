@@ -167,7 +167,7 @@ static ProcessStream *getTargetProcess(TimerStream::sTimerMsg *request)
 void TimerQueue::tick(sZkcmTimerEvent *event)
 {
 	TimerStream::sTimerMsg	*request;
-	void			*targetObject=NULL;
+	Thread			*targetThread=NULL;
 	ProcessStream		*targetProcess, *creatorProcess;
 	sarch_t			requestQueueWasEmpty=1;
 
@@ -224,7 +224,7 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 			 * Can also occur if the target is a CPU and that CPU
 			 * was hotplug removed before the request expired.
 			 **/
-			targetObject = targetProcess->timerStream
+			targetThread = targetProcess->timerStream
 				.timerRequestTimeoutNotification(
 					request, &event->irqStamp);
 		}
@@ -262,14 +262,8 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 				.timerRequestTimeoutNotification();
 		};
 
-		if (targetProcess != NULL && targetObject != NULL)
-		{
-			// Unblock the target thread/CPU.
-			if (isPerCpuTarget(request)) {
-				taskTrib.unblock((CpuStream *)targetObject);
-			} else {
-				taskTrib.unblock((Thread *)targetObject);
-			};
+		if (targetProcess != NULL && targetThread != NULL) {
+			taskTrib.unblock(targetThread);
 		};
 
 		delete request;

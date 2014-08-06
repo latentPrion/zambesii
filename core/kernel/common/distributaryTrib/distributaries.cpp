@@ -24,7 +24,7 @@ static void cisternnEntry(void)
 	Thread		*self;
 
 	self = static_cast<Thread *>(
-		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask() );
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread() );
 
 	printf(NOTICE"Cisternn executing; process ID: 0x%x. ESP: 0x%p. "
 		"Killing.\n",

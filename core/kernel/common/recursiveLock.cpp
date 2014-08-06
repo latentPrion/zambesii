@@ -19,14 +19,14 @@
 
 void RecursiveLock::acquire(void)
 {
-	TaskContext	*taskContext;
+	Thread		*thread;
 
-	taskContext = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentTaskContext();
+	thread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
 
 #if __SCALING__ >= SCALING_SMP
 
-	for (;;)
+	for (;FOREVER;)
 	{
 #endif
 		taskId.lock.acquire();
@@ -34,8 +34,7 @@ void RecursiveLock::acquire(void)
 #if __SCALING__ >= SCALING_SMP
 		if (taskId.rsrc == PROCID_INVALID)
 		{
-			taskId.rsrc = cpuTrib.getCurrentCpuStream()->taskStream
-				.getCurrentTaskId();
+			taskId.rsrc = thread->getFullId();
 
 			/* Check the flags on the waitlock which guards
 			 * this critical section to know whether or not
@@ -51,18 +50,17 @@ void RecursiveLock::acquire(void)
 					flags,
 					LOCK_FLAGS_IRQS_WERE_ENABLED);
 			};
-				
+
 			// Release the taskId lock as soon as you can.
 			taskId.lock.releaseNoIrqs();
 
-			taskContext->nLocksHeld++;
+			thread->nLocksHeld++;
 			lock++;
 #if __SCALING__ >= SCALING_SMP
 			return;
 		}
 		// If the current task already holds the lock:
-		else if (taskId.rsrc == cpuTrib.getCurrentCpuStream()
-			->taskStream.getCurrentTaskId())
+		else if (taskId.rsrc == thread->getFullId())
 		{
 			taskId.lock.releaseNoIrqs();
 			lock++;
@@ -114,7 +112,7 @@ void RecursiveLock::release(void)
 
 		// Decrement nLocksHeld:
 		cpuTrib.getCurrentCpuStream()->taskStream
-			.getCurrentTaskContext()->nLocksHeld--;
+			.getCurrentThread()->nLocksHeld--;
 	};
 }
 

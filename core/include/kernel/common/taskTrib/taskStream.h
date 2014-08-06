@@ -16,6 +16,7 @@
 #define TASK_SCHEDULE_TRY_AGAIN		0x1
 
 class CpuStream;
+
 class TaskStream
 :
 public Stream
@@ -46,39 +47,34 @@ public:
 	void updateLoad(ubit8 action, ubit32 val);
 	void updateCapacity(ubit8 action, ubit32 val);
 
-	Task *getCurrentTask(void) { return currentTask; }
-	PerCpuThread *getCurrentPerCpuTask(void) { return currentPerCpuThread; }
-	TaskContext *getCurrentTaskContext(void);
-	processId_t getCurrentTaskId(void);
+	Thread *getCurrentThread(void) { return currentThread; }
 
-	error_t schedule(Task* task);
+	error_t schedule(Thread *thread);
 
-	void yield(Task *task);
-	error_t wake(Task *task);
-	void dormant(Task *task);
-	void block(Task *task);
-	error_t unblock(Task *task);
+	void yield(Thread *thread);
+	error_t wake(Thread *thread);
+	void dormant(Thread *thread);
+	void block(Thread *thread);
+	error_t unblock(Thread *thread);
 	/**	Unimplemented.
-	 * void kill(Task *task);
+	 * void kill(Thread *thread);
 	 **/
 
 	void dump(void);
 
 private:
-	Task *pullRealTimeQ(void);
-	Task *pullRoundRobinQ(void);
+	Thread *pullFromQ(utf8Char *queueName);
 
 public:
 	ubit32		load;
 	ubit32		capacity;
 
 private:
-	Task		*currentTask;
-	PerCpuThread	*currentPerCpuThread;
+	Thread		*currentThread;
 
 public:
 	// Three queues on each CPU: rr, rt and sleep.
-	PrioQueue<Task>		roundRobinQ, realTimeQ;
+	PrioQueue<Thread>	roundRobinQ, realTimeQ;
 	CpuStream		*parentCpu;
 };
 
