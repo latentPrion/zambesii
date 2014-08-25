@@ -27,7 +27,7 @@ public:
 	// Sets up arch-specific exception handling and masks off ALL IRQ pins.
 	error_t initializeExceptions(void);
 	// Initializes the ZKCM IRQ Control mod, bus-pin mappings and IRQs.
-	error_t initializeIrqManagement(void);
+	error_t initializeIrqs(void);
 	~InterruptTrib(void) {};
 
 public:
@@ -111,8 +111,8 @@ public:
 
 private:
 	// These two are architecture specific.
-	void installHardwareVectorTable(void);
-	void installExceptions(void);
+	void installVectorRoutines(void);
+	void installExceptionRoutines(void);
 
 private:
 	struct sIsrDescriptor
@@ -173,7 +173,7 @@ private:
 		 * Each vector may have either one exception, a list of IRQ
 		 * handlers (ISRs) or an SWI handler. These are all mutually
 		 * exclusive.
-		 * 
+		 *
 		 * Exceptions may only be installed on a vector by the kernel
 		 * itself. Userspace and drivers may not install exceptions on
 		 * an interrupt vector.

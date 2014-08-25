@@ -122,6 +122,7 @@ namespace ipc
 }
 
 class MessageStream
+: public Stream<Thread>
 {
 public:
 	// Common header contained within all messages.
@@ -144,8 +145,7 @@ public:
 
 public:
 	MessageStream(Thread *parent)
-	:
-	parent(parent)
+	: Stream<Thread>(parent, 0)
 	{}
 
 	error_t initialize(void)
@@ -211,7 +211,6 @@ private:
 	 * new message.
 	 **/
 	Bitmap			pendingSubsystems;
-	Thread			*parent;
 };
 
 #define DONT_SEND_RESPONSE		((void *)NULL)

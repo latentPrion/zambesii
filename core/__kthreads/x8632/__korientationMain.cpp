@@ -166,34 +166,33 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 	 * C++ global constructors.
 	 **/
 	__koptimizationHacks();
+	bspCpu.initializeBaseState();
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
-	DO_OR_DIE(bspCpu, initializeBspCpuLocking(), ret);
 	cxxrtl::callGlobalConstructors();
-	bspCpu.powerManager.setPowerStatus(CpuStream::PowerManager::C0);
 
-	/* Initialize exception handling, then do chipset-wide early init.
-	 * Finally, initialize the irqControl mod, and mask all IRQs off to
-	 * place the chipset into a stable state.
+	/* Initialize exceptions, then move on to __kspace level physical
+	 * memory management, then the kernel Memory Stream. Then when we have
+	 * MM up, we initialize the debug pipe.
 	 **/
 	DO_OR_DIE(interruptTrib, initializeExceptions(), ret);
-	DO_OR_DIE(zkcmCore, initialize(), ret);
+	DO_OR_DIE(memoryTrib, initialize(), ret);
+	DO_OR_DIE(memoryTrib, __kspaceInitialize(), ret);
 
-	/* Initialize the kernel debug pipe for boot logging, etc.
-	 **/
 	DO_OR_DIE(__kdebug, initialize(), ret);
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
 	if (!FLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
 		printf(WARNING ORIENT"No debug buffer allocated.\n");
+	}
+	else
+	{
+		printf(NOTICE ORIENT"Kernel debug output tied to devices "
+			"BUFFER and DEVICE1.\n");
 	};
 
-	// __kdebug.refresh();
-	printf(NOTICE ORIENT"Kernel debug output tied to devices BUFFER and "
-		"DEVICE1.\n");
-
-	/* Initialize IRQs.
-	 **/
-	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
-	zkcmCore.irqControl.maskAll();
+	DO_OR_DIE((*__kprocess.getVaddrSpaceStream()), initialize(), ret);
+	DO_OR_DIE(__kprocess.memoryStream, initialize(), ret);
+	DO_OR_DIE(memReservoir, initialize(), ret);
+	DO_OR_DIE(cachePool, initialize(), ret);
 
 	DO_OR_DIE(processTrib, initialize(), ret);
 	DO_OR_DIE(
@@ -204,20 +203,32 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 			NULL),
 		ret);
 
-	/* Initialize __kspace level physical memory management, then the
-	 * kernel Memory Stream.
+memoryTrib.dump();
+
+	/* The next block is dedicated to initializing the core of the
+	 * microkernel. Scheduling, Message passing, Processes and Threads.
 	 **/
-	DO_OR_DIE(memoryTrib, initialize(), ret);
-	DO_OR_DIE(memoryTrib, __kspaceInitialize(), ret);
-	DO_OR_DIE(processTrib.__kgetStream()->memoryStream, initialize(), ret);
+
+	/* Finally, the last block in this sequence is dedicated to IRQs before
+	 * we branch off to working on the hardware abstraction subsystems.
+	 **/
+	DO_OR_DIE(zkcmCore, initialize(), ret);
+
+	/* Initialize the kernel debug pipe for boot logging, etc.
+	 **/
+
+	/* Initialize IRQs.
+	 **/
+	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
+	zkcmCore.irqControl.maskAll();
+
+
 	zkcmCore.irqControl.chipsetEventNotification(
 		IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL, 0);
 
 	/* Initialize the kernel Memory Reservoir (heap) and object cache pool.
 	 * Create the global asyncContext object cache.
 	 **/
-	DO_OR_DIE(memReservoir, initialize(), ret);
-	DO_OR_DIE(cachePool, initialize(), ret);
 	__kcallbackCache = cachePool.createCache(sizeof(__kCallback));
 	if (__kcallbackCache == NULL)
 	{
@@ -234,7 +245,9 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 	DO_OR_DIE(__kprocess.zasyncStream, initialize(), ret);
 	DO_OR_DIE(cpuTrib, initialize(), ret);
 	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
+asm volatile("hlt\n\t");
 	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
+
 
 	/* Spawn the new thread for __korientationMain. There is no need to
 	 * unschedule __korientationInit() because it will never be scheduled.
@@ -379,7 +392,7 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	 * then load the chipset's bus-pin mappings and initialize timer
 	 * services.
 	 **/
-	DO_OR_DIE(interruptTrib, initializeIrqManagement(), ret);
+	DO_OR_DIE(interruptTrib, initializeIrqs(), ret);
 	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);

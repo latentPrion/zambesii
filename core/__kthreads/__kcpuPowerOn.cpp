@@ -22,15 +22,8 @@ uarch_t		__kcpuPowerStacksLength=0;
 void		**__kcpuPowerStacks=0;
 ubit8		*__kcpuPowerOnLapicVaddr=0;
 
-/**	EXPLANATION:
- * Under here is the __kcpuPowerOn thread's actual thread structure, as
- * a recognizible entity by the scheduler.
- *
- * This is what the waking CPU's stream will point to as its "currentTask". Its
- * members are initialized by the CPU Tributary before any CPUs are awakened in
- * CpuTrib::initialize2().
- **/
-Thread	__kcpuPowerOnThread(0x0, processTrib.__kgetStream(), NULL);
+void __kcpuPowerOnMain(CpuStream *self);
+
 // Part of __koptimizationHacks.cpp.
 void (*__kcpuPowerOnInit(void))()
 {

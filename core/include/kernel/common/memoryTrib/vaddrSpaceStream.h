@@ -12,7 +12,7 @@
  * Management. It 'monitors' the virtual address space therefore, of its
  * associated process.
  *
- * Each process's vaddrSpaceStream provides virtual address caching, 
+ * Each process's vaddrSpaceStream provides virtual address caching,
  * and address space managment. The Virtual Address Space management is
  * provided by means of a helper class. The helper class is actually an
  * allocator for virtual addresses: it keeps a list of free virtual
@@ -32,15 +32,14 @@ class ContainerProcess;
 
 class VaddrSpaceStream
 :
-public Stream
+public Stream<ContainerProcess>
 {
 public:
 	// This constructor must be used to initialize userspace streams.
 	VaddrSpaceStream(
 		uarch_t id, ContainerProcess *parent,
 		void *swampStart, uarch_t swampSize)
-	:
-	Stream(id), parent(parent),
+	: Stream<ContainerProcess>(parent, id),
 	vSwamp(swampStart, swampSize)
 	{}
 
@@ -52,12 +51,11 @@ public:
 	void releasePages(void *vaddr, uarch_t nPages);
 
 public:
-	void cut(void);
-	error_t bind(void);
+	virtual error_t bind(void);
+	virtual void cut(void);
 	void dump(void);
 
 public:
-	ContainerProcess	*parent;
 	VaddrSpace		vaddrSpace;
 	StackCache<void *>	pageCache;
 	VSwamp			vSwamp;

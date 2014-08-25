@@ -414,10 +414,10 @@ error_t ProcessTrib::spawnDriver(
 	error_t				ret;
 	processId_t			newProcessId;
 	Thread				*parentThread, *firstThread;
-	fplainn::Device		*dev;
-	fplainn::Driver		*drv;
-	fplainn::DriverInstance	*drvInstance;
-	HeapObj<DriverProcess>	newProcess;
+	fplainn::Device			*dev;
+	fplainn::Driver			*drv;
+	fplainn::DriverInstance		*drvInstance;
+	HeapObj<DriverProcess>		newProcess;
 
 	if (commandLine == NULL || retProcess == NULL)
 		{ return ERROR_INVALID_ARG; };

@@ -25,7 +25,7 @@ void MemoryStream::cut(void)
 
 void MemoryStream::dump(void)
 {
-	printf(NOTICE MEMORYSTREAM"%d: Dumping.\n", id);
+	printf(NOTICE MEMORYSTREAM"0x%x: Dumping.\n", id);
 }
 
 void *MemoryStream::memAlloc(uarch_t nPages, uarch_t flags)
@@ -213,6 +213,6 @@ void MemoryStream::memFree(void *vaddr)
 	// Free the virtual memory.
 	parent->getVaddrSpaceStream()->releasePages(vaddr, nPages);
 	// Remove the entry from the process's Alloc Table.
-	allocTable.removeEntry(vaddr);	
+	allocTable.removeEntry(vaddr);
 }
 

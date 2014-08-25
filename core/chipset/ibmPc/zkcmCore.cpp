@@ -40,7 +40,7 @@ void ZkcmCore::newCpuIdNotification(cpu_t newCpuId)
 	newArray = new void*[newCpuId + 1];
 	if (newArray == NULL)
 	{
-		panic(FATAL"zkcmCore::highestCpuIdNotification: Failed to "
+		panic(FATAL"zkcmCore::newCpuIdNotification: Failed to "
 			"allocate sleepstack pointer array.\n");
 	};
 

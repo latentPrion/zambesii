@@ -66,6 +66,7 @@ private:
 
 	Heap			__kheap;
 	MemoryStream		*sourceStream;
+
 	SharedResourceGroup<MultipleReaderLock, sBogState>	heaps;
 };
 

@@ -237,6 +237,6 @@ void acpiRsdt::destroySdt(acpi::sSdt *sdt)
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		(void *)((uintptr_t)sdt & PAGING_BASE_MASK_HIGH),
 		nPages);
-if (!FLAG_TEST(cpuTrib.getCurrentCpuStream()->flags, CPUSTREAM_FLAGS_BSP)) {printf(NOTICE"Destroying SDT @v 0x%p on CPU %d.\n", sdt, cpuTrib.getCurrentCpuStream()->cpuId);};
+if (!cpuTrib.getCurrentCpuStream()->isBspCpu()) {printf(NOTICE"Destroying SDT @v 0x%p on CPU %d.\n", sdt, cpuTrib.getCurrentCpuStream()->cpuId);};
 }
 

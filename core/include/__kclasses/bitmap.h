@@ -52,9 +52,6 @@ public:
 		vaddr(ptr), size(size)
 		{}
 
-		sPreallocatedMemory operator =(int)
-			{ return *this; }
-
 		void		*vaddr;
 		ubit16		size;
 	};
@@ -62,7 +59,8 @@ public:
 	Bitmap(void);
 
 	error_t initialize(
-		ubit32 nBits, sPreallocatedMemory preallocatedMemory=0);
+		ubit32 nBits,
+		sPreallocatedMemory preallocatedMemory=sPreallocatedMemory(NULL, 0));
 
 	~Bitmap(void);
 

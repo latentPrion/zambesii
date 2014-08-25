@@ -23,14 +23,13 @@ class Thread;
 
 class TimerStream
 :
-public Stream
+public Stream<ProcessStream>
 {
 friend class TimerTrib;
 friend class TimerQueue;
 public:
 	TimerStream(processId_t id, ProcessStream *parent)
-	:
-	Stream(id), parent(parent)
+	: Stream<ProcessStream>(parent, id)
 	{}
 
 	error_t initialize(void);
@@ -137,7 +136,6 @@ private:
 	 * being expired.
 	 **/
 	WaitLock					requestQueueLock;
-	ProcessStream					*parent;
 };
 
 #endif

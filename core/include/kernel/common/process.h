@@ -5,6 +5,8 @@
 	#include <arch/memory.h>
 	#include <chipset/chipset.h>
 	#include <chipset/memory.h>
+	#include <platform/pageTables.h>
+	#include <platform/memory.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
 	#include <__kclasses/bitmap.h>
@@ -102,8 +104,7 @@ public:
 		if (id == __KPROCESSID)
 		{
 			FLAG_SET(flags, PROCESS_FLAGS___KPROCESS);
-			nThreads = 1;
-			threads[0] = &__korientationThread;
+			nThreads = 0;
 			defaultMemoryBank.rsrc =
 				CHIPSET_NUMA___KSPACE_BANKID;
 		};
@@ -254,8 +255,23 @@ public:
 			commandLine, environment, affinity);
 
 		if (ret != ERROR_SUCCESS) { return ret; };
-		return vaddrSpaceStream.initialize();
-	}
+
+		/*	EXPLANATION:
+		 * The kernel process' MemoryStream and VaddrSpaceStream objects
+		 * are initialized directly within __korientation.
+		 *
+		 * If we re-initialize() them, we will overwrite vital MM
+		 * metadata, thereby causing trampling later on as the kernel
+		 * executes.
+		 **/
+		if (id != __KPROCESSID)
+		{
+			ret = vaddrSpaceStream.initialize();
+			if (ret != ERROR_SUCCESS) { return ret; };
+		};
+
+		return ERROR_SUCCESS;
+ 	}
 
 	~ContainerProcess(void) {}
 

@@ -22,7 +22,6 @@
 
 #define CPUSTREAM_FLAGS_INITIALIZED	(1<<0)
 #define CPUSTREAM_FLAGS_ENUMERATED	(1<<1)
-#define CPUSTREAM_FLAGS_BSP		(1<<2)
 
 #define CPUSTREAM_POWER_ON		0x0
 #define CPUSTREAM_POWER_CHECK		0x1
@@ -48,17 +47,15 @@ class CpuStream
 friend class ProcessStream;
 public:
 #if __SCALING__ >= SCALING_CC_NUMA
-	CpuStream(numaBankId_t bid, cpu_t id, ubit32 acpiId);
+	CpuStream(numaBankId_t bid, cpu_t id, ubit32 acpiId, bspPlugTypeE bpt);
 #else
-	CpuStream(cpu_t id, ubit32 cpuAcpiId);
+	CpuStream(cpu_t id, ubit32 cpuAcpiId, bspPlugTypeE bpt);
 #endif
 
-	void baseInit(void);
+	void initializeBaseState(void);
+	void initializeExceptions(void);
 	error_t initialize(void);
-	sarch_t isInitialized(void);
 	~CpuStream(void);
-
-	error_t initializeBspCpuLocking(void);
 
 	error_t bind(void);
 	void cut(void);
@@ -66,9 +63,13 @@ public:
 public:
 	status_t enumerate(void);
 	sCpuFeatures *getCpuFeatureBlock(void);
+	ubit8 isBspCpu(void) { return bspPlugType > BSP_PLUGTYPE_NOTBSP; }
+	ubit8 isBspFirstPlug(void)
+		{ return bspPlugType == BSP_PLUGTYPE_FIRSTPLUG; }
 
 public:
 	class PowerManager
+	: public Stream<CpuStream>
 	{
 	public:
 		enum powerStatusE {
@@ -77,10 +78,16 @@ public:
 			GOING_TO_SLEEP, WAKING,
 			FAILED_BOOT };
 
-		PowerManager(CpuStream *parentStream)
-		:
-		parent(parentStream)
-			{ powerStatus.rsrc = OFF; }
+		PowerManager(CpuStream *parentStream, bspPlugTypeE bspPlugType)
+		: Stream<CpuStream>(parentStream, parentStream->cpuId),
+		bspPlugType(bspPlugType)
+		{
+			if (bspPlugType == BSP_PLUGTYPE_FIRSTPLUG) {
+				powerStatus.rsrc = C0;
+			} else {
+				powerStatus.rsrc = OFF;
+			};
+		}
 
 		~PowerManager(void)
 			{ powerStatus.rsrc = OFF; }
@@ -112,15 +119,15 @@ public:
 		void bootWaitForCpuToPowerOn(void);
 
 	private:
+		bspPlugTypeE		bspPlugType;
 		SharedResourceGroup<MultipleReaderLock, powerStatusE>
 			powerStatus;
-
-		CpuStream	*parent;
 	};
 
 private:
 #if __SCALING__ >= SCALING_SMP
 	class InterCpuMessager
+	: public Stream<CpuStream>
 	{
 	private: struct sMessage;
 	public:
@@ -171,10 +178,9 @@ private:
 			volatile uarch_t		val2;
 			volatile uarch_t		val3;
 		};
-		List<sMessage>		messageQueue;
-		SlamCache			*cache;
-		SharedResourceGroup<WaitLock, statusE> statusFlag;
-		CpuStream	*parent;
+		List<sMessage>				messageQueue;
+		SlamCache				*cache;
+		SharedResourceGroup<WaitLock, statusE>	statusFlag;
 	};
 #endif
 
@@ -184,6 +190,8 @@ public:
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaBankId_t		bankId;
 #endif
+	bspPlugTypeE		bspPlugType;
+
 	sCpuFeatures		cpuFeatures;
 	// Per CPU scheduler.
 	TaskStream		taskStream;
@@ -191,10 +199,6 @@ public:
 	ubit32			flags;
 	// Small stack used for scheduler task switching.
 	ubit8			schedStack[PAGING_BASE_SIZE / 2];
-	// Stack for the CPU's power thread.
-	ubit8			powerStack[
-		PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES];
-
 	PowerManager		powerManager;
 #if __SCALING__ >= SCALING_SMP
 	InterCpuMessager	interCpuMessager;
@@ -202,8 +206,6 @@ public:
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
 	class X86Lapic		lapic;
 #endif
-private:
-	Thread			powerThread;
 };
 
 // The hardcoded stream for the BSP CPU.

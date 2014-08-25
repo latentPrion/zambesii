@@ -20,16 +20,14 @@ class ProcessStream;
 
 class ZAsyncStream
 :
-public Stream
+public Stream<ProcessStream>
 {
 public:
 	enum connectReplyE { CONNREPLY_YES, CONNREPLY_NO, CONNREPLY_CLOSED };
 
 	ZAsyncStream(processId_t parentPid, ProcessStream *parent)
-	:
-	Stream(parentPid),
-	handlerTid(PROCID_INVALID),
-	parent(parent)
+	: Stream<ProcessStream>(parent, parentPid),
+	handlerTid(PROCID_INVALID)
 	{}
 
 	error_t initialize(void) { return messages.initialize(); };
@@ -135,8 +133,7 @@ private:
 	};
 
 	SharedResourceGroup<WaitLock, sState>	connections;
-	PtrList<ipc::sDataHeader>	messages;
-	ProcessStream			*parent;
+	PtrList<ipc::sDataHeader>		messages;
 };
 
 #endif

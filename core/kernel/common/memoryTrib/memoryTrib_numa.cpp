@@ -73,14 +73,12 @@ error_t MemoryTrib::__kspaceInitialize(void)
 #if __SCALING__ < SCALING_CC_NUMA
 	defaultMemoryBank.rsrc = CHIPSET_NUMA___KSPACE_BANKID;
 #else
-	__korientationThread.defaultMemoryBank.rsrc =
+	bspCpu.taskStream.getCurrentThread()->defaultMemoryBank.rsrc =
 		CHIPSET_NUMA___KSPACE_BANKID;
 #endif
 
 	// Next give it the pre-allocated __kspace memory bank.
-	ret = createBank(
-		CHIPSET_NUMA___KSPACE_BANKID, &__kspaceMemoryBank);
-
+	ret = createBank(CHIPSET_NUMA___KSPACE_BANKID, &__kspaceMemoryBank);
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};

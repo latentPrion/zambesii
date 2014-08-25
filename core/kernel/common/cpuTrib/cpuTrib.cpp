@@ -674,20 +674,20 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 		cs = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(CpuStream)),
 			MEMALLOC_NO_FAKEMAP))
-				CpuStream(bid, cid, cpuAcpiId);
+				CpuStream(bid, cid, cpuAcpiId, BSP_PLUGTYPE_NOTBSP);
 #else
 		cs = new (processTrib.__kgetStream()->memoryStream.*memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(CpuStream)),
 			MEMALLOC_NO_FAKEMAP))
-				CpuStream(cid, cpuAcpiId);
+				CpuStream(cid, cpuAcpiId, BSP_PLUGTYPE_NOTBSP);
 #endif
 	}
 	else
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new (&bspCpu) CpuStream(bid, cid, cpuAcpiId);
+		cs = new (&bspCpu) CpuStream(bid, cid, cpuAcpiId, BSP_PLUGTYPE_HOTPLUG);
 #else
-		cs = new (&bspCpu) CpuStream(cid, cpuAcpiId);
+		cs = new (&bspCpu) CpuStream(cid, cpuAcpiId, BSP_PLUGTYPE_HOTPLUG);
 #endif
 	};
 
@@ -818,20 +818,6 @@ error_t CpuTrib::__kupdateAffinity(cpu_t cid, ubit8 action)
 	{
 	case CPUTRIB___KUPDATEAFFINITY_ADD:
 		CHECK_AND_RESIZE_BMP(
-			&__korientationThread.cpuAffinity, cid, &ret,
-			"__kupdateAffinity", "__korientation CPU affinity");
-
-		if (ret != ERROR_SUCCESS)
-		{
-			printf(ERROR CPUTRIB"__korientation unable to use "
-				"CPU %d.\n",
-				cid);
-		}
-		else {
-			__korientationThread.cpuAffinity.setSingle(cid);
-		};
-
-		CHECK_AND_RESIZE_BMP(
 			&processTrib.__kgetStream()->cpuAffinity, cid, &ret,
 			"__kupdateAffinity", "__kprocess CPU affinity");
 
@@ -848,7 +834,6 @@ error_t CpuTrib::__kupdateAffinity(cpu_t cid, ubit8 action)
 		return ERROR_SUCCESS;
 
 	case CPUTRIB___KUPDATEAFFINITY_REMOVE:
-		__korientationThread.cpuAffinity.unsetSingle(cid);
 		processTrib.__kgetStream()->cpuAffinity.unsetSingle(cid);
 		return ERROR_SUCCESS;
 

@@ -35,15 +35,17 @@ Thread *ProcessStream::getThread(processId_t id)
 	uarch_t		rwFlags;
 	CpuStream	*cs;
 
-	if (PROCID_PROCESS(id) == CPU_PROCESSID)
+	if (PROCID_PROCESS(id) == PROCID_PROCESS(CPU_PROCESSID))
 	{
+		// First see if by chance it's the current CPU's thread.
 		cs = cpuTrib.getCurrentCpuStream();
 		if ((unsigned)cs->cpuId == PROCID_THREAD(id))
-			{ return &cs->powerThread; };
+			{ return &cs->taskStream.powerThread; };
 
+		// If not, proceed; Was #worth the try. No regrets.
 		cs = cpuTrib.getStream(PROCID_THREAD(id));
 		if (cs == NULL) { return NULL; };
-		return &cs->powerThread;
+		return &cs->taskStream.powerThread;
 	};
 
 	threadLock.readAcquire(&rwFlags);
@@ -108,21 +110,19 @@ error_t ProcessStream::initialize(
 		cpuAffinity.merge(&cpuTrib.onlineCpus);
 	};
 
-	/* Now initialize all the process' streams if it's not the kernel
-	 * process. The kernel process' streams are initialized separately
-	 * as a result of the kernel initialization sequence.
+	/* Now initialize all the process' streams.
 	 **/
-	if (this->id != __KPROCESSID)
+	if (PROCID_PROCESS(id) != PROCID_PROCESS(__KPROCESSID))
 	{
 		ret = memoryStream.initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
-		ret = timerStream.initialize();
-		if (ret != ERROR_SUCCESS) { return ret; };
-		ret = floodplainnStream.initialize();
-		if (ret != ERROR_SUCCESS) { return ret; };
-		ret = zasyncStream.initialize();
-		if (ret != ERROR_SUCCESS) { return ret; };
 	};
+	ret = timerStream.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+	ret = floodplainnStream.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+	ret = zasyncStream.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	return ERROR_SUCCESS;
 }
@@ -637,11 +637,13 @@ error_t ProcessStream::spawnThread(
 	};
 }
 
-Thread *ProcessStream::allocateNewThread(processId_t newThreadId, void *privateData)
+Thread *ProcessStream::allocateNewThread(
+	processId_t newThreadId, void *privateData
+	)
 {
 	Thread		*ret;
 
-	ret = new Thread(newThreadId, this, privateData);
+	ret = new Thread(newThreadId, this, BSP_PLUGTYPE_NOTBSP, privateData);
 	if (ret == NULL) { return NULL; };
 
 	threadLock.writeAcquire();

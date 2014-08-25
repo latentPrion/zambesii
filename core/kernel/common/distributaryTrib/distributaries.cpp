@@ -78,6 +78,8 @@ const dvfs::sDistributaryDescriptor
 #endif
 #ifdef CONFIG_DTRIB_CAURALL
 #endif
+#ifdef CONFIG_DTRIB_WATERMARKK
+#endif
 	&floodplainnIndexer,
 	// Null entry to terminate the array. Do not remove.
 	NULL

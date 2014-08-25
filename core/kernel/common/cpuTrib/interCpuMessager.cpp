@@ -7,8 +7,7 @@
 
 #if __SCALING__ >= SCALING_SMP
 CpuStream::InterCpuMessager::InterCpuMessager(CpuStream *parent)
-:
-parent(parent)
+: Stream<CpuStream>(parent, parent->cpuId)
 {
 	cache = NULL;
 	statusFlag.rsrc = NOT_TAKING_REQUESTS;

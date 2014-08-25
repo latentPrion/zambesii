@@ -5,6 +5,4 @@
 #include <kernel/common/thread.h>
 #include <kernel/common/processTrib/processTrib.h>
 
-
-Thread	__korientationThread(__KPROCESSID, processTrib.__kgetStream(), NULL);
-ubit8	__korientationStack[PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES];
+extern "C" void __korientationInit(ubit32, sMultibootData *);

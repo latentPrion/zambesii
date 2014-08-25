@@ -28,24 +28,37 @@
  * related stream cuts it off from all networking activity, for example.
  **/
 
+template <class ParentType>
 class Stream
 {
 public:
-	explicit Stream(processId_t id)
+	explicit Stream(ParentType *parent, processId_t id)
 	:
-	id(id), streamFlags(0)
+	parent(parent), id(id), flags(0)
 	{
 		binding.rsrc = 0;
 	};
 
 public:
+	virtual ubit8 isBound(void)
+	{
+		ubit8		ret;
+
+		binding.lock.acquire();
+		ret = binding.rsrc;
+		binding.lock.release();
+
+		return ret;
+	}
+
 	virtual error_t bind(void) { return ERROR_SUCCESS; };
 	virtual void cut(void) {};
 
 // jumpList interface.
 public:
+	ParentType	*parent;
 	processId_t	id;
-	ubit32		streamFlags;
+	ubit32		flags;
 
 protected:
 	SharedResourceGroup<WaitLock, ubit8>	binding;

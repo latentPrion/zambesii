@@ -34,7 +34,7 @@ ASM_SECTION(.__korientationText)
 
 ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	/* Load the stack pointer for the Orientation thread. */
-	movl $__korientationStack+(PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES), %esp
+	movl $bspCpuPowerStack+(PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES), %esp
 	/* Clear the CPU flags */
 	pushl $0
 	popfl

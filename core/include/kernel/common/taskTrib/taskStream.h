@@ -18,13 +18,11 @@
 class CpuStream;
 
 class TaskStream
-:
-public Stream
+: public Stream<CpuStream>
 {
 friend class CpuStream;
 public:
-
-	TaskStream(CpuStream *parentCpu);
+	TaskStream(CpuStream *parentCpu, cpu_t cid, bspPlugTypeE bspPlugType);
 
 	/* Allocates internal queues, etc.
 	 *	XXX:
@@ -75,8 +73,13 @@ private:
 public:
 	// Three queues on each CPU: rr, rt and sleep.
 	PrioQueue<Thread>	roundRobinQ, realTimeQ;
-	CpuStream		*parentCpu;
+	bspPlugTypeE		bspPlugType;
+	Thread			powerThread;
+	// Stack for the CPU's power thread.
+	ubit8			powerStack[
+		PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES];
 };
+
 
 #endif
 

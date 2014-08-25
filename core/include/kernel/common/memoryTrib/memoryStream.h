@@ -61,15 +61,14 @@ class Heap;
 
 class MemoryStream
 :
-public Stream
+public Stream<ProcessStream>
 {
 friend class MemoryTrib;
 friend class Heap;
 
 public:
 	MemoryStream(processId_t id, ProcessStream *parent)
-	:
-	Stream(id), parent(parent)
+	: Stream<ProcessStream>(parent, id)
 	{}
 
 	error_t initialize(void)
@@ -99,7 +98,6 @@ public:
 	void dump(void);
 
 private:
-	ProcessStream		*parent;
 	StackCache<void *>	allocCache;
 	AllocTable		allocTable;
 };

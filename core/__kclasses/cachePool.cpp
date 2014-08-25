@@ -185,7 +185,6 @@ SlamCache *CachePool::getCache(uarch_t objSize)
 	return NULL;
 }
 
-#include <__kclasses/memReservoir.h>
 SlamCache *CachePool::createCache(uarch_t objSize)
 {
 	sCachePoolNode	*node;

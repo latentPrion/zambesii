@@ -52,12 +52,12 @@ class ProcessStream;
 
 class FloodplainnStream
 :
-public Stream
+public Stream<ProcessStream>
 {
 public:
 	FloodplainnStream(processId_t id, ProcessStream *parent)
 	:
-	Stream(id), parent(parent)
+	Stream<ProcessStream>(parent, id)
 	{};
 
 	error_t initialize(void) { return ERROR_SUCCESS; }
@@ -70,7 +70,6 @@ private:
 	// error_t zkcmDisconnect(SingleWaiterQueue *queue);
 
 private:
-	ProcessStream		*parent;
 };
 
 #endif

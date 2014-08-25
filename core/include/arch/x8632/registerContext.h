@@ -6,8 +6,6 @@
 	#include <kernel/common/execDomain.h>
 	#include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 
-class Thread;
-
 class RegisterContext
 {
 public:

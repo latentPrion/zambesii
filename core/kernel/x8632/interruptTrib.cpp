@@ -80,7 +80,7 @@ out:
 	// This point should never be reached. Fooey if it is.
 }
 
-void InterruptTrib::installHardwareVectorTable(void)
+void InterruptTrib::installVectorRoutines(void)
 {
 	/* We have a table of vectors. Run through and initialize the IDT with
 	 * each pointer.
@@ -97,15 +97,9 @@ void InterruptTrib::installHardwareVectorTable(void)
 			(reinterpret_cast<uarch_t>( __kvectorTable[i] ) >> 16)
 			& 0xFFFF;
 	};
-
-	/* Hand the now built-up hardware vector table to the hardware. No
-	 * need to do any inline ASM stuff since the symbol x8632IdtPtr is
-	 * a global symbol.
-	 **/
-	asm volatile("lidt	(x8632IdtPtr)\n\t");
 }
 
-void InterruptTrib::installExceptions(void)
+void InterruptTrib::installExceptionRoutines(void)
 {
 	// Register all of the exceptions with the Interrupt Trib.
 	for (uarch_t i=0; i<19; i++) {

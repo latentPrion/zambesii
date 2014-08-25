@@ -20,7 +20,7 @@ static HardwareIdList::sArrayNode	memoryTribMemoryBanksListMem[
 
 MemoryTrib::MemoryTrib(void)
 :
-	nBanks(0)
+nBanks(0)
 {
 	for (uarch_t i=0; i<CHIPSET_MEMORY_NREGIONS; i++)
 	{

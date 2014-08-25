@@ -6,6 +6,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/process.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
@@ -25,19 +26,15 @@ extern "C" void taskStream_pull(RegisterContext *savedContext)
 	currTaskStream->pull();
 }
 
-TaskStream::TaskStream(CpuStream *parent)
-:
-Stream(0),
+TaskStream::TaskStream(CpuStream *parent, cpu_t cid, bspPlugTypeE bspPlugType)
+: Stream<CpuStream>(parent, cid),
 load(0), capacity(0),
+currentThread(&powerThread),
 roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
-parentCpu(parent)
+bspPlugType(bspPlugType),
+powerThread(parent->cpuId, processTrib.__kgetStream(), bspPlugType, NULL)
 {
-	/* Ensure that the BSP CPU's pointer to __korientation isn't trampled
-	 * by the general case constructor.
-	 **/
-	if (!FLAG_TEST(parentCpu->flags, CPUSTREAM_FLAGS_BSP)) {
-		currentThread = &__kcpuPowerOnThread;
-	};
+	memset(powerStack, 0, sizeof(powerStack));
 }
 
 error_t TaskStream::initialize(void)
@@ -47,6 +44,9 @@ error_t TaskStream::initialize(void)
 	ret = realTimeQ.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
+	ret = powerThread.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
 	return roundRobinQ.initialize();
 }
 
@@ -54,7 +54,7 @@ void TaskStream::dump(void)
 {
 	printf(NOTICE TASKSTREAM"%d: load %d, capacity %d, "
 		"currentTask 0x%x(@0x%p): dump.\n",
-		parentCpu->cpuId,
+		parent->cpuId,
 		load, capacity,
 		getCurrentThread()->getFullId(),
 		getCurrentThread());
@@ -89,7 +89,7 @@ error_t TaskStream::cooperativeBind(void)
 		__korientationThread.schedPrio->prio,
 		__korientationThread.schedOptions);*/
 
-	cpuTrib.onlineCpus.setSingle(parentCpu->cpuId);
+	cpuTrib.onlineCpus.setSingle(parent->cpuId);
 	return ERROR_SUCCESS;
 }
 
@@ -108,7 +108,7 @@ status_t TaskStream::schedule(Thread *thread)
 	 **/
 #if __SCALING__ >= SCALING_SMP
 	CHECK_AND_RESIZE_BMP(
-		&thread->parent->cpuTrace, parentCpu->cpuId, &ret,
+		&thread->parent->cpuTrace, parent->cpuId, &ret,
 		"schedule", "cpuTrace");
 
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -117,7 +117,7 @@ status_t TaskStream::schedule(Thread *thread)
 	// TODO: Validate any scheduling parameters that need to be checked.
 
 	thread->runState = Thread::RUNNABLE;
-	thread->currentCpu = parentCpu;
+	thread->currentCpu = parent;
 
 	// Finally, add the task to a queue.
 	switch (thread->schedPolicy)
@@ -140,7 +140,7 @@ status_t TaskStream::schedule(Thread *thread)
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	thread->parent->cpuTrace.setSingle(parentCpu->cpuId);
+	thread->parent->cpuTrace.setSingle(parent->cpuId);
 	// Increment and notify upper layers of new task being scheduled.
 	updateLoad(LOAD_UPDATE_ADD, 1);
 	return ret;
@@ -169,10 +169,10 @@ void TaskStream::pull(void)
 		};
 
 		// Else set the CPU to a low power state.
-		if (/*!FLAG_TEST(parentCpu->flags, CPUSTREAM_FLAGS_BSP)*/ 0)
+		if (/* !parent->isBspCpu() */ 0)
 		{
 			printf(NOTICE TASKSTREAM"%d: Entering C1.\n",
-				parentCpu->cpuId);
+				parent->cpuId);
 		};
 
 		cpuControl::halt();
@@ -195,7 +195,7 @@ void TaskStream::pull(void)
 	newThread->runState = Thread::RUNNING;
 	currentThread = newThread;
 printf(NOTICE TASKSTREAM"%d: Switching to task 0x%x.\n",
-	parentCpu->cpuId, newThread->getFullId());
+	parent->cpuId, newThread->getFullId());
 	loadContextAndJump(newThread->context);
 }
 
@@ -251,7 +251,7 @@ void TaskStream::updateCapacity(ubit8 action, uarch_t val)
 	default: return;
 	};
 
-	ncb = cpuTrib.getBank(parentCpu->bankId);
+	ncb = cpuTrib.getBank(parent->bankId);
 	if (ncb == NULL) { return; };
 
 	ncb->updateCapacity(action, val);
@@ -278,7 +278,7 @@ void TaskStream::updateLoad(ubit8 action, uarch_t val)
 	default: return;
 	};
 
-	ncb = cpuTrib.getBank(parentCpu->bankId);
+	ncb = cpuTrib.getBank(parent->bankId);
 	if (ncb == NULL) { return; };
 
 	ncb->updateLoad(action, val);

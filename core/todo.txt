@@ -60,7 +60,7 @@ __kcallbacks: Designed and implemented. Integrating.
 			__kCallback(void(*)(...));
 		};
 
-Eliminating per-cpu threads:
+Eliminating per-cpu threads: Halfway done.
 	We should give each CPU its own power thread of sorts. This is the
 	thread it executes in while waking up, and which it uses for
 	power events. This thread also leads it to the scheduler's pull()
@@ -106,6 +106,38 @@ Eliminating per-cpu threads:
 
 	Since this is the next thing we'll be fixing, I'd recommend you give it
 	some deep thought.
+
+Kernel startup sequence:
+	I want to transform the kernel into essentially a micro-biased-hybrid
+	kernel. Maybe, a hybrid microkernel. Something along those lines. I'm
+	sincerely considering making a deep-seated messaging infrastructure, and
+	making everything message passed.
+
+	In such a design, one would have to change the way the kernel puts out
+	its dependencies. For a hybrid kernel, you should aim to satisfy dependencies
+	in this order:
+
+		Base kernel environment.
+		Language environment.
+		Memory Management (which should not use message passing.)
+		Scheduling.
+		Processes.
+		Threads.
+		Message queues.
+		<Everything else>
+
+	We will be aiming to force the kernel to follow this format over the
+	next few patches.
+
+	Essentially, this will mean that we will have to force
+	certain subsystems to refrain from using demand paging? Or, maybe not.
+	The MM will never page fault, and everything else is initialized after
+	it.
+
+	I'm sure we'll find a workaround anywaty.
+
+BSP Plug status:
+	* Make it a global status variable and not a per-cpu state.
 
 Kernel-server thread IPC/ITC mechanism:
 

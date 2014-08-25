@@ -15,40 +15,41 @@
 
 // We make a global CpuStream for the bspCpu.
 #if __SCALING__ >= SCALING_CC_NUMA
-CpuStream		bspCpu(NUMABANKID_INVALID, CPUID_INVALID, 0);
+CpuStream		bspCpu(
+	NUMABANKID_INVALID, CPUID_INVALID, 0, BSP_PLUGTYPE_FIRSTPLUG);
 #elif __SCALING__ == SCALING_SMP
-CpuStream		bspCpu(CPUID_INVALID, 0);
+CpuStream		bspCpu(CPUID_INVALID, 0, BSP_PLUGTYPE_FIRSTPLUG);
 #else
-CpuStream		bspCpu(0, 0);
+// Not sure which constructor this is supposed to be calling.
+CpuStream		bspCpu(0, 0, BSP_PLUGTYPE_FIRSTPLUG);
 #endif
 
-extern "C" ubit8	*const bspCpuPowerStack = bspCpu.powerStack;
+extern "C" ubit8	*const bspCpuPowerStack = bspCpu.taskStream.powerStack;
 
 /**	NOTE:
  * A lot of preprocessing in here: It looks quite ugly I suppose.
  **/
+CpuStream::CpuStream(
 #if __SCALING__ >= SCALING_CC_NUMA
-CpuStream::CpuStream(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
-#else
-CpuStream::CpuStream(cpu_t cid, ubit32 acpiId)
+	numaBankId_t bid,
 #endif
+	cpu_t cid, ubit32 acpiId, bspPlugTypeE bpt
+	)
 :
 cpuId(cid), cpuAcpiId(acpiId),
 #if __SCALING__ >= SCALING_CC_NUMA
 bankId(bid),
 #endif
-taskStream(this), flags(0),
-powerManager(this),
+bspPlugType(bpt),
+taskStream(this, cid, bpt), flags(0),
+powerManager(this, bpt),
 #if __SCALING__ >= SCALING_SMP
 interCpuMessager(this),
 #endif
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
-lapic(this),
+lapic(this)
 #endif
-powerThread(cpuId, processTrib.__kgetStream(), NULL)
 {
-	if (this == &bspCpu) { FLAG_SET(flags, CPUSTREAM_FLAGS_BSP); };
-
 	/* We don't need to acquire the __kcpuPowerStacksLock lock before
 	 * editing this CPU's index in the array, because a race condition can
 	 * never occur here. No other writer will ever write to any other CPU's
@@ -56,18 +57,18 @@ powerThread(cpuId, processTrib.__kgetStream(), NULL)
 	 * array is always serial in nature.
 	 *
 	 *	FIXME:
-	 * Notice that we do not allow the BSP CPU to set its index in the
-	 * sleepstacks array. When writing power management, if it becomes
+	 * Notice that we do not allow the BSP CPU to set its index on its first
+	 * "plug". When writing power management, if it becomes
 	 * necessary for the BSP CPU to know its sleepstack location, we may
 	 * need to change this behaviour, or else just explicitly set the
 	 * BSP CPU's sleep stack in the power management code.
 	 **/
-	if (!FLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
+	if (!isBspFirstPlug())
 	{
-		__kcpuPowerStacks[cpuId] = &powerStack[
-			sizeof(powerStack) - sizeof(void *)];
+		__kcpuPowerStacks[cpuId] = &taskStream.powerStack[
+			sizeof(taskStream.powerStack) - sizeof(void *)];
 
-		/* Push the CPU Stream address to the sleep stack so the waking
+		/* Push the CPU Stream address to the power stack so the waking
 		 * CPU can obtain it as if it was passed as an argument to
 		 * __kcpuPowerOnMain.
 		 **/
@@ -76,35 +77,9 @@ powerThread(cpuId, processTrib.__kgetStream(), NULL)
 	};
 }
 
-error_t CpuStream::initializeBspCpuLocking(void)
-{
-	/**	EXPLANATION:
-	 * This gets called before global constructors get called. In here we
-	 * set the CPUSTREAM_FLAGS_BSP flag on the BSP CPU Stream so that when
-	 * its constructor is executed it doesn't trample itself.
-	 **/
-	__korientationThread.nLocksHeld = 0;
-	__korientationThread.parent = processTrib.__kgetStream();
-	// Init cpuConfig and numaConfig BMPs later.
-	__korientationThread.defaultMemoryBank.rsrc =
-		CHIPSET_NUMA___KSPACE_BANKID;
-
-	// Let the CPU know that it is the BSP.
-	FLAG_SET(flags, CPUSTREAM_FLAGS_BSP);
-	// Set the BSP's currentTask to __korientation.
-	taskStream.currentThread = &__korientationThread;
-
-	baseInit();
-
-	return ERROR_SUCCESS;
-}
-
 error_t CpuStream::initialize(void)
 {
 	error_t		ret;
-
-	ret = powerThread.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
 
 	ret = interCpuMessager.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -114,7 +89,10 @@ error_t CpuStream::initialize(void)
 	if (ret != ERROR_SUCCESS) { return ret; };
 #endif
 
-	return taskStream.initialize();
+	ret = taskStream.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	return ERROR_SUCCESS;
 }
 
 void CpuStream::cut(void)

@@ -54,7 +54,8 @@ void __kcpuPowerOnMain(CpuStream *self)
 	 * to handle inter-CPU-messages, and thus cause that waking CPU to
 	 * crash.
 	 **/
-	self->baseInit();
+	self->initializeBaseState();
+	self->initializeExceptions();
 	self->powerManager.setPowerStatus(CpuStream::PowerManager::C0);
 
 	// After "bind", the CPU will be able to allocate, etc. normally.

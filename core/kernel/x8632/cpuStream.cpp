@@ -42,7 +42,7 @@ static sX86ManufacturerEntry		x86Manufacturers[] =
 	{CC"RiseRiseRise"} */
 };
 
-void CpuStream::baseInit(void)
+void CpuStream::initializeBaseState(void)
 {
 	debug::disableDebugExtensions();
 
@@ -58,16 +58,13 @@ void CpuStream::baseInit(void)
 		:
 		: "r" (this));
 
-	if (!FLAG_TEST(flags, CPUSTREAM_FLAGS_BSP))
-	{
-		// Load kernel's main GDT:
-		asm volatile ("lgdt	(x8632GdtPtr)");
-		// Load the kernel's IDT:
-		asm volatile ("lidt	(x8632IdtPtr)");
+	asm volatile ("lgdt	(x8632GdtPtr)");
+}
 
-		// Load the __kcpuPowerOnThread into the currentTask holder.
-		taskStream.currentThread = &__kcpuPowerOnThread;
-	};
+void CpuStream::initializeExceptions(void)
+{
+	// Load the kernel's IDT:
+	asm volatile ("lidt	(x8632IdtPtr)");
 }
 
 error_t CpuStream::bind(void)

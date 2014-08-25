@@ -5,6 +5,79 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 
+ubit8		_TaskContext::bspPowerTaskContextCpuAffinityMem[32];
+
+_Task::_Task(
+	Thread *parent, processId_t tid, bspPlugTypeE bspPlugType,
+	void *privateData
+	)
+:	Stream<Thread>(parent, tid),
+bspPlugType(bspPlugType), privateData(privateData),
+// Usually overridden immediately by inheritSchedPrio(), though.
+schedPrio(&internalPrio),
+internalPrio(CC"Custom", PRIOCLASS_DEFAULT),
+schedPolicy(ROUND_ROBIN), schedOptions(0), schedFlags(0)
+{
+	if (isPowerTask())
+	{
+		inheritSchedPrio(0, SPAWNPROC_FLAGS_SCHEDPRIO_CLASS_DEFAULT);
+		inheritSchedPolicy(
+			ROUND_ROBIN, SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET);
+	};
+}
+
+Thread::Thread(
+	processId_t id, ProcessStream *parent, bspPlugTypeE bspPlugType,
+	void *privateData
+	)
+:	Stream<ProcessStream>(parent, id),
+	_Task(this, id, bspPlugType, privateData),
+	_TaskContext(this, id, bspPlugType),
+id(id), bspPlugType(bspPlugType), parent(parent),
+currentCpu(NULL),
+stack0(NULL), stack1(NULL),
+messageStream(this)
+{
+	CpuStream		*cs;
+
+	/* If this is a power thread, set the thread's currentCpu
+	 * member to its parent CPU's power thread.
+	 **/
+	if (isPowerThread())
+	{
+		if (isBspPowerThread())
+		{
+			currentCpu = &bspCpu;
+			allocateStacks();
+		}
+		else
+		{
+			error_t		err;
+
+			/*	FIXME:
+			 * I don't think this will work. The constructor
+			 * is almost definitely going to be run before
+			 * the new CPU stream is added to the list of
+			 * CPUs in the CPU Trib.
+			 *
+			 * We can cross this hurdle when we get to it.
+			 **/
+			cs = cpuTrib.getStream(id);
+			if (cs == NULL)
+			{
+				panic(CC"Unable to find parent CPU in "
+					"Power thread constructor.");
+			};
+
+			currentCpu = cs;
+			err = allocateStacks();
+			if (err != ERROR_SUCCESS) {
+				panic(err);
+			}
+		};
+	};
+}
+
 error_t _TaskContext::initialize(void)
 {
 	error_t		ret;
@@ -18,9 +91,8 @@ error_t _TaskContext::initialize(void)
 	ret = cpuAffinity.initialize(cpuTrib.availableCpus.getNBits());
 	if (ret != ERROR_SUCCESS) { return ret; };
 #endif
-
-	// Initialize callback queues.
-	return messageStream.initialize();
+for(;;){};
+	return ERROR_SUCCESS;
 }
 
 void _TaskContext::initializeRegisterContext(
@@ -128,16 +200,35 @@ error_t _TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 	 * that task context will only have bit 0 set (because we cannot allow
 	 * power threads to migrate, obviously...).
 	 **/
-	if (PROCID_PROCESS(parentThread->getFullId()) == CPU_PROCESSID)
+	if (isPowerTaskContext())
 	{
-		ret = this->cpuAffinity.initialize(
-			PROCID_THREAD(parentThread->getFullId()) + 1);
+		if (isBspPowerTaskContext())
+		{
+			/* For the BSP power thread, we need to use the
+			 * preallocated mem that comes embedded statically in
+			 * the class.
+			 **/
+			ret = this->cpuAffinity.initialize(
+				sizeof(bspPowerTaskContextCpuAffinityMem)
+					* __BITS_PER_BYTE__,
+				Bitmap::sPreallocatedMemory(
+					bspPowerTaskContextCpuAffinityMem,
+					sizeof(bspPowerTaskContextCpuAffinityMem)));
+		}
+		else
+		{
+			/* For all other power threads, we allow dynamic
+			 * allocation.
+			 **/
+			ret = this->cpuAffinity.initialize(
+				PROCID_THREAD(parent->getFullId()) + 1);
+		};
 
 		if (ret != ERROR_SUCCESS) { return ret; };
 
 		// Set the containing CPU's bit.
 		this->cpuAffinity.setSingle(
-			PROCID_THREAD(parentThread->getFullId()));
+			PROCID_THREAD(parent->getFullId()));
 
 		return ERROR_SUCCESS;
 	};
@@ -148,7 +239,7 @@ error_t _TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 
 		// PINHERIT.
 		if (FLAG_TEST(flags, SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT)) {
-			sourceBitmap = &parentThread->parent->cpuAffinity;
+			sourceBitmap = &parent->parent->cpuAffinity;
 		}
 		else
 		{
@@ -234,7 +325,9 @@ void _Task::inheritSchedPrio(prio_t prio, uarch_t flags)
 		spawningThread = cpuTrib.getCurrentCpuStream()->taskStream
 			.getCurrentThread();
 
-		if (FLAG_TEST(spawningThread->flags, TASK_FLAGS_CUSTPRIO))
+		if (FLAG_TEST(
+			spawningThread->Stream<ProcessStream>::flags,
+			TASK_FLAGS_CUSTPRIO))
 		{
 			FLAG_SET(this->flags, TASK_FLAGS_CUSTPRIO);
 			internalPrio.prio = spawningThread->internalPrio.prio;
@@ -251,9 +344,11 @@ void _Task::inheritSchedPrio(prio_t prio, uarch_t flags)
 		&& prio < PRIOCLASS_NCLASSES)
 	{
 		schedPrio = &prioClasses[prio];
-	} else {
-		schedPrio = &prioClasses[PRIOCLASS_DEFAULT];
+		return;
 	};
+
+	schedPrio = &prioClasses[PRIOCLASS_DEFAULT];
+	return;
 }
 
 error_t Thread::allocateStacks(void)
@@ -278,6 +373,22 @@ error_t Thread::allocateStacks(void)
 	 * allocate a userspace stack, and furthermore, the use of a userspace
 	 * stack for such a process is prohibited by kernel policy.
 	 **/
+	if (isPowerThread())
+	{
+		CpuStream	*cs;
+		if (isBspPowerThread()) {
+			stack0 = bspCpu.taskStream.powerStack;
+		}
+		else
+		{
+			cs = cpuTrib.getStream(getFullId());
+			if (cs == NULL) { return ERROR_FATAL; };
+			stack0 = cs->taskStream.powerStack;
+		};
+
+		return ERROR_SUCCESS;
+	};
+
 	// No fakemapping for kernel stacks.
 	stack0 = processTrib.__kgetStream()->memoryStream.memAlloc(
 		CHIPSET_MEMORY___KSTACK_NPAGES, MEMALLOC_NO_FAKEMAP);

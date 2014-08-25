@@ -27,11 +27,11 @@ void VaddrSpaceStream::cut(void)
 
 void VaddrSpaceStream::dump(void)
 {
-	printf(NOTICE"VaddrSpaceStream %X: Level0: v: %p, p: %p\n",
+	printf(NOTICE"VaddrSpaceStream 0x%x: Level0: v: 0x%p, p: 0x%P\n",
 		id, vaddrSpace.level0Accessor.rsrc,
 		vaddrSpace.level0Paddr);
 
-	printf(NOTICE"vaddrSpace object: v %X, p %X\n",
+	printf(NOTICE"vaddrSpace object: v 0x%p, p 0x%P\n",
 		vaddrSpace.level0Accessor.rsrc, vaddrSpace.level0Paddr);
 
 	vSwamp.dump();

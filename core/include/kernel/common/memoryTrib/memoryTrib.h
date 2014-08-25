@@ -69,7 +69,6 @@ public:
 	void dump(void);
 
 private:
-
 	void init2_spawnNumaStreams(sZkcmNumaMap *map);
 	void init2_generateNumaMemoryRanges(
 		sZkcmNumaMap *map, sarch_t *__kspaceBool);

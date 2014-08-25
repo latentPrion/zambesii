@@ -223,7 +223,6 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 			break;
 
 		default:
-//printf(NOTICE"After INIT ipi on CPU %d, local ints are %d, nLocks %d.\n", cs->cpuId, cpuControl::interruptsEnabled(), cpuTrib.getCurrentCpuStream()->taskStream.getCurrentTask()->nLocksHeld);
 			// CPU successfully booted.
 			printf(NOTICE CPUPWRMGR"%d: Successfully booted.\n",
 				cs->cpuId);

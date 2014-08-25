@@ -42,7 +42,13 @@ ZAsyncStream::~ZAsyncStream(void)
 
 	handle = NULL;
 	while ((msgTmp = messages.getNextItem(&handle)) != NULL)
-		{ delete[] msgTmp; };
+	{
+		/*	Fixme:
+		 * This should probably be ipc::destroyDataHeader() instead of
+		 * a delete call.
+		 **/
+		delete msgTmp;
+	};
 }
 
 error_t ZAsyncStream::addConnection(processId_t pid)

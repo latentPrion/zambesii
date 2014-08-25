@@ -31,29 +31,32 @@ error_t InterruptTrib::initializeExceptions(void)
 {
 	/**	EXPLANATION:
 	 * Installs the architecture specific exception handlers and initializes
-	 * the chipset's IRQ Control module. The IRQ Control mod is initialized
-	 * for the /sole/ purpose of being able to call maskAll() and mask off
-	 * all IRQs at the chipset's IRQ controller(s).
+	 * the chipset's IRQ Control module.
 	 *
 	 * The chipset is not expected to register __kpins at this time, and
 	 * indeed, if it tries it will most likely fail because dynamic memory
 	 * allocation is not yet available.
 	 **/
 	// Arch specific CPU vector table setup.
-	installHardwareVectorTable();
-
+	installVectorRoutines();
 	// Arch specific exception handler setup.
-	installExceptions();
+	installExceptionRoutines();
 
+	/* This is basic per-CPU level initialization. Per-CPU vector table
+	 * installation. For the BSP CPU in FIRSTPLUG mode, it's done here.
+	 * For the BSP CPU in HOTPLUG mode, it's done in the __kcpuPowerOn
+	 * sequence.
+	 **/
+	cpuTrib.getCurrentCpuStream()->initializeExceptions();
 	return ERROR_SUCCESS;
 }
 
-error_t InterruptTrib::initializeIrqManagement(void)
+error_t InterruptTrib::initializeIrqs(void)
 {
 	error_t		ret;
 
 	/**	EXPLANATION:
-	 * After a call to initializeIrqManagement(), the chipset is expected to
+	 * After a call to initializeIrqs(), the chipset is expected to
 	 * be fully in synch with the kernel on all information to do with IRQ
 	 * pins and bus/device <-> IRQ-pin relationships. The IBM-PC will be
 	 * used as the paradigm for explanation:

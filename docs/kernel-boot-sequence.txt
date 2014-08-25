@@ -1,0 +1,118 @@
+In lieu of the need to revise the kernel's boot sequence, I need to document it
+correctly so I can have a reference list for checking progress and ensuring that
+I haven't missed anything when I'm done.
+
+Our goal is to have a startup sequence like this:
+	Kernel Executable Setup
+		* Clear .BSS.
+		* Relocate kernel if necessary.
+	C++ Language environment setup, stage 1.
+		* Call global constructors.
+	Memory Management.
+		* Kernel memory stream.
+		* Memory Tributary.
+		* Heap.
+	C++ Language environment setup, stage 2.
+	Debug Pipe.
+
+	Exceptions.
+	Message Queues.
+	Scheduling.
+	Processes.
+	Threads.
+	IRQs.
+
+	UDI.
+
+	Timers.
+	VFS.
+	Networking.
+	Video.
+	Sound.
+
+After this point we don't care about anything else, since this is the extent of
+kernel-level API support for anything. Technically, we will probably have the
+Video (Reflectionn), Networking (Aqueductt), Sound (Caurall) and other services
+(Print spool (Watermarkk), etc) as separate processes.
+
+These changes will essentially transform the kernel into a microkernel, minus
+the exposed messaging. We keep the messaging under the hood. Apart from that,
+we're really just a microkernel. We have SAS services (userspace too),
+SAS drivers, and heavy message passing. Zambesii is at this point in its design
+concept, an asynchronous microkernel.
+
+To achieve these ends, we must analyze and restructure the way the kernel boots.
+We currently have a very confusing set of boot-time dependencies which are
+created by the need to have certain objects pre-initialized. We must clearly
+identify these pre-initialized dependencies and fully understand them so
+that we can go about simplifying them.
+
+	Pre-initialized dependencies:
+
+The first problem is that Streams depend on their Tributaries, so the kernel
+ProcessStream's member Stream objects have a set of complex, staged
+initialization requirements.
+DONE.	* Make all streams independent of their Tributaries.
+	* Make sure that the initialize() routines for all Streams take
+	  into account the kernel process potentially being their parent.
+
+The next pre-initialized dependency area is the GDT and IDT. For the BSP, this
+is automatically loaded in the __korientation sequence. For AP CPUs it is
+loaded in the __kcpuPowerOn sequence.
+
+We should make exception initialization both logically and physically distinct
+from GDT loading.
+	* Separate exception initialization from GDT loading (in baseInit).
+	* Exception handling is started separately:
+		* For the BSP CPU:
+DONE.			* First plug: it's started within the
+			  InterruptTrib.
+DONE.			* Hotplug: It's started within CpuStream::initialize.
+DONE.		* For the AP CPUs, it's started within CpuStream::initialize.
+
+The next preinitialized dependency is those things needed for global and static-
+local constructor execution.
+	* No real requirements, except that no global classes use locking
+	  in their constructors.
+
+The major preinitialized dependencies from here on are:
+	* Kernel process.
+	* BSP CPU Stream object.
+	* BSP Task Stream object.
+	* BSP CPU's power thread object.
+
+The BSP CPU object and Task Stream object are the easiest to deal with, so we'll
+deal with those first:
+
+The BSP CPU object needs to be informed that it is the BSP's object first of
+all. We've taken care of this with the new bspPlugTypeE. Next:
+	* Nothing much I can think of.
+
+BSP Task Stream object needs a few things:
+DONE	* CurrentThread needs to be set to the CPU's powerThread. All CPUs will
+	  be executing their power thread upon waking: both BSP and APs.
+DONE	* schedule() with a parameter of a thread whose ID is in the power thread
+	  namespace should know that it has to look up the target thread from
+	  the CPU Trib.
+DONE	* getThread() with a parameter of a thread whose ID is in the power thread
+	  namespace should know that it has to look up the target process and
+	  thread from the CPU Trib.
+
+Power threads:
+	* Their currentCpu member should always be their parent CPU.
+	* The BSP CPU's cpuAffinity BMP should be supplied with preallocated
+	  memory.
+	* The BSP CPU's defaultMemoryBank should be set to __KSPACE.
+	* There is no need to set the "context" member of each thread because
+	  context is only used when the scheduler is pull()ing threads, and it
+	  is automatically set when saveContextAndCallPull() is called.
+	  So if a thread was already running, setting its initial context is
+	  both impossible and meaningless since it will be overwritten whenever
+	  the thread eventually gets dormanted.
+
+Affinity:
+	* BSP CPU's power thread should have its CPU affinity re-patched when its
+	  ID is discovered.
+	* BSP CPU's power thread should have its memory affinity patched to be
+	  SHBANK or a numa-local bank when memory detection is complete.
+	*
