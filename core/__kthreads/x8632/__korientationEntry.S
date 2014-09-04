@@ -33,8 +33,12 @@ ASM_END_FUNCTION(__korientationEntry)
 ASM_SECTION(.__korientationText)
 
 ASM_LOCAL_FUNCTION(__korientationVirtualStart)
-	/* Load the stack pointer for the Orientation thread. */
-	movl $bspCpuPowerStack+(PAGING_BASE_SIZE * CHIPSET_MEMORY___KSTACK_NPAGES), %esp
+	/* Load the stack pointer for the BSP power thread. */
+	movl $bspCpuPowerStack, %esp
+	movl (%esp), %esp
+	movl $PAGING_BASE_SIZE, %ecx
+	lea (%esp, %ecx, CHIPSET_MEMORY___KSTACK_NPAGES), %esp
+
 	/* Clear the CPU flags */
 	pushl $0
 	popfl
@@ -50,7 +54,6 @@ ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	ljmp	$0x08, $.loadAX
 
 .loadAX:
-
 	/* This is a security trick. We push the address of an infinite loop,
 	 * and if the kernel manages to return from the orientation thread
 	 * somehow, we manipulate the return address to point to this infinite
@@ -62,7 +65,7 @@ ASM_LOCAL_FUNCTION(__korientationVirtualStart)
 	pushl %ebx
 	pushl %eax
 
-	call __korientationInit
+	call __korientationMain
 
 	addl $0x8, %esp
 ret

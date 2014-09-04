@@ -49,7 +49,7 @@ error_t ZkcmCpuDetectionMod::restore(void)
 	return ERROR_SUCCESS;
 }
 
-sZkcmNumaMap *ibmPc_cm_rGnm(void)
+static sZkcmNumaMap *ibmPc_cm_rGnm(void)
 {
 	sZkcmNumaMap		*ret;
 	acpi::sRsdt		*rsdt;
@@ -565,57 +565,77 @@ checkForMpTables:
 	return 1;
 }
 
-cpu_t ZkcmCpuDetectionMod::getBspId(void)
+error_t ZkcmCpuDetectionMod::loadBspId(cpu_t *bspId, sbit8 requery)
 {
 	X86Lapic	*lapic;
 
 	lapic = &cpuTrib.getCurrentCpuStream()->lapic;
-	if (!ibmPcState.bspInfo.bspIdRequestedAlready)
+
+	/* Can be called from non-BSP CPUs only if it has been called already,
+	 * and the result has already been cached. In that case, (and if we are
+	 * not being asked to re-query anew) we just return the cached result.
+	 *
+	 * Else, if re-querying or querying for the first time, non-BSP CPUs are
+	 * not allowed to call this function.
+	 **/
+	if (ibmPcState.bspInfo.bspIdRequestedAlready && !requery)
 	{
-		// We expect to be executing on the BSP, or this won't work.
-		if (!lapic->cpuHasLapic())
-		{
-			printf(NOTICE CPUMOD"getBspId: BSP CPU has no "
-				"LAPIC. Assigning fake ID of 0.\n");
-
-			ibmPcState.bspInfo.bspId = (cpu_t)0;
-			ibmPcState.bspInfo.bspIdRequestedAlready = 1;
-			return ibmPcState.bspInfo.bspId;
-		};
-
-
-		if (!X86Lapic::lapicMemIsMapped())
-		{
-			// Not safe, but detectPaddr() never returns error.
-			if (X86Lapic::detectPaddr() != ERROR_SUCCESS) {
-				return 0;
-			};
-
-			if (X86Lapic::mapLapicMem() != ERROR_SUCCESS)
-			{
-				panic(ERROR CPUMOD"getBspId: Failed to map LAPIC "
-					"into kernel vaddrspace.\n");
-			};
-		};
-
-		ibmPcState.bspInfo.bspId = lapic->read32(
-			x86LAPIC_REG_LAPICID);
-
-		ibmPcState.bspInfo.bspId >>= 24;
-		ibmPcState.bspInfo.bspIdRequestedAlready = 1;
+		*bspId = ibmPcState.bspInfo.bspId;
+		return ERROR_SUCCESS;
 	};
 
-	return ibmPcState.bspInfo.bspId;
+	// We expect to be executing on the BSP, or this won't work.
+	if (!cpuTrib.getCurrentCpuStream()->isBspCpu())
+	{
+		printf(WARNING CPUMOD"getBspId: re-query runs must be executed "
+			"on the BSP CPU.\n");
+
+		return ERROR_NON_CONFORMANT;
+	};
+
+	// If the BSP CPU has no LAPIC, that's a problem:
+	if (!lapic->cpuHasLapic())
+	{
+		printf(NOTICE CPUMOD"getBspId: BSP CPU has no LAPIC. Assigning "
+			"ID INVALID.\n");
+
+		ibmPcState.bspInfo.bspIdRequestedAlready = 1;
+		ibmPcState.bspInfo.bspId = CPUID_INVALID;
+		*bspId = ibmPcState.bspInfo.bspId;
+		return ERROR_SUCCESS;
+	};
+
+	if (!X86Lapic::lapicMemIsMapped())
+	{
+		if (X86Lapic::detectPaddr() != ERROR_SUCCESS)
+		{
+			panic(ERROR CPUMOD"getBspId: Failed to get LAPIC "
+				"physical addr.\n");
+		};
+
+		if (X86Lapic::mapLapicMem() != ERROR_SUCCESS)
+		{
+			panic(ERROR CPUMOD"getBspId: Failed to map LAPIC "
+				"into kernel vaddrspace.\n");
+		};
+	};
+
+	ibmPcState.bspInfo.bspId = lapic->read32(x86LAPIC_REG_LAPICID);
+	ibmPcState.bspInfo.bspId >>= 24;
+	ibmPcState.bspInfo.bspIdRequestedAlready = 1;
+
+	*bspId = ibmPcState.bspInfo.bspId;
+	return ERROR_SUCCESS;
 }
 
 error_t ZkcmCpuDetectionMod::setSmpMode(void)
 {
-	error_t		ret;
-	ubit8		*lowmem;
-	void		*srcAddr, *destAddr;
-	uarch_t		copySize, cpuFlags;
+	error_t			ret;
+	ubit8			*lowmem;
+	void			*srcAddr, *destAddr;
+	uarch_t			copySize, cpuFlags;
 	x86Mp::sFloatingPtr	*mpFp;
-	ubit8		i8254WasEnabled=0, i8254WasSoftEnabled=0;
+	ubit8			i8254WasEnabled=0, i8254WasSoftEnabled=0;
 
 	/**	EXPLANATION:
 	 * This function will enable Symmetric I/O mode on the IBM-PC chipset.

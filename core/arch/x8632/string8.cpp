@@ -4,6 +4,31 @@
 #include <kernel/common/panic.h>
 
 
+utf8Char *strstr8(const utf8Char *str1, const utf8Char *const str2)
+{
+	uarch_t		s1len, s2len;
+
+	if (str1 == NULL || str2 == NULL)
+	{
+		printf(FATAL"strstr8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+			str1, str2, __builtin_return_address(0));
+
+		panic(ERROR_CRITICAL);
+	};
+
+	s1len = strlen8(str1);
+	s2len = strlen8(str2);
+
+	// Lazy implementation: reuse strncmp.
+	for (uarch_t i=0; i<s1len; i++)
+	{
+		if (strncmp8(&str1[i], str2, s2len) == 0)
+			{ return (utf8Char *)&str1[i]; };
+	};
+
+	return NULL;
+}
+
 utf8Char *strcpy8(utf8Char *dest, const utf8Char *src)
 {
 	uarch_t		i=0;

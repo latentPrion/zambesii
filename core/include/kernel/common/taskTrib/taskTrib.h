@@ -20,6 +20,7 @@ public Tributary
 {
 public:
 	TaskTrib(void);
+	error_t initialize(void) { return ERROR_SUCCESS; }
 
 	void dump(void);
 

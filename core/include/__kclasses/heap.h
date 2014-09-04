@@ -17,6 +17,7 @@ class MemReservoir;
 class Heap
 {
 public:
+	friend class MemReservoir;
 	Heap(
 		uintptr_t chunkSize, MemoryStream *sourceStream,
 		uint32_t options=0)
@@ -220,7 +221,7 @@ private:
 
 	public:
 		static const ubit8			descriptionMaxlen=32;
-		List<Allocation>::sHeader	listHeader;
+		List<Allocation>::sHeader		listHeader;
 		void					*allocatedBy;
 		utf8Char				description[
 			descriptionMaxlen];

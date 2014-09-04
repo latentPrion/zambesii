@@ -47,7 +47,7 @@ error_t InterruptTrib::initializeExceptions(void)
 	 * For the BSP CPU in HOTPLUG mode, it's done in the __kcpuPowerOn
 	 * sequence.
 	 **/
-	cpuTrib.getCurrentCpuStream()->initializeExceptions();
+	bspCpu.initializeExceptions();
 	return ERROR_SUCCESS;
 }
 

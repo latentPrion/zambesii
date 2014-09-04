@@ -29,20 +29,20 @@
 
 /**	Flags for processC::flags.
  **/
-#define PROCESS_FLAGS___KPROCESS	(1<<0)
-#define PROCESS_FLAGS_SPAWNED_DORMANT	(1<<1)
+#define PROCESS_FLAGS___KPROCESS			(1<<0)
+#define PROCESS_FLAGS_SPAWNED_DORMANT			(1<<1)
 
 /**	Flags for ProcessStream::spawnThread().
  **/
 // STINHERIT by default.
-#define SPAWNTHREAD_FLAGS_AFFINITY_STINHERIT	(0)
+#define SPAWNTHREAD_FLAGS_AFFINITY_STINHERIT		(0)
 // Implied if the cpuAffinity BMP != NULL && !PINHERIT
-#define SPAWNTHREAD_FLAGS_AFFINITY_SET		(0)
-#define SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT	(1<<1)
+#define SPAWNTHREAD_FLAGS_AFFINITY_SET			(0)
+#define SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT		(1<<1)
 
 // STINHERIT by default.
-#define SPAWNTHREAD_FLAGS_SCHEDPOLICY_STINHERIT	(0)
-#define SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET	(1<<3)
+#define SPAWNTHREAD_FLAGS_SCHEDPOLICY_STINHERIT		(0)
+#define SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET		(1<<3)
 
 // Set to PRIOCLASS_DEFAULT by default.
 #define SPAWNTHREAD_FLAGS_SCHEDPRIO_CLASS_DEFAULT	(0)
@@ -54,8 +54,10 @@
 #define SPAWNTHREAD_FLAGS_DORMANT			(1<<8)
 // Indicates that this is the first thread of a new process.
 #define SPAWNTHREAD_FLAGS_FIRST_THREAD			(1<<9)
+// Used to "spawn" per-CPU power threads. Reduces code duplication.
+#define SPAWNTHREAD_FLAGS_POWER_THREAD			(1<<10)
 
-#define SPAWNTHREAD_STATUS_NO_PIDS		0x1
+#define SPAWNTHREAD_STATUS_NO_PIDS			0x1
 
 namespace fplainn
 {

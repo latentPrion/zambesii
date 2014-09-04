@@ -449,11 +449,15 @@ void Heap::releaseChunk(Chunk *chunk) const
 
 void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 {
-	//size_t				origSz=sz;
+	size_t					origSz=sz;
+	sbit8					alignmentRequired=0;
 	error_t					err;
-	List<Chunk>::Iterator		it;
+	List<Chunk>::Iterator			it;
 	Chunk					*currChunk;
 	Allocation				*ret;
+
+	(void)origSz;
+	(void)alignmentRequired;
 
 	if (sz == 0)
 	{
@@ -480,6 +484,7 @@ void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 	// If "sz" isn't native-word aligned, align it.
 	if (sz & (sizeof(void *) - 1))
 	{
+		alignmentRequired = 1;
 		sz += sizeof(void *);
 		sz &= ~(sizeof(void *) - 1);
 	};
@@ -558,10 +563,73 @@ void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 	return NULL;
 }
 
+void *Heap::realloc(void *p, size_t sz)
+{
+	Allocation			*alloc = (Allocation *)p;
+	void				*newmem;
+
+	/**	EXPLANATION:
+	 * Simplest implementation is to check to see if the memory at "p" is
+	 * too small, and if so, reallocate. Else do nothing and return "p".
+	 *
+	 * More complex implementation is to attempt to resize "p".
+	 **/
+	if (alloc != NULL)
+	{
+		alloc--;
+		if (!alloc->magicIsValid())
+		{
+			printf(FATAL HEAP"realloc(0x%p, sz): magic invalid. Aborting."
+				"\n", p, sz);
+
+			panic(ERROR_FATAL);
+		};
+
+		if (options & OPT_CHECK_ALLOCS_ON_FREE)
+		{
+			// Is the alloc in the alloc list?
+			if (!allocationList.find(alloc))
+			{
+				printf(NOTICE HEAP"realloc(0x%p, sz): mem pointer 0x%p "
+					"(hdr 0x%p) not in alloc list!\n",
+					p, sz, p, (void*)alloc);
+
+				panic(ERROR_UNKNOWN);
+			};
+		};
+
+		// If the alloc can handle the requested size, just return it.
+		if (alloc->nBytes - sizeof(Allocation) - pageSize >= sz) {
+			return p;
+		};
+	};
+
+	/* If sz == 0, the memory at "p" is freed and the rest of the behaviour
+	 * is implementation defined.
+	 *
+	 * We choose to return NULL, because allocating 0 bytes is always
+	 * indicative of bad logic or a bug.
+	 **/
+	if (sz == 0) { free(p, __builtin_return_address(0)); return NULL; };
+
+	// Allocate a new block of memory.
+	newmem = malloc(sz, __builtin_return_address(0));
+	if (newmem == NULL) { return NULL; };
+
+	// Copy the contents of the old block into the new block.
+	if (alloc != NULL)
+	{
+		memcpy(newmem, p, alloc->nBytes - sizeof(Allocation) - pageSize);
+		free(p, __builtin_return_address(0));
+	};
+
+	return newmem;
+}
+
 void Heap::free(void *_p, void *freedBy)
 {
 	Allocation				*alloc=(Allocation *)_p;
-	List<Chunk>::Iterator		chunkIt;
+	List<Chunk>::Iterator			chunkIt;
 	sbit8					isWithinHeap=0;
 
 	// Move backward in memory to get to the start of the header.

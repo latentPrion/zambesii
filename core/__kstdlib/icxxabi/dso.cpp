@@ -26,6 +26,10 @@ extern "C" int __cxa_atexit(
 	void *dsoHandle
 	)
 {
+	(void)func;
+	(void)arg;
+	(void)dsoHandle;
+#if 0
 	for (int i=0; i<CXXABI_ATEXIT_MAX_NFUNCS; i++)
 	{
 		if (atexitFuncTable[i].func == 0)
@@ -37,6 +41,9 @@ extern "C" int __cxa_atexit(
 		};
 	};
 	return -1;
+#else
+	return 0;
+#endif
 }
 
 /* __cxa_finalize(): Calls a function in the list if given a pointer,
@@ -56,10 +63,10 @@ extern "C" void __cxa_finalize(void *dsoHandle)
 				(*atexitFuncTable[i].func)(
 					atexitFuncTable[i].arg
 					);
-				
+
 				// To remove, bring the rest one index up.
 				int j=i;
-				if ((j < CXXABI_ATEXIT_MAX_NFUNCS - 1) 
+				if ((j < CXXABI_ATEXIT_MAX_NFUNCS - 1)
 					&& (atexitFuncTable[j+1].func != 0))
 				{
 					while (j < CXXABI_ATEXIT_MAX_NFUNCS - 1)

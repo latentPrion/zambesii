@@ -34,12 +34,8 @@ friend class ProcessStream;
 public:
 	enum schedPolicyE { INVALID=0, ROUND_ROBIN, REAL_TIME };
 
-	_Task(
-		Thread *parent, processId_t tid, bspPlugTypeE bpt,
-		void *privateData);
-
+	_Task(processId_t tid, Thread *parent, void *privateData);
 	error_t initialize(void) { return ERROR_SUCCESS; }
-
 	virtual ~_Task(void) {}
 
 	void *getPrivateData(void) { return privateData; }
@@ -47,7 +43,6 @@ public:
 private:
 
 	// General.
-	bspPlugTypeE		bspPlugType;
 	void			*privateData;
 
 public:
@@ -60,14 +55,6 @@ public:
 private:
 	void inheritSchedPolicy(schedPolicyE schedPolicy, uarch_t flags);
 	void inheritSchedPrio(prio_t prio, uarch_t flags);
-
-protected:
-friend class _TaskContext;
-	ubit8 isBspFirstPlugTask(void)
-		{ return bspPlugType == BSP_PLUGTYPE_FIRSTPLUG; }
-	ubit8 isBspPowerTask(void) { return bspPlugType > BSP_PLUGTYPE_NOTBSP; }
-	ubit8 isPowerTask(void)
-		{ return (PROCID_PROCESS(id) == CPU_PROCESSID); }
 };
 
 /**	EXPLANATION:
@@ -93,30 +80,11 @@ public:
 		BLOCKED_UNSCHEDULED=1, PREEMPTED, DORMANT, BLOCKED };
 
 protected:
-	_TaskContext(Thread *parent, processId_t tid, bspPlugTypeE bspPlugType)
-	: Stream<Thread>(parent, tid),
-	bspPlugType(bspPlugType),
-	runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
-	nLocksHeld(0), context(NULL)
-	{
-#if __SCALING__ >= SCALING_CC_NUMA
-		defaultMemoryBank.rsrc = NUMABANKID_INVALID;
-#endif
-
-		memset(
-			bspPowerTaskContextCpuAffinityMem, 0,
-			sizeof(bspPowerTaskContextCpuAffinityMem));
-
-		if (isPowerTaskContext()) {
-			inheritAffinity(NULL, 0);
-		};
-	}
-
+	_TaskContext(processId_t tid, Thread *parent);
 	error_t initialize(void);
 
 public:
 	// Scheduler related.
-	bspPlugTypeE		bspPlugType;
 	runStateE		runState;
 	blockStateE		blockState;
 
@@ -140,13 +108,6 @@ public:
 protected:
 	static ubit8			bspPowerTaskContextCpuAffinityMem[32];
 
-	ubit8 isBspFirstPlugTaskContext(void)
-		{ return bspPlugType == BSP_PLUGTYPE_FIRSTPLUG; }
-	ubit8 isBspPowerTaskContext(void)
-		{ return bspPlugType > BSP_PLUGTYPE_NOTBSP; }
-	ubit8 isPowerTaskContext(void)
-		{ return (PROCID_PROCESS(id) == CPU_PROCESSID); }
-
 private:
 	void initializeRegisterContext(
 		void (*entryPoint)(void *), void *stack0, void *stack1,
@@ -169,8 +130,8 @@ class Thread
 friend class ProcessStream;
 public:
 	Thread(
-		processId_t id, ProcessStream *parent, bspPlugTypeE bspPlugType,
-		void *privateData);
+		processId_t id, ProcessStream *parent, void *privateData,
+		CpuStream *parentCpu=NULL);
 
 	error_t initialize(void)
 	{
@@ -187,10 +148,13 @@ public:
 public:
 	processId_t getFullId(void) { return id; }
 
-	ubit8 isBspFirstPlugThread(void)
-		{ return bspPlugType == BSP_PLUGTYPE_FIRSTPLUG; }
-	ubit8 isBspPowerThread(void) { return _Task::isBspPowerTask(); }
-	ubit8 isPowerThread(void) { return _Task::isPowerTask(); }
+	static sbit8 isBspPowerThread(processId_t tid);
+	static sbit8 isPowerThread(processId_t tid)
+	{
+		// The thread with CPUID_INVALID is the BSP power thread.
+		return tid == CPUID_INVALID
+			|| PROCID_PROCESS(tid) == PROCID_PROCESS(CPU_PROCESSID);
+	}
 
 private:
 	// Allocates stacks for kernelspace and userspace (if necessary).
@@ -198,9 +162,8 @@ private:
 
 private:processId_t		id;
 public:
-	bspPlugTypeE		bspPlugType;
 	ProcessStream		*parent;
-	CpuStream		*currentCpu;
+	CpuStream		*currentCpu, *parentCpu;
 	void			*stack0, *stack1;
 
 	// Asynchronous API message queues for this thread.

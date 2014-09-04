@@ -13,15 +13,20 @@
 #include <__kthreads/__kcpuPowerOn.h>
 
 
+bspPlugTypeE		CpuStream::bspPlugType = BSP_PLUGTYPE_FIRSTPLUG;
+cpu_t			CpuStream::bspCpuId = CPUID_INVALID;
+ubit32			CpuStream::bspAcpiId = CPUID_INVALID;
+numaBankId_t		CpuStream::bspBankId = NUMABANKID_INVALID;
+sCpuFeatures		CpuStream::baseCpuFeatures;
+
 // We make a global CpuStream for the bspCpu.
 #if __SCALING__ >= SCALING_CC_NUMA
-CpuStream		bspCpu(
-	NUMABANKID_INVALID, CPUID_INVALID, 0, BSP_PLUGTYPE_FIRSTPLUG);
+CpuStream		bspCpu(NUMABANKID_INVALID, CPUID_INVALID, 0);
 #elif __SCALING__ == SCALING_SMP
-CpuStream		bspCpu(CPUID_INVALID, 0, BSP_PLUGTYPE_FIRSTPLUG);
+CpuStream		bspCpu(CPUID_INVALID, 0);
 #else
 // Not sure which constructor this is supposed to be calling.
-CpuStream		bspCpu(0, 0, BSP_PLUGTYPE_FIRSTPLUG);
+CpuStream		bspCpu(0, 0);
 #endif
 
 extern "C" ubit8	*const bspCpuPowerStack = bspCpu.taskStream.powerStack;
@@ -33,23 +38,42 @@ CpuStream::CpuStream(
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaBankId_t bid,
 #endif
-	cpu_t cid, ubit32 acpiId, bspPlugTypeE bpt
+	cpu_t cid, ubit32 acpiId
 	)
 :
 cpuId(cid), cpuAcpiId(acpiId),
 #if __SCALING__ >= SCALING_CC_NUMA
 bankId(bid),
 #endif
-bspPlugType(bpt),
-taskStream(this, cid, bpt), flags(0),
-powerManager(this, bpt),
+taskStream(cid, this), flags(0),
+powerManager(cid, this),
 #if __SCALING__ >= SCALING_SMP
-interCpuMessager(this),
+interCpuMessager(cid, this),
 #endif
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
 lapic(this)
 #endif
 {
+}
+
+error_t CpuStream::initialize(void)
+{
+	error_t		ret;
+
+	ret = interCpuMessager.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+#if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
+	ret = lapic.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+#endif
+
+	ret = taskStream.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	ret = powerManager.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
 	/* We don't need to acquire the __kcpuPowerStacksLock lock before
 	 * editing this CPU's index in the array, because a race condition can
 	 * never occur here. No other writer will ever write to any other CPU's
@@ -75,22 +99,6 @@ lapic(this)
 		*reinterpret_cast<CpuStream **>(
 			__kcpuPowerStacks[cpuId] ) = this;
 	};
-}
-
-error_t CpuStream::initialize(void)
-{
-	error_t		ret;
-
-	ret = interCpuMessager.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
-
-#if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
-	ret = lapic.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
-#endif
-
-	ret = taskStream.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
 
 	return ERROR_SUCCESS;
 }

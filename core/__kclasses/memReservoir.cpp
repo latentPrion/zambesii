@@ -127,6 +127,37 @@ void *MemReservoir::allocate(uarch_t nBytes, uarch_t)
 	return NULL;
 }
 
+void *MemReservoir::reallocate(void *old, uarch_t _nBytes, uarch_t)
+{
+	sReservoirHeader	*resHdr = (sReservoirHeader *)old;
+	Heap::Allocation	*heapHdr;
+	uarch_t			nBytes = _nBytes + sizeof(sReservoirHeader);
+
+	(void)heapHdr;
+
+	/**	EXPLANATION:
+	 * Problem here is that we need to have the MemReservoir header on the
+	 * allocation, even for allocations returned by reallocate().
+	 *
+	 * I was not in the mood when I wrote this code, so I simply decided
+	 * to write a suboptimal implementation where we add the header size to
+	 * the requested allocation size.
+	 **/
+	resHdr--;
+	heapHdr = (Heap::Allocation *)resHdr;
+	heapHdr--;
+
+	if ((resHdr->magic >> 4) != (RESERVOIR_MAGIC >> 4))
+	{
+		printf(ERROR RESERVOIR"Corrupt memory or bad free v 0x%p.\n",
+			old);
+
+		panic(ERROR_FATAL);
+	};
+
+	return __kheap.realloc(old, nBytes);
+}
+
 void MemReservoir::free(void *_mem)
 {
 	sReservoirHeader	*mem;

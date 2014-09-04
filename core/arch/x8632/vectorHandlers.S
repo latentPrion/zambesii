@@ -136,7 +136,7 @@ ASM_GLOBAL_FUNCTION(saveContextAndCallPull)
 	movl	(%esp), %eax
 	movl	%eax, 12(%esp)
 	movl	8(%esp), %eax
-	movl	%eax, (%esp)	
+	movl	%eax, (%esp)
 	xor	%eax, %eax
 	movw	%cs, %ax
 	movl	%eax, 8(%esp)
@@ -1723,4 +1723,4 @@ ASM_LOCAL_FUNCTION(vector255)
 	pushl $255
 	jmp __ksaveRegs
 ASM_END_FUNCTION(vector255)
-	
+

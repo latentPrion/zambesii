@@ -22,7 +22,7 @@ class TaskStream
 {
 friend class CpuStream;
 public:
-	TaskStream(CpuStream *parentCpu, cpu_t cid, bspPlugTypeE bspPlugType);
+	TaskStream(cpu_t cid, CpuStream *parentCpu);
 
 	/* Allocates internal queues, etc.
 	 *	XXX:
@@ -37,8 +37,8 @@ public:
 
 	// cooperativeBind is only ever used at boot, on the BSP.
 	error_t cooperativeBind(void);
-	// error_t bind(void);
-	// void cut(void);
+	//virtual error_t bind(void);
+	//virtual void cut(void);
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };
@@ -73,7 +73,6 @@ private:
 public:
 	// Three queues on each CPU: rr, rt and sleep.
 	PrioQueue<Thread>	roundRobinQ, realTimeQ;
-	bspPlugTypeE		bspPlugType;
 	Thread			powerThread;
 	// Stack for the CPU's power thread.
 	ubit8			powerStack[

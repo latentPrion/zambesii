@@ -6,8 +6,8 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 #if __SCALING__ >= SCALING_SMP
-CpuStream::InterCpuMessager::InterCpuMessager(CpuStream *parent)
-: Stream<CpuStream>(parent, parent->cpuId)
+CpuStream::InterCpuMessager::InterCpuMessager(cpu_t cid, CpuStream *parent)
+: Stream<CpuStream>(parent, cid)
 {
 	cache = NULL;
 	statusFlag.rsrc = NOT_TAKING_REQUESTS;

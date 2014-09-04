@@ -11,8 +11,15 @@ RegisterContext::RegisterContext(ubit8 execDomain)
 {
 	memset(this, 0, sizeof(*this));
 
-	// Set the x86 EFLAGS.IF to enable IRQs when new task is pulled.
-	eflags |= x8632_CPUFLAGS_IF;
+	/* Set the x86 EFLAGS.IF to enable IRQs when new task is pulled.
+	 *
+	 **	CAVEAT:
+	 * Only however, set it if this register context is being initialized
+	 * when the kernel has initialized IRQ handling, or else the newly
+	 * spawned thread will begin executing with IRQs enabled, and fail
+	 * immediately upon executing.
+	 **/
+	//eflags |= x8632_CPUFLAGS_IF;
 	if (execDomain == PROCESS_EXECDOMAIN_KERNEL)
 	{
 		cs = 0x08;

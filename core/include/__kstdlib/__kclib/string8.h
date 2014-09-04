@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+utf8Char *strstr8(const utf8Char *str1, const utf8Char *str2);
 utf8Char *strcpy8(utf8Char *dest, const utf8Char *src);
 utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count);
 size_t strlen8(const utf8Char *str);

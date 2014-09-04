@@ -15,8 +15,6 @@
  * it very quickly. This problem can be alleviated a little by using a custom
  * slam cache for __kCallback objects specifically.
  **/
-class SlamCache;
-extern SlamCache	*__kcallbackCache;
 
 class Callback
 {

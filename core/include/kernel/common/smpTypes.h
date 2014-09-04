@@ -3,9 +3,9 @@
 
 	#include <__kstdlib/__ktypes.h>
 
-#define CPUID_INVALID		(-1)
+#define CPUID_INVALID		((cpu_t)~0)
 
-typedef sarch_t		cpu_t;
+typedef uarch_t		cpu_t;
 
 enum bspPlugTypeE
 {

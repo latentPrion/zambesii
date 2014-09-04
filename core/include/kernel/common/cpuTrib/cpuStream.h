@@ -47,9 +47,9 @@ class CpuStream
 friend class ProcessStream;
 public:
 #if __SCALING__ >= SCALING_CC_NUMA
-	CpuStream(numaBankId_t bid, cpu_t id, ubit32 acpiId, bspPlugTypeE bpt);
+	CpuStream(numaBankId_t bid, cpu_t id, ubit32 acpiId);
 #else
-	CpuStream(cpu_t id, ubit32 cpuAcpiId, bspPlugTypeE bpt);
+	CpuStream(cpu_t id, ubit32 cpuAcpiId);
 #endif
 
 	void initializeBaseState(void);
@@ -61,11 +61,31 @@ public:
 	void cut(void);
 
 public:
+	/**	NOTE:
+	 * "highestCpuId" and "highestBankId" are defined in cpuTrib.cpp; not
+	 * cpuStream.cpp.
+	 **/
+	static cpu_t			bspCpuId, highestCpuId;
+	static numaBankId_t		bspBankId, highestBankId;
+	static ubit32			bspAcpiId;
+	static bspPlugTypeE		bspPlugType;
+	static sCpuFeatures		baseCpuFeatures;
+
 	status_t enumerate(void);
 	sCpuFeatures *getCpuFeatureBlock(void);
-	ubit8 isBspCpu(void) { return bspPlugType > BSP_PLUGTYPE_NOTBSP; }
-	ubit8 isBspFirstPlug(void)
-		{ return bspPlugType == BSP_PLUGTYPE_FIRSTPLUG; }
+
+	sbit8 isBspCpu(void) { return isBspCpuId(this->cpuId); }
+	static sbit8 isBspCpuId(cpu_t cid)
+		{ return cid == CPUID_INVALID || cid == bspCpuId; }
+
+	static bspPlugTypeE		getBspPlugType(void)
+		{ return bspPlugType; }
+
+	static sbit8 isBspFirstPlug(void)
+		{ return getBspPlugType() == BSP_PLUGTYPE_FIRSTPLUG; }
+
+	static sbit8 isBspHotplug(void)
+		{ return getBspPlugType() == BSP_PLUGTYPE_HOTPLUG; }
 
 public:
 	class PowerManager
@@ -78,16 +98,17 @@ public:
 			GOING_TO_SLEEP, WAKING,
 			FAILED_BOOT };
 
-		PowerManager(CpuStream *parentStream, bspPlugTypeE bspPlugType)
-		: Stream<CpuStream>(parentStream, parentStream->cpuId),
-		bspPlugType(bspPlugType)
+		PowerManager(cpu_t id, CpuStream *parentStream)
+		: Stream<CpuStream>(parentStream, id)
 		{
-			if (bspPlugType == BSP_PLUGTYPE_FIRSTPLUG) {
+			if (CpuStream::isBspCpuId(id) && CpuStream::isBspFirstPlug()) {
 				powerStatus.rsrc = C0;
 			} else {
 				powerStatus.rsrc = OFF;
 			};
 		}
+
+		error_t initialize(void) { return ERROR_SUCCESS; }
 
 		~PowerManager(void)
 			{ powerStatus.rsrc = OFF; }
@@ -116,10 +137,10 @@ public:
 		status_t halt(ubit32 flags);
 		status_t sleep(ubit32 flags);
 		status_t powerOff(ubit32 flags);
+
 		void bootWaitForCpuToPowerOn(void);
 
 	private:
-		bspPlugTypeE		bspPlugType;
 		SharedResourceGroup<MultipleReaderLock, powerStatusE>
 			powerStatus;
 	};
@@ -131,7 +152,7 @@ private:
 	{
 	private: struct sMessage;
 	public:
-		InterCpuMessager(CpuStream *parent);
+		InterCpuMessager(cpu_t id, CpuStream *parent);
 		error_t initialize(void);
 
 		error_t bind(void);
@@ -190,8 +211,6 @@ public:
 #if __SCALING__ >= SCALING_CC_NUMA
 	numaBankId_t		bankId;
 #endif
-	bspPlugTypeE		bspPlugType;
-
 	sCpuFeatures		cpuFeatures;
 	// Per CPU scheduler.
 	TaskStream		taskStream;

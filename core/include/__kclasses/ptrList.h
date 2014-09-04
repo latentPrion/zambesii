@@ -135,7 +135,7 @@ sarch_t PtrList<T>::checkForItem(T *item)
 	};
 
 	head.lock.release();
-	return 0;		
+	return 0;
 }
 
 template <class T>
@@ -234,7 +234,7 @@ T *PtrList<T>::getItem(ubit32 num)
 		tmp != NULL && num > 0;
 		tmp = tmp->next, num--)
 	{};
-	
+
 	head.lock.release();
 
 	// If the list ended before the counter ran out, return an error value.

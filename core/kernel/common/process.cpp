@@ -117,11 +117,11 @@ error_t ProcessStream::initialize(
 		ret = memoryStream.initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
 	};
+	ret = zasyncStream.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
 	ret = timerStream.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ret = floodplainnStream.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = zasyncStream.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	return ERROR_SUCCESS;
@@ -586,22 +586,36 @@ error_t ProcessStream::spawnThread(
 	error_t		ret;
 	processId_t	newThreadId;
 
-	if (newThread == NULL) { return ERROR_INVALID_ARG; };
+	if (newThread == NULL
+		&& !FLAG_TEST(flags, SPAWNTHREAD_FLAGS_POWER_THREAD))
+	{ return ERROR_INVALID_ARG; };
 
-	// Check for a free thread ID in this process's thread ID space.
-	ret = getNewThreadId(&newThreadId);
-	if (ret != ERROR_SUCCESS) { return SPAWNTHREAD_STATUS_NO_PIDS; };
+	/**	EXPLANATION:
+	 * Power threads only need to be initialized; nothing else. Initializing
+	 * them in this function simply enables us to avoid code duplication.
+	 **/
+	if (!FLAG_TEST(flags, SPAWNTHREAD_FLAGS_POWER_THREAD))
+	{
+		// Check for a free thread ID in this process's thread ID space.
+		ret = getNewThreadId(&newThreadId);
+		if (ret != ERROR_SUCCESS)
+			{ return SPAWNTHREAD_STATUS_NO_PIDS; };
 
-	// Combine the parent process ID with new thread ID for full thread ID.
-	newThreadId = id | newThreadId;
+		// Combine the parent process ID with new thread ID for full thread ID.
+		newThreadId = id | newThreadId;
 
-	// Allocate new thread if ID was available.
-	*newThread = allocateNewThread(newThreadId, argument);
-	if (*newThread == NULL) { return ERROR_MEMORY_NOMEM; };
+		// Allocate new thread if ID was available.
+		*newThread = allocateNewThread(newThreadId, argument);
+		if (*newThread == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	// Allocate internal sub-structures (context, etc.).
-	ret = (*newThread)->initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
+		// Allocate internal sub-structures (context, etc.).
+		ret = (*newThread)->initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+	}
+	else {
+		// The power thread is passed as the "argument" pointer arg.
+		*newThread = (Thread *)argument;
+	};
 
 	ret = (*newThread)->allocateStacks();
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -615,24 +629,36 @@ error_t ProcessStream::spawnThread(
 	(*newThread)->inheritSchedPolicy(schedPolicy, flags);
 	(*newThread)->inheritSchedPrio(prio, flags);
 
-	// Now everything is allocated; just initialize the register context.
-	(*newThread)->initializeRegisterContext(
-		entryPoint,
-		(*newThread)->stack0,
-		(*newThread)->stack1,
-		this->execDomain,
-		FLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD));
+	/**	EXPLANATION:
+	 * No need to set up initial register state for power threads since they
+	 * are already executing on the target CPU when the CPU is awakened.
+	 **/
+	if (!FLAG_TEST(flags, SPAWNTHREAD_FLAGS_POWER_THREAD))
+	{
+		// Now everything is allocated; just initialize the reg context.
+		(*newThread)->initializeRegisterContext(
+			entryPoint,
+			(*newThread)->stack0,
+			(*newThread)->stack1,
+			this->execDomain,
+			FLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD));
+	};
 
 	/* First thread in a process is always scheduled immediately; DORMANT
 	 * is handled by the kernel's common entry point for such threads. For
 	 * other threads (which do not pass through the common entry point),
 	 * DORMANT is handled right here.
+	 *
+	 * Power threads should not be scheduled through the taskTrib. They are
+	 * privately scheduled by their parent TaskStream.
 	 **/
-	if (!FLAG_TEST(flags, SPAWNTHREAD_FLAGS_DORMANT)
+	if ((!FLAG_TEST(flags, SPAWNTHREAD_FLAGS_DORMANT)
 		|| FLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD))
+		&& !FLAG_TEST(flags, SPAWNTHREAD_FLAGS_POWER_THREAD))
 	{
 		return taskTrib.schedule(*newThread);
-	} else {
+	}
+	else {
 		return ERROR_SUCCESS;
 	};
 }
@@ -643,7 +669,7 @@ Thread *ProcessStream::allocateNewThread(
 {
 	Thread		*ret;
 
-	ret = new Thread(newThreadId, this, BSP_PLUGTYPE_NOTBSP, privateData);
+	ret = new Thread(newThreadId, this, privateData);
 	if (ret == NULL) { return NULL; };
 
 	threadLock.writeAcquire();

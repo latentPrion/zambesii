@@ -6,7 +6,7 @@
 	#include <kernel/common/execDomain.h>
 	#include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 
-class RegisterContext
+class __attribute__((packed)) RegisterContext
 {
 public:
 	RegisterContext(ubit8 execDomain);

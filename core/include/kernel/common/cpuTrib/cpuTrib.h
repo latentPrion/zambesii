@@ -54,14 +54,14 @@ public Tributary
 {
 public:
 	CpuTrib(void);
-	error_t initializeBspCpuStream(void);
 	error_t initialize(void);
+	error_t loadBspInformation(void);
 	error_t initializeAllCpus(void);
+
 #if __SCALING__ >= SCALING_CC_NUMA
 	error_t numaInit(void);
 #endif
 #if __SCALING__ == SCALING_SMP
-	// Not useful on a NUMA or higher scaling build.
 	error_t smpInit(void);
 #endif
 	error_t uniProcessorInit(void);
@@ -120,7 +120,6 @@ public:
 	Bitmap			availableCpus, onlineCpus;
 	ubit8			_usingChipsetSmpMode;
 #endif
-	cpu_t			bspId;
 
 private:
 #if __SCALING__ >= SCALING_CC_NUMA

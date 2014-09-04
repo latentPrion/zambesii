@@ -20,7 +20,7 @@ error_t TaskTrib::schedule(Thread *task)
 {
 	CpuStream	*cs, *bestCandidate=NULL;
 
-	for (cpu_t i=0; i<(signed)task->cpuAffinity.getNBits(); i++)
+	for (cpu_t i=0; i<task->cpuAffinity.getNBits(); i++)
 	{
 		if (task->cpuAffinity.testSingle(i)
 			&& cpuTrib.onlineCpus.testSingle(i))

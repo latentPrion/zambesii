@@ -26,15 +26,19 @@ extern "C" void taskStream_pull(RegisterContext *savedContext)
 	currTaskStream->pull();
 }
 
-TaskStream::TaskStream(CpuStream *parent, cpu_t cid, bspPlugTypeE bspPlugType)
+TaskStream::TaskStream(cpu_t cid, CpuStream *parent)
 : Stream<CpuStream>(parent, cid),
 load(0), capacity(0),
 currentThread(&powerThread),
 roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
-bspPlugType(bspPlugType),
-powerThread(parent->cpuId, processTrib.__kgetStream(), bspPlugType, NULL)
+powerThread(cid, processTrib.__kgetStream(), NULL, parent)
 {
-	memset(powerStack, 0, sizeof(powerStack));
+	// Set the power thread's current CPU pointer.
+	powerThread.currentCpu = parent;
+
+	if (!CpuStream::isBspCpuId(id)) {
+		memset(powerStack, 0, sizeof(powerStack));
+	};
 }
 
 error_t TaskStream::initialize(void)
@@ -44,10 +48,13 @@ error_t TaskStream::initialize(void)
 	ret = realTimeQ.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
+	ret = roundRobinQ.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
 	ret = powerThread.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	return roundRobinQ.initialize();
+	return ERROR_SUCCESS;
 }
 
 void TaskStream::dump(void)
@@ -65,6 +72,9 @@ void TaskStream::dump(void)
 
 error_t TaskStream::cooperativeBind(void)
 {
+	error_t		ret;
+	Thread		*dummy;
+
 	/**	EXPLANATION:
 	 * This function is only ever called on the BSP CPU's Task Stream,
 	 * because only the BSP task stream will ever be deliberately co-op
@@ -88,6 +98,20 @@ error_t TaskStream::cooperativeBind(void)
 		&__korientationThread,
 		__korientationThread.schedPrio->prio,
 		__korientationThread.schedOptions);*/
+
+	ret = processTrib.__kgetStream()->spawnThread(
+		NULL, &powerThread,
+		NULL, Thread::ROUND_ROBIN, 0,
+		SPAWNTHREAD_FLAGS_POWER_THREAD,
+		&dummy);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR TASKSTREAM"%d: coopBind: spawnThread() failed for "
+			"power thread.\n",
+			this->id);
+
+		return ret;
+	};
 
 	cpuTrib.onlineCpus.setSingle(parent->cpuId);
 	return ERROR_SUCCESS;
@@ -199,19 +223,19 @@ printf(NOTICE TASKSTREAM"%d: Switching to task 0x%x.\n",
 	loadContextAndJump(newThread->context);
 }
 
-// TODO: Merge the two queue pull functions for cache efficiency.
 Thread* TaskStream::pullFromQ(utf8Char *which)
 {
 	Thread			*ret;
 	status_t		status;
 	PrioQueue<Thread>	*queue=NULL;
 
+	(void)status;
+
 	if (!strcmp8(which, CC"realtime")) { queue = &realTimeQ; };
 	if (!strcmp8(which, CC"roundrobin")) { queue = &roundRobinQ; };
 	if (queue == NULL) { return NULL; };
 
-	(void)status;
-	do
+	for (;FOREVER;)
 	{
 		ret = queue->pop();
 		if (ret == NULL) {
@@ -227,7 +251,7 @@ Thread* TaskStream::pullFromQ(utf8Char *which)
 		};
 
 		return ret;
-	} while (1);
+	};
 }
 
 void TaskStream::updateCapacity(ubit8 action, uarch_t val)

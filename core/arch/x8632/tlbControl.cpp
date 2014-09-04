@@ -90,7 +90,7 @@ void tlbControl::smpFlushEntryRange(void *vaddr, uarch_t nPages)
 	};
 
 	bmp->lock();
-	for (sbit32 i=0; (unsigned)i<bmp->getNBits(); i++)
+	for (ubit32 i=0; i<bmp->getNBits(); i++)
 	{
 		if (bmp->test(i) && i != cpuTrib.getCurrentCpuStream()->cpuId)
 		{

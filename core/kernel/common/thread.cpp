@@ -7,75 +7,47 @@
 
 ubit8		_TaskContext::bspPowerTaskContextCpuAffinityMem[32];
 
-_Task::_Task(
-	Thread *parent, processId_t tid, bspPlugTypeE bspPlugType,
-	void *privateData
-	)
+sbit8 Thread::isBspPowerThread(processId_t tid)
+{
+	return isPowerThread(tid) && CpuStream::isBspCpuId(tid);
+}
+
+
+_Task::_Task(processId_t tid, Thread *parent, void *privateData)
 :	Stream<Thread>(parent, tid),
-bspPlugType(bspPlugType), privateData(privateData),
+privateData(privateData),
 // Usually overridden immediately by inheritSchedPrio(), though.
 schedPrio(&internalPrio),
 internalPrio(CC"Custom", PRIOCLASS_DEFAULT),
 schedPolicy(ROUND_ROBIN), schedOptions(0), schedFlags(0)
 {
-	if (isPowerTask())
-	{
-		inheritSchedPrio(0, SPAWNPROC_FLAGS_SCHEDPRIO_CLASS_DEFAULT);
-		inheritSchedPolicy(
-			ROUND_ROBIN, SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET);
-	};
+}
+
+_TaskContext::_TaskContext(processId_t tid, Thread *parent)
+: Stream<Thread>(parent, tid),
+runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
+nLocksHeld(0), context(NULL)
+{
+#if __SCALING__ >= SCALING_CC_NUMA
+	defaultMemoryBank.rsrc = NUMABANKID_INVALID;
+#endif
+
+	memset(
+		bspPowerTaskContextCpuAffinityMem, 0,
+		sizeof(bspPowerTaskContextCpuAffinityMem));
 }
 
 Thread::Thread(
-	processId_t id, ProcessStream *parent, bspPlugTypeE bspPlugType,
-	void *privateData
-	)
+	processId_t id, ProcessStream *parent, void *privateData,
+	CpuStream *parentCpu)
 :	Stream<ProcessStream>(parent, id),
-	_Task(this, id, bspPlugType, privateData),
-	_TaskContext(this, id, bspPlugType),
-id(id), bspPlugType(bspPlugType), parent(parent),
-currentCpu(NULL),
+	_Task(id, this, privateData),
+	_TaskContext(id, this),
+id(id), parent(parent),
+currentCpu(NULL), parentCpu(parentCpu),
 stack0(NULL), stack1(NULL),
 messageStream(this)
 {
-	CpuStream		*cs;
-
-	/* If this is a power thread, set the thread's currentCpu
-	 * member to its parent CPU's power thread.
-	 **/
-	if (isPowerThread())
-	{
-		if (isBspPowerThread())
-		{
-			currentCpu = &bspCpu;
-			allocateStacks();
-		}
-		else
-		{
-			error_t		err;
-
-			/*	FIXME:
-			 * I don't think this will work. The constructor
-			 * is almost definitely going to be run before
-			 * the new CPU stream is added to the list of
-			 * CPUs in the CPU Trib.
-			 *
-			 * We can cross this hurdle when we get to it.
-			 **/
-			cs = cpuTrib.getStream(id);
-			if (cs == NULL)
-			{
-				panic(CC"Unable to find parent CPU in "
-					"Power thread constructor.");
-			};
-
-			currentCpu = cs;
-			err = allocateStacks();
-			if (err != ERROR_SUCCESS) {
-				panic(err);
-			}
-		};
-	};
 }
 
 error_t _TaskContext::initialize(void)
@@ -91,7 +63,7 @@ error_t _TaskContext::initialize(void)
 	ret = cpuAffinity.initialize(cpuTrib.availableCpus.getNBits());
 	if (ret != ERROR_SUCCESS) { return ret; };
 #endif
-for(;;){};
+
 	return ERROR_SUCCESS;
 }
 
@@ -189,6 +161,10 @@ error_t _TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 
 	/**	EXPLANATION:
 	 * Threads STINHERIT CPU Affinity by default. Overrides are:
+	 * PARENT_CPU:
+	 *	Forced if the thread is a power thread. Cannot be overridden.
+	 *	Basically forces a power thread to be bound only to its parent
+	 *	CPU, since they should never be migrated.
 	 * PINHERIT:
 	 *	Indicated by SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT.
 	 * SET:
@@ -200,29 +176,10 @@ error_t _TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 	 * that task context will only have bit 0 set (because we cannot allow
 	 * power threads to migrate, obviously...).
 	 **/
-	if (isPowerTaskContext())
+	if (Thread::isPowerThread(id))
 	{
-		if (isBspPowerTaskContext())
-		{
-			/* For the BSP power thread, we need to use the
-			 * preallocated mem that comes embedded statically in
-			 * the class.
-			 **/
-			ret = this->cpuAffinity.initialize(
-				sizeof(bspPowerTaskContextCpuAffinityMem)
-					* __BITS_PER_BYTE__,
-				Bitmap::sPreallocatedMemory(
-					bspPowerTaskContextCpuAffinityMem,
-					sizeof(bspPowerTaskContextCpuAffinityMem)));
-		}
-		else
-		{
-			/* For all other power threads, we allow dynamic
-			 * allocation.
-			 **/
-			ret = this->cpuAffinity.initialize(
-				PROCID_THREAD(parent->getFullId()) + 1);
-		};
+		ret = this->cpuAffinity.initialize(
+			PROCID_THREAD(parent->getFullId()) + 1);
 
 		if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -373,19 +330,9 @@ error_t Thread::allocateStacks(void)
 	 * allocate a userspace stack, and furthermore, the use of a userspace
 	 * stack for such a process is prohibited by kernel policy.
 	 **/
-	if (isPowerThread())
+	if (isPowerThread(getFullId()))
 	{
-		CpuStream	*cs;
-		if (isBspPowerThread()) {
-			stack0 = bspCpu.taskStream.powerStack;
-		}
-		else
-		{
-			cs = cpuTrib.getStream(getFullId());
-			if (cs == NULL) { return ERROR_FATAL; };
-			stack0 = cs->taskStream.powerStack;
-		};
-
+		stack0 = parentCpu->taskStream.powerStack;
 		return ERROR_SUCCESS;
 	};
 

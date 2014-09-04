@@ -24,21 +24,12 @@
 		}; \
 	} while (0)
 
-#if __SCALING__ >= SMP
-static cpu_t		highestCpuId=0;
-#endif
-#if __SCALING__ >= SCALING_CC_NUMA
-	#ifdef CHIPSET_NUMA_GENERATE_SHBANK
-static numaBankId_t	highestBankId=CHIPSET_NUMA_SHBANKID;
-	#else
-static numaBankId_t	highestBankId=0;
-	#endif
-#endif
+cpu_t		CpuStream::highestCpuId=CPUID_INVALID;
+numaBankId_t	CpuStream::highestBankId=NUMABANKID_INVALID;
 
 CpuTrib::CpuTrib(void)
 :
-_usingChipsetSmpMode(0),
-bspId(CPUID_INVALID)
+_usingChipsetSmpMode(0)
 {
 	/**	EXPLANATION
 	 * Even on a uniprocessor build of the kernel, we set this to
@@ -86,14 +77,32 @@ oo=26;
 	return ERROR_SUCCESS;
 }
 
-error_t CpuTrib::initializeBspCpuStream(void)
+#include <arch/debug.h>
+error_t CpuTrib::loadBspInformation(void)
 {
 	error_t		ret;
 
 	// Get BSP's hardware ID.
-	bspId = zkcmCore.cpuDetection.getBspId();
-	printf(NOTICE CPUTRIB"initializeBspStream: BSP CPU ID is %d.\n",
-		bspId);
+	ret = zkcmCore.cpuDetection.loadBspId(&CpuStream::bspCpuId, 1);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(FATAL CPUTRIB"loadBspInformation: ZKCM loadBspId failed "
+			"because %s.\n",
+			strerror(ret));
+
+		return ret;
+	};
+
+	if (CpuStream::bspCpuId == CPUID_INVALID)
+	{
+		printf(WARNING CPUTRIB"loadBspInformation: ZKCM loadBspId "
+			"returned INVALID as ID for BSP.\n");
+
+		CpuStream::bspCpuId = 0;
+	};
+
+	printf(NOTICE CPUTRIB"loadBspInformation: BSP CPU ID is %d.\n",
+		CpuStream::bspCpuId);
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	/**	EXPLANATION:
@@ -103,7 +112,6 @@ error_t CpuTrib::initializeBspCpuStream(void)
 	 * the NUMA map, or no NUMA map is obtained, we place the BSP CPU into
 	 * the shared bank.
 	 **/
-	numaBankId_t	bspBankId=CHIPSET_NUMA_SHBANKID;
 	sZkcmNumaMap	*numaMap;
 
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
@@ -111,36 +119,54 @@ error_t CpuTrib::initializeBspCpuStream(void)
 	{
 		for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
 		{
-			if (numaMap->cpuEntries[i].cpuId == bspId)
+			if (numaMap->cpuEntries[i].cpuId == CpuStream::bspCpuId)
 			{
-				bspBankId = numaMap->cpuEntries[i].bankId;
+				CpuStream::bspBankId =
+					numaMap->cpuEntries[i].bankId;
+
 				printf(NOTICE CPUTRIB"initializeBspStream: "
 					"BSP CPU bank ID is %d.\n",
-					bspBankId);
+					CpuStream::bspBankId);
 			};
 		};
 	};
 #endif
 
-	if (bspBankId == CHIPSET_NUMA_SHBANKID)
+	if (CpuStream::bspBankId == NUMABANKID_INVALID)
 	{
-		printf(WARNING CPUTRIB"initializeBspStream: Unable to "
+		CpuStream::bspBankId = CHIPSET_NUMA_SHBANKID;
+		printf(WARNING CPUTRIB"loadBspInformation: Unable to "
 			"determine BSP bank ID.\n\tUsing SHBANKID (%d).\n",
 			CHIPSET_NUMA_SHBANKID);
 	};
 
-	ret = bootCpuNotification(
-#if __SCALING__ >= SCALING_CC_NUMA
-		bspBankId,
-#endif
-		bspId, 0);
+	/**	TODO:
+	 * If possible, load the BSP's ACPI ID as well.
+	 **/
+	sZkcmSmpMap		*smpMap;
 
-	if (ret != ERROR_SUCCESS) { return ret; };
+	smpMap = zkcmCore.cpuDetection.getSmpMap();
+	if (smpMap != NULL && smpMap->nEntries > 0)
+	{
+		for (uarch_t i=0; i<smpMap->nEntries; i++)
+		{
+			if (smpMap->entries[i].cpuId == CpuStream::bspCpuId)
+			{
+				CpuStream::bspAcpiId =
+					smpMap->entries[i].cpuAcpiId;
 
-	ret = bspCpu.bind();
-	if (ret != ERROR_SUCCESS) { return ret; };
+				break;
+			};
+		};
+	};
 
-	return bspCpu.taskStream.cooperativeBind();
+	if (CpuStream::bspAcpiId == CPUID_INVALID)
+	{
+		printf(WARNING CPUTRIB"loadBspInformation: Failed to detect BSP ACPI "
+			"ID.\n");
+	};
+
+	return ERROR_SUCCESS;
 }
 
 error_t CpuTrib::displayUpOperationOnMpBuildMessage(void)
@@ -234,15 +260,23 @@ error_t CpuTrib::initializeAllCpus(void)
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
 	if (numaMap != NULL && numaMap->nCpuEntries > 0)
 	{
+		if (CpuStream::highestCpuId == CPUID_INVALID)
+			{ CpuStream::highestCpuId = 0; };
+		if (CpuStream::highestBankId == NUMABANKID_INVALID)
+			{ CpuStream::highestBankId = 0; };
+
 		getHighestId(
-			highestBankId, numaMap, cpuEntries,
+			CpuStream::highestBankId, numaMap, cpuEntries,
 			bankId, numaMap->nCpuEntries);
 
 		getHighestId(
-			highestCpuId, numaMap, cpuEntries,
+			CpuStream::highestCpuId, numaMap, cpuEntries,
 			cpuId, numaMap->nCpuEntries);
 	};
-	if (availableBanks.resizeTo(highestBankId + 1) != ERROR_SUCCESS) {
+
+	if (availableBanks.resizeTo(
+		CpuStream::highestBankId + 1) != ERROR_SUCCESS)
+	{
 		panic(CC""CPUTRIB"AvailableBanks BMP initialize() failed.\n");
 	};
 #endif
@@ -252,20 +286,28 @@ error_t CpuTrib::initializeAllCpus(void)
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != NULL && smpMap->nEntries > 0)
 	{
+		if (CpuStream::highestCpuId == CPUID_INVALID)
+			{ CpuStream::highestCpuId = 0; };
+
 		getHighestId(
-			highestCpuId, smpMap, entries, cpuId, smpMap->nEntries);
+			CpuStream::highestCpuId, smpMap,
+			entries, cpuId, smpMap->nEntries);
 	};
 
-	if (availableCpus.resizeTo(highestCpuId + 1) != ERROR_SUCCESS) {
+	if (availableCpus.resizeTo(
+		CpuStream::highestCpuId + 1) != ERROR_SUCCESS)
+	{
 		panic(CC""CPUTRIB"Failed to initialize() availableCpus bmp.\n");
 	};
 
-	if (onlineCpus.resizeTo(highestCpuId + 1) != ERROR_SUCCESS) {
+	if (onlineCpus.resizeTo(
+		CpuStream::highestCpuId + 1) != ERROR_SUCCESS)
+	{
 		panic(CC""CPUTRIB"Failed to initialize() onlineCpus bmp.\n");
 	};
 #endif
 
-	zkcmCore.newCpuIdNotification(highestCpuId);
+	zkcmCore.newCpuIdNotification(CpuStream::highestCpuId);
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	return numaInit();
@@ -319,7 +361,9 @@ void CpuTrib::bootParseNumaMap(sZkcmNumaMap *numaMap)
 
 	for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
 	{
-		if (numaMap->cpuEntries[i].cpuId == bspId) { continue; };
+		if (numaMap->cpuEntries[i].cpuId == CpuStream::bspCpuId)
+			{ continue; };
+
 		err = bootCpuNotification(
 			numaMap->cpuEntries[i].bankId,
 			numaMap->cpuEntries[i].cpuId,
@@ -341,7 +385,9 @@ void CpuTrib::bootConfirmNumaCpusBooted(sZkcmNumaMap *numaMap)
 {
 	for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
 	{
-		if (numaMap->cpuEntries[i].cpuId == bspId) { continue; };
+		if (numaMap->cpuEntries[i].cpuId == CpuStream::bspCpuId)
+			{ continue; };
+
 		getStream(numaMap->cpuEntries[i].cpuId)->powerManager
 			.bootWaitForCpuToPowerOn();
 	};
@@ -357,7 +403,9 @@ void CpuTrib::bootParseNumaMap(
 	{
 		sarch_t		found=0;
 
-		if (smpMap->entries[i].cpuId == bspId) { continue; };
+		if (smpMap->entries[i].cpuId == CpuStream::bspCpuId)
+			{ continue; };
+
 		for (uarch_t j=0; j<numaMap->nCpuEntries; j++)
 		{
 			// If the cpu is also in the NUMA map:
@@ -397,7 +445,9 @@ void CpuTrib::bootConfirmNumaCpusBooted(
 	{
 		sarch_t		found=0;
 
-		if (smpMap->entries[i].cpuId == bspId) { continue; };
+		if (smpMap->entries[i].cpuId == CpuStream::bspCpuId)
+			{ continue; };
+
 		for (uarch_t j=0; j<numaMap->nCpuEntries; j++)
 		{
 			if (smpMap->entries[i].cpuId
@@ -526,7 +576,8 @@ void CpuTrib::bootParseSmpMap(sZkcmSmpMap *smpMap)
 
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
 	{
-		if (smpMap->entries[i].cpuId == bspId) { continue; };
+		if (smpMap->entries[i].cpuId == CpuStream::bspCpuId)
+			{ continue; };
 
 		err = bootCpuNotification(
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -552,7 +603,7 @@ void CpuTrib::bootConfirmSmpCpusBooted(sZkcmSmpMap *smpMap)
 {
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
 	{
-		if (smpMap->entries[i].cpuId != bspId)
+		if (smpMap->entries[i].cpuId != CpuStream::bspCpuId)
 		{
 			getStream(smpMap->entries[i].cpuId)->powerManager
 				.bootWaitForCpuToPowerOn();
@@ -624,7 +675,7 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 #else
 	if (cid == CPUID_INVALID) {
 #endif
-		return ERROR_UNAUTHORIZED;
+		return ERROR_INVALID_ARG_VAL;
 	};
 
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -643,8 +694,7 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 
 	ncb = getBank(bid);
 	CHECK_AND_RESIZE_BMP(
-		&ncb->cpus, cid, &ret,
-		"spawnStream", "resident bank");
+		&ncb->cpus, cid, &ret, "spawnStream", "resident bank");
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ncb->cpus.setSingle(cid);
@@ -655,8 +705,7 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	 * resized to hold the new CPU's bit.
 	 **/
 	CHECK_AND_RESIZE_BMP(
-		&availableCpus, cid, &ret,
-		"spawnStream", "availableCpus");
+		&availableCpus, cid, &ret, "spawnStream", "availableCpus");
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -668,30 +717,31 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	/* Now we simply allocate the CPU stream and add it to the global CPU
 	 * array. Also, do not re-allocate the BSP CPU stream.
 	 **/
-	if (cid != bspId)
+	if (cid != CpuStream::bspCpuId)
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
 		cs = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(CpuStream)),
 			MEMALLOC_NO_FAKEMAP))
-				CpuStream(bid, cid, cpuAcpiId, BSP_PLUGTYPE_NOTBSP);
+				CpuStream(bid, cid, cpuAcpiId);
 #else
 		cs = new (processTrib.__kgetStream()->memoryStream.*memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(CpuStream)),
 			MEMALLOC_NO_FAKEMAP))
-				CpuStream(cid, cpuAcpiId, BSP_PLUGTYPE_NOTBSP);
+				CpuStream(cid, cpuAcpiId);
 #endif
 	}
 	else
 	{
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new (&bspCpu) CpuStream(bid, cid, cpuAcpiId, BSP_PLUGTYPE_HOTPLUG);
+		cs = new (&bspCpu) CpuStream(bid, cid, cpuAcpiId);
 #else
-		cs = new (&bspCpu) CpuStream(cid, cpuAcpiId, BSP_PLUGTYPE_HOTPLUG);
+		cs = new (&bspCpu) CpuStream(cid, cpuAcpiId);
 #endif
 	};
 
 	if (cs == NULL) { return ERROR_MEMORY_NOMEM; };
+
 	ret = cs->initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -711,13 +761,13 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	};
 
 #if __SCALING__ >= SCALING_CC_NUMA
-		printf(NOTICE CPUTRIB"spawnStream(%d,%d,%d): Success.\n",
-			bid, cid, cpuAcpiId);
+	printf(NOTICE CPUTRIB"spawnStream(%d,%d,%d): Success.\n",
+		bid, cid, cpuAcpiId);
 #else
-		printf(NOTICE CPUTRIB"spawnStream(%d,%d): Success.\n",
-			cid, cpuAcpiId);
+	printf(NOTICE CPUTRIB"spawnStream(%d,%d): Success.\n",
+		cid, cpuAcpiId);
 #endif
-		__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_ADD);
+	__kupdateAffinity(cid, CPUTRIB___KUPDATEAFFINITY_ADD);
 
 	return ERROR_SUCCESS;
 }

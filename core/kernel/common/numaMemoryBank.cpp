@@ -219,7 +219,7 @@ error_t NumaMemoryBank::contiguousGetFrames(
 		defRange.lock.writeRelease();
 
 		ranges.lock.readRelease(rwFlags2);
-		defRange.lock.readAcquire(&rwFlags);		
+		defRange.lock.readAcquire(&rwFlags);
 		// Note that we still hold readAcquire on defRange here.
 	};
 
@@ -258,7 +258,7 @@ error_t NumaMemoryBank::contiguousGetFrames(
 	defRange.lock.readRelease(rwFlags);
 	ranges.lock.readRelease(rwFlags2);
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
-}			
+}
 
 status_t NumaMemoryBank::fragmentedGetFrames(
 	uarch_t nFrames, paddr_t *paddr, ubit32)
@@ -286,7 +286,7 @@ status_t NumaMemoryBank::fragmentedGetFrames(
 		defRange.lock.writeRelease();
 
 		ranges.lock.readRelease(rwFlags2);
-		defRange.lock.readAcquire(&rwFlags);		
+		defRange.lock.readAcquire(&rwFlags);
 		// Note that we still hold readAcquire on defRange here.
 	};
 

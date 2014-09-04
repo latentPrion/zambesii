@@ -14,14 +14,25 @@
 
 struct sIbmPcChipsetState
 {
-	struct
+	struct sBspInfo
 	{
+		sBspInfo(void)
+		:
+		bspIdRequestedAlready(0), bspId(CPUID_INVALID)
+		{}
+
 		sarch_t		bspIdRequestedAlready;
 		cpu_t		bspId;
 	} bspInfo;
 
-	struct
+	struct sSmpInfo
 	{
+		sSmpInfo(void)
+		:
+		chipsetState(SMPSTATE_SMP),
+		chipsetOriginalState(SMPSTATE_UNIPROCESSOR)
+		{}
+
 		// Whether SMP (Symmetric I/O) or non-SMP mode.
 		ubit8		chipsetState;
 		// Set the board back to Virt. wire or PIC mode at shutdown.

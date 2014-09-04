@@ -51,8 +51,20 @@ public:
 		return ret;
 	}
 
-	virtual error_t bind(void) { return ERROR_SUCCESS; };
-	virtual void cut(void) {};
+	virtual error_t bind(void)
+	{
+		binding.lock.acquire();
+		binding.rsrc = 1;
+		binding.lock.release();
+		return ERROR_SUCCESS;
+	};
+
+	virtual void cut(void)
+	{
+		binding.lock.acquire();
+		binding.rsrc = 0;
+		binding.lock.release();
+	};
 
 // jumpList interface.
 public:

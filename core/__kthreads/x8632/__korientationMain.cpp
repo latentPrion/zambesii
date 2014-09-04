@@ -154,11 +154,22 @@ static void dumpSrat(void)
  *
  * We then pass control to __korientationMain().
  **/
-extern "C" void __korientationInit(ubit32, sMultibootData *)
+inline static ubit8 *getEsp(void)
+{
+	ubit8		*ret;
+
+	asm volatile(
+		"movl %%esp, %0\n\t"
+		: "=r" (ret));
+
+	return ret;
+}
+
+extern "C" void __korientationMain(ubit32, sMultibootData *)
 {
 	error_t			ret;
 	uarch_t			devMask;
-	Thread			*mainThread;
+	Thread			*self;
 	ContainerProcess	&__kprocess = *processTrib.__kgetStream();
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
@@ -169,6 +180,7 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 	bspCpu.initializeBaseState();
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 	cxxrtl::callGlobalConstructors();
+	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread() ;
 
 	/* Initialize exceptions, then move on to __kspace level physical
 	 * memory management, then the kernel Memory Stream. Then when we have
@@ -178,6 +190,7 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 	DO_OR_DIE(memoryTrib, initialize(), ret);
 	DO_OR_DIE(memoryTrib, __kspaceInitialize(), ret);
 
+	DO_OR_DIE(zkcmCore, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
 	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
 	if (!FLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
@@ -194,6 +207,9 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
 
+	/* Next block is dedicated to initializing Process management,
+	 * Threading and scheduling.
+	 **/
 	DO_OR_DIE(processTrib, initialize(), ret);
 	DO_OR_DIE(
 		__kprocess,
@@ -203,55 +219,46 @@ extern "C" void __korientationInit(ubit32, sMultibootData *)
 			NULL),
 		ret);
 
-memoryTrib.dump();
+	/* This next block is dedicated to initializing the BSP CPU stream.
+	 **/
+	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
+	DO_OR_DIE(cpuTrib, initialize(), ret);
+	DO_OR_DIE(cpuTrib, loadBspInformation(), ret);
+	DO_OR_DIE(
+		cpuTrib,
+		spawnStream(
+			CpuStream::bspBankId,
+			CpuStream::bspCpuId, CpuStream::bspAcpiId),
+		ret);
+
+	// XXX: Might want to insert a bspCpu.bind() call here.
+	DO_OR_DIE(bspCpu.taskStream, cooperativeBind(), ret);
+
 
 	/* The next block is dedicated to initializing the core of the
 	 * microkernel. Scheduling, Message passing, Processes and Threads.
 	 **/
+	DO_OR_DIE(taskTrib, initialize(), ret);
 
 	/* Finally, the last block in this sequence is dedicated to IRQs before
 	 * we branch off to working on the hardware abstraction subsystems.
 	 **/
-	DO_OR_DIE(zkcmCore, initialize(), ret);
 
 	/* Initialize the kernel debug pipe for boot logging, etc.
 	 **/
 
 	/* Initialize IRQs.
 	 **/
+#if 0
 	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
 	zkcmCore.irqControl.maskAll();
 
 
 	zkcmCore.irqControl.chipsetEventNotification(
 		IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL, 0);
+#endif
 
-	/* Initialize the kernel Memory Reservoir (heap) and object cache pool.
-	 * Create the global asyncContext object cache.
-	 **/
-	__kcallbackCache = cachePool.createCache(sizeof(__kCallback));
-	if (__kcallbackCache == NULL)
-	{
-		printf(FATAL ORIENT"Main: Failed to create async context "
-			"object cache. Halting.\n");
-
-		panic(ERROR_UNKNOWN);
-	};
-
-	/* Initialize the CPU Tributary's internal BMPs etc, then initialize the
-	 * BSP CPU's scheduler to co-op level scheduling capability, and
-	 * spawn the __korientationMain thread, ending __korientationInit.
-	 **/
-	DO_OR_DIE(__kprocess.zasyncStream, initialize(), ret);
-	DO_OR_DIE(cpuTrib, initialize(), ret);
-	DO_OR_DIE(zkcmCore.cpuDetection, initialize(), ret);
-asm volatile("hlt\n\t");
-	DO_OR_DIE(cpuTrib, initializeBspCpuStream(), ret);
-
-
-	/* Spawn the new thread for __korientationMain. There is no need to
-	 * unschedule __korientationInit() because it will never be scheduled.
-	**/
+#if 0
 	DO_OR_DIE(
 		__kprocess,
 		spawnThread(
@@ -262,34 +269,10 @@ asm volatile("hlt\n\t");
 			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
 			&mainThread),
 		ret);
-
 	cpuTrib.getCurrentCpuStream()->taskStream.pull();
-}
+#endif
 
-/**	EXPLANATION:
- * This function is entered after __korientationInit() so it has access to
- * memory management (__kspace level), cooperative scheduling on the BSP,
- * thread spawning and process spawning, along with exceptions and IRQs.
- *
- * Certain chipsets may need to do extra work inside of __korientationMain to
- * have IRQs etc up to speed, but that is the general initialization state at
- * this point.
- *
- * The rest of this function guides the kernel through the bootstrap sequence
- * (timers, VFS, drivers, etc). Generally the floodplainn VFS is initialized
- * first, and then populated with the ZKCM devices, and then the rest of the
- * kernel is initialized with an emphasis on getting the timers initialized
- * ASAP so we can get the BSP CPU to pre-emptive scheduling status quickly.
- **/
-
-void __korientationMain(void)
-{
-	Thread			*self;
-
-	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread() );
-
-	printf(NOTICE ORIENT"Main running. Task ID 0x%x (@0x%p).\n",
+	printf(NOTICE ORIENT"Entering message loop. Task ID 0x%x (@0x%p).\n",
 		self->getFullId(), self);
 
 	__korientationMain1();
@@ -340,6 +323,8 @@ void __korientationMain1(void)
 		ret);
 
 	floodplainn.setZudiIndexServerTid(dp->id);
+
+//cpuTrib.getCurrentCpuStream()->taskStream.dump();
 }
 
 void __korientationMain2(MessageStream::sHeader *msg)
@@ -462,6 +447,6 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	};
 
 	printf(NOTICE ORIENT"Halting unfavourably.\n");
-	for (;;) { asm volatile("hlt\n\t"); };
+	for (;FOREVER;) { asm volatile("hlt\n\t"); };
 }
 
