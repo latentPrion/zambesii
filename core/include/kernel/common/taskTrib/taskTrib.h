@@ -58,25 +58,6 @@ public:
 		return dormant(thread);
 	}
 
-#if 0
-	error_t dormant(CpuStream *cpuStream)
-	{
-		return dormant(
-			cpuStream->taskStream.getCurrentPerCpuTask(),
-			cpuStream->getTaskContext());
-	}
-
-	error_t dormant(cpu_t cid)
-	{
-		CpuStream	*cpuStream;
-
-		cpuStream = cpuTrib.getStream(cid);
-		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
-
-		return dormant(cpuStream);
-	}
-#endif
-
 	error_t wake(processId_t tid)
 	{
 		ProcessStream	*proc;
@@ -88,25 +69,6 @@ public:
 		thread = proc->getThread(tid);
 		return wake(thread);
 	}
-
-#if 0
-	error_t wake(CpuStream *cpuStream)
-	{
-		return wake(
-			cpuStream->taskStream.getCurrentPerCpuTask(),
-			cpuStream->getTaskContext());
-	}
-
-	error_t wake(cpu_t cid)
-	{
-		CpuStream	*cpuStream;
-
-		cpuStream = cpuTrib.getStream(cid);
-		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
-
-		return wake(cpuStream);
-	}
-#endif
 
 	error_t unblock(processId_t tid)
 	{
@@ -120,25 +82,6 @@ public:
 		return unblock(thread);
 	}
 
-#if 0
-	error_t unblock(CpuStream *cpuStream)
-	{
-		return unblock(
-			cpuStream->taskStream.getCurrentPerCpuTask(),
-			cpuStream->getTaskContext());
-	}
-
-	error_t unblock(cpu_t cid)
-	{
-		CpuStream	*cpuStream;
-
-		cpuStream = cpuTrib.getStream(cid);
-		if (cpuStream == NULL) { return ERROR_INVALID_ARG_VAL; };
-
-		return unblock(cpuStream);
-	}
-#endif
-
 	void kill(processId_t tid)
 	{
 		ProcessStream	*proc;
@@ -150,25 +93,6 @@ public:
 		thread = proc->getThread(tid);
 		kill(thread);
 	}
-
-#if 0
-	void kill(CpuStream *cpuStream)
-	{
-		kill(
-			cpuStream->taskStream.getCurrentPerCpuTask(),
-			cpuStream->getTaskContext());
-	}
-
-	void kill(cpu_t cid)
-	{
-		CpuStream	*cpuStream;
-
-		cpuStream = cpuTrib.getStream(cid);
-		if (cpuStream == NULL) { return; };
-
-		kill(cpuStream);
-	}
-#endif
 
 	ubit32 getLoad(void) { return load; };
 	ubit32 getCapacity(void) { return capacity; };
