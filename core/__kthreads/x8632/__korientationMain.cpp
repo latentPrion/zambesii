@@ -223,7 +223,7 @@ extern "C" void __korientationMain(ubit32, sMultibootData *)
 			CpuStream::bspCpuId, CpuStream::bspAcpiId),
 		ret);
 
-	// XXX: Might want to insert a bspCpu.bind() call here.
+	DO_OR_DIE(bspCpu, bind(), ret);
 	DO_OR_DIE(bspCpu.taskStream, cooperativeBind(), ret);
 
 	/* The next block is dedicated to initializing the core of the
@@ -240,20 +240,6 @@ extern "C" void __korientationMain(ubit32, sMultibootData *)
 
 	zkcmCore.irqControl.chipsetEventNotification(
 		IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL, 0);
-#endif
-
-#if 0
-	DO_OR_DIE(
-		__kprocess,
-		spawnThread(
-			(void (*)(void *))&__korientationMain, NULL,
-			NULL,
-			Thread::ROUND_ROBIN,
-			0,
-			SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT,
-			&mainThread),
-		ret);
-	cpuTrib.getCurrentCpuStream()->taskStream.pull();
 #endif
 
 	printf(NOTICE ORIENT"Entering message loop. Task ID 0x%x (@0x%p).\n",

@@ -87,7 +87,7 @@ error_t CpuStream::bind(void)
 	cpuTrib.availableCpus.setSingle(cpuId);
 
 	// Open the floodgates.
-	cpuControl::enableInterrupts();
+//	cpuControl::enableInterrupts();
 
 	// Enumerate CPU and features.
 	enumerate();
