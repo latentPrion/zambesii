@@ -93,10 +93,17 @@ void ZkcmIrqControlMod::destroyIrqController(void)
 
 void ZkcmIrqControlMod::chipsetEventNotification(ubit8 event, uarch_t flags)
 {
+	printf(FATAL IBMPCIRQCTL"chipsetEventNotification has been "
+		"disconnected from the kernel code path.\n\tYou will have to "
+		"re-organize and reconnect this code path.\n"
+		"\tONLY the IBMPC VGA terminal will receive this message.\n");
+
+	ibmPcVgaTerminal.chipsetEventNotification(event, flags);
+	return;
+
 	switch (event)
 	{
 	case IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL:
-		ibmPcVgaTerminal.chipsetEventNotification(event, flags);
 		break;
 
 	case IRQCTL_EVENT_MEMMGT_AVAIL:

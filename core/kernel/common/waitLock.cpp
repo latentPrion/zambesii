@@ -52,7 +52,7 @@ void Lock::sOperationDescriptor::execute()
 
 void WaitLock::acquire(void)
 {
-	uarch_t	nTries = 0xF00000;
+	uarch_t	nTries = 10000;
 	cpu_t	cid;
 	uarch_t contenderFlags=0;
 

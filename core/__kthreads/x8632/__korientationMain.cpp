@@ -154,16 +154,6 @@ static void dumpSrat(void)
  *
  * We then pass control to __korientationMain().
  **/
-inline static ubit8 *getEsp(void)
-{
-	ubit8		*ret;
-
-	asm volatile(
-		"movl %%esp, %0\n\t"
-		: "=r" (ret));
-
-	return ret;
-}
 
 extern "C" void __korientationMain(ubit32, sMultibootData *)
 {
@@ -204,6 +194,8 @@ extern "C" void __korientationMain(ubit32, sMultibootData *)
 
 	DO_OR_DIE((*__kprocess.getVaddrSpaceStream()), initialize(), ret);
 	DO_OR_DIE(__kprocess.memoryStream, initialize(), ret);
+	// This does nothing for IRQ ctl, but remaps VGA buff into kvaddrspace.
+	zkcmCore.irqControl.chipsetEventNotification(IRQCTL_EVENT_MEMMGT_AVAIL, 0);
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
 
@@ -234,22 +226,14 @@ extern "C" void __korientationMain(ubit32, sMultibootData *)
 	// XXX: Might want to insert a bspCpu.bind() call here.
 	DO_OR_DIE(bspCpu.taskStream, cooperativeBind(), ret);
 
-
 	/* The next block is dedicated to initializing the core of the
 	 * microkernel. Scheduling, Message passing, Processes and Threads.
 	 **/
 	DO_OR_DIE(taskTrib, initialize(), ret);
 
-	/* Finally, the last block in this sequence is dedicated to IRQs before
-	 * we branch off to working on the hardware abstraction subsystems.
-	 **/
-
-	/* Initialize the kernel debug pipe for boot logging, etc.
-	 **/
-
+#if 0
 	/* Initialize IRQs.
 	 **/
-#if 0
 	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
 	zkcmCore.irqControl.maskAll();
 
@@ -323,8 +307,6 @@ void __korientationMain1(void)
 		ret);
 
 	floodplainn.setZudiIndexServerTid(dp->id);
-
-//cpuTrib.getCurrentCpuStream()->taskStream.dump();
 }
 
 void __korientationMain2(MessageStream::sHeader *msg)

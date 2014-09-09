@@ -10,6 +10,23 @@
 // Static data member.
 uarch_t debug::Debugger::flags = 0;
 
+void debug::getVaddrSpacePointer(paddr_t *ret)
+{
+	asm volatile("movl	%%cr3, %0\n\t"
+		: "=r" (*ret));
+}
+
+ubit8 *debug::getStackPointer(void)
+{
+	ubit8		*ret;
+
+	asm volatile(
+		"movl %%esp, %0\n\t"
+		: "=r" (ret));
+
+	return ret;
+}
+
 
 void debug::sStackDescriptor::dump(void)
 {

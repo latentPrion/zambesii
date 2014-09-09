@@ -20,7 +20,7 @@ class PrioQueue
 public:
 	PrioQueue(ubit16 nPriorities)
 	:
-	Nodeache(NULL), nPrios(nPriorities), queues(NULL)
+	nodeCache(NULL), nPrios(nPriorities), queues(NULL)
 	{
 		headQueue.rsrc = -1;
 	}
@@ -31,7 +31,7 @@ public:
 	{
 		headQueue.rsrc = -1;
 		delete[] queues;
-		cachePool.destroyCache(Nodeache);
+		cachePool.destroyCache(nodeCache);
 	}
 
 public:
@@ -46,11 +46,14 @@ private:
 	class Queue
 	{
 	friend class PrioQueue;
+		// Private constructor only for use by parent class. NOP.
+		Queue(void) {}
+
 	public:
 		// fine.
 		Queue(ubit16 prio, SlamCache *cache)
 		:
-		prio(prio), Nodeache(cache)
+		prio(prio), nodeCache(cache)
 		{}
 
 		// fine.
@@ -67,7 +70,7 @@ private:
 			{
 				tmp = curr;
 				curr = curr->next;
-				Nodeache->free(tmp);
+				nodeCache->free(tmp);
 			};
 
 			q.lock.release();
@@ -110,15 +113,15 @@ private:
 			sQueueNode	*head, *tail;
 		};
 
-		ubit16 prio;
+		ubit16						prio;
 		SharedResourceGroup<WaitLock, sQueueState>	q;
-		SlamCache		*Nodeache;
+		SlamCache					*nodeCache;
 	};
 
-	SlamCache	*Nodeache;
+	SlamCache				*nodeCache;
 	// Locking isn't needed; state is only modified once at instance init.
-	ubit16		nPrios;
-	Queue<T>	*queues;
+	ubit16					nPrios;
+	Queue<T>				*queues;
 	// Q number of the first queue with items in it. -1 if all Qs empty.
 	SharedResourceGroup<WaitLock, sbit16>	headQueue;
 };
@@ -134,28 +137,28 @@ error_t PrioQueue<T>::initialize(void)
 	error_t		ret;
 
 	// Allocate a node Cache:
-	Nodeache = cachePool.createCache(
+	nodeCache = cachePool.createCache(
 		sizeof(class Queue<T>::sQueueNode));
 
-	if (Nodeache == NULL) { return ERROR_MEMORY_NOMEM; };
+	if (nodeCache == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	// Allocate internal array.
-	queues = (Queue<T> *) new ubit8[sizeof(Queue<T>) * nPrios];
+	queues = new Queue<T>[nPrios];
 	if (queues == NULL)
 	{
-		cachePool.destroyCache(Nodeache);
+		cachePool.destroyCache(nodeCache);
 		return ERROR_MEMORY_NOMEM;
 	};
 
 	for (uarch_t i=0; i<nPrios; i++)
 	{
 		// Re-construct the item using placement new.
-		new (&queues[i]) Queue<T>(i, Nodeache);
+		new (&queues[i]) Queue<T>(i, nodeCache);
 		ret = queues[i].initialize();
 		if (ret != ERROR_SUCCESS)
 		{
 			delete[] queues;
-			cachePool.destroyCache(Nodeache);
+			cachePool.destroyCache(nodeCache);
 			return ret;
 		};
 	};
@@ -264,7 +267,7 @@ inline void PrioQueue<T>::dump(void)
 {
 	printf(NOTICE PRIOQUEUE"%d prios, cache @0x%p, first valid q %d: "
 		"dumping.\n",
-		nPrios, Nodeache, headQueue.rsrc);
+		nPrios, nodeCache, headQueue.rsrc);
 
 	for (ubit16 i=0; i<nPrios; i++) {
 		queues[i].dump();
@@ -279,7 +282,7 @@ error_t PrioQueue<T>::Queue<T2>::insert(T2 *item, ubit32 opt)
 {
 	sQueueNode	*tmp;
 
-	tmp = (sQueueNode *)Nodeache->allocate();
+	tmp = new (nodeCache->allocate()) sQueueNode;
 	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 	tmp->item = item;
 
@@ -338,7 +341,7 @@ T2 *PrioQueue<T>::Queue<T2>::pop(void)
 		ret = tmp->item;
 	};
 
-	Nodeache->free(tmp);
+	nodeCache->free(tmp);
 	return ret;
 }
 
@@ -368,7 +371,7 @@ void PrioQueue<T>::Queue<T2>::remove(T2 *item)
 		q.rsrc.nItems--;
 
 		q.lock.release();
-		delete tmp;
+		nodeCache->free(tmp);
 		return;
 	};
 

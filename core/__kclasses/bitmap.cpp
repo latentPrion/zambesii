@@ -147,6 +147,7 @@ sarch_t Bitmap::test(ubit32 bit)
 			bmp.rsrc.bmp[BITMAP_INDEX(bit)],
 			BITMAP_OFFSET(bit));
 	};
+
 	return 0;
 }
 

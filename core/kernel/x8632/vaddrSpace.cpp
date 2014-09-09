@@ -102,7 +102,7 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE);
 
 	// Map 0xFFFF000 to nothing, but set the access flags for it.
-	level1Table->entries[1023] = 0 
+	level1Table->entries[1023] = 0
 		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE);
 
 	printf(NOTICE VADDRSPACE"initialize: binding %d; lvl0: v 0x%p, "

@@ -56,7 +56,6 @@ error_t CpuTrib::initialize(void)
 	error_t		ret;
 
 #if __SCALING__ >= SCALING_CC_NUMA
-oo=26;
 	ret = availableBanks.initialize(0);
 	if (ret != ERROR_SUCCESS) { return ret; };
 

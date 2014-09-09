@@ -15,6 +15,8 @@
 
 extern int oo, pp, qq, rr;
 
+int testFunction(...);
+
 // GCC likes to warn me about this, and it gets really irritating.
 // #define PRINTFON(__cond, __str, ...)		{if (__cond) { printf(__str, __VA_ARGS__); };}
 

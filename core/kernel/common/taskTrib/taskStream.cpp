@@ -104,6 +104,7 @@ error_t TaskStream::cooperativeBind(void)
 		NULL, Thread::ROUND_ROBIN, 0,
 		SPAWNTHREAD_FLAGS_POWER_THREAD,
 		&dummy);
+
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR TASKSTREAM"%d: coopBind: spawnThread() failed for "
@@ -114,6 +115,17 @@ error_t TaskStream::cooperativeBind(void)
 	};
 
 	cpuTrib.onlineCpus.setSingle(parent->cpuId);
+
+	ret = schedule(&powerThread);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR TASKSTREAM"%d: coopBind: Failed to schedule "
+			"power thread for CPU to itself.\n",
+			this->id);
+
+		return ret;
+	};
+
 	return ERROR_SUCCESS;
 }
 
@@ -170,12 +182,6 @@ status_t TaskStream::schedule(Thread *thread)
 	return ret;
 }
 
-static inline void getCr3(paddr_t *ret)
-{
-	asm volatile("movl	%%cr3, %0\n\t"
-		: "=r" (*ret));
-}
-
 void TaskStream::pull(void)
 {
 	Thread		*newThread;
@@ -220,6 +226,7 @@ void TaskStream::pull(void)
 	currentThread = newThread;
 printf(NOTICE TASKSTREAM"%d: Switching to task 0x%x.\n",
 	parent->cpuId, newThread->getFullId());
+
 	loadContextAndJump(newThread->context);
 }
 

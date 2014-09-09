@@ -149,7 +149,7 @@ void *MemReservoir::reallocate(void *old, uarch_t _nBytes, uarch_t)
 
 	if ((resHdr->magic >> 4) != (RESERVOIR_MAGIC >> 4))
 	{
-		printf(ERROR RESERVOIR"Corrupt memory or bad free v 0x%p.\n",
+		printf(ERROR RESERVOIR"realloc: Corrupt memory or bad free v 0x%p.\n",
 			old);
 
 		panic(ERROR_FATAL);
@@ -171,8 +171,9 @@ void MemReservoir::free(void *_mem)
 
 	if ((mem->magic >> 4) != (RESERVOIR_MAGIC >> 4))
 	{
-		printf(ERROR RESERVOIR"Corrupt memory or bad free v 0x%p.\n",
-			mem);
+		printf(ERROR RESERVOIR"free: Corrupt memory or bad free v0x%p. "
+			"Caller: 0x%p.\n",
+			mem, __builtin_return_address(1));
 
 		return;
 	};

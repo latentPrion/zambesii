@@ -1,5 +1,6 @@
 
 #include <debug.h>
+#include <arch/debug.h>
 #include <__ksymbols.h>
 #include <zui.h>
 #include <__kstdlib/callback.h>
@@ -37,17 +38,6 @@ ZudiIndexParser		*zudiIndexes[3] =
 	&ramdiskIndex,
 	&externalIndex
 };
-
-void *getEsp(void)
-{
-	void		*esp;
-
-	asm volatile (
-		"movl	%%esp, %0\n\t"
-		: "=r" (esp));
-
-	return esp;
-}
 
 status_t fplainnIndexServer_detectDriver_compareEnumerationAttributes(
 	fplainn::Device *device, zui::device::sHeader *devline,
@@ -1396,7 +1386,7 @@ void Floodplainn::indexReaderEntry(void)
 
 	printf(NOTICE FPLAINNIDX"Floodplainn-indexer executing;\n"
 		"\tprocess ID: 0x%x. ESP: 0x%p. Listening; dormanting.\n",
-		self->getFullId(), getEsp());
+		self->getFullId(), debug::getStackPointer());
 
 	zudiIndexes[0]->getHeader(&__kindexHeader);
 	printf(NOTICE FPLAINNIDX"KERNEL_INDEX: Version %d.%d. (%s), holds %d "

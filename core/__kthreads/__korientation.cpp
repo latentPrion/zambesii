@@ -6,3 +6,8 @@
 #include <kernel/common/processTrib/processTrib.h>
 
 extern "C" void __korientationInit(ubit32, sMultibootData *);
+
+int testFunction(...)
+{
+	return 0;
+}

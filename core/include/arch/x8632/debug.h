@@ -1,6 +1,7 @@
 #ifndef _ARCH_x86_32_DEBUG_H
 	#define _ARCH_x86_32_DEBUG_H
 
+	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 
 	#define DEBUG_BREAKPOINT_READ		(1<<0)
@@ -15,6 +16,9 @@
 
 namespace debug
 {
+	ubit8 *getStackPointer(void);
+	void getVaddrSpacePointer(paddr_t *p);
+
 	void enableDebugExtensions(void);
 	void disableDebugExtensions(void);
 	sarch_t debugExtensionsEnabled(void);
@@ -40,4 +44,4 @@ namespace debug
 
 #endif
 
-	
+
