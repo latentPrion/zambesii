@@ -52,7 +52,7 @@ const dvfs::sDistributaryDescriptor	floodplainnIndexer=
 	},
 	1,		// Provides only one category.
 	0, 0, 0,	// v0.00.000.
-	&Floodplainn::indexReaderEntry,
+	(void(*)(void))&fplainn::Zui::main,
 	0
 };
 

@@ -87,7 +87,7 @@ public:
 
 	private:
 		List<T>		*list;
-		T			*currItem;
+		T		*currItem;
 	};
 
 	Iterator begin(void)

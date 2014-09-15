@@ -16,6 +16,7 @@
  * slam cache for __kCallback objects specifically.
  **/
 
+// Polymorphism is great.
 class Callback
 {
 public:

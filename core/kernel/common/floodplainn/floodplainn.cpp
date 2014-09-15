@@ -4,113 +4,90 @@
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/debugPipe.h>
-#include <kernel/common/zudiIndexServer.h>
 #include <kernel/common/floodplainn/floodplainn.h>
+#include <kernel/common/floodplainn/zudi.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
 
-static fplainn::Device		treeDev(CHIPSET_NUMA_SHBANKID);
+static fplainn::Device		byId(CHIPSET_NUMA_SHBANKID),
+				byName(CHIPSET_NUMA_SHBANKID),
+				byClass(CHIPSET_NUMA_SHBANKID),
+				byPath(CHIPSET_NUMA_SHBANKID);
 
-class Floodplainn::InitializeReqCb
-: public _Callback<Floodplainn::__kinitializeReqCbFn>
+error_t Floodplainn::initialize(void)
 {
-	Floodplainn::initializeReqCbFn	*callerCb;
-
-public:
-	InitializeReqCb(
-		Floodplainn::__kinitializeReqCbFn *__kcb,
-		Floodplainn::initializeReqCbFn *ccb)
-	: _Callback<Floodplainn::__kinitializeReqCbFn>(__kcb),
-	callerCb(ccb)
-	{}
-
-	virtual void operator()(MessageStream::sHeader *msg)
-		{ (*function)(msg, callerCb); }
-};
-
-error_t Floodplainn::initializeReq(initializeReqCbFn *callback)
-{
-	fvfs::Tag		*root, *tmp;
-	error_t			ret;
+	fvfs::Tag			*root, *tmp;
+	error_t				ret;
+	udi_instance_attr_list_t	tmpAttr;
 
 	/**	EXPLANATION:
-	 * Create the four sub-trees and then exit.
+	 * Create the four sub-trees and set up the enumeration attributes of
+	 * the root device ("@f/by-id") and then exit.
+	 *
+	 * The root device node (@f/by-id) must be given enumeration attributes
+	 * which will cause it to be detected as the root device by the ZUI
+	 * Server.
+	 *
+	 * Basically, the ZUI Server will then instantiate the root device
+	 * driver, which will then enumerate the first child nodes of the by-id
+	 * tree, namely @f/by-id/0 and @f/by-id/1, which are the __kramdisk
+	 * and vchipset devices respectively.
 	 **/
-	ret = driverList.initialize();
+	ret = byId.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
-
-	ret = treeDev.initialize();
+	ret = byName.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+	ret = byClass.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+	ret = byPath.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	root = vfsTrib.getFvfs()->getRoot();
 
-	ret = root->getInode()->createChild(CC"by-id", root, &treeDev, &tmp);
+	ret = root->getInode()->createChild(CC"by-id", root, &byId, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = root->getInode()->createChild(CC"by-name", root, &treeDev, &tmp);
+	ret = root->getInode()->createChild(CC"by-name", root, &byName, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = root->getInode()->createChild(CC"by-class", root, &treeDev, &tmp);
+	ret = root->getInode()->createChild(CC"by-class", root, &byClass, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = root->getInode()->createChild(CC"by-path", root, &treeDev, &tmp);
+	ret = root->getInode()->createChild(CC"by-path", root, &byPath, &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	zuiServer::setNewDeviceActionReq(
-		zuiServer::NDACTION_INSTANTIATE,
-		new InitializeReqCb(&Floodplainn::initializeReq1, callback));
+	/* Create the enumeration attributes for the root device.
+	 */
+	strcpy8(CC tmpAttr.attr_name, CC"bus_type");
+	strcpy8(CC tmpAttr.attr_value, CC"zrootbus");
+	tmpAttr.attr_type = UDI_ATTR_STRING;
+	ret = byId.addEnumerationAttribute(&tmpAttr);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	strcpy8(CC tmpAttr.attr_name, CC"identifier");
+	strcpy8(CC tmpAttr.attr_value, CC"zrootdev");
+	tmpAttr.attr_type = UDI_ATTR_STRING;
+	ret = byId.addEnumerationAttribute(&tmpAttr);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	strcpy8(CC tmpAttr.attr_name, CC"address_locator");
+	strcpy8(CC tmpAttr.attr_value, CC"zrootdev0");
+	tmpAttr.attr_type = UDI_ATTR_STRING;
+	ret = byId.addEnumerationAttribute(&tmpAttr);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	strcpy8(CC tmpAttr.attr_name, CC"physical_locator");
+	strcpy8(CC tmpAttr.attr_value, CC"zrootdev0");
+	tmpAttr.attr_type = UDI_ATTR_STRING;
+	ret = byId.addEnumerationAttribute(&tmpAttr);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	strcpy8(CC tmpAttr.attr_name, CC"physical_label");
+	strcpy8(CC tmpAttr.attr_value, CC"in memory");
+	tmpAttr.attr_type = UDI_ATTR_STRING;
+	ret = byId.addEnumerationAttribute(&tmpAttr);
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	return ERROR_SUCCESS;
-}
-
-void Floodplainn::initializeReq1(
-	MessageStream::sHeader *res, initializeReqCbFn *callback
-	)
-{
-	if (res->error != ERROR_SUCCESS)
-	{
-		printf(ERROR FPLAINN"initialize: Failed to set new-device "
-			"action.\n");
-	};
-
-	callback(res->error);
-}
-
-error_t Floodplainn::findDriver(utf8Char *fullName, fplainn::Driver **retDrv)
-{
-	HeapArr<utf8Char>	tmpStr;
-	void			*handle;
-	fplainn::Driver	*tmpDrv;
-
-	tmpStr = new utf8Char[DRIVER_FULLNAME_MAXLEN];
-
-	if (tmpStr.get() == NULL) { return ERROR_MEMORY_NOMEM; };
-
-	handle = NULL;
-	driverList.lock();
-	tmpDrv = driverList.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; tmpDrv != NULL;
-		tmpDrv = driverList.getNextItem(
-			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
-	{
-		uarch_t		len;
-
-		len = strlen8(tmpDrv->basePath);
-		strcpy8(tmpStr.get(), tmpDrv->basePath);
-		if (len > 0 && tmpStr[len - 1] != '/')
-			{ strcat8(tmpStr.get(), CC"/"); };
-
-		strcat8(tmpStr.get(), tmpDrv->shortName);
-
-		if (strcmp8(tmpStr.get(), fullName) == 0)
-		{
-			driverList.unlock();
-			*retDrv = tmpDrv;
-			return ERROR_SUCCESS;
-		};
-	};
-
-	driverList.unlock();
-	return ERROR_NO_MATCH;
 }
 
 static inline sarch_t isByIdPath(utf8Char *path)
@@ -130,7 +107,7 @@ error_t Floodplainn::createDevice(
 {
 	error_t			ret;
 	fvfs::Tag		*parentTag, *childTag;
-	fplainn::Device	*newDev;
+	fplainn::Device		*newDev;
 
 	/**	EXPLANATION:
 	 * This function both creates the device, and creates its nodes in the
@@ -208,111 +185,17 @@ error_t Floodplainn::getDevice(utf8Char *path, fplainn::Device **device)
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	/* Do not allow callers to "getDevice" on the by-* containers.
-	 * e.g: "by-id", "/by-id", "@f/by-id", etc.
+	 * e.g: "by-name", "/by-name", "@f/by-name", etc.
+	 *
+	 * The only one callers are permitted to get is by-id, since it is
+	 * also the root device.
 	 **/
-	if (tag->getInode() == &treeDev) { return ERROR_UNAUTHORIZED; };
+	if (tag->getInode() == &byName || tag->getInode() == &byClass
+		|| tag->getInode() == &byPath)
+		{ return ERROR_UNAUTHORIZED; };
 
 	*device = tag->getInode();
 	return ERROR_SUCCESS;
-}
-
-error_t Floodplainn::instantiateDeviceReq(utf8Char *path, void *privateData)
-{
-	sZudiKernelCallMsg			*request;
-	fplainn::Device			*dev;
-	error_t					ret;
-	HeapObj<fplainn::DeviceInstance>	devInst;
-
-	if (path == NULL) { return ERROR_INVALID_ARG; };
-	if (strnlen8(path, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
-		{ return ERROR_INVALID_RESOURCE_NAME; };
-
-	ret = getDevice(path, &dev);
-	if (ret != ERROR_SUCCESS) { return ret; };
-
-	// Ensure that spawnDriver() has been called beforehand.
-	if (!dev->driverDetected || dev->driverInstance == NULL)
-		{ return ERROR_UNINITIALIZED; };
-
-	if (dev->instance == NULL)
-	{
-		// Allocate the device instance.
-		devInst = new fplainn::DeviceInstance(dev);
-		if (devInst == NULL) { return ERROR_MEMORY_NOMEM; };
-
-		ret = devInst->initialize();
-		if (ret != ERROR_SUCCESS) { return ret; };
-
-		ret = dev->driverInstance->addHostedDevice(path);
-		if (ret != ERROR_SUCCESS) { return ret; };
-	};
-
-	request = new sZudiKernelCallMsg(
-		dev->driverInstance->pid,
-		MSGSTREAM_SUBSYSTEM_ZUDI,
-		MSGSTREAM_FPLAINN_ZUDI___KCALL,
-		sizeof(*request), 0, privateData);
-
-	if (request == NULL)
-	{
-		dev->driverInstance->removeHostedDevice(path);
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	// Assign the device instance to dev->instance and release the mem.
-	request->set(path, sZudiKernelCallMsg::CMD_INSTANTIATE_DEVICE);
-	if (dev->instance == NULL) { dev->instance = devInst.release(); };
-	return MessageStream::enqueueOnThread(
-		request->header.targetId, &request->header);
-}
-
-void Floodplainn::instantiateDeviceAck(
-	processId_t targetId, utf8Char *path, error_t err, void *privateData
-	)
-{
-	Thread				*currThread;
-	Floodplainn::sZudiKernelCallMsg	*response;
-	fplainn::Device			*dev;
-
-	currThread = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread();
-
-	// Only driver processes can call this.
-	if (currThread->parent->getType() != ProcessStream::DRIVER)
-		{ return; };
-
-	// If the instantiation didn't work, delete the instance object.
-	if (err != ERROR_SUCCESS)
-	{
-		if (floodplainn.getDevice(path, &dev) != ERROR_SUCCESS)
-		{
-			printf(ERROR FPLAINN"instantiateDevAck: getDevice "
-				"failed on %s.\n\tUnable to unset "
-				"device->instance pointer.\n",
-				path);
-
-			return;
-		};
-
-		dev->driverInstance->removeHostedDevice(path);
-		// Set the dev->instance pointer to NULL.
-		delete dev->instance;
-		dev->instance = NULL;
-	};
-
-	response = new sZudiKernelCallMsg(
-		targetId,
-		MSGSTREAM_SUBSYSTEM_ZUDI,
-		MSGSTREAM_FPLAINN_ZUDI___KCALL,
-		sizeof(*response), 0, privateData);
-
-	if (response == NULL) { return; };
-
-	response->set(path, sZudiKernelCallMsg::CMD_INSTANTIATE_DEVICE);
-	response->header.error = err;
-
-	MessageStream::enqueueOnThread(
-		response->header.targetId, &response->header);
 }
 
 error_t Floodplainn::enumerateBaseDevices(void)
@@ -429,155 +312,4 @@ error_t Floodplainn::enumerateChipsets(void)
 
 	chipset->bankId = CHIPSET_NUMA_SHBANKID;
 	return ERROR_SUCCESS;
-}
-
-const sDriverInitEntry *Floodplainn::findDriverInitInfo(utf8Char *shortName)
-{
-	const sDriverInitEntry	*tmp;
-
-	for (tmp=driverInitInfo; tmp->udi_init_info != NULL; tmp++) {
-		if (!strcmp8(tmp->shortName, shortName)) { return tmp; };
-	};
-
-	return NULL;
-}
-
-const sMetaInitEntry *Floodplainn::findMetaInitInfo(utf8Char *shortName)
-{
-	const sMetaInitEntry		*tmp;
-
-	for (tmp=metaInitInfo; tmp->udi_meta_info != NULL; tmp++) {
-		if (!strcmp8(tmp->shortName, shortName)) { return tmp; };
-	};
-
-	return NULL;
-}
-
-static error_t udi_mgmt_calls_prep(
-	utf8Char *callerName, utf8Char *devPath, fplainn::Device **dev,
-	HeapObj<Floodplainn::sZudiMgmtCallMsg> *request,
-	void *privateData
-	)
-{
-	processId_t		primaryRegionTid=PROCID_INVALID;
-	udi_init_context_t	*dummy;
-
-	if (floodplainn.getDevice(devPath, dev) != ERROR_SUCCESS)
-	{
-		printf(ERROR FPLAINN"%s: device %s doesn't exist.\n",
-			callerName, devPath);
-
-		return ERROR_INVALID_RESOURCE_NAME;
-	};
-
-	if (!(*dev)->driverDetected
-		|| (*dev)->driverInstance == NULL || (*dev)->instance == NULL)
-		{ return ERROR_UNINITIALIZED; };
-
-	(*dev)->instance->getRegionInfo(0, &primaryRegionTid, &dummy);
-
-	*request = new Floodplainn::sZudiMgmtCallMsg(
-		devPath, primaryRegionTid,
-		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL,
-		sizeof(**request), 0, privateData);
-
-	if (request->get() == NULL)
-	{
-		printf(ERROR FPLAINN"%s: Failed to alloc request.\n",
-			callerName);
-
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	return ERROR_SUCCESS;
-}
-
-static void udi_usage_gcb_prep(
-	udi_cb_t *cb, fplainn::Device *dev, void *privateData
-	)
-{
-	cb->channel = NULL;
-	cb->context = dev->instance->mgmtChannelContext;
-	cb->scratch = NULL;
-	cb->initiator_context = privateData;
-	cb->origin = NULL;
-}
-
-void Floodplainn::udi_usage_ind(
-	utf8Char *devPath, udi_ubit8_t usageLevel, void *privateData
-	)
-{
-	HeapObj<sZudiMgmtCallMsg>		request;
-	udi_usage_cb_t				*cb;
-	fplainn::Device			*dev;
-
-	if (udi_mgmt_calls_prep(
-		CC"udi_usage_ind", devPath, &dev, &request, privateData)
-		!= ERROR_SUCCESS)
-		{ return; };
-
-	// Set the request block's parameters.
-	request->set_usage_ind(usageLevel);
-
-	// Next, fill in the control block.
-	cb = &request->cb.ucb;
-	cb->trace_mask = 0;
-	cb->meta_idx = 0;
-
-	/** FIXME:
-	 * In this part here, we use the initiator_context member of the UDI
-	 * control block to store very important continuation information for
-	 * the driver process.
-	 *
-	 * A malicious driver can crash a whole driver process (and the device
-	 * instances in it) by modifying this pointer. We need to find a way
-	 * to make the kernel less dependent on this context pointer.
-	 **/
-	udi_usage_gcb_prep(&cb->gcb, dev, privateData);
-	// Now send the request.
-	if (MessageStream::enqueueOnThread(
-		request->header.targetId, &request->header) == ERROR_SUCCESS)
-		{ request.release(); };
-}
-
-void Floodplainn::udi_usage_res(
-	utf8Char *devicePath, processId_t targetTid, void *privateData
-	)
-{
-	Floodplainn::sZudiMgmtCallMsg	*response;
-
-	response = new sZudiMgmtCallMsg(
-		devicePath, targetTid,
-		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL,
-		sizeof(*response), 0, privateData);
-
-	if (response == NULL)
-	{
-		printf(FATAL FPLAINN"usage_res: failed to alloc response "
-			"message. Thread 0x%x may be stalled waiting for ever\n",
-			targetTid);
-
-		return;
-	};
-
-	if (MessageStream::enqueueOnThread(
-		response->header.targetId, &response->header) != ERROR_SUCCESS)
-		{ delete response; };
-}
-
-void Floodplainn::udi_enumerate_req(
-	utf8Char *, udi_ubit8_t /*enumerateLevel*/, void * /*privateData*/
-	)
-{
-}
-
-void Floodplainn::udi_devmgmt_req(
-	utf8Char *, udi_ubit8_t /*op*/, udi_ubit8_t /*parentId*/,
-	void * /*privateData*/
-	)
-{
-}
-
-void Floodplainn::udi_final_cleanup_req(utf8Char *, void * /*privateData*/)
-{
 }

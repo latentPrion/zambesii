@@ -9,7 +9,7 @@ fplainn::Device		rootDevice(CHIPSET_NUMA_SHBANKID);
 fvfs::Currentt::Currentt(void)
 :
 vfs::Currentt(static_cast<utf8Char>('f')),
-rootTag(CC"FVFS root tag", vfs::DEVICE, &rootTag, &rootDevice)
+rootTag(CC"Zambesii HVFS root", vfs::DEVICE, &rootTag, &rootDevice)
 {
 }
 
@@ -50,7 +50,7 @@ error_t fvfs::Currentt::getPath(utf8Char *path, fvfs::Tag **ret)
 
 	// Discard preceding slashes.
 	for (; path[i] == '/'; i++) {};
-	if (strncmp8(path, CC"@f/", 3) == 0) { i += 3; };
+	if (strncmp8(&path[i], CC"@f/", 3) == 0) { i += 3; };
 	// zero-length string results in NOT_FOUND.
 	if (path[i] == '\0') { return ERROR_NOT_FOUND; };
 

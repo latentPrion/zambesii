@@ -28,9 +28,9 @@
 static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 {
 	x86Mp::sCpuConfig	*cpu;
-	void		*handle=0;
-	uarch_t		pos=0;
-	sarch_t		isNewerCpu=1;
+	void			*handle=0;
+	uarch_t			pos=0;
+	sarch_t			isNewerCpu=1;
 
 	// Scan MP tables.
 	x86Mp::initializeCache();
@@ -119,7 +119,7 @@ status_t CpuStream::PowerManager::bootPowerOn(ubit32)
 	 **/
 	// Set a 10 millisecond timeout.
 	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		sTimestamp(0, 0, 10000000), 0, 0, parent);
+		sTimestamp(0, 0, 10000000), 0, parent);
 
 	return ERROR_SUCCESS;
 }
@@ -181,7 +181,7 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 				processTrib.__kgetStream()->timerStream
 					.createRelativeOneshotEvent(
 						sTimestamp(0, 0, 200000),
-						0, 0, cs);
+						0, cs);
 
 				loopAgain = 1;
 				break;
@@ -208,8 +208,7 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 
 			processTrib.__kgetStream()->timerStream
 				.createRelativeOneshotEvent(
-					sTimestamp(0, 0, 200000),
-					0, 0, cs);
+					sTimestamp(0, 0, 200000), 0, cs);
 
 			loopAgain = 1;
 			break;

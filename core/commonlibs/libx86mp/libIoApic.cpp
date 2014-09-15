@@ -48,13 +48,14 @@ error_t x86IoApic::allocateVectorBaseFor(IoApic *ioApic, ubit8 *vectorBase)
 
 x86IoApic::IoApic *x86IoApic::getIoApicByVector(ubit8 vector)
 {
-	HardwareIdList::iterator	it;
+	HardwareIdList::Iterator	it;
 	IoApic				*ioApic;
 
 	it = cache.ioApics.begin();
-	for (ioApic = (IoApic *)it++;
-		ioApic != NULL; ioApic = (IoApic *)it++)
+	for (; it != cache.ioApics.end(); ++it)
 	{
+		ioApic = (IoApic *)*it;
+
 		if (ioApic->getVectorBase() <= vector
 			&& (ioApic->getVectorBase() + ioApic->getNIrqs())
 				> vector)
@@ -269,15 +270,14 @@ tryMpTables:
 
 x86IoApic::IoApic *x86IoApic::getIoApicFor(ubit16 __kpin)
 {
-	sarch_t		context;
-	IoApic		*ret;
+	HardwareIdList::Iterator	it;
+	IoApic				*ret;
 
-	context = cache.ioApics.prepareForLoop();
-	ret = reinterpret_cast<IoApic*>( cache.ioApics.getLoopItem(&context) );
-
-	for (; ret != NULL;
-		ret = (IoApic *)cache.ioApics.getLoopItem(&context))
+	it = cache.ioApics.begin();
+	for (; it != cache.ioApics.end(); ++it)
 	{
+		ret = (IoApic *)*it;
+
 		if (__kpin >= ret->get__kpinBase()
 			&& __kpin < (ret->get__kpinBase() + ret->getNIrqs())
 			)
@@ -291,38 +291,34 @@ x86IoApic::IoApic *x86IoApic::getIoApicFor(ubit16 __kpin)
 
 void x86IoApic::maskAll(void)
 {
-	IoApic		*ioApic;
-	sarch_t		context;
+	IoApic				*ioApic;
+	HardwareIdList::Iterator	it;
 
-	context = cache.ioApics.prepareForLoop();
-	ioApic = (IoApic *)cache.ioApics.getLoopItem(&context);
-
-	for (; ioApic != NULL;
-		ioApic = (IoApic *)cache.ioApics.getLoopItem(&context))
+	it = cache.ioApics.begin();
+	for (; it != cache.ioApics.end(); ++it)
 	{
+		ioApic = (IoApic *)*it;
 		ioApic->maskAll();
 	};
 }
 
 void x86IoApic::unmaskAll(void)
 {
-	IoApic		*ioApic;
-	sarch_t		context;
+	IoApic				*ioApic;
+	HardwareIdList::Iterator	it;
 
-	context = cache.ioApics.prepareForLoop();
-	ioApic = (IoApic *)cache.ioApics.getLoopItem(&context);
-
-	for (; ioApic != NULL;
-		ioApic = (IoApic *)cache.ioApics.getLoopItem(&context))
+	it = cache.ioApics.begin();
+	for (; it != cache.ioApics.end(); ++it)
 	{
+		ioApic = (IoApic *)*it;
 		ioApic->unmaskAll();
 	};
 }
 
 error_t x86IoApic::get__kpinFor(uarch_t girqNo, ubit16 *__kpin)
 {
-	sarch_t		context;
-	IoApic		*ioApic;
+	IoApic				*ioApic;
+	HardwareIdList::Iterator	it;
 
 	/* Truth be told, the only way to know for this case is by using
 	 * the ACPI IDs.
@@ -332,12 +328,11 @@ error_t x86IoApic::get__kpinFor(uarch_t girqNo, ubit16 *__kpin)
 	 * knowledge of the ACPI IDs of its pins. If none of them can, we just
 	 * assume the pin doesn't exist.
 	 **/
-	context = cache.ioApics.prepareForLoop();
-	ioApic = (IoApic *)cache.ioApics.getLoopItem(&context);
-
-	for (; ioApic != NULL;
-		ioApic = (IoApic *)cache.ioApics.getLoopItem(&context))
+	it = cache.ioApics.begin();
+	for (; it != cache.ioApics.end(); ++it)
 	{
+		ioApic = (IoApic *)*it;
+
 		if (ioApic->get__kpinFor(girqNo, __kpin) == ERROR_SUCCESS) {
 			return ERROR_SUCCESS;
 		};

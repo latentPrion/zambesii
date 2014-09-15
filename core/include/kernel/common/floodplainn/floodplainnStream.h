@@ -2,6 +2,7 @@
 	#define _FLOODPLAINN_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kclasses/ptrList.h>
 	//#include <__kclasses/singleWaiterQueue.h>
 	#include <kernel/common/stream.h>
 
@@ -64,12 +65,28 @@ public:
 	// Release all connections.
 	~FloodplainnStream(void) {};
 
-private:
+public:
+	class MetaConnection;
+	class ZkcmConnection;
+
+public:
+	error_t connect(utf8Char *devName, utf8Char *metaName, uarch_t flags);
+
 	// Allocate and deallocate queues.
 	// error_t zkcmConnect(SingleWaiterQueue *queue);
 	// error_t zkcmDisconnect(SingleWaiterQueue *queue);
 
 private:
+	PtrList<MetaConnection>		metaConnections;
+	PtrList<ZkcmConnection>		zkcmConnections;
+};
+
+class FloodplainnStream::MetaConnection
+{
+};
+
+class FloodplainnStream::ZkcmConnection
+{
 };
 
 #endif

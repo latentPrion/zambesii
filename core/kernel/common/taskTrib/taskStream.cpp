@@ -116,16 +116,22 @@ error_t TaskStream::cooperativeBind(void)
 
 	cpuTrib.onlineCpus.setSingle(parent->cpuId);
 
-	ret = schedule(&powerThread);
-	if (ret != ERROR_SUCCESS)
-	{
-		printf(ERROR TASKSTREAM"%d: coopBind: Failed to schedule "
-			"power thread for CPU to itself.\n",
-			this->id);
-
-		return ret;
-	};
-
+	/**	CAVEAT:
+	 * We do /NOT/ schedule() the power thread, since it should be the
+	 * thread we are /ALREADY/ executing in at this point. When a thread
+	 * is executing, it should not be in the runqueue.
+	 *
+	 * If we schedule() the power thread when it is executing, we would,
+	 * in effect, re-add it to to the runqueue such that it would exist
+	 * in the runqueue twice.
+	 *
+	 * Consider:
+	 *	schedule() => { Now power thread is in currentThread, and in the
+	 * 		runqueue }
+	 *	yield() => { Now power thread gets added again to runqueue }
+	 *	pull() x2 => { Power thread which is listed twice, will get
+	 * 		pulled twice }
+	 **/
 	return ERROR_SUCCESS;
 }
 
@@ -182,6 +188,7 @@ status_t TaskStream::schedule(Thread *thread)
 	return ret;
 }
 
+#include <debug.h>
 void TaskStream::pull(void)
 {
 	Thread		*newThread;

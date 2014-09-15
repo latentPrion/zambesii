@@ -157,8 +157,8 @@ void MemoryTrib::destroyBank(numaBankId_t id)
 
 void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 {
-	NumaMemoryBank	*currBank;
-	numaBankId_t	cur;
+	NumaMemoryBank			*currBank;
+	HardwareIdList::Iterator	it;
 
 	/**	EXPLANATION:
 	 * Here we have the result of a trade-off. For a reduction in the size
@@ -169,12 +169,10 @@ void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	 * before it can be freed.
 	 **/
 #if __SCALING__ >= SCALING_CC_NUMA
-	cur = memoryBanks.prepareForLoop();
-	currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur);
-
-	for (; currBank != NULL;
-		currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur))
+	for (it = memoryBanks.begin(); it != memoryBanks.end(); ++it)
 	{
+		currBank = (NumaMemoryBank *)*it;
+
 		if (currBank->identifyPaddr(paddr))
 		{
 			currBank->releaseFrames(paddr, nFrames);
@@ -250,20 +248,20 @@ error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 #if __SCALING__ >= SCALING_CC_NUMA
 error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 {
-	numaBankId_t		def, cur;
-	NumaMemoryBank		*currBank;
-	error_t			ret;
-	uarch_t			rwFlags;
-	Thread			*thread;
+	HardwareIdList::Iterator	currIt;
+	NumaMemoryBank			*currBank;
+	error_t				ret;
+	uarch_t				rwFlags;
+	Thread				*thread;
 
 	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	// Get the calling thread's default memory bank.
 	thread->defaultMemoryBank.lock.readAcquire(&rwFlags);
-	def = thread->defaultMemoryBank.rsrc;
+	currIt.cursor = thread->defaultMemoryBank.rsrc;
 	thread->defaultMemoryBank.lock.readRelease(rwFlags);
 
-	currBank = getBank(def);
+	currBank = getBank(currIt.cursor);
 	if (currBank != NULL)
 	{
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
@@ -280,21 +278,19 @@ error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	 **/
 
 	// Allocation from the default bank failed. Find another default bank.
-	def = cur = memoryBanks.prepareForLoop();
-	currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&def);
-
-	for (; currBank != NULL;
-		currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&def))
+	currIt = memoryBanks.begin();
+	for (; currIt != memoryBanks.end(); ++currIt)
 	{
+		currBank = (NumaMemoryBank *)*currIt;
+
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
 		if (ret > 0)
 		{
 			thread->defaultMemoryBank.lock.writeAcquire();
-			thread->defaultMemoryBank.rsrc = cur;
+			thread->defaultMemoryBank.rsrc = currIt.cursor;
 			thread->defaultMemoryBank.lock.writeRelease();
 			return ret;
 		};
-		cur = def;
 	};
 
 	/* If we reach here then none of the thread's configured banks have any
@@ -306,18 +302,14 @@ error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 
 void MemoryTrib::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 {
-#if __SCALING__ >= SCALING_CC_NUMA
-	numaBankId_t	cur;
-#endif
 	NumaMemoryBank	*currBank;
 
 #if __SCALING__ >= SCALING_CC_NUMA
-	cur = memoryBanks.prepareForLoop();
-	currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur);
-
-	for (; currBank != NULL;
-		currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur))
+	HardwareIdList::Iterator	it = memoryBanks.begin();
+	for (; it != memoryBanks.end(); ++it)
 	{
+		currBank = (NumaMemoryBank *)*it;
+
 		/* We can most likely afford this small speed bump since ranges
 		 * of physical RAM are not often mapped or unmapped as used at
 		 * runtime. This generally only happens when the kernel is made
@@ -341,19 +333,14 @@ void MemoryTrib::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 
 void MemoryTrib::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 {
-#if __SCALING__ >= SCALING_CC_NUMA
-	numaBankId_t	cur;
-#endif
 	NumaMemoryBank	*currBank;
 
-
 #if __SCALING__ >= SCALING_CC_NUMA
-	cur = memoryBanks.prepareForLoop();
-	currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur);
-
-	for (; currBank != NULL;
-		currBank = (NumaMemoryBank *)memoryBanks.getLoopItem(&cur))
+	HardwareIdList::Iterator		it = memoryBanks.begin();
+	for (; it != memoryBanks.end(); ++it)
 	{
+		currBank = (NumaMemoryBank *)*it;
+
 		/* We can most likely afford this small speed bump since ranges
 		 * of physical RAM are not often mapped or unmapped as used at
 		 * runtime. This generally only happens when the kernel is made

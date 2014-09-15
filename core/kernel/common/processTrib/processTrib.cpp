@@ -108,10 +108,10 @@ error_t ProcessTrib::getDriverExecutableFormat(
 	error_t			ret;
 	fplainn::Driver	*tmpDrv;
 
-	ret = floodplainn.findDriver(fullName, &tmpDrv);
+	ret = floodplainn.zudi.findDriver(fullName, &tmpDrv);
 	if (ret != ERROR_SUCCESS) { return ERROR_UNINITIALIZED; };
 
-	if (tmpDrv->index == zuiServer::INDEX_KERNEL)
+	if (tmpDrv->index == fplainn::Zui::INDEX_KERNEL)
 	{
 		*retfmt = ProcessStream::RAW;
 		*retEntryPoint = &__klzbzcore::main;
@@ -445,7 +445,7 @@ error_t ProcessTrib::spawnDriver(
 	// Verify that a driver has been detected for the device.
 	if (!dev->driverDetected) { return SPAWNDRIVER_STATUS_NO_DRIVER; };
 	// Verify that caller has called loadDriverReq() first.
-	if (floodplainn.findDriver(dev->driverFullName, &drv) != ERROR_SUCCESS)
+	if (floodplainn.zudi.findDriver(dev->driverFullName, &drv) != ERROR_SUCCESS)
 	{
 		printf(WARNING PROCTRIB"spawnDriver: %s: Must successfully "
 			"call loadDriver first.\n",
@@ -477,7 +477,7 @@ error_t ProcessTrib::spawnDriver(
 
 	newProcess = new DriverProcess(
 		newProcessId, parentThread->getFullId(),
-		(drv->index == zuiServer::INDEX_KERNEL)
+		(drv->index == fplainn::Zui::INDEX_KERNEL)
 			? PROCESS_EXECDOMAIN_KERNEL
 			: PROCESS_EXECDOMAIN_USER,
 		dev->bankId, drvInstance,

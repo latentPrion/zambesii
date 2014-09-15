@@ -6,7 +6,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
-	#include <kernel/common/zudiIndexServer.h>
+	#include <kernel/common/floodplainn/zui.h>
 
 #define ZUDIIDX		"ZUDI-Idx: "
 
@@ -21,9 +21,9 @@ class ZudiIndexParser
 {
 friend class Floodplainn;
 public:	enum sourceE {
-	SOURCE_KERNEL=zuiServer::INDEX_KERNEL,
-	SOURCE_RAMDISK=zuiServer::INDEX_RAMDISK,
-	SOURCE_EXTERNAL=zuiServer::INDEX_EXTERNAL };
+	SOURCE_KERNEL=fplainn::Zui::INDEX_KERNEL,
+	SOURCE_RAMDISK=fplainn::Zui::INDEX_RAMDISK,
+	SOURCE_EXTERNAL=fplainn::Zui::INDEX_EXTERNAL };
 
 public:
 	ZudiIndexParser(sourceE source)

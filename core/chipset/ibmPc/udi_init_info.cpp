@@ -17,11 +17,13 @@
  * Place your udi_init_info declaration here.
  **/
 extern udi_init_t	zramdisk_init_info;
+extern udi_init_t	zrootdev_init_info;
 extern udi_mei_init_t	udi_gio_meta_info;
 
 const sDriverInitEntry		driverInitInfo[] =
 {
 	{ CC"zramdisk", &zramdisk_init_info },
+	{ CC"zrootdev", &zrootdev_init_info },
 	// Shall always be terminated with the NULL entry.
 	{ NULL, NULL }
 };

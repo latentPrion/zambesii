@@ -40,6 +40,15 @@ public:
 
 	void *getPrivateData(void) { return privateData; }
 
+	void setSchedOptions(uarch_t opts)
+		{ schedOptions = opts; }
+
+	void setSchedOptionBits(uarch_t mask)
+		{ FLAG_SET(schedOptions, mask); }
+
+	void unsetSchedOptionBits(uarch_t mask)
+		{ FLAG_UNSET(schedOptions, mask); }
+
 private:
 
 	// General.

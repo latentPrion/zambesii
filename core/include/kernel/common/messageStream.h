@@ -35,9 +35,6 @@
 
 #define MSGSTREAM				"MsgStream "
 
-#define MSGSTREAM_FLAGS_CPU_SOURCE		(1<<0)
-#define MSGSTREAM_FLAGS_CPU_TARGET		(1<<1)
-
 /**	EXPLANATION:
  * All of these structures must remain POD (plain-old-data) types. They are used
  * as part of the userspace ABI. In general, meaning of the header members is
@@ -49,9 +46,7 @@
  * targetId (only for zrequest::sHeader).
  *	ID of the target CPU or thread that the callback/response for this
  *	async round-trip must be sent to.
- * flags: (common subset):
- *	Z*_FLAGS_CPU_SOURCE: The source object was a CPU and not a thread.
- *	Z*_FLAGS_CPU_TARGET: The target object is a CPU and not a thread.
+ * flags: (common subset): None for now.
  * privateData:
  *	Opaque storage (sizeof(void *)) that is uninterpeted by the kernel
  *	subsystem that processes the request; this will be copied from the
@@ -69,13 +64,13 @@
  *	desired.
  **/
 
-/**	Values for zrequest::sHeader::subsystem & zcallback::sHeader::subsystem.
+/**	Values for MessageStream::sHeader::subsystem & MessageStream::sHeader::subsystem.
  * Subsystem IDs are basically implicitly queue IDs (to the kernel; externally
  * no assumptions should be made about the mapping of subsystem IDs to queues
  * in the kernel).
  **/
 // Keep these two up to date.
-#define MSGSTREAM_SUBSYSTEM_MAXVAL		(0x8)
+#define MSGSTREAM_SUBSYSTEM_MAXVAL		(0x9)
 #define MSGSTREAM_USERQ_MAXVAL			(0x3)
 // Actual subsystem values.
 #define MSGSTREAM_SUBSYSTEM_USER0		(0x0)
@@ -84,9 +79,10 @@
 #define MSGSTREAM_SUBSYSTEM_USER3		(0x3)
 #define MSGSTREAM_SUBSYSTEM_TIMER		(0x4)
 #define MSGSTREAM_SUBSYSTEM_PROCESS		(0x5)
-#define MSGSTREAM_SUBSYSTEM_FLOODPLAINN		(0x6)
-#define MSGSTREAM_SUBSYSTEM_ZASYNC		(0x7)
+#define MSGSTREAM_SUBSYSTEM_ZASYNC		(0x6)
+#define MSGSTREAM_SUBSYSTEM_FLOODPLAINN		(0x7)
 #define MSGSTREAM_SUBSYSTEM_ZUDI		(0x8)
+#define MSGSTREAM_SUBSYSTEM_ZUI			(0x9)
 
 #define MSGSTREAM_USERQ(num)			(MSGSTREAM_SUBSYSTEM_USER0 + num)
 
@@ -190,6 +186,8 @@ public:
 		processId_t targetId, processId_t sourceId,
 		uarch_t callerFlags, ubit16 *messageFlags);
 
+	void dump(void);
+
 private:
 	MessageQueue *getSubsystemQueue(ubit16 subsystemId)
 	{
@@ -199,7 +197,7 @@ private:
 		return &queues[subsystemId];
 	}
 
-private:
+public:
 	MessageQueue	queues[MSGSTREAM_SUBSYSTEM_MAXVAL + 1];
 
 	/* Bitmap of all subsystem queues which have messages in them. The lock

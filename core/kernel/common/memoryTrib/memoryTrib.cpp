@@ -50,7 +50,7 @@ error_t MemoryTrib::initialize(void)
 
 void MemoryTrib::dump(void)
 {
-	HardwareIdList::iterator	it;
+	HardwareIdList::Iterator	it;
 	NumaMemoryBank			*nmb;
 
 	printf(NOTICE MEMTRIB"Dumping: %d banks."
@@ -61,11 +61,9 @@ void MemoryTrib::dump(void)
 		"\n", nBanks);
 #endif
 
-	it = memoryBanks.begin();
-	for (nmb = (NumaMemoryBank *)it++;
-		nmb != NULL;
-		nmb = (NumaMemoryBank *)it++)
+	for (it = memoryBanks.begin(); it != memoryBanks.end(); ++it)
 	{
+		nmb = (NumaMemoryBank *)*it;
 		nmb->dump();
 	};
 }

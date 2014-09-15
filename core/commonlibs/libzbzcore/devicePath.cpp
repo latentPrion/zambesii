@@ -8,7 +8,7 @@
 
 
 static void postRegionInitInd(
-	Thread *self, Floodplainn::sZudiKernelCallMsg *ctxt, error_t err
+	Thread *self, fplainn::Zudi::sKernelCallMsg *ctxt, error_t err
 	)
 {
 	self->messageStream.postMessage(
@@ -25,12 +25,12 @@ void __klzbzcore::region::main(void *)
 	ubit16					regionIndex;
 	error_t					err;
 	Thread					*self;
-	Floodplainn::sZudiKernelCallMsg		*ctxt;
+	fplainn::Zudi::sKernelCallMsg		*ctxt;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
 
-	ctxt = (Floodplainn::sZudiKernelCallMsg *)self->getPrivateData();
+	ctxt = (fplainn::Zudi::sKernelCallMsg *)self->getPrivateData();
 
 	err = floodplainn.getDevice(ctxt->path, &dev);
 	if (err != ERROR_SUCCESS)
@@ -79,19 +79,21 @@ void __klzbzcore::region::main(void *)
 			{
 			case __klzbzcore::driver::localService::REGION_INIT_SYNC_REQ:
 				main1(
-					(Floodplainn::sZudiKernelCallMsg *)
+					(fplainn::Zudi::sKernelCallMsg *)
 						iMsg->privateData, self, dev);
 
 				break;
 			};
+
+			delete iMsg;
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_ZUDI:
 			switch (iMsg->function)
 			{
-			case MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL:
+			case MSGSTREAM_ZUDI_MGMT_CALL:
 				mgmt::handler(
-					(Floodplainn::sZudiMgmtCallMsg *)iMsg,
+					(fplainn::Zudi::sMgmtCallMsg *)iMsg,
 					dev, regionIndex);
 
 				break;
@@ -109,7 +111,7 @@ void __klzbzcore::region::main(void *)
 }
 
 void __klzbzcore::region::main1(
-	Floodplainn::sZudiKernelCallMsg *ctxt,
+	fplainn::Zudi::sKernelCallMsg *ctxt,
 	Thread *self, fplainn::Device *dev
 	)
 {
@@ -140,7 +142,7 @@ void __klzbzcore::region::main1(
 		udi_ops_vector_t	*opsVector0=NULL, *opsVector1=NULL;
 		udi_ops_init_t		*ops_info_tmp;
 
-		err = floodplainn.getInternalBopVectorIndexes(
+		err = floodplainn.zudi.getInternalBopVectorIndexes(
 			regionIndex, &opsIndex0, &opsIndex1);
 
 		if (err != ERROR_SUCCESS)
@@ -173,7 +175,7 @@ void __klzbzcore::region::main1(
 			return;
 		};
 
-		err = floodplainn.spawnInternalBindChannel(
+		err = floodplainn.zudi.spawnInternalBindChannel(
 			ctxt->path, regionIndex, opsVector0, opsVector1);
 
 		if (err != ERROR_SUCCESS)
@@ -195,7 +197,7 @@ void __klzbzcore::region::main1(
 
 struct sUdi_Mgmt_ContextBlock
 {
-	sUdi_Mgmt_ContextBlock(Floodplainn::sZudiMgmtCallMsg *msg)
+	sUdi_Mgmt_ContextBlock(fplainn::Zudi::sMgmtCallMsg *msg)
 	:
 	privateData(msg->header.privateData), sourceTid(msg->header.sourceId)
 	{
@@ -208,7 +210,7 @@ struct sUdi_Mgmt_ContextBlock
 };
 
 error_t __klzbzcore::region::mgmt::handler(
-	Floodplainn::sZudiMgmtCallMsg *msg,
+	fplainn::Zudi::sMgmtCallMsg *msg,
 	fplainn::Device *dev, ubit16 regionIndex
 	)
 {
@@ -242,7 +244,7 @@ error_t __klzbzcore::region::mgmt::handler(
 
 	switch (msg->mgmtOp)
 	{
-	case Floodplainn::sZudiMgmtCallMsg::MGMTOP_USAGE:
+	case fplainn::Zudi::sMgmtCallMsg::MGMTOP_USAGE:
 		printf(NOTICE"%s, rgn %d: udi_usage_ind call received!\n",
 			msg->path, regionIndex);
 
@@ -280,7 +282,7 @@ void udi_usage_res(udi_usage_cb_t *cb)
 printf(NOTICE"in res\n");
 	contextBlock = (sUdi_Mgmt_ContextBlock *)cb->gcb.initiator_context;
 
-	floodplainn.udi_usage_res(
+	floodplainn.zudi.udi_usage_res(
 		contextBlock->devicePath,
 		contextBlock->sourceTid, contextBlock->privateData);
 

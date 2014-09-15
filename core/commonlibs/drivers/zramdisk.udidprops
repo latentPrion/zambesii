@@ -13,8 +13,6 @@ message 3	N/A
 requires	udi 0x101
 requires	zbz_root 0x0
 requires	udi_gio 0x101
-#requires	udi_bridge 0x101
-#requires	udi_disk 0x101
 
 meta 1 zbz_root
 meta 2 udi_gio
@@ -24,7 +22,7 @@ region 0
 region 1
 
 internal_bind_ops	2 1 1 2 1
-parent_bind_ops		2 0 1 1
+parent_bind_ops		1 0 1 1
 parent_bind_ops		1 0 1 1
 child_bind_ops		1 0 1
 

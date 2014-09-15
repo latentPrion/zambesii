@@ -59,21 +59,19 @@ public:
 	// sarch_t sleep(sTime delay);
 
 	error_t createAbsoluteOneshotEvent(
-		sTimestamp stamp, processId_t targetPid,
-		ubit32 flags, void *privateData)
+		sTimestamp stamp, ubit32 flags, void *privateData)
 	{
 		return createOneshotEvent(
 			stamp, TIMERSTREAM_CREATEONESHOT_TYPE_ABSOLUTE,
-			targetPid, flags, privateData);
+			flags, privateData);
 	}
 
 	error_t createRelativeOneshotEvent(
-		sTimestamp stamp, processId_t targetPid,
-		ubit32 flags, void *privateData)
+		sTimestamp stamp, ubit32 flags, void *privateData)
 	{
 		return createOneshotEvent(
 			stamp, TIMERSTREAM_CREATEONESHOT_TYPE_RELATIVE,
-			targetPid, flags, privateData);
+			flags, privateData);
 	}
 
 	/* wakeTarget:
@@ -100,13 +98,11 @@ public:
 	 **/
 	#define MSGSTREAM_TIMER_CREATE_ONESHOT_EVENT	(0)
 	error_t createOneshotEvent(
-		sTimestamp stamp, ubit8 type, processId_t targetPid,
-		ubit32 flags, void *privateData);
+		sTimestamp stamp, ubit8 type, ubit32 flags, void *privateData);
 
 	#define MSGSTREAM_TIMER_CREATE_PERIODIC_EVENT	(1)
 	error_t createPeriodicEvent(
-		sTime interval, processId_t targetPid,
-		ubit32 flags, void *privateData);
+		sTime interval,	ubit32 flags, void *privateData);
 
 	// Pulls an event from the expired events list.
 	error_t pullEvent(ubit32 flags, sTimerMsg **ret);

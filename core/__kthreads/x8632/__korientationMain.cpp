@@ -26,8 +26,6 @@
 int oo=0, pp=0, qq=0, rr=0;
 
 static void				__korientationMain1(void);
-static __kcbFn				__korientationMain2;
-static Floodplainn::initializeReqCbFn	__korientationMain3;
 static __kcbFn				__korientationMain4;
 
 #include <commonlibs/libacpi/libacpi.h>
@@ -273,46 +271,23 @@ extern "C" void __korientationMain(ubit32, sMultibootData *)
 void __korientationMain1(void)
 {
 	error_t			ret;
-	DistributaryProcess	*dp;
 
 	// Initialize the VFS roots.
 	DO_OR_DIE(vfsTrib, initialize(), ret);
 	DO_OR_DIE(vfsTrib, getFvfs()->initialize(), ret);
 	DO_OR_DIE(vfsTrib, getDvfs()->initialize(), ret);
 
-	/* Initialize the Distributary Trib and start up the UDI driver indexer
-	 * dtrib to allow us to search the kernel driver index.
+	/* Next block, we initialize the kernel's Floodplainn.
 	 **/
-	DO_OR_DIE(distributaryTrib, initialize(), ret);
-	DO_OR_DIE(
-		processTrib, spawnDistributary(
-			CC"///@d//././udi-driver-indexer//./.", NULL,
-			NUMABANKID_INVALID,
-			0, 0, new __kCallback(&__korientationMain2),
-			&dp),
-		ret);
-
-	floodplainn.setZudiIndexServerTid(dp->id);
-}
-
-void __korientationMain2(MessageStream::sHeader *msg)
-{
-	error_t		ret;
-
-	DIE_ON(msg->error);
-	DO_OR_DIE(floodplainn, initializeReq(&__korientationMain3), ret);
-}
-
-void __korientationMain3(error_t ret)
-{
-	DIE_ON(ret);
+	DO_OR_DIE(floodplainn, initialize(), ret);
+	DO_OR_DIE(floodplainn.zui, initialize(), ret);
+	DO_OR_DIE(floodplainn.zudi, initialize(), ret);
 
 	/* Start the chipset up.
 	 **/
-	DO_OR_DIE(floodplainn, enumerateBaseDevices(), ret);
-
-	zuiServer::newDeviceInd(
-		CC"by-id/0", zuiServer::INDEX_KERNEL,
+// 	DO_OR_DIE(floodplainn, enumerateBaseDevices(), ret);
+	floodplainn.zui.newDeviceInd(
+		CC"by-id", fplainn::Zui::INDEX_KERNEL,
 		new __kCallback(&__korientationMain4));
 }
 
@@ -321,13 +296,13 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	Thread				*self;
 	fplainn::Device			*chipsetDev; (void)chipsetDev;
 	error_t				ret;
-	Floodplainn::sZudiIndexMsg	*msg;
+	fplainn::Zui::sIndexMsg	*msg;
 
-	msg = (Floodplainn::sZudiIndexMsg *)msgIt;
+	msg = (fplainn::Zui::sIndexMsg *)msgIt;
 	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread() );
 
-	if (msg->info.action != zuiServer::NDACTION_INSTANTIATE)
+	if (msg->info.action != fplainn::Zui::NDACTION_INSTANTIATE)
 	{
 		printf(FATAL ORIENT"Failed to instantiate "
 			"root device.\n\tError is %s; got as far as %d.\n",
@@ -375,7 +350,7 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 
 	sarch_t		waitForTimeout=1;
 	ret = self->parent->timerStream.createRelativeOneshotEvent(
-		sTimestamp(0, 3, 0), 0, 0, NULL);
+		sTimestamp(0, 3, 0), 0, NULL);
 
 	if (ret != ERROR_SUCCESS)
 	{

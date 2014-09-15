@@ -15,6 +15,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 
+#include <debug.h>
 AsyncResponse::~AsyncResponse(void)
 {
 	MessageStream::sHeader		*msg;
@@ -322,6 +323,13 @@ subsystem(subsystem), flags(0), function(function), size(size)
 #endif
 }
 
+void MessageStream::dump(void)
+{
+	for (uarch_t i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++) {
+		queues[i].dump();
+	};
+}
+
 processId_t MessageStream::determineSourceThreadId(Thread *caller, ubit16 *)
 {
 	return caller->getFullId();
@@ -332,14 +340,10 @@ processId_t MessageStream::determineTargetThreadId(
 	uarch_t callerFlags, ubit16 *messageFlags
 	)
 {
-	// If target thread is a CPU:
-	if (FLAG_TEST(callerFlags, MSGSTREAM_FLAGS_CPU_TARGET))
-	{
-		FLAG_SET(*messageFlags, MSGSTREAM_FLAGS_CPU_TARGET);
-		return targetId;
-	};
+	(void)sourceId;
+	(void)callerFlags;
+	(void)messageFlags;
 
-	if (targetId == 0) { return sourceId; };
 	return targetId;
 }
 

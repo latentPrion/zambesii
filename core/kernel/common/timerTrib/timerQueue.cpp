@@ -134,15 +134,10 @@ sarch_t TimerQueue::cancel(TimerStream::sTimerMsg *request)
 	return 1;
 }
 
-static sarch_t isPerCpuCreator(TimerStream::sTimerMsg *request)
-{
-	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_SOURCE);
-}
-
 static ProcessStream *getCreatorProcess(TimerStream::sTimerMsg *request)
 {
-	// If creator was a per-cpu thread, the creator process is the kernel.
-	if (isPerCpuCreator(request)) {
+	// If creator was a power thread, the creator process is the kernel.
+	if (Thread::isPowerThread(request->header.sourceId)) {
 		return processTrib.__kgetStream();
 	};
 
@@ -150,14 +145,9 @@ static ProcessStream *getCreatorProcess(TimerStream::sTimerMsg *request)
 	return processTrib.getStream(request->header.sourceId);
 }
 
-inline static sarch_t isPerCpuTarget(TimerStream::sTimerMsg *request)
-{
-	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
-}
-
 static ProcessStream *getTargetProcess(TimerStream::sTimerMsg *request)
 {
-	if (isPerCpuTarget(request)) {
+	if (Thread::isPowerThread(request->header.targetId)) {
 		return processTrib.__kgetStream();
 	};
 

@@ -10,7 +10,6 @@ ZAsyncStream::~ZAsyncStream(void)
 {
 	processId_t		*tmp=NULL;
 	uarch_t			nConnections;
-	void			*handle;
 	ipc::sDataHeader	*msgTmp;
 
 	connections.lock.acquire();
@@ -40,13 +39,14 @@ ZAsyncStream::~ZAsyncStream(void)
 		delete[] tmp;
 	};
 
-	handle = NULL;
-	while ((msgTmp = messages.getNextItem(&handle)) != NULL)
+	PtrList<ipc::sDataHeader>::Iterator	it = messages.begin(0);
+	for (; it != messages.end(); ++it)
 	{
 		/*	Fixme:
 		 * This should probably be ipc::destroyDataHeader() instead of
 		 * a delete call.
 		 **/
+		msgTmp = *it;
 		delete msgTmp;
 	};
 }

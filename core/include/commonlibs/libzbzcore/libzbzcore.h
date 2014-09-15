@@ -22,7 +22,7 @@ namespace __klzbzcore
 
 	// PRIVATE:
 		typedef void (__kmainCbFn)(
-			Floodplainn::sZudiKernelCallMsg *ctxt,
+			fplainn::Zudi::sKernelCallMsg *ctxt,
 			Thread *self, fplainn::Device *dev);
 
 		__kmainCbFn	main1;
@@ -36,7 +36,7 @@ namespace __klzbzcore
 		namespace mgmt
 		{
 			error_t handler(
-				Floodplainn::sZudiMgmtCallMsg *msg,
+				fplainn::Zudi::sMgmtCallMsg *msg,
 				fplainn::Device *dev, ubit16 regionIndex);
 		}
 	}
@@ -61,28 +61,28 @@ namespace __klzbzcore
 					DESTROY_DEVICE=1;
 
 			typedef void (instantiateDeviceReqCbFn)(
-				Floodplainn::sZudiKernelCallMsg *, error_t);
+				fplainn::Zudi::sKernelCallMsg *, error_t);
 			typedef instantiateDeviceReqCbFn destroyDeviceReqCbFn;
 
-			void handler(Floodplainn::sZudiKernelCallMsg *msg);
+			void handler(fplainn::Zudi::sKernelCallMsg *msg);
 
 			void instantiateDeviceReq(
-				Floodplainn::sZudiKernelCallMsg *ctxt);
+				fplainn::Zudi::sKernelCallMsg *ctxt);
 
 			void destroyDeviceReq(
-				Floodplainn::sZudiKernelCallMsg *ctxt);
+				fplainn::Zudi::sKernelCallMsg *ctxt);
 
 		// PRIVATE:
 			typedef void (__kinstantiateDeviceReqCbFn)(
 				MessageStream::sHeader *msg,
-				Floodplainn::sZudiKernelCallMsg *ctxt);
+				fplainn::Zudi::sKernelCallMsg *ctxt);
 			typedef __kinstantiateDeviceReqCbFn
 				__kdestroyDeviceReqCbFn;
 
 			class InstantiateDeviceReqCb;
 			typedef InstantiateDeviceReqCb DestroyDeviceReqCb;
-			void instantiateDeviceReq1(Floodplainn::sZudiKernelCallMsg *);
-			void instantiateDeviceReq2(Floodplainn::sZudiKernelCallMsg *);
+			void instantiateDeviceReq1(fplainn::Zudi::sKernelCallMsg *);
+			void instantiateDeviceReq2(fplainn::Zudi::sKernelCallMsg *);
 
 			instantiateDeviceReqCbFn	instantiateDeviceAck;
 			destroyDeviceReqCbFn		destroyDeviceAck;
@@ -108,7 +108,7 @@ namespace __klzbzcore
 				utf8Char *path);
 
 			void regionInitInd(
-				Floodplainn::sZudiKernelCallMsg *ctxt,
+				fplainn::Zudi::sKernelCallMsg *ctxt,
 				error_t error);
 		}
 	}

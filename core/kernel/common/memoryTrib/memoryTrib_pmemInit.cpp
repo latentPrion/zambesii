@@ -79,14 +79,15 @@ static void sortNumaMapByAddress(sZkcmNumaMap *map)
 
 error_t MemoryTrib::pmemInit(void)
 {
-	error_t			ret;
+	error_t				ret;
 	sZkcmMemoryConfig		*memConfig=NULL;
-	sZkcmMemoryMapS		*memMap=NULL;
-	sZkcmNumaMap		*numaMap=NULL;
-	NumaMemoryBank		*nmb;
+	sZkcmMemoryMapS			*memMap=NULL;
+	sZkcmNumaMap			*numaMap=NULL;
+	NumaMemoryBank			*nmb;
 	// __kspaceBool is used to determine whether or not to kill __kspace.
-	sarch_t			pos, __kspaceBool=0;
-	status_t		nSet=0;
+	sarch_t				__kspaceBool=0;
+	HardwareIdList::Iterator	pos;
+	status_t			nSet=0;
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	// Get NUMA map from chipset.
@@ -192,11 +193,11 @@ parseMemoryMap:
 				memMap->entries[i].memType);
 		};
 
-		pos = memoryBanks.prepareForLoop();
-		nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos);
-		for (; nmb != NULL;
-			nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos))
+		pos = memoryBanks.begin();
+		for (; pos != memoryBanks.end(); ++pos)
 		{
+			nmb = (NumaMemoryBank *)*pos;
+
 			for (uarch_t i=0; i<memMap->nEntries; i++)
 			{
 				if (memMap->entries[i].memType !=
@@ -218,11 +219,11 @@ parseMemoryMap:
 	};
 
 	// Next merge all banks with __kspace.
-	pos = memoryBanks.prepareForLoop();
-	nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos);
-	for (; nmb != NULL;
-		nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos))
+	pos = memoryBanks.end();
+	for (; pos != memoryBanks.end(); ++pos)
 	{
+		nmb = (NumaMemoryBank *)*pos;
+
 		if (nmb == getBank(CHIPSET_NUMA___KSPACE_BANKID)) {
 			continue;
 		};
@@ -238,11 +239,11 @@ parseMemoryMap:
 	// Then apply the Memory Tributary's Memory Regions to all banks.
 	if (chipsetRegionMap != NULL)
 	{
-		pos = memoryBanks.prepareForLoop();
-		nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos);
-		for (; nmb != NULL;
-			nmb = (NumaMemoryBank *)memoryBanks.getLoopItem(&pos))
+		pos = memoryBanks.begin();
+		for (; pos != memoryBanks.end(); ++pos)
 		{
+			nmb = (NumaMemoryBank *)*pos;
+
 			for (uarch_t i=0; i<chipsetRegionMap->nEntries; i++)
 			{
 				nmb->mapMemUsed(

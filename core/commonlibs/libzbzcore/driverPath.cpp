@@ -40,7 +40,7 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 	 * other subsystems.
 	 **/
 
-	zuiServer::loadDriverRequirementsReq(
+	floodplainn.zui.loadDriverRequirementsReq(
 		new MainCb(&main1, self, callerCb));
 
 	for (;FOREVER;)
@@ -62,13 +62,13 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 		case MSGSTREAM_SUBSYSTEM_ZUDI:
 			switch (iMsg->function)
 			{
-			case MSGSTREAM_FPLAINN_ZUDI___KCALL:
+			case MSGSTREAM_ZUDI___KCALL:
 				__kcontrol::handler(
-					(Floodplainn::sZudiKernelCallMsg *)iMsg);
+					(fplainn::Zudi::sKernelCallMsg *)iMsg);
 
 				break;
 
-			case MSGSTREAM_FPLAINN_ZUDI_MGMT_CALL:
+			case MSGSTREAM_ZUDI_MGMT_CALL:
 				/* Would be a call to main_handleMgmtCall()
 				 * here, had I not cleaned up.
 				 **/
@@ -227,9 +227,9 @@ void __klzbzcore::driver::localService::handler(
 		return;
 
 	case REGION_INIT_IND:
-		Floodplainn::sZudiKernelCallMsg		*ctxt;
+		fplainn::Zudi::sKernelCallMsg		*ctxt;
 
-		ctxt = (Floodplainn::sZudiKernelCallMsg *)iMsg->privateData;
+		ctxt = (fplainn::Zudi::sKernelCallMsg *)iMsg->privateData;
 		regionInitInd(ctxt, iMsg->error);
 		return;
 
@@ -282,7 +282,7 @@ error_t __klzbzcore::driver::localService::getThreadDevicePathReq(
 }
 
 void __klzbzcore::driver::localService::regionInitInd(
-	Floodplainn::sZudiKernelCallMsg *ctxt, error_t error
+	fplainn::Zudi::sKernelCallMsg *ctxt, error_t error
 	)
 {
 	fplainn::Device		*dev;
@@ -361,11 +361,11 @@ void __klzbzcore::driver::localService::regionInitInd(
 	return __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(ctxt);
 }
 
-void __klzbzcore::driver::__kcontrol::handler(Floodplainn::sZudiKernelCallMsg *msg)
+void __klzbzcore::driver::__kcontrol::handler(fplainn::Zudi::sKernelCallMsg *msg)
 {
-	Floodplainn::sZudiKernelCallMsg		*copy;
+	fplainn::Zudi::sKernelCallMsg		*copy;
 
-	copy = new Floodplainn::sZudiKernelCallMsg(
+	copy = new fplainn::Zudi::sKernelCallMsg(
 		msg->header.targetId,
 		msg->header.subsystem, msg->header.function,
 		msg->header.size, msg->header.flags,
@@ -385,7 +385,7 @@ void __klzbzcore::driver::__kcontrol::handler(Floodplainn::sZudiKernelCallMsg *m
 
 	switch (msg->command)
 	{
-	case Floodplainn::sZudiKernelCallMsg::CMD_INSTANTIATE_DEVICE:
+	case fplainn::Zudi::sKernelCallMsg::CMD_INSTANTIATE_DEVICE:
 		/* Sent by the kernel when it wishes to create a new instance
 		 * of a device that is to be serviced by this driver process.
 		 *
@@ -399,7 +399,7 @@ void __klzbzcore::driver::__kcontrol::handler(Floodplainn::sZudiKernelCallMsg *m
 			/* Have to call the Floodplainn method directly.
 			 * Local ack also deletes the message (double free).
 			 **/
-			floodplainn.instantiateDeviceAck(
+			floodplainn.zudi.instantiateDeviceAck(
 				msg->header.sourceId, msg->path,
 				ERROR_MEMORY_NOMEM,
 				msg->header.privateData);
@@ -420,11 +420,11 @@ void __klzbzcore::driver::__kcontrol::handler(Floodplainn::sZudiKernelCallMsg *m
 }
 
 void __klzbzcore::driver::__kcontrol::instantiateDeviceAck(
-	Floodplainn::sZudiKernelCallMsg *callerContext, error_t err
+	fplainn::Zudi::sKernelCallMsg *callerContext, error_t err
 	)
 {
 	// TODO: Kill all the region threads that were spawned.
-	floodplainn.instantiateDeviceAck(
+	floodplainn.zudi.instantiateDeviceAck(
 		callerContext->header.sourceId,
 		callerContext->path,
 		err,
@@ -434,7 +434,7 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceAck(
 }
 
 void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
-	Floodplainn::sZudiKernelCallMsg *ctxt
+	fplainn::Zudi::sKernelCallMsg *ctxt
 	)
 {
 	fplainn::Device			*dev;
@@ -506,7 +506,7 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 }
 
 void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
-	Floodplainn::sZudiKernelCallMsg *ctxt
+	fplainn::Zudi::sKernelCallMsg *ctxt
 	)
 {
 	error_t		ret;
@@ -516,8 +516,8 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 	 * thread of logic and the region threads that it has spawned.
 	 **/
 
-	// Spawn the parent bind channel.
-	ret = floodplainn.spawnChildBindChannel(
+	// If the device has a parent, spawn a bind channel to its parent.
+	ret = floodplainn.zudi.spawnChildBindChannel(
 		CC"by-id/0", ctxt->path, CC"zbz_root",
 		(udi_ops_vector_t *)0xF00115);
 
@@ -564,7 +564,7 @@ printf(NOTICE LZBZCORE"instDevReq1: Just called floodplainn.usage_ind on dev %s.
 }
 
 void __klzbzcore::driver::__kcontrol::instantiateDeviceReq2(
-	Floodplainn::sZudiKernelCallMsg *ctxt
+	fplainn::Zudi::sKernelCallMsg *ctxt
 	)
 {
 printf(NOTICE LZBZCORE"instDevReq2: HERE! 0x%p\n", ctxt);
@@ -583,7 +583,7 @@ void __klzbzcore::driver::main_handleMgmtCall(
 	{
 	case Floodplainn::sZudiMgmtCallMsg::MGMTOP_USAGE:
 		err = __kcall::instantiateDevice2(
-			(__klzbzcore::driver::__kcall::Floodplainn::sZudiKernelCallMsg *)
+			(__klzbzcore::driver::__kcall::fplainn::Zudi::sKernelCallMsg *)
 				msg->header.privateData);
 
 		break;

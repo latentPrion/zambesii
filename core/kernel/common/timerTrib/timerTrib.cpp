@@ -71,8 +71,7 @@ sarch_t TimerTrib::uninstallClockRoutine(void)
 void TimerTrib::initializeAllQueues(void)
 {
 	error_t			ret;
-	ZkcmTimerDevice	*dev;
-	void			*handle=NULL;
+	ZkcmTimerDevice		*dev;
 
 	/**	EXPLANATION:
 	 * First call initialize() on each TimerQueue object, then proceed:
@@ -93,6 +92,8 @@ void TimerTrib::initializeAllQueues(void)
 		};
 	};
 
+	PtrList<ZkcmTimerDevice>::Iterator		it;
+
 	dev = zkcmCore.timerControl.filterTimerDevices(
 		ZkcmTimerDevice::CHIPSET,
 		0,
@@ -102,7 +103,7 @@ void TimerTrib::initializeAllQueues(void)
 		| TIMERCTL_FILTER_IO_ANY
 		| TIMERCTL_FILTER_PREC_ANY
 		| TIMERCTL_FILTER_FLAGS_SKIP_LATCHED,
-		&handle);
+		&it);
 
 	for (; dev != NULL;
 		dev = zkcmCore.timerControl.filterTimerDevices(
@@ -114,7 +115,7 @@ void TimerTrib::initializeAllQueues(void)
 			| TIMERCTL_FILTER_IO_ANY
 			| TIMERCTL_FILTER_PREC_ANY
 			| TIMERCTL_FILTER_FLAGS_SKIP_LATCHED,
-			&handle))
+			&it))
 	{
 		newTimerDeviceNotification(dev);
 	};

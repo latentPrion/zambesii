@@ -14,7 +14,7 @@
 	#include <__kclasses/ptrlessList.h>
 	#include <kernel/common/thread.h>
 	#include <kernel/common/numaTypes.h>
-	#include <kernel/common/zudiIndexServer.h>
+	#include <kernel/common/floodplainn/zui.h>
 	#include <kernel/common/floodplainn/fvfs.h>	// FVFS_TAG_NAME_MAXLEN
 
 /**	Device:
@@ -65,7 +65,7 @@ struct sDriverClassMapEntry
 	uarch_t		classIndex;
 } extern driverClassMap[];
 
-extern utf8Char		*Driverlasses[];
+extern utf8Char		*driverClasses[];
 
 namespace fplainn
 {
@@ -89,8 +89,8 @@ namespace fplainn
 		nParentTags(0),
 		enumerationAttrs(NULL), instanceAttrs(NULL), classes(NULL),
 		driverDetected(0),
-		driverIndex(zuiServer::INDEX_KERNEL),
-		requestedIndex(zuiServer::INDEX_KERNEL),
+		driverIndex(fplainn::Zui::INDEX_KERNEL),
+		requestedIndex(fplainn::Zui::INDEX_KERNEL),
 		parentTags(NULL), parentTagCounter(0)
 		{
 			this->longName[0]
@@ -225,7 +225,7 @@ namespace fplainn
 		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
 		sbit8			driverDetected;
 		// The index which enumerated this device's driver.
-		zuiServer::indexE	driverIndex, requestedIndex;
+		fplainn::Zui::indexE	driverIndex, requestedIndex;
 		sParentTag		*parentTags;
 		uarch_t			parentTagCounter;
 	};
@@ -368,7 +368,7 @@ namespace fplainn
 		struct sParentBop;
 		struct sInternalBop;
 
-		Driver(zuiServer::indexE index)
+		Driver(fplainn::Zui::indexE index)
 		:
 		index(index),
 		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
@@ -684,7 +684,7 @@ namespace fplainn
 		// Kernel doesn't need to know about control block information.
 
 	public:
-		zuiServer::indexE		index;
+		fplainn::Zui::indexE		index;
 
 		utf8Char	basePath[DRIVER_BASEPATH_MAXLEN],
 				shortName[DRIVER_SHORTNAME_MAXLEN],

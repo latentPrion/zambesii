@@ -16,9 +16,7 @@ error_t TimerStream::initialize(void)
 }
 
 error_t TimerStream::createOneshotEvent(
-	sTimestamp stamp, ubit8 type,
-	processId_t targetPid,
-	uarch_t flags, void *privateData
+	sTimestamp stamp, ubit8 type, uarch_t flags, void *privateData
 	)
 {
 	sTimerMsg	*request, *tmp;
@@ -29,7 +27,7 @@ error_t TimerStream::createOneshotEvent(
 	};
 
 	request = new sTimerMsg(
-		targetPid,
+		this->id,
 		MSGSTREAM_SUBSYSTEM_TIMER, MSGSTREAM_TIMER_CREATE_ONESHOT_EVENT,
 		sizeof(*request), flags, privateData);
 
@@ -120,11 +118,6 @@ error_t TimerStream::pullEvent(ubit32 flags, sTimerMsg **event)
 	return ERROR_SUCCESS;
 }
 
-static inline sarch_t isPerCpuTarget(TimerStream::sTimerMsg *request)
-{
-	return FLAG_TEST(request->header.flags, MSGSTREAM_FLAGS_CPU_TARGET);
-}
-
 Thread *TimerStream::timerRequestTimeoutNotification(
 	sTimerMsg *request, sTimestamp *sTimerMsgtamp
 	)
@@ -166,7 +159,6 @@ Thread *TimerStream::timerRequestTimeoutNotification(
 			id, thread->getFullId());
 	};
 
-	// Tbh, it doesn't matter which union member we return.
 	return thread;
 }
 

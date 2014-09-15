@@ -3,6 +3,7 @@
 
 	#include <chipset/zkcm/timerDevice.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kclasses/ptrList.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 	#include <kernel/common/processId.h>
 
@@ -125,7 +126,7 @@ public:
 		ZkcmTimerDevice::precisionE precision,	// EXACT, NEGLIGABLE,
 							// OVERFLOW or UNDERFLOW
 		ubit32 flags,
-		void **handle);
+		PtrList<ZkcmTimerDevice>::Iterator *it);
 
 	/**	EXPLANATION:
 	 * The chipset calls this function to register new timer sources as

@@ -20,12 +20,12 @@ void __udi_assert(const char *expr, const char *file, int line)
 	assert_fatal(0);
 }
 
-error_t Floodplainn::getInternalBopVectorIndexes(
+error_t fplainn::Zudi::getInternalBopVectorIndexes(
 	ubit16 regionIndex, ubit16 *opsIndex0, ubit16 *opsIndex1
 	)
 {
 	Thread				*self;
-	fplainn::DriverInstance	*drvInst;
+	fplainn::DriverInstance		*drvInst;
 	fplainn::Driver::sInternalBop	*iBop;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()
@@ -41,14 +41,14 @@ error_t Floodplainn::getInternalBopVectorIndexes(
 	return ERROR_SUCCESS;
 }
 
-error_t Floodplainn::spawnInternalBindChannel(
+error_t fplainn::Zudi::spawnInternalBindChannel(
 	utf8Char *devPath, ubit16 regionIndex,
 	udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1)
 {
 	Thread				*thread0, *thread1;
 	udi_init_context_t		*rdata0=NULL, *rdata1=NULL;
 	processId_t			region0Tid=PROCID_INVALID, dummy;
-	fplainn::Device		*dev;
+	fplainn::Device			*dev;
 	error_t				ret;
 
 printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
@@ -59,7 +59,7 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 	thread1 = (Thread *)cpuTrib.getCurrentCpuStream()
 		->taskStream.getCurrentThread();
 
-	ret = getDevice(devPath, &dev);
+	ret = floodplainn.getDevice(devPath, &dev);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	if (dev->instance->getRegionInfo(regionIndex, &dummy, &rdata1)
@@ -78,23 +78,24 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 		dev, thread1, opsVector1, rdata1);
 }
 
-error_t Floodplainn::spawnChildBindChannel(
+error_t fplainn::Zudi::spawnChildBindChannel(
 	utf8Char *parentDevPath, utf8Char *childDevPath, utf8Char *metaName,
 	udi_ops_vector_t *opsVector
 	)
 {
-	fplainn::Device		*parentDev, *childDev;
-	fplainn::Driver::sMetalanguage	*parentMeta, *childMeta;
-	fplainn::Driver::sChildBop	*parentCBop;
-	fplainn::Driver::sParentBop	*childPBop;
-	Thread				*parentThread, *childThread;
-	processId_t			parentTid, childTid;
-	udi_init_context_t		*parentRdata, *childRdata;
-	fplainn::DriverInstance::sChildBop *parentInstCBop;
+	fplainn::Device				*parentDev, *childDev;
+	fplainn::Driver::sMetalanguage		*parentMeta, *childMeta;
+	fplainn::Driver::sChildBop		*parentCBop;
+	fplainn::Driver::sParentBop		*childPBop;
+	Thread					*parentThread, *childThread;
+	processId_t				parentTid, childTid;
+	udi_init_context_t			*parentRdata, *childRdata;
+	fplainn::DriverInstance::sChildBop	*parentInstCBop;
 
-	if (getDevice(parentDevPath, &parentDev) != ERROR_SUCCESS
-		|| getDevice(childDevPath, &childDev) != ERROR_SUCCESS)
+	if (floodplainn.getDevice(parentDevPath, &parentDev) != ERROR_SUCCESS
+		|| floodplainn.getDevice(childDevPath, &childDev) != ERROR_SUCCESS)
 		{ return ERROR_INVALID_RESOURCE_NAME; };
+for(printf(FATAL"%s\n\t%s", parentDevPath, childDevPath);;);
 
 	/* Both the parent device and the connecting child device must expose
 	 * have "meta" indexes for the specified metalanguage.
@@ -174,7 +175,7 @@ error_t Floodplainn::spawnChildBindChannel(
 		childDev, childThread, opsVector, childRdata);
 }
 
-error_t Floodplainn::spawnChannel(
+error_t fplainn::Zudi::spawnChannel(
 	fplainn::Device *dev0, Thread *thread0, udi_ops_vector_t *opsVector0,
 	udi_init_context_t *channelContext0,
 	fplainn::Device *dev1, Thread *thread1, udi_ops_vector_t *opsVector1,

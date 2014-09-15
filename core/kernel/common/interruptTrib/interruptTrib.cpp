@@ -113,7 +113,6 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 	sIrqPinDescriptor	*pinDescriptor;
 	sIsrDescriptor		*isrDescriptor, (*isrRetireList[4]);
 	status_t		status;
-	void			*handle;
 	ubit8			makeNoise, triggerMode, isrRetireListLength=0;
 	ubit16			__kpin;
 
@@ -171,13 +170,15 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 				? "level" : "edge");
 	};
 
-	handle = NULL;
 	atomicAsm::set(&pinDescriptor->inService, 1);
 
-	isrDescriptor = pinDescriptor->isrList.getNextItem(&handle);
-	for (; isrDescriptor != NULL;
-		isrDescriptor = pinDescriptor->isrList.getNextItem(&handle))
+	PtrList<sIsrDescriptor>::Iterator	it =
+		pinDescriptor->isrList.begin(0);
+
+	for (; it != pinDescriptor->isrList.end(); ++it)
 	{
+		isrDescriptor = *it;
+
 		// For now only ZKCM.
 		status = isrDescriptor->api.zkcm.isr(
 			isrDescriptor->api.zkcm.device, 0);
@@ -342,7 +343,6 @@ sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 {
 	sIrqPinDescriptor	*pinDesc;
 	sIsrDescriptor		*isrDesc;
-	void			*handle;
 
 	/**	FIXME:
 	 * Race condition here if one tries to retire an ISR on a __kpin
@@ -373,12 +373,12 @@ sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 		return 0;
 	};
 
-	handle = NULL;
-	for (isrDesc = (sIsrDescriptor *)pinDesc->isrList.getNextItem(&handle);
-		isrDesc != NULL;
-		isrDesc = (sIsrDescriptor *)pinDesc->isrList
-			.getNextItem(&handle))
+	PtrList<sIsrDescriptor>::Iterator	it = pinDesc->isrList.begin(0);
+
+	for (; it != pinDesc->isrList.end(); ++it)
 	{
+		isrDesc = *it;
+
 		if (isrDesc->api.zkcm.isr != isr) { continue; };
 
 		// If we found the right one:
@@ -650,20 +650,18 @@ void InterruptTrib::dumpUnusedVectors(void)
 
 void InterruptTrib::dumpIrqPins(void)
 {
-	HardwareIdList::iterator	it, prev;
+	HardwareIdList::Iterator	curr;
 	sIrqPinDescriptor		*tmp;
 
 	printf(NOTICE INTTRIB"dumpIrqPins:\n");
 
-	prev = it = pinIrqTable.begin();
-	tmp = reinterpret_cast<sIrqPinDescriptor *>( it++ );
-	while (tmp != NULL)
+	curr = pinIrqTable.begin();
+	for (; curr != pinIrqTable.end(); ++curr)
 	{
-		printf(CC"\t__kpin %d: %d devices.\n",
-			prev.cursor, tmp->isrList.getNItems());
+		tmp = reinterpret_cast<sIrqPinDescriptor *>( *curr );
 
-		prev = it;
-		tmp = reinterpret_cast<sIrqPinDescriptor *>( it++ );
+		printf(CC"\t__kpin %d: %d devices.\n",
+			curr.cursor, tmp->isrList.getNItems());
 	};
 }
 

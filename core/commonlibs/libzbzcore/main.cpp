@@ -59,8 +59,9 @@ void __klzbzcore::main()
 static void driverMain1(Thread *self, error_t ret)
 {
 	self->parent->sendResponse(ret);
-	printf(NOTICE LZBZCORE"Driver Proc 0x%x: Done executing. Killing.\n",
-		self->getFullId());
+	printf(NOTICE LZBZCORE"Driver Proc 0x%x: Done executing. Killing with "
+		"ret %s.\n",
+		self->getFullId(), strerror(ret));
 
 	if (ret != ERROR_SUCCESS) {
 		taskTrib.kill(self->getFullId());
@@ -70,8 +71,9 @@ static void driverMain1(Thread *self, error_t ret)
 static void distributaryMain1(Thread *self, error_t ret)
 {
 	self->parent->sendResponse(ret);
-	printf(NOTICE LZBZCORE"Dtrib Proc 0x%x: Done executing. Killing.\n",
-		self->getFullId());
+	printf(NOTICE LZBZCORE"Dtrib Proc 0x%x: Done executing. Killing with "
+		"ret %s.\n",
+		self->getFullId(), strerror(ret));
 
 	if (ret != ERROR_SUCCESS) {
 		taskTrib.kill(self->getFullId());

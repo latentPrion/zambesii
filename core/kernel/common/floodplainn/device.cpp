@@ -11,12 +11,12 @@
 
 /**	EXPLANATION:
  * Global array of device classes recognized by the kernel. This array is used
- * to initialize the device classes in the by-class tree ofthe floodplainn VFS.
+ * to initialize the device classes in the by-class tree of the floodplainn VFS.
  *
  * The second array below maps UDI metalanguage names to kernel device class
  * names. We use it to detect what classes of functionality a device exports.
  **/
-utf8Char		*Driverlasses[] =
+utf8Char		*driverClasses[] =
 {
 	CC"unknown",		// 0
 	CC"unrecognized",	// 1
@@ -26,8 +26,8 @@ utf8Char		*Driverlasses[] =
 	CC"network",		// 5
 	CC"audio-output",	// 6
 	CC"audio-input",	// 7
-	CC"video-output",	// 8
-	CC"video-input",	// 9
+	CC"visual-output",	// 8
+	CC"visual-input",	// 9
 	CC"storage",		// 10
 	CC"character-input",	// 11
 	CC"coordinate-input",	// 12
@@ -40,6 +40,12 @@ utf8Char		*Driverlasses[] =
 	CC"timer",		// 19
 	CC"clock",		// 20
 	CC"card-reader",	// 21
+	CC"kernel-abstraction",	// 22
+	CC"entropy-source",	// 23
+	CC"tactile-input",	// 24
+	CC"tactile-output",	// 25
+	CC"cerebral-input",	// 26
+	CC"cerebral-output",	// 27
 	NULL
 };
 
@@ -49,6 +55,7 @@ sDriverClassMapEntry	driverClassMap[] =
 	{ CC"udi_nic", 5 },
 	{ CC"udi_gio", 4 },
 	{ CC"udi_scsi", 3 },
+	{ CC"zbz_root", 22 },
 	{ NULL, 0 }
 };
 
@@ -181,7 +188,7 @@ error_t fplainn::Driver::detectClasses(void)
 				{
 					nClasses += fillInClass(
 						classes, nClasses,
-						Driverlasses[tmp->classIndex]);
+						driverClasses[tmp->classIndex]);
 				};
 
 				break;
@@ -200,7 +207,7 @@ error_t fplainn::Driver::detectClasses(void)
 			if (classes == NULL) { return ERROR_MEMORY_NOMEM; };
 
 			// driver class 1 is set in stone as "unrecognized".
-			strcpy8(classes[0], Driverlasses[1]);
+			strcpy8(classes[0], driverClasses[1]);
 			nClasses = 1;
 			return ERROR_SUCCESS;
 		};

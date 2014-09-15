@@ -2,17 +2,39 @@
 #include <__kstdlib/__kcxxlib/memory>
 #include <kernel/common/thread.h>
 #include <kernel/common/process.h>
-#include <kernel/common/zudiIndexServer.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/floodplainn/floodplainn.h>
+#include <kernel/common/floodplainn/zui.h>
 
 
-error_t zuiServer::detectDriverReq(
+error_t fplainn::Zui::initialize(void)
+{
+	error_t		ret;
+
+	ret = processTrib.__kgetStream()->spawnThread(
+		&main, NULL,
+		NULL, Thread::ROUND_ROBIN,
+		0, 0, &server);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(FATAL ZUI"Failed to spawn server thread.\n");
+		return ret;
+	};
+
+	setServerTid(server->getFullId());
+	taskTrib.yield();
+	return ERROR_SUCCESS;
+}
+
+error_t fplainn::Zui::detectDriverReq(
 	utf8Char *devicePath, indexE index,
 	void *privateData, ubit32 flags
 	)
 {
-	HeapObj<zuiServer::sIndexMsg>	request;
+	HeapObj<sIndexZAsyncMsg>	request;
 	Thread				*currThread;
 
 	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
@@ -21,19 +43,19 @@ error_t zuiServer::detectDriverReq(
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	// Allocate and queue the new request.
-	request = new zuiServer::sIndexMsg(
-		ZUISERVER_DETECTDRIVER_REQ, devicePath, index);
+	request = new sIndexZAsyncMsg(
+		MSGSTREAM_ZUI_DETECTDRIVER_REQ, devicePath, index);
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	return currThread->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
+		floodplainn.zui.serverTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, flags, privateData);
 }
 
-error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
+error_t fplainn::Zui::loadDriverReq(utf8Char *devicePath, void *privateData)
 {
-	HeapObj<zuiServer::sIndexMsg>	request;
+	HeapObj<sIndexZAsyncMsg>	request;
 	Thread				*currThread;
 
 	if (strnlen8(devicePath, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
@@ -41,81 +63,81 @@ error_t zuiServer::loadDriverReq(utf8Char *devicePath, void *privateData)
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	request = new zuiServer::sIndexMsg(
-		ZUISERVER_LOADDRIVER_REQ, devicePath,
-		zuiServer::INDEX_KERNEL);
+	request = new sIndexZAsyncMsg(
+		MSGSTREAM_ZUI_LOADDRIVER_REQ, devicePath,
+		fplainn::Zui::INDEX_KERNEL);
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	return currThread->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
+		floodplainn.zui.serverTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
-void zuiServer::loadDriverRequirementsReq(void *privateData)
+void fplainn::Zui::loadDriverRequirementsReq(void *privateData)
 {
-	HeapObj<zuiServer::sIndexMsg>	request;
+	HeapObj<sIndexZAsyncMsg>	request;
 	Thread				*currThread;
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 	if (currThread->parent->getType() != ProcessStream::DRIVER)
 		{ return; };
 
-	request = new zuiServer::sIndexMsg(
-		ZUISERVER_LOAD_REQUIREMENTS_REQ,
+	request = new sIndexZAsyncMsg(
+		MSGSTREAM_ZUI_LOAD_REQUIREMENTS_REQ,
 		currThread->parent->fullName,
-		zuiServer::INDEX_KERNEL);
+		fplainn::Zui::INDEX_KERNEL);
 
 	if (request == NULL) { return; };
 
 	currThread->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
+		floodplainn.zui.serverTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
-void zuiServer::setNewDeviceActionReq(
+void fplainn::Zui::setNewDeviceActionReq(
 	newDeviceActionE action, void *privateData
 	)
 {
-	HeapObj<zuiServer::sIndexMsg>	request;
+	HeapObj<sIndexZAsyncMsg>	request;
 	Thread			*currThread;
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	request = new zuiServer::sIndexMsg(
-		ZUISERVER_SET_NEWDEVICE_ACTION_REQ, NULL,
-		zuiServer::INDEX_KERNEL, action);
+	request = new sIndexZAsyncMsg(
+		MSGSTREAM_ZUI_SET_NEWDEVICE_ACTION_REQ, NULL,
+		fplainn::Zui::INDEX_KERNEL, action);
 
 	if (request == NULL) { return; };
 
 	currThread->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
+		floodplainn.zui.serverTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
-void zuiServer::getNewDeviceActionReq(void *privateData)
+void fplainn::Zui::getNewDeviceActionReq(void *privateData)
 {
-	HeapObj<zuiServer::sIndexMsg>	request;
+	HeapObj<sIndexZAsyncMsg>	request;
 	Thread				*currThread;
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	request = new zuiServer::sIndexMsg(
-		ZUISERVER_GET_NEWDEVICE_ACTION_REQ, NULL,
-		zuiServer::INDEX_KERNEL);
+	request = new sIndexZAsyncMsg(
+		MSGSTREAM_ZUI_GET_NEWDEVICE_ACTION_REQ, NULL,
+		fplainn::Zui::INDEX_KERNEL);
 
 	if (request == NULL) { return; };
 
 	currThread->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
+		floodplainn.zui.serverTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
-void zuiServer::newDeviceInd(
+void fplainn::Zui::newDeviceInd(
 	utf8Char *path, indexE index, void *privateData
 	)
 {
-	HeapObj<zuiServer::sIndexMsg>	request;
+	HeapObj<sIndexZAsyncMsg>	request;
 	Thread				*currThread;
 
 	if (strnlen8(path, FVFS_PATH_MAXLEN) >= FVFS_PATH_MAXLEN)
@@ -126,13 +148,13 @@ void zuiServer::newDeviceInd(
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	request = new zuiServer::sIndexMsg(
-		ZUISERVER_NEWDEVICE_IND, path, index);
+	request = new sIndexZAsyncMsg(
+		MSGSTREAM_ZUI_NEWDEVICE_IND, path, index);
 
 	if (request == NULL) { return; };
 
 	currThread->parent->zasyncStream.send(
-		floodplainn.zudiIndexServerTid, request.get(), sizeof(*request),
+		floodplainn.zui.serverTid, request.get(), sizeof(*request),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 

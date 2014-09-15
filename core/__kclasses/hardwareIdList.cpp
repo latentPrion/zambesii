@@ -35,6 +35,7 @@ error_t HardwareIdList::initialize(
 void HardwareIdList::dump(void)
 {
 	uarch_t		rwFlags;
+	Iterator	it;
 
 	arr.lock.readAcquire(&rwFlags);
 
@@ -45,12 +46,11 @@ void HardwareIdList::dump(void)
 		arr.rsrc.maxAllocatedIndex, arr.rsrc.firstValidIndex,
 		arr.rsrc.maxIndex);
 
-	for (sarch_t i=arr.rsrc.firstValidIndex; i != HWIDLIST_INDEX_INVALID;
-		i=arr.rsrc.arr[i].next)
+	for (it = begin(); it != end(); ++it)
 	{
 		printf(NOTICE HWIDLIST"%d (idx@0x%p): item 0x%p, next %d.\n",
-			i, &arr.rsrc.arr[i].item, arr.rsrc.arr[i].item,
-			arr.rsrc.arr[i].next);
+			it.cursor, &arr.rsrc.arr[it.cursor].item,
+			*it, arr.rsrc.arr[it.cursor].next);
 	};
 
 	arr.lock.readRelease(rwFlags);
@@ -100,39 +100,36 @@ error_t HardwareIdList::findFreeIndex(uarch_t *id)
 	return ERROR_GENERAL;
 }
 
-sarch_t HardwareIdList::prepareForLoop(void)
-{
-	uarch_t		rwFlags;
-	sarch_t		ret;
-
-	arr.lock.readAcquire(&rwFlags);
-	ret = arr.rsrc.firstValidIndex;
-	arr.lock.readRelease(rwFlags);
-
-	return ret;
-}
-
-void *HardwareIdList::getLoopItem(sarch_t *context)
+void *HardwareIdList::getNextItem(sarch_t *cursor)
 {
 	uarch_t		rwFlags;
 	void		*ret;
 
-	if (*context < 0) {
-		return NULL;
-	};
-
-	// 'context' is an index into the array.
 	arr.lock.readAcquire(&rwFlags);
 
-	if (!FLAG_TEST(
-		arr.rsrc.arr[*context].flags, HWIDLIST_FLAGS_INDEX_VALID))
+	if (*cursor == HWIDLIST_INDEX_INVALID)
 	{
+		if (arr.rsrc.firstValidIndex == HWIDLIST_INDEX_INVALID) {
+			ret = NULL;
+		}
+		else
+		{
+			*cursor = arr.rsrc.firstValidIndex;
+			ret = arr.rsrc.arr[*cursor].item;
+		};
+
 		arr.lock.readRelease(rwFlags);
-		return NULL;
+		return ret;
 	};
 
-	ret = arr.rsrc.arr[*context].item;
-	*context = arr.rsrc.arr[*context].next;
+	if (arr.rsrc.arr[*cursor].next == HWIDLIST_INDEX_INVALID) {
+		ret = NULL;
+	}
+	else
+	{
+		*cursor = arr.rsrc.arr[*cursor].next;
+		ret = arr.rsrc.arr[*cursor].item;
+	};
 
 	arr.lock.readRelease(rwFlags);
 	return ret;

@@ -1,7 +1,7 @@
 .PHONY=
 DELIVERABLE=../../../floodplainn.a
-OBJFILES=device.o fvfs.o floodplainn_zudiIndexServer_frontEnd.o \
-	floodplainn_zudiIndexServer_backEnd.o floodplainn.o udiServiceCalls.o
+OBJFILES=device.o fvfs.o zuiFrontEnd.o zuiBackEnd.o floodplainn.o \
+	udiServiceCalls.o zudi.o
 
 all: Makefile $(DELIVERABLE)
 
@@ -13,4 +13,3 @@ clean:
 
 fonyphile:
 	rm -f clean aclean dirclean
-

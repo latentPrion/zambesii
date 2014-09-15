@@ -348,17 +348,18 @@ tagType *vfs::DirInode<tagType>::createLeafTag(
 template <class tagType>
 sarch_t vfs::DirInode<tagType>::removeDirTag(utf8Char *name)
 {
-	void			*handle;
-	tagType		*currItem;
+	tagType					*currItem;
 
 	if (name == NULL || name[0] == '\0') { return 0; };
 
-	handle = NULL;
+	typename PtrList<tagType>::Iterator		it =
+		dirs.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
+
 	dirs.lock();
-	currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != NULL;
-		currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
+	for (; it != dirs.end(); ++it)
 	{
+		currItem = *it;
+
 		if (strncmp8(
 			currItem->getName(), name,
 			currItem->getMaxNameLength()) != 0)
@@ -378,18 +379,18 @@ sarch_t vfs::DirInode<tagType>::removeDirTag(utf8Char *name)
 template <class tagType>
 sarch_t vfs::DirInode<tagType>::removeLeafTag(utf8Char *name)
 {
-	void		*handle;
-	tagType	*currItem;
+	tagType		*currItem;
 
 	if (name == NULL || name[0] == '\0') { return 0; };
 
-	handle = NULL;
+	typename PtrList<tagType>::Iterator		it =
+		leaves.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
+
 	leaves.lock();
-	currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != NULL;
-		currItem = leaves.getNextItem(
-			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
+	for (; it != leaves.end(); ++it)
 	{
+		currItem = *it;
+
 		if (strncmp8(
 			currItem->getName(), name,
 			currItem->getMaxNameLength()) != 0)
@@ -411,17 +412,18 @@ tagType *vfs::DirInode<tagType>::getDirTag(
 	utf8Char *name
 	)
 {
-	void			*handle;
-	tagType		*currItem;
+	tagType					*currItem;
 
 	if (name == NULL || name[0] == '\0') { return NULL; };
 
-	handle = NULL;
+	typename PtrList<tagType>::Iterator		it =
+		dirs.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
+
 	dirs.lock();
-	currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != NULL;
-		currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
+	for (; it != dirs.end(); ++it)
 	{
+		currItem = *it;
+
 		if (strncmp8(
 			currItem->getName(), name,
 			currItem->getMaxNameLength()) != 0)
@@ -443,18 +445,18 @@ tagType *vfs::DirInode<tagType>::getLeafTag(
 	utf8Char *name
 	)
 {
-	void			*handle;
-	tagType		*currItem;
+	tagType			*currItem;
 
 	if (name == NULL || name[0] == '\0') { return NULL; };
 
-	handle = NULL;
+	typename PtrList<tagType>::Iterator		it =
+		leaves.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
+
 	leaves.lock();
-	currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != NULL;
-		currItem = leaves.getNextItem(
-			&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
+	for (; it != leaves.end(); ++it)
 	{
+		currItem = *it;
+
 		if (strncmp8(
 			currItem->getName(), name,
 			currItem->getMaxNameLength()) != 0)
@@ -474,18 +476,19 @@ tagType *vfs::DirInode<tagType>::getLeafTag(
 template <class tagType>
 void vfs::DirInode<tagType>::dumpDirs(void)
 {
-	void			*handle;
 	tagType		*currItem;
 
 	printf(NOTICE"vfs::dirInode: dumping dirs (%d total).\n",
 		dirs.getNItems());
 
-	handle = NULL;
+	typename PtrList<tagType>::Iterator		it =
+		dirs.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
+
 	dirs.lock();
-	currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != NULL;
-		currItem = dirs.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
+	for (; it != dirs.end(); ++it)
 	{
+		currItem = *it;
+
 		printf(CC"\tname: %s. Parent 0x%p.\n",
 			currItem->getName(), currItem->getParent());
 	};
@@ -496,18 +499,19 @@ void vfs::DirInode<tagType>::dumpDirs(void)
 template <class tagType>
 void vfs::DirInode<tagType>::dumpLeaves(void)
 {
-	void			*handle;
 	tagType		*currItem;
 
 	printf(NOTICE"vfs::dirInode: dumping leaves (%d total).\n",
 		leaves.getNItems());
 
-	handle = NULL;
+	typename PtrList<tagType>::Iterator			it =
+		leaves.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
+
 	leaves.lock();
-	currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK);
-	for (; currItem != NULL;
-		currItem = leaves.getNextItem(&handle, PTRLIST_FLAGS_NO_AUTOLOCK))
+	for (; it != leaves.end(); ++it)
 	{
+		currItem = *it;
+
 		printf(CC"\tname: %s. Parent 0x%p.\n",
 			currItem->getName(), currItem->getParent());
 	};

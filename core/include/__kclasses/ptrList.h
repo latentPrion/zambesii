@@ -19,6 +19,9 @@ template <class T>
 class PtrList
 {
 public:
+	class Iterator;
+	friend class Iterator;
+
 	PtrList(sarch_t useCache=1);
 	error_t initialize(void);
 	~PtrList(void);
@@ -30,7 +33,6 @@ public:
 	ubit32 getNItems(void);
 
 	sarch_t checkForItem(T *item);
-	T *getNextItem(void **const handle, ubit32 flags=0);
 	T *getItem(ubit32 num);
 
 	void lock(void);
@@ -38,7 +40,59 @@ public:
 
 	void dump(void);
 
+	class Iterator
+	{
+		friend class ::PtrList<T>;
+
+		void		*handle;
+		PtrList<T>	*list;
+		T		*currItem;
+		ubit32		flags;
+
+		Iterator(PtrList<T> *list, ubit32 flags)
+		:
+		handle(NULL), list(list), currItem(NULL), flags(flags)
+		{}
+
+	public:
+		Iterator(void)
+		:
+		handle(NULL), list(NULL), currItem(NULL), flags(0)
+		{}
+
+		~Iterator(void) { handle = NULL, currItem = NULL; }
+
+		void operator ++(void)
+			{ currItem = list->getNextItem(&handle, flags); }
+
+		T *operator *(void)
+			{ return currItem; }
+
+		int operator ==(Iterator it)
+			{ return currItem == it.currItem; }
+
+		int operator !=(Iterator it)
+			{ return currItem != it.currItem; }
+	};
+
+	Iterator begin(ubit32 flags)
+	{
+		Iterator	tmp(this, flags);
+
+		++tmp;
+		return tmp;
+	}
+
+	Iterator end(void)
+	{
+		Iterator	nullIt(this, 0);
+
+		return nullIt;
+	}
+
 private:
+	T *getNextItem(void **const handle, ubit32 flags=0);
+
 	struct sPtrListNode
 	{
 		T		*item;

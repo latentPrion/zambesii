@@ -21,26 +21,38 @@ public:
 		void *preallocatedMem=NULL, ubit16 preallocatedSize=0);
 
 public:
-	typedef class Iterator
+	class Iterator
 	{
 	friend class HardwareIdList;
+		Iterator(HardwareIdList *list)
+		:
+		cursor(HWIDLIST_INDEX_INVALID), list(list), currItem(NULL)
+		{}
+
 	public:
 		Iterator(void)
 		:
-		cursor(0), list(NULL)
+		cursor(HWIDLIST_INDEX_INVALID), list(NULL), currItem(NULL)
 		{}
 
-		void *operator++(int)
-		{
-			if (list == NULL) { return NULL; };
-			return list->getLoopItem(&cursor);
-		}
+		void operator ++(void)
+			{ currItem = list->getNextItem(&cursor); }
+
+		void *operator *(void)
+			{ return currItem; }
+
+		int operator ==(Iterator it)
+			{ return currItem == it.currItem; }
+
+		int operator !=(Iterator it)
+			{ return currItem != it.currItem; }
 
 		// Allow "cursor" to be read.
 		sarch_t		cursor;
 	private:
 		HardwareIdList	*list;
-	} iterator;
+		void		*currItem;
+	};
 
 	// Retrieves an item's pointer by its hardware ID.
 	void *getItem(sarch_t id);
@@ -55,30 +67,20 @@ public:
 		return static_cast<uarch_t>( arr.rsrc.maxIndex + 1 );
 	};
 
-	/* Allows a caller to loop through the array without knowing about
-	 * the layout of the members.
-	 *
-	 *	USAGE:
-	 * Prepare an iterator of type sarch_t. Call prepareForLoop(), saving
-	 * the return value in the iterator. The returned value is the ID of the
-	 * first valid (occupied) index in the array. From then on, call
-	 * getLoopItem(&it) with the address of the iterator as shown to read
-	 * the current value of the index in the iterator and advance it to the
-	 * next valid index for reading.
-	 *
-	 * Repeat until getLoopItem() returns NULL.
-	 **/
 	Iterator begin(void)
 	{
-		Iterator	it;
+		Iterator	it(this);
 
-		it.cursor = prepareForLoop();
-		it.list = this;
+		++it;
 		return it;
 	}
 
-	sarch_t prepareForLoop(void);
-	void *getLoopItem(sarch_t *id);
+	Iterator end(void)
+	{
+		Iterator	nullIt;
+
+		return nullIt;
+	}
 
 	void dump(void);
 
@@ -91,6 +93,8 @@ public:
 	};
 
 private:
+	void *getNextItem(sarch_t *id);
+
 	ubit8		preAllocated;
 
 	struct sArrayState

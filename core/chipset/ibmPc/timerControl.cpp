@@ -182,16 +182,18 @@ ZkcmTimerDevice *ZkcmTimerControlMod::filterTimerDevices(
 	ZkcmTimerDevice::precisionE precision,	// EXACT, NEGLIGABLE,
 						// OVERFLOW or UNDERFLOW
 	ubit32 flags,
-	void **handle
+	PtrList<ZkcmTimerDevice>::Iterator *it
 	)
 {
-	ZkcmTimerDevice	*source;
-	void			*owner;
+	ZkcmTimerDevice			*source;
+	void				*owner;
 
-	for (source = timers.getNextItem(handle);
-		source != NULL;
-		source = timers.getNextItem(handle))
+	if (*it == timers.end()) { *it = timers.begin(0); };
+
+	for (; *it != timers.end(); ++(*it))
 	{
+		source = **it;
+
 		// Must meet all of the criteria passed to us.
 		if (FLAG_TEST(flags, TIMERCTL_FILTER_FLAGS_SKIP_LATCHED))
 		{
@@ -241,7 +243,7 @@ static void dumpTimerDeviceInfo(ZkcmTimerDevice *dev)
 		timerDevModes[dev->capabilities.modes],
 		timerDevPrecisions[dev->capabilities.precision],
 		timerDevIoLatencies[dev->capabilities.ioLatency]);
-}	
+}
 
 error_t ZkcmTimerControlMod::registerNewTimerDevice(ZkcmTimerDevice *timer)
 {

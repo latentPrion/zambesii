@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../drivers.a
-OBJFILES=zramdisk.o
+OBJFILES=zramdisk.o zrootdev.o zrootdev_init.o
 
 all: Makefile $(DELIVERABLE)
 
