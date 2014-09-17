@@ -61,7 +61,7 @@ public:
 	Stream<ProcessStream>(parent, id)
 	{};
 
-	error_t initialize(void) { return ERROR_SUCCESS; }
+	error_t initialize(void);
 	// Release all connections.
 	~FloodplainnStream(void) {};
 

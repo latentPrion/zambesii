@@ -174,6 +174,121 @@ const sMetaInitEntry *fplainn::Zudi::findMetaInitInfo(utf8Char *shortName)
 	return NULL;
 }
 
+error_t fplainn::Zudi::udi_channel_spawn(
+	udi_channel_spawn_call_t *cb, udi_cb_t *gcb,
+	udi_channel_t channel_endp, udi_index_t spawn_idx,
+	udi_ops_vector_t *ops_vector,
+	udi_init_context_t *channel_context
+	)
+{
+	error_t					ret;
+	Thread					*self;
+	fplainn::DeviceInstance::sRegion	*callerRegion;
+	fplainn::DeviceInstance::sChannel	*originChannel;
+	fplainn::DeviceInstance::sChannel::sIncompleteChannel
+						*incChan;
+
+	(void)cb; (void)gcb;
+	/**	EXPLANATION:
+	 * Only drivers are allowed to call this.
+	 *
+	 * We need to get the device instance for the caller, and:
+	 *	* Check to see if a channel endpoint matching the pointer passed
+	 * 	  to us exists.
+	 * 	* Take the channel which is the parent of the passed endpoint,
+	 *	  and check to see if it has an incompleteChannel with the
+	 *	  spawn_idx passed to us here.
+	 * 		* If an incompleteChannel with our spawn_idx value
+	 *		  doesn't exist, create a new incompleteChannel and
+	 *		  then anchor() it.
+	 *		* If one exists, anchor the new end, then remove it
+	 *		  from the incompleteChannel list, and create a new
+	 *		  fully fledged channel based on it.
+	 **/
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	if (self->parent->getType() != ProcessStream::DRIVER)
+		{ return ERROR_UNAUTHORIZED; };
+
+	// Set by fplainn::DeviceInstance::setThreadRegionPointer().
+	callerRegion = self->getRegion();
+	// Make sure the "channel" endpoint passed to us is really an endpoint.
+	originChannel = callerRegion->parent->getChannelByEndpoint(channel_endp);
+	if (originChannel == NULL) { return ERROR_INVALID_ARG_VAL; };
+
+	// Is there already a spawn in progress with this spawn_idx?
+	incChan = originChannel->getIncompleteChannelBySpawnIndex(spawn_idx);
+	if (incChan == NULL)
+	{
+		/* No incomplete channel with our spawn_idx exists. Create a
+		 * new incomplete channel and anchor one of its endpoints.
+		 **/
+		ret = originChannel->createIncompleteChannel(
+			spawn_idx, &incChan);
+
+		incChan->endpoints[0].anchor(
+			(fplainn::DeviceInstance::sChannel::sEndpoint *)
+				channel_endp,
+			callerRegion, ops_vector, channel_context);
+
+		return ERROR_SUCCESS;
+	};
+
+	/* We marked each incomplete endpoint with a complete channel's endpoint.
+	 * This allows us to detect when a caller is calling udi_channel_spawn()
+	 * twice on for the same spawn_idx.
+	 **/
+	for (uarch_t i=0; i<2; i++)
+	{
+		if (incChan->endpoints[i].parentEndpoint == channel_endp)
+		{
+			// If it's a repeat call, just re-anchor (overwrite).
+			incChan->endpoints[i].anchor(
+				(fplainn::DeviceInstance::sChannel::sEndpoint *)
+					channel_endp,
+				callerRegion,
+				ops_vector, channel_context);
+
+			return ERROR_SUCCESS;
+		};
+	};
+
+	// Else anchor the other end.
+	fplainn::DeviceInstance::sChannel::sIncompleteChannel::sEndpoint
+								*targetEndpoint;
+
+	targetEndpoint = (incChan->endpoints[0].parentEndpoint != NULL)
+		? (&incChan->endpoints[0])
+		: (&incChan->endpoints[1]);
+
+	targetEndpoint->anchor(
+		(fplainn::DeviceInstance::sChannel::sEndpoint *)channel_endp,
+		callerRegion, ops_vector, channel_context);
+
+	/* Now, if both ends have been claimed by calls to udi_channel_spawn()
+	 * such that both ends have valid "parentEndpoint"s, we can proceed
+	 * to create a new channel based on the incomplete channel.
+	 **/
+	if (incChan->endpoints[0].parentEndpoint == NULL
+		|| incChan->endpoints[1].parentEndpoint == NULL)
+	{ return ERROR_SUCCESS; };
+
+	// If we're here, then both ends have been claimed and matched.
+	ret = spawnChannel(
+		incChan->endpoints[0].parentEndpoint->region->parent->device,
+		incChan->endpoints[0].region, incChan->endpoints[0].opsVector,
+		incChan->endpoints[0].channelContext,
+		incChan->endpoints[1].parentEndpoint->region->parent->device,
+		incChan->endpoints[1].region, incChan->endpoints[1].opsVector,
+		incChan->endpoints[1].channelContext);
+
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	// Next, remove the incompleteChannel from the originating channel.
+	originChannel->destroyIncompleteChannel(incChan->spawnIndex);
+	return ERROR_SUCCESS;
+}
+
 static error_t udi_mgmt_calls_prep(
 	utf8Char *callerName, utf8Char *devPath, fplainn::Device **dev,
 	HeapObj<fplainn::Zudi::sMgmtCallMsg> *request,

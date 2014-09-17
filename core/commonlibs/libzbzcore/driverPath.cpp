@@ -365,12 +365,7 @@ void __klzbzcore::driver::__kcontrol::handler(fplainn::Zudi::sKernelCallMsg *msg
 {
 	fplainn::Zudi::sKernelCallMsg		*copy;
 
-	copy = new fplainn::Zudi::sKernelCallMsg(
-		msg->header.targetId,
-		msg->header.subsystem, msg->header.function,
-		msg->header.size, msg->header.flags,
-		msg->header.privateData);
-
+	copy = new fplainn::Zudi::sKernelCallMsg(*msg);
 	if (copy != NULL) {
 		copy->set(msg->path, msg->command);
 	}
@@ -493,6 +488,9 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 		dev->instance->setRegionInfo(
 			drv->regions[i].index, newThread->getFullId(),
 			rdata.release());
+
+		dev->instance->setThreadRegionPointer(
+			newThread->getFullId());
 	};
 
 	/**	EXPLANATION:
@@ -509,25 +507,68 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 	fplainn::Zudi::sKernelCallMsg *ctxt
 	)
 {
-	error_t		ret;
+	error_t				ret;
+	fplainn::Device			*dev;
+	Thread				*self;
 
 	/* This can only be reached after all the region threads have begun
 	 * executing. This function itself is a mini sync-point between the main
 	 * thread of logic and the region threads that it has spawned.
 	 **/
-
-	// If the device has a parent, spawn a bind channel to its parent.
-	ret = floodplainn.zudi.spawnChildBindChannel(
-		CC"by-id/0", ctxt->path, CC"zbz_root",
-		(udi_ops_vector_t *)0xF00115);
-
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	ret = floodplainn.getDevice(ctxt->path, &dev);
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(NOTICE LZBZCORE"instDevReq1 %s: Failed to spawn cbind "
-			"chan\n",
+		printf(FATAL LZBZCORE"instDevReq1 %s: Device has disappeared "
+			"from FVFS while being instantiated.\n",
 			ctxt->path);
 
-		instantiateDeviceAck(ctxt, ret); return;
+		panic(ERROR_INVALID_RESOURCE_NAME);
+	}
+
+	// If the device has parents, spawn bind channels to its parents.
+	for (uarch_t i=0; i<dev->getNParentTags(); i++)
+	{
+		fplainn::Device::sParentTag		*pTag;
+		utf8Char				parentFullName[
+			FVFS_TAG_NAME_MAXLEN + 1];
+
+		pTag = dev->indexedGetParentTag(i);
+		// Should never happen, though.
+		if (pTag == NULL)
+		{
+			instantiateDeviceAck(ctxt, ERROR_NOT_FOUND);
+			return;
+		};
+
+		ret = pTag->tag->getFullName(
+			parentFullName, sizeof(parentFullName) - 1);
+
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"instDevReq1: %s: Unable to get "
+				"fullname of\n\tparent %d (name %s).\n",
+				ctxt->path, pTag->id, pTag->tag->getName());
+
+			instantiateDeviceAck(ctxt, ret);
+			return;
+		};
+
+		printf(NOTICE"instDevReq1 %s: Binding to parent %s, meta %s.\n",
+			ctxt->path, parentFullName, "zbz_root");
+
+		ret = floodplainn.zudi.spawnChildBindChannel(
+			parentFullName, ctxt->path, CC"zbz_root",
+			(udi_ops_vector_t *)0xF00115);
+
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(NOTICE LZBZCORE"instDevReq1 %s: Failed to spawn cbind "
+				"chan\n",
+				ctxt->path);
+
+			instantiateDeviceAck(ctxt, ret); return;
+		};
 	};
 
 	/**	EXPLANATION:
@@ -556,11 +597,9 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 	 *
 	 *	udi_channel_event_ind(parent_bind_channel);
 	 **/
-//	floodplainn.udi_usage_ind(
-//		ctxt->devicePath, UDI_RESOURCES_NORMAL, ctxt);
 
-printf(NOTICE LZBZCORE"instDevReq1: Just called floodplainn.usage_ind on dev %s.\n",
-	ctxt->path);
+	printf(NOTICE LZBZCORE"instDevReq1 %s: Done.\n", ctxt->path);
+	instantiateDeviceAck(ctxt, ERROR_SUCCESS);
 }
 
 void __klzbzcore::driver::__kcontrol::instantiateDeviceReq2(

@@ -10,6 +10,7 @@
 	#include <kernel/common/messageStream.h>
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/taskTrib/prio.h>
+	#include <kernel/common/floodplainn/device.h>
 	#include <__kthreads/__korientation.h>
 
 
@@ -165,18 +166,26 @@ public:
 			|| PROCID_PROCESS(tid) == PROCID_PROCESS(CPU_PROCESSID);
 	}
 
+	void setRegion(fplainn::DeviceInstance::sRegion *region)
+		{ this->region = region; };
+
+	fplainn::DeviceInstance::sRegion *getRegion(void)
+		{ return region; }
+
 private:
 	// Allocates stacks for kernelspace and userspace (if necessary).
 	error_t allocateStacks(void);
 
-private:processId_t		id;
+private:processId_t				id;
 public:
-	ProcessStream		*parent;
-	CpuStream		*currentCpu, *parentCpu;
-	void			*stack0, *stack1;
+	ProcessStream				*parent;
+	// Only valid for region threads of drivers.
+	fplainn::DeviceInstance::sRegion	*region;
+	CpuStream				*currentCpu, *parentCpu;
+	void					*stack0, *stack1;
 
 	// Asynchronous API message queues for this thread.
-	MessageStream		messageStream;
+	MessageStream				messageStream;
 };
 
 #endif

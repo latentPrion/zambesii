@@ -43,7 +43,7 @@ Thread::Thread(
 :	Stream<ProcessStream>(parent, id),
 	_Task(id, this, privateData),
 	_TaskContext(id, this),
-id(id), parent(parent),
+id(id), parent(parent), region(NULL),
 currentCpu(NULL), parentCpu(parentCpu),
 stack0(NULL), stack1(NULL),
 messageStream(this)

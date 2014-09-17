@@ -45,19 +45,20 @@ error_t fplainn::Zudi::spawnInternalBindChannel(
 	utf8Char *devPath, ubit16 regionIndex,
 	udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1)
 {
-	Thread				*thread0, *thread1;
-	udi_init_context_t		*rdata0=NULL, *rdata1=NULL;
-	processId_t			region0Tid=PROCID_INVALID, dummy;
-	fplainn::Device			*dev;
-	error_t				ret;
+	fplainn::DeviceInstance::sRegion	*region0, *region1;
+	udi_init_context_t			*rdata0=NULL, *rdata1=NULL;
+	processId_t				region0Tid=PROCID_INVALID,
+						dummy;
+	fplainn::Device				*dev;
+	error_t					ret;
 
 printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 	devPath, regionIndex, opsVector0, opsVector1);
-	/* Thread1 is always the caller because internal bind channels are
+	/* region1 is always the caller because internal bind channels are
 	 * spawned by the secondary region thread.
 	 **/
-	thread1 = (Thread *)cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentThread();
+	region1 = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->getRegion();
 
 	ret = floodplainn.getDevice(devPath, &dev);
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -71,11 +72,11 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 		dev->instance->getRegionInfo(0, &region0Tid, &rdata0)
 		== ERROR_SUCCESS);
 
-	thread0 = (Thread *)thread1->parent->getThread(region0Tid);
+	region0 = region1->thread->parent->getThread(region0Tid)->getRegion();
 
 	return spawnChannel(
-		dev, thread0, opsVector0, rdata0,
-		dev, thread1, opsVector1, rdata1);
+		dev, region0, opsVector0, rdata0,
+		dev, region1, opsVector1, rdata1);
 }
 
 error_t fplainn::Zudi::spawnChildBindChannel(
@@ -87,7 +88,7 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 	fplainn::Driver::sMetalanguage		*parentMeta, *childMeta;
 	fplainn::Driver::sChildBop		*parentCBop;
 	fplainn::Driver::sParentBop		*childPBop;
-	Thread					*parentThread, *childThread;
+	fplainn::DeviceInstance::sRegion	*parentRegion, *childRegion;
 	processId_t				parentTid, childTid;
 	udi_init_context_t			*parentRdata, *childRdata;
 	fplainn::DriverInstance::sChildBop	*parentInstCBop;
@@ -95,10 +96,9 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 	if (floodplainn.getDevice(parentDevPath, &parentDev) != ERROR_SUCCESS
 		|| floodplainn.getDevice(childDevPath, &childDev) != ERROR_SUCCESS)
 		{ return ERROR_INVALID_RESOURCE_NAME; };
-for(printf(FATAL"%s\n\t%s", parentDevPath, childDevPath);;);
 
 	/* Both the parent device and the connecting child device must expose
-	 * have "meta" indexes for the specified metalanguage.
+	 * "meta" indexes for the specified metalanguage.
 	 **/
 	childMeta = childDev->driverInstance->driver->getMetalanguage(metaName);
 	parentMeta = parentDev->driverInstance->driver->getMetalanguage(
@@ -147,9 +147,9 @@ for(printf(FATAL"%s\n\t%s", parentDevPath, childDevPath);;);
 	};
 
 	// Now get the thread objects using their thread IDs.
-	parentThread = (Thread *)processTrib.getThread(parentTid);
-	childThread = (Thread *)processTrib.getThread(childTid);
-	if (parentThread == NULL || childThread == NULL)
+	parentRegion = processTrib.getThread(parentTid)->getRegion();
+	childRegion = processTrib.getThread(childTid)->getRegion();
+	if (parentRegion == NULL || childRegion == NULL)
 	{
 		printf(ERROR FPLAINN"spawnCBindChan: Either parent or child's "
 			"region TID doesn't map to valid thread.\n");
@@ -171,34 +171,33 @@ for(printf(FATAL"%s\n\t%s", parentDevPath, childDevPath);;);
 
 	// Finally, call spawnChannel.
 	return spawnChannel(
-		parentDev, parentThread, parentInstCBop->opsVector, parentRdata,
-		childDev, childThread, opsVector, childRdata);
+		parentDev, parentRegion, parentInstCBop->opsVector, parentRdata,
+		childDev, childRegion, opsVector, childRdata);
 }
 
 error_t fplainn::Zudi::spawnChannel(
-	fplainn::Device *dev0, Thread *thread0, udi_ops_vector_t *opsVector0,
-	udi_init_context_t *channelContext0,
-	fplainn::Device *dev1, Thread *thread1, udi_ops_vector_t *opsVector1,
-	udi_init_context_t *channelContext1
+	fplainn::Device *dev0, fplainn::DeviceInstance::sRegion *region0,
+	udi_ops_vector_t *opsVector0, udi_init_context_t *channelContext0,
+	fplainn::Device *dev1, fplainn::DeviceInstance::sRegion *region1,
+	udi_ops_vector_t *opsVector1, udi_init_context_t *channelContext1
 	)
 {
 	HeapObj<fplainn::DeviceInstance::sChannel>	chan;
 	error_t						ret0, ret1;
 
 	/**	EXPLANATION:
-	 * System setup version of udi_channel_spawn, used to spawn channels
-	 * during device instantiation. It is meant to be used to establish
-	 * channels which are spawned before the driver begins actively
-	 * executing.
+	 * Back-end function that actually allocates the channel object and
+	 * adds it to both device-instances' channel lists.
+	 *
+	 * The region thread, ops-vector and channel-context need not be
+	 * set at this point, but they will be required by the kernel before
+	 * the channel can be used.
 	 **/
-	if (opsVector0 == NULL || opsVector1 == NULL
-		|| channelContext0 == NULL || channelContext1 == NULL
-		|| thread0 == NULL || thread1 == NULL)
-		{ return ERROR_INVALID_ARG; };
+	if (dev0 == NULL || dev1 == NULL) { return ERROR_INVALID_ARG; };
 
 	chan = new fplainn::DeviceInstance::sChannel(
-		thread0, opsVector0, channelContext0,
-		thread1, opsVector1, channelContext1);
+		region0, opsVector0, channelContext0,
+		region1, opsVector1, channelContext1);
 
 	if (chan == NULL) { return ERROR_MEMORY_NOMEM; };
 

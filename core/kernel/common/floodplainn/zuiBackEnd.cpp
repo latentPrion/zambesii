@@ -27,7 +27,7 @@
 
 
 fplainn::Zui::newDeviceActionE	newDeviceAction =
-	fplainn::Zui::NDACTION_SPAWN_DRIVER;
+	fplainn::Zui::NDACTION_INSTANTIATE;
 
 ZudiIndexParser		kernelIndex(ZudiIndexParser::SOURCE_KERNEL),
 			ramdiskIndex(ZudiIndexParser::SOURCE_RAMDISK),
@@ -772,6 +772,7 @@ void zuiBackend::loadDriverReq(
 				"init_info for driver %s.\n",
 				driver->shortName);
 
+			myResponse(ERROR_NOT_FOUND);
 			return;
 		};
 

@@ -6,6 +6,7 @@
 	#undef UDI_VERSION
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/floodplainn/zui.h>
+	#include <kernel/common/floodplainn/device.h>
 	#include <kernel/common/floodplainn/fvfs.h>
 
 /**	EXPLANATION:
@@ -75,6 +76,14 @@ public:
 	 * Effectively then, devices that do not have child bind ops don't
 	 * need to expose any parent bind ops information to the kernel.
 	 **/
+	error_t udi_channel_spawn(
+		udi_channel_spawn_call_t *cb, udi_cb_t *gcb,
+		udi_channel_t channel, udi_index_t spawn_idx,
+		udi_ops_vector_t *ops_vector,
+		udi_init_context_t *channel_context);
+
+	void udi_channel_anchor(void);
+
 	error_t spawnInternalBindChannel(
 		utf8Char *devicePath, ubit16 regionIndex,
 		udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1);
@@ -182,10 +191,12 @@ public:
 
 private:
 	error_t spawnChannel(
-		fplainn::Device *dev0, Thread *thread0,
+		fplainn::Device *dev0,
+		fplainn::DeviceInstance::sRegion *thread0,
 		udi_ops_vector_t *opsVector0,
 		udi_init_context_t *channelContext0,
-		fplainn::Device *dev1, Thread *thread1,
+		fplainn::Device *dev1,
+		fplainn::DeviceInstance::sRegion *thread1,
 		udi_ops_vector_t *opsVector1,
 		udi_init_context_t *channelContext1);
 

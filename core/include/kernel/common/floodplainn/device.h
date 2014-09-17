@@ -12,10 +12,10 @@
 	#include <__kstdlib/__kclib/string.h>
 	#include <__kstdlib/__kcxxlib/memory>
 	#include <__kclasses/ptrlessList.h>
-	#include <kernel/common/thread.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/floodplainn/zui.h>
 	#include <kernel/common/floodplainn/fvfs.h>	// FVFS_TAG_NAME_MAXLEN
+//	#include <kernel/common/processTrib/processTrib.h>
 
 /**	Device:
  * Base type for a device in general. The type of driver used to instantiate
@@ -66,6 +66,8 @@ struct sDriverClassMapEntry
 } extern driverClassMap[];
 
 extern utf8Char		*driverClasses[];
+
+class Thread;
 
 namespace fplainn
 {
@@ -166,8 +168,24 @@ namespace fplainn
 		error_t getEnumerationAttribute(
 			utf8Char *name, udi_instance_attr_list_t *attrib);
 
+		uarch_t getNParentTags(void) { return nParentTags; };
 		error_t addParentTag(fvfs::Tag *tag, ubit16 *newIdRetval);
 		void removeParentTag(fvfs::Tag *tag);
+		sParentTag *getParentTag(ubit16 parentId)
+		{
+			for (uarch_t i=0; i<nParentTags; i++)
+			{
+				if (parentTags[i].id == parentId)
+					{ return &parentTags[i]; };
+			};
+			return NULL;
+		}
+
+		sParentTag *indexedGetParentTag(uarch_t idx)
+		{
+			if (idx >= nParentTags) { return NULL; };
+			return &parentTags[idx];
+		};
 
 		void dumpEnumerationAttributes(void);
 
@@ -238,9 +256,8 @@ namespace fplainn
 	public:
 		DeviceInstance(Device *dev)
 		:
-		nChannels(0),
 		device(dev),
-		regions(NULL), channels(NULL),
+		regions(NULL),
 		nRegionsInitialized(0), nRegionsFailed(0)
 		{}
 
@@ -259,29 +276,37 @@ namespace fplainn
 			ubit16 index, processId_t *tid,
 			udi_init_context_t **rdata);
 
+		void setThreadRegionPointer(processId_t tid);
+
 	public:
 		struct sRegion
 		{
+			DeviceInstance		*parent;
 			ubit16			index;
-			processId_t		tid;
+			Thread			*thread;
 			udi_init_context_t	*rdata;
 		};
 
 		struct sChannel
 		{
 			sChannel(
-				Thread *t0, udi_ops_vector_t *opsVec0,
+				sRegion *r0, udi_ops_vector_t *opsVec0,
 				udi_init_context_t *chanContext0,
-				Thread *t1, udi_ops_vector_t *opsVec1,
+				sRegion *r1, udi_ops_vector_t *opsVec1,
 				udi_init_context_t *chanContext1)
 			{
 				new (&endpoints[0]) sEndpoint(
 					this, &endpoints[1],
-					t0, opsVec0, chanContext0);
+					r0, opsVec0, chanContext0);
 
 				new (&endpoints[1]) sEndpoint(
 					this, &endpoints[0],
-					t1, opsVec1, chanContext1);
+					r1, opsVec1, chanContext1);
+			}
+
+			error_t initialize(void)
+			{
+				return incompleteChannels.initialize();
 			}
 
 			struct sEndpoint
@@ -293,36 +318,96 @@ namespace fplainn
 			public:
 				sEndpoint(
 					sChannel *parent, sEndpoint *otherEnd,
-					Thread *thread,
+					sRegion *region,
 					udi_ops_vector_t *opsVector,
 					udi_init_context_t *chanContext)
 				:
 				parent(parent), otherEnd(otherEnd),
-				thread(thread),
+				region(region),
 				opsVector(opsVector),
 				channelContext(chanContext)
 				{}
 
+				void anchor(
+					sRegion *region,
+					udi_ops_vector_t *ops_vector,
+					udi_init_context_t *channel_context)
+				{
+					this->region = region;
+					opsVector = ops_vector;
+					channelContext = channel_context;
+				}
+
 				sChannel		*parent;
 				sEndpoint		*otherEnd;
-				Thread			*thread;
+				sRegion			*region;
 				udi_ops_vector_t	*opsVector;
 				udi_init_context_t	*channelContext;
 			};
 
 			struct sIncompleteChannel
 			{
-				sIncompleteChannel(void)
+				sIncompleteChannel(
+					sChannel *parent, udi_index_t spawn_idx)
 				:
-				spawnIndex(-1), channel(NULL)
-				{}
+				parent(parent), spawnIndex(spawn_idx)
+				{
+					new (&endpoints[0]) sEndpoint(
+						&endpoints[1]);
+
+					new (&endpoints[1]) sEndpoint(
+						&endpoints[0]);
+				}
+
+				struct sEndpoint
+				{
+					sEndpoint(void) {}
+					sEndpoint(sEndpoint *otherEnd)
+					:
+					parentEndpoint(NULL),
+					otherEnd(otherEnd),
+					opsVector(NULL), channelContext(NULL)
+					{}
+
+					void anchor(
+						sChannel::sEndpoint *parentEndpoint,
+						sRegion *region,
+						udi_ops_vector_t *opsVector,
+						udi_init_context_t *channelContext)
+					{
+						this->region = region;
+						this->parentEndpoint =
+							parentEndpoint;
+						this->opsVector = opsVector;
+						this->channelContext =
+							channelContext;
+					}
+
+					sChannel::sEndpoint	*parentEndpoint;
+					sEndpoint		*otherEnd;
+					udi_ops_vector_t	*opsVector;
+					sRegion			*region;
+					udi_init_context_t	*channelContext;
+				};
 
 				List<sIncompleteChannel>::sHeader
 					listHeader;
 
+				sChannel	*parent;
 				udi_index_t	spawnIndex;
-				sChannel	*channel;
+				sEndpoint	endpoints[2];
+
 			};
+
+			sIncompleteChannel *getIncompleteChannelBySpawnIndex(
+				udi_index_t spawn_idx);
+
+			error_t createIncompleteChannel(
+				udi_index_t spawn_idx,
+				sIncompleteChannel **ret);
+
+			sbit8 destroyIncompleteChannel(
+				udi_index_t spawn_idx);
 
 			/**	EXPLANATION:
 			 * This is a list of all incomplete spawn operations
@@ -332,18 +417,22 @@ namespace fplainn
 			 * spawn is completed and the spawn_idx is removed from
 			 * this list.
 			 **/
-			List<sIncompleteChannel> incompleteChannels;
-			sEndpoint				endpoints[2];
+			List<sChannel>::sHeader		listHeader;
+			List<sIncompleteChannel>	incompleteChannels;
+			sEndpoint			endpoints[2];
 		};
 
-		error_t addChannel(sChannel *newChan);
-		void removeChannel(sChannel *chan);
+		sChannel *getChannelByEndpoint(void *endpoint);
+		error_t addChannel(sChannel *newChan)
+			{ channels.insert(newChan); return ERROR_SUCCESS; }
+
+		void removeChannel(sChannel *chan)
+			{ channels.remove(chan); }
 
 	public:
-		ubit16			nChannels;
+		List<sChannel>		channels;
 		Device			*device;
 		sRegion			*regions;
-		sChannel		**channels;
 		udi_init_context_t	*mgmtChannelContext;
 
 		// XXX: ONLY to be used by __klibzbzcore.
@@ -832,50 +921,6 @@ namespace fplainn
 
 /**	Inline methods.
  ******************************************************************************/
-
-inline void fplainn::DeviceInstance::setRegionInfo(
-	ubit16 index, processId_t tid, udi_init_context_t *rdata
-	)
-{
-	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
-	{
-		if (regions[i].index != index) { continue; };
-
-		regions[i].tid = tid;
-		regions[i].rdata = rdata;
-		return;
-	};
-}
-
-inline error_t fplainn::DeviceInstance::getRegionInfo(
-	processId_t tid, ubit16 *index, udi_init_context_t **rdata
-	)
-{
-	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
-	{
-		if (regions[i].tid != tid) { continue; };
-		*index = regions[i].index;
-		*rdata = regions[i].rdata;
-		return ERROR_SUCCESS;
-	};
-
-	return ERROR_NOT_FOUND;
-}
-
-inline error_t fplainn::DeviceInstance::getRegionInfo(
-	ubit16 index, processId_t *tid, udi_init_context_t **rdata
-	)
-{
-	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
-	{
-		if (regions[i].index != index) { continue; };
-		*tid = regions[i].tid;
-		*rdata = regions[i].rdata;
-		return ERROR_SUCCESS;
-	};
-
-	return ERROR_NOT_FOUND;
-}
 
 inline fplainn::DriverInstance *fplainn::Driver::getInstance(numaBankId_t bid)
 {
