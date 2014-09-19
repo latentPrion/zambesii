@@ -15,7 +15,8 @@
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/floodplainn/zui.h>
 	#include <kernel/common/floodplainn/fvfs.h>	// FVFS_TAG_NAME_MAXLEN
-//	#include <kernel/common/processTrib/processTrib.h>
+	#include <kernel/common/floodplainn/region.h>
+	#include <kernel/common/floodplainn/channel.h>
 
 /**	Device:
  * Base type for a device in general. The type of driver used to instantiate
@@ -279,160 +280,18 @@ namespace fplainn
 		void setThreadRegionPointer(processId_t tid);
 
 	public:
-		struct sRegion
-		{
-			DeviceInstance		*parent;
-			ubit16			index;
-			Thread			*thread;
-			udi_init_context_t	*rdata;
-		};
+		void dumpChannels(void);
+		Channel *getChannelByEndpoint(void *endpoint);
+		error_t addChannel(Channel *newChan)
+			{ return channels.insert(newChan); }
 
-		struct sChannel
-		{
-			sChannel(
-				sRegion *r0, udi_ops_vector_t *opsVec0,
-				udi_init_context_t *chanContext0,
-				sRegion *r1, udi_ops_vector_t *opsVec1,
-				udi_init_context_t *chanContext1)
-			{
-				new (&endpoints[0]) sEndpoint(
-					this, &endpoints[1],
-					r0, opsVec0, chanContext0);
-
-				new (&endpoints[1]) sEndpoint(
-					this, &endpoints[0],
-					r1, opsVec1, chanContext1);
-			}
-
-			error_t initialize(void)
-			{
-				return incompleteChannels.initialize();
-			}
-
-			struct sEndpoint
-			{
-				friend struct fplainn::DeviceInstance::sChannel;
-				// Private, void constructor that does nothing.
-				sEndpoint(void) {}
-
-			public:
-				sEndpoint(
-					sChannel *parent, sEndpoint *otherEnd,
-					sRegion *region,
-					udi_ops_vector_t *opsVector,
-					udi_init_context_t *chanContext)
-				:
-				parent(parent), otherEnd(otherEnd),
-				region(region),
-				opsVector(opsVector),
-				channelContext(chanContext)
-				{}
-
-				void anchor(
-					sRegion *region,
-					udi_ops_vector_t *ops_vector,
-					udi_init_context_t *channel_context)
-				{
-					this->region = region;
-					opsVector = ops_vector;
-					channelContext = channel_context;
-				}
-
-				sChannel		*parent;
-				sEndpoint		*otherEnd;
-				sRegion			*region;
-				udi_ops_vector_t	*opsVector;
-				udi_init_context_t	*channelContext;
-			};
-
-			struct sIncompleteChannel
-			{
-				sIncompleteChannel(
-					sChannel *parent, udi_index_t spawn_idx)
-				:
-				parent(parent), spawnIndex(spawn_idx)
-				{
-					new (&endpoints[0]) sEndpoint(
-						&endpoints[1]);
-
-					new (&endpoints[1]) sEndpoint(
-						&endpoints[0]);
-				}
-
-				struct sEndpoint
-				{
-					sEndpoint(void) {}
-					sEndpoint(sEndpoint *otherEnd)
-					:
-					parentEndpoint(NULL),
-					otherEnd(otherEnd),
-					opsVector(NULL), channelContext(NULL)
-					{}
-
-					void anchor(
-						sChannel::sEndpoint *parentEndpoint,
-						sRegion *region,
-						udi_ops_vector_t *opsVector,
-						udi_init_context_t *channelContext)
-					{
-						this->region = region;
-						this->parentEndpoint =
-							parentEndpoint;
-						this->opsVector = opsVector;
-						this->channelContext =
-							channelContext;
-					}
-
-					sChannel::sEndpoint	*parentEndpoint;
-					sEndpoint		*otherEnd;
-					udi_ops_vector_t	*opsVector;
-					sRegion			*region;
-					udi_init_context_t	*channelContext;
-				};
-
-				List<sIncompleteChannel>::sHeader
-					listHeader;
-
-				sChannel	*parent;
-				udi_index_t	spawnIndex;
-				sEndpoint	endpoints[2];
-
-			};
-
-			sIncompleteChannel *getIncompleteChannelBySpawnIndex(
-				udi_index_t spawn_idx);
-
-			error_t createIncompleteChannel(
-				udi_index_t spawn_idx,
-				sIncompleteChannel **ret);
-
-			sbit8 destroyIncompleteChannel(
-				udi_index_t spawn_idx);
-
-			/**	EXPLANATION:
-			 * This is a list of all incomplete spawn operations
-			 * that are taking place across this channel. The
-			 * spawn_idx is recorded until two udi_channel_spawn()
-			 * operations are paired up. At that point, a channel
-			 * spawn is completed and the spawn_idx is removed from
-			 * this list.
-			 **/
-			List<sChannel>::sHeader		listHeader;
-			List<sIncompleteChannel>	incompleteChannels;
-			sEndpoint			endpoints[2];
-		};
-
-		sChannel *getChannelByEndpoint(void *endpoint);
-		error_t addChannel(sChannel *newChan)
-			{ channels.insert(newChan); return ERROR_SUCCESS; }
-
-		void removeChannel(sChannel *chan)
+		void removeChannel(Channel *chan)
 			{ channels.remove(chan); }
 
 	public:
-		List<sChannel>		channels;
+		PtrList<Channel>	channels;
 		Device			*device;
-		sRegion			*regions;
+		Region			*regions;
 		udi_init_context_t	*mgmtChannelContext;
 
 		// XXX: ONLY to be used by __klibzbzcore.
@@ -450,7 +309,7 @@ namespace fplainn
 	{
 	public:
 		struct sModule;
-		struct sRegion;
+		struct Region;
 		struct sRequirement;
 		struct sMetalanguage;
 		struct sChildBop;
@@ -528,9 +387,9 @@ namespace fplainn
 			}
 		};
 
-		struct sRegion
+		struct Region
 		{
-			sRegion(ubit16 index, ubit16 moduleIndex, ubit32 flags)
+			Region(ubit16 index, ubit16 moduleIndex, ubit32 flags)
 			:
 			index(index), moduleIndex(moduleIndex),
 			dataSize(0), flags(flags)
@@ -546,7 +405,7 @@ namespace fplainn
 
 		private:
 			friend class fplainn::Driver;
-			sRegion(void)
+			Region(void)
 			:
 			index(0), moduleIndex(0),
 			dataSize(0), flags(0)
@@ -713,7 +572,7 @@ namespace fplainn
 			return NULL;
 		};
 
-		sRegion *getRegion(ubit16 index)
+		Region *getRegion(ubit16 index)
 		{
 			for (uarch_t i=0; i<nRegions; i++)
 			{
@@ -801,7 +660,7 @@ namespace fplainn
 		// Modules for this driver, and their indexes.
 		sModule		*modules;
 		// Regions in this driver and their indexes/module indexes, etc.
-		sRegion		*regions;
+		Region		*regions;
 		// All required libraries for this driver.
 		sRequirement	*requirements;
 		// Metalanguage indexes, names, etc.

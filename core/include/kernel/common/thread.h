@@ -10,7 +10,7 @@
 	#include <kernel/common/messageStream.h>
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/taskTrib/prio.h>
-	#include <kernel/common/floodplainn/device.h>
+	#include <kernel/common/floodplainn/region.h>
 	#include <__kthreads/__korientation.h>
 
 
@@ -166,10 +166,10 @@ public:
 			|| PROCID_PROCESS(tid) == PROCID_PROCESS(CPU_PROCESSID);
 	}
 
-	void setRegion(fplainn::DeviceInstance::sRegion *region)
+	void setRegion(fplainn::Region *region)
 		{ this->region = region; };
 
-	fplainn::DeviceInstance::sRegion *getRegion(void)
+	fplainn::Region *getRegion(void)
 		{ return region; }
 
 private:
@@ -180,7 +180,7 @@ private:processId_t				id;
 public:
 	ProcessStream				*parent;
 	// Only valid for region threads of drivers.
-	fplainn::DeviceInstance::sRegion	*region;
+	fplainn::Region			*region;
 	CpuStream				*currentCpu, *parentCpu;
 	void					*stack0, *stack1;
 

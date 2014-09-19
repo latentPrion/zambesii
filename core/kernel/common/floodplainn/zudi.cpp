@@ -1,7 +1,9 @@
 
 #include <__kstdlib/__kcxxlib/memory>
+#include <__kstdlib/__kclib/assert.h>
 #include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/floodplainn/floodplainn.h>
 #include <kernel/common/floodplainn/zudi.h>
 #include <kernel/common/floodplainn/device.h>
@@ -174,119 +176,187 @@ const sMetaInitEntry *fplainn::Zudi::findMetaInitInfo(utf8Char *shortName)
 	return NULL;
 }
 
-error_t fplainn::Zudi::udi_channel_spawn(
-	udi_channel_spawn_call_t *cb, udi_cb_t *gcb,
-	udi_channel_t channel_endp, udi_index_t spawn_idx,
-	udi_ops_vector_t *ops_vector,
-	udi_init_context_t *channel_context
-	)
+error_t fplainn::Zudi::createChannel(fplainn::IncompleteD2DChannel *bprint)
 {
-	error_t					ret;
-	Thread					*self;
-	fplainn::DeviceInstance::sRegion	*callerRegion;
-	fplainn::DeviceInstance::sChannel	*originChannel;
-	fplainn::DeviceInstance::sChannel::sIncompleteChannel
-						*incChan;
+	HeapObj<fplainn::D2DChannel>	chan;
+	error_t				ret0, ret1;
+	fplainn::Region			*region0, *region1;
 
-	(void)cb; (void)gcb;
 	/**	EXPLANATION:
-	 * Only drivers are allowed to call this.
+	 * Back-end function that actually allocates the channel object and
+	 * adds it to both device-instances' channel lists.
 	 *
-	 * We need to get the device instance for the caller, and:
-	 *	* Check to see if a channel endpoint matching the pointer passed
-	 * 	  to us exists.
-	 * 	* Take the channel which is the parent of the passed endpoint,
-	 *	  and check to see if it has an incompleteChannel with the
-	 *	  spawn_idx passed to us here.
-	 * 		* If an incompleteChannel with our spawn_idx value
-	 *		  doesn't exist, create a new incompleteChannel and
-	 *		  then anchor() it.
-	 *		* If one exists, anchor the new end, then remove it
-	 *		  from the incompleteChannel list, and create a new
-	 *		  fully fledged channel based on it.
+	 * The region thread, ops-vector and channel-context need not be
+	 * set at this point, but they will be required by the kernel before
+	 * the channel can be used.
 	 **/
-	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	if (bprint == NULL) { return ERROR_INVALID_ARG; };
 
-	if (self->parent->getType() != ProcessStream::DRIVER)
-		{ return ERROR_UNAUTHORIZED; };
+	region0 = bprint->regionEnd0.region;
+	region1 = bprint->regionEnd1.region;
 
-	// Set by fplainn::DeviceInstance::setThreadRegionPointer().
-	callerRegion = self->getRegion();
-	// Make sure the "channel" endpoint passed to us is really an endpoint.
-	originChannel = callerRegion->parent->getChannelByEndpoint(channel_endp);
-	if (originChannel == NULL) { return ERROR_INVALID_ARG_VAL; };
+	chan = new fplainn::D2DChannel(*bprint);
+	if (chan == NULL) { return ERROR_MEMORY_NOMEM; };
+	ret0 = chan->initialize();
+	if (ret0 != ERROR_SUCCESS) { return ret0; };
 
-	// Is there already a spawn in progress with this spawn_idx?
-	incChan = originChannel->getIncompleteChannelBySpawnIndex(spawn_idx);
-	if (incChan == NULL)
+	ret0 = region0->parent->addChannel(chan.get());
+	if (region0->parent != region1->parent)
+		{ ret1 = region1->parent->addChannel(chan.get()); }
+	else { ret1 = ret0; };
+
+	if (ret0 != ERROR_SUCCESS || ret1 != ERROR_SUCCESS)
 	{
-		/* No incomplete channel with our spawn_idx exists. Create a
-		 * new incomplete channel and anchor one of its endpoints.
-		 **/
-		ret = originChannel->createIncompleteChannel(
-			spawn_idx, &incChan);
+		printf(ERROR FPLAINN"spawnChannel: Failed to add chan to "
+			"one or both deviceInstance objects.\n");
 
-		incChan->endpoints[0].anchor(
-			(fplainn::DeviceInstance::sChannel::sEndpoint *)
-				channel_endp,
-			callerRegion, ops_vector, channel_context);
-
-		return ERROR_SUCCESS;
+		return ERROR_UNKNOWN;
 	};
 
-	/* We marked each incomplete endpoint with a complete channel's endpoint.
-	 * This allows us to detect when a caller is calling udi_channel_spawn()
-	 * twice on for the same spawn_idx.
+	chan.release();
+	return ERROR_SUCCESS;
+}
+
+error_t fplainn::Zudi::spawnInternalBindChannel(
+	utf8Char *devPath, ubit16 regionIndex,
+	udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1)
+{
+	fplainn::Region	*region0, *region1;
+	udi_init_context_t			*rdata0=NULL, *rdata1=NULL;
+	processId_t				region0Tid=PROCID_INVALID,
+						dummy;
+	fplainn::Device				*dev;
+	error_t					ret;
+
+printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
+	devPath, regionIndex, opsVector0, opsVector1);
+	/* region1 is always the caller because internal bind channels are
+	 * spawned by the secondary region thread.
 	 **/
-	for (uarch_t i=0; i<2; i++)
-	{
-		if (incChan->endpoints[i].parentEndpoint == channel_endp)
-		{
-			// If it's a repeat call, just re-anchor (overwrite).
-			incChan->endpoints[i].anchor(
-				(fplainn::DeviceInstance::sChannel::sEndpoint *)
-					channel_endp,
-				callerRegion,
-				ops_vector, channel_context);
+	region1 = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->getRegion();
 
-			return ERROR_SUCCESS;
-		};
-	};
-
-	// Else anchor the other end.
-	fplainn::DeviceInstance::sChannel::sIncompleteChannel::sEndpoint
-								*targetEndpoint;
-
-	targetEndpoint = (incChan->endpoints[0].parentEndpoint != NULL)
-		? (&incChan->endpoints[0])
-		: (&incChan->endpoints[1]);
-
-	targetEndpoint->anchor(
-		(fplainn::DeviceInstance::sChannel::sEndpoint *)channel_endp,
-		callerRegion, ops_vector, channel_context);
-
-	/* Now, if both ends have been claimed by calls to udi_channel_spawn()
-	 * such that both ends have valid "parentEndpoint"s, we can proceed
-	 * to create a new channel based on the incomplete channel.
-	 **/
-	if (incChan->endpoints[0].parentEndpoint == NULL
-		|| incChan->endpoints[1].parentEndpoint == NULL)
-	{ return ERROR_SUCCESS; };
-
-	// If we're here, then both ends have been claimed and matched.
-	ret = spawnChannel(
-		incChan->endpoints[0].parentEndpoint->region->parent->device,
-		incChan->endpoints[0].region, incChan->endpoints[0].opsVector,
-		incChan->endpoints[0].channelContext,
-		incChan->endpoints[1].parentEndpoint->region->parent->device,
-		incChan->endpoints[1].region, incChan->endpoints[1].opsVector,
-		incChan->endpoints[1].channelContext);
-
+	ret = floodplainn.getDevice(devPath, &dev);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	// Next, remove the incompleteChannel from the originating channel.
-	originChannel->destroyIncompleteChannel(incChan->spawnIndex);
-	return ERROR_SUCCESS;
+	if (dev->instance->getRegionInfo(regionIndex, &dummy, &rdata1)
+		!= ERROR_SUCCESS)
+		{ return ERROR_INVALID_ARG_VAL; };
+
+	// If we can't get primary region info, something is terribly wrong.
+	assert_fatal(
+		dev->instance->getRegionInfo(0, &region0Tid, &rdata0)
+		== ERROR_SUCCESS);
+
+	region0 = region1->thread->parent->getThread(region0Tid)->getRegion();
+
+	IncompleteD2DChannel		blueprint(0);
+
+	blueprint.initialize();
+	blueprint.endpoints[0]->anchor(region0, opsVector0, rdata0);
+	blueprint.endpoints[1]->anchor(region1, opsVector1, rdata1);
+	return createChannel(&blueprint);
+}
+
+error_t fplainn::Zudi::spawnChildBindChannel(
+	utf8Char *parentDevPath, utf8Char *childDevPath, utf8Char *metaName,
+	udi_ops_vector_t *opsVector
+	)
+{
+	fplainn::Device				*parentDev, *childDev;
+	fplainn::Driver::sMetalanguage		*parentMeta, *childMeta;
+	fplainn::Driver::sChildBop		*parentCBop;
+	fplainn::Driver::sParentBop		*childPBop;
+	fplainn::Region	*parentRegion, *childRegion;
+	processId_t				parentTid, childTid;
+	udi_init_context_t			*parentRdata, *childRdata;
+	fplainn::DriverInstance::sChildBop	*parentInstCBop;
+
+	if (floodplainn.getDevice(parentDevPath, &parentDev) != ERROR_SUCCESS
+		|| floodplainn.getDevice(childDevPath, &childDev) != ERROR_SUCCESS)
+		{ return ERROR_INVALID_RESOURCE_NAME; };
+
+	/* Both the parent device and the connecting child device must expose
+	 * "meta" indexes for the specified metalanguage.
+	 **/
+	childMeta = childDev->driverInstance->driver->getMetalanguage(metaName);
+	parentMeta = parentDev->driverInstance->driver->getMetalanguage(
+		metaName);
+
+	if (childMeta == NULL || parentMeta == NULL)
+	{
+		printf(WARNING FPLAINN"spawnCBindChan: meta %s not declared "
+			"by one or both devices.\n",
+			metaName);
+
+		return ERROR_NON_CONFORMANT;
+	};
+
+	/* Furthermore, the parent must have a child bop for the meta, while the
+	 * child must have a parent bop for the meta. If any of these conditions
+	 * are not met, the connection cannot be established.
+	 **/
+	parentCBop = parentDev->driverInstance->driver->getChildBop(
+		parentMeta->index);
+
+	childPBop = childDev->driverInstance->driver->getParentBop(
+		childMeta->index);
+
+	if (parentCBop == NULL || childPBop == NULL)
+	{
+		printf(WARNING FPLAINN"spawnCBindChan: meta %s not exposed "
+			"as parent/child bop by one or both devices.\n",
+			metaName);
+
+		return ERROR_UNSUPPORTED;
+	};
+
+	// Next, get the region thread IDs.
+	if (parentDev->instance->getRegionInfo(
+		parentCBop->regionIndex, &parentTid, &parentRdata)
+		!= ERROR_SUCCESS
+		|| childDev->instance->getRegionInfo(
+			childPBop->regionIndex, &childTid, &childRdata)
+			!= ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINN"spawnCBindChan: Either parent or child's "
+			"Bop region ID is invalid.\n");
+
+		return ERROR_INVALID_RESOURCE_ID;
+	};
+
+	// Now get the thread objects using their thread IDs.
+	parentRegion = processTrib.getThread(parentTid)->getRegion();
+	childRegion = processTrib.getThread(childTid)->getRegion();
+	if (parentRegion == NULL || childRegion == NULL)
+	{
+		printf(ERROR FPLAINN"spawnCBindChan: Either parent or child's "
+			"region TID doesn't map to valid thread.\n");
+
+		return ERROR_INVALID_RESOURCE_ID;
+	};
+
+	// Finally, we need the parent's ops vector and context info.
+	parentInstCBop = parentDev->driverInstance->getChildBop(
+		parentMeta->index);
+
+	if (parentInstCBop == NULL)
+	{
+		printf(ERROR FPLAINN"spawnCBindChan: Parent driver instance "
+			"hasn't set its child bop vectors.\n");
+
+		return ERROR_UNINITIALIZED;
+	};
+
+	// Finally, create the blueprint and then call spawnChannel.
+	fplainn::IncompleteD2DChannel		blueprint(0);
+
+	blueprint.initialize();
+	blueprint.endpoints[1]->anchor(childRegion, opsVector, childRdata);
+	blueprint.endpoints[0]->anchor(
+		parentRegion, parentInstCBop->opsVector, parentRdata);
+
+	return createChannel(&blueprint);
 }
 
 static error_t udi_mgmt_calls_prep(

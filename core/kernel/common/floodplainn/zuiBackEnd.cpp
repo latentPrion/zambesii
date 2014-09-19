@@ -813,7 +813,7 @@ void zuiBackend::loadDriverReq(
 			driverHdr.get(), i, &currRegion) != ERROR_SUCCESS)
 			{ myResponse(ERROR_NOT_FOUND); return; };
 
-		new (&driver->regions[i]) fplainn::Driver::sRegion(
+		new (&driver->regions[i]) fplainn::Driver::Region(
 			currRegion.index, currRegion.moduleIndex,
 			currRegion.flags);
 	};

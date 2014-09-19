@@ -509,13 +509,13 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 {
 	error_t				ret;
 	fplainn::Device			*dev;
-	Thread				*self;
+//	Thread				*self;
 
 	/* This can only be reached after all the region threads have begun
 	 * executing. This function itself is a mini sync-point between the main
 	 * thread of logic and the region threads that it has spawned.
 	 **/
-	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+//	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 	ret = floodplainn.getDevice(ctxt->path, &dev);
 	if (ret != ERROR_SUCCESS)
 	{

@@ -1,7 +1,7 @@
 .PHONY=
 DELIVERABLE=../../../floodplainn.a
 OBJFILES=device.o fvfs.o zuiFrontEnd.o zuiBackEnd.o floodplainn.o \
-	udiServiceCalls.o zudi.o floodplainnStream.o
+	udiServiceCalls.o zudi.o floodplainnStream.o channel.o
 
 all: Makefile $(DELIVERABLE)
 

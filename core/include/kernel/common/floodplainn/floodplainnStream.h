@@ -3,8 +3,10 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/ptrList.h>
-	//#include <__kclasses/singleWaiterQueue.h>
 	#include <kernel/common/stream.h>
+	#include <kernel/common/messageStream.h>
+	#include <kernel/common/floodplainn/channel.h>
+	#include <kernel/common/floodplainn/device.h>
 
 /**	EXPLANATION:
  * The "Floodplainn" is the name for the hardware management layer of Zambesii.
@@ -66,24 +68,88 @@ public:
 	~FloodplainnStream(void) {};
 
 public:
-	class MetaConnection;
-	class ZkcmConnection;
+	struct MetaConnection;
+	struct ZkcmConnection;
 
 public:
-	error_t connect(utf8Char *devName, utf8Char *metaName, uarch_t flags);
+	// Establishes a child-bind channel to a device on behalf of its parent.
+	error_t connect(
+		utf8Char *devName, utf8Char *metaName, uarch_t flags,
+		fplainn::FStreamEndpoint **retendp);
 
-	// Allocate and deallocate queues.
-	// error_t zkcmConnect(SingleWaiterQueue *queue);
-	// error_t zkcmDisconnect(SingleWaiterQueue *queue);
+	error_t spawnChannel(
+		fplainn::FStreamEndpoint *endpoint,
+		udi_index_t spawn_idx, udi_ops_vector_t *ops_vector,
+		udi_init_context_t *channel_context,
+		fplainn::FStreamEndpoint **retendp);
+
+	void anchorChannel(
+		fplainn::FStreamEndpoint *endpoint,
+		udi_ops_vector_t *ops_vector,
+		udi_init_context_t *channel_context);
+
+	void setChannelContext(
+		fplainn::FStreamEndpoint *endpoint,
+		udi_init_context_t *channel_context);
+
+	sbit8 closeChannel(fplainn::FStreamEndpoint *endpoint);
+
+	// Closes a connection to a device.
+	sbit8 close(fplainn::FStreamEndpoint *endpoint, uarch_t flags);
+
+	static error_t createChannel(fplainn::IncompleteD2SChannel *blueprint)
+		{ (void)blueprint; return ERROR_SUCCESS; };
 
 private:
-	PtrList<MetaConnection>		metaConnections;
-	PtrList<ZkcmConnection>		zkcmConnections;
+	List<MetaConnection>		metaConnections;
+	List<ZkcmConnection>		zkcmConnections;
 };
+
+
+/**	Class MetaConnection.
+ * These are essentially our way of tracking the devices that a process
+ * is connected to. UDI's "channel" and "child-binding" really lend
+ * themselves to a very clean convergence of the host kernel and the
+ * UDI environment.
+ ******************************************************************************/
 
 class FloodplainnStream::MetaConnection
 {
+friend class FloodplainnStream;
+public:
+	MetaConnection(
+		fplainn::Driver::sChildBop *childBop,
+		fplainn::Driver::sMetalanguage *meta,
+		fplainn::FStreamEndpoint *channelEndpoint)
+	:
+	meta(meta), childBop(childBop), channelEndpoint(channelEndpoint)
+	{}
+
+	struct ChannelMsg
+	{
+		ChannelMsg(
+			processId_t targetPid,
+			ubit16 subsystem, ubit16 function,
+	 		uarch_t size, uarch_t flags, void *privateData)
+	 	:
+	 	header(
+			targetPid, subsystem, function,
+			size, flags, privateData)
+		{}
+
+		MessageStream::sHeader		header;
+
+	};
+private:
+	List<MetaConnection>::sHeader			listHeader;
+
+	fplainn::Driver::sMetalanguage			*meta;
+	fplainn::Driver::sChildBop			*childBop;
+	fplainn::FStreamEndpoint			*channelEndpoint;
 };
+
+/**	Class ZkcmConnection.
+ ******************************************************************************/
 
 class FloodplainnStream::ZkcmConnection
 {

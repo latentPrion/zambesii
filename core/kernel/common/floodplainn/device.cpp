@@ -72,7 +72,7 @@ error_t fplainn::Driver::preallocateModules(uarch_t nModules)
 error_t fplainn::Driver::preallocateRegions(uarch_t nRegions)
 {
 	if (nRegions == 0) { return ERROR_SUCCESS; };
-	regions = new sRegion[nRegions];
+	regions = new Region[nRegions];
 	if (regions == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nRegions = nRegions;
 	return ERROR_SUCCESS;
@@ -298,7 +298,7 @@ error_t fplainn::DeviceInstance::initialize(void)
 {
 	error_t			ret;
 
-	regions = new sRegion[device->driverInstance->driver->nRegions];
+	regions = new Region[device->driverInstance->driver->nRegions];
 	if (regions == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
@@ -314,81 +314,23 @@ error_t fplainn::DeviceInstance::initialize(void)
 	return ERROR_SUCCESS;
 }
 
-fplainn::DeviceInstance::sChannel *
+fplainn::Channel *
 fplainn::DeviceInstance::getChannelByEndpoint(void *endpoint)
 {
-	List<sChannel>::Iterator		it;
+	PtrList<Channel>::Iterator		it;
 
-	for (it = channels.begin(); it != channels.end(); ++it)
+	for (it = channels.begin(0); it != channels.end(); ++it)
 	{
-		sChannel	*currChannel = *it;
+		Channel	*currChannel = *it;
 
 		for (uarch_t i=0; i<2; i++)
 		{
-			if (&currChannel->endpoints[i]
-				!= endpoint)
-			{ continue; };
-
+			if (currChannel->hasEndpoint(endpoint)) { continue; };
 			return currChannel;
 		};
 	};
 
 	return NULL;
-}
-
-fplainn::DeviceInstance::sChannel::sIncompleteChannel *
-fplainn::DeviceInstance::sChannel::getIncompleteChannelBySpawnIndex(
-	udi_index_t spawn_idx
-	)
-{
-	List<sIncompleteChannel>::Iterator	it;
-
-	for (it = incompleteChannels.begin(); it != incompleteChannels.end();
-		++it)
-	{
-		sIncompleteChannel		*incChan = *it;
-
-		if (incChan->spawnIndex == spawn_idx) { return incChan; };
-	};
-
-	return NULL;
-}
-
-error_t fplainn::DeviceInstance::sChannel::createIncompleteChannel(
-	udi_index_t spawnIdx, sIncompleteChannel **retIncChan
-	)
-{
-	sIncompleteChannel		*tmp;
-
-	if (retIncChan == NULL) { return ERROR_INVALID_ARG; };
-
-	tmp = getIncompleteChannelBySpawnIndex(spawnIdx);
-	if (tmp != NULL) { return ERROR_NO_MATCH; };
-
-	tmp = new sIncompleteChannel(this, spawnIdx);
-	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
-
-	new (&tmp->endpoints[0]) sIncompleteChannel::sEndpoint(
-		&tmp->endpoints[1]);
-
-	new (&tmp->endpoints[1]) sIncompleteChannel::sEndpoint(
-		&tmp->endpoints[0]);
-
-	incompleteChannels.insert(tmp);
-	*retIncChan = tmp;
-	return ERROR_SUCCESS;
-}
-
-sbit8 fplainn::DeviceInstance::sChannel::destroyIncompleteChannel(
-	udi_index_t spawnIdx
-	)
-{
-	sIncompleteChannel		*tmp;
-
-	tmp = getIncompleteChannelBySpawnIndex(spawnIdx);
-	if (tmp == NULL) { return 0; };
-
-	return incompleteChannels.remove(tmp);
 }
 
 error_t fplainn::DeviceInstance::getRegionInfo(
@@ -442,7 +384,7 @@ error_t fplainn::DeviceInstance::getRegionInfo(
 
 void fplainn::DeviceInstance::setThreadRegionPointer(processId_t tid)
 {
-	sRegion			*region=NULL;
+	Region			*region=NULL;
 	Thread			*regionThread;
 
 	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
@@ -450,6 +392,7 @@ void fplainn::DeviceInstance::setThreadRegionPointer(processId_t tid)
 		if (regions[i].thread->getFullId() != tid) { continue; };
 
 		region = &regions[i];
+		break;
 	};
 
 	// Not found.
@@ -460,6 +403,24 @@ void fplainn::DeviceInstance::setThreadRegionPointer(processId_t tid)
 	if (regionThread == NULL) { /* Weird. */ return; };
 
 	regionThread->setRegion(region);
+}
+
+void fplainn::DeviceInstance::dumpChannels(void)
+{
+	printf(NOTICE"dumpChannels: devInst %s, %d channels.\n",
+		device->longName, channels.getNItems());
+
+	PtrList<fplainn::Channel>::Iterator		iChan;
+
+	for (iChan = channels.begin(0); iChan != channels.end(); ++iChan)
+	{
+		fplainn::Channel		*chan = *iChan;
+
+		printf(CC"\tChan %s, %d incchans.\n",
+			((chan->getType() == fplainn::Channel::TYPE_D2D)
+				? "D2D" : "D2S"),
+			chan->incompleteChannels.getNItems());
+	};
 }
 
 error_t fplainn::Device::addParentTag(fvfs::Tag *tag, ubit16 *newId)

@@ -41,179 +41,135 @@ error_t fplainn::Zudi::getInternalBopVectorIndexes(
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::Zudi::spawnInternalBindChannel(
-	utf8Char *devPath, ubit16 regionIndex,
-	udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1)
+error_t fplainn::Zudi::udi_channel_spawn(
+	udi_channel_spawn_call_t *cb, udi_cb_t *gcb,
+	udi_channel_t channel_endp, udi_index_t spawn_idx,
+	udi_ops_vector_t *ops_vector,
+	udi_init_context_t *channel_context
+	)
 {
-	fplainn::DeviceInstance::sRegion	*region0, *region1;
-	udi_init_context_t			*rdata0=NULL, *rdata1=NULL;
-	processId_t				region0Tid=PROCID_INVALID,
-						dummy;
-	fplainn::Device				*dev;
 	error_t					ret;
+	Thread					*self;
+	fplainn::Region				*callerRegion;
+	fplainn::Channel			*originChannel;
+	fplainn::IncompleteChannel		*incChan;
+	sbit8					emptyEndpointIdx;
 
-printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
-	devPath, regionIndex, opsVector0, opsVector1);
-	/* region1 is always the caller because internal bind channels are
-	 * spawned by the secondary region thread.
+	(void)cb; (void)gcb;
+	/**	EXPLANATION:
+	 * Only drivers are allowed to call this.
+	 *
+	 * We need to get the device instance for the caller, and:
+	 *	* Check to see if a channel endpoint matching the pointer passed
+	 * 	  to us exists.
+	 * 	* Take the channel which is the parent of the passed endpoint,
+	 *	  and check to see if it has an incompleteChannel with the
+	 *	  spawn_idx passed to us here.
+	 * 		* If an incompleteChannel with our spawn_idx value
+	 *		  doesn't exist, create a new incompleteChannel and
+	 *		  then anchor() it.
+	 *		* If one exists, anchor the new end, then remove it
+	 *		  from the incompleteChannel list, and create a new
+	 *		  fully fledged channel based on it.
 	 **/
-	region1 = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->getRegion();
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	ret = floodplainn.getDevice(devPath, &dev);
+	if (self->parent->getType() != ProcessStream::DRIVER)
+		{ return ERROR_UNAUTHORIZED; };
+
+	// Set by fplainn::DeviceInstance::setThreadRegionPointer().
+	callerRegion = self->getRegion();
+	// Make sure the "channel" endpoint passed to us is really an endpoint.
+	originChannel = callerRegion->parent->getChannelByEndpoint(channel_endp);
+	if (originChannel == NULL) { return ERROR_INVALID_ARG_VAL; };
+
+	// Is there already a spawn in progress with this spawn_idx?
+	incChan = originChannel->getIncompleteChannelBySpawnIndex(spawn_idx);
+	if (incChan == NULL)
+	{
+		/* No incomplete channel with our spawn_idx exists. Create a
+		 * new incomplete channel and anchor one of its endpoints.
+		 *
+		 * Endpoint0 is always a region endpoint. Since this is
+		 **/
+		ret = originChannel->createIncompleteChannel(
+			originChannel->getType(), spawn_idx, &incChan);
+
+
+		/* We can use originChannel to determine what type of incomplete
+		 * channel (D2D or D2S) we have spawned because it is not
+		 * possible for a D2D channel to be used to spawn anything but
+		 * another D2D channel, and vice versa: a D2S channel can only
+		 * be used to spawn another D2S channel.
+		 **/
+		incChan->cast2BaseChannel(originChannel->getType())
+			->endpoints[0]->anchor(
+				callerRegion, ops_vector, channel_context);
+
+		incChan->setOrigin(0, channel_endp);
+		return ERROR_SUCCESS;
+	};
+
+	/* Check to ensure that the same caller doesn't call spawn() twice and
+	 * set up a channel to itself like a retard. If spawn() is called twice
+	 * with the same originating endpoint, we cause the second call to
+	 * overwrite the attributes that were set by the first.
+	 **/
+	for (uarch_t i=0; i<2; i++)
+	{
+		if (incChan->originEndpoints[i] == channel_endp)
+		{
+			// If it's a repeat call, just re-anchor (overwrite).
+			incChan->cast2BaseChannel(originChannel->getType())
+				->endpoints[i]->anchor(
+					callerRegion, ops_vector,
+					channel_context);
+
+			return ERROR_SUCCESS;
+		};
+
+		// Prepare for below.
+		if (incChan->originEndpoints[i] == NULL) {
+			emptyEndpointIdx = i;
+		};
+	};
+
+	// Else anchor the other end.
+	incChan->cast2BaseChannel(originChannel->getType())
+		->endpoints[emptyEndpointIdx]->anchor(
+			callerRegion, ops_vector, channel_context);
+
+	/* Now, if both ends have been claimed by calls to udi_channel_spawn()
+	 * such that both ends have valid "parentEndpoint"s, we can proceed
+	 * to create a new channel based on the incomplete channel.
+	 **/
+	if (incChan->originEndpoints[0] == NULL
+		|| incChan->originEndpoints[1] == NULL)
+	{
+		panic(
+			ERROR_FATAL,
+			FATAL ZUDI"udi_ch_spawn: originating endpoints are "
+			"NULL at point where that should not be possible.\n");
+	};
+
+	// If we're here, then both ends have been claimed and matched.
+	if (originChannel->getType() == fplainn::Channel::TYPE_D2D)
+	{
+		ret = createChannel(
+			static_cast<IncompleteD2DChannel *>(incChan));
+	}
+	else
+	{
+		ret = FloodplainnStream::createChannel(
+			static_cast<IncompleteD2SChannel *>(incChan));
+	};
+
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	if (dev->instance->getRegionInfo(regionIndex, &dummy, &rdata1)
-		!= ERROR_SUCCESS)
-		{ return ERROR_INVALID_ARG_VAL; };
+	// Next, remove the incompleteChannel from the originating channel.
+	originChannel->destroyIncompleteChannel(
+		originChannel->getType(), incChan->spawnIndex);
 
-	// If we can't get primary region info, something is terribly wrong.
-	assert_fatal(
-		dev->instance->getRegionInfo(0, &region0Tid, &rdata0)
-		== ERROR_SUCCESS);
-
-	region0 = region1->thread->parent->getThread(region0Tid)->getRegion();
-
-	return spawnChannel(
-		dev, region0, opsVector0, rdata0,
-		dev, region1, opsVector1, rdata1);
-}
-
-error_t fplainn::Zudi::spawnChildBindChannel(
-	utf8Char *parentDevPath, utf8Char *childDevPath, utf8Char *metaName,
-	udi_ops_vector_t *opsVector
-	)
-{
-	fplainn::Device				*parentDev, *childDev;
-	fplainn::Driver::sMetalanguage		*parentMeta, *childMeta;
-	fplainn::Driver::sChildBop		*parentCBop;
-	fplainn::Driver::sParentBop		*childPBop;
-	fplainn::DeviceInstance::sRegion	*parentRegion, *childRegion;
-	processId_t				parentTid, childTid;
-	udi_init_context_t			*parentRdata, *childRdata;
-	fplainn::DriverInstance::sChildBop	*parentInstCBop;
-
-	if (floodplainn.getDevice(parentDevPath, &parentDev) != ERROR_SUCCESS
-		|| floodplainn.getDevice(childDevPath, &childDev) != ERROR_SUCCESS)
-		{ return ERROR_INVALID_RESOURCE_NAME; };
-
-	/* Both the parent device and the connecting child device must expose
-	 * "meta" indexes for the specified metalanguage.
-	 **/
-	childMeta = childDev->driverInstance->driver->getMetalanguage(metaName);
-	parentMeta = parentDev->driverInstance->driver->getMetalanguage(
-		metaName);
-
-	if (childMeta == NULL || parentMeta == NULL)
-	{
-		printf(WARNING FPLAINN"spawnCBindChan: meta %s not declared "
-			"by one or both devices.\n",
-			metaName);
-
-		return ERROR_NON_CONFORMANT;
-	};
-
-	/* Furthermore, the parent must have a child bop for the meta, while the
-	 * child must have a parent bop for the meta. If any of these conditions
-	 * are not met, the connection cannot be established.
-	 **/
-	parentCBop = parentDev->driverInstance->driver->getChildBop(
-		parentMeta->index);
-
-	childPBop = childDev->driverInstance->driver->getParentBop(
-		childMeta->index);
-
-	if (parentCBop == NULL || childPBop == NULL)
-	{
-		printf(WARNING FPLAINN"spawnCBindChan: meta %s not exposed "
-			"as parent/child bop by one or both devices.\n",
-			metaName);
-
-		return ERROR_UNSUPPORTED;
-	};
-
-	// Next, get the region thread IDs.
-	if (parentDev->instance->getRegionInfo(
-		parentCBop->regionIndex, &parentTid, &parentRdata)
-		!= ERROR_SUCCESS
-		|| childDev->instance->getRegionInfo(
-			childPBop->regionIndex, &childTid, &childRdata)
-			!= ERROR_SUCCESS)
-	{
-		printf(ERROR FPLAINN"spawnCBindChan: Either parent or child's "
-			"Bop region ID is invalid.\n");
-
-		return ERROR_INVALID_RESOURCE_ID;
-	};
-
-	// Now get the thread objects using their thread IDs.
-	parentRegion = processTrib.getThread(parentTid)->getRegion();
-	childRegion = processTrib.getThread(childTid)->getRegion();
-	if (parentRegion == NULL || childRegion == NULL)
-	{
-		printf(ERROR FPLAINN"spawnCBindChan: Either parent or child's "
-			"region TID doesn't map to valid thread.\n");
-
-		return ERROR_INVALID_RESOURCE_ID;
-	};
-
-	// Finally, we need the parent's ops vector and context info.
-	parentInstCBop = parentDev->driverInstance->getChildBop(
-		parentMeta->index);
-
-	if (parentInstCBop == NULL)
-	{
-		printf(ERROR FPLAINN"spawnCBindChan: Parent driver instance "
-			"hasn't set its child bop vectors.\n");
-
-		return ERROR_UNINITIALIZED;
-	};
-
-	// Finally, call spawnChannel.
-	return spawnChannel(
-		parentDev, parentRegion, parentInstCBop->opsVector, parentRdata,
-		childDev, childRegion, opsVector, childRdata);
-}
-
-error_t fplainn::Zudi::spawnChannel(
-	fplainn::Device *dev0, fplainn::DeviceInstance::sRegion *region0,
-	udi_ops_vector_t *opsVector0, udi_init_context_t *channelContext0,
-	fplainn::Device *dev1, fplainn::DeviceInstance::sRegion *region1,
-	udi_ops_vector_t *opsVector1, udi_init_context_t *channelContext1
-	)
-{
-	HeapObj<fplainn::DeviceInstance::sChannel>	chan;
-	error_t						ret0, ret1;
-
-	/**	EXPLANATION:
-	 * Back-end function that actually allocates the channel object and
-	 * adds it to both device-instances' channel lists.
-	 *
-	 * The region thread, ops-vector and channel-context need not be
-	 * set at this point, but they will be required by the kernel before
-	 * the channel can be used.
-	 **/
-	if (dev0 == NULL || dev1 == NULL) { return ERROR_INVALID_ARG; };
-
-	chan = new fplainn::DeviceInstance::sChannel(
-		region0, opsVector0, channelContext0,
-		region1, opsVector1, channelContext1);
-
-	if (chan == NULL) { return ERROR_MEMORY_NOMEM; };
-
-	ret0 = dev0->instance->addChannel(chan.get());
-	if (dev1 != dev0) { ret1 = dev1->instance->addChannel(chan.get()); }
-	else { ret1 = ret0; };
-
-	if (ret0 != ERROR_SUCCESS || ret1 != ERROR_SUCCESS)
-	{
-		printf(ERROR FPLAINN"spawnChannel: Failed to add chan to "
-			"one or both deviceInstance objects.\n");
-
-		return ERROR_UNKNOWN;
-	};
-
-	chan.release();
 	return ERROR_SUCCESS;
 }
 

@@ -19,10 +19,16 @@ meta	2	udi_gio
 
 module	main
 region	0
+region	1
+region	2
+region	3
 
 message	10	Zambesii root device
 
 device 10 1	identifier string zrootdev
 
-child_bind_ops 1 0 1
-child_bind_ops 2 0 2
+child_bind_ops		1 0 1
+child_bind_ops		2 0 2
+internal_bind_ops	2 1 1 2 1
+internal_bind_ops	2 2 1 2 1
+internal_bind_ops	2 3 1 2 1

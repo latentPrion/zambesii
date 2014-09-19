@@ -6,8 +6,10 @@
 	#undef UDI_VERSION
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/floodplainn/zui.h>
-	#include <kernel/common/floodplainn/device.h>
 	#include <kernel/common/floodplainn/fvfs.h>
+	#include <kernel/common/floodplainn/channel.h>
+
+#define ZUDI			"ZUDI: "
 
 /**	EXPLANATION:
  * The Zambesii UDI environment public API.
@@ -16,6 +18,7 @@ namespace fplainn
 {
 	class Zudi;
 	class Driver;
+	class Region;
 }
 
 struct sDriverInitEntry;
@@ -190,15 +193,7 @@ public:
 	};
 
 private:
-	error_t spawnChannel(
-		fplainn::Device *dev0,
-		fplainn::DeviceInstance::sRegion *thread0,
-		udi_ops_vector_t *opsVector0,
-		udi_init_context_t *channelContext0,
-		fplainn::Device *dev1,
-		fplainn::DeviceInstance::sRegion *thread1,
-		udi_ops_vector_t *opsVector1,
-		udi_init_context_t *channelContext1);
+	static error_t createChannel(fplainn::IncompleteD2DChannel *blueprint);
 
 public:
 	PtrList<fplainn::Driver>	driverList;
