@@ -7,11 +7,15 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/ptrList.h>
 	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/debugPipe.h>
+	#include <kernel/common/messageStream.h>
 	#include <kernel/common/floodplainn/region.h>
 
 class Thread;
 namespace fplainn
 {
+
+	struct sChannelMsg;
 	class Channel;
 
 	/**	class Endpoint
@@ -38,12 +42,31 @@ namespace fplainn
 			channelContext = channel_context;
 		}
 
+		virtual sbit8 isAnchored(void)
+			{ return opsVector != NULL && channelContext != NULL; }
+
+		/* This version of anchor() calls the entity that the endpoint
+		 * is connected to, and asks it to add the endpoint to its
+		 * list.
+		 **/
+		virtual error_t anchor(void)=0;
+
+		// send() calls enqueue() on the "otherEnd" endpoint.
+		virtual error_t send(sChannelMsg *msg)
+			{ return otherEnd->enqueue(msg); }
+
+		// enqueue() is called by opposite end to enqueue on this end.
+		virtual error_t enqueue(sChannelMsg *)=0;
+
+		virtual void dump(void)
+			{ printf(CC"\topsvec 0x%p, ", opsVector); }
+
 	private:
 		friend class D2DChannel;
 		friend class D2SChannel;
 
-		Channel		*parent;
-		Endpoint		*otherEnd;
+	public:	Channel			*parent;
+	private:Endpoint		*otherEnd;
 		udi_ops_vector_t	*opsVector;
 		udi_init_context_t	*channelContext;
 	};
@@ -67,6 +90,15 @@ namespace fplainn
 			thread = (Thread *)object;
 		}
 
+		virtual sbit8 isAnchored(void)
+			{ return Endpoint::isAnchored() && thread != NULL; }
+
+		virtual error_t anchor(void);
+
+		virtual error_t enqueue(sChannelMsg *);
+
+		virtual void dump(void);
+
 	public:
 		Thread		*thread;
 	};
@@ -89,6 +121,15 @@ namespace fplainn
 			Endpoint::anchor(object, ops_vector, channel_context);
 			region = (Region *)object;
 		}
+
+		virtual sbit8 isAnchored(void)
+			{ return Endpoint::isAnchored() && region != NULL; }
+
+		virtual error_t anchor(void);
+
+		virtual error_t enqueue(sChannelMsg *);
+
+		virtual void dump(void);
 
 	public:
 		Region		*region;
@@ -119,6 +160,15 @@ namespace fplainn
 
 		error_t initialize(void)
 			{ return incompleteChannels.initialize(); }
+
+		void dump(void)
+		{
+			printf(NOTICE"%s channel, %d incchans.\n",
+				((getType() == TYPE_D2D) ? "D2D" : "D2S"),
+				incompleteChannels.getNItems());
+
+			for (uarch_t i=0; i<2; i++) { endpoints[i]->dump(); };
+		}
 
 	public:
 		IncompleteChannel *getIncompleteChannelBySpawnIndex(
@@ -246,6 +296,32 @@ namespace fplainn
 		: IncompleteChannel(spawn_idx)
 		{}
 	};
+
+	struct sChannelMsg
+	{
+		sChannelMsg(
+			processId_t targetId,
+			ubit16 subsystem, ubit16 function,
+			uarch_t size, uarch_t flags, void *privateData)
+		:
+		header(targetId, subsystem, function, size, flags, privateData),
+		data((ubit8 *)&this[1])
+		{}
+
+		void set(ubit16 dataSize)
+			{ header.size = sizeof(*this) + dataSize; }
+
+		uarch_t getDataSize(void)
+			{ return header.size - sizeof(*this); }
+
+		// Custom allocator to facilitate the extra room at the end.
+		void *operator new(size_t sz, uarch_t dataSize);
+
+		MessageStream::sHeader		header;
+		// "data" is initialized to point to the byte after this struct.
+		ubit8				*data;
+	};
+
 }
 
 

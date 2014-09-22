@@ -279,6 +279,8 @@ namespace fplainn
 
 		void setThreadRegionPointer(processId_t tid);
 
+		Region *getRegion(ubit16 regionIndex);
+
 	public:
 		void dumpChannels(void);
 		Channel *getChannelByEndpoint(void *endpoint);
@@ -309,7 +311,7 @@ namespace fplainn
 	{
 	public:
 		struct sModule;
-		struct Region;
+		struct sRegion;
 		struct sRequirement;
 		struct sMetalanguage;
 		struct sChildBop;
@@ -387,9 +389,9 @@ namespace fplainn
 			}
 		};
 
-		struct Region
+		struct sRegion
 		{
-			Region(ubit16 index, ubit16 moduleIndex, ubit32 flags)
+			sRegion(ubit16 index, ubit16 moduleIndex, ubit32 flags)
 			:
 			index(index), moduleIndex(moduleIndex),
 			dataSize(0), flags(flags)
@@ -405,7 +407,7 @@ namespace fplainn
 
 		private:
 			friend class fplainn::Driver;
-			Region(void)
+			sRegion(void)
 			:
 			index(0), moduleIndex(0),
 			dataSize(0), flags(0)
@@ -572,7 +574,7 @@ namespace fplainn
 			return NULL;
 		};
 
-		Region *getRegion(ubit16 index)
+		sRegion *getRegion(ubit16 index)
 		{
 			for (uarch_t i=0; i<nRegions; i++)
 			{
@@ -660,7 +662,7 @@ namespace fplainn
 		// Modules for this driver, and their indexes.
 		sModule		*modules;
 		// Regions in this driver and their indexes/module indexes, etc.
-		Region		*regions;
+		sRegion		*regions;
 		// All required libraries for this driver.
 		sRequirement	*requirements;
 		// Metalanguage indexes, names, etc.
@@ -787,6 +789,17 @@ inline fplainn::DriverInstance *fplainn::Driver::getInstance(numaBankId_t bid)
 	{
 		if (instances[i].bankId == bid)
 			{ return &instances[i]; };
+	};
+
+	return NULL;
+}
+
+inline fplainn::Region *fplainn::DeviceInstance::getRegion(ubit16 regionIndex)
+{
+	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
+	{
+		if (regions[i].index == regionIndex)
+			{ return &regions[i]; };
 	};
 
 	return NULL;

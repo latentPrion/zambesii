@@ -180,7 +180,7 @@ private:processId_t				id;
 public:
 	ProcessStream				*parent;
 	// Only valid for region threads of drivers.
-	fplainn::Region			*region;
+	fplainn::Region				*region;
 	CpuStream				*currentCpu, *parentCpu;
 	void					*stack0, *stack1;
 

@@ -72,7 +72,7 @@ error_t fplainn::Driver::preallocateModules(uarch_t nModules)
 error_t fplainn::Driver::preallocateRegions(uarch_t nRegions)
 {
 	if (nRegions == 0) { return ERROR_SUCCESS; };
-	regions = new Region[nRegions];
+	regions = new sRegion[nRegions];
 	if (regions == NULL) { return ERROR_MEMORY_NOMEM; };
 	this->nRegions = nRegions;
 	return ERROR_SUCCESS;
@@ -303,6 +303,16 @@ error_t fplainn::DeviceInstance::initialize(void)
 
 	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
 	{
+		ret = regions[i].initialize();
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR"DevInst: init: Failed for region %d.\n",
+				device->driverInstance->driver->regions[i]
+					.index);
+
+			return ret;
+		};
+
 		regions[i].parent = this;
 		regions[i].index = device->driverInstance->driver->regions[i]
 			.index;
@@ -416,10 +426,7 @@ void fplainn::DeviceInstance::dumpChannels(void)
 	{
 		fplainn::Channel		*chan = *iChan;
 
-		printf(CC"\tChan %s, %d incchans.\n",
-			((chan->getType() == fplainn::Channel::TYPE_D2D)
-				? "D2D" : "D2S"),
-			chan->incompleteChannels.getNItems());
+		chan->dump();
 	};
 }
 

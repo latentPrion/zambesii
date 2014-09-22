@@ -282,9 +282,9 @@ void udi_usage_res(udi_usage_cb_t *cb)
 printf(NOTICE"in res\n");
 	contextBlock = (sUdi_Mgmt_ContextBlock *)cb->gcb.initiator_context;
 
-	floodplainn.zudi.udi_usage_res(
-		contextBlock->devicePath,
-		contextBlock->sourceTid, contextBlock->privateData);
+	//floodplainn.zudi.udi_usage_res(
+	//	contextBlock->devicePath,
+	//	contextBlock->sourceTid, contextBlock->privateData);
 
 	delete contextBlock;
 }

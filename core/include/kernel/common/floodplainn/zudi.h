@@ -27,7 +27,11 @@ struct sMetaInitEntry;
 class fplainn::Zudi
 {
 public:
-	Zudi(void) {}
+	Zudi(void)
+	:
+	server(NULL)
+	{}
+
 	error_t initialize(void);
 	~Zudi(void) {}
 
@@ -44,23 +48,33 @@ public:
 		processId_t targetId, utf8Char *path, error_t err,
 		void *privateData);
 
-	#define MSGSTREAM_ZUDI_MGMT_CALL	(1)
-	void udi_final_cleanup_req(utf8Char *devicePath, void *privateData);
-	void udi_usage_ind(
-		utf8Char *devicePath, udi_ubit8_t usageLevel,
-		void *privateData);
+	class Management
+	{
+		/* This executes the UDI instantiation sequence on a given
+		 * device.
+		 **/
+		void startDeviceReq(
+			utf8Char *path, udi_ubit8_t usageLevel,
+			void *privateData);
 
-	void udi_usage_res(
-		utf8Char *devicePath,
-		processId_t targetTid, void *privateData);
+		/* The rest of these functions are like a udi metalanguage lib
+		 * for udi_mgmt.
+		 **/
+		#define MSGSTREAM_ZUDI_MGMT_CALL	(1)
+		void udi_usage_ind(
+			utf8Char *devicePath, udi_ubit8_t usageLevel,
+			void *privateData);
 
-	void udi_enumerate_req(
-		utf8Char *devicePath, udi_ubit8_t enumerateLevel,
-		void *privateData);
+		void udi_final_cleanup_req(utf8Char *path, void *privateData);
 
-	void udi_devmgmt_req(
-		utf8Char *devicePath, udi_ubit8_t op, udi_ubit8_t parentId,
-		void *privateData);
+		void udi_enumerate_req(
+			utf8Char *devicePath, udi_ubit8_t enumerateLevel,
+			void *privateData);
+
+		void udi_devmgmt_req(
+			utf8Char *devicePath, udi_ubit8_t op,
+			udi_ubit8_t parentId, void *privateData);
+	};
 
 	/**	EXPLANATION:
 	 * When spawning internal bind channels, all anchoring is done
@@ -194,6 +208,8 @@ public:
 
 private:
 	static error_t createChannel(fplainn::IncompleteD2DChannel *blueprint);
+
+	Thread				*server;
 
 public:
 	PtrList<fplainn::Driver>	driverList;

@@ -8,6 +8,8 @@
 	#include <kernel/common/floodplainn/channel.h>
 	#include <kernel/common/floodplainn/device.h>
 
+	#define FPSTREAM		"FplainnStream "
+
 /**	EXPLANATION:
  * The "Floodplainn" is the name for the hardware management layer of Zambesii.
  * Specifically, it is responsible for connecting processes to hardware.
@@ -74,8 +76,12 @@ public:
 public:
 	// Establishes a child-bind channel to a device on behalf of its parent.
 	error_t connect(
-		utf8Char *devName, utf8Char *metaName, uarch_t flags,
-		fplainn::FStreamEndpoint **retendp);
+		utf8Char *devName, utf8Char *metaName,
+		udi_ops_vector_t *ops_vector, udi_init_context_t *channel_context,
+		uarch_t flags, fplainn::FStreamEndpoint **retendp);
+
+	// Closes a connection to a device.
+	sbit8 close(fplainn::FStreamEndpoint *endpoint, uarch_t flags);
 
 	error_t spawnChannel(
 		fplainn::FStreamEndpoint *endpoint,
@@ -92,17 +98,25 @@ public:
 		fplainn::FStreamEndpoint *endpoint,
 		udi_init_context_t *channel_context);
 
+	error_t send(void *marshalledData);
+
 	sbit8 closeChannel(fplainn::FStreamEndpoint *endpoint);
 
-	// Closes a connection to a device.
-	sbit8 close(fplainn::FStreamEndpoint *endpoint, uarch_t flags);
-
-	static error_t createChannel(fplainn::IncompleteD2SChannel *blueprint)
-		{ (void)blueprint; return ERROR_SUCCESS; };
+	// Should really be private...
+	static error_t createChannel(fplainn::IncompleteD2SChannel *blueprint);
 
 private:
-	List<MetaConnection>		metaConnections;
-	List<ZkcmConnection>		zkcmConnections;
+	friend class fplainn::FStreamEndpoint;
+
+	error_t addEndpoint(fplainn::FStreamEndpoint *endp)
+		{ return endpoints.insert(endp); }
+
+	sbit8 removeEndpoint(fplainn::FStreamEndpoint *endp)
+		{ return endpoints.remove(endp); }
+
+	PtrList<fplainn::FStreamEndpoint>	endpoints;
+	List<MetaConnection>			metaConnections;
+	List<ZkcmConnection>			zkcmConnections;
 };
 
 
@@ -140,6 +154,7 @@ public:
 		MessageStream::sHeader		header;
 
 	};
+
 private:
 	List<MetaConnection>::sHeader			listHeader;
 

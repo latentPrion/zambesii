@@ -313,6 +313,22 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 //	floodplainn.getDevice(CC"by-id/0", &chipsetDev);
 //	chipsetDev->driver->dump();
 
+	fplainn::FStreamEndpoint	*endp;
+	fplainn::Device			*d;
+
+	floodplainn.getDevice(CC"by-id", &d);
+
+//	d->instance->getRegion(0)->dumpChannelEndpoints();
+	DO_OR_DIE(
+		self->parent->floodplainnStream,
+		connect(
+			CC"by-id", CC"zbz_root",
+			(udi_ops_vector_t *)0x1, (udi_init_context_t *)0x2,
+			0, &endp),
+		ret);
+
+	d->instance->dumpChannels();
+
 	printf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 

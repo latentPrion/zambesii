@@ -207,10 +207,24 @@ error_t fplainn::Zudi::createChannel(fplainn::IncompleteD2DChannel *bprint)
 
 	if (ret0 != ERROR_SUCCESS || ret1 != ERROR_SUCCESS)
 	{
-		printf(ERROR FPLAINN"spawnChannel: Failed to add chan to "
+		printf(ERROR ZUDI"createChannel: Failed to add chan to "
 			"one or both deviceInstance objects.\n");
 
-		return ERROR_UNKNOWN;
+		return ERROR_INITIALIZATION_FAILURE;
+	};
+
+	assert_fatal(chan->endpoints[0] != chan->endpoints[1]);
+
+	ret0 = chan->endpoints[0]->anchor();
+	ret1 = chan->endpoints[1]->anchor();
+	if (ret0 != ERROR_SUCCESS || ret1 != ERROR_SUCCESS)
+	{
+		printf(ERROR ZUDI"createChannel: Failed to add endpoints of "
+			"new channel to endpoint-objects.\n"
+			"\tret0 %d: %s, ret1 %d: %s",
+			ret0, strerror(ret0), ret1, strerror(ret1));
+
+		return ERROR_INITIALIZATION_FAILURE;
 	};
 
 	chan.release();
@@ -409,7 +423,7 @@ static void udi_usage_gcb_prep(
 	cb->origin = NULL;
 }
 
-void fplainn::Zudi::udi_usage_ind(
+void fplainn::Zudi::Management::udi_usage_ind(
 	utf8Char *devPath, udi_ubit8_t usageLevel, void *privateData
 	)
 {
@@ -446,44 +460,19 @@ void fplainn::Zudi::udi_usage_ind(
 		{ request.release(); };
 }
 
-void fplainn::Zudi::udi_usage_res(
-	utf8Char *devicePath, processId_t targetTid, void *privateData
-	)
-{
-	fplainn::Zudi::sMgmtCallMsg	*response;
-
-	response = new fplainn::Zudi::sMgmtCallMsg(
-		devicePath, targetTid,
-		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_ZUDI_MGMT_CALL,
-		sizeof(*response), 0, privateData);
-
-	if (response == NULL)
-	{
-		printf(FATAL FPLAINN"usage_res: failed to alloc response "
-			"message. Thread 0x%x may be stalled waiting for ever\n",
-			targetTid);
-
-		return;
-	};
-
-	if (MessageStream::enqueueOnThread(
-		response->header.targetId, &response->header) != ERROR_SUCCESS)
-		{ delete response; };
-}
-
-void fplainn::Zudi::udi_enumerate_req(
+void fplainn::Zudi::Management::udi_enumerate_req(
 	utf8Char *, udi_ubit8_t /*enumerateLevel*/, void * /*privateData*/
 	)
 {
 }
 
-void fplainn::Zudi::udi_devmgmt_req(
+void fplainn::Zudi::Management::udi_devmgmt_req(
 	utf8Char *, udi_ubit8_t /*op*/, udi_ubit8_t /*parentId*/,
 	void * /*privateData*/
 	)
 {
 }
 
-void fplainn::Zudi::udi_final_cleanup_req(utf8Char *, void * /*privateData*/)
+void fplainn::Zudi::Management::udi_final_cleanup_req(utf8Char *, void * /*privateData*/)
 {
 }
