@@ -125,17 +125,30 @@ error_t FloodplainnStream::connect(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread(),
 		ops_vector, channel_context);
 
-	return createChannel(&blueprint);
+	ret = createChannel(&blueprint, retendp);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR FPSTREAM"%d: connect %s %s: createChannel() "
+			"failed. Err %d %s.\n",
+			this->id, devName, metaName, ret, strerror(ret));
+
+		return ret;
+	};
+
+	return ERROR_SUCCESS;
 }
 
 error_t FloodplainnStream::createChannel(
-	fplainn::IncompleteD2SChannel *blueprint
+	fplainn::IncompleteD2SChannel *blueprint,
+	fplainn::FStreamEndpoint **retendp
 	)
 {
 	error_t				ret0, ret1;
 	fplainn::Region			*region;
 	FloodplainnStream		*stream;
 	HeapObj<fplainn::D2SChannel>	chan;
+
+	if (retendp == NULL) { return ERROR_INVALID_ARG; };
 
 	region = blueprint->regionEnd0.region;
 	stream = &blueprint->fstreamEnd.thread->parent->floodplainnStream;
@@ -163,11 +176,39 @@ error_t FloodplainnStream::createChannel(
 		return ERROR_INITIALIZATION_FAILURE;
 	};
 
+	if (retendp != NULL)
+	{
+		*retendp = static_cast<fplainn::FStreamEndpoint *>(
+			chan->endpoints[1]);
+	};
+
 	chan.release();
 	return ERROR_SUCCESS;
 }
 
-error_t FloodplainnStream::send(void *)
+error_t FloodplainnStream::send(udi_cb_t *mcb, uarch_t size, void *privateData)
 {
-	return ERROR_SUCCESS;
+	fplainn::FStreamEndpoint	*endp;
+
+	/**	EXPLANATION:
+	 * We use the channel pointer inside of the GCB to know which channel
+	 * endpoint we are meant to send this message over. We assume that
+	 * the data pointer given to us is the beginning of the GCB for the
+	 * marshalled data.
+	 *
+	 **	SYNOPSIS:
+	 * We first check the channel pointer to ensure that it is a valid
+	 * endpoint that is actually connected to this stream. After that, we
+	 * needn't do much other than minor preparations before sending the
+	 * message across the channel. Allocate the message
+	 * (fplainn::sChannelMsg), then copy the marshaled data into the message
+	 * memory. Then send the message across the channel.
+	 **/
+	if (mcb == NULL) { return ERROR_INVALID_ARG; };
+
+	endp = static_cast<fplainn::FStreamEndpoint *>(mcb->channel);
+	if (!endpoints.checkForItem(endp))
+		{ return ERROR_INVALID_RESOURCE_HANDLE; };
+
+	return fplainn::sChannelMsg::send(endp, mcb, size, privateData);
 }

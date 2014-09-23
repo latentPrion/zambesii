@@ -98,12 +98,14 @@ public:
 		fplainn::FStreamEndpoint *endpoint,
 		udi_init_context_t *channel_context);
 
-	error_t send(void *marshalledData);
+	error_t send(udi_cb_t *marshalledCb, uarch_t size, void *privateData);
 
 	sbit8 closeChannel(fplainn::FStreamEndpoint *endpoint);
 
 	// Should really be private...
-	static error_t createChannel(fplainn::IncompleteD2SChannel *blueprint);
+	static error_t createChannel(
+		fplainn::IncompleteD2SChannel *blueprint,
+		fplainn::FStreamEndpoint **retendp);
 
 private:
 	friend class fplainn::FStreamEndpoint;

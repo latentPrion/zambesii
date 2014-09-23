@@ -373,6 +373,31 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 	return createChannel(&blueprint);
 }
 
+error_t fplainn::Zudi::send(udi_cb_t *mcb, uarch_t size, void *privateData)
+{
+	fplainn::Region			*region;
+	fplainn::RegionEndpoint		*endp;
+	Thread				*self;
+
+	/**	EXPLANATION:
+	 * In this one we need to do a little more work; we must get the
+	 * region for the current thread (only driver processes should call this
+	 * function), and then we can proceed.
+	 **/
+	if (mcb == NULL) { return ERROR_INVALID_ARG; };
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	if (self->parent->getType() != ProcessStream::DRIVER)
+		{ return ERROR_UNAUTHORIZED; };
+
+	region = self->getRegion();
+	endp = static_cast<fplainn::RegionEndpoint *>(mcb->channel);
+	if (!region->endpoints.checkForItem(endp))
+		{ return ERROR_INVALID_RESOURCE_HANDLE; };
+
+	return fplainn::sChannelMsg::send(endp, mcb, size, privateData);
+}
+
 static error_t udi_mgmt_calls_prep(
 	utf8Char *callerName, utf8Char *devPath, fplainn::Device **dev,
 	HeapObj<fplainn::Zudi::sMgmtCallMsg> *request,

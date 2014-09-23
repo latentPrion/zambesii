@@ -31,7 +31,6 @@ namespace fplainn
 		sbit8 removeEndpoint(RegionEndpoint *endp)
 			{ return endpoints.remove(endp); }
 
-
 	public:
 		DeviceInstance		*parent;
 		ubit16			index;

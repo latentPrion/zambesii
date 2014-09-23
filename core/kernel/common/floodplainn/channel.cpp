@@ -1,5 +1,6 @@
 
 #include <kernel/common/floodplainn/channel.h>
+#include <kernel/common/floodplainn/zudi.h>
 #include <kernel/common/thread.h>
 #include <kernel/common/process.h>
 
@@ -37,6 +38,40 @@ fstreamEnd(this, &regionEnd0)
 void *fplainn::sChannelMsg::operator new(size_t sz, uarch_t dataSize)
 {
 	return ::operator new(sz + dataSize);
+}
+
+error_t fplainn::sChannelMsg::send(
+	fplainn::Endpoint *endp, udi_cb_t *mcb, uarch_t size, void *privateData
+	)
+{
+	fplainn::sChannelMsg		*msg;
+
+	/**	EXPLANATION:
+	 * The back-end for the other ZUDI_CHANNEL_SEND category APIs.
+	 * Allocates an sChannelMsg, populates its members and prepares it, then
+	 * calls Endpoint::send() to send it down the channel.
+	 **/
+	// Custom sChannelMsg::operator new().
+	msg = new (size) sChannelMsg(
+		/* We don't know the targetTid of the message. It will be filled
+		 * out by the channel while it is passing through, because only
+		 * the channel knows where its ends point.
+		 **/
+		0,
+		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_ZUDI_CHANNEL_SEND,
+		sizeof(*msg), 0, privateData);
+
+	if (msg == NULL)
+	{
+		printf(ERROR FPSTREAM"send %dB: Failed to alloc sChannelMsg.\n",
+			size);
+
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	msg->set(size);
+	memcpy(msg->data, mcb, size);
+	return endp->send(msg);
 }
 
 void fplainn::Region::dumpChannelEndpoints(void)

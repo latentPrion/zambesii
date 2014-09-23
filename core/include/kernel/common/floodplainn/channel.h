@@ -12,6 +12,7 @@
 	#include <kernel/common/floodplainn/region.h>
 
 class Thread;
+class FloodplainnStream;
 namespace fplainn
 {
 
@@ -34,8 +35,16 @@ namespace fplainn
 	public:
 		virtual ~Endpoint(void) {}
 
+		union anchorTargetU
+		{
+			anchorTargetU(Thread *t) : thread(t) {}
+			anchorTargetU(Region *r) : region(r) {}
+			Thread		*thread;
+			Region		*region;
+		};
+
 		virtual void anchor(
-			void *, udi_ops_vector_t *ops_vector,
+			anchorTargetU, udi_ops_vector_t *ops_vector,
 			udi_init_context_t *channel_context)
 		{
 			opsVector = ops_vector;
@@ -83,11 +92,11 @@ namespace fplainn
 		{}
 
 		virtual void anchor(
-			void *object, udi_ops_vector_t *ops_vector,
+			anchorTargetU object, udi_ops_vector_t *ops_vector,
 			udi_init_context_t *channel_context)
 		{
 			Endpoint::anchor(object, ops_vector, channel_context);
-			thread = (Thread *)object;
+			thread = object.thread;
 		}
 
 		virtual sbit8 isAnchored(void)
@@ -115,11 +124,11 @@ namespace fplainn
 		{}
 
 		virtual void anchor(
-			void *object, udi_ops_vector_t *ops_vector,
+			anchorTargetU object, udi_ops_vector_t *ops_vector,
 			udi_init_context_t *channel_context)
 		{
 			Endpoint::anchor(object, ops_vector, channel_context);
-			region = (Region *)object;
+			region = object.region;
 		}
 
 		virtual sbit8 isAnchored(void)
@@ -314,12 +323,21 @@ namespace fplainn
 		uarch_t getDataSize(void)
 			{ return header.size - sizeof(*this); }
 
+
 		// Custom allocator to facilitate the extra room at the end.
 		void *operator new(size_t sz, uarch_t dataSize);
 
 		MessageStream::sHeader		header;
 		// "data" is initialized to point to the byte after this struct.
 		ubit8				*data;
+
+	private:
+		friend class Zudi;
+		friend class ::FloodplainnStream;
+
+		static error_t send(
+			Endpoint *endp,
+			udi_cb_t *cb, uarch_t size, void *privateData);
 	};
 
 }

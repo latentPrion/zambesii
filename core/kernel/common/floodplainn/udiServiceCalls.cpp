@@ -160,8 +160,10 @@ error_t fplainn::Zudi::udi_channel_spawn(
 	}
 	else
 	{
+		FStreamEndpoint		*dummy;
+
 		ret = FloodplainnStream::createChannel(
-			static_cast<IncompleteD2SChannel *>(incChan));
+			static_cast<IncompleteD2SChannel *>(incChan), &dummy);
 	};
 
 	if (ret != ERROR_SUCCESS) { return ret; };

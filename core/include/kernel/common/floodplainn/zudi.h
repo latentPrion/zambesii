@@ -113,6 +113,9 @@ public:
 	error_t getInternalBopVectorIndexes(
 		ubit16 regionIndex, ubit16 *opsIndex0, ubit16 *opsIndex1);
 
+	#define MSGSTREAM_ZUDI_CHANNEL_SEND		(2)
+	error_t send(udi_cb_t *marshalledCb, uarch_t size, void *privateData);
+
 public:
 	struct sKernelCallMsg
 	{

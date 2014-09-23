@@ -315,6 +315,7 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 
 	fplainn::FStreamEndpoint	*endp;
 	fplainn::Device			*d;
+	udi_cb_t			*mcb;
 
 	floodplainn.getDevice(CC"by-id", &d);
 
@@ -327,7 +328,9 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 			0, &endp),
 		ret);
 
-	d->instance->dumpChannels();
+	mcb = new udi_cb_t;
+	mcb->channel = endp;
+	self->parent->floodplainnStream.send(mcb, sizeof(udi_cb_t), NULL);
 
 	printf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
