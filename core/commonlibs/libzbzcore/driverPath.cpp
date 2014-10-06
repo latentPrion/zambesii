@@ -14,20 +14,124 @@ class __klzbzcore::driver::MainCb
 {
 	Thread		*self;
 	mainCbFn	*callerCb;
+	CachedInfo	*driverCachedInfo;
 
 public:
-	MainCb(__kmainCbFn *kcb, Thread *self, mainCbFn *callerCb)
+	MainCb(
+		__kmainCbFn *kcb, Thread *self, CachedInfo *driverCachedInfo,
+		mainCbFn *callerCb)
 	: _Callback<__kmainCbFn>(kcb),
-	self(self), callerCb(callerCb)
+	self(self), callerCb(callerCb), driverCachedInfo(driverCachedInfo)
 	{}
 
 	virtual void operator()(MessageStream::sHeader *msg)
-		{ function(msg, self, callerCb); }
+		{ function(msg, driverCachedInfo, self, callerCb); }
 };
+
+error_t __klzbzcore::driver::CachedInfo::generateMetaCbScratchCache(void)
+{
+	udi_cb_init_t				*currCbInfo;
+	List<sMetaCbScratchInfo>::Iterator	it;
+	sMetaCbScratchInfo			*curr;
+
+	assert_fatal(this->initInfo != NULL);
+
+	/**	EXPLANATION:
+	 * We run through the list multiple times, and for each
+	 * meta_cb_idx we find, we search all of the entries for matches
+	 * and get the highest scratch requirement for that meta_cb_idx.
+	 *
+	 * We'll use a 2-pass approach. First we run through all the cb_init
+	 * entries, looking for unique meta_cb_num entries, and add each unique
+	 * meta_cb_num entry to a list.
+	 *
+	 * In the second run, we take each meta_cb_num in the list and search
+	 * through all the cb_init entries looking for matches, and seek the
+	 * match with the highest scratch_requirement.
+	 **/
+
+	// Create list entries for each meta_cb_num.
+	currCbInfo = initInfo->cb_init_list;
+	for (; currCbInfo != NULL && currCbInfo->cb_idx != 0; currCbInfo++)
+	{
+		sbit8					foundMetaCb=0;
+		sMetaCbScratchInfo			*tmp;
+
+		it = metaCbScratchInfo.begin();
+		for (; it != metaCbScratchInfo.end(); ++it)
+		{
+			sMetaCbScratchInfo			*curr = *it;
+
+			if (curr->metaIndex == currCbInfo->meta_idx
+				&& curr->metaCbNum == currCbInfo->meta_cb_num)
+			{
+				foundMetaCb = 1;
+				break;
+			};
+		};
+
+		if (foundMetaCb) { continue; };
+
+		/* If we reached here, it means we have yet to allocate
+		 * a list entry for this meta_cb_num.
+		 **/
+		tmp = new sMetaCbScratchInfo(
+			currCbInfo->meta_idx,
+			currCbInfo->meta_cb_num,
+			currCbInfo->scratch_requirement);
+
+		if (tmp == NULL)
+		{
+			printf(ERROR LZBZCORE"genMetaCbScratchCache: Failed to "
+				"alloc meta scratch cache metadata for "
+				"meta_idx %d, meta_cb_num %d.\n",
+				currCbInfo->meta_idx, currCbInfo->meta_cb_num);
+
+			return ERROR_MEMORY_NOMEM;
+		};
+
+		metaCbScratchInfo.insert(tmp);
+	};
+
+	/* Now for the 2nd pass: find the highest scratch_requirement for each
+	 * meta_cb_num.
+	 **/
+	it = metaCbScratchInfo.begin();
+	for (; it != metaCbScratchInfo.end(); ++it)
+	{
+		curr = *it;
+
+		currCbInfo = initInfo->cb_init_list;
+		for (; currCbInfo != NULL && currCbInfo->cb_idx != 0;
+			currCbInfo++)
+		{
+			// Only compare scratch sizes if the meta_cb_nums match.
+			if (currCbInfo->meta_idx != curr->metaIndex
+				|| currCbInfo->meta_cb_num != curr->metaCbNum)
+				{ continue; };
+
+			/* If the current cb_info has a higher
+			 * scratch_requirement then the scratchRequirement
+			 * currently recorded for this meta_cb_num, we record
+			 * the new scratch_requirement as the highest.
+			 **/
+			if (currCbInfo->scratch_requirement
+				> curr->scratchRequirement)
+			{
+				curr->scratchRequirement =
+					currCbInfo->scratch_requirement;
+			};
+		};
+	};
+
+	return ERROR_SUCCESS;
+}
 
 void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 {
 	fplainn::DriverInstance		*drvInst;
+	CachedInfo			*cache;
+	error_t				err;
 
 	drvInst = self->parent->getDriverInstance();
 
@@ -40,8 +144,32 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 	 * other subsystems.
 	 **/
 
+	/* Allocate the driver info cache. This cache will actually just be
+	 * passed along as a local variable from callback to callback, and will
+	 * not be a global.
+	 **/
+	cache = new CachedInfo(drvInst->driver->driverInitInfo);
+	if (cache == NULL || cache->initialize() != ERROR_SUCCESS)
+	{
+		printf(ERROR LZBZCORE"driver:main %s: Failed to allocate or "
+			"initialize driver info cache.\n",
+			drvInst->driver->shortName);
+
+		callerCb(self, ERROR_MEMORY_NOMEM); return;
+	};
+
+	err = cache->generateMetaCbScratchCache();
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR LZBZCORE"driver:main %s: Failed to generate "
+			"meta_cb_num scratch requirement cache.\n",
+			drvInst->driver->shortName);
+
+		callerCb(self, err); return;
+	};
+
 	floodplainn.zui.loadDriverRequirementsReq(
-		new MainCb(&main1, self, callerCb));
+		new MainCb(&main1, self, cache, callerCb));
 
 	for (;FOREVER;)
 	{
@@ -54,7 +182,10 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 		switch (iMsg->subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_USER0:
-			localService::handler(iMsg, drvInst, self);
+			localService::handler(
+				(MessageStream::sPostMsg *)iMsg,
+				drvInst, cache, self);
+
 			// Posted messages aren't garbage collected in kdomain.
 			delete iMsg;
 			break;
@@ -64,7 +195,8 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 			{
 			case MSGSTREAM_ZUDI___KCALL:
 				__kcontrol::handler(
-					(fplainn::Zudi::sKernelCallMsg *)iMsg);
+					(fplainn::Zudi::sKernelCallMsg *)iMsg,
+					cache);
 
 				break;
 
@@ -101,23 +233,22 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 }
 
 void __klzbzcore::driver::main1(
-	MessageStream::sHeader *iMsg, Thread *self, mainCbFn *callerCb
+	MessageStream::sHeader *iMsg, CachedInfo *cache, Thread *self,
+	mainCbFn *callerCb
 	)
 {
 	DriverProcess			*selfProcess;
 	fplainn::DriverInstance		*drvInst;
-	const udi_init_t		*driverInitInfo;
 
 	selfProcess = (DriverProcess *)self->parent;
 	drvInst = self->parent->getDriverInstance();
 
-	driverInitInfo = drvInst->driver->driverInitInfo;
 	printf(NOTICE LZBZCORE"driverPath1: Ret from loadRequirementsReq: %s "
 		"(%d).\n",
 		strerror(iMsg->error), iMsg->error);
 
 	if (iMsg->error != ERROR_SUCCESS)
-		{ callerCb(self, iMsg->error); };
+		{ callerCb(self, iMsg->error); return; };
 
 	/**	EXPLANATION:
 	 * In the userspace libzbzcore, we would have to make calls to the VFS
@@ -128,9 +259,9 @@ void __klzbzcore::driver::main1(
 	 **/
 	// Set management op vector and scratch, etc.
 	drvInst->setMgmtChannelInfo(
-		driverInitInfo->primary_init_info->mgmt_ops,
-		driverInitInfo->primary_init_info->mgmt_scratch_requirement,
-		*driverInitInfo->primary_init_info->mgmt_op_flags);
+		cache->initInfo->primary_init_info->mgmt_ops,
+		cache->initInfo->primary_init_info->mgmt_scratch_requirement,
+		*cache->initInfo->primary_init_info->mgmt_op_flags);
 
 	if (drvInst->driver->nInternalBops != drvInst->driver->nRegions - 1)
 	{
@@ -140,7 +271,7 @@ void __klzbzcore::driver::main1(
 			drvInst->driver->nInternalBops,
 			drvInst->driver->nRegions);
 
-		callerCb(self, ERROR_INVALID_STATE);
+		callerCb(self, ERROR_INVALID_STATE); return;
 	};
 
 	// Set child bind ops vectors.
@@ -149,7 +280,7 @@ void __klzbzcore::driver::main1(
 		udi_ops_init_t		*tmp;
 		udi_ops_vector_t	*opsVector=NULL;
 
-		for (tmp=driverInitInfo->ops_init_list;
+		for (tmp=cache->initInfo->ops_init_list;
 			tmp->ops_idx != 0;
 			tmp++)
 		{
@@ -176,7 +307,7 @@ void __klzbzcore::driver::main1(
 				"%d.\n",
 				drvInst->driver->childBops[i].metaIndex);
 
-			callerCb(self, ERROR_INVALID_STATE);
+			callerCb(self, ERROR_INVALID_STATE); return;
 		};
 
 		drvInst->setChildBopVector(
@@ -192,17 +323,18 @@ void __klzbzcore::driver::main1(
 }
 
 void __klzbzcore::driver::localService::handler(
-	MessageStream::sHeader *iMsg, fplainn::DriverInstance *drvInst,
-	Thread *self
+	MessageStream::sPostMsg *iMsg, fplainn::DriverInstance *drvInst,
+	__klzbzcore::driver::CachedInfo *cache, Thread *self
 	)
 {
-	switch (iMsg->function)
+	switch (iMsg->header.function)
 	{
 	case REGION_INIT_SYNC_REQ:
-		// Just a force-sync operation.
+		// Just a force-sync operation. No actual data to be sent.
 		self->messageStream.postMessage(
-			iMsg->sourceId, 0, REGION_INIT_SYNC_REQ,
-			iMsg->privateData);
+			iMsg->header.sourceId, 0, REGION_INIT_SYNC_REQ,
+			iMsg->data,
+			iMsg->header.privateData);
 
 		return;
 
@@ -215,27 +347,34 @@ void __klzbzcore::driver::localService::handler(
 		 **/
 		assert_fatal(getThreadDevicePathReq(
 			drvInst,
-			iMsg->sourceId,
-			(utf8Char *)iMsg->privateData)
+			iMsg->header.sourceId,
+			(utf8Char *)iMsg->data)
 			== ERROR_SUCCESS);
 
 		self->messageStream.postMessage(
-			iMsg->sourceId,
+			iMsg->header.sourceId,
 			0, GET_THREAD_DEVICE_PATH_REQ,
-			NULL);
+			iMsg->data, iMsg->header.privateData);
 
 		return;
 
 	case REGION_INIT_IND:
 		fplainn::Zudi::sKernelCallMsg		*ctxt;
 
-		ctxt = (fplainn::Zudi::sKernelCallMsg *)iMsg->privateData;
-		regionInitInd(ctxt, iMsg->error);
+		ctxt = (fplainn::Zudi::sKernelCallMsg *)iMsg->header.privateData;
+		regionInitInd(ctxt, iMsg->header.error);
+		return;
+
+	case GET_DRIVER_CACHED_INFO:
+		self->messageStream.postMessage(
+			iMsg->header.sourceId, 0, GET_DRIVER_CACHED_INFO,
+			cache, iMsg->header.privateData);
+
 		return;
 
 	default:
 		printf(WARNING LZBZCORE"drv: user0 Q: unknown message %d.\n",
-			iMsg->function);
+			iMsg->header.function);
 	};
 }
 
@@ -361,9 +500,14 @@ void __klzbzcore::driver::localService::regionInitInd(
 	return __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(ctxt);
 }
 
-void __klzbzcore::driver::__kcontrol::handler(fplainn::Zudi::sKernelCallMsg *msg)
+void __klzbzcore::driver::__kcontrol::handler(
+	fplainn::Zudi::sKernelCallMsg *msg,
+	__klzbzcore::driver::CachedInfo *cache
+	)
 {
 	fplainn::Zudi::sKernelCallMsg		*copy;
+
+	(void)cache;
 
 	copy = new fplainn::Zudi::sKernelCallMsg(*msg);
 	if (copy != NULL) {

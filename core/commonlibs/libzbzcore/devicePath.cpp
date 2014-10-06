@@ -14,7 +14,7 @@ static void postRegionInitInd(
 	self->messageStream.postMessage(
 		self->parent->id, 0,
 		__klzbzcore::driver::localService::REGION_INIT_IND,
-		ctxt, err);
+		NULL, ctxt, err);
 }
 
 void __klzbzcore::region::main(void *)
@@ -26,6 +26,7 @@ void __klzbzcore::region::main(void *)
 	error_t					err;
 	Thread					*self;
 	fplainn::Zudi::sKernelCallMsg		*ctxt;
+	__klzbzcore::driver::CachedInfo		*drvInfoCache=NULL;
 
 	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
@@ -43,17 +44,10 @@ void __klzbzcore::region::main(void *)
 		return;
 	};
 
-	/* Force a sync operation with the main thread. We can't continue until
-	 * we can guarantee that the main thread has filled out our region
-	 * information in our device-instance object.
-	 *
-	 * Otherwise it will be filled with garbage and we will read garbage
-	 * data.
-	 **/
 	self->messageStream.postMessage(
-		self->parent->id,
-		0, __klzbzcore::driver::localService::REGION_INIT_SYNC_REQ,
-		ctxt);
+		self->parent->id, 0,
+		__klzbzcore::driver::localService::GET_DRIVER_CACHED_INFO,
+		NULL, ctxt);
 
 	assert_fatal(
 		dev->instance->getRegionInfo(
@@ -75,12 +69,29 @@ void __klzbzcore::region::main(void *)
 		switch (iMsg->subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_USER0:
-			switch (iMsg->function)
+			MessageStream::sPostMsg		*postMsg;
+
+			postMsg = (MessageStream::sPostMsg *)iMsg;
+
+			switch (postMsg->header.function)
 			{
-			case __klzbzcore::driver::localService::REGION_INIT_SYNC_REQ:
+			case __klzbzcore::driver::localService::GET_DRIVER_CACHED_INFO:
+				drvInfoCache =
+					(__klzbzcore::driver::CachedInfo *)
+						postMsg->data;
+
 				main1(
 					(fplainn::Zudi::sKernelCallMsg *)
-						iMsg->privateData, self, dev);
+						postMsg->header.privateData,
+						self, drvInfoCache, dev);
+
+				break;
+
+			case __klzbzcore::driver::localService::REGION_INIT_SYNC_REQ:
+				main2(
+					(fplainn::Zudi::sKernelCallMsg *)
+						postMsg->header.privateData,
+						self, drvInfoCache, dev);
 
 				break;
 			};
@@ -112,15 +123,32 @@ void __klzbzcore::region::main(void *)
 
 void __klzbzcore::region::main1(
 	fplainn::Zudi::sKernelCallMsg *ctxt,
-	Thread *self, fplainn::Device *dev
+	Thread *self, __klzbzcore::driver::CachedInfo *,
+	fplainn::Device *
+	)
+{
+	/* Force a sync operation with the main thread. We can't continue until
+	 * we can guarantee that the main thread has filled out our region
+	 * information in our device-instance object.
+	 *
+	 * Otherwise it will be filled with garbage and we will read garbage
+	 * data.
+	 **/
+	self->messageStream.postMessage(
+		self->parent->id,
+		0, __klzbzcore::driver::localService::REGION_INIT_SYNC_REQ,
+		NULL, ctxt);
+}
+
+void __klzbzcore::region::main2(
+	fplainn::Zudi::sKernelCallMsg *ctxt,
+	Thread *self, __klzbzcore::driver::CachedInfo *drvInfoCache,
+	fplainn::Device *dev
 	)
 {
 	udi_init_context_t			*rdata;
-	udi_init_t				*init_info;
 	ubit16					regionIndex;
 	error_t					err;
-
-	init_info = self->parent->getDriverInstance()->driver->driverInitInfo;
 
 	assert_fatal(
 		dev->instance->getRegionInfo(
@@ -155,7 +183,7 @@ void __klzbzcore::region::main1(
 			return;
 		};
 
-		ops_info_tmp = init_info->ops_init_list;
+		ops_info_tmp = drvInfoCache->initInfo->ops_init_list;
 		for (; ops_info_tmp->ops_idx != 0; ops_info_tmp++)
 		{
 			if (ops_info_tmp->ops_idx == opsIndex0)

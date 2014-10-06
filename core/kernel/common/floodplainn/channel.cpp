@@ -166,6 +166,14 @@ error_t fplainn::RegionEndpoint::anchor(void)
 	return region->addEndpoint(this);
 }
 
+error_t fplainn::Endpoint::enqueue(sChannelMsg *msg)
+{
+	// Switch the "channel" of the CB to the opposite (target) endpoint.
+	msg->data->channel = this;
+	return MessageStream::enqueueOnThread(
+		msg->header.targetId, &msg->header);
+}
+
 error_t fplainn::RegionEndpoint::enqueue(sChannelMsg *msg)
 {
 	/**	EXPLANATION:
@@ -185,8 +193,7 @@ error_t fplainn::RegionEndpoint::enqueue(sChannelMsg *msg)
 	if (!isAnchored()) { return ERROR_UNINITIALIZED; };
 
 	msg->header.targetId = region->thread->getFullId();
-	return MessageStream::enqueueOnThread(
-		msg->header.targetId, &msg->header);
+	return Endpoint::enqueue(msg);
 }
 
 error_t fplainn::FStreamEndpoint::enqueue(sChannelMsg *msg)
@@ -198,8 +205,7 @@ error_t fplainn::FStreamEndpoint::enqueue(sChannelMsg *msg)
 	if (!isAnchored()) { return ERROR_UNINITIALIZED; };
 
 	msg->header.targetId = thread->getFullId();
-	return MessageStream::enqueueOnThread(
-		msg->header.targetId, &msg->header);
+	return Endpoint::enqueue(msg);
 }
 
 void fplainn::FStreamEndpoint::dump(void)

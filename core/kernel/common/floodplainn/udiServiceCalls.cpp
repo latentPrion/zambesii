@@ -174,17 +174,3 @@ error_t fplainn::Zudi::udi_channel_spawn(
 
 	return ERROR_SUCCESS;
 }
-
-void udi_mei_call(
-	udi_cb_t *,
-	udi_mei_init_t *,
-	udi_index_t ,
-	udi_index_t vec_idx,
-	...
-	)
-{
-	va_list		args;
-
-	va_start(args, vec_idx);
-	va_end(args);
-}

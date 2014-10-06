@@ -64,8 +64,6 @@ namespace fplainn
 		virtual error_t send(sChannelMsg *msg)
 			{ return otherEnd->enqueue(msg); }
 
-		// enqueue() is called by opposite end to enqueue on this end.
-		virtual error_t enqueue(sChannelMsg *)=0;
 
 		virtual void dump(void)
 			{ printf(CC"\topsvec 0x%p, ", opsVector); }
@@ -73,6 +71,10 @@ namespace fplainn
 	private:
 		friend class D2DChannel;
 		friend class D2SChannel;
+
+	protected:
+		// enqueue() is called by opposite end to enqueue on this end.
+		virtual error_t enqueue(sChannelMsg *)=0;
 
 	public:	Channel			*parent;
 	private:Endpoint		*otherEnd;
@@ -314,7 +316,7 @@ namespace fplainn
 			uarch_t size, uarch_t flags, void *privateData)
 		:
 		header(targetId, subsystem, function, size, flags, privateData),
-		data((ubit8 *)&this[1])
+		data((udi_cb_t *)&this[1])
 		{}
 
 		void set(ubit16 dataSize)
@@ -323,13 +325,12 @@ namespace fplainn
 		uarch_t getDataSize(void)
 			{ return header.size - sizeof(*this); }
 
-
 		// Custom allocator to facilitate the extra room at the end.
 		void *operator new(size_t sz, uarch_t dataSize);
 
 		MessageStream::sHeader		header;
 		// "data" is initialized to point to the byte after this struct.
-		ubit8				*data;
+		udi_cb_t			*data;
 
 	private:
 		friend class Zudi;

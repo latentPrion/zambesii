@@ -9,30 +9,30 @@
  * part of udi.h.
  *
  * $Copyright udi_reference:
- * 
- * 
+ *
+ *
  *    Copyright (c) 1995-2001; Compaq Computer Corporation; Hewlett-Packard
  *    Company; Interphase Corporation; The Santa Cruz Operation, Inc;
  *    Software Technologies Group, Inc; and Sun Microsystems, Inc
  *    (collectively, the "Copyright Holders").  All rights reserved.
- * 
+ *
  *    Redistribution and use in source and binary forms, with or without
  *    modification, are permitted provided that the conditions are met:
- * 
+ *
  *            Redistributions of source code must retain the above
  *            copyright notice, this list of conditions and the following
  *            disclaimer.
- * 
+ *
  *            Redistributions in binary form must reproduce the above
  *            copyright notice, this list of conditions and the following
  *            disclaimers in the documentation and/or other materials
  *            provided with the distribution.
- * 
+ *
  *            Neither the name of Project UDI nor the names of its
  *            contributors may be used to endorse or promote products
  *            derived from this software without specific prior written
  *            permission.
- * 
+ *
  *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *    "AS IS," AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -45,14 +45,14 @@
  *    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  *    USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  *    DAMAGE.
- * 
+ *
  *    THIS SOFTWARE IS BASED ON SOURCE CODE PROVIDED AS A SAMPLE REFERENCE
  *    IMPLEMENTATION FOR VERSION 1.01 OF THE UDI CORE SPECIFICATION AND/OR
  *    RELATED UDI SPECIFICATIONS. USE OF THIS SOFTWARE DOES NOT IN AND OF
  *    ITSELF CONSTITUTE CONFORMANCE WITH THIS OR ANY OTHER VERSION OF ANY
  *    UDI SPECIFICATION.
- * 
- * 
+ *
+ *
  * $
  */
 
@@ -121,7 +121,7 @@ typedef const struct _udi_mei_op_template {
 
 #define UDI_MEI_OP_ABORTABLE		(1U<<0)
 #define UDI_MEI_OP_RECOVERABLE		(1U<<1)
-#define UDI_MEI_OP_STAT_CHANGE		(1U<<2)
+#define UDI_MEI_OP_STATE_CHANGE		(1U<<2)
 
 /*
  * Metalanguage ops vector template
@@ -132,7 +132,7 @@ typedef const struct _udi_mei_ops_vec_template {
 	udi_mei_op_template_t * op_template_list;
 } udi_mei_ops_vec_template_t;
 
-/* 
+/*
  * Metalanguage initialization structure
  */
 typedef const struct _udi_mei_init {
@@ -151,7 +151,7 @@ typedef const struct _udi_mei_init {
 #define UDI_MEI_REL_INTERNAL 		(1U<<3)
 #define UDI_MEI_REL_SINGLE 		(1U<<4)
 
-/* 
+/*
  * Function prototypes for MEI environment services.
  */
 
@@ -172,36 +172,36 @@ void udi_mei_driver_error(
 /*
  * ========================================================================
  * Macros for use in Metalanguage/Environment interface (MEI)
- * 
+ *
  * This describes how channel operations occur.
  * These are standard macros based on the MEI, which provide both
  * source and binary portability of the metalanguage libraries.
- * 
+ *
  * Each invocation of UDI_MEI_STUBS() generates three functions for
  * a channel operation.
- *   1) A frontend stub to implement the visible interface for the 
+ *   1) A frontend stub to implement the visible interface for the
  *      caller of a channel op.  It generates a call to udi_mei_call
  *      with appropriate arguments.
- *   2) A direct-call stub to implement a call into the target driver 
- *      when the environment wishes to invoke it directly from the original 
+ *   2) A direct-call stub to implement a call into the target driver
+ *      when the environment wishes to invoke it directly from the original
  *      calling context.  This will be used if the channel end points are
  *      in the same domain, the target region is not busy, etc.
  *   3) A backend stub to dequeue the paramaters from the a control block
  *      that has been queued (presumably it was decided during the channel
- *      op that it was unsuitable as a direct call, has been queued, and 
+ *      op that it was unsuitable as a direct call, has been queued, and
  *      is now ready to be executed) and rebuild an appropriate argument
  *      list for the channel op that is now ready to be called.
- *     
+ *
  * Unfortunately, implementation of this is somewhat obscured by the absence
  * of vararg macros in C89.
- * 
+ *
  * Examples:
  *  void
  *  udi_scsi_io_req (SCSI Metalanguage):
  * 	The scsi_io_req operation has zero additional paramaters and
  * 	requires the use of a udi_scsi_io_cb_t for the channel op.  It
  * 	would be implemented as follows:
- * 
+ *
  * 		UDI_MEI_STUBS(udi_scsi_io_req, udi_scsi_io_cb_t,
  *		   0, (), (), (),
  *		   UDI_SCSI_HD_OPS_NUM, UDI_SCSI_IO_REQ)
@@ -209,9 +209,9 @@ void udi_mei_driver_error(
  * 	This will result in the generation of three functions,
  *		udi_scsi_io_req() - call udi_mei_call with metalanguage
  * 			ops num and ops vector index. If udi_mei_call
- * 			call udi_scsi_io_req_direct() at this time, it 
+ * 			call udi_scsi_io_req_direct() at this time, it
  * 			will marshal the arg list into the control block.
- *		udi_scsi_io_req_direct() 
+ *		udi_scsi_io_req_direct()
  *		udi_scsi_io_req_backend()
  *
  *  void
@@ -219,7 +219,7 @@ void udi_mei_driver_error(
  *	The udi_devmgmt_req channl operation has two extra paramaters
  *      and requires a udi_mgmt_cb_t for the channel operation.   It would
  *      be impelmented as follows.
- * 	
+ *
  * 		UDI_MEI_STUBS(udi_devmgmt_req, udi_mgmt_cb_t,
  *		   	2, (mgmt_op, parent_id),
  *			(udi_ubit8_t, udi_ubit8_t),
@@ -228,16 +228,16 @@ void udi_mei_driver_error(
  *
  * 	This will result in the generation of three functions,
  *		udi_devmgmt_req() - call udi_mei_call with metalanguage
- * 			ops num and ops vector index passing mgmt_op 
- * 			and parent_id in an appropriate manner.  If 
+ * 			ops num and ops vector index passing mgmt_op
+ * 			and parent_id in an appropriate manner.  If
  * 			udi_mei_call cannot call udi_scsi_req_direct() at
  * 			this time, it will marshal the arg list into the
  * 			control block.
  *		udi_devmgmt_req_direct() - calls the target channel operation
  *			function with an appropriate arg list.
  *		udi_devmgmt_req_backend() - pulls the marshalled arguments
- * 			out of the control block and executes the target 
- * 			channel operation function with an appropriate 
+ * 			out of the control block and executes the target
+ * 			channel operation function with an appropriate
  * 			arg list.
  * ========================================================================
  */
@@ -332,7 +332,7 @@ void udi_mei_driver_error(
 #define _UDI_ARG_LIST_0()
 #define _UDI_ARG_LIST_1(a) 		,a arg1
 #define _UDI_ARG_LIST_2(a,b) 		,a arg1, b arg2
-#define _UDI_ARG_LIST_3(a,b,c) 		,a arg1, b arg2, c arg3 
+#define _UDI_ARG_LIST_3(a,b,c) 		,a arg1, b arg2, c arg3
 #define _UDI_ARG_LIST_4(a,b,c,d) 	,a arg1, b arg2, c arg3, d arg4
 #define _UDI_ARG_LIST_5(a,b,c,d,e) 	,a arg1, b arg2, c arg3, d arg4, \
 						e arg5
@@ -411,7 +411,7 @@ void udi_mei_driver_error(
   { \
 	struct op_name##_marshal { \
 		_UDI_ARG_MEMBERS_##argc arg_types \
-	} *mp = marshal_space; \
+	} *mp = (struct op_name##_marshal *)marshal_space; \
 	mp = mp; \
 	(*(op_name##_op_t *)op) ( UDI_MCB(gcb, cb_type) _UDI_MP_ARGS_##argc ); \
   }

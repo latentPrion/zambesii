@@ -332,6 +332,8 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	mcb->channel = endp;
 	self->parent->floodplainnStream.send(mcb, sizeof(udi_cb_t), NULL);
 
+	extern udi_mei_init_t		udi_bridge_meta_info;
+	udi_mei_call(mcb, &udi_bridge_meta_info, 1, 3, 0, 0, 0, 0, 0, 0);
 	printf(NOTICE ORIENT"About to dormant.\n");
 	taskTrib.dormant(self->getFullId());
 

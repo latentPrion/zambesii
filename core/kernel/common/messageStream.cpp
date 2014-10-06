@@ -452,10 +452,10 @@ error_t MessageStream::pull(MessageStream::sHeader **message, ubit32 flags)
 
 error_t MessageStream::postMessage(
 	processId_t tid, ubit16 userQId, ubit16 messageNo, void *data,
-	error_t errorVal
+	void *privateData, error_t errorVal
 	)
 {
-	MessageStream::sHeader		*message;
+	MessageStream::sPostMsg		*message;
 	processId_t			currTid;
 
 	currTid = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
@@ -476,14 +476,14 @@ error_t MessageStream::postMessage(
 	if (PROCID_PROCESS(tid) != PROCID_PROCESS(currTid))
 		{ return ERROR_UNAUTHORIZED; };
 
-	message = new MessageStream::sHeader(
+	message = new MessageStream::sPostMsg(
 		tid, MSGSTREAM_USERQ(userQId), messageNo,
-		sizeof(*message), 0, data);
+		sizeof(*message), 0, privateData);
 
 	if (message == NULL) { return ERROR_MEMORY_NOMEM; };
-	message->error = errorVal;
+	message->set(data, errorVal);
 
-	return enqueueOnThread(tid, message);
+	return enqueueOnThread(tid, &message->header);
 }
 
 error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)

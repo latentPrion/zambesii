@@ -11,24 +11,18 @@ message	2	Zambesii
 message	3	N/A
 
 requires	udi		0x101
-requires	udi_gio		0x101
+requires	udi_bridge	0x101
 requires	zbz_root	0x0
 
 meta	1	zbz_root
-meta	2	udi_gio
+meta	2	udi_bridge
+
 
 module	main
 region	0
-region	1
-region	2
-region	3
 
 message	10	Zambesii root device
 
 device 10 1	identifier string zrootdev
 
 child_bind_ops		1 0 1
-child_bind_ops		2 0 2
-internal_bind_ops	2 1 1 2 1
-internal_bind_ops	2 2 1 2 1
-internal_bind_ops	2 3 1 2 1

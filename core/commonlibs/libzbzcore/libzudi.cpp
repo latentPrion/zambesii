@@ -2,12 +2,26 @@
 #define UDI_VERSION	0x101
 #include <udi.h>
 #include <commonlibs/libzbzcore/libzudi.h>
+#include <kernel/common/thread.h>
+#include <kernel/common/process.h>
+#include <kernel/common/floodplainn/initInfo.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-void (marshalUdiArgumentsFn)(
-	ubit8 *buff, va_list rawData, udi_layout_t *layout);
+lzudi::sEndpointContext::sEndpointContext(
+	utf8Char *metaName,
+	udi_mei_init_t *metaInfo, udi_index_t opsIdx,
+	void *channel_context)
+:
+metaInfo(metaInfo), channel_context(channel_context)
+{
+	strncpy8(this->metaName, metaName, ZUI_DRIVER_METALANGUAGE_MAXLEN);
+	this->metaName[ZUI_DRIVER_METALANGUAGE_MAXLEN - 1] = '\0';
 
-static marshalUdiArgumentsFn			marshalUdiArguments;
+	fplainn::MetaInit		metaInit(metaInfo);
+
+	opsVectorTemplate = metaInit.getOpsVectorTemplate(opsIdx);
+}
 
 void udi_mei_call(
 	udi_cb_t *gcb,
@@ -17,11 +31,14 @@ void udi_mei_call(
 	...
 	)
 {
-	Thread			*self;
-	udi_layout_t		*visible, *marshal, *inlin;
-	udi_size_t		scratchSize, inlineSize, marshalSize,
+	Thread				*self;
+	udi_ubit16_t			dummy;
+	udi_layout_t			*visible, *marshal, *inlin;
+	udi_size_t			visibleSize, inlineSize, marshalSize,
 	// totalSize begins at size of a generic CB, then we add to it.
-				totalSize = sizeof(udi_cb_t);
+					totalSize = sizeof(udi_cb_t);
+	udi_mei_ops_vec_template_t	*opsVector;
+	udi_mei_op_template_t		*op;
 
 	/**	EXPLANATION:
 	 * This is called by every metalanguage library. It is responsible for
@@ -86,9 +103,26 @@ void udi_mei_call(
 	 * * Marshal all arguments into the allocated space.
 	 * * </end>.
 	 **/
+	if (gcb == NULL || meta_info == NULL) { return; };
+	if (meta_ops_num == 0) { return; };
+
+	fplainn::MetaInit				metaInfo(meta_info);
+
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
+	opsVector = metaInfo.getOpsVectorTemplate(meta_ops_num);
+	if (opsVector == NULL) { return; };
+	op = metaInfo.getOpTemplate(opsVector, vec_idx);
+	if (op == NULL) { return; };
 
+	visibleSize = lzudi::_udi_get_layout_size(
+		op->visible_layout, &dummy, &dummy);
+
+	marshalSize = lzudi::_udi_get_layout_size(
+		op->marshal_layout, &dummy, &dummy);
+
+	// We don't need to consider anything to do with scratch here.
+printf(NOTICE"visiblesize %d, marshalsize %d.\n", visibleSize, marshalSize);
 	// Eventually.... We send all the marshalled data as one clump.
 	if (self->parent->getType() == ProcessStream::DRIVER) {
 //		floodplainn.zudi.send(MARSHALLED_DATA);

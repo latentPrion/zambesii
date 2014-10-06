@@ -55,27 +55,12 @@ void zrootdev_intr_detach_req(udi_intr_detach_cb_t *cb)
 	(void)cb;
 }
 
-void zrootdev_gio_channel_event_ind(udi_channel_event_cb_t *cb)
+void zrootdev_intr_channel_event_ind(udi_channel_event_cb_t *cb)
 {
 	(void)cb;
 }
 
-void zrootdev_gio_bind_req(udi_gio_bind_cb_t *cb)
+void zrootdev_intr_event_rdy(udi_intr_event_cb_t *intr_event_cb)
 {
-	(void)cb;
-}
-
-void zrootdev_gio_unbind_req(udi_gio_bind_cb_t *cb)
-{
-	(void)cb;
-}
-
-void zrootdev_gio_xfer_req(udi_gio_xfer_cb_t *cb)
-{
-	(void)cb;
-}
-
-void zrootdev_gio_event_res(udi_gio_event_cb_t *cb)
-{
-	(void)cb;
+	(void)intr_event_cb;
 }

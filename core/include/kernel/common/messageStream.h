@@ -137,6 +137,26 @@ public:
 		uarch_t		size;
 	};
 
+	struct sPostMsg
+	{
+		sPostMsg(
+			processId_t targetPid,
+			ubit16 subsystem, ubit16 function,
+	 		uarch_t size, uarch_t flags, void *privateData)
+	 	:
+	 	header(targetPid, subsystem, function, size, flags, privateData)
+		{}
+
+		void set(void *data, error_t err)
+		{
+			header.error = err;
+			this->data = data;
+		}
+
+		sHeader		header;
+		void		*data;
+	};
+
 	typedef PtrDblList<MessageStream::sHeader>	MessageQueue;
 
 public:
@@ -171,7 +191,7 @@ public:
 	error_t	enqueue(ubit16 queueId, MessageStream::sHeader *message);
 	error_t postMessage(
 		processId_t tid, ubit16 userQueueId,
-		ubit16 messageNo, void *data,
+		ubit16 messageNo, void *data, void *privateData,
 		error_t errorVal=ERROR_SUCCESS);
 
 	// Utility functions exported for other subsystems to use.

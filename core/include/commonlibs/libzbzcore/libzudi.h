@@ -4,7 +4,9 @@
 	#define UDI_VERSION	0x101
 	#include <udi.h>
 	#undef UDI_VERSION
+	#include <zui.h>
 	#include <extern.h>
+	#include <__kstdlib/__kclib/string8.h>
 
 CPPEXTERN_START
 
@@ -16,5 +18,42 @@ void udi_mei_call(
 	...);
 
 CPPEXTERN_END
+
+namespace lzudi
+{
+	/* Used to encompass the data needed for a channel to work correctly.
+	 *
+	 * Calls to udi_channel_* will be intercepted and the channel_context
+	 * argument will be replaced with one of these, and the actual
+	 * channel_context argument will be pointed to by that sEndpointContext
+	 * instance.
+	 **/
+	struct sEndpointContext
+	{
+		sEndpointContext(
+			utf8Char *metaName,
+			udi_mei_init_t *metaInfo, udi_index_t opsIdx,
+			void *channel_context);
+
+		utf8Char			metaName[
+			ZUI_DRIVER_METALANGUAGE_MAXLEN];
+
+		udi_mei_init_t			*metaInfo;
+		udi_mei_ops_vec_template_t	*opsVectorTemplate;
+		void				*channel_context;
+	};
+
+	udi_size_t _udi_get_layout_size(
+		udi_layout_t *layout,
+		udi_ubit16_t *inline_offset,
+		udi_ubit16_t *chain_offset);
+
+	void _udi_marshal_params(
+		udi_layout_t *layout, void *marshal_space, va_list args);
+
+	udi_boolean_t _udi_get_layout_offset(
+		udi_layout_t *start, udi_layout_t **end, udi_size_t *offset,
+		udi_layout_t key);
+}
 
 #endif

@@ -16,9 +16,11 @@
 /**	XXX:
  * Place your udi_init_info declaration here.
  **/
-extern udi_init_t	zramdisk_init_info;
-extern udi_init_t	zrootdev_init_info;
-extern udi_mei_init_t	udi_gio_meta_info;
+extern const udi_init_t		zramdisk_init_info;
+extern const udi_init_t		zrootdev_init_info;
+
+extern const udi_mei_init_t	udi_gio_meta_info;
+extern const udi_mei_init_t	udi_bridge_meta_info;
 
 const sDriverInitEntry		driverInitInfo[] =
 {
@@ -31,7 +33,9 @@ const sDriverInitEntry		driverInitInfo[] =
 const sMetaInitEntry		metaInitInfo[] =
 {
 	{ CC"udi_gio", &udi_gio_meta_info },
-	{ CC"zbz_root", &udi_gio_meta_info },
+	{ CC"udi_bridge", &udi_bridge_meta_info },
+	{ CC"zbz_root", &udi_bridge_meta_info },
+	// Shall always be terminated with the NULL entry.
 	{ NULL, NULL }
 };
 
