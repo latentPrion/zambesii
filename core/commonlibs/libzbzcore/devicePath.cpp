@@ -1,4 +1,5 @@
 
+#include <__kstdlib/callback.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kcxxlib/memory>
 #include <commonlibs/libzbzcore/libzbzcore.h>
@@ -6,6 +7,29 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/process.h>
 
+
+class __klzbzcore::region::MainCb
+: public _Callback<__kmainCbFn>
+{
+	fplainn::Zudi::sKernelCallMsg		*ctxtMsg;
+	Thread					*self;
+	fplainn::Device				*dev;
+	__klzbzcore::driver::CachedInfo		**drvInfoCache;
+
+public:
+	MainCb(
+		__kmainCbFn *kcb,
+		fplainn::Zudi::sKernelCallMsg *ctxtMsg,
+		Thread *self,
+		__klzbzcore::driver::CachedInfo **drvInfoCache,
+		fplainn::Device *dev)
+	: _Callback<__kmainCbFn>(kcb),
+	ctxtMsg(ctxtMsg), self(self), dev(dev), drvInfoCache(drvInfoCache)
+	{}
+
+	virtual void operator()(MessageStream::sHeader *msg)
+		{ function(msg, ctxtMsg, self, drvInfoCache, dev); }
+};
 
 static void postRegionInitInd(
 	Thread *self, fplainn::Zudi::sKernelCallMsg *ctxt, error_t err
@@ -47,7 +71,7 @@ void __klzbzcore::region::main(void *)
 	self->messageStream.postMessage(
 		self->parent->id, 0,
 		__klzbzcore::driver::localService::GET_DRIVER_CACHED_INFO,
-		NULL, ctxt);
+		NULL, new MainCb(&main1, ctxt, self, &drvInfoCache, dev));
 
 	assert_fatal(
 		dev->instance->getRegionInfo(
@@ -68,37 +92,6 @@ void __klzbzcore::region::main(void *)
 
 		switch (iMsg->subsystem)
 		{
-		case MSGSTREAM_SUBSYSTEM_USER0:
-			MessageStream::sPostMsg		*postMsg;
-
-			postMsg = (MessageStream::sPostMsg *)iMsg;
-
-			switch (postMsg->header.function)
-			{
-			case __klzbzcore::driver::localService::GET_DRIVER_CACHED_INFO:
-				drvInfoCache =
-					(__klzbzcore::driver::CachedInfo *)
-						postMsg->data;
-
-				main1(
-					(fplainn::Zudi::sKernelCallMsg *)
-						postMsg->header.privateData,
-						self, drvInfoCache, dev);
-
-				break;
-
-			case __klzbzcore::driver::localService::REGION_INIT_SYNC_REQ:
-				main2(
-					(fplainn::Zudi::sKernelCallMsg *)
-						postMsg->header.privateData,
-						self, drvInfoCache, dev);
-
-				break;
-			};
-
-			delete iMsg;
-			break;
-
 		case MSGSTREAM_SUBSYSTEM_ZUDI:
 			switch (iMsg->function)
 			{
@@ -113,8 +106,23 @@ void __klzbzcore::region::main(void *)
 			break;
 
 		default:
-			printf(NOTICE"dev %s, rgn %d: unknown subsystem %d\n",
-				iMsg->subsystem);
+			Callback		*callback;
+
+			callback = (Callback *)iMsg->privateData;
+			if (callback == NULL)
+			{
+				printf(WARNING LZBZCORE"region:main %s, "
+					"region %d: unknown message with no "
+					"callback continuation.\n",
+					dev->driverInstance->driver->longName,
+					regionIndex);
+
+				break;
+			}
+
+			(*callback)(iMsg);
+			delete callback;
+			break;
 		};
 	};
 
@@ -122,9 +130,10 @@ void __klzbzcore::region::main(void *)
 }
 
 void __klzbzcore::region::main1(
+	MessageStream::sHeader *msg,
 	fplainn::Zudi::sKernelCallMsg *ctxt,
-	Thread *self, __klzbzcore::driver::CachedInfo *,
-	fplainn::Device *
+	Thread *self, __klzbzcore::driver::CachedInfo **drvInfoCache,
+	fplainn::Device *dev
 	)
 {
 	/* Force a sync operation with the main thread. We can't continue until
@@ -134,15 +143,19 @@ void __klzbzcore::region::main1(
 	 * Otherwise it will be filled with garbage and we will read garbage
 	 * data.
 	 **/
+	*drvInfoCache = (__klzbzcore::driver::CachedInfo *)
+		((MessageStream::sPostMsg *)msg)->data;
+
 	self->messageStream.postMessage(
 		self->parent->id,
 		0, __klzbzcore::driver::localService::REGION_INIT_SYNC_REQ,
-		NULL, ctxt);
+		NULL, new MainCb(&main2, ctxt, self, drvInfoCache, dev));
 }
 
 void __klzbzcore::region::main2(
+	MessageStream::sHeader *,
 	fplainn::Zudi::sKernelCallMsg *ctxt,
-	Thread *self, __klzbzcore::driver::CachedInfo *drvInfoCache,
+	Thread *self, __klzbzcore::driver::CachedInfo **drvInfoCache,
 	fplainn::Device *dev
 	)
 {
@@ -183,7 +196,7 @@ void __klzbzcore::region::main2(
 			return;
 		};
 
-		ops_info_tmp = drvInfoCache->initInfo->ops_init_list;
+		ops_info_tmp = (*drvInfoCache)->initInfo->ops_init_list;
 		for (; ops_info_tmp->ops_idx != 0; ops_info_tmp++)
 		{
 			if (ops_info_tmp->ops_idx == opsIndex0)

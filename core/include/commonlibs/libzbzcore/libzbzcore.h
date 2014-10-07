@@ -25,11 +25,13 @@ namespace __klzbzcore
 
 	// PRIVATE:
 		typedef void (__kmainCbFn)(
+			MessageStream::sHeader *msg,
 			fplainn::Zudi::sKernelCallMsg *ctxt,
 			Thread *self,
-			__klzbzcore::driver::CachedInfo *drvInfoCache,
+			__klzbzcore::driver::CachedInfo **drvInfoCache,
 			fplainn::Device *dev);
 
+		class MainCb;
 		__kmainCbFn	main1;
 		__kmainCbFn	main2;
 
