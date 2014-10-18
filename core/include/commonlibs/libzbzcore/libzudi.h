@@ -7,6 +7,8 @@
 	#include <zui.h>
 	#include <extern.h>
 	#include <__kstdlib/__kclib/string8.h>
+	#include <__kclasses/ptrList.h>
+
 
 CPPEXTERN_START
 
@@ -41,6 +43,13 @@ namespace lzudi
 		udi_mei_init_t			*metaInfo;
 		udi_mei_ops_vec_template_t	*opsVectorTemplate;
 		void				*channel_context;
+	};
+
+	struct sRegion
+	{
+		udi_index_t			index;
+		udi_init_context_t		*rdata;
+		PtrList<sEndpointContext>	endpoints;
 	};
 
 	udi_size_t _udi_get_layout_size(

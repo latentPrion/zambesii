@@ -45,14 +45,13 @@ namespace fplainn
 
 		virtual void anchor(
 			anchorTargetU, udi_ops_vector_t *ops_vector,
-			udi_init_context_t *channel_context)
+			void *privateData)
 		{
 			opsVector = ops_vector;
-			channelContext = channel_context;
+			this->privateData = privateData;
 		}
 
-		virtual sbit8 isAnchored(void)
-			{ return opsVector != NULL && channelContext != NULL; }
+		virtual sbit8 isAnchored(void) { return opsVector != NULL; }
 
 		/* This version of anchor() calls the entity that the endpoint
 		 * is connected to, and asks it to add the endpoint to its
@@ -79,7 +78,7 @@ namespace fplainn
 	public:	Channel			*parent;
 	private:Endpoint		*otherEnd;
 		udi_ops_vector_t	*opsVector;
-		udi_init_context_t	*channelContext;
+		void			*privateData;
 	};
 
 	/**	class FStreamEndpoint
@@ -95,9 +94,9 @@ namespace fplainn
 
 		virtual void anchor(
 			anchorTargetU object, udi_ops_vector_t *ops_vector,
-			udi_init_context_t *channel_context)
+			void *privateData)
 		{
-			Endpoint::anchor(object, ops_vector, channel_context);
+			Endpoint::anchor(object, ops_vector, privateData);
 			thread = object.thread;
 		}
 
@@ -127,9 +126,9 @@ namespace fplainn
 
 		virtual void anchor(
 			anchorTargetU object, udi_ops_vector_t *ops_vector,
-			udi_init_context_t *channel_context)
+			void *privateData)
 		{
-			Endpoint::anchor(object, ops_vector, channel_context);
+			Endpoint::anchor(object, ops_vector, privateData);
 			region = object.region;
 		}
 

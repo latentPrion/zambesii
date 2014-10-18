@@ -13,11 +13,11 @@ regionEnd1(this, &regionEnd0)
 
 	endpoints[0]->anchor(
 		ic.regionEnd0.region,
-		ic.endpoints[0]->opsVector, ic.endpoints[0]->channelContext);
+		ic.endpoints[0]->opsVector, ic.endpoints[0]->privateData);
 
 	endpoints[1]->anchor(
 		ic.regionEnd1.region,
-		ic.endpoints[1]->opsVector, ic.endpoints[1]->channelContext);
+		ic.endpoints[1]->opsVector, ic.endpoints[1]->privateData);
 }
 
 fplainn::D2SChannel::D2SChannel(IncompleteD2SChannel &ic)
@@ -28,11 +28,11 @@ fstreamEnd(this, &regionEnd0)
 
 	endpoints[0]->anchor(
 		ic.regionEnd0.region, ic.endpoints[0]->opsVector,
-		ic.endpoints[0]->channelContext);
+		ic.endpoints[0]->privateData);
 
 	endpoints[1]->anchor(
 		ic.fstreamEnd.thread, ic.endpoints[1]->opsVector,
-		ic.endpoints[1]->channelContext);
+		ic.endpoints[1]->privateData);
 }
 
 void *fplainn::sChannelMsg::operator new(size_t sz, uarch_t dataSize)

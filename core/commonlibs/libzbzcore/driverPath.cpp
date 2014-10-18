@@ -671,12 +671,20 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 	}
 
 	// If the device has parents, spawn bind channels to its parents.
+	/**	FIXME:
+	 * This current sequence does not properly support multiple parents.
+	 **/
 	for (uarch_t i=0; i<dev->getNParentTags(); i++)
 	{
+		sbit8					foundInParent=0,
+							foundInChild=0;
 		fplainn::Device::sParentTag		*pTag;
+		fplainn::Device				*parentDev;
+		fplainn::Driver				*drv, *parentDrv;
 		utf8Char				parentFullName[
 			FVFS_TAG_NAME_MAXLEN + 1];
 
+		drv = dev->driverInstance->driver;
 		pTag = dev->indexedGetParentTag(i);
 		// Should never happen, though.
 		if (pTag == NULL)
@@ -698,11 +706,80 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 			return;
 		};
 
+		// Get a handle to the parent device.
+		ret = floodplainn.getDevice(parentFullName, &parentDev);
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"instDevReq1: %s: Unable to get "
+				"handle to parent %d (%s).\n",
+				ctxt->path, pTag->id, parentFullName);
+
+			instantiateDeviceAck(ctxt, ret); return;
+		};
+
+		parentDrv = parentDev->driverInstance->driver;
+
+		/* Next, get the meta through which this device was detected
+		 * (e.g, meta 10 2 bus_type string pci), and search both the
+		 * child and parent devices to confirm that they both
+		 * expose it, before establishing a child-bind channel between
+		 * the two devices.
+		 **/
+		for (uarch_t j=0; j<parentDrv->nChildBops; j++)
+		{
+			fplainn::Driver::sChildBop	*parentCBop;
+			fplainn::Driver::sMetalanguage	*parentMeta;
+
+			parentCBop = &parentDrv->childBops[j];
+			parentMeta = parentDrv->getMetalanguage(
+				parentCBop->metaIndex);
+
+			if (!strncmp8(
+				parentMeta->name,
+				dev->detectedDeviceLineMetaName,
+				DRIVER_METALANGUAGE_MAXLEN))
+			{
+				foundInParent = 1;
+				break;
+			};
+		};
+
+		for (uarch_t j=0; j<drv->nChildBops; j++)
+		{
+			fplainn::Driver::sParentBop	*childPBop;
+			fplainn::Driver::sMetalanguage	*childMeta;
+
+			childPBop = &drv->parentBops[j];
+			childMeta = drv->getMetalanguage(childPBop->metaIndex);
+
+			if (!strncmp8(
+				childMeta->name,
+				dev->detectedDeviceLineMetaName,
+				DRIVER_METALANGUAGE_MAXLEN))
+			{
+				foundInChild = 1;
+				break;
+			};
+		};
+
+		if (!foundInParent || !foundInChild)
+		{
+			printf(ERROR LZBZCORE"instDevReq1: Failed to find the "
+				"device's detecting meta in both child and "
+				"parent devices.\n\tCannot establish "
+				"child bind channel to parent %s.\n",
+				parentFullName);
+
+			instantiateDeviceAck(ctxt, ERROR_NOT_FOUND); return;
+		};
+
 		printf(NOTICE"instDevReq1 %s: Binding to parent %s, meta %s.\n",
-			ctxt->path, parentFullName, "zbz_root");
+			ctxt->path, parentFullName,
+			dev->detectedDeviceLineMetaName);
 
 		ret = floodplainn.zudi.spawnChildBindChannel(
-			parentFullName, ctxt->path, CC"zbz_root",
+			parentFullName, ctxt->path,
+			dev->detectedDeviceLineMetaName,
 			(udi_ops_vector_t *)0xF00115);
 
 		if (ret != ERROR_SUCCESS)
@@ -745,6 +822,7 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 	printf(NOTICE LZBZCORE"instDevReq1 %s: Done.\n", ctxt->path);
 	instantiateDeviceAck(ctxt, ERROR_SUCCESS);
 }
+
 
 void __klzbzcore::driver::__kcontrol::instantiateDeviceReq2(
 	fplainn::Zudi::sKernelCallMsg *ctxt

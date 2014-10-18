@@ -501,13 +501,18 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		 * undesired driver, should the user so choose to do so.
 		 **/
 		myResponse(ERROR_NO_MATCH);
-		dev->driverFullName[0] = '\0';
 		dev->driverDetected = 0;
 		dev->driverIndex = fplainn::Zui::INDEX_KERNEL;
+		dev->driverFullName[0] =
+			dev->detectedDeviceLineMetaName[0] = '\0';
 	}
 	else
 	{
-		uarch_t		basePathLen;
+		uarch_t				basePathLen;
+		zui::driver::sMetalanguage	detectedDevlineMeta;
+		utf8Char			detectedDevlineMetaName[
+			DRIVER_METALANGUAGE_MAXLEN];
+
 
 		/* If more than one driver matches, warn the user that we are
 		 * about to make an arbitrary decision.
@@ -541,6 +546,28 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			return;
 		};
 
+		if (zudiIndexes[0]->getMetalanguage(
+			driverHdr.get(), currDevlineHdr->metaIndex,
+			&detectedDevlineMeta) != ERROR_SUCCESS)
+		{
+			printf(FATAL FPLAINNIDX"detectDriver: Chosen driver "
+				"somehow doesn't contain meta_idx %d for "
+				"chosen device line.\n",
+				currDevlineHdr->metaIndex);
+
+			myResponse(ERROR_NOT_FOUND); return;
+		};
+
+		if (zudiIndexes[0]->getString(
+			detectedDevlineMeta.nameOff, detectedDevlineMetaName)
+			!= ERROR_SUCCESS)
+		{
+			printf(FATAL FPLAINNIDX"detectDriver: meta line's name "
+				"offset failed to retrieve a string.\n");
+
+			myResponse(ERROR_NO_MATCH); return;
+		};
+
 		myResponse(ERROR_SUCCESS);
 
 		strcpy8(dev->driverFullName, CC driverHdr->basePath);
@@ -564,6 +591,13 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 
 		dev->driverDetected = 1;
 		dev->driverIndex = fplainn::Zui::INDEX_KERNEL;
+		strncpy8(
+			dev->detectedDeviceLineMetaName,
+			detectedDevlineMetaName,
+			DRIVER_METALANGUAGE_MAXLEN);
+
+		dev->detectedDeviceLineMetaName[DRIVER_METALANGUAGE_MAXLEN - 1]
+			= '\0';
 	};
 
 	// In both cases, driverInstance should be NULL.

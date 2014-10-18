@@ -430,25 +430,6 @@ void fplainn::DeviceInstance::dumpChannels(void)
 	};
 }
 
-error_t fplainn::Device::addParentTag(fvfs::Tag *tag, ubit16 *newId)
-{
-	sParentTag		*tmp, *old;
-
-	tmp = new sParentTag[nParentTags + 1];
-	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
-
-	if (nParentTags > 0)
-		{ memcpy(tmp, parentTags, sizeof(*parentTags) * nParentTags); };
-
-	new (&tmp[nParentTags]) sParentTag(parentTagCounter++, tag);
-	*newId = tmp[nParentTags].id;
-	old = parentTags;
-	parentTags = tmp;
-	nParentTags++;
-	delete[] old;
-	return ERROR_SUCCESS;
-}
-
 void fplainn::Device::dumpEnumerationAttributes(void)
 {
 	utf8Char		*fmtChar;
