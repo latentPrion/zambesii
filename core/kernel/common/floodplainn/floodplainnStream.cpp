@@ -25,8 +25,8 @@ error_t FloodplainnStream::initialize(void)
 
 error_t FloodplainnStream::connect(
 	utf8Char *devName, utf8Char *metaName,
-	udi_ops_vector_t *ops_vector, udi_init_context_t *channel_context,
-	uarch_t, fplainn::FStreamEndpoint **retendp)
+	udi_ops_vector_t *ops_vector, void *endpPrivateData1,
+	uarch_t, fplainn::Endpoint **retendp)
 {
 	error_t					ret;
 	fplainn::Device				*dev;
@@ -34,6 +34,7 @@ error_t FloodplainnStream::connect(
 	fplainn::Driver::sMetalanguage		*devMeta;
 	fplainn::Region				*devRegion;
 	fplainn::DriverInstance::sChildBop	*drvInstCbop;
+	fplainn::D2SChannel			*tmpretchan;
 
 	/**	EXPLANATION:
 	 * This is called to create an initial bind channel between a userspace
@@ -119,13 +120,12 @@ error_t FloodplainnStream::connect(
 	 **/
 	fplainn::IncompleteD2SChannel		blueprint(0);
 
-	blueprint.endpoints[0]->anchor(
-		devRegion, drvInstCbop->opsVector, devRegion->rdata);
+	blueprint.endpoints[0]->anchor(devRegion, drvInstCbop->opsVector, NULL);
 	blueprint.endpoints[1]->anchor(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread(),
-		ops_vector, channel_context);
+		ops_vector, endpPrivateData1);
 
-	ret = createChannel(&blueprint, retendp);
+	ret = createChannel(&blueprint, &tmpretchan);
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR FPSTREAM"%d: connect %s %s: createChannel() "
@@ -135,12 +135,12 @@ error_t FloodplainnStream::connect(
 		return ret;
 	};
 
+	*retendp = tmpretchan->endpoints[1];
 	return ERROR_SUCCESS;
 }
 
 error_t FloodplainnStream::createChannel(
-	fplainn::IncompleteD2SChannel *blueprint,
-	fplainn::FStreamEndpoint **retendp
+	fplainn::IncompleteD2SChannel *blueprint, fplainn::D2SChannel **retchan
 	)
 {
 	error_t				ret0, ret1;
@@ -148,7 +148,7 @@ error_t FloodplainnStream::createChannel(
 	FloodplainnStream		*stream;
 	HeapObj<fplainn::D2SChannel>	chan;
 
-	if (retendp == NULL) { return ERROR_INVALID_ARG; };
+	if (retchan == NULL) { return ERROR_INVALID_ARG; };
 
 	region = blueprint->regionEnd0.region;
 	stream = &blueprint->fstreamEnd.thread->parent->floodplainnStream;
@@ -176,10 +176,8 @@ error_t FloodplainnStream::createChannel(
 		return ERROR_INITIALIZATION_FAILURE;
 	};
 
-	if (retendp != NULL)
-	{
-		*retendp = static_cast<fplainn::FStreamEndpoint *>(
-			chan->endpoints[1]);
+	if (retchan != NULL) {
+		*retchan = static_cast<fplainn::D2SChannel*>(chan.get());
 	};
 
 	chan.release();

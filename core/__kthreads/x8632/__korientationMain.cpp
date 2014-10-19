@@ -313,7 +313,7 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 //	floodplainn.getDevice(CC"by-id/0", &chipsetDev);
 //	chipsetDev->driver->dump();
 
-	fplainn::FStreamEndpoint	*endp;
+	fplainn::Endpoint		*endp;
 	fplainn::Device			*d;
 	udi_cb_t			*mcb;
 

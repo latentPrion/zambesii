@@ -20,27 +20,6 @@ void __udi_assert(const char *expr, const char *file, int line)
 	assert_fatal(0);
 }
 
-error_t fplainn::Zudi::getInternalBopVectorIndexes(
-	ubit16 regionIndex, ubit16 *opsIndex0, ubit16 *opsIndex1
-	)
-{
-	Thread				*self;
-	fplainn::DriverInstance		*drvInst;
-	fplainn::Driver::sInternalBop	*iBop;
-
-	self = (Thread *)cpuTrib.getCurrentCpuStream()
-		->taskStream.getCurrentThread();
-
-	drvInst = self->parent->getDriverInstance();
-
-	iBop = drvInst->driver->getInternalBop(regionIndex);
-	if (iBop == NULL) { return ERROR_NOT_FOUND; };
-
-	*opsIndex0 = iBop->opsIndex0;
-	*opsIndex1 = iBop->opsIndex1;
-	return ERROR_SUCCESS;
-}
-
 error_t fplainn::Zudi::udi_channel_spawn(
 	udi_channel_spawn_call_t *cb, udi_cb_t *gcb,
 	udi_channel_t channel_endp, udi_index_t spawn_idx,
@@ -155,12 +134,14 @@ error_t fplainn::Zudi::udi_channel_spawn(
 	// If we're here, then both ends have been claimed and matched.
 	if (originChannel->getType() == fplainn::Channel::TYPE_D2D)
 	{
+		fplainn::D2DChannel		*dummy;
+
 		ret = createChannel(
-			static_cast<IncompleteD2DChannel *>(incChan));
+			static_cast<IncompleteD2DChannel *>(incChan), &dummy);
 	}
 	else
 	{
-		FStreamEndpoint		*dummy;
+		fplainn::D2SChannel		*dummy;
 
 		ret = FloodplainnStream::createChannel(
 			static_cast<IncompleteD2SChannel *>(incChan), &dummy);

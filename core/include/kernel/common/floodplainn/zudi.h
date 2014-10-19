@@ -103,15 +103,21 @@ public:
 
 	error_t spawnInternalBindChannel(
 		utf8Char *devicePath, ubit16 regionIndex,
-		udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1);
+		udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1,
+		fplainn::Endpoint **retendp1);
 
 	error_t spawnChildBindChannel(
 		utf8Char *parentDevPath, utf8Char *selfDevPath,
 		utf8Char *metaName,
-		udi_ops_vector_t *opsVector);
+		udi_ops_vector_t *opsVector,
+		fplainn::Endpoint **retendp1);
 
-	error_t getInternalBopVectorIndexes(
-		ubit16 regionIndex, ubit16 *opsIndex0, ubit16 *opsIndex1);
+	error_t getInternalBopInfo(
+		ubit16 regionIndex, ubit16 *metaIndex,
+		ubit16 *opsIndex0, ubit16 *opsIndex1, ubit16 *bindCbIndex);
+
+	void setEndpointPrivateData(
+		fplainn::Endpoint *endp, void *privateData);
 
 	#define MSGSTREAM_ZUDI_CHANNEL_SEND		(2)
 	error_t send(udi_cb_t *marshalledCb, uarch_t size, void *privateData);
@@ -210,7 +216,9 @@ public:
 	};
 
 private:
-	static error_t createChannel(fplainn::IncompleteD2DChannel *blueprint);
+	static error_t createChannel(
+		fplainn::IncompleteD2DChannel *blueprint,
+		fplainn::D2DChannel **retchan);
 
 	Thread				*server;
 

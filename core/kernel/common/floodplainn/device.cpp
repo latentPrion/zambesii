@@ -343,24 +343,19 @@ fplainn::DeviceInstance::getChannelByEndpoint(void *endpoint)
 	return NULL;
 }
 
-error_t fplainn::DeviceInstance::getRegionInfo(
-	processId_t tid, ubit16 *index, udi_init_context_t **rdata
-	)
+error_t fplainn::DeviceInstance::getRegionInfo(processId_t tid, ubit16 *index)
 {
 	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
 	{
 		if (regions[i].thread->getFullId() != tid) { continue; };
 		*index = regions[i].index;
-		*rdata = regions[i].rdata;
 		return ERROR_SUCCESS;
 	};
 
 	return ERROR_NOT_FOUND;
 }
 
-void fplainn::DeviceInstance::setRegionInfo(
-	ubit16 index, processId_t tid, udi_init_context_t *rdata
-	)
+void fplainn::DeviceInstance::setRegionInfo(ubit16 index, processId_t tid)
 {
 	Thread		*tmp;
 
@@ -372,20 +367,16 @@ void fplainn::DeviceInstance::setRegionInfo(
 		if (regions[i].index != index) { continue; };
 
 		regions[i].thread = tmp;
-		regions[i].rdata = rdata;
 		return;
 	};
 }
 
-error_t fplainn::DeviceInstance::getRegionInfo(
-	ubit16 index, processId_t *tid, udi_init_context_t **rdata
-	)
+error_t fplainn::DeviceInstance::getRegionInfo(ubit16 index, processId_t *tid)
 {
 	for (uarch_t i=0; i<device->driverInstance->driver->nRegions; i++)
 	{
 		if (regions[i].index != index) { continue; };
 		*tid = regions[i].thread->getFullId();
-		*rdata = regions[i].rdata;
 		return ERROR_SUCCESS;
 	};
 

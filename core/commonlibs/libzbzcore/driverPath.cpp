@@ -406,9 +406,8 @@ error_t __klzbzcore::driver::localService::getThreadDevicePathReq(
 		for (uarch_t j=0; j<drvInst->driver->nRegions; j++)
 		{
 			ubit16			idx;
-			udi_init_context_t	*ic;
 
-			if (currDev->instance->getRegionInfo(tid, &idx, &ic)
+			if (currDev->instance->getRegionInfo(tid, &idx)
 				!= ERROR_SUCCESS)
 				{ continue; };
 
@@ -605,11 +604,6 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 	for (uarch_t i=0; i<drv->nRegions; i++)
 	{
 		Thread				*newThread;
-		HeapObj<udi_init_context_t>	rdata;
-
-		// The +1 is to ensure the allocation size isn't 0.
-		rdata = (udi_init_context_t *)new ubit8[
-			drv->driverInitInfo->primary_init_info->rdata_size + 1];
 
 		// We pass the context to each thread.
 		err = self->parent->spawnThread(
@@ -630,8 +624,7 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 
 		// Store the TID in the device's region metadata.
 		dev->instance->setRegionInfo(
-			drv->regions[i].index, newThread->getFullId(),
-			rdata.release());
+			drv->regions[i].index, newThread->getFullId());
 
 		dev->instance->setThreadRegionPointer(
 			newThread->getFullId());
@@ -777,10 +770,29 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 			ctxt->path, parentFullName,
 			dev->detectedDeviceLineMetaName);
 
+		/**	FIXME:
+		 * This whole child-bind-channel spawning sequence will have
+		 * to be moved over to devicePath.cpp, and executed from
+		 * within a region thread instead.
+		 *
+		 * Specifically, each region thread should cycle through all
+		 * of the device's parent bops. For all those parent bops that
+		 * are to be tied to that thread's region, that thread will
+		 * then call spawnChildBindChannel().
+		 *
+		 * The reason we force the target region thread to execute the
+		 * spawnChildBindChannel() call is because that way, we can take
+		 * the ENDPOINT-handle that is returned by spawnChildBindChannel
+		 * and immediately fill it in to the local region data that that
+		 * thread maintains.
+		 **/
+		fplainn::Endpoint		*tmpendp;
+
 		ret = floodplainn.zudi.spawnChildBindChannel(
 			parentFullName, ctxt->path,
 			dev->detectedDeviceLineMetaName,
-			(udi_ops_vector_t *)0xF00115);
+			(udi_ops_vector_t *)0xF00115,
+			&tmpendp);
 
 		if (ret != ERROR_SUCCESS)
 		{

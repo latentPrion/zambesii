@@ -9,6 +9,7 @@
 #define LZBZCORE	"lzbzcore: "
 
 class Thread;
+namespace lzudi { struct sRegion; }
 
 namespace __klzbzcore
 {
@@ -29,6 +30,7 @@ namespace __klzbzcore
 			fplainn::Zudi::sKernelCallMsg *ctxt,
 			Thread *self,
 			__klzbzcore::driver::CachedInfo **drvInfoCache,
+			lzudi::sRegion *r,
 			fplainn::Device *dev);
 
 		class MainCb;

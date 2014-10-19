@@ -283,17 +283,9 @@ namespace fplainn
 		error_t initialize(void);
 
 	public:
-		void setRegionInfo(
-			ubit16 index,
-			processId_t tid, udi_init_context_t *rdata);
-
-		error_t getRegionInfo(
-			processId_t tid, ubit16 *index,
-			udi_init_context_t **rdata);
-
-		error_t getRegionInfo(
-			ubit16 index, processId_t *tid,
-			udi_init_context_t **rdata);
+		void setRegionInfo(ubit16 index, processId_t tid);
+		error_t getRegionInfo(processId_t tid, ubit16 *index);
+		error_t getRegionInfo(ubit16 index, processId_t *tid);
 
 		void setThreadRegionPointer(processId_t tid);
 

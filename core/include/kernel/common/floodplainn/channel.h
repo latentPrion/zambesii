@@ -15,7 +15,7 @@ class Thread;
 class FloodplainnStream;
 namespace fplainn
 {
-
+	class Zudi;
 	struct sChannelMsg;
 	class Channel;
 
@@ -25,6 +25,7 @@ namespace fplainn
 	{
 		friend class FStreamEndpoint;
 		friend class RegionEndpoint;
+		friend class Zudi;
 
 		// Deliberately left private.
 		Endpoint(Channel *parent, Endpoint *otherEnd)

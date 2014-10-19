@@ -21,6 +21,8 @@ void udi_mei_call(
 
 CPPEXTERN_END
 
+namespace fplainn { class Endpoint; }
+
 namespace lzudi
 {
 	/* Used to encompass the data needed for a channel to work correctly.
@@ -33,10 +35,12 @@ namespace lzudi
 	struct sEndpointContext
 	{
 		sEndpointContext(
+			fplainn::Endpoint *__kendp,
 			utf8Char *metaName,
 			udi_mei_init_t *metaInfo, udi_index_t opsIdx,
 			void *channel_context);
 
+		fplainn::Endpoint		*__kendpoint;
 		utf8Char			metaName[
 			ZUI_DRIVER_METALANGUAGE_MAXLEN];
 
@@ -47,7 +51,7 @@ namespace lzudi
 
 	struct sRegion
 	{
-		udi_index_t			index;
+		ubit16				index;
 		udi_init_context_t		*rdata;
 		PtrList<sEndpointContext>	endpoints;
 	};

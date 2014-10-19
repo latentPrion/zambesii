@@ -57,6 +57,31 @@ error_t fplainn::Zudi::findDriver(utf8Char *fullName, fplainn::Driver **retDrv)
 	return ERROR_NO_MATCH;
 }
 
+error_t fplainn::Zudi::getInternalBopInfo(
+	ubit16 regionIndex, ubit16 *metaIndex,
+	ubit16 *opsIndex0, ubit16 *opsIndex1,
+	ubit16 *bindCbIndex
+	)
+{
+	Thread				*self;
+	fplainn::DriverInstance		*drvInst;
+	fplainn::Driver::sInternalBop	*iBop;
+
+	self = (Thread *)cpuTrib.getCurrentCpuStream()
+		->taskStream.getCurrentThread();
+
+	drvInst = self->parent->getDriverInstance();
+
+	iBop = drvInst->driver->getInternalBop(regionIndex);
+	if (iBop == NULL) { return ERROR_NOT_FOUND; };
+
+	*metaIndex = iBop->metaIndex;
+	*opsIndex0 = iBop->opsIndex0;
+	*opsIndex1 = iBop->opsIndex1;
+	*bindCbIndex = iBop->bindCbIndex;
+	return ERROR_SUCCESS;
+}
+
 error_t fplainn::Zudi::instantiateDeviceReq(utf8Char *path, void *privateData)
 {
 	fplainn::Zudi::sKernelCallMsg			*request;
@@ -176,7 +201,44 @@ const sMetaInitEntry *fplainn::Zudi::findMetaInitInfo(utf8Char *shortName)
 	return NULL;
 }
 
-error_t fplainn::Zudi::createChannel(fplainn::IncompleteD2DChannel *bprint)
+void fplainn::Zudi::setEndpointPrivateData(
+	fplainn::Endpoint *endp, void *privateData
+	)
+{
+	Thread			*currThread;
+
+	/**	NOTES:
+	 * Since this is a kernel syscall, and it is not actually
+	 * udi_channel_set_context(), we can impose the restriction that only
+	 * the region to which a channel is bound can call this function to set
+	 * its context.
+	 *
+	 * In any case, we would have to scan through incomplete channels as
+	 * well if we want to support setting context from regions to which the
+	 * endpoint is not bound.
+	 *
+	 **	EXPLANATION:
+	 * Now from here, we get the region for the current (calling) thread,
+	 * and then scan through its bound endpoints. If we find an endpoint
+	 * which matches the pointer the caller passed to us, we proceed to
+	 * change the privatedata for that endpoint.
+	 **/
+
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	if (currThread->parent->getType() != ProcessStream::DRIVER)
+		{ return; };
+
+	if (!currThread->getRegion()->findEndpoint(
+		static_cast<fplainn::RegionEndpoint *>(endp)))
+		{ return; };
+	endp->anchor(currThread->getRegion(), endp->opsVector, privateData);
+}
+
+error_t fplainn::Zudi::createChannel(
+	fplainn::IncompleteD2DChannel *bprint, fplainn::D2DChannel **retchan
+	)
 {
 	HeapObj<fplainn::D2DChannel>	chan;
 	error_t				ret0, ret1;
@@ -190,7 +252,7 @@ error_t fplainn::Zudi::createChannel(fplainn::IncompleteD2DChannel *bprint)
 	 * set at this point, but they will be required by the kernel before
 	 * the channel can be used.
 	 **/
-	if (bprint == NULL) { return ERROR_INVALID_ARG; };
+	if (bprint == NULL || retchan == NULL) { return ERROR_INVALID_ARG; };
 
 	region0 = bprint->regionEnd0.region;
 	region1 = bprint->regionEnd1.region;
@@ -227,20 +289,23 @@ error_t fplainn::Zudi::createChannel(fplainn::IncompleteD2DChannel *bprint)
 		return ERROR_INITIALIZATION_FAILURE;
 	};
 
-	chan.release();
+	*retchan = chan.release();
 	return ERROR_SUCCESS;
 }
 
 error_t fplainn::Zudi::spawnInternalBindChannel(
 	utf8Char *devPath, ubit16 regionIndex,
-	udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1)
+	udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1,
+	fplainn::Endpoint **retendp1
+	)
 {
 	fplainn::Region	*region0, *region1;
-	udi_init_context_t			*rdata0=NULL, *rdata1=NULL;
-	processId_t				region0Tid=PROCID_INVALID,
-						dummy;
+	processId_t				region0Tid=PROCID_INVALID;
 	fplainn::Device				*dev;
 	error_t					ret;
+	fplainn::D2DChannel			*tmpret;
+
+	if (retendp1 == NULL) { return ERROR_INVALID_ARG; };
 
 printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 	devPath, regionIndex, opsVector0, opsVector1);
@@ -253,13 +318,9 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 	ret = floodplainn.getDevice(devPath, &dev);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	if (dev->instance->getRegionInfo(regionIndex, &dummy, &rdata1)
-		!= ERROR_SUCCESS)
-		{ return ERROR_INVALID_ARG_VAL; };
-
 	// If we can't get primary region info, something is terribly wrong.
 	assert_fatal(
-		dev->instance->getRegionInfo(0, &region0Tid, &rdata0)
+		dev->instance->getRegionInfo(0, &region0Tid)
 		== ERROR_SUCCESS);
 
 	region0 = region1->thread->parent->getThread(region0Tid)->getRegion();
@@ -267,24 +328,38 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 	IncompleteD2DChannel		blueprint(0);
 
 	blueprint.initialize();
-	blueprint.endpoints[0]->anchor(region0, opsVector0, rdata0);
-	blueprint.endpoints[1]->anchor(region1, opsVector1, rdata1);
-	return createChannel(&blueprint);
+	blueprint.endpoints[0]->anchor(region0, opsVector0, NULL);
+	blueprint.endpoints[1]->anchor(region1, opsVector1, NULL);
+	ret = createChannel(&blueprint, &tmpret);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR"spawnIbopChan(%s, %d, 0x%p, 0x%p): createChannel "
+			"call failed. Ret %d.\n",
+			devPath, regionIndex, opsVector0, opsVector1, ret);
+
+		return ret;
+	};
+
+	*retendp1 = tmpret->endpoints[1];
+	return ERROR_SUCCESS;
 }
 
 error_t fplainn::Zudi::spawnChildBindChannel(
 	utf8Char *parentDevPath, utf8Char *childDevPath, utf8Char *metaName,
-	udi_ops_vector_t *opsVector
+	udi_ops_vector_t *opsVector, fplainn::Endpoint **retendp1
 	)
 {
 	fplainn::Device				*parentDev, *childDev;
 	fplainn::Driver::sMetalanguage		*parentMeta, *childMeta;
 	fplainn::Driver::sChildBop		*parentCBop;
 	fplainn::Driver::sParentBop		*childPBop;
-	fplainn::Region	*parentRegion, *childRegion;
+	fplainn::Region				*parentRegion, *childRegion;
 	processId_t				parentTid, childTid;
-	udi_init_context_t			*parentRdata, *childRdata;
 	fplainn::DriverInstance::sChildBop	*parentInstCBop;
+	fplainn::D2DChannel			*tmpret;
+	error_t					ret;
+
+	if (retendp1 == NULL) { return ERROR_INVALID_ARG; };
 
 	if (floodplainn.getDevice(parentDevPath, &parentDev) != ERROR_SUCCESS
 		|| floodplainn.getDevice(childDevPath, &childDev) != ERROR_SUCCESS)
@@ -327,11 +402,9 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 
 	// Next, get the region thread IDs.
 	if (parentDev->instance->getRegionInfo(
-		parentCBop->regionIndex, &parentTid, &parentRdata)
-		!= ERROR_SUCCESS
+		parentCBop->regionIndex, &parentTid) != ERROR_SUCCESS
 		|| childDev->instance->getRegionInfo(
-			childPBop->regionIndex, &childTid, &childRdata)
-			!= ERROR_SUCCESS)
+			childPBop->regionIndex, &childTid) != ERROR_SUCCESS)
 	{
 		printf(ERROR FPLAINN"spawnCBindChan: Either parent or child's "
 			"Bop region ID is invalid.\n");
@@ -366,11 +439,22 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 	fplainn::IncompleteD2DChannel		blueprint(0);
 
 	blueprint.initialize();
-	blueprint.endpoints[1]->anchor(childRegion, opsVector, childRdata);
+	blueprint.endpoints[1]->anchor(childRegion, opsVector, NULL);
 	blueprint.endpoints[0]->anchor(
-		parentRegion, parentInstCBop->opsVector, parentRdata);
+		parentRegion, parentInstCBop->opsVector, NULL);
 
-	return createChannel(&blueprint);
+	ret = createChannel(&blueprint, &tmpret);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR"spawnCBindChan(%s,%s,%s,0x%p): spawnChannel call "
+			"failed. Ret %d.\n",
+			parentDevPath, childDevPath, metaName, opsVector, ret);
+
+		return ret;
+	};
+
+	*retendp1 = tmpret->endpoints[1];
+	return ERROR_SUCCESS;
 }
 
 error_t fplainn::Zudi::send(udi_cb_t *mcb, uarch_t size, void *privateData)
@@ -405,7 +489,6 @@ static error_t udi_mgmt_calls_prep(
 	)
 {
 	processId_t		primaryRegionTid=PROCID_INVALID;
-	udi_init_context_t	*dummy;
 
 	if (floodplainn.getDevice(devPath, dev) != ERROR_SUCCESS)
 	{
@@ -419,7 +502,7 @@ static error_t udi_mgmt_calls_prep(
 		|| (*dev)->driverInstance == NULL || (*dev)->instance == NULL)
 		{ return ERROR_UNINITIALIZED; };
 
-	(*dev)->instance->getRegionInfo(0, &primaryRegionTid, &dummy);
+	(*dev)->instance->getRegionInfo(0, &primaryRegionTid);
 
 	*request = new fplainn::Zudi::sMgmtCallMsg(
 		devPath, primaryRegionTid,

@@ -22,6 +22,20 @@ namespace fplainn
 
 		void dumpChannelEndpoints(void);
 
+		sbit8 findEndpoint(RegionEndpoint *endp)
+		{
+			PtrList<RegionEndpoint>::Iterator	it;
+
+			it = endpoints.begin(0);
+			for (; it != endpoints.end(); ++it)
+			{
+				if (*it != endp) { continue; };
+				return 1;
+			};
+
+			return 0;
+		}
+
 	private:
 		friend class RegionEndpoint;
 
@@ -35,7 +49,6 @@ namespace fplainn
 		DeviceInstance		*parent;
 		ubit16			index;
 		Thread			*thread;
-		udi_init_context_t	*rdata;
 		PtrList<RegionEndpoint>	endpoints;
 	};
 }

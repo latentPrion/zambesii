@@ -77,8 +77,8 @@ public:
 	// Establishes a child-bind channel to a device on behalf of its parent.
 	error_t connect(
 		utf8Char *devName, utf8Char *metaName,
-		udi_ops_vector_t *ops_vector, udi_init_context_t *channel_context,
-		uarch_t flags, fplainn::FStreamEndpoint **retendp);
+		udi_ops_vector_t *ops_vector, void *endpPrivateData1,
+		uarch_t flags, fplainn::Endpoint **retendp);
 
 	// Closes a connection to a device.
 	sbit8 close(fplainn::FStreamEndpoint *endpoint, uarch_t flags);
@@ -105,7 +105,7 @@ public:
 	// Should really be private...
 	static error_t createChannel(
 		fplainn::IncompleteD2SChannel *blueprint,
-		fplainn::FStreamEndpoint **retendp);
+		fplainn::D2SChannel **retchan);
 
 private:
 	friend class fplainn::FStreamEndpoint;

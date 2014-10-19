@@ -9,11 +9,13 @@
 
 
 lzudi::sEndpointContext::sEndpointContext(
+	fplainn::Endpoint *__kendp,
 	utf8Char *metaName,
 	udi_mei_init_t *metaInfo, udi_index_t opsIdx,
-	void *channel_context)
+	void *channel_context
+	)
 :
-metaInfo(metaInfo), channel_context(channel_context)
+__kendpoint(__kendp), metaInfo(metaInfo), channel_context(channel_context)
 {
 	strncpy8(this->metaName, metaName, ZUI_DRIVER_METALANGUAGE_MAXLEN);
 	this->metaName[ZUI_DRIVER_METALANGUAGE_MAXLEN - 1] = '\0';
