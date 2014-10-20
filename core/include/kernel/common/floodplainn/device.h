@@ -96,8 +96,7 @@ namespace fplainn
 		parentTags(NULL), parentTagCounter(0)
 		{
 			this->longName[0]
-				= this->driverFullName[0]
-				= this->detectedDeviceLineMetaName[0] = '\0';
+				= this->driverFullName[0] = '\0';
 		}
 
 		error_t initialize(void)
@@ -277,9 +276,6 @@ namespace fplainn
 		sbit8			driverDetected;
 		// The index which enumerated this device's driver.
 		fplainn::Zui::indexE	driverIndex, requestedIndex;
-		// The meta name from the device line that matched this device.
-		utf8Char		detectedDeviceLineMetaName[
-			DRIVER_METALANGUAGE_MAXLEN];
 		sParentTag		*parentTags;
 		uarch_t			parentTagCounter;
 	};

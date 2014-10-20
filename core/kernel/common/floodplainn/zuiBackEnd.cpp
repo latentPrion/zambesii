@@ -503,8 +503,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		myResponse(ERROR_NO_MATCH);
 		dev->driverDetected = 0;
 		dev->driverIndex = fplainn::Zui::INDEX_KERNEL;
-		dev->driverFullName[0] =
-			dev->detectedDeviceLineMetaName[0] = '\0';
+		dev->driverFullName[0] = '\0';
 	}
 	else
 	{
@@ -591,13 +590,6 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 
 		dev->driverDetected = 1;
 		dev->driverIndex = fplainn::Zui::INDEX_KERNEL;
-		strncpy8(
-			dev->detectedDeviceLineMetaName,
-			detectedDevlineMetaName,
-			DRIVER_METALANGUAGE_MAXLEN);
-
-		dev->detectedDeviceLineMetaName[DRIVER_METALANGUAGE_MAXLEN - 1]
-			= '\0';
 	};
 
 	// In both cases, driverInstance should be NULL.
