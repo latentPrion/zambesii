@@ -306,7 +306,7 @@ namespace fplainn
 
 	public:
 		void dumpChannels(void);
-		Channel *getChannelByEndpoint(void *endpoint);
+		Channel *getChannelByEndpoint(Endpoint *endpoint);
 		error_t addChannel(Channel *newChan)
 			{ return channels.insert(newChan); }
 

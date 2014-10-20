@@ -86,19 +86,19 @@ static const udi_primary_init_t		zrootdev_primary_init_info =
 	0, 0
 };
 
-/*static const udi_secondary_init_t	sectmp[] =
+static const udi_secondary_init_t	sectmp[] =
 {
 	{ 1, 5 },
 	{ 2, 32 },
 	{ 3, 8 },
 	{ 0, 0 }
-};*/
+};
 
 extern "C" const udi_init_t			zrootdev_init_info =
 {
 	&zrootdev_primary_init_info,
 	// No secondary regions needed.
-	NULL,
+	sectmp,
 	zrootdev_ops_init_info,
 	NULL, NULL, NULL
 };

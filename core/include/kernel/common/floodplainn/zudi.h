@@ -93,13 +93,15 @@ public:
 	 * Effectively then, devices that do not have child bind ops don't
 	 * need to expose any parent bind ops information to the kernel.
 	 **/
-	error_t udi_channel_spawn(
-		udi_channel_spawn_call_t *cb, udi_cb_t *gcb,
-		udi_channel_t channel, udi_index_t spawn_idx,
+	error_t spawnEndpoint(
+		fplainn::Endpoint *channel_endp, udi_index_t spawn_idx,
 		udi_ops_vector_t *ops_vector,
-		udi_init_context_t *channel_context);
+		udi_init_context_t *channel_context,
+		fplainn::Endpoint **retendp);
 
-	void udi_channel_anchor(void);
+	void anchorEndpoint(
+		fplainn::Endpoint *endp, udi_ops_vector_t *ops_vector,
+		void *endpPrivateData);
 
 	error_t spawnInternalBindChannel(
 		utf8Char *devicePath, ubit16 regionIndex,

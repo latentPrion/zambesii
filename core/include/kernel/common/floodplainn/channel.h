@@ -193,7 +193,7 @@ namespace fplainn
 		sbit8 destroyIncompleteChannel(
 			typeE type, udi_index_t spawn_idx);
 
-		sbit8 hasEndpoint(void *endp)
+		sbit8 hasEndpoint(Endpoint *endp)
 		{
 			if (endpoints[0] == endp || endpoints[1] == endp)
 				{ return 1; }

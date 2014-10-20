@@ -325,7 +325,7 @@ error_t fplainn::DeviceInstance::initialize(void)
 }
 
 fplainn::Channel *
-fplainn::DeviceInstance::getChannelByEndpoint(void *endpoint)
+fplainn::DeviceInstance::getChannelByEndpoint(Endpoint *endpoint)
 {
 	PtrList<Channel>::Iterator		it;
 
