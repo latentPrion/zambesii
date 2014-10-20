@@ -699,7 +699,6 @@ void zuiBackend::loadDriverReq(
 	HeapArr<utf8Char>			tmpString;
 	fplainn::Device			*device;
 	error_t					err;
-	const sDriverInitEntry			*driverInitEntry;
 
 	response = new fplainn::Zui::sIndexMsg(
 		request->header.sourceId,
@@ -781,6 +780,7 @@ void zuiBackend::loadDriverReq(
 	err = zudiIndexes[0]->getMessageString(
 		driverHdr.get(), driverHdr->nameIndex, driver->longName);
 
+#if 0
 	if (driver->index == fplainn::Zui::INDEX_KERNEL)
 	{
 		/* Only needed for kernel-index drivers. Others will have their
@@ -789,21 +789,10 @@ void zuiBackend::loadDriverReq(
 		 * have their init_info structs embedded as well, so we must
 		 * fill this out for them.
 		 **/
-		driverInitEntry = floodplainn.zudi.findDriverInitInfo(
-			driver->shortName);
-
-		if (driverInitEntry == NULL)
-		{
-			printf(ERROR FPLAINNIDX"loadDriver: failed to find "
-				"init_info for driver %s.\n",
-				driver->shortName);
-
-			myResponse(ERROR_NOT_FOUND);
-			return;
-		};
 
 		driver->driverInitInfo = driverInitEntry->udi_init_info;
 	};
+#endif
 
 	// Copy all the module information:
 	err = driver->preallocateModules(driverHdr->nModules);
@@ -965,7 +954,6 @@ void zuiBackend::loadDriverReq(
 	err = driver->detectClasses();
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };
 
-	driver->dump();
 	// Release the managed memory as well when inserting.
 	err = floodplainn.zudi.driverList.insert(driver.release());
 	if (err != ERROR_SUCCESS) { myResponse(err); return; };

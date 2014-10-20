@@ -2,8 +2,10 @@
 #define UDI_VERSION	0x101
 #include <udi.h>
 #include <commonlibs/libzbzcore/libzudi.h>
+#include <commonlibs/libzbzcore/libzbzcore.h>
 #include <kernel/common/thread.h>
 #include <kernel/common/process.h>
+#include <kernel/common/floodplainn/floodplainn.h>
 #include <kernel/common/floodplainn/initInfo.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -17,12 +19,20 @@ lzudi::sEndpointContext::sEndpointContext(
 :
 __kendpoint(__kendp), metaInfo(metaInfo), channel_context(channel_context)
 {
-	strncpy8(this->metaName, metaName, ZUI_DRIVER_METALANGUAGE_MAXLEN);
-	this->metaName[ZUI_DRIVER_METALANGUAGE_MAXLEN - 1] = '\0';
+	if (metaName != NULL)
+	{
+		strncpy8(
+			this->metaName, metaName,
+			ZUI_DRIVER_METALANGUAGE_MAXLEN);
+
+		this->metaName[ZUI_DRIVER_METALANGUAGE_MAXLEN - 1] = '\0';
+	};
 
 	fplainn::MetaInit		metaInit(metaInfo);
 
-	opsVectorTemplate = metaInit.getOpsVectorTemplate(opsIdx);
+	if (metaInfo != NULL) {
+		opsVectorTemplate = metaInit.getOpsVectorTemplate(opsIdx);
+	};
 }
 
 void lzudi::sEndpointContext::dump(void)
@@ -31,6 +41,139 @@ void lzudi::sEndpointContext::dump(void)
 		"\t__kendp 0x%p, chan_ctxt 0x%p, opsVecTemplate 0x%p.\n",
 		this, metaInfo, metaName, __kendpoint, channel_context,
 		opsVectorTemplate);
+}
+
+void udi_channel_spawn(
+	udi_channel_spawn_call_t *callback,
+	udi_cb_t *gcb,
+	udi_channel_t channel,
+	udi_index_t spawn_idx,
+	udi_index_t ops_idx,
+	void *channel_context
+	)
+{
+	List<lzudi::sRegion>		*metadataList;
+	List<lzudi::sRegion>::Iterator	mlIt;
+	lzudi::sRegion			*r=NULL;
+	Thread				*thread;
+	lzudi::sEndpointContext		*originEndp, *newEndp;
+	fplainn::Endpoint		*__kendp;
+	error_t				err;
+	__klzbzcore::driver::CachedInfo	*drvInfoCache;
+	udi_ops_init_t			*opsInitEntry=NULL;
+
+	if (channel == NULL || gcb == NULL || callback == NULL) {
+		callback(gcb, NULL); return;
+	};
+
+	originEndp = (lzudi::sEndpointContext *)channel;
+	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	metadataList = &thread->getRegion()->parent->regionLocalMetadata;
+	drvInfoCache = thread->parent->getDriverInstance()->cachedInfo;
+
+	// Really hate that we have to do this loop, but no way around it.
+	mlIt = metadataList->begin();
+	for (; mlIt != metadataList->end(); ++mlIt)
+	{
+		lzudi::sRegion		*tmp = *mlIt;
+
+		if (tmp->index != thread->getRegion()->index) { continue; };
+		// Found it.
+		r = tmp;
+		break;
+	};
+
+	// Now proceed to make the calls as needed.
+	fplainn::DriverInit		drvInitParser(drvInfoCache->initInfo);
+
+	if (ops_idx != 0)
+	{
+		opsInitEntry = drvInitParser.getOpsInit(ops_idx);
+		if (opsInitEntry == NULL) {
+			callback(gcb, NULL); return;
+		};
+	};
+
+	// Does the origin channel exist, and is it anchored to this region?
+	if (!r->findEndpointContext(originEndp)) {
+		callback(gcb, NULL); return;
+	};
+
+	err = floodplainn.zudi.spawnEndpoint(
+		originEndp->__kendpoint, spawn_idx,
+		((ops_idx == 0) ? NULL : opsInitEntry->ops_vector), NULL,
+		&__kendp);
+
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR LZUDI"udi_chan_sp: spawnEndpoint call failed.\n");
+		callback(gcb, NULL);
+		return;
+	};
+
+	// Is there already an ongoing spawn with this spawn_idx?
+	newEndp = r->getEndpointContextBy__kendpoint(__kendp);
+	if (newEndp != NULL) {
+		// Callback with success, because endpoint already exists.
+		callback(gcb, newEndp); return;
+	};
+
+	/* Else, this channel is newly being spawned. We need to create a new
+	 * sEndpointContext for it. Get the metalanguage lib and name.
+	 **/
+	if (ops_idx != 0)
+	{
+		__klzbzcore::driver::CachedInfo::sMetaDescriptor      *metaDesc;
+
+		metaDesc = drvInfoCache->getMetaDescriptor(
+			opsInitEntry->meta_idx);
+
+		newEndp = new lzudi::sEndpointContext(
+			__kendp,
+			metaDesc->name, metaDesc->initInfo,
+			ops_idx, channel_context);
+	}
+	else
+	{
+		newEndp = new lzudi::sEndpointContext(
+			__kendp,
+			NULL, NULL,
+			ops_idx, channel_context);
+	}
+
+	if (newEndp == NULL) {
+		callback(gcb, NULL); return;
+	};
+
+	err = r->endpoints.insert(newEndp);
+	if (err != ERROR_SUCCESS)
+	{
+		delete newEndp;
+		callback(gcb, NULL); return;
+	};
+
+	callback(gcb, newEndp);
+}
+
+void udi_channel_set_context(
+	udi_channel_t target_channel,
+	void *channel_context
+	)
+{
+}
+
+void udi_channel_anchor(
+	udi_channel_anchor_call_t *callback,
+	udi_cb_t *gcb,
+	udi_channel_t channel,
+	udi_index_t ops_idx,
+	void *channel_context
+	)
+{
+}
+
+void udi_channel_close(udi_channel_t channel)
+{
 }
 
 void udi_mei_call(

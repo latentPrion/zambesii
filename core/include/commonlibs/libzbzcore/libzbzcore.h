@@ -10,6 +10,7 @@
 
 class Thread;
 namespace lzudi { struct sRegion; }
+namespace fplainn { class MetaInit; }
 
 namespace __klzbzcore
 {
@@ -47,6 +48,7 @@ namespace __klzbzcore
 		{
 			error_t handler(
 				fplainn::Zudi::sMgmtCallMsg *msg,
+				__klzbzcore::driver::CachedInfo *cache,
 				fplainn::Device *dev, ubit16 regionIndex);
 		}
 	}
@@ -82,9 +84,13 @@ namespace __klzbzcore
 			initInfo(driver_init_info)
 			{}
 
-			error_t initialize(void) { return ERROR_SUCCESS; }
+			error_t initialize(void)
+			{
+				return metaInfos.initialize();
+			}
 
 			error_t generateMetaCbScratchCache(void);
+			error_t generateMetaInfoCache(void);
 
 			~CachedInfo(void)
 			{
@@ -114,8 +120,48 @@ namespace __klzbzcore
 				};
 			}
 
+			struct sMetaDescriptor
+			{
+				sMetaDescriptor(
+					utf8Char *metaName,
+					udi_index_t metaIndex,
+					udi_mei_init_t *udi_meta_info)
+				:
+				index(metaIndex), initInfo(udi_meta_info)
+				{
+					strncpy8(
+						this->name, metaName,
+						DRIVER_METALANGUAGE_MAXLEN);
+
+					name[DRIVER_METALANGUAGE_MAXLEN - 1]
+						= '\0';
+				}
+
+				udi_index_t		index;
+				utf8Char		name[
+					DRIVER_METALANGUAGE_MAXLEN];
+
+				udi_mei_init_t		*initInfo;
+			};
+
+			sMetaDescriptor *getMetaDescriptor(udi_index_t idx)
+			{
+				PtrList<sMetaDescriptor>::Iterator	it;
+
+				it = metaInfos.begin(0);
+				for (; it != metaInfos.end(); ++it)
+				{
+					if ((*it)->index == idx) {
+						return *it;
+					};
+				};
+
+				return NULL;
+			}
+
 			const udi_init_t		*initInfo;
 			List<sMetaCbScratchInfo>	metaCbScratchInfo;
+			PtrList<sMetaDescriptor>	metaInfos;
 		};
 
 	// PRIVATE:

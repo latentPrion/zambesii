@@ -28,6 +28,57 @@ public:
 		{ function(msg, driverCachedInfo, self, callerCb); }
 };
 
+error_t __klzbzcore::driver::CachedInfo::generateMetaInfoCache(void)
+{
+	fplainn::DriverInstance			*drvInst;
+
+	drvInst = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->parent->getDriverInstance();
+
+	for (uarch_t i=0; i<drvInst->driver->nMetalanguages; i++)
+	{
+		sMetaDescriptor			*tmpMetaDesc;
+		const sMetaInitEntry		*tmpMetaInit;
+
+		// NOTE: Could also skip metaIndex 0, to skip udi_mgmt entirely.
+
+		tmpMetaInit = floodplainn.zudi.findMetaInitInfo(
+			drvInst->driver->metalanguages[i].name);
+
+		if (tmpMetaInit == NULL)
+		{
+			printf(ERROR LZBZCORE"genMetaInfoCache: Failed to get "
+				"udi_meta_info for meta %d (%s).\n",
+				drvInst->driver->metalanguages[i].index,
+				drvInst->driver->metalanguages[i].name);
+
+			return ERROR_NOT_FOUND;
+		};
+
+		tmpMetaDesc = new sMetaDescriptor(
+			drvInst->driver->metalanguages[i].name,
+			drvInst->driver->metalanguages[i].index,
+			tmpMetaInit->udi_meta_info);
+
+		if (tmpMetaDesc == NULL)
+		{
+			printf(ERROR LZBZCORE"genMetaInfoCache: Failed to "
+				"alloc sMetaDescriptor for meta %s.\n",
+				drvInst->driver->metalanguages[i].name);
+
+			return ERROR_MEMORY_NOMEM;
+		};
+
+		if (metaInfos.insert(tmpMetaDesc) != ERROR_SUCCESS)
+		{
+			delete tmpMetaDesc;
+			return ERROR_GENERAL;
+		};
+	};
+
+	return ERROR_SUCCESS;
+}
+
 error_t __klzbzcore::driver::CachedInfo::generateMetaCbScratchCache(void)
 {
 	udi_cb_init_t				*currCbInfo;
@@ -131,7 +182,8 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 {
 	fplainn::DriverInstance		*drvInst;
 	CachedInfo			*cache;
-	error_t				err;
+	error_t				err0, err1;
+	const sDriverInitEntry		*drvInitEntry;
 
 	drvInst = self->parent->getDriverInstance();
 
@@ -148,7 +200,19 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 	 * passed along as a local variable from callback to callback, and will
 	 * not be a global.
 	 **/
-	cache = new CachedInfo(drvInst->driver->driverInitInfo);
+	drvInitEntry = floodplainn.zudi.findDriverInitInfo(
+		drvInst->driver->shortName);
+
+	if (drvInitEntry == NULL)
+	{
+		printf(ERROR LZBZCORE"driver:main %s: failed to find "
+			"init_info for driver %s.\n",
+			drvInst->driver->shortName, drvInst->driver->shortName);
+
+		callerCb(self, ERROR_NOT_FOUND); return;
+	};
+
+	cache = new CachedInfo(drvInitEntry->udi_init_info);
 	if (cache == NULL || cache->initialize() != ERROR_SUCCESS)
 	{
 		printf(ERROR LZBZCORE"driver:main %s: Failed to allocate or "
@@ -158,15 +222,19 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 		callerCb(self, ERROR_MEMORY_NOMEM); return;
 	};
 
-	err = cache->generateMetaCbScratchCache();
-	if (err != ERROR_SUCCESS)
+	err0 = cache->generateMetaCbScratchCache();
+	err1 = cache->generateMetaInfoCache();
+	if (err0 != ERROR_SUCCESS || err1 != ERROR_SUCCESS)
 	{
 		printf(ERROR LZBZCORE"driver:main %s: Failed to generate "
-			"meta_cb_num scratch requirement cache.\n",
+			"meta_cb_num scratch requirement cache.\n"
+			"\tOR, failed to generate metaInfo descriptor cache.\n",
 			drvInst->driver->shortName);
 
-		callerCb(self, err); return;
+		callerCb(self, ERROR_INITIALIZATION_FAILURE); return;
 	};
+
+	drvInst->setCachedInfo(cache);
 
 	floodplainn.zui.loadDriverRequirementsReq(
 		new MainCb(&main1, self, cache, callerCb));

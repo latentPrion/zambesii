@@ -76,6 +76,21 @@ namespace fplainn
 
 		error_t initialize(void) { return ERROR_SUCCESS; }
 
+		const udi_ops_init_t *getOpsInit(udi_index_t ops_idx)
+		{
+			udi_ops_init_t		*ret;
+
+			ret = initInfo->ops_init_list;
+			for (; ret != NULL && ret->ops_idx != 0; ret++)
+			{
+				if (ret->ops_idx == ops_idx) {
+					return ret;
+				};
+			};
+
+			return NULL;
+		}
+
 	public:
 		udi_init_t		*initInfo;
 	};

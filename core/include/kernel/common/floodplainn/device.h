@@ -69,6 +69,8 @@ struct sDriverClassMapEntry
 extern utf8Char		*driverClasses[];
 
 class Thread;
+namespace lzudi { struct sRegion; }
+namespace __klzbzcore { namespace driver { class CachedInfo; } }
 
 namespace fplainn
 {
@@ -321,6 +323,8 @@ namespace fplainn
 
 		// XXX: ONLY to be used by __klibzbzcore.
 		uarch_t			nRegionsInitialized, nRegionsFailed;
+		// XXX: ONLY to be used by __klzudi.
+		List<lzudi::sRegion>	regionLocalMetadata;
 	};
 
 	class DriverInstance;
@@ -694,9 +698,6 @@ namespace fplainn
 		sParentBop	*parentBops;
 		sInternalBop	*internalBops;
 		utf8Char	(*classes)[DRIVER_CLASS_MAXLEN];
-
-		// XXX: ONLY for use by libzbzcore, and ONLY in kernel-space.
-		const udi_init_t	*driverInitInfo;
 	};
 
 	/**	DriverInstance
@@ -726,7 +727,8 @@ namespace fplainn
 			Driver *driver, numaBankId_t bid, processId_t pid)
 		:
 		driver(driver), bankId(bid), pid(pid), childBopVectors(NULL),
-		nHostedDevices(0), hostedDevices(NULL)
+		nHostedDevices(0), hostedDevices(NULL),
+		cachedInfo(NULL)
 		{}
 
 		error_t initialize(void);
@@ -799,6 +801,11 @@ namespace fplainn
 		uarch_t				nHostedDevices;
 		HeapArr<HeapArr<utf8Char> >	hostedDevices;
 		sManagementChannel		managementChannel;
+
+		// XXX: ONLY for use by libzbzcore, and ONLY in kernel-space.
+		__klzbzcore::driver::CachedInfo	*cachedInfo;
+		void setCachedInfo(__klzbzcore::driver::CachedInfo *ci)
+			{ cachedInfo = ci; }
 	};
 }
 

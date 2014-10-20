@@ -8,7 +8,9 @@
 	#include <extern.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kclasses/ptrList.h>
+	#include <__kclasses/ptrlessList.h>
 
+#define LZUDI			"lzudi: "
 
 CPPEXTERN_START
 
@@ -42,7 +44,10 @@ void udi_channel_close(udi_channel_t channel);
 
 CPPEXTERN_END
 
-namespace fplainn { class Endpoint; }
+namespace fplainn
+{
+	class Endpoint;
+}
 
 namespace lzudi
 {
@@ -76,6 +81,32 @@ namespace lzudi
 	{
 		error_t initialize(void) { return endpoints.initialize(); }
 
+		sbit8 findEndpointContext(sEndpointContext *ec)
+		{
+			PtrList<sEndpointContext>::Iterator	it;
+
+			for (it=endpoints.begin(0); it!=endpoints.end(); ++it) {
+				if (*it == ec) { return 1; };
+			};
+
+			return 0;
+		}
+
+		sEndpointContext *getEndpointContextBy__kendpoint(
+			fplainn::Endpoint *__kep)
+		{
+			PtrList<sEndpointContext>::Iterator	it;
+
+			for (it=endpoints.begin(0); it!=endpoints.end(); ++it)
+			{
+				if ((*it)->__kendpoint == __kep)
+					{ return *it; };
+			};
+
+			return NULL;
+		}
+
+		List<sRegion>::sHeader		listHeader;
 		ubit16				index;
 		udi_init_context_t		*rdata;
 		PtrList<sEndpointContext>	endpoints;

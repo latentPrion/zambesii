@@ -60,14 +60,6 @@ void __klzbzcore::region::main(void *)
 
 	ctxt = (fplainn::Zudi::sKernelCallMsg *)self->getPrivateData();
 
-	err = r.initialize();
-	if (err != ERROR_SUCCESS)
-	{
-		printf(ERROR LZBZCORE"region:main: Failed to initialize local "
-			"region metadata.\n");
-
-		postRegionInitInd(self, ctxt, err); return;
-	};
 
 	err = floodplainn.getDevice(ctxt->path, &dev);
 	if (err != ERROR_SUCCESS)
@@ -79,6 +71,20 @@ void __klzbzcore::region::main(void *)
 		postRegionInitInd(self, ctxt, ERROR_INVALID_RESOURCE_NAME);
 		return;
 	};
+
+	if (r.initialize() != ERROR_SUCCESS)
+	{
+		printf(ERROR LZBZCORE"region:main: Failed to initialize local "
+			"region metadata.\n");
+
+		postRegionInitInd(self, ctxt, ERROR_INITIALIZATION_FAILURE);
+		return;
+	};
+
+	/* Add the region-local data to the list to make it accessible to
+	 * udi service calls.
+	 **/
+	dev->instance->regionLocalMetadata.insert(&r);
 
 	self->messageStream.postMessage(
 		self->parent->id, 0,
@@ -109,7 +115,7 @@ void __klzbzcore::region::main(void *)
 			case MSGSTREAM_ZUDI_MGMT_CALL:
 				mgmt::handler(
 					(fplainn::Zudi::sMgmtCallMsg *)iMsg,
-					dev, r.index);
+					drvInfoCache, dev, r.index);
 
 				break;
 			};
@@ -579,14 +585,15 @@ struct sUdi_Mgmt_ContextBlock
 
 error_t __klzbzcore::region::mgmt::handler(
 	fplainn::Zudi::sMgmtCallMsg *msg,
-	fplainn::Device *dev, ubit16 regionIndex
+	__klzbzcore::driver::CachedInfo *drvInfoCache,
+	fplainn::Device *, ubit16 regionIndex
 	)
 {
 	udi_init_t		*initInfo;
 	udi_mgmt_ops_t		*mgmtOps;
 	sUdi_Mgmt_ContextBlock	*contextBlock;
 
-	initInfo = dev->driverInstance->driver->driverInitInfo;
+	initInfo = drvInfoCache->initInfo;
 	mgmtOps = initInfo->primary_init_info->mgmt_ops;
 
 	contextBlock = new sUdi_Mgmt_ContextBlock(msg);

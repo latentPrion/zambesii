@@ -321,6 +321,9 @@ error_t fplainn::DeviceInstance::initialize(void)
 	ret = channels.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
+	ret = regionLocalMetadata.initialize();
+	if (ret != ERROR_SUCCESS) { return ret; };
+
 	return ERROR_SUCCESS;
 }
 
