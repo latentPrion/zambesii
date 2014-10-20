@@ -491,12 +491,15 @@ void __klzbzcore::driver::localService::regionInitInd(
 
 		__klzbzcore::driver::__kcontrol::instantiateDeviceAck(
 			ctxt, ERROR_INITIALIZATION_FAILURE);
+
+		return;
 	};
 
 	/* If all regions succeeded, continue executing instantiateDevice at
 	 * instantiateDevice1.
 	 **/
-	return __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(ctxt);
+	__klzbzcore::driver::__kcontrol::instantiateDeviceReq1(ctxt);
+	return;
 }
 
 void __klzbzcore::driver::__kcontrol::handler(

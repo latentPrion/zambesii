@@ -1341,6 +1341,7 @@ static void zuiBackend::newDeviceInd4(
 
 	myResponse(originCtxt);
 
+
 	response = (fplainn::Zudi::sKernelCallMsg *)_response;
 	if (response->header.error != ERROR_SUCCESS)
 	{
@@ -1530,7 +1531,7 @@ void fplainn::Zui::main(void *)
 			};
 
 			(*callback)(gcb);
-			delete gcb;
+			delete callback;
 			break;
 		};
 	};
