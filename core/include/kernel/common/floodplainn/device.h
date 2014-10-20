@@ -145,18 +145,15 @@ namespace fplainn
 
 			sParentTag(
 				ubit16 id, fvfs::Tag *tag,
-				utf8Char *detectedMetaName)
+				ubit16 enumeratedMetaIndex,
+				ubit16 enumeratedMetaOpsIndex,
+				utf8Char *enumeratedMetaName)
 			:
+			udi(
+				enumeratedMetaIndex, enumeratedMetaOpsIndex,
+				enumeratedMetaName),
 			id(id), tag(tag)
-			{
-				strncpy8(
-					this->detectedMetaName,
-					detectedMetaName,
-					DRIVER_METALANGUAGE_MAXLEN);
-
-				this->detectedMetaName[
-					DRIVER_METALANGUAGE_MAXLEN - 1] = '\0';
-			}
+			{}
 
 			/* Each parent device will have a device-relative ID.
 			 * This ID is used as the UDI parent ID number.
@@ -170,10 +167,30 @@ namespace fplainn
 			 *
 			 * Talk much less about a 32 bit counter.
 			 **/
+			struct sEnumerationInfo
+			{
+				sEnumerationInfo(void){ metaName[0] = '\0'; }
+				sEnumerationInfo(
+					ubit16 metaIndex, ubit16 metaOpsIdx,
+					utf8Char *metaName)
+				:
+				metaIndex(metaIndex), metaOpsIndex(metaOpsIdx)
+				{
+					strncpy8(
+						this->metaName, metaName,
+						DRIVER_METALANGUAGE_MAXLEN);
+
+					this->metaName[
+						DRIVER_METALANGUAGE_MAXLEN - 1]
+						= '\0';
+				}
+
+				ubit16		metaIndex, metaOpsIndex;
+				utf8Char	metaName[
+					DRIVER_METALANGUAGE_MAXLEN];
+			} udi;
 			ubit16		id;
 			fvfs::Tag	*tag;
-			utf8Char	detectedMetaName[
-				DRIVER_METALANGUAGE_MAXLEN];
 		};
 
 		error_t addClass(utf8Char *name);
@@ -183,7 +200,7 @@ namespace fplainn
 
 		uarch_t getNParentTags(void) { return nParentTags; };
 		error_t createParentTag(
-			fvfs::Tag *tag, utf8Char *detectedMetaName,
+			fvfs::Tag *tag, utf8Char *enumeratedMetaName,
 			ubit16 *newIdRetval);
 
 		void destroyParentTag(fvfs::Tag *tag);

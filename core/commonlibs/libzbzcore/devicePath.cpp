@@ -60,6 +60,15 @@ void __klzbzcore::region::main(void *)
 
 	ctxt = (fplainn::Zudi::sKernelCallMsg *)self->getPrivateData();
 
+	err = r.initialize();
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR LZBZCORE"region:main: Failed to initialize local "
+			"region metadata.\n");
+
+		postRegionInitInd(self, ctxt, err); return;
+	};
+
 	err = floodplainn.getDevice(ctxt->path, &dev);
 	if (err != ERROR_SUCCESS)
 	{
@@ -220,7 +229,8 @@ void __klzbzcore::region::main2(
 	printf(NOTICE LZBZCORE"region:main2 Device %s, region %d running: rdata 0x%x.\n",
 		ctxt->path, r->index, r->rdata);
 
-	/* Next, we spawn all internal bind channels.
+	/**	EXPLANATION:
+	 * Next, we spawn all internal bind channels.
 	 * internal_bind_ops meta_idx region_idx ops0_idx ops1_idx1 bind_cb_idx.
 	 * Small sanity check here before moving on.
 	 **/
@@ -252,8 +262,10 @@ void __klzbzcore::region::main2(
 			return;
 		};
 
+		// Look up both opsVectors using their ops_idxes.
 		ops_info_tmp = (*drvInfoCache)->initInfo->ops_init_list;
-		for (; ops_info_tmp->ops_idx != 0; ops_info_tmp++)
+		for (; ops_info_tmp != NULL && ops_info_tmp->ops_idx != 0;
+			ops_info_tmp++)
 		{
 			if (ops_info_tmp->ops_idx == opsIndex0)
 				{ opsVector0 = ops_info_tmp->ops_vector; };
@@ -273,7 +285,7 @@ void __klzbzcore::region::main2(
 		};
 
 		/* We are going to need the metaName and udi_meta_info for
-		 * the local endpoint-context.
+		 * the local endpoint-context structure.
 		 **/
 		iBopMeta = dev->driverInstance->driver->getMetalanguage(
 			metaIndex);
@@ -332,6 +344,217 @@ void __klzbzcore::region::main2(
 			__kibindEndp, endpContext);
 
 		r->endpoints.insert(endpContext);
+	};
+
+	/**	EXPLANATION:
+	 * Now we spawn the child bind channels to the device's parents.
+	 * Run through all known parents, and for each parent, if that parent's
+	 * target region is us, we proceed to spawn the child-bind-chan.
+	 *
+	 * If the target region is not us, we ignore the parent_bind_ops
+	 * directive. The correct thread will eventually pick it up.
+	 *
+	 **	CAVEAT:
+	 * This whole sequence is UNTESTED.
+	 **/
+	for (uarch_t i=0; i<dev->getNParentTags(); i++)
+	{
+		sbit8					matchedInParent=0,
+							matchedInChild=0,
+							isCorrectRegion=0;
+		fplainn::Device::sParentTag		*pTag;
+		fplainn::Device				*parentDev;
+		fplainn::Driver				*drv, *parentDrv;
+		fplainn::Endpoint			*__kpbindEndp;
+		lzudi::sEndpointContext			*pbindEndpContext;
+		const sMetaInitEntry			*pBopMetaInfo;
+		fplainn::Driver::sParentBop		*correctPBop;
+		utf8Char				parentFullName[
+			FVFS_TAG_NAME_MAXLEN + 1];
+
+		drv = dev->driverInstance->driver;
+		pTag = dev->indexedGetParentTag(i);
+		// Should never happen, though.
+		if (pTag == NULL) {
+			postRegionInitInd(self, ctxt, ERROR_NOT_FOUND); return;
+		};
+
+		err = pTag->tag->getFullName(
+			parentFullName, sizeof(parentFullName) - 1);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"reg:main2 %d: Unable to get "
+				"fullname of\n\tparent %d (name %s).\n",
+				r->index, pTag->id, pTag->tag->getName());
+
+			postRegionInitInd(self, ctxt, err); return;
+		};
+
+		// Get a handle to the parent device.
+		err = floodplainn.getDevice(parentFullName, &parentDev);
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"reg:main2 %d: Unable to get "
+				"handle to parent %d (%s).\n",
+				r->index, pTag->id, parentFullName);
+
+			postRegionInitInd(self, ctxt, err); return;
+		};
+
+		parentDrv = parentDev->driverInstance->driver;
+
+		/**	EXPLANATION:
+		 * The parent, when it enumerated this child, would have also
+		 * enumerated a metalanguage to go along with it. This is the
+		 * metalanguage that the parent expects the child to connect
+		 * bind to it with.
+		 *
+		 * We must see whether or not the child exposes a
+		 * parent_bind_ops that matches this metalanguage that the
+		 * parent expects it to bind with.
+		 *
+		 * If it does not, then we cannot reasonably expect the child to
+		 * bind. And in that case, the child will be cut off from I/O
+		 * with its parent, so in all, this is a fatal condition.
+		 *
+		 **	SEQUENCE:
+		 * Cycle through all parentBops and compare the meta_idx's
+		 * metaName to the parent's expected bind-meta.
+		 **/
+		for (uarch_t j=0; j<drv->nParentBops; j++)
+		{
+			fplainn::Driver::sParentBop	*childPBop;
+			fplainn::Driver::sMetalanguage	*childMeta;
+
+			childPBop = &drv->parentBops[j];
+			childMeta = drv->getMetalanguage(childPBop->metaIndex);
+
+			if (!strncmp8(
+				childMeta->name, pTag->udi.metaName,
+				DRIVER_METALANGUAGE_MAXLEN))
+			{
+				matchedInChild = 1;
+
+				/* Secondarily, we need to know whether or not
+				 * the bind channel should be anchored to THIS
+				 * REGION. Or else, we'll have to leave it alone
+				 * for the right region-thread anyway.
+				 **/
+				if (childPBop->regionIndex == r->index) {
+					isCorrectRegion = 1;
+				};
+
+				correctPBop = childPBop;
+				break;
+			};
+		};
+
+		/* If we are not the region that the parent-bind channel should
+		 * be anchored to, we need to skip this parent tag and leave it
+		 * up to the correct region to do it.
+		 **/
+		if (!isCorrectRegion) { continue; };
+
+		/**	EXPLANATION:
+		 * This next sequence is not strictly necessary. We are going to
+		 * check to see if the parent exposes a childBop that matches
+		 * the one that it enumerated this child with.
+		 *
+		 * This is really just pedantic double-checking/validation, and
+		 * it's not a required step. If the check fails though, it is
+		 * fatal, but we can skip the check and assume it won't fail.
+		 * (It can fail, but it's unlikely that driver writers would
+		 * make this mistake).
+		 **/
+		for (uarch_t j=0; j<parentDrv->nChildBops; j++)
+		{
+			fplainn::Driver::sChildBop	*parentCBop;
+			fplainn::Driver::sMetalanguage	*parentMeta;
+
+			parentCBop = &parentDrv->childBops[j];
+			parentMeta = parentDrv->getMetalanguage(
+				parentCBop->metaIndex);
+
+			if (!strncmp8(
+				parentMeta->name, pTag->udi.metaName,
+				DRIVER_METALANGUAGE_MAXLEN))
+			{
+				matchedInParent = 1;
+				break;
+			};
+		};
+
+		if (!matchedInParent || !matchedInChild)
+		{
+			printf(ERROR LZBZCORE"reg:main2 %d: Failed to find the "
+				"device's detecting meta in both child and "
+				"parent devices.\n\tCannot establish "
+				"child bind channel to parent %s.\n",
+				r->index, parentFullName);
+
+			postRegionInitInd(self, ctxt, ERROR_NOT_FOUND); return;
+		};
+
+		pBopMetaInfo = floodplainn.zudi.findMetaInitInfo(
+			pTag->udi.metaName);
+
+		if (pBopMetaInfo == NULL)
+		{
+			printf(ERROR LZBZCORE"reg:main2 %d: Kernel doesn't "
+				"support meta %s needed to bind to parent %s.\n",
+				r->index, pTag->udi.metaName,
+				parentFullName);
+
+			postRegionInitInd(self, ctxt, ERROR_INVALID_RESOURCE_NAME);
+			return;
+		};
+
+		printf(NOTICE"reg:main2 %d: Binding to parent %s, meta %s.\n",
+			r->index, parentFullName, pTag->udi.metaName);
+
+		/**	FIXME:
+		 * This whole child-bind-channel spawning sequence will have
+		 * to be moved over to devicePath.cpp, and executed from
+		 * within a region thread instead.
+		 *
+		 * Specifically, each region thread should cycle through all
+		 * of the device's parent bops. For all those parent bops that
+		 * are to be tied to that thread's region, that thread will
+		 * then call spawnChildBindChannel().
+		 *
+		 * The reason we force the target region thread to execute the
+		 * spawnChildBindChannel() call is because that way, we can take
+		 * the ENDPOINT-handle that is returned by spawnChildBindChannel
+		 * and immediately fill it in to the local region data that that
+		 * thread maintains.
+		 **/
+		err = floodplainn.zudi.spawnChildBindChannel(
+			parentFullName, ctxt->path,
+			pTag->udi.metaName,
+			(udi_ops_vector_t *)0xF00115,
+			&__kpbindEndp);
+
+		pbindEndpContext = new lzudi::sEndpointContext(
+			__kpbindEndp, pTag->udi.metaName,
+			pBopMetaInfo->udi_meta_info, correctPBop->opsIndex,
+			r->rdata);
+
+		if (err != ERROR_SUCCESS || pbindEndpContext == NULL)
+		{
+			printf(NOTICE LZBZCORE"reg:main2 %d: Failed to spawn "
+				"cbind chan; err %d.\n"
+				"\tOR, failed to allocate local endpoint "
+				"context.\n",
+				r->index, err);
+
+			postRegionInitInd(self, ctxt, ERROR_CRITICAL); return;
+		};
+
+		floodplainn.zudi.setEndpointPrivateData(
+			__kpbindEndp, pbindEndpContext);
+
+		r->endpoints.insert(pbindEndpContext);
 	};
 
 	/* Send a message to the main thread, letting it know that a region

@@ -25,6 +25,14 @@ __kendpoint(__kendp), metaInfo(metaInfo), channel_context(channel_context)
 	opsVectorTemplate = metaInit.getOpsVectorTemplate(opsIdx);
 }
 
+void lzudi::sEndpointContext::dump(void)
+{
+	printf(NOTICE"endpointCtxt: 0x%p: metaInfo 0x%p, metaName %s.\n"
+		"\t__kendp 0x%p, chan_ctxt 0x%p, opsVecTemplate 0x%p.\n",
+		this, metaInfo, metaName, __kendpoint, channel_context,
+		opsVectorTemplate);
+}
+
 void udi_mei_call(
 	udi_cb_t *gcb,
 	udi_mei_init_t *meta_info,

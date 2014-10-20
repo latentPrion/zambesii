@@ -609,7 +609,9 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 		err = self->parent->spawnThread(
 			&::__klzbzcore::region::main, ctxt,
 			NULL, (Thread::schedPolicyE)0, 0,
-			0, &newThread);
+//			SPAWNTHREAD_FLAGS_DORMANT,
+			0,
+			&newThread);
 
 		if (err != ERROR_SUCCESS)
 		{
@@ -628,6 +630,8 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 
 		dev->instance->setThreadRegionPointer(
 			newThread->getFullId());
+
+//		taskTrib.wake(newThread);
 	};
 
 	/**	EXPLANATION:
@@ -662,147 +666,6 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq1(
 
 		panic(ERROR_INVALID_RESOURCE_NAME);
 	}
-
-	// If the device has parents, spawn bind channels to its parents.
-	/**	FIXME:
-	 * This current sequence does not properly support multiple parents.
-	 **/
-	for (uarch_t i=0; i<dev->getNParentTags(); i++)
-	{
-		sbit8					foundInParent=0,
-							foundInChild=0;
-		fplainn::Device::sParentTag		*pTag;
-		fplainn::Device				*parentDev;
-		fplainn::Driver				*drv, *parentDrv;
-		utf8Char				parentFullName[
-			FVFS_TAG_NAME_MAXLEN + 1];
-
-		drv = dev->driverInstance->driver;
-		pTag = dev->indexedGetParentTag(i);
-		// Should never happen, though.
-		if (pTag == NULL)
-		{
-			instantiateDeviceAck(ctxt, ERROR_NOT_FOUND);
-			return;
-		};
-
-		ret = pTag->tag->getFullName(
-			parentFullName, sizeof(parentFullName) - 1);
-
-		if (ret != ERROR_SUCCESS)
-		{
-			printf(ERROR LZBZCORE"instDevReq1: %s: Unable to get "
-				"fullname of\n\tparent %d (name %s).\n",
-				ctxt->path, pTag->id, pTag->tag->getName());
-
-			instantiateDeviceAck(ctxt, ret);
-			return;
-		};
-
-		// Get a handle to the parent device.
-		ret = floodplainn.getDevice(parentFullName, &parentDev);
-		if (ret != ERROR_SUCCESS)
-		{
-			printf(ERROR LZBZCORE"instDevReq1: %s: Unable to get "
-				"handle to parent %d (%s).\n",
-				ctxt->path, pTag->id, parentFullName);
-
-			instantiateDeviceAck(ctxt, ret); return;
-		};
-
-		parentDrv = parentDev->driverInstance->driver;
-
-		/* Next, get the meta through which this device was detected
-		 * (e.g, meta 10 2 bus_type string pci), and search both the
-		 * child and parent devices to confirm that they both
-		 * expose it, before establishing a child-bind channel between
-		 * the two devices.
-		 **/
-		for (uarch_t j=0; j<parentDrv->nChildBops; j++)
-		{
-			fplainn::Driver::sChildBop	*parentCBop;
-			fplainn::Driver::sMetalanguage	*parentMeta;
-
-			parentCBop = &parentDrv->childBops[j];
-			parentMeta = parentDrv->getMetalanguage(
-				parentCBop->metaIndex);
-
-			if (!strncmp8(
-				parentMeta->name,
-				dev->detectedDeviceLineMetaName,
-				DRIVER_METALANGUAGE_MAXLEN))
-			{
-				foundInParent = 1;
-				break;
-			};
-		};
-
-		for (uarch_t j=0; j<drv->nChildBops; j++)
-		{
-			fplainn::Driver::sParentBop	*childPBop;
-			fplainn::Driver::sMetalanguage	*childMeta;
-
-			childPBop = &drv->parentBops[j];
-			childMeta = drv->getMetalanguage(childPBop->metaIndex);
-
-			if (!strncmp8(
-				childMeta->name,
-				dev->detectedDeviceLineMetaName,
-				DRIVER_METALANGUAGE_MAXLEN))
-			{
-				foundInChild = 1;
-				break;
-			};
-		};
-
-		if (!foundInParent || !foundInChild)
-		{
-			printf(ERROR LZBZCORE"instDevReq1: Failed to find the "
-				"device's detecting meta in both child and "
-				"parent devices.\n\tCannot establish "
-				"child bind channel to parent %s.\n",
-				parentFullName);
-
-			instantiateDeviceAck(ctxt, ERROR_NOT_FOUND); return;
-		};
-
-		printf(NOTICE"instDevReq1 %s: Binding to parent %s, meta %s.\n",
-			ctxt->path, parentFullName,
-			dev->detectedDeviceLineMetaName);
-
-		/**	FIXME:
-		 * This whole child-bind-channel spawning sequence will have
-		 * to be moved over to devicePath.cpp, and executed from
-		 * within a region thread instead.
-		 *
-		 * Specifically, each region thread should cycle through all
-		 * of the device's parent bops. For all those parent bops that
-		 * are to be tied to that thread's region, that thread will
-		 * then call spawnChildBindChannel().
-		 *
-		 * The reason we force the target region thread to execute the
-		 * spawnChildBindChannel() call is because that way, we can take
-		 * the ENDPOINT-handle that is returned by spawnChildBindChannel
-		 * and immediately fill it in to the local region data that that
-		 * thread maintains.
-		 **/
-		fplainn::Endpoint		*tmpendp;
-
-		ret = floodplainn.zudi.spawnChildBindChannel(
-			parentFullName, ctxt->path,
-			dev->detectedDeviceLineMetaName,
-			(udi_ops_vector_t *)0xF00115,
-			&tmpendp);
-
-		if (ret != ERROR_SUCCESS)
-		{
-			printf(NOTICE LZBZCORE"instDevReq1 %s: Failed to spawn cbind "
-				"chan\n",
-				ctxt->path);
-
-			instantiateDeviceAck(ctxt, ret); return;
-		};
-	};
 
 	/**	EXPLANATION:
 	 * At this point the parent bind channel has been spawned. All of the

@@ -40,6 +40,8 @@ namespace lzudi
 			udi_mei_init_t *metaInfo, udi_index_t opsIdx,
 			void *channel_context);
 
+		void dump(void);
+
 		fplainn::Endpoint		*__kendpoint;
 		utf8Char			metaName[
 			ZUI_DRIVER_METALANGUAGE_MAXLEN];
@@ -51,6 +53,8 @@ namespace lzudi
 
 	struct sRegion
 	{
+		error_t initialize(void) { return endpoints.initialize(); }
+
 		ubit16				index;
 		udi_init_context_t		*rdata;
 		PtrList<sEndpointContext>	endpoints;
