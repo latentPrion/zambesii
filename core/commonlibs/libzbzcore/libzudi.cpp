@@ -5,6 +5,7 @@
 #include <commonlibs/libzbzcore/libzbzcore.h>
 #include <kernel/common/thread.h>
 #include <kernel/common/process.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/floodplainn/floodplainn.h>
 #include <kernel/common/floodplainn/initInfo.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -160,6 +161,37 @@ void udi_channel_set_context(
 	void *channel_context
 	)
 {
+	List<lzudi::sRegion>		*metadataList;
+	List<lzudi::sRegion>::Iterator	mlIt;
+	lzudi::sRegion			*r=NULL;
+	Thread				*thread;
+	lzudi::sEndpointContext		*endpoint;
+
+	endpoint = (lzudi::sEndpointContext *)target_channel;
+	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	metadataList = &thread->getRegion()->parent->regionLocalMetadata;
+
+	/* Just find the region-local metadata object on which the endpoint
+	 * context is stored, then change its channel_context pointer. Scan all
+	 * region-local metadata objects for one which contains the endpoint
+	 * we were passed.
+	 **/
+	mlIt = metadataList->begin();
+	for (; mlIt != metadataList->end(); ++mlIt)
+	{
+		lzudi::sRegion		*rtmp = *mlIt;
+
+		if (rtmp->findEndpointContext(endpoint))
+		{
+			r = rtmp;
+			break;
+		};
+	};
+
+	// If r == NULL, the target_channel was invalid.
+	if (r == NULL) { return; }
+
+	endpoint->channel_context = channel_context;
 }
 
 void udi_channel_anchor(
@@ -170,6 +202,8 @@ void udi_channel_anchor(
 	void *channel_context
 	)
 {
+	UNIMPLEMENTED("udi_channel_anchor in libzudi");
+	panic(ERROR_UNIMPLEMENTED);
 }
 
 void udi_channel_close(udi_channel_t channel)

@@ -346,6 +346,28 @@ error_t fplainn::Zudi::spawnEndpoint(
 	return ERROR_SUCCESS;
 }
 
+void fplainn::Zudi::anchorEndpoint(
+	fplainn::Endpoint *endp, udi_ops_vector_t *ops_vector,
+	void *endpPrivateData
+	)
+{
+	Thread			*currThread;
+	fplainn::Channel	*chanTmp;
+
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	if (currThread->parent->getType() != ProcessStream::DRIVER)
+		{ return; };
+
+	chanTmp = currThread->getRegion()->parent->getChannelByEndpoint(endp);
+	if (chanTmp == NULL) { return; };
+
+	endp->anchor(
+		static_cast<fplainn::RegionEndpoint *>(endp)->region,
+		ops_vector, endpPrivateData);
+}
+
 void fplainn::Zudi::setEndpointPrivateData(
 	fplainn::Endpoint *endp, void *privateData
 	)
@@ -379,7 +401,9 @@ void fplainn::Zudi::setEndpointPrivateData(
 	chanTmp = currThread->getRegion()->parent->getChannelByEndpoint(endp);
 	if (chanTmp == NULL) { return; };
 
-	endp->anchor(currThread->getRegion(), endp->opsVector, privateData);
+	endp->anchor(
+		static_cast<fplainn::RegionEndpoint *>(endp)->region,
+		endp->opsVector, privateData);
 }
 
 error_t fplainn::Zudi::createChannel(
