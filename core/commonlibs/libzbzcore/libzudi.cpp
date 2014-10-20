@@ -20,6 +20,13 @@ lzudi::sEndpointContext::sEndpointContext(
 :
 __kendpoint(__kendp), metaInfo(metaInfo), channel_context(channel_context)
 {
+	anchor(metaName, metaInfo, opsIdx);
+}
+
+void lzudi::sEndpointContext::anchor(
+	utf8Char *metaName, udi_mei_init_t *metaInfo, udi_index_t ops_idx
+)
+{
 	if (metaName != NULL)
 	{
 		strncpy8(
@@ -32,7 +39,7 @@ __kendpoint(__kendp), metaInfo(metaInfo), channel_context(channel_context)
 	fplainn::MetaInit		metaInit(metaInfo);
 
 	if (metaInfo != NULL) {
-		opsVectorTemplate = metaInit.getOpsVectorTemplate(opsIdx);
+		opsVectorTemplate = metaInit.getOpsVectorTemplate(ops_idx);
 	};
 }
 
@@ -156,38 +163,45 @@ void udi_channel_spawn(
 	callback(gcb, newEndp);
 }
 
+static lzudi::sRegion *getRegionForEndpointContext(lzudi::sEndpointContext *ec)
+{
+	List<lzudi::sRegion>		*metadataList;
+	List<lzudi::sRegion>::Iterator	mlIt;
+	Thread				*thread;
+
+	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	metadataList = &thread->getRegion()->parent->regionLocalMetadata;
+
+	mlIt = metadataList->begin();
+	for (; mlIt != metadataList->end(); ++mlIt)
+	{
+		lzudi::sRegion			*curr=*mlIt;
+
+		if (curr->findEndpointContext(ec)) {
+			return curr;
+		};
+	};
+
+	return NULL;
+}
+
 void udi_channel_set_context(
 	udi_channel_t target_channel,
 	void *channel_context
 	)
 {
-	List<lzudi::sRegion>		*metadataList;
-	List<lzudi::sRegion>::Iterator	mlIt;
 	lzudi::sRegion			*r=NULL;
-	Thread				*thread;
 	lzudi::sEndpointContext		*endpoint;
 
 	endpoint = (lzudi::sEndpointContext *)target_channel;
-	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
-	metadataList = &thread->getRegion()->parent->regionLocalMetadata;
 
 	/* Just find the region-local metadata object on which the endpoint
 	 * context is stored, then change its channel_context pointer. Scan all
 	 * region-local metadata objects for one which contains the endpoint
 	 * we were passed.
 	 **/
-	mlIt = metadataList->begin();
-	for (; mlIt != metadataList->end(); ++mlIt)
-	{
-		lzudi::sRegion		*rtmp = *mlIt;
 
-		if (rtmp->findEndpointContext(endpoint))
-		{
-			r = rtmp;
-			break;
-		};
-	};
-
+	r = getRegionForEndpointContext(endpoint);
 	// If r == NULL, the target_channel was invalid.
 	if (r == NULL) { return; }
 
@@ -202,8 +216,54 @@ void udi_channel_anchor(
 	void *channel_context
 	)
 {
-	UNIMPLEMENTED("udi_channel_anchor in libzudi");
-	panic(ERROR_UNIMPLEMENTED);
+	lzudi::sEndpointContext					*endp;
+	lzudi::sRegion						*r;
+	fplainn::DriverInstance					*drvInst;
+	Thread							*thread;
+	__klzbzcore::driver::CachedInfo				*drvInfoCache;
+	__klzbzcore::driver::CachedInfo::sMetaDescriptor	*metaDesc;
+	const udi_ops_init_t					*opsInit;
+
+	/**	EXPLANATION:
+	 * We need to set both the opsVector pointer in kernel space,
+	 * and also the local bits of metadata that are derived from the
+	 * ops_idx, and finally the channel_context pointer locally.
+	 *
+	 **	SEQUENCE:
+	 * First thing is to determine whether or not the channel pointer is
+	 * a valid endpoint. Following that, we can immediately just set the
+	 * channel_context. Next, we can immediately proceed to gather the
+	 * required extra metadata for the sEndpointContext (metaName, etc).
+	 *
+	 * Finally, we do the syscall and set the kernel-level opsVector
+	 * pointer.
+	 **/
+	// According to the spec, ops_idx must be non-zero for this call.
+	if (ops_idx == 0) { return; };
+
+	endp = (lzudi::sEndpointContext *)channel;
+	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	drvInfoCache = thread->parent->getDriverInstance()->cachedInfo;
+
+	fplainn::DriverInit		drvInfoParser(drvInfoCache->initInfo);
+
+	/* By extension, if ops_idx cannot be 0, ops_idx must also resolve to a
+	 * valid udi_ops_init_t entry.
+	 **/
+	opsInit = drvInfoParser.getOpsInit(ops_idx);
+	if (opsInit == NULL) { return; };
+
+	r = getRegionForEndpointContext(endp);
+	if (r == NULL) { return; };
+
+	endp->channel_context = channel_context;
+
+	// Gather all information to be derived from ops_idx here.
+	metaDesc = drvInfoCache->getMetaDescriptor(opsInit->meta_idx);
+	endp->anchor(metaDesc->name, metaDesc->initInfo, ops_idx);
+
+	floodplainn.zudi.anchorEndpoint(
+		endp->__kendpoint, opsInit->ops_vector, endp);
 }
 
 void udi_channel_close(udi_channel_t channel)

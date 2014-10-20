@@ -68,6 +68,10 @@ namespace lzudi
 
 		void dump(void);
 
+		void anchor(
+			utf8Char *metaName, udi_mei_init_t *metaInfo,
+			udi_index_t ops_idx);
+
 		fplainn::Endpoint		*__kendpoint;
 		utf8Char			metaName[
 			ZUI_DRIVER_METALANGUAGE_MAXLEN];
