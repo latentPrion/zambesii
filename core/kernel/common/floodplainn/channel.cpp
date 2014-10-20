@@ -5,6 +5,25 @@
 #include <kernel/common/process.h>
 
 
+void fplainn::Channel::operator delete(void *obj)
+{
+	Channel		*chan = reinterpret_cast<Channel *>(obj);
+
+	/**	EXPLANATION:
+	 * Channels always begin as an IncompleteChannel derivative, and then
+	 * they are cast downwards to a Channel derivative.
+	 *
+	 * We must ensure that we don't delete() the Channel derivative pointer,
+	 * and that we cast the channel back up to its IncompleteChannel
+	 * derivative before deleting.
+	 **/
+	if (chan->getType() == TYPE_D2D) {
+		::delete static_cast<IncompleteD2DChannel *>(chan);
+	} else {
+		::delete static_cast<IncompleteD2SChannel *>(chan);
+	};
+}
+
 fplainn::D2DChannel::D2DChannel(IncompleteD2DChannel &ic)
 : Channel(&regionEnd1),
 regionEnd1(this, &regionEnd0)
@@ -109,6 +128,7 @@ error_t fplainn::Channel::createIncompleteChannel(
 	)
 {
 	IncompleteChannel		*tmp;
+	error_t				ret;
 
 	if (retIncChan == NULL) { return ERROR_INVALID_ARG; };
 
@@ -119,22 +139,28 @@ error_t fplainn::Channel::createIncompleteChannel(
 	{
 		tmp = static_cast<IncompleteChannel *>(
 			new IncompleteD2DChannel(spawnIdx));
+
+		if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
+		ret = static_cast<IncompleteD2DChannel *>(tmp)->initialize();
 	}
 	else
 	{
 		tmp = static_cast<IncompleteChannel *>(
 			new IncompleteD2SChannel(spawnIdx));
+
+		if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
+		ret = static_cast<IncompleteD2SChannel *>(tmp)->initialize();
 	};
 
-	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
+	if (ret != ERROR_SUCCESS) { return ret; };
 
 	incompleteChannels.insert(tmp);
 	*retIncChan = tmp;
 	return ERROR_SUCCESS;
 }
 
-sbit8 fplainn::Channel::destroyIncompleteChannel(
-	typeE type, udi_index_t spawnIdx
+sbit8 fplainn::Channel::removeIncompleteChannel(
+	typeE, udi_index_t spawnIdx
 	)
 {
 	sbit8				ret;
@@ -144,13 +170,6 @@ sbit8 fplainn::Channel::destroyIncompleteChannel(
 	if (tmp == NULL) { return 0; };
 
 	ret = incompleteChannels.remove(tmp);
-
-	if (type == TYPE_D2D) {
-		delete static_cast<IncompleteD2DChannel *>(tmp);
-	} else {
-		delete static_cast<IncompleteD2SChannel *>(tmp);
-	}
-
 	return ret;
 }
 

@@ -267,6 +267,9 @@ error_t fplainn::Zudi::spawnEndpoint(
 				callerRegion, ops_vector, channel_context);
 
 		incChan->setOrigin(0, channel_endp);
+		*retendp = incChan->cast2BaseChannel(originChannel->getType())
+			->endpoints[0];
+
 		return ERROR_SUCCESS;
 	};
 
@@ -284,6 +287,9 @@ error_t fplainn::Zudi::spawnEndpoint(
 				->endpoints[i]->anchor(
 					callerRegion, ops_vector,
 					channel_context);
+
+			*retendp = incChan->cast2BaseChannel(
+				originChannel->getType())->endpoints[i];
 
 			return ERROR_SUCCESS;
 		};
@@ -331,8 +337,11 @@ error_t fplainn::Zudi::spawnEndpoint(
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// Next, remove the incompleteChannel from the originating channel.
-	originChannel->destroyIncompleteChannel(
+	originChannel->removeIncompleteChannel(
 		originChannel->getType(), incChan->spawnIndex);
+
+	*retendp = incChan->cast2BaseChannel(originChannel->getType())
+		->endpoints[emptyEndpointIdx];
 
 	return ERROR_SUCCESS;
 }
@@ -377,7 +386,7 @@ error_t fplainn::Zudi::createChannel(
 	fplainn::IncompleteD2DChannel *bprint, fplainn::D2DChannel **retchan
 	)
 {
-	HeapObj<fplainn::D2DChannel>	chan;
+	fplainn::D2DChannel		*chan;
 	error_t				ret0, ret1;
 	fplainn::Region			*region0, *region1;
 
@@ -394,14 +403,12 @@ error_t fplainn::Zudi::createChannel(
 	region0 = bprint->regionEnd0.region;
 	region1 = bprint->regionEnd1.region;
 
-	chan = new fplainn::D2DChannel(*bprint);
-	if (chan == NULL) { return ERROR_MEMORY_NOMEM; };
-	ret0 = chan->initialize();
-	if (ret0 != ERROR_SUCCESS) { return ret0; };
+	// We no longer allocate a new object. Just downcast.
+	chan = static_cast<fplainn::D2DChannel *>(bprint);
 
-	ret0 = region0->parent->addChannel(chan.get());
+	ret0 = region0->parent->addChannel(chan);
 	if (region0->parent != region1->parent)
-		{ ret1 = region1->parent->addChannel(chan.get()); }
+		{ ret1 = region1->parent->addChannel(chan); }
 	else { ret1 = ret0; };
 
 	if (ret0 != ERROR_SUCCESS || ret1 != ERROR_SUCCESS)
@@ -426,7 +433,7 @@ error_t fplainn::Zudi::createChannel(
 		return ERROR_INITIALIZATION_FAILURE;
 	};
 
-	*retchan = chan.release();
+	*retchan = chan;
 	return ERROR_SUCCESS;
 }
 
@@ -436,7 +443,7 @@ error_t fplainn::Zudi::spawnInternalBindChannel(
 	fplainn::Endpoint **retendp1
 	)
 {
-	fplainn::Region	*region0, *region1;
+	fplainn::Region				*region0, *region1;
 	processId_t				region0Tid=PROCID_INVALID;
 	fplainn::Device				*dev;
 	error_t					ret;
@@ -462,12 +469,21 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 
 	region0 = region1->thread->parent->getThread(region0Tid)->getRegion();
 
-	IncompleteD2DChannel		blueprint(0);
+	IncompleteD2DChannel		*blueprint;
 
-	blueprint.initialize();
-	blueprint.endpoints[0]->anchor(region0, opsVector0, NULL);
-	blueprint.endpoints[1]->anchor(region1, opsVector1, NULL);
-	ret = createChannel(&blueprint, &tmpret);
+	blueprint = new IncompleteD2DChannel(0);
+	if (blueprint == NULL || blueprint->initialize() != ERROR_SUCCESS)
+	{
+		printf(ERROR"spawnIbopChan %s,%d,0x%p,0x%p: Failed to alloc or "
+			"initialize new channel object.\n",
+			devPath, regionIndex, opsVector0, opsVector1);
+
+		return ERROR_INITIALIZATION_FAILURE;
+	};
+
+	blueprint->endpoints[0]->anchor(region0, opsVector0, NULL);
+	blueprint->endpoints[1]->anchor(region1, opsVector1, NULL);
+	ret = createChannel(blueprint, &tmpret);
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR"spawnIbopChan(%s, %d, 0x%p, 0x%p): createChannel "
@@ -573,14 +589,23 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 	};
 
 	// Finally, create the blueprint and then call spawnChannel.
-	fplainn::IncompleteD2DChannel		blueprint(0);
+	fplainn::IncompleteD2DChannel		*blueprint;
 
-	blueprint.initialize();
-	blueprint.endpoints[1]->anchor(childRegion, opsVector, NULL);
-	blueprint.endpoints[0]->anchor(
+	blueprint = new IncompleteD2DChannel(0);
+	if (blueprint == NULL || blueprint->initialize() != ERROR_SUCCESS)
+	{
+		printf(ERROR"spawnCBindChan %s,%s,%s,0x%p: Failed to alloc or "
+			"initialize new channel object.\n",
+			parentDevPath, childDevPath, metaName, opsVector);
+
+		return ERROR_INITIALIZATION_FAILURE;
+	};
+
+	blueprint->endpoints[1]->anchor(childRegion, opsVector, NULL);
+	blueprint->endpoints[0]->anchor(
 		parentRegion, parentInstCBop->opsVector, NULL);
 
-	ret = createChannel(&blueprint, &tmpret);
+	ret = createChannel(blueprint, &tmpret);
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR"spawnCBindChan(%s,%s,%s,0x%p): spawnChannel call "

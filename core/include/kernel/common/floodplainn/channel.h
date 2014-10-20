@@ -190,7 +190,8 @@ namespace fplainn
 			udi_index_t spawn_idx,
 			IncompleteChannel **ret);
 
-		sbit8 destroyIncompleteChannel(
+		// Not a misnaming: does not free, only removes.
+		sbit8 removeIncompleteChannel(
 			typeE type, udi_index_t spawn_idx);
 
 		sbit8 hasEndpoint(Endpoint *endp)
@@ -201,6 +202,9 @@ namespace fplainn
 		}
 
 		virtual typeE getType(void)=0;
+
+		// Custom operator delete().
+		void operator delete(void *obj);
 
 	public:
 		RegionEndpoint			regionEnd0;

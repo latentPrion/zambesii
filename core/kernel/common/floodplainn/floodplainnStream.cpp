@@ -118,14 +118,24 @@ error_t FloodplainnStream::connect(
 	 * Begin gathering required information for the Stream end of the
 	 * channel.
 	 **/
-	fplainn::IncompleteD2SChannel		blueprint(0);
+	fplainn::IncompleteD2SChannel		*blueprint;
 
-	blueprint.endpoints[0]->anchor(devRegion, drvInstCbop->opsVector, NULL);
-	blueprint.endpoints[1]->anchor(
+	blueprint = new fplainn::IncompleteD2SChannel(0);
+	if (blueprint == NULL || blueprint->initialize() != ERROR_SUCCESS)
+	{
+		printf(ERROR FPSTREAM"%d: connect %s %s: failed to alloc or "
+			"initialize new channel object.\n",
+			this->id, devName, metaName);
+
+		return ERROR_INITIALIZATION_FAILURE;
+	};
+
+	blueprint->endpoints[0]->anchor(devRegion, drvInstCbop->opsVector, NULL);
+	blueprint->endpoints[1]->anchor(
 		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread(),
 		ops_vector, endpPrivateData1);
 
-	ret = createChannel(&blueprint, &tmpretchan);
+	ret = createChannel(blueprint, &tmpretchan);
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR FPSTREAM"%d: connect %s %s: createChannel() "
@@ -146,20 +156,18 @@ error_t FloodplainnStream::createChannel(
 	error_t				ret0, ret1;
 	fplainn::Region			*region;
 	FloodplainnStream		*stream;
-	HeapObj<fplainn::D2SChannel>	chan;
+	fplainn::D2SChannel		*chan;
 
 	if (retchan == NULL) { return ERROR_INVALID_ARG; };
 
 	region = blueprint->regionEnd0.region;
 	stream = &blueprint->fstreamEnd.thread->parent->floodplainnStream;
 
-	chan = new fplainn::D2SChannel(*blueprint);
-	if (chan == NULL) { return ERROR_MEMORY_NOMEM; };
-	ret0 = chan->initialize();
-	if (ret0 != ERROR_SUCCESS) { return ret0; };
+	// We no longer allocate a new object; just downcast.
+	chan = static_cast<fplainn::D2SChannel *>(blueprint);
 
 	// Only one device instance to add the channel to.
-	ret0 = region->parent->addChannel(chan.get());
+	ret0 = region->parent->addChannel(chan);
 	if (ret0 != ERROR_SUCCESS) { return ret0; };
 
 	ret0 = chan->endpoints[0]->anchor();
@@ -172,15 +180,14 @@ error_t FloodplainnStream::createChannel(
 			"\tret0 %d: %s, ret1 %d: %s",
 			stream->id, ret0, strerror(ret0), ret1, strerror(ret1));
 
-		region->parent->removeChannel(chan.get());
+		region->parent->removeChannel(chan);
 		return ERROR_INITIALIZATION_FAILURE;
 	};
 
 	if (retchan != NULL) {
-		*retchan = static_cast<fplainn::D2SChannel*>(chan.get());
+		*retchan = static_cast<fplainn::D2SChannel*>(chan);
 	};
 
-	chan.release();
 	return ERROR_SUCCESS;
 }
 
