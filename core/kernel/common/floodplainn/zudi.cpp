@@ -1,7 +1,9 @@
 
 #include <__kstdlib/__kcxxlib/memory>
 #include <__kstdlib/__kclib/assert.h>
+#include <__kstdlib/__kclib/string.h>
 #include <kernel/common/process.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/floodplainn/floodplainn.h>
@@ -643,7 +645,12 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::Zudi::send(udi_cb_t *mcb, uarch_t size, void *privateData)
+error_t fplainn::Zudi::send(
+	fplainn::Endpoint *_endp,
+	udi_cb_t *gcb, va_list args, udi_layout_t *layouts[3],
+	utf8Char *metaName, udi_index_t meta_ops_num, udi_index_t ops_idx,
+	void *privateData
+	)
 {
 	fplainn::Region			*region;
 	fplainn::RegionEndpoint		*endp;
@@ -654,18 +661,20 @@ error_t fplainn::Zudi::send(udi_cb_t *mcb, uarch_t size, void *privateData)
 	 * region for the current thread (only driver processes should call this
 	 * function), and then we can proceed.
 	 **/
-	if (mcb == NULL) { return ERROR_INVALID_ARG; };
-
+	endp = static_cast<fplainn::RegionEndpoint *>(_endp);
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	region = self->getRegion();
+
 	if (self->parent->getType() != ProcessStream::DRIVER)
 		{ return ERROR_UNAUTHORIZED; };
 
-	region = self->getRegion();
-	endp = static_cast<fplainn::RegionEndpoint *>(mcb->channel);
 	if (!region->endpoints.checkForItem(endp))
 		{ return ERROR_INVALID_RESOURCE_HANDLE; };
 
-	return fplainn::sChannelMsg::send(endp, mcb, size, privateData);
+	return fplainn::sChannelMsg::send(
+		endp,
+		gcb, args, layouts,
+		metaName, meta_ops_num, ops_idx, privateData);
 }
 
 static error_t udi_mgmt_calls_prep(

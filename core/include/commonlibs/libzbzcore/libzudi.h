@@ -115,18 +115,6 @@ namespace lzudi
 		udi_init_context_t		*rdata;
 		PtrList<sEndpointContext>	endpoints;
 	};
-
-	udi_size_t _udi_get_layout_size(
-		udi_layout_t *layout,
-		udi_ubit16_t *inline_offset,
-		udi_ubit16_t *chain_offset);
-
-	void _udi_marshal_params(
-		udi_layout_t *layout, void *marshal_space, va_list args);
-
-	udi_boolean_t _udi_get_layout_offset(
-		udi_layout_t *start, udi_layout_t **end, udi_size_t *offset,
-		udi_layout_t key);
 }
 
 #endif

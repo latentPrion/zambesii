@@ -51,6 +51,28 @@ void lzudi::sEndpointContext::dump(void)
 		opsVectorTemplate);
 }
 
+static lzudi::sRegion *getRegionMetadataByIndex(udi_index_t index)
+{
+	List<lzudi::sRegion>		*metadataList;
+	List<lzudi::sRegion>::Iterator	mlIt;
+
+	metadataList = &cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->getRegion()->parent->regionLocalMetadata;
+
+	// Really hate that we have to do this loop, but no way around it.
+	mlIt = metadataList->begin();
+	for (; mlIt != metadataList->end(); ++mlIt)
+	{
+		lzudi::sRegion		*tmp = *mlIt;
+
+		if (tmp->index != index) { continue; };
+		// Found it.
+		return tmp;
+	};
+
+	return NULL;
+}
+
 void udi_channel_spawn(
 	udi_channel_spawn_call_t *callback,
 	udi_cb_t *gcb,
@@ -60,8 +82,6 @@ void udi_channel_spawn(
 	void *channel_context
 	)
 {
-	List<lzudi::sRegion>		*metadataList;
-	List<lzudi::sRegion>::Iterator	mlIt;
 	lzudi::sRegion			*r=NULL;
 	Thread				*thread;
 	lzudi::sEndpointContext		*originEndp, *newEndp;
@@ -76,19 +96,11 @@ void udi_channel_spawn(
 
 	originEndp = (lzudi::sEndpointContext *)channel;
 	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
-	metadataList = &thread->getRegion()->parent->regionLocalMetadata;
 	drvInfoCache = thread->parent->getDriverInstance()->cachedInfo;
 
-	// Really hate that we have to do this loop, but no way around it.
-	mlIt = metadataList->begin();
-	for (; mlIt != metadataList->end(); ++mlIt)
-	{
-		lzudi::sRegion		*tmp = *mlIt;
-
-		if (tmp->index != thread->getRegion()->index) { continue; };
-		// Found it.
-		r = tmp;
-		break;
+	r = getRegionMetadataByIndex(thread->getRegion()->index);
+	if (r == NULL) {
+		callback(gcb, NULL); return;
 	};
 
 	// Now proceed to make the calls as needed.
@@ -163,7 +175,9 @@ void udi_channel_spawn(
 	callback(gcb, newEndp);
 }
 
-static lzudi::sRegion *getRegionForEndpointContext(lzudi::sEndpointContext *ec)
+static lzudi::sRegion *getRegionMetadataForEndpointContext(
+	lzudi::sEndpointContext *ec
+	)
 {
 	List<lzudi::sRegion>		*metadataList;
 	List<lzudi::sRegion>::Iterator	mlIt;
@@ -201,7 +215,7 @@ void udi_channel_set_context(
 	 * we were passed.
 	 **/
 
-	r = getRegionForEndpointContext(endpoint);
+	r = getRegionMetadataForEndpointContext(endpoint);
 	// If r == NULL, the target_channel was invalid.
 	if (r == NULL) { return; }
 
@@ -218,7 +232,6 @@ void udi_channel_anchor(
 {
 	lzudi::sEndpointContext					*endp;
 	lzudi::sRegion						*r;
-	fplainn::DriverInstance					*drvInst;
 	Thread							*thread;
 	__klzbzcore::driver::CachedInfo				*drvInfoCache;
 	__klzbzcore::driver::CachedInfo::sMetaDescriptor	*metaDesc;
@@ -238,8 +251,14 @@ void udi_channel_anchor(
 	 * Finally, we do the syscall and set the kernel-level opsVector
 	 * pointer.
 	 **/
-	// According to the spec, ops_idx must be non-zero for this call.
-	if (ops_idx == 0) { return; };
+	/* According to the spec, ops_idx must be non-zero for this call.
+	 *
+	 * Any failures will return a NULL argument because we would prefer to
+	 * fail loudly than silently.
+	 **/
+	if (ops_idx == 0) {
+		callback(gcb, NULL); return;
+	};
 
 	endp = (lzudi::sEndpointContext *)channel;
 	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
@@ -251,25 +270,39 @@ void udi_channel_anchor(
 	 * valid udi_ops_init_t entry.
 	 **/
 	opsInit = drvInfoParser.getOpsInit(ops_idx);
-	if (opsInit == NULL) { return; };
+	if (opsInit == NULL) {
+		callback(gcb, NULL); return;
+	};
 
-	r = getRegionForEndpointContext(endp);
-	if (r == NULL) { return; };
+	r = getRegionMetadataForEndpointContext(endp);
+	if (r == NULL) {
+		callback(gcb, NULL); return;
+	};
 
 	endp->channel_context = channel_context;
 
 	// Gather all information to be derived from ops_idx here.
 	metaDesc = drvInfoCache->getMetaDescriptor(opsInit->meta_idx);
+	if (metaDesc == NULL) {
+		callback(gcb, NULL); return;
+	};
+
 	endp->anchor(metaDesc->name, metaDesc->initInfo, ops_idx);
 
 	floodplainn.zudi.anchorEndpoint(
 		endp->__kendpoint, opsInit->ops_vector, endp);
+
+	callback(gcb, endp);
 }
 
 void udi_channel_close(udi_channel_t channel)
 {
+	(void)channel;
+	UNIMPLEMENTED("udi_channel_close in libzudi");
+	panic(ERROR_UNIMPLEMENTED);
 }
 
+static udi_layout_t blankInlineLayout[] = { UDI_DL_END };
 void udi_mei_call(
 	udi_cb_t *gcb,
 	udi_mei_init_t *meta_info,
@@ -278,38 +311,21 @@ void udi_mei_call(
 	...
 	)
 {
-	Thread				*self;
-	udi_ubit16_t			dummy;
-	udi_layout_t			*visible, *marshal, *inlin;
-	udi_size_t			visibleSize, inlineSize, marshalSize,
-	// totalSize begins at size of a generic CB, then we add to it.
-					totalSize = sizeof(udi_cb_t);
-	udi_mei_ops_vec_template_t	*opsVector;
-	udi_mei_op_template_t		*op;
+	enum layoutE {
+		LAYOUT_VISIBLE, LAYOUT_MARSHAL, LAYOUT_INLINE };
+
+	va_list				args;
+	udi_layout_t			*layouts[3];
+	lzudi::sEndpointContext		*endp;
+	lzudi::sRegion			*r;
+	Thread				*thread;
+//	sCbHeader			*cbHeader;
+	udi_mei_op_template_t		*opTemplate;
 
 	/**	EXPLANATION:
 	 * This is called by every metalanguage library. It is responsible for
-	 * marshaling the arguments for the call into a single block and then
-	 * calling the kernel.
-	 *
-	 * In addition, it must consider the type of process on whose behalf it
-	 * is preparing the call:
-	 *	* For driver hosts, it must call floodplainn.zudi.send().
-	 *		This syscall will interpret the "channel" argument of
-	 *		the generic control block passed to it as one end
-	 *		of a Driver-to-Driver channel.
-	 *		Consequently, it will get the region for the current
-	 *		thread, and scan it for all channels bound to it. If the
-	 *		"channel" passed through the control block is not found,
-	 *		it will assume that the "channel" pointer is invalid.
-	 *	* For non-driver process hosts, it must call
-	 *	  floodplainnStream.send().
-	 *		This syscall will interpret the "channel" argument of
-	 *		the generic control block passed to it as one end of
-	 *		a Driver-to-Stream channel.
-	 *		Consequently, when trying to validate the channel
-	 *		pointer, it will scan only through the list of endpoints
-	 *		on the host process' FloodplainnStream instance.
+	 * gathering the information required to marshal the call, and then
+	 * calling the kernel to do the marshalling.
 	 *
 	 **	MARSHALING STRATEGY:
 	 * The marshaling strategy is nothing novel; we simply follow the UDI
@@ -350,31 +366,41 @@ void udi_mei_call(
 	 * * Marshal all arguments into the allocated space.
 	 * * </end>.
 	 **/
-	if (gcb == NULL || meta_info == NULL) { return; };
 	if (meta_ops_num == 0) { return; };
-
-	fplainn::MetaInit				metaInfo(meta_info);
-
-	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
-
-	opsVector = metaInfo.getOpsVectorTemplate(meta_ops_num);
-	if (opsVector == NULL) { return; };
-	op = metaInfo.getOpTemplate(opsVector, vec_idx);
-	if (op == NULL) { return; };
-
-	visibleSize = lzudi::_udi_get_layout_size(
-		op->visible_layout, &dummy, &dummy);
-
-	marshalSize = lzudi::_udi_get_layout_size(
-		op->marshal_layout, &dummy, &dummy);
-
-	// We don't need to consider anything to do with scratch here.
-printf(NOTICE"visiblesize %d, marshalsize %d.\n", visibleSize, marshalSize);
-	// Eventually.... We send all the marshalled data as one clump.
-	if (self->parent->getType() == ProcessStream::DRIVER) {
-//		floodplainn.zudi.send(MARSHALLED_DATA);
-	} else {
-//		self->parent->floodplainnStream.send(NULL);
+	if (gcb == NULL || gcb->channel == NULL || meta_info == NULL)
+	{
+		// Can probably use that critical condition call API.
+		return;
 	};
+
+	va_start(args, vec_idx);
+//	cbHeader = (sCbHeader *)gcb;
+//	cbHeader--;
+	endp = (lzudi::sEndpointContext *)gcb->channel;
+	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	// Now search for the endpoint among those anchored to this region.
+	r = getRegionMetadataByIndex(thread->getRegion()->index);
+	if (r == NULL) { return; };
+
+	// If channel doesn't exist or is not bound to this region, abort.
+	if (!r->findEndpointContext(endp)) { return; };
+
+	fplainn::MetaInit			metaInfoParser(meta_info);
+
+	opTemplate = metaInfoParser.getOpTemplate(meta_ops_num, vec_idx);
+	if (opTemplate == NULL) { return; };
+
+	layouts[LAYOUT_VISIBLE] = opTemplate->visible_layout;
+	layouts[LAYOUT_MARSHAL] = opTemplate->marshal_layout;
+//	layouts[LAYOUT_INLINE] = cbHeader->inlineLayout;
+	layouts[LAYOUT_INLINE] = blankInlineLayout;
+
+	// Finally, pass the marshalling specification to Zudi::send().
+	floodplainn.zudi.send(
+		endp->__kendpoint,
+		gcb, args, layouts,
+		endp->metaName, meta_ops_num, vec_idx,
+		NULL);
 }
 

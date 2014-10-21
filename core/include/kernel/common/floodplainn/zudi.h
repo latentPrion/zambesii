@@ -122,7 +122,11 @@ public:
 		fplainn::Endpoint *endp, void *privateData);
 
 	#define MSGSTREAM_ZUDI_CHANNEL_SEND		(2)
-	error_t send(udi_cb_t *marshalledCb, uarch_t size, void *privateData);
+	error_t send(
+		fplainn::Endpoint *endp,
+		udi_cb_t *gcb, va_list args, udi_layout_t *layouts[3],
+		utf8Char *metaName, udi_index_t meta_ops_num, udi_index_t op_idx,
+		void *privateData);
 
 public:
 	struct sKernelCallMsg

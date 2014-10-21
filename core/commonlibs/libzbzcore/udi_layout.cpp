@@ -57,9 +57,10 @@
 #define UDI_PHYSIO_VERSION	0x101
 #include <udi_physio.h>
 #include <__kstdlib/__kclib/assert.h>
+#include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
-#include <commonlibs/libzbzcore/libzudi.h>
+#include <kernel/common/floodplainn/channel.h>
 
 
 #define _UDI_PHYSIO_SUPPORTED		1
@@ -76,10 +77,161 @@
  * Has the additional benefit that it will validate the layout template
  * before we ever try to do anything "hard" with it.
  */
-namespace lzudi
-{
 
-udi_size_t _udi_get_layout_size(
+struct sLayoutElementDescriptor
+{
+	uarch_t		elementSize,
+			layoutSkipCount;
+};
+
+sLayoutElementDescriptor layoutElements[] =
+{
+	{ 0, 0 },				// UDI_DL_END
+
+	// #def = 1, index = 1 (Fixed width types)
+	#define ZUDI_LAYOUT_ELEMDESC_INTEGRAL_BASE	(1)
+	{ sizeof(udi_ubit8_t), 1 },		// UDI_DL_UBIT8_T
+	{ sizeof(udi_sbit8_t), 1 },		// UDI_DL_SBIT8_T
+	{ sizeof(udi_ubit16_t), 1 },		// UDI_DL_UBIT16_T
+	{ sizeof(udi_sbit16_t), 1 },		// UDI_DL_SBIT16_T
+	{ sizeof(udi_ubit32_t), 1 },		// UDI_DL_UBIT32_T
+	{ sizeof(udi_sbit32_t), 1 },		// UDI_DL_SBIT32_T
+	{ sizeof(udi_boolean_t), 1 },		// UDI_DL_BOOLEAN_T
+	{ sizeof(udi_status_t), 1 },		// UDI_DL_STATUS_T
+
+	// #def = 20, index = 9 (Abstract types)
+	#define ZUDI_LAYOUT_ELEMDESC_ABSTRACT_BASE	(9)
+	{ sizeof(udi_index_t), 1 },		// UDI_DL_INDEX_T
+
+	// #def = 30, index = 10 (Opaque handles)
+	#define ZUDI_LAYOUT_ELEMDESC_OPAQUE_BASE	(10)
+	{ sizeof(udi_channel_t), 1 },		// UDI_DL_CHANNEL_T
+	{ 0, 1 },				// INVALID
+	{ sizeof(udi_origin_t), 1 },		// UDI_DL_ORIGIN_T
+
+	// #def = 40, index = 13 (Indirect element descriptors)
+	#define ZUDI_LAYOUT_ELEMDESC_INDIRECT_BASE	(13)
+	{ sizeof(udi_buf_t *), 4 },		// UDI_DL_BUF
+	{ sizeof(udi_cb_t *), 1 },		// UDI_DL_CB
+	{ sizeof(void *), 1 },			// UDI_DL_INLINE_UNTYPED
+	{ sizeof(void *), 1 },			// UDI_DL_INLINE_DRIVER_TYPED
+	{ sizeof(void *), 1 },			// UDI_DL_MOVABLE_UNTYPED
+
+	// #def = 50, index = 18 (Nested element descriptors)
+	#define ZUDI_LAYOUT_ELEMDESC_NESTED_BASE	(18)
+	{ sizeof(void *), 0 },			// UDI_DL_INLINE_TYPED
+	{ sizeof(void *), 0 },			// UDI_DL_MOVABLE_TYPED
+	{ 0, 0 }				// UDI_DL_ARRAY
+};
+
+udi_size_t fplainn::sChannelMsg::zudi_get_layout_element_size(
+	const udi_layout_t element, const udi_layout_t nestedLayout[],
+	udi_size_t *layoutSkipCount
+	)
+{
+	udi_index_t		index=element;
+
+	// Nested element.
+	if (element >= 50)
+	{
+		if (nestedLayout == NULL) {
+			*layoutSkipCount = 0; return 0;
+		};
+
+		index = index - 50 + ZUDI_LAYOUT_ELEMDESC_NESTED_BASE;
+
+		if (element == UDI_DL_INLINE_TYPED
+			|| element == UDI_DL_MOVABLE_TYPED)
+		{
+			/* For these, the next few bytes until the next
+			 * UDI_DL_END describe the structure of the object
+			 * pointed to by the pointer element. Skip these
+			 * detailed descriptor bytes, and increase the caller's
+			 * skip count by the number of detail bytes as well.
+			 **/
+			*layoutSkipCount = 1;
+			for (
+				udi_layout_t *curr=nestedLayout;
+				*curr != UDI_DL_END;
+				curr++)
+				{ *layoutSkipCount += 1; };
+
+			return layoutElements[index].elementSize;
+		};
+
+		if (element == UDI_DL_ARRAY)
+		{
+			udi_layout_t		*curr;
+			udi_size_t		nElements, elemSize=0;
+
+			/* Skip count starts at 2, because the caller will
+			 * have to skip both the UDI_DL_ARRAY byte and the
+			 * element_count byte that follows it.
+			 **/
+			*layoutSkipCount = 2;
+
+			curr = nestedLayout;
+			nElements = *nestedLayout;
+			nestedLayout++;
+
+			for (; *curr != UDI_DL_END; curr++)
+			{
+				udi_size_t		currLElemSize,
+							currLElemSkip;
+
+				currLElemSize = zudi_get_layout_element_size(
+					*curr, curr + 1, &currLElemSkip);
+
+				if (currLElemSkip == 0) {
+					*layoutSkipCount = 0; return 0;
+				};
+
+				elemSize += currLElemSize;
+				*layoutSkipCount += currLElemSkip;
+			};
+
+			return elemSize * nElements;
+		}
+		else
+		{
+			// Should never reach here.
+			*layoutSkipCount = 0;
+			return 0;
+		};
+	};
+
+	// Indirect element pointer.
+	if (element >= 40)
+	{
+		index = index - 40 + ZUDI_LAYOUT_ELEMDESC_INDIRECT_BASE;
+		goto out;
+	};
+
+	// Opaque handle.
+	if (element >= 30)
+	{
+		index = index - 30 + ZUDI_LAYOUT_ELEMDESC_OPAQUE_BASE;
+		goto out;
+	};
+
+	// Abstract type.
+	if (element >= 20)
+	{
+		index = index - 20 + ZUDI_LAYOUT_ELEMDESC_ABSTRACT_BASE;
+		goto out;
+	}
+	else // Integral type.
+	{
+		index = index - 1 + ZUDI_LAYOUT_ELEMDESC_INTEGRAL_BASE;
+		goto out;
+	};
+
+out:
+	*layoutSkipCount = layoutElements[index].layoutSkipCount;
+	return layoutElements[index].elementSize;
+}
+
+udi_size_t fplainn::sChannelMsg::_udi_get_layout_size(
 	udi_layout_t *layout,
 	udi_ubit16_t *inline_offset,
 	udi_ubit16_t *chain_offset
@@ -285,7 +437,7 @@ printf(NOTICE"unknown UDI_DL %d.\n", *layout);
 	ptr = (void *) (_ported_udi_alignto(ptr, element_size)); \
 	*(type *) ptr = _##va(args, type);
 
-void _udi_marshal_params(
+void fplainn::sChannelMsg::_udi_marshal_params(
 	udi_layout_t *layout, void *marshal_space, va_list args
 	)
 {
@@ -401,7 +553,7 @@ void _udi_marshal_params(
  * _udi_get_layout_offset(layout, UDI_DL_END) would return
  * on the second UDI_DL_END
  */
-udi_boolean_t _udi_get_layout_offset(
+udi_boolean_t fplainn::sChannelMsg::_udi_get_layout_offset(
 	udi_layout_t *start, udi_layout_t **end, udi_size_t *offset,
 	udi_layout_t key
 	)
@@ -539,6 +691,4 @@ udi_boolean_t _udi_get_layout_offset(
 	*end = layout;
 	*offset = layout_size;
 	return TRUE;
-}
-
 }

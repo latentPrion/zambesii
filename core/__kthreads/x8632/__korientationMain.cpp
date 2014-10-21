@@ -291,12 +291,13 @@ void __korientationMain1(void)
 		new __kCallback(&__korientationMain4));
 }
 
+#include <kernel/common/floodplainn/initInfo.h>
 void __korientationMain4(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
 	fplainn::Device			*chipsetDev; (void)chipsetDev;
 	error_t				ret;
-	fplainn::Zui::sIndexMsg	*msg;
+	fplainn::Zui::sIndexMsg		*msg;
 
 	msg = (fplainn::Zui::sIndexMsg *)msgIt;
 	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
@@ -315,7 +316,10 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 
 	fplainn::Endpoint		*endp;
 	fplainn::Device			*d;
-	udi_cb_t			*mcb;
+	udi_intr_attach_cb_t		cb;
+	extern udi_mei_init_t		udi_bridge_meta_info;
+	fplainn::MetaInit		parser(&udi_bridge_meta_info);
+	udi_mei_op_template_t		*bindOpTemplate;
 
 	floodplainn.getDevice(CC"by-id", &d);
 
@@ -328,13 +332,25 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 			0, &endp),
 		ret);
 
-	mcb = new udi_cb_t;
-	mcb->channel = endp;
-	self->parent->floodplainnStream.send(mcb, sizeof(udi_cb_t), NULL);
+	cb.gcb.channel = endp;
 
-	extern udi_mei_init_t		udi_bridge_meta_info;
-	udi_mei_call(mcb, &udi_bridge_meta_info, 1, 3, 0, 0, 0, 0, 0, 0);
-	printf(NOTICE ORIENT"About to dormant.\n");
+	bindOpTemplate = parser.getOpTemplate(
+		UDI_BUS_BRIDGE_OPS_NUM, 3);
+
+	udi_layout_t			*lay[3] = {
+		bindOpTemplate->visible_layout,
+		bindOpTemplate->marshal_layout,
+		NULL
+	};
+
+
+	ret = self->parent->floodplainnStream.send(
+		static_cast<fplainn::FStreamEndpoint *>(endp),
+		&cb.gcb, (va_list)&msg, lay,
+		CC"zbz_root", UDI_BUS_BRIDGE_OPS_NUM, 3,
+		NULL);
+
+	printf(NOTICE ORIENT"About to dormant %d, %s.\n", ret, strerror(ret));
 	taskTrib.dormant(self->getFullId());
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),

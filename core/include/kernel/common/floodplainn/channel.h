@@ -1,9 +1,13 @@
 #ifndef _FLOODPLAINN_UDI_CHANNEL_H
 	#define _FLOODPLAINN_UDI_CHANNEL_H
 
-	#define UDI_VERSION	0x101
+	#define UDI_VERSION		0x101
 	#include <udi.h>
+	#define UDI_PHYSIO_VERSION	0x101
+	#include <udi_physio.h>
+	#undef UDI_PHYSIO_VERSION
 	#undef UDI_VERSION
+	#include <zui.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/ptrList.h>
 	#include <__kclasses/ptrlessList.h>
@@ -63,7 +67,6 @@ namespace fplainn
 		// send() calls enqueue() on the "otherEnd" endpoint.
 		virtual error_t send(sChannelMsg *msg)
 			{ return otherEnd->enqueue(msg); }
-
 
 		virtual void dump(void)
 			{ printf(CC"\topsvec 0x%p, ", opsVector); }
@@ -321,10 +324,28 @@ namespace fplainn
 		:
 		header(targetId, subsystem, function, size, flags, privateData),
 		data((udi_cb_t *)&this[1])
-		{}
+		{
+			metaName[0] = '\0';
+		}
 
-		void set(ubit16 dataSize)
+		void setPayloadSize(ubit16 dataSize)
 			{ header.size = sizeof(*this) + dataSize; }
+
+		void set(utf8Char *metaName, ubit16 metaOpsNum, ubit16 opsIndex)
+		{
+			this->metaOpsNum = metaOpsNum;
+			this->opsIndex = opsIndex;
+
+			if (metaName != NULL)
+			{
+				strncpy8(
+					this->metaName, metaName,
+					ZUI_DRIVER_METALANGUAGE_MAXLEN);
+
+				this->metaName[ZUI_DRIVER_METALANGUAGE_MAXLEN - 1]
+					= '\0';
+			};
+		}
 
 		uarch_t getDataSize(void)
 			{ return header.size - sizeof(*this); }
@@ -335,16 +356,78 @@ namespace fplainn
 		MessageStream::sHeader		header;
 		// "data" is initialized to point to the byte after this struct.
 		udi_cb_t			*data;
+		// These 3 are set by Zudi::send()/FloodplainnStream::send().
+		utf8Char			metaName[
+			ZUI_DRIVER_METALANGUAGE_MAXLEN];
+		ubit16				metaOpsNum,
+						opsIndex;
+		// These 2 are set by the target endpoint.
+		udi_ops_vector_t		*opsVector;
+		void				*endpointPrivateData;
 
 	private:
 		friend class Zudi;
 		friend class ::FloodplainnStream;
 
-		static error_t send(
-			Endpoint *endp,
-			udi_cb_t *cb, uarch_t size, void *privateData);
-	};
+		static sbit8 zudi_layout_element_is_valid(udi_layout_t element)
+		{
+			/**	TODO:
+			 * Implement this properly. Right now it is very
+			 * generalized.
+			 **/
+			return element == UDI_DL_DMA_CONSTRAINTS_T
+				|| element == UDI_DL_PIO_HANDLE_T
+				|| (element > 0 && element <= 52);
+		}
 
+		static udi_size_t zudi_get_layout_element_size(
+			const udi_layout_t element,
+			const udi_layout_t nestedLayout[],
+			udi_size_t *layoutSkipCount);
+
+		static status_t zudi_get_layout_size(const udi_layout_t layout[])
+		{
+			udi_layout_t		*curr;
+			udi_size_t		ret=0, skipCount;
+
+			if (layout == NULL) { return ERROR_INVALID_ARG; };
+
+			for (curr=layout; *curr != UDI_DL_END; curr+=skipCount)
+			{
+				udi_size_t		currElemSize;
+
+				currElemSize = zudi_get_layout_element_size(
+					*curr, curr + 1, &skipCount);
+
+				if (currElemSize == 0)
+					{ return ERROR_INVALID_FORMAT; };
+
+				ret += currElemSize;
+			};
+
+			return ret;
+		};
+
+		static udi_size_t _udi_get_layout_size(
+			udi_layout_t *layout,
+			udi_ubit16_t *inline_offset,
+			udi_ubit16_t *chain_offset);
+
+		static void _udi_marshal_params(
+			udi_layout_t *layout, void *marshal_space, va_list args);
+
+		static udi_boolean_t _udi_get_layout_offset(
+			udi_layout_t *start, udi_layout_t **end,
+			udi_size_t *offset,
+			udi_layout_t key);
+
+		static error_t send(
+			fplainn::Endpoint *endp,
+			udi_cb_t *gcb, va_list args, udi_layout_t *layouts[3],
+			utf8Char *metaName,
+			udi_index_t meta_ops_num, udi_index_t ops_idx,
+			void *privateData);
+	};
 }
 
 

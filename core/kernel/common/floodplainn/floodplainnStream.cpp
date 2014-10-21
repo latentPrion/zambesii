@@ -191,9 +191,17 @@ error_t FloodplainnStream::createChannel(
 	return ERROR_SUCCESS;
 }
 
-error_t FloodplainnStream::send(udi_cb_t *mcb, uarch_t size, void *privateData)
+error_t FloodplainnStream::send(
+//	fplainn::Endpoint *_endp,
+	fplainn::FStreamEndpoint *endp,
+	udi_cb_t *gcb, va_list args, udi_layout_t *layouts[3],
+	utf8Char *metaName, udi_index_t meta_ops_num, udi_index_t ops_idx,
+	void *privateData
+	)
+
 {
-	fplainn::FStreamEndpoint	*endp;
+	Thread				*self;
+//	fplainn::FStreamEndpoint	*endp
 
 	/**	EXPLANATION:
 	 * We use the channel pointer inside of the GCB to know which channel
@@ -209,11 +217,17 @@ error_t FloodplainnStream::send(udi_cb_t *mcb, uarch_t size, void *privateData)
 	 * (fplainn::sChannelMsg), then copy the marshaled data into the message
 	 * memory. Then send the message across the channel.
 	 **/
-	if (mcb == NULL) { return ERROR_INVALID_ARG; };
+//	endp = static_cast<fplainn::FStreamEndpoint *>(_endp);
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	endp = static_cast<fplainn::FStreamEndpoint *>(mcb->channel);
+	if (self->parent->getType() == ProcessStream::DRIVER)
+		{ return ERROR_UNAUTHORIZED; };
+
 	if (!endpoints.checkForItem(endp))
 		{ return ERROR_INVALID_RESOURCE_HANDLE; };
 
-	return fplainn::sChannelMsg::send(endp, mcb, size, privateData);
+	return fplainn::sChannelMsg::send(
+		endp,
+		gcb, args, layouts,
+		metaName, meta_ops_num, ops_idx, privateData);
 }
