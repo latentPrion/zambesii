@@ -9,6 +9,15 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
+/**	EXPLANATION:
+ * Like the ZUI server, the ZUM server will also take commands over a ZAsync
+ * Stream connection.
+ *
+ * This thread essentially implements all the logic required to allow the kernel
+ * to call into a device on its udi_mgmt channel. It doesn't care about any
+ * other channels.
+ **/
+
 // Dat C++ inheritance.
 struct sDummyMgmtMaOpsVector
 : udi_ops_vector_t
@@ -36,7 +45,7 @@ namespace zumServer
 			Thread *self,
 			fplainn::Device *dev);
 
-//		startDeviceReqCbFn	startDeviceReq1;
+		startDeviceReqCbFn	startDeviceReq1;
 //		startDeviceReqCbFn	startDeviceReq2;
 	}
 }
@@ -130,6 +139,8 @@ void zumServer::zasyncHandler(
 	case 4:
 		break;
 	case 5:
+		break;
+	case 6:
 		start::startDeviceReq(msg, request, self);
 		break;
 
@@ -213,5 +224,37 @@ void zumServer::start::startDeviceReq(
 		myResponse(err); return;
 	};
 
-//	dev->instance->setMgmtEndpoint(endp);
+	dev->instance->setMgmtEndpoint(endp);
+
+	/* Now we have our connection. Start sending the initialization
+	 * sequence (UDI Core Specification, section 24.2.1):
+	 *	udi_usage_ind()
+	 *	for (EACH; INTERNAL; BIND; CHILD; ENDPOINT) {
+	 *		udi_channel_event_ind(UDI_CHANNEL_BOUND);
+	 *	};
+	 *	udi_channel_event_ind(parent_bind_channel, UDI_CHANNEL_BOUND);
+	 *
+	 * And that's it, friends. We'd have at that point, a running UDI
+	 * driver, or as the spec describes it, a driver that is "open for
+	 * business".
+	 **/
+	floodplainn.zum.usageInd(
+		ctxt->info.path, ctxt->info.params.usage.resource_level,
+		new StartDeviceReqCb(startDeviceReq1, ctxt, self, dev));
+}
+
+void zumServer::start::startDeviceReq1(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *self,
+	fplainn::Device *dev
+	)
+{
+	AsyncResponse			myResponse;
+	fplainn::Zum::sZumMsg		*response;
+
+	response = (fplainn::Zum::sZumMsg *)msg;
+	myResponse(ctxt);
+
+	myResponse(response->header.error);
 }

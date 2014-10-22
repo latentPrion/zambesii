@@ -294,6 +294,7 @@ namespace fplainn
 		:
 		device(dev),
 		regions(NULL),
+		mgmtChannelContext(NULL), mgmtEndpoint(NULL),
 		nRegionsInitialized(0), nRegionsFailed(0)
 		{}
 
@@ -317,11 +318,15 @@ namespace fplainn
 		void removeChannel(Channel *chan)
 			{ channels.remove(chan); }
 
+		void setMgmtEndpoint(FStreamEndpoint *endp)
+			{ mgmtEndpoint = endp; }
+
 	public:
 		PtrList<Channel>	channels;
 		Device			*device;
 		Region			*regions;
 		udi_init_context_t	*mgmtChannelContext;
+		FStreamEndpoint		*mgmtEndpoint;
 
 		// XXX: ONLY to be used by __klibzbzcore.
 		uarch_t			nRegionsInitialized, nRegionsFailed;

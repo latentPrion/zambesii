@@ -11,7 +11,7 @@
 	#include <kernel/common/floodplainn/fvfs.h> // FVFS_PATH_MAXLEN
 	#include <kernel/common/floodplainn/channel.h>
 
-#define ZUP			"ZUP: "
+#define ZUM			"ZUM: "
 
 class Thread;
 
@@ -32,7 +32,13 @@ public:
 	/* Causes the ZUM server to connect("udi_mgmt") to the device, and then
 	 * send the sequence of initialization calls to it.
 	 **/
-	void startDeviceReq(utf8Char *devicePath, void *privateData);
+	void startDeviceReq(
+		utf8Char *devicePath, udi_ubit8_t resource_level,
+		void *privateData);
+
+	/* Causes the ZUM server to disconnect from the device, closing the
+	 * management channel, and tearing down the device instance.
+	 **/
 	void finalCleanupReq(utf8Char *devicePath, void *privateData);
 
 	void suspendDeviceReq(utf8Char *devicePath, void *privateData);
@@ -50,6 +56,52 @@ public:
 	void enumerateReq(
 		utf8Char *devicePath, udi_ubit8_t enumLevel, void *privateData);
 
+	void usageInd(
+		utf8Char *devicePath, udi_ubit8_t resource_level,
+		void *privateData);
+
+	union eventIndU {
+		void setInternalParams(udi_cb_t *cb)
+			{ internal_bound.bind_cb = cb; }
+
+		void setParentParams(
+			udi_cb_t *cb,
+			udi_ubit8_t parentId, udi_buf_path_t *parentPath)
+		{
+			parent_bound.bind_cb = cb;
+			parent_bound.parent_ID = parentId;
+			parent_bound.path_handles = parentPath;
+		}
+
+		void setAbortParams(udi_cb_t *cb)
+			{ orig_cb = cb; }
+
+		struct {
+			udi_cb_t *bind_cb;
+		} internal_bound;
+		struct {
+			udi_cb_t *bind_cb;
+			udi_ubit8_t parent_ID;
+			udi_buf_path_t *path_handles;
+		} parent_bound;
+		udi_cb_t *orig_cb;
+	};
+
+	void internalChannelEventInd(
+		utf8Char *devicePath, fplainn::Endpoint *endp,
+		udi_ubit8_t event, void *privateData);
+
+	void parentChannelEventInd(
+		utf8Char *devicePath, fplainn::Endpoint *endp,
+		udi_ubit8_t event, udi_ubit8_t parent_ID, void *privateData);
+
+	void channelOpAbortedInd(
+		utf8Char *devicePath, fplainn::Endpoint *endp,
+		udi_cb_t *orig_cb, void *privateData);
+
+	void channelEventInd(
+		utf8Char *devicePath, fplainn::Endpoint *endp,
+		udi_ubit8_t event, eventIndU *params, void *privateData);
 
 private:
 	struct sZAsyncMsg
@@ -64,6 +116,12 @@ private:
 				this->path[FVFS_PATH_MAXLEN - 1] = '\0';
 			};
 		}
+
+		enum opE {
+			OP_USAGE_IND, OP_ENUMERATE_REQ, OP_DEVMGMT_REQ,
+			OP_FINAL_CLEANUP_REQ,
+			OP_CHANNEL_EVENT_IND,
+			OP_START_REQ };
 
 		ubit16			opsIndex;
 		utf8Char		path[FVFS_PATH_MAXLEN];
@@ -93,6 +151,7 @@ private:
 			struct
 			{
 				udi_usage_cb_t		cb;
+
 				udi_ubit8_t		resource_level;
 			} usage;
 
@@ -100,6 +159,15 @@ private:
 			{
 				udi_mgmt_cb_t		cb;
 			} final_cleanup;
+
+			struct
+			{
+				udi_channel_event_cb_t	cb;
+
+				fplainn::Endpoint	*endpoint;
+
+				udi_status_t		status;
+			} channel_event;
 		} params;
 	};
 
@@ -124,7 +192,50 @@ private:
 	Thread			*thread;
 
 	static void main(void *);
+
+	static sZAsyncMsg *getNewSZAsyncMsg(
+		utf8Char *func, utf8Char *devPath, sZAsyncMsg::opE op);
 };
+
+
+/**	Inline methods:
+ ******************************************************************************/
+
+void fplainn::Zum::internalChannelEventInd(
+	utf8Char *devicePath, fplainn::Endpoint *endp, udi_ubit8_t event,
+	void *privateData
+	)
+{
+	eventIndU		p;
+
+	p.setInternalParams(NULL);
+	channelEventInd(devicePath, endp, event, &p, privateData);
+}
+
+void fplainn::Zum::parentChannelEventInd(
+	utf8Char *devicePath, fplainn::Endpoint *endp, udi_ubit8_t event,
+	udi_ubit8_t parent_ID, void *privateData
+	)
+{
+	eventIndU		p;
+
+	// The buffer path info will be set by the ZUM server.
+	p.setParentParams(NULL, parent_ID, NULL);
+	channelEventInd(devicePath, endp, event, &p, privateData);
+}
+
+void fplainn::Zum::channelOpAbortedInd(
+	utf8Char *devicePath, fplainn::Endpoint *endp, udi_cb_t *orig_cb,
+	void *privateData
+	)
+{
+	eventIndU		p;
+
+	p.setAbortParams(orig_cb);
+	channelEventInd(
+		devicePath, endp, UDI_CHANNEL_OP_ABORTED, &p,
+		privateData);
+}
 
 #endif
 
