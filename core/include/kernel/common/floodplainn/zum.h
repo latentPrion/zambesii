@@ -6,6 +6,7 @@
 	#undef UDI_VERSION
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/processId.h>
+	#include <kernel/common/messageStream.h>
 	#include <kernel/common/floodplainn/zui.h>
 	#include <kernel/common/floodplainn/fvfs.h> // FVFS_PATH_MAXLEN
 	#include <kernel/common/floodplainn/channel.h>
@@ -57,8 +58,11 @@ private:
 		:
 		opsIndex(opsIndex)
 		{
-			strncpy8(this->path, path, FVFS_PATH_MAXLEN);
-			this->path[FVFS_PATH_MAXLEN - 1] = '\0';
+			if (path != NULL)
+			{
+				strncpy8(this->path, path, FVFS_PATH_MAXLEN);
+				this->path[FVFS_PATH_MAXLEN - 1] = '\0';
+			};
 		}
 
 		ubit16			opsIndex;
@@ -97,6 +101,23 @@ private:
 				udi_mgmt_cb_t		cb;
 			} final_cleanup;
 		} params;
+	};
+
+	struct sZumMsg
+	{
+		sZumMsg(
+			processId_t targetPid,
+			ubit16 subsystem, ubit16 function,
+	 		uarch_t size, uarch_t flags, void *privateData)
+	 	:
+	 	header(
+			targetPid, subsystem, function,
+			size, flags, privateData),
+		info(NULL, 0)
+		{}
+
+		MessageStream::sHeader		header;
+		sZAsyncMsg			info;
 	};
 
 	processId_t		serverTid;

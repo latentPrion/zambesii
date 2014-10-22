@@ -5,8 +5,15 @@
 #include <kernel/common/messageStream.h>
 #include <kernel/common/zasyncStream.h>
 #include <kernel/common/floodplainn/zum.h>
+#include <kernel/common/floodplainn/floodplainnStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
+
+// Dat C++ inheritance.
+struct sDummyMgmtMaOpsVector
+: udi_ops_vector_t
+{
+} dummyMgmtMaOpsVector;
 
 namespace zumServer
 {
@@ -21,6 +28,16 @@ namespace zumServer
 			ZAsyncStream::sZAsyncMsg *msg,
 			fplainn::Zum::sZAsyncMsg *request,
 			Thread *self);
+
+		class StartDeviceReqCb;
+		typedef void (startDeviceReqCbFn)(
+			MessageStream::sHeader *msg,
+			fplainn::Zum::sZumMsg *ctxt,
+			Thread *self,
+			fplainn::Device *dev);
+
+//		startDeviceReqCbFn	startDeviceReq1;
+//		startDeviceReqCbFn	startDeviceReq2;
 	}
 }
 
@@ -124,10 +141,77 @@ void zumServer::zasyncHandler(
 	};
 }
 
+class zumServer::start::StartDeviceReqCb
+: public _Callback
+{
+	fplainn::Zum::sZumMsg *ctxt;
+	Thread *self;
+	fplainn::Device *dev;
+
+public:
+	StartDeviceReqCb(
+		startDeviceReqCbFn *fn,
+		fplainn::Zum::sZumMsg *ctxt, Thread *self, fplainn::Device *dev)
+	: _Callback(fn),
+	ctxt(ctxt), self(self), dev(dev)
+	{}
+
+	virtual void operator()(MessageStream::sHeader *iMsg)
+		{ function(iMsg, ctxt, self, dev); }
+};
+
 void zumServer::start::startDeviceReq(
 	ZAsyncStream::sZAsyncMsg *msg,
 	fplainn::Zum::sZAsyncMsg *request,
 	Thread *self
 	)
 {
+	fplainn::Zum::sZumMsg		*ctxt;
+	error_t				err;
+	fplainn::FStreamEndpoint	*endp;
+	AsyncResponse			myResponse;
+	fplainn::Device			*dev;
+
+	ctxt = new fplainn::Zum::sZumMsg(
+		msg->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
+		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
+
+	if (ctxt == NULL)
+	{
+		printf(ERROR ZUM"startDevReq %s: Failed to alloc async ctxt.\n"
+			"\tCaller may be halted indefinitely.\n"
+			request->path);
+
+		return;
+	};
+
+	myResponse(ctxt);
+	// Copy the request data over.
+	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+
+	// Does the requested device even exist?
+	err = floodplainn.getDevice(ctxt->info.path, &dev);
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	/* First thing is to connect() to the device. We store the handle to
+	 * our endpoint of the udi_mgmt channel to every device within its
+	 * fplainn::DeviceInstance object.
+	 *
+	 * We can make sure that we haven't already connect()ed to the device by
+	 * checking for it first before proceeding.
+	 **/
+	// Can't think of anything meaningful to use as the endpoint privdata.
+	err = self->parent->floodplainnStream.connect(
+		ctxt->info.path, CC"udi_mgmt",
+		&dummyMgmtMaOpsVector, NULL, 0,
+		&endp);
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+//	dev->instance->setMgmtEndpoint(endp);
 }
