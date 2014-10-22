@@ -1444,7 +1444,7 @@ void fplainn::Zui::main(void *)
 		printf(FATAL"Failed to allocate heap mem for request data "
 			"buffer.\n\tAborting.\n");
 
-		return;
+		taskTrib.kill(self); return;
 	};
 
 	if (zudiIndexes[0]->initialize(CC"[__kindex]") != ERROR_SUCCESS)
@@ -1515,4 +1515,6 @@ void fplainn::Zui::main(void *)
 			break;
 		};
 	};
+
+	taskTrib.kill(self);
 }

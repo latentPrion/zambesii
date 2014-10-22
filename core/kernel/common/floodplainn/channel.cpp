@@ -100,6 +100,8 @@ error_t fplainn::sChannelMsg::send(
 
 	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
 		layouts[LAYOUT_VISIBLE], &inlineOffset, &dummy);
+//	visibleSize = fplainn::sChannelMsg::zudi_get_layout_size(
+//		layouts[LAYOUT_VISIBLE]);
 
 	marshalSize = fplainn::sChannelMsg::_udi_get_layout_size(
 		layouts[LAYOUT_MARSHAL], &dummy, &dummy);

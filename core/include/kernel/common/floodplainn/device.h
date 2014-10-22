@@ -95,7 +95,9 @@ namespace fplainn
 		driverDetected(0),
 		driverIndex(fplainn::Zui::INDEX_KERNEL),
 		requestedIndex(fplainn::Zui::INDEX_KERNEL),
-		parentTags(NULL), parentTagCounter(0)
+		parentTags(NULL),
+		// Parent tag counter must begin at 1. 0 is reserved.
+		parentTagCounter(1)
 		{
 			this->longName[0]
 				= this->driverFullName[0] = '\0';
