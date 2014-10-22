@@ -42,15 +42,6 @@ namespace __klzbzcore
 		{
 			void handler(void);
 		}
-
-		// Will probably be deprecated soon.
-		namespace mgmt
-		{
-			error_t handler(
-				fplainn::Zudi::sMgmtCallMsg *msg,
-				__klzbzcore::driver::CachedInfo *cache,
-				fplainn::Device *dev, ubit16 regionIndex);
-		}
 	}
 
 	namespace driver

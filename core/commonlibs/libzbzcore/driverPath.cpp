@@ -268,17 +268,6 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 
 				break;
 
-			case MSGSTREAM_ZUDI_MGMT_CALL:
-				/* Would be a call to main_handleMgmtCall()
-				 * here, had I not cleaned up.
-				 **/
-				printf(FATAL"This would have called into "
-					"udi_mgmt_ops_vector_t had it not been "
-					"deprecated.\n");
-
-				panic(ERROR_UNKNOWN);
-				break;
-
 			default:
 				break; // NOP and fallthrough.
 			};

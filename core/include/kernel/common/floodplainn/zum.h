@@ -1,5 +1,5 @@
-#ifndef _FLOODPLAINN_ZAMBESII_UDI_ENV_PUBLIC_API_H
-	#define _FLOODPLAINN_ZAMBESII_UDI_ENV_PUBLIC_API_H
+#ifndef _FLOODPLAINN_ZAMBESII_UDI_MA_PUBLIC_API_H
+	#define _FLOODPLAINN_ZAMBESII_UDI_MA_PUBLIC_API_H
 
 	#define UDI_VERSION 0x101
 	#include <udi.h>
@@ -7,9 +7,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/messageStream.h>
-	#include <kernel/common/floodplainn/zui.h>
 	#include <kernel/common/floodplainn/fvfs.h> // FVFS_PATH_MAXLEN
-	#include <kernel/common/floodplainn/channel.h>
 
 #define ZUM			"ZUM: "
 
@@ -18,15 +16,19 @@ class Thread;
 namespace fplainn
 {
 	class Zum;
+	class Endpoint;
 }
 
 class fplainn::Zum
 {
 public:
-	Zum();
+	Zum(void)
+	:
+	serverTid(PROCID_INVALID), thread(NULL)
+	{}
 
 	error_t initialize(void);
-	~Zum(void);
+	~Zum(void) {};
 
 public:
 	/* Causes the ZUM server to connect("udi_mgmt") to the device, and then
@@ -201,7 +203,7 @@ private:
 /**	Inline methods:
  ******************************************************************************/
 
-void fplainn::Zum::internalChannelEventInd(
+inline void fplainn::Zum::internalChannelEventInd(
 	utf8Char *devicePath, fplainn::Endpoint *endp, udi_ubit8_t event,
 	void *privateData
 	)
@@ -212,7 +214,7 @@ void fplainn::Zum::internalChannelEventInd(
 	channelEventInd(devicePath, endp, event, &p, privateData);
 }
 
-void fplainn::Zum::parentChannelEventInd(
+inline void fplainn::Zum::parentChannelEventInd(
 	utf8Char *devicePath, fplainn::Endpoint *endp, udi_ubit8_t event,
 	udi_ubit8_t parent_ID, void *privateData
 	)
@@ -224,7 +226,7 @@ void fplainn::Zum::parentChannelEventInd(
 	channelEventInd(devicePath, endp, event, &p, privateData);
 }
 
-void fplainn::Zum::channelOpAbortedInd(
+inline void fplainn::Zum::channelOpAbortedInd(
 	utf8Char *devicePath, fplainn::Endpoint *endp, udi_cb_t *orig_cb,
 	void *privateData
 	)

@@ -5,9 +5,7 @@
 	#include <udi.h>
 	#undef UDI_VERSION
 	#include <__kstdlib/__ktypes.h>
-	#include <kernel/common/floodplainn/zui.h>
 	#include <kernel/common/floodplainn/fvfs.h>
-	#include <kernel/common/floodplainn/channel.h>
 
 #define ZUDI			"ZUDI: "
 
@@ -19,6 +17,9 @@ namespace fplainn
 	class Zudi;
 	class Driver;
 	class Region;
+	class Endpoint;
+	class D2DChannel;
+	class IncompleteD2DChannel;
 }
 
 struct sDriverInitEntry;
@@ -47,34 +48,6 @@ public:
 	void instantiateDeviceAck(
 		processId_t targetId, utf8Char *path, error_t err,
 		void *privateData);
-
-	class Management
-	{
-		/* This executes the UDI instantiation sequence on a given
-		 * device.
-		 **/
-		void startDeviceReq(
-			utf8Char *path, udi_ubit8_t usageLevel,
-			void *privateData);
-
-		/* The rest of these functions are like a udi metalanguage lib
-		 * for udi_mgmt.
-		 **/
-		#define MSGSTREAM_ZUDI_MGMT_CALL	(1)
-		void udi_usage_ind(
-			utf8Char *devicePath, udi_ubit8_t usageLevel,
-			void *privateData);
-
-		void udi_final_cleanup_req(utf8Char *path, void *privateData);
-
-		void udi_enumerate_req(
-			utf8Char *devicePath, udi_ubit8_t enumerateLevel,
-			void *privateData);
-
-		void udi_devmgmt_req(
-			utf8Char *devicePath, udi_ubit8_t op,
-			udi_ubit8_t parentId, void *privateData);
-	};
 
 	/**	EXPLANATION:
 	 * When spawning internal bind channels, all anchoring is done
@@ -161,64 +134,6 @@ public:
 		MessageStream::sHeader	header;
 		commandE		command;
 		utf8Char		path[FVFS_PATH_MAXLEN];
-	};
-
-	struct sMgmtCallMsg
-	{
-		enum mgmtOperationE {
-			MGMTOP_USAGE, MGMTOP_ENUMERATE, MGMTOP_DEVMGMT,
-			MGMTOP_FINAL_CLEANUP };
-
-		sMgmtCallMsg(
-			utf8Char *path,
-			processId_t targetPid,
-			ubit16 subsystem, ubit16 function,
-			uarch_t size, uarch_t flags, void *privateData)
-		:
-		header(
-			targetPid, subsystem, function,
-			size, flags, privateData)
-		{
-			strncpy8(this->path, path, FVFS_PATH_MAXLEN);
-			this->path[FVFS_PATH_MAXLEN - 1] = '\0';
-			memset(&cb, 0, sizeof(cb));
-		}
-
-		void set_usage_ind(udi_ubit8_t usageLevel)
-		{
-			mgmtOp = MGMTOP_USAGE;
-			this->usageLevel = usageLevel;
-		}
-
-		void set_devmgmt_req(
-			udi_ubit8_t op, udi_ubit8_t parentId)
-		{
-			mgmtOp = MGMTOP_DEVMGMT;
-			this->op = op;
-			this->parentId = parentId;
-		}
-
-		void set_enumerate_req(udi_ubit8_t enumLvl)
-		{
-			mgmtOp = MGMTOP_ENUMERATE;
-			this->enumerateLevel = enumLvl;
-		}
-
-		void set_final_cleanup_req(void)
-			{ mgmtOp = MGMTOP_FINAL_CLEANUP; }
-
-		MessageStream::sHeader	header;
-		mgmtOperationE		mgmtOp;
-		udi_ubit8_t		usageLevel;
-		udi_ubit8_t		enumerateLevel;
-		udi_ubit8_t		op, parentId;
-		utf8Char		path[FVFS_PATH_MAXLEN];
-		union
-		{
-			udi_mgmt_cb_t		mcb;
-			udi_usage_cb_t		ucb;
-			udi_enumerate_cb_t	ecb;
-		} cb;
 	};
 
 private:

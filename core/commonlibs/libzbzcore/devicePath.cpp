@@ -109,19 +109,6 @@ void __klzbzcore::region::main(void *)
 
 		switch (iMsg->subsystem)
 		{
-		case MSGSTREAM_SUBSYSTEM_ZUDI:
-			switch (iMsg->function)
-			{
-			case MSGSTREAM_ZUDI_MGMT_CALL:
-				mgmt::handler(
-					(fplainn::Zudi::sMgmtCallMsg *)iMsg,
-					drvInfoCache, dev, r.index);
-
-				break;
-			};
-
-			break;
-
 		default:
 			Callback		*callback;
 
@@ -567,99 +554,4 @@ void __klzbzcore::region::main2(
 	 * thead's initialization is now done.
 	 **/
 	postRegionInitInd(self, ctxt, ERROR_SUCCESS);
-}
-
-struct sUdi_Mgmt_ContextBlock
-{
-	sUdi_Mgmt_ContextBlock(fplainn::Zudi::sMgmtCallMsg *msg)
-	:
-	privateData(msg->header.privateData), sourceTid(msg->header.sourceId)
-	{
-		strncpy8(this->devicePath, msg->path, FVFS_PATH_MAXLEN);
-	}
-
-	void		*privateData;
-	processId_t	sourceTid;
-	utf8Char	devicePath[FVFS_PATH_MAXLEN];
-};
-
-error_t __klzbzcore::region::mgmt::handler(
-	fplainn::Zudi::sMgmtCallMsg *msg,
-	__klzbzcore::driver::CachedInfo *drvInfoCache,
-	fplainn::Device *, ubit16 regionIndex
-	)
-{
-	udi_init_t		*initInfo;
-	udi_mgmt_ops_t		*mgmtOps;
-	sUdi_Mgmt_ContextBlock	*contextBlock;
-
-	initInfo = drvInfoCache->initInfo;
-	mgmtOps = initInfo->primary_init_info->mgmt_ops;
-
-	contextBlock = new sUdi_Mgmt_ContextBlock(msg);
-	if (contextBlock == NULL)
-	{
-		return ERROR_MEMORY_NOMEM;
-	};
-
-	if (initInfo->primary_init_info->mgmt_scratch_requirement > 0)
-	{
-		msg->cb.ucb.gcb.scratch = new ubit8[
-			initInfo->primary_init_info->mgmt_scratch_requirement];
-
-		if (msg->cb.ucb.gcb.scratch == NULL)
-		{
-			delete contextBlock;
-			return ERROR_MEMORY_NOMEM;
-		};
-	};
-
-	// Very critical continuation.
-	msg->cb.ucb.gcb.initiator_context = contextBlock;
-
-	switch (msg->mgmtOp)
-	{
-	case fplainn::Zudi::sMgmtCallMsg::MGMTOP_USAGE:
-		printf(NOTICE"%s, rgn %d: udi_usage_ind call received!\n",
-			msg->path, regionIndex);
-
-		mgmtOps->usage_ind_op(&msg->cb.ucb, msg->usageLevel);
-		break;
-
-	default:
-		printf(NOTICE"dev %s, rgn %d: unknown command %d!\n",
-			msg->path, regionIndex);
-
-		break;
-	};
-
-	delete[] (ubit8 *)msg->cb.ucb.gcb.scratch;
-	return ERROR_SUCCESS;
-}
-
-void udi_usage_res(udi_usage_cb_t *cb)
-{
-	sUdi_Mgmt_ContextBlock		*contextBlock;
-
-	/**	EXPLANATION:
-	 * Basically, the driver will eventually call udi_usage_res(). This is
-	 * the entry point it will call into. In here, we execute a syscall,
-	 * essentially.
-	 *
-	 *	FIXME:
-	 * In the same vein as the initiator_context comments in udi_usage_ind,
-	 * we are dependent on the pointer stored in initiator_context in this
-	 * function too.
-	 *
-	 * We just extract the required information from the control block, and
-	 * call the kernel with the _res operation.
-	 **/
-printf(NOTICE"in res\n");
-	contextBlock = (sUdi_Mgmt_ContextBlock *)cb->gcb.initiator_context;
-
-	//floodplainn.zudi.udi_usage_res(
-	//	contextBlock->devicePath,
-	//	contextBlock->sourceTid, contextBlock->privateData);
-
-	delete contextBlock;
 }

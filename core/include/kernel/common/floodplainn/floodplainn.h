@@ -6,8 +6,9 @@
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kclasses/ptrList.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/floodplainn/zui.h>
 	#include <kernel/common/floodplainn/zudi.h>
+	#include <kernel/common/floodplainn/zum.h>
+	#include <kernel/common/floodplainn/zui.h>
 	#include <kernel/common/floodplainn/device.h>
 	#include <kernel/common/vfsTrib/commonOperations.h>
 
@@ -27,6 +28,8 @@ public:
 	fplainn::Zudi		zudi;
 	// Zambesii UDI Index Server API.
 	fplainn::Zui		zui;
+	// Zambesii UDI Management Agent API.
+	fplainn::Zum		zum;
 
 public:
 	/* Creates a child device under a given parent and returns it to the
