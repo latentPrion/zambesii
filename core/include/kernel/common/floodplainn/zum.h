@@ -24,7 +24,7 @@ class fplainn::Zum
 public:
 	Zum(void)
 	:
-	serverTid(PROCID_INVALID), thread(NULL)
+	serverTid(PROCID_INVALID), server(NULL)
 	{}
 
 	error_t initialize(void);
@@ -105,7 +105,10 @@ public:
 		utf8Char *devicePath, fplainn::Endpoint *endp,
 		udi_ubit8_t event, eventIndU *params, void *privateData);
 
-private:
+	void setServerTid(processId_t tid)
+		{ serverTid = tid; }
+
+public:
 	struct sZAsyncMsg
 	{
 		sZAsyncMsg(utf8Char *path, ubit16 opsIndex)
@@ -120,9 +123,9 @@ private:
 		}
 
 		enum opE {
+			OP_CHANNEL_EVENT_IND=0,
 			OP_USAGE_IND, OP_ENUMERATE_REQ, OP_DEVMGMT_REQ,
 			OP_FINAL_CLEANUP_REQ,
-			OP_CHANNEL_EVENT_IND,
 			OP_START_REQ };
 
 		ubit16			opsIndex;
@@ -190,8 +193,9 @@ private:
 		sZAsyncMsg			info;
 	};
 
+private:
 	processId_t		serverTid;
-	Thread			*thread;
+	Thread			*server;
 
 	static void main(void *);
 

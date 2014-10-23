@@ -109,6 +109,12 @@ void __klzbzcore::region::main(void *)
 
 		switch (iMsg->subsystem)
 		{
+		case MSGSTREAM_SUBSYSTEM_ZUDI:
+			printf(NOTICE"%s, rgn%d: CHANNEL_SEND msg. ops_idx %d.\n",
+				dev->driverInstance->driver->longName,
+				r.index, iMsg->function);
+
+			break;
 		default:
 			Callback		*callback;
 

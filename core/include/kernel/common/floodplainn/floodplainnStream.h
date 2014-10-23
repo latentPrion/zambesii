@@ -81,30 +81,31 @@ public:
 		uarch_t flags, fplainn::Endpoint **retendp);
 
 	// Closes a connection to a device.
-	sbit8 close(fplainn::FStreamEndpoint *endpoint, uarch_t flags);
+	sbit8 close(fplainn::Endpoint *endpoint, uarch_t flags);
 
 	error_t spawnChannel(
-		fplainn::FStreamEndpoint *endpoint,
+		fplainn::Endpoint *endpoint,
 		udi_index_t spawn_idx, udi_ops_vector_t *ops_vector,
 		udi_init_context_t *channel_context,
-		fplainn::FStreamEndpoint **retendp);
+		fplainn::Endpoint **retendp);
 
 	void anchorChannel(
-		fplainn::FStreamEndpoint *endpoint,
+		fplainn::Endpoint *endpoint,
 		udi_ops_vector_t *ops_vector,
 		udi_init_context_t *channel_context);
 
 	void setChannelContext(
-		fplainn::FStreamEndpoint *endpoint,
+		fplainn::Endpoint *endpoint,
 		udi_init_context_t *channel_context);
 
 	error_t send(
-		fplainn::FStreamEndpoint *endp,
-		udi_cb_t *gcb, va_list args, udi_layout_t *layouts[3],
+		fplainn::Endpoint *endp,
+		udi_cb_t *gcb, udi_layout_t *layouts[3],
 		utf8Char *metaName, udi_index_t meta_ops_num, udi_index_t op_idx,
-		void *privateData);
+		void *privateData,
+		...);
 
-	sbit8 closeChannel(fplainn::FStreamEndpoint *endpoint);
+	sbit8 closeChannel(fplainn::Endpoint *endpoint);
 
 	// Should really be private...
 	static error_t createChannel(

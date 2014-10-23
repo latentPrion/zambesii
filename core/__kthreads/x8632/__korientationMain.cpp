@@ -281,6 +281,7 @@ void __korientationMain1(void)
 	 **/
 	DO_OR_DIE(floodplainn, initialize(), ret);
 	DO_OR_DIE(floodplainn.zui, initialize(), ret);
+	DO_OR_DIE(floodplainn.zum, initialize(), ret);
 	DO_OR_DIE(floodplainn.zudi, initialize(), ret);
 
 	/* Start the chipset up.
@@ -311,47 +312,11 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	};
 
 	DIE_ON(msg->header.error);
-//	floodplainn.getDevice(CC"by-id/0", &chipsetDev);
-//	chipsetDev->driver->dump();
 
-	fplainn::Endpoint		*endp;
-	fplainn::Device			*d;
-	udi_intr_attach_cb_t		cb;
-	extern udi_mei_init_t		udi_bridge_meta_info;
-	fplainn::MetaInit		parser(&udi_bridge_meta_info);
-	udi_mei_op_template_t		*bindOpTemplate;
-
-	floodplainn.getDevice(CC"by-id", &d);
-
-//	d->instance->getRegion(0)->dumpChannelEndpoints();
-	DO_OR_DIE(
-		self->parent->floodplainnStream,
-		connect(
-			CC"by-id", CC"zbz_root",
-			(udi_ops_vector_t *)0x1, (udi_init_context_t *)0x2,
-			0, &endp),
-		ret);
-
-	cb.gcb.channel = endp;
-
-	bindOpTemplate = parser.getOpTemplate(
-		UDI_BUS_BRIDGE_OPS_NUM, 3);
-
-	udi_layout_t			*lay[3] = {
-		bindOpTemplate->visible_layout,
-		bindOpTemplate->marshal_layout,
-		NULL
-	};
-
-
-	ret = self->parent->floodplainnStream.send(
-		static_cast<fplainn::FStreamEndpoint *>(endp),
-		&cb.gcb, (va_list)&msg, lay,
-		CC"zbz_root", UDI_BUS_BRIDGE_OPS_NUM, 3,
-		NULL);
-
-	printf(NOTICE ORIENT"About to dormant %d, %s.\n", ret, strerror(ret));
-	taskTrib.dormant(self->getFullId());
+	floodplainn.zum.startDeviceReq(CC"by-id", UDI_RESOURCES_NORMAL, NULL);
+	printf(NOTICE ORIENT"About to dormant.\n");
+	// Returning here will send us back to the message loop.
+	return;
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
 	 * then load the chipset's bus-pin mappings and initialize timer

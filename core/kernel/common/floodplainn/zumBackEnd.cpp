@@ -1,12 +1,17 @@
 
+#define UDI_VERSION		0x101
+#include <udi.h>
+#undef UDI_VERSION
 #include <__kstdlib/callback.h>
-#include <__kstdlib/__kcxxlib/memory.h>
+#include <__kstdlib/__kcxxlib/memory>
 #include <kernel/common/thread.h>
 #include <kernel/common/messageStream.h>
 #include <kernel/common/zasyncStream.h>
 #include <kernel/common/floodplainn/zum.h>
+#include <kernel/common/floodplainn/floodplainn.h>
 #include <kernel/common/floodplainn/floodplainnStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 
 
 /**	EXPLANATION:
@@ -19,10 +24,7 @@
  **/
 
 // Dat C++ inheritance.
-struct sDummyMgmtMaOpsVector
-: udi_ops_vector_t
-{
-} dummyMgmtMaOpsVector;
+udi_ops_vector_t		dummyMgmtMaOpsVector=0;
 
 namespace zumServer
 {
@@ -31,6 +33,28 @@ namespace zumServer
 		fplainn::Zum::sZAsyncMsg *request,
 		Thread *self);
 
+	// Reduces code duplication and increases readability.
+	fplainn::Zum::sZumMsg *getNewZumMsg(
+		utf8Char *funcName, utf8Char *devicePath,
+		processId_t targetPid, ubit16 subsystem, ubit16 function,
+		uarch_t size, uarch_t flags, void *privateData)
+	{
+		fplainn::Zum::sZumMsg		*ret;
+
+		ret = new fplainn::Zum::sZumMsg(
+			targetPid, subsystem, function,
+			size, flags, privateData);
+
+		if (ret == NULL)
+		{
+			printf(ERROR ZUM"%s %s: Failed to alloc async ctxt.\n"
+				"\tCaller may be halted indefinitely.\n",
+				funcName, devicePath);
+		}
+
+		return ret;
+	}
+
 	namespace start
 	{
 		void startDeviceReq(
@@ -38,6 +62,7 @@ namespace zumServer
 			fplainn::Zum::sZAsyncMsg *request,
 			Thread *self);
 
+	// PRIVATE:
 		class StartDeviceReqCb;
 		typedef void (startDeviceReqCbFn)(
 			MessageStream::sHeader *msg,
@@ -46,19 +71,134 @@ namespace zumServer
 			fplainn::Device *dev);
 
 		startDeviceReqCbFn	startDeviceReq1;
-//		startDeviceReqCbFn	startDeviceReq2;
 	}
+
+	namespace mgmt
+	{
+		void usageInd(
+			ZAsyncStream::sZAsyncMsg *msg,
+			fplainn::Zum::sZAsyncMsg *request,
+			Thread *self);
+
+		void channelEventInd(
+			ZAsyncStream::sZAsyncMsg *msg,
+			fplainn::Zum::sZAsyncMsg *request,
+			Thread *self);
+
+	// PRIVATE:
+		typedef start::StartDeviceReqCb		MgmtReqCb;
+		typedef start::startDeviceReqCbFn	mgmtReqCbFn;
+
+		mgmtReqCbFn			usageRes;
+		mgmtReqCbFn			enumerateAck;
+		mgmtReqCbFn			deviceManagementAck;
+		mgmtReqCbFn			finalCleanupAck;
+		mgmtReqCbFn			channelEventComplete;
+
+		// Reduces code duplication and improves readability.
+		static error_t getDeviceHandleAndMgmtEndpoint(
+			utf8Char *funcName,
+			utf8Char *devicePath,
+			fplainn::Device **retdev, fplainn::Endpoint **retendp)
+		{
+			error_t		ret;
+
+			ret = floodplainn.getDevice(devicePath, retdev);
+			if (ret != ERROR_SUCCESS)
+			{
+				printf(ERROR ZUM"%s %s: Invalid device name.\n",
+					funcName, devicePath);
+
+				return ret;
+			};
+
+			*retendp = (*retdev)->instance->mgmtEndpoint;
+			if (*retendp == NULL)
+			{
+				printf(ERROR ZUM"%s %s: Not connected to "
+					"device. Try startDeviceReq first.\n",
+					funcName, devicePath);
+
+				return ERROR_INVALID_STATE;
+			};
+
+			return ERROR_SUCCESS;
+		}
+
+		namespace layouts
+		{
+			udi_layout_t		usage_cb[] =
+				{ UDI_DL_UBIT32_T, UDI_DL_INDEX_T, UDI_DL_END };
+
+			udi_layout_t		enumerate_cb[] =
+			{
+				UDI_DL_UBIT32_T, UDI_DL_INLINE_UNTYPED,
+				UDI_DL_MOVABLE_UNTYPED, UDI_DL_UBIT8_T,
+				UDI_DL_MOVABLE_UNTYPED, UDI_DL_UBIT8_T,
+				UDI_DL_UBIT8_T,
+				UDI_DL_END
+			};
+
+			udi_layout_t		mgmt_cb[] = { UDI_DL_END };
+
+			udi_layout_t		channel_event_cb[] =
+			{
+				UDI_DL_UBIT8_T,
+				  /* Union. We just instruct env to
+				   * copy max bytes.
+				   **/
+				  UDI_DL_INLINE_UNTYPED,
+				  UDI_DL_UBIT8_T,
+				  UDI_DL_INLINE_UNTYPED,
+				UDI_DL_END
+			};
+
+			udi_layout_t		*visible[] =
+			{
+				channel_event_cb,
+				usage_cb,
+				enumerate_cb,
+				mgmt_cb, mgmt_cb
+			};
+
+			udi_layout_t		usage_ind[] =
+				{ UDI_DL_UBIT8_T, UDI_DL_END };
+
+			udi_layout_t		enumerate_req[] =
+				{ UDI_DL_UBIT8_T, UDI_DL_END };
+
+			udi_layout_t		devmgmt_req[] =
+				{ UDI_DL_UBIT8_T, UDI_DL_UBIT8_T, UDI_DL_END };
+
+			udi_layout_t		final_cleanup_req[] =
+				{ UDI_DL_END };
+
+			udi_layout_t		channel_event_ind[] =
+				{ UDI_DL_END };
+
+			udi_layout_t		*marshal[] =
+			{
+				channel_event_ind,
+				usage_ind,
+				enumerate_req,
+				devmgmt_req,
+				final_cleanup_req
+			};
+		}
+	}
+
+
 }
 
 void fplainn::Zum::main(void *)
 {
 	Thread				*self;
 	MessageStream::sHeader		*iMsg;
-	HeapObj<sZAsyncMsg>		*requestData;
+	HeapObj<sZAsyncMsg>		requestData;
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	requestData = new sZAsyncMsg(0);
+	requestData = new sZAsyncMsg(NULL, 0);
 	if (requestData.get() == NULL)
 	{
 		printf(ERROR ZUM"main: failed to alloc request data mem.\n");
@@ -66,17 +206,19 @@ void fplainn::Zum::main(void *)
 		return;
 	};
 
+	printf(NOTICE ZUM"main: running, tid 0x%x.\n", self->getFullId());
+
 	for (;FOREVER;)
 	{
-		self->messageStream.pull(&iMsg);
+		ZAsyncStream::sZAsyncMsg	*zAMsg;
 
+		self->messageStream.pull(&iMsg);
 		switch (iMsg->subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_ZASYNC:
-			ZAsyncStream::sZAsyncMsg	*msg =
-				(ZAsyncStream::sZAsyncMsg *)iMsg;
+			zAMsg = (ZAsyncStream::sZAsyncMsg *)iMsg;
 
-			zumServer::zasyncHandler(msg, requestData.get(), self);
+			zumServer::zasyncHandler(zAMsg, requestData.get(), self);
 			break;
 
 		default:
@@ -85,7 +227,7 @@ void fplainn::Zum::main(void *)
 			callback = (Callback *)iMsg->privateData;
 			if (callback == NULL)
 			{
-				printf(WARNING ZUP"main: message with no "
+				printf(WARNING ZUM"main: message with no "
 					"callback from 0x%x.\n",
 					iMsg->sourceId);
 
@@ -117,7 +259,7 @@ void zumServer::zasyncHandler(
 		return;
 	};
 
-	err = self->zasyncStream.receive(
+	err = self->parent->zasyncStream.receive(
 		msg->dataHandle, request, 0);
 
 	if (err != ERROR_SUCCESS)
@@ -130,17 +272,19 @@ void zumServer::zasyncHandler(
 
 	switch (request->opsIndex)
 	{
-	case 1:
+	case fplainn::Zum::sZAsyncMsg::OP_USAGE_IND:
+		mgmt::usageInd(msg, request, self);
 		break;
-	case 2:
+	case fplainn::Zum::sZAsyncMsg::OP_ENUMERATE_REQ:
 		break;
-	case 3:
+	case fplainn::Zum::sZAsyncMsg::OP_DEVMGMT_REQ:
 		break;
-	case 4:
+	case fplainn::Zum::sZAsyncMsg::OP_FINAL_CLEANUP_REQ:
 		break;
-	case 5:
+	case fplainn::Zum::sZAsyncMsg::OP_CHANNEL_EVENT_IND:
+		mgmt::channelEventInd(msg, request, self);
 		break;
-	case 6:
+	case fplainn::Zum::sZAsyncMsg::OP_START_REQ:
 		start::startDeviceReq(msg, request, self);
 		break;
 
@@ -153,7 +297,7 @@ void zumServer::zasyncHandler(
 }
 
 class zumServer::start::StartDeviceReqCb
-: public _Callback
+: public _Callback<startDeviceReqCbFn>
 {
 	fplainn::Zum::sZumMsg *ctxt;
 	Thread *self;
@@ -163,7 +307,7 @@ public:
 	StartDeviceReqCb(
 		startDeviceReqCbFn *fn,
 		fplainn::Zum::sZumMsg *ctxt, Thread *self, fplainn::Device *dev)
-	: _Callback(fn),
+	: _Callback<startDeviceReqCbFn>(fn),
 	ctxt(ctxt), self(self), dev(dev)
 	{}
 
@@ -179,27 +323,21 @@ void zumServer::start::startDeviceReq(
 {
 	fplainn::Zum::sZumMsg		*ctxt;
 	error_t				err;
-	fplainn::FStreamEndpoint	*endp;
+	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
 	fplainn::Device			*dev;
 
-	ctxt = new fplainn::Zum::sZumMsg(
+	ctxt = getNewZumMsg(
+		CC __func__, request->path,
 		msg->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
 		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
 
-	if (ctxt == NULL)
-	{
-		printf(ERROR ZUM"startDevReq %s: Failed to alloc async ctxt.\n"
-			"\tCaller may be halted indefinitely.\n"
-			request->path);
-
-		return;
-	};
-
-	myResponse(ctxt);
+	if (ctxt == NULL) { return; };
 	// Copy the request data over.
 	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+
+	myResponse(ctxt);
 
 	// Does the requested device even exist?
 	err = floodplainn.getDevice(ctxt->info.path, &dev);
@@ -216,7 +354,7 @@ void zumServer::start::startDeviceReq(
 	 **/
 	// Can't think of anything meaningful to use as the endpoint privdata.
 	err = self->parent->floodplainnStream.connect(
-		ctxt->info.path, CC"udi_mgmt",
+		ctxt->info.path, CC"zbz_root",
 		&dummyMgmtMaOpsVector, NULL, 0,
 		&endp);
 
@@ -224,7 +362,8 @@ void zumServer::start::startDeviceReq(
 		myResponse(err); return;
 	};
 
-	dev->instance->setMgmtEndpoint(endp);
+	dev->instance->setMgmtEndpoint(
+		static_cast<fplainn::FStreamEndpoint *>(endp));
 
 	/* Now we have our connection. Start sending the initialization
 	 * sequence (UDI Core Specification, section 24.2.1):
@@ -241,6 +380,8 @@ void zumServer::start::startDeviceReq(
 	floodplainn.zum.usageInd(
 		ctxt->info.path, ctxt->info.params.usage.resource_level,
 		new StartDeviceReqCb(startDeviceReq1, ctxt, self, dev));
+
+	myResponse(DONT_SEND_RESPONSE);
 }
 
 void zumServer::start::startDeviceReq1(
@@ -257,4 +398,147 @@ void zumServer::start::startDeviceReq1(
 	myResponse(ctxt);
 
 	myResponse(response->header.error);
+}
+
+void zumServer::mgmt::usageInd(
+	ZAsyncStream::sZAsyncMsg *msg,
+	fplainn::Zum::sZAsyncMsg *request,
+	Thread *self
+	)
+{
+	fplainn::Endpoint		*endp;
+	fplainn::Device			*dev;
+	error_t				err;
+	fplainn::Zum::sZumMsg		*ctxt;
+	AsyncResponse			myResponse;
+	udi_usage_cb_t			cb;
+
+	/**	EXPLANATION:
+	 * Basically:
+	 *	* Get the device, if it exists.
+	 *	* Ensure that we are connected to the device first.
+	 *	* Get the kernel's mgmt endpoint.
+	 *	* Then fill out a udi_usage_cb_t control block.
+	 *	* Call FloodplainnStream::send():
+	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=1.
+	 **/
+	ctxt = getNewZumMsg(
+		CC __func__, request->path,
+		msg->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
+		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
+
+	if (ctxt == NULL) { return; };
+	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	myResponse(ctxt);
+
+	err = getDeviceHandleAndMgmtEndpoint(
+		CC __func__, ctxt->info.path, &dev, &endp);
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	cb.trace_mask = ctxt->info.params.usage.cb.trace_mask;
+	cb.meta_idx = ctxt->info.params.usage.cb.meta_idx;
+
+	udi_layout_t		*layouts[3] =
+	{
+		layouts::visible[ctxt->info.opsIndex],
+		layouts::marshal[ctxt->info.opsIndex],
+		NULL
+	};
+
+	err = self->parent->floodplainnStream.send(
+		endp, &cb.gcb, layouts,
+		CC "udi_mgmt", 1, ctxt->info.opsIndex,
+		new MgmtReqCb(usageRes, ctxt, self, dev),
+		ctxt->info.params.usage.resource_level);
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	myResponse(DONT_SEND_RESPONSE);
+}
+
+void zumServer::mgmt::usageRes(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *self,
+	fplainn::Device *dev
+	)
+{
+}
+
+void zumServer::mgmt::channelEventInd(
+	ZAsyncStream::sZAsyncMsg *msg,
+	fplainn::Zum::sZAsyncMsg *request,
+	Thread *self
+	)
+{
+	fplainn::Endpoint		*endp;
+	fplainn::Device			*dev;
+	error_t				err;
+	fplainn::Zum::sZumMsg		*ctxt;
+	AsyncResponse			myResponse;
+	udi_channel_event_cb_t		cb;
+
+	/**	EXPLANATION:
+	 * Basically:
+	 *	* Get the device, if it exists.
+	 *	* Ensure that we are connected to the device first.
+	 *	* Get the kernel's mgmt endpoint.
+	 *	* Then fill out a udi_channel_event_cb_t control block.
+	 *	* Call FloodplainnStream::send():
+	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=0.
+	 **/
+	ctxt = getNewZumMsg(
+		CC __func__, request->path,
+		msg->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
+		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
+
+	if (ctxt == NULL) { return; };
+	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	myResponse(ctxt);
+
+	err = getDeviceHandleAndMgmtEndpoint(
+		CC __func__, ctxt->info.path, &dev, &endp);
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	cb.event = ctxt->info.params.channel_event.cb.event;
+	memcpy(
+		&cb.params, &ctxt->info.params.channel_event.cb.params,
+		sizeof(cb.params));
+
+	udi_layout_t		*layouts[3] =
+	{
+		layouts::visible[ctxt->info.opsIndex],
+		layouts::marshal[ctxt->info.opsIndex],
+		NULL
+	};
+
+	self->parent->floodplainnStream.send(
+		endp, &cb.gcb, layouts,
+		CC "udi_mgmt", 1, ctxt->info.opsIndex,
+		new MgmtReqCb(usageRes, ctxt, self, dev));
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	myResponse(DONT_SEND_RESPONSE);
+}
+
+void zumServer::mgmt::channelEventComplete(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *self,
+	fplainn::Device *dev
+	)
+{
 }

@@ -6,6 +6,7 @@
 #include <kernel/common/process.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/floodplainn/floodplainn.h>
+#include <kernel/common/floodplainn/initInfo.h>
 #include <commonlibs/libzbzcore/libzbzcore.h>
 
 
@@ -314,12 +315,6 @@ void __klzbzcore::driver::main1(
 	 *
 	 * However, since this is the kernel syslib, we can skip all of that.
 	 **/
-	// Set management op vector and scratch, etc.
-	drvInst->setMgmtChannelInfo(
-		cache->initInfo->primary_init_info->mgmt_ops,
-		cache->initInfo->primary_init_info->mgmt_scratch_requirement,
-		*cache->initInfo->primary_init_info->mgmt_op_flags);
-
 	if (drvInst->driver->nInternalBops != drvInst->driver->nRegions - 1)
 	{
 		printf(NOTICE LZBZCORE"driverPath1: %s: driver has %d ibops, "
@@ -334,37 +329,42 @@ void __klzbzcore::driver::main1(
 	// Set child bind ops vectors.
 	for (uarch_t i=0; i<drvInst->driver->nChildBops; i++)
 	{
+		fplainn::DriverInit	drvInfoParser(cache->initInfo);
 		udi_ops_init_t		*tmp;
 		udi_ops_vector_t	*opsVector=NULL;
 
-		for (tmp=cache->initInfo->ops_init_list;
-			tmp->ops_idx != 0;
-			tmp++)
-		{
-			if (tmp->ops_idx == drvInst->driver
-				->childBops[i].opsIndex)
-			{
-				opsVector = tmp->ops_vector;
-			};
-		};
-
-		// Skip the MGMT meta's child bop for now.
 		if (drvInst->driver->childBops[i].metaIndex == 0)
 		{
-			// drvInst->setChildBopVector(
-			//	0, driverInitInfo->primary_init_info->mgmt_ops);
+			opsVector = (udi_ops_vector_t *)cache->initInfo
+				->primary_init_info->mgmt_ops;
 
-			continue;
-		};
+			if (opsVector == NULL)
+			{
+				printf(ERROR LZBZCORE"driver:main1 %s: No mgmt "
+					"ops vector specified in init info.\n",
+					drvInst->driver->shortName);
 
-		if (opsVector == NULL)
+				callerCb(self, ERROR_INVALID_STATE); return;
+			};
+		}
+		else
 		{
-			printf(ERROR LZBZCORE"driverPath1: Failed to obtain "
-				"ops vector addr for child bop with meta idx "
-				"%d.\n",
-				drvInst->driver->childBops[i].metaIndex);
+			tmp = drvInfoParser.getOpsInit(
+				drvInst->driver->childBops[i].opsIndex);
 
-			callerCb(self, ERROR_INVALID_STATE); return;
+			if (tmp == NULL)
+			{
+				printf(ERROR LZBZCORE"driver:main1 %s: Failed to "
+					"obtain ops vector addr for child bop "
+					"with meta idx %d.\n",
+					drvInst->driver->shortName,
+					drvInst->driver->childBops[i]
+						.metaIndex);
+
+				callerCb(self, ERROR_INVALID_STATE); return;
+			};
+
+			opsVector = tmp->ops_vector;
 		};
 
 		drvInst->setChildBopVector(

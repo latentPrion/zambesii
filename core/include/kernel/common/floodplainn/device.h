@@ -750,18 +750,6 @@ namespace fplainn
 			udi_ops_vector_t	*opsVector;
 		};
 
-		struct sManagementChannel
-		{
-			sManagementChannel(void)
-			:
-			opsVector(NULL), scratchSize(0)
-			{}
-
-			udi_mgmt_ops_t		*opsVector;
-			uarch_t			scratchSize;
-			udi_ubit32_t		opFlags;
-		};
-
 	public:
 		void setChildBopVector(
 			ubit16 metaIndex, udi_ops_vector_t *vaddr)
@@ -787,16 +775,6 @@ namespace fplainn
 			return NULL;
 		}
 
-		void setMgmtChannelInfo(
-			udi_mgmt_ops_t *mgmtOpsVector,
-			uarch_t scratchSize,
-			udi_ubit32_t opFlags)
-		{
-			managementChannel.opsVector = mgmtOpsVector;
-			managementChannel.scratchSize = scratchSize;
-			managementChannel.opFlags = opFlags;
-		}
-
 		error_t addHostedDevice(utf8Char *path);
 		void removeHostedDevice(utf8Char *path);
 
@@ -807,7 +785,6 @@ namespace fplainn
 		sChildBop			*childBopVectors;
 		uarch_t				nHostedDevices;
 		HeapArr<HeapArr<utf8Char> >	hostedDevices;
-		sManagementChannel		managementChannel;
 
 		// XXX: ONLY for use by libzbzcore, and ONLY in kernel-space.
 		__klzbzcore::driver::CachedInfo	*cachedInfo;

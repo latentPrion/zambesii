@@ -5,7 +5,28 @@
 #include <kernel/common/process.h>
 #include <kernel/common/floodplainn/zum.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/taskTrib/taskTrib.h>
 
+
+error_t fplainn::Zum::initialize(void)
+{
+	error_t		ret;
+
+	ret = processTrib.__kgetStream()->spawnThread(
+		&main, NULL,
+		NULL, Thread::ROUND_ROBIN,
+		0, 0, &server);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(FATAL ZUM"Failed to spawn server thread.\n");
+		return ret;
+	};
+
+	setServerTid(server->getFullId());
+	taskTrib.yield();
+	return ERROR_SUCCESS;
+}
 
 fplainn::Zum::sZAsyncMsg *fplainn::Zum::getNewSZAsyncMsg(
 	utf8Char *func, utf8Char *devicePath, fplainn::Zum::sZAsyncMsg::opE op

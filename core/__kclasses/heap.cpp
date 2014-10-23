@@ -506,12 +506,8 @@ void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 			ret = currChunk->malloc(
 				this, sz, allocatedBy, desc);
 
-			if (ret == NULL)
-			{
-				printf(NOTICE HEAP"malloc: chunk 0x%p: not enough for %d "
-					"request\n",
-					(void*)currChunk, sz);
-
+			if (ret == NULL) {
+				// Not enough on this chunk. Move on to next.
 				continue;
 			};
 

@@ -13,7 +13,7 @@ static const uarch_t		shiftTab[] =
 
 	// For 64-bit build, we'll generate more numbers here.
 };
-	
+
 
 ubit16 getShiftFor(uarch_t num)
 {
@@ -34,19 +34,19 @@ ubit16 getShiftFor(uarch_t num)
 static const utf8Char *const strErrorTable[] =
 {
 	CC"SUCCESS", CC"GENERAL", CC"UNKNOWN", CC"CRITICAL", CC"FATAL",
-		CC"DUPLICATE", CC"", CC"", CC"", CC"",
+		CC"DUPLICATE", CC"NON_CONFORMANT", CC"", CC"", CC"",
 
 	CC"INVALID_ARG", CC"INVALID_ARG_VAL", CC"INVALID_OPERATION",
-		CC"INVALID_RESOUCE_FORMAT", CC"INVALID_FORMAT",
+		CC"INVALID_RESOURCE_NAME", CC"INVALID_FORMAT",
 		CC"INVALID_RESOURCE_HANDLE", CC"INVALID_RESOURCE_ID",
-		CC"", CC"", CC"",
+		CC"INVALID_STATE", CC"", CC"",
 
 	CC"MEMORY_NOMEM", CC"MEMORY_NOMEM_VIRTUAL", CC"MEMORY_NOMEM_PHYSICAL",
 		CC"MEMORY_VIRTUAL_PAGEMAP", CC"MEMORY_NOMEM_IN_CONSTRUCTOR",
 		CC"", CC"", CC"", CC"", CC"",
 
 	CC"UNIMPLEMENTED", CC"UNSUPPORTED", CC"UNINITIALIZED", CC"UNAUTHORIZED",
-		CC"", CC"", CC"", CC"", CC"", CC"",
+		CC"INITIALIZATION_FAILURE", CC"", CC"", CC"", CC"", CC"",
 
 	CC"RESOURCE_BUSY", CC"RESOURCE_UNAVAILABLE", CC"RESOURCE_EXHAUSTED",
 		CC"", CC"", CC"", CC"", CC"", CC"", CC"",
@@ -55,7 +55,7 @@ static const utf8Char *const strErrorTable[] =
 		CC"", CC"", CC"", CC"", CC"", CC""
 };
 
-static const utf8Char		*unknownError = CC"<Unknown error>";
+static const utf8Char		*unknownError = CC"<unknown error>";
 const utf8Char *strerror(error_t err)
 {
 	if (err > 0) { return (const utf8Char *)"Invalid error code"; };
