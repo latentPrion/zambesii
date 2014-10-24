@@ -9,7 +9,11 @@
 #define LZBZCORE	"lzbzcore: "
 
 class Thread;
-namespace lzudi { struct sRegion; }
+namespace lzudi
+{
+	struct sRegion;
+	struct sEndpointContext;
+}
 namespace fplainn { class MetaInit; }
 
 namespace __klzbzcore
@@ -45,6 +49,13 @@ namespace __klzbzcore
 				Thread *self,
 				__klzbzcore::driver::CachedInfo *drvInfoCache,
 				lzudi::sRegion *r);
+
+			error_t allocateEndpointContext(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r,
+				lzudi::sEndpointContext **retctxt);
 
 			void mgmtMeiCall();
 			void genericMeiCall();

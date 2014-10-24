@@ -589,154 +589,18 @@ void __klzbzcore::region::channel::handler(
 
 	if (endpContext == NULL)
 	{
-		fplainn::Channel::bindChannelTypeE	bindChanType;
-		ubit16					metaIndex, opsIndex;
-		fplainn::DriverInstance			*drvInst;
-		__klzbzcore::driver::CachedInfo::sMetaDescriptor
-							*metaDesc;
-		ubit16					dummy;
+		err = allocateEndpointContext(
+			msg, self, drvInfoCache, r, &endpContext);
 
-		fplainn::Driver::sChildBop		*cbindCbop;
-		fplainn::Driver::sMetalanguage		*cbindMeta;
-		utf8Char				cbindMetaName[
-			DRIVER_METALANGUAGE_MAXLEN];
-
-		/* Allocate lzudi::sEndpointContext here. Then call
-		 * FloodplainnStream::setEndpointContext() to seal the deal.
-		 **/
-printf(NOTICE"channel message, but no channel context.\n");
-
-		drvInst = self->getRegion()->parent->device->driverInstance;
-
-		bindChanType = floodplainn.zudi.getBindChannelType(
-			msg->__kendpoint);
-
-		/* Now that we know what kind of bind channel we are dealing
-		 * with, we can get the information on its metalanguage and
-		 * ops_idx, as required.
-		 **/
-		switch (bindChanType)
-		{
-		case fplainn::Channel::BIND_CHANNEL_TYPE_CHILD:
-			err = floodplainn.zudi.getEndpointMetaName(
-				msg->__kendpoint, cbindMetaName);
-
-			if (err != ERROR_SUCCESS)
-			{
-				printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: "
-					"Could not get channel metaName for "
-					"__kendp 0x%p.\n",
-					self->getRegion()->parent->device->longName,
-					r->index, msg->__kendpoint);
-
-				return;
-			};
-
-			cbindMeta = drvInst->driver->getMetalanguage(
-				cbindMetaName);
-
-			if (cbindMeta == NULL)
-			{
-				printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: "
-					"channel meta name is %s, but driver "
-					"doesn't declare this meta.\n",
-					self->getRegion()->parent->device->longName,
-					r->index, cbindMetaName);
-
-				return;
-			};
-
-			cbindCbop = drvInst->driver->getChildBop(
-				cbindMeta->index);
-
-			if (cbindCbop == NULL)
-			{
-				printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: "
-					"Failed to get child bop for meta %s.\n",
-					self->getRegion()->parent->device->longName,
-					r->index, cbindMetaName);
-
-				return;
-			};
-
-			metaIndex = cbindMeta->index;
-			opsIndex = cbindCbop->opsIndex;
-			break;
-
-		case fplainn::Channel::BIND_CHANNEL_TYPE_INTERNAL:
-			err = floodplainn.zudi.getInternalBopInfo(
-				r->index, &metaIndex, &opsIndex,
-				&dummy, &dummy);
-
-			if (err != ERROR_SUCCESS)
-			{
-				printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: "
-					"Failed to get internal bop info for "
-					"region %d.\n",
-					self->getRegion()->parent->device->longName,
-					r->index, r->index);
-
-				return;
-			};
-			break;
-
-		default:
-			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: endpoint "
-				"of non-bind channel found with no endpoint "
-				"context.\n",
-				self->getRegion()->parent->device->longName,
-				r->index);
-
-			return;
-		};
-
-		metaDesc = drvInfoCache->getMetaDescriptor(metaIndex);
-		if (metaDesc == NULL)
-		{
-			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: no meta "
-				"descriptor for meta_idx %d in driver cached "
-				"data.\n",
-				self->getRegion()->parent->device->longName,
-				r->index, metaIndex);
-
-			return;
-		};
-
-		endpContext = new lzudi::sEndpointContext(
-			msg->__kendpoint,
-			metaDesc->name, metaDesc->initInfo, opsIndex,
-			0, r->rdata);
-
-		if (endpContext == NULL)
-		{
-			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: failed to "
-				"demand alloc endpointContext.\n",
-				self->getRegion()->parent->device->longName,
-				r->index);
-
-			return;
-		};
-
-		floodplainn.zudi.setEndpointPrivateData(
-			msg->__kendpoint, endpContext);
-
-		// Finally, add it to the list on the region-local metadata.
-		err = r->endpoints.insert(endpContext);
 		if (err != ERROR_SUCCESS)
 		{
 			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: failed to "
-				"add new endpContext to region metatada.\n",
+				"alloc endpoint context for endpoint 0x%p.\n",
 				self->getRegion()->parent->device->longName,
-				r->index);
+				r->index, msg->__kendpoint);
 
-			floodplainn.zudi.setEndpointPrivateData(
-				msg->__kendpoint, NULL);
-
-			delete endpContext;
 			return;
 		};
-
-		printf(NOTICE LZBZCORE"New endpoint context created.\n");
 	};
 
 	/* The opsIndex 0 should only ever be called by the MA, and regardless
@@ -795,4 +659,162 @@ printf(NOTICE"channel message, but no channel context.\n");
 	else {
 		printf(NOTICE"Standard IPC call.");
 	};
+}
+
+error_t __klzbzcore::region::channel::allocateEndpointContext(
+	fplainn::sChannelMsg *msg,
+	Thread *self,
+	__klzbzcore::driver::CachedInfo *drvInfoCache,
+	lzudi::sRegion *r,
+	lzudi::sEndpointContext **retctxt
+	)
+{
+	error_t					err;
+	fplainn::Channel::bindChannelTypeE	bindChanType;
+	ubit16					metaIndex, opsIndex;
+	fplainn::DriverInstance			*drvInst;
+	__klzbzcore::driver::CachedInfo::sMetaDescriptor
+						*metaDesc;
+	ubit16					dummy;
+
+	fplainn::Driver::sChildBop		*cbindCbop;
+	fplainn::Driver::sMetalanguage		*cbindMeta;
+	utf8Char				cbindMetaName[
+		DRIVER_METALANGUAGE_MAXLEN];
+
+	/* Allocate lzudi::sEndpointContext here. Then call
+	 * FloodplainnStream::setEndpointContext() to seal the deal.
+	 **/
+
+	drvInst = self->getRegion()->parent->device->driverInstance;
+
+	bindChanType = floodplainn.zudi.getBindChannelType(
+		msg->__kendpoint);
+
+	/* Now that we know what kind of bind channel we are dealing
+	 * with, we can get the information on its metalanguage and
+	 * ops_idx, as required.
+	 **/
+	switch (bindChanType)
+	{
+	case fplainn::Channel::BIND_CHANNEL_TYPE_CHILD:
+		err = floodplainn.zudi.getEndpointMetaName(
+			msg->__kendpoint, cbindMetaName);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: "
+				"Could not get channel metaName for "
+				"__kendp 0x%p.\n",
+				self->getRegion()->parent->device->longName,
+				r->index, msg->__kendpoint);
+
+			return err;
+		};
+
+		cbindMeta = drvInst->driver->getMetalanguage(
+			cbindMetaName);
+
+		if (cbindMeta == NULL)
+		{
+			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: "
+				"channel meta name is %s, but driver "
+				"doesn't declare this meta.\n",
+				self->getRegion()->parent->device->longName,
+				r->index, cbindMetaName);
+
+			return ERROR_NOT_FOUND;
+		};
+
+		cbindCbop = drvInst->driver->getChildBop(
+			cbindMeta->index);
+
+		if (cbindCbop == NULL)
+		{
+			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: "
+				"Failed to get child bop for meta %s.\n",
+				self->getRegion()->parent->device->longName,
+				r->index, cbindMetaName);
+
+			return ERROR_NOT_FOUND;
+		};
+
+		metaIndex = cbindMeta->index;
+		opsIndex = cbindCbop->opsIndex;
+		break;
+
+	case fplainn::Channel::BIND_CHANNEL_TYPE_INTERNAL:
+		err = floodplainn.zudi.getInternalBopInfo(
+			r->index, &metaIndex, &opsIndex,
+			&dummy, &dummy);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: "
+				"Failed to get internal bop info for "
+				"region %d.\n",
+				self->getRegion()->parent->device->longName,
+				r->index, r->index);
+
+			return err;
+		};
+		break;
+
+	default:
+		printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: endpoint "
+			"of non-bind channel found with no endpoint "
+			"context.\n",
+			self->getRegion()->parent->device->longName,
+			r->index);
+
+		return ERROR_INVALID_FORMAT;
+	};
+
+	metaDesc = drvInfoCache->getMetaDescriptor(metaIndex);
+	if (metaDesc == NULL)
+	{
+		printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: no meta "
+			"descriptor for meta_idx %d in driver cached "
+			"data.\n",
+			self->getRegion()->parent->device->longName,
+			r->index, metaIndex);
+
+		return ERROR_NO_MATCH;
+	};
+
+	*retctxt = new lzudi::sEndpointContext(
+		msg->__kendpoint,
+		metaDesc->name, metaDesc->initInfo, opsIndex,
+		0, r->rdata);
+
+	if (*retctxt == NULL)
+	{
+		printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: failed to "
+			"demand alloc endpointContext.\n",
+			self->getRegion()->parent->device->longName,
+			r->index);
+
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	floodplainn.zudi.setEndpointPrivateData(
+		msg->__kendpoint, *retctxt);
+
+	// Finally, add it to the list on the region-local metadata.
+	err = r->endpoints.insert(*retctxt);
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: failed to "
+			"add new endpContext to region metatada.\n",
+			self->getRegion()->parent->device->longName,
+			r->index);
+
+		floodplainn.zudi.setEndpointPrivateData(
+			msg->__kendpoint, NULL);
+
+		delete *retctxt;
+		return err;
+	};
+
+	return ERROR_SUCCESS;
 }
