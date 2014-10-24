@@ -591,7 +591,31 @@ void __klzbzcore::region::channel::handler(
 		 * FloodplainnStream::setEndpointContext() to seal the deal.
 		 **/
 		printf(NOTICE"channel message, but no channel context.\n");
+
+#if 0
+		endpContext = new lzudi::sEndpointContext(
+			msg->__kendpoint,
+			META_NAME, META_INFO, OPS_IDX,
+			0, CHANNEL_CONTEXT);
+
+		if (endpContext == NULL)
+		{
+			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: failed to "
+				"demand alloc endpointContext.\n",
+				self->getRegion()->parent->device->longName,
+				r->index);
+
+			return;
+		};
+
+		floodplainn.zudi.setEndpointPrivateData(
+			msg->__kendpoint, endpContext);
+
+		// Finally, add it to the list on the region-local metadata.
+		r->endpoints.insert(endpContext);
+#else
 		return;
+#endif
 	};
 
 	/* The opsIndex 0 should only ever be called by the MA, and regardless
