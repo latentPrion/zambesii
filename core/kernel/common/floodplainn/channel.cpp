@@ -275,6 +275,7 @@ error_t fplainn::Endpoint::enqueue(sChannelMsg *msg)
 {
 	msg->endpointPrivateData = privateData;
 	msg->opsVector = opsVector;
+	msg->__kendpoint = this;
 	return MessageStream::enqueueOnThread(
 		msg->header.targetId, &msg->header);
 }

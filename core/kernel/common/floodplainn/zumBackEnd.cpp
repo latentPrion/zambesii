@@ -354,7 +354,7 @@ void zumServer::start::startDeviceReq(
 	 **/
 	// Can't think of anything meaningful to use as the endpoint privdata.
 	err = self->parent->floodplainnStream.connect(
-		ctxt->info.path, CC"zbz_root",
+		ctxt->info.path, CC"udi_mgmt",
 		&dummyMgmtMaOpsVector, NULL, 0,
 		&endp);
 

@@ -110,9 +110,20 @@ void __klzbzcore::region::main(void *)
 		switch (iMsg->subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_ZUDI:
-			printf(NOTICE"%s, rgn%d: CHANNEL_SEND msg. ops_idx %d.\n",
-				dev->driverInstance->driver->longName,
-				r.index, iMsg->function);
+			switch (iMsg->function)
+			{
+			case MSGSTREAM_ZUDI_CHANNEL_SEND:
+				channel::handler(
+					(fplainn::sChannelMsg *)iMsg,
+					self, drvInfoCache, &r);
+
+				break;
+
+			default:
+				printf(WARNING LZBZCORE"rgn:main: Unknown ZUDI "
+					"message %d.\n",
+					iMsg->function);
+			};
 
 			break;
 		default:
@@ -560,4 +571,82 @@ void __klzbzcore::region::main2(
 	 * thead's initialization is now done.
 	 **/
 	postRegionInitInd(self, ctxt, ERROR_SUCCESS);
+}
+
+void __klzbzcore::region::channel::handler(
+	fplainn::sChannelMsg *msg,
+	Thread *self,
+	__klzbzcore::driver::CachedInfo *drvInfoCache,
+	lzudi::sRegion *r
+	)
+{
+	lzudi::sEndpointContext					*endpContext;
+
+	endpContext = (lzudi::sEndpointContext *)msg->endpointPrivateData;
+
+	if (endpContext == NULL)
+	{
+		/* Allocate lzudi::sEndpointContext here. Then call
+		 * FloodplainnStream::setEndpointContext() to seal the deal.
+		 **/
+		printf(NOTICE"channel message, but no channel context.\n");
+		return;
+	};
+
+	/* The opsIndex 0 should only ever be called by the MA, and regardless
+	 * of which channel the ZUM MA makes a call on, it will always set the
+	 * metaName to be udi_mgmt. The metaName "udi_mgmt" is the signature
+	 * of a channel message from the ZUM MA.
+	 **/
+	if (msg->opsIndex == 0
+		&& strncmp8(
+			msg->metaName, CC"udi_mgmt",
+			DRIVER_METALANGUAGE_MAXLEN) != 0)
+	{
+		printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: ops_idx for "
+			"channel message is 0, but the metaName is not "
+			"udi_mgmt.\n",
+			self->getRegion()->parent->device->longName,
+			r->index);
+
+		return;
+	};
+
+	/* Now that we are guaranteed to have an sEndpointContext, we can do
+	 * some double-checking. The metalanguage name from both ends of the
+	 * channel must match. The only exception is where the channel message
+	 * is a udi_channel_event_ind call, in which case the metaName will be
+	 * udi_mgmt.
+	 **/
+	if (msg->opsIndex != 0
+		&& strncmp8(
+			endpContext->metaName, msg->metaName,
+			DRIVER_METALANGUAGE_MAXLEN) != 0)
+	{
+		printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: channel is "
+			"anchored with a %s ops vector, but a %s message came "
+			"in on it. Aborting.\n",
+			self->getRegion()->parent->device->longName,
+			r->index,
+			endpContext->metaName, msg->metaName);
+
+		return;
+	};
+
+	/* Now we can try to determine what kind of channel message this is.
+	 *	* If the metaName is "udi_mgmt", then this is a MA call into the
+	 *	  driver.
+	 *		* If the opsIndex of the call is 0, it is a MA call
+	 *		  for a udi_channel_event_ind operation.
+	 *		* If the opsIndex of the call is not 0, it is a MA call
+	 *		  for a udi_mgmt_ops_t operation.
+	 *	* If the metaName is not "udi_mgmt", this is a standard IPC
+	 *	  call.
+	 **/
+	if (!strncmp8(msg->metaName, CC"udi_mgmt", DRIVER_METALANGUAGE_MAXLEN)) {
+		printf(NOTICE"MGMT MA call.");
+	}
+	else {
+		printf(NOTICE"Standard IPC call.");
+	};
 }

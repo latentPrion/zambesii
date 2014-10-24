@@ -38,9 +38,17 @@ namespace __klzbzcore
 		__kmainCbFn	main1;
 		__kmainCbFn	main2;
 
-		namespace mei
+		namespace channel
 		{
-			void handler(void);
+			void handler(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r);
+
+			void mgmtMeiCall();
+			void genericMeiCall();
+			void eventIndMeiCall();
 		}
 	}
 
@@ -144,6 +152,26 @@ namespace __klzbzcore
 				{
 					if ((*it)->index == idx) {
 						return *it;
+					};
+				};
+
+				return NULL;
+			}
+
+			sMetaDescriptor *getMetaDescriptor(utf8Char *metaName)
+			{
+				PtrList<sMetaDescriptor>::Iterator	it;
+
+				it = metaInfos.begin(0);
+				for (; it != metaInfos.end(); ++it)
+				{
+					sMetaDescriptor		*curr = *it;
+
+					if (!strncmp8(
+						curr->name, metaName,
+						DRIVER_METALANGUAGE_MAXLEN))
+					{
+						return curr;
 					};
 				};
 

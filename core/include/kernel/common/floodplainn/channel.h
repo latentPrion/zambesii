@@ -361,7 +361,8 @@ namespace fplainn
 			ZUI_DRIVER_METALANGUAGE_MAXLEN];
 		ubit16				metaOpsNum,
 						opsIndex;
-		// These 2 are set by the target endpoint.
+		// These 3 are set by the target endpoint.
+		fplainn::Endpoint		*__kendpoint;
 		udi_ops_vector_t		*opsVector;
 		void				*endpointPrivateData;
 

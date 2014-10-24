@@ -78,12 +78,42 @@ namespace fplainn
 
 		const udi_ops_init_t *getOpsInit(udi_index_t ops_idx)
 		{
-			udi_ops_init_t		*ret;
+			const udi_ops_init_t		*ret;
 
 			ret = initInfo->ops_init_list;
 			for (; ret != NULL && ret->ops_idx != 0; ret++)
 			{
 				if (ret->ops_idx == ops_idx) {
+					return ret;
+				};
+			};
+
+			return NULL;
+		}
+
+		const udi_cb_init_t *getCbInit(udi_index_t cb_idx)
+		{
+			const udi_cb_init_t		*ret;
+
+			ret = initInfo->cb_init_list;
+			for (; ret != NULL && ret->cb_idx != 0; ret++)
+			{
+				if (ret->cb_idx == cb_idx) {
+					return ret;
+				};
+			};
+
+			return NULL;
+		}
+
+		const udi_secondary_init_t *getSecondaryInit(udi_index_t rgn_idx)
+		{
+			const udi_secondary_init_t	*ret;
+
+			ret = initInfo->secondary_init_list;
+			for (; ret != NULL && ret->region_idx != 0; ret++)
+			{
+				if (ret->region_idx == rgn_idx) {
 					return ret;
 				};
 			};
