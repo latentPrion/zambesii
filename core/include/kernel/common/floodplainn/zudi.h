@@ -6,6 +6,7 @@
 	#undef UDI_VERSION
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/floodplainn/fvfs.h>
+	#include <kernel/common/floodplainn/channel.h>
 
 #define ZUDI			"ZUDI: "
 
@@ -101,6 +102,9 @@ public:
 		udi_cb_t *gcb, va_list args, udi_layout_t *layouts[3],
 		utf8Char *metaName, udi_index_t meta_ops_num, udi_index_t op_idx,
 		void *privateData);
+
+	fplainn::Channel::bindChannelTypeE getBindChannelType(
+		fplainn::Endpoint *endp);
 
 public:
 	struct sKernelCallMsg

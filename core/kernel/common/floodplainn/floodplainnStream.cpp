@@ -120,7 +120,9 @@ error_t FloodplainnStream::connect(
 	 **/
 	fplainn::IncompleteD2SChannel		*blueprint;
 
-	blueprint = new fplainn::IncompleteD2SChannel(metaName, 0);
+	blueprint = new fplainn::IncompleteD2SChannel(
+		metaName, fplainn::Channel::BIND_CHANNEL_TYPE_CHILD, 0);
+
 	if (blueprint == NULL || blueprint->initialize() != ERROR_SUCCESS)
 	{
 		printf(ERROR FPSTREAM"%d: connect %s %s: failed to alloc or "

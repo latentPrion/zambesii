@@ -160,9 +160,16 @@ namespace fplainn
 		friend class D2DChannel;
 		friend class D2SChannel;
 
+	public:	enum bindChannelTypeE {
+			// None means it's not a bind channel.
+			BIND_CHANNEL_TYPE_NONE,
+			BIND_CHANNEL_TYPE_INTERNAL, BIND_CHANNEL_TYPE_CHILD };
 
-		Channel(utf8Char *metaName, Endpoint *otherEnd)
-		: regionEnd0(this, otherEnd)
+	private:
+		Channel(
+			utf8Char *metaName, bindChannelTypeE bct,
+			Endpoint *otherEnd)
+		: bindChannelType(bct), regionEnd0(this, otherEnd)
 		{
 			this->metaName[0] = '\0';
 			if (metaName != NULL)
@@ -202,7 +209,8 @@ namespace fplainn
 
 		error_t createIncompleteChannel(
 			typeE type,
-			utf8Char *metaName, udi_index_t spawn_idx,
+			utf8Char *metaName, bindChannelTypeE bct,
+			udi_index_t spawn_idx,
 			IncompleteChannel **ret);
 
 		// Not a misnaming: does not free, only removes.
@@ -222,6 +230,7 @@ namespace fplainn
 		void operator delete(void *obj);
 
 	public:
+		bindChannelTypeE		bindChannelType;
 		RegionEndpoint			regionEnd0;
 		Endpoint			*endpoints[2];
 		PtrList<IncompleteChannel>	incompleteChannels;
@@ -238,8 +247,8 @@ namespace fplainn
 	: public Channel
 	{
 	public:
-		D2DChannel(utf8Char *metaName)
-		: Channel(metaName, &regionEnd1),
+		D2DChannel(utf8Char *metaName, bindChannelTypeE bct)
+		: Channel(metaName, bct, &regionEnd1),
 		regionEnd1(this, &regionEnd0)
 		{
 			endpoints[1] = &regionEnd1;
@@ -263,8 +272,8 @@ namespace fplainn
 	: public Channel
 	{
 	public:
-		D2SChannel(utf8Char *metaName)
-		: Channel(metaName, &fstreamEnd),
+		D2SChannel(utf8Char *metaName, bindChannelTypeE bct)
+		: Channel(metaName, bct, &fstreamEnd),
 		fstreamEnd(this, &regionEnd0)
 		{
 			endpoints[1] = &fstreamEnd;
@@ -315,8 +324,10 @@ namespace fplainn
 	: public D2DChannel, public IncompleteChannel
 	{
 	public:
-		IncompleteD2DChannel(utf8Char *metaName, udi_index_t spawn_idx)
-		: D2DChannel(metaName), IncompleteChannel(spawn_idx)
+		IncompleteD2DChannel(
+			utf8Char *metaName, bindChannelTypeE bct,
+			udi_index_t spawn_idx)
+		: D2DChannel(metaName, bct), IncompleteChannel(spawn_idx)
 		{}
 	};
 
@@ -324,8 +335,10 @@ namespace fplainn
 	: public D2SChannel, public IncompleteChannel
 	{
 	public:
-		IncompleteD2SChannel(utf8Char *metaName, udi_index_t spawn_idx)
-		: D2SChannel(metaName), IncompleteChannel(spawn_idx)
+		IncompleteD2SChannel(
+			utf8Char *metaName, bindChannelTypeE bct,
+			udi_index_t spawn_idx)
+		: D2SChannel(metaName, bct), IncompleteChannel(spawn_idx)
 		{}
 	};
 
