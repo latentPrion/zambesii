@@ -162,7 +162,7 @@ namespace fplainn
 
 	public:	enum bindChannelTypeE {
 			// None means it's not a bind channel.
-			BIND_CHANNEL_TYPE_NONE,
+			BIND_CHANNEL_TYPE_NONE=0,
 			BIND_CHANNEL_TYPE_INTERNAL, BIND_CHANNEL_TYPE_CHILD };
 
 	private:

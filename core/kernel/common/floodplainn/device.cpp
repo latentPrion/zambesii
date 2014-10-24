@@ -336,11 +336,8 @@ fplainn::DeviceInstance::getChannelByEndpoint(Endpoint *endpoint)
 	{
 		Channel	*currChannel = *it;
 
-		for (uarch_t i=0; i<2; i++)
-		{
-			if (currChannel->hasEndpoint(endpoint)) { continue; };
-			return currChannel;
-		};
+		if (!currChannel->hasEndpoint(endpoint)) { continue; };
+		return currChannel;
 	};
 
 	return NULL;

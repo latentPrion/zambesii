@@ -203,6 +203,46 @@ const sMetaInitEntry *fplainn::Zudi::findMetaInitInfo(utf8Char *shortName)
 	return NULL;
 }
 
+fplainn::Channel::bindChannelTypeE fplainn::Zudi::getBindChannelType(
+	fplainn::Endpoint *endp
+	)
+{
+	Thread			*self;
+	fplainn::Channel	*chan;
+
+	if (endp == NULL) { return fplainn::Channel::BIND_CHANNEL_TYPE_NONE; };
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	if (self->parent->getType() != ProcessStream::DRIVER)
+		{ return fplainn::Channel::BIND_CHANNEL_TYPE_NONE; };
+
+	chan = self->getRegion()->parent->getChannelByEndpoint(endp);
+	if (chan == NULL) { return fplainn::Channel::BIND_CHANNEL_TYPE_NONE; };
+	return chan->bindChannelType;
+}
+
+error_t fplainn::Zudi::getEndpointMetaName(
+	fplainn::Endpoint *endp, utf8Char *mem
+	)
+{
+	Thread			*self;
+	fplainn::Channel	*chan;
+
+	if (endp == NULL || mem == NULL) { return ERROR_INVALID_ARG; };
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	if (self->parent->getType() != ProcessStream::DRIVER)
+		{ return ERROR_UNAUTHORIZED; };
+
+	chan = self->getRegion()->parent->getChannelByEndpoint(endp);
+	if (chan == NULL) { return ERROR_NO_MATCH; };
+
+	strncpy8(mem, chan->metaName, DRIVER_METALANGUAGE_MAXLEN);
+	return ERROR_SUCCESS;
+}
+
 error_t fplainn::Zudi::spawnEndpoint(
 	fplainn::Endpoint *channel_endp,
 	utf8Char *metaName, udi_index_t spawn_idx,

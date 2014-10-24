@@ -106,6 +106,8 @@ public:
 	fplainn::Channel::bindChannelTypeE getBindChannelType(
 		fplainn::Endpoint *endp);
 
+	error_t getEndpointMetaName(fplainn::Endpoint *endp, utf8Char *mem);
+
 public:
 	struct sKernelCallMsg
 	{
