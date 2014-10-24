@@ -331,7 +331,7 @@ void __klzbzcore::region::main2(
 		endpContext = new lzudi::sEndpointContext(
 			__kibindEndp, iBopMeta->name,
 			iBopMetaInfo->udi_meta_info,
-			opsIndex1, r->rdata);
+			opsIndex1, bindCbIndex, r->rdata);
 
 		// Unify the error checking for both of these.
 		if (err != ERROR_SUCCESS || endpContext == NULL)
@@ -548,6 +548,7 @@ void __klzbzcore::region::main2(
 		pbindEndpContext = new lzudi::sEndpointContext(
 			__kpbindEndp, pTag->udi.metaName,
 			pBopMetaInfo->udi_meta_info, correctPBop->opsIndex,
+			correctPBop->bindCbIndex,
 			r->rdata);
 
 		if (err != ERROR_SUCCESS || pbindEndpContext == NULL)

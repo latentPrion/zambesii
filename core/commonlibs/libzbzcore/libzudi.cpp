@@ -15,10 +15,12 @@ lzudi::sEndpointContext::sEndpointContext(
 	fplainn::Endpoint *__kendp,
 	utf8Char *metaName,
 	udi_mei_init_t *metaInfo, udi_index_t opsIdx,
+	udi_index_t bindCbIndex,
 	void *channel_context
 	)
 :
-__kendpoint(__kendp), metaInfo(metaInfo), channel_context(channel_context)
+__kendpoint(__kendp), metaInfo(metaInfo), channel_context(channel_context),
+bindCbIndex(bindCbIndex)
 {
 	anchor(metaName, metaInfo, opsIdx);
 }
@@ -151,14 +153,14 @@ void udi_channel_spawn(
 		newEndp = new lzudi::sEndpointContext(
 			__kendp,
 			metaDesc->name, metaDesc->initInfo,
-			ops_idx, channel_context);
+			ops_idx, 0, channel_context);
 	}
 	else
 	{
 		newEndp = new lzudi::sEndpointContext(
 			__kendp,
 			NULL, NULL,
-			ops_idx, channel_context);
+			ops_idx, 0, channel_context);
 	}
 
 	if (newEndp == NULL) {

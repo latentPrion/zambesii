@@ -64,6 +64,7 @@ namespace lzudi
 			fplainn::Endpoint *__kendp,
 			utf8Char *metaName,
 			udi_mei_init_t *metaInfo, udi_index_t opsIdx,
+			udi_index_t bindCbIndex,
 			void *channel_context);
 
 		void dump(void);
@@ -79,6 +80,7 @@ namespace lzudi
 		udi_mei_init_t			*metaInfo;
 		udi_mei_ops_vec_template_t	*opsVectorTemplate;
 		void				*channel_context;
+		udi_index_t			bindCbIndex;
 	};
 
 	struct sRegion
