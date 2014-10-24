@@ -57,9 +57,23 @@ namespace __klzbzcore
 				lzudi::sRegion *r,
 				lzudi::sEndpointContext **retctxt);
 
-			void mgmtMeiCall();
-			void genericMeiCall();
-			void eventIndMeiCall();
+			void mgmtMeiCall(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r);
+
+			void genericMeiCall(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r);
+
+			void eventIndMeiCall(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r);
 		}
 	}
 

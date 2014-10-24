@@ -55,11 +55,8 @@ void __klzbzcore::region::main(void *)
 	fplainn::Zudi::sKernelCallMsg		*ctxt;
 	__klzbzcore::driver::CachedInfo		*drvInfoCache=NULL;
 
-	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread();
-
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 	ctxt = (fplainn::Zudi::sKernelCallMsg *)self->getPrivateData();
-
 
 	err = floodplainn.getDevice(ctxt->path, &dev);
 	if (err != ERROR_SUCCESS)
@@ -653,11 +650,17 @@ void __klzbzcore::region::channel::handler(
 	 *	* If the metaName is not "udi_mgmt", this is a standard IPC
 	 *	  call.
 	 **/
-	if (!strncmp8(msg->metaName, CC"udi_mgmt", DRIVER_METALANGUAGE_MAXLEN)) {
-		printf(NOTICE"MGMT MA call.");
+	if (!strncmp8(msg->metaName, CC"udi_mgmt", DRIVER_METALANGUAGE_MAXLEN))
+	{
+		if (msg->opsIndex == 0) {
+			printf(NOTICE"udi_channel_event_ind call.\n");
+		}
+		else {
+			mgmtMeiCall(msg, self, drvInfoCache, r);
+		};
 	}
 	else {
-		printf(NOTICE"Standard IPC call.");
+		printf(NOTICE"Standard IPC call.\n");
 	};
 }
 
@@ -817,4 +820,15 @@ error_t __klzbzcore::region::channel::allocateEndpointContext(
 	};
 
 	return ERROR_SUCCESS;
+}
+
+void __klzbzcore::region::channel::mgmtMeiCall(
+	fplainn::sChannelMsg *msg,
+	Thread *self,
+	__klzbzcore::driver::CachedInfo *drvInfoCache,
+	lzudi::sRegion *r
+	)
+{
+	printf(NOTICE"ZUM MA call.\n");
+
 }

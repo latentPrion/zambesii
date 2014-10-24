@@ -168,7 +168,7 @@ extern "C" void __korientationMain(ubit32, sMultibootData *)
 	bspCpu.initializeBaseState();
 	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
 	cxxrtl::callGlobalConstructors();
-	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread() ;
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread() ;
 
 	/* Initialize exceptions, then move on to __kspace level physical
 	 * memory management, then the kernel Memory Stream. Then when we have
@@ -235,7 +235,6 @@ extern "C" void __korientationMain(ubit32, sMultibootData *)
 	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
 	zkcmCore.irqControl.maskAll();
 
-
 	zkcmCore.irqControl.chipsetEventNotification(
 		IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL, 0);
 #endif
@@ -292,7 +291,6 @@ void __korientationMain1(void)
 		new __kCallback(&__korientationMain4));
 }
 
-#include <kernel/common/floodplainn/initInfo.h>
 void __korientationMain4(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
