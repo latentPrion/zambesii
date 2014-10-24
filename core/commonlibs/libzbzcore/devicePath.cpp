@@ -325,7 +325,8 @@ void __klzbzcore::region::main2(
 		};
 
 		err = floodplainn.zudi.spawnInternalBindChannel(
-			ctxt->path, r->index, opsVector0, opsVector1,
+			ctxt->path, iBopMeta->name, r->index,
+			opsVector0, opsVector1,
 			&__kibindEndp);
 
 		endpContext = new lzudi::sEndpointContext(
@@ -581,7 +582,8 @@ void __klzbzcore::region::channel::handler(
 	lzudi::sRegion *r
 	)
 {
-	lzudi::sEndpointContext					*endpContext;
+	error_t						err;
+	lzudi::sEndpointContext				*endpContext;
 
 	endpContext = (lzudi::sEndpointContext *)msg->endpointPrivateData;
 
@@ -596,7 +598,7 @@ void __klzbzcore::region::channel::handler(
 		endpContext = new lzudi::sEndpointContext(
 			msg->__kendpoint,
 			META_NAME, META_INFO, OPS_IDX,
-			0, CHANNEL_CONTEXT);
+			0, r->rdata);
 
 		if (endpContext == NULL)
 		{
@@ -612,7 +614,20 @@ void __klzbzcore::region::channel::handler(
 			msg->__kendpoint, endpContext);
 
 		// Finally, add it to the list on the region-local metadata.
-		r->endpoints.insert(endpContext);
+		err = r->endpoints.insert(endpContext);
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: failed to "
+				"add new endpContext to region metatada.\n",
+				self->getRegion()->parent->device->longName,
+				r->index);
+
+			floodplainn.zudi.setEndpointPrivateData(
+				msg->__kendpoint, NULL);
+
+			delete endpContext;
+			return;
+		};
 #else
 		return;
 #endif

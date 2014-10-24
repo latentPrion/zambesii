@@ -204,7 +204,8 @@ const sMetaInitEntry *fplainn::Zudi::findMetaInitInfo(utf8Char *shortName)
 }
 
 error_t fplainn::Zudi::spawnEndpoint(
-	fplainn::Endpoint *channel_endp, udi_index_t spawn_idx,
+	fplainn::Endpoint *channel_endp,
+	utf8Char *metaName, udi_index_t spawn_idx,
 	udi_ops_vector_t *ops_vector,
 	udi_init_context_t *channel_context,
 	fplainn::Endpoint **retendp
@@ -255,8 +256,8 @@ error_t fplainn::Zudi::spawnEndpoint(
 		 * Endpoint0 is always a region endpoint. Since this is
 		 **/
 		ret = originChannel->createIncompleteChannel(
-			originChannel->getType(), spawn_idx, &incChan);
-
+			originChannel->getType(),
+			metaName, spawn_idx, &incChan);
 
 		/* We can use originChannel to determine what type of incomplete
 		 * channel (D2D or D2S) we have spawned because it is not
@@ -464,7 +465,7 @@ error_t fplainn::Zudi::createChannel(
 }
 
 error_t fplainn::Zudi::spawnInternalBindChannel(
-	utf8Char *devPath, ubit16 regionIndex,
+	utf8Char *devPath, utf8Char *metaName, ubit16 regionIndex,
 	udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1,
 	fplainn::Endpoint **retendp1
 	)
@@ -497,7 +498,7 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 
 	IncompleteD2DChannel		*blueprint;
 
-	blueprint = new IncompleteD2DChannel(0);
+	blueprint = new IncompleteD2DChannel(metaName, 0);
 	if (blueprint == NULL || blueprint->initialize() != ERROR_SUCCESS)
 	{
 		printf(ERROR"spawnIbopChan %s,%d,0x%p,0x%p: Failed to alloc or "
@@ -617,7 +618,7 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 	// Finally, create the blueprint and then call spawnChannel.
 	fplainn::IncompleteD2DChannel		*blueprint;
 
-	blueprint = new IncompleteD2DChannel(0);
+	blueprint = new IncompleteD2DChannel(metaName, 0);
 	if (blueprint == NULL || blueprint->initialize() != ERROR_SUCCESS)
 	{
 		printf(ERROR"spawnCBindChan %s,%s,%s,0x%p: Failed to alloc or "

@@ -121,8 +121,14 @@ void udi_channel_spawn(
 		callback(gcb, NULL); return;
 	};
 
+	/* FIXME: We can spawn non-bind endpoints without a metaName, and it'll
+	 * be fine; they are only functionally required for bind channels. But
+	 * eventually we still should do this since it doesn't hurt and it adds
+	 * an extra bit of validation checking. For now we pass NULL to the
+	 * "metaName" argument.
+	 **/
 	err = floodplainn.zudi.spawnEndpoint(
-		originEndp->__kendpoint, spawn_idx,
+		originEndp->__kendpoint, NULL, spawn_idx,
 		((ops_idx == 0) ? NULL : opsInitEntry->ops_vector), NULL,
 		&__kendp);
 

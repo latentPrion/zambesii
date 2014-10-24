@@ -67,7 +67,8 @@ public:
 	 * need to expose any parent bind ops information to the kernel.
 	 **/
 	error_t spawnEndpoint(
-		fplainn::Endpoint *channel_endp, udi_index_t spawn_idx,
+		fplainn::Endpoint *channel_endp,
+		utf8Char *metaName, udi_index_t spawn_idx,
 		udi_ops_vector_t *ops_vector,
 		udi_init_context_t *channel_context,
 		fplainn::Endpoint **retendp);
@@ -77,7 +78,7 @@ public:
 		void *endpPrivateData);
 
 	error_t spawnInternalBindChannel(
-		utf8Char *devicePath, ubit16 regionIndex,
+		utf8Char *devicePath, utf8Char *metaName, ubit16 regionIndex,
 		udi_ops_vector_t *opsVector0, udi_ops_vector_t *opsVector1,
 		fplainn::Endpoint **retendp1);
 

@@ -27,7 +27,7 @@ void fplainn::Channel::operator delete(void *obj)
 }
 
 fplainn::D2DChannel::D2DChannel(IncompleteD2DChannel &ic)
-: Channel(&regionEnd1),
+: Channel(ic.metaName, &regionEnd1),
 regionEnd1(this, &regionEnd0)
 {
 	endpoints[1] = &regionEnd1;
@@ -42,7 +42,7 @@ regionEnd1(this, &regionEnd0)
 }
 
 fplainn::D2SChannel::D2SChannel(IncompleteD2SChannel &ic)
-: Channel(&fstreamEnd),
+: Channel(ic.metaName, &fstreamEnd),
 fstreamEnd(this, &regionEnd0)
 {
 	endpoints[1] = &fstreamEnd;
@@ -210,7 +210,8 @@ fplainn::Channel::getIncompleteChannelBySpawnIndex(
 }
 
 error_t fplainn::Channel::createIncompleteChannel(
-	typeE type, udi_index_t spawnIdx, IncompleteChannel **retIncChan
+	typeE type, utf8Char *metaName, udi_index_t spawnIdx,
+	IncompleteChannel **retIncChan
 	)
 {
 	IncompleteChannel		*tmp;
@@ -224,7 +225,7 @@ error_t fplainn::Channel::createIncompleteChannel(
 	if (type == TYPE_D2D)
 	{
 		tmp = static_cast<IncompleteChannel *>(
-			new IncompleteD2DChannel(spawnIdx));
+			new IncompleteD2DChannel(metaName, spawnIdx));
 
 		if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 		ret = static_cast<IncompleteD2DChannel *>(tmp)->initialize();
@@ -232,7 +233,7 @@ error_t fplainn::Channel::createIncompleteChannel(
 	else
 	{
 		tmp = static_cast<IncompleteChannel *>(
-			new IncompleteD2SChannel(spawnIdx));
+			new IncompleteD2SChannel(metaName, spawnIdx));
 
 		if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
 		ret = static_cast<IncompleteD2SChannel *>(tmp)->initialize();

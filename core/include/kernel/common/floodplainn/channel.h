@@ -161,9 +161,21 @@ namespace fplainn
 		friend class D2SChannel;
 
 
-		Channel(Endpoint *otherEnd)
+		Channel(utf8Char *metaName, Endpoint *otherEnd)
 		: regionEnd0(this, otherEnd)
 		{
+			this->metaName[0] = '\0';
+			if (metaName != NULL)
+			{
+				strncpy8(
+					this->metaName, metaName,
+					ZUI_DRIVER_METALANGUAGE_MAXLEN);
+
+				this->metaName[
+					ZUI_DRIVER_METALANGUAGE_MAXLEN - 1] =
+					'\0';
+			};
+
 			endpoints[0] = &regionEnd0;
 			endpoints[1] = NULL;
 		}
@@ -190,7 +202,7 @@ namespace fplainn
 
 		error_t createIncompleteChannel(
 			typeE type,
-			udi_index_t spawn_idx,
+			utf8Char *metaName, udi_index_t spawn_idx,
 			IncompleteChannel **ret);
 
 		// Not a misnaming: does not free, only removes.
@@ -213,6 +225,8 @@ namespace fplainn
 		RegionEndpoint			regionEnd0;
 		Endpoint			*endpoints[2];
 		PtrList<IncompleteChannel>	incompleteChannels;
+		utf8Char			metaName[
+			ZUI_DRIVER_METALANGUAGE_MAXLEN];
 	};
 
 	class IncompleteD2DChannel;
@@ -224,8 +238,8 @@ namespace fplainn
 	: public Channel
 	{
 	public:
-		D2DChannel(void)
-		: Channel(&regionEnd1),
+		D2DChannel(utf8Char *metaName)
+		: Channel(metaName, &regionEnd1),
 		regionEnd1(this, &regionEnd0)
 		{
 			endpoints[1] = &regionEnd1;
@@ -249,8 +263,8 @@ namespace fplainn
 	: public Channel
 	{
 	public:
-		D2SChannel(void)
-		: Channel(&fstreamEnd),
+		D2SChannel(utf8Char *metaName)
+		: Channel(metaName, &fstreamEnd),
 		fstreamEnd(this, &regionEnd0)
 		{
 			endpoints[1] = &fstreamEnd;
@@ -301,8 +315,8 @@ namespace fplainn
 	: public D2DChannel, public IncompleteChannel
 	{
 	public:
-		IncompleteD2DChannel(udi_index_t spawn_idx)
-		: IncompleteChannel(spawn_idx)
+		IncompleteD2DChannel(utf8Char *metaName, udi_index_t spawn_idx)
+		: D2DChannel(metaName), IncompleteChannel(spawn_idx)
 		{}
 	};
 
@@ -310,8 +324,8 @@ namespace fplainn
 	: public D2SChannel, public IncompleteChannel
 	{
 	public:
-		IncompleteD2SChannel(udi_index_t spawn_idx)
-		: IncompleteChannel(spawn_idx)
+		IncompleteD2SChannel(utf8Char *metaName, udi_index_t spawn_idx)
+		: D2SChannel(metaName), IncompleteChannel(spawn_idx)
 		{}
 	};
 
