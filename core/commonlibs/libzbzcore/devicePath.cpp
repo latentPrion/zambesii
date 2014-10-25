@@ -5,9 +5,10 @@
 #include <__kstdlib/__kcxxlib/memory>
 #include <commonlibs/libzbzcore/libzbzcore.h>
 #include <commonlibs/libzbzcore/libzudi.h>
+#include <kernel/common/process.h>
+#include <kernel/common/floodplainn/initInfo.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
-#include <kernel/common/process.h>
 
 
 class __klzbzcore::region::MainCb
@@ -829,6 +830,37 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 	lzudi::sRegion *r
 	)
 {
+	__klzbzcore::driver::CachedInfo::sMetaDescriptor	*mgmtDesc;
+	udi_mei_op_template_t					*opTemplate;
+	uarch_t							visibleSize;
+	udi_ubit16_t						dummy;
+
 	printf(NOTICE"ZUM MA call.\n");
 
+	/* Wrote this function entirely off instinct, and had no idea what I
+	 * was doing while writing it.
+	 **/
+	mgmtDesc = drvInfoCache->getMetaDescriptor(CC"udi_mgmt");
+	if (mgmtDesc == NULL)
+	{
+		return;
+	};
+
+	fplainn::MetaInit		metaInfoParser(mgmtDesc->initInfo);
+
+	opTemplate = metaInfoParser.getOpTemplate(
+		UDI_MGMT_OPS_NUM, msg->opsIndex);
+
+	if (opTemplate == NULL)
+	{
+		return;
+	};
+
+	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
+		opTemplate->visible_layout, &dummy, &dummy);
+
+printf(NOTICE"vis size %d, opsVector 0x%p, backendstub 0x%p.\n", visibleSize, msg->opsVector, opTemplate->backend_stub);
+	opTemplate->backend_stub(
+		msg->opsVector[msg->opsIndex - 1], msg->data,
+		((ubit8 *)msg->data) + sizeof(udi_cb_t) + visibleSize);
 }

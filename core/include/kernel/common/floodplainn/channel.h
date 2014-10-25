@@ -393,7 +393,7 @@ namespace fplainn
 		udi_ops_vector_t		*opsVector;
 		void				*endpointPrivateData;
 
-	private:
+	public:
 		friend class Zudi;
 		friend class ::FloodplainnStream;
 

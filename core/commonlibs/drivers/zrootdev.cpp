@@ -8,7 +8,8 @@
 void zrootdev_usage_ind(udi_usage_cb_t *cb, udi_ubit8_t resource_level)
 {
 	(void)cb; (void)resource_level;
-printf(NOTICE"Zambesii root device driver executing.\n");
+printf(NOTICE"Zambesii root device driver executing. resource level %d.\n",
+	resource_level);
 }
 
 void zrootdev_enumerate_req(
