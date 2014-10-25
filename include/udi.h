@@ -6,30 +6,30 @@
  * All UDI drivers must #include this file.
  *
  * $Copyright udi_reference:
- * 
- * 
+ *
+ *
  *    Copyright (c) 1995-2001; Compaq Computer Corporation; Hewlett-Packard
  *    Company; Interphase Corporation; The Santa Cruz Operation, Inc;
  *    Software Technologies Group, Inc; and Sun Microsystems, Inc
  *    (collectively, the "Copyright Holders").  All rights reserved.
- * 
+ *
  *    Redistribution and use in source and binary forms, with or without
  *    modification, are permitted provided that the conditions are met:
- * 
+ *
  *            Redistributions of source code must retain the above
  *            copyright notice, this list of conditions and the following
  *            disclaimer.
- * 
+ *
  *            Redistributions in binary form must reproduce the above
  *            copyright notice, this list of conditions and the following
  *            disclaimers in the documentation and/or other materials
  *            provided with the distribution.
- * 
+ *
  *            Neither the name of Project UDI nor the names of its
  *            contributors may be used to endorse or promote products
  *            derived from this software without specific prior written
  *            permission.
- * 
+ *
  *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *    "AS IS," AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -42,14 +42,14 @@
  *    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  *    USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  *    DAMAGE.
- * 
+ *
  *    THIS SOFTWARE IS BASED ON SOURCE CODE PROVIDED AS A SAMPLE REFERENCE
  *    IMPLEMENTATION FOR VERSION 1.01 OF THE UDI CORE SPECIFICATION AND/OR
  *    RELATED UDI SPECIFICATIONS. USE OF THIS SOFTWARE DOES NOT IN AND OF
  *    ITSELF CONSTITUTE CONFORMANCE WITH THIS OR ANY OTHER VERSION OF ANY
  *    UDI SPECIFICATION.
- * 
- * 
+ *
+ *
  * $
  */
 
@@ -61,11 +61,11 @@
 #error "Unsupported UDI_VERSION."
 #endif
 
-#include <extern.h>
-
 /* Note: The order of inclusion below is very sensitive to dependencies */
 
-CPPEXTERN_START
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define _UDI_H_INSIDE
 #include <udi_core/udi_types.h>
@@ -83,9 +83,12 @@ CPPEXTERN_START
 #include <udi_core/udi_trace_log.h>
 #include <udi_core/udi_debug.h>
 #include <udi_core/udi_mgmt.h>
+#include <udi_core/zbz_udi_mgmt.h>
 #include <udi_core/udi_gio.h>
 #undef _UDI_H_INSIDE
 
-CPPEXTERN_END
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _UDI_H */

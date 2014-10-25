@@ -19,7 +19,7 @@
 extern const udi_init_t		zramdisk_init_info;
 extern const udi_init_t		zrootdev_init_info;
 
-udi_mei_init_t			udi_mgmt_meta_info = {NULL};
+extern const udi_mei_init_t	udi_mgmt_meta_info;
 extern const udi_mei_init_t	udi_gio_meta_info;
 extern const udi_mei_init_t	udi_bridge_meta_info;
 

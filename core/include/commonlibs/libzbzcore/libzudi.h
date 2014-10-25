@@ -12,38 +12,6 @@
 
 #define LZUDI			"lzudi: "
 
-CPPEXTERN_START
-
-void udi_mei_call(
-	udi_cb_t *gcb,
-	udi_mei_init_t *meta_info,
-	udi_index_t meta_ops_num,
-	udi_index_t vec_idx,
-	...);
-
-void udi_channel_spawn(
-	udi_channel_spawn_call_t *callback,
-	udi_cb_t *gcb,
-	udi_channel_t channel,
-	udi_index_t spawn_idx,
-	udi_index_t ops_idx,
-	void *channel_context);
-
-void udi_channel_set_context(
-	udi_channel_t target_channel,
-	void *channel_context);
-
-void udi_channel_anchor(
-	udi_channel_anchor_call_t *callback,
-	udi_cb_t *gcb,
-	udi_channel_t channel,
-	udi_index_t ops_idx,
-	void *channel_context);
-
-void udi_channel_close(udi_channel_t channel);
-
-CPPEXTERN_END
-
 namespace fplainn
 {
 	class Endpoint;

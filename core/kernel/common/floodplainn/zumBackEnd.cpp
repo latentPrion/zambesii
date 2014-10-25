@@ -9,6 +9,7 @@
 #include <kernel/common/zasyncStream.h>
 #include <kernel/common/floodplainn/zum.h>
 #include <kernel/common/floodplainn/floodplainn.h>
+#include <kernel/common/floodplainn/initInfo.h>
 #include <kernel/common/floodplainn/floodplainnStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
@@ -23,7 +24,6 @@
  * other channels.
  **/
 
-// Dat C++ inheritance.
 udi_ops_vector_t		dummyMgmtMaOpsVector=0;
 
 namespace zumServer
@@ -127,20 +127,6 @@ namespace zumServer
 
 		namespace layouts
 		{
-			udi_layout_t		usage_cb[] =
-				{ UDI_DL_UBIT32_T, UDI_DL_INDEX_T, UDI_DL_END };
-
-			udi_layout_t		enumerate_cb[] =
-			{
-				UDI_DL_UBIT32_T, UDI_DL_INLINE_UNTYPED,
-				UDI_DL_MOVABLE_UNTYPED, UDI_DL_UBIT8_T,
-				UDI_DL_MOVABLE_UNTYPED, UDI_DL_UBIT8_T,
-				UDI_DL_UBIT8_T,
-				UDI_DL_END
-			};
-
-			udi_layout_t		mgmt_cb[] = { UDI_DL_END };
-
 			udi_layout_t		channel_event_cb[] =
 			{
 				UDI_DL_UBIT8_T,
@@ -156,22 +142,8 @@ namespace zumServer
 			udi_layout_t		*visible[] =
 			{
 				channel_event_cb,
-				usage_cb,
-				enumerate_cb,
-				mgmt_cb, mgmt_cb
+				NULL, NULL, NULL, NULL
 			};
-
-			udi_layout_t		usage_ind[] =
-				{ UDI_DL_UBIT8_T, UDI_DL_END };
-
-			udi_layout_t		enumerate_req[] =
-				{ UDI_DL_UBIT8_T, UDI_DL_END };
-
-			udi_layout_t		devmgmt_req[] =
-				{ UDI_DL_UBIT8_T, UDI_DL_UBIT8_T, UDI_DL_END };
-
-			udi_layout_t		final_cleanup_req[] =
-				{ UDI_DL_END };
 
 			udi_layout_t		channel_event_ind[] =
 				{ UDI_DL_END };
@@ -179,10 +151,7 @@ namespace zumServer
 			udi_layout_t		*marshal[] =
 			{
 				channel_event_ind,
-				usage_ind,
-				enumerate_req,
-				devmgmt_req,
-				final_cleanup_req
+				NULL, NULL, NULL, NULL
 			};
 		}
 	}
@@ -195,6 +164,7 @@ void fplainn::Zum::main(void *)
 	Thread				*self;
 	MessageStream::sHeader		*iMsg;
 	HeapObj<sZAsyncMsg>		requestData;
+	const sMetaInitEntry		*mgmtInitEntry;
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
@@ -204,6 +174,39 @@ void fplainn::Zum::main(void *)
 		printf(ERROR ZUM"main: failed to alloc request data mem.\n");
 		taskTrib.kill(self);
 		return;
+	};
+
+	mgmtInitEntry = floodplainn.zudi.findMetaInitInfo(CC"udi_mgmt");
+	if (mgmtInitEntry == NULL)
+	{
+		printf(FATAL ZUM"main: failed to get udi_mgmt meta_init.\n");
+		taskTrib.kill(self);
+		return;
+	};
+
+	fplainn::MetaInit	metaInitParser(mgmtInitEntry->udi_meta_info);
+
+	// Construct the fast lookup arrays of visible and marshal layouts.
+	for (uarch_t i=1; i<=4; i++)
+	{
+		udi_mei_op_template_t		*opTemplate;
+
+		opTemplate = metaInitParser.getOpTemplate(UDI_MGMT_OPS_NUM, i);
+		if (opTemplate == NULL)
+		{
+			printf(FATAL ZUM"main: failed to get udi_mgmt op "
+				"template for ops_idx %d.\n",
+				i);
+
+			taskTrib.kill(self);
+			return;
+		};
+
+		zumServer::mgmt::layouts::visible[i] =
+			opTemplate->visible_layout;
+
+		zumServer::mgmt::layouts::marshal[i] =
+			opTemplate->marshal_layout;
 	};
 
 	printf(NOTICE ZUM"main: running, tid 0x%x.\n", self->getFullId());

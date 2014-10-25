@@ -31,9 +31,6 @@
 		vislay, marshlay \
 	}
 
-// For the sake of neatness.
-#define UDI_MGMT_OPS_NUM		1
-#define UDI_MGMT_MA_OPS_NUM		2
 // udi_mgmt_ops_t
 #define UDI_USAGE_IND_NUM		1
 #define UDI_ENUMERATE_REQ_NUM		2
@@ -101,73 +98,108 @@ UDI_MEI_STUBS(
 	0, (), (), (),
 	UDI_MGMT_MA_OPS_NUM, UDI_FINAL_CLEANUP_ACK_NUM)
 
+
+// Control block visible_layouts
+static udi_layout_t		blankLayout[] = { UDI_DL_END };
+
+static udi_layout_t		usage_cb_layout[] =
+	{ UDI_DL_UBIT32_T, UDI_DL_INDEX_T, UDI_DL_END };
+
+static udi_layout_t		enumerate_cb_layout[] =
+{
+	UDI_DL_UBIT32_T, UDI_DL_INLINE_UNTYPED,
+	UDI_DL_MOVABLE_UNTYPED, UDI_DL_UBIT8_T,
+	UDI_DL_MOVABLE_UNTYPED, UDI_DL_UBIT8_T,
+	UDI_DL_UBIT8_T,
+	UDI_DL_END
+};
+
+
+// udi_mgmt_ops_t marshal_layouts.
+static udi_layout_t		usage_ind_layout[] =
+	{ UDI_DL_UBIT8_T, UDI_DL_END };
+
+static udi_layout_t		enumerate_req_layout[] =
+	{ UDI_DL_UBIT8_T, UDI_DL_END };
+
+static udi_layout_t		devmgmt_req_layout[] =
+	{ UDI_DL_UBIT8_T, UDI_DL_UBIT8_T, UDI_DL_END };
+
 const static udi_mei_op_template_t	udi_mgmt_op_template_list[] =
 {
 	ZUDI_MEI_OP_TEMPLATE_CREATE(
 		udi_usage_ind, IND,
 		(0),
-		0,
-		0, UDI_USAGE_RES_NUM,
-		NULL, NULL),
+		UDI_MGMT_USAGE_CB_NUM,
+		UDI_MGMT_MA_OPS_NUM, UDI_USAGE_RES_NUM,
+		usage_cb_layout, usage_ind_layout),
 
 	ZUDI_MEI_OP_TEMPLATE_CREATE(
 		udi_enumerate_req, REQ,
 		(0),
-		0,
-		0, UDI_ENUMERATE_ACK_NUM,
-		NULL, NULL),
+		UDI_MGMT_ENUMERATE_CB_NUM,
+		UDI_MGMT_MA_OPS_NUM, UDI_ENUMERATE_ACK_NUM,
+		enumerate_cb_layout, enumerate_req_layout),
 
 	ZUDI_MEI_OP_TEMPLATE_CREATE(
 		udi_devmgmt_req, REQ,
 		(0),
-		0,
-		0, UDI_DEVMGMT_ACK_NUM,
-		NULL, NULL),
+		UDI_MGMT_CB_NUM,
+		UDI_MGMT_MA_OPS_NUM, UDI_DEVMGMT_ACK_NUM,
+		blankLayout, devmgmt_req_layout),
 
 	ZUDI_MEI_OP_TEMPLATE_CREATE(
 		udi_final_cleanup_req, REQ,
 		(0),
-		0,
-		0, UDI_FINAL_CLEANUP_ACK_NUM,
-		NULL, NULL),
+		UDI_MGMT_CB_NUM,
+		UDI_MGMT_MA_OPS_NUM, UDI_FINAL_CLEANUP_ACK_NUM,
+		blankLayout, blankLayout),
 
 	ZUDI_MEI_BLANK_OP_TEMPLATE_CREATE
 };
+
+
+// udi_mgmt_ma_ops_t marshal_layouts.
+const static udi_layout_t		udi_enumerate_ack_layout[] =
+	{ UDI_DL_UBIT8_T, UDI_DL_INDEX_T, UDI_DL_END };
+
+const static udi_layout_t		udi_devmgmt_ack_layout[] =
+	{ UDI_DL_UBIT8_T, UDI_DL_STATUS_T, UDI_DL_END };
 
 const static udi_mei_op_template_t	udi_mgmt_ma_op_template_list[] =
 {
 	ZUDI_MEI_OP_TEMPLATE_CREATE(
 		udi_usage_res, RES,
 		(0),
-		0,
+		UDI_MGMT_USAGE_CB_NUM,
 		0, 0,
-		NULL, NULL),
+		usage_cb_layout, blankLayout),
 
 	ZUDI_MEI_OP_TEMPLATE_CREATE(
 		udi_enumerate_ack, ACK,
 		(0),
-		0,
+		UDI_MGMT_ENUMERATE_CB_NUM,
 		0, 0,
-		NULL, NULL),
+		enumerate_cb_layout, udi_enumerate_ack_layout),
 
 	ZUDI_MEI_OP_TEMPLATE_CREATE(
 		udi_devmgmt_ack, ACK,
 		(UDI_MEI_OP_STATE_CHANGE),
-		0,
+		UDI_MGMT_CB_NUM,
 		0, 0,
-		NULL, NULL),
+		blankLayout, udi_devmgmt_ack_layout),
 
 	ZUDI_MEI_OP_TEMPLATE_CREATE(
 		udi_final_cleanup_ack, ACK,
 		(UDI_MEI_OP_STATE_CHANGE),
-		0,
+		UDI_MGMT_CB_NUM,
 		0, 0,
-		NULL, NULL),
+		blankLayout, blankLayout),
 
 	ZUDI_MEI_BLANK_OP_TEMPLATE_CREATE
 };
 
-const static udi_mei_ops_vec_template_t	udi_mgmt_ma_ops_vec_template_list[] =
+const static udi_mei_ops_vec_template_t	udi_mgmt_ops_vec_template_list[] =
 {
 	{
 		UDI_MGMT_MA_OPS_NUM,
@@ -184,7 +216,7 @@ const static udi_mei_ops_vec_template_t	udi_mgmt_ma_ops_vec_template_list[] =
 	ZUDI_MEI_BLANK_OPS_VEC_TEMPLATE_CREATE
 };
 
-udi_mei_init_t			udi_mgmt_meta_info =
+const udi_mei_init_t			udi_mgmt_meta_info =
 {
 	udi_mgmt_ops_vec_template_list
 };

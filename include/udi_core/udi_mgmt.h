@@ -7,30 +7,30 @@
  * part of udi.h.
  *
  * $Copyright udi_reference:
- * 
- * 
+ *
+ *
  *    Copyright (c) 1995-2001; Compaq Computer Corporation; Hewlett-Packard
  *    Company; Interphase Corporation; The Santa Cruz Operation, Inc;
  *    Software Technologies Group, Inc; and Sun Microsystems, Inc
  *    (collectively, the "Copyright Holders").  All rights reserved.
- * 
+ *
  *    Redistribution and use in source and binary forms, with or without
  *    modification, are permitted provided that the conditions are met:
- * 
+ *
  *            Redistributions of source code must retain the above
  *            copyright notice, this list of conditions and the following
  *            disclaimer.
- * 
+ *
  *            Redistributions in binary form must reproduce the above
  *            copyright notice, this list of conditions and the following
  *            disclaimers in the documentation and/or other materials
  *            provided with the distribution.
- * 
+ *
  *            Neither the name of Project UDI nor the names of its
  *            contributors may be used to endorse or promote products
  *            derived from this software without specific prior written
  *            permission.
- * 
+ *
  *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *    "AS IS," AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -43,14 +43,14 @@
  *    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  *    USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  *    DAMAGE.
- * 
+ *
  *    THIS SOFTWARE IS BASED ON SOURCE CODE PROVIDED AS A SAMPLE REFERENCE
  *    IMPLEMENTATION FOR VERSION 1.01 OF THE UDI CORE SPECIFICATION AND/OR
  *    RELATED UDI SPECIFICATIONS. USE OF THIS SOFTWARE DOES NOT IN AND OF
  *    ITSELF CONSTITUTE CONFORMANCE WITH THIS OR ANY OTHER VERSION OF ANY
  *    UDI SPECIFICATION.
- * 
- * 
+ *
+ *
  * $
  */
 
@@ -65,7 +65,9 @@
  * Control block groupings.
  * For mgmt meta, all control blocks are in a single group.
  */
+#if 0
 #define UDI_MGMT_CB_NUM      		0
+#endif
 
 /*
  * Resource levels.
@@ -252,8 +254,10 @@ typedef struct _udi_channel_event_cb_t {
 /*
  * Channel event notification.
  */
+#if 0
 void udi_channel_event_ind(
 		udi_channel_event_cb_t *cb);
+#endif
 typedef void udi_channel_event_ind_op_t(
 		udi_channel_event_cb_t *cb);
 void udi_channel_event_complete(
