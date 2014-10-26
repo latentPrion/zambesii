@@ -24,59 +24,6 @@ namespace __klzbzcore
 		void main(Thread *self, mainCbFn *callback);
 	}
 
-	namespace driver { class CachedInfo; }
-	namespace region
-	{
-		void main(void *);
-
-	// PRIVATE:
-		typedef void (__kmainCbFn)(
-			MessageStream::sHeader *msg,
-			fplainn::Zudi::sKernelCallMsg *ctxt,
-			Thread *self,
-			__klzbzcore::driver::CachedInfo **drvInfoCache,
-			lzudi::sRegion *r,
-			fplainn::Device *dev);
-
-		class MainCb;
-		__kmainCbFn	main1;
-		__kmainCbFn	main2;
-
-		namespace channel
-		{
-			void handler(
-				fplainn::sChannelMsg *msg,
-				Thread *self,
-				__klzbzcore::driver::CachedInfo *drvInfoCache,
-				lzudi::sRegion *r);
-
-			error_t allocateEndpointContext(
-				fplainn::sChannelMsg *msg,
-				Thread *self,
-				__klzbzcore::driver::CachedInfo *drvInfoCache,
-				lzudi::sRegion *r,
-				lzudi::sEndpointContext **retctxt);
-
-			void mgmtMeiCall(
-				fplainn::sChannelMsg *msg,
-				Thread *self,
-				__klzbzcore::driver::CachedInfo *drvInfoCache,
-				lzudi::sRegion *r);
-
-			void genericMeiCall(
-				fplainn::sChannelMsg *msg,
-				Thread *self,
-				__klzbzcore::driver::CachedInfo *drvInfoCache,
-				lzudi::sRegion *r);
-
-			void eventIndMeiCall(
-				fplainn::sChannelMsg *msg,
-				Thread *self,
-				__klzbzcore::driver::CachedInfo *drvInfoCache,
-				lzudi::sRegion *r);
-		}
-	}
-
 	namespace driver
 	{
 		typedef void (mainCbFn)(Thread *self, error_t);
@@ -203,6 +150,26 @@ namespace __klzbzcore
 				return NULL;
 			}
 
+			status_t getScratchSizeFor(
+				udi_index_t metaIndex, udi_index_t metaCbNum)
+			{
+				List<sMetaCbScratchInfo>::Iterator	it;
+
+				it = metaCbScratchInfo.begin();
+				for (; it != metaCbScratchInfo.end(); ++it)
+				{
+					sMetaCbScratchInfo	*curr = *it;
+
+					if (curr->metaIndex != metaIndex
+						|| curr->metaCbNum != metaCbNum)
+						{ continue; };
+
+					return curr->scratchRequirement;
+				};
+
+				return ERROR_NO_MATCH;
+			}
+
 			const udi_init_t		*initInfo;
 			List<sMetaCbScratchInfo>	metaCbScratchInfo;
 			PtrList<sMetaDescriptor>	metaInfos;
@@ -276,6 +243,67 @@ namespace __klzbzcore
 			void regionInitInd(
 				fplainn::Zudi::sKernelCallMsg *ctxt,
 				error_t error);
+		}
+	}
+
+	namespace region
+	{
+		void main(void *);
+
+	// PRIVATE:
+		typedef void (__kmainCbFn)(
+			MessageStream::sHeader *msg,
+			fplainn::Zudi::sKernelCallMsg *ctxt,
+			Thread *self,
+			__klzbzcore::driver::CachedInfo **drvInfoCache,
+			lzudi::sRegion *r,
+			fplainn::Device *dev);
+
+		class MainCb;
+		__kmainCbFn	main1;
+		__kmainCbFn	main2;
+
+		namespace channel
+		{
+			void handler(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r);
+
+			error_t allocateEndpointContext(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r,
+				lzudi::sEndpointContext **retctxt);
+
+			void mgmtMeiCall(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r,
+				__klzbzcore::driver::CachedInfo::sMetaDescriptor
+					*metaDesc,
+				udi_mei_op_template_t *opTemplate);
+
+			void genericMeiCall(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r,
+				__klzbzcore::driver::CachedInfo::sMetaDescriptor
+					*metaDesc,
+				udi_mei_op_template_t *opTemplate);
+
+			void eventIndMeiCall(
+				fplainn::sChannelMsg *msg,
+				Thread *self,
+				__klzbzcore::driver::CachedInfo *drvInfoCache,
+				lzudi::sRegion *r,
+				__klzbzcore::driver::CachedInfo::sMetaDescriptor
+					*metaDesc,
+				udi_mei_op_template_t *opTemplate);
 		}
 	}
 

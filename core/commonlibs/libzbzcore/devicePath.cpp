@@ -580,8 +580,10 @@ void __klzbzcore::region::channel::handler(
 	lzudi::sRegion *r
 	)
 {
-	error_t						err;
-	lzudi::sEndpointContext				*endpContext;
+	error_t							err;
+	lzudi::sEndpointContext					*endpContext;
+	__klzbzcore::driver::CachedInfo::sMetaDescriptor	*metaDesc;
+	udi_mei_op_template_t					*opTemplate;
 
 	endpContext = (lzudi::sEndpointContext *)msg->endpointPrivateData;
 
@@ -651,17 +653,53 @@ void __klzbzcore::region::channel::handler(
 	 *	* If the metaName is not "udi_mgmt", this is a standard IPC
 	 *	  call.
 	 **/
+	metaDesc = drvInfoCache->getMetaDescriptor(msg->metaName);
+	if (metaDesc == NULL)
+	{
+		printf(ERROR LZBZCORE"chan:handler rgn%d: failed to get meta "
+			"%s which was used to call across the channel.\n",
+			r->index, msg->metaName);
+
+		return;
+	};
+
+	/* The "msg->opsIndex-1" is safe because we will never call opsIndex=0
+	 * on the actual management channel. So if the msg->metaName is
+	 * "udi_mgmt", then:
+	 *	* If it's a udi_mgmt call, we need to subtract one.
+	 *	* If it's a channel_event_ind call, we should not subtract one.
+	 *
+	 * We can detect the channel_event_ind by checking for opsIndex=0.
+	 **/
+	fplainn::MetaInit		metaInfoParser(metaDesc->initInfo);
+
+	opTemplate = metaInfoParser.getOpTemplate(
+		msg->metaOpsNum, msg->opsIndex);
+
+	// For channel_event_ind messages, opsIndex=0 will return NULL.
+	if (opTemplate == NULL && msg->opsIndex != 0)
+	{
+		printf(ERROR LZBZCORE"chan:handler rgn%d: no op_template_t for "
+			"meta %s, meta_ops_num %d, ops_idx %d.\n",
+			r->index,
+			msg->metaName, msg->metaOpsNum, msg->opsIndex);
+
+		return;
+	};
+
 	if (!strncmp8(msg->metaName, CC"udi_mgmt", DRIVER_METALANGUAGE_MAXLEN))
 	{
 		if (msg->opsIndex == 0) {
 			printf(NOTICE"udi_channel_event_ind call.\n");
 		}
-		else {
-			mgmtMeiCall(msg, self, drvInfoCache, r);
+		else
+		{
+			mgmtMeiCall(
+				msg, self, drvInfoCache, r,
+				metaDesc, opTemplate);
 		};
 	}
 	else {
-		printf(NOTICE"Standard IPC call.\n");
 	};
 }
 
@@ -827,40 +865,79 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 	fplainn::sChannelMsg *msg,
 	Thread *self,
 	__klzbzcore::driver::CachedInfo *drvInfoCache,
-	lzudi::sRegion *r
+	lzudi::sRegion *r,
+	__klzbzcore::driver::CachedInfo::sMetaDescriptor *metaDesc,
+	udi_mei_op_template_t *opTemplate
 	)
 {
-	__klzbzcore::driver::CachedInfo::sMetaDescriptor	*mgmtDesc;
-	udi_mei_op_template_t					*opTemplate;
 	uarch_t							visibleSize;
 	udi_ubit16_t						dummy;
 
 	printf(NOTICE"ZUM MA call.\n");
 
-	/* Wrote this function entirely off instinct, and had no idea what I
-	 * was doing while writing it.
-	 **/
-	mgmtDesc = drvInfoCache->getMetaDescriptor(CC"udi_mgmt");
-	if (mgmtDesc == NULL)
-	{
-		return;
-	};
-
-	fplainn::MetaInit		metaInfoParser(mgmtDesc->initInfo);
-
-	opTemplate = metaInfoParser.getOpTemplate(
-		UDI_MGMT_OPS_NUM, msg->opsIndex);
-
-	if (opTemplate == NULL)
-	{
-		return;
-	};
-
 	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
 		opTemplate->visible_layout, &dummy, &dummy);
 
-printf(NOTICE"vis size %d, opsVector 0x%p, backendstub 0x%p.\n", visibleSize, msg->opsVector, opTemplate->backend_stub);
+printf(NOTICE"vis size %d, opsVector 0x%p, backendstub 0x%p, opName %s.\n",
+	visibleSize, msg->opsVector, opTemplate->backend_stub, opTemplate->op_name);
 	opTemplate->backend_stub(
 		msg->opsVector[msg->opsIndex - 1], msg->data,
 		((ubit8 *)msg->data) + sizeof(udi_cb_t) + visibleSize);
+}
+
+void __klzbzcore::region::channel::genericMeiCall(
+	fplainn::sChannelMsg *msg,
+	Thread *self,
+	__klzbzcore::driver::CachedInfo *drvInfoCache,
+	lzudi::sRegion *r,
+	__klzbzcore::driver::CachedInfo::sMetaDescriptor *metaDesc,
+	udi_mei_op_template_t *opTemplate
+	)
+{
+	uarch_t							visibleSize;
+	udi_ubit16_t						dummy;
+	status_t						scratchRequirement;
+	ubit8							*gcb8;
+
+	/**	EXPLANATION:
+	 * Generic call into a region. We already have the opsVector and
+	 * opsIndex. We can almost call in directly now, but first we need to
+	 * get the backend_stub from the metalanguage library.
+	 *
+	 * We can know the metalanguage being called on by examining the
+	 * "metaName" in the sChannelMsg.
+	 **/
+
+	/* To call in, we have to find out the offset of the marshal_layout
+	 * space. We don't need to modify inline pointers.
+	 **/
+	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
+		opTemplate->visible_layout, &dummy, &dummy);
+
+	// Next, find out the scratch size required for this op.
+	scratchRequirement = drvInfoCache->getScratchSizeFor(
+		metaDesc->index, opTemplate->meta_cb_num);
+
+	if (scratchRequirement < 0)
+	{
+		printf(ERROR LZBZCORE"chan:handler rgn%d: no scratch size info "
+			"for meta_idx %d, meta_cb_num %d.\n",
+			r->index,
+			metaDesc->index, opTemplate->meta_cb_num);
+
+		return;
+	};
+
+	if (scratchRequirement > 0) {
+		msg->data->scratch = new ubit8[scratchRequirement];
+	} else {
+		msg->data->scratch = NULL;
+	};
+
+	gcb8 = (ubit8 *)msg->data;
+	// Now we do the actual call-in.
+	opTemplate->backend_stub(
+		msg->opsVector[msg->opsIndex],
+		msg->data,
+		gcb8 + sizeof(udi_cb_t) + visibleSize);
 }

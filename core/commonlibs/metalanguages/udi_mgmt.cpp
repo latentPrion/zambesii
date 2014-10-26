@@ -202,15 +202,14 @@ const static udi_mei_op_template_t	udi_mgmt_ma_op_template_list[] =
 const static udi_mei_ops_vec_template_t	udi_mgmt_ops_vec_template_list[] =
 {
 	{
-		UDI_MGMT_MA_OPS_NUM,
-		UDI_MEI_REL_EXTERNAL | UDI_MEI_REL_INITIATOR,
-		udi_mgmt_ma_op_template_list
-	},
-
-	{
 		UDI_MGMT_OPS_NUM,
 		UDI_MEI_REL_EXTERNAL,
 		udi_mgmt_op_template_list
+	},
+	{
+		UDI_MGMT_MA_OPS_NUM,
+		UDI_MEI_REL_EXTERNAL | UDI_MEI_REL_INITIATOR,
+		udi_mgmt_ma_op_template_list
 	},
 
 	ZUDI_MEI_BLANK_OPS_VEC_TEMPLATE_CREATE

@@ -454,7 +454,7 @@ void zumServer::mgmt::usageInd(
 
 	err = self->parent->floodplainnStream.send(
 		endp, &cb.gcb, layouts,
-		CC "udi_mgmt", 1, ctxt->info.opsIndex,
+		CC "udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
 		new MgmtReqCb(usageRes, ctxt, self, dev),
 		ctxt->info.params.usage.resource_level);
 
@@ -527,7 +527,7 @@ void zumServer::mgmt::channelEventInd(
 
 	self->parent->floodplainnStream.send(
 		endp, &cb.gcb, layouts,
-		CC "udi_mgmt", 1, ctxt->info.opsIndex,
+		CC "udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
 		new MgmtReqCb(usageRes, ctxt, self, dev));
 
 	if (err != ERROR_SUCCESS) {
