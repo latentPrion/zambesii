@@ -403,6 +403,7 @@ void zumServer::start::startDeviceReq1(
 	myResponse(response->header.error);
 }
 
+#include <debug.h>
 void zumServer::mgmt::usageInd(
 	ZAsyncStream::sZAsyncMsg *msg,
 	fplainn::Zum::sZAsyncMsg *request,
@@ -458,6 +459,7 @@ void zumServer::mgmt::usageInd(
 		new MgmtReqCb(usageRes, ctxt, self, dev),
 		ctxt->info.params.usage.resource_level);
 
+rr=80;
 	if (err != ERROR_SUCCESS) {
 		myResponse(err); return;
 	};
@@ -472,6 +474,7 @@ void zumServer::mgmt::usageRes(
 	fplainn::Device *dev
 	)
 {
+	printf(NOTICE"here in usageRes.\n");
 }
 
 void zumServer::mgmt::channelEventInd(

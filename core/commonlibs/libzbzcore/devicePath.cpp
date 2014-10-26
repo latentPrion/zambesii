@@ -687,6 +687,10 @@ void __klzbzcore::region::channel::handler(
 		return;
 	};
 
+	// Set the "channel" and "channel_context" pointers:
+	msg->data->origin = msg->header.privateData;
+	msg->data->channel = endpContext;
+	msg->data->context = endpContext->channel_context;
 	if (!strncmp8(msg->metaName, CC"udi_mgmt", DRIVER_METALANGUAGE_MAXLEN))
 	{
 		if (msg->opsIndex == 0) {
@@ -699,7 +703,10 @@ void __klzbzcore::region::channel::handler(
 				metaDesc, opTemplate);
 		};
 	}
-	else {
+	else
+	{
+		genericMeiCall(
+			msg, self, drvInfoCache, r, metaDesc, opTemplate);
 	};
 }
 
@@ -873,13 +880,20 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 	uarch_t							visibleSize;
 	udi_ubit16_t						dummy;
 
-	printf(NOTICE"ZUM MA call.\n");
-
 	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
 		opTemplate->visible_layout, &dummy, &dummy);
 
-printf(NOTICE"vis size %d, opsVector 0x%p, backendstub 0x%p, opName %s.\n",
-	visibleSize, msg->opsVector, opTemplate->backend_stub, opTemplate->op_name);
+	if (drvInfoCache->initInfo->primary_init_info->mgmt_scratch_requirement
+		> 0)
+	{
+		msg->data->scratch = new ubit8[
+			drvInfoCache->initInfo
+				->primary_init_info->mgmt_scratch_requirement];
+	}
+	else {
+		msg->data->scratch = NULL;
+	};
+
 	opTemplate->backend_stub(
 		msg->opsVector[msg->opsIndex - 1], msg->data,
 		((ubit8 *)msg->data) + sizeof(udi_cb_t) + visibleSize);

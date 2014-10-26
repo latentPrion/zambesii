@@ -8,8 +8,15 @@
 void zrootdev_usage_ind(udi_usage_cb_t *cb, udi_ubit8_t resource_level)
 {
 	(void)cb; (void)resource_level;
-printf(NOTICE"Zambesii root device driver executing. resource level %d.\n",
-	resource_level);
+
+	printf(NOTICE"My president is black / My lambo is blue.\n"
+		"\tAnd I'll be gotdamned if my rims ain't too.\n"
+		"\tMy rdata is at 0x%p, and the kernel wants me to run at "
+		"resource_level %d too.\n"
+		"My scratch is 0x%p.\n",
+		cb->gcb.context, resource_level,
+		cb->gcb.scratch);
+	udi_usage_res(cb);
 }
 
 void zrootdev_enumerate_req(

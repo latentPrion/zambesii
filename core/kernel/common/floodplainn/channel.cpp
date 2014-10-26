@@ -61,6 +61,7 @@ void *fplainn::sChannelMsg::operator new(size_t sz, uarch_t dataSize)
 	return ::operator new(sz + dataSize);
 }
 
+#include <debug.h>
 error_t fplainn::sChannelMsg::send(
 	fplainn::Endpoint *endp,
 	udi_cb_t *gcb, va_list args, udi_layout_t *layouts[3],
@@ -74,7 +75,7 @@ error_t fplainn::sChannelMsg::send(
 	fplainn::sChannelMsg			*msg;
 //	Thread					*thread;
 	uarch_t					visibleSize, marshalSize,
-						inlineSize,
+						inlineSize=0,
 						totalInlineSize,
 						totalMovableSize;
 	udi_ubit16_t				inlineOffset, dummy;
@@ -129,6 +130,7 @@ printf(NOTICE"Vis %d, marshal %d, inline %d.\n",
 	 *
 	 * This can be easily remedied.
 	 **/
+
 	// Copy the generic control block.
 	memcpy(data8, gcb8, sizeof(udi_cb_t));
 	// Copy the visible portion of the meta-specific control block area.
@@ -162,7 +164,7 @@ printf(NOTICE"Vis %d, marshal %d, inline %d.\n",
 	 *
 	 * FOR NOW however, we only support UDI_DL_INLINE_DRIVER_TYPED.
 	 **/
-	if (layouts[LAYOUT_INLINE] != NULL)
+	if (layouts[LAYOUT_INLINE] != NULL && inlineSize != 0)
 	{
 		memcpy(
 			data8 + sizeof(udi_cb_t) + visibleSize + marshalSize,

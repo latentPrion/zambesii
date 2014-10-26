@@ -409,6 +409,6 @@ void udi_mei_call(
 		endp->__kendpoint,
 		gcb, args, layouts,
 		endp->metaName, meta_ops_num, vec_idx,
-		NULL);
+		gcb->origin);
 }
 
