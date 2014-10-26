@@ -394,13 +394,40 @@ void zumServer::start::startDeviceReq1(
 	fplainn::Device *dev
 	)
 {
-	AsyncResponse			myResponse;
-	fplainn::Zum::sZumMsg		*response;
+	AsyncResponse				myResponse;
+	fplainn::Zum::sZumMsg			*response;
+	ubit32					nChannels;
+	PtrList<fplainn::Channel>::Iterator	chanIt;
 
 	response = (fplainn::Zum::sZumMsg *)msg;
-	myResponse(ctxt);
 
+	myResponse(ctxt);
 	myResponse(response->header.error);
+
+	if (response->header.error != ERROR_SUCCESS) { return; };
+
+	/**	EXPLANATION:
+	 * We have to send a udi_channel_event_ind(UDI_CHANNEL_BOUND) to each
+	 * internal bind channel on the child end of the channel.
+	 **/
+	nChannels = dev->instance->channels.getNItems();
+printf(NOTICE"%d channels in device %s.\n", nChannels, dev->longName);
+	for (chanIt=dev->instance->channels.begin(0);
+		chanIt != dev->instance->channels.end(); ++chanIt)
+	{
+		fplainn::Channel	*currChan=*chanIt;
+
+		if (currChan->bindChannelType
+			!= fplainn::Channel::BIND_CHANNEL_TYPE_INTERNAL)
+			{ continue; };
+
+		floodplainn.zum.internalChannelEventInd(
+			ctxt->info.path, currChan->endpoints[0],
+			UDI_CHANNEL_BOUND, NULL);
+	};
+
+__kdebug.refresh();
+	myResponse(DONT_SEND_RESPONSE);
 }
 
 void zumServer::mgmt::usageInd(
@@ -494,7 +521,6 @@ void zumServer::mgmt::channelEventInd(
 	Thread *self
 	)
 {
-	fplainn::Endpoint		*endp;
 	fplainn::Device			*dev;
 	error_t				err;
 	fplainn::Zum::sZumMsg		*ctxt;
@@ -520,10 +546,12 @@ void zumServer::mgmt::channelEventInd(
 	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
 	myResponse(ctxt);
 
-	err = getDeviceHandleAndMgmtEndpoint(
-		CC __func__, ctxt->info.path, &dev, &endp);
+	err = floodplainn.getDevice(ctxt->info.path, &dev);
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR ZUM"%s %s: Device doesn't exist.\n",
+			__func__, ctxt->info.path);
 
-	if (err != ERROR_SUCCESS) {
 		myResponse(err); return;
 	};
 
@@ -539,9 +567,10 @@ void zumServer::mgmt::channelEventInd(
 		NULL
 	};
 
-	self->parent->floodplainnStream.send(
-		endp, &cb.gcb, layouts,
-		CC "udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
+	err = fplainn::sChannelMsg::send(
+		ctxt->info.params.channel_event.endpoint,
+		&cb.gcb, (va_list)&cb, layouts,
+		CC"udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
 		new MgmtReqCb(usageRes, ctxt, self, dev));
 
 	if (err != ERROR_SUCCESS) {

@@ -9,13 +9,11 @@ void zrootdev_usage_ind(udi_usage_cb_t *cb, udi_ubit8_t resource_level)
 {
 	(void)cb; (void)resource_level;
 
-	printf(NOTICE"My president is black / My lambo is blue.\n"
-		"\tAnd I'll be gotdamned if my rims ain't too.\n"
-		"\tMy rdata is at 0x%p, and the kernel wants me to run at "
-		"resource_level %d too.\n"
-		"My scratch is 0x%p.\n",
-		cb->gcb.context, resource_level,
-		cb->gcb.scratch);
+	printf(NOTICE"The plan was to drink until the pain was over;\n"
+		"\tbut what's worse, the pain or the hangover? --Kanye West.\n"
+		"\trdata 0x%p, scratch 0x%p, channel 0x%p, resource_lvl %d.\n",
+		cb->gcb.context, cb->gcb.scratch, cb->gcb.channel,
+		resource_level);
 	udi_usage_res(cb);
 }
 

@@ -693,8 +693,11 @@ void __klzbzcore::region::channel::handler(
 	msg->data->context = endpContext->channel_context;
 	if (!strncmp8(msg->metaName, CC"udi_mgmt", DRIVER_METALANGUAGE_MAXLEN))
 	{
-		if (msg->opsIndex == 0) {
-			printf(NOTICE"udi_channel_event_ind call.\n");
+		if (msg->opsIndex == 0)
+		{
+			eventIndMeiCall(
+				msg, self, drvInfoCache, r,
+				metaDesc, opTemplate);
 		}
 		else
 		{
@@ -897,6 +900,29 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 	opTemplate->backend_stub(
 		msg->opsVector[msg->opsIndex - 1], msg->data,
 		((ubit8 *)msg->data) + sizeof(udi_cb_t) + visibleSize);
+}
+
+static utf8Char *events[] =
+{
+	CC"CHANNEL_CLOSED", CC"CHANNEL_BOUND", CC"CHANNEL_OP_ABORTED"
+};
+
+void __klzbzcore::region::channel::eventIndMeiCall(
+	fplainn::sChannelMsg *msg,
+	Thread *self,
+	__klzbzcore::driver::CachedInfo *drvInfoCache,
+	lzudi::sRegion *r,
+	__klzbzcore::driver::CachedInfo::sMetaDescriptor
+		*metaDesc,
+	udi_mei_op_template_t *opTemplate
+	)
+{
+	udi_channel_event_cb_t			*cb;
+
+	cb = (udi_channel_event_cb_t *)msg->data;
+printf(NOTICE"udi_channel_event_ind call: %s.\n",
+	events[cb->event]);
+__kdebug.refresh();
 }
 
 void __klzbzcore::region::channel::genericMeiCall(
