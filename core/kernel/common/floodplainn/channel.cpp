@@ -61,7 +61,6 @@ void *fplainn::sChannelMsg::operator new(size_t sz, uarch_t dataSize)
 	return ::operator new(sz + dataSize);
 }
 
-#include <debug.h>
 error_t fplainn::sChannelMsg::send(
 	fplainn::Endpoint *endp,
 	udi_cb_t *gcb, va_list args, udi_layout_t *layouts[3],

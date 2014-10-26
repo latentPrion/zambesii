@@ -403,7 +403,6 @@ void zumServer::start::startDeviceReq1(
 	myResponse(response->header.error);
 }
 
-#include <debug.h>
 void zumServer::mgmt::usageInd(
 	ZAsyncStream::sZAsyncMsg *msg,
 	fplainn::Zum::sZAsyncMsg *request,
@@ -459,7 +458,6 @@ void zumServer::mgmt::usageInd(
 		new MgmtReqCb(usageRes, ctxt, self, dev),
 		ctxt->info.params.usage.resource_level);
 
-rr=80;
 	if (err != ERROR_SUCCESS) {
 		myResponse(err); return;
 	};
@@ -474,7 +472,20 @@ void zumServer::mgmt::usageRes(
 	fplainn::Device *dev
 	)
 {
-	printf(NOTICE"here in usageRes.\n");
+	fplainn::sChannelMsg	*response = (fplainn::sChannelMsg *)msg;
+	AsyncResponse		myResponse;
+	udi_usage_cb_t		*cb;
+
+	myResponse(ctxt);
+
+	cb = (udi_usage_cb_t *)response->data;
+	ctxt->info.params.usage.cb = *cb;
+
+	/* This is the status for the usageInd call itself, and not for the
+	 * driver's return value in its usage_res call (there is none actually),
+	 * or anything like that.
+	 **/
+	myResponse(ERROR_SUCCESS);
 }
 
 void zumServer::mgmt::channelEventInd(

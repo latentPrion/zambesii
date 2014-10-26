@@ -255,7 +255,17 @@ extern "C" void __korientationMain(ubit32, sMultibootData *)
 		{
 		default:
 			// Discard message if it has no callback.
-			if (callback == NULL) { break; };
+			if (callback == NULL)
+			{
+				printf(WARNING ORIENT"Unknown message with "
+					"no callback.\n"
+					"\tSrcTid 0x%x, subsys %d, func %d.\n",
+					iMessage->sourceId,
+					iMessage->subsystem,
+					iMessage->function);
+
+				break;
+			};
 
 			(*callback)(iMessage);
 			delete callback;
