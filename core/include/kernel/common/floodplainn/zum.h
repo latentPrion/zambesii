@@ -173,6 +173,23 @@ public:
 
 				udi_status_t		status;
 			} channel_event;
+
+			struct
+			{
+				struct sChannelEventTracker
+				{
+					/* nChannels Starts as -1.
+					 * The caller can detect
+					 * whether or not the kernel tried to
+					 * do the internal-bind init sequence
+					 * by checking this value, since it
+					 * will be >= 0 if the kernel started
+					 * the internal-bind init sequence.
+					 **/
+					sarch_t		nChannels,
+							nSuccesses, nFailures;
+				} ibind, pbind;
+			} start;
 		} params;
 	};
 

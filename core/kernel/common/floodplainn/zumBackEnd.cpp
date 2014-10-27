@@ -71,6 +71,8 @@ namespace zumServer
 			fplainn::Device *dev);
 
 		startDeviceReqCbFn	startDeviceReq1;
+		startDeviceReqCbFn	startDeviceReq2;
+		startDeviceReqCbFn	startDeviceReq3;
 	}
 
 	namespace mgmt
@@ -339,6 +341,8 @@ void zumServer::start::startDeviceReq(
 	if (ctxt == NULL) { return; };
 	// Copy the request data over.
 	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	ctxt->info.params.start.ibind.nChannels = -1;
+	ctxt->info.params.start.pbind.nChannels = -1;
 
 	myResponse(ctxt);
 
@@ -396,22 +400,19 @@ void zumServer::start::startDeviceReq1(
 {
 	AsyncResponse				myResponse;
 	fplainn::Zum::sZumMsg			*response;
-	ubit32					nChannels;
 	PtrList<fplainn::Channel>::Iterator	chanIt;
 
-	response = (fplainn::Zum::sZumMsg *)msg;
-
-	myResponse(ctxt);
-	myResponse(response->header.error);
-
-	if (response->header.error != ERROR_SUCCESS) { return; };
+	(void)response;
 
 	/**	EXPLANATION:
 	 * We have to send a udi_channel_event_ind(UDI_CHANNEL_BOUND) to each
 	 * internal bind channel on the child end of the channel.
 	 **/
-	nChannels = dev->instance->channels.getNItems();
-printf(NOTICE"%d channels in device %s.\n", nChannels, dev->longName);
+	response = (fplainn::Zum::sZumMsg *)msg;
+
+	myResponse(ctxt);
+
+	ctxt->info.params.start.ibind.nChannels = 0;
 	for (chanIt=dev->instance->channels.begin(0);
 		chanIt != dev->instance->channels.end(); ++chanIt)
 	{
@@ -421,13 +422,153 @@ printf(NOTICE"%d channels in device %s.\n", nChannels, dev->longName);
 			!= fplainn::Channel::BIND_CHANNEL_TYPE_INTERNAL)
 			{ continue; };
 
+		ctxt->info.params.start.ibind.nChannels++;
 		floodplainn.zum.internalChannelEventInd(
 			ctxt->info.path, currChan->endpoints[0],
-			UDI_CHANNEL_BOUND, NULL);
+			UDI_CHANNEL_BOUND,
+			new StartDeviceReqCb(startDeviceReq2, ctxt, self, dev));
 	};
 
-__kdebug.refresh();
 	myResponse(DONT_SEND_RESPONSE);
+	if (ctxt->info.params.start.ibind.nChannels == 0)
+	{
+		/* If there were no secondary regions, (ergo no internal bind
+		 * channels), we should just continue to the next sequence.
+		 **/
+		startDeviceReq2(msg, ctxt, self, dev);
+	};
+}
+
+void zumServer::start::startDeviceReq2(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *self,
+	fplainn::Device *dev
+	)
+{
+	fplainn::Zum::sZumMsg			*response;
+	AsyncResponse				myResponse;
+	PtrList<fplainn::Channel>::Iterator	chanIt;
+
+	/**	EXPLANATION:
+	 * In here we must tally both the failures and successes among the
+	 * regions of the device.
+	 *
+	 * When all regions have responded, only if all have been successful
+	 * will the MA proceed with allowing the startDeviceReq sequence to
+	 * continue.
+	 **/
+	response = (fplainn::Zum::sZumMsg *)msg;
+
+	myResponse(ctxt);
+
+	if (ctxt->info.params.start.ibind.nChannels > 0)
+	{
+		if (response->info.params.channel_event.status == UDI_OK) {
+			ctxt->info.params.start.ibind.nSuccesses++;
+		} else {
+			ctxt->info.params.start.ibind.nFailures++;
+		};
+
+		if (ctxt->info.params.start.ibind.nSuccesses
+			+ ctxt->info.params.start.ibind.nFailures
+			< ctxt->info.params.start.ibind.nChannels)
+		{
+			/* Don't let the response be sent until all secondary
+			 * regions have responded. Just keep return()ing until
+			 * the last one responds.
+			 **/
+			myResponse(DONT_SEND_RESPONSE);
+			return;
+		};
+	};
+
+
+	if (ctxt->info.params.start.ibind.nSuccesses
+		< ctxt->info.params.start.ibind.nChannels)
+	{
+		myResponse(ERROR_INITIALIZATION_FAILURE);
+		return;
+	};
+
+	/* Last step is to send a udi_channel_event_ind to the device's
+	 * parent bind channels, and then we can officially say that the
+	 * device is "open for business", to use the phrase from the spec.
+	 **/
+	ctxt->info.params.start.pbind.nChannels = 0;
+	for (chanIt=dev->instance->channels.begin(0);
+		chanIt != dev->instance->channels.end(); ++chanIt)
+	{
+		fplainn::Channel		*currChan=*chanIt;
+
+		if (currChan->bindChannelType !=
+			fplainn::Channel::BIND_CHANNEL_TYPE_CHILD)
+			{ continue; };
+
+		/* All child bind channels between drivers will be D2D, as
+		 * opposed to child bind channels that connect() an application
+		 * process to a driver, which will be D2S.
+		 **/
+		if (currChan->getType() != fplainn::Channel::TYPE_D2D)
+			{ continue; };
+
+		ctxt->info.params.start.pbind.nChannels++;
+		floodplainn.zum.parentChannelEventInd(
+			ctxt->info.path, currChan->endpoints[0],
+			UDI_CHANNEL_BOUND,
+			// For "parent_ID", we'll have to do more work later.
+			1,
+			new StartDeviceReqCb(startDeviceReq3, ctxt, self, dev));
+	};
+
+	myResponse(DONT_SEND_RESPONSE);
+	if (ctxt->info.params.start.pbind.nChannels == 0)
+	{
+		/* If there are no parent bind channels to work with, just
+		 * immediately call the next sequence.
+		 **/
+		startDeviceReq3(msg, ctxt, self, dev);
+	};
+}
+
+void zumServer::start::startDeviceReq3(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *,
+	fplainn::Device *
+	)
+{
+	fplainn::Zum::sZumMsg			*response;
+	AsyncResponse				myResponse;
+
+	response = (fplainn::Zum::sZumMsg *)msg;
+
+	myResponse(ctxt);
+	myResponse(msg->error);
+
+	if (ctxt->info.params.start.pbind.nChannels > 0)
+	{
+		if (response->info.params.channel_event.status == UDI_OK) {
+			ctxt->info.params.start.pbind.nSuccesses++;
+		} else {
+			ctxt->info.params.start.pbind.nFailures++;
+		};
+
+		if (ctxt->info.params.start.pbind.nSuccesses
+			+ ctxt->info.params.start.pbind.nFailures
+			< ctxt->info.params.start.pbind.nChannels)
+		{
+			/* Don't let the response be sent until all secondary
+			 * regions have responded. Just keep return()ing until
+			 * the last one responds.
+			 **/
+			myResponse(DONT_SEND_RESPONSE);
+			return;
+		};
+	};
+
+	// Else, we now have a successfully initialized driver. Done.
+	myResponse(ERROR_SUCCESS);
 }
 
 void zumServer::mgmt::usageInd(
@@ -495,8 +636,8 @@ void zumServer::mgmt::usageInd(
 void zumServer::mgmt::usageRes(
 	MessageStream::sHeader *msg,
 	fplainn::Zum::sZumMsg *ctxt,
-	Thread *self,
-	fplainn::Device *dev
+	Thread *,
+	fplainn::Device *
 	)
 {
 	fplainn::sChannelMsg	*response = (fplainn::sChannelMsg *)msg;
@@ -512,7 +653,7 @@ void zumServer::mgmt::usageRes(
 	 * driver's return value in its usage_res call (there is none actually),
 	 * or anything like that.
 	 **/
-	myResponse(ERROR_SUCCESS);
+	myResponse(response->header.error);
 }
 
 void zumServer::mgmt::channelEventInd(
@@ -571,7 +712,7 @@ void zumServer::mgmt::channelEventInd(
 		ctxt->info.params.channel_event.endpoint,
 		&cb.gcb, (va_list)&cb, layouts,
 		CC"udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
-		new MgmtReqCb(usageRes, ctxt, self, dev));
+		new MgmtReqCb(channelEventComplete, ctxt, self, dev));
 
 	if (err != ERROR_SUCCESS) {
 		myResponse(err); return;
@@ -583,8 +724,28 @@ void zumServer::mgmt::channelEventInd(
 void zumServer::mgmt::channelEventComplete(
 	MessageStream::sHeader *msg,
 	fplainn::Zum::sZumMsg *ctxt,
-	Thread *self,
-	fplainn::Device *dev
+	Thread *,
+	fplainn::Device *
 	)
 {
+	fplainn::sChannelMsg	*response = (fplainn::sChannelMsg *)msg;
+	AsyncResponse		myResponse;
+	udi_size_t		visibleSize;
+	udi_ubit16_t		dummy;
+	ubit8			*cb8;
+
+	cb8 = (ubit8 *)response->data;
+
+	myResponse(ctxt);
+	myResponse(msg->error);
+
+	/**	EXPLANATION:
+	 * Take the marshalled argument out and place it into the params
+	 * space in ctxt->info.params.channel_event.
+	 **/
+	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
+		layouts::channel_event_cb, &dummy, &dummy);
+
+	ctxt->info.params.channel_event.status =
+		*(udi_index_t *)(cb8 + sizeof(udi_cb_t) + visibleSize);
 }

@@ -99,12 +99,6 @@ void __klzbzcore::region::main(void *)
 	for (;FOREVER;)
 	{
 		self->messageStream.pull(&iMsg);
-		printf(NOTICE"%s dev, region %d, got a message.\n"
-			"\tsubsys %d, func %d, sourcetid 0x%x targettid 0x%x\n",
-			dev->driverInstance->driver->longName, r.index,
-			iMsg->subsystem, iMsg->function,
-			iMsg->sourceId, iMsg->targetId);
-
 		switch (iMsg->subsystem)
 		{
 		case MSGSTREAM_SUBSYSTEM_ZUDI:
@@ -873,10 +867,10 @@ error_t __klzbzcore::region::channel::allocateEndpointContext(
 
 void __klzbzcore::region::channel::mgmtMeiCall(
 	fplainn::sChannelMsg *msg,
-	Thread *self,
+	Thread *,
 	__klzbzcore::driver::CachedInfo *drvInfoCache,
-	lzudi::sRegion *r,
-	__klzbzcore::driver::CachedInfo::sMetaDescriptor *metaDesc,
+	lzudi::sRegion *,
+	__klzbzcore::driver::CachedInfo::sMetaDescriptor *,
 	udi_mei_op_template_t *opTemplate
 	)
 {
@@ -902,27 +896,27 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 		((ubit8 *)msg->data) + sizeof(udi_cb_t) + visibleSize);
 }
 
-static utf8Char *events[] =
-{
-	CC"CHANNEL_CLOSED", CC"CHANNEL_BOUND", CC"CHANNEL_OP_ABORTED"
-};
-
 void __klzbzcore::region::channel::eventIndMeiCall(
 	fplainn::sChannelMsg *msg,
-	Thread *self,
-	__klzbzcore::driver::CachedInfo *drvInfoCache,
-	lzudi::sRegion *r,
-	__klzbzcore::driver::CachedInfo::sMetaDescriptor
-		*metaDesc,
-	udi_mei_op_template_t *opTemplate
+	Thread *,
+	__klzbzcore::driver::CachedInfo *,
+	lzudi::sRegion *,
+	__klzbzcore::driver::CachedInfo::sMetaDescriptor *,
+	udi_mei_op_template_t *
 	)
 {
 	udi_channel_event_cb_t			*cb;
+	udi_channel_event_ind_op_t		*op;
 
 	cb = (udi_channel_event_cb_t *)msg->data;
-printf(NOTICE"udi_channel_event_ind call: %s.\n",
-	events[cb->event]);
-__kdebug.refresh();
+	op = (udi_channel_event_ind_op_t *)msg->opsVector[0];
+
+	/**	EXPLANATION:
+	 * The really great part about udi_channel_event_ind is that there is
+	 * nothing to unmarshal. The size of the visible portion of the control
+	 * block is irrelevant, and it takes no arguments either.
+	 **/
+	op(cb);
 }
 
 void __klzbzcore::region::channel::genericMeiCall(
@@ -947,6 +941,11 @@ void __klzbzcore::region::channel::genericMeiCall(
 	 * We can know the metalanguage being called on by examining the
 	 * "metaName" in the sChannelMsg.
 	 **/
+	printf(NOTICE"%s dev, region %d, got a message.\n"
+		"\tsubsys %d, func %d, sourcetid 0x%x targettid 0x%x\n",
+		self->getRegion()->parent->device->longName, r->index,
+		msg->header.subsystem, msg->header.function,
+		msg->header.sourceId, msg->header.targetId);
 
 	/* To call in, we have to find out the offset of the marshal_layout
 	 * space. We don't need to modify inline pointers.

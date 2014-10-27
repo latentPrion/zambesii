@@ -109,9 +109,6 @@ error_t fplainn::sChannelMsg::send(
 	inlineSize = fplainn::sChannelMsg::_udi_get_layout_size(
 		layouts[LAYOUT_INLINE], &dummy, &dummy);
 
-printf(NOTICE"Vis %d, marshal %d, inline %d.\n",
-	visibleSize, marshalSize, inlineSize);
-
 	msg = new (sizeof(udi_cb_t) + visibleSize + marshalSize + inlineSize)
 		fplainn::sChannelMsg(
 			0,

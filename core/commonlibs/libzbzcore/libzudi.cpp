@@ -412,3 +412,62 @@ void udi_mei_call(
 		gcb->origin);
 }
 
+static udi_layout_t		channel_event_cb[] =
+{
+	UDI_DL_UBIT8_T,
+	  /* Union. We just instruct env to
+	   * copy max bytes.
+	   **/
+	  UDI_DL_INLINE_UNTYPED,
+	  UDI_DL_UBIT8_T,
+	  UDI_DL_INLINE_UNTYPED,
+	UDI_DL_END
+};
+
+static udi_layout_t		channel_event_complete_marshal_layout[] =
+	{ UDI_DL_STATUS_T, UDI_DL_END };
+
+static udi_layout_t		channel_event_complete_inline_layout[] =
+	{ UDI_DL_END };
+
+void _udi_channel_event_complete(udi_channel_event_cb_t *cb, ...)
+{
+	va_list			args;
+	fplainn::Endpoint	*__kmgmtEndpoint;
+	error_t			err;
+
+	__kmgmtEndpoint = floodplainn.zudi.
+		getMgmtEndpointForCurrentDeviceInstance();
+
+	if (__kmgmtEndpoint == NULL)
+	{
+		printf(FATAL LZUDI"udi_chan_event_complete: failed to get "
+			"device's end of the MGMT channel.\n"
+			"\tUnable to send chan_event_complete response to "
+			"ZUM MA.\n");
+
+		return;
+	};
+
+	va_start(args, cb);
+
+	udi_layout_t		*layouts[] =
+	{
+		channel_event_cb,
+		channel_event_complete_marshal_layout,
+		channel_event_complete_inline_layout
+	};
+
+	err = floodplainn.zudi.send(
+		__kmgmtEndpoint,
+		&cb->gcb, args, layouts,
+		CC"udi_mgmt", UDI_MGMT_MA_OPS_NUM, 0,
+		cb->gcb.origin);
+
+	if (err != ERROR_SUCCESS) { return; };
+}
+
+void udi_channel_event_complete(udi_channel_event_cb_t *cb, udi_status_t status)
+{
+	_udi_channel_event_complete(cb, status);
+}

@@ -243,6 +243,17 @@ error_t fplainn::Zudi::getEndpointMetaName(
 	return ERROR_SUCCESS;
 }
 
+fplainn::Endpoint *fplainn::Zudi::getMgmtEndpointForCurrentDeviceInstance(void)
+{
+	Thread			*self;
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	if (self->parent->getType() != ProcessStream::DRIVER) { return NULL; };
+
+	if (self->getRegion()->parent->mgmtEndpoint == NULL) { return NULL; };
+	return self->getRegion()->parent->mgmtEndpoint->otherEnd;
+}
+
 error_t fplainn::Zudi::spawnEndpoint(
 	fplainn::Endpoint *channel_endp,
 	utf8Char *metaName, udi_index_t spawn_idx,
@@ -715,7 +726,32 @@ error_t fplainn::Zudi::send(
 		{ return ERROR_UNAUTHORIZED; };
 
 	if (!region->endpoints.checkForItem(endp))
-		{ return ERROR_INVALID_RESOURCE_HANDLE; };
+	{
+		fplainn::Channel	*chan;
+
+		/* In the case of a udi_channel_event_complete response from
+		 * the driver across the MA channel, the MA channel may not be
+		 * connected to the region that is calling across it. Any
+		 * secondary region may need to call over the MA channel.
+		 *
+		 * We do an extra, DeviceInstance-wide check for the endpoint
+		 * if the first region-specific check fails.
+		 *
+		 * If the endpoint is the MA channel, we should find it...AND
+		 * its metaName should also be "udi_mgmt". The MA channel is
+		 * also ALWAYS a child-bind channel. This is how we
+		 * identify the MA channel.
+		 **/
+		chan = region->parent->getChannelByEndpoint(endp);
+		if (chan == NULL
+			|| chan->bindChannelType != fplainn::Channel::BIND_CHANNEL_TYPE_CHILD
+			|| strncmp8(
+				chan->metaName, CC"udi_mgmt",
+				DRIVER_METALANGUAGE_MAXLEN) != 0)
+		{
+			return ERROR_INVALID_RESOURCE_HANDLE;
+		};
+	};
 
 	return fplainn::sChannelMsg::send(
 		endp,

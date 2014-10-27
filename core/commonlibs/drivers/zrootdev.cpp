@@ -36,9 +36,17 @@ void zrootdev_final_cleanup_req(udi_mgmt_cb_t *cb)
 	(void)cb;
 }
 
+static utf8Char *events[] =
+{
+	CC"CHANNEL_CLOSED", CC"CHANNEL_BOUND", CC"CHANNEL_OP_ABORTED"
+};
+
 void zrootdev_bus_channel_event_ind(udi_channel_event_cb_t *cb)
 {
 	(void)cb;
+	printf(NOTICE"ayo~! %s. Chan 0x%p.\n", events[cb->event], cb->gcb.channel);
+
+	udi_channel_event_complete(cb, UDI_OK);
 }
 
 void zrootdev_bus_bind_req(udi_bus_bind_cb_t *cb)
