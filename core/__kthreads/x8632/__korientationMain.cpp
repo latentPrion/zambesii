@@ -342,63 +342,6 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
 
-	DistributaryProcess		*dtribs[3];
-
-	for (ubit8 i=0; i<3; i++)
-	{
-		DO_OR_DIE(
-			processTrib,
-			spawnDistributary(
-				CC"@d/storage/cisternn", NULL,
-				NUMABANKID_INVALID, 0, 0,
-				(void *)(uintptr_t)i,
-				&dtribs[i]),
-			ret);
-
-		printf(NOTICE ORIENT"Spawned %dth process.\n", i);
-	};
-
-	sarch_t		waitForTimeout=1;
-	ret = self->parent->timerStream.createRelativeOneshotEvent(
-		sTimestamp(0, 3, 0), 0, NULL);
-
-	if (ret != ERROR_SUCCESS)
-	{
-		waitForTimeout = 0;
-		printf(ERROR ORIENT"Failed to create 1 second timeout.\n");
-	};
-
-	for (ubit8 i=0; i<((waitForTimeout) ? 0xFF : 3); i++)
-	{
-		MessageStream::sHeader	*iMessage;
-
-		self->messageStream.pull(&iMessage);
-
-		switch (iMessage->subsystem)
-		{
-		case MSGSTREAM_SUBSYSTEM_PROCESS:
-			printf(NOTICE ORIENT"pulled %dth callback: err %d. "
-				"New process' ID: 0x%x.\n",
-				iMessage->privateData,
-				iMessage->error,
-				iMessage->sourceId);
-
-			break;
-
-		case MSGSTREAM_SUBSYSTEM_TIMER:
-			TimerStream::sTimerMsg	*timerEvent;
-
-			timerEvent = (TimerStream::sTimerMsg *)&iMessage;
-			printf(NOTICE ORIENT"pulled timer timeout. "
-				"Actual expiration: %d:%dns.\n",
-				timerEvent->actualExpirationStamp.time.seconds,
-				timerEvent->actualExpirationStamp.time.nseconds);
-
-			printf(NOTICE ORIENT"Kernel should meet scheduler now, and be halted.\n");
-			break;
-		};
-	};
-
 	printf(NOTICE ORIENT"Halting unfavourably.\n");
 	for (;FOREVER;) { asm volatile("hlt\n\t"); };
 }
