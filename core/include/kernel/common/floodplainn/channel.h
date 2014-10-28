@@ -9,6 +9,7 @@
 	#undef UDI_VERSION
 	#include <zui.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kmath.h>
 	#include <__kclasses/ptrList.h>
 	#include <__kclasses/ptrlessList.h>
 	#include <__kclasses/debugPipe.h>
@@ -397,6 +398,35 @@ namespace fplainn
 		friend class Zudi;
 		friend class ::FloodplainnStream;
 
+		static sbit8 isInlineElement(udi_layout_t elem)
+		{
+			switch (elem)
+			{
+			case UDI_DL_INLINE_TYPED:
+			case UDI_DL_INLINE_DRIVER_TYPED:
+			case UDI_DL_MOVABLE_UNTYPED:
+			case UDI_DL_MOVABLE_TYPED:
+				return 1;
+			default:
+				/* UDI_DL_INLINE_UNTYPED is the same as void*.
+				 * We can't do anything with it at all.
+				 **/
+				return 0;
+			};
+		}
+
+		static sbit8 hasInlineElements(udi_layout_t *layout)
+		{
+			for (udi_layout_t *curr=layout;
+				curr != NULL && *curr != UDI_DL_END;
+				curr++)
+			{
+				if (isInlineElement(*curr)) { return 1; };
+			};
+
+			return 0;
+		}
+
 		static sbit8 zudi_layout_element_is_valid(udi_layout_t element)
 		{
 			/**	TODO:
@@ -408,41 +438,46 @@ namespace fplainn
 				|| (element > 0 && element <= 52);
 		}
 
-		static udi_size_t zudi_get_layout_element_size(
+		static udi_size_t zudi_layout_get_element_size(
 			const udi_layout_t element,
 			const udi_layout_t nestedLayout[],
 			udi_size_t *layoutSkipCount);
 
-		static status_t zudi_get_layout_size(const udi_layout_t layout[])
+		static status_t zudi_layout_get_size(
+			const udi_layout_t layout[],
+			sbit8 inlineElementsAllowed)
 		{
 			udi_layout_t		*curr;
 			udi_size_t		ret=0, skipCount;
 
 			if (layout == NULL) { return ERROR_INVALID_ARG; };
 
+			if (!inlineElementsAllowed)
+			{
+				if (hasInlineElements(layout))
+					{ return ERROR_INVALID_FORMAT; };
+			};
+
 			for (curr=layout; *curr != UDI_DL_END; curr+=skipCount)
 			{
 				udi_size_t		currElemSize;
 
-				currElemSize = zudi_get_layout_element_size(
+				currElemSize = zudi_layout_get_element_size(
 					*curr, curr + 1, &skipCount);
 
 				if (currElemSize == 0)
 					{ return ERROR_INVALID_FORMAT; };
 
+				// Align "ret" before continuing.
+				ret = align(ret, currElemSize);
 				ret += currElemSize;
 			};
 
-			return ret;
+			return align(ret, sizeof(void*));
 		};
 
-		static udi_size_t _udi_get_layout_size(
-			udi_layout_t *layout,
-			udi_ubit16_t *inline_offset,
-			udi_ubit16_t *chain_offset);
-
-		static void _udi_marshal_params(
-			udi_layout_t *layout, void *marshal_space, va_list args);
+		static status_t marshalStackArguments(
+			ubit8 *dest, va_list src, udi_layout_t *layout);
 
 		static udi_boolean_t _udi_get_layout_offset(
 			udi_layout_t *start, udi_layout_t **end,

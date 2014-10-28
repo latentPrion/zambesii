@@ -1,5 +1,6 @@
 
 #include <__kstdlib/callback.h>
+#include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kclib/stdlib.h>
 #include <__kstdlib/__kcxxlib/memory>
@@ -876,11 +877,16 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 	udi_mei_op_template_t *opTemplate
 	)
 {
-	uarch_t							visibleSize;
-	udi_ubit16_t						dummy;
+	status_t				visibleSize;
 
-	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
-		opTemplate->visible_layout, &dummy, &dummy);
+	visibleSize = fplainn::sChannelMsg::zudi_layout_get_size(
+		opTemplate->visible_layout, 1);
+
+	if (visibleSize < 0)
+	{
+		printf(ERROR"rgn:chan:mgmthandler: invalid visible layout.\n");
+		return;
+	};
 
 	if (drvInfoCache->initInfo->primary_init_info->mgmt_scratch_requirement
 		> 0)
@@ -930,10 +936,9 @@ void __klzbzcore::region::channel::genericMeiCall(
 	udi_mei_op_template_t *opTemplate
 	)
 {
-	uarch_t							visibleSize;
-	udi_ubit16_t						dummy;
-	status_t						scratchRequirement;
-	ubit8							*gcb8;
+	status_t					visibleSize;
+	status_t					scratchRequirement;
+	ubit8						*gcb8;
 
 	/**	EXPLANATION:
 	 * Generic call into a region. We already have the opsVector and
@@ -952,8 +957,14 @@ void __klzbzcore::region::channel::genericMeiCall(
 	/* To call in, we have to find out the offset of the marshal_layout
 	 * space. We don't need to modify inline pointers.
 	 **/
-	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
-		opTemplate->visible_layout, &dummy, &dummy);
+	visibleSize = fplainn::sChannelMsg::zudi_layout_get_size(
+		opTemplate->visible_layout, 1);
+
+	if (visibleSize < 0)
+	{
+		printf(ERROR"rgn:chan:meihandler: invalid visible layout.\n");
+		return;
+	};
 
 	// Next, find out the scratch size required for this op.
 	scratchRequirement = drvInfoCache->getScratchSizeFor(

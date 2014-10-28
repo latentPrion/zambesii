@@ -61,6 +61,7 @@ void *fplainn::sChannelMsg::operator new(size_t sz, uarch_t dataSize)
 	return ::operator new(sz + dataSize);
 }
 
+static udi_layout_t		blankLayout[] = { UDI_DL_END };
 error_t fplainn::sChannelMsg::send(
 	fplainn::Endpoint *endp,
 	udi_cb_t *gcb, va_list args, udi_layout_t *layouts[3],
@@ -73,11 +74,10 @@ error_t fplainn::sChannelMsg::send(
 
 	fplainn::sChannelMsg			*msg;
 //	Thread					*thread;
-	uarch_t					visibleSize, marshalSize,
-						inlineSize=0,
-						totalInlineSize,
+	status_t				visibleSize, marshalSize,
+						inlineSize=0, status;
+	uarch_t					totalInlineSize,
 						totalMovableSize;
-	udi_ubit16_t				inlineOffset, dummy;
 	ubit8					*gcb8 = (ubit8 *)gcb,
 						*data8;
 
@@ -98,16 +98,26 @@ error_t fplainn::sChannelMsg::send(
 
 //	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
-		layouts[LAYOUT_VISIBLE], &inlineOffset, &dummy);
-//	visibleSize = fplainn::sChannelMsg::zudi_get_layout_size(
-//		layouts[LAYOUT_VISIBLE]);
+	visibleSize = fplainn::sChannelMsg::zudi_layout_get_size(
+		layouts[LAYOUT_VISIBLE], 1);
 
-	marshalSize = fplainn::sChannelMsg::_udi_get_layout_size(
-		layouts[LAYOUT_MARSHAL], &dummy, &dummy);
+	marshalSize = fplainn::sChannelMsg::zudi_layout_get_size(
+		layouts[LAYOUT_MARSHAL], 0);
 
-	inlineSize = fplainn::sChannelMsg::_udi_get_layout_size(
-		layouts[LAYOUT_INLINE], &dummy, &dummy);
+	inlineSize = fplainn::sChannelMsg::zudi_layout_get_size(
+		((layouts[LAYOUT_INLINE] == NULL)
+			? blankLayout
+			: layouts[LAYOUT_INLINE]), 0);
+
+	if (visibleSize < 0 || marshalSize < 0 || inlineSize < 0)
+	{
+		printf(ERROR"sChannelMsg:send: one or more of the layouts is "
+			"invalid.\n"
+			"\tVisible: %d, Marshal: %d, Inline: %d\n",
+			visibleSize, marshalSize, inlineSize);
+
+		return ERROR_INVALID_FORMAT;
+	};
 
 	msg = new (sizeof(udi_cb_t) + visibleSize + marshalSize + inlineSize)
 		fplainn::sChannelMsg(
@@ -130,14 +140,17 @@ error_t fplainn::sChannelMsg::send(
 	// Copy the generic control block.
 	memcpy(data8, gcb8, sizeof(udi_cb_t));
 	// Copy the visible portion of the meta-specific control block area.
-	memcpy(
-		data8 + sizeof(udi_cb_t), gcb8 + sizeof(udi_cb_t),
-		visibleSize);
-
+	memcpy(data8 + sizeof(udi_cb_t), gcb8 + sizeof(udi_cb_t), visibleSize);
 	// Copy the stack arguments.
-	memcpy(
-		data8 + sizeof(udi_cb_t) + visibleSize,
-		args, marshalSize);
+	status = marshalStackArguments(
+		data8 + sizeof(udi_cb_t) + visibleSize, args,
+		layouts[LAYOUT_MARSHAL]);
+
+	if (status < 0)
+	{
+		printf(ERROR"sChannelMsg:send: Failed to marshal args.\n");
+		return (error_t)status;
+	};
 
 	/* All messages without inline pointers will now be fully marshalled.
 	 * This next portion is for marshalling inline pointers. We scan through
@@ -160,14 +173,13 @@ error_t fplainn::sChannelMsg::send(
 	 *
 	 * FOR NOW however, we only support UDI_DL_INLINE_DRIVER_TYPED.
 	 **/
-	if (layouts[LAYOUT_INLINE] != NULL && inlineSize != 0)
+	if (layouts[LAYOUT_INLINE] != NULL && inlineSize > 0)
 	{
-		memcpy(
-			data8 + sizeof(udi_cb_t) + visibleSize + marshalSize,
-			*(void **)(gcb8 + inlineOffset), inlineSize);
+		panic(
+			ERROR_UNIMPLEMENTED,
+			FATAL"Inline marshalling is unimplemented.\n");
 
-		*(void **)(data8 + inlineOffset) = data8 + sizeof(udi_cb_t)
-			+ visibleSize + marshalSize;
+		return ERROR_UNIMPLEMENTED;
 	};
 
 	msg->set(metaName, meta_ops_num, ops_idx);

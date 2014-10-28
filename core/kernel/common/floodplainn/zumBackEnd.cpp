@@ -415,6 +415,8 @@ void zumServer::start::startDeviceReq1(
 	myResponse(ctxt);
 
 	ctxt->info.params.start.ibind.nChannels = 0;
+	ctxt->info.params.start.ibind.nSuccesses = 0;
+	ctxt->info.params.start.ibind.nFailures = 0;
 	for (chanIt=dev->instance->channels.begin(0);
 		chanIt != dev->instance->channels.end(); ++chanIt)
 	{
@@ -485,7 +487,6 @@ void zumServer::start::startDeviceReq2(
 		};
 	};
 
-
 	if (ctxt->info.params.start.ibind.nSuccesses
 		< ctxt->info.params.start.ibind.nChannels)
 	{
@@ -498,6 +499,8 @@ void zumServer::start::startDeviceReq2(
 	 * device is "open for business", to use the phrase from the spec.
 	 **/
 	ctxt->info.params.start.pbind.nChannels = 0;
+	ctxt->info.params.start.pbind.nSuccesses = 0;
+	ctxt->info.params.start.pbind.nFailures = 0;
 	for (chanIt=dev->instance->channels.begin(0);
 		chanIt != dev->instance->channels.end(); ++chanIt)
 	{
@@ -733,7 +736,6 @@ void zumServer::mgmt::channelEventComplete(
 	fplainn::sChannelMsg	*response = (fplainn::sChannelMsg *)msg;
 	AsyncResponse		myResponse;
 	udi_size_t		visibleSize;
-	udi_ubit16_t		dummy;
 	ubit8			*cb8;
 
 	cb8 = (ubit8 *)response->data;
@@ -745,8 +747,8 @@ void zumServer::mgmt::channelEventComplete(
 	 * Take the marshalled argument out and place it into the params
 	 * space in ctxt->info.params.channel_event.
 	 **/
-	visibleSize = fplainn::sChannelMsg::_udi_get_layout_size(
-		layouts::channel_event_cb, &dummy, &dummy);
+	visibleSize = fplainn::sChannelMsg::zudi_layout_get_size(
+		layouts::channel_event_cb, 1);
 
 	ctxt->info.params.channel_event.status =
 		*(udi_index_t *)(cb8 + sizeof(udi_cb_t) + visibleSize);

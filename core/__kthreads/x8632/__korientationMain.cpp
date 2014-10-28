@@ -26,7 +26,8 @@
 int oo=0, pp=0, qq=0, rr=0;
 
 static void				__korientationMain1(void);
-static __kcbFn				__korientationMain4;
+static __kcbFn				__korientationMain2;
+static __kcbFn				__korientationMain3;
 
 #include <commonlibs/libacpi/libacpi.h>
 static void rDumpSrat(void)
@@ -300,10 +301,10 @@ void __korientationMain1(void)
 // 	DO_OR_DIE(floodplainn, enumerateBaseDevices(), ret);
 	floodplainn.zui.newDeviceInd(
 		CC"by-id", fplainn::Zui::INDEX_KERNEL,
-		new __kCallback(&__korientationMain4));
+		new __kCallback(&__korientationMain2));
 }
 
-void __korientationMain4(MessageStream::sHeader *msgIt)
+void __korientationMain2(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
 	fplainn::Device			*chipsetDev; (void)chipsetDev;
@@ -324,9 +325,69 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 
 	DIE_ON(msg->header.error);
 
-	floodplainn.zum.startDeviceReq(CC"by-id", UDI_RESOURCES_NORMAL, NULL);
+	floodplainn.zum.startDeviceReq(
+		CC"by-id", UDI_RESOURCES_NORMAL,
+//		NULL);
+		new __kCallback(&__korientationMain3));
+
 	printf(NOTICE ORIENT"About to dormant.\n");
-	// Returning here will send us back to the message loop.
+}
+
+#define UDI_PHYSIO_VERSION	0x101
+#include <udi_physio.h>
+#include <kernel/common/floodplainn/initInfo.h>
+static udi_layout_t	sTLayout[] =
+{
+	UDI_DL_UBIT8_T, UDI_DL_UBIT8_T, UDI_DL_BUF,
+		0, 0, 0,
+	UDI_DL_UBIT16_T, UDI_DL_INLINE_UNTYPED,
+	UDI_DL_END
+};
+struct sT
+{
+
+	void dump(void)
+	{
+		printf(NOTICE"m0 %d, m1 %d, m3 0x%p, m4 %d, m5 0x%p.\n",
+			m0, m1, m2, m3, m4);
+	}
+
+	ubit8		m0;
+	ubit8		m1;
+	udi_buf_t	*m2;
+	udi_ubit16_t	m3;
+	void		*m4;
+};
+
+status_t func0(void *mem, udi_layout_t *lay, ...);
+void __korientationMain3(MessageStream::sHeader *msgIt)
+{
+	Thread				*self;
+	error_t				ret;
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	const sMetaInitEntry		*mie;
+	udi_mei_op_template_t		*opt;
+	status_t			sz1, sz3;
+	sT				mem;
+
+	mie = floodplainn.zudi.findMetaInitInfo(CC"udi_gio");
+	fplainn::MetaInit		mp(mie->udi_meta_info);
+
+	opt = mp.getOpTemplate(UDI_GIO_PROVIDER_OPS_NUM, 1);
+
+	sz1 = fplainn::sChannelMsg::zudi_layout_get_size(
+		opt->visible_layout, 0);
+	printf(NOTICE"sz1: %d, %d.\n", sz1,
+		fplainn::sChannelMsg::hasInlineElements(opt->visible_layout));
+
+	sz3 = fplainn::sChannelMsg::zudi_layout_get_size(
+		opt->marshal_layout, 0);
+	printf(NOTICE"sz3: %d.\n", sz3);
+
+	func0(&mem, sTLayout, 1, 1, 0xDEADBEEF, 65536, 0xCAFEBABE);
+	mem.dump();
 	return;
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
@@ -349,3 +410,11 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	for (;FOREVER;) { asm volatile("hlt\n\t"); };
 }
 
+status_t func0(void *mem, udi_layout_t *lay, ...)
+{
+	va_list		args;
+
+	va_start(args, lay);
+	return fplainn::sChannelMsg::marshalStackArguments((ubit8 *)mem, args, lay);
+	va_end(args);
+}

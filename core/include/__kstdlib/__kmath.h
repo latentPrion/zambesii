@@ -24,6 +24,22 @@
 		__item += (__boundary); \
 	}
 
+template <class T>
+T align(T ptr, uarch_t elemSize)
+{
+	// If the elem is >wordsize, we just word-align it.
+	if (elemSize > sizeof(void *)) {
+		elemSize = sizeof(void *);
+	};
+
+	if ((uintptr_t)ptr & (elemSize - 1))
+	{
+		ptr = (T)((((uintptr_t)ptr) + elemSize) & (~(elemSize - 1)));
+	};
+
+	return ptr;
+}
+
 /**	EXPLANATION:
  * This function can theoretically save us a lot of multiplication/division.
  * If there is some power-of-two number which can only be known at runtime,

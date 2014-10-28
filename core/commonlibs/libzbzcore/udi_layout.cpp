@@ -121,15 +121,27 @@ sLayoutElementDescriptor layoutElements[] =
 	#define ZUDI_LAYOUT_ELEMDESC_NESTED_BASE	(18)
 	{ sizeof(void *), 0 },			// UDI_DL_INLINE_TYPED
 	{ sizeof(void *), 0 },			// UDI_DL_MOVABLE_TYPED
-	{ 0, 0 }				// UDI_DL_ARRAY
+	{ 0, 0 },				// UDI_DL_ARRAY
+
+	// #def = 200, index = 21 (Physio opaque handles)
+	#define ZUDI_LAYOUT_ELEMDESC_PHYSIO_BASE	(21)
+	{ sizeof(udi_pio_handle_t), 1 },	// UDI_DL_PIO_HANDLE_T
+	{ sizeof(udi_dma_constraints_t), 1 }	// UDI_DL_DMA_CONSTRAINTS_T
 };
 
-udi_size_t fplainn::sChannelMsg::zudi_get_layout_element_size(
+udi_size_t fplainn::sChannelMsg::zudi_layout_get_element_size(
 	const udi_layout_t element, const udi_layout_t nestedLayout[],
 	udi_size_t *layoutSkipCount
 	)
 {
 	udi_index_t		index=element;
+
+	// Physio opaque handle.
+	if (element >= 200)
+	{
+		index = index - 200 + ZUDI_LAYOUT_ELEMDESC_PHYSIO_BASE;
+		goto out;
+	};
 
 	// Nested element.
 	if (element >= 50)
@@ -179,7 +191,7 @@ udi_size_t fplainn::sChannelMsg::zudi_get_layout_element_size(
 				udi_size_t		currLElemSize,
 							currLElemSkip;
 
-				currLElemSize = zudi_get_layout_element_size(
+				currLElemSize = zudi_layout_get_element_size(
 					*curr, curr + 1, &currLElemSkip);
 
 				if (currLElemSkip == 0) {
@@ -231,319 +243,71 @@ out:
 	return layoutElements[index].elementSize;
 }
 
-udi_size_t fplainn::sChannelMsg::_udi_get_layout_size(
-	udi_layout_t *layout,
-	udi_ubit16_t *inline_offset,
-	udi_ubit16_t *chain_offset
+status_t fplainn::sChannelMsg::marshalStackArguments(
+	ubit8 *dest, va_list args, udi_layout_t *layout
 	)
 {
-	udi_size_t		layout_size=0, element_size, array_size=0;
-	udi_boolean_t		found_dl_cb=FALSE;
+	uarch_t				offset=0, skipCount;
+	status_t			elemSize;
 
-	if (layout == NULL) { return 0;	};
-
-	for (;;)
+	for (
+		udi_layout_t *curr=layout;
+		curr != NULL && *curr != UDI_DL_END;
+		curr += skipCount, offset += elemSize)
 	{
-		switch (*layout)
+		/* We don't actually try to care about the type or size of the
+		 * argument itself by using va_arg. We are only using it to
+		 * ensure that we get the correct stack pop width when taking
+		 * the arguments off the stack.
+		 **/
+		elemSize = zudi_layout_get_element_size(
+			*curr, curr + 1, &skipCount);
+
+		if (elemSize < 0) { return elemSize; };
+
+		// We don't support huge objects on the stack. Period.
+		if (elemSize > 16) { return ERROR_UNSUPPORTED; };
+
+		offset = align(offset, elemSize);
+		switch (elemSize)
 		{
-		case UDI_DL_UBIT8_T:
-			element_size = sizeof(udi_ubit8_t);
-			break;
-
-		case UDI_DL_SBIT8_T:
-			element_size = sizeof(udi_sbit8_t);
-			break;
-
-		case UDI_DL_UBIT16_T:
-			element_size = sizeof(udi_ubit16_t);
-			break;
-
-		case UDI_DL_SBIT16_T:
-			element_size = sizeof(udi_sbit16_t);
-			break;
-
-		case UDI_DL_UBIT32_T:
-			element_size = sizeof(udi_ubit32_t);
-			break;
-
-		case UDI_DL_SBIT32_T:
-			element_size = sizeof(udi_sbit32_t);
-			break;
-
-		case UDI_DL_BOOLEAN_T:
-			element_size = sizeof(udi_boolean_t);
-			break;
-
-		case UDI_DL_STATUS_T:
-			element_size = sizeof(udi_status_t);
-			break;
-
-		case UDI_DL_INDEX_T:
-			element_size = sizeof(udi_index_t);
-			break;
-
-		case UDI_DL_CHANNEL_T:
-			element_size = sizeof(udi_channel_t);
-			break;
-
-		case UDI_DL_ORIGIN_T:
-			element_size = sizeof(udi_origin_t);
-			break;
-
-#if _UDI_PHYSIO_SUPPORTED
-		case UDI_DL_DMA_CONSTRAINTS_T:
-			element_size = sizeof(udi_dma_constraints_t);
-			break;
-#endif /* _UDI_PHYSIO_SUPPORTED */
-
-		case UDI_DL_BUF:
-			element_size = sizeof(udi_buf_t *);
-			layout += 3;	/* skip "uninteresting" args */
-			break;
-
-		case UDI_DL_CB:
-			element_size = sizeof(udi_cb_t *);
-
-			/*
-			 * The spec says we can have at most one of these
-			 * per cb.  Enforce that now.
-			 */
-			assert_fatal(found_dl_cb == FALSE);
-			found_dl_cb = TRUE;
-
-			/*
-			 * Make the offset of CB pointers available
-			 * to the caller.
-			 */
-			if (chain_offset)
-			{
-				*chain_offset = sizeof(udi_cb_t)
-					+ _ported_udi_alignto(
-						layout_size, element_size);
-			}
-			break;
-
-		case UDI_DL_INLINE_UNTYPED:
-		case UDI_DL_INLINE_DRIVER_TYPED:
-			element_size = sizeof(void *);
-
-			/*
-			 * Make the offset of inline types available
-			 * to the caller.
-			 */
-			if (inline_offset)
-			{
-				*inline_offset = sizeof(udi_cb_t)
-					+ _ported_udi_alignto(
-						layout_size, element_size);
-			}
-			break;
-
-		case UDI_DL_INLINE_TYPED:
-			/*
-			 * The size in the surrounding object is
-			 * just a pointer, but we have to skip over
-			 * the nested layout.
-			 * TODO: Something will probably care about
-			 * the content of the nested layout.
-			 */
-			element_size = sizeof(void *);
-
-			/*
-			 * Make the offset of inline types available
-			 * to the caller.
-			 */
-			if (inline_offset)
-			{
-				*inline_offset = sizeof(udi_cb_t)
-					+ _ported_udi_alignto(
-						layout_size, element_size);
-			}
-
-			/*
-			 * This isn't very efficient, but we're in
-			 * a low-running path and this keeps the
-			 * calling convention simple.
-			 */
-			while (*++layout != UDI_DL_END);
-			break;
-
-		case UDI_DL_MOVABLE_UNTYPED:
-			element_size = sizeof(void *);
-			break;
-
-		case UDI_DL_MOVABLE_TYPED:
-			/*
-			 * The size in the surrounding object is
-			 * just a pointer, but we have to skip over
-			 * the nested layout.
-			 * TODO: Something will probably care about
-			 * the content of the nested layout.
-			 */
-			element_size = sizeof(void *);
-
-			/*
-			 * This isn't very efficient, but we're in
-			 * a low-running path and this keeps the
-			 * calling convention simple.
-			 */
-			while (*++layout != UDI_DL_END);
-			break;
-
-		case UDI_DL_ARRAY:
-			/*
-			 * Recurse to parse these
-			 */
-			array_size = *++layout;
-			element_size = array_size
-				* _udi_get_layout_size(++layout, NULL, NULL);
-			/*
-			 * This isn't very efficient, but we're in
-			 * a low-running path and this keeps the
-			 * calling convention simple.
-			 */
-			while (*++layout != UDI_DL_END);
-			break;
-
-#if defined (UDI_DL_PIO_HANDLE_T)
-		case UDI_DL_PIO_HANDLE_T:
-			element_size = sizeof(udi_pio_handle_t);
-			break;
+		case 1: *(ubit8 *)(dest + offset) = va_arg(args, int); break;
+		case 2: *(ubit16 *)(dest + offset) = va_arg(args, int); break;
+		case 4: *(ubit32 *)(dest + offset) = va_arg(args, int); break;
+		case 8:
+#if __WORDSIZE == 32
+			*(ubit32 *)(dest + offset) = va_arg(args, int);
+			*(ubit32 *)(dest + offset + 4) = va_arg(args, int);
+#elif __WORDSIZE >= 64
+			*(ubit64 *)(dest + offset) = va_arg(args, int);
+#else
+#error "Unable to generate argument 8Byte marshalling for your arch wordsize."
 #endif
+			break;
 
-		case UDI_DL_END:
-			return layout_size;
+		case 16:
+#if __WORDSIZE == 32
+			*(ubit32 *)(dest + offset) = va_arg(args, int);
+			*(ubit32 *)(dest + offset + 4) = va_arg(args, int);
+			*(ubit32 *)(dest + offset + 8) = va_arg(args, int);
+			*(ubit32 *)(dest + offset + 12) = va_arg(args, int);
+#elif __WORDSIZE == 64
+			*(ubit64 *)(dest + offset) = va_arg(args, int);
+			*(ubit64 *)(dest + offset + 8) = va_arg(args, int);
+#elif __WORDSIZE >= 128
+			*(ubit128 *)(dest + offset) = va_arg(args, int);
+#else
+#error "Unable to generate argument 16Byte marshalling for your arch wordsize."
+#endif
+			break;
 
 		default:
-printf(NOTICE"unknown UDI_DL %d.\n", *layout);
-			assert_fatal(0);
-		}
-		layout++;
+			return ERROR_UNSUPPORTED;
+		};
+	};
 
-		/*
-		 * Properly align this element
-		 */
-		layout_size = _ported_udi_alignto(layout_size, element_size);
-
-		/*
-		 * Add the element to the total size
-		 */
-		layout_size += element_size;
-	}
+	return ERROR_SUCCESS;
 }
-
-#define STORE_ARG(ptr, ap, type, va) \
-	element_size = sizeof(type); \
-	ptr = (void *) (_ported_udi_alignto(ptr, element_size)); \
-	*(type *) ptr = _##va(args, type);
-
-void fplainn::sChannelMsg::_udi_marshal_params(
-	udi_layout_t *layout, void *marshal_space, va_list args
-	)
-{
-	udi_size_t			element_size, array_size=0;
-	void				*p=marshal_space;
-
-	if (layout == NULL) { return; };
-
-	for (;;)
-	{
-		switch (*layout)
-		{
-		case UDI_DL_UBIT8_T:
-			STORE_ARG(p, args, udi_ubit8_t, UDI_VA_UBIT8_T);
-			break;
-		case UDI_DL_SBIT8_T:
-			STORE_ARG(p, args, udi_sbit8_t, UDI_VA_SBIT8_T);
-			break;
-		case UDI_DL_UBIT16_T:
-			STORE_ARG(p, args, udi_ubit16_t, UDI_VA_UBIT16_T);
-			break;
-		case UDI_DL_SBIT16_T:
-			STORE_ARG(p, args, udi_sbit16_t, UDI_VA_SBIT16_T);
-			break;
-		case UDI_DL_UBIT32_T:
-			STORE_ARG(p, args, udi_ubit32_t, UDI_VA_UBIT32_T);
-			break;
-		case UDI_DL_SBIT32_T:
-			STORE_ARG(p, args, udi_sbit32_t, UDI_VA_SBIT32_T);
-			break;
-		case UDI_DL_BOOLEAN_T:
-			STORE_ARG(p, args, udi_boolean_t, UDI_VA_BOOLEAN_T);
-			break;
-		case UDI_DL_STATUS_T:
-			STORE_ARG(p, args, udi_status_t, UDI_VA_STATUS_T);
-			break;
-
-		case UDI_DL_INDEX_T:
-			STORE_ARG(p, args, udi_index_t, UDI_VA_INDEX_T);
-			break;
-
-		case UDI_DL_CHANNEL_T:
-			STORE_ARG(p, args, udi_channel_t, UDI_VA_CHANNEL_T);
-			break;
-
-		case UDI_DL_ORIGIN_T:
-			STORE_ARG(p, args, udi_origin_t, UDI_VA_ORIGIN_T);
-			break;
-
-#if _UDI_PHYSIO_SUPPORTED
-		case UDI_DL_DMA_CONSTRAINTS_T:
-			STORE_ARG(
-				p, args, udi_dma_constraints_t,
-				UDI_VA_DMA_CONSTRAINTS_T);
-
-			break;
-#endif /* _UDI_PHYSIO_SUPPORTED */
-
-		case UDI_DL_BUF:
-			STORE_ARG(p, args, udi_buf_t *, UDI_VA_POINTER);
-			layout += 3;	/* skip "uninteresting" args */
-			break;
-		case UDI_DL_CB:
-			STORE_ARG(p, args, udi_cb_t *, UDI_VA_POINTER);
-			break;
-
-		case UDI_DL_INLINE_UNTYPED:
-		case UDI_DL_INLINE_DRIVER_TYPED:
-		case UDI_DL_MOVABLE_UNTYPED:
-			STORE_ARG(p, args, void *, UDI_VA_POINTER);
-			break;
-
-		case UDI_DL_MOVABLE_TYPED:
-		case UDI_DL_INLINE_TYPED:
-			while (*++layout != UDI_DL_END);
-			STORE_ARG(p, args, void *, UDI_VA_POINTER);
-			break;
-
-		case UDI_DL_ARRAY:
-			/*
-			 * Recurse to parse these
-			 */
-			array_size = *++layout;
-			element_size = array_size
-				* _udi_get_layout_size(++layout, NULL, NULL);
-
-			/*
-			 * This isn't very efficient, but we're in
-			 * a low-running path and this keeps the
-			 * calling convention simple.
-			 */
-			while (*++layout != UDI_DL_END);
-			break;
-
-		case UDI_DL_END:
-			return;
-
-		default:
-			assert_fatal(0);
-		}
-		layout++;
-
-		p = (char *)p + element_size;
-	}
-}
-
 
 /*
  * look for the first occurance a layout_t and return the offset.
@@ -659,8 +423,8 @@ udi_boolean_t fplainn::sChannelMsg::_udi_get_layout_offset(
 			 * Recurse to parse these
 			 */
 			array_size = *++layout;
-			element_size = array_size
-				* _udi_get_layout_size(++layout, NULL, NULL);
+//			element_size = array_size
+//				* _udi_get_layout_size(++layout, NULL, NULL);
 
 			while (*++layout != UDI_DL_END);
 			break;
