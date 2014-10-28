@@ -273,27 +273,12 @@ error_t ZAsyncStream::receive(void *dataHandle, void *buffer, uarch_t)
 {
 	ipc::sDataHeader		*dataHeader;
 	error_t				ret;
-	ProcessStream			*receivingProcess;
 
 	if (dataHandle == NULL || buffer == NULL) { return ERROR_INVALID_ARG; };
 
 	dataHeader = (ipc::sDataHeader *)dataHandle;
 	if (!messages.checkForItem(dataHeader))
 		{ return ERROR_INVALID_RESOURCE_HANDLE; };
-
-	receivingProcess = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread()->parent;
-
-	// Garbage collect the request message.
-	if (receivingProcess->execDomain == PROCESS_EXECDOMAIN_KERNEL
-		&& dataHeader->requestMessage != NULL)
-	{
-		sZAsyncMsg		*requestMessage;
-
-		requestMessage = (sZAsyncMsg *)dataHeader->requestMessage;
-		dataHeader->requestMessage = NULL;
-		delete requestMessage;
-	};
 
 	// Dispatch the data.
 	ret = ipc::dispatchDataHeader(dataHeader, buffer);
@@ -307,27 +292,12 @@ void ZAsyncStream::acknowledge(void *dataHandle, void *buffer, void *privateData
 	ipc::methodE			method;
 	processId_t			sourceTid;
 	sZAsyncMsg			*response;
-	ProcessStream			*ackingProcess;
 
 	if (dataHandle == NULL) { return; };
 
 	dataHeader = (ipc::sDataHeader *)dataHandle;
 
 	if (!messages.checkForItem(dataHeader)) { return; };
-
-	ackingProcess = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread()->parent;
-
-	// Garbage collect the request message if it hasn't already been done.
-	if (ackingProcess->execDomain == PROCESS_EXECDOMAIN_KERNEL
-		&& dataHeader->requestMessage != NULL)
-	{
-		sZAsyncMsg		*requestMessage;
-
-		requestMessage = (sZAsyncMsg *)dataHeader->requestMessage;
-		dataHeader->requestMessage = NULL;
-		delete requestMessage;
-	};
 
 	method = dataHeader->method;
 	sourceTid = dataHeader->foreignTid;

@@ -255,8 +255,6 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 				(MessageStream::sPostMsg *)iMsg,
 				drvInst, cache, self);
 
-			// Posted messages aren't garbage collected in kdomain.
-			delete iMsg;
 			break;
 
 		case MSGSTREAM_SUBSYSTEM_ZUDI:
@@ -287,6 +285,8 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 			delete callback;
 			break;
 		};
+
+		delete iMsg;
 	};
 }
 

@@ -271,6 +271,8 @@ extern "C" void __korientationMain(ubit32, sMultibootData *)
 			delete callback;
 			break;
 		};
+
+		delete iMessage;
 	};
 
 	printf(NOTICE ORIENT"Main: Exited async loop. Killing.\n");
@@ -308,6 +310,7 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	error_t				ret;
 	fplainn::Zui::sIndexMsg		*msg;
 
+	(void)self;
 	msg = (fplainn::Zui::sIndexMsg *)msgIt;
 	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread() );

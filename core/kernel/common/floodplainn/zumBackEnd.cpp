@@ -242,6 +242,8 @@ void fplainn::Zum::main(void *)
 			(*callback)(iMsg);
 			delete callback;
 		};
+
+		delete iMsg;
 	};
 
 	taskTrib.kill(self);

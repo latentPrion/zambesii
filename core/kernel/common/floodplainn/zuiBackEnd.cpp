@@ -1514,6 +1514,8 @@ void fplainn::Zui::main(void *)
 			delete callback;
 			break;
 		};
+
+		delete gcb;
 	};
 
 	taskTrib.kill(self);

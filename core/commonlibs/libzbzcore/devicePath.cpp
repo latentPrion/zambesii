@@ -131,12 +131,14 @@ void __klzbzcore::region::main(void *)
 					r.index);
 
 				break;
-			}
+			};
 
 			(*callback)(iMsg);
 			delete callback;
 			break;
 		};
+
+		delete iMsg;
 	};
 
 	taskTrib.dormant(self->getFullId());
