@@ -76,12 +76,8 @@ error_t fplainn::sChannelMsg::send(
 //	Thread					*thread;
 	status_t				visibleSize, marshalSize,
 						inlineSize=0, status;
-	uarch_t					totalInlineSize,
-						totalMovableSize;
 	ubit8					*gcb8 = (ubit8 *)gcb,
 						*data8;
-
-	(void)totalInlineSize; (void)totalMovableSize;
 
 	/**	EXPLANATION:
 	 * In this one we need to do a little more work; we must get the
@@ -104,10 +100,8 @@ error_t fplainn::sChannelMsg::send(
 	marshalSize = fplainn::sChannelMsg::zudi_layout_get_size(
 		layouts[LAYOUT_MARSHAL], 0);
 
-	inlineSize = fplainn::sChannelMsg::zudi_layout_get_size(
-		((layouts[LAYOUT_INLINE] == NULL)
-			? blankLayout
-			: layouts[LAYOUT_INLINE]), 0);
+	inlineSize = fplainn::sChannelMsg::getTotalInlineLayoutSize(
+		layouts[LAYOUT_VISIBLE], layouts[LAYOUT_INLINE], gcb);
 
 	if (visibleSize < 0 || marshalSize < 0 || inlineSize < 0)
 	{
@@ -137,11 +131,11 @@ error_t fplainn::sChannelMsg::send(
 	 * This can be easily remedied.
 	 **/
 
-	// Copy the generic control block.
+	// Marshal the generic control block.
 	memcpy(data8, gcb8, sizeof(udi_cb_t));
-	// Copy the visible portion of the meta-specific control block area.
+	// Marshal the visible portion of the meta-specific control block area.
 	memcpy(data8 + sizeof(udi_cb_t), gcb8 + sizeof(udi_cb_t), visibleSize);
-	// Copy the stack arguments.
+	// Marshal the stack arguments.
 	status = marshalStackArguments(
 		data8 + sizeof(udi_cb_t) + visibleSize, args,
 		layouts[LAYOUT_MARSHAL]);
@@ -152,34 +146,15 @@ error_t fplainn::sChannelMsg::send(
 		return (error_t)status;
 	};
 
-	/* All messages without inline pointers will now be fully marshalled.
-	 * This next portion is for marshalling inline pointers. We scan through
-	 * the entirety of the visible_layout seeking inline pointers.
-	 *
-	 * For each pointer, we:
-	 *	1. Get the offset within the sourceCb where it is,
-	 *	   and use that to extract the address of the inline object.
-	 *	2. Use the visible_layout to determine how large the inline
-	 *	   object is.
-	 *	3. Copy the inline object into our sChannelMsg's inline
-	 *	   marshalling space.
-	 *	4. Set the sChannelMsg's inline pointer to point to the offset
-	 *	   within itself that now holds the copied inline object.
-	 *
-	 * 	* Special case: UDI_DL_INLINE_DRIVER_TYPED:
-	 *		The layout of a DRIVER_TYPED inline object is passed to
-	 *		us as an argument. We simply use its size and offset
-	 *		to copy it in, along with the other inline objects.
-	 *
-	 * FOR NOW however, we only support UDI_DL_INLINE_DRIVER_TYPED.
-	 **/
-	if (layouts[LAYOUT_INLINE] != NULL && inlineSize > 0)
-	{
-		panic(
-			ERROR_UNIMPLEMENTED,
-			FATAL"Inline marshalling is unimplemented.\n");
+	status = marshalInlineObjects(
+		data8 + sizeof(udi_cb_t) + visibleSize + marshalSize,
+		msg->data, gcb,
+		layouts[LAYOUT_VISIBLE], layouts[LAYOUT_INLINE]);
 
-		return ERROR_UNIMPLEMENTED;
+	if (status < 0)
+	{
+		printf(ERROR"sChannelMsg:send: Failed to marshal inline objects.\n");
+		return (error_t)status;
 	};
 
 	msg->set(metaName, meta_ops_num, ops_idx);

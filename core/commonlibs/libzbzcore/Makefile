@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../libzbzcore.a
-OBJFILES=main.o distributaryPath.o driverPath.o devicePath.o udi_layout.o \
+OBJFILES=main.o distributaryPath.o driverPath.o devicePath.o layout.o \
 	libzudi.o
 
 all: Makefile $(DELIVERABLE)

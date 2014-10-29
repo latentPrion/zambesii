@@ -1,56 +1,3 @@
-/*
- * Taken from the UDI Reference Implementation.
- * File: env/common/udi_layout.c
- */
-
-/*
- * $Copyright udi_reference:
- *
- *
- *    Copyright (c) 1995-2001; Compaq Computer Corporation; Hewlett-Packard
- *    Company; Interphase Corporation; The Santa Cruz Operation, Inc;
- *    Software Technologies Group, Inc; and Sun Microsystems, Inc
- *    (collectively, the "Copyright Holders").  All rights reserved.
- *
- *    Redistribution and use in source and binary forms, with or without
- *    modification, are permitted provided that the conditions are met:
- *
- *            Redistributions of source code must retain the above
- *            copyright notice, this list of conditions and the following
- *            disclaimer.
- *
- *            Redistributions in binary form must reproduce the above
- *            copyright notice, this list of conditions and the following
- *            disclaimers in the documentation and/or other materials
- *            provided with the distribution.
- *
- *            Neither the name of Project UDI nor the names of its
- *            contributors may be used to endorse or promote products
- *            derived from this software without specific prior written
- *            permission.
- *
- *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *    "AS IS," AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- *    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- *    HOLDERS OR ANY CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- *    OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- *    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
- *    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
- *    USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
- *    DAMAGE.
- *
- *    THIS SOFTWARE IS BASED ON SOURCE CODE PROVIDED AS A SAMPLE REFERENCE
- *    IMPLEMENTATION FOR VERSION 1.01 OF THE UDI CORE SPECIFICATION AND/OR
- *    RELATED UDI SPECIFICATIONS. USE OF THIS SOFTWARE DOES NOT IN AND OF
- *    ITSELF CONSTITUTE CONFORMANCE WITH THIS OR ANY OTHER VERSION OF ANY
- *    UDI SPECIFICATION.
- *
- *
- * $
- */
 
 #define UDI_VERSION		0x101
 #include <udi.h>
@@ -61,22 +8,8 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/floodplainn/channel.h>
+#include <kernel/common/floodplainn/movableMemoryHeader.h>
 
-
-#define _UDI_PHYSIO_SUPPORTED		1
-
-// FIXME: I do *not* like this macro at all.
-#define _ported_udi_alignto(_item, boundary) \
-  (((unsigned)((uintptr_t)(_item) + (boundary) - 1) >= (unsigned)((uintptr_t) (_item)))	\
-   ? (((uintptr_t) (_item) + ((boundary) - 1)) & (~((uintptr_t)(boundary)-1)))	\
-   : ~ (long) 0)
-
-/*
- * Analyze a layout template and see how much core storage it will take.
- *
- * Has the additional benefit that it will validate the layout template
- * before we ever try to do anything "hard" with it.
- */
 
 struct sLayoutElementDescriptor
 {
@@ -248,7 +181,7 @@ status_t fplainn::sChannelMsg::marshalStackArguments(
 	)
 {
 	uarch_t				offset=0, skipCount;
-	status_t			elemSize;
+	uarch_t				elemSize;
 
 	for (
 		udi_layout_t *curr=layout;
@@ -263,7 +196,7 @@ status_t fplainn::sChannelMsg::marshalStackArguments(
 		elemSize = zudi_layout_get_element_size(
 			*curr, curr + 1, &skipCount);
 
-		if (elemSize < 0) { return elemSize; };
+		if (skipCount == 0) { return ERROR_INVALID_FORMAT; };
 
 		// We don't support huge objects on the stack. Period.
 		if (elemSize > 16) { return ERROR_UNSUPPORTED; };
@@ -309,150 +242,140 @@ status_t fplainn::sChannelMsg::marshalStackArguments(
 	return ERROR_SUCCESS;
 }
 
-/*
- * look for the first occurance a layout_t and return the offset.
- * in the special case of UDI_DL_END, intermmediate nested
- * structures are ignored. ie:
- * UDI_UBIT8_T UDI_DL_ARRAY UDI_UBIT8_T 10 UDI_DL_END UDI_DL_END
- * _udi_get_layout_offset(layout, UDI_DL_END) would return
- * on the second UDI_DL_END
- */
-udi_boolean_t fplainn::sChannelMsg::_udi_get_layout_offset(
-	udi_layout_t *start, udi_layout_t **end, udi_size_t *offset,
-	udi_layout_t key
+status_t fplainn::sChannelMsg::getTotalInlineLayoutSize(
+	udi_layout_t *layout, udi_layout_t *drvTypedLayout,
+	udi_cb_t *_srcCb
 	)
 {
+	status_t		ret=0;
+	uarch_t			ptrOffset=0, skipCount, currElemSize;
+	ubit8			*srcCb = (ubit8 *)(_srcCb + 1);
 
-	udi_layout_t			*layout=start;
-	udi_size_t			layout_size=0, element_size,
-					array_size=0;
-
-	if (layout == NULL) { return FALSE; };
-
-	while (*layout != key)
+	for (udi_layout_t *curr=layout;
+		curr != NULL && *curr != UDI_DL_END;
+		curr += skipCount, ptrOffset += currElemSize)
 	{
-		switch (*layout)
+		status_t			currLayoutSize=0;
+		fplainn::sMovableMemory		*mmh;
+
+		currElemSize = zudi_layout_get_element_size(
+			*curr, curr + 1, &skipCount);
+
+		if (skipCount == 0) { return ERROR_INVALID_FORMAT; };
+		ptrOffset = align(ptrOffset, currElemSize);
+
+		switch (*curr)
 		{
-		case UDI_DL_UBIT8_T:
-			element_size = sizeof(udi_ubit8_t);
-			break;
-		case UDI_DL_SBIT8_T:
-			element_size = sizeof(udi_sbit8_t);
-			break;
-		case UDI_DL_UBIT16_T:
-			element_size = sizeof(udi_ubit16_t);
-			break;
-		case UDI_DL_SBIT16_T:
-			element_size = sizeof(udi_sbit16_t);
-			break;
-		case UDI_DL_UBIT32_T:
-			element_size = sizeof(udi_ubit32_t);
-			break;
-		case UDI_DL_SBIT32_T:
-			element_size = sizeof(udi_sbit32_t);
-			break;
-		case UDI_DL_BOOLEAN_T:
-			element_size = sizeof(udi_boolean_t);
-			break;
-		case UDI_DL_STATUS_T:
-			element_size = sizeof(udi_status_t);
-			break;
-
-		case UDI_DL_INDEX_T:
-			element_size = sizeof(udi_index_t);
-			break;
-
-		case UDI_DL_CHANNEL_T:
-			element_size = sizeof(udi_channel_t);
-			break;
-
-		case UDI_DL_ORIGIN_T:
-			element_size = sizeof(udi_origin_t);
-			break;
-
-#if _UDI_PHYSIO_SUPPORTED
-		case UDI_DL_DMA_CONSTRAINTS_T:
-			element_size = sizeof(udi_dma_constraints_t);
-			break;
-#endif /* _UDI_PHYSIO_SUPPORTED */
-
-		case UDI_DL_BUF:
-			element_size = sizeof(udi_buf_t *);
-			layout += 3;	/* skip "uninteresting" args */
-			break;
-
-		case UDI_DL_CB:
-			element_size = sizeof(udi_cb_t *);
-			break;
-
-		case UDI_DL_INLINE_UNTYPED:
-		case UDI_DL_INLINE_DRIVER_TYPED:
-			element_size = sizeof(void *);
-			break;
-
 		case UDI_DL_INLINE_TYPED:
-			/*
-			 * The size in the surrounding object is
-			 * just a pointer, but we have to skip over
-			 * the nested layout.
-			 * TODO: Something will probably care about
-			 * the content of the nested layout.
-			 */
-			element_size = sizeof(void *);
-			while (*++layout != UDI_DL_END);
+		case UDI_DL_MOVABLE_TYPED:
+			currLayoutSize = zudi_layout_get_size(curr + 1, 0);
+			break;
+
+		case UDI_DL_INLINE_DRIVER_TYPED:
+			if (drvTypedLayout == NULL)
+				{ return ERROR_INVALID_ARG; };
+
+			currLayoutSize = zudi_layout_get_size(drvTypedLayout, 0);
 			break;
 
 		case UDI_DL_MOVABLE_UNTYPED:
-			element_size = sizeof(void *);
+			mmh = *(fplainn::sMovableMemory **)(srcCb + ptrOffset);
+			if (mmh != NULL)
+			{
+				mmh--;
+				currLayoutSize = mmh->nBytes;
+			}
+			else {
+				currLayoutSize = 0;
+			};
 			break;
 
-		case UDI_DL_MOVABLE_TYPED:
-			/*
-			 * The size in the surrounding object is
-			 * just a pointer, but we have to skip over
-			 * the nested layout.
-			 * TODO: Something will probably care about
-			 * the content of the nested layout.
-			 */
-			element_size = sizeof(void *);
-			while (*++layout != UDI_DL_END);
-			break;
-
-		case UDI_DL_ARRAY:
-			/*
-			 * Recurse to parse these
-			 */
-			array_size = *++layout;
-//			element_size = array_size
-//				* _udi_get_layout_size(++layout, NULL, NULL);
-
-			while (*++layout != UDI_DL_END);
-			break;
-
-#if defined (UDI_DL_PIO_HANDLE_T)
-		case UDI_DL_PIO_HANDLE_T:
-			element_size = sizeof(udi_pio_handle_t);
-			break;
-#endif
-
-		case UDI_DL_END:
-			return FALSE;
-		default:
-			assert_fatal(0);
+		default: continue; break;
 		}
-		layout++;
 
-		/*
-		 * Properly align this element
-		 */
-		layout_size = _ported_udi_alignto(layout_size, element_size);
-
-		/*
-		 * Add the element to the total size
-		 */
-		layout_size += element_size;
+		if (currLayoutSize < 0) { return currLayoutSize; };
+		if (*(void **)(srcCb + ptrOffset) != NULL)
+		{
+			/* Only add it to the inline total if it's non-NULL.
+			 * We have nothing to copy if it's NULL, and therefore
+			 * there is no need to allocate marshal space for it.
+			 **/
+			ret += currLayoutSize;
+		};
 	}
-	*end = layout;
-	*offset = layout_size;
-	return TRUE;
+
+	return ret;
+}
+
+status_t fplainn::sChannelMsg::marshalInlineObjects(
+	ubit8 *dest, udi_cb_t *_destCb, udi_cb_t *_srcCb,
+	udi_layout_t *layout, udi_layout_t *drvTypedLayout
+	)
+{
+	uarch_t			ptrOffset=0, skipCount, currElemSize;
+	ubit8			*srcCb = (ubit8 *)(_srcCb + 1),
+				*destCb = (ubit8 *)(_destCb + 1 );
+
+	for (udi_layout_t *curr=layout;
+		curr != NULL && *curr != UDI_DL_END;
+		curr += skipCount, ptrOffset += currElemSize)
+	{
+		status_t		currObjectSize;
+		fplainn::sMovableMemory	*mmh;
+		void			*object;
+
+		currElemSize = zudi_layout_get_element_size(
+			*curr, curr + 1, &skipCount);
+
+		if (skipCount == 0) { return ERROR_INVALID_FORMAT; };
+		ptrOffset = align(ptrOffset, currElemSize);
+
+		switch (*curr)
+		{
+		case UDI_DL_INLINE_TYPED:
+		case UDI_DL_MOVABLE_TYPED:
+			currObjectSize = zudi_layout_get_size(curr + 1, 0);
+			break;
+
+		case UDI_DL_INLINE_DRIVER_TYPED:
+			currObjectSize = zudi_layout_get_size(drvTypedLayout, 0);
+			break;
+
+		case UDI_DL_MOVABLE_UNTYPED:
+			mmh = *(fplainn::sMovableMemory **)(srcCb + ptrOffset);
+			if (mmh != NULL)
+			{
+				mmh--;
+				currObjectSize = mmh->nBytes;
+			}
+			else {
+				currObjectSize = 0;
+			};
+			break;
+
+		default: continue; break;
+		};
+
+		object = *(fplainn::sMovableMemory **)(srcCb + ptrOffset);
+		if (object != NULL)
+		{
+			// Copy the object into the marshal space.
+			memcpy(dest, object, currObjectSize);
+			// Set the pointer in the destination CB.
+			*(void **)(destCb + ptrOffset) = dest;
+			// Increment the marshal space.
+			dest += currObjectSize;
+		}
+		else
+		{
+			/* There is probably no need to do this since the NULL
+			 * would have been copied when the caller copied the
+			 * visible mem (outside of this function). But it
+			 * doesn't hurt to be thorough.
+			 **/
+			*(void **)(destCb + ptrOffset) = NULL;
+		};
+	};
+
+	return ERROR_SUCCESS;
 }
