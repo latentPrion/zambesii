@@ -336,6 +336,7 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 #define UDI_PHYSIO_VERSION	0x101
 #include <udi_physio.h>
 #include <kernel/common/floodplainn/initInfo.h>
+#include <kernel/common/floodplainn/movableMemoryHeader.h>
 static udi_layout_t	sTLayout[] =
 {
 	UDI_DL_UBIT8_T, UDI_DL_UBIT8_T, UDI_DL_BUF,
@@ -343,6 +344,7 @@ static udi_layout_t	sTLayout[] =
 	UDI_DL_UBIT16_T, UDI_DL_INLINE_UNTYPED,
 	UDI_DL_END
 };
+
 struct sT
 {
 
@@ -359,7 +361,39 @@ struct sT
 	void		*m4;
 };
 
+static udi_layout_t		trLayout[] =
+{
+	UDI_DL_UBIT32_T, UDI_DL_UBIT32_T,
+	UDI_DL_END
+};
+
+ubit8		mem0[512];
+ubit8		mem1[128];
+
+struct sMMa
+{
+	sMMa()
+	:
+	h(sizeof(a))
+	{}
+
+	fplainn::sMovableMemory		h;
+	udi_instance_attr_list_t	a;
+};
+
+struct sMMf
+{
+	sMMf()
+	:
+	h(sizeof(f))
+	{}
+
+	fplainn::sMovableMemory		h;
+	udi_filter_element_t		f;
+};
+
 status_t func0(void *mem, udi_layout_t *lay, ...);
+
 void __korientationMain3(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
@@ -369,25 +403,34 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 
 	const sMetaInitEntry		*mie;
 	udi_mei_op_template_t		*opt;
-	status_t			sz1, sz3;
-	sT				mem;
+	status_t			sz0, sz1, sz2, sz3, sz4, sz5, sz6;
+	udi_enumerate_cb_t		uec, dst;
 
-	mie = floodplainn.zudi.findMetaInitInfo(CC"udi_gio");
+	mie = floodplainn.zudi.findMetaInitInfo(CC"udi_mgmt");
 	fplainn::MetaInit		mp(mie->udi_meta_info);
 
-	opt = mp.getOpTemplate(UDI_GIO_PROVIDER_OPS_NUM, 1);
+	opt = mp.getOpTemplate(UDI_MGMT_OPS_NUM, 2);
 
-	sz1 = fplainn::sChannelMsg::zudi_layout_get_size(
-		opt->visible_layout, 0);
-	printf(NOTICE"sz1: %d, %d.\n", sz1,
-		fplainn::sChannelMsg::hasInlineElements(opt->visible_layout));
+printf(NOTICE"sizeof attr_list_t %d, filter_elem_t %d.\n",
+	sizeof(udi_instance_attr_list_t),
+	sizeof(udi_filter_element_t));
 
-	sz3 = fplainn::sChannelMsg::zudi_layout_get_size(
-		opt->marshal_layout, 0);
-	printf(NOTICE"sz3: %d.\n", sz3);
+	uec.attr_list = &(new sMMa)->a;
+	memset(uec.attr_list, 0x2B, sizeof(*uec.attr_list));
+	uec.filter_list = &(new sMMf)->f;
+	memset((void *)uec.filter_list, 0xB2, sizeof(*uec.filter_list));
+	sz0 = fplainn::sChannelMsg::getTotalInlineLayoutSize(
+		opt->visible_layout, NULL, &uec.gcb);
 
-	func0(&mem, sTLayout, 1, 1, 0xDEADBEEF, 65536, 0xCAFEBABE);
-	mem.dump();
+	sz1 = fplainn::sChannelMsg::marshalInlineObjects(
+		mem0, &dst.gcb, &uec.gcb, opt->visible_layout, NULL);
+
+	printf(NOTICE"total inline size %d.\n", sz0);
+	printf(NOTICE"mem0[0] 0x%x, mem0[97] 0x%x\n", mem0[0], mem0[97]);
+	printf(NOTICE"mem0[98] 0x%x, mem0[98+167] 0x%x\n", mem0[98], mem0[98+167]);
+	printf(NOTICE"destcb pointers: %d, %d\n",
+		(void *)dst.attr_list == mem0,
+		(void *)dst.filter_list == mem0+98);
 	return;
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),

@@ -438,10 +438,11 @@ namespace fplainn
 				|| (element > 0 && element <= 52);
 		}
 
+		// Signals error by setting skipCount to 0.
 		static udi_size_t zudi_layout_get_element_size(
 			const udi_layout_t element,
 			const udi_layout_t nestedLayout[],
-			udi_size_t *layoutSkipCount);
+			udi_size_t *skipCount);
 
 		static status_t zudi_layout_get_size(
 			const udi_layout_t layout[],
@@ -465,7 +466,7 @@ namespace fplainn
 				currElemSize = zudi_layout_get_element_size(
 					*curr, curr + 1, &skipCount);
 
-				if (currElemSize == 0)
+				if (currElemSize == 0 || skipCount == 0)
 					{ return ERROR_INVALID_FORMAT; };
 
 				// Align "ret" before continuing.
@@ -476,13 +477,42 @@ namespace fplainn
 			return align(ret, sizeof(void*));
 		};
 
+		static status_t getTotalInlineLayoutSize(
+			udi_layout_t *layout, udi_layout_t *drvTypedLayout,
+			udi_cb_t *srcCb);
+
 		static status_t marshalStackArguments(
 			ubit8 *dest, va_list src, udi_layout_t *layout);
 
-		static udi_boolean_t _udi_get_layout_offset(
-			udi_layout_t *start, udi_layout_t **end,
-			udi_size_t *offset,
-			udi_layout_t key);
+		static status_t marshalInlineObjects(
+			ubit8 *dest, udi_cb_t *_destCb, udi_cb_t *_srcCb,
+			udi_layout_t *layout, udi_layout_t *drvTypedLayout);
+
+		static void dumpLayout(udi_layout_t *lay)
+		{
+			printf(NOTICE"layout: ");
+			for (udi_layout_t *curr=lay;
+				curr != NULL && *curr != UDI_DL_END;
+				curr++)
+			{
+				printf(CC"%d ", *curr);
+				switch (*curr)
+				{
+				case UDI_DL_MOVABLE_TYPED:
+				case UDI_DL_INLINE_TYPED:
+					printf(CC"(nest) "); break;
+				case UDI_DL_INLINE_DRIVER_TYPED:
+					printf(CC"(drvtyped) "); break;
+				case UDI_DL_MOVABLE_UNTYPED:
+					printf(CC"(heapobj) "); break;
+				case UDI_DL_ARRAY:
+					printf(CC"(arr) "); break;
+				case UDI_DL_BUF:
+					printf(CC"(buf) "); break;
+				};
+			}
+			printf(CC"\n");
+		}
 
 		static error_t send(
 			fplainn::Endpoint *endp,

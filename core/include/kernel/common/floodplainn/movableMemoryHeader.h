@@ -7,6 +7,16 @@ namespace fplainn
 {
 	struct sMovableMemory
 	{
+		sMovableMemory(uarch_t nBytes)
+		:
+		nBytes(nBytes)
+		{}
+
+		sMovableMemory(void)
+		:
+		nBytes(0)
+		{}
+
 		uarch_t		nBytes;
 	};
 }
