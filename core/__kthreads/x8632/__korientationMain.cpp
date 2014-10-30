@@ -313,8 +313,7 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 
 	(void)self;
 	msg = (fplainn::Zui::sIndexMsg *)msgIt;
-	self = static_cast<Thread *>( cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread() );
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	if (msg->info.action != fplainn::Zui::NDACTION_INSTANTIATE)
 	{
@@ -327,72 +326,10 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 
 	floodplainn.zum.startDeviceReq(
 		CC"by-id", UDI_RESOURCES_NORMAL,
-//		NULL);
 		new __kCallback(&__korientationMain3));
 
 	printf(NOTICE ORIENT"About to dormant.\n");
 }
-
-#define UDI_PHYSIO_VERSION	0x101
-#include <udi_physio.h>
-#include <kernel/common/floodplainn/initInfo.h>
-#include <kernel/common/floodplainn/movableMemoryHeader.h>
-static udi_layout_t	sTLayout[] =
-{
-	UDI_DL_UBIT8_T, UDI_DL_UBIT8_T, UDI_DL_BUF,
-		0, 0, 0,
-	UDI_DL_UBIT16_T, UDI_DL_INLINE_UNTYPED,
-	UDI_DL_END
-};
-
-struct sT
-{
-
-	void dump(void)
-	{
-		printf(NOTICE"m0 %d, m1 %d, m3 0x%p, m4 %d, m5 0x%p.\n",
-			m0, m1, m2, m3, m4);
-	}
-
-	ubit8		m0;
-	ubit8		m1;
-	udi_buf_t	*m2;
-	udi_ubit16_t	m3;
-	void		*m4;
-};
-
-static udi_layout_t		trLayout[] =
-{
-	UDI_DL_UBIT32_T, UDI_DL_UBIT32_T,
-	UDI_DL_END
-};
-
-ubit8		mem0[512];
-ubit8		mem1[128];
-
-struct sMMa
-{
-	sMMa()
-	:
-	h(sizeof(a))
-	{}
-
-	fplainn::sMovableMemory		h;
-	udi_instance_attr_list_t	a;
-};
-
-struct sMMf
-{
-	sMMf()
-	:
-	h(sizeof(f))
-	{}
-
-	fplainn::sMovableMemory		h;
-	udi_filter_element_t		f;
-};
-
-status_t func0(void *mem, udi_layout_t *lay, ...);
 
 void __korientationMain3(MessageStream::sHeader *msgIt)
 {
@@ -401,36 +338,7 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	const sMetaInitEntry		*mie;
-	udi_mei_op_template_t		*opt;
-	status_t			sz0, sz1, sz2, sz3, sz4, sz5, sz6;
-	udi_enumerate_cb_t		uec, dst;
-
-	mie = floodplainn.zudi.findMetaInitInfo(CC"udi_mgmt");
-	fplainn::MetaInit		mp(mie->udi_meta_info);
-
-	opt = mp.getOpTemplate(UDI_MGMT_OPS_NUM, 2);
-
-printf(NOTICE"sizeof attr_list_t %d, filter_elem_t %d.\n",
-	sizeof(udi_instance_attr_list_t),
-	sizeof(udi_filter_element_t));
-
-	uec.attr_list = &(new sMMa)->a;
-	memset(uec.attr_list, 0x2B, sizeof(*uec.attr_list));
-	uec.filter_list = &(new sMMf)->f;
-	memset((void *)uec.filter_list, 0xB2, sizeof(*uec.filter_list));
-	sz0 = fplainn::sChannelMsg::getTotalInlineLayoutSize(
-		opt->visible_layout, NULL, &uec.gcb);
-
-	sz1 = fplainn::sChannelMsg::marshalInlineObjects(
-		mem0, &dst.gcb, &uec.gcb, opt->visible_layout, NULL);
-
-	printf(NOTICE"total inline size %d.\n", sz0);
-	printf(NOTICE"mem0[0] 0x%x, mem0[97] 0x%x\n", mem0[0], mem0[97]);
-	printf(NOTICE"mem0[98] 0x%x, mem0[98+167] 0x%x\n", mem0[98], mem0[98+167]);
-	printf(NOTICE"destcb pointers: %d, %d\n",
-		(void *)dst.attr_list == mem0,
-		(void *)dst.filter_list == mem0+98);
+printf(NOTICE ORIENT"orient 3.\n");
 	return;
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
@@ -451,13 +359,4 @@ printf(NOTICE"sizeof attr_list_t %d, filter_elem_t %d.\n",
 
 	printf(NOTICE ORIENT"Halting unfavourably.\n");
 	for (;FOREVER;) { asm volatile("hlt\n\t"); };
-}
-
-status_t func0(void *mem, udi_layout_t *lay, ...)
-{
-	va_list		args;
-
-	va_start(args, lay);
-	return fplainn::sChannelMsg::marshalStackArguments((ubit8 *)mem, args, lay);
-	va_end(args);
 }

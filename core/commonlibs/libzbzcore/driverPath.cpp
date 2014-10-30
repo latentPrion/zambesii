@@ -80,11 +80,11 @@ error_t __klzbzcore::driver::CachedInfo::generateMetaInfoCache(void)
 	return ERROR_SUCCESS;
 }
 
-error_t __klzbzcore::driver::CachedInfo::generateMetaCbScratchCache(void)
+error_t __klzbzcore::driver::CachedInfo::generateMetaCbCache(void)
 {
-	udi_cb_init_t				*currCbInfo;
-	List<sMetaCbScratchInfo>::Iterator	it;
-	sMetaCbScratchInfo			*curr;
+	udi_cb_init_t			*currCbInfo;
+	List<sMetaCbInfo>::Iterator	it;
+	sMetaCbInfo			*curr;
 
 	assert_fatal(this->initInfo != NULL);
 
@@ -107,12 +107,12 @@ error_t __klzbzcore::driver::CachedInfo::generateMetaCbScratchCache(void)
 	for (; currCbInfo != NULL && currCbInfo->cb_idx != 0; currCbInfo++)
 	{
 		sbit8					foundMetaCb=0;
-		sMetaCbScratchInfo			*tmp;
+		sMetaCbInfo			*tmp;
 
-		it = metaCbScratchInfo.begin();
-		for (; it != metaCbScratchInfo.end(); ++it)
+		it = metaCbInfo.begin();
+		for (; it != metaCbInfo.end(); ++it)
 		{
-			sMetaCbScratchInfo			*curr = *it;
+			sMetaCbInfo			*curr = *it;
 
 			if (curr->metaIndex == currCbInfo->meta_idx
 				&& curr->metaCbNum == currCbInfo->meta_cb_num)
@@ -127,7 +127,7 @@ error_t __klzbzcore::driver::CachedInfo::generateMetaCbScratchCache(void)
 		/* If we reached here, it means we have yet to allocate
 		 * a list entry for this meta_cb_num.
 		 **/
-		tmp = new sMetaCbScratchInfo(
+		tmp = new sMetaCbInfo(
 			currCbInfo->meta_idx,
 			currCbInfo->meta_cb_num,
 			currCbInfo->scratch_requirement);
@@ -142,14 +142,14 @@ error_t __klzbzcore::driver::CachedInfo::generateMetaCbScratchCache(void)
 			return ERROR_MEMORY_NOMEM;
 		};
 
-		metaCbScratchInfo.insert(tmp);
+		metaCbInfo.insert(tmp);
 	};
 
 	/* Now for the 2nd pass: find the highest scratch_requirement for each
 	 * meta_cb_num.
 	 **/
-	it = metaCbScratchInfo.begin();
-	for (; it != metaCbScratchInfo.end(); ++it)
+	it = metaCbInfo.begin();
+	for (; it != metaCbInfo.end(); ++it)
 	{
 		curr = *it;
 
@@ -176,7 +176,102 @@ error_t __klzbzcore::driver::CachedInfo::generateMetaCbScratchCache(void)
 		};
 	};
 
+	/* Third pass:
+	 * Link each meta_cb_num to its visible_layout. This will be used to
+	 * determine the total size of each meta_cb_num, as well as where in
+	 * the control block the UDI_DL_INLINE_DRIVER_TYPED object is pointed
+	 * to, if any such inline member exists in the meta_cb_num.
+	 *
+	 * This will enable us to quickly service udi_cb_alloc() calls.
+	 **/
+	it = metaCbInfo.begin();
+	for (; it != metaCbInfo.end(); ++it)
+	{
+		sMetaDescriptor			*cbMetaDesc;
+		udi_mei_ops_vec_template_t	*currVecTemplate;
+
+		curr = *it;
+		// Get the meta descriptor for this cb's meta_idx.
+		cbMetaDesc = getMetaDescriptor(curr->metaIndex);
+		if (cbMetaDesc == NULL) {
+			return ERROR_NOT_FOUND;
+		}
+
+		/**	EXPLANATION:
+		 * Basically want to run through each udi_mei_op_template_t
+		 * until we find one that describes an op that has the same
+		 * meta_cb_num as the sMetaCbInfo that we're trying to fill out
+		 * the layout information for.
+		 *
+		 * We only use the values from the FIRST such match that we find
+		 * and then exit. It is assumed that there will be no
+		 * inconsistencies in the metalanguage library's visible_layout
+		 * descriptors for any particular meta_cb_num.
+		 *
+		 **	ALTERNATIVE:
+		 * The alternative is to go through every such match, and
+		 * compare it to every other, and verify consistency. This would
+		 * enable us to catch inconsistencies, and warn the metalanguage
+		 * library's developer to fix them.
+		 *
+		 * But inconsistencies in visible_layouts for any meta_cb_num
+		 * will not cause the kernel to be unable to run the driver;
+		 * they will just make the driver's control blocks' sizes be
+		 * unequal to what the driver expected. But the kernel and the
+		 * Zbz UDI environment will remain unaffected, largely.
+		 *
+		 * Perhaps we can do these extra checks later, but for now, I'm
+		 * taking the quick approach.
+		 **/
+		currVecTemplate = cbMetaDesc->initInfo->ops_vec_template_list;
+		for (; currVecTemplate != NULL
+			&& currVecTemplate->meta_ops_num != 0;
+			currVecTemplate++)
+		{
+			udi_mei_op_template_t	*currOpTemplate;
+
+			currOpTemplate = currVecTemplate->op_template_list;
+			for (; currOpTemplate != NULL
+				&& currOpTemplate->op_name != NULL;
+				currOpTemplate++)
+			{
+				status_t		sizeTmp;
+
+				if (currOpTemplate->meta_cb_num
+					!= curr->metaCbNum)
+					{ continue; };
+
+				curr->visibleLayout = currOpTemplate
+					->visible_layout;
+
+				/* We can also precalculate the visible size
+				 * here if we wish.
+				 **/
+				sizeTmp = fplainn::sChannelMsg
+					::zudi_layout_get_size(
+						currOpTemplate->visible_layout,
+						1);
+
+				if (sizeTmp < 0)
+					{ return ERROR_INVALID_FORMAT; };
+
+				curr->visibleSize = sizeTmp;
+			};
+		};
+	};
+
 	return ERROR_SUCCESS;
+}
+
+void __klzbzcore::driver::sMetaCbInfo::dump(utf8Char *metaName)
+{
+	printf(NOTICE"meta_idx %d (%s), cb_num %d: "
+		"scratch %dB, visible %dB.\n",
+		metaIndex, ((metaName == NULL) ? CC"name unknown" : metaName),
+		metaCbNum,
+		scratchRequirement, visibleSize);
+
+	fplainn::sChannelMsg::dumpLayout(visibleLayout);
 }
 
 void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
@@ -223,8 +318,8 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 		callerCb(self, ERROR_MEMORY_NOMEM); return;
 	};
 
-	err0 = cache->generateMetaCbScratchCache();
 	err1 = cache->generateMetaInfoCache();
+	err0 = cache->generateMetaCbCache();
 	if (err0 != ERROR_SUCCESS || err1 != ERROR_SUCCESS)
 	{
 		printf(ERROR LZBZCORE"driver:main %s: Failed to generate "

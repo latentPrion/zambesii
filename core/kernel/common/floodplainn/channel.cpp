@@ -82,7 +82,8 @@ error_t fplainn::sChannelMsg::send(
 	/**	EXPLANATION:
 	 * In this one we need to do a little more work; we must get the
 	 * region for the current thread (only driver processes should call this
-	 * function), and then we can proceed.
+	 * function), and then we can proceed to marshal the call and then
+	 * convey it to the callee.
 	 **/
 	if (gcb == NULL || metaName == NULL || meta_ops_num == 0)
 		{ return ERROR_INVALID_ARG; };
@@ -113,6 +114,7 @@ error_t fplainn::sChannelMsg::send(
 		return ERROR_INVALID_FORMAT;
 	};
 
+	// Allocate enough marshal space for all components of the call.
 	msg = new (sizeof(udi_cb_t) + visibleSize + marshalSize + inlineSize)
 		fplainn::sChannelMsg(
 			0,
@@ -121,15 +123,6 @@ error_t fplainn::sChannelMsg::send(
 
 	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
 	data8 = (ubit8 *)msg->data;
-
-	/* At this point, we have enough memory to hold almost everything.
-	 * This marshalling sequence does not support inline elements properly.
-	 *
-	 * Specifically, it supports UDI_DL_INLINE_DRIVER_TYPED inline objects,
-	 * but no others.
-	 *
-	 * This can be easily remedied.
-	 **/
 
 	// Marshal the generic control block.
 	memcpy(data8, gcb8, sizeof(udi_cb_t));

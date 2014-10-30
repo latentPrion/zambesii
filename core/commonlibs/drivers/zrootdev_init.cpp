@@ -94,6 +94,39 @@ static const udi_secondary_init_t	sectmp[] =
 	{ 0, 0 }
 };
 
+udi_layout_t				l20b[] =
+	{ UDI_DL_UBIT8_T, UDI_DL_UBIT32_T, UDI_DL_INLINE_UNTYPED,
+		UDI_DL_UBIT16_T, UDI_DL_UBIT16_T, UDI_DL_UBIT16_T,
+		UDI_DL_END };
+
+udi_layout_t				l12b[] =
+	{ UDI_DL_ARRAY,
+		3, UDI_DL_UBIT32_T,
+		UDI_DL_END,
+	UDI_DL_END };
+
+udi_layout_t				l32b[] =
+	{ UDI_DL_ARRAY, 2, UDI_DL_UBIT8_T, UDI_DL_UBIT16_T,
+		UDI_DL_MOVABLE_UNTYPED, UDI_DL_MOVABLE_UNTYPED,
+		UDI_DL_INLINE_UNTYPED,
+		UDI_DL_MOVABLE_TYPED,
+			UDI_DL_UBIT8_T, UDI_DL_UBIT16_T,
+			UDI_DL_UBIT32_T,
+			UDI_DL_END,
+		UDI_DL_UBIT16_T, UDI_DL_UBIT8_T, UDI_DL_UBIT8_T,
+		UDI_DL_END };
+
+static const udi_cb_init_t		cbtmp[] =
+{
+	{ 1, 1, 1, 20, 0, NULL },
+	{ 1, 1, 1, 30, 0, NULL },
+	{ 1, 1, 1, 5, 0, NULL },
+	{ 1, 1, 2, 2, 0, NULL },
+	{ 1, 1, 2, 2, 0, NULL },
+	{ 1, 1, 2, 3, 0, NULL },
+	{ 0, 0, 0, 0, 0, NULL }
+};
+
 extern "C" const udi_init_t			zrootdev_init_info =
 {
 	&zrootdev_primary_init_info,

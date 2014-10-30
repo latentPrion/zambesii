@@ -1,12 +1,14 @@
 
 #define UDI_VERSION	0x101
 #include <udi.h>
+#include <__kstdlib/__kclib/string.h>
 #include <commonlibs/libzbzcore/libzudi.h>
 #include <commonlibs/libzbzcore/libzbzcore.h>
 #include <kernel/common/thread.h>
 #include <kernel/common/process.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/floodplainn/floodplainn.h>
+#include <kernel/common/floodplainn/movableMemoryHeader.h>
 #include <kernel/common/floodplainn/initInfo.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -367,12 +369,11 @@ void udi_mei_call(
 	 *   block layout.
 	 * * Use the meta_info->...->marshal_layout member to get the argument
 	 *   layout on the stack.
-	 * * Combine these to deduce the total size of extra storage required
-	 *   for the marshalled block.
-	 * * Allocate a kernel message structure with extra room at the end
-	 *   to hold the entire thing.
-	 * * Marshal all arguments into the allocated space.
-	 * * </end>.
+	 * * Analyze the control block's header-metadata to determine whether
+	 *   or not it has a UDI_DL_INLINE_DRIVER_TYPED object within it. If
+	 *   it does, get the udi_cb_init_t::inline_layout for the CB.
+	 * * Pass all of these to send(), and let send() marshal the entire call
+	 *   into a message.
 	 **/
 	if (meta_ops_num == 0) { return; };
 	if (gcb == NULL || gcb->channel == NULL || meta_info == NULL)
@@ -470,4 +471,25 @@ void _udi_channel_event_complete(udi_channel_event_cb_t *cb, ...)
 void udi_channel_event_complete(udi_channel_event_cb_t *cb, udi_status_t status)
 {
 	_udi_channel_event_complete(cb, status);
+}
+
+void udi_mem_alloc (
+	udi_mem_alloc_call_t *callback, udi_cb_t *gcb,
+	udi_size_t size, udi_ubit8_t flags
+	)
+{
+	fplainn::sMovableMemory		*mem;
+
+	// In the kernel we only give out movable memory.
+	if (size == 0) { callback(gcb, NULL); };
+
+	mem = new (size) fplainn::sMovableMemory(size);
+	if (mem == NULL) { callback(gcb, NULL); };
+
+	mem++;
+	if (!FLAG_TEST(flags, UDI_MEM_NOZERO)) {
+		memset(mem, 0, size);
+	};
+
+	callback(gcb, mem);
 }

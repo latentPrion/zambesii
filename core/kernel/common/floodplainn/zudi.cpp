@@ -9,6 +9,7 @@
 #include <kernel/common/floodplainn/floodplainn.h>
 #include <kernel/common/floodplainn/zudi.h>
 #include <kernel/common/floodplainn/device.h>
+#include <kernel/common/floodplainn/movableMemoryHeader.h>
 
 
 error_t fplainn::Zudi::initialize(void)
@@ -20,6 +21,17 @@ error_t fplainn::Zudi::initialize(void)
 
 	return ERROR_SUCCESS;
 }
+
+void *fplainn::sMovableMemory::operator new(size_t sz, uarch_t objectSize)
+{
+	return ::operator new(sz + objectSize);
+}
+
+void fplainn::sMovableMemory::operator delete(void *mem)
+{
+	::operator delete(mem);
+}
+
 
 error_t fplainn::Zudi::findDriver(utf8Char *fullName, fplainn::Driver **retDrv)
 {

@@ -4,6 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kcxxlib/new>
 	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/floodplainn/floodplainn.h>
 
 #define LZBZCORE	"lzbzcore: "
@@ -30,9 +31,9 @@ namespace __klzbzcore
 
 		void main(Thread *self, mainCbFn *callback);
 
-		struct sMetaCbScratchInfo
+		struct sMetaCbInfo
 		{
-			sMetaCbScratchInfo(
+			sMetaCbInfo(
 				udi_index_t meta_idx,
 				udi_index_t meta_cb_num,
 				udi_size_t scratch_requirement)
@@ -42,9 +43,13 @@ namespace __klzbzcore
 			scratchRequirement(scratch_requirement)
 			{}
 
-			List<sMetaCbScratchInfo>::sHeader	listHeader;
-			udi_index_t	metaIndex, metaCbNum;
-			udi_size_t	scratchRequirement;
+			void dump(utf8Char *metaName);
+
+			List<sMetaCbInfo>::sHeader	listHeader;
+			udi_index_t			metaIndex, metaCbNum;
+			udi_size_t			scratchRequirement;
+			udi_layout_t			*visibleLayout;
+			udi_size_t			visibleSize;
 		};
 
 		class CachedInfo
@@ -60,15 +65,15 @@ namespace __klzbzcore
 				return metaInfos.initialize();
 			}
 
-			error_t generateMetaCbScratchCache(void);
+			error_t generateMetaCbCache(void);
 			error_t generateMetaInfoCache(void);
 
 			~CachedInfo(void)
 			{
-				List<sMetaCbScratchInfo>::Iterator	it;
+				List<sMetaCbInfo>::Iterator	it;
 
-				it = metaCbScratchInfo.begin();
-				for (; it != metaCbScratchInfo.end(); ++it)
+				it = metaCbInfo.begin();
+				for (; it != metaCbInfo.end(); ++it)
 				{
 					delete *it;
 				};
@@ -76,18 +81,27 @@ namespace __klzbzcore
 
 			void dump(void)
 			{
-				List<sMetaCbScratchInfo>::Iterator	it;
+				List<sMetaCbInfo>::Iterator	it;
 
-				it = metaCbScratchInfo.begin();
-				for (; it != metaCbScratchInfo.end(); ++it)
+				printf(NOTICE"cache @0x%p: dumping.\n");
+				it = metaCbInfo.begin();
+				for (; it != metaCbInfo.end(); ++it)
 				{
-					sMetaCbScratchInfo	*tmp = *it;
+					sMetaCbInfo	*tmp = *it;
+					sMetaDescriptor	*metaDesc;
 
-					printf(NOTICE"meta_idx %d, "
-						"meta_cb_num %d, "
-						"max scratch required %d.\n",
-						tmp->metaIndex, tmp->metaCbNum,
-						tmp->scratchRequirement);
+					metaDesc = getMetaDescriptor(
+						tmp->metaIndex);
+
+					if (metaDesc == NULL)
+					{
+						printf(ERROR"dump: Failed to "
+							"get metaname for "
+							"meta_idx %d.\n",
+							tmp->metaIndex);
+					};
+
+					tmp->dump(metaDesc->name);
 				};
 			}
 
@@ -153,12 +167,12 @@ namespace __klzbzcore
 			status_t getScratchSizeFor(
 				udi_index_t metaIndex, udi_index_t metaCbNum)
 			{
-				List<sMetaCbScratchInfo>::Iterator	it;
+				List<sMetaCbInfo>::Iterator	it;
 
-				it = metaCbScratchInfo.begin();
-				for (; it != metaCbScratchInfo.end(); ++it)
+				it = metaCbInfo.begin();
+				for (; it != metaCbInfo.end(); ++it)
 				{
-					sMetaCbScratchInfo	*curr = *it;
+					sMetaCbInfo	*curr = *it;
 
 					if (curr->metaIndex != metaIndex
 						|| curr->metaCbNum != metaCbNum)
@@ -171,7 +185,7 @@ namespace __klzbzcore
 			}
 
 			const udi_init_t		*initInfo;
-			List<sMetaCbScratchInfo>	metaCbScratchInfo;
+			List<sMetaCbInfo>		metaCbInfo;
 			PtrList<sMetaDescriptor>	metaInfos;
 		};
 

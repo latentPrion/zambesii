@@ -8,6 +8,7 @@
 #include <commonlibs/libzbzcore/libzudi.h>
 #include <kernel/common/process.h>
 #include <kernel/common/floodplainn/initInfo.h>
+#include <kernel/common/floodplainn/movableMemoryHeader.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 
@@ -899,6 +900,74 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 		msg->data->scratch = NULL;
 	};
 
+	if (msg->opsIndex == 2)
+	{
+		udi_enumerate_cb_t		*ecb;
+		udi_primary_init_t		*primaryInit;
+		fplainn::sMovableMemory		*tmp;
+
+		/* Allocate the child_data and attr_list.
+		 *
+		 * child_data must be UDI_MEM_MOVABLE, as stated by the spec.
+		 * attr_list is UDI_MEM_MOVABLE in Zambesii because that is the
+		 * best way to handle it since it means that the marshalling
+		 * code will automatically marshal it out for us and pass it to
+		 * the kernel.
+		 **/
+		ecb = (udi_enumerate_cb_t *)msg->data;
+		primaryInit = drvInfoCache->initInfo->primary_init_info;
+
+		if (primaryInit->child_data_size > 0)
+		{
+			tmp = new (primaryInit->child_data_size)
+				fplainn::sMovableMemory(
+					primaryInit->child_data_size);
+
+			if (tmp == NULL)
+			{
+				printf(ERROR"rgn:chan:mgmthandler: failed to "
+					"alloc child_data mem.\n");
+
+				return;
+			};
+
+			ecb->child_data = ++tmp;
+		}
+		else {
+			ecb->child_data = NULL;
+		};
+
+		if (ecb->attr_list == NULL
+			&& primaryInit->enumeration_attr_list_length > 0)
+		{
+			uarch_t			allocSize;
+
+			allocSize = sizeof(udi_instance_attr_list_t)
+				* primaryInit->enumeration_attr_list_length;
+
+			tmp = new (allocSize) fplainn::sMovableMemory(
+				allocSize);
+
+			if (tmp == NULL)
+			{
+				printf(ERROR"rgn:chan:mgmthandler: failed to "
+					"alloc instance_attr_list.\n");
+
+				return;
+			};
+
+			ecb->attr_list = (udi_instance_attr_list_t *)++tmp;
+		}
+		else
+		{
+			/* If the attr_list is non-NULL, it means that this is
+			 * a UDI_ENUMERATE_DIRECTED operation, and the
+			 * environment has supplied the attrs itself. Leave
+			 * the attr_list pointer alone.
+			 **/
+		};
+	};
+
 	opTemplate->backend_stub(
 		msg->opsVector[msg->opsIndex - 1], msg->data,
 		((ubit8 *)msg->data) + sizeof(udi_cb_t) + visibleSize);
@@ -915,15 +984,32 @@ void __klzbzcore::region::channel::eventIndMeiCall(
 {
 	udi_channel_event_cb_t			*cb;
 	udi_channel_event_ind_op_t		*op;
+	lzudi::sEndpointContext			*endpContext;
 
 	cb = (udi_channel_event_cb_t *)msg->data;
 	op = (udi_channel_event_ind_op_t *)msg->opsVector[0];
+	endpContext = (lzudi::sEndpointContext *)msg->endpointPrivateData;
 
 	/**	EXPLANATION:
 	 * The really great part about udi_channel_event_ind is that there is
 	 * nothing to unmarshal. The size of the visible portion of the control
 	 * block is irrelevant, and it takes no arguments either.
+	 *
+	 * All we have to do is allocate the bind_cb_index control block for
+	 * the driver, and we're set.
 	 **/
+	if (cb->event == UDI_CHANNEL_BOUND && endpContext->bindCbIndex != 0)
+	{
+		/* The bind_cb is only filled in when the event being processed
+		 * is a UDI_CHANNEL_BOUND event. In addition, if the
+		 * bind_cb_index is 0, then no bind_cb is allocated.
+		 **/
+
+	}
+	else {
+		cb->params.internal_bound.bind_cb = NULL;
+	};
+
 	op(cb);
 }
 
