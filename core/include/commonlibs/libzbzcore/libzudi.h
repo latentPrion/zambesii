@@ -17,6 +17,11 @@ namespace fplainn
 	class Endpoint;
 }
 
+namespace __klzbzcore
+{
+	namespace driver { class CachedInfo; }
+}
+
 namespace lzudi
 {
 	/* Used to encompass the data needed for a channel to work correctly.
@@ -85,6 +90,25 @@ namespace lzudi
 		udi_init_context_t		*rdata;
 		PtrList<sEndpointContext>	endpoints;
 	};
+
+	struct sControlBlock
+	{
+		sControlBlock(udi_layout_t *drvTypedLayout)
+		:
+		driverTypedLayout(drvTypedLayout)
+		{}
+
+		void *operator new(size_t sz, uarch_t payloadSize);
+		void operator delete(void *mem);
+
+		udi_layout_t		*driverTypedLayout;
+	};
+
+	void *udi_mem_alloc_sync(udi_size_t size, udi_ubit8_t flags);
+
+	error_t udi_cb_alloc_sync(
+		__klzbzcore::driver::CachedInfo *drvInfoCache,
+		udi_index_t cb_idx, udi_cb_t **retcb);
 }
 
 #endif

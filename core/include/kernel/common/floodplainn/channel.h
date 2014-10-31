@@ -477,7 +477,7 @@ namespace fplainn
 			return align(ret, sizeof(void*));
 		};
 
-		static status_t getTotalInlineLayoutSize(
+		static status_t getTotalMarshalSpaceInlineRequirements(
 			udi_layout_t *layout, udi_layout_t *drvTypedLayout,
 			udi_cb_t *srcCb);
 
@@ -486,6 +486,13 @@ namespace fplainn
 
 		static status_t marshalInlineObjects(
 			ubit8 *dest, udi_cb_t *_destCb, udi_cb_t *_srcCb,
+			udi_layout_t *layout, udi_layout_t *drvTypedLayout);
+
+		static status_t getTotalCbInlineRequirements(
+			udi_layout_t *layout, udi_layout_t *drvTypedLayout);
+
+		static error_t initializeCbInlinePointers(
+			udi_cb_t *cb, ubit8 *inlineSpace,
 			udi_layout_t *layout, udi_layout_t *drvTypedLayout);
 
 		static void dumpLayout(udi_layout_t *lay)

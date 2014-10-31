@@ -184,6 +184,26 @@ namespace __klzbzcore
 				return ERROR_NO_MATCH;
 			}
 
+			sMetaCbInfo *getMetaCbInfo(
+				udi_index_t metaIndex, udi_index_t metaCbNum)
+			{
+				List<sMetaCbInfo>::Iterator	it;
+
+				it = metaCbInfo.begin();
+				for (; it != metaCbInfo.end(); ++it)
+				{
+					sMetaCbInfo	*curr = *it;
+
+					if (curr->metaIndex != metaIndex
+						|| curr->metaCbNum != metaCbNum)
+						{ continue; };
+
+					return curr;
+				};
+
+				return NULL;
+			}
+
 			const udi_init_t		*initInfo;
 			List<sMetaCbInfo>		metaCbInfo;
 			PtrList<sMetaDescriptor>	metaInfos;

@@ -118,9 +118,9 @@ udi_layout_t				l32b[] =
 
 static const udi_cb_init_t		cbtmp[] =
 {
-	{ 1, 1, 1, 20, 0, NULL },
-	{ 1, 1, 1, 30, 0, NULL },
-	{ 1, 1, 1, 5, 0, NULL },
+	{ 1, 1, 1, 0, 0, NULL },
+	{ 1, 1, 1, 0, 0, NULL },
+	{ 1, 1, 1, 0, 0, NULL },
 	{ 1, 1, 2, 2, 0, NULL },
 	{ 1, 1, 2, 2, 0, NULL },
 	{ 1, 1, 2, 3, 0, NULL },
@@ -133,6 +133,6 @@ extern "C" const udi_init_t			zrootdev_init_info =
 	// No secondary regions needed.
 	sectmp,
 	zrootdev_ops_init_info,
-	NULL, NULL, NULL
+	cbtmp, NULL, NULL
 };
 

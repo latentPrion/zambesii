@@ -904,7 +904,6 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 	{
 		udi_enumerate_cb_t		*ecb;
 		udi_primary_init_t		*primaryInit;
-		fplainn::sMovableMemory		*tmp;
 
 		/* Allocate the child_data and attr_list.
 		 *
@@ -919,19 +918,17 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 
 		if (primaryInit->child_data_size > 0)
 		{
-			tmp = new (primaryInit->child_data_size)
-				fplainn::sMovableMemory(
-					primaryInit->child_data_size);
+			ecb->child_data = new (lzudi::udi_mem_alloc_sync(
+				primaryInit->child_data_size,
+				UDI_MEM_NOZERO | UDI_MEM_MOVABLE)) ubit8;
 
-			if (tmp == NULL)
+			if (ecb->child_data == NULL)
 			{
 				printf(ERROR"rgn:chan:mgmthandler: failed to "
 					"alloc child_data mem.\n");
 
 				return;
 			};
-
-			ecb->child_data = ++tmp;
 		}
 		else {
 			ecb->child_data = NULL;
@@ -945,18 +942,17 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 			allocSize = sizeof(udi_instance_attr_list_t)
 				* primaryInit->enumeration_attr_list_length;
 
-			tmp = new (allocSize) fplainn::sMovableMemory(
-				allocSize);
+			ecb->attr_list = new (lzudi::udi_mem_alloc_sync(
+				allocSize, UDI_MEM_MOVABLE))
+				udi_instance_attr_list_t;
 
-			if (tmp == NULL)
+			if (ecb->attr_list == NULL)
 			{
 				printf(ERROR"rgn:chan:mgmthandler: failed to "
 					"alloc instance_attr_list.\n");
 
 				return;
 			};
-
-			ecb->attr_list = (udi_instance_attr_list_t *)++tmp;
 		}
 		else
 		{
@@ -976,7 +972,7 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 void __klzbzcore::region::channel::eventIndMeiCall(
 	fplainn::sChannelMsg *msg,
 	Thread *,
-	__klzbzcore::driver::CachedInfo *,
+	__klzbzcore::driver::CachedInfo *drvInfoCache,
 	lzudi::sRegion *,
 	__klzbzcore::driver::CachedInfo::sMetaDescriptor *,
 	udi_mei_op_template_t *
@@ -985,6 +981,7 @@ void __klzbzcore::region::channel::eventIndMeiCall(
 	udi_channel_event_cb_t			*cb;
 	udi_channel_event_ind_op_t		*op;
 	lzudi::sEndpointContext			*endpContext;
+	error_t					err;
 
 	cb = (udi_channel_event_cb_t *)msg->data;
 	op = (udi_channel_event_ind_op_t *)msg->opsVector[0];
@@ -1004,7 +1001,17 @@ void __klzbzcore::region::channel::eventIndMeiCall(
 		 * is a UDI_CHANNEL_BOUND event. In addition, if the
 		 * bind_cb_index is 0, then no bind_cb is allocated.
 		 **/
+		err = lzudi::udi_cb_alloc_sync(
+			drvInfoCache, endpContext->bindCbIndex,
+			&cb->params.internal_bound.bind_cb);
 
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR"rgn:handler:event_ind: Failed to alloc "
+				"bind_cb for CHANNEL_BOUND event.\n");
+
+			return;
+		};
 	}
 	else {
 		cb->params.internal_bound.bind_cb = NULL;

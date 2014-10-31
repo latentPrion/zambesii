@@ -478,18 +478,132 @@ void udi_mem_alloc (
 	udi_size_t size, udi_ubit8_t flags
 	)
 {
+	void		*mem;
+
+	mem = lzudi::udi_mem_alloc_sync(size, flags);
+	if (mem == NULL) { callback(gcb, NULL); };
+
+	callback(gcb, mem);
+}
+
+void *lzudi::udi_mem_alloc_sync(udi_size_t size, udi_ubit8_t flags)
+{
 	fplainn::sMovableMemory		*mem;
 
-	// In the kernel we only give out movable memory.
-	if (size == 0) { callback(gcb, NULL); };
+	if (size == 0) { return NULL; };
 
+	// In the kernel we only give out movable memory.
 	mem = new (size) fplainn::sMovableMemory(size);
-	if (mem == NULL) { callback(gcb, NULL); };
+	if (mem == NULL) { return NULL; };
 
 	mem++;
 	if (!FLAG_TEST(flags, UDI_MEM_NOZERO)) {
 		memset(mem, 0, size);
 	};
 
-	callback(gcb, mem);
+	return mem;
+}
+
+void *lzudi::sControlBlock::operator new(size_t sz, uarch_t payloadSize)
+{
+	return ::operator new(sz + payloadSize);
+}
+
+void lzudi::sControlBlock::operator delete(void *mem)
+{
+	::operator delete(mem);
+}
+
+void udi_cb_alloc(
+	udi_cb_alloc_call_t *callback,
+	udi_cb_t *gcb,
+	udi_index_t cb_idx,
+	udi_channel_t default_channel
+	)
+{
+	error_t					err;
+	udi_cb_t				*cb;
+	__klzbzcore::driver::CachedInfo		*drvInfoCache;
+	Thread					*caller;
+
+	if (gcb == NULL) { callback(gcb, NULL); return; };
+
+	caller = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	if (caller->parent->getType() != ProcessStream::DRIVER)
+		{ callback(gcb, NULL); return; };
+
+	drvInfoCache = caller->getRegion()->parent->device->driverInstance
+		->cachedInfo;
+
+	err = lzudi::udi_cb_alloc_sync(drvInfoCache, cb_idx, &cb);
+	if (err != ERROR_SUCCESS) { callback(gcb, NULL); };
+
+	callback(gcb, cb);
+}
+
+error_t lzudi::udi_cb_alloc_sync(
+	__klzbzcore::driver::CachedInfo *drvInfoCache,
+	udi_index_t cb_idx, udi_cb_t **retcb
+	)
+{
+	udi_cb_init_t				*cbInit;
+	__klzbzcore::driver::sMetaCbInfo	*metaCbDesc;
+	fplainn::DriverInit
+					drvInfoParser(drvInfoCache->initInfo);
+	status_t				totalInlineSize;
+	lzudi::sControlBlock			*cbTmp;
+
+	cbInit = drvInfoParser.getCbInit(cb_idx);
+	if (cbInit == NULL){ return ERROR_NOT_FOUND; };
+
+	metaCbDesc = drvInfoCache->getMetaCbInfo(
+		cbInit->meta_idx, cbInit->meta_cb_num);
+
+	if (metaCbDesc == NULL) { return ERROR_NOT_FOUND; };
+
+	/* Now using the visible_layout from the metaCbDesc that we cached
+	 * in driverPath::main, we can analyze the layout of the visible
+	 * portion of to-be-allocated CB, and determine how much inline memory
+	 * will be required for it.
+	 **/
+	totalInlineSize = fplainn::sChannelMsg::getTotalCbInlineRequirements(
+		metaCbDesc->visibleLayout, cbInit->inline_layout);
+
+	if (totalInlineSize < 0) { return (error_t)totalInlineSize; };
+
+	/* Next, we can now allocate the cb since we know how large it must
+	 * be now. Make sure to include the scratch size since it is also to be
+	 * part of the allocated size of the CB.
+	 *
+	 * We could have used the udi_cb_init_t::scratch_requirement member,
+	 * but since we have already cached the maximum size of the required
+	 * scratch space for all CBs of a particular meta_idx+meta_cb_num,
+	 * we might as well use that computed maximum value instead.
+	 **/
+	cbTmp = new (
+		sizeof(udi_cb_t) + metaCbDesc->visibleSize
+			+ totalInlineSize
+			+ metaCbDesc->scratchRequirement)
+		lzudi::sControlBlock(cbInit->inline_layout);
+
+	if (cbTmp == NULL) { return ERROR_MEMORY_NOMEM; };
+	*retcb = (udi_cb_t *)++cbTmp;
+
+	/* Finally, we initialize the scratch pointer, and we have to
+	 * initialize the pointers in the visible portion of
+	 * the CB to point to their relevant inline space offsets.
+	 **/
+	if (metaCbDesc->scratchRequirement > 0)
+	{
+		(*retcb)->scratch = ((ubit8 *)*retcb) + sizeof(udi_cb_t)
+			+ metaCbDesc->visibleSize + totalInlineSize;
+	}
+	else {
+		(*retcb)->scratch = NULL;
+	};
+
+	return fplainn::sChannelMsg::initializeCbInlinePointers(
+		*retcb,
+		((ubit8 *)*retcb) + sizeof(udi_cb_t) + metaCbDesc->visibleSize,
+		metaCbDesc->visibleLayout, cbInit->inline_layout);
 }

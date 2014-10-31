@@ -44,7 +44,11 @@ static utf8Char *events[] =
 void zrootdev_bus_channel_event_ind(udi_channel_event_cb_t *cb)
 {
 	(void)cb;
-	printf(NOTICE"ayo~! %s. Chan 0x%p.\n", events[cb->event], cb->gcb.channel);
+	printf(NOTICE"ayo~! %s. Chan 0x%p.\n"
+		"\tcb @0x%p, bind_cb @0x%p, bind_cb->scratch 0x%p.\n",
+		events[cb->event], cb->gcb.channel,
+		cb, cb->params.internal_bound.bind_cb,
+		cb->params.internal_bound.bind_cb->scratch);
 
 	udi_channel_event_complete(cb, UDI_OK);
 }

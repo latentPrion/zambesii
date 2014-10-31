@@ -101,8 +101,9 @@ error_t fplainn::sChannelMsg::send(
 	marshalSize = fplainn::sChannelMsg::zudi_layout_get_size(
 		layouts[LAYOUT_MARSHAL], 0);
 
-	inlineSize = fplainn::sChannelMsg::getTotalInlineLayoutSize(
-		layouts[LAYOUT_VISIBLE], layouts[LAYOUT_INLINE], gcb);
+	inlineSize = fplainn::sChannelMsg
+		::getTotalMarshalSpaceInlineRequirements(
+			layouts[LAYOUT_VISIBLE], layouts[LAYOUT_INLINE], gcb);
 
 	if (visibleSize < 0 || marshalSize < 0 || inlineSize < 0)
 	{

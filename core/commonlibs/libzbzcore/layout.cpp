@@ -242,7 +242,7 @@ status_t fplainn::sChannelMsg::marshalStackArguments(
 	return ERROR_SUCCESS;
 }
 
-status_t fplainn::sChannelMsg::getTotalInlineLayoutSize(
+status_t fplainn::sChannelMsg::getTotalMarshalSpaceInlineRequirements(
 	udi_layout_t *layout, udi_layout_t *drvTypedLayout,
 	udi_cb_t *_srcCb
 	)
@@ -376,6 +376,95 @@ status_t fplainn::sChannelMsg::marshalInlineObjects(
 			*(void **)(destCb + ptrOffset) = NULL;
 		};
 	};
+
+	return ERROR_SUCCESS;
+}
+
+status_t fplainn::sChannelMsg::getTotalCbInlineRequirements(
+	udi_layout_t *layout, udi_layout_t *drvTypedLayout
+	)
+{
+	status_t		ret=0;
+	uarch_t			skipCount, currElemSize;
+
+	(void)currElemSize;
+
+	for (udi_layout_t *curr=layout;
+		curr != NULL && *curr != UDI_DL_END;
+		curr += skipCount)
+	{
+		status_t			currLayoutSize=0;
+
+		currElemSize = zudi_layout_get_element_size(
+			*curr, curr + 1, &skipCount);
+
+		if (skipCount == 0) { return ERROR_INVALID_FORMAT; };
+
+		switch (*curr)
+		{
+		case UDI_DL_INLINE_TYPED:
+			currLayoutSize = zudi_layout_get_size(curr + 1, 0);
+			break;
+
+		case UDI_DL_INLINE_DRIVER_TYPED:
+			if (drvTypedLayout == NULL)
+				{ return ERROR_INVALID_ARG; };
+
+			currLayoutSize = zudi_layout_get_size(drvTypedLayout, 0);
+			break;
+
+		default: continue; break;
+		}
+
+		if (currLayoutSize < 0) { return currLayoutSize; };
+		ret += currLayoutSize;
+	}
+
+	return ret;
+}
+
+error_t fplainn::sChannelMsg::initializeCbInlinePointers(
+	udi_cb_t *cb, ubit8 *inlineSpace,
+	udi_layout_t *layout, udi_layout_t *drvTypedLayout
+	)
+{
+	status_t		inlineSpaceOffset=0;
+	uarch_t			ptrOffset=0, skipCount, currElemSize;
+	ubit8			*cb8 = (ubit8 *)cb;
+
+	for (udi_layout_t *curr=layout;
+		curr != NULL && *curr != UDI_DL_END;
+		curr += skipCount, ptrOffset += currElemSize)
+	{
+		status_t			currLayoutSize=0;
+
+		currElemSize = zudi_layout_get_element_size(
+			*curr, curr + 1, &skipCount);
+
+		if (skipCount == 0) { return ERROR_INVALID_FORMAT; };
+		ptrOffset = align(ptrOffset, currElemSize);
+
+		switch (*curr)
+		{
+		case UDI_DL_INLINE_TYPED:
+			currLayoutSize = zudi_layout_get_size(curr + 1, 0);
+			break;
+
+		case UDI_DL_INLINE_DRIVER_TYPED:
+			if (drvTypedLayout == NULL)
+				{ return ERROR_INVALID_ARG; };
+
+			currLayoutSize = zudi_layout_get_size(drvTypedLayout, 0);
+			break;
+
+		default: continue; break;
+		}
+
+		if (currLayoutSize < 0) { return currLayoutSize; };
+
+		*(ubit8 **)(cb8 + ptrOffset) = inlineSpace + inlineSpaceOffset;
+		inlineSpaceOffset += currLayoutSize;
+	}
 
 	return ERROR_SUCCESS;
 }
