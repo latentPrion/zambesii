@@ -8,7 +8,7 @@
 #include <kernel/common/process.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/floodplainn/floodplainn.h>
-#include <kernel/common/floodplainn/movableMemoryHeader.h>
+#include <kernel/common/floodplainn/movableMemory.h>
 #include <kernel/common/floodplainn/initInfo.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
@@ -329,7 +329,7 @@ void udi_mei_call(
 	lzudi::sEndpointContext		*endp;
 	lzudi::sRegion			*r;
 	Thread				*thread;
-//	sCbHeader			*cbHeader;
+	lzudi::sControlBlock		*cbHeader;
 	udi_mei_op_template_t		*opTemplate;
 
 	/**	EXPLANATION:
@@ -383,8 +383,8 @@ void udi_mei_call(
 	};
 
 	va_start(args, vec_idx);
-//	cbHeader = (sCbHeader *)gcb;
-//	cbHeader--;
+	cbHeader = (lzudi::sControlBlock *)gcb;
+	cbHeader--;
 	endp = (lzudi::sEndpointContext *)gcb->channel;
 	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
@@ -402,8 +402,7 @@ void udi_mei_call(
 
 	layouts[LAYOUT_VISIBLE] = opTemplate->visible_layout;
 	layouts[LAYOUT_MARSHAL] = opTemplate->marshal_layout;
-//	layouts[LAYOUT_INLINE] = cbHeader->inlineLayout;
-	layouts[LAYOUT_INLINE] = blankInlineLayout;
+	layouts[LAYOUT_INLINE] = cbHeader->driverTypedLayout;
 
 	// Finally, pass the marshalling specification to Zudi::send().
 	floodplainn.zudi.send(
