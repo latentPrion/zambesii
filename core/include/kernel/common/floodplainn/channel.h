@@ -497,9 +497,10 @@ namespace fplainn
 
 		static void dumpLayout(udi_layout_t *lay)
 		{
+			uarch_t		nest=0;
 			printf(NOTICE"layout: ");
 			for (udi_layout_t *curr=lay;
-				curr != NULL && *curr != UDI_DL_END;
+				curr != NULL && (*curr != UDI_DL_END || nest > 0);
 				curr++)
 			{
 				printf(CC"%d ", *curr);
@@ -507,16 +508,18 @@ namespace fplainn
 				{
 				case UDI_DL_MOVABLE_TYPED:
 				case UDI_DL_INLINE_TYPED:
-					printf(CC"(nest) "); break;
+					printf(CC"(nest) "); nest++; break;
 				case UDI_DL_INLINE_DRIVER_TYPED:
 					printf(CC"(drvtyped) "); break;
 				case UDI_DL_MOVABLE_UNTYPED:
 					printf(CC"(heapobj) "); break;
 				case UDI_DL_ARRAY:
-					printf(CC"(arr) "); break;
+					printf(CC"(arr) "); nest++; break;
 				case UDI_DL_BUF:
 					printf(CC"(buf) "); break;
 				};
+
+				if (*curr == UDI_DL_END) { nest--; };
 			}
 			printf(CC"\n");
 		}

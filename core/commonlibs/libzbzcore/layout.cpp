@@ -93,8 +93,12 @@ udi_size_t fplainn::sChannelMsg::zudi_layout_get_element_size(
 			 * pointed to by the pointer element. Skip these
 			 * detailed descriptor bytes, and increase the caller's
 			 * skip count by the number of detail bytes as well.
+			 *
+			 * Skip-count is 2 because we need to skip both the
+			 * DL_INLINE/DL_MOVABLE byte itself, AND the DL_END byte
+			 * that terminates it.
 			 **/
-			*layoutSkipCount = 1;
+			*layoutSkipCount = 2;
 			for (
 				udi_layout_t *curr=nestedLayout;
 				*curr != UDI_DL_END;
@@ -107,33 +111,28 @@ udi_size_t fplainn::sChannelMsg::zudi_layout_get_element_size(
 		if (element == UDI_DL_ARRAY)
 		{
 			udi_layout_t		*curr;
-			udi_size_t		nElements, elemSize=0;
+			udi_size_t		nElements;
+			status_t		elemSize=0;
 
-			/* Skip count starts at 2, because the caller will
+			/* Skip count starts at 3, because the caller will
 			 * have to skip both the UDI_DL_ARRAY byte and the
-			 * element_count byte that follows it.
+			 * element_count byte that follows it, AND the
+			 * UDI_DL_END that terminates the sequence.
 			 **/
-			*layoutSkipCount = 2;
+			*layoutSkipCount = 3;
 
 			curr = nestedLayout;
-			nElements = *nestedLayout;
-			nestedLayout++;
+			nElements = *curr;
+			curr++;
 
-			for (; *curr != UDI_DL_END; curr++)
-			{
-				udi_size_t		currLElemSize,
-							currLElemSkip;
+			elemSize = zudi_layout_get_size(curr, 0);
+			if (elemSize < 0) { *layoutSkipCount = 0; return 0; };
 
-				currLElemSize = zudi_layout_get_element_size(
-					*curr, curr + 1, &currLElemSkip);
-
-				if (currLElemSkip == 0) {
-					*layoutSkipCount = 0; return 0;
-				};
-
-				elemSize += currLElemSize;
-				*layoutSkipCount += currLElemSkip;
-			};
+			// Now count the number of elements to skip.
+			for (udi_layout_t *laytmp=curr;
+				laytmp != NULL && *laytmp != UDI_DL_END;
+				laytmp++)
+				{ *layoutSkipCount += 1; };
 
 			return elemSize * nElements;
 		}
@@ -430,7 +429,7 @@ error_t fplainn::sChannelMsg::initializeCbInlinePointers(
 {
 	status_t		inlineSpaceOffset=0;
 	uarch_t			ptrOffset=0, skipCount, currElemSize;
-	ubit8			*cb8 = (ubit8 *)cb;
+	ubit8			*cb8 = (ubit8 *)(cb + 1);
 
 	for (udi_layout_t *curr=layout;
 		curr != NULL && *curr != UDI_DL_END;
@@ -462,7 +461,7 @@ error_t fplainn::sChannelMsg::initializeCbInlinePointers(
 
 		if (currLayoutSize < 0) { return currLayoutSize; };
 
-		*(ubit8 **)(cb8 + ptrOffset) = inlineSpace + inlineSpaceOffset;
+		*(void **)(cb8 + ptrOffset) = inlineSpace + inlineSpaceOffset;
 		inlineSpaceOffset += currLayoutSize;
 	}
 
