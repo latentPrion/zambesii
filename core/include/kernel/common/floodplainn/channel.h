@@ -351,7 +351,7 @@ namespace fplainn
 			uarch_t size, uarch_t flags, void *privateData)
 		:
 		header(targetId, subsystem, function, size, flags, privateData),
-		data((udi_cb_t *)&this[1])
+		data((udi_cb_t *)&this[1]), driverTypedLayout(NULL)
 		{
 			metaName[0] = '\0';
 		}
@@ -393,6 +393,7 @@ namespace fplainn
 		fplainn::Endpoint		*__kendpoint;
 		udi_ops_vector_t		*opsVector;
 		void				*endpointPrivateData;
+		udi_layout_t			*driverTypedLayout;
 
 	public:
 		friend class Zudi;

@@ -331,40 +331,6 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 	printf(NOTICE ORIENT"About to dormant.\n");
 }
 
-udi_layout_t		dtLay[] =
-{
-	UDI_DL_UBIT16_T, UDI_DL_UBIT32_T, UDI_DL_END
-};
-
-udi_layout_t		lay[] =
-{
-	UDI_DL_UBIT8_T, UDI_DL_UBIT16_T,
-	UDI_DL_INLINE_UNTYPED,
-	UDI_DL_ARRAY, 4, UDI_DL_INLINE_UNTYPED, UDI_DL_UBIT8_T, UDI_DL_END,
-//	UDI_DL_MOVABLE_UNTYPED,
-	UDI_DL_INLINE_TYPED,
-		UDI_DL_UBIT8_T, UDI_DL_UBIT16_T,
-		UDI_DL_UBIT32_T,
-		UDI_DL_END,
-	UDI_DL_INLINE_TYPED,
-		UDI_DL_UBIT8_T, UDI_DL_UBIT16_T,
-		UDI_DL_UBIT32_T,
-		UDI_DL_END,
-	UDI_DL_SBIT32_T,
-	UDI_DL_INLINE_DRIVER_TYPED,
-	UDI_DL_END
-};
-
-struct sLay {
-	udi_cb_t	gcb;
-	ubit8 m0; ubit16 m1;
-	void *m2;
-	struct { void *inline0; ubit8 mm1; } m3[4];
-	void *inline2, *inline3;
-	sbit32 m4;
-	void *inline4;
-}sl;
-
 void __korientationMain3(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
@@ -372,25 +338,6 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	status_t			s;
-
-	// test getTotalCbInlineRequirement.
-	fplainn::sChannelMsg::dumpLayout(lay);
-	s = fplainn::sChannelMsg::getTotalCbInlineRequirements(lay, dtLay);
-	printf(NOTICE"inline req %d.\n", s);
-	memset(&sl, 0x45, sizeof(sl));
-	s = fplainn::sChannelMsg::getTotalMarshalSpaceInlineRequirements(lay, dtLay, &sl.gcb);
-	printf(NOTICE"inline req %d.\n", s);
-
-	printf(NOTICE"init inline ptrs %d, cb is at 0x%p, visible portion @0x%p.\n"
-		"INLINE_TYPED0 0x%p, INLINE_TYPED1 0x%p, INLINE_DRIVER_TYPED 0x%p.\n",
-		s, &sl, (&sl.gcb) + 1,
-		sl.inline2, sl.inline3, sl.inline4);
-	s = fplainn::sChannelMsg::initializeCbInlinePointers(&sl.gcb, (ubit8 *)0xFFFFF000, lay, dtLay);
-	printf(NOTICE"init inline ptrs %d.\n"
-		"INLINE_TYPED0 @0x%p, val 0x%p, INLINE_TYPED1 @0x%p, val 0x%p, INLINE_DRIVER_TYPED @0x%p, val 0x%p.\n",
-		s,
-		&sl.inline2, sl.inline2, &sl.inline3, sl.inline3, &sl.inline4, sl.inline4);
 printf(NOTICE ORIENT"orient 3.\n");
 	return;
 

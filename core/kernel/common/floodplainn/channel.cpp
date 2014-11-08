@@ -61,6 +61,17 @@ void *fplainn::sChannelMsg::operator new(size_t sz, uarch_t dataSize)
 	return ::operator new(sz + dataSize);
 }
 
+static inline status_t getLayoutNElements(udi_layout_t *lay)
+{
+	status_t		ret=1;
+
+	/* Ret starts at one because we have to count the ending UDI_DL_END
+	 * byte as well.
+	 **/
+	for (; *lay != UDI_DL_END; lay++, ret++) {};
+	return ret;
+}
+
 static udi_layout_t		blankLayout[] = { UDI_DL_END };
 error_t fplainn::sChannelMsg::send(
 	fplainn::Endpoint *endp,
@@ -75,7 +86,9 @@ error_t fplainn::sChannelMsg::send(
 	fplainn::sChannelMsg			*msg;
 //	Thread					*thread;
 	status_t				visibleSize, marshalSize,
-						inlineSize=0, status;
+						inlineSize=0,
+						inlineLayoutNElems=0,
+						status;
 	ubit8					*gcb8 = (ubit8 *)gcb,
 						*data8;
 
@@ -105,6 +118,11 @@ error_t fplainn::sChannelMsg::send(
 		::getTotalMarshalSpaceInlineRequirements(
 			layouts[LAYOUT_VISIBLE], layouts[LAYOUT_INLINE], gcb);
 
+	// We also need to marshal the inlineDriverTyped layout, if any.
+	if (layouts[LAYOUT_INLINE] != NULL) {
+		inlineLayoutNElems = getLayoutNElements(layouts[LAYOUT_INLINE]);
+	};
+
 	if (visibleSize < 0 || marshalSize < 0 || inlineSize < 0)
 	{
 		printf(ERROR"sChannelMsg:send: one or more of the layouts is "
@@ -116,7 +134,9 @@ error_t fplainn::sChannelMsg::send(
 	};
 
 	// Allocate enough marshal space for all components of the call.
-	msg = new (sizeof(udi_cb_t) + visibleSize + marshalSize + inlineSize)
+	msg = new (
+		sizeof(udi_cb_t) + visibleSize + marshalSize + inlineSize
+			+ (inlineLayoutNElems * sizeof(udi_layout_t)))
 		fplainn::sChannelMsg(
 			0,
 			MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_ZUDI_CHANNEL_SEND,
@@ -151,9 +171,27 @@ error_t fplainn::sChannelMsg::send(
 		return (error_t)status;
 	};
 
+	/* Finally, copy over the DRIVER_TYPED layout elements into the message
+	 * and set the pointer, if necessary.
+	 **/
+	if (layouts[LAYOUT_INLINE] != NULL)
+	{
+		memcpy(
+			data8 + sizeof(udi_cb_t) + visibleSize
+				+ marshalSize + inlineSize,
+			layouts[LAYOUT_INLINE],
+			inlineLayoutNElems * sizeof(udi_layout_t));
+
+		msg->driverTypedLayout = (udi_layout_t *)(data8
+			+ sizeof(udi_cb_t) + visibleSize
+				+ marshalSize + inlineSize);
+	};
+
 	msg->set(metaName, meta_ops_num, ops_idx);
 	msg->setPayloadSize(
-		sizeof(udi_cb_t) + visibleSize + marshalSize + inlineSize);
+		sizeof(udi_cb_t) + visibleSize + marshalSize
+			+ inlineSize
+			+ (inlineLayoutNElems * sizeof(udi_layout_t)));
 
 	return endp->send(msg);
 }

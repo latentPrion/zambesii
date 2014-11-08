@@ -537,6 +537,9 @@ void udi_cb_alloc(
 	err = lzudi::udi_cb_alloc_sync(drvInfoCache, cb_idx, &cb);
 	if (err != ERROR_SUCCESS) { callback(gcb, NULL); };
 
+	cb->context = gcb->context;
+	cb->origin = gcb->origin;
+	cb->channel = default_channel;
 	callback(gcb, cb);
 }
 
