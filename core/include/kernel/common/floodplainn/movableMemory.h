@@ -9,17 +9,17 @@ namespace fplainn
 	{
 		void *operator new(size_t sz, uarch_t objectSize);
 		void operator delete(void *mem);
-		sMovableMemory(uarch_t nBytes)
+		sMovableMemory(uarch_t objectNBytes)
 		:
-		nBytes(nBytes)
+		objectNBytes(objectNBytes)
 		{}
 
 		sMovableMemory(void)
 		:
-		nBytes(0)
+		objectNBytes(0)
 		{}
 
-		uarch_t		nBytes;
+		uarch_t		objectNBytes;
 	};
 }
 

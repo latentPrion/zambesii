@@ -68,6 +68,8 @@ static inline status_t getLayoutNElements(udi_layout_t *lay)
 	/* Ret starts at one because we have to count the ending UDI_DL_END
 	 * byte as well.
 	 **/
+	if (lay == NULL) { return 0; };
+
 	for (; *lay != UDI_DL_END; lay++, ret++) {};
 	return ret;
 }

@@ -282,7 +282,9 @@ status_t fplainn::sChannelMsg::getTotalMarshalSpaceInlineRequirements(
 			if (mmh != NULL)
 			{
 				mmh--;
-				currLayoutSize = mmh->nBytes;
+				currLayoutSize = mmh->objectNBytes;
+				currLayoutSize +=
+					sizeof(fplainn::sMovableMemory);
 			}
 			else {
 				currLayoutSize = 0;
@@ -345,7 +347,9 @@ status_t fplainn::sChannelMsg::marshalInlineObjects(
 			if (mmh != NULL)
 			{
 				mmh--;
-				currObjectSize = mmh->nBytes;
+				currObjectSize = mmh->objectNBytes;
+				currObjectSize +=
+					sizeof(fplainn::sMovableMemory);
 			}
 			else {
 				currObjectSize = 0;
@@ -358,10 +362,21 @@ status_t fplainn::sChannelMsg::marshalInlineObjects(
 		object = *(fplainn::sMovableMemory **)(srcCb + ptrOffset);
 		if (object != NULL)
 		{
+			if (*curr == UDI_DL_MOVABLE_UNTYPED) {
+				object = (fplainn::sMovableMemory *)object - 1;
+			};
+
 			// Copy the object into the marshal space.
 			memcpy(dest, object, currObjectSize);
 			// Set the pointer in the destination CB.
-			*(void **)(destCb + ptrOffset) = dest;
+			if (*curr == UDI_DL_MOVABLE_UNTYPED)
+			{
+				*(void **)(destCb + ptrOffset) =
+					(fplainn::sMovableMemory *)dest + 1;
+			}
+			else {
+				*(void **)(destCb + ptrOffset) = dest;
+			};
 			// Increment the marshal space.
 			dest += currObjectSize;
 		}
