@@ -331,6 +331,9 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 	printf(NOTICE ORIENT"About to dormant.\n");
 }
 
+#include <commonlibs/libzbzcore/libzudi.h>
+#include <commonlibs/libzbzcore/libzbzcore.h>
+#include <kernel/common/floodplainn/initInfo.h>
 void __korientationMain3(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
@@ -338,6 +341,38 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
+/*	fplainn::Device			*dev;
+
+	floodplainn.getDevice(CC"by-id", &dev);
+	struct sGxcb
+	{
+		lzudi::sControlBlock	cbHdr;
+		udi_gio_xfer_cb_t	cb;
+	} cb;
+
+extern udi_mei_init_t			udi_gio_meta_info;
+fplainn::MetaInit			mParser(&udi_gio_meta_info);
+udi_layout_t				tmpLay[] = { UDI_DL_UBIT32_T, UDI_DL_UBIT32_T, UDI_DL_END };
+
+	udi_layout_t		*l[3] = {
+		mParser.getOpTemplate(1, 3)->visible_layout,
+		mParser.getOpTemplate(1, 3)->marshal_layout,
+		//__klzbzcore::region::channel::mgmt::layouts::channel_event_ind,
+		tmpLay
+	};
+
+	error_t send(
+		fplainn::Endpoint *endp,
+		udi_cb_t *gcb, udi_layout_t *layouts[3],
+		utf8Char *metaName, udi_index_t meta_ops_num, udi_index_t op_idx,
+		void *privateData,
+		...);
+
+	self->parent->floodplainnStream.send(
+		dev->instance->mgmtEndpoint, &cb.cb.gcb,
+		l, CC"udi_gio",
+		UDI_GIO_PROVIDER_OPS_NUM, 3, NULL);
+*/
 printf(NOTICE ORIENT"orient 3.\n");
 	return;
 

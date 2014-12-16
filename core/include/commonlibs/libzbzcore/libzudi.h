@@ -15,6 +15,7 @@
 namespace fplainn
 {
 	class Endpoint;
+	struct sChannelMsg;
 }
 
 namespace __klzbzcore
@@ -93,16 +94,21 @@ namespace lzudi
 
 	struct sControlBlock
 	{
-		sControlBlock(udi_layout_t *drvTypedLayout)
+		sControlBlock(void)
 		:
-		driverTypedLayout(drvTypedLayout)
+		dtypedLayoutNElements(0), driverTypedLayout(NULL)
 		{}
 
 		void *operator new(size_t sz, uarch_t payloadSize);
 		void operator delete(void *mem);
 
+		uarch_t			dtypedLayoutNElements;
 		udi_layout_t		*driverTypedLayout;
 	};
+
+	sControlBlock *calleeCloneCb(
+		fplainn::sChannelMsg *msg,
+		udi_mei_op_template_t *opTemplate, udi_index_t opsIndex);
 
 	void *udi_mem_alloc_sync(udi_size_t size, udi_ubit8_t flags);
 

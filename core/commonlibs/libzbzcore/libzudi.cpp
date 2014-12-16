@@ -393,7 +393,14 @@ void udi_mei_call(
 	if (r == NULL) { return; };
 
 	// If channel doesn't exist or is not bound to this region, abort.
-	if (!r->findEndpointContext(endp)) { return; };
+	if (!r->findEndpointContext(endp))
+	{
+		printf(ERROR"udi_mei_call: endpContext 0x%p passed by region "
+			"%d doesn't exist.\n",
+			endp, r->index);
+
+		return;
+	};
 
 	fplainn::MetaInit			metaInfoParser(meta_info);
 
@@ -554,6 +561,7 @@ error_t lzudi::udi_cb_alloc_sync(
 					drvInfoParser(drvInfoCache->initInfo);
 	status_t				totalInlineSize;
 	lzudi::sControlBlock			*cbTmp;
+	uarch_t					dtypedLayoutNElems;
 
 	cbInit = drvInfoParser.getCbInit(cb_idx);
 	if (cbInit == NULL){ return ERROR_NOT_FOUND; };
@@ -573,39 +581,162 @@ error_t lzudi::udi_cb_alloc_sync(
 
 	if (totalInlineSize < 0) { return (error_t)totalInlineSize; };
 
+	/* We also need to know how many elements are in the DRIVER_TYPED
+	 * layout, if it's not NULL.
+	 **/
+	dtypedLayoutNElems = fplainn::sChannelMsg::getLayoutNElements(
+		cbInit->inline_layout, 0);
+
 	/* Next, we can now allocate the cb since we know how large it must
-	 * be now. Make sure to include the scratch size since it is also to be
-	 * part of the allocated size of the CB.
+	 * be now. We allocate scratch separately to enable us to treat it
+	 * as its own logical problem. Also, while we don't really care much,
+	 * it does bring the benefit of shielding the driver from trampling the
+	 * controlblock (which it could, if we'd allocated scratch as part of
+	 * the CB itself, in one allocation).
 	 *
 	 * We could have used the udi_cb_init_t::scratch_requirement member,
 	 * but since we have already cached the maximum size of the required
 	 * scratch space for all CBs of a particular meta_idx+meta_cb_num,
 	 * we might as well use that computed maximum value instead.
+	 *
+	 * Additionally, we copy the DRIVER_TYPED layout into the CB's hidden
+	 * portion.
 	 **/
 	cbTmp = new (
 		sizeof(udi_cb_t) + metaCbDesc->visibleSize
 			+ totalInlineSize
-			+ metaCbDesc->scratchRequirement)
-		lzudi::sControlBlock(cbInit->inline_layout);
+			+ dtypedLayoutNElems)
+		lzudi::sControlBlock;
 
 	if (cbTmp == NULL) { return ERROR_MEMORY_NOMEM; };
 	*retcb = (udi_cb_t *)++cbTmp;
 
-	/* Finally, we initialize the scratch pointer, and we have to
+	/* Next, we initialize the scratch pointer, and we have to
 	 * initialize the pointers in the visible portion of
 	 * the CB to point to their relevant inline space offsets.
 	 **/
 	if (metaCbDesc->scratchRequirement > 0)
 	{
-		(*retcb)->scratch = ((ubit8 *)*retcb) + sizeof(udi_cb_t)
-			+ metaCbDesc->visibleSize + totalInlineSize;
+		(*retcb)->scratch = new ubit8[metaCbDesc->scratchRequirement];
+		if ((*retcb)->scratch == NULL)
+		{
+			delete *retcb;
+			return ERROR_MEMORY_NOMEM;
+		};
 	}
 	else {
 		(*retcb)->scratch = NULL;
+	};
+
+	// Finally, we copy the DRIVER_TYPED layout at the end of the CB.
+	if (cbInit->inline_layout != NULL && dtypedLayoutNElems > 0)
+	{
+		udi_layout_t			*layoutOffset;
+		lzudi::sControlBlock		*cbHdrTmp;
+
+		cbHdrTmp = (lzudi::sControlBlock *)(*retcb - 1);
+		layoutOffset = ((ubit8 *)*retcb) + sizeof(udi_cb_t)
+				+ metaCbDesc->visibleSize
+				+ totalInlineSize;
+
+		cbHdrTmp->dtypedLayoutNElements = dtypedLayoutNElems;
+		cbHdrTmp->driverTypedLayout = layoutOffset;
+
+		memcpy(
+			const_cast<ubit8 *>(layoutOffset),
+			cbInit->inline_layout,
+			dtypedLayoutNElems);
 	};
 
 	return fplainn::sChannelMsg::initializeCbInlinePointers(
 		*retcb,
 		((ubit8 *)*retcb) + sizeof(udi_cb_t) + metaCbDesc->visibleSize,
 		metaCbDesc->visibleLayout, cbInit->inline_layout);
+}
+
+lzudi::sControlBlock *lzudi::calleeCloneCb(
+	fplainn::sChannelMsg *msg,
+	udi_mei_op_template_t *opTemplate,
+	udi_index_t opsIndex
+	)
+{
+	sControlBlock			*ret;
+	status_t			visibleSize, inlineObjectsSize;
+	ubit8				*mcb8 = (ubit8 *)msg->getPayloadAddr(),
+					*ret8;
+
+	/**	EXPLANATION:
+	 * Given a sChannelMsg, clone the CB inside of it based on the
+	 * metaName+opsIndex information. The DRIVER_TYPED layout will be
+	 * available as part of the message.
+	 *
+	 * In order, just find out the sizes of the sections of the CB
+	 * (gcb, visible, inline-objects), and copy them over.
+	 **/
+	if (opsIndex == 0)
+	{
+		visibleSize = fplainn::sChannelMsg::zudi_layout_get_size(
+			__klzbzcore::region::channel
+				::mgmt::layouts::channel_event_cb, 1);
+
+		inlineObjectsSize = fplainn::sChannelMsg
+			::getTotalMarshalSpaceInlineRequirements(
+			__klzbzcore::region::channel
+				::mgmt::layouts::channel_event_cb,
+			msg->getDtypedLayoutAddr(),
+			msg->getPayloadAddr());
+	}
+	else
+	{
+		visibleSize = fplainn::sChannelMsg::zudi_layout_get_size(
+			opTemplate->visible_layout, 1);
+
+		inlineObjectsSize = fplainn::sChannelMsg
+			::getTotalMarshalSpaceInlineRequirements(
+			opTemplate->visible_layout,
+			msg->getDtypedLayoutAddr(),
+			msg->getPayloadAddr());
+	};
+
+	ret = new (
+		sizeof(udi_cb_t)
+			+ visibleSize + inlineObjectsSize
+			+ (msg->dtypedLayoutNElements * sizeof(udi_layout_t)))
+		sControlBlock;
+
+	if (ret == NULL) { return NULL; };
+
+	ret8 = (ubit8 *)(ret + 1);
+
+	// Copy the GCB:
+	memcpy(ret, msg->getPayloadAddr(), sizeof(udi_cb_t));
+	// Copy the visible portion.
+	memcpy(
+		ret8 + sizeof(udi_cb_t),
+		mcb8 + sizeof(udi_cb_t),
+		visibleSize);
+
+	// Copy the inline objects over.
+	memcpy(
+		ret8 + sizeof(udi_cb_t) + visibleSize,
+		mcb8 + sizeof(udi_cb_t) + visibleSize,
+		inlineObjectsSize);
+
+	// Copy the DRIVER_TYPED layout finally.
+	if (msg->msgDtypedLayoutOff != 0)
+	{
+
+		ret->dtypedLayoutNElements = msg->dtypedLayoutNElements;
+		ret->driverTypedLayout = (udi_layout_t *)(ret8 + sizeof(udi_cb_t)
+			+ visibleSize
+			+ inlineObjectsSize);
+
+		memcpy(
+			ret8 + sizeof(udi_cb_t)
+				+ visibleSize + inlineObjectsSize,
+			msg->getDtypedLayoutAddr(),
+			msg->dtypedLayoutNElements);
+	};
+
+	return ret;
 }

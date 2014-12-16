@@ -319,7 +319,8 @@ namespace __klzbzcore
 				lzudi::sRegion *r,
 				__klzbzcore::driver::CachedInfo::sMetaDescriptor
 					*metaDesc,
-				udi_mei_op_template_t *opTemplate);
+				udi_mei_op_template_t *opTemplate,
+				udi_cb_t *cb);
 
 			void genericMeiCall(
 				fplainn::sChannelMsg *msg,
@@ -328,7 +329,8 @@ namespace __klzbzcore
 				lzudi::sRegion *r,
 				__klzbzcore::driver::CachedInfo::sMetaDescriptor
 					*metaDesc,
-				udi_mei_op_template_t *opTemplate);
+				udi_mei_op_template_t *opTemplate,
+				udi_cb_t *cb);
 
 			void eventIndMeiCall(
 				fplainn::sChannelMsg *msg,
@@ -337,7 +339,19 @@ namespace __klzbzcore
 				lzudi::sRegion *r,
 				__klzbzcore::driver::CachedInfo::sMetaDescriptor
 					*metaDesc,
-				udi_mei_op_template_t *opTemplate);
+				udi_mei_op_template_t *opTemplate,
+				udi_cb_t *cb);
+
+			namespace mgmt
+			{
+				namespace layouts
+				{
+					extern udi_layout_t	channel_event_cb[];
+					extern udi_layout_t	*visible[];
+					extern udi_layout_t	channel_event_ind[];
+					extern udi_layout_t	*marshal[];
+				}
+			}
 		}
 	}
 

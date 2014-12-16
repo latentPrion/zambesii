@@ -263,6 +263,45 @@ error_t __klzbzcore::driver::CachedInfo::generateMetaCbCache(void)
 	return ERROR_SUCCESS;
 }
 
+namespace __klzbzcore {
+namespace region {
+namespace channel {
+namespace mgmt
+{
+	namespace layouts
+	{
+		udi_layout_t		channel_event_cb[] =
+		{
+			UDI_DL_UBIT8_T,
+			  /* Union. We just instruct env to
+			   * copy max bytes.
+			   **/
+			  UDI_DL_INLINE_UNTYPED,
+			  UDI_DL_UBIT8_T,
+			  UDI_DL_INLINE_UNTYPED,
+			UDI_DL_END
+		};
+
+		udi_layout_t		*visible[] =
+		{
+			channel_event_cb,
+			NULL, NULL, NULL, NULL
+		};
+
+		udi_layout_t		channel_event_ind[] =
+			{ UDI_DL_END };
+
+		udi_layout_t		*marshal[] =
+		{
+			channel_event_ind,
+			NULL, NULL, NULL, NULL
+		};
+	}
+}
+}
+}
+}
+
 void __klzbzcore::driver::sMetaCbInfo::dump(utf8Char *metaName)
 {
 	printf(NOTICE"meta_idx %d (%s), cb_num %d: "

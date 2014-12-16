@@ -61,19 +61,6 @@ void *fplainn::sChannelMsg::operator new(size_t sz, uarch_t dataSize)
 	return ::operator new(sz + dataSize);
 }
 
-static inline status_t getLayoutNElements(udi_layout_t *lay)
-{
-	status_t		ret=1;
-
-	/* Ret starts at one because we have to count the ending UDI_DL_END
-	 * byte as well.
-	 **/
-	if (lay == NULL) { return 0; };
-
-	for (; *lay != UDI_DL_END; lay++, ret++) {};
-	return ret;
-}
-
 static udi_layout_t		blankLayout[] = { UDI_DL_END };
 error_t fplainn::sChannelMsg::send(
 	fplainn::Endpoint *endp,
@@ -93,6 +80,7 @@ error_t fplainn::sChannelMsg::send(
 						status;
 	ubit8					*gcb8 = (ubit8 *)gcb,
 						*data8;
+	udi_cb_t				*marshalCbSpace;
 
 	/**	EXPLANATION:
 	 * In this one we need to do a little more work; we must get the
@@ -121,8 +109,10 @@ error_t fplainn::sChannelMsg::send(
 			layouts[LAYOUT_VISIBLE], layouts[LAYOUT_INLINE], gcb);
 
 	// We also need to marshal the inlineDriverTyped layout, if any.
-	if (layouts[LAYOUT_INLINE] != NULL) {
-		inlineLayoutNElems = getLayoutNElements(layouts[LAYOUT_INLINE]);
+	if (layouts[LAYOUT_INLINE] != NULL)
+	{
+		inlineLayoutNElems = fplainn::sChannelMsg::getLayoutNElements(
+			layouts[LAYOUT_INLINE], 0);
 	};
 
 	if (visibleSize < 0 || marshalSize < 0 || inlineSize < 0)
@@ -145,7 +135,8 @@ error_t fplainn::sChannelMsg::send(
 			sizeof(*msg), 0, privateData);
 
 	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
-	data8 = (ubit8 *)msg->data;
+	data8 = (ubit8 *)msg->getPayloadAddr();
+	marshalCbSpace = (udi_cb_t *)msg->getPayloadAddr();
 
 	// Marshal the generic control block.
 	memcpy(data8, gcb8, sizeof(udi_cb_t));
@@ -164,7 +155,7 @@ error_t fplainn::sChannelMsg::send(
 
 	status = marshalInlineObjects(
 		data8 + sizeof(udi_cb_t) + visibleSize + marshalSize,
-		msg->data, gcb,
+		marshalCbSpace, gcb,
 		layouts[LAYOUT_VISIBLE], layouts[LAYOUT_INLINE]);
 
 	if (status < 0)
@@ -174,19 +165,25 @@ error_t fplainn::sChannelMsg::send(
 	};
 
 	/* Finally, copy over the DRIVER_TYPED layout elements into the message
-	 * and set the pointer, if necessary.
+	 * if necessary, and set the pointer.
 	 **/
 	if (layouts[LAYOUT_INLINE] != NULL)
 	{
+		ubit8			*msgLayAddr;
+
 		memcpy(
-			data8 + sizeof(udi_cb_t) + visibleSize
-				+ marshalSize + inlineSize,
+			data8 + sizeof(udi_cb_t)
+				+ visibleSize + marshalSize + inlineSize,
 			layouts[LAYOUT_INLINE],
 			inlineLayoutNElems * sizeof(udi_layout_t));
 
-		msg->driverTypedLayout = (udi_layout_t *)(data8
-			+ sizeof(udi_cb_t) + visibleSize
-				+ marshalSize + inlineSize);
+		msg->dtypedLayoutNElements = inlineLayoutNElems;
+
+		msgLayAddr = data8 + sizeof(udi_cb_t)
+			+ visibleSize
+			+ marshalSize + inlineSize;
+
+		msg->msgDtypedLayoutOff = msgLayAddr - (ubit8 *)msg;
 	};
 
 	msg->set(metaName, meta_ops_num, ops_idx);

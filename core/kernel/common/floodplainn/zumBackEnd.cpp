@@ -13,7 +13,7 @@
 #include <kernel/common/floodplainn/floodplainnStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
-
+#include <commonlibs/libzbzcore/libzbzcore.h>
 
 /**	EXPLANATION:
  * Like the ZUI server, the ZUM server will also take commands over a ZAsync
@@ -126,39 +126,7 @@ namespace zumServer
 
 			return ERROR_SUCCESS;
 		}
-
-		namespace layouts
-		{
-			udi_layout_t		channel_event_cb[] =
-			{
-				UDI_DL_UBIT8_T,
-				  /* Union. We just instruct env to
-				   * copy max bytes.
-				   **/
-				  UDI_DL_INLINE_UNTYPED,
-				  UDI_DL_UBIT8_T,
-				  UDI_DL_INLINE_UNTYPED,
-				UDI_DL_END
-			};
-
-			udi_layout_t		*visible[] =
-			{
-				channel_event_cb,
-				NULL, NULL, NULL, NULL
-			};
-
-			udi_layout_t		channel_event_ind[] =
-				{ UDI_DL_END };
-
-			udi_layout_t		*marshal[] =
-			{
-				channel_event_ind,
-				NULL, NULL, NULL, NULL
-			};
-		}
 	}
-
-
 }
 
 void fplainn::Zum::main(void *)
@@ -204,10 +172,10 @@ void fplainn::Zum::main(void *)
 			return;
 		};
 
-		zumServer::mgmt::layouts::visible[i] =
+		__klzbzcore::region::channel::mgmt::layouts::visible[i] =
 			opTemplate->visible_layout;
 
-		zumServer::mgmt::layouts::marshal[i] =
+		__klzbzcore::region::channel::mgmt::layouts::marshal[i] =
 			opTemplate->marshal_layout;
 	};
 
@@ -620,8 +588,8 @@ void zumServer::mgmt::usageInd(
 
 	udi_layout_t		*layouts[3] =
 	{
-		layouts::visible[ctxt->info.opsIndex],
-		layouts::marshal[ctxt->info.opsIndex],
+		__klzbzcore::region::channel::mgmt::layouts::visible[ctxt->info.opsIndex],
+		__klzbzcore::region::channel::mgmt::layouts::marshal[ctxt->info.opsIndex],
 		NULL
 	};
 
@@ -651,7 +619,7 @@ void zumServer::mgmt::usageRes(
 
 	myResponse(ctxt);
 
-	cb = (udi_usage_cb_t *)response->data;
+	cb = (udi_usage_cb_t *)response->getPayloadAddr();
 	ctxt->info.params.usage.cb = *cb;
 
 	/* This is the status for the usageInd call itself, and not for the
@@ -708,8 +676,8 @@ void zumServer::mgmt::channelEventInd(
 
 	udi_layout_t		*layouts[3] =
 	{
-		layouts::visible[ctxt->info.opsIndex],
-		layouts::marshal[ctxt->info.opsIndex],
+		__klzbzcore::region::channel::mgmt::layouts::visible[ctxt->info.opsIndex],
+		__klzbzcore::region::channel::mgmt::layouts::marshal[ctxt->info.opsIndex],
 		NULL
 	};
 
@@ -738,7 +706,7 @@ void zumServer::mgmt::channelEventComplete(
 	udi_size_t		visibleSize;
 	ubit8			*cb8;
 
-	cb8 = (ubit8 *)response->data;
+	cb8 = (ubit8 *)response->getPayloadAddr();
 
 	myResponse(ctxt);
 	myResponse(msg->error);
@@ -748,7 +716,7 @@ void zumServer::mgmt::channelEventComplete(
 	 * space in ctxt->info.params.channel_event.
 	 **/
 	visibleSize = fplainn::sChannelMsg::zudi_layout_get_size(
-		layouts::channel_event_cb, 1);
+		__klzbzcore::region::channel::mgmt::layouts::channel_event_cb, 1);
 
 	ctxt->info.params.channel_event.status =
 		*(udi_index_t *)(cb8 + sizeof(udi_cb_t) + visibleSize);

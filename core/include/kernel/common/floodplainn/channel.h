@@ -351,7 +351,8 @@ namespace fplainn
 			uarch_t size, uarch_t flags, void *privateData)
 		:
 		header(targetId, subsystem, function, size, flags, privateData),
-		data((udi_cb_t *)&this[1]), driverTypedLayout(NULL)
+		msgDataOff((ubit8 *)(this + 1) - (ubit8 *)this),
+		dtypedLayoutNElements(0), msgDtypedLayoutOff(0)
 		{
 			metaName[0] = '\0';
 		}
@@ -375,6 +376,16 @@ namespace fplainn
 			};
 		}
 
+		udi_cb_t *getPayloadAddr(void)
+			{ return (udi_cb_t *)((ubit8 *)this + msgDataOff); }
+
+		udi_layout_t *getDtypedLayoutAddr(void)
+		{
+			if (msgDtypedLayoutOff == 0) { return NULL; };
+			return (udi_layout_t *)
+				((ubit8 *)this + msgDtypedLayoutOff);
+		}
+
 		uarch_t getDataSize(void)
 			{ return header.size - sizeof(*this); }
 
@@ -383,7 +394,7 @@ namespace fplainn
 
 		MessageStream::sHeader		header;
 		// "data" is initialized to point to the byte after this struct.
-		udi_cb_t			*data;
+		ptrdiff_t			msgDataOff;
 		// These 3 are set by Zudi::send()/FloodplainnStream::send().
 		utf8Char			metaName[
 			ZUI_DRIVER_METALANGUAGE_MAXLEN];
@@ -393,7 +404,8 @@ namespace fplainn
 		fplainn::Endpoint		*__kendpoint;
 		udi_ops_vector_t		*opsVector;
 		void				*endpointPrivateData;
-		udi_layout_t			*driverTypedLayout;
+		ubit16				dtypedLayoutNElements;
+		ptrdiff_t			msgDtypedLayoutOff;
 
 	public:
 		friend class Zudi;
@@ -496,6 +508,10 @@ namespace fplainn
 			udi_cb_t *cb, ubit8 *inlineSpace,
 			udi_layout_t *layout, udi_layout_t *drvTypedLayout);
 
+		static status_t updateClonedCbInlinePointers(
+			udi_cb_t *cb, udi_cb_t *marshalledCb,
+			udi_layout_t *layout, udi_layout_t *marshalLayout);
+
 		static void dumpLayout(udi_layout_t *lay)
 		{
 			uarch_t		nest=0;
@@ -521,8 +537,48 @@ namespace fplainn
 				};
 
 				if (*curr == UDI_DL_END) { nest--; };
-			}
+			};
+
 			printf(CC"\n");
+		}
+
+		static status_t getLayoutNElements(
+			udi_layout_t *lay, sbit8 inlineElementsAllowed)
+		{
+			uarch_t		nest=0;
+			status_t	ret=1;
+
+			if (lay == NULL) { return 0; };
+
+			for (udi_layout_t *curr=lay;
+				curr != NULL
+					&& (*curr != UDI_DL_END || nest > 0);
+				curr++, ret++)
+			{
+				if (!inlineElementsAllowed)
+				{
+					switch (*curr)
+					{
+					case UDI_DL_MOVABLE_TYPED:
+					case UDI_DL_INLINE_TYPED:
+					case UDI_DL_INLINE_DRIVER_TYPED:
+					case UDI_DL_MOVABLE_UNTYPED:
+						return ERROR_NON_CONFORMANT;
+					};
+				};
+
+				switch (*curr)
+				{
+				case UDI_DL_MOVABLE_TYPED:
+				case UDI_DL_INLINE_TYPED:
+				case UDI_DL_ARRAY:
+					nest++; break;
+				};
+
+				if (*curr == UDI_DL_END) { nest--; };
+			};
+
+			return ret;
 		}
 
 		static error_t send(

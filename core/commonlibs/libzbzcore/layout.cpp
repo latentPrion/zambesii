@@ -266,8 +266,12 @@ status_t fplainn::sChannelMsg::getTotalMarshalSpaceInlineRequirements(
 		switch (*curr)
 		{
 		case UDI_DL_INLINE_TYPED:
+			currLayoutSize = zudi_layout_get_size(curr + 1, 0);
+			break;
+
 		case UDI_DL_MOVABLE_TYPED:
 			currLayoutSize = zudi_layout_get_size(curr + 1, 0);
+			currLayoutSize += sizeof(fplainn::sMovableMemory);
 			break;
 
 		case UDI_DL_INLINE_DRIVER_TYPED:
@@ -334,8 +338,12 @@ status_t fplainn::sChannelMsg::marshalInlineObjects(
 		switch (*curr)
 		{
 		case UDI_DL_INLINE_TYPED:
+			currObjectSize = zudi_layout_get_size(curr + 1, 0);
+			break;
+
 		case UDI_DL_MOVABLE_TYPED:
 			currObjectSize = zudi_layout_get_size(curr + 1, 0);
+			currObjectSize += sizeof(fplainn::sMovableMemory);
 			break;
 
 		case UDI_DL_INLINE_DRIVER_TYPED:
@@ -362,14 +370,17 @@ status_t fplainn::sChannelMsg::marshalInlineObjects(
 		object = *(fplainn::sMovableMemory **)(srcCb + ptrOffset);
 		if (object != NULL)
 		{
-			if (*curr == UDI_DL_MOVABLE_UNTYPED) {
+			if (*curr == UDI_DL_MOVABLE_UNTYPED
+				|| *curr == UDI_DL_MOVABLE_TYPED)
+			{
 				object = (fplainn::sMovableMemory *)object - 1;
 			};
 
 			// Copy the object into the marshal space.
 			memcpy(dest, object, currObjectSize);
 			// Set the pointer in the destination CB.
-			if (*curr == UDI_DL_MOVABLE_UNTYPED)
+			if (*curr == UDI_DL_MOVABLE_UNTYPED
+				|| *curr == UDI_DL_MOVABLE_TYPED)
 			{
 				*(void **)(destCb + ptrOffset) =
 					(fplainn::sMovableMemory *)dest + 1;
@@ -479,6 +490,79 @@ error_t fplainn::sChannelMsg::initializeCbInlinePointers(
 		*(void **)(cb8 + ptrOffset) = inlineSpace + inlineSpaceOffset;
 		inlineSpaceOffset += currLayoutSize;
 	}
+
+	return ERROR_SUCCESS;
+}
+
+status_t fplainn::sChannelMsg::updateClonedCbInlinePointers(
+	udi_cb_t *cb, udi_cb_t *marshalledCb,
+	udi_layout_t *layout, udi_layout_t *marshalLayout
+	)
+{
+	uarch_t			ptrOffset=0, skipCount, currElemSize;
+	ubit8			*cb8 = (ubit8 *)(cb + 1),
+				*mcb8 = (ubit8 *)(marshalledCb + 1);
+	status_t		marshalLayoutSize;
+
+	/**	EXPLANATION:
+	 * Takes a cloned control block and updates its inline pointer members
+	 * to ensure that they are valid.
+	 *
+	 *	SEQUENCE:
+	 * Must go through the visible_layout, seek each inline type, and for
+	 * each one, read the source-cb. If the source-cb's pointer is
+	 * non-NULL, we need to update the pointer in the target CB.
+	 *
+	 * We can actually do this /without/ knowing anything about the
+	 * individual inline pointer types: to know where a pointer should point
+	 * we need only know the offset within the CB that it should point to.
+	 *
+	 * We don't need to fully re-calculate the offsets using the layouts;
+	 * Rather, we can simply use subtraction to determine how many bytes
+	 * are between the sourceCB's pointer and its object, and set that
+	 * same offset in the cloned cb.
+	 **/
+	marshalLayoutSize = fplainn::sChannelMsg::zudi_layout_get_size(
+		marshalLayout, 0);
+
+	if (marshalLayoutSize < 0) { return marshalLayoutSize; };
+
+	for (udi_layout_t *curr=layout;
+		curr != NULL && *curr != UDI_DL_END;
+		curr += skipCount, ptrOffset += currElemSize)
+	{
+		ubit8			*srcObject;
+		ptrdiff_t		objectOffset;
+
+		currElemSize = zudi_layout_get_element_size(
+			*curr, curr + 1, &skipCount);
+
+		if (skipCount == 0) { return ERROR_INVALID_FORMAT; };
+		ptrOffset = align(ptrOffset, currElemSize);
+
+		switch (*curr)
+		{
+		case UDI_DL_INLINE_TYPED:
+		case UDI_DL_INLINE_DRIVER_TYPED:
+		case UDI_DL_MOVABLE_TYPED:
+		case UDI_DL_MOVABLE_UNTYPED:
+			break;
+
+		default: continue; break;
+		};
+
+		srcObject = *(ubit8 **)(mcb8 + ptrOffset);
+		if (srcObject == NULL)
+		{
+			// If ptr is NULL in source, set NULL in clone.
+			*(void **)(cb8 + ptrOffset) = NULL;
+			continue;
+		};
+
+		objectOffset = srcObject - ((ubit8 *)marshalledCb);
+		*(void **)(cb8 + ptrOffset) =
+			((ubit8 *)cb) - marshalLayoutSize + objectOffset;
+	};
 
 	return ERROR_SUCCESS;
 }

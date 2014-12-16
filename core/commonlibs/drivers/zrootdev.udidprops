@@ -13,9 +13,11 @@ message	3	N/A
 requires	udi		0x101
 requires	udi_bridge	0x101
 requires	zbz_root	0x0
+requires	udi_gio		0x101
 
 meta	1	zbz_root
 meta	2	udi_bridge
+meta	3	udi_gio
 
 
 module	main

@@ -582,6 +582,8 @@ void __klzbzcore::region::channel::handler(
 	lzudi::sEndpointContext					*endpContext;
 	__klzbzcore::driver::CachedInfo::sMetaDescriptor	*metaDesc;
 	udi_mei_op_template_t					*opTemplate;
+	lzudi::sControlBlock					*cbHdr;
+	udi_cb_t						*cb;
 
 	endpContext = (lzudi::sEndpointContext *)msg->endpointPrivateData;
 
@@ -685,29 +687,52 @@ void __klzbzcore::region::channel::handler(
 		return;
 	};
 
-	// Set the "channel" and "channel_context" pointers:
-	msg->data->origin = msg->header.privateData;
-	msg->data->channel = endpContext;
-	msg->data->context = endpContext->channel_context;
+	// Clone the CB from the caller.
+	cbHdr = lzudi::calleeCloneCb(msg, opTemplate, msg->opsIndex);
+	if (cbHdr == NULL)
+	{
+		printf(ERROR LZBZCORE"chan:handler rgn%d: Failed to clone CB "
+			"for call from 0x%x.\n",
+			r->index, msg->header.sourceId);
+
+		return;
+	};
+
+	cb = (udi_cb_t *)(cbHdr + 1);
+	fplainn::sChannelMsg::updateClonedCbInlinePointers(
+		cb, msg->getPayloadAddr(),
+		((opTemplate == NULL)
+			? __klzbzcore::region::channel::mgmt::layouts
+				::channel_event_cb
+			: opTemplate->visible_layout),
+		((opTemplate == NULL)
+			? __klzbzcore::region::channel::mgmt::layouts
+				::channel_event_ind
+			: opTemplate->marshal_layout));
+
+	cb->origin = msg->header.privateData;
+	cb->channel = endpContext;
+	cb->context = endpContext->channel_context;
+
 	if (!strncmp8(msg->metaName, CC"udi_mgmt", DRIVER_METALANGUAGE_MAXLEN))
 	{
 		if (msg->opsIndex == 0)
 		{
 			eventIndMeiCall(
 				msg, self, drvInfoCache, r,
-				metaDesc, opTemplate);
+				metaDesc, opTemplate, cb);
 		}
 		else
 		{
 			mgmtMeiCall(
 				msg, self, drvInfoCache, r,
-				metaDesc, opTemplate);
+				metaDesc, opTemplate, cb);
 		};
 	}
 	else
 	{
 		genericMeiCall(
-			msg, self, drvInfoCache, r, metaDesc, opTemplate);
+			msg, self, drvInfoCache, r, metaDesc, opTemplate, cb);
 	};
 }
 
@@ -875,7 +900,8 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 	__klzbzcore::driver::CachedInfo *drvInfoCache,
 	lzudi::sRegion *,
 	__klzbzcore::driver::CachedInfo::sMetaDescriptor *,
-	udi_mei_op_template_t *opTemplate
+	udi_mei_op_template_t *opTemplate,
+	udi_cb_t *cb
 	)
 {
 	status_t				visibleSize;
@@ -892,12 +918,12 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 	if (drvInfoCache->initInfo->primary_init_info->mgmt_scratch_requirement
 		> 0)
 	{
-		msg->data->scratch = new ubit8[
+		cb->scratch = new ubit8[
 			drvInfoCache->initInfo
 				->primary_init_info->mgmt_scratch_requirement];
 	}
 	else {
-		msg->data->scratch = NULL;
+		cb->scratch = NULL;
 	};
 
 	if (msg->opsIndex == 2)
@@ -913,7 +939,8 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 		 * code will automatically marshal it out for us and pass it to
 		 * the kernel.
 		 **/
-		ecb = (udi_enumerate_cb_t *)msg->data;
+//		ecb = (udi_enumerate_cb_t *)msg->data;
+		ecb = (udi_enumerate_cb_t *)cb;
 		primaryInit = drvInfoCache->initInfo->primary_init_info;
 
 		if (primaryInit->child_data_size > 0)
@@ -965,8 +992,9 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 	};
 
 	opTemplate->backend_stub(
-		msg->opsVector[msg->opsIndex - 1], msg->data,
-		((ubit8 *)msg->data) + sizeof(udi_cb_t) + visibleSize);
+		msg->opsVector[msg->opsIndex - 1], cb,
+		((ubit8 *)msg->getPayloadAddr())
+			+ sizeof(udi_cb_t) + visibleSize);
 }
 
 void __klzbzcore::region::channel::eventIndMeiCall(
@@ -975,15 +1003,16 @@ void __klzbzcore::region::channel::eventIndMeiCall(
 	__klzbzcore::driver::CachedInfo *drvInfoCache,
 	lzudi::sRegion *,
 	__klzbzcore::driver::CachedInfo::sMetaDescriptor *,
-	udi_mei_op_template_t *
+	udi_mei_op_template_t *,
+	udi_cb_t *cb
 	)
 {
-	udi_channel_event_cb_t			*cb;
+	udi_channel_event_cb_t			*cecb;
 	udi_channel_event_ind_op_t		*op;
 	lzudi::sEndpointContext			*endpContext;
 	error_t					err;
 
-	cb = (udi_channel_event_cb_t *)msg->data;
+	cecb = (udi_channel_event_cb_t *)cb;
 	op = (udi_channel_event_ind_op_t *)msg->opsVector[0];
 	endpContext = (lzudi::sEndpointContext *)msg->endpointPrivateData;
 
@@ -995,7 +1024,7 @@ void __klzbzcore::region::channel::eventIndMeiCall(
 	 * All we have to do is allocate the bind_cb_index control block for
 	 * the driver, and we're set.
 	 **/
-	if (cb->event == UDI_CHANNEL_BOUND && endpContext->bindCbIndex != 0)
+	if (cecb->event == UDI_CHANNEL_BOUND && endpContext->bindCbIndex != 0)
 	{
 		/* The bind_cb is only filled in when the event being processed
 		 * is a UDI_CHANNEL_BOUND event. In addition, if the
@@ -1003,7 +1032,7 @@ void __klzbzcore::region::channel::eventIndMeiCall(
 		 **/
 		err = lzudi::udi_cb_alloc_sync(
 			drvInfoCache, endpContext->bindCbIndex,
-			&cb->params.internal_bound.bind_cb);
+			&cecb->params.internal_bound.bind_cb);
 
 		if (err != ERROR_SUCCESS)
 		{
@@ -1014,10 +1043,10 @@ void __klzbzcore::region::channel::eventIndMeiCall(
 		};
 	}
 	else {
-		cb->params.internal_bound.bind_cb = NULL;
+		cecb->params.internal_bound.bind_cb = NULL;
 	};
 
-	op(cb);
+	op(cecb);
 }
 
 void __klzbzcore::region::channel::genericMeiCall(
@@ -1026,12 +1055,13 @@ void __klzbzcore::region::channel::genericMeiCall(
 	__klzbzcore::driver::CachedInfo *drvInfoCache,
 	lzudi::sRegion *r,
 	__klzbzcore::driver::CachedInfo::sMetaDescriptor *metaDesc,
-	udi_mei_op_template_t *opTemplate
+	udi_mei_op_template_t *opTemplate,
+	udi_cb_t *cb
 	)
 {
 	status_t					visibleSize;
 	status_t					scratchRequirement;
-	ubit8						*gcb8;
+	ubit8						*marshalledCb8;
 
 	/**	EXPLANATION:
 	 * Generic call into a region. We already have the opsVector and
@@ -1074,15 +1104,15 @@ void __klzbzcore::region::channel::genericMeiCall(
 	};
 
 	if (scratchRequirement > 0) {
-		msg->data->scratch = new ubit8[scratchRequirement];
+		cb->scratch = new ubit8[scratchRequirement];
 	} else {
-		msg->data->scratch = NULL;
+		cb->scratch = NULL;
 	};
 
-	gcb8 = (ubit8 *)msg->data;
+	marshalledCb8 = (ubit8 *)msg->getPayloadAddr();
 	// Now we do the actual call-in.
 	opTemplate->backend_stub(
 		msg->opsVector[msg->opsIndex],
-		msg->data,
-		gcb8 + sizeof(udi_cb_t) + visibleSize);
+		cb,
+		marshalledCb8 + sizeof(udi_cb_t) + visibleSize);
 }
