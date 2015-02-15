@@ -327,8 +327,6 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 	floodplainn.zum.startDeviceReq(
 		CC"by-id", UDI_RESOURCES_NORMAL,
 		new __kCallback(&__korientationMain3));
-
-	printf(NOTICE ORIENT"About to dormant.\n");
 }
 
 #include <commonlibs/libzbzcore/libzudi.h>
@@ -341,18 +339,30 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-/*	fplainn::Device			*dev;
+	fplainn::Device			*dev;
 
 	floodplainn.getDevice(CC"by-id", &dev);
 	struct sGxcb
 	{
+		sGxcb(void)
+		{
+			memset(&cb, 0, sizeof(cb));
+			cb.tr_params = &tr_params;
+		}
+
 		lzudi::sControlBlock	cbHdr;
 		udi_gio_xfer_cb_t	cb;
+		struct _{
+			_(void) { a[0] = a[1] = 0xDEaDBEEF; }
+			ubit32		a[2];
+		} tr_params;
 	} cb;
 
 extern udi_mei_init_t			udi_gio_meta_info;
 fplainn::MetaInit			mParser(&udi_gio_meta_info);
-udi_layout_t				tmpLay[] = { UDI_DL_UBIT32_T, UDI_DL_UBIT32_T, UDI_DL_END };
+udi_layout_t				tmpLay[] =
+	{ UDI_DL_UBIT32_T, UDI_DL_UBIT32_T, UDI_DL_END };
+//	{ UDI_DL_END };
 
 	udi_layout_t		*l[3] = {
 		mParser.getOpTemplate(1, 3)->visible_layout,
@@ -371,8 +381,9 @@ udi_layout_t				tmpLay[] = { UDI_DL_UBIT32_T, UDI_DL_UBIT32_T, UDI_DL_END };
 	self->parent->floodplainnStream.send(
 		dev->instance->mgmtEndpoint, &cb.cb.gcb,
 		l, CC"udi_gio",
-		UDI_GIO_PROVIDER_OPS_NUM, 3, NULL);
-*/
+		UDI_GIO_PROVIDER_OPS_NUM, 3, NULL,
+		0xFF, 0xCaFEBaBE);
+
 printf(NOTICE ORIENT"orient 3.\n");
 	return;
 

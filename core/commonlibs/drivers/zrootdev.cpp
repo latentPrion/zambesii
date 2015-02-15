@@ -34,6 +34,11 @@ void zrootdev_devmgmt_req(
 void zrootdev_final_cleanup_req(udi_mgmt_cb_t *cb)
 {
 	(void)cb;
+	udi_gio_xfer_cb_t		*c = (udi_gio_xfer_cb_t *)cb;
+printf(NOTICE"cb: 0x%p. 0: 0x%x, 1: 0x%x.\n",
+	c,
+	((ubit32 *)c->tr_params)[0],
+	((ubit32 *)c->tr_params)[1]);
 }
 
 static utf8Char *events[] =

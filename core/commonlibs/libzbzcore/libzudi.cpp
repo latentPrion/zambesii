@@ -417,6 +417,8 @@ void udi_mei_call(
 		gcb, args, layouts,
 		endp->metaName, meta_ops_num, vec_idx,
 		gcb->origin);
+
+	lzudi::udi_cb_free_sync(gcb);
 }
 
 static udi_layout_t		channel_event_cb[] =
@@ -501,6 +503,7 @@ void *lzudi::udi_mem_alloc_sync(udi_size_t size, udi_ubit8_t flags)
 	// In the kernel we only give out movable memory.
 	mem = new (size) fplainn::sMovableMemory(size);
 	if (mem == NULL) { return NULL; };
+	mem->setMagic(UDI_MOVABLE_MEM_MAGIC);
 
 	mem++;
 	if (!FLAG_TEST(flags, UDI_MEM_NOZERO)) {
@@ -508,6 +511,27 @@ void *lzudi::udi_mem_alloc_sync(udi_size_t size, udi_ubit8_t flags)
 	};
 
 	return mem;
+}
+
+void lzudi::udi_mem_free_sync(void *mem)
+{
+	fplainn::sMovableMemory		*memHdr;
+
+	memHdr = (fplainn::sMovableMemory *)mem;
+	memHdr--;
+	if (!memHdr->magicIsValid())
+	{
+		printf(FATAL"udi_mem_free_sync: Found invalid magic!\n");
+		panic(ERROR_INVALID_STATE);
+		return;
+	};
+
+	delete memHdr;
+}
+
+void udi_mem_free(void *mem)
+{
+	lzudi::udi_mem_free_sync(mem);
 }
 
 void *lzudi::sControlBlock::operator new(size_t sz, uarch_t payloadSize)
@@ -654,6 +678,30 @@ error_t lzudi::udi_cb_alloc_sync(
 		metaCbDesc->visibleLayout, cbInit->inline_layout);
 }
 
+void udi_cb_free(udi_cb_t *cb)
+{
+	lzudi::udi_cb_free_sync(cb);
+}
+
+void lzudi::udi_cb_free_sync(udi_cb_t *cb)
+{
+	lzudi::sControlBlock		*cbHdr;
+
+	cbHdr = (lzudi::sControlBlock *)cb;
+	cbHdr--;
+
+	if (!cbHdr->magicIsValid())
+	{
+		printf(FATAL"udi_cb_free_sync 0x%p: Found invalid "
+			"magic!\n",
+			cbHdr);
+
+		panic(ERROR_INVALID_STATE);
+		return;
+	}
+	delete cbHdr;
+}
+
 lzudi::sControlBlock *lzudi::calleeCloneCb(
 	fplainn::sChannelMsg *msg,
 	udi_mei_op_template_t *opTemplate,
@@ -661,7 +709,8 @@ lzudi::sControlBlock *lzudi::calleeCloneCb(
 	)
 {
 	sControlBlock			*ret;
-	status_t			visibleSize, inlineObjectsSize;
+	status_t			visibleSize, marshalSize,
+					inlineObjectsSize;
 	ubit8				*mcb8 = (ubit8 *)msg->getPayloadAddr(),
 					*ret8;
 
@@ -679,6 +728,10 @@ lzudi::sControlBlock *lzudi::calleeCloneCb(
 			__klzbzcore::region::channel
 				::mgmt::layouts::channel_event_cb, 1);
 
+		marshalSize = fplainn::sChannelMsg::zudi_layout_get_size(
+			__klzbzcore::region::channel
+				::mgmt::layouts::channel_event_ind, 0);
+
 		inlineObjectsSize = fplainn::sChannelMsg
 			::getTotalMarshalSpaceInlineRequirements(
 			__klzbzcore::region::channel
@@ -691,11 +744,25 @@ lzudi::sControlBlock *lzudi::calleeCloneCb(
 		visibleSize = fplainn::sChannelMsg::zudi_layout_get_size(
 			opTemplate->visible_layout, 1);
 
+		marshalSize = fplainn::sChannelMsg::zudi_layout_get_size(
+			opTemplate->marshal_layout, 0);
+
 		inlineObjectsSize = fplainn::sChannelMsg
 			::getTotalMarshalSpaceInlineRequirements(
 			opTemplate->visible_layout,
 			msg->getDtypedLayoutAddr(),
 			msg->getPayloadAddr());
+	};
+
+	if (visibleSize < 0 || marshalSize < 0 || inlineObjectsSize < 0)
+	{
+		printf(ERROR LZUDI"calleeCloneCb: unable to gauge size of one "
+			"or more marshalled components in the sChannelMsg.\n"
+			"\tRets: vis %d, marshal %d, inline %d.\n",
+			visibleSize, marshalSize, inlineObjectsSize);
+
+		panic(ERROR_NON_CONFORMANT);
+		return NULL;
 	};
 
 	ret = new (
@@ -709,7 +776,7 @@ lzudi::sControlBlock *lzudi::calleeCloneCb(
 	ret8 = (ubit8 *)(ret + 1);
 
 	// Copy the GCB:
-	memcpy(ret, msg->getPayloadAddr(), sizeof(udi_cb_t));
+	memcpy(ret8, msg->getPayloadAddr(), sizeof(udi_cb_t));
 	// Copy the visible portion.
 	memcpy(
 		ret8 + sizeof(udi_cb_t),
@@ -719,13 +786,12 @@ lzudi::sControlBlock *lzudi::calleeCloneCb(
 	// Copy the inline objects over.
 	memcpy(
 		ret8 + sizeof(udi_cb_t) + visibleSize,
-		mcb8 + sizeof(udi_cb_t) + visibleSize,
+		mcb8 + sizeof(udi_cb_t) + visibleSize + marshalSize,
 		inlineObjectsSize);
 
 	// Copy the DRIVER_TYPED layout finally.
 	if (msg->msgDtypedLayoutOff != 0)
 	{
-
 		ret->dtypedLayoutNElements = msg->dtypedLayoutNElements;
 		ret->driverTypedLayout = (udi_layout_t *)(ret8 + sizeof(udi_cb_t)
 			+ visibleSize

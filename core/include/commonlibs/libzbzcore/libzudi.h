@@ -94,14 +94,19 @@ namespace lzudi
 
 	struct sControlBlock
 	{
+		static const uarch_t	MAGIC=0xC01111D0;
 		sControlBlock(void)
 		:
-		dtypedLayoutNElements(0), driverTypedLayout(NULL)
+		magic(MAGIC), dtypedLayoutNElements(0), driverTypedLayout(NULL)
 		{}
+
+
+		sbit8 magicIsValid(void) { return magic == MAGIC; }
 
 		void *operator new(size_t sz, uarch_t payloadSize);
 		void operator delete(void *mem);
 
+		uarch_t			magic;
 		uarch_t			dtypedLayoutNElements;
 		udi_layout_t		*driverTypedLayout;
 	};
@@ -111,10 +116,13 @@ namespace lzudi
 		udi_mei_op_template_t *opTemplate, udi_index_t opsIndex);
 
 	void *udi_mem_alloc_sync(udi_size_t size, udi_ubit8_t flags);
+	void udi_mem_free_sync(void *mem);
 
+	void udi_cb_free_sync(udi_cb_t *cb);
 	error_t udi_cb_alloc_sync(
 		__klzbzcore::driver::CachedInfo *drvInfoCache,
 		udi_index_t cb_idx, udi_cb_t **retcb);
+
 }
 
 #endif
