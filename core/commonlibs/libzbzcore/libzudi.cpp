@@ -418,7 +418,33 @@ void udi_mei_call(
 		endp->metaName, meta_ops_num, vec_idx,
 		gcb->origin);
 
+	/**	EXPLanaTION:
+	 * If udi_primary_init_t::enumeration_attr_list_length is non-zero, we
+	 * have to udi_mem_free() the mem we allocated for the attr_list before we
+	 * udi_cb_free_sync() the cb.
+	 **/
+	if (!strncmp8(endp->metaName, CC"udi_mgmt", DRIVER_METALANGUAGE_MAXLEN)
+		&& vec_idx == 2)
+	{
+		__klzbzcore::driver::CachedInfo		*drvInfoCache;
+
+		// Possibly use udi_mei_driver_error() here.
+		if (thread->parent->getType() != ProcessStream::DRIVER) { return; };
+		drvInfoCache = thread->getRegion()->parent->device->driverInstance
+			->cachedInfo;
+
+		if (drvInfoCache->initInfo->primary_init_info
+			->enumeration_attr_list_length > 0)
+		{
+			udi_enumerate_cb_t		*ecb =
+				(udi_enumerate_cb_t *)gcb;
+
+			lzudi::udi_mem_free_sync(ecb->attr_list, 1);
+		};
+	};
+
 	lzudi::udi_cb_free_sync(gcb);
+
 }
 
 static udi_layout_t		channel_event_cb[] =
@@ -513,7 +539,7 @@ void *lzudi::udi_mem_alloc_sync(udi_size_t size, udi_ubit8_t flags)
 	return mem;
 }
 
-void lzudi::udi_mem_free_sync(void *mem)
+void lzudi::udi_mem_free_sync(void *mem, sbit8 dontPanicOnBadMagic)
 {
 	fplainn::sMovableMemory		*memHdr;
 
@@ -522,7 +548,15 @@ void lzudi::udi_mem_free_sync(void *mem)
 	if (!memHdr->magicIsValid())
 	{
 		printf(FATAL"udi_mem_free_sync: Found invalid magic!\n");
-		panic(ERROR_INVALID_STATE);
+		if (!dontPanicOnBadMagic) {
+			panic(ERROR_INVALID_STATE);
+		}
+		else
+		{
+			printf(FATAL"udi_mem_free_sync: dontPanicOnBadMagic "
+				"flag set.\n");
+		};
+
 		return;
 	};
 

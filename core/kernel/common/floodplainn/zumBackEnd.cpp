@@ -9,6 +9,7 @@
 #include <kernel/common/zasyncStream.h>
 #include <kernel/common/floodplainn/zum.h>
 #include <kernel/common/floodplainn/floodplainn.h>
+#include <kernel/common/floodplainn/movableMemory.h>
 #include <kernel/common/floodplainn/initInfo.h>
 #include <kernel/common/floodplainn/floodplainnStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -78,6 +79,11 @@ namespace zumServer
 	namespace mgmt
 	{
 		void usageInd(
+			ZAsyncStream::sZAsyncMsg *msg,
+			fplainn::Zum::sZAsyncMsg *request,
+			Thread *self);
+
+		void enumerateReq(
 			ZAsyncStream::sZAsyncMsg *msg,
 			fplainn::Zum::sZAsyncMsg *request,
 			Thread *self);
@@ -251,6 +257,7 @@ void zumServer::zasyncHandler(
 		mgmt::usageInd(msg, request, self);
 		break;
 	case fplainn::Zum::sZAsyncMsg::OP_ENUMERATE_REQ:
+		mgmt::enumerateReq(msg, request, self);
 		break;
 	case fplainn::Zum::sZAsyncMsg::OP_DEVMGMT_REQ:
 		break;
@@ -555,7 +562,6 @@ void zumServer::mgmt::usageInd(
 	error_t				err;
 	fplainn::Zum::sZumMsg		*ctxt;
 	AsyncResponse			myResponse;
-	udi_usage_cb_t			cb;
 
 	/**	EXPLANATION:
 	 * Basically:
@@ -583,9 +589,6 @@ void zumServer::mgmt::usageInd(
 		myResponse(err); return;
 	};
 
-	cb.trace_mask = ctxt->info.params.usage.cb.trace_mask;
-	cb.meta_idx = ctxt->info.params.usage.cb.meta_idx;
-
 	udi_layout_t		*layouts[3] =
 	{
 		__klzbzcore::region::channel::mgmt::layouts::visible[ctxt->info.opsIndex],
@@ -594,7 +597,7 @@ void zumServer::mgmt::usageInd(
 	};
 
 	err = self->parent->floodplainnStream.send(
-		endp, &cb.gcb, layouts,
+		endp, &ctxt->info.params.usage.cb.gcb, layouts,
 		CC "udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
 		new MgmtReqCb(usageRes, ctxt, self, dev),
 		ctxt->info.params.usage.resource_level);
@@ -629,6 +632,146 @@ void zumServer::mgmt::usageRes(
 	myResponse(response->header.error);
 }
 
+void zumServer::mgmt::enumerateReq(
+	ZAsyncStream::sZAsyncMsg *msg,
+	fplainn::Zum::sZAsyncMsg *request,
+	Thread *self
+	)
+{
+	fplainn::Endpoint		*endp;
+	fplainn::Device			*dev;
+	error_t				err;
+	fplainn::Zum::sZumMsg		*ctxt;
+	AsyncResponse			myResponse;
+
+	/**	EXPLANATION:
+	 * Basically:
+	 *	* Get the device, if it exists.
+	 *	* Ensure that we are connected to the device first.
+	 *	* Get the kernel's mgmt endpoint.
+	 *	* Then fill out a udi_usage_cb_t control block.
+	 *	* Call FloodplainnStream::send():
+	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=2.
+	 **/
+	ctxt = getNewZumMsg(
+		CC __func__, request->path,
+		msg->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
+		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
+
+	if (ctxt == NULL) { return; };
+	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+
+	ctxt->info.params.enumerate.filter_list = NULL;
+	ctxt->info.params.enumerate.attr_list = NULL;
+	myResponse(ctxt);
+
+	err = getDeviceHandleAndMgmtEndpoint(
+		CC __func__, ctxt->info.path, &dev, &endp);
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	udi_layout_t		*layouts[] =
+	{
+		__klzbzcore::region::channel::mgmt::layouts::visible[ctxt->info.opsIndex],
+		__klzbzcore::region::channel::mgmt::layouts::marshal[ctxt->info.opsIndex],
+		NULL
+	};
+
+	err = self->parent->floodplainnStream.send(
+		endp, &ctxt->info.params.enumerate.cb.gcb, layouts,
+		CC "udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
+		new MgmtReqCb(enumerateAck, ctxt, self, dev),
+		ctxt->info.params.enumerate.enumeration_level);
+
+	/* Cleanup the heap objects we used to transmit the attr and filter lists
+	 * now. They have been marshalled, and we no longer need to keep those
+	 * floating heap objects.
+	 **/
+	fplainn::sMovableMemory			*a, *f;
+
+	a = (fplainn::sMovableMemory *)request->params.enumerate.cb.attr_list;
+	f = (fplainn::sMovableMemory *)request->params.enumerate.cb.filter_list;
+	if (a != NULL) { a--; };
+	if (f != NULL) { f--; };
+
+	if (request->params.enumerate.cb.attr_valid_length > 0) { delete a; };
+	if (request->params.enumerate.cb.filter_list_length > 0) { delete f; };
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	myResponse(DONT_SEND_RESPONSE);
+}
+
+void zumServer::mgmt::enumerateAck(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *,
+	fplainn::Device *
+	)
+{
+	fplainn::sChannelMsg	*response = (fplainn::sChannelMsg *)msg;
+	AsyncResponse		myResponse;
+	udi_enumerate_cb_t	*cb;
+
+	myResponse(ctxt);
+
+	cb = (udi_enumerate_cb_t *)response->getPayloadAddr();
+
+	ctxt->info.params.enumerate.cb = *cb;
+
+	// Copy the attr and filter lists into some kernel memory area.
+	if (cb->attr_valid_length > 0)
+	{
+		ctxt->info.params.enumerate.cb.attr_valid_length =
+			cb->attr_valid_length;
+
+		ctxt->info.params.enumerate.attr_list =
+			ctxt->info.params.enumerate.cb.attr_list =
+			new udi_instance_attr_list_t[cb->attr_valid_length];
+
+		if (ctxt->info.params.enumerate.attr_list == NULL) {
+			myResponse(ERROR_MEMORY_NOMEM); return;
+		};
+
+		memcpy(
+			ctxt->info.params.enumerate.attr_list,
+			cb->attr_list,
+			sizeof(*cb->attr_list) * cb->attr_valid_length);
+	};
+
+	if (cb->filter_list_length > 0)
+	{
+		ctxt->info.params.enumerate.cb.filter_list_length =
+			cb->filter_list_length;
+
+		ctxt->info.params.enumerate.filter_list =
+			*const_cast<udi_filter_element_t **>(&ctxt->info.params.enumerate.cb.filter_list) =
+			new udi_filter_element_t[cb->filter_list_length];
+
+		if (ctxt->info.params.enumerate.filter_list == NULL)
+		{
+			delete[] ctxt->info.params.enumerate.attr_list;
+			myResponse(ERROR_MEMORY_NOMEM); return;
+		};
+
+		memcpy(
+			ctxt->info.params.enumerate.filter_list,
+			cb->filter_list,
+			sizeof(*cb->filter_list) * cb->filter_list_length);
+	};
+
+	/* This is the status for the enumerate_req call itself, and not for the
+	 * driver's return value in its usage_res call (there is none actually),
+	 * or anything like that.
+	 **/
+	myResponse(response->header.error);
+}
+
 void zumServer::mgmt::channelEventInd(
 	ZAsyncStream::sZAsyncMsg *msg,
 	fplainn::Zum::sZAsyncMsg *request,
@@ -639,7 +782,6 @@ void zumServer::mgmt::channelEventInd(
 	error_t				err;
 	fplainn::Zum::sZumMsg		*ctxt;
 	AsyncResponse			myResponse;
-	udi_channel_event_cb_t		cb;
 
 	/**	EXPLANATION:
 	 * Basically:
@@ -669,11 +811,6 @@ void zumServer::mgmt::channelEventInd(
 		myResponse(err); return;
 	};
 
-	cb.event = ctxt->info.params.channel_event.cb.event;
-	memcpy(
-		&cb.params, &ctxt->info.params.channel_event.cb.params,
-		sizeof(cb.params));
-
 	udi_layout_t		*layouts[3] =
 	{
 		__klzbzcore::region::channel::mgmt::layouts::visible[ctxt->info.opsIndex],
@@ -683,7 +820,8 @@ void zumServer::mgmt::channelEventInd(
 
 	err = fplainn::sChannelMsg::send(
 		ctxt->info.params.channel_event.endpoint,
-		&cb.gcb, (va_list)&cb, layouts,
+		&ctxt->info.params.channel_event.cb.gcb,
+		(va_list)NULL, layouts,
 		CC"udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
 		new MgmtReqCb(channelEventComplete, ctxt, self, dev));
 

@@ -285,6 +285,7 @@ namespace mgmt
 		udi_layout_t		*visible[] =
 		{
 			channel_event_cb,
+			// These 4 NULLs get filled out when ZUM is initialized.
 			NULL, NULL, NULL, NULL
 		};
 
@@ -294,6 +295,7 @@ namespace mgmt
 		udi_layout_t		*marshal[] =
 		{
 			channel_event_ind,
+			// These 4 NULLs get filled out when ZUM is initialized.
 			NULL, NULL, NULL, NULL
 		};
 	}

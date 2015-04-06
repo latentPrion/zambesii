@@ -699,6 +699,7 @@ void __klzbzcore::region::channel::handler(
 	};
 
 	cb = (udi_cb_t *)(cbHdr + 1);
+
 	fplainn::sChannelMsg::updateClonedCbInlinePointers(
 		cb, msg->getPayloadAddr(),
 		((opTemplate == NULL)
@@ -961,7 +962,7 @@ void __klzbzcore::region::channel::mgmtMeiCall(
 			ecb->child_data = NULL;
 		};
 
-		if (ecb->attr_list == NULL
+		if (ecb->attr_valid_length == 0
 			&& primaryInit->enumeration_attr_list_length > 0)
 		{
 			uarch_t			allocSize;

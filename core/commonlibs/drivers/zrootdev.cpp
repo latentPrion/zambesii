@@ -9,8 +9,8 @@ void zrootdev_usage_ind(udi_usage_cb_t *cb, udi_ubit8_t resource_level)
 {
 	(void)cb; (void)resource_level;
 
-	printf(NOTICE"The plan was to drink until the pain was over;\n"
-		"\tbut what's worse, the pain or the hangover? --Kanye West.\n"
+	printf(NOTICE"We are saved by grace, through faith,\n\tand that not of "
+		"ourselves: but it is a gift of El.\n"
 		"\trdata 0x%p, scratch 0x%p, channel 0x%p, resource_lvl %d.\n",
 		cb->gcb.context, cb->gcb.scratch, cb->gcb.channel,
 		resource_level);
@@ -22,6 +22,22 @@ void zrootdev_enumerate_req(
 	)
 {
 	(void)cb; (void)enumeration_level;
+
+printf(NOTICE"enum!\tcb 0x%p, %d attr @0x%p, %d filt @0x%p.\n",
+	cb,
+	cb->attr_valid_length, cb->attr_list,
+	cb->filter_list_length, cb->filter_list);
+
+	for (uarch_t i=0; i<cb->attr_valid_length; i++) {
+		printf(CC"\tattr %s.\n", cb->attr_list[i].attr_name);
+	};
+
+	for (uarch_t i=0; i<cb->filter_list_length; i++) {
+		printf(CC"\tfilt %s.\n", cb->filter_list[i].attr_name);
+	};
+
+//	cb->attr_valid_length = 2;
+	udi_enumerate_ack(cb, UDI_ENUMERATE_LEAF, 0);
 }
 
 void zrootdev_devmgmt_req(
@@ -34,11 +50,6 @@ void zrootdev_devmgmt_req(
 void zrootdev_final_cleanup_req(udi_mgmt_cb_t *cb)
 {
 	(void)cb;
-	udi_gio_xfer_cb_t		*c = (udi_gio_xfer_cb_t *)cb;
-printf(NOTICE"cb: 0x%p. 0: 0x%x, 1: 0x%x.\n",
-	c,
-	((ubit32 *)c->tr_params)[0],
-	((ubit32 *)c->tr_params)[1]);
 }
 
 static utf8Char *events[] =

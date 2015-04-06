@@ -54,15 +54,41 @@ public:
 		utf8Char *devicePath, udi_ubit8_t op, ubit16 parentId,
 		void *privateData);
 
-	// TODO: later.
 	void enumerateReq(
-		utf8Char *devicePath, udi_ubit8_t enumLevel, void *privateData);
+		utf8Char *devicePath, udi_ubit8_t enumLevel,
+		udi_enumerate_cb_t *cb, void *privateData);
+
+	void getEnumerateReqAttrsAndFilters(
+		const udi_enumerate_cb_t *const cb,
+		udi_instance_attr_list_t *attr_list_mem,
+		udi_filter_element_t *filter_list_mem)
+	{
+		if (cb->attr_valid_length > 0)
+		{
+			memcpy(
+				attr_list_mem, cb->attr_list,
+				sizeof(*cb->attr_list) * cb->attr_valid_length);
+
+			delete[] cb->attr_list;
+		};
+
+		if (cb->filter_list_length > 0)
+		{
+			memcpy(
+				filter_list_mem, cb->filter_list,
+				sizeof(*cb->filter_list)
+					* cb->filter_list_length);
+
+			delete[] cb->filter_list;
+		};
+	}
 
 	void usageInd(
 		utf8Char *devicePath, udi_ubit8_t resource_level,
 		void *privateData);
 
-	union eventIndU {
+	union eventIndU
+	{
 		void setInternalParams(udi_cb_t *cb)
 			{ internal_bound.bind_cb = cb; }
 
@@ -151,6 +177,9 @@ public:
 
 				udi_ubit8_t		enumeration_result;
 				udi_index_t		ops_idx;
+
+				udi_instance_attr_list_t	*attr_list;
+				udi_filter_element_t		*filter_list;
 			} enumerate;
 
 			struct

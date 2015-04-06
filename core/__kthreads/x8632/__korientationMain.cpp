@@ -342,7 +342,7 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 	fplainn::Device			*dev;
 
 	floodplainn.getDevice(CC"by-id", &dev);
-	struct sGxcb
+/*	struct sGxcb
 	{
 		sGxcb(void)
 		{
@@ -382,9 +382,53 @@ udi_layout_t				tmpLay[] =
 		dev->instance->mgmtEndpoint, &cb.cb.gcb,
 		l, CC"udi_gio",
 		UDI_GIO_PROVIDER_OPS_NUM, 3, NULL,
-		0xFF, 0xCaFEBaBE);
+		0xFF, 0xCaFEBaBE);*/
+
+	struct sGecb {
+		sGecb(void) {
+			memset(&cb, 0, sizeof(cb));
+		}
+
+		lzudi::sControlBlock			hdr;
+		udi_enumerate_cb_t		cb;
+	} ecb;
+	udi_instance_attr_list_t	ta[2];
+	udi_filter_element_t		tf[2];
+
+
+	{
+		strcpy8(CC ta[0].attr_name, CC"attr0");
+		strcpy8(CC ta[0].attr_value, CC"attr0-value");
+		ta[0].attr_type = 1;
+		strcpy8(CC ta[1].attr_name, CC"attr1");
+		strcpy8(CC ta[1].attr_value, CC"attr1-value");
+		ta[1].attr_type = 1;
+	};
+	{
+		strcpy8(CC tf[0].attr_name, CC"filter0");
+		strcpy8(CC tf[1].attr_name, CC"filter1");
+	};
+	{
+		ecb.cb.attr_valid_length = 0;
+		ecb.cb.filter_list_length = 0;
+		ecb.cb.attr_list = ta;
+		ecb.cb.filter_list = tf;
+	};
+
+	printf(NOTICE ORIENT"o3: cb 0x%p: %d attr @0x%p, %d filt @0x%p.\n",
+		&ecb,
+		ecb.cb.attr_valid_length,
+		ecb.cb.attr_list,
+		ecb.cb.filter_list_length,
+		ecb.cb.filter_list);
+
+	__kcbFn		__kotp;
+	floodplainn.zum.enumerateReq(
+		CC"by-id", UDI_ENUMERATE_NEXT, &ecb.cb,
+		new __kCallback(&__kotp));
 
 printf(NOTICE ORIENT"orient 3.\n");
+
 	return;
 
 	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
@@ -405,4 +449,29 @@ printf(NOTICE ORIENT"orient 3.\n");
 
 	printf(NOTICE ORIENT"Halting unfavourably.\n");
 	for (;FOREVER;) { asm volatile("hlt\n\t"); };
+}
+
+void __kotp(MessageStream::sHeader *msgIt)
+{
+	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
+	udi_enumerate_cb_t		*ecb = &msg->info.params.enumerate.cb;
+	udi_instance_attr_list_t	a[2];
+	udi_filter_element_t		f[2];
+
+printf(NOTICE"here, finished enum req.\n");
+	printf(NOTICE ORIENT"msg 0x%p: %d attr @0x%p, %d filt @0x%p.\n",
+		msg,
+		ecb->attr_valid_length,
+		ecb->attr_list,
+		ecb->filter_list_length,
+		ecb->filter_list);
+
+	floodplainn.zum.getEnumerateReqAttrsAndFilters(ecb, a, f);
+	for (uarch_t i=0; i<ecb->attr_valid_length; i++) {
+		printf(CC"\tattr %s.\n", ecb->attr_list[i].attr_name);
+	};
+
+	for (uarch_t i=0; i<ecb->filter_list_length; i++) {
+		printf(CC"\tfilt %s.\n", ecb->filter_list[i].attr_name);
+	};
 }

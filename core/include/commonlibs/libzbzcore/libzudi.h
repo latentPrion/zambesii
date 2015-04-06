@@ -116,7 +116,7 @@ namespace lzudi
 		udi_mei_op_template_t *opTemplate, udi_index_t opsIndex);
 
 	void *udi_mem_alloc_sync(udi_size_t size, udi_ubit8_t flags);
-	void udi_mem_free_sync(void *mem);
+	void udi_mem_free_sync(void *mem, sbit8 dontPanicOnBadMagic=0);
 
 	void udi_cb_free_sync(udi_cb_t *cb);
 	error_t udi_cb_alloc_sync(
