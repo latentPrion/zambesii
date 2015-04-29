@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #define UDI_VERSION		0x101
 #include <udi.h>
 #undef UDI_VERSION
@@ -76,6 +77,26 @@ namespace zumServer
 		startDeviceReqCbFn	startDeviceReq3;
 	}
 
+	namespace enumerateChildren
+	{
+		void enumerateChildrenReq(
+			ZAsyncStream::sZAsyncMsg *msg,
+			fplainn::Zum::sZAsyncMsg *request,
+			Thread *self);
+
+	// PRIVATE:
+		typedef start::StartDeviceReqCb EnumerateChildrenReqCb;
+		typedef void (startDeviceReqCbFn)(
+			MessageStream::sHeader *msg,
+			fplainn::Zum::sZumMsg *ctxt,
+			Thread *self,
+			fplainn::Device *dev);
+
+		startDeviceReqCbFn	enumerateChildrenReq1;
+		startDeviceReqCbFn	enumerateChildrenReq2;
+		startDeviceReqCbFn	enumerateChildrenReq3;
+	}
+
 	namespace mgmt
 	{
 		void usageInd(
@@ -135,6 +156,7 @@ namespace zumServer
 	}
 }
 
+#define ZUM_ASYNC_MSG_EXTRA_NPAGES		2
 void fplainn::Zum::main(void *)
 {
 	Thread				*self;
@@ -144,7 +166,12 @@ void fplainn::Zum::main(void *)
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	requestData = new sZAsyncMsg(NULL, 0);
+	requestData = getNewSZAsyncMsg(
+		CC __func__, CC"NONE:MAIN",
+		fplainn::Zum::sZAsyncMsg::OP_CHANNEL_EVENT_IND,
+		PAGING_BASE_SIZE * ZUM_ASYNC_MSG_EXTRA_NPAGES);
+
+//	requestData = new sZAsyncMsg(NULL, 0, PAGING_BASE_SIZE * 2);
 	if (requestData.get() == NULL)
 	{
 		printf(ERROR ZUM"main: failed to alloc request data mem.\n");
@@ -231,7 +258,9 @@ void zumServer::zasyncHandler(
 {
 	error_t			err;
 
-	if (msg->dataNBytes != sizeof(*request))
+printf(NOTICE"%d bytes sent to the backend.\n", msg->dataNBytes);
+
+	if (msg->dataNBytes > sizeof(*request) + PAGING_BASE_SIZE * ZUM_ASYNC_MSG_EXTRA_NPAGES)
 	{
 		printf(WARNING ZUM"incoming request from 0x%x has odd size. "
 			"Rejected.\n",
@@ -268,6 +297,9 @@ void zumServer::zasyncHandler(
 		break;
 	case fplainn::Zum::sZAsyncMsg::OP_START_REQ:
 		start::startDeviceReq(msg, request, self);
+		break;
+	case fplainn::Zum::sZAsyncMsg::OP_ENUMERATE_CHILDREN_REQ:
+		enumerateChildren::enumerateChildrenReq(msg, request, self);
 		break;
 
 	default:
@@ -317,7 +349,7 @@ void zumServer::start::startDeviceReq(
 
 	if (ctxt == NULL) { return; };
 	// Copy the request data over.
-	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
 	ctxt->info.params.start.ibind.nChannels = -1;
 	ctxt->info.params.start.pbind.nChannels = -1;
 
@@ -551,6 +583,65 @@ void zumServer::start::startDeviceReq3(
 	myResponse(ERROR_SUCCESS);
 }
 
+void zumServer::enumerateChildren::enumerateChildrenReq(
+	ZAsyncStream::sZAsyncMsg *msg,
+	fplainn::Zum::sZAsyncMsg *request,
+	Thread *self
+	)
+{
+	fplainn::Zum::sZumMsg		*ctxt;
+	error_t				err;
+	fplainn::Endpoint		*endp;
+	AsyncResponse			myResponse;
+	fplainn::Device			*dev;
+
+	ctxt = getNewZumMsg(
+		CC __func__, request->path,
+		msg->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
+		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
+
+	if (ctxt == NULL) { return; };
+	// Copy the request data over.
+	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+
+	myResponse(ctxt);
+
+	// Does the requested device even exist?
+	err = floodplainn.getDevice(ctxt->info.path, &dev);
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+printf(NOTICE"Here at the spot bruh.\n");
+	/**	EXPLANATION:
+	 * Now we just cycle through, calling enumerateReq on the device until
+	 * it tells us UDI_ENUMERATE_DONE.
+	 **/
+	udi_enumerate_cb_t		ecb;
+
+	memset(&ecb, 0, sizeof(ecb));
+	floodplainn.zum.enumerateReq(
+		ctxt->info.path,
+		(FLAG_TEST(
+			ctxt->info.params.enumerateChildren.flags,
+			ZUM_ENUMCHILDREN_FLAGS_UNCACHED_SCAN)
+			? UDI_ENUMERATE_START_RESCAN : UDI_ENUMERATE_START),
+		&ecb,
+		new EnumerateChildrenReqCb(
+			enumerateChildrenReq1, ctxt, self, dev));
+}
+
+
+void zumServer::enumerateChildren::enumerateChildrenReq1(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *self,
+	fplainn::Device *dev)
+{
+
+}
+
 void zumServer::mgmt::usageInd(
 	ZAsyncStream::sZAsyncMsg *msg,
 	fplainn::Zum::sZAsyncMsg *request,
@@ -579,7 +670,7 @@ void zumServer::mgmt::usageInd(
 		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
 
 	if (ctxt == NULL) { return; };
-	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
 	myResponse(ctxt);
 
 	err = getDeviceHandleAndMgmtEndpoint(
@@ -632,6 +723,7 @@ void zumServer::mgmt::usageRes(
 	myResponse(response->header.error);
 }
 
+udi_enumerate_cb_t	*gecb;
 void zumServer::mgmt::enumerateReq(
 	ZAsyncStream::sZAsyncMsg *msg,
 	fplainn::Zum::sZAsyncMsg *request,
@@ -660,7 +752,7 @@ void zumServer::mgmt::enumerateReq(
 		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
 
 	if (ctxt == NULL) { return; };
-	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
 
 	ctxt->info.params.enumerate.filter_list = NULL;
 	ctxt->info.params.enumerate.attr_list = NULL;
@@ -680,12 +772,18 @@ void zumServer::mgmt::enumerateReq(
 		NULL
 	};
 
+oo=56; gecb = &request->params.enumerate.cb;
+fplainn::sMovableMemory *smm = (fplainn::sMovableMemory *)((uintptr_t)ctxt->info.params.enumerate.cb.attr_list - sizeof(*smm));
+printf(ERROR"SZAsync msg as arrived at backend, objnbytes in backend: %d.\n", smm->objectNBytes);
 	err = self->parent->floodplainnStream.send(
 		endp, &ctxt->info.params.enumerate.cb.gcb, layouts,
 		CC "udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
 		new MgmtReqCb(enumerateAck, ctxt, self, dev),
 		ctxt->info.params.enumerate.enumeration_level);
+printf(NOTICE"---%s.\n",
+	request->params.enumerate.cb.attr_list[0].attr_name);
 
+#if 0
 	/* Cleanup the heap objects we used to transmit the attr and filter lists
 	 * now. They have been marshalled, and we no longer need to keep those
 	 * floating heap objects.
@@ -699,6 +797,7 @@ void zumServer::mgmt::enumerateReq(
 
 	if (request->params.enumerate.cb.attr_valid_length > 0) { delete a; };
 	if (request->params.enumerate.cb.filter_list_length > 0) { delete f; };
+#endif
 
 	if (err != ERROR_SUCCESS) {
 		myResponse(err); return;
@@ -799,7 +898,7 @@ void zumServer::mgmt::channelEventInd(
 		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
 
 	if (ctxt == NULL) { return; };
-	new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
 	myResponse(ctxt);
 
 	err = floodplainn.getDevice(ctxt->info.path, &dev);

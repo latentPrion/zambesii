@@ -409,18 +409,11 @@ udi_layout_t				tmpLay[] =
 		strcpy8(CC tf[1].attr_name, CC"filter1");
 	};
 	{
-		ecb.cb.attr_valid_length = 0;
+		ecb.cb.attr_valid_length = 2;
 		ecb.cb.filter_list_length = 0;
 		ecb.cb.attr_list = ta;
 		ecb.cb.filter_list = tf;
 	};
-
-	printf(NOTICE ORIENT"o3: cb 0x%p: %d attr @0x%p, %d filt @0x%p.\n",
-		&ecb,
-		ecb.cb.attr_valid_length,
-		ecb.cb.attr_list,
-		ecb.cb.filter_list_length,
-		ecb.cb.filter_list);
 
 	__kcbFn		__kotp;
 	floodplainn.zum.enumerateReq(
@@ -474,4 +467,6 @@ printf(NOTICE"here, finished enum req.\n");
 	for (uarch_t i=0; i<ecb->filter_list_length; i++) {
 		printf(CC"\tfilt %s.\n", ecb->filter_list[i].attr_name);
 	};
+
+//	floodplainn.zum.enumerateChildrenReq(CC"by-id", ecb, 0, 0);
 }

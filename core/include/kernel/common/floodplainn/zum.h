@@ -38,6 +38,26 @@ public:
 		utf8Char *devicePath, udi_ubit8_t resource_level,
 		void *privateData);
 
+	/* Causes the ZUM server to execute a full cycle of udi_enumerate_req
+	 * calls into a device. The kernel will build the device's children
+	 * using the information gathered. This function will return a buffer
+	 * of strings.
+	 *
+	 * The buffer will contain UTF-8 device paths, separated by ascii NULL
+	 * bytes. The terminating sequence is two contiguous NULLs.
+	 *
+	 * There is no way for the kernel to predict how many child devices the
+	 * target device will enumerate when this function is called, so we
+	 * simply recommend passing in a reasonably overcompensated buffer for
+	 * your output.
+	 **/
+	#define ZUM_ENUMCHILDREN_FLAGS_TEST_RUN			(1<<0)
+	#define ZUM_ENUMCHILDREN_FLAGS_UNCACHED_SCAN		(1<<1)
+	// We should eventually add support for filter_list to be passed to this.
+	void enumerateChildrenReq(
+		utf8Char *devicePath, udi_enumerate_cb_t *ecb,
+		uarch_t flags, void *privateData);
+
 	/* Causes the ZUM server to disconnect from the device, closing the
 	 * management channel, and tearing down the device instance.
 	 **/
@@ -137,8 +157,11 @@ public:
 public:
 	struct sZAsyncMsg
 	{
-		sZAsyncMsg(utf8Char *path, ubit16 opsIndex)
+		sZAsyncMsg(
+			utf8Char *path, ubit16 opsIndex,
+			uarch_t extraMemNBytes=0)
 		:
+		extraMemNBytes(extraMemNBytes),
 		opsIndex(opsIndex)
 		{
 			if (path != NULL)
@@ -152,8 +175,15 @@ public:
 			OP_CHANNEL_EVENT_IND=0,
 			OP_USAGE_IND, OP_ENUMERATE_REQ, OP_DEVMGMT_REQ,
 			OP_FINAL_CLEANUP_REQ,
-			OP_START_REQ };
+			OP_START_REQ, OP_ENUMERATE_CHILDREN_REQ };
 
+		void *operator new(size_t n, uarch_t extra)
+			{ return ::operator new(n + extra); }
+
+		void operator delete(void *m)
+			{ ::operator delete(m); }
+
+		uarch_t			extraMemNBytes;
 		ubit16			opsIndex;
 		utf8Char		path[FVFS_PATH_MAXLEN];
 		union
@@ -219,6 +249,13 @@ public:
 							nSuccesses, nFailures;
 				} ibind, pbind;
 			} start;
+
+			struct
+			{
+				udi_enumerate_cb_t	cb;
+
+				uarch_t			flags;
+			} enumerateChildren;
 		} params;
 	};
 
@@ -246,7 +283,8 @@ private:
 	static void main(void *);
 
 	static sZAsyncMsg *getNewSZAsyncMsg(
-		utf8Char *func, utf8Char *devPath, sZAsyncMsg::opE op);
+		utf8Char *func, utf8Char *devPath, sZAsyncMsg::opE op,
+		uarch_t extraMemNBytes=0);
 };
 
 

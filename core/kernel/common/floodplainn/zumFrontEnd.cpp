@@ -30,12 +30,13 @@ error_t fplainn::Zum::initialize(void)
 }
 
 fplainn::Zum::sZAsyncMsg *fplainn::Zum::getNewSZAsyncMsg(
-	utf8Char *func, utf8Char *devicePath, fplainn::Zum::sZAsyncMsg::opE op
+	utf8Char *func, utf8Char *devicePath, fplainn::Zum::sZAsyncMsg::opE op,
+	uarch_t extraMemNBytes
 	)
 {
 	fplainn::Zum::sZAsyncMsg	*ret;
 
-	ret = new sZAsyncMsg(devicePath, op);
+	ret = new (extraMemNBytes) sZAsyncMsg(devicePath, op, extraMemNBytes);
 	if (ret == NULL)
 	{
 		printf(ERROR ZUM"%s %s: Failed to alloc ZAsync req "
@@ -69,6 +70,67 @@ void fplainn::Zum::startDeviceReq(
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 
+void fplainn::Zum::enumerateChildrenReq(
+	utf8Char *devicePath, udi_enumerate_cb_t *ecb,
+	uarch_t flags, void *privateData
+	)
+{
+	HeapObj<sZAsyncMsg>		req;
+	Thread				*caller;
+	uarch_t				requiredExtraMem;
+	sZAsyncMsg			*tmp;
+	udi_instance_attr_list_t	*tmp2;
+
+	caller = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	requiredExtraMem =
+		ecb->attr_valid_length * sizeof(*ecb->attr_list)
+		+ ecb->filter_list_length * sizeof(*ecb->filter_list);
+
+	req = tmp = getNewSZAsyncMsg(
+		CC __func__, devicePath, sZAsyncMsg::OP_ENUMERATE_CHILDREN_REQ,
+		requiredExtraMem);
+
+	if (req.get() == NULL) { return; };
+
+	/**	EXPLANATION:
+	 * Copy the attr and filter lists into the extra mem packed at the
+	 * end of the sZASyncMsg.
+	 **/
+	// "tmp" and "tmp2 "now point to the beginning of the extra mem.
+	tmp2 = (udi_instance_attr_list_t *)++tmp;
+
+	// Set request params here.
+	req->params.enumerateChildren.flags = flags;
+
+	// Copy filter and list into extra mem.
+	if (ecb->attr_valid_length > 0 && ecb->attr_list != NULL)
+	{
+		memcpy(
+			tmp, ecb->attr_list,
+			ecb->attr_valid_length * sizeof(*ecb->attr_list));
+
+		ecb->attr_list = (udi_instance_attr_list_t *)tmp;
+		tmp2 += ecb->attr_valid_length;
+		// "tmp2" now points past the end of the copied attrs in the extra mem.
+	};
+
+	// Copy attr and list into extra mem.
+	if (ecb->filter_list_length > 0 && ecb->filter_list != NULL)
+	{
+		memcpy(
+			tmp2, ecb->filter_list,
+			ecb->filter_list_length * sizeof(*ecb->filter_list));
+
+		ecb->filter_list = (udi_filter_element_t *)tmp2;
+	};
+
+	caller->parent->zasyncStream.send(
+		serverTid, req.get(),
+		sizeof(*req) + req->extraMemNBytes,
+		ipc::METHOD_BUFFER, 0, privateData);
+}
+
 void fplainn::Zum::usageInd(
 	utf8Char *devicePath, udi_ubit8_t resource_level, void *privateData
 	)
@@ -99,6 +161,10 @@ void fplainn::Zum::enumerateReq(
 {
 	HeapObj<sZAsyncMsg>		req;
 	Thread				*caller;
+	uarch_t				requiredExtraMem;
+	fplainn::sMovableMemory		*tmp0[2];
+	udi_instance_attr_list_t	*tmp;
+	udi_filter_element_t		*tmp2;
 
 	if (cb == NULL) {
 		printf(ERROR ZUM"enumerateReq: cb arg is invalid.\n");
@@ -117,8 +183,14 @@ void fplainn::Zum::enumerateReq(
 
 	caller = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
+	requiredExtraMem =
+		(cb->attr_valid_length * sizeof(*cb->attr_list))
+		+ (cb->filter_list_length * sizeof(*cb->filter_list))
+		+ (sizeof(fplainn::sMovableMemory) * 2);
+
 	req = getNewSZAsyncMsg(
-		CC __func__, devicePath, sZAsyncMsg::OP_ENUMERATE_REQ);
+		CC __func__, devicePath, sZAsyncMsg::OP_ENUMERATE_REQ,
+		requiredExtraMem);
 
 	if (req.get() == NULL) { return; };
 
@@ -139,6 +211,49 @@ void fplainn::Zum::enumerateReq(
 	req->params.enumerate.cb.attr_list = NULL;
 	req->params.enumerate.cb.filter_list = NULL;
 
+	/* tmp1[0] = sMovableMem for attr_list.
+	 * tmp1[1] = sMovableMem for attr_list.
+	 * tmp = extra mem for attr_list.
+	 **/
+	tmp0[0] = tmp0[1] = (fplainn::sMovableMemory *)(req.get() + 1);
+	tmp = (udi_instance_attr_list_t *)(tmp0[0] + 1);
+
+	if (cb->attr_valid_length > 0 && cb->attr_list != NULL)
+	{
+		::new (tmp0[0]) fplainn::sMovableMemory(
+			cb->attr_valid_length * sizeof(*cb->attr_list));
+
+		memcpy(
+			tmp, cb->attr_list,
+			cb->attr_valid_length * sizeof(*cb->attr_list));
+
+		// Update pointer val
+		req->params.enumerate.cb.attr_list =
+			(udi_instance_attr_list_t *)tmp;
+
+		// tmp1[1] = sMovableMem for filter_list.
+		tmp0[1] = (fplainn::sMovableMemory *)
+			(tmp + cb->attr_valid_length);
+	};
+
+	// tmp2 = extra mem for filter list.
+	tmp2 = (udi_filter_element_t *)(tmp0[1] + 1);
+
+	if (cb->filter_list_length > 0 && cb->filter_list != NULL)
+	{
+		::new (tmp0[1]) fplainn::sMovableMemory(
+			cb->filter_list_length * sizeof(*cb->filter_list));
+
+		memcpy(
+			tmp2, cb->filter_list,
+			cb->filter_list_length * sizeof(*cb->filter_list));
+
+		// Update pointer val.
+		req->params.enumerate.cb.filter_list =
+			(udi_filter_element_t *)tmp2;
+	};
+
+#if 0
 	if (cb->attr_valid_length > 0 && cb->attr_list != NULL)
 	{
 		const uarch_t			listNBytes =
@@ -187,11 +302,14 @@ void fplainn::Zum::enumerateReq(
 			cb->filter_list,
 			listNBytes);
 	};
+#endif
 
 	req->params.enumerate.enumeration_level = enumLevel;
 
+printf(NOTICE"reqmem 0x%p: offsets: 0x%p, 0x%p; 0x%p, 0x%p.\n", req.get(), tmp0[0], tmp, tmp0[1], tmp2);
+
 	caller->parent->zasyncStream.send(
-		serverTid, req.get(), sizeof(*req),
+		serverTid, req.get(), sizeof(*req) + requiredExtraMem,
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 

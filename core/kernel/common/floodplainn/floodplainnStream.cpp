@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <kernel/common/thread.h>
 #include <kernel/common/process.h>
@@ -192,6 +193,8 @@ error_t FloodplainnStream::createChannel(
 
 	return ERROR_SUCCESS;
 }
+
+#include <kernel/common/floodplainn/movableMemory.h>
 
 error_t FloodplainnStream::send(
 	fplainn::Endpoint *_endp,
