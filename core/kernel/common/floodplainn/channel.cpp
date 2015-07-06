@@ -62,8 +62,6 @@ void *fplainn::sChannelMsg::operator new(size_t sz, uarch_t dataSize)
 	return ::operator new(sz + dataSize);
 }
 
-#include <kernel/common/floodplainn/movableMemory.h>
-
 static udi_layout_t		blankLayout[] = { UDI_DL_END };
 error_t fplainn::sChannelMsg::send(
 	fplainn::Endpoint *endp,
@@ -160,13 +158,6 @@ error_t fplainn::sChannelMsg::send(
 		data8 + sizeof(udi_cb_t) + visibleSize + marshalSize,
 		marshalCbSpace, gcb,
 		layouts[LAYOUT_VISIBLE], layouts[LAYOUT_INLINE]);
-
-if (oo==56)
-{
-udi_enumerate_cb_t	*ecb = (udi_enumerate_cb_t *)gcb;
-printf(NOTICE"===%s.\n",
-	ecb->attr_list[0].attr_name);
-};
 
 	if (status < 0)
 	{

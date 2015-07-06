@@ -139,7 +139,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 
 	case WPRANGER_STATUS_HEAP_GUARDPAGE:
 		panicWorthy = 1;
-		traceStack = 1;
+		//traceStack = 1;
 
 		printf(FATAL"Encountered a heap guardpage; heap corrupted\n"
 			"\tVaddr: 0x%p, EIP 0x%p\n"

@@ -194,8 +194,6 @@ error_t FloodplainnStream::createChannel(
 	return ERROR_SUCCESS;
 }
 
-#include <kernel/common/floodplainn/movableMemory.h>
-
 error_t FloodplainnStream::send(
 	fplainn::Endpoint *_endp,
 //	fplainn::Endpoint *endp,

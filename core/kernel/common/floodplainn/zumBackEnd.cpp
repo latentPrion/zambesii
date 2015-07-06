@@ -258,8 +258,6 @@ void zumServer::zasyncHandler(
 {
 	error_t			err;
 
-printf(NOTICE"%d bytes sent to the backend.\n", msg->dataNBytes);
-
 	if (msg->dataNBytes > sizeof(*request) + PAGING_BASE_SIZE * ZUM_ASYNC_MSG_EXTRA_NPAGES)
 	{
 		printf(WARNING ZUM"incoming request from 0x%x has odd size. "
@@ -723,7 +721,6 @@ void zumServer::mgmt::usageRes(
 	myResponse(response->header.error);
 }
 
-udi_enumerate_cb_t	*gecb;
 void zumServer::mgmt::enumerateReq(
 	ZAsyncStream::sZAsyncMsg *msg,
 	fplainn::Zum::sZAsyncMsg *request,
@@ -754,8 +751,6 @@ void zumServer::mgmt::enumerateReq(
 	if (ctxt == NULL) { return; };
 	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
 
-	ctxt->info.params.enumerate.filter_list = NULL;
-	ctxt->info.params.enumerate.attr_list = NULL;
 	myResponse(ctxt);
 
 	err = getDeviceHandleAndMgmtEndpoint(
@@ -772,32 +767,11 @@ void zumServer::mgmt::enumerateReq(
 		NULL
 	};
 
-oo=56; gecb = &request->params.enumerate.cb;
-fplainn::sMovableMemory *smm = (fplainn::sMovableMemory *)((uintptr_t)ctxt->info.params.enumerate.cb.attr_list - sizeof(*smm));
-printf(ERROR"SZAsync msg as arrived at backend, objnbytes in backend: %d.\n", smm->objectNBytes);
 	err = self->parent->floodplainnStream.send(
 		endp, &ctxt->info.params.enumerate.cb.gcb, layouts,
 		CC "udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
 		new MgmtReqCb(enumerateAck, ctxt, self, dev),
 		ctxt->info.params.enumerate.enumeration_level);
-printf(NOTICE"---%s.\n",
-	request->params.enumerate.cb.attr_list[0].attr_name);
-
-#if 0
-	/* Cleanup the heap objects we used to transmit the attr and filter lists
-	 * now. They have been marshalled, and we no longer need to keep those
-	 * floating heap objects.
-	 **/
-	fplainn::sMovableMemory			*a, *f;
-
-	a = (fplainn::sMovableMemory *)request->params.enumerate.cb.attr_list;
-	f = (fplainn::sMovableMemory *)request->params.enumerate.cb.filter_list;
-	if (a != NULL) { a--; };
-	if (f != NULL) { f--; };
-
-	if (request->params.enumerate.cb.attr_valid_length > 0) { delete a; };
-	if (request->params.enumerate.cb.filter_list_length > 0) { delete f; };
-#endif
 
 	if (err != ERROR_SUCCESS) {
 		myResponse(err); return;
@@ -816,6 +790,9 @@ void zumServer::mgmt::enumerateAck(
 	fplainn::sChannelMsg	*response = (fplainn::sChannelMsg *)msg;
 	AsyncResponse		myResponse;
 	udi_enumerate_cb_t	*cb;
+	fplainn::Zum::EnumerateReqMovableObjects
+				*movableMem;
+	uarch_t			movableMemRequirement;
 
 	myResponse(ctxt);
 
@@ -823,45 +800,46 @@ void zumServer::mgmt::enumerateAck(
 
 	ctxt->info.params.enumerate.cb = *cb;
 
-	// Copy the attr and filter lists into some kernel memory area.
-	if (cb->attr_valid_length > 0)
-	{
-		ctxt->info.params.enumerate.cb.attr_valid_length =
-			cb->attr_valid_length;
+	movableMemRequirement = fplainn::Zum::EnumerateReqMovableObjects
+		::calcMemRequirementsFor(
+			cb->attr_valid_length, cb->filter_list_length);
 
-		ctxt->info.params.enumerate.attr_list =
-			ctxt->info.params.enumerate.cb.attr_list =
-			new udi_instance_attr_list_t[cb->attr_valid_length];
+	movableMem = new (new ubit8[movableMemRequirement])
+	fplainn::Zum::EnumerateReqMovableObjects(
+		cb->attr_valid_length, cb->filter_list_length);
 
-		if (ctxt->info.params.enumerate.attr_list == NULL) {
-			myResponse(ERROR_MEMORY_NOMEM); return;
-		};
-
-		memcpy(
-			ctxt->info.params.enumerate.attr_list,
-			cb->attr_list,
-			sizeof(*cb->attr_list) * cb->attr_valid_length);
+	if (movableMem == NULL) {
+		myResponse(ERROR_MEMORY_NOMEM); return;
 	};
 
-	if (cb->filter_list_length > 0)
+	// Copy the attr and filter lists into some kernel memory area.
+	if (cb->attr_valid_length > 0 && cb->attr_list != NULL)
 	{
-		ctxt->info.params.enumerate.cb.filter_list_length =
-			cb->filter_list_length;
-
-		ctxt->info.params.enumerate.filter_list =
-			*const_cast<udi_filter_element_t **>(&ctxt->info.params.enumerate.cb.filter_list) =
-			new udi_filter_element_t[cb->filter_list_length];
-
-		if (ctxt->info.params.enumerate.filter_list == NULL)
-		{
-			delete[] ctxt->info.params.enumerate.attr_list;
-			myResponse(ERROR_MEMORY_NOMEM); return;
-		};
+		ctxt->info.params.enumerate.cb.attr_list =
+			movableMem->calcAttrList(cb->attr_valid_length);
 
 		memcpy(
-			ctxt->info.params.enumerate.filter_list,
+			ctxt->info.params.enumerate.cb.attr_list,
+			cb->attr_list,
+			sizeof(*cb->attr_list) * cb->attr_valid_length);
+	}
+	else {
+		ctxt->info.params.enumerate.cb.attr_list = NULL;
+	};
+
+	if (cb->filter_list_length > 0 && cb->filter_list != NULL)
+	{
+		*const_cast<udi_filter_element_t **>(&ctxt->info.params.enumerate.cb.filter_list) =
+			movableMem->calcFilterList(
+				cb->attr_valid_length, cb->filter_list_length);
+
+		memcpy(
+			const_cast<udi_filter_element_t *>(ctxt->info.params.enumerate.cb.filter_list),
 			cb->filter_list,
 			sizeof(*cb->filter_list) * cb->filter_list_length);
+	}
+	else {
+		*const_cast<udi_filter_element_t **>(&ctxt->info.params.enumerate.cb.filter_list) = NULL;
 	};
 
 	/* This is the status for the enumerate_req call itself, and not for the

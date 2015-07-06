@@ -13,6 +13,11 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
+char *udi_strcpy(char *s0, const char *s1)
+{
+	return (char *)strcpy8(CC s0, CC s1);
+}
+
 lzudi::sEndpointContext::sEndpointContext(
 	fplainn::Endpoint *__kendp,
 	utf8Char *metaName,

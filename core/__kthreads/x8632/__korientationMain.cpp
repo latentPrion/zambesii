@@ -332,6 +332,15 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 #include <commonlibs/libzbzcore/libzudi.h>
 #include <commonlibs/libzbzcore/libzbzcore.h>
 #include <kernel/common/floodplainn/initInfo.h>
+#include <kernel/common/floodplainn/movableMemory.h>
+template <class T, int N>
+struct sMovableMemObject
+{
+	sMovableMemObject(void) : hdr(sizeof(T) * N) {}
+
+	fplainn::sMovableMemory		hdr;
+	T				a[N];
+};
 void __korientationMain3(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
@@ -392,27 +401,27 @@ udi_layout_t				tmpLay[] =
 		lzudi::sControlBlock			hdr;
 		udi_enumerate_cb_t		cb;
 	} ecb;
-	udi_instance_attr_list_t	ta[2];
-	udi_filter_element_t		tf[2];
 
+	sMovableMemObject<udi_instance_attr_list_t, 2>	ta;
+	sMovableMemObject<udi_filter_element_t, 2>	tf;
 
 	{
-		strcpy8(CC ta[0].attr_name, CC"attr0");
-		strcpy8(CC ta[0].attr_value, CC"attr0-value");
-		ta[0].attr_type = 1;
-		strcpy8(CC ta[1].attr_name, CC"attr1");
-		strcpy8(CC ta[1].attr_value, CC"attr1-value");
-		ta[1].attr_type = 1;
+		strcpy8(CC ta.a[0].attr_name, CC"attr0");
+		strcpy8(CC ta.a[0].attr_value, CC"attr0-value");
+		ta.a[0].attr_type = 1;
+		strcpy8(CC ta.a[1].attr_name, CC"attr1");
+		strcpy8(CC ta.a[1].attr_value, CC"attr1-value");
+		ta.a[1].attr_type = 1;
 	};
 	{
-		strcpy8(CC tf[0].attr_name, CC"filter0");
-		strcpy8(CC tf[1].attr_name, CC"filter1");
+		strcpy8(CC tf.a[0].attr_name, CC"filter0");
+		strcpy8(CC tf.a[1].attr_name, CC"filter1");
 	};
 	{
-		ecb.cb.attr_valid_length = 2;
-		ecb.cb.filter_list_length = 0;
-		ecb.cb.attr_list = ta;
-		ecb.cb.filter_list = tf;
+		ecb.cb.attr_valid_length = 1;
+		ecb.cb.filter_list_length = 2;
+		ecb.cb.attr_list = ta.a;
+		ecb.cb.filter_list = tf.a;
 	};
 
 	__kcbFn		__kotp;

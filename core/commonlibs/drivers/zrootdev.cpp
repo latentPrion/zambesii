@@ -36,7 +36,6 @@ printf(NOTICE"enum!\tcb 0x%p, %d attr @0x%p, %d filt @0x%p.\n",
 		printf(CC"\tfilt %s.\n", cb->filter_list[i].attr_name);
 	};
 
-//	cb->attr_valid_length = 2;
 	udi_enumerate_ack(cb, UDI_ENUMERATE_LEAF, 0);
 }
 

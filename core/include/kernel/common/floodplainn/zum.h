@@ -7,6 +7,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/messageStream.h>
+	#include <kernel/common/floodplainn/movableMemory.h>
 	#include <kernel/common/floodplainn/fvfs.h> // FVFS_PATH_MAXLEN
 
 #define ZUM			"ZUM: "
@@ -83,24 +84,31 @@ public:
 		udi_instance_attr_list_t *attr_list_mem,
 		udi_filter_element_t *filter_list_mem)
 	{
-		if (cb->attr_valid_length > 0)
-		{
-			memcpy(
-				attr_list_mem, cb->attr_list,
-				sizeof(*cb->attr_list) * cb->attr_valid_length);
-
-			delete[] cb->attr_list;
-		};
+		EnumerateReqMovableObjects		*movableMem=NULL;
+		fplainn::sMovableMemory			*tmp;
 
 		if (cb->filter_list_length > 0)
 		{
+			tmp = (fplainn::sMovableMemory *)cb->filter_list;
+			movableMem = (EnumerateReqMovableObjects *)(tmp - 1);
+
 			memcpy(
 				filter_list_mem, cb->filter_list,
 				sizeof(*cb->filter_list)
 					* cb->filter_list_length);
 
-			delete[] cb->filter_list;
 		};
+
+		if (cb->attr_valid_length > 0) {
+			tmp = (fplainn::sMovableMemory *)cb->attr_list;
+			movableMem = (EnumerateReqMovableObjects *)(tmp - 1);
+
+			memcpy(
+				attr_list_mem, cb->attr_list,
+				sizeof(*cb->attr_list) * cb->attr_valid_length);
+		};
+
+		delete movableMem;
 	}
 
 	void usageInd(
@@ -207,9 +215,6 @@ public:
 
 				udi_ubit8_t		enumeration_result;
 				udi_index_t		ops_idx;
-
-				udi_instance_attr_list_t	*attr_list;
-				udi_filter_element_t		*filter_list;
 			} enumerate;
 
 			struct
@@ -274,6 +279,87 @@ public:
 
 		MessageStream::sHeader		header;
 		sZAsyncMsg			info;
+	};
+
+	// Just an offsets calculation class.
+	class EnumerateReqMovableObjects
+	{
+	public:
+		EnumerateReqMovableObjects(uarch_t nAttrs, uarch_t nFilters)
+		{
+			if (nAttrs > 0)
+			{
+				::new (calcAttrMovableMemHeader())
+				fplainn::sMovableMemory(
+					sizeof(udi_instance_attr_list_t) * nAttrs);
+			};
+
+			if (nFilters > 0)
+			{
+				::new (calcFilterMovableMemHeader(nAttrs))
+				fplainn::sMovableMemory(
+					sizeof(udi_filter_element_t) * nFilters);
+			}
+		}
+
+		static uarch_t calcMemRequirementsFor(
+			uarch_t nAttrs, uarch_t nFilters
+			)
+		{
+			uarch_t		ret=0;
+
+			if (nAttrs > 0)
+			{
+				ret += sizeof(fplainn::sMovableMemory);
+				ret += sizeof(udi_instance_attr_list_t)
+					* nAttrs;
+			};
+
+			if (nFilters > 0)
+			{
+				ret += sizeof(fplainn::sMovableMemory);
+				ret += sizeof(udi_filter_element_t) * nFilters;
+			};
+
+			return ret;
+		}
+
+		fplainn::sMovableMemory *calcAttrMovableMemHeader(void)
+		{
+			// Even if nAttrs==0, return "o".
+			return reinterpret_cast<fplainn::sMovableMemory *>(this);
+		}
+
+		udi_instance_attr_list_t *calcAttrList(uarch_t nAttrs)
+		{
+			if (nAttrs > 0)
+			{
+				return reinterpret_cast<udi_instance_attr_list_t *>(
+					calcAttrMovableMemHeader() + 1);
+			};
+
+			return reinterpret_cast<udi_instance_attr_list_t *>(this);
+		}
+
+		fplainn::sMovableMemory *calcFilterMovableMemHeader(uarch_t nAttrs)
+		{
+			return reinterpret_cast<fplainn::sMovableMemory *>(
+				calcAttrList(nAttrs) + nAttrs);
+		}
+
+		udi_filter_element_t *calcFilterList(
+			uarch_t nAttrs, uarch_t nFilters
+			)
+		{
+			if (nFilters > 0)
+			{
+				return reinterpret_cast<udi_filter_element_t *>(
+					calcFilterMovableMemHeader(nAttrs) + 1);
+			};
+
+			return reinterpret_cast<udi_filter_element_t *>(
+				calcFilterMovableMemHeader(nAttrs));
+		}
 	};
 
 private:

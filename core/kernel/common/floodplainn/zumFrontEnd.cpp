@@ -162,9 +162,7 @@ void fplainn::Zum::enumerateReq(
 	HeapObj<sZAsyncMsg>		req;
 	Thread				*caller;
 	uarch_t				requiredExtraMem;
-	fplainn::sMovableMemory		*tmp0[2];
-	udi_instance_attr_list_t	*tmp;
-	udi_filter_element_t		*tmp2;
+	EnumerateReqMovableObjects	*movableMem;
 
 	if (cb == NULL) {
 		printf(ERROR ZUM"enumerateReq: cb arg is invalid.\n");
@@ -183,10 +181,8 @@ void fplainn::Zum::enumerateReq(
 
 	caller = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	requiredExtraMem =
-		(cb->attr_valid_length * sizeof(*cb->attr_list))
-		+ (cb->filter_list_length * sizeof(*cb->filter_list))
-		+ (sizeof(fplainn::sMovableMemory) * 2);
+	requiredExtraMem = EnumerateReqMovableObjects::calcMemRequirementsFor(
+		cb->attr_valid_length, cb->filter_list_length);
 
 	req = getNewSZAsyncMsg(
 		CC __func__, devicePath, sZAsyncMsg::OP_ENUMERATE_REQ,
@@ -194,11 +190,7 @@ void fplainn::Zum::enumerateReq(
 
 	if (req.get() == NULL) { return; };
 
-	req->params.enumerate.cb.child_ID = cb->child_ID;
-	req->params.enumerate.cb.parent_ID = cb->parent_ID;
-
-	req->params.enumerate.cb.attr_valid_length = cb->attr_valid_length;
-	req->params.enumerate.cb.filter_list_length = cb->filter_list_length;
+	memcpy(&req->params.enumerate.cb, cb, sizeof(*cb));
 
 	/**	EXPLaNaTION:
 	 * We alloc space to hold the attr and filter lists, and pass them to
@@ -211,102 +203,43 @@ void fplainn::Zum::enumerateReq(
 	req->params.enumerate.cb.attr_list = NULL;
 	req->params.enumerate.cb.filter_list = NULL;
 
-	/* tmp1[0] = sMovableMem for attr_list.
-	 * tmp1[1] = sMovableMem for attr_list.
-	 * tmp = extra mem for attr_list.
-	 **/
-	tmp0[0] = tmp0[1] = (fplainn::sMovableMemory *)(req.get() + 1);
-	tmp = (udi_instance_attr_list_t *)(tmp0[0] + 1);
+	// Construct offset calc object after sZasyncMsg.
+	movableMem = ::new (req.get() + 1) EnumerateReqMovableObjects(
+		cb->attr_valid_length, cb->filter_list_length);
 
 	if (cb->attr_valid_length > 0 && cb->attr_list != NULL)
 	{
-		::new (tmp0[0]) fplainn::sMovableMemory(
-			cb->attr_valid_length * sizeof(*cb->attr_list));
-
 		memcpy(
-			tmp, cb->attr_list,
+			movableMem->calcAttrList(cb->attr_valid_length),
+			cb->attr_list,
 			cb->attr_valid_length * sizeof(*cb->attr_list));
 
 		// Update pointer val
-		req->params.enumerate.cb.attr_list =
-			(udi_instance_attr_list_t *)tmp;
-
-		// tmp1[1] = sMovableMem for filter_list.
-		tmp0[1] = (fplainn::sMovableMemory *)
-			(tmp + cb->attr_valid_length);
+		req->params.enumerate.cb.attr_list = movableMem->calcAttrList(
+			cb->attr_valid_length);
+	}
+	else {
+		req->params.enumerate.cb.attr_list = NULL;
 	};
-
-	// tmp2 = extra mem for filter list.
-	tmp2 = (udi_filter_element_t *)(tmp0[1] + 1);
 
 	if (cb->filter_list_length > 0 && cb->filter_list != NULL)
 	{
-		::new (tmp0[1]) fplainn::sMovableMemory(
-			cb->filter_list_length * sizeof(*cb->filter_list));
-
 		memcpy(
-			tmp2, cb->filter_list,
+			movableMem->calcFilterList(
+				cb->attr_valid_length, cb->filter_list_length),
+			cb->filter_list,
 			cb->filter_list_length * sizeof(*cb->filter_list));
 
 		// Update pointer val.
-		req->params.enumerate.cb.filter_list =
-			(udi_filter_element_t *)tmp2;
+		req->params.enumerate.cb.filter_list = movableMem
+			->calcFilterList(
+				cb->attr_valid_length, cb->filter_list_length);
+	}
+	else {
+		req->params.enumerate.cb.filter_list = NULL;
 	};
-
-#if 0
-	if (cb->attr_valid_length > 0 && cb->attr_list != NULL)
-	{
-		const uarch_t			listNBytes =
-			sizeof(*cb->attr_list) * cb->attr_valid_length;
-
-		/* If we're going to pass these attrs to sChannelMsg::send() as
-		 * inline pointers, we need to give them MEM_MOVaBLE headers.
-		 **/
-		req->params.enumerate.cb.attr_list = new
-			((new (listNBytes) fplainn::sMovableMemory(listNBytes)) + 1)
-			udi_instance_attr_list_t;
-
-		if (req->params.enumerate.cb.attr_list == NULL)
-		{
-			printf(ERROR ZUM"enumerateReq: failed to alloc mem for "
-				"attr list.\n");
-			return;
-		};
-
-		memcpy(
-			req->params.enumerate.cb.attr_list, cb->attr_list,
-			listNBytes);
-	};
-
-	if (cb->filter_list_length > 0 && cb->filter_list != NULL)
-	{
-		const uarch_t			listNBytes =
-			sizeof(*cb->filter_list) * cb->filter_list_length;
-
-		/* If we're going to pass these filters to sChannelMsg::send() as
-		 * inline pointers, we need to give them MEM_MOVaBLE headers.
-		 **/
-		req->params.enumerate.cb.filter_list = new
-			((new (listNBytes) fplainn::sMovableMemory(listNBytes)) + 1)
-			udi_filter_element_t;
-
-		if (req->params.enumerate.cb.filter_list == NULL)
-		{
-			printf(ERROR ZUM"enumerateReq: failed to alloc mem for "
-				"filter list.\n");
-			return;
-		};
-
-		memcpy(
-			const_cast<udi_filter_element_t *>(req->params.enumerate.cb.filter_list),
-			cb->filter_list,
-			listNBytes);
-	};
-#endif
 
 	req->params.enumerate.enumeration_level = enumLevel;
-
-printf(NOTICE"reqmem 0x%p: offsets: 0x%p, 0x%p; 0x%p, 0x%p.\n", req.get(), tmp0[0], tmp, tmp0[1], tmp2);
 
 	caller->parent->zasyncStream.send(
 		serverTid, req.get(), sizeof(*req) + requiredExtraMem,

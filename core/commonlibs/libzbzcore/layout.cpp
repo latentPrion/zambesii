@@ -176,9 +176,6 @@ out:
 	return layoutElements[index].elementSize;
 }
 
-
-#include <kernel/common/floodplainn/movableMemory.h>
-extern udi_enumerate_cb_t		*gecb;
 status_t fplainn::sChannelMsg::marshalStackArguments(
 	ubit8 *dest, va_list args, udi_layout_t *layout
 	)
@@ -208,11 +205,7 @@ status_t fplainn::sChannelMsg::marshalStackArguments(
 		offset = align(offset, elemSize);
 		switch (elemSize)
 		{
-		case 1: *(ubit8 *)(dest + offset) = 0xff; if (oo==56) {
-fplainn::sMovableMemory *smm = (fplainn::sMovableMemory *)((uintptr_t)((udi_enumerate_cb_t *)gecb)->attr_list - sizeof(*smm));
-printf(ERROR"in channel::send(): %d; dest 0x%p, off 0x%p, gecb 0x%p\n", smm->objectNBytes, dest, offset, gecb);
-};
-break;
+		case 1: *(ubit8 *)(dest + offset) = va_arg(args, int); break;
 		case 2: *(ubit16 *)(dest + offset) = va_arg(args, int); break;
 		case 4: *(ubit32 *)(dest + offset) = va_arg(args, int); break;
 		case 8:
@@ -321,7 +314,6 @@ status_t fplainn::sChannelMsg::getTotalMarshalSpaceInlineRequirements(
 	return ret;
 }
 
-extern udi_enumerate_cb_t		*gecb;
 status_t fplainn::sChannelMsg::marshalInlineObjects(
 	ubit8 *dest, udi_cb_t *_destCb, udi_cb_t *_srcCb,
 	udi_layout_t *layout, udi_layout_t *drvTypedLayout
@@ -345,8 +337,6 @@ status_t fplainn::sChannelMsg::marshalInlineObjects(
 		if (skipCount == 0) { return ERROR_INVALID_FORMAT; };
 		ptrOffset = align(ptrOffset, currElemSize);
 
-/*if (oo==56)
-{ printf(NOTICE">>>>>>>>%s.\n", gecb->attr_list[0].attr_name);};*/
 		switch (*curr)
 		{
 		case UDI_DL_INLINE_TYPED:
@@ -374,7 +364,7 @@ status_t fplainn::sChannelMsg::marshalInlineObjects(
 			else {
 				currObjectSize = 0;
 			};
-printf(NOTICE"mov unt size %d.\n", currObjectSize);
+
 			break;
 
 		default: continue; break;
@@ -390,10 +380,6 @@ printf(NOTICE"mov unt size %d.\n", currObjectSize);
 			};
 
 			// Copy the object into the marshal space.
-/*if (oo==56)
-{ printf(NOTICE"%%%%%%%%%s.\n", gecb->attr_list[0].attr_name);
-printf(NOTICE"%%%%%%%% gecb 0x%p, dest 0x%p, %d bytes copied, %d.\n", gecb, dest, currObjectSize, sizeof(*gecb));
-};*/
 			memcpy(dest, object, currObjectSize);
 			// Set the pointer in the destination CB.
 			if (*curr == UDI_DL_MOVABLE_UNTYPED
