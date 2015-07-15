@@ -78,51 +78,60 @@ void fplainn::Zum::enumerateChildrenReq(
 	HeapObj<sZAsyncMsg>		req;
 	Thread				*caller;
 	uarch_t				requiredExtraMem;
-	sZAsyncMsg			*tmp;
-	udi_instance_attr_list_t	*tmp2;
+	EnumerateReqMovableObjects	*movableMem;
 
 	caller = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	requiredExtraMem =
-		ecb->attr_valid_length * sizeof(*ecb->attr_list)
-		+ ecb->filter_list_length * sizeof(*ecb->filter_list);
+	if (ecb == NULL || ecb->attr_list != NULL || ecb->attr_valid_length > 0)
+	{
+		printf(ERROR ZUM"enumChildrenReq: %d attrs passed in @0x%p. "
+			"Directed enumeration not allowed!",
+			ecb->attr_valid_length, ecb->attr_list);
+		return;
+	};
 
-	req = tmp = getNewSZAsyncMsg(
+	requiredExtraMem =
+		EnumerateReqMovableObjects::calcMemRequirementsFor(
+			ecb->attr_valid_length,
+			ecb->filter_list_length);
+
+	req = getNewSZAsyncMsg(
 		CC __func__, devicePath, sZAsyncMsg::OP_ENUMERATE_CHILDREN_REQ,
 		requiredExtraMem);
 
 	if (req.get() == NULL) { return; };
+
+	memcpy(&req->params.enumerateChildren.cb, ecb, sizeof(*ecb));
 
 	/**	EXPLANATION:
 	 * Copy the attr and filter lists into the extra mem packed at the
 	 * end of the sZASyncMsg.
 	 **/
 	// "tmp" and "tmp2 "now point to the beginning of the extra mem.
-	tmp2 = (udi_instance_attr_list_t *)++tmp;
+	movableMem = new (req.get() + 1)
+	EnumerateReqMovableObjects(
+		ecb->attr_valid_length, ecb->filter_list_length);
 
 	// Set request params here.
 	req->params.enumerateChildren.flags = flags;
+	req->params.enumerateChildren.deviceIdsHandle = NULL;
 
-	// Copy filter and list into extra mem.
-	if (ecb->attr_valid_length > 0 && ecb->attr_list != NULL)
-	{
-		memcpy(
-			tmp, ecb->attr_list,
-			ecb->attr_valid_length * sizeof(*ecb->attr_list));
-
-		ecb->attr_list = (udi_instance_attr_list_t *)tmp;
-		tmp2 += ecb->attr_valid_length;
-		// "tmp2" now points past the end of the copied attrs in the extra mem.
-	};
+	/* We don't copy the attr list because enumerateChildrenReq is not meant
+	 * to be used for directed enumeration. We do copy the filter list
+	 * because we want to allow the caller to filter which devices it
+	 * enumerates.
+	 **/
 
 	// Copy attr and list into extra mem.
 	if (ecb->filter_list_length > 0 && ecb->filter_list != NULL)
 	{
 		memcpy(
-			tmp2, ecb->filter_list,
+			movableMem->calcFilterList(0, ecb->filter_list_length),
+			ecb->filter_list,
 			ecb->filter_list_length * sizeof(*ecb->filter_list));
 
-		ecb->filter_list = (udi_filter_element_t *)tmp2;
+		req->params.enumerateChildren.cb.filter_list =
+			movableMem->calcFilterList(0, ecb->filter_list_length);
 	};
 
 	caller->parent->zasyncStream.send(

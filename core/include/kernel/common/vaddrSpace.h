@@ -22,6 +22,16 @@ public:
 
 	~VaddrSpace(void);
 
+	void dumpAllNonEmpty(void);
+	void dumpAllPresent(void);
+	status_t getTopLevelAddrState(void *vaddr)
+	{
+		return getTopLevelAddrState(
+			(uintptr_t)vaddr >> PAGING_L0_VADDR_SHIFT);
+	}
+
+	status_t getTopLevelAddrState(uarch_t entry);
+
 public:
 	// Uses a recursive lock, take note.
 	SharedResourceGroup<RecursiveLock, sPagingLevel0 *>	level0Accessor;

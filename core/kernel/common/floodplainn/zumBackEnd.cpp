@@ -611,33 +611,149 @@ void zumServer::enumerateChildren::enumerateChildrenReq(
 		myResponse(err); return;
 	};
 
-printf(NOTICE"Here at the spot bruh.\n");
+	// Prepare the buffer page.
+	ctxt->info.params.enumerateChildren.nDeviceIds = 0;
+	ctxt->info.params.enumerateChildren.deviceIdsHandle =
+		new (processTrib.__kgetStream()->memoryStream.memAlloc(1, 0)) ubit32;
+
+	if (ctxt->info.params.enumerateChildren.deviceIdsHandle == NULL)
+	{
+		printf(ERROR ZUM"enumChildReq(%s):No memory for device ID "
+			"buffer.\n",
+			ctxt->info.path);
+
+		myResponse(ERROR_MEMORY_NOMEM); return;
+	};
+
 	/**	EXPLANATION:
 	 * Now we just cycle through, calling enumerateReq on the device until
 	 * it tells us UDI_ENUMERATE_DONE.
 	 **/
-	udi_enumerate_cb_t		ecb;
-
-	memset(&ecb, 0, sizeof(ecb));
 	floodplainn.zum.enumerateReq(
 		ctxt->info.path,
 		(FLAG_TEST(
 			ctxt->info.params.enumerateChildren.flags,
 			ZUM_ENUMCHILDREN_FLAGS_UNCACHED_SCAN)
 			? UDI_ENUMERATE_START_RESCAN : UDI_ENUMERATE_START),
-		&ecb,
+		&request->params.enumerateChildren.cb,
 		new EnumerateChildrenReqCb(
 			enumerateChildrenReq1, ctxt, self, dev));
+
+	myResponse(DONT_SEND_RESPONSE);
 }
 
-
+#include <kernel/common/memoryTrib/memoryTrib.h>
 void zumServer::enumerateChildren::enumerateChildrenReq1(
 	MessageStream::sHeader *msg,
 	fplainn::Zum::sZumMsg *ctxt,
 	Thread *self,
 	fplainn::Device *dev)
 {
+	error_t				err;
+	fplainn::Device			*newDevice;
+	fplainn::Endpoint		*endp;
+	AsyncResponse			myResponse;
+	fplainn::Zum::sZumMsg		*response;
+	sbit8				loopAgain=0,
+					clearBuffer=0, releaseBuffer=0;
+	const char 			*ueaStrings[] =
+	{
+		"OK", "LEAF", "DONE", "RESCAN", "REMOVED", "REMOVED_SELF",
+		"RELEASED", "FAILED"
+	};
 
+	response = (fplainn::Zum::sZumMsg *)msg;
+	myResponse(ctxt);
+
+	/**	EXPLANATION:
+	 * We're now going to construct a loop. The loop will process the result
+	 * passed back from the device (udi_enumerate_ack()).
+	 *
+	 * For each new device detected, we will add the new device's ID string
+	 * to a buffer of strings. Since we do not know how many child devices
+	 * the target device will detect, we cannot predict in advance how large
+	 * the buffer must be.
+	 *
+	 *	* For each new device, we add it to the device tree.
+	 *	* For each already-known device, we modify its attributes based
+	 * 	  on the information newly reported by the target device.
+	 **/
+
+	switch (response->info.params.enumerate.enumeration_result)
+	{
+	case UDI_ENUMERATE_LEAF: releaseBuffer = clearBuffer = 1; break;
+	case UDI_ENUMERATE_OK:
+		err = floodplainn.createDevice(
+			ctxt->info.path, CHIPSET_NUMA_SHBANKID,
+			response->info.params.enumerateChildren.cb.child_ID,
+			0, &newDevice);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR ZUM"enumChildren %s: Failed to add child "
+				"%d.\n",
+				ctxt->info.path,
+				response->info.params.enumerateChildren.cb.child_ID);
+
+			myResponse(err);
+			// Let it gracefully break out. Don't "return".
+			break;
+		};
+
+printf(NOTICE"new dev %d, Buff 0x%p, %d handles done.\n", ctxt->info.params.enumerateChildren.cb.child_ID,
+	ctxt->info.params.enumerateChildren.deviceIdsHandle,
+	ctxt->info.params.enumerateChildren.nDeviceIds);
+
+		// Add the new device's child_ID to the buffer.
+		ctxt->info.params.enumerateChildren.deviceIdsHandle[
+			ctxt->info.params.enumerateChildren.nDeviceIds++]
+			= response->info.params.enumerateChildren.cb.child_ID;
+
+		break;
+
+	case UDI_ENUMERATE_DONE: break;
+	case UDI_ENUMERATE_RESCAN:
+	case UDI_ENUMERATE_REMOVED:
+	case UDI_ENUMERATE_REMOVED_SELF:
+	case UDI_ENUMERATE_RELEASED:
+		printf(NOTICE ZUM"enumerateAck: enum_res %d (%s).\n",
+			response->info.params.enumerate.enumeration_result,
+			ueaStrings[response->info.params.enumerate.enumeration_result]);
+		break;
+	//case UDI_ENUMERATE_FAILED:
+	default: break;
+	};
+
+	if (clearBuffer) {
+		ctxt->info.params.enumerateChildren.nDeviceIds = 0;
+	};
+
+	if (releaseBuffer)
+	{
+		processTrib.__kgetStream()->memoryStream.memFree(
+			ctxt->info.params.enumerateChildren.deviceIdsHandle);
+
+		ctxt->info.params.enumerateChildren.deviceIdsHandle = NULL;
+	};
+
+	if (loopAgain)
+	{
+		floodplainn.zum.enumerateReq(
+			ctxt->info.path,
+			(FLAG_TEST(
+				ctxt->info.params.enumerateChildren.flags,
+				ZUM_ENUMCHILDREN_FLAGS_UNCACHED_SCAN)
+				? UDI_ENUMERATE_START_RESCAN : UDI_ENUMERATE_START),
+			&ctxt->info.params.enumerateChildren.cb,
+			new EnumerateChildrenReqCb(
+				enumerateChildrenReq1, ctxt, self, dev));
+
+		// Prevent response from being sent until the end of the loop.
+		myResponse(DONT_SEND_RESPONSE);
+	}
+	else {
+		// Allow the response to be sent. Nothing to do here.
+	};
 }
 
 void zumServer::mgmt::usageInd(
@@ -841,6 +957,47 @@ void zumServer::mgmt::enumerateAck(
 	else {
 		*const_cast<udi_filter_element_t **>(&ctxt->info.params.enumerate.cb.filter_list) = NULL;
 	};
+
+	// Finally, capture the stack arguments.
+	udi_size_t		enumCbSize;
+
+#if 0
+	/* Stack arguments are after the visible layout of the CB. We'll need to
+	 * get the visible layout. Then we can calculate its size to determine
+	 * how many bytes past the visible_layout we have to skip, in order to
+	 * get to the stack arguments.
+	 **/
+	const sMetaInitEntry		*mgmt;
+
+	mgmt = floodplainn.zudi.findMetaInitInfo(CC"udi_mgmt");
+	if (mgmt == NULL)
+	{
+		printf(ERROR ZUM"enumerateAck: failed to get mgmt meta info.\n");
+		myResponse(ERROR_NOT_FOUND);
+		return;
+	};
+
+	fplainn::MetaInit	parser(mgmt->udi_meta_info);
+	udi_mei_op_template_t	*enumReqTmplt;
+	udi_layout_t		*enumCbLay;
+
+	enumReqTmplt = parser.getOpTemplate((udi_index_t)1, 2);
+	enumCbLay = enumReqTmplt->visible_layout;
+	enumCbSize = fplainn::sChannelMsg::zudi_layout_get_size(enumCbLay, 1);
+#else // Both paths give the same result, but this one is dramatically faster.
+	enumCbSize = sizeof(udi_enumerate_cb_t) - sizeof(udi_cb_t);
+#endif
+
+	ubit8			*args8 = &((ubit8 *)(&cb->gcb + 1))[enumCbSize];
+	struct			sEnumReqArgs
+	{
+		udi_ubit8_t	enumeration_result;
+		udi_index_t	ops_idx;
+	} *args = (sEnumReqArgs *)args8;
+
+	ctxt->info.params.enumerate.ops_idx = args->ops_idx;
+	ctxt->info.params.enumerate.enumeration_result =
+		args->enumeration_result;
 
 	/* This is the status for the enumerate_req call itself, and not for the
 	 * driver's return value in its usage_res call (there is none actually),

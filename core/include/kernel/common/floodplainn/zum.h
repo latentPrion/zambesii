@@ -260,6 +260,8 @@ public:
 				udi_enumerate_cb_t	cb;
 
 				uarch_t			flags;
+				uarch_t			nDeviceIds;
+				ubit32			*deviceIdsHandle;
 			} enumerateChildren;
 		} params;
 	};

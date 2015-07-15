@@ -28,4 +28,3 @@ void getLevelRanges(
 	*l2End = (endAddr & PAGING_L2_VADDR_MASK) >> PAGING_L2_VADDR_SHIFT;
 #endif
 }
-

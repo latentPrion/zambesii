@@ -158,6 +158,8 @@ public:
 
 	error_t destroyStream(void);
 
+	void dumpProcessesAndVaddrspaces(void);
+
 private:
 	void fillOutPrioClasses(void);
 	error_t getNewProcessId(processId_t *ret);

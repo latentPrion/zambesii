@@ -95,15 +95,15 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 
 	// Map the kernel's top level table into the new addrspace.
 	level1Table->entries[1021] = paddr_t(&__kpagingLevel0Tables)
-		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE);
+		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE | PAGING_L1_CACHE_WRITE_THROUGH);
 
 	// Map 0xFFFE000 to the level 1 table, allowing the kernel to modify it.
 	level1Table->entries[1022] = level1TablePaddr
-		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE);
+		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE | PAGING_L1_CACHE_WRITE_THROUGH);
 
 	// Map 0xFFFF000 to nothing, but set the access flags for it.
 	level1Table->entries[1023] = 0
-		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE);
+		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE | PAGING_L1_CACHE_WRITE_THROUGH);
 
 	printf(NOTICE VADDRSPACE"initialize: binding %d; lvl0: v 0x%p, "
 		"p 0x%P.\n",
@@ -123,4 +123,91 @@ VaddrSpace::~VaddrSpace(void)
 	};
 
 	level0Accessor.rsrc = NULL;
+}
+
+status_t VaddrSpace::getTopLevelAddrState(uarch_t entry)
+{
+	paddr_t			raw, paddr;
+//	uarch_t			flags;
+
+	level0Accessor.lock.acquire();
+	raw = level0Accessor.rsrc->entries[entry];
+	level0Accessor.lock.release();
+
+//	flags = walkerPageRanger::decodeFlags(raw & 0xFFF);
+	paddr = (raw >> PAGING_BASE_SHIFT) << PAGING_BASE_SHIFT;
+
+	if (raw != 0)
+	{
+		switch ((paddr >> PAGING_PAGESTATUS_SHIFT) & PAGESTATUS_MASK)
+		{
+		case PAGESTATUS_SWAPPED:
+			return WPRANGER_STATUS_SWAPPED;
+
+		case PAGESTATUS_GUARDPAGE:
+			return WPRANGER_STATUS_GUARDPAGE;
+
+		case PAGESTATUS_HEAP_GUARDPAGE:
+			return WPRANGER_STATUS_HEAP_GUARDPAGE;
+
+		case PAGESTATUS_FAKEMAPPED_STATIC:
+			return WPRANGER_STATUS_FAKEMAPPED_STATIC;
+
+		case PAGESTATUS_FAKEMAPPED_DYNAMIC:
+			return WPRANGER_STATUS_FAKEMAPPED_DYNAMIC;
+		default: return ERROR_INVALID_STATE;
+		};
+	}
+	else {
+		return WPRANGER_STATUS_UNMAPPED;
+	};
+}
+
+void VaddrSpace::dumpAllNonEmpty(void)
+{
+	uarch_t			flipFlop=0;
+
+	printf(NOTICE VADDRSPACE"@0x%p (P0x%P): dumping all nonzero PDEs.\n\t",
+		level0Accessor.rsrc, level0Paddr);
+
+	for (uarch_t i=0; i<PAGING_L0_NENTRIES; i++)
+	{
+		if (flipFlop == 0) { printf(CC"\t"); };
+		if (level0Accessor.rsrc->entries[i] != 0)
+		{
+			printf(CC"%d ", i);
+			flipFlop++;
+		};
+
+		if (flipFlop == 12) {
+			printf(CC"\n");
+			flipFlop = 0;
+		};
+	};
+}
+
+void VaddrSpace::dumpAllPresent(void)
+{
+	uarch_t			flipFlop=0;
+
+	printf(NOTICE VADDRSPACE"@0x%p (P0x%P): dumping all present PDEs.\n",
+		level0Accessor.rsrc, level0Paddr);
+
+	for (uarch_t i=0; i<PAGING_L0_NENTRIES; i++)
+	{
+		if (flipFlop == 0) { printf(CC"\t"); };
+		if (level0Accessor.rsrc->entries[i] & PAGING_L0_PRESENT)
+		{
+			printf(CC"%d ", i);
+			flipFlop++;
+		};
+
+		if (flipFlop == 12) {
+			printf(CC"\n");
+			flipFlop = 0;
+		};
+	};
+
+	if (flipFlop != 0) { printf(CC"\n"); };
+
 }

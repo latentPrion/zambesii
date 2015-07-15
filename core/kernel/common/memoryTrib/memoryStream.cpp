@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <scaling.h>
 #include <arch/paddr_t.h>
 #include <arch/walkerPageRanger.h>
@@ -124,7 +125,7 @@ void *MemoryStream::memAlloc(uarch_t nPages, uarch_t flags)
 
 		if (nMapped < static_cast<sarch_t>( nPages ) - totalFrames)
 		{
-			printf(WARNING MEMORYSTREAM"0x%X: WPR failed to "
+			printf(WARNING MEMORYSTREAM"0x%x: WPR failed to "
 				"fakemap %d pages for alloc of %d pages.\n",
 				this->id, nPages - totalFrames, nPages);
 

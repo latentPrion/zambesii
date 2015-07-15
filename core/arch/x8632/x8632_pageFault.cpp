@@ -6,6 +6,7 @@
 #include <arch/debug.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
+#include <__kclasses/memReservoir.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/process.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -94,13 +95,17 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 	paddr_t			pmap;
 	uarch_t			__kflags;
 	Thread			*currThread=NULL;
-	sbit8			panicWorthy=0, traceStack=0, printArgs=0;
+	sbit8			panicWorthy=0, traceStack=0, printArgs=0,
+				topLevelPropagated=0, printVaddrspaceInfo=0;
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 	vaddrSpaceStream = currThread->parent->getVaddrSpaceStream();
 
 	if (faultAddr >= (void *)ARCH_MEMORY___KLOAD_VADDR_BASE)
-		{ __kpropagateTopLevelVaddrSpaceChanges(faultAddr); };
+	{
+		topLevelPropagated = __kpropagateTopLevelVaddrSpaceChanges(
+			faultAddr);
+	};
 
 	status = walkerPageRanger::lookup(
 		&vaddrSpaceStream->vaddrSpace,
@@ -139,7 +144,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 
 	case WPRANGER_STATUS_HEAP_GUARDPAGE:
 		panicWorthy = 1;
-		//traceStack = 1;
+		traceStack = 1;
 
 		printf(FATAL"Encountered a heap guardpage; heap corrupted\n"
 			"\tVaddr: 0x%p, EIP 0x%p\n"
@@ -172,13 +177,19 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 		break;
 
 	case WPRANGER_STATUS_BACKED:
+		if (topLevelPropagated) { break; };
+
 		// Either COW, or simple access perms violation.
 		panicWorthy = 1;
-		//traceStack = 1;
-		printf(FATAL"Kernel faulted on a backed page. Probably access "
-			"perms violation, or unintentional COW\n"
-			"Vaddr: 0x%p. EIP 0x%p.\n",
-			faultAddr, regs->eip);
+		traceStack = 1;
+		printVaddrspaceInfo = 1;
+		printf(FATAL"BACKED page faulted. Access perms violation or "
+			"unintended COW?\n"
+			"\tVaddr: 0x%p, __kf 0x%x. EIP 0x%p. Errcode 0x%x "
+			"TID 0x%x.\n",
+			faultAddr, __kflags, regs->eip, regs->errorCode,
+			cpuTrib.getCurrentCpuStream()->taskStream
+				.getCurrentThread()->getFullId());
 
 		break;
 
@@ -201,6 +212,14 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 
 		panic(ERROR_UNKNOWN);
 		break;
+	};
+
+	if (printVaddrspaceInfo)
+	{
+		printf(NOTICE"TID 0x%x, L0v 0x%p, L0p 0x%P.\n",
+			currThread->getFullId(),
+			vaddrSpaceStream->vaddrSpace.level0Accessor.rsrc,
+			vaddrSpaceStream->vaddrSpace.level0Paddr);
 	};
 
 	if (traceStack)

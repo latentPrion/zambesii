@@ -81,7 +81,8 @@ status_t walkerPageRanger::mapInc(
 				l0Entry;
 
 			*level1Modifier = vaddrSpace->level0Accessor.rsrc
-				->entries[l0Current];
+				->entries[l0Current]
+				| PAGING_L0_CACHE_WRITE_THROUGH;
 
 			// Flush the l1 accessor from the TLB.
 			tlbControl::flushSingleEntry((void *)level1Accessor);
@@ -120,7 +121,8 @@ status_t walkerPageRanger::mapInc(
 				level1Accessor->entries[l1Current] = l1Entry;
 
 				*level2Modifier =
-					level1Accessor->entries[l1Current];
+					level1Accessor->entries[l1Current]
+					| PAGING_L2_CACHE_WRITE_THROUGH;
 
 				tlbControl::flushSingleEntry(
 					(void *)level2Accessor);

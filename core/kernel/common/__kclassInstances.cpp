@@ -28,12 +28,12 @@ InterruptTrib		interruptTrib;
 MemoryTrib		memoryTrib;
 DebugTrib		debugTrib;
 MemReservoir		memReservoir(&processTrib.__kgetStream()->memoryStream);
-CpuTrib		cpuTrib;
+CpuTrib			cpuTrib;
 DebugPipe		__kdebug;
 TaskTrib		taskTrib;
 CachePool		cachePool;
 ExecTrib		execTrib;
-VfsTrib		vfsTrib;
+VfsTrib			vfsTrib;
 DistributaryTrib	distributaryTrib;
 Floodplainn		floodplainn;
 

@@ -453,12 +453,14 @@ printf(NOTICE ORIENT"orient 3.\n");
 	for (;FOREVER;) { asm volatile("hlt\n\t"); };
 }
 
+void __kecrCb(MessageStream::sHeader *msgIt);
+
 void __kotp(MessageStream::sHeader *msgIt)
 {
 	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
 	udi_enumerate_cb_t		*ecb = &msg->info.params.enumerate.cb;
 	udi_instance_attr_list_t	a[2];
-	udi_filter_element_t		f[2];
+	sMovableMemObject<udi_filter_element_t, 2>	tf;
 
 printf(NOTICE"here, finished enum req.\n");
 	printf(NOTICE ORIENT"msg 0x%p: %d attr @0x%p, %d filt @0x%p.\n",
@@ -468,14 +470,31 @@ printf(NOTICE"here, finished enum req.\n");
 		ecb->filter_list_length,
 		ecb->filter_list);
 
-	floodplainn.zum.getEnumerateReqAttrsAndFilters(ecb, a, f);
-	for (uarch_t i=0; i<ecb->attr_valid_length; i++) {
-		printf(CC"\tattr %s.\n", ecb->attr_list[i].attr_name);
+	floodplainn.zum.getEnumerateReqAttrsAndFilters(ecb, a, tf.a);
+
+	{
+		ecb->filter_list_length = 2;
+		ecb->filter_list = tf.a;
 	};
 
-	for (uarch_t i=0; i<ecb->filter_list_length; i++) {
-		printf(CC"\tfilt %s.\n", ecb->filter_list[i].attr_name);
-	};
+	ecb->attr_valid_length = 0;
+	ecb->attr_list = NULL;
+	floodplainn.zum.enumerateChildrenReq(
+		CC"by-id", ecb, 0,
+		new __kCallback(&__kecrCb));
+}
 
-//	floodplainn.zum.enumerateChildrenReq(CC"by-id", ecb, 0, 0);
+void __kecrCb(MessageStream::sHeader *msgIt)
+{
+	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
+
+	printf(NOTICE"Here, enumChildren done. %d new child IDs in buffer.\n",
+		msg->info.params.enumerateChildren.nDeviceIds);
+
+	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
+	{
+		printf(NOTICE"New child: %s/%d.\n",
+			msg->info.path,
+			msg->info.params.enumerateChildren.deviceIdsHandle[i]);
+	};
 }

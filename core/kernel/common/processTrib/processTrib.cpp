@@ -734,3 +734,33 @@ error_t *ProcessTrib::spawnStream(
 }
 #endif
 
+void ProcessTrib::dumpProcessesAndVaddrspaces(void)
+{
+	uarch_t			flipFlop=0;
+
+	printf(NOTICE PROCTRIB"Dumping all PIDs and vaddrspaces.\n");
+	for (uarch_t i=0; i<CHIPSET_MEMORY_MAX_NPROCESSES; i++)
+	{
+		VaddrSpaceStream		*v;
+
+		if (i == 0 || processes.rsrc[i] == NULL) { continue; };
+
+		if (flipFlop == 0) { printf(CC"\t"); };
+
+		v = processes.rsrc[i]->getVaddrSpaceStream();
+		printf(CC"PID 0x%x l0v 0x%p l0p 0x%P; ",
+			processes.rsrc[i]->id,
+			v->vaddrSpace.level0Accessor.rsrc,
+			v->vaddrSpace.level0Paddr);
+
+		flipFlop++;
+
+		if (flipFlop == 1)
+		{
+			printf(CC"\n");
+			flipFlop = 0;
+		};
+	};
+
+	if (flipFlop != 0) { printf(CC"\n"); };
+}

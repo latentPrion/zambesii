@@ -219,10 +219,20 @@ void TaskStream::pull(void)
 	tlbControl::saveContext(
 		&currentThread->parent->getVaddrSpaceStream()->vaddrSpace);
 
-	// If addrspaces differ, switch; don't switch if kernel/per-cpu thread.
+	/**	TODO
+	 * Add a way for the kernel to support having a particular thread be
+	 * the current thread, but also not have that thread's process'
+	 * addrspace be loaded. This would be necessary to enable the kernel
+	 * to avoid having to load the kernel's addrspace when switching to a
+	 * kernel thread.
+	 *
+	 * It should be possible to switch to a kernel thread without having to
+	 * switch out of whichever addrspace was loaded before, since the kernel
+	 * is mapped into every process.
+	 **/
 	if (newThread->parent->getVaddrSpaceStream()
 		!= currentThread->parent->getVaddrSpaceStream()
-		&& newThread->parent->id != __KPROCESSID)
+		/*&& newThread->parent->id != __KPROCESSID*/)
 	{
 		tlbControl::loadContext(
 			&newThread->parent->getVaddrSpaceStream()
@@ -231,6 +241,7 @@ void TaskStream::pull(void)
 
 	newThread->runState = Thread::RUNNING;
 	currentThread = newThread;
+
 printf(NOTICE TASKSTREAM"%d: Switching to task 0x%x.\n",
 	parent->cpuId, newThread->getFullId());
 

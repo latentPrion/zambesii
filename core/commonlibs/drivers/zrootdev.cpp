@@ -17,6 +17,7 @@ void zrootdev_usage_ind(udi_usage_cb_t *cb, udi_ubit8_t resource_level)
 	udi_usage_res(cb);
 }
 
+ubit32 ___=0;
 void zrootdev_enumerate_req(
 	udi_enumerate_cb_t *cb, udi_ubit8_t enumeration_level
 	)
@@ -28,15 +29,20 @@ printf(NOTICE"enum!\tcb 0x%p, %d attr @0x%p, %d filt @0x%p.\n",
 	cb->attr_valid_length, cb->attr_list,
 	cb->filter_list_length, cb->filter_list);
 
-	for (uarch_t i=0; i<cb->attr_valid_length; i++) {
+/*	for (uarch_t i=0; i<cb->attr_valid_length; i++) {
 		printf(CC"\tattr %s.\n", cb->attr_list[i].attr_name);
 	};
 
 	for (uarch_t i=0; i<cb->filter_list_length; i++) {
 		printf(CC"\tfilt %s.\n", cb->filter_list[i].attr_name);
-	};
+	};*/
 
-	udi_enumerate_ack(cb, UDI_ENUMERATE_LEAF, 0);
+	if (___ >3) {
+		udi_enumerate_ack(cb, UDI_ENUMERATE_DONE, 0);
+	} else {
+		cb->child_ID = ___++;
+		udi_enumerate_ack(cb, UDI_ENUMERATE_OK, 0);
+	};
 }
 
 void zrootdev_devmgmt_req(
