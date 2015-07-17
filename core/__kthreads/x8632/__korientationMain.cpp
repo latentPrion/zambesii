@@ -483,8 +483,8 @@ printf(NOTICE ORIENT"About to call devmgmt.\n");
 /*	floodplainn.zum.enumerateChildrenReq(
 		CC"by-id", ecb, 0,
 		new __kCallback(&__kecrCb));*/
-	floodplainn.zum.deviceManagementReq(
-		CC"by-id", UDI_DMGMT_SUSPEND, 0,
+	floodplainn.zum.finalCleanupReq(
+		CC"by-id",
 		new __kCallback(&__kecrCb));
 }
 

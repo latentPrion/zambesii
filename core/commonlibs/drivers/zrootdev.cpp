@@ -58,7 +58,8 @@ printf(NOTICE"zrootdev: devmgmt_req: op %d, parent %d.\n",
 
 void zrootdev_final_cleanup_req(udi_mgmt_cb_t *cb)
 {
-	(void)cb;
+printf(NOTICE"zrootdev: final_cleanup.\n");
+	udi_final_cleanup_ack(cb);
 }
 
 static utf8Char *events[] =

@@ -140,8 +140,7 @@ void fplainn::Zum::enumerateChildrenReq(
 }
 
 void fplainn::Zum::postManagementCbReq(
-	utf8Char *devicePath, udi_enumerate_cb_t *ecb,
-	uarch_t flags, void *privateData
+	utf8Char *devicePath, udi_enumerate_cb_t *ecb, void *privateData
 	)
 {
 	HeapObj<sZAsyncMsg>		req;
@@ -335,6 +334,23 @@ void fplainn::Zum::deviceManagementReq(
 
 	req->params.devmgmt.mgmt_op = op;
 	req->params.devmgmt.parent_ID = parentId;
+
+	caller->parent->zasyncStream.send(
+		serverTid, req.get(), sizeof(*req),
+		ipc::METHOD_BUFFER, 0, privateData);
+}
+
+void fplainn::Zum::finalCleanupReq(utf8Char *devicePath, void *privateData)
+{
+	HeapObj<sZAsyncMsg>		req;
+	Thread				*caller;
+
+	caller = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	req = getNewSZAsyncMsg(
+		CC __func__, devicePath, sZAsyncMsg::OP_FINAL_CLEANUP_REQ);
+
+	if (req.get() == NULL) { return; };
 
 	caller->parent->zasyncStream.send(
 		serverTid, req.get(), sizeof(*req),

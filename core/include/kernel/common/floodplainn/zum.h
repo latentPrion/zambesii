@@ -61,7 +61,7 @@ public:
 
 	void postManagementCbReq(
 		utf8Char *devicePath, udi_enumerate_cb_t *ecb,
-		uarch_t flags, void *privateData);
+		void *privateData);
 
 	/* Causes the ZUM server to disconnect from the device, closing the
 	 * management channel, and tearing down the device instance.

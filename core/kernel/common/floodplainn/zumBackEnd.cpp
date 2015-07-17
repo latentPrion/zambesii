@@ -124,6 +124,11 @@ namespace zumServer
 			fplainn::Zum::sZAsyncMsg *request,
 			Thread *self);
 
+		void finalCleanupReq(
+			ZAsyncStream::sZAsyncMsg *msg,
+			fplainn::Zum::sZAsyncMsg *request,
+			Thread *self);
+
 		void channelEventInd(
 			ZAsyncStream::sZAsyncMsg *msg,
 			fplainn::Zum::sZAsyncMsg *request,
@@ -305,6 +310,7 @@ void zumServer::zasyncHandler(
 		mgmt::deviceManagementReq(msg, request, self);
 		break;
 	case fplainn::Zum::sZAsyncMsg::OP_FINAL_CLEANUP_REQ:
+		mgmt::finalCleanupReq(msg, request, self);
 		break;
 	case fplainn::Zum::sZAsyncMsg::OP_CHANNEL_EVENT_IND:
 		mgmt::channelEventInd(msg, request, self);
@@ -608,7 +614,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq(
 {
 	fplainn::Zum::sZumMsg		*ctxt;
 	error_t				err;
-	fplainn::Endpoint		*endp;
+//	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
 	fplainn::Device			*dev;
 
@@ -669,7 +675,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 {
 	error_t				err;
 	fplainn::Device			*newDevice;
-	fplainn::Endpoint		*endp;
+//	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
 	fplainn::Zum::sZumMsg		*response;
 	sbit8				loopAgain=0,
@@ -680,6 +686,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 		"RELEASED", "FAILED"
 	};
 
+	(void)ueaStrings;
 	response = (fplainn::Zum::sZumMsg *)msg;
 	myResponse(ctxt);
 
@@ -793,7 +800,7 @@ void zumServer::postManagementCb::postManagementCbReq(
 {
 	fplainn::Zum::sZumMsg		*ctxt;
 	error_t				err;
-	fplainn::Endpoint		*endp;
+//	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
 	fplainn::Device			*dev;
 
@@ -837,7 +844,7 @@ void zumServer::postManagementCb::postManagementCbReq1(
 {
 	error_t				err;
 	fplainn::Device			*newDevice;
-	fplainn::Endpoint		*endp;
+//	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
 	fplainn::Zum::sZumMsg		*response;
 	sbit8				loopAgain=0;
@@ -847,6 +854,7 @@ void zumServer::postManagementCb::postManagementCbReq1(
 		"RELEASED", "FAILED"
 	};
 
+	(void)ueaStrings;
 	response = (fplainn::Zum::sZumMsg *)msg;
 	myResponse(ctxt);
 
@@ -1289,6 +1297,86 @@ void zumServer::mgmt::deviceManagementAck(
 
 	ctxt->info.params.devmgmt.flags = args->flags;
 	ctxt->info.params.devmgmt.status = args->status;
+
+	/* This is the status for the usageInd call itself, and not for the
+	 * driver's return value in its usage_res call (there is none actually),
+	 * or anything like that.
+	 **/
+	myResponse(response->header.error);
+}
+
+void zumServer::mgmt::finalCleanupReq(
+	ZAsyncStream::sZAsyncMsg *msg,
+	fplainn::Zum::sZAsyncMsg *request,
+	Thread *self
+	)
+{
+	fplainn::Endpoint		*endp;
+	fplainn::Device			*dev;
+	error_t				err;
+	fplainn::Zum::sZumMsg		*ctxt;
+	AsyncResponse			myResponse;
+
+	/**	EXPLANATION:
+	 * Basically:
+	 *	* Get the device, if it exists.
+	 *	* Ensure that we are connected to the device first.
+	 *	* Get the kernel's mgmt endpoint.
+	 *	* Then fill out a udi_mgmt_cb_t control block.
+	 *	* Call FloodplainnStream::send():
+	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=1.
+	 **/
+	ctxt = getNewZumMsg(
+		CC __func__, request->path,
+		msg->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
+		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
+
+	if (ctxt == NULL) { return; };
+	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	myResponse(ctxt);
+
+	err = getDeviceHandleAndMgmtEndpoint(
+		CC __func__, ctxt->info.path, &dev, &endp);
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	udi_layout_t		*layouts[3] =
+	{
+		__klzbzcore::region::channel::mgmt::layouts::visible[ctxt->info.opsIndex],
+		__klzbzcore::region::channel::mgmt::layouts::marshal[ctxt->info.opsIndex],
+		NULL
+	};
+
+	err = self->parent->floodplainnStream.send(
+		endp, &ctxt->info.params.final_cleanup.cb.gcb, layouts,
+		CC "udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
+		new MgmtReqCb(finalCleanupAck, ctxt, self, dev));
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	myResponse(DONT_SEND_RESPONSE);
+}
+
+void zumServer::mgmt::finalCleanupAck(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *,
+	fplainn::Device *
+	)
+{
+	fplainn::sChannelMsg	*response = (fplainn::sChannelMsg *)msg;
+	AsyncResponse		myResponse;
+	udi_mgmt_cb_t		*cb;
+
+	myResponse(ctxt);
+
+	cb = (udi_mgmt_cb_t *)response->getPayloadAddr();
+	ctxt->info.params.final_cleanup.cb = *cb;
 
 	/* This is the status for the usageInd call itself, and not for the
 	 * driver's return value in its usage_res call (there is none actually),
