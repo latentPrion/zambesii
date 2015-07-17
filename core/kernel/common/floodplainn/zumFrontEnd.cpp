@@ -107,7 +107,6 @@ void fplainn::Zum::enumerateChildrenReq(
 	 * Copy the attr and filter lists into the extra mem packed at the
 	 * end of the sZASyncMsg.
 	 **/
-	// "tmp" and "tmp2 "now point to the beginning of the extra mem.
 	movableMem = new (req.get() + 1)
 	EnumerateReqMovableObjects(
 		ecb->attr_valid_length, ecb->filter_list_length);
@@ -122,7 +121,72 @@ void fplainn::Zum::enumerateChildrenReq(
 	 * enumerates.
 	 **/
 
-	// Copy attr and list into extra mem.
+	// Copy filter list into extra mem.
+	if (ecb->filter_list_length > 0 && ecb->filter_list != NULL)
+	{
+		memcpy(
+			movableMem->calcFilterList(0, ecb->filter_list_length),
+			ecb->filter_list,
+			ecb->filter_list_length * sizeof(*ecb->filter_list));
+
+		req->params.enumerateChildren.cb.filter_list =
+			movableMem->calcFilterList(0, ecb->filter_list_length);
+	};
+
+	caller->parent->zasyncStream.send(
+		serverTid, req.get(),
+		sizeof(*req) + req->extraMemNBytes,
+		ipc::METHOD_BUFFER, 0, privateData);
+}
+
+void fplainn::Zum::postManagementCbReq(
+	utf8Char *devicePath, udi_enumerate_cb_t *ecb,
+	uarch_t flags, void *privateData
+	)
+{
+	HeapObj<sZAsyncMsg>		req;
+	Thread				*caller;
+	uarch_t				requiredExtraMem;
+	EnumerateReqMovableObjects	*movableMem;
+
+	caller = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	if (ecb == NULL || ecb->attr_list != NULL || ecb->attr_valid_length > 0)
+	{
+		printf(ERROR ZUM"postMgmtCb: %d attrs passed in @0x%p. "
+			"Directed enumeration not allowed!",
+			ecb->attr_valid_length, ecb->attr_list);
+		return;
+	};
+
+	requiredExtraMem =
+		EnumerateReqMovableObjects::calcMemRequirementsFor(
+			ecb->attr_valid_length,
+			ecb->filter_list_length);
+
+	req = getNewSZAsyncMsg(
+		CC __func__, devicePath, sZAsyncMsg::OP_POST_MANAGEMENT_CB_REQ,
+		requiredExtraMem);
+
+	if (req.get() == NULL) { return; };
+
+	memcpy(&req->params.enumerateChildren.cb, ecb, sizeof(*ecb));
+
+	/**	EXPLANATION:
+	 * Copy the attr and filter lists into the extra mem packed at the
+	 * end of the sZASyncMsg.
+	 **/
+	movableMem = new (req.get() + 1)
+	EnumerateReqMovableObjects(
+		ecb->attr_valid_length, ecb->filter_list_length);
+
+	/* We don't copy the attr list because enumerateChildrenReq is not meant
+	 * to be used for directed enumeration. We do copy the filter list
+	 * because we want to allow the caller to filter which devices it
+	 * enumerates.
+	 **/
+
+	// Copy filter list into extra mem.
 	if (ecb->filter_list_length > 0 && ecb->filter_list != NULL)
 	{
 		memcpy(
@@ -252,6 +316,28 @@ void fplainn::Zum::enumerateReq(
 
 	caller->parent->zasyncStream.send(
 		serverTid, req.get(), sizeof(*req) + requiredExtraMem,
+		ipc::METHOD_BUFFER, 0, privateData);
+}
+
+void fplainn::Zum::deviceManagementReq(
+	utf8Char *devicePath, udi_ubit8_t op, ubit16 parentId, void *privateData
+	)
+{
+	HeapObj<sZAsyncMsg>		req;
+	Thread				*caller;
+
+	caller = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	req = getNewSZAsyncMsg(
+		CC __func__, devicePath, sZAsyncMsg::OP_DEVMGMT_REQ);
+
+	if (req.get() == NULL) { return; };
+
+	req->params.devmgmt.mgmt_op = op;
+	req->params.devmgmt.parent_ID = parentId;
+
+	caller->parent->zasyncStream.send(
+		serverTid, req.get(), sizeof(*req),
 		ipc::METHOD_BUFFER, 0, privateData);
 }
 

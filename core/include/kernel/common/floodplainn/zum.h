@@ -59,6 +59,10 @@ public:
 		utf8Char *devicePath, udi_enumerate_cb_t *ecb,
 		uarch_t flags, void *privateData);
 
+	void postManagementCbReq(
+		utf8Char *devicePath, udi_enumerate_cb_t *ecb,
+		uarch_t flags, void *privateData);
+
 	/* Causes the ZUM server to disconnect from the device, closing the
 	 * management channel, and tearing down the device instance.
 	 **/
@@ -183,7 +187,8 @@ public:
 			OP_CHANNEL_EVENT_IND=0,
 			OP_USAGE_IND, OP_ENUMERATE_REQ, OP_DEVMGMT_REQ,
 			OP_FINAL_CLEANUP_REQ,
-			OP_START_REQ, OP_ENUMERATE_CHILDREN_REQ };
+			OP_START_REQ, OP_ENUMERATE_CHILDREN_REQ,
+			OP_POST_MANAGEMENT_CB_REQ };
 
 		void *operator new(size_t n, uarch_t extra)
 			{ return ::operator new(n + extra); }
@@ -259,10 +264,18 @@ public:
 			{
 				udi_enumerate_cb_t	cb;
 
+				udi_ubit8_t		enumeration_result;
 				uarch_t			flags;
 				uarch_t			nDeviceIds;
 				ubit32			*deviceIdsHandle;
 			} enumerateChildren;
+
+			struct
+			{
+				udi_enumerate_cb_t	cb;
+
+				udi_ubit8_t		enumeration_result;
+			} postManagementCb;
 		} params;
 	};
 

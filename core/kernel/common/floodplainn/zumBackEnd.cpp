@@ -86,15 +86,25 @@ namespace zumServer
 
 	// PRIVATE:
 		typedef start::StartDeviceReqCb EnumerateChildrenReqCb;
-		typedef void (startDeviceReqCbFn)(
-			MessageStream::sHeader *msg,
-			fplainn::Zum::sZumMsg *ctxt,
-			Thread *self,
-			fplainn::Device *dev);
+		typedef start::startDeviceReqCbFn enumerateChildrenReqCbFn;
 
-		startDeviceReqCbFn	enumerateChildrenReq1;
-		startDeviceReqCbFn	enumerateChildrenReq2;
-		startDeviceReqCbFn	enumerateChildrenReq3;
+		enumerateChildrenReqCbFn	enumerateChildrenReq1;
+		enumerateChildrenReqCbFn	enumerateChildrenReq2;
+		enumerateChildrenReqCbFn	enumerateChildrenReq3;
+	}
+
+	namespace postManagementCb
+	{
+		void postManagementCbReq(
+			ZAsyncStream::sZAsyncMsg *msg,
+			fplainn::Zum::sZAsyncMsg *request,
+			Thread *self);
+
+	// PRIVATE:
+		typedef start::StartDeviceReqCb PostManagementCbReqCb;
+		typedef start::startDeviceReqCbFn postManagementCbReqCbFn;
+
+		postManagementCbReqCbFn		postManagementCbReq1;
 	}
 
 	namespace mgmt
@@ -105,6 +115,11 @@ namespace zumServer
 			Thread *self);
 
 		void enumerateReq(
+			ZAsyncStream::sZAsyncMsg *msg,
+			fplainn::Zum::sZAsyncMsg *request,
+			Thread *self);
+
+		void deviceManagementReq(
 			ZAsyncStream::sZAsyncMsg *msg,
 			fplainn::Zum::sZAsyncMsg *request,
 			Thread *self);
@@ -287,6 +302,7 @@ void zumServer::zasyncHandler(
 		mgmt::enumerateReq(msg, request, self);
 		break;
 	case fplainn::Zum::sZAsyncMsg::OP_DEVMGMT_REQ:
+		mgmt::deviceManagementReq(msg, request, self);
 		break;
 	case fplainn::Zum::sZAsyncMsg::OP_FINAL_CLEANUP_REQ:
 		break;
@@ -299,9 +315,12 @@ void zumServer::zasyncHandler(
 	case fplainn::Zum::sZAsyncMsg::OP_ENUMERATE_CHILDREN_REQ:
 		enumerateChildren::enumerateChildrenReq(msg, request, self);
 		break;
+	case fplainn::Zum::sZAsyncMsg::OP_POST_MANAGEMENT_CB_REQ:
+		postManagementCb::postManagementCbReq(msg, request, self);
+		break;
 
 	default:
-		printf(WARNING ZUM"request from 0x% is for invalid ops_idx "
+		printf(WARNING ZUM"request from 0x%x is for invalid ops_idx "
 			"into udi_mgmt_ops_vector_t for device %s.\n",
 			msg->header.sourceId,
 			request->path);
@@ -642,7 +661,6 @@ void zumServer::enumerateChildren::enumerateChildrenReq(
 	myResponse(DONT_SEND_RESPONSE);
 }
 
-#include <kernel/common/memoryTrib/memoryTrib.h>
 void zumServer::enumerateChildren::enumerateChildrenReq1(
 	MessageStream::sHeader *msg,
 	fplainn::Zum::sZumMsg *ctxt,
@@ -681,7 +699,6 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 
 	switch (response->info.params.enumerate.enumeration_result)
 	{
-	case UDI_ENUMERATE_LEAF: releaseBuffer = clearBuffer = 1; break;
 	case UDI_ENUMERATE_OK:
 		err = floodplainn.createDevice(
 			ctxt->info.path, CHIPSET_NUMA_SHBANKID,
@@ -700,28 +717,37 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 			break;
 		};
 
-printf(NOTICE"new dev %d, Buff 0x%p, %d handles done.\n", ctxt->info.params.enumerateChildren.cb.child_ID,
-	ctxt->info.params.enumerateChildren.deviceIdsHandle,
-	ctxt->info.params.enumerateChildren.nDeviceIds);
-
 		// Add the new device's child_ID to the buffer.
 		ctxt->info.params.enumerateChildren.deviceIdsHandle[
 			ctxt->info.params.enumerateChildren.nDeviceIds++]
 			= response->info.params.enumerateChildren.cb.child_ID;
 
+		loopAgain = 1;
 		break;
 
+	case UDI_ENUMERATE_LEAF: releaseBuffer = clearBuffer = 1; break;
 	case UDI_ENUMERATE_DONE: break;
-	case UDI_ENUMERATE_RESCAN:
-	case UDI_ENUMERATE_REMOVED:
+	case UDI_ENUMERATE_REMOVED: break;
 	case UDI_ENUMERATE_REMOVED_SELF:
-	case UDI_ENUMERATE_RELEASED:
-		printf(NOTICE ZUM"enumerateAck: enum_res %d (%s).\n",
-			response->info.params.enumerate.enumeration_result,
-			ueaStrings[response->info.params.enumerate.enumeration_result]);
+		/** TODO:
+		 * Will need to do some analysis and design to determine how to
+		 * handle this event.
+		 **/
 		break;
-	//case UDI_ENUMERATE_FAILED:
-	default: break;
+	// Should only be called in response to UDI_ENUMERATE_RELEASE
+	case UDI_ENUMERATE_RELEASED: break;
+	// We don't handle these. Let the caller handle them.
+	case UDI_ENUMERATE_RESCAN:
+	case UDI_ENUMERATE_FAILED:
+		break;
+
+	default:
+		printf(WARNING ZUM"enumChildren %s: device responded with "
+			"unknown enumeration_result %d.\n",
+			ctxt->info.path,
+			response->info.params.enumerate.enumeration_result);
+
+		break;
 	};
 
 	if (clearBuffer) {
@@ -751,8 +777,151 @@ printf(NOTICE"new dev %d, Buff 0x%p, %d handles done.\n", ctxt->info.params.enum
 		// Prevent response from being sent until the end of the loop.
 		myResponse(DONT_SEND_RESPONSE);
 	}
-	else {
-		// Allow the response to be sent. Nothing to do here.
+	else
+	{
+		// Allow the response to be sent. Nothing really to do here.
+		ctxt->info.params.enumerateChildren.enumeration_result =
+			response->info.params.enumerate.enumeration_result;
+	};
+}
+
+void zumServer::postManagementCb::postManagementCbReq(
+	ZAsyncStream::sZAsyncMsg *msg,
+	fplainn::Zum::sZAsyncMsg *request,
+	Thread *self
+	)
+{
+	fplainn::Zum::sZumMsg		*ctxt;
+	error_t				err;
+	fplainn::Endpoint		*endp;
+	AsyncResponse			myResponse;
+	fplainn::Device			*dev;
+
+	ctxt = getNewZumMsg(
+		CC __func__, request->path,
+		msg->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
+		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
+
+	if (ctxt == NULL) { return; };
+	// Copy the request data over.
+	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+
+	myResponse(ctxt);
+
+	// Does the requested device even exist?
+	err = floodplainn.getDevice(ctxt->info.path, &dev);
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	/**	EXPLANATION:
+	 * Now we just cycle through, calling enumerateReq on the device until
+	 * it tells us UDI_ENUMERATE_DONE.
+	 **/
+	floodplainn.zum.enumerateReq(
+		ctxt->info.path,
+		UDI_ENUMERATE_NEW,
+		&request->params.postManagementCb.cb,
+		new PostManagementCbReqCb(
+			&postManagementCbReq1, ctxt, self, dev));
+
+	myResponse(DONT_SEND_RESPONSE);
+}
+
+void zumServer::postManagementCb::postManagementCbReq1(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *self,
+	fplainn::Device *dev)
+{
+	error_t				err;
+	fplainn::Device			*newDevice;
+	fplainn::Endpoint		*endp;
+	AsyncResponse			myResponse;
+	fplainn::Zum::sZumMsg		*response;
+	sbit8				loopAgain=0;
+	const char 			*ueaStrings[] =
+	{
+		"OK", "LEAF", "DONE", "RESCAN", "REMOVED", "REMOVED_SELF",
+		"RELEASED", "FAILED"
+	};
+
+	response = (fplainn::Zum::sZumMsg *)msg;
+	myResponse(ctxt);
+
+	/**	EXPLANATION:
+	 * We now just sit waiting for the device to return our posted CB.
+	 * Depending on the response we get, we will take one or more actions.
+	 **/
+
+	switch (response->info.params.enumerate.enumeration_result)
+	{
+	case UDI_ENUMERATE_OK:
+		err = floodplainn.createDevice(
+			ctxt->info.path, CHIPSET_NUMA_SHBANKID,
+			response->info.params.postManagementCb.cb.child_ID,
+			0, &newDevice);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR ZUM"postMgmtCb %s: Failed to add child "
+				"%d.\n",
+				ctxt->info.path,
+				response->info.params.postManagementCb.cb.child_ID);
+
+			myResponse(err);
+			// Let it gracefully break out. Don't "return".
+			break;
+		};
+
+		loopAgain = 1;
+		break;
+
+	case UDI_ENUMERATE_LEAF: break;
+	case UDI_ENUMERATE_DONE: break;
+	case UDI_ENUMERATE_REMOVED:
+		// This is more complicated.
+		break;
+	case UDI_ENUMERATE_REMOVED_SELF:
+		/** TODO:
+		 * Will need to do some analysis and design to determine how to
+		 * handle this event.
+		 **/
+		break;
+	// Should only be called in response to UDI_ENUMERATE_RELEASE
+	case UDI_ENUMERATE_RELEASED: break;
+	// We don't handle these. Let the caller handle them.
+	case UDI_ENUMERATE_RESCAN:
+	case UDI_ENUMERATE_FAILED:
+		break;
+
+	default:
+		printf(WARNING ZUM"enumChildren %s: device responded with "
+			"unknown enumeration_result %d.\n",
+			ctxt->info.path,
+			response->info.params.enumerate.enumeration_result);
+
+		break;
+	};
+
+	if (loopAgain)
+	{
+		floodplainn.zum.enumerateReq(
+			ctxt->info.path,
+			UDI_ENUMERATE_NEW,
+			&ctxt->info.params.postManagementCb.cb,
+			new PostManagementCbReqCb(
+				postManagementCbReq1, ctxt, self, dev));
+
+		// Prevent response from being sent until the end of the loop.
+		myResponse(DONT_SEND_RESPONSE);
+	}
+	else
+	{
+		// Allow the response to be sent. Nothing really to do here.
+		ctxt->info.params.postManagementCb.enumeration_result =
+			response->info.params.enumerate.enumeration_result;
 	};
 }
 
@@ -1000,6 +1169,128 @@ void zumServer::mgmt::enumerateAck(
 		args->enumeration_result;
 
 	/* This is the status for the enumerate_req call itself, and not for the
+	 * driver's return value in its usage_res call (there is none actually),
+	 * or anything like that.
+	 **/
+	myResponse(response->header.error);
+}
+
+void zumServer::mgmt::deviceManagementReq(
+	ZAsyncStream::sZAsyncMsg *msg,
+	fplainn::Zum::sZAsyncMsg *request,
+	Thread *self
+	)
+{
+	fplainn::Endpoint		*endp;
+	fplainn::Device			*dev;
+	error_t				err;
+	fplainn::Zum::sZumMsg		*ctxt;
+	AsyncResponse			myResponse;
+
+	/**	EXPLANATION:
+	 * Basically:
+	 *	* Get the device, if it exists.
+	 *	* Ensure that we are connected to the device first.
+	 *	* Get the kernel's mgmt endpoint.
+	 *	* Then fill out a udi_usage_cb_t control block.
+	 *	* Call FloodplainnStream::send():
+	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=1.
+	 **/
+	ctxt = getNewZumMsg(
+		CC __func__, request->path,
+		msg->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
+		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
+
+	if (ctxt == NULL) { return; };
+	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	myResponse(ctxt);
+
+	err = getDeviceHandleAndMgmtEndpoint(
+		CC __func__, ctxt->info.path, &dev, &endp);
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	udi_layout_t		*layouts[3] =
+	{
+		__klzbzcore::region::channel::mgmt::layouts::visible[ctxt->info.opsIndex],
+		__klzbzcore::region::channel::mgmt::layouts::marshal[ctxt->info.opsIndex],
+		NULL
+	};
+
+	err = self->parent->floodplainnStream.send(
+		endp, &ctxt->info.params.devmgmt.cb.gcb, layouts,
+		CC "udi_mgmt", UDI_MGMT_OPS_NUM, ctxt->info.opsIndex,
+		new MgmtReqCb(&deviceManagementAck, ctxt, self, dev),
+		ctxt->info.params.devmgmt.mgmt_op,
+		ctxt->info.params.devmgmt.parent_ID);
+
+	if (err != ERROR_SUCCESS) {
+		myResponse(err); return;
+	};
+
+	myResponse(DONT_SEND_RESPONSE);
+}
+
+void zumServer::mgmt::deviceManagementAck(
+	MessageStream::sHeader *msg,
+	fplainn::Zum::sZumMsg *ctxt,
+	Thread *,
+	fplainn::Device *
+	)
+{
+	fplainn::sChannelMsg	*response = (fplainn::sChannelMsg *)msg;
+	AsyncResponse		myResponse;
+	udi_mgmt_cb_t		*cb;
+	uarch_t			devmgmtCbSize;
+
+	myResponse(ctxt);
+
+	cb = (udi_mgmt_cb_t *)response->getPayloadAddr();
+	ctxt->info.params.devmgmt.cb = *cb;
+
+	// Extract the stack arguments from the marshal space.
+#if 0
+	/* Stack arguments are after the visible layout of the CB. We'll need to
+	 * get the visible layout. Then we can calculate its size to determine
+	 * how many bytes past the visible_layout we have to skip, in order to
+	 * get to the stack arguments.
+	 **/
+	const sMetaInitEntry		*mgmt;
+
+	mgmt = floodplainn.zudi.findMetaInitInfo(CC"udi_mgmt");
+	if (mgmt == NULL)
+	{
+		printf(ERROR ZUM"enumerateAck: failed to get mgmt meta info.\n");
+		myResponse(ERROR_NOT_FOUND);
+		return;
+	};
+
+	fplainn::MetaInit	parser(mgmt->udi_meta_info);
+	udi_mei_op_template_t	*devmgmtReqTmplt;
+	udi_layout_t		*devmgmtCbLay;
+
+	devmgmtReqTmplt = parser.getOpTemplate((udi_index_t)1, 3);
+	devmgmtCbLay = devmgmtReqTmplt->visible_layout;
+	devmgmtCbSize = fplainn::sChannelMsg::zudi_layout_get_size(
+		devmgmtCbLay, 1);
+#else // Both paths give the same result, but this one is dramatically faster.
+	devmgmtCbSize = sizeof(udi_mgmt_cb_t) - sizeof(udi_cb_t);
+#endif
+
+	ubit8			*args8 = &((ubit8 *)(&cb->gcb + 1))[devmgmtCbSize];
+	struct			sDevmgmtReqArgs
+	{
+		udi_ubit8_t	flags;
+		udi_status_t	status;
+	} *args = (sDevmgmtReqArgs *)args8;
+
+	ctxt->info.params.devmgmt.flags = args->flags;
+	ctxt->info.params.devmgmt.status = args->status;
+
+	/* This is the status for the usageInd call itself, and not for the
 	 * driver's return value in its usage_res call (there is none actually),
 	 * or anything like that.
 	 **/

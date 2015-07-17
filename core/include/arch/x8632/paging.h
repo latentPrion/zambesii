@@ -38,9 +38,9 @@
 #endif
 
 #define PAGING_BASE_MASK_LOW		(PAGING_BASE_SIZE - 1)
-#define PAGING_BASE_MASK_HIGH		~(PAGING_BASE_MASK_LOW)
+#define PAGING_BASE_MASK_HIGH		(~(PAGING_BASE_MASK_LOW))
 #define PAGING_ALTERNATE_MASK_LOW	(PAGING_ALTERNATE_SIZE - 1)
-#define PAGING_ALTERNATE_MASK_HIGH	~(PAGING_ALTERNATE_MASK_LOW)
+#define PAGING_ALTERNATE_MASK_HIGH	(~(PAGING_ALTERNATE_MASK_LOW))
 
 /* Define the mask and shift offsets to allow the kernel to extract the page
  * table entry number from any level of the paging hierarchy.

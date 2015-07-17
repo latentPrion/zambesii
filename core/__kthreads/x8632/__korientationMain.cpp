@@ -479,8 +479,12 @@ printf(NOTICE"here, finished enum req.\n");
 
 	ecb->attr_valid_length = 0;
 	ecb->attr_list = NULL;
-	floodplainn.zum.enumerateChildrenReq(
+printf(NOTICE ORIENT"About to call devmgmt.\n");
+/*	floodplainn.zum.enumerateChildrenReq(
 		CC"by-id", ecb, 0,
+		new __kCallback(&__kecrCb));*/
+	floodplainn.zum.deviceManagementReq(
+		CC"by-id", UDI_DMGMT_SUSPEND, 0,
 		new __kCallback(&__kecrCb));
 }
 
@@ -488,13 +492,14 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 {
 	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
 
-	printf(NOTICE"Here, enumChildren done. %d new child IDs in buffer.\n",
+	printf(NOTICE"Here, devmgmt done. %d new child IDs in buffer.\n",
 		msg->info.params.enumerateChildren.nDeviceIds);
 
-	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
+__kdebug.refresh();
+/*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
 	{
 		printf(NOTICE"New child: %s/%d.\n",
 			msg->info.path,
 			msg->info.params.enumerateChildren.deviceIdsHandle[i]);
-	};
+	};*/
 }

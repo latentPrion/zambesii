@@ -50,6 +50,10 @@ void zrootdev_devmgmt_req(
 	)
 {
 	(void)cb; (void)mgmt_op; (void)parent_ID;
+
+printf(NOTICE"zrootdev: devmgmt_req: op %d, parent %d.\n",
+	mgmt_op, parent_ID);
+	udi_devmgmt_ack(cb, 0, 0);
 }
 
 void zrootdev_final_cleanup_req(udi_mgmt_cb_t *cb)
