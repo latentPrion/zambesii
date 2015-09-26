@@ -109,6 +109,10 @@ public:
 	error_t getEndpointMetaName(fplainn::Endpoint *endp, utf8Char *mem);
 	fplainn::Endpoint *getMgmtEndpointForCurrentDeviceInstance(void);
 
+	class Buffer
+	{
+	};
+
 public:
 	struct sKernelCallMsg
 	{
