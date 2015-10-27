@@ -330,7 +330,7 @@ error_t fplainn::DeviceInstance::initialize(void)
 fplainn::Channel *
 fplainn::DeviceInstance::getChannelByEndpoint(Endpoint *endpoint)
 {
-	PtrList<Channel>::Iterator		it;
+	HeapList<Channel>::Iterator		it;
 
 	for (it = channels.begin(0); it != channels.end(); ++it)
 	{
@@ -411,7 +411,7 @@ void fplainn::DeviceInstance::dumpChannels(void)
 	printf(NOTICE"dumpChannels: devInst %s, %d channels.\n",
 		device->longName, channels.getNItems());
 
-	PtrList<fplainn::Channel>::Iterator		iChan;
+	HeapList<fplainn::Channel>::Iterator		iChan;
 
 	for (iChan = channels.begin(0); iChan != channels.end(); ++iChan)
 	{

@@ -3,7 +3,7 @@
 
 	#include <scaling.h>
 	#include <__kclasses/bitmap.h>
-	#include <__kclasses/sortedPtrDoubleList.h>
+	#include <__kclasses/sortedHeapDoubleList.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
@@ -57,7 +57,7 @@ public:
 	 * latency. The implication is that banks that aren't reachable aren't
 	 * listed.
 	 **/
-	SortedPtrDblList<sMemProximityEntry, sTime>
+	SortedHeapDoubleList<sMemProximityEntry, sTime>
 		memProximityMatrix;
 
 	ubit32		capacity;

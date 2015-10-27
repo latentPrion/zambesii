@@ -5,7 +5,7 @@
 	#include <udi.h>
 	#undef UDI_VERSION
 	#include <__kstdlib/__ktypes.h>
-	#include <__kclasses/ptrList.h>
+	#include <__kclasses/heapList.h>
 
 class Thread;
 
@@ -24,7 +24,7 @@ namespace fplainn
 
 		sbit8 findEndpoint(RegionEndpoint *endp)
 		{
-			PtrList<RegionEndpoint>::Iterator	it;
+			HeapList<RegionEndpoint>::Iterator	it;
 
 			it = endpoints.begin(0);
 			for (; it != endpoints.end(); ++it)
@@ -49,7 +49,7 @@ namespace fplainn
 		DeviceInstance		*parent;
 		ubit16			index;
 		Thread			*thread;
-		PtrList<RegionEndpoint>	endpoints;
+		HeapList<RegionEndpoint>	endpoints;
 	};
 }
 

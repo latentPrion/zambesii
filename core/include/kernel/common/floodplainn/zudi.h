@@ -7,6 +7,8 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/floodplainn/fvfs.h>
 	#include <kernel/common/floodplainn/channel.h>
+	#include <__kclasses/resizeableArray.h>
+	#include <__kclasses/slamCache.h>
 
 #define ZUDI			"ZUDI: "
 
@@ -109,8 +111,175 @@ public:
 	error_t getEndpointMetaName(fplainn::Endpoint *endp, utf8Char *mem);
 	fplainn::Endpoint *getMgmtEndpointForCurrentDeviceInstance(void);
 
-	class Buffer
+	/**	EXPLANATION:
+	 * This sub-API is concerned with the carrying out of UDI DMA
+	 * transactions.
+	 **********************************************************************/
+	struct dma
 	{
+		/**	EXPLANATION:
+		 * This class encapsulates the kernel's ability to read/write
+		 * from/to a DMA SGlist. SGLists are in physical memory, so
+		 * the kernel must map them before it can alter their contents.
+		 *
+		 * This class provides methods such as memset(), memcpy(),
+		 * etc.
+		 **/
+		class MappedScatterGatherList
+		/*: public SparseBuffer*/
+		{
+		protected:
+			struct sListNode
+			{
+				List<sListNode>::sHeader	listHeader;
+				ubit8				*vaddr;
+				uarch_t				nBytes;
+			};
+
+		public:
+			MappedScatterGatherList(void)
+			:
+			cache(sizeof(sListNode))
+			{}
+
+			error_t initialize()
+			{
+				error_t		ret;
+
+				ret = cache.initialize();
+				if (ret != ERROR_SUCCESS) { return ret; }
+				ret = pages.initialize();
+				if (ret != ERROR_SUCCESS) { return ret; }
+			}
+
+			~MappedScatterGatherList(void) {}
+
+		public:
+			virtual void memset8(
+				uarch_t offset, ubit8 value, uarch_t nBytes);
+			virtual void memset16(
+				uarch_t offset, ubit8 value, uarch_t nBytes);
+			virtual void memset32(
+				uarch_t offset, ubit8 value, uarch_t nBytes);
+
+			virtual void memcpy(
+				uarch_t offset, void *mem, uarch_t nBytes);
+			virtual void memcpy(
+				void *mem, uarch_t offset, uarch_t nBytes);
+
+			void memmove(
+				uarch_t destOff, uarch_t srcOff,
+				uarch_t nBytes);
+
+			error_t addPages(void *vaddr, uarch_t nBytes);
+			error_t removePages(void *vaddr, uarch_t nBytes);
+			void compact(void);
+
+		protected:
+			SlamCache		cache;
+			List<sListNode>		pages;
+		};
+
+		/**	EXPLANATION:
+		 * This is an abstraction around the udi_scgth_t type, meant to
+		 * make the building and manipulation of DMA elements easier.
+		 *
+		 * It also provides a map() method, which causes it to read all
+		 * of its scatter-gather elements and return a virtual mapping
+		 * to them. The purpose of this of course, is to enable the
+		 * kernel to read/write the contents stored in a particular
+		 * scatter-gather list's memory.
+		 **/
+		class ScatterGatherList
+		{
+		public:
+			ScatterGatherList(void);
+			error_t initialize(void) { return ERROR_SUCCESS; }
+			~ScatterGatherList(void) {}
+
+		public:
+			error_t map(MappedScatterGatherList *retMapping);
+			error_t remap(MappedScatterGatherList *mapping);
+			void unmap(MappedScatterGatherList *mapping);
+
+		public:
+			ResizeableArray<udi_scgth_element_32_t>	elements32;
+			ResizeableArray<udi_scgth_element_64_t>	elements64;
+			udi_scgth_t				udiScgthList;
+		};
+
+		/**	EXPLANATION:
+		 * This class represents a driver's request to perform a DMA
+		 * transaction. It carries directs the entire operation, from
+		 * allocating the DMA SGList, to copying data to and from DMA
+		 * memory, and so on.
+		 *
+		 * This is what Zambesii's udi_dma_constraints_t handle points
+		 * to.
+		 **/
+		class DmaConstraints
+		{
+		public:
+			typedef ResizeableArray<udi_dma_constraints_attr_spec_t>
+				AttrArray;
+
+			DmaConstraints(void) {}
+			error_t initialize(void)
+			{
+				error_t		ret;
+
+				ret = attrs.initialize();
+				return ret;
+			}
+
+		public:
+			void dump(void);
+			static utf8Char *getAttrTypeName(
+				udi_dma_constraints_attr_t a);
+
+			sbit8 attrAlreadySet(udi_dma_constraints_attr_t a)
+			{
+				for (
+					AttrArray::Iterator it=attrs.begin();
+					it != attrs.end();
+					++it)
+				{
+					udi_dma_constraints_attr_spec_t	*s =
+						&(*it);
+
+					if (s->attr_type == a) { return 1; };
+				};
+
+				return 0;
+			}
+
+			/* We don't need to provide a "remove()" method since
+			 * that is not allowed by UDI. Can only reset() single
+			 * attributes.
+			 **/
+			error_t addOrModifyAttrs(
+				udi_dma_constraints_attr_spec_t *attrs,
+				uarch_t nAttrs);
+
+		public:
+			static utf8Char		*attrTypeNames[32];
+			AttrArray		attrs;
+		};
+
+		class DmaRequest
+		{
+		public:
+			DmaRequest(udi_dma_constraints_t *)
+			{}
+
+			error_t initialize(void) { return ERROR_SUCCESS; }
+			~DmaRequest(void);
+
+		protected:
+			DmaConstraints			constraints;
+			ScatterGatherList		sGList;
+			MappedScatterGatherList		mapping;
+		};
 	};
 
 public:
@@ -156,11 +325,10 @@ private:
 	Thread				*server;
 
 public:
-	PtrList<fplainn::Driver>	driverList;
+	HeapList<fplainn::Driver>	driverList;
 };
 
 extern const sDriverInitEntry	driverInitInfo[];
 extern const sMetaInitEntry	metaInitInfo[];
 
 #endif
-

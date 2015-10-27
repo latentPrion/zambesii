@@ -3,7 +3,7 @@
 
 	#include <chipset/zkcm/timerDevice.h>
 	#include <__kstdlib/__ktypes.h>
-	#include <__kclasses/sortedPtrDoubleList.h>
+	#include <__kclasses/sortedHeapDoubleList.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 	#include <kernel/common/timerTrib/timerStream.h>
 
@@ -158,7 +158,7 @@ private:
 	ubit32		currentPeriod, nativePeriod;
 
 	// The actual internal queue instance for timer request objects.
-	SortedPtrDblList<TimerStream::sTimerMsg, sTimestamp>
+	SortedHeapDoubleList<TimerStream::sTimerMsg, sTimestamp>
 		requestQueue;
 
 	// Used to prevent a series of race conditions.

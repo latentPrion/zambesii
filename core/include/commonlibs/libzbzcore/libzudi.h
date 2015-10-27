@@ -7,8 +7,8 @@
 	#include <zui.h>
 	#include <extern.h>
 	#include <__kstdlib/__kclib/string8.h>
-	#include <__kclasses/ptrList.h>
-	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/heapList.h>
+	#include <__kclasses/list.h>
 
 #define LZUDI			"lzudi: "
 
@@ -63,7 +63,7 @@ namespace lzudi
 
 		sbit8 findEndpointContext(sEndpointContext *ec)
 		{
-			PtrList<sEndpointContext>::Iterator	it;
+			HeapList<sEndpointContext>::Iterator	it;
 
 			for (it=endpoints.begin(0); it!=endpoints.end(); ++it) {
 				if (*it == ec) { return 1; };
@@ -75,7 +75,7 @@ namespace lzudi
 		sEndpointContext *getEndpointContextBy__kendpoint(
 			fplainn::Endpoint *__kep)
 		{
-			PtrList<sEndpointContext>::Iterator	it;
+			HeapList<sEndpointContext>::Iterator	it;
 
 			for (it=endpoints.begin(0); it!=endpoints.end(); ++it)
 			{
@@ -89,7 +89,7 @@ namespace lzudi
 		List<sRegion>::sHeader		listHeader;
 		ubit16				index;
 		udi_init_context_t		*rdata;
-		PtrList<sEndpointContext>	endpoints;
+		HeapList<sEndpointContext>	endpoints;
 	};
 
 	struct sControlBlock

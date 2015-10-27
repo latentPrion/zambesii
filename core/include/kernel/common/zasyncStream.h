@@ -2,7 +2,7 @@
 	#define _Z_ASYNC_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <__kclasses/ptrList.h>
+	#include <__kclasses/heapList.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/sharedResourceGroup.h>
@@ -133,7 +133,7 @@ private:
 	};
 
 	SharedResourceGroup<WaitLock, sState>	connections;
-	PtrList<ipc::sDataHeader>		messages;
+	HeapList<ipc::sDataHeader>		messages;
 };
 
 #endif

@@ -1,0 +1,34 @@
+We need to modify the PMM to support taking a contraints object as an argument.
+The PMM must be able to parse the essential elements of this constraints object
+and return pmem which satisfies it.
+
+Our current PMM design consists of NUMA Banks and Memory Regions. DMA will
+*usually* need to come from a mem region. We can either complicate our PMM
+design and go through a redesign iteration, or else just let the chipset
+code assist us in deciding where each DMA allocation should come from.
+
+So the first question is, "Should we redesign the PMM to integrate placement
+and constrained allocation?"
+
+First of all, why would we need or want constrained allocation? We already have
+setUsed() and setUnused() in the PMM, in case we should ever discover reserved
+memory through inference, that the memory map didn't tell us about.
+
+Secondly, placement allocation in physical memory is dumb. It makes no sense.
+Even if we should encounter a situation where we have inferred a reserved
+region, we should not need to allocate from it, because it will most likely be
+purely reserved, period. But in the unlikely case that this reserved range
+is usable in an allocatable manner by some entity, placement allocation doesn't
+help there either: we would need an allocator, and not a guesswork placement
+patchwork. So in the end, just setting the memory as reserved in the main PMM
+bitmaps and then spawning a new Memory Region for each stretch of inferred
+memory which must be managed.
+
+``~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+
+We will need two allocators. The first will be the allocator for the scatter
+gather list. The second will be for the scatter gather frames.
+
+The scgth list allocator must allocate a scgth list compatible with the
+constraints object. The list allocator will operate differently from the frame
+allocator. The list allocator will allocate a series of

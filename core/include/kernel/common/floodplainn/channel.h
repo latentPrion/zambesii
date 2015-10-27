@@ -10,8 +10,8 @@
 	#include <zui.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kmath.h>
-	#include <__kclasses/ptrList.h>
-	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/heapList.h>
+	#include <__kclasses/list.h>
 	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/messageStream.h>
 	#include <kernel/common/floodplainn/region.h>
@@ -234,7 +234,7 @@ namespace fplainn
 		bindChannelTypeE		bindChannelType;
 		RegionEndpoint			regionEnd0;
 		Endpoint			*endpoints[2];
-		PtrList<IncompleteChannel>	incompleteChannels;
+		HeapList<IncompleteChannel>	incompleteChannels;
 		utf8Char			metaName[
 			ZUI_DRIVER_METALANGUAGE_MAXLEN];
 	};

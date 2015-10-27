@@ -18,7 +18,7 @@ error_t SingleWaiterQueue::addItem(void *item)
 		return ERROR_UNINITIALIZED;
 	};
 
-	ret = PtrDblList<void>::addItem(item);
+	ret = HeapDoubleList<void>::addItem(item);
 	if (ret != ERROR_SUCCESS)
 	{
 		lock.release();
@@ -27,13 +27,13 @@ error_t SingleWaiterQueue::addItem(void *item)
 
 	ubit32		nItems;
 
-	nItems = PtrDblList<void>::getNItems();
+	nItems = HeapDoubleList<void>::getNItems();
 	if (nItems == 1)
 	{
 		ret = taskTrib.unblock(thread);
 		if (ret != ERROR_SUCCESS)
 		{
-			PtrDblList<void>::removeItem(item);
+			HeapDoubleList<void>::removeItem(item);
 
 			lock.release();
 
@@ -58,7 +58,7 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 		// Prevent lost wakeups from race conditions.
 		lock.acquire();
 
-		*item = PtrDblList<void>::popFromHead();
+		*item = HeapDoubleList<void>::popFromHead();
 		if (*item != NULL)
 		{
 			lock.release();

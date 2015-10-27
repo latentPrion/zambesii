@@ -4,7 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kstdlib/__kclib/string.h>
-	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/list.h>
 
 #define HEAP_CHUNK_MAGIC	(utf8Char *)"##Zambesii heap chunk##"
 #define HEAP_BLOCK_MAGIC	(utf8Char *)"##Zambesii heap block##"

@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kcxxlib/new>
-	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/list.h>
 	#include <__kclasses/debugPipe.h>
 	#include <kernel/common/floodplainn/floodplainn.h>
 
@@ -131,7 +131,7 @@ namespace __klzbzcore
 
 			sMetaDescriptor *getMetaDescriptor(udi_index_t idx)
 			{
-				PtrList<sMetaDescriptor>::Iterator	it;
+				HeapList<sMetaDescriptor>::Iterator	it;
 
 				it = metaInfos.begin(0);
 				for (; it != metaInfos.end(); ++it)
@@ -146,7 +146,7 @@ namespace __klzbzcore
 
 			sMetaDescriptor *getMetaDescriptor(utf8Char *metaName)
 			{
-				PtrList<sMetaDescriptor>::Iterator	it;
+				HeapList<sMetaDescriptor>::Iterator	it;
 
 				it = metaInfos.begin(0);
 				for (; it != metaInfos.end(); ++it)
@@ -206,7 +206,7 @@ namespace __klzbzcore
 
 			const udi_init_t		*initInfo;
 			List<sMetaCbInfo>		metaCbInfo;
-			PtrList<sMetaDescriptor>	metaInfos;
+			HeapList<sMetaDescriptor>	metaInfos;
 		};
 
 	// PRIVATE:

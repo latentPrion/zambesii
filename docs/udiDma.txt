@@ -1,0 +1,28 @@
+	Scatter Gather List (SGL):
+SGLs are physical page lists. They are simple descriptors of frames, given in
+the udi_scgth_t format.
+
+map() returns a VSGL object.
+Need methods to manipulate the element array.
+
+
+	Virtual Scatter Gather List:
+VSGLs are an abstraction that works on top of SGLs. A VSGL has accessor methods
+such as memcpy which allow it to be written to and read from.
+
+	DMA Descriptor:
+Takes a udi_dma_constraints_t object and manages the reification of the DMA
+abstraction as requred by the udi_dma_constraints_t object.
+
+Calling udi_dma_prepare causes one of these to be created.
+
+I think this class should be the overseer of the building of udi_scgth_t lists.
+An allocate() method on this class causes it to direct the building of a
+udi_scgth_t list.
+
+	udi_buf_t:
+Can be mapped to a DMA Descriptor, and subsequently unmapped.
+
+
+		PMM changes:
+The PMM changes are mostly going to be about alignment constraints.

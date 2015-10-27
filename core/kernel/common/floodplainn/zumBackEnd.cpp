@@ -432,7 +432,7 @@ void zumServer::start::startDeviceReq1(
 {
 	AsyncResponse				myResponse;
 	fplainn::Zum::sZumMsg			*response;
-	PtrList<fplainn::Channel>::Iterator	chanIt;
+	HeapList<fplainn::Channel>::Iterator	chanIt;
 
 	(void)response;
 
@@ -482,7 +482,7 @@ void zumServer::start::startDeviceReq2(
 {
 	fplainn::Zum::sZumMsg			*response;
 	AsyncResponse				myResponse;
-	PtrList<fplainn::Channel>::Iterator	chanIt;
+	HeapList<fplainn::Channel>::Iterator	chanIt;
 
 	/**	EXPLANATION:
 	 * In here we must tally both the failures and successes among the

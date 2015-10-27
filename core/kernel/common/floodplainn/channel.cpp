@@ -198,7 +198,7 @@ error_t fplainn::sChannelMsg::send(
 
 void fplainn::Region::dumpChannelEndpoints(void)
 {
-	PtrList<RegionEndpoint>::Iterator	it;
+	HeapList<RegionEndpoint>::Iterator	it;
 
 	for (it=endpoints.begin(0); it != endpoints.end(); ++it)
 	{
@@ -213,7 +213,7 @@ fplainn::Channel::getIncompleteChannelBySpawnIndex(
 	udi_index_t spawn_idx
 	)
 {
-	PtrList<IncompleteChannel>::Iterator	it;
+	HeapList<IncompleteChannel>::Iterator	it;
 
 	for (it = incompleteChannels.begin(0); it != incompleteChannels.end();
 		++it)

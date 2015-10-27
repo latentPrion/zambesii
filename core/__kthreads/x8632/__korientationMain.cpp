@@ -480,12 +480,12 @@ printf(NOTICE"here, finished enum req.\n");
 	ecb->attr_valid_length = 0;
 	ecb->attr_list = NULL;
 printf(NOTICE ORIENT"About to call devmgmt.\n");
-/*	floodplainn.zum.enumerateChildrenReq(
+	floodplainn.zum.enumerateChildrenReq(
 		CC"by-id", ecb, 0,
-		new __kCallback(&__kecrCb));*/
-	floodplainn.zum.finalCleanupReq(
-		CC"by-id",
 		new __kCallback(&__kecrCb));
+/*	floodplainn.zum.finalCleanupReq(
+		CC"by-id",
+		new __kCallback(&__kecrCb));*/
 }
 
 void __kecrCb(MessageStream::sHeader *msgIt)
@@ -496,6 +496,24 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 		msg->info.params.enumerateChildren.nDeviceIds);
 
 __kdebug.refresh();
+
+	fplainn::Zudi::dma::DmaConstraints			c;
+	udi_dma_constraints_attr_spec_t	a[4] =
+	{
+		{ UDI_DMA_ADDRESSABLE_BITS, 16 },
+		{ UDI_DMA_NO_PARTIAL, 1 },
+		{ UDI_DMA_SCGTH_FORMAT, UDI_SCGTH_32 | UDI_DMA_LITTLE_ENDIAN },
+		{ UDI_DMA_SEQUENTIAL, 1 }
+	};
+
+	c.initialize();
+
+	c.addOrModifyAttrs(a, 3);
+	a[1].attr_value = 5;
+	a[0].attr_type = UDI_DMA_SCGTH_MAX_EL_PER_SEG;
+	c.addOrModifyAttrs(a, 4);
+	c.dump();
+
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
 	{
 		printf(NOTICE"New child: %s/%d.\n",

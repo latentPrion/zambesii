@@ -92,7 +92,7 @@ void TimerTrib::initializeAllQueues(void)
 		};
 	};
 
-	PtrList<ZkcmTimerDevice>::Iterator		it;
+	HeapList<ZkcmTimerDevice>::Iterator		it;
 
 	dev = zkcmCore.timerControl.filterTimerDevices(
 		ZkcmTimerDevice::CHIPSET,

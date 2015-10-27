@@ -5,7 +5,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string.h>
 	#include <__kstdlib/__kclib/string8.h>
-	#include <__kclasses/ptrList.h>
+	#include <__kclasses/heapList.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 
 
@@ -184,8 +184,8 @@ namespace vfs
 		void dumpLeaves(void);
 
 	public:
-		PtrList<tagType>		dirs;
-		PtrList<tagType>		leaves;
+		HeapList<tagType>		dirs;
+		HeapList<tagType>		leaves;
 	};
 
 	/**	EXPLANATION:
@@ -352,7 +352,7 @@ sarch_t vfs::DirInode<tagType>::removeDirTag(utf8Char *name)
 
 	if (name == NULL || name[0] == '\0') { return 0; };
 
-	typename PtrList<tagType>::Iterator		it =
+	typename HeapList<tagType>::Iterator		it =
 		dirs.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
 
 	dirs.lock();
@@ -383,7 +383,7 @@ sarch_t vfs::DirInode<tagType>::removeLeafTag(utf8Char *name)
 
 	if (name == NULL || name[0] == '\0') { return 0; };
 
-	typename PtrList<tagType>::Iterator		it =
+	typename HeapList<tagType>::Iterator		it =
 		leaves.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
 
 	leaves.lock();
@@ -416,7 +416,7 @@ tagType *vfs::DirInode<tagType>::getDirTag(
 
 	if (name == NULL || name[0] == '\0') { return NULL; };
 
-	typename PtrList<tagType>::Iterator		it =
+	typename HeapList<tagType>::Iterator		it =
 		dirs.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
 
 	dirs.lock();
@@ -449,7 +449,7 @@ tagType *vfs::DirInode<tagType>::getLeafTag(
 
 	if (name == NULL || name[0] == '\0') { return NULL; };
 
-	typename PtrList<tagType>::Iterator		it =
+	typename HeapList<tagType>::Iterator		it =
 		leaves.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
 
 	leaves.lock();
@@ -481,7 +481,7 @@ void vfs::DirInode<tagType>::dumpDirs(void)
 	printf(NOTICE"vfs::dirInode: dumping dirs (%d total).\n",
 		dirs.getNItems());
 
-	typename PtrList<tagType>::Iterator		it =
+	typename HeapList<tagType>::Iterator		it =
 		dirs.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
 
 	dirs.lock();
@@ -504,7 +504,7 @@ void vfs::DirInode<tagType>::dumpLeaves(void)
 	printf(NOTICE"vfs::dirInode: dumping leaves (%d total).\n",
 		leaves.getNItems());
 
-	typename PtrList<tagType>::Iterator			it =
+	typename HeapList<tagType>::Iterator			it =
 		leaves.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
 
 	leaves.lock();

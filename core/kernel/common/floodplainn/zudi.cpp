@@ -42,7 +42,7 @@ error_t fplainn::Zudi::findDriver(utf8Char *fullName, fplainn::Driver **retDrv)
 
 	if (tmpStr.get() == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	PtrList<fplainn::Driver>::Iterator		it =
+	HeapList<fplainn::Driver>::Iterator		it =
 		driverList.begin(PTRLIST_FLAGS_NO_AUTOLOCK);
 
 	driverList.lock();

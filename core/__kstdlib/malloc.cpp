@@ -1,5 +1,6 @@
 
 #include <arch/walkerPageRanger.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/stdlib.h>
 #include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/memReservoir.h>

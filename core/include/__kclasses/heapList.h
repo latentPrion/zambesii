@@ -9,22 +9,22 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
-#define PTRLIST				"Pointer List: "
+#define PTRLIST				"Heap list: "
 
 #define PTRLIST_MAGIC			0x1D1E1D11
 
 #define PTRLIST_FLAGS_NO_AUTOLOCK	(1<<0)
 
 template <class T>
-class PtrList
+class HeapList
 {
 public:
 	class Iterator;
 	friend class Iterator;
 
-	PtrList(sarch_t useCache=1);
+	HeapList(sarch_t useCache=1);
 	error_t initialize(void);
-	~PtrList(void);
+	~HeapList(void);
 
 public:
 	error_t insert(T *item);
@@ -42,14 +42,14 @@ public:
 
 	class Iterator
 	{
-		friend class ::PtrList<T>;
+		friend class ::HeapList<T>;
 
 		void		*handle;
-		PtrList<T>	*list;
+		HeapList<T>	*list;
 		T		*currItem;
 		ubit32		flags;
 
-		Iterator(PtrList<T> *list, ubit32 flags)
+		Iterator(HeapList<T> *list, ubit32 flags)
 		:
 		handle(NULL), list(list), currItem(NULL), flags(flags)
 		{}
@@ -93,19 +93,19 @@ public:
 private:
 	T *getNextItem(void **const handle, ubit32 flags=0);
 
-	struct sPtrListNode
+	struct sHeapListNode
 	{
 		T		*item;
-		sPtrListNode	*next;
+		sHeapListNode	*next;
 		ubit32		magic;
 	};
-	struct sPtrListState
+	struct sHeapListState
 	{
-		sPtrListNode	*ptr;
+		sHeapListNode	*ptr;
 		ubit32		nItems;
 	};
 
-	SharedResourceGroup<WaitLock, sPtrListState>	head;
+	SharedResourceGroup<WaitLock, sHeapListState>	head;
 	SlamCache		*cache;
 	sarch_t			usingCache;
 };
@@ -115,7 +115,7 @@ private:
  ******************************************************************************/
 
 template <class T>
-PtrList<T>::PtrList(sarch_t useCache)
+HeapList<T>::HeapList(sarch_t useCache)
 :
 cache(NULL), usingCache(useCache)
 {
@@ -124,11 +124,11 @@ cache(NULL), usingCache(useCache)
 }
 
 template <class T>
-error_t PtrList<T>::initialize(void)
+error_t HeapList<T>::initialize(void)
 {
 	if (usingCache)
 	{
-		cache = cachePool.createCache(sizeof(sPtrListNode));
+		cache = cachePool.createCache(sizeof(sHeapListNode));
 		if (cache == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
@@ -138,9 +138,9 @@ error_t PtrList<T>::initialize(void)
 }
 
 template <class T>
-PtrList<T>::~PtrList(void)
+HeapList<T>::~HeapList(void)
 {
-	sPtrListNode		*cur, *tmp;
+	sHeapListNode		*cur, *tmp;
 
 	for (cur = head.rsrc.ptr; cur != NULL; )
 	{
@@ -152,9 +152,9 @@ PtrList<T>::~PtrList(void)
 }
 
 template <class T>
-void PtrList<T>::dump(void)
+void HeapList<T>::dump(void)
 {
-	sPtrListNode	*tmp;
+	sHeapListNode	*tmp;
 
 	head.lock.acquire();
 	tmp = head.rsrc.ptr;
@@ -174,9 +174,9 @@ void PtrList<T>::dump(void)
 
 
 template <class T>
-sarch_t PtrList<T>::checkForItem(T *item)
+sarch_t HeapList<T>::checkForItem(T *item)
 {
-	sPtrListNode		*tmp;
+	sHeapListNode		*tmp;
 
 	head.lock.acquire();
 
@@ -193,7 +193,7 @@ sarch_t PtrList<T>::checkForItem(T *item)
 }
 
 template <class T>
-ubit32 PtrList<T>::getNItems(void)
+ubit32 HeapList<T>::getNItems(void)
 {
 	ubit32		ret;
 
@@ -205,13 +205,13 @@ ubit32 PtrList<T>::getNItems(void)
 }
 
 template <class T>
-error_t PtrList<T>::insert(T *item)
+error_t HeapList<T>::insert(T *item)
 {
-	sPtrListNode		*node;
+	sHeapListNode		*node;
 
 	node = (usingCache)
-		? new (cache->allocate()) sPtrListNode
-		: new sPtrListNode;
+		? new (cache->allocate()) sHeapListNode
+		: new sHeapListNode;
 
 	if (node == NULL) {
 		return ERROR_MEMORY_NOMEM;
@@ -231,9 +231,9 @@ error_t PtrList<T>::insert(T *item)
 }
 
 template <class T>
-sarch_t PtrList<T>::remove(T *item)
+sarch_t HeapList<T>::remove(T *item)
 {
-	sPtrListNode		*cur, *prev=NULL, *tmp;
+	sHeapListNode		*cur, *prev=NULL, *tmp;
 
 	head.lock.acquire();
 
@@ -266,21 +266,21 @@ sarch_t PtrList<T>::remove(T *item)
 }
 
 template <class T>
-void PtrList<T>::lock(void)
+void HeapList<T>::lock(void)
 {
 	head.lock.acquire();
 }
 
 template <class T>
-void PtrList<T>::unlock(void)
+void HeapList<T>::unlock(void)
 {
 	head.lock.release();
 }
 
 template <class T>
-T *PtrList<T>::getItem(ubit32 num)
+T *HeapList<T>::getItem(ubit32 num)
 {
-	sPtrListNode	*tmp;
+	sHeapListNode	*tmp;
 
 	head.lock.acquire();
 	// Cycle through until the counter is 0, or the list ends.
@@ -296,16 +296,16 @@ T *PtrList<T>::getItem(ubit32 num)
 }
 
 template <class T>
-T *PtrList<T>::getNextItem(void **handle, ubit32 flags)
+T *HeapList<T>::getNextItem(void **handle, ubit32 flags)
 {
-	sPtrListNode	*tmp = reinterpret_cast<sPtrListNode *>( *handle );
+	sHeapListNode	*tmp = reinterpret_cast<sHeapListNode *>( *handle );
 	T		*ret=NULL;
 
 	if (handle == NULL) { return NULL; };
 
 	// Don't allow arbitrary kernel memory reads.
 	if (*handle != NULL
-		&& ((sPtrListNode *)(*handle))->magic != PTRLIST_MAGIC) {
+		&& ((sHeapListNode *)(*handle))->magic != PTRLIST_MAGIC) {
 		return NULL;
 	};
 
@@ -326,7 +326,7 @@ T *PtrList<T>::getNextItem(void **handle, ubit32 flags)
 	};
 
 	/**	FIXME:
-	 * Optimally, each sPtrListNode object should have a magic number to
+	 * Optimally, each sHeapListNode object should have a magic number to
 	 * distinguish between valid and discarded objects; this API allows
 	 * for the caller to take and use items inside of it without locking
 	 * the list off for the duration of their use.

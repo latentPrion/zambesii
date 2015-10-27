@@ -39,7 +39,7 @@ ZAsyncStream::~ZAsyncStream(void)
 		delete[] tmp;
 	};
 
-	PtrList<ipc::sDataHeader>::Iterator	it = messages.begin(0);
+	HeapList<ipc::sDataHeader>::Iterator	it = messages.begin(0);
 	for (; it != messages.end(); ++it)
 	{
 		/*	Fixme:

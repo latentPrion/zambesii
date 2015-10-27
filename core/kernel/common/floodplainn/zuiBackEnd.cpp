@@ -7,7 +7,7 @@
 #include <__kstdlib/__kclib/string8.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/memory>
-#include <__kclasses/ptrList.h>
+#include <__kclasses/heapList.h>
 #include <__kclasses/memReservoir.h>
 #include <commonlibs/libzudiIndexParser.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -271,7 +271,7 @@ void zuiBackend::detectDriverReq(
 	HeapObj<zui::sHeader>			indexHdr;
 	HeapObj<zui::driver::sHeader>		driverHdr, metaHdr;
 	// FIXME: big memory leak on this list within this function.
-	PtrList<zui::device::sHeader>		matchingDevices;
+	HeapList<zui::device::sHeader>		matchingDevices;
 	status_t				bestRank=-1;
 	AsyncResponse				myResponse;
 
@@ -434,7 +434,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			{
 				// Clear the list and restart.
 				// FIXME: memory leak here.
-				PtrList<zui::device::sHeader>::Iterator	it
+				HeapList<zui::device::sHeader>::Iterator	it
 					= matchingDevices.begin(0);
 
 				for(; it != matchingDevices.end(); ++it)
@@ -443,9 +443,9 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 					delete currDevlineHdr;
 				};
 
-				matchingDevices.~PtrList();
+				matchingDevices.~HeapList();
 				new (&matchingDevices)
-					PtrList<zui::device::sHeader>;
+					HeapList<zui::device::sHeader>;
 
 				err = matchingDevices.initialize();
 				if (err != ERROR_SUCCESS)
@@ -523,7 +523,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 				requestData->path);
 		};
 
-		PtrList<zui::device::sHeader>::Iterator		it =
+		HeapList<zui::device::sHeader>::Iterator		it =
 			matchingDevices.begin(0);
 
 		/* Shouldn't need to error check for NULL, because we are
@@ -596,7 +596,7 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 	dev->driverInstance = NULL;
 
 	// Free the list.
-	PtrList<zui::device::sHeader>::Iterator		it =
+	HeapList<zui::device::sHeader>::Iterator		it =
 		matchingDevices.begin(0);
 
 	for (; it != matchingDevices.end(); ++it) { delete *it; };

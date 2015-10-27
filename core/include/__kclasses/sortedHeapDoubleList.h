@@ -7,17 +7,17 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
-#define SRT_PTRDBLLIST			"Sorted-Dbl-Link PtrList: "
+#define SRT_PTRDBLLIST			"Sorted HeapDblList: "
 
 #define SRT_PTRDBLLIST_ADD_ASCENDING		0x0
 #define SRT_PTRDBLLIST_ADD_DESCENDING		0x1
 
 template <class T, class criterionType>
-class SortedPtrDblList
+class SortedHeapDoubleList
 {
 public:
-	SortedPtrDblList(void) {}
-	~SortedPtrDblList(void) {};
+	SortedHeapDoubleList(void) {}
+	~SortedHeapDoubleList(void) {};
 
 	error_t initialize(void) { return ERROR_SUCCESS; };
 
@@ -63,7 +63,7 @@ protected:
  ******************************************************************************/
 
 template <class T, class criterionType>
-uarch_t SortedPtrDblList<T, criterionType>::getNItems(void)
+uarch_t SortedHeapDoubleList<T, criterionType>::getNItems(void)
 {
 	uarch_t		ret;
 
@@ -75,7 +75,7 @@ uarch_t SortedPtrDblList<T, criterionType>::getNItems(void)
 }
 
 template <class T, class criterionType>
-void SortedPtrDblList<T, criterionType>::dump(void)
+void SortedHeapDoubleList<T, criterionType>::dump(void)
 {
 	sListNode	*curr, *head, *tail;
 	sbit8		flipFlop=0;
@@ -109,7 +109,7 @@ void SortedPtrDblList<T, criterionType>::dump(void)
 }
 
 template <class T, class criterionType>
-error_t SortedPtrDblList<T, criterionType>::addItem(
+error_t SortedHeapDoubleList<T, criterionType>::addItem(
 	T *item, criterionType criterion, ubit8 mode
 	)
 {
@@ -223,7 +223,7 @@ error_t SortedPtrDblList<T, criterionType>::addItem(
 }
 
 template <class T, class criterionType>
-void SortedPtrDblList<T, criterionType>::removeItem(T *item)
+void SortedHeapDoubleList<T, criterionType>::removeItem(T *item)
 {
 	sListNode	*curr;
 
@@ -263,7 +263,7 @@ void SortedPtrDblList<T, criterionType>::removeItem(T *item)
 }
 
 template <class T, class criterionType>
-T *SortedPtrDblList<T, criterionType>::popFromHead(void)
+T *SortedHeapDoubleList<T, criterionType>::popFromHead(void)
 {
 	T		*ret=NULL;
 	sListNode	*tmp;
@@ -297,7 +297,7 @@ T *SortedPtrDblList<T, criterionType>::popFromHead(void)
 }
 
 template <class T, class criterionType>
-T *SortedPtrDblList<T, criterionType>::popFromTail(void)
+T *SortedHeapDoubleList<T, criterionType>::popFromTail(void)
 {
 	T		*ret=NULL;
 	sListNode	*tmp;
@@ -331,7 +331,7 @@ T *SortedPtrDblList<T, criterionType>::popFromTail(void)
 }
 
 template <class T, class criterionType>
-T *SortedPtrDblList<T, criterionType>::getHead(void)
+T *SortedHeapDoubleList<T, criterionType>::getHead(void)
 {
 	T	*ret=NULL;
 
@@ -347,7 +347,7 @@ T *SortedPtrDblList<T, criterionType>::getHead(void)
 }
 
 template <class T, class criterionType>
-T *SortedPtrDblList<T, criterionType>::getTail(void)
+T *SortedHeapDoubleList<T, criterionType>::getTail(void)
 {
 	T	*ret=NULL;
 

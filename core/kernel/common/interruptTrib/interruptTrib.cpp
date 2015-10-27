@@ -8,7 +8,7 @@
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
-#include <__kclasses/ptrList.h>
+#include <__kclasses/heapList.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -172,7 +172,7 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 
 	atomicAsm::set(&pinDescriptor->inService, 1);
 
-	PtrList<sIsrDescriptor>::Iterator	it =
+	HeapList<sIsrDescriptor>::Iterator	it =
 		pinDescriptor->isrList.begin(0);
 
 	for (; it != pinDescriptor->isrList.end(); ++it)
@@ -373,7 +373,7 @@ sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 		return 0;
 	};
 
-	PtrList<sIsrDescriptor>::Iterator	it = pinDesc->isrList.begin(0);
+	HeapList<sIsrDescriptor>::Iterator	it = pinDesc->isrList.begin(0);
 
 	for (; it != pinDesc->isrList.end(); ++it)
 	{

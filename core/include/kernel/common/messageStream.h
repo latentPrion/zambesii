@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/bitmap.h>
-	#include <__kclasses/ptrDoubleList.h>
+	#include <__kclasses/heapDoubleList.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/stream.h>
 
@@ -158,7 +158,7 @@ public:
 		void		*data;
 	};
 
-	typedef PtrDblList<MessageStream::sHeader>	MessageQueue;
+	typedef HeapDoubleList<MessageStream::sHeader>	MessageQueue;
 
 public:
 	MessageStream(Thread *parent)

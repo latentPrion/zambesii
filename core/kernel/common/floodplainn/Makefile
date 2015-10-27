@@ -2,7 +2,7 @@
 DELIVERABLE=../../../floodplainn.a
 OBJFILES=device.o fvfs.o zuiFrontEnd.o zuiBackEnd.o floodplainn.o \
 	udiServiceCalls.o zudi.o floodplainnStream.o channel.o \
-	zumFrontEnd.o zumBackEnd.o
+	zumFrontEnd.o zumBackEnd.o udi_dma.o
 
 all: Makefile $(DELIVERABLE)
 

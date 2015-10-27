@@ -2,7 +2,7 @@
 	#define _FLOODPLAINN_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <__kclasses/ptrList.h>
+	#include <__kclasses/heapList.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/messageStream.h>
 	#include <kernel/common/floodplainn/channel.h>
@@ -121,7 +121,7 @@ private:
 	sbit8 removeEndpoint(fplainn::FStreamEndpoint *endp)
 		{ return endpoints.remove(endp); }
 
-	PtrList<fplainn::FStreamEndpoint>	endpoints;
+	HeapList<fplainn::FStreamEndpoint>	endpoints;
 	List<MetaConnection>			metaConnections;
 	List<ZkcmConnection>			zkcmConnections;
 };

@@ -7,7 +7,7 @@
 	#include <chipset/zkcm/zkcmIsr.h>
 	#include <chipset/zkcm/device.h>
 	#include <__kstdlib/__ktypes.h>
-	#include <__kclasses/ptrList.h>
+	#include <__kclasses/heapList.h>
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/interruptTrib/__kexceptionFn.h>
@@ -197,7 +197,7 @@ private:
 		 * time the kernel will be augmented with the ability to balance
 		 * the number of devices mapped to signal on the same vector.
 		 **/
-		PtrList<sIsrDescriptor>	isrList;
+		HeapList<sIsrDescriptor>	isrList;
 	};
 
 	struct sIrqPinDescriptor
@@ -215,7 +215,7 @@ private:
 		 * __kpin, but the kernel will eventually be equipped with the
 		 * ability to balance the number of IRQs mapped to the same pin.
 		 **/
-		PtrList<sIsrDescriptor>	isrList;
+		HeapList<sIsrDescriptor>	isrList;
 	};
 
 	// Array of vector descriptors. See above.

@@ -250,3 +250,4 @@ cp -f "$srcdir/core/Makefile.in" "$builddir/core/Makefile"
 
 echo "Extracting GRUB ISO structure."
 tar -xzf scripts/iso.tar.gz
+mkdir -p iso/zambesii

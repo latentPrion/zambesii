@@ -9,7 +9,7 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
 
-#define PTRDBLLIST			"Dbl-Link PtrList: "
+#define PTRDBLLIST			"Dbl-Link HeapList: "
 
 #define PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE	(1<<0)
 
@@ -17,10 +17,10 @@
 #define PTRDBLLIST_ADD_TAIL		0x1
 
 template <class T>
-class PtrDblList
+class HeapDoubleList
 {
 public:
-	PtrDblList(void)
+	HeapDoubleList(void)
 	:
 	objectCache(NULL)
 	{
@@ -28,7 +28,7 @@ public:
 		list.rsrc.nItems = 0;
 	}
 
-	~PtrDblList(void)
+	~HeapDoubleList(void)
 	{
 		cachePool.destroyCache(objectCache);
 	};
@@ -81,7 +81,7 @@ protected:
  ******************************************************************************/
 
 template <class T>
-uarch_t PtrDblList<T>::getNItems(void)
+uarch_t HeapDoubleList<T>::getNItems(void)
 {
 	uarch_t		ret;
 
@@ -93,7 +93,7 @@ uarch_t PtrDblList<T>::getNItems(void)
 }
 
 template <class T>
-void PtrDblList<T>::dump(void)
+void HeapDoubleList<T>::dump(void)
 {
 	sListNode	*curr, *head, *tail;
 	sbit8		flipFlop=0;
@@ -125,7 +125,7 @@ void PtrDblList<T>::dump(void)
 }
 
 template <class T>
-error_t PtrDblList<T>::addItem(T *item, ubit8 mode)
+error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode)
 {
 	sListNode	*newNode;
 
@@ -189,7 +189,7 @@ error_t PtrDblList<T>::addItem(T *item, ubit8 mode)
 }
 
 template <class T>
-void PtrDblList<T>::removeItem(T *item)
+void HeapDoubleList<T>::removeItem(T *item)
 {
 	sListNode	*curr;
 
@@ -230,7 +230,7 @@ void PtrDblList<T>::removeItem(T *item)
 }
 
 template <class T>
-T *PtrDblList<T>::popFromHead(void)
+T *HeapDoubleList<T>::popFromHead(void)
 {
 	T		*ret=NULL;
 	sListNode	*tmp;
@@ -266,7 +266,7 @@ T *PtrDblList<T>::popFromHead(void)
 }
 
 template <class T>
-T *PtrDblList<T>::popFromTail(void)
+T *HeapDoubleList<T>::popFromTail(void)
 {
 	T		*ret=NULL;
 	sListNode	*tmp;
@@ -302,7 +302,7 @@ T *PtrDblList<T>::popFromTail(void)
 }
 
 template <class T>
-T *PtrDblList<T>::getHead(void)
+T *HeapDoubleList<T>::getHead(void)
 {
 	T	*ret=NULL;
 
@@ -318,7 +318,7 @@ T *PtrDblList<T>::getHead(void)
 }
 
 template <class T>
-T *PtrDblList<T>::getTail(void)
+T *HeapDoubleList<T>::getTail(void)
 {
 	T	*ret=NULL;
 

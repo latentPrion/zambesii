@@ -4,7 +4,7 @@
 #include <chipset/zkcm/timerControl_filters.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kbitManipulation.h>
-#include <__kclasses/ptrList.h>
+#include <__kclasses/heapList.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 
@@ -14,7 +14,7 @@
 
 #define IBMPC_TIMERCTL		"Timer Control: "
 
-static PtrList<ZkcmTimerDevice>	timers;
+static HeapList<ZkcmTimerDevice>	timers;
 static SharedResourceGroup<MultipleReaderLock, sTimestamp>	systemTime;
 static const ubit32			ibmPcSafePeriodMask =
 	/*TIMERCTL_1S_SAFE
@@ -182,7 +182,7 @@ ZkcmTimerDevice *ZkcmTimerControlMod::filterTimerDevices(
 	ZkcmTimerDevice::precisionE precision,	// EXACT, NEGLIGABLE,
 						// OVERFLOW or UNDERFLOW
 	ubit32 flags,
-	PtrList<ZkcmTimerDevice>::Iterator *it
+	HeapList<ZkcmTimerDevice>::Iterator *it
 	)
 {
 	ZkcmTimerDevice			*source;

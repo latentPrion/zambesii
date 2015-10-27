@@ -2,7 +2,7 @@
 	#define _SINGLE_WAITER_QUEUE_H
 
 	#include <__kstdlib/__kflagManipulation.h>
-	#include <__kclasses/ptrDoubleList.h>
+	#include <__kclasses/heapDoubleList.h>
 	#include <kernel/common/waitLock.h>
 
 #define SWAITQ		"Single-WaiterQ: "
@@ -13,7 +13,7 @@ class Thread;
 
 class SingleWaiterQueue
 :
-public PtrDblList<void>
+public HeapDoubleList<void>
 {
 public:
 	SingleWaiterQueue(void)
@@ -23,16 +23,16 @@ public:
 
 	error_t initialize(void)
 	{
-		return PtrDblList<void>::initialize();
+		return HeapDoubleList<void>::initialize();
 	};
 
 	~SingleWaiterQueue(void) {}
 
 public:
 	error_t addItem(void *item);
-	// PtrDblList::remove() is sufficient, needs no extending.
-	// PtrDblList::getHead() is sufficient, needs no extending.
-	// PtrDblList::getNItems() is sufficient, needs no extending.
+	// HeapDoubleList::remove() is sufficient, needs no extending.
+	// HeapDoubleList::getHead() is sufficient, needs no extending.
+	// HeapDoubleList::getNItems() is sufficient, needs no extending.
 	error_t pop(void **ret, uarch_t flags=0);
 	error_t setWaitingThread(Thread *thread);
 

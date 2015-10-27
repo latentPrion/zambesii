@@ -2,8 +2,8 @@
 	#define _TIMER_STREAM_H
 
 	#include <__kstdlib/__ktypes.h>
-	#include <__kclasses/sortedPtrDoubleList.h>
-	#include <__kclasses/ptrDoubleList.h>
+	#include <__kclasses/sortedHeapDoubleList.h>
+	#include <__kclasses/heapDoubleList.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/timerTrib/timeTypes.h>
 
@@ -127,7 +127,7 @@ private:
 	void timerRequestTimeoutNotification(void);
 
 private:
-	SortedPtrDblList<sTimerMsg, sTimestamp>	requests;
+	SortedHeapDoubleList<sTimerMsg, sTimestamp>	requests;
 	/* Used to prevent race conditions while requests from this process are
 	 * being expired.
 	 **/

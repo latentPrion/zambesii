@@ -11,7 +11,7 @@
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kstdlib/__kclib/string.h>
 	#include <__kstdlib/__kcxxlib/memory>
-	#include <__kclasses/ptrlessList.h>
+	#include <__kclasses/list.h>
 	#include <kernel/common/numaTypes.h>
 	#include <kernel/common/floodplainn/zui.h>
 	#include <kernel/common/floodplainn/fvfs.h>	// FVFS_TAG_NAME_MAXLEN
@@ -322,7 +322,7 @@ namespace fplainn
 			{ mgmtEndpoint = endp; }
 
 	public:
-		PtrList<Channel>	channels;
+		HeapList<Channel>	channels;
 		Device			*device;
 		Region			*regions;
 		udi_init_context_t	*mgmtChannelContext;
