@@ -58,7 +58,7 @@ public:
 			currItem = currItem->listHeader.next;
 		}
 
-		T *operator *(void) const
+		T *&operator *(void)
 		{
 			return currItem;
 		}

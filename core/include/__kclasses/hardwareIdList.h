@@ -38,7 +38,7 @@ public:
 		void operator ++(void)
 			{ currItem = list->getNextItem(&cursor); }
 
-		void *operator *(void)
+		void *&operator *(void)
 			{ return currItem; }
 
 		int operator ==(Iterator it)

@@ -65,7 +65,7 @@ public:
 		void operator ++(void)
 			{ currItem = list->getNextItem(&handle, flags); }
 
-		T *operator *(void)
+		T *&operator *(void)
 			{ return currItem; }
 
 		int operator ==(Iterator it)
