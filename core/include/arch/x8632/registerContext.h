@@ -26,20 +26,20 @@ public:
 	}
 
 public:
-	ubit16		es;
-	ubit16		ds;
-	ubit16		gs;
-	ubit16		fs;
-	ubit32		edi, esi;
-	ubit32		ebp, dummyEsp;
-	ubit32		ebx, edx;
-	ubit32		ecx, eax;
-	ubit32		vectorNo;
+	ubit16		es;			// 2
+	ubit16		ds;			// 4
+	ubit16		gs;			// 6
+	ubit16		fs;			// 8
+	ubit32		edi, esi;		// 16
+	ubit32		ebp, dummyEsp;		// 24
+	ubit32		ebx, edx;		// 32
+	ubit32		ecx, eax;		// 40
+	ubit32		vectorNo;		// 44
 	// Error code pushed by the CPU for certain exceptions.
-	ubit32		errorCode;
-	ubit32		eip, cs;
-	ubit32		eflags;
-	ubit32		esp, ss;
+	ubit32		errorCode;		// 48
+	ubit32		eip, cs;		// 56
+	ubit32		eflags;			// 60
+	ubit32		esp, ss;		// 68
 };
 
 #endif

@@ -220,17 +220,20 @@ void unsignedToStrHexLower(uarch_t num, uarch_t *curLen, utf8Char *buff)
 	};
 }
 
-void paddrToStrHex(paddr_t num, uarch_t *curLen, utf8Char *buff)
+void paddrToStrHex(paddr_t *_num, uarch_t *curLen, utf8Char *buff)
 {
 	utf8Char	b[28];
 	uarch_t		blen=0;
+	paddr_t		num(*_num);
 
-	for (; num >> 4 ; blen++)
+	for (; !!(num >> 4) ; blen++)
 	{
-		b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0');
+		b[blen] = ((num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0'))
+			.getLow();
 		num >>= 4;
 	};
-	b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0');
+
+	b[blen] = ((num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0')).getLow();
 	blen++;
 
 	for (; blen; blen--, *curLen += 1) {
@@ -248,7 +251,7 @@ void printf(const utf8Char *str, ...)
 }
 
 void printf(
-	SharedResourceGroup<WaitLock, void *> *buff, uarch_t buffSize,
+	SharedResourceGroup<WaitLock, utf8Char *> *buff, uarch_t buffSize,
 	utf8Char *str, ...
 	)
 {
@@ -310,7 +313,7 @@ static sarch_t expandPrintfFormatting(
 	{
 		uarch_t		unum;
 		sarch_t		snum;
-		paddr_t		pnum;
+		paddr_t		*pnum;
 		utf8Char	*u8Str;
 
 		if (*str != '%')
@@ -347,7 +350,7 @@ static sarch_t expandPrintfFormatting(
 			break;
 
 		case 'P':
-			pnum = va_arg(args, paddr_t);
+			pnum = va_arg(args, paddr_t*);
 			paddrToStrHex(pnum, &buffIndex, buff);
 			break;
 
@@ -463,11 +466,11 @@ void DebugPipe::printf(const utf8Char *str, va_list args)
 	convBuff.lock.acquire();
 
 	// Make sure we're not printing to an unallocated buffer.
-	if (convBuff.rsrc == NULL)
+/*	if (convBuff.rsrc == NULL)
 	{
 		convBuff.lock.release();
 		return;
-	};
+	};*/
 
 	buffMax = DEBUGPIPE_CONVERSION_BUFF_NBYTES;
 
@@ -498,7 +501,7 @@ void DebugPipe::printf(const utf8Char *str, va_list args)
 }
 
 void DebugPipe::printf(
-	SharedResourceGroup<WaitLock, void *> *buff, uarch_t buffSize,
+	SharedResourceGroup<WaitLock, utf8Char *> *buff, uarch_t buffSize,
 	utf8Char *str, va_list args
 	)
 {
@@ -518,7 +521,7 @@ void DebugPipe::printf(
 
 	// Expand printf formatting into convBuff.
 	buffLen = expandPrintfFormatting(
-		static_cast<utf8Char *>( buff->rsrc ), buffMax,
+		buff->rsrc, buffMax,
 		str, args, &printfFlags);
 
 	if (buffLen < 0)

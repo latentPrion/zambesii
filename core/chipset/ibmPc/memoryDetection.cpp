@@ -77,7 +77,7 @@ static sZkcmNumaMap *ibmPc_mMod_gnm_rGnm(void)
 	context = handle = NULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	// First run: find out how many entries exist.
-	while (srat != NULL) 
+	while (srat != NULL)
 	{
 		sratHandle = NULL;
 		memEntry = acpiR::srat::getNextMemEntry(srat, &sratHandle);
@@ -233,7 +233,7 @@ sZkcmMemoryMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
 	ret = new sZkcmMemoryMapS;
 	if (ret == NULL)
 	{
-		printf(ERROR"Failed to alloc memMap main structure.\n");	
+		printf(ERROR"Failed to alloc memMap main structure.\n");
 		return NULL;
 	};
 
@@ -351,8 +351,8 @@ sZkcmMemoryMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
 	ret->entries[j+2].memType = ZKCM_MMAP_TYPE_RESERVED;
 
 	printf(NOTICE"getMemoryMap(): Kernel phys: base 0x%P, size 0x%P.\n",
-		ret->entries[j+2].baseAddr,
-		ret->entries[j+2].size);
+		&ret->entries[j+2].baseAddr,
+		&ret->entries[j+2].size);
 
 	ret->nEntries = j + 3;
 	_mmap = ret;

@@ -83,7 +83,7 @@
 #define WPRANGER_ADJUST_VADDR(_v,_p,_t)			\
 	(reinterpret_cast<_t>( \
 		(((uintptr_t)(_v)) & PAGING_BASE_MASK_HIGH) \
-		+ ((_p) & PAGING_BASE_MASK_LOW) ))
+		+ ((_p) & PAGING_BASE_MASK_LOW).getLow() ))
 
 #define WPRANGER_UNADJUST_VADDR(_v, _t) \
 	(reinterpret_cast<_t>((uintptr_t)(_v) & PAGING_BASE_MASK_HIGH))

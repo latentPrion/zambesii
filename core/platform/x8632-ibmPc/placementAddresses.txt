@@ -1,5 +1,5 @@
 
-	IBM-PC CHIPSET RELATED:
+		IBM-PC CHIPSET RELATED:
 
 memoryDetection.cpp:
 	The e820 memory map is stored at 0x1000-0x2FFF in low memory.
@@ -20,7 +20,7 @@ __Kspace:
 
 Reserved Memory Region :: ISA-DMA
 
-	x86-32 ARCHITECTURE RELATED:
+		x86-32 ARCHITECTURE RELATED:
 
 Reserved Memory Region :: PAE PDP table pool.
 	0x700000 - 0x7FFFFF.

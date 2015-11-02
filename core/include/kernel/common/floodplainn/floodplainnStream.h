@@ -70,8 +70,8 @@ public:
 	~FloodplainnStream(void) {};
 
 public:
-	struct MetaConnection;
-	struct ZkcmConnection;
+	class MetaConnection;
+	class ZkcmConnection;
 
 public:
 	// Establishes a child-bind channel to a device on behalf of its parent.

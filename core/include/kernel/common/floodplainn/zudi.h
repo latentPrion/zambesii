@@ -150,6 +150,8 @@ public:
 				if (ret != ERROR_SUCCESS) { return ret; }
 				ret = pages.initialize();
 				if (ret != ERROR_SUCCESS) { return ret; }
+
+				return ERROR_SUCCESS;
 			}
 
 			~MappedScatterGatherList(void) {}
@@ -193,19 +195,72 @@ public:
 		class ScatterGatherList
 		{
 		public:
-			ScatterGatherList(void);
-			error_t initialize(void) { return ERROR_SUCCESS; }
+			enum eAddressSize { ADDR_SIZE_32, ADDR_SIZE_64 };
+
+			ScatterGatherList(eAddressSize asize)
+			:
+			addressSize(asize)
+			{
+				memset(&udiScgthList, 0, sizeof(udiScgthList));
+			}
+
+			error_t initialize(void)
+			{
+				error_t		ret;
+
+				ret = elements32.initialize();
+				if (ret != ERROR_SUCCESS) { return ret; };
+
+				ret = elements64.initialize();
+				if (ret != ERROR_SUCCESS) { return ret; };
+
+				return ERROR_SUCCESS;
+			}
+
 			~ScatterGatherList(void) {}
 
 		public:
+			error_t addFrames(paddr_t p, uarch_t nFrames)
+			{
+				/**	EXPLANATION:
+				 * Iterates through the list first to see if it
+				 * can add the new frames to an existing
+				 * element.
+				 **/
+				if (addressSize == ADDR_SIZE_32)
+				{
+					return addFrames(
+						&elements32, p, nFrames);
+				}
+				else
+				{
+					return addFrames(
+						&elements64, p, nFrames);
+				};
+			}
+
+			void compact(void);
+
 			error_t map(MappedScatterGatherList *retMapping);
 			error_t remap(MappedScatterGatherList *mapping);
 			void unmap(MappedScatterGatherList *mapping);
 
+		private:
+			template <class scgth_elements_type>
+			error_t addFrames(
+				ResizeableArray<scgth_elements_type> *list,
+				paddr_t p, uarch_t nFrames);
+
 		public:
-			ResizeableArray<udi_scgth_element_32_t>	elements32;
-			ResizeableArray<udi_scgth_element_64_t>	elements64;
-			udi_scgth_t				udiScgthList;
+			typedef ResizeableArray<udi_scgth_element_32_t>
+							SGList32;
+			typedef ResizeableArray<udi_scgth_element_64_t>
+							SGList64;
+
+			eAddressSize			addressSize;
+			SGList32			elements32;
+			SGList64			elements64;
+			udi_scgth_t			udiScgthList;
 		};
 
 		/**	EXPLANATION:
@@ -277,7 +332,7 @@ public:
 
 		protected:
 			DmaConstraints			constraints;
-			ScatterGatherList		sGList;
+			ScatterGatherList		*sGList;
 			MappedScatterGatherList		mapping;
 		};
 	};

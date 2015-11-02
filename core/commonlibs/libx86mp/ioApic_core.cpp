@@ -49,7 +49,7 @@ x86IoApic::IoApic::sIoApicRegspace *x86IoApic::IoApic::mapIoApic(
 	if (status < 1)
 	{
 		printf(ERROR x86IOAPIC"%d: Failed to map: v:0x%p, p:0x%P.\n",
-			paddr, ret);
+			id, ret, &paddr);
 
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			ret, 1);
@@ -95,7 +95,7 @@ error_t x86IoApic::IoApic::initialize(void)
 	if (vaddr.rsrc == NULL) { return ERROR_MEMORY_VIRTUAL_PAGEMAP; };
 
 	// Get version and number of pins.
-	vaddr.lock.acquire(); 
+	vaddr.lock.acquire();
 	writeIoRegSel(x86IOAPIC_REG_VERSION);
 	version = readIoWin() & 0xFF;
 	nPins = ((readIoWin() >> 16) & 0xFF) + 1;
@@ -155,7 +155,7 @@ error_t x86IoApic::IoApic::initialize(void)
 
 	printf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x,\n"
 		"\tnPins %d, Girqbase %d, vectorBase %d.\n",
-		id, vaddr.rsrc, paddr, version, nPins,
+		id, vaddr.rsrc, &paddr, version, nPins,
 		acpiGirqBase, vectorBase);
 
 	return ERROR_SUCCESS;

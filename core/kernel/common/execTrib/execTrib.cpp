@@ -16,7 +16,7 @@ error_t ExecTrib::initialize(void)
 {
 	error_t		ret;
 
-	ret = (*elfParser.initialize)(ARCH_SHORT_STRING, __WORDSIZE);
+	ret = (*elfParser.initialize)(ARCH_SHORT_STRING, __VADDR_NBITS__);
 	if (ret != ERROR_SUCCESS) {
 		return ret;
 	};

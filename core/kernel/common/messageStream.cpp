@@ -240,7 +240,7 @@ error_t ipc::dispatchDataHeader(sDataHeader *header, void *buffer)
 	// Adjust the vaddr to re-add the offset.
 	targetMapping = WPRANGER_ADJUST_VADDR(
 		targetMapping,
-		(uintptr_t)header->foreignVaddr, void *);
+		paddr_t((uintptr_t)header->foreignVaddr), void *);
 
 	// For MAP_AND_READ, we're now done.
 	if (header->method == METHOD_MAP_AND_READ) { return ERROR_SUCCESS; };

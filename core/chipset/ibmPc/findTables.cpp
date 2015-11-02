@@ -56,8 +56,9 @@ void *chipset_findx86MpFp(void)
 
 		if (checksum != 0) { continue; };
 
-		printf(NOTICE FINDTABLES"MPFP: Found MP FP: 0x%P.\n",
-			tmp - (uarch_t)lowmem);
+		paddr_t			p = (uintptr_t)tmp - (uintptr_t)lowmem;
+
+		printf(NOTICE FINDTABLES"MPFP: Found MP FP: 0x%P.\n", &p);
 
 		return (void *)tmp;
 	};
@@ -105,9 +106,9 @@ void *chipset_findAcpiRsdp(void)
 
 		if (checksum != 0) { continue; };
 
-		printf(NOTICE FINDTABLES"RSDP: Found RSDP: 0x%P.\n",
-			tmp - (uarch_t)lowmem);
+		paddr_t			p = (uintptr_t)tmp - (uintptr_t)lowmem;
 
+		printf(NOTICE FINDTABLES"RSDP: Found RSDP: 0x%P.\n", &p);
 		return (void *)tmp;
 	};
 

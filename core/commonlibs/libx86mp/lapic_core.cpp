@@ -120,7 +120,7 @@ error_t X86Lapic::detectPaddr(void)
 		madt = acpiRsdt::getNextMadt(rsdt, &context, &handle);
 
 		if (madt == NULL) { goto tryMpTables; };
-		tmp = (paddr_t)madt->lapicPaddr;
+		tmp = madt->lapicPaddr;
 
 		acpiRsdt::destroyContext(&context);
 		acpiRsdt::destroySdt(reinterpret_cast<acpi::sSdt *>( madt ));
@@ -158,7 +158,7 @@ useDefaultPaddr:
 
 initLibLapic:
 	printf(NOTICE x86LAPIC"detectPaddr: LAPIC paddr: 0x%P.\n",
-		tmp);
+		&tmp);
 
 	X86Lapic::setPaddr(tmp);
 	return ERROR_SUCCESS;

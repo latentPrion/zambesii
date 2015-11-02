@@ -263,7 +263,10 @@ error_t fplainn::DriverInstance::addHostedDevice(utf8Char *path)
 
 	if (nHostedDevices > 0)
 	{
-		memcpy(tmp.get(), hostedDevices.get(),
+		memcpy(
+			// Cast to void* silences Clang++ warning.
+			static_cast<void *>(tmp.get()),
+			static_cast<void *>(hostedDevices.get()),
 			sizeof(*hostedDevices) * nHostedDevices);
 	};
 
@@ -286,7 +289,9 @@ void fplainn::DriverInstance::removeHostedDevice(utf8Char *path)
 		// tmp will auto delete the mem on exit.
 		tmp = hostedDevices[i];
 		memmove(
-			&hostedDevices[i], &hostedDevices[i+1],
+			// Cast to void* silences Clang++ warning.
+			static_cast<void *>(&hostedDevices[i]),
+			static_cast<void *>(&hostedDevices[i+1]),
 			sizeof(*hostedDevices) * (nHostedDevices - i - 1));
 
 		nHostedDevices--;
@@ -513,7 +518,9 @@ error_t fplainn::Device::addEnumerationAttribute(
 	if (nEnumerationAttrs > 0)
 	{
 		memcpy(
-			newArray.get(), enumerationAttrs.get(),
+			// Cast to void* silences Clang++ warning.
+			static_cast<void *>(newArray.get()),
+			static_cast<void *>(enumerationAttrs.get()),
 			sizeof(*enumerationAttrs) * nEnumerationAttrs);
 	};
 
@@ -555,8 +562,13 @@ error_t fplainn::Driver::addInstance(numaBankId_t bid, processId_t pid)
 		old = instances;
 		instances = new DriverInstance[nInstances + 1];
 		if (instances == NULL) { return ERROR_MEMORY_NOMEM; };
-		if (nInstances > 0) {
-			memcpy(instances, old, nInstances * sizeof(*instances));
+		if (nInstances > 0)
+		{
+			memcpy(
+				// Cast to void* silences Clang++ warning.
+				static_cast<void *>(instances),
+				static_cast<void *>(old),
+				nInstances * sizeof(*instances));
 		};
 
 		delete[] old;

@@ -57,8 +57,9 @@ utf8Char *fplainn::Zudi::dma::DmaConstraints::getAttrTypeName(
 	if (a >= UDI_DMA_ADDR_FIXED_BITS)
 		{ return attrTypeNames[a - UDI_DMA_ADDR_FIXED_BITS + 15]; };
 
-	if (a >= UDI_DMA_ELEMENT_ALIGNMENT_BITS)
-		{ return attrTypeNames[a - UDI_DMA_ELEMENT_ALIGNMENT_BITS + 12]; };
+	if (a >= UDI_DMA_ELEMENT_ALIGNMENT_BITS) {
+		return attrTypeNames[a - UDI_DMA_ELEMENT_ALIGNMENT_BITS + 12];
+	};
 
 	if (a >= UDI_DMA_SCGTH_ALIGNMENT_BITS)
 		{ return attrTypeNames[a - UDI_DMA_SCGTH_ALIGNMENT_BITS + 9]; };
@@ -66,8 +67,9 @@ utf8Char *fplainn::Zudi::dma::DmaConstraints::getAttrTypeName(
 	if (a >= UDI_DMA_SCGTH_MAX_ELEMENTS)
 		{ return attrTypeNames[a - UDI_DMA_SCGTH_MAX_ELEMENTS + 4]; };
 
-	if (a >= UDI_DMA_DATA_ADDRESSABLE_BITS)
-		{ return attrTypeNames[a - UDI_DMA_DATA_ADDRESSABLE_BITS + 2]; };
+	if (a >= UDI_DMA_DATA_ADDRESSABLE_BITS) {
+		return attrTypeNames[a - UDI_DMA_DATA_ADDRESSABLE_BITS + 2];
+	};
 
 	if (a >= UDI_DMA_ADDRESSABLE_BITS)
 		{ return attrTypeNames[a - UDI_DMA_ADDRESSABLE_BITS + 0]; };
@@ -151,6 +153,39 @@ error_t fplainn::Zudi::dma::DmaConstraints::addOrModifyAttrs(
 			};
 		};
 	};
+
+	return ERROR_SUCCESS;
+}
+
+template <class scgth_elements_type>
+error_t fplainn::Zudi::dma::ScatterGatherList::addFrames(
+	ResizeableArray<scgth_elements_type> *list, paddr_t p, uarch_t nFrames
+	)
+{
+	for (
+		typename ResizeableArray<scgth_elements_type>::Iterator it=
+			list->begin();
+		it != list->end();
+		++it)
+	{
+		scgth_elements_type		*tmp=&*it;
+
+		// Can the new paddr be prepended to this element?
+/*		if (p + (nFrames * PAGING_BASE_SIZE) == *tmp)
+		{
+			tmp->block_busaddr = p;
+			tmp->block_length += nFrames * PAGING_BASE_SIZE;
+			return ERROR_SUCCESS;
+		}
+		// Can the new paddr be appended to this element?
+		else if (p == tmp + tmp->block_length)
+		{
+			tmp->block_length += nPages * PAGING_BASE_SIZE;
+			return ERROR_SUCCESS;
+		};
+*/	};
+
+	// If we reached here, then we need to add a new element altogether.
 
 	return ERROR_SUCCESS;
 }

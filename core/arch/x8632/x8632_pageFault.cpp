@@ -56,7 +56,7 @@ static sarch_t __kpropagateTopLevelVaddrSpaceChanges(void *faultAddr)
 
 		if (__kvaddrSpace->level0Accessor.rsrc->entries[topLevelEntry]
 			!= vaddrSpace->level0Accessor.rsrc
-				->entries[topLevelEntry])
+				->entries[topLevelEntry].getNv())
 		{
 			vaddrSpace->level0Accessor.rsrc->entries[topLevelEntry]
 			= __kvaddrSpace->level0Accessor.rsrc
@@ -138,7 +138,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 			walkerPageRanger::lookup(
 				&vaddrSpaceStream->vaddrSpace,
 				faultAddr, &pmap, &__kflags),
-			pmap, __kflags);
+			&pmap, __kflags);
 
 		break;
 
@@ -219,7 +219,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 		printf(NOTICE"TID 0x%x, L0v 0x%p, L0p 0x%P.\n",
 			currThread->getFullId(),
 			vaddrSpaceStream->vaddrSpace.level0Accessor.rsrc,
-			vaddrSpaceStream->vaddrSpace.level0Paddr);
+			&vaddrSpaceStream->vaddrSpace.level0Paddr);
 	};
 
 	if (traceStack)

@@ -28,7 +28,7 @@ void tlbControl::loadContext(VaddrSpace *context)
 {
 	asm volatile("movl	%0, %%cr3\n\t"
 		:
-		: "r" (context->level0Paddr));
+		: "r" (context->level0Paddr.getLow()));
 }
 
 void tlbControl::flushEntryRange(void *vaddr, uarch_t nPages)
@@ -36,7 +36,7 @@ void tlbControl::flushEntryRange(void *vaddr, uarch_t nPages)
 
 	for (; nPages > 0;
 		vaddr = reinterpret_cast<void *>(
-			reinterpret_cast<uarch_t>( vaddr ) + PAGING_BASE_SIZE ),
+			reinterpret_cast<uintptr_t>( vaddr ) + PAGING_BASE_SIZE ),
 			nPages--)
 	{
 		asm volatile (

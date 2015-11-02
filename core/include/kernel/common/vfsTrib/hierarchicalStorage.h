@@ -188,8 +188,8 @@ namespace hvfs
 	{
 	public:
 		Currentt(void)
-		:
-		vfs::Currentt(static_cast<utf8Char>( 'h' )),
+		:	vfs::Currentt(static_cast<utf8Char>( 'h' )),
+		tagCache(NULL),
 		rootTag(
 			CC"Zambesii Hierarchical VFS Currentt", vfs::DIR,
 			&rootTag, &rootInode),
@@ -199,7 +199,9 @@ namespace hvfs
 			sTimestamp(0, 0, 0),
 			sTimestamp(0, 0, 0),
 			sTimestamp(0, 0, 0))
-		{}
+		{
+			(void)tagCache;
+		}
 
 		error_t initialize(void)
 			{ return vfs::Currentt::initialize(); }
@@ -244,7 +246,7 @@ namespace hvfs
 			Tag		*tag;
 		};
 
-		class SlamCache	*Tagache;
+		class SlamCache		*tagCache;
 		Tag			rootTag;
 		DirInode		rootInode;
 		SharedResourceGroup<MultipleReaderLock, sDefaultTreeInfo>

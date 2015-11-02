@@ -56,14 +56,14 @@ void NumaMemoryBank::dump(void)
 	defRange.lock.readAcquire(&rwFlags2);
 
 	printf(NOTICE NUMAMEMBANK"%d: Dumping. Default range base 0x%P.\n",
-		id, defRange.rsrc->baseAddr);
+		id, &defRange.rsrc->baseAddr);
 
 	defRange.lock.readRelease(rwFlags2);
 
 	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
-		printf((utf8Char *)"\tMem range: base 0x%X, size 0x%X.\n",
-			cur->range->baseAddr, cur->range->size);
+		printf((utf8Char *)"\tMem range: base 0x%P, size 0x%P.\n",
+			&cur->range->baseAddr, &cur->range->size);
 
 		cur->range->dump();
 	};
@@ -129,9 +129,9 @@ error_t NumaMemoryBank::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	defRange.lock.writeRelease();
 	ranges.lock.writeRelease();
 
-	printf(NOTICE NUMAMEMBANK"%d: New mem range: base 0x%X, size 0x%X, "
-		"v 0x%X.\n",
-		id, baseAddr, size, memRange);
+	printf(NOTICE NUMAMEMBANK"%d: New mem range: base 0x%P, size 0x%P, "
+		"v 0x%p.\n",
+		id, &baseAddr, &size, memRange);
 
 	return ERROR_SUCCESS;
 }
@@ -166,8 +166,8 @@ error_t NumaMemoryBank::removeMemoryRange(paddr_t baseAddr)
 			ranges.lock.writeRelease();
 
 			printf(NOTICE NUMAMEMBANK"%d: Destroying mem range: "
-				"base 0x%X, size 0x%X, v 0x%X.\n",
-				id, cur->range->baseAddr, cur->range->size,
+				"base 0x%P, size 0x%P, v 0x%p.\n",
+				id, &cur->range->baseAddr, &cur->range->size,
 				cur->range);
 
 			// Make sure we don't mess up by freeing __kspace.
@@ -187,8 +187,8 @@ error_t NumaMemoryBank::removeMemoryRange(paddr_t baseAddr)
 	ranges.lock.writeRelease();
 
 	// Memory range with this base address/contained address doesn't exist.
-	printf(NOTICE NUMAMEMBANK"%d: Failed to remove range with base 0x%X."
-		"\n", id, baseAddr);
+	printf(NOTICE NUMAMEMBANK"%d: Failed to remove range with base 0x%P."
+		"\n", id, &baseAddr);
 
 	return ERROR_INVALID_ARG_VAL;
 }
@@ -345,8 +345,8 @@ void NumaMemoryBank::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 
 	ranges.lock.readRelease(rwFlags);
 
-	printf(WARNING NUMAMEMBANK"%d: releaseFrames(0x%X, %d) Pmem leak.\n",
-		id, basePaddr, nFrames);
+	printf(WARNING NUMAMEMBANK"%d: releaseFrames(0x%P, %d) Pmem leak.\n",
+		id, &basePaddr, nFrames);
 }
 
 sarch_t NumaMemoryBank::identifyPaddr(paddr_t paddr)

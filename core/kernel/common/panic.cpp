@@ -52,3 +52,11 @@ void panic(utf8Char *str, error_t err)
 	panic(err, str);
 }
 
+void panic(void)
+{
+	for (;FOREVER;)
+	{
+		cpuControl::disableInterrupts();
+		cpuControl::halt();
+	};
+}

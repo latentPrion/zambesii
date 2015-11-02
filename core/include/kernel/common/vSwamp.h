@@ -28,21 +28,7 @@ public:
 	swampNodeList(sizeof(SwampInfoNode), SlamCache::RAW)
 	{}
 
-	error_t initialize(void)
-	{
-		// Ensure the size doesn't overflow the vaddrspace.
-		if ((void *)((uarch_t)baseAddr + size) < baseAddr) {
-			return ERROR_FATAL;
-		};
-
-		initSwampNode.baseAddr = baseAddr;
-		initSwampNode.nPages = PAGING_BYTES_TO_PAGES(size);
-		initSwampNode.prev = initSwampNode.next = NULL;
-
-		state.rsrc.head = state.rsrc.tail = &initSwampNode;
-		return swampNodeList.initialize();
-	}
-
+	error_t initialize(void);
 	~VSwamp(void) {}
 
 public:

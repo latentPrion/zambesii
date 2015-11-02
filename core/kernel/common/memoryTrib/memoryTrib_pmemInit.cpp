@@ -105,8 +105,8 @@ error_t MemoryTrib::pmemInit(void)
 			printf(NOTICE MEMTRIB"Entry %d: Base 0x%P, size "
 				"0x%P, bank %d.\n",
 				i,
-				numaMap->memEntries[i].baseAddr,
-				numaMap->memEntries[i].size,
+				&numaMap->memEntries[i].baseAddr,
+				&numaMap->memEntries[i].size,
 				numaMap->memEntries[i].bankId);
 		};
 		init2_spawnNumaStreams(numaMap);
@@ -127,7 +127,7 @@ error_t MemoryTrib::pmemInit(void)
 	{
 		printf(NOTICE MEMTRIB"pmemInit: Chipset Mem Config: memsize "
 			"0x%P.\n",
-			memConfig->memSize);
+			&memConfig->memSize);
 
 		ret = createBank(CHIPSET_NUMA_SHBANKID);
 		if (ret != ERROR_SUCCESS)
@@ -162,7 +162,7 @@ error_t MemoryTrib::pmemInit(void)
 					"NUMA map.\n"
 					"\tSpawning shbank with total memsize "
 					"0x%P.\n",
-					memConfig->memSize);
+					&memConfig->memSize);
 
 				__kspaceBool = 1;
 			};
@@ -188,8 +188,8 @@ parseMemoryMap:
 			printf(NOTICE MEMTRIB"Entry %d: Base 0x%P, size "
 				"0x%P, type %d.\n",
 				i,
-				memMap->entries[i].baseAddr,
-				memMap->entries[i].size,
+				&memMap->entries[i].baseAddr,
+				&memMap->entries[i].size,
 				memMap->entries[i].memType);
 		};
 
@@ -207,7 +207,8 @@ parseMemoryMap:
 						memMap->entries[i].baseAddr,
 						PAGING_BYTES_TO_PAGES(
 							memMap->entries[i]
-								.size));
+								.size)
+							.getLow());
 				};
 			};
 		};
@@ -250,7 +251,8 @@ parseMemoryMap:
 					chipsetRegionMap->entries[i].baseAddr,
 					PAGING_BYTES_TO_PAGES(
 						chipsetRegionMap
-							->entries[i].size));
+							->entries[i].size)
+						.getLow());
 			};
 		};
 	};
@@ -355,8 +357,8 @@ void MemoryTrib::init2_generateNumaMemoryRanges(
 			printf(ERROR MEMTRIB"Failed to allocate "
 				"memory range obj for range: base 0x%P "
 				"size 0x%P on bank %d.\n",
-				map->memEntries[i].baseAddr,
-				map->memEntries[i].size,
+				&map->memEntries[i].baseAddr,
+				&map->memEntries[i].size,
 				map->memEntries[i].bankId);
 		}
 		else
@@ -372,7 +374,7 @@ void MemoryTrib::init2_generateNumaMemoryRanges(
 
 static utf8Char		*overlappingMessage =
 	ERROR MEMTRIB"Error generating shbank holes:\n"
-	"\tOverlapping entries base 0x%P, size 0x%X, base 0x%P, size 0x%X.\n"
+	"\tOverlapping entries base 0x%P, size 0x%P, base 0x%P, size 0x%P.\n"
 	"\tHalting generation of shbank due to non-sane NUMA map.\n";
 
 void MemoryTrib::init2_generateShbankFromNumaMap(
@@ -410,10 +412,10 @@ void MemoryTrib::init2_generateShbankFromNumaMap(
 		{
 			printf(
 				overlappingMessage,
-				map->memEntries[i].baseAddr,
-				map->memEntries[i].size,
-				map->memEntries[i+1].baseAddr,
-				map->memEntries[i+1].size);
+				&map->memEntries[i].baseAddr,
+				&map->memEntries[i].size,
+				&map->memEntries[i+1].baseAddr,
+				&map->memEntries[i+1].size);
 
 			return;
 		};
@@ -428,10 +430,10 @@ void MemoryTrib::init2_generateShbankFromNumaMap(
 		{
 			printf(
 				overlappingMessage,
-				map->memEntries[i].baseAddr,
-				map->memEntries[i].size,
-				map->memEntries[i+1].baseAddr,
-				map->memEntries[i+1].size);
+				&map->memEntries[i].baseAddr,
+				&map->memEntries[i].size,
+				&map->memEntries[i+1].baseAddr,
+				&map->memEntries[i+1].size);
 
 			return;
 		};
@@ -459,18 +461,17 @@ void MemoryTrib::init2_generateShbankFromNumaMap(
 				printf(ERROR MEMTRIB
 					"Shbank: Failed to spawn memrange for "
 					"hole: base 0x%P size 0x%P.\n",
-					tmpBase, tmpSize);
+					&tmpBase, &tmpSize);
 			}
 			else
 			{
 				printf(NOTICE MEMTRIB
 					"Shbank: New memrange base 0x%P, size "
 					"0x%P.\n",
-					tmpBase, tmpSize);
+					&tmpBase, &tmpSize);
 
 				*__kspaceBool = 1;
 			};
 		};
 	};
 }
-

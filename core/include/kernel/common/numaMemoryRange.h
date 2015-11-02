@@ -40,7 +40,7 @@ public:
 	status_t merge(NumaMemoryRange *nmr);
 
 	sarch_t identifyPaddr(paddr_t paddr);
-	sarch_t identifyPaddrRange(paddr_t baseAddr, uarch_t nFrames);
+	sarch_t identifyPaddrRange(paddr_t baseAddr, paddr_t nBytes);
 
 private:
 	paddr_t			baseAddr, size;

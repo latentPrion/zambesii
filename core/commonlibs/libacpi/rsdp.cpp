@@ -110,7 +110,8 @@ error_t acpi::mapRsdt(void)
 	rsdt.vasStream = processTrib.__kgetStream()->getVaddrSpaceStream();
 
 	rsdt = WPRANGER_ADJUST_VADDR(
-		rsdt.get(), cache.rsdp->rsdtPaddr, acpi::sRsdt *);
+		rsdt.get(),
+		paddr_t(cache.rsdp->rsdtPaddr), acpi::sRsdt *);
 
 	// Ensure that the table is valid: compute checksum.
 	if (!checksumIsValid(rsdt.get()))
@@ -138,7 +139,8 @@ error_t acpi::mapRsdt(void)
 
 	rsdt.nPages = rsdt.nMapped = rsdtNPages;
 	rsdt = WPRANGER_ADJUST_VADDR(
-		rsdt.get(), cache.rsdp->rsdtPaddr, acpi::sRsdt *);
+		rsdt.get(),
+		paddr_t(cache.rsdp->rsdtPaddr), acpi::sRsdt *);
 
 	cache.rsdt = rsdt.release();
 	return ERROR_SUCCESS;

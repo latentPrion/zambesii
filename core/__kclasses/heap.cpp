@@ -76,7 +76,7 @@ error_t Heap::setGuardPage(void *vaddr)
 		|| f & PAGEATTRIB_PRESENT)
 	{
 		printf(FATAL HEAP"Gpage: 0x%p; flags 0x%x, paddr bits 0x%P\n",
-			vaddr, f, p);
+			vaddr, f, &p);
 
 		panic(FATAL HEAP"Failed to protect guardpage.\n");
 	};

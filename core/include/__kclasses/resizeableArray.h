@@ -5,6 +5,7 @@
 	#include <kernel/common/panic.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <__kstdlib/__kclib/stdlib.h>
 
 	/**	CAVEAT:
 	 * The only thing that is MP safe in this class is the act of resizing

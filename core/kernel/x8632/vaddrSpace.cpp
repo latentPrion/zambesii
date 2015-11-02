@@ -29,7 +29,7 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 #else
 		level0Accessor.rsrc = (sPagingLevel0 *)0xFFFFD000;
 #endif
-		level0Paddr = paddr_t(&__kpagingLevel0Tables);
+		level0Paddr = (uintptr_t)&__kpagingLevel0Tables;
 		return ERROR_SUCCESS;
 	};
 
@@ -60,9 +60,11 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 
 	// Clone the kernel vaddrspace top-level table into the new process.
 	memcpy(
-		&level0Accessor.rsrc->entries[startEntry],
-		&boundVaddrSpaceStream->vaddrSpace.level0Accessor.rsrc
-			->entries[startEntry],
+		const_cast<paddr_t *>(
+			&level0Accessor.rsrc->entries[startEntry]),
+		const_cast<paddr_t *>(
+			&boundVaddrSpaceStream->vaddrSpace.level0Accessor.rsrc
+			->entries[startEntry]),
 		sizeof(level0Accessor.rsrc->entries[0]) * nEntries);
 
 	uarch_t			__kflags;
@@ -94,7 +96,7 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 		| paddr_t(PAGING_L0_PRESENT | PAGING_L0_WRITE);
 
 	// Map the kernel's top level table into the new addrspace.
-	level1Table->entries[1021] = paddr_t(&__kpagingLevel0Tables)
+	level1Table->entries[1021] = paddr_t((uintptr_t)&__kpagingLevel0Tables)
 		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE | PAGING_L1_CACHE_WRITE_THROUGH);
 
 	// Map 0xFFFE000 to the level 1 table, allowing the kernel to modify it.
@@ -102,12 +104,13 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE | PAGING_L1_CACHE_WRITE_THROUGH);
 
 	// Map 0xFFFF000 to nothing, but set the access flags for it.
-	level1Table->entries[1023] = 0
-		| paddr_t(PAGING_L1_PRESENT | PAGING_L1_WRITE | PAGING_L1_CACHE_WRITE_THROUGH);
+	level1Table->entries[1023] = paddr_t(0)
+		| PAGING_L1_PRESENT | PAGING_L1_WRITE
+		| PAGING_L1_CACHE_WRITE_THROUGH;
 
 	printf(NOTICE VADDRSPACE"initialize: binding %d; lvl0: v 0x%p, "
 		"p 0x%P.\n",
-		boundBankId, level0Accessor.rsrc, level0Paddr);
+		boundBankId, level0Accessor.rsrc, &level0Paddr);
 
 	return ERROR_SUCCESS;
 }
@@ -139,7 +142,12 @@ status_t VaddrSpace::getTopLevelAddrState(uarch_t entry)
 
 	if (raw != 0)
 	{
-		switch ((paddr >> PAGING_PAGESTATUS_SHIFT) & PAGESTATUS_MASK)
+		paddr_t		switchable;
+
+		switchable = (paddr >> PAGING_PAGESTATUS_SHIFT)
+			& PAGESTATUS_MASK;
+
+		switch (switchable.getLow())
 		{
 		case PAGESTATUS_SWAPPED:
 			return WPRANGER_STATUS_SWAPPED;
@@ -168,7 +176,7 @@ void VaddrSpace::dumpAllNonEmpty(void)
 	uarch_t			flipFlop=0;
 
 	printf(NOTICE VADDRSPACE"@0x%p (P0x%P): dumping all nonzero PDEs.\n\t",
-		level0Accessor.rsrc, level0Paddr);
+		level0Accessor.rsrc, &level0Paddr);
 
 	for (uarch_t i=0; i<PAGING_L0_NENTRIES; i++)
 	{
@@ -191,12 +199,15 @@ void VaddrSpace::dumpAllPresent(void)
 	uarch_t			flipFlop=0;
 
 	printf(NOTICE VADDRSPACE"@0x%p (P0x%P): dumping all present PDEs.\n",
-		level0Accessor.rsrc, level0Paddr);
+		level0Accessor.rsrc, &level0Paddr);
 
 	for (uarch_t i=0; i<PAGING_L0_NENTRIES; i++)
 	{
+		paddr_t		comparable;
+
+		comparable = level0Accessor.rsrc->entries[i] & PAGING_L0_PRESENT;
 		if (flipFlop == 0) { printf(CC"\t"); };
-		if (level0Accessor.rsrc->entries[i] & PAGING_L0_PRESENT)
+		if (comparable.getLow())
 		{
 			printf(CC"%d ", i);
 			flipFlop++;

@@ -34,7 +34,7 @@
 	#define PAGING_ALTERNATE_SIZE		(0x00200000)
 	#define PAGING_ALTERNATE_SHIFT		(21)
 #else
-	// #define PAGING_ALTERNATE_SIZE	0x00400000
+	// #define PAGING_ALTERNATE_SIZE	(0x00400000)
 #endif
 
 #define PAGING_BASE_MASK_LOW		(PAGING_BASE_SIZE - 1)
@@ -118,24 +118,24 @@
 //sPagingLevel0: x86 Top level paging structure, aka the Page Directory.
 struct sPagingLevel0
 {
-	paddr_t		entries[PAGING_L0_NENTRIES];
+	volatile paddr_t		entries[PAGING_L0_NENTRIES];
 #ifdef CONFIG_ARCH_x86_32_PAE
 //Take note of the significance of this.
-} __attribute__(( packed, aligned(32) ));
+} __attribute__(( /*packed,*/ aligned(32) ));
 #else
-} __attribute__(( packed, aligned(PAGING_BASE_SIZE) ));
+} __attribute__(( /*packed,*/ aligned(PAGING_BASE_SIZE) ));
 #endif
 
 struct sPagingLevel1
 {
-	paddr_t		entries[PAGING_L1_NENTRIES];
-} __attribute__(( packed, aligned(PAGING_BASE_SIZE) ));
+	volatile paddr_t		entries[PAGING_L1_NENTRIES];
+} __attribute__(( /*packed,*/ aligned(PAGING_BASE_SIZE) ));
 
 #ifdef CONFIG_ARCH_x86_32_PAE
 struct sPagingLevel2
 {
-	paddr_t		entries[PAGING_L2_NENTRIES];
-} __attribute__(( packed, aligned(PAGING_BASE_SIZE) ));
+	volatile paddr_t		entries[PAGING_L2_NENTRIES];
+} __attribute__(( /*packed,*/ aligned(PAGING_BASE_SIZE) ));
 #endif
 
 #endif /* !defined( __ASM__ ) */

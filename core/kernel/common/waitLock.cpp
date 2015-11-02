@@ -9,8 +9,20 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-static SharedResourceGroup<WaitLock, void *>	buffDescriptors[16];
-static utf8Char		buffers[16][1024];
+struct sDeadlockBuff
+{
+	sDeadlockBuff(void)
+	:
+	inUse(0)
+	{
+		memset(buff, 0, sizeof(buff));
+		buffer.rsrc = buff;
+	}
+
+	sbit8		inUse;
+	utf8Char	buff[1024];
+	SharedResourceGroup<WaitLock, utf8Char *>	buffer;
+} static deadlockBuffers[16];
 
 void Lock::sOperationDescriptor::execute()
 {
@@ -75,9 +87,21 @@ void WaitLock::acquire(void)
 	{
 		cid = cpuTrib.getCurrentCpuStream()->cpuId;
 		if (cid == CPUID_INVALID) { cid = 0; };
-		buffDescriptors[cid].rsrc = buffers[cid];
 
-		printf(&buffDescriptors[cid], 1024,
+		/**	EXPLANATION:
+		 * This "inUse" feature allows us to detect infinite recursion
+		 * deadlock loops. This can occur when the kernel somehow
+		 * manages to deadlock in printf() AND also then deadlock
+		 * in the deadlock debugger printf().
+		 **/
+		if (deadlockBuffers[cid].inUse == 1)
+			{ panic(); };
+
+		deadlockBuffers[cid].inUse = 1;
+
+		printf(
+			&deadlockBuffers[cid].buffer,
+			sizeof(deadlockBuffers[cid].buffer.rsrc),
 			FATAL"Deadlock detected.\n"
 			"\tCPU: %d, Lock obj addr: 0x%p. Calling function: 0x%p,\n"
 			"\tlock int addr: 0x%p, lockval: %d.\n",

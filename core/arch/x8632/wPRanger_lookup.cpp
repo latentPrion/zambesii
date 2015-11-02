@@ -116,7 +116,7 @@ status_t walkerPageRanger::lookup(
 				ret = WPRANGER_STATUS_UNMAPPED;
 			};
 #else
-			*flags = decodeFlags(l1Entry & 0xFFF);
+			*flags = decodeFlags((l1Entry & 0xFFF).getLow());
 			*paddr = (l1Entry >> 12);
 			*paddr <<= 12;
 
@@ -125,8 +125,11 @@ status_t walkerPageRanger::lookup(
 			}
 			else
 			{
-				switch ((*paddr >> PAGING_PAGESTATUS_SHIFT)
-					& PAGESTATUS_MASK)
+				paddr_t		switchable =
+					(*paddr >> PAGING_PAGESTATUS_SHIFT)
+						& PAGESTATUS_MASK;
+
+				switch (switchable.getLow())
 				{
 				case PAGESTATUS_SWAPPED:
 					ret = WPRANGER_STATUS_SWAPPED;
@@ -195,7 +198,7 @@ void *walkerPageRanger::createMappingTo(
 	{
 		printf(ERROR WPRANGER"createMappingTo(0x%P, %d): Failed to "
 			"alloc vmem.\n",
-			paddr, nPages);
+			&paddr, nPages);
 
 		return NULL;
 	};
@@ -209,7 +212,7 @@ void *walkerPageRanger::createMappingTo(
 	{
 		printf(ERROR WPRANGER"createMappingTo(0x%P, %d): mapInc "
 			"failed.\n",
-			paddr, nPages);
+			&paddr, nPages);
 
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 			ret, nPages);

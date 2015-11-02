@@ -13,7 +13,7 @@ class VaddrSpace
 {
 public:
 	VaddrSpace(void)
-	: level0Paddr((paddr_t)NULL)
+	: level0Paddr(paddr_t(0))
 	{
 		VaddrSpace::level0Accessor.rsrc = NULL;
 	}

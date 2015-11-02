@@ -125,7 +125,7 @@ error_t MemoryTrib::memRegionInit(void)
 				memRegions[i].memBmp->mapMemUsed(
 					currReserved[j].baseAddr,
 					PAGING_BYTES_TO_PAGES(
-						currReserved[j].size));
+						currReserved[j].size).getLow());
 			};
 		};
 
@@ -147,7 +147,8 @@ error_t MemoryTrib::memRegionInit(void)
 				memRegions[i].memBmp->mapMemUsed(
 					memMap->entries[j].baseAddr,
 					PAGING_BYTES_TO_PAGES(
-						memMap->entries[j].size));
+						memMap->entries[j].size)
+						.getLow());
 			};
 		};
 	};

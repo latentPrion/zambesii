@@ -2,11 +2,11 @@
 #include <arch/x8632/wPRanger_accessors.h>
 
 // Accessors.
-volatile sPagingLevel1		*const level1Accessor =
+sPagingLevel1		*const level1Accessor =
 	reinterpret_cast<sPagingLevel1 *>( 0xFFFFF000 );
 
 #ifdef CONFIG_ARCH_x86_32_PAE
-volatile sPagingLevel2		*const level2Accessor =
+sPagingLevel2		*const level2Accessor =
 	reinterpret_cast<sPagingLevel2 *>( 0xFFFFE000 );
 #endif
 

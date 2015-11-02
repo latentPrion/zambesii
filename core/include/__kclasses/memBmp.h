@@ -17,13 +17,22 @@
 
 #define MEMBMP_FLAGS_DYNAMIC		(1<<0)
 
-#define MEMBMP_OFFSET(__pfn,__basePfn)	(__pfn - __basePfn)
+inline uarch_t MEMBMP_OFFSET(uarch_t _pfn, uarch_t _basePfn)
+	{ return _pfn - _basePfn; }
 
-#define MEMBMP_INDEX(__pfn,__basePfn,__bmp)		\
-	(MEMBMP_OFFSET(__pfn,__basePfn) / __KBIT_NBITS_IN(__bmp))
+template <class T>
+inline uarch_t MEMBMP_INDEX(uarch_t _pfn, uarch_t _basePfn, T _bmp)
+	{ return MEMBMP_OFFSET(_pfn, _basePfn) / __KBIT_NBITS_IN(_bmp); }
 
-#define MEMBMP_BIT(__pfn,__basePfn,__bmp)			\
-	(MEMBMP_OFFSET(__pfn,__basePfn) % __KBIT_NBITS_IN(__bmp))
+/*#define MEMBMP_INDEX(__pfn,__basePfn,__bmp)		\
+	(MEMBMP_OFFSET((__pfn),(__basePfn)) / __KBIT_NBITS_IN((__bmp)))*/
+
+template <class T>
+inline uarch_t MEMBMP_BIT(uarch_t _pfn, uarch_t _basePfn, T _bmp)
+	{ return MEMBMP_OFFSET(_pfn, _basePfn) % __KBIT_NBITS_IN(_bmp); }
+
+/*#define MEMBMP_BIT(__pfn,__basePfn,__bmp)			\
+	(MEMBMP_OFFSET((__pfn),(__basePfn)) % __KBIT_NBITS_IN((__bmp))) */
 
 class NumaMemoryBank;
 
@@ -62,7 +71,7 @@ public:
 public:
 	inline void setFrame(uarch_t pfn);
 	inline void unsetFrame(uarch_t pfn);
-	inline sarch_t testFrame(uarch_t pfn);
+	inline sbit8 testFrame(uarch_t pfn);
 
 public:
 	uarch_t		basePfn, endPfn, bmpNFrames, flags, nIndexes;
@@ -88,13 +97,13 @@ inline void MemoryBmp::setFrame(uarch_t pfn)
 }
 
 inline void MemoryBmp::unsetFrame(uarch_t pfn)
-{	
+{
 	__KBIT_UNSET(
 		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],
 		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp));
 }
 
-inline sarch_t MemoryBmp::testFrame(uarch_t pfn)
+inline sbit8 MemoryBmp::testFrame(uarch_t pfn)
 {
 	return __KBIT_TEST(
 		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],

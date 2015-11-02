@@ -156,16 +156,19 @@ status_t walkerPageRanger::unmap(
 			if (l1Entry != 0)
 			{
 				*flags = walkerPageRanger::decodeFlags(
-					l1Entry & 0xFFF);
+					(l1Entry & 0xFFF).getLow());
 
 				*paddr = (l1Entry >> 12);
 				*paddr <<= 12;
 
 				if (!FLAG_TEST(*flags, PAGEATTRIB_PRESENT))
 				{
-					switch ((*paddr
+					paddr_t 		switchable =
+						(*paddr
 						>> PAGING_PAGESTATUS_SHIFT)
-						& PAGESTATUS_MASK)
+						& PAGESTATUS_MASK;
+
+					switch (switchable.getLow())
 					{
 					case PAGESTATUS_SWAPPED:
 						ret = WPRANGER_STATUS_SWAPPED;

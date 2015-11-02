@@ -6,6 +6,20 @@
 #include <kernel/common/vSwamp.h>
 
 
+error_t VSwamp::initialize(void)
+{
+	// Ensure the size doesn't overflow the vaddrspace.
+	if ((void *)((uintptr_t)baseAddr + size) < baseAddr) {
+		return ERROR_FATAL;
+	};
+
+	initSwampNode.baseAddr = baseAddr;
+	initSwampNode.nPages = PAGING_BYTES_TO_PAGES(size);
+	initSwampNode.prev = initSwampNode.next = NULL;
+
+	state.rsrc.head = state.rsrc.tail = &initSwampNode;
+	return swampNodeList.initialize();
+}
 void VSwamp::dump(void)
 {
 	printf(NOTICE"vSwamp: base: 0x%p, size: 0x%x, ", baseAddr, size);
@@ -64,7 +78,7 @@ void *VSwamp::getPages(uarch_t nPages, ubit32)
 					state.rsrc.tail = currentNode->prev;
 				};
 
-				/* If this is the init node, it just 
+				/* If this is the init node, it just
 				 * won't be freed.
 				 **/
 				deleteSwampNode(currentNode);
@@ -85,7 +99,7 @@ void VSwamp::releasePages(void *vaddr, uarch_t nPages)
 	SwampInfoNode	*insertionNode;
 	status_t	status;
 
-	if (vaddr == NULL 
+	if (vaddr == NULL
 		|| reinterpret_cast<uarch_t>( vaddr ) & PAGING_BASE_MASK_LOW
 		|| nPages == 0)
 	{

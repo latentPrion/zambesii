@@ -18,10 +18,10 @@ static const uarch_t		shiftTab[] =
 ubit16 getShiftFor(uarch_t num)
 {
 	if (num == 0) {
-		return __WORDSIZE - 1;
+		return __VADDR_NBITS__ - 1;
 	};
 
-	for (ubit16 i=0; i<__WORDSIZE - 1; i++)
+	for (ubit16 i=0; i<__VADDR_NBITS__ - 1; i++)
 	{
 		if (shiftTab[i] == num) {
 			return i;

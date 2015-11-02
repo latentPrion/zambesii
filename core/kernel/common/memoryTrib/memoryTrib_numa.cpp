@@ -183,7 +183,7 @@ void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	 * or there's corruption in the memory manager somewhere.
 	 **/
 	printf(WARNING MEMTRIB"releaseFrames(0x%P, %d): pmem leak.\n",
-		paddr, nFrames);
+		&paddr, nFrames);
 #else
 	currBank = getBank(defaultMemoryBank.rsrc);
 	if (currBank) {

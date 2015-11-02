@@ -1,4 +1,5 @@
 
+#include <debug.h>
 #include <arch/walkerPageRanger.h>
 #include <chipset/memoryAreas.h>
 #include <__kstdlib/__kcxxlib/new>
@@ -58,6 +59,7 @@ void IbmPcVgaTerminal::chipsetEventNotification(ubit8, uarch_t)
 	// Also, unmap the old identity mapping.
 	paddr_t		p;
 	uarch_t		f;
+
 
 	walkerPageRanger::unmap(
 		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,

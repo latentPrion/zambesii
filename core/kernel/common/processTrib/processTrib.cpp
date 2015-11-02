@@ -272,7 +272,9 @@ void ProcessTrib::commonEntry(void *)
 		myResponse(err);
 		// Prematurely destroy the object to force-send the message.
 		myResponse.~AsyncResponse();
-		taskTrib.dormant(self->getFullId());
+		taskTrib.kill(self->getFullId());
+
+		__builtin_unreachable();
 	};
 
 	if (err != ERROR_SUCCESS)
@@ -751,7 +753,7 @@ void ProcessTrib::dumpProcessesAndVaddrspaces(void)
 		printf(CC"PID 0x%x l0v 0x%p l0p 0x%P; ",
 			processes.rsrc[i]->id,
 			v->vaddrSpace.level0Accessor.rsrc,
-			v->vaddrSpace.level0Paddr);
+			&v->vaddrSpace.level0Paddr);
 
 		flipFlop++;
 

@@ -131,7 +131,7 @@ public:
 		cache.p = p;
 	}
 
-	static sarch_t getPaddr(paddr_t *p)
+	static sbit8 getPaddr(paddr_t *p)
 	{
 		*p = cache.p;
 		return (cache.p != 0);

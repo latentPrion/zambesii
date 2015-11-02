@@ -209,10 +209,10 @@ status_t fplainn::sChannelMsg::marshalStackArguments(
 		case 2: *(ubit16 *)(dest + offset) = va_arg(args, int); break;
 		case 4: *(ubit32 *)(dest + offset) = va_arg(args, int); break;
 		case 8:
-#if __WORDSIZE == 32
+#if __VADDR_NBITS__ == 32
 			*(ubit32 *)(dest + offset) = va_arg(args, int);
 			*(ubit32 *)(dest + offset + 4) = va_arg(args, int);
-#elif __WORDSIZE >= 64
+#elif __VADDR_NBITS__ >= 64
 			*(ubit64 *)(dest + offset) = va_arg(args, int);
 #else
 #error "Unable to generate argument 8Byte marshalling for your arch wordsize."
@@ -220,15 +220,15 @@ status_t fplainn::sChannelMsg::marshalStackArguments(
 			break;
 
 		case 16:
-#if __WORDSIZE == 32
+#if __VADDR_NBITS__ == 32
 			*(ubit32 *)(dest + offset) = va_arg(args, int);
 			*(ubit32 *)(dest + offset + 4) = va_arg(args, int);
 			*(ubit32 *)(dest + offset + 8) = va_arg(args, int);
 			*(ubit32 *)(dest + offset + 12) = va_arg(args, int);
-#elif __WORDSIZE == 64
+#elif __VADDR_NBITS__ == 64
 			*(ubit64 *)(dest + offset) = va_arg(args, int);
 			*(ubit64 *)(dest + offset + 8) = va_arg(args, int);
-#elif __WORDSIZE >= 128
+#elif __VADDR_NBITS__ >= 128
 			*(ubit128 *)(dest + offset) = va_arg(args, int);
 #else
 #error "Unable to generate argument 16Byte marshalling for your arch wordsize."

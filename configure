@@ -126,9 +126,12 @@ if [ $hllToolchain == 'llvm' ]; then
 		hllCxx='clang++ -###'
 		hllCpp='clang -E -###'
 	else
-		hllCc="clang -ccc-host-triple $toolchainTarget"
-		hllCxx="clang++ -ccc-host-triple $toolchainTarget"
-		hllCpp="clang -ccc-host-triple $toolchainTarget -E"
+#		hllCc="clang -ccc-host-triple $toolchainTarget"
+#		hllCxx="clang++ -ccc-host-triple $toolchainTarget"
+#		hllCpp="clang -ccc-host-triple $toolchainTarget -E"
+		hllCc="clang -target $toolchainTarget"
+		hllCxx="clang++ -target $toolchainTarget"
+		hllCpp="clang -target $toolchainTarget -E"
 	fi
 
 	if [ "$arch" == "x8632" ]; then

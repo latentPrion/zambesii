@@ -113,7 +113,10 @@ x86Mp::sConfig *x86Mp::mapMpConfigTable(void)
 		return NULL;
 	};
 
-	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86Mp::sConfig *);
+	ret = WPRANGER_ADJUST_VADDR(
+		ret, paddr_t(cache.fp->cfgTablePaddr),
+		x86Mp::sConfig *);
+
 	cfgNPages = PAGING_BYTES_TO_PAGES(ret->length) + 1;
 
 	// First ensure that the table's checksum is valid.
@@ -140,7 +143,10 @@ x86Mp::sConfig *x86Mp::mapMpConfigTable(void)
 		return NULL;
 	};
 
-	ret = WPRANGER_ADJUST_VADDR(ret, cache.fp->cfgTablePaddr, x86Mp::sConfig *);
+	ret = WPRANGER_ADJUST_VADDR(
+		ret, paddr_t(cache.fp->cfgTablePaddr),
+		x86Mp::sConfig *);
+
 	cache.cfg = ret;
 	cache.lapicPaddr = cache.cfg->lapicPaddr;
 	cache.nCfgEntries = ret->nEntries;
@@ -194,7 +200,7 @@ status_t x86Mp::getChipsetDefaultConfig(void)
 	 * The value returned, if greater than 0, is an index into a hardcoded
 	 * table of CPU Config and CPU Maps to return for each default config.
 	 **/
-	if (!cache.magic == x86_MPCACHE_MAGIC || !x86Mp::mpFpFound()) {
+	if (cache.magic != x86_MPCACHE_MAGIC || !x86Mp::mpFpFound()) {
 		return -1;
 	};
 

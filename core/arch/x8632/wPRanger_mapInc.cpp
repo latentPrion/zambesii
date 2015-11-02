@@ -65,7 +65,9 @@ status_t walkerPageRanger::mapInc(
 
 	for (l0Current = l0Start; l0Current <= l0End; l0Current++)
 	{
-		l0Entry = vaddrSpace->level0Accessor.rsrc->entries[l0Current];
+		l0Entry = vaddrSpace->level0Accessor.rsrc
+			->entries[l0Current];
+
 		if (l0Entry == 0)
 		{
 			if (memoryTrib.pageTablePop(&l0Entry)

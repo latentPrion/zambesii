@@ -31,7 +31,7 @@ error_t chipsetMemAreas::mapArea(ubit16 index)
 	goto skipVmemAlloc;
 #endif
 	vaddr = processTrib.__kgetStream()->getVaddrSpaceStream()->getPages(
-		PAGING_BYTES_TO_PAGES(memAreas[index].size));
+		PAGING_BYTES_TO_PAGES(memAreas[index].size).getLow());
 
 #ifdef CONFIG_DEBUGPIPE_STATIC
 skipVmemAlloc:
@@ -43,14 +43,16 @@ skipVmemAlloc:
 		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		vaddr,
 		memAreas[index].basePaddr,
-		PAGING_BYTES_TO_PAGES(memAreas[index].size),
+		PAGING_BYTES_TO_PAGES(memAreas[index].size).getLow(),
 		PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE | PAGEATTRIB_SUPERVISOR
 		| PAGEATTRIB_CACHE_WRITE_THROUGH);
 
-	if (status < (signed)PAGING_BYTES_TO_PAGES(memAreas[index].size))
+	if (status < (signed)PAGING_BYTES_TO_PAGES(
+		memAreas[index].size).getLow())
 	{
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
-			vaddr, PAGING_BYTES_TO_PAGES(memAreas[index].size));
+			vaddr,
+			PAGING_BYTES_TO_PAGES(memAreas[index].size).getLow());
 
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
@@ -73,17 +75,17 @@ error_t chipsetMemAreas::unmapArea(ubit16 index)
 		&processTrib.__kgetStream()->getVaddrSpaceStream()->vaddrSpace,
 		memAreas[index].vaddr,
 		&p,
-		PAGING_BYTES_TO_PAGES(memAreas[index].size),
+		PAGING_BYTES_TO_PAGES(memAreas[index].size).getLow(),
 		&f);
 
 	processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
 		memAreas[index].vaddr,
-		PAGING_BYTES_TO_PAGES(memAreas[index].size));
+		PAGING_BYTES_TO_PAGES(memAreas[index].size).getLow());
 
 	memAreas[index].vaddr = NULL;
 	return ERROR_SUCCESS;
 }
-		
+
 void *chipsetMemAreas::getArea(ubit16 index)
 {
 	if (index >= CHIPSET_MEMAREA_NAREAS) { return NULL; };

@@ -82,7 +82,7 @@ public:
 	 * passed as an argument. This may cause a race condition on the kernel
 	 * debug log, but seeing some output is better than seeing none.
 	 **/
-	void printf(SharedResourceGroup<WaitLock, void *> *buff,
+	void printf(SharedResourceGroup<WaitLock, utf8Char *> *buff,
 		uarch_t buffSize, utf8Char *str, va_list v);
 
 	/**	EXPLANATION:
@@ -124,7 +124,7 @@ extern "C" sarch_t snprintf(
 	utf8Char *buff, uarch_t maxLength, utf8Char *format, ...);
 
 // Used for debugging, see above.
-void printf(SharedResourceGroup<WaitLock, void *> *buff,
+void printf(SharedResourceGroup<WaitLock, utf8Char *> *buff,
 	uarch_t buffSize, utf8Char *str, ...);
 
 extern DebugPipe	__kdebug;

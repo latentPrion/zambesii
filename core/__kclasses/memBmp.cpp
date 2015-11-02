@@ -22,8 +22,20 @@ MemoryBmp::MemoryBmp(paddr_t baseAddr, paddr_t size)
 	MemoryBmp::baseAddr = baseAddr;
 	endAddr = baseAddr + (size - 1);
 
-	basePfn = baseAddr >> PAGING_BASE_SHIFT;
-	endPfn = endAddr >> PAGING_BASE_SHIFT;
+	/**	EXPLANATION:
+	 * The reason its fine to use getLow() here is that we limit the number
+	 * of supported PFN bits in the kernel to the amount that can fit into
+	 * one uarch_t.
+	 *
+	 * This means that even if a bignum paddr arch supports memory whose
+	 * PFN is greater than can fit in one uarch_t, the kernel will refuse to
+	 * support more than that.
+	 *
+	 * So if we cut off the high bits of the result of the SHR calculation
+	 * below (by only taking the low order bits of the result), it's fine.
+	 **/
+	basePfn = (baseAddr >> PAGING_BASE_SHIFT).getLow();
+	endPfn = (endAddr >> PAGING_BASE_SHIFT).getLow();
 	bmpNFrames = (endPfn - basePfn) + 1;
 
 	nIndexes = __KMATH_NELEMENTS(bmpNFrames, __KBIT_NBITS_IN(*bmp.rsrc.bmp));
@@ -101,7 +113,7 @@ void MemoryBmp::dump(void)
 }
 
 /**	EXPLANATION:
- * It isn't necessary to pass a page aligned address to this function. You 
+ * It isn't necessary to pass a page aligned address to this function. You
  * can pass an unaligned address. If an unaligned address is passed, the bmp
  * will automatically map the unaligned frame as used.
  *
@@ -129,7 +141,7 @@ error_t MemoryBmp::initialize(void *preAllocated)
 	};
 	memset(bmp.rsrc.bmp, 0, bmpSize);
 
-	if (baseAddr & PAGING_BASE_MASK_LOW) {
+	if (!!(baseAddr & PAGING_BASE_MASK_LOW)) {
 		setFrame(basePfn);
 	};
 	// Set last frame if end address is on the exact bound of a new frame.
@@ -194,7 +206,7 @@ error_t MemoryBmp::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
 	 * done over once more if it reaches the last bit and no memory was
 	 * found.
 	 *
-	 * FIXME: Right now, the bmp measures its limit by the number of 
+	 * FIXME: Right now, the bmp measures its limit by the number of
 	 * indexes, and not the number of bits within the range. Therefore, if
 	 * the last index is such that there should only be 2 relevant bits in
 	 * the last index, and the other 30 should not be searched since they
@@ -265,7 +277,7 @@ error_t MemoryBmp::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
 						};
 						nFound++;
 						if (nFound >= _nFrames) {
-							goto success; 
+							goto success;
 						};
 					};
 					if (nFound == 0) {
@@ -287,7 +299,7 @@ success:
 	for (uarch_t i=startPfn; i<_endPfn; i++) {
 		setFrame(i);
 	};
-	
+
 	bmp.rsrc.lastAllocIndex =
 		(_endPfn - basePfn) / __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
@@ -387,14 +399,17 @@ out:
 	bmp.lock.release();
 	*paddr = startPfn << PAGING_BASE_SHIFT;
 	return nFound;
-}	
+}
 
 void MemoryBmp::releaseFrames(paddr_t frameAddr, uarch_t _nFrames)
 {
-	uarch_t		rangeStartPfn = frameAddr >> PAGING_BASE_SHIFT;
-	uarch_t		rangeEndPfn = rangeStartPfn + _nFrames;
+	uarch_t		rangeStartPfn;
+	uarch_t		rangeEndPfn;;
 
 	if (_nFrames == 0) { return; };
+
+	rangeStartPfn = (frameAddr >> PAGING_BASE_SHIFT).getLow();
+	rangeEndPfn = rangeStartPfn + _nFrames;
 
 	bmp.lock.acquire();
 
@@ -415,13 +430,15 @@ void MemoryBmp::mapMemUsed(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 	uarch_t		rangeEndPfn;
 
 	if (rangeBaseAddr >= baseAddr) {
-		rangeStartPfn = rangeBaseAddr >> PAGING_BASE_SHIFT;
+		rangeStartPfn = (rangeBaseAddr >> PAGING_BASE_SHIFT).getLow();
 	};
 
-	rangeEndPfn = (rangeBaseAddr >> PAGING_BASE_SHIFT) + rangeNFrames;
+	rangeEndPfn = (rangeBaseAddr >> PAGING_BASE_SHIFT).getLow()
+		+ rangeNFrames;
+
 	if (rangeEndPfn > endPfn) {
 		rangeEndPfn = endPfn + 1;
-	};	
+	};
 
 	bmp.lock.acquire();
 
@@ -438,13 +455,15 @@ void MemoryBmp::mapMemUnused(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 	uarch_t		rangeEndPfn;
 
 	if (rangeBaseAddr >= baseAddr) {
-		rangeStartPfn = rangeBaseAddr >> PAGING_BASE_SHIFT;
+		rangeStartPfn = (rangeBaseAddr >> PAGING_BASE_SHIFT).getLow();
 	};
 
-	rangeEndPfn = (rangeBaseAddr >> PAGING_BASE_SHIFT) + rangeNFrames;
+	rangeEndPfn = (rangeBaseAddr >> PAGING_BASE_SHIFT).getLow()
+		+ rangeNFrames;
+
 	if (rangeEndPfn > endPfn) {
 		rangeEndPfn = endPfn + 1;
-	};	
+	};
 
 	bmp.lock.acquire();
 

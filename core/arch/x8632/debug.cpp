@@ -12,8 +12,11 @@ uarch_t debug::Debugger::flags = 0;
 
 void debug::getVaddrSpacePointer(paddr_t *ret)
 {
+	uarch_t			tmp;
+
+	tmp = ret->getLow();
 	asm volatile("movl	%%cr3, %0\n\t"
-		: "=r" (*ret));
+		: "=r" (tmp));
 }
 
 ubit8 *debug::getStackPointer(void)
