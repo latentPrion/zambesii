@@ -79,9 +79,9 @@ aclean: fonyphile
 fonyphile:
 	rm -f clean aclean
 
-# Spotless removes the configuration created by the coonfigure script.
+# Spotless removes the configuration created by the configure script.
 distclean: fonyphile clean
-	rm -f Makefile.vars config.h Makefile
+	rm -f Makefile.vars config.h Makefile ldSearchDirs.ld
 # Only execute this script here. Should never be called by the user explicitly.
 #	./.unconfigure
 
