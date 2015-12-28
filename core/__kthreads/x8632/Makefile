@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../__karchThreads.a
-OBJFILES= __korientationEntry.o __korientationMain.o __kcpuPowerOnEntry.o \
+OBJFILES= crt0.o __korientationMain.o __kcpuPowerOnEntry.o \
 	__kcpuPowerOnMain.o
 
 all: Makefile $(DELIVERABLE)
@@ -8,9 +8,9 @@ all: Makefile $(DELIVERABLE)
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-__korientationEntry.o: __korientationEntryTmp.s
-__korientationEntryTmp.s: __korientationEntry.S
-	$(CPP) $(CPPFLAGS) __korientationEntry.S >$@
+crt0.o: crt0Tmp.s
+crt0Tmp.s: crt0.S
+	$(CPP) $(CPPFLAGS) crt0.S >$@
 
 __kcpuPowerOnEntry.o: __kcpuPowerOnEntryTmp.s
 __kcpuPowerOnEntryTmp.s: __kcpuPowerOnEntry.S

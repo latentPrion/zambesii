@@ -97,8 +97,8 @@ void ZkcmIrqControlMod::chipsetEventNotification(ubit8 event, uarch_t flags)
 		"disconnected from the kernel code path.\n\tYou will have to "
 		"re-organize and reconnect this code path.\n"
 		"\tONLY the IBMPC VGA terminal will receive this message.\n"
-		"\tEvent is %d, 0x%P.\n",
-		event, &p);
+		"\tEvent is %d.\n",
+		event);
 
 	ibmPcVgaTerminal.chipsetEventNotification(event, flags);
 	return;

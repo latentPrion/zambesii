@@ -11,7 +11,7 @@
 
 ASM_SECTION(.__ksetupText)
 
-ASM_GLOBAL_FUNCTION(__korientationEntry)
+ASM_GLOBAL_FUNCTION(_start)
 	cli
 
 	/* Enable Paging, then move on from there. */
@@ -25,14 +25,15 @@ ASM_GLOBAL_FUNCTION(__korientationEntry)
 	orl $0x80000000, %ecx
 	movl %ecx, %cr0
 
+xchg %bx, %bx
 	/* Jump to the virtual offset now. */
-	movl $__korientationVirtualStart, %ecx
+	movl $_startVirtual, %ecx
 	jmp *%ecx
-ASM_END_FUNCTION(__korientationEntry)
+ASM_END_FUNCTION(_start)
 
-ASM_SECTION(.__korientationText)
+ASM_SECTION(.text)
 
-ASM_LOCAL_FUNCTION(__korientationVirtualStart)
+ASM_LOCAL_FUNCTION(_startVirtual)
 	/* Load the stack pointer for the BSP power thread. */
 	movl $bspCpuPowerStack, %esp
 	movl (%esp), %esp
@@ -74,5 +75,5 @@ ret
 	cli
 	hlt
 	jmp .infiniteLoop
-ASM_END_FUNCTION(__korientationVirtualStart)
+ASM_END_FUNCTION(_startVirtual)
 

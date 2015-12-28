@@ -12,4 +12,3 @@
 #define x8632_IBMPC_POWERON_GET_VECTOR(_paddr)	(((_paddr) >> 12) & 0xFF)
 
 #endif
-

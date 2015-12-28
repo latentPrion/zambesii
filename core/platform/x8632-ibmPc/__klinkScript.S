@@ -6,132 +6,146 @@
 #include <platform/x8632-ibmPc/memory.h>
 #include <platform/x8632-ibmPc/cpu.h>
 
+#define IBMPC_LOWMEM_TRAMPOLINE_NEXT_PADDR(_section)		\
+	(CHIPSET_MEMORY___KLOAD_PADDR_BASE \
+		+ (ADDR(_section) - x8632_IBMPC_POWERON_PADDR_BASE))
 
-ENTRY(__korientationEntry)
+#define IBMPC___KLOAD_PADDR_NEXT_PADDR(_section)			\
+	(ADDR(_section))
+
+#define IBMPC___KLOAD_VADDR_NEXT_PADDR(_section)			\
+	(CHIPSET_MEMORY___KLOAD_PADDR_BASE \
+		+ (ADDR(_section) - ARCH_MEMORY___KLOAD_VADDR_BASE))
+
+OUTPUT_FORMAT("elf32-i386", "elf32-i386",
+              "elf32-i386")
+ENTRY(_start)
+
+/*INCLUDE ldSearchDirs.ld*/
+
+MEMORY
+{
+	ibmPc_lowmem_trampoline (rx)
+		: ORIGIN = x8632_IBMPC_POWERON_PADDR_BASE, LENGTH = 16K
+	ibmPc___kload_paddr (rwx)
+		: ORIGIN = CHIPSET_MEMORY___KLOAD_PADDR_BASE, LENGTH = 4M
+	ibmPc___kload_vaddr (rwx)
+		: ORIGIN = ARCH_MEMORY___KLOAD_VADDR_BASE, LENGTH = 1020M
+}
 
 SECTIONS
 {
-	/** NOTE:
-	 * These sections are linked in low physical memory as their virtual
-	 * address. They hold the code that is used to wake up CPUs. This code
-	 * must begin on a page boundary and be in low memory.
-	 *
-	 * We enlist the aid of the linker to link everything virtually to low
-	 * memory in order to be able to just memcpy the already linked code
-	 * and not have to do any extra work.
-	 **/
+	/*	EXPLANATION:
+	 * These sections are virtually linked to the IBM-PC lowmem
+	 * region. Specifically the area within lowmem reserved for
+	 * the AP wakeup trampoline code and data.
+	 **********************************************************************/
+
 	. = x8632_IBMPC_POWERON_PADDR_BASE;
+
 	.__kheaders : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE) {
 		*(.__kheaders*)
-	}
+	} >ibmPc_lowmem_trampoline
 
-	.__kcpuPowerOnData ALIGN(0x4) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.__kcpuPowerOnData) - x8632_IBMPC_POWERON_PADDR_BASE))
-	{
+	.__kcpuPowerOn.data BLOCK(0x4)
+	: AT(IBMPC_LOWMEM_TRAMPOLINE_NEXT_PADDR(.__kcpuPowerOn.data)) {
 		__kcpuPowerOnDataStart = .;
 		*(.__kcpuPowerOnData*)
 		__kcpuPowerOnDataEnd = .;
-	}
+	} >ibmPc_lowmem_trampoline
 
-	.__kcpuPowerOnText ALIGN(PAGING_BASE_SIZE) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.__kcpuPowerOnText) - x8632_IBMPC_POWERON_PADDR_BASE))
-	{
+	.__kcpuPowerOn.text BLOCK(PAGING_BASE_SIZE)
+	: AT(IBMPC_LOWMEM_TRAMPOLINE_NEXT_PADDR(.__kcpuPowerOn.text)) {
 		__kcpuPowerOnTextStart = .;
 		*(.__kcpuPowerOnText*)
 		__kcpuPowerOnTextEnd = .;
-	}
+	} >ibmPc_lowmem_trampoline
 
-	/** NOTE:
-	 * These next sections must be virtually linked to the exact place
-	 * they are in physical memory; In other words, their virtual addresses
-	 * must correspond 1:1 with their actual physical locations.
+
+	/*	EXPLANATION:
+	 * These sections are linked to be identity-mapped to the
+	 * physical location that they are loaded to in actual
+	 * physical RAM.
 	 *
-	 * They are used for the kernel's Orientation thread, as well as any
-	 * other code/data which must be identity mapped (such as certain boot
-	 * page tables which have been hardcoded into the kernel image).
-	 **/
-	. = CHIPSET_MEMORY___KLOAD_PADDR_BASE + (. - x8632_IBMPC_POWERON_PADDR_BASE);
+	 * They must be identity mapped because they contain code
+	 * and data which needs to yield their actual paddr when referenced.
+	 * Examples of such code/data include:
+	 *	* Page tables.
+	 *	* Code that is executed immediately after enabling paging.
+	 **********************************************************************/
 
-	.__ksetupData ALIGN(PAGING_BASE_SIZE): AT(ADDR(.__ksetupData))
-	{
+	. = CHIPSET_MEMORY___KLOAD_PADDR_BASE
+		+ (. - x8632_IBMPC_POWERON_PADDR_BASE);
+
+	.__ksetup.data BLOCK(PAGING_BASE_SIZE)
+	: AT(IBMPC___KLOAD_PADDR_NEXT_PADDR(.__ksetup.data)) {
 		__ksetupDataStart = .;
 		*(.__ksetupData*)
 		__ksetupDataEnd = .;
-	}
+	} >ibmPc___kload_paddr
 
-	.__ksetupText ALIGN(0x4) : AT(ADDR(.__ksetupText))
-	{
-		__ksetupTextStart = .;
+	.__ksetup.text BLOCK(0x4)
+	: AT(IBMPC___KLOAD_PADDR_NEXT_PADDR(.__ksetup.text)) {
 		*(.__ksetupText*)
-		__ksetupTextEnd = .;
-	}
+	} >ibmPc___kload_paddr
 
-	/** NOTE:
-	 * The rest of the sections are all linked virtually to 0xc0000000
-	 * (in other words, ARCH_MEMORY___KLOAD_VADDR_BASE).
+
+	/*	EXPLANATION:
+	 * These sections are linked to the kernel's high load
+	 * vaddr.
 	 *
-	 * The read only sections are separated from the read/write sections.
-	 * This is so that later on in the boot process, the kernel can mark
-	 * all of its text/data sections as read-only/read-write/executable etc.
-	 * as needed.
-	 **/
+	 * I.e, these sections are linked normally. There is no
+	 * peculiarity about them.
+	 **********************************************************************/
+
 	. = ARCH_MEMORY___KLOAD_VADDR_BASE + (. - CHIPSET_MEMORY___KLOAD_PADDR_BASE);
-	__kvirtStart = ARCH_MEMORY___KLOAD_VADDR_BASE;
-	__kreadOnlyStart = .;
 
-	.__korientationText ALIGN(PAGING_BASE_SIZE) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.__korientationText) - ARCH_MEMORY___KLOAD_VADDR_BASE))
-	{
-		__korientationTextStart = .;
-		*(.__korientationText*)
-		__korientationTextEnd = .;
-	}
+	__kvirtStart = .;
+	__kloadVaddrCodeStart = .;
 
-	.__korientationData ALIGN(0x4) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.__korientationData) - ARCH_MEMORY___KLOAD_VADDR_BASE))
-	{
-		__korientationDataStart = .;
-		*(.__korientationData*)
-		__korientationDataEnd = .;
-	}
+	.text BLOCK(PAGING_BASE_SIZE)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.text)) {
+		*(.text*)
+	} >ibmPc___kload_vaddr
 
-	.ctor ALIGN(0x4) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.ctor) - ARCH_MEMORY___KLOAD_VADDR_BASE))
-	{
+	__kloadVaddrCodeEnd = .;
+	__kloadVaddrRodataStart = .;
+
+	.ctor BLOCK(PAGING_BASE_SIZE)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.ctor)) {
 		__kctorStart = .;
 		*(.ctor*)
 		__kctorEnd = .;
-	}
+	} >ibmPc___kload_vaddr
 
-	.dtor ALIGN(0x4) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.dtor) - ARCH_MEMORY___KLOAD_VADDR_BASE))
-	{
+	.dtor BLOCK(0x4)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.dtor)) {
 		__kdtorStart = .;
 		*(.dtor*)
 		__kdtorEnd = .;
-	}
+	} >ibmPc___kload_vaddr
 
-	.text ALIGN(0x4) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.text) - ARCH_MEMORY___KLOAD_VADDR_BASE))
-	{
-		__ktextStart = .;
-		*(.text*)
-		__ktextEnd = .;
-	}
-
-	.gnu.linkonce.t ALIGN(0x4) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.gnu.linkonce.t) - ARCH_MEMORY___KLOAD_VADDR_BASE))
-	{
+	.gnu.linkonce.t BLOCK(0x4)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.gnu.linkonce.t)) {
 		*(.gnu.linkonce.t*)
-	}
+	} >ibmPc___kload_vaddr
 
-	.rodata ALIGN(0x4): AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.rodata) - ARCH_MEMORY___KLOAD_VADDR_BASE))
-	{
-		__kroDataStart = .;
+	.rodata BLOCK(0x4)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.rodata)) {
 		*(.rodata*)
-		__kroDataEnd = .;
-	}
+	} >ibmPc___kload_vaddr
+
+	__kloadVaddrRodataEnd = .;
 
 	/** NOTE:
 	 * The following sections are read-write.
 	 **/
-	.data ALIGN(PAGING_BASE_SIZE) : AT(CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ADDR(.data) - ARCH_MEMORY___KLOAD_VADDR_BASE))
-	{
-		__kdataStart = .;
+
+	__kloadVaddrDataStart = .;
+
+	.data BLOCK(PAGING_BASE_SIZE)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.data)) {
 		*(.data*)
-		__kdataEnd = .;
 
 		. = ALIGN(0x4);
 		__kbssStart = .;
@@ -140,12 +154,14 @@ SECTIONS
 
 		. = ALIGN(0x4);
 		*(COMMON*)
-	}
+	} >ibmPc___kload_vaddr
 
-	__kreadOnlyEnd = .;
+	__kloadVaddrDataEnd = .;
+
 	__kvirtEnd = .;
 	__kphysStart = CHIPSET_MEMORY___KLOAD_PADDR_BASE;
-	__kphysEnd = CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ARCH_MEMORY___KLOAD_VADDR_BASE - .);
+	/*__kphysEnd = CHIPSET_MEMORY___KLOAD_PADDR_BASE + (ARCH_MEMORY___KLOAD_VADDR_BASE - .);*/
+	__kphysEnd = . - ARCH_MEMORY___KLOAD_VADDR_BASE;
 	__kend = .;
 
 	/DISCARD/ :
@@ -154,4 +170,3 @@ SECTIONS
 		*(.eh_frame)
 	}
 }
-

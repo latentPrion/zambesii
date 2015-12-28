@@ -125,6 +125,8 @@ public:
 		 * This class provides methods such as memset(), memcpy(),
 		 * etc.
 		 **/
+		class ScatterGatherList;
+
 		class MappedScatterGatherList
 		/*: public SparseBuffer*/
 		{
@@ -137,19 +139,14 @@ public:
 			};
 
 		public:
-			MappedScatterGatherList(void)
+			MappedScatterGatherList(ScatterGatherList *_parent)
 			:
-			cache(sizeof(sListNode))
+			parent(_parent)
 			{}
 
 			error_t initialize()
 			{
-				error_t		ret;
-
-				ret = cache.initialize();
-				if (ret != ERROR_SUCCESS) { return ret; }
-				ret = pages.initialize();
-				if (ret != ERROR_SUCCESS) { return ret; }
+				//error_t		ret;
 
 				return ERROR_SUCCESS;
 			}
@@ -178,8 +175,7 @@ public:
 			void compact(void);
 
 		protected:
-			SlamCache		cache;
-			List<sListNode>		pages;
+			ScatterGatherList	*parent;
 		};
 
 		/**	EXPLANATION:
@@ -220,8 +216,10 @@ public:
 			~ScatterGatherList(void) {}
 
 		public:
-			error_t addFrames(paddr_t p, uarch_t nFrames)
+			status_t addFrames(paddr_t p, uarch_t nFrames)
 			{
+				status_t		ret;
+
 				/**	EXPLANATION:
 				 * Iterates through the list first to see if it
 				 * can add the new frames to an existing
@@ -229,20 +227,36 @@ public:
 				 **/
 				if (addressSize == ADDR_SIZE_32)
 				{
-					return addFrames(
+					ret = addFrames(
 						&elements32, p, nFrames);
 				}
 				else
 				{
-					return addFrames(
+					ret = addFrames(
 						&elements64, p, nFrames);
 				};
+
+
+				if (ret > ERROR_SUCCESS) {
+					udiScgthList.scgth_num_elements++;
+				};
+
+				return ret;
 			}
 
-			void compact(void);
+			/* Returns the number of elements that were discarded
+			 * due to compaction.
+			 **/
+			uarch_t compact(void);
 
+			// Returns a virtual mapping to this SGList.
 			error_t map(MappedScatterGatherList *retMapping);
-			error_t remap(MappedScatterGatherList *mapping);
+			// Returns a re-done mapping of this SGList.
+			error_t remap(
+				MappedScatterGatherList *oldMapping,
+				MappedScatterGatherList *newMapping);
+
+			// Destroys a mapping to this SGList.
 			void unmap(MappedScatterGatherList *mapping);
 
 		private:
@@ -325,6 +339,8 @@ public:
 		{
 		public:
 			DmaRequest(udi_dma_constraints_t *)
+			:
+			mapping(sGList)
 			{}
 
 			error_t initialize(void) { return ERROR_SUCCESS; }
@@ -386,4 +402,156 @@ public:
 extern const sDriverInitEntry	driverInitInfo[];
 extern const sMetaInitEntry	metaInitInfo[];
 
+
+/**	Template definitions:
+ ******************************************************************************/
+
+inline int operator ==(paddr_t p, udi_scgth_element_32_t *s)
+{
+	return (p == s->block_busaddr);
+}
+
+inline int operator ==(paddr_t p, udi_scgth_element_64_t *s)
+{
+#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
+	struct s64BitInt
+	{
+		ubit32		low, high;
+	} *e = (s64BitInt *)&s->block_busaddr;
+
+	if (e->high != 0) { return 0; };
+	return p == e->low;
+#else
+	paddr_t		*p2 = (paddr_t *)&s->block_busaddr;
+
+	return p == *p2;
 #endif
+}
+
+inline void assign_paddr_to_scgth_block_busaddr(udi_scgth_element_32_t *u32, paddr_t p)
+{
+#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
+	// No-pae-32bit-paddr being assigned to a 32-bit-block_busaddr.
+	u32->block_busaddr = p.getLow();
+#else
+	/* Pae-64bit-paddr being assigned to a 32bit-block_busaddr.
+	 *
+	 * Requires us to cut off the high bits of the pae-64bit-paddr.
+	 *
+	 * In such a case, we would have clearly chosen to build a 32-bit
+	 * SGList, so we should not be trying to add any frames with the high
+	 * bits set.
+	 **/
+	if ((p >> 32).getLow() != 0)
+	{
+		panic("Trying to add a 64-bit paddr with high bits set, to a "
+			"32-bit SGList.");
+	};
+
+	u32->block_busaddr = p.getLow();
+#endif
+}
+
+inline void assign_paddr_to_scgth_block_busaddr(udi_scgth_element_64_t *u64, paddr_t p)
+{
+#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
+	/* No-pae-32bit-paddr being assigned to a 64-bit-block_busaddr.
+	 *
+	 * Just requires us to assign the paddr to the low 32 bits of the
+	 * block_busaddr. We also clear the high bits to be pedantic.
+	 **/
+	struct s64BitInt
+	{
+		ubit32		low, high;
+	} *e = (s64BitInt *)&u64->block_busaddr;
+
+	e->high = 0;
+	e->low = p.getLow();
+#else
+	// Pae-64bit-paddr being assigned to a 64-bit-block_busaddr.
+	paddr_t		*p2 = (paddr_t *)&u64->block_busaddr;
+
+	*p2 = p;
+#endif
+}
+
+inline void assign_busaddr64_to_paddr(paddr_t &p, udi_busaddr64_t u64)
+{
+#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
+	struct s64BitInt
+	{
+		ubit32		low, high;
+	} *s = (s64BitInt *)&u64;
+
+	if (s->high != 0) {
+		panic(CC"High bits set in udi_busaddr64_t on non-PAE build.\n");
+	};
+
+	p = s->low;
+#else
+	paddr_t			*p2 = (paddr_t *)&u64;
+
+	p = *p2;
+#endif
+}
+
+template <class scgth_elements_type>
+error_t fplainn::Zudi::dma::ScatterGatherList::addFrames(
+	ResizeableArray<scgth_elements_type> *list, paddr_t p, uarch_t nFrames
+	)
+{
+	error_t			ret;
+
+	/**	EXPLANATION:
+	 * Returns ERROR_SUCCESS if there was no need to allocate a new
+	 * SGList element.
+	 *
+	 * Returns 1 if a new element was created.
+	 *
+	 * Returns negative integer value on error.
+	 **/
+	for (
+		typename ResizeableArray<scgth_elements_type>::Iterator it=
+			list->begin();
+		it != list->end();
+		++it)
+	{
+		scgth_elements_type		*tmp=&*it;
+
+		// Can the new paddr be prepended to this element?
+		if (::operator==(p + PAGING_PAGES_TO_BYTES(nFrames), tmp))
+		{
+			assign_paddr_to_scgth_block_busaddr(tmp, p);
+			tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
+			return ERROR_SUCCESS;
+		}
+		// Can the new paddr be appended to this element?
+		else if (::operator==(p - tmp->block_length, tmp))
+		{
+			tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
+			return ERROR_SUCCESS;
+		};
+	};
+
+	/* If we reached here, then we need to add a new element altogether.
+	 **/
+	uarch_t			prevNIndexes;
+	scgth_elements_type	newElement;
+
+	// Resize the list to hold the new SGList element.
+	prevNIndexes = list->getNIndexes();
+	ret = list->resizeToHoldIndex(prevNIndexes);
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	// Initialize the new element's values.
+	memset(&newElement, 0, sizeof(newElement));
+	assign_paddr_to_scgth_block_busaddr(&newElement, p);
+	newElement.block_length = PAGING_PAGES_TO_BYTES(nFrames);
+
+	// Finally add it to the list.
+	(*list)[prevNIndexes] = newElement;
+	return 1;
+}
+
+#endif
+
