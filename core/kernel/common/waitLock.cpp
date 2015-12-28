@@ -111,12 +111,6 @@ void WaitLock::acquire(void)
 	};
 
 	flags = contenderFlags;
-
-	/* On a non-SMP build, this just indicates the number of critical
-	 * sections deep into the kernel this thread has currently traveled.
-	 **/
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->nLocksHeld++;
 }
 
 void WaitLock::release(void)
@@ -138,9 +132,6 @@ void WaitLock::release(void)
 #endif
 		cpuControl::enableInterrupts();
 	};
-
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->nLocksHeld--;
 }
 
 void WaitLock::releaseNoIrqs(void)
@@ -149,8 +140,5 @@ void WaitLock::releaseNoIrqs(void)
 #if __SCALING__ >= SCALING_SMP
 	atomicAsm::set(&lock, 0);
 #endif
-
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->nLocksHeld--;
 }
 

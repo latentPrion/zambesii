@@ -23,9 +23,6 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 #endif
 
 	readerCount.lock.releaseNoIrqs();
-
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->nLocksHeld++;
 }
 
 void MultipleReaderLock::readRelease(uarch_t _flags)
@@ -48,9 +45,6 @@ void MultipleReaderLock::readRelease(uarch_t _flags)
 		atomicAsm::decrement(&readerCount.rsrc);
 	};
 #endif
-
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->nLocksHeld--;
 
 	// Test the flags and see whether or not to enable IRQs.
 	if (FLAG_TEST(_flags, LOCK_FLAGS_IRQS_WERE_ENABLED)) {
@@ -108,9 +102,6 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 		cpuControl::subZero();
 	};
 #endif
-
-	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->nLocksHeld--;
 
 	/* It doesn't matter whether or not IRQs were enabled before the
 	 * readAcquire() that preceded the call to this function. The write

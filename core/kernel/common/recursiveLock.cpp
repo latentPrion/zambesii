@@ -54,7 +54,6 @@ void RecursiveLock::acquire(void)
 			// Release the taskId lock as soon as you can.
 			taskId.lock.releaseNoIrqs();
 
-			thread->nLocksHeld++;
 			lock++;
 #if __SCALING__ >= SCALING_SMP
 			return;
@@ -109,10 +108,6 @@ void RecursiveLock::release(void)
 #endif
 			cpuControl::enableInterrupts();
 		};
-
-		// Decrement nLocksHeld:
-		cpuTrib.getCurrentCpuStream()->taskStream
-			.getCurrentThread()->nLocksHeld--;
 	};
 }
 

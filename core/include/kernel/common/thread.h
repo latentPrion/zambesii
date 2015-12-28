@@ -99,7 +99,6 @@ public:
 	blockStateE		blockState;
 
 	// Miscellaneous.
-	ubit16			nLocksHeld;
 	RegisterContext		*context;
 #ifdef CONFIG_PER_TASK_TLB_CONTEXT
 	sTlbContext		tlbContext;

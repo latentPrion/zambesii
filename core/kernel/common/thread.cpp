@@ -26,7 +26,7 @@ schedPolicy(ROUND_ROBIN), schedOptions(0), schedFlags(0)
 _TaskContext::_TaskContext(processId_t tid, Thread *parent)
 : Stream<Thread>(parent, tid),
 runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
-nLocksHeld(0), context(NULL)
+context(NULL)
 {
 #if __SCALING__ >= SCALING_CC_NUMA
 	defaultMemoryBank.rsrc = NUMABANKID_INVALID;
