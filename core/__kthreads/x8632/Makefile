@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../__karchThreads.a
-OBJFILES= crt0.o __korientationMain.o __kcpuPowerOnEntry.o \
+OBJFILES= crt0.o main.o __kcpuPowerOnEntry.o \
 	__kcpuPowerOnMain.o
 
 all: Makefile $(DELIVERABLE)

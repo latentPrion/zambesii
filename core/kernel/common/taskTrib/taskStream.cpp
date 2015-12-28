@@ -10,7 +10,7 @@
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
-#include <__kthreads/__korientation.h>
+#include <__kthreads/main.h>
 
 
 extern "C" void taskStream_pull(RegisterContext *savedContext)

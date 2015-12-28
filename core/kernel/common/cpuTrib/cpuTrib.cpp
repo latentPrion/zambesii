@@ -9,7 +9,7 @@
 #include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
-#include <__kthreads/__korientation.h>
+#include <__kthreads/main.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
 

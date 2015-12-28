@@ -11,7 +11,7 @@
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/taskTrib/prio.h>
 	#include <kernel/common/floodplainn/region.h>
-	#include <__kthreads/__korientation.h>
+	#include <__kthreads/main.h>
 
 
 #define TASK				"Task "

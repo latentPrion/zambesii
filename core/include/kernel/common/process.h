@@ -19,7 +19,7 @@
 	#include <kernel/common/memoryTrib/memoryStream.h>
 	#include <kernel/common/timerTrib/timerStream.h>
 	#include <kernel/common/floodplainn/floodplainnStream.h>
-	#include <__kthreads/__korientation.h>
+	#include <__kthreads/main.h>
 
 #define PROCESS_ENV_MAX_NVARS		(64)
 #define PROCESS_ENV_NAME_MAXLEN		(96)

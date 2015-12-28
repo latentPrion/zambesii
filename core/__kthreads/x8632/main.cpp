@@ -9,7 +9,7 @@
 #include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
-#include <__kthreads/__korientation.h>
+#include <__kthreads/main.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
@@ -154,7 +154,7 @@ static void dumpSrat(void)
  * We then pass control to __korientationMain().
  **/
 
-extern "C" void __korientationMain(ubit32, sMultibootData *)
+extern "C" void main(ubit32, sMultibootData *)
 {
 	error_t			ret;
 	uarch_t			devMask;

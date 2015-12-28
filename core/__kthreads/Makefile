@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../__kthreads.a
-OBJFILES= __korientation.o __kcpuPowerOn.o
+OBJFILES= main.o __kcpuPowerOn.o
 
 all: Makefile $(DELIVERABLE)
 

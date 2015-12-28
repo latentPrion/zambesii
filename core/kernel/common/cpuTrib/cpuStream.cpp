@@ -3,7 +3,7 @@
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
-#include <__kthreads/__korientation.h>
+#include <__kthreads/main.h>
 #include <kernel/common/process.h>
 #include <kernel/common/thread.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>

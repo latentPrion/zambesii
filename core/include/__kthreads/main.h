@@ -33,7 +33,7 @@
 
 #define ORIENT				"Orientation: "
 
-extern "C" void __korientationMain(ubit32 mbMagic, sMultibootData *mbData);
+extern "C" void main(ubit32 mbMagic, sMultibootData *mbData);
 
 extern ubit8		__korientationPreallocatedBmpMem[][64];
 

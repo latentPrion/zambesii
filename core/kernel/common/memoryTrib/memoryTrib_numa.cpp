@@ -8,7 +8,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
-#include <__kthreads/__korientation.h>
+#include <__kthreads/main.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
 

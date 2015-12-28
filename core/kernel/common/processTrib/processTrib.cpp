@@ -14,7 +14,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 #include <kernel/common/floodplainn/floodplainn.h>
-#include <__kthreads/__korientation.h>
+#include <__kthreads/main.h>
 
 
 sPriorityClass	prioClasses[PRIOCLASS_NCLASSES];

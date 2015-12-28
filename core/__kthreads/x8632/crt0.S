@@ -66,7 +66,7 @@ ASM_LOCAL_FUNCTION(_startVirtual)
 	pushl %ebx
 	pushl %eax
 
-	call __korientationMain
+	call main
 
 	addl $0x8, %esp
 ret
