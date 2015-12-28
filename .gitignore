@@ -6,8 +6,6 @@
 iso
 bochsrc*
 *.bz2
-*.tgz
-*.tar*
 tmp
 flp
 hdd
