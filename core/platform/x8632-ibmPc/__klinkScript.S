@@ -113,18 +113,16 @@ SECTIONS
 
 	.init BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init)) {
-		__init = .;
-		*(.init_fini.prologue)
+		*(.init.prologue)
 		*(.init)
-		*(.init_fini.epilogue)
+		*(.init.epilogue)
 	} >ibmPc___kload_vaddr
 
 	.fini BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.fini)) {
-		__fini = .;
-		*(.init_fini.prologue)
+		*(.fini.prologue)
 		*(.fini)
-		*(.init_fini.epilogue)
+		*(.fini.epilogue)
 	} >ibmPc___kload_vaddr
 
 	.ctor BLOCK(PAGING_BASE_SIZE)

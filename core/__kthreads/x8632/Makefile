@@ -8,10 +8,13 @@ OBJFILES=main.o __kcpuPowerOnEntry.o \
 # linked later. We only link it at the very last linking step. Linking it now
 # will cause it to be linked twice, and therefore cause
 # multiple-symbol-definition linker errors.
-all: Makefile $(DELIVERABLE) crt0.o
+all: Makefile $(DELIVERABLE) crt1.o crt0.o crti.o crtn.o
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
+
+crt1.o: crt0.o
+	cp crt0.o crt1.o
 
 crt0.o: crt0Tmp.s
 crt0Tmp.s: crt0.S

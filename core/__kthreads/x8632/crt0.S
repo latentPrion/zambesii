@@ -51,9 +51,9 @@ ASM_LOCAL_FUNCTION(_startVirtual)
 	movw	%cx, %fs
 	movw	%cx, %gs
 	movw	%cx, %ss
-	ljmp	$0x08, $.loadAX
+	ljmp	$0x08, $.loadCs
 
-.loadAX:
+.loadCs:
 	/* This is a security trick. We push the address of an infinite loop,
 	 * and if the kernel manages to return from the orientation thread
 	 * somehow, we manipulate the return address to point to this infinite
@@ -98,18 +98,24 @@ ASM_END_FUNCTION(_startVirtual)
 	 * We just use the linker to assemble these bits of code in the right
 	 * order surrounding the .init and .fini sections of our output
 	 * executable.
-	 *
-	 * The actual symbols for __init and __fini are defined in the linker
-	 * script.
 	 **/
-ASM_SECTION(.init_fini.prologue)
+ASM_SECTION(.init.prologue)
+__init:
 	pushl	%ebp
 	movl	%esp, %ebp
-ASM_SECTION(.init)
+ASM_SECTION(.fini.prologue)
+__fini:
+	pushl	%ebp
+	movl	%esp, %ebp
 
+ASM_SECTION(.init)
 ASM_SECTION(.fini)
 
-ASM_SECTION(.init_fini.epilogue)
+ASM_SECTION(.init.epilogue)
+	movl	%ebp, %esp
+	popl	%ebp
+	ret
+ASM_SECTION(.fini.epilogue)
 	movl	%ebp, %esp
 	popl	%ebp
 	ret

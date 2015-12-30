@@ -340,7 +340,7 @@ public:
 		public:
 			DmaRequest(udi_dma_constraints_t *)
 			:
-			mapping(sGList)
+			sGList(NULL), mapping(NULL)
 			{}
 
 			error_t initialize(void) { return ERROR_SUCCESS; }
