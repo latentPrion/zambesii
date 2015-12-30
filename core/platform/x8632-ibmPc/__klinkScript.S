@@ -111,6 +111,22 @@ SECTIONS
 	__kloadVaddrCodeEnd = .;
 	__kloadVaddrRodataStart = .;
 
+	.init BLOCK(4)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init)) {
+		__init = .;
+		*(.init_fini.prologue)
+		*(.init)
+		*(.init_fini.epilogue)
+	} >ibmPc___kload_vaddr
+
+	.fini BLOCK(4)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.fini)) {
+		__fini = .;
+		*(.init_fini.prologue)
+		*(.fini)
+		*(.init_fini.epilogue)
+	} >ibmPc___kload_vaddr
+
 	.ctor BLOCK(PAGING_BASE_SIZE)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.ctor)) {
 		__kctorStart = .;
@@ -167,6 +183,5 @@ SECTIONS
 	/DISCARD/ :
 	{
 		*(.comment)
-		*(.eh_frame)
 	}
 }

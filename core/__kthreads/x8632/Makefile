@@ -1,9 +1,14 @@
 .PHONY=
 DELIVERABLE=../../__karchThreads.a
-OBJFILES= crt0.o main.o __kcpuPowerOnEntry.o \
+# We DO NOT link crt0.o in here. It is built, but not linked.
+OBJFILES=main.o __kcpuPowerOnEntry.o \
 	__kcpuPowerOnMain.o
 
-all: Makefile $(DELIVERABLE)
+# Build crt0.o, but DON'T allow it to be added to the .a archive. It will be
+# linked later. We only link it at the very last linking step. Linking it now
+# will cause it to be linked twice, and therefore cause
+# multiple-symbol-definition linker errors.
+all: Makefile $(DELIVERABLE) crt0.o
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)

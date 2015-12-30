@@ -19,6 +19,15 @@ ubit32			CpuStream::bspAcpiId = CPUID_INVALID;
 numaBankId_t		CpuStream::bspBankId = NUMABANKID_INVALID;
 sCpuFeatures		CpuStream::baseCpuFeatures;
 
+/**	NOTE:
+ * We *MUST* force the bspCpu object to go into the .data section, and it
+ * *MUSTN'T* end up in the .bss section.
+ *
+ * This is because we the bspCpu object contains the stack used by the BSP CPU.
+ * And because we memset(0) the entire .bss section AFTER the BSP has already
+ * begun using its this same stack!
+ **/
+__attribute__((section(".data")))
 // We make a global CpuStream for the bspCpu.
 #if __SCALING__ >= SCALING_CC_NUMA
 CpuStream		bspCpu(NUMABANKID_INVALID, CPUID_INVALID, 0);

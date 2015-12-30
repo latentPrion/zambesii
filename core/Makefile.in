@@ -26,8 +26,8 @@ all: $(GOAL)
 # The kernel core file produced here must be relocatable. We have to link it
 # with the Endo Kernel FS fragments later on in the kernel build process.
 $(GOAL): $(EXECOBJS)
-	$(LD) $(LDFLAGS) -e _start -i -o $(GOAL) \
-		-\( $(EXECOBJS) -\)
+	$(LD) $(LDFLAGS) -nostartfiles -e main -r -o $(GOAL) \
+		-Xlinker -\( $(EXECOBJS) -Xlinker -\)
 
 include clean.mk
 include __kstdlib/__kstdlib.mk

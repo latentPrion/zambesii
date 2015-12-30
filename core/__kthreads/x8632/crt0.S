@@ -25,7 +25,6 @@ ASM_GLOBAL_FUNCTION(_start)
 	orl $0x80000000, %ecx
 	movl %ecx, %cr0
 
-xchg %bx, %bx
 	/* Jump to the virtual offset now. */
 	movl $_startVirtual, %ecx
 	jmp *%ecx
@@ -66,9 +65,24 @@ ASM_LOCAL_FUNCTION(_startVirtual)
 	pushl %ebx
 	pushl %eax
 
-	call main
+	/* Clear .BSS. */
+	movl	$__kbssEnd, %edx
+	subl	$__kbssStart, %edx
+	pushl	%edx
+	pushl	$0
+	pushl	$__kbssStart
+	call memset
+	addl	$12, %esp
 
+	/* Call __init. */
+	call __init
+
+	/* Jump into the C++ HLL. */
+	call main
 	addl $0x8, %esp
+
+	/* Call __fini. */
+	call __fini
 ret
 
 .infiniteLoop:
@@ -77,3 +91,25 @@ ret
 	jmp .infiniteLoop
 ASM_END_FUNCTION(_startVirtual)
 
+	/**	EXPLANATION:
+	 * This is how we solve the problem with GCC not linking crti.o and
+	 * crtn.o.
+	 *
+	 * We just use the linker to assemble these bits of code in the right
+	 * order surrounding the .init and .fini sections of our output
+	 * executable.
+	 *
+	 * The actual symbols for __init and __fini are defined in the linker
+	 * script.
+	 **/
+ASM_SECTION(.init_fini.prologue)
+	pushl	%ebp
+	movl	%esp, %ebp
+ASM_SECTION(.init)
+
+ASM_SECTION(.fini)
+
+ASM_SECTION(.init_fini.epilogue)
+	movl	%ebp, %esp
+	popl	%ebp
+	ret

@@ -167,8 +167,6 @@ extern "C" void main(ubit32, sMultibootData *)
 	 **/
 	__koptimizationHacks();
 	bspCpu.initializeBaseState();
-	memset(&__kbssStart, 0, &__kbssEnd - &__kbssStart);
-	cxxrtl::callGlobalConstructors();
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread() ;
 
 	/* Initialize exceptions, then move on to __kspace level physical

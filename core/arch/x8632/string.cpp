@@ -17,6 +17,7 @@ void *memset(void *_ptr, int value, size_t count)
 	for (; count; count--) {
 		((ubit8*)_ptr)[count-1] = (ubit8)value;
 	};
+
 	return _ptr;
 }
 

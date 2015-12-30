@@ -11,7 +11,13 @@ struct sAtexitFuncTableEntry
 	void *arg, *dsoHandle;
 } atexitFuncTable[ CXXABI_ATEXIT_MAX_NFUNCS ];
 
-void * __dso_handle = 0;
+/**	EXPLANATIONL:
+ * No longer needed since we now properly use -nodefaultlibs and let the
+ * compiler do its job, by allowing it to link the startfiles (crt*.o).
+ * Apparently this symbol is contained within crtbegin.o for GCC's
+ * implementation.
+ * **/
+// void * __dso_handle = 0;
 
 extern "C" void __cxa_pure_virtual(void)
 {
