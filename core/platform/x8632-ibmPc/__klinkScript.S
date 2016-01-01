@@ -162,12 +162,14 @@ SECTIONS
 		*(.data*)
 
 		. = ALIGN(0x4);
+		*(COMMON*)
+	} >ibmPc___kload_vaddr
+
+	.bss BLOCK(0x4)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.bss)) {
 		__kbssStart = .;
 		*(.bss*)
 		__kbssEnd = .;
-
-		. = ALIGN(0x4);
-		*(COMMON*)
 	} >ibmPc___kload_vaddr
 
 	__kloadVaddrDataEnd = .;

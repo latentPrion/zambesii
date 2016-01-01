@@ -44,7 +44,7 @@ if [ $assembler != 'gnu' -a "$assembler" != 'llvm' ]; then
 fi
 
 echo 'Which toolchain provides the linker you will be using?
-	Currently supported options: gnu.'
+	Currently supported options: gnu, llvm.'
 read linker
 echo
 
@@ -110,11 +110,11 @@ if [ $hllToolchain == 'gnu' ]; then
 	if [ -z $toolchainTarget ]; then
 		hllCc='gcc'
 		hllCxx='g++'
-		hllCpp='gcc -E'
+		hllCpp='g++ -E'
 	else
 		hllCc="$toolchainTarget-gcc"
 		hllCxx="$toolchainTarget-g++"
-		hllCpp="$toolchainTarget-gcc -E"
+		hllCpp="$toolchainTarget-g++ -E"
 	fi
 fi
 
@@ -129,9 +129,9 @@ if [ $hllToolchain == 'llvm' ]; then
 #		hllCc="clang -ccc-host-triple $toolchainTarget"
 #		hllCxx="clang++ -ccc-host-triple $toolchainTarget"
 #		hllCpp="clang -ccc-host-triple $toolchainTarget -E"
-		hllCc="clang -target $toolchainTarget"
-		hllCxx="clang++ -target $toolchainTarget"
-		hllCpp="clang -target $toolchainTarget -E"
+		hllCc="clang -target $toolchainTarget -Xclang -no-implicit-float"
+		hllCxx="clang++ -target $toolchainTarget -Xclang -no-implicit-float"
+		hllCpp="clang++ -target $toolchainTarget -E"
 	fi
 
 	if [ "$arch" == "x8632" ]; then
@@ -150,14 +150,16 @@ if [ $assembler == 'llvm' ]; then
 	fi
 fi
 
-if [ $linker == 'gnu' ]; then
-	if [ -z $toolchainTarget ]; then linker='g++'; else linker="$toolchainTarget-g++"; fi
+if [ "$linker" == 'gnu' ]; then
+#	if [ -z $toolchainTarget ]; then linker='g++'; else linker="$toolchainTarget-g++"; fi
+	linker="$hllCxx";
 fi
 
-if [ $linker == 'llvm' ]; then
-	if [ -z $toolchainTarget ]; then
-		linker='llvm-ld-3.0'; else linker="llvm-ld-3.0 -ccc-host-triple $toolchainTarget";
-	fi
+if [ "$linker" == 'llvm' ]; then
+#	if [ -z $toolchainTarget ]; then
+#		linker='clang++'; else linker="clang++ -target $toolchainTarget -ccc-gcc-name i586-elf-g++";
+#	fi
+	linker="$hllCxx -ccc-gcc-name i586-elf-g++";
 fi
 
 # We pass a non-existent file as an argument to ensure that tools that read from
