@@ -2,7 +2,7 @@
 final_new_line=true
 ensure_convert_new_lines=false
 strip_trailing_spaces=true
-replace_tabs=false
+replace_tabs=true
 
 [indentation]
 indent_width=8
@@ -14,40 +14,26 @@ indent_mode=2
 
 [project]
 name=zbz
-base_path=/media/hddExtended/cygwin/osdev/zbz
+base_path=/home/kofid/projects/zbz/
 description=Zambesii kernel.
 file_patterns=
 
 [long line marker]
-long_line_behaviour=2
+long_line_behaviour=1
 long_line_column=80
 
 [files]
-current_page=4
-FILE_NAME_0=17443;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Fdevice.h;0;8
-FILE_NAME_1=12618;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2Fdevice.cpp;0;8
-FILE_NAME_2=713;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2F__kclasses%2FmemReservoir.cpp;0;8
-FILE_NAME_3=652;C;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Ffloodplainn.h;0;8
-FILE_NAME_4=5157;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2FudiServiceCalls.cpp;0;8
-FILE_NAME_5=38903;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2Ffloodplainn_zudiIndexServer_backEnd.cpp;0;8
-FILE_NAME_6=1420;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fcommonlibs%2FlibzudiIndexParser.cpp;0;8
-FILE_NAME_7=1562;C;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Finclude%2F__kclasses%2FmemReservoir.h;0;8
-FILE_NAME_8=254380;None;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fdis.tmp;0;8
-FILE_NAME_9=3095;C;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FmessageStream.h;0;8
-FILE_NAME_10=10040;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2FmessageStream.cpp;0;8
-FILE_NAME_11=117784;None;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fsym.tmp;0;8
-FILE_NAME_12=6957;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2F__kthreads%2Fx8632%2F__korientationMain.cpp;0;8
-FILE_NAME_13=14691;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2Ffloodplainn.cpp;0;8
-FILE_NAME_14=10974;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fcommonlibs%2Flibzbzcore%2FdriverPath.cpp;0;8
-FILE_NAME_15=1543;C;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Ffvfs.h;0;8
-FILE_NAME_16=1150;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fcommonlibs%2Fdrivers%2Fzramdisk.cpp;0;8
-FILE_NAME_17=390;None;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fcommonlibs%2Fdrivers%2Fzramdisk.udidprops;0;8
-FILE_NAME_18=0;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fchipset%2FibmPc%2Fudi_init_info.cpp;0;8
-FILE_NAME_19=0;C;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Finclude%2FzudiIndex.h;0;8
-FILE_NAME_20=0;C;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FzudiIndexServer.h;0;8
-FILE_NAME_21=408;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2Ffloodplainn_zudiIndexServer_frontEnd.cpp;0;8
-FILE_NAME_22=2307;C;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FprocessTrib%2FprocessTrib.h;0;8
-FILE_NAME_23=16039;C++;0;16;1;1;0;%2Fmedia%2FhddExtended%2Fcygwin%2Fosdev%2Fzbz%2Fcore%2Fkernel%2Fcommon%2FprocessTrib%2FprocessTrib.cpp;0;8
+current_page=0
+FILE_NAME_0=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Farch%2Fx8632%2FregisterContext.h;0;8
+FILE_NAME_1=580;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2F__kclasses%2FwrapAroundCounter.h;0;8
+FILE_NAME_2=6039;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fchipset%2Fzkcm%2FtimerDevice.h;0;8
+FILE_NAME_3=2520;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Farch%2Fx8632%2Fatomic.h;0;8
+FILE_NAME_4=7040;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FtimerTrib%2FtimerQueue.h;0;8
 
 [VTE]
-last_dir=/home/latentprion
+last_dir=/home/kofid
+
+[editor]
+line_wrapping=false
+line_break_column=80
+auto_continue_multiline=true

@@ -5,11 +5,11 @@ __kcxxabi.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building __kstdlib/$(ZCXXABI)/ dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd __kstdlib/$(ZCXXABI); make
+	cd __kstdlib/$(ZCXXABI); $(MAKE)
 
 __kstdlib.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building __kstdlib/ dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd __kstdlib; make
+	cd __kstdlib; $(MAKE)
 

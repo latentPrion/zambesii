@@ -4,7 +4,7 @@
 # runs through them in. If you change the order around, you'll begin to get
 # undefined symbol complaints.
 #
-# As a rule, make sure to put object files with references to external symbols
+# As a rule, $(MAKE) sure to put object files with references to external symbols
 # before object files without unresolved symbols. LD seems to run through all
 # files resolving as it goes, so if it sees an unresolved symbol too late,
 # it halts saying that the symbol cannot be resolved, even if the symbol is
@@ -53,60 +53,60 @@ archCore.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building arch core dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd arch/$(ZARCH); make
+	cd arch/$(ZARCH); $(MAKE)
 
 chipset.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building chipset/ dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd chipset; make
+	cd chipset; $(MAKE)
 
 chipsetCore.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building chipset core dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd chipset/$(ZCHIPSET); make
+	cd chipset/$(ZCHIPSET); $(MAKE)
 
 firmwareCore.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building firmware core dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd firmware/$(ZFIRMWARE); make
+	cd firmware/$(ZFIRMWARE); $(MAKE)
 
 platformCore.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building platform core dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd platform/$(ZARCH)-$(ZCHIPSET); make
+	cd platform/$(ZARCH)-$(ZCHIPSET); $(MAKE)
 
 __kthreads.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building __kthreads/ dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd __kthreads; make
+	cd __kthreads; $(MAKE)
 
 __karchThreads.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building arch __kthreads dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd __kthreads/$(ZARCH); make
+	cd __kthreads/$(ZARCH); $(MAKE)
 
 kernel.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building kernel/common/ dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd kernel/common; make
+	cd kernel/common; $(MAKE)
 
 archKernel.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building arch kernel dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd kernel/$(ZARCH); make
+	cd kernel/$(ZARCH); $(MAKE)
 
 __kclasses.a:
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	@echo Building __kclasses/ dir.
 	@echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	cd __kclasses; make
+	cd __kclasses; $(MAKE)
 
 

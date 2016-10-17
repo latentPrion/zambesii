@@ -2,7 +2,7 @@
 
 include Makefile.vars
 #
-# Zambesii Kernel top-level makefile.
+# Zambesii Kernel top-level $(MAKE)file.
 #
 iso9660: zambesii.iso
 	cp -f zambesii.zxe iso/zambesii
@@ -33,48 +33,48 @@ core.o:
 	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 	@echo Building core/
 	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-	cd core; make
+	cd core; $(MAKE)
 
 programs.ekf:
 #	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #	@echo Building programs/
 #	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-#	cd programs; make
+#	cd programs; $(MAKE)
 
 libraries.ekf:
 #	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #	@echo Building libraries/
 #	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-#	cd libraries; make
+#	cd libraries; $(MAKE)
 
 resources.ekf:
 #	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #	@echo Building resources/
 #	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-#	cd resources; make
+#	cd resources; $(MAKE)
 
 drivers.ekf:
 #	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #	@echo Building drivers/
 #	@echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-#	cd drivers; make
+#	cd drivers; $(MAKE)
 
 # Top level clean target
 clean: fonyphile
 	rm -f *.o *.ekf *.zxe *.iso *.img
-	cd core; make clean
-#	cd programs; make clean
-#	cd libraries; make clean
-#	cd resources; make clean
-#	cd drivers; make clean
+	cd core; $(MAKE) clean
+#	cd programs; $(MAKE) clean
+#	cd libraries; $(MAKE) clean
+#	cd resources; $(MAKE) clean
+#	cd drivers; $(MAKE) clean
 
 aclean: fonyphile
 	rm -f *.o *.ekf *.zxe *.iso *.fat
-	cd core; make aclean
-#	cd programs; make aclean
-#	cd libraries; make aclean
-#	cd resources; make aclean
-#	cd drivers; make aclean
+	cd core; $(MAKE) aclean
+#	cd programs; $(MAKE) aclean
+#	cd libraries; $(MAKE) aclean
+#	cd resources; $(MAKE) aclean
+#	cd drivers; $(MAKE) aclean
 
 fonyphile:
 	rm -f clean aclean
