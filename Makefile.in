@@ -6,7 +6,7 @@ include Makefile.vars
 #
 iso9660: zambesii.iso
 	cp -f zambesii.zxe iso/zambesii
-	genisoimage -R -b boot/grub/stage2_eltorito -no-emul-boot \
+	$(ISOPROG) -R -b boot/grub/stage2_eltorito -no-emul-boot \
 	-boot-load-size 4 -boot-info-table -V zambesii -o zambesii.iso iso
 
 # For my personal use. (~lp).
