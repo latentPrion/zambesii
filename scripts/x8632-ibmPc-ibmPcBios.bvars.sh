@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Set your cross toolchain here if you want. Also, change the chipset and
 #firmware if building for a different chipset and firmware.

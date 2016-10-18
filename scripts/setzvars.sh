@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export \
 	CPP=$ZCPP CC=$ZCC CXX=$ZCXX AS=$ZAS LD=$ZLD AR=$ZAR \

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export \
 	CPP=$LCPP CC=$LCC CXX=$LCXX AS=$LAS LD=$LLD AR=$LAR \
