@@ -701,7 +701,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	 *
 	 *	* For each new device, we add it to the device tree.
 	 *	* For each already-known device, we modify its attributes based
-	 * 	  on the information newly reported by the target device.
+	 *		on the information newly reported by the target device.
 	 **/
 
 	switch (response->info.params.enumerate.enumeration_result)
@@ -736,7 +736,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	case UDI_ENUMERATE_DONE: break;
 	case UDI_ENUMERATE_REMOVED: break;
 	case UDI_ENUMERATE_REMOVED_SELF:
-		/** TODO:
+		/**	TODO:
 		 * Will need to do some analysis and design to determine how to
 		 * handle this event.
 		 **/
@@ -892,7 +892,7 @@ void zumServer::postManagementCb::postManagementCbReq1(
 		// This is more complicated.
 		break;
 	case UDI_ENUMERATE_REMOVED_SELF:
-		/** TODO:
+		/**	TODO:
 		 * Will need to do some analysis and design to determine how to
 		 * handle this event.
 		 **/

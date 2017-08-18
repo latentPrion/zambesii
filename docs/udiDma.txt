@@ -26,3 +26,23 @@ Can be mapped to a DMA Descriptor, and subsequently unmapped.
 
 		PMM changes:
 The PMM changes are mostly going to be about alignment constraints.
+
+XgF's explanation:
+Day changed to 25 Oct 2016
+05:35 < XgF> latentprion: As I remember, you ask for a scatter/gather list,
+		give that to the device (probably manipulating it into the
+		device's DMA list format), and then you issue a request to
+		complete the DMA (which will do any necessary cache maintainance)?
+05:38 < XgF> latentprion: yeah, you udi_dma_buf_map to map the buffer for DMA
+		acess, specifying a direction (which causes any appropriate cache
+		maintainance ops to happen), then when you unmap any additional
+		maintainance operations are performed
+05:42 < XgF> For writes, you specify UDI_DMA_OUT when mapping; for reads, you
+		specify UDI_DMA_IN (for read/write, you specify both)
+05:56 < XgF> The whole process is udi_dma_prepare (allocate DMA handle, specify
+		your device's capabilities) -> [loop: udi_dma_buf_map -> device
+		does dma -> udi_dma_buf_unmap] -> udi_dma_free
+05:57 < XgF> For a "control structure" (i.e. memory which is mapped directly,
+		concurrently accessible by both, and not associated with a buffer)
+		you do udi_dma_mem_alloc -> [loop: you/device writes,
+		udi_dma_sync] -> udi_dma_free/udi_dma_mem_to_buf

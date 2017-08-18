@@ -284,9 +284,9 @@ public:
 		sZumMsg(
 			processId_t targetPid,
 			ubit16 subsystem, ubit16 function,
-	 		uarch_t size, uarch_t flags, void *privateData)
-	 	:
-	 	header(
+			uarch_t size, uarch_t flags, void *privateData)
+		:
+		header(
 			targetPid, subsystem, function,
 			size, flags, privateData),
 		info(NULL, 0)

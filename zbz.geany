@@ -2,7 +2,7 @@
 final_new_line=true
 ensure_convert_new_lines=false
 strip_trailing_spaces=true
-replace_tabs=true
+replace_tabs=false
 
 [indentation]
 indent_width=8
@@ -23,17 +23,59 @@ long_line_behaviour=1
 long_line_column=80
 
 [files]
-current_page=0
-FILE_NAME_0=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Farch%2Fx8632%2FregisterContext.h;0;8
-FILE_NAME_1=580;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2F__kclasses%2FwrapAroundCounter.h;0;8
-FILE_NAME_2=6039;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fchipset%2Fzkcm%2FtimerDevice.h;0;8
-FILE_NAME_3=2520;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Farch%2Fx8632%2Fatomic.h;0;8
-FILE_NAME_4=7040;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FtimerTrib%2FtimerQueue.h;0;8
+current_page=37
+FILE_NAME_0=586;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Farch%2Fx8632%2FregisterContext.h;0;8
+FILE_NAME_1=206;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2F__kclasses%2FwrapAroundCounter.h;0;8
+FILE_NAME_2=6655;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fchipset%2Fzkcm%2FtimerDevice.h;0;8
+FILE_NAME_3=1103;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Farch%2Fx8632%2Fatomic.h;0;8
+FILE_NAME_4=5344;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FtimerTrib%2FtimerQueue.h;0;8
+FILE_NAME_5=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FmemoryTrib%2FallocFlags.h;0;8
+FILE_NAME_6=696;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FmemoryTrib%2FmemoryTrib.h;0;8
+FILE_NAME_7=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FmemoryTrib%2FpmmBridge.h;0;8
+FILE_NAME_8=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2FmemoryTrib%2FrawMemAlloc.h;0;8
+FILE_NAME_9=1694;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2F__kthreads%2Fx8632%2F__kcpuPowerOnMain.cpp;0;8
+FILE_NAME_10=12233;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2F__kthreads%2Fx8632%2Fmain.cpp;0;8
+FILE_NAME_11=8499;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2Ffloodplainn.cpp;0;8
+FILE_NAME_12=399;None;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fcommonlibs%2Fdrivers%2Fzrootdev.udidprops;0;8
+FILE_NAME_13=234;None;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fcommonlibs%2Fmetalanguages%2Fzbz_root.udimprops;0;8
+FILE_NAME_14=263;None;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fcommonlibs%2Fmetalanguages%2Fzbz_chipset.udimprops;0;8
+FILE_NAME_15=472;None;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fchipset%2FibmPc%2Fibm_pc.udidprops;0;8
+FILE_NAME_16=2929;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Ffloodplainn.h;0;8
+FILE_NAME_17=9281;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Fzum.h;0;8
+FILE_NAME_18=741;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fcommonlibs%2Fdrivers%2Fzrootdev.cpp;0;8
+FILE_NAME_19=9351;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2FzumFrontEnd.cpp;0;8
+FILE_NAME_20=18588;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2FzumBackEnd.cpp;0;8
+FILE_NAME_21=13549;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Fchannel.h;0;8
+FILE_NAME_22=18935;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Fdevice.h;0;8
+FILE_NAME_23=0;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Fregion.h;0;8
+FILE_NAME_24=36860;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fudiref%2Fdriver%2Fshrkudi%2Fshrk.h;0;8
+FILE_NAME_25=151837;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fudiref%2Fdriver%2Fshrkudi%2Fshrkudi.c;0;8
+FILE_NAME_26=2024;None;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fdocs%2FudiDma.txt;0;8
+FILE_NAME_27=2827;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Farch%2Fx8632%2Fpaddr_t.h;0;8
+FILE_NAME_28=370;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2F__kclasses%2FresizeableArray.h;0;8
+FILE_NAME_29=609;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2F__kstdlib%2F__ktypes.h;0;8
+FILE_NAME_30=10177;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fkernel%2Fcommon%2FmemoryTrib%2FmemoryTrib_numa.cpp;0;8
+FILE_NAME_31=3281;C;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2F__kclasses%2FmemBmp.h;0;8
+FILE_NAME_32=7526;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2F__kclasses%2FmemBmp.cpp;0;8
+FILE_NAME_33=725;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2F__kstdlib%2F__kerror.h;0;8
+FILE_NAME_34=0;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Farch%2Fx8632%2Farch.h;0;8
+FILE_NAME_35=4866;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Fkernel%2Fcommon%2Ffloodplainn%2Fudi_dma.cpp;0;8
+FILE_NAME_36=3519;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2F__kclasses%2Flist.h;0;8
+FILE_NAME_37=8683;C++;0;EUTF-8;1;1;0;%2Fhome%2Fkofid%2Fprojects%2Fzbz%2Fcore%2Finclude%2Fkernel%2Fcommon%2Ffloodplainn%2Fzudi.h;0;8
 
 [VTE]
-last_dir=/home/kofid
+last_dir=/home/kofid/projects/zbz
 
 [editor]
 line_wrapping=false
 line_break_column=80
 auto_continue_multiline=true
+
+[build-menu]
+C++FT_00_LB=_Compile
+C++FT_00_CM=g++ -Wall -c "%f"
+C++FT_00_WD=
+C++FT_01_LB=_Build
+C++FT_01_CM=g++ -Wall -o "%e" "%f"
+C++FT_01_WD=
+filetypes=C++;

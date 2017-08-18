@@ -27,6 +27,7 @@ namespace fplainn
 
 struct sDriverInitEntry;
 struct sMetaInitEntry;
+class MemoryBmp;
 
 class fplainn::Zudi
 {
@@ -146,9 +147,10 @@ public:
 
 			error_t initialize()
 			{
-				//error_t		ret;
+				error_t		ret;
 
-				return ERROR_SUCCESS;
+				ret = pageArray.initialize();
+				return ret;
 			}
 
 			~MappedScatterGatherList(void) {}
@@ -175,7 +177,9 @@ public:
 			void compact(void);
 
 		protected:
-			ScatterGatherList	*parent;
+			ResizeableArray<void *>	pageArray;
+			ScatterGatherList       *parent;
+			void			*vaddr;
 		};
 
 		/**	EXPLANATION:
@@ -191,19 +195,22 @@ public:
 		class ScatterGatherList
 		{
 		public:
-			enum eAddressSize { ADDR_SIZE_32, ADDR_SIZE_64 };
+			enum eAddressSize {
+				ADDR_SIZE_UNKNOWN, ADDR_SIZE_32, ADDR_SIZE_64
+			};
 
-			ScatterGatherList(eAddressSize asize)
+			ScatterGatherList(void)
 			:
-			addressSize(asize)
+			addressSize(ADDR_SIZE_UNKNOWN)
 			{
 				memset(&udiScgthList, 0, sizeof(udiScgthList));
 			}
 
-			error_t initialize(void)
+			error_t initialize(eAddressSize addrSize)
 			{
 				error_t		ret;
 
+				addressSize = addrSize;
 				ret = elements32.initialize();
 				if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -225,6 +232,10 @@ public:
 				 * can add the new frames to an existing
 				 * element.
 				 **/
+				if (addressSize == ADDR_SIZE_UNKNOWN) {
+					return ERROR_UNINITIALIZED;
+				};
+
 				if (addressSize == ADDR_SIZE_32)
 				{
 					ret = addFrames(
@@ -278,26 +289,31 @@ public:
 		};
 
 		/**	EXPLANATION:
-		 * This class represents a driver's request to perform a DMA
-		 * transaction. It carries directs the entire operation, from
-		 * allocating the DMA SGList, to copying data to and from DMA
-		 * memory, and so on.
-		 *
-		 * This is what Zambesii's udi_dma_constraints_t handle points
-		 * to.
-		 **/
+		 * This class represents Zambesii's UDI DMA constraints feature.
+		 */
 		class DmaConstraints
 		{
 		public:
+			friend class MemoryBmp;
+
 			typedef ResizeableArray<udi_dma_constraints_attr_spec_t>
 				AttrArray;
 
-			DmaConstraints(void) {}
-			error_t initialize(void)
+			DmaConstraints(void)
+			:
+			compiler(this)
+			{}
+
+			error_t initialize(
+				udi_dma_constraints_attr_spec_t *_attrs,
+				uarch_t nAttrs)
 			{
 				error_t		ret;
 
 				ret = attrs.initialize();
+				if (ret != ERROR_SUCCESS) { return ret; };
+
+				ret = addOrModifyAttrs(_attrs, nAttrs);
 				return ret;
 			}
 
@@ -308,17 +324,24 @@ public:
 
 			sbit8 attrAlreadySet(udi_dma_constraints_attr_t a)
 			{
+				attrs.lock();
+
 				for (
 					AttrArray::Iterator it=attrs.begin();
 					it != attrs.end();
 					++it)
 				{
-					udi_dma_constraints_attr_spec_t	*s =
+					udi_dma_constraints_attr_spec_t *s =
 						&(*it);
 
-					if (s->attr_type == a) { return 1; };
+					if (s->attr_type == a)
+					{
+						attrs.unlock();
+						return 1;
+					};
 				};
 
+				attrs.unlock();
 				return 0;
 			}
 
@@ -330,25 +353,82 @@ public:
 				udi_dma_constraints_attr_spec_t *attrs,
 				uarch_t nAttrs);
 
+			udi_dma_constraints_attr_spec_t *getAttr(
+				udi_dma_constraints_attr_t attr);
+
 		public:
-			static utf8Char		*attrTypeNames[32];
+			#define N_ATTR_TYPE_NAMES	(32)
+			static utf8Char		*attrTypeNames[N_ATTR_TYPE_NAMES];
 			AttrArray		attrs;
+
+			class Compiler
+			{
+			public:
+				Compiler(DmaConstraints *_parent)
+				:
+				parent(_parent)
+				{
+					memset(this, 0, sizeof(*this));
+				}
+
+				error_t compile(void);
+
+			private:
+				DmaConstraints	*parent;
+				uint8_t		addressableBits, fixedBits;
+				paddr_t		startPfn, beyondEndPfn,
+						pfnSkipStride,
+						minElementGranularityNFrames,
+						maxNContiguousFrames,
+						slopInBits, slopOutBits,
+						slopOutExtra, slopBarrierBits;
+			}
+			compiler;
 		};
 
+		/**	EXPLANATION:
+		 * This class represents a driver's request to perform a DMA
+		 * transaction. It directs the entire operation, from
+		 * allocating the DMA SGList, to copying data to and from DMA
+		 * memory, and so on.
+		 *
+		 * This is what Zambesii's udi_dma_handle_t handle points
+		 * to.
+		 *
+		 * An instance of this class is created each time a user calls
+		 * udi_dma_prepare(). There can be multiple instances of this
+		 * class which all refer to the same udi_dma_constraints_t
+		 * userspace-object.
+		 *
+		 * Essentially, each DmaRequest instance represents a DMA
+		 * transaction, and multiple DMA transactions can have the same
+		 * behavioural constraints.
+		 *
+		 * This implies that we will have to decide on some kind of
+		 * arbitrary limit on the number of DmaRequests each process or
+		 * driver may have.
+		 **/
 		class DmaRequest
 		{
 		public:
-			DmaRequest(udi_dma_constraints_t *)
+			DmaRequest(void)
 			:
-			sGList(NULL), mapping(NULL)
+			mapping(NULL)
 			{}
 
-			error_t initialize(void) { return ERROR_SUCCESS; }
+			error_t initialize(
+				udi_dma_constraints_attr_spec_t *conspec,
+				uarch_t nSpecItems)
+			{
+				return constraints.initialize(
+					conspec, nSpecItems);
+			}
+
 			~DmaRequest(void);
 
 		protected:
 			DmaConstraints			constraints;
-			ScatterGatherList		*sGList;
+			ScatterGatherList		sGList;
 			MappedScatterGatherList		mapping;
 		};
 	};
@@ -406,23 +486,23 @@ extern const sMetaInitEntry	metaInitInfo[];
 /**	Template definitions:
  ******************************************************************************/
 
-inline int operator ==(paddr_t p, udi_scgth_element_32_t *s)
+inline int operator ==(paddr_t p, udi_scgth_element_32_t s)
 {
-	return (p == s->block_busaddr);
+	return (p == s.block_busaddr);
 }
 
-inline int operator ==(paddr_t p, udi_scgth_element_64_t *s)
+inline int operator ==(paddr_t p, udi_scgth_element_64_t s)
 {
 #if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
 	struct s64BitInt
 	{
 		ubit32		low, high;
-	} *e = (s64BitInt *)&s->block_busaddr;
+	} *e = (s64BitInt *)&s.block_busaddr;
 
 	if (e->high != 0) { return 0; };
 	return p == e->low;
 #else
-	paddr_t		*p2 = (paddr_t *)&s->block_busaddr;
+	paddr_t		*p2 = (paddr_t *)&s.block_busaddr;
 
 	return p == *p2;
 #endif
@@ -510,25 +590,32 @@ error_t fplainn::Zudi::dma::ScatterGatherList::addFrames(
 	 *
 	 * Returns negative integer value on error.
 	 **/
+	list->lock();
+
 	for (
 		typename ResizeableArray<scgth_elements_type>::Iterator it=
 			list->begin();
 		it != list->end();
 		++it)
 	{
+		// The dereference is unary operator* on class Iterator.
 		scgth_elements_type		*tmp=&*it;
 
 		// Can the new paddr be prepended to this element?
-		if (::operator==(p + PAGING_PAGES_TO_BYTES(nFrames), tmp))
+		if (::operator==(p + PAGING_PAGES_TO_BYTES(nFrames), *tmp))
 		{
 			assign_paddr_to_scgth_block_busaddr(tmp, p);
 			tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
+
+			list->unlock();
 			return ERROR_SUCCESS;
 		}
 		// Can the new paddr be appended to this element?
-		else if (::operator==(p - tmp->block_length, tmp))
+		else if (::operator==(p - tmp->block_length, *tmp))
 		{
 			tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
+
+			list->unlock();
 			return ERROR_SUCCESS;
 		};
 	};
@@ -541,6 +628,9 @@ error_t fplainn::Zudi::dma::ScatterGatherList::addFrames(
 	// Resize the list to hold the new SGList element.
 	prevNIndexes = list->getNIndexes();
 	ret = list->resizeToHoldIndex(prevNIndexes);
+
+	list->unlock();
+
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// Initialize the new element's values.

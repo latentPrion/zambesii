@@ -18,7 +18,7 @@ class ResizeableArray
 public:
 	ResizeableArray(void) {}
 
-	error_t	initialize(void) { return ERROR_SUCCESS; }
+	error_t initialize(void) { return ERROR_SUCCESS; }
 
 	~ResizeableArray(void)
 	{
@@ -30,12 +30,17 @@ public:
 	void lock(void) { s.lock.acquire(); }
 	void unlock(void) { s.lock.release(); }
 
+	uarch_t unlocked_getNIndexes(void)
+	{
+		return s.rsrc.nIndexes;
+	}
+
 	uarch_t getNIndexes(void)
 	{
 		uarch_t		ret;
 
 		lock();
-		ret = s.rsrc.nIndexes;
+		ret = unlocked_getNIndexes();
 		unlock();
 		return ret;
 	}

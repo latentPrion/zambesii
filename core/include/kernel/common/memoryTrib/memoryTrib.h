@@ -61,6 +61,10 @@ public:
 	error_t contiguousGetFrames(
 		uarch_t nFrames, paddr_t *ret, ubit32 flags=0);
 
+	status_t constrainedGetFrames(
+		void *constraints, uarch_t nFrames, paddr_t *retlist,
+		ubit32 flags=0);
+
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
 
 	void mapRangeUsed(paddr_t baseAddr, uarch_t nFrames);

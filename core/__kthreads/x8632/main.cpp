@@ -140,9 +140,9 @@ static void dumpSrat(void)
  *	2. Initializing CPU exceptions.
  *	3. Initializing the kernel's process control block.
  *	4. Initializing the Memory Manager.
- *	   a. Setup the __kspace memory bank (boot PMM).
- *	   b. Setup the kernel process' Memory Stream (VMM).
- *	   c. Setup the kernel heap.
+ *		a. Setup the __kspace memory bank (boot PMM).
+ *		b. Setup the kernel process' Memory Stream (VMM).
+ *		c. Setup the kernel heap.
  *	5. Setting up the kernel's debug log (we actually do this out of order,
  *	   before the heap because debug output is really valuable).
  *	6. Initializing the scheduler on the BSP CPU.
@@ -296,7 +296,7 @@ void __korientationMain1(void)
 
 	/* Start the chipset up.
 	 **/
-// 	DO_OR_DIE(floodplainn, enumerateBaseDevices(), ret);
+//	DO_OR_DIE(floodplainn, enumerateBaseDevices(), ret);
 	floodplainn.zui.newDeviceInd(
 		CC"by-id", fplainn::Zui::INDEX_KERNEL,
 		new __kCallback(&__korientationMain2));
@@ -310,6 +310,7 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 	fplainn::Zui::sIndexMsg		*msg;
 
 	(void)self;
+	(void)ret;
 	msg = (fplainn::Zui::sIndexMsg *)msgIt;
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
@@ -339,11 +340,13 @@ struct sMovableMemObject
 	fplainn::sMovableMemory		hdr;
 	T				a[N];
 };
+
 void __korientationMain3(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
 	error_t				ret;
 
+	(void)self;
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	fplainn::Device			*dev;
@@ -365,11 +368,11 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 		} tr_params;
 	} cb;
 
-extern udi_mei_init_t			udi_gio_meta_info;
-fplainn::MetaInit			mParser(&udi_gio_meta_info);
-udi_layout_t				tmpLay[] =
-	{ UDI_DL_UBIT32_T, UDI_DL_UBIT32_T, UDI_DL_END };
-//	{ UDI_DL_END };
+	extern udi_mei_init_t			udi_gio_meta_info;
+	fplainn::MetaInit			mParser(&udi_gio_meta_info);
+	udi_layout_t				tmpLay[] =
+		{ UDI_DL_UBIT32_T, UDI_DL_UBIT32_T, UDI_DL_END };
+//		{ UDI_DL_END };
 
 	udi_layout_t		*l[3] = {
 		mParser.getOpTemplate(1, 3)->visible_layout,
@@ -391,8 +394,10 @@ udi_layout_t				tmpLay[] =
 		UDI_GIO_PROVIDER_OPS_NUM, 3, NULL,
 		0xFF, 0xCaFEBaBE);*/
 
-	struct sGecb {
-		sGecb(void) {
+	struct sGecb
+	{
+		sGecb(void)
+		{
 			memset(&cb, 0, sizeof(cb));
 		}
 
@@ -477,7 +482,7 @@ printf(NOTICE"here, finished enum req.\n");
 
 	ecb->attr_valid_length = 0;
 	ecb->attr_list = NULL;
-printf(NOTICE ORIENT"About to call devmgmt.\n");
+printf(NOTICE ORIENT"About to call enumerateChildren.\n");
 	floodplainn.zum.enumerateChildrenReq(
 		CC"by-id", ecb, 0,
 		new __kCallback(&__kecrCb));
@@ -496,7 +501,7 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 __kdebug.refresh();
 
 	fplainn::Zudi::dma::DmaConstraints			c;
-	udi_dma_constraints_attr_spec_t	a[4] =
+	udi_dma_constraints_attr_spec_t a[4] =
 	{
 		{ UDI_DMA_ADDRESSABLE_BITS, 16 },
 		{ UDI_DMA_NO_PARTIAL, 1 },
@@ -504,7 +509,7 @@ __kdebug.refresh();
 		{ UDI_DMA_SEQUENTIAL, 1 }
 	};
 
-	c.initialize();
+	c.initialize(a, 4);
 
 	c.addOrModifyAttrs(a, 3);
 	a[1].attr_value = 5;

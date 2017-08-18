@@ -34,6 +34,7 @@ inline uarch_t MEMBMP_BIT(uarch_t _pfn, uarch_t _basePfn, T _bmp)
 /*#define MEMBMP_BIT(__pfn,__basePfn,__bmp)			\
 	(MEMBMP_OFFSET((__pfn),(__basePfn)) % __KBIT_NBITS_IN((__bmp))) */
 
+
 class NumaMemoryBank;
 
 class MemoryBmp
@@ -55,6 +56,14 @@ public:
 	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 	void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
+	/* Searches the bitmap for frames that match the compiled constraints
+	 * specified in "compiledConstraints".
+	 */
+	status_t constrainedGetFrames(
+		void *compiledConstraints,
+		uarch_t nFrames, paddr_t *retlist,
+		ubit32 flags=0);
+
 
 	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
 	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);

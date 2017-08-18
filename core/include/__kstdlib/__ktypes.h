@@ -10,8 +10,9 @@
 	#include <__kstdlib/__kcxxCast.h>
 
 // "CC" below stands for "kernel char cast".
-#define CC				(utf8Char *)
-#define FOREVER				(1)
+#define CC			(utf8Char *)
+#define FOREVER			(1)
+#define DECLARATION
 
 #ifndef __ASM__
 

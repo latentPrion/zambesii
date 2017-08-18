@@ -8,6 +8,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/floodplainn/zudi.h>
 #include <__kthreads/main.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
@@ -362,3 +363,11 @@ void MemoryTrib::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 #endif
 }
 
+status_t MemoryTrib::constrainedGetFrames(
+	void *_constraints, uarch_t nFrames, paddr_t *retlist, ubit32 flags
+	)
+{
+	fplainn::Zudi::dma::DmaConstraints      *con =
+		static_cast<fplainn::Zudi::dma::DmaConstraints *>(_constraints);
+	(void)con;
+}

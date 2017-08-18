@@ -12,6 +12,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/floodplainn/zudi.h>
 
 #define MEMBMP_FULL_SLOT		(~((uarch_t)0))
 #define MEMBMP_ALLOC_UNSUCCESSFUL	(~((uarch_t)0))
@@ -215,7 +216,7 @@ error_t MemoryBmp::contiguousGetFrames(uarch_t _nFrames, paddr_t *paddr)
 	 * irrelevant bits.
 	 **/
 	uarch_t		nFound=0, startPfn=MEMBMP_ALLOC_UNSUCCESSFUL, _endPfn;
-	uarch_t	bitLimit=__KBIT_NBITS_IN(*bmp.rsrc.bmp);
+	uarch_t		bitLimit=__KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 	if (_nFrames == 0) { return ERROR_INVALID_ARG_VAL; };
 	if (paddr == NULL) { return ERROR_INVALID_ARG; };
@@ -316,7 +317,7 @@ status_t MemoryBmp::fragmentedGetFrames(uarch_t _nFrames, paddr_t *paddr)
 	 *
 	 * Remember to reset bitlimit to 0 when restarting.
 	 **/
-	uarch_t 	nFound = 0, _endPfn, startPfn;
+	uarch_t		nFound = 0, _endPfn, startPfn;
 	uarch_t		bitLimit=__KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 	if (_nFrames == 0) { return ERROR_INVALID_ARG_VAL; };
@@ -474,3 +475,13 @@ void MemoryBmp::mapMemUnused(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 	bmp.lock.release();
 }
 
+status_t MemoryBmp::constrainedGetFrames(
+	void *constraints,
+	uarch_t nFrames, paddr_t *retlist, ubit32 flags
+	)
+{
+	fplainn::Zudi::dma::DmaConstraints::Compiler *compiler;
+	(void)compiler;
+
+	return ERROR_SUCCESS;
+}

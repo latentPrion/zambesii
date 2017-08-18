@@ -289,7 +289,7 @@ namespace fplainn
 	};
 
 	/**	classes	IncompleteChannel,
-	 * 		IncompleteD2DChannel, IncompleteD2SChannel
+	 *		IncompleteD2DChannel, IncompleteD2SChannel
 	 *
 	 * These are used only as placeholder classes. When two matching spawn
 	 * calls have been received, then "turn" these into normal channels.
