@@ -1,0 +1,18 @@
+#ifndef __MUTEX_H
+        #define __MUTEX_H
+
+namespace std
+{
+        class spinlock;
+        class recursive_spinlock;
+
+        template <class lock> class lock_guard;
+        template <class lock> class unique_lock;
+
+        template <class lock>
+        void swap(unique_lock<lock> &x, unique_lock<lock> &y) throw();
+
+        void lock(void);
+}
+
+#endif

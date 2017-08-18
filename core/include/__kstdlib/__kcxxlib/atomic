@@ -1,0 +1,125 @@
+#ifndef __ATOMIC
+        #define __ATOMIC
+
+        #include <stdint.h>
+
+enum memory_order
+{
+        memory_order_relaxed,
+        memory_order_consume,
+        memory_order_acquire,
+        memory_order_release,
+        memory_order_acq_rel,
+        memory_order_seq_cst
+};
+
+template <class T>
+T kill_dependency(T y) throw();
+
+template <class T>
+class atomic
+{
+        sbit8 is_lock_free(void) const volatile throw();
+        sbit8 is_lock_free(void) const throw();
+
+        void store(T val, memory_order o) volatile throw();
+        void store(T val, memory_order o) throw();
+
+        T load(memory_order o) const volatile throw();
+        T load(memory_order o) const throw();
+
+        T exchange(T val, memory_order o) volatile throw();
+        T exchange(T val, memory_order o) throw();
+
+        T fetch_add(T ) volatile throw();
+        T fetch_add() throw();
+
+        T fetch_sub() volatile throw();
+        T fetch_sub() throw();
+
+        T fetch_and() volatile throw();
+        T fetch_and() throw();
+
+        T fetch_or() volatile throw();
+        T fetch_or() throw();
+
+        T fetch_xor() volatile throw();
+        T fetch_xor() throw();
+
+        operator T(void) const volatile throw();
+        operator T(void) const throw();
+
+        atomic(void) throw();
+        atomic(T initval) throw();
+        atomic &operator =(const atomic) volatile throw();
+        T operator =(T val) volatile throw();
+        T operator =(T val) throw();
+};
+
+/* We are only interested in defining atomics for integral types. */
+typedef atomic<int_least8_t> atomic_int_least8_t;
+typedef atomic<uint_least8_t> atomic_uint_least8_t;
+typedef atomic<int_least16_t> atomic_int_least16_t;
+typedef atomic<uint_least16_t> atomic_uint_least16_t;
+typedef atomic<int_least32_t> atomic_int_least32_t;
+typedef atomic<uint_least32_t> atomic_uint_least32_t;
+typedef atomic<int_least64_t> atomic_int_least64_t;
+typedef atomic<uint_least64_t> atomic_uint_least64_t;
+typedef atomic<int_fast8_t> atomic_int_fast8_t;
+typedef atomic<uint_fast8_t> atomic_uint_fast8_t;
+typedef atomic<int_fast16_t> atomic_int_fast16_t;
+typedef atomic<uint_fast16_t> atomic_uint_fast16_t;
+typedef atomic<int_fast32_t> atomic_int_fast32_t;
+typedef atomic<uint_fast32_t> atomic_uint_fast32_t;
+typedef atomic<int_fast64_t> atomic_int_fast64_t;
+typedef atomic<uint_fast64_t> atomic_uint_fast64_t;
+typedef atomic<intptr_t> atomic_intptr_t;
+typedef atomic<uintptr_t> atomic_uintptr_t;
+typedef atomic<size_t> atomic_size_t;
+typedef atomic<ptrdiff_t> atomic_ptrdiff_t;
+typedef atomic<intmax_t> atomic_intmax_t;
+typedef atomic<uintmax_t> atomic_uintmax_t;
+
+// templated operations on atomic types (declared, but not defined)
+template <class T>
+T atomic_fetch_add(volatile atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_add(atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_add_explicit(volatile atomic<T>*, T, memory_order) throw();
+template <class T>
+T atomic_fetch_add_explicit(atomic<T>*, T, memory_order) throw();
+template <class T>
+T atomic_fetch_sub(volatile atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_sub(atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_sub_explicit(volatile atomic<T>*, T, memory_order) throw();
+template <class T>
+T atomic_fetch_sub_explicit(atomic<T>*, T, memory_order) throw();
+template <class T>
+T atomic_fetch_and(volatile atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_and(atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_and_explicit(volatile atomic<T>*, T, memory_order) throw();
+template <class T>
+T atomic_fetch_and_explicit(atomic<T>*, T, memory_order) throw();
+template <class T>
+T atomic_fetch_or(volatile atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_or(atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_or_explicit(volatile atomic<T>*, T, memory_order) throw();
+template <class T>
+T atomic_fetch_or_explicit(atomic<T>*, T, memory_order) throw();
+template <class T>
+T atomic_fetch_xor(volatile atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_xor(atomic<T>*, T) throw();
+template <class T>
+T atomic_fetch_xor_explicit(volatile atomic<T>*, T, memory_order) throw();
+template <class T>
+T atomic_fetch_xor_explicit(atomic<T>*, T, memory_order) throw();
+
+#endif
