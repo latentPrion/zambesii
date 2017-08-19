@@ -138,107 +138,58 @@ void DebugPipe::refresh(void)
 }
 
 // Expects the lock to already be held.
-void unsignedToStr(uarch_t num, uarch_t *curLen, utf8Char *buff)
+sarch_t sprintnum(
+	utf8Char *buff, uarch_t buffsize, uarch_t num, const ubit8 base,
+	sbit8 isSigned, sbit8 doUpperCase
+	)
 {
-	utf8Char	b[28];
-	uarch_t		blen=0;
+	const int	TMPBUFF_SIZE=28;
+	utf8Char	b[TMPBUFF_SIZE];
+	uarch_t		nDigitsPrinted=0, buffCursor=0;
+	char		hexBaseChar = 'a';
 
-	for (; num / 10 ; blen++)
+	if (base != 10 && base != 16) {
+		return -1;
+	};
+
+	if (num == 0)
 	{
-		b[blen] = (num % 10) + '0';
-		num /= 10;
+		buff[buffCursor++] = '0';
+		return buffCursor;
 	};
-	b[blen] = (num % 10) + '0';
-	blen++;
 
-	for (; blen; blen--, *curLen += 1) {
-		buff[*curLen] = b[blen-1];
-	};
-}
-
-// Expects the lock to already be held.
-void signedToStr(sarch_t num, uarch_t *curLen, utf8Char *buff)
-{
-	utf8Char	b[28];
-	uarch_t		blen=0;
-
-	if (num < 0)
+	if (isSigned)
 	{
-		buff[*curLen] = '-';
-		*curLen += 1;
-		num = -num;
+		sarch_t snum = (sarch_t)num;
+
+		if (snum < 0)
+		{
+			buff[buffCursor++] = '-';
+			snum = -snum;
+			num = (uarch_t)snum;
+		};
 	};
 
-	for (; num / 10 ; blen++)
+	if (base > 10 && doUpperCase) {
+		hexBaseChar = 'A';
+	};
+
+	for (; num; num /= base)
 	{
-		b[blen] = (num % 10) + '0';
-		num /= 10;
-	};
-	b[blen] = (num % 10) + '0';
-	blen++;
+		ubit8 digit = num % base;
 
-	for (; blen; blen--, *curLen += 1) {
-		buff[*curLen] = b[blen-1];
-	};
-}
-
-// Expects the lock to already be held.
-void unsignedToStrHexUpper(uarch_t num, uarch_t *curLen, utf8Char *buff)
-{
-	utf8Char	b[28];
-	uarch_t		blen=0;
-
-	for (; num >> 4 ; blen++)
-	{
-		b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0');
-		num >>= 4;
-	};
-	b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0');
-	blen++;
-
-	for (; blen; blen--, *curLen += 1) {
-		buff[*curLen] = b[blen-1];
-	};
-}
-
-// Expects the lock to already be held.
-void unsignedToStrHexLower(uarch_t num, uarch_t *curLen, utf8Char *buff)
-{
-	utf8Char	b[28];
-	uarch_t		blen=0;
-
-	for (; num >> 4 ; blen++)
-	{
-		b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('a'-10):'0');
-		num >>= 4;
-	};
-	b[blen] = (num & 0xF) + (((num & 0xF) > 9) ? ('a'-10):'0');
-	blen++;
-
-	for (; blen; blen--, *curLen += 1) {
-		buff[*curLen] = b[blen-1];
-	};
-}
-
-void paddrToStrHex(paddr_t *_num, uarch_t *curLen, utf8Char *buff)
-{
-	utf8Char	b[28];
-	uarch_t		blen=0;
-	paddr_t		num(*_num);
-
-	for (; !!(num >> 4) ; blen++)
-	{
-		b[blen] = ((num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0'))
-			.getLow();
-		num >>= 4;
+		if (digit < 10) {
+			b[nDigitsPrinted++] = digit + '0';
+		} else {
+			b[nDigitsPrinted++] = digit - 10 + hexBaseChar;
+		};
 	};
 
-	b[blen] = ((num & 0xF) + (((num & 0xF) > 9) ? ('A'-10):'0')).getLow();
-	blen++;
-
-	for (; blen; blen--, *curLen += 1) {
-		buff[*curLen] = b[blen-1];
+	for (uarch_t i=0; i<nDigitsPrinted && buffCursor < buffsize; i++) {
+		buff[buffCursor++] = b[nDigitsPrinted - i - 1];
 	};
+
+	return buffCursor;
 }
 
 void printf(const utf8Char *str, ...)
@@ -300,7 +251,10 @@ static sarch_t expandPrintfFormatting(
 	const utf8Char *str, va_list args, uarch_t *printfFlags
 	)
 {
-	uarch_t		buffIndex;
+	// Number of chars consumed in the output buffer.
+	uarch_t		buffIndex,
+	// Number of chars printed in the current loop iteration.
+			nPrinted;
 
 	/**	CAVEAT:
 	 * If you ever change the format specifiers (add new ones, take some
@@ -309,53 +263,113 @@ static sarch_t expandPrintfFormatting(
 	 * count is consistent with the format specifiers that this function
 	 * actually takes.
 	 **/
-	for (buffIndex=0; (*str != '\0') && (buffIndex < buffMax); str++)
+	for (
+		buffIndex=0;
+		(*str != '\0') && (buffIndex < buffMax);
+		str++, buffIndex+=nPrinted)
 	{
-		uarch_t		unum;
-		sarch_t		snum;
-		paddr_t		*pnum;
-		utf8Char	*u8Str;
+		nPrinted = 0;
 
 		if (*str != '%')
 		{
 			buff[buffIndex] = *str;
-			buffIndex += 1;
+			nPrinted++;
 			continue;
 		};
 
 		str++;
+
 		// Avoid the exploit "foo %", which would cause buffer overread.
 		if (*str == '\0') { return -1; };
+
 		switch (*str)
 		{
-		case 'd':
-			snum = va_arg(args, sarch_t);
-			signedToStr(snum, &buffIndex, buff);
+		case '%':
+			buff[buffIndex] = *str;
+			nPrinted++;
 			break;
 
-		case 'u':
-			unum = va_arg(args, uarch_t);
-			unsignedToStr(unum, &buffIndex, buff);
+		case 'i':
+		case 'd': {
+			sarch_t snum = va_arg(args, sarch_t);
+
+			nPrinted += sprintnum(
+				&buff[buffIndex], buffMax - buffIndex,
+				snum, 10, 1, 0);
 			break;
+		}
+
+		case 'u': {
+			uarch_t unum = va_arg(args, uarch_t);
+
+			nPrinted += sprintnum(
+				&buff[buffIndex], buffMax - buffIndex,
+				unum, 10, 0, 0);
+			break;
+		}
 
 		case 'x':
-		case 'p':
-			unum = va_arg(args, uarch_t);
-			unsignedToStrHexLower(unum, &buffIndex, buff);
-			break;
+		case 'p': {
+			uarch_t		unum = va_arg(args, uarch_t);
+			utf8Char	*prefix;
 
-		case 'X':
-			unum = va_arg(args, uarch_t);
-			unsignedToStrHexUpper(unum, &buffIndex, buff);
-			break;
+			prefix = (*str == 'x')
+				? CC"0x"
+				: CC"pX";
 
-		case 'P':
-			pnum = va_arg(args, paddr_t*);
-			paddrToStrHex(pnum, &buffIndex, buff);
+			strncpy8(&buff[buffIndex], prefix, buffMax - buffIndex);
+			nPrinted += strnlen8(prefix, buffMax - buffIndex);
+
+			nPrinted += sprintnum(
+				&buff[buffIndex + nPrinted],
+				buffMax - (buffIndex + nPrinted),
+				unum, 16, 0, 0);
 			break;
+		}
+
+		case 'X': {
+			uarch_t unum = va_arg(args, uarch_t);
+			utf8Char	*prefix = CC"0x";
+
+			strncpy8(&buff[buffIndex], prefix, buffMax - buffIndex);
+			nPrinted += strnlen8(prefix, buffMax - buffIndex);
+
+			nPrinted += sprintnum(
+				&buff[buffIndex + nPrinted],
+				buffMax - (buffIndex + nPrinted),
+				unum, 16, 0, 1);
+			break;
+		}
+
+		case 'P': {
+			paddr_t *ppnum = va_arg(args, paddr_t*);
+			utf8Char	*prefix = CC"Px";
+
+			strncpy8(&buff[buffIndex], prefix, buffMax - buffIndex);
+			nPrinted += strnlen8(prefix, buffMax - buffIndex);
+
+			if (sizeof(*ppnum) > __VADDR_NBITS__) {
+				paddr_t pnum = *ppnum;
+
+				pnum >>= __VADDR_NBITS__;
+
+				nPrinted += sprintnum(
+					&buff[buffIndex + nPrinted],
+					buffMax - (buffIndex + nPrinted),
+					pnum.getLow(), 16, 0, 1);
+
+				buff[buffIndex + nPrinted++] = '_';
+			};
+
+			nPrinted += sprintnum(
+				&buff[buffIndex + nPrinted], buffMax - buffIndex,
+				ppnum->getLow(), 16, 0, 1);
+			break;
+		}
 
 		// Non recursive string printing.
-		case 's':
+		case 's': {
+			utf8Char	*u8Str;
 			uarch_t		u8Strlen;
 
 			u8Str = va_arg(args, utf8Char *);
@@ -363,7 +377,7 @@ static sarch_t expandPrintfFormatting(
 			// Handle NULL pointers passed as string args:
 			if ((uintptr_t)u8Str < PAGING_BASE_SIZE)
 			{
-				buffIndex += handleNullPointerArg(
+				nPrinted += handleNullPointerArg(
 					&buff[buffIndex], buffMax - buffIndex);
 
 				break;
@@ -371,34 +385,32 @@ static sarch_t expandPrintfFormatting(
 
 			u8Strlen = strnlen8(u8Str, buffMax - buffIndex);
 			strncpy8(&buff[buffIndex], u8Str, u8Strlen);
-			buffIndex += u8Strlen;
+			nPrinted += u8Strlen;
 			break;
+		}
 
 		// Same as 's', but recursively parses format strings.
-		case 'r':
-			sarch_t		expandRet;
+		case 'r': {
+			utf8Char	*fmtStr;
 			ubit16		numFormatArgs;
 
-			u8Str = va_arg(args, utf8Char *);
+			fmtStr = va_arg(args, utf8Char *);
 
 			// Handle NULL pointers passed a string args:
-			if ((uintptr_t)u8Str < PAGING_BASE_SIZE)
+			if ((uintptr_t)fmtStr < PAGING_BASE_SIZE)
 			{
-				buffIndex += handleNullPointerArg(
+				nPrinted += handleNullPointerArg(
 					&buff[buffIndex], buffMax - buffIndex);
 
 				break;
 			};
 
-			expandRet = expandPrintfFormatting(
+			nPrinted += expandPrintfFormatting(
 				&buff[buffIndex], buffMax - buffIndex,
-				u8Str, args, printfFlags);
-
-			if (expandRet > 0)
-				{ buffIndex += (unsigned)expandRet; };
+				fmtStr, args, printfFlags);
 
 			numFormatArgs = getNumberOfFormatArgsN(
-				u8Str, buffMax - buffIndex);
+				fmtStr, buffMax - buffIndex);
 
 			/* Advance the vararg pointer past the args for the
 			 * recursive format string argument (basically discard
@@ -408,6 +420,7 @@ static sarch_t expandPrintfFormatting(
 				{ va_arg(args, uarch_t); };
 
 			break;
+		}
 
 		// Options.
 		case '-':
@@ -428,13 +441,8 @@ static sarch_t expandPrintfFormatting(
 			};
 			break;
 
-		case '%':
-			buff[buffIndex] = *str;
-			buffIndex += 1;
-			break;
-
 		default:
-			unum = va_arg(args, uarch_t);
+			va_arg(args, uarch_t);
 			break;
 		};
 	};

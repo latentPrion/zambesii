@@ -102,12 +102,6 @@ public:
 	void flush(void);
 
 private:
-	/*void unsignedToStr(uarch_t num, uarch_t *len, utf8Char *buff);
-	void signedToStr(sarch_t num, uarch_t *len, utf8Char *buff);
-	void numToStrHexUpper(uarch_t num, uarch_t *len, utf8Char *buff);
-	void numToStrHexLower(uarch_t num, uarch_t *len, utf8Char *buff);
-	void paddrToStrHex(paddr_t num, uarch_t *len, utf8Char *buff);*/
-
 	DebugBuffer		debugBuff;
 	// 'convBuff' is used to expand the printf formatting.
 	SharedResourceGroup<
