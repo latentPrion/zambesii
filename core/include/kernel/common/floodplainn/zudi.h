@@ -365,6 +365,7 @@ public:
 				}
 
 				error_t compile(void);
+				void dump(void);
 
 			private:
 				DmaConstraints	*parent;

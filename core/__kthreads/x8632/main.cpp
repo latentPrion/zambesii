@@ -517,6 +517,8 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	c.addOrModifyAttrs(a, 4);
 	c.dump();
 
+	c.compiler.compile();
+	c.compiler.dump();
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
 	{
 		printf(NOTICE"New child: %s/%d.\n",

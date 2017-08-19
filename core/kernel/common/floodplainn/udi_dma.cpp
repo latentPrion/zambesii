@@ -402,6 +402,18 @@ udi_dma_constraints_attr_spec_t *fplainn::Zudi::dma::DmaConstraints::getAttr(
 	return NULL;
 }
 
+void fplainn::Zudi::dma::DmaConstraints::Compiler::dump(void)
+{
+	printf(NOTICE"DMACon Compiler @%p: Parent @%p. Dumping.\n"
+		"\tCan address %u bits, starting at PFN %x upto PFN %x.\n"
+		"\tSkip stride of %d frames, and allocates in blocks of at least %d frames\n"
+		"\tSlop in is %d bits, out is %d bits.\n",
+		this, parent,
+		addressableBits, startPfn, beyondEndPfn - 1,
+		pfnSkipStride, minElementGranularityNFrames,
+		slopInBits, slopOutBits);
+}
+
 error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 {
 	const udi_dma_constraints_attr_spec_t	*tmpAttr;
