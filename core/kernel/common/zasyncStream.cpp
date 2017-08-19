@@ -148,7 +148,7 @@ error_t ZAsyncStream::connect(
 	// If already connected to target process, return error.
 	if (findConnection(targetPid))
 	{
-		printf(WARNING ZASYNC"0x%x: Already connected to pid 0x%x.\n",
+		printf(WARNING ZASYNC"%x: Already connected to pid %x.\n",
 			this->id, targetPid);
 
 		return ERROR_DUPLICATE;
@@ -314,8 +314,8 @@ void ZAsyncStream::acknowledge(void *dataHandle, void *buffer, void *privateData
 
 	if (response == NULL)
 	{
-		printf(ERROR ZASYNC"0x%x: response message alloc failed; "
-			"async sender 0x%x may be halted indefinitely.\n",
+		printf(ERROR ZASYNC"%x: response message alloc failed; "
+			"async sender %x may be halted indefinitely.\n",
 			this->id, sourceTid);
 
 		return;

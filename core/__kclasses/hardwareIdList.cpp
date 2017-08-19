@@ -39,7 +39,7 @@ void HardwareIdList::dump(void)
 
 	arr.lock.readAcquire(&rwFlags);
 
-	printf(NOTICE"HWID list @ 0x%p, arr @ v0x%p, preAlloc'd: %d,\n"
+	printf(NOTICE"HWID list @ %p, arr @ v%p, preAlloc'd: %d,\n"
 		"\tmaxAllocatedIndex %d, firstValidIndex %d, maxIndex %d. "
 		"dumping.\n",
 		this, arr.rsrc.arr, preAllocated,
@@ -48,7 +48,7 @@ void HardwareIdList::dump(void)
 
 	for (it = begin(); it != end(); ++it)
 	{
-		printf(NOTICE HWIDLIST"%d (idx@0x%p): item 0x%p, next %d.\n",
+		printf(NOTICE HWIDLIST"%d (idx@%p): item %p, next %d.\n",
 			it.cursor, &arr.rsrc.arr[it.cursor].item,
 			*it, arr.rsrc.arr[it.cursor].next);
 	};
@@ -159,7 +159,7 @@ error_t HardwareIdList::addItem(sarch_t index, void *item)
 
 		if (tmp == NULL)
 		{
-			printf(ERROR HWIDLIST"addItem(%d,0x%p): failed to "
+			printf(ERROR HWIDLIST"addItem(%d,%p): failed to "
 				"resize array.\n",
 				index, item);
 

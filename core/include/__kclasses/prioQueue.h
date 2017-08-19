@@ -265,7 +265,7 @@ inline void PrioQueue<T>::remove(T *item, ubit16 prio)
 template <class T>
 inline void PrioQueue<T>::dump(void)
 {
-	printf(NOTICE PRIOQUEUE"%d prios, cache @0x%p, first valid q %d: "
+	printf(NOTICE PRIOQUEUE"%d prios, cache @%p, first valid q %d: "
 		"dumping.\n",
 		nPrios, nodeCache, headQueue.rsrc);
 
@@ -387,7 +387,7 @@ void PrioQueue<T>::Queue<T2>::dump(void)
 
 	q.lock.acquire();
 
-	printf(CC"\tQueue %d, head 0x%p, tail 0x%p, %d items:\n%s",
+	printf(CC"\tQueue %d, head %p, tail %p, %d items:\n%s",
 		prio, q.rsrc.head, q.rsrc.tail, q.rsrc.nItems,
 		(q.rsrc.head == NULL) ? "" : "\t");
 
@@ -399,7 +399,7 @@ void PrioQueue<T>::Queue<T2>::dump(void)
 			flipFlop = 0;
 		};
 
-		printf(CC"0x%p ", tmp->item);
+		printf(CC"%p ", tmp->item);
 	};
 
 	q.lock.release();

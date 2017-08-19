@@ -131,9 +131,9 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 			faultAddr, pmap, status, WPRANGER_OP_SET_PRESENT, 0);
 
 		printf(NOTICE OPTS(NOLOG)
-			"Page Fault: FAKE_DYN: addr 0x%p, "
-			"EIP 0x%p\n\tWPRl map: stat %d, pmap 0x%P, "
-			"__kf 0x%x.\n",
+			"Page Fault: FAKE_DYN: addr %p, "
+			"EIP %p\n\tWPRl map: stat %d, pmap %P, "
+			"__kf %x.\n",
 			faultAddr, regs->eip,
 			walkerPageRanger::lookup(
 				&vaddrSpaceStream->vaddrSpace,
@@ -147,7 +147,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 		traceStack = 1;
 
 		printf(FATAL"Encountered a heap guardpage; heap corrupted\n"
-			"\tVaddr: 0x%p, EIP 0x%p\n"
+			"\tVaddr: %p, EIP %p\n"
 			"\tFault was caused by a %s, and %s an instruction "
 			"fetch\n",
 			faultAddr, regs->eip,
@@ -166,8 +166,8 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 			"movl %%esp, %0\n\t"
 			: "=r" (esp));
 
-		printf(FATAL"Encountered unmapped page at 0x%p, EIP: 0x%x, "
-			"esp: 0x%x, schedstack end: 0x%p schedstack base 0x%p."
+		printf(FATAL"Encountered unmapped page at %p, EIP: %x, "
+			"esp: %x, schedstack end: %p schedstack base %p."
 			"\n", faultAddr,
 			regs->eip, esp,
 			cpuTrib.getCurrentCpuStream()->schedStack,
@@ -185,8 +185,8 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 		printVaddrspaceInfo = 1;
 		printf(FATAL"BACKED page faulted. Access perms violation or "
 			"unintended COW?\n"
-			"\tVaddr: 0x%p, __kf 0x%x. EIP 0x%p. Errcode 0x%x "
-			"TID 0x%x.\n",
+			"\tVaddr: %p, __kf %x. EIP %p. Errcode %x "
+			"TID %x.\n",
 			faultAddr, __kflags, regs->eip, regs->errorCode,
 			cpuTrib.getCurrentCpuStream()->taskStream
 				.getCurrentThread()->getFullId());
@@ -216,7 +216,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 
 	if (printVaddrspaceInfo)
 	{
-		printf(NOTICE"TID 0x%x, L0v 0x%p, L0p 0x%P.\n",
+		printf(NOTICE"TID %x, L0v %p, L0p %P.\n",
 			currThread->getFullId(),
 			vaddrSpaceStream->vaddrSpace.level0Accessor.rsrc,
 			&vaddrSpaceStream->vaddrSpace.level0Paddr);

@@ -183,7 +183,7 @@ void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	/* Couldn't find a suitable bank. Probably the memory was hot swapped,
 	 * or there's corruption in the memory manager somewhere.
 	 **/
-	printf(WARNING MEMTRIB"releaseFrames(0x%P, %d): pmem leak.\n",
+	printf(WARNING MEMTRIB"releaseFrames(%P, %d): pmem leak.\n",
 		&paddr, nFrames);
 #else
 	currBank = getBank(defaultMemoryBank.rsrc);
@@ -192,7 +192,7 @@ void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	}
 	else
 	{
-		printf(FATAL MEMTRIB"releaseFrames(0x%P, %d): Attempted to "
+		printf(FATAL MEMTRIB"releaseFrames(%P, %d): Attempted to "
 			"free to non-existent mem bank %d.\n",
 			paddr, nFrames, defaultAffinity.def.rsrc);
 	};
@@ -325,7 +325,7 @@ void MemoryTrib::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 	}
 	else
 	{
-		printf(ERROR MEMTRIB"mapRangeUsed(0x%P, %d): attempt to "
+		printf(ERROR MEMTRIB"mapRangeUsed(%P, %d): attempt to "
 			"mark on non-existent bank %d.\n",
 			defaultAffinity.def.rsrc);
 	};
@@ -356,7 +356,7 @@ void MemoryTrib::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 	}
 	else
 	{
-		printf(ERROR MEMTRIB"mapRangeUnused(0x%P, %d): attempt to "
+		printf(ERROR MEMTRIB"mapRangeUnused(%P, %d): attempt to "
 			"mark on non-existent bank %d.\n",
 			defaultAffinity.def.rsrc);
 	};

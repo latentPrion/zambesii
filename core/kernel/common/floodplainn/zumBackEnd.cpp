@@ -232,7 +232,7 @@ void fplainn::Zum::main(void *)
 			opTemplate->marshal_layout;
 	};
 
-	printf(NOTICE ZUM"main: running, tid 0x%x.\n", self->getFullId());
+	printf(NOTICE ZUM"main: running, tid %x.\n", self->getFullId());
 
 	for (;FOREVER;)
 	{
@@ -254,7 +254,7 @@ void fplainn::Zum::main(void *)
 			if (callback == NULL)
 			{
 				printf(WARNING ZUM"main: message with no "
-					"callback from 0x%x.\n",
+					"callback from %x.\n",
 					iMsg->sourceId);
 
 				continue;
@@ -280,7 +280,7 @@ void zumServer::zasyncHandler(
 
 	if (msg->dataNBytes > sizeof(*request) + PAGING_BASE_SIZE * ZUM_ASYNC_MSG_EXTRA_NPAGES)
 	{
-		printf(WARNING ZUM"incoming request from 0x%x has odd size. "
+		printf(WARNING ZUM"incoming request from %x has odd size. "
 			"Rejected.\n",
 			msg->header.sourceId);
 
@@ -292,7 +292,7 @@ void zumServer::zasyncHandler(
 
 	if (err != ERROR_SUCCESS)
 	{
-		printf(WARNING ZUM"receive() failed on request from 0x%x.\n",
+		printf(WARNING ZUM"receive() failed on request from %x.\n",
 			msg->header.sourceId);
 
 		return;
@@ -326,7 +326,7 @@ void zumServer::zasyncHandler(
 		break;
 
 	default:
-		printf(WARNING ZUM"request from 0x%x is for invalid ops_idx "
+		printf(WARNING ZUM"request from %x is for invalid ops_idx "
 			"into udi_mgmt_ops_vector_t for device %s.\n",
 			msg->header.sourceId,
 			request->path);

@@ -682,8 +682,8 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 	copySize = (uarch_t)&__kcpuPowerOnTextEnd
 		- (uarch_t)&__kcpuPowerOnTextStart;
 
-	printf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup code: 0x%p "
-		"to 0x%p; %d B.\n",
+	printf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup code: %p "
+		"to %p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
 	memcpy(destAddr, srcAddr, copySize);
@@ -696,8 +696,8 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 	copySize = (uarch_t)&__kcpuPowerOnDataEnd
 		- (uarch_t)&__kcpuPowerOnDataStart;
 
-	printf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup data: 0x%p "
-		"to 0x%p; %d B.\n",
+	printf(NOTICE CPUMOD"setSmpMode: Copy CPU wakeup data: %p "
+		"to %p; %d B.\n",
 		srcAddr, destAddr, copySize);
 
 	memcpy(destAddr, srcAddr, copySize);

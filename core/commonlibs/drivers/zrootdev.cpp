@@ -11,7 +11,7 @@ void zrootdev_usage_ind(udi_usage_cb_t *cb, udi_ubit8_t resource_level)
 
 	printf(NOTICE"We are saved by grace, through faith,\n\tand that not of "
 		"ourselves: but it is a gift of El.\n"
-		"\trdata 0x%p, scratch 0x%p, channel 0x%p, resource_lvl %d.\n",
+		"\trdata %p, scratch %p, channel %p, resource_lvl %d.\n",
 		cb->gcb.context, cb->gcb.scratch, cb->gcb.channel,
 		resource_level);
 	udi_usage_res(cb);
@@ -24,7 +24,7 @@ void zrootdev_enumerate_req(
 {
 	(void)cb; (void)enumeration_level;
 
-printf(NOTICE"enum!\tcb 0x%p, %d attr @0x%p, %d filt @0x%p.\n",
+printf(NOTICE"enum!\tcb %p, %d attr @%p, %d filt @%p.\n",
 	cb,
 	cb->attr_valid_length, cb->attr_list,
 	cb->filter_list_length, cb->filter_list);
@@ -70,8 +70,8 @@ static utf8Char *events[] =
 void zrootdev_bus_channel_event_ind(udi_channel_event_cb_t *cb)
 {
 	(void)cb;
-	printf(NOTICE"ayo~! %s. Chan 0x%p.\n"
-		"\tcb @0x%p, bind_cb @0x%p, bind_cb->scratch 0x%p.\n",
+	printf(NOTICE"ayo~! %s. Chan %p.\n"
+		"\tcb @%p, bind_cb @%p, bind_cb->scratch %p.\n",
 		events[cb->event], cb->gcb.channel,
 		cb, cb->params.internal_bound.bind_cb,
 		(cb->params.internal_bound.bind_cb)

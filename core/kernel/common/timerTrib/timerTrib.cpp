@@ -359,7 +359,7 @@ error_t TimerTrib::initialize(void)
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	printf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
-		"addr 0x%p, id 0x%x.\n",
+		"addr %p, id %x.\n",
 		eventProcessor.task, eventProcessor.tid);
 
 	eventProcessor.controlQueue.setWaitingThread(eventProcessor.task);
@@ -576,7 +576,7 @@ void TimerTrib::dump(void)
 		}
 		else
 		{
-			printf((utf8Char *)"Yes: isr addr: 0x%p, "
+			printf((utf8Char *)"Yes: isr addr: %p, "
 				"interval: %ds,%dns\n",
 				watchdog.rsrc.isr,
 				watchdog.rsrc.interval.seconds,

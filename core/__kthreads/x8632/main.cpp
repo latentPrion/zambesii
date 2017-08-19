@@ -38,7 +38,7 @@ static void rDumpSrat(void)
 	uarch_t		nSrats;
 
 	rsdt = acpi::getRsdt();
-	printf(NOTICE"RSDT mapped to 0x%p.\n", rsdt);
+	printf(NOTICE"RSDT mapped to %p.\n", rsdt);
 
 	context = handle = NULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
@@ -49,7 +49,7 @@ static void rDumpSrat(void)
 		void			*handle2;
 		uarch_t			nCpuEntries;
 
-		printf(NOTICE"Srat #%d, at vaddr 0x%p. CPU entries:\n",
+		printf(NOTICE"Srat #%d, at vaddr %p. CPU entries:\n",
 			nSrats, srat);
 
 		handle2 = NULL;
@@ -85,7 +85,7 @@ static void rDumpSrat(void)
 		{
 			printf(NOTICE"Entry %d: bank %d, firmware-enabled? "
 				"%s, hotplug? %s.\n"
-				"\tBase paddr 0x%P_%P, length 0x%P_%P.\n",
+				"\tBase paddr %P_%P, length %P_%P.\n",
 				nMemEntries,
 				memEntry->domain0
 				| (memEntry->domain1 << 16),
@@ -238,7 +238,7 @@ extern "C" void main(ubit32, sMultibootData *)
 		IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL, 0);
 #endif
 
-	printf(NOTICE ORIENT"Entering message loop. Task ID 0x%x (@0x%p).\n",
+	printf(NOTICE ORIENT"Entering message loop. Task ID %x (@%p).\n",
 		self->getFullId(), self);
 
 	__korientationMain1();
@@ -258,7 +258,7 @@ extern "C" void main(ubit32, sMultibootData *)
 			{
 				printf(WARNING ORIENT"Unknown message with "
 					"no callback.\n"
-					"\tSrcTid 0x%x, subsys %d, func %d.\n",
+					"\tSrcTid %x, subsys %d, func %d.\n",
 					iMessage->sourceId,
 					iMessage->subsystem,
 					iMessage->function);
@@ -466,7 +466,7 @@ void __kotp(MessageStream::sHeader *msgIt)
 	sMovableMemObject<udi_filter_element_t, 2>	tf;
 
 printf(NOTICE"here, finished enum req.\n");
-	printf(NOTICE ORIENT"msg 0x%p: %d attr @0x%p, %d filt @0x%p.\n",
+	printf(NOTICE ORIENT"msg %p: %d attr @%p, %d filt @%p.\n",
 		msg,
 		ecb->attr_valid_length,
 		ecb->attr_list,

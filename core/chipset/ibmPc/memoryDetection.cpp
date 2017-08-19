@@ -350,7 +350,7 @@ sZkcmMemoryMapS *ZkcmMemoryDetectionMod::getMemoryMap(void)
 
 	ret->entries[j+2].memType = ZKCM_MMAP_TYPE_RESERVED;
 
-	printf(NOTICE"getMemoryMap(): Kernel phys: base 0x%P, size 0x%P.\n",
+	printf(NOTICE"getMemoryMap(): Kernel phys: base %P, size %P.\n",
 		&ret->entries[j+2].baseAddr,
 		&ret->entries[j+2].size);
 

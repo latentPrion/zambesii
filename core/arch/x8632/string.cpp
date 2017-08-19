@@ -8,7 +8,7 @@ void *memset(void *_ptr, int value, size_t count)
 {
 	if (_ptr == NULL)
 	{
-		printf(FATAL"memset: dest 0x%p, n %d, caller 0x%x.\n",
+		printf(FATAL"memset: dest %p, n %d, caller %x.\n",
 			_ptr, count, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -25,7 +25,7 @@ void *memcpy(void *dest, const void *src, size_t count)
 {
 	if (dest == NULL || src == NULL)
 	{
-		printf(FATAL"memcpy: dest 0x%p, src 0x%p, n %d, caller 0x%x.\n",
+		printf(FATAL"memcpy: dest %p, src %p, n %d, caller %x.\n",
 			dest, src, count, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -48,7 +48,7 @@ int memcmp(const void *ptr1, const void *ptr2, size_t n)
 
 	if (ptr1 == NULL || ptr2 == NULL)
 	{
-		printf(FATAL"memcmp: ptr1 0x%p, ptr2 0x%p, n %d, caller 0x%x.\n",
+		printf(FATAL"memcmp: ptr1 %p, ptr2 %p, n %d, caller %x.\n",
 			ptr1, ptr2, n, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -68,7 +68,7 @@ void *memmove(void *dest, const void *src, size_t n)
 {
 	if (dest == NULL || src == NULL)
 	{
-		printf(FATAL"memmove: dest 0x%p, src 0x%p, n %d, caller 0x%x.\n",
+		printf(FATAL"memmove: dest %p, src %p, n %d, caller %x.\n",
 			dest, src, n, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);

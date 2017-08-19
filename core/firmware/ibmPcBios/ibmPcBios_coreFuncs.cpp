@@ -54,7 +54,7 @@ error_t ibmPcBios::initialize(void)
 
 	if (nMapped < LOWMEM_NPAGES)
 	{
-		printf(ERROR FWFWS"initialize(): Unable to map buff 0x%p to "
+		printf(ERROR FWFWS"initialize(): Unable to map buff %p to "
 			"lowmem. %d of %d pages were mapped.\n",
 			M.mem_base, nMapped, LOWMEM_NPAGES);
 
@@ -68,7 +68,7 @@ error_t ibmPcBios::initialize(void)
 	M.x86.debug = 0;
 	M.x86.mode = 0;
 
-	printf(NOTICE FWFWS"initialize(): Done. Lowmem 0x%p.\n",
+	printf(NOTICE FWFWS"initialize(): Done. Lowmem %p.\n",
 		M.mem_base);
 
 	ibmPcBios_initialized = 1;

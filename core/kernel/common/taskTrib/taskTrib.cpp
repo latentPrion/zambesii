@@ -276,7 +276,7 @@ error_t TaskTrib::unblock(Thread *thread)
 	if (!(thread->runState == Thread::STOPPED
 		&& thread->blockState == Thread::BLOCKED))
 	{
-		printf(NOTICE TASKTRIB"unblock(0x%x): Invalid run state."
+		printf(NOTICE TASKTRIB"unblock(%x): Invalid run state."
 			"runState is %s.\n",
 			thread->getFullId(),
 			runStates[thread->runState]);

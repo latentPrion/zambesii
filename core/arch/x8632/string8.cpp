@@ -10,7 +10,7 @@ utf8Char *strstr8(const utf8Char *str1, const utf8Char *const str2)
 
 	if (str1 == NULL || str2 == NULL)
 	{
-		printf(FATAL"strstr8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+		printf(FATAL"strstr8: str1 %p, str2 %p, caller %x.\n",
 			str1, str2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -35,7 +35,7 @@ utf8Char *strcpy8(utf8Char *dest, const utf8Char *src)
 
 	if (dest == NULL || src == NULL)
 	{
-		printf(FATAL"strcpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
+		printf(FATAL"strcpy8: dest %p, src %p, caller %x.\n",
 			dest, src, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -53,7 +53,7 @@ utf8Char *strncpy8(utf8Char *dest, const utf8Char *src, size_t count)
 {
 	if (dest == NULL || src == NULL)
 	{
-		printf(FATAL"strncpy8: dest 0x%p, src 0x%p, caller 0x%x.\n",
+		printf(FATAL"strncpy8: dest %p, src %p, caller %x.\n",
 			dest, src, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -77,7 +77,7 @@ size_t strlen8(const utf8Char *str)
 
 	if (str == NULL)
 	{
-		printf(FATAL"strlen8: str 0x%p, caller 0x%x.\n",
+		printf(FATAL"strlen8: str %p, caller %x.\n",
 			str, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -93,7 +93,7 @@ int strcmp8(const utf8Char *str1, const utf8Char *str2)
 
 	if (str1 == NULL || str2 == NULL)
 	{
-		printf(FATAL"strcmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+		printf(FATAL"strcmp8: str1 %p, str2 %p, caller %x.\n",
 			str1, str2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -113,7 +113,7 @@ int strncmp8(const utf8Char *str1, const utf8Char *str2, int count)
 
 	if (str1 == NULL || str2 == NULL)
 	{
-		printf(FATAL"strncmp8: str1 0x%p, str2 0x%p, caller 0x%x.\n",
+		printf(FATAL"strncmp8: str1 %p, str2 %p, caller %x.\n",
 			str1, str2, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -147,7 +147,7 @@ size_t strnlen8(const utf8Char *str1, size_t maxLen)
 
 	if (str1 == NULL)
 	{
-		printf(FATAL"strnlen8: str1 0x%p, caller 0x%x.\n",
+		printf(FATAL"strnlen8: str1 %p, caller %x.\n",
 			str1, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);
@@ -163,7 +163,7 @@ utf8Char *strnchr8(const utf8Char *str, size_t n, const utf8Char chr)
 
 	if (str == NULL)
 	{
-		printf(FATAL"strnchr8: str1 0x%p, caller 0x%x.\n",
+		printf(FATAL"strnchr8: str1 %p, caller %x.\n",
 			str, __builtin_return_address(0));
 
 		panic(ERROR_CRITICAL);

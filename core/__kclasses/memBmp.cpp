@@ -56,8 +56,8 @@ void MemoryBmp::dump(void)
 
 	bmp.lock.acquire();
 
-	printf(NOTICE MEMBMP"v 0x%p: PFN base 0x%X, nframes %d,\n"
-		"\tarray 0x%p, nIndexes %d, lastAllocIndex %d.\n",
+	printf(NOTICE MEMBMP"v %p: PFN base %X, nframes %d,\n"
+		"\tarray %p, nIndexes %d, lastAllocIndex %d.\n",
 		this, basePfn, bmpNFrames, bmp.rsrc.bmp, nIndexes,
 		bmp.rsrc.lastAllocIndex);
 

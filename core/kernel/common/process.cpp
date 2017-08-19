@@ -528,7 +528,7 @@ void ProcessStream::sendResponse(error_t err)
 	tmpErr = MessageStream::enqueueOnThread(msg->targetId, msg);
 	if (tmpErr != ERROR_SUCCESS)
 	{
-		printf(FATAL"ProcessStream::sendResponse(%d): proc 0x%x: "
+		printf(FATAL"ProcessStream::sendResponse(%d): proc %x: "
 			"Failed because %d.\n",
 			err, this->id, tmpErr);
 	};

@@ -7,7 +7,7 @@
 status_t x8632_gpf(RegisterContext *regs, ubit8)
 {
 	printf(NOTICE OPTS(NOLOG)
-		"#GPF: Culprit selector 0x%x. Halting.\n",
+		"#GPF: Culprit selector %x. Halting.\n",
 		regs->errorCode);
 
 	for (;FOREVER;)

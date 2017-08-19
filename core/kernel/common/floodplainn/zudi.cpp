@@ -542,7 +542,7 @@ error_t fplainn::Zudi::spawnInternalBindChannel(
 
 	if (retendp1 == NULL) { return ERROR_INVALID_ARG; };
 
-printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
+printf(NOTICE"spawnIBopChan(%s, %d, %p, %p).\n",
 	devPath, regionIndex, opsVector0, opsVector1);
 	/* region1 is always the caller because internal bind channels are
 	 * spawned by the secondary region thread.
@@ -567,7 +567,7 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 
 	if (blueprint == NULL || blueprint->initialize() != ERROR_SUCCESS)
 	{
-		printf(ERROR"spawnIbopChan %s,%d,0x%p,0x%p: Failed to alloc or "
+		printf(ERROR"spawnIbopChan %s,%d,%p,%p: Failed to alloc or "
 			"initialize new channel object.\n",
 			devPath, regionIndex, opsVector0, opsVector1);
 
@@ -579,7 +579,7 @@ printf(NOTICE"spawnIBopChan(%s, %d, 0x%p, 0x%p).\n",
 	ret = createChannel(blueprint, &tmpret);
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(ERROR"spawnIbopChan(%s, %d, 0x%p, 0x%p): createChannel "
+		printf(ERROR"spawnIbopChan(%s, %d, %p, %p): createChannel "
 			"call failed. Ret %d.\n",
 			devPath, regionIndex, opsVector0, opsVector1, ret);
 
@@ -689,7 +689,7 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 
 	if (blueprint == NULL || blueprint->initialize() != ERROR_SUCCESS)
 	{
-		printf(ERROR"spawnCBindChan %s,%s,%s,0x%p: Failed to alloc or "
+		printf(ERROR"spawnCBindChan %s,%s,%s,%p: Failed to alloc or "
 			"initialize new channel object.\n",
 			parentDevPath, childDevPath, metaName, opsVector);
 
@@ -703,7 +703,7 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 	ret = createChannel(blueprint, &tmpret);
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(ERROR"spawnCBindChan(%s,%s,%s,0x%p): spawnChannel call "
+		printf(ERROR"spawnCBindChan(%s,%s,%s,%p): spawnChannel call "
 			"failed. Ret %d.\n",
 			parentDevPath, childDevPath, metaName, opsVector, ret);
 

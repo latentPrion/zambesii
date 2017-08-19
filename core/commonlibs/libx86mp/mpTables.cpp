@@ -151,7 +151,7 @@ x86Mp::sConfig *x86Mp::mapMpConfigTable(void)
 	cache.lapicPaddr = cache.cfg->lapicPaddr;
 	cache.nCfgEntries = ret->nEntries;
 
-	printf(NOTICE x86MP"Mapped MP Config table to 0x%p, %d pages. %d "
+	printf(NOTICE x86MP"Mapped MP Config table to %p, %d pages. %d "
 		"entries in MP config.\n",
 		ret, cfgNPages, ret->nEntries);
 
@@ -315,7 +315,7 @@ x86Mp::sCpuConfig *x86Mp::getNextCpuEntry(uarch_t *pos, void **const handle)
 
 		default: // This should NEVER be reached.
 			printf(ERROR x86MP"Encountered CFG entry with "
-				"unknown type 0x%X. Ending loop.\n",
+				"unknown type %X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
 			return NULL;
@@ -384,7 +384,7 @@ x86Mp::sBusConfig *x86Mp::getNextBusEntry(uarch_t *pos, void **const handle)
 
 		default: // This should NEVER be reached.
 			printf(ERROR x86MP"Encountered CFG entry with "
-				"unknown type 0x%X. Ending loop.\n",
+				"unknown type %X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
 			return NULL;
@@ -455,7 +455,7 @@ x86Mp::sIoApicConfig *x86Mp::getNextIoApicEntry(
 
 		default: // This should NEVER be reached.
 			printf(ERROR x86MP"Encountered CFG entry with "
-				"unknown type 0x%X. Ending loop.\n",
+				"unknown type %X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
 			return NULL;
@@ -526,7 +526,7 @@ x86Mp::sLocalIrqSourceConfig *x86Mp::getNextLocalIrqSourceEntry(
 
 		default: // This should NEVER be reached.
 			printf(ERROR x86MP"Encountered CFG entry with "
-				"unknown type 0x%X. Ending loop.\n",
+				"unknown type %X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
 			return NULL;
@@ -597,7 +597,7 @@ x86Mp::sIrqSourceConfig *x86Mp::getNextIrqSourceEntry(
 
 		default: // This should NEVER be reached.
 			printf(ERROR x86MP"Encountered CFG entry with "
-				"unknown type 0x%X. Ending loop.\n",
+				"unknown type %X. Ending loop.\n",
 				*(ubit8 *)*handle);
 
 			return NULL;

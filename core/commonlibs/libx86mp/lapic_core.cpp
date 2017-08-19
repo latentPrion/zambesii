@@ -157,7 +157,7 @@ useDefaultPaddr:
 	tmp = 0xFEE00000;
 
 initLibLapic:
-	printf(NOTICE x86LAPIC"detectPaddr: LAPIC paddr: 0x%P.\n",
+	printf(NOTICE x86LAPIC"detectPaddr: LAPIC paddr: %P.\n",
 		&tmp);
 
 	X86Lapic::setPaddr(tmp);

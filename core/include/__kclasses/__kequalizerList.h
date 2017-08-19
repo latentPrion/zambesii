@@ -96,7 +96,7 @@ __kEqualizerList<T>::~__kEqualizerList(void)
 template <class T>
 void __kEqualizerList<T>::dump(void)
 {
-	printf(NOTICE"eqList: @0x%p, head 0x%p, %d entries per block.\n",
+	printf(NOTICE"eqList: @%p, head %p, %d entries per block.\n",
 		this, head.rsrc, PAGEBLOCK_NENTRIES(T));
 
 	head.lock.acquire();
@@ -107,7 +107,7 @@ void __kEqualizerList<T>::dump(void)
 	{
 		uarch_t		nEntries;
 		for (nEntries=0; tmp->entries[nEntries] != 0; nEntries++) {};
-		printf(CC"\teqList: block 0x%p, %d entries, %d free entries."
+		printf(CC"\teqList: block %p, %d entries, %d free entries."
 			"\n", tmp, nEntries, tmp->header.nFreeEntries);
 	};
 

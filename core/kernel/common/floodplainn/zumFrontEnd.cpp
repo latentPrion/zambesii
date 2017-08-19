@@ -84,7 +84,7 @@ void fplainn::Zum::enumerateChildrenReq(
 
 	if (ecb == NULL || ecb->attr_list != NULL || ecb->attr_valid_length > 0)
 	{
-		printf(ERROR ZUM"enumChildrenReq: %d attrs passed in @0x%p. "
+		printf(ERROR ZUM"enumChildrenReq: %d attrs passed in @%p. "
 			"Directed enumeration not allowed!",
 			ecb->attr_valid_length, ecb->attr_list);
 		return;
@@ -152,7 +152,7 @@ void fplainn::Zum::postManagementCbReq(
 
 	if (ecb == NULL || ecb->attr_list != NULL || ecb->attr_valid_length > 0)
 	{
-		printf(ERROR ZUM"postMgmtCb: %d attrs passed in @0x%p. "
+		printf(ERROR ZUM"postMgmtCb: %d attrs passed in @%p. "
 			"Directed enumeration not allowed!",
 			ecb->attr_valid_length, ecb->attr_list);
 		return;

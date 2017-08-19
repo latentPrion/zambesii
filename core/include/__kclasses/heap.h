@@ -107,7 +107,7 @@ private:
 
 		void dump(void)
 		{
-			printf(CC"\tchunk: 0x%p, %d allocations, magic %s.\n",
+			printf(CC"\tchunk: %p, %d allocations, magic %s.\n",
 				(void *)this, nAllocations,
 				strcmp8(magic, HEAP_CHUNK_MAGIC) == 0
 					? "valid"
@@ -150,8 +150,8 @@ private:
 
 		void dump(void)
 		{
-			printf(CC"\tblock: 0x%p, next 0x%p, %dB. chunk 0x%p, "
-				"magic %s; freed by 0x%p\n",
+			printf(CC"\tblock: %p, next %p, %dB. chunk %p, "
+				"magic %s; freed by %p\n",
 				(void*)this, (void*)listHeader.getNextItem(),
 				nBytes, (void*)parent,
 				(strcmp8(magic, HEAP_BLOCK_MAGIC) == 0)
@@ -207,7 +207,7 @@ private:
 
 		void dump(void)
 		{
-			printf(CC"\talloc[1]: 0x%p, alloc'd by 0x%p, chunk 0x%p, "
+			printf(CC"\talloc[1]: %p, alloc'd by %p, chunk %p, "
 				"%d(%d)B, %s magic\n\tDesc: %s\n",
 				(void*)&this[1], (void*)allocatedBy,
 				(void*)parent,

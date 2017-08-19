@@ -83,7 +83,7 @@ namespace __klzbzcore
 			{
 				List<sMetaCbInfo>::Iterator	it;
 
-				printf(NOTICE"cache @0x%p: dumping.\n");
+				printf(NOTICE"cache @%p: dumping.\n");
 				it = metaCbInfo.begin();
 				for (; it != metaCbInfo.end(); ++it)
 				{

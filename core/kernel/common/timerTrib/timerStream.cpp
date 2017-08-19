@@ -155,7 +155,7 @@ Thread *TimerStream::timerRequestTimeoutNotification(
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR TIMERSTREAM"%d: Failed to add expired event to "
-			"thread 0x%x's queue.\n",
+			"thread %x's queue.\n",
 			id, thread->getFullId());
 	};
 
@@ -186,7 +186,7 @@ void TimerStream::timerRequestTimeoutNotification(void)
 
 	if (nextRequest == NULL)
 	{
-		printf(FATAL TIMERSTREAM"0x%x: corrupt timer request list:\n"
+		printf(FATAL TIMERSTREAM"%x: corrupt timer request list:\n"
 			"\tpopFromHead() returned NULL when trying to remove "
 			"the old item.\n",
 			id);

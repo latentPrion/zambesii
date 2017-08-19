@@ -158,14 +158,14 @@ void HeapList<T>::dump(void)
 
 	head.lock.acquire();
 	tmp = head.rsrc.ptr;
-	printf(NOTICE PTRLIST"List obj @0x%p, usingCache? %d, cache @0x%p; "
-		"%d items, 1st item @0x%p: "
+	printf(NOTICE PTRLIST"List obj @%p, usingCache? %d, cache @%p; "
+		"%d items, 1st item @%p: "
 		"Dumping.\n",
 		this, usingCache, cache, head.rsrc.nItems, head.rsrc.ptr);
 
 	for (; tmp != NULL; tmp = tmp->next)
 	{
-		printf(NOTICE PTRLIST"Node @0x%p, item: 0x%p, next: 0x%p.\n",
+		printf(NOTICE PTRLIST"Node @%p, item: %p, next: %p.\n",
 			tmp, tmp->item, tmp->next);
 	};
 

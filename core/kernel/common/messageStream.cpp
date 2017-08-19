@@ -28,8 +28,8 @@ AsyncResponse::~AsyncResponse(void)
 	ret = MessageStream::enqueueOnThread(msg->targetId, msg);
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(FATAL"asyncCleanup: Failed to send msg from 0x%x to "
-			"0x%x, with error %s because %s.\n",
+		printf(FATAL"asyncCleanup: Failed to send msg from %x to "
+			"%x, with error %s because %s.\n",
 			msg->sourceId, msg->targetId, strerror(msg->error),
 			strerror(ret));
 	};
@@ -312,8 +312,8 @@ subsystem(subsystem), flags(0), function(function), size(size)
 	{
 		printf(FATAL MSGSTREAM"sHeader con: size %d exceeds "
 			"sizeof(sHeader) (%d)\n"
-			"\tCaller 0x%p: subsystem %d, function %d, from T0x%x "
-			"to T0x%x\n",
+			"\tCaller %p: subsystem %d, function %d, from T%x "
+			"to T%x\n",
 			size, sizeof(sHeader),
 			__builtin_return_address(0),
 			subsystem, function, sourceId, targetId);
@@ -500,8 +500,8 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	{
 		printf(FATAL MSGSTREAM"sHeader con: size %d exceeds "
 			"sizeof(sHeader) (%d)\n"
-			"\tCaller 0x%p: subsystem %d, function %d, from T0x%x "
-			"to T0x%x\n",
+			"\tCaller %p: subsystem %d, function %d, from T%x "
+			"to T%x\n",
 			callback->size, sizeof(sHeader),
 			__builtin_return_address(0),
 			callback->subsystem, callback->function,

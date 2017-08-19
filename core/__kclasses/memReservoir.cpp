@@ -47,8 +47,8 @@ error_t MemReservoir::initialize(void)
 
 	memset(heaps.rsrc.ptrs, 0, PAGING_BASE_SIZE);
 
-	printf(NOTICE RESERVOIR"initialize(): Done. __kheap chunk size 0x%x, "
-		"custom bogs array 0x%p.\n",
+	printf(NOTICE RESERVOIR"initialize(): Done. __kheap chunk size %x, "
+		"custom bogs array %p.\n",
 		__kheap.getChunkSize(), heaps.rsrc.ptrs);
 
 	return ERROR_SUCCESS;
@@ -62,7 +62,7 @@ void MemReservoir::dump(void)
 {
 
 	printf(NOTICE RESERVOIR"Dumping.\n");
-	printf(NOTICE RESERVOIR"bogs array 0x%X, nHeaps %d.\n",
+	printf(NOTICE RESERVOIR"bogs array %X, nHeaps %d.\n",
 		heaps.rsrc.ptrs, heaps.rsrc.nHeaps);
 
 	printf(NOTICE RESERVOIR"Dumping __kheap.\n");
@@ -89,7 +89,7 @@ void *MemReservoir::allocate(uarch_t nBytes, uarch_t)
 
 	if (nBytes == 0)
 	{
-		printf(WARNING RESERVOIR"Caller 0x%p.\n",
+		printf(WARNING RESERVOIR"Caller %p.\n",
 			__builtin_return_address(1));
 
 		panic(WARNING RESERVOIR"Allocation with size=0.\n");
@@ -149,7 +149,7 @@ void *MemReservoir::reallocate(void *old, uarch_t _nBytes, uarch_t)
 
 	if ((resHdr->magic >> 4) != (RESERVOIR_MAGIC >> 4))
 	{
-		printf(ERROR RESERVOIR"realloc: Corrupt memory or bad free v 0x%p.\n",
+		printf(ERROR RESERVOIR"realloc: Corrupt memory or bad free v %p.\n",
 			old);
 
 		panic(ERROR_FATAL);
@@ -171,8 +171,8 @@ void MemReservoir::free(void *_mem)
 
 	if ((mem->magic >> 4) != (RESERVOIR_MAGIC >> 4))
 	{
-		printf(ERROR RESERVOIR"free: Corrupt memory or bad free v0x%p. "
-			"Caller: 0x%p.\n",
+		printf(ERROR RESERVOIR"free: Corrupt memory or bad free v%p. "
+			"Caller: %p.\n",
 			mem, __builtin_return_address(1));
 
 		return;
@@ -192,7 +192,7 @@ void MemReservoir::free(void *_mem)
 		return;
 	};
 
-	printf(WARNING RESERVOIR"free(0x%X): Operation fell through without "
+	printf(WARNING RESERVOIR"free(%X): Operation fell through without "
 		"finding subsystem to be freed to.\n", mem);
 }
 

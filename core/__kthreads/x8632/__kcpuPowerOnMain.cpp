@@ -64,11 +64,11 @@ void __kcpuPowerOnMain(CpuStream *self)
 		printf(FATAL CPUPOWER"%d: Failed to bind().\n", self->cpuId);
 	};
 
-	/*printf(NOTICE CPUPOWER"CPU %d: Sleepstack: 0x%x. Regdump:\n"
-		"\teax 0x%x, ebx 0x%x, ecx 0x%x, edx 0x%x\n"
-		"\tesi 0x%x, edi 0x%x, esp 0x%x, ebp 0x%x\n"
-		"\tcs 0x%x, ds 0x%x, es 0x%x, fs 0x%x, gs 0x%x, ss 0x%x\n"
-		"\teip 0x%x, eflags 0x%x\n",
+	/*printf(NOTICE CPUPOWER"CPU %d: Sleepstack: %x. Regdump:\n"
+		"\teax %x, ebx %x, ecx %x, edx %x\n"
+		"\tesi %x, edi %x, esp %x, ebp %x\n"
+		"\tcs %x, ds %x, es %x, fs %x, gs %x, ss %x\n"
+		"\teip %x, eflags %x\n",
 		self->cpuId, self->sleepStack,
 		y.eax, y.ebx, y.ecx, y.edx, y.esi, y.edi, y.esp, y.ebp,
 		y.cs, y.ds, y.es, y.fs, y.gs, y.ss, y.eip, y.eflags);*/

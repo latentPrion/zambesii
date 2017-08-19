@@ -336,14 +336,14 @@ error_t fplainn::FStreamEndpoint::enqueue(sChannelMsg *msg)
 void fplainn::FStreamEndpoint::dump(void)
 {
 	Endpoint::dump();
-	printf(CC"fpstream pid 0x%x, listenertid 0x%x.\n",
+	printf(CC"fpstream pid %x, listenertid %x.\n",
 		thread->parent->id, thread->getFullId());
 }
 
 void fplainn::RegionEndpoint::dump(void)
 {
 	Endpoint::dump();
-	printf(CC"dev %s, region idx %d, tid 0x%x.\n",
+	printf(CC"dev %s, region idx %d, tid %x.\n",
 		region->parent->device->driverInstance->driver->shortName,
 		region->index, region->thread->getFullId());
 }

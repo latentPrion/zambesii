@@ -103,8 +103,8 @@ void HeapDoubleList<T>::dump(void)
 	tail = list.rsrc.tail;
 	list.lock.release();
 
-	printf(NOTICE PTRDBLLIST"@ head 0x%p, tail 0x%p, %d items, "
-		"lock obj 0x%p: Dumping.\n",
+	printf(NOTICE PTRDBLLIST"@ head %p, tail %p, %d items, "
+		"lock obj %p: Dumping.\n",
 		head, tail, getNItems(), &list.lock);
 
 	list.lock.acquire();
@@ -112,10 +112,10 @@ void HeapDoubleList<T>::dump(void)
 	curr = head;
 	for (; curr != NULL; curr = curr->next, flipFlop++)
 	{
-		if (flipFlop < 4) { printf(CC"\t0x%p ", curr->item); }
+		if (flipFlop < 4) { printf(CC"\t%p ", curr->item); }
 		else
 		{
-			printf(CC"0x%p\n", curr->item);
+			printf(CC"%p\n", curr->item);
 			flipFlop = -1;
 		};
 	};
@@ -135,7 +135,7 @@ error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode)
 
 	if (newNode == NULL)
 	{
-		printf(ERROR PTRDBLLIST"addItem(0x%p,%s): Failed to alloc "
+		printf(ERROR PTRDBLLIST"addItem(%p,%s): Failed to alloc "
 			"mem for new node.\n",
 			item, (mode == PTRDBLLIST_ADD_HEAD)?"head":"tail");
 
@@ -179,7 +179,7 @@ error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode)
 		break;
 
 	default:
-		printf(ERROR PTRDBLLIST"addItem(0x%p): Invalid add mode.\n",
+		printf(ERROR PTRDBLLIST"addItem(%p): Invalid add mode.\n",
 			item);
 
 		return ERROR_INVALID_ARG;

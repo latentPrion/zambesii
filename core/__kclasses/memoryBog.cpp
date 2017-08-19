@@ -65,20 +65,20 @@ void MemoryBog::dump(void)
 	printf(NOTICE MEMBOG"Dumping.\n");
 
 	head.lock.acquire();
-	printf(NOTICE MEMBOG"Size: 0x%X, head pointer: 0x%X.\n",
+	printf(NOTICE MEMBOG"Size: %X, head pointer: %X.\n",
 		blockSize, head.rsrc);
 
 	block = head.rsrc;
 	for (; block != NULL; block = block->next)
 	{
-		printf((utf8Char *)"\tBlock: 0x%X, refCount %d 1stObj 0x%X."
+		printf((utf8Char *)"\tBlock: %X, refCount %d 1stObj %X."
 			"\n", block, block->refCount, block->firstObject);
 
 		obj = block->firstObject;
 		for (; obj != NULL; obj = obj->next)
 		{
 			printf((utf8Char *)"\t\tFree object: "
-				"Addr 0x%X, nBytes 0x%X.\n",
+				"Addr %X, nBytes %X.\n",
 				obj, obj->nBytes);
 		};
 	};
@@ -246,8 +246,8 @@ void MemoryBog::free(void *_mem)
 	if (strncmp8(mem->magic, MEMBOG_MAGIC, strlen8(MEMBOG_MAGIC)) != 0)
 	{
 		mem->magic[sizeof(mem->magic) - 1] = '\0';
-		printf(WARNING MEMBOG"Corrupt memory or bad free at 0x%X, "
-			"magic was 0x%s.\n", mem, mem->magic);
+		printf(WARNING MEMBOG"Corrupt memory or bad free at %X, "
+			"magic was %s.\n", mem, mem->magic);
 
 		return;
 	};
@@ -258,7 +258,7 @@ void MemoryBog::free(void *_mem)
 	if (mem->nBytes < 1)
 	{
 		printf(FATAL MEMBOG"free: Free'd block size is 0!\n"
-			"\tAllocated by: 0x%p.\n",
+			"\tAllocated by: %p.\n",
 			mem->allocatedBy);
 
 //		dump();
@@ -403,14 +403,14 @@ error_t MemoryBog::checkAllocations(sarch_t nBytes)
 			};
 
 			cursor.allocation->magic[sizeof(cursor.allocation->magic) - 1] = '\0';
-			printf(NOTICE"Found alloc: %d bytes @ 0x%p, %s.\n",
+			printf(NOTICE"Found alloc: %d bytes @ %p, %s.\n",
 				cursor.allocation->nBytes, cursor.allocation, cursor.allocation->magic);
 
 			if (cursor.allocation->parent != currBlock)
 			{
 				printf(FATAL"Parent block is not currently "
-					"scrutinized block!. Val 0x%p, should "
-					"be 0x%p.\n",
+					"scrutinized block!. Val %p, should "
+					"be %p.\n",
 					cursor.allocation->parent,
 					currBlock);
 
@@ -444,8 +444,8 @@ MemoryBog::sBogBlock *MemoryBog::getNewBlock(void)
 	ret->firstObject->nBytes = blockSize;
 	ret->firstObject->next = NULL;
 
-	printf(NOTICE MEMBOG"New bog block @v 0x%p, 1stObj 0x%p, 1stObj "
-		"nBytes 0x%x.\n",
+	printf(NOTICE MEMBOG"New bog block @v %p, 1stObj %p, 1stObj "
+		"nBytes %x.\n",
 		ret, ret->firstObject, ret->firstObject->nBytes);
 
 	return ret;

@@ -141,7 +141,7 @@ error_t FloodplainnStream::connect(
 	ret = createChannel(blueprint, &tmpretchan);
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(ERROR FPSTREAM"0x%x: connect %s %s: createChannel() "
+		printf(ERROR FPSTREAM"%x: connect %s %s: createChannel() "
 			"failed. Err %d %s.\n",
 			this->id, devName, metaName, ret, strerror(ret));
 

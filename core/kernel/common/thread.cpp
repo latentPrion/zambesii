@@ -342,7 +342,7 @@ error_t Thread::allocateStacks(void)
 
 	if (stack0 == NULL)
 	{
-		printf(ERROR TASK"0x%x: kernel stack alloc failed.\n", id);
+		printf(ERROR TASK"%x: kernel stack alloc failed.\n", id);
 		return ERROR_MEMORY_NOMEM;
 	};
 
@@ -355,7 +355,7 @@ error_t Thread::allocateStacks(void)
 	if (stack1 == NULL)
 	{
 		processTrib.__kgetStream()->memoryStream.memFree(stack0);
-		printf(ERROR TASK"0x%x: failed to alloc user stack.\n", id);
+		printf(ERROR TASK"%x: failed to alloc user stack.\n", id);
 		return ERROR_MEMORY_NOMEM;
 	};
 

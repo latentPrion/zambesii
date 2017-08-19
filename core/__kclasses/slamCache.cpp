@@ -86,10 +86,10 @@ void SlamCache::dump(void)
 	sObject		*obj;
 	uarch_t		count;
 
-	printf(NOTICE SLAMCACHE"@0x%p: Dumping; locks @ F: 0x%p/P: 0x%p.\n",
+	printf(NOTICE SLAMCACHE"@%p: Dumping; locks @ F: %p/P: %p.\n",
 		this, &freeList.lock, &partialList.lock);
 
-	printf(NOTICE SLAMCACHE"@0x%p: Object size: %X, ppb %d, ppexcess %d, "
+	printf(NOTICE SLAMCACHE"@%p: Object size: %X, ppb %d, ppexcess %d, "
 		"FreeList: Pages:\n\t",
 		this, sObjectize, perPageBlocks, perPageExcess);
 

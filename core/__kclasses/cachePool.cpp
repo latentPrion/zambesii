@@ -37,7 +37,7 @@ void CachePool::dump(void)
 
 	for (sCachePoolNode *cur = head.rsrc; cur != NULL; cur = cur->next)
 	{
-		printf(NOTICE CACHEPOOL"Node: 0x%p, Item 0x%p, size 0x%p.\n",
+		printf(NOTICE CACHEPOOL"Node: %p, Item %p, size %p.\n",
 			cur, cur->item, cur->item->sObjectize);
 	};
 

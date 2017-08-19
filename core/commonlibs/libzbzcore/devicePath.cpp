@@ -232,7 +232,7 @@ void __klzbzcore::region::main2(
 		dev->instance->getRegionInfo(self->getFullId(), &r->index)
 			== ERROR_SUCCESS);
 
-	printf(NOTICE LZBZCORE"region:main2 Device %s, region %d running: rdata 0x%x.\n",
+	printf(NOTICE LZBZCORE"region:main2 Device %s, region %d running: rdata %x.\n",
 		ctxt->path, r->index, r->rdata);
 
 	/**	EXPLANATION:
@@ -595,7 +595,7 @@ void __klzbzcore::region::channel::handler(
 		if (err != ERROR_SUCCESS)
 		{
 			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: failed to "
-				"alloc endpoint context for endpoint 0x%p.\n",
+				"alloc endpoint context for endpoint %p.\n",
 				self->getRegion()->parent->device->longName,
 				r->index, msg->__kendpoint);
 
@@ -692,7 +692,7 @@ void __klzbzcore::region::channel::handler(
 	if (cbHdr == NULL)
 	{
 		printf(ERROR LZBZCORE"chan:handler rgn%d: Failed to clone CB "
-			"for call from 0x%x.\n",
+			"for call from %x.\n",
 			r->index, msg->header.sourceId);
 
 		return;
@@ -781,7 +781,7 @@ error_t __klzbzcore::region::channel::allocateEndpointContext(
 		{
 			printf(ERROR LZBZCORE"rgn:handler %s,rgn%d: "
 				"Could not get channel metaName for "
-				"__kendp 0x%p.\n",
+				"__kendp %p.\n",
 				self->getRegion()->parent->device->longName,
 				r->index, msg->__kendpoint);
 
@@ -1073,7 +1073,7 @@ void __klzbzcore::region::channel::genericMeiCall(
 	 * "metaName" in the sChannelMsg.
 	 **/
 	printf(NOTICE"%s dev, region %d, got a message.\n"
-		"\tsubsys %d, func %d, sourcetid 0x%x targettid 0x%x\n",
+		"\tsubsys %d, func %d, sourcetid %x targettid %x\n",
 		self->getRegion()->parent->device->longName, r->index,
 		msg->header.subsystem, msg->header.function,
 		msg->header.sourceId, msg->header.targetId);

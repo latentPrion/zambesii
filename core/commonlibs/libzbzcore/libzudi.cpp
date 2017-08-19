@@ -54,8 +54,8 @@ void lzudi::sEndpointContext::anchor(
 
 void lzudi::sEndpointContext::dump(void)
 {
-	printf(NOTICE"endpointCtxt: 0x%p: metaInfo 0x%p, metaName %s.\n"
-		"\t__kendp 0x%p, chan_ctxt 0x%p, opsVecTemplate 0x%p.\n",
+	printf(NOTICE"endpointCtxt: %p: metaInfo %p, metaName %s.\n"
+		"\t__kendp %p, chan_ctxt %p, opsVecTemplate %p.\n",
 		this, metaInfo, metaName, __kendpoint, channel_context,
 		opsVectorTemplate);
 }
@@ -400,7 +400,7 @@ void udi_mei_call(
 	// If channel doesn't exist or is not bound to this region, abort.
 	if (!r->findEndpointContext(endp))
 	{
-		printf(ERROR"udi_mei_call: endpContext 0x%p passed by region "
+		printf(ERROR"udi_mei_call: endpContext %p passed by region "
 			"%d doesn't exist.\n",
 			endp, r->index);
 
@@ -731,7 +731,7 @@ void lzudi::udi_cb_free_sync(udi_cb_t *cb)
 
 	if (!cbHdr->magicIsValid())
 	{
-		printf(FATAL"udi_cb_free_sync 0x%p: Found invalid "
+		printf(FATAL"udi_cb_free_sync %p: Found invalid "
 			"magic!\n",
 			cbHdr);
 

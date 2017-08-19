@@ -108,8 +108,8 @@ error_t VaddrSpace::initialize(numaBankId_t boundBankId)
 		| PAGING_L1_PRESENT | PAGING_L1_WRITE
 		| PAGING_L1_CACHE_WRITE_THROUGH;
 
-	printf(NOTICE VADDRSPACE"initialize: binding %d; lvl0: v 0x%p, "
-		"p 0x%P.\n",
+	printf(NOTICE VADDRSPACE"initialize: binding %d; lvl0: v %p, "
+		"p %P.\n",
 		boundBankId, level0Accessor.rsrc, &level0Paddr);
 
 	return ERROR_SUCCESS;
@@ -175,7 +175,7 @@ void VaddrSpace::dumpAllNonEmpty(void)
 {
 	uarch_t			flipFlop=0;
 
-	printf(NOTICE VADDRSPACE"@0x%p (P0x%P): dumping all nonzero PDEs.\n\t",
+	printf(NOTICE VADDRSPACE"@%p (P%P): dumping all nonzero PDEs.\n\t",
 		level0Accessor.rsrc, &level0Paddr);
 
 	for (uarch_t i=0; i<PAGING_L0_NENTRIES; i++)
@@ -198,7 +198,7 @@ void VaddrSpace::dumpAllPresent(void)
 {
 	uarch_t			flipFlop=0;
 
-	printf(NOTICE VADDRSPACE"@0x%p (P0x%P): dumping all present PDEs.\n",
+	printf(NOTICE VADDRSPACE"@%p (P%P): dumping all present PDEs.\n",
 		level0Accessor.rsrc, &level0Paddr);
 
 	for (uarch_t i=0; i<PAGING_L0_NENTRIES; i++)

@@ -196,7 +196,7 @@ void *walkerPageRanger::createMappingTo(
 
 	if (ret == NULL)
 	{
-		printf(ERROR WPRANGER"createMappingTo(0x%P, %d): Failed to "
+		printf(ERROR WPRANGER"createMappingTo(%P, %d): Failed to "
 			"alloc vmem.\n",
 			&paddr, nPages);
 
@@ -210,7 +210,7 @@ void *walkerPageRanger::createMappingTo(
 
 	if (nMapped < (signed)nPages)
 	{
-		printf(ERROR WPRANGER"createMappingTo(0x%P, %d): mapInc "
+		printf(ERROR WPRANGER"createMappingTo(%P, %d): mapInc "
 			"failed.\n",
 			&paddr, nPages);
 

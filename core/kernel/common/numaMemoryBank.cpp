@@ -55,14 +55,14 @@ void NumaMemoryBank::dump(void)
 	ranges.lock.readAcquire(&rwFlags);
 	defRange.lock.readAcquire(&rwFlags2);
 
-	printf(NOTICE NUMAMEMBANK"%d: Dumping. Default range base 0x%P.\n",
+	printf(NOTICE NUMAMEMBANK"%d: Dumping. Default range base %P.\n",
 		id, &defRange.rsrc->baseAddr);
 
 	defRange.lock.readRelease(rwFlags2);
 
 	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
-		printf((utf8Char *)"\tMem range: base 0x%P, size 0x%P.\n",
+		printf((utf8Char *)"\tMem range: base %P, size %P.\n",
 			&cur->range->baseAddr, &cur->range->size);
 
 		cur->range->dump();
@@ -129,8 +129,8 @@ error_t NumaMemoryBank::addMemoryRange(paddr_t baseAddr, paddr_t size)
 	defRange.lock.writeRelease();
 	ranges.lock.writeRelease();
 
-	printf(NOTICE NUMAMEMBANK"%d: New mem range: base 0x%P, size 0x%P, "
-		"v 0x%p.\n",
+	printf(NOTICE NUMAMEMBANK"%d: New mem range: base %P, size %P, "
+		"v %p.\n",
 		id, &baseAddr, &size, memRange);
 
 	return ERROR_SUCCESS;
@@ -166,7 +166,7 @@ error_t NumaMemoryBank::removeMemoryRange(paddr_t baseAddr)
 			ranges.lock.writeRelease();
 
 			printf(NOTICE NUMAMEMBANK"%d: Destroying mem range: "
-				"base 0x%P, size 0x%P, v 0x%p.\n",
+				"base %P, size %P, v %p.\n",
 				id, &cur->range->baseAddr, &cur->range->size,
 				cur->range);
 
@@ -187,7 +187,7 @@ error_t NumaMemoryBank::removeMemoryRange(paddr_t baseAddr)
 	ranges.lock.writeRelease();
 
 	// Memory range with this base address/contained address doesn't exist.
-	printf(NOTICE NUMAMEMBANK"%d: Failed to remove range with base 0x%P."
+	printf(NOTICE NUMAMEMBANK"%d: Failed to remove range with base %P."
 		"\n", id, &baseAddr);
 
 	return ERROR_INVALID_ARG_VAL;
@@ -345,7 +345,7 @@ void NumaMemoryBank::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 
 	ranges.lock.readRelease(rwFlags);
 
-	printf(WARNING NUMAMEMBANK"%d: releaseFrames(0x%P, %d) Pmem leak.\n",
+	printf(WARNING NUMAMEMBANK"%d: releaseFrames(%P, %d) Pmem leak.\n",
 		id, &basePaddr, nFrames);
 }
 

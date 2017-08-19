@@ -430,7 +430,7 @@ void fplainn::Device::dumpEnumerationAttributes(void)
 {
 	utf8Char		*fmtChar;
 
-	printf(NOTICE"Device: @0x%p, bid %d, %d enum attrs.\n\tlongname %s.\n",
+	printf(NOTICE"Device: @%p, bid %d, %d enum attrs.\n\tlongname %s.\n",
 		this, bankId, nEnumerationAttrs, longName);
 
 	for (uarch_t i=0; i<nEnumerationAttrs; i++)
@@ -438,7 +438,7 @@ void fplainn::Device::dumpEnumerationAttributes(void)
 		switch (enumerationAttrs[i]->attr_type)
 		{
 		case UDI_ATTR_STRING: fmtChar = CC"%s"; break;
-		case UDI_ATTR_UBIT32: fmtChar = CC"0x%x"; break;
+		case UDI_ATTR_UBIT32: fmtChar = CC"%x"; break;
 		case UDI_ATTR_ARRAY8: fmtChar = CC"%x"; break;
 		case UDI_ATTR_BOOLEAN: fmtChar = CC"%x"; break;
 		default:

@@ -69,7 +69,7 @@ x86IoApic::IoApic *x86IoApic::getIoApicByVector(ubit8 vector)
 
 void x86IoApic::dump(void)
 {
-	printf(NOTICE x86IOAPIC"Dumping. Cache @v 0x%p magic: 0x%x.\n"
+	printf(NOTICE x86IOAPIC"Dumping. Cache @v %p magic: %x.\n"
 		"\tmapped %d, nIoApics %d.\n",
 		&cache, cache.magic, cache.mapped, cache.nIoApics);
 }

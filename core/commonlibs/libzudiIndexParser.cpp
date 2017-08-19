@@ -82,7 +82,7 @@ error_t ZudiIndexParser::RandomAccessBuffer::read(
 			buffer.lock.release();
 
 			printf(WARNING ZUDIIDX"RAB::read: Overflow: bufferEof "
-				"0x%p, read would have accessed up to 0x%p.\n",
+				"%p, read would have accessed up to %p.\n",
 				buffer.rsrc.bufferEof,
 				&buffer.rsrc.buffer[offset + nBytes - 1]);
 

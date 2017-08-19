@@ -290,8 +290,8 @@ template <class T> void List<T>::dump(void)
 
 	list.lock.acquire();
 
-	printf(NOTICE"PointerlessList @ 0x%p: dumping; lock @ 0x%p.\n"
-		"\tNum items: %d, head: 0x%p, tail 0x%p.\n\t",
+	printf(NOTICE"PointerlessList @ %p: dumping; lock @ %p.\n"
+		"\tNum items: %d, head: %p, tail %p.\n\t",
 		this, &list.lock,
 		list.rsrc.nItems, list.rsrc.head, list.rsrc.tail);
 
@@ -300,7 +300,7 @@ template <class T> void List<T>::dump(void)
 		curr = curr->listHeader.next, count--)
 	{
 		if (count == 0) { printf(CC"\n\t"); count = 4; };
-		printf(CC"obj: 0x%p, ", curr);
+		printf(CC"obj: %p, ", curr);
 	};
 	printf(CC"\n");
 

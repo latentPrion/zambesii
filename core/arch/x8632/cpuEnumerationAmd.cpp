@@ -118,8 +118,8 @@ static status_t amdSignatureEnum(void)
 
 	edx = AMDENUM_SIG_GET_REV(eax);
 	// For now just display the values you've got. Debug on real hardware.
-	printf(NOTICE AMDENUM"Family low: 0x%x.\nTaken family value: 0x%x."
-		"Taken model value: 0x%x.\nTaken revision: 0x%x.\n",
+	printf(NOTICE AMDENUM"Family low: %x.\nTaken family value: %x."
+		"Taken model value: %x.\nTaken revision: %x.\n",
 		AMDENUM_SIG_GET_FAMILY_LOW(eax),
 		ebx, ecx, edx);
 

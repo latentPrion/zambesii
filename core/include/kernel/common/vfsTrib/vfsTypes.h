@@ -489,7 +489,7 @@ void vfs::DirInode<tagType>::dumpDirs(void)
 	{
 		currItem = *it;
 
-		printf(CC"\tname: %s. Parent 0x%p.\n",
+		printf(CC"\tname: %s. Parent %p.\n",
 			currItem->getName(), currItem->getParent());
 	};
 
@@ -512,7 +512,7 @@ void vfs::DirInode<tagType>::dumpLeaves(void)
 	{
 		currItem = *it;
 
-		printf(CC"\tname: %s. Parent 0x%p.\n",
+		printf(CC"\tname: %s. Parent %p.\n",
 			currItem->getName(), currItem->getParent());
 	};
 

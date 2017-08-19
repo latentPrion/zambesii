@@ -508,7 +508,7 @@ void __klzbzcore::driver::main1(
 	};
 
 	// Done with the spawnDriver syscall at this point.
-	printf(NOTICE LZBZCORE"spawnDriver(%s, NUMA%d): done. PID 0x%x.\n",
+	printf(NOTICE LZBZCORE"spawnDriver(%s, NUMA%d): done. PID %x.\n",
 		drvInst->driver->shortName,
 		drvInst->bankId, selfProcess->id);
 
@@ -712,7 +712,7 @@ void __klzbzcore::driver::__kcontrol::handler(
 	{
 		printf(ERROR LZBZCORE"drvPath: process__kcall: "
 			"__KOP_INST_DEV: failed to alloc caller "
-			"context block.\n\tCaller 0x%x, device %s.\n",
+			"context block.\n\tCaller %x, device %s.\n",
 			msg->header.sourceId, msg->path);
 	};
 
@@ -899,7 +899,7 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq2(
 	fplainn::Zudi::sKernelCallMsg *ctxt
 	)
 {
-printf(NOTICE LZBZCORE"instDevReq2: HERE! 0x%p\n", ctxt);
+printf(NOTICE LZBZCORE"instDevReq2: HERE! %p\n", ctxt);
 	return;
 }
 

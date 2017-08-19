@@ -75,7 +75,7 @@ error_t ProcessTrib::getDistributaryExecutableFormat(
 
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(ERROR PROCTRIB"Proc 0x%x: command line invalid; "
+		printf(ERROR PROCTRIB"Proc %x: command line invalid; "
 			"distributary doesn't exist.\n",
 			self->getFullId());
 
@@ -92,7 +92,7 @@ error_t ProcessTrib::getDistributaryExecutableFormat(
 	else
 	{
 		// OUT_OF_KERNEL distributaries can only be ELF.
-		printf(WARNING PROCTRIB"Proc 0x%x: out-of-kernel dtribs are "
+		printf(WARNING PROCTRIB"Proc %x: out-of-kernel dtribs are "
 			"not yet supported.\n",
 			self->getFullId());
 
@@ -202,7 +202,7 @@ void ProcessTrib::commonEntry(void *)
 	self = (Thread *)cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
 
-	printf(NOTICE PROCTRIB"New process running. ID=0x%x type=%d.\n",
+	printf(NOTICE PROCTRIB"New process running. ID=%x type=%d.\n",
 		self->getFullId(),
 		self->parent->getType());
 
@@ -214,7 +214,7 @@ void ProcessTrib::commonEntry(void *)
 
 	if (callbackMessage == NULL)
 	{
-		printf(FATAL PROCTRIB"commonEntry: process 0x%x:\n",
+		printf(FATAL PROCTRIB"commonEntry: process %x:\n",
 			self->getFullId());
 
 		panic(CC"\tFailed to allocate callback message.\n");
@@ -265,7 +265,7 @@ void ProcessTrib::commonEntry(void *)
 
 	default:
 		err = ERROR_UNSUPPORTED;
-		printf(FATAL PROCTRIB"Proc 0x%x: Currently unsupported process "
+		printf(FATAL PROCTRIB"Proc %x: Currently unsupported process "
 			"type %d.\n",
 			self->getFullId(), initBlock->type);
 
@@ -279,7 +279,7 @@ void ProcessTrib::commonEntry(void *)
 
 	if (err != ERROR_SUCCESS)
 	{
-		printf(ERROR PROCTRIB"Proc 0x%x: Failed to detect process' "
+		printf(ERROR PROCTRIB"Proc %x: Failed to detect process' "
 			"executable format.\n",
 			self->getFullId());
 
@@ -291,7 +291,7 @@ void ProcessTrib::commonEntry(void *)
 	if (executableFormat != ProcessStream::RAW)
 	{
 		// Load the confluence lib and extract its entry point addr.
-		printf(FATAL PROCTRIB"Proc 0x%x: Currently unsupported "
+		printf(FATAL PROCTRIB"Proc %x: Currently unsupported "
 			"executable format %d.\n",
 			self->getFullId(), executableFormat);
 
@@ -321,7 +321,7 @@ void ProcessTrib::commonEntry(void *)
 	err = context.initialize();
 	if (err != ERROR_SUCCESS)
 	{
-		printf(FATAL PROCTRIB"Proc 0x%x: Failed to initialize reg "
+		printf(FATAL PROCTRIB"Proc %x: Failed to initialize reg "
 			"context; unable to jump to rawsyslib entry.\n",
 			self->getFullId());
 
@@ -533,7 +533,7 @@ error_t ProcessTrib::spawnDriver(
 		return ret;
 	};
 
-	printf(NOTICE PROCTRIB"spawnDriver: New driver spawned, tid = 0x%x.\n",
+	printf(NOTICE PROCTRIB"spawnDriver: New driver spawned, tid = %x.\n",
 		firstThread->getFullId());
 
 	*retProcess = newProcess.release();
@@ -604,7 +604,7 @@ error_t ProcessTrib::spawnDistributary(
 		return ret;
 	};
 
-	printf(NOTICE"New process spawned, tid = 0x%x.\n",
+	printf(NOTICE"New process spawned, tid = %x.\n",
 		firstTask->getFullId());
 
 	return ERROR_SUCCESS;
@@ -750,7 +750,7 @@ void ProcessTrib::dumpProcessesAndVaddrspaces(void)
 		if (flipFlop == 0) { printf(CC"\t"); };
 
 		v = processes.rsrc[i]->getVaddrSpaceStream();
-		printf(CC"PID 0x%x l0v 0x%p l0p 0x%P; ",
+		printf(CC"PID %x l0v %p l0p %P; ",
 			processes.rsrc[i]->id,
 			v->vaddrSpace.level0Accessor.rsrc,
 			&v->vaddrSpace.level0Paddr);

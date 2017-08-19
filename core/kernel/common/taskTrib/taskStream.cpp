@@ -60,7 +60,7 @@ error_t TaskStream::initialize(void)
 void TaskStream::dump(void)
 {
 	printf(NOTICE TASKSTREAM"%d: load %d, capacity %d, "
-		"currentTask 0x%x(@0x%p): dump.\n",
+		"currentTask %x(@%p): dump.\n",
 		parent->cpuId,
 		load, capacity,
 		getCurrentThread()->getFullId(),
@@ -242,7 +242,7 @@ void TaskStream::pull(void)
 	newThread->runState = Thread::RUNNING;
 	currentThread = newThread;
 
-printf(NOTICE TASKSTREAM"%d: Switching to task 0x%x.\n",
+printf(NOTICE TASKSTREAM"%d: Switching to task %x.\n",
 	parent->cpuId, newThread->getFullId());
 
 	loadContextAndJump(newThread->context);

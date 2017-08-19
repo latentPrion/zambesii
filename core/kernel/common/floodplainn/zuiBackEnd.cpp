@@ -307,7 +307,7 @@ void zuiBackend::detectDriverReq(
 		return;
 	};
 
-	printf(NOTICE FPLAINNIDX"detectDriver: devname %s. Src 0x%x, target 0x%x."
+	printf(NOTICE FPLAINNIDX"detectDriver: devname %s. Src %x, target %x."
 		"\n", requestData->path,
 		request->header.sourceId, request->header.targetId);
 
@@ -620,7 +620,7 @@ void zuiBackend::newDeviceActionReq(
 	{
 		printf(ERROR FPLAINNIDX"newDeviceActionReq: "
 			"unable to allocate response message.\n"
-			"\tSender thread 0x%x may be frozen indefinitely.\n",
+			"\tSender thread %x may be frozen indefinitely.\n",
 			request->header.sourceId);
 
 		return;
@@ -709,7 +709,7 @@ void zuiBackend::loadDriverReq(
 	{
 		printf(ERROR FPLAINNIDX"loadDriverReq: "
 			"unable to allocate response message.\n"
-			"\tSender thread 0x%x may be frozen indefinitely.\n",
+			"\tSender thread %x may be frozen indefinitely.\n",
 			request->header.sourceId);
 
 		return;
@@ -982,7 +982,7 @@ void zuiBackend::loadRequirementsReq(
 	{
 		printf(ERROR FPLAINNIDX"loadRequirementReq: "
 			"unable to allocate response.\n"
-			"\tSender thread 0x%x may be frozen indefinitely.\n",
+			"\tSender thread %x may be frozen indefinitely.\n",
 			request->header.sourceId);
 
 		return;
@@ -1166,7 +1166,7 @@ void zuiBackend::newDeviceInd(
 	{
 		printf(ERROR FPLAINNIDX"newDeviceInd: "
 			"unable to allocate response, or origin context.\n"
-			"\tSender thread 0x%x may be frozen indefinitely.\n",
+			"\tSender thread %x may be frozen indefinitely.\n",
 			request->header.sourceId);
 
 		return;
@@ -1345,7 +1345,7 @@ void zuiBackend::handleUnknownRequest(ZAsyncStream::sZAsyncMsg *request)
 	{
 		printf(ERROR FPLAINNIDX"HandleUnknownRequest: "
 			"unable to allocate response message.\n"
-			"\tSender thread 0x%x may be frozen indefinitely.\n",
+			"\tSender thread %x may be frozen indefinitely.\n",
 			request->header.sourceId);
 
 		return;
@@ -1366,7 +1366,7 @@ void zuiBackend::handleRequest(
 	// Ensure that no process is sending us bogus request data.
 	if (msg->dataNBytes != sizeof(fplainn::Zui::sIndexZAsyncMsg))
 	{
-		printf(WARNING FPLAINNIDX"Thread 0x%x is sending spoofed "
+		printf(WARNING FPLAINNIDX"Thread %x is sending spoofed "
 			"request data.\n",
 			msg->header.sourceId);
 
@@ -1462,7 +1462,7 @@ void fplainn::Zui::main(void *)
 	self->parent->zasyncStream.listen(self->getFullId(), 1);
 
 	printf(NOTICE FPLAINNIDX"Floodplainn-indexer executing;\n"
-		"\tprocess ID: 0x%x. ESP: 0x%p. Listening; dormanting.\n",
+		"\tprocess ID: %x. ESP: %p. Listening; dormanting.\n",
 		self->getFullId(), debug::getStackPointer());
 
 	zudiIndexes[0]->getHeader(&__kindexHeader);

@@ -33,7 +33,7 @@ ubit8 *debug::getStackPointer(void)
 
 void debug::sStackDescriptor::dump(void)
 {
-	printf(NOTICE"stackDescriptor: @0x%p: start 0x%p, eof 0x%p. %d bytes\n",
+	printf(NOTICE"stackDescriptor: @%p: start %p, eof %p. %d bytes\n",
 		this, start, eof, nBytes);
 }
 
@@ -59,13 +59,13 @@ void debug::printStackTrace(void *startFrame, sStackDescriptor *stack)
 		void			(*caller)(void);
 	} *currFrame;
 
-	printf(NOTICE"Stack: bounds: low 0x%p, high 0x%p. Start frame 0x%p\n",
+	printf(NOTICE"Stack: bounds: low %p, high %p. Start frame %p\n",
 		stack->start, stack->eof, startFrame);
 
 	currFrame = (sX8632StackFrame *)startFrame;
 	do
 	{
-		printf(NOTICE"Stack: frame @0x%p, called by: 0x%p\n",
+		printf(NOTICE"Stack: frame @%p, called by: %p\n",
 			currFrame, currFrame->caller);
 
 		if (currFrame->prevFrame >= stack->eof
@@ -81,12 +81,12 @@ void debug::printStackArguments(void *stackFrame, void *stackPointer)
 	void		**currArg;
 
 	currArg = (void **)stackPointer;
-	printf(NOTICE"%d args, EBP 0x%p, ESP 0x%p\n",
+	printf(NOTICE"%d args, EBP %p, ESP %p\n",
 		(void**)stackPointer - (void **)stackFrame,
 		stackFrame, stackPointer);
 
 	for (uarch_t i=0; currArg < stackFrame; i++, currArg++) {
-		printf(NOTICE"Stack args: %d: 0x%x\n", i, *currArg);
+		printf(NOTICE"Stack args: %d: %x\n", i, *currArg);
 	};
 }
 
@@ -139,7 +139,7 @@ static void __attribute__((noinline)) setRwxBits(ubit8 breakpoint, ubit8 rwx)
 		// We don't support I/O breakpoints right now.
 		default:
 			printf(ERROR"x86 Debug: Invalid breakpoint "
-				"condition 0x%x for bp %d.\n"
+				"condition %x for bp %d.\n"
 				"\tDisabling breakpoint.\n",
 				rwx, breakpoint);
 

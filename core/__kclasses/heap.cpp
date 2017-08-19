@@ -75,7 +75,7 @@ error_t Heap::setGuardPage(void *vaddr)
 	if (status != WPRANGER_STATUS_HEAP_GUARDPAGE
 		|| f & PAGEATTRIB_PRESENT)
 	{
-		printf(FATAL HEAP"Gpage: 0x%p; flags 0x%x, paddr bits 0x%P\n",
+		printf(FATAL HEAP"Gpage: %p; flags %x, paddr bits %P\n",
 			vaddr, f, &p);
 
 		panic(FATAL HEAP"Failed to protect guardpage.\n");
@@ -114,7 +114,7 @@ error_t Heap::unsetGuardPage(void *vaddr)
 	// Verify that we unprotected the guardpage.
 	if (status != WPRANGER_STATUS_FAKEMAPPED_DYNAMIC)
 	{
-		printf(FATAL HEAP"unsetGuardPage 0x%p: lookup didn't return "
+		printf(FATAL HEAP"unsetGuardPage %p: lookup didn't return "
 			"FAKE_DYN status value. Status %d.\n",
 			vaddr, status);
 
@@ -209,7 +209,7 @@ Heap::Allocation *Heap::Chunk::malloc(
 				printf(ERROR HEAP"Chunk::malloc: GUARD_PAGED "
 					"set, but for alloc of %dB, "
 					"after alloc, new block destination "
-					"0x%p is not page aligned\n",
+					"%p is not page aligned\n",
 					sz, (void*)newBlockDest);
 
 				panic(ERROR_UNKNOWN);
@@ -431,7 +431,7 @@ error_t Heap::getNewChunk(Chunk **retchunk) const
 
 	tmpchunk->blocks.sortedInsert(firstBlock);
 	*retchunk = tmpchunk;
-printf(NOTICE"getNewChunk: chunk 0x%p: first block @0x%p, %d bytes.\n",
+printf(NOTICE"getNewChunk: chunk %p: first block @%p, %d bytes.\n",
 	(void*)tmpchunk, (void*)firstBlock, firstBlock->nBytes);
 	return ERROR_SUCCESS;
 }
@@ -461,7 +461,7 @@ void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 
 	if (sz == 0)
 	{
-		printf(WARNING HEAP"malloc: 0 sized alloc from caller 0x%p.\n",
+		printf(WARNING HEAP"malloc: 0 sized alloc from caller %p.\n",
 			allocatedBy);
 
 		panic(ERROR_UNKNOWN);
@@ -525,8 +525,8 @@ void *Heap::malloc(size_t sz, void *allocatedBy, utf8Char *desc)
 					!= ERROR_SUCCESS)
 				{
 					printf(ERROR HEAP"malloc: Failed to "
-						"protect alloc 0x%p, %dB, "
-						"gpage @0x%p!\n",
+						"protect alloc %p, %dB, "
+						"gpage @%p!\n",
 						(void*)ret, ret->nBytes,
 						(void*)guardPageStart);
 
@@ -575,7 +575,7 @@ void *Heap::realloc(void *p, size_t sz)
 		alloc--;
 		if (!alloc->magicIsValid())
 		{
-			printf(FATAL HEAP"realloc(0x%p, sz): magic invalid. Aborting."
+			printf(FATAL HEAP"realloc(%p, sz): magic invalid. Aborting."
 				"\n", p, sz);
 
 			panic(ERROR_FATAL);
@@ -586,8 +586,8 @@ void *Heap::realloc(void *p, size_t sz)
 			// Is the alloc in the alloc list?
 			if (!allocationList.find(alloc))
 			{
-				printf(NOTICE HEAP"realloc(0x%p, sz): mem pointer 0x%p "
-					"(hdr 0x%p) not in alloc list!\n",
+				printf(NOTICE HEAP"realloc(%p, sz): mem pointer %p "
+					"(hdr %p) not in alloc list!\n",
 					p, sz, p, (void*)alloc);
 
 				panic(ERROR_UNKNOWN);
@@ -638,8 +638,8 @@ void Heap::free(void *_p, void *freedBy)
 		allocStart = (uintptr_t)alloc - alloc->gapSize;
 		if (allocStart & (pageSize - 1))
 		{
-			printf(WARNING HEAP"free: Alloc @0x%p, gapSize "
-				"%d, true start 0x%p, caller 0x%p: not page aligned, "
+			printf(WARNING HEAP"free: Alloc @%p, gapSize "
+				"%d, true start %p, caller %p: not page aligned, "
 				"but GUARD_PAGED is set\n",
 				(void*)alloc, alloc->gapSize,
 				(void*)allocStart, freedBy);
@@ -651,7 +651,7 @@ void Heap::free(void *_p, void *freedBy)
 		// If the alloc doesn't end just before a page boundary:
 		if ((allocEnd + 1) & (pageSize - 1))
 		{
-			printf(ERROR HEAP"free: alloc @0x%p, size %dB "
+			printf(ERROR HEAP"free: alloc @%p, size %dB "
 				"doesn't end on a page boundary, but "
 				"GUARD_PAGED set\n",
 				(void*)alloc, alloc->nBytes);
@@ -670,7 +670,7 @@ void Heap::free(void *_p, void *freedBy)
 
 		if (!isWithinHeap)
 		{
-			printf(WARNING HEAP"free: ptr 0x%p not within "
+			printf(WARNING HEAP"free: ptr %p not within "
 				"heap!\n", _p);
 
 			panic(ERROR_UNKNOWN);
@@ -702,9 +702,9 @@ void Heap::free(void *_p, void *freedBy)
 				"movl	%%ebp, %0\n\t"
 				: "=r" (ebp));
 
-			printf(NOTICE HEAP"free: mem pointer 0x%p "
-				"(hdr 0x%p) not in alloc list!\n"
-				"\tFree called for by 0x%p\n",
+			printf(NOTICE HEAP"free: mem pointer %p "
+				"(hdr %p) not in alloc list!\n"
+				"\tFree called for by %p\n",
 				_p, (void*)alloc, freedBy);
 
 			//debug::printStackTrace(ebp, &currStack);
@@ -714,8 +714,8 @@ void Heap::free(void *_p, void *freedBy)
 
 	if (!chunkList.find(alloc->parent))
 	{
-		printf(NOTICE HEAP"free: mem ptr 0x%p (hdr 0x%p) has invalid "
-			"parent chunk 0x%p!\n",
+		printf(NOTICE HEAP"free: mem ptr %p (hdr %p) has invalid "
+			"parent chunk %p!\n",
 			_p, (void*)alloc, (void*)alloc->parent);
 
 		panic(ERROR_UNKNOWN);
@@ -733,7 +733,7 @@ void Heap::free(void *_p, void *freedBy)
 		if (unsetGuardPage(guardPageStart) != ERROR_SUCCESS)
 		{
 			printf(ERROR HEAP"free: failed to unprotect alloc: "
-				"0x%p, %dB, gpage @0x%p!\n",
+				"%p, %dB, gpage @%p!\n",
 				(void*)alloc, alloc->nBytes,
 				(void*)guardPageStart);
 
@@ -889,7 +889,7 @@ error_t Heap::checkBlocks(void)
 
 			if (!currBlock->magicIsValid())
 			{
-				printf(ERROR HEAP"checkBlocks: Block 0x%p: "
+				printf(ERROR HEAP"checkBlocks: Block %p: "
 					"invalid magic!\n",
 					currBlock);
 
@@ -898,7 +898,7 @@ error_t Heap::checkBlocks(void)
 
 			if (currBlock->parent != currChunk)
 			{
-				printf(ERROR HEAP"checkBlocks: Block 0x%p: "
+				printf(ERROR HEAP"checkBlocks: Block %p: "
 					"Incorrect parent chunk!\n",
 					currBlock);
 
@@ -909,9 +909,9 @@ error_t Heap::checkBlocks(void)
 			currBlockEnd = (ubit8 *)currBlock + currBlock->nBytes;
 			if (currBlockEnd > currChunkEnd)
 			{
-				printf(ERROR HEAP"checkBlocks: Block 0x%p, "
+				printf(ERROR HEAP"checkBlocks: Block %p, "
 					"%dB: Extends beyond parent chunk "
-					"0x%p, %dB!\n",
+					"%p, %dB!\n",
 					currBlock, currBlock->nBytes,
 					currChunk, chunkSize);
 
@@ -921,9 +921,9 @@ error_t Heap::checkBlocks(void)
 			// Check for unsorted blocks.
 			if (prevBlock != NULL && currBlock < prevBlock)
 			{
-				printf(ERROR HEAP"checkBlocks: Block 0x%p, "
+				printf(ERROR HEAP"checkBlocks: Block %p, "
 					"%dB: out of order! "
-					"Prevblock 0x%p, %dB\n",
+					"Prevblock %p, %dB\n",
 					currBlock, currBlock->nBytes,
 					prevBlock, prevBlock->nBytes);
 
@@ -933,9 +933,9 @@ error_t Heap::checkBlocks(void)
 			// Check for duplicate blocks.
 			if (prevBlock != NULL && currBlock == prevBlock)
 			{
-				printf(ERROR HEAP"checkBlocks: Block 0x%p, "
+				printf(ERROR HEAP"checkBlocks: Block %p, "
 					"%dB: duplicate block! "
-					"Prevblock 0x%p, %dB\n",
+					"Prevblock %p, %dB\n",
 					currBlock, currBlock->nBytes,
 					prevBlock, prevBlock->nBytes);
 
@@ -951,9 +951,9 @@ error_t Heap::checkBlocks(void)
 			// Check for blocks that overlap each other.
 			if (prevBlock != NULL && prevBlockEnd >= (void *)currBlock)
 			{
-				printf(ERROR HEAP"checkBlocks: Block 0x%p, "
+				printf(ERROR HEAP"checkBlocks: Block %p, "
 					"%dB: overlapping block! "
-					"Prevblock 0x%p, %dB\n",
+					"Prevblock %p, %dB\n",
 					currBlock, currBlock->nBytes,
 					prevBlock, prevBlock->nBytes);
 
@@ -994,7 +994,7 @@ error_t Heap::checkAllocations(void)
 
 		if (!currChunk->magicIsValid())
 		{
-			printf(FATAL HEAP"checkAllocs: chunk 0x%p, invalid "
+			printf(FATAL HEAP"checkAllocs: chunk %p, invalid "
 				"magic\n",
 				currChunk);
 
@@ -1017,7 +1017,7 @@ error_t Heap::checkAllocations(void)
 
 		if (!allocIsWithinHeap(alloc, &detectedParent))
 		{
-			printf(FATAL HEAP"checkAllocs: alloc 0x%p not within "
+			printf(FATAL HEAP"checkAllocs: alloc %p not within "
 				"heap!\n",
 				alloc);
 
@@ -1028,7 +1028,7 @@ error_t Heap::checkAllocations(void)
 
 		if (!alloc->magicIsValid())
 		{
-			printf(FATAL HEAP"checkAllocs: Alloc 0x%p: invalid "
+			printf(FATAL HEAP"checkAllocs: Alloc %p: invalid "
 				"magic, %dth alloc of %d\n",
 				alloc, nAllocsInList, totalAllocs);
 
@@ -1041,8 +1041,8 @@ error_t Heap::checkAllocations(void)
 			alloc->parent, List<Chunk>::OP_FLAGS_UNLOCKED)
 			|| alloc->parent != detectedParent)
 		{
-			printf(FATAL HEAP"checkAllocs: alloc 0x%p: invalid "
-				"parent chunk 0x%p!\n\t%s\n",
+			printf(FATAL HEAP"checkAllocs: alloc %p: invalid "
+				"parent chunk %p!\n\t%s\n",
 				alloc, alloc->parent,
 				(alloc->parent != detectedParent)
 					? "Parent chunk != detected parent!"

@@ -329,7 +329,7 @@ error_t InterruptTrib::sZkcm::registerPinIsr(
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR INTTRIB"registerPinIsr: Failed to add new ISR "
-			"on __kpin %d.\n\tZkcmDevice obj 0x%p, ISR 0x%p.\n",
+			"on __kpin %d.\n\tZkcmDevice obj %p, ISR %p.\n",
 			__kpin, dev, isr);
 
 		delete isrDesc;
@@ -382,7 +382,7 @@ sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 		if (isrDesc->api.zkcm.isr != isr) { continue; };
 
 		// If we found the right one:
-		printf(NOTICE INTTRIB"retirePinIsr: Retiring ISR 0x%p on "
+		printf(NOTICE INTTRIB"retirePinIsr: Retiring ISR %p on "
 			"__kpin %d.\n\t(type: ZKCM), handled %d IRQs.\n",
 			isr, __kpin, isrDesc->nHandled);
 
@@ -582,7 +582,7 @@ void InterruptTrib::dumpExceptions(void)
 	{
 		if (msiIrqTable[i].type == sVectorDescriptor::EXCEPTION)
 		{
-			printf(CC"\t%d: 0x%p,", i, msiIrqTable[i].exception);
+			printf(CC"\t%d: %p,", i, msiIrqTable[i].exception);
 			if (flipFlop == 3)
 			{
 				printf(CC"\n");
@@ -599,7 +599,7 @@ void dumpIsrDescriptor(ubit16 num, InterruptTrib::sIsrDescriptor *desc)
 	if (desc->driverType == InterruptTrib::sIsrDescriptor::ZKCM)
 	{
 		printf(CC"\t%d (is ZKCM): nHandled %d,"
-			"\n\tisr @0x%p, device base @0x%p.\n",
+			"\n\tisr @%p, device base @%p.\n",
 			num, desc->nHandled,
 			desc->api.zkcm.isr, desc->api.zkcm.device);
 	};

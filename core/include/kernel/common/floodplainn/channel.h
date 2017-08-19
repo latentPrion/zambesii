@@ -70,7 +70,7 @@ namespace fplainn
 			{ return otherEnd->enqueue(msg); }
 
 		virtual void dump(void)
-			{ printf(CC"\topsvec 0x%p, ", opsVector); }
+			{ printf(CC"\topsvec %p, ", opsVector); }
 
 	private:
 		friend class D2DChannel;

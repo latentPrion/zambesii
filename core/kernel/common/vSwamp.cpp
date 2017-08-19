@@ -22,7 +22,7 @@ error_t VSwamp::initialize(void)
 }
 void VSwamp::dump(void)
 {
-	printf(NOTICE"vSwamp: base: 0x%p, size: 0x%x, ", baseAddr, size);
+	printf(NOTICE"vSwamp: base: %p, size: %x, ", baseAddr, size);
 
 	state.lock.acquire();
 
@@ -39,7 +39,7 @@ void VSwamp::dump(void)
 		tmp != NULL;
 		tmp = tmp->next)
 	{
-		printf(CC"\tNode (v0x%p): baseAddr 0x%p, nPages 0x%x.\n",
+		printf(CC"\tNode (v%p): baseAddr %p, nPages %x.\n",
 			tmp, tmp->baseAddr, tmp->nPages);
 	};
 
@@ -105,7 +105,7 @@ void VSwamp::releasePages(void *vaddr, uarch_t nPages)
 	{
 		printf(WARNING OPTS(NOLOG)
 			"vSwamp: ReleasePages with non-page "
-			"aligned vaddr 0x%p.\n", vaddr);
+			"aligned vaddr %p.\n", vaddr);
 
 		return;
 	};

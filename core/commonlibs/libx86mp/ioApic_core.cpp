@@ -48,7 +48,7 @@ x86IoApic::IoApic::sIoApicRegspace *x86IoApic::IoApic::mapIoApic(
 
 	if (status < 1)
 	{
-		printf(ERROR x86IOAPIC"%d: Failed to map: v:0x%p, p:0x%P.\n",
+		printf(ERROR x86IOAPIC"%d: Failed to map: v:%p, p:%P.\n",
 			id, ret, &paddr);
 
 		processTrib.__kgetStream()->getVaddrSpaceStream()->releasePages(
@@ -153,7 +153,7 @@ error_t x86IoApic::IoApic::initialize(void)
 	interruptTrib.registerIrqPins(nPins, irqPinList);
 	__kpinBase = irqPinList[0].__kid;
 
-	printf(NOTICE x86IOAPIC"%d: Initialize: v 0x%p, p 0x%P, ver 0x%x,\n"
+	printf(NOTICE x86IOAPIC"%d: Initialize: v %p, p %P, ver %x,\n"
 		"\tnPins %d, Girqbase %d, vectorBase %d.\n",
 		id, vaddr.rsrc, &paddr, version, nPins,
 		acpiGirqBase, vectorBase);

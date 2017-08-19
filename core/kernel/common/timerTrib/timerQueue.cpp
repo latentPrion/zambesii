@@ -221,7 +221,7 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 		else
 		{
 			printf(WARNING TIMERQUEUE"%dus: wake target process "
-				"0x%x does not exist.\n",
+				"%x does not exist.\n",
 				getNativePeriod() / 1000,
 				request->header.targetId);
 		};
@@ -241,7 +241,7 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 		if (creatorProcess == NULL)
 		{
 			printf(WARNING TIMERQUEUE"%dus: Inexistent creator "
-				"process 0x%x for timer queue request.\n",
+				"process %x for timer queue request.\n",
 				getNativePeriod() / 1000,
 				request->header.sourceId);
 		}

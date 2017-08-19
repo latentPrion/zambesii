@@ -105,8 +105,8 @@ void WaitLock::acquire(void)
 			&deadlockBuffers[cid].buffer,
 			DEADLOCK_BUFF_MAX_NBYTES,
 			FATAL"Deadlock detected.\n"
-			"\tCPU: %d, Lock obj addr: 0x%p. Calling function: 0x%p,\n"
-			"\tlock int addr: 0x%p, lockval: %d.\n",
+			"\tCPU: %d, Lock obj addr: %p. Calling function: %p,\n"
+			"\tlock int addr: %p, lockval: %d.\n",
 			cid, this, __builtin_return_address(0), &lock, lock);
 
 		asm volatile("cli\n\thlt\n\t");

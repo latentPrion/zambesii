@@ -81,14 +81,14 @@ utf8Char *fplainn::Zudi::dma::DmaConstraints::getAttrTypeName(
 
 void fplainn::Zudi::dma::DmaConstraints::dump(void)
 {
-	printf(NOTICE"DMA Constraints obj @0x%p, %d attrs: dumping.\n",
+	printf(NOTICE"DMA Constraints obj @%p, %d attrs: dumping.\n",
 		this, attrs.getNIndexes());
 
 	for (AttrArray::Iterator it=attrs.begin(); it != attrs.end(); ++it)
 	{
 		udi_dma_constraints_attr_spec_t		*tmp=&*it;
 
-		printf(CC"\tAttr %s,\t\tValue 0x%x.\n",
+		printf(CC"\tAttr %s,\t\tValue %x.\n",
 			getAttrTypeName(tmp->attr_type),
 			tmp->attr_value);
 	};
@@ -260,7 +260,7 @@ error_t fplainn::Zudi::dma::ScatterGatherList::map(
 						printf(ERROR"SGList::map: "
 							"Failed to map all %d "
 							"pages for SGList "
-							"element P0x%P, %d "
+							"element P%P, %d "
 							"frames.\n",
 							&p, nFrames);
 
@@ -343,7 +343,7 @@ error_t fplainn::Zudi::dma::ScatterGatherList::map(
 						printf(ERROR"SGList::map: "
 							"Failed to map all %d "
 							"pages for SGList "
-							"element P0x%P, %d "
+							"element P%P, %d "
 							"frames.\n",
 							&p, nFrames);
 

@@ -11,10 +11,10 @@ status_t __attribute__((noreturn)) x8632_breakpoint(RegisterContext *regs, ubit8
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 	printf(NOTICE"Breakpoint exception on CPU %d.\n"
-		"\tContext: CS 0x%x, EIP 0x%x, EFLAGS 0x%x\n"
-		"\tESP 0x%p, EBP 0x%p, stack0 0x%p, stack1 0x%p\n"
-			"\tESI 0x%x, EDI 0x%x\n"
-		"\tEAX 0x%x, EBX 0x%x, ECX 0x%x, EDX 0x%x.\n",
+		"\tContext: CS %x, EIP %x, EFLAGS %x\n"
+		"\tESP %p, EBP %p, stack0 %p, stack1 %p\n"
+			"\tESI %x, EDI %x\n"
+		"\tEAX %x, EBX %x, ECX %x, EDX %x.\n",
 		cpuTrib.getCurrentCpuStream()->cpuId,
 		regs->cs, regs->eip, regs->eflags,
 		regs->esp, regs->ebp,
