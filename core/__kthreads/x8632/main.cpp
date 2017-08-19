@@ -498,7 +498,7 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	printf(NOTICE"Here, devmgmt done. %d new child IDs in buffer.\n",
 		msg->info.params.enumerateChildren.nDeviceIds);
 
-__kdebug.refresh();
+//~ __kdebug.refresh();
 
 	fplainn::Zudi::dma::DmaConstraints			c;
 	udi_dma_constraints_attr_spec_t a[4] =
@@ -509,7 +509,7 @@ __kdebug.refresh();
 		{ UDI_DMA_SEQUENTIAL, 1 }
 	};
 
-	c.initialize(a, 4);
+	c.initialize();
 
 	c.addOrModifyAttrs(a, 3);
 	a[1].attr_value = 5;

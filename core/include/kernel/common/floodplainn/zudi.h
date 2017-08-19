@@ -304,16 +304,13 @@ public:
 			compiler(this)
 			{}
 
-			error_t initialize(
-				udi_dma_constraints_attr_spec_t *_attrs,
-				uarch_t nAttrs)
+			error_t initialize(void)
 			{
 				error_t		ret;
 
 				ret = attrs.initialize();
 				if (ret != ERROR_SUCCESS) { return ret; };
 
-				ret = addOrModifyAttrs(_attrs, nAttrs);
 				return ret;
 			}
 
@@ -357,10 +354,6 @@ public:
 				udi_dma_constraints_attr_t attr);
 
 		public:
-			#define N_ATTR_TYPE_NAMES	(32)
-			static utf8Char		*attrTypeNames[N_ATTR_TYPE_NAMES];
-			AttrArray		attrs;
-
 			class Compiler
 			{
 			public:
@@ -384,6 +377,10 @@ public:
 						slopOutExtra, slopBarrierBits;
 			}
 			compiler;
+
+			#define N_ATTR_TYPE_NAMES	(32)
+			static utf8Char		*attrTypeNames[N_ATTR_TYPE_NAMES];
+			AttrArray		attrs;
 		};
 
 		/**	EXPLANATION:
@@ -417,11 +414,20 @@ public:
 			{}
 
 			error_t initialize(
-				udi_dma_constraints_attr_spec_t *conspec,
-				uarch_t nSpecItems)
+				enum ScatterGatherList::eAddressSize addrSize)
 			{
-				return constraints.initialize(
-					conspec, nSpecItems);
+				error_t ret;
+
+				ret = constraints.initialize();
+				if (ret != ERROR_SUCCESS) { return ret; };
+
+				ret = sGList.initialize(addrSize);
+				if (ret != ERROR_SUCCESS) { return ret; };
+
+				ret = mapping.initialize();
+				if (ret != ERROR_SUCCESS) { return ret; };
+
+				return ret;
 			}
 
 			~DmaRequest(void);

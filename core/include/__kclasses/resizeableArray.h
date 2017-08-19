@@ -50,6 +50,12 @@ public:
 		return s.array;
 	}
 
+	sbit8 unlocked_indexIsValid(uarch_t index)
+	{
+		return index + 1 <= s.rsrc.nIndexes;
+	}
+
+	// This operator is unlocked.
 	T &operator [](uarch_t index)
 	{
 		if (s.rsrc.array == NULL)
@@ -59,7 +65,7 @@ public:
 				CC"ARArray op[]: Internal array is NULL");
 		};
 
-		if (!indexIsValid(index))
+		if (!unlocked_indexIsValid(index))
 		{
 			panic(
 				ERROR_LIMIT_OVERFLOWED,
@@ -68,11 +74,6 @@ public:
 
 
 		return s.rsrc.array[index];
-	}
-
-	sbit8 unsafe_indexIsValid(uarch_t index) volatile const
-	{
-		return index + 1 <= s.rsrc.nIndexes;
 	}
 
 	sbit8 indexIsValid(uarch_t index)
@@ -89,7 +90,7 @@ public:
 
 		lock();
 
-		if (unsafe_indexIsValid(index))
+		if (unlocked_indexIsValid(index))
 		{
 			unlock();
 			return ERROR_SUCCESS;
@@ -172,7 +173,7 @@ public:
 
 	Iterator end(void)
 	{
-		return Iterator(this, getNIndexes());
+		return Iterator(this, unlocked_getNIndexes());
 	}
 
 public:
