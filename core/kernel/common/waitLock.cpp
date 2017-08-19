@@ -9,6 +9,8 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
+#define DEADLOCK_BUFF_MAX_NBYTES	(1024)
+
 struct sDeadlockBuff
 {
 	sDeadlockBuff(void)
@@ -20,7 +22,7 @@ struct sDeadlockBuff
 	}
 
 	sbit8		inUse;
-	utf8Char	buff[1024];
+	utf8Char	buff[DEADLOCK_BUFF_MAX_NBYTES];
 	SharedResourceGroup<WaitLock, utf8Char *>	buffer;
 } static deadlockBuffers[16];
 
@@ -101,7 +103,7 @@ void WaitLock::acquire(void)
 
 		printf(
 			&deadlockBuffers[cid].buffer,
-			sizeof(deadlockBuffers[cid].buffer.rsrc),
+			DEADLOCK_BUFF_MAX_NBYTES,
 			FATAL"Deadlock detected.\n"
 			"\tCPU: %d, Lock obj addr: 0x%p. Calling function: 0x%p,\n"
 			"\tlock int addr: 0x%p, lockval: %d.\n",
