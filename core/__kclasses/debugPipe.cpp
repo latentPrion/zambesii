@@ -348,7 +348,7 @@ static sarch_t expandPrintfFormatting(
 			strncpy8(&buff[buffIndex], prefix, buffMax - buffIndex);
 			nPrinted += strnlen8(prefix, buffMax - buffIndex);
 
-			if (sizeof(*ppnum) > __VADDR_NBITS__) {
+			if (sizeof(*ppnum) > (__VADDR_NBITS__ / __BITS_PER_BYTE__)) {
 				paddr_t pnum = *ppnum;
 
 				pnum >>= __VADDR_NBITS__;
