@@ -406,11 +406,13 @@ void fplainn::Zudi::dma::DmaConstraints::Compiler::dump(void)
 {
 	printf(NOTICE"DMACon Compiler @%p: Parent @%p. Dumping.\n"
 		"\tCan address %u bits, starting at PFN %x upto PFN %x.\n"
-		"\tSkip stride of %d frames, and allocates in blocks of at least %d frames\n"
+		"\tSkip stride of %d frames.\n"
+		"\tAllocates in blocks of at least %d frames, up to a max of %u frames per elem.\n"
 		"\tSlop in is %d bits, out is %d bits.\n",
 		this, parent,
 		i.addressableBits, i.startPfn, i.beyondEndPfn - 1,
-		i.pfnSkipStride, i.minElementGranularityNFrames,
+		i.pfnSkipStride,
+		i.minElementGranularityNFrames, i.maxNContiguousFrames,
 		i.slopInBits, i.slopOutBits);
 }
 
@@ -503,10 +505,14 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 	tmpAttr = parent->getAttr(UDI_DMA_ADDR_FIXED_BITS);
 	if (tmpAttr != NULL && tmpAttr->attr_value > 0)
 	{
-		paddr_t					tmpFixed,
-							beyondEndOfFixedPfn;
+		paddr_t					beyondEndOfFixedPfn;
 		const udi_dma_constraints_attr_spec_t	*tmpFixedType,
 							*tmpFixedLo,*tmpFixedHi;
+
+		/* We don't need to track this value since we can just constrain
+		 * startPfn and then discard it, but track it anyway.
+		 */
+		i.fixedBits = tmpAttr->attr_value;
 
 		tmpFixedType = parent->getAttr(UDI_DMA_ADDR_FIXED_TYPE);
 		if (tmpFixedType != NULL && tmpFixedType->attr_value == UDI_DMA_FIXED_LIST)
@@ -547,20 +553,20 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 			};
 #endif
 
-			tmpFixed = paddr_t(
+			i.fixedBitsValue = paddr_t(
 #ifdef CONFIG_ARCH_x86_32_PAE
 				((tmpFixedHi != NULL) ? tmpFixedHi->attr_value : 0),
 #endif
 				((tmpFixedLo != NULL) ? tmpFixedLo->attr_value : 0));
 
-			i.startPfn = (tmpFixed << (i.addressableBits - i.fixedBits))
+			i.startPfn = (i.fixedBitsValue << (i.addressableBits - i.fixedBits))
 				>> PAGING_BASE_SHIFT;
 
 			/* Because beyondEndOfFixedPfn is calculated relative to
 			 * startPfn, we don't have to check later on to see if
 			 * beyondEndOfFixedPfn is before startPfn.
 			 */
-			beyondEndOfFixedPfn = ((tmpFixed + 1)
+			beyondEndOfFixedPfn = ((i.fixedBitsValue + 1)
 				<< (i.addressableBits - i.fixedBits))
 				>> PAGING_BASE_SHIFT;
 
@@ -576,6 +582,7 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 			if (beyondEndOfFixedPfn > i.beyondEndPfn) {
 				beyondEndOfFixedPfn = i.beyondEndPfn;
 			}
+			i.beyondEndPfn = beyondEndOfFixedPfn;
 		};
 
 	};
@@ -590,11 +597,23 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 	{
 		i.minElementGranularityNFrames = 1
 			<< (tmpAttr->attr_value - PAGING_BASE_SHIFT);
+
+		/* Max N Contiguous frames should be updated to match the min
+		 * granularity, and then it will be re-constrained later when we
+		 * process UDI_DMA_ELEMENT_LENGTH_BITS, if one is supplied.
+		 */
+		i.maxNContiguousFrames = i.minElementGranularityNFrames;
 	};
 
 	tmpAttr = parent->getAttr(UDI_DMA_ELEMENT_LENGTH_BITS);
 	if (tmpAttr != NULL) {
-		i.maxNContiguousFrames = tmpAttr->attr_value - PAGING_BASE_SHIFT;
+		ubit32		maxElemBits=tmpAttr->attr_value;
+
+		if (maxElemBits < PAGING_BASE_SHIFT) {
+			maxElemBits = PAGING_BASE_SHIFT;
+		};
+		maxElemBits -= PAGING_BASE_SHIFT;
+		i.maxNContiguousFrames = 1 << maxElemBits;
 	}
 
 	// maxNContiguousFrames cannot be less than minElementGranularityNFrames.

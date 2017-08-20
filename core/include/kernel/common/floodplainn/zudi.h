@@ -370,13 +370,15 @@ public:
 			private:
 				DmaConstraints	*parent;
 				struct {
-					uint8_t		addressableBits, fixedBits;
+					uint8_t		addressableBits,
+							fixedBits;
 					paddr_t		startPfn, beyondEndPfn,
 							pfnSkipStride,
 							minElementGranularityNFrames,
 							maxNContiguousFrames,
 							slopInBits, slopOutBits,
-							slopOutExtra, slopBarrierBits;
+							slopOutExtra, slopBarrierBits,
+							fixedBitsValue;
 				} i;
 			}
 			compiler;

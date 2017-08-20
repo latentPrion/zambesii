@@ -495,6 +495,7 @@ printf(NOTICE ORIENT"About to call enumerateChildren.\n");
 void __kecrCb(MessageStream::sHeader *msgIt)
 {
 	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
+	error_t err;
 
 	printf(NOTICE"Here, devmgmt done. %d new child IDs in buffer.\n",
 		msg->info.params.enumerateChildren.nDeviceIds);
@@ -502,12 +503,18 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 //~ __kdebug.refresh();
 
 	fplainn::Zudi::dma::DmaConstraints			c;
-	udi_dma_constraints_attr_spec_t a[4] =
+	udi_dma_constraints_attr_spec_t a[] =
 	{
-		{ UDI_DMA_DATA_ADDRESSABLE_BITS, 16 },
+		{ UDI_DMA_DATA_ADDRESSABLE_BITS, 64 },
 		{ UDI_DMA_NO_PARTIAL, 1 },
 		{ UDI_DMA_SCGTH_FORMAT, UDI_SCGTH_32 | UDI_DMA_LITTLE_ENDIAN },
-		{ UDI_DMA_SEQUENTIAL, 1 }
+		{ UDI_DMA_SEQUENTIAL, 1 },
+		{ UDI_DMA_ELEMENT_GRANULARITY_BITS, 15 },
+		{ UDI_DMA_ELEMENT_ALIGNMENT_BITS, 13 },
+		{ UDI_DMA_ADDR_FIXED_TYPE, UDI_DMA_FIXED_VALUE },
+		{ UDI_DMA_ADDR_FIXED_VALUE_LO, 0x6 },
+		{ UDI_DMA_ADDR_FIXED_BITS, 3 },
+		{ UDI_DMA_ELEMENT_LENGTH_BITS, 15 },
 	};
 
 	c.initialize();
@@ -515,10 +522,13 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	c.addOrModifyAttrs(a, 3);
 	a[1].attr_value = 5;
 	a[0].attr_type = UDI_DMA_SCGTH_MAX_EL_PER_SEG;
-	c.addOrModifyAttrs(a, 4);
+	c.addOrModifyAttrs(a, 10);
 	c.dump();
 
-	c.compiler.compile();
+	err = c.compiler.compile();
+	if (err != ERROR_SUCCESS) {
+		printf(ERROR"Compilation failed.\n");
+	};
 	c.compiler.dump();
 
 __kdebug.refresh();
