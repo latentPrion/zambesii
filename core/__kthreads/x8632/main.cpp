@@ -179,7 +179,8 @@ extern "C" void main(ubit32, sMultibootData *)
 
 	DO_OR_DIE(zkcmCore, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
-	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER | DEBUGPIPE_DEVICE1);
+	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER
+		| DEBUGPIPE_DEVICE1 | DEBUGPIPE_DEVICE2);
 	if (!FLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
 		printf(WARNING ORIENT"No debug buffer allocated.\n");
 	}
@@ -503,7 +504,7 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	fplainn::Zudi::dma::DmaConstraints			c;
 	udi_dma_constraints_attr_spec_t a[4] =
 	{
-		{ UDI_DMA_ADDRESSABLE_BITS, 16 },
+		{ UDI_DMA_DATA_ADDRESSABLE_BITS, 16 },
 		{ UDI_DMA_NO_PARTIAL, 1 },
 		{ UDI_DMA_SCGTH_FORMAT, UDI_SCGTH_32 | UDI_DMA_LITTLE_ENDIAN },
 		{ UDI_DMA_SEQUENTIAL, 1 }
@@ -519,6 +520,9 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 
 	c.compiler.compile();
 	c.compiler.dump();
+
+__kdebug.refresh();
+	printf(NOTICE"All is well in the universe.\n");
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
 	{
 		printf(NOTICE"New child: %s/%d.\n",

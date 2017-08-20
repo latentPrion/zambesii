@@ -7,6 +7,7 @@
 #include <__kthreads/__kcpuPowerOn.h>
 
 #include "vgaTerminal.h"
+#include "rs232.h"
 
 
 ZkcmCore::ZkcmCore(utf8Char *chipsetName, utf8Char *chipsetVendor)
@@ -15,7 +16,8 @@ ZkcmCore::ZkcmCore(utf8Char *chipsetName, utf8Char *chipsetVendor)
 	strcpy8(ZkcmCore::chipsetVendor, chipsetVendor);
 
 	debug[0] = &ibmPcVgaTerminal;
-	debug[1] = debug[2] = debug[3] = NULL;
+	debug[1] = &ibmPcRs2320;
+	debug[2] = debug[3] = NULL;
 }
 
 error_t ZkcmCore::initialize(void) { return ERROR_SUCCESS; }

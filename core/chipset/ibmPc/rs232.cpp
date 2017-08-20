@@ -1,67 +1,79 @@
 
+#include <arch/io.h>
 #include <__kstdlib/__ktypes.h>
-#include <kernel/common/firmwareTrib/firmwareStream.h>
-#include <kernel/common/firmwareTrib/rivIoApi.h>
+#include <__kstdlib/__kclib/string.h>
 
-uarch_t		initialized = 0;
+#include "rs232.h"
 
-static error_t ibmPc_rs232_initialize(void)
+IbmPcRs232	ibmPcRs2320(0), ibmPcRs2321(1);
+
+error_t IbmPcRs232::initialize(void)
 {
-	initialized = 1;
+	switch (baseDeviceInfo.childId) {
+	case 0:
+		s.port = 0x3f8;
+		break;
+
+	case 1:
+		s.port = 0x2f8;
+		break;
+
+	default:
+		return -1;
+	};
+
+	/* This next portion of code with the I/O port transactions is taken
+	 * from the seL4 microkernel, and maintains their copyright.
+	 */
+	while (!(io::read8(s.port + 5) & 0x60)); /* wait until not busy */
+
+	io::write8(s.port + 1, 0x00); /* disable generating interrupts */
+	io::write8(s.port + 3, 0x80); /* line control register: command: set divisor */
+	io::write8(s.port,     0x01); /* set low byte of divisor to 0x01 = 115200 baud */
+	io::write8(s.port + 1, 0x00); /* set high byte of divisor to 0x00 */
+	io::write8(s.port + 3, 0x03); /* line control register: set 8 bit, no parity, 1 stop bit */
+	io::write8(s.port + 4, 0x0b); /* modem control register: set DTR/RTS/OUT2 */
+
+	io::read8(s.port);     /* clear recevier s.port */
+	io::read8(s.port + 5); /* clear line status s.port */
+	io::read8(s.port + 6); /* clear modem status s.port */
+
 	return ERROR_SUCCESS;
 }
 
-static error_t ibmPc_rs232_shutdown(void)
+error_t IbmPcRs232::shutdown(void)
 {
-	initialized = 0;
+	s.port = 0;
 	return ERROR_SUCCESS;
 }
 
-static error_t ibmPc_rs232_suspend(void)
+error_t IbmPcRs232::suspend(void)
 {
-	initialized = 0;
 	return ERROR_SUCCESS;
 }
 
-static error_t ibmPc_rs232_awake(void)
+error_t IbmPcRs232::restore(void)
 {
-	initialized = 1;
 	return ERROR_SUCCESS;
 }
 
-static void ibmPc_rs232_syphon(unicodePoint *str, uarch_t len)
+void IbmPcRs232::syphon(const utf8Char *str, uarch_t len)
 {
 	for (; len > 0; len--)
 	{
-		if (*str == '\n') {
-			io_write8(0x3F8, '\r');
-		};
-
-		io_write8(0x3F8, *str++);
+		while (s.port && !(io::read8(s.port + 5) & 0x20));
+		io::write8(s.port, *str++);
 	};
 }
 
-static char	*clearMsg = "\n\t=== End of last burst, screen clearing.===\n";
+static utf8Char	*clearMsg = CC"\n\t== End of last burst, screen clearing. ==\n";
 
-static void ibmPc_rs232_clear(void)
+void IbmPcRs232::clear(void)
 {
-	ibmPc_rs232_syphon((unicodePoint *)clearMsg, 45);
+	syphon(clearMsg, strlen8(clearMsg));
 }
 
-static sarch_t ibmPc_rs232_isInitialized(void)
+sarch_t IbmPcRs232::isInitialized(void)
 {
-	return (initialized);
+	return s.port != 0;
 }
-
-struct sDebugRiv	ibmPc_rs232 =
-{
-	&ibmPc_rs232_initialize,
-	&ibmPc_rs232_shutdown,
-	&ibmPc_rs232_suspend,
-	&ibmPc_rs232_awake,
-	&ibmPc_rs232_isInitialized,
-
-	&ibmPc_rs232_syphon,
-	&ibmPc_rs232_clear
-};
-

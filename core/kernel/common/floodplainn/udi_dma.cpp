@@ -409,9 +409,9 @@ void fplainn::Zudi::dma::DmaConstraints::Compiler::dump(void)
 		"\tSkip stride of %d frames, and allocates in blocks of at least %d frames\n"
 		"\tSlop in is %d bits, out is %d bits.\n",
 		this, parent,
-		addressableBits, startPfn, beyondEndPfn - 1,
-		pfnSkipStride, minElementGranularityNFrames,
-		slopInBits, slopOutBits);
+		i.addressableBits, i.startPfn, i.beyondEndPfn - 1,
+		i.pfnSkipStride, i.minElementGranularityNFrames,
+		i.slopInBits, i.slopOutBits);
 }
 
 error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
@@ -460,32 +460,32 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 	 * retlist.
 	 */
 
-	minElementGranularityNFrames = 1;
-	maxNContiguousFrames = 1;
+	i.minElementGranularityNFrames = 1;
+	i.maxNContiguousFrames = 1;
 
 	// Don't allocate frames beyond what the DMA engine can address.
-	addressableBits = __PADDR_NBITS__;
-	beyondEndPfn = 0;
-	beyondEndPfn = ~beyondEndPfn;
+	i.addressableBits = __PADDR_NBITS__;
+	i.beyondEndPfn = 0;
+	i.beyondEndPfn = ~i.beyondEndPfn;
 	tmpAttr = parent->getAttr(UDI_DMA_DATA_ADDRESSABLE_BITS);
 	if (tmpAttr != NULL)
 	{
-		addressableBits = tmpAttr->attr_value;
+		i.addressableBits = tmpAttr->attr_value;
 		// Clamp addressableBits down to __PADDR_NBITS__.
-		if (addressableBits > __PADDR_NBITS__) {
-			addressableBits = __PADDR_NBITS__;
+		if (i.addressableBits > __PADDR_NBITS__) {
+			i.addressableBits = __PADDR_NBITS__;
 		};
 
-		if (addressableBits >= PAGING_BASE_SHIFT)
+		if (i.addressableBits >= PAGING_BASE_SHIFT)
 		{
-			beyondEndPfn = paddr_t(1)
-				<< (addressableBits - PAGING_BASE_SHIFT);
+			i.beyondEndPfn = paddr_t(1)
+				<< (i.addressableBits - PAGING_BASE_SHIFT);
 		}
 		else {
 			/* If the engine can only address the first frame, then
 			 * limit allocation to the first frame
 			 */
-			beyondEndPfn = 1;
+			i.beyondEndPfn = 1;
 		};
 	};
 
@@ -493,15 +493,15 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 	 * a += (1 + stride) in the loop bound increment step.
 	 * Skip stride ensures we meet element alignment requirements.
 	 */
-	pfnSkipStride = 0;
+	i.pfnSkipStride = 0;
 	tmpAttr = parent->getAttr(UDI_DMA_ELEMENT_ALIGNMENT_BITS);
 	if (tmpAttr != NULL && tmpAttr->attr_value > PAGING_BASE_SHIFT) {
-		pfnSkipStride = (1 << (tmpAttr->attr_value - PAGING_BASE_SHIFT)) - 1;
+		i.pfnSkipStride = (1 << (tmpAttr->attr_value - PAGING_BASE_SHIFT)) - 1;
 	};
 
-	startPfn = 0;
+	i.startPfn = 0;
 	tmpAttr = parent->getAttr(UDI_DMA_ADDR_FIXED_BITS);
-	if (tmpAttr->attr_value > 0)
+	if (tmpAttr != NULL && tmpAttr->attr_value > 0)
 	{
 		paddr_t					tmpFixed,
 							beyondEndOfFixedPfn;
@@ -553,7 +553,7 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 #endif
 				((tmpFixedLo != NULL) ? tmpFixedLo->attr_value : 0));
 
-			startPfn = (tmpFixed << (addressableBits - fixedBits))
+			i.startPfn = (tmpFixed << (i.addressableBits - i.fixedBits))
 				>> PAGING_BASE_SHIFT;
 
 			/* Because beyondEndOfFixedPfn is calculated relative to
@@ -561,7 +561,7 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 			 * beyondEndOfFixedPfn is before startPfn.
 			 */
 			beyondEndOfFixedPfn = ((tmpFixed + 1)
-				<< (addressableBits - fixedBits))
+				<< (i.addressableBits - i.fixedBits))
 				>> PAGING_BASE_SHIFT;
 
 			/* We also have to modify beyondEndPfn based on the
@@ -573,8 +573,8 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 			 * Don't need to check if beyondEndOfFixedPfn is before
 			 * startPfn, because addressableBits was already checked.
 			 */
-			if (beyondEndOfFixedPfn > beyondEndPfn) {
-				beyondEndOfFixedPfn = beyondEndPfn;
+			if (beyondEndOfFixedPfn > i.beyondEndPfn) {
+				beyondEndOfFixedPfn = i.beyondEndPfn;
 			}
 		};
 
@@ -588,40 +588,40 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 	tmpAttr = parent->getAttr(UDI_DMA_ELEMENT_GRANULARITY_BITS);
 	if (tmpAttr != NULL && tmpAttr->attr_value > PAGING_BASE_SHIFT)
 	{
-		minElementGranularityNFrames = 1
+		i.minElementGranularityNFrames = 1
 			<< (tmpAttr->attr_value - PAGING_BASE_SHIFT);
 	};
 
 	tmpAttr = parent->getAttr(UDI_DMA_ELEMENT_LENGTH_BITS);
 	if (tmpAttr != NULL) {
-		maxNContiguousFrames = tmpAttr->attr_value - PAGING_BASE_SHIFT;
+		i.maxNContiguousFrames = tmpAttr->attr_value - PAGING_BASE_SHIFT;
 	}
 
 	// maxNContiguousFrames cannot be less than minElementGranularityNFrames.
-	if (maxNContiguousFrames < minElementGranularityNFrames)
+	if (i.maxNContiguousFrames < i.minElementGranularityNFrames)
 	{
 		printf(ERROR MEMBMP"constrainedGF: Minimum granularity is %d "
 			"frames, but max element size is %d frames.\n",
-			minElementGranularityNFrames, maxNContiguousFrames);
+			i.minElementGranularityNFrames, i.maxNContiguousFrames);
 
 		return ERROR_INVALID_ARG_VAL;
 	};
 
 	/* We don't yet support slop. Especially not SLOP-IN. */
-	slopInBits = slopOutBits = slopOutExtra = 0;
+	i.slopInBits = i.slopOutBits = i.slopOutExtra = 0;
 
 	tmpAttr = parent->getAttr(UDI_DMA_SLOP_IN_BITS);
-	if (tmpAttr != NULL) { slopInBits = tmpAttr->attr_value; };
+	if (tmpAttr != NULL) { i.slopInBits = tmpAttr->attr_value; };
 	tmpAttr = parent->getAttr(UDI_DMA_SLOP_OUT_BITS);
-	if (tmpAttr != NULL) { slopOutBits = tmpAttr->attr_value; };
+	if (tmpAttr != NULL) { i.slopOutBits = tmpAttr->attr_value; };
 	tmpAttr = parent->getAttr(UDI_DMA_SLOP_OUT_EXTRA);
-	if (tmpAttr != NULL) { slopOutExtra = tmpAttr->attr_value; };
+	if (tmpAttr != NULL) { i.slopOutExtra = tmpAttr->attr_value; };
 
-	if (slopInBits != 0 || slopOutBits != 0 || slopOutExtra != 0)
+	if (i.slopInBits != 0 || i.slopOutBits != 0 || i.slopOutExtra != 0)
 	{
 		printf(ERROR MEMBMP"constrainedGF: SLOP is unsupported\n"
 			"\tSLOP-IN %d, SLOP-OUT %d, SLOP-EXTRA %d.\n",
-			slopInBits, slopOutBits, slopOutExtra);
+			i.slopInBits, i.slopOutBits, i.slopOutExtra);
 
 		return ERROR_UNSUPPORTED;
 	};

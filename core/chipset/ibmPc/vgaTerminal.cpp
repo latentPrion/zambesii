@@ -8,7 +8,7 @@
 #include "vgaTerminal.h"
 
 
-IbmPcVgaTerminal		ibmPcVgaTerminal(IbmPcVgaTerminal::TERMINAL);
+IbmPcVgaTerminal		ibmPcVgaTerminal;
 
 // Static member variable.
 ubit8	*IbmPcVgaTerminal::bda=NULL;

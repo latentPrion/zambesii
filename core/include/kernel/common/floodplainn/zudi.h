@@ -361,7 +361,7 @@ public:
 				:
 				parent(_parent)
 				{
-					memset(this, 0, sizeof(*this));
+					memset(&i, 0, sizeof(i));
 				}
 
 				error_t compile(void);
@@ -369,13 +369,15 @@ public:
 
 			private:
 				DmaConstraints	*parent;
-				uint8_t		addressableBits, fixedBits;
-				paddr_t		startPfn, beyondEndPfn,
-						pfnSkipStride,
-						minElementGranularityNFrames,
-						maxNContiguousFrames,
-						slopInBits, slopOutBits,
-						slopOutExtra, slopBarrierBits;
+				struct {
+					uint8_t		addressableBits, fixedBits;
+					paddr_t		startPfn, beyondEndPfn,
+							pfnSkipStride,
+							minElementGranularityNFrames,
+							maxNContiguousFrames,
+							slopInBits, slopOutBits,
+							slopOutExtra, slopBarrierBits;
+				} i;
 			}
 			compiler;
 

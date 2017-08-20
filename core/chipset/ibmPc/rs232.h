@@ -1,20 +1,21 @@
-#ifndef _IBM_PC_TERMINAL_MOD_H
-	#define _IBM_PC_TERMINAL_MOD_H
+#ifndef _IBM_PC_RS232_MOD_H
+	#define _IBM_PC_RS232_MOD_H
 
 	#include <chipset/zkcm/debugDevice.h>
+	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/waitLock.h>
 
-class IbmPcVgaTerminal
+class IbmPcRs232
 :
 public ZkcmDebugDevice
 {
 public:
-	IbmPcVgaTerminal()
+	IbmPcRs232(ubit32 childId)
 	:
 	ZkcmDebugDevice(ZkcmDebugDevice::TERMINAL, &baseDeviceInfo),
-	buff(NULL),
 	baseDeviceInfo(
-		0,
-		CC"ibmpc-vga-term", CC"IBM PC compatible VGA card in text mode",
+		childId,
+		CC"ibmpc-rs232-serial", CC"IBM PC compatible RS232 serial",
 		CC"Unknown vendor", CC"N/A")
 	{}
 
@@ -32,22 +33,23 @@ public:
 	void chipsetEventNotification(ubit8 event, uarch_t flags);
 
 private:
-	void scrollDown(void);
+	// Serial is a character stream, there's no surface to scroll
+	void scrollDown(void) {}
 
 private:
-	struct sIbmPc_TerminalMod_Fb
+	struct sState
 	{
-		ubit8	ch;
-		ubit8	attr;
-	};
+		sState(void)
+		:
+		port(0)
+		{}
 
-	struct sIbmPc_TerminalMod_Fb	*buff, *origBuff;
-	uarch_t				row, col, maxRow, maxCol;
-	static ubit8			*bda;
+		ubit16		port;
+	}s;
 
 	ZkcmDevice			baseDeviceInfo;
 };
 
-extern IbmPcVgaTerminal		ibmPcVgaTerminal;
+extern IbmPcRs232		ibmPcRs2320, ibmPcRs2321;
 
 #endif
