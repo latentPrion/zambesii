@@ -15,7 +15,7 @@ ASM_GLOBAL_FUNCTION(_start)
 	cli
 
 	/* Enable Paging, then move on from there. */
-#ifdef CONFIG_ARCH_X86_32_PAE
+#ifdef CONFIG_ARCH_x86_32_PAE
 	/* Code to enable the PAE, etc here. */
 #else
 	movl $__kpagingLevel0Tables, %ecx

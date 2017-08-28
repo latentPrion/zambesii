@@ -370,7 +370,9 @@ public:
 			private:
 				DmaConstraints	*parent;
 				struct {
-					uint8_t		addressableBits,
+					sbit8		partialAllocationsDisallowed,
+							sequentialAccessHint;
+					ubit8		addressableBits,
 							fixedBits;
 					paddr_t		startPfn, beyondEndPfn,
 							pfnSkipStride,
@@ -379,6 +381,7 @@ public:
 							slopInBits, slopOutBits,
 							slopOutExtra, slopBarrierBits,
 							fixedBitsValue;
+					ScatterGatherList::eAddressSize addressSize;
 				} i;
 			}
 			compiler;

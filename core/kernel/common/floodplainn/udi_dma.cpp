@@ -405,15 +405,21 @@ udi_dma_constraints_attr_spec_t *fplainn::Zudi::dma::DmaConstraints::getAttr(
 void fplainn::Zudi::dma::DmaConstraints::Compiler::dump(void)
 {
 	printf(NOTICE"DMACon Compiler @%p: Parent @%p. Dumping.\n"
-		"\tCan address %u bits, starting at PFN %x upto PFN %x.\n"
+		"\tCan address %u bits, will be presented with %s-bit descriptors.\n"
+		"\tstarting at PFN %x upto PFN %x.\n"
 		"\tSkip stride of %d frames.\n"
 		"\tAllocates in blocks of at least %d frames, up to a max of %u frames per elem.\n"
-		"\tSlop in is %d bits, out is %d bits.\n",
+		"\tSlop in is %d bits, out is %d bits.\n"
+		"\tPartial alloc? %s. Sequentially accessed? %s.\n",
 		this, parent,
-		i.addressableBits, i.startPfn, i.beyondEndPfn - 1,
+		i.addressableBits,
+		((i.addressSize == ScatterGatherList::ADDR_SIZE_64) ? "64" : "32"),
+		i.startPfn, i.beyondEndPfn - 1,
 		i.pfnSkipStride,
 		i.minElementGranularityNFrames, i.maxNContiguousFrames,
-		i.slopInBits, i.slopOutBits);
+		i.slopInBits, i.slopOutBits,
+		((i.partialAllocationsDisallowed) ? "no" : "yes"),
+		((i.sequentialAccessHint) ? "yes" : "no"));
 }
 
 error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
@@ -643,6 +649,65 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 			i.slopInBits, i.slopOutBits, i.slopOutExtra);
 
 		return ERROR_UNSUPPORTED;
+	};
+
+	tmpAttr = parent->getAttr(UDI_DMA_NO_PARTIAL);
+	if (tmpAttr != NULL && tmpAttr->attr_value != 0) {
+		i.partialAllocationsDisallowed = 1;
+	};
+
+	tmpAttr = parent->getAttr(UDI_DMA_SEQUENTIAL);
+	if (tmpAttr != NULL && tmpAttr->attr_value != 0) {
+		i.sequentialAccessHint = 1;
+	};
+
+	/* SCGTH_FORMAT *must* be provided. */
+	i.addressSize = ScatterGatherList::ADDR_SIZE_UNKNOWN;
+	tmpAttr = parent->getAttr(UDI_DMA_SCGTH_FORMAT);
+	if (tmpAttr == NULL)
+	{
+		printf(ERROR"Constraints compiler: No SCGTH_FORMAT provided.\n");
+		return ERROR_NON_CONFORMANT;
+	}
+	else
+	{
+		if ((tmpAttr->attr_value & (UDI_SCGTH_32 | UDI_SCGTH_64)) == 0)
+		{
+			printf(ERROR"Constraints compiler: SCGTH_FORMAT "
+				"doesn't specify any list word-sizes.\n");
+			return ERROR_NON_CONFORMANT;
+		};
+
+		/* On a 32-bit build, prefer to use 32-bit SCGTH, unless
+		 * it's a PAE build.
+		 *
+		 * The reason we prefer to do 64-bit scgth lists on a
+		 * PAE build is because it makes it more likely that
+		 * device DMA memory will be allocated from the higher
+		 * regions in RAM, away from where most application
+		 * footprint is.
+		 *
+		 * On a 64-bit build we also prefer to use 64-bit DMA so we have
+		 * a higher chance of reserving the low 32-bits for devices that
+		 * truly need 32-bit DMA.
+		 */
+#if (__VADDR_NBITS__ == 64) || ((__VADDR_NBITS__ == 32) && defined(ARCH_x86_32_PAE))
+		if (tmpAttr->attr_value & UDI_SCGTH_64) {
+			i.addressSize = ScatterGatherList::ADDR_SIZE_64;
+		} else {
+			i.addressSize = ScatterGatherList::ADDR_SIZE_32;
+		};
+#elif (__VADDR_NBITS__ == 32)
+		if (tmpAttr->attr_value & UDI_SCGTH_32) {
+			i.addressSize = ScatterGatherList::ADDR_SIZE_32;
+		} else {
+			printf(ERROR"Constraints doesn't support SCGTH_FORMAT "
+				"32 on 32-bit paddrspace kernel.\n");
+			return ERROR_UNINITIALIZED;
+		};
+#else
+	#error "Unhandled build configuration for UDI DMA SCGTH_FORMAT."
+#endif
 	};
 
 	return ERROR_SUCCESS;
