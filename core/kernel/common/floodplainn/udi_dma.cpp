@@ -217,7 +217,9 @@ error_t fplainn::Zudi::dma::ScatterGatherList::map(
 				paddr_t				p, p2;
 				uarch_t				currNFrames;
 
-				p = tmp->block_busaddr;
+				assign_scgth_block_busaddr_to_paddr(
+					p, tmp->block_busaddr);
+
 				p2 = p + tmp->block_length;
 
 				currNFrames = PAGING_BYTES_TO_PAGES(p2 - p)
@@ -298,7 +300,7 @@ error_t fplainn::Zudi::dma::ScatterGatherList::map(
 				paddr_t				p, p2;
 				uarch_t				currNFrames;
 
-				assign_busaddr64_to_paddr(
+				assign_scgth_block_busaddr_to_paddr(
 					p, tmp->block_busaddr);
 
 				p2 = p + tmp->block_length;

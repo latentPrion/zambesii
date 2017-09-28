@@ -223,6 +223,25 @@ public:
 			~ScatterGatherList(void) {}
 
 		public:
+			error_t preallocateEntries(uarch_t nEntries)
+			{
+				if (nEntries == 0) { return ERROR_SUCCESS; };
+				if (addressSize == ADDR_SIZE_UNKNOWN) {
+					return ERROR_UNINITIALIZED;
+				};
+
+				if (addressSize == ADDR_SIZE_32)
+				{
+					return elements32.resizeToHoldIndex(
+						nEntries - 1);
+				}
+				else
+				{
+					return elements64.resizeToHoldIndex(
+						nEntries - 1);
+				};
+			}
+
 			status_t addFrames(paddr_t p, uarch_t nFrames)
 			{
 				status_t		ret;
@@ -246,7 +265,6 @@ public:
 					ret = addFrames(
 						&elements64, p, nFrames);
 				};
-
 
 				if (ret > ERROR_SUCCESS) {
 					udiScgthList.scgth_num_elements++;
@@ -315,6 +333,18 @@ public:
 			}
 
 		public:
+			/* Allocates nFrames frames which match the constraints
+			 * specified by the attributes contained within this
+			 * DmaConstraints instance object.
+			 **/
+			status_t allocFrames(
+				uarch_t nFrames,
+				uarch_t flags, ScatterGatherList *ret);
+
+			/* Releases all physical frames contained within "list".
+			 **/
+			void releaseFrames(ScatterGatherList *list);
+
 			void dump(void);
 			static utf8Char *getAttrTypeName(
 				udi_dma_constraints_attr_t a);
@@ -367,15 +397,14 @@ public:
 				error_t compile(void);
 				void dump(void);
 
-			private:
-				DmaConstraints	*parent;
+			public:
 				struct {
 					sbit8		partialAllocationsDisallowed,
 							sequentialAccessHint;
 					ubit8		addressableBits,
 							fixedBits;
+					uarch_t		pfnSkipStride;
 					paddr_t		startPfn, beyondEndPfn,
-							pfnSkipStride,
 							minElementGranularityNFrames,
 							maxNContiguousFrames,
 							slopInBits, slopOutBits,
@@ -383,6 +412,9 @@ public:
 							fixedBitsValue;
 					ScatterGatherList::eAddressSize addressSize;
 				} i;
+
+			private:
+				DmaConstraints	*parent;
 			}
 			compiler;
 
@@ -569,7 +601,7 @@ inline void assign_paddr_to_scgth_block_busaddr(udi_scgth_element_64_t *u64, pad
 #endif
 }
 
-inline void assign_busaddr64_to_paddr(paddr_t &p, udi_busaddr64_t u64)
+inline void assign_scgth_block_busaddr_to_paddr(paddr_t &p, udi_busaddr64_t u64)
 {
 #if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
 	struct s64BitInt
@@ -587,6 +619,11 @@ inline void assign_busaddr64_to_paddr(paddr_t &p, udi_busaddr64_t u64)
 
 	p = *p2;
 #endif
+}
+
+inline void assign_scgth_block_busaddr_to_paddr(paddr_t &p, udi_ubit32_t u32)
+{
+	p = u32;
 }
 
 template <class scgth_elements_type>

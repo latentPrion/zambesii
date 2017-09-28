@@ -475,13 +475,226 @@ void MemoryBmp::mapMemUnused(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 	bmp.lock.release();
 }
 
+/**	EXPLANATION:
+ * This class will ensure that if the allocation fails, all bits in the
+ * BMP that were set as "used" during the partial allocation will be
+ * unset before this function returns.
+ **/
+class ConstrainedGetFramesJanitor
+{
+public:
+	ConstrainedGetFramesJanitor(
+		fplainn::Zudi::dma::ScatterGatherList *_list,
+		MemoryBmp *_bmp)
+	:
+	sglist(_list), bmp(_bmp)
+	{
+		setDoCleanup(1);
+	}
+
+	~ConstrainedGetFramesJanitor(void)
+	{
+		if (!doCleanup) { return; };
+
+		if (sglist->addressSize ==
+			fplainn::Zudi::dma::ScatterGatherList::ADDR_SIZE_32)
+		{
+			udi_scgth_element_32_t el;
+			cleanup(&el, &sglist->elements32);
+		}
+		else
+		{
+			udi_scgth_element_64_t el;
+			cleanup(&el, &sglist->elements64);
+		}
+	}
+
+	void setDoCleanup(sbit8 _doCleanup)
+	{
+		doCleanup = _doCleanup;
+	}
+
+	template <class scgth_elements_type>
+	void cleanup(
+		scgth_elements_type *unused,
+		ResizeableArray<scgth_elements_type> *sgarray)
+	{
+		typename ResizeableArray<scgth_elements_type>::Iterator	it;
+
+		(void)unused;
+
+		sgarray->lock();
+		bmp->bmp.lock.acquire();
+		for (
+			it=sgarray->begin();
+			it!=sgarray->end();
+			++it)
+		{
+			scgth_elements_type	el = *it;
+			paddr_t			startPaddr,
+						endPaddr;
+
+			assign_scgth_block_busaddr_to_paddr(
+				startPaddr, el.block_busaddr);
+			endPaddr = startPaddr;
+			endPaddr += el.block_length;
+
+			// Convert it to a PFN offset.
+			startPaddr >>= PAGING_BASE_SHIFT;
+			endPaddr >>= PAGING_BASE_SHIFT;
+
+			// Unset each bit.
+			for (
+				uarch_t i=startPaddr.getLow();
+				i<endPaddr.getLow();
+				i++)
+			{
+				bmp->unsetFrame(i);
+			};
+		};
+		bmp->bmp.lock.acquire();
+		sgarray->unlock();
+	}
+
+private:
+	sbit8					doCleanup;
+	fplainn::Zudi::dma::ScatterGatherList	*sglist;
+	MemoryBmp				*bmp;
+};
+
 status_t MemoryBmp::constrainedGetFrames(
-	void *constraints,
-	uarch_t nFrames, paddr_t *retlist, ubit32 flags
+	fplainn::Zudi::dma::DmaConstraints::Compiler *c,
+	uarch_t nFrames,
+	fplainn::Zudi::dma::ScatterGatherList *retlist,
+	ubit32 flags
 	)
 {
-	fplainn::Zudi::dma::DmaConstraints::Compiler *compiler;
-	(void)compiler;
+	status_t			ret;
+	uarch_t 			nextBoundarySkip, alignmentStartBit,
+					searchEndBit=bmpNFrames;
+	error_t 			error;
+	// Object whose destructor automatically cleans up.
+	ConstrainedGetFramesJanitor	janitor(retlist, this);
 
+	(void)flags;
+
+	if (c == NULL || retlist == NULL) {
+		return ERROR_INVALID_ARG;
+	};
+
+	if (nFrames == 0) {
+		return 0;
+	};
+
+	/**	EXPLANATION:
+	 * In order to preserve the alignment constraint required by the caller,
+	 * we have to ensure that we start attempting to allocate on an aligned
+	 * bit in the first place.
+	 **/
+	alignmentStartBit = basePfn;
+	if (alignmentStartBit & c->i.pfnSkipStride)
+	{
+		alignmentStartBit += c->i.pfnSkipStride + 1;
+		alignmentStartBit &= ~c->i.pfnSkipStride;
+	};
+
+	if (alignmentStartBit >= endPfn)
+	{
+		/* If attempting to find a starting bit that is aligned to the
+		 * caller's constraints causes us to hit the end of the bitmap's
+		 * bits, then it's impossible for us to satisfy the allocation
+		 * from this bitmap. Return error.
+		 **/
+		return ERROR_LIMIT_OVERFLOWED;
+	}
+
+	// Decide the upper bit bound of our search.
+	if (c->i.beyondEndPfn.getLow() - basePfn < bmpNFrames) {
+		searchEndBit = c->i.beyondEndPfn.getLow() - basePfn;
+	}
+
+	/* We resize the internal memory to be able to hold "nFrames" entries,
+	 * though it is very likely that we won't need that many since each
+	 * entry describes both a base-addr and a length.
+	 **/
+	ret = retlist->preallocateEntries(nFrames);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR MEMBMP"Failed to prealloc %d SGList entries for "
+			"constrained alloc.\n", nFrames);
+		return ret;
+	};
+
+	/**	EXPLANATION:
+	 * From here, we're just allocating. Run through the bitmaps and try to
+	 * get nFrames in accordance with the compiled constraints specification
+	 * we've been asked to satisfy.
+	 *
+	 * When searching for DMA memory, we don't use the "lastIndex"
+	 * optimization. We need memory that satisfies the constraints, and we
+	 * don't need to seriously optimize this allocation because we accept
+	 * that we are already performing a costly allocation that must satisfy
+	 * particular constraints.
+	 **/
+	bmp.lock.acquire();
+	for (
+		uarch_t i=alignmentStartBit;
+		i<bmpNFrames;
+		i+=(1 + c->i.pfnSkipStride + nextBoundarySkip))
+	{
+		uarch_t nFound = 0;
+		status_t foundStartBit;
+		paddr_t foundBaseAddr;
+
+		nextBoundarySkip = 0;
+		foundStartBit = checkForContiguousBitsAt(
+			bmp.rsrc.bmp, i,
+			c->i.minElementGranularityNFrames.getLow(),
+			c->i.maxNContiguousFrames.getLow(),
+			bmpNFrames - i, &nFound);
+
+		if (foundStartBit < 1) {
+			break; // Cannot satisfy the allocation.
+		};
+
+		/* If the number of frames we found means that the next search
+		 * will begin at an unaligned bit (alignment is a multiple of
+		 * pfnSkipStride), we have to pad until the next alignment
+		 * boundary.
+		 **/
+		while (c->i.pfnSkipStride + 1 + nextBoundarySkip < nFound) {
+			nextBoundarySkip += c->i.pfnSkipStride + 1;
+		};
+
+		/* Add the stretch to the retlist.This really shouldn't fail
+		 * because we preallocated the room for it, but still check.
+		 **/
+		foundBaseAddr = foundStartBit + basePfn;
+		foundBaseAddr <<= PAGING_BASE_SHIFT;
+		error = retlist->addFrames(foundBaseAddr, nFound);
+		if (error != ERROR_SUCCESS)
+		{
+			bmp.lock.release();
+			return error;
+		}
+
+		// Set bits in the BMP.
+		for (uarch_t j=0; j<nFound; j++) {
+			setFrame(basePfn + foundStartBit + j);
+		};
+
+		ret += nFound;
+	};
+
+	if (ret < (signed)nFrames)
+	{
+		// Free all the frames that were found and allocated.
+		bmp.lock.release();
+		return ERROR_MEMORY_NOMEM_PHYSICAL;
+	}
+
+	bmp.lock.release();
+	// Stop the cleanup if we succeeded.
+	janitor.setDoCleanup(0);
 	return ERROR_SUCCESS;
 }

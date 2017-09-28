@@ -2,9 +2,11 @@
 	#define _MEM_BMP_H
 
 	#include <__kstdlib/__kbitManipulation.h>
+	#include <__kstdlib/__kclib/assert.h>
 	#include <__kclasses/allocClass.h>
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/floodplainn/zudi.h>
 
 /**	EXPLANATION:
  * Simple bitmap, 1/0 for used/free. Will soon be changed into some sort of
@@ -17,24 +19,6 @@
 
 #define MEMBMP_FLAGS_DYNAMIC		(1<<0)
 
-inline uarch_t MEMBMP_OFFSET(uarch_t _pfn, uarch_t _basePfn)
-	{ return _pfn - _basePfn; }
-
-template <class T>
-inline uarch_t MEMBMP_INDEX(uarch_t _pfn, uarch_t _basePfn, T _bmp)
-	{ return MEMBMP_OFFSET(_pfn, _basePfn) / __KBIT_NBITS_IN(_bmp); }
-
-/*#define MEMBMP_INDEX(__pfn,__basePfn,__bmp)		\
-	(MEMBMP_OFFSET((__pfn),(__basePfn)) / __KBIT_NBITS_IN((__bmp)))*/
-
-template <class T>
-inline uarch_t MEMBMP_BIT(uarch_t _pfn, uarch_t _basePfn, T _bmp)
-	{ return MEMBMP_OFFSET(_pfn, _basePfn) % __KBIT_NBITS_IN(_bmp); }
-
-/*#define MEMBMP_BIT(__pfn,__basePfn,__bmp)			\
-	(MEMBMP_OFFSET((__pfn),(__basePfn)) % __KBIT_NBITS_IN((__bmp))) */
-
-
 class NumaMemoryBank;
 
 class MemoryBmp
@@ -42,6 +26,7 @@ class MemoryBmp
 public AllocatorBase
 {
 friend class NumaMemoryBank;
+friend class ConstrainedGetFramesJanitor;
 
 public:
 	MemoryBmp(paddr_t baseAddr, paddr_t size);
@@ -52,18 +37,18 @@ public:
 	void dump(void);
 
 public:
-	// The frame address is returned on the stack.
-	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
-	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
-	void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
 	/* Searches the bitmap for frames that match the compiled constraints
 	 * specified in "compiledConstraints".
 	 */
 	status_t constrainedGetFrames(
-		void *compiledConstraints,
-		uarch_t nFrames, paddr_t *retlist,
+		fplainn::Zudi::dma::DmaConstraints::Compiler *compiledConstraints,
+		uarch_t nFrames,
+		fplainn::Zudi::dma::ScatterGatherList *retlist,
 		ubit32 flags=0);
 
+	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
+	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
+	void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
 
 	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
 	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);
@@ -100,23 +85,23 @@ public:
 
 inline void MemoryBmp::setFrame(uarch_t pfn)
 {
-	__KBIT_SET(
-		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],
-		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp));
+	assert_fatal(pfn >= basePfn && pfn <= endPfn);
+
+	setBit(bmp.rsrc.bmp, pfn - basePfn);
 }
 
 inline void MemoryBmp::unsetFrame(uarch_t pfn)
 {
-	__KBIT_UNSET(
-		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],
-		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp));
+	assert_fatal(pfn >= basePfn && pfn <= endPfn);
+
+	unsetBit(bmp.rsrc.bmp, pfn - basePfn);
 }
 
 inline sbit8 MemoryBmp::testFrame(uarch_t pfn)
 {
-	return __KBIT_TEST(
-		bmp.rsrc.bmp[ MEMBMP_INDEX(pfn, basePfn, *bmp.rsrc.bmp) ],
-		MEMBMP_BIT(pfn, basePfn, *bmp.rsrc.bmp));
+	assert_fatal(pfn >= basePfn && pfn <= endPfn);
+
+	return bitIsSet(bmp.rsrc.bmp, pfn - basePfn);
 }
 
 #endif
