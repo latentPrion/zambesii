@@ -639,7 +639,7 @@ status_t MemoryBmp::constrainedGetFrames(
 	bmp.lock.acquire();
 	for (
 		uarch_t i=alignmentStartBit;
-		i<bmpNFrames;
+		i<searchEndBit;
 		i+=(1 + c->i.pfnSkipStride + nextBoundarySkip))
 	{
 		uarch_t nFound = 0;
