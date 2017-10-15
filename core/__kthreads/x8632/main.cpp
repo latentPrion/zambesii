@@ -531,6 +531,11 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	};
 	c.compiler.dump();
 
+	uarch_t tot, succ, fail;
+	err = tests::checkForContiguousBitsAt(&tot, &succ, &fail);
+	printf(NOTICE"CheckForContigBits: ret %d; %d tests, %d passed, %d failed.\n",
+		err, tot, succ, fail);
+
 __kdebug.refresh();
 	printf(NOTICE"All is well in the universe.\n");
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)

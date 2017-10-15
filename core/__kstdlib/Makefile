@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../__kstdlib.a
-OBJFILES=new.o malloc.o __kmath.o
+OBJFILES=new.o malloc.o __kmath.o test___kbitManipulation.o
 
 all: Makefile $(DELIVERABLE)
 
@@ -12,4 +12,3 @@ clean: fonyphile
 
 fonyphile:
 	rm -f clean aclean dirclean
-
