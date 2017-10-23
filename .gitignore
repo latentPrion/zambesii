@@ -19,3 +19,4 @@ foo
 /Makefile
 *.zudi-index
 *.geany
+cscope.out

@@ -30,7 +30,7 @@ status_t checkForContiguousBitsAt(
 		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
 	};
 
-	*nTotal = 5;
+	*nTotal = 6;
 	*nSucceeded = *nFailed = 0;
 
 	/**	TEST:
@@ -112,6 +112,25 @@ status_t checkForContiguousBitsAt(
 	if (st != 65 || nf != 2) {
 		*nFailed += 1;
 		printf(ERROR"Should have found 2 bits at 65. st %d, nf %d.\n"
+			"bmp is %x %x %x %x.\n",
+			st, nf,
+			bmp[0], bmp[1], bmp[2], bmp[3]);
+	}
+	else {
+		*nSucceeded += 1;
+	}
+
+	/**	TEST:
+	 * In a BMP with free bits past the bounds given to
+	 * checkForContiguousBits, the function should not search past the
+	 * bounds and find those free bits.
+	 **/
+	bmp[2] = 0;
+	st = ::checkForContiguousBitsAt(
+		bmp, 0, 1, 1, 32*2, &nf);
+	if (st >= 0) {
+		*nFailed += 1;
+		printf(ERROR"Should not have found any bits. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
