@@ -720,8 +720,10 @@ error_t fplainn::Zudi::dma::ScatterGatherList::addFrames(
 	scgth_elements_type	newElement;
 
 	// Resize the list to hold the new SGList element.
-	prevNIndexes = list->getNIndexes();
-	ret = list->resizeToHoldIndex(prevNIndexes);
+	prevNIndexes = list->unlocked_getNIndexes();
+	ret = list->resizeToHoldIndex(
+		prevNIndexes,
+		ResizeableArray<scgth_elements_type>::RTHI_FLAGS_UNLOCKED);
 
 	list->unlock();
 
