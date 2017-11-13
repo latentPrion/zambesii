@@ -327,7 +327,7 @@ void MemoryTrib::mapRangeUsed(paddr_t baseAddr, uarch_t nPages)
 	{
 		printf(ERROR MEMTRIB"mapRangeUsed(%P, %d): attempt to "
 			"mark on non-existent bank %d.\n",
-			defaultAffinity.def.rsrc);
+			&baseAddr, nPages, defaultAffinity.def.rsrc);
 	};
 #endif
 }
@@ -358,7 +358,7 @@ void MemoryTrib::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 	{
 		printf(ERROR MEMTRIB"mapRangeUnused(%P, %d): attempt to "
 			"mark on non-existent bank %d.\n",
-			defaultAffinity.def.rsrc);
+			&baseAddr, nPages, defaultAffinity.def.rsrc);
 	};
 #endif
 }
