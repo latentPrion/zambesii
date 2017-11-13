@@ -482,11 +482,21 @@ status_t MemoryBmp::constrainedGetFrames(
 	ubit32 flags
 	)
 {
-	status_t			ret;
+	status_t			ret=0;
 	uarch_t 			nextBoundarySkip, alignmentStartBit,
-					searchEndBit=bmpNFrames;
+					searchEndBit=bmpNFrames,
+					nScgthElements=0, currScgthElement=0;
 	error_t 			error;
 
+	/**	EXPLANATION:
+	 * Two pass algorithm for searching a bitmap for pmem, and then
+	 * allocating memory to store it as a scatter gather list.
+	 *
+	 * On the first pass we just check to see how many bits we can get.
+	 * Then if we can get all the memory we need, we allocate the memory
+	 * for the metadata needed to track the pmem. Finally, we do a second
+	 * pass to both allocate and track the pmem.
+	 */
 	(void)flags;
 
 	if (c == NULL || retlist == NULL) {
@@ -502,7 +512,10 @@ status_t MemoryBmp::constrainedGetFrames(
 	 * we have to ensure that we start attempting to allocate on an aligned
 	 * bit in the first place.
 	 **/
-	alignmentStartBit = basePfn;
+	alignmentStartBit = (c->i.startPfn.getLow() >= basePfn)
+		? c->i.startPfn.getLow()
+		: basePfn;
+
 	if (alignmentStartBit & c->i.pfnSkipStride)
 	{
 		alignmentStartBit += c->i.pfnSkipStride + 1;
@@ -519,89 +532,130 @@ status_t MemoryBmp::constrainedGetFrames(
 		return ERROR_LIMIT_OVERFLOWED;
 	}
 
+	// The algorithm deals with bit positions; not PFNs.
+	alignmentStartBit -= basePfn;
+
 	// Decide the upper bit bound of our search.
 	if (c->i.beyondEndPfn.getLow() - basePfn < bmpNFrames) {
 		searchEndBit = c->i.beyondEndPfn.getLow() - basePfn;
 	}
 
-	/* We resize the internal memory to be able to hold "nFrames" entries,
-	 * though it is very likely that we won't need that many since each
-	 * entry describes both a base-addr and a length.
-	 **/
-	ret = retlist->preallocateEntries(nFrames);
-	if (ret != ERROR_SUCCESS)
-	{
-		printf(ERROR MEMBMP"Failed to prealloc %d SGList entries for "
-			"constrained alloc.\n", nFrames);
-		return ret;
-	};
+printf(NOTICE"Starting at bit %d, searching until %d-1, skipping by %d bits.\n",
+	alignmentStartBit, searchEndBit, c->i.pfnSkipStride);
 
-	/**	EXPLANATION:
-	 * From here, we're just allocating. Run through the bitmaps and try to
-	 * get nFrames in accordance with the compiled constraints specification
-	 * we've been asked to satisfy.
-	 *
-	 * When searching for DMA memory, we don't use the "lastIndex"
-	 * optimization. We need memory that satisfies the constraints, and we
-	 * don't need to seriously optimize this allocation because we accept
-	 * that we are already performing a costly allocation that must satisfy
-	 * particular constraints.
-	 **/
 	bmp.lock.acquire();
-	for (
-		uarch_t i=alignmentStartBit;
-		i<searchEndBit;
-		i+=(1 + c->i.pfnSkipStride + nextBoundarySkip))
+
+	for (sbit8 isSecondPass = 0; isSecondPass <= 1; isSecondPass++)
 	{
-		uarch_t nFound = 0;
-		status_t foundStartBit;
-		paddr_t foundBaseAddr;
-
-		nextBoundarySkip = 0;
-		foundStartBit = checkForContiguousBitsAt(
-			bmp.rsrc.bmp, i,
-			c->i.minElementGranularityNFrames.getLow(),
-			c->i.maxNContiguousFrames.getLow(),
-			bmpNFrames - i, &nFound);
-
-		if (foundStartBit < 1) {
-			break; // Cannot satisfy the allocation.
-		};
-
-		/* If the number of frames we found means that the next search
-		 * will begin at an unaligned bit (alignment is a multiple of
-		 * pfnSkipStride), we have to pad until the next alignment
-		 * boundary.
+		/**	EXPLANATION:
+		 * From here, we're just allocating. Run through the bitmaps and try to
+		 * get nFrames in accordance with the compiled constraints specification
+		 * we've been asked to satisfy.
+		 *
+		 * When searching for DMA memory, we don't use the "lastIndex"
+		 * optimization. We need memory that satisfies the constraints, and we
+		 * don't need to seriously optimize this allocation because we accept
+		 * that we are already performing a costly allocation that must satisfy
+		 * particular constraints.
 		 **/
-		while (c->i.pfnSkipStride + 1 + nextBoundarySkip < nFound) {
-			nextBoundarySkip += c->i.pfnSkipStride + 1;
-		};
-
-		/* Add the stretch to the retlist.This really shouldn't fail
-		 * because we preallocated the room for it, but still check.
-		 **/
-		foundBaseAddr = foundStartBit + basePfn;
-		foundBaseAddr <<= PAGING_BASE_SHIFT;
-		error = retlist->addFrames(foundBaseAddr, nFound);
-		if (error != ERROR_SUCCESS)
+		for (
+			uarch_t i=alignmentStartBit;
+			i<searchEndBit && ret < (signed)nFrames;
+			i+=(1 + c->i.pfnSkipStride + nextBoundarySkip))
 		{
+			uarch_t nFound = 0;
+			status_t foundStartBit;
+			paddr_t foundBaseAddr;
+
+			nextBoundarySkip = 0;
+			foundStartBit = checkForContiguousBitsAt(
+				bmp.rsrc.bmp, i,
+				c->i.minElementGranularityNFrames.getLow(),
+				c->i.maxNContiguousFrames.getLow(),
+				bmpNFrames - i, &nFound);
+
+			if (foundStartBit < 1) {
+				break; // Cannot satisfy the allocation.
+			};
+
+			/* If the number of frames we found means that the next search
+			 * will begin at an unaligned bit (alignment is a multiple of
+			 * pfnSkipStride), we have to pad until the next alignment
+			 * boundary.
+			 **/
+			while (c->i.pfnSkipStride + 1 + nextBoundarySkip < nFound) {
+				nextBoundarySkip += c->i.pfnSkipStride + 1;
+			};
+
+			if (isSecondPass)
+			{
+				/* Add the stretch to the retlist. This really shouldn't fail
+				 * because we preallocated the room for it, but still check.
+				 **/
+				foundBaseAddr = foundStartBit + basePfn;
+				foundBaseAddr <<= PAGING_BASE_SHIFT;
+				error = retlist->addFrames(
+					foundBaseAddr, nFound,
+					currScgthElement);
+				if (error != ERROR_SUCCESS)
+				{
+					bmp.lock.release();
+					printf(ERROR MEMBMP"Failed to add %d "
+						"frames to SGList, starting at "
+						"%P.\n",
+						nFound, &foundBaseAddr);
+					return error;
+				}
+
+//printf(NOTICE MEMBMP"Added element @index %d: baseAddr %P, %d frames, ret is %d\n",
+//	currScgthElement, &foundBaseAddr, nFound, error);
+				// Set bits in the BMP.
+				for (uarch_t j=0; j<nFound; j++) {
+					setFrame(basePfn + foundStartBit + j);
+				};
+			};
+
+			if (!isSecondPass)
+			{
+				ret += nFound;
+				nScgthElements++;
+			}
+			else
+			{
+				currScgthElement++;
+			}
+		};
+
+		if (ret < (signed)nFrames)
+		{
+			// Free all the frames that were found and allocated.
 			bmp.lock.release();
-			return error;
+			if (isSecondPass)
+			{
+				panic(ERROR_UNKNOWN, CC"The second pass of "
+					"constrainedGetFrames should be "
+					"failsafe.\n");
+			}
+			return ERROR_MEMORY_NOMEM_PHYSICAL;
 		}
 
-		// Set bits in the BMP.
-		for (uarch_t j=0; j<nFound; j++) {
-			setFrame(basePfn + foundStartBit + j);
+		/* We resize the internal memory to be able to hold "nFrames" entries,
+		 * though it is very likely that we won't need that many since each
+		 * entry describes both a base-addr and a length.
+		 **/
+		if (!isSecondPass)
+		{
+			error = retlist->preallocateEntries(nScgthElements);
+			if (error != ERROR_SUCCESS)
+			{
+				bmp.lock.release();
+				printf(ERROR MEMBMP"Failed to prealloc %d SGList entries for "
+					"constrained alloc.\n", nScgthElements);
+				return error;
+			};
+printf(NOTICE"PReallocated room for %d list entries, to describe %d frames total.\n",
+	nScgthElements, nFrames);
 		};
-
-		ret += nFound;
-	};
-
-	if (ret < (signed)nFrames)
-	{
-		// Free all the frames that were found and allocated.
-		bmp.lock.release();
-		return ERROR_MEMORY_NOMEM_PHYSICAL;
 	}
 
 	bmp.lock.release();
