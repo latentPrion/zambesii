@@ -84,11 +84,15 @@ public:
 		return index + 1 <= tmp;
 	};
 
-	error_t resizeToHoldIndex(uarch_t index)
+	enum resizeToHoldIndexFlagsE {
+		RTHI_FLAGS_UNLOCKED = (1<<0)
+	};
+
+	error_t resizeToHoldIndex(uarch_t index, uarch_t _flags=0)
 	{
 		error_t		ret;
 
-		lock();
+		if (!FLAG_TEST(_flags, RTHI_FLAGS_UNLOCKED)) { lock(); };
 
 		if (unlocked_indexIsValid(index))
 		{
@@ -105,7 +109,7 @@ public:
 			s.rsrc.nIndexes = index + 1;
 		};
 
-		unlock();
+		if (!FLAG_TEST(_flags, RTHI_FLAGS_UNLOCKED)) { unlock(); };
 
 		return ret;
 	}
