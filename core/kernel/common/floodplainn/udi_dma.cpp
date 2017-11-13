@@ -102,6 +102,7 @@ error_t fplainn::Zudi::dma::DmaConstraints::addOrModifyAttrs(
 	uarch_t			nNewAttrs=0;
 
 	if (_attrs == NULL) { return ERROR_INVALID_ARG; };
+	if (nAttrs == 0) { return ERROR_SUCCESS; };
 
 	// How many of the attrs are new ones?
 	for (uarch_t i=0; i<nAttrs; i++) {
@@ -680,7 +681,8 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 			return ERROR_NON_CONFORMANT;
 		};
 
-		/* On a 32-bit build, prefer to use 32-bit SCGTH, unless
+		/*	EXPLANATION:
+		 * On a 32-bit build, prefer to use 32-bit SCGTH, unless
 		 * it's a PAE build.
 		 *
 		 * The reason we prefer to do 64-bit scgth lists on a
@@ -693,6 +695,16 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 		 * a higher chance of reserving the low 32-bits for devices that
 		 * truly need 32-bit DMA.
 		 */
+
+		/*	NOTES:
+		 * We allow 64-bit formatted scgth lists on 32 bit builds
+		 * because format of the list is not the same as the range of
+		 * pmem from which the memory was allocated.
+		 *
+		 * So we can allocate memory in the first 4GiB to a caller that
+		 * requests a 64-bit formatted list. This just means we set the
+		 * top 32-bit of the addresses to 0.
+		 **/
 #if (__VADDR_NBITS__ == 64) || ((__VADDR_NBITS__ == 32) && defined(ARCH_x86_32_PAE))
 		if (tmpAttr->attr_value & UDI_SCGTH_64) {
 			i.addressSize = ScatterGatherList::ADDR_SIZE_64;
@@ -703,9 +715,7 @@ error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
 		if (tmpAttr->attr_value & UDI_SCGTH_32) {
 			i.addressSize = ScatterGatherList::ADDR_SIZE_32;
 		} else {
-			printf(ERROR"Constraints doesn't support SCGTH_FORMAT "
-				"32 on 32-bit paddrspace kernel.\n");
-			return ERROR_UNINITIALIZED;
+			i.addressSize = ScatterGatherList::ADDR_SIZE_64;
 		};
 #else
 	#error "Unhandled build configuration for UDI DMA SCGTH_FORMAT."
