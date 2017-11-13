@@ -232,17 +232,17 @@ public:
 
 				if (addressSize == ADDR_SIZE_32)
 				{
-					return elements32.resizeToHoldIndex(
-						nEntries - 1);
+					return preallocateEntries(
+						&elements32, nEntries);
 				}
 				else
 				{
-					return elements64.resizeToHoldIndex(
-						nEntries - 1);
+					return preallocateEntries(
+						&elements64, nEntries);
 				};
 			}
 
-			status_t addFrames(paddr_t p, uarch_t nFrames)
+			status_t addFrames(paddr_t p, uarch_t nFrames, sarch_t atIndex=-1)
 			{
 				status_t		ret;
 
@@ -258,12 +258,14 @@ public:
 				if (addressSize == ADDR_SIZE_32)
 				{
 					ret = addFrames(
-						&elements32, p, nFrames);
+						&elements32, p, nFrames,
+						atIndex);
 				}
 				else
 				{
 					ret = addFrames(
-						&elements64, p, nFrames);
+						&elements64, p, nFrames,
+						atIndex);
 				};
 
 				if (ret > ERROR_SUCCESS) {
@@ -289,10 +291,31 @@ public:
 			void unmap(MappedScatterGatherList *mapping);
 
 		private:
+			template <class T>
+			error_t preallocateEntries(T *array, uarch_t nEntries)
+			{
+				error_t ret;
+
+				ret = array->resizeToHoldIndex(
+					nEntries - 1);
+
+				if (ret != ERROR_SUCCESS) {
+					return ret;
+				};
+
+				/*	TODO:
+				 * Really inefficient? Cycle through and set
+				 * the block_length member of each of the new
+				 * elements to be 0, indicating that it's an
+				 * unused element.
+				 */
+				return ret;
+			}
+
 			template <class scgth_elements_type>
 			error_t addFrames(
 				ResizeableArray<scgth_elements_type> *list,
-				paddr_t p, uarch_t nFrames);
+				paddr_t p, uarch_t nFrames, sarch_t atIndex=-1);
 
 		public:
 			typedef ResizeableArray<udi_scgth_element_32_t>
@@ -628,7 +651,8 @@ inline void assign_scgth_block_busaddr_to_paddr(paddr_t &p, udi_ubit32_t u32)
 
 template <class scgth_elements_type>
 error_t fplainn::Zudi::dma::ScatterGatherList::addFrames(
-	ResizeableArray<scgth_elements_type> *list, paddr_t p, uarch_t nFrames
+	ResizeableArray<scgth_elements_type> *list, paddr_t p, uarch_t nFrames,
+	sarch_t atIndex
 	)
 {
 	error_t			ret;
@@ -637,10 +661,27 @@ error_t fplainn::Zudi::dma::ScatterGatherList::addFrames(
 	 * Returns ERROR_SUCCESS if there was no need to allocate a new
 	 * SGList element.
 	 *
+	 * If atIndex is non-negative, it is taken to be a placement index in
+	 * the array, at which the frames should be added. Whatever frames exist
+	 * at that index will be overwritten.
+	 *
 	 * Returns 1 if a new element was created.
 	 *
 	 * Returns negative integer value on error.
 	 **/
+
+	if (atIndex >= 0) {
+		scgth_elements_type	newElement;
+
+		assign_paddr_to_scgth_block_busaddr(&newElement, p);
+		newElement.block_length = PAGING_PAGES_TO_BYTES(nFrames);
+
+		list->lock();
+		(*list)[atIndex] = newElement;
+		list->unlock();
+		return ERROR_SUCCESS;
+	}
+
 	list->lock();
 
 	for (
