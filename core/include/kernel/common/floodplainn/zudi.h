@@ -268,7 +268,9 @@ public:
 						atIndex);
 				};
 
-				if (ret > ERROR_SUCCESS) {
+				if (ret > ERROR_SUCCESS)
+				{
+					// TODO: Should be atomic_add.
 					udiScgthList.scgth_num_elements++;
 				};
 
