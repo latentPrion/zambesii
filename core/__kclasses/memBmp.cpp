@@ -475,93 +475,6 @@ void MemoryBmp::mapMemUnused(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 	bmp.lock.release();
 }
 
-/**	EXPLANATION:
- * This class will ensure that if the allocation fails, all bits in the
- * BMP that were set as "used" during the partial allocation will be
- * unset before this function returns.
- **/
-class ConstrainedGetFramesJanitor
-{
-public:
-	ConstrainedGetFramesJanitor(
-		fplainn::Zudi::dma::ScatterGatherList *_list,
-		MemoryBmp *_bmp)
-	:
-	sglist(_list), bmp(_bmp)
-	{
-		setDoCleanup(1);
-	}
-
-	~ConstrainedGetFramesJanitor(void)
-	{
-		if (!doCleanup) { return; };
-
-		if (sglist->addressSize ==
-			fplainn::Zudi::dma::ScatterGatherList::ADDR_SIZE_32)
-		{
-			udi_scgth_element_32_t el;
-			cleanup(&el, &sglist->elements32);
-		}
-		else
-		{
-			udi_scgth_element_64_t el;
-			cleanup(&el, &sglist->elements64);
-		}
-	}
-
-	void setDoCleanup(sbit8 _doCleanup)
-	{
-		doCleanup = _doCleanup;
-	}
-
-	template <class scgth_elements_type>
-	void cleanup(
-		scgth_elements_type *unused,
-		ResizeableArray<scgth_elements_type> *sgarray)
-	{
-		typename ResizeableArray<scgth_elements_type>::Iterator	it;
-
-		(void)unused;
-
-		sgarray->lock();
-		bmp->bmp.lock.acquire();
-		for (
-			it=sgarray->begin();
-			it!=sgarray->end();
-			++it)
-		{
-			scgth_elements_type	el = *it;
-			paddr_t			startPaddr,
-						endPaddr;
-
-			assign_scgth_block_busaddr_to_paddr(
-				startPaddr, el.block_busaddr);
-			endPaddr = startPaddr;
-			endPaddr += el.block_length;
-
-			// Convert it to a PFN offset.
-			startPaddr >>= PAGING_BASE_SHIFT;
-			endPaddr >>= PAGING_BASE_SHIFT;
-
-			// Unset each bit.
-			for (
-				uarch_t i=startPaddr.getLow();
-				i<endPaddr.getLow();
-				i++)
-			{
-				bmp->unsetFrame(i);
-			};
-		};
-		bmp->bmp.lock.acquire();
-		sgarray->unlock();
-	}
-
-private:
-	sbit8					doCleanup;
-	fplainn::Zudi::dma::ScatterGatherList	*sglist;
-	MemoryBmp				*bmp;
-};
-
 status_t MemoryBmp::constrainedGetFrames(
 	fplainn::Zudi::dma::DmaConstraints::Compiler *c,
 	uarch_t nFrames,
@@ -573,8 +486,6 @@ status_t MemoryBmp::constrainedGetFrames(
 	uarch_t 			nextBoundarySkip, alignmentStartBit,
 					searchEndBit=bmpNFrames;
 	error_t 			error;
-	// Object whose destructor automatically cleans up.
-	ConstrainedGetFramesJanitor	janitor(retlist, this);
 
 	(void)flags;
 
@@ -694,7 +605,5 @@ status_t MemoryBmp::constrainedGetFrames(
 	}
 
 	bmp.lock.release();
-	// Stop the cleanup if we succeeded.
-	janitor.setDoCleanup(0);
-	return ERROR_SUCCESS;
+	return ret;
 }
