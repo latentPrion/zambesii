@@ -30,7 +30,7 @@ ASM_GLOBAL_FUNCTION(_start)
 	jmp *%ecx
 ASM_END_FUNCTION(_start)
 
-ASM_SECTION(.text)
+.section .text
 
 ASM_LOCAL_FUNCTION(_startVirtual)
 	/* Load the stack pointer for the BSP power thread. */

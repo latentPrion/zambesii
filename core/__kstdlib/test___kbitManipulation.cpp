@@ -7,16 +7,19 @@ namespace tests
 
 status_t bitIsSet(uarch_t *nTotal, uarch_t *nSucceeded, uarch_t *nFailed)
 {
+	(void)nTotal; (void)nSucceeded; (void)nFailed;
 	return ERROR_SUCCESS;
 }
 
 status_t setBit(uarch_t *nTotal, uarch_t *nSucceeded, uarch_t *nFailed)
 {
+	(void)nTotal; (void)nSucceeded; (void)nFailed;
 	return ERROR_SUCCESS;
 }
 
 status_t unsetBit(uarch_t *nTotal, uarch_t *nSucceeded, uarch_t *nFailed)
 {
+	(void)nTotal; (void)nSucceeded; (void)nFailed;
 	return ERROR_SUCCESS;
 }
 

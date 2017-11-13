@@ -94,16 +94,17 @@ sarch_t IbmPcVgaTerminal::isInitialized(void)
 
 void IbmPcVgaTerminal::scrollDown(void)
 {
-	uarch_t		i;
-	uarch_t		bound=(maxRow * maxCol) - maxCol;
+	uarch_t			i;
+	uarch_t			bound=(maxRow * maxCol) - maxCol;
+	sIbmPc_TerminalMod_Fb	nullChar = { 0, 0 };
 
 	for (i=0; i<bound; i++) {
-		*(ubit16 *)&buff[i] = *(ubit16 *)&buff[i + maxCol];
+		buff[i] = buff[i + maxCol];
 	}
 
 	bound += maxCol;
 	for (; i<bound; i++) {
-		*(ubit16 *)&buff[i] = 0;
+		buff[i] = nullChar;
 	};
 }
 
