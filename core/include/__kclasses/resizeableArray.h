@@ -130,11 +130,11 @@ public:
 				CC"ARArray erase: Index overflows array");
 		};
 
+		lock();
 		memmove(
 			&s.rsrc.array[index], &s.rsrc.array[index + nItems],
 			sizeof(*s.rsrc.array) * nItems);
 
-		lock();
 		s.rsrc.nIndexes -= nItems;
 		unlock();
 	}
