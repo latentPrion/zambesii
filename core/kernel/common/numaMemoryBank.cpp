@@ -326,6 +326,37 @@ status_t NumaMemoryBank::fragmentedGetFrames(
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
 
+status_t NumaMemoryBank::constrainedGetFrames(
+	fplainn::Zudi::dma::DmaConstraints::Compiler *constraints,
+	uarch_t nFrames,
+	fplainn::Zudi::dma::ScatterGatherList *retlist,
+	ubit32 flags
+	)
+{
+	status_t	ret;
+
+	/**	EXPLANATION:
+	 * We don't care about setting a new default range. We are attempting
+	 * to get memory according to a constraints specification.
+	 *
+	 * If the allocation is successful, it doesn't mean we can use that
+	 * fact to optimize future allocations.
+	 **/
+	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
+	{
+		ret = cur->range->constrainedGetFrames(
+			constraints, nFrames, retlist, flags);
+
+		if (ret < (signed)nFrames) {
+			continue;
+		};
+
+		return ret;
+	}
+
+	return ERROR_MEMORY_NOMEM_PHYSICAL;
+}
+
 void NumaMemoryBank::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 {
 	uarch_t		rwFlags;

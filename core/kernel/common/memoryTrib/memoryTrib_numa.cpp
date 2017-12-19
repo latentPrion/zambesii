@@ -364,10 +364,39 @@ void MemoryTrib::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 }
 
 status_t MemoryTrib::constrainedGetFrames(
-	void *_constraints, uarch_t nFrames, paddr_t *retlist, ubit32 flags
+	fplainn::Zudi::dma::DmaConstraints::Compiler *_constraints,
+	uarch_t nFrames,
+	fplainn::Zudi::dma::ScatterGatherList *retlist, ubit32 flags
 	)
 {
-	fplainn::Zudi::dma::DmaConstraints      *con =
-		static_cast<fplainn::Zudi::dma::DmaConstraints *>(_constraints);
-	(void)con;
+	NumaMemoryBank	*currBank;
+
+#if __SCALING__ >= SCALING_CC_NUMA
+	HardwareIdList::Iterator		it = memoryBanks.begin();
+	for (; it != memoryBanks.end(); ++it)
+	{
+		currBank = (NumaMemoryBank *)*it;
+
+		/* We can most likely afford this small speed bump since new
+		 * constrained pmem ranges are not allocated often, and the
+		 * driver allocating them is likely to prefer to keep the
+		 * scatter gather list cached in userspace for re-use, rather
+		 * then repeatedly free the frames back to the kernel.
+		 **/
+		currBank->constrainedGetFrames(
+			_constraints, nFrames, retlist, flags);
+	};
+#else
+	currBank = getBank(defaultMemoryBank.rsrc);
+	if (currBank != NULL) {
+		currBank->constrainedGetFrames(
+			_constraints, nFrames, retlist, flags);
+	}
+	else
+	{
+		printf(ERROR MEMTRIB"constrainedGetFrames(%d): attempt to "
+			"allocate on non-existent bank %d.\n",
+			nFrames, defaultAffinity.def.rsrc);
+	};
+#endif
 }

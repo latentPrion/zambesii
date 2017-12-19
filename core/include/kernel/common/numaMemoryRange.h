@@ -32,6 +32,17 @@ public:
 	status_t fragmentedGetFrames(
 		uarch_t nFrames, paddr_t *paddr, ubit32 flags=0);
 
+	status_t constrainedGetFrames(
+		fplainn::Zudi::dma::DmaConstraints::Compiler *compiledConstraints,
+		uarch_t nFrames,
+		fplainn::Zudi::dma::ScatterGatherList *retlist,
+		ubit32 flags)
+	{
+		// constrainedGetFrames should not consult the page cache.
+		return bmp.constrainedGetFrames(
+			compiledConstraints, nFrames, retlist, flags);
+	}
+
 	void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
 
 	error_t mapMemUsed(paddr_t baseAddr, uarch_t nFrames);

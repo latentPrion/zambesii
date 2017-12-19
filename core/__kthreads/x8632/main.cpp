@@ -496,6 +496,7 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 {
 	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
 	error_t err;
+	status_t stat;
 
 	printf(NOTICE"Here, devmgmt done. %d new child IDs in buffer.\n",
 		msg->info.params.enumerateChildren.nDeviceIds);
@@ -531,10 +532,16 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	};
 	c.compiler.dump();
 
-	uarch_t tot, succ, fail;
-	err = tests::checkForContiguousBitsAt(&tot, &succ, &fail);
-	printf(NOTICE"CheckForContigBits: ret %d; %d tests, %d passed, %d failed.\n",
-		err, tot, succ, fail);
+	MemoryBmp				tb(0xB0000000, 0x3F000000);
+	fplainn::Zudi::dma::ScatterGatherList	sgl;
+
+	err = sgl.initialize(c.compiler.i.addressSize);
+	assert_fatal(err == ERROR_SUCCESS);
+	err = tb.initialize();
+	assert_fatal(err == ERROR_SUCCESS);
+	tb.dump();
+	stat = tb.constrainedGetFrames(&c.compiler, 0, &sgl, 0);
+	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
 
 __kdebug.refresh();
 	printf(NOTICE"All is well in the universe.\n");
