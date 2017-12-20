@@ -351,10 +351,20 @@ status_t MemoryTrib::constrainedGetFrames(
 {
 	NumaMemoryBank	*currBank;
 
+	/**	EXPLANATION:
+	 * We want to run through every bank from the first to the last and
+	 * see if we can successfully allocate memory that meets the supplied
+	 * constraints.
+	 *
+	 * It is not useful to consult the default bank in this function.
+	 */
+
 #if __SCALING__ >= SCALING_CC_NUMA
 	HardwareIdList::Iterator		it = memoryBanks.begin();
 	for (; it != memoryBanks.end(); ++it)
 	{
+		status_t	ret;
+
 		currBank = (NumaMemoryBank *)*it;
 
 		/* We can most likely afford this small speed bump since new
@@ -363,13 +373,17 @@ status_t MemoryTrib::constrainedGetFrames(
 		 * scatter gather list cached in userspace for re-use, rather
 		 * then repeatedly free the frames back to the kernel.
 		 **/
-		currBank->constrainedGetFrames(
+		ret = currBank->constrainedGetFrames(
 			_constraints, nFrames, retlist, flags);
+
+		if (ret >= 0) {
+			return ret;
+		}
 	};
 #else
 	currBank = getBank(defaultMemoryBank.rsrc);
 	if (currBank != NULL) {
-		currBank->constrainedGetFrames(
+		return currBank->constrainedGetFrames(
 			_constraints, nFrames, retlist, flags);
 	}
 	else
