@@ -120,6 +120,8 @@ error_t MemoryTrib::createBank(numaBankId_t id, NumaMemoryBank *preAllocated)
 				NumaMemoryBank(id);
 	}
 	else {
+		// Only __kspace should be preallocated.
+		assert_fatal(id == CHIPSET_NUMA___KSPACE_BANKID);
 		nmb = new (preAllocated) NumaMemoryBank(id);
 	};
 
@@ -185,7 +187,7 @@ void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	 **/
 	printf(WARNING MEMTRIB"releaseFrames(%P, %d): pmem leak.\n",
 		&paddr, nFrames);
-#else
+#else // Non-NUMA
 	currBank = getBank(defaultMemoryBank.rsrc);
 	if (currBank) {
 		currBank->releaseFrames(paddr, nFrames);

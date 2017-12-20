@@ -212,8 +212,13 @@ status_t MemoryBmp::fragmentedGetFrames(uarch_t _nFrames, paddr_t *paddr)
 	uarch_t		nFound = 0, _endPfn, startPfn;
 	uarch_t		bitLimit=__KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
-	if (_nFrames == 0) { return ERROR_INVALID_ARG_VAL; };
 	if (paddr == NULL) { return ERROR_INVALID_ARG; };
+	if (_nFrames == 0)
+	{
+		// If 0 frames requested, return success early.
+		printf(WARNING MEMBMP"fragmentedGetFrames called with 0.\n");
+		return ERROR_SUCCESS;
+	};
 
 	bmp.lock.acquire();
 
