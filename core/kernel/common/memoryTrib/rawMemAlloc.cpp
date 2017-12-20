@@ -14,16 +14,19 @@ void rawMemFree(void *vaddr, uarch_t nPages)
 	memoryTrib.rawMemFree(vaddr, nPages);
 }
 
-error_t memoryTribPmm::contiguousGetFrames(uarch_t, paddr_t *)
-{
-	// return memoryTrib.contiguousGetFrames(nFrames, paddr);
-	UNIMPLEMENTED("MemoryTrib::contiguousGetFrames()");
-	return ERROR_UNIMPLEMENTED;
-}
-
 status_t memoryTribPmm::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 {
 	return memoryTrib.fragmentedGetFrames(nFrames, paddr);
+}
+
+status_t memoryTribPmm::constrainedGetFrames(
+	fplainn::Zudi::dma::DmaConstraints::Compiler *comCon,
+	uarch_t nFrames,
+	fplainn::Zudi::dma::ScatterGatherList *retlist,
+	uarch_t flags
+	)
+{
+	return memoryTrib.constrainedGetFrames(comCon, nFrames, retlist, flags);
 }
 
 void memoryTribPmm::releaseFrames(paddr_t paddr, uarch_t nFrames)

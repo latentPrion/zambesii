@@ -5,13 +5,19 @@
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/bitmap.h>
+	#include <kernel/common/floodplainn/zudi.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 
 namespace memoryTribPmm
 {
-	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
+	status_t constrainedGetFrames(
+		fplainn::Zudi::dma::DmaConstraints::Compiler *comCon,
+		uarch_t nFrames,
+		fplainn::Zudi::dma::ScatterGatherList *retlist,
+		uarch_t flags=0);
+
 	void releaseFrames(paddr_t basePaddr, uarch_t nFrames);
 }
 
