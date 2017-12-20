@@ -216,7 +216,7 @@ error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	if (currBank != NULL)
 	{
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
-		if (ret > 0) {
+		if (ret >= 0) {
 			return ret;
 		};
 	};
@@ -246,7 +246,7 @@ error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	if (currBank != NULL)
 	{
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
-		if (ret > 0) {
+		if (ret >= 0) {
 			return ret;
 		};
 	};
@@ -265,7 +265,7 @@ error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 		currBank = (NumaMemoryBank *)*currIt;
 
 		ret = currBank->fragmentedGetFrames(nPages, paddr);
-		if (ret > 0)
+		if (ret >= 0)
 		{
 			thread->defaultMemoryBank.lock.writeAcquire();
 			thread->defaultMemoryBank.rsrc = currIt.cursor;
