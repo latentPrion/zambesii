@@ -437,9 +437,6 @@ status_t MemoryBmp::constrainedGetFrames(
 		searchEndBit = c->i.beyondEndPfn.getLow() - basePfn;
 	}
 
-printf(NOTICE"Starting at bit %d, searching until %d-1, skipping by %d bits.\n",
-	alignmentStartBit, searchEndBit, c->i.pfnSkipStride);
-
 	bmp.lock.acquire();
 
 	for (sbit8 isSecondPass = 0; isSecondPass <= 1; isSecondPass++)
