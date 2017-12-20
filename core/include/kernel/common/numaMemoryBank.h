@@ -61,9 +61,6 @@ public:
 	void bind(void);
 
 public:
-	error_t contiguousGetFrames(
-		uarch_t nFrames, paddr_t *paddr, ubit32 flags=0);
-
 	status_t constrainedGetFrames(
 		fplainn::Zudi::dma::DmaConstraints::Compiler *compiledConstraints,
 		uarch_t nFrames,

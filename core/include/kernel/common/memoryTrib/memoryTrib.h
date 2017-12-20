@@ -58,9 +58,6 @@ public:
 	status_t fragmentedGetFrames(
 		uarch_t nFrames, paddr_t *ret, ubit32 flags=0);
 
-	error_t contiguousGetFrames(
-		uarch_t nFrames, paddr_t *ret, ubit32 flags=0);
-
 	status_t constrainedGetFrames(
 		fplainn::Zudi::dma::DmaConstraints::Compiler *constraints,
 		uarch_t nFrames,

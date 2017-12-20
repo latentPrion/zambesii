@@ -201,28 +201,6 @@ void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 }
 
 #if __SCALING__ < SCALING_CC_NUMA
-error_t MemoryTrib::contiguousGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
-{
-	error_t			ret;
-	NumaMemoryBank		*currBank;
-
-	/* Allocate from the current default bank, which is either __kspace or
-	 * shared-bank, depending on which stage of memory management
-	 * initialization the kernel is currently at.
-	 **/
-	currBank = getBank(defaultMemoryBank.rsrc);
-	if (currBank != NULL)
-	{
-		ret = currBank->contiguousGetFrames(nPages, paddr);
-		if (ret == ERROR_SUCCESS) {
-			return ret;
-		};
-	};
-
-	// If we reached here, then we've failed completely.
-	return ERROR_MEMORY_NOMEM_PHYSICAL;
-}
-
 error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 {
 	error_t			ret;

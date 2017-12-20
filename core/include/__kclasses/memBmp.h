@@ -46,7 +46,6 @@ public:
 		fplainn::Zudi::dma::ScatterGatherList *retlist,
 		ubit32 flags=0);
 
-	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 	void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
 
