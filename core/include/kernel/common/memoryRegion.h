@@ -44,8 +44,7 @@ public:
 
 private:
 	sChipsetRegionMapEntry	*info;
-	MemoryBmp			*memBmp;
-	AllocTable		allocTable;
+	MemoryBmp		*memBmp;
 };
 
 #endif
