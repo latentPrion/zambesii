@@ -352,12 +352,29 @@ status_t MemoryTrib::constrainedGetFrames(
 	NumaMemoryBank	*currBank;
 
 	/**	EXPLANATION:
-	 * We want to run through every bank from the first to the last and
-	 * see if we can successfully allocate memory that meets the supplied
-	 * constraints.
+	 * First we need to consult the chipset's DMA memory regions list since
+	 * those regions were explicitly described to us for the purpose of
+	 * being used for DMA allocation.
 	 *
-	 * It is not useful to consult the default bank in this function.
+	 * If allocation from the memory regions list fails, then we proceed on
+	 * to sequentially try each NUMA memory bank without any respect for
+	 * the calling process' NUMA policy --ergo it is not useful to consult
+	 * the default bank in this function.
 	 */
+	/* First check all the memory regions to see if any of them can satisfy
+	 * the request.
+	 */
+	for (uarch_t i=0; i < CHIPSET_MEMORY_NREGIONS; i++)
+	{
+		status_t	ret;
+
+		ret = memRegions[i].constrainedGetFrames(
+			_constraints, nFrames, retlist, flags);
+
+		if (ret >= 0) {
+			return ret;
+		};
+	};
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	HardwareIdList::Iterator		it = memoryBanks.begin();
