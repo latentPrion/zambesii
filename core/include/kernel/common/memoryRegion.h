@@ -22,6 +22,7 @@
  * NUMA Tributary has been successfully initialized, then the behaviour of the
  * memory region allocator is undefined, and likely to be destructive.
  **/
+#define MEMREGION	"MemoryRegion: "
 
 typedef ubit8		memoryRegionId_t;
 
