@@ -449,6 +449,7 @@ printf(NOTICE ORIENT"orient 3.\n");
 	// Detect physical memory.
 	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
+	DO_OR_DIE(memoryTrib, memRegionInit(), ret);
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
