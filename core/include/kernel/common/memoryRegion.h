@@ -39,7 +39,6 @@ public:
 	{};
 
 public:
-	error_t contiguousGetFrames(uarch_t nFrames, paddr_t *paddr);
 	error_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 	void releaseFrames(paddr_t paddr, uarch_t nFrames);
 
