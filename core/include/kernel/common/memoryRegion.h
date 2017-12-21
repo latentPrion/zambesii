@@ -40,12 +40,54 @@ public:
 
 public:
 	error_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
-	void releaseFrames(paddr_t paddr, uarch_t nFrames);
+	status_t constrainedGetFrames(
+		fplainn::Zudi::dma::DmaConstraints::Compiler *comCon,
+		uarch_t nFrames,
+		fplainn::Zudi::dma::ScatterGatherList *retlist,
+		uarch_t flags=0);
+	/* Returns 1 if this MemoryRegion object was able to successfully take
+	 * responsibility for freeing the allocation.
+	 */
+	sbit8 releaseFrames(paddr_t paddr, uarch_t nFrames);
 
 private:
 	sChipsetRegionMapEntry	*info;
 	MemoryBmp		*memBmp;
 };
+
+
+/**	Inline methods:
+ ******************************************************************************/
+
+inline error_t MemoryRegion::fragmentedGetFrames(
+	uarch_t nFrames, paddr_t *paddr
+	)
+{
+	printf(FATAL MEMREGION"fragmentedGetFrames(%d, %P) unimplemented.\n",
+		nFrames, paddr);
+
+	return ERROR_UNIMPLEMENTED;
+}
+
+inline status_t MemoryRegion::constrainedGetFrames(
+	fplainn::Zudi::dma::DmaConstraints::Compiler *comCon,
+	uarch_t nFrames,
+	fplainn::Zudi::dma::ScatterGatherList *retlist,
+	uarch_t flags
+	)
+{
+	/**	EXPLANATION:
+	 * Just ask the bitmap to allocate.
+	 */
+	return memBmp->constrainedGetFrames(comCon, nFrames, retlist, flags);
+}
+
+inline sbit8 MemoryRegion::releaseFrames(paddr_t paddr, uarch_t nFrames)
+{
+	printf(FATAL MEMREGION"releaseFrames(%P, %d): unimplemented.\n",
+		&paddr, nFrames);
+	return 0;
+}
 
 #endif
 
