@@ -186,7 +186,9 @@ error_t fplainn::Zudi::dma::MappedScatterGatherList::addPages(
 	return ERROR_SUCCESS;
 }
 
+template <class scgth_elements_type>
 error_t fplainn::Zudi::dma::ScatterGatherList::map(
+	ResizeableArray<scgth_elements_type> *list,
 	MappedScatterGatherList *retobj
 	)
 {
@@ -207,170 +209,84 @@ error_t fplainn::Zudi::dma::ScatterGatherList::map(
 
 	for (ubit8 pass=1; pass <= 2; pass++)
 	{
-		if (addressSize == ADDR_SIZE_32)
+		for (
+			typename ResizeableArray<scgth_elements_type>::Iterator it=list->begin();
+			it != list->end();
+			++it)
 		{
-			for (
-				SGList32::Iterator it=elements32.begin();
-				it != elements32.end();
-				++it)
-			{
-				udi_scgth_element_32_t		*tmp = &*it;
-				paddr_t				p, p2;
-				uarch_t				currNFrames;
+			scgth_elements_type		*tmp = &*it;
+			paddr_t				p, p2;
+			uarch_t				currNFrames;
 
-				assign_scgth_block_busaddr_to_paddr(
-					p, tmp->block_busaddr);
+			assign_scgth_block_busaddr_to_paddr(
+				p, tmp->block_busaddr);
 
-				p2 = p + tmp->block_length;
+			p2 = p + tmp->block_length;
 
-				currNFrames = PAGING_BYTES_TO_PAGES(p2 - p)
-					.getLow();
+			currNFrames = PAGING_BYTES_TO_PAGES(p2 - p)
+				.getLow();
 
-				if (pass == 1) {
-					nFrames += currNFrames;
-				};
-
-				if (pass == 2)
-				{
-					if (vmem == NULL)
-					{
-						// Alloc the vmem.
-						vmem = __kvasStream->getPages(nFrames);
-						if (vmem == NULL)
-						{
-							printf(ERROR"SGList::map: "
-								"Failed to alloc vmem "
-								"to map the %d "
-								"frames in the list.\n",
-								nFrames);
-
-							return ERROR_MEMORY_NOMEM_VIRTUAL;
-						};
-
-						currVaddr = (uintptr_t)vmem;
-					}
-
-					ret = walkerPageRanger::mapInc(
-						&__kvasStream->vaddrSpace,
-						(void *)currVaddr, p,
-						currNFrames,
-						PAGEATTRIB_PRESENT
-						| PAGEATTRIB_WRITE
-						| PAGEATTRIB_SUPERVISOR);
-
-					if (ret < (signed)currNFrames)
-					{
-						printf(ERROR"SGList::map: "
-							"Failed to map all %d "
-							"pages for SGList "
-							"element P%P, %d "
-							"frames.\n",
-							&p, nFrames);
-
-						goto releaseVmem;
-					};
-
-					ret = retobj->addPages(
-						(void *)currVaddr,
-						currNFrames * PAGING_BASE_SIZE);
-
-					if (ret != ERROR_SUCCESS)
-					{
-						printf(ERROR"SGList::map: "
-							"Failed to add "
-							"page %p in DMA "
-							"sglist mapping to "
-							"internal metadata "
-							"list.\n",
-						(void*)currVaddr);
-					}
-
-					currVaddr += currNFrames
-						* PAGING_BASE_SIZE;
-				};
+			if (pass == 1) {
+				nFrames += currNFrames;
 			};
-		}
-		else
-		{
-			for (
-				SGList64::Iterator it=elements64.begin();
-				it != elements64.end();
-				++it)
+
+			if (pass == 2)
 			{
-				udi_scgth_element_64_t		*tmp = &*it;
-				paddr_t				p, p2;
-				uarch_t				currNFrames;
-
-				assign_scgth_block_busaddr_to_paddr(
-					p, tmp->block_busaddr);
-
-				p2 = p + tmp->block_length;
-
-				currNFrames = PAGING_BYTES_TO_PAGES(p2 - p)
-					.getLow();
-
-				if (pass == 1) {
-					nFrames += currNFrames;
-				};
-
-				if (pass == 2)
+				if (vmem == NULL)
 				{
+					// Alloc the vmem.
+					vmem = __kvasStream->getPages(nFrames);
 					if (vmem == NULL)
 					{
-						// Alloc the vmem.
-						vmem = __kvasStream->getPages(nFrames);
-						if (vmem == NULL)
-						{
-							printf(ERROR"SGList::map: "
-								"Failed to alloc vmem "
-								"to map the %d "
-								"frames in the list.\n",
-								nFrames);
-
-							return ERROR_MEMORY_NOMEM_VIRTUAL;
-						};
-
-						currVaddr = (uintptr_t)vmem;
-					}
-
-					ret = walkerPageRanger::mapInc(
-						&__kvasStream->vaddrSpace,
-						(void *)currVaddr, p,
-						currNFrames,
-						PAGEATTRIB_PRESENT
-						| PAGEATTRIB_WRITE
-						| PAGEATTRIB_SUPERVISOR);
-
-					if (ret < (signed)currNFrames)
-					{
 						printf(ERROR"SGList::map: "
-							"Failed to map all %d "
-							"pages for SGList "
-							"element P%P, %d "
-							"frames.\n",
-							&p, nFrames);
+							"Failed to alloc vmem "
+							"to map the %d "
+							"frames in the list.\n",
+							nFrames);
 
-						goto releaseVmem;
+						return ERROR_MEMORY_NOMEM_VIRTUAL;
 					};
 
-					ret = retobj->addPages(
-						(void *)currVaddr,
-						currNFrames * PAGING_BASE_SIZE);
+					currVaddr = (uintptr_t)vmem;
+				}
 
-					if (ret != ERROR_SUCCESS)
-					{
-						printf(ERROR"SGList::map: "
-							"Failed to add "
-							"page %p in DMA "
-							"sglist mapping to "
-							"internal metadata "
-							"list.\n",
-						(void*)currVaddr);
-					}
+				ret = walkerPageRanger::mapInc(
+					&__kvasStream->vaddrSpace,
+					(void *)currVaddr, p,
+					currNFrames,
+					PAGEATTRIB_PRESENT
+					| PAGEATTRIB_WRITE
+					| PAGEATTRIB_SUPERVISOR);
 
-					currVaddr += currNFrames
-						* PAGING_BASE_SIZE;
+				if (ret < (signed)currNFrames)
+				{
+					printf(ERROR"SGList::map: "
+						"Failed to map all %d "
+						"pages for SGList "
+						"element P%P, %d "
+						"frames.\n",
+						&p, nFrames);
+
+					goto releaseVmem;
 				};
+
+				ret = retobj->addPages(
+					(void *)currVaddr,
+					currNFrames * PAGING_BASE_SIZE);
+
+				if (ret != ERROR_SUCCESS)
+				{
+					printf(ERROR"SGList::map: "
+						"Failed to add "
+						"page %p in DMA "
+						"sglist mapping to "
+						"internal metadata "
+						"list.\n",
+					(void*)currVaddr);
+				}
+
+				currVaddr += currNFrames
+					* PAGING_BASE_SIZE;
 			};
 		};
 	};

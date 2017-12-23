@@ -283,7 +283,15 @@ public:
 			uarch_t compact(void);
 
 			// Returns a virtual mapping to this SGList.
-			error_t map(MappedScatterGatherList *retMapping);
+			error_t map(MappedScatterGatherList *retMapping)
+			{
+				if (addressSize == ADDR_SIZE_32) {
+					return map(&elements32, retMapping);
+				} else {
+					return map(&elements64, retMapping);
+				}
+			}
+
 			// Returns a re-done mapping of this SGList.
 			error_t remap(
 				MappedScatterGatherList *oldMapping,
@@ -318,6 +326,11 @@ public:
 			error_t addFrames(
 				ResizeableArray<scgth_elements_type> *list,
 				paddr_t p, uarch_t nFrames, sarch_t atIndex=-1);
+
+			template <class scgth_elements_type>
+			error_t map(
+				ResizeableArray<scgth_elements_type> *list,
+				MappedScatterGatherList *retMapping);
 
 		public:
 			typedef ResizeableArray<udi_scgth_element_32_t>
