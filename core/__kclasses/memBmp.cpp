@@ -299,15 +299,24 @@ out:
 	return nFound;
 }
 
-void MemoryBmp::releaseFrames(paddr_t frameAddr, uarch_t _nFrames)
+sbit8 MemoryBmp::releaseFrames(paddr_t frameAddr, uarch_t _nFrames)
 {
 	uarch_t		rangeStartPfn;
 	uarch_t		rangeEndPfn;;
 
-	if (_nFrames == 0) { return; };
+	if (_nFrames == 0) { return 0; };
 
 	rangeStartPfn = (frameAddr >> PAGING_BASE_SHIFT).getLow();
 	rangeEndPfn = rangeStartPfn + _nFrames;
+
+	/* If the frames to be released are not in range of this BMP, return
+	 * false.
+	 **/
+	if (!((frameAddr >= rangeStartPfn && frameAddr <= endPfn)
+		|| (rangeEndPfn > rangeStartPfn && rangeEndPfn <= endPfn)))
+	{
+		return 0;
+	};
 
 	bmp.lock.acquire();
 
@@ -320,6 +329,7 @@ void MemoryBmp::releaseFrames(paddr_t frameAddr, uarch_t _nFrames)
 		(rangeStartPfn - basePfn) / __KBIT_NBITS_IN(*bmp.rsrc.bmp);
 
 	bmp.lock.release();
+	return 1;
 }
 
 void MemoryBmp::mapMemUsed(paddr_t rangeBaseAddr, uarch_t rangeNFrames)

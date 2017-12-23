@@ -47,7 +47,7 @@ public:
 		ubit32 flags=0);
 
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
-	void releaseFrames(paddr_t frameAddr, uarch_t nFrames);
+	sbit8 releaseFrames(paddr_t frameAddr, uarch_t nFrames);
 
 	void mapMemUsed(paddr_t basePaddr, uarch_t nFrames);
 	void mapMemUnused(paddr_t basePaddr, uarch_t nFrames);
