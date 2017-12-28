@@ -384,18 +384,6 @@ public:
 			}
 
 		public:
-			/* Allocates nFrames frames which match the constraints
-			 * specified by the attributes contained within this
-			 * DmaConstraints instance object.
-			 **/
-			status_t allocFrames(
-				uarch_t nFrames,
-				uarch_t flags, ScatterGatherList *ret);
-
-			/* Releases all physical frames contained within "list".
-			 **/
-			void releaseFrames(ScatterGatherList *list);
-
 			void dump(void);
 			static utf8Char *getAttrTypeName(
 				udi_dma_constraints_attr_t a);
