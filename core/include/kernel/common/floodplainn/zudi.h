@@ -242,7 +242,8 @@ public:
 				};
 			}
 
-			status_t addFrames(paddr_t p, uarch_t nFrames, sarch_t atIndex=-1)
+			status_t addFrames(
+				paddr_t p, uarch_t nFrames, sarch_t atIndex=-1)
 			{
 				status_t		ret;
 

@@ -392,7 +392,8 @@ status_t MemoryBmp::constrainedGetFrames(
 	status_t			ret=0;
 	uarch_t 			nextBoundarySkip, alignmentStartBit,
 					searchEndBit=bmpNFrames,
-					nScgthElements=0, currScgthElement=0;
+					nScgthElements=0, currScgthElement=0,
+					scgthPreviousNElements=0;
 	error_t 			error;
 
 	/**	EXPLANATION:
@@ -500,7 +501,8 @@ status_t MemoryBmp::constrainedGetFrames(
 				foundBaseAddr <<= PAGING_BASE_SHIFT;
 				error = retlist->addFrames(
 					foundBaseAddr, nFound,
-					currScgthElement);
+					scgthPreviousNElements
+						+ currScgthElement);
 				if (error != ERROR_SUCCESS)
 				{
 					bmp.lock.release();
@@ -519,15 +521,12 @@ status_t MemoryBmp::constrainedGetFrames(
 				};
 			};
 
-			if (!isSecondPass)
-			{
-				ret += nFound;
+			if (!isSecondPass) {
 				nScgthElements++;
-			}
-			else
-			{
+			} else {
 				currScgthElement++;
 			}
+			ret += nFound;
 		};
 
 		if (ret < (signed)nFrames)
@@ -543,13 +542,22 @@ status_t MemoryBmp::constrainedGetFrames(
 			return ERROR_MEMORY_NOMEM_PHYSICAL;
 		}
 
-		/* We resize the internal memory to be able to hold "nFrames" entries,
-		 * though it is very likely that we won't need that many since each
-		 * entry describes both a base-addr and a length.
-		 **/
+		/* Resizing the array resizes it from the end of the previous
+		 * internal memory.
+		 */
 		if (!isSecondPass)
 		{
-			error = retlist->preallocateEntries(nScgthElements);
+			if (retlist->addressSize == fplainn::Zudi::dma
+				::ScatterGatherList::ADDR_SIZE_32)
+			{
+				scgthPreviousNElements = retlist->elements32.getNIndexes();
+			}
+			else {
+				scgthPreviousNElements = retlist->elements64.getNIndexes();
+			};
+
+			error = retlist->preallocateEntries(
+				scgthPreviousNElements + nScgthElements);
 			if (error != ERROR_SUCCESS)
 			{
 				bmp.lock.release();
@@ -560,6 +568,8 @@ status_t MemoryBmp::constrainedGetFrames(
 printf(NOTICE"PReallocated room for %d list entries, to describe %d frames total.\n",
 	nScgthElements, nFrames);
 		};
+
+		if (!isSecondPass) { ret = 0; };
 	}
 
 	bmp.lock.release();
