@@ -223,6 +223,15 @@ public:
 			~ScatterGatherList(void) {}
 
 		public:
+			void dump(void)
+			{
+				if (addressSize == ADDR_SIZE_32) {
+					dump(&elements32);
+				} else {
+					dump(&elements64);
+				};
+			}
+
 			error_t preallocateEntries(uarch_t nEntries)
 			{
 				if (nEntries == 0) { return ERROR_SUCCESS; };
@@ -302,6 +311,9 @@ public:
 			void unmap(MappedScatterGatherList *mapping);
 
 		private:
+			template <class scgth_elements_type>
+			void dump(ResizeableArray<scgth_elements_type> *list);
+
 			template <class T>
 			error_t preallocateEntries(T *array, uarch_t nEntries)
 			{
@@ -663,6 +675,22 @@ inline void assign_scgth_block_busaddr_to_paddr(paddr_t &p, udi_busaddr64_t u64)
 inline void assign_scgth_block_busaddr_to_paddr(paddr_t &p, udi_ubit32_t u32)
 {
 	p = u32;
+}
+
+template <class scgth_elements_type>
+void fplainn::Zudi::dma::ScatterGatherList::dump(ResizeableArray<scgth_elements_type> *list)
+{
+	printf(NOTICE "ScGthList: %d elements, dumping:\n", list->getNIndexes());
+	for (typename ResizeableArray<scgth_elements_type>::Iterator it=list->begin();
+		it != list->end(); ++it)
+	{
+		scgth_elements_type	tmp = *it;
+		paddr_t				p;
+
+		assign_scgth_block_busaddr_to_paddr(p, tmp.block_busaddr);
+		printf(CC"\tElement: Paddr %P, nBytes %d.\n",
+			&p, tmp.block_length);
+	}
 }
 
 template <class scgth_elements_type>
