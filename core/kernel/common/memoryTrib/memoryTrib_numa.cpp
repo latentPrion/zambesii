@@ -158,7 +158,7 @@ void MemoryTrib::destroyBank(numaBankId_t id)
 	};
 }
 
-void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
+sbit8 MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 {
 	NumaMemoryBank			*currBank;
 	HardwareIdList::Iterator	it;
@@ -179,7 +179,7 @@ void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 		if (currBank->identifyPaddr(paddr))
 		{
 			currBank->releaseFrames(paddr, nFrames);
-			return;
+			return 1;
 		};
 	};
 	/* Couldn't find a suitable bank. Probably the memory was hot swapped,
@@ -191,6 +191,7 @@ void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	currBank = getBank(defaultMemoryBank.rsrc);
 	if (currBank) {
 		currBank->releaseFrames(paddr, nFrames);
+		return 1;
 	}
 	else
 	{
@@ -200,6 +201,7 @@ void MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	};
 #endif
 
+	return 0;
 }
 
 #if __SCALING__ < SCALING_CC_NUMA

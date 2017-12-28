@@ -64,7 +64,7 @@ public:
 		fplainn::Zudi::dma::ScatterGatherList *retlist,
 		ubit32 flags=0);
 
-	void releaseFrames(paddr_t paddr, uarch_t nFrames);
+	sbit8 releaseFrames(paddr_t paddr, uarch_t nFrames);
 
 	void mapRangeUsed(paddr_t baseAddr, uarch_t nFrames);
 	void mapRangeUnused(paddr_t baseAddr, uarch_t nFrames);
