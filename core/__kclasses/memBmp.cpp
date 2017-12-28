@@ -483,6 +483,16 @@ status_t MemoryBmp::constrainedGetFrames(
 				break; // Cannot satisfy the allocation.
 			};
 
+			/* Minimize memory waste on the final element of the
+			 * allocation.
+			 **/
+			if (ret + nFound >= nFrames) {
+				nFound = nFrames - ret;
+				if (nFound < c->i.minElementGranularityNFrames.getLow()) {
+					nFound = c->i.minElementGranularityNFrames.getLow();
+				}
+			}
+
 			/* If the number of frames we found means that the next search
 			 * will begin at an unaligned bit (alignment is a multiple of
 			 * pfnSkipStride), we have to pad until the next alignment
