@@ -65,6 +65,17 @@ public:
 		ubit32 flags=0);
 
 	sbit8 releaseFrames(paddr_t paddr, uarch_t nFrames);
+	sbit8 releaseFrames(fplainn::Zudi::dma::ScatterGatherList *list)
+	{
+		if (list->addressSize
+			== fplainn::Zudi::dma::ScatterGatherList::ADDR_SIZE_32)
+		{
+			return releaseFrames(&list->elements32);
+		}
+		else {
+			return releaseFrames(&list->elements64);
+		};
+	}
 
 	void mapRangeUsed(paddr_t baseAddr, uarch_t nFrames);
 	void mapRangeUnused(paddr_t baseAddr, uarch_t nFrames);
@@ -79,6 +90,30 @@ private:
 	void init2_generateShbankFromNumaMap(
 		sZkcmMemoryConfig *cfg, sZkcmNumaMap *map, sarch_t *__kspaceBool);
 
+	template <class scgth_elements_type>
+	sbit8 releaseFrames(ResizeableArray<scgth_elements_type> *array)
+	{
+		sbit8	ret = 0;
+
+		for (
+			typename ResizeableArray<scgth_elements_type>::Iterator
+				it = array->begin();
+			it != array->end();
+			++it)
+		{
+			sbit8				wasFreed=0;
+			scgth_elements_type	tmp = *it;
+			paddr_t				p;
+
+			assign_scgth_block_busaddr_to_paddr(p, tmp.block_busaddr);
+			wasFreed = releaseFrames(
+				p, PAGING_BYTES_TO_PAGES(tmp.block_length));
+
+			if (wasFreed) { ret = 1; };
+		}
+
+		return ret;
+	}
 public:
 	Bitmap			availableBanks;
 
