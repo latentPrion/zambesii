@@ -65,8 +65,22 @@
 /*
  * Semi-opaque type.
  */
+#define ZUDI_MAX_N_CONSTRAINTS_ATTRS	(32)
 typedef struct __udi_buf {
 	udi_size_t buf_size;
+	/* Zambesii needs to have the constraints attributes associated with a
+	 * buffer included in the userspace buffer handle, in order to enable
+	 * the userspace UDI library to properly implement udi_buf_read() and
+	 * udi_buf_write().
+	 *
+	 * If you associate a UDI buf with a buf_path, the Zambesii kernel will
+	 * also associate that UDI buf with the constraints of the parent device
+	 * which that buf_path points to.
+	 *
+	 * The reason for this is to enable zero-copy passthrough of buffers
+	 * all the way from userspace to the end-device's DMA engine.
+	 **/
+	udi_dma_constraints_attr_spec_t constraints[ZUDI_MAX_N_CONSTRAINTS_ATTRS];
 } udi_buf_t;
 
 /*
