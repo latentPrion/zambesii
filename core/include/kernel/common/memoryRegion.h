@@ -26,6 +26,20 @@
 
 typedef ubit8		memoryRegionId_t;
 
+namespace fplainn
+{
+namespace dma
+{
+	class Constraints;
+	class ScatterGatherList;
+
+namespace constraints
+{
+	class Compiler;
+}
+}
+}
+
 class MemoryTrib;
 
 class MemoryRegion
@@ -41,9 +55,9 @@ public:
 public:
 	error_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 	status_t constrainedGetFrames(
-		fplainn::Zudi::dma::DmaConstraints::Compiler *comCon,
+		fplainn::dma::constraints::Compiler *comCon,
 		uarch_t nFrames,
-		fplainn::Zudi::dma::ScatterGatherList *retlist,
+		fplainn::dma::ScatterGatherList *retlist,
 		uarch_t flags=0);
 	/* Returns 1 if this MemoryRegion object was able to successfully take
 	 * responsibility for freeing the allocation.
@@ -70,9 +84,9 @@ inline error_t MemoryRegion::fragmentedGetFrames(
 }
 
 inline status_t MemoryRegion::constrainedGetFrames(
-	fplainn::Zudi::dma::DmaConstraints::Compiler *comCon,
+	fplainn::dma::constraints::Compiler *comCon,
 	uarch_t nFrames,
-	fplainn::Zudi::dma::ScatterGatherList *retlist,
+	fplainn::dma::ScatterGatherList *retlist,
 	uarch_t flags
 	)
 {

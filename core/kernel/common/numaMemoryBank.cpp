@@ -6,6 +6,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/numaMemoryBank.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/floodplainn/dma.h>
 
 
 #define NUMAMEMBANK_DEFINDEX_NONE	(-1)
@@ -260,9 +261,9 @@ status_t NumaMemoryBank::fragmentedGetFrames(
 }
 
 status_t NumaMemoryBank::constrainedGetFrames(
-	fplainn::Zudi::dma::DmaConstraints::Compiler *constraints,
+	fplainn::dma::constraints::Compiler *constraints,
 	uarch_t nFrames,
-	fplainn::Zudi::dma::ScatterGatherList *retlist,
+	fplainn::dma::ScatterGatherList *retlist,
 	ubit32 flags
 	)
 {

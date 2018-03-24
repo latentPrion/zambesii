@@ -8,6 +8,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/floodplainn/dma.h>
 #include <kernel/common/floodplainn/zudi.h>
 #include <__kthreads/main.h>
 #include <__kthreads/__kcpuPowerOn.h>
@@ -346,9 +347,9 @@ void MemoryTrib::mapRangeUnused(paddr_t baseAddr, uarch_t nPages)
 }
 
 status_t MemoryTrib::constrainedGetFrames(
-	fplainn::Zudi::dma::DmaConstraints::Compiler *_constraints,
+	fplainn::dma::constraints::Compiler *_constraints,
 	uarch_t nFrames,
-	fplainn::Zudi::dma::ScatterGatherList *retlist, ubit32 flags
+	fplainn::dma::ScatterGatherList *retlist, ubit32 flags
 	)
 {
 	NumaMemoryBank	*currBank;

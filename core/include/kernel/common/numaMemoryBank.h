@@ -38,6 +38,20 @@
 #define NUMAMEMBANK_FLAGS_NO_AUTO_ALLOC_BMP	(1<<0)
 #define NUMAMEMBANK			"Numa Memory Bank "
 
+namespace fplainn
+{
+namespace dma
+{
+	class Constraints;
+	class ScatterGatherList;
+
+namespace constraints
+{
+	class Compiler;
+}
+}
+}
+
 class NumaMemoryBank
 {
 public:
@@ -62,9 +76,9 @@ public:
 
 public:
 	status_t constrainedGetFrames(
-		fplainn::Zudi::dma::DmaConstraints::Compiler *compiledConstraints,
+		fplainn::dma::constraints::Compiler *compiledConstraints,
 		uarch_t nFrames,
-		fplainn::Zudi::dma::ScatterGatherList *retlist,
+		fplainn::dma::ScatterGatherList *retlist,
 		ubit32 flags=0);
 
 	status_t fragmentedGetFrames(

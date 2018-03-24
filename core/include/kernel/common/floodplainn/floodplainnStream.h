@@ -7,6 +7,7 @@
 	#include <kernel/common/messageStream.h>
 	#include <kernel/common/floodplainn/channel.h>
 	#include <kernel/common/floodplainn/device.h>
+	#include <kernel/common/floodplainn/dma.h>
 
 	#define FPSTREAM		"FplainnStream "
 
@@ -112,6 +113,46 @@ public:
 		fplainn::IncompleteD2SChannel *blueprint,
 		fplainn::D2SChannel **retchan);
 
+public:
+	/**	Scatter Gather List related APIs.
+	 *
+	 *	EXPLANATION:
+	 * This set of abstractions forms the base of DMA related functionality
+	 * in Zambesii. This abstraction does not currently fully support the
+	 * UDI notion of how sglists should work. In particular zbz sglists
+	 * currently do not allow the owner to re-associate the sglist with a
+	 * different set of allocation constraints.
+	 *
+	 * The constraints in zbz's sglists are set at allocation time and
+	 * cannot be altered.
+	 *
+	 * Basically these sglist APIs return handles to sglist objects. SGList
+	 * objects are transferrable between Floodplainn streams. This makes
+	 * them a way of transferring frames between processes in addition to
+	 * being a way to allocate memory with constraints that match a
+	 * particular DMA engine's requirements.
+	 **********************************************************************/
+	status_t allocateScatterGatherList(fplainn::dma::ScatterGatherList *retlist);
+	sbit8 releaseScatterGatherList(fplainn::dma::ScatterGatherList *retlist);
+	// Associate an SGList with a set of constraints.
+	error_t constrainScatterGatherList(
+		fplainn::dma::ScatterGatherList *list, fplainn::dma::Constraints *constraints);
+	error_t liberateScatterGatherList(fplainn::dma::ScatterGatherList *list)
+	{
+		// Passing NULL associates the list with a default "loose" list.
+		return constrainScatterGatherList(list, &defaultConstraints);
+	}
+
+	enum transferScatterGatherListFlagsE {
+		// Before transferring, unmap the list from the current owner
+		XFER_SGLIST_FLAGS_UNMAP_FIRST = (1<<0),
+		// Fakemap the list before transferring.
+		XFER_SGLIST_FLAGS_FAKEMAP_FIRST = (1<<1)
+	};
+	error_t transferScatterGatherList(
+		processId_t destStream, fplainn::dma::ScatterGatherList *srcList,
+		uarch_t flags);
+
 private:
 	friend class fplainn::FStreamEndpoint;
 
@@ -124,6 +165,7 @@ private:
 	HeapList<fplainn::FStreamEndpoint>	endpoints;
 	List<MetaConnection>			metaConnections;
 	List<ZkcmConnection>			zkcmConnections;
+	fplainn::dma::Constraints			defaultConstraints;
 };
 
 
@@ -177,5 +219,7 @@ class FloodplainnStream::ZkcmConnection
 {
 };
 
-#endif
+/**	Inline methods:
+ ******************************************************************************/
 
+#endif

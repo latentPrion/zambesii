@@ -15,7 +15,7 @@ status_t constrainedGetFrames(
 {
 	const int				N_ATTRS = 16;
 	status_t				s;
-	fplainn::Zudi::DmaConstraints		c;
+	fplainn::dma::Constraints		c;
 	udi_dma_constraints_attr_spec_t		attrs[] = {
 		{ UDI_DMA_SCGTH_FORMAT, UDI_SCGTH_32 | UDI_SCGTH_64 },
 		{ UDI_DMA_ELEMENT_GRANULARITY_BITS, 12 }

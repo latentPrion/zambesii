@@ -12,6 +12,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/floodplainn/dma.h>
 #include <kernel/common/floodplainn/zudi.h>
 
 #define MEMBMP_FULL_SLOT		(~((uarch_t)0))
@@ -383,9 +384,9 @@ void MemoryBmp::mapMemUnused(paddr_t rangeBaseAddr, uarch_t rangeNFrames)
 }
 
 status_t MemoryBmp::constrainedGetFrames(
-	fplainn::Zudi::dma::DmaConstraints::Compiler *c,
+	fplainn::dma::constraints::Compiler *c,
 	uarch_t nFrames,
-	fplainn::Zudi::dma::ScatterGatherList *retlist,
+	fplainn::dma::ScatterGatherList *retlist,
 	ubit32 flags
 	)
 {
@@ -557,8 +558,8 @@ status_t MemoryBmp::constrainedGetFrames(
 		 */
 		if (!isSecondPass)
 		{
-			if (retlist->addressSize == fplainn::Zudi::dma
-				::ScatterGatherList::ADDR_SIZE_32)
+			if (retlist->addressSize
+				== fplainn::dma::ScatterGatherList::ADDR_SIZE_32)
 			{
 				scgthPreviousNElements = retlist->elements32.getNIndexes();
 			}
@@ -575,8 +576,8 @@ status_t MemoryBmp::constrainedGetFrames(
 					"constrained alloc.\n", nScgthElements);
 				return error;
 			};
-printf(NOTICE"PReallocated room for %d list entries, to describe %d frames total.\n",
-	nScgthElements, nFrames);
+//printf(NOTICE"PReallocated room for %d list entries, to describe %d frames total.\n",
+//	nScgthElements, nFrames);
 		};
 
 		if (!isSecondPass) { ret = 0; };

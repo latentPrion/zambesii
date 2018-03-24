@@ -3,6 +3,7 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/memoryTrib/rawMemAlloc.h>
 #include <kernel/common/memoryTrib/pmmBridge.h>
+#include <kernel/common/floodplainn/dma.h>
 
 void *rawMemAlloc(uarch_t nPages, uarch_t flags)
 {
@@ -20,9 +21,9 @@ status_t memoryTribPmm::fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr)
 }
 
 status_t memoryTribPmm::constrainedGetFrames(
-	fplainn::Zudi::dma::DmaConstraints::Compiler *comCon,
+	fplainn::dma::constraints::Compiler *comCon,
 	uarch_t nFrames,
-	fplainn::Zudi::dma::ScatterGatherList *retlist,
+	fplainn::dma::ScatterGatherList *retlist,
 	uarch_t flags
 	)
 {

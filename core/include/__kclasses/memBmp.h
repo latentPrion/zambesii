@@ -5,8 +5,8 @@
 	#include <__kstdlib/__kclib/assert.h>
 	#include <__kclasses/allocClass.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/panic.h>
 	#include <kernel/common/sharedResourceGroup.h>
-	#include <kernel/common/floodplainn/zudi.h>
 
 /**	EXPLANATION:
  * Simple bitmap, 1/0 for used/free. Will soon be changed into some sort of
@@ -21,12 +21,25 @@
 
 class NumaMemoryBank;
 
+namespace fplainn
+{
+namespace dma
+{
+	class Constraints;
+	class ScatterGatherList;
+
+namespace constraints
+{
+	class Compiler;
+}
+}
+}
+
 class MemoryBmp
 :
 public AllocatorBase
 {
 friend class NumaMemoryBank;
-friend class ConstrainedGetFramesJanitor;
 
 public:
 	MemoryBmp(paddr_t baseAddr, paddr_t size);
@@ -41,9 +54,9 @@ public:
 	 * specified in "compiledConstraints".
 	 */
 	status_t constrainedGetFrames(
-		fplainn::Zudi::dma::DmaConstraints::Compiler *compiledConstraints,
+		fplainn::dma::constraints::Compiler *compiledConstraints,
 		uarch_t nFrames,
-		fplainn::Zudi::dma::ScatterGatherList *retlist,
+		fplainn::dma::ScatterGatherList *retlist,
 		ubit32 flags=0);
 
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);

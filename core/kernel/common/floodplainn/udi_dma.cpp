@@ -3,9 +3,10 @@
 #include <__kstdlib/__kclib/assert.h>
 #include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/floodplainn/dma.h>
 #include <kernel/common/floodplainn/zudi.h>
 
-utf8Char *fplainn::Zudi::dma::DmaConstraints::attrTypeNames[N_ATTR_TYPE_NAMES] = {
+utf8Char *fplainn::dma::Constraints::attrTypeNames[N_ATTR_TYPE_NAMES] = {
 	CC"ADDRESSABLE_BITS",
 	CC"ALIGNMENT_BITS",
 
@@ -47,7 +48,7 @@ utf8Char *fplainn::Zudi::dma::DmaConstraints::attrTypeNames[N_ATTR_TYPE_NAMES] =
 
 static utf8Char		*unknownString = CC"<UNKNOWN>";
 
-utf8Char *fplainn::Zudi::dma::DmaConstraints::getAttrTypeName(
+utf8Char *fplainn::dma::Constraints::getAttrTypeName(
 	udi_dma_constraints_attr_t a
 	)
 {
@@ -79,7 +80,7 @@ utf8Char *fplainn::Zudi::dma::DmaConstraints::getAttrTypeName(
 	return unknownString;
 }
 
-void fplainn::Zudi::dma::DmaConstraints::dump(void)
+void fplainn::dma::Constraints::dump(void)
 {
 	printf(NOTICE"DMA Constraints obj @%p, %d attrs: dumping.\n",
 		this, attrs.getNIndexes());
@@ -94,7 +95,7 @@ void fplainn::Zudi::dma::DmaConstraints::dump(void)
 	};
 }
 
-error_t fplainn::Zudi::dma::DmaConstraints::addOrModifyAttrs(
+error_t fplainn::dma::Constraints::addOrModifyAttrs(
 	udi_dma_constraints_attr_spec_t *_attrs, uarch_t nAttrs
 	)
 {
@@ -162,7 +163,7 @@ error_t fplainn::Zudi::dma::DmaConstraints::addOrModifyAttrs(
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::Zudi::dma::MappedScatterGatherList::addPages(
+error_t fplainn::dma::MappedScatterGatherList::addPages(
 	void *vaddr, uarch_t nBytes
 	)
 {
@@ -187,7 +188,7 @@ error_t fplainn::Zudi::dma::MappedScatterGatherList::addPages(
 }
 
 template <class scgth_elements_type>
-error_t fplainn::Zudi::dma::ScatterGatherList::map(
+error_t fplainn::dma::ScatterGatherList::map(
 	ResizeableArray<scgth_elements_type> *list,
 	MappedScatterGatherList *retobj
 	)
@@ -301,7 +302,7 @@ releaseVmem:
 	return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 }
 
-udi_dma_constraints_attr_spec_t *fplainn::Zudi::dma::DmaConstraints::getAttr(
+udi_dma_constraints_attr_spec_t *fplainn::dma::Constraints::getAttr(
 	udi_dma_constraints_attr_t attr
 	)
 {
@@ -321,7 +322,7 @@ udi_dma_constraints_attr_spec_t *fplainn::Zudi::dma::DmaConstraints::getAttr(
 	return NULL;
 }
 
-void fplainn::Zudi::dma::DmaConstraints::Compiler::dump(void)
+void fplainn::dma::constraints::Compiler::dump(void)
 {
 	printf(NOTICE"DMACon Compiler @%p: Parent @%p. Dumping.\n"
 		"\tCan address %u bits, will be presented with %s-bit descriptors.\n"
@@ -341,7 +342,7 @@ void fplainn::Zudi::dma::DmaConstraints::Compiler::dump(void)
 		((i.sequentialAccessHint) ? "yes" : "no"));
 }
 
-error_t fplainn::Zudi::dma::DmaConstraints::Compiler::compile(void)
+error_t fplainn::dma::constraints::Compiler::compile(void)
 {
 	const udi_dma_constraints_attr_spec_t	*tmpAttr;
 

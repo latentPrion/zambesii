@@ -12,6 +12,20 @@
  * personal frame cache to allow for faster allocation of frames from that
  * range.
  **/
+namespace fplainn
+{
+namespace dma
+{
+	class Constraints;
+	class ScatterGatherList;
+
+namespace constraints
+{
+	class Compiler;
+}
+}
+}
+
 class NumaMemoryBank;
 
 class NumaMemoryRange
@@ -30,9 +44,9 @@ public:
 		uarch_t nFrames, paddr_t *paddr, ubit32 flags=0);
 
 	status_t constrainedGetFrames(
-		fplainn::Zudi::dma::DmaConstraints::Compiler *compiledConstraints,
+		fplainn::dma::constraints::Compiler *compiledConstraints,
 		uarch_t nFrames,
-		fplainn::Zudi::dma::ScatterGatherList *retlist,
+		fplainn::dma::ScatterGatherList *retlist,
 		ubit32 flags)
 	{
 		// constrainedGetFrames should not consult the page cache.

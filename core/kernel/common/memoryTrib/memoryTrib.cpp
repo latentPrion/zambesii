@@ -156,6 +156,15 @@ error_t MemoryTrib::memRegionInit(void)
 	return ERROR_SUCCESS;
 }
 
+sbit8 MemoryTrib::releaseFrames(fplainn::dma::ScatterGatherList *list)
+{
+	if (list->addressSize == fplainn::dma::ScatterGatherList::ADDR_SIZE_32) {
+		return releaseFrames(&list->elements32);
+	} else {
+		return releaseFrames(&list->elements64);
+	};
+}
+
 // TODO: This function can be greatly optimized. KAGS, you are needed.
 void *MemoryTrib::rawMemAlloc(uarch_t nPages, uarch_t flags)
 {

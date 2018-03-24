@@ -10,11 +10,26 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/memBmp.h>
 	#include <__kclasses/bitmap.h>
+	#include <__kclasses/resizeableArray.h>
 	#include <__kclasses/pageTableCache.h>
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/memoryRegion.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
+
+namespace fplainn
+{
+namespace dma
+{
+	class Constraints;
+	class ScatterGatherList;
+
+namespace constraints
+{
+	class Compiler;
+}
+}
+}
 
 #define MEMTRIB		"Memory Trib: "
 
@@ -58,31 +73,26 @@ public:
 	status_t fragmentedGetFrames(
 		uarch_t nFrames, paddr_t *ret, ubit32 flags=0);
 
-	status_t constrainedGetFrames(
-		fplainn::Zudi::dma::DmaConstraints::Compiler *constraints,
-		uarch_t nFrames,
-		fplainn::Zudi::dma::ScatterGatherList *retlist,
-		ubit32 flags=0);
-
 	sbit8 releaseFrames(paddr_t paddr, uarch_t nFrames);
-	sbit8 releaseFrames(fplainn::Zudi::dma::ScatterGatherList *list)
-	{
-		if (list->addressSize
-			== fplainn::Zudi::dma::ScatterGatherList::ADDR_SIZE_32)
-		{
-			return releaseFrames(&list->elements32);
-		}
-		else {
-			return releaseFrames(&list->elements64);
-		};
-	}
-
 	void mapRangeUsed(paddr_t baseAddr, uarch_t nFrames);
 	void mapRangeUnused(paddr_t baseAddr, uarch_t nFrames);
 
 	void dump(void);
 
+	/* These 2 functions should not be exposed to userspace: userspace
+	 * should allocate and destroy scatter gather lists using
+	 * FloodplainnStreams.
+	 */
+	status_t constrainedGetFrames(
+		fplainn::dma::constraints::Compiler *constraints,
+		uarch_t nFrames,
+		fplainn::dma::ScatterGatherList *retlist,
+		ubit32 flags=0);
+
+	sbit8 releaseFrames(fplainn::dma::ScatterGatherList *list);
+
 private:
+
 	void init2_spawnNumaStreams(sZkcmNumaMap *map);
 	void init2_generateNumaMemoryRanges(
 		sZkcmNumaMap *map, sarch_t *__kspaceBool);

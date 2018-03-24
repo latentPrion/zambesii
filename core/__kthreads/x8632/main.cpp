@@ -504,7 +504,7 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 
 //~ __kdebug.refresh();
 
-	fplainn::Zudi::dma::DmaConstraints			c;
+	fplainn::dma::Constraints			c;
 	udi_dma_constraints_attr_spec_t a[] =
 	{
 		{ UDI_DMA_DATA_ADDRESSABLE_BITS, 64 },
@@ -516,7 +516,7 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 		{ UDI_DMA_ADDR_FIXED_TYPE, UDI_DMA_FIXED_VALUE },
 		{ UDI_DMA_ADDR_FIXED_VALUE_LO, 0x6 },
 		{ UDI_DMA_ADDR_FIXED_BITS, 3 },
-		{ UDI_DMA_ELEMENT_LENGTH_BITS, 15 },
+		{ UDI_DMA_ELEMENT_LENGTH_BITS, 17 },
 	};
 
 	c.initialize();
@@ -534,16 +534,23 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	c.compiler.dump();
 
 	MemoryBmp				tb(0xB0000000, 0x3F000000);
-	fplainn::Zudi::dma::ScatterGatherList	sgl;
+	fplainn::dma::ScatterGatherList	sgl;
 
 	err = sgl.initialize(c.compiler.i.addressSize);
 	assert_fatal(err == ERROR_SUCCESS);
 	err = tb.initialize();
 	assert_fatal(err == ERROR_SUCCESS);
 	tb.dump();
-	stat = tb.constrainedGetFrames(&c.compiler, 0, &sgl, 0);
+	stat = tb.constrainedGetFrames(&c.compiler, 2, &sgl, 0);
+	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
+	stat = tb.constrainedGetFrames(&c.compiler, 7, &sgl, 0);
+	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
+	stat = tb.constrainedGetFrames(&c.compiler, 1, &sgl, 0);
+	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
+	stat = tb.constrainedGetFrames(&c.compiler, 99, &sgl, 0);
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
 
+	sgl.dump();
 __kdebug.refresh();
 	printf(NOTICE"All is well in the universe.\n");
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)

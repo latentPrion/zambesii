@@ -2,6 +2,7 @@
 	#define ___K_VECTOR_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kflagManipulation.h>
 	#include <kernel/common/panic.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>

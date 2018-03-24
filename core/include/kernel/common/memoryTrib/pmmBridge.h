@@ -9,13 +9,27 @@
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/multipleReaderLock.h>
 
+namespace fplainn
+{
+namespace dma
+{
+	class Constraints;
+	class ScatterGatherList;
+
+namespace constraints
+{
+	class Compiler;
+}
+}
+}
+
 namespace memoryTribPmm
 {
 	status_t fragmentedGetFrames(uarch_t nFrames, paddr_t *paddr);
 	status_t constrainedGetFrames(
-		fplainn::Zudi::dma::DmaConstraints::Compiler *comCon,
+		fplainn::dma::constraints::Compiler *comCon,
 		uarch_t nFrames,
-		fplainn::Zudi::dma::ScatterGatherList *retlist,
+		fplainn::dma::ScatterGatherList *retlist,
 		uarch_t flags=0);
 
 	void releaseFrames(paddr_t basePaddr, uarch_t nFrames);
