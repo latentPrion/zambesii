@@ -3,6 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/heapList.h>
+	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/messageStream.h>
 	#include <kernel/common/floodplainn/channel.h>
@@ -165,7 +166,8 @@ private:
 	HeapList<fplainn::FStreamEndpoint>	endpoints;
 	List<MetaConnection>			metaConnections;
 	List<ZkcmConnection>			zkcmConnections;
-	fplainn::dma::Constraints			defaultConstraints;
+	fplainn::dma::Constraints		defaultConstraints;
+	HardwareIdList				scatterGatherLists;
 };
 
 
