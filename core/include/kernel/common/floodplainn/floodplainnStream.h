@@ -137,7 +137,8 @@ public:
 	sbit8 releaseScatterGatherList(fplainn::dma::ScatterGatherList *retlist);
 	// Associate an SGList with a set of constraints.
 	error_t constrainScatterGatherList(
-		fplainn::dma::ScatterGatherList *list, fplainn::dma::Constraints *constraints);
+		fplainn::dma::ScatterGatherList *list,
+		fplainn::dma::Constraints *constraints);
 	error_t liberateScatterGatherList(fplainn::dma::ScatterGatherList *list)
 	{
 		// Passing NULL associates the list with a default "loose" list.
