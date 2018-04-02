@@ -19,6 +19,10 @@ public:
 
 public:
 	sarch_t getNextValue(void **arr, ubit8 secondTry=0);
+	void setMaxVal(sarch_t newMaxVal)
+	{
+		maxVal = newMaxVal;
+	}
 
 private:
 	sarch_t					maxVal;
