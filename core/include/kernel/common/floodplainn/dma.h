@@ -85,6 +85,8 @@ protected:
  * this of course, is to enable the kernel to read/write the contents stored in
  * a particular scatter-gather list's memory.
  ******************************************************************************/
+class Constraints;
+
 extern ubit8		nullSGList[];
 
 class ScatterGatherList
@@ -138,6 +140,8 @@ public:
 		 **/
 		return !memcmp(nullSGList, p, sizeof(*this));
 	}
+
+	error_t constrain(Constraints *constraints);
 
 	error_t preallocateEntries(uarch_t nEntries)
 	{
