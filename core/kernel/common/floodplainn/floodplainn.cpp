@@ -10,6 +10,8 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 
+ubit8		fplainn::dma::nullSGList[
+	sizeof(fplainn::dma::ScatterGatherList)];
 
 static fplainn::Device		byId(CHIPSET_NUMA_SHBANKID),
 				byName(CHIPSET_NUMA_SHBANKID),
@@ -86,6 +88,10 @@ error_t Floodplainn::initialize(void)
 	tmpAttr.attr_type = UDI_ATTR_STRING;
 	ret = byId.addEnumerationAttribute(&tmpAttr);
 	if (ret != ERROR_SUCCESS) { return ret; };
+
+	memset(
+		fplainn::dma::nullSGList, 0,
+		sizeof(sizeof(fplainn::dma::ScatterGatherList)));
 
 	return ERROR_SUCCESS;
 }

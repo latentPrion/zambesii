@@ -85,6 +85,8 @@ protected:
  * this of course, is to enable the kernel to read/write the contents stored in
  * a particular scatter-gather list's memory.
  ******************************************************************************/
+extern ubit8		nullSGList[];
+
 class ScatterGatherList
 {
 public:
