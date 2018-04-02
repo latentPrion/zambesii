@@ -8,9 +8,9 @@
 class WrapAroundCounter
 {
 public:
-	WrapAroundCounter(uarch_t maxVal, uarch_t startVal=0)
+	WrapAroundCounter(sarch_t maxVal, uarch_t startVal=0)
 	:
-	maxVal((sarch_t)maxVal)
+	maxVal(maxVal)
 	{
 		nextVal.rsrc = startVal;
 	};
