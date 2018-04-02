@@ -3,6 +3,7 @@
 #include <__kstdlib/__kclib/string8.h>
 #include <kernel/common/thread.h>
 #include <kernel/common/process.h>
+#include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/floodplainn/floodplainn.h>
 #include <kernel/common/floodplainn/floodplainnStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -242,4 +243,144 @@ error_t FloodplainnStream::send(
 		endp,
 		gcb, args, layouts,
 		metaName, meta_ops_num, ops_idx, privateData);
+}
+
+status_t FloodplainnStream::allocateScatterGatherList(
+	fplainn::dma::ScatterGatherList **retlist
+	)
+{
+	status_t	newId;
+	error_t 	err;
+
+	/**	EXPLANATION:
+	 *
+	 *
+	 * Returns positive integer ID greater than 0 if successful. Else
+	 * returns an error_t error value.
+	 **/
+	scatterGatherLists.lock();
+
+	newId = scatterGatherLists.unlocked_getNextValue();
+	if (newId < 0)
+	{
+		uarch_t		currentNIndexes;
+
+		currentNIndexes = scatterGatherLists.unlocked_getNIndexes();
+		err = scatterGatherLists.resizeToHoldIndex(
+			currentNIndexes
+				+ FPLAINN_STREAM_SCGTH_LIST_GROWTH_STRIDE - 1,
+			ResizeableIdArray<fplainn::dma::ScatterGatherList>::RTHI_FLAGS_UNLOCKED);
+
+		if (err != ERROR_SUCCESS)
+		{
+			scatterGatherLists.unlock();
+
+			printf(ERROR"allocScgthList: Failed to resize internal "
+				"array.\n");
+
+			return err;
+		}
+
+		scatterGatherLists.idCounter.setMaxVal(
+			currentNIndexes
+				+ FPLAINN_STREAM_SCGTH_LIST_GROWTH_STRIDE - 1);
+
+		// If it fails now, something really weird happened.
+		newId = scatterGatherLists.unlocked_getNextValue();
+	}
+
+	if (newId < 0)
+	{
+		scatterGatherLists.unlock();
+
+		printf(FATAL"allocScgthList: Failed get ID for new scgth list "
+			"even though array resize worked.\n");
+
+		return ERROR_UNKNOWN;
+	}
+
+	scatterGatherLists.unlock();
+
+	*retlist = &scatterGatherLists[newId];
+	new (*retlist) fplainn::dma::ScatterGatherList;
+	return newId;
+}
+
+sbit8 FloodplainnStream::releaseScatterGatherList(sarch_t id)
+{
+	fplainn::dma::ScatterGatherList		*sgl;
+
+	sgl = &scatterGatherLists[id];
+	if (!(*sgl == NULL))
+	{
+		printf(WARNING"releaseSGList(%d): ID indexes to a blank array "
+			"index.\n",
+			id);
+
+		return 0;
+	}
+
+	/* We can assume that the userspace program will not attempt to double-
+	 * free the array index?
+	 **/
+	memset(sgl, 0, sizeof(*sgl));
+	return 1;
+}
+
+status_t FloodplainnStream::transferScatterGatherList(
+	processId_t destStreamId, sarch_t srcListId, uarch_t flags
+	)
+{
+	ProcessStream						*destProcess;
+	fplainn::dma::ScatterGatherList				*srcList,
+								*newDestSGList;
+	sarch_t							newDestId;
+
+	/**	EXPLANATION:
+	 * Transfer a scatter gather list from one process to another.
+	 *
+	 * This process doesn't actually transfer the frames in the scatter
+	 * gather list, but just the metadata describing the frames.
+	 *
+	 * SGLists cannot be copied; only transfered or deallocated. It is
+	 * because of this restriction that we can track and garbage collect
+	 * them without refcounting.
+	 *
+	 **/
+	destProcess = processTrib.getStream(destStreamId);
+	if (destProcess == NULL) { return ERROR_INVALID_ARG_VAL; };
+
+	srcList = getScatterGatherList(srcListId);
+	if (srcList == NULL) { return ERROR_INVALID_ARG_VAL; };
+
+	newDestId = destProcess->floodplainnStream.allocateScatterGatherList
+		(&newDestSGList);
+
+	if (newDestId < 0)
+	{
+		printf(ERROR"transferSGList(%x, %d, %x): Failed to alloc slot "
+			"in target stream.\n",
+			destStreamId, srcListId, flags);
+
+		return newDestId;
+	};
+
+	/* We now have both the list and the dest stream. Just transfer. The
+	 * easiest way to do this is to call allocScatterGatherList() on the
+	 * target FloodplainnStream, then overwrite the returned index number
+	 * with the source object we wish to transfer.
+	 *
+	 * We should not need to lock the dest list while doing this since
+	 * the new slot we just allocated should not be used by anyone other
+	 * than us, the kernel, since we haven't given it out to anybody else
+	 * yet.
+	 **/
+	*newDestSGList = *srcList;
+	releaseScatterGatherList(srcListId);
+
+	/**	TODO:
+	 * Now take any tail-end actions required to preserve the API's expected
+	 * behaviour, such as umapping or fakemapping, etc.
+	 **/
+	return newDestId;
 }
