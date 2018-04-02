@@ -411,6 +411,8 @@ status_t MemoryTrib::constrainedGetFrames(
 		printf(ERROR MEMTRIB"constrainedGetFrames(%d): attempt to "
 			"allocate on non-existent bank %d.\n",
 			nFrames, defaultAffinity.def.rsrc);
+
+		return ERROR_MEMORY_NOMEM_PHYSICAL;
 	};
 #endif
 }
