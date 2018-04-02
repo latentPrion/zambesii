@@ -3,7 +3,7 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/heapList.h>
-	#include <__kclasses/hardwareIdList.h>
+	#include <__kclasses/resizeableIdArray.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/messageStream.h>
 	#include <kernel/common/floodplainn/channel.h>
@@ -55,6 +55,13 @@
  * communication with the UDI driver.
  **/
 
+/* This is the number of elements that the ResizeableArray that holds the
+ * scatter gather lists will be grown by when it needs to be resized.
+ */
+#define FPLAINN_STREAM_SCGTH_LIST_GROWTH_STRIDE		(16)
+// Max number of scgth lists per process.
+#define FPLAINN_STREAM_MAX_N_SCGTH_LISTS		(128)
+
 class ProcessStream;
 
 class FloodplainnStream
@@ -64,7 +71,9 @@ public Stream<ProcessStream>
 public:
 	FloodplainnStream(processId_t id, ProcessStream *parent)
 	:
-	Stream<ProcessStream>(parent, id)
+		Stream<ProcessStream>(parent, id),
+	// MaxVal starts off at -1 because the array of scgth lists is empty.
+	scatterGatherLists(-1)
 	{};
 
 	error_t initialize(void);
@@ -133,18 +142,18 @@ public:
 	 * being a way to allocate memory with constraints that match a
 	 * particular DMA engine's requirements.
 	 **********************************************************************/
-	status_t allocateScatterGatherList(fplainn::dma::ScatterGatherList *retlist);
-	sbit8 releaseScatterGatherList(fplainn::dma::ScatterGatherList *retlist);
-	// Associate an SGList with a set of constraints.
-	error_t constrainScatterGatherList(
-		fplainn::dma::ScatterGatherList *list,
-		fplainn::dma::Constraints *constraints);
+	status_t allocateScatterGatherList(fplainn::dma::ScatterGatherList **retlist);
+	sbit8 releaseScatterGatherList(sarch_t id);
+	fplainn::dma::ScatterGatherList *getScatterGatherList(sarch_t id)
+		{ return &scatterGatherLists[id]; }
+
 	error_t liberateScatterGatherList(fplainn::dma::ScatterGatherList *list)
 	{
-		// Passing NULL associates the list with a default "loose" list.
-		return constrainScatterGatherList(list, &defaultConstraints);
+		// Associates the list with the default "loose" constraints.
+		return list->constrain(&defaultConstraints);
 	}
 
+	// Returns the ID of the slot in the target stream.
 	enum transferScatterGatherListFlagsE {
 		// Before transferring, unmap the list from the current owner
 		XFER_SGLIST_FLAGS_UNMAP_FIRST = (1<<0),
@@ -152,7 +161,7 @@ public:
 		XFER_SGLIST_FLAGS_FAKEMAP_FIRST = (1<<1)
 	};
 	error_t transferScatterGatherList(
-		processId_t destStream, fplainn::dma::ScatterGatherList *srcList,
+		processId_t destStream, sarch_t srcListId,
 		uarch_t flags);
 
 private:
@@ -168,7 +177,8 @@ private:
 	List<MetaConnection>			metaConnections;
 	List<ZkcmConnection>			zkcmConnections;
 	fplainn::dma::Constraints		defaultConstraints;
-	HardwareIdList				scatterGatherLists;
+	ResizeableIdArray<fplainn::dma::ScatterGatherList>
+						scatterGatherLists;
 };
 
 
