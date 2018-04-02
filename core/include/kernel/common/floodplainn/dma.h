@@ -127,6 +127,18 @@ public:
 		};
 	}
 
+	int operator ==(void *p)
+	{
+		assert_fatal(p == NULL);
+
+		/**	EXPLANATION:
+		 * This operator is implemented for the benefit of the
+		 * comparison to NULL which is done against it in
+		 * WrapAroundCounter.
+		 **/
+		return !memcmp(nullSGList, p, sizeof(*this));
+	}
+
 	error_t preallocateEntries(uarch_t nEntries)
 	{
 		if (nEntries == 0) { return ERROR_SUCCESS; };
