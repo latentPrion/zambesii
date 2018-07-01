@@ -1,9 +1,6 @@
 #ifndef _Z_UDI_INDEX_H
 	#define _Z_UDI_INDEX_H
 
-	#define __IS_KERNEL_SOURCE__				\
-		(defined(__ZAMBESII_KERNEL_SOURCE__))
-
 	#define UDI_VERSION	0x101
 	#include <udi.h>
 	#undef UDI_VERSION
@@ -52,15 +49,15 @@ namespace zui
 		:
 		public udi_instance_attr_list_t
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *outfile, FILE *stringfile);
 #endif
 		};
 
 		#define ZUI_DEVICE_MAX_NATTRS		(20)
-		struct _deviceS
+		struct _sDevice
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int  writeOut(
 				FILE *headerfile, FILE *datafile,
 				FILE *strings);
@@ -130,7 +127,7 @@ namespace zui
 
 		struct _sRequirement
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -146,7 +143,7 @@ namespace zui
 
 		struct _sMetalanguage
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -171,15 +168,15 @@ namespace zui
 					opsIndex0, opsIndex1, bindCbIndex;
 		};
 
-		struct Module
+		struct sModule
 		{
 			uint16_t	index;
 			uint32_t	fileNameOff;
 		};
 
-		struct _Module
+		struct _sModule
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -200,7 +197,7 @@ namespace zui
 		#define	ZUI_REGION_FLAGS_INTERRUPT	(1<<2)
 		struct sRegion
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -211,16 +208,16 @@ namespace zui
 			uint32_t	flags;
 		};
 
-		struct Message
+		struct sMessage
 		{
 			uint32_t	driverId;
 			uint16_t	index;
 			uint32_t	messageOff;
 		};
 
-		struct _Message
+		struct _sMessage
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -238,7 +235,7 @@ namespace zui
 
 		struct _sDisasterMessage
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -256,7 +253,7 @@ namespace zui
 
 		struct _sMessageFile
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -273,7 +270,7 @@ namespace zui
 
 		struct _sReadableFile
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -281,7 +278,7 @@ namespace zui
 			char		fileName[ZUI_FILENAME_MAXLEN];
 		};
 
-		struct Provision
+		struct sProvision
 		{
 			uint32_t	driverId;
 			uint32_t	version;
@@ -289,9 +286,9 @@ namespace zui
 		};
 
 		#define ZUI_PROVISION_NAME_MAXLEN	(ZUI_DRIVER_METALANGUAGE_MAXLEN)
-		struct _Provision
+		struct _sProvision
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -300,7 +297,7 @@ namespace zui
 			char		name[ZUI_PROVISION_NAME_MAXLEN];
 		};
 
-		struct Driver
+		struct sDriver
 		{
 			struct zui::driver::sHeader	h;
 			struct _sRequirement		requirements[
@@ -318,7 +315,7 @@ namespace zui
 			struct sInternalBop		internalBops[
 				ZUI_DRIVER_MAX_NINTERNAL_BOPS];
 
-			struct _Module			modules[
+			struct _sModule			modules[
 				ZUI_DRIVER_MAX_NMODULES];
 		};
 	}
@@ -340,16 +337,16 @@ namespace zui
 
 		struct _sRankAttr
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
 			char		name[UDI_MAX_ATTR_NAMELEN];
 		};
 
-		struct _rankS
+		struct _sRank
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *rankF, FILE *dataF, FILE *stringF);
 #endif
 
