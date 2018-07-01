@@ -1,9 +1,6 @@
 #ifndef _Z_UDI_INDEX_H
 	#define _Z_UDI_INDEX_H
 
-	#define __IS_KERNEL_SOURCE__				\
-		(defined(__ZAMBESII_KERNEL_SOURCE__))
-
 	#define UDI_VERSION	0x101
 	#include <udi.h>
 	#undef UDI_VERSION
@@ -52,7 +49,7 @@ namespace zui
 		:
 		public udi_instance_attr_list_t
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *outfile, FILE *stringfile);
 #endif
 		};
@@ -60,7 +57,7 @@ namespace zui
 		#define ZUI_DEVICE_MAX_NATTRS		(20)
 		struct _deviceS
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int  writeOut(
 				FILE *headerfile, FILE *datafile,
 				FILE *strings);
@@ -130,7 +127,7 @@ namespace zui
 
 		struct _sRequirement
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -146,7 +143,7 @@ namespace zui
 
 		struct _sMetalanguage
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -179,7 +176,7 @@ namespace zui
 
 		struct _Module
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -200,7 +197,7 @@ namespace zui
 		#define	ZUI_REGION_FLAGS_INTERRUPT	(1<<2)
 		struct sRegion
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -220,7 +217,7 @@ namespace zui
 
 		struct _Message
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -238,7 +235,7 @@ namespace zui
 
 		struct _sDisasterMessage
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -256,7 +253,7 @@ namespace zui
 
 		struct _sMessageFile
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -273,7 +270,7 @@ namespace zui
 
 		struct _sReadableFile
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -291,7 +288,7 @@ namespace zui
 		#define ZUI_PROVISION_NAME_MAXLEN	(ZUI_DRIVER_METALANGUAGE_MAXLEN)
 		struct _Provision
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -340,7 +337,7 @@ namespace zui
 
 		struct _sRankAttr
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *dataF, FILE *stringF);
 #endif
 
@@ -349,7 +346,7 @@ namespace zui
 
 		struct _rankS
 		{
-#if !__IS_KERNEL_SOURCE__
+#if !defined(__ZAMBESII_KERNEL_SOURCE__)
 			int writeOut(FILE *rankF, FILE *dataF, FILE *stringF);
 #endif
 
