@@ -142,7 +142,10 @@ public:
 	 * being a way to allocate memory with constraints that match a
 	 * particular DMA engine's requirements.
 	 **********************************************************************/
-	status_t allocateScatterGatherList(fplainn::dma::ScatterGatherList **retlist);
+	status_t allocateScatterGatherList(
+		fplainn::dma::ScatterGatherList::eAddressSize addrSize,
+		fplainn::dma::ScatterGatherList **retlist);
+
 	sbit8 releaseScatterGatherList(sarch_t id);
 	fplainn::dma::ScatterGatherList *getScatterGatherList(sarch_t id)
 		{ return &scatterGatherLists[id]; }

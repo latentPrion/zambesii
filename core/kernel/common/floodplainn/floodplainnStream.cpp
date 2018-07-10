@@ -246,6 +246,7 @@ error_t FloodplainnStream::send(
 }
 
 status_t FloodplainnStream::allocateScatterGatherList(
+	fplainn::dma::ScatterGatherList::eAddressSize _addrSize,
 	fplainn::dma::ScatterGatherList **retlist
 	)
 {
@@ -258,6 +259,10 @@ status_t FloodplainnStream::allocateScatterGatherList(
 	 * Returns positive integer ID greater than 0 if successful. Else
 	 * returns an error_t error value.
 	 **/
+	if (_addrSize < fplainn::dma::ScatterGatherList::ADDR_SIZE_32
+		|| _addrSize > fplainn::dma::ScatterGatherList::ADDR_SIZE_64)
+		{ return ERROR_INVALID_ARG_VAL; }
+
 	scatterGatherLists.lock();
 
 	newId = scatterGatherLists.unlocked_getNextValue();
@@ -303,6 +308,16 @@ status_t FloodplainnStream::allocateScatterGatherList(
 
 	*retlist = &scatterGatherLists[newId];
 	new (*retlist) fplainn::dma::ScatterGatherList;
+	err = (*retlist)->initialize(_addrSize);
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR FPSTREAM"%x: allocScgthList: Failed to initialize "
+			"new SGList.\n",
+			this->id);
+
+		return err;
+	}
+
 	return newId;
 }
 
@@ -353,8 +368,8 @@ status_t FloodplainnStream::transferScatterGatherList(
 	srcList = getScatterGatherList(srcListId);
 	if (srcList == NULL) { return ERROR_INVALID_ARG_VAL; };
 
-	newDestId = destProcess->floodplainnStream.allocateScatterGatherList
-		(&newDestSGList);
+	newDestId = destProcess->floodplainnStream.allocateScatterGatherList(
+		srcList->addressSize, &newDestSGList);
 
 	if (newDestId < 0)
 	{
