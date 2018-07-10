@@ -18,7 +18,8 @@ public:
 	error_t initialize(void) { return ERROR_SUCCESS; };
 
 public:
-	sarch_t getNextValue(void **arr, ubit8 secondTry=0);
+	template <class T>
+	sarch_t getNextValue(T *arr, ubit8 secondTry=0);
 	void setMaxVal(sarch_t newMaxVal)
 	{
 		maxVal = newMaxVal;
@@ -33,7 +34,8 @@ private:
 /**	Inline methods.
  ****************************************************************************/
 
-inline sarch_t WrapAroundCounter::getNextValue(void **arr, ubit8 secondTry)
+template <class T>
+inline sarch_t WrapAroundCounter::getNextValue(T *arr, ubit8 secondTry)
 {
 	sarch_t		ret;
 

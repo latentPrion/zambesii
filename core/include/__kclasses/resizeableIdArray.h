@@ -32,7 +32,7 @@ public:
 	sarch_t unlocked_getNextValue(ubit8 secondTry=0);
 
 private:
-	sarch_t getNextValue(void **arr, ubit8 secondTry=0)
+	sarch_t getNextValue(T *arr, ubit8 secondTry=0)
 	{
 		return ERROR_UNIMPLEMENTED;
 	}
@@ -49,7 +49,7 @@ template <class T>
 sarch_t ResizeableIdArray<T>::unlocked_getNextValue(ubit8 secondTry)
 {
 	return idCounter.getNextValue(
-		reinterpret_cast<void **>(ResizeableArray<T>::s.rsrc.array),
+		ResizeableArray<T>::s.rsrc.array,
 		secondTry);
 }
 
