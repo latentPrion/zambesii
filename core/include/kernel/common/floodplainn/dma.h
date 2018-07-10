@@ -138,7 +138,7 @@ public:
 		 * comparison to NULL which is done against it in
 		 * WrapAroundCounter.
 		 **/
-		return !memcmp(nullSGList, p, sizeof(*this));
+		return !memcmp(this, nullSGList, sizeof(*this));
 	}
 
 	error_t constrain(Constraints *constraints);
