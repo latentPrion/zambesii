@@ -93,6 +93,9 @@ error_t Floodplainn::initialize(void)
 		fplainn::dma::nullSGList, 0,
 		sizeof(sizeof(fplainn::dma::ScatterGatherList)));
 
+	assert_fatal(*reinterpret_cast<fplainn::dma::ScatterGatherList *>(
+		fplainn::dma::nullSGList) == NULL);
+
 	return ERROR_SUCCESS;
 }
 
