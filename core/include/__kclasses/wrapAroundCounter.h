@@ -8,26 +8,36 @@
 class WrapAroundCounter
 {
 public:
-	WrapAroundCounter(sarch_t maxVal, uarch_t startVal=0)
-	:
-	maxVal(maxVal)
+	WrapAroundCounter(sarch_t _maxVal, sarch_t startVal=0)
 	{
-		nextVal.rsrc = startVal;
+		sState		tmp = {
+			_maxVal, startVal
+		};
+
+		state.rsrc = tmp;
 	};
 
 	error_t initialize(void) { return ERROR_SUCCESS; };
 
 public:
 	template <class T>
+	uarch_t getSizeofT(T *) { return sizeof(T); }
+
+	template <class T>
 	sarch_t getNextValue(T *arr, ubit8 secondTry=0);
+
 	void setMaxVal(sarch_t newMaxVal)
 	{
-		maxVal = newMaxVal;
+		state.lock.acquire();
+		state.rsrc.maxVal = newMaxVal;
+		state.lock.release();
 	}
 
 private:
-	sarch_t					maxVal;
-	SharedResourceGroup<WaitLock, sarch_t>	nextVal;
+	struct sState {
+		sarch_t		maxVal, nextVal;
+	};
+	SharedResourceGroup<WaitLock, sState>	state;
 };
 
 
@@ -39,21 +49,21 @@ inline sarch_t WrapAroundCounter::getNextValue(T *arr, ubit8 secondTry)
 {
 	sarch_t		ret;
 
-	nextVal.lock.acquire();
+	state.lock.acquire();
 
-	for (sarch_t i=nextVal.rsrc; i<=maxVal; i++)
+	for (sarch_t i=state.rsrc.nextVal; i<=state.rsrc.maxVal; i++)
 	{
 		if (arr[i] == NULL)
 		{
 			ret = i;
-			nextVal.rsrc = i + 1;
-			nextVal.lock.release();
+			state.rsrc.nextVal = i + 1;
+			state.lock.release();
 			return ret;
 		};
 	};
 
-	nextVal.rsrc = 0;
-	nextVal.lock.release();
+	state.rsrc.nextVal = 0;
+	state.lock.release();
 	return ((secondTry) ? (-1) : getNextValue(arr, 1));
 }
 
