@@ -400,19 +400,23 @@ status_t MemoryTrib::constrainedGetFrames(
 			return ret;
 		}
 	};
+
+	printf(ERROR MEMTRIB"constrainedGetFrames(%d): Failed to satisfy req "
+		"from regions and banks.\n",
+		nFrames);
 #else
 	currBank = getBank(defaultMemoryBank.rsrc);
-	if (currBank != NULL) {
+	if (currBank != NULL)
+	{
 		return currBank->constrainedGetFrames(
 			_constraints, nFrames, retlist, flags);
 	}
-	else
-	{
-		printf(ERROR MEMTRIB"constrainedGetFrames(%d): attempt to "
-			"allocate on non-existent bank %d.\n",
-			nFrames, defaultAffinity.def.rsrc);
 
-		return ERROR_MEMORY_NOMEM_PHYSICAL;
-	};
+	printf(ERROR MEMTRIB"constrainedGetFrames(%d): attempt to "
+		"allocate on non-existent bank %d.\n",
+		nFrames, defaultAffinity.def.rsrc);
+
 #endif
+
+	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
