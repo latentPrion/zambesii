@@ -220,8 +220,8 @@ echo "export AS=$assembler" >>Makefile.vars
 echo "export LD=$linker" >>Makefile.vars
 echo "export ISOPROG=$isoProg" >>Makefile.vars
 echo "export CPPFLAGS=-I\"$srcdir/include\" -I\"$srcdir/core/include\" -ffreestanding" >>Makefile.vars
-echo "export CFLAGS=-O3 -Wstrict-overflow=5 -Wall -Wextra -pedantic -std=c99 -fno-omit-frame-pointer" >>Makefile.vars
-echo "export CXXFLAGS=-O3 -Wstrict-overflow=5 -Wall -Wextra -pedantic -std=c++98 -fno-omit-frame-pointer -fno-exceptions -fno-rtti" >>Makefile.vars
+echo "export CFLAGS=-O3 -Wstrict-overflow=4 -Wall -Wextra -pedantic -std=c99 -fno-omit-frame-pointer" >>Makefile.vars
+echo "export CXXFLAGS=-O3 -Wstrict-overflow=4 -Wall -Wextra -pedantic -std=c++98 -fno-omit-frame-pointer -fno-exceptions -fno-rtti" >>Makefile.vars
 echo "export ASFLAGS=" >>Makefile.vars
 echo "export LDFLAGS=-B\"$builddir/core/__kthreads/$arch\" -nodefaultlibs" >>Makefile.vars
 # echo "export LDFLAGS=-nodefaultlibs --verbose" >>Makefile.vars
