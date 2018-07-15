@@ -24,8 +24,11 @@ public:
 
 	error_t initialize(void)
 	{
-		ResizeableArray<T>::initialize();
-		idCounter.initialize();
+		error_t		ret;
+		ret = ResizeableArray<T>::initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+		ret = idCounter.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
 		return ERROR_SUCCESS;
 	}
 
