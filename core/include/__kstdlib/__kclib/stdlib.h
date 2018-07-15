@@ -33,7 +33,7 @@ error_t crudeRealloc(
 
 	*newMem = _newMem;
 
-	::operator delete(oldMem);
+	::operator delete[](oldMem);
 	return ERROR_SUCCESS;
 }
 
