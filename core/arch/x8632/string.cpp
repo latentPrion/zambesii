@@ -61,7 +61,10 @@ int memcmp(const void *ptr1, const void *ptr2, size_t n)
 		if (p1[i] != p2[i]) { break; };
 	};
 
-	return p1[i] - p2[i];
+	if (i < n) {
+		return p1[i] - p2[i];
+	}
+	return 0;
 }
 
 void *memmove(void *dest, const void *src, size_t n)
