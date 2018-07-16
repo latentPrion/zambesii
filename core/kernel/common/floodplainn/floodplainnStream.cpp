@@ -385,6 +385,8 @@ status_t FloodplainnStream::transferScatterGatherList(
 	 * because of this restriction that we can track and garbage collect
 	 * them without refcounting.
 	 *
+	 *	CAVEAT:
+	 * This method is untested.
 	 **/
 	destProcess = processTrib.getStream(destStreamId);
 	if (destProcess == NULL) { return ERROR_INVALID_ARG_VAL; };
