@@ -252,6 +252,7 @@ status_t FloodplainnStream::allocateScatterGatherList(
 {
 	status_t	newId;
 	error_t 	err;
+	fplainn::dma::ScatterGatherList		*newObj=NULL;
 
 	/**	EXPLANATION:
 	 *
@@ -268,13 +269,13 @@ status_t FloodplainnStream::allocateScatterGatherList(
 	newId = scatterGatherLists.unlocked_getNextValue();
 	if (newId < 0)
 	{
-		uarch_t		currentNIndexes;
+		uarch_t					currentNIndexes;
 
 		currentNIndexes = scatterGatherLists.unlocked_getNIndexes();
 		err = scatterGatherLists.resizeToHoldIndex(
 			currentNIndexes
 				+ FPLAINN_STREAM_SCGTH_LIST_GROWTH_STRIDE - 1,
-			ResizeableIdArray<fplainn::dma::ScatterGatherList>::RTHI_FLAGS_UNLOCKED);
+			ResizeableIdArray<typename fplainn::dma::ScatterGatherList>::RTHI_FLAGS_UNLOCKED);
 
 		if (err != ERROR_SUCCESS)
 		{
@@ -286,9 +287,20 @@ status_t FloodplainnStream::allocateScatterGatherList(
 			return err;
 		}
 
+		assert_fatal(
+			scatterGatherLists.unlocked_getNIndexes()
+				== currentNIndexes
+				+ FPLAINN_STREAM_SCGTH_LIST_GROWTH_STRIDE);
+
 		scatterGatherLists.idCounter.setMaxVal(
 			currentNIndexes
 				+ FPLAINN_STREAM_SCGTH_LIST_GROWTH_STRIDE - 1);
+
+		/* Zero out the newly allocated memory. */
+		newObj = &scatterGatherLists[currentNIndexes];
+		memset(
+			newObj, 0, sizeof(*newObj)
+				* FPLAINN_STREAM_SCGTH_LIST_GROWTH_STRIDE);
 
 		// If it fails now, something really weird happened.
 		newId = scatterGatherLists.unlocked_getNextValue();
@@ -306,9 +318,12 @@ status_t FloodplainnStream::allocateScatterGatherList(
 
 	scatterGatherLists.unlock();
 
-	*retlist = &scatterGatherLists[newId];
-	new (*retlist) fplainn::dma::ScatterGatherList;
-	err = (*retlist)->initialize(_addrSize);
+	if (newObj == NULL) {
+		newObj = &scatterGatherLists[newId];
+	}
+
+	new (newObj) fplainn::dma::ScatterGatherList;
+	err = newObj->initialize(_addrSize);
 	if (err != ERROR_SUCCESS)
 	{
 		printf(ERROR FPSTREAM"%x: allocScgthList: Failed to initialize "
@@ -318,6 +333,7 @@ status_t FloodplainnStream::allocateScatterGatherList(
 		return err;
 	}
 
+	*retlist = newObj;
 	return newId;
 }
 
