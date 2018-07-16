@@ -342,7 +342,7 @@ sbit8 FloodplainnStream::releaseScatterGatherList(sarch_t id)
 	fplainn::dma::ScatterGatherList		*sgl;
 
 	sgl = &scatterGatherLists[id];
-	if (!(*sgl == NULL))
+	if (*sgl == NULL)
 	{
 		printf(WARNING"releaseSGList(%d): ID indexes to a blank array "
 			"index.\n",
@@ -353,8 +353,16 @@ sbit8 FloodplainnStream::releaseScatterGatherList(sarch_t id)
 
 	/* We can assume that the userspace program will not attempt to double-
 	 * free the array index?
+	 *
+	 * Acquire the lock still in case another thread within the owning
+	 * Stream attempts to call allocateScatterGatherList while we are
+	 * performing memset here.
+	 *
+	 * The results shouldn't be catastrophic but just in case.
 	 **/
+	scatterGatherLists.lock();
 	memset(sgl, 0, sizeof(*sgl));
+	scatterGatherLists.unlock();
 	return 1;
 }
 
