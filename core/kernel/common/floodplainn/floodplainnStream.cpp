@@ -303,17 +303,16 @@ status_t FloodplainnStream::allocateScatterGatherList(
 		newId = scatterGatherLists.unlocked_getNextValue();
 	}
 
+	scatterGatherLists.unlock();
+
 	if (newId < 0)
 	{
-		scatterGatherLists.unlock();
 
 		printf(FATAL"allocScgthList: Failed get ID for new scgth list "
 			"even though array resize worked.\n");
 
 		return ERROR_UNKNOWN;
 	}
-
-	scatterGatherLists.unlock();
 
 	if (newObj == NULL) {
 		newObj = &scatterGatherLists[newId];
