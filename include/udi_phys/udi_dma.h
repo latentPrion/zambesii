@@ -76,6 +76,11 @@ typedef _UDI_OPAQUE_64	udi_busaddr64_t;
  * These numbers must start above the last generic constraints attribute.
  */
 
+/** XXX: DO NOT RE-ORDER THESE CONSTANTS BELOW. **/
+/* Bounds used for class fplain::dma::Constraints */
+#define UDI_DMA_ATTR_SPEC_TYPE_MIN		UDI_DMA_ADDRESSABLE_BITS
+#define UDI_DMA_ATTR_SPEC_TYPE_MAX		UDI_DMA_SLOP_BARRIER_BITS
+
 /* DMA Convenience Attribute Codes */
 #define UDI_DMA_ADDRESSABLE_BITS		100
 #define UDI_DMA_ALIGNMENT_BITS			101
@@ -113,6 +118,8 @@ typedef _UDI_OPAQUE_64	udi_busaddr64_t;
 #define UDI_DMA_SLOP_OUT_BITS			162
 #define UDI_DMA_SLOP_OUT_EXTRA			163
 #define UDI_DMA_SLOP_BARRIER_BITS		164
+
+/** XXX: DO NOT RE-ORDER THESE CONSTANTS ABOVE. **/
 
 /*
  * Values for UDI_DMA_SCGTH_ENDIANNESS
