@@ -125,53 +125,6 @@ namespace lzudi
 	error_t udi_cb_alloc_sync(
 		__klzbzcore::driver::CachedInfo *drvInfoCache,
 		udi_index_t cb_idx, udi_cb_t **retcb);
-
-	namespace dma
-	{
-		void kek(void);
-		void udi_dma_prepare(
-			udi_dma_prepare_call_t *callback,
-			udi_cb_t *gcb,
-			udi_dma_constraints_t constraints,
-			udi_ubit8_t flags);
-
-		void udi_dma_free(udi_dma_handle_t dma_handle);
-
-		void udi_dma_mem_alloc(
-			udi_dma_mem_alloc_call_t *callback,
-			udi_cb_t *gcb,
-			udi_dma_constraints_t constraints,
-			udi_ubit8_t flags,
-			udi_ubit16_t nelements,
-			udi_size_t element_size,
-			udi_size_t max_gap);
-
-		void udi_dma_mem_to_buf(
-			udi_dma_mem_to_buf_call_t *callback,
-			udi_cb_t *gcb,
-			udi_dma_handle_t dma_handle,
-			udi_size_t src_off,
-			udi_size_t src_len,
-			udi_buf_t *dst_buf);
-
-		void udi_dma_buf_map(
-			udi_dma_buf_map_call_t *callback,
-			udi_cb_t *gcb,
-			udi_dma_handle_t dma_handle,
-			udi_buf_t *buf,
-			udi_size_t offset,
-			udi_size_t len,
-			udi_ubit8_t flags);
-
-		void udi_dma_mem_barrier(udi_dma_handle_t dma_handle);
-		void udi_dma_sync(
-			udi_dma_sync_call_t *callback,
-			udi_cb_t *gcb,
-			udi_dma_handle_t dma_handle,
-			udi_size_t offset,
-			udi_size_t length,
-			udi_ubit8_t flags);
-	}
 }
 
 #endif
