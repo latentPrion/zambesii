@@ -337,11 +337,11 @@ sbit8 FloodplainnStream::releaseScatterGatherList(sarch_t id)
 {
 	fplainn::dma::ScatterGatherList		*sgl;
 
-	sgl = &scatterGatherLists[id];
-	if (*sgl == NULL)
+	sgl = getScatterGatherList(id);
+	if (sgl == NULL)
 	{
-		printf(WARNING"releaseSGList(%d): ID indexes to a blank array "
-			"index.\n",
+		printf(WARNING"releaseSGList(%d): ID indexes to a "
+			"blank/invalid array index.\n",
 			id);
 
 		return 0;
