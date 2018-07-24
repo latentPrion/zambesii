@@ -236,7 +236,7 @@ error_t fplainn::dma::ScatterGatherList::map(
 	uarch_t			nFrames=0;
 	void			*vmem=NULL;
 	uintptr_t		currVaddr=0;
-	VaddrSpaceStream	*__kvasStream;
+	VaddrSpaceStream	*currVasStream;
 
 	/**	EXPLANATION:
 	 * First count the number of pages we have to allocate in order to
@@ -245,7 +245,8 @@ error_t fplainn::dma::ScatterGatherList::map(
 	 **/
 	if (retobj == NULL) { return ERROR_INVALID_ARG_VAL; };
 
-	__kvasStream = processTrib.__kgetStream()->getVaddrSpaceStream();
+	currVasStream = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->parent->getVaddrSpaceStream();
 
 	for (ubit8 pass=1; pass <= 2; pass++)
 	{
@@ -275,7 +276,7 @@ error_t fplainn::dma::ScatterGatherList::map(
 				if (vmem == NULL)
 				{
 					// Alloc the vmem.
-					vmem = __kvasStream->getPages(nFrames);
+					vmem = currVasStream->getPages(nFrames);
 					if (vmem == NULL)
 					{
 						printf(ERROR"SGList::map: "
@@ -291,7 +292,7 @@ error_t fplainn::dma::ScatterGatherList::map(
 				}
 
 				ret = walkerPageRanger::mapInc(
-					&__kvasStream->vaddrSpace,
+					&currVasStream->vaddrSpace,
 					(void *)currVaddr, p,
 					currNFrames,
 					PAGEATTRIB_PRESENT
@@ -337,7 +338,7 @@ error_t fplainn::dma::ScatterGatherList::map(
 	return ERROR_SUCCESS;
 
 releaseVmem:
-	__kvasStream->releasePages(vmem, nFrames);
+	currVasStream->releasePages(vmem, nFrames);
 	return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 }
 
