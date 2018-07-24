@@ -69,8 +69,12 @@ typedef udi_ubit8_t udi_dma_constraints_attr_t;
 
 /*
  * DMA constraints handle (opaque type).
+ *
+ * Zambesii expects that the object pointed to by a udi_dma_constraints_t is
+ * a `zudi_dma_constraints_attr_spec_t`. See zbz_udi_mgmt.h.
  */
-typedef _UDI_HANDLE	udi_dma_constraints_t;
+typedef struct zudi_dma_constraints_ zudi_dma_constraints_t;
+typedef zudi_dma_constraints_t *	udi_dma_constraints_t;
 #define UDI_NULL_DMA_CONSTRAINTS	((udi_dma_constraints_t)NULL)
 
 /*

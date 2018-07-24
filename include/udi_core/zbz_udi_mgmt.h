@@ -56,4 +56,10 @@ typedef void (udi_devmgmt_ack_op_t)(
 
 typedef void (udi_final_cleanup_ack_op_t)(udi_mgmt_cb_t *cb);
 
+typedef struct zudi_dma_constraints_
+{
+	udi_dma_constraints_attr_spec_t *attrs;
+	udi_ubit8_t nAttrs;
+} zudi_dma_constraints_t;
+
 #endif /* ZBZ__UDI_CORE_META_MGMT_H */
