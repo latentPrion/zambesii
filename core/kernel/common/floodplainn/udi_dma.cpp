@@ -372,7 +372,7 @@ void fplainn::dma::constraints::Compiler::dump(void)
 		"\tPartial alloc? %s. Sequentially accessed? %s.\n",
 		this, parent,
 		i.addressableBits,
-		((i.addressSize == ScatterGatherList::ADDR_SIZE_64) ? "64" : "32"),
+		((i.addressSize == scatterGatherLists::ADDR_SIZE_64) ? "64" : "32"),
 		i.startPfn, i.beyondEndPfn - 1,
 		i.pfnSkipStride,
 		i.minElementGranularityNFrames, i.maxNContiguousFrames,
@@ -621,7 +621,7 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 	};
 
 	/* SCGTH_FORMAT *must* be provided. */
-	i.addressSize = ScatterGatherList::ADDR_SIZE_UNKNOWN;
+	i.addressSize = scatterGatherLists::ADDR_SIZE_UNKNOWN;
 	tmpAttr = parent->getAttr(UDI_DMA_SCGTH_FORMAT);
 	if (tmpAttr == NULL)
 	{
@@ -663,15 +663,15 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 		 **/
 #if (__VADDR_NBITS__ == 64) || ((__VADDR_NBITS__ == 32) && defined(ARCH_x86_32_PAE))
 		if (tmpAttr->attr_value & UDI_SCGTH_64) {
-			i.addressSize = ScatterGatherList::ADDR_SIZE_64;
+			i.addressSize = scatterGatherLists::ADDR_SIZE_64;
 		} else {
-			i.addressSize = ScatterGatherList::ADDR_SIZE_32;
+			i.addressSize = scatterGatherLists::ADDR_SIZE_32;
 		};
 #elif (__VADDR_NBITS__ == 32)
 		if (tmpAttr->attr_value & UDI_SCGTH_32) {
-			i.addressSize = ScatterGatherList::ADDR_SIZE_32;
+			i.addressSize = scatterGatherLists::ADDR_SIZE_32;
 		} else {
-			i.addressSize = ScatterGatherList::ADDR_SIZE_64;
+			i.addressSize = scatterGatherLists::ADDR_SIZE_64;
 		};
 #else
 	#error "Unhandled build configuration for UDI DMA SCGTH_FORMAT."

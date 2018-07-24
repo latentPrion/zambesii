@@ -158,9 +158,11 @@ error_t MemoryTrib::memRegionInit(void)
 
 sbit8 MemoryTrib::releaseFrames(fplainn::dma::ScatterGatherList *list)
 {
-	if (list->addressSize == fplainn::dma::ScatterGatherList::ADDR_SIZE_32) {
+	if (list->addressSize == fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
+	{
 		return releaseFrames(&list->elements32);
-	} else {
+	}
+	else {
 		return releaseFrames(&list->elements64);
 	};
 }

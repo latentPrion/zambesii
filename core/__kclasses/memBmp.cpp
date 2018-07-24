@@ -559,7 +559,7 @@ status_t MemoryBmp::constrainedGetFrames(
 		if (!isSecondPass)
 		{
 			if (retlist->addressSize
-				== fplainn::dma::ScatterGatherList::ADDR_SIZE_32)
+				== fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
 			{
 				scgthPreviousNElements = retlist->elements32.getNIndexes();
 			}

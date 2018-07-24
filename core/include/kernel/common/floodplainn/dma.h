@@ -76,6 +76,16 @@ protected:
 	void			*vaddr;
 };
 
+namespace scatterGatherLists
+{
+	enum eAddressSize {
+		ADDR_SIZE_UNKNOWN, ADDR_SIZE_32, ADDR_SIZE_64
+	};
+}
+
+
+}
+
 /**	EXPLANATION:
  * This is an abstraction around the udi_scgth_t type, meant to make the
  * building and manipulation of DMA elements easier.
@@ -92,18 +102,14 @@ extern ubit8		nullSGList[];
 class ScatterGatherList
 {
 public:
-	enum eAddressSize {
-		ADDR_SIZE_UNKNOWN, ADDR_SIZE_32, ADDR_SIZE_64
-	};
-
 	ScatterGatherList(void)
 	:
-	addressSize(ADDR_SIZE_UNKNOWN)
+	addressSize(scatterGatherLists::ADDR_SIZE_UNKNOWN)
 	{
 		memset(&udiScgthList, 0, sizeof(udiScgthList));
 	}
 
-	error_t initialize(eAddressSize addrSize)
+	error_t initialize(scatterGatherLists::eAddressSize addrSize)
 	{
 		error_t		ret;
 
@@ -122,7 +128,7 @@ public:
 public:
 	void dump(void)
 	{
-		if (addressSize == ADDR_SIZE_32) {
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
 			dump(&elements32);
 		} else {
 			dump(&elements64);
@@ -146,11 +152,11 @@ public:
 	error_t preallocateEntries(uarch_t nEntries)
 	{
 		if (nEntries == 0) { return ERROR_SUCCESS; };
-		if (addressSize == ADDR_SIZE_UNKNOWN) {
+		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN) {
 			return ERROR_UNINITIALIZED;
 		};
 
-		if (addressSize == ADDR_SIZE_32)
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
 		{
 			return preallocateEntries(
 				&elements32, nEntries);
@@ -172,11 +178,11 @@ public:
 		 * can add the new frames to an existing
 		 * element.
 		 **/
-		if (addressSize == ADDR_SIZE_UNKNOWN) {
+		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN) {
 			return ERROR_UNINITIALIZED;
 		};
 
-		if (addressSize == ADDR_SIZE_32)
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
 		{
 			ret = addFrames(
 				&elements32, p, nFrames,
@@ -206,7 +212,7 @@ public:
 	// Returns a virtual mapping to this SGList.
 	error_t map(MappedScatterGatherList *retMapping)
 	{
-		if (addressSize == ADDR_SIZE_32) {
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
 			return map(&elements32, retMapping);
 		} else {
 			return map(&elements64, retMapping);
@@ -262,10 +268,10 @@ public:
 	typedef ResizeableArray<udi_scgth_element_64_t>
 					SGList64;
 
-	eAddressSize			addressSize;
-	SGList32			elements32;
-	SGList64			elements64;
-	udi_scgth_t			udiScgthList;
+	scatterGatherLists::eAddressSize	addressSize;
+	SGList32				elements32;
+	SGList64				elements64;
+	udi_scgth_t				udiScgthList;
 };
 
 /**	EXPLANATION:
@@ -405,7 +411,7 @@ public:
 	mapping(NULL)
 	{}
 
-	error_t initialize(enum ScatterGatherList::eAddressSize addrSize)
+	error_t initialize(enum scatterGatherLists::eAddressSize addrSize)
 	{
 		error_t ret;
 
