@@ -133,8 +133,6 @@ private:
  * this of course, is to enable the kernel to read/write the contents stored in
  * a particular scatter-gather list's memory.
  ******************************************************************************/
-class Constraints;
-
 extern ubit8		nullSGList[];
 
 class ScatterGatherList
@@ -185,7 +183,7 @@ public:
 		return !memcmp(this, nullSGList, sizeof(*this));
 	}
 
-	error_t constrain(Constraints *constraints);
+	error_t constrain(constraints::Compiler *compiledCon);
 
 	error_t preallocateEntries(uarch_t nEntries)
 	{
@@ -310,6 +308,7 @@ public:
 	SGList32				elements32;
 	SGList64				elements64;
 	udi_scgth_t				udiScgthList;
+	constraints::Compiler			compiledConstraints;
 };
 
 class Constraints

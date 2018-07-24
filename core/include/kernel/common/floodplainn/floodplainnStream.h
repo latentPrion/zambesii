@@ -68,6 +68,7 @@ class FloodplainnStream
 :
 public Stream<ProcessStream>
 {
+	friend class Floodplainn;
 public:
 	FloodplainnStream(processId_t id, ProcessStream *parent)
 	:
@@ -143,17 +144,22 @@ public:
 	 * particular DMA engine's requirements.
 	 **********************************************************************/
 	status_t allocateScatterGatherList(
-		fplainn::dma::ScatterGatherList::eAddressSize addrSize,
 		fplainn::dma::ScatterGatherList **retlist);
 
 	sbit8 releaseScatterGatherList(sarch_t id);
-	fplainn::dma::ScatterGatherList *getScatterGatherList(sarch_t id)
-		{ return &scatterGatherLists[id]; }
 
-	error_t liberateScatterGatherList(fplainn::dma::ScatterGatherList *list)
+	error_t liberateScatterGatherList(sarch_t id)
+		{ return constrainScatterGatherList(id, &defaultConstraints); }
+
+	error_t constrainScatterGatherList(
+		sarch_t id, fplainn::dma::constraints::Compiler *compiledCon)
 	{
+		fplainn::dma::ScatterGatherList		*list;
+
+		list = getScatterGatherList(id);
+		if (list == NULL) { return ERROR_NOT_FOUND; }
 		// Associates the list with the default "loose" constraints.
-		return list->constrain(&defaultConstraints);
+		return list->constrain(compiledCon);
 	}
 
 	// Returns the ID of the slot in the target stream.
@@ -168,6 +174,31 @@ public:
 		uarch_t flags);
 
 private:
+	fplainn::dma::ScatterGatherList *getScatterGatherList(sarch_t id)
+	{
+		fplainn::dma::ScatterGatherList		*sgl;
+
+		scatterGatherLists.lock();
+		if (!scatterGatherLists.unlocked_indexIsValid(id))
+		{
+			scatterGatherLists.unlock();
+			return NULL;
+		}
+
+		sgl = &scatterGatherLists[id];
+		scatterGatherLists.unlock();
+
+		if (*sgl == NULL) {
+			printf(ERROR"getSGList(%d): Index refers to NULL "
+				"object.\n",
+				id);
+
+			return NULL;
+		}
+		return sgl;
+	}
+
+private:
 	friend class fplainn::FStreamEndpoint;
 
 	error_t addEndpoint(fplainn::FStreamEndpoint *endp)
@@ -176,12 +207,12 @@ private:
 	sbit8 removeEndpoint(fplainn::FStreamEndpoint *endp)
 		{ return endpoints.remove(endp); }
 
-	HeapList<fplainn::FStreamEndpoint>	endpoints;
-	List<MetaConnection>			metaConnections;
-	List<ZkcmConnection>			zkcmConnections;
-	fplainn::dma::Constraints		defaultConstraints;
+	HeapList<fplainn::FStreamEndpoint>		endpoints;
+	List<MetaConnection>				metaConnections;
+	List<ZkcmConnection>				zkcmConnections;
+	static fplainn::dma::constraints::Compiler	defaultConstraints;
 	ResizeableIdArray<fplainn::dma::ScatterGatherList>
-						scatterGatherLists;
+							scatterGatherLists;
 };
 
 

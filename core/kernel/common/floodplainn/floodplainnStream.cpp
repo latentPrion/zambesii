@@ -22,9 +22,6 @@ error_t FloodplainnStream::initialize(void)
 	ret = endpoints.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	ret = defaultConstraints.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
-
 	ret = scatterGatherLists.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 

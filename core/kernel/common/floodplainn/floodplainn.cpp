@@ -13,6 +13,25 @@
 ubit8		fplainn::dma::nullSGList[
 	sizeof(fplainn::dma::ScatterGatherList)];
 
+udi_dma_constraints_attr_spec_t _defaultConstraints[] = {
+	{ UDI_DMA_SCGTH_FORMAT, UDI_SCGTH_32
+#if __PADDR_NBITS__ <= 64 && __PADDR_NBITS__ > 32
+				| UDI_SCGTH_64
+#endif
+#ifdef __ARCH_LITTLE_ENDIAN__
+				| UDI_DMA_LITTLE_ENDIAN
+#elif defined(__ARCH_BIG_ENDIAN__)
+				| UDI_DMA_BIG_ENDIAN
+#else
+	#error "Unable to determine endianness of target host CPU arch!"
+#endif
+	},
+	{ UDI_DMA_ADDRESSABLE_BITS, __PADDR_NBITS__ },
+	{ UDI_DMA_ALIGNMENT_BITS, PAGING_BASE_SHIFT }
+};
+
+fplainn::dma::constraints::Compiler	FloodplainnStream::defaultConstraints;
+
 static fplainn::Device		byId(CHIPSET_NUMA_SHBANKID),
 				byName(CHIPSET_NUMA_SHBANKID),
 				byClass(CHIPSET_NUMA_SHBANKID),
@@ -20,9 +39,10 @@ static fplainn::Device		byId(CHIPSET_NUMA_SHBANKID),
 
 error_t Floodplainn::initialize(void)
 {
-	fvfs::Tag			*root, *tmp;
-	error_t				ret;
-	udi_instance_attr_list_t	tmpAttr;
+	fvfs::Tag				*root, *tmp;
+	error_t					ret;
+	udi_instance_attr_list_t		tmpAttr;
+	fplainn::dma::Constraints		constraintsParser;
 
 	/**	EXPLANATION:
 	 * Create the four sub-trees and set up the enumeration attributes of
@@ -93,8 +113,29 @@ error_t Floodplainn::initialize(void)
 		fplainn::dma::nullSGList, 0,
 		sizeof(sizeof(fplainn::dma::ScatterGatherList)));
 
-	assert_fatal(*reinterpret_cast<fplainn::dma::ScatterGatherList *>(
-		fplainn::dma::nullSGList) == NULL);
+	ret = constraintsParser.initialize(_defaultConstraints, 2);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINN"Failed to initialize parser for default "
+			"DMA constraints initialization.\n");
+		return ret;
+	}
+
+	ret = FloodplainnStream::defaultConstraints.initialize();
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINN"Failed to initialize constraints compiler "
+			"for default constraints.\n");
+		return ret;
+	}
+
+	ret = FloodplainnStream::defaultConstraints.compile(&constraintsParser);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR FPLAINN"Failed to compile default DMA "
+			"Constraints.\n");
+		return ret;
+	}
 
 	return ERROR_SUCCESS;
 }
