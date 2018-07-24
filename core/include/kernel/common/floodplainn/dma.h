@@ -316,22 +316,37 @@ class Constraints
 public:
 	friend class MemoryBmp;
 
-	typedef ResizeableArray<udi_dma_constraints_attr_spec_t>
-		AttrArray;
+	Constraints(void) {}
 
-	Constraints(void)
-	:
-	compiler(this)
-	{}
-
-	error_t initialize(void)
+	error_t initialize(
+		udi_dma_constraints_attr_spec_t *_attrs, uarch_t _nAttrs)
 	{
-		error_t		ret;
+		if (_attrs == NULL)
+		{
+			nAttrs = 0;
+			return ERROR_INVALID_ARG;
+		}
 
-		ret = attrs.initialize();
-		if (ret != ERROR_SUCCESS) { return ret; };
+		nAttrs = _nAttrs;
+		if (_nAttrs == 0) { return ERROR_SUCCESS; }
 
-		return ret;
+		memcpy(attrs, _attrs, sizeof(*_attrs) * _nAttrs);
+
+		// Sanity check for holes.
+		for (uarch_t i=0; i<nAttrs; i++)
+		{
+			if (isValidConstraintAttrType(attrs[i].attr_type))
+			{
+				continue;
+			}
+
+			memcpy(
+				&attrs[i], &attrs[i+1],
+				sizeof(*attrs) * (nAttrs - (i + 1)));
+			nAttrs--;
+		}
+
+		return ERROR_SUCCESS;
 	}
 
 public:
@@ -342,24 +357,14 @@ public:
 	static sbit8 isValidConstraintAttrType(udi_dma_constraints_attr_t val);
 	sbit8 attrAlreadySet(udi_dma_constraints_attr_t a)
 	{
-		attrs.lock();
-
-		for (
-			AttrArray::Iterator it=attrs.begin();
-			it != attrs.end();
-			++it)
+		for (uarch_t i=0; i<nAttrs; i++)
 		{
-			udi_dma_constraints_attr_spec_t *s =
-				&(*it);
+			udi_dma_constraints_attr_spec_t *s = &attrs[i];
 
-			if (s->attr_type == a)
-			{
-				attrs.unlock();
-				return 1;
-			};
+			if (s->attr_type != a) { continue; }
+			return 1;
 		};
 
-		attrs.unlock();
 		return 0;
 	}
 
@@ -375,10 +380,10 @@ public:
 		udi_dma_constraints_attr_t attr);
 
 public:
-	constraints::Compiler		compiler;
 	#define N_ATTR_TYPE_NAMES	(32)
 	static utf8Char			*attrTypeNames[N_ATTR_TYPE_NAMES];
-	AttrArray			attrs;
+	udi_dma_constraints_attr_spec_t attrs[N_ATTR_TYPE_NAMES];
+	uarch_t				nAttrs;
 };
 
 /**	EXPLANATION:
@@ -410,7 +415,7 @@ public:
 	{
 		error_t ret;
 
-		ret = constraints.initialize();
+		ret = constraints.initialize(NULL, 0);
 		if (ret != ERROR_SUCCESS) { return ret; };
 
 		ret = sGList.initialize(addrSize);

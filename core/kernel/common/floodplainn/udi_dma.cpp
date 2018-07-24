@@ -122,11 +122,11 @@ utf8Char *fplainn::dma::Constraints::getAttrTypeName(
 void fplainn::dma::Constraints::dump(void)
 {
 	printf(NOTICE"DMA Constraints obj @%p, %d attrs: dumping.\n",
-		this, attrs.getNIndexes());
+		this, nAttrs);
 
-	for (AttrArray::Iterator it=attrs.begin(); it != attrs.end(); ++it)
+	for (uarch_t i=0; i<nAttrs; i++)
 	{
-		udi_dma_constraints_attr_spec_t		*tmp=&*it;
+		udi_dma_constraints_attr_spec_t		*tmp=&attrs[i];
 
 		printf(CC"\tAttr %s,\t\tValue %x.\n",
 			getAttrTypeName(tmp->attr_type),
@@ -135,70 +135,56 @@ void fplainn::dma::Constraints::dump(void)
 }
 
 error_t fplainn::dma::Constraints::addOrModifyAttrs(
-	udi_dma_constraints_attr_spec_t *_attrs, uarch_t nAttrs
+	udi_dma_constraints_attr_spec_t *_attrs, uarch_t _nAttrs
 	)
 {
 	error_t			ret;
 	uarch_t			nNewAttrs=0;
 
 	if (_attrs == NULL) { return ERROR_INVALID_ARG; };
-	if (nAttrs == 0) { return ERROR_SUCCESS; };
+	if (_nAttrs == 0) { return ERROR_SUCCESS; };
 
 	// How many of the attrs are new ones?
-	for (uarch_t i=0; i<nAttrs; i++) {
+	for (uarch_t i=0; i<_nAttrs; i++) {
+		// Silently ignore invalid attr_type values from userspace.
+		if (!isValidConstraintAttrType(_attrs[i].attr_type))
+			{ continue; }
+
 		if (!attrAlreadySet(_attrs[i].attr_type)) { nNewAttrs++; };
 	};
 
-	// Make room for all the new attrs.
-	if (nNewAttrs > 0)
+	assert_fatal(nAttrs + nNewAttrs <= N_ATTR_TYPE_NAMES);
+
+	for (uarch_t i=0, newAttrIndex=0; i<_nAttrs; i++)
 	{
-		uarch_t			prevNIndexes = attrs.getNIndexes();
+		if (!isValidConstraintAttrType(_attrs[i].attr_type))
+			{ continue; }
 
-		ret = attrs.resizeToHoldIndex(
-			prevNIndexes + nNewAttrs - 1);
-
-		if (ret != ERROR_SUCCESS) { return ret; };
-
-		/* Set all the new attrs' attr_types to 0 to distinguish them.
-		 * It should not be necessary to lock this operation.
-		 */
-		for (uarch_t i=0; i<nNewAttrs; i++) {
-			attrs[prevNIndexes + i].attr_type = 0;
-		};
-	};
-
-	for (AttrArray::Iterator it=attrs.begin(); it != attrs.end(); ++it)
-	{
-		udi_dma_constraints_attr_spec_t		*spec=&*it;
-
-		/* If it's a newly allocated attr (attr_type=0), search the
-		 * passed attrs for one that's new, and put it in this slot.
-		 **/
-		if (spec->attr_type == 0)
+		if (attrAlreadySet(_attrs[i].attr_type))
 		{
-			for (uarch_t i=0; i<nAttrs; i++)
-			{
-				if (attrAlreadySet(_attrs[i].attr_type))
-					{ continue; };
+			udi_dma_constraints_attr_spec_t		*s;
 
-				*spec = _attrs[i];
-			};
+			s = getAttr(_attrs[i].attr_type);
+			if (s == NULL)
+			{
+				printf(FATAL"Attribute %d(%s) disappeared "
+					"somehow between the time we examined "
+					"it and the time we tried to fetch it.",
+					_attrs[i].attr_type);
+				panic(ERROR_UNKNOWN);
+			}
+
+			s->attr_value = _attrs[i].attr_value;
 		}
-		/* Else search the passed attrs to see if the caller wanted this
-		 * attr modified.
-		 **/
 		else
 		{
-			for (uarch_t i=0; i<nAttrs; i++)
-			{
-				if (spec->attr_type != _attrs[i].attr_type)
-					{ continue; };
+			assert_fatal(newAttrIndex < nNewAttrs);
+			attrs[nAttrs + newAttrIndex] = _attrs[i];
+			newAttrIndex++;
+		}
+	}
 
-				spec->attr_value = _attrs[i].attr_value;
-			};
-		};
-	};
-
+	nAttrs += nNewAttrs;
 	return ERROR_SUCCESS;
 }
 
@@ -346,19 +332,14 @@ udi_dma_constraints_attr_spec_t *fplainn::dma::Constraints::getAttr(
 	udi_dma_constraints_attr_t attr
 	)
 {
-	attrs.lock();
-
-	for (AttrArray::Iterator it = attrs.begin(); it != attrs.end(); ++it)
+	for (uarch_t i=0; i<nAttrs; i++)
 	{
-		udi_dma_constraints_attr_spec_t		*tmp = &*it;
+		udi_dma_constraints_attr_spec_t		*tmp=&attrs[i];
 
 		if (tmp->attr_type != attr) { continue; };
-
-		attrs.unlock();
 		return tmp;
 	};
 
-	attrs.unlock();
 	return NULL;
 }
 
