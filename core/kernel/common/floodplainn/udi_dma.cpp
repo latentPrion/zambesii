@@ -345,14 +345,14 @@ udi_dma_constraints_attr_spec_t *fplainn::dma::Constraints::getAttr(
 
 void fplainn::dma::constraints::Compiler::dump(void)
 {
-	printf(NOTICE"DMACon Compiler @%p: Parent @%p. Dumping.\n"
+	printf(NOTICE"DMACon Compiler @%p. Dumping.\n"
 		"\tCan address %u bits, will be presented with %s-bit descriptors.\n"
 		"\tstarting at PFN %x upto PFN %x.\n"
 		"\tSkip stride of %d frames.\n"
 		"\tAllocates in blocks of at least %d frames, up to a max of %u frames per elem.\n"
 		"\tSlop in is %d bits, out is %d bits.\n"
 		"\tPartial alloc? %s. Sequentially accessed? %s.\n",
-		this, parent,
+		this,
 		i.addressableBits,
 		((i.addressSize == scatterGatherLists::ADDR_SIZE_64) ? "64" : "32"),
 		i.startPfn, i.beyondEndPfn - 1,
@@ -363,7 +363,9 @@ void fplainn::dma::constraints::Compiler::dump(void)
 		((i.sequentialAccessHint) ? "yes" : "no"));
 }
 
-error_t fplainn::dma::constraints::Compiler::compile(void)
+error_t fplainn::dma::constraints::Compiler::compile(
+	fplainn::dma::Constraints *cons
+	)
 {
 	const udi_dma_constraints_attr_spec_t	*tmpAttr;
 
@@ -416,7 +418,7 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 	i.addressableBits = __PADDR_NBITS__;
 	i.beyondEndPfn = 0;
 	i.beyondEndPfn = ~i.beyondEndPfn;
-	tmpAttr = parent->getAttr(UDI_DMA_DATA_ADDRESSABLE_BITS);
+	tmpAttr = cons->getAttr(UDI_DMA_DATA_ADDRESSABLE_BITS);
 	if (tmpAttr != NULL)
 	{
 		i.addressableBits = tmpAttr->attr_value;
@@ -443,13 +445,13 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 	 * Skip stride ensures we meet element alignment requirements.
 	 */
 	i.pfnSkipStride = 0;
-	tmpAttr = parent->getAttr(UDI_DMA_ELEMENT_ALIGNMENT_BITS);
+	tmpAttr = cons->getAttr(UDI_DMA_ELEMENT_ALIGNMENT_BITS);
 	if (tmpAttr != NULL && tmpAttr->attr_value > PAGING_BASE_SHIFT) {
 		i.pfnSkipStride = (1 << (tmpAttr->attr_value - PAGING_BASE_SHIFT)) - 1;
 	};
 
 	i.startPfn = 0;
-	tmpAttr = parent->getAttr(UDI_DMA_ADDR_FIXED_BITS);
+	tmpAttr = cons->getAttr(UDI_DMA_ADDR_FIXED_BITS);
 	if (tmpAttr != NULL && tmpAttr->attr_value > 0)
 	{
 		paddr_t					beyondEndOfFixedPfn;
@@ -461,7 +463,7 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 		 */
 		i.fixedBits = tmpAttr->attr_value;
 
-		tmpFixedType = parent->getAttr(UDI_DMA_ADDR_FIXED_TYPE);
+		tmpFixedType = cons->getAttr(UDI_DMA_ADDR_FIXED_TYPE);
 		if (tmpFixedType != NULL && tmpFixedType->attr_value == UDI_DMA_FIXED_LIST)
 		{
 			printf(WARNING MEMBMP"constrainedGF: "
@@ -486,8 +488,8 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 			 * use them to determine what changes need to be made to the
 			 * start and beyondEnd PFNs.
 			 */
-			tmpFixedLo = parent->getAttr(UDI_DMA_ADDR_FIXED_VALUE_LO);
-			tmpFixedHi = parent->getAttr(UDI_DMA_ADDR_FIXED_VALUE_HI);
+			tmpFixedLo = cons->getAttr(UDI_DMA_ADDR_FIXED_VALUE_LO);
+			tmpFixedHi = cons->getAttr(UDI_DMA_ADDR_FIXED_VALUE_HI);
 
 #ifndef CONFIG_ARCH_x86_32_PAE
 			if (tmpFixedHi != NULL && tmpFixedHi->attr_value != 0) {
@@ -539,7 +541,7 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 	 * to cross beyond the end of the BMP? Other than that, no harm
 	 * can come from values in this attribute.
 	 */
-	tmpAttr = parent->getAttr(UDI_DMA_ELEMENT_GRANULARITY_BITS);
+	tmpAttr = cons->getAttr(UDI_DMA_ELEMENT_GRANULARITY_BITS);
 	if (tmpAttr != NULL && tmpAttr->attr_value > PAGING_BASE_SHIFT)
 	{
 		i.minElementGranularityNFrames = 1
@@ -552,7 +554,7 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 		i.maxNContiguousFrames = i.minElementGranularityNFrames;
 	};
 
-	tmpAttr = parent->getAttr(UDI_DMA_ELEMENT_LENGTH_BITS);
+	tmpAttr = cons->getAttr(UDI_DMA_ELEMENT_LENGTH_BITS);
 	if (tmpAttr != NULL) {
 		ubit32		maxElemBits=tmpAttr->attr_value;
 
@@ -576,11 +578,11 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 	/* We don't yet support slop. Especially not SLOP-IN. */
 	i.slopInBits = i.slopOutBits = i.slopOutExtra = 0;
 
-	tmpAttr = parent->getAttr(UDI_DMA_SLOP_IN_BITS);
+	tmpAttr = cons->getAttr(UDI_DMA_SLOP_IN_BITS);
 	if (tmpAttr != NULL) { i.slopInBits = tmpAttr->attr_value; };
-	tmpAttr = parent->getAttr(UDI_DMA_SLOP_OUT_BITS);
+	tmpAttr = cons->getAttr(UDI_DMA_SLOP_OUT_BITS);
 	if (tmpAttr != NULL) { i.slopOutBits = tmpAttr->attr_value; };
-	tmpAttr = parent->getAttr(UDI_DMA_SLOP_OUT_EXTRA);
+	tmpAttr = cons->getAttr(UDI_DMA_SLOP_OUT_EXTRA);
 	if (tmpAttr != NULL) { i.slopOutExtra = tmpAttr->attr_value; };
 
 	if (i.slopInBits != 0 || i.slopOutBits != 0 || i.slopOutExtra != 0)
@@ -592,19 +594,19 @@ error_t fplainn::dma::constraints::Compiler::compile(void)
 		return ERROR_UNSUPPORTED;
 	};
 
-	tmpAttr = parent->getAttr(UDI_DMA_NO_PARTIAL);
+	tmpAttr = cons->getAttr(UDI_DMA_NO_PARTIAL);
 	if (tmpAttr != NULL && tmpAttr->attr_value != 0) {
 		i.partialAllocationsDisallowed = 1;
 	};
 
-	tmpAttr = parent->getAttr(UDI_DMA_SEQUENTIAL);
+	tmpAttr = cons->getAttr(UDI_DMA_SEQUENTIAL);
 	if (tmpAttr != NULL && tmpAttr->attr_value != 0) {
 		i.sequentialAccessHint = 1;
 	};
 
 	/* SCGTH_FORMAT *must* be provided. */
 	i.addressSize = scatterGatherLists::ADDR_SIZE_UNKNOWN;
-	tmpAttr = parent->getAttr(UDI_DMA_SCGTH_FORMAT);
+	tmpAttr = cons->getAttr(UDI_DMA_SCGTH_FORMAT);
 	if (tmpAttr == NULL)
 	{
 		printf(ERROR"Constraints compiler: No SCGTH_FORMAT provided.\n");

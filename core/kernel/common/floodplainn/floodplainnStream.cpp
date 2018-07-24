@@ -243,13 +243,13 @@ error_t FloodplainnStream::send(
 }
 
 status_t FloodplainnStream::allocateScatterGatherList(
-	fplainn::dma::ScatterGatherList::eAddressSize _addrSize,
 	fplainn::dma::ScatterGatherList **retlist
 	)
 {
 	status_t	newId;
 	error_t 	err;
-	fplainn::dma::ScatterGatherList		*newObj=NULL;
+	fplainn::dma::ScatterGatherList			*newObj=NULL;
+	fplainn::dma::scatterGatherLists::eAddressSize	_addrSize;
 
 	/**	EXPLANATION:
 	 *
@@ -257,8 +257,17 @@ status_t FloodplainnStream::allocateScatterGatherList(
 	 * Returns positive integer ID greater than 0 if successful. Else
 	 * returns an error_t error value.
 	 **/
-	if (_addrSize < fplainn::dma::ScatterGatherList::ADDR_SIZE_32
-		|| _addrSize > fplainn::dma::ScatterGatherList::ADDR_SIZE_64)
+	_addrSize =
+#if __PADDR_NBITS__ > 32 && __PADDR_NBITS__ <= 64
+		fplainn::dma::scatterGatherLists::ADDR_SIZE_64;
+#elif __PADDR_NBITS__ <= 32
+		fplainn::dma::scatterGatherLists::ADDR_SIZE_32;
+#else
+	#error "Cannot determine what element size udi_scgth_element_t should use."
+#endif
+
+	if (_addrSize < fplainn::dma::scatterGatherLists::ADDR_SIZE_32
+		|| _addrSize > fplainn::dma::scatterGatherLists::ADDR_SIZE_64)
 		{ return ERROR_INVALID_ARG_VAL; }
 
 	scatterGatherLists.lock();
@@ -391,7 +400,7 @@ status_t FloodplainnStream::transferScatterGatherList(
 	if (srcList == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 	newDestId = destProcess->floodplainnStream.allocateScatterGatherList(
-		srcList->addressSize, &newDestSGList);
+		&newDestSGList);
 
 	if (newDestId < 0)
 	{
