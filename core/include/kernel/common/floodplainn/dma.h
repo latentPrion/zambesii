@@ -83,6 +83,44 @@ namespace scatterGatherLists
 	};
 }
 
+/**	EXPLANATION:
+ * This class represents Zambesii's UDI DMA constraints feature.
+ */
+class Constraints;
+namespace constraints
+{
+
+class Compiler
+{
+public:
+	Compiler(void)
+	{
+		memset(&i, 0, sizeof(i));
+	}
+
+	error_t initialize(void) { return ERROR_SUCCESS; };
+
+	error_t compile(Constraints *cons);
+	void dump(void);
+
+public:
+	struct {
+		sbit8		partialAllocationsDisallowed,
+				sequentialAccessHint;
+		ubit8		addressableBits,
+				fixedBits;
+		uarch_t		pfnSkipStride;
+		paddr_t		startPfn, beyondEndPfn,
+				minElementGranularityNFrames,
+				maxNContiguousFrames,
+				slopInBits, slopOutBits,
+				slopOutExtra, slopBarrierBits,
+				fixedBitsValue;
+		fplainn::dma::scatterGatherLists::eAddressSize	addressSize;
+	} i;
+
+private:
+};
 
 }
 
@@ -273,48 +311,6 @@ public:
 	SGList64				elements64;
 	udi_scgth_t				udiScgthList;
 };
-
-/**	EXPLANATION:
- * This class represents Zambesii's UDI DMA constraints feature.
- */
-class Constraints;
-namespace constraints
-{
-
-class Compiler
-{
-public:
-	Compiler(Constraints *_parent)
-	:
-	parent(_parent)
-	{
-		memset(&i, 0, sizeof(i));
-	}
-
-	error_t compile(void);
-	void dump(void);
-
-public:
-	struct {
-		sbit8		partialAllocationsDisallowed,
-				sequentialAccessHint;
-		ubit8		addressableBits,
-				fixedBits;
-		uarch_t		pfnSkipStride;
-		paddr_t		startPfn, beyondEndPfn,
-				minElementGranularityNFrames,
-				maxNContiguousFrames,
-				slopInBits, slopOutBits,
-				slopOutExtra, slopBarrierBits,
-				fixedBitsValue;
-		ScatterGatherList::eAddressSize addressSize;
-	} i;
-
-private:
-	Constraints	*parent;
-};
-
-}
 
 class Constraints
 {
