@@ -338,6 +338,7 @@ public:
 	static utf8Char *getAttrTypeName(
 		udi_dma_constraints_attr_t a);
 
+	static sbit8 isValidConstraintAttrType(udi_dma_constraints_attr_t val);
 	sbit8 attrAlreadySet(udi_dma_constraints_attr_t a)
 	{
 		attrs.lock();

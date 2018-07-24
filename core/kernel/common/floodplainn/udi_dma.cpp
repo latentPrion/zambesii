@@ -1,7 +1,9 @@
 
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__kclib/assert.h>
+#include <kernel/common/panic.h>
 #include <kernel/common/memoryTrib/vaddrSpaceStream.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/floodplainn/dma.h>
 #include <kernel/common/floodplainn/zudi.h>
@@ -48,11 +50,46 @@ utf8Char *fplainn::dma::Constraints::attrTypeNames[N_ATTR_TYPE_NAMES] = {
 
 static utf8Char		*unknownString = CC"<UNKNOWN>";
 
+sbit8 fplainn::dma::Constraints::isValidConstraintAttrType(
+	udi_dma_constraints_attr_t a
+	)
+{
+	if (a < UDI_DMA_ATTR_SPEC_TYPE_MIN || a > UDI_DMA_ATTR_SPEC_TYPE_MAX)
+		{ return 0; };
+
+	if (a >= UDI_DMA_SEQUENTIAL && a <= UDI_DMA_SLOP_BARRIER_BITS)
+		{ return 1; };
+
+	if (a >= UDI_DMA_ADDR_FIXED_BITS && a <= UDI_DMA_ADDR_FIXED_VALUE_HI)
+		{ return 1; };
+
+	if (a >= UDI_DMA_ELEMENT_ALIGNMENT_BITS
+		&& a <= UDI_DMA_ELEMENT_GRANULARITY_BITS)
+	{
+		return 1;
+	};
+
+	if (a >= UDI_DMA_SCGTH_ALIGNMENT_BITS && a <= UDI_DMA_SCGTH_PREFIX_BYTES)
+		{ return 1; };
+
+	if (a >= UDI_DMA_SCGTH_MAX_ELEMENTS && a <= UDI_DMA_SCGTH_MAX_SEGMENTS)
+		{ return 1; };
+
+	if (a >= UDI_DMA_DATA_ADDRESSABLE_BITS && a <= UDI_DMA_NO_PARTIAL)
+		{ return 1; };
+
+	if (a >= UDI_DMA_ADDRESSABLE_BITS && a <= UDI_DMA_ALIGNMENT_BITS)
+		{ return 1; };
+
+	return 0;
+}
+
 utf8Char *fplainn::dma::Constraints::getAttrTypeName(
 	udi_dma_constraints_attr_t a
 	)
 {
-	if (a == 0 || a > UDI_DMA_SLOP_BARRIER_BITS) { return unknownString; };
+	if (!isValidConstraintAttrType(a))
+		{ return unknownString; };
 
 	if (a >= UDI_DMA_SEQUENTIAL)
 		{ return attrTypeNames[a - UDI_DMA_SEQUENTIAL + 19]; };
@@ -77,7 +114,9 @@ utf8Char *fplainn::dma::Constraints::getAttrTypeName(
 	if (a >= UDI_DMA_ADDRESSABLE_BITS)
 		{ return attrTypeNames[a - UDI_DMA_ADDRESSABLE_BITS + 0]; };
 
-	return unknownString;
+	/* This should never be reached. */
+	panic(ERROR_UNKNOWN, CC"Fell through to code which should be "
+		"unreachable in getAttrTypeName().");
 }
 
 void fplainn::dma::Constraints::dump(void)
