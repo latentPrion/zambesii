@@ -338,7 +338,7 @@ status_t FloodplainnStream::allocateScatterGatherList(
 		return err;
 	}
 
-	*retlist = newObj;
+	if (retlist != NULL) { *retlist = newObj; }
 	return newId;
 }
 
