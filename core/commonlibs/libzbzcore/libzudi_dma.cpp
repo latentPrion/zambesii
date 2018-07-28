@@ -7,17 +7,8 @@
 #include <commonlibs/libzbzcore/libzudi.h>
 
 
-struct sUdiDmaHandle
-{
-	sarch_t					index;
-	fplainn::dma::Constraints 		*constraints;
-	fplainn::dma::ScatterGatherList		*sGList;
-	fplainn::dma::MappedScatterGatherList	*mappedSGList;
-};
-
-void udi_dma_prepare(
-	udi_dma_prepare_call_t *callback,
-	udi_cb_t *gcb,
+lzudi::dma::sHandle *
+lzudi::dma::udi_dma_prepare_sync(
 	udi_dma_constraints_t constraints,
 	udi_ubit8_t flags
 	)
@@ -25,18 +16,12 @@ void udi_dma_prepare(
 	sarch_t					sGListIndex;
 	Thread					*currThread;
 	fplainn::dma::ScatterGatherList		*sgl;
-	sUdiDmaHandle				*ret;
+	lzudi::dma::sHandle				*ret;
 	fplainn::dma::Constraints		conParser;
 	fplainn::dma::constraints::Compiler	compiledCons;
 	error_t					err;
 
-
-	if (callback == NULL) { return; }
-	if (gcb == NULL || constraints == NULL || constraints->attrs == NULL)
-	{
-		callback(gcb, NULL);
-		return;
-	}
+	if (constraints == NULL || constraints->attrs == NULL) { return NULL; }
 
 	/**	EXPLANATION:
 	 * We want to sanity check the constraints given by userspace then
@@ -45,14 +30,14 @@ void udi_dma_prepare(
 	 * If they do, then we need to call allocateScatterGatherList() and save
 	 * the ID. Then constrain the SGList with the compiled constraints.
 	 *
-	 * If all of that works out, we can return the sUdiDmaHandle object
+	 * If all of that works out, we can return the lzudi::dma::sHandle object
 	 * which maintains the context for this SGList.
 	 */
-	ret = new sUdiDmaHandle;
+	ret = new lzudi::dma::sHandle;
 	if (ret == NULL)
 	{
 		printf(ERROR"Failed to alloc metadata for udi_dma_prepare.\n");
-		(*callback)(gcb, NULL); return;
+		return NULL;
 	}
 
 	memset(ret, 0, sizeof(*ret));
@@ -85,13 +70,13 @@ void udi_dma_prepare(
 		goto out_freeDmaHandle;
 	}
 
-	ret->index = currThread->parent->floodplainnStream
+	ret->sGListIndex = currThread->parent->floodplainnStream
 		.allocateScatterGatherList(&ret->sGList);
 
-	if (ret->index < 0)
+	if (ret->sGListIndex < 0)
 	{
 		printf(ERROR"allocSGList() syscall failed. Ret is %d.\n",
-			ret->index);
+			ret->sGListIndex);
 		goto out_freeDmaHandle;
 	}
 
@@ -102,16 +87,40 @@ void udi_dma_prepare(
 		goto out_releaseSGList;
 	}
 
-	(*callback)(gcb, reinterpret_cast<udi_dma_handle_t *>(ret));
+	return ret;
 
 out_releaseSGList:
 	currThread->parent->floodplainnStream.releaseScatterGatherList(
-		ret->index);
+		ret->sGListIndex);
 
 out_freeDmaHandle:
 	delete ret;
-	(*callback)(gcb, NULL);
-	return;
+	return NULL;
+}
+
+void udi_dma_prepare(
+	udi_dma_prepare_call_t *callback,
+	udi_cb_t *gcb,
+	udi_dma_constraints_t constraints,
+	udi_ubit8_t flags
+	)
+{
+	lzudi::dma::sHandle		*ret;
+
+	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(
+		gcb, callback,
+		gcb, NULL);
+
+	if (constraints == NULL || constraints->attrs == NULL)
+	{
+		callback(gcb, NULL);
+		return;
+	}
+
+	ret = lzudi::dma::udi_dma_prepare_sync(
+		constraints, flags);
+
+	callback(gcb, reinterpret_cast<udi_dma_handle_t *>(ret));
 }
 
 void udi_dma_free(udi_dma_handle_t dma_handle)
@@ -128,10 +137,39 @@ void udi_dma_mem_alloc(
 	udi_size_t max_gap
 	)
 {
+	lzudi::dma::sHandle	*dmah;
+
+	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(
+		gcb, callback,
+		gcb, NULL, NULL, 0, 0, NULL, 0);
+
+	if (nelements == 0 || element_size == 0) {
+		callback(gcb, NULL, NULL, 0, 0, NULL, 0);
+	}
+
 	/**	EXPLANATION:
 	 * Call MapScatterGatherList, but don't construct a udi_buf_t on top of
 	 * it.
 	 **/
+	dmah = lzudi::dma::udi_dma_prepare_sync(constraints, flags);
+	if (dmah == NULL)
+	{
+		printf(ERROR"udi_dma_mem_alloc(%d,%d): prepare_sync operation "
+			"failed.\n",
+			nelements, element_size);
+
+		goto out_freeDmah;
+	}
+
+out_freeDmah:
+	delete dmah;
+	/**	FIXME:
+	 * mem_ptr cannot actually return NULL, unlike udi_dma_prepare().
+	 * We have to artificially allocate a single element somehow.
+	 *
+	 * This current behaviour is non-compliant.
+	 */
+	callback(gcb, NULL, NULL, 0, 0, NULL, 0);
 }
 
 void udi_dma_mem_to_buf(
@@ -144,8 +182,7 @@ void udi_dma_mem_to_buf(
 	)
 {
 	/**	EXPLANATION:
-	 * Construct a udi_buf_t to wrap around the memory returned from a call
-	 * to udi_dma_mem_alloc().
+	 * This is essentially a no-op.
 	 **/
 }
 
@@ -159,7 +196,7 @@ void udi_dma_buf_map(
 	udi_ubit8_t flags
 	)
 {
-	sUdiDmaHandle		*dmah = reinterpret_cast<sUdiDmaHandle *>(
+	lzudi::dma::sHandle	*dmah = reinterpret_cast<lzudi::dma::sHandle *>(
 		dma_handle);
 
 	/**	EXPLANATION:

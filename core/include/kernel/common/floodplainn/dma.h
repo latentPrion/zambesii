@@ -13,69 +13,6 @@ namespace fplainn
 namespace dma
 {
 
-/**	EXPLANATION:
- * This class encapsulates the kernel's ability to read/write from/to a DMA
- * SGlist. SGLists are in physical memory, so the kernel must map them before it
- * can alter their contents.
- *
- * This class provides methods such as memset(), memcpy(), etc.
- ******************************************************************************/
-class ScatterGatherList;
-
-class MappedScatterGatherList
-/*: public SparseBuffer*/
-{
-protected:
-	struct sListNode
-	{
-		List<sListNode>::sHeader	listHeader;
-		ubit8				*vaddr;
-		uarch_t				nBytes;
-	};
-
-public:
-	MappedScatterGatherList(ScatterGatherList *_parent)
-	:
-	parent(_parent)
-	{}
-
-	error_t initialize()
-	{
-		error_t		ret;
-
-		ret = pageArray.initialize();
-		return ret;
-	}
-
-	~MappedScatterGatherList(void) {}
-
-public:
-	virtual void memset8(
-		uarch_t offset, ubit8 value, uarch_t nBytes);
-	virtual void memset16(
-		uarch_t offset, ubit8 value, uarch_t nBytes);
-	virtual void memset32(
-		uarch_t offset, ubit8 value, uarch_t nBytes);
-
-	virtual void memcpy(
-		uarch_t offset, void *mem, uarch_t nBytes);
-	virtual void memcpy(
-		void *mem, uarch_t offset, uarch_t nBytes);
-
-	void memmove(
-		uarch_t destOff, uarch_t srcOff,
-		uarch_t nBytes);
-
-	error_t addPages(void *vaddr, uarch_t nBytes);
-	error_t removePages(void *vaddr, uarch_t nBytes);
-	void compact(void);
-
-protected:
-	ResizeableArray<void *>	pageArray;
-	ScatterGatherList       *parent;
-	void			*vaddr;
-};
-
 namespace scatterGatherLists
 {
 	enum eAddressSize {
@@ -125,6 +62,54 @@ private:
 }
 
 /**	EXPLANATION:
+ * This class encapsulates the ZBZ implementation of udi_buf_t for
+ * reading/writing from/to a UDI DMA SGlist. SGLists are in physical memory, so
+ * they must be mapped before their contents can be altered.
+ *
+ * This class provides methods such as memset(), memmove(), read(), write(),
+ * etc.
+ ******************************************************************************/
+class ScatterGatherList;
+
+class MappedScatterGatherList
+/*: public SparseBuffer*/
+{
+protected:
+	struct sListNode
+	{
+		List<sListNode>::sHeader	listHeader;
+		ubit8				*vaddr;
+		uarch_t				nBytes;
+	};
+
+public:
+	MappedScatterGatherList(ScatterGatherList *_parent)
+	:
+	parent(_parent)
+	{}
+
+	error_t initialize(void)
+	{
+		error_t		ret;
+
+		ret = pageArray.initialize();
+		return ret;
+	}
+
+	~MappedScatterGatherList(void) {}
+
+public:
+	error_t addPages(void *vaddr, uarch_t nBytes);
+	error_t removePages(void *vaddr, uarch_t nBytes);
+	void compact(void);
+
+protected:
+	ResizeableArray<void *>	pageArray;
+	void			*vaddr;
+	ScatterGatherList	*parent;
+};
+
+/**	EXPLANATION:
  * This is an abstraction around the udi_scgth_t type, meant to make the
  * building and manipulation of DMA elements easier.
  *
@@ -140,7 +125,8 @@ class ScatterGatherList
 public:
 	ScatterGatherList(void)
 	:
-	addressSize(scatterGatherLists::ADDR_SIZE_UNKNOWN)
+	addressSize(scatterGatherLists::ADDR_SIZE_UNKNOWN),
+	mapping(this)
 	{
 		memset(&udiScgthList, 0, sizeof(udiScgthList));
 	}
@@ -245,23 +231,20 @@ public:
 	 **/
 	uarch_t compact(void);
 
-	// Returns a virtual mapping to this SGList.
-	error_t map(MappedScatterGatherList *retMapping)
+	// Maps this SGList and records the page list using its MappedSGList.
+	error_t map(void)
 	{
 		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
-			return map(&elements32, retMapping);
+			return map(&elements32, &mapping);
 		} else {
-			return map(&elements64, retMapping);
+			return map(&elements64, &mapping);
 		}
 	}
 
-	// Returns a re-done mapping of this SGList.
-	error_t remap(
-		MappedScatterGatherList *oldMapping,
-		MappedScatterGatherList *newMapping);
-
+	// Remaps this SGList.
+	error_t remap(void);
 	// Destroys a mapping to this SGList.
-	void unmap(MappedScatterGatherList *mapping);
+	void unmap(void);
 
 private:
 	template <class scgth_elements_type>
@@ -309,6 +292,7 @@ public:
 	SGList64				elements64;
 	udi_scgth_t				udiScgthList;
 	constraints::Compiler			compiledConstraints;
+	MappedScatterGatherList			mapping;
 };
 
 class Constraints

@@ -12,13 +12,30 @@
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kclasses/heapList.h>
 	#include <__kclasses/list.h>
+	#include <__kclasses/resizeableArray.h>
 
 #define LZUDI			"lzudi: "
+
+#define LZUDI_CHECK_GCB_AND_CALLBACK_VALID(gcb,cb,...) do { \
+	if ((gcb) == NULL || (cb) == NULL) { \
+		printf(ERROR"%s: gcb(%p) or cb(%p) arg is NULL.\n", \
+			__FUNCTION__, (gcb), (cb)); \
+		if ((cb) != NULL) { \
+			cb(__VA_ARGS__); \
+		} \
+	} \
+} while (0)
 
 namespace fplainn
 {
 	class Endpoint;
 	struct sChannelMsg;
+	namespace dma
+	{
+		class Constraints;
+		class ScatterGatherList;
+		class MappedScatterGatherList;
+	}
 }
 
 namespace __klzbzcore
@@ -125,6 +142,77 @@ namespace lzudi
 	error_t udi_cb_alloc_sync(
 		__klzbzcore::driver::CachedInfo *drvInfoCache,
 		udi_index_t cb_idx, udi_cb_t **retcb);
+
+	namespace buf
+	{
+		class SparseBuffer
+		{
+		protected:
+			struct sListNode
+			{
+				List<sListNode>::sHeader	listHeader;
+				ubit8				*vaddr;
+				uarch_t				nBytes;
+			};
+
+		public:
+			SparseBuffer(void)
+			{}
+
+			error_t initialize()
+			{
+				error_t		ret;
+
+				ret = pageArray.initialize();
+				return ret;
+			}
+
+			~SparseBuffer(void) {}
+
+		public:
+			virtual void memset8(
+				uarch_t offset, ubit8 value, uarch_t nBytes);
+			virtual void memset16(
+				uarch_t offset, ubit8 value, uarch_t nBytes);
+			virtual void memset32(
+				uarch_t offset, ubit8 value, uarch_t nBytes);
+
+			virtual sarch_t write(
+				const void *inbuff,
+				uarch_t offset, uarch_t nBytes);
+
+			virtual sarch_t read(
+				void *const mem,
+				uarch_t offset, uarch_t nBytes);
+
+			void memmove(
+				uarch_t destOff, uarch_t srcOff,
+				uarch_t nBytes);
+
+			error_t addPages(void *vaddr, uarch_t nBytes);
+			error_t removePages(void *vaddr, uarch_t nBytes);
+			void compact(void);
+
+		protected:
+			ResizeableArray<void *>	pageArray;
+			void			*vaddr;
+		};
+	}
+
+	namespace dma
+	{
+		struct sHandle
+		{
+			sarch_t					sGListIndex;
+			fplainn::dma::Constraints 		*constraints;
+			fplainn::dma::ScatterGatherList		*sGList;
+			uarch_t					flags;
+		};
+
+		sHandle *udi_dma_prepare_sync(
+			udi_dma_constraints_t constraints,
+			udi_ubit8_t flags);
+	}
 }
 
 #endif
