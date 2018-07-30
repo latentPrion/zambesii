@@ -88,7 +88,6 @@ public:
 	enum resizeToHoldIndexFlagsE {
 		RTHI_FLAGS_UNLOCKED = (1<<0)
 	};
-
 	error_t resizeToHoldIndex(uarch_t index, uarch_t _flags=0)
 	{
 		error_t		ret;
