@@ -12,6 +12,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/floodplainn/dma.h>
 #include <kernel/common/floodplainn/zudi.h>
 
@@ -555,20 +556,44 @@ status_t MemoryBmp::constrainedGetFrames(
 
 		/* Resizing the array resizes it from the end of the previous
 		 * internal memory.
+		 *
+		 *	FIXME: LOCKING:
+		 * We need to lock the getNIndexes() and resizeToHoldIndex()
+		 * operations together.
 		 */
 		if (!isSecondPass)
 		{
+			uarch_t		fUnlocked;
+
+			fUnlocked = FLAG_TEST(
+				flags, MemoryTrib::CGF_SGLIST_UNLOCKED)
+				? 1 : 0;
+
+
 			if (retlist->addressSize
 				== fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
 			{
-				scgthPreviousNElements = retlist->elements32.getNIndexes();
+				if (!fUnlocked) { retlist->elements32.lock(); }
+				scgthPreviousNElements = retlist->elements32.unlocked_getNIndexes();
 			}
 			else {
-				scgthPreviousNElements = retlist->elements64.getNIndexes();
+				if (!fUnlocked) { retlist->elements64.lock(); }
+				scgthPreviousNElements = retlist->elements64.unlocked_getNIndexes();
 			};
 
 			error = retlist->preallocateEntries(
-				scgthPreviousNElements + nScgthElements);
+				scgthPreviousNElements + nScgthElements,
+				((fUnlocked) ? fplainn::dma::ScatterGatherList::PE_FLAGS_UNLOCKED : 0));
+
+			if (retlist->addressSize
+				== fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
+			{
+				if (!fUnlocked) { retlist->elements32.unlock(); }
+			}
+			else {
+				if (!fUnlocked) { retlist->elements64.unlock(); }
+			}
+
 			if (error != ERROR_SUCCESS)
 			{
 				bmp.lock.release();

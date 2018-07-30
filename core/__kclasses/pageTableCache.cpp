@@ -43,7 +43,7 @@ error_t PageTableCache::pop(paddr_t *paddr)
 		 * MUST CREATE A NEW "NOSLEEP" FLAG FOR THE PMM.
 		 **/
 		return ((memoryTrib.fragmentedGetFrames(
-			1, paddr, MEMTRIB_GETFRAMES_FLAGS_NOSLEEP) > 0)
+			1, paddr, MemoryTrib::FGF_FLAGS_NOSLEEP) > 0)
 			? ERROR_SUCCESS : ERROR_MEMORY_NOMEM_PHYSICAL);
 	};
 

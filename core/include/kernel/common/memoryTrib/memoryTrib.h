@@ -33,8 +33,6 @@ namespace constraints
 
 #define MEMTRIB		"Memory Trib: "
 
-#define MEMTRIB_GETFRAMES_FLAGS_NOSLEEP		(1<<0)
-
 class MemoryTrib
 :
 public Tributary
@@ -70,6 +68,9 @@ public:
 	 * Otherwise you end up with NUMA bank specifics in the kernel.
 	 **/
 	// Physical memory management functions.
+	enum fragmentedGetFramesE {
+		FGF_FLAGS_NOSLEEP		= (1<<0)
+	};
 	status_t fragmentedGetFrames(
 		uarch_t nFrames, paddr_t *ret, ubit32 flags=0);
 
@@ -83,6 +84,9 @@ public:
 	 * should allocate and destroy scatter gather lists using
 	 * FloodplainnStreams.
 	 */
+	enum constrainedGetFramesFlagsE {
+		CGF_SGLIST_UNLOCKED		= (1<<0)
+	};
 	status_t constrainedGetFrames(
 		fplainn::dma::constraints::Compiler *constraints,
 		uarch_t nFrames,
