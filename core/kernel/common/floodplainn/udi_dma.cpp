@@ -332,6 +332,21 @@ unmapVmem:
 	return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 }
 
+status_t fplainn::dma::ScatterGatherList::unlocked_resize(uarch_t nFrames)
+{
+	uarch_t		currNFrames;
+
+	currNFrames = getNFrames(ScatterGatherList::GNF_FLAGS_UNLOCKED);
+	if (currNFrames <= nFrames) { return ERROR_SUCCESS; }
+
+	return memoryTrib.constrainedGetFrames(
+		&compiledConstraints,
+		// Alloc as many frames as are needed to make up the difference.
+		nFrames - currNFrames,
+		this,
+		MemoryTrib::CGF_SGLIST_UNLOCKED);
+}
+
 template <class scgth_elements_type>
 uarch_t fplainn::dma::ScatterGatherList::getNFrames(
 	ResizeableArray<scgth_elements_type> *list, uarch_t flags

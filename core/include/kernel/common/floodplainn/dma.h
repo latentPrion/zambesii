@@ -238,6 +238,18 @@ public:
 		}
 	}
 
+	error_t resize(uarch_t nFrames)
+	{
+		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
+			{ return ERROR_UNINITIALIZED; }
+
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
+			return resize(nFrames, &elements32);
+		} else {
+			return resize(nFrames, &elements64);
+		}
+	}
+
 	/* Returns the number of elements that were discarded
 	 * due to compaction.
 	 **/
@@ -308,6 +320,18 @@ private:
 	uarch_t getNFrames(
 		ResizeableArray<scgth_elements_type> *list,
 		uarch_t flags=0);
+
+	template <class scgth_elements_type>
+	error_t resize(
+		uarch_t nFrames, ResizeableArray<scgth_elements_type> *list);
+
+	/* This is the backend for
+	 *	resize(uarch_t ResizeableArray<scgth_elements_type> *);
+	 *
+	 * This section had to be split off because we don't want to have to
+	 * #include memoryTrib.h in this header.
+	 **/
+	status_t unlocked_resize(uarch_t nFrames);
 
 public:
 	typedef ResizeableArray<udi_scgth_element_32_t>
@@ -658,6 +682,40 @@ error_t fplainn::dma::ScatterGatherList::addFrames(
 	// Finally add it to the list.
 	(*list)[prevNIndexes] = newElement;
 	return 1;
+}
+
+template <class scgth_elements_type>
+error_t fplainn::dma::ScatterGatherList::resize(
+	uarch_t nFrames, ResizeableArray<scgth_elements_type> *list
+	)
+{
+	uarch_t		currNFrames;
+	status_t	nNewFrames;
+
+	/**	EXPLANATION:
+	 * Causes this SGList's physical memory to be expanded to at least
+	 * nFrames.
+	 **/
+	if (nFrames == 0) { return ERROR_SUCCESS; }
+
+	list->lock();
+	nNewFrames = unlocked_resize(nFrames);
+	list->unlock();
+
+	if (currNFrames + nNewFrames < nFrames)
+	{
+		// Just to be sure about the behaviour of constrainedGetFrames.
+		assert_fatal(nNewFrames < 0);
+
+		printf(ERROR SGLIST"resize(nFrames): Op failed. "
+			"PrevNFrames %d, %d allocated newly and will be "
+			"freed.\n",
+			nFrames, currNFrames, nNewFrames);
+
+		return nNewFrames;
+	}
+
+	return ERROR_SUCCESS;
 }
 
 #endif
