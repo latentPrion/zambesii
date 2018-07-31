@@ -138,7 +138,6 @@ error_t fplainn::dma::Constraints::addOrModifyAttrs(
 	udi_dma_constraints_attr_spec_t *_attrs, uarch_t _nAttrs
 	)
 {
-	error_t			ret;
 	uarch_t			nNewAttrs=0;
 
 	if (_attrs == NULL) { return ERROR_INVALID_ARG; };
@@ -188,20 +187,19 @@ error_t fplainn::dma::Constraints::addOrModifyAttrs(
 	return ERROR_SUCCESS;
 }
 
-error_t fplainn::dma::MappedScatterGatherList::addPages(
-	void *vaddr, uarch_t nBytes
+error_t fplainn::dma::MappedScatterGatherList::trackPages(
+	void *_vaddr, uarch_t nBytes
 	)
 {
-	uarch_t nPages;
-	error_t ret;
+	uarch_t _nPages;
 
 	assert_warn(nBytes % PAGING_BASE_SIZE == 0);
-	nPages = __KMATH_NELEMENTS(nBytes, PAGING_BASE_SIZE);
+	_nPages = __KMATH_NELEMENTS(nBytes, PAGING_BASE_SIZE);
 
-	ret = pageArray.resizeToHoldIndex(pageArray.getNIndexes() + nPages - 1);
-	if (ret != ERROR_SUCCESS) {
-		return ret;
-	}
+	vaddr = _vaddr;
+	nPages = _nPages;
+	return ERROR_SUCCESS;
+}
 
 	for (uarch_t i=0; i<nPages; i++)
 	{

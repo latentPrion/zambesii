@@ -4,8 +4,9 @@
 	#define UDI_VERSION 0x101
 	#include <udi.h>
 	#undef UDI_VERSION
-	#include <__kclasses/resizeableArray.h>
+	#include <__kstdlib/__kclib/assert.h>
 	#include <__kclasses/list.h>
+	#include <__kclasses/resizeableArray.h>
 
 namespace fplainn
 {
@@ -72,40 +73,30 @@ private:
 class ScatterGatherList;
 
 class MappedScatterGatherList
-/*: public SparseBuffer*/
 {
-protected:
-	struct sListNode
-	{
-		List<sListNode>::sHeader	listHeader;
-		ubit8				*vaddr;
-		uarch_t				nBytes;
-	};
-
 public:
 	MappedScatterGatherList(ScatterGatherList *_parent)
 	:
 	parent(_parent)
-	{}
+	{
+		trackPages(NULL, 0);
+	}
 
 	error_t initialize(void)
 	{
-		error_t		ret;
-
-		ret = pageArray.initialize();
-		return ret;
+		return ERROR_SUCCESS;
 	}
 
 	~MappedScatterGatherList(void) {}
 
 public:
-	error_t addPages(void *vaddr, uarch_t nBytes);
+	error_t trackPages(void *vaddr, uarch_t nBytes);
 	error_t removePages(void *vaddr, uarch_t nBytes);
 	void compact(void);
 
-protected:
-	ResizeableArray<void *>	pageArray;
+public:
 	void			*vaddr;
+	uarch_t			nPages;
 	ScatterGatherList	*parent;
 };
 

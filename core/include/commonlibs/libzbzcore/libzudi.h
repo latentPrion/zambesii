@@ -12,7 +12,6 @@
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kclasses/heapList.h>
 	#include <__kclasses/list.h>
-	#include <__kclasses/resizeableArray.h>
 
 #define LZUDI			"lzudi: "
 
@@ -145,29 +144,18 @@ namespace lzudi
 
 	namespace buf
 	{
-		class SparseBuffer
+		class MappedScatterGatherList
+		:	public udi_buf_t
 		{
-		protected:
-			struct sListNode
-			{
-				List<sListNode>::sHeader	listHeader;
-				ubit8				*vaddr;
-				uarch_t				nBytes;
-			};
-
 		public:
-			SparseBuffer(void)
+			MappedScatterGatherList(void)
+			:
+			vaddr(NULL), nBytes(0), nFrames(0), sGListIndex(-1)
 			{}
 
-			error_t initialize()
-			{
-				error_t		ret;
+			error_t initialize() { return ERROR_SUCCESS; }
 
-				ret = pageArray.initialize();
-				return ret;
-			}
-
-			~SparseBuffer(void) {}
+			~MappedScatterGatherList(void) {}
 
 		public:
 			virtual void memset8(
@@ -189,13 +177,10 @@ namespace lzudi
 				uarch_t destOff, uarch_t srcOff,
 				uarch_t nBytes);
 
-			error_t addPages(void *vaddr, uarch_t nBytes);
-			error_t removePages(void *vaddr, uarch_t nBytes);
-			void compact(void);
-
 		protected:
-			ResizeableArray<void *>	pageArray;
 			void			*vaddr;
+			uarch_t			nBytes, nFrames;
+			sarch_t			sGListIndex;
 		};
 	}
 
