@@ -342,6 +342,25 @@ status_t FloodplainnStream::allocateScatterGatherList(
 	return newId;
 }
 
+error_t FloodplainnStream::resizeScatterGatherList(sarch_t id, uarch_t nFrames)
+{
+	fplainn::dma::ScatterGatherList		*sgl;
+
+	if (nFrames == 0) { return ERROR_SUCCESS; }
+
+	sgl = getScatterGatherList(id);
+	if (sgl == NULL)
+	{
+		printf(WARNING"releaseSGList(%d): ID indexes to a "
+			"blank/invalid array index.\n",
+			id);
+
+		return ERROR_NOT_FOUND;
+	}
+
+	return sgl->resize(nFrames);
+}
+
 sbit8 FloodplainnStream::releaseScatterGatherList(sarch_t id)
 {
 	fplainn::dma::ScatterGatherList		*sgl;

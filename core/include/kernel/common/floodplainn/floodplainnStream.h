@@ -162,6 +162,7 @@ public:
 		return list->constrain(compiledCon);
 	}
 
+	error_t resizeScatterGatherList(sarch_t id, uarch_t nFrames);
 	status_t getNFramesInScatterGatherList(sarch_t id)
 	{
 		fplainn::dma::ScatterGatherList		*list;
