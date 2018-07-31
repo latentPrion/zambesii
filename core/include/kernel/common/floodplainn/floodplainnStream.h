@@ -162,6 +162,16 @@ public:
 		return list->constrain(compiledCon);
 	}
 
+	status_t getNFramesInScatterGatherList(sarch_t id)
+	{
+		fplainn::dma::ScatterGatherList		*list;
+
+		list = getScatterGatherList(id);
+		if (list == NULL) { return ERROR_NOT_FOUND; }
+
+		return list->getNFrames();
+	}
+
 	// Returns the ID of the slot in the target stream.
 	enum transferScatterGatherListFlagsE {
 		// Before transferring, unmap the list from the current owner
