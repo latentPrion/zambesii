@@ -8,6 +8,8 @@
 	#include <__kclasses/list.h>
 	#include <__kclasses/resizeableArray.h>
 
+#define SGLIST		"SGList: "
+
 namespace fplainn
 {
 
