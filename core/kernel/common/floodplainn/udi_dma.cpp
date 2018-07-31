@@ -202,13 +202,26 @@ error_t fplainn::dma::MappedScatterGatherList::trackPages(
 	return ERROR_SUCCESS;
 }
 
-	for (uarch_t i=0; i<nPages; i++)
-	{
-		pageArray[i] = (void *)((uintptr_t)vaddr
-			+ (i * PAGING_BASE_SIZE));
-	};
+void fplainn::dma::ScatterGatherList::unmap(void)
+{
+	ProcessStream		*currProcess;
+	VaddrSpaceStream	*currVasStream;
+	paddr_t			p;
+	uarch_t			f;
 
-	return ERROR_SUCCESS;
+	if (mapping.vaddr == NULL || mapping.nPages == 0) { return; }
+
+	currProcess = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->parent;
+
+	currVasStream = currProcess->getVaddrSpaceStream();
+
+	walkerPageRanger::unmap(
+		&currVasStream->vaddrSpace, mapping.vaddr,
+		&p, mapping.nPages, &f);
+
+	currVasStream->releasePages(mapping.vaddr, mapping.nPages);
+	mapping.trackPages(NULL, 0);
 }
 
 template <class scgth_elements_type>
