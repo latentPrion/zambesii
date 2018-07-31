@@ -16,7 +16,7 @@ lzudi::dma::udi_dma_prepare_sync(
 	sarch_t					sGListIndex;
 	Thread					*currThread;
 	fplainn::dma::ScatterGatherList		*sgl;
-	lzudi::dma::sHandle				*ret;
+	lzudi::dma::sHandle			*ret;
 	fplainn::dma::Constraints		conParser;
 	fplainn::dma::constraints::Compiler	compiledCons;
 	error_t					err;
