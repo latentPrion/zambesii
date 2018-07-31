@@ -254,7 +254,12 @@ public:
 	}
 
 	// Remaps this SGList.
-	error_t remap(void);
+	error_t remap(void)
+	{
+		unmap();
+		return map();
+	}
+
 	// Destroys a mapping to this SGList.
 	void unmap(void);
 
