@@ -5,6 +5,7 @@
 #include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/floodplainn/dma.h>
 #include <kernel/common/floodplainn/zudi.h>
 
@@ -221,107 +222,99 @@ error_t fplainn::dma::ScatterGatherList::map(
 	void			*vmem=NULL;
 	uintptr_t		currVaddr=0;
 	VaddrSpaceStream	*currVasStream;
+	sbit8			fKernel;
+	ProcessStream		*currProcess;
 
 	/**	EXPLANATION:
 	 * First count the number of pages we have to allocate in order to
 	 * fully map the entire SGList. Then allocate the vmem to map it,
 	 * and well, map it.
+	 *
+	 *	FUTURE IMPROVEMENTS:
+	 * Ideally buf mappings should use fake-mapping to ensure that we don't
+	 * initially commit DMA-usable memory to processes that aren't using it
+	 * at the moment of allocation.
+	 *
+	 *	FIXME: LOCKING:
+	 * This function should probably lock the list while counting the number
+	 * of pages to be mapped.
 	 **/
 	if (retobj == NULL) { return ERROR_INVALID_ARG_VAL; };
 
-	currVasStream = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread()->parent->getVaddrSpaceStream();
+	currProcess = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->parent;
 
-	for (ubit8 pass=1; pass <= 2; pass++)
+	currVasStream = currProcess->getVaddrSpaceStream();
+	fKernel = (currProcess->execDomain == PROCESS_EXECDOMAIN_KERNEL)
+		? 1 : 0;
+
+	nFrames = getNFrames(list);
+	if (nFrames == 0) { return ERROR_SUCCESS; };
+
+	// Alloc the vmem.
+	vmem = currVasStream->getPages(nFrames);
+	if (vmem == NULL)
 	{
-		for (
-			typename ResizeableArray<scgth_elements_type>::Iterator it=list->begin();
-			it != list->end();
-			++it)
-		{
-			scgth_elements_type		*tmp = &*it;
-			paddr_t				p, p2;
-			uarch_t				currNFrames;
+		printf(ERROR"SGList::map: Failed to alloc vmem to map the %d "
+			"frames in the list.\n",
+			nFrames);
 
-			assign_scgth_block_busaddr_to_paddr(
-				p, tmp->block_busaddr);
-
-			p2 = p + tmp->block_length;
-
-			currNFrames = PAGING_BYTES_TO_PAGES(p2 - p)
-				.getLow();
-
-			if (pass == 1) {
-				nFrames += currNFrames;
-			};
-
-			if (pass == 2)
-			{
-				if (vmem == NULL)
-				{
-					// Alloc the vmem.
-					vmem = currVasStream->getPages(nFrames);
-					if (vmem == NULL)
-					{
-						printf(ERROR"SGList::map: "
-							"Failed to alloc vmem "
-							"to map the %d "
-							"frames in the list.\n",
-							nFrames);
-
-						return ERROR_MEMORY_NOMEM_VIRTUAL;
-					};
-
-					currVaddr = (uintptr_t)vmem;
-				}
-
-				ret = walkerPageRanger::mapInc(
-					&currVasStream->vaddrSpace,
-					(void *)currVaddr, p,
-					currNFrames,
-					PAGEATTRIB_PRESENT
-					| PAGEATTRIB_WRITE
-					| PAGEATTRIB_SUPERVISOR);
-
-				if (ret < (signed)currNFrames)
-				{
-					printf(ERROR"SGList::map: "
-						"Failed to map all %d "
-						"pages for SGList "
-						"element P%P, %d "
-						"frames.\n",
-						&p, nFrames);
-
-					goto releaseVmem;
-				};
-
-				ret = retobj->addPages(
-					(void *)currVaddr,
-					currNFrames * PAGING_BASE_SIZE);
-
-				if (ret != ERROR_SUCCESS)
-				{
-					printf(ERROR"SGList::map: "
-						"Failed to add "
-						"page %p in DMA "
-						"sglist mapping to "
-						"internal metadata "
-						"list.\n",
-					(void*)currVaddr);
-				}
-
-				currVaddr += currNFrames
-					* PAGING_BASE_SIZE;
-			};
-		};
+		return ERROR_MEMORY_NOMEM_VIRTUAL;
 	};
 
-	/**	FIXME: Build the page list here.
-	 **/
+	// Start mapping from the first vmem page allocated.
+	currVaddr = (uintptr_t)vmem;
+	for (
+		typename ResizeableArray<scgth_elements_type>::Iterator it=list->begin();
+		it != list->end();
+		++it)
+	{
+		scgth_elements_type		*tmp = &*it;
+		paddr_t				p;
+		uarch_t				currNFrames;
+
+		assign_scgth_block_busaddr_to_paddr(p, tmp->block_busaddr);
+		currNFrames = PAGING_BYTES_TO_PAGES(tmp->block_length);
+
+		/* From userspace POV, udi_bufs are always writeable. */
+		ret = walkerPageRanger::mapInc(
+			&currVasStream->vaddrSpace,
+			(void *)currVaddr, p, currNFrames,
+			PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
+			| ((fKernel) ? PAGEATTRIB_SUPERVISOR : 0));
+
+		if (ret < (signed)currNFrames)
+		{
+			printf(ERROR"SGList::map: Failed to map all %d pages "
+				"for SGList element P%P, %d frames.\n",
+				&p, nFrames);
+
+			goto unmapVmem;
+		};
+
+		currVaddr += currNFrames * PAGING_BASE_SIZE;
+	};
+
+	// Overwrite the metadata to track our newly allocated vmem.
+	ret = retobj->trackPages(vmem, nFrames * PAGING_BASE_SIZE);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR"SGList::map: Failed to track vmem pages at %p in "
+			"SGList mapping.\n",
+			vmem);
+
+		goto unmapVmem;
+	}
 
 	return ERROR_SUCCESS;
 
-releaseVmem:
+unmapVmem:
+	paddr_t		_p;
+	uarch_t		_f;
+
+	walkerPageRanger::unmap(
+		&currVasStream->vaddrSpace, vmem, &_p, nFrames, &_f);
+
 	currVasStream->releasePages(vmem, nFrames);
 	return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 }
