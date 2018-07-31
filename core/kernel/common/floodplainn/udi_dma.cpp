@@ -326,6 +326,32 @@ releaseVmem:
 	return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 }
 
+template <class scgth_elements_type>
+uarch_t fplainn::dma::ScatterGatherList::getNFrames(
+	ResizeableArray<scgth_elements_type> *list, uarch_t flags
+	)
+{
+	uarch_t							ret=0;
+	typename ResizeableArray<scgth_elements_type>::Iterator	it;
+
+	if (!FLAG_TEST(flags, ScatterGatherList::GNF_FLAGS_UNLOCKED))
+		{ list->lock(); }
+
+	for (it = list->begin(); it != list->end(); ++it)
+	{
+		scgth_elements_type		*el = &*it;
+		uarch_t				currNFrames;
+
+		currNFrames = PAGING_BYTES_TO_PAGES(el->block_length);
+		ret += currNFrames;
+	}
+
+	if (!FLAG_TEST(flags, ScatterGatherList::GNF_FLAGS_UNLOCKED))
+		{ list->unlock(); }
+
+	return ret;
+}
+
 udi_dma_constraints_attr_spec_t *fplainn::dma::Constraints::getAttr(
 	udi_dma_constraints_attr_t attr
 	)

@@ -219,6 +219,21 @@ public:
 		return ret;
 	}
 
+	enum getNFramesE {
+		GNF_FLAGS_UNLOCKED		= (1<<0)
+	};
+	uarch_t getNFrames(uarch_t flags=0)
+	{
+		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
+			{ return 0; }
+
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
+			return getNFrames(&elements32, flags);
+		} else {
+			return getNFrames(&elements64, flags);
+		}
+	}
+
 	/* Returns the number of elements that were discarded
 	 * due to compaction.
 	 **/
@@ -273,6 +288,11 @@ private:
 	error_t map(
 		ResizeableArray<scgth_elements_type> *list,
 		MappedScatterGatherList *retMapping);
+
+	template <class scgth_elements_type>
+	uarch_t getNFrames(
+		ResizeableArray<scgth_elements_type> *list,
+		uarch_t flags=0);
 
 public:
 	typedef ResizeableArray<udi_scgth_element_32_t>
