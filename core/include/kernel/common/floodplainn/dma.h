@@ -164,7 +164,11 @@ public:
 
 	error_t constrain(constraints::Compiler *compiledCon);
 
-	error_t preallocateEntries(uarch_t nEntries)
+	enum preallocateEntriesE {
+		PE_RTHI_FLAGS_SHIFT	= 4,
+		PE_FLAGS_UNLOCKED	= (ResizeableArray<void *>::RTHI_FLAGS_UNLOCKED << PE_RTHI_FLAGS_SHIFT)
+	};
+	error_t preallocateEntries(uarch_t nEntries, uarch_t flags=0)
 	{
 		if (nEntries == 0) { return ERROR_SUCCESS; };
 		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN) {
@@ -174,12 +178,12 @@ public:
 		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
 		{
 			return preallocateEntries(
-				&elements32, nEntries);
+				&elements32, nEntries, flags);
 		}
 		else
 		{
 			return preallocateEntries(
-				&elements64, nEntries);
+				&elements64, nEntries, flags);
 		};
 	}
 
@@ -259,12 +263,18 @@ private:
 	void dump(ResizeableArray<scgth_elements_type> *list);
 
 	template <class T>
-	error_t preallocateEntries(T *array, uarch_t nEntries)
+	error_t preallocateEntries(T *array, uarch_t nEntries, uarch_t flags=0)
 	{
 		error_t ret;
+		uarch_t fRthi;
+
+		// Only pass on the ResizeableArray flags into resizeToHoldIndex
+		fRthi = (flags >> PE_RTHI_FLAGS_SHIFT)
+			& ResizeableArray<void *>::RTHI_FLAGS_UNLOCKED
+		;
 
 		ret = array->resizeToHoldIndex(
-			nEntries - 1);
+			nEntries - 1, fRthi);
 
 		if (ret != ERROR_SUCCESS) {
 			return ret;
