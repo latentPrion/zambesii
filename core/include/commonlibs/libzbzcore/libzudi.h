@@ -165,6 +165,13 @@ namespace lzudi
 			virtual void memset32(
 				uarch_t offset, ubit8 value, uarch_t nBytes);
 
+			virtual sbit8 hasEnoughMemoryForWrite(
+				uarch_t dest_off, uarch_t dest_len,
+				uarch_t src_len);
+
+			virtual sbit8 hasEnoughMemoryForRead(
+				uarch_t off, uarch_t len);
+
 			virtual sarch_t write(
 				const void *inbuff,
 				uarch_t offset, uarch_t nBytes);
