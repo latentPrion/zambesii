@@ -2,7 +2,9 @@
 	#define _ZBZ_DMA_H
 
 	#define UDI_VERSION 0x101
+	#define UDI_PHYSIO_VERSION 0x101
 	#include <udi.h>
+	#include <udi_physio.h>
 	#undef UDI_VERSION
 	#include <__kstdlib/__kclib/assert.h>
 	#include <__kclasses/list.h>
