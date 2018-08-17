@@ -155,7 +155,7 @@ namespace lzudi
 
 			error_t initialize() { return ERROR_SUCCESS; }
 
-			~MappedScatterGatherList(void) {}
+			virtual ~MappedScatterGatherList(void) {}
 
 		public:
 			virtual void memset8(
@@ -184,11 +184,16 @@ namespace lzudi
 				uarch_t destOff, uarch_t srcOff,
 				uarch_t nBytes);
 
-		protected:
+		public:
 			void			*vaddr;
 			uarch_t			nBytes, nFrames;
 			sarch_t			sGListIndex;
 		};
+
+		error_t allocateScatterGatherList(
+			udi_dma_constraints_t cons,
+			uarch_t initialNBytes,
+			MappedScatterGatherList **retobj);
 	}
 
 	namespace dma
