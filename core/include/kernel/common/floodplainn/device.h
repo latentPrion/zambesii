@@ -17,6 +17,7 @@
 	#include <kernel/common/floodplainn/fvfs.h>	// FVFS_TAG_NAME_MAXLEN
 	#include <kernel/common/floodplainn/region.h>
 	#include <kernel/common/floodplainn/channel.h>
+	#include <kernel/common/floodplainn/dma.h>
 
 /**	Device:
  * Base type for a device in general. The type of driver used to instantiate
@@ -193,6 +194,8 @@ namespace fplainn
 					DRIVER_METALANGUAGE_MAXLEN];
 			} udi;
 			ubit16		id;
+			fplainn::dma::constraints::Compiler
+					compiledConstraints;
 			fvfs::Tag	*tag;
 		};
 
