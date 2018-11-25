@@ -6,26 +6,16 @@
 
 
 error_t lzudi::buf::allocateScatterGatherList(
-	udi_dma_constraints_t cons,
+	fplainn::dma::constraints::Compiler *comCons,
 	uarch_t initialNBytes,
 	MappedScatterGatherList **retobj
 	)
 {
 	MappedScatterGatherList			*msgl;
-	fplainn::dma::Constraints		conParser;
-	fplainn::dma::constraints::Compiler	compiledCons;
 	error_t					ret;
 	Thread					*currThread;
 
-	if (retobj == NULL) { return ERROR_INVALID_ARG; }
-	if (cons == NULL || cons->attrs == NULL)
-	{
-		printf(ERROR LZUDI"buf:allocSGList(%d): No constraints "
-			"supplied. Bufs must be constrained.\n",
-			initialNBytes);
-
-		return ERROR_INVALID_ARG;
-	}
+	if (retobj == NULL || comCons == NULL) { return ERROR_INVALID_ARG; }
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
@@ -34,33 +24,6 @@ error_t lzudi::buf::allocateScatterGatherList(
 	 * We want to allocate a ScatterGatherList object inside the kernel
 	 * and constrain it with the constraints in "cons".
 	 **/
-
-	/* First we want to validate the DMA constraints passed to us.
-	 * Initialize a constraints parser.
-	 **/
-	ret = conParser.initialize(cons->attrs, cons->nAttrs);
-	if (ret != ERROR_SUCCESS)
-	{
-		printf(ERROR"Failed to initialize parser for attrs.\n");
-		return ret;
-	}
-
-	// Initialize a constraints compiler.
-	ret = compiledCons.initialize();
-	if (ret != ERROR_SUCCESS)
-	{
-		printf(ERROR"Failed to constraint compiler for attrs.\n");
-		return ret;
-	}
-
-	// Compile the constraints.
-	ret = compiledCons.compile(&conParser);
-	if (ret != ERROR_SUCCESS)
-	{
-		printf(ERROR"Failed to compile constraints passed by "
-			"userspace.\n");
-		return ret;
-	}
 
 	msgl = new MappedScatterGatherList;
 	if (msgl == NULL) {
@@ -81,7 +44,7 @@ error_t lzudi::buf::allocateScatterGatherList(
 	}
 
 	ret = currThread->parent->floodplainnStream
-		.constrainScatterGatherList(msgl->sGListIndex, &compiledCons);
+		.constrainScatterGatherList(msgl->sGListIndex, comCons);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -90,7 +53,6 @@ error_t lzudi::buf::allocateScatterGatherList(
 
 		goto out_freeSgl;
 	}
-
 
 	*retobj = msgl;
 	return ERROR_SUCCESS;
@@ -115,10 +77,12 @@ void udi_buf_write(
 	udi_buf_path_t path_handle
 	)
 {
-	error_t					err;
-	lzudi::buf::MappedScatterGatherList	*msgl;
-	uarch_t					currNFrames;
-	Thread					*currThread;
+	error_t						err;
+	lzudi::buf::MappedScatterGatherList		*msgl;
+	uarch_t						currNFrames;
+	Thread						*currThread;
+	fplainn::dma::constraints::Compiler	requestedConstraints;
+	fplainn::Device::sParentTag			*parentTag;
 
 	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(
 		gcb, callback,
@@ -144,10 +108,22 @@ void udi_buf_write(
 		 * Ask the kernel for the constraints associated with the
 		 * path handle.
 		 **/
+		parentTag = currThread->getRegion()->parent->device->
+			getParentTag((uarch_t)path_handle);
+
+		if (parentTag == NULL
+			|| !parentTag->compiledConstraints.isValid())
+		{
+			printf(ERROR"UDI_BUF_ALLOC: Path handle %d is invalid.\n",
+				path_handle);
+
+			callback(gcb, NULL);
+			return;
+		}
 
 		// Allocate a new SGList.
 		err = lzudi::buf::allocateScatterGatherList(
-			NULL, // FIXME: This should be a constraints object.
+			&requestedConstraints, // FIXME: This should be a constraints object.
 			src_len, &msgl);
 
 		if (err != ERROR_SUCCESS)
@@ -156,6 +132,7 @@ void udi_buf_write(
 				"handle.\n");
 
 			callback(gcb, NULL);
+			return;
 		}
 
 		// udi_buf_t is the base class so that we can downcast.
