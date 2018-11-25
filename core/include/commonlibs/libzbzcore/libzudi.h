@@ -12,6 +12,7 @@
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kclasses/heapList.h>
 	#include <__kclasses/list.h>
+	#include <kernel/common/floodplainn/dma.h>
 
 #define LZUDI			"lzudi: "
 
@@ -191,7 +192,7 @@ namespace lzudi
 		};
 
 		error_t allocateScatterGatherList(
-			udi_dma_constraints_t cons,
+			fplainn::dma::constraints::Compiler *cons,
 			uarch_t initialNBytes,
 			MappedScatterGatherList **retobj);
 	}
