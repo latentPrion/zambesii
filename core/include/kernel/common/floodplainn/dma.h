@@ -38,21 +38,41 @@ public:
 	Compiler(void)
 	{
 		memset(&i, 0, sizeof(i));
+		i.version = 1;
 	}
 
 	error_t initialize(void) { return ERROR_SUCCESS; };
 
 	error_t compile(Constraints *cons);
+
+	sbit8 isValid(void)
+	{
+		return (i.version > 0) && (i.minElementGranularityNFrames > 0);
+	}
+
+	void setInvalid(void)
+	{
+		i.version = 0;
+		i.minElementGranularityNFrames = paddr_t(0);
+	}
+
 	void dump(void);
 
 public:
 	struct {
+		/**	EXPLANATION:
+		 * This is a version number for this struct layout.
+		 * Additions to this struct layout will be appended after
+		 * the members that make up previous version iterations.
+		 */
+		uarch_t		version;
 		sbit8		partialAllocationsDisallowed,
 				sequentialAccessHint;
 		ubit8		addressableBits,
 				fixedBits;
 		uarch_t		pfnSkipStride;
 		paddr_t		startPfn, beyondEndPfn,
+				// minElemGranNFrames cannot be < 1.
 				minElementGranularityNFrames,
 				maxNContiguousFrames,
 				slopInBits, slopOutBits,
