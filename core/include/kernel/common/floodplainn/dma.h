@@ -720,6 +720,7 @@ error_t fplainn::dma::ScatterGatherList::resize(
 	if (nFrames == 0) { return ERROR_SUCCESS; }
 
 	list->lock();
+	currNFrames = getNFrames(GNF_FLAGS_UNLOCKED);
 	nNewFrames = unlocked_resize(nFrames);
 	list->unlock();
 
