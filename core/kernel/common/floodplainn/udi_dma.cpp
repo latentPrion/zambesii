@@ -337,7 +337,7 @@ status_t fplainn::dma::ScatterGatherList::unlocked_resize(uarch_t nFrames)
 	uarch_t		currNFrames;
 
 	currNFrames = getNFrames(ScatterGatherList::GNF_FLAGS_UNLOCKED);
-	if (currNFrames <= nFrames) { return ERROR_SUCCESS; }
+	if (currNFrames >= nFrames) { return ERROR_SUCCESS; }
 
 	return memoryTrib.constrainedGetFrames(
 		&compiledConstraints,
