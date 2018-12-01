@@ -11,6 +11,7 @@
 	#include <kernel/common/floodplainn/dma.h>
 
 	#define FPSTREAM		"FplainnStream "
+	#define FPSTREAM_ID		FPSTREAM "%d: "
 
 /**	EXPLANATION:
  * The "Floodplainn" is the name for the hardware management layer of Zambesii.
