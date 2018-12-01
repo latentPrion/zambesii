@@ -583,7 +583,7 @@ status_t MemoryBmp::constrainedGetFrames(
 
 			error = retlist->preallocateEntries(
 				scgthPreviousNElements + nScgthElements,
-				((fUnlocked) ? fplainn::dma::ScatterGatherList::PE_FLAGS_UNLOCKED : 0));
+				fplainn::dma::ScatterGatherList::PE_FLAGS_UNLOCKED);
 
 			if (retlist->addressSize
 				== fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
