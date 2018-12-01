@@ -173,6 +173,10 @@ public:
 		return list->getNFrames();
 	}
 
+	// Retrieves the constraints for a parent by its ID.
+	error_t getParentConstraints(
+		ubit16 parentId, fplainn::dma::constraints::Compiler *ret);
+
 	// Returns the ID of the slot in the target stream.
 	enum transferScatterGatherListFlagsE {
 		// Before transferring, unmap the list from the current owner

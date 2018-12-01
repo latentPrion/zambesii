@@ -28,6 +28,60 @@ error_t FloodplainnStream::initialize(void)
 	return ERROR_SUCCESS;
 }
 
+error_t FloodplainnStream::getParentConstraints(
+	ubit16 parentId, fplainn::dma::constraints::Compiler *ret
+	)
+{
+	Thread					*self;
+	fplainn::Device				*currDev;
+	fplainn::Device::sParentTag		*parentTag;
+
+	if (ret == NULL) { return ERROR_INVALID_ARG; }
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	if (parentId == 0)
+	{
+		printf(WARNING FPSTREAM_ID "getParentConstraints(%d): Invalid "
+			"parentId.\n",
+			self->getFullId(), parentId);
+		return ERROR_INVALID_ARG_VAL;
+	}
+
+
+	if (self->parent->getType() != ProcessStream::DRIVER)
+	{
+		printf(ERROR FPSTREAM_ID"getParentConstraints: Caller is not a "
+			"driver process.\n",
+			self->getFullId());
+		return ERROR_UNAUTHORIZED;
+	}
+
+	currDev = self->getRegion()->parent->device;
+	parentTag = currDev->getParentTag(parentId);
+	if (parentTag == NULL)
+	{
+		printf(ERROR FPSTREAM_ID"getParentConstraints(%d): Parent not "
+			"recognized.\n",
+			self->getFullId(), parentId);
+
+		return ERROR_NOT_FOUND;
+	}
+
+	// Still copy it regardless of whether or not it's valid.
+	*ret = parentTag->compiledConstraints;
+	if (!parentTag->compiledConstraints.isValid())
+	{
+		printf(WARNING FPSTREAM_ID"getParentConstraints(%d): "
+			"Constraints object uninitialized.\n",
+			self->getFullId(), parentId);
+
+		return ERROR_UNINITIALIZED;
+	}
+
+	return ERROR_SUCCESS;
+}
+
 error_t FloodplainnStream::connect(
 	utf8Char *devName, utf8Char *metaName,
 	udi_ops_vector_t *ops_vector, void *endpPrivateData1,
