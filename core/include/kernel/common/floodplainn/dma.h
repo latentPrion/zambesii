@@ -187,8 +187,7 @@ public:
 	error_t constrain(constraints::Compiler *compiledCon);
 
 	enum preallocateEntriesE {
-		PE_RTHI_FLAGS_SHIFT	= 4,
-		PE_FLAGS_UNLOCKED	= (ResizeableArray<void *>::RTHI_FLAGS_UNLOCKED << PE_RTHI_FLAGS_SHIFT)
+		PE_FLAGS_UNLOCKED		= (1<<0)
 	};
 	error_t preallocateEntries(uarch_t nEntries, uarch_t flags=0)
 	{
@@ -308,8 +307,8 @@ private:
 		uarch_t fRthi;
 
 		// Only pass on the ResizeableArray flags into resizeToHoldIndex
-		fRthi = (flags >> PE_RTHI_FLAGS_SHIFT)
-			& ResizeableArray<void *>::RTHI_FLAGS_UNLOCKED
+		fRthi = (FLAG_TEST(flags, PE_FLAGS_UNLOCKED))
+			? ResizeableArray<void *>::RTHI_FLAGS_UNLOCKED : 0
 		;
 
 		ret = array->resizeToHoldIndex(
