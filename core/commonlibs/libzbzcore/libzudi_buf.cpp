@@ -1,4 +1,8 @@
 
+#define UDI_VERSION 0x101
+#include <udi.h>
+#undef UDI_VERSION
+
 #include <kernel/common/process.h>
 #include <kernel/common/floodplainn/dma.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -81,8 +85,7 @@ void udi_buf_write(
 	lzudi::buf::MappedScatterGatherList		*msgl;
 	uarch_t						currNFrames;
 	Thread						*currThread;
-	fplainn::dma::constraints::Compiler	requestedConstraints;
-	fplainn::Device::sParentTag			*parentTag;
+	fplainn::dma::constraints::Compiler		requestedConstraints;
 
 	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(
 		gcb, callback,
@@ -95,7 +98,7 @@ void udi_buf_write(
 	{
 
 		// path_handle must be supplied when allocating a buf.
-		if (path_handle == NULL)
+		if (UDI_HANDLE_IS_NULL(path_handle, udi_path_handle_t))
 		{
 			printf(ERROR"UDI_BUF_ALLOC: A path handle must be "
 				"supplied to enable constraint.\n");
@@ -108,14 +111,15 @@ void udi_buf_write(
 		 * Ask the kernel for the constraints associated with the
 		 * path handle.
 		 **/
-		parentTag = currThread->getRegion()->parent->device->
-			getParentTag((uarch_t)path_handle);
+		err = currThread->parent->floodplainnStream.
+			getParentConstraints(
+				reinterpret_cast<uintptr_t>(path_handle),
+				&requestedConstraints);
 
-		if (parentTag == NULL
-			|| !parentTag->compiledConstraints.isValid())
+		if (err != ERROR_SUCCESS)
 		{
-			printf(ERROR"UDI_BUF_ALLOC: Path handle %d is invalid.\n",
-				path_handle);
+			printf(ERROR LZUDI"BUF_ALLOC: Failed to get "
+				"constraints for new buffer.\n");
 
 			callback(gcb, NULL);
 			return;
@@ -123,7 +127,7 @@ void udi_buf_write(
 
 		// Allocate a new SGList.
 		err = lzudi::buf::allocateScatterGatherList(
-			&requestedConstraints, // FIXME: This should be a constraints object.
+			&requestedConstraints,
 			src_len, &msgl);
 
 		if (err != ERROR_SUCCESS)
