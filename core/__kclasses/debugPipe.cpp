@@ -315,7 +315,7 @@ static sarch_t expandPrintfFormatting(
 
 			prefix = (*str == 'x')
 				? CC"0x"
-				: CC"pX";
+				: CC"vX";
 
 			strncpy8(&buff[buffIndex], prefix, buffMax - buffIndex);
 			nPrinted += strnlen8(prefix, buffMax - buffIndex);
