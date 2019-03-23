@@ -26,6 +26,8 @@
 	} \
 } while (0)
 
+class Thread;
+
 namespace fplainn
 {
 	class Endpoint;
@@ -159,25 +161,29 @@ namespace lzudi
 			virtual ~MappedScatterGatherList(void) {}
 
 		public:
-			virtual void memset8(
+			void memset8(
 				uarch_t offset, ubit8 value, uarch_t nBytes);
-			virtual void memset16(
-				uarch_t offset, ubit8 value, uarch_t nBytes);
-			virtual void memset32(
-				uarch_t offset, ubit8 value, uarch_t nBytes);
+			void memset16(
+				uarch_t offset, ubit16 value, uarch_t nBytes);
+			void memset32(
+				uarch_t offset, ubit32 value, uarch_t nBytes);
 
-			virtual sbit8 hasEnoughMemoryForWrite(
+			sbit8 hasEnoughMemoryForWrite(
+				Thread *currThread,
 				uarch_t dest_off, uarch_t dest_len,
-				uarch_t src_len);
+				uarch_t src_len,
+				uarch_t *nBytesExcessRequiredForWrite);
 
-			virtual sbit8 hasEnoughMemoryForRead(
-				uarch_t off, uarch_t len);
+			sbit8 hasEnoughMemoryForRead(
+				Thread *currThread,
+				uarch_t off, uarch_t len,
+				uarch_t *nBytesExcessRequiredForWrite);
 
-			virtual sarch_t write(
+			sarch_t write(
 				const void *inbuff,
 				uarch_t offset, uarch_t nBytes);
 
-			virtual sarch_t read(
+			sarch_t read(
 				void *const mem,
 				uarch_t offset, uarch_t nBytes);
 
