@@ -3,11 +3,139 @@
 #include <udi.h>
 #undef UDI_VERSION
 
+#include <__kstdlib/__kclib/assert.h>
+#include <__kstdlib/__kclib/string.h>
 #include <kernel/common/process.h>
 #include <kernel/common/floodplainn/dma.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <commonlibs/libzbzcore/libzudi.h>
 
+void lzudi::buf::MappedScatterGatherList::memset8(
+	uarch_t offset, ubit8 value, uarch_t nBytes
+	)
+{
+	ubit8		*offvaddr;
+
+	assert_fatal(offset + nBytes <= PAGING_PAGES_TO_BYTES(nFrames));
+
+	offvaddr = reinterpret_cast<ubit8 *>(vaddr);
+	offvaddr += offset;
+	memset(offvaddr, value, nBytes);
+}
+
+sarch_t lzudi::buf::MappedScatterGatherList::write(
+	const void *inbuff, uarch_t offset, uarch_t nBytes
+	)
+{
+	ubit8		*offvaddr;
+
+	if (offset + nBytes > PAGING_PAGES_TO_BYTES(nFrames))
+		{ return ERROR_INVALID_ARG_VAL; }
+
+	offvaddr = reinterpret_cast<ubit8 *>(vaddr);
+	offvaddr += offset;
+	memcpy(offvaddr, inbuff, nBytes);
+	return nBytes;
+}
+
+sarch_t lzudi::buf::MappedScatterGatherList::read(
+	void *const mem, uarch_t offset, uarch_t nBytes
+	)
+{
+	ubit8		*offvaddr;
+
+	if (offset + nBytes > PAGING_PAGES_TO_BYTES(nFrames))
+		{ return ERROR_INVALID_ARG_VAL; }
+
+	offvaddr = reinterpret_cast<ubit8 *>(vaddr);
+	offvaddr += offset;
+	memcpy(mem, offvaddr, nBytes);
+	return nBytes;
+}
+
+void lzudi::buf::MappedScatterGatherList::memmove(
+	uarch_t destOff, uarch_t srcOff, uarch_t nBytes
+	)
+{
+	uarch_t		currentNBytes;
+	ubit8		*destvaddr, *srcvaddr;
+
+	currentNBytes = PAGING_PAGES_TO_BYTES(nFrames);
+
+	assert_fatal(destOff + nBytes <= currentNBytes);
+	assert_fatal(srcOff + nBytes <= currentNBytes);
+
+	destvaddr = srcvaddr = reinterpret_cast<ubit8 *>(vaddr);
+	destvaddr += destOff;
+	srcvaddr += srcOff;
+
+	::memmove(destvaddr, srcvaddr, nBytes);
+}
+
+sbit8 lzudi::buf::MappedScatterGatherList::hasEnoughMemoryForWrite(
+	Thread *currThread,
+	uarch_t dst_off, uarch_t dst_len,
+	uarch_t src_len,
+	uarch_t *nBytesExcessRequiredForWrite
+	)
+{
+	uarch_t		currNBytes;
+
+	assert_fatal(nBytesExcessRequiredForWrite != NULL);
+
+	// Does the buf have enough memory behind it to carry out the write()?
+	nFrames = currThread->parent->floodplainnStream
+		.getNFramesInScatterGatherList(sGListIndex);
+
+	currNBytes = PAGING_PAGES_TO_BYTES(nFrames);
+
+	if (src_len > dst_len)
+	{
+		if (dst_off + src_len > currNBytes)
+		{
+			*nBytesExcessRequiredForWrite = (dst_off + src_len)
+				- currNBytes;
+
+			return 0;
+		}
+	}
+	else
+	{
+		if (dst_off + dst_len > currNBytes)
+		{
+			*nBytesExcessRequiredForWrite = (dst_off + dst_len)
+				- currNBytes;
+
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+sbit8 lzudi::buf::MappedScatterGatherList::hasEnoughMemoryForRead(
+	Thread *currThread,
+	uarch_t off, uarch_t len, uarch_t *nBytesExcessRequiredForWrite
+	)
+{
+	uarch_t		currNBytes;
+
+	assert_fatal(nBytesExcessRequiredForWrite != NULL);
+
+	// Does the buf have enough memory behind it to carry out the write()?
+	nFrames = currThread->parent->floodplainnStream
+		.getNFramesInScatterGatherList(sGListIndex);
+
+	currNBytes = PAGING_PAGES_TO_BYTES(nFrames);
+
+	if (off + len > currNBytes)
+	{
+		*nBytesExcessRequiredForWrite = (off + len) - currNBytes;
+		return 0;
+	}
+
+	return 1;
+}
 
 error_t lzudi::buf::allocateScatterGatherList(
 	fplainn::dma::constraints::Compiler *comCons,
