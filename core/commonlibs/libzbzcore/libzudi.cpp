@@ -424,6 +424,8 @@ void udi_mei_call(
 		gcb->origin);
 
 	/**	EXPLanaTION:
+	 * vec_idx==2 is enumerate_ack().
+	 *
 	 * If udi_primary_init_t::enumeration_attr_list_length is non-zero, we
 	 * have to udi_mem_free() the mem we allocated for the attr_list before we
 	 * udi_cb_free_sync() the cb.
