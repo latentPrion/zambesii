@@ -499,6 +499,9 @@ sbit8 FloodplainnStream::releaseScatterGatherList(sarch_t id)
 		return 0;
 	}
 
+	// Destroy the object.
+	sgl->~ScatterGatherList();
+
 	/* We can assume that the userspace program will not attempt to double-
 	 * free the array index?
 	 *
