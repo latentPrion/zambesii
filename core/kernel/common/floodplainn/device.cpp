@@ -531,6 +531,36 @@ error_t fplainn::Device::addEnumerationAttribute(
 	return ERROR_SUCCESS;
 }
 
+error_t fplainn::Device::createParentTag(
+	fvfs::Tag *tag, utf8Char *enumeratingMetaName, ubit16 *newIdRetval)
+{
+	ParentTag	*old;
+
+	if (newIdRetval == NULL) { return ERROR_INVALID_ARG; }
+	if (tag == NULL) { return ERROR_INVALID_ARG_VAL; }
+
+	old = parentTags;
+
+	parentTags = new ParentTag[nParentTags + 1];
+	if (parentTags == NULL) { return ERROR_MEMORY_NOMEM; }
+
+	if (nParentTags > 0)
+	{
+		memcpy(
+			parentTags, old,
+			nParentTags * sizeof(*parentTags));
+	}
+
+	delete[] old;
+
+	// Return and assign the new parentTag.
+	*newIdRetval = parentTagCounter;
+	parentTags[nParentTags++] = ParentTag(
+		parentTagCounter++, tag, enumeratingMetaName);
+
+	return ERROR_SUCCESS;
+}
+
 error_t fplainn::Driver::sModule::addAttachedRegion(ubit16 regionIndex)
 {
 	ubit16		*old;
