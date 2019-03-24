@@ -17,6 +17,24 @@ void zrootdev_usage_ind(udi_usage_cb_t *cb, udi_ubit8_t resource_level)
 	udi_usage_res(cb);
 }
 
+void enumerate_buff_alloc_cbfn2(udi_cb_t *, udi_buf_t *newbuff)
+{
+	printf(NOTICE"buff_alloc callback: newbuff %p.\n", newbuff);
+}
+
+void enumerate_buff_alloc_cbfn(udi_cb_t *gcb, udi_buf_t *newbuff)
+{
+	udi_ubit32_t		var;
+
+	printf(NOTICE"buff_alloc callback: newbuff %p.\n", newbuff);
+
+	udi_buf_write(
+		&enumerate_buff_alloc_cbfn2, gcb,
+		&var, sizeof(var),
+		newbuff, 2048, 16,
+		0);
+}
+
 ubit32 ___=0;
 void zrootdev_enumerate_req(
 	udi_enumerate_cb_t *cb, udi_ubit8_t enumeration_level
@@ -43,6 +61,12 @@ printf(NOTICE"enum!\tcb %p, %d attr @%p, %d filt @%p.\n",
 		cb->child_ID = ___++;
 		udi_enumerate_ack(cb, UDI_ENUMERATE_OK, 0);
 	};
+
+	udi_buf_write(
+		&enumerate_buff_alloc_cbfn, &cb->gcb,
+		&___, sizeof(___),
+		NULL, 0, sizeof(___),
+		(void *)1);
 }
 
 void zrootdev_devmgmt_req(
