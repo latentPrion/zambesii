@@ -674,6 +674,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	fplainn::Device *dev)
 {
 	error_t				err;
+	fplainn::Driver::sMetalanguage	*enumeratingMeta;
 	fplainn::Device			*newDevice;
 //	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
@@ -707,9 +708,26 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	switch (response->info.params.enumerate.enumeration_result)
 	{
 	case UDI_ENUMERATE_OK:
+		enumeratingMeta = dev->driverInstance->driver
+			->lookupMetalanguageForDriverOpsIndex(
+			response->info.params.enumerateChildren.ops_idx);
+
+		if (enumeratingMeta == NULL)
+		{
+			printf(ERROR ZUM"enumChildren %s: ops_idx %d in "
+				"enumerating parent isn't known to kernel.\n",
+				ctxt->info.path,
+				response->info.params.enumerateChildren
+					.ops_idx);
+
+			myResponse(ERROR_NOT_FOUND);
+			break;
+		}
+
 		err = floodplainn.createDevice(
 			ctxt->info.path, CHIPSET_NUMA_SHBANKID,
 			response->info.params.enumerateChildren.cb.child_ID,
+			enumeratingMeta->name,
 			0, &newDevice);
 
 		if (err != ERROR_SUCCESS)
@@ -844,6 +862,7 @@ void zumServer::postManagementCb::postManagementCbReq1(
 {
 	error_t				err;
 	fplainn::Device			*newDevice;
+	fplainn::Driver::sMetalanguage	*enumeratingMeta;
 //	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
 	fplainn::Zum::sZumMsg		*response;
@@ -866,9 +885,29 @@ void zumServer::postManagementCb::postManagementCbReq1(
 	switch (response->info.params.enumerate.enumeration_result)
 	{
 	case UDI_ENUMERATE_OK:
+		/* We need to know the metaName of the metalanguage which
+		 * this device was enumerated with.
+		 */
+		enumeratingMeta = dev->driverInstance->driver
+			->lookupMetalanguageForDriverOpsIndex(
+			response->info.params.enumerateChildren.ops_idx);
+
+		if (enumeratingMeta == NULL)
+		{
+			printf(ERROR ZUM"enumChildren %s: ops_idx %d in "
+				"enumerating parent isn't known to kernel.\n",
+				ctxt->info.path,
+				response->info.params.enumerateChildren
+					.ops_idx);
+
+			myResponse(ERROR_NOT_FOUND);
+			break;
+		}
+
 		err = floodplainn.createDevice(
 			ctxt->info.path, CHIPSET_NUMA_SHBANKID,
 			response->info.params.postManagementCb.cb.child_ID,
+			enumeratingMeta->name,
 			0, &newDevice);
 
 		if (err != ERROR_SUCCESS)
