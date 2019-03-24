@@ -397,6 +397,15 @@ status_t MemoryBmp::constrainedGetFrames(
 					nScgthElements=0, currScgthElement=0,
 					scgthPreviousNElements=0;
 	error_t 			error;
+	sbit8				dontLockRetlist;
+
+	/* This flag tells us whether or not the "retlist" object was locked
+	 * before being passed to us. If the flag is set, then it means that the
+	 * object is already locked, and we should operate it unlocked.
+	 */
+	dontLockRetlist = FLAG_TEST(
+		flags, MemoryTrib::CGF_SGLIST_UNLOCKED)
+		? 1 : 0;
 
 	/**	EXPLANATION:
 	 * Two pass algorithm for searching a bitmap for pmem, and then
@@ -511,10 +520,13 @@ status_t MemoryBmp::constrainedGetFrames(
 				 **/
 				foundBaseAddr = foundStartBit + basePfn;
 				foundBaseAddr <<= PAGING_BASE_SHIFT;
+
 				error = retlist->addFrames(
 					foundBaseAddr, nFound,
 					scgthPreviousNElements
-						+ currScgthElement);
+						+ currScgthElement,
+					((dontLockRetlist)
+						? fplainn::dma::ScatterGatherList::AF_FLAGS_UNLOCKED : 0));
 				if (error != ERROR_SUCCESS)
 				{
 					bmp.lock.release();
@@ -563,21 +575,14 @@ status_t MemoryBmp::constrainedGetFrames(
 		 */
 		if (!isSecondPass)
 		{
-			uarch_t		fUnlocked;
-
-			fUnlocked = FLAG_TEST(
-				flags, MemoryTrib::CGF_SGLIST_UNLOCKED)
-				? 1 : 0;
-
-
 			if (retlist->addressSize
 				== fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
 			{
-				if (!fUnlocked) { retlist->elements32.lock(); }
+				if (!dontLockRetlist) { retlist->elements32.lock(); }
 				scgthPreviousNElements = retlist->elements32.unlocked_getNIndexes();
 			}
 			else {
-				if (!fUnlocked) { retlist->elements64.lock(); }
+				if (!dontLockRetlist) { retlist->elements64.lock(); }
 				scgthPreviousNElements = retlist->elements64.unlocked_getNIndexes();
 			};
 
@@ -588,10 +593,10 @@ status_t MemoryBmp::constrainedGetFrames(
 			if (retlist->addressSize
 				== fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
 			{
-				if (!fUnlocked) { retlist->elements32.unlock(); }
+				if (!dontLockRetlist) { retlist->elements32.unlock(); }
 			}
 			else {
-				if (!fUnlocked) { retlist->elements64.unlock(); }
+				if (!dontLockRetlist) { retlist->elements64.unlock(); }
 			}
 
 			if (error != ERROR_SUCCESS)
