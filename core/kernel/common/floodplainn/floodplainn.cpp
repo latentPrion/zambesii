@@ -68,19 +68,23 @@ error_t Floodplainn::initialize(void)
 
 	root = vfsTrib.getFvfs()->getRoot();
 
-	ret = root->getInode()->createChild(CC"by-id", root, &byId, &tmp);
+	ret = root->getInode()->createChild(
+		CC"by-id", root, &byId, CC"udi_bridge", &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = root->getInode()->createChild(CC"by-name", root, &byName, &tmp);
+	ret = root->getInode()->createChild(
+		CC"by-name", root, &byName, CC"udi_bridge", &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = root->getInode()->createChild(CC"by-class", root, &byClass, &tmp);
+	ret = root->getInode()->createChild(
+		CC"by-class", root, &byClass, CC"udi_bridge", &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
-	ret = root->getInode()->createChild(CC"by-path", root, &byPath, &tmp);
+	ret = root->getInode()->createChild(
+		CC"by-path", root, &byPath, CC"udi_bridge", &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	/* Create the enumeration attributes for the root device.
 	 */
 	strcpy8(CC tmpAttr.attr_name, CC"bus_type");
-	strcpy8(CC tmpAttr.attr_value, CC"zrootbus");
+	strcpy8(CC tmpAttr.attr_value, CC"floodplainn");
 	tmpAttr.attr_type = UDI_ATTR_STRING;
 	ret = byId.addEnumerationAttribute(&tmpAttr);
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -151,8 +155,9 @@ static inline sarch_t isByIdPath(utf8Char *path)
 }
 
 error_t Floodplainn::createDevice(
-	utf8Char *parentId, numaBankId_t bid, ubit16 childId, ubit32 /*flags*/,
-	fplainn::Device **device
+	utf8Char *parentId, numaBankId_t bid, ubit16 childId,
+	utf8Char *enumeratingMetaName,
+	ubit32 /*flags*/, fplainn::Device **device
 	)
 {
 	error_t			ret;
@@ -184,7 +189,7 @@ error_t Floodplainn::createDevice(
 	// Add the new device node to the parent node.
 	snprintf(tmpBuff, FVFS_TAG_NAME_MAXLEN, CC"%d", childId);
 	ret = parentTag->getInode()->createChild(
-		tmpBuff, parentTag, newDev, &childTag);
+		tmpBuff, parentTag, newDev, enumeratingMetaName, &childTag);
 
 	if (ret != ERROR_SUCCESS) { delete newDev; };
 	*device = newDev;
@@ -255,12 +260,13 @@ error_t Floodplainn::enumerateBaseDevices(void)
 	udi_instance_attr_list_t	tmp;
 
 	ret = createDevice(
-		CC"by-id", CHIPSET_NUMA_SHBANKID, 0, 0, &ramdisk);
+		CC"by-id", CHIPSET_NUMA_SHBANKID, 0, CC"udi_bridge", 0, &ramdisk);
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	ret = createDevice(
-		CC"by-id", CHIPSET_NUMA_SHBANKID, 1, 0, &vchipset);
+		CC"by-id", CHIPSET_NUMA_SHBANKID, 1, CC"udi_bridge", 0,
+		&vchipset);
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -303,7 +309,8 @@ error_t Floodplainn::enumerateChipsets(void)
 	udi_instance_attr_list_t	tmp;
 
 	ret = createDevice(
-		CC"by-id", CHIPSET_NUMA_SHBANKID, 2, 0, &chipset);
+		CC"by-id", CHIPSET_NUMA_SHBANKID, 2, CC"udi_bridge", 0,
+		&chipset);
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
