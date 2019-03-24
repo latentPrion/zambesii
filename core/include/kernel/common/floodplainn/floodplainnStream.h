@@ -147,7 +147,8 @@ public:
 	status_t allocateScatterGatherList(
 		fplainn::dma::ScatterGatherList **retlist);
 
-	sbit8 releaseScatterGatherList(sarch_t id, ubit8 justTransfer);
+	// Do not expose "justTransfer" to userspace in the syscall version.
+	sbit8 releaseScatterGatherList(sarch_t id, sbit8 justTransfer);
 
 	error_t liberateScatterGatherList(sarch_t id)
 		{ return constrainScatterGatherList(id, &defaultConstraints); }

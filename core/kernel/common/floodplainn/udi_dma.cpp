@@ -275,7 +275,7 @@ status_t fplainn::dma::ScatterGatherList::unlocked_resize(uarch_t nFrames)
 		MemoryTrib::CGF_SGLIST_UNLOCKED);
 }
 
-fplainn::dma::ScatterGatherList::destroySGList(void)
+fplainn::dma::ScatterGatherList::~ScatterGatherList(void)
 {
 	destroySGList(0);
 }

@@ -191,7 +191,7 @@ error_t lzudi::buf::allocateScatterGatherList(
 
 out_freeSgl:
 	currThread->parent->floodplainnStream.releaseScatterGatherList(
-		msgl->sGListIndex);
+		msgl->sGListIndex, 0);
 
 out_freeMsgl:
 	delete msgl;

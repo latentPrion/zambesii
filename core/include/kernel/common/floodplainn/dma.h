@@ -15,6 +15,8 @@
 
 #define SGLIST		"SGList: "
 
+class FloodplainnStream;
+
 namespace fplainn
 {
 
@@ -141,6 +143,7 @@ extern ubit8		nullSGList[];
 
 class ScatterGatherList
 {
+	friend class ::FloodplainnStream;
 public:
 	ScatterGatherList(void)
 	:
