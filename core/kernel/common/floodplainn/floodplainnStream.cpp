@@ -82,6 +82,76 @@ error_t FloodplainnStream::getParentConstraints(
 	return ERROR_SUCCESS;
 }
 
+error_t FloodplainnStream::setChildConstraints(
+	ubit32 childId, fplainn::dma::constraints::Compiler *compiledConstraints
+	)
+{
+	Thread				*self;
+	fplainn::Device			*currDev;
+	fvfs::Tag			*childDevTag;
+	fplainn::Device::ParentTag	*parentTag;
+
+	if (compiledConstraints == NULL) { return ERROR_INVALID_ARG; }
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	if (self->parent->getType() != ProcessStream::DRIVER)
+	{
+		printf(ERROR FPSTREAM_ID"setChildConstraints(%d): Caller is "
+			"not a driver.\n",
+			self->getFullId(), childId);
+
+		return ERROR_UNAUTHORIZED;
+	}
+
+	currDev = self->getRegion()->parent->device;
+
+	utf8Char		tmpBuff[FVFS_TAG_NAME_MAXLEN];
+
+	snprintf(tmpBuff, FVFS_TAG_NAME_MAXLEN, CC"%d", childId);
+	childDevTag = currDev->getChild(tmpBuff);
+	if (childDevTag == NULL)
+	{
+		// The child must already be known to the kernel.
+		printf(ERROR FPSTREAM_ID"setChildConstraints(%d): Unknown "
+			"childID.\n",
+			self->getFullId(), childId);
+
+		return ERROR_NOT_FOUND;
+	}
+
+	/* Problem: we don't know what our own parentId is as it was reported to
+	 * the child by the kernel. We'll have to just peek into each parentTag
+	 * of the child until we find the one that contains a pointer to
+	 * ourself.
+	 */
+	parentTag = NULL;
+	for (uarch_t i=0; i<childDevTag->getInode()->nParentTags; i++)
+	{
+		fplainn::Device::ParentTag	*curr;
+
+		curr = childDevTag->getInode()->indexedGetParentTag(i);
+		if (curr == NULL || !curr->isValid()) { continue; }
+
+		if (curr->tag->getInode() != currDev) { continue; }
+		parentTag = curr;
+		break;
+	}
+
+	if (parentTag == NULL)
+	{
+		printf(FATAL FPSTREAM_ID"setParentConstraints(%d): ChildId "
+			"exists from parent's PoV, but child has no parentTag "
+			"pointing to parent!\n",
+			self->getFullId(), childId);
+
+		return ERROR_UNKNOWN;
+	}
+
+	parentTag->compiledConstraints = *compiledConstraints;
+	return ERROR_SUCCESS;
+}
+
 error_t FloodplainnStream::connect(
 	utf8Char *devName, utf8Char *metaName,
 	udi_ops_vector_t *ops_vector, void *endpPrivateData1,
