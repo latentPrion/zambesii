@@ -140,24 +140,41 @@ namespace fplainn
 			{ return removeDirTag(name); }
 
 	public:
-		struct sParentTag
+		class ParentTag
 		{
-			sParentTag(void)
+		public:
+			ParentTag(void)
 			:
 			id(0), tag(NULL)
-			{}
+			{
+				metaName[0] = '\0';
+			}
 
-			sParentTag(
-				ubit16 id, fvfs::Tag *tag,
-				ubit16 enumeratedMetaIndex,
-				ubit16 enumeratedMetaOpsIndex,
-				utf8Char *enumeratedMetaName)
+			ParentTag(ubit16 id, fvfs::Tag *tag, utf8Char *_metaName)
 			:
-			udi(
-				enumeratedMetaIndex, enumeratedMetaOpsIndex,
-				enumeratedMetaName),
 			id(id), tag(tag)
-			{}
+			{
+				/**	TODO:
+				 * Should we allow this to be set to NULL?
+				 **/
+				if (_metaName == NULL) {
+					metaName[0] = '\0';
+					printf(WARNING"ParentTag metaName is "
+						"NULL!\n");
+				}
+				else
+				{
+					strncpy8(
+						metaName, _metaName,
+						DRIVER_METALANGUAGE_MAXLEN);
+				}
+			}
+
+			error_t initialize(void) { return ERROR_SUCCESS; }
+
+		public:
+			sbit8 isValid(void) { return id != 0; }
+			void setInvalid(void) { id = 0; }
 
 			/* Each parent device will have a device-relative ID.
 			 * This ID is used as the UDI parent ID number.
@@ -185,11 +202,11 @@ namespace fplainn
 
 		uarch_t getNParentTags(void) { return nParentTags; };
 		error_t createParentTag(
-			fvfs::Tag *tag, utf8Char *enumeratedMetaName,
+			fvfs::Tag *tag, utf8Char *enumeratingMetaName,
 			ubit16 *newIdRetval);
 
 		void destroyParentTag(fvfs::Tag *tag);
-		sParentTag *getParentTag(ubit16 parentId)
+		ParentTag *getParentTag(ubit16 parentId)
 		{
 			for (uarch_t i=0; i<nParentTags; i++)
 			{
@@ -199,7 +216,7 @@ namespace fplainn
 			return NULL;
 		}
 
-		sParentTag *indexedGetParentTag(uarch_t idx)
+		ParentTag *indexedGetParentTag(uarch_t idx)
 		{
 			if (idx >= nParentTags) { return NULL; };
 			return &parentTags[idx];
@@ -262,7 +279,7 @@ namespace fplainn
 		sbit8			driverDetected;
 		// The index which enumerated this device's driver.
 		fplainn::Zui::indexE	driverIndex, requestedIndex;
-		sParentTag		*parentTags;
+		ParentTag		*parentTags;
 		uarch_t			parentTagCounter;
 	};
 
