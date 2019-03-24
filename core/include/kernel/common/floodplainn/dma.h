@@ -184,7 +184,19 @@ public:
 		return !memcmp(this, nullSGList, sizeof(*this));
 	}
 
-	error_t constrain(constraints::Compiler *compiledCon);
+	error_t constrain(constraints::Compiler *compiledCon)
+	{
+		if (compiledCon == NULL)
+		{
+			printf(ERROR"SGList::constrain: compiledCon is "
+				"NULL.\n");
+
+			return ERROR_INVALID_ARG;
+		}
+
+		compiledConstraints = *compiledCon;
+		return ERROR_SUCCESS;
+	}
 
 	enum preallocateEntriesE {
 		PE_FLAGS_UNLOCKED		= (1<<0)
