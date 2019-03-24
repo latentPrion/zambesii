@@ -230,14 +230,9 @@ error_t fplainn::dma::Constraints::addOrModifyAttrs(
 }
 
 error_t fplainn::dma::MappedScatterGatherList::trackPages(
-	void *_vaddr, uarch_t nBytes
+	void *_vaddr, uarch_t _nPages
 	)
 {
-	uarch_t _nPages;
-
-	assert_warn(nBytes % PAGING_BASE_SIZE == 0);
-	_nPages = __KMATH_NELEMENTS(nBytes, PAGING_BASE_SIZE);
-
 	vaddr = _vaddr;
 	nPages = _nPages;
 	return ERROR_SUCCESS;
