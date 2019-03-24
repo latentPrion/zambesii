@@ -158,7 +158,14 @@ public:
 		fplainn::dma::ScatterGatherList		*list;
 
 		list = getScatterGatherList(id);
-		if (list == NULL) { return ERROR_NOT_FOUND; }
+		if (list == NULL)
+		{
+			printf(ERROR FPSTREAM_ID"constrain(%d): Failed to find "
+				"requested list.\n",
+				this->id, id);
+
+			return ERROR_NOT_FOUND;
+		}
 		// Associates the list with the default "loose" constraints.
 		return list->constrain(compiledCon);
 	}
