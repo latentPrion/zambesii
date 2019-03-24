@@ -369,8 +369,8 @@ void __klzbzcore::region::main2(
 		sbit8					matchedInParent=0,
 							matchedInChild=0,
 							isCorrectRegion=0;
-		fplainn::Device::sParentTag		*pTag;
-		fplainn::Device				*parentDev;
+		fplainn::Device::ParentTag		*pTag;
+		fplainn::Device				*parentDev, *tmpDev;
 		fplainn::Driver				*drv, *parentDrv;
 		fplainn::Endpoint			*__kpbindEndp;
 		lzudi::sEndpointContext			*pbindEndpContext;
@@ -378,6 +378,18 @@ void __klzbzcore::region::main2(
 		fplainn::Driver::sParentBop		*correctPBop;
 		utf8Char				parentFullName[
 			FVFS_TAG_NAME_MAXLEN + 1];
+
+		err = floodplainn.getDevice(CC"by-id", &tmpDev);
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR"reg:main2 %d: Failed to get by-id dev.\n",
+				r->index);
+
+			postRegionInitInd(self, ctxt, err); return;
+		}
+
+		// The by-id tree device has no parents.
+		if (dev == tmpDev) { break; }
 
 		drv = dev->driverInstance->driver;
 		pTag = dev->indexedGetParentTag(i);
@@ -438,7 +450,7 @@ void __klzbzcore::region::main2(
 			childMeta = drv->getMetalanguage(childPBop->metaIndex);
 
 			if (!strncmp8(
-				childMeta->name, pTag->udi.metaName,
+				childMeta->name, pTag->metaName,
 				DRIVER_METALANGUAGE_MAXLEN))
 			{
 				matchedInChild = 1;
@@ -484,7 +496,7 @@ void __klzbzcore::region::main2(
 				parentCBop->metaIndex);
 
 			if (!strncmp8(
-				parentMeta->name, pTag->udi.metaName,
+				parentMeta->name, pTag->metaName,
 				DRIVER_METALANGUAGE_MAXLEN))
 			{
 				matchedInParent = 1;
@@ -504,13 +516,13 @@ void __klzbzcore::region::main2(
 		};
 
 		pBopMetaInfo = floodplainn.zudi.findMetaInitInfo(
-			pTag->udi.metaName);
+			pTag->metaName);
 
 		if (pBopMetaInfo == NULL)
 		{
 			printf(ERROR LZBZCORE"reg:main2 %d: Kernel doesn't "
 				"support meta %s needed to bind to parent %s.\n",
-				r->index, pTag->udi.metaName,
+				r->index, pTag->metaName,
 				parentFullName);
 
 			postRegionInitInd(self, ctxt, ERROR_INVALID_RESOURCE_NAME);
@@ -518,7 +530,7 @@ void __klzbzcore::region::main2(
 		};
 
 		printf(NOTICE"reg:main2 %d: Binding to parent %s, meta %s.\n",
-			r->index, parentFullName, pTag->udi.metaName);
+			r->index, parentFullName, pTag->metaName);
 
 		/**	FIXME:
 		 * This whole child-bind-channel spawning sequence will have
@@ -538,12 +550,12 @@ void __klzbzcore::region::main2(
 		 **/
 		err = floodplainn.zudi.spawnChildBindChannel(
 			parentFullName, ctxt->path,
-			pTag->udi.metaName,
+			pTag->metaName,
 			(udi_ops_vector_t *)0xF00115,
 			&__kpbindEndp);
 
 		pbindEndpContext = new lzudi::sEndpointContext(
-			__kpbindEndp, pTag->udi.metaName,
+			__kpbindEndp, pTag->metaName,
 			pBopMetaInfo->udi_meta_info, correctPBop->opsIndex,
 			correctPBop->bindCbIndex,
 			r->rdata);
