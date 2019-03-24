@@ -265,6 +265,7 @@ public:
 				udi_enumerate_cb_t	cb;
 
 				udi_ubit8_t		enumeration_result;
+				udi_index_t		ops_idx;
 				uarch_t			flags;
 				uarch_t			nDeviceIds;
 				ubit32			*deviceIdsHandle;
@@ -275,6 +276,7 @@ public:
 				udi_enumerate_cb_t	cb;
 
 				udi_ubit8_t		enumeration_result;
+				udi_index_t		ops_idx;
 			} postManagementCb;
 		} params;
 	};

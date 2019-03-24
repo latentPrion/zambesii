@@ -344,7 +344,7 @@ namespace fplainn
 		childEnumerationAttrSize(0),
 		modules(NULL), regions(NULL), requirements(NULL),
 		metalanguages(NULL), childBops(NULL), parentBops(NULL),
-		internalBops(NULL), classes(NULL)
+		internalBops(NULL), opsInits(NULL), classes(NULL)
 		{
 			basePath[0] = shortName[0] = longName[0]
 				= supplier[0] = supplierContact[0] = '\0';
@@ -556,6 +556,28 @@ namespace fplainn
 			{}
 		};
 
+		/* The only reason we have to track this is so that the kernel
+		 * will be able to look up the metalanguage name for an
+		 * "ops_idx" argument passed as an argument to
+		 * udi_enumerate_ack.
+		 */
+		struct sOpsInit
+		{
+			sOpsInit(ubit16 _opsIndex, ubit16 _metaIndex)
+			:
+			opsIndex(_opsIndex), metaIndex(_metaIndex)
+			{}
+
+			ubit16		opsIndex, metaIndex;
+
+		private:
+			friend class fplainn::Driver;
+			sOpsInit(void)
+			:
+			opsIndex(0), metaIndex(0)
+			{}
+		};
+
 	public:
 		sMetalanguage *getMetalanguage(ubit16 index)
 		{
@@ -634,6 +656,33 @@ namespace fplainn
 			return NULL;
 		}
 
+		sOpsInit *getOpsInit(ubit16 opsIndex)
+		{
+			for (uarch_t i=0; i<nOpsInits; i++)
+			{
+				if (opsInits[i].opsIndex == opsIndex)
+					{ return &opsInits[i]; }
+			}
+
+			return NULL;
+		}
+
+		error_t addOrModifyOpsInit(ubit16 opsIndex, ubit16 metaIndex);
+
+		sMetalanguage *lookupMetalanguageForDriverOpsIndex(
+			ubit16 opsIndex)
+		{
+			sOpsInit	*opsInit;
+			sMetalanguage	*ret;
+
+			opsInit = getOpsInit(opsIndex);
+			if (opsInit == NULL) { return NULL; }
+			ret = getMetalanguage(opsInit->metaIndex);
+			if (ret == NULL) { return NULL; }
+
+			return ret;
+		}
+
 		// XXX: Only used by kernel for kernelspace drivers.
 		const udi_mei_init_t *getMetaInitInfo(const utf8Char *name)
 		{
@@ -659,7 +708,8 @@ namespace fplainn
 				supplierContact[DRIVER_CONTACT_MAXLEN];
 		ubit16		nModules, nRegions, nRequirements,
 				nMetalanguages, nChildBops, nParentBops,
-				nInternalBops, nInstances, nClasses;
+				nInternalBops, nOpsInits,
+				nInstances, nClasses;
 
 		/**	NOTES:
 		 * Zambesii's definition of "driver instances" is not conformant
@@ -686,6 +736,7 @@ namespace fplainn
 		sChildBop	*childBops;
 		sParentBop	*parentBops;
 		sInternalBop	*internalBops;
+		sOpsInit	*opsInits;
 		utf8Char	(*classes)[DRIVER_CLASS_MAXLEN];
 	};
 
