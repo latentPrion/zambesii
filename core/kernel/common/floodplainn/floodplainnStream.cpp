@@ -34,7 +34,7 @@ error_t FloodplainnStream::getParentConstraints(
 {
 	Thread					*self;
 	fplainn::Device				*currDev;
-	fplainn::Device::sParentTag		*parentTag;
+	fplainn::Device::ParentTag		*parentTag;
 
 	if (ret == NULL) { return ERROR_INVALID_ARG; }
 
@@ -51,8 +51,8 @@ error_t FloodplainnStream::getParentConstraints(
 
 	if (self->parent->getType() != ProcessStream::DRIVER)
 	{
-		printf(ERROR FPSTREAM_ID"getParentConstraints: Caller is not a "
-			"driver process.\n",
+		printf(ERROR FPSTREAM_ID"getParentConstraints(%d): Caller is "
+			"not a driver process.\n",
 			self->getFullId());
 		return ERROR_UNAUTHORIZED;
 	}
@@ -61,8 +61,8 @@ error_t FloodplainnStream::getParentConstraints(
 	parentTag = currDev->getParentTag(parentId);
 	if (parentTag == NULL)
 	{
-		printf(ERROR FPSTREAM_ID"getParentConstraints(%d): Parent not "
-			"recognized.\n",
+		printf(ERROR FPSTREAM_ID"getParentConstraints(%d): Parent "
+			"not recognized.\n",
 			self->getFullId(), parentId);
 
 		return ERROR_NOT_FOUND;
@@ -73,8 +73,8 @@ error_t FloodplainnStream::getParentConstraints(
 	if (!parentTag->compiledConstraints.isValid())
 	{
 		printf(WARNING FPSTREAM_ID"getParentConstraints(%d): "
-			"Constraints object uninitialized.\n",
-			self->getFullId(), parentId);
+			"Constraints object uninitialized. (Parent is %s).\n",
+			self->getFullId(), parentId, parentTag->tag->getName());
 
 		return ERROR_UNINITIALIZED;
 	}
@@ -405,7 +405,7 @@ error_t FloodplainnStream::resizeScatterGatherList(sarch_t id, uarch_t nFrames)
 	sgl = getScatterGatherList(id);
 	if (sgl == NULL)
 	{
-		printf(WARNING"releaseSGList(%d): ID indexes to a "
+		printf(WARNING"resizeSGList(%d): ID indexes to a "
 			"blank/invalid array index.\n",
 			id);
 
