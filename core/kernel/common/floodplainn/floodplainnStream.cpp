@@ -485,7 +485,9 @@ error_t FloodplainnStream::resizeScatterGatherList(sarch_t id, uarch_t nFrames)
 	return sgl->resize(nFrames);
 }
 
-sbit8 FloodplainnStream::releaseScatterGatherList(sarch_t id)
+sbit8 FloodplainnStream::releaseScatterGatherList(
+	sarch_t id, sbit8 justTransfer
+	)
 {
 	fplainn::dma::ScatterGatherList		*sgl;
 
@@ -499,8 +501,14 @@ sbit8 FloodplainnStream::releaseScatterGatherList(sarch_t id)
 		return 0;
 	}
 
-	// Destroy the object.
-	sgl->~ScatterGatherList();
+	if (!justTransfer)
+	{
+		// Destroy the object.
+		sgl->~ScatterGatherList();
+	}
+	else {
+		sgl->destroySGList(0);
+	}
 
 	/* We can assume that the userspace program will not attempt to double-
 	 * free the array index?
@@ -568,7 +576,7 @@ status_t FloodplainnStream::transferScatterGatherList(
 	 * yet.
 	 **/
 	*newDestSGList = *srcList;
-	releaseScatterGatherList(srcListId);
+	releaseScatterGatherList(srcListId, 1);
 
 	/**	TODO:
 	 * Now take any tail-end actions required to preserve the API's expected

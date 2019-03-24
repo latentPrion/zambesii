@@ -275,15 +275,24 @@ status_t fplainn::dma::ScatterGatherList::unlocked_resize(uarch_t nFrames)
 		MemoryTrib::CGF_SGLIST_UNLOCKED);
 }
 
-fplainn::dma::ScatterGatherList::~ScatterGatherList(void)
+fplainn::dma::ScatterGatherList::destroySGList(void)
+{
+	destroySGList(0);
+}
+
+void fplainn::dma::ScatterGatherList::destroySGList(sbit8 justTransfer)
 {
 	assert_fatal(addressSize != scatterGatherLists::ADDR_SIZE_UNKNOWN);
 
 	unmap();
-	if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
-		freeSGListElements(&elements32);
-	} else {
-		freeSGListElements(&elements64);
+
+	if (!justTransfer)
+	{
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
+			freeSGListElements(&elements32);
+		} else {
+			freeSGListElements(&elements64);
+		}
 	}
 
 	compiledConstraints.setInvalid();

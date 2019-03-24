@@ -369,6 +369,8 @@ private:
 	template <class scgth_elements_type>
 	void freeSGListElements(ResizeableArray<scgth_elements_type> *list);
 
+	void destroySGList(sbit8 justTransfer);
+
 	/* This is the backend for
 	 *	resize(uarch_t, ResizeableArray<scgth_elements_type> *);
 	 *
