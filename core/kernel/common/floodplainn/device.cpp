@@ -551,6 +551,40 @@ error_t fplainn::Driver::sModule::addAttachedRegion(ubit16 regionIndex)
 	return ERROR_SUCCESS;
 }
 
+error_t fplainn::Driver::addOrModifyOpsInit(ubit16 opsIndex, ubit16 metaIndex)
+{
+	sOpsInit	*old;
+
+	if (opsIndex == 0 || metaIndex == 0) { return ERROR_INVALID_ARG_VAL; }
+
+	// Does the opsIndex already exist?
+	old = getOpsInit(opsIndex);
+	if (old != NULL)
+	{
+		old->metaIndex = metaIndex;
+		return ERROR_SUCCESS;
+	}
+
+	old = opsInits;
+	opsInits = new sOpsInit[nOpsInits + 1];
+	if (opsInits == NULL)
+	{
+		opsInits = old;
+		return ERROR_MEMORY_NOMEM;
+	}
+
+	if (nOpsInits > 0)
+	{
+		memcpy(
+			opsInits, old,
+			nOpsInits * sizeof(*opsInits));
+	}
+
+	delete[] old;
+	opsInits[nOpsInits++] = sOpsInit(opsIndex, metaIndex);
+	return ERROR_SUCCESS;
+}
+
 error_t fplainn::Driver::addInstance(numaBankId_t bid, processId_t pid)
 {
 	DriverInstance		*old, *newInstance;
@@ -589,10 +623,10 @@ void fplainn::Driver::dump(void)
 	printf(NOTICE"Driver: index %d: %s/%s\n\t(%s).\n\tSupplier %s; "
 		"Contact %s.\n"
 		"\t%d mods, %d rgns, %d req's, %d metas, %d cbops, %d pbops, "
-		"%d ibops, %d classes.\n",
+		"%d ibops, %d ops_vecs, %d classes.\n",
 		index, basePath, shortName, longName, supplier, supplierContact,
 		nModules, nRegions, nRequirements, nMetalanguages,
-		nChildBops, nParentBops, nInternalBops, nClasses);
+		nChildBops, nParentBops, nInternalBops, nOpsInits, nClasses);
 
 	for (uarch_t i=0; i<nClasses; i++) {
 		printf(NOTICE"\tdriver: class %s\n", classes[i]);
