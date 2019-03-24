@@ -141,6 +141,12 @@ error_t Floodplainn::initialize(void)
 		return ret;
 	}
 
+	/* Set up by-id's default constraints to be the chipset's default
+	 * constraints.
+	 */
+	byId.getParentTag(1)->compiledConstraints =
+		FloodplainnStream::defaultConstraints;
+
 	return ERROR_SUCCESS;
 }
 
