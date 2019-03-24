@@ -224,8 +224,11 @@ public:
 		};
 	}
 
+	enum addFramesE {
+		AF_FLAGS_UNLOCKED		= (1<<0)
+	};
 	status_t addFrames(
-		paddr_t p, uarch_t nFrames, sarch_t atIndex=-1)
+		paddr_t p, uarch_t nFrames, sarch_t atIndex=-1, uarch_t flags=0)
 	{
 		status_t		ret;
 
@@ -242,13 +245,13 @@ public:
 		{
 			ret = addFrames(
 				&elements32, p, nFrames,
-				atIndex);
+				atIndex, flags);
 		}
 		else
 		{
 			ret = addFrames(
 				&elements64, p, nFrames,
-				atIndex);
+				atIndex, flags);
 		};
 
 		if (ret > ERROR_SUCCESS)
@@ -346,7 +349,8 @@ private:
 	template <class scgth_elements_type>
 	error_t addFrames(
 		ResizeableArray<scgth_elements_type> *list,
-		paddr_t p, uarch_t nFrames, sarch_t atIndex=-1);
+		paddr_t p, uarch_t nFrames, sarch_t atIndex=-1,
+		uarch_t flags=0);
 
 	template <class scgth_elements_type>
 	error_t map(
@@ -639,10 +643,11 @@ void fplainn::dma::ScatterGatherList::dump(
 template <class scgth_elements_type>
 error_t fplainn::dma::ScatterGatherList::addFrames(
 	ResizeableArray<scgth_elements_type> *list, paddr_t p, uarch_t nFrames,
-	sarch_t atIndex
+	sarch_t atIndex, uarch_t flags
 	)
 {
 	error_t			ret;
+	sbit8			dontTakeLock;
 
 	/**	EXPLANATION:
 	 * Returns ERROR_SUCCESS if there was no need to allocate a new
@@ -657,19 +662,21 @@ error_t fplainn::dma::ScatterGatherList::addFrames(
 	 * Returns negative integer value on error.
 	 **/
 
+	dontTakeLock = FLAG_TEST(flags, AF_FLAGS_UNLOCKED) ? 1 : 0;
+
 	if (atIndex >= 0) {
 		scgth_elements_type	newElement;
 
 		assign_paddr_to_scgth_block_busaddr(&newElement, p);
 		newElement.block_length = PAGING_PAGES_TO_BYTES(nFrames);
 
-		list->lock();
+		if (!dontTakeLock) { list->lock(); }
 		(*list)[atIndex] = newElement;
-		list->unlock();
+		if (!dontTakeLock) { list->unlock(); }
 		return ERROR_SUCCESS;
 	}
 
-	list->lock();
+	if (!dontTakeLock) { list->lock(); }
 
 	for (
 		typename ResizeableArray<scgth_elements_type>::Iterator it=
@@ -686,7 +693,7 @@ error_t fplainn::dma::ScatterGatherList::addFrames(
 			assign_paddr_to_scgth_block_busaddr(tmp, p);
 			tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
 
-			list->unlock();
+			if (!dontTakeLock) { list->unlock(); }
 			return ERROR_SUCCESS;
 		}
 		// Can the new paddr be appended to this element?
@@ -694,7 +701,7 @@ error_t fplainn::dma::ScatterGatherList::addFrames(
 		{
 			tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
 
-			list->unlock();
+			if (!dontTakeLock) { list->unlock(); }
 			return ERROR_SUCCESS;
 		};
 	};
@@ -710,7 +717,7 @@ error_t fplainn::dma::ScatterGatherList::addFrames(
 		prevNIndexes,
 		ResizeableArray<scgth_elements_type>::RTHI_FLAGS_UNLOCKED);
 
-	list->unlock();
+	if (!dontTakeLock) { list->unlock(); }
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 
