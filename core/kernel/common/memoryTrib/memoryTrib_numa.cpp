@@ -371,6 +371,12 @@ status_t MemoryTrib::constrainedGetFrames(
 	{
 		status_t	ret;
 
+		/* This is a workaround from debugging, but does't hurt to leave
+		 * it either. But strictly speaking, this condition should never
+		 * occur.
+		 **/
+		if (memRegions[i].memBmp == NULL) { break; }
+
 		ret = memRegions[i].constrainedGetFrames(
 			_constraints, nFrames, retlist, flags);
 
