@@ -86,6 +86,46 @@ sbit8 fplainn::dma::Constraints::isValidConstraintAttrType(
 	return 0;
 }
 
+void *fplainn::dma::scatterGatherLists::getPages(Thread *t, uarch_t nPages)
+{
+	return t->parent->getVaddrSpaceStream()->getPages(nPages);
+}
+
+void fplainn::dma::scatterGatherLists::releasePages(
+	Thread *t, void *vaddr, uarch_t nPages
+	)
+{
+	return t->parent->getVaddrSpaceStream()->releasePages(vaddr, nPages);
+}
+
+status_t fplainn::dma::scatterGatherLists::wprUnmap(
+	Thread *t, void *v, uarch_t nFrames
+	)
+{
+	paddr_t		p;
+	uarch_t		f;
+
+	return walkerPageRanger::unmap(
+		&t->parent->getVaddrSpaceStream()->vaddrSpace,
+		v, &p, nFrames, &f);
+}
+
+status_t fplainn::dma::scatterGatherLists::wprMapInc(
+	Thread *t, void *v, paddr_t p, uarch_t nFrames
+	)
+{
+	sbit8			fKernel;
+
+	fKernel = (t->parent->execDomain == PROCESS_EXECDOMAIN_KERNEL)
+		? 1 : 0;
+
+	return walkerPageRanger::mapInc(
+		&t->parent->getVaddrSpaceStream()->vaddrSpace,
+		v, p, nFrames,
+		(PAGEATTRIB_PRESENT | PAGEATTRIB_WRITE
+		| ((fKernel) ? PAGEATTRIB_SUPERVISOR : 0)));
+}
+
 utf8Char *fplainn::dma::Constraints::getAttrTypeName(
 	udi_dma_constraints_attr_t a
 	)
