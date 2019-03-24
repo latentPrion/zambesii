@@ -171,32 +171,11 @@ namespace fplainn
 			 *
 			 * Talk much less about a 32 bit counter.
 			 **/
-			struct sEnumerationInfo
-			{
-				sEnumerationInfo(void){ metaName[0] = '\0'; }
-				sEnumerationInfo(
-					ubit16 metaIndex, ubit16 metaOpsIdx,
-					utf8Char *metaName)
-				:
-				metaIndex(metaIndex), metaOpsIndex(metaOpsIdx)
-				{
-					strncpy8(
-						this->metaName, metaName,
-						DRIVER_METALANGUAGE_MAXLEN);
-
-					this->metaName[
-						DRIVER_METALANGUAGE_MAXLEN - 1]
-						= '\0';
-				}
-
-				ubit16		metaIndex, metaOpsIndex;
-				utf8Char	metaName[
-					DRIVER_METALANGUAGE_MAXLEN];
-			} udi;
 			ubit16		id;
 			fplainn::dma::constraints::Compiler
 					compiledConstraints;
 			fvfs::Tag	*tag;
+			utf8Char	metaName[DRIVER_METALANGUAGE_MAXLEN];
 		};
 
 		error_t addClass(utf8Char *name);
