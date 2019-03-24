@@ -9,6 +9,9 @@
 	#include <__kstdlib/__kclib/assert.h>
 	#include <__kclasses/list.h>
 	#include <__kclasses/resizeableArray.h>
+	#include <kernel/common/thread.h>
+	#include <kernel/common/memoryTrib/memoryTrib.h>
+	#include <kernel/common/cpuTrib/cpuTrib.h>
 
 #define SGLIST		"SGList: "
 
@@ -38,6 +41,7 @@ public:
 	Compiler(void)
 	{
 		memset(&i, 0, sizeof(i));
+		setInvalid();
 		i.version = 1;
 	}
 
@@ -114,8 +118,8 @@ public:
 	~MappedScatterGatherList(void) {}
 
 public:
-	error_t trackPages(void *vaddr, uarch_t nBytes);
-	error_t removePages(void *vaddr, uarch_t nBytes);
+	error_t trackPages(void *vaddr, uarch_t nPages);
+	error_t removePages(void *vaddr, uarch_t nPages);
 	void compact(void);
 
 public:
@@ -358,8 +362,11 @@ private:
 	error_t resize(
 		uarch_t nFrames, ResizeableArray<scgth_elements_type> *list);
 
+	template <class scgth_elements_type>
+	void freeSGListElements(ResizeableArray<scgth_elements_type> *list);
+
 	/* This is the backend for
-	 *	resize(uarch_t ResizeableArray<scgth_elements_type> *);
+	 *	resize(uarch_t, ResizeableArray<scgth_elements_type> *);
 	 *
 	 * This section had to be split off because we don't want to have to
 	 * #include memoryTrib.h in this header.
@@ -776,6 +783,143 @@ error_t fplainn::dma::ScatterGatherList::resize(
 	}
 
 	return ERROR_SUCCESS;
+}
+
+template <class scgth_elements_type>
+void fplainn::dma::ScatterGatherList::freeSGListElements(
+	ResizeableArray<scgth_elements_type> *list)
+{
+	typename ResizeableArray<scgth_elements_type>::Iterator		it;
+
+	list->lock();
+	for (it = list->begin(); it != list->end(); ++it)
+	{
+		scgth_elements_type		*tmp = &*it;
+		paddr_t				p;
+
+		assign_scgth_block_busaddr_to_paddr(p, tmp->block_busaddr);
+
+		memoryTrib.releaseFrames(p, tmp->block_length);
+	}
+	list->unlock();
+}
+
+namespace fplainn
+{
+namespace dma
+{
+namespace scatterGatherLists
+{
+void *getPages(Thread *t, uarch_t nPages);
+void releasePages(Thread *t, void *vaddr, uarch_t nPages);
+
+status_t wprMapInc(Thread *t, void *vaddr, paddr_t p, uarch_t nFrames);
+status_t wprUnmap(Thread *t, void *vaddr, uarch_t nFrames);
+}
+}
+}
+
+template <class scgth_elements_type>
+error_t fplainn::dma::ScatterGatherList::map(
+	ResizeableArray<scgth_elements_type> *list,
+	MappedScatterGatherList *retMapping)
+{
+	uarch_t			nFrames, nFramesMapped;
+	Thread			*currThread;
+	typename ResizeableArray<scgth_elements_type>::Iterator		it;
+	void			*vaddr;
+	uintptr_t		currVaddr;
+	error_t			ret;
+	status_t		status;
+	paddr_t			p;
+
+	/*	EXPLANATION:
+	 * Map a scgth list into the vaddrspace of the caller. This is fine
+	 * because only the caller should have a handle-ID to any sglist.
+	 *
+	 * MappedSGLists are not demand mapped. They are fully mapped and
+	 * committed.
+	 */
+
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	list->lock();
+
+	nFrames = getNFrames(GNF_FLAGS_UNLOCKED);
+
+	vaddr = scatterGatherLists::getPages(currThread, nFrames);
+	if (vaddr == NULL)
+	{
+		list->unlock();
+		printf(ERROR SGLIST"map: Failed to alloc vmem to map the %d "
+			"frames in the list.\n",
+			nFrames);
+
+		return ERROR_MEMORY_NOMEM_VIRTUAL;
+	}
+
+	currVaddr = (uintptr_t)vaddr;
+	nFramesMapped = 0;
+	for (it = list->begin(); it != list->end(); ++it)
+	{
+		scgth_elements_type		*tmp=&*it;
+		uarch_t				nPagesInBlock;
+
+		// Map each paddr + length segment.
+		assign_scgth_block_busaddr_to_paddr(p, tmp->block_busaddr);
+		nPagesInBlock = PAGING_BYTES_TO_PAGES(tmp->block_length);
+
+		status = scatterGatherLists::wprMapInc(
+			currThread, (void *)currVaddr, p, nPagesInBlock);
+
+		if (status < (sarch_t)nPagesInBlock) {
+			list->unlock();
+
+			printf(ERROR SGLIST"map: Failed to map all %d pages "
+				"for SGList element P%P, %d frames.\n",
+				nPagesInBlock, &p);
+
+			ret = ERROR_MEMORY_VIRTUAL_PAGEMAP;
+			goto unmapAndReleaseVmem;
+		}
+
+		currVaddr += tmp->block_length;
+		assert_fatal((currVaddr & PAGING_BASE_MASK_LOW) == 0);
+		nFramesMapped += nPagesInBlock;
+
+		// Ensure we don't exceed the amount of loose vmem allocated.
+		assert_fatal(nFramesMapped <= nFrames);
+	}
+
+	list->unlock();
+
+	ret = retMapping->trackPages(vaddr, nFrames);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR SGLIST"map: Failed to track vmem pages at %p in "
+			"SGList mapping.\n",
+			vaddr);
+
+		// 'ret' was already set.
+		goto unmapAndReleaseVmem;
+	}
+
+	return ERROR_SUCCESS;
+
+unmapAndReleaseVmem:
+	status = scatterGatherLists::wprUnmap(currThread, vaddr, nFrames);
+	if (status < (sarch_t)nFrames)
+	{
+		printf(FATAL SGLIST"map: Failed to clean up. Only %d of %d "
+			"pages were unmapped from vaddrspace.\n",
+			status, nFrames);
+
+		// Fallthrough.
+	}
+
+	scatterGatherLists::releasePages(currThread, vaddr, nFrames);
+	return ret;
 }
 
 #endif
