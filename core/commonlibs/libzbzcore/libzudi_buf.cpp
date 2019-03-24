@@ -211,7 +211,8 @@ void udi_buf_write(
 {
 	error_t						err;
 	lzudi::buf::MappedScatterGatherList		*msgl;
-	uarch_t						currNFrames;
+	uarch_t						currNBytes,
+							extraNBytesRequired;
 	Thread						*currThread;
 	fplainn::dma::constraints::Compiler		requestedConstraints;
 
@@ -224,11 +225,12 @@ void udi_buf_write(
 
 	if (dst_buf == NULL)
 	{
+		// dst_buf == NULL means we need to allocate a new scgth list.
 
 		// path_handle must be supplied when allocating a buf.
 		if (UDI_HANDLE_IS_NULL(path_handle, udi_path_handle_t))
 		{
-			printf(ERROR"UDI_BUF_ALLOC: A path handle must be "
+			printf(ERROR LZUDI"BUF_ALLOC: A path handle must be "
 				"supplied to enable constraint.\n");
 
 			callback(gcb, NULL);
@@ -274,7 +276,87 @@ void udi_buf_write(
 	// Upcast it into a MappedSGList.
 	msgl = static_cast<lzudi::buf::MappedScatterGatherList *>(dst_buf);
 
-	// Does the buf have enough memory behind it to carry out the write()?
-	msgl->nFrames = currThread->parent->floodplainnStream
-		.getNFramesInScatterGatherList(msgl->sGListIndex);
+	if (!msgl->hasEnoughMemoryForWrite(
+		currThread, dst_off, dst_len, src_len, &extraNBytesRequired))
+	{
+		// Attempt to resize the SGList.
+		err = currThread->parent->floodplainnStream
+			.resizeScatterGatherList(
+				msgl->sGListIndex,
+				msgl->nFrames + PAGING_BYTES_TO_PAGES(
+					extraNBytesRequired));
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZUDI"BUF_WRITE: Failed to resize buf.\n");
+			callback(gcb, NULL);
+			return;
+		}
+
+		if (!msgl->hasEnoughMemoryForWrite(
+			currThread,
+			dst_off, dst_len, src_len, &extraNBytesRequired))
+		{
+			printf(ERROR LZUDI"BUF_WRITE: Resize returned success, "
+				"yet still not enough memory for write.\n");
+
+			callback(gcb, NULL);
+			return;
+		}
+
+		err = currThread->parent->floodplainnStream
+			.remapScatterGatherList(
+				msgl->sGListIndex, &msgl->vaddr);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZUDI"BUF_WRITE: Remap after resize "
+				"failed!\n");
+
+			callback(gcb, NULL);
+			return;
+		}
+	}
+
+	if (src_mem == NULL || src_len == 0) {
+		uarch_t		filler_len;
+
+		/* If src_len == 0, then take dst_len;
+		 * Else take the greater of src_len and dst_len.
+		 * Effectively then, just take the greater of the two.
+		 */
+		filler_len = (src_len > dst_len) ? src_len : dst_len;
+		msgl->memset8(dst_off, 0, filler_len);
+	}
+	else if (src_len > dst_len)
+	{
+		uarch_t filler_start, filler_len;
+		/* For this case, the spec explicitly says to write past
+		 * dst_len with "unspecified" bytes beyond src_len. So we write
+		 * 0s.
+		 */
+		msgl->write(src_mem, dst_off, src_len);
+
+		filler_start = dst_off + src_len;
+		filler_len = src_len - dst_len;
+		msgl->memset8(filler_start, 0, filler_len);
+	}
+	else if (dst_len > src_len || dst_len == src_len)
+	{
+		/* For the case where dst_len > src_len the spec doesn't say
+		 * what to do, so we only copy up to src_len and then return.
+		 * I.e, we don't trample the dst_buff, and we treat it as if
+		 * dst_len == src_len.
+		 */
+		msgl->write(src_mem, dst_off, src_len);
+	}
+	else
+	{
+		printf(WARNING LZUDI"BUF_ALLOC: Unknown permutation of args. "
+			"Unsure how to copy. Silently ignoring.\n");
+	}
+
+	callback(gcb, msgl);
+}
+
 }
