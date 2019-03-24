@@ -121,9 +121,11 @@ namespace fplainn
 		 **/
 		error_t createChild(
 			utf8Char *name, fvfs::Tag *parent,
-			Device *device, fvfs::Tag **tag)
+			Device *device, utf8Char *enumeratingMetaName,
+			fvfs::Tag **tag)
 		{
 			error_t		ret;
+			ubit16		selfParentIdToChild;
 
 			if (name == NULL || tag == NULL || device == NULL)
 				{ return ERROR_INVALID_ARG; };
@@ -132,6 +134,27 @@ namespace fplainn
 				name, vfs::DEVICE, parent, device, &ret);
 
 			if (ret != ERROR_SUCCESS) { return ret; };
+
+			// Automatically create the parentTag as well.
+			/*	FIXME:
+			 * parentTagCounter should be atomically
+			 * incremented.
+			 *
+			 *	EXPLANATION:
+			 * selfParentIdToChild is the child's ID to refer to
+			 * its parent. I.e, it is the ID that the child has
+			 * assigned to this parent which is creating it.
+			 **/
+			ret = (*tag)->getInode()->createParentTag(
+				parent, enumeratingMetaName,
+				&selfParentIdToChild);
+
+			if (ret != ERROR_SUCCESS)
+			{
+				removeDirTag(name);
+				return ret;
+			}
+
 			return ERROR_SUCCESS;
 		}
 

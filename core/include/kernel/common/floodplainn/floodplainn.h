@@ -37,6 +37,7 @@ public:
 	 **/
 	error_t createDevice(
 		utf8Char *parentId, numaBankId_t bid, ubit16 childId,
+		utf8Char *enumeratingMetaName,
 		ubit32 flags, fplainn::Device **device);
 
 	// Removes a given child from a given parent.
