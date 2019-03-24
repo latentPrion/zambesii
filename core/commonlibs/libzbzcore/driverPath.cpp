@@ -433,6 +433,8 @@ void __klzbzcore::driver::main1(
 {
 	DriverProcess			*selfProcess;
 	fplainn::DriverInstance		*drvInst;
+	udi_ops_init_t			*curr;
+	error_t				err;
 
 	selfProcess = (DriverProcess *)self->parent;
 	drvInst = self->parent->getDriverInstance();
@@ -506,6 +508,24 @@ void __klzbzcore::driver::main1(
 		drvInst->setChildBopVector(
 			drvInst->driver->childBops[i].metaIndex, opsVector);
 	};
+
+	// Associate ops vector indexes with meta indexes for the kernel.
+	for (curr = cache->initInfo->ops_init_list;
+		curr != NULL && curr->ops_idx != 0;
+		curr++)
+	{
+		err = drvInst->driver->addOrModifyOpsInit(
+			curr->ops_idx, curr->meta_idx);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR "Failed to add ops_idx %d from ops_init_t "
+				"to driver's kernel metadata.\n",
+				curr->ops_idx);
+
+			callerCb(self, err); return;
+		}
+	}
 
 	// Done with the spawnDriver syscall at this point.
 	printf(NOTICE LZBZCORE"spawnDriver(%s, NUMA%d): done. PID %x.\n",
