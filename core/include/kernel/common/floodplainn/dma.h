@@ -164,7 +164,7 @@ public:
 		return ERROR_SUCCESS;
 	}
 
-	~ScatterGatherList(void) {}
+	~ScatterGatherList(void);
 
 public:
 	void dump(void)

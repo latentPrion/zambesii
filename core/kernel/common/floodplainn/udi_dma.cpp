@@ -2,6 +2,7 @@
 #include <arch/walkerPageRanger.h>
 #include <__kstdlib/__kclib/assert.h>
 #include <kernel/common/panic.h>
+#include <kernel/common/process.h>
 #include <kernel/common/memoryTrib/vaddrSpaceStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
@@ -345,6 +346,21 @@ status_t fplainn::dma::ScatterGatherList::unlocked_resize(uarch_t nFrames)
 		nFrames - currNFrames,
 		this,
 		MemoryTrib::CGF_SGLIST_UNLOCKED);
+}
+
+fplainn::dma::ScatterGatherList::~ScatterGatherList(void)
+{
+	assert_fatal(addressSize != scatterGatherLists::ADDR_SIZE_UNKNOWN);
+
+	unmap();
+	if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
+		freeSGListElements(&elements32);
+	} else {
+		freeSGListElements(&elements64);
+	}
+
+	compiledConstraints.setInvalid();
+	addressSize = scatterGatherLists::ADDR_SIZE_UNKNOWN;
 }
 
 udi_dma_constraints_attr_spec_t *fplainn::dma::Constraints::getAttr(
