@@ -11,7 +11,7 @@
 	#include <kernel/common/floodplainn/dma.h>
 
 	#define FPSTREAM		"FplainnStream "
-	#define FPSTREAM_ID		FPSTREAM "%d: "
+	#define FPSTREAM_ID		FPSTREAM "%x: "
 
 /**	EXPLANATION:
  * The "Floodplainn" is the name for the hardware management layer of Zambesii.
@@ -174,10 +174,6 @@ public:
 		return list->getNFrames();
 	}
 
-	// Retrieves the constraints for a parent by its ID.
-	error_t getParentConstraints(
-		ubit16 parentId, fplainn::dma::constraints::Compiler *ret);
-
 	// Returns the ID of the slot in the target stream.
 	enum transferScatterGatherListFlagsE {
 		// Before transferring, unmap the list from the current owner
@@ -188,6 +184,54 @@ public:
 	error_t transferScatterGatherList(
 		processId_t destStream, sarch_t srcListId,
 		uarch_t flags);
+
+	// Maps or remaps an SGList into the current process' vaddrspace.
+	error_t remapScatterGatherList(sarch_t id, void **newvaddr)
+	{
+		fplainn::dma::ScatterGatherList		*sgl;
+		error_t					ret;
+
+		sgl = getScatterGatherList(id);
+		if (sgl == NULL) {
+			return ERROR_NOT_FOUND;
+		}
+
+		ret = sgl->remap();
+		if (ret != ERROR_SUCCESS) {
+			return ret;
+		}
+
+		*newvaddr = sgl->mapping.vaddr;
+		return ERROR_SUCCESS;
+	}
+
+	/* Sets default constraints for a child device of a device instance.
+	 * This is useful because the kernel requires that SGLists be
+	 * constrained at the time of their allocation.
+	 *
+	 * This call will fail if invoked on a child that doesn't exist, or
+	 * a child for which the calling parent hasn't yet at least received
+	 * a UDI_CHANNEL_BOUND child bind message.
+	 *
+	 * The intended invocation context is for when the child has called
+	 * both channel-bound to the parent and has initiated a metalanguage
+	 * specific bind to that parent as well (specifically a UDI Bridge
+	 * meta bind).
+	 */
+	error_t setChildConstraints(
+		ubit32 childId, fplainn::dma::constraints::Compiler *ret);
+
+	/* Retrieves the constraints for a parent by its ID.
+	 * The kernel doesn't allow device instances to constrain SGLists
+	 * in a more permissive manner than the constraints supplied for them
+	 * by their most permissive parent.
+	 *
+	 * Therefore getParentConstraints() is the way for a device instance to
+	 * obtain starting constraints from which they can derive acceptable
+	 * constraints for use with their SGLists.
+	 */
+	error_t getParentConstraints(
+		ubit16 parentId, fplainn::dma::constraints::Compiler *ret);
 
 private:
 	fplainn::dma::ScatterGatherList *getScatterGatherList(sarch_t id)
