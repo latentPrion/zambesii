@@ -1,0 +1,71 @@
+HDCR/MDCR_EL2:
+	Controls traps of PM registers: enables trapping all EL1&0 accesses to EL2.
+	You don't have to touch MDCR_EL2 because TPM and TPMCR are both default 0.
+
+	TPM[6]: 0: No traps to EL2. Default.
+		1: Non-secure EL1&0 accesses to PM regs are trapped to EL2.
+	TPMCR:	0: No traps to EL2. Default.
+		1: PMCR_EL0 accesses trap to EL2.
+
+PMUSERENR_EL0:
+	Basically, set EN=1 to disable all trapping; other bits are ignored.
+	To trap, set EN=0, and then use the other bits to control fine grained trapping.
+	EN=1 and EN=0+(all other bits = 1) are the same.
+
+	ER[3]: EL0 Event counter read enable:
+		0: if (PMUSERENR_EL0.EN == 0), reads of PMXEVCNTR_EL0 & PMEVCNTR<N>_EL0 as well as
+			read/write of PMSELR_EL0 trap to EL1.
+		1: No traps of above regs.
+
+	CR[2]:
+		0: if (PMUSERENR_EL0==0), reads of PMCCNTR_EL0 are trapped to EL1.
+		1: No trapping of PMCCNTR_EL0.
+	SW[1]:
+		0: If (PMUSERENR_EL0==0), writes to PMSWINC_EL0 are trapped to EL1.
+		1: No trapping of PMSWINC_EL0.
+	EN[0]: Trap EL0 accesses to PM regs to EL1.
+		0: Trap; 1: No trap.
+
+PMCCFILTR_EL0: Cycle Count filter
+	Bits U and P control SECURE EL1 and EL0 cycle counter reads.
+	If secure mode is NOT implemented, U and P control NON-SECURE EL1 and EL0 CC reads.
+	If secure mode is implemented, NSK, NSU and NSH control NON-SECURE mode counting.
+	Bit M only pertains to EL3, and it enables counting in EL3.
+
+	U[30]:	Controls counting in (secure, if implemented, else non-secure) EL0.
+		0: Count cycles in EL0.
+		1: Filter out EL0 from counting (don't count).
+	P[31]:	Controls counting in (secure, if implemented, else non-secure) EL1.
+		0: Count cycles in EL1.
+		1: Filter out EL1 from counting (don't count).
+	NSU[28]: RES0 if secure mode unimplemented. If this.value == U, then EL0 counting is enabled.
+	NSK[29]: RES0 if secure mode unimplemented. If this.value == P, then EL1 counting is enabled.
+	NSH[27]: RES0 if secure mode unimplemented. Values work differently from U and P!
+		0: DO count cycles in EL2.
+		1: Do NOT count cycles in EL2.
+	M[26]: If this.value == P.value, then EL3 counting is enabled.
+
+PMCR_EL0:
+	N[15:11]: From 0-31 counters. 0 means no event counters.
+	LC[6]: Long counter enable; chooses which bit flip triggers an Cycle Counter overflow IRQ.
+		0: Bit 31 triggers overflow. Invalid on ARMv8.
+		1: Bit 63 triggers overflow. Only valid value for ARMv8.
+	DP[5]: Disables cycle counter when event counting is disabled by PSTATE. This bit is RES0 if
+		SECURE world is not implemented.
+		0: Cycle Counting continues when event counting is disabled.
+		1: Cycle counting STOPS when event counting is disabled.
+	X[4]: Enable export of events to an external ETM.
+	D[3]: Divider bit: If this.LC==1, this bit is ignored and the CPU acts as if this==0.
+		0: Increment cycle counter every cycle. Always fixed to this value for ARMv8.
+		1: Increment cycle counter every 64 cycles. Deprecated with ARMv8.
+	C[2]: Cycle couner Reset bit. Writing a 1 to this bit resets the cycle counter to 0.
+	P[1]: Performance event counter reset. Writing a 1 to this bit resets the cycle counter to 0.
+	E[0]: Enable bit:
+		This bit does not disable event counters which are reserved for EL2 by MDCR_EL2.HPMN.
+
+		0: All counters INCLUDING PMCCNTR_EL0 are disabled.
+		1: All counters are enabled based on their bits in PMCNTENSET_EL0.
+
+PMCNTENSET_EL0:
+	C[31]: Enables PMCCNTR_EL0 cycle counter.
+	Bits[30:0]: Enable PMC Event 0..30.
