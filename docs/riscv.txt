@@ -1,0 +1,242 @@
+Riscv notes:
+
+CSR=Control and Status Reg
+WIRI: Reserved Write Ignored, Reads Ignore Values:
+	Hardware ignores writes to this field if RW; if RO, illegal exception generated.
+WPRI: Reserved Writes Preserve Values, Reads Ignore Values
+	Hardware will commit write changes to this field, but software should not change the value
+	in this field in the first place: preserve what you read out.
+WLRL: Write/Read Only Legal Values: Be careful to only write legal, and shouldn't
+	assume that reads after illegal write will return legal values.
+WARL: Write Any, Read Legal Values: You can write illegal values and when read back, only
+	legal values will be returned.
+
+The Hart enters MMode on #RESET. 
+Privilege level: 0=User, 1=Supervisor, 2=RSVD, 3=Machine; Machine mode must always exist.
+	Implementations may also implement a "Debug" and "OEM Test" mode. No privlevel value
+	is assigned by the spec. Since increasing privilege is encoded as increasingly higher
+	numerical values, this is seamlessly doable. Machine mode should be trapped if it tries to
+	access the D-CSRs [sec 2.1].
+
+All privileged intrs are prefixed by the SYSTEM major opcode. Privileged instrs are 2 categories:
+	(1) RMW ops to CSR regs, (2) All other privileged instrs.
+
+	CSRs:
+CSRs at level X are accessible to all levels higher than it (greater than X) as well.
+Shadow registers are RW versions of a lower priv reg which can be written to by a higher priv lvl.
+	They enable higher priv determine what environment lower priv sees. Multiple higher privlvls
+	may use the same shadow reg so shadow regs don't need to be provided to every privlvl for
+	any given CSR.
+
+	* Attempting to access a non-existent CSR generates an illegal instr exception.
+	* Accessing a CSR from a lower privlevel generates an illegal instr exception.
+
+	* There are 4096 CSRs altogether (12 bit encoding space).
+	* 12 bit encoding space broken down into:
+		CSR_IDX[11:10]: RW perms. (0x3=RO, 0x0-0x2=RW).
+		CSR_IDX[9:8]: Lowest priv level which can access the CSR. Because increasing
+			privilege is encoded using increasing value integers, this means that
+			any privlevel CSR_IDX[9:8] or higher can access the CSR.
+
+
+Trap architecture:
+Trap is the umbrella term for IRQs, exceptions etc. Vertical traps are those taken from lower
+to higher. Horizontal traps are those taken from same to same.
+By default, all traps at any privlvl are taken directly to MACHINE mode.
+* xRET (MRET, SRET, URET) are used to return from mode X respectively.
+* RISC-V supports the idea of userlvl traps -- traps taken from highpriv to userlvl.
+	* When a trap occurs, CPU stores Previous Privlvl in xPP bit (xSTATUS.[xPP]).
+	  ^ You can also read yPP from mode X where Y is a lower privlvl.
+	* When a trap occurs from priv Y to X:
+	  * xPP <= y; xPIE <= xIE. xIE <= 0.
+	* When executing xRET (returning from from X to Y):
+	  * xIE <= xPIE; [MODECHANGE]; xPIE = 1 ALWAYS; xPP = U (or M if U unsupp) ALWAYS;
+	* OS is expected to manually save xSTATUS.
+	* MISA.Extensions[N]: Indicates support for user-level traps.
+
+	Trap sequence:
+	On trap taken to mode X:
+	* xCause <= exception cause;
+	* xEPC <= PC that triggered the trap.
+	* Then the standard trap sequence goes with xIE, xPIE, xPP [out of order].
+	* If the trap was delegated, the MCAUSE, MEPC, MIE, MPIE, MPP regs are not changed.
+
+* Delegation is based on the prilvl the trap was taken from. So a trap taken from MMode cannot be
+  delegated to SMode. It must have been taken FROM UMode or SMode to be delegated BY MMode TO SMode.
+  ^ See MEDELEG and MIDELEG CSRs for trap delegation information.
+
+Interrupt architecture:
+
+* RISC-V specifies the following events as "interrupts":
+  * Timer Interrupt (xTI?): mip.[MTIP]: cleared by writing to timer compare reg.
+    ^ MMode can only trigger a MTimer event by writing to the timer CSRs.
+	* MMode can trigger a STimer or UTimer event by writing to mip[STIP] or mip.[UTIP].
+	  ^ SMode and UMode must clear the STIP/UTIP bit by making calls to AEE/SEE through ABI/SBI.
+  ^ Software Interrupt (mip.[xSI?]):
+    ^ These are also the vector for IPIs.
+  ^ External Interrupt (mip.[xEI?])
+	xSTATUS.[xIE]: 0=IRQs disabled; 1=IRQs enabled for respective mode.
+	* While in mode X, IRQs in mode X-1 and lower are always disabled.
+	* While in mode X, IRQs in mode X+1 and higher ALWAYS ENabled. Highpriv IRQs always taken.
+
+IRQ PRIORITY: Harts prioritize these three types of interrupts as follows:
+	External IRQ > Software Interrupt > Timer Interrupt > Synchronous traps (exceptions?).
+	^ It is a bit odd that they prioritize Softint over timer, but that may be a symptom of IPIs
+	  being delivered as Software Ints.
+
+An IRQ will be taken if its bit is set in both mie.[CAUSE] and if mip.[CAUSE] gets set.
+
+	IPIs:
+	* IPIs are simulated as software interrupts.
+	* The source hart writes to the target hart's mip.[MSIP] CSR, and this delivers the IPI.
+	  ^ SMode must deliver IPIs by executing calls to the SEE.
+	  ^ SMode CLEARS pending IPIs/SoftInts by clearing sip.[SSIP].
+	  ^ UMode delivers IPIs (if it ever has to) by calling the AEE.
+	* A hart can IPI itself by writing to its own mip.[MSIP].
+	* The mechanism for writing to a foreign hart's CSR space is IMPLEMENTATION DEFINED.
+	  ^ Might be via MMIO or some other mechanism.
+
+	External IRQs:
+	* mip.[MEIP] is set by an external IRQ signal. Cleared by writing to the platform's PIC.
+	* mip.[S/U-EIP] work the same way.
+
+	Injecting external IRQs into SMode/UMode:
+	* See Virtualization section.
+
+	Non-Maskable IRQ:
+	* There is no Interrupt Pending bit in mip for an NMI-EIP because a pending NMI can be
+	  recognized implicitly by the very fact that you are executing the NMI handler.
+
+Multiple wordsizes: 32, 64, 128:
+* When CPU supports multiple wordsizes and is operating in wordsize lower than greatest
+  mode supported, all operations must ignore source reg high bits sign extend result
+  regs up to highest wordsize high bits.
+* Higher priv modes can query the current wordsize(XLEN) of a lower mode by reading
+  xSTATUS.[yXLEN], where X is current privlvl and Y is privlvl to be queried about.
+
+	* See MISA CSR for how to detect MMode wordsize.
+	* See MSTATUS CSR for how to control xXLEN of lower priv modes.
+	  ^ This means that MMode can support mixed wordsize guests (32, 64, 128).
+	* See SSTATUS CSR for how to control UXLEN.
+	  ^ This means that SMode can support mixed wordsize binaries (32, 64, 128).
+	* In all cases, the OEM is free to HARDWARE values for xSTATUS.[xXL].
+
+Machine Mode:
+
+MISA CSR: Always readable without fault but returns 0 if not implemented.
+	XLEN:XLEN-1: MXL | XLEN-3:26: RSVD. | 25:0: Extensions bits.
+		MXL: Sets CPU ISA/reg wordsize: 0=unimplemented; 1=32; 2=64; 3=128
+			RW if multiple XLENs supported. The RISC-V spec gives advice on
+			how to detect your current MXL using this reg without knowing
+			beforehand.
+		Extensions: WARL: Each bit from 0-25 represents a letter from A-Z.
+			G-bit: Accesses separate namespace of new letters gA-gZ.
+				G also means that ADFIM are implicitly supported.
+			See riscv-misa-extension-bits.png.
+			I: must be set; represents the base ISA.
+			X: Non-standard extensions present.
+			N: User-level traps.
+MVENDOR CSR: Always readable w/o fault but returns 0 if unimplemented or "non-commercial" vendor.
+MARCHID CSR: Always readable w/o fault but returns 0 if unimplemented.
+	Bit XLEN (MSb): 0=open source vendor; 1=proprietary vendor.
+MIMPID CSR: Always readable w/o fault but returns 0 if unimplemented.
+MHARTID CSR: Always readable w/o fault.
+	* Gives the HART ID. Not the Core ID. Hart IDs need not be contiguous.
+	* At least one hard must have an ID of 0. Explicitly stated that this is BSP.
+MSTATUS CSR: Virtualization, xIntEn, xPrevIntEn, xPreviousPriv, xXLEN
+* Restricted copies of this reg appear in S and U Mode.
+* Bits are intended to be toggled with atomic instructions.
+	* See Trap Architecture section for how traps and xRET modify the xIE, xPIE and xPP bits.
+	* Setting xXLEN sets the XLEN (wordsize) of the lower privlvl in question.
+	  ^ For systems whose highest wordsize is 32, MSTATUS.[xXL] does not exist.
+	  ^ In all cases, the OEM may HARDWIRE xSTATUS.[xXL] to some value.
+	Bits:
+	* Bit XLEN-1: SD bit. See FPU and other feature save and restore section.
+	* Bit 16:13: FS and XS bits: Also see FPU and other feature save/restore section.
+	* Bit 17: MPRV: See "Cute features"
+	* Bit 19: MXR: See "Cute features"
+	* Bit 20, 21, 22: See "Virtualization" section.
+MTVEC CSR: Must always be implemented but may contain hardwired RO value.
+	* Is WARL so you can test to see if it is hardwired.
+
+	Vector base alignment:
+	* Vector addr can be anywhere as long as it is 4B aligned for direct mode.
+	* For Vectored mode, aligmment is 4*XLEN.
+
+	Bits:
+	* 1:0: MODE:	0=Direct: all exceptions set PC to this.[BASE]
+			1=Vectored: Async exceptions set PC to (this.BASE + 4*CAUSE)
+MIDELEG/MEDELEG CSR: By default *ALL* traps route to MMode, but can be delegated to SMode.
+* If only MMode exists, or if only M+UMode exist without UMode-traps (N), then M?DELEG should NOT
+  EXIST. I.e, accessing will trigger a fault.
+* Delegation from MMode is only to SMode. SMode can then choose to delegate to UMode if UMode traps
+  are supported (MISA.Extensions[N]).
+  ^ That said, if SMode doesn't exist (only M+U), then delegation goes to UMode.
+
+	MEDELEG:
+	* Bit positions in MEDELEG correspond to exception cause values as used by MCAUSE.
+	* MEDELEG[11] and SEDELEG[11:9] are hardwired to 0; CANNOT be delegated.
+	MIDELEG:
+	* Bit positions in MIDELEG correspond those of the MIP reg.
+MIP CSR: Machine Interrupt Pending
+^ Has bits: MTIP/STIP/UTIP; MSIP/SSIP/USIP; MEIP/SEIP/UEIP.
+* See Interrupt architecture section for explanation of how these bits work.
+MIE CSR: Machine Interrupt Enable:
+* Has bits: MTIE/STIE/UTIE; MSIE/SSIE/USIE; MEIE/SEIE/UEIE.
+* See interrupt architecture section for explanation of how these bits work.
+
+Supervisor Mode: Detected by MISA.Extensions[S].
+
+UserMode: Detected by MISA.Extensions[U].
+
+Virtualization:
+ENABLE BITS FOR VIRTUALIZATION:
+	MMU Management trapping (enable with MSTATUS.TVM):
+	* Hardwired to 0 (disabled) if SMode unsupported (MISA.Extensions[S]=0).
+	* Traps all accesses to SATP CSR.
+	* Traps all executions of SFENCE.VMA instr by SMode.
+
+	WFI trapping (enable with MSTATUS.TW):
+	* Hardwired to 0 (disabled) if SMode unsupported.
+	* Traps execution of WFI by SMode (not by UMode).
+	* After WFI is executed, an IMPLEMENTATION DEFINED countdown is done and if CPU is
+	  still halted, trap is taken to MMode.
+
+	SRET instr trapping (enable with MSTATUS.TSR):
+	* This is provided to enable simulation of something called "Augmented Virtualization".
+
+	Injecting external IRQs into SMode/UMode from MMode:
+	* See mip.[SEIP/UEIP] bit.
+	  ^ This bit has unusual behaviour in that reading it in certain ways will return a value
+	    OR'd with a value from the chipset's PIC.
+	  ^ Writing this bit with a CSRR[SC] RMW instr will always ONLY write the mip.[xEIP] bit tho.
+	  ^ mip.[UEIP] is only accessible if misa.Ext[N]==1 (UMode interrupts). 
+	* mip.[UEIP] works the same way as mip.[SEIP].
+
+FLOATING POINT UNIT AND OTHER FEATURE SAVE/RESTORE:
+	* Check FPU usage status when save/restoring using xSTATUS.[FS].
+	* Check extension feature usage status when save/restoring using xSTATUS.[XS].
+
+	When a feature is disabled, any attempt to access its regs/state will trigger an
+	unspecified exception.
+
+	FS and XS field format: Both are 2 bits.
+		0=off: unit/features is off;
+		1=initial: feature is on and initialized, state unmodified since initialization;
+		2=clean: none dirty some state clean;
+		3=dirty: FPU or some features dirty.
+	SD bit: This is a superbit which encompasses the state of both FS and XS.
+
+
+CUTE FEATURES:
+	Modified PRiVilege: Enable using xSTATUS.[MPRV]:
+		Causes CPU to perform LOADS and STORES in mode X as if they were performed from
+		mode xSTATUS.[xPP]. Basically set xPP and then you get to simulate data accesses
+		(NOT INSTR FETCH+DECODE) as if executing in mode xPP.
+
+	Make eXecutable Readable: Enable using xSTATUS.[MXR]:
+		RISCV CPUs will fault on data load from vmem pages without READ perms set
+		by default. This feature makes it easier for a trap and emulate handler to
+		emulate by allowing pages marked as EXEC only to also count as if they had READ
+		set.
+
