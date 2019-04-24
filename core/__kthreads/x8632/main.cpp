@@ -505,6 +505,8 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 //~ __kdebug.refresh();
 
 	fplainn::dma::Constraints			c;
+	fplainn::dma::constraints::Compiler		cmp;
+
 	udi_dma_constraints_attr_spec_t a[] =
 	{
 		{ UDI_DMA_DATA_ADDRESSABLE_BITS, 64 },
@@ -519,7 +521,8 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 		{ UDI_DMA_ELEMENT_LENGTH_BITS, 17 },
 	};
 
-	c.initialize();
+	cmp.initialize();
+	c.initialize(a, 0);
 
 	c.addOrModifyAttrs(a, 3);
 	a[1].attr_value = 5;
@@ -527,27 +530,27 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	c.addOrModifyAttrs(a, 10);
 	c.dump();
 
-	err = c.compiler.compile();
+	err = cmp.compile(&c);
 	if (err != ERROR_SUCCESS) {
 		printf(ERROR"Compilation failed.\n");
 	};
-	c.compiler.dump();
+	cmp.dump();
 
 	MemoryBmp				tb(0xB0000000, 0x3F000000);
 	fplainn::dma::ScatterGatherList	sgl;
 
-	err = sgl.initialize(c.compiler.i.addressSize);
+	err = sgl.initialize(cmp.i.addressSize);
 	assert_fatal(err == ERROR_SUCCESS);
 	err = tb.initialize();
 	assert_fatal(err == ERROR_SUCCESS);
 	tb.dump();
-	stat = tb.constrainedGetFrames(&c.compiler, 2, &sgl, 0);
+	stat = tb.constrainedGetFrames(&cmp, 2, &sgl, 0);
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
-	stat = tb.constrainedGetFrames(&c.compiler, 7, &sgl, 0);
+	stat = tb.constrainedGetFrames(&cmp, 7, &sgl, 0);
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
-	stat = tb.constrainedGetFrames(&c.compiler, 1, &sgl, 0);
+	stat = tb.constrainedGetFrames(&cmp, 1, &sgl, 0);
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
-	stat = tb.constrainedGetFrames(&c.compiler, 99, &sgl, 0);
+	stat = tb.constrainedGetFrames(&cmp, 99, &sgl, 0);
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
 
 	sgl.dump();

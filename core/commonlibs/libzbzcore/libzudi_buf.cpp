@@ -198,6 +198,60 @@ out_freeMsgl:
 	return ret;
 }
 
+static error_t allocSGListAndConstrainByPathHandle(
+	udi_size_t initialNBytes, udi_buf_path_t path_handle,
+	lzudi::buf::MappedScatterGatherList **retmsgl
+	)
+{
+	error_t						ret;
+	Thread						*currThread;
+	fplainn::dma::constraints::Compiler		requestedConstraints;
+
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	// path_handle must be supplied when allocating a buf.
+	if (UDI_HANDLE_IS_NULL(path_handle, udi_buf_path_t))
+	{
+		printf(ERROR LZUDI"BUF_ALLOC: A path handle must be "
+			"supplied to enable constraint.\n");
+
+		return ERROR_INVALID_FORMAT;
+	}
+
+	/**	FIXME:
+	 * Ask the kernel for the constraints associated with the
+	 * path handle.
+	 **/
+	ret = currThread->parent->floodplainnStream.
+		getParentConstraints(
+			reinterpret_cast<uintptr_t>(path_handle),
+			&requestedConstraints);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR LZUDI"BUF_ALLOC: Failed to get "
+			"constraints for new buffer.\n");
+
+		return ret;
+	}
+
+	// Allocate a new SGList.
+	ret = lzudi::buf::allocateScatterGatherList(
+		&requestedConstraints,
+		initialNBytes, retmsgl);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR LZUDI"BUF_ALLOC: Failed to malloc "
+			"handle.\n");
+
+		return ret;
+	}
+
+	return ERROR_SUCCESS;
+}
+
 void udi_buf_write(
 	udi_buf_write_call_t *callback,
 	udi_cb_t *gcb,
@@ -214,11 +268,13 @@ void udi_buf_write(
 	uarch_t						currNBytes,
 							extraNBytesRequired;
 	Thread						*currThread;
-	fplainn::dma::constraints::Compiler		requestedConstraints;
+	sarch_t						status;
 
-	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(
-		gcb, callback,
-		gcb, NULL);
+	/*	TODO:
+	 * Don't forget to update dst_buf->buf_size.
+	 */
+
+	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(gcb, callback, gcb, NULL);
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
@@ -226,44 +282,13 @@ void udi_buf_write(
 	if (dst_buf == NULL)
 	{
 		// dst_buf == NULL means we need to allocate a new scgth list.
-
-		// path_handle must be supplied when allocating a buf.
-		if (UDI_HANDLE_IS_NULL(path_handle, udi_path_handle_t))
-		{
-			printf(ERROR LZUDI"BUF_ALLOC: A path handle must be "
-				"supplied to enable constraint.\n");
-
-			callback(gcb, NULL);
-			return;
-		}
-
-		/**	FIXME:
-		 * Ask the kernel for the constraints associated with the
-		 * path handle.
-		 **/
-		err = currThread->parent->floodplainnStream.
-			getParentConstraints(
-				reinterpret_cast<uintptr_t>(path_handle),
-				&requestedConstraints);
+		err = allocSGListAndConstrainByPathHandle(
+			src_len, path_handle, &msgl);
 
 		if (err != ERROR_SUCCESS)
 		{
-			printf(ERROR LZUDI"BUF_ALLOC: Failed to get "
-				"constraints for new buffer.\n");
-
-			callback(gcb, NULL);
-			return;
-		}
-
-		// Allocate a new SGList.
-		err = lzudi::buf::allocateScatterGatherList(
-			&requestedConstraints,
-			src_len, &msgl);
-
-		if (err != ERROR_SUCCESS)
-		{
-			printf(ERROR LZUDI"BUF_ALLOC: Failed to malloc "
-				"handle.\n");
+			printf(ERROR LZUDI"BUF_ALLOC: Failed to alloc and "
+				"constrain SGList.\n");
 
 			callback(gcb, NULL);
 			return;
@@ -335,7 +360,8 @@ void udi_buf_write(
 		 * dst_len with "unspecified" bytes beyond src_len. So we write
 		 * 0s.
 		 */
-		msgl->write(src_mem, dst_off, src_len);
+		status = msgl->write(src_mem, dst_off, src_len);
+		assert_fatal(status >= 0);
 
 		filler_start = dst_off + src_len;
 		filler_len = src_len - dst_len;
@@ -348,7 +374,8 @@ void udi_buf_write(
 		 * I.e, we don't trample the dst_buff, and we treat it as if
 		 * dst_len == src_len.
 		 */
-		msgl->write(src_mem, dst_off, src_len);
+		status = msgl->write(src_mem, dst_off, src_len);
+		assert_fatal(status >= 0);
 	}
 	else
 	{
@@ -356,7 +383,131 @@ void udi_buf_write(
 			"Unsure how to copy. Silently ignoring.\n");
 	}
 
+	// There should be a trivial conversion here to udi_buf_t *.
 	callback(gcb, msgl);
 }
 
+void udi_buf_read(
+	udi_buf_t *src_buf,
+	udi_size_t src_off,
+	udi_size_t src_len,
+	void *dst_mem
+	)
+{
+	/*	TODO:
+	 * Don't forget to update src_buf->buf_size.
+	 */
+	sarch_t					status;
+	lzudi::buf::MappedScatterGatherList	*msgl;
+
+	assert_fatal(dst_mem != NULL);
+	assert_fatal(src_buf != NULL);
+	msgl = static_cast<lzudi::buf::MappedScatterGatherList *>(src_buf);
+
+	status = msgl->read(dst_mem, src_off, src_len);
+	assert_fatal(status >= 0);
+}
+
+void udi_buf_copy(
+	udi_buf_copy_call_t *callback,
+	udi_cb_t *gcb,
+	udi_buf_t *src_buf,
+	udi_size_t src_off,
+	udi_size_t src_len,
+	udi_buf_t *dst_buf, 
+	udi_size_t dst_off,
+	udi_size_t dst_len,
+	udi_buf_path_t path_handle
+	)
+{
+	error_t						err;
+	lzudi::buf::MappedScatterGatherList		*dst_msgl, *src_msgl;
+	Thread						*currThread;
+	uarch_t						extraNBytesRequired;
+	void						*src_mem;
+
+	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(gcb, callback, gcb, NULL);
+
+	assert_fatal(src_buf != NULL);
+
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	src_msgl = static_cast<lzudi::buf::MappedScatterGatherList *>(src_buf);
+
+	if (dst_buf == NULL)
+	{
+		// dst_buf == NULL means we have to alloc a new scgth list.
+		err = allocSGListAndConstrainByPathHandle(
+			dst_len, path_handle, &dst_msgl);
+
+		if (err != ERROR_SUCCESS)
+		{
+			callback(gcb, NULL);
+			return;
+		}
+
+		dst_buf = static_cast<udi_buf_t *>(dst_msgl);
+	}
+
+	dst_msgl = static_cast<lzudi::buf::MappedScatterGatherList *>(dst_buf);
+
+	// Make sure the dest buf has enough room.
+	if (!dst_msgl->hasEnoughMemoryForWrite(
+		currThread, dst_off, dst_len, src_len, &extraNBytesRequired))
+	{
+		// Attempt to resize the SGList.
+		err = currThread->parent->floodplainnStream
+			.resizeScatterGatherList(
+				dst_msgl->sGListIndex,
+				dst_msgl->nFrames + PAGING_BYTES_TO_PAGES(
+					extraNBytesRequired));
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZUDI"BUF_COPY: Failed to resize buf.\n");
+			callback(gcb, NULL);
+			return;
+		}
+
+		if (!dst_msgl->hasEnoughMemoryForWrite(
+			currThread,
+			dst_off, dst_len, src_len, &extraNBytesRequired))
+		{
+			printf(ERROR LZUDI"BUF_COPY: Resize returned success, "
+				"yet still not enough memory for write.\n");
+
+			callback(gcb, NULL);
+			return;
+		}
+
+		err = currThread->parent->floodplainnStream
+			.remapScatterGatherList(
+				dst_msgl->sGListIndex, &dst_msgl->vaddr);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZUDI"BUF_COPY: Remap after resize "
+				"failed!\n");
+
+			callback(gcb, NULL);
+			return;
+		}
+	}
+
+	// Perform the copy.
+	src_mem = src_msgl->getAddrForOffset(src_off);
+	if (src_mem == NULL)
+	{
+		printf(ERROR LZUDI"BUF_COPY: src buf offset %d invalid!\n",
+			src_off);
+
+		callback(gcb, NULL);
+		return;
+	}
+
+	// Most basic scenario.
+	dst_msgl->write(src_mem, dst_off, src_len);
+	// There should be a trivial conversion here to udi_buf_t *.
+	callback(gcb, dst_msgl);
 }
