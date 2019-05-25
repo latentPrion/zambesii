@@ -210,11 +210,13 @@ void udi_buf_write(
 	uarch_t						currNBytes,
 							extraNBytesRequired;
 	Thread						*currThread;
-	fplainn::dma::constraints::Compiler		requestedConstraints;
+	sarch_t						status;
 
-	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(
-		gcb, callback,
-		gcb, NULL);
+	/*	TODO:
+	 * Don't forget to update dst_buf->buf_size.
+	 */
+
+	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(gcb, callback, gcb, NULL);
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
