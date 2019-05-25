@@ -382,4 +382,161 @@ void udi_buf_write(
 	callback(gcb, msgl);
 }
 
+void udi_buf_read(
+	udi_buf_t *src_buf,
+	udi_size_t src_off,
+	udi_size_t src_len,
+	void *dst_mem
+	)
+{
+	sarch_t					status;
+	lzudi::buf::MappedScatterGatherList	*msgl;
+
+	/*	TODO:
+	 * Don't forget to update src_buf->buf_size.
+	 */
+
+	assert_fatal(dst_mem != NULL);
+	assert_fatal(src_buf != NULL);
+	msgl = static_cast<lzudi::buf::MappedScatterGatherList *>(src_buf);
+
+	/* No need for any eccentric case handling since the spec demands that:
+	 *	"src_off+src_len must not exceed src_buf->buf_size."
+	 */
+	status = msgl->read(dst_mem, src_off, src_len);
+	assert_fatal(status >= 0);
+}
+
+void udi_buf_copy(
+	udi_buf_copy_call_t *callback,
+	udi_cb_t *gcb,
+	udi_buf_t *src_buf,
+	udi_size_t src_off,
+	udi_size_t src_len,
+	udi_buf_t *dst_buf,
+	udi_size_t dst_off,
+	udi_size_t dst_len,
+	udi_buf_path_t path_handle
+	)
+{
+	error_t						err;
+	lzudi::buf::MappedScatterGatherList		*dst_msgl, *src_msgl;
+	Thread						*currThread;
+	uarch_t						extraNBytesRequired;
+	void						*src_mem;
+
+	/**	CAVEAT:
+	 * This function is not yet UDI fully compliant. There are scenarios
+	 * which should be triggered by different combinations of arguments
+	 * which are not handled by this code.
+	 */
+
+	LZUDI_CHECK_GCB_AND_CALLBACK_VALID(gcb, callback, gcb, NULL);
+
+	/* UDI spec:
+	 *	"src_buf is a pointer to the buffer containing data to
+	 * 	be copied. This must not be set to NULL."
+	 *
+	 *	"src_len is the number of bytes to be copied from the source
+	 * 	buffer. src_len must be at least 1, and src_off + src_len must
+	 * 	not extend beyond the current buffer size"
+	 *
+	 * I.e, src_buf can't be NULL and src_len can't be 0.
+	 **/
+	if (src_buf == NULL || src_len < 1)
+	{
+		printf(ERROR LZUDI"BUF_COPY: src_buf is %p, src_len is %u.\n",
+			src_buf, src_len);
+
+		callback(gcb, NULL);
+	}
+
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	src_msgl = static_cast<lzudi::buf::MappedScatterGatherList *>(src_buf);
+
+	if (dst_buf == NULL)
+	{
+		// dst_buf == NULL means we have to alloc a new scgth list.
+		err = allocSGListAndConstrainByPathHandle(
+			dst_len, path_handle, &dst_msgl);
+
+		if (err != ERROR_SUCCESS)
+		{
+			callback(gcb, NULL);
+			return;
+		}
+
+		dst_buf = static_cast<udi_buf_t *>(dst_msgl);
+	}
+
+	dst_msgl = static_cast<lzudi::buf::MappedScatterGatherList *>(dst_buf);
+
+	// Make sure the dest buf has enough room.
+	if (!dst_msgl->hasEnoughMemoryForWrite(
+		currThread, dst_off, dst_len, src_len, &extraNBytesRequired))
+	{
+		// Attempt to resize the SGList.
+		err = currThread->parent->floodplainnStream
+			.resizeScatterGatherList(
+				dst_msgl->sGListIndex,
+				dst_msgl->nFrames + PAGING_BYTES_TO_PAGES(
+					extraNBytesRequired));
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZUDI"BUF_COPY: Failed to resize buf.\n");
+			callback(gcb, NULL);
+			return;
+		}
+
+		if (!dst_msgl->hasEnoughMemoryForWrite(
+			currThread,
+			dst_off, dst_len, src_len, &extraNBytesRequired))
+		{
+			printf(ERROR LZUDI"BUF_COPY: Resize returned success, "
+				"yet still not enough memory for write.\n");
+
+			callback(gcb, NULL);
+			return;
+		}
+
+		err = currThread->parent->floodplainnStream
+			.remapScatterGatherList(
+				dst_msgl->sGListIndex, &dst_msgl->vaddr);
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR LZUDI"BUF_COPY: Remap after resize "
+				"failed!\n");
+
+			callback(gcb, NULL);
+			return;
+		}
+	}
+
+	/* "src_off is the offset, in bytes, from the first logical data byte
+	 * to the start of the copy area in the source buffer. This must not
+	 * exceed the current size of the buffer:
+	 *	0 <= src_off < src_buf->buf_size
+	 *
+	 * src_off gets checked in getAddrForOffset below.
+	 **/
+
+	// Perform the copy.
+	src_mem = src_msgl->getAddrForOffset(src_off);
+	if (src_mem == NULL)
+	{
+		printf(ERROR LZUDI"BUF_COPY: src buf offset %d invalid!\n",
+			src_off);
+
+		callback(gcb, NULL);
+		return;
+	}
+
+	// Most basic scenario.
+	dst_msgl->write(src_mem, dst_off, src_len);
+	// There should be a trivial conversion here to udi_buf_t *.
+	callback(gcb, dst_msgl);
 }
