@@ -333,7 +333,8 @@ void udi_buf_write(
 		 * dst_len with "unspecified" bytes beyond src_len. So we write
 		 * 0s.
 		 */
-		msgl->write(src_mem, dst_off, src_len);
+		status = msgl->write(src_mem, dst_off, src_len);
+		assert_fatal(status >= 0);
 
 		filler_start = dst_off + src_len;
 		filler_len = src_len - dst_len;
@@ -346,7 +347,8 @@ void udi_buf_write(
 		 * I.e, we don't trample the dst_buff, and we treat it as if
 		 * dst_len == src_len.
 		 */
-		msgl->write(src_mem, dst_off, src_len);
+		status = msgl->write(src_mem, dst_off, src_len);
+		assert_fatal(status >= 0);
 	}
 	else
 	{
