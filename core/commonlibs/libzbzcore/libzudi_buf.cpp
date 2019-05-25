@@ -139,7 +139,6 @@ sbit8 lzudi::buf::MappedScatterGatherList::hasEnoughMemoryForRead(
 
 error_t lzudi::buf::allocateScatterGatherList(
 	fplainn::dma::constraints::Compiler *comCons,
-	uarch_t initialNBytes,
 	MappedScatterGatherList **retobj
 	)
 {
@@ -167,9 +166,8 @@ error_t lzudi::buf::allocateScatterGatherList(
 
 	if (msgl->sGListIndex < 0)
 	{
-		printf(ERROR LZUDI"buf:allocSGList(%d): allocSGList syscall "
-			"failed.\n",
-			initialNBytes);
+		printf(ERROR LZUDI"buf:allocSGList(): allocSGList syscall "
+			"failed.\n");
 
 		ret = msgl->sGListIndex;
 		goto out_freeMsgl;
@@ -180,9 +178,7 @@ error_t lzudi::buf::allocateScatterGatherList(
 
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(ERROR LZUDI"buf:allocSGList(%d): constrain failed.\n",
-			initialNBytes);
-
+		printf(ERROR LZUDI"buf:allocSGList(): constrain failed.\n");
 		goto out_freeSgl;
 	}
 
