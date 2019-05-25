@@ -179,6 +179,20 @@ namespace lzudi
 				uarch_t off, uarch_t len,
 				uarch_t *nBytesExcessRequiredForWrite);
 
+			void *getAddrForOffset(uarch_t off)
+			{
+				ubit8		*vmem;
+
+				if (off >= PAGING_PAGES_TO_BYTES(nFrames)
+					|| vaddr == NULL)
+				{
+					return NULL;
+				}
+
+				vmem = reinterpret_cast<ubit8 *>(vaddr);
+				return &vmem[off];
+			}
+
 			sarch_t write(
 				const void *inbuff,
 				uarch_t offset, uarch_t nBytes);
