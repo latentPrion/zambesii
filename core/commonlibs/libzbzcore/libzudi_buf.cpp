@@ -378,6 +378,7 @@ void udi_buf_write(
 			"Unsure how to copy. Silently ignoring.\n");
 	}
 
+	// There should be a trivial conversion here to udi_buf_t *.
 	callback(gcb, msgl);
 }
 
