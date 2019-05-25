@@ -194,6 +194,59 @@ out_freeMsgl:
 	return ret;
 }
 
+static error_t allocSGListAndConstrainByPathHandle(
+	udi_buf_path_t path_handle,
+	lzudi::buf::MappedScatterGatherList **retmsgl
+	)
+{
+	error_t						ret;
+	Thread						*currThread;
+	fplainn::dma::constraints::Compiler		requestedConstraints;
+
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	// path_handle must be supplied when allocating a buf.
+	if (UDI_HANDLE_IS_NULL(path_handle, udi_buf_path_t))
+	{
+		printf(ERROR LZUDI"BUF_ALLOC: A path handle must be "
+			"supplied to enable constraint.\n");
+
+		return ERROR_INVALID_FORMAT;
+	}
+
+	/**	FIXME:
+	 * Ask the kernel for the constraints associated with the
+	 * path handle.
+	 **/
+	ret = currThread->parent->floodplainnStream.
+		getParentConstraints(
+			reinterpret_cast<uintptr_t>(path_handle),
+			&requestedConstraints);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR LZUDI"BUF_ALLOC: Failed to get "
+			"constraints for new buffer.\n");
+
+		return ret;
+	}
+
+	// Allocate a new SGList.
+	ret = lzudi::buf::allocateScatterGatherList(
+		&requestedConstraints, retmsgl);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR LZUDI"BUF_ALLOC: Failed to malloc "
+			"handle.\n");
+
+		return ret;
+	}
+
+	return ERROR_SUCCESS;
+}
+
 void udi_buf_write(
 	udi_buf_write_call_t *callback,
 	udi_cb_t *gcb,
@@ -224,44 +277,13 @@ void udi_buf_write(
 	if (dst_buf == NULL)
 	{
 		// dst_buf == NULL means we need to allocate a new scgth list.
-
-		// path_handle must be supplied when allocating a buf.
-		if (UDI_HANDLE_IS_NULL(path_handle, udi_path_handle_t))
-		{
-			printf(ERROR LZUDI"BUF_ALLOC: A path handle must be "
-				"supplied to enable constraint.\n");
-
-			callback(gcb, NULL);
-			return;
-		}
-
-		/**	FIXME:
-		 * Ask the kernel for the constraints associated with the
-		 * path handle.
-		 **/
-		err = currThread->parent->floodplainnStream.
-			getParentConstraints(
-				reinterpret_cast<uintptr_t>(path_handle),
-				&requestedConstraints);
+		err = allocSGListAndConstrainByPathHandle(
+			src_len, path_handle, &msgl);
 
 		if (err != ERROR_SUCCESS)
 		{
-			printf(ERROR LZUDI"BUF_ALLOC: Failed to get "
-				"constraints for new buffer.\n");
-
-			callback(gcb, NULL);
-			return;
-		}
-
-		// Allocate a new SGList.
-		err = lzudi::buf::allocateScatterGatherList(
-			&requestedConstraints,
-			src_len, &msgl);
-
-		if (err != ERROR_SUCCESS)
-		{
-			printf(ERROR LZUDI"BUF_ALLOC: Failed to malloc "
-				"handle.\n");
+			printf(ERROR LZUDI"BUF_ALLOC: Failed to alloc and "
+				"constrain SGList.\n");
 
 			callback(gcb, NULL);
 			return;
