@@ -458,6 +458,12 @@ void udi_buf_copy(
 
 	if (dst_buf == NULL)
 	{
+		if (dst_len != 0)
+		{
+			printf(WARNING LZUDI"When dst_buf is NULL, dst_len "
+				"should be 0 for UDI compliance. Ignoring.\n");
+		}
+
 		// dst_buf == NULL means we have to alloc a new scgth list.
 		err = allocSGListAndConstrainByPathHandle(
 			dst_len, path_handle, &dst_msgl);
@@ -535,7 +541,19 @@ void udi_buf_copy(
 		return;
 	}
 
-	// Most basic scenario.
+	/* From here there are 2 basic use cases for udi_buf_copy:
+	 * overwrite and insert.
+	 *
+	 * When dst_len is 0 then we are inserting;
+	 * Else we are overwriting.
+	 */
+
+	if (dst_len == 0)
+	{
+		// Inserting use case: move the current data aside first.
+		dst_msgl->memmove(dst_off + src_len, dst_off, src_len);
+	}
+
 	dst_msgl->write(src_mem, dst_off, src_len);
 	// There should be a trivial conversion here to udi_buf_t *.
 	callback(gcb, dst_msgl);
