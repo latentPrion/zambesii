@@ -276,6 +276,12 @@ void udi_buf_write(
 
 	if (dst_buf == NULL)
 	{
+		if (dst_len != 0)
+		{
+			printf(WARNING LZUDI"When dst_buf is NULL, dst_len "
+				"should be 0 for UDI compliance. Ignoring.\n");
+		}
+
 		// dst_buf == NULL means we need to allocate a new scgth list.
 		err = allocSGListAndConstrainByPathHandle(
 			src_len, path_handle, &msgl);
@@ -338,7 +344,24 @@ void udi_buf_write(
 		}
 	}
 
-	if (src_mem == NULL || src_len == 0) {
+	if (dst_buf != NULL && dst_len == 0)
+	{
+		// Handle the insertion case: move data up src_len bytes.
+		msgl->memmove(
+			dst_off + src_len, dst_off,
+			PAGING_PAGES_TO_BYTES(msgl->nFrames)
+				- (dst_off + dst_len));
+	}
+
+	if (src_mem == NULL && src_len == 0)
+	{
+		// Deletion case is where src_mem AND src_len are NULL.
+		msgl->memmove(
+			dst_off, dst_off + dst_len,
+			PAGING_PAGES_TO_BYTES(msgl->nFrames)
+				- (dst_off + dst_len));
+	}
+	else if (src_mem == NULL || src_len == 0) {
 		uarch_t		filler_len;
 
 		/* If src_len == 0, then take dst_len;
@@ -375,7 +398,7 @@ void udi_buf_write(
 	else
 	{
 		printf(WARNING LZUDI"BUF_ALLOC: Unknown permutation of args. "
-			"Unsure how to copy. Silently ignoring.\n");
+			"Unsure how to copy. Ignoring.\n");
 	}
 
 	// There should be a trivial conversion here to udi_buf_t *.
