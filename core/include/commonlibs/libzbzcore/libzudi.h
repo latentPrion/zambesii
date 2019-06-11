@@ -213,7 +213,6 @@ namespace lzudi
 
 		error_t allocateScatterGatherList(
 			fplainn::dma::constraints::Compiler *cons,
-			uarch_t initialNBytes,
 			MappedScatterGatherList **retobj);
 	}
 

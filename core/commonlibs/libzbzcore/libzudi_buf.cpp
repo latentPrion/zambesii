@@ -284,7 +284,7 @@ void udi_buf_write(
 
 		// dst_buf == NULL means we need to allocate a new scgth list.
 		err = allocSGListAndConstrainByPathHandle(
-			src_len, path_handle, &msgl);
+			path_handle, &msgl);
 
 		if (err != ERROR_SUCCESS)
 		{
@@ -494,7 +494,7 @@ void udi_buf_copy(
 
 		// dst_buf == NULL means we have to alloc a new scgth list.
 		err = allocSGListAndConstrainByPathHandle(
-			dst_len, path_handle, &dst_msgl);
+			path_handle, &dst_msgl);
 
 		if (err != ERROR_SUCCESS)
 		{
