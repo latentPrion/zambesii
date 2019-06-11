@@ -344,6 +344,11 @@ void udi_buf_write(
 		}
 	}
 
+	/* We don't need to bounds check dst_off + [dst|src]_len because we
+	 * ensure that there is enough memory up above using
+	 * hasEnoughMemoryForWrite.
+	 **/
+
 	if (dst_buf != NULL && dst_len == 0)
 	{
 		// Handle the insertion case: move data up src_len bytes.
