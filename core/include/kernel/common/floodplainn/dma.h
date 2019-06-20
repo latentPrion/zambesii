@@ -172,11 +172,34 @@ public:
 public:
 	void dump(void)
 	{
+		assert_fatal(addressSize
+			!= scatterGatherLists::ADDR_SIZE_UNKNOWN);
+
 		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
 			dump(&elements32);
 		} else {
 			dump(&elements64);
 		};
+	}
+
+	void lock(void)
+	{
+		assert_fatal(addressSize
+			!= scatterGatherLists::ADDR_SIZE_UNKNOWN);
+
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
+			{ elements32.lock(); }
+		else { elements64.lock(); }
+	}
+
+	void unlock(void)
+	{
+		assert_fatal(addressSize
+			!= scatterGatherLists::ADDR_SIZE_UNKNOWN);
+
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
+			{ elements32.unlock(); }
+		else { elements64.unlock(); }
 	}
 
 	int operator ==(void *p)

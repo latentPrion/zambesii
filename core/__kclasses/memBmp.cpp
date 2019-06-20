@@ -575,14 +575,14 @@ status_t MemoryBmp::constrainedGetFrames(
 		 */
 		if (!isSecondPass)
 		{
+			if (!dontLockRetlist) { retlist->lock(); }
+
 			if (retlist->addressSize
 				== fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
 			{
-				if (!dontLockRetlist) { retlist->elements32.lock(); }
 				scgthPreviousNElements = retlist->elements32.unlocked_getNIndexes();
 			}
 			else {
-				if (!dontLockRetlist) { retlist->elements64.lock(); }
 				scgthPreviousNElements = retlist->elements64.unlocked_getNIndexes();
 			};
 
@@ -590,14 +590,7 @@ status_t MemoryBmp::constrainedGetFrames(
 				scgthPreviousNElements + nScgthElements,
 				fplainn::dma::ScatterGatherList::PE_FLAGS_UNLOCKED);
 
-			if (retlist->addressSize
-				== fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
-			{
-				if (!dontLockRetlist) { retlist->elements32.unlock(); }
-			}
-			else {
-				if (!dontLockRetlist) { retlist->elements64.unlock(); }
-			}
+			if (!dontLockRetlist) { retlist->unlock(); }
 
 			if (error != ERROR_SUCCESS)
 			{
