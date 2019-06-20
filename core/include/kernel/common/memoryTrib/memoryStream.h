@@ -84,6 +84,9 @@ public:
 	// ONLY to be used for allocating dynamic memory and stacks.
 	void *memAlloc(uarch_t nPages, uarch_t flags=0);
 	void memFree(void *vaddr);
+	void *memRealloc(
+		void *oldmem, uarch_t oldNBytes, uarch_t newNBytes,
+		uarch_t flags=0);
 
 	// These two make use of the AllocTable to store nPages.
 	void *memoryRegionAlloc(

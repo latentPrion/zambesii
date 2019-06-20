@@ -13,6 +13,7 @@
 #include <kernel/common/memoryTrib/pmmBridge.h>
 #include <kernel/common/memoryTrib/allocFlags.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/processTrib/processTrib.h>
 
 
 error_t MemoryStream::bind(void)
@@ -217,3 +218,30 @@ void MemoryStream::memFree(void *vaddr)
 	allocTable.removeEntry(vaddr);
 }
 
+void *MemoryStream::memRealloc(
+	void *oldmem, uarch_t oldNBytes, uarch_t newNBytes, uarch_t flags
+	)
+{
+	void		*ret;
+
+	ret = memAlloc(PAGING_BYTES_TO_PAGES(newNBytes), flags);
+	if (ret == NULL) {
+		return ret;
+	}
+
+	if (oldmem != NULL)
+	{
+		memcpy(ret, oldmem, oldNBytes);
+		memFree(oldmem);
+	}
+
+	return ret;
+}
+
+void *__kmemoryStream_memRealloc(
+		void *oldmem, uarch_t oldNBytes, uarch_t newNBytes,
+		uarch_t flags)
+{
+	return processTrib.__kgetStream()->memoryStream.memRealloc(
+		oldmem, oldNBytes, newNBytes, flags);
+}
