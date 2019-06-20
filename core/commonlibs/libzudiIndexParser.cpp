@@ -197,7 +197,7 @@ error_t ZudiIndexParser::findMetalanguage(
 	zui::sHeader *hdr, utf8Char *metaName, zui::driver::sHeader *retobj
 	)
 {
-	zui::driver::Provision	currProvision;
+	zui::driver::sProvision		currProvision;
 
 	for (uarch_t i=0;
 		i < hdr->nSupportedMetas && provisionIndex.indexedRead(
@@ -305,7 +305,7 @@ error_t ZudiIndexParser::indexedGetDeviceData(
 
 error_t ZudiIndexParser::getMessage(
 	zui::driver::sHeader *drvHeader,
-	ubit16 index, zui::driver::Message *retobj
+	ubit16 index, zui::driver::sMessage *retobj
 	)
 {
 	uarch_t		messageBase;
@@ -331,7 +331,7 @@ error_t ZudiIndexParser::getMessageString(
 	)
 {
 	error_t			ret;
-	zui::driver::Message	msg;
+	zui::driver::sMessage	msg;
 
 	ret = getMessage(drvHeader, index, &msg);
 	if (ret != ERROR_SUCCESS) { return ret; };

@@ -640,7 +640,7 @@ udi_mei_init_t *zuiBackend::__kindex_getMetaInfoFor(
 	)
 {
 	HeapObj<zui::driver::sHeader>	metaHdr;
-	zui::driver::Provision		provTmp;
+	zui::driver::sProvision		provTmp;
 	ubit8				indexNo=(int)fplainn::Zui::INDEX_KERNEL;
 
 	metaHdr = new zui::driver::sHeader;
@@ -801,7 +801,7 @@ void zuiBackend::loadDriverReq(
 
 	for (uarch_t i=0; i<driverHdr->nModules; i++)
 	{
-		zui::driver::Module		currModule;
+		zui::driver::sModule		currModule;
 
 		if (zudiIndexes[0]->indexedGetModule(
 			driverHdr.get(), i, &currModule) != ERROR_SUCCESS)
@@ -1017,7 +1017,7 @@ void zuiBackend::loadRequirementsReq(
 
 	for (uarch_t i=0; i<drv->nRequirements; i++)
 	{
-		zui::driver::Provision	currProv;
+		zui::driver::sProvision		currProv;
 		sarch_t				isSatisfied=0;
 
 		for (uarch_t j=0;

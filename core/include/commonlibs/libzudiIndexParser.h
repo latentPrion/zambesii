@@ -85,7 +85,7 @@ public:
 
 	error_t getMessage(
 		zui::driver::sHeader *drvHeader, ubit16 index,
-		zui::driver::Message *ret);
+		zui::driver::sMessage *ret);
 
 	error_t getMessageString(
 		zui::driver::sHeader *drvHeader, ubit16 index,
@@ -103,21 +103,21 @@ public:
 		zui::rank::sHeader *rankHeader, uarch_t idx, utf8Char *retstr);
 
 	error_t indexedGetProvision(
-		uarch_t idx, zui::driver::Provision *retobj)
+		uarch_t idx, zui::driver::sProvision *retobj)
 	{
 		return provisionIndex.read(
 			retobj, sizeof(*retobj) * idx, sizeof(*retobj));
 	}
 
 	error_t getProvisionString(
-		zui::driver::Provision *prov, utf8Char *retstr)
+		zui::driver::sProvision *prov, utf8Char *retstr)
 	{
 		return stringIndex.readString(retstr, prov->nameOff);
 	}
 
 	error_t indexedGetModule(
 		zui::driver::sHeader *drvHeader, uarch_t idx,
-		zui::driver::Module *retobj)
+		zui::driver::sModule *retobj)
 	{
 		return dataIndex.read(
 			retobj,
@@ -125,7 +125,7 @@ public:
 			sizeof(*retobj));
 	}
 
-	error_t getModuleString(zui::driver::Module *module, utf8Char *retstr)
+	error_t getModuleString(zui::driver::sModule *module, utf8Char *retstr)
 	{
 		return stringIndex.readString(retstr, module->fileNameOff);
 	}
