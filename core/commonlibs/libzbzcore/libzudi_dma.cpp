@@ -7,6 +7,33 @@
 #include <commonlibs/libzbzcore/libzudi.h>
 
 
+/**	EXPLANATION:
+ * The UDI DMA abstractions are built on top of the UDI buf abstractions,
+ * and to the extent that this is true, the UDI DMA abstractions mostly consist
+ * of userspace constructs.
+ *
+ * The udi_dma_handle_t is really a handle to a compiled constraints object.
+ * The developer can then bind any number of different buffers to that compiled
+ * constraints object by using dma_buf_map/unmap.
+ *
+ * If the buf_path for the given buffer doesn't match the constraints on the
+ * udi_dma_handle_t, the environment is *expected* to allocate a new SGList on
+ * the fly and then copy the data from the given buffer into that transitory
+ * SGList and return the frame-list for the transitory SGList as the
+ * udi_scgth_t.
+ *
+ * This on the fly SGList allocation and (moreso than that) the data copying
+ * into the transitory SGList is a bit too cumbersome for me to implement when
+ * it can be designed around by the developer. So I will postpone implementation
+ * of that portion of the UDI spec.
+ *
+ * What we currently do instead, is require the developer to make sure that
+ * his/her udi_buf_t objects are properly bound to a udi_buf_path_t.
+ *
+ * This is a way to ensure that the on-the-fly bounce buffer SGList allocation
+ * is not needed.
+ **/
+
 lzudi::dma::sHandle *
 lzudi::dma::udi_dma_prepare_sync(
 	udi_dma_constraints_t constraints,
