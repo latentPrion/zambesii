@@ -148,6 +148,11 @@ public:
 	ScatterGatherList(void)
 	:
 	addressSize(scatterGatherLists::ADDR_SIZE_UNKNOWN),
+	/* ScatterGatherList instances are manipulated by the PMM, so their
+	 * metadata must not be fakemapped.
+	 */
+	elements32(RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP),
+	elements64(RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP),
 	mapping(this)
 	{
 		memset(&udiScgthList, 0, sizeof(udiScgthList));

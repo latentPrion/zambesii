@@ -3,21 +3,28 @@
 
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kflagManipulation.h>
+	#include <__kstdlib/__kclib/stdlib.h>
 	#include <kernel/common/panic.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
-	#include <__kstdlib/__kclib/stdlib.h>
+	#include <kernel/common/memoryTrib/__kmemoryStream_methods.h>
+	#include <kernel/common/memoryTrib/allocFlags.h>
 
 	/**	CAVEAT:
 	 * The only thing that is MP safe in this class is the act of resizing
 	 * it. Everything else is *NOT* mp-safe.
 	 **/
 
+#define RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP	(1<<0)
+
 template <class T>
 class ResizeableArray
 {
 public:
-	ResizeableArray(void) {}
+	ResizeableArray(uarch_t _flags=0)
+	:
+	flags(_flags)
+	{}
 
 	error_t initialize(void) { return ERROR_SUCCESS; }
 
@@ -100,10 +107,48 @@ public:
 			return ERROR_SUCCESS;
 		};
 
-		// Else, resize array.
-		ret = crudeRealloc(
-			s.rsrc.array, sizeof(T) * s.rsrc.nIndexes,
-			(void **)&s.rsrc.array, sizeof(T) * (index + 1));
+		if (FLAG_TEST(this->flags, RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP))
+		{
+			// Else, resize array.
+			ret = crudeRealloc(
+				s.rsrc.array, sizeof(T) * s.rsrc.nIndexes,
+				(void **)&s.rsrc.array,
+				sizeof(T) * (index + 1));
+		}
+		else
+		{
+			void		*newmem;
+
+			/**	EXPLANATION:
+			 * The RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP flag was
+			 * introduced to deal with the need for instances of
+			 * ScatterGatherList to be able to be read/written
+			 * inside of the PMM's constrainedGetFrames() method.
+			 *
+			 * Since any memory that is accessed by any layer of
+			 * the memory management code must absolutely not
+			 * page fault, we must ensure that all metadata
+			 * manipulated by MM code is fully committed.
+			 *
+			 * Hence this feature: it enables ScatterGatherList to
+			 * use ResizeableArray internally to store the list of
+			 * frames that make up the SGList and ensure that this
+			 * metadata does not trigger a page fault.
+			 **/
+			newmem = __kmemoryStream_memRealloc(
+				s.rsrc.array, sizeof(T) * s.rsrc.nIndexes,
+				sizeof(T) * (index + 1),
+				MEMALLOC_NO_FAKEMAP);
+
+			if (newmem != NULL)
+			{
+				ret = ERROR_SUCCESS;
+				s.rsrc.array = static_cast<T *>(newmem);
+			}
+			else {
+				ret = ERROR_MEMORY_NOMEM;
+			}
+		}
 
 		if (ret == ERROR_SUCCESS) {
 			s.rsrc.nIndexes = index + 1;
@@ -192,6 +237,7 @@ public:
 		uarch_t		nIndexes;
 	};
 
+	uarch_t						flags;
 	SharedResourceGroup<WaitLock, sState>		s;
 };
 
