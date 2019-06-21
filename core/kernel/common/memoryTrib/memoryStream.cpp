@@ -44,7 +44,7 @@ void *MemoryStream::memAlloc(uarch_t nPages, uarch_t flags)
 
 	// Try alloc cache.
 	if (!FLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)
-		&& (allocCache.pop(nPages, (void **)&ret) == ERROR_SUCCESS))
+		&& (allocCache.pop(nPages, &ret) == ERROR_SUCCESS))
 	{
 		walkerPageRanger::setAttributes(
 			&parent->getVaddrSpaceStream()->vaddrSpace,
