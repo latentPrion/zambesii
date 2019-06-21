@@ -710,15 +710,14 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	case UDI_ENUMERATE_OK:
 		enumeratingMeta = dev->driverInstance->driver
 			->lookupMetalanguageForDriverOpsIndex(
-			response->info.params.enumerateChildren.ops_idx);
+			response->info.params.enumerate.ops_idx);
 
 		if (enumeratingMeta == NULL)
 		{
 			printf(ERROR ZUM"enumChildren %s: ops_idx %d in "
 				"enumerating parent isn't known to kernel.\n",
 				ctxt->info.path,
-				response->info.params.enumerateChildren
-					.ops_idx);
+				response->info.params.enumerate.ops_idx);
 
 			myResponse(ERROR_NOT_FOUND);
 			break;
@@ -726,7 +725,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 
 		err = floodplainn.createDevice(
 			ctxt->info.path, CHIPSET_NUMA_SHBANKID,
-			response->info.params.enumerateChildren.cb.child_ID,
+			response->info.params.enumerate.cb.child_ID,
 			enumeratingMeta->name,
 			0, &newDevice);
 
@@ -805,7 +804,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	else
 	{
 		// Allow the response to be sent. Nothing really to do here.
-		ctxt->info.params.enumerateChildren.enumeration_result =
+		ctxt->info.params.enumerateChildren.final_enumeration_result =
 			response->info.params.enumerate.enumeration_result;
 	};
 }
@@ -890,15 +889,14 @@ void zumServer::postManagementCb::postManagementCbReq1(
 		 */
 		enumeratingMeta = dev->driverInstance->driver
 			->lookupMetalanguageForDriverOpsIndex(
-			response->info.params.enumerateChildren.ops_idx);
+			response->info.params.enumerate.ops_idx);
 
 		if (enumeratingMeta == NULL)
 		{
 			printf(ERROR ZUM"enumChildren %s: ops_idx %d in "
 				"enumerating parent isn't known to kernel.\n",
 				ctxt->info.path,
-				response->info.params.enumerateChildren
-					.ops_idx);
+				response->info.params.enumerate.ops_idx);
 
 			myResponse(ERROR_NOT_FOUND);
 			break;
@@ -906,7 +904,7 @@ void zumServer::postManagementCb::postManagementCbReq1(
 
 		err = floodplainn.createDevice(
 			ctxt->info.path, CHIPSET_NUMA_SHBANKID,
-			response->info.params.postManagementCb.cb.child_ID,
+			response->info.params.enumerate.cb.child_ID,
 			enumeratingMeta->name,
 			0, &newDevice);
 

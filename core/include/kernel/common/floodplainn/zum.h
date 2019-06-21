@@ -262,10 +262,11 @@ public:
 
 			struct
 			{
+				// We need the cb here only for the filter_list.
 				udi_enumerate_cb_t	cb;
 
-				udi_ubit8_t		enumeration_result;
-				udi_index_t		ops_idx;
+				udi_ubit8_t
+						final_enumeration_result;
 				uarch_t			flags;
 				uarch_t			nDeviceIds;
 				ubit32			*deviceIdsHandle;
@@ -273,6 +274,11 @@ public:
 
 			struct
 			{
+				/* cb is needed here for the filter_list and
+				 * attr_list. The attr_list is an input here
+				 * because this request is meant to be used
+				 * for directed enumeration.
+				 **/
 				udi_enumerate_cb_t	cb;
 
 				udi_ubit8_t		enumeration_result;
