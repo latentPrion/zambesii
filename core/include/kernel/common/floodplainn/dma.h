@@ -378,7 +378,7 @@ private:
 	}
 
 	template <class scgth_elements_type>
-	error_t addFrames(
+	status_t addFrames(
 		ResizeableArray<scgth_elements_type> *list,
 		paddr_t p, uarch_t nFrames, sarch_t atIndex=-1,
 		uarch_t flags=0);
@@ -674,7 +674,7 @@ void fplainn::dma::ScatterGatherList::dump(
 }
 
 template <class scgth_elements_type>
-error_t fplainn::dma::ScatterGatherList::addFrames(
+status_t fplainn::dma::ScatterGatherList::addFrames(
 	ResizeableArray<scgth_elements_type> *list, paddr_t p, uarch_t nFrames,
 	sarch_t atIndex, uarch_t flags
 	)
