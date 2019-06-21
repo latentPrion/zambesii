@@ -17,23 +17,7 @@ void zrootdev_usage_ind(udi_usage_cb_t *cb, udi_ubit8_t resource_level)
 	udi_usage_res(cb);
 }
 
-void enumerate_buff_alloc_cbfn2(udi_cb_t *, udi_buf_t *newbuff)
-{
-	printf(NOTICE"buff_alloc callback: newbuff %p.\n", newbuff);
-}
-
-void enumerate_buff_alloc_cbfn(udi_cb_t *gcb, udi_buf_t *newbuff)
-{
-	udi_ubit32_t		var;
-
-	printf(NOTICE"buff_alloc callback: newbuff %p.\n", newbuff);
-
-	udi_buf_write(
-		&enumerate_buff_alloc_cbfn2, gcb,
-		&var, sizeof(var),
-		newbuff, 2048, 16,
-		0);
-}
+udi_buf_write_call_t zrootdev_enumerate_req1;
 
 ubit32 ___=0;
 void zrootdev_enumerate_req(
@@ -57,16 +41,27 @@ printf(NOTICE"enum!\tcb %p, %d attr @%p, %d filt @%p.\n",
 
 	if (___ >3) {
 		udi_enumerate_ack(cb, UDI_ENUMERATE_DONE, 0);
+
+		udi_buf_write(
+			&zrootdev_enumerate_req1, &cb->gcb,
+			&___, sizeof(___),
+			NULL, 16, sizeof(___),
+			(void *)1);
 	} else {
 		cb->child_ID = ___++;
-		udi_enumerate_ack(cb, UDI_ENUMERATE_OK, 0);
+		udi_enumerate_ack(cb, UDI_ENUMERATE_OK, 1);
 	};
 
-	udi_buf_write(
-		&enumerate_buff_alloc_cbfn, &cb->gcb,
-		&___, sizeof(___),
-		NULL, 0, sizeof(___),
-		(void *)1);
+}
+
+void zrootdev_enumerate_req1(udi_cb_t *gcb, udi_buf_t *newbuf)
+{
+	ubit32		tmp;
+
+	udi_buf_read(newbuf, 0, 4, &tmp);
+	printf(CC"Value read back from buf0 is %x\n", tmp);
+	udi_buf_read(newbuf, 16, 4, &tmp);
+	printf(CC"Value read back from buf16 is %x\n", tmp);
 }
 
 void zrootdev_devmgmt_req(
