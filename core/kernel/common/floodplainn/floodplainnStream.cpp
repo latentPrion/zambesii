@@ -40,10 +40,10 @@ error_t FloodplainnStream::getParentConstraints(
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	if (parentId == 0)
+	if ((udi_buf_path_t)(uintptr_t)parentId == UDI_NULL_BUF_PATH)
 	{
-		printf(WARNING FPSTREAM_ID "getParentConstraints(%d): Invalid "
-			"parentId.\n",
+		printf(WARNING FPSTREAM_ID "getParentConstraints(NULL_PATH): "
+			"Invalid parentId.\n",
 			self->getFullId(), parentId);
 		return ERROR_INVALID_ARG_VAL;
 	}
