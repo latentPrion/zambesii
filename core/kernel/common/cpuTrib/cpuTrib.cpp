@@ -276,7 +276,7 @@ error_t CpuTrib::initializeAllCpus(void)
 	if (availableBanks.resizeTo(
 		CpuStream::highestBankId + 1) != ERROR_SUCCESS)
 	{
-		panic(CC""CPUTRIB"AvailableBanks BMP initialize() failed.\n");
+		panic(ERROR CPUTRIB"AvailableBanks BMP initialize() failed.\n");
 	};
 #endif
 #endif
@@ -296,13 +296,13 @@ error_t CpuTrib::initializeAllCpus(void)
 	if (availableCpus.resizeTo(
 		CpuStream::highestCpuId + 1) != ERROR_SUCCESS)
 	{
-		panic(CC""CPUTRIB"Failed to initialize() availableCpus bmp.\n");
+		panic(ERROR CPUTRIB"Failed to initialize() availableCpus bmp.\n");
 	};
 
 	if (onlineCpus.resizeTo(
 		CpuStream::highestCpuId + 1) != ERROR_SUCCESS)
 	{
-		panic(CC""CPUTRIB"Failed to initialize() onlineCpus bmp.\n");
+		panic(ERROR CPUTRIB"Failed to initialize() onlineCpus bmp.\n");
 	};
 #endif
 
