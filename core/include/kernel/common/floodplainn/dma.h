@@ -169,6 +169,12 @@ public:
 		ret = elements64.initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
 
+		ret = compiledConstraints.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+
+		ret = mapping.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+
 		return ERROR_SUCCESS;
 	}
 
