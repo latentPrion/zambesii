@@ -252,6 +252,36 @@ public:
 		return ERROR_SUCCESS;
 	}
 
+	// Retrieves the constraints for a particular SGList.
+	error_t getScatterGatherListConstraints(
+		sarch_t id, fplainn::dma::constraints::Compiler *retobj)
+	{
+		fplainn::dma::ScatterGatherList		*sgl;
+
+		sgl = getScatterGatherList(id);
+		if (sgl == NULL) {
+			return ERROR_NOT_FOUND;
+		}
+
+		if (!sgl->compiledConstraints.isValid()) {
+			return ERROR_UNINITIALIZED;
+		}
+
+		*retobj = sgl->compiledConstraints;
+		return ERROR_SUCCESS;
+	}
+
+	error_t getChipsetDefaultConstraints(
+		fplainn::dma::constraints::Compiler *retobj)
+	{
+		if (!defaultConstraints.isValid()) {
+			return ERROR_UNINITIALIZED;
+		}
+
+		*retobj = defaultConstraints;
+		return ERROR_SUCCESS;
+	}
+
 	/* Sets default constraints for a child device of a device instance.
 	 * This is useful because the kernel requires that SGLists be
 	 * constrained at the time of their allocation.
