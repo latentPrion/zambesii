@@ -260,8 +260,7 @@ void udi_buf_write(
 {
 	error_t						err;
 	lzudi::buf::MappedScatterGatherList		*msgl;
-	uarch_t						currNBytes,
-							extraNBytesRequired;
+	uarch_t						extraNBytesRequired;
 	Thread						*currThread;
 	sarch_t						status;
 
