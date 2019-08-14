@@ -7,6 +7,8 @@ OBJFILES=memBmp.o bitmap.o allocTable.o pageTableCache.o slamCache.o \
 
 all: Makefile $(DELIVERABLE)
 
+memReservoir.o: CXXFLAGS+=-Wno-frame-address
+
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
