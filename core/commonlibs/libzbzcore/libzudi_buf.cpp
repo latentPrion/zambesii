@@ -146,7 +146,7 @@ error_t lzudi::buf::allocateScatterGatherList(
 	error_t					ret;
 	Thread					*currThread;
 
-	if (retobj == NULL || comCons == NULL) { return ERROR_INVALID_ARG; }
+	if (retobj == NULL) { return ERROR_INVALID_ARG; }
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
@@ -173,13 +173,17 @@ error_t lzudi::buf::allocateScatterGatherList(
 		goto out_freeMsgl;
 	}
 
-	ret = currThread->parent->floodplainnStream
-		.constrainScatterGatherList(msgl->sGListIndex, comCons);
-
-	if (ret != ERROR_SUCCESS)
+	if (comCons != NULL)
 	{
-		printf(ERROR LZUDI"buf:allocSGList(): constrain failed.\n");
-		goto out_freeSgl;
+		ret = currThread->parent->floodplainnStream
+			.constrainScatterGatherList(msgl->sGListIndex, comCons);
+
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR LZUDI"buf:allocSGList(): constrain "
+				"failed.\n");
+			goto out_freeSgl;
+		}
 	}
 
 	*retobj = msgl;
@@ -201,40 +205,46 @@ static error_t allocSGListAndConstrainByPathHandle(
 {
 	error_t						ret;
 	Thread						*currThread;
-	fplainn::dma::constraints::Compiler		requestedConstraints;
+	fplainn::dma::constraints::Compiler		requestedConstraints,
+							*constraintsToBeUsed;
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
 
-	// path_handle must be supplied when allocating a buf.
+	// Warn the user that path handles should be used when allocating bufs.
 	if (UDI_HANDLE_IS_NULL(path_handle, udi_buf_path_t))
 	{
-		printf(ERROR LZUDI"BUF_ALLOC: A path handle must be "
-			"supplied to enable constraint.\n");
+		printf(WARNING LZUDI"BUF_ALLOC: Path handles should be "
+			"supplied to enable buf sglist frame constraining.\n");
 
-		return ERROR_INVALID_FORMAT;
+		constraintsToBeUsed = NULL;
 	}
-
-	/**	FIXME:
-	 * Ask the kernel for the constraints associated with the
-	 * path handle.
-	 **/
-	ret = currThread->parent->floodplainnStream.
-		getParentConstraints(
-			reinterpret_cast<uintptr_t>(path_handle),
-			&requestedConstraints);
-
-	if (ret != ERROR_SUCCESS)
+	else
 	{
-		printf(ERROR LZUDI"BUF_ALLOC: Failed to get "
-			"constraints for new buffer.\n");
+		/**	FIXME:
+		 * Ask the kernel for the constraints associated with the
+		 * path handle.
+		 **/
+		ret = currThread->parent->floodplainnStream.
+			getParentConstraints(
+				reinterpret_cast<uintptr_t>(path_handle),
+				&requestedConstraints);
 
-		return ret;
+		if (ret != ERROR_SUCCESS
+			&& !UDI_HANDLE_IS_NULL(path_handle, udi_buf_path_t))
+		{
+			printf(ERROR LZUDI"BUF_ALLOC: Failed to get "
+				"constraints for new buffer.\n");
+
+			return ret;
+		}
+
+		constraintsToBeUsed = &requestedConstraints;
 	}
 
 	// Allocate a new SGList.
 	ret = lzudi::buf::allocateScatterGatherList(
-		&requestedConstraints, retmsgl);
+		constraintsToBeUsed, retmsgl);
 
 	if (ret != ERROR_SUCCESS)
 	{
