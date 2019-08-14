@@ -193,6 +193,44 @@ public:
 	}
 
 	/**	EXPLANATION:
+	 * This method will  iterate through the nominated sglist and copy out
+	 * the address+size pairs into `outarray`. The bounds of `outarray` are
+	 * given to the kernel in `outarraynBytes` as a byte size.
+	 *
+	 * If the memory supplied in `outarray` is insufficient to copy the
+	 * entire frame list, the kernel will copy as much metadata as it can
+	 * and then return.
+	 *
+	 * The number of address+size elements copied by the kernel is returned
+	 * as the return value.
+	 *
+	 * The data type of the elements of the array returned by the kernel
+	 * (i.e, whether 32-bit or 64-bit) is determined by the flags passed
+	 * to `outarrrayType`. Pass in UDI_SCGTH_32 and/or UDI_SCGTH_64.
+	 *
+	 * The kernel will read `outarrayType` and it will set `outarrayType`
+	 * to the list data type it chose to use before returning.
+	 */
+	status_t getScatterGatherListElements(
+		sarch_t id,
+		void *outarray, uarch_t outarrayNBytes, ubit8 *outarrayType)
+	{
+		fplainn::dma::ScatterGatherList		*sgl;
+
+		if (outarray == NULL || outarrayType == NULL)
+			{ return ERROR_INVALID_ARG; }
+
+		if (outarrayNBytes < sizeof(udi_scgth_element_32_t))
+			{ return 0; }
+
+		sgl = getScatterGatherList(id);
+		if (sgl == NULL) { return ERROR_NOT_FOUND; }
+
+		return sgl->getElements(
+			outarray, outarrayNBytes, outarrayType);
+	}
+
+	/**	EXPLANATION:
 	 * Freezes a SGList. Freezing means that the frames list cannot
 	 * be modified until the list is unfrozen. That includes resizing the
 	 * list. This is effectively the implementation of

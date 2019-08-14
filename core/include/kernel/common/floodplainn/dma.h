@@ -316,6 +316,26 @@ public:
 		}
 	}
 
+	status_t getElements(void *outarr, uarch_t nBytes, ubit8 *outarrType)
+	{
+		if (outarrType == NULL)
+			{ return ERROR_INVALID_ARG; }
+
+		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
+			{ return ERROR_UNINITIALIZED; }
+
+		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
+		{
+			return getElements(
+				&elements32, outarr, nBytes, outarrType);
+		}
+		else
+		{
+			return getElements(
+				&elements64, outarr, nBytes, outarrType);
+		}
+	}
+
 	error_t resize(uarch_t nFrames)
 	{
 		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
@@ -414,6 +434,12 @@ private:
 	uarch_t getNFrames(
 		ResizeableArray<scgth_elements_type> *list,
 		uarch_t flags=0);
+
+	template <class scgth_elements_type>
+	status_t getElements(
+		ResizeableArray<scgth_elements_type> *list,
+		void *outarr, uarch_t nBytes,
+		ubit8 *outarrType);
 
 	template <class scgth_elements_type>
 	error_t resize(
@@ -812,6 +838,76 @@ uarch_t fplainn::dma::ScatterGatherList::getNFrames(
 		{ list->unlock(); }
 
 	return ret;
+}
+
+template <class scgth_elements_type>
+status_t fplainn::dma::ScatterGatherList::getElements(
+	ResizeableArray<scgth_elements_type> *list,
+	void *outarr, uarch_t nelem, ubit8 *outarrType
+	)
+{
+	class ResizeableArray<scgth_elements_type>::Iterator	it;
+	uarch_t							i;
+
+	if (outarr == NULL || outarrType == NULL) { return ERROR_INVALID_ARG; }
+
+	if ((*outarrType & (UDI_SCGTH_32 | UDI_SCGTH_64)) == 0) {
+		printf(ERROR SGLIST"getElements: Caller must state supported "
+			"output list formats. Pass UDI_SCGTH_[32|64].\n");
+
+		return ERROR_INVALID_ARG_VAL;
+	}
+
+	/* Prefer to support 64-bit output lists if the caller indicates support
+	 * for them.
+	 *
+	 * But only one sglist format flag must be set by the kernel as the
+	 * output `outarrType` returned to the user.
+	 */
+	if (FLAG_TEST(*outarrType, UDI_SCGTH_64)) {
+		*outarrType = UDI_SCGTH_64;
+	} else {
+		// Nothing to do -- 32 was already set by caller.
+	}
+
+	list->lock();
+
+	// See if the supplied outarr can hold all the elements.
+	for (i=0, it=list->begin();
+		i < nelem && it != list->end();
+		++it, i++)
+	{
+		scgth_elements_type	tmp = *it;
+		paddr_t			p;
+
+		assign_scgth_block_busaddr_to_paddr(p, tmp.block_busaddr);
+
+		switch (*outarrType)
+		{
+		case UDI_SCGTH_32:
+			{
+			udi_scgth_element_32_t			*outarr32;
+
+			outarr32 = static_cast<udi_scgth_element_32_t *>(outarr);
+
+			outarr32[i].block_length = tmp.block_length;
+			assign_paddr_to_scgth_block_busaddr(&outarr32[i], p);
+			}
+			break;
+		default:
+			{
+			udi_scgth_element_64_t			*outarr64;
+
+			outarr64 = static_cast<udi_scgth_element_64_t *>(outarr);
+
+			outarr64[i].block_length = tmp.block_length;
+			assign_paddr_to_scgth_block_busaddr(&outarr64[i], p);
+			}
+		}
+	}
+
+	list->unlock();
+	return i;
 }
 
 template <class scgth_elements_type>
