@@ -45,7 +45,7 @@ printf(NOTICE"enum!\tcb %p, %d attr @%p, %d filt @%p.\n",
 		udi_buf_write(
 			&zrootdev_enumerate_req1, &cb->gcb,
 			&___, sizeof(___),
-			NULL, 16, sizeof(___),
+			NULL, 8192, sizeof(___),
 			(void *)1);
 	} else {
 		cb->child_ID = ___++;
@@ -61,6 +61,8 @@ void zrootdev_enumerate_req1(udi_cb_t *gcb, udi_buf_t *newbuf)
 	udi_buf_read(newbuf, 0, 4, &tmp);
 	printf(CC"Value read back from buf0 is %x\n", tmp);
 	udi_buf_read(newbuf, 16, 4, &tmp);
+	printf(CC"Value read back from buf16 is %x\n", tmp);
+	udi_buf_read(newbuf, 8500, 4, &tmp);
 	printf(CC"Value read back from buf16 is %x\n", tmp);
 }
 
