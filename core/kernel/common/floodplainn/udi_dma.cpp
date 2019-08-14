@@ -317,7 +317,9 @@ udi_dma_constraints_attr_spec_t *fplainn::dma::Constraints::getAttr(
 void fplainn::dma::constraints::Compiler::dump(void)
 {
 	printf(NOTICE"DMACon Compiler @%p. Dumping.\n"
-		"\tCan address %u bits, will be presented with %s-bit descriptors.\n"
+		"\tCan address %u bits\n"
+		"\tCan be presented with descriptors of "
+		"sizes: 32? %s | 64? %s.\n"
 		"\tstarting at PFN %x upto PFN %x.\n"
 		"\tSkip stride of %d frames.\n"
 		"\tAllocates in blocks of at least %d frames, up to a max of %u frames per elem.\n"
@@ -325,7 +327,8 @@ void fplainn::dma::constraints::Compiler::dump(void)
 		"\tPartial alloc? %s. Sequentially accessed? %s.\n",
 		this,
 		i.addressableBits,
-		((i.addressSize == scatterGatherLists::ADDR_SIZE_64) ? "64" : "32"),
+		(FLAG_TEST(i.callerSupportedFormats, UDI_SCGTH_32) ? "yes" : "no"),
+		(FLAG_TEST(i.callerSupportedFormats, UDI_SCGTH_64) ? "yes" : "no"),
 		i.startPfn, i.beyondEndPfn - 1,
 		i.pfnSkipStride,
 		i.minElementGranularityNFrames, i.maxNContiguousFrames,
@@ -576,7 +579,7 @@ error_t fplainn::dma::constraints::Compiler::compile(
 	};
 
 	/* SCGTH_FORMAT *must* be provided. */
-	i.addressSize = scatterGatherLists::ADDR_SIZE_UNKNOWN;
+	i.callerSupportedFormats = 0;
 	tmpAttr = cons->getAttr(UDI_DMA_SCGTH_FORMAT);
 	if (tmpAttr == NULL)
 	{
@@ -592,45 +595,23 @@ error_t fplainn::dma::constraints::Compiler::compile(
 			return ERROR_NON_CONFORMANT;
 		};
 
-		/*	EXPLANATION:
-		 * On a 32-bit build, prefer to use 32-bit SCGTH, unless
-		 * it's a PAE build.
+		/* Store the caller's indicated supported formats.
+		 * The final choice on which list element format is actually
+		 * returned by the kernel to the user, is made at point of list
+		 * copy-out in getElements().
 		 *
-		 * The reason we prefer to do 64-bit scgth lists on a
-		 * PAE build is because it makes it more likely that
-		 * device DMA memory will be allocated from the higher
-		 * regions in RAM, away from where most application
-		 * footprint is.
+		 * In particular, notice how `callerSupportedFormats` is
+		 * actually never used by the kernel itself in making that
+		 * decision.
 		 *
-		 * On a 64-bit build we also prefer to use 64-bit DMA so we have
-		 * a higher chance of reserving the low 32-bits for devices that
-		 * truly need 32-bit DMA.
+		 * `callerSupportedFormats` is for userspace's benefit. It
+		 * allows the libzudi code in userspace to see what formats were
+		 * indicated by the uncompiled constraints that were originally
+		 * bound to the sglist object (i.e, those constraints which we
+		 * are presumably compiling right now in this function
+		 * invocation).
 		 */
-
-		/*	NOTES:
-		 * We allow 64-bit formatted scgth lists on 32 bit builds
-		 * because format of the list is not the same as the range of
-		 * pmem from which the memory was allocated.
-		 *
-		 * So we can allocate memory in the first 4GiB to a caller that
-		 * requests a 64-bit formatted list. This just means we set the
-		 * top 32-bit of the addresses to 0.
-		 **/
-#if (__VADDR_NBITS__ == 64) || ((__VADDR_NBITS__ == 32) && defined(ARCH_x86_32_PAE))
-		if (tmpAttr->attr_value & UDI_SCGTH_64) {
-			i.addressSize = scatterGatherLists::ADDR_SIZE_64;
-		} else {
-			i.addressSize = scatterGatherLists::ADDR_SIZE_32;
-		};
-#elif (__VADDR_NBITS__ == 32)
-		if (tmpAttr->attr_value & UDI_SCGTH_32) {
-			i.addressSize = scatterGatherLists::ADDR_SIZE_32;
-		} else {
-			i.addressSize = scatterGatherLists::ADDR_SIZE_64;
-		};
-#else
-	#error "Unhandled build configuration for UDI DMA SCGTH_FORMAT."
-#endif
+		i.callerSupportedFormats = tmpAttr->attr_value;
 	};
 
 	return ERROR_SUCCESS;

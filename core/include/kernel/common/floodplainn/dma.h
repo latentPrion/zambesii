@@ -72,6 +72,7 @@ public:
 		 * the members that make up previous version iterations.
 		 */
 		uarch_t		version;
+		ubit8		callerSupportedFormats;
 		sbit8		partialAllocationsDisallowed,
 				sequentialAccessHint;
 		ubit8		addressableBits,
@@ -84,7 +85,6 @@ public:
 				slopInBits, slopOutBits,
 				slopOutExtra, slopBarrierBits,
 				fixedBitsValue;
-		fplainn::dma::scatterGatherLists::eAddressSize	addressSize;
 	} i;
 
 private:
