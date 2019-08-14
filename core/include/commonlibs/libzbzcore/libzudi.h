@@ -220,13 +220,15 @@ namespace lzudi
 	{
 		struct sHandle
 		{
-			sarch_t					sGListIndex;
-			fplainn::dma::Constraints 		*constraints;
-			fplainn::dma::ScatterGatherList		*sGList;
-			uarch_t					flags;
+			sHandle				*bounceBuffer;
+			fplainn::dma::constraints::Compiler
+							compiledConstraints;
+			buf::MappedScatterGatherList	*msgl;
+			udi_scgth_t			udiScgthObj;
+			uarch_t				udi_dmah_flags;
 		};
 
-		sHandle *udi_dma_prepare_sync(
+		sHandle *udi_dma_prepare_alloc_and_compile_dmah_sync(
 			udi_dma_constraints_t constraints,
 			udi_ubit8_t flags);
 	}
