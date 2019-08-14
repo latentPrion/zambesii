@@ -150,6 +150,7 @@ public:
 	// Do not expose "justTransfer" to userspace in the syscall version.
 	sbit8 releaseScatterGatherList(sarch_t id, sbit8 justTransfer);
 
+	// Associates the list with the default "loose" constraints.
 	error_t liberateScatterGatherList(sarch_t id)
 		{ return constrainScatterGatherList(id, &defaultConstraints); }
 
@@ -167,7 +168,16 @@ public:
 
 			return ERROR_NOT_FOUND;
 		}
-		// Associates the list with the default "loose" constraints.
+
+		/**	FIXME:
+		 * When re-constraining a previously constrained list, we may
+		 * need to create an intermediate list whose frames meet the
+		 * new constraints, then copy over the data currently in the
+		 * list before returning.
+		 *
+		 * This would be the case if the new constraints are stricter
+		 * than the old constraints.
+		 */
 		return list->constrain(compiledCon);
 	}
 
