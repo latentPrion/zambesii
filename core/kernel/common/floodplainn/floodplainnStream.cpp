@@ -440,7 +440,6 @@ status_t FloodplainnStream::allocateScatterGatherList(
 
 	if (newId < 0)
 	{
-
 		printf(FATAL"allocScgthList: Failed get ID for new scgth list "
 			"even though array resize worked.\n");
 
