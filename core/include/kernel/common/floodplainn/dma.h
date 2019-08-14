@@ -77,7 +77,7 @@ public:
 				sequentialAccessHint;
 		ubit8		addressableBits,
 				fixedBits;
-		uarch_t		pfnSkipStride;
+		uarch_t		pfnSkipStride, maxElementsPerSegment;
 		paddr_t		startPfn, beyondEndPfn,
 				// minElemGranNFrames cannot be < 1.
 				minElementGranularityNFrames,

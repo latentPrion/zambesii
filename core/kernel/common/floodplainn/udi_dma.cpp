@@ -424,6 +424,13 @@ error_t fplainn::dma::constraints::Compiler::compile(
 		i.pfnSkipStride = (1 << (tmpAttr->attr_value - PAGING_BASE_SHIFT)) - 1;
 	};
 
+	// 0 means unlimited elements per segment.
+	i.maxElementsPerSegment = 0;
+	tmpAttr = cons->getAttr(UDI_DMA_ELEMENT_ALIGNMENT_BITS);
+	if (tmpAttr != NULL) {
+		i.maxElementsPerSegment = tmpAttr->attr_value;
+	}
+
 	i.startPfn = 0;
 	tmpAttr = cons->getAttr(UDI_DMA_ADDR_FIXED_BITS);
 	if (tmpAttr != NULL && tmpAttr->attr_value > 0)
