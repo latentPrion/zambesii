@@ -153,7 +153,8 @@ public:
 	 */
 	elements32(RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP),
 	elements64(RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP),
-	mapping(this)
+	mapping(this),
+	isFrozen(0)
 	{
 		memset(&udiScgthList, 0, sizeof(udiScgthList));
 	}
@@ -352,6 +353,21 @@ public:
 	// Destroys a mapping to this SGList.
 	void unmap(void);
 
+	/**	EXPLANATION:
+	 * This function should be renamed into something like iommuMap().
+	 *
+	 * We don't need to freeze SGLists -- we need only ensure that whe
+	 * their frame list contents are changed, that we force the IOMM
+	 * mappings to be made invalid such that the respective device can no
+	 * longer access the frames which were previously in the list.
+	 */
+	status_t toggleFreeze(sbit8 freeze_or_unfreeze)
+	{
+		(void)freeze_or_unfreeze;
+		printf(WARNING SGLIST"toggleFreeze: Unimplemented!\n");
+		return ERROR_SUCCESS;
+	}
+
 private:
 	template <class scgth_elements_type>
 	void dump(ResizeableArray<scgth_elements_type> *list);
@@ -428,6 +444,8 @@ public:
 	udi_scgth_t				udiScgthList;
 	constraints::Compiler			compiledConstraints;
 	MappedScatterGatherList			mapping;
+	// XXX: FIXME: This should be read/written with atomic operations.
+	sarch_t					isFrozen;
 };
 
 class Constraints

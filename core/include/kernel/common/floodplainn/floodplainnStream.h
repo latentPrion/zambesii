@@ -182,6 +182,35 @@ public:
 		return list->getNFrames();
 	}
 
+	/**	EXPLANATION:
+	 * Freezes a SGList. Freezing means that the frames list cannot
+	 * be modified until the list is unfrozen. That includes resizing the
+	 * list. This is effectively the implementation of
+	 * udi_dma_buf_[un]map().
+	 *
+	 * When we DMA map the list, we don't want the list being modified while
+	 * it's visible to the DMA engine.
+	 *
+	 * Even though it shouldn't be an issue for us to allow SGLists to be
+	 * transferred between processes while they are frozen (DMA visible),
+	 * we still disallow this because there's no good reason to allow it.
+	 *
+	 * The other thing that freezing does is IOMMU map the frames in the
+	 * SGList such that they are accessible to the device.
+	 **/
+	status_t toggleFreezeScatterGatherList(
+		sarch_t id, sbit8 freeze_or_unfreeze)
+	{
+		fplainn::dma::ScatterGatherList		*sgl;
+
+		sgl = getScatterGatherList(id);
+		if (sgl == NULL) {
+			return ERROR_NOT_FOUND;
+		}
+
+		return sgl->toggleFreeze(freeze_or_unfreeze);
+	}
+
 	// Returns the ID of the slot in the target stream.
 	enum transferScatterGatherListFlagsE {
 		// Before transferring, unmap the list from the current owner
