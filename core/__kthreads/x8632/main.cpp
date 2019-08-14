@@ -430,7 +430,7 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 
 	__kcbFn		__kotp;
 	floodplainn.zum.enumerateReq(
-		CC"by-id", UDI_ENUMERATE_NEXT, &ecb.cb,
+		CC"by-id", UDI_ENUMERATE_START, &ecb.cb,
 		new __kCallback(&__kotp));
 
 printf(NOTICE ORIENT"orient 3.\n");
@@ -505,6 +505,8 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 //~ __kdebug.refresh();
 
 	fplainn::dma::Constraints			c;
+	fplainn::dma::constraints::Compiler		cmp;
+
 	udi_dma_constraints_attr_spec_t a[] =
 	{
 		{ UDI_DMA_DATA_ADDRESSABLE_BITS, 64 },
@@ -519,7 +521,8 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 		{ UDI_DMA_ELEMENT_LENGTH_BITS, 17 },
 	};
 
-	c.initialize();
+	cmp.initialize();
+	c.initialize(a, 0);
 
 	c.addOrModifyAttrs(a, 3);
 	a[1].attr_value = 5;
@@ -527,31 +530,38 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	c.addOrModifyAttrs(a, 10);
 	c.dump();
 
-	err = c.compiler.compile();
+	err = cmp.compile(&c);
 	if (err != ERROR_SUCCESS) {
 		printf(ERROR"Compilation failed.\n");
 	};
-	c.compiler.dump();
+	cmp.dump();
 
 	MemoryBmp				tb(0xB0000000, 0x3F000000);
 	fplainn::dma::ScatterGatherList	sgl;
 
-	err = sgl.initialize(c.compiler.i.addressSize);
+	err = sgl.initialize(
+#if __PADDR_NBITS__ > 32 && __PADDR_NBITS__ <= 64
+		fplainn::dma::scatterGatherLists::ADDR_SIZE_64
+#elif __PADDR_NBITS__ <= 32
+		fplainn::dma::scatterGatherLists::ADDR_SIZE_32
+#else
+	#error "Cannot determine what element size udi_scgth_element_t should use."
+#endif
+	);
 	assert_fatal(err == ERROR_SUCCESS);
 	err = tb.initialize();
 	assert_fatal(err == ERROR_SUCCESS);
 	tb.dump();
-	stat = tb.constrainedGetFrames(&c.compiler, 2, &sgl, 0);
+	stat = tb.constrainedGetFrames(&cmp, 2, &sgl, 0);
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
-	stat = tb.constrainedGetFrames(&c.compiler, 7, &sgl, 0);
+	stat = tb.constrainedGetFrames(&cmp, 7, &sgl, 0);
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
-	stat = tb.constrainedGetFrames(&c.compiler, 1, &sgl, 0);
+	stat = tb.constrainedGetFrames(&cmp, 1, &sgl, 0);
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
-	stat = tb.constrainedGetFrames(&c.compiler, 99, &sgl, 0);
+	stat = tb.constrainedGetFrames(&cmp, 99, &sgl, 0);
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
 
 	sgl.dump();
-__kdebug.refresh();
 	printf(NOTICE"All is well in the universe.\n");
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
 	{
