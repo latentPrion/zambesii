@@ -585,3 +585,28 @@ void udi_buf_copy(
 	// There should be a trivial conversion here to udi_buf_t *.
 	callback(gcb, dst_msgl);
 }
+
+void udi_buf_free(udi_buf_t *buf)
+{
+	lzudi::buf::MappedScatterGatherList	*msgl;
+	Thread					*currThread;
+	sbit8					succeeded;
+
+	if (buf == NULL) {
+		return;
+	}
+
+	msgl = static_cast<lzudi::buf::MappedScatterGatherList *>(buf);
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+
+	succeeded = currThread->parent->floodplainnStream
+		.releaseScatterGatherList(msgl->sGListIndex, 0);
+
+	if (!succeeded)
+	{
+		printf(FATAL LZUDI"buf_free: FPStream:releaseSGList(%d) failed."
+			"\n", msgl->sGListIndex);
+	}
+
+	delete msgl;
+}
