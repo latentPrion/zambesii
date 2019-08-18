@@ -418,9 +418,8 @@ status_t MemoryBmp::constrainedGetFrames(
 	 */
 	(void)flags;
 
-	if (c == NULL || retlist == NULL) {
-		return ERROR_INVALID_ARG;
-	};
+	if (c == NULL || retlist == NULL) { return ERROR_INVALID_ARG; };
+	if (!c->isValid()) { return ERROR_INVALID_STATE; }
 
 	if (nFrames == 0) {
 		return 0;
