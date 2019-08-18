@@ -551,8 +551,7 @@ void zumServer::start::startDeviceReq2(
 		floodplainn.zum.parentChannelEventInd(
 			ctxt->info.path, currChan->endpoints[0],
 			UDI_CHANNEL_BOUND,
-			// For "parent_ID", we'll have to do more work later.
-			1,
+			currChan->parentId,
 			new StartDeviceReqCb(startDeviceReq3, ctxt, self, dev));
 	};
 

@@ -428,6 +428,7 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 	)
 {
 	fplainn::Device				*parentDev, *childDev;
+	fplainn::Device::ParentTag		*parentTag;
 	fplainn::Driver::sMetalanguage		*parentMeta, *childMeta;
 	fplainn::Driver::sChildBop		*parentCBop;
 	fplainn::Driver::sParentBop		*childPBop;
@@ -501,7 +502,7 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 		return ERROR_INVALID_RESOURCE_ID;
 	};
 
-	// Finally, we need the parent's ops vector and context info.
+	// Next, we need the parent's ops vector and context info.
 	parentInstCBop = parentDev->driverInstance->getChildBop(
 		parentMeta->index);
 
@@ -512,6 +513,21 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 
 		return ERROR_UNINITIALIZED;
 	};
+
+	// Finally, we need to know the ParentId for this parentBindChan.
+	parentTag = childDev->getParentTag(parentDev);
+	if (parentTag == NULL)
+	{
+		printf(ERROR"spawnCBindChan(%s,%s,%s): No parent tag for "
+			"dev %s found in child dev %s.\n",
+			parentDevPath, childDevPath, metaName,
+			parentDevPath, childDevPath);
+
+		return ERROR_NOT_FOUND;
+	}
+
+	// This should definitely not be the case by this point.
+	assert_fatal(parentTag->id != 0);
 
 	// Finally, create the blueprint and then call spawnChannel.
 	fplainn::IncompleteD2DChannel		*blueprint;
@@ -542,6 +558,7 @@ error_t fplainn::Zudi::spawnChildBindChannel(
 		return ret;
 	};
 
+	tmpret->parentId = parentTag->id;
 	*retendp1 = tmpret->endpoints[1];
 	return ERROR_SUCCESS;
 }

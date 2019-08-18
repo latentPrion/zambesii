@@ -239,6 +239,21 @@ namespace fplainn
 			return NULL;
 		}
 
+		ParentTag *getParentTag(Device *parentDev)
+		{
+			/**	EXPLANATION:
+			 * Get the parentTag for a parent based on a pointer
+			 * to the parent.
+			 */
+			for (uarch_t i=0; i<nParentTags; i++)
+			{
+				if (parentTags[i].tag->getInode() == parentDev)
+					{ return &parentTags[i]; }
+			}
+
+			return NULL;
+		}
+
 		ParentTag *indexedGetParentTag(uarch_t idx)
 		{
 			if (idx >= nParentTags) { return NULL; };

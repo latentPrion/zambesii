@@ -170,7 +170,8 @@ namespace fplainn
 		Channel(
 			utf8Char *metaName, bindChannelTypeE bct,
 			Endpoint *otherEnd)
-		: bindChannelType(bct), regionEnd0(this, otherEnd)
+		: bindChannelType(bct), regionEnd0(this, otherEnd),
+		parentId(0)
 		{
 			this->metaName[0] = '\0';
 			if (metaName != NULL)
@@ -237,6 +238,13 @@ namespace fplainn
 		HeapList<IncompleteChannel>	incompleteChannels;
 		utf8Char			metaName[
 			ZUI_DRIVER_METALANGUAGE_MAXLEN];
+		/* Only relevant for ParentBind channels:
+		 *
+		 * This is the ID of the parent, as known to the
+		 * child. I.e, the ID that the child uses to refe
+		 * to that parent.
+		 */
+		ubit16				parentId;
 	};
 
 	class IncompleteD2DChannel;
