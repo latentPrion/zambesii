@@ -469,7 +469,7 @@ status_t fplainn::dma::ScatterGatherList::getElements(
 
 error_t fplainn::dma::ScatterGatherList::resize(uarch_t nFrames)
 {
-	uarch_t		currNFrames;
+	sarch_t		currNFrames;
 	status_t	nNewFrames;
 
 	/**	EXPLANATION:
@@ -483,7 +483,7 @@ error_t fplainn::dma::ScatterGatherList::resize(uarch_t nFrames)
 	nNewFrames = unlocked_resize(nFrames);
 	unlock();
 
-	if (currNFrames + nNewFrames < nFrames)
+	if ((currNFrames + nNewFrames) < (signed)nFrames)
 	{
 		// Just to be sure about the behaviour of constrainedGetFrames.
 		assert_fatal(nNewFrames < 0);
