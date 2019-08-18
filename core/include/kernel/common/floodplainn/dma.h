@@ -391,55 +391,6 @@ public:
 	uarch_t				nAttrs;
 };
 
-/**	EXPLANATION:
- * This class represents a driver's request to perform a DMA transaction. It
- * directs the entire operation, from allocating the DMA SGList, to copying data
- * to and from DMA memory, and so on.
- *
- * This is what Zambesii's udi_dma_handle_t handle points to.
- *
- * An instance of this class is created each time a user calls
- * udi_dma_prepare(). There can be multiple instances of this class which all
- * refer to the same udi_dma_constraints_t userspace-object.
- *
- * Essentially, each Request instance represents a DMA transaction, and
- * multiple DMA transactions can have the same behavioural constraints.
- *
- * This implies that we will have to decide on some kind of arbitrary limit on
- * the number of DmaRequests each process or driver may have.
- **/
-class Request
-{
-public:
-	Request(void)
-	:
-	mapping(NULL)
-	{}
-
-	error_t initialize(void)
-	{
-		error_t ret;
-
-		ret = constraints.initialize(NULL, 0);
-		if (ret != ERROR_SUCCESS) { return ret; };
-
-		ret = sGList.initialize();
-		if (ret != ERROR_SUCCESS) { return ret; };
-
-		ret = mapping.initialize();
-		if (ret != ERROR_SUCCESS) { return ret; };
-
-		return ret;
-	}
-
-	~Request(void);
-
-protected:
-	Constraints			constraints;
-	ScatterGatherList		sGList;
-	MappedScatterGatherList		mapping;
-};
-
 } /* namespace dma */
 
 } /* namespace fplainn */
