@@ -282,8 +282,6 @@ fplainn::dma::ScatterGatherList::~ScatterGatherList(void)
 
 void fplainn::dma::ScatterGatherList::destroySGList(sbit8 justTransfer)
 {
-	assert_fatal(addressSize != scatterGatherLists::ADDR_SIZE_UNKNOWN);
-
 	unmap();
 
 	if (!justTransfer) {
@@ -291,7 +289,6 @@ void fplainn::dma::ScatterGatherList::destroySGList(sbit8 justTransfer)
 	}
 
 	compiledConstraints.setInvalid();
-	addressSize = scatterGatherLists::ADDR_SIZE_UNKNOWN;
 }
 
 udi_dma_constraints_attr_spec_t *fplainn::dma::Constraints::getAttr(

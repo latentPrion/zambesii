@@ -539,15 +539,7 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	MemoryBmp				tb(0xB0000000, 0x3F000000);
 	fplainn::dma::ScatterGatherList	sgl;
 
-	err = sgl.initialize(
-#if __PADDR_NBITS__ > 32 && __PADDR_NBITS__ <= 64
-		fplainn::dma::scatterGatherLists::ADDR_SIZE_64
-#elif __PADDR_NBITS__ <= 32
-		fplainn::dma::scatterGatherLists::ADDR_SIZE_32
-#else
-	#error "Cannot determine what element size udi_scgth_element_t should use."
-#endif
-	);
+	err = sgl.initialize();
 	assert_fatal(err == ERROR_SUCCESS);
 	err = tb.initialize();
 	assert_fatal(err == ERROR_SUCCESS);

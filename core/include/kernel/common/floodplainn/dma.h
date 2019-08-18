@@ -260,7 +260,6 @@ class ScatterGatherList
 public:
 	ScatterGatherList(void)
 	:
-	addressSize(scatterGatherLists::ADDR_SIZE_UNKNOWN),
 	/* ScatterGatherList instances are manipulated by the PMM, so their
 	 * metadata must not be fakemapped.
 	 */
@@ -271,11 +270,10 @@ public:
 		memset(&udiScgthList, 0, sizeof(udiScgthList));
 	}
 
-	error_t initialize(scatterGatherLists::eAddressSize addrSize)
+	error_t initialize(void)
 	{
 		error_t		ret;
 
-		addressSize = addrSize;
 		ret = elements.initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
 
@@ -293,9 +291,6 @@ public:
 public:
 	void dump(void)
 	{
-		assert_fatal(addressSize
-			!= scatterGatherLists::ADDR_SIZE_UNKNOWN);
-
 		printf(NOTICE "ScGthList: %d elements, dumping:\n",
 			elements.getNIndexes());
 
@@ -316,17 +311,11 @@ public:
 
 	void lock(void)
 	{
-		assert_fatal(addressSize
-			!= scatterGatherLists::ADDR_SIZE_UNKNOWN);
-
 		elements.lock();
 	}
 
 	void unlock(void)
 	{
-		assert_fatal(addressSize
-			!= scatterGatherLists::ADDR_SIZE_UNKNOWN);
-
 		elements.unlock();
 	}
 
@@ -365,9 +354,6 @@ public:
 		uarch_t fRthi;
 
 		if (nEntries == 0) { return ERROR_SUCCESS; };
-		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN) {
-			return ERROR_UNINITIALIZED;
-		};
 
 		// Only pass on the ResizeableArray flags into resizeToHoldIndex
 		fRthi = (FLAG_TEST(flags, PE_FLAGS_UNLOCKED))
@@ -413,9 +399,6 @@ public:
 		 *
 		 * Returns negative integer value on error.
 		 **/
-
-		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
-			{ return ERROR_UNINITIALIZED; }
 
 		dontTakeLock = FLAG_TEST(flags, AF_FLAGS_UNLOCKED) ? 1 : 0;
 
@@ -496,9 +479,6 @@ public:
 		uarch_t							ret=0;
 		typename SGListElementArray::Iterator	it;
 
-		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
-			{ return 0; }
-
 		if (!FLAG_TEST(flags, ScatterGatherList::GNF_FLAGS_UNLOCKED))
 			{ lock(); }
 
@@ -525,8 +505,6 @@ public:
 		uarch_t							i;
 
 		if (outarr == NULL || outarrType == NULL) { return ERROR_INVALID_ARG; }
-		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
-			{ return ERROR_UNINITIALIZED; }
 
 		if ((*outarrType & (UDI_SCGTH_32 | UDI_SCGTH_64)) == 0) {
 			printf(ERROR SGLIST"getElements: Caller must state supported "
@@ -597,8 +575,6 @@ public:
 		 * nFrames.
 		 **/
 		if (nFrames == 0) { return ERROR_SUCCESS; }
-		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
-			{ return ERROR_UNINITIALIZED; }
 
 		lock();
 		currNFrames = getNFrames(GNF_FLAGS_UNLOCKED);
@@ -645,9 +621,6 @@ public:
 		 * MappedSGLists are not demand mapped. They are fully mapped and
 		 * committed.
 		 */
-
-		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
-			{ return ERROR_UNINITIALIZED; }
 
 		currThread = cpuTrib.getCurrentCpuStream()->taskStream
 			.getCurrentThread();
@@ -794,7 +767,6 @@ public:
 	typedef ResizeableArray<__kscgth_element_type_t>
 					SGListElementArray;
 
-	scatterGatherLists::eAddressSize	addressSize;
 	SGListElementArray			elements;
 	udi_scgth_t				udiScgthList;
 	constraints::Compiler			compiledConstraints;
@@ -903,14 +875,14 @@ public:
 	mapping(NULL)
 	{}
 
-	error_t initialize(enum scatterGatherLists::eAddressSize addrSize)
+	error_t initialize(void)
 	{
 		error_t ret;
 
 		ret = constraints.initialize(NULL, 0);
 		if (ret != ERROR_SUCCESS) { return ret; };
 
-		ret = sGList.initialize(addrSize);
+		ret = sGList.initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
 
 		ret = mapping.initialize();
