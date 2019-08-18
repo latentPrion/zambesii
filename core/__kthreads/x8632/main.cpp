@@ -1,4 +1,5 @@
 
+#include <tests.h>
 #include <__ksymbols.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__ktypes.h>
@@ -501,7 +502,6 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 
 	printf(NOTICE"Here, devmgmt done. %d new child IDs in buffer.\n",
 		msg->info.params.enumerateChildren.nDeviceIds);
-
 //~ __kdebug.refresh();
 
 	fplainn::dma::Constraints			c;
@@ -554,6 +554,17 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 	printf(NOTICE"Ret is %d from constrainedGetFrames.\n", stat);
 
 	sgl.dump();
+
+	uarch_t tot, succ, fail;
+	struct {
+		TESTS_FN_MAKE_PROTOTYPE_DEFVARS(runTests)
+		{
+			return ::runTests(nTotal, nSucceeded, nFailed);
+		}
+	} testobj;
+
+	DO_OR_DIE(testobj, runTests(&tot, &succ, &fail), stat);
+	printf(NOTICE"Tests: %d total, %d succ, %d fail\n", tot, succ, fail);
 	printf(NOTICE"All is well in the universe.\n");
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
 	{

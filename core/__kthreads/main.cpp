@@ -1,12 +1,32 @@
 
-#include <chipset/memory.h>
-#include <arch/paging.h>
-#include <__kstdlib/__ktypes.h>
-#include <kernel/common/thread.h>
-#include <kernel/common/processTrib/processTrib.h>
+#include <tests.h>
+#include <__kclasses/tests.h>
+#include <__kstdlib/tests.h>
 
+#define TESTS_CHECK_RETVAL_AND_UPDATE_RETVAL(retval, tmpretval) do \
+{ \
+	if ((tmpretval) != ERROR_SUCCESS) { \
+		(retval) = (tmpretval); \
+	} \
+} while (0)
 
-int testFunction(...)
+TESTS_FN_MAKE_PROTOTYPE_DEFVARS(runTests)
 {
-	return 0;
+	uarch_t tot, succ, fail;
+	status_t status, s;
+
+	TESTS_VARS_INIT_DEFVARS();
+
+	s = runTestArray(
+		tests::__kstdlib::tests, &tot, &succ, &fail);
+	TESTS_CHECK_RETVAL_AND_UPDATE_RETVAL(status, s);
+	TESTS_VARS_DEFVARS_INC_ALL_BY(tot, succ, fail);
+
+	s = runTestArray(
+		tests::__kclasses::memBmp::tests,
+		&tot, &succ, &fail);
+	TESTS_CHECK_RETVAL_AND_UPDATE_RETVAL(status, s);
+	TESTS_VARS_DEFVARS_INC_ALL_BY(tot, succ, fail);
+
+	return status;
 }

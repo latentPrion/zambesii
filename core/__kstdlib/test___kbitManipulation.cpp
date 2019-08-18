@@ -1,31 +1,33 @@
 
+#include <tests.h>
 #include <__kstdlib/__kbitManipulation.h>
 
 
 namespace tests
 {
 
-status_t bitIsSet(uarch_t *nTotal, uarch_t *nSucceeded, uarch_t *nFailed)
+namespace __kstdlib
 {
-	(void)nTotal; (void)nSucceeded; (void)nFailed;
-	return ERROR_SUCCESS;
+
+TESTS_FN_MAKE_PROTOTYPE_DEFVARS(bitIsSet)
+{
+	TESTS_VARS_INIT_DEFVARS();
+	return TESTS_RETURN_DEFVARS();
 }
 
-status_t setBit(uarch_t *nTotal, uarch_t *nSucceeded, uarch_t *nFailed)
+TESTS_FN_MAKE_PROTOTYPE_DEFVARS(setBit)
 {
-	(void)nTotal; (void)nSucceeded; (void)nFailed;
-	return ERROR_SUCCESS;
+	TESTS_VARS_INIT_DEFVARS();
+	return TESTS_RETURN_DEFVARS();
 }
 
-status_t unsetBit(uarch_t *nTotal, uarch_t *nSucceeded, uarch_t *nFailed)
+TESTS_FN_MAKE_PROTOTYPE_DEFVARS(unsetBit)
 {
-	(void)nTotal; (void)nSucceeded; (void)nFailed;
-	return ERROR_SUCCESS;
+	TESTS_VARS_INIT_DEFVARS();
+	return TESTS_RETURN_DEFVARS();
 }
 
-status_t checkForContiguousBitsAt(
-	uarch_t *nTotal, uarch_t *nSucceeded, uarch_t *nFailed
-	)
+TESTS_FN_MAKE_PROTOTYPE_DEFVARS(checkForContiguousBitsAt)
 {
 	status_t	st;
 	uarch_t		nf;
@@ -33,8 +35,7 @@ status_t checkForContiguousBitsAt(
 		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
 	};
 
-	*nTotal = 6;
-	*nSucceeded = *nFailed = 0;
+	TESTS_VARS_INIT_DEFVARS();
 
 	/**	TEST:
 	 * In a completely occupied BMP, no free bits should be found.
@@ -42,13 +43,12 @@ status_t checkForContiguousBitsAt(
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 1, 1, 32*4, &nf);
 	if (st >= 0) {
-		*nFailed += 1;
-		printf(ERROR"Shouldn't have found any free bits. st %d, nf %d.\n"
+		FAILED_DEFVARS("Shouldn't have found any free bits. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	} else {
-		*nSucceeded += 1;
+		SUCCEEDED_DEFVARS();
 	}
 
 	/**	TEST:
@@ -59,14 +59,13 @@ status_t checkForContiguousBitsAt(
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 1, 1, 32*4, &nf);
 	if (st != 64 || nf != 1) {
-		*nFailed += 1;
-		printf(ERROR"Should have found 1 free bit at 64. st %d, nf %d.\n"
+		FAILED_DEFVARS("Should have found 1 free bit at 64. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		*nSucceeded += 1;
+		SUCCEEDED_DEFVARS();
 	}
 
 	/**	TEST:
@@ -77,14 +76,13 @@ status_t checkForContiguousBitsAt(
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 2, 2, 32*4, &nf);
 	if (st >= 0) {
-		*nFailed += 1;
-		printf(ERROR"Shouldn't have found 2 contig bits. st %d, nf %d.\n"
+		FAILED_DEFVARS("Shouldn't have found 2 contig bits. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		*nSucceeded += 1;
+		SUCCEEDED_DEFVARS();
 	}
 
 	/**	TEST:
@@ -95,14 +93,13 @@ status_t checkForContiguousBitsAt(
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 2, 2, 32*4, &nf);
 	if (st >= 0) {
-		*nFailed += 1;
-		printf(ERROR"Shouldn't have found 2 contig bits. st %d, nf %d.\n"
+		FAILED_DEFVARS("Shouldn't have found 2 contig bits. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		*nSucceeded += 1;
+		SUCCEEDED_DEFVARS();
 	}
 
 	/**	TEST:
@@ -113,14 +110,13 @@ status_t checkForContiguousBitsAt(
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 2, 2, 32*4, &nf);
 	if (st != 65 || nf != 2) {
-		*nFailed += 1;
-		printf(ERROR"Should have found 2 bits at 65. st %d, nf %d.\n"
+		FAILED_DEFVARS("Should have found 2 bits at 65. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		*nSucceeded += 1;
+		SUCCEEDED_DEFVARS();
 	}
 
 	/**	TEST:
@@ -132,17 +128,26 @@ status_t checkForContiguousBitsAt(
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 1, 1, 32*2, &nf);
 	if (st >= 0) {
-		*nFailed += 1;
-		printf(ERROR"Should not have found any bits. st %d, nf %d.\n"
+		FAILED_DEFVARS("Should not have found any bits. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		*nSucceeded += 1;
+		SUCCEEDED_DEFVARS();
 	}
 
-	return (*nFailed > 0) ? ERROR_NON_CONFORMANT : ERROR_SUCCESS;
+	return TESTS_RETURN_DEFVARS();
+}
+
+testFn *tests[] = {
+	bitIsSet,
+	setBit,
+	unsetBit,
+	checkForContiguousBitsAt,
+	NULL
+};
+
 }
 
 }

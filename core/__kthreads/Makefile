@@ -7,6 +7,8 @@ all: Makefile $(DELIVERABLE)
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
+main.o: CXXFLAGS+=-Wno-variadic-macros
+
 clean: fonyphile
 	rm -rf *.o *.s
 

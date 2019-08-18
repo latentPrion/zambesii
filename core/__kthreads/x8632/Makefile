@@ -13,6 +13,8 @@ all: Makefile $(DELIVERABLE) crt1.o crt0.o crti.o crtn.o
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
+main.o: CXXFLAGS+=-Wno-variadic-macros
+
 crt1.o: crt0.o
 	cp crt0.o crt1.o
 
