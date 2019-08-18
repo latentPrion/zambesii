@@ -104,30 +104,6 @@ private:
 	void init2_generateShbankFromNumaMap(
 		sZkcmMemoryConfig *cfg, sZkcmNumaMap *map, sarch_t *__kspaceBool);
 
-	template <class scgth_elements_type>
-	sbit8 releaseFrames(ResizeableArray<scgth_elements_type> *array)
-	{
-		sbit8	ret = 0;
-
-		for (
-			typename ResizeableArray<scgth_elements_type>::Iterator
-				it = array->begin();
-			it != array->end();
-			++it)
-		{
-			sbit8				wasFreed=0;
-			scgth_elements_type	tmp = *it;
-			paddr_t				p;
-
-			assign_scgth_block_busaddr_to_paddr(p, tmp.block_busaddr);
-			wasFreed = releaseFrames(
-				p, PAGING_BYTES_TO_PAGES(tmp.block_length));
-
-			if (wasFreed) { ret = 1; };
-		}
-
-		return ret;
-	}
 public:
 	Bitmap			availableBanks;
 

@@ -12,6 +12,7 @@
 #include <kernel/common/numaMemoryBank.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/floodplainn/dma.h>
 
 
 static ubit8				memoryTribAvailableBanksBmpMem[64];
@@ -158,13 +159,23 @@ error_t MemoryTrib::memRegionInit(void)
 
 sbit8 MemoryTrib::releaseFrames(fplainn::dma::ScatterGatherList *list)
 {
-	if (list->addressSize == fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
+	sbit8								ret = 0;
+	fplainn::dma::ScatterGatherList::SGListElementArray::Iterator	it;
+
+	for (it = list->elements.begin(); it != list->elements.end(); ++it)
 	{
-		return releaseFrames(&list->elements32);
+		sbit8					wasFreed=0;
+		fplainn::dma::__kscgth_element_type_t	tmp = *it;
+		paddr_t					p;
+
+		assign_scgth_block_busaddr_to_paddr(p, tmp.block_busaddr);
+		wasFreed = releaseFrames(
+			p, PAGING_BYTES_TO_PAGES(tmp.block_length));
+
+		if (wasFreed) { ret = 1; };
 	}
-	else {
-		return releaseFrames(&list->elements64);
-	};
+
+	return ret;
 }
 
 // TODO: This function can be greatly optimized. KAGS, you are needed.

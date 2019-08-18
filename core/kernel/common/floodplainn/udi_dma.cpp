@@ -286,13 +286,8 @@ void fplainn::dma::ScatterGatherList::destroySGList(sbit8 justTransfer)
 
 	unmap();
 
-	if (!justTransfer)
-	{
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
-			freeSGListElements(&elements32);
-		} else {
-			freeSGListElements(&elements64);
-		}
+	if (!justTransfer) {
+		freeSGListElements();
 	}
 
 	compiledConstraints.setInvalid();

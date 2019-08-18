@@ -577,14 +577,7 @@ status_t MemoryBmp::constrainedGetFrames(
 		{
 			if (!dontLockRetlist) { retlist->lock(); }
 
-			if (retlist->addressSize
-				== fplainn::dma::scatterGatherLists::ADDR_SIZE_32)
-			{
-				scgthPreviousNElements = retlist->elements32.unlocked_getNIndexes();
-			}
-			else {
-				scgthPreviousNElements = retlist->elements64.unlocked_getNIndexes();
-			};
+			scgthPreviousNElements = retlist->elements.unlocked_getNIndexes();
 
 			error = retlist->preallocateEntries(
 				scgthPreviousNElements + nScgthElements,

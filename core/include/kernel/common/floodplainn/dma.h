@@ -17,17 +17,130 @@
 
 class FloodplainnStream;
 
+/**
+ * These inline operators make it easier to code assignments to
+ * UDI's scatter-gather bignum types.
+ ******************************************************************************/
+
+inline int operator ==(paddr_t p, udi_scgth_element_32_t s)
+{
+	return (p == s.block_busaddr);
+}
+
+inline int operator ==(paddr_t p, udi_scgth_element_64_t s)
+{
+#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
+	struct s64BitInt
+	{
+		ubit32		low, high;
+	} *e = (s64BitInt *)&s.block_busaddr;
+
+	if (e->high != 0) { return 0; };
+	return p == e->low;
+#else
+	paddr_t		*p2 = (paddr_t *)&s.block_busaddr;
+
+	return p == *p2;
+#endif
+}
+
+inline void assign_paddr_to_scgth_block_busaddr(udi_scgth_element_32_t *u32, paddr_t p)
+{
+#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
+	// No-pae-32bit-paddr being assigned to a 32-bit-block_busaddr.
+	u32->block_busaddr = p.getLow();
+#else
+	/* Pae-64bit-paddr being assigned to a 32bit-block_busaddr.
+	 *
+	 * Requires us to cut off the high bits of the pae-64bit-paddr.
+	 *
+	 * In such a case, we would have clearly chosen to build a 32-bit
+	 * SGList, so we should not be trying to add any frames with the high
+	 * bits set.
+	 **/
+	if ((p >> 32).getLow() != 0)
+	{
+		panic("Trying to add a 64-bit paddr with high bits set, to a "
+			"32-bit SGList.");
+	};
+
+	u32->block_busaddr = p.getLow();
+#endif
+}
+
+inline void assign_paddr_to_scgth_block_busaddr(udi_scgth_element_64_t *u64, paddr_t p)
+{
+#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
+	/* No-pae-32bit-paddr being assigned to a 64-bit-block_busaddr.
+	 *
+	 * Just requires us to assign the paddr to the low 32 bits of the
+	 * block_busaddr. We also clear the high bits to be pedantic.
+	 **/
+	struct s64BitInt
+	{
+		ubit32		low, high;
+	} *e = (s64BitInt *)&u64->block_busaddr;
+
+	e->high = 0;
+	e->low = p.getLow();
+#else
+	// Pae-64bit-paddr being assigned to a 64-bit-block_busaddr.
+	paddr_t		*p2 = (paddr_t *)&u64->block_busaddr;
+
+	*p2 = p;
+#endif
+}
+
+inline void assign_scgth_block_busaddr_to_paddr(paddr_t &p, udi_busaddr64_t u64)
+{
+#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
+	struct s64BitInt
+	{
+		ubit32		low, high;
+	} *s = (s64BitInt *)&u64;
+
+	if (s->high != 0) {
+		panic(CC"High bits set in udi_busaddr64_t on non-PAE build.\n");
+	};
+
+	p = s->low;
+#else
+	paddr_t			*p2 = (paddr_t *)&u64;
+
+	p = *p2;
+#endif
+}
+
+inline void assign_scgth_block_busaddr_to_paddr(paddr_t &p, udi_ubit32_t u32)
+{
+	p = u32;
+}
+
 namespace fplainn
 {
 
 namespace dma
 {
 
+#if __PADDR_NBITS__ > 32 && __PADDR_NBITS__ <= 64
+typedef udi_scgth_element_64_t __kscgth_element_type_t;
+#elif __PADDR_NBITS__ <= 32
+typedef udi_scgth_element_32_t __kscgth_element_type_t;
+#else
+	#error "Cannot determine what element size __kscgth_element_type_t should use."
+#endif
+
 namespace scatterGatherLists
 {
 	enum eAddressSize {
 		ADDR_SIZE_UNKNOWN, ADDR_SIZE_32, ADDR_SIZE_64
 	};
+
+	void *getPages(Thread *t, uarch_t nPages);
+	void releasePages(Thread *t, void *vaddr, uarch_t nPages);
+
+	status_t wprMapInc(Thread *t, void *vaddr, paddr_t p, uarch_t nFrames);
+	status_t wprUnmap(Thread *t, void *vaddr, uarch_t nFrames);
 }
 
 /**	EXPLANATION:
@@ -151,8 +264,7 @@ public:
 	/* ScatterGatherList instances are manipulated by the PMM, so their
 	 * metadata must not be fakemapped.
 	 */
-	elements32(RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP),
-	elements64(RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP),
+	elements(RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP),
 	mapping(this),
 	isFrozen(0)
 	{
@@ -164,10 +276,7 @@ public:
 		error_t		ret;
 
 		addressSize = addrSize;
-		ret = elements32.initialize();
-		if (ret != ERROR_SUCCESS) { return ret; };
-
-		ret = elements64.initialize();
+		ret = elements.initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
 
 		ret = compiledConstraints.initialize();
@@ -187,21 +296,30 @@ public:
 		assert_fatal(addressSize
 			!= scatterGatherLists::ADDR_SIZE_UNKNOWN);
 
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
-			dump(&elements32);
-		} else {
-			dump(&elements64);
-		};
+		printf(NOTICE "ScGthList: %d elements, dumping:\n",
+			elements.getNIndexes());
+
+		for (typename SGListElementArray::Iterator it=elements.begin();
+			it != elements.end(); ++it)
+		{
+			__kscgth_element_type_t		tmp = *it;
+			paddr_t				p;
+
+			assign_scgth_block_busaddr_to_paddr(
+				p, tmp.block_busaddr);
+
+			printf(CC"\tElement: Paddr %P, nBytes %d.\n",
+				&p, tmp.block_length);
+		}
 	}
+
 
 	void lock(void)
 	{
 		assert_fatal(addressSize
 			!= scatterGatherLists::ADDR_SIZE_UNKNOWN);
 
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
-			{ elements32.lock(); }
-		else { elements64.lock(); }
+		elements.lock();
 	}
 
 	void unlock(void)
@@ -209,9 +327,7 @@ public:
 		assert_fatal(addressSize
 			!= scatterGatherLists::ADDR_SIZE_UNKNOWN);
 
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
-			{ elements32.unlock(); }
-		else { elements64.unlock(); }
+		elements.unlock();
 	}
 
 	int operator ==(void *p)
@@ -245,60 +361,131 @@ public:
 	};
 	error_t preallocateEntries(uarch_t nEntries, uarch_t flags=0)
 	{
+		error_t ret;
+		uarch_t fRthi;
+
 		if (nEntries == 0) { return ERROR_SUCCESS; };
 		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN) {
 			return ERROR_UNINITIALIZED;
 		};
 
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
-		{
-			return preallocateEntries(
-				&elements32, nEntries, flags);
-		}
-		else
-		{
-			return preallocateEntries(
-				&elements64, nEntries, flags);
+		// Only pass on the ResizeableArray flags into resizeToHoldIndex
+		fRthi = (FLAG_TEST(flags, PE_FLAGS_UNLOCKED))
+			? ResizeableArray<void *>::RTHI_FLAGS_UNLOCKED : 0
+		;
+
+		ret = elements.resizeToHoldIndex(
+			nEntries - 1, fRthi);
+
+		if (ret != ERROR_SUCCESS) {
+			return ret;
 		};
+
+		/*	TODO:
+		 * Really inefficient? Cycle through and set
+		 * the block_length member of each of the new
+		 * elements to be 0, indicating that it's an
+		 * unused element.
+		 */
+		return ret;
 	}
+
 
 	enum addFramesE {
 		AF_FLAGS_UNLOCKED		= (1<<0)
 	};
 	status_t addFrames(
-		paddr_t p, uarch_t nFrames, sarch_t atIndex=-1, uarch_t flags=0)
+		paddr_t p, uarch_t nFrames, sarch_t atIndex, uarch_t flags
+		)
 	{
-		status_t		ret;
+		error_t			ret;
+		sbit8			dontTakeLock;
 
 		/**	EXPLANATION:
-		 * Iterates through the list first to see if it
-		 * can add the new frames to an existing
-		 * element.
+		 * Returns ERROR_SUCCESS if there was no need to allocate a new
+		 * SGList element.
+		 *
+		 * If atIndex is non-negative, it is taken to be a placement index in
+		 * the array, at which the frames should be added. Whatever frames exist
+		 * at that index will be overwritten.
+		 *
+		 * Returns 1 if a new element was created.
+		 *
+		 * Returns negative integer value on error.
 		 **/
-		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN) {
-			return ERROR_UNINITIALIZED;
-		};
 
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
-		{
-			ret = addFrames(
-				&elements32, p, nFrames,
-				atIndex, flags);
+		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
+			{ return ERROR_UNINITIALIZED; }
+
+		dontTakeLock = FLAG_TEST(flags, AF_FLAGS_UNLOCKED) ? 1 : 0;
+
+		if (atIndex >= 0) {
+			__kscgth_element_type_t		newElement;
+
+			assign_paddr_to_scgth_block_busaddr(&newElement, p);
+			newElement.block_length = PAGING_PAGES_TO_BYTES(nFrames);
+
+			if (!dontTakeLock) { lock(); }
+			elements[atIndex] = newElement;
+			if (!dontTakeLock) { unlock(); }
+			return ERROR_SUCCESS;
 		}
-		else
+
+		if (!dontTakeLock) { lock(); }
+
+		for (
+			typename SGListElementArray::Iterator it=
+				elements.begin();
+			it != elements.end();
+			++it)
 		{
-			ret = addFrames(
-				&elements64, p, nFrames,
-				atIndex, flags);
+			// The dereference is unary operator* on class Iterator.
+			__kscgth_element_type_t		*tmp=&*it;
+
+			// Can the new paddr be prepended to this element?
+			if (::operator==(p + PAGING_PAGES_TO_BYTES(nFrames), *tmp))
+			{
+				assign_paddr_to_scgth_block_busaddr(tmp, p);
+				tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
+
+				if (!dontTakeLock) { unlock(); }
+				return ERROR_SUCCESS;
+			}
+			// Can the new paddr be appended to this element?
+			else if (::operator==(p - tmp->block_length, *tmp))
+			{
+				tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
+
+				if (!dontTakeLock) { unlock(); }
+				return ERROR_SUCCESS;
+			};
 		};
 
-		if (ret > ERROR_SUCCESS)
-		{
-			// TODO: Should be atomic_add.
-			udiScgthList.scgth_num_elements++;
-		};
+		/* If we reached here, then we need to add a new element altogether.
+		 **/
+		uarch_t				prevNIndexes;
+		__kscgth_element_type_t		newElement;
 
-		return ret;
+		// Resize the list to hold the new SGList element.
+		prevNIndexes = elements.unlocked_getNIndexes();
+		ret = elements.resizeToHoldIndex(
+			prevNIndexes,
+			SGListElementArray::RTHI_FLAGS_UNLOCKED);
+
+		if (!dontTakeLock) { unlock(); }
+
+		if (ret != ERROR_SUCCESS) { return ret; };
+
+		// Initialize the new element's values.
+		memset(&newElement, 0, sizeof(newElement));
+		assign_paddr_to_scgth_block_busaddr(&newElement, p);
+		newElement.block_length = PAGING_PAGES_TO_BYTES(nFrames);
+
+		// Finally add it to the list.
+		elements[prevNIndexes] = newElement;
+		// TODO: Should be atomic_add.
+		udiScgthList.scgth_num_elements++;
+		return 1;
 	}
 
 	enum getNFramesE {
@@ -306,46 +493,132 @@ public:
 	};
 	uarch_t getNFrames(uarch_t flags=0)
 	{
+		uarch_t							ret=0;
+		typename SGListElementArray::Iterator	it;
+
 		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
 			{ return 0; }
 
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
-			return getNFrames(&elements32, flags);
-		} else {
-			return getNFrames(&elements64, flags);
+		if (!FLAG_TEST(flags, ScatterGatherList::GNF_FLAGS_UNLOCKED))
+			{ lock(); }
+
+		for (it = elements.begin(); it != elements.end(); ++it)
+		{
+			__kscgth_element_type_t		*el = &*it;
+			uarch_t				currNFrames;
+
+			currNFrames = PAGING_BYTES_TO_PAGES(el->block_length);
+			ret += currNFrames;
 		}
+
+		if (!FLAG_TEST(flags, ScatterGatherList::GNF_FLAGS_UNLOCKED))
+			{ unlock(); }
+
+		return ret;
 	}
 
-	status_t getElements(void *outarr, uarch_t nBytes, ubit8 *outarrType)
+	status_t getElements(
+		void *outarr, uarch_t nelem, ubit8 *outarrType
+		)
 	{
-		if (outarrType == NULL)
-			{ return ERROR_INVALID_ARG; }
+		class SGListElementArray::Iterator	it;
+		uarch_t							i;
 
+		if (outarr == NULL || outarrType == NULL) { return ERROR_INVALID_ARG; }
 		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
 			{ return ERROR_UNINITIALIZED; }
 
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32)
-		{
-			return getElements(
-				&elements32, outarr, nBytes, outarrType);
+		if ((*outarrType & (UDI_SCGTH_32 | UDI_SCGTH_64)) == 0) {
+			printf(ERROR SGLIST"getElements: Caller must state supported "
+				"output list formats. Pass UDI_SCGTH_[32|64].\n");
+
+			return ERROR_INVALID_ARG_VAL;
 		}
-		else
-		{
-			return getElements(
-				&elements64, outarr, nBytes, outarrType);
+
+		/* Prefer to support 64-bit output lists if the caller indicates support
+		 * for them.
+		 *
+		 * But only one sglist format flag must be set by the kernel as the
+		 * output `outarrType` returned to the user.
+		 */
+		if (FLAG_TEST(*outarrType, UDI_SCGTH_64)) {
+			*outarrType = UDI_SCGTH_64;
+		} else {
+			// Nothing to do -- 32 was already set by caller.
 		}
+
+		lock();
+
+		// See if the supplied outarr can hold all the elements.
+		for (i=0, it=elements.begin();
+			i < nelem && it != elements.end();
+			++it, i++)
+		{
+			__kscgth_element_type_t		tmp = *it;
+			paddr_t				p;
+
+			assign_scgth_block_busaddr_to_paddr(p, tmp.block_busaddr);
+
+			switch (*outarrType)
+			{
+			case UDI_SCGTH_32:
+				{
+				udi_scgth_element_32_t			*outarr32;
+
+				outarr32 = static_cast<udi_scgth_element_32_t *>(outarr);
+
+				outarr32[i].block_length = tmp.block_length;
+				assign_paddr_to_scgth_block_busaddr(&outarr32[i], p);
+				}
+				break;
+			default:
+				{
+				udi_scgth_element_64_t			*outarr64;
+
+				outarr64 = static_cast<udi_scgth_element_64_t *>(outarr);
+
+				outarr64[i].block_length = tmp.block_length;
+				assign_paddr_to_scgth_block_busaddr(&outarr64[i], p);
+				}
+			}
+		}
+
+		unlock();
+		return i;
 	}
 
 	error_t resize(uarch_t nFrames)
 	{
+		uarch_t		currNFrames;
+		status_t	nNewFrames;
+
+		/**	EXPLANATION:
+		 * Causes this SGList's physical memory to be expanded to at least
+		 * nFrames.
+		 **/
+		if (nFrames == 0) { return ERROR_SUCCESS; }
 		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
 			{ return ERROR_UNINITIALIZED; }
 
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
-			return resize(nFrames, &elements32);
-		} else {
-			return resize(nFrames, &elements64);
+		lock();
+		currNFrames = getNFrames(GNF_FLAGS_UNLOCKED);
+		nNewFrames = unlocked_resize(nFrames);
+		unlock();
+
+		if (currNFrames + nNewFrames < nFrames)
+		{
+			// Just to be sure about the behaviour of constrainedGetFrames.
+			assert_fatal(nNewFrames < 0);
+
+			printf(ERROR SGLIST"resize(nFrames): Op failed. "
+				"PrevNFrames %d, %d allocated newly and will be "
+				"freed.\n",
+				nFrames, currNFrames, nNewFrames);
+
+			return nNewFrames;
 		}
+
+		return ERROR_SUCCESS;
 	}
 
 	/* Returns the number of elements that were discarded
@@ -356,12 +629,108 @@ public:
 	// Maps this SGList and records the page list using its MappedSGList.
 	error_t map(void)
 	{
-		if (addressSize == scatterGatherLists::ADDR_SIZE_32) {
-			return map(&elements32, &mapping);
-		} else {
-			return map(&elements64, &mapping);
+		uarch_t			nFrames, nFramesMapped;
+		Thread			*currThread;
+		typename SGListElementArray::Iterator		it;
+		void			*vaddr;
+		uintptr_t		currVaddr;
+		error_t			ret;
+		status_t		status;
+		paddr_t			p;
+
+		/*	EXPLANATION:
+		 * Map a scgth list into the vaddrspace of the caller. This is fine
+		 * because only the caller should have a handle-ID to any sglist.
+		 *
+		 * MappedSGLists are not demand mapped. They are fully mapped and
+		 * committed.
+		 */
+
+		if (addressSize == scatterGatherLists::ADDR_SIZE_UNKNOWN)
+			{ return ERROR_UNINITIALIZED; }
+
+		currThread = cpuTrib.getCurrentCpuStream()->taskStream
+			.getCurrentThread();
+
+		lock();
+
+		nFrames = getNFrames(GNF_FLAGS_UNLOCKED);
+
+		vaddr = scatterGatherLists::getPages(currThread, nFrames);
+		if (vaddr == NULL)
+		{
+			unlock();
+			printf(ERROR SGLIST"map: Failed to alloc vmem to map the %d "
+				"frames in the list.\n",
+				nFrames);
+
+			return ERROR_MEMORY_NOMEM_VIRTUAL;
 		}
+
+		currVaddr = (uintptr_t)vaddr;
+		nFramesMapped = 0;
+		for (it = elements.begin(); it != elements.end(); ++it)
+		{
+			__kscgth_element_type_t			*tmp=&*it;
+			uarch_t					nPagesInBlock;
+
+			// Map each paddr + length segment.
+			assign_scgth_block_busaddr_to_paddr(p, tmp->block_busaddr);
+			nPagesInBlock = PAGING_BYTES_TO_PAGES(tmp->block_length);
+
+			status = scatterGatherLists::wprMapInc(
+				currThread, (void *)currVaddr, p, nPagesInBlock);
+
+			if (status < (sarch_t)nPagesInBlock)
+			{
+				unlock();
+
+				printf(ERROR SGLIST"map: Failed to map all %d pages "
+					"for SGList element P%P, %d frames.\n",
+					nPagesInBlock, &p);
+
+				ret = ERROR_MEMORY_VIRTUAL_PAGEMAP;
+				goto unmapAndReleaseVmem;
+			}
+
+			currVaddr += tmp->block_length;
+			assert_fatal((currVaddr & PAGING_BASE_MASK_LOW) == 0);
+			nFramesMapped += nPagesInBlock;
+
+			// Ensure we don't exceed the amount of loose vmem allocated.
+			assert_fatal(nFramesMapped <= nFrames);
+		}
+
+		unlock();
+
+		ret = mapping.trackPages(vaddr, nFrames);
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR SGLIST"map: Failed to track vmem pages at %p in "
+				"SGList mapping.\n",
+				vaddr);
+
+			// 'ret' was already set.
+			goto unmapAndReleaseVmem;
+		}
+
+		return ERROR_SUCCESS;
+
+	unmapAndReleaseVmem:
+		status = scatterGatherLists::wprUnmap(currThread, vaddr, nFrames);
+		if (status < (sarch_t)nFrames)
+		{
+			printf(FATAL SGLIST"map: Failed to clean up. Only %d of %d "
+				"pages were unmapped from vaddrspace.\n",
+				status, nFrames);
+
+			// Fallthrough.
+		}
+
+		scatterGatherLists::releasePages(currThread, vaddr, nFrames);
+		return ret;
 	}
+
 
 	// Remaps this SGList.
 	error_t remap(void)
@@ -389,69 +758,27 @@ public:
 	}
 
 private:
-	template <class scgth_elements_type>
-	void dump(ResizeableArray<scgth_elements_type> *list);
-
-	template <class T>
-	error_t preallocateEntries(T *array, uarch_t nEntries, uarch_t flags=0)
+	void freeSGListElements(void)
 	{
-		error_t ret;
-		uarch_t fRthi;
+		typename SGListElementArray::Iterator		it;
 
-		// Only pass on the ResizeableArray flags into resizeToHoldIndex
-		fRthi = (FLAG_TEST(flags, PE_FLAGS_UNLOCKED))
-			? ResizeableArray<void *>::RTHI_FLAGS_UNLOCKED : 0
-		;
+		lock();
+		for (it = elements.begin(); it != elements.end(); ++it)
+		{
+			__kscgth_element_type_t		*tmp = &*it;
+			paddr_t				p;
 
-		ret = array->resizeToHoldIndex(
-			nEntries - 1, fRthi);
+			assign_scgth_block_busaddr_to_paddr(p, tmp->block_busaddr);
 
-		if (ret != ERROR_SUCCESS) {
-			return ret;
-		};
-
-		/*	TODO:
-		 * Really inefficient? Cycle through and set
-		 * the block_length member of each of the new
-		 * elements to be 0, indicating that it's an
-		 * unused element.
-		 */
-		return ret;
+			memoryTrib.releaseFrames(p, tmp->block_length);
+		}
+		unlock();
 	}
-
-	template <class scgth_elements_type>
-	status_t addFrames(
-		ResizeableArray<scgth_elements_type> *list,
-		paddr_t p, uarch_t nFrames, sarch_t atIndex=-1,
-		uarch_t flags=0);
-
-	template <class scgth_elements_type>
-	error_t map(
-		ResizeableArray<scgth_elements_type> *list,
-		MappedScatterGatherList *retMapping);
-
-	template <class scgth_elements_type>
-	uarch_t getNFrames(
-		ResizeableArray<scgth_elements_type> *list,
-		uarch_t flags=0);
-
-	template <class scgth_elements_type>
-	status_t getElements(
-		ResizeableArray<scgth_elements_type> *list,
-		void *outarr, uarch_t nBytes,
-		ubit8 *outarrType);
-
-	template <class scgth_elements_type>
-	error_t resize(
-		uarch_t nFrames, ResizeableArray<scgth_elements_type> *list);
-
-	template <class scgth_elements_type>
-	void freeSGListElements(ResizeableArray<scgth_elements_type> *list);
 
 	void destroySGList(sbit8 justTransfer);
 
 	/* This is the backend for
-	 *	resize(uarch_t, ResizeableArray<scgth_elements_type> *);
+	 *	resize(uarch_t);
 	 *
 	 * This section had to be split off because we don't want to have to
 	 * #include memoryTrib.h in this header.
@@ -464,9 +791,11 @@ public:
 	typedef ResizeableArray<udi_scgth_element_64_t>
 					SGList64;
 
+	typedef ResizeableArray<__kscgth_element_type_t>
+					SGListElementArray;
+
 	scatterGatherLists::eAddressSize	addressSize;
-	SGList32				elements32;
-	SGList64				elements64;
+	SGListElementArray			elements;
 	udi_scgth_t				udiScgthList;
 	constraints::Compiler			compiledConstraints;
 	MappedScatterGatherList			mapping;
@@ -601,485 +930,5 @@ protected:
 } /* namespace dma */
 
 } /* namespace fplainn */
-
-/**	Template definitions:
- * These inline template operations make it easier to code assignments to
- * UDI's scatter-gather bignum types.
- ******************************************************************************/
-
-inline int operator ==(paddr_t p, udi_scgth_element_32_t s)
-{
-	return (p == s.block_busaddr);
-}
-
-inline int operator ==(paddr_t p, udi_scgth_element_64_t s)
-{
-#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
-	struct s64BitInt
-	{
-		ubit32		low, high;
-	} *e = (s64BitInt *)&s.block_busaddr;
-
-	if (e->high != 0) { return 0; };
-	return p == e->low;
-#else
-	paddr_t		*p2 = (paddr_t *)&s.block_busaddr;
-
-	return p == *p2;
-#endif
-}
-
-inline void assign_paddr_to_scgth_block_busaddr(udi_scgth_element_32_t *u32, paddr_t p)
-{
-#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
-	// No-pae-32bit-paddr being assigned to a 32-bit-block_busaddr.
-	u32->block_busaddr = p.getLow();
-#else
-	/* Pae-64bit-paddr being assigned to a 32bit-block_busaddr.
-	 *
-	 * Requires us to cut off the high bits of the pae-64bit-paddr.
-	 *
-	 * In such a case, we would have clearly chosen to build a 32-bit
-	 * SGList, so we should not be trying to add any frames with the high
-	 * bits set.
-	 **/
-	if ((p >> 32).getLow() != 0)
-	{
-		panic("Trying to add a 64-bit paddr with high bits set, to a "
-			"32-bit SGList.");
-	};
-
-	u32->block_busaddr = p.getLow();
-#endif
-}
-
-inline void assign_paddr_to_scgth_block_busaddr(udi_scgth_element_64_t *u64, paddr_t p)
-{
-#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
-	/* No-pae-32bit-paddr being assigned to a 64-bit-block_busaddr.
-	 *
-	 * Just requires us to assign the paddr to the low 32 bits of the
-	 * block_busaddr. We also clear the high bits to be pedantic.
-	 **/
-	struct s64BitInt
-	{
-		ubit32		low, high;
-	} *e = (s64BitInt *)&u64->block_busaddr;
-
-	e->high = 0;
-	e->low = p.getLow();
-#else
-	// Pae-64bit-paddr being assigned to a 64-bit-block_busaddr.
-	paddr_t		*p2 = (paddr_t *)&u64->block_busaddr;
-
-	*p2 = p;
-#endif
-}
-
-inline void assign_scgth_block_busaddr_to_paddr(paddr_t &p, udi_busaddr64_t u64)
-{
-#if __VADDR_NBITS__ == 32 && !defined(CONFIG_ARCH_x86_32_PAE)
-	struct s64BitInt
-	{
-		ubit32		low, high;
-	} *s = (s64BitInt *)&u64;
-
-	if (s->high != 0) {
-		panic(CC"High bits set in udi_busaddr64_t on non-PAE build.\n");
-	};
-
-	p = s->low;
-#else
-	paddr_t			*p2 = (paddr_t *)&u64;
-
-	p = *p2;
-#endif
-}
-
-inline void assign_scgth_block_busaddr_to_paddr(paddr_t &p, udi_ubit32_t u32)
-{
-	p = u32;
-}
-
-
-/** Inline methods:
- ******************************************************************************/
-
-template <class scgth_elements_type>
-void fplainn::dma::ScatterGatherList::dump(
-	ResizeableArray<scgth_elements_type> *list
-	)
-{
-	printf(NOTICE "ScGthList: %d elements, dumping:\n", list->getNIndexes());
-	for (typename ResizeableArray<scgth_elements_type>::Iterator it=list->begin();
-		it != list->end(); ++it)
-	{
-		scgth_elements_type	tmp = *it;
-		paddr_t				p;
-
-		assign_scgth_block_busaddr_to_paddr(p, tmp.block_busaddr);
-		printf(CC"\tElement: Paddr %P, nBytes %d.\n",
-			&p, tmp.block_length);
-	}
-}
-
-template <class scgth_elements_type>
-status_t fplainn::dma::ScatterGatherList::addFrames(
-	ResizeableArray<scgth_elements_type> *list, paddr_t p, uarch_t nFrames,
-	sarch_t atIndex, uarch_t flags
-	)
-{
-	error_t			ret;
-	sbit8			dontTakeLock;
-
-	/**	EXPLANATION:
-	 * Returns ERROR_SUCCESS if there was no need to allocate a new
-	 * SGList element.
-	 *
-	 * If atIndex is non-negative, it is taken to be a placement index in
-	 * the array, at which the frames should be added. Whatever frames exist
-	 * at that index will be overwritten.
-	 *
-	 * Returns 1 if a new element was created.
-	 *
-	 * Returns negative integer value on error.
-	 **/
-
-	dontTakeLock = FLAG_TEST(flags, AF_FLAGS_UNLOCKED) ? 1 : 0;
-
-	if (atIndex >= 0) {
-		scgth_elements_type	newElement;
-
-		assign_paddr_to_scgth_block_busaddr(&newElement, p);
-		newElement.block_length = PAGING_PAGES_TO_BYTES(nFrames);
-
-		if (!dontTakeLock) { list->lock(); }
-		(*list)[atIndex] = newElement;
-		if (!dontTakeLock) { list->unlock(); }
-		return ERROR_SUCCESS;
-	}
-
-	if (!dontTakeLock) { list->lock(); }
-
-	for (
-		typename ResizeableArray<scgth_elements_type>::Iterator it=
-			list->begin();
-		it != list->end();
-		++it)
-	{
-		// The dereference is unary operator* on class Iterator.
-		scgth_elements_type		*tmp=&*it;
-
-		// Can the new paddr be prepended to this element?
-		if (::operator==(p + PAGING_PAGES_TO_BYTES(nFrames), *tmp))
-		{
-			assign_paddr_to_scgth_block_busaddr(tmp, p);
-			tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
-
-			if (!dontTakeLock) { list->unlock(); }
-			return ERROR_SUCCESS;
-		}
-		// Can the new paddr be appended to this element?
-		else if (::operator==(p - tmp->block_length, *tmp))
-		{
-			tmp->block_length += PAGING_PAGES_TO_BYTES(nFrames);
-
-			if (!dontTakeLock) { list->unlock(); }
-			return ERROR_SUCCESS;
-		};
-	};
-
-	/* If we reached here, then we need to add a new element altogether.
-	 **/
-	uarch_t			prevNIndexes;
-	scgth_elements_type	newElement;
-
-	// Resize the list to hold the new SGList element.
-	prevNIndexes = list->unlocked_getNIndexes();
-	ret = list->resizeToHoldIndex(
-		prevNIndexes,
-		ResizeableArray<scgth_elements_type>::RTHI_FLAGS_UNLOCKED);
-
-	if (!dontTakeLock) { list->unlock(); }
-
-	if (ret != ERROR_SUCCESS) { return ret; };
-
-	// Initialize the new element's values.
-	memset(&newElement, 0, sizeof(newElement));
-	assign_paddr_to_scgth_block_busaddr(&newElement, p);
-	newElement.block_length = PAGING_PAGES_TO_BYTES(nFrames);
-
-	// Finally add it to the list.
-	(*list)[prevNIndexes] = newElement;
-	return 1;
-}
-
-template <class scgth_elements_type>
-uarch_t fplainn::dma::ScatterGatherList::getNFrames(
-	ResizeableArray<scgth_elements_type> *list, uarch_t flags
-	)
-{
-	uarch_t							ret=0;
-	typename ResizeableArray<scgth_elements_type>::Iterator	it;
-
-	if (!FLAG_TEST(flags, ScatterGatherList::GNF_FLAGS_UNLOCKED))
-		{ list->lock(); }
-
-	for (it = list->begin(); it != list->end(); ++it)
-	{
-		scgth_elements_type		*el = &*it;
-		uarch_t				currNFrames;
-
-		currNFrames = PAGING_BYTES_TO_PAGES(el->block_length);
-		ret += currNFrames;
-	}
-
-	if (!FLAG_TEST(flags, ScatterGatherList::GNF_FLAGS_UNLOCKED))
-		{ list->unlock(); }
-
-	return ret;
-}
-
-template <class scgth_elements_type>
-status_t fplainn::dma::ScatterGatherList::getElements(
-	ResizeableArray<scgth_elements_type> *list,
-	void *outarr, uarch_t nelem, ubit8 *outarrType
-	)
-{
-	class ResizeableArray<scgth_elements_type>::Iterator	it;
-	uarch_t							i;
-
-	if (outarr == NULL || outarrType == NULL) { return ERROR_INVALID_ARG; }
-
-	if ((*outarrType & (UDI_SCGTH_32 | UDI_SCGTH_64)) == 0) {
-		printf(ERROR SGLIST"getElements: Caller must state supported "
-			"output list formats. Pass UDI_SCGTH_[32|64].\n");
-
-		return ERROR_INVALID_ARG_VAL;
-	}
-
-	/* Prefer to support 64-bit output lists if the caller indicates support
-	 * for them.
-	 *
-	 * But only one sglist format flag must be set by the kernel as the
-	 * output `outarrType` returned to the user.
-	 */
-	if (FLAG_TEST(*outarrType, UDI_SCGTH_64)) {
-		*outarrType = UDI_SCGTH_64;
-	} else {
-		// Nothing to do -- 32 was already set by caller.
-	}
-
-	list->lock();
-
-	// See if the supplied outarr can hold all the elements.
-	for (i=0, it=list->begin();
-		i < nelem && it != list->end();
-		++it, i++)
-	{
-		scgth_elements_type	tmp = *it;
-		paddr_t			p;
-
-		assign_scgth_block_busaddr_to_paddr(p, tmp.block_busaddr);
-
-		switch (*outarrType)
-		{
-		case UDI_SCGTH_32:
-			{
-			udi_scgth_element_32_t			*outarr32;
-
-			outarr32 = static_cast<udi_scgth_element_32_t *>(outarr);
-
-			outarr32[i].block_length = tmp.block_length;
-			assign_paddr_to_scgth_block_busaddr(&outarr32[i], p);
-			}
-			break;
-		default:
-			{
-			udi_scgth_element_64_t			*outarr64;
-
-			outarr64 = static_cast<udi_scgth_element_64_t *>(outarr);
-
-			outarr64[i].block_length = tmp.block_length;
-			assign_paddr_to_scgth_block_busaddr(&outarr64[i], p);
-			}
-		}
-	}
-
-	list->unlock();
-	return i;
-}
-
-template <class scgth_elements_type>
-error_t fplainn::dma::ScatterGatherList::resize(
-	uarch_t nFrames, ResizeableArray<scgth_elements_type> *list
-	)
-{
-	uarch_t		currNFrames;
-	status_t	nNewFrames;
-
-	/**	EXPLANATION:
-	 * Causes this SGList's physical memory to be expanded to at least
-	 * nFrames.
-	 **/
-	if (nFrames == 0) { return ERROR_SUCCESS; }
-
-	list->lock();
-	currNFrames = getNFrames(GNF_FLAGS_UNLOCKED);
-	nNewFrames = unlocked_resize(nFrames);
-	list->unlock();
-
-	if (currNFrames + nNewFrames < nFrames)
-	{
-		// Just to be sure about the behaviour of constrainedGetFrames.
-		assert_fatal(nNewFrames < 0);
-
-		printf(ERROR SGLIST"resize(nFrames): Op failed. "
-			"PrevNFrames %d, %d allocated newly and will be "
-			"freed.\n",
-			nFrames, currNFrames, nNewFrames);
-
-		return nNewFrames;
-	}
-
-	return ERROR_SUCCESS;
-}
-
-template <class scgth_elements_type>
-void fplainn::dma::ScatterGatherList::freeSGListElements(
-	ResizeableArray<scgth_elements_type> *list)
-{
-	typename ResizeableArray<scgth_elements_type>::Iterator		it;
-
-	list->lock();
-	for (it = list->begin(); it != list->end(); ++it)
-	{
-		scgth_elements_type		*tmp = &*it;
-		paddr_t				p;
-
-		assign_scgth_block_busaddr_to_paddr(p, tmp->block_busaddr);
-
-		memoryTrib.releaseFrames(p, tmp->block_length);
-	}
-	list->unlock();
-}
-
-namespace fplainn
-{
-namespace dma
-{
-namespace scatterGatherLists
-{
-void *getPages(Thread *t, uarch_t nPages);
-void releasePages(Thread *t, void *vaddr, uarch_t nPages);
-
-status_t wprMapInc(Thread *t, void *vaddr, paddr_t p, uarch_t nFrames);
-status_t wprUnmap(Thread *t, void *vaddr, uarch_t nFrames);
-}
-}
-}
-
-template <class scgth_elements_type>
-error_t fplainn::dma::ScatterGatherList::map(
-	ResizeableArray<scgth_elements_type> *list,
-	MappedScatterGatherList *retMapping)
-{
-	uarch_t			nFrames, nFramesMapped;
-	Thread			*currThread;
-	typename ResizeableArray<scgth_elements_type>::Iterator		it;
-	void			*vaddr;
-	uintptr_t		currVaddr;
-	error_t			ret;
-	status_t		status;
-	paddr_t			p;
-
-	/*	EXPLANATION:
-	 * Map a scgth list into the vaddrspace of the caller. This is fine
-	 * because only the caller should have a handle-ID to any sglist.
-	 *
-	 * MappedSGLists are not demand mapped. They are fully mapped and
-	 * committed.
-	 */
-
-	currThread = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread();
-
-	list->lock();
-
-	nFrames = getNFrames(GNF_FLAGS_UNLOCKED);
-
-	vaddr = scatterGatherLists::getPages(currThread, nFrames);
-	if (vaddr == NULL)
-	{
-		list->unlock();
-		printf(ERROR SGLIST"map: Failed to alloc vmem to map the %d "
-			"frames in the list.\n",
-			nFrames);
-
-		return ERROR_MEMORY_NOMEM_VIRTUAL;
-	}
-
-	currVaddr = (uintptr_t)vaddr;
-	nFramesMapped = 0;
-	for (it = list->begin(); it != list->end(); ++it)
-	{
-		scgth_elements_type		*tmp=&*it;
-		uarch_t				nPagesInBlock;
-
-		// Map each paddr + length segment.
-		assign_scgth_block_busaddr_to_paddr(p, tmp->block_busaddr);
-		nPagesInBlock = PAGING_BYTES_TO_PAGES(tmp->block_length);
-
-		status = scatterGatherLists::wprMapInc(
-			currThread, (void *)currVaddr, p, nPagesInBlock);
-
-		if (status < (sarch_t)nPagesInBlock) {
-			list->unlock();
-
-			printf(ERROR SGLIST"map: Failed to map all %d pages "
-				"for SGList element P%P, %d frames.\n",
-				nPagesInBlock, &p);
-
-			ret = ERROR_MEMORY_VIRTUAL_PAGEMAP;
-			goto unmapAndReleaseVmem;
-		}
-
-		currVaddr += tmp->block_length;
-		assert_fatal((currVaddr & PAGING_BASE_MASK_LOW) == 0);
-		nFramesMapped += nPagesInBlock;
-
-		// Ensure we don't exceed the amount of loose vmem allocated.
-		assert_fatal(nFramesMapped <= nFrames);
-	}
-
-	list->unlock();
-
-	ret = retMapping->trackPages(vaddr, nFrames);
-	if (ret != ERROR_SUCCESS)
-	{
-		printf(ERROR SGLIST"map: Failed to track vmem pages at %p in "
-			"SGList mapping.\n",
-			vaddr);
-
-		// 'ret' was already set.
-		goto unmapAndReleaseVmem;
-	}
-
-	return ERROR_SUCCESS;
-
-unmapAndReleaseVmem:
-	status = scatterGatherLists::wprUnmap(currThread, vaddr, nFrames);
-	if (status < (sarch_t)nFrames)
-	{
-		printf(FATAL SGLIST"map: Failed to clean up. Only %d of %d "
-			"pages were unmapped from vaddrspace.\n",
-			status, nFrames);
-
-		// Fallthrough.
-	}
-
-	scatterGatherLists::releasePages(currThread, vaddr, nFrames);
-	return ret;
-}
 
 #endif
