@@ -418,7 +418,9 @@ inline void fplainn::Zum::parentChannelEventInd(
 {
 	eventIndU		p;
 
-	// The buffer path info will be set by the ZUM server.
+	/* The buffer path *is* the parent_ID in Zambesii. But that will be
+	 * taken care of by libzbzcore.
+	 */
 	p.setParentParams(NULL, parent_ID, NULL);
 	channelEventInd(devicePath, endp, event, &p, privateData);
 }
