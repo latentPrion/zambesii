@@ -29,6 +29,8 @@ int oo=0, pp=0, qq=0, rr=0;
 static void				__korientationMain1(void);
 static __kcbFn				__korientationMain2;
 static __kcbFn				__korientationMain3;
+static __kcbFn				__korientationMain4;
+static __kcbFn				__korientationMain5;
 
 #include <commonlibs/libacpi/libacpi.h>
 static void rDumpSrat(void)
@@ -330,23 +332,13 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 		new __kCallback(&__korientationMain3));
 }
 
-#include <commonlibs/libzbzcore/libzudi.h>
-#include <commonlibs/libzbzcore/libzbzcore.h>
-#include <kernel/common/floodplainn/initInfo.h>
-#include <kernel/common/floodplainn/movableMemory.h>
-template <class T, int N>
-struct sMovableMemObject
-{
-	sMovableMemObject(void) : hdr(sizeof(T) * N) {}
-
-	fplainn::sMovableMemory		hdr;
-	T				a[N];
-};
+void __korientationMain4(MessageStream::sHeader *msgIt);
 
 void __korientationMain3(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
-	error_t				ret;
+	fplainn::Zum::sZumMsg		*msg=reinterpret_cast<
+		fplainn::Zum::sZumMsg *>(msgIt);
 
 	(void)self;
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
@@ -354,87 +346,84 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 	fplainn::Device			*dev;
 
 	floodplainn.getDevice(CC"by-id", &dev);
-/*	struct sGxcb
+
+	if (msg->info.params.start.ibind.nFailures > 0)
 	{
-		sGxcb(void)
+		printf(FATAL ORIENT"Failed to start Root device 'by-id'.\n"
+			"\t%d of %d internal bind channels failed "
+			"channel_event_ind(CHANNEL_BOUND).\n"
+			"\tBoot halted.\n",
+			msg->info.params.start.ibind.nFailures,
+			msg->info.params.start.ibind.nChannels);
+
+		return;
+	}
+
+	if (msg->info.params.start.pbind.nFailures > 0)
+	{
+		printf(FATAL ORIENT"Failed to start Root device 'by-id'.\n"
+			"\t%d of %d parent bind channels failed "
+			"channel_event_ind(PARENT_BOUND).\n"
+			"\tBoot halted.\n",
+			msg->info.params.start.pbind.nFailures,
+			msg->info.params.start.pbind.nChannels);
+	}
+
+	udi_enumerate_cb_t		ecb;
+
+	memset(&ecb, 0, sizeof(ecb));
+	ecb.attr_list = NULL;
+	ecb.filter_list = NULL;
+	ecb.attr_valid_length = ecb.filter_list_length = 0;
+
+	// Enumerate the children of the root device.
+	floodplainn.zum.enumerateChildrenReq(
+		CC"by-id", &ecb, 0,
+		new __kCallback(&__korientationMain4));
+}
+
+void __korientationMain4(MessageStream::sHeader *msgIt)
+{
+	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
+	status_t			stat;
+
+	if (msg->info.params.enumerateChildren.final_enumeration_result
+		!= UDI_ENUMERATE_DONE)
+	{
+		printf(FATAL ORIENT"enumerateChildren() failed on root device "
+			"'by-id'.\n");
+		return;
+	}
+
+	if (msg->info.params.enumerateChildren.nDeviceIds < 1)
+	{
+		printf(WARNING ORIENT"enumerateChildren(): root device "
+			"reported that it has no children.\n"
+			"\tThis is highly unusual, but boot will proceed.\n");
+	}
+
+	printf(NOTICE ORIENT"Root dev reported %d children.\n",
+		msg->info.params.enumerateChildren.nDeviceIds);
+
+	uarch_t tot, succ, fail;
+	struct {
+		TESTS_FN_MAKE_PROTOTYPE_DEFVARS(runTests)
 		{
-			memset(&cb, 0, sizeof(cb));
-			cb.tr_params = &tr_params;
+			return ::runTests(nTotal, nSucceeded, nFailed);
 		}
+	} testobj;
 
-		lzudi::sControlBlock	cbHdr;
-		udi_gio_xfer_cb_t	cb;
-		struct _{
-			_(void) { a[0] = a[1] = 0xDEaDBEEF; }
-			ubit32		a[2];
-		} tr_params;
-	} cb;
+	DO_OR_DIE(testobj, runTests(&tot, &succ, &fail), stat);
+	printf(NOTICE"Tests: %d total, %d succ, %d fail\n", tot, succ, fail);
+	printf(NOTICE"All is well in the universe.\n");
+}
 
-	extern udi_mei_init_t			udi_gio_meta_info;
-	fplainn::MetaInit			mParser(&udi_gio_meta_info);
-	udi_layout_t				tmpLay[] =
-		{ UDI_DL_UBIT32_T, UDI_DL_UBIT32_T, UDI_DL_END };
-//		{ UDI_DL_END };
+void __korientationMain5(MessageStream::sHeader *msgIt)
+{
+	error_t ret;
 
-	udi_layout_t		*l[3] = {
-		mParser.getOpTemplate(1, 3)->visible_layout,
-		mParser.getOpTemplate(1, 3)->marshal_layout,
-		//__klzbzcore::region::channel::mgmt::layouts::channel_event_ind,
-		tmpLay
-	};
-
-	error_t send(
-		fplainn::Endpoint *endp,
-		udi_cb_t *gcb, udi_layout_t *layouts[3],
-		utf8Char *metaName, udi_index_t meta_ops_num, udi_index_t op_idx,
-		void *privateData,
-		...);
-
-	self->parent->floodplainnStream.send(
-		dev->instance->mgmtEndpoint, &cb.cb.gcb,
-		l, CC"udi_gio",
-		UDI_GIO_PROVIDER_OPS_NUM, 3, NULL,
-		0xFF, 0xCaFEBaBE);*/
-
-	struct sGecb
-	{
-		sGecb(void)
-		{
-			memset(&cb, 0, sizeof(cb));
-		}
-
-		lzudi::sControlBlock			hdr;
-		udi_enumerate_cb_t		cb;
-	} ecb;
-
-	sMovableMemObject<udi_instance_attr_list_t, 2>	ta;
-	sMovableMemObject<udi_filter_element_t, 2>	tf;
-
-	{
-		strcpy8(CC ta.a[0].attr_name, CC"attr0");
-		strcpy8(CC ta.a[0].attr_value, CC"attr0-value");
-		ta.a[0].attr_type = 1;
-		strcpy8(CC ta.a[1].attr_name, CC"attr1");
-		strcpy8(CC ta.a[1].attr_value, CC"attr1-value");
-		ta.a[1].attr_type = 1;
-	};
-	{
-		strcpy8(CC tf.a[0].attr_name, CC"filter0");
-		strcpy8(CC tf.a[1].attr_name, CC"filter1");
-	};
-	{
-		ecb.cb.attr_valid_length = 1;
-		ecb.cb.filter_list_length = 2;
-		ecb.cb.attr_list = ta.a;
-		ecb.cb.filter_list = tf.a;
-	};
-
-	__kcbFn		__kotp;
-	floodplainn.zum.enumerateReq(
-		CC"by-id", UDI_ENUMERATE_START, &ecb.cb,
-		new __kCallback(&__kotp));
-
-printf(NOTICE ORIENT"orient 3.\n");
+	(void)msgIt;
+	(void)__korientationMain5;
 
 	return;
 
@@ -459,40 +448,6 @@ printf(NOTICE ORIENT"orient 3.\n");
 	for (;FOREVER;) { asm volatile("hlt\n\t"); };
 }
 
-void __kecrCb(MessageStream::sHeader *msgIt);
-
-void __kotp(MessageStream::sHeader *msgIt)
-{
-	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
-	udi_enumerate_cb_t		*ecb = &msg->info.params.enumerate.cb;
-	udi_instance_attr_list_t	a[2];
-	sMovableMemObject<udi_filter_element_t, 2>	tf;
-
-printf(NOTICE"here, finished enum req.\n");
-	printf(NOTICE ORIENT"msg %p: %d attr @%p, %d filt @%p.\n",
-		msg,
-		ecb->attr_valid_length,
-		ecb->attr_list,
-		ecb->filter_list_length,
-		ecb->filter_list);
-
-	floodplainn.zum.getEnumerateReqAttrsAndFilters(ecb, a, tf.a);
-
-	{
-		ecb->filter_list_length = 2;
-		ecb->filter_list = tf.a;
-	};
-
-	ecb->attr_valid_length = 0;
-	ecb->attr_list = NULL;
-printf(NOTICE ORIENT"About to call enumerateChildren.\n");
-	floodplainn.zum.enumerateChildrenReq(
-		CC"by-id", ecb, 0,
-		new __kCallback(&__kecrCb));
-/*	floodplainn.zum.finalCleanupReq(
-		CC"by-id",
-		new __kCallback(&__kecrCb));*/
-}
 
 void __kecrCb(MessageStream::sHeader *msgIt)
 {
@@ -555,17 +510,6 @@ void __kecrCb(MessageStream::sHeader *msgIt)
 
 	sgl.dump();
 
-	uarch_t tot, succ, fail;
-	struct {
-		TESTS_FN_MAKE_PROTOTYPE_DEFVARS(runTests)
-		{
-			return ::runTests(nTotal, nSucceeded, nFailed);
-		}
-	} testobj;
-
-	DO_OR_DIE(testobj, runTests(&tot, &succ, &fail), stat);
-	printf(NOTICE"Tests: %d total, %d succ, %d fail\n", tot, succ, fail);
-	printf(NOTICE"All is well in the universe.\n");
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
 	{
 		printf(NOTICE"New child: %s/%d.\n",
