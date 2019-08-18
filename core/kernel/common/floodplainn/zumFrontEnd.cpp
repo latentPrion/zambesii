@@ -82,7 +82,14 @@ void fplainn::Zum::enumerateChildrenReq(
 
 	caller = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	if (ecb == NULL || ecb->attr_list != NULL || ecb->attr_valid_length > 0)
+	if (ecb == NULL)
+	{
+		printf(ERROR ZUM"enumChildrenReq: a udi_enumerate_cb_t arg is "
+			"required.\n");
+		return;
+	}
+
+	if (ecb->attr_list != NULL || ecb->attr_valid_length > 0)
 	{
 		printf(ERROR ZUM"enumChildrenReq: %d attrs passed in @%p. "
 			"Directed enumeration not allowed!",

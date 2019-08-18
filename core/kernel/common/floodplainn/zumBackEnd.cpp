@@ -1120,7 +1120,7 @@ void zumServer::mgmt::enumerateAck(
 	AsyncResponse		myResponse;
 	udi_enumerate_cb_t	*cb;
 	fplainn::Zum::EnumerateReqMovableObjects
-				*movableMem;
+				*movableMem=NULL;
 	uarch_t			movableMemRequirement;
 
 	myResponse(ctxt);
@@ -1133,13 +1133,17 @@ void zumServer::mgmt::enumerateAck(
 		::calcMemRequirementsFor(
 			cb->attr_valid_length, cb->filter_list_length);
 
-	movableMem = new (new ubit8[movableMemRequirement])
-	fplainn::Zum::EnumerateReqMovableObjects(
-		cb->attr_valid_length, cb->filter_list_length);
+	if (movableMemRequirement > 0)
+	{
+		movableMem = new (new ubit8[movableMemRequirement])
+			fplainn::Zum::EnumerateReqMovableObjects(
+			cb->attr_valid_length, cb->filter_list_length);
 
-	if (movableMem == NULL) {
-		myResponse(ERROR_MEMORY_NOMEM); return;
-	};
+		if (movableMem == NULL) {
+			myResponse(ERROR_MEMORY_NOMEM); return;
+		};
+	}
+
 
 	// Copy the attr and filter lists into some kernel memory area.
 	if (cb->attr_valid_length > 0 && cb->attr_list != NULL)
