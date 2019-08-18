@@ -164,9 +164,7 @@ public:
 	elements(RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP),
 	mapping(this),
 	isFrozen(0)
-	{
-		memset(&udiScgthList, 0, sizeof(udiScgthList));
-	}
+	{}
 
 	error_t initialize(void)
 	{
@@ -364,8 +362,6 @@ public:
 
 		// Finally add it to the list.
 		elements[prevNIndexes] = newElement;
-		// TODO: Should be atomic_add.
-		udiScgthList.scgth_num_elements++;
 		return 1;
 	}
 
@@ -666,7 +662,6 @@ public:
 					SGListElementArray;
 
 	SGListElementArray			elements;
-	udi_scgth_t				udiScgthList;
 	constraints::Compiler			compiledConstraints;
 	MappedScatterGatherList			mapping;
 	// XXX: FIXME: This should be read/written with atomic operations.
