@@ -132,10 +132,6 @@ typedef udi_scgth_element_32_t __kscgth_element_type_t;
 
 namespace scatterGatherLists
 {
-	enum eAddressSize {
-		ADDR_SIZE_UNKNOWN, ADDR_SIZE_32, ADDR_SIZE_64
-	};
-
 	void *getPages(Thread *t, uarch_t nPages);
 	void releasePages(Thread *t, void *vaddr, uarch_t nPages);
 
