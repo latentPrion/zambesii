@@ -367,6 +367,8 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 			"\tBoot halted.\n",
 			msg->info.params.start.pbind.nFailures,
 			msg->info.params.start.pbind.nChannels);
+
+		return;
 	}
 
 	udi_enumerate_cb_t		ecb;
