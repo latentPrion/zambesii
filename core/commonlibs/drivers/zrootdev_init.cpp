@@ -1,4 +1,5 @@
 
+#include <__kstdlib/__kclib/string8.h>
 #include "zrootdev.h"
 
 
@@ -23,6 +24,82 @@
  **/
 static udi_ubit8_t			blankFlags=0;
 
+/* base_devs holds the attrs for those devices which are not chipset-specific
+ * such as the __kramdisk and vchipset
+ */
+static struct child_dev base_devs[] = {
+	{
+		.childId = 1,
+		.identifier = "ramdisk",
+		.address_locator = "root-dev1",
+
+		.bus_type = "zbz_root",
+		.zbz_root_device_type = "ramdisk"
+	},
+	{
+		.childId = 2,
+		.identifier = "vchipset",
+		.address_locator = "root-dev2",
+
+		.bus_type = "zbz_root",
+		.zbz_root_device_type = "virtual-chipset"
+	}
+};
+
+udi_ubit8_t zrootdev_get_n_base_devs(void)
+{
+	return sizeof(base_devs) / sizeof(*base_devs);
+}
+
+void zrootdev_root_dev_mark_released(udi_ubit32_t childId)
+{
+	const int N_BASE_DEVS = zrootdev_get_n_base_devs();
+
+	for (int i = 0; i < N_BASE_DEVS; i++)
+	{
+		if (base_devs[i].childId == childId) {
+			base_devs[i].enum_released = 1;
+		}
+	}
+}
+
+#define COPY_DEV_MEMBER_STRING_TO_ATTR(devvar,attrvar,membername) \
+	(attrvar)->attr_type = UDI_ATTR_STRING; \
+	(attrvar)->attr_length = strnlen8( \
+		CC (devvar)->membername, UDI_MAX_ATTR_SIZE); \
+	strncpy8(CC (attrvar)->attr_name, CC #membername, UDI_MAX_ATTR_NAMELEN); \
+	strncpy8( \
+		CC (attrvar)->attr_value, CC (devvar)->membername, \
+		UDI_MAX_ATTR_SIZE);
+
+void zrootdev_child_dev_to_enum_attrs(
+	struct child_dev *dev, udi_instance_attr_list_t *outattrs,
+	udi_ubit32_t *outChildId
+	)
+{
+	*outChildId = dev->childId;
+
+	COPY_DEV_MEMBER_STRING_TO_ATTR(dev, &outattrs[0], identifier);
+	COPY_DEV_MEMBER_STRING_TO_ATTR(dev, &outattrs[1], address_locator);
+	COPY_DEV_MEMBER_STRING_TO_ATTR(dev, &outattrs[2], bus_type);
+	COPY_DEV_MEMBER_STRING_TO_ATTR(dev, &outattrs[3], zbz_root_device_type);
+}
+
+udi_boolean_t zrootdev_root_dev_to_enum_attrs(
+	udi_ubit32_t index, udi_instance_attr_list_t *outattrs,
+	udi_ubit32_t *outChildId
+	)
+{
+	const unsigned N_BASE_DEVS = zrootdev_get_n_base_devs();
+
+	if (index >= N_BASE_DEVS) { return false; }
+
+	zrootdev_child_dev_to_enum_attrs(
+		&base_devs[index], outattrs, outChildId);
+
+	return true;
+}
+
 static const udi_mgmt_ops_t		zrootdev_mgmt_ops =
 {
 	&zrootdev_usage_ind,
@@ -46,18 +123,18 @@ static const udi_intr_dispatcher_ops_t	zrootdev_intr_dispatcher_ops =
 
 static const udi_bus_bridge_ops_t	zrootdev_bus_bridge_ops =
 {
-	&zrootdev_bus_channel_event_ind,
-	&zrootdev_bus_bind_req,
-	&zrootdev_bus_unbind_req,
-	&zrootdev_intr_attach_req,
-	&zrootdev_intr_detach_req
+	&zrootdev_child_bus_channel_event_ind,
+	&zrootdev_child_bus_bind_req,
+	&zrootdev_child_bus_unbind_req,
+	&zrootdev_child_intr_attach_req,
+	&zrootdev_child_intr_detach_req
 };
 
 static const udi_ops_init_t		zrootdev_ops_init_info[] =
 {
 	// ChildBOp: 1 0 1: zbz_root (is udi_bridge).
 	{
-		1, 1, 2,
+		1, 2, 2,
 		0,
 		(udi_ops_vector_t *)&zrootdev_bus_bridge_ops,
 		&blankFlags
@@ -78,11 +155,11 @@ static const udi_primary_init_t		zrootdev_primary_init_info =
 {
 	&zrootdev_mgmt_ops, &blankFlags,
 	0,
-	/* zbz_root enumerated devices require 6 attrs.
-	 * (4 generic enumeration attributes + meta specific attrs.)
+	/* zbz_root enumerated devices require 4 attrs.
+	 * (2 generic enumeration attributes + 2 meta specific attrs.)
 	 **/
-	6,
-	sizeof(udi_init_context_t) + 0,
+	4,
+	sizeof(udi_init_context_t) + sizeof(primary_rdata_t),
 	0, 0
 };
 
@@ -120,12 +197,12 @@ UDI_DL_END };
 
 static const udi_cb_init_t		cbtmp[] =
 {
-	{ 1, 1, 1, 0, 0, NULL },
-	{ 2, 1, 1, 0, 0, NULL },
-	{ 3, 1, 1, 0, 0, NULL },
-	{ 4, 1, 2, 2, 0, NULL },
-	{ 5, 1, 2, 2, 0, NULL },
-	{ 6, 1, 2, 3, 0, NULL },
+	{ 1, 3, 1, 0, 0, NULL },
+	{ 2, 3, 1, 0, 0, NULL },
+	{ 3, 4, 1, 0, 0, NULL },
+	{ 4, 4, 2, 2, 0, NULL },
+	{ 5, 3, 2, 2, 0, NULL },
+	{ 6, 4, 2, 3, 0, NULL },
 	{ 7, 3, 2, 3, 0, NULL },
 	{ 0, 0, 0, 0, 0, NULL }
 };

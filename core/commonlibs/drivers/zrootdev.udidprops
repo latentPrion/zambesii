@@ -11,14 +11,13 @@ message	2	Zambesii
 message	3	N/A
 
 requires	udi		0x101
-requires	udi_bridge	0x101
-requires	zbz_root	0x0
+requires	udi_physio	0x101
 requires	udi_gio		0x101
 
-meta	1	zbz_root
-meta	2	udi_bridge
+meta	1	zbz_fplainn
+meta	2	zbz_root
 meta	3	udi_gio
-
+meta	4	udi_physio
 
 module	main
 region	0
@@ -28,9 +27,12 @@ region	3
 
 message	10	Zambesii root device
 
-device 10 1	identifier string zrootdev
+device 10 1 \
+	identifier		string zrootdev
 
-child_bind_ops		1 0 1
-internal_bind_ops	2 1 1 1 1
-internal_bind_ops	2 2 1 1 1
-internal_bind_ops	2 3 1 1 1
+# For the parent we will never bind to because we are the kernel.
+parent_bind_ops		1 0 1 1
+child_bind_ops		2 0 1
+internal_bind_ops	3 1 1 1 1
+internal_bind_ops	3 2 1 1 1
+internal_bind_ops	3 3 1 1 1

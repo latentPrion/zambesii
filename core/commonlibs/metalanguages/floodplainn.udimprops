@@ -1,0 +1,16 @@
+properties_version	0x101
+
+name		1
+supplier	2
+contact		3
+shortname	zbz_fplainn
+release		1 v0.00.000
+
+message	1	Zambesii Floodplainn metalanguage library
+message	2	Zambesii
+message	3	N/A
+
+requires	udi		0x101
+provides	zbz_fplainn	0x0
+
+rank 1	identifier
