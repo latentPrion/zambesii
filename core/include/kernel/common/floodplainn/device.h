@@ -487,9 +487,12 @@ namespace fplainn
 
 		struct sRequirement
 		{
-			sRequirement(utf8Char *name, ubit32 version)
+			sRequirement(
+				utf8Char *name, ubit32 version,
+				udi_mei_init_t *udi_meta_info)
 			:
-			fullName(NULL), version(version)
+			fullName(NULL), version(version),
+			udi_meta_info(udi_meta_info)
 			{
 				strcpy8(this->name, name);
 			}
@@ -499,12 +502,14 @@ namespace fplainn
 			utf8Char	name[DRIVER_REQUIREMENT_MAXLEN],
 					*fullName;
 			ubit32		version;
+			// XXX: Only used by the kernel for kernelspace drivers.
+			const udi_mei_init_t	*udi_meta_info;
 
 		private:
 			friend class fplainn::Driver;
 			sRequirement(void)
 			:
-			fullName(NULL), version(0)
+			fullName(NULL), version(0), udi_meta_info(NULL)
 			{
 				name[0] = '\0';
 			}
@@ -513,10 +518,9 @@ namespace fplainn
 		struct sMetalanguage
 		{
 			sMetalanguage(
-				ubit16 index, utf8Char *name,
-				udi_mei_init_t *udi_meta_info)
+				ubit16 index, utf8Char *name)
 			:
-			index(index), udi_meta_info(udi_meta_info)
+			index(index)
 			{
 				strcpy8(this->name, name);
 			}
@@ -525,14 +529,12 @@ namespace fplainn
 
 			ubit16		index;
 			utf8Char	name[DRIVER_METALANGUAGE_MAXLEN];
-			// XXX: Only used by the kernel for kernelspace drivers.
-			const udi_mei_init_t	*udi_meta_info;
 
 		private:
 			friend class fplainn::Driver;
 			sMetalanguage(void)
 			:
-			index(0), udi_meta_info(NULL)
+			index(0)
 			{
 				name[0] = '\0';
 			}
@@ -741,10 +743,10 @@ namespace fplainn
 		// XXX: Only used by kernel for kernelspace drivers.
 		const udi_mei_init_t *getMetaInitInfo(const utf8Char *name)
 		{
-			for (uarch_t i=0; i<nMetalanguages; i++)
+			for (uarch_t i=0; i<nRequirements; i++)
 			{
-				if (!strcmp8(metalanguages[i].name, name)) {
-					return metalanguages[i].udi_meta_info;
+				if (!strcmp8(requirements[i].name, name)) {
+					return requirements[i].udi_meta_info;
 				};
 			};
 

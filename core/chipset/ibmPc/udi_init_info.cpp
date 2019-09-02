@@ -34,8 +34,7 @@ const sDriverInitEntry		driverInitInfo[] =
 const sMetaInitEntry		metaInitInfo[] =
 {
 	{ CC"udi_gio", &udi_gio_meta_info },
-	{ CC"udi_bridge", &udi_bridge_meta_info },
-	{ CC"zbz_root", &udi_bridge_meta_info },
+	{ CC"udi_physio", &udi_bridge_meta_info },
 	{ CC"udi_mgmt", &udi_mgmt_meta_info },
 	// Shall always be terminated with the NULL entry.
 	{ NULL, NULL }

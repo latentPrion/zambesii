@@ -833,14 +833,34 @@ void zuiBackend::loadDriverReq(
 			currRegion.flags);
 	};
 
-	// Now copy all the requirements information:
-	err = driver->preallocateRequirements(driverHdr->nRequirements);
-	if (driverHdr->nRequirements > 0 && err != ERROR_SUCCESS)
-		{ myResponse(ERROR_MEMORY_NOMEM); return; };
+	/* Now copy all the requirements information:
+	 *
+	 * Just like the metalanguage metadata below, we make extra room for
+	 * one more requirement -- the mgmt meta.
+	 */
+	err = driver->preallocateRequirements(driverHdr->nRequirements + 1);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+
+	const sMetaInitEntry			*udiMgmtMetaInitEntry;
+
+	udiMgmtMetaInitEntry = floodplainn.zudi.findMetaInitInfo(CC"udi_mgmt");
+	if (udiMgmtMetaInitEntry == NULL)
+	{
+		printf(ERROR FPLAINNIDX"loadDriver %s: failed to load "
+			"udi_meta_info for MGMT meta!\n",
+			driver->shortName);
+
+		myResponse(ERROR_UNKNOWN);
+		return;
+	}
+
+	new (&driver->requirements[0]) fplainn::Driver::sRequirement(
+		CC"udi_mgmt", 0x101, udiMgmtMetaInitEntry->udi_meta_info);
 
 	for (uarch_t i=0; i<driverHdr->nRequirements; i++)
 	{
 		zui::driver::sRequirement	currRequirement;
+		udi_mei_init_t			*metaInfo=NULL;
 
 		if (zudiIndexes[0]->indexedGetRequirement(
 			driverHdr.get(), i, &currRequirement) != ERROR_SUCCESS)
@@ -848,32 +868,6 @@ void zuiBackend::loadDriverReq(
 
 		if (zudiIndexes[0]->getRequirementString(
 			&currRequirement, tmpString.get()) != ERROR_SUCCESS)
-			{ myResponse(ERROR_UNKNOWN); return; };
-
-		new (&driver->requirements[i]) fplainn::Driver::sRequirement(
-			tmpString.get(), currRequirement.version);
-	};
-
-	/* Next, metalanguage index information.
-	 * We always allocate room for one more, because we insinuate the MGMT
-	 * metalanguage as an implicit child_bind_op meta for every driver.
-	 **/
-	err = driver->preallocateMetalanguages(driverHdr->nMetalanguages + 1);
-	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
-	new (&driver->metalanguages[0]) fplainn::Driver::sMetalanguage(
-		0, CC"udi_mgmt", NULL);
-
-	for (uarch_t i=0; i<driverHdr->nMetalanguages; i++)
-	{
-		zui::driver::sMetalanguage	currMetalanguage;
-		udi_mei_init_t			*metaInfo=NULL;
-
-		if (zudiIndexes[0]->indexedGetMetalanguage(
-			driverHdr.get(), i, &currMetalanguage) != ERROR_SUCCESS)
-			{ myResponse(ERROR_NOT_FOUND); return; };
-
-		if (zudiIndexes[0]->getMetalanguageString(
-			&currMetalanguage, tmpString.get()) != ERROR_SUCCESS)
 			{ myResponse(ERROR_UNKNOWN); return; };
 
 		if (driver->index == fplainn::Zui::INDEX_KERNEL)
@@ -886,16 +880,44 @@ void zuiBackend::loadDriverReq(
 				printf(ERROR FPLAINNIDX"loadDriver: "
 					"(kernel driver %s):\n\tFailed to find "
 					"a udi_meta_info struct in kernel for "
-					"metalanguage %s.\n",
+					"'requires' line %s.\n",
 					driver->shortName, tmpString.get());
 
+				myResponse(ERROR_NO_MATCH);
 				return;
 			};
 		};
 
+		new (&driver->requirements[i] + 1)
+			fplainn::Driver::sRequirement(
+				tmpString.get(), currRequirement.version,
+				metaInfo);
+	};
+
+	/* Next, metalanguage index information.
+	 * We always allocate room for one more, because we insinuate the MGMT
+	 * metalanguage as an implicit child_bind_op meta for every driver.
+	 **/
+	err = driver->preallocateMetalanguages(driverHdr->nMetalanguages + 1);
+	if (err != ERROR_SUCCESS) { myResponse(ERROR_MEMORY_NOMEM); return; };
+	new (&driver->metalanguages[0]) fplainn::Driver::sMetalanguage(
+		0, CC"udi_mgmt");
+
+	for (uarch_t i=0; i<driverHdr->nMetalanguages; i++)
+	{
+		zui::driver::sMetalanguage	currMetalanguage;
+
+		if (zudiIndexes[0]->indexedGetMetalanguage(
+			driverHdr.get(), i, &currMetalanguage) != ERROR_SUCCESS)
+			{ myResponse(ERROR_NOT_FOUND); return; };
+
+		if (zudiIndexes[0]->getMetalanguageString(
+			&currMetalanguage, tmpString.get()) != ERROR_SUCCESS)
+			{ myResponse(ERROR_UNKNOWN); return; };
+
 		// Place it at the position i + 1; index 0 is always MGMT.
 		new (&driver->metalanguages[i + 1]) fplainn::Driver::sMetalanguage(
-			currMetalanguage.index, tmpString.get(), metaInfo);
+			currMetalanguage.index, tmpString.get());
 	};
 
 	// We also preallocate an extra childBop for the MGMT meta.
@@ -1019,6 +1041,19 @@ void zuiBackend::loadRequirementsReq(
 	{
 		zui::driver::sProvision		currProv;
 		sarch_t				isSatisfied=0;
+
+		if (strcmp8(drv->requirements[i].name, CC"udi_mgmt") == 0)
+		{
+			/* MGMT meta will either be satisfied by libzbzcore
+			 * and the service calls (for kernelspace drivers),
+			 * or by libzbzcore in userspace for userspace
+			 * drivers.
+			 *
+			 * Either way, we don't need to try to satisfy it here.
+			 */
+			isSatisfied = 1;
+			continue;
+		}
 
 		for (uarch_t j=0;
 			j<indexHdr->nSupportedMetas

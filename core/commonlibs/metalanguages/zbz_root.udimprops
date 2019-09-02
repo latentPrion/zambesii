@@ -10,11 +10,9 @@ message	1	Zambesii root bus metalanguage library
 message	2	Zambesii
 message	3	N/A
 
-requires	udi 0x101
-provides	zbz_root 0x0
+requires	udi		0x101
+requires	udi_physio	0x101
+provides	zbz_root	0x0
 
-module	main
-
-rank 1	bus_type zbz_root_chipset_short_name
-rank 2	bus_type zbz_root_chipset_short_name zbz_root_chipset_long_name
+rank 1	bus_type zbz_root_device_type
 rank 3	identifier

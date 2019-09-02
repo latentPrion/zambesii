@@ -69,26 +69,20 @@ error_t Floodplainn::initialize(void)
 	root = vfsTrib.getFvfs()->getRoot();
 
 	ret = root->getInode()->createChild(
-		CC"by-id", root, &byId, CC"udi_bridge", &tmp);
+		CC"by-id", root, &byId, CC"zbz_fplainn", &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ret = root->getInode()->createChild(
-		CC"by-name", root, &byName, CC"udi_bridge", &tmp);
+		CC"by-name", root, &byName, CC"zbz_fplainn", &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ret = root->getInode()->createChild(
-		CC"by-class", root, &byClass, CC"udi_bridge", &tmp);
+		CC"by-class", root, &byClass, CC"zbz_fplainn", &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ret = root->getInode()->createChild(
-		CC"by-path", root, &byPath, CC"udi_bridge", &tmp);
+		CC"by-path", root, &byPath, CC"zbz_fplainn", &tmp);
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	/* Create the enumeration attributes for the root device.
 	 */
-	strcpy8(CC tmpAttr.attr_name, CC"bus_type");
-	strcpy8(CC tmpAttr.attr_value, CC"floodplainn");
-	tmpAttr.attr_type = UDI_ATTR_STRING;
-	ret = byId.addEnumerationAttribute(&tmpAttr);
-	if (ret != ERROR_SUCCESS) { return ret; };
-
 	strcpy8(CC tmpAttr.attr_name, CC"identifier");
 	strcpy8(CC tmpAttr.attr_value, CC"zrootdev");
 	tmpAttr.attr_type = UDI_ATTR_STRING;

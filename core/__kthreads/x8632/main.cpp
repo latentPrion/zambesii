@@ -407,6 +407,40 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	printf(NOTICE ORIENT"Root dev reported %d children.\n",
 		msg->info.params.enumerateChildren.nDeviceIds);
 
+	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
+	{
+		utf8Char		tmp[FVFS_PATH_MAXLEN],
+					tmp2[FVFS_PATH_MAXLEN];
+		fvfs::Tag		*tag;
+		error_t			err;
+
+		snprintf(tmp, FVFS_PATH_MAXLEN, CC"%s/%d",
+			msg->info.path,
+			msg->info.params.enumerateChildren.deviceIdsHandle[i]);
+
+		err = vfsTrib.getFvfs()->getPath(tmp, &tag);
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR ORIENT"Failed to get new child dev %d\n",
+				msg->info.params.enumerateChildren.deviceIdsHandle[i]);
+
+			continue;
+		};
+
+		err = tag->getFullName(tmp2, FVFS_PATH_MAXLEN);
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR ORIENT"Failed to get fullname of new "
+				"child with ID %d.\n",
+				msg->info.params.enumerateChildren.deviceIdsHandle[i]);
+
+			continue;
+		}
+
+		printf(NOTICE ORIENT"Dev: name %s\n", tmp2);
+		tag->getInode()->dumpEnumerationAttributes();
+	}
+
 	uarch_t tot, succ, fail;
 	struct {
 		TESTS_FN_MAKE_PROTOTYPE_DEFVARS(runTests)

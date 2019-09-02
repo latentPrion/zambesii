@@ -36,29 +36,42 @@ error_t __klzbzcore::driver::CachedInfo::generateMetaInfoCache(void)
 	drvInst = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
 		->parent->getDriverInstance();
 
-	for (uarch_t i=0; i<drvInst->driver->nMetalanguages; i++)
+	for (uarch_t i=0; i<drvInst->driver->nRequirements; i++)
 	{
 		sMetaDescriptor			*tmpMetaDesc;
 		const sMetaInitEntry		*tmpMetaInit;
+		fplainn::Driver::sMetalanguage	*drvMeta;
 
 		// NOTE: Could also skip metaIndex 0, to skip udi_mgmt entirely.
 
 		tmpMetaInit = floodplainn.zudi.findMetaInitInfo(
-			drvInst->driver->metalanguages[i].name);
+			drvInst->driver->requirements[i].name);
 
 		if (tmpMetaInit == NULL)
 		{
 			printf(ERROR LZBZCORE"genMetaInfoCache: Failed to get "
-				"udi_meta_info for meta %d (%s).\n",
-				drvInst->driver->metalanguages[i].index,
-				drvInst->driver->metalanguages[i].name);
+				"udi_meta_info for 'requires' line (%s).\n",
+				drvInst->driver->requirements[i].name);
 
 			return ERROR_NOT_FOUND;
 		};
 
+		drvMeta = drvInst->driver->getMetalanguage(
+			drvInst->driver->requirements[i].name);
+
+		if (drvMeta == NULL)
+		{
+			printf(ERROR LZBZCORE"genMetaInfoCache: Failed to get "
+				"meta %s for driver %s.\n",
+				drvInst->driver->requirements[i].name,
+				drvInst->driver->shortName);
+
+			return ERROR_NOT_FOUND;
+		}
+
 		tmpMetaDesc = new sMetaDescriptor(
-			drvInst->driver->metalanguages[i].name,
-			drvInst->driver->metalanguages[i].index,
+			drvMeta->name,
+			drvMeta->index,
 			tmpMetaInit->udi_meta_info);
 
 		if (tmpMetaDesc == NULL)
@@ -72,6 +85,10 @@ error_t __klzbzcore::driver::CachedInfo::generateMetaInfoCache(void)
 
 		if (metaInfos.insert(tmpMetaDesc) != ERROR_SUCCESS)
 		{
+			printf(ERROR LZBZCORE"genMetaInfoCache: Unknown error "
+				"occured while attempting to insert entry into "
+				"cache.\n");
+
 			delete tmpMetaDesc;
 			return ERROR_GENERAL;
 		};
@@ -193,7 +210,12 @@ error_t __klzbzcore::driver::CachedInfo::generateMetaCbCache(void)
 		curr = *it;
 		// Get the meta descriptor for this cb's meta_idx.
 		cbMetaDesc = getMetaDescriptor(curr->metaIndex);
-		if (cbMetaDesc == NULL) {
+		if (cbMetaDesc == NULL)
+		{
+			printf(ERROR LZBZCORE"Failed to get metadesc for meta "
+				"index %d (%s)\n",
+				curr->metaIndex);
+
 			return ERROR_NOT_FOUND;
 		}
 
