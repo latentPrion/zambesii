@@ -672,15 +672,16 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	Thread *self,
 	fplainn::Device *dev)
 {
-	error_t				err;
-	fplainn::Driver::sMetalanguage	*enumeratingMeta;
-	fplainn::Device			*newDevice;
-//	fplainn::Endpoint		*endp;
-	AsyncResponse			myResponse;
-	fplainn::Zum::sZumMsg		*response;
-	sbit8				loopAgain=0,
-					clearBuffer=0, releaseBuffer=0;
-	const char 			*ueaStrings[] =
+	error_t					err;
+	fplainn::Driver::sMetalanguage		*enumeratingMeta;
+	fplainn::Device				*newDevice;
+//	fplainn::Endpoint			*endp;
+	AsyncResponse				myResponse;
+	fplainn::Zum::sZumMsg			*response;
+	sbit8					loopAgain=0,
+						clearBuffer=0, releaseBuffer=0;
+	HeapArr<udi_instance_attr_list_t>	enumAttrs;
+	const char 				*ueaStrings[] =
 	{
 		"OK", "LEAF", "DONE", "RESCAN", "REMOVED", "REMOVED_SELF",
 		"RELEASED", "FAILED"
@@ -733,7 +734,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 			printf(ERROR ZUM"enumChildren %s: Failed to add child "
 				"%d.\n",
 				ctxt->info.path,
-				response->info.params.enumerateChildren.cb.child_ID);
+				response->info.params.enumerate.cb.child_ID);
 
 			myResponse(err);
 			// Let it gracefully break out. Don't "return".
@@ -743,7 +744,44 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 		// Add the new device's child_ID to the buffer.
 		ctxt->info.params.enumerateChildren.deviceIdsHandle[
 			ctxt->info.params.enumerateChildren.nDeviceIds++]
-			= response->info.params.enumerateChildren.cb.child_ID;
+			= response->info.params.enumerate.cb.child_ID;
+
+		enumAttrs = new udi_instance_attr_list_t[
+			response->info.params.enumerate.cb.attr_valid_length];
+
+		if (enumAttrs == NULL)
+		{
+			printf(ERROR ZUM"enumChildren %s: Failed to alloc mem "
+				"for attrs for new device (childId %d).\n",
+				ctxt->info.path,
+				response->info.params.enumerate.cb.child_ID);
+
+			myResponse(ERROR_MEMORY_NOMEM);
+			break;
+		}
+
+		floodplainn.zum.getEnumerateReqAttrsAndFilters(
+			&response->info.params.enumerate.cb,
+			enumAttrs.get(), NULL);
+
+		for (uarch_t i=0;
+			i<response->info.params.enumerate.cb.attr_valid_length;
+			i++)
+		{
+			err = newDevice->addEnumerationAttribute(&enumAttrs[i]);
+			if (err != ERROR_SUCCESS)
+			{
+				printf(ERROR ZUM"enumChildren %s: Failed to "
+					"add enum attr #%d of new dev childId "
+					"%d.\n",
+					ctxt->info.path,
+					i,
+					response->info.params.enumerate.cb.child_ID);
+
+				myResponse(err);
+				break;
+			}
+		}
 
 		loopAgain = 1;
 		break;
@@ -789,10 +827,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	{
 		floodplainn.zum.enumerateReq(
 			ctxt->info.path,
-			(FLAG_TEST(
-				ctxt->info.params.enumerateChildren.flags,
-				ZUM_ENUMCHILDREN_FLAGS_UNCACHED_SCAN)
-				? UDI_ENUMERATE_START_RESCAN : UDI_ENUMERATE_START),
+			UDI_ENUMERATE_NEXT,
 			&ctxt->info.params.enumerateChildren.cb,
 			new EnumerateChildrenReqCb(
 				enumerateChildrenReq1, ctxt, self, dev));
@@ -858,14 +893,15 @@ void zumServer::postManagementCb::postManagementCbReq1(
 	Thread *self,
 	fplainn::Device *dev)
 {
-	error_t				err;
-	fplainn::Device			*newDevice;
-	fplainn::Driver::sMetalanguage	*enumeratingMeta;
-//	fplainn::Endpoint		*endp;
-	AsyncResponse			myResponse;
-	fplainn::Zum::sZumMsg		*response;
-	sbit8				loopAgain=0;
-	const char 			*ueaStrings[] =
+	error_t					err;
+	fplainn::Device				*newDevice;
+	fplainn::Driver::sMetalanguage		*enumeratingMeta;
+//	fplainn::Endpoint			*endp;
+	AsyncResponse				myResponse;
+	fplainn::Zum::sZumMsg			*response;
+	HeapArr<udi_instance_attr_list_t>	enumAttrs;
+	sbit8					loopAgain=0;
+	const char 				*ueaStrings[] =
 	{
 		"OK", "LEAF", "DONE", "RESCAN", "REMOVED", "REMOVED_SELF",
 		"RELEASED", "FAILED"
@@ -918,6 +954,43 @@ void zumServer::postManagementCb::postManagementCbReq1(
 			// Let it gracefully break out. Don't "return".
 			break;
 		};
+
+		enumAttrs = new udi_instance_attr_list_t[
+			response->info.params.enumerate.cb.attr_valid_length];
+
+		if (enumAttrs == NULL)
+		{
+			printf(ERROR ZUM"enumChildren %s: Failed to alloc mem "
+				"for attrs for new device (childId %d).\n",
+				ctxt->info.path,
+				response->info.params.enumerate.cb.child_ID);
+
+			myResponse(ERROR_MEMORY_NOMEM);
+			break;
+		}
+
+		floodplainn.zum.getEnumerateReqAttrsAndFilters(
+			&response->info.params.enumerate.cb,
+			enumAttrs.get(), NULL);
+
+		for (uarch_t i=0;
+			i<response->info.params.enumerate.cb.attr_valid_length;
+			i++)
+		{
+			err = newDevice->addEnumerationAttribute(&enumAttrs[i]);
+			if (err != ERROR_SUCCESS)
+			{
+				printf(ERROR ZUM"enumChildren %s: Failed to "
+					"add enum attr #%d of new dev childId "
+					"%d.\n",
+					ctxt->info.path,
+					i,
+					response->info.params.enumerate.cb.child_ID);
+
+				myResponse(err);
+				break;
+			}
+		}
 
 		loopAgain = 1;
 		break;
