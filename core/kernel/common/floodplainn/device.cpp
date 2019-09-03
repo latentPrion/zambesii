@@ -151,6 +151,9 @@ error_t fplainn::Driver::detectClasses(void)
 	 * the kernel recognizes; second pass allocates the array of classes
 	 * for the driver, and fills it in.
 	 **/
+
+	state.lock.writeAcquire();
+
 	for (ubit8 pass=1; pass <= 2; pass++)
 	{
 		for (uarch_t i=0; i<nChildBops; i++)
@@ -187,8 +190,9 @@ error_t fplainn::Driver::detectClasses(void)
 				if (pass == 1) { nRecognizedClasses++; }
 				else
 				{
-					nClasses += fillInClass(
-						classes, nClasses,
+					state.rsrc.nClasses += fillInClass(
+						state.rsrc.classes,
+						state.rsrc.nClasses,
 						driverClasses[tmp->classIndex]);
 				};
 
@@ -204,19 +208,34 @@ error_t fplainn::Driver::detectClasses(void)
 		 **/
 		if (nRecognizedClasses == 0)
 		{
-			classes = new utf8Char[1][DRIVER_CLASS_MAXLEN];
-			if (classes == NULL) { return ERROR_MEMORY_NOMEM; };
+			state.rsrc.classes = new utf8Char[1][
+				DRIVER_CLASS_MAXLEN];
+
+			if (state.rsrc.classes == NULL)
+			{
+				state.lock.writeRelease();
+				return ERROR_MEMORY_NOMEM;
+			};
 
 			// driver class 1 is set in stone as "unrecognized".
-			strcpy8(classes[0], driverClasses[1]);
-			nClasses = 1;
+			strcpy8(state.rsrc.classes[0], driverClasses[1]);
+			state.rsrc.nClasses = 1;
+
+			state.lock.writeRelease();
 			return ERROR_SUCCESS;
 		};
 
-		classes = new utf8Char[nRecognizedClasses][DRIVER_CLASS_MAXLEN];
-		if (classes == NULL) { return ERROR_MEMORY_NOMEM; };
+		state.rsrc.classes = new utf8Char[
+			nRecognizedClasses][DRIVER_CLASS_MAXLEN];
+
+		if (state.rsrc.classes == NULL)
+		{
+			state.lock.writeRelease();
+			return ERROR_MEMORY_NOMEM;
+		};
 	};
 
+	state.lock.writeRelease();
 	return ERROR_SUCCESS;
 }
 
@@ -621,44 +640,69 @@ error_t fplainn::Driver::addInstance(numaBankId_t bid, processId_t pid)
 	error_t			ret;
 
 	newInstance = getInstance(bid);
-	if (newInstance == NULL)
+	// If one already exists for this NUMA bank:
+	if (newInstance != NULL) {
+		return ERROR_SUCCESS;
+	}
+
+	state.lock.writeAcquire();
+
+	old = state.rsrc.instances;
+	state.rsrc.instances = new DriverInstance[state.rsrc.nInstances + 1];
+	if (state.rsrc.instances == NULL)
 	{
-		old = instances;
-		instances = new DriverInstance[nInstances + 1];
-		if (instances == NULL) { return ERROR_MEMORY_NOMEM; };
-		if (nInstances > 0)
-		{
-			memcpy(
-				// Cast to void* silences Clang++ warning.
-				static_cast<void *>(instances),
-				static_cast<void *>(old),
-				nInstances * sizeof(*instances));
-		};
+		// Rollback.
+		state.rsrc.instances = old;
 
-		delete[] old;
-
-		newInstance = &instances[nInstances];
+		state.lock.writeRelease();
+		return ERROR_MEMORY_NOMEM;
 	};
+
+	if (state.rsrc.nInstances > 0)
+	{
+		memcpy(
+			// Cast to void* silences Clang++ warning.
+			static_cast<void *>(state.rsrc.instances),
+			static_cast<void *>(old),
+			state.rsrc.nInstances * sizeof(*state.rsrc.instances));
+	};
+
+	delete[] old;
+
+	newInstance = &state.rsrc.instances[state.rsrc.nInstances];
 
 	new (newInstance) DriverInstance(this, bid, pid);
 	ret = newInstance->initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
+	if (ret != ERROR_SUCCESS)
+	{
+		state.lock.writeRelease();
+		return ret;
+	};
 
-	nInstances++;
+	state.rsrc.nInstances++;
+
+	state.lock.writeRelease();
 	return ERROR_SUCCESS;
 }
 
 void fplainn::Driver::dump(void)
 {
+	uarch_t		rwflags;
+
+	state.lock.readAcquire(&rwflags);
+
 	printf(NOTICE"Driver: index %d: %s/%s\n\t(%s).\n\tSupplier %s; "
 		"Contact %s.\n"
 		"\t%d mods, %d rgns, %d req's, %d metas, %d cbops, %d pbops, "
 		"%d ibops, %d ops_vecs, %d classes.\n",
 		index, basePath, shortName, longName, supplier, supplierContact,
 		nModules, nRegions, nRequirements, nMetalanguages,
-		nChildBops, nParentBops, nInternalBops, nOpsInits, nClasses);
+		nChildBops, nParentBops, nInternalBops, nOpsInits,
+		state.rsrc.nClasses);
 
-	for (uarch_t i=0; i<nClasses; i++) {
-		printf(NOTICE"\tdriver: class %s\n", classes[i]);
+	for (uarch_t i=0; i<state.rsrc.nClasses; i++) {
+		printf(NOTICE"\tdriver: class %s\n", state.rsrc.classes[i]);
 	};
+
+	state.lock.readRelease(rwflags);
 }

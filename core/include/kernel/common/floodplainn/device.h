@@ -397,13 +397,12 @@ namespace fplainn
 		:
 		index(index),
 		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
-		nChildBops(0), nParentBops(0), nInternalBops(0), nInstances(0),
-		nClasses(0),
-		instances(NULL), allRequirementsSatisfied(0),
+		nChildBops(0), nParentBops(0), nInternalBops(0),
+		allRequirementsSatisfied(0),
 		childEnumerationAttrSize(0),
 		modules(NULL), regions(NULL), requirements(NULL),
 		metalanguages(NULL), childBops(NULL), parentBops(NULL),
-		internalBops(NULL), opsInits(NULL), classes(NULL)
+		internalBops(NULL), opsInits(NULL)
 		{
 			basePath[0] = shortName[0] = longName[0]
 				= supplier[0] = supplierContact[0] = '\0';
@@ -760,6 +759,11 @@ namespace fplainn
 		// Kernel doesn't need to know about control block information.
 
 	public:
+		/**	LOCKING:
+		 * We won't use a lock around these variables here because they
+		 * are all only going to be set once during the lifetime of each
+		 * instance.
+		 **/
 		fplainn::Zui::indexE		index;
 
 		utf8Char	basePath[DRIVER_BASEPATH_MAXLEN],
@@ -769,22 +773,10 @@ namespace fplainn
 				supplierContact[DRIVER_CONTACT_MAXLEN];
 		ubit16		nModules, nRegions, nRequirements,
 				nMetalanguages, nChildBops, nParentBops,
-				nInternalBops, nOpsInits,
-				nInstances, nClasses;
-
-		/**	NOTES:
-		 * Zambesii's definition of "driver instances" is not conformant
-		 * to the UDI definition. We use "device instance" to cover what
-		 * UDI defines as a "driver instance".
-		 *
-		 * Driver instances in Zambesii are driver process address
-		 * spaces. A driver instance does not imply a separate device
-		 * instance, and in fact most driver instances will host
-		 * multiple devices.
-		 **/
-		DriverInstance	*instances;
+				nInternalBops, nOpsInits;
 
 		sbit8		allRequirementsSatisfied;
+
 		uarch_t		childEnumerationAttrSize;
 		// Modules for this driver, and their indexes.
 		sModule		*modules;
@@ -798,7 +790,36 @@ namespace fplainn
 		sParentBop	*parentBops;
 		sInternalBop	*internalBops;
 		sOpsInit	*opsInits;
-		utf8Char	(*classes)[DRIVER_CLASS_MAXLEN];
+
+		/**	LOCKING:
+		 * These are likely to be updated more than once over the
+		 * instance's lifetime, so they get a multipleReaderLock.
+		 */
+		struct sMutableState
+		{
+			sMutableState(void)
+			:
+			nInstances(0), nClasses(0),
+			instances(NULL),
+			classes(NULL)
+			{}
+
+			/**	NOTES:
+			 * Zambesii's definition of "driver instances" is not
+			 * conformant to the UDI definition. We use "device
+			 * instance" to cover what UDI defines as a "driver
+			 * instance".
+			 *
+			 * Driver instances in Zambesii are driver process
+			 * address spaces. A driver instance does not imply a
+			 * separate device instance, and in fact most driver
+			 * instances will host multiple devices.
+			 **/
+			ubit16		nInstances, nClasses;
+			DriverInstance	*instances;
+			utf8Char	(*classes)[DRIVER_CLASS_MAXLEN];
+		};
+		SharedResourceGroup<MultipleReaderLock, sMutableState>	state;
 	};
 
 	/**	DriverInstance
@@ -893,12 +914,20 @@ namespace fplainn
 
 inline fplainn::DriverInstance *fplainn::Driver::getInstance(numaBankId_t bid)
 {
-	for (uarch_t i=0; i<nInstances; i++)
+	uarch_t		rwflags;
+
+	state.lock.readAcquire(&rwflags);
+
+	for (uarch_t i=0; i<state.rsrc.nInstances; i++)
 	{
-		if (instances[i].bankId == bid)
-			{ return &instances[i]; };
+		if (state.rsrc.instances[i].bankId == bid)
+		{
+			state.lock.readRelease(rwflags);
+			return &state.rsrc.instances[i];
+		};
 	};
 
+	state.lock.readRelease(rwflags);
 	return NULL;
 }
 
