@@ -35,6 +35,7 @@ error_t FloodplainnStream::getParentConstraints(
 	Thread					*self;
 	fplainn::Device				*currDev;
 	fplainn::Device::ParentTag		*parentTag;
+	uarch_t					rwflags;;
 
 	if (ret == NULL) { return ERROR_INVALID_ARG; }
 
@@ -69,8 +70,11 @@ error_t FloodplainnStream::getParentConstraints(
 	}
 
 	// Still copy it regardless of whether or not it's valid.
-	*ret = parentTag->compiledConstraints;
-	if (!parentTag->compiledConstraints.isValid())
+	parentTag->compiledConstraints.lock.readAcquire(&rwflags);
+	*ret = parentTag->compiledConstraints.rsrc;
+	parentTag->compiledConstraints.lock.readRelease(rwflags);
+
+	if (!ret->isValid())
 	{
 		printf(WARNING FPSTREAM_ID"getParentConstraints(%d): "
 			"Constraints object uninitialized. (Parent is %s).\n",
@@ -148,7 +152,9 @@ error_t FloodplainnStream::setChildConstraints(
 		return ERROR_UNKNOWN;
 	}
 
-	parentTag->compiledConstraints = *compiledConstraints;
+	parentTag->compiledConstraints.lock.writeAcquire();
+	parentTag->compiledConstraints.rsrc = *compiledConstraints;
+	parentTag->compiledConstraints.lock.writeRelease();
 	return ERROR_SUCCESS;
 }
 

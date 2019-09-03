@@ -18,6 +18,8 @@
 	#include <kernel/common/floodplainn/region.h>
 	#include <kernel/common/floodplainn/channel.h>
 	#include <kernel/common/floodplainn/dma.h>
+	#include <kernel/common/sharedResourceGroup.h>
+	#include <kernel/common/multipleReaderLock.h>
 
 /**	Device:
  * Base type for a device in general. The type of driver used to instantiate
@@ -212,7 +214,9 @@ namespace fplainn
 			 * Talk much less about a 32 bit counter.
 			 **/
 			ubit16		id;
-			fplainn::dma::constraints::Compiler
+			SharedResourceGroup<
+				MultipleReaderLock,
+				fplainn::dma::constraints::Compiler>
 					compiledConstraints;
 			fvfs::Tag	*tag;
 			utf8Char	metaName[DRIVER_METALANGUAGE_MAXLEN];
