@@ -106,8 +106,9 @@ error_t acpi::mapRsdt(void)
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
-	rsdt.nPages = rsdt.nMapped = 2;
-	rsdt.vasStream = processTrib.__kgetStream()->getVaddrSpaceStream();
+	rsdt.get_deleter().nPages = rsdt.get_deleter().nMapped = 2;
+	rsdt.get_deleter().vasStream =
+		processTrib.__kgetStream()->getVaddrSpaceStream();
 
 	rsdt = WPRANGER_ADJUST_VADDR(
 		rsdt.get(),
@@ -137,7 +138,7 @@ error_t acpi::mapRsdt(void)
 		return ERROR_MEMORY_VIRTUAL_PAGEMAP;
 	};
 
-	rsdt.nPages = rsdt.nMapped = rsdtNPages;
+	rsdt.get_deleter().nPages = rsdt.get_deleter().nMapped = rsdtNPages;
 	rsdt = WPRANGER_ADJUST_VADDR(
 		rsdt.get(),
 		paddr_t(cache.rsdp->rsdtPaddr), acpi::sRsdt *);

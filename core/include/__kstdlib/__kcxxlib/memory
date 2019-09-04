@@ -16,21 +16,31 @@ namespace pointer
 	void streamFree(void *vaddr, MemoryStream *memStream);
 }
 
-template <class type>
+template <class type, class DeleterType>
 class Pointer
 {
 protected:
 	explicit Pointer(type *_p=NULL) : p(_p) {}
 	~Pointer(void) { reset(); }
 
-public:	Pointer &operator =(Pointer &_p) { reset(_p.release()); };
+public:
+	Pointer &operator =(Pointer &_p)
+	{
+		reset(_p.release());
+		deleter = _p.get_deleter();
+		return *this;
+	}
 
 public:
 	// Equivalent to std::unique_ptr<>::get().
 	type *get(void) { return p; }
 	type **addressOf(void) { return &p; }
 	// Equivalent to std::unique_ptr<>::reset(void *=NULL).
-	void reset(type *_p=NULL) { p = _p; }
+	void reset(type *_p=NULL)
+	{
+		get_deleter()(p);
+		p = _p;
+	}
 	// Equivalent to std::unique_ptr<>::release().
 	type *release(void)
 	{
@@ -48,147 +58,97 @@ public:
 	int operator <(type *_p) { return p < _p; }
 	Pointer &operator++(void) { ++p; return *this; }
 	Pointer &operator--(void) { --p; return *this; }
+	DeleterType &get_deleter(void) { return deleter; }
 
 	// We refuse to provide operators + and -. Use array indexing instead.
 private:
+	/* Force this class to be pure-virtual because its reset() is not
+	 * practically useful and is really unimplemented.
+	 */
 	virtual void _(void) = 0;
+
+public:
+	DeleterType	deleter;
 
 protected:
 	type	*p;
 };
 
-class DefaultDeleter {};
-class ArrayDeleter {};
+class BuiltinDeleter {};
 
-template <class type, class deleter>
-class HeapPtr
-:
-public Pointer<type>
+template <class T>
+class DefaultDeleter
+: public BuiltinDeleter
 {
 public:
-	explicit HeapPtr(type *_p=NULL)
-	:
-	Pointer<type>(_p)
-	{}
-
-	~HeapPtr(void) { reset(); }
-
-	HeapPtr &operator =(HeapPtr &_p)
-		{ reset(_p.release()); return *this; }
-
-public:
-	HeapPtr &operator =(type *_p)
-		{ Pointer<type>::operator =(_p); return *this; }
-
-	void reset(type *_p=NULL) { Pointer<type>::reset(_p); }
-
-private:
-	virtual void _(void) = 0;
-};
-
-template <class type>
-class HeapObj
-:
-public HeapPtr<type, DefaultDeleter>
-{
-public:
-	explicit HeapObj(type *_p=NULL)
-	:
-	HeapPtr<type, DefaultDeleter>(_p)
-	{}
-
-	~HeapObj(void) { reset(); }
-
-	HeapObj &operator =(HeapObj &_p)
-		{ reset(_p.release()); return *this; };
-
-public:
-	HeapObj &operator =(type *_p) {
-		HeapPtr<type, DefaultDeleter>::operator =(_p); return *this;
+	void operator ()(T *ptr)
+	{
+		if (ptr != NULL) {
+			delete ptr;
+		}
 	}
-
-	void reset(type *_p=NULL)
-	{
-		if (this->get() != NULL) { delete this->get(); };
-		HeapPtr<type, DefaultDeleter>::reset(_p);
-	};
-
-private:
-	virtual void _(void) {}
 };
 
-template <class type>
-class HeapArr
-:
-public HeapPtr<type, ArrayDeleter>
+template <class T>
+class ArrayDeleter
+: public BuiltinDeleter
 {
 public:
-	explicit HeapArr(type *_p=NULL)
-	:
-	HeapPtr<type, ArrayDeleter>(_p)
-	{}
-
-	~HeapArr(void) { reset(); }
-
-	HeapArr &operator =(HeapArr &_p)
-		{ reset(_p.release()); return *this; };
-
-public:
-	HeapArr &operator =(type *_p) {
-		HeapPtr<type, ArrayDeleter>::operator =(_p); return *this;
+	void operator ()(T *ptr)
+	{
+		if (ptr != NULL) {
+			delete[] ptr;
+		}
 	}
-
-	void reset(type *_p=NULL)
-	{
-		if (this->get() != NULL) { delete[] this->get(); };
-		HeapPtr<type, ArrayDeleter>::reset(_p);
-	};
-
-private:
-	virtual void _(void) {}
 };
 
-template <class type>
-class LoosePage
-:
-public Pointer<type>
+template <class T>
+class StreamDeleter
 {
-public:
-	explicit LoosePage(type *_p=NULL)
+	StreamDeleter(void)
 	:
-	Pointer<type>(_p), nPages(0), nMapped(0),  vasStream(NULL)
+	stream(NULL)
 	{}
 
-	~LoosePage(void) { reset(); }
+	~StreamDeleter(void) { stream = NULL; }
 
-	LoosePage &operator =(LoosePage &_p)
+public:
+	void operator()(T *ptr)
 	{
-		reset(_p.release(), _p.nPages, _p.nMapped, _p.vasStream);
-		return *this;
+		if (ptr != NULL) {
+			pointer::streamFree(ptr, stream);
+		}
 	}
 
 public:
-	LoosePage &operator =(type *_p)
-		{ Pointer<type>::operator =(_p); return *this; }
+	MemoryStream		*stream;
+};
 
-	void reset(
-		type *_p=NULL, uarch_t _nPages=0, status_t _nMapped=0,
-		VaddrSpaceStream *_vasStream=NULL)
+template <class T>
+class LoosePageDeleter
+{
+public:
+	LoosePageDeleter(void)
+	:
+	nPages(0), nMapped(0), vasStream(NULL)
+	{}
+
+	~LoosePageDeleter(void)
 	{
-		if (this->get() != NULL && nPages > 0)
+		nPages = 0;
+		vasStream = NULL;
+		nMapped = 0;
+	}
+
+public:
+	void operator ()(T *ptr)
+	{
+		if (ptr != NULL)
 		{
 			pointer::vmemUnmapAndFree(
-				this->get(), nPages, nMapped, vasStream);
-		};
-
-		nPages = _nPages;
-		nMapped = _nMapped;
-		vasStream = _vasStream;
-		Pointer<type>::reset(_p);
-	};
-
-private:
-	virtual void _(void) {}
+				ptr, nPages, nMapped, vasStream);
+		}
+	}
 
 public:
 	uarch_t			nPages;
@@ -197,36 +157,62 @@ public:
 };
 
 template <class type>
-class StreamMem
-:
-public Pointer<type>
+class HeapObj
+: public Pointer<type, DefaultDeleter<type> >
 {
 public:
-	explicit StreamMem(type *_p=NULL) : Pointer<type>(_p), memStream(NULL) {}
-	~StreamMem(void) { reset(); }
+	explicit HeapObj(type *_p=NULL)
+	: Pointer<type, DefaultDeleter<type> >(_p)
+	{}
 
-	StreamMem &operator =(StreamMem &_p)
-		{ reset(_p.release(), _p.memStream); return *this; }
-
-public:
-	StreamMem &operator =(type *_p)
-		{ Pointer<type>::operator =(_p); return *this; }
-
-	void reset(type *_p=NULL, MemoryStream *_memStream=NULL)
-	{
-		if (this->get() != NULL) {
-			pointer::streamFree(this->get(), memStream);
-		};
-
-		memStream = _memStream;
-		Pointer<type>::reset(_p);
-	}
+	using Pointer<type, DefaultDeleter<type> >::operator =;
 
 private:
 	virtual void _(void) {}
+};
 
+template <class type>
+class HeapArr
+: public Pointer<type, ArrayDeleter<type> >
+{
 public:
-	MemoryStream		*memStream;
+	explicit HeapArr(type *_p=NULL)
+	: Pointer<type, ArrayDeleter<type> >(_p)
+	{}
+
+	using Pointer<type, ArrayDeleter<type> >::operator =;
+private:
+	virtual void _(void) {}
+};
+
+template <class type>
+class LoosePage
+: public Pointer<type, LoosePageDeleter<type> >
+{
+public:
+	explicit LoosePage(type *_p=NULL)
+	: Pointer<type, LoosePageDeleter<type> >(_p)
+	{}
+
+	using Pointer<type, LoosePageDeleter<type> >::operator =;
+
+private:
+	virtual void _(void) {}
+};
+
+template <class type>
+class StreamMem
+: public Pointer<type, StreamDeleter<type> >
+{
+public:
+	explicit StreamMem(type *_p=NULL)
+	: Pointer<type, StreamDeleter<type> >(_p)
+	{}
+
+	using Pointer<type, StreamDeleter<type> >::operator =;
+
+private:
+	virtual void _(void) {}
 };
 
 #endif
