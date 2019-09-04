@@ -840,17 +840,13 @@ namespace fplainn
 	public:
 		DriverInstance(void)
 		:
-		driver(NULL), bankId(NUMABANKID_INVALID), pid(PROCID_INVALID),
-		childBopVectors(NULL),
-		nHostedDevices(0), hostedDevices(NULL)
+		driver(NULL), bankId(NUMABANKID_INVALID), pid(PROCID_INVALID)
 		{}
 
 		DriverInstance(
 			Driver *driver, numaBankId_t bid, processId_t pid)
 		:
-		driver(driver), bankId(bid), pid(pid), childBopVectors(NULL),
-		nHostedDevices(0), hostedDevices(NULL),
-		cachedInfo(NULL)
+		driver(driver), bankId(bid), pid(pid)
 		{}
 
 		error_t initialize(void);
@@ -869,42 +865,95 @@ namespace fplainn
 		void setChildBopVector(
 			ubit16 metaIndex, udi_ops_vector_t *vaddr)
 		{
+			uarch_t		rwflags;
+
+			s.lock.readAcquire(&rwflags);
+
 			for (uarch_t i=0; i<driver->nChildBops; i++)
 			{
-				if (childBopVectors[i].metaIndex != metaIndex)
+				if (s.rsrc.childBopVectors[i].metaIndex
+					!= metaIndex)
 					{ continue; };
 
-				childBopVectors[i].opsVector = vaddr;
+				s.lock.readReleaseWriteAcquire(rwflags);
+				s.rsrc.childBopVectors[i].opsVector = vaddr;
+				s.lock.writeRelease();
 				return;
 			};
+
+			s.lock.readRelease(rwflags);
 		}
 
 		sChildBop *getChildBop(ubit16 metaIndex)
 		{
+			uarch_t		rwflags;
+
+			s.lock.readAcquire(&rwflags);
 			for (uarch_t i=0; i<driver->nChildBops; i++)
 			{
-				if (childBopVectors[i].metaIndex == metaIndex)
-					{ return &childBopVectors[i]; };
+				if (s.rsrc.childBopVectors[i].metaIndex
+					== metaIndex)
+				{
+					sChildBop		*ret;
+
+					ret = &s.rsrc.childBopVectors[i];
+
+					s.lock.readRelease(rwflags);
+					return ret;
+				};
 			};
 
+			s.lock.readRelease(rwflags);
 			return NULL;
 		}
 
 		error_t addHostedDevice(utf8Char *path);
 		void removeHostedDevice(utf8Char *path);
+		error_t getHostedDevicePathByTid(
+			processId_t tid, utf8Char *path);
+
+		void setCachedInfo(__klzbzcore::driver::CachedInfo *ci)
+		{
+			s.lock.writeAcquire();
+			s.rsrc.cachedInfo = ci;
+			s.lock.writeRelease();
+		}
+
+		__klzbzcore::driver::CachedInfo *getCachedInfo(void)
+		{
+			uarch_t					rwflags;
+			__klzbzcore::driver::CachedInfo		*ret;
+
+			s.lock.readAcquire(&rwflags);
+			ret = s.rsrc.cachedInfo;
+			s.lock.readRelease(rwflags);
+
+			return ret;
+		}
+
+	private:
+		struct sMutableState
+		{
+			sMutableState(void)
+			:
+			childBopVectors(NULL),
+			nHostedDevices(0), hostedDevices(0),
+			cachedInfo(NULL)
+			{}
+
+			sChildBop			*childBopVectors;
+			uarch_t				nHostedDevices;
+			HeapArr<HeapArr<utf8Char> >	hostedDevices;
+
+			// XXX: ONLY for use by libzbzcore, and ONLY in kernel-space.
+			__klzbzcore::driver::CachedInfo	*cachedInfo;
+		};
 
 	public:
 		Driver				*driver;
 		numaBankId_t			bankId;
 		processId_t			pid;
-		sChildBop			*childBopVectors;
-		uarch_t				nHostedDevices;
-		HeapArr<HeapArr<utf8Char> >	hostedDevices;
-
-		// XXX: ONLY for use by libzbzcore, and ONLY in kernel-space.
-		__klzbzcore::driver::CachedInfo	*cachedInfo;
-		void setCachedInfo(__klzbzcore::driver::CachedInfo *ci)
-			{ cachedInfo = ci; }
+		SharedResourceGroup<MultipleReaderLock, sMutableState>	s;
 	};
 }
 

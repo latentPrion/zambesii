@@ -105,7 +105,7 @@ void udi_channel_spawn(
 
 	originEndp = (lzudi::sEndpointContext *)channel;
 	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
-	drvInfoCache = thread->parent->getDriverInstance()->cachedInfo;
+	drvInfoCache = thread->parent->getDriverInstance()->getCachedInfo();
 
 	r = getRegionMetadataByIndex(thread->getRegion()->index);
 	if (r == NULL) {
@@ -277,7 +277,7 @@ void udi_channel_anchor(
 
 	endp = (lzudi::sEndpointContext *)channel;
 	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
-	drvInfoCache = thread->parent->getDriverInstance()->cachedInfo;
+	drvInfoCache = thread->parent->getDriverInstance()->getCachedInfo();
 
 	fplainn::DriverInit		drvInfoParser(drvInfoCache->initInfo);
 
@@ -437,8 +437,8 @@ void udi_mei_call(
 
 		// Possibly use udi_mei_driver_error() here.
 		if (thread->parent->getType() != ProcessStream::DRIVER) { return; };
-		drvInfoCache = thread->getRegion()->parent->device->driverInstance
-			->cachedInfo;
+		drvInfoCache = thread->getRegion()->parent->device
+			->driverInstance->getCachedInfo();
 
 		if (drvInfoCache->initInfo->primary_init_info
 			->enumeration_attr_list_length > 0)
@@ -604,7 +604,7 @@ void udi_cb_alloc(
 		{ callback(gcb, NULL); return; };
 
 	drvInfoCache = caller->getRegion()->parent->device->driverInstance
-		->cachedInfo;
+		->getCachedInfo();
 
 	err = lzudi::udi_cb_alloc_sync(drvInfoCache, cb_idx, &cb);
 	if (err != ERROR_SUCCESS) { callback(gcb, NULL); };

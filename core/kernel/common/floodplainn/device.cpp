@@ -241,20 +241,26 @@ error_t fplainn::Driver::detectClasses(void)
 
 error_t fplainn::DriverInstance::initialize(void)
 {
+	sChildBop		*newmem;
+
 	if (driver->nChildBops > 0)
 	{
-		childBopVectors = new sChildBop[driver->nChildBops];
-		if (childBopVectors == NULL) { return ERROR_MEMORY_NOMEM; };
+		newmem = new sChildBop[driver->nChildBops];
+		if (newmem == NULL) { return ERROR_MEMORY_NOMEM; };
 
 		memset(
-			childBopVectors, 0,
-			sizeof(*childBopVectors) * driver->nChildBops);
+			newmem, 0,
+			sizeof(*newmem) * driver->nChildBops);
 
 		for (uarch_t i=0; i<driver->nChildBops; i++)
 		{
-			childBopVectors[i].metaIndex =
+			newmem[i].metaIndex =
 				driver->childBops[i].metaIndex;
 		};
+
+		s.lock.writeAcquire();
+		s.rsrc.childBopVectors = newmem;
+		s.lock.writeRelease();
 	};
 
 	return ERROR_SUCCESS;
@@ -263,36 +269,48 @@ error_t fplainn::DriverInstance::initialize(void)
 error_t fplainn::DriverInstance::addHostedDevice(utf8Char *path)
 {
 	HeapArr<HeapArr<utf8Char> >	tmp, old;
-	uarch_t				len;
+	uarch_t				len, rwflags;
 
-	for (uarch_t i=0; i<nHostedDevices; i++)
+	s.lock.readAcquire(&rwflags);
+
+	for (uarch_t i=0; i<s.rsrc.nHostedDevices; i++)
 	{
-		if (!strcmp8(hostedDevices[i].get(), path))
-			{ return ERROR_SUCCESS; };
+		if (!strcmp8(s.rsrc.hostedDevices[i].get(), path))
+		{
+			s.lock.readRelease(rwflags);
+			return ERROR_SUCCESS;
+		};
 	};
 
 	len = strlen8(path);
 
-	tmp = new HeapArr<utf8Char>[nHostedDevices + 1];
+	tmp = new HeapArr<utf8Char>[s.rsrc.nHostedDevices + 1];
 	if (tmp == NULL) { return ERROR_MEMORY_NOMEM; };
-	tmp[nHostedDevices] = new utf8Char[len + 1];
-	if (tmp[nHostedDevices] == NULL) { return ERROR_MEMORY_NOMEM; };
+	tmp[s.rsrc.nHostedDevices] = new utf8Char[len + 1];
+	if (tmp[s.rsrc.nHostedDevices] == NULL) { return ERROR_MEMORY_NOMEM; };
 
-	strcpy8(tmp[nHostedDevices].get(), path);
+	strcpy8(tmp[s.rsrc.nHostedDevices].get(), path);
 
-	if (nHostedDevices > 0)
+	if (s.rsrc.nHostedDevices > 0)
 	{
 		memcpy(
 			// Cast to void* silences Clang++ warning.
 			static_cast<void *>(tmp.get()),
-			static_cast<void *>(hostedDevices.get()),
-			sizeof(*hostedDevices) * nHostedDevices);
+			static_cast<void *>(s.rsrc.hostedDevices.get()),
+			sizeof(*s.rsrc.hostedDevices) * s.rsrc.nHostedDevices);
 	};
 
-	old = hostedDevices;
-	hostedDevices = tmp;
-	for (uarch_t i=0; i<nHostedDevices; i++) { old[i].release(); };
-	nHostedDevices++;
+	s.lock.readReleaseWriteAcquire(rwflags);
+
+	// old will auto-free on exit.
+	old = s.rsrc.hostedDevices;
+	for (uarch_t i=0; i<s.rsrc.nHostedDevices; i++)
+		{ old[i].release(); };
+
+	s.rsrc.hostedDevices = tmp;
+	s.rsrc.nHostedDevices++;
+
+	s.lock.writeRelease();
 
 	return ERROR_SUCCESS;
 }
@@ -300,22 +318,80 @@ error_t fplainn::DriverInstance::addHostedDevice(utf8Char *path)
 void fplainn::DriverInstance::removeHostedDevice(utf8Char *path)
 {
 	HeapArr<utf8Char>	tmp;
+	uarch_t			rwflags;
 
-	for (uarch_t i=0; i<nHostedDevices; i++)
+	s.lock.readAcquire(&rwflags);
+
+	for (uarch_t i=0; i<s.rsrc.nHostedDevices; i++)
 	{
-		if (strcmp8(hostedDevices[i].get(), path) != 0) { continue; };
+		if (strcmp8(s.rsrc.hostedDevices[i].get(), path) != 0)
+			{ continue; };
+
+		s.lock.readReleaseWriteAcquire(rwflags);
 
 		// tmp will auto delete the mem on exit.
-		tmp = hostedDevices[i];
+		tmp = s.rsrc.hostedDevices[i];
 		memmove(
 			// Cast to void* silences Clang++ warning.
-			static_cast<void *>(&hostedDevices[i]),
-			static_cast<void *>(&hostedDevices[i+1]),
-			sizeof(*hostedDevices) * (nHostedDevices - i - 1));
+			static_cast<void *>(&s.rsrc.hostedDevices[i]),
+			static_cast<void *>(&s.rsrc.hostedDevices[i+1]),
+			sizeof(*s.rsrc.hostedDevices)
+				* (s.rsrc.nHostedDevices - i - 1));
 
-		nHostedDevices--;
+		s.rsrc.nHostedDevices--;
+
+		s.lock.writeRelease();
 		return;
 	};
+
+	s.lock.readRelease(rwflags);
+}
+
+error_t fplainn::DriverInstance::getHostedDevicePathByTid(
+	processId_t tid, utf8Char *path
+	)
+{
+	error_t		ret;
+	uarch_t		rwflags;
+
+	/**	EXPLANATION:
+	 * Newly started threads will not know which device they belong to.
+	 * They will send a request to the main thread, asking it which device
+	 * they should be servicing.
+	 *
+	 * The main thread will use the source thread's ID to search through all
+	 * the devices hosted by this driver instance, and find out which
+	 * device has a region with the source thread's TID.
+	 **/
+	s.lock.readAcquire(&rwflags);
+
+	for (uarch_t i=0; i<s.rsrc.nHostedDevices; i++)
+	{
+		fplainn::Device		*currDev;
+		utf8Char		*currDevPath=
+			s.rsrc.hostedDevices[i].get();
+
+		ret = floodplainn.getDevice(currDevPath, &currDev);
+		// Odd, but keep searching anyway.
+		if (ret != ERROR_SUCCESS) { continue; };
+
+		for (uarch_t j=0; j<driver->nRegions; j++)
+		{
+			ubit16			idx;
+
+			if (currDev->instance->getRegionInfo(tid, &idx)
+				!= ERROR_SUCCESS)
+				{ continue; };
+
+			strcpy8(path, currDevPath);
+
+			s.lock.readRelease(rwflags);
+			return ERROR_SUCCESS;
+		};
+	};
+
+	s.lock.readRelease(rwflags);
+	return ERROR_NOT_FOUND;
 }
 
 error_t fplainn::DeviceInstance::initialize(void)

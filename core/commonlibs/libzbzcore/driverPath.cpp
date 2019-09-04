@@ -580,8 +580,7 @@ void __klzbzcore::driver::localService::handler(
 		 * send a message asking the main thread which device they
 		 * pertain to. We respond with the name of their device.
 		 **/
-		assert_fatal(getThreadDevicePathReq(
-			drvInst,
+		assert_fatal(drvInst->getHostedDevicePathByTid(
 			iMsg->header.sourceId,
 			(utf8Char *)iMsg->data)
 			== ERROR_SUCCESS);
@@ -611,47 +610,6 @@ void __klzbzcore::driver::localService::handler(
 		printf(WARNING LZBZCORE"drv: user0 Q: unknown message %d.\n",
 			iMsg->header.function);
 	};
-}
-
-error_t __klzbzcore::driver::localService::getThreadDevicePathReq(
-	fplainn::DriverInstance *drvInst, processId_t tid, utf8Char *path
-	)
-{
-	error_t		ret;
-
-	/**	EXPLANATION:
-	 * Newly started threads will not know which device they belong to.
-	 * They will send a request to the main thread, asking it which device
-	 * they should be servicing.
-	 *
-	 * The main thread will use the source thread's ID to search through all
-	 * the devices hosted by this driver instance, and find out which
-	 * device has a region with the source thread's TID.
-	 **/
-	for (uarch_t i=0; i<drvInst->nHostedDevices; i++)
-	{
-		fplainn::Device		*currDev;
-		utf8Char		*currDevPath=
-			drvInst->hostedDevices[i].get();
-
-		ret = floodplainn.getDevice(currDevPath, &currDev);
-		// Odd, but keep searching anyway.
-		if (ret != ERROR_SUCCESS) { continue; };
-
-		for (uarch_t j=0; j<drvInst->driver->nRegions; j++)
-		{
-			ubit16			idx;
-
-			if (currDev->instance->getRegionInfo(tid, &idx)
-				!= ERROR_SUCCESS)
-				{ continue; };
-
-			strcpy8(path, currDevPath);
-			return ERROR_SUCCESS;
-		};
-	};
-
-	return ERROR_NOT_FOUND;
 }
 
 void __klzbzcore::driver::localService::regionInitInd(

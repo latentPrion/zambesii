@@ -268,12 +268,6 @@ namespace __klzbzcore
 				__klzbzcore::driver::CachedInfo *cache,
 				Thread *self);
 
-			// Deprecated.
-			error_t getThreadDevicePathReq(
-				fplainn::DriverInstance *drvInst,
-				processId_t tid,
-				utf8Char *path);
-
 			void regionInitInd(
 				fplainn::Zudi::sKernelCallMsg *ctxt,
 				error_t error);
