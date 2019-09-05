@@ -161,7 +161,7 @@ namespace zumServer
 				return ret;
 			};
 
-			*retendp = (*retdev)->instance->mgmtEndpoint;
+			*retendp = (*retdev)->instance->getMgmtEndpoint();
 			if (*retendp == NULL)
 			{
 				printf(ERROR ZUM"%s %s: Not connected to "

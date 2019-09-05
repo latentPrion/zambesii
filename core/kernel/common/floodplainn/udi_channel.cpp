@@ -90,12 +90,15 @@ error_t fplainn::Zudi::getEndpointMetaName(
 fplainn::Endpoint *fplainn::Zudi::getMgmtEndpointForCurrentDeviceInstance(void)
 {
 	Thread			*self;
+	fplainn::Endpoint	*ret;
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 	if (self->parent->getType() != ProcessStream::DRIVER) { return NULL; };
 
-	if (self->getRegion()->parent->mgmtEndpoint == NULL) { return NULL; };
-	return self->getRegion()->parent->mgmtEndpoint->otherEnd;
+	ret = self->getRegion()->parent->getMgmtEndpoint();
+	if (ret == NULL) { return NULL; };
+
+	return ret->otherEnd;
 }
 
 error_t fplainn::Zudi::spawnEndpoint(

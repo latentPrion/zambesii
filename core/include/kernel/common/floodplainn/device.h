@@ -334,9 +334,7 @@ namespace fplainn
 		DeviceInstance(Device *dev)
 		:
 		device(dev),
-		regions(NULL),
-		mgmtChannelContext(NULL), mgmtEndpoint(NULL),
-		nRegionsInitialized(0), nRegionsFailed(0)
+		regions(NULL)
 		{}
 
 		error_t initialize(void);
@@ -360,19 +358,45 @@ namespace fplainn
 			{ channels.remove(chan); }
 
 		void setMgmtEndpoint(FStreamEndpoint *endp)
-			{ mgmtEndpoint = endp; }
+		{
+			s.lock.writeAcquire();
+			s.rsrc.mgmtEndpoint = endp;
+			s.lock.writeRelease();
+		}
+
+		FStreamEndpoint *getMgmtEndpoint(void)
+		{
+			FStreamEndpoint			*ret;
+
+			s.lock.writeAcquire();
+			ret = s.rsrc.mgmtEndpoint;
+			s.lock.writeRelease();
+
+			return ret;
+		}
 
 	public:
-		HeapList<Channel>	channels;
+		struct sMutableState
+		{
+			sMutableState(void)
+			:
+			mgmtChannelContext(NULL), mgmtEndpoint(NULL),
+			nRegionsInitialized(0), nRegionsFailed(0)
+			{}
+
+			udi_init_context_t	*mgmtChannelContext;
+			FStreamEndpoint		*mgmtEndpoint;
+
+			// XXX: ONLY to be used by __klibzbzcore.
+			uarch_t			nRegionsInitialized, nRegionsFailed;
+		};
+
 		Device			*device;
 		Region			*regions;
-		udi_init_context_t	*mgmtChannelContext;
-		FStreamEndpoint		*mgmtEndpoint;
-
-		// XXX: ONLY to be used by __klibzbzcore.
-		uarch_t			nRegionsInitialized, nRegionsFailed;
+		HeapList<Channel>	channels;
 		// XXX: ONLY to be used by __klzudi.
 		List<lzudi::sRegion>	regionLocalMetadata;
+		SharedResourceGroup<MultipleReaderLock, sMutableState>	s;
 	};
 
 	class DriverInstance;

@@ -663,14 +663,18 @@ void __klzbzcore::driver::localService::regionInitInd(
 		return;
 	};
 
-	if (error == ERROR_SUCCESS)
-		{ dev->instance->nRegionsInitialized++; }
-	else
-		{ dev->instance->nRegionsFailed++; };
+	dev->instance->s.lock.writeAcquire();
 
-	totalSuccesses = dev->instance->nRegionsInitialized;
-	totalNotifications = dev->instance->nRegionsInitialized
-		+ dev->instance->nRegionsFailed;
+	if (error == ERROR_SUCCESS)
+		{ dev->instance->s.rsrc.nRegionsInitialized++; }
+	else
+		{ dev->instance->s.rsrc.nRegionsFailed++; };
+
+	totalSuccesses = dev->instance->s.rsrc.nRegionsInitialized;
+	totalNotifications = totalSuccesses
+		+ dev->instance->s.rsrc.nRegionsFailed;
+
+	dev->instance->s.lock.writeRelease();
 
 	// If all regions haven't sent notifications yet, wait for them.
 	if (totalNotifications != dev->driverInstance->driver->nRegions)

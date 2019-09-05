@@ -116,6 +116,7 @@ public:
 		fplainn::Endpoint *endp);
 
 	error_t getEndpointMetaName(fplainn::Endpoint *endp, utf8Char *mem);
+	// TODO: Move this into libzudi. It shouldn't be in the kernel.
 	fplainn::Endpoint *getMgmtEndpointForCurrentDeviceInstance(void);
 
 public:
