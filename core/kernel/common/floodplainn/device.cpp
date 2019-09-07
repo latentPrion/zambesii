@@ -524,13 +524,17 @@ void fplainn::DeviceInstance::dumpChannels(void)
 void fplainn::Device::dumpEnumerationAttributes(void)
 {
 	utf8Char		*fmtChar;
+	uarch_t			rwflags;
+
+	s.lock.readAcquire(&rwflags);
 
 	printf(NOTICE"Device: @%p, bid %d, %d enum attrs.\n\tlongname %s.\n",
-		this, bankId, nEnumerationAttrs, longName);
+		this, bankId,
+		s.rsrc.nEnumerationAttrs, longName);
 
-	for (uarch_t i=0; i<nEnumerationAttrs; i++)
+	for (uarch_t i=0; i<s.rsrc.nEnumerationAttrs; i++)
 	{
-		switch (enumerationAttrs[i]->attr_type)
+		switch (s.rsrc.enumerationAttrs[i]->attr_type)
 		{
 		case UDI_ATTR_STRING: fmtChar = CC"%s"; break;
 		case UDI_ATTR_UBIT32: fmtChar = CC"%x"; break;
@@ -538,34 +542,45 @@ void fplainn::Device::dumpEnumerationAttributes(void)
 		case UDI_ATTR_BOOLEAN: fmtChar = CC"%x"; break;
 		default:
 			printf(ERROR"Unknown device attr type %d.\n",
-				enumerationAttrs[i]->attr_type);
-			return;
+				s.rsrc.enumerationAttrs[i]->attr_type);
+			continue;
 		};
 
 		// This recursive %s feature is actually pretty nice.
 		printf(NOTICE"Attr: name %s, type %d, val %r.\n",
-			enumerationAttrs[i]->attr_name, enumerationAttrs[i]->attr_type,
+			s.rsrc.enumerationAttrs[i]->attr_name,
+			s.rsrc.enumerationAttrs[i]->attr_type,
 			fmtChar,
 			(!strcmp8(fmtChar, CC"%s"))
-				? (void *)enumerationAttrs[i]->attr_value
+				? (void *)s.rsrc.enumerationAttrs[i]->attr_value
 				: (void *)(uintptr_t)UDI_ATTR32_GET(
-					enumerationAttrs[i]->attr_value));
+					s.rsrc.enumerationAttrs[i]->attr_value));
 	};
+
+	s.lock.readRelease(rwflags);
 }
 
 error_t fplainn::Device::findEnumerationAttribute(
 	utf8Char *name, udi_instance_attr_list_t **attr
 	)
 {
-	for (uarch_t i=0; i<nEnumerationAttrs; i++)
+	uarch_t		rwflags;
+
+	s.lock.readAcquire(&rwflags);
+
+	for (uarch_t i=0; i<s.rsrc.nEnumerationAttrs; i++)
 	{
-		if (strcmp8(CC enumerationAttrs[i]->attr_name, name) != 0)
+		if (strcmp8(CC s.rsrc.enumerationAttrs[i]->attr_name, name)
+			!= 0)
 			{ continue; };
 
-		*attr = enumerationAttrs[i].get();
+		*attr = s.rsrc.enumerationAttrs[i].get();
+
+		s.lock.readRelease(rwflags);
 		return ERROR_SUCCESS;
 	};
 
+	s.lock.readRelease(rwflags);
 	return ERROR_NOT_FOUND;
 }
 
@@ -592,6 +607,7 @@ error_t fplainn::Device::addEnumerationAttribute(
 	udi_instance_attr_list_t		*attrTmp;
 	HeapArr<HeapObj<udi_instance_attr_list_t> >
 						newArray, oldArray;
+	uarch_t					prevNAttrs;
 
 	if (attrib == NULL) { return ERROR_MEMORY_NOMEM; };
 
@@ -603,56 +619,90 @@ error_t fplainn::Device::addEnumerationAttribute(
 		return ERROR_SUCCESS;
 	};
 
-	newArray = new HeapObj<udi_instance_attr_list_t>[nEnumerationAttrs + 1];
-	if (newArray == NULL) { return ERROR_MEMORY_NOMEM; };
+	s.lock.writeAcquire();
 
-	newArray[nEnumerationAttrs] = new udi_instance_attr_list_t;
-	if (newArray[nEnumerationAttrs] == NULL) { return ERROR_MEMORY_NOMEM; };
-	memcpy(newArray[nEnumerationAttrs].get(), attrib, sizeof(*attrib));
+	// Reuse attrTmp.
+	attrTmp = new udi_instance_attr_list_t;
+	if (attrTmp == NULL)
+	{
+		s.lock.writeRelease();
+		return ERROR_MEMORY_NOMEM;
+	};
 
-	if (nEnumerationAttrs > 0)
+	newArray = new HeapObj<udi_instance_attr_list_t>[
+		s.rsrc.nEnumerationAttrs + 1];
+
+	if (newArray == NULL)
+	{
+		s.lock.writeRelease();
+
+		delete attrTmp;
+		return ERROR_MEMORY_NOMEM;
+	};
+
+	memcpy(attrTmp, attrib, sizeof(*attrib));
+	newArray[s.rsrc.nEnumerationAttrs] = attrTmp;
+
+	if (s.rsrc.nEnumerationAttrs > 0)
 	{
 		memcpy(
 			// Cast to void* silences Clang++ warning.
 			static_cast<void *>(newArray.get()),
-			static_cast<void *>(enumerationAttrs.get()),
-			sizeof(*enumerationAttrs) * nEnumerationAttrs);
+			static_cast<void *>(s.rsrc.enumerationAttrs.get()),
+			sizeof(*s.rsrc.enumerationAttrs)
+				* s.rsrc.nEnumerationAttrs);
 	};
 
-	oldArray = enumerationAttrs;
-	enumerationAttrs = newArray;
-	for (uarch_t i=0; i<nEnumerationAttrs; i++) { oldArray[i].release(); };
-	nEnumerationAttrs++;
+
+	prevNAttrs = s.rsrc.nEnumerationAttrs;
+	oldArray = s.rsrc.enumerationAttrs;
+	s.rsrc.enumerationAttrs = newArray;
+	s.rsrc.nEnumerationAttrs++;
+
+	s.lock.writeRelease();
+
+	for (uarch_t i=0; i<prevNAttrs; i++) { oldArray[i].release(); };
 	return ERROR_SUCCESS;
 }
 
 error_t fplainn::Device::createParentTag(
 	fvfs::Tag *tag, utf8Char *enumeratingMetaName, ubit16 *newIdRetval)
 {
-	ParentTag	*old;
+	ParentTag	*old, *tmp;
 
 	if (newIdRetval == NULL) { return ERROR_INVALID_ARG; }
 	if (tag == NULL) { return ERROR_INVALID_ARG_VAL; }
 
-	old = parentTags;
+	s.lock.writeAcquire();
 
-	parentTags = new ParentTag[nParentTags + 1];
-	if (parentTags == NULL) { return ERROR_MEMORY_NOMEM; }
-
-	if (nParentTags > 0)
+	tmp = new ParentTag[s.rsrc.nParentTags + 1];
+	if (tmp == NULL)
 	{
-		memcpy(
-			parentTags, old,
-			nParentTags * sizeof(*parentTags));
+		s.lock.writeRelease();
+		return ERROR_MEMORY_NOMEM;
 	}
 
-	delete[] old;
+	if (s.rsrc.nParentTags > 0)
+	{
+		memcpy(
+			tmp, s.rsrc.parentTags,
+			s.rsrc.nParentTags * sizeof(*s.rsrc.parentTags));
+	}
 
+	new (&tmp[s.rsrc.nParentTags]) ParentTag(
+		s.rsrc.parentTagCounter, tag, enumeratingMetaName);
+
+	old = s.rsrc.parentTags;
+	*newIdRetval = s.rsrc.parentTagCounter;
+
+	s.rsrc.parentTags = tmp;
+	s.rsrc.nParentTags++;
+	s.rsrc.parentTagCounter++;
 	// Return and assign the new parentTag.
-	*newIdRetval = parentTagCounter;
-	parentTags[nParentTags++] = ParentTag(
-		parentTagCounter++, tag, enumeratingMetaName);
 
+	s.lock.writeRelease();
+
+	delete[] old;
 	return ERROR_SUCCESS;
 }
 

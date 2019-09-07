@@ -92,6 +92,7 @@ namespace zuiBackend
 		fplainn::Zui::sIndexMsg *originCtxt);
 }
 
+// Must hold device->s.lock.readAcquire() before calling this.
 status_t zuiBackend::detectDriver_compareEnumerationAttributes(
 	fplainn::Device *device, zui::device::sHeader *devline,
 	zui::driver::sHeader *metaHdr
@@ -101,6 +102,12 @@ status_t zuiBackend::detectDriver_compareEnumerationAttributes(
 	status_t			ret=ERROR_NO_MATCH;
 	zui::rank::sHeader		currRank;
 	HeapArr<utf8Char>		attrValueTmp;
+
+	/**	CAVEAT:
+	 *	LOCKING:
+	 * The lock for the the device pointed to by "device" must be
+	 * readAcquire()'d before calling this function.
+	 */
 
 	attrValueTmp = new ubit8[UDI_MAX_ATTR_SIZE];
 	if (attrValueTmp == NULL) { return ERROR_MEMORY_NOMEM; };
@@ -152,10 +159,12 @@ status_t zuiBackend::detectDriver_compareEnumerationAttributes(
 			{ break; };
 
 			// Compare each attrib against the device's enum attribs
-			for (uarch_t k=0; k<device->nEnumerationAttrs; k++)
+			for (uarch_t k=0; k<device->s.rsrc.nEnumerationAttrs;
+				k++)
 			{
 				if (strcmp8(
-					CC device->enumerationAttrs[k]->attr_name,
+					CC device->s.rsrc.enumerationAttrs[k]
+						->attr_name,
 					currRankAttrName) != 0)
 				{
 					continue;
@@ -164,13 +173,14 @@ status_t zuiBackend::detectDriver_compareEnumerationAttributes(
 				/* Even if they have the same name, if the types
 				 * differ, we can't consider it a match.
 				 **/
-				if (device->enumerationAttrs[k]->attr_type
-					!= devlineData.attr_type)
+				if (device->s.rsrc.enumerationAttrs[k]
+					->attr_type != devlineData.attr_type)
 				{
 					break;
 				};
 
-				switch (device->enumerationAttrs[k]->attr_type)
+				switch (device->s.rsrc.enumerationAttrs[k]
+					->attr_type)
 				{
 				case UDI_ATTR_STRING:
 					// Get the string from the index.
@@ -181,7 +191,8 @@ status_t zuiBackend::detectDriver_compareEnumerationAttributes(
 					{ break; };
 
 					if (!strcmp8(
-						CC device->enumerationAttrs[k]
+						CC device->s.rsrc
+							.enumerationAttrs[k]
 							->attr_value,
 						attrValueTmp.get()))
 					{
@@ -190,15 +201,21 @@ status_t zuiBackend::detectDriver_compareEnumerationAttributes(
 
 					break;
 				case UDI_ATTR_UBIT32:
-					if (UDI_ATTR32_GET(device->enumerationAttrs[k]->attr_value)
-						== UDI_ATTR32_GET((ubit8 *)&devlineData.attr_valueOff))
+					if (UDI_ATTR32_GET(
+						device->s.rsrc
+							.enumerationAttrs[k]
+							->attr_value)
+						== UDI_ATTR32_GET(
+							(ubit8 *)&devlineData
+								.attr_valueOff))
 					{
 						attrMatched = 1;
 					};
 
 					break;
 				case UDI_ATTR_BOOLEAN:
-					if (device->enumerationAttrs[k]->attr_value[0]
+					if (device->s.rsrc.enumerationAttrs[k]
+						->attr_value[0]
 						== *(ubit8 *)&devlineData
 							.attr_valueOff)
 					{
@@ -207,7 +224,8 @@ status_t zuiBackend::detectDriver_compareEnumerationAttributes(
 
 					break;
 				case UDI_ATTR_ARRAY8:
-					if (device->enumerationAttrs[k]->attr_length
+					if (device->s.rsrc.enumerationAttrs[k]
+						->attr_length
 						!= devlineData.attr_length)
 					{
 						break;
@@ -223,7 +241,8 @@ status_t zuiBackend::detectDriver_compareEnumerationAttributes(
 					};
 
 					if (!memcmp(
-						device->enumerationAttrs[k]
+						device->s.rsrc
+							.enumerationAttrs[k]
 							->attr_value,
 						attrValueTmp.get(),
 						devlineData.attr_length))
@@ -274,6 +293,7 @@ void zuiBackend::detectDriverReq(
 	HeapList<zui::device::sHeader>		matchingDevices;
 	status_t				bestRank=-1;
 	AsyncResponse				myResponse;
+	uarch_t					rwflags;
 
 	/** FIXME: Memory leaks all over this function.
 	 **/
@@ -331,9 +351,6 @@ void zuiBackend::detectDriverReq(
 		return;
 	};
 
-	// Set the requested index
-	dev->requestedIndex = requestData->index;
-
 	// Get the index header for the current selected index.
 	err = zudiIndexes[0]->getHeader(indexHdr.get());
 	if (err != ERROR_SUCCESS)
@@ -343,6 +360,8 @@ void zuiBackend::detectDriverReq(
 
 		myResponse(err); return;
 	};
+
+	dev->s.lock.readAcquire(&rwflags);
 
 	/**	EXPLANATION:
 	 * Search through the device index. For each device record, use its
@@ -501,9 +520,11 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		 * undesired driver, should the user so choose to do so.
 		 **/
 		myResponse(ERROR_NO_MATCH);
-		dev->driverDetected = 0;
-		dev->driverIndex = fplainn::Zui::INDEX_KERNEL;
+
+		dev->s.lock.readReleaseWriteAcquire(rwflags);
+
 		dev->driverFullName[0] = '\0';
+		dev->s.rsrc.driverDetected = 0;
 	}
 	else
 	{
@@ -569,6 +590,8 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 
 		myResponse(ERROR_SUCCESS);
 
+		dev->s.lock.readReleaseWriteAcquire(rwflags);
+
 		strcpy8(dev->driverFullName, CC driverHdr->basePath);
 		basePathLen = strlen8(CC driverHdr->basePath);
 		// Ensure there's a '/' between the basepath and the shortname.
@@ -588,12 +611,22 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 			driverHdr.get(), driverHdr->nameIndex,
 			dev->longName);
 
-		dev->driverDetected = 1;
-		dev->driverIndex = fplainn::Zui::INDEX_KERNEL;
+		dev->s.rsrc.driverDetected = 1;
 	};
 
+	dev->s.rsrc.driverIndex = fplainn::Zui::INDEX_KERNEL;
+	// Set the requested index
+	dev->s.rsrc.requestedIndex = requestData->index;
+
 	// In both cases, driverInstance should be NULL.
-	dev->driverInstance = NULL;
+	if (dev->driverInstance != NULL)
+	{
+		dev->s.lock.writeRelease();
+		panic(FATAL FPLAINNIDX"detectDriver: device has a "
+			"driverInstance set already.");
+	}
+
+	dev->s.lock.writeRelease();
 
 	// Free the list.
 	HeapList<zui::device::sHeader>::Iterator		it =
@@ -697,8 +730,10 @@ void zuiBackend::loadDriverReq(
 	HeapObj<zui::sHeader> 			indexHdr;
 	HeapObj<zui::driver::sHeader>		driverHdr;
 	HeapArr<utf8Char>			tmpString;
-	fplainn::Device			*device;
+	fplainn::Device				*device;
+	fplainn::Zui::indexE			devDriverIndex;
 	error_t					err;
+	uarch_t					rwflags;
 
 	response = new fplainn::Zui::sIndexMsg(
 		request->header.sourceId,
@@ -745,7 +780,12 @@ void zuiBackend::loadDriverReq(
 	/* Else, the driver wasn't loaded already. Proceed to fill out the
 	 * driver information object.
 	 **/
-	driver = new fplainn::Driver(device->driverIndex);
+	device->s.lock.readAcquire(&rwflags);
+	devDriverIndex = device->s.rsrc.driverIndex;
+	device->s.lock.readRelease(rwflags);
+
+	driver = new fplainn::Driver(devDriverIndex);
+
 	indexHdr = new zui::sHeader;
 	driverHdr = new zui::driver::sHeader;
 	tmpString = new utf8Char[DRIVER_FULLNAME_MAXLEN];

@@ -227,6 +227,7 @@ void __klzbzcore::region::main2(
 	)
 {
 	error_t					err;
+	uarch_t					nParentTags;
 
 	assert_fatal(
 		dev->instance->getRegionInfo(self->getFullId(), &r->index)
@@ -364,7 +365,8 @@ void __klzbzcore::region::main2(
 	 **	CAVEAT:
 	 * This whole sequence is UNTESTED.
 	 **/
-	for (uarch_t i=0; i<dev->getNParentTags(); i++)
+	nParentTags = dev->getNParentTags();
+	for (uarch_t i=0; i<nParentTags; i++)
 	{
 		sbit8					matchedInParent=0,
 							matchedInChild=0,

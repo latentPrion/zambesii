@@ -445,7 +445,9 @@ error_t ProcessTrib::spawnDriver(
 		{ return ERROR_RESOURCE_UNAVAILABLE; };
 
 	// Verify that a driver has been detected for the device.
-	if (!dev->driverDetected) { return SPAWNDRIVER_STATUS_NO_DRIVER; };
+	if (!dev->driverHasBeenDetected())
+		{ return SPAWNDRIVER_STATUS_NO_DRIVER; };
+
 	// Verify that caller has called loadDriverReq() first.
 	if (floodplainn.zudi.findDriver(dev->driverFullName, &drv) != ERROR_SUCCESS)
 	{

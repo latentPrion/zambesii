@@ -94,6 +94,7 @@ error_t FloodplainnStream::setChildConstraints(
 	fplainn::Device			*currDev;
 	fvfs::Tag			*childDevTag;
 	fplainn::Device::ParentTag	*parentTag;
+	uarch_t				nParentTags;
 
 	if (compiledConstraints == NULL) { return ERROR_INVALID_ARG; }
 
@@ -130,7 +131,9 @@ error_t FloodplainnStream::setChildConstraints(
 	 * ourself.
 	 */
 	parentTag = NULL;
-	for (uarch_t i=0; i<childDevTag->getInode()->nParentTags; i++)
+	nParentTags = childDevTag->getInode()->getNParentTags();
+
+	for (uarch_t i=0; i<nParentTags; i++)
 	{
 		fplainn::Device::ParentTag	*curr;
 

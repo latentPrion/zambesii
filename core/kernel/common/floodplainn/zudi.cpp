@@ -75,7 +75,7 @@ error_t fplainn::Zudi::instantiateDeviceReq(utf8Char *path, void *privateData)
 	if (ret != ERROR_SUCCESS) { return ret; };
 
 	// Ensure that spawnDriver() has been called beforehand.
-	if (!dev->driverDetected || dev->driverInstance == NULL)
+	if (!dev->driverHasBeenDetected() || dev->driverInstance == NULL)
 		{ return ERROR_UNINITIALIZED; };
 
 	if (dev->instance == NULL)

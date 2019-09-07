@@ -91,16 +91,9 @@ namespace fplainn
 	public:
 		Device(numaBankId_t bid)
 		:
-		bankId(bid), driverInstance(NULL), instance(NULL),
-		nEnumerationAttrs(0), nInstanceAttrs(0), nClasses(0),
-		nParentTags(0),
-		enumerationAttrs(NULL), instanceAttrs(NULL), classes(NULL),
-		driverDetected(0),
-		driverIndex(fplainn::Zui::INDEX_KERNEL),
-		requestedIndex(fplainn::Zui::INDEX_KERNEL),
-		parentTags(NULL),
-		// Parent tag counter must begin at 1. 0 is reserved.
-		parentTagCounter(1)
+		bankId(bid),
+		instance(NULL),
+		driverInstance(NULL)
 		{
 			this->longName[0]
 				= this->driverFullName[0] = '\0';
@@ -227,7 +220,29 @@ namespace fplainn
 		error_t getEnumerationAttribute(
 			utf8Char *name, udi_instance_attr_list_t *attrib);
 
-		uarch_t getNParentTags(void) { return nParentTags; };
+		uarch_t getNParentTags(void)
+		{
+			uarch_t		ret, rwflags;
+
+			s.lock.readAcquire(&rwflags);
+			ret = s.rsrc.nParentTags;
+			s.lock.readRelease(rwflags);
+
+			return ret;
+		};
+
+		sbit8 driverHasBeenDetected(void)
+		{
+			sbit8		ret;
+			uarch_t		rwflags;
+
+			s.lock.readAcquire(&rwflags);
+			ret = s.rsrc.driverDetected;
+			s.lock.readRelease(rwflags);
+
+			return ret;
+		};
+
 		error_t createParentTag(
 			fvfs::Tag *tag, utf8Char *enumeratingMetaName,
 			ubit16 *newIdRetval);
@@ -235,33 +250,68 @@ namespace fplainn
 		void destroyParentTag(fvfs::Tag *tag);
 		ParentTag *getParentTag(ubit16 parentId)
 		{
-			for (uarch_t i=0; i<nParentTags; i++)
+			uarch_t		rwflags;
+			ParentTag	*ret;
+
+			s.lock.readAcquire(&rwflags);
+
+			for (uarch_t i=0; i<s.rsrc.nParentTags; i++)
 			{
-				if (parentTags[i].id == parentId)
-					{ return &parentTags[i]; };
+				if (s.rsrc.parentTags[i].id == parentId)
+				{
+					ret = &s.rsrc.parentTags[i];
+
+					s.lock.readRelease(rwflags);
+					return ret;
+				};
 			};
+
+			s.lock.readRelease(rwflags);
 			return NULL;
 		}
 
 		ParentTag *getParentTag(Device *parentDev)
 		{
+			uarch_t		rwflags;
+			ParentTag	*ret;
+
 			/**	EXPLANATION:
 			 * Get the parentTag for a parent based on a pointer
 			 * to the parent.
 			 */
-			for (uarch_t i=0; i<nParentTags; i++)
+			s.lock.readAcquire(&rwflags);
+
+			for (uarch_t i=0; i<s.rsrc.nParentTags; i++)
 			{
-				if (parentTags[i].tag->getInode() == parentDev)
-					{ return &parentTags[i]; }
+				if (s.rsrc.parentTags[i].tag->getInode()
+					== parentDev)
+				{
+					ret = &s.rsrc.parentTags[i];
+
+					s.lock.readRelease(rwflags);
+					return ret;
+				};
 			}
 
+			s.lock.readRelease(rwflags);
 			return NULL;
 		}
 
 		ParentTag *indexedGetParentTag(uarch_t idx)
 		{
-			if (idx >= nParentTags) { return NULL; };
-			return &parentTags[idx];
+			uarch_t		rwflags;
+			ParentTag	*ret;
+
+			s.lock.readAcquire(&rwflags);
+
+			if (idx < s.rsrc.nParentTags) {
+				ret = &s.rsrc.parentTags[idx];
+			} else {
+				ret = NULL;
+			}
+
+			s.lock.readRelease(rwflags);
+			return ret;
 		};
 
 		void dumpEnumerationAttributes(void);
@@ -304,6 +354,34 @@ namespace fplainn
 			utf8Char *name, udi_instance_attr_list_t **attr);
 
 	public:
+		struct sMutableState
+		{
+			sMutableState(void)
+			:
+			nEnumerationAttrs(0), nInstanceAttrs(0), nClasses(0),
+			nParentTags(0),
+			enumerationAttrs(NULL), instanceAttrs(NULL),
+			classes(NULL),
+			driverDetected(0),
+			driverIndex(fplainn::Zui::INDEX_KERNEL),
+			requestedIndex(fplainn::Zui::INDEX_KERNEL),
+			parentTags(NULL),
+			// Parent tag counter must begin at 1. 0 is reserved.
+			parentTagCounter(1)
+			{}
+
+			ubit8			nEnumerationAttrs, nInstanceAttrs,
+						nClasses, nParentTags;
+			HeapArr<HeapObj<udi_instance_attr_list_t> >
+						enumerationAttrs, instanceAttrs;
+			utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
+			sbit8			driverDetected;
+			// The index which enumerated this device's driver.
+			fplainn::Zui::indexE	driverIndex, requestedIndex;
+			ParentTag		*parentTags;
+			uarch_t			parentTagCounter;
+		};
+
 		utf8Char	longName[DEVICE_LONGNAME_MAXLEN],
 				driverFullName[DEVICE_FULLNAME_MAXLEN];
 
@@ -311,18 +389,10 @@ namespace fplainn
 		 * driver object, instead of unnecessarily being duplicated.
 		 **/
 		numaBankId_t		bankId;
-		DriverInstance		*driverInstance;
+		// TODO: "instance" should be an atomic, perhaps.
 		DeviceInstance		*instance;
-		ubit8			nEnumerationAttrs, nInstanceAttrs,
-					nClasses, nParentTags;
-		HeapArr<HeapObj<udi_instance_attr_list_t> >
-					enumerationAttrs, instanceAttrs;
-		utf8Char		(*classes)[DEVICE_CLASS_MAXLEN];
-		sbit8			driverDetected;
-		// The index which enumerated this device's driver.
-		fplainn::Zui::indexE	driverIndex, requestedIndex;
-		ParentTag		*parentTags;
-		uarch_t			parentTagCounter;
+		DriverInstance		*driverInstance;
+		SharedResourceGroup<MultipleReaderLock, sMutableState>	s;
 	};
 
 	/**	DeviceInstance:
