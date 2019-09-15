@@ -34,7 +34,7 @@ void IbmPcVgaTerminal::chipsetEventNotification(ubit8 event, uarch_t)
 	error_t		ret;
 	ubit8		*lowmem;
 
-	if (event != __KPOWER_EVENT___KMEMORY_STREAM_AVAIL) { return; }
+	assert_fatal(event == __KPOWER_EVENT___KMEMORY_STREAM_AVAIL);
 
 	// The memoryAreas API maps ranges as PAGEATTRIB_CACHE_WRITE_THROUGH.
 	ret = chipsetMemAreas::mapArea(CHIPSET_MEMAREA_LOWMEM);
