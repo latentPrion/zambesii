@@ -76,6 +76,13 @@ static sZkcmNumaMap *ibmPc_mMod_gnm_rGnm(void)
 	// Now look for an SRAT entry in the RSDT.
 	context = handle = NULL;
 	srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
+
+	if (srat == NULL)
+	{
+		printf(NOTICE"rsdtGetNumaMap: No SRAT tables found.\n");
+		return NULL;
+	}
+
 	// First run: find out how many entries exist.
 	while (srat != NULL)
 	{
@@ -91,6 +98,12 @@ static sZkcmNumaMap *ibmPc_mMod_gnm_rGnm(void)
 		acpiRsdt::destroySdt((acpi::sSdt *)srat);
 		srat = acpiRsdt::getNextSrat(rsdt, &context, &handle);
 	};
+
+	if (nEntries < 1)
+	{
+		printf(NOTICE"rsdtGetNumaMap: No memory entries in SRAT.\n");
+		return NULL;
+	}
 
 	ret = new sZkcmNumaMap;
 	if (ret == NULL) { return NULL; };
@@ -172,7 +185,7 @@ static sZkcmNumaMap *ibmPc_mMod_gnm_rGnm(void)
 sZkcmNumaMap *ZkcmMemoryDetectionMod::getNumaMap(void)
 {
 	error_t		err;
-	sZkcmNumaMap	*ret=0;
+	sZkcmNumaMap	*ret=NULL;
 
 	// Get NUMA map from ACPI.
 	acpi::initializeCache();
@@ -180,14 +193,14 @@ sZkcmNumaMap *ZkcmMemoryDetectionMod::getNumaMap(void)
 	if (err != ERROR_SUCCESS) { return NULL; };
 
 // Only try to use XSDT for 64-bit and upwards.
-#ifndef __32_BIT__
-/*	if (acpi::testForXsdt())
+#if __VADDR_NBITS__ >= 64
+	if (acpi::testForXsdt())
 	{
 		printf(NOTICE"getNumaMap: Using XSDT.\n");
 		// Prefer XSDT to RSDT if found.
 		ret = ibmPc_mMod_gnm_xGnm();
 		if (ret != NULL) { return ret; };
-	}; */
+	};
 #endif
 	// Else use RSDT.
 	if (acpi::testForRsdt())
