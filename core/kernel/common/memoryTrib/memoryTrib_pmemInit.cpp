@@ -220,8 +220,7 @@ parseMemoryMap:
 	};
 
 	// Next merge all banks with __kspace.
-	pos = memoryBanks.end();
-	for (; pos != memoryBanks.end(); ++pos)
+	for (pos = memoryBanks.begin(); pos != memoryBanks.end(); ++pos)
 	{
 		nmb = (NumaMemoryBank *)*pos;
 
