@@ -498,15 +498,19 @@ error_t CpuTrib::numaInit(void)
 	else
 	{
 		printf(WARNING CPUTRIB"numaInit: NUMA build, but CPU mod "
+			"reports no NUMA CPUs"
 #ifndef CHIPSET_NUMA_GENERATE_SHBANK
-			"reports no NUMA CPUs, and no shbank configured.\n");
-#else
-			"reports no NUMA CPUs.\n");
+			", and no shbank configured"
 #endif
+			".\n");
 	};
 
-#if defined(CHIPSET_NUMA_GENERATE_SHBANK)				\
-	&& defined(CHIPSET_NUMA_SHBANKID)
+#if defined(CHIPSET_NUMA_GENERATE_SHBANK)
+
+#ifndef CHIPSET_NUMA_SHBANKID
+	panic(FATAL CPUTRIB"numaInit(): NUMA_SHBANKID not defined!\n");
+#endif
+
 	smpMap = zkcmCore.cpuDetection.getSmpMap();
 	if (smpMap != NULL && smpMap->nEntries > 0)
 	{
