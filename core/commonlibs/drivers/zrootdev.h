@@ -21,6 +21,15 @@ struct child_dev
 				*zbz_root_device_type;
 };
 
+#define COPY_DEV_MEMBER_STRING_TO_ATTR(devvar,attrvar,membername) \
+	(attrvar)->attr_type = UDI_ATTR_STRING; \
+	(attrvar)->attr_length = strnlen8( \
+		CC (devvar)->membername, UDI_MAX_ATTR_SIZE); \
+	strncpy8(CC (attrvar)->attr_name, CC #membername, UDI_MAX_ATTR_NAMELEN); \
+	strncpy8( \
+		CC (attrvar)->attr_value, CC (devvar)->membername, \
+		UDI_MAX_ATTR_SIZE);
+
 /* chipset_devs holds the attrs for those devices which are chipset specific
  * such as the chipset itself, or the multiple chipset top level devices if
  * the machine is multi-mobo, etc.

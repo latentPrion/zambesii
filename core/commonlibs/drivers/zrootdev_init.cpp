@@ -63,15 +63,6 @@ void zrootdev_root_dev_mark_released(udi_ubit32_t childId)
 	}
 }
 
-#define COPY_DEV_MEMBER_STRING_TO_ATTR(devvar,attrvar,membername) \
-	(attrvar)->attr_type = UDI_ATTR_STRING; \
-	(attrvar)->attr_length = strnlen8( \
-		CC (devvar)->membername, UDI_MAX_ATTR_SIZE); \
-	strncpy8(CC (attrvar)->attr_name, CC #membername, UDI_MAX_ATTR_NAMELEN); \
-	strncpy8( \
-		CC (attrvar)->attr_value, CC (devvar)->membername, \
-		UDI_MAX_ATTR_SIZE);
-
 void zrootdev_child_dev_to_enum_attrs(
 	struct child_dev *dev, udi_instance_attr_list_t *outattrs,
 	udi_ubit32_t *outChildId

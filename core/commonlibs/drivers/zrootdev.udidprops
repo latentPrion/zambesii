@@ -31,7 +31,6 @@ device 10 1 \
 	identifier		string zrootdev
 
 # For the parent we will never bind to because we are the kernel.
-parent_bind_ops		1 0 1 1
 child_bind_ops		2 0 1
 internal_bind_ops	3 1 1 1 1
 internal_bind_ops	3 2 1 1 1
