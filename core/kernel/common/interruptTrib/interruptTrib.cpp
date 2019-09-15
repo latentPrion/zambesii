@@ -101,10 +101,9 @@ error_t InterruptTrib::initializeIrqs(void)
 	// Initialize the data structure before use.
 	ret = pinIrqTable.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
-	// Notify the IRQ Control mod that memory management is initialized.
-	zkcmCore.irqControl.chipsetEventNotification(
-		IRQCTL_EVENT_MEMMGT_AVAIL, 0);
 
+	zkcmCore.chipsetEventNotification(
+		__KPOWER_EVENT_INTERRUPT_TRIB_AVAIL, 0);
 	return ERROR_SUCCESS;
 }
 

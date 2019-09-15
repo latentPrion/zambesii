@@ -195,8 +195,7 @@ extern "C" void main(ubit32, sMultibootData *)
 
 	DO_OR_DIE((*__kprocess.getVaddrSpaceStream()), initialize(), ret);
 	DO_OR_DIE(__kprocess.memoryStream, initialize(), ret);
-	// This does nothing for IRQ ctl, but remaps VGA buff into kvaddrspace.
-	zkcmCore.irqControl.chipsetEventNotification(IRQCTL_EVENT_MEMMGT_AVAIL, 0);
+
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
 
@@ -237,9 +236,6 @@ extern "C" void main(ubit32, sMultibootData *)
 	 **/
 	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
 	zkcmCore.irqControl.maskAll();
-
-	zkcmCore.irqControl.chipsetEventNotification(
-		IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL, 0);
 #endif
 
 	printf(NOTICE ORIENT"Entering message loop. Task ID %x (@%p).\n",
@@ -388,6 +384,7 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 {
 	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
 	status_t			stat;
+	error_t				ret;
 
 	if (msg->info.params.enumerateChildren.final_enumeration_result
 		!= UDI_ENUMERATE_DONE)
@@ -441,6 +438,27 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 		tag->getInode()->dumpEnumerationAttributes();
 	}
 
+	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
+	 * then load the chipset's bus-pin mappings and initialize timer
+	 * services.
+	 **/
+	DO_OR_DIE(interruptTrib, initializeIrqs(), ret);
+	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
+	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
+	DO_OR_DIE(timerTrib, initialize(), ret);
+
+printf(NOTICE ORIENT"IRQs enabled? %d\n", cpuControl::interruptsEnabled());
+printf(NOTICE ORIENT"Got here\n");
+return;
+
+	// Detect physical memory.
+	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
+	DO_OR_DIE(memoryTrib, pmemInit(), ret);
+	DO_OR_DIE(memoryTrib, memRegionInit(), ret);
+
+	// Detect and wake all CPUs.
+	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
+
 	uarch_t tot, succ, fail;
 	struct {
 		TESTS_FN_MAKE_PROTOTYPE_DEFVARS(runTests)
@@ -452,36 +470,6 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	DO_OR_DIE(testobj, runTests(&tot, &succ, &fail), stat);
 	printf(NOTICE"Tests: %d total, %d succ, %d fail\n", tot, succ, fail);
 	printf(NOTICE"All is well in the universe.\n");
-}
-
-void __korientationMain5(MessageStream::sHeader *msgIt)
-{
-	error_t ret;
-
-	(void)msgIt;
-	(void)__korientationMain5;
-
-	return;
-
-	/* Initialize Interrupt Trib IRQ management (__kpin and __kvector),
-	 * then load the chipset's bus-pin mappings and initialize timer
-	 * services.
-	 **/
-	DO_OR_DIE(interruptTrib, initializeIrqs(), ret);
-	DO_OR_DIE(zkcmCore.irqControl.bpm, loadBusPinMappings(CC"isa"), ret);
-	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
-	DO_OR_DIE(timerTrib, initialize(), ret);
-
-	// Detect physical memory.
-	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
-	DO_OR_DIE(memoryTrib, pmemInit(), ret);
-	DO_OR_DIE(memoryTrib, memRegionInit(), ret);
-
-	// Detect and wake all CPUs.
-	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
-
-	printf(NOTICE ORIENT"Halting unfavourably.\n");
-	for (;FOREVER;) { asm volatile("hlt\n\t"); };
 }
 
 

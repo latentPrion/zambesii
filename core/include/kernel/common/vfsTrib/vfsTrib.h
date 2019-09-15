@@ -36,7 +36,13 @@ public:
 
 		ret = dvfsCurrentt.initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
-		return hvfsCurrentt.initialize();
+		ret = hvfsCurrentt.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+
+		zkcmCore.chipsetEventNotification(
+			__KPOWER_EVENT_VFS_TRIB_AVAIL, 0);
+
+		return ERROR_SUCCESS;
 	}
 
 	~VfsTrib(void) {}

@@ -4,6 +4,7 @@
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
 	#include <__kclasses/singleWaiterQueue.h>
+	#include <chipset/zkcm/zkcmCore.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 
 #define DVFS_TAG_NAME_MAXLEN			(48)
@@ -83,7 +84,14 @@ namespace dvfs
 
 		error_t initialize(void)
 		{
-			return vfs::Tag<DVFS_TAG_NAME_MAXLEN>::initialize();
+			error_t			ret;
+
+			ret = vfs::Tag<DVFS_TAG_NAME_MAXLEN>::initialize();
+			if (ret != ERROR_SUCCESS) { return ret; };
+			zkcmCore.chipsetEventNotification(
+				__KPOWER_EVENT_DVFS_AVAIL, 0);
+
+			return ERROR_SUCCESS;
 		}
 
 		~Tag(void) {}

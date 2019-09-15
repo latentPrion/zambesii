@@ -298,6 +298,7 @@ parseMemoryMap:
 	#endif
 #endif
 
+	zkcmCore.chipsetEventNotification(__KPOWER_EVENT_FULL_PMM_AVAIL, 0);
 	return ERROR_SUCCESS;
 }
 

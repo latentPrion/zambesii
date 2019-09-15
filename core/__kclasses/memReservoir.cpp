@@ -51,6 +51,7 @@ error_t MemReservoir::initialize(void)
 		"custom bogs array %p.\n",
 		__kheap.getChunkSize(), heaps.rsrc.ptrs);
 
+	zkcmCore.chipsetEventNotification(__KPOWER_EVENT_HEAP_AVAIL, 0);
 	return ERROR_SUCCESS;
 }
 

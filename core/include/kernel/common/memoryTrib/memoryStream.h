@@ -4,6 +4,7 @@
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/allocTable.h>
+	#include <chipset/zkcm/zkcmCore.h>
 	#include <kernel/common/stream.h>
 	#include <kernel/common/vSwamp.h>
 	#include <kernel/common/memoryTrib/vaddrSpaceStream.h>
@@ -77,7 +78,16 @@ public:
 
 		ret = allocCache.initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
-		return allocTable.initialize();
+		ret = allocTable.initialize();
+		if (ret != ERROR_SUCCESS) { return ret; };
+
+		if (PROCID_PROCESS(id) == PROCID_PROCESS(__KPROCESSID))
+		{
+			zkcmCore.chipsetEventNotification(
+				__KPOWER_EVENT___KMEMORY_STREAM_AVAIL, 0);
+		}
+
+		return ERROR_SUCCESS;
 	}
 
 public:

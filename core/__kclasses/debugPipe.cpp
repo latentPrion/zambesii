@@ -20,6 +20,7 @@ DebugPipe::DebugPipe(void)
 
 error_t DebugPipe::initialize(void)
 {
+	zkcmCore.chipsetEventNotification(__KPOWER_EVENT___KPRINTF_AVAIL, 0);
 	return ERROR_SUCCESS;
 }
 

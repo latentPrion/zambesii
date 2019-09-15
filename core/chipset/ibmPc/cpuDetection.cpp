@@ -780,8 +780,8 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 		if (!i8254WasSoftEnabled) { i8254Pit.softDisable(); };
 	};
 
-	zkcmCore.irqControl.chipsetEventNotification(
-		IRQCTL_EVENT_SMP_MODE_SWITCH, 0);
+	zkcmCore.chipsetEventNotification(
+		__KPOWER_EVENT_PRE_SMP_MODE_SWITCH, 0);
 
 	return ERROR_SUCCESS;
 }

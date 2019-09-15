@@ -10,6 +10,8 @@
 	#include <chipset/pkg/watchdogMod.h>
 	#include <kernel/common/smpTypes.h>
 
+#define ZKCMCORE	"ZKCM Core: "
+
 class ZkcmCore
 {
 public:
@@ -34,6 +36,7 @@ public:
 
 	ZkcmDebugDevice		*debug[4];
 
+	void chipsetEventNotification(e__kPowerEvent event, uarch_t flags);
 	void newCpuIdNotification(cpu_t highestCpuId);
 };
 

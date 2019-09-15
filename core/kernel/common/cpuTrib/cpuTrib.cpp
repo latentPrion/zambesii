@@ -315,10 +315,12 @@ error_t CpuTrib::initializeAllCpus(void)
 	return smpInit();
 #endif
 #if __SCALING__ == SCALING_UNIPROCESSOR
-	return uniProcessorInit();
-#else
-	return ERROR_SUCCESS;
+	ret = uniProcessorInit();
 #endif
+	if (ret != ERROR_SUCCESS) { return ret; }
+
+	zkcmCore.chipsetEventNotification(__KPOWER_EVENT_SMP_AVAIL, 0);
+	return ERROR_SUCCESS;
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA

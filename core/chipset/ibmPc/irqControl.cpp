@@ -100,22 +100,18 @@ void ZkcmIrqControlMod::chipsetEventNotification(ubit8 event, uarch_t flags)
 		"\tEvent is %d.\n",
 		event);
 
-	ibmPcVgaTerminal.chipsetEventNotification(event, flags);
 	return;
 
 	switch (event)
 	{
-	case IRQCTL_EVENT___KSPACE_MEMMGT_AVAIL:
-		break;
-
-	case IRQCTL_EVENT_MEMMGT_AVAIL:
+	case __KPOWER_EVENT_HEAP_AVAIL:
 		/**	EXPLANATION:
 		 * Tell the i8259 code to advertise its IRQ pins to the kernel.
 		 **/
 		i8259aPic.chipsetEventNotification(event, flags);
 		break;
 
-	case IRQCTL_EVENT_SMP_MODE_SWITCH:
+	case __KPOWER_EVENT_PRE_SMP_MODE_SWITCH:
 		/**	EXPLANATION:
 		 * When switching to multiprocessor mode on the IBM-PC, the
 		 * i8259a code must first be told, so it can remove its IRQ

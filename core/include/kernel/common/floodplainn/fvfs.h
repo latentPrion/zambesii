@@ -2,6 +2,7 @@
 	#define _FLOODPLAINN_VFS_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <chipset/zkcm/zkcmCore.h>
 	#include <kernel/common/vfsTrib/vfsTypes.h>
 
 #define FVFS_TAG_NAME_MAXLEN		(32)
@@ -53,7 +54,14 @@ namespace fvfs
 
 		error_t initialize(void)
 		{
-			return vfs::Tag<FVFS_TAG_NAME_MAXLEN>::initialize();
+			error_t		ret;
+
+			ret = vfs::Tag<FVFS_TAG_NAME_MAXLEN>::initialize();
+			if (ret != ERROR_SUCCESS) { return ret; };
+			zkcmCore.chipsetEventNotification(
+				__KPOWER_EVENT_FVFS_AVAIL, 0);
+
+			return ERROR_SUCCESS;
 		}
 
 		~Tag(void) {}

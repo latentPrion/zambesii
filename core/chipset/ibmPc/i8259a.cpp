@@ -94,7 +94,7 @@ void I8259APic::chipsetEventNotification(ubit8 event, uarch_t)
 {
 	switch (event)
 	{
-	case IRQCTL_EVENT_MEMMGT_AVAIL:
+	case __KPOWER_EVENT_HEAP_AVAIL:
 
 		// Allocate and zero memory for the __kpin mapping list.
 		irqPinList = new sZkcmIrqPin[16];
@@ -126,7 +126,7 @@ void I8259APic::chipsetEventNotification(ubit8 event, uarch_t)
 
 		break;
 
-	case IRQCTL_EVENT_SMP_MODE_SWITCH:
+	case __KPOWER_EVENT_PRE_SMP_MODE_SWITCH:
 		/**	EXPLANATION:
 		 * Tell the kernel to remove all i8259a IRQ pins from the __kpin
 		 * list, because on IBM-PC, when symmetric multiprocessing mode
@@ -197,7 +197,7 @@ status_t I8259APic::identifyActiveIrq(
 		io::write8(PIC_PIC2_CMD, 0x4B);
 		mask = io::read8(PIC_PIC2_CMD);
 		cpuControl::safeEnableInterrupts(flags);
-	};		
+	};
 
 	if (mask)
 	{

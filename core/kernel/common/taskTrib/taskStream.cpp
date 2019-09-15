@@ -132,6 +132,8 @@ error_t TaskStream::cooperativeBind(void)
 	 *	pull() x2 => { Power thread which is listed twice, will get
 	 * 		pulled twice }
 	 **/
+
+	zkcmCore.chipsetEventNotification(__KPOWER_EVENT_SCHED_COOP_AVAIL, 0);
 	return ERROR_SUCCESS;
 }
 

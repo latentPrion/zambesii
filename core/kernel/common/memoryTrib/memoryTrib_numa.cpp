@@ -99,7 +99,10 @@ error_t MemoryTrib::__kspaceInitialize(void)
 			&__kspaceMemoryRange,
 			__kspaceInitMem);
 
-	return ret;
+	if (ret != ERROR_SUCCESS) { return ret; };
+
+	zkcmCore.chipsetEventNotification(__KPOWER_EVENT___KSPACE_PMM_AVAIL, 0);
+	return ERROR_SUCCESS;
 }
 
 error_t MemoryTrib::createBank(numaBankId_t id, NumaMemoryBank *preAllocated)
