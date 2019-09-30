@@ -641,7 +641,8 @@ status_t ibmPcBpm::isa::loadBusPinMappings(void)
 			};
 		};
 
-		printf(NOTICE IBMPCBPM"ISA: UP mode, assumed i8259s.\n");
+		printf(NOTICE IBMPCBPM"ISA: uniprocessor mode. Assumed "
+			"i8259s.\n");
 		return ERROR_SUCCESS;
 	};
 
