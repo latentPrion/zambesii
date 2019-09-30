@@ -104,6 +104,7 @@ error_t InterruptTrib::initializeIrqs(void)
 
 	zkcmCore.chipsetEventNotification(
 		__KPOWER_EVENT_INTERRUPT_TRIB_AVAIL, 0);
+
 	return ERROR_SUCCESS;
 }
 
@@ -302,13 +303,8 @@ error_t InterruptTrib::sZkcm::registerPinIsr(
 		return ERROR_INVALID_ARG_VAL;
 	};
 
-	if (atomicAsm::read(&pinDesc->inService) != 0)
-	{
-		printf(ERROR INTTRIB"registerPinIsr: __kpin %d is in "
-			"service.\n",
-			__kpin);
-
-		return ERROR_RESOURCE_BUSY;
+	while (atomicAsm::read(&pinDesc->inService) != 0) {
+		cpuControl::subZero();
 	};
 
 	// Constructor zeroes it out.
@@ -363,13 +359,8 @@ sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 		return 0;
 	};
 
-	if (atomicAsm::read(&pinDesc->inService) != 0)
-	{
-		printf(ERROR INTTRIB"retirePinIsr: cannot retire ISR from "
-			"__kpin %d while in service.\n",
-			__kpin);
-
-		return 0;
+	while (atomicAsm::read(&pinDesc->inService) != 0) {
+		cpuControl::subZero();
 	};
 
 	HeapList<sIsrDescriptor>::Iterator	it = pinDesc->isrList.begin(0);
