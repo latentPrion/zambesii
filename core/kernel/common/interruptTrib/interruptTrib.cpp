@@ -518,9 +518,9 @@ void InterruptTrib::registerIrqPins(ubit16 nPins, sZkcmIrqPin *pinList)
 		 *
 		 * This functionality was deliberately removed. The kernel now
 		 * guarantees that all pins which are registered in the same
-		 * call will be assigned congtiguous __kpin IDs, even at the
-		 * expense of leaving indexes unused and consuming memory
-		 * unnecessarily.
+		 * call to this function will be assigned contiguous __kpin IDs,
+		 * even at the expense of leaving indexes unused and consuming
+		 * memory unnecessarily.
 		 *
 		 * The code below however, is highly naive, and it does not try
 		 * to optimize for space at all. It simply adds new __kpins
