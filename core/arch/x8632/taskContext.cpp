@@ -6,6 +6,19 @@
 #include <kernel/common/process.h>
 #include <kernel/common/panic.h>
 
+void RegisterContext::dump(void)
+{
+	printf(NOTICE"Context %p: dumping: [Vector num %d]:\n"
+		"\t[SS %x, ESP %x]; EFLAGS %x, CS %x, EIP %x\n"
+		"\t[errorCode %x]; ds %x, es %x, fs %x, gs %x\n"
+		"\tesi %x, edi %x, ebp %x; eax %x, ebx %x, ecx %x, edx %x\n",
+		this, vectorNo,
+		ss, esp, eflags, cs, eip,
+		errorCode,
+		ds, es, fs, gs,
+		esi, edi, ebp,
+		eax, ebx, ecx, edx);
+}
 
 RegisterContext::RegisterContext(ubit8 execDomain)
 {

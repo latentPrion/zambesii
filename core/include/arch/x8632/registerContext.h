@@ -25,6 +25,8 @@ public:
 		eip = (uintptr_t)entryPoint;
 	}
 
+	void dump(void);
+
 public:
 	ubit16		es;		// 2
 	ubit16		ds;		// 4
