@@ -210,8 +210,11 @@ void TaskStream::pull(void)
 		// Else set the CPU to a low power state.
 		if (/* !parent->isBspCpu() */ 0)
 		{
-			printf(NOTICE TASKSTREAM"%d: Entering C1.\n",
-				parent->cpuId);
+			printf(NOTICE TASKSTREAM"%d: Entering C1: "
+				"IRQs enabled? %d. Prev threadID %x.\n",
+				parent->cpuId,
+				cpuControl::interruptsEnabled(),
+				getCurrentThread()->getFullId());
 		};
 
 		cpuControl::halt();
