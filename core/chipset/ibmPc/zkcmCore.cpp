@@ -57,13 +57,14 @@ void ZkcmCore::newCpuIdNotification(cpu_t newCpuId)
 			__kcpuPowerStacksLength * sizeof(void *));
 	};
 
+
 	oldArray = __kcpuPowerStacks;
 	__kcpuPowerStacks = newArray;
 	__kcpuPowerStacksLength = newCpuId + 1;
 
 	__kcpuPowerStacksLock.release();
 
-	delete oldArray;
+	delete[] oldArray;
 }
 
 void ZkcmCore::chipsetEventNotification(e__kPowerEvent event, uarch_t flags)
