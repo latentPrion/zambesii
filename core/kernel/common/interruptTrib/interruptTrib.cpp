@@ -334,7 +334,7 @@ error_t InterruptTrib::sZkcm::registerPinIsr(
 	return ERROR_SUCCESS;
 }
 
-sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
+status_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 {
 	sIrqPinDescriptor	*pinDesc;
 	sIsrDescriptor		*isrDesc;
@@ -346,7 +346,7 @@ sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 	 *
 	 * Need an rwlock.
 	 **/
-	if (isr == NULL) { return 0; };
+	if (isr == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 	pinDesc = (sIrqPinDescriptor *)interruptTrib.pinIrqTable
 		.getItem(__kpin);
@@ -356,7 +356,7 @@ sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 		printf(ERROR INTTRIB"retirePinIsr: Invalid __kpin %d.\n",
 			__kpin);
 
-		return 0;
+		return ERROR_NOT_FOUND;
 	};
 
 	while (atomicAsm::read(&pinDesc->inService) != 0) {
@@ -384,6 +384,10 @@ sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 		{
 			interruptTrib.__kpinDisable(__kpin);
 			// Return 1 if this call caused the pin to be masked.
+			printf(NOTICE INTTRIB"retirePinIsr: no more ISRs on "
+				"__kpin %d. Masking pin off.\n",
+				__kpin);
+
 			return 1;
 		};
 
@@ -391,7 +395,7 @@ sarch_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 	};
 
 	// Means this was an attempt to retire an ISR that was never registered.
-	return 0;
+	return ERROR_NO_MATCH;
 }
 
 error_t InterruptTrib::__kpinEnable(ubit16 __kpin)

@@ -80,7 +80,7 @@ public:
 			ubit16 __kpin, ZkcmDeviceBase *dev, zkcmIsrFn *isr,
 			uarch_t flags);
 
-		sarch_t retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr);
+		status_t retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr);
 
 		error_t registerMsiIsr(
 			uarch_t vector, ZkcmDeviceBase *dev, zkcmIsrFn *isr,
