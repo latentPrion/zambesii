@@ -387,11 +387,9 @@ status_t InterruptTrib::sZkcm::retirePinIsr(ubit16 __kpin, zkcmIsrFn *isr)
 			printf(NOTICE INTTRIB"retirePinIsr: no more ISRs on "
 				"__kpin %d. Masking pin off.\n",
 				__kpin);
-
-			return 1;
 		};
 
-		return 0;
+		return ERROR_SUCCESS;
 	};
 
 	// Means this was an attempt to retire an ISR that was never registered.
