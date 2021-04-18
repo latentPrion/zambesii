@@ -3,73 +3,53 @@
 #include <__kstdlib/__kmath.h>
 #include <__kstdlib/__kbitManipulation.h>
 #include <__kstdlib/__kclib/string.h>
+#include <__kstdlib/__kclib/assert.h>
 #include <__kstdlib/__kcxxlib/new>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/bitmap.h>
+#include <kernel/common/panic.h>
 
-
-Bitmap::Bitmap(void)
-{
-	preAllocated = 0;
-	preAllocatedSize = 0;
-	bmp.rsrc.bmp = NULL;
-	bmp.rsrc.nBits = 0;
-}
 
 error_t Bitmap::initialize(
-	ubit32 nBits, sPreallocatedMemory preAllocatedMemory
+	ubit32 nBits, sPreallocatedMemory _preAllocatedMemory
 	)
 {
-	ubit32		nIndexes;
+	const uarch_t		nIndexes=BITMAP_NELEMENTS_FOR_BITS(nBits);
 
-	nIndexes = __KMATH_NELEMENTS(
-		nBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__));
-
-	if (preAllocatedMemory.vaddr != NULL)
+	if (_preAllocatedMemory.vaddr != NULL)
 	{
-		if (nBits > preAllocatedMemory.size * __BITS_PER_BYTE__)
+		if (nBits > _preAllocatedMemory.size * __BITS_PER_BYTE__)
 			{ return ERROR_LIMIT_OVERFLOWED; };
 
-		preAllocated = 1;
-		preAllocatedSize = preAllocatedMemory.size;
-	};
-
-	bmp.rsrc.bmp = (preAllocated)
-		? new (preAllocatedMemory.vaddr) uarch_t[nIndexes]
-		: (nIndexes == 0 ) ? NULL : new uarch_t[nIndexes];
-
-	if (bmp.rsrc.bmp == NULL && nBits != 0)
+		preallocatedMemory = _preAllocatedMemory;
+		bmp.rsrc.bmp = preallocatedMemory.vaddr;
+	}
+	else
 	{
-		bmp.rsrc.nBits = 0;
-		return ERROR_MEMORY_NOMEM;
-	};
+		if (nIndexes == 0) { return ERROR_SUCCESS; }
+
+		bmp.rsrc.bmp = new element_t[nIndexes];
+		if (bmp.rsrc.bmp == NULL)
+			{ return ERROR_MEMORY_NOMEM; };
+	}
 
 	bmp.rsrc.nBits = nBits;
-	// Don't pass NULL to memset when BMP is initialized to 0 bits.
-	if (nIndexes > 0)
-	{
-		if (!preAllocated)
-		{
-			memset(
-				bmp.rsrc.bmp, 0,
-				nIndexes * sizeof(*bmp.rsrc.bmp));
-		}
-		else {
-			memset(bmp.rsrc.bmp, 0, preAllocatedSize);
-		};
-	};
-
+	memset(
+		bmp.rsrc.bmp, 0,
+		(nIndexes > 0)
+			? nIndexes * sizeof(*bmp.rsrc.bmp)
+			: preallocatedMemory.size);
 
 	return ERROR_SUCCESS;
 }
 
 void Bitmap::dump(void)
 {
-	printf(NOTICE BITMAP"@%p: %d bits, %s (%dB), array @%p.\n",
+	printf(NOTICE BITMAP"@%p: %d bits, (%s %dB), array @%p.\n",
 		this,
 		bmp.rsrc.nBits,
-		(preAllocated) ? "pre-allocated" : "dyn-allocated",
-		(preAllocated) ? preAllocatedSize : 0,
+		(!!preallocatedMemory.vaddr) ? "pre-allocated" : "dyn-allocated",
+		(!!preallocatedMemory.vaddr) ? preallocatedMemory.size : 0,
 		bmp.rsrc.bmp);
 }
 
@@ -92,12 +72,13 @@ void Bitmap::merge(Bitmap *b)
 
 Bitmap::~Bitmap(void)
 {
-	if (!preAllocated && bmp.rsrc.bmp != NULL) {
-		delete bmp.rsrc.bmp;
+	if (preallocatedMemory.vaddr == NULL && bmp.rsrc.bmp != NULL) {
+		delete[] bmp.rsrc.bmp;
 	};
 
+	bmp.rsrc.bmp = NULL;
 	bmp.rsrc.nBits = 0;
-	preAllocated = 0;
+	preallocatedMemory = sPreallocatedMemory(NULL, 0);
 }
 
 void Bitmap::lock(void)
@@ -153,7 +134,8 @@ sarch_t Bitmap::test(ubit32 bit)
 
 error_t Bitmap::resizeTo(ubit32 _nBits)
 {
-	uarch_t		bitCapacity, *tmp, *old;
+	uarch_t		bitCapacity;
+	element_t	*tmp, *old;
 	sbit8		wasPreAllocated;
 
 	bmp.lock.acquire();
@@ -164,22 +146,30 @@ error_t Bitmap::resizeTo(ubit32 _nBits)
 		bmp.rsrc.nBits = 0;
 		old = bmp.rsrc.bmp;
 		bmp.rsrc.bmp = NULL;
-		wasPreAllocated = preAllocated;
-		preAllocated = 0;
+		wasPreAllocated = !!preallocatedMemory.vaddr;
+		preallocatedMemory = sPreallocatedMemory(NULL, 0);
 
 		bmp.lock.release();
 
 		if (!wasPreAllocated) { delete[] old; };
+		printf(WARNING"BMP resized to 0. Caller is %p.\n",
+			__builtin_return_address(0));
+
 		return ERROR_SUCCESS;;
 	};
 
-	if (preAllocated) {
-		bitCapacity = preAllocatedSize * __BITS_PER_BYTE__;
+	if (!!preallocatedMemory.vaddr) {
+		bitCapacity = preallocatedMemory.size * __BITS_PER_BYTE__;
 	}
 	else
 	{
-		bitCapacity = __KMATH_NELEMENTS(
-			bmp.rsrc.nBits, __BITS_PER_BYTE__) * __BITS_PER_BYTE__;
+		bitCapacity = BITMAP_NELEMENTS_FOR_BITS(bmp.rsrc.nBits)
+			* sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__;
+
+		assert_fatal(bitCapacity >= bmp.rsrc.nBits);
+		// Not precise, but within ballpark -- still a useful check.
+		assert_fatal(bitCapacity < bmp.rsrc.nBits
+			+ sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__);
 	};
 
 	// If we don't need to resize upwards:
@@ -191,7 +181,8 @@ error_t Bitmap::resizeTo(ubit32 _nBits)
 	};
 
 	// Else:
-	tmp = (uarch_t *)new ubit8[_nBits];
+	tmp = new element_t[BITMAP_NELEMENTS_FOR_BITS(_nBits)];
+
 	if (tmp == NULL)
 	{
 		bmp.lock.release();
@@ -208,99 +199,14 @@ error_t Bitmap::resizeTo(ubit32 _nBits)
 
 	bmp.rsrc.nBits = _nBits;
 	bmp.rsrc.bmp = tmp;
-	wasPreAllocated = preAllocated;
-	preAllocated = 0;
+	wasPreAllocated = !!preallocatedMemory.vaddr;
+	preallocatedMemory = sPreallocatedMemory(NULL, 0);
 
 	bmp.lock.release();
 
-	if (wasPreAllocated) { delete[] old; };
+	if (!wasPreAllocated) { delete[] old; };
 	return ERROR_SUCCESS;
 }
-
-#if 0
-error_t Bitmap::resizeTo(ubit32 nBits)
-{
-	uarch_t		*tmp, *oldmem;
-	ubit32		currentBits, nIndexes;
-	error_t		ret;
-
-	/* If the BMP was pre-allocated and the amount of memory that was
-	 * assigned to it is enough to forego re-allocation, exit early.
-	 **/
-	if (preAllocated && (preAllocatedSize * __BITS_PER_BYTE__ >= nBits))
-	{
-		bmp.lock.acquire();
-		bmp.rsrc.nBits = nBits;
-		bmp.lock.release();
-		return ERROR_SUCCESS;
-	};
-
-	// Passing nBits = 0 arg deallocates the BMP.
-	if (nBits == 0)
-	{
-		bmp.lock.acquire();
-
-		if (!preAllocated && bmp.rsrc.bmp != NULL) {
-			delete bmp.rsrc.bmp;
-		};
-
-		preAllocated = 0;
-		bmp.rsrc.bmp = NULL;
-		bmp.rsrc.nBits = 0;
-
-		bmp.lock.release();
-		return ERROR_SUCCESS;
-	}
-
-	bmp.lock.acquire();
-
-	currentBits = bmp.rsrc.nBits;
-
-	// If the new nBits will fit in the currently allocated memory:
-	if (__KMATH_NELEMENTS(
-		currentBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__))
-		== __KMATH_NELEMENTS(
-			nBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__)))
-	{
-		bmp.rsrc.nBits = nBits;
-		bmp.lock.release();
-		return ERROR_SUCCESS;
-	};
-
-	bmp.lock.release();
-
-	nIndexes = __KMATH_NELEMENTS(
-		nBits, (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__));
-
-	tmp = new uarch_t[nIndexes];
-
-	if (tmp == NULL) {
-		ret = ERROR_MEMORY_NOMEM;
-	}
-	else
-	{
-		bmp.lock.acquire();
-		// Copy the old array's state into the new.
-		if (bmp.rsrc.bmp != NULL)
-		{
-			memcpy(
-				tmp, bmp.rsrc.bmp,
-				nIndexes * sizeof(*bmp.rsrc.bmp));
-		};
-		oldmem = bmp.rsrc.bmp;
-		bmp.rsrc.bmp = tmp;
-		bmp.rsrc.nBits = nBits;
-		bmp.lock.release();
-
-		if (!preAllocated && oldmem != NULL) { delete oldmem; };
-		preAllocated = 0;
-
-		ret = ERROR_SUCCESS;
-	};
-
-	return ret;
-}
-#endif
 
 void Bitmap::setSingle(ubit32 bit)
 {
