@@ -13,7 +13,7 @@
 TESTS_FN_MAKE_PROTOTYPE_DEFVARS(runTests)
 {
 	uarch_t tot, succ, fail;
-	status_t status, s;
+	status_t status=ERROR_SUCCESS, s;
 
 	TESTS_VARS_INIT_DEFVARS();
 
