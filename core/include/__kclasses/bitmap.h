@@ -12,6 +12,19 @@
 #define BITMAP_OFFSET(__bit)			\
 	((__bit) % (sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__))
 
+#define BITMAP_NELEMENTS_FOR_BITS(_nbits_desired) \
+	(__KMATH_NELEMENTS( \
+		((_nbits_desired)), \
+		sizeof(Bitmap::element_t) * __BITS_PER_BYTE__) \
+	)
+
+#define BITMAP_PREALLOCATED_NELEMENTS_FOR_BITS(_nbits_desired) \
+	BITMAP_NELEMENTS_FOR_BITS(_nbits_desired)
+
+#define BITMAP_DEFINE_PREALLOCATED_MEM(_varname,_nbits_desired) \
+	Bitmap::element_t	(_varname)[ \
+		BITMAP_PREALLOCATED_NELEMENTS_FOR_BITS((_nbits_desired))]
+
 /* Args:
  * __pb = pointer to the Bitmap object to be checked.
  * __n = the bit number which the bitmap should be able to hold. For example,
@@ -42,25 +55,31 @@ class Bitmap
 {
 friend class MessageStream;
 public:
+	typedef ubit32 element_t;
+
 	/* Used to inialize BMPs which must be initialized in the absence of
 	 * dynamic memory allocation.
 	 **/
 	struct sPreallocatedMemory
 	{
-		sPreallocatedMemory(void *ptr=NULL, ubit16 size=0)
+		sPreallocatedMemory(element_t *ptr=NULL, ubit16 size=0)
 		:
 		vaddr(ptr), size(size)
 		{}
 
-		void		*vaddr;
+		element_t	*vaddr;
 		ubit16		size;
 	};
 
-	Bitmap(void);
+	Bitmap(void)
+	{
+		bmp.rsrc.bmp = NULL;
+		bmp.rsrc.nBits = 0;
+	}
 
 	error_t initialize(
 		ubit32 nBits,
-		sPreallocatedMemory preallocatedMemory=sPreallocatedMemory(NULL, 0));
+		sPreallocatedMemory _preallocatedMemory=sPreallocatedMemory(NULL, 0));
 
 	~Bitmap(void);
 
@@ -88,12 +107,11 @@ public:
 	void dump(void);
 
 private:
-	ubit8		preAllocated;
-	ubit16		preAllocatedSize;
+	sPreallocatedMemory preallocatedMemory;
 
 	struct sBmpState
 	{
-		uarch_t		*bmp;
+		element_t	*bmp;
 		ubit32		nBits;
 	};
 	SharedResourceGroup<WaitLock, sBmpState>	bmp;
