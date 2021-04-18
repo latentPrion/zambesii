@@ -40,5 +40,7 @@
 		: \
 		((void)0))
 
+#define assert(e) assert_fatal((e))
+
 #endif
 
