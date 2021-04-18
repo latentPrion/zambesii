@@ -111,7 +111,7 @@ error_t InterruptTrib::initializeIrqs(void)
 void InterruptTrib::pinIrqMain(RegisterContext *regs)
 {
 	sIrqPinDescriptor	*pinDescriptor;
-	sIsrDescriptor		*isrDescriptor, (*isrRetireList[4]);
+	sIsrDescriptor		*isrDescriptor, *isrRetireList[4];
 	status_t		status;
 	ubit8			makeNoise, triggerMode, isrRetireListLength=0;
 	ubit16			__kpin;
