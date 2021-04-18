@@ -15,7 +15,7 @@
 #include <kernel/common/floodplainn/dma.h>
 
 
-static ubit8				memoryTribAvailableBanksBmpMem[64];
+static BITMAP_DEFINE_PREALLOCATED_MEM(memoryTribAvailableBanksBmpMem, 256);
 static HardwareIdList::sArrayNode	memoryTribMemoryBanksListMem[
 	CHIPSET_NUMA___KSPACE_BANKID + 1];
 
