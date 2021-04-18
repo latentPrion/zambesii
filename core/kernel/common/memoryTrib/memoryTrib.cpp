@@ -36,15 +36,21 @@ nBanks(0)
 
 error_t MemoryTrib::initialize(void)
 {
-	availableBanks.initialize(
+	error_t		ret;
+
+	ret = availableBanks.initialize(
 		0,
 		Bitmap::sPreallocatedMemory(
 			memoryTribAvailableBanksBmpMem,
 			sizeof(memoryTribAvailableBanksBmpMem)));
 
-	memoryBanks.initialize(
+	if (ret != ERROR_SUCCESS) { return ret; }
+
+	ret = memoryBanks.initialize(
 		memoryTribMemoryBanksListMem,
 		sizeof(memoryTribMemoryBanksListMem));
+
+	if (ret != ERROR_SUCCESS) { return ret; }
 
 	return ERROR_SUCCESS;
 }
