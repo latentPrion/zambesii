@@ -182,13 +182,13 @@ error_t Bitmap::resizeTo(ubit32 _nBits)
 
 	// Else:
 	tmp = new element_t[BITMAP_NELEMENTS_FOR_BITS(_nBits)];
-
 	if (tmp == NULL)
 	{
 		bmp.lock.release();
 		return ERROR_MEMORY_NOMEM;
 	};
 
+	memset(tmp, 0, __KMATH_NELEMENTS(_nBits, __BITS_PER_BYTE__));
 	old = bmp.rsrc.bmp;
 	if (old != NULL)
 	{
