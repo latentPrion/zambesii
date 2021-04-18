@@ -26,7 +26,7 @@ utf8Char	__kprocessArgStringMem
 
 #if __SCALING__ >= SCALING_SMP
 // Preallocated mem space for the internals of the __kprocess Bitmap objects.
-ubit8		__kprocessPreallocatedBmpMem[3][32];
+BITMAP_DEFINE_PREALLOCATED_MEM(__kprocessPreallocatedBmpMem[3], 256);
 #endif
 
 Thread *ProcessStream::getThread(processId_t id)
