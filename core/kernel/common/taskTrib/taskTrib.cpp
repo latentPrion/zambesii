@@ -168,6 +168,8 @@ error_t TaskTrib::dormant(Thread *thread)
 
 error_t TaskTrib::wake(Thread *thread)
 {
+	error_t		err;
+
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
 	if (thread->runState != Thread::UNSCHEDULED
@@ -178,9 +180,28 @@ error_t TaskTrib::wake(Thread *thread)
 	};
 
 	if (thread->runState == Thread::UNSCHEDULED) {
-		return schedule(thread);
+		err = schedule(thread);
 	}
-	else { return thread->currentCpu->taskStream.wake(thread); };
+	else { err = thread->currentCpu->taskStream.wake(thread); };
+
+	if (err != ERROR_SUCCESS) {
+		panic(err, ERROR"Failed to wake thread!");
+	}
+
+	if (thread->shouldPreemptCurrentThreadOn(thread->currentCpu))
+	{
+		if (thread->currentCpu == cpuTrib.getCurrentCpuStream())
+			{ printf(CC"About to yield...\n"); yield(); }
+		else
+		{
+			/* FIXME: Send an IPC message to the other CPU to check
+		 	* its queue in case the newly scheduled thread is higher
+		 	* priority.
+		 	*/
+		}
+	}
+
+	return err;
 }
 
 void TaskTrib::yield(void)
