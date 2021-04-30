@@ -363,7 +363,11 @@ error_t TimerTrib::initialize(void)
 		eventProcessor.task, eventProcessor.tid);
 
 	eventProcessor.controlQueue.setWaitingThread(eventProcessor.task);
-	taskTrib.wake(eventProcessor.task);
+	if (taskTrib.wake(eventProcessor.task) != ERROR_SUCCESS)
+	{
+		printf(ERROR TIMERTRIB"Failed to wake event processor thread!\n");
+		return ERROR_UNKNOWN;
+	}
 
 	initializeAllQueues();
 	zkcmCore.timerControl.timerQueuesInitializedNotification();

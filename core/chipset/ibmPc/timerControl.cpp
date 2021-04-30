@@ -152,7 +152,7 @@ error_t ZkcmTimerControlMod::initialize(void)
 
 error_t ZkcmTimerControlMod::shutdown(void)
 {
-	return ERROR_SUCCESS;
+	return i8254Pit.shutdown();
 }
 
 error_t ZkcmTimerControlMod::suspend(void)

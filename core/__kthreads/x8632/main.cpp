@@ -182,8 +182,10 @@ extern "C" void main(ubit32, sMultibootData *)
 
 	DO_OR_DIE(zkcmCore, initialize(), ret);
 	DO_OR_DIE(__kdebug, initialize(), ret);
-	devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE_BUFFER
+	devMask = __kdebug.tieTo(
+		DEBUGPIPE_DEVICE_BUFFER
 		| DEBUGPIPE_DEVICE1 | DEBUGPIPE_DEVICE2);
+
 	if (!FLAG_TEST(devMask, DEBUGPIPE_DEVICE_BUFFER)) {
 		printf(WARNING ORIENT"No debug buffer allocated.\n");
 	}

@@ -20,6 +20,15 @@ error_t ZkcmTimerDevice::initialize(void)
 	return irqEventQueue.initialize();
 }
 
+error_t ZkcmTimerDevice::shutdown(void)
+{
+	if (irqEventCache != NULL) {
+		cachePool.destroyCache(irqEventCache);
+	}
+
+	return ERROR_SUCCESS;
+}
+
 error_t ZkcmTimerDevice::latch(class FloodplainnStream *stream)
 {
 	state.lock.acquire();

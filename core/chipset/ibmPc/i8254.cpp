@@ -88,7 +88,14 @@ error_t I8254Pit::initialize(void)
 	sendEoi();
 
 	// Initialize the base class members.
-	ZkcmTimerDevice::initialize();
+	ret = ZkcmTimerDevice::initialize();
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR i8254"Failed to init IRQ event queue. IRQs won't "
+			"be signaled to kernel.\n");
+
+		return ret;
+	}
 
 	// Expose the i8254 channel 0 timer source to the Timer Control mod.
 	ret = zkcmCore.timerControl.registerNewTimerDevice(this);
@@ -97,7 +104,6 @@ error_t I8254Pit::initialize(void)
 		printf(WARNING i8254"Failed to register i8254 with Timer "
 			"Control mod.\n");
 
-		cachePool.destroyCache(irqEventCache);
 		return ret;
 	};
 
@@ -106,18 +112,22 @@ error_t I8254Pit::initialize(void)
 
 error_t I8254Pit::shutdown(void)
 {
-	error_t		ret;
+	error_t		ret=ERROR_SUCCESS, err;
 
-	ret = zkcmCore.timerControl.unregisterTimerDevice(this, 0);
-	if (ret != ERROR_SUCCESS)
+	err = zkcmCore.timerControl.unregisterTimerDevice(this, 0);
+	if (err != ERROR_SUCCESS)
 	{
 		printf(WARNING i8254"Unable to unregister %s; latched.\n",
 			getBaseDevice()->shortName);
 
-		return ret;
+		ret = err;
 	};
 
-	return ERROR_SUCCESS;
+	err = ZkcmTimerDevice::shutdown();
+	if (err != ERROR_SUCCESS)
+		{ ret = err; }
+
+	return ret;
 }
 
 void I8254Pit::sendEoi(void)
@@ -226,8 +236,8 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 	{
 		device->freeIrqEvent(irqEvent);
 		printf(WARNING i8254"isr: Failed to queue IRQ event; "
-			"err %s.\n",
-			strerror(err));
+			"err %d (%s).\n",
+			err, strerror(err));
 	};
 
 	return ZKCM_ISR_SUCCESS;
