@@ -195,9 +195,9 @@ error_t TaskTrib::wake(Thread *thread)
 		else
 		{
 			/* FIXME: Send an IPC message to the other CPU to check
-		 	* its queue in case the newly scheduled thread is higher
-		 	* priority.
-		 	*/
+			 * its queue in case the newly scheduled thread is higher
+			 * priority.
+			 */
 		}
 	}
 
@@ -286,6 +286,8 @@ static utf8Char		*runStates[5] =
 
 error_t TaskTrib::unblock(Thread *thread)
 {
+	error_t		err;
+
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
 	if (thread->runState == Thread::RUNNABLE
@@ -305,6 +307,22 @@ error_t TaskTrib::unblock(Thread *thread)
 		return ERROR_INVALID_OPERATION;
 	};
 
-	return thread->currentCpu->taskStream.unblock(thread);
-}
+	err = thread->currentCpu->taskStream.unblock(thread);
+	if (err != ERROR_SUCCESS)
+		{ panic(err, ERROR"Failed to wake thread!"); }
 
+	if (thread->shouldPreemptCurrentThreadOn(thread->currentCpu))
+	{
+		if (thread->currentCpu == cpuTrib.getCurrentCpuStream())
+			{ yield(); }
+		else
+		{
+			/* FIXME: Send an IPC message to the other CPU to check
+			 * its queue in case the newly scheduled thread is higher
+			 * priority.
+			 */
+		}
+	}
+
+	return err;
+}
