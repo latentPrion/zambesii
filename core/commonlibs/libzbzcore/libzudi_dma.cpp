@@ -215,11 +215,11 @@ void udi_dma_free(udi_dma_handle_t dma_handle)
 
 	udi_dma_buf_unmap(dma_handle, 0);
 
+	// Upcast.
+	dmah = static_cast<lzudi::dma::sHandle *>(dma_handle);
 	dmah->compiledConstraints.setInvalid();
 	dmah->udi_dmah_flags = 0;
 
-	// Upcast.
-	dmah = static_cast<lzudi::dma::sHandle *>(dma_handle);
 	delete dmah;
 }
 
