@@ -268,10 +268,11 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 
 	unlockRequestQueue();
 
-	if (requestQueueWasEmpty)
+	if (requestQueueWasEmpty && !atomicAsm::read(&clockRoutineInstalled))
 	{
 		// If you see this message in the log, don't be too panicked.
-		printf(WARNING TIMERQUEUE"%dus: tick called on empty Q.\n",
+		printf(WARNING TIMERQUEUE"%dus: tick called on empty Q without "
+			"clock routine.\n",
 			getNativePeriod() / 1000);
 	};
 }
