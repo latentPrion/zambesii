@@ -191,7 +191,7 @@ error_t TaskTrib::wake(Thread *thread)
 	if (thread->shouldPreemptCurrentThreadOn(thread->currentCpu))
 	{
 		if (thread->currentCpu == cpuTrib.getCurrentCpuStream())
-			{ printf(CC"About to yield...\n"); yield(); }
+			{ yield(); }
 		else
 		{
 			/* FIXME: Send an IPC message to the other CPU to check

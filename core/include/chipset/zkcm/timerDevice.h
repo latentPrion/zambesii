@@ -80,7 +80,7 @@ public:
 
 public:
 	virtual error_t initialize(void);
-	virtual error_t shutdown(void)=0;
+	virtual error_t shutdown(void);
 	virtual error_t suspend(void)=0;
 	virtual error_t restore(void)=0;
 

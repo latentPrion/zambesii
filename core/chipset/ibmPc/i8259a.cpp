@@ -297,7 +297,7 @@ void I8259APic::maskAll(void)
 		};
 	};
 }
-	
+
 void I8259APic::unmaskAll(void)
 {
 	io::write8(PIC_PIC1_DATA, 0x0);

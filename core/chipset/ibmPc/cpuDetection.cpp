@@ -709,6 +709,12 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 		if (ret != ERROR_SUCCESS) { return ret; };
 	};
 
+	/* Right now, all devices we're currently using, are signaling their
+	 * IRQs through the i8259as. We intend to switch over to the IOAPICs,
+	 * so if any devices are already currently signalling on the i8259as,
+	 * we need to switch them over.
+	 **/
+
 	/* The i8254 is the only device which should be operational right
 	 * now. Disable it to force it to forget its __kpin assignment, then
 	 * mask all of the i8259 PIC pins.

@@ -308,6 +308,22 @@ void _Task::inheritSchedPrio(prio_t prio, uarch_t flags)
 	return;
 }
 
+sbit8 Thread::shouldPreemptCurrentThreadOn(CpuStream *cpu)
+{
+	const Thread	*otherThread = cpu->taskStream.getCurrentThread();
+
+	if (this->schedPrio->prio > otherThread->schedPrio->prio)
+	{
+		if (otherThread->schedPolicy == Thread::REAL_TIME
+			&& this->schedPolicy == Thread::ROUND_ROBIN)
+			{ return 0; }
+
+		return 1;
+	}
+
+	return 0;
+}
+
 error_t Thread::allocateStacks(void)
 {
 	/**	NOTES:

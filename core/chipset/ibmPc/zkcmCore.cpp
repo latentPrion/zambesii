@@ -6,6 +6,7 @@
 #include <kernel/common/panic.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
+#include "zkcmIbmPcState.h"
 #include "vgaTerminal.h"
 #include "rs232.h"
 

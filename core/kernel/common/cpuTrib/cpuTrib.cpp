@@ -18,7 +18,8 @@
 	{ \
 		for (ubit32 tmpidx=0; tmpidx<hibound; tmpidx++) \
 		{ \
-			if (map->member[tmpidx].item > currHighest) { \
+			if ((signed)map->member[tmpidx].item \
+				> (signed)currHighest) { \
 				currHighest = map->member[tmpidx].item; \
 			}; \
 		}; \
@@ -95,7 +96,8 @@ error_t CpuTrib::loadBspInformation(void)
 	if (CpuStream::bspCpuId == CPUID_INVALID)
 	{
 		printf(WARNING CPUTRIB"loadBspInformation: ZKCM loadBspId "
-			"returned INVALID as ID for BSP.\n");
+			"returned INVALID as ID for BSP.\n"
+			"\tAssuming BSP CPU ID is 0.\n");
 
 		CpuStream::bspCpuId = 0;
 	};
@@ -133,10 +135,12 @@ error_t CpuTrib::loadBspInformation(void)
 
 	if (CpuStream::bspBankId == NUMABANKID_INVALID)
 	{
-		CpuStream::bspBankId = CHIPSET_NUMA_SHBANKID;
 		printf(WARNING CPUTRIB"loadBspInformation: Unable to "
-			"determine BSP bank ID.\n\tUsing SHBANKID (%d).\n",
+			"determine BSP bank ID.\n"
+			"\tAssuming BSP CPU is on SHBANKID (%d).\n",
 			CHIPSET_NUMA_SHBANKID);
+
+		CpuStream::bspBankId = CHIPSET_NUMA_SHBANKID;
 	};
 
 	/**	TODO:
@@ -164,6 +168,9 @@ error_t CpuTrib::loadBspInformation(void)
 		printf(WARNING CPUTRIB"loadBspInformation: Failed to detect BSP ACPI "
 			"ID.\n");
 	};
+
+	CpuStream::highestCpuId = CpuStream::bspCpuId;
+	CpuStream::highestBankId = CpuStream::bspBankId;
 
 	return ERROR_SUCCESS;
 }
@@ -259,11 +266,6 @@ error_t CpuTrib::initializeAllCpus(void)
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
 	if (numaMap != NULL && numaMap->nCpuEntries > 0)
 	{
-		if (CpuStream::highestCpuId == CPUID_INVALID)
-			{ CpuStream::highestCpuId = 0; };
-		if (CpuStream::highestBankId == NUMABANKID_INVALID)
-			{ CpuStream::highestBankId = 0; };
-
 		getHighestId(
 			CpuStream::highestBankId, numaMap, cpuEntries,
 			bankId, numaMap->nCpuEntries);

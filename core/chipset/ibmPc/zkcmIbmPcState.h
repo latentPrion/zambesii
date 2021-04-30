@@ -14,6 +14,11 @@
 
 struct sIbmPcChipsetState
 {
+	sIbmPcChipsetState(void)
+	:
+	lapicPaddr(0)
+	{}
+
 	struct sBspInfo
 	{
 		sBspInfo(void)
@@ -29,7 +34,7 @@ struct sIbmPcChipsetState
 	{
 		sSmpInfo(void)
 		:
-		chipsetState(SMPSTATE_SMP),
+		chipsetState(SMPSTATE_UNIPROCESSOR),
 		chipsetOriginalState(SMPSTATE_UNIPROCESSOR)
 		{}
 

@@ -15,6 +15,10 @@ error_t SingleWaiterQueue::addItem(void *item)
 	if (thread == NULL)
 	{
 		lock.release();
+
+		printf(ERROR SWAITQ"addItem failed because no waiting thread "
+			"has been set.\n");
+
 		return ERROR_UNINITIALIZED;
 	};
 
@@ -28,6 +32,7 @@ error_t SingleWaiterQueue::addItem(void *item)
 	ubit32		nItems;
 
 	nItems = HeapDoubleList<void>::getNItems();
+	// XXX: Why is this only 1?
 	if (nItems == 1)
 	{
 		ret = taskTrib.unblock(thread);

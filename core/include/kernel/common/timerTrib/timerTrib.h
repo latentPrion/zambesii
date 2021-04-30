@@ -150,6 +150,7 @@ private:
 	sbit32		clockQueueId;
 	SharedResourceGroup<WaitLock, sWatchdogIsr>	watchdog;
 
+public:
 	// All of the event processing thread's state information.
 	struct sEventProcessor
 	{

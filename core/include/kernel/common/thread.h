@@ -131,8 +131,6 @@ private:
 /**	Class Thread, a normal thread.
  ******************************************************************************/
 
-extern CpuStream	bspCpu;
-
 class Thread
 :	public Stream<ProcessStream>, public _Task, public _TaskContext
 {
@@ -156,6 +154,8 @@ public:
 
 public:
 	processId_t getFullId(void) { return id; }
+
+	sbit8 shouldPreemptCurrentThreadOn(CpuStream *cpu);
 
 	static sbit8 isBspPowerThread(processId_t tid);
 	static sbit8 isPowerThread(processId_t tid)
