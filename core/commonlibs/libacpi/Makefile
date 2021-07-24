@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../libacpi.a
-OBJFILES=rsdp.o rxsdt.o madt.o srat.o
+_OBJFILES=rsdp.o rxsdt.o madt.o srat.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

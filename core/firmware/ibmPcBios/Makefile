@@ -1,8 +1,11 @@
 .PHONY=
 DELIVERABLE=../../firmwareCore.a
-OBJFILES=debug.o decode.o fpu.o ops.o ops2.o prim_ops.o sys.o \
+_OBJFILES=debug.o decode.o fpu.o ops.o ops2.o prim_ops.o sys.o \
 	x86EmuAuxFuncs.o ibmPcBios_setRegs.o ibmPcBios_getRegs.o \
 	ibmPcBios_coreFuncs.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

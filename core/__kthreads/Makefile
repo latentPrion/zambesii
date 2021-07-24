@@ -1,13 +1,16 @@
 .PHONY=
 DELIVERABLE=../__kthreads.a
-OBJFILES= main.o __kcpuPowerOn.o
+_OBJFILES= main.o __kcpuPowerOn.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-main.o: CXXFLAGS+=-Wno-variadic-macros
+${THISDIR}/main.o: CXXFLAGS+=-Wno-variadic-macros
 
 clean: fonyphile
 	rm -rf *.o *.s

@@ -1,8 +1,11 @@
 .PHONY=
 DELIVERABLE=../../libx86mp.a
-OBJFILES=mpTables.o mpDefaultTables.o \
+_OBJFILES=mpTables.o mpDefaultTables.o \
 	lapic_core.o lapic_ipi.o lapic_lint.o \
 	libIoApic.o ioApic_core.o ioApic_zkcm.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

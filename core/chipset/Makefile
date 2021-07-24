@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../chipset.a
-OBJFILES=timerControl_filters.o timerDevice.o
+_OBJFILES=timerControl_filters.o timerDevice.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

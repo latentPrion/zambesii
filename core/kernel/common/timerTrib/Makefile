@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../../timerTrib.a
-OBJFILES=timerTrib.o timerQueue.o timerStream.o
+_OBJFILES=timerTrib.o timerQueue.o timerStream.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

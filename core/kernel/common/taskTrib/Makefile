@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../../taskTrib.a
-OBJFILES=taskTrib.o taskStream.o
+_OBJFILES=taskTrib.o taskStream.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

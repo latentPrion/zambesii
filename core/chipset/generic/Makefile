@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../chipsetCore.a
-OBJFILES=memoryConfig.o memoryMap.o regionMap.o numaMap.o
+_OBJFILES=memoryConfig.o memoryMap.o regionMap.o numaMap.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 
