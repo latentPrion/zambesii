@@ -11,8 +11,6 @@
 
 #define FINDTABLES		"chipset_findTables: "
 
-static ubit8	*lowmem;
-
 #ifdef CONFIG_ARCH_x86_32
 	#if  __SCALING__ >= SCALING_SMP
 
