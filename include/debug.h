@@ -1,6 +1,8 @@
 #ifndef _DEBUG_HELPER_H
 	#define _DEBUG_HELPER_H
 
+#include <__kstdlib/__ktypes.h>
+
 #define DEBUG_ON(__con)				\
 	if (__con) \
 	{ \
