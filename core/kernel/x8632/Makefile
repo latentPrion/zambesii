@@ -1,7 +1,10 @@
 .PHONY=
 DELIVERABLE=../../archKernel.a
-OBJFILES=__kclassInstances.o cpuTrib.o interruptTrib.o cpuStream.o \
+_OBJFILES=__kclassInstances.o cpuTrib.o interruptTrib.o cpuStream.o \
 	interCpuMessager.o cpuStream_powerManager.o vaddrSpace.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

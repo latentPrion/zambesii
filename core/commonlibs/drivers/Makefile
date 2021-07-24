@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../drivers.a
-OBJFILES=zramdisk.o zrootdev.o zrootdev_init.o
+_OBJFILES=zramdisk.o zrootdev.o zrootdev_init.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../metalanguages.a
-OBJFILES=udi_gio.o udi_bridge.o udi_mgmt.o
+_OBJFILES=udi_gio.o udi_bridge.o udi_mgmt.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

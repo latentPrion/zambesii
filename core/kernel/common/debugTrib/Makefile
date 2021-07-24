@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../../debugTrib.a
-OBJFILES=debugTrib.o
+_OBJFILES=debugTrib.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../../interruptTrib.a
-OBJFILES=interruptTrib.o
+_OBJFILES=interruptTrib.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

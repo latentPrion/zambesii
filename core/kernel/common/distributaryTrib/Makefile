@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../../distributaryTrib.a
-OBJFILES=distributaryTrib.o distributaries.o distributaryTrib_dvfs.o
+_OBJFILES=distributaryTrib.o distributaries.o distributaryTrib_dvfs.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

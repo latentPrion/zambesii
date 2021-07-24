@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../platform.a
-OBJFILES=foo.o
+_OBJFILES=foo.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

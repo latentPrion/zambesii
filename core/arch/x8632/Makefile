@@ -1,6 +1,6 @@
 .PHONY=
 DELIVERABLE=../../archCore.a
-OBJFILES=wPRanger_mapInc.o wPRanger_mapNoInc.o wPRanger_remapInc.o \
+_OBJFILES=wPRanger_mapInc.o wPRanger_mapNoInc.o wPRanger_remapInc.o \
 	wPRanger_remapNoInc.o wPRanger_setAttributes.o wPRanger_lookup.o \
 	wPRanger_unmap.o wPRanger_getLevelRanges.o wPRanger_accessors.o \
 	wPRanger_convertFlags.o \
@@ -11,24 +11,27 @@ OBJFILES=wPRanger_mapInc.o wPRanger_mapNoInc.o wPRanger_remapInc.o \
 	taskContext.o cpuid.o msr.o cpuEnumerationIntel.o cpuEnumerationAmd.o \
 	debug.o x8632_debugException.o x8632_breakpointException.o
 
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
+
 all: Makefile $(DELIVERABLE)
 
 $(DELIVERABLE): $(OBJFILES)
 	$(AR) -rcs $@ $(OBJFILES)
 
-vectorHandlers.o: vectorHandlersTmp.s
+${THISDIR}/vectorHandlers.o: vectorHandlersTmp.s
 vectorHandlersTmp.s: vectorHandlers.S
 	$(CPP) $(CPPFLAGS) vectorHandlers.S >$@
 
-setjmp.o: setjmpTmp.s
+${THISDIR}/setjmp.o: setjmpTmp.s
 setjmpTmp.s: setjmp.S
 	$(CPP) $(CPPFLAGS) setjmp.S >$@
 
-cpuid.o: cpuidTmp.s
+${THISDIR}/cpuid.o: cpuidTmp.s
 cpuidTmp.s: cpuid.S
 	$(CPP) $(CPPFLAGS) cpuid.S >$@
 
-msr.o: msrTmp.s
+${THISDIR}/msr.o: msrTmp.s
 msrTmp.s: msr.S
 	$(CPP) $(CPPFLAGS) msr.S >$@
 

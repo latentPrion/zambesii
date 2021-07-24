@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../__kcxxabi.a
-OBJFILES=dso.o callConstructors.o
+_OBJFILES=dso.o callConstructors.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

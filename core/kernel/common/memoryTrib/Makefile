@@ -1,7 +1,10 @@
 .PHONY=
 DELIVERABLE=../../../memoryTrib.a
-OBJFILES=memoryStream.o memoryTrib.o vaddrSpaceStream.o rawMemAlloc.o \
+_OBJFILES=memoryStream.o memoryTrib.o vaddrSpaceStream.o rawMemAlloc.o \
 	memoryTrib_numa.o memoryTrib_pmemInit.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

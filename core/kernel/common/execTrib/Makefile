@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../../execTrib.a
-OBJFILES=execTrib.o elf_base.o elfParser.o
+_OBJFILES=execTrib.o elf_base.o elfParser.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 

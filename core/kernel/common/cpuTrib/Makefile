@@ -1,6 +1,9 @@
 .PHONY=
 DELIVERABLE=../../../cpuTrib.a
-OBJFILES=cpuTrib.o cpuStream.o chipsetSmpMode.o interCpuMessager.o
+_OBJFILES=cpuTrib.o cpuStream.o chipsetSmpMode.o interCpuMessager.o
+
+THISDIR:=$(patsubst %/,%,$(dir $(abspath $(lastword ${MAKEFILE_LIST}))))
+OBJFILES:=$(addprefix ${THISDIR}/, ${_OBJFILES})
 
 all: Makefile $(DELIVERABLE)
 
