@@ -81,7 +81,7 @@ public:
 	}
 
 public:
-	ContainerProcess *__kgetStream(void) { return &__kprocess; };
+	KernelProcess *__kgetStream(void) { return &__kprocess; };
 	ProcessStream *getStream(processId_t id);
 	inline Thread *getThread(processId_t tid);
 

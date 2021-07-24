@@ -162,7 +162,7 @@ extern "C" void main(ubit32, sMultibootData *)
 	error_t			ret;
 	uarch_t			devMask;
 	Thread			*self;
-	ContainerProcess	&__kprocess = *processTrib.__kgetStream();
+	KernelProcess		&__kprocess = *processTrib.__kgetStream();
 
 	/* Zero out uninitialized sections, prepare kernel locking and place a
 	 * pointer to the BSP CPU Stream into the BSP CPU; then we can call all
