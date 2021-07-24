@@ -318,7 +318,7 @@ public:
 		{ return containerProcess; }
 
 	virtual VaddrSpaceStream *getVaddrSpaceStream(void)
-		{ return containerProcess->getVaddrSpaceStream(); }
+		{ return getContainerProcess()->getVaddrSpaceStream(); }
 
 private:
 	ContainerProcess	*containerProcess;
