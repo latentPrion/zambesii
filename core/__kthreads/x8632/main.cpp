@@ -463,7 +463,7 @@ return;
 
 	uarch_t tot, succ, fail;
 	struct {
-		TESTS_FN_MAKE_PROTOTYPE_DEFVARS(runTests)
+		TESTS_FN_MAKE_PROTOTYPE_DEFAULT_VARS(runTests)
 		{
 			return ::runTests(nTotal, nSucceeded, nFailed);
 		}

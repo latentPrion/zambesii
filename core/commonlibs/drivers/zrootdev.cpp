@@ -62,7 +62,7 @@ printf(NOTICE"enum!\tcb %p, %d attr @%p, %d filt @%p, rdata @%p.\n",
 		break;
 
 	case UDI_ENUMERATE_RELEASE:
-		if (cb->child_ID > N_BASE_DEVS + N_CHIPSET_DEVS)
+		if (cb->child_ID > (unsigned)(N_BASE_DEVS + N_CHIPSET_DEVS))
 		{
 			enum_result = UDI_ENUMERATE_FAILED;
 			break;

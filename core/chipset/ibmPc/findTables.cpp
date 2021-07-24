@@ -29,7 +29,7 @@ static ubit8 mpFpChecksum(ubit8 *location, ubit8 nBytes)
 
 void *chipset_findx86MpFp(void)
 {
-	ubit8		checksum;
+	ubit8		checksum, *lowmem;
 
 	if (chipsetMemAreas::mapArea(CHIPSET_MEMAREA_LOWMEM) != ERROR_SUCCESS)
 	{
@@ -42,8 +42,9 @@ void *chipset_findx86MpFp(void)
 
 	// Look for the MP Floating Pointer Structure.
 	for (ubit8 *tmp = &lowmem[0x80000];
-		tmp < &lowmem[0x100000];
-		tmp = reinterpret_cast<ubit8 *>( (uarch_t)tmp + 0x10 ))
+		(uarch_t)tmp < (uarch_t)
+		&lowmem[0x100000];
+		tmp += 0x10)
 	{
 		if (strncmp8(CC(tmp), CC"_MP_", 4) != 0) { continue; };
 
@@ -79,7 +80,7 @@ inline static ubit8 acpiRsdpChecksum(ubit8 *location, ubit8 nBytes)
 
 void *chipset_findAcpiRsdp(void)
 {
-	ubit8		checksum;
+	ubit8		checksum, *lowmem;
 
 	if (chipsetMemAreas::mapArea(CHIPSET_MEMAREA_LOWMEM) != ERROR_SUCCESS)
 	{
@@ -91,8 +92,8 @@ void *chipset_findAcpiRsdp(void)
 		chipsetMemAreas::getArea(CHIPSET_MEMAREA_LOWMEM) );
 
 	for (ubit8 *tmp = &lowmem[0x80000];
-		tmp < &lowmem[0x100000];
-		tmp = reinterpret_cast<ubit8 *>( (uarch_t)tmp + 0x10 ))
+		(uarch_t)tmp < (uarch_t)&lowmem[0x100000];
+		tmp += 0x10)
 	{
 		if (strncmp8(CC(tmp), CC"RSD PTR ", 8) != 0) { continue; };
 

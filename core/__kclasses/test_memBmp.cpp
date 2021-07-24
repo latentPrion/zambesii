@@ -17,7 +17,7 @@ namespace __kclasses
 namespace memBmp
 {
 
-TESTS_FN_MAKE_PROTOTYPE_DEFVARS(constrainedGetFrames)
+TESTS_FN_MAKE_PROTOTYPE_DEFAULT_VARS(constrainedGetFrames)
 {
 	const int				N_ATTRS = 16;
 	status_t				s;
@@ -28,16 +28,18 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(constrainedGetFrames)
 		{ UDI_DMA_ELEMENT_GRANULARITY_BITS, 12 }
 	};
 
-	TESTS_VARS_INIT_DEFVARS();
+	(void)N_ATTRS;
+	TESTS_VARS_INIT_DEFAULT_VARS();
 
 	c.initialize(attrs, 0);
 	s = cmp.compile(&c);
 	if (s == ERROR_SUCCESS)
 	{
 		/* SCGTH_FORMAT is required by our implementation. */
-		FAILED_DEFVARS("Should fail because SCGTH_FORMAT isn't set.\n");
+		FAILED_DEFAULT_VARS0(
+			"Should fail because SCGTH_FORMAT isn't set.\n");
 	} else
-		{ SUCCEEDED_DEFVARS(); };
+		{ SUCCEEDED_DEFAULT_VARS(); };
 
 	attrs[0].attr_type = UDI_DMA_SCGTH_FORMAT;
 	attrs[0].attr_value = UDI_SCGTH_32 | UDI_SCGTH_64;
@@ -45,19 +47,20 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(constrainedGetFrames)
 	s = cmp.compile(&c);
 	if (s != ERROR_SUCCESS)
 	{
-		FAILED_DEFVARS("Should have succeeded because SCGTH_FORMAT is "
+		FAILED_DEFAULT_VARS0(
+			"Should have succeeded because SCGTH_FORMAT is "
 			"set now.\n");
 	}
 	else
-		{ SUCCEEDED_DEFVARS(); }
+		{ SUCCEEDED_DEFAULT_VARS(); }
 
-	return TESTS_RETURN_DEFVARS();
+	return TESTS_RETURN_DEFAULT_VARS();
 }
 
-TESTS_FN_MAKE_PROTOTYPE_DEFVARS(fragmentedGetFrames)
+TESTS_FN_MAKE_PROTOTYPE_DEFAULT_VARS(fragmentedGetFrames)
 {
-	TESTS_VARS_INIT_DEFVARS();
-	return TESTS_RETURN_DEFVARS();
+	TESTS_VARS_INIT_DEFAULT_VARS();
+	return TESTS_RETURN_DEFAULT_VARS();
 }
 
 testFn *tests[] = {

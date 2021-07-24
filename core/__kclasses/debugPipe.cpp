@@ -202,6 +202,11 @@ void printf(const utf8Char *str, ...)
 	va_end(args);
 }
 
+void vprintf(const utf8Char *str, va_list args)
+{
+	__kdebug.printf(str, args);
+}
+
 void printf(
 	SharedResourceGroup<WaitLock, utf8Char *> *buff, uarch_t buffSize,
 	utf8Char *str, ...
