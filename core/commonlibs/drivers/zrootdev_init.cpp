@@ -29,20 +29,22 @@ static udi_ubit8_t			blankFlags=0;
  */
 static struct child_dev base_devs[] = {
 	{
-		.childId = 1,
-		.identifier = "ramdisk",
-		.address_locator = "root-dev1",
+		1, 		// childId
+		0,		// enum_released
+		"ramdisk",	// identifier
+		"root-dev1",	// address_locator
 
-		.bus_type = "zbz_root",
-		.zbz_root_device_type = "ramdisk"
+		"zbz_root",	// bus_type
+		"ramdisk"	// zbz_root_device_type
 	},
 	{
-		.childId = 2,
-		.identifier = "vchipset",
-		.address_locator = "root-dev2",
+		2,		// childId
+		0,		// enum_released
+		"vchipset",	// identifier
+		"root-dev2",	// address_locator
 
-		.bus_type = "zbz_root",
-		.zbz_root_device_type = "virtual-chipset"
+		"zbz_root",	// bus_type
+		"virtual-chipset"	// zbz_root_device_type
 	}
 };
 

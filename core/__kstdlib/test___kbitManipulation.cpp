@@ -9,25 +9,25 @@ namespace tests
 namespace __kstdlib
 {
 
-TESTS_FN_MAKE_PROTOTYPE_DEFVARS(bitIsSet)
+TESTS_FN_MAKE_PROTOTYPE_DEFAULT_VARS(bitIsSet)
 {
-	TESTS_VARS_INIT_DEFVARS();
-	return TESTS_RETURN_DEFVARS();
+	TESTS_VARS_INIT_DEFAULT_VARS();
+	return TESTS_RETURN_DEFAULT_VARS();
 }
 
-TESTS_FN_MAKE_PROTOTYPE_DEFVARS(setBit)
+TESTS_FN_MAKE_PROTOTYPE_DEFAULT_VARS(setBit)
 {
-	TESTS_VARS_INIT_DEFVARS();
-	return TESTS_RETURN_DEFVARS();
+	TESTS_VARS_INIT_DEFAULT_VARS();
+	return TESTS_RETURN_DEFAULT_VARS();
 }
 
-TESTS_FN_MAKE_PROTOTYPE_DEFVARS(unsetBit)
+TESTS_FN_MAKE_PROTOTYPE_DEFAULT_VARS(unsetBit)
 {
-	TESTS_VARS_INIT_DEFVARS();
-	return TESTS_RETURN_DEFVARS();
+	TESTS_VARS_INIT_DEFAULT_VARS();
+	return TESTS_RETURN_DEFAULT_VARS();
 }
 
-TESTS_FN_MAKE_PROTOTYPE_DEFVARS(checkForContiguousBitsAt)
+TESTS_FN_MAKE_PROTOTYPE_DEFAULT_VARS(checkForContiguousBitsAt)
 {
 	status_t	st;
 	uarch_t		nf;
@@ -35,7 +35,7 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(checkForContiguousBitsAt)
 		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
 	};
 
-	TESTS_VARS_INIT_DEFVARS();
+	TESTS_VARS_INIT_DEFAULT_VARS();
 
 	/**	TEST:
 	 * In a completely occupied BMP, no free bits should be found.
@@ -43,12 +43,13 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(checkForContiguousBitsAt)
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 1, 1, 32*4, &nf);
 	if (st >= 0) {
-		FAILED_DEFVARS("Shouldn't have found any free bits. st %d, nf %d.\n"
+		FAILED_DEFAULT_VARS(
+			"Shouldn't have found any free bits. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	} else {
-		SUCCEEDED_DEFVARS();
+		SUCCEEDED_DEFAULT_VARS();
 	}
 
 	/**	TEST:
@@ -59,13 +60,14 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(checkForContiguousBitsAt)
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 1, 1, 32*4, &nf);
 	if (st != 64 || nf != 1) {
-		FAILED_DEFVARS("Should have found 1 free bit at 64. st %d, nf %d.\n"
+		FAILED_DEFAULT_VARS(
+			"Should have found 1 free bit at 64. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		SUCCEEDED_DEFVARS();
+		SUCCEEDED_DEFAULT_VARS();
 	}
 
 	/**	TEST:
@@ -76,13 +78,13 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(checkForContiguousBitsAt)
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 2, 2, 32*4, &nf);
 	if (st >= 0) {
-		FAILED_DEFVARS("Shouldn't have found 2 contig bits. st %d, nf %d.\n"
+		FAILED_DEFAULT_VARS("Shouldn't have found 2 contig bits. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		SUCCEEDED_DEFVARS();
+		SUCCEEDED_DEFAULT_VARS();
 	}
 
 	/**	TEST:
@@ -93,13 +95,13 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(checkForContiguousBitsAt)
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 2, 2, 32*4, &nf);
 	if (st >= 0) {
-		FAILED_DEFVARS("Shouldn't have found 2 contig bits. st %d, nf %d.\n"
+		FAILED_DEFAULT_VARS("Shouldn't have found 2 contig bits. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		SUCCEEDED_DEFVARS();
+		SUCCEEDED_DEFAULT_VARS();
 	}
 
 	/**	TEST:
@@ -110,13 +112,13 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(checkForContiguousBitsAt)
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 2, 2, 32*4, &nf);
 	if (st != 65 || nf != 2) {
-		FAILED_DEFVARS("Should have found 2 bits at 65. st %d, nf %d.\n"
+		FAILED_DEFAULT_VARS("Should have found 2 bits at 65. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		SUCCEEDED_DEFVARS();
+		SUCCEEDED_DEFAULT_VARS();
 	}
 
 	/**	TEST:
@@ -128,16 +130,16 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(checkForContiguousBitsAt)
 	st = ::checkForContiguousBitsAt(
 		bmp, 0, 1, 1, 32*2, &nf);
 	if (st >= 0) {
-		FAILED_DEFVARS("Should not have found any bits. st %d, nf %d.\n"
+		FAILED_DEFAULT_VARS("Should not have found any bits. st %d, nf %d.\n"
 			"bmp is %x %x %x %x.\n",
 			st, nf,
 			bmp[0], bmp[1], bmp[2], bmp[3]);
 	}
 	else {
-		SUCCEEDED_DEFVARS();
+		SUCCEEDED_DEFAULT_VARS();
 	}
 
-	return TESTS_RETURN_DEFVARS();
+	return TESTS_RETURN_DEFAULT_VARS();
 }
 
 testFn *tests[] = {

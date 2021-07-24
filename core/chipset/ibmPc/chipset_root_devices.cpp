@@ -7,11 +7,12 @@
 
 struct child_dev chipset_devs[] = {
 	{
-		.childId = 3,
-		.identifier = "chipset",
-		.address_locator = "root-dev3",
-		.bus_type = "zbz_root",
-		.zbz_root_device_type = "chipset"
+		3,		// childId
+		0, 		// enum_released
+		"chipset", 	// identifier
+		"root-dev3", 	// address_locator
+		"zbz_root", 	// bus_type
+		"chipset" 	// zbz_root_device_type
 	}
 };
 

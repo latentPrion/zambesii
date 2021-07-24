@@ -112,6 +112,7 @@ private:
 };
 
 void printf(const utf8Char *str, ...);
+void vprintf(const utf8Char *str, va_list args);
 
 // The kernel deliberately does not provide sprintf.
 extern "C" sarch_t snprintf(

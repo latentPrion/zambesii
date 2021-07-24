@@ -8,6 +8,13 @@
 
 #define ZROOTDEV_N_CHILDREN		(1)
 
+/**	CAVEAT:
+ * Instances of this struct are defined with initializer-list syntax,
+ * and they therefore rely on the order of the members not changing.
+ *
+ * If you change the order of members in this struct, be sure to update
+ * its instances.
+ */
 struct child_dev
 {
 	udi_ubit16_t		childId;

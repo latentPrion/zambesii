@@ -10,23 +10,23 @@
 	} \
 } while (0)
 
-TESTS_FN_MAKE_PROTOTYPE_DEFVARS(runTests)
+TESTS_FN_MAKE_PROTOTYPE_DEFAULT_VARS(runTests)
 {
 	uarch_t tot, succ, fail;
 	status_t status=ERROR_SUCCESS, s;
 
-	TESTS_VARS_INIT_DEFVARS();
+	TESTS_VARS_INIT_DEFAULT_VARS();
 
 	s = runTestArray(
 		tests::__kstdlib::tests, &tot, &succ, &fail);
 	TESTS_CHECK_RETVAL_AND_UPDATE_RETVAL(status, s);
-	TESTS_VARS_DEFVARS_INC_ALL_BY(tot, succ, fail);
+	TESTS_VARS_DEFAULT_VARS_INC_ALL_BY(tot, succ, fail);
 
 	s = runTestArray(
 		tests::__kclasses::memBmp::tests,
 		&tot, &succ, &fail);
 	TESTS_CHECK_RETVAL_AND_UPDATE_RETVAL(status, s);
-	TESTS_VARS_DEFVARS_INC_ALL_BY(tot, succ, fail);
+	TESTS_VARS_DEFAULT_VARS_INC_ALL_BY(tot, succ, fail);
 
 	return status;
 }

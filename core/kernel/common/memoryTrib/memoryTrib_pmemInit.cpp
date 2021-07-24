@@ -396,8 +396,10 @@ void MemoryTrib::init2_generateShbankFromNumaMap(
 	 * this function will fail to generate the final hole needed to cover
 	 * that scenario. Low priority fix.
 	 **/
+	sarch_t ubound = static_cast<sarch_t>( map->nMemEntries );
+	ubound--;
 
-	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries ) - 1; i++)
+	for (sarch_t i=0; i<ubound; i++)
 	{
 		/* Shbank is only for where holes intersect with memoryConfig.
 		 * i.e., if memSize is reported to be 256MB, and there are
@@ -422,8 +424,9 @@ void MemoryTrib::init2_generateShbankFromNumaMap(
 
 		tmpBase = map->memEntries[i].baseAddr + map->memEntries[i].size;
 		tmpSize = map->memEntries[i+1].baseAddr - tmpBase;
+		paddr_t endAddr = tmpBase + tmpSize;
 
-		if (tmpBase + tmpSize > cfg->memSize) {
+		if (endAddr > cfg->memSize) {
 			tmpSize = cfg->memSize - tmpBase;
 		};
 		if (tmpBase > map->memEntries[i+1].baseAddr)
