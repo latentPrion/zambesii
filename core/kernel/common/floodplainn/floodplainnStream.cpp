@@ -258,6 +258,10 @@ error_t FloodplainnStream::connect(
 			"initialize new channel object.\n",
 			this->id, devName, metaName);
 
+		if (blueprint != NULL) {
+			delete blueprint;
+		}
+
 		return ERROR_INITIALIZATION_FAILURE;
 	};
 
