@@ -1,0 +1,2 @@
+noinst_LIBRARIES=libtimerTrib.a
+libtimerTrib_a_SOURCES=timerTrib.cpp timerQueue.cpp timerStream.cpp

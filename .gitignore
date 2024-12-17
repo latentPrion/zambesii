@@ -15,8 +15,22 @@ foo
 *.tmp
 .bochsrc
 *.iso
-/Makefile.vars
-/Makefile
+*~
 *.zudi-index
 *.geany
 cscope.out
+b
+
+# Autotools
+aclocal.m4
+autom4te.cache/
+/autotools-aux/
+configure
+config.log
+config.status
+Makefile.vars
+Makefile
+Makefile.in
+include/config.h*
+include/stamp-h*
+confdefs.h

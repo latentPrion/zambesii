@@ -1,0 +1,2 @@
+noinst_LIBRARIES=libdebugTrib.a
+libdebugTrib_a_SOURCES=debugTrib.cpp
