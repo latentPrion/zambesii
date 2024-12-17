@@ -1,0 +1,2 @@
+noinst_LIBRARIES=lib__klibcxx.a
+lib__klibcxx_a_SOURCES=new.cpp
