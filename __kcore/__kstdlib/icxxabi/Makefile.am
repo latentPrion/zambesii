@@ -1,0 +1,2 @@
+noinst_LIBRARIES=libicxxabi.a
+libicxxabi_a_SOURCES=dso.cpp callConstructors.cpp

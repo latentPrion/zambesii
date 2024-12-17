@@ -1,0 +1,3 @@
+noinst_LIBRARIES=libdistributaryTrib.a
+libdistributaryTrib_a_SOURCES=distributaryTrib.cpp distributaries.cpp \
+	distributaryTrib_dvfs.cpp

@@ -1,0 +1,2 @@
+noinst_LIBRARIES=libprocessTrib.a
+libprocessTrib_a_SOURCES=processTrib.cpp

@@ -4,8 +4,10 @@ It's simple really. But still no freestanding crt*.o (technically mightn't be po
 
 ## Command summary:
 
+```sh
 $ ../gcc-14.2.0/configure --target=i586-elf --disable-nls --enable-languages=c,c++ --prefix=$(HOME)/bin/i586-elf --without-headers --with-static-standard-libraries --disable-hosted-libstdcxx --enable-libstdcxx-static-eh-pool --with-libstdcxx-eh-pool-obj-count=64
 $ make -j8 all-gcc all-target-libgcc all-target-libstdc++-v3
+```
 
 ## Flag explanations:
 
@@ -18,10 +20,10 @@ $ make -j8 all-gcc all-target-libgcc all-target-libstdc++-v3
 
 ### Other interesting and potentially useful flags:
 
---disable-tls
---disable-linux-futex
---disable-libstdcxx-threads
---disable-libstdcxx-filesystem-ts
---disable-libstdcxx-backtrace
---enable-libstdcxx-static-eh-pool
---enable-version-specific-runtime-libs
+* --disable-tls
+* --disable-linux-futex
+* --disable-libstdcxx-threads
+* --disable-libstdcxx-filesystem-ts
+* --disable-libstdcxx-backtrace
+* --enable-libstdcxx-static-eh-pool
+* --enable-version-specific-runtime-libs

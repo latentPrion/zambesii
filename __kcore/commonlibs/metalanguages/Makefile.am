@@ -1,0 +1,2 @@
+noinst_LIBRARIES=libmetalanguages.a
+libmetalanguages_a_SOURCES=udi_gio.cpp udi_bridge.cpp udi_mgmt.cpp

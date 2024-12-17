@@ -1,0 +1,2 @@
+noinst_LIBRARIES=libtaskTrib.a
+libtaskTrib_a_SOURCES=taskTrib.cpp taskStream.cpp
