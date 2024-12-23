@@ -93,7 +93,7 @@ static status_t amdBrandStringEnum(void)
 		&brandString[cpuTrib.getCurrentCpuStream()
 			->cpuFeatures.archFeatures.cpuNameNSpaces]);
 
-	delete brandString;
+	delete[] brandString;
 	return ERROR_SUCCESS;
 }
 

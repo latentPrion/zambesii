@@ -335,7 +335,7 @@ status_t intelBrandStringEnum(void)
 		&brandString[cpuTrib.getCurrentCpuStream()
 			->cpuFeatures.archFeatures.cpuNameNSpaces]);
 
-	delete brandString;
+	delete[] brandString;
 	return ERROR_SUCCESS;
 }
 
