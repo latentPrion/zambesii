@@ -23,10 +23,10 @@ CLEANFILES = zambesii.iso
 #		$(builddir)/core/core.o
 
 noinst_PROGRAMS = zambesii.zxe
-zambesii_zxe_LDFLAGS = -nostartfiles -e main -nodefaultlibs \
-	-T __kcore/platform/$(ZARCH)-$(ZCHIPSET)/__klinkScript.ld
+zambesii_zxe_LDFLAGS=-nostartfiles -e main -nodefaultlibs \
+	-T __kcore/platform/$(ZARCH)-$(ZCHIPSET)/__klinkScript.ld \
 	-B__kcore/__kstdlib/__klibc/$(ZARCH)
-zambesii_zxe_LDADD = __kcore/lib__kcore.a __kcore/__kthreads/$(ZARCH)/lib__karchThreads.a
+zambesii_zxe_LDADD =__kcore/lib__kcore.a
 zambesii_zxe_SOURCES = __kendoFs.S force_cpp_link.cpp
 
 #

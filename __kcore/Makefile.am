@@ -4,51 +4,44 @@
 SUBDIRS = __kstdlib __kthreads platform chipset firmware arch \
 	kernel commonlibs __kclasses
 
-# Try not to change the order of these items. This is the order the linker
-# runs through them in. If you change the order around, you'll begin to get
-# undefined symbol complaints.
-#
-# As a rule, $(MAKE) sure to put object files with references to external symbols
-# before object files without unresolved symbols. LD seems to run through all
-# files resolving as it goes, so if it sees an unresolved symbol too late,
-# it halts saying that the symbol cannot be resolved, even if the symbol is
-# defined in one of the objects passed on the command line.
-# EXECOBJS=__kthreads.a kernel.a archKernel.a firmwareCore.a \
-#	platformCore.a \
-#	memoryTrib.a interruptTrib.a execTrib.a distributaryTrib.a \
-#	timerTrib.a cpuTrib.a processTrib.a vfsTrib.a taskTrib.a debugTrib.a \
-#	floodplainn.a \
-#	platformCore.a chipset.a chipsetCore.a archCore.a firmwareCore.a \
-#	__kclasses.a __kstdlib.a __kcxxabi.a libx86mp.a libacpi.a \
-#	commonlibs/libcommonlibs.a libzbzcore.a udi_index.o \
-#	drivers.a metalanguages.a
-
 BUILT_SOURCES = $(ZUDI_INDEX_FILES)
 
-noinst_LIBRARIES=lib__kcore.a
-lib__kcore_a_LIBADD=__kstdlib/__klibc/lib__klibc.a __kstdlib/__klibcxx/lib__klibcxx.a \
-	__kstdlib/lib__kstdlib.a \
+__KCORE_LIBS = \
+	__kstdlib/__klibc/lib__klibc.a \
+	__kthreads/$(ZARCH)/lib__kthreadsCore.a \
 	__kthreads/lib__kthreads.a \
 	chipset/libchipset.a chipset/$(ZCHIPSET)/libchipsetCore.a \
 	firmware/$(ZFIRMWARE)/libfirmwareCore.a \
-	arch/$(ZARCH)/libarchCore.a
-	kernel/common/libkernel.a kernel/$(ARCH)/libkernelCore.a
+	arch/$(ZARCH)/libarchCore.a \
+	kernel/common/libkernel.a kernel/$(ZARCH)/libkernelCore.a
 # Tributaries
-lib__kcore_a_LIBADD += kernel/common/cpuTrib/libcpuTrib.a \
-	kernel/common/debugTrib/libdebugTrib.a
+__KCORE_LIBS += kernel/common/cpuTrib/libcpuTrib.a \
+	kernel/common/debugTrib/libdebugTrib.a \
 	kernel/common/distributaryTrib/libdistributaryTrib.a \
 	kernel/common/execTrib/libexecTrib.a kernel/common/floodplainn/libfloodplainn.a \
 	kernel/common/interruptTrib/libinterruptTrib.a kernel/common/memoryTrib/libmemoryTrib.a \
 	kernel/common/processTrib/libprocessTrib.a kernel/common/taskTrib/libtaskTrib.a \
 	kernel/common/timerTrib/libtimerTrib.a kernel/common/vfsTrib/libvfsTrib.a
 # Distributaries
-lib__kcore_a_LIBADD += commonlibs/libcommonlibs.a commonlibs/drivers/libdrivers.a \
+__KCORE_LIBS += @DISTRIBUTARY_KERNEL_LIBS@
+__KCORE_LIBS += commonlibs/libcommonlibs.a commonlibs/drivers/libdrivers.a \
 	commonlibs/metalanguages/libmetalanguages.a \
 	@ZCHIPSET_COMMONLIBS_KERNEL_LIBS@
+# Stdlibs
+__KCORE_LIBS += __kclasses/lib__kclasses.a \
+	__kstdlib/__klibcxx/lib__klibcxx.a \
+	__kstdlib/lib__kstdlib.a
 
-lib__kcore_a_LIBADD += @DISTRIBUTARY_KERNEL_LIBS@
-lib__kcore_a_LIBADD += __kclasses/lib__kclasses.a
+noinst_LIBRARIES=lib__kcore.a
+lib__kcore_a_LIBADD=lib__kcore_prelink.a
 lib__kcore_a_SOURCES=udi_index.S
+
+lib__kcore_prelink.a: $(__KCORE_LIBS)
+#	As documentation: -Xlinker and -Wl both pass
+#	arguments to the linker. However, -Xlinker is used to
+#	pass arguments that are not recognized by the compiler,
+#	and so the compiler should not try to interpret them.
+	$(CXX) -r -o $@ -Wl,--start-group $^ -Wl,--end-group
 
 ZUDI_INDEX_FILES = drivers.zudi-index data.zudi-index provisions.zudi-index \
 	devices.zudi-index ranks.zudi-index strings.zudi-index
