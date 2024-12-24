@@ -14,7 +14,7 @@ CLEANFILES = zambesii.iso
 # with the Endo Kernel FS fragments later on in the kernel build process.
 #
 #$(GOAL): $(EXECOBJS)
-#	$(LD) $(LDFLAGS) -nostartfiles -e main -r -o $(GOAL) \
+#	$(LD) $(LDFLAGS) -nostartfiles -r -o $(GOAL) \
 #		-Xlinker -\( $(EXECOBJS) -Xlinker -\)
 #
 #zambesii.zxe: __kcore drivers libraries resources programs
@@ -23,11 +23,11 @@ CLEANFILES = zambesii.iso
 #		$(builddir)/core/core.o
 
 noinst_PROGRAMS = zambesii.zxe
-zambesii_zxe_LDFLAGS=-nostartfiles -e main -nodefaultlibs \
+zambesii_zxe_LDFLAGS=-nodefaultlibs \
 	-T __kcore/platform/$(ZARCH)-$(ZCHIPSET)/__klinkScript.ld \
 	-B__kcore/__kstdlib/__klibc/$(ZARCH)
-zambesii_zxe_LDADD =__kcore/lib__kcore.a
-zambesii_zxe_SOURCES = __kendoFs.S force_cpp_link.cpp
+zambesii_zxe_LDADD=__kcore/lib__kcore.a
+zambesii_zxe_SOURCES=__kendoFs.S force_cpp_link.cpp
 
 #
 # Packaging targets

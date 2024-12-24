@@ -7,12 +7,12 @@ SUBDIRS = __kstdlib __kthreads platform chipset firmware arch \
 BUILT_SOURCES = $(ZUDI_INDEX_FILES)
 
 __KCORE_LIBS = \
-	__kstdlib/__klibc/lib__klibc.a \
 	__kthreads/$(ZARCH)/lib__kthreadsCore.a \
 	__kthreads/lib__kthreads.a \
 	chipset/libchipset.a chipset/$(ZCHIPSET)/libchipsetCore.a \
 	firmware/$(ZFIRMWARE)/libfirmwareCore.a \
 	arch/$(ZARCH)/libarchCore.a \
+	platform/$(ZARCH)-$(ZCHIPSET)/libplatformCore.a \
 	kernel/common/libkernel.a kernel/$(ZARCH)/libkernelCore.a
 # Tributaries
 __KCORE_LIBS += kernel/common/cpuTrib/libcpuTrib.a \
@@ -24,16 +24,18 @@ __KCORE_LIBS += kernel/common/cpuTrib/libcpuTrib.a \
 	kernel/common/timerTrib/libtimerTrib.a kernel/common/vfsTrib/libvfsTrib.a
 # Distributaries
 __KCORE_LIBS += @DISTRIBUTARY_KERNEL_LIBS@
-__KCORE_LIBS += commonlibs/libcommonlibs.a commonlibs/drivers/libdrivers.a \
-	commonlibs/metalanguages/libmetalanguages.a \
-	@ZCHIPSET_COMMONLIBS_KERNEL_LIBS@
+__KCORE_LIBS += @ZCHIPSET_COMMONLIBS_KERNEL_LIBS@ \
+	commonlibs/libcommonlibs.a commonlibs/drivers/libdrivers.a \
+	commonlibs/metalanguages/libmetalanguages.a
 # Stdlibs
 __KCORE_LIBS += __kclasses/lib__kclasses.a \
 	__kstdlib/__klibcxx/lib__klibcxx.a \
+	__kstdlib/__klibc/lib__klibc.a \
 	__kstdlib/lib__kstdlib.a
 
 noinst_LIBRARIES=lib__kcore.a
-lib__kcore_a_LIBADD=lib__kcore_prelink.a
+#lib__kcore_a_LIBADD=lib__kcore_prelink.a
+lib__kcore_a_LIBADD=$(__KCORE_LIBS)
 lib__kcore_a_SOURCES=udi_index.S
 
 lib__kcore_prelink.a: $(__KCORE_LIBS)
