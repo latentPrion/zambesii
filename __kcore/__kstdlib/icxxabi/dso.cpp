@@ -3,7 +3,7 @@
 #include <kernel/common/panic.h>
 //#include "icxxabi.h"
 
-#define CXXABI_ATEXIT_MAX_NFUNCS 64
+#define CXXABI_ATEXIT_MAX_NFUNCS 128
 
 struct sAtexitFuncTableEntry
 {
