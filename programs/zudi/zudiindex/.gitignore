@@ -1,0 +1,8 @@
+list
+*.udiprops
+zudiindex
+*.o
+*.zudid-index
+*.zudim-index
+*.zudi-index
+*.tmp

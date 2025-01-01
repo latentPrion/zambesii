@@ -13,18 +13,22 @@ noinst_DATA=$(ZUDI_INDEX_FILES)
 ZUDI_INDEX_FILES = drivers.zudi-index data.zudi-index provisions.zudi-index \
 	devices.zudi-index ranks.zudi-index strings.zudi-index
 
-udi_index.S: $(ZUDI_INDEX_FILES)
+udi_index.S: zudi_index_updated
 
+ZUDIINDEX = $(abs_top_builddir)/$(ZUDIINDEX_TOP_RELPATH)
+ZUDIINDEX_ADDALL = $(abs_top_builddir)/$(ZUDIINDEX_ADDALL_TOP_RELPATH)
 $(ZUDI_INDEX_FILES): $(ZUDIINDEX) $(ZUDIINDEX_ADDALL)
+zudi_index_updated: $(ZUDI_INDEX_FILES)
 	@echo "Creating driver index."
 	$(ZUDIINDEX) -c le -i .
 	@echo "Adding chipset specific drivers to index."
-	$(ZUDIINDEX_ADDALL) -drivers chipset/$(ZCHIPSET) .
+	ZUDIINDEX_BIN=${ZUDIINDEX} $(ZUDIINDEX_ADDALL) -drivers $(srcdir)/chipset/$(ZCHIPSET) .
 	@echo "Adding chipset specific metalanguages to index."
-	$(ZUDIINDEX_ADDALL) -metas chipset/$(ZCHIPSET) .
+	ZUDIINDEX_BIN=${ZUDIINDEX} $(ZUDIINDEX_ADDALL) -metas $(srcdir)/chipset/$(ZCHIPSET) .
 	@echo "Adding common metalanguages to index."
-	$(ZUDIINDEX_ADDALL) -metas commonlibs/metalanguages .
+	ZUDIINDEX_BIN=${ZUDIINDEX} $(ZUDIINDEX_ADDALL) -metas $(srcdir)/commonlibs/metalanguages .
 	@echo "Adding common drivers to index."
-	$(ZUDIINDEX_ADDALL) -drivers commonlibs/drivers .
+	ZUDIINDEX_BIN=${ZUDIINDEX} $(ZUDIINDEX_ADDALL) -drivers $(srcdir)/commonlibs/drivers .
+	$(TOUCH) zudi_index_updated
 
 CLEANFILES = $(ZUDI_INDEX_FILES)

@@ -17,6 +17,8 @@ AC_CONFIG_SRCDIR([__kcore/kernel/common/__kclassInstances.cpp])
 AC_CONFIG_AUX_DIR([autotools-aux])
 AC_CONFIG_MACRO_DIRS([m4])
 
+m4_include([m4/ax_subdirs_configure.m4])
+
 # AC_NO_EXECUTABLES is needed because a freestanding cross compiler
 # (such as those required to build Zambesii) shouldn't have a C
 # runtime library. However, AUTOCONF will try to test whether the
@@ -64,7 +66,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 AC_NO_EXECUTABLES
 
 # Initialize Automake
-AM_INIT_AUTOMAKE([foreign -Wall -Woverride])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Woverride])
 
 # Detect build and host systems
 AC_CANONICAL_BUILD
@@ -74,16 +76,6 @@ AC_CANONICAL_HOST
 AC_PATH_PROGS([ISOPROG], [mkisofs genisoimage])
 AS_IF([test -z "$ISOPROG"],
     [AC_MSG_ERROR([Could not find mkisofs or genisoimage in PATH. Please install one of them.])])
-
-# Check for ZUDI Index utilities.
-AC_PATH_PROG([ZUDIINDEX], [zudiindex])
-AC_PATH_PROG([ZUDIINDEX_ADDALL], [zudiindex-addall])
-AS_IF([test -z "$ZUDIINDEX" || test -z "$ZUDIINDEX_ADDALL"],
-    [AC_MSG_ERROR(
-        m4_normalize([Could not find zudiindex or zudiindex-addall in PATH.
-        Please install them or add them to PATH.
-        You can find these programs at:
-        https://github.com/latentPrion/zudi]))])
 
 # Add arguments for host machine
 AC_ARG_VAR([ZARCH], [Zambesii kernel architecture (mandatory, options: i586, x86_64)])
@@ -168,52 +160,45 @@ AS_IF([test -z "$TAR"], [
 AC_PATH_PROG([CP], [cp])
 AS_IF([test -z "$CP"], [
     AC_MSG_ERROR([Could not find 'cp' in PATH. Please install it or add it to PATH.])])
-
+AC_PATH_PROG([TOUCH], [touch])
+AS_IF([test -z "$TOUCH"], [
+    AC_MSG_ERROR([Could not find 'touch' in PATH. Please install it or add it to PATH.])])
 
 # ZBZ flags: for building the Zambesii kernel binaries that will run on the host
-ZBZ_CPP_FLAGS="-I\$(abs_top_srcdir)/include -I\$(abs_top_srcdir)/__kcore/include -ffreestanding"
+ZBZ_CPP_FLAGS="-I\"\$(abs_top_srcdir)/include\" -I\"\$(abs_top_srcdir)/programs/zudi/include\" -I\"\$(abs_top_srcdir)/__kcore/include\" -ffreestanding"
 ZBZ_C_FLAGS="-O3 -Wstrict-overflow=4 -Wall -Wextra -pedantic -std=c99 -fno-omit-frame-pointer"
 ZBZ_CXX_FLAGS="-O3 -Wstrict-overflow=4 -Wall -Wextra -pedantic -std=c++98 -fno-omit-frame-pointer -fno-exceptions -fno-rtti"
-ZBZ_LD_FLAGS=
 
 AM_CPPFLAGS=${ZBZ_CPP_FLAGS}
 AM_CFLAGS=${ZBZ_C_FLAGS}
 AM_CXXFLAGS=${ZBZ_CXX_FLAGS}
-AM_LDFLAGS=${ZBZ_LD_FLAGS}
 
 # Export host and build toolchain flags to be used in Makefile.am
-AC_SUBST(ZARCH)
-AC_SUBST(ZCHIPSET)
-AC_SUBST(ZFIRMWARE)
-AC_SUBST(ZSOC)
+AC_SUBST([ZARCH])
+AC_SUBST([ZCHIPSET])
+AC_SUBST([ZFIRMWARE])
+AC_SUBST([ZSOC])
 
-AC_SUBST(ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS)
+AC_SUBST([ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS])
 AC_SUBST([ZCHIPSET_COMMONLIBS_KERNEL_LIBS])
-AC_SUBST(ZCXXABI)
+AC_SUBST([ZCXXABI])
 
-AC_SUBST(ZBZ_CPP_FLAGS)
-AC_SUBST(ZBZ_C_FLAGS)
-AC_SUBST(ZBZ_CXX_FLAGS)
-AC_SUBST(ZBZ_LD_FLAGS)
-AC_SUBST(AM_CPPFLAGS)
-AC_SUBST(AM_CFLAGS)
-AC_SUBST(AM_CXXFLAGS)
-AC_SUBST(AM_LDFLAGS)
+AC_SUBST([ZBZ_CPP_FLAGS])
+AC_SUBST([ZBZ_C_FLAGS])
+AC_SUBST([ZBZ_CXX_FLAGS])
+AC_SUBST([ZBZ_LD_FLAGS])
+AC_SUBST([AM_CPPFLAGS])
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_CXXFLAGS])
 
-AC_SUBST(ISOPROG)
-AC_SUBST(ZUDIINDEX)
-AC_SUBST(ZUDIINDEX_ADDALL)
-AC_SUBST(LN_S)
-AC_SUBST(MKDIR_P)
-AC_SUBST(TAR)
-AC_SUBST(CP)
-
-SET_BUILD_TOOLCHAIN_AND_VARS=${srcdir}/set-build-toolchain-and-vars.mk
-SET_HOST_TOOLCHAIN_AND_VARS=${srcdir}/set-host-toolchain-and-vars.mk
-SET_ZBZ_TOOLCHAIN_AND_VARS=${srcdir}/set-zbz-toolchain-and-vars.mk
-AC_SUBST_FILE([SET_BUILD_TOOLCHAIN_AND_VARS])
-AC_SUBST_FILE([SET_HOST_TOOLCHAIN_AND_VARS])
-AC_SUBST_FILE([SET_ZBZ_TOOLCHAIN_AND_VARS])
+AC_SUBST([ISOPROG])
+AC_SUBST([ZUDIINDEX_TOP_RELPATH], [build/zudi/zudiindex/zudiindex])
+AC_SUBST([ZUDIINDEX_ADDALL_TOP_RELPATH], [build/zudi/zudiindex/zudiindex-addall])
+AC_SUBST([LN_S])
+AC_SUBST([MKDIR_P])
+AC_SUBST([TAR])
+AC_SUBST([CP])
+AC_SUBST([TOUCH])
 
 #
 # Distributary options.
@@ -241,7 +226,7 @@ AC_CONFIG_HEADERS([include/config.h])
 # Output non-platform-specific Makefiles
 AC_CONFIG_FILES([
     Makefile
-    __kcore/Makefile
+    build/Makefile __kcore/Makefile
     __kcore/__kstdlib/Makefile
     __kcore/__kstdlib/__klibc/Makefile __kcore/__kstdlib/__klibcxx/Makefile
     __kcore/__kstdlib/icxxabi/Makefile
@@ -291,6 +276,12 @@ AS_IF([test "${ZFIRMWARE}" = "ibmPcBios"], [
         __kcore/firmware/ibmPcBios/Makefile
     ])
 ])
+
+# Configure ZUDI tools to build native zudiindex.
+AX_SUBDIRS_CONFIGURE([build/zudi],
+    [[]],[[]],
+    [[--build=${build_alias}],[--host=${build_alias}],[host_alias=${build_alias}]],
+    [[host_alias=${host_alias}]])
 
 AC_CONFIG_COMMANDS_POST(
     AC_MSG_NOTICE(m4_normalize(

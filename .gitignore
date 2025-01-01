@@ -13,6 +13,7 @@ hdd
 fat
 foo
 *.tmp
+*.swp
 .bochsrc
 *.iso
 *~

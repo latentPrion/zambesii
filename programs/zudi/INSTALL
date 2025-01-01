@@ -1,0 +1,7 @@
+Building is simple:
+	make
+	make install
+
+And that's it. If you need su -c or sudo, you should of course, be sure to
+prepend those.
+
