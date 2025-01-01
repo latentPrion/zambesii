@@ -1,0 +1,9 @@
+*~
+*.swp
+*.tmp
+autotools-aux
+aclocal.m4
+Makefile.in
+config.h.in
+.deps
+.dirstamp

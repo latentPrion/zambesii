@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = __kcore #libraries #programs resources drivers
+SUBDIRS = build __kcore #libraries #programs resources drivers
 .PHONY: iso9660 imm __kexec programs libraries resources drivers isodir
 
 CLEANFILES = zambesii.iso
@@ -56,7 +56,7 @@ zambesii_zxe_SOURCES=force_cpp_link.cpp
 # Packaging targets
 #
 iso9660: zambesii.iso
-zambesii.iso: __kexec isodir
+zambesii.iso: all __kexec isodir
 	$(CP) -f zambesii.zxe iso/zambesii
 	$(ISOPROG) -R -b boot/grub/stage2_eltorito -no-emul-boot \
 	-boot-load-size 4 -boot-info-table -V zambesii -o zambesii.iso iso
