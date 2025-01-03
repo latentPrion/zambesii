@@ -202,8 +202,6 @@ AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 
 AC_SUBST([ISOPROG])
-AC_SUBST([ZUDIINDEX_TOP_RELPATH], [build/zudi/zudiindex/zudiindex])
-AC_SUBST([ZUDIINDEX_ADDALL_TOP_RELPATH], [build/zudi/zudiindex/zudiindex-addall])
 AC_SUBST([LN_S])
 AC_SUBST([MKDIR_P])
 AC_SUBST([TAR])
