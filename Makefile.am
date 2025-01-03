@@ -56,7 +56,7 @@ zambesii_zxe_SOURCES=force_cpp_link.cpp
 # Packaging targets
 #
 iso9660: zambesii.iso
-zambesii.iso: all __kexec isodir
+zambesii.iso: __kexec isodir
 	$(CP) -f zambesii.zxe iso/zambesii
 	$(ISOPROG) -R -b boot/grub/stage2_eltorito -no-emul-boot \
 	-boot-load-size 4 -boot-info-table -V zambesii -o zambesii.iso iso
@@ -74,7 +74,7 @@ $(MAKE_IMM_PATH)/zambesii.zxe: zambesii.zxe
 $(MAKE_IMM_PATH)/zambesii.iso: zambesii.iso
 	$(CP) -f zambesii.iso $(MAKE_IMM_PATH)/zambesii.iso
 
-__kexec: zambesii.zxe
+__kexec: all
 programs:
 #	make programs/programs.ekf
 libraries:
