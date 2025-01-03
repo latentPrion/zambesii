@@ -68,9 +68,11 @@ iso/zambesii:
 	$(MKDIR_P) iso/zambesii
 
 # For personal use
-imm: $(MAKE_IMM_PATH)/zambesii.zxe
+imm: $(MAKE_IMM_PATH)/zambesii.zxe $(MAKE_IMM_PATH)/zambesii.iso
 $(MAKE_IMM_PATH)/zambesii.zxe: __kexec
 	$(CP) -f zambesii.zxe $(MAKE_IMM_PATH)/zambesii.zxe
+$(MAKE_IMM_PATH)/zambesii.iso: zambesii.iso
+	$(CP) -f zambesii.iso $(MAKE_IMM_PATH)/zambesii.iso
 
 __kexec: all
 programs:
