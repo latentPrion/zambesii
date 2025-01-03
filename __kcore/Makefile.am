@@ -4,16 +4,15 @@
 SUBDIRS = __kstdlib __kthreads platform chipset firmware arch \
 	kernel commonlibs __kclasses
 
-BUILT_SOURCES = $(ZUDI_INDEX_FILES)
+BUILT_SOURCES = $(ZUDI_INDEX_FILES) zudi_index_updated
 
 noinst_LIBRARIES=lib__kcore.a
+lib__kcore_a_DEPENDENCIES=zudi_index_updated
 lib__kcore_a_SOURCES=udi_index.S
 
 noinst_DATA=$(ZUDI_INDEX_FILES)
 ZUDI_INDEX_FILES = drivers.zudi-index data.zudi-index provisions.zudi-index \
 	devices.zudi-index ranks.zudi-index strings.zudi-index
-
-udi_index.S: zudi_index_updated
 
 ZUDIINDEX_BUILD_DIR ::= $(top_builddir)/build/zudi/zudiindex
 ZUDIINDEX ::= $(ZUDIINDEX_BUILD_DIR)/zudiindex
@@ -32,4 +31,4 @@ zudi_index_updated: $(ZUDI_INDEX_FILES)
 	ZUDIINDEX_BIN=${ZUDIINDEX} $(ZUDIINDEX_ADDALL) -drivers $(srcdir)/commonlibs/drivers .
 	$(TOUCH) zudi_index_updated
 
-CLEANFILES = $(ZUDI_INDEX_FILES)
+CLEANFILES = $(ZUDI_INDEX_FILES) zudi_index_updated
