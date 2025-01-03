@@ -15,8 +15,9 @@ ZUDI_INDEX_FILES = drivers.zudi-index data.zudi-index provisions.zudi-index \
 
 udi_index.S: zudi_index_updated
 
-ZUDIINDEX = $(abs_top_builddir)/$(ZUDIINDEX_TOP_RELPATH)
-ZUDIINDEX_ADDALL = $(abs_top_builddir)/$(ZUDIINDEX_ADDALL_TOP_RELPATH)
+ZUDIINDEX_BUILD_DIR ::= $(top_builddir)/build/zudi/zudiindex
+ZUDIINDEX ::= $(ZUDIINDEX_BUILD_DIR)/zudiindex
+ZUDIINDEX_ADDALL ::= $(ZUDIINDEX_BUILD_DIR)/zudiindex-addall
 $(ZUDI_INDEX_FILES): $(ZUDIINDEX) $(ZUDIINDEX_ADDALL)
 zudi_index_updated: $(ZUDI_INDEX_FILES)
 	@echo "Creating driver index."
