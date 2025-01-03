@@ -68,11 +68,11 @@ iso/zambesii:
 	$(MKDIR_P) iso/zambesii
 
 # For personal use
-imm: $(BOOTDIR)/zambesii.zxe $(BOOTDIR)/zambesii.iso
-$(BOOTDIR)/zambesii.zxe: zambesii.zxe
-	$(CP) -f zambesii.zxe $(BOOTDIR)/zambesii.zxe
-$(BOOTDIR)/zambesii.iso: zambesii.iso
-	$(CP) -f zambesii.iso $(BOOTDIR)/zambesii.iso
+imm: $(MAKE_IMM_PATH)/zambesii.zxe $(MAKE_IMM_PATH)/zambesii.iso
+$(MAKE_IMM_PATH)/zambesii.zxe: zambesii.zxe
+	$(CP) -f zambesii.zxe $(MAKE_IMM_PATH)/zambesii.zxe
+$(MAKE_IMM_PATH)/zambesii.iso: zambesii.iso
+	$(CP) -f zambesii.iso $(MAKE_IMM_PATH)/zambesii.iso
 
 __kexec: zambesii.zxe
 programs:

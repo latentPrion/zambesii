@@ -82,6 +82,8 @@ AC_ARG_VAR([ZARCH], [Zambesii kernel architecture (mandatory, options: i586, x86
 AC_ARG_VAR([ZSOC], [Zambesii kernel SoC embedding (optional)])
 AC_ARG_VAR([ZCHIPSET], [Zambesii kernel chipset (mandatory, options: ibmPc, generic)])
 AC_ARG_VAR([ZFIRMWARE], [Zambesii kernel firmware (mandatory, options: ibmPcBios, efi, generic)])
+AC_ARG_VAR([MAKE_IMM_PATH], [Target path for the `make imm` command (optional)])
+AS_IF([test -z "${MAKE_IMM_PATH}"], [MAKE_IMM_PATH="/boot"])
 
 # Validate mandatory arguments
 AS_IF([test -z "$host_alias"], [AC_MSG_ERROR([--host is mandatory.])])
@@ -178,6 +180,8 @@ AC_SUBST([ZARCH])
 AC_SUBST([ZCHIPSET])
 AC_SUBST([ZFIRMWARE])
 AC_SUBST([ZSOC])
+
+AC_SUBST([MAKE_IMM_PATH])
 
 AC_SUBST([ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS])
 AC_SUBST([ZCHIPSET_COMMONLIBS_KERNEL_LIBS])
