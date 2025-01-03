@@ -19,10 +19,10 @@ AM_CPPFLAGS=m4_normalize(["-I\"\$(abs_top_srcdir)/../../include\" \
 AM_CFLAGS=m4_normalize(["-O3 -Wall -Wextra -pedantic -std=c99"])
 AM_CXXFLAGS=m4_normalize(["-O3 -Wall -Wextra -pedantic -std=c++03"])
 
-AC_SUBST(AM_CPPFLAGS)
-AC_SUBST(AM_CFLAGS)
-AC_SUBST(AM_CXXFLAGS)
-AC_SUBST(CHMOD)
+AC_SUBST([AM_CPPFLAGS])
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_CXXFLAGS])
+AC_SUBST([CHMOD])
 
 AC_CONFIG_HEADERS([config.h])
 
