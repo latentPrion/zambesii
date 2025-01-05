@@ -3,7 +3,7 @@
 #include <__kclasses/memReservoir.h>
 
 
-void *operator new (size_t nBytes)
+void *operator new(size_t nBytes)
 {
 	return memReservoir.allocate(nBytes);
 }
