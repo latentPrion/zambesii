@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/__kcore/include",
+                "${workspaceFolder}/programs/zudi/include",
+                "${workspaceFolder}/b/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/local/bin/i586-elf/bin/i586-elf-g++",
+            "cStandard": "c11",
+            "cppStandard": "c++98",
+            "intelliSenseMode": "gcc-x86",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${workspaceFolder}/b"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "forcedInclude": [
+                "${workspaceFolder}/b/include/config.h"
+            ]
+        }
+    ],
+    "version": 4
+}
