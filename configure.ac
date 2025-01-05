@@ -167,9 +167,9 @@ AS_IF([test -z "$TOUCH"], [
     AC_MSG_ERROR([Could not find 'touch' in PATH. Please install it or add it to PATH.])])
 
 # ZBZ flags: for building the Zambesii kernel binaries that will run on the host
-ZBZ_CPP_FLAGS=m4_normalize(["-I\"\$(abs_top_srcdir)/include\" \
-    -I\"\$(abs_top_srcdir)/programs/zudi/include\" \
-    -I\"\$(abs_top_srcdir)/__kcore/include\" \
+ZBZ_CPP_FLAGS=m4_normalize(["-I\"\$(top_srcdir)/include\" \
+    -I\"\$(top_srcdir)/programs/zudi/include\" \
+    -I\"\$(top_srcdir)/__kcore/include\" \
     -ffreestanding"])
 ZBZ_C_FLAGS=m4_normalize(["-O3 -Wstrict-overflow=4 -Wall -Wextra \
     -pedantic -std=c99 -fno-omit-frame-pointer"])
