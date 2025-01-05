@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Quick Build Zambesii Kernel",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/usr/bin/true",
+            "preLaunchTask": "Quick Build Zambesii Kernel",
+            "cwd": "${workspaceFolder}/b"
+        },
+        {
+            "name": "Configure and Build Zambesii Kernel",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/usr/bin/true",
+            "preLaunchTask": "Build Zambesii Kernel executable",
+            "cwd": "${workspaceFolder}/b"
+        }
+    ]
+}

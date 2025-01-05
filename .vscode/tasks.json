@@ -1,0 +1,77 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Autoreconf Zambesii Kernel",
+            "type": "shell",
+            "command": "autoreconf",
+            "args": [
+                ".."
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/b"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Configure Zambesii Kernel",
+            "type": "shell",
+            "command": "../configure",
+            "args": [
+                "--host=i586-elf",
+                "ZCHIPSET=ibmPc",
+                "ZFIRMWARE=ibmPcBios"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/b"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [],
+            "dependsOn": "Autoreconf Zambesii Kernel"
+        },
+        {
+            "label": "Quick Build Zambesii Kernel",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-j$(nproc)"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/b"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Build Zambesii Kernel executable",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "-j$(nproc)"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/b"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOn": "Configure Zambesii Kernel"
+        }
+    ]
+}
