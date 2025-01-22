@@ -10,7 +10,7 @@
 
 void fplainn::Channel::operator delete(void *obj)
 {
-	Channel		*chan = reinterpret_cast<Channel *>(obj);
+	Channel		*chan = static_cast<Channel *>(obj);
 
 	/**	EXPLANATION:
 	 * Channels always begin as an IncompleteChannel derivative, and then
