@@ -654,13 +654,17 @@ error_t ibmPcBpm::isa::get__kpinFor(ubit32 busIrqId, ubit16 *__kpin)
 	if (busIrqId > 15) { return ERROR_INVALID_ARG_VAL; };
 
 	// Just lookup the __kpin in the table.
-	if (isaBusPinMappings[busIrqId].isValid)
+	if (!isaBusPinMappings[busIrqId].isValid)
 	{
-		*__kpin = isaBusPinMappings[busIrqId].__kpin;
-		return ERROR_SUCCESS;
-	};
+		printf(NOTICE IBMPCBPM"ISA: BusIRQ %d isn't valid.\n",
+			busIrqId);
+	
+		dumpSmpIsaPins();
+		return ERROR_RESOURCE_UNAVAILABLE;
+	}
 
-	return ERROR_RESOURCE_UNAVAILABLE;
+	*__kpin = isaBusPinMappings[busIrqId].__kpin;
+	return ERROR_SUCCESS;
 }
 
 #if 0
