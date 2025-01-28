@@ -1,59 +1,38 @@
-AC_ARG_ENABLE([dtrib-cisternn],
-    [AS_HELP_STRING([--enable-dtrib-cisternn], [Enable Cisternn Distributary (storage)])],
-    [AS_CASE(["$enableval"], [no], enable_dtrib_cisternn=no,
-        [yes | "" | *],
-            enable_dtrib_cisternn=yes
-            AC_DEFINE([CONFIG_DTRIB_CISTERNN], [1], [Enable Cisternn Distributary (storage)])
-            DISTRIBUTARIES_ENABLED_SUBDIRS="${DISTRIBUTARIES_ENABLED_SUBDIRS} cisternn"
-    )]
-)
-AC_ARG_ENABLE([dtrib-levee],
-    [AS_HELP_STRING([--enable-dtrib-levee], [Enable Levee Distributary (security)])],
-    [AS_CASE(["$enableval"], [no], enable_dtrib_levee=no,
-        [yes | "" | *],
-            enable_dtrib_levee=yes
-            AC_DEFINE([CONFIG_DTRIB_LEVEE], [1], [Enable Levee Distributary (security)])
-            DISTRIBUTARIES_ENABLED_SUBDIRS="${DISTRIBUTARIES_ENABLED_SUBDIRS} levee"
-            AC_MSG_ERROR([Levee is not yet implemented])
-    )]
-)
-AC_ARG_ENABLE([dtrib-aqueductt],
-    [AS_HELP_STRING([--enable-dtrib-aqueductt], [Enable Aqueductt Distributary (networking)])],
-    [AS_CASE(["$enableval"], [no], enable_dtrib_aqueductt=no,
-        [yes | "" | *],
-            enable_dtrib_aqueductt=yes
-            AC_DEFINE([CONFIG_DTRIB_AQUEDUCTT], [1], [Enable Aqueductt Distributary (networking)])
-            DISTRIBUTARIES_ENABLED_SUBDIRS="${DISTRIBUTARIES_ENABLED_SUBDIRS} aqueductt"
-            AC_MSG_ERROR([Aqueductt is not yet implemented])
-    )]
-)
-AC_ARG_ENABLE([dtrib-reflectionn],
-    [AS_HELP_STRING([--enable-dtrib-reflectionn], [Enable Reflectionn Distributary (graphics)])],
-    [AS_CASE(["$enableval"], [no], enable_dtrib_reflectionn=no,
-        [yes | "" | *],
-            enable_dtrib_reflectionn=yes
-            AC_DEFINE([CONFIG_DTRIB_REFLECTIONN], [1], [Enable Reflectionn Distributary (graphics)])
-            DISTRIBUTARIES_ENABLED_SUBDIRS="${DISTRIBUTARIES_ENABLED_SUBDIRS} reflectionn"
-            AC_MSG_ERROR([Reflectionn is not yet implemented])
-    )]
-)
-AC_ARG_ENABLE([dtrib-caurall],
-    [AS_HELP_STRING([--enable-dtrib-caurall], [Enable Caurall Distributary (audio)])],
-    [AS_CASE(["$enableval"], [no], enable_dtrib_caurall=no,
-        [yes | "" | *],
-            enable_dtrib_caurall=yes
-            AC_DEFINE([CONFIG_DTRIB_CAURALL], [1], [Enable Caurall Distributary (audio)])
-            DISTRIBUTARIES_ENABLED_SUBDIRS="${DISTRIBUTARIES_ENABLED_SUBDIRS} caurall"
-            AC_MSG_ERROR([Caurall is not yet implemented])
-    )]
-)
-AC_ARG_ENABLE([dtrib-watermarkk],
-    [AS_HELP_STRING([--enable-dtrib-watermarkk], [Enable Watermarkk Distributary])],
-    [AS_CASE(["$enableval"], [no], enable_dtrib_watermarkk=no,
-        [yes | "" | *],
-            enable_dtrib_watermarkk=yes
-            AC_DEFINE([CONFIG_DTRIB_WATERMARKK], [1], [Enable Watermarkk Distributary])
-            DISTRIBUTARIES_ENABLED_SUBDIRS="${DISTRIBUTARIES_ENABLED_SUBDIRS} watermarkk"
-            AC_MSG_ERROR([Watermarkk is not yet implemented])
-    )]
-)
+AC_DEFUN([AX_ZBZ_DTRIB_ARG_ENABLE], [
+    AC_ARG_ENABLE([dtrib-$1],
+        [AS_HELP_STRING([--enable-dtrib-$1],
+            [Enable $2])],
+        [AS_CASE(["$enableval"], [no], [$4=no],
+            [yes | "" | *], [
+                $4=yes
+                AC_DEFINE([$3], [1], [Enable $2])
+                DISTRIBUTARIES_ENABLED_SUBDIRS="${DISTRIBUTARIES_ENABLED_SUBDIRS} $1"
+                AS_IF([test "x$5" = "xunimplemented"],
+                    [AC_MSG_ERROR([$2 is not yet implemented])])])
+        ]
+    )
+])
+
+AX_ZBZ_DTRIB_ARG_ENABLE([cisternn],
+    [Cisternn Distributary (storage)],
+    [CONFIG_DTRIB_CISTERNN], [enable_dtrib_cisternn])
+AX_ZBZ_DTRIB_ARG_ENABLE([levee],
+    [Levee Distributary (security)],
+    [CONFIG_DTRIB_LEVEE], [enable_dtrib_levee],
+    [unimplemented])
+AX_ZBZ_DTRIB_ARG_ENABLE([aqueductt],
+    [Aqueductt Distributary (networking)],
+    [CONFIG_DTRIB_AQUEDUCTT], [enable_dtrib_aqueductt],
+    [unimplemented])
+AX_ZBZ_DTRIB_ARG_ENABLE([reflectionn],
+    [Reflectionn Distributary (graphics)],
+    [CONFIG_DTRIB_REFLECTIONN], [enable_dtrib_reflectionn],
+    [unimplemented])
+AX_ZBZ_DTRIB_ARG_ENABLE([caurall],
+    [Caurall Distributary (audio)],
+    [CONFIG_DTRIB_CAURALL], [enable_dtrib_caurall],
+    [unimplemented])
+AX_ZBZ_DTRIB_ARG_ENABLE([watermarkk],
+    [Watermarkk Distributary],
+    [CONFIG_DTRIB_WATERMARKK], [enable_dtrib_watermarkk],
+    [unimplemented])
