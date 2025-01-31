@@ -17,8 +17,6 @@ AC_CONFIG_SRCDIR([__kcore/kernel/common/__kclassInstances.cpp])
 AC_CONFIG_AUX_DIR([autotools-aux])
 AC_CONFIG_MACRO_DIRS([m4])
 
-m4_include([m4/ax_subdirs_configure.m4])
-
 # AC_NO_EXECUTABLES is needed because a freestanding cross compiler
 # (such as those required to build Zambesii) shouldn't have a C
 # runtime library. However, AUTOCONF will try to test whether the
@@ -284,6 +282,8 @@ AS_IF([test "${ZFIRMWARE}" = "ibmPcBios"], [
         __kcore/firmware/ibmPcBios/Makefile
     ])
 ])
+
+m4_include([m4/ax_subdirs_configure.m4])
 
 # Configure ZUDI tools to build native zudiindex.
 AX_SUBDIRS_CONFIGURE([build/zudi],
