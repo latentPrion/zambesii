@@ -2,7 +2,7 @@
 #include <in_asm.h>
 #include <assembler.h>
 
-.section .data
+ASM_SECTION(.data)
 
 ASM_GLOBAL_DATA(__kendoFs)
 // .incbin "drivers.zudi-index"
