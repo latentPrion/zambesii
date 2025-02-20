@@ -106,7 +106,9 @@ AS_CASE(["$ZARCH"],
         ZARCH="x86_64"
         AC_DEFINE([CONFIG_ARCH_x86_64], [1], [x86 64-bit architecture])
         AC_MSG_ERROR([x86_64 architecture is not yet supported.]),
-    [*], AC_MSG_ERROR([Unsupported or empty host architecture value: "$ZARCH"])
+    [*], AC_MSG_ERROR(m4_normalize(
+	[Unsupported or empty host architecture value: "$ZARCH".
+	Try setting --host=<TRIPLET>, or ZARCH=<ARCH>.]))
 )
 
 # Initialize ZCHIPSET_USER_MUST_SET_FIRMWARE to false
@@ -123,7 +125,9 @@ AS_CASE(["$ZCHIPSET"],
     [generic],
         ZFIRMWARE="generic"
         AC_DEFINE([CONFIG_CHIPSET_GENERIC], [1], [Generic chipset]),
-    [*], AC_MSG_ERROR([Unsupported or empty host chipset value: "$ZCHIPSET"])
+    [*], AC_MSG_ERROR(m4_normalize(
+	[Unsupported or empty host chipset value: "$ZCHIPSET".
+	Try setting ZCHIPSET=<CHIPSET>.]))
 )
 ZCHIPSET_COMMONLIBS_KERNEL_LIBS=""
 AS_IF([test -n "${ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS}"], [
@@ -142,7 +146,9 @@ AS_CASE(["$ZFIRMWARE"],
         AC_DEFINE([CONFIG_FIRMWARE_EFI], [1], [EFI firmware])
         AC_MSG_ERROR([UEFI firmware is not yet supported.]),
     [generic], AC_DEFINE([CONFIG_FIRMWARE_GENERIC], [1], [Generic firmware]),
-    [*], AC_MSG_ERROR([Unsupported or empty host firmware value: "$ZFIRMWARE"])
+    [*], AC_MSG_ERROR(m4_normalize(
+	[Unsupported or empty host firmware value: "$ZFIRMWARE".
+	Try setting ZFIRMWARE=<FIRMWARE>.]))
 )
 
 # Checks for programs.
