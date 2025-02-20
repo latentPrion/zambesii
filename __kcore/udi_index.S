@@ -2,7 +2,7 @@
 #include <in_asm.h>
 #include <assembler.h>
 
-.section .rodata
+ASM_SECTION(.rodata)
 
 ASM_GLOBAL_DATA(__kudi_index_drivers)
 .incbin "drivers.zudi-index"
