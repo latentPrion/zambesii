@@ -60,7 +60,7 @@ AS_CASE(["$ZCHIPSET"],
         AC_DEFINE([CONFIG_CHIPSET_GENERIC], [1], [Generic chipset]),
     [*],
         AC_MSG_ERROR(m4_normalize(
-	        [Unsupported or empty host chipset value: "$ZCHIPSET".
+	        [Unsupported or empty host chipset value: "${ZCHIPSET}".
 	        Try setting ZCHIPSET=<CHIPSET>.]))
 )
 ZCHIPSET_COMMONLIBS_KERNEL_LIBS=""
@@ -91,7 +91,7 @@ AS_CASE(["$ZARCH"],
         AC_DEFINE([CONFIG_ARCH_x86_64], [1], [x86 64-bit architecture])
         AC_MSG_ERROR([x86_64 architecture is not yet supported.]),
     [*], AC_MSG_ERROR(m4_normalize(
-	[Unsupported or empty host architecture value: "$ZARCH".
+	[Unsupported or empty host architecture value: "${ZARCH}".
 	Try setting --host=<TRIPLET>, or ZARCH=<ARCH>.]))
 )
 
@@ -108,7 +108,7 @@ AS_CASE(["$ZFIRMWARE"],
     [*],
         AS_IF([test "$ZCHIPSET_USER_MUST_SET_FIRMWARE" = 'yes'], [
             AC_MSG_ERROR(m4_normalize(
-	            [Unsupported or empty host firmware value: "$ZFIRMWARE".
+	            [Unsupported or empty host firmware value: "${ZFIRMWARE}".
 	            Try setting ZFIRMWARE=<FIRMWARE>.]))
         ])
 )
