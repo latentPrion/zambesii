@@ -19,48 +19,8 @@ AC_CONFIG_MACRO_DIRS([m4])
 
 # AC_NO_EXECUTABLES is needed because a freestanding cross compiler
 # (such as those required to build Zambesii) shouldn't have a C
-# runtime library. However, AUTOCONF will try to test whether the
-# cross compiler can create executables by running a test program.
-# and this will fail since our cross compiler doesn't have a C runtime.
-#
-# This macro disables the test for executables.
-#
-# For the exact details of where autoconf tries to run the test program
-# see the following autoconf macros:
-#   AC_PROG_CC
-#   _AC_COMPILER_EXEEXT
-#   _AC_COMPILER_EXEEXT_DEFAULT
-#   AC_PROG_CC_WORKS
-#
-# It's specifically within `_AC_COMPILER_EXEEXT_DEFAULT` that the test
-# for whether the "C compiler works" is done.
-# Calling AC_NO_EXECUTABLES tells autoconf to not run this test, or
-# the link tests either.
-#
-# HOWEVER: Note that we can indeed permit the test for executables if we
-# simply had a way to tell autoconf where to look for Zambesii's own
-# prebuild crt*.o files. We could just tell autoconf to use the prebuild
-# crt*.o files in the Zambesii source tree, and then the test for
-# executables would pass.
-#
-# In theory, we could do this by setting the LDFLAGS and CFLAGS, and
-# there's every reason to think it should work, since `ac_link` and
-# `ac_compile` are both passed the LDFLAGS and CFLAGS, and these
-# are used to compile and link the test programs. However, in
-# practice, it doesn't work, and idk why.
-#
-# So, for now, we just disable the test for executables. However, if
-# someone is interested in figuring out how to make it work, then
-# the code to build the prebuild crt*.o files is left in place below,
-# in this comment.
-# 
-#   AC_MSG_NOTICE(m4_normalize([Compiling prebuild libraries for
-#       Zambesii kernel for host CPU: ${ZARCH}, host system ${host_alias}...]))
-#   make -C ${srcdir}/libraries/libzbzcrt_prebuild ZARCH=${ZARCH} HOST="${host_alias}"
-#   LDFLAGS=${LDFLAGS} -B${srcdir}/libraries/libzbzcrt_prebuild/${ZARCH}
-#
-# You may have to restructure this configure.ac script so that you can
-# make use of the code that infers $ZARCH from $host_alias, though.
+# runtime library. This disables autoconf's executable testing since
+# our cross compiler can't create executables without runtime support.
 AC_NO_EXECUTABLES
 
 # Initialize Automake
@@ -112,13 +72,13 @@ AS_IF([test -n "${ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS}"], [
 
 # Infer ZARCH from --host triplet if possible
 AS_IF([test -z "$ZARCH" && test -n "$host_alias"], [
-    prebuild_host_cpu=`echo ${host_alias} | cut -d'-' -f1`
-    AS_CASE(["$prebuild_host_cpu"],
+    host_cpu=`echo ${host_alias} | cut -d'-' -f1`
+    AS_CASE(["$host_cpu"],
         [i?86|x86|x86_32], ZARCH="i586",
         [x86_64|x64|amd64|?ntel64], ZARCH="x86_64",
-        [*], AC_MSG_WARN([Could not infer ZARCH from --host CPU value: "${prebuild_host_cpu}"])
+        [*], AC_MSG_WARN([Could not infer ZARCH from --host CPU value: "${host_cpu}"])
     )]
-    AC_MSG_NOTICE([Inferred ZARCH (="${ZARCH}") from --host CPU value: (="${prebuild_host_cpu}")])
+    AC_MSG_NOTICE([Inferred ZARCH (="${ZARCH}") from --host CPU value: (="${host_cpu}")])
 )
 
 # Validate ZARCH: allow the user to specify it if --host guess isn't working.
