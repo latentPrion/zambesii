@@ -86,7 +86,7 @@ grub2-iso: all $(ISO_GRUB2_DIR)/zambesii.iso
 $(ISO_GRUB2_DIR)/zambesii.iso: zambesii.zxe isodir-grub2 packaging/grub2/iso/grub2-i386-modules.img
 	$(MKDIR_P) $(ISO_GRUB2_DIR)
 	$(CP) -f zambesii.zxe iso-grub2/zambesii
-	$(CP) -f $(srcdir)/packaging/grub2/iso/grub.cfg iso-grub2/boot/grub/grub.cfg
+	$(CP) -f $(srcdir)/packaging/grub2/grub.cfg iso-grub2/boot/grub/grub.cfg
 	cat $(srcdir)/packaging/grub2/iso/cdboot.img $(srcdir)/packaging/grub2/iso/grub2-i386-modules.img > iso-grub2/boot/grub/grub.img
 	$(ISOPROG) -R -b boot/grub/grub.img -no-emul-boot \
 	-boot-load-size 4 -boot-info-table -V zambesii -o $(ISO_GRUB2_DIR)/zambesii.iso iso-grub2
