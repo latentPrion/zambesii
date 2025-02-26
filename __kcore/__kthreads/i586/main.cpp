@@ -1,4 +1,3 @@
-
 #include <tests.h>
 #include <__ksymbols.h>
 #include <chipset/zkcm/zkcmCore.h>
@@ -21,6 +20,8 @@
 #include <kernel/common/vfsTrib/vfsTrib.h>
 #include <kernel/common/distributaryTrib/distributaryTrib.h>
 #include <kernel/common/floodplainn/floodplainn.h>
+#include <multiboot.h>
+#include <multiboot2.h>
 
 #include <arch/cpuControl.h>
 
@@ -157,7 +158,7 @@ static void dumpSrat(void)
  * We then pass control to __korientationMain().
  **/
 
-extern "C" void main(ubit32, sMultibootData *)
+extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 {
 	error_t			ret;
 	uarch_t			devMask;
@@ -170,7 +171,7 @@ extern "C" void main(ubit32, sMultibootData *)
 	 **/
 	__koptimizationHacks();
 	bspCpu.initializeBaseState();
-	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread() ;
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
 	/* Initialize exceptions, then move on to __kspace level physical
 	 * memory management, then the kernel Memory Stream. Then when we have
@@ -194,6 +195,17 @@ extern "C" void main(ubit32, sMultibootData *)
 		printf(NOTICE ORIENT"Kernel debug output tied to devices "
 			"BUFFER and DEVICE1.\n");
 	};
+
+	// Check for Multiboot 2 boot
+	if (magic == MULTIBOOT2_BOOTLOADER_MAGIC) {
+		printf(NOTICE ORIENT"Multiboot 2 header at %p\n", mbHeader.mb2);
+	}
+	else if (magic == MULTIBOOT_DATA_MAGIC) {
+		printf(NOTICE ORIENT"Multiboot 1 header at %p\n", mbHeader.mb1);
+	}
+	else {
+		printf(ERROR ORIENT"Unknown boot magic: %x\n", magic);
+	}
 
 	DO_OR_DIE((*__kprocess.getVaddrSpaceStream()), initialize(), ret);
 	DO_OR_DIE(__kprocess.memoryStream, initialize(), ret);

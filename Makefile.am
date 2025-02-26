@@ -1,10 +1,14 @@
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = build __kcore #libraries #programs resources drivers
-.PHONY: iso9660 imm __kexec programs libraries resources drivers isodir
+.PHONY: grub-iso grub2-iso imm imm-grub2 __kexec programs libraries resources drivers isodir-grub isodir-grub2
 
-CLEANFILES = zambesii.iso
-DISTCLEANFILES = iso
+# Define output directories for ISO files
+ISO_GRUB_DIR = $(builddir)/packaging/iso/grub
+ISO_GRUB2_DIR = $(builddir)/packaging/iso/grub2
+
+CLEANFILES = $(ISO_GRUB_DIR)/zambesii.iso $(ISO_GRUB2_DIR)/zambesii.iso
+DISTCLEANFILES = iso-grub iso-grub2 $(ISO_GRUB_DIR) $(ISO_GRUB2_DIR)
 
 # We may be able to use the following form to manipulate words
 # within the __KCORE_LIBS variable:
@@ -55,26 +59,59 @@ zambesii_zxe_SOURCES=force_cpp_link.cpp
 #
 # Packaging targets
 #
-iso9660: zambesii.iso
-zambesii.iso: __kexec isodir
-	$(CP) -f zambesii.zxe iso/zambesii
-	$(ISOPROG) -R -b boot/grub/stage2_eltorito -no-emul-boot \
-	-boot-load-size 4 -boot-info-table -V zambesii -o zambesii.iso iso
 
-# Create the ISO directory structure
-isodir: iso/zambesii
-iso/zambesii:
-	$(TAR) -xzf $(srcdir)/build/iso.tar.gz -C $(builddir)
-	$(MKDIR_P) iso/zambesii
+# This target ensures all subdirectories are built first
+all-local: zambesii.zxe
+
+# GRUB1 ISO target
+grub-iso: all $(ISO_GRUB_DIR)/zambesii.iso
+
+$(ISO_GRUB_DIR)/zambesii.iso: zambesii.zxe isodir-grub
+	$(MKDIR_P) $(ISO_GRUB_DIR)
+	$(CP) -f zambesii.zxe iso-grub/zambesii
+	$(CP) -f $(srcdir)/packaging/grub/menu.lst iso-grub/boot/grub/menu.lst
+	$(ISOPROG) -R -b boot/grub/stage2_eltorito -no-emul-boot \
+	-boot-load-size 4 -boot-info-table -V zambesii -o $(ISO_GRUB_DIR)/zambesii.iso iso-grub
+
+# Create the GRUB ISO directory structure
+isodir-grub: iso-grub/zambesii
+iso-grub/zambesii:
+	$(MKDIR_P) iso-grub/boot/grub
+	$(MKDIR_P) iso-grub/zambesii
+	$(CP) -f $(srcdir)/packaging/grub/iso/stage2_eltorito iso-grub/boot/grub/
+
+# GRUB2 ISO target
+grub2-iso: all $(ISO_GRUB2_DIR)/zambesii.iso
+
+$(ISO_GRUB2_DIR)/zambesii.iso: zambesii.zxe isodir-grub2 packaging/grub2/iso/grub2-i386-modules.img
+	$(MKDIR_P) $(ISO_GRUB2_DIR)
+	$(CP) -f zambesii.zxe iso-grub2/zambesii
+	$(CP) -f $(srcdir)/packaging/grub2/iso/grub.cfg iso-grub2/boot/grub/grub.cfg
+	cat $(srcdir)/packaging/grub2/iso/cdboot.img $(srcdir)/packaging/grub2/iso/grub2-i386-modules.img > iso-grub2/boot/grub/grub.img
+	$(ISOPROG) -R -b boot/grub/grub.img -no-emul-boot \
+	-boot-load-size 4 -boot-info-table -V zambesii -o $(ISO_GRUB2_DIR)/zambesii.iso iso-grub2
+
+# Create the GRUB2 ISO directory structure
+isodir-grub2: iso-grub2/zambesii
+iso-grub2/zambesii:
+	$(MKDIR_P) iso-grub2/boot/grub
+	$(MKDIR_P) iso-grub2/zambesii
+
+packaging/grub2/iso/grub2-i386-modules.img:
+	false
 
 # For personal use
-imm: $(MAKE_IMM_PATH)/zambesii.zxe $(MAKE_IMM_PATH)/zambesii.iso
-$(MAKE_IMM_PATH)/zambesii.zxe: __kexec
-	$(CP) -f zambesii.zxe $(MAKE_IMM_PATH)/zambesii.zxe
-$(MAKE_IMM_PATH)/zambesii.iso: zambesii.iso
-	$(CP) -f zambesii.iso $(MAKE_IMM_PATH)/zambesii.iso
+imm: all $(MAKE_IMM_PATH)/zambesii.zxe $(MAKE_IMM_PATH)/zambesii.iso
+imm-grub2: all $(MAKE_IMM_PATH)/zambesii.zxe $(MAKE_IMM_PATH)/zambesii-grub2.iso
 
-__kexec: all
+$(MAKE_IMM_PATH)/zambesii.zxe: zambesii.zxe
+	$(CP) -f zambesii.zxe $(MAKE_IMM_PATH)/zambesii.zxe
+$(MAKE_IMM_PATH)/zambesii.iso: $(ISO_GRUB_DIR)/zambesii.iso
+	$(CP) -f $(ISO_GRUB_DIR)/zambesii.iso $(MAKE_IMM_PATH)/zambesii.iso
+$(MAKE_IMM_PATH)/zambesii-grub2.iso: $(ISO_GRUB2_DIR)/zambesii.iso
+	$(CP) -f $(ISO_GRUB2_DIR)/zambesii.iso $(MAKE_IMM_PATH)/zambesii-grub2.iso
+
+# Additional targets
 programs:
 #	make programs/programs.ekf
 libraries:

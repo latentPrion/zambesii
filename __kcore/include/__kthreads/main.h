@@ -2,6 +2,7 @@
 	#define ___KORIENTATION_H
 
 	#include <multiboot.h>
+	#include <multiboot2.h>
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/panic.h>
@@ -33,7 +34,13 @@
 
 #define ORIENT				"Orientation: "
 
-extern "C" void main(ubit32 mbMagic, sMultibootData *mbData);
+union uMultibootHeader
+{
+    sMultibootHeader *mb1;
+    sMultiboot2Header *mb2;
+};
+
+extern "C" void main(ubit32 mbMagic, uMultibootHeader mbHeader);
 
 extern ubit8		__korientationPreallocatedBmpMem[][64];
 
