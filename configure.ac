@@ -79,14 +79,38 @@ AS_IF([test -z "$ISOPROG"],
 AC_ARG_VAR([ZARCH], [Zambesii kernel architecture (mandatory, options: i586, x86_64)])
 AC_ARG_VAR([ZSOC], [Zambesii kernel SoC embedding (optional)])
 AC_ARG_VAR([ZCHIPSET], [Zambesii kernel chipset (mandatory, options: ibmPc, generic)])
-AC_ARG_VAR([ZFIRMWARE], [Zambesii kernel firmware (mandatory, options: ibmPcBios, efi, generic)])
+AC_ARG_VAR([ZFIRMWARE], [Zambesii kernel firmware (mandatory, options: ibmPcBios, uefi, generic)])
 AC_ARG_VAR([MAKE_IMM_PATH], [Target path for the `make imm` command (optional)])
 AS_IF([test -z "${MAKE_IMM_PATH}"], [MAKE_IMM_PATH="/boot"])
 
 # Validate mandatory arguments
 AS_IF([test -z "$host_alias"], [AC_MSG_ERROR([--host is mandatory.])])
 
-# Validate mandatory ZARCH
+# Initialize ZCHIPSET_USER_MUST_SET_FIRMWARE to 'no'
+ZCHIPSET_USER_MUST_SET_FIRMWARE='no'
+ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS=""
+AS_CASE(["$ZCHIPSET"],
+    [ibmPc|pc|pcCompatible],
+        ZCHIPSET="ibmPc"
+        ZCHIPSET_USER_MUST_SET_FIRMWARE='yes'
+        AC_DEFINE([CONFIG_CHIPSET_IBM_PC], [1], [IBM PC chipset])
+        ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS="${ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS} libx86mp libacpi",
+    [generic],
+        ZFIRMWARE="generic"
+        AC_DEFINE([CONFIG_CHIPSET_GENERIC], [1], [Generic chipset]),
+    [*],
+        AC_MSG_ERROR(m4_normalize(
+	        [Unsupported or empty host chipset value: "$ZCHIPSET".
+	        Try setting ZCHIPSET=<CHIPSET>.]))
+)
+ZCHIPSET_COMMONLIBS_KERNEL_LIBS=""
+AS_IF([test -n "${ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS}"], [
+    for lib in ${ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS}; do
+        ZCHIPSET_COMMONLIBS_KERNEL_LIBS="${ZCHIPSET_COMMONLIBS_KERNEL_LIBS} __kcore/commonlibs/${lib}/${lib}.a"
+    done
+])
+
+# Infer ZARCH from --host triplet if possible
 AS_IF([test -z "$ZARCH" && test -n "$host_alias"], [
     prebuild_host_cpu=`echo ${host_alias} | cut -d'-' -f1`
     AS_CASE(["$prebuild_host_cpu"],
@@ -111,44 +135,22 @@ AS_CASE(["$ZARCH"],
 	Try setting --host=<TRIPLET>, or ZARCH=<ARCH>.]))
 )
 
-# Initialize ZCHIPSET_USER_MUST_SET_FIRMWARE to false
-ZCHIPSET_USER_MUST_SET_FIRMWARE=false
-
-# Validate ZCHIPSET
-ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS=""
-AS_CASE(["$ZCHIPSET"],
-    [ibmPc|pc|pcCompatible],
-        ZCHIPSET="ibmPc"
-        ZCHIPSET_USER_MUST_SET_FIRMWARE=true
-        AC_DEFINE([CONFIG_CHIPSET_IBM_PC], [1], [IBM PC chipset])
-        ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS="${ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS} libx86mp libacpi",
-    [generic],
-        ZFIRMWARE="generic"
-        AC_DEFINE([CONFIG_CHIPSET_GENERIC], [1], [Generic chipset]),
-    [*], AC_MSG_ERROR(m4_normalize(
-	[Unsupported or empty host chipset value: "$ZCHIPSET".
-	Try setting ZCHIPSET=<CHIPSET>.]))
-)
-ZCHIPSET_COMMONLIBS_KERNEL_LIBS=""
-AS_IF([test -n "${ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS}"], [
-    for lib in ${ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS}; do
-        ZCHIPSET_COMMONLIBS_KERNEL_LIBS="${ZCHIPSET_COMMONLIBS_KERNEL_LIBS} __kcore/commonlibs/${lib}/${lib}.a"
-    done
-])
-
 # Validate ZFIRMWARE
 AS_CASE(["$ZFIRMWARE"],
     [ibmPcBios|pcBios|bios],
         ZFIRMWARE="ibmPcBios"
         AC_DEFINE([CONFIG_FIRMWARE_IBM_PC_BIOS], [1], [IBM PC BIOS firmware]),
-    [efi|uefi],
+    [uefi|efi],
         ZFIRMWARE="uefi"
-        AC_DEFINE([CONFIG_FIRMWARE_EFI], [1], [EFI firmware])
+        AC_DEFINE([CONFIG_FIRMWARE_UEFI], [1], [UEFI firmware])
         AC_MSG_ERROR([UEFI firmware is not yet supported.]),
     [generic], AC_DEFINE([CONFIG_FIRMWARE_GENERIC], [1], [Generic firmware]),
-    [*], AC_MSG_ERROR(m4_normalize(
-	[Unsupported or empty host firmware value: "$ZFIRMWARE".
-	Try setting ZFIRMWARE=<FIRMWARE>.]))
+    [*],
+        AS_IF([test "$ZCHIPSET_USER_MUST_SET_FIRMWARE" = 'yes'], [
+            AC_MSG_ERROR(m4_normalize(
+	            [Unsupported or empty host firmware value: "$ZFIRMWARE".
+	            Try setting ZFIRMWARE=<FIRMWARE>.]))
+        ])
 )
 
 # Checks for programs.
