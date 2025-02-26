@@ -4,7 +4,6 @@ ldSearchDirs.ld
 *.ekf
 *.ekfs
 *.zxe
-iso
 bochsrc*
 *.bz2
 tmp
