@@ -1,0 +1,7 @@
+timeout 2
+
+title Raw Zambesii v0.xx (Multiboot 1)
+kernel /zambesii/zambesii.zxe
+
+title Raw Zambesii v0.xx (Multiboot 2)
+multiboot2 /zambesii/zambesii.zxe
