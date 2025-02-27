@@ -9,7 +9,10 @@ UEFI doesn't require any modifications to the boot sector of a storage device. F
 
 UEFI will loop through all known OS loaders. For each loader:
 * If loader calls Exit(), then UEFI moves on to next loader.
+* If a BOOT#### option returns with EFI_SUCCESS, then "platform firmware supports boot manager menu, and if firmware is configured to boot in an interactive mode, the boot manager will stop processing the BootOrder variable and present a boot manager menu to the user." (sec 3.1.1).
+* If neither of the above, then UEFI will loop through the next loader.
 * If all loaders call Exit(), I suppose that means the system has failed to boot.
+* If all possibilities are exhausted, then "boot option recovery must be performed" (sec 3.1.1).
 
 The __OS itself__ is expected to call `ExitBootServices()` when it's ready to take over control.
 
@@ -165,6 +168,33 @@ RISC-V platform firmware must implement the RISCV_EFI_BOOT_PROTOCOL. OS loaders 
 
 Section 2.6.3:
 > If a driver is digitally signed, it must embed the digital signature in the PE/COFF image as described in Embedded Signatures .
+
+## Boot Manager:
+
+Use `SetVariable()` to set "Load Option" variables. Each load option is stored in a var whose name is of the form (sec 3.1.1):
+> Boot####, Driver####, SysPrep####, OsRecovery#### or PlatformRecovery####
+
+PlatformRecovery####: holds info about some recovery image.
+> The contents of PlatformRecovery#### represent the final recovery options the firmware would have attempted had recovery been initiated during the current boot, and need not include entries to reflect contingencies such as significant hardware reconfiguration, or entries corresponding to specific hardware that the firmware is not yet aware of.
+
+The load options are ordered in 2 ordering list vars: "DriverOrder" and "BootOrder". DriverOrder must be processed before BootOrder.
+
+### Recovery sequences:
+
+* If `OsIndications.EFI_OS_INDICATIONS_START_OS_RECOVERY` bit is set, then BootMgr will initiate "OS-defined recovery" (sec 3.1.2) instead of the normal boot process.
+* If `OsIndications.EFI_OS_INDICATIONS_START_PLATFORM_RECOVERY` bit is set, then BootMgr will initiate "platform-defined recovery" (sec 3.1.2) instead of the normal boot process.
+
+If either recovery sequence is executed, then *both* bits are unset, and on the next boot *only*, BootMgr will boot into the "BootNext" option (and delete BootNext).
+
+### Short-form device paths:
+
+* USB short forms by WWID or Device Class ID.
+* "Hard Drive Media Device Path": Allows the disk's physical location to chance, yet still be successfully booted from. Consists of a (GUID OR Signature) + a partition number.
+* "File Path Media Device Path": Gives a file path, and then the BootMgr will enumerate all removable media devices __followed by__ all fixed media devices. It will then boot into the device that contains the given file.
+* "URI Device Path": I didn't quite understand but it seems like BootMgr will literally try every possible device that exposes a "LoadFile" protocol instance.
+
+
+
 
 ## Caveats:
 
