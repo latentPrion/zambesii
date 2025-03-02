@@ -16,6 +16,9 @@ UEFI will loop through all known OS loaders. For each loader:
 
 The __OS itself__ is expected to call `ExitBootServices()` when it's ready to take over control.
 
+More from sec 4.1.1:
+> If the UEFI image is a UEFI OS Loader, then the UEFI OS Loader executes and either returns, calls the EFI Boot Service Exit() , or calls the EFI Boot Service EFI_BOOT_SERVICES.ExitBootServices() . If the EFI OS Loader returns or calls Exit() , then the load of the OS has failed, and the EFI OS Loader is unloaded from memory and control is returned to the component that attempted to boot the UEFI OS Loader
+
 ## NVRAM and global boot menu:
 
 UEFI specifies a Boot Manager component that allows loading of any UEFI application, including OS Loaders; or drivers. UEFI defines NVRAM variables that point to the file to be loaded.
@@ -193,6 +196,60 @@ If either recovery sequence is executed, then *both* bits are unset, and on the 
 * "File Path Media Device Path": Gives a file path, and then the BootMgr will enumerate all removable media devices __followed by__ all fixed media devices. It will then boot into the device that contains the given file.
 * "URI Device Path": I didn't quite understand but it seems like BootMgr will literally try every possible device that exposes a "LoadFile" protocol instance.
 
+### BootOrder vs OsRecoveryOrder+PlatformRecoveryOrder:
+
+BoorOrder contains the hex indexes of Boot#### vars, in sequential order.
+OSRecoveryOrder and PlatformRecoveryOrder contain the VendorGuids of vendors in sequential order. The BootMgr then looks for all the vars with a given VendorGuid and tries them in order, per VendorGuid.
+
+### Default FileNames for bootable applications:
+
+When no file path is provided, BootMgr will look for a file with the following name in the following path:
+> \EFI\BOOT\BOOT<cpu_architecture>.efi
+
+## UEFI Vars:
+
+### Architecturally defined global vars:
+
+All arch-defined global vars have the GUID "8be4df61-93ca-11d2-aa0d-00e098032b8c". All non-arch defined vars must use a vendor-defined GUID given by "VendorGuid" (sec 3.3) (spec italicized it like a var name but I don't see it in /efivars on my machine).
+
+### Global vars:
+
+These arch-def global vars are of interest:
+* BootNext: The boot option for the next boot only.
+* BootOptionSupport: The types of boot options supported by the boot manager. Should be treated as read-only.
+* ConIn: The device path of the default input console. `ConInDev` lists all input consoles.
+* ConOut: The device path of the default output console. `ConOutDev` lists all output consoles.
+* ErrOut: The device path of the default error console. `ErrOutDev` lists all error consoles.
+* SecureBoot: Whether or not the system is in secure boot mode.
+* OsIndications: Allows the OS to request the firmware to enable certain features and to take certain actions.
+* OsIndicationsSupported: Allows the firmware to indicate supported features and actions to the OS.
+
+In particular it seems like the OS can just read ConOut instead of searching for a SIMPLE_TEXT_OUTPUT_PROTOCOL producer.
+
+### UEFI Variables:
+
+* UEFI variables are used to store configuration data for UEFI applications and drivers.
+* UEFI variables are stored in the NVRAM (non-volatile RAM) and are persistent across system reboots.
+* UEFI variables are identified by a unique GUID (Global Unique Identifier).
+
+## UEFI Image handles:
+
+Image handles passed to UEFI applications have the following protocols pre-filled in by the firmware:
+> EFI_LOADED_IMAGE_PROTOCOL, EFI_LOADED_IMAGE_DEVICE_PATH_PROTOCOL.
+
+Driver apps are expected to register and produce the following protocols:
+> EFI_DRIVER_BINDING_PROTOCOL.
+
+## UEFI Configuration Tables:
+
+Tables of note (sec 4.6):
+* ACPI 1.0 and 2.0 tables (phys only, no fixup).
+* SMBIOS, SMBIOS3 tables (phys only, no fixup).
+* MPS table (most likely Intel MP Spec table) (phys only, no fixup).
+* Flattened Device Tree (FDT) (phys only, no fixup).
+* EFI_RT_PROPERTIES_TABLE (phys only, no fixup): This table has a bitmask of supported EFI Runtime services. Can be ignored because unsupported services must still be implemented to return EFI_UNSUPPORTED.
+* EFI_MEMORY_ATTRIBUTES_TABLE (phys only, no fixup): Tells the kernel how to page-attribute protect the EFI memory regions.
+* EFI_CONFORMANCE_PROFILE_TABLE (phys only, no fixup). May be important if it works like the MP spec default profiles.
 
 
 
