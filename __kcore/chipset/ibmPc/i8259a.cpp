@@ -126,7 +126,7 @@ void I8259APic::chipsetEventNotification(ubit8 event, uarch_t)
 
 		break;
 
-	case __KPOWER_EVENT_PRE_SMP_MODE_SWITCH:
+	case __KPOWER_EVENT_POST_SMP_MODE_SWITCH:
 		/**	EXPLANATION:
 		 * Tell the kernel to remove all i8259a IRQ pins from the __kpin
 		 * list, because on IBM-PC, when symmetric multiprocessing mode

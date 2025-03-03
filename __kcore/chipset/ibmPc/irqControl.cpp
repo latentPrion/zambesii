@@ -111,7 +111,7 @@ void ZkcmIrqControlMod::chipsetEventNotification(ubit8 event, uarch_t flags)
 		i8259aPic.chipsetEventNotification(event, flags);
 		break;
 
-	case __KPOWER_EVENT_PRE_SMP_MODE_SWITCH:
+	case __KPOWER_EVENT_POST_SMP_MODE_SWITCH:
 		/**	EXPLANATION:
 		 * When switching to multiprocessor mode on the IBM-PC, the
 		 * i8259a code must first be told, so it can remove its IRQ

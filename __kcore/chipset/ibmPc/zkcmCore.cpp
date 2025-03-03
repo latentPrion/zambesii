@@ -83,7 +83,7 @@ void ZkcmCore::chipsetEventNotification(e__kPowerEvent event, uarch_t flags)
 		break;
 
 	case __KPOWER_EVENT_HEAP_AVAIL:
-	case __KPOWER_EVENT_PRE_SMP_MODE_SWITCH:
+	case __KPOWER_EVENT_POST_SMP_MODE_SWITCH:
 		irqControl.chipsetEventNotification(event, flags);
 		break;
 

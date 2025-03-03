@@ -787,7 +787,7 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 	};
 
 	zkcmCore.chipsetEventNotification(
-		__KPOWER_EVENT_PRE_SMP_MODE_SWITCH, 0);
+		__KPOWER_EVENT_POST_SMP_MODE_SWITCH, 0);
 
 	return ERROR_SUCCESS;
 }
