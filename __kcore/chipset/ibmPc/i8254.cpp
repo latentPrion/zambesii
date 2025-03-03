@@ -366,7 +366,23 @@ void I8254Pit::disable(void)
 	 **/
 
 	state.lock.acquire();
-	if (i8254State.smpModeSwitchInProgress) { disableDelayClks = 50000; };
+	if (i8254State.smpModeSwitchInProgress)
+	{
+		/* The smpModeSwitch delay is a bit longer because
+		 * we have to give enough time for this function to
+		 * return, and then for the code in setSmpMode() to
+		 * complete its call to taskTrib.block().
+		 * If the code in setSmpMode() isn't given enough time
+		 * to complete its call to block(), then the oneshot IRQ
+		 * will fire, and then the ISR will call wake() on the
+		 * thread before it's been block()ed. Then, the thread will
+		 * call block(), and the order would be messed up.
+		 *
+		 * I.e: the kernel will freeze because the setSmpMode() thread
+		 * will just remain blocked forever.
+		 **/
+		disableDelayClks = 50000;
+	};
 
 	// Write out the oneshot mode (mode 0) control byte.
 	io::write8(
