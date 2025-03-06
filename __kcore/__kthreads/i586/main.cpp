@@ -237,6 +237,10 @@ extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 			CpuStream::bspCpuId, CpuStream::bspAcpiId),
 		ret);
 
+	/* Initialize IRQs.
+	 **/
+	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
+	zkcmCore.irqControl.maskAll();
 	DO_OR_DIE(bspCpu, bind(), ret);
 	DO_OR_DIE(bspCpu.taskStream, cooperativeBind(), ret);
 
@@ -244,13 +248,6 @@ extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 	 * microkernel. Scheduling, Message passing, Processes and Threads.
 	 **/
 	DO_OR_DIE(taskTrib, initialize(), ret);
-
-#if 0
-	/* Initialize IRQs.
-	 **/
-	DO_OR_DIE(zkcmCore.irqControl, initialize(), ret);
-	zkcmCore.irqControl.maskAll();
-#endif
 
 	printf(NOTICE ORIENT"Entering message loop. Task ID %x (@%p).\n",
 		self->getFullId(), self);

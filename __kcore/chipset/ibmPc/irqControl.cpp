@@ -100,8 +100,6 @@ void ZkcmIrqControlMod::chipsetEventNotification(ubit8 event, uarch_t flags)
 		"\tEvent is %d.\n",
 		event);
 
-	return;
-
 	switch (event)
 	{
 	case __KPOWER_EVENT_HEAP_AVAIL:
