@@ -15,8 +15,7 @@
 #elif defined( CONFIG_UNI_PROCESSOR )
 	#define __SCALING__			SCALING_UNI_PROCESSOR
 #else
-	//Default scaling is at Non CC NUMA level.
-	#define __SCALING__			SCALING_NONCC_NUMA
+	#error "No scaling mode selected. Please re-run kernel configuration with --enable-scaling=<up|smp|numa>"
 #endif
 
 #endif

@@ -46,6 +46,30 @@ AS_IF([test -z "${MAKE_IMM_PATH}"], [MAKE_IMM_PATH="/boot"])
 # Validate mandatory arguments
 AS_IF([test -z "$host_alias"], [AC_MSG_ERROR([--host is mandatory.])])
 
+#
+# Scaling options
+#
+AC_ARG_ENABLE([scaling],
+    [AS_HELP_STRING([--enable-scaling=@<:@up|smp|numa@:>@],
+        [Select processor scaling mode @<:@default=numa@:>@])],
+    [AS_CASE(["$enableval"],
+        [uniprocessor|up|no],
+            [AC_DEFINE([CONFIG_UNI_PROCESSOR], [1], [Uniprocessor scaling mode])
+             ZSCALING="up"],
+        [multiprocessor|multiprocessing|smp|yes],
+            [AC_DEFINE([CONFIG_SMP], [1], [SMP scaling mode])
+             ZSCALING="smp"],
+        [numa|ccnuma],
+            [AC_DEFINE([CONFIG_CC_NUMA], [1], [CC-NUMA scaling mode])
+             ZSCALING="numa"],
+        [*], [AC_MSG_ERROR([Invalid scaling mode: $enableval])])],
+    [
+        AC_DEFINE([CONFIG_CC_NUMA], [1], [Default to CC-NUMA scaling mode])
+        ZSCALING="numa"
+    ]
+)
+AC_SUBST([ZSCALING])
+
 # Initialize ZCHIPSET_USER_MUST_SET_FIRMWARE to 'no'
 ZCHIPSET_USER_MUST_SET_FIRMWARE='no'
 ZCHIPSET_COMMONLIBS_ENABLED_SUBDIRS=""
