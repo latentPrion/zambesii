@@ -139,6 +139,13 @@ public:
 	 		uarch_t size, uarch_t flags, void *privateData);
 
 		processId_t	sourceId, targetId;
+		/* `privateData` is a context-keeping cookie for the caller.
+		 * Not to be confused with the actual data payload to be
+		 * transferred in the message.
+		 *
+		 * This header doesn't carry any payload data. True to its
+		 * name, it's only a header.
+		 */
 		void		*privateData;
 		error_t		error;
 		ubit16		subsystem, flags;
