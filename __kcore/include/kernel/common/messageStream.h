@@ -69,23 +69,31 @@
  * no assumptions should be made about the mapping of subsystem IDs to queues
  * in the kernel).
  **/
-// Keep these two up to date.
-#define MSGSTREAM_SUBSYSTEM_MAXVAL		(0xA)
-#define MSGSTREAM_USERQ_MAXVAL			(0x3)
-// Actual subsystem values.
-#define MSGSTREAM_SUBSYSTEM_USER0		(0x0)
-#define MSGSTREAM_SUBSYSTEM_USER1		(0x1)
-#define MSGSTREAM_SUBSYSTEM_USER2		(0x2)
-#define MSGSTREAM_SUBSYSTEM_USER3		(0x3)
-#define MSGSTREAM_SUBSYSTEM_TIMER		(0x4)
-#define MSGSTREAM_SUBSYSTEM_PROCESS		(0x5)
-#define MSGSTREAM_SUBSYSTEM_ZASYNC		(0x6)
-#define MSGSTREAM_SUBSYSTEM_FLOODPLAINN		(0x7)
-#define MSGSTREAM_SUBSYSTEM_ZUDI		(0x8)
-#define MSGSTREAM_SUBSYSTEM_ZUI			(0x9)
-#define MSGSTREAM_SUBSYSTEM_ZUM			(0xA)
+enum MessageStreamSubsystem {
+	MSGSTREAM_SUBSYSTEM_USER0=0,
+	MSGSTREAM_SUBSYSTEM_USER1,
+	MSGSTREAM_SUBSYSTEM_USER2,
+	MSGSTREAM_SUBSYSTEM_USER3,
+	MSGSTREAM_SUBSYSTEM_TIMER,
+	MSGSTREAM_SUBSYSTEM_ZASYNC,
+	MSGSTREAM_SUBSYSTEM_FLOODPLAINN,
+	MSGSTREAM_SUBSYSTEM_ZUDI,
+	MSGSTREAM_SUBSYSTEM_ZUI,
+	MSGSTREAM_SUBSYSTEM_ZUM,
+	MSGSTREAM_SUBSYSTEM_PROCESS,
 
-#define MSGSTREAM_USERQ(num)			(MSGSTREAM_SUBSYSTEM_USER0 + num)
+	/* Insert new subsystems *ABOVE* this one.
+	 * This must *ALWAYS* be the last element in the enum.
+	 **/
+	MSGSTREAM_SUBSYSTEM_ENUM_END
+};
+
+// Keep these two up to date
+#define MSGSTREAM_SUBSYSTEM_MAXVAL		(MSGSTREAM_SUBSYSTEM_ENUM_END - 1)
+#define MSGSTREAM_SUBSYSTEM_N_QUEUES	((MSGSTREAM_SUBSYSTEM_MAXVAL) + 1)
+#define MSGSTREAM_USERQ_MAXVAL			(MSGSTREAM_SUBSYSTEM_USER3)
+
+#define MSGSTREAM_USERQ(num)			(MSGSTREAM_SUBSYSTEM_USER0 + (num))
 
 class Thread;
 
@@ -169,7 +177,7 @@ public:
 	{
 		error_t		ret;
 
-		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
+		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_N_QUEUES; i++)
 		{
 			ret = queues[i].initialize(
 				PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE);
@@ -178,7 +186,7 @@ public:
 		};
 
 		return pendingSubsystems.initialize(
-			MSGSTREAM_SUBSYSTEM_MAXVAL + 1);
+			MSGSTREAM_SUBSYSTEM_N_QUEUES);
 	};
 
 	~MessageStream(void) {};
@@ -219,7 +227,7 @@ private:
 	}
 
 public:
-	MessageQueue	queues[MSGSTREAM_SUBSYSTEM_MAXVAL + 1];
+	MessageQueue	queues[MSGSTREAM_SUBSYSTEM_N_QUEUES];
 
 	/* Bitmap of all subsystem queues which have messages in them. The lock
 	 * on this bitmap is also used as the serializing lock that minimizes
