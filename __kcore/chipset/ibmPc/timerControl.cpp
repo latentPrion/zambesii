@@ -23,7 +23,7 @@ static const ubit32			ibmPcSafePeriodMask =
 static const ubit8 daysInMonth[12] =
 	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-static void upsDateystemTime(ubit32 tickGranularity)
+static void updateSystemTime(ubit32 tickGranularity)
 {
 	systemTime.lock.writeAcquire();
 	systemTime.rsrc.time.nseconds += tickGranularity;
@@ -125,7 +125,7 @@ void ZkcmTimerControlMod::timerQueuesInitializedNotification(void)
 	{
 		if (!__KBIT_TEST(latchedQueueMask, i)) { continue; };
 
-		timerTrib.installClockRoutine((1<<i), &upsDateystemTime);
+		timerTrib.installClockRoutine((1<<i), &updateSystemTime);
 		printf(NOTICE IBMPC_TIMERCTL"System timekeeper routine "
 			"installed on timer queue %d.\n",
 			i);
