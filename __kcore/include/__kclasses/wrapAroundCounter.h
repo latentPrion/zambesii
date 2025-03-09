@@ -8,7 +8,9 @@
 class WrapAroundCounter
 {
 public:
-	WrapAroundCounter(sarch_t _maxVal, sarch_t startVal=0)
+	WrapAroundCounter(sarch_t _maxVal, sarch_t _startVal=0)
+	:
+	startVal(_startVal)
 	{
 		sState		tmp = {
 			_maxVal, startVal
@@ -37,6 +39,7 @@ private:
 	struct sState {
 		sarch_t		maxVal, nextVal;
 	};
+	sarch_t					startVal;
 	SharedResourceGroup<WaitLock, sState>	state;
 };
 
@@ -62,7 +65,7 @@ inline sarch_t WrapAroundCounter::getNextValue(T *arr, ubit8 secondTry)
 		};
 	};
 
-	state.rsrc.nextVal = 0;
+	state.rsrc.nextVal = startVal;
 	state.lock.release();
 	return ((secondTry) ? (-1) : getNextValue(arr, 1));
 }
