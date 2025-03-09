@@ -56,35 +56,39 @@ void ZkcmTimerDevice::unlatch(void)
 	// If it's not the owning process, deny the attempt.
 	currCpu = cpuTrib.getCurrentCpuStream();
 
+	state.lock.acquire();
+
 	// This condition needs to check the Floodplainn binding.
 	if (currCpu->taskStream.getCurrentThread()->parent->id
-		== state.rsrc.latchedStream->id)
+		!= state.rsrc.latchedStream->id)
 	{
-		state.lock.acquire();
-
-		FLAG_UNSET(
-			state.rsrc.flags,
-			ZKCM_TIMERDEV_STATE_FLAGS_LATCHED);
-
 		state.lock.release();
+		return;
 	};
+
+	state.rsrc.latchedStream = NULL;
+	FLAG_UNSET(
+		state.rsrc.flags,
+		ZKCM_TIMERDEV_STATE_FLAGS_LATCHED);
+
+	state.lock.release();
 }
 
 sarch_t ZkcmTimerDevice::getLatchState(class FloodplainnStream **latchedStream)
 {
 	state.lock.acquire();
 
-	if (FLAG_TEST(
+	if (!FLAG_TEST(
 		state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_LATCHED))
 	{
-		*latchedStream = state.rsrc.latchedStream;
-
 		state.lock.release();
-		return 1;
+		return 0;
 	};
 
+	*latchedStream = state.rsrc.latchedStream;
+
 	state.lock.release();
-	return 0;
+	return 1;
 }
 
 sarch_t ZkcmTimerDevice::validateCallerIsLatched(void)
