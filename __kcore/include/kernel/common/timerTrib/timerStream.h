@@ -115,7 +115,15 @@ private:
 	void lockRequestQueue(void) { requestQueueLock.acquire(); };
 	void unlockRequestQueue(void) { requestQueueLock.release(); };
 
-	/* Queues a timer request expiry event on this stream and returns a
+	/* The Zambesii Timer Tributary notionally supports the use-case
+	 * where a requesting process sets a timer which will deliver its
+	 * expiry event to a different target process/thread.
+	 *
+	 * That's why the "timerRequestTimeoutNotification()" sequence is split
+	 * into two functions. This one here is used to enqueue the expiry event
+	 * on the target process's messageStream.
+	 *
+	 * Queues a timer request expiry event on this stream and returns a
 	 * pointer to the object that it unblocked. That is, it returns a
 	 * pointer to the Thread or cpuStream object that it unblocked
 	 * after queueing the new callback.
@@ -123,7 +131,11 @@ private:
 	Thread *timerRequestTimeoutNotification(
 		sTimerMsg *request, sTimestamp *eventStamp);
 
-	// Causes this stream to insert its next request into the timer queues.
+	/* Causes this stream to insert its next request into the timer queues.
+	 *
+	 * This is called to ensure that the requesting process' next oneshot
+	 * timer request is inserted into the timer queue.
+	 **/
 	void timerRequestTimeoutNotification(void);
 
 private:

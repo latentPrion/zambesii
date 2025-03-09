@@ -94,13 +94,13 @@ private:
 
 	/* Called by the Timer Trib Dqer thread when the latched timer for this
 	 * instance fires an IRQ. Expires/migrates the items at the front of the
-	 * Q if necessary, and sets the pending event bit in the process'
-	 * PCB, before waking the thread that registered to listen for the
-	 * event (if any).
+	 * Q if necessary, and sets the pending event bit in the target thread's
+	 * PCB, before waking the target thread (if it exists).
 	 **/
 	void tick(sZkcmTimerEvent *timerIrqEvent);
 
 	/* These two are back-ends for the methods declared in TimerTrib.
+	 * Should only be called by the Timer Trib; not called directly.
 	 **/
 	error_t installClockRoutine(ZkcmTimerDevice::clockRoutineFn *routine)
 	{

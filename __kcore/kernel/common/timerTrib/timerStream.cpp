@@ -118,6 +118,9 @@ error_t TimerStream::pullEvent(ubit32 flags, sTimerMsg **event)
 	return ERROR_SUCCESS;
 }
 
+/* Enqueues a timer expiry notification event on the target process's
+ * messageStream.
+ **/
 Thread *TimerStream::timerRequestTimeoutNotification(
 	sTimerMsg *request, sTimestamp *sTimerMsgtamp
 	)
@@ -162,6 +165,9 @@ Thread *TimerStream::timerRequestTimeoutNotification(
 	return thread;
 }
 
+/* Ensures that the requesting process' next oneshot timer request is
+ * inserted into the timer queue.
+ **/
 void TimerStream::timerRequestTimeoutNotification(void)
 {
 	sTimerMsg	*nextRequest;
