@@ -27,7 +27,8 @@ error_t TimerStream::createOneshotEvent(
 	};
 
 	request = new sTimerMsg(
-		this->id,
+		cpuTrib.getCurrentCpuStream()->taskStream
+			.getCurrentThread()->getFullId(),
 		MSGSTREAM_SUBSYSTEM_TIMER, MSGSTREAM_TIMER_CREATE_ONESHOT_EVENT,
 		sizeof(*request), flags, privateData);
 
