@@ -204,7 +204,29 @@ public:
 		ubit16 subsystemQueue, MessageStream::sHeader **message,
 		ubit32 flags=0);
 
+	/** EXPLANATION:
+	 * Enqueues a message to a designated MSGSTREAM_SUBSYSTEM_* subsystem
+	 * queue.
+	 *
+	 * Only the particular subsystem which owns that subsystem ID should
+	 * enqueue messages to that queue.
+	 **/
 	error_t	enqueue(ubit16 queueId, MessageStream::sHeader *message);
+
+	/** EXPLANATION:
+	 * Enqueues a message with a subsystem-ID of
+	 * MSGSTREAM_USERQ(userQueueId).
+	 *
+	 * Any thread can enqueue messages to a MSGSTREAM_USERQ(userQueueId)
+	 * queue.
+	 *
+	 * This is useful for sending messages among kernel
+	 * threads without needing to go through the connection-oriented
+	 * setup burden that's imposed by ZAsyncStream connections.
+	 *
+	 * It allows threads to act as servers without needing to set
+	 * up formal subsystem-specific MessageStream queues.
+	 **/
 	error_t postMessage(
 		processId_t tid, ubit16 userQueueId,
 		ubit16 messageNo, void *data, void *privateData,
