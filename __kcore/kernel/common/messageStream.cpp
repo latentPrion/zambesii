@@ -70,7 +70,7 @@ ipc::sDataHeader *ipc::createDataHeader(
 inline static sarch_t is__kvaddrspaceProcess(processId_t pid)
 {
 	if (PROCID_PROCESS(pid) == __KPROCESSID
-		|| PROCID_PROCESS(pid) == 0)
+		|| PROCID_PROCESS(pid) == CPU_PROCESSID)
 		{ return 1; };
 
 	return 0;
