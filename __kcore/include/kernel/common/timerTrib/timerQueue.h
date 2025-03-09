@@ -59,6 +59,9 @@ private:
 	error_t initialize(void) { return requestQueue.initialize(); }
 	~TimerQueue(void) {}
 
+public:
+	void dump(void);
+
 private:
 	error_t latch(ZkcmTimerDevice *device);
 	void unlatch(void);

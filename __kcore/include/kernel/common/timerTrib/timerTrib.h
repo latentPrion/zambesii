@@ -194,6 +194,8 @@ public:
 		void processQueueUnlatchedMessage(sMessage *msg);
 		void processExitMessage(sMessage *);
 
+		void dump(void);
+
 		// PID and Pointer to event processing thread's Task struct.
 		processId_t		tid;
 		Thread			*task;

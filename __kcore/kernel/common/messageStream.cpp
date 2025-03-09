@@ -325,6 +325,8 @@ subsystem(subsystem), flags(0), function(function), size(size)
 
 void MessageStream::dump(void)
 {
+	printf(NOTICE MSGSTREAM"@%p: Dumping.\n", this);
+	pendingSubsystems.dump();
 	for (uarch_t i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++) {
 		queues[i].dump();
 	};

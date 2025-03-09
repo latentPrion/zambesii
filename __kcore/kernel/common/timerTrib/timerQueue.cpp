@@ -24,6 +24,16 @@
  * chipset can have a timer running at 100Hz and remain stable, for example.
  **/
 
+void TimerQueue::dump(void)
+{
+	printf(NOTICE TIMERQUEUE"%dus: @ %p, currentPeriod %dus, device %p, "
+		"clockRoutineInstalled %d.\n",
+		(getNativePeriod() / 1000), this, (getCurrentPeriod() / 1000),
+		device, clockRoutineInstalled);
+
+	requestQueue.dump();
+}
+
 error_t TimerQueue::latch(ZkcmTimerDevice *dev)
 {
 	error_t		ret;

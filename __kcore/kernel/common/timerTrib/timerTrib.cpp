@@ -456,6 +456,27 @@ void TimerTrib::sEventProcessor::processExitMessage(sMessage *)
 		"sEventProcessor::processExitMessage");*/
 }
 
+void TimerTrib::sEventProcessor::dump(void)
+{
+	const ubit8		nWaitSlots = sizeof(waitSlots) / sizeof(waitSlots[0]);
+
+	printf(NOTICE TIMERTRIB"Event DQer thread: %d wait slots:\n",
+		nWaitSlots);
+
+	for (ubit8 i=0; i<nWaitSlots; i++)
+	{
+		printf(NOTICE TIMERTRIB"waitSlot[%d]: timerQueue %p, "
+			"eventQueue %p.\n",
+			i, waitSlots[i].timerQueue,
+			waitSlots[i].eventQueue);
+
+		if (waitSlots[i].eventQueue != NULL)
+			{ waitSlots[i].eventQueue->dump(); };
+		if (waitSlots[i].timerQueue != NULL)
+			{ waitSlots[i].timerQueue->dump(); };
+	};
+}
+
 void TimerTrib::sendMessage(void)
 {
 	sEventProcessor::sMessage	*msg;
@@ -586,6 +607,8 @@ void TimerTrib::dump(void)
 				watchdog.rsrc.interval.seconds,
 				watchdog.rsrc.interval.nseconds);
 		};
+
+	eventProcessor.dump();
 }
 
 status_t TimerTrib::registerWatchdogIsr(zkcmIsrFn *isr, sTime interval)
