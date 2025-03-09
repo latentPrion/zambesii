@@ -189,7 +189,7 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 		FLAG_UNSET(
 			device->state.rsrc.flags,
 			ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
-			| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+			| ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED);
 	};
 
 	device->state.lock.release();
@@ -212,7 +212,7 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 	};
 
 	// Create an event.
-	if (!FLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED)) {
+	if (!FLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED)) {
 		return ZKCM_ISR_SUCCESS;
 	};
 
@@ -397,7 +397,7 @@ void I8254Pit::disable(void)
 	FLAG_UNSET(
 		state.rsrc.flags,
 		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
-		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+		| ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED);
 
 	i8254State.irqState = sI8254State::DISABLING;
 
@@ -551,7 +551,7 @@ void I8254Pit::writeOneshotIo(void)
 	FLAG_SET(
 		state.rsrc.flags,
 		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
-		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+		| ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED);
 
 	state.lock.release();
 }
@@ -580,7 +580,7 @@ void I8254Pit::writePeriodicIo(void)
 	FLAG_SET(
 		state.rsrc.flags,
 		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
-		| ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+		| ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED);
 
 	state.lock.release();
 }

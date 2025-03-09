@@ -23,24 +23,24 @@
  **/
 #define ZKCM_TIMERDEV_STATE_FLAGS_ENABLED   (1<<0)
 #define ZKCM_TIMERDEV_STATE_FLAGS_LATCHED   (1<<1)
-/* Soft enabled is the state where the device is set to raise IRQs, BUT /not/
- * queue messages on its IRQ event queue when its ISR is called to process
- * one of its IRQs.
+/* IRQ_EVENT_MESSAGES_ENABLED enables us to have a timer generating IRQs, but
+ * not queueing messages on its IRQ event queue when its ISR is called to
+ * process one of its IRQs.
  *
- * The primary use case for this is where a timer device is being used both for
- * the system clock, and for the Timer Tributary's timer queues. In this case,
- * the device cannot be hard disabled, because its IRQs must be used to update
- * the system clock; however, the Timer Tributary does not need IRQ event msgs
- * from the device because there are no timer service requests. The queueing
- * of IRQ event messages in this case is unoptimal because it wastes memory,
- * and causes the Timer Tributary's processing thread to be scheduled
- * unnecessarily.
+ * The primary use case for this is where the Timer Trib has no pending timer
+ * service requests, but the device is being used both for the Timer Tributary's
+ * timer queues and also for the system clock. In this case, the device's IRQs
+ * cannot be hard disabled, because we need its IRQs to update the system clock.
+ * However, the Timer Tributary does not need IRQ event msgs from the device
+ * because there are no timer service requests. The queueing of IRQ event msgs
+ * in this case is undesirable because it wastes CPU cycles and memory; and
+ * causes the Timer Tributary's processing thread to be scheduled unnecessarily.
  *
- * Thus, the "soft enabled" state is provided to enable the device to be told
- * to be hard enabled (keep raising IRQs and updating the system clock), but
- * "soft disabled" (don't bother the kernel with unnecessary IRQ event messages)
+ * Thus, the "IRQ_EVENT_MESSAGES_ENABLED" state is provided to enable the device
+ * to be told to be hard enabled (keep raising IRQs and updating the system clock),
+ * but to not enqueue IRQ event messages on its IRQ event queue in its ISR.
  **/
-#define ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED  (1<<2)
+#define ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED  (1<<2)
 
 class ZkcmTimerDevice;
 
@@ -85,14 +85,23 @@ public:
 	virtual error_t restore(void)=0;
 
 	virtual error_t enable(void)=0;
-	error_t softEnable(void)
-	{
-		if (!isEnabled()) { return enable(); };
 
+	/* See documentation for this feature flag above:
+	 * ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED
+	 **/
+	error_t enableIrqEventMessages(void)
+	{
+		// If the timer device is not enabled, enable it first.
+		if (!isEnabled())
+			{ return enable(); };
+
+		/* Now indicate that the device's ISR should enqueue
+		 * IRQ event msgs.
+		 */
 		state.lock.acquire();
 		FLAG_SET(
 			state.rsrc.flags,
-			ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+			ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED);
 
 		state.lock.release();
 
@@ -100,12 +109,12 @@ public:
 	}
 
 	virtual void disable(void)=0;
-	void softDisable(void)
+	void disableIrqEventMessages(void)
 	{
 		state.lock.acquire();
 		FLAG_UNSET(
 			state.rsrc.flags,
-			ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+			ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED);
 
 		state.lock.release();
 	}
@@ -121,7 +130,7 @@ public:
 		return FLAG_TEST(flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
 	}
 
-	sarch_t isSoftEnabled(void)
+	sarch_t irqEventMessagesEnabled(void)
 	{
 		uarch_t		flags;
 
@@ -130,7 +139,7 @@ public:
 		state.lock.release();
 
 		return FLAG_TEST(
-			flags, ZKCM_TIMERDEV_STATE_FLAGS_SOFT_ENABLED);
+			flags, ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED);
 	}
 
 	// Call disable() before setting timer options, then enable() again.

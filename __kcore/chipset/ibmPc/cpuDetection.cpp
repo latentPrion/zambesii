@@ -635,7 +635,7 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 	void			*srcAddr, *destAddr;
 	uarch_t			copySize, cpuFlags;
 	x86Mp::sFloatingPtr	*mpFp;
-	ubit8			i8254WasEnabled=0, i8254WasSoftEnabled=0;
+	ubit8			i8254WasEnabled=0, i8254WasEnqueueingIrqEventMessages=0;
 
 	/**	EXPLANATION:
 	 * This function will enable Symmetric I/O mode on the IBM-PC chipset.
@@ -720,10 +720,10 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 	 * mask all of the i8259 PIC pins.
 	 **/
 	if (i8254Pit.isEnabled()) { i8254WasEnabled = 1; };
-	if (i8254Pit.isSoftEnabled()) { i8254WasSoftEnabled = 1; };
+	if (i8254Pit.irqEventMessagesEnabled()) { i8254WasEnqueueingIrqEventMessages = 1; };
 	printf(NOTICE CPUMOD"setSmpMode: i8254: wasEnabled=%d, "
-		"wasSoftEnabled=%d.\n",
-		i8254WasEnabled, i8254WasSoftEnabled);
+		"wasEnqueueingIrqEventMessages=%d.\n",
+		i8254WasEnabled, i8254WasEnqueueingIrqEventMessages);
 
 	i8254Pit.setSmpModeSwitchFlag(
 		cpuTrib.getCurrentCpuStream()
@@ -783,7 +783,8 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 			return ret;
 		};
 
-		if (!i8254WasSoftEnabled) { i8254Pit.softDisable(); };
+		if (!i8254WasEnqueueingIrqEventMessages)
+			{ i8254Pit.disableIrqEventMessages(); };
 	};
 
 	zkcmCore.chipsetEventNotification(

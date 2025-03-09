@@ -79,7 +79,7 @@ error_t TimerQueue::enable(void)
 		return ret;
 	};
 
-	ret = device->softEnable();
+	ret = device->enableIrqEventMessages();
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR TIMERQUEUE"%dus: Failed to enable() device.\n",
@@ -97,7 +97,7 @@ void TimerQueue::disable(void)
 	 * for them to expire before physically disabling the timer source.
 	 **/
 	if (!isLatched()) { return; };
-	if (clockRoutineInstalled) { device->softDisable(); }
+	if (clockRoutineInstalled) { device->disableIrqEventMessages(); }
 	else { device->disable(); };
 }
 
@@ -113,7 +113,7 @@ error_t TimerQueue::insert(TimerStream::sTimerMsg *request)
 		return ret;
 	};
 
-	if (!device->isSoftEnabled()) { return TimerQueue::enable(); };
+	if (!device->irqEventMessagesEnabled()) { return TimerQueue::enable(); };
 	return ERROR_SUCCESS;
 }
 

@@ -123,7 +123,10 @@ private:
 				return ret;
 			};
 
-			device->softDisable();
+			/* Disable IRQ event messages because the device was disabled
+			 * prior to installing the clock routine.
+			 */
+			device->disableIrqEventMessages();
 			printf(NOTICE TIMERQUEUE"%dus: installClockRoutine: "
 				"softEnabled device \"%s\".\n",
 				getNativePeriod() / 1000,
