@@ -103,9 +103,9 @@ void HeapDoubleList<T>::dump(void)
 	tail = list.rsrc.tail;
 	list.lock.release();
 
-	printf(NOTICE PTRDBLLIST"@ head %p, tail %p, %d items, "
+	printf(NOTICE PTRDBLLIST"@%p: head %p, tail %p, %d items, "
 		"lock obj %p: Dumping.\n",
-		head, tail, getNItems(), &list.lock);
+		this, head, tail, getNItems(), &list.lock);
 
 	list.lock.acquire();
 
