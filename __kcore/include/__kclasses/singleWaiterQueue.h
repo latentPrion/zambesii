@@ -28,6 +28,12 @@ public:
 
 	~SingleWaiterQueue(void) {}
 
+	void dump(void)
+	{
+		printf(NOTICE SWAITQ"%p: thread %p.\n", this, thread);
+		HeapDoubleList<void>::dump();
+	}
+
 public:
 	error_t addItem(void *item);
 	// HeapDoubleList::remove() is sufficient, needs no extending.
