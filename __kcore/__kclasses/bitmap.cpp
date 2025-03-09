@@ -132,6 +132,23 @@ sarch_t Bitmap::test(ubit32 bit)
 	return 0;
 }
 
+uarch_t Bitmap::unlocked_getBitCapacity(void) const
+{
+	if (!!preallocatedMemory.vaddr) {
+		return preallocatedMemory.size * __BITS_PER_BYTE__;
+	}
+
+	uarch_t bitCapacity = BITMAP_NELEMENTS_FOR_BITS(bmp.rsrc.nBits)
+		* sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__;
+
+	assert_fatal(bitCapacity >= bmp.rsrc.nBits);
+	// Not precise, but within ballpark -- still a useful check.
+	assert_fatal(bitCapacity < bmp.rsrc.nBits
+		+ sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__);
+
+	return bitCapacity;
+}
+
 error_t Bitmap::resizeTo(ubit32 _nBits)
 {
 	uarch_t		bitCapacity;
@@ -158,19 +175,7 @@ error_t Bitmap::resizeTo(ubit32 _nBits)
 		return ERROR_SUCCESS;;
 	};
 
-	if (!!preallocatedMemory.vaddr) {
-		bitCapacity = preallocatedMemory.size * __BITS_PER_BYTE__;
-	}
-	else
-	{
-		bitCapacity = BITMAP_NELEMENTS_FOR_BITS(bmp.rsrc.nBits)
-			* sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__;
-
-		assert_fatal(bitCapacity >= bmp.rsrc.nBits);
-		// Not precise, but within ballpark -- still a useful check.
-		assert_fatal(bitCapacity < bmp.rsrc.nBits
-			+ sizeof(*bmp.rsrc.bmp) * __BITS_PER_BYTE__);
-	};
+	bitCapacity = unlocked_getBitCapacity();
 
 	// If we don't need to resize upwards:
 	if (_nBits < bitCapacity)

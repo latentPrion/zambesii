@@ -109,6 +109,8 @@ public:
 private:
 	sPreallocatedMemory preallocatedMemory;
 
+	uarch_t unlocked_getBitCapacity(void) const;
+
 	struct sBmpState
 	{
 		element_t	*bmp;
