@@ -211,7 +211,7 @@ public:
 	 * Only the particular subsystem which owns that subsystem ID should
 	 * enqueue messages to that queue.
 	 **/
-	error_t	enqueue(ubit16 queueId, MessageStream::sHeader *message);
+	error_t	enqueue(ubit16 subsystemQueueId, MessageStream::sHeader *message);
 
 	/** EXPLANATION:
 	 * Enqueues a message with a subsystem-ID of
