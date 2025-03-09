@@ -45,11 +45,11 @@ error_t Bitmap::initialize(
 
 void Bitmap::dump(void)
 {
-	printf(NOTICE BITMAP"@%p: %d bits, (%s %dB), array @%p.\n",
+	printf(NOTICE BITMAP"@%p: %d bits, (%s bit capacity %d), array @%p.\n",
 		this,
 		bmp.rsrc.nBits,
 		(!!preallocatedMemory.vaddr) ? "pre-allocated" : "dyn-allocated",
-		(!!preallocatedMemory.vaddr) ? preallocatedMemory.size : 0,
+		unlocked_getBitCapacity(),
 		bmp.rsrc.bmp);
 }
 
