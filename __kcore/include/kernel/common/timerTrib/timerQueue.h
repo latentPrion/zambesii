@@ -151,7 +151,7 @@ private:
 	 * if it is still waiting for stale requests to time out.
 	 **/
 	error_t enable(void);
-	void disable(void);
+	void disable(sarch_t forceHardDisable = 0);
 
 	void lockRequestQueue(void) { requestQueueLock.acquire(); }
 	void unlockRequestQueue(void) { requestQueueLock.release(); }

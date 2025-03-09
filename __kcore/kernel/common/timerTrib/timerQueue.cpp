@@ -51,7 +51,12 @@ void TimerQueue::unlatch(void)
 {
 	if (!isLatched()) { return; };
 
-	disable();
+	/** FIXME:
+	 * We may pass the 'forceHardDisable' flag to disable()
+	 * to indicate to it that it should hard disable the device
+	 * even if the clock routine is installed.
+	 **/
+	disable(1);
 	device->unlatch();
 	device = NULL;
 
@@ -91,14 +96,23 @@ error_t TimerQueue::enable(void)
 	return ERROR_SUCCESS;
 }
 
-void TimerQueue::disable(void)
+void TimerQueue::disable(sarch_t forceHardDisable)
 {
 	/** FIXME: Should first check to see if there are objects left, and wait
 	 * for them to expire before physically disabling the timer source.
 	 **/
 	if (!isLatched()) { return; };
-	if (clockRoutineInstalled) { device->disableIrqEventMessages(); }
-	else { device->disable(); };
+
+	if (!clockRoutineInstalled || forceHardDisable)
+		{ device->disable(); }
+
+	/* If the wall clock is being updated by this queue, we should
+	 * have the device continue to generate IRQs and execute the
+	 * clock routine, but don't enqueue any IRQ event messages in its
+	 * ISR.
+	 **/
+	assert_fatal(clockRoutineInstalled);
+	device->disableIrqEventMessages();
 }
 
 error_t TimerQueue::insert(TimerStream::sTimerMsg *request)
