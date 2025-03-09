@@ -452,7 +452,7 @@ error_t MessageStream::pull(MessageStream::sHeader **message, ubit32 flags)
 	};
 }
 
-error_t MessageStream::postMessage(
+error_t MessageStream::postUserQMessage(
 	processId_t tid, ubit16 userQId, ubit16 messageNo, void *data,
 	void *privateData, error_t errorVal
 	)
@@ -468,12 +468,12 @@ error_t MessageStream::postMessage(
 
 	/**	NOTE:
 	 * I thought about removing this restriction when we made CPUs have
-	 * their own threads, but then CPUs shouldn't be using the postMessage()
+	 * their own threads, but then CPUs shouldn't be using the postUserQMessage()
 	 * facility to post messages to kernel threads, and vice-versa.
 	 *
-	 * postMessage() when used by kernel threads should be used to post
+	 * postUserQMessage() when used by kernel threads should be used to post
 	 * messages between *related* groups of kernel threads. CPUs should only
-	 * use postMessage() to post messages to *other* CPUs.
+	 * use postUserQMessage() to post messages to *other* CPUs.
 	 **/
 	if (PROCID_PROCESS(tid) != PROCID_PROCESS(currTid))
 		{ return ERROR_UNAUTHORIZED; };

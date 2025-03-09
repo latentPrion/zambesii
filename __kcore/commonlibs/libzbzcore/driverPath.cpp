@@ -566,7 +566,7 @@ void __klzbzcore::driver::localService::handler(
 	{
 	case REGION_INIT_SYNC_REQ:
 		// Just a force-sync operation. No actual data to be sent.
-		self->messageStream.postMessage(
+		self->messageStream.postUserQMessage(
 			iMsg->header.sourceId, 0, REGION_INIT_SYNC_REQ,
 			iMsg->data,
 			iMsg->header.privateData);
@@ -585,7 +585,7 @@ void __klzbzcore::driver::localService::handler(
 			(utf8Char *)iMsg->data)
 			== ERROR_SUCCESS);
 
-		self->messageStream.postMessage(
+		self->messageStream.postUserQMessage(
 			iMsg->header.sourceId,
 			0, GET_THREAD_DEVICE_PATH_REQ,
 			iMsg->data, iMsg->header.privateData);
@@ -600,7 +600,7 @@ void __klzbzcore::driver::localService::handler(
 		return;
 
 	case GET_DRIVER_CACHED_INFO:
-		self->messageStream.postMessage(
+		self->messageStream.postUserQMessage(
 			iMsg->header.sourceId, 0, GET_DRIVER_CACHED_INFO,
 			cache, iMsg->header.privateData);
 

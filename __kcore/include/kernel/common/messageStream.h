@@ -227,7 +227,7 @@ public:
 	 * It allows threads to act as servers without needing to set
 	 * up formal subsystem-specific MessageStream queues.
 	 **/
-	error_t postMessage(
+	error_t postUserQMessage(
 		processId_t tid, ubit16 userQueueId,
 		ubit16 messageNo, void *data, void *privateData,
 		error_t errorVal=ERROR_SUCCESS);

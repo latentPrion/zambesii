@@ -42,7 +42,7 @@ static void postRegionInitInd(
 	Thread *self, fplainn::Zudi::sKernelCallMsg *ctxt, error_t err
 	)
 {
-	self->messageStream.postMessage(
+	self->messageStream.postUserQMessage(
 		self->parent->id, 0,
 		__klzbzcore::driver::localService::REGION_INIT_IND,
 		NULL, ctxt, err);
@@ -86,7 +86,7 @@ void __klzbzcore::region::main(void *)
 	 **/
 	dev->instance->regionLocalMetadata.insert(&r);
 
-	self->messageStream.postMessage(
+	self->messageStream.postUserQMessage(
 		self->parent->id, 0,
 		__klzbzcore::driver::localService::GET_DRIVER_CACHED_INFO,
 		NULL, new MainCb(&main1, ctxt, self, &drvInfoCache, &r, dev));
@@ -212,7 +212,7 @@ void __klzbzcore::region::main1(
 		return;
 	};
 
-	self->messageStream.postMessage(
+	self->messageStream.postUserQMessage(
 		self->parent->id,
 		0, __klzbzcore::driver::localService::REGION_INIT_SYNC_REQ,
 		NULL, new MainCb(&main2, ctxt, self, drvInfoCache, r, dev));
