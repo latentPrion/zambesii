@@ -491,7 +491,7 @@ namespace fplainn
 		:
 		index(index),
 		nModules(0), nRegions(0), nRequirements(0), nMetalanguages(0),
-		nChildBops(0), nParentBops(0), nInternalBops(0),
+		nChildBops(0), nParentBops(0), nInternalBops(0), nOpsInits(0),
 		allRequirementsSatisfied(0),
 		childEnumerationAttrSize(0),
 		modules(NULL), regions(NULL), requirements(NULL),
@@ -812,6 +812,9 @@ namespace fplainn
 
 		sOpsInit *getOpsInit(ubit16 opsIndex)
 		{
+			if (nOpsInits > 0)
+				{ assert_fatal(opsInits != NULL); }
+
 			for (uarch_t i=0; i<nOpsInits; i++)
 			{
 				if (opsInits[i].opsIndex == opsIndex)

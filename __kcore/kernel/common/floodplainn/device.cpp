@@ -740,23 +740,24 @@ error_t fplainn::Driver::addOrModifyOpsInit(ubit16 opsIndex, ubit16 metaIndex)
 		return ERROR_SUCCESS;
 	}
 
-	old = opsInits;
-	opsInits = new sOpsInit[nOpsInits + 1];
-	if (opsInits == NULL)
+	sOpsInit *tmp = new sOpsInit[nOpsInits + 1];
+	if (tmp == NULL)
 	{
-		opsInits = old;
 		return ERROR_MEMORY_NOMEM;
 	}
 
 	if (nOpsInits > 0)
 	{
 		memcpy(
-			opsInits, old,
+			tmp, opsInits,
 			nOpsInits * sizeof(*opsInits));
 	}
 
+	tmp[nOpsInits] = sOpsInit(opsIndex, metaIndex);
+	old = opsInits;
+	opsInits = tmp;
+	nOpsInits++;
 	delete[] old;
-	opsInits[nOpsInits++] = sOpsInit(opsIndex, metaIndex);
 	return ERROR_SUCCESS;
 }
 
