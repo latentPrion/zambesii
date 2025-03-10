@@ -57,6 +57,7 @@ ASM_GLOBAL_FUNCTION(__kcpuPowerOnEntry)
 
 	/* Enable the MMU immediately. */
 #ifdef CONFIG_ARCH_x86_32_PAE
+	#error "PAE not implemented."
 	/* Code to enable PAE etc here. Not implemented. */
 #else
 	movl	$__kpagingLevel0Tables, %ecx
