@@ -31,7 +31,7 @@ multibootHeader =
 
 /* Multiboot 2 header */
 __attribute__(( section(".__kheaders"), aligned(8) ))
-struct {
+struct sMultiboot2FilledOutHeader {
     sMultiboot2Header header;
 
     /* End tag */
