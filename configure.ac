@@ -17,6 +17,8 @@ AC_CONFIG_SRCDIR([__kcore/kernel/common/__kclassInstances.cpp])
 AC_CONFIG_AUX_DIR([autotools-aux])
 AC_CONFIG_MACRO_DIRS([m4])
 
+m4_include([m4/zbz-helpers.m4])
+
 # AC_NO_EXECUTABLES is needed because a freestanding cross compiler
 # (such as those required to build Zambesii) shouldn't have a C
 # runtime library. This disables autoconf's executable testing since
@@ -45,30 +47,6 @@ AS_IF([test -z "${MAKE_IMM_PATH}"], [MAKE_IMM_PATH="/boot"])
 
 # Validate mandatory arguments
 AS_IF([test -z "$host_alias"], [AC_MSG_ERROR([--host is mandatory.])])
-
-#
-# Scaling options
-#
-AC_ARG_ENABLE([scaling],
-    [AS_HELP_STRING([--enable-scaling=@<:@up|smp|numa@:>@],
-        [Select processor scaling mode @<:@default=numa@:>@])],
-    [AS_CASE(["$enableval"],
-        [uniprocessor|up|no],
-            [AC_DEFINE([CONFIG_UNI_PROCESSOR], [1], [Uniprocessor scaling mode])
-             ZSCALING="up"],
-        [multiprocessor|multiprocessing|smp|yes],
-            [AC_DEFINE([CONFIG_SMP], [1], [SMP scaling mode])
-             ZSCALING="smp"],
-        [numa|ccnuma],
-            [AC_DEFINE([CONFIG_CC_NUMA], [1], [CC-NUMA scaling mode])
-             ZSCALING="numa"],
-        [*], [AC_MSG_ERROR([Invalid scaling mode: $enableval])])],
-    [
-        AC_DEFINE([CONFIG_CC_NUMA], [1], [Default to CC-NUMA scaling mode])
-        ZSCALING="numa"
-    ]
-)
-AC_SUBST([ZSCALING])
 
 # Initialize ZCHIPSET_USER_MUST_SET_FIRMWARE to 'no'
 ZCHIPSET_USER_MUST_SET_FIRMWARE='no'
@@ -118,6 +96,11 @@ AS_CASE(["$ZARCH"],
 	[Unsupported or empty host architecture value: "${ZARCH}".
 	Try setting --host=<TRIPLET>, or ZARCH=<ARCH>.]))
 )
+
+#
+# Scaling options
+#
+m4_include([m4/scaling-opts.m4])
 
 # Validate ZFIRMWARE
 AS_CASE(["$ZFIRMWARE"],
@@ -287,6 +270,10 @@ AC_CONFIG_COMMANDS_POST(
     AC_MSG_NOTICE(m4_normalize(
         [Compiling Zambesii for platform:
         (Arch:${ZARCH})-(SoC:${ZSOC:-none})-(Chipset:${ZCHIPSET})-(Firmware:${ZFIRMWARE})]
+    ))
+    AC_MSG_NOTICE(m4_normalize(
+        [Scaling mode:
+        (${ZSCALING}) with max (${ZMAX_NCPUS}) CPUs]
     ))
     AC_MSG_NOTICE(m4_normalize(
         [Distributaries enabled:
