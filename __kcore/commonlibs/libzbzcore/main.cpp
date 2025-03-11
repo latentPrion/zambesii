@@ -59,8 +59,8 @@ void __klzbzcore::main()
 static void driverMain1(Thread *self, error_t ret)
 {
 	self->parent->sendResponse(ret);
-	printf(NOTICE LZBZCORE"Driver Proc %x: Done executing. Killing with "
-		"ret %s.\n",
+	printf(NOTICE LZBZCORE"Driver Proc %x: Done executing. "
+		"ACKing our process spawner with ret %s.\n",
 		self->getFullId(), strerror(ret));
 
 	if (ret != ERROR_SUCCESS) {

@@ -374,8 +374,8 @@ void CpuTrib::bootParseNumaMap(sZkcmNumaMap *numaMap)
 
 		if (err != ERROR_SUCCESS)
 		{
-			printf(ERROR CPUTRIB"bootParseNumaMap: Failed to "
-				"power on CPU %d.\n",
+			printf(ERROR CPUTRIB"bootParseNumaMap: bootCpuNotification() "
+				"failed for CPU %d.\n",
 				numaMap->cpuEntries[i].cpuId);
 		};
 
@@ -534,7 +534,7 @@ error_t CpuTrib::numaInit(void)
 		if (numaMap != NULL && numaMap->nCpuEntries > 0)
 		{
 			// Filter out the CPUs which need to be in shared bank.
-			printf(CC"Filtering out NUMA CPUs.\n");
+			printf(NOTICE CPUTRIB"Filtering out NUMA CPUs.\n");
 			bootParseNumaMap(numaMap, smpMap);
 			bootConfirmNumaCpusBooted(numaMap, smpMap);
 		}
@@ -572,6 +572,7 @@ error_t CpuTrib::numaInit(void)
 	};
 #endif
 
+	printf(NOTICE CPUTRIB"numaInit: Success.\n");
 	return ERROR_SUCCESS;
 }
 #endif
