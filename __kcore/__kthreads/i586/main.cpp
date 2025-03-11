@@ -196,6 +196,7 @@ extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 			"BUFFER and DEVICE1.\n");
 	};
 
+	printf(NOTICE ORIENT"Zambesii kernel version %s\n", PACKAGE_VERSION);
 	// Check for Multiboot 2 boot
 	if (magic == MULTIBOOT2_BOOTLOADER_MAGIC) {
 		printf(NOTICE ORIENT"Multiboot 2 header at %p\n", mbHeader.mb2);
