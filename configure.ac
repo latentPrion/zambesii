@@ -18,6 +18,8 @@ AC_CONFIG_AUX_DIR([autotools-aux])
 AC_CONFIG_MACRO_DIRS([m4])
 
 m4_include([m4/zbz-helpers.m4])
+# Parse the version string into components.
+ZBZ_SPLIT_VERSION
 
 # AC_NO_EXECUTABLES is needed because a freestanding cross compiler
 # (such as those required to build Zambesii) shouldn't have a C
@@ -268,7 +270,7 @@ AX_SUBDIRS_CONFIGURE([build/zudi],
 
 AC_CONFIG_COMMANDS_POST(
     AC_MSG_NOTICE(m4_normalize(
-        [Compiling Zambesii for platform:
+        [Compiling Zambesii v${PACKAGE_VERSION} for platform:
         (Arch:${ZARCH})-(SoC:${ZSOC:-none})-(Chipset:${ZCHIPSET})-(Firmware:${ZFIRMWARE})]
     ))
     AC_MSG_NOTICE(m4_normalize(
