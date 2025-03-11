@@ -1,4 +1,5 @@
 
+#include <config.h>
 #include <arch/cpuControl.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
@@ -24,7 +25,7 @@ struct sDeadlockBuff
 	sbit8		inUse;
 	utf8Char	buff[DEADLOCK_BUFF_MAX_NBYTES];
 	SharedResourceGroup<WaitLock, utf8Char *>	buffer;
-} static deadlockBuffers[16];
+} static deadlockBuffers[CONFIG_MAX_NCPUS];
 
 void Lock::sOperationDescriptor::execute()
 {

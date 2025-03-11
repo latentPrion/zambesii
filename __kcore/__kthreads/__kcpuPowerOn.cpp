@@ -17,10 +17,8 @@
  * On this stack, pushed by the kernel before the CPU was powered on, is the
  * address of the CPU's CPU Stream.
  **/
-WaitLock	__kcpuPowerStacksLock;
-uarch_t		__kcpuPowerStacksLength=0;
-void		**__kcpuPowerStacks=0;
-ubit8		*__kcpuPowerOnLapicVaddr=0;
+void		*__kcpuPowerStacks[CONFIG_MAX_NCPUS];
+ubit8		*__kcpuPowerOnLapicVaddr=NULL;
 
 void __kcpuPowerOnMain(CpuStream *self);
 

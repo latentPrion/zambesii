@@ -96,10 +96,12 @@ ASM_LOCAL_FUNCTION(__kcpuPowerOnVirtualStart)
 	movl	x86LAPIC_REG_LAPICID(%ebx), %ebx
 	shr	$24, %ebx
 
+	/* EAX = __kcpuPowerStacks pointer array start address. */
 	movl	$__kcpuPowerStacks, %eax
-	/* EAX = sleepstacks array start address. */
-	movl	(%eax), %eax
-	/* ECX = sleepstack address for this CPU. */
+	/* ESP = power stack address for this CPU, minus stack arguments
+	 * that the kernel prepared. The kernel already adjusted the address
+	 * to account for them, on our behalf.
+	 **/
 	movl	(%eax,%ebx,4), %esp
 	movl	%esp, %ebp
 

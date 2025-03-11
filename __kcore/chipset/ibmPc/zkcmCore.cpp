@@ -30,42 +30,7 @@ error_t ZkcmCore::restore(void) { return ERROR_SUCCESS; }
 
 void ZkcmCore::newCpuIdNotification(cpu_t newCpuId)
 {
-	void		**newArray, **oldArray;
-
-	__kcpuPowerStacksLock.acquire();
-	// If the current array is already large enough, exit.
-	if (__kcpuPowerStacksLength >= (unsigned)newCpuId + 1)
-	{
-		__kcpuPowerStacksLock.release();
-		return;
-	};
-	__kcpuPowerStacksLock.release();
-
-	// Re-size the sleepstack array.
-	newArray = new void*[newCpuId + 1];
-	if (newArray == NULL)
-	{
-		panic(FATAL"zkcmCore::newCpuIdNotification: Failed to "
-			"allocate sleepstack pointer array.\n");
-	};
-
-	__kcpuPowerStacksLock.acquire();
-
-	if (__kcpuPowerStacksLength > 0)
-	{
-		memcpy(
-			newArray, __kcpuPowerStacks,
-			__kcpuPowerStacksLength * sizeof(void *));
-	};
-
-
-	oldArray = __kcpuPowerStacks;
-	__kcpuPowerStacks = newArray;
-	__kcpuPowerStacksLength = newCpuId + 1;
-
-	__kcpuPowerStacksLock.release();
-
-	delete[] oldArray;
+	(void)newCpuId;
 }
 
 void ZkcmCore::chipsetEventNotification(e__kPowerEvent event, uarch_t flags)

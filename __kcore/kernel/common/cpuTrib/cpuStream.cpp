@@ -68,6 +68,7 @@ lapic(this)
 error_t CpuStream::initialize(void)
 {
 	error_t		ret;
+	ubit8		*stackTop;
 
 	ret = interCpuMessager.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
@@ -83,31 +84,37 @@ error_t CpuStream::initialize(void)
 	ret = powerManager.initialize();
 	if (ret != ERROR_SUCCESS) { return ret; };
 
-	/* We don't need to acquire the __kcpuPowerStacksLock lock before
-	 * editing this CPU's index in the array, because a race condition can
-	 * never occur here. No other writer will ever write to any other CPU's
-	 * index, so the operation of writing a sleep stack pointer to the
-	 * array is always serial in nature.
+	/* We don't need to use a lock before editing an AP CPU's index in the
+	 * __kcpuPowerStacks array, because a race condition can never occur here.
+	 * No other writer will ever write to any other CPU's index, so the operation
+	 * of writing a sleep stack pointer to the array is always serial in nature.
 	 *
-	 *	FIXME:
-	 * Notice that we do not allow the BSP CPU to set its index on its first
-	 * "plug". When writing power management, if it becomes
-	 * necessary for the BSP CPU to know its sleepstack location, we may
-	 * need to change this behaviour, or else just explicitly set the
-	 * BSP CPU's sleep stack in the power management code.
+	 * NB: We used to dynamically allocate/resize the __kcpuPowerStacks array
+	 * here, but we don't do that anymore. We now statically preallocate it
+	 * based on CONFIG_MAX_CPUS.
 	 **/
-	if (!isBspFirstPlug())
-	{
-		__kcpuPowerStacks[cpuId] = &taskStream.powerStack[
-			sizeof(taskStream.powerStack) - sizeof(void *)];
+	assert_fatal(bspCpuId != CPUID_INVALID);
 
-		/* Push the CPU Stream address to the power stack so the waking
-		 * CPU can obtain it as if it was passed as an argument to
-		 * __kcpuPowerOnMain.
-		 **/
-		*reinterpret_cast<CpuStream **>(
-			__kcpuPowerStacks[cpuId] ) = this;
-	};
+	stackTop = &taskStream.powerStack[sizeof(taskStream.powerStack)];
+
+	/* Push the CPU Stream address to the power stack so the waking
+	 * CPU can obtain it as if it was passed as an argument to
+	 * __kcpuPowerOnMain.
+	 **/
+	stackTop -= sizeof(CpuStream *);
+	*reinterpret_cast<CpuStream **>(stackTop) = this;
+
+	/* Issue a memory barrier to ensure the power stack setup is visible
+	 * to the AP CPU when it wakes up.
+	 **/
+	__kcpuPowerStacks[cpuId] = stackTop;
+	atomicAsm::memoryBarrier();
+
+	printf(NOTICE CPUSTREAM"%d @%p: initialize: done.\n"
+		"\t__kcps symbol @%p, __kcps array @%p, __kcps[%d] = %p, stackTopAbs = %p\n"
+		"\tPower stack sz=%dB.\n",
+		cpuId, this, &__kcpuPowerStacks, __kcpuPowerStacks, cpuId, __kcpuPowerStacks[cpuId],
+		(taskStream.powerStack + sizeof(taskStream.powerStack)), sizeof(taskStream.powerStack));
 
 	return ERROR_SUCCESS;
 }
