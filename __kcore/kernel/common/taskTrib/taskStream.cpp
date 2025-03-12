@@ -450,6 +450,12 @@ error_t TaskStream::wake(Thread *thread)
 			"is in BLOCKED/SHUTTING_DOWN/ZOMBIE state\n",
 			parent->cpuId, thread->getFullId());
 
+#ifdef CONFIG_DEBUG_SCHEDULER
+		// Panic if wake called on blocked/shutting down/zombie thread
+		panic(ERROR_CRITICAL, FATAL"Wake called on thread in "
+			"blocked/shutting down/zombie state");
+#endif
+
 		return ERROR_UNSUPPORTED;
 	}
 

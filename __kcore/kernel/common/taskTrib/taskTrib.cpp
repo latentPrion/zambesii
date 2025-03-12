@@ -213,6 +213,16 @@ void TaskTrib::yield(void)
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
 
+#ifdef CONFIG_DEBUG_SCHEDULER
+	/* The only thread allowed to call this while not in the RUNNING state
+	 * is the BSP's power thread, and even the BSP's power thread should only
+	 * do this when it is in the UNSCHEDULED state (i.e: at boot time).
+	 **/
+	assert_fatal(currThread->schedState == Thread::RUNNING
+		|| (currThread->schedState == Thread::UNSCHEDULED
+			&& Thread::isPowerThread(currThread->getFullId())));
+#endif
+
 	cpuTrib.getCurrentCpuStream()->taskStream.yield(currThread);
 
 	// TODO: Set this CPU's currentTask to NULL here.
@@ -235,6 +245,16 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	 **/
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
+
+#ifdef CONFIG_DEBUG_SCHEDULER
+	/* The only thread allowed to call this while not in the RUNNING state
+	 * is the BSP's power thread, and even the BSP's power thread should only
+	 * do this when it is in the UNSCHEDULED state (i.e: at boot time).
+	 **/
+	assert_fatal(currThread->schedState == Thread::RUNNING
+		|| (currThread->schedState == Thread::UNSCHEDULED
+			&& Thread::isPowerThread(currThread->getFullId())));
+#endif
 
 	cpuTrib.getCurrentCpuStream()->taskStream.block(currThread);
 
