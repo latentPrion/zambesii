@@ -248,7 +248,7 @@ error_t ZAsyncStream::send(
 	 **/
 	if (!targetProcess->zasyncStream.connectionlessListenEnabled()
 		&& !findConnection(bindTid))
-	{ return ERROR_UNINITIALIZED; };
+		{ return ERROR_UNINITIALIZED; };
 
 	dataHeader = new (ipc::createDataHeader(data, nBytes, method))
 		ipc::sDataHeader;
