@@ -208,6 +208,10 @@ public:
 		 * queue, which causes the thread to begin checking that
 		 * timerQueue's wait queue.
 		 **/
+		/** FIXME:
+		 * Figure out where this number "6" for the number of wait slots
+		 * comes from.
+		 */
 		struct sWaitSlot
 		{
 			TimerQueue		*timerQueue;

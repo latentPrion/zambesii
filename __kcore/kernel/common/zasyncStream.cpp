@@ -183,6 +183,11 @@ error_t ZAsyncStream::respond(
 	sZAsyncMsg		*response;
 	ProcessStream		*initiatorProcess;
 
+	/** FIXME: We should add checks here to ensure that the
+	 * (alleged) initiator thread did indeed call connect()
+	 * on this process to begin with.
+	 **/
+
 	initiatorProcess = processTrib.getStream(initiatorPid);
 	if (initiatorProcess == NULL) { return ERROR_INVALID_RESOURCE_NAME; };
 
