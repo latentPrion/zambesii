@@ -240,6 +240,7 @@ error_t _TaskContext::inheritAffinity(Bitmap *cpuAffinity, uarch_t flags)
 	}
 	else
 	{
+		// SET.
 		ret = resizeAndMergeBitmaps(&this->cpuAffinity, cpuAffinity);
 		if (ret != ERROR_SUCCESS) { return ret; };
 	};
@@ -316,6 +317,9 @@ void _Task::inheritSchedPrio(prio_t prio, uarch_t flags)
 		return;
 	};
 
+	/** FIXME:
+	 * Add support for PRIOCLASS_PINHERIT and PRIOCLASS_STINHERIT.
+	 **/
 	schedPrio = &prioClasses[PRIOCLASS_DEFAULT];
 	return;
 }
