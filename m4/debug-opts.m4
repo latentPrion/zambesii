@@ -36,3 +36,7 @@ AC_DEFUN([AX_ZBZ_DEBUG_ARG_ENABLE], [
 
 AX_ZBZ_DEBUG_ARG_ENABLE([locks], [Lock debugging],
     [CONFIG_DEBUG_LOCKS])
+
+AX_ZBZ_DEBUG_ARG_ENABLE([scheduler],
+    [Enable debugging for the scheduler],
+    [CONFIG_DEBUG_SCHEDULER])

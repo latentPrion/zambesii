@@ -283,7 +283,8 @@ AC_CONFIG_COMMANDS_POST(
     ))
     AC_MSG_NOTICE(m4_normalize(
         [Debugging options:
-        (Locks:${enable_debug_locks})]
+        (Locks:${enable_debug_locks})
+        (Scheduler:${enable_debug_scheduler})]
     ))
 )
 
