@@ -280,6 +280,13 @@ error_t TaskTrib::unblock(Thread *thread)
 
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
+	/** NOTE:
+	 * It's permissible for a thread to call unblock() on itself, because
+	 * it may have called block() on itself outside of IRQ context, and
+	 * then an IRQ may have occured (running in that same thread's context)
+	 * which called unblock() on the thread. Just documenting for posterity.
+	 **/
+
 	if (thread->schedState == Thread::RUNNABLE
 		|| thread->schedState == Thread::RUNNING)
 	{

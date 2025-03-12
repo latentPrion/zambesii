@@ -143,6 +143,11 @@ void fplainn::Zudi::instantiateDeviceAck(
 		dev->instance = NULL;
 	};
 
+	/* Allowing the caller to determine the target threadId
+	 * for this ACK call is fine because the caller will always
+	 * be the kernel's own server thread library code within the
+	 * driver process.
+	 **/
 	response = new fplainn::Zudi::sKernelCallMsg(
 		targetId,
 		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_ZUDI___KCALL,
