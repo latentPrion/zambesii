@@ -160,6 +160,16 @@ status_t TaskStream::schedule(Thread *thread)
 	// TODO: Check CPU suitability to run task (FPU, other features).
 	// TODO: Validate any scheduling parameters that need to be checked.
 
+#ifdef CONFIG_DEBUG_SCHEDULER
+	// Ensure that the thread is not already in a queue
+	if (roundRobinQ.find(thread) || realTimeQ.find(thread))
+	{
+		printf(ERROR TASKSTREAM"%d: schedule: thread %x is already in the scheduling queue\n",
+			parent->cpuId, thread->getFullId());
+		panic(ERROR_CRITICAL, FATAL"Double-adding thread to scheduling queue");
+	}
+#endif
+
 	thread->runState = Thread::RUNNABLE;
 	thread->currentCpu = parent;
 

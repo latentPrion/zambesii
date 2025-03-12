@@ -38,6 +38,7 @@ public:
 	error_t insert(T *item, ubit16 prio, ubit32 opt=0);
 	T *pop(void);
 	void remove(T *item, ubit16 prio);
+	sarch_t find(T *item);
 
 	void dump(void);
 
@@ -80,6 +81,7 @@ private:
 		error_t insert(T2 *item, ubit32 opt);
 		T2 *pop(void);
 		void remove(T2 *item);
+		sarch_t find(T2 *item);
 
 		// fine.
 		inline uarch_t getNItems(void)
@@ -404,6 +406,38 @@ void PrioQueue<T>::Queue<T2>::dump(void)
 
 	q.lock.release();
 	if (flipFlop != 0) { printf(CC"\n"); };
+}
+
+template <class T>
+sarch_t PrioQueue<T>::find(T *item)
+{
+	for (ubit16 i = 0; i < nPrios; i++)
+	{
+		if (queues[i].find(item)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+template <class T> template <class T2>
+sarch_t PrioQueue<T>::Queue<T2>::find(T2 *item)
+{
+	sarch_t found = 0;
+
+	q.lock.acquire();
+
+	for (sQueueNode *tmp = q.rsrc.head; tmp != NULL; tmp = tmp->next)
+	{
+		if (tmp->item == item) {
+			found = 1;
+			break;
+		}
+	}
+
+	q.lock.release();
+	return found;
 }
 
 #endif
