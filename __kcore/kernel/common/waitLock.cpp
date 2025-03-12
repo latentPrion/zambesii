@@ -110,12 +110,10 @@ void WaitLock::acquire(void)
 			"\tlock int addr: %p, lockval: %d.\n",
 			cid, this, __builtin_return_address(0), &lock, lock);
 
+		deadlockBuffers[cid].inUse = 0;
+
 		cpuControl::disableInterrupts();
 		cpuControl::halt();
-
-		/* If we somehow get past the CLI/HLT pair, clear the inUse flag.
-		 */
-		deadlockBuffers[cid].inUse = 0;
 	};
 
 	flags = contenderFlags;

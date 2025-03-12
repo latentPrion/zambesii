@@ -7,6 +7,18 @@
 
 ubit8		_TaskContext::bspPowerTaskContextCpuAffinityMem[32];
 
+utf8Char *_TaskContext::schedStates[8] =
+{
+	CC"invalid",
+	CC"unscheduled",
+	CC"dormant",
+	CC"runnable",
+	CC"running",
+	CC"blocked",
+	CC"shutting-down",
+	CC"zombie"
+};
+
 sbit8 Thread::isBspPowerThread(processId_t tid)
 {
 	return isPowerThread(tid) && CpuStream::isBspCpuId(tid);
@@ -25,7 +37,7 @@ schedPolicy(ROUND_ROBIN), schedOptions(0), schedFlags(0)
 
 _TaskContext::_TaskContext(processId_t tid, Thread *parent)
 : Stream<Thread>(parent, tid),
-runState(UNSCHEDULED), blockState(BLOCKED_UNSCHEDULED),
+schedState(UNSCHEDULED),
 context(NULL)
 {
 #if __SCALING__ >= SCALING_CC_NUMA

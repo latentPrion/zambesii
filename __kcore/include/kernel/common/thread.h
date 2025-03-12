@@ -85,9 +85,18 @@ class _TaskContext
 {
 friend class ProcessStream;
 public:
-	enum runStateE { UNSCHEDULED=1, RUNNABLE, RUNNING, STOPPED };
-	enum blockStateE {
-		BLOCKED_UNSCHEDULED=1, PREEMPTED, DORMANT, BLOCKED };
+	enum schedStateE
+	{
+		UNSCHEDULED=1,
+		DORMANT,
+		RUNNABLE,
+		RUNNING,
+		BLOCKED,
+		SHUTTING_DOWN,
+		ZOMBIE
+	};
+
+	static utf8Char *schedStates[8];
 
 protected:
 	_TaskContext(processId_t tid, Thread *parent);
@@ -95,8 +104,7 @@ protected:
 
 public:
 	// Scheduler related.
-	runStateE		runState;
-	blockStateE		blockState;
+	schedStateE		schedState;
 
 	// Miscellaneous.
 	RegisterContext		*context;

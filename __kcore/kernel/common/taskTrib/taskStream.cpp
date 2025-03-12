@@ -170,7 +170,7 @@ status_t TaskStream::schedule(Thread *thread)
 	}
 #endif
 
-	thread->runState = Thread::RUNNABLE;
+	thread->schedState = Thread::RUNNABLE;
 	thread->currentCpu = parent;
 
 	// Finally, add the task to a queue.
@@ -254,7 +254,7 @@ void TaskStream::pull(void)
 				->vaddrSpace);
 	};
 
-	newThread->runState = Thread::RUNNING;
+	newThread->schedState = Thread::RUNNING;
 	currentThread = newThread;
 
 printf(NOTICE TASKSTREAM"%d: Switching to task %x.\n",
@@ -350,8 +350,7 @@ void TaskStream::updateLoad(ubit8 action, uarch_t val)
 
 void TaskStream::dormant(Thread *thread)
 {
-	thread->runState = Thread::STOPPED;
-	thread->blockState = Thread::DORMANT;
+	thread->schedState = Thread::DORMANT;
 
 	switch (thread->schedPolicy)
 	{
@@ -370,8 +369,7 @@ void TaskStream::dormant(Thread *thread)
 
 void TaskStream::block(Thread *thread)
 {
-	thread->runState = Thread::STOPPED;
-	thread->blockState = Thread::BLOCKED;
+	thread->schedState = Thread::BLOCKED;
 
 	switch (thread->schedPolicy)
 	{
@@ -390,7 +388,7 @@ void TaskStream::block(Thread *thread)
 
 error_t TaskStream::unblock(Thread *thread)
 {
-	thread->runState = Thread::RUNNABLE;
+	thread->schedState = Thread::RUNNABLE;
 
 	switch (thread->schedPolicy)
 	{
@@ -410,7 +408,7 @@ error_t TaskStream::unblock(Thread *thread)
 
 void TaskStream::yield(Thread *thread)
 {
-	thread->runState = Thread::RUNNABLE;
+	thread->schedState = Thread::RUNNABLE;
 
 	switch (thread->schedPolicy)
 	{
@@ -433,14 +431,29 @@ void TaskStream::yield(Thread *thread)
 
 error_t TaskStream::wake(Thread *thread)
 {
-	if (!(thread->runState == Thread::STOPPED
-		&& thread->blockState == Thread::DORMANT)
-		&& thread->runState != Thread::UNSCHEDULED)
+	// If thread is already runnable/running, warn but proceed
+	if (thread->schedState == Thread::RUNNABLE
+		|| thread->schedState == Thread::RUNNING)
 	{
-		return ERROR_UNSUPPORTED;
-	};
+		printf(WARNING TASKSTREAM"%d: wake called on thread %x "
+			"which is already in RUNNABLE/RUNNING state\n",
+			parent->cpuId, thread->getFullId());
 
-	thread->runState = Thread::RUNNABLE;
+		return ERROR_SUCCESS;
+	}
+
+	if (thread->schedState == Thread::BLOCKED
+		|| thread->schedState == Thread::SHUTTING_DOWN
+		|| thread->schedState == Thread::ZOMBIE)
+	{
+		printf(ERROR TASKSTREAM"%d: wake called on thread %x which "
+			"is in BLOCKED/SHUTTING_DOWN/ZOMBIE state\n",
+			parent->cpuId, thread->getFullId());
+
+		return ERROR_UNSUPPORTED;
+	}
+
+	thread->schedState = Thread::RUNNABLE;
 
 	switch (thread->schedPolicy)
 	{

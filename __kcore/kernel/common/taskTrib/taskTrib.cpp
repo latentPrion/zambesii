@@ -124,12 +124,14 @@ error_t TaskTrib::dormant(Thread *thread)
 
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
-	if (thread->runState == Thread::UNSCHEDULED
-		|| (thread->runState == Thread::STOPPED
-			&& thread->blockState == Thread::DORMANT))
-	{
-		return ERROR_SUCCESS;
-	};
+	/** EXPLANATION:
+	 * This current implementation of dormant() will leave an unscheduled
+	 * thread in the UNSCHEDULED state if invoked on one. Basically, calling
+	 * dormant() on an unscheduled thread is a no-op.
+	 **/
+	if (thread->schedState == Thread::UNSCHEDULED
+		|| thread->schedState == Thread::DORMANT)
+		{ return ERROR_SUCCESS; };
 
 	thread->currentCpu->taskStream.dormant(thread);
 	threadCurrentCpu = thread->currentCpu;
@@ -172,17 +174,14 @@ error_t TaskTrib::wake(Thread *thread)
 
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
-	if (thread->runState != Thread::UNSCHEDULED
-		&& (thread->runState != Thread::STOPPED
-			&& thread->blockState != Thread::DORMANT))
-	{
-		return ERROR_SUCCESS;
-	};
+	if (thread->schedState == Thread::RUNNABLE
+		|| thread->schedState == Thread::RUNNING)
+		{ return ERROR_SUCCESS; };
 
-	if (thread->runState == Thread::UNSCHEDULED) {
-		err = schedule(thread);
-	}
-	else { err = thread->currentCpu->taskStream.wake(thread); };
+	if (thread->schedState == Thread::UNSCHEDULED)
+		{ err = schedule(thread); }
+
+	err = thread->currentCpu->taskStream.wake(thread);
 
 	if (err != ERROR_SUCCESS) {
 		panic(err, ERROR"Failed to wake thread!");
@@ -226,17 +225,13 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 {
 	Thread		*currThread;
 
-	/* Yield() and block() are always called by the current thread, and
-	 * they always act on the thread that called them.
-	 **/
-
-	/**	XXX:
-	 * If you update this function, be sure to update its overloaded version
-	 * above as well.
-	 *
-	 *	NOTES:
+	/**	NOTES:
 	 * After placing a task into a waitqueue, call this function to
 	 * place it into a "blocked" state.
+	 **/
+
+	/* Yield() and block() are always called by the current thread, and
+	 * they always act on the thread that called them.
 	 **/
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
@@ -279,30 +274,30 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 }
 
-static utf8Char		*runStates[5] =
-{
-	CC"invalid", CC"unscheduled", CC"runnable", CC"running", CC"stopped"
-};
-
 error_t TaskTrib::unblock(Thread *thread)
 {
 	error_t		err;
 
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
-	if (thread->runState == Thread::RUNNABLE
-		|| thread->runState == Thread::RUNNING)
+	if (thread->schedState == Thread::RUNNABLE
+		|| thread->schedState == Thread::RUNNING)
 	{
+		/* It's not the worst thing if this happens, so just warn the user
+		 * that their state machine is flawed and move on.
+		 */
+		printf(WARNING TASKTRIB"unblock(%x): Thread is not blocked.\n",
+			thread->getFullId());
+
 		return ERROR_SUCCESS;
 	};
 
-	if (!(thread->runState == Thread::STOPPED
-		&& thread->blockState == Thread::BLOCKED))
+	if (thread->schedState != Thread::BLOCKED)
 	{
-		printf(NOTICE TASKTRIB"unblock(%x): Invalid run state."
-			"runState is %s.\n",
+		printf(NOTICE TASKTRIB"unblock(%x): Invalid sched state."
+			"schedState is %s.\n",
 			thread->getFullId(),
-			runStates[thread->runState]);
+			Thread::schedStates[thread->schedState]);
 
 		return ERROR_INVALID_OPERATION;
 	};
