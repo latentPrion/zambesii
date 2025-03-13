@@ -23,11 +23,15 @@ AC_DEFUN([AX_ZBZ_DEBUG_ARG_ENABLE], [
     AC_ARG_ENABLE([debug-$1],
         [AS_HELP_STRING([--enable-debug-$1],
             [Enable $2])],
-        [AS_IF([test "x$4" = "xunimplemented"],
-            [AC_MSG_ERROR([$2 is not yet implemented])])],
+        [AS_IF([test "x$enable_debug_$1" != "xno"],
+            [enable_debug_$1=yes])],
         [AS_IF([test "x$enable_all_debug_opts" = "xyes"],
             [enable_debug_$1=yes], [enable_debug_$1=no])]
     )
+
+    AS_IF([test "x$4" = "xunimplemented"],
+        [AC_MSG_ERROR([$2 is not yet implemented])
+    ])
 
     AS_IF([test "x$enable_debug_$1" != "xno"], [
         AC_DEFINE([$3], [1], [Enable $2])
