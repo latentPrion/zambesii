@@ -23,26 +23,24 @@ namespace atomicAsm
 	inline void flushDataCache(void);
 	inline void flushAllCaches(void);
 
-	inline sarch_t exchange(volatile intptr_t *lock, sarch_t val);
-	inline void set(volatile intptr_t *lock, sarch_t val);
-	inline void set(volatile uintptr_t *lock, uarch_t val)
+	inline sarch_t exchange(volatile uarch_t *lock, sarch_t val);
+	inline void set(volatile sarch_t *lock, sarch_t val);
+	inline void set(volatile uarch_t *lock, uarch_t val)
 	{
-		set((intptr_t *)lock, (sarch_t)val);
+		set((sarch_t *)lock, (sarch_t)val);
 	}
 
-	inline sarch_t exchangeAndAdd(
-		volatile sarch_t *ptr1, sarch_t *ptr2, sarch_t val);
-
-	inline sarch_t add(volatile sarch_t *lock, sarch_t val)
-		{ *lock += val; return *lock; }
-
-	inline ubit8 bitTestAndComplement(volatile sarch_t *lock, ubit8 bit);
-	inline sarch_t read(volatile sarch_t *lock) { return *lock; }
-	inline uarch_t read(volatile uarch_t *lock) { return *lock; }
-	inline void increment(volatile sarch_t *lock) { *lock += 1; }
-	inline void increment(volatile uarch_t *lock) { *lock += 1; }
-	inline void decrement(volatile sarch_t *lock) { *lock -= 1; }
-	inline void decrement(volatile uarch_t *lock) { *lock -= 1; }
+	inline sarch_t exchangeAndAdd(volatile sarch_t *ptr, sarch_t val);
+	inline sarch_t add(volatile sarch_t *lock, sarch_t val);
+	inline sarch_t bitTestAndComplement(volatile uarch_t *lock, ubit8 bit);
+	inline sarch_t bitTestAndSet(volatile uarch_t *lock, ubit8 bit);
+	inline sarch_t bitTestAndClear(volatile uarch_t *lock, ubit8 bit);
+	inline sarch_t read(volatile sarch_t *lock);
+	inline uarch_t read(volatile uarch_t *lock);
+	inline void increment(volatile sarch_t *lock);
+	inline void increment(volatile uarch_t *lock);
+	inline void decrement(volatile sarch_t *lock);
+	inline void decrement(volatile uarch_t *lock);
 }
 
 
@@ -59,7 +57,7 @@ inline void atomicAsm::memoryBarrier(void)
 		popl    %edx\n\t");
 }
 
-inline sarch_t atomicAsm::exchange(volatile intptr_t *lock, sarch_t val)
+inline sarch_t atomicAsm::exchange(volatile uarch_t *lock, sarch_t val)
 {
 	asm volatile (
 		"xchgl %1,%0 \n\t"
@@ -70,9 +68,137 @@ inline sarch_t atomicAsm::exchange(volatile intptr_t *lock, sarch_t val)
 	return val;
 }
 
-inline void atomicAsm::set(volatile intptr_t *lock, sarch_t val)
+inline void atomicAsm::set(volatile sarch_t *lock, sarch_t val)
 {
-	atomicAsm::exchange(lock, val);
+	atomicAsm::exchange((uarch_t *)lock, val);
+}
+
+inline sarch_t atomicAsm::exchangeAndAdd(volatile sarch_t *ptr, sarch_t val)
+{
+	sarch_t result;
+	asm volatile (
+		"lock; xaddl %0, %1"
+		: "=r" (result), "+m" (*ptr)
+		: "0" (val)
+		: "memory"
+	);
+	return result;
+}
+
+inline sarch_t atomicAsm::add(volatile sarch_t *lock, sarch_t val)
+{
+	sarch_t result;
+	asm volatile (
+		"lock; addl %2, %0\n\t"
+		"movl %0, %1"
+		: "+m" (*lock), "=r" (result)
+		: "ri" (val)
+		: "memory"
+	);
+	return result;
+}
+
+inline sarch_t atomicAsm::bitTestAndComplement(volatile uarch_t *lock, ubit8 bit)
+{
+	ubit8 byte_result;
+	asm volatile (
+		"lock; btcl %2, %0\n\t"
+		"setc %b1"
+		: "+m" (*lock), "=q" (byte_result)
+		: "r" ((sarch_t)bit)
+		: "memory", "cc"
+	);
+	return (sarch_t)byte_result;
+}
+
+inline sarch_t atomicAsm::bitTestAndSet(volatile uarch_t *lock, ubit8 bit)
+{
+	ubit8 byte_result;
+	asm volatile (
+		"lock; btsl %2, %0\n\t"
+		"setc %b1"
+		: "+m" (*lock), "=q" (byte_result)
+		: "r" ((sarch_t)bit)
+		: "memory", "cc"
+	);
+	return (sarch_t)byte_result;
+}
+
+inline sarch_t atomicAsm::bitTestAndClear(volatile uarch_t *lock, ubit8 bit)
+{
+	ubit8 byte_result;
+	asm volatile (
+		"lock; btrl %2, %0\n\t"
+		"setc %b1"
+		: "+m" (*lock), "=q" (byte_result)
+		: "r" ((sarch_t)bit)
+		: "memory", "cc"
+	);
+	return (sarch_t)byte_result;
+}
+
+inline sarch_t atomicAsm::read(volatile sarch_t *lock)
+{
+	sarch_t result;
+	asm volatile (
+		"movl %1, %0"
+		: "=r" (result)
+		: "m" (*lock)
+		: "memory"
+	);
+	return result;
+}
+
+inline uarch_t atomicAsm::read(volatile uarch_t *lock)
+{
+	uarch_t result;
+	asm volatile (
+		"movl %1, %0"
+		: "=r" (result)
+		: "m" (*lock)
+		: "memory"
+	);
+	return result;
+}
+
+inline void atomicAsm::increment(volatile sarch_t *lock)
+{
+	asm volatile (
+		"lock; incl %0"
+		: "+m" (*lock)
+		:
+		: "memory"
+	);
+}
+
+inline void atomicAsm::increment(volatile uarch_t *lock)
+{
+	asm volatile (
+		"lock; incl %0"
+		: "+m" (*lock)
+		:
+		: "memory"
+	);
+}
+
+inline void atomicAsm::decrement(volatile sarch_t *lock)
+{
+	asm volatile (
+		"lock; decl %0"
+		: "+m" (*lock)
+		:
+		: "memory"
+	);
+}
+
+inline void atomicAsm::decrement(volatile uarch_t *lock)
+{
+	asm volatile (
+		"lock; decl %0"
+		: "+m" (*lock)
+		:
+		: "memory"
+	);
 }
 
 #endif
