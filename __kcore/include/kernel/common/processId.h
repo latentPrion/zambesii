@@ -29,7 +29,7 @@ typedef uarch_t		processId_t;
 #define PROCID_THREAD_MASK	0xFFFF
 #define PROCID_THREAD_SHIFT	0
 
-#define PROCID_INVALID		((processId_t)(0xFFFF << PROCID_PROCESS_SHIFT))
+#define PROCID_INVALID		((processId_t)(0xFFFF << PROCID_PROCESS_SHIFT) | 0)
 
 #elif defined(__64_BIT__)
 
