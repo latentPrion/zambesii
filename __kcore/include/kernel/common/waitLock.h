@@ -20,6 +20,13 @@ friend class RecursiveLock;
 friend class MultipleReaderLock;
 
 public:
+	enum flagShiftE {
+		WL_FLAGS_ENUM_END = Lock::FLAGS_ENUM_END
+	};
+
+	// Compile-time check that enum values fit within uarch_t
+	typedef char __lock_flags_size_check2[(WL_FLAGS_ENUM_END <= __UARCH_T_NBITS__) ? 1 : -1];
+
 	void acquire();
 	void release();
 	// Release without re-enabling IRQs even if they were on before acquire.

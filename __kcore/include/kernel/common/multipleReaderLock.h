@@ -21,17 +21,27 @@
 /* The writer asserts this flag to notify all current readers not to try for the
  * lock on readRelease().
  **/
-#define MRLOCK_FLAGS_WRITE_REQUEST	(1<<5)
-
 class MultipleReaderLock
 :
 public Lock
 {
 public:
-	MultipleReaderLock(void)
-	{
-		readerCount.rsrc = 0;
+	// Flag shift values for the 'flags' member, continuing from Lock::FLAGS_ENUM_END
+	enum flagShiftE {
+		MR_FLAGS_WRITE_REQUEST_SHIFT = Lock::FLAGS_ENUM_END,
+		MR_FLAGS_ENUM_END
 	};
+
+	// Compile-time check that enum values fit within uarch_t
+	typedef char __lock_flags_size_check2[(MR_FLAGS_ENUM_END <= __UARCH_T_NBITS__) ? 1 : -1];
+
+	// Actual flag values derived from shifts
+	enum flagValueE {
+		MR_FLAGS_WRITE_REQUEST = (1 << MR_FLAGS_WRITE_REQUEST_SHIFT)
+	};
+
+	MultipleReaderLock(void)
+	{}
 
 public:
 	void readAcquire(uarch_t *flags);
@@ -41,10 +51,6 @@ public:
 	void writeRelease(void);
 
 	void readReleaseWriteAcquire(uarch_t flags);
-
-private:
-	// An atomic counter for the number of current readers.
-	SharedResourceGroup<WaitLock, volatile sarch_t>	readerCount;
 };
 
 #endif

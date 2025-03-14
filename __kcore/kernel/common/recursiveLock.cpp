@@ -7,7 +7,7 @@
 #include <kernel/common/processId.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
-/**	EXNAPLANATION:
+/**	EXPLANATION:
  * On a non-SMP build, there is only ONE processor, so there is no need to
  * spin on a lock. Also, there's no need to check, or even have the 'taskId'
  * member since only one thread can run at once. And that thread will not
@@ -25,7 +25,6 @@ void RecursiveLock::acquire(void)
 		.getCurrentThread();
 
 #if __SCALING__ >= SCALING_SMP
-
 	for (;FOREVER;)
 	{
 #endif
@@ -44,11 +43,11 @@ void RecursiveLock::acquire(void)
 #endif
 			if (FLAG_TEST(
 				taskId.lock.flags,
-				LOCK_FLAGS_IRQS_WERE_ENABLED))
+				Lock::FLAGS_IRQS_WERE_ENABLED))
 			{
 				FLAG_SET(
 					flags,
-					LOCK_FLAGS_IRQS_WERE_ENABLED);
+					Lock::FLAGS_IRQS_WERE_ENABLED);
 			};
 
 			// Release the taskId lock as soon as you can.
@@ -95,9 +94,9 @@ void RecursiveLock::release(void)
 	// If we're releasing the lock completely, open it up for other tasks.
 	if (lock == 0)
 	{
-		if (FLAG_TEST(flags, LOCK_FLAGS_IRQS_WERE_ENABLED))
+		if (FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED))
 		{
-			FLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
+			FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
 #if __SCALING__ >= SCALING_SMP
 			enableIrqs = 1;
 		};

@@ -7,73 +7,18 @@
 #include <kernel/common/panic.h>
 #include <kernel/common/waitLock.h>
 #include <kernel/common/sharedResourceGroup.h>
+#include <kernel/common/deadlock.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-#define DEADLOCK_BUFF_MAX_NBYTES	(1024)
-
-struct sDeadlockBuff
-{
-	sDeadlockBuff(void)
-	:
-	inUse(0)
-	{
-		memset(buff, 0, sizeof(buff));
-		buffer.rsrc = buff;
-	}
-
-	sbit8		inUse;
-	utf8Char	buff[DEADLOCK_BUFF_MAX_NBYTES];
-	SharedResourceGroup<WaitLock, utf8Char *>	buffer;
-} static deadlockBuffers[CONFIG_MAX_NCPUS];
-
-void Lock::sOperationDescriptor::execute()
-{
-	if (lock == NULL) { panic(FATAL"execute: lock is NULL.\n"); };
-
-	switch (type)
-	{
-	case WAIT:
-		static_cast<WaitLock *>( lock )->release();
-		break;
-
-	case RECURSIVE:
-		static_cast<RecursiveLock *>( lock )->release();
-		break;
-
-	case MULTIPLE_READER:
-		switch (operation)
-		{
-		case READ:
-			static_cast<MultipleReaderLock *>( lock )
-				->readRelease(rwFlags);
-
-			break;
-
-		case WRITE:
-			static_cast<MultipleReaderLock *>( lock )
-				->writeRelease();
-
-			break;
-
-		default:
-			panic(FATAL"execute: Invalid unlock operation.\n");
-		};
-		break;
-
-	default: panic(FATAL"execute: Invalid lock type.\n");
-	};
-}
-
 void WaitLock::acquire(void)
 {
-	uarch_t	nTries = 10000;
-	cpu_t	cid;
+	uarch_t	nTries = DEADLOCK_WRITE_MAX_NTRIES;
 	uarch_t contenderFlags=0;
 
 	if (cpuControl::interruptsEnabled())
 	{
-		FLAG_SET(contenderFlags, LOCK_FLAGS_IRQS_WERE_ENABLED);
+		FLAG_SET(contenderFlags, Lock::FLAGS_IRQS_WERE_ENABLED);
 		cpuControl::disableInterrupts();
 	};
 
@@ -81,13 +26,14 @@ void WaitLock::acquire(void)
 	ARCH_ATOMIC_WAITLOCK_HEADER(&lock, 1, 0)
 	{
 		cpuControl::subZero();
-		if (nTries <= 1) { break; };
-		nTries--;
+		if (nTries-- <= 1) { break; };
 	};
-#endif
 
+#ifdef CONFIG_DEBUG_LOCKS
 	if (nTries <= 1)
 	{
+		cpu_t	cid;
+
 		cid = cpuTrib.getCurrentCpuStream()->cpuId;
 		if (cid == CPUID_INVALID) { cid = 0; };
 
@@ -105,18 +51,18 @@ void WaitLock::acquire(void)
 		printf(
 			&deadlockBuffers[cid].buffer,
 			DEADLOCK_BUFF_MAX_NBYTES,
-			FATAL"Deadlock detected.\n"
+			FATAL"Waitlock::acquire deadlock detected: nTriesRemaining: %d.\n"
 			"\tCPU: %d, Lock obj addr: %p. Calling function: %p,\n"
 			"\tlock int addr: %p, lockval: %d.\n",
-			cid, this, __builtin_return_address(0), &lock, lock);
+			nTries, cid, this, __builtin_return_address(0), &lock, lock);
 
 		deadlockBuffers[cid].inUse = 0;
-
-		cpuControl::disableInterrupts();
 		cpuControl::halt();
 	};
+#endif
+#endif
 
-	flags = contenderFlags;
+	flags |= contenderFlags;
 }
 
 void WaitLock::release(void)
@@ -125,9 +71,9 @@ void WaitLock::release(void)
 	uarch_t		enableIrqs=0;
 #endif
 
-	if (FLAG_TEST(flags, LOCK_FLAGS_IRQS_WERE_ENABLED))
+	if (FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED))
 	{
-		FLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
+		FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
 #if __SCALING__ >= SCALING_SMP
 		enableIrqs = 1;
 	};
@@ -142,7 +88,7 @@ void WaitLock::release(void)
 
 void WaitLock::releaseNoIrqs(void)
 {
-	FLAG_UNSET(flags, LOCK_FLAGS_IRQS_WERE_ENABLED);
+	FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
 #if __SCALING__ >= SCALING_SMP
 	atomicAsm::set(&lock, 0);
 #endif
