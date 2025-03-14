@@ -43,6 +43,9 @@ typedef ubit8		utf8Char;
 typedef ubit16		utf16Char;
 typedef ubit32		unicodePoint;
 
+#define __UARCH_T_NBITS__ (sizeof(uarch_t) * __BITS_PER_BYTE__)
+#define __SARCH_T_NBITS__ (sizeof(sarch_t) * __BITS_PER_BYTE__)
+
 const utf8Char *strerror(error_t err);
 
 #endif /* !defined( __ASM__ ) */
