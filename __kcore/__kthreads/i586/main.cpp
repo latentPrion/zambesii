@@ -31,7 +31,6 @@ static void				__korientationMain1(void);
 static __kcbFn				__korientationMain2;
 static __kcbFn				__korientationMain3;
 static __kcbFn				__korientationMain4;
-static __kcbFn				__korientationMain5;
 
 #include <commonlibs/libacpi/libacpi.h>
 static void rDumpSrat(void)

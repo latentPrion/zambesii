@@ -49,12 +49,14 @@ static void sortNumaMapByAddress(sZkcmNumaMap *map)
 {
 	sNumaMemoryMapEntry	tmp;
 
+
 	/** EXPLANATION:
 	 * Simple one-pass swap sort algorithm. Recurses backward while sorting
 	 * to avoid the need for multiple passes.
 	 **/
+	assert(map->nMemEntries > 0);
 
-	for (sarch_t i=0; i<static_cast<sarch_t>( map->nMemEntries - 1 ); )
+	for (uarch_t i=0; i < static_cast<uarch_t>(map->nMemEntries - 1); )
 	{
 		if (map->memEntries[i].baseAddr > map->memEntries[i+1].baseAddr)
 		{
@@ -396,10 +398,12 @@ void MemoryTrib::init2_generateShbankFromNumaMap(
 	 * this function will fail to generate the final hole needed to cover
 	 * that scenario. Low priority fix.
 	 **/
-	sarch_t ubound = static_cast<sarch_t>( map->nMemEntries );
+	uarch_t ubound = map->nMemEntries;
+	// We need at least two entries in the NUMA map to generate a shbank.
+	assert_fatal(ubound >= 2);
 	ubound--;
 
-	for (sarch_t i=0; i<ubound; i++)
+	for (uarch_t i=0; i < ubound; i++)
 	{
 		/* Shbank is only for where holes intersect with memoryConfig.
 		 * i.e., if memSize is reported to be 256MB, and there are
