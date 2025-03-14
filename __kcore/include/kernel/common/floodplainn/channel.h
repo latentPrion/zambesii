@@ -228,9 +228,6 @@ namespace fplainn
 
 		virtual typeE getType(void)=0;
 
-		// Custom operator delete().
-		void operator delete(void *obj);
-
 	public:
 		bindChannelTypeE		bindChannelType;
 		RegionEndpoint			regionEnd0;
@@ -399,6 +396,11 @@ namespace fplainn
 
 		// Custom allocator to facilitate the extra room at the end.
 		void *operator new(size_t sz, uarch_t dataSize);
+		// Matching placement delete operator.
+		void operator delete(void *ptr, uarch_t dataSize);
+
+		// Multiplexer for this class' delete operators.
+		void operator delete(void *ptr);
 
 		MessageStream::sHeader		header;
 		// "data" is initialized to point to the byte after this struct.

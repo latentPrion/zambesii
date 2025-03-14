@@ -8,25 +8,6 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
-void fplainn::Channel::operator delete(void *obj)
-{
-	Channel		*chan = static_cast<Channel *>(obj);
-
-	/**	EXPLANATION:
-	 * Channels always begin as an IncompleteChannel derivative, and then
-	 * they are cast downwards to a Channel derivative.
-	 *
-	 * We must ensure that we don't delete() the Channel derivative pointer,
-	 * and that we cast the channel back up to its IncompleteChannel
-	 * derivative before deleting.
-	 **/
-	if (chan->getType() == TYPE_D2D) {
-		::delete static_cast<IncompleteD2DChannel *>(chan);
-	} else {
-		::delete static_cast<IncompleteD2SChannel *>(chan);
-	};
-}
-
 fplainn::D2DChannel::D2DChannel(IncompleteD2DChannel &ic)
 : Channel(ic.metaName, ic.bindChannelType, &regionEnd1),
 regionEnd1(this, &regionEnd0)
@@ -57,9 +38,30 @@ fstreamEnd(this, &regionEnd0)
 		ic.endpoints[1]->privateData);
 }
 
+/* Placement new operator for the sChannelMsg class.
+ * Used to allocate the extra space needed for the marshalled data
+ * in the IPC message.
+ **/
 void *fplainn::sChannelMsg::operator new(size_t sz, uarch_t dataSize)
 {
 	return ::operator new(sz + dataSize);
+}
+
+/* Mirror delete operator for the placement delete above.
+ **/
+void fplainn::sChannelMsg::operator delete(void *ptr, uarch_t)
+{
+	::operator delete(ptr);
+}
+
+/* Normal delete operator - called by delete expressions
+ * Chain-calls the placement delete to reuse the cleanup logic
+ */
+void fplainn::sChannelMsg::operator delete(void *ptr)
+{
+	// Chain to the placement delete with a dummy dataSize parameter
+	// since our cleanup doesn't actually depend on the dataSize value
+	operator delete(ptr, 0);
 }
 
 //static udi_layout_t		blankLayout[] = { UDI_DL_END };
