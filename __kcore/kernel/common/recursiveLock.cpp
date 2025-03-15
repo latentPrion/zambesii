@@ -6,71 +6,74 @@
 #include <kernel/common/thread.h>
 #include <kernel/common/processId.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <arch/x8632/atomic.h>
 
 /**	EXPLANATION:
  * On a non-SMP build, there is only ONE processor, so there is no need to
- * spin on a lock. Also, there's no need to check, or even have the 'taskId'
- * member since only one thread can run at once. And that thread will not
- * be able to leave the CPU until it leave the critical section. Therefore,
- * we need not have a count of the number of times it entered the critical
- * section. We can just disable IRQs and increment the 'lock' member on
- * acquire and decrement it on release.
+ * spin on a lock. Also, there's no need to check the thread ID since only
+ * one thread can run at once. And that thread will not be able to leave the
+ * CPU until it leaves the critical section. Therefore, we can just
+ * disable IRQs and increment the recursionCount member on acquire and
+ * decrement it on release.
  **/
 
 void RecursiveLock::acquire(void)
 {
 	Thread		*thread;
+	processId_t	currThreadId, oldValue;
+	uarch_t		irqsWereEnabled;
 
 	thread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
+	currThreadId = thread->getFullId();
+
+	// Save the current interrupt state
+	irqsWereEnabled = cpuControl::interruptsEnabled();
+
+	// Disable interrupts to ensure atomicity
+	cpuControl::disableInterrupts();
 
 #if __SCALING__ >= SCALING_SMP
 	for (;FOREVER;)
 	{
-#endif
-		taskId.lock.acquire();
+		// Try to acquire the lock if it's free (PROCID_INVALID)
+		oldValue = atomicAsm::compareAndExchange(
+			&lock,
+			PROCID_INVALID, currThreadId);
 
-#if __SCALING__ >= SCALING_SMP
-		if (taskId.rsrc == PROCID_INVALID)
+		if (oldValue == PROCID_INVALID)
 		{
-			taskId.rsrc = thread->getFullId();
-
-			/* Check the flags on the waitlock which guards
-			 * this critical section to know whether or not
-			 * IRQS were enabled before we got to this
-			 * lock's acquire.
-			 **/
-#endif
-			if (FLAG_TEST(
-				taskId.lock.flags,
-				Lock::FLAGS_IRQS_WERE_ENABLED))
-			{
-				FLAG_SET(
-					flags,
-					Lock::FLAGS_IRQS_WERE_ENABLED);
-			};
-
-			// Release the taskId lock as soon as you can.
-			taskId.lock.releaseNoIrqs();
-
-			lock++;
-#if __SCALING__ >= SCALING_SMP
+			// We acquired the lock
+			recursionCount = 1;
+			if (irqsWereEnabled)
+				{ FLAG_SET(flags, Lock::FLAGS_IRQS_WERE_ENABLED); }
 			return;
 		}
-		// If the current task already holds the lock:
-		else if (taskId.rsrc == thread->getFullId())
+		else if (oldValue == currThreadId)
 		{
-			taskId.lock.releaseNoIrqs();
-			lock++;
+			// We already own the lock, increment recursion count
+			recursionCount++;
 			return;
 		}
-		else {
-			taskId.lock.release();
-		};
+
+		/* If we get here, someone else owns the lock
+		 * Re-enable interrupts while we spin
+		 * */
+		if (irqsWereEnabled)
+			{ cpuControl::enableInterrupts(); }
 
 		// Relax the CPU.
 		cpuControl::subZero();
-	};
+		
+		// Disable interrupts again before next attempt
+		cpuControl::disableInterrupts();
+	}
+#else
+	// In non-SMP mode, just take the lock
+	lock = currThreadId;
+	recursionCount++;
+	if (irqsWereEnabled)
+		{ FLAG_SET(flags, Lock::FLAGS_IRQS_WERE_ENABLED); }
 #endif
 }
 
@@ -79,34 +82,20 @@ void RecursiveLock::release(void)
 	/* We make the assumption that a task will only call release() if it
 	 * already holds the lock. this is pretty logical. Anyone who does
 	 * otherwise is simply being malicious and stupid.
-	 *
-	 * We can also not acquire the lock on the decrement and the read on
-	 * the 'lock' var since only one thread should be able to execute this
-	 * code at once. Therefore there is no contention on 'lock' while the
-	 * lock is held.
 	 **/
 
-#if __SCALING__ >= SCALING_SMP
-	uarch_t		enableIrqs=0;
-#endif
-
-	lock--;
-	// If we're releasing the lock completely, open it up for other tasks.
-	if (lock == 0)
+	recursionCount--;
+	
+	// If we're releasing the lock completely, open it up for other tasks
+	if (recursionCount == 0)
 	{
-		if (FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED))
-		{
-			FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
-#if __SCALING__ >= SCALING_SMP
-			enableIrqs = 1;
-		};
-		taskId.lock.acquire();
-		taskId.rsrc = PROCID_INVALID;
-		taskId.lock.release();
-		if (enableIrqs) {
-#endif
-			cpuControl::enableInterrupts();
-		};
-	};
-}
+		uarch_t irqsWereEnabled = FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
+		FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
+		// Mark the lock as free atomically
+		atomicAsm::set(&lock, PROCID_INVALID);
 
+		// Restore interrupts if they were enabled before
+		if (irqsWereEnabled)
+			{ cpuControl::enableInterrupts(); }
+	}
+}
