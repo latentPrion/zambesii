@@ -18,6 +18,13 @@ class RecursiveLock
 public Lock
 {
 public:
+	enum flagShiftE {
+		RL_FLAGS_ENUM_END = Lock::FLAGS_ENUM_END
+	};
+
+	// Compile-time check that enum values fit within uarch_t
+	typedef char __lock_flags_size_check2[(RL_FLAGS_ENUM_END <= __UARCH_T_NBITS__) ? 1 : -1];
+
 	RecursiveLock(void)
 	: Lock()
 	{
