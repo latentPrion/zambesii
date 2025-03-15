@@ -5,6 +5,7 @@
 	#include <udi.h>
 	#undef UDI_VERSION
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kcxxlib/new>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/messageStream.h>
 	#include <kernel/common/floodplainn/movableMemory.h>
@@ -193,8 +194,11 @@ public:
 		void *operator new(size_t n, uarch_t extra)
 			{ return ::operator new(n + extra); }
 
-		void operator delete(void *m)
+		void operator delete(void *m, uarch_t)
 			{ ::operator delete(m); }
+
+		void operator delete(void *m)
+			{ operator delete(m, 0); }
 
 		uarch_t			extraMemNBytes;
 		ubit16			opsIndex;

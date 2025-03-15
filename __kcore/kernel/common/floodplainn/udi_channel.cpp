@@ -12,16 +12,6 @@
 #include <kernel/common/floodplainn/movableMemory.h>
 
 
-void *fplainn::sMovableMemory::operator new(size_t sz, uarch_t objectSize)
-{
-	return ::operator new(sz + objectSize);
-}
-
-void fplainn::sMovableMemory::operator delete(void *mem)
-{
-	::operator delete(mem);
-}
-
 error_t fplainn::Zudi::getInternalBopInfo(
 	ubit16 regionIndex, ubit16 *metaIndex,
 	ubit16 *opsIndex0, ubit16 *opsIndex1,

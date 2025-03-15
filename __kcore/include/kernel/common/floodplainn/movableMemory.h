@@ -10,8 +10,21 @@ namespace fplainn
 {
 	struct sMovableMemory
 	{
-		void *operator new(size_t sz, uarch_t objectSize);
-		void operator delete(void *mem);
+		void *operator new(size_t sz, uarch_t objectSize)
+		{
+			return ::operator new(sz + objectSize);
+		}
+
+		void operator delete(void *mem, uarch_t)
+		{
+			::operator delete(mem);
+		}
+
+		void operator delete(void *mem)
+		{
+			operator delete(mem, 0);
+		}
+
 		sMovableMemory(uarch_t objectNBytes)
 		:
 		magic(0), objectNBytes(objectNBytes)
