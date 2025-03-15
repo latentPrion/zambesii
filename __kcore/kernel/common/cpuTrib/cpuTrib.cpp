@@ -22,15 +22,19 @@ numaBankId_t	CpuStream::highestBankId=NUMABANKID_INVALID;
  *
  * @param mapType A string describing the map type for error messages
  * @param cpuId The CPU ID to check
+ * @return non-zero if the CPU ID is valid (less than CONFIG_MAX_NCPUS), zero otherwise
  */
-static void checkCpuIdLimit(const char* mapType, cpu_t cpuId)
+static sarch_t checkCpuIdLimit(const char* mapType, cpu_t cpuId)
 {
     if (cpuId >= CONFIG_MAX_NCPUS)
     {
-        printf(ERROR CPUTRIB"checkCpuIdLimit(%s): CPU ID %d exceeds CONFIG_MAX_NCPUS (%d).\n",
+        printf(WARNING CPUTRIB"checkCpuIdLimit(%s): CPU ID %d exceeds "
+			"CONFIG_MAX_NCPUS (%d). Ignoring this CPU.\n",
             mapType, cpuId, CONFIG_MAX_NCPUS);
-        panic(ERROR CPUTRIB"Cannot proceed with CPU ID that exceeds CONFIG_MAX_NCPUS.\n");
+
+        return 0;
     }
+    return 1;
 }
 
 /**
@@ -68,17 +72,19 @@ static IdType findHighestId(
     ubit32 nEntries,
     IdType currHighest,
     IdType (*getIdFunc)(const MapType*, ubit32),
-    bool checkLimit)
+    sarch_t checkLimit)
 {
     for (ubit32 i = 0; i < nEntries; i++)
     {
         const IdType entryId = getIdFunc(map, i);
         if ((signed)entryId > (signed)currHighest)
         {
+            // Skip CPUs with IDs exceeding CONFIG_MAX_NCPUS if checkLimit is true
             if (checkLimit && sizeof(IdType) == sizeof(cpu_t))
             {
                 // Only check CPU IDs against CONFIG_MAX_NCPUS
-                checkCpuIdLimit(mapType, (cpu_t)entryId);
+                if (!checkCpuIdLimit(mapType, (cpu_t)entryId))
+					{ continue; };
             }
             currHighest = entryId;
         }
@@ -97,7 +103,7 @@ static cpu_t getHighestCpuIdFromNumaMap(
         "NUMA map",
         numaMap, numaMap->nCpuEntries,
         currHighest,
-        getNumaMapCpuId, true);
+        getNumaMapCpuId, 1);
 }
 
 /**
@@ -111,7 +117,7 @@ static cpu_t getHighestCpuIdFromSmpMap(
         "SMP map",
         smpMap, smpMap->nEntries,
         currHighest,
-        getSmpMapCpuId, true);
+        getSmpMapCpuId, 1);
 }
 
 /**
@@ -125,7 +131,7 @@ static numaBankId_t getHighestBankIdFromNumaMap(
         "NUMA bank",
 		numaMap, numaMap->nCpuEntries,
         currHighest,
-		getNumaMapBankId, false);
+		getNumaMapBankId, 0);
 }
 
 CpuTrib::CpuTrib(void)
@@ -275,6 +281,11 @@ error_t CpuTrib::loadBspInformation(void)
 		printf(ERROR CPUTRIB"loadBspInformation: BSP CPU ID %d "
 			"exceeds CONFIG_MAX_NCPUS (%d).\n",
 			CpuStream::bspCpuId, CONFIG_MAX_NCPUS);
+
+		/** EXPLANATION:
+		 * We must panic here because the BSP is essential and we can't manage it
+		 * if its ID exceeds CONFIG_MAX_NCPUS (powerStacks array size limitation)
+		 **/
 		panic(ERROR CPUTRIB"Cannot proceed with BSP CPU ID that exceeds "
 			"CONFIG_MAX_NCPUS.\n");
 	}
@@ -417,10 +428,12 @@ error_t CpuTrib::initializeAllCpus(void)
 	cpu_t finalHighestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
 	if (finalHighestCpuId >= CONFIG_MAX_NCPUS)
 	{
-		printf(ERROR CPUTRIB"initializeAllCpus: Highest CPU ID %d exceeds CONFIG_MAX_NCPUS (%d).\n",
-			finalHighestCpuId, CONFIG_MAX_NCPUS);
+		printf(WARNING CPUTRIB"initializeAllCpus: Highest CPU ID %d "
+			"exceeds CONFIG_MAX_NCPUS (%d). Capping to %d.\n",
+			finalHighestCpuId, CONFIG_MAX_NCPUS, CONFIG_MAX_NCPUS - 1);
 
-		panic(ERROR CPUTRIB"Cannot proceed with CPU ID that exceeds CONFIG_MAX_NCPUS.\n");
+		atomicAsm::set(&CpuStream::highestCpuId, CONFIG_MAX_NCPUS - 1);
+		finalHighestCpuId = CONFIG_MAX_NCPUS - 1;
 	}
 
 	if (availableCpus.resizeTo(
@@ -449,17 +462,47 @@ error_t CpuTrib::initializeAllCpus(void)
 #endif
 	if (ret != ERROR_SUCCESS) { return ret; }
 
+assert_fatal(0);
 	zkcmCore.chipsetEventNotification(__KPOWER_EVENT_SMP_AVAIL, 0);
 	return ERROR_SUCCESS;
 }
 
 #if __SCALING__ >= SCALING_CC_NUMA
+/**
+ * Notification of a CPU detected at boot time
+ *
+ * @param bid The NUMA bank ID for the CPU
+ * @param cid The CPU ID
+ * @param acpiId The ACPI ID for the CPU
+ * @return ERROR_SUCCESS if successful, ERROR_LIMIT_OVERFLOWED if CPU ID exceeds CONFIG_MAX_NCPUS,
+ *         or another error code if spawnStream fails
+ *
+ * @note The ERROR_LIMIT_OVERFLOWED return value has special significance in the kernel.
+ *       It should ONLY be used to signal that a CPU ID exceeds CONFIG_MAX_NCPUS.
+ *       The kernel relies on this specific error code to handle CPUs with IDs that
+ *       exceed CONFIG_MAX_NCPUS differently from other error conditions.
+ */
 error_t CpuTrib::bootCpuNotification(numaBankId_t bid, cpu_t cid, ubit32 acpiId)
 #elif __SCALING__ == SCALING_SMP
 error_t CpuTrib::bootCpuNotification(cpu_t cid, ubit32 acpiId)
 #endif
 {
 	error_t			ret;
+
+	// Check that CPU ID doesn't exceed CONFIG_MAX_NCPUS
+	if (cid >= CONFIG_MAX_NCPUS)
+	{
+#if __SCALING__ >= SCALING_CC_NUMA
+		printf(WARNING CPUTRIB"bootCpuNotification(%d,%d,%d): CPU ID %d exceeds "
+			"CONFIG_MAX_NCPUS (%d). Ignoring this CPU.\n",
+			bid, cid, acpiId, cid, CONFIG_MAX_NCPUS);
+#elif __SCALING__ == SCALING_SMP
+		printf(WARNING CPUTRIB"bootCpuNotification(%d,%d): CPU ID %d exceeds "
+			"CONFIG_MAX_NCPUS (%d). Ignoring this CPU.\n",
+			cid, acpiId, cid, CONFIG_MAX_NCPUS);
+#endif
+		return ERROR_LIMIT_OVERFLOWED;
+	}
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	ret = spawnStream(bid, cid, acpiId);
@@ -502,9 +545,19 @@ void CpuTrib::bootParseNumaMap(sZkcmNumaMap *numaMap)
 
 		if (err != ERROR_SUCCESS)
 		{
+			/* If the error is due to CPU ID exceeding CONFIG_MAX_NCPUS,
+			 * we've already logged a warning
+			 * and we can continue with other CPUs
+			 **/
+			if (err == ERROR_LIMIT_OVERFLOWED)
+				{ continue; };
+
 			printf(ERROR CPUTRIB"bootParseNumaMap: bootCpuNotification() "
-				"failed for CPU %d.\n",
-				numaMap->cpuEntries[i].cpuId);
+				"failed for CPU %d with error %s.\n",
+				numaMap->cpuEntries[i].cpuId,
+				strerror(err));
+
+			continue;
 		};
 
 		getStream(numaMap->cpuEntries[i].cpuId)
@@ -724,10 +777,19 @@ void CpuTrib::bootParseSmpMap(sZkcmSmpMap *smpMap)
 
 		if (err != ERROR_SUCCESS)
 		{
+			/* If the error is due to CPU ID exceeding CONFIG_MAX_NCPUS, we've already logged a warning
+			 * and we can continue with other CPUs
+			 **/
+			if (err == ERROR_LIMIT_OVERFLOWED)
+				{ continue; };
+
 			printf(ERROR CPUTRIB"bootParseSmpMap: "
 				"Failed to power on CPU Stream "
-				"for CPU %d.",
-				smpMap->entries[i].cpuId);
+				"for CPU %d with error %s.",
+				smpMap->entries[i].cpuId,
+				strerror(err));
+
+			continue;
 		};
 
 		getStream(smpMap->entries[i].cpuId)
