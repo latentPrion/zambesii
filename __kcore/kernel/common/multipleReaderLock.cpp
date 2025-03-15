@@ -16,14 +16,18 @@
  **/
 void MultipleReaderLock::readAcquire(uarch_t *_flags)
 {
-	if (cpuControl::interruptsEnabled()) {
+	if (cpuControl::interruptsEnabled())
+	{
 		FLAG_SET(*_flags, Lock::FLAGS_IRQS_WERE_ENABLED);
 		cpuControl::disableInterrupts();
 	}
 
 #if __SCALING__ >= SCALING_SMP
 #ifdef CONFIG_DEBUG_LOCKS
-	uarch_t nReadTriesRemaining = DEADLOCK_READ_MAX_NTRIES;
+	// Scale the number of tries based on the number of CPUs
+	cpu_t highestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
+	uarch_t nReadTriesRemaining = DEADLOCK_READ_BASE_MAX_NTRIES +
+		(highestCpuId * DEADLOCK_PER_CPU_EXTRA_READ_NTRIES);
 #endif
 
 	atomicAsm::increment(&lock);
@@ -76,8 +80,12 @@ void MultipleReaderLock::readRelease(uarch_t _flags)
 void MultipleReaderLock::writeAcquire(void)
 {
 #ifdef CONFIG_DEBUG_LOCKS
-	uarch_t nReadTriesRemaining = DEADLOCK_READ_MAX_NTRIES,
-		nWriteTriesRemaining = DEADLOCK_WRITE_MAX_NTRIES;
+	// Scale the number of tries based on the number of CPUs
+	cpu_t highestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
+	uarch_t nReadTriesRemaining = DEADLOCK_READ_BASE_MAX_NTRIES +
+		(highestCpuId * DEADLOCK_PER_CPU_EXTRA_READ_NTRIES),
+		nWriteTriesRemaining = DEADLOCK_WRITE_BASE_MAX_NTRIES +
+		(highestCpuId * DEADLOCK_PER_CPU_EXTRA_WRITE_NTRIES);
 #endif
 	uarch_t contenderFlags = 0;
 
@@ -176,8 +184,12 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 	 **/
 #if __SCALING__ >= SCALING_SMP
 #ifdef CONFIG_DEBUG_LOCKS
-	uarch_t nReadTriesRemaining = DEADLOCK_READ_MAX_NTRIES,
-		nWriteTriesRemaining = DEADLOCK_WRITE_MAX_NTRIES;
+	// Scale the number of tries based on the number of CPUs
+	cpu_t highestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
+	uarch_t nReadTriesRemaining = DEADLOCK_READ_BASE_MAX_NTRIES +
+		(highestCpuId * DEADLOCK_PER_CPU_EXTRA_READ_NTRIES),
+		nWriteTriesRemaining = DEADLOCK_WRITE_BASE_MAX_NTRIES +
+		(highestCpuId * DEADLOCK_PER_CPU_EXTRA_WRITE_NTRIES);
 #endif
 
 	// Don't have to CLI cos readAcquire() already CLI'd for us.

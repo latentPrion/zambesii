@@ -11,6 +11,7 @@
 #include <kernel/common/processTrib/processTrib.h>
 #include <__kthreads/main.h>
 #include <__kthreads/__kcpuPowerOn.h>
+#include <arch/atomic.h>
 
 
 #define getHighestId(currHighest,map,member,item,hibound)	\
@@ -185,7 +186,8 @@ error_t CpuTrib::loadBspInformation(void)
 			"CONFIG_MAX_NCPUS.\n");
 	}
 
-	CpuStream::highestCpuId = CpuStream::bspCpuId;
+	// Set highestCpuId atomically
+	atomicAsm::set(&CpuStream::highestCpuId, CpuStream::bspCpuId);
 	CpuStream::highestBankId = CpuStream::bspBankId;
 
 	return ERROR_SUCCESS;
@@ -286,9 +288,14 @@ error_t CpuTrib::initializeAllCpus(void)
 			CpuStream::highestBankId, numaMap, cpuEntries,
 			bankId, numaMap->nCpuEntries);
 
+		// Use a local variable for getHighestId and then set atomically
+		cpu_t localHighestCpuId = CpuStream::highestCpuId;
+
 		getHighestId(
-			CpuStream::highestCpuId, numaMap, cpuEntries,
+			localHighestCpuId, numaMap, cpuEntries,
 			cpuId, numaMap->nCpuEntries);
+
+		atomicAsm::set(&CpuStream::highestCpuId, localHighestCpuId);
 	};
 
 	if (availableBanks.resizeTo(
@@ -304,11 +311,17 @@ error_t CpuTrib::initializeAllCpus(void)
 	if (smpMap != NULL && smpMap->nEntries > 0)
 	{
 		if (CpuStream::highestCpuId == CPUID_INVALID)
-			{ CpuStream::highestCpuId = 0; };
+			{ atomicAsm::set(&CpuStream::highestCpuId, 0); };
+
+		// Use a local variable for getHighestId and then set atomically
+		cpu_t localHighestCpuId = CpuStream::highestCpuId;
 
 		getHighestId(
-			CpuStream::highestCpuId, smpMap,
+			localHighestCpuId, smpMap,
 			entries, cpuId, smpMap->nEntries);
+
+		// Set highestCpuId atomically with the new value
+		atomicAsm::set(&CpuStream::highestCpuId, localHighestCpuId);
 	};
 
 	// Final check to ensure highestCpuId doesn't exceed CONFIG_MAX_NCPUS

@@ -1,6 +1,7 @@
 
 #include <config.h>
 #include <arch/cpuControl.h>
+#include <arch/atomic.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/thread.h>
@@ -14,7 +15,10 @@
 void WaitLock::acquire(void)
 {
 #ifdef CONFIG_DEBUG_LOCKS
-	uarch_t	nTries = DEADLOCK_WRITE_MAX_NTRIES;
+	// Scale the number of tries based on the number of CPUs
+	cpu_t highestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
+	uarch_t nTries = DEADLOCK_WRITE_BASE_MAX_NTRIES +
+		(highestCpuId * DEADLOCK_PER_CPU_EXTRA_WRITE_NTRIES);
 #endif
 	uarch_t contenderFlags=0;
 
