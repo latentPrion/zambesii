@@ -16,7 +16,6 @@
  **/
 void MultipleReaderLock::readAcquire(uarch_t *_flags)
 {
-
 	if (cpuControl::interruptsEnabled()) {
 		FLAG_SET(*_flags, Lock::FLAGS_IRQS_WERE_ENABLED);
 		cpuControl::disableInterrupts();
@@ -30,8 +29,16 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 	atomicAsm::increment(&lock);
 	while ((atomicAsm::read(&lock) & MR_FLAGS_WRITE_REQUEST) != 0)
 	{
+		// Re-enable interrupts while we spin if they were enabled before
+		if (FLAG_TEST(*_flags, Lock::FLAGS_IRQS_WERE_ENABLED))
+			{ cpuControl::enableInterrupts(); }
+
 		cpuControl::subZero();
+		cpuControl::disableInterrupts();
+
+#ifdef CONFIG_DEBUG_LOCKS
 		if (nReadTriesRemaining-- <= 1) { break; };
+#endif
 	}
 
 #ifdef CONFIG_DEBUG_LOCKS
@@ -89,7 +96,13 @@ void MultipleReaderLock::writeAcquire(void)
 	// Spin until we can set the write request bit (it was previously unset)
 	while (atomicAsm::bitTestAndSet(&lock, MR_FLAGS_WRITE_REQUEST_SHIFT) != 0)
 	{
+		// Re-enable interrupts while we spin if they were enabled before
+		if (FLAG_TEST(contenderFlags, Lock::FLAGS_IRQS_WERE_ENABLED))
+			{ cpuControl::enableInterrupts(); }
+
 		cpuControl::subZero();
+		cpuControl::disableInterrupts();
+
 #ifdef CONFIG_DEBUG_LOCKS
 		if (nWriteTriesRemaining-- <= 1) { goto deadlock; };
 #endif
@@ -101,7 +114,13 @@ void MultipleReaderLock::writeAcquire(void)
 	while ((atomicAsm::read(&lock)
 		& ((1 << Lock::FLAGS_ENUM_START) - 1)) != 0)
 	{
+		// Re-enable interrupts while we spin if they were enabled before
+		if (FLAG_TEST(contenderFlags, Lock::FLAGS_IRQS_WERE_ENABLED))
+			{ cpuControl::enableInterrupts(); }
+
 		cpuControl::subZero();
+		cpuControl::disableInterrupts();
+
 #ifdef CONFIG_DEBUG_LOCKS
 		if (nReadTriesRemaining-- <= 1) { break; };
 #endif
@@ -169,6 +188,10 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 {
 	/* Acquire the lock, set the writer flag, decrement the reader count,
 	 * wait for readers to exit. Return.
+	 *
+	 * We shouldn't enable IRQs between loop iterations of the spin loops
+	 * because the caller expects IRQs to remain disabled -- the caller
+	 * wishes to maintain her critical section.
 	 **/
 #if __SCALING__ >= SCALING_SMP
 #ifdef CONFIG_DEBUG_LOCKS

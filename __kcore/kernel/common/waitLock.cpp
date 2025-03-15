@@ -27,8 +27,18 @@ void WaitLock::acquire(void)
 #if __SCALING__ >= SCALING_SMP
 	ARCH_ATOMIC_WAITLOCK_HEADER(&lock, 1, 0)
 	{
+		// Re-enable interrupts while we spin if they were enabled before
+		if (FLAG_TEST(contenderFlags, Lock::FLAGS_IRQS_WERE_ENABLED))
+			{ cpuControl::enableInterrupts(); }
+
+		// Relax the CPU
 		cpuControl::subZero();
+		// Disable interrupts again before next attempt
+		cpuControl::disableInterrupts();
+
+#ifdef CONFIG_DEBUG_LOCKS
 		if (nTries-- <= 1) { break; };
+#endif
 	};
 
 #ifdef CONFIG_DEBUG_LOCKS
