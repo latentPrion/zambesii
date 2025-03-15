@@ -7,6 +7,8 @@
 #include <kernel/common/processId.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <arch/x8632/atomic.h>
+#include <kernel/common/panic.h>
+#include <kernel/common/deadlock.h>
 
 /**	EXPLANATION:
  * On a non-SMP build, there is only ONE processor, so there is no need to
@@ -74,34 +76,12 @@ void RecursiveLock::acquire(void)
 #ifdef CONFIG_DEBUG_LOCKS
 		if (nTries-- <= 1)
 		{
-			cpu_t cid;
-
-			cid = cpuTrib.getCurrentCpuStream()->cpuId;
-			if (cid == CPUID_INVALID) { cid = 0; }
-
-			/**	EXPLANATION:
-			 * This "inUse" feature allows us to detect infinite recursion
-			 * deadlock loops. This can occur when the kernel somehow
-			 * manages to deadlock in printf() AND also then deadlock
-			 * in the deadlock debugger printf().
-			 **/
-			if (deadlockBuffers[cid].inUse == 1)
-				{ panic(); }
-
-			deadlockBuffers[cid].inUse = 1;
-
-			printf(
-				&deadlockBuffers[cid].buffer,
-				DEADLOCK_BUFF_MAX_NBYTES,
-				FATAL"RecursiveLock::acquire deadlock detected: nTriesRemaining: %d.\n"
-				"\tCPU: %d, Lock obj addr: %p. Calling function: %p,\n"
-				"\tlock int addr: %p, lockval: %x, currThreadId: %x.\n",
-				nTries,
-				cid, this, __builtin_return_address(0),
-				&lock, lock, currThreadId);
-
-			deadlockBuffers[cid].inUse = 0;
-			cpuControl::halt();
+			reportDeadlock(
+				FATAL"RecursiveLock::acquire deadlock detected:\n"
+				"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
+				"\tcurrThreadId: %x, CPU: %d, Lock obj addr: %p, Calling function: %p",
+				nTries, &lock, lock, currThreadId,
+				cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
 		}
 #endif
 	}

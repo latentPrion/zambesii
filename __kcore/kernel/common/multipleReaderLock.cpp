@@ -42,25 +42,20 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 	}
 
 #ifdef CONFIG_DEBUG_LOCKS
-	if (nReadTriesRemaining <= 1) {
-		cpu_t cid = cpuTrib.getCurrentCpuStream()->cpuId;
-		if (cid == CPUID_INVALID) { cid = 0; }
+	if (nReadTriesRemaining <= 1)
+	{
+		uarch_t lockValue = atomicAsm::read(&lock);
+		uarch_t nReaders = lockValue & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1);
+		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
-		if (deadlockBuffers[cid].inUse == 1) {
-			panic();
-		}
-
-		deadlockBuffers[cid].inUse = 1;
-		printf(
-			&deadlockBuffers[cid].buffer,
-			DEADLOCK_BUFF_MAX_NBYTES,
-			FATAL"MRLock::readAcquire deadlock detected: nReadTriesRemaining: %d.\n"
-			"\tCPU: %d, Lock obj addr: %p. Calling function: %p,\n"
-			"\tlock int addr: %p, lockval: %d.\n",
-			nReadTriesRemaining, cid, this, __builtin_return_address(0), &lock, lock);
-
-		deadlockBuffers[cid].inUse = 0;
-		cpuControl::halt();
+		reportDeadlock(
+			FATAL"MultipleReaderLock::readAcquire deadlock detected:\n"
+			"\tnReadTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
+			"\tWrite request bit: %s, Number of readers: %d\n"
+			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
+			nReadTriesRemaining, &lock, lock,
+			writeRequestSet ? "SET" : "CLEAR", nReaders,
+			cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
 	}
 #endif
 #endif
@@ -130,33 +125,19 @@ void MultipleReaderLock::writeAcquire(void)
 deadlock:
 	if (nReadTriesRemaining <= 1 || nWriteTriesRemaining <= 1)
 	{
-		cpu_t cid;
+		uarch_t lockValue = atomicAsm::read(&lock);
+		uarch_t nReaders = lockValue & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1);
+		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
-		cid = cpuTrib.getCurrentCpuStream()->cpuId;
-		if (cid == CPUID_INVALID) { cid = 0; };
-
-		/**	EXPLANATION:
-		 * This "inUse" feature allows us to detect infinite recursion
-		 * deadlock loops. This can occur when the kernel somehow
-		 * manages to deadlock in printf() AND also then deadlock
-		 * in the deadlock debugger printf().
-		 **/
-		if (deadlockBuffers[cid].inUse == 1)
-			{ panic(); };
-
-		deadlockBuffers[cid].inUse = 1;
-
-		printf(
-			&deadlockBuffers[cid].buffer,
-			DEADLOCK_BUFF_MAX_NBYTES,
-			FATAL"MRLock::writeAcquire deadlock detected: nReadTriesRemaining: %d, nWriteTriesRemaining: %d.\n"
-			"\tCPU: %d, Lock obj addr: %p. Calling function: %p,\n"
-			"\tflags addr: %p, flags val: %d.\n",
-			nReadTriesRemaining, nWriteTriesRemaining,
-			cid, this, __builtin_return_address(0), &flags, flags);
-
-		deadlockBuffers[cid].inUse = 0;
-		cpuControl::halt();
+		reportDeadlock(
+			FATAL"MultipleReaderLock::writeAcquire deadlock detected:\n"
+			"\tnReadTriesRemaining: %d, nWriteTriesRemaining: %d\n"
+			"\tlock addr: %p, lock val: %x\n"
+			"\tWrite request bit: %s, Number of readers: %d\n"
+			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
+			nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
+			writeRequestSet ? "SET" : "CLEAR", nReaders,
+			cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
 	};
 #endif
 #endif
@@ -225,25 +206,19 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 deadlock:
 	if (nReadTriesRemaining <= 1 || nWriteTriesRemaining <= 1)
 	{
-		cpu_t cid = cpuTrib.getCurrentCpuStream()->cpuId;
-		if (cid == CPUID_INVALID) { cid = 0; };
+		uarch_t lockValue = atomicAsm::read(&lock);
+		uarch_t nReaders = lockValue & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1);
+		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
-		if (deadlockBuffers[cid].inUse == 1)
-			{ panic(); };
-
-		deadlockBuffers[cid].inUse = 1;
-
-		printf(
-			&deadlockBuffers[cid].buffer,
-			DEADLOCK_BUFF_MAX_NBYTES,
-			FATAL"MRLock::readReleaseWriteAcquire deadlock detected: nReadTriesRemaining: %d, nWriteTriesRemaining: %d.\n"
-			"\tCPU: %d, Lock obj addr: %p. Calling function: %p,\n"
-			"\tflags addr: %p, flags val: %d.\n",
-			nReadTriesRemaining, nWriteTriesRemaining,
-			cid, this, __builtin_return_address(0), &flags, flags);
-
-		deadlockBuffers[cid].inUse = 0;
-		cpuControl::halt();
+		reportDeadlock(
+			FATAL"MultipleReaderLock::readReleaseWriteAcquire deadlock detected:\n"
+			"\tnReadTriesRemaining: %d, nWriteTriesRemaining: %d\n"
+			"\tlock addr: %p, lock val: %x\n"
+			"\tWrite request bit: %s, Number of readers: %d\n"
+			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
+			nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
+			writeRequestSet ? "SET" : "CLEAR", nReaders,
+			cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
 	}
 #endif
 #endif

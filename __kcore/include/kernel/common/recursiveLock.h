@@ -11,6 +11,8 @@
  * to efficiently manage lock ownership without requiring a separate WaitLock.
  * The lock member of the base Lock class is used to store the thread ID of
  * the owner, or PROCID_INVALID if the lock is free.
+ *
+ * Includes deadlock detection when CONFIG_DEBUG_LOCKS is defined.
  **/
 
 class RecursiveLock

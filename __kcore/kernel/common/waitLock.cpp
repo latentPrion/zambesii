@@ -44,32 +44,12 @@ void WaitLock::acquire(void)
 #ifdef CONFIG_DEBUG_LOCKS
 	if (nTries <= 1)
 	{
-		cpu_t	cid;
-
-		cid = cpuTrib.getCurrentCpuStream()->cpuId;
-		if (cid == CPUID_INVALID) { cid = 0; };
-
-		/**	EXPLANATION:
-		 * This "inUse" feature allows us to detect infinite recursion
-		 * deadlock loops. This can occur when the kernel somehow
-		 * manages to deadlock in printf() AND also then deadlock
-		 * in the deadlock debugger printf().
-		 **/
-		if (deadlockBuffers[cid].inUse == 1)
-			{ panic(); };
-
-		deadlockBuffers[cid].inUse = 1;
-
-		printf(
-			&deadlockBuffers[cid].buffer,
-			DEADLOCK_BUFF_MAX_NBYTES,
-			FATAL"Waitlock::acquire deadlock detected: nTriesRemaining: %d.\n"
-			"\tCPU: %d, Lock obj addr: %p. Calling function: %p,\n"
-			"\tlock int addr: %p, lockval: %d.\n",
-			nTries, cid, this, __builtin_return_address(0), &lock, lock);
-
-		deadlockBuffers[cid].inUse = 0;
-		cpuControl::halt();
+		reportDeadlock(
+			FATAL"WaitLock::acquire deadlock detected:\n"
+			"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
+			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
+			nTries, &lock, lock,
+			cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
 	};
 #endif
 #endif

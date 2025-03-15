@@ -219,6 +219,14 @@ void printf(
 	va_end(args);
 }
 
+void vnprintf(
+	SharedResourceGroup<WaitLock, utf8Char *> *buff, uarch_t buffSize,
+	utf8Char *str, va_list args
+	)
+{
+	__kdebug.printf(buff, buffSize, str, args);
+}
+
 static ubit16 getNumberOfFormatArgsN(utf8Char *format, uarch_t maxLength)
 {
 	uarch_t		i;

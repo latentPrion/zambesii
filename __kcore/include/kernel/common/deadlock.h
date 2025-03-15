@@ -27,6 +27,15 @@ struct sDeadlockBuff
     utf8Char	buff[DEADLOCK_BUFF_MAX_NBYTES];
     SharedResourceGroup<WaitLock, utf8Char *>	buffer;
 } extern deadlockBuffers[CONFIG_MAX_NCPUS];
+
+/**
+ * Common function to handle deadlock detection for all lock types
+ *
+ * @param formatStr Format string for the deadlock message
+ * @param ... Variable arguments for the format string, including lock object, CPU ID, and caller address
+ */
+void reportDeadlock(utf8Char *formatStr, ...);
+
 #endif
 
 #endif /* __KERNEL_COMMON_DEADLOCK_DETECTION_H */

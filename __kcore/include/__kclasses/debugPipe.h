@@ -122,6 +122,10 @@ extern "C" sarch_t snprintf(
 void printf(SharedResourceGroup<WaitLock, utf8Char *> *buff,
 	uarch_t buffSize, utf8Char *str, ...);
 
+// Used for debugging with va_list
+void vnprintf(SharedResourceGroup<WaitLock, utf8Char *> *buff,
+	uarch_t buffSize, utf8Char *str, va_list args);
+
 extern DebugPipe	__kdebug;
 
 #endif
