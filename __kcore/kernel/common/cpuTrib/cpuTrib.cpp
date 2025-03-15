@@ -14,26 +14,119 @@
 #include <arch/atomic.h>
 
 
-#define getHighestId(currHighest,map,member,item,hibound)	\
-	do \
-	{ \
-		for (ubit32 tmpidx=0; tmpidx<hibound; tmpidx++) \
-		{ \
-			if ((signed)map->member[tmpidx].item \
-				> (signed)currHighest) { \
-				/* Check if the new value exceeds CONFIG_MAX_NCPUS */ \
-				if (map->member[tmpidx].item >= CONFIG_MAX_NCPUS) { \
-					printf(ERROR CPUTRIB"getHighestId: CPU ID %d exceeds CONFIG_MAX_NCPUS (%d).\n", \
-						map->member[tmpidx].item, CONFIG_MAX_NCPUS); \
-					panic(ERROR CPUTRIB"Cannot proceed with CPU ID that exceeds CONFIG_MAX_NCPUS.\n"); \
-				} \
-				currHighest = map->member[tmpidx].item; \
-			}; \
-		}; \
-	} while (0)
-
 cpu_t		CpuStream::highestCpuId=CPUID_INVALID;
 numaBankId_t	CpuStream::highestBankId=NUMABANKID_INVALID;
+
+/**
+ * Helper function to check if a CPU ID exceeds CONFIG_MAX_NCPUS
+ *
+ * @param mapType A string describing the map type for error messages
+ * @param cpuId The CPU ID to check
+ */
+static void checkCpuIdLimit(const char* mapType, cpu_t cpuId)
+{
+    if (cpuId >= CONFIG_MAX_NCPUS)
+    {
+        printf(ERROR CPUTRIB"checkCpuIdLimit(%s): CPU ID %d exceeds CONFIG_MAX_NCPUS (%d).\n",
+            mapType, cpuId, CONFIG_MAX_NCPUS);
+        panic(ERROR CPUTRIB"Cannot proceed with CPU ID that exceeds CONFIG_MAX_NCPUS.\n");
+    }
+}
+
+/**
+ * Get CPU ID from a NUMA map entry
+ */
+static cpu_t getNumaMapCpuId(const sZkcmNumaMap* numaMap, ubit32 index)
+{
+    return numaMap->cpuEntries[index].cpuId;
+}
+
+/**
+ * Get bank ID from a NUMA map entry
+ */
+static numaBankId_t getNumaMapBankId(const sZkcmNumaMap* numaMap, ubit32 index)
+{
+    return numaMap->cpuEntries[index].bankId;
+}
+
+/**
+ * Get CPU ID from an SMP map entry
+ */
+static cpu_t getSmpMapCpuId(const sZkcmSmpMap* smpMap, ubit32 index)
+{
+    return smpMap->entries[index].cpuId;
+}
+
+/**
+ * Helper function to find the highest ID in a collection
+ * This is a common implementation that can be used for different ID types
+ */
+template <typename IdType, typename MapType>
+static IdType findHighestId(
+    const char* mapType,
+    const MapType* map,
+    ubit32 nEntries,
+    IdType currHighest,
+    IdType (*getIdFunc)(const MapType*, ubit32),
+    bool checkLimit)
+{
+    for (ubit32 i = 0; i < nEntries; i++)
+    {
+        const IdType entryId = getIdFunc(map, i);
+        if ((signed)entryId > (signed)currHighest)
+        {
+            if (checkLimit && sizeof(IdType) == sizeof(cpu_t))
+            {
+                // Only check CPU IDs against CONFIG_MAX_NCPUS
+                checkCpuIdLimit(mapType, (cpu_t)entryId);
+            }
+            currHighest = entryId;
+        }
+    }
+    return currHighest;
+}
+
+/**
+ * Get the highest CPU ID from a NUMA map
+ */
+static cpu_t getHighestCpuIdFromNumaMap(
+    const sZkcmNumaMap* numaMap,
+    cpu_t currHighest)
+{
+    return findHighestId<cpu_t, sZkcmNumaMap>(
+        "NUMA map",
+        numaMap, numaMap->nCpuEntries,
+        currHighest,
+        getNumaMapCpuId, true);
+}
+
+/**
+ * Get the highest CPU ID from an SMP map
+ */
+static cpu_t getHighestCpuIdFromSmpMap(
+    const sZkcmSmpMap* smpMap,
+    cpu_t currHighest)
+{
+    return findHighestId<cpu_t, sZkcmSmpMap>(
+        "SMP map",
+        smpMap, smpMap->nEntries,
+        currHighest,
+        getSmpMapCpuId, true);
+}
+
+/**
+ * Get the highest bank ID from a NUMA map
+ */
+static numaBankId_t getHighestBankIdFromNumaMap(
+    const sZkcmNumaMap* numaMap,
+    numaBankId_t currHighest)
+{
+    return findHighestId<numaBankId_t, sZkcmNumaMap>(
+        "NUMA bank",
+		numaMap, numaMap->nCpuEntries,
+        currHighest,
+		getNumaMapBankId, false);
+}
 
 CpuTrib::CpuTrib(void)
 :
@@ -284,17 +377,15 @@ error_t CpuTrib::initializeAllCpus(void)
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
 	if (numaMap != NULL && numaMap->nCpuEntries > 0)
 	{
-		getHighestId(
-			CpuStream::highestBankId, numaMap, cpuEntries,
-			bankId, numaMap->nCpuEntries);
+		CpuStream::highestBankId = getHighestBankIdFromNumaMap(
+			numaMap, CpuStream::highestBankId);
 
-		// Use a local variable for getHighestId and then set atomically
-		cpu_t localHighestCpuId = CpuStream::highestCpuId;
+		cpu_t localHighestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
 
-		getHighestId(
-			localHighestCpuId, numaMap, cpuEntries,
-			cpuId, numaMap->nCpuEntries);
+		localHighestCpuId = getHighestCpuIdFromNumaMap(
+			numaMap, localHighestCpuId);
 
+		// Update highestCpuId atomically
 		atomicAsm::set(&CpuStream::highestCpuId, localHighestCpuId);
 	};
 
@@ -313,39 +404,39 @@ error_t CpuTrib::initializeAllCpus(void)
 		if (CpuStream::highestCpuId == CPUID_INVALID)
 			{ atomicAsm::set(&CpuStream::highestCpuId, 0); };
 
-		// Use a local variable for getHighestId and then set atomically
-		cpu_t localHighestCpuId = CpuStream::highestCpuId;
+		// Update highestCpuId atomically
+		cpu_t localHighestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
 
-		getHighestId(
-			localHighestCpuId, smpMap,
-			entries, cpuId, smpMap->nEntries);
+		localHighestCpuId = getHighestCpuIdFromSmpMap(
+			smpMap, localHighestCpuId);
 
-		// Set highestCpuId atomically with the new value
 		atomicAsm::set(&CpuStream::highestCpuId, localHighestCpuId);
 	};
 
 	// Final check to ensure highestCpuId doesn't exceed CONFIG_MAX_NCPUS
-	if (CpuStream::highestCpuId >= CONFIG_MAX_NCPUS)
+	cpu_t finalHighestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
+	if (finalHighestCpuId >= CONFIG_MAX_NCPUS)
 	{
 		printf(ERROR CPUTRIB"initializeAllCpus: Highest CPU ID %d exceeds CONFIG_MAX_NCPUS (%d).\n",
-			CpuStream::highestCpuId, CONFIG_MAX_NCPUS);
+			finalHighestCpuId, CONFIG_MAX_NCPUS);
+
 		panic(ERROR CPUTRIB"Cannot proceed with CPU ID that exceeds CONFIG_MAX_NCPUS.\n");
 	}
 
 	if (availableCpus.resizeTo(
-		CpuStream::highestCpuId + 1) != ERROR_SUCCESS)
+		finalHighestCpuId + 1) != ERROR_SUCCESS)
 	{
 		panic(ERROR CPUTRIB"Failed to initialize() availableCpus bmp.\n");
 	};
 
 	if (onlineCpus.resizeTo(
-		CpuStream::highestCpuId + 1) != ERROR_SUCCESS)
+		finalHighestCpuId + 1) != ERROR_SUCCESS)
 	{
 		panic(ERROR CPUTRIB"Failed to initialize() onlineCpus bmp.\n");
 	};
 #endif
 
-	zkcmCore.newCpuIdNotification(CpuStream::highestCpuId);
+	zkcmCore.newCpuIdNotification(atomicAsm::read(&CpuStream::highestCpuId));
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	return numaInit();
