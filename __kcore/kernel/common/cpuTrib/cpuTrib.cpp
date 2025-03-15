@@ -20,6 +20,12 @@
 		{ \
 			if ((signed)map->member[tmpidx].item \
 				> (signed)currHighest) { \
+				/* Check if the new value exceeds CONFIG_MAX_NCPUS */ \
+				if (map->member[tmpidx].item >= CONFIG_MAX_NCPUS) { \
+					printf(ERROR CPUTRIB"getHighestId: CPU ID %d exceeds CONFIG_MAX_NCPUS (%d).\n", \
+						map->member[tmpidx].item, CONFIG_MAX_NCPUS); \
+					panic(ERROR CPUTRIB"Cannot proceed with CPU ID that exceeds CONFIG_MAX_NCPUS.\n"); \
+				} \
 				currHighest = map->member[tmpidx].item; \
 			}; \
 		}; \
@@ -169,6 +175,16 @@ error_t CpuTrib::loadBspInformation(void)
 			"ID.\n");
 	};
 
+	// Check if BSP CPU ID exceeds CONFIG_MAX_NCPUS
+	if (CpuStream::bspCpuId >= CONFIG_MAX_NCPUS)
+	{
+		printf(ERROR CPUTRIB"loadBspInformation: BSP CPU ID %d "
+			"exceeds CONFIG_MAX_NCPUS (%d).\n",
+			CpuStream::bspCpuId, CONFIG_MAX_NCPUS);
+		panic(ERROR CPUTRIB"Cannot proceed with BSP CPU ID that exceeds "
+			"CONFIG_MAX_NCPUS.\n");
+	}
+
 	CpuStream::highestCpuId = CpuStream::bspCpuId;
 	CpuStream::highestBankId = CpuStream::bspBankId;
 
@@ -294,6 +310,14 @@ error_t CpuTrib::initializeAllCpus(void)
 			CpuStream::highestCpuId, smpMap,
 			entries, cpuId, smpMap->nEntries);
 	};
+
+	// Final check to ensure highestCpuId doesn't exceed CONFIG_MAX_NCPUS
+	if (CpuStream::highestCpuId >= CONFIG_MAX_NCPUS)
+	{
+		printf(ERROR CPUTRIB"initializeAllCpus: Highest CPU ID %d exceeds CONFIG_MAX_NCPUS (%d).\n",
+			CpuStream::highestCpuId, CONFIG_MAX_NCPUS);
+		panic(ERROR CPUTRIB"Cannot proceed with CPU ID that exceeds CONFIG_MAX_NCPUS.\n");
+	}
 
 	if (availableCpus.resizeTo(
 		CpuStream::highestCpuId + 1) != ERROR_SUCCESS)
@@ -685,6 +709,15 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 #endif
 		return ERROR_INVALID_ARG_VAL;
 	};
+
+	// Check that CPU ID doesn't exceed CONFIG_MAX_NCPUS
+	if (cid >= CONFIG_MAX_NCPUS)
+	{
+		printf(ERROR CPUTRIB"spawnStream(%d, %d, %d): CPU ID %d exceeds CONFIG_MAX_NCPUS (%d).\n",
+			bid, cid, cpuAcpiId, cid, CONFIG_MAX_NCPUS);
+
+		return ERROR_LIMIT_OVERFLOWED;
+	}
 
 #if __SCALING__ >= SCALING_CC_NUMA
 	/**	EXPLANATION:
