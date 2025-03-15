@@ -30,6 +30,14 @@ namespace atomicAsm
 		set((sarch_t *)lock, (sarch_t)val);
 	}
 
+	// CMPXCHG is available on IA-32 CPUs from i486 onwards.
+	inline sarch_t compareAndExchange(
+		volatile sarch_t *ptr,
+		const sarch_t comparatorVal, const sarch_t loadNEqVal);
+	inline uarch_t compareAndExchange(
+		volatile uarch_t *ptr,
+		const uarch_t comparatorVal, const uarch_t loadNEqVal);
+
 	inline sarch_t exchangeAndAdd(volatile sarch_t *ptr, sarch_t val);
 	inline sarch_t add(volatile sarch_t *lock, sarch_t val);
 	inline sarch_t bitTestAndComplement(volatile uarch_t *lock, ubit8 bit);
@@ -199,6 +207,32 @@ inline void atomicAsm::decrement(volatile uarch_t *lock)
 		:
 		: "memory"
 	);
+}
+
+inline sarch_t atomicAsm::compareAndExchange(
+	volatile sarch_t *ptr,
+	const sarch_t comparatorVal, const sarch_t loadNEqVal
+	)
+{
+	return (sarch_t)compareAndExchange(
+		(volatile uarch_t *)ptr,
+		(uarch_t)comparatorVal,
+		(uarch_t)loadNEqVal);
+}
+
+inline uarch_t atomicAsm::compareAndExchange(
+	volatile uarch_t *ptr,
+	const uarch_t comparatorVal, const uarch_t loadNEqVal
+	)
+{
+	uarch_t result;
+	asm volatile (
+		"lock; cmpxchgl %2, %1"
+		: "=a" (result), "+m" (*ptr)
+		: "r" (loadNEqVal), "0" (comparatorVal)
+		: "memory", "cc"
+	);
+	return result;
 }
 
 #endif
