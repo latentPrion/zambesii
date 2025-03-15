@@ -22,6 +22,9 @@ void RecursiveLock::acquire(void)
 	Thread		*thread;
 	processId_t	currThreadId, oldValue;
 	uarch_t		irqsWereEnabled;
+#ifdef CONFIG_DEBUG_LOCKS
+	uarch_t		nTries = DEADLOCK_WRITE_MAX_NTRIES;
+#endif
 
 	thread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
@@ -67,6 +70,40 @@ void RecursiveLock::acquire(void)
 		
 		// Disable interrupts again before next attempt
 		cpuControl::disableInterrupts();
+
+#ifdef CONFIG_DEBUG_LOCKS
+		if (nTries-- <= 1)
+		{
+			cpu_t cid;
+
+			cid = cpuTrib.getCurrentCpuStream()->cpuId;
+			if (cid == CPUID_INVALID) { cid = 0; }
+
+			/**	EXPLANATION:
+			 * This "inUse" feature allows us to detect infinite recursion
+			 * deadlock loops. This can occur when the kernel somehow
+			 * manages to deadlock in printf() AND also then deadlock
+			 * in the deadlock debugger printf().
+			 **/
+			if (deadlockBuffers[cid].inUse == 1)
+				{ panic(); }
+
+			deadlockBuffers[cid].inUse = 1;
+
+			printf(
+				&deadlockBuffers[cid].buffer,
+				DEADLOCK_BUFF_MAX_NBYTES,
+				FATAL"RecursiveLock::acquire deadlock detected: nTriesRemaining: %d.\n"
+				"\tCPU: %d, Lock obj addr: %p. Calling function: %p,\n"
+				"\tlock int addr: %p, lockval: %x, currThreadId: %x.\n",
+				nTries,
+				cid, this, __builtin_return_address(0),
+				&lock, lock, currThreadId);
+
+			deadlockBuffers[cid].inUse = 0;
+			cpuControl::halt();
+		}
+#endif
 	}
 #else
 	// In non-SMP mode, just take the lock
@@ -91,9 +128,10 @@ void RecursiveLock::release(void)
 	{
 		uarch_t irqsWereEnabled = FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
 		FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
+		
 		// Mark the lock as free atomically
 		atomicAsm::set(&lock, PROCID_INVALID);
-
+		
 		// Restore interrupts if they were enabled before
 		if (irqsWereEnabled)
 			{ cpuControl::enableInterrupts(); }

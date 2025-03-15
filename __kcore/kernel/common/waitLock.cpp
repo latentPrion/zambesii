@@ -13,7 +13,9 @@
 
 void WaitLock::acquire(void)
 {
+#ifdef CONFIG_DEBUG_LOCKS
 	uarch_t	nTries = DEADLOCK_WRITE_MAX_NTRIES;
+#endif
 	uarch_t contenderFlags=0;
 
 	if (cpuControl::interruptsEnabled())

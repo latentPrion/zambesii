@@ -23,7 +23,9 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 	}
 
 #if __SCALING__ >= SCALING_SMP
+#ifdef CONFIG_DEBUG_LOCKS
 	uarch_t nReadTriesRemaining = DEADLOCK_READ_MAX_NTRIES;
+#endif
 
 	atomicAsm::increment(&lock);
 	while ((atomicAsm::read(&lock) & MR_FLAGS_WRITE_REQUEST) != 0)
@@ -71,8 +73,10 @@ void MultipleReaderLock::readRelease(uarch_t _flags)
 
 void MultipleReaderLock::writeAcquire(void)
 {
+#ifdef CONFIG_DEBUG_LOCKS
 	uarch_t nReadTriesRemaining = DEADLOCK_READ_MAX_NTRIES,
 		nWriteTriesRemaining = DEADLOCK_WRITE_MAX_NTRIES;
+#endif
 	uarch_t contenderFlags = 0;
 
 	if (cpuControl::interruptsEnabled())
@@ -167,8 +171,10 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 	 * wait for readers to exit. Return.
 	 **/
 #if __SCALING__ >= SCALING_SMP
+#ifdef CONFIG_DEBUG_LOCKS
 	uarch_t nReadTriesRemaining = DEADLOCK_READ_MAX_NTRIES,
 		nWriteTriesRemaining = DEADLOCK_WRITE_MAX_NTRIES;
+#endif
 
 	// Don't have to CLI cos readAcquire() already CLI'd for us.
 	while (atomicAsm::bitTestAndSet(&lock, MR_FLAGS_WRITE_REQUEST_SHIFT) != 0)
