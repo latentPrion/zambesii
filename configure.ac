@@ -275,12 +275,14 @@ AC_CONFIG_COMMANDS_POST(
         (Arch:${ZARCH})-(SoC:${ZSOC:-none})-(Chipset:${ZCHIPSET})-(Firmware:${ZFIRMWARE})]
     ))
     AC_MSG_NOTICE(m4_normalize(
-        [Scaling mode:
-        (${ZSCALING}) with max (${ZMAX_NCPUS}) CPUs]
+        [Scaling options:
+        (Mode:${ZSCALING}) (MAX CPUs:${ZMAX_NCPUS})]
     ))
     AC_MSG_NOTICE(m4_normalize(
-        [Distributaries enabled:
-        (${DISTRIBUTARIES_ENABLED_SUBDIRS})]
+        [Scheduler options:
+        (Preemption:${enable_sched_preemption})
+        (Timeslice:${with_sched_timeslice_us}us)
+        (Kernel preemption:${enable_sched_preempt_kernel})]
     ))
     AC_MSG_NOTICE(m4_normalize(
         [Debugging options:
@@ -288,10 +290,8 @@ AC_CONFIG_COMMANDS_POST(
         (Scheduler:${enable_debug_scheduler})]
     ))
     AC_MSG_NOTICE(m4_normalize(
-        [Scheduler options:
-        (Preemption:${enable_sched_preemption:-timeslice})
-        (Timeslice:${with_sched_timeslice_us:-5000}us)
-        (Kernel preemption:${enable_sched_preempt_kernel:-yes})]
+        [Distributaries enabled:
+        (${DISTRIBUTARIES_ENABLED_SUBDIRS})]
     ))
 )
 
