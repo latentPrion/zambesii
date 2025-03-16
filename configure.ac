@@ -99,11 +99,6 @@ AS_CASE(["$ZARCH"],
 	Try setting --host=<TRIPLET>, or ZARCH=<ARCH>.]))
 )
 
-#
-# Scaling options
-#
-m4_include([m4/scaling-opts.m4])
-
 # Validate ZFIRMWARE
 AS_CASE(["$ZFIRMWARE"],
     [ibmPcBios|pcBios|bios],
@@ -121,6 +116,12 @@ AS_CASE(["$ZFIRMWARE"],
 	            Try setting ZFIRMWARE=<FIRMWARE>.]))
         ])
 )
+
+#
+# Scaling options
+m4_include([m4/scaling-opts.m4])
+# Scheduling options
+m4_include([m4/scheduling-opts.m4])
 
 # Checks for programs.
 AC_PROG_CPP
@@ -285,6 +286,12 @@ AC_CONFIG_COMMANDS_POST(
         [Debugging options:
         (Locks:${enable_debug_locks})
         (Scheduler:${enable_debug_scheduler})]
+    ))
+    AC_MSG_NOTICE(m4_normalize(
+        [Scheduler options:
+        (Preemption:${enable_sched_preemption:-timeslice})
+        (Timeslice:${with_sched_timeslice_us:-5000}us)
+        (Kernel preemption:${enable_sched_preempt_kernel:-yes})]
     ))
 )
 
