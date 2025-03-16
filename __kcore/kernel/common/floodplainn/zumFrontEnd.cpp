@@ -132,7 +132,7 @@ fplainn::Zum::sZumServerMsg *fplainn::Zum::createServerRequestMsg(
 			func, devicePath);
 		return NULL;
 	}
-	
+
 	return ret;
 }
 
