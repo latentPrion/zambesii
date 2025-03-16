@@ -84,37 +84,50 @@ public:
 		utf8Char *devicePath, udi_ubit8_t enumLevel,
 		udi_enumerate_cb_t *cb, void *privateData);
 
-	void getEnumerateReqAttrsAndFilters(
-		const udi_enumerate_cb_t *const cb,
-		udi_instance_attr_list_t *attr_list_mem,
-		udi_filter_element_t *filter_list_mem)
+	error_t unmarshalEnumerateAckAttrsAndFilters(
+		udi_enumerate_cb_t *enumCb,
+		udi_instance_attr_list_t *attrList,
+		udi_filter_element_t *filterList);
+
+	// Forward declaration of implementation class
+public:
+	class EnumerateReqMovableMemMarshaller
 	{
-		EnumerateReqMovableObjects		*movableMem=NULL;
-		fplainn::sMovableMemory			*tmp;
+	public:
+		EnumerateReqMovableMemMarshaller(uarch_t nAttrs, uarch_t nFilters);
 
-		if (cb->filter_list_length > 0)
-		{
-			tmp = (fplainn::sMovableMemory *)cb->filter_list;
-			movableMem = (EnumerateReqMovableObjects *)(tmp - 1);
+		static uarch_t calcMemRequirementsFor(
+			uarch_t nAttrs, uarch_t nFilters);
 
-			memcpy(
-				filter_list_mem, cb->filter_list,
-				sizeof(*cb->filter_list)
-					* cb->filter_list_length);
+		// Individual marshal/unmarshal methods
+		void marshalAttrList(
+			const udi_instance_attr_list_t *const srcAttrList,
+			uarch_t nAttrs);
+		void marshalFilterList(
+			const udi_filter_element_t *const srcFilterList,
+			uarch_t nAttrs, uarch_t nFilters);
+		void unmarshalAttrList(
+			udi_instance_attr_list_t *destAttrList,
+			uarch_t nAttrs) const;
+		void unmarshalFilterList(
+			udi_filter_element_t *destFilterList,
+			uarch_t nAttrs, uarch_t nFilters) const;
 
-		};
+		// Wrapper methods that handle both attr and filter lists
+		void marshal(
+			const udi_instance_attr_list_t *const srcAttrList, uarch_t nAttrs,
+			const udi_filter_element_t *const srcFilterList, uarch_t nFilters);
+		void unmarshal(
+			udi_instance_attr_list_t *destAttrList, uarch_t nAttrs,
+			udi_filter_element_t *destFilterList, uarch_t nFilters) const;
 
-		if (cb->attr_valid_length > 0) {
-			tmp = (fplainn::sMovableMemory *)cb->attr_list;
-			movableMem = (EnumerateReqMovableObjects *)(tmp - 1);
-
-			memcpy(
-				attr_list_mem, cb->attr_list,
-				sizeof(*cb->attr_list) * cb->attr_valid_length);
-		};
-
-		delete movableMem;
-	}
+		// Pointer calculation methods
+		fplainn::sMovableMemory *calcAttrMovableMemHeaderPtr(void) const;
+		udi_instance_attr_list_t *calcAttrListPtr(uarch_t nAttrs) const;
+		fplainn::sMovableMemory *calcFilterMovableMemHeaderPtr(uarch_t nAttrs) const;
+		udi_filter_element_t *calcFilterListPtr(
+			uarch_t nAttrs, uarch_t nFilters) const;
+	};
 
 	void usageInd(
 		utf8Char *devicePath, udi_ubit8_t resource_level,
@@ -168,9 +181,18 @@ public:
 		{ serverTid = tid; }
 
 public:
-	struct sZAsyncMsg
+	/**
+	 * @brief Message structure used for communication with the ZUM server
+	 *
+	 * This structure is used to send requests to the ZUM backend server.
+	 * It contains the necessary information for the server to
+	 * process requests related to device management operations.
+	 * These messages are sent TO the ZUM server from clients
+	 * that need to interact with devices.
+	 */
+	struct sZumServerMsg
 	{
-		sZAsyncMsg(
+		sZumServerMsg(
 			utf8Char *path, ubit16 opsIndex,
 			uarch_t extraMemNBytes=0)
 		:
@@ -182,6 +204,13 @@ public:
 				strncpy8(this->path, path, FVFS_PATH_MAXLEN);
 				this->path[FVFS_PATH_MAXLEN - 1] = '\0';
 			};
+		}
+
+		// Copy constructor
+		sZumServerMsg(const sZumServerMsg& other)
+		{
+			// memcpy whole obj for simplicity and maintainability
+			memcpy(this, &other, sizeof(sZumServerMsg));
 		}
 
 		enum opE {
@@ -291,9 +320,17 @@ public:
 		} params;
 	};
 
-	struct sZumMsg
+	/**
+	 * @brief Message structure used for communication between ZUM server and devices
+	 *
+	 * This structure is used by the ZUM server to communicate with devices being managed.
+	 * It encapsulates a MessageStream header along with a sZumServerMsg for the actual
+	 * request data. These messages are sent FROM the ZUM server TO the devices being
+	 * managed, and are used to carry out device management operations.
+	 */
+	struct sZumDeviceMgmtMsg
 	{
-		sZumMsg(
+		sZumDeviceMgmtMsg(
 			processId_t targetPid,
 			ubit16 subsystem, ubit16 function,
 			uarch_t size, uarch_t flags, void *privateData)
@@ -302,91 +339,12 @@ public:
 			targetPid, subsystem, function,
 			size, flags, privateData),
 		info(NULL, 0)
-		{}
+		{
+			// Empty constructor body
+		}
 
 		MessageStream::sHeader		header;
-		sZAsyncMsg			info;
-	};
-
-	// Just an offsets calculation class.
-	class EnumerateReqMovableObjects
-	{
-	public:
-		EnumerateReqMovableObjects(uarch_t nAttrs, uarch_t nFilters)
-		{
-			if (nAttrs > 0)
-			{
-				::new (calcAttrMovableMemHeader())
-				fplainn::sMovableMemory(
-					sizeof(udi_instance_attr_list_t) * nAttrs);
-			};
-
-			if (nFilters > 0)
-			{
-				::new (calcFilterMovableMemHeader(nAttrs))
-				fplainn::sMovableMemory(
-					sizeof(udi_filter_element_t) * nFilters);
-			}
-		}
-
-		static uarch_t calcMemRequirementsFor(
-			uarch_t nAttrs, uarch_t nFilters
-			)
-		{
-			uarch_t		ret=0;
-
-			if (nAttrs > 0)
-			{
-				ret += sizeof(fplainn::sMovableMemory);
-				ret += sizeof(udi_instance_attr_list_t)
-					* nAttrs;
-			};
-
-			if (nFilters > 0)
-			{
-				ret += sizeof(fplainn::sMovableMemory);
-				ret += sizeof(udi_filter_element_t) * nFilters;
-			};
-
-			return ret;
-		}
-
-		fplainn::sMovableMemory *calcAttrMovableMemHeader(void)
-		{
-			// Even if nAttrs==0, return "o".
-			return reinterpret_cast<fplainn::sMovableMemory *>(this);
-		}
-
-		udi_instance_attr_list_t *calcAttrList(uarch_t nAttrs)
-		{
-			if (nAttrs > 0)
-			{
-				return reinterpret_cast<udi_instance_attr_list_t *>(
-					calcAttrMovableMemHeader() + 1);
-			};
-
-			return reinterpret_cast<udi_instance_attr_list_t *>(this);
-		}
-
-		fplainn::sMovableMemory *calcFilterMovableMemHeader(uarch_t nAttrs)
-		{
-			return reinterpret_cast<fplainn::sMovableMemory *>(
-				calcAttrList(nAttrs) + nAttrs);
-		}
-
-		udi_filter_element_t *calcFilterList(
-			uarch_t nAttrs, uarch_t nFilters
-			)
-		{
-			if (nFilters > 0)
-			{
-				return reinterpret_cast<udi_filter_element_t *>(
-					calcFilterMovableMemHeader(nAttrs) + 1);
-			};
-
-			return reinterpret_cast<udi_filter_element_t *>(
-				calcFilterMovableMemHeader(nAttrs));
-		}
+		sZumServerMsg			info;
 	};
 
 private:
@@ -395,8 +353,8 @@ private:
 
 	static void main(void *);
 
-	static sZAsyncMsg *getNewSZAsyncMsg(
-		utf8Char *func, utf8Char *devPath, sZAsyncMsg::opE op,
+	static sZumServerMsg *createServerRequestMsg(
+		utf8Char *func, utf8Char *devPath, sZumServerMsg::opE op,
 		uarch_t extraMemNBytes=0);
 };
 
@@ -440,6 +398,96 @@ inline void fplainn::Zum::channelOpAbortedInd(
 	channelEventInd(
 		devicePath, endp, UDI_CHANNEL_OP_ABORTED, &p,
 		privateData);
+}
+
+/* Movable Objects marshaling class for EnumerateReq
+ ******************************************************************************/
+
+inline fplainn::Zum::EnumerateReqMovableMemMarshaller::EnumerateReqMovableMemMarshaller(
+	uarch_t nAttrs, uarch_t nFilters)
+{
+	if (nAttrs > 0)
+	{
+		::new (calcAttrMovableMemHeaderPtr())
+		fplainn::sMovableMemory(
+			sizeof(udi_instance_attr_list_t) * nAttrs);
+	};
+
+	if (nFilters > 0)
+	{
+		::new (calcFilterMovableMemHeaderPtr(nAttrs))
+		fplainn::sMovableMemory(
+			sizeof(udi_filter_element_t) * nFilters);
+	}
+}
+
+inline fplainn::sMovableMemory *
+fplainn::Zum::EnumerateReqMovableMemMarshaller::calcAttrMovableMemHeaderPtr(
+	void) const
+{
+	// Even if nAttrs==0, return "this".
+	return const_cast<fplainn::sMovableMemory *>(
+		reinterpret_cast<const fplainn::sMovableMemory *>(this));
+}
+
+inline udi_instance_attr_list_t *
+fplainn::Zum::EnumerateReqMovableMemMarshaller::calcAttrListPtr(
+	uarch_t nAttrs) const
+{
+	if (nAttrs > 0)
+	{
+		return const_cast<udi_instance_attr_list_t *>(
+			reinterpret_cast<const udi_instance_attr_list_t *>(
+				calcAttrMovableMemHeaderPtr() + 1));
+	};
+
+	return const_cast<udi_instance_attr_list_t *>(
+		reinterpret_cast<const udi_instance_attr_list_t *>(this));
+}
+
+inline fplainn::sMovableMemory *
+fplainn::Zum::EnumerateReqMovableMemMarshaller::calcFilterMovableMemHeaderPtr(
+	uarch_t nAttrs) const
+{
+	return const_cast<fplainn::sMovableMemory *>(
+		reinterpret_cast<const fplainn::sMovableMemory *>(
+			calcAttrListPtr(nAttrs) + nAttrs));
+}
+
+inline udi_filter_element_t *
+fplainn::Zum::EnumerateReqMovableMemMarshaller::calcFilterListPtr(
+	uarch_t nAttrs, uarch_t nFilters) const
+{
+	if (nFilters > 0)
+	{
+		return const_cast<udi_filter_element_t *>(
+			reinterpret_cast<const udi_filter_element_t *>(
+				calcFilterMovableMemHeaderPtr(nAttrs) + 1));
+	};
+
+	return const_cast<udi_filter_element_t *>(
+		reinterpret_cast<const udi_filter_element_t *>(
+			calcFilterMovableMemHeaderPtr(nAttrs)));
+}
+
+inline uarch_t fplainn::Zum::EnumerateReqMovableMemMarshaller::calcMemRequirementsFor(
+	uarch_t nAttrs, uarch_t nFilters)
+{
+	uarch_t ret=0;
+
+	if (nAttrs > 0)
+	{
+		ret += sizeof(fplainn::sMovableMemory);
+		ret += sizeof(udi_instance_attr_list_t) * nAttrs;
+	};
+
+	if (nFilters > 0)
+	{
+		ret += sizeof(fplainn::sMovableMemory);
+		ret += sizeof(udi_filter_element_t) * nFilters;
+	};
+
+	return ret;
 }
 
 #endif

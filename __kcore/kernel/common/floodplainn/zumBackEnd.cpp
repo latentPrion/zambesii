@@ -32,18 +32,18 @@ namespace zumServer
 {
 	void zasyncHandler(
 		ZAsyncStream::sZAsyncMsg *msg,
-		fplainn::Zum::sZAsyncMsg *request,
+		fplainn::Zum::sZumServerMsg *request,
 		Thread *self);
 
 	// Reduces code duplication and increases readability.
-	fplainn::Zum::sZumMsg *getNewZumMsg(
+	fplainn::Zum::sZumDeviceMgmtMsg *getNewZumDeviceMgmtMsg(
 		utf8Char *funcName, utf8Char *devicePath,
 		processId_t targetPid, ubit16 subsystem, ubit16 function,
 		uarch_t size, uarch_t flags, void *privateData)
 	{
-		fplainn::Zum::sZumMsg		*ret;
+		fplainn::Zum::sZumDeviceMgmtMsg		*ret;
 
-		ret = new fplainn::Zum::sZumMsg(
+		ret = new fplainn::Zum::sZumDeviceMgmtMsg(
 			targetPid, subsystem, function,
 			size, flags, privateData);
 
@@ -61,14 +61,14 @@ namespace zumServer
 	{
 		void startDeviceReq(
 			ZAsyncStream::sZAsyncMsg *msg,
-			fplainn::Zum::sZAsyncMsg *request,
+			fplainn::Zum::sZumServerMsg *request,
 			Thread *self);
 
 	// PRIVATE:
 		class StartDeviceReqCb;
 		typedef void (startDeviceReqCbFn)(
 			MessageStream::sHeader *msg,
-			fplainn::Zum::sZumMsg *ctxt,
+			fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 			Thread *self,
 			fplainn::Device *dev);
 
@@ -81,7 +81,7 @@ namespace zumServer
 	{
 		void enumerateChildrenReq(
 			ZAsyncStream::sZAsyncMsg *msg,
-			fplainn::Zum::sZAsyncMsg *request,
+			fplainn::Zum::sZumServerMsg *request,
 			Thread *self);
 
 	// PRIVATE:
@@ -97,7 +97,7 @@ namespace zumServer
 	{
 		void postManagementCbReq(
 			ZAsyncStream::sZAsyncMsg *msg,
-			fplainn::Zum::sZAsyncMsg *request,
+			fplainn::Zum::sZumServerMsg *request,
 			Thread *self);
 
 	// PRIVATE:
@@ -111,27 +111,27 @@ namespace zumServer
 	{
 		void usageInd(
 			ZAsyncStream::sZAsyncMsg *msg,
-			fplainn::Zum::sZAsyncMsg *request,
+			fplainn::Zum::sZumServerMsg *request,
 			Thread *self);
 
 		void enumerateReq(
 			ZAsyncStream::sZAsyncMsg *msg,
-			fplainn::Zum::sZAsyncMsg *request,
+			fplainn::Zum::sZumServerMsg *request,
 			Thread *self);
 
 		void deviceManagementReq(
 			ZAsyncStream::sZAsyncMsg *msg,
-			fplainn::Zum::sZAsyncMsg *request,
+			fplainn::Zum::sZumServerMsg *request,
 			Thread *self);
 
 		void finalCleanupReq(
 			ZAsyncStream::sZAsyncMsg *msg,
-			fplainn::Zum::sZAsyncMsg *request,
+			fplainn::Zum::sZumServerMsg *request,
 			Thread *self);
 
 		void channelEventInd(
 			ZAsyncStream::sZAsyncMsg *msg,
-			fplainn::Zum::sZAsyncMsg *request,
+			fplainn::Zum::sZumServerMsg *request,
 			Thread *self);
 
 	// PRIVATE:
@@ -181,17 +181,16 @@ void fplainn::Zum::main(void *)
 {
 	Thread				*self;
 	MessageStream::sHeader		*iMsg;
-	HeapObj<sZAsyncMsg>		requestData;
+	HeapObj<sZumServerMsg>		requestData;
 	const sMetaInitEntry		*mgmtInitEntry;
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
-	requestData = getNewSZAsyncMsg(
+	requestData = createServerRequestMsg(
 		CC __func__, CC"NONE:MAIN",
-		fplainn::Zum::sZAsyncMsg::OP_CHANNEL_EVENT_IND,
+		fplainn::Zum::sZumServerMsg::OP_CHANNEL_EVENT_IND,
 		PAGING_BASE_SIZE * ZUM_ASYNC_MSG_EXTRA_NPAGES);
 
-//	requestData = new sZAsyncMsg(NULL, 0, PAGING_BASE_SIZE * 2);
 	if (requestData.get() == NULL)
 	{
 		printf(ERROR ZUM"main: failed to alloc request data mem.\n");
@@ -272,7 +271,7 @@ void fplainn::Zum::main(void *)
 
 void zumServer::zasyncHandler(
 	ZAsyncStream::sZAsyncMsg *msg,
-	fplainn::Zum::sZAsyncMsg *request,
+	fplainn::Zum::sZumServerMsg *request,
 	Thread *self
 	)
 {
@@ -300,28 +299,28 @@ void zumServer::zasyncHandler(
 
 	switch (request->opsIndex)
 	{
-	case fplainn::Zum::sZAsyncMsg::OP_USAGE_IND:
+	case fplainn::Zum::sZumServerMsg::OP_USAGE_IND:
 		mgmt::usageInd(msg, request, self);
 		break;
-	case fplainn::Zum::sZAsyncMsg::OP_ENUMERATE_REQ:
+	case fplainn::Zum::sZumServerMsg::OP_ENUMERATE_REQ:
 		mgmt::enumerateReq(msg, request, self);
 		break;
-	case fplainn::Zum::sZAsyncMsg::OP_DEVMGMT_REQ:
+	case fplainn::Zum::sZumServerMsg::OP_DEVMGMT_REQ:
 		mgmt::deviceManagementReq(msg, request, self);
 		break;
-	case fplainn::Zum::sZAsyncMsg::OP_FINAL_CLEANUP_REQ:
+	case fplainn::Zum::sZumServerMsg::OP_FINAL_CLEANUP_REQ:
 		mgmt::finalCleanupReq(msg, request, self);
 		break;
-	case fplainn::Zum::sZAsyncMsg::OP_CHANNEL_EVENT_IND:
+	case fplainn::Zum::sZumServerMsg::OP_CHANNEL_EVENT_IND:
 		mgmt::channelEventInd(msg, request, self);
 		break;
-	case fplainn::Zum::sZAsyncMsg::OP_START_REQ:
+	case fplainn::Zum::sZumServerMsg::OP_START_REQ:
 		start::startDeviceReq(msg, request, self);
 		break;
-	case fplainn::Zum::sZAsyncMsg::OP_ENUMERATE_CHILDREN_REQ:
+	case fplainn::Zum::sZumServerMsg::OP_ENUMERATE_CHILDREN_REQ:
 		enumerateChildren::enumerateChildrenReq(msg, request, self);
 		break;
-	case fplainn::Zum::sZAsyncMsg::OP_POST_MANAGEMENT_CB_REQ:
+	case fplainn::Zum::sZumServerMsg::OP_POST_MANAGEMENT_CB_REQ:
 		postManagementCb::postManagementCbReq(msg, request, self);
 		break;
 
@@ -336,14 +335,14 @@ void zumServer::zasyncHandler(
 class zumServer::start::StartDeviceReqCb
 : public _Callback<startDeviceReqCbFn>
 {
-	fplainn::Zum::sZumMsg *ctxt;
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt;
 	Thread *self;
 	fplainn::Device *dev;
 
 public:
 	StartDeviceReqCb(
 		startDeviceReqCbFn *fn,
-		fplainn::Zum::sZumMsg *ctxt, Thread *self, fplainn::Device *dev)
+		fplainn::Zum::sZumDeviceMgmtMsg *ctxt, Thread *self, fplainn::Device *dev)
 	: _Callback<startDeviceReqCbFn>(fn),
 	ctxt(ctxt), self(self), dev(dev)
 	{}
@@ -354,17 +353,17 @@ public:
 
 void zumServer::start::startDeviceReq(
 	ZAsyncStream::sZAsyncMsg *msg,
-	fplainn::Zum::sZAsyncMsg *request,
+	fplainn::Zum::sZumServerMsg *request,
 	Thread *self
 	)
 {
-	fplainn::Zum::sZumMsg		*ctxt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*ctxt;
 	error_t				err;
 	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
 	fplainn::Device			*dev;
 
-	ctxt = getNewZumMsg(
+	ctxt = getNewZumDeviceMgmtMsg(
 		CC __func__, request->path,
 		msg->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
@@ -372,7 +371,7 @@ void zumServer::start::startDeviceReq(
 
 	if (ctxt == NULL) { return; };
 	// Copy the request data over.
-	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZumServerMsg(*request);
 	ctxt->info.params.start.ibind.nChannels = -1;
 	ctxt->info.params.start.pbind.nChannels = -1;
 
@@ -425,13 +424,13 @@ void zumServer::start::startDeviceReq(
 
 void zumServer::start::startDeviceReq1(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *self,
 	fplainn::Device *dev
 	)
 {
 	AsyncResponse				myResponse;
-	fplainn::Zum::sZumMsg			*response;
+	fplainn::Zum::sZumDeviceMgmtMsg			*response;
 	HeapList<fplainn::Channel>::Iterator	chanIt;
 
 	(void)response;
@@ -440,7 +439,7 @@ void zumServer::start::startDeviceReq1(
 	 * We have to send a udi_channel_event_ind(UDI_CHANNEL_BOUND) to each
 	 * internal bind channel on the child end of the channel.
 	 **/
-	response = (fplainn::Zum::sZumMsg *)msg;
+	response = (fplainn::Zum::sZumDeviceMgmtMsg *)msg;
 
 	myResponse(ctxt);
 
@@ -475,12 +474,12 @@ void zumServer::start::startDeviceReq1(
 
 void zumServer::start::startDeviceReq2(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *self,
 	fplainn::Device *dev
 	)
 {
-	fplainn::Zum::sZumMsg			*response;
+	fplainn::Zum::sZumDeviceMgmtMsg			*response;
 	AsyncResponse				myResponse;
 	HeapList<fplainn::Channel>::Iterator	chanIt;
 
@@ -492,7 +491,7 @@ void zumServer::start::startDeviceReq2(
 	 * will the MA proceed with allowing the startDeviceReq sequence to
 	 * continue.
 	 **/
-	response = (fplainn::Zum::sZumMsg *)msg;
+	response = (fplainn::Zum::sZumDeviceMgmtMsg *)msg;
 
 	myResponse(ctxt);
 
@@ -567,15 +566,15 @@ void zumServer::start::startDeviceReq2(
 
 void zumServer::start::startDeviceReq3(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *,
 	fplainn::Device *
 	)
 {
-	fplainn::Zum::sZumMsg			*response;
+	fplainn::Zum::sZumDeviceMgmtMsg			*response;
 	AsyncResponse				myResponse;
 
-	response = (fplainn::Zum::sZumMsg *)msg;
+	response = (fplainn::Zum::sZumDeviceMgmtMsg *)msg;
 
 	myResponse(ctxt);
 	myResponse(msg->error);
@@ -607,17 +606,17 @@ void zumServer::start::startDeviceReq3(
 
 void zumServer::enumerateChildren::enumerateChildrenReq(
 	ZAsyncStream::sZAsyncMsg *msg,
-	fplainn::Zum::sZAsyncMsg *request,
+	fplainn::Zum::sZumServerMsg *request,
 	Thread *self
 	)
 {
-	fplainn::Zum::sZumMsg		*ctxt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*ctxt;
 	error_t				err;
 //	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
 	fplainn::Device			*dev;
 
-	ctxt = getNewZumMsg(
+	ctxt = getNewZumDeviceMgmtMsg(
 		CC __func__, request->path,
 		msg->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
@@ -625,7 +624,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq(
 
 	if (ctxt == NULL) { return; };
 	// Copy the request data over.
-	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZumServerMsg(*request);
 
 	myResponse(ctxt);
 
@@ -668,7 +667,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq(
 
 void zumServer::enumerateChildren::enumerateChildrenReq1(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *self,
 	fplainn::Device *dev)
 {
@@ -677,7 +676,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	fplainn::Device				*newDevice;
 //	fplainn::Endpoint			*endp;
 	AsyncResponse				myResponse;
-	fplainn::Zum::sZumMsg			*response;
+	fplainn::Zum::sZumDeviceMgmtMsg			*response;
 	sbit8					loopAgain=0,
 						clearBuffer=0, releaseBuffer=0;
 	HeapArr<udi_instance_attr_list_t>	enumAttrs;
@@ -688,7 +687,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 	};
 
 	(void)ueaStrings;
-	response = (fplainn::Zum::sZumMsg *)msg;
+	response = (fplainn::Zum::sZumDeviceMgmtMsg *)msg;
 	myResponse(ctxt);
 
 	/**	EXPLANATION:
@@ -760,7 +759,7 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 			break;
 		}
 
-		floodplainn.zum.getEnumerateReqAttrsAndFilters(
+		floodplainn.zum.unmarshalEnumerateAckAttrsAndFilters(
 			&response->info.params.enumerate.cb,
 			enumAttrs.get(), NULL);
 
@@ -845,17 +844,17 @@ void zumServer::enumerateChildren::enumerateChildrenReq1(
 
 void zumServer::postManagementCb::postManagementCbReq(
 	ZAsyncStream::sZAsyncMsg *msg,
-	fplainn::Zum::sZAsyncMsg *request,
+	fplainn::Zum::sZumServerMsg *request,
 	Thread *self
 	)
 {
-	fplainn::Zum::sZumMsg		*ctxt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*ctxt;
 	error_t				err;
 //	fplainn::Endpoint		*endp;
 	AsyncResponse			myResponse;
 	fplainn::Device			*dev;
 
-	ctxt = getNewZumMsg(
+	ctxt = getNewZumDeviceMgmtMsg(
 		CC __func__, request->path,
 		msg->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
@@ -863,7 +862,7 @@ void zumServer::postManagementCb::postManagementCbReq(
 
 	if (ctxt == NULL) { return; };
 	// Copy the request data over.
-	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZumServerMsg(*request);
 
 	myResponse(ctxt);
 
@@ -889,7 +888,7 @@ void zumServer::postManagementCb::postManagementCbReq(
 
 void zumServer::postManagementCb::postManagementCbReq1(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *self,
 	fplainn::Device *dev)
 {
@@ -898,7 +897,7 @@ void zumServer::postManagementCb::postManagementCbReq1(
 	fplainn::Driver::sMetalanguage		*enumeratingMeta;
 //	fplainn::Endpoint			*endp;
 	AsyncResponse				myResponse;
-	fplainn::Zum::sZumMsg			*response;
+	fplainn::Zum::sZumDeviceMgmtMsg			*response;
 	HeapArr<udi_instance_attr_list_t>	enumAttrs;
 	sbit8					loopAgain=0;
 	const char 				*ueaStrings[] =
@@ -908,7 +907,7 @@ void zumServer::postManagementCb::postManagementCbReq1(
 	};
 
 	(void)ueaStrings;
-	response = (fplainn::Zum::sZumMsg *)msg;
+	response = (fplainn::Zum::sZumDeviceMgmtMsg *)msg;
 	myResponse(ctxt);
 
 	/**	EXPLANATION:
@@ -969,7 +968,7 @@ void zumServer::postManagementCb::postManagementCbReq1(
 			break;
 		}
 
-		floodplainn.zum.getEnumerateReqAttrsAndFilters(
+		floodplainn.zum.unmarshalEnumerateAckAttrsAndFilters(
 			&response->info.params.enumerate.cb,
 			enumAttrs.get(), NULL);
 
@@ -1044,14 +1043,14 @@ void zumServer::postManagementCb::postManagementCbReq1(
 
 void zumServer::mgmt::usageInd(
 	ZAsyncStream::sZAsyncMsg *msg,
-	fplainn::Zum::sZAsyncMsg *request,
+	fplainn::Zum::sZumServerMsg *request,
 	Thread *self
 	)
 {
 	fplainn::Endpoint		*endp;
 	fplainn::Device			*dev;
 	error_t				err;
-	fplainn::Zum::sZumMsg		*ctxt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*ctxt;
 	AsyncResponse			myResponse;
 
 	/**	EXPLANATION:
@@ -1063,14 +1062,14 @@ void zumServer::mgmt::usageInd(
 	 *	* Call FloodplainnStream::send():
 	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=1.
 	 **/
-	ctxt = getNewZumMsg(
+	ctxt = getNewZumDeviceMgmtMsg(
 		CC __func__, request->path,
 		msg->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
 		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
 
 	if (ctxt == NULL) { return; };
-	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZumServerMsg(*request);
 	myResponse(ctxt);
 
 	err = getDeviceHandleAndMgmtEndpoint(
@@ -1102,7 +1101,7 @@ void zumServer::mgmt::usageInd(
 
 void zumServer::mgmt::usageRes(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *,
 	fplainn::Device *
 	)
@@ -1125,14 +1124,14 @@ void zumServer::mgmt::usageRes(
 
 void zumServer::mgmt::enumerateReq(
 	ZAsyncStream::sZAsyncMsg *msg,
-	fplainn::Zum::sZAsyncMsg *request,
+	fplainn::Zum::sZumServerMsg *request,
 	Thread *self
 	)
 {
 	fplainn::Endpoint		*endp;
 	fplainn::Device			*dev;
 	error_t				err;
-	fplainn::Zum::sZumMsg		*ctxt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*ctxt;
 	AsyncResponse			myResponse;
 
 	/**	EXPLANATION:
@@ -1144,14 +1143,14 @@ void zumServer::mgmt::enumerateReq(
 	 *	* Call FloodplainnStream::send():
 	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=2.
 	 **/
-	ctxt = getNewZumMsg(
+	ctxt = getNewZumDeviceMgmtMsg(
 		CC __func__, request->path,
 		msg->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
 		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
 
 	if (ctxt == NULL) { return; };
-	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZumServerMsg(*request);
 
 	myResponse(ctxt);
 
@@ -1184,7 +1183,7 @@ void zumServer::mgmt::enumerateReq(
 
 void zumServer::mgmt::enumerateAck(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *,
 	fplainn::Device *
 	)
@@ -1192,7 +1191,7 @@ void zumServer::mgmt::enumerateAck(
 	fplainn::sChannelMsg	*response = (fplainn::sChannelMsg *)msg;
 	AsyncResponse		myResponse;
 	udi_enumerate_cb_t	*cb;
-	fplainn::Zum::EnumerateReqMovableObjects
+	fplainn::Zum::EnumerateReqMovableMemMarshaller
 				*movableMem=NULL;
 	uarch_t			movableMemRequirement;
 
@@ -1202,32 +1201,34 @@ void zumServer::mgmt::enumerateAck(
 
 	ctxt->info.params.enumerate.cb = *cb;
 
-	movableMemRequirement = fplainn::Zum::EnumerateReqMovableObjects
+	movableMemRequirement = fplainn::Zum::EnumerateReqMovableMemMarshaller
 		::calcMemRequirementsFor(
 			cb->attr_valid_length, cb->filter_list_length);
 
 	if (movableMemRequirement > 0)
 	{
-		movableMem = new (new ubit8[movableMemRequirement])
-			fplainn::Zum::EnumerateReqMovableObjects(
-			cb->attr_valid_length, cb->filter_list_length);
-
-		if (movableMem == NULL) {
+		// Allocate memory for the movable objects
+		ubit8 *tmpMem = new ubit8[movableMemRequirement];
+		if (tmpMem == NULL) {
 			myResponse(ERROR_MEMORY_NOMEM); return;
-		};
+		}
+
+		// No need to test for NULL because placement constructing
+		movableMem = new (tmpMem) fplainn::Zum::EnumerateReqMovableMemMarshaller(
+			cb->attr_valid_length, cb->filter_list_length);
 	}
 
 
 	// Copy the attr and filter lists into some kernel memory area.
+	// Use the marshal wrapper method to handle both attr and filter lists
+	movableMem->marshal(cb->attr_list, cb->attr_valid_length,
+		cb->filter_list, cb->filter_list_length);
+
+	// Update pointer values in the response
 	if (cb->attr_valid_length > 0 && cb->attr_list != NULL)
 	{
 		ctxt->info.params.enumerate.cb.attr_list =
-			movableMem->calcAttrList(cb->attr_valid_length);
-
-		memcpy(
-			ctxt->info.params.enumerate.cb.attr_list,
-			cb->attr_list,
-			sizeof(*cb->attr_list) * cb->attr_valid_length);
+			movableMem->calcAttrListPtr(cb->attr_valid_length);
 	}
 	else {
 		ctxt->info.params.enumerate.cb.attr_list = NULL;
@@ -1236,13 +1237,8 @@ void zumServer::mgmt::enumerateAck(
 	if (cb->filter_list_length > 0 && cb->filter_list != NULL)
 	{
 		*const_cast<udi_filter_element_t **>(&ctxt->info.params.enumerate.cb.filter_list) =
-			movableMem->calcFilterList(
+			movableMem->calcFilterListPtr(
 				cb->attr_valid_length, cb->filter_list_length);
-
-		memcpy(
-			const_cast<udi_filter_element_t *>(ctxt->info.params.enumerate.cb.filter_list),
-			cb->filter_list,
-			sizeof(*cb->filter_list) * cb->filter_list_length);
 	}
 	else {
 		*const_cast<udi_filter_element_t **>(&ctxt->info.params.enumerate.cb.filter_list) = NULL;
@@ -1298,14 +1294,14 @@ void zumServer::mgmt::enumerateAck(
 
 void zumServer::mgmt::deviceManagementReq(
 	ZAsyncStream::sZAsyncMsg *msg,
-	fplainn::Zum::sZAsyncMsg *request,
+	fplainn::Zum::sZumServerMsg *request,
 	Thread *self
 	)
 {
 	fplainn::Endpoint		*endp;
 	fplainn::Device			*dev;
 	error_t				err;
-	fplainn::Zum::sZumMsg		*ctxt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*ctxt;
 	AsyncResponse			myResponse;
 
 	/**	EXPLANATION:
@@ -1317,14 +1313,14 @@ void zumServer::mgmt::deviceManagementReq(
 	 *	* Call FloodplainnStream::send():
 	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=1.
 	 **/
-	ctxt = getNewZumMsg(
+	ctxt = getNewZumDeviceMgmtMsg(
 		CC __func__, request->path,
 		msg->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
 		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
 
 	if (ctxt == NULL) { return; };
-	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZumServerMsg(*request);
 	myResponse(ctxt);
 
 	err = getDeviceHandleAndMgmtEndpoint(
@@ -1357,7 +1353,7 @@ void zumServer::mgmt::deviceManagementReq(
 
 void zumServer::mgmt::deviceManagementAck(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *,
 	fplainn::Device *
 	)
@@ -1420,14 +1416,14 @@ void zumServer::mgmt::deviceManagementAck(
 
 void zumServer::mgmt::finalCleanupReq(
 	ZAsyncStream::sZAsyncMsg *msg,
-	fplainn::Zum::sZAsyncMsg *request,
+	fplainn::Zum::sZumServerMsg *request,
 	Thread *self
 	)
 {
 	fplainn::Endpoint		*endp;
 	fplainn::Device			*dev;
 	error_t				err;
-	fplainn::Zum::sZumMsg		*ctxt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*ctxt;
 	AsyncResponse			myResponse;
 
 	/**	EXPLANATION:
@@ -1439,14 +1435,14 @@ void zumServer::mgmt::finalCleanupReq(
 	 *	* Call FloodplainnStream::send():
 	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=1.
 	 **/
-	ctxt = getNewZumMsg(
+	ctxt = getNewZumDeviceMgmtMsg(
 		CC __func__, request->path,
 		msg->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
 		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
 
 	if (ctxt == NULL) { return; };
-	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZumServerMsg(*request);
 	myResponse(ctxt);
 
 	err = getDeviceHandleAndMgmtEndpoint(
@@ -1477,7 +1473,7 @@ void zumServer::mgmt::finalCleanupReq(
 
 void zumServer::mgmt::finalCleanupAck(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *,
 	fplainn::Device *
 	)
@@ -1500,13 +1496,13 @@ void zumServer::mgmt::finalCleanupAck(
 
 void zumServer::mgmt::channelEventInd(
 	ZAsyncStream::sZAsyncMsg *msg,
-	fplainn::Zum::sZAsyncMsg *request,
+	fplainn::Zum::sZumServerMsg *request,
 	Thread *self
 	)
 {
 	fplainn::Device			*dev;
 	error_t				err;
-	fplainn::Zum::sZumMsg		*ctxt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*ctxt;
 	AsyncResponse			myResponse;
 
 	/**	EXPLANATION:
@@ -1518,14 +1514,14 @@ void zumServer::mgmt::channelEventInd(
 	 *	* Call FloodplainnStream::send():
 	 *		* metaName="udi_mgmt", meta_ops_num=1, ops_idx=0.
 	 **/
-	ctxt = getNewZumMsg(
+	ctxt = getNewZumDeviceMgmtMsg(
 		CC __func__, request->path,
 		msg->header.sourceId,
 		MSGSTREAM_SUBSYSTEM_ZUM, request->opsIndex,
 		sizeof(*ctxt), msg->header.flags, msg->header.privateData);
 
 	if (ctxt == NULL) { return; };
-	::new (&ctxt->info) fplainn::Zum::sZAsyncMsg(*request);
+	::new (&ctxt->info) fplainn::Zum::sZumServerMsg(*request);
 	myResponse(ctxt);
 
 	err = floodplainn.getDevice(ctxt->info.path, &dev);
@@ -1560,7 +1556,7 @@ void zumServer::mgmt::channelEventInd(
 
 void zumServer::mgmt::channelEventComplete(
 	MessageStream::sHeader *msg,
-	fplainn::Zum::sZumMsg *ctxt,
+	fplainn::Zum::sZumDeviceMgmtMsg *ctxt,
 	Thread *,
 	fplainn::Device *
 	)

@@ -161,7 +161,7 @@ TESTS_FN_MAKE_PROTOTYPE_DEFVARS(makeARequestToZumWithMovableMemory)
 			ecb->filter_list_length,
 			ecb->filter_list);
 
-		floodplainn.zum.getEnumerateReqAttrsAndFilters(ecb, a, tf.a);
+		floodplainn.zum.unmarshalEnumerateAckAttrsAndFilters(ecb, a, tf.a);
 
 		{
 			ecb->filter_list_length = 2;

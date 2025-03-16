@@ -344,8 +344,8 @@ void __korientationMain4(MessageStream::sHeader *msgIt);
 void __korientationMain3(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
-	fplainn::Zum::sZumMsg		*msg=reinterpret_cast<
-		fplainn::Zum::sZumMsg *>(msgIt);
+	fplainn::Zum::sZumDeviceMgmtMsg		*msg=reinterpret_cast<
+		fplainn::Zum::sZumDeviceMgmtMsg *>(msgIt);
 
 	(void)self;
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
@@ -393,7 +393,7 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 
 void __korientationMain4(MessageStream::sHeader *msgIt)
 {
-	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*msg = (fplainn::Zum::sZumDeviceMgmtMsg *)msgIt;
 	status_t			stat;
 	error_t				ret;
 
@@ -486,7 +486,7 @@ return;
 
 void __kecrCb(MessageStream::sHeader *msgIt)
 {
-	fplainn::Zum::sZumMsg		*msg = (fplainn::Zum::sZumMsg *)msgIt;
+	fplainn::Zum::sZumDeviceMgmtMsg		*msg = (fplainn::Zum::sZumDeviceMgmtMsg *)msgIt;
 	error_t err;
 	status_t stat;
 
