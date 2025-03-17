@@ -28,7 +28,7 @@ AS_CASE(["$enable_sched_preemption"],
         AC_DEFINE([CONFIG_SCHED_PREEMPT_TIMESLICE], [1],
             [Enable timeslice preemption (default)])
         AC_DEFINE([CONFIG_SCHED_PREEMPT], [1],
-            [Enable scheduler preemption])]
+            [Enable scheduler preemption])],
     [*], [AC_MSG_ERROR(
         [Invalid scheduler preemption mode: $enable_sched_preemption])]
 )
@@ -43,7 +43,7 @@ AC_ARG_WITH([sched-timeslice-us],
     ]
 )
 ZBZ_VALIDATE_POSITIVE_NONZERO_INTEGER([with_sched_timeslice_us])
-AC_DEFINE([CONFIG_SCHED_TIMESLICE_US], [$with_sched_timeslice_us],
+AC_DEFINE_UNQUOTED([CONFIG_SCHED_TIMESLICE_US], [$with_sched_timeslice_us],
     [Set scheduler timeslice duration in microseconds])
 
 dnl Kernel preemption option
