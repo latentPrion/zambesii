@@ -52,15 +52,25 @@ Run `./configure --help` to see all available options.
 
 ### Compilation
 
+The build system provides different targets for building the kernel and packaging it:
+
+#### Building the Kernel Binary Only
+
 After configuration, run:
 
 ```bash
+# Standard build - builds the kernel binary file 'zambesii.zxe'
 make
+
+# Alternative - the __kexec target also builds just the kernel binary
+make __kexec
 ```
 
-This will build the kernel binary file `zambesii.zxe`.
+Both commands above will build only the kernel binary file `zambesii.zxe` without creating any ISO images.
 
-To create an ISO image, run one of the following commands:
+#### Creating Boot Images
+
+To build the kernel and create a bootable ISO image, use one of the packaging targets:
 
 ```bash
 # For GRUB legacy
