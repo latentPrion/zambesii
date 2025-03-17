@@ -1,0 +1,125 @@
+Sched bugs-ish?
+* TimerQueue::tick() shouldn't need to call taskTrib.unblock() on the
+  target thread since the call to timerRequestTimeoutNotification() on
+  the target process' Timer Stream should wake the target thread; because
+  timerRequestTimeoutNotification() calls enqueue() on the target thread's
+  messageStream, which should already wake the target thread.
+* TaskTrib::unblock() calls yield() in the case where the thread is
+  runnable. This is fine as long as the caller isn't in IRQ context.
+  Unfortunately, we don't guard against this possibility, so we actually
+  yield() and perform a full context switch in IRQ context, which is bad.
+  * The problem may not be the fundamental design of the scheduler but rather
+    merely the way we impliement yield(). IFF we call saveContextAndCallPull
+    in yield(), or we call pull() or something of that sort, then that's likely
+    the entire problem.
+  * Double check that we don't call pull() anywhere other than at the end of
+    interrupt context.
+* Double check the way we do saveContextAndCallPull -- we may need to redesign it.
+* Yes: the specific issue is that in TaskTrib, the scheduler functions don't merely
+  manipulate the per-CPU scheduler queues (prio queues of threads) but they also
+  invoke saveContextAndCallPull; or in the case of say, unblock() for example,
+  it calls yield() which then calls saveContextandCallPull on its behalf.
+  There are several reasons why this is wrong:
+  * We switch the thread context immediately on invoking a scheduler operation,
+    but it's entirely plausible that within a single kernel entrance, we may
+    perform several scheduler operations. For example, one thread signals some
+    object, and the object is being monitored by 10 threads. Each of those threads
+    gets unblock()d. Current design would mean that we switch context 10 times
+    during the same kernel entrance.
+  * We don't provide any guards against context switching in the middle of
+    an IRQ, as noted above.
+  * The solution is to just defer context switching to the end of kernel entrances
+    just before we return to userspace. Kernel functions may call the scheduler
+    operations any number of times and this should only rearrange the threads in
+    the prio queues. There should only be one final context switch at the end of
+    a kernel entrance.
+* Right now the kernel pushes thread context into the thread's schedStack.
+  This needs to change. We should be pushing normally onto the thread's kernel
+  stack.
+* We currently appear to have the kernel thinking that it should allocate the
+  userspace stacks for a new thread INSTEAD OF the kernel stack for that
+  thread, rather than IN ADDITION TO it. This is shaky, and I need to trace it.
+
+----
+
+* We call pull after saving the previous task's context. IIRC we originally
+  designed things such that we would switch to a tiny "sleepstack" inside
+  the per-CPU metadata (CpuStream). So what we actually do, IIRC, is we
+  save current thread's context, then switch stacks to a sleepstack, then
+  call pull() to figure out which thread to switch to next, then context
+  switch into that thread.
+  We should be able to instead do:
+  * Remain on current thread's context.
+  * Save its context with its instr ptr pointing to the instruction after
+    saveContextAndCallPull().
+  * Remain on current thread's stack.
+  * Call pull to figure out which thread to switch to.
+  * Switch to that thread.
+* I.e: eliminate the little intermediate stack switch to the sleepstack.
+
+Ok so I've realized that we have to leave in the calls to
+saveContextAndCallPull for coop sched mode, because there's no pre-emption in
+that mode. Context switches only happen when the current thread relinquishes
+the CPU in one way or another. In coop mode, the current thread can
+relinquish the CPU by:
+
+Calling block(), calling dormant() on itself, calling yield(). No other operations
+cause a context switch. A ccop system must explicitly call yield() if it sends
+a message to another thread and expects that thread to execute and return a
+message -- and it must ensure that its own priority is lower than that thread's or
+else it will just yield to itself. Block is a  good way to solve this for a coop
+system: block on a sync primitive like a queue whenever expecting a reply from
+another thread.
+
+It's important to note that priorities also have significance in a coop system.
+They determine which thread gets executed when another thread yield()s or
+dormant()s itself.
+
+In coop mode, it's legitimate for an interrupt to unblock a thread. We just
+need to make sure that no context switch is triggered within block() while
+we're in interrupt context.
+
+In syscall context, coop mode calls to block/dormant/yield should indeed
+immediately trigger a context switch -- so the saveContextAndCallPull
+calls should indeed stay within the TaskTrib methods. NB:
+TaskTrib::dormant(self) should trigger a context switch immediately
+but TaskTrib::dormant(other) shouldn't trigger an immediate context
+switch. In coop mode the only purpose of the prios in the sched queue
+is to determine who gets to run when the current thread
+yields/blocks/dormants. Coop prios don't determine who has priority claim
+to the CPU -- the incumbent wins every contest.
+
+So it seems like in coop mode, we shouldn't call saveContextAndCallPull
+in interrupt context; but we should keep the saveContextAndCallPull calls
+in the TaskTrib methods. 
+
+----
+
+In passive preempt mode, prios determine who has prior claim to the CPU.
+Passive prios are enforced at every kernel exit.
+
+Unlike coop mode, passive prio mode does call saveContextAndCallPull in
+interrupt but __ONLY__ on kernel exit. All other saveContextAndCallPull
+calls are elided and only result in a sched prioQueue data structure
+operation. Calls to TaskTrib:: methods elide their internal calls to
+saveContextAndCallPull.
+
+----
+
+KERNEL_PREEMPT.
+
+Ok, we need to properly understand kernel pre-emption before we can
+continue because it crosses over with this coop-vs-preemption dichotomy.
+
+Kernel preemption is always done in interrupt context. Kernel 
+
+
+
+
+Improvements:
+* Rename fplainn::Zum::sZAsyncMsg. Too confusing the way it's named right now.
+  * Understand why we delete movableMem in unmarshalEnumerateAckAttrsAndFilters.
+    * We may need to entirely redesign the way we do movable mem allocation because
+      I'm not sure the correct parties are allocating and freeing here.
+    * We need to figure out where we can preallocate memory within one of the messageStream
+      for marshaling. Then marshal the attr/filter lists into it.
