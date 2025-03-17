@@ -46,6 +46,10 @@ AX_ZBZ_DTRIB_ARG_ENABLE([caurall],
     [CONFIG_DTRIB_CAURALL],
     [unimplemented])
 AX_ZBZ_DTRIB_ARG_ENABLE([watermarkk],
-    [Watermarkk Distributary],
+    [Watermarkk Distributary (user authentication, authorization, and encryption)],
     [CONFIG_DTRIB_WATERMARKK],
+    [unimplemented])
+AX_ZBZ_DTRIB_ARG_ENABLE([neapp],
+    [Neapp Distributary (RAM swapping to storage)],
+    [CONFIG_DTRIB_NEAPP],
     [unimplemented])
