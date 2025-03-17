@@ -276,6 +276,14 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 				.timerRequestTimeoutNotification();
 		};
 
+		/** FIXME:
+		 * I don't think this taskTrib.unblock() call is needed.
+		 *
+		 * The call to timerRequestTimeoutNotification(foo, bar) on the
+		 * target process' Timer Stream should call enqueue() on the target
+		 * thread's messageStream, which should already wake the target
+		 * thread.
+		 **/
 		if (targetProcess != NULL && targetThread != NULL) {
 			taskTrib.unblock(targetThread);
 		};

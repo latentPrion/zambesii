@@ -91,6 +91,12 @@ error_t fplainn::Zudi::instantiateDeviceReq(utf8Char *path, void *privateData)
 		if (ret != ERROR_SUCCESS) { return ret; };
 	};
 
+	/** FIXME:
+	 * Consider explicitly denoting the target threadID instead of
+	 * only denoting the processId.
+	 * And double-check whether the kernel maintains a server thread to
+	 * process requests within the driver process.
+	 **/
 	request = new fplainn::Zudi::sKernelCallMsg(
 		dev->driverInstance->pid,
 		MSGSTREAM_SUBSYSTEM_ZUDI, MSGSTREAM_ZUDI___KCALL,

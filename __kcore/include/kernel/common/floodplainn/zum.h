@@ -406,6 +406,12 @@ inline void fplainn::Zum::channelOpAbortedInd(
 inline fplainn::Zum::EnumerateReqMovableMemMarshaller::EnumerateReqMovableMemMarshaller(
 	uarch_t nAttrs, uarch_t nFilters)
 {
+	/** FIXME:
+	 * I think this is buggy. AFAICT we allocate one movable memory
+	 * chunk for both the attr_list and the filter_list. In here we
+	 * appear to be initializing two headers, one for each list.
+	 * Double-check and fix if necessary.
+	 **/
 	if (nAttrs > 0)
 	{
 		::new (calcAttrMovableMemHeaderPtr())
