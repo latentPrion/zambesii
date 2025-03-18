@@ -1,0 +1,70 @@
+Below are some notes from me thinking through the various kinds of schedulers invocation strategies and how they deal with various issues specific to each strategy.
+
+Please see scheduling-invocation.md for an LLM summary that structures these thoughts into a readable form.
+
+----
+
+Rewrite this note in a structured way with tables to summarize each concept and the different cases. Also, for the "when to immediately effectuate a schedop" question, the correct answer is "always", but do also summarize the arguments for "sometimes". Both can be taken seriously, but ultimately "always" is more generalizaable and it only has one edge case, whereas the "Sometimes" design looks through a less unified, integrated lens. Add some prose to briefly describe the concepts and constraining reasoning behind the choices in each sub-conceptual domain.
+
+----
+Ok, I didn't need you to give me a general summary. Assuming timeslice based preemptive prior scheduler:
+
+# For ring3 threads:
+
+Kernel entry: CPU auto switches to stack0 (aka, kernel stack for that thread). Snapshot is taken of regs in userspace, on stack0. Kernel executes syscall, or handles IRQ. Assume the thread isn't pre-empted so on kernel exit we're returning to the same thread. Kernel points CPU at the entrance context (we'll call it lobby context from here on) and then pops it into the CPU. This causes the CPU to return to ring3.
+
+If the thread is pre-empted, this means it's pre-empted while in the kernel. There's no way to pre-empt the thread in ring3. When choosing where to resume the thread, we can't assume that we can resume it in the lobby context because there may be other operations that the thread has to execute along the kernel path during its kernel path-execution, before it returns from int context. So when we pre-empt a thread in kernelspace, we save a new reg snapshot of the reg context within kernelspace, and this is where it will resume from.
+
+Remember: snapshots are only used for the purpose of resuming execution. In theory you could resume a pre-empted at the lobby snapshot, which would result in that thread exiting the kernel and resuming at its ring3 location.
+
+The uncertainty over whether there are further operations to execute on the kernel path is strongest in the coop sched case -- but in that case, we aren't using pre-emption.
+
+Another question that arises is: should the kernel allow for thread switches at the end of every type of kernel entry? IRQ+Syscall? Well, it seems like it shouldn't because if we have a ring3 thread get an IRQ and then begin executing kernel path code, should that IRQ path be pre-empted on the stack of that ring3 thread? That would tie the IRQ event to that single thread. IRQs are supposed to be async events -- they shouldn't be synchronized to the fate of a single thread's execution. At minimum, we can see that pre-emption should be disabled in IRQ interrupts.
+
+But that then sets up the timer IRQ as being "special", in that it is supposed to trigger an invocation of the timeslice scheduler. How to handle that?
+
+Anyway: so: IRQs shouldn't be pre-empted. In fact, it's not merely a question of whether IRQs should be pre-empted: it seems like the correct approach is to not invoke the timeslice scheduler (default blacklisted from all kernel exits) and only permit it for specific kernel exits. PRe-emption should only be triggered on: syscall exits and timeslice IRQ exits. Keep this in mind. We've now understood the bounding conditions for one abstraction. For nested IRQs, we should always use an interrupt IDT gate (disables INT locally automatically) until we've called timeslice_preempt_disable(). The purpose of explicit pre-empt_disable() calls is to tell the timer IRQ not to invoke the pre-empt scheduler on its exit, when we're doing nested IRQs. Why? Because we can't have the timeslice-preempter pre-empting IRQs since that will bind them to the currently executing thread. It seems though, that pre-empt_disable() should just increment a counter. Because preempt_Disable() should be called on all IRQ entrnces, but the timeslice IRQ should still defy the prohibition if the preempt counter is 1 -- i.e, if the thread of execution just beneath it is a syscall, or nothing at all (i.e: an IRQ occured directly from userspace).
+
+Oh this is interesting: so in that latter case (IRQ directly from ring3) the timeslice enforcer should actually point the saved reg snapshot at the ring3 context on the kernel stack when "saving a new snapshot", and it shouldn't try to save a new context. Actually, this is uniformly true whether or not the timer IRQ came in directly from ring3, or from ring0: because if the timeslice enforcer tries to "save" a new snapshot, it will save that snapshot from its own execution path which is an async IRQ, which is ephemeral and shouldn't be persisted past its kernel exit. So the timeslicer should always "save" the current thread's snapshot by pointing its context ptr at the lobby snapshot for its current nesting level.
+
+It seems we also need a "do timeslice enforcement" flag: this enables the timeslice IRQ to indicate to the kernel that it should invoke the timeslicer on kernel exit from whichever IRQ nesting level below has preempt_count==1. If we don't create a flag like this, then the timeslicer will only be able to enforce timeslicing if its IRQ occurs at nesting level==1. I.e: timeslicer timer IRQs can come in at nesting lvl 3, for example, and then because the timeslicer can't be invoked at its own exit from lvl3, it will just exit and do no enforcement of timeslices. Then when the IRQ with nesting lvl==1 exits, it won't invoke the timeslicer because we only invoke it on the timeslicer IRQ's vector. So it seems like we need to invoke the timeslicer on every vector as long as the "enforce_timeslice" flag is set. We should always enforce timeslices on a syscall vector whether or not enforce_timeslice is set.
+
+Syscall vector exit: unconditionally enforce timeslice.
+IRQ vector exit: if (enforce_timeslice == true && irq_nesting_lvl==1) { enforce timeslicing; }
+No timeslicing on any other type of kernel path.
+The timeslice timer triggers the  timeslicer by setting enforce_timeslice=true. The kernel will then automatically invoke the timeslicer when irq_nesting_lvl==1.
+
+IRQ nesting lvl is not the same as in_irq(). In interrupt is handled like:
+if (irq_nesting_level > 0) { return true; } else { return false; }
+
+It's possible to have a situation where we're in ring3, then IRQ occurs. Kernel enters and before it can increment preempt_count, another IRQ occurs. We're now in IRQ nesting lvl==2. lvl2 increements Preempt_count to 1, and when it exits, preempt_count==1, so this invokes the timeslice enforcer. This is bad because the real IRQ with nesting lvl==1 is now going to be pre-empted and bound to the current ring3 thread. To solve this problem, IRQ vectors shuld be set to auto-disable INT# until preempt_count has been incremented. Then we can re-enable IRQs and let other IRQs nest in on us. Never let a nested IRQ get delivered to the CPU until preempt_count has been incremented.
+
+Next question: the timeslicer should always save the snapshot of the current thread as its nesting lobby snapshot. What about other schedulers? The passive preempter and the coop scheduler?
+
+For the passive preempter (invoked at the end of every syscall, to make sure that the kernel resumes executing the highest prio thread with remaining timeslice available; which is different from the timeslicer scheduler which actively enforces timeslices and prios at regular intervals.) The passive pre-empter is always called in syscall context, so it's always going to be operating on a thread that is in the kernle path, executing on its ring0 stack. Get that through your head: the passive scheduler is ALWAYS executed on a thread that ENTERED the kernel. It can never be operating on a thread that entered DIRECTLY from ring3. Only the timeslice scheduler could possibly wind up in that situation. For that reason, the timeslicer always saves the incumbent thread's reg snapshot as its proximal lobby context. The passive pre-empter is invoked within the same kernel entry nesting level as the incumbent thread itself -- the kernel forces the incumbent thread to invoke the passive preempter on itself. Thus, unlike the timeslicer which is invoked at a nesting level at least 1 level above the incumbent thread (thus the incumbent thread's reg snap is autosaved by the CPU in the proximal lobby), the passive preempter is invoked at  the same nesting level as the incumbent thread's syscall. Hence, within the passive pre-empter, its proximal lobby points to the ring3 context. In order to establish a ring0 snapshot, the passive pre-emptor must explicitly save a new snapshot in addition to its proximal lobby context. So the passive pre-emptor saves the incumbent thread's context by pushing a brand new snapshot to the incumbent's ring0 stack and pointing the incumbent's TCB at that; whereas the timeslicer "saves" the incumbent's context by pointing the incumbent's TCB at the nesting-level-1-IRQ's proximal lobby snapshot.
+
+Now, for the coop scheduler, it will also always  be executed from syscall context. You can think of the passive preemptor and coop scheduler as both forcing the incumbent thread to perform a context switch -- they both occur in the kernel and both require resuming at a point within the kernel rather than at the place where the ring3 thread entered the kernel. So they both require that we explicitly save new context.
+
+# For kernel threads:
+
+The "push an entirely new kernel-mode snapshot" general strategy for syscall-invoked sched triggers (passive and coop) is doubly true for kernel threads since they won't have a lobby context when performing kernel path operations. A kernel thread won't make syscalls so there will be no "entry point" at which the CPU would auto-save a lobby context for such threads. If such threads are to be snapshotted at all, they must be snapshotted at the point when they invoke a scheduler operation; or by  the timeslicer.
+
+The timeslicer will still be perfectly fine if it uses the lobby context because it always occurs in an IRQ context -- i.e, the CPU had to save a lobby context because of the timer IRQ.
+
+Now there are 2 final issues to consider:
+1. When should saveContextAndCallPull perform an immediate context switch under coop, passive and timeslicer scheduler invocation strategies??
+
+2. When, if ever, should a scheduler operation (e.g: block, yield, dormant(self)) invoked within syscall context trigger an immediate context switch under coop, passive and timeslicer scheduler invocation strategies? Under coop mode, every time: under coop mode there is no passive scheduler invocation at the end of every syscall, so any schedop call must be effectuatd immediately -- new snapshot should be saved and then the scheduler should choose highest prio thread w/remaining timeslice. Under passive:
+1. For coop builds:
+a. For user threads: schedops invoked during syscalls are only committed/effectuated at syscall exit, when the passive preempter then saves the incumbent's snapshot and then switches to the highest prio thread -- so schedops should never trigger immediate thread switch.
+b. For kernel threads, there are no syscalls -- they're always in the kernel, so there's no opportunity to passively enforce preemption. Their schedops must be effectuated as an immediate thread switch.
+3. For timeslicer builds:
+a. For user threads, always? Because the invocation of the timeslicer can't be synchronized with the thread's whims to syscalll at anygiven moment -- hence you can't assume that the schedop you called during that syscall would ncessarily be enforced by the timeslicer -- not least because you can't assume that the timeslicer would even be triggered during your syscall since it only occrs within IRQs.
+b. For kernel threads, always as well, but for a slightly different reason: kernel threads have no kernel exits, so they will not be able to do deferred scheduler invocation at the point of kernel exit. And also, the a similar synchronicity issue with the timeslicer IRQ arises: you can't depend on the timer IRQ coming in in a timeframe that's responsive enough -- but unlike the user thread case, the kernel thread will remain in kernel mode so it will be executing when the timer IRQ fires -- it'll just have big jitter in responsiveness to effectuating its invocations of schedops.
+
+3. When if ever, should a schedler operation (e.g: block, yield, dormant(self)) invoked within IRQ context trigger an immediate context switch under coop, passive and timeslicer scheduler invocation strategies? Never: saving a snapshot of the incumbent thread from IRQ context is the same as saving a snapshot of that IRQ's progress and then switching away from it -- i.e, it's the same as binding that IRQ (should be async event) synchronously to that incumbent thread.
+
+ACTUALLY THO, you could argue that schedop invocation should always resut in an immediate context switch, because the biggest case where they "shouldn't" (the passive invocation strat) actually works out just fine: it jsut means that you perform one context switch immediately when the schedop is invoked and then another later on just before you exit the syscall. It produces 2 context switches, potentially. You could of course, optimize it by checking whether the invocation of the passive pre-empter at syscall exit will actually result in a new incumbent thread being pulled, but that's not structurally important to this design -- it's an optimization.
+
+So basically: always effectuate schedop-triggered context switches immediately except when in IRQ context.
+
