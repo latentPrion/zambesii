@@ -9,6 +9,8 @@ Rewrite this note in a structured way with tables to summarize each concept and 
 ----
 Ok, I didn't need you to give me a general summary. Assuming timeslice based preemptive prior scheduler:
 
+Important: add an assert to ensure that TaskStream::getCurrentThread() is never called from IRQ context.
+
 # For ring3 threads:
 
 Kernel entry: CPU auto switches to stack0 (aka, kernel stack for that thread). Snapshot is taken of regs in userspace, on stack0. Kernel executes syscall, or handles IRQ. Assume the thread isn't pre-empted so on kernel exit we're returning to the same thread. Kernel points CPU at the entrance context (we'll call it lobby context from here on) and then pops it into the CPU. This causes the CPU to return to ring3.

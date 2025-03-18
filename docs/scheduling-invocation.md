@@ -6,6 +6,8 @@ This note explores the design of a kernel with **nested interrupts** (kernel-mod
 
 ## **1. Stack Management and Thread State Saving**
 
+Important: add an assertion to ensure that TaskStream::getCurrentThread() is never invoked from IRQ context.
+
 ### **1.1 User Threads**
 
 #### **Kernel Entry (Syscall or IRQ)**
