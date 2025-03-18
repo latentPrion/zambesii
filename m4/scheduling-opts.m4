@@ -1,49 +1,45 @@
 dnl Scheduling options
 dnl
 
-dnl Preemption mode option
-AC_ARG_ENABLE([sched-preemption],
-    [AS_HELP_STRING([--enable-sched-preemption=MODE],
-        [Set scheduler preemption mode: passive, timeslice, or no (cooperative) @<:@default=timeslice@:>@])],
+dnl Passive preemption option
+AC_ARG_ENABLE([sched-preempt-passive],
+    [AS_HELP_STRING([--enable-sched-preempt-passive],
+        [Enable passive preemption @<:@default=yes@:>@])],
     [AS_CASE(["$enableval"],
-        [passive|opportune|opportunistic|opp], [enable_sched_preemption="passive"],
-        [no|coop|cooperative|co-op|co-operative], [enable_sched_preemption="coop"],
-        # Default to timeslice
-        [timeslice|timer|tick|""], [enable_sched_preemption="timeslice"],
-        [*], [
-            AC_MSG_ERROR([Invalid scheduler preemption mode: $enableval])
-        ])],
-    [enable_sched_preemption="timeslice"]
+        [no], [enable_sched_preempt_passive="no"],
+        [yes|""|*], [enable_sched_preempt_passive="yes"])],
+    [enable_sched_preempt_passive="yes"]
 )
-AS_CASE(["$enable_sched_preemption"],
-    [coop], [
-        AC_DEFINE([CONFIG_SCHED_COOP], [1],
-            [Enable cooperative scheduling])],
-    [passive], [
-        AC_DEFINE([CONFIG_SCHED_PREEMPT_PASSIVE], [1],
-            [Enable passive preemption])
-        AC_DEFINE([CONFIG_SCHED_PREEMPT], [1],
-            [Enable scheduler preemption])],
-    [timeslice], [
-        AC_DEFINE([CONFIG_SCHED_PREEMPT_TIMESLICE], [1],
-            [Enable timeslice preemption (default)])
-        AC_DEFINE([CONFIG_SCHED_PREEMPT], [1],
-            [Enable scheduler preemption])],
-    [*], [AC_MSG_ERROR(
-        [Invalid scheduler preemption mode: $enable_sched_preemption])]
+AS_IF([test "$enable_sched_preempt_passive" = "yes"], [
+    AC_DEFINE([CONFIG_SCHED_PREEMPT_PASSIVE], [1], [Enable passive preemption])
+    AC_DEFINE([CONFIG_SCHED_PREEMPT], [1], [Enable scheduler preemption])
+])
+
+dnl Timeslice preemption option
+AC_ARG_ENABLE([sched-preempt-timeslice],
+    [AS_HELP_STRING([--enable-sched-preempt-timeslice],
+        [Enable timeslice preemption @<:@default=yes@:>@])],
+    [AS_CASE(["$enableval"],
+        [no], [enable_sched_preempt_timeslice="no"],
+        [yes|""|*], [enable_sched_preempt_timeslice="yes"])],
+    [enable_sched_preempt_timeslice="no"]
 )
+AS_IF([test "$enable_sched_preempt_timeslice" = "yes"], [
+    AC_DEFINE([CONFIG_SCHED_PREEMPT_TIMESLICE], [1], [Enable timeslice preemption])
+    AC_DEFINE([CONFIG_SCHED_PREEMPT], [1], [Enable scheduler preemption])
+])
 
 dnl Timeslice duration option
-AC_ARG_WITH([sched-timeslice-us],
-    [AS_HELP_STRING([--with-sched-timeslice-us=MICROSECONDS],
+AC_ARG_WITH([sched-preempt-timeslice-us],
+    [AS_HELP_STRING([--with-sched-preempt-timeslice-us=MICROSECONDS],
         [Set scheduler timeslice duration in microseconds @<:@default=5000@:>@])],
     [], [
         AC_MSG_NOTICE([Using default timeslice duration: 5000us])
-        with_sched_timeslice_us="5000"
+        with_sched_preempt_timeslice_us="5000"
     ]
 )
-ZBZ_VALIDATE_POSITIVE_NONZERO_INTEGER([with_sched_timeslice_us])
-AC_DEFINE_UNQUOTED([CONFIG_SCHED_TIMESLICE_US], [$with_sched_timeslice_us],
+ZBZ_VALIDATE_POSITIVE_NONZERO_INTEGER([with_sched_preempt_timeslice_us])
+AC_DEFINE_UNQUOTED([CONFIG_SCHED_PREEMPT_TIMESLICE_US], [$with_sched_preempt_timeslice_us],
     [Set scheduler timeslice duration in microseconds])
 
 dnl Kernel preemption option

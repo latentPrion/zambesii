@@ -280,8 +280,9 @@ AC_CONFIG_COMMANDS_POST(
     ))
     AC_MSG_NOTICE(m4_normalize(
         [Scheduler options:
-        (Preemption:${enable_sched_preemption})
-        (Timeslice:${with_sched_timeslice_us}us)
+        (Passive preemption:${enable_sched_preempt_passive})
+        (Timeslice preemption:${enable_sched_preempt_timeslice})
+        (Timeslice:${with_sched_preempt_timeslice_us}us)
         (Kernel preemption:${enable_sched_preempt_kernel})]
     ))
     AC_MSG_NOTICE(m4_normalize(
