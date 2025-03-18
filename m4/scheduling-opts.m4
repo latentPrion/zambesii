@@ -6,7 +6,7 @@ AC_ARG_ENABLE([sched-preemption],
     [AS_HELP_STRING([--enable-sched-preemption=MODE],
         [Set scheduler preemption mode: passive, timeslice, or no (cooperative) @<:@default=timeslice@:>@])],
     [AS_CASE(["$enableval"],
-        [passive], [enable_sched_preemption="passive"],
+        [passive|opportune|opportunistic|opp], [enable_sched_preemption="passive"],
         [no|coop|cooperative|co-op|co-operative], [enable_sched_preemption="coop"],
         # Default to timeslice
         [timeslice|timer|tick|""], [enable_sched_preemption="timeslice"],
