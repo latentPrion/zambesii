@@ -856,11 +856,11 @@ error_t CpuTrib::uniProcessorInit(void)
 #endif
 
 
+error_t CpuTrib::spawnStream(
 #if __SCALING__ >= SCALING_CC_NUMA
-error_t CpuTrib::spawnStream(numaBankId_t bid, cpu_t cid, ubit32 cpuAcpiId)
-#else
-error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
+    numaBankId_t bid,
 #endif
+    cpu_t cid, ubit32 cpuAcpiId)
 {
 	error_t		ret;
 #if __SCALING__ >= SCALING_CC_NUMA
@@ -868,11 +868,11 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 #endif
 	CpuStream	*cs;
 
+	if (
 #if __SCALING__ >= SCALING_CC_NUMA
-	if (bid == NUMABANKID_INVALID || cid == CPUID_INVALID) {
-#else
-	if (cid == CPUID_INVALID) {
+		bid == NUMABANKID_INVALID ||
 #endif
+		cid == CPUID_INVALID) {
 		return ERROR_INVALID_ARG_VAL;
 	};
 
@@ -905,8 +905,8 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 
 	if (ret != ERROR_SUCCESS) { return ret; };
 	ncb->cpus.setSingle(cid);
-
 #endif
+
 	/**	EXPLANATION:
 	 * The SMP case requires that the onlineCpus and availableCpus bmps be
 	 * resized to hold the new CPU's bit.
@@ -926,26 +926,23 @@ error_t CpuTrib::spawnStream(cpu_t cid, ubit32 cpuAcpiId)
 	 **/
 	if (cid != CpuStream::bspCpuId)
 	{
-#if __SCALING__ >= SCALING_CC_NUMA
 		cs = new (processTrib.__kgetStream()->memoryStream.memAlloc(
 			PAGING_BYTES_TO_PAGES(sizeof(CpuStream)),
 			MEMALLOC_NO_FAKEMAP))
-				CpuStream(bid, cid, cpuAcpiId);
-#else
-		cs = new (processTrib.__kgetStream()->memoryStream.*memAlloc(
-			PAGING_BYTES_TO_PAGES(sizeof(CpuStream)),
-			MEMALLOC_NO_FAKEMAP))
-				CpuStream(cid, cpuAcpiId);
+				CpuStream(
+#if __SCALING__ >= SCALING_CC_NUMA
+					bid,
 #endif
+					cid, cpuAcpiId);
 	}
 	else
 	{
+		cs = new (&bspCpu) CpuStream(
 #if __SCALING__ >= SCALING_CC_NUMA
-		cs = new (&bspCpu) CpuStream(bid, cid, cpuAcpiId);
-#else
-		cs = new (&bspCpu) CpuStream(cid, cpuAcpiId);
+			bid,
 #endif
-	};
+			cid, cpuAcpiId);
+	}
 
 	if (cs == NULL) { return ERROR_MEMORY_NOMEM; };
 
