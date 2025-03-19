@@ -108,6 +108,7 @@ public:
 	void msiIrqMain(RegisterContext *regs);
 	void swiMain(RegisterContext *regs);
 	void exceptionMain(RegisterContext *regs);
+	void nmiMain(RegisterContext *regs);
 
 private:
 	// These two are architecture specific.
