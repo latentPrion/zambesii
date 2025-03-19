@@ -33,7 +33,7 @@ uarch_t getEip(void)
 }
 
 extern "C" void getRegs(RegisterContext *t);
-//RegisterContext		y(0);
+RegisterContext		y(0);
 
 void __kcpuPowerOnMain(CpuStream *self)
 {
@@ -64,19 +64,22 @@ void __kcpuPowerOnMain(CpuStream *self)
 		printf(FATAL CPUPOWER"%d: Failed to bind().\n", self->cpuId);
 	};
 
-	/*printf(NOTICE CPUPOWER"CPU %d: Sleepstack: %x. Regdump:\n"
+/*	getRegs(&y);
+	printf(NOTICE CPUPOWER"CPU %d @%p: Sleepstack: %x. Regdump:\n"
 		"\teax %x, ebx %x, ecx %x, edx %x\n"
 		"\tesi %x, edi %x, esp %x, ebp %x\n"
 		"\tcs %x, ds %x, es %x, fs %x, gs %x, ss %x\n"
 		"\teip %x, eflags %x\n",
-		self->cpuId, self->sleepStack,
+		self->cpuId, self, self->schedStack,
 		y.eax, y.ebx, y.ecx, y.edx, y.esi, y.edi, y.esp, y.ebp,
-		y.cs, y.ds, y.es, y.fs, y.gs, y.ss, y.eip, y.eflags);*/
+		y.cs, y.ds, y.es, y.fs, y.gs, y.ss, y.eip, y.eflags);
+*/
 
 	/* Halt the CPU here. This will be replaced with a call to
 	 * TaskStream::pull() eventually.
 	 **/
 	self->taskStream.cooperativeBind();
+	printf(NOTICE CPUPOWER"%d: PowerOnMain: done. About to taskStream.pull()\n", self->cpuId);
 	self->taskStream.pull();
 }
 

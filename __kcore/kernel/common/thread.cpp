@@ -37,7 +37,19 @@ schedPolicy(ROUND_ROBIN), schedOptions(0), schedFlags(0)
 
 _TaskContext::_TaskContext(processId_t tid, Thread *parent)
 : Stream<Thread>(parent, tid),
-schedState(UNSCHEDULED),
+schedState(
+	(Thread::isBspPowerThread(tid) && CpuStream::isBspFirstPlug())
+		/** EXPLANATION:
+		 * The BSP's power thread, when it's first being initialized
+		 * (this is represented as its "first plugin event"), should be
+		 * in the RUNNING state. Because it quite literally is executing
+		 * this very code here in this case. It is indeed the BSP's power
+		 * thread that boots up the kernel.
+		 *
+		 * All other threads are UNSCHEDULED by default.
+		 **/
+		? Thread::RUNNING
+		: Thread::UNSCHEDULED),
 context(NULL)
 {
 #if __SCALING__ >= SCALING_CC_NUMA

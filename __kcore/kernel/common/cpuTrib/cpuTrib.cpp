@@ -533,6 +533,7 @@ void CpuTrib::bootParseNumaMap(sZkcmNumaMap *numaMap)
 {
 	error_t		err;
 
+printf(FATAL CPUTRIB"bootParseNumaMap: about to parse raw numaMap without SMP map comparison.\n");
 	for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
 	{
 		if (numaMap->cpuEntries[i].cpuId == CpuStream::bspCpuId)
@@ -543,6 +544,7 @@ void CpuTrib::bootParseNumaMap(sZkcmNumaMap *numaMap)
 			numaMap->cpuEntries[i].cpuId,
 			numaMap->cpuEntries[i].cpuAcpiId);
 
+printf(FATAL CPUTRIB"Just called bootCpuNotification for CPU %d.\n", numaMap->cpuEntries[i].cpuId);
 		if (err != ERROR_SUCCESS)
 		{
 			/* If the error is due to CPU ID exceeding CONFIG_MAX_NCPUS,
@@ -560,6 +562,7 @@ void CpuTrib::bootParseNumaMap(sZkcmNumaMap *numaMap)
 			continue;
 		};
 
+printf(FATAL CPUTRIB"About to call bootPowerOn() for CPU %d.\n", numaMap->cpuEntries[i].cpuId);
 		getStream(numaMap->cpuEntries[i].cpuId)
 			->powerManager.bootPowerOn(0);
 	};
@@ -735,7 +738,6 @@ error_t CpuTrib::numaInit(void)
 			 **/
 			printf(CC"No NUMA map, all CPUs on shared bank (SMP "
 				"operation).\n");
-
 			bootParseSmpMap(smpMap);
 			bootConfirmSmpCpusBooted(smpMap);
 		};
@@ -870,7 +872,7 @@ error_t CpuTrib::spawnStream(
 
 	if (
 #if __SCALING__ >= SCALING_CC_NUMA
-		bid == NUMABANKID_INVALID ||
+		bid == NUMABANKID_INVALID || 
 #endif
 		cid == CPUID_INVALID) {
 		return ERROR_INVALID_ARG_VAL;

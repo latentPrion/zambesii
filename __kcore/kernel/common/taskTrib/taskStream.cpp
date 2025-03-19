@@ -388,6 +388,9 @@ void TaskStream::block(Thread *thread)
 
 error_t TaskStream::unblock(Thread *thread)
 {
+	if (thread->schedState == Thread::RUNNING)
+		{ return ERROR_SUCCESS; }
+
 	thread->schedState = Thread::RUNNABLE;
 
 	switch (thread->schedPolicy)

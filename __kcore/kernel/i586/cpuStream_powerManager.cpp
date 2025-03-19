@@ -83,6 +83,8 @@ static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 }
 
 #include <arch/cpuControl.h>
+#include <kernel/common/timerTrib/timerTrib.h>
+#include "../../chipset/ibmPc/i8254.h"
 status_t CpuStream::PowerManager::bootPowerOn(ubit32)
 {
 	error_t		ret;
@@ -111,6 +113,7 @@ status_t CpuStream::PowerManager::bootPowerOn(ubit32)
 			"\n", parent->cpuId);
 	};
 
+printf(FATAL CPUPWRMGR"bootPowerOn: about to create oneshot event.\n");
 	/**	FIXME:
 	 * Even if the IPI above timed out, we still set a
 	 * timer for the bootup here, simply because doing otherwise will
@@ -120,7 +123,8 @@ status_t CpuStream::PowerManager::bootPowerOn(ubit32)
 	// Set a 10 millisecond timeout.
 	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
 		sTimestamp(0, 0, 10000000), 0, parent);
-
+//assert_fatal(i8254Pit.irqEventMessagesEnabled());
+//timerTrib.dump();
 	return ERROR_SUCCESS;
 }
 
@@ -140,15 +144,19 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 
 		processTrib.__kgetStream()->timerStream.pullEvent(
 			0, (TimerStream::sTimerMsg **)&event);
+printf(FATAL CPUPWRMGR"bootWaitForCpuToPowerOn: got event.\n");
 
 		cs = reinterpret_cast<CpuStream *>( event->privateData );
+printf(FATAL CPUPWRMGR"bootWaitForCpuToPowerOn: cs = %p, cpuId = %d.\n", cs, ((cs == NULL) ? CPUID_INVALID : cs->cpuId));
 
 		switch (cs->powerManager.getPowerStatus())
 		{
 		case OFF:
+printf(CC"#1#");
 			// If non-integrated LAPIC, boot failed. Else send SIPI.
 			if (cpuHasOlderNonIntegratedLapic(cs->cpuId))
 			{
+printf(CC"#2#");
 				cs->powerManager.setPowerStatus(FAILED_BOOT);
 				printf(WARNING CPUPWRMGR"%d: CPU failed to "
 					"boot.\n",
@@ -158,6 +166,7 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 			}
 			else
 			{
+printf(CC"#3#");
 				// Intgr. LAPIC. Send first SIPI, set timeout.
 				cs->powerManager.setPowerStatus(POWERING_ON);
 				err = parent->lapic.ipi.sendPhysicalIpi(
@@ -166,8 +175,10 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 					x86LAPIC_IPI_SHORTDEST_NONE,
 					cs->cpuId);
 
+printf(CC"#4#");
 				if (err != ERROR_SUCCESS)
 				{
+printf(CC"#5#");
 					printf(ERROR CPUPWRMGR"%d: "
 						"bootPowerOn: SIPI1 timed out."
 						"\n", cs->cpuId);
@@ -178,16 +189,18 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 					break;
 				};
 
+printf(CC"#6#");
 				processTrib.__kgetStream()->timerStream
 					.createRelativeOneshotEvent(
 						sTimestamp(0, 0, 200000),
 						0, cs);
-
+printf(CC"#7#");
 				loopAgain = 1;
 				break;
 			};
 
 		case POWERING_ON:
+printf(CC"#8#");
 			// Integrated LAPIC. Send second SIPI and set timeout.
 			cs->powerManager.setPowerStatus(POWERING_ON_RETRY);
 			err = parent->lapic.ipi.sendPhysicalIpi(
@@ -195,9 +208,10 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 				sipiVector,
 				x86LAPIC_IPI_SHORTDEST_NONE,
 				cs->cpuId);
-
+printf(CC"#9#");
 			if (err != ERROR_SUCCESS)
 			{
+printf(CC"#10#");
 				printf(ERROR CPUPWRMGR"%d: bootPowerOn: "
 					"SIPI2 timed out.\n",
 					cs->cpuId);
@@ -206,26 +220,27 @@ void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
 				break;
 			};
 
+printf(CC"#11#");
 			processTrib.__kgetStream()->timerStream
 				.createRelativeOneshotEvent(
 					sTimestamp(0, 0, 200000), 0, cs);
-
+printf(CC"#12#");
 			loopAgain = 1;
 			break;
 
 		case POWERING_ON_RETRY:
 			// Integrated LAPIC that failed to boot.
+printf(CC"#13#");
 			cs->powerManager.setPowerStatus(FAILED_BOOT);
 			printf(WARNING CPUPWRMGR"%d: CPU failed to boot.\n",
 				cs->cpuId);
-
 			break;
 
 		default:
 			// CPU successfully booted.
 			printf(NOTICE CPUPWRMGR"%d: Successfully booted.\n",
 				cs->cpuId);
-
+printf(CC"#14#");
 			break;
 		};
 	} while (loopAgain);

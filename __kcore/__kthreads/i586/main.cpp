@@ -395,7 +395,7 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 {
 	fplainn::Zum::sZumDeviceMgmtMsg		*msg = (fplainn::Zum::sZumDeviceMgmtMsg *)msgIt;
 	status_t			stat;
-	error_t				ret;
+	error_t				ret, err;
 
 	if (msg->info.params.enumerateChildren.final_enumeration_result
 		!= UDI_ENUMERATE_DONE)
@@ -458,10 +458,6 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
-printf(NOTICE ORIENT"IRQs enabled? %d\n", cpuControl::interruptsEnabled());
-printf(NOTICE ORIENT"Got here\n");
-return;
-
 	// Detect physical memory.
 	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
@@ -481,17 +477,6 @@ return;
 	DO_OR_DIE(testobj, runTests(&tot, &succ, &fail), stat);
 	printf(NOTICE"Tests: %d total, %d succ, %d fail\n", tot, succ, fail);
 	printf(NOTICE"All is well in the universe.\n");
-}
-
-
-void __kecrCb(MessageStream::sHeader *msgIt)
-{
-	fplainn::Zum::sZumDeviceMgmtMsg		*msg = (fplainn::Zum::sZumDeviceMgmtMsg *)msgIt;
-	error_t err;
-	status_t stat;
-
-	printf(NOTICE"Here, devmgmt done. %d new child IDs in buffer.\n",
-		msg->info.params.enumerateChildren.nDeviceIds);
 //~ __kdebug.refresh();
 
 	fplainn::dma::Constraints			c;

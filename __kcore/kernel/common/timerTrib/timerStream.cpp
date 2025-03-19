@@ -15,6 +15,7 @@ error_t TimerStream::initialize(void)
 	return requests.initialize();
 }
 
+#include "../../../chipset/ibmPc/i8254.h"
 error_t TimerStream::createOneshotEvent(
 	sTimestamp stamp, ubit8 type, uarch_t flags, void *privateData
 	)
@@ -33,6 +34,9 @@ error_t TimerStream::createOneshotEvent(
 		sizeof(*request), flags, privateData);
 
 	if (request == NULL) { return ERROR_MEMORY_NOMEM; };
+
+printf(FATAL TIMERSTREAM"%x: new msg sourceTid=%x, targetTid=%x.\n",
+	id, request->header.sourceId, request->header.targetId);
 
 	request->type = ONESHOT;
 
@@ -84,16 +88,20 @@ error_t TimerStream::createOneshotEvent(
 		ret = requests.addItem(request, request->expirationStamp);
 		unlockRequestQueue();
 		if (ret != ERROR_SUCCESS) { return ret; };
-
-		return timerTrib.insertTimerQueueRequestObject(request);
+		ret = timerTrib.insertTimerQueueRequestObject(request);
 	}
 	else
 	{
 		ret = requests.addItem(request, request->expirationStamp);
 		unlockRequestQueue();
-		return ret;
 	};
+
+	assert_fatal(i8254Pit.irqEventMessagesEnabled());
+	printf(NOTICE TIMERSTREAM"%x: created oneshot event.\n", id);
+	return ret;
 }
+
+#include "../../../chipset/ibmPc/i8254.h"
 
 error_t TimerStream::pullEvent(ubit32 flags, sTimerMsg **event)
 {
@@ -107,6 +115,9 @@ error_t TimerStream::pullEvent(ubit32 flags, sTimerMsg **event)
 	 * Attempts to pull an event from "events" linked list. If it fails, it
 	 * sleeps the process.
 	 */
+//i8254Pit.irqEventQueue.dump();
+//cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->messageStream.dump();
+
 	ret = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread()->messageStream.pullFrom(
 			MSGSTREAM_SUBSYSTEM_TIMER,
@@ -137,12 +148,18 @@ Thread *TimerStream::timerRequestTimeoutNotification(
 	 * If TIMERSTREAM_CREATE*_FLAGS_CPU_TARGET is set, then the target
 	 * context is a per-CPU context. Else, it is a normal thread context.
 	 **/
+printf(CC"+1+");
 	thread = parent->getThread(request->header.targetId);
-	if (thread == NULL) { return NULL; };
+	if (thread == NULL) {
+printf(CC"+2+");
+		return NULL;
+	};
 
+printf(CC"+3+");
 	event = new sTimerMsg(*request);
 	if (event == NULL)
 	{
+printf(CC"+4+");
 		printf(ERROR TIMERSTREAM"%d: Failed to allocate event for "
 			"expired request.\n",
 			id);
@@ -155,14 +172,15 @@ Thread *TimerStream::timerRequestTimeoutNotification(
 	// Queue event.
 	ret = thread->messageStream.enqueue(
 		event->header.subsystem, &event->header);
-
+printf(CC"+5+");
 	if (ret != ERROR_SUCCESS)
 	{
-		printf(ERROR TIMERSTREAM"%d: Failed to add expired event to "
+printf(CC"+6+");
+		printf(ERROR TIMERSTREAM"%x: Failed to add expired event to "
 			"thread %x's queue.\n",
 			id, thread->getFullId());
 	};
-
+printf(CC"+7+");
 	return thread;
 }
 
@@ -213,7 +231,7 @@ void TimerStream::timerRequestTimeoutNotification(void)
 	if (timerTrib.insertTimerQueueRequestObject(nextRequest)
 		!= ERROR_SUCCESS)
 	{
-		printf(ERROR TIMERSTREAM"%d: Failed to insert the next "
+		printf(ERROR TIMERSTREAM"%x: Failed to insert the next "
 			"timer request object.\n",
 			id);
 	};

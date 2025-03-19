@@ -111,7 +111,12 @@ error_t InterruptTrib::initializeIrqs(void)
 void InterruptTrib::msiIrqMain(RegisterContext *regs)
 {
 	(void)regs;
+	CpuStream *cpuStream = cpuTrib.getCurrentCpuStream();
 
+	cpuStream->asyncInterruptEvent.enter();
+#ifdef CONFIG_DEBUG_INTERRUPTS
+	cpuStream->irqEvent.enter();
+#endif
 #ifdef CONFIG_RT_KERNEL_IRQ_NESTING
 	/* See comments in pinIrqMain() for more details about why
 	 * we must enable interrupts *after* calling enterIrq().
@@ -125,6 +130,11 @@ void InterruptTrib::msiIrqMain(RegisterContext *regs)
 	 **/
 	cpuControl::disableInterrupts();
 #endif
+
+#ifdef CONFIG_DEBUG_INTERRUPTS
+	cpuStream->irqEvent.exit();
+#endif
+	cpuStream->asyncInterruptEvent.exit();
 }
 
 void InterruptTrib::pinIrqMain(RegisterContext *regs)
@@ -134,13 +144,21 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 	status_t		status;
 	ubit8			makeNoise, triggerMode, isrRetireListLength=0;
 	ubit16			__kpin;
+	CpuStream		*cpuStream = cpuTrib.getCurrentCpuStream();
 
+<<<<<<< Updated upstream
 	// Ask the chipset if any pin-based IRQs are pending and handle them.
 	status = zkcmCore.irqControl.identifyActiveIrq(
 		cpuTrib.getCurrentCpuStream()->cpuId,
 		regs->vectorNo,
 		&__kpin, &triggerMode);
 
+=======
+	cpuStream->asyncInterruptEvent.enter();
+#ifdef CONFIG_DEBUG_INTERRUPTS
+	cpuStream->irqEvent.enter();
+#endif
+>>>>>>> Stashed changes
 #ifdef CONFIG_RT_KERNEL_IRQ_NESTING
 	/* Only enable *after* calling enterIrq(), *and* calling
 	 * identifyActiveIrq().
@@ -297,12 +315,27 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 	 **/
 	cpuControl::disableInterrupts();
 #endif
+#ifdef CONFIG_DEBUG_INTERRUPTS
+	cpuStream->irqEvent.exit();
+#endif
+	cpuStream->asyncInterruptEvent.exit();
 }
 
 void InterruptTrib::exceptionMain(RegisterContext *regs)
 {
 	CpuStream *cpuStream = cpuTrib.getCurrentCpuStream();
 
+<<<<<<< Updated upstream
+=======
+#ifdef CONFIG_DEBUG_INTERRUPTS
+	cpuStream->syncInterruptEvent.enter();
+	cpuStream->excEvent.enter();
+#endif
+#ifdef CONFIG_RT_KERNEL_IRQS
+	if (cpuStream->isReadyForIrqs()) { cpuControl::enableInterrupts(); }
+#endif
+
+>>>>>>> Stashed changes
 	if (msiIrqTable[regs->vectorNo].type == sVectorDescriptor::UNCLAIMED)
 	{
 		printf(FATAL INTTRIB"Entry on UNCLAIMED vector %d "
@@ -322,6 +355,17 @@ void InterruptTrib::exceptionMain(RegisterContext *regs)
 	{
 		(msiIrqTable[regs->vectorNo].exception)(regs, 1);
 	};
+<<<<<<< Updated upstream
+=======
+
+#ifdef CONFIG_RT_KERNEL_IRQS
+	if (cpuStream->isReadyForIrqs()) { cpuControl::disableInterrupts(); }
+#endif
+#ifdef CONFIG_DEBUG_INTERRUPTS
+	cpuStream->excEvent.exit();
+	cpuStream->syncInterruptEvent.exit();
+#endif
+>>>>>>> Stashed changes
 }
 
 void InterruptTrib::installException(

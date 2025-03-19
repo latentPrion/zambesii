@@ -20,6 +20,8 @@ void interruptTrib_interruptEntry(RegisterContext *regs)
 	cpuStream = cpuTrib.getCurrentCpuStream();
 
 #ifdef CONFIG_DEBUG_INTERRUPTS
+	cpuStream->interruptEvent.enter();
+
 	makeNoise = regs->vectorNo != 254 && regs->vectorNo != 32
 		&& regs->vectorNo != 34;
 
@@ -62,6 +64,8 @@ out:
 		"on CPU %d vector %d.\n",
 		cpuStream->cpuId, regs->vectorNo)
 		: noop();
+
+	cpuStream->interruptEvent.exit();
 #endif
 
 	// We should be able to: point ESP to regs, and then pop and iret.
