@@ -133,8 +133,10 @@ error_t TaskTrib::dormant(Thread *thread)
 		|| thread->schedState == Thread::DORMANT)
 		{ return ERROR_SUCCESS; };
 
-	thread->currentCpu->taskStream.dormant(thread);
-	threadCurrentCpu = thread->currentCpu;
+	threadCurrentCpu = reinterpret_cast<CpuStream *>(
+		atomicAsm::read(&thread->currentCpu));
+
+	threadCurrentCpu->taskStream.dormant(thread);
 
 	/* At this point, taskCurrentCpu points to the CPU which the
 	 * particular unique thread or per-cpu thread that was our target, is
