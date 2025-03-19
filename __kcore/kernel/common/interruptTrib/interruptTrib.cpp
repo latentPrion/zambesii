@@ -122,7 +122,9 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 		regs->vectorNo,
 		&__kpin, &triggerMode);
 
+#ifdef CONFIG_DEBUG_INTERRUPTS
 	makeNoise = (__kpin != 0 && __kpin != 18 && __kpin != 16);
+#endif
 
 	if (status == IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS
 		|| status ==  IRQCTL_IDENTIFY_ACTIVE_IRQ_UNIDENTIFIABLE)
@@ -158,6 +160,7 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 		return;
 	};
 
+#ifdef CONFIG_DEBUG_INTERRUPTS
 	if (makeNoise)
 	{
 		printf(NOTICE INTTRIB"Pin-based IRQ (__kpin %d) on CPU %d.\n"
@@ -169,7 +172,7 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 			(triggerMode == IRQCTL_IRQPIN_TRIGGMODE_LEVEL)
 				? "level" : "edge");
 	};
-
+#endif
 	atomicAsm::set(&pinDescriptor->inService, 1);
 
 	HeapList<sIsrDescriptor>::Iterator	it =

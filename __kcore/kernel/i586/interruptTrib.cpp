@@ -15,19 +15,23 @@ static void noop(void) {}
 void interruptTrib_interruptEntry(RegisterContext *regs)
 {
 	ubit8		makeNoise;
+	CpuStream	*cpuStream;
 
-	/**	EXPLANATION:
-	 * Subtractively decode the type of interrupt vector being dealt with.
-	 **/
+	cpuStream = cpuTrib.getCurrentCpuStream();
+
+#ifdef CONFIG_DEBUG_INTERRUPTS
 	makeNoise = regs->vectorNo != 254 && regs->vectorNo != 32
 		&& regs->vectorNo != 34;
 
 	(makeNoise) ? printf(NOTICE OPTS(NOLOG)
 		INTTRIB"interruptEntry: CPU %d "
 		"entered on vector %d.\n",
-		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo)
+		cpuStream->cpuId, regs->vectorNo)
 		: noop();
-
+#endif
+	/**	EXPLANATION:
+	 * Subtractively decode the type of interrupt vector being dealt with.
+	 **/
 	if (regs->vectorNo >= ARCH_INTERRUPTS_VECTOR_PIN_START
 		&& regs->vectorNo < ARCH_INTERRUPTS_VECTOR_MSI_START)
 	{
@@ -52,11 +56,13 @@ void interruptTrib_interruptEntry(RegisterContext *regs)
 	interruptTrib.exceptionMain(regs);
 
 out:
+#ifdef CONFIG_DEBUG_INTERRUPTS
 	(makeNoise) ? printf(NOTICE OPTS(NOLOG)
 		INTTRIB"interruptEntry: Exiting "
 		"on CPU %d vector %d.\n",
-		cpuTrib.getCurrentCpuStream()->cpuId, regs->vectorNo)
+		cpuStream->cpuId, regs->vectorNo)
 		: noop();
+#endif
 
 	// We should be able to: point ESP to regs, and then pop and iret.
 	asm volatile(
