@@ -108,6 +108,25 @@ error_t InterruptTrib::initializeIrqs(void)
 	return ERROR_SUCCESS;
 }
 
+void InterruptTrib::msiIrqMain(RegisterContext *regs)
+{
+	(void)regs;
+
+#ifdef CONFIG_RT_KERNEL_IRQ_NESTING
+	/* See comments in pinIrqMain() for more details about why
+	 * we must enable interrupts *after* calling enterIrq().
+	 **/
+	cpuControl::enableInterrupts();
+#endif
+
+#ifdef CONFIG_RT_KERNEL_IRQ_NESTING
+	/* See comments in pinIrqMain() for more details about why
+	 * we must disable interrupts *before* calling exitIrq().
+	 **/
+	cpuControl::disableInterrupts();
+#endif
+}
+
 void InterruptTrib::pinIrqMain(RegisterContext *regs)
 {
 	sIrqPinDescriptor	*pinDescriptor;
@@ -115,6 +134,34 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 	status_t		status;
 	ubit8			makeNoise, triggerMode, isrRetireListLength=0;
 	ubit16			__kpin;
+
+#ifdef CONFIG_RT_KERNEL_IRQ_NESTING
+	/* Only enable *after* calling enterIrq().
+	 *
+	 * If we enableInterrupts() before calling enterIrq(), this will
+	 * allow a nested IRQ to come in and think that its nesting level
+	 * is lower than it should be. E.g:
+	 * * IRQ0 comes in.
+	 *   * It should have nesting level 1, but it calls
+	 *     enableInterrupts() before it calls enterIrq().
+	 *   * irqNestingLevel is still 0 at this point, yet local
+	 *     interrupts are now enabled.
+	 * * IRQ1 comes in.
+	 *   * It successfully both calls enableInterrupts() and
+	 *     enterIrq().
+	 *   * It should get nesting level 2, but it since IRQ0 didn't
+	 *     call enterIrq(), irqNestingLevel is still 0.
+	 *   * IRQ1 now thinks it's the first-level IRQ.
+	 *
+	 * This leads to many sorrows. For example, since the timeslice
+	 * preemptor only runs at irqNestingLevel == 1, this means that
+	 * the timeslicer will run at the end of IRQ1's ISR, when it should
+	 * have run at the end of IRQ0's ISR, instead.
+	 *
+	 * This is why we enableInterrupts() *after* calling enterIrq().
+	 **/
+	cpuControl::enableInterrupts();
+#endif
 
 	// Ask the chipset if any pin-based IRQs are pending and handle them.
 	status = zkcmCore.irqControl.identifyActiveIrq(
@@ -233,6 +280,17 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 		}
 		else {};
 	};
+
+#ifdef CONFIG_RT_KERNEL_IRQ_NESTING
+	/* Disable interrupts before calling exitIrq().
+	 *
+	 * If we call exitIrq() before disabling interrupts, this will
+	 * allow a nested IRQ to come in and think that its nesting level
+	 * is lower than it should be. This has similarly bad consequences
+	 * to the problem described above in the comment for enterIrq().
+	 **/
+	cpuControl::disableInterrupts();
+#endif
 }
 
 void InterruptTrib::exceptionMain(RegisterContext *regs)
