@@ -118,7 +118,7 @@ void InterruptTrib::msiIrqMain(RegisterContext *regs)
 	 **/
 	cpuControl::enableInterrupts();
 #endif
-
+	// First get the IRQ metadata, then enable interrupts.
 #ifdef CONFIG_RT_KERNEL_IRQ_NESTING
 	/* See comments in pinIrqMain() for more details about why
 	 * we must disable interrupts *before* calling exitIrq().
@@ -135,8 +135,15 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 	ubit8			makeNoise, triggerMode, isrRetireListLength=0;
 	ubit16			__kpin;
 
+	// Ask the chipset if any pin-based IRQs are pending and handle them.
+	status = zkcmCore.irqControl.identifyActiveIrq(
+		cpuTrib.getCurrentCpuStream()->cpuId,
+		regs->vectorNo,
+		&__kpin, &triggerMode);
+
 #ifdef CONFIG_RT_KERNEL_IRQ_NESTING
-	/* Only enable *after* calling enterIrq().
+	/* Only enable *after* calling enterIrq(), *and* calling
+	 * identifyActiveIrq().
 	 *
 	 * If we enableInterrupts() before calling enterIrq(), this will
 	 * allow a nested IRQ to come in and think that its nesting level
@@ -159,15 +166,14 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 	 * have run at the end of IRQ0's ISR, instead.
 	 *
 	 * This is why we enableInterrupts() *after* calling enterIrq().
+	 *
+	 * ----------------------------------------------------------------
+	 * As for why we must call identifyActiveIrq() *before* calling
+	 * enableInterrupts(), it's because we need to read the IRQ metadata
+	 * before it gets overwritten.
 	 **/
 	cpuControl::enableInterrupts();
 #endif
-
-	// Ask the chipset if any pin-based IRQs are pending and handle them.
-	status = zkcmCore.irqControl.identifyActiveIrq(
-		cpuTrib.getCurrentCpuStream()->cpuId,
-		regs->vectorNo,
-		&__kpin, &triggerMode);
 
 #ifdef CONFIG_DEBUG_INTERRUPTS
 	makeNoise = (__kpin != 0 && __kpin != 18 && __kpin != 16);
