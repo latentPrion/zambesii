@@ -45,3 +45,7 @@ AX_ZBZ_DEBUG_ARG_ENABLE([locks], [Lock debugging],
 AX_ZBZ_DEBUG_ARG_ENABLE([scheduler],
     [Enable debugging for the scheduler],
     [CONFIG_DEBUG_SCHEDULER])
+
+AX_ZBZ_DEBUG_ARG_ENABLE([page-faults],
+    [Enable debugging for page faults],
+    [CONFIG_DEBUG_PAGE_FAULTS])

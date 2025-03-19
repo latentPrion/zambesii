@@ -130,6 +130,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 			&vaddrSpaceStream->vaddrSpace,
 			faultAddr, pmap, status, WPRANGER_OP_SET_PRESENT, 0);
 
+#ifdef CONFIG_DEBUG_PAGE_FAULTS
 		printf(NOTICE OPTS(NOLOG)
 			"Page Fault: FAKE_DYN: addr %p, "
 			"EIP %p\n\tWPRl map: stat %d, pmap %P, "
@@ -139,13 +140,14 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 				&vaddrSpaceStream->vaddrSpace,
 				faultAddr, &pmap, &__kflags),
 			&pmap, __kflags);
-
+#endif
 		break;
 
 	case WPRANGER_STATUS_HEAP_GUARDPAGE:
 		panicWorthy = 1;
 		traceStack = 1;
 
+#ifdef CONFIG_DEBUG_PAGE_FAULTS
 		printf(FATAL"Encountered a heap guardpage; heap corrupted\n"
 			"\tVaddr: %p, EIP %p\n"
 			"\tFault was caused by a %s, and %s an instruction "
@@ -153,7 +155,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 			faultAddr, regs->eip,
 			(regs->errorCode & 0x2) ? "write" : "read",
 			(regs->errorCode & 0x10) ? "was" : "was not");
-
+#endif
 		break;
 
 	case WPRANGER_STATUS_UNMAPPED:
@@ -166,6 +168,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 			"movl %%esp, %0\n\t"
 			: "=r" (esp));
 
+#ifdef CONFIG_DEBUG_PAGE_FAULTS
 		printf(FATAL"Encountered unmapped page at %p, EIP: %x, "
 			"esp: %x, schedstack end: %p schedstack base %p."
 			"\n", faultAddr,
@@ -173,7 +176,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 			cpuTrib.getCurrentCpuStream()->schedStack,
 			&cpuTrib.getCurrentCpuStream()->schedStack[
 				sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
-
+#endif
 		break;
 
 	case WPRANGER_STATUS_BACKED:
@@ -183,6 +186,8 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 		panicWorthy = 1;
 		traceStack = 1;
 		printVaddrspaceInfo = 1;
+
+#ifdef CONFIG_DEBUG_PAGE_FAULTS
 		printf(FATAL"BACKED page faulted. Access perms violation or "
 			"unintended COW?\n"
 			"\tVaddr: %p, __kf %x. EIP %p. Errcode %x "
@@ -190,7 +195,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 			faultAddr, __kflags, regs->eip, regs->errorCode,
 			cpuTrib.getCurrentCpuStream()->taskStream
 				.getCurrentThread()->getFullId());
-
+#endif
 		break;
 
 	case WPRANGER_STATUS_FAKEMAPPED_STATIC:
@@ -203,7 +208,9 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 		panicWorthy = 1;
 		traceStack = 1;
 		// Not implemented.
+#ifdef CONFIG_DEBUG_PAGE_FAULTS
 		printf(FATAL"Encountered swapped page. at %X.\n", faultAddr);
+#endif
 		break;
 
 	default:
