@@ -122,6 +122,8 @@ AS_CASE(["$ZFIRMWARE"],
 m4_include([m4/scaling-opts.m4])
 # Scheduling options
 m4_include([m4/scheduling-opts.m4])
+# Realtime options
+m4_include([m4/realtime-opts.m4])
 
 # Checks for programs.
 AC_PROG_CPP
@@ -284,6 +286,11 @@ AC_CONFIG_COMMANDS_POST(
         (Timeslice preemption:${enable_sched_preempt_timeslice})
         (Timeslice:${with_sched_preempt_timeslice_us}us)
         (Kernel preemption:${enable_sched_preempt_kernel})]
+    ))
+    AC_MSG_NOTICE(m4_normalize(
+        [Realtime options:
+        (Kernel IRQs:${enable_rt_kernel_irqs})
+        (IRQ nesting:${enable_rt_kernel_irq_nesting})]
     ))
     AC_MSG_NOTICE(m4_normalize(
         [Debugging options:

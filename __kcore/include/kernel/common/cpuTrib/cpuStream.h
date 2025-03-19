@@ -74,6 +74,9 @@ public:
 	status_t enumerate(void);
 	sCpuFeatures *getCpuFeatureBlock(void);
 
+	sbit8 isReadyForIrqs(void) { return readyForIrqs; }
+	void setReadyForIrqs(sbit8 ready) { readyForIrqs = ready; }
+
 	sbit8 isBspCpu(void) { return isBspCpuId(this->cpuId); }
 	static sbit8 isBspCpuId(cpu_t cid)
 		{ return cid == CPUID_INVALID || cid == bspCpuId; }
@@ -225,6 +228,9 @@ public:
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
 	class X86Lapic		lapic;
 #endif
+
+private:
+	sbit8			readyForIrqs;
 };
 
 // The hardcoded stream for the BSP CPU.

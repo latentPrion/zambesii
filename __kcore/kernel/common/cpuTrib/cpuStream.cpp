@@ -60,8 +60,9 @@ powerManager(cid, this),
 interCpuMessager(cid, this),
 #endif
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
-lapic(this)
+lapic(this),
 #endif
+readyForIrqs(0)
 {
 }
 
