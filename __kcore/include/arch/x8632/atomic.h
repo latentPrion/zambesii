@@ -43,8 +43,8 @@ namespace atomicAsm
 	inline sarch_t bitTestAndComplement(volatile uarch_t *lock, ubit8 bit);
 	inline sarch_t bitTestAndSet(volatile uarch_t *lock, ubit8 bit);
 	inline sarch_t bitTestAndClear(volatile uarch_t *lock, ubit8 bit);
-	inline sarch_t read(volatile sarch_t *lock);
-	inline uarch_t read(volatile uarch_t *lock);
+	template <typename Type>
+	inline uarch_t read(volatile Type *lock);
 	inline void increment(volatile sarch_t *lock);
 	inline void increment(volatile uarch_t *lock);
 	inline void decrement(volatile sarch_t *lock);
@@ -145,25 +145,14 @@ inline sarch_t atomicAsm::bitTestAndClear(volatile uarch_t *lock, ubit8 bit)
 	return (sarch_t)byte_result;
 }
 
-inline sarch_t atomicAsm::read(volatile sarch_t *lock)
-{
-	sarch_t result;
-	asm volatile (
-		"movl %1, %0"
-		: "=r" (result)
-		: "m" (*lock)
-		: "memory"
-	);
-	return result;
-}
-
-inline uarch_t atomicAsm::read(volatile uarch_t *lock)
+template <typename Type>
+inline uarch_t atomicAsm::read(volatile Type *lock)
 {
 	uarch_t result;
 	asm volatile (
 		"movl %1, %0"
 		: "=r" (result)
-		: "m" (*lock)
+		: "m" (*(volatile uarch_t *)lock)
 		: "memory"
 	);
 	return result;
