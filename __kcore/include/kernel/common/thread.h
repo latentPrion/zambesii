@@ -87,7 +87,8 @@ friend class ProcessStream;
 public:
 	enum schedStateE
 	{
-		UNSCHEDULED=1,
+		INVALID=0,
+		UNSCHEDULED,
 		DORMANT,
 		RUNNABLE,
 		RUNNING,
