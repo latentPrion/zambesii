@@ -20,20 +20,21 @@ dnl   $2  description      Human-readable description of the debug feature
 dnl   $3  config-define    The C preprocessor macro to define when enabled
 dnl   $4  unimplemented   Optional. If set to "unimplemented", error out when enabled
 AC_DEFUN([AX_ZBZ_DEBUG_ARG_ENABLE], [
+    m4_define([_debug_arg_name_underscores], m4_translit([$1], [-], [_]))
     AC_ARG_ENABLE([debug-$1],
         [AS_HELP_STRING([--enable-debug-$1],
             [Enable $2])],
-        [AS_IF([test "x$enable_debug_$1" != "xno"],
-            [enable_debug_$1=yes])],
+        [AS_IF([test "x$enable_debug_]_debug_arg_name_underscores[" != "xno"],
+            [enable_debug_]_debug_arg_name_underscores[=yes])],
         [AS_IF([test "x$enable_all_debug_opts" = "xyes"],
-            [enable_debug_$1=yes], [enable_debug_$1=no])]
+            [enable_debug_]_debug_arg_name_underscores[=yes], [enable_debug_]_debug_arg_name_underscores[=no])]
     )
 
     AS_IF([test "x$4" = "xunimplemented"],
         [AC_MSG_ERROR([$2 is not yet implemented])
     ])
 
-    AS_IF([test "x$enable_debug_$1" != "xno"], [
+    AS_IF([test "x$enable_debug_]_debug_arg_name_underscores[" != "xno"], [
         AC_DEFINE([$3], [1], [Enable $2])
     ])
 ])
