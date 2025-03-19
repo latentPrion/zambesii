@@ -91,7 +91,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 {
 	status_t		status;
 	VaddrSpaceStream	*vaddrSpaceStream;
-	void			*faultAddr = getCr2();
+	void			*faultAddr;
 	paddr_t			pmap;
 	uarch_t			__kflags;
 	Thread			*currThread=NULL;
@@ -100,6 +100,12 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 	vaddrSpaceStream = currThread->parent->getVaddrSpaceStream();
+	faultAddr = getCr2();
+
+#ifdef CONFIG_RT_KERNEL_IRQS
+	if (cpuTrib.getCurrentCpuStream()->isReadyForIrqs())
+		{ cpuControl::enableInterrupts(); }
+#endif
 
 	if (faultAddr >= (void *)ARCH_MEMORY___KLOAD_VADDR_BASE)
 	{
@@ -249,6 +255,11 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 		debug::printStackArguments(
 			(void *)regs->ebp, (void *)regs->dummyEsp);
 	};
+
+#ifdef CONFIG_RT_KERNEL_IRQS
+	if (cpuTrib.getCurrentCpuStream()->isReadyForIrqs())
+		{ cpuControl::disableInterrupts(); }
+#endif
 
 	if (panicWorthy) { panic(ERROR_FATAL); };
 	return ERROR_SUCCESS;
