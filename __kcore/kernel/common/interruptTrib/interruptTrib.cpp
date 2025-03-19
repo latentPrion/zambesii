@@ -303,10 +303,6 @@ void InterruptTrib::exceptionMain(RegisterContext *regs)
 {
 	CpuStream *cpuStream = cpuTrib.getCurrentCpuStream();
 
-#ifdef CONFIG_RT_KERNEL_IRQS
-	if (cpuStream->isReadyForIrqs()) { cpuControl::enableInterrupts(); }
-#endif
-
 	if (msiIrqTable[regs->vectorNo].type == sVectorDescriptor::UNCLAIMED)
 	{
 		printf(FATAL INTTRIB"Entry on UNCLAIMED vector %d "
@@ -326,10 +322,6 @@ void InterruptTrib::exceptionMain(RegisterContext *regs)
 	{
 		(msiIrqTable[regs->vectorNo].exception)(regs, 1);
 	};
-
-#ifdef CONFIG_RT_KERNEL_IRQS
-	if (cpuStream->isReadyForIrqs()) { cpuControl::disableInterrupts(); }
-#endif
 }
 
 void InterruptTrib::installException(
