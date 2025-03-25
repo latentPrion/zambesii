@@ -5,5 +5,8 @@
  //   "C_Cpp.errorSquiggles": "disabled",
     "terminal.integrated.env.linux": {
         "GTK_PATH": null
-    }
+    },
+    "editor.insertSpaces": false,
+    "editor.tabSize": 8,
+    "editor.rulers": [80]
 }
