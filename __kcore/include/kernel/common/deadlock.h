@@ -15,6 +15,32 @@
 #define DEADLOCK_PER_CPU_EXTRA_READ_NTRIES	(7500)
 #define DEADLOCK_PER_CPU_EXTRA_WRITE_NTRIES	(7500)
 
+inline uarch_t calcDeadlockNTries(
+    uarch_t highestCpuId, uarch_t baseMaxTries,
+	uarch_t perCpuExtraTries
+    )
+{
+    /**     EXPLANATION:
+     * At early boot, the highest CPU ID is not known, so it defaults to
+     * CPUID_INVALID, which is a negative number. We handle this case by
+     * setting the scale factor to 1 until the highest CPU ID is known.
+     **/
+	uarch_t scaleFactor = (((signed)highestCpuId) <= 0) ? 1 : highestCpuId;
+	return baseMaxTries + (scaleFactor * perCpuExtraTries);
+}
+
+inline uarch_t calcDeadlockNReadTries(uarch_t highestCpuId)
+{
+	return calcDeadlockNTries(highestCpuId, DEADLOCK_READ_BASE_MAX_NTRIES,
+		DEADLOCK_PER_CPU_EXTRA_READ_NTRIES);
+}
+
+inline uarch_t calcDeadlockNWriteTries(uarch_t highestCpuId)
+{
+	return calcDeadlockNTries(highestCpuId, DEADLOCK_WRITE_BASE_MAX_NTRIES,
+		DEADLOCK_PER_CPU_EXTRA_WRITE_NTRIES);
+}
+
 struct sDeadlockBuff
 {
     sDeadlockBuff(void)

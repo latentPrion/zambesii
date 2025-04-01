@@ -17,8 +17,7 @@ void WaitLock::acquire(void)
 #ifdef CONFIG_DEBUG_LOCKS
 	// Scale the number of tries based on the number of CPUs
 	cpu_t highestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
-	uarch_t nTries = DEADLOCK_WRITE_BASE_MAX_NTRIES +
-		(highestCpuId * DEADLOCK_PER_CPU_EXTRA_WRITE_NTRIES);
+	uarch_t nTries = calcDeadlockNWriteTries(highestCpuId);
 #endif
 	uarch_t contenderFlags=0;
 
