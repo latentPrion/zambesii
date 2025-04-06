@@ -104,10 +104,15 @@ public:
 	volatile uarch_t	lock;
 #endif
 	uarch_t			magic;
+#ifdef CONFIG_DEBUG_LOCKS
+	/* Pointer to the return address of the function that acquired the
+	 * lock. I.e: tells us the place where the lock was acquired.
+	 **/
+	void			(*ownerAcquisitionInstr)(void);
+#endif
 
 protected:
 	uarch_t			flags;
 };
 
 #endif
-
