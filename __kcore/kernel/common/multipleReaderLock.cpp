@@ -61,7 +61,8 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
 			nReadTriesRemaining, &lock, lock,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
-			cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
+			cpuTrib.getCurrentCpuStream()->cpuId, this,
+			__builtin_return_address(0));
 	}
 #endif
 #endif
@@ -148,11 +149,17 @@ deadlock:
 			"\tnReadTriesRemaining: %d, nWriteTriesRemaining: %d\n"
 			"\tlock addr: %p, lock val: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
-			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
+			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
+			"curr ownerAcquisitionInstr: %p",
 			nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
-			cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
+			cpuTrib.getCurrentCpuStream()->cpuId, this,
+			__builtin_return_address(0),
+			ownerAcquisitionInstr);
 	};
+
+	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
+		__builtin_return_address(0));
 #endif
 #endif
 
@@ -231,11 +238,17 @@ deadlock:
 			"\tnReadTriesRemaining: %d, nWriteTriesRemaining: %d\n"
 			"\tlock addr: %p, lock val: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
-			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
+			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
+			"curr ownerAcquisitionInstr: %p",
 			nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
-			cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
+			cpuTrib.getCurrentCpuStream()->cpuId, this,
+			__builtin_return_address(0),
+			ownerAcquisitionInstr);
 	}
+
+	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
+		__builtin_return_address(0));
 #endif
 #endif
 

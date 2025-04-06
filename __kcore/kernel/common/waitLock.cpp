@@ -54,10 +54,17 @@ void WaitLock::acquire(void)
 		reportDeadlock(
 			FATAL"WaitLock::acquire deadlock detected:\n"
 			"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
-			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
+			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
+			"curr ownerAcquisitionInstr: %p",
 			nTries, &lock, lock,
-			cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
+			cpuTrib.getCurrentCpuStream()->cpuId, this,
+			__builtin_return_address(0),
+			ownerAcquisitionInstr);
 	};
+
+	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
+		__builtin_return_address(0));
+
 #endif
 #endif
 

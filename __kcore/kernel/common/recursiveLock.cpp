@@ -52,6 +52,10 @@ void RecursiveLock::acquire(void)
 		{
 			// We acquired the lock
 			recursionCount = 1;
+			// Only set ownerAcquisitionInstr on first acquisition.
+			ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
+				__builtin_return_address(0));
+
 			if (irqsWereEnabled)
 				{ FLAG_SET(flags, Lock::FLAGS_IRQS_WERE_ENABLED); }
 			return;
@@ -85,9 +89,12 @@ void RecursiveLock::acquire(void)
 			reportDeadlock(
 				FATAL"RecursiveLock::acquire deadlock detected:\n"
 				"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
-				"\tcurrThreadId: %x, CPU: %d, Lock obj addr: %p, Calling function: %p",
+				"\tcurrThreadId: %x, CPU: %d, Lock obj addr: %p, Calling function: %p, "
+				"curr ownerAcquisitionInstr: %p",
 				nTries, &lock, lock, currThreadId,
-				cpuTrib.getCurrentCpuStream()->cpuId, this, __builtin_return_address(0));
+				cpuTrib.getCurrentCpuStream()->cpuId, this,
+				__builtin_return_address(0),
+				ownerAcquisitionInstr);
 		}
 #endif
 	}
