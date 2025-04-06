@@ -10,6 +10,36 @@
 class Lock
 {
 public:
+	class ScopedGuard
+	{
+	public:
+		ScopedGuard(Lock* _lock)
+		: doAutoRelease(1), lock(_lock)
+		{}
+
+		~ScopedGuard(void)
+			{ releaseManagement(); }
+
+		virtual Lock *releaseManagement(void)
+		{
+			Lock		*tmpRet = lock;
+
+			doAutoRelease = 0;
+			lock = NULL;
+			return tmpRet;
+		}
+
+		virtual void releaseManagementAndUnlock(void)=0;
+
+	protected:
+		virtual void unlock(void)=0;
+
+	protected:
+		sbit8	doAutoRelease;
+		Lock	*lock;
+	};
+
+public:
 	/** EXPLANATION:
 	 * Flag shift values for lock::flags.
 	 *

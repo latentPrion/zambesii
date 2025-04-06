@@ -18,6 +18,36 @@ public Lock
 {
 friend class RecursiveLock;
 friend class MultipleReaderLock;
+public:
+	class ScopedGuard
+	: public Lock::ScopedGuard
+	{
+	public:
+		ScopedGuard(WaitLock* _lock)
+		: Lock::ScopedGuard(_lock)
+		{
+			_lock->acquire();
+		}
+
+		~ScopedGuard()
+			{ if (doAutoRelease) { unlock(); } }
+
+		virtual WaitLock *releaseManagement(void)
+		{
+			return static_cast<WaitLock *>(
+				Lock::ScopedGuard::releaseManagement());
+		}
+
+		virtual void unlock(void)
+		{
+			if (lock == NULL) { return; }
+			static_cast<WaitLock *>(lock)->release();
+		}
+
+		virtual void releaseManagementAndUnlock(void)
+			{ releaseManagement()->release(); }
+	};
+
 
 public:
 	enum flagShiftE {

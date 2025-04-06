@@ -20,6 +20,36 @@ class RecursiveLock
 public Lock
 {
 public:
+	class ScopedGuard
+	: public Lock::ScopedGuard
+	{
+	public:
+		ScopedGuard(RecursiveLock* _lock)
+		: Lock::ScopedGuard(_lock)
+		{
+			_lock->acquire();
+		}
+
+		~ScopedGuard()
+			{ if (doAutoRelease) { unlock(); } }
+
+		virtual RecursiveLock *releaseManagement(void)
+		{
+			return static_cast<RecursiveLock *>(
+				Lock::ScopedGuard::releaseManagement());
+		}
+
+		virtual void unlock(void)
+		{
+			if (lock == NULL) { return; }
+			static_cast<RecursiveLock *>(lock)->release();
+		}
+
+		virtual void releaseManagementAndUnlock(void)
+			{ releaseManagement()->release(); }
+	};
+
+public:
 	enum flagShiftE {
 		RL_FLAGS_ENUM_END = Lock::FLAGS_ENUM_END
 	};
