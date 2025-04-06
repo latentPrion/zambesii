@@ -26,6 +26,69 @@ class MultipleReaderLock
 public Lock
 {
 public:
+	class ScopedWriteGuard
+	: public Lock::ScopedGuard
+	{
+	public:
+		ScopedWriteGuard(MultipleReaderLock* _lock)
+		: Lock::ScopedGuard(_lock)
+		{
+			_lock->writeAcquire();
+		}
+
+		~ScopedWriteGuard()
+			{ if (doAutoRelease) { unlock(); } }
+
+		virtual MultipleReaderLock *releaseManagement(void)
+		{
+			return static_cast<MultipleReaderLock*>(
+				Lock::ScopedGuard::releaseManagement());
+		}
+
+		virtual void unlock(void)
+		{
+			if (lock == NULL) { return; }
+			static_cast<MultipleReaderLock*>(lock)->writeRelease();
+		}
+
+		virtual void releaseManagementAndUnlock(void)
+			{ releaseManagement()->writeRelease(); }
+	};
+
+	class ScopedReadGuard
+	: public Lock::ScopedGuard
+	{
+	public:
+		ScopedReadGuard(MultipleReaderLock* _lock)
+		: Lock::ScopedGuard(_lock), flags(0)
+		{
+			_lock->readAcquire(&flags);
+		}
+
+		~ScopedReadGuard()
+			{ if (doAutoRelease) { unlock(); } }
+
+		virtual MultipleReaderLock *releaseManagement(void)
+		{
+			return static_cast<MultipleReaderLock*>(
+				Lock::ScopedGuard::releaseManagement());
+		}
+
+		virtual void unlock(void)
+		{
+			if (lock == NULL) { return; }
+			static_cast<MultipleReaderLock*>(lock)->readRelease(
+				flags);
+		}
+
+		virtual void releaseManagementAndUnlock(void)
+			{ releaseManagement()->readRelease(flags); }
+
+	private:
+		uarch_t		flags;
+	};
+
+public:
 	// Flag shift values for the 'flags' member, continuing from Lock::FLAGS_ENUM_END
 	enum flagShiftE {
 		MR_FLAGS_WRITE_REQUEST_SHIFT = Lock::FLAGS_ENUM_END,
