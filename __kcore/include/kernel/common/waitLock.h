@@ -32,7 +32,7 @@ public:
 		~ScopedGuard()
 			{ if (doAutoRelease) { unlock(); } }
 
-		virtual WaitLock *releaseManagement(void)
+		WaitLock *releaseManagement(void)
 		{
 			return static_cast<WaitLock *>(
 				Lock::ScopedGuard::releaseManagement());
