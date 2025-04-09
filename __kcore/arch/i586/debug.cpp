@@ -49,15 +49,62 @@ void debug::getCurrentStackInfo(sStackDescriptor *desc)
 		+ desc->nBytes;
 }
 
+// Common stack frame structure used by both stack trace functions
+struct sX8632StackFrame
+{
+	// aka, "EBP" that was pushed on the stack.
+	sX8632StackFrame	*prevFrame;
+	// aka, "EIP" that was pushed on the stack.
+	void			(*caller)(void);
+};
+
+#ifdef CONFIG_DEBUG_LOCKS
+/**	EXPLANATION:
+ * Helper function to print stack trace to a debugPipe buffer.
+ * Used by the deadlock detection code to print a stack trace of the
+ * thread that is holding the lock when a deadlock is detected.
+ **/
+void debug::printStackTraceToBuffer(
+	SharedResourceGroup<WaitLock, utf8Char *> *buff, uarch_t bufferSize,
+	void *startFrame, sStackDescriptor *stack
+)
+{
+	sX8632StackFrame *currFrame;
+	sarch_t offset = 0;
+
+	// Print stack bounds information
+	offset += printf(
+		buff, bufferSize,
+		NOTICE"Stack: bounds: low %p, high %p. Start frame %p\n",
+		stack->start, stack->eof, startFrame);
+
+	currFrame = (sX8632StackFrame *)startFrame;
+	do
+	{
+		// Check if we have enough buffer space left
+		if (offset >= (sarch_t)(bufferSize - 1)) {
+			break;
+		}
+
+		// Print frame information
+		offset += printf(
+			buff, bufferSize,
+			NOTICE"Stack: frame @%p, called by: %p\n",
+			currFrame, currFrame->caller);
+
+		if (currFrame->prevFrame >= stack->eof
+			|| currFrame->prevFrame < stack->start)
+			{ break; };
+
+		currFrame = currFrame->prevFrame;
+	} while (FOREVER);
+}
+#endif
+
+// Direct printf version that doesn't use a buffer
 void debug::printStackTrace(void *startFrame, sStackDescriptor *stack)
 {
-	struct sX8632StackFrame
-	{
-		// aka, "EBP" that was pushed on the stack.
-		sX8632StackFrame	*prevFrame;
-		// aka, "EIP" that was pushed on the stack.
-		void			(*caller)(void);
-	} *currFrame;
+	sX8632StackFrame *currFrame;
 
 	printf(NOTICE"Stack: bounds: low %p, high %p. Start frame %p\n",
 		stack->start, stack->eof, startFrame);

@@ -1,8 +1,13 @@
 #include <arch/arch_include.h>
 #include ARCH_INCLUDE(debug.h)
 
+
 #ifndef _ARCH_DEBUG_COMMON_H
 	#define _ARCH_DEBUG_COMMON_H
+
+#include <config.h>
+#include <kernel/common/sharedResourceGroup.h>
+#include <kernel/common/waitLock.h>
 
 namespace debug
 {
@@ -15,7 +20,13 @@ namespace debug
 	};
 
 	void getCurrentStackInfo(sStackDescriptor *desc);
-	void printStackTrace(void *startFrame, sStackDescriptor *desc);
+#ifdef CONFIG_DEBUG_LOCKS
+	void printStackTraceToBuffer(
+		SharedResourceGroup<WaitLock, utf8Char *> *buff,
+		uarch_t bufferSize,
+		void *startFrame, sStackDescriptor *stack);
+#endif
+	void printStackTrace(void *startFrame, sStackDescriptor *stack);
 	void printStackArguments(void *stackFrame, void *stackPointer);
 }
 
