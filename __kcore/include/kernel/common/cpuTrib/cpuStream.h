@@ -229,6 +229,10 @@ public:
 	class X86Lapic		lapic;
 #endif
 
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	uarch_t			nLocksHeld;
+#endif
+
 private:
 	sbit8			readyForIrqs;
 };

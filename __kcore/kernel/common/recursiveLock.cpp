@@ -52,6 +52,9 @@ void RecursiveLock::acquire(void)
 		{
 			// We acquired the lock
 			recursionCount = 1;
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+			cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+#endif
 			// Only set ownerAcquisitionInstr on first acquisition.
 			ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 				__builtin_return_address(0));
@@ -64,6 +67,9 @@ void RecursiveLock::acquire(void)
 		{
 			// We already own the lock, increment recursion count
 			recursionCount++;
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+			cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+#endif
 			return;
 		}
 
@@ -102,6 +108,9 @@ void RecursiveLock::acquire(void)
 	// In non-SMP mode, just take the lock
 	lock = currThreadId;
 	recursionCount++;
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+#endif
 	if (irqsWereEnabled)
 		{ FLAG_SET(flags, Lock::FLAGS_IRQS_WERE_ENABLED); }
 #endif
@@ -115,7 +124,9 @@ void RecursiveLock::release(void)
 	 **/
 
 	recursionCount--;
-	
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
+#endif
 	// If we're releasing the lock completely, open it up for other tasks
 	if (recursionCount == 0)
 	{

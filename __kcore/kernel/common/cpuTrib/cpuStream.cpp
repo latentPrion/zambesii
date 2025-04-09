@@ -62,6 +62,9 @@ interCpuMessager(cid, this),
 #if defined(CONFIG_ARCH_x86_32) || defined(CONFIG_ARCH_x86_64)
 lapic(this),
 #endif
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+nLocksHeld(0),
+#endif
 readyForIrqs(0)
 {
 }
