@@ -64,8 +64,10 @@ void WaitLock::acquire(void)
 
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
-
 #endif
+#endif
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
 #endif
 
 	flags |= contenderFlags;
@@ -85,6 +87,11 @@ void WaitLock::release(void)
 	};
 
 	atomicAsm::set(&lock, 0);
+#endif
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
+#endif
+#if __SCALING__ >= SCALING_SMP
 
 	if (enableIrqs) {
 #endif
@@ -97,6 +104,9 @@ void WaitLock::releaseNoIrqs(void)
 	FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
 #if __SCALING__ >= SCALING_SMP
 	atomicAsm::set(&lock, 0);
+#endif
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
 }
 

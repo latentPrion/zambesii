@@ -66,12 +66,18 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 	}
 #endif
 #endif
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+#endif
 }
 
 void MultipleReaderLock::readRelease(uarch_t _flags)
 {
 #if __SCALING__ >= SCALING_SMP
 	atomicAsm::decrement(&lock);
+#endif
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
 
 	// Test the flags and see whether or not to enable IRQs.
@@ -162,6 +168,9 @@ deadlock:
 		__builtin_return_address(0));
 #endif
 #endif
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+#endif
 
 	this->flags |= contenderFlags;
 }
@@ -179,6 +188,9 @@ void MultipleReaderLock::writeRelease(void)
 #if __SCALING__ >= SCALING_SMP
 	// Clear the write request bit to release the lock
 	atomicAsm::bitTestAndClear(&lock, MR_FLAGS_WRITE_REQUEST_SHIFT);
+#endif
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
 
 	if (enableIrqs) {
@@ -246,6 +258,8 @@ deadlock:
 			__builtin_return_address(0),
 			ownerAcquisitionInstr);
 	}
+
+	// We don't modify nLocksHeld in readReleaseWriteAcquire().
 
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
