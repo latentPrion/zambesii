@@ -29,6 +29,17 @@ void interruptTrib_interruptEntry(RegisterContext *regs)
 		cpuStream->cpuId, regs->vectorNo)
 		: noop();
 #endif
+
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	if (cpuStream->nLocksHeld > 0)
+	{
+		printf(FATAL INTTRIB"interruptEntry: CPU %d "
+			"has %d locks held.\n",
+			cpuStream->cpuId, cpuStream->nLocksHeld);
+		panic(ERROR_INVALID_STATE);
+	};
+#endif
+
 	/**	EXPLANATION:
 	 * Subtractively decode the type of interrupt vector being dealt with.
 	 **/

@@ -340,7 +340,8 @@ AC_CONFIG_COMMANDS_POST(
         (Locks:${enable_debug_locks})
         (Scheduler:${enable_debug_scheduler})
         (Interrupts:${enable_debug_interrupts})
-        (Page faults:${enable_debug_page_faults})]
+        (Page faults:${enable_debug_page_faults})
+        (Lock exceptions:${enable_debug_lock_exceptions})]
     ))
     AC_MSG_NOTICE(m4_normalize(
         [Distributaries enabled:
