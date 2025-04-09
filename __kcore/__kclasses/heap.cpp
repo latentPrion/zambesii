@@ -698,16 +698,14 @@ void Heap::free(void *_p, void *freedBy)
 			debug::sStackDescriptor		currStack;
 
 			debug::getCurrentStackInfo(&currStack);
-			asm volatile(
-				"movl	%%ebp, %0\n\t"
-				: "=r" (ebp));
+			ebp = debug::getBasePointer();
 
 			printf(NOTICE HEAP"free: mem pointer %p "
 				"(hdr %p) not in alloc list!\n"
 				"\tFree called for by %p\n",
 				_p, (void*)alloc, freedBy);
 
-			//debug::printStackTrace(ebp, &currStack);
+			debug::printStackTrace(ebp, &currStack);
 			panic(ERROR_UNKNOWN);
 		};
 	};
