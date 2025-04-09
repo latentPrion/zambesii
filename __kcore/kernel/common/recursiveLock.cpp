@@ -55,9 +55,11 @@ void RecursiveLock::acquire(void)
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 			cpuTrib.getCurrentCpuStream()->nLocksHeld++;
 #endif
+#ifdef CONFIG_DEBUG_LOCKS
 			// Only set ownerAcquisitionInstr on first acquisition.
 			ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 				__builtin_return_address(0));
+#endif
 
 			if (irqsWereEnabled)
 				{ FLAG_SET(flags, Lock::FLAGS_IRQS_WERE_ENABLED); }
