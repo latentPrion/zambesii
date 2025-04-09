@@ -92,20 +92,26 @@ void RecursiveLock::acquire(void)
 #endif
 
 #ifdef CONFIG_DEBUG_LOCKS
-		if (nTries-- <= 1)
-		{
-			reportDeadlock(
-				FATAL"RecursiveLock::acquire deadlock detected:\n"
-				"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
-				"\tcurrThreadId: %x, CPU: %d, Lock obj addr: %p, Calling function: %p, "
-				"curr ownerAcquisitionInstr: %p",
-				nTries, &lock, lock, currThreadId,
-				cpuTrib.getCurrentCpuStream()->cpuId, this,
-				__builtin_return_address(0),
-				ownerAcquisitionInstr);
-		}
+		if (nTries-- <= 1) { break; }
 #endif
 	}
+
+#ifdef CONFIG_DEBUG_LOCKS
+	if (nTries <= 1)
+	{
+		reportDeadlock(
+			FATAL"RecursiveLock::acquire deadlock detected:\n"
+			"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
+			"\tcurrThreadId: %x, CPU: %d, Lock obj addr: %p,\n"
+			"\tCalling function: %p, "
+			"curr ownerAcquisitionInstr: %p",
+			nTries, &lock, lock, currThreadId,
+			cpuTrib.getCurrentCpuStream()->cpuId, this,
+			__builtin_return_address(0),
+			ownerAcquisitionInstr);
+	}
+#endif
+
 #else
 	// In non-SMP mode, just take the lock
 	lock = currThreadId;
