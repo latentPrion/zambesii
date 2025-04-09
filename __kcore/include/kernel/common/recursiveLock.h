@@ -33,7 +33,7 @@ public:
 		~ScopedGuard()
 			{ if (doAutoRelease) { unlock(); } }
 
-		virtual RecursiveLock *releaseManagement(void)
+		RecursiveLock *releaseManagement(void)
 		{
 			return static_cast<RecursiveLock *>(
 				Lock::ScopedGuard::releaseManagement());

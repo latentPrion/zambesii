@@ -20,7 +20,7 @@ public:
 		~ScopedGuard(void)
 			{ releaseManagement(); }
 
-		virtual Lock *releaseManagement(void)
+		Lock *releaseManagement(void)
 		{
 			Lock		*tmpRet = lock;
 

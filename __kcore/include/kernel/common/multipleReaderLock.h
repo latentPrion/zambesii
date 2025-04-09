@@ -39,7 +39,7 @@ public:
 		~ScopedWriteGuard()
 			{ if (doAutoRelease) { unlock(); } }
 
-		virtual MultipleReaderLock *releaseManagement(void)
+		MultipleReaderLock *releaseManagement(void)
 		{
 			return static_cast<MultipleReaderLock*>(
 				Lock::ScopedGuard::releaseManagement());
@@ -65,10 +65,19 @@ public:
 			_lock->readAcquire(&flags);
 		}
 
+		ScopedReadGuard &move_assign(ScopedReadGuard &other)
+		{
+			lock = other.lock;
+			flags = other.flags;
+			doAutoRelease = other.doAutoRelease;
+			other.releaseManagement();
+			return *this;
+		}
+		
 		~ScopedReadGuard()
 			{ if (doAutoRelease) { unlock(); } }
 
-		virtual MultipleReaderLock *releaseManagement(void)
+		MultipleReaderLock *releaseManagement(void)
 		{
 			return static_cast<MultipleReaderLock*>(
 				Lock::ScopedGuard::releaseManagement());
@@ -83,6 +92,15 @@ public:
 
 		virtual void releaseManagementAndUnlock(void)
 			{ releaseManagement()->readRelease(flags); }
+
+	private:
+		// Only allow TaskTrib::unblock() to call default constructor
+		friend class TaskTrib;
+		ScopedReadGuard(void)
+		: Lock::ScopedGuard(NULL), flags(0)
+		{
+			Lock::ScopedGuard::doAutoRelease = 0;
+		}
 
 	private:
 		uarch_t		flags;
