@@ -293,6 +293,44 @@ void ipc::destroyDataHeader(sDataHeader *header, void *buffer)
 	delete header;
 }
 
+sbit8 MessageStream::Filter::compare(const sHeader *hdr) const
+{
+	if ((comparisonFlags & FLAG_SOURCE_ID) &&
+		hdr->sourceId != criteria.sourceId) {
+		return false;
+	}
+	if ((comparisonFlags & FLAG_TARGET_ID) &&
+		hdr->targetId != criteria.targetId) {
+		return false;
+	}
+	if ((comparisonFlags & FLAG_PRIVATE_DATA) &&
+		hdr->privateData != criteria.privateData) {
+		return false;
+	}
+	if ((comparisonFlags & FLAG_SUBSYSTEM) &&
+		(hdr->subsystem > MSGSTREAM_SUBSYSTEM_MAXVAL ||
+		hdr->subsystem != criteria.subsystem)) {
+		return false;
+	}
+	if ((comparisonFlags & FLAG_FUNCTION) &&
+		hdr->function != criteria.function) {
+		return false;
+	}
+	if ((comparisonFlags & FLAG_SIZE) &&
+		hdr->size != criteria.size) {
+		return false;
+	}
+	if ((comparisonFlags & FLAG_ERROR) &&
+		hdr->error != criteria.error) {
+		return false;
+	}
+	if ((comparisonFlags & FLAG_FLAGS) &&
+		hdr->flags != criteria.flags) {
+		return false;
+	}
+	return true;
+}
+
 MessageStream::sHeader::sHeader(
 	processId_t targetPid, ubit16 subsystem, ubit16 function,
 	uarch_t size, uarch_t flags, void *privateData)
