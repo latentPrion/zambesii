@@ -14,9 +14,21 @@
 	#define DEBUG_FLAGS_BP2_ENABLED		(1<<2)
 	#define DEBUG_FLAGS_BP3_ENABLED		(1<<3)
 
+
 namespace debug
 {
 	ubit8 *getStackPointer(void);
+	inline void *getBasePointer(void)
+	{
+		void	*ebp;
+
+		asm volatile(
+			"movl	%%ebp, %0\n\t"
+			: "=r" (ebp));
+
+		return ebp;
+	}
+
 	void getVaddrSpacePointer(paddr_t *p);
 
 	void enableDebugExtensions(void);
