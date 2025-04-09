@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <arch/cpuControl.h>
+#include <arch/debug.h>
 #include <__kstdlib/__ktypes.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
@@ -58,6 +59,15 @@ void reportDeadlock(utf8Char *formatStr, ...)
 		formatStr,
 		args);
 	va_end(args);
+
+	debug::sStackDescriptor stack;
+	debug::getCurrentStackInfo(&stack);
+
+	debug::printStackTraceToBuffer(
+		&deadlockBuffers[cid].buffer,
+		DEADLOCK_BUFF_MAX_NBYTES,
+		debug::getBasePointer(),
+		&stack);
 
 	deadlockBuffers[cid].inUse = 0;
 	cpuControl::halt();
