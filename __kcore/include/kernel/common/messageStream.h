@@ -153,6 +153,54 @@ public:
 		uarch_t		size;
 	};
 
+	class Filter
+	{
+	public:
+		enum ComparisonFlagShiftsE {
+			SOURCE_ID_SHIFT = 0,
+			TARGET_ID_SHIFT,
+			PRIVATE_DATA_SHIFT,
+			ERROR_SHIFT,
+			SUBSYSTEM_SHIFT,
+			FLAGS_SHIFT,
+			FUNCTION_SHIFT,
+			SIZE_SHIFT
+		};
+
+		enum ComparisonFlagsE {
+			FLAG_SOURCE_ID = (1 << SOURCE_ID_SHIFT),
+			FLAG_TARGET_ID = (1 << TARGET_ID_SHIFT),
+			FLAG_PRIVATE_DATA = (1 << PRIVATE_DATA_SHIFT),
+			FLAG_ERROR = (1 << ERROR_SHIFT),
+			FLAG_SUBSYSTEM = (1 << SUBSYSTEM_SHIFT),
+			FLAG_FLAGS = (1 << FLAGS_SHIFT),
+			FLAG_FUNCTION = (1 << FUNCTION_SHIFT),
+			FLAG_SIZE = (1 << SIZE_SHIFT)
+		};
+
+		Filter(
+			processId_t targetPid,
+			ubit16 subsystem, ubit16 function,
+			uarch_t size, uarch_t flags, void *privateData,
+			ubit16 compFlags = 0)
+		: criteria(
+			targetPid, subsystem, function,
+			size, flags, privateData),
+		comparisonFlags(compFlags)
+		{}
+
+		sbit8 comparisonFlagIsSet(ComparisonFlagsE flag) const
+		{
+			return FLAG_TEST(comparisonFlags, flag);
+		}
+
+		sbit8 compare(const sHeader *hdr) const;
+
+	public:
+		sHeader criteria;
+		ubit16 comparisonFlags;
+	};
+
 	struct sPostMsg
 	{
 		sPostMsg(
