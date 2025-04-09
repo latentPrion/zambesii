@@ -5,7 +5,8 @@ AC_INIT([Zambesii Kernel], [0.00.014],
 
 # Stop AC_PROG_[CC|CXX] from adding -g and -O2 to C(XX)FLAGS
 # if the user hasn't set them.
-true ${CFLAGS:=""} ${CXXFLAGS:=""}
+AS_VAR_SET_IF([CFLAGS], [], [CFLAGS=""])
+AS_VAR_SET_IF([CXXFLAGS], [], [CXXFLAGS=""])
 
 # Some libraries can be lifted out of the Zambesii source tree
 # and built in a hosted environment. They use this macro to
