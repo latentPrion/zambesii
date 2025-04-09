@@ -131,7 +131,7 @@ private:
 			 */
 			device->disableIrqEventMessages();
 			printf(NOTICE TIMERQUEUE"%dus: installClockRoutine: "
-				"softEnabled device \"%s\".\n",
+				"softDisabled device \"%s\".\n",
 				getNativePeriod() / 1000,
 				device->getBaseDevice()->shortName);
 		};
