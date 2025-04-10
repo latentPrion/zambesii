@@ -55,7 +55,7 @@ public:
 
 	T *getInternalArrayAddress(void)
 	{
-		return s.array;
+		return s.rsrc.array;
 	}
 
 	sbit8 unlocked_indexIsValid(uarch_t index)
@@ -103,11 +103,13 @@ public:
 
 		if (unlocked_indexIsValid(index))
 		{
-			unlock();
+			if (!FLAG_TEST(_flags, RTHI_FLAGS_UNLOCKED))
+				{ unlock(); };
+
 			return ERROR_SUCCESS;
 		};
 
-		if (FLAG_TEST(this->flags, RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP))
+		if (!FLAG_TEST(this->flags, RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP))
 		{
 			// Else, resize array.
 			ret = crudeRealloc(
@@ -178,7 +180,8 @@ public:
 		lock();
 		memmove(
 			&s.rsrc.array[index], &s.rsrc.array[index + nItems],
-			sizeof(*s.rsrc.array) * nItems);
+			sizeof(*s.rsrc.array)
+				* ((s.rsrc.nIndexes - nItems) - index));
 
 		s.rsrc.nIndexes -= nItems;
 		unlock();
