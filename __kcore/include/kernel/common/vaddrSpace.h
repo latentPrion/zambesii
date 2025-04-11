@@ -30,7 +30,7 @@ public:
 			(uintptr_t)vaddr >> PAGING_L0_VADDR_SHIFT);
 	}
 
-	status_t getTopLevelAddrState(uarch_t entry);
+	status_t getTopLevelEntryState(uarch_t entry);
 
 public:
 	// Uses a recursive lock, take note.
