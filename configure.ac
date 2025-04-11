@@ -237,6 +237,8 @@ AC_SUBST([DISTRIBUTARIES_KERNEL_LIBS])
 # Debugging options.
 #
 m4_include([m4/debug-opts.m4])
+# Virtual memory options.
+m4_include([m4/virtual-memory-opts.m4])
 
 #
 # Itanium C++ ABI options.
@@ -323,6 +325,11 @@ AC_CONFIG_COMMANDS_POST(
     AC_MSG_NOTICE(m4_normalize(
         [Scaling options:
         (Mode:${ZSCALING}) (MAX CPUs:${ZMAX_NCPUS})]
+    ))
+    AC_MSG_NOTICE(m4_normalize(
+        [Virtual memory options:
+        (__kvaddrspace demand paging:${enable_kernel_vaddrspace_demand_paging})
+        (__kheap demand paging:${enable_heap_demand_paging})]
     ))
     AC_MSG_NOTICE(m4_normalize(
         [Scheduler options:
