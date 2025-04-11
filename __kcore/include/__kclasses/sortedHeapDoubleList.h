@@ -16,7 +16,11 @@ template <class T, class criterionType>
 class SortedHeapDoubleList
 {
 public:
-	SortedHeapDoubleList(void) {}
+	SortedHeapDoubleList(void)
+	:
+	list(CC"SortedHeapDoubleList list")
+	{}
+
 	~SortedHeapDoubleList(void) {};
 
 	error_t initialize(void) { return ERROR_SUCCESS; };

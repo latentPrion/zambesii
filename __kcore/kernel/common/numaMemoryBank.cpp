@@ -13,7 +13,9 @@
 
 NumaMemoryBank::NumaMemoryBank(numaBankId_t id)
 :
-id(id), rangePtrCache(sizeof(NumaMemoryBank::sRangePtr))
+id(id),
+ranges(CC"NumaMemoryBank ranges"), defRange(CC"NumaMemoryBank def[ault]Range"),
+rangePtrCache(sizeof(NumaMemoryBank::sRangePtr))
 {
 	ranges.rsrc = NULL;
 	defRange.rsrc = NULL;

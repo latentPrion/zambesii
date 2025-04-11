@@ -54,21 +54,9 @@ public:
 	// Kernel occupies process ID 1; we begin handing process IDs from 2.
 	nextProcId(
 		CHIPSET_MEMORY_MAX_NPROCESSES - 1,
-		PROCID_PROCESS(__KPROCESSID) + 1)
+		PROCID_PROCESS(__KPROCESSID) + 1),
+	processes(&__kprocess)
 	{
-		memset(processes.rsrc, 0, sizeof(processes.rsrc));
-		/**	EXPLANATION:
-		 * I am not a fan of mnemonic magic numbers, but in this case
-		 * I will use this here. The kernel reserves process ID 0, and
-		 * occupies process ID 1 for itself.
-		 *
-		 * To ensure that process ID 0 is never allocated, we fill its
-		 * index with garbage. We then expect that should this index
-		 * ever be dereferenced we should get a page fault of some kind.
-		 **/
-		processes.rsrc[0] = (ProcessStream *)0xFEEDBEEF;
-		processes.rsrc[PROCID_PROCESS(__KPROCESSID)] = &__kprocess;
-
 		fillOutPrioClasses();
 	}
 
@@ -187,8 +175,27 @@ private:
 private:
 	KernelProcess		__kprocess;
 	WrapAroundCounter	nextProcId;
-	struct
+	struct ProcessArray
 	{
+		ProcessArray(KernelProcess *kprocess)
+		:
+		lock(CC"ProcessArray lock")
+		{
+			memset(rsrc, 0, sizeof(rsrc));
+			/**	EXPLANATION:
+			 * I am not a fan of mnemonic magic numbers, but in this
+			 * case I will use this here. The kernel reserves
+			 * process ID 0, and occupies process ID 1 for itself.
+			 *
+			 * To ensure that process ID 0 is never allocated, we
+			 * fill its index with garbage. We then expect that
+			 * should this index ever be dereferenced we should
+			 * get a page fault of some kind.
+			 **/
+			rsrc[0] = (ProcessStream *)0xFEEDBEEF;
+			rsrc[PROCID_PROCESS(__KPROCESSID)] = kprocess;
+		}
+
 		void setSlot(processId_t pid, ProcessStream *newProc)
 		{
 			lock.writeAcquire();

@@ -52,11 +52,11 @@ void WaitLock::acquire(void)
 	if (nTries <= 1)
 	{
 		reportDeadlock(
-			FATAL"WaitLock::acquire deadlock detected:\n"
+			FATAL"WaitLock::acquire[%s] deadlock detected:\n"
 			"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
 			"curr ownerAcquisitionInstr: %p",
-			nTries, &lock, lock,
+			name, nTries, &lock, lock,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
 			ownerAcquisitionInstr);

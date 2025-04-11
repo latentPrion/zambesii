@@ -121,7 +121,9 @@ public:
 		MR_FLAGS_WRITE_REQUEST = (1 << MR_FLAGS_WRITE_REQUEST_SHIFT)
 	};
 
-	MultipleReaderLock(void)
+public:
+	MultipleReaderLock(const utf8Char *name)
+	: Lock(name)
 	{}
 
 public:

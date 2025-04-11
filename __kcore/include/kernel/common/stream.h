@@ -34,7 +34,8 @@ class Stream
 public:
 	explicit Stream(ParentType *parent, processId_t id)
 	:
-	parent(parent), id(id), flags(0)
+	parent(parent), id(id), flags(0),
+	binding(CC"Stream binding")
 	{
 		binding.rsrc = 0;
 	};

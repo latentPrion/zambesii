@@ -26,6 +26,11 @@ public:
 private:
 	struct sStackState
 	{
+		sStackState(void)
+		:
+		arr(NULL), cursor(-1)
+		{}
+
 		T	*arr;
 		sbit32	cursor;
 	};
@@ -39,11 +44,10 @@ private:
 
 template <class T>
 ArrayStack<T>::ArrayStack(ubit32 nItems)
-{
-	stack.rsrc.arr = NULL;
-	stack.rsrc.cursor = -1;
-	ArrayStack::nItems = nItems;
-}
+:
+stack(CC"ArrayStack stack"),
+nItems(nItems)
+{}
 
 template <class T>
 error_t ArrayStack<T>::initialize(void)

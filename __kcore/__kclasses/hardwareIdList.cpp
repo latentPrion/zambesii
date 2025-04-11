@@ -8,8 +8,9 @@
 
 
 HardwareIdList::HardwareIdList(void)
+:
+preAllocated(0), arr(CC"HardwareIdList arr")
 {
-	preAllocated = 0;
 	arr.rsrc.maxIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.maxAllocatedIndex = HWIDLIST_INDEX_INVALID;
 	arr.rsrc.firstValidIndex = HWIDLIST_INDEX_INVALID;

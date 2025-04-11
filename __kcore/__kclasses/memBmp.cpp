@@ -20,6 +20,8 @@
 #define MEMBMP_ALLOC_UNSUCCESSFUL	(~((uarch_t)0))
 
 MemoryBmp::MemoryBmp(paddr_t baseAddr, paddr_t size)
+:
+bmp(CC"MemoryBmp bmp")
 {
 	flags = 0;
 	MemoryBmp::baseAddr = baseAddr;

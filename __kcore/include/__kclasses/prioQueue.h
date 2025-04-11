@@ -20,7 +20,8 @@ class PrioQueue
 public:
 	PrioQueue(ubit16 nPriorities)
 	:
-	nodeCache(NULL), nPrios(nPriorities), queues(NULL)
+	nodeCache(NULL), nPrios(nPriorities), queues(NULL),
+	headQueue(CC"PrioQueue headQueue")
 	{
 		headQueue.rsrc = -1;
 	}
@@ -48,13 +49,16 @@ private:
 	{
 	friend class PrioQueue;
 		// Private constructor only for use by parent class. NOP.
-		Queue(void) {}
+		Queue(void)
+		:
+		q(CC"Queue q")
+		{}
 
 	public:
 		// fine.
 		Queue(ubit16 prio, SlamCache *cache)
 		:
-		prio(prio), nodeCache(cache)
+		prio(prio), q(CC"Queue q"), nodeCache(cache)
 		{}
 
 		// fine.

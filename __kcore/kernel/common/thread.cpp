@@ -37,8 +37,9 @@ schedPolicy(ROUND_ROBIN), schedOptions(0), schedFlags(0)
 
 _TaskContext::_TaskContext(processId_t tid, Thread *parent)
 : Stream<Thread>(parent, tid),
-schedState(UNSCHEDULED),
-context(NULL)
+schedState(CC"_TaskContext schedState"),
+context(NULL),
+defaultMemoryBank(CC"_TaskContext defaultMemoryBank")
 {
 #if __SCALING__ >= SCALING_CC_NUMA
 	defaultMemoryBank.rsrc = NUMABANKID_INVALID;
@@ -47,6 +48,20 @@ context(NULL)
 	memset(
 		bspPowerTaskContextCpuAffinityMem, 0,
 		sizeof(bspPowerTaskContextCpuAffinityMem));
+
+	/** EXPLANATION:
+	 * The BSP's power thread, when it's first being initialized
+	 * (this is represented as its "first plugin event"), should be
+	 * in the RUNNING state. Because it quite literally is executing
+	 * this very code here in this case. It is indeed the BSP's power
+	 * thread that boots up the kernel.
+	 *
+	 * All other threads are UNSCHEDULED by default.
+	 **/
+	schedState.rsrc.status = (Thread::isBspPowerThread(tid)
+		&& CpuStream::isBspFirstPlug())
+		? Thread::RUNNING
+		: Thread::UNSCHEDULED;
 }
 
 Thread::Thread(
@@ -56,7 +71,7 @@ Thread::Thread(
 	_Task(id, this, privateData),
 	_TaskContext(id, this),
 id(id), parent(parent), region(NULL),
-currentCpu(NULL), parentCpu(parentCpu),
+parentCpu(parentCpu),
 stack0(NULL), stack1(NULL),
 messageStream(this)
 {

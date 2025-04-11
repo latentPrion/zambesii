@@ -4,6 +4,8 @@
 #include <kernel/common/memoryTrib/memoryTrib.h>
 
 PageTableCache::PageTableCache(void)
+:
+stackPtr(CC"PageTableCache stackPtr")
 {
 	stackPtr.rsrc = PTCACHE_STACK_EMPTY;
 }

@@ -200,7 +200,8 @@ namespace hvfs
 			InodeId(0, 0), hvfs::Inode::FileSize(0, 0, 0),
 			sTimestamp(0, 0, 0),
 			sTimestamp(0, 0, 0),
-			sTimestamp(0, 0, 0))
+			sTimestamp(0, 0, 0)),
+		defaultTree(CC"Hierarchical VFS default tree")
 		{
 			(void)tagCache;
 		}

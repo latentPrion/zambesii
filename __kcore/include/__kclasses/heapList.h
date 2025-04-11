@@ -117,7 +117,7 @@ private:
 template <class T>
 HeapList<T>::HeapList(sarch_t useCache)
 :
-cache(NULL), usingCache(useCache)
+head(CC"HeapList head"), cache(NULL), usingCache(useCache)
 {
 	head.rsrc.nItems = 0;
 	head.rsrc.ptr = NULL;

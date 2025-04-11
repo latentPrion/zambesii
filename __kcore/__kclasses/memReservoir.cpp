@@ -20,11 +20,9 @@ __kheap(
 	| Heap::OPT_GUARD_PAGED
 	| Heap::OPT_CHECK_ALLOCS_ON_FREE
 	| Heap::OPT_CHECK_BLOCK_MAGIC_PASSIVELY
-	| Heap::OPT_CHECK_HEAP_RANGES_ON_FREE),
-sourceStream(sourceStream)
+	| Heap::OPT_CHECK_HEAP_RANGES_ON_FREE), 
+sourceStream(sourceStream), heaps(CC"MemReservoir heaps")
 {
-	heaps.rsrc.ptrs = NULL;
-	heaps.rsrc.nHeaps = 0;
 }
 
 error_t MemReservoir::initialize(void)

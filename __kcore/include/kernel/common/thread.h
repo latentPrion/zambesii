@@ -104,8 +104,33 @@ protected:
 	error_t initialize(void);
 
 public:
-	// Scheduler related.
-	schedStateE		schedState;
+	/**	EXPLANATION:
+	 * This is used to protect against two problems:
+	 * 1. Multiple readers/writers accessing the scheduling state.
+	 * 2. It's used to prevent lost wakeups.
+	 *
+	 * When a thread is assigned to wait on some object, that object must
+	 * take a handle to said thread's schedState lock. Whenever someone
+	 * wishes to signal the object, they must readAcquire() said waiting
+	 * thread's schedState lock.
+	 *
+	 * Whenever the owning thread is about to check the state of one or more
+	 * objects, it must writeAcquire() this lock and if the object has no
+	 * data/messages available for processing, then the owning thread must
+	 * pass this lock to the block() invocation __still acquired__. The
+	 * block() invocation will writeRelease() the lock internally on behalf
+	 * of the owning thread.
+	 */
+	struct SchedState
+	{
+		SchedState(void)
+		: status(UNSCHEDULED), currentCpu(NULL)
+		{}
+
+		schedStateE	status;
+		CpuStream	*currentCpu;
+	};
+	SharedResourceGroup<MultipleReaderLock, SchedState>	schedState;
 
 	// Miscellaneous.
 	RegisterContext		*context;
@@ -189,7 +214,7 @@ public:
 	ProcessStream				*parent;
 	// Only valid for region threads of drivers.
 	fplainn::Region				*region;
-	CpuStream				*currentCpu, *parentCpu;
+	CpuStream				*parentCpu;
 	void					*stack0, *stack1;
 
 	// Asynchronous API message queues for this thread.
