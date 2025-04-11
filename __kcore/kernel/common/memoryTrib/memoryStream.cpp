@@ -35,7 +35,13 @@ void *MemoryStream::memAlloc(uarch_t nPages, uarch_t flags)
 	uarch_t		commit=nPages, f, nTries, localFlush=0;
 	status_t	totalFrames, nFrames, nMapped;
 	paddr_t		p;
-	ubit8		fKernel;
+	sbit8		fKernel;
+	sbit8		bKernelVaddrspaceDemandPaging =
+#ifdef CONFIG_KERNEL_VADDRSPACE_DEMAND_PAGING
+	1;
+#else
+	0;
+#endif
 	void		*ret;
 
 	if (nPages == 0) { return NULL; };
@@ -59,7 +65,22 @@ void *MemoryStream::memAlloc(uarch_t nPages, uarch_t flags)
 	if (!FLAG_TEST(flags, MEMALLOC_NO_FAKEMAP)
 		&& !FLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL))
 	{
-		commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
+		/**	EXPLANATION:
+		 * We only do fakemapping (demand paging) for the kernel
+		 * vaddrspace if CONFIG_KERNEL_VADDRSPACE_DEMAND_PAGING is
+		 * enabled.
+		 *
+		 * All other processes' vaddrspaces are demand paged by default.
+		 */
+		if (parent->getVaddrSpaceStream()
+			!= processTrib.__kgetStream()->getVaddrSpaceStream()
+			||
+			(parent->getVaddrSpaceStream()
+				== processTrib.__kgetStream()->getVaddrSpaceStream()
+				&& bKernelVaddrspaceDemandPaging))
+		{
+			commit = MEMORYSTREAM_FAKEMAP_PAGE_TRANSFORM(nPages);
+		}
 	};
 
 	ret = parent->getVaddrSpaceStream()->getPages(nPages);
