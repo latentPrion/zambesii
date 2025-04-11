@@ -18,7 +18,7 @@ public HeapDoubleList<void>
 public:
 	SingleWaiterQueue(void)
 	:
-	thread(NULL)
+	state(CC"SingleWaiterQueue state")
 	{}
 
 	error_t initialize(void)
@@ -30,7 +30,7 @@ public:
 
 	void dump(void)
 	{
-		printf(NOTICE SWAITQ"%p: thread %p.\n", this, thread);
+		printf(NOTICE SWAITQ"%p: thread %p.\n", this, state.rsrc.thread);
 		HeapDoubleList<void>::dump();
 	}
 
@@ -42,11 +42,19 @@ public:
 	error_t pop(void **ret, uarch_t flags=0);
 	error_t setWaitingThread(Thread *thread);
 
-	Thread *getThread(void) { return thread; }
+	Thread *unlocked_getThread(void) { return state.rsrc.thread; }
 
 private:
-	Thread		*thread;
-	WaitLock	lock;
+	struct sState
+	{
+		sState(void)
+		:
+		thread(NULL)
+		{}
+
+		Thread		*thread;
+	};
+	SharedResourceGroup<WaitLock, sState>	state;
 };
 
 #endif

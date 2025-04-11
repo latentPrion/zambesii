@@ -102,7 +102,8 @@ public:
 			FAILED_BOOT };
 
 		PowerManager(cpu_t id, CpuStream *parentStream)
-		: Stream<CpuStream>(parentStream, id)
+		: Stream<CpuStream>(parentStream, id),
+		powerStatus(CC"PowerManager powerStatus")
 		{
 			if (CpuStream::isBspCpuId(id) && CpuStream::isBspFirstPlug()) {
 				powerStatus.rsrc = C0;

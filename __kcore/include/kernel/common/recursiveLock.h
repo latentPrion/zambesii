@@ -57,8 +57,8 @@ public:
 	// Compile-time check that enum values fit within uarch_t
 	typedef char __lock_flags_size_check2[(RL_FLAGS_ENUM_END <= __UARCH_T_NBITS__) ? 1 : -1];
 
-	RecursiveLock(void)
-	: Lock()
+	RecursiveLock(const utf8Char *name)
+	: Lock(name)
 	{
 		// Initialize lock to PROCID_INVALID to indicate it's free
 		lock = PROCID_INVALID;

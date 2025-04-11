@@ -27,7 +27,8 @@ public:
 
 	ZAsyncStream(processId_t parentPid, ProcessStream *parent)
 	: Stream<ProcessStream>(parent, parentPid),
-	handlerTid(PROCID_INVALID)
+	handlerTid(PROCID_INVALID),
+	connections(CC"ZAsyncStream connections")
 	{}
 
 	error_t initialize(void) { return messages.initialize(); };
