@@ -67,20 +67,21 @@ private:
 	struct sObject
 	{
 		sObject(void)
-#ifdef CONFIG_HEAP_SLAM_DEBUG
 		:
+#ifdef CONFIG_DEBUG_HEAP_SLAM_CACHE
 		magic(SLAMCACHE_MAGIC),
 #endif
+		next(NULL)
 		{}
 
 		~sObject(void)
 		{
-#ifdef CONFIG_HEAP_SLAM_DEBUG
+#ifdef CONFIG_DEBUG_HEAP_SLAM_CACHE
 			magic = 0;
 #endif
 		}
 
-#ifdef CONFIG_HEAP_SLAM_DEBUG
+#ifdef CONFIG_DEBUG_HEAP_SLAM_CACHE
 		uarch_t		magic;
 #endif
 		sObject		*next;
