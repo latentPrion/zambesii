@@ -61,7 +61,8 @@ public:
 	static const uint32_t	OPT_GUARD_PAGED=(1<<0),
 				OPT_CHECK_ALLOCS_ON_FREE=(1<<1),
 				OPT_CHECK_HEAP_RANGES_ON_FREE=(1<<2),
-				OPT_CHECK_BLOCK_MAGIC_PASSIVELY=(1<<3);
+				OPT_CHECK_BLOCK_MAGIC_PASSIVELY=(1<<3),
+				OPT_DEMAND_PAGED=(1<<4);
 
 	static const uint32_t	OP_FLAGS_UNLOCKED=(1<<0);
 
