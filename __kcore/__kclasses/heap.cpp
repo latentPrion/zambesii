@@ -1,4 +1,5 @@
 
+#include <config.h>
 #include <debug.h>
 #include <arch/debug.h>
 #include <arch/paging.h>
@@ -376,21 +377,25 @@ error_t Heap::getNewChunk(Chunk **retchunk) const
 	error_t		ret;
 	Block		*firstBlock;
 	Chunk		*tmpchunk;
+	uarch_t		memAllocFlags=0;
 
 	if (memoryStream == NULL) { return ERROR_UNINITIALIZED; };
+
+	if (options & OPT_DEMAND_PAGED)
+		{ memAllocFlags |= MEMALLOC_PURE_VIRTUAL; }
 
 	tmpchunk = new (
 #ifndef __ZAMBESII_KERNEL_SOURCE__
 		mmap(
 			NULL, chunkSize, PROT_READ | PROT_WRITE,
-			MAP_PRIVATE | MAP_ANONYMOUS, -1, 0))
+			MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)
 #else
 		memoryStream->memAlloc(
 			PAGING_BYTES_TO_PAGES(
 				chunkSize),
-			MEMALLOC_PURE_VIRTUAL))
+			memAllocFlags)
 #endif
-		Chunk;
+	) Chunk;
 
 	if (tmpchunk == NULL)
 	{
