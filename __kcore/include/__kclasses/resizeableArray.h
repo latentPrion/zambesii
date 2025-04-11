@@ -23,7 +23,8 @@ class ResizeableArray
 public:
 	ResizeableArray(uarch_t _flags=0)
 	:
-	flags(_flags)
+	flags(_flags),
+	s(CC"ResizeableArray state")
 	{}
 
 	error_t initialize(void) { return ERROR_SUCCESS; }

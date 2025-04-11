@@ -72,6 +72,7 @@ public:
 	};
 
 	Bitmap(void)
+	: bmp(CC"Bitmap bmp")
 	{
 		bmp.rsrc.bmp = NULL;
 		bmp.rsrc.nBits = 0;

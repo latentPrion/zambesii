@@ -88,7 +88,8 @@ namespace x86IoApic
 		baseDeviceInfo(
 			id, CC"IO-APIC", CC"Intel MP Compliant IO-APIC chip",
 			CC"Unknown vendor", CC"N/A"),
-		paddr(paddr), id(id), acpiGirqBase(acpiGirqBase), vectorBase(0)
+		paddr(paddr), id(id), acpiGirqBase(acpiGirqBase),
+		vaddr(CC"IoApic vaddr"), vectorBase(0)
 		{
 			vaddr.rsrc = NULL;
 			version = 0;

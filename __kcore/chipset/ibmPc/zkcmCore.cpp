@@ -1,4 +1,5 @@
 
+#include <config.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/string8.h>

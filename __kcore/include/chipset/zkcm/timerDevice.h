@@ -75,7 +75,8 @@ public:
 	type, modes,
 	periodicMinPeriod, periodicMaxPeriod,
 	oneshotMinTimeout, oneshotMaxTimeout,
-	ioLatency, precision)
+	ioLatency, precision),
+	state(CC"ZkcmTimerDevice state")
 	{}
 
 public:

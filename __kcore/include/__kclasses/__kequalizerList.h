@@ -76,6 +76,8 @@ private:
 
 template <class T>
 __kEqualizerList<T>::__kEqualizerList(void)
+:
+head(CC"__kEqualizerList head")
 {
 	head.rsrc = NULL;
 }

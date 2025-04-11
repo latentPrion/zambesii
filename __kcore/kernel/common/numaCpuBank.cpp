@@ -10,7 +10,7 @@
 #if __SCALING__ >= SCALING_CC_NUMA
 NumaCpuBank::NumaCpuBank(void)
 :
-capacity(0), load(0)
+capacity(0), load(0), nTasks(CC"NumaCpuBank nTasks")
 {
 	nTasks.rsrc = 0;
 }

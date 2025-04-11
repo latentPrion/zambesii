@@ -208,10 +208,10 @@ private:
 	public:
 		RandomAccessBuffer(sourceE source, uarch_t bufferSize)
 		:
-		fullName(NULL), bufferSize(bufferSize), source(source)
-		{
-			buffer.rsrc.buffer = buffer.rsrc.bufferEof = NULL;
-		}
+		fullName(NULL),
+		buffer(CC"RandomAccessBuffer buffer"),
+		bufferSize(bufferSize), source(source)
+		{}
 
 		error_t initialize(void *source, void *sourceEof);
 		error_t initialize(utf8Char *indexPath, utf8Char *fileName);
@@ -234,6 +234,11 @@ private:
 		// Pointers to the buffer in memory and its end.
 		struct sBufferState
 		{
+			sBufferState(void)
+			:
+			buffer(NULL), bufferEof(NULL)
+			{}
+
 			ubit8		*buffer, *bufferEof;
 		};
 

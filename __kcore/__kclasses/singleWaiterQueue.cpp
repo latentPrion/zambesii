@@ -28,12 +28,11 @@ error_t SingleWaiterQueue::addItem(void *item)
 	 * the server thread can deal with it by checking to ensure that it
 	 * actually got some data to process from the client.
 	 */
-	// Prevent lost wakeups from race conditions.
-	lock.acquire();
+	state.lock.acquire();
 
-	if (thread == NULL)
+	if (state.rsrc.thread == NULL)
 	{
-		lock.release();
+		state.lock.release();
 
 		printf(ERROR SWAITQ"addItem failed because no waiting thread "
 			"has been set.\n");
@@ -43,7 +42,7 @@ error_t SingleWaiterQueue::addItem(void *item)
 
 	ret = HeapDoubleList<void>::addItem(item);
 
-	lock.release();
+	state.lock.release();
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -53,7 +52,9 @@ error_t SingleWaiterQueue::addItem(void *item)
 		return ret;
 	};
 
-	ret = taskTrib.unblock(thread);
+	ret = taskTrib.unblock(reinterpret_cast<Thread *>(
+		atomicAsm::read(&state.rsrc.thread)));
+
 	if (ret != ERROR_SUCCESS)
 		{ panic(ret, FATAL SWAITQ"Failed to unblock thread!"); }
 
@@ -62,6 +63,8 @@ error_t SingleWaiterQueue::addItem(void *item)
 
 error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 {
+	Thread		*currThread;
+
 	/**	EXPLANATION:
 	 * The pop operation must atomically do both the check and the block.
 	 * The block() call must be atomic with respect to the check because
@@ -84,26 +87,49 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 	 *
 	 * Therefore the check and block() must be atomic.
 	 */
+	currThread = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
 	for (;FOREVER;)
 	{
 		// Prevent lost wakeups from race conditions.
-		lock.acquire();
+		state.lock.acquire();
+
+		if (state.rsrc.thread == NULL)
+		{
+			state.lock.release();
+			printf(ERROR SWAITQ"pop failed because no waiting thread "
+				"has been set.\n");
+
+			return ERROR_UNINITIALIZED;
+		};
+
+		if (state.rsrc.thread != currThread)
+		{
+			state.lock.release();
+			printf(ERROR SWAITQ"pop called by thread %x, but "
+				"waiting thread is %x.\n",
+				currThread->getFullId(),
+				state.rsrc.thread->getFullId());
+
+			return ERROR_UNINITIALIZED;
+		};
 
 		*item = HeapDoubleList<void>::popFromHead();
 		if (*item != NULL)
 		{
-			lock.release();
+			state.lock.release();
 			return ERROR_SUCCESS;
-		};
+		}
 
 		if (FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_DONTBLOCK))
 		{
-			lock.release();
+			state.lock.release();
 			return ERROR_WOULD_BLOCK;
-		};
+		}
 
 		Lock::sOperationDescriptor	unlockDescriptor(
-			&lock,
+			&state.lock,
 			Lock::sOperationDescriptor::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
@@ -114,10 +140,14 @@ error_t SingleWaiterQueue::setWaitingThread(Thread *newThread)
 {
 	if (newThread == NULL) { return ERROR_INVALID_ARG; };
 
+	state.lock.acquire();
+
 	// Only allow threads from the currently owning process to wait.
-	if (thread != NULL
-		&& thread->parent->id != newThread->parent->id)
+	if (state.rsrc.thread != NULL
+		&& state.rsrc.thread->parent->id != newThread->parent->id)
 	{
+		state.lock.release();
+
 		printf(WARNING SWAITQ"Failed to allow task %x to "
 			"wait.\n",
 			newThread->getFullId());
@@ -125,7 +155,8 @@ error_t SingleWaiterQueue::setWaitingThread(Thread *newThread)
 		return ERROR_RESOURCE_BUSY;
 	}
 
-	thread = newThread;
+	state.rsrc.thread = newThread;
+	state.lock.release();
 	return ERROR_SUCCESS;
 }
 

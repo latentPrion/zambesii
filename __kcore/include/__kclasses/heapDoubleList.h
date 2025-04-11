@@ -22,7 +22,7 @@ class HeapDoubleList
 public:
 	HeapDoubleList(void)
 	:
-	objectCache(NULL)
+	list(CC"HeapDoubleList list"), objectCache(NULL)
 	{
 		list.rsrc.head = list.rsrc.tail = NULL;
 		list.rsrc.nItems = 0;

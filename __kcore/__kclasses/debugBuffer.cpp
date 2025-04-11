@@ -17,6 +17,8 @@
 static ubit8	buffMem[PAGING_BASE_SIZE * DEBUGBUFFER_INIT_NPAGES];
 
 DebugBuffer::DebugBuffer(void)
+:
+buff(CC"DebugBuffer buff")
 {
 	DebugBuffer::sBuffPage		*tmp;
 

@@ -25,7 +25,11 @@ template <class T>
 class List
 {
 public:
-	List(void);
+	List(void)
+	:
+	list(CC"List list")
+	{}
+
 	error_t initialize(void);
 
 public:
@@ -134,6 +138,11 @@ public:
 private:
 	struct sListState
 	{
+		sListState(void)
+		:
+		head(NULL), tail(NULL), nItems(0)
+		{}
+
 		T		*head, *tail;
 		ubit32		nItems;
 	};
@@ -144,12 +153,6 @@ private:
 
 /**	Template Definition
  ******************************************************************************/
-
-template <class T> List<T>::List(void)
-{
-	list.rsrc.head = list.rsrc.tail = NULL;
-	list.rsrc.nItems = 0;
-}
 
 template <class T> error_t List<T>::initialize(void)
 {

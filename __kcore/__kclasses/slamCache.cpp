@@ -14,7 +14,9 @@ SlamCache	*__kcallbackCache;
 
 SlamCache::SlamCache(uarch_t _sObjectize, allocatorE allocator)
 :
-allocator(allocator)
+allocator(allocator),
+partialList(CC"SlamCache partialList"),
+freeList(CC"SlamCache freeList")
 {
 	sObjectize = (_sObjectize < sizeof(sObject))
 		? sizeof(sObject)

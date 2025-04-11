@@ -20,7 +20,7 @@ inline uarch_t calcDeadlockNTries(
 	uarch_t perCpuExtraTries
     )
 {
-    /**     EXPLANATION:
+    /**	EXPLANATION:
      * At early boot, the highest CPU ID is not known, so it defaults to
      * CPUID_INVALID, which is a negative number. We handle this case by
      * setting the scale factor to 1 until the highest CPU ID is known.
@@ -45,7 +45,7 @@ struct sDeadlockBuff
 {
     sDeadlockBuff(void)
     :
-    inUse(0)
+    inUse(0), buffer(CC"DeadlockBuff buffer")
     {
         memset(buff, 0, sizeof(buff));
         buffer.rsrc = buff;

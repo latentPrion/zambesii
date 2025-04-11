@@ -3,12 +3,16 @@
 
 	#include <config.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/string8.h>
 
 // 10C1CO1C -> "lockOk". I'm not good with these magic numbers.
 #define LOCK_MAGIC				0x10C1C01C
 
 class Lock
 {
+public:
+	enum { LOCK_NAME_MAX_LEN = 64 };
+
 public:
 	class ScopedGuard
 	{
@@ -65,11 +69,16 @@ public:
 		FLAGS_IRQS_WERE_ENABLED = (1 << FLAGS_IRQS_WERE_ENABLED_SHIFT)
 	};
 
-	Lock(void)
+	Lock(const utf8Char *_name)
 	{
 		lock = 0;
 		flags = 0;
 		magic = LOCK_MAGIC;
+#ifdef CONFIG_DEBUG_LOCKS
+		strncpy8(name, _name, LOCK_NAME_MAX_LEN);
+#else
+		(void)_name;
+#endif
 	};
 
 	struct sOperationDescriptor
@@ -109,6 +118,7 @@ public:
 	 * lock. I.e: tells us the place where the lock was acquired.
 	 **/
 	void			(*ownerAcquisitionInstr)(void);
+	utf8Char		name[LOCK_NAME_MAX_LEN];
 #endif
 
 protected:

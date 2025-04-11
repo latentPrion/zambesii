@@ -53,6 +53,7 @@ private:
 	TimerQueue(ubit32 nativePeriod)
 	:
 	currentPeriod(nativePeriod), nativePeriod(nativePeriod),
+	requestQueueLock(CC"TimerQueue requestQueueLock"),
 	device(NULL), clockRoutineInstalled(0)
 	{}
 

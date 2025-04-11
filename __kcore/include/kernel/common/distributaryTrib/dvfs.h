@@ -192,7 +192,8 @@ namespace dvfs
 		rootTag(
 			CC"Zambesii Distributary VFS", vfs::DIR,
 			&rootTag, &rootCategory),
-		Tagache(NULL)
+		Tagache(NULL),
+		state(CC"DVFS state")
 		{}
 
 		error_t initialize(void)

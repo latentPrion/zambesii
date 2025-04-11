@@ -1,6 +1,8 @@
 #ifndef _SHARED_RESOURCE_GROUP_H
 	#define _SHARED_RESOURCE_GROUP_H
 
+#include <config.h>
+
 	/**	EXPLANATION:
 	 * A resource group is a class which encapsulates the shared resource
 	 * locking for any set of parallel resources. In order to disambiguate
@@ -14,6 +16,12 @@
 template <class lockType, class resourceType>
 class SharedResourceGroup
 {
+public:
+	SharedResourceGroup(const utf8Char *name)
+	:
+	lock(name)
+	{}
+
 public:
 	lockType	lock;
 	resourceType	rsrc;

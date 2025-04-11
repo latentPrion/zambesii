@@ -55,6 +55,11 @@ public:
 private:
 	struct sBogState
 	{
+		sBogState(void)
+		:
+		ptrs(NULL), nHeaps(0)
+		{}
+
 		Heap		**ptrs;
 		uarch_t		nHeaps;
 	};

@@ -13,6 +13,8 @@
 #define DEBUGPIPE_FLAGS_NOLOG		(1<<0)
 
 DebugPipe::DebugPipe(void)
+:
+convBuff(CC"DebugPipe convBuff"), devices(CC"DebugPipe devices")
 {
 	memset(convBuff.rsrc, 0, sizeof(convBuff.rsrc));
 	devices.rsrc = 0;

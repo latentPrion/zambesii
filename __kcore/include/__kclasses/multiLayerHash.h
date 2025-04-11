@@ -70,6 +70,8 @@ private:
 
 template <class T>
 MultiLayerHash<T>::MultiLayerHash(void)
+:
+top(CC"MultiLayerHash top")
 {
 	top.rsrc = 0;
 }

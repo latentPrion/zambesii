@@ -105,7 +105,7 @@
 static ubit8		rtccmosIsPowered=0;
 static ubit8		rtccmos24HourTime=0;
 static ubit8		rtccmosBcdDateTime=0;
-WaitLock		rtccmosLock;
+WaitLock		rtccmosLock(CC"RTC/CMOS lock");
 static ubit8		rtccmosDateCenturyChecked=0;
 static ubit8		rtccmosDateCenturyOffset=0;
 

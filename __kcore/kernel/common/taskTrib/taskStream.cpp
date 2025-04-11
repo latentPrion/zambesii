@@ -34,7 +34,7 @@ roundRobinQ(SCHEDPRIO_MAX_NPRIOS), realTimeQ(SCHEDPRIO_MAX_NPRIOS),
 powerThread(cid, processTrib.__kgetStream(), NULL, parent)
 {
 	// Set the power thread's current CPU pointer.
-	powerThread.currentCpu = parent;
+	powerThread.schedState.rsrc.currentCpu = parent;
 
 	if (!CpuStream::isBspCpuId(id)) {
 		memset(powerStack, 0, sizeof(powerStack));
@@ -170,8 +170,8 @@ status_t TaskStream::schedule(Thread *thread)
 	}
 #endif
 
-	thread->schedState = Thread::RUNNABLE;
-	thread->currentCpu = parent;
+	thread->schedState.rsrc.status = Thread::RUNNABLE;
+	thread->schedState.rsrc.currentCpu = parent;
 
 	// Finally, add the task to a queue.
 	switch (thread->schedPolicy)
@@ -350,7 +350,7 @@ void TaskStream::updateLoad(ubit8 action, uarch_t val)
 
 void TaskStream::dormant(Thread *thread)
 {
-	thread->schedState = Thread::DORMANT;
+	thread->schedState.rsrc.status = Thread::DORMANT;
 
 	switch (thread->schedPolicy)
 	{
@@ -369,7 +369,7 @@ void TaskStream::dormant(Thread *thread)
 
 void TaskStream::block(Thread *thread)
 {
-	thread->schedState = Thread::BLOCKED;
+	thread->schedState.rsrc.status = Thread::BLOCKED;
 
 	switch (thread->schedPolicy)
 	{
@@ -388,7 +388,10 @@ void TaskStream::block(Thread *thread)
 
 error_t TaskStream::unblock(Thread *thread)
 {
-	thread->schedState = Thread::RUNNABLE;
+	if (thread->schedState.rsrc.status == Thread::RUNNING)
+		{ return ERROR_SUCCESS; }
+
+	thread->schedState.rsrc.status = Thread::RUNNABLE;
 
 	switch (thread->schedPolicy)
 	{
@@ -408,7 +411,7 @@ error_t TaskStream::unblock(Thread *thread)
 
 void TaskStream::yield(Thread *thread)
 {
-	thread->schedState = Thread::RUNNABLE;
+	thread->schedState.rsrc.status = Thread::RUNNABLE;
 
 	switch (thread->schedPolicy)
 	{
@@ -432,8 +435,8 @@ void TaskStream::yield(Thread *thread)
 error_t TaskStream::wake(Thread *thread)
 {
 	// If thread is already runnable/running, warn but proceed
-	if (thread->schedState == Thread::RUNNABLE
-		|| thread->schedState == Thread::RUNNING)
+	if (thread->schedState.rsrc.status == Thread::RUNNABLE
+		|| thread->schedState.rsrc.status == Thread::RUNNING)
 	{
 		printf(WARNING TASKSTREAM"%d: wake called on thread %x "
 			"which is already in RUNNABLE/RUNNING state\n",
@@ -442,12 +445,14 @@ error_t TaskStream::wake(Thread *thread)
 		return ERROR_SUCCESS;
 	}
 
-	if (thread->schedState == Thread::BLOCKED
-		|| thread->schedState == Thread::SHUTTING_DOWN
-		|| thread->schedState == Thread::ZOMBIE)
+	if (thread->schedState.rsrc.status == Thread::BLOCKED
+		|| thread->schedState.rsrc.status == Thread::SHUTTING_DOWN
+		|| thread->schedState.rsrc.status == Thread::ZOMBIE
+		|| thread->schedState.rsrc.status == Thread::UNSCHEDULED)
 	{
 		printf(ERROR TASKSTREAM"%d: wake called on thread %x which "
-			"is in BLOCKED/SHUTTING_DOWN/ZOMBIE state\n",
+			"is in BLOCKED/SHUTTING_DOWN/ZOMBIE/UNSCHEDULED "
+			"state\n",
 			parent->cpuId, thread->getFullId());
 
 #ifdef CONFIG_DEBUG_SCHEDULER
@@ -459,7 +464,7 @@ error_t TaskStream::wake(Thread *thread)
 		return ERROR_UNSUPPORTED;
 	}
 
-	thread->schedState = Thread::RUNNABLE;
+	thread->schedState.rsrc.status = Thread::RUNNABLE;
 
 	switch (thread->schedPolicy)
 	{
