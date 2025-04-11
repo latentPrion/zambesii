@@ -32,7 +32,8 @@ friend class TimerTrib;
 friend class TimerQueue;
 public:
 	TimerStream(processId_t id, ProcessStream *parent)
-	: Stream<ProcessStream>(parent, id)
+	: Stream<ProcessStream>(parent, id),
+	requestQueueLock(CC"TimerStream requestQueueLock")
 	{}
 
 	error_t initialize(void);

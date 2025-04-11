@@ -100,12 +100,12 @@ void RecursiveLock::acquire(void)
 	if (nTries <= 1)
 	{
 		reportDeadlock(
-			FATAL"RecursiveLock::acquire deadlock detected:\n"
+			FATAL"RecursiveLock::acquire[%s] deadlock detected:\n"
 			"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
 			"\tcurrThreadId: %x, CPU: %d, Lock obj addr: %p,\n"
 			"\tCalling function: %p, "
 			"curr ownerAcquisitionInstr: %p",
-			nTries, &lock, lock, currThreadId,
+			name, nTries, &lock, lock, currThreadId,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
 			ownerAcquisitionInstr);

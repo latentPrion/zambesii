@@ -55,11 +55,11 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
 		reportDeadlock(
-			FATAL"MultipleReaderLock::readAcquire deadlock detected:\n"
+			FATAL"MultipleReaderLock::readAcquire[%s] deadlock detected:\n"
 			"\tnReadTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
-			nReadTriesRemaining, &lock, lock,
+			name, nReadTriesRemaining, &lock, lock,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0));
@@ -151,13 +151,13 @@ deadlock:
 		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
 		reportDeadlock(
-			FATAL"MultipleReaderLock::writeAcquire deadlock detected:\n"
+			FATAL"MultipleReaderLock::writeAcquire[%s] deadlock detected:\n"
 			"\tnReadTriesRemaining: %d, nWriteTriesRemaining: %d\n"
 			"\tlock addr: %p, lock val: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
 			"curr ownerAcquisitionInstr: %p",
-			nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
+			name, nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
@@ -246,13 +246,13 @@ deadlock:
 		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
 		reportDeadlock(
-			FATAL"MultipleReaderLock::readReleaseWriteAcquire deadlock detected:\n"
+			FATAL"MultipleReaderLock::readReleaseWriteAcquire[%s] deadlock detected:\n"
 			"\tnReadTriesRemaining: %d, nWriteTriesRemaining: %d\n"
 			"\tlock addr: %p, lock val: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
 			"curr ownerAcquisitionInstr: %p",
-			nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
+			name, nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),

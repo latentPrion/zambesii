@@ -56,6 +56,10 @@ public:
 
 	// Compile-time check that enum values fit within uarch_t
 	typedef char __lock_flags_size_check2[(WL_FLAGS_ENUM_END <= __UARCH_T_NBITS__) ? 1 : -1];
+public:
+	WaitLock(const utf8Char *name)
+	: Lock(name)
+	{}
 
 	void acquire();
 	void release();

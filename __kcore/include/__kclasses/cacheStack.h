@@ -47,6 +47,8 @@ private:
 
 template <class T>
 CacheStack<T>::CacheStack(void)
+:
+stack(CC"CacheStack stack")
 {
 	memset(
 		stack.rsrc.stack, 0,

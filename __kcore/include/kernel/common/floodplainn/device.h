@@ -93,7 +93,8 @@ namespace fplainn
 		:
 		bankId(bid),
 		instance(NULL),
-		driverInstance(NULL)
+		driverInstance(NULL),
+		s(CC"Device state")
 		{
 			this->longName[0]
 				= this->driverFullName[0] = '\0';
@@ -163,14 +164,18 @@ namespace fplainn
 		public:
 			ParentTag(void)
 			:
-			id(0), tag(NULL)
+			id(0),
+			compiledConstraints(CC"ParentTag compiledConstraints"),
+			tag(NULL)
 			{
 				metaName[0] = '\0';
 			}
 
 			ParentTag(ubit16 id, fvfs::Tag *tag, utf8Char *_metaName)
 			:
-			id(id), tag(tag)
+			id(id),
+			compiledConstraints(CC"ParentTag compiledConstraints"),
+			tag(tag)
 			{
 				/**	TODO:
 				 * Should we allow this to be set to NULL?
@@ -404,7 +409,8 @@ namespace fplainn
 		DeviceInstance(Device *dev)
 		:
 		device(dev),
-		regions(NULL)
+		regions(NULL),
+		s(CC"DeviceInstance state")
 		{}
 
 		error_t initialize(void);
@@ -496,7 +502,8 @@ namespace fplainn
 		childEnumerationAttrSize(0),
 		modules(NULL), regions(NULL), requirements(NULL),
 		metalanguages(NULL), childBops(NULL), parentBops(NULL),
-		internalBops(NULL), opsInits(NULL)
+		internalBops(NULL), opsInits(NULL),
+		state(CC"Driver state")
 		{
 			basePath[0] = shortName[0] = longName[0]
 				= supplier[0] = supplierContact[0] = '\0';
@@ -937,13 +944,15 @@ namespace fplainn
 	public:
 		DriverInstance(void)
 		:
-		driver(NULL), bankId(NUMABANKID_INVALID), pid(PROCID_INVALID)
+		driver(NULL), bankId(NUMABANKID_INVALID), pid(PROCID_INVALID),
+		s(CC"DriverInstance state")
 		{}
 
 		DriverInstance(
 			Driver *driver, numaBankId_t bid, processId_t pid)
 		:
-		driver(driver), bankId(bid), pid(pid)
+		driver(driver), bankId(bid), pid(pid),
+		s(CC"DriverInstance state")
 		{}
 
 		error_t initialize(void);

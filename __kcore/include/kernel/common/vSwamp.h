@@ -25,6 +25,7 @@ public:
 	baseAddr((void *)PAGING_BASE_ALIGN_FORWARD((uintptr_t)swampStart)),
 	size(PAGING_BASE_ALIGN_TRUNCATED(swampSize)),
 	flags(0),
+	state(CC"VSwamp state"),
 	swampNodeList(sizeof(SwampInfoNode), SlamCache::RAW)
 	{}
 

@@ -20,7 +20,8 @@ period100us(100000), period10us(10000), period1us(1000),
 period100ns(100), period10ns(10), period1ns(1),
 safePeriodMask(0), latchedPeriodMask(0),
 flags(0),
-clockQueueId(-1)
+clockQueueId(-1),
+watchdog(CC"TimerTrib watchdog")
 {
 	memset(&watchdog.rsrc.interval, 0, sizeof(watchdog.rsrc.interval));
 	memset(

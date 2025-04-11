@@ -83,6 +83,7 @@ public:
 		privateData(privateData), responseMessage(NULL),
 
 		// Kernel process hands out thread IDs from 1 since 0 is taken.
+		threadLock(CC"ProcessStream threadLock"),
 		nextThreadId(
 			CHIPSET_MEMORY_MAX_NTASKS - 1,
 			(processId == __KPROCESSID) ? 1 : 0),
@@ -94,6 +95,9 @@ public:
 		environment(NULL),
 
 		execDomain(execDomain),
+#if __SCALING__ >= SCALING_CC_NUMA
+		defaultMemoryBank(CC"ProcessStream defaultMemoryBank"),
+#endif
 
 		memoryStream(processId, this),
 		timerStream(processId, this),

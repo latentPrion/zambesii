@@ -10,7 +10,8 @@ class WrapAroundCounter
 public:
 	WrapAroundCounter(sarch_t _maxVal, sarch_t _startVal=0)
 	:
-	startVal(_startVal)
+	startVal(_startVal),
+	state(CC"WrapAroundCounter state")
 	{
 		sState		tmp = {
 			_maxVal, startVal

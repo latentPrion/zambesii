@@ -4,12 +4,15 @@
 #include <__kstdlib/__kcxxlib/new>
 #include <kernel/common/numaCpuBank.h>
 #include <kernel/common/panic.h>
+#include <kernel/common/multipleReaderLock.h>
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
 TaskTrib::TaskTrib(void)
+:
+deadQ(CC"TaskTrib deadQ")
 {
 	capacity = 0;
 	load = 0;
@@ -129,12 +132,12 @@ error_t TaskTrib::dormant(Thread *thread)
 	 * thread in the UNSCHEDULED state if invoked on one. Basically, calling
 	 * dormant() on an unscheduled thread is a no-op.
 	 **/
-	if (thread->schedState == Thread::UNSCHEDULED
-		|| thread->schedState == Thread::DORMANT)
+	if (thread->schedState.rsrc.status == Thread::UNSCHEDULED
+		|| thread->schedState.rsrc.status == Thread::DORMANT)
 		{ return ERROR_SUCCESS; };
 
 	threadCurrentCpu = reinterpret_cast<CpuStream *>(
-		atomicAsm::read(&thread->currentCpu));
+		atomicAsm::read(&thread->schedStatus.rsrc.currentCpu));
 
 	threadCurrentCpu->taskStream.dormant(thread);
 
@@ -176,22 +179,23 @@ error_t TaskTrib::wake(Thread *thread)
 
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
-	if (thread->schedState == Thread::RUNNABLE
-		|| thread->schedState == Thread::RUNNING)
+	if (thread->schedState.rsrc.status == Thread::RUNNABLE
+		|| thread->schedState.rsrc.status == Thread::RUNNING)
 		{ return ERROR_SUCCESS; };
 
-	if (thread->schedState == Thread::UNSCHEDULED)
-		{ err = schedule(thread); }
+	if (thread->schedState.rsrc.status == Thread::UNSCHEDULED)
+		{ err = schedule(thread); } 
 
-	err = thread->currentCpu->taskStream.wake(thread);
+	err = thread->schedState.rsrc.currentCpu->taskStream.wake(thread);
 
 	if (err != ERROR_SUCCESS) {
-		panic(err, ERROR"Failed to wake thread!");
+		panic(err, ERROR"wake() failed on thread!");
 	}
 
-	if (thread->shouldPreemptCurrentThreadOn(thread->currentCpu))
+	if (thread->shouldPreemptCurrentThreadOn(
+		thread->schedState.rsrc.currentCpu))
 	{
-		if (thread->currentCpu == cpuTrib.getCurrentCpuStream())
+		if (thread->schedState.rsrc.currentCpu == cpuTrib.getCurrentCpuStream())
 			{ yield(); }
 		else
 		{
@@ -220,8 +224,8 @@ void TaskTrib::yield(void)
 	 * is the BSP's power thread, and even the BSP's power thread should only
 	 * do this when it is in the UNSCHEDULED state (i.e: at boot time).
 	 **/
-	assert_fatal(currThread->schedState == Thread::RUNNING
-		|| (currThread->schedState == Thread::UNSCHEDULED
+	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING
+		|| (currThread->schedState.rsrc.status == Thread::UNSCHEDULED
 			&& Thread::isPowerThread(currThread->getFullId())));
 #endif
 
@@ -253,8 +257,8 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	 * is the BSP's power thread, and even the BSP's power thread should only
 	 * do this when it is in the UNSCHEDULED state (i.e: at boot time).
 	 **/
-	assert_fatal(currThread->schedState == Thread::RUNNING
-		|| (currThread->schedState == Thread::UNSCHEDULED
+	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING
+		|| (currThread->schedState.rsrc.status == Thread::UNSCHEDULED
 			&& Thread::isPowerThread(currThread->getFullId())));
 #endif
 
@@ -309,8 +313,8 @@ error_t TaskTrib::unblock(Thread *thread)
 	 * which called unblock() on the thread. Just documenting for posterity.
 	 **/
 
-	if (thread->schedState == Thread::RUNNABLE
-		|| thread->schedState == Thread::RUNNING)
+	if (thread->schedState.rsrc.status == Thread::RUNNABLE
+		|| thread->schedState.rsrc.status == Thread::RUNNING)
 	{
 		/* It's not the worst thing if this happens, so just warn the user
 		 * that their state machine is flawed and move on.
@@ -321,23 +325,25 @@ error_t TaskTrib::unblock(Thread *thread)
 		return ERROR_SUCCESS;
 	};
 
-	if (thread->schedState != Thread::BLOCKED)
+	if (thread->schedState.rsrc.status != Thread::BLOCKED)
 	{
 		printf(NOTICE TASKTRIB"unblock(%x): Invalid sched state."
-			"schedState is %s.\n",
+			"schedState is %d (%s).\n",
 			thread->getFullId(),
-			Thread::schedStates[thread->schedState]);
+			thread->schedState.rsrc.status,
+			Thread::schedStates[thread->schedState.rsrc.status]);
 
 		return ERROR_INVALID_OPERATION;
 	};
 
-	err = thread->currentCpu->taskStream.unblock(thread);
+	err = thread->schedState.rsrc.currentCpu->taskStream.unblock(thread);
 	if (err != ERROR_SUCCESS)
-		{ panic(err, ERROR"Failed to wake thread!"); }
+		{ panic(err, ERROR"Failed to unblock thread!"); }
 
-	if (thread->shouldPreemptCurrentThreadOn(thread->currentCpu))
+	if (thread->shouldPreemptCurrentThreadOn(
+		thread->schedState.rsrc.currentCpu))
 	{
-		if (thread->currentCpu == cpuTrib.getCurrentCpuStream())
+		if (thread->schedState.rsrc.currentCpu == cpuTrib.getCurrentCpuStream())
 			{ yield(); }
 		else
 		{

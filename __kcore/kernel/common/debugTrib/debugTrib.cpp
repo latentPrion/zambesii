@@ -7,6 +7,8 @@
 
 
 DebugTrib::DebugTrib(void)
+:
+cpuCount(CC"DebugTrib cpuCount")
 {
 	cpuCount.rsrc = 0;
 }

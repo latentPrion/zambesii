@@ -6,7 +6,7 @@
 
 CachePool::CachePool(void)
 :
-nCaches(0), poolNodeCache(sizeof(sCachePoolNode))
+head(CC"CachePool head"), nCaches(0), poolNodeCache(sizeof(sCachePoolNode))
 {
 	head.rsrc = NULL;
 }

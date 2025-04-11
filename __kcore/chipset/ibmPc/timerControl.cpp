@@ -15,7 +15,8 @@
 #define IBMPC_TIMERCTL		"Timer Control: "
 
 static HeapList<ZkcmTimerDevice>	timers;
-static SharedResourceGroup<MultipleReaderLock, sTimestamp>	systemTime;
+static SharedResourceGroup<MultipleReaderLock, sTimestamp>
+					systemTime(CC"TimerControl systemTime");
 static const ubit32			ibmPcSafePeriodMask =
 	/*TIMERCTL_1S_SAFE
 	|*/ TIMERCTL_100MS_SAFE | TIMERCTL_10MS_SAFE /*| TIMERCTL_1MS_SAFE*/;
