@@ -57,3 +57,7 @@ AX_ZBZ_DEBUG_ARG_ENABLE([interrupts],
 AX_ZBZ_DEBUG_ARG_ENABLE([page-faults],
     [Enable debugging for page faults],
     [CONFIG_DEBUG_PAGE_FAULTS])
+
+AX_ZBZ_DEBUG_ARG_ENABLE([heap-slam-cache],
+    [Enable heap SLAM cache debugging],
+    [CONFIG_DEBUG_HEAP_SLAM_CACHE])

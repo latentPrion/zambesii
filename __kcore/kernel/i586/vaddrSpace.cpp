@@ -128,7 +128,7 @@ VaddrSpace::~VaddrSpace(void)
 	level0Accessor.rsrc = NULL;
 }
 
-status_t VaddrSpace::getTopLevelAddrState(uarch_t entry)
+status_t VaddrSpace::getTopLevelEntryState(uarch_t entry)
 {
 	paddr_t			raw, paddr;
 //	uarch_t			flags;
