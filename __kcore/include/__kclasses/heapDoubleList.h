@@ -13,6 +13,8 @@
 
 #define PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE	(1<<0)
 
+#define PTRDBLLIST_FLAGS_UNLOCKED    (1<<0)
+
 #define PTRDBLLIST_ADD_HEAD		0x0
 #define PTRDBLLIST_ADD_TAIL		0x1
 
@@ -20,6 +22,9 @@ template <class T>
 class HeapDoubleList
 {
 public:
+	// Forward declaration for Iterator
+	class Iterator;
+
 	HeapDoubleList(void)
 	:
 	list(CC"HeapDoubleList list"), objectCache(NULL)
@@ -51,13 +56,21 @@ public:
 	void dump(void);
 
 	error_t addItem(T *item, ubit8 mode=PTRDBLLIST_ADD_TAIL);
-	void removeItem(T *item);
+	void removeItem(T *item, ubit32 flags=0);
 	T *popFromHead(void);
 	T *popFromTail(void);
 	T *getHead(void);
 	T *getTail(void);
 
 	uarch_t	getNItems(void);
+
+	// Lock methods to explicitly control access
+	void lock(void) { list.lock.acquire(); }
+	void unlock(void) { list.lock.release(); }
+
+	// Iterator methods
+	Iterator begin(void);
+	Iterator end(void);
 
 protected:
 	struct sListNode
@@ -74,6 +87,55 @@ protected:
 
 	SharedResourceGroup<WaitLock, sListState>	list;
 	SlamCache		*objectCache;
+
+public:
+	// Iterator class definition
+	class Iterator
+	{
+	public:
+		Iterator(void) : node(NULL), parent(NULL) {}
+		Iterator(sListNode *n, HeapDoubleList<T> *p) : node(n), parent(p) {}
+
+		// Prefix increment
+		Iterator& operator++(void)
+		{
+			if (node != NULL) {
+				node = node->next;
+			}
+			return *this;
+		}
+
+		// Postfix increment
+		Iterator operator++(int)
+		{
+			Iterator tmp = *this;
+			++(*this);
+			return tmp;
+		}
+
+		// Dereference operator
+		T* operator*(void) const
+		{
+			return (node != NULL) ? node->item : NULL;
+		}
+
+		// Comparison operators
+		bool operator==(const Iterator& other) const
+		{
+			return node == other.node;
+		}
+
+		bool operator!=(const Iterator& other) const
+		{
+			return node != other.node;
+		}
+
+	private:
+		sListNode *node;
+		HeapDoubleList<T> *parent;
+
+		friend class HeapDoubleList<T>;
+	};
 };
 
 
@@ -189,11 +251,13 @@ error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode)
 }
 
 template <class T>
-void HeapDoubleList<T>::removeItem(T *item)
+void HeapDoubleList<T>::removeItem(T *item, ubit32 flags)
 {
 	sListNode	*curr;
 
-	list.lock.acquire();
+	if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+		{ list.lock.acquire(); }
+
 	// Just run through until we find it, then remove it.
 	for (curr = list.rsrc.head; curr != NULL; curr = curr->next)
 	{
@@ -218,7 +282,9 @@ void HeapDoubleList<T>::removeItem(T *item)
 			else { curr->next->prev = curr->prev; };
 
 			list.rsrc.nItems--;
-			list.lock.release();
+
+			if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+				{ list.lock.release(); }
 
 			if (objectCache == NULL) { delete curr; }
 			else { objectCache->free(curr); };
@@ -226,7 +292,8 @@ void HeapDoubleList<T>::removeItem(T *item)
 		};
 	};
 
-	list.lock.release();
+	if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+		{ list.lock.release(); }
 }
 
 template <class T>
@@ -331,6 +398,20 @@ T *HeapDoubleList<T>::getTail(void)
 	list.lock.release();
 
 	return ret;
+}
+
+// Add iterator methods implementation
+template <class T>
+typename HeapDoubleList<T>::Iterator HeapDoubleList<T>::begin(void)
+{
+	Iterator it(list.rsrc.head, this);
+	return it;
+}
+
+template <class T>
+typename HeapDoubleList<T>::Iterator HeapDoubleList<T>::end(void)
+{
+	return Iterator(NULL, this);
 }
 
 #endif
