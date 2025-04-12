@@ -54,6 +54,8 @@ void RecursiveLock::acquire(void)
 			recursionCount = 1;
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 			cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+			cpuTrib.getCurrentCpuStream()
+				->mostRecentlyAcquiredLock = this;
 #endif
 #ifdef CONFIG_DEBUG_LOCKS
 			// Only set ownerAcquisitionInstr on first acquisition.
@@ -71,6 +73,8 @@ void RecursiveLock::acquire(void)
 			recursionCount++;
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 			cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+			cpuTrib.getCurrentCpuStream()
+				->mostRecentlyAcquiredLock = this;
 #endif
 			return;
 		}
@@ -118,6 +122,8 @@ void RecursiveLock::acquire(void)
 	recursionCount++;
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+	cpuTrib.getCurrentCpuStream()
+		->mostRecentlyAcquiredLock = this;
 #endif
 	if (irqsWereEnabled)
 		{ FLAG_SET(flags, Lock::FLAGS_IRQS_WERE_ENABLED); }
