@@ -199,6 +199,10 @@ extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 	};
 
 	printf(NOTICE ORIENT"Zambesii kernel version %s\n", PACKAGE_VERSION);
+	printf(NOTICE ORIENT"Chipset __kspace base: %p, size: %p.\n",
+		CHIPSET_MEMORY___KSPACE_BASE, CHIPSET_MEMORY___KSPACE_SIZE);
+	dumpChipsetDedicatedMemoryRegions();
+
 	// Check for Multiboot 2 boot
 	if (magic == MULTIBOOT2_BOOTLOADER_MAGIC) {
 		printf(NOTICE ORIENT"Multiboot 2 header at %p\n", mbHeader.mb2);
@@ -468,7 +472,7 @@ return;
 	// Detect physical memory.
 	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
-	DO_OR_DIE(memoryTrib, memRegionInit(), ret);
+	DO_OR_DIE(memoryTrib, dedicatedMemoryRegionInit(), ret);
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
