@@ -232,6 +232,7 @@ public:
 
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 	uarch_t			nLocksHeld;
+	Lock			*mostRecentlyAcquiredLock;
 #endif
 
 private:
