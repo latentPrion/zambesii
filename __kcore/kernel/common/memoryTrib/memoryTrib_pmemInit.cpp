@@ -1,6 +1,6 @@
 
 #include <chipset/chipset.h>
-#include <chipset/regionMap.h>
+#include <chipset/dedicatedMemoryRegions.h>
 #include <chipset/memory.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kclib/assert.h>
@@ -239,19 +239,21 @@ parseMemoryMap:
 		nSet);
 
 	// Then apply the Memory Tributary's Memory Regions to all banks.
-	if (chipsetRegionMap != NULL)
+	if (dedicatedMemoryRegionMap != NULL)
 	{
 		pos = memoryBanks.begin();
 		for (; pos != memoryBanks.end(); ++pos)
 		{
 			nmb = (NumaMemoryBank *)*pos;
 
-			for (uarch_t i=0; i<chipsetRegionMap->nEntries; i++)
+			for (uarch_t i=0; i<dedicatedMemoryRegionMap->nEntries;
+			i++)
 			{
 				nmb->mapMemUsed(
-					chipsetRegionMap->entries[i].baseAddr,
+					dedicatedMemoryRegionMap->entries[i]
+						.baseAddr,
 					PAGING_BYTES_TO_PAGES(
-						chipsetRegionMap
+						dedicatedMemoryRegionMap
 							->entries[i].size)
 						.getLow());
 			};

@@ -1,8 +1,8 @@
-#ifndef _MEMORY_REGION_H
-	#define _MEMORY_REGION_H
+#ifndef _DEDICATED_MEMORY_REGION_H
+	#define _DEDICATED_MEMORY_REGION_H
 
 	#include <arch/paddr_t.h>
-	#include <chipset/regionMap.h>
+	#include <chipset/dedicatedMemoryRegions.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kclasses/memBmp.h>
 	#include <__kclasses/allocTable.h>
@@ -22,9 +22,10 @@
  * NUMA Tributary has been successfully initialized, then the behaviour of the
  * memory region allocator is undefined, and likely to be destructive.
  **/
-#define MEMREGION	"MemoryRegion: "
+#define DEDICATEDMEMRGN		"DedicatedMemRgn: "
+#define MEMREGION		DEDICATEDMEMRGN
 
-typedef ubit8		memoryRegionId_t;
+typedef ubit8		dedicatedMemoryRegionId_t;
 
 namespace fplainn
 {
@@ -42,12 +43,12 @@ namespace constraints
 
 class MemoryTrib;
 
-class MemoryRegion
+class DedicatedMemoryRegion
 {
 friend class MemoryTrib;
 
 public:
-	MemoryRegion(void)
+	DedicatedMemoryRegion(void)
 	:
 	info(NULL), memBmp(NULL)
 	{};
@@ -65,25 +66,26 @@ public:
 	sbit8 releaseFrames(paddr_t paddr, uarch_t nFrames);
 
 private:
-	sChipsetRegionMapEntry	*info;
-	MemoryBmp		*memBmp;
+	sDedicatedMemoryRegionMapEntry	*info;
+	MemoryBmp			*memBmp;
 };
 
 
 /**	Inline methods:
  ******************************************************************************/
 
-inline error_t MemoryRegion::fragmentedGetFrames(
+inline error_t DedicatedMemoryRegion::fragmentedGetFrames(
 	uarch_t nFrames, paddr_t *paddr
 	)
 {
-	printf(FATAL MEMREGION"fragmentedGetFrames(%d, %P) unimplemented.\n",
+	printf(FATAL DEDICATEDMEMRGN"fragmentedGetFrames(%d, %P) "
+		"unimplemented.\n",
 		nFrames, paddr);
 
 	return ERROR_UNIMPLEMENTED;
 }
 
-inline status_t MemoryRegion::constrainedGetFrames(
+inline status_t DedicatedMemoryRegion::constrainedGetFrames(
 	fplainn::dma::constraints::Compiler *comCon,
 	uarch_t nFrames,
 	fplainn::dma::ScatterGatherList *retlist,
@@ -96,12 +98,12 @@ inline status_t MemoryRegion::constrainedGetFrames(
 	return memBmp->constrainedGetFrames(comCon, nFrames, retlist, flags);
 }
 
-inline sbit8 MemoryRegion::releaseFrames(paddr_t paddr, uarch_t nFrames)
+inline sbit8 DedicatedMemoryRegion::releaseFrames(paddr_t paddr, uarch_t nFrames)
 {
-	printf(FATAL MEMREGION"releaseFrames(%P, %d): unimplemented.\n",
+	printf(FATAL DEDICATEDMEMRGN"releaseFrames(%P, %d): unimplemented.\n",
 		&paddr, nFrames);
 	return 0;
 }
 
-#endif
+#endif /* _DEDICATED_MEMORY_REGION_H */
 

@@ -370,7 +370,7 @@ status_t MemoryTrib::constrainedGetFrames(
 	/* First check all the memory regions to see if any of them can satisfy
 	 * the request.
 	 */
-	for (uarch_t i=0; i < CHIPSET_MEMORY_NREGIONS; i++)
+	for (uarch_t i=0; i < CHIPSET_DEDICATED_MEMRGN_NREGIONS; i++)
 	{
 		status_t	ret;
 
@@ -378,9 +378,9 @@ status_t MemoryTrib::constrainedGetFrames(
 		 * it either. But strictly speaking, this condition should never
 		 * occur.
 		 **/
-		if (memRegions[i].memBmp == NULL) { break; }
+		if (dedicatedMemRegions[i].memBmp == NULL) { break; }
 
-		ret = memRegions[i].constrainedGetFrames(
+		ret = dedicatedMemRegions[i].constrainedGetFrames(
 			_constraints, nFrames, retlist, flags);
 
 		if (ret >= 0) {
