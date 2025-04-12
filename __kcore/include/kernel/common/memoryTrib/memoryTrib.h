@@ -4,7 +4,7 @@
 	#include <scaling.h>
 	#include <arch/paddr_t.h>
 	#include <arch/paging.h>
-	#include <chipset/regionMap.h>
+	#include <chipset/dedicatedMemoryRegions.h>
 	#include <chipset/zkcm/numaMap.h>
 	#include <chipset/zkcm/memoryConfig.h>
 	#include <__kstdlib/__ktypes.h>
@@ -14,7 +14,7 @@
 	#include <__kclasses/pageTableCache.h>
 	#include <__kclasses/hardwareIdList.h>
 	#include <kernel/common/tributary.h>
-	#include <kernel/common/memoryRegion.h>
+	#include <kernel/common/dedicatedMemoryRegion.h>
 	#include <kernel/common/memoryTrib/memoryStream.h>
 
 namespace fplainn
@@ -43,7 +43,7 @@ public:
 	error_t initialize(void);
 	error_t __kspaceInitialize(void);
 	error_t pmemInit(void);
-	error_t memRegionInit(void);
+	error_t dedicatedMemoryRegionInit(void);
 
 public:
 	void *rawMemAlloc(uarch_t nPages, uarch_t flags);
@@ -108,7 +108,8 @@ public:
 	Bitmap			availableBanks;
 
 private:
-	MemoryRegion		memRegions[CHIPSET_MEMORY_NREGIONS];
+	DedicatedMemoryRegion	dedicatedMemRegions[
+		CHIPSET_DEDICATED_MEMRGN_NREGIONS];
 	PageTableCache		pageTableCache;
 
 	/* "defaultMemoryBank" is the bank that the kernel is currently using

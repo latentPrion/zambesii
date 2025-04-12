@@ -1,14 +1,14 @@
-#ifndef _CHIPSET_MEMORY_REGION_H
-	#define _CHIPSET_MEMORY_REGION_H
+#ifndef _CHIPSET_DEDICATED_MEMORY_REGIONS_H
+	#define _CHIPSET_DEDICATED_MEMORY_REGIONS_H
 
 	#include <chipset/chipset_include.h>
 	#include <arch/paddr_t.h>
 	#include <__kstdlib/__ktypes.h>
 
 /**	EXPLANATION:
- * chipsetMemRegionMapS is used to detail, at compile time, the special memory
- * ranges existent on the chipset. An example would be the IBM-PC, where there
- * is a 16MB region which most kernels reserve for DMA.
+ * sDedicatedMemoryRegionMap is used to detail, at compile time, the dedicated
+ * memory ranges existent on the chipset. An example would be the IBM-PC, where
+ * there is a 16MB region which most kernels reserve for DMA.
  *
  * Another example is a chipset with 32-bit PCI, which runs a 64-bit cpu. Or
  * even the x86-32 with the PAE enabled. In the latter's case, you'd need a
@@ -25,31 +25,32 @@
  * there are no memory regions.
  **/
 
-struct sReservedChipsetRegion
+struct sDedicatedMemoryReservedRegion
 {
 	paddr_t		baseAddr, size;
 };
 
-struct sChipsetRegionMapEntry
+struct sDedicatedMemoryRegionMapEntry
 {
 	paddr_t				baseAddr, size;
-	sReservedChipsetRegion		*reservedMap;
-	ubit8				nReservedEntries;
+	sDedicatedMemoryReservedRegion	*reservedRegions;
+	ubit8				nReservedRegions;
 };
 
-struct sChipsetRegionMap
+struct sDedicatedMemoryRegionMap
 {
-	sChipsetRegionMapEntry		*entries;
-	ubit8				nEntries;
+	sDedicatedMemoryRegionMapEntry		*entries;
+	ubit8					nEntries;
 };
 
 /*	NOTE:
  * Do not remove this. It's used to statically allocate room for the memory
  * regions in memoryTrib.h.
  **/
-#include CHIPSET_INCLUDE(regionMap.h)
+#include CHIPSET_INCLUDE(dedicatedMemoryRegions.h)
 
-extern sChipsetRegionMap		*chipsetRegionMap;
+extern sDedicatedMemoryRegionMap		*dedicatedMemoryRegionMap;
+void dumpChipsetDedicatedMemoryRegions(void);
 
-#endif
+#endif /* _CHIPSET_DEDICATED_MEMORY_REGIONS_H */
 

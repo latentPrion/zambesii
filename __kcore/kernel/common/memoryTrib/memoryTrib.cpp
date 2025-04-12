@@ -23,10 +23,10 @@ MemoryTrib::MemoryTrib(void)
 :
 nBanks(0)
 {
-	for (uarch_t i=0; i<CHIPSET_MEMORY_NREGIONS; i++)
+	for (uarch_t i=0; i<CHIPSET_DEDICATED_MEMRGN_NREGIONS; i++)
 	{
-		memRegions[i].info = NULL;
-		memRegions[i].memBmp = NULL;
+		dedicatedMemRegions[i].info = NULL;
+		dedicatedMemRegions[i].memBmp = NULL;
 	};
 
 #if __SCALING__ < SCALING_CC_NUMA
@@ -75,10 +75,10 @@ void MemoryTrib::dump(void)
 	};
 }
 
-error_t MemoryTrib::memRegionInit(void)
+error_t MemoryTrib::dedicatedMemoryRegionInit(void)
 {
-	sChipsetRegionMapEntry		*currEntry;
-	sReservedChipsetRegion		*currReserved;
+	sDedicatedMemoryRegionMapEntry	*currEntry;
+	sDedicatedMemoryReservedRegion	*currReserved;
 	sZkcmMemoryMapS			*memMap;
 	paddr_t				currBase, currSize;
 	error_t				ret;
@@ -100,50 +100,50 @@ error_t MemoryTrib::memRegionInit(void)
 	 * are contained in a special region will be left marked as allocatable.
 	 **/
 	// If there are no memory regions, just exit.
-	if (chipsetRegionMap == NULL) { return ERROR_SUCCESS; };
+	if (dedicatedMemoryRegionMap == NULL) { return ERROR_SUCCESS; };
 
 	/* We want to run through each sChipsetRegionMapEntry entry and for
 	 * each one, generate a BMP at runtime. The bitmaps for the chipset
 	 * memory regions are allocated from Kernel Space.
 	 **/
-	for (uarch_t i=0; i<chipsetRegionMap->nEntries; i++)
+	for (uarch_t i=0; i<dedicatedMemoryRegionMap->nEntries; i++)
 	{
-		currEntry = &chipsetRegionMap->entries[i];
-		currReserved = currEntry->reservedMap;
+		currEntry = &dedicatedMemoryRegionMap->entries[i];
+		currReserved = currEntry->reservedRegions;
 
 		currBase = currEntry->baseAddr;
 		currSize = currEntry->size;
 
-		memRegions[i].memBmp = new (rawMemAlloc(1, 0)) MemoryBmp(
-			currBase, currSize);
+		dedicatedMemRegions[i].memBmp = new (rawMemAlloc(1, 0))
+			MemoryBmp(currBase, currSize);
 
-		if (memRegions[i].memBmp == NULL) {
+		if (dedicatedMemRegions[i].memBmp == NULL) {
 			return ERROR_MEMORY_NOMEM;
 		};
 
-		ret = memRegions[i].memBmp->initialize();
+		ret = dedicatedMemRegions[i].memBmp->initialize();
 		if (ret != ERROR_SUCCESS) { return ret; };
 
 		// If there are any hardcoded reserved ranges, mark them used.
 		if (currReserved != NULL)
 		{
-			for (uarch_t j=0; i<currEntry->nReservedEntries; i++)
+			for (uarch_t j=0; j<currEntry->nReservedRegions; j++)
 			{
-				memRegions[i].memBmp->mapMemUsed(
+				dedicatedMemRegions[i].memBmp->mapMemUsed(
 					currReserved[j].baseAddr,
 					PAGING_BYTES_TO_PAGES(
 						currReserved[j].size).getLow());
 			};
 		};
 
-		memRegions[i].info = currEntry;
+		dedicatedMemRegions[i].info = currEntry;
 	};
 
 	// Next step is to overlay the memory regions with chipset memory map.
 	memMap = zkcmCore.memoryDetection.getMemoryMap();
 	if (memMap == NULL) { return ERROR_SUCCESS; };
 
-	for (ubit32 i=0; i<chipsetRegionMap->nEntries; i++)
+	for (ubit32 i=0; i<dedicatedMemoryRegionMap->nEntries; i++)
 	{
 		for (ubit32 j=0; j<memMap->nEntries; j++)
 		{
@@ -151,7 +151,7 @@ error_t MemoryTrib::memRegionInit(void)
 			if (memMap->entries[j].memType
 				!= ZKCM_MMAP_TYPE_USABLE)
 			{
-				memRegions[i].memBmp->mapMemUsed(
+				dedicatedMemRegions[i].memBmp->mapMemUsed(
 					memMap->entries[j].baseAddr,
 					PAGING_BYTES_TO_PAGES(
 						memMap->entries[j].size)
