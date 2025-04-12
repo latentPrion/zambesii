@@ -63,7 +63,7 @@ interCpuMessager(cid, this),
 lapic(this),
 #endif
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
-nLocksHeld(0),
+nLocksHeld(0), mostRecentlyAcquiredLock(NULL),
 #endif
 readyForIrqs(0)
 {

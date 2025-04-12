@@ -68,6 +68,7 @@ void WaitLock::acquire(void)
 #endif
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+	cpuTrib.getCurrentCpuStream()->mostRecentlyAcquiredLock = this;
 #endif
 
 	flags |= contenderFlags;

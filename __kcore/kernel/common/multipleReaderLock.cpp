@@ -68,6 +68,7 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 #endif
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+	cpuTrib.getCurrentCpuStream()->mostRecentlyAcquiredLock = this;
 #endif
 }
 
@@ -170,6 +171,7 @@ deadlock:
 #endif
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
+	cpuTrib.getCurrentCpuStream()->mostRecentlyAcquiredLock = this;
 #endif
 
 	this->flags |= contenderFlags;
@@ -259,11 +261,15 @@ deadlock:
 			ownerAcquisitionInstr);
 	}
 
-	// We don't modify nLocksHeld in readReleaseWriteAcquire().
 
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
 #endif
+#endif
+
+#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+	// We don't modify nLocksHeld in readReleaseWriteAcquire().
+	cpuTrib.getCurrentCpuStream()->mostRecentlyAcquiredLock = this;
 #endif
 
 	flags |= rwFlags;
