@@ -46,6 +46,36 @@ class CpuStream
 {
 friend class ProcessStream;
 public:
+	// Base class for tracking interrupt nesting levels
+	class InterruptNestingCounter
+	{
+	public:
+		InterruptNestingCounter()
+		: nestingLevel(0)
+		{}
+
+		uarch_t enter(void) { return ++nestingLevel; }
+		uarch_t exit(void) { return --nestingLevel; }
+		sbit8 isBeingHandled(void) { return nestingLevel > 0; }
+		uarch_t getNestingLevel(void) { return nestingLevel; }
+
+	protected:
+		volatile uarch_t nestingLevel;
+	};
+
+	// Extended class for async interrupts with the isNested method
+	class AsyncInterruptNestingCounter
+	: public InterruptNestingCounter
+	{
+	public:
+		AsyncInterruptNestingCounter()
+		: InterruptNestingCounter()
+		{}
+
+		sbit8 isBeingNested(void) { return nestingLevel > 1; }
+	};
+
+public:
 #if __SCALING__ >= SCALING_CC_NUMA
 	CpuStream(numaBankId_t bid, cpu_t id, ubit32 acpiId);
 #else
