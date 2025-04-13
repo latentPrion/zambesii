@@ -4,9 +4,14 @@
 	#include <scaling.h>
 	#include <__kstdlib/__ktypes.h>
 
-// __kspace size is 2MB, starting at the 4MiB mark. Do not exceed 3MiB.
-#define CHIPSET_MEMORY___KSPACE_BASE				(0x400000)
-#define CHIPSET_MEMORY___KSPACE_SIZE				(0x100000 * 2)
+/**	EXPLANATION:
+ * The kernel's address space is 8MB, starting at the 8MiB mark.
+ *
+ * Immediately following this region is the chipset's Reserved Memory Regions.
+ * See chipset/ibmPc/regionMap.h for more information.
+ **/
+#define CHIPSET_MEMORY___KSPACE_BASE				(0x800000)
+#define CHIPSET_MEMORY___KSPACE_SIZE				(0x100000 * 8)
 
 // Implies the size of the global array of process pointers.
 #define CHIPSET_MEMORY_MAX_NPROCESSES		(16384)
