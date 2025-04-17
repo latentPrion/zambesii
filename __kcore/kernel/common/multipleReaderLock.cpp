@@ -195,7 +195,8 @@ deadlock:
 
 void MultipleReaderLock::writeRelease(void)
 {
-	uarch_t enableIrqs = 0;
+	uarch_t		enableIrqs = 0;
+	uarch_t		innerWriteRequestBitSet = 0;
 
 	if (FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED))
 	{
@@ -204,9 +205,39 @@ void MultipleReaderLock::writeRelease(void)
 	};
 
 #if __SCALING__ >= SCALING_SMP
-	// Clear the write request bit to release the lock
-	atomicAsm::bitTestAndClear(&lock, MR_FLAGS_WRITE_REQUEST_SHIFT);
+	/**	EXPLANATION:
+	 * There are 2 release cases:
+	 *	1. The inner write request bit is set.
+	 *	2. The inner write request bit is not set.
+	 *
+	 * Case 1 means we acquired the lock while we ourselves held the lock
+	 * as a reader (i.e: we called readReleaseWriteAcquire()). In this case,
+	 * we need to both unset the inner write request bit and decrement the
+	 * lock count.
+	 *
+	 * Case 2 means we acquired the lock trivially and directly via
+	 * writeAcquire(). In this case, we just need to unset the write request
+	 * bit to release the lock.
+	 *
+	 *	NB:
+	 * The fact that we unset the INNER_WRITE_REQUEST bit before
+	 * decrementing the lock count means that we are favouring threads that
+	 * already held the lock as a reader. They will have first crack at
+	 * acquiring the lock before other threads that are requesting write
+	 * access with the plain, outer WRITE_REQUEST bit.
+	 **/
+	innerWriteRequestBitSet = atomicAsm::bitTestAndClear(
+		&lock, MR_FLAGS_INNER_WRITE_REQUEST_SHIFT);
+	if (innerWriteRequestBitSet)
+		{ atomicAsm::decrement(&lock); }
+	else
+	{
+		uarch_t writeRequestBitSet = atomicAsm::bitTestAndClear(
+			&lock, MR_FLAGS_WRITE_REQUEST_SHIFT);
+		assert(writeRequestBitSet);
+	}
 #endif
+
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
@@ -229,12 +260,27 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 #ifdef CONFIG_DEBUG_LOCKS
 	// Scale the number of tries based on the number of CPUs
 	cpu_t highestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
-	uarch_t nReadTriesRemaining = calcDeadlockNReadTries(highestCpuId);
 	uarch_t nWriteTriesRemaining = calcDeadlockNWriteTries(highestCpuId);
 #endif
 
 	// Don't have to CLI cos readAcquire() already CLI'd for us.
-	while (atomicAsm::bitTestAndSet(&lock, MR_FLAGS_WRITE_REQUEST_SHIFT) != 0)
+
+	/**	EXPLANATION:
+	 * The reader count already has our contribution added to it. This keeps
+	 * any outer write requests from being granted while we're still inside
+	 * the critical section.
+	 *
+	 * There may however, be another reader currently inside the critical
+	 * section. In order to gain exclusive access with respect to the other
+	 * readers, we spin and set the inner write request bit. Once the inner
+	 * write request bit is set, we can be sure that no other readers are
+	 * inside the critical section.
+	 *
+	 * At that point, we now have exclusive access with respect to the other
+	 * readers and the outer write request.
+	 **/
+	while (atomicAsm::bitTestAndSet(
+		&lock, MR_FLAGS_INNER_WRITE_REQUEST_SHIFT) != 0)
 	{
 		cpuControl::subZero();
 #ifdef CONFIG_DEBUG_LOCKS
@@ -242,22 +288,9 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 #endif
 	}
 
-	// Decrement our contribution to the reader count.
-	atomicAsm::decrement(&lock);
-
-	// Wait for the other readers to exit.
-	while ((atomicAsm::read(&lock)
-		& ((1 << Lock::FLAGS_ENUM_START) - 1)) != 0)
-	{
-		cpuControl::subZero();
-#ifdef CONFIG_DEBUG_LOCKS
-		if (nReadTriesRemaining-- <= 1) { break; };
-#endif
-	}
-
 #ifdef CONFIG_DEBUG_LOCKS
 deadlock:
-	if (nReadTriesRemaining <= 1 || nWriteTriesRemaining <= 1)
+	if (nWriteTriesRemaining <= 1)
 	{
 		uarch_t lockValue = atomicAsm::read(&lock);
 		uarch_t nReaders = lockValue & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1);
@@ -265,18 +298,17 @@ deadlock:
 
 		reportDeadlock(
 			FATAL"MultipleReaderLock::readReleaseWriteAcquire[%s] deadlock detected:\n"
-			"\tnReadTriesRemaining: %d, nWriteTriesRemaining: %d\n"
+			"\tnWriteTriesRemaining: %d\n"
 			"\tlock addr: %p, lock val: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
 			"curr ownerAcquisitionInstr: %p",
-			name, nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
+			name, nWriteTriesRemaining, &lock, lock,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
 			ownerAcquisitionInstr);
 	}
-
 
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
