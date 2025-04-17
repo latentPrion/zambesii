@@ -29,22 +29,38 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 	uarch_t nReadTriesRemaining = calcDeadlockNReadTries(highestCpuId);
 #endif
 
-	atomicAsm::increment(&lock);
-	while ((atomicAsm::read(&lock) & MR_FLAGS_WRITE_REQUEST) != 0)
+	for (;FOREVER;)
 	{
+		atomicAsm::increment(&lock);
+		if (!FLAG_TEST(
+			atomicAsm::read<uarch_t>(&lock),
+			MR_FLAGS_WRITE_REQUEST))
+		{
+			break;
+		}
+		else
+		{
+			/**	EXPLANATION:
+			 * If there's someone requesting write access, we need
+			 * to decrement the reader count so they can acquire
+			 * the lock; then we back out and try again after a
+			 * pause
+			 */
+			atomicAsm::decrement(&lock);
 #ifdef CONFIG_RT_KERNEL_IRQS
-		// Re-enable interrupts while we spin if they were enabled before
-		if (FLAG_TEST(*_flags, Lock::FLAGS_IRQS_WERE_ENABLED))
-			{ cpuControl::enableInterrupts(); }
+			// Re-enable interrupts while we spin if they were enabled before
+			if (FLAG_TEST(*_flags, Lock::FLAGS_IRQS_WERE_ENABLED))
+				{ cpuControl::enableInterrupts(); }
 #endif
-		cpuControl::subZero();
+			cpuControl::subZero();
 #ifdef CONFIG_RT_KERNEL_IRQS
-		cpuControl::disableInterrupts();
+			cpuControl::disableInterrupts();
 #endif
 
 #ifdef CONFIG_DEBUG_LOCKS
-		if (nReadTriesRemaining-- <= 1) { break; };
+			if (nReadTriesRemaining-- <= 1) { break; }
 #endif
+		}
 	}
 
 #ifdef CONFIG_DEBUG_LOCKS
