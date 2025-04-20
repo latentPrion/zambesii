@@ -202,12 +202,13 @@ AS_IF([test -n "${DISTRIBUTARIES_ENABLED_SUBDIRS}"], [
 AC_SUBST([DISTRIBUTARIES_ENABLED_SUBDIRS])
 AC_SUBST([DISTRIBUTARIES_KERNEL_LIBS])
 
-#
 # Debugging options.
-#
 m4_include([m4/debug-opts.m4])
 # Virtual memory options.
 m4_include([m4/virtual-memory-opts.m4])
+
+# Check for conflicting options
+m4_include([m4/opt-conflict-checker.m4])
 
 # Generate config.h and other files
 AC_CONFIG_HEADERS([include/config.h])

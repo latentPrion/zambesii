@@ -82,10 +82,54 @@ static sarch_t cpuHasOlderNonIntegratedLapic(cpu_t cpuId)
 	return !isNewerCpu;
 }
 
-#include <arch/cpuControl.h>
-status_t CpuStream::PowerManager::bootPowerOn(ubit32)
+typedef void (CpuStreamPowerOnCbFn)(
+	MessageStream::sHeader *msg,
+	CpuStream::PowerManager *powerManager,
+	CpuStream::PowerManager::sCpuPowerOnMsg *response);
+
+class CpuStreamPowerOnCb
+: public MessageStreamCallback<CpuStreamPowerOnCbFn *>
 {
-	error_t		ret;
+public:
+	CpuStreamPowerOnCb(
+		CpuStreamPowerOnCbFn *function,
+		CpuStream::PowerManager *_powerManager,
+		CpuStream::PowerManager::sCpuPowerOnMsg *_response)
+	: MessageStreamCallback<CpuStreamPowerOnCbFn *>(function),
+	powerManager(_powerManager), response(_response)
+	{}
+
+	virtual void operator()(MessageStream::sHeader *msg)
+		{ function(msg, powerManager, response); }
+
+public:
+	CpuStream::PowerManager			*powerManager;
+	CpuStream::PowerManager::sCpuPowerOnMsg	*response;
+};
+
+static inline uarch_t calculateSipiVector(void)
+{
+	return (((uarch_t)&__kcpuPowerOnTextStart) >> 12) & 0xFF;
+}
+
+#include <arch/cpuControl.h>
+#include <kernel/common/timerTrib/timerTrib.h>
+#include "../../chipset/ibmPc/i8254.h"
+
+static CpuStreamPowerOnCbFn		bootPowerOn_contd1;
+
+status_t CpuStream::PowerManager::bootPowerOnReq(ubit32, void *privateData)
+{
+	status_t						ret;
+	HeapObj<CpuStream::PowerManager::sCpuPowerOnMsg>	response;
+
+	response = new CpuStream::PowerManager::sCpuPowerOnMsg(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+			->getFullId(),
+		CpuStream::PowerManager::OP_BOOT_POWER_ON_REQ,
+		0, privateData, this->parent);
+
+	if (response == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	if (!X86Lapic::lapicMemIsMapped()) { return ERROR_UNINITIALIZED; };
 
@@ -109,8 +153,11 @@ status_t CpuStream::PowerManager::bootPowerOn(ubit32)
 	{
 		printf(ERROR CPUPWRMGR"%d: bootPowerOn: INIT IPI timed out."
 			"\n", parent->cpuId);
+		
+		return ret;
 	};
 
+printf(FATAL CPUPWRMGR"bootPowerOn: about to create oneshot event.\n");
 	/**	FIXME:
 	 * Even if the IPI above timed out, we still set a
 	 * timer for the bootup here, simply because doing otherwise will
@@ -118,116 +165,171 @@ status_t CpuStream::PowerManager::bootPowerOn(ubit32)
 	 * will cause the calling CPU Trib loop to get stuck waiting forever.
 	 **/
 	// Set a 10 millisecond timeout.
-	processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
-		sTimestamp(0, 0, 10000000), 0, parent);
-
+	ret = processTrib.__kgetStream()->timerStream.createRelativeOneshotEvent(
+		sTimestamp(0, 0, 10000000), 0,
+		new CpuStreamPowerOnCb(
+			&bootPowerOn_contd1, this, response.release()));
+//printf(FATAL CPUPWRMGR"bootPowerOn: about to return.\n");
+//assert_fatal(i8254Pit.irqEventMessagesEnabled());
+//timerTrib.dump();
 	return ERROR_SUCCESS;
 }
 
-void CpuStream::PowerManager::bootWaitForCpuToPowerOn(void)
+static void bootPowerOn_contd1(
+	MessageStream::sHeader *, CpuStream::PowerManager *cspm,
+	CpuStream::PowerManager::sCpuPowerOnMsg *response
+	)
 {
-	MessageStream::sHeader		*event;
-	CpuStream			*cs;
-	sarch_t				loopAgain;
-	uarch_t				sipiVector;
-	error_t				err;
+	error_t					err;
+	AsyncResponse				myResponse;
+	const uarch_t				sipiVector =
+		calculateSipiVector();
 
-	sipiVector = (((uarch_t)&__kcpuPowerOnTextStart) >> 12) & 0xFF;
+	myResponse(response);
 
-	do
+	switch (cspm->getPowerStatus())
 	{
-		loopAgain = 0;
-
-		processTrib.__kgetStream()->timerStream.pullEvent(
-			0, (TimerStream::sTimerMsg **)&event);
-
-		cs = reinterpret_cast<CpuStream *>( event->privateData );
-
-		switch (cs->powerManager.getPowerStatus())
+	case CpuStream::PowerManager::OFF:
+printf(CC"#1#");
+		// If non-integrated LAPIC, boot failed. Else send SIPI.
+		if (cpuHasOlderNonIntegratedLapic(cspm->parent->cpuId))
 		{
-		case OFF:
-			// If non-integrated LAPIC, boot failed. Else send SIPI.
-			if (cpuHasOlderNonIntegratedLapic(cs->cpuId))
-			{
-				cs->powerManager.setPowerStatus(FAILED_BOOT);
-				printf(WARNING CPUPWRMGR"%d: CPU failed to "
-					"boot.\n",
-					cs->cpuId);
+printf(CC"#2#");
+			cspm->setPowerStatus(
+				CpuStream::PowerManager::FAILED_BOOT);
 
-				break;
-			}
-			else
-			{
-				// Intgr. LAPIC. Send first SIPI, set timeout.
-				cs->powerManager.setPowerStatus(POWERING_ON);
-				err = parent->lapic.ipi.sendPhysicalIpi(
-					x86LAPIC_IPI_TYPE_SIPI,
-					sipiVector,
-					x86LAPIC_IPI_SHORTDEST_NONE,
-					cs->cpuId);
+			printf(WARNING CPUPWRMGR"%d: CPU failed to "
+				"boot.\n",
+				cspm->parent->cpuId);
 
-				if (err != ERROR_SUCCESS)
-				{
-					printf(ERROR CPUPWRMGR"%d: "
-						"bootPowerOn: SIPI1 timed out."
-						"\n", cs->cpuId);
+			myResponse(ERROR_INITIALIZATION_FAILURE);
+			return;
+		}
+		else
+		{
+printf(CC"#3#");
+			// Intgr. LAPIC. Send first SIPI, set timeout.
+			cspm->setPowerStatus(
+				CpuStream::PowerManager::POWERING_ON);
 
-					cs->powerManager.setPowerStatus(
-						FAILED_BOOT);
-
-					break;
-				};
-
-				processTrib.__kgetStream()->timerStream
-					.createRelativeOneshotEvent(
-						sTimestamp(0, 0, 200000),
-						0, cs);
-
-				loopAgain = 1;
-				break;
-			};
-
-		case POWERING_ON:
-			// Integrated LAPIC. Send second SIPI and set timeout.
-			cs->powerManager.setPowerStatus(POWERING_ON_RETRY);
-			err = parent->lapic.ipi.sendPhysicalIpi(
+			err = cspm->parent->lapic.ipi.sendPhysicalIpi(
 				x86LAPIC_IPI_TYPE_SIPI,
 				sipiVector,
 				x86LAPIC_IPI_SHORTDEST_NONE,
-				cs->cpuId);
+				cspm->parent->cpuId);
+
+printf(CC"#4#");
+			if (err != ERROR_SUCCESS)
+			{
+printf(CC"#5#");
+				printf(ERROR CPUPWRMGR"%d: "
+					"bootPowerOn: SIPI1 timed out."
+					"\n", cspm->parent->cpuId);
+
+				cspm->setPowerStatus(
+					CpuStream::PowerManager::FAILED_BOOT);
+
+				myResponse(err); return;
+			};
+
+printf(CC"#6#");
+			err = processTrib.__kgetStream()->timerStream
+				.createRelativeOneshotEvent(
+					sTimestamp(0, 0, 200000),
+					0, new CpuStreamPowerOnCb(
+						&bootPowerOn_contd1,
+						cspm, response));
 
 			if (err != ERROR_SUCCESS)
 			{
-				printf(ERROR CPUPWRMGR"%d: bootPowerOn: "
-					"SIPI2 timed out.\n",
-					cs->cpuId);
+				printf(ERROR CPUPWRMGR"%d: "
+					"bootPowerOn_contd2: "
+					"Failed to create timer.\n",
+					cspm->parent->cpuId);
 
-				cs->powerManager.setPowerStatus(FAILED_BOOT);
-				break;
+				cspm->setPowerStatus(
+					CpuStream::PowerManager::FAILED_BOOT);
+
+				myResponse(err); return;
 			};
+printf(CC"#7#");
+		}
 
-			processTrib.__kgetStream()->timerStream
-				.createRelativeOneshotEvent(
-					sTimestamp(0, 0, 200000), 0, cs);
+		myResponse(DONT_SEND_RESPONSE);
+		return;
 
-			loopAgain = 1;
-			break;
+	case CpuStream::PowerManager::POWERING_ON:
+printf(CC"#8#");
+		// Integrated LAPIC. Send second SIPI and set timeout.
+		cspm->setPowerStatus(
+			CpuStream::PowerManager::POWERING_ON_RETRY);
+		err = cspm->parent->lapic.ipi.sendPhysicalIpi(
+			x86LAPIC_IPI_TYPE_SIPI,
+			sipiVector,
+			x86LAPIC_IPI_SHORTDEST_NONE,
+			cspm->parent->cpuId);
+printf(CC"#9#");
+		if (err != ERROR_SUCCESS)
+		{
+printf(CC"#10#");
+			printf(ERROR CPUPWRMGR"%d: bootPowerOn: "
+				"SIPI2 timed out.\n",
+				cspm->parent->cpuId);
 
-		case POWERING_ON_RETRY:
-			// Integrated LAPIC that failed to boot.
-			cs->powerManager.setPowerStatus(FAILED_BOOT);
-			printf(WARNING CPUPWRMGR"%d: CPU failed to boot.\n",
-				cs->cpuId);
+			cspm->setPowerStatus(
+				CpuStream::PowerManager::FAILED_BOOT);
 
-			break;
-
-		default:
-			// CPU successfully booted.
-			printf(NOTICE CPUPWRMGR"%d: Successfully booted.\n",
-				cs->cpuId);
-
-			break;
+			myResponse(err); return;
 		};
-	} while (loopAgain);
+
+printf(CC"#11#");
+		err = processTrib.__kgetStream()->timerStream
+			.createRelativeOneshotEvent(
+				sTimestamp(0, 0, 200000), 0,
+				new CpuStreamPowerOnCb(
+					&bootPowerOn_contd1,
+					cspm, response));
+
+		if (err != ERROR_SUCCESS)
+		{
+			printf(ERROR CPUPWRMGR"%d: "
+				"bootPowerOn_contd2: "
+				"Failed to create timer.\n",
+				cspm->parent->cpuId);
+
+			cspm->setPowerStatus(
+				CpuStream::PowerManager::FAILED_BOOT);
+
+			myResponse(err); return;
+		};
+printf(CC"#12#");
+
+		myResponse(DONT_SEND_RESPONSE);
+		return;
+
+	case CpuStream::PowerManager::POWERING_ON_RETRY:
+		// Integrated LAPIC that failed to boot.
+printf(CC"#13#");
+		cspm->setPowerStatus(
+			CpuStream::PowerManager::FAILED_BOOT);
+
+		printf(WARNING CPUPWRMGR"%d: CPU failed to boot.\n",
+			cspm->parent->cpuId);
+
+		myResponse(ERROR_INITIALIZATION_FAILURE);
+		return;
+
+	default:
+		// CPU successfully booted.
+		printf(NOTICE CPUPWRMGR"%d: Successfully booted.\n",
+			cspm->parent->cpuId);
+
+		myResponse(ERROR_SUCCESS);
+		return;
+printf(CC"#14#");
+
+	}
+
+	myResponse(ERROR_UNKNOWN);
 }
 

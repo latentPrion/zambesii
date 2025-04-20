@@ -40,7 +40,9 @@ error_t SingleWaiterQueue::addItem(void *item)
 		return ERROR_UNINITIALIZED;
 	};
 
-	ret = HeapDoubleList<void>::addItem(item);
+	// Thread's schedState lock prevents lost wakeups from race conditions.
+	MultipleReaderLock::ScopedReadGuard	threadSchedStateGuard(
+		&state.rsrc.thread->schedState.lock);
 
 	ret = HeapDoubleList<void>::addItem(
 		item, PTRDBLLIST_ADD_TAIL, PTRDBLLIST_OP_FLAGS_UNLOCKED);
@@ -66,6 +68,7 @@ error_t SingleWaiterQueue::addItem(void *item)
 		&state.lock,
 		Lock::sOperationDescriptor::WAIT);
 
+	threadSchedStateGuard.releaseManagementAndUnlock();
 	ret = taskTrib.unblock(reinterpret_cast<Thread *>(
 		atomicAsm::read(&state.rsrc.thread)), &unlockDescriptor);
 
@@ -138,13 +141,13 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 		{
 			state.lock.release();
 			return ERROR_SUCCESS;
-		}
+		};
 
 		if (FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_DONTBLOCK))
 		{
 			state.lock.release();
 			return ERROR_WOULD_BLOCK;
-		}
+		};
 
 		Lock::sOperationDescriptor	unlockDescriptor(
 			&state.lock,
@@ -158,13 +161,13 @@ error_t SingleWaiterQueue::setWaitingThread(Thread *newThread)
 {
 	if (newThread == NULL) { return ERROR_INVALID_ARG; };
 
-	state.lock.acquire();
+	WaitLock::ScopedGuard			listGuard(&state.lock);
 
 	// Only allow threads from the currently owning process to wait.
 	if (state.rsrc.thread != NULL
 		&& state.rsrc.thread->parent->id != newThread->parent->id)
 	{
-		state.lock.release();
+		listGuard.releaseManagementAndUnlock();
 
 		printf(WARNING SWAITQ"Failed to allow task %x to "
 			"wait.\n",
@@ -174,7 +177,6 @@ error_t SingleWaiterQueue::setWaitingThread(Thread *newThread)
 	}
 
 	state.rsrc.thread = newThread;
-	state.lock.release();
 	return ERROR_SUCCESS;
 }
 

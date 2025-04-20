@@ -10,7 +10,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/floodplainn/dma.h>
 #include <kernel/common/floodplainn/zudi.h>
-#include <__kthreads/main.h>
+#include <__kthreads/__korientation.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
 

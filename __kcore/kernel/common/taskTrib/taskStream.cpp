@@ -10,7 +10,7 @@
 #include <kernel/common/taskTrib/taskStream.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <__kthreads/__kcpuPowerOn.h>
-#include <__kthreads/main.h>
+#include <__kthreads/__korientation.h>
 
 
 extern "C" void taskStream_pull(RegisterContext *savedContext)
@@ -103,7 +103,7 @@ error_t TaskStream::cooperativeBind(void)
 		NULL, &powerThread,
 		NULL, Thread::ROUND_ROBIN, 0,
 		SPAWNTHREAD_FLAGS_POWER_THREAD,
-		&dummy);
+		&dummy, NULL);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -218,7 +218,7 @@ void TaskStream::pull(void)
 		};
 
 		// Else set the CPU to a low power state.
-		if (/* !parent->isBspCpu() */ 0)
+		if (/* !parent->isBspCpu() */ 1)
 		{
 			printf(NOTICE TASKSTREAM"%d: Entering C1: "
 				"IRQs enabled? %d. Prev threadID %x.\n",
@@ -254,11 +254,15 @@ void TaskStream::pull(void)
 				->vaddrSpace);
 	};
 
-	newThread->schedState = Thread::RUNNING;
+	atomicAsm::set(
+		reinterpret_cast<volatile uarch_t *>(
+			&newThread->schedState.rsrc.status),
+		Thread::RUNNING);
+
 	currentThread = newThread;
 
-printf(NOTICE TASKSTREAM"%d: Switching to task %x.\n",
-	parent->cpuId, newThread->getFullId());
+printf(NOTICE TASKSTREAM"%d: Switching to task %x, IRQs are %d.\n",
+	parent->cpuId, newThread->getFullId(), cpuControl::interruptsEnabled());
 
 	loadContextAndJump(newThread->context);
 }
@@ -464,7 +468,15 @@ error_t TaskStream::wake(Thread *thread)
 		return ERROR_UNSUPPORTED;
 	}
 
+printf(FATAL TASKSTREAM"In wake(%x): pre: thread->schedState is %d(%s).\n",
+	thread->getFullId(), thread->schedState.rsrc.status, _TaskContext::schedStates[thread->schedState.rsrc.status]);
+
 	thread->schedState.rsrc.status = Thread::RUNNABLE;
+
+printf(FATAL TASKSTREAM"In wake(%x): post: just set thread->schedState is %d(%s).\n"
+	"thread->schedPrio->prio is %d, thread->schedOptions is %d.\n",
+	thread->getFullId(), thread->schedState.rsrc.status, _TaskContext::schedStates[thread->schedState.rsrc.status],
+	thread->schedPrio->prio, thread->schedOptions);
 
 	switch (thread->schedPolicy)
 	{
@@ -479,5 +491,10 @@ error_t TaskStream::wake(Thread *thread)
 	default:
 		return ERROR_CRITICAL;
 	};
+
+printf(FATAL TASKSTREAM"In wake(%x): post: just inserted thread into queue.\n",
+	thread->getFullId());
+
+	return ERROR_SUCCESS;
 }
 

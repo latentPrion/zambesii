@@ -239,7 +239,7 @@ protected:
 		irqEventCache->free(event);
 	}
 
-protected:
+public:
 	struct sState
 	{
 		sState(void)

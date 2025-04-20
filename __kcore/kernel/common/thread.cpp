@@ -73,7 +73,7 @@ Thread::Thread(
 id(id), parent(parent), region(NULL),
 parentCpu(parentCpu),
 stack0(NULL), stack1(NULL),
-messageStream(this)
+messageStream(this), responseMessage(NULL)
 {
 }
 
@@ -92,6 +92,13 @@ error_t _TaskContext::initialize(void)
 #endif
 
 	return ERROR_SUCCESS;
+}
+
+error_t Thread::sendAckToSpawner(error_t err)
+{
+	responseMessage->error = err;
+	return MessageStream::enqueueOnThread(
+		responseMessage->targetId, responseMessage);
 }
 
 void _TaskContext::initializeRegisterContext(

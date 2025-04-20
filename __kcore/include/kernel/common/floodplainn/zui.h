@@ -1,6 +1,7 @@
 #ifndef _ZAMBESII_UDI_INDEX_SERVER_PUBLIC_API_H
 	#define _ZAMBESII_UDI_INDEX_SERVER_PUBLIC_API_H
 
+	#include <__kstdlib/callback.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/floodplainn/fvfs.h> // FVFS_PATH_MAXLEN
 	#include <kernel/common/messageStream.h>
@@ -32,7 +33,7 @@ public:
 
 	Zui(void) {}
 
-	error_t initialize(void);
+	error_t initializeReq(MessageStreamCb *callback);
 	~Zui(void) {}
 
 public:

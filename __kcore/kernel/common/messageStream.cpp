@@ -367,7 +367,7 @@ void MessageStream::dump(void)
 	state.rsrc.pendingSubsystems.dump();
 	for (uarch_t i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++) {
 		state.rsrc.queues[i].dump();
-	};
+	}
 }
 
 processId_t MessageStream::determineSourceThreadId(Thread *caller, ubit16 *)
@@ -403,32 +403,111 @@ error_t MessageStream::enqueueOnThread(
 
 error_t MessageStream::pullFrom(
 	ubit16 subsystemQueue, MessageStream::sHeader **message,
-	ubit32 flags
+	ubit32 flags, const MessageStream::Filter *filter
 	)
 {
-	MessageStream::sHeader	*tmp;
-
 	if (message == NULL) { return ERROR_INVALID_ARG; };
 	if (subsystemQueue > MSGSTREAM_SUBSYSTEM_MAXVAL)
 		{ return ERROR_INVALID_ARG_VAL; };
 
+	// Create a filter that matches only the specified subsystem
+	MessageStream::Filter subsystemFilter(
+		0, subsystemQueue, 0, 0, 0, NULL, 0);
+
+	if (filter != NULL) {
+		memcpy(&subsystemFilter, filter, sizeof(MessageStream::Filter));
+	}
+	
+	/* Override the subsystem setting with parameter regardless of what the
+	 * filter object has set.
+	 * I.e: subsystemQueue overrides filter->criteria.subsystem.
+	 **/
+	subsystemFilter.criteria.subsystem = subsystemQueue;
+	subsystemFilter.comparisonFlags |=
+		MessageStream::Filter::FLAG_SUBSYSTEM;
+
+	return pull(message, flags, &subsystemFilter);
+}
+
+error_t MessageStream::pull(
+	MessageStream::sHeader **message,
+	ubit32 flags, const MessageStream::Filter *filter
+	)
+{
+	MessageStream::sHeader	*tmp=NULL;
+
+	if (message == NULL) { return ERROR_INVALID_ARG; };
+
 	for (;FOREVER;)
 	{
 		state.lock.acquire();
+		MultipleReaderLock::ScopedWriteGuard threadSchedStateGuard(
+			&parent->schedState.lock);
 
-		if (state.rsrc.pendingSubsystems.test(subsystemQueue))
+		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
 		{
-			tmp = state.rsrc.queues[subsystemQueue].popFromHead(
-				PTRDBLLIST_OP_FLAGS_UNLOCKED);
+			if (!state.rsrc.pendingSubsystems.test(i))
+				{ continue; };
 
-			if (state.rsrc.queues[subsystemQueue]
-				.unlocked_getNItems() == 0)
+			if (filter != NULL)
 			{
-				state.rsrc.pendingSubsystems.unset(
-					subsystemQueue);
-			};
+				if (filter->comparisonFlagIsSet(
+					MessageStream::Filter::FLAG_SUBSYSTEM)
+					&& i != filter->criteria.subsystem)
+				{
+					/* Return early if filter has subsystem
+					 * set and the subsystem does not match.
+					 **/
+					continue;
+				}
 
+				/* Search all messages in the queue for a match.
+				 * If we find one, remove it from the queue and
+				 * return it to the caller.
+				 **/
+				for (MessageQueue::Iterator it =
+					state.rsrc.queues[i].begin();
+					it != state.rsrc.queues[i].end(); ++it)
+				{
+					if (!filter->compare(*it))
+						{ continue; };
+
+					tmp = *it;
+					state.rsrc.queues[i].removeItem(
+						*it,
+						PTRDBLLIST_OP_FLAGS_UNLOCKED);
+
+					break;
+				}
+			}
+			else
+			{
+				tmp = state.rsrc.queues[i].popFromHead(
+					PTRDBLLIST_OP_FLAGS_UNLOCKED);
+			}
+
+			if (state.rsrc.queues[i].unlocked_getNItems() == 0) {
+				state.rsrc.pendingSubsystems.unset(i);
+			}
+
+			if (tmp == NULL) { continue; }
+
+			/* This should only be unlocked if we've found a message
+			 * that should be returned to the caller.
+			 *
+			 * If we don't find a message, we'll unlock the
+			 * pendingSubsystems lock below and check for
+			 * ERROR_WOULD_BLOCK before potentially blocking.
+			 **/
+			threadSchedStateGuard.releaseManagementAndUnlock();
 			state.lock.release();
+
+			// Very useful checks here for sanity.
+			assert_fatal(tmp->size >= sizeof(*tmp));
+#if 0
+			assert_fatal(
+				tmp->size <= sizeof(MessageStream::sHeader));
+#endif
 
 			*message = tmp;
 			return ERROR_SUCCESS;
@@ -444,59 +523,34 @@ error_t MessageStream::pullFrom(
 			&state.lock,
 			Lock::sOperationDescriptor::WAIT);
 
+		threadSchedStateGuard.releaseManagementAndUnlock();
 		taskTrib.block(&unlockDescriptor);
 	};
 }
 
-error_t MessageStream::pull(MessageStream::sHeader **message, ubit32 flags)
+error_t MessageStream::pullAndDispatchUntil(
+	MessageStream::sHeader **message, ubit32 flags,
+	const MessageStream::Filter *filter, DispatchFn *dispatchFn
+	)
 {
-	MessageStream::sHeader	*tmp;
-
-	if (message == NULL) { return ERROR_INVALID_ARG; };
-
+	error_t ret;
+	
 	for (;FOREVER;)
 	{
-		state.lock.acquire();
-
-		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
+		ret = pull(message, flags, filter);
+		if (ret != ERROR_SUCCESS)
 		{
-			if (state.rsrc.pendingSubsystems.test(i))
-			{
-				tmp = state.rsrc.queues[i].popFromHead(
-					PTRDBLLIST_OP_FLAGS_UNLOCKED);
+			printf(ERROR MSGSTREAM"%d: pullAndDispatchUntil: "
+				"pull() returned %d.\n",
+				parent->getFullId(), ret);
+			return ret;
+		}
 
-				if (state.rsrc.queues[i]
-					.unlocked_getNItems() == 0)
-				{
-					state.rsrc.pendingSubsystems.unset(i);
-				};
-
-				state.lock.release();
-
-				// Very useful checks here for sanity.
-				assert_fatal(tmp->size >= sizeof(*tmp));
-#if 0
-				assert_fatal(
-					tmp->size <= sizeof(MessageStream::sHeader));
-#endif
-
-				*message = tmp;
-				return ERROR_SUCCESS;
-			};
-		};
-
-		if (FLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
+		if (dispatchFn(*message) != 0)
 		{
-			state.lock.release();
-			return ERROR_WOULD_BLOCK;
-		};
-
-		Lock::sOperationDescriptor	unlockDescriptor(
-			&state.lock,
-			Lock::sOperationDescriptor::WAIT);
-
-		taskTrib.block(&unlockDescriptor);
-	};
+			return ERROR_SUCCESS;
+		}
+	}
 }
 
 error_t MessageStream::postUserQMessage(
@@ -568,23 +622,36 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	 * functionality tweak.
 	 **/
 	state.lock.acquire();
+	MultipleReaderLock::ScopedReadGuard 	threadSchedStateGuard(
+		&parent->schedState.lock);
 
 	ret = state.rsrc.queues[queueId].addItem(
 		callback, PTRDBLLIST_ADD_TAIL, PTRDBLLIST_OP_FLAGS_UNLOCKED);
 
-	if (ret == ERROR_SUCCESS)
+	if (ret != ERROR_SUCCESS)
 	{
-		state.rsrc.pendingSubsystems.set(queueId);
+		state.lock.release();
+		return ret;
+	}
 
-		Lock::sOperationDescriptor	unlockDescriptor(
-			&state.lock,
-			Lock::sOperationDescriptor::WAIT);
+	state.rsrc.pendingSubsystems.set(queueId);
 
-		// Unblock the thread.
-		taskTrib.unblock(parent, &unlockDescriptor);
-	};
+	threadSchedStateGuard.releaseManagementAndUnlock();
 
-	state.lock.release();
-	return ret;
+	/**	EXPLANATION:
+	 * Unblock the thread atomically with respect to this enqueue() call's
+	 * queue operation.
+	 *
+	 * Unblock() will release the threadSchedStateGuard on our behalf after
+	 * internally manipulating the sched queues. This has the effect of
+	 * making the thread unblock() operation atomic with respect to this
+	 * enqueue() call's queue operation.
+	 **/
+	Lock::sOperationDescriptor	unlockDescriptor(
+		&state.lock,
+		Lock::sOperationDescriptor::WAIT);
+
+	taskTrib.unblock(parent, &unlockDescriptor);
+	return ERROR_SUCCESS;
 }
 

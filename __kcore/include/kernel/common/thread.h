@@ -11,7 +11,7 @@
 	#include <kernel/common/smpTypes.h>
 	#include <kernel/common/taskTrib/prio.h>
 	#include <kernel/common/floodplainn/region.h>
-	#include <__kthreads/main.h>
+	#include <__kthreads/__korientation.h>
 
 
 #define TASK				"Task "
@@ -205,6 +205,11 @@ public:
 	fplainn::Region *getRegion(void)
 		{ return region; }
 
+	void setResponse(MessageStream::sHeader *responseMessage)
+		{ this->responseMessage = responseMessage; }
+
+	error_t sendAckToSpawner(error_t err);
+
 private:
 	// Allocates stacks for kernelspace and userspace (if necessary).
 	error_t allocateStacks(void);
@@ -219,6 +224,7 @@ public:
 
 	// Asynchronous API message queues for this thread.
 	MessageStream				messageStream;
+	MessageStream::sHeader		*responseMessage;
 };
 
 #endif

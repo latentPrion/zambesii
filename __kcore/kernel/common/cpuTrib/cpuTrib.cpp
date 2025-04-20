@@ -4,18 +4,20 @@
 #include <chipset/cpus.h>
 #include <chipset/zkcm/zkcmCore.h>
 #include <arch/cpuControl.h>
+#include <arch/atomic.h>
 #include <__kstdlib/__kclib/string8.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
-#include <__kthreads/main.h>
+#include <__kthreads/__korientation.h>
 #include <__kthreads/__kcpuPowerOn.h>
 #include <arch/atomic.h>
 
 
 cpu_t		CpuStream::highestCpuId=CPUID_INVALID;
 numaBankId_t	CpuStream::highestBankId=NUMABANKID_INVALID;
+uarch_t		CpuStream::nCpusInExcessOfConfigMaxNcpus=0;
 
 /**
  * Helper function to check if a CPU ID exceeds CONFIG_MAX_NCPUS
@@ -528,60 +530,186 @@ error_t CpuTrib::bootCpuNotification(cpu_t cid, ubit32 acpiId)
 	return ERROR_SUCCESS;
 }
 
-#if __SCALING__ >= SCALING_CC_NUMA
-void CpuTrib::bootParseNumaMap(sZkcmNumaMap *numaMap)
-{
-	error_t		err;
+#if __SCALING__ >= SCALING_SMP
+class BootParseCpuMapCb;
+typedef void (BootParseCpuMapCbFn)(
+	MessageStream::sHeader *msg, BootParseCpuMapCb *cb);
 
+static BootParseCpuMapCbFn	bootParseCpuMap_contd1;
+
+class BootParseCpuMapCb
+: public MessageStreamCallback<BootParseCpuMapCbFn *>
+{
+public:
+	BootParseCpuMapCb(
+		BootParseCpuMapCbFn *_function, ubit16 _callbackFunctionId,
+		volatile uarch_t *_nTotalIsFinalCount,
+		volatile uarch_t *_nSucceeded, volatile uarch_t *_nFailed,
+		volatile uarch_t *_nTotal,
+		volatile uarch_t *_nInExcessOfConfigMaxNcpus)
+	: MessageStreamCallback<BootParseCpuMapCbFn *>(_function),
+	nTotalIsFinalCount(_nTotalIsFinalCount), nSucceeded(_nSucceeded),
+	nFailed(_nFailed), nTotal(_nTotal),
+	nInExcessOfConfigMaxNcpus(_nInExcessOfConfigMaxNcpus),
+	callbackFunctionId(_callbackFunctionId)
+	{}
+
+	virtual void operator()(MessageStream::sHeader *msg)
+		{ function(msg, this); }
+
+public:
+	volatile uarch_t	*nTotalIsFinalCount,
+				*nSucceeded, *nFailed, *nTotal,
+				*nInExcessOfConfigMaxNcpus;
+	ubit16			callbackFunctionId;
+};
+#endif
+
+#if __SCALING__ >= SCALING_CC_NUMA
+static MessageStream::DispatchFn	bootParseNumaMap_syncDispatcher;
+
+static sbit8 bootParseNumaMap_syncDispatcher(MessageStream::sHeader *msg)
+{
+	if (msg->subsystem == MSGSTREAM_SUBSYSTEM_USER0
+		&& msg->function
+			== CPUTRIB_BOOT_PARSE_NUMA_MAP_ACK)
+	{
+		return 1;
+	}
+
+	__korientationMainDispatchOne(msg);
+	return 0;
+}
+
+error_t CpuTrib::bootParseNumaMap(sZkcmNumaMap *numaMap)
+{
+	error_t			ret;
+	volatile uarch_t	nTotalIsFinalCount=0,
+				nSucceeded=0, nFailed=0, nTotal=0,
+				nInExcessOfConfigMaxNcpus=0;
+
+printf(FATAL CPUTRIB"bootParseNumaMap: about to parse raw numaMap without SMP map comparison.\n");
 	for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
 	{
 		if (numaMap->cpuEntries[i].cpuId == CpuStream::bspCpuId)
 			{ continue; };
 
-		err = bootCpuNotification(
+		atomicAsm::increment(&nTotal);
+
+		ret = bootCpuNotification(
 			numaMap->cpuEntries[i].bankId,
 			numaMap->cpuEntries[i].cpuId,
 			numaMap->cpuEntries[i].cpuAcpiId);
 
-		if (err != ERROR_SUCCESS)
+printf(FATAL CPUTRIB"Just called bootCpuNotification for CPU %d.\n", numaMap->cpuEntries[i].cpuId);
+		if (ret != ERROR_SUCCESS)
 		{
-			/* If the error is due to CPU ID exceeding CONFIG_MAX_NCPUS,
-			 * we've already logged a warning
-			 * and we can continue with other CPUs
-			 **/
-			if (err == ERROR_LIMIT_OVERFLOWED)
-				{ continue; };
-
 			printf(ERROR CPUTRIB"bootParseNumaMap: bootCpuNotification() "
 				"failed for CPU %d with error %s.\n",
 				numaMap->cpuEntries[i].cpuId,
-				strerror(err));
+				strerror(ret));
 
+			/* If the error is due to CPU ID exceeding
+			 * CONFIG_MAX_NCPUS, we've already logged a warning
+			 * and we can continue with other CPUs.
+			 **/
+			if (ret == ERROR_LIMIT_OVERFLOWED)
+			{
+				atomicAsm::increment(
+					&nInExcessOfConfigMaxNcpus);
+			};
+
+			atomicAsm::increment(&nFailed);
 			continue;
-		};
+		}
 
-		getStream(numaMap->cpuEntries[i].cpuId)
-			->powerManager.bootPowerOn(0);
-	};
-}
+printf(FATAL CPUTRIB"About to call bootPowerOn() for CPU %d.\n", numaMap->cpuEntries[i].cpuId);
+		ret = getStream(numaMap->cpuEntries[i].cpuId)
+			->powerManager.bootPowerOnReq(
+				0,
+				new BootParseCpuMapCb(
+					bootParseCpuMap_contd1,
+					CPUTRIB_BOOT_PARSE_NUMA_MAP_ACK,
+					&nTotalIsFinalCount,
+					&nSucceeded, &nFailed, &nTotal,
+					&nInExcessOfConfigMaxNcpus));
 
-void CpuTrib::bootConfirmNumaCpusBooted(sZkcmNumaMap *numaMap)
-{
-	for (uarch_t i=0; i<numaMap->nCpuEntries; i++)
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR CPUTRIB"bootParseNumaMap: "
+				"Failed to power on CPU Stream "
+				"for CPU %d with error %s.",
+				numaMap->cpuEntries[i].cpuId,
+				strerror(ret));
+
+			atomicAsm::increment(&nFailed);
+			continue;
+		}
+	}
+
+	atomicAsm::set(&nTotalIsFinalCount, 1);
+
+	MessageStream::sHeader *msg;
+
+printf(FATAL CPUTRIB"About to pullAndDispatchUntil() for %d CPUs.\n",
+	nTotal);
+
+	ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->messageStream.pullAndDispatchUntil(
+			&msg, 0, NULL,
+			&bootParseNumaMap_syncDispatcher);
+
+	if (ret != ERROR_SUCCESS)
 	{
-		if (numaMap->cpuEntries[i].cpuId == CpuStream::bspCpuId)
-			{ continue; };
+		printf(ERROR CPUTRIB"bootParseNumaMap: "
+			"Failed to pullAndDispatchUntil (err=%d).\n",
+			ret);
 
-		getStream(numaMap->cpuEntries[i].cpuId)->powerManager
-			.bootWaitForCpuToPowerOn();
-	};
+		return ret;
+	}
+
+	printf(NOTICE CPUTRIB"bootParseNumaMap: Processed %d CPUs. "
+		"Succeeded: %d, Failed: %d; %d CPUs with ID exceeding "
+		"CONFIG_MAX_NCPUS.\n",
+		nTotal, nSucceeded, nFailed,
+		nInExcessOfConfigMaxNcpus);
+
+	CpuStream::nCpusInExcessOfConfigMaxNcpus
+		+= nInExcessOfConfigMaxNcpus;
+
+	ret = (nFailed > nInExcessOfConfigMaxNcpus)
+		? ERROR_INITIALIZATION_FAILURE
+		: ERROR_SUCCESS;
+
+	delete msg;
+	return ret;
 }
 
-void CpuTrib::bootParseNumaMap(
+static MessageStream::DispatchFn bootParseNumaMapAgainstSmpMap_syncDispatcher;
+
+static sbit8 bootParseNumaMapAgainstSmpMap_syncDispatcher(
+	MessageStream::sHeader *msg
+	)
+{
+	if (msg->subsystem == MSGSTREAM_SUBSYSTEM_USER0
+		&& msg->function
+			== CPUTRIB_BOOT_PARSE_NUMA_MAP_AGAINST_SMP_MAP_ACK)
+	{
+		return 1;
+	}
+
+	__korientationMainDispatchOne(msg);
+	return 0;
+}
+
+error_t CpuTrib::bootParseNumaMapAgainstSmpMap(
 	sZkcmNumaMap *numaMap, sZkcmSmpMap *smpMap
 	)
 {
-	error_t		err;
+	error_t			ret;
+	volatile uarch_t	nTotalIsFinalCount=0,
+				nSucceeded=0, nFailed=0, nTotal=0,
+				nInExcessOfConfigMaxNcpus=0;
 
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
 	{
@@ -603,52 +731,86 @@ void CpuTrib::bootParseNumaMap(
 
 		// If the CPU is not an extra, don't process it.
 		if (found) { continue; };
-		err = bootCpuNotification(
+
+		atomicAsm::increment(&nTotal);
+
+		ret = bootCpuNotification(
 			CHIPSET_NUMA_SHBANKID,
 			smpMap->entries[i].cpuId,
 			smpMap->entries[i].cpuId);
 
-		if (err != ERROR_SUCCESS)
+		if (ret != ERROR_SUCCESS)
 		{
-			printf(ERROR CPUTRIB"bootParseNumaMapHoles: "
-				"Failed to power on CPU Stream "
-				"%d.\n",
+			printf(ERROR CPUTRIB"bootParseNumaMapAgainstSmpMap: "
+				"Failed to notify chipset before attempting to "
+				"boot CPU Stream %d.\n",
 				smpMap->entries[i].cpuId);
-		};
 
-		getStream(smpMap->entries[i].cpuId)
-			->powerManager.bootPowerOn(0);
-	};
-}
-
-void CpuTrib::bootConfirmNumaCpusBooted(
-	sZkcmNumaMap *numaMap, sZkcmSmpMap *smpMap
-	)
-{
-	for (uarch_t i=0; i<smpMap->nEntries; i++)
-	{
-		sarch_t		found=0;
-
-		if (smpMap->entries[i].cpuId == CpuStream::bspCpuId)
-			{ continue; };
-
-		for (uarch_t j=0; j<numaMap->nCpuEntries; j++)
-		{
-			if (smpMap->entries[i].cpuId
-				== numaMap->cpuEntries[j].cpuId)
+			if (ret == ERROR_LIMIT_OVERFLOWED)
 			{
-				found = 1;
-				break;
+				atomicAsm::increment(
+					&nInExcessOfConfigMaxNcpus);
 			};
-		};
 
-		// Skip those CPUs which appear in both maps.
-		if (!found)
+			atomicAsm::increment(&nFailed);
+			continue;
+		}
+
+		ret = getStream(smpMap->entries[i].cpuId)
+			->powerManager.bootPowerOnReq(
+				0,
+				new BootParseCpuMapCb(
+					bootParseCpuMap_contd1,
+					CPUTRIB_BOOT_PARSE_NUMA_MAP_AGAINST_SMP_MAP_ACK,
+					&nTotalIsFinalCount, &nSucceeded, &nFailed,
+					&nTotal, &nInExcessOfConfigMaxNcpus));
+
+		if (ret != ERROR_SUCCESS)
 		{
-			getStream(smpMap->entries[i].cpuId)->powerManager
-				.bootWaitForCpuToPowerOn();
-		};
-	};
+			printf(ERROR CPUTRIB"bootParseNumaMapAgainstSmpMap: "
+				"Failed to power on CPU Stream "
+				"for CPU %d with error %s.",
+				smpMap->entries[i].cpuId,
+				strerror(ret));
+
+			atomicAsm::increment(&nFailed);
+			continue;
+		}
+	}
+
+	atomicAsm::set(&nTotalIsFinalCount, 1);
+
+	MessageStream::sHeader *msg;
+
+	ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->messageStream.pullAndDispatchUntil(
+			&msg, 0, NULL,
+			&bootParseNumaMapAgainstSmpMap_syncDispatcher);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR CPUTRIB"bootParseNumaMapAgainstSmpMap: "
+			"Failed to pullAndDispatchUntil (err=%d).\n",
+			ret);
+		
+		return ret;
+	}
+
+	printf(NOTICE CPUTRIB"bootParseNumaMapAgainstSmpMap: Processed %d CPUs. "
+		"Succeeded: %d, Failed: %d; %d CPUs with ID exceeding "
+		"CONFIG_MAX_NCPUS.\n",
+		nTotal, nSucceeded, nFailed,
+		nInExcessOfConfigMaxNcpus);
+
+	CpuStream::nCpusInExcessOfConfigMaxNcpus
+		+= nInExcessOfConfigMaxNcpus;
+
+	ret = (nFailed > nInExcessOfConfigMaxNcpus)
+		? ERROR_INITIALIZATION_FAILURE
+		: ERROR_SUCCESS;
+
+	delete msg;
+	return ret;
 }
 #endif
 
@@ -673,10 +835,8 @@ error_t CpuTrib::numaInit(void)
 	if (!usingChipsetSmpMode()) { return ERROR_UNSUPPORTED; };
 
 	numaMap = zkcmCore.cpuDetection.getNumaMap();
-	if (numaMap != NULL && numaMap->nCpuEntries > 0)
-	{
+	if (numaMap != NULL && numaMap->nCpuEntries > 0) {
 		bootParseNumaMap(numaMap);
-		bootConfirmNumaCpusBooted(numaMap);
 	}
 	else
 	{
@@ -716,8 +876,7 @@ error_t CpuTrib::numaInit(void)
 		{
 			// Filter out the CPUs which need to be in shared bank.
 			printf(NOTICE CPUTRIB"Filtering out NUMA CPUs.\n");
-			bootParseNumaMap(numaMap, smpMap);
-			bootConfirmNumaCpusBooted(numaMap, smpMap);
+			bootParseNumaMapAgainstSmpMap(numaMap, smpMap);
 		}
 		else
 		{
@@ -735,9 +894,7 @@ error_t CpuTrib::numaInit(void)
 			 **/
 			printf(CC"No NUMA map, all CPUs on shared bank (SMP "
 				"operation).\n");
-
 			bootParseSmpMap(smpMap);
-			bootConfirmSmpCpusBooted(smpMap);
 		};
 	}
 	else
@@ -759,54 +916,153 @@ error_t CpuTrib::numaInit(void)
 #endif
 
 #if __SCALING__ >= SCALING_SMP
-void CpuTrib::bootParseSmpMap(sZkcmSmpMap *smpMap)
+static MessageStream::DispatchFn	bootParseSmpMap_syncDispatcher;
+
+static sbit8 bootParseSmpMap_syncDispatcher(
+	MessageStream::sHeader *msg
+	)
 {
-	error_t		err;
+	if (msg->subsystem == MSGSTREAM_SUBSYSTEM_USER0
+		&& msg->function == CPUTRIB_BOOT_PARSE_SMP_MAP_ACK)
+	{
+		return 1;
+	}
+
+	__korientationMainDispatchOne(msg);
+	return 0;
+}
+
+error_t CpuTrib::bootParseSmpMap(sZkcmSmpMap *smpMap)
+{
+	error_t			ret;
+	volatile uarch_t	nTotalIsFinalCount=0,
+				nSucceeded=0, nFailed=0, nTotal=0,
+				nInExcessOfConfigMaxNcpus=0;
 
 	for (uarch_t i=0; i<smpMap->nEntries; i++)
 	{
 		if (smpMap->entries[i].cpuId == CpuStream::bspCpuId)
 			{ continue; };
 
-		err = bootCpuNotification(
+		atomicAsm::increment(&nTotal);
+
+		ret = bootCpuNotification(
 #if __SCALING__ >= SCALING_CC_NUMA
 			CHIPSET_NUMA_SHBANKID,
 #endif
 			smpMap->entries[i].cpuId,
 			smpMap->entries[i].cpuAcpiId);
 
-		if (err != ERROR_SUCCESS)
+		if (ret != ERROR_SUCCESS)
 		{
-			/* If the error is due to CPU ID exceeding CONFIG_MAX_NCPUS, we've already logged a warning
-			 * and we can continue with other CPUs
-			 **/
-			if (err == ERROR_LIMIT_OVERFLOWED)
-				{ continue; };
-
 			printf(ERROR CPUTRIB"bootParseSmpMap: "
 				"Failed to power on CPU Stream "
 				"for CPU %d with error %s.",
 				smpMap->entries[i].cpuId,
-				strerror(err));
+				strerror(ret));
 
+			/* If the error is due to CPU ID exceeding
+			 * CONFIG_MAX_NCPUS, we've already logged a warning
+			 * and we can continue with other CPUs.
+			 **/
+			if (ret == ERROR_LIMIT_OVERFLOWED)
+			{
+				atomicAsm::increment(
+					&nInExcessOfConfigMaxNcpus);
+			};
+
+			atomicAsm::increment(&nFailed);
 			continue;
-		};
+		}
 
-		getStream(smpMap->entries[i].cpuId)
-			->powerManager.bootPowerOn(0);
-	};
+		ret = getStream(smpMap->entries[i].cpuId)
+			->powerManager.bootPowerOnReq(
+				0,
+				new BootParseCpuMapCb(
+					bootParseCpuMap_contd1,
+					CPUTRIB_BOOT_PARSE_SMP_MAP_ACK,
+					&nTotalIsFinalCount,
+					&nSucceeded, &nFailed, &nTotal,
+					&nInExcessOfConfigMaxNcpus));
+
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR CPUTRIB"bootParseSmpMap: "
+				"Failed to power on CPU Stream "
+				"for CPU %d with error %s.",
+				smpMap->entries[i].cpuId,
+				strerror(ret));
+
+			atomicAsm::increment(&nFailed);
+			continue;
+		}
+	}
+
+	atomicAsm::set(&nTotalIsFinalCount, 1);
+
+	MessageStream::sHeader *msg;
+
+	ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->messageStream.pullAndDispatchUntil(
+			&msg, 0, NULL,
+			&bootParseSmpMap_syncDispatcher);
+
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR CPUTRIB"bootParseSmpMap: "
+			"Failed to pullAndDispatchUntil (err=%d).\n",
+			ret);
+
+		return ret;
+	}
+
+	printf(NOTICE CPUTRIB"bootParseSmpMap: Processed %d CPUs. "
+		"Succeeded: %d, Failed: %d; %d CPUs with ID exceeding "
+		"CONFIG_MAX_NCPUS.\n",
+		nTotal, nSucceeded, nFailed,
+		nInExcessOfConfigMaxNcpus);
+
+	CpuStream::nCpusInExcessOfConfigMaxNcpus
+		+= nInExcessOfConfigMaxNcpus;
+
+	ret = (nFailed > nInExcessOfConfigMaxNcpus)
+		? ERROR_INITIALIZATION_FAILURE
+		: ERROR_SUCCESS;
+
+	delete msg;
+	return ret;
 }
 
-void CpuTrib::bootConfirmSmpCpusBooted(sZkcmSmpMap *smpMap)
+static void bootParseCpuMap_contd1(
+	MessageStream::sHeader *msg, BootParseCpuMapCb *cb
+	)
 {
-	for (uarch_t i=0; i<smpMap->nEntries; i++)
+	if (msg->error == ERROR_SUCCESS)
+		{ atomicAsm::increment(cb->nSucceeded); }
+	else
+		{ atomicAsm::increment(cb->nFailed); }
+
+	if (!atomicAsm::read(cb->nTotalIsFinalCount)) { return; };
+
+	if (atomicAsm::read(cb->nSucceeded) + atomicAsm::read(cb->nFailed)
+		!= atomicAsm::read(cb->nTotal))
+		{ return; }
+
+	error_t		err;
+
+	err = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->messageStream.postUserQMessage(
+			msg->sourceId,
+			MSGSTREAM_USERQ(MSGSTREAM_SUBSYSTEM_USER0),
+			cb->callbackFunctionId,
+			NULL, NULL);
+
+	if (err != ERROR_SUCCESS)
 	{
-		if (smpMap->entries[i].cpuId != CpuStream::bspCpuId)
-		{
-			getStream(smpMap->entries[i].cpuId)->powerManager
-				.bootWaitForCpuToPowerOn();
-		};
-	};
+		printf(ERROR CPUTRIB"bootParseNumaMap_contd2: "
+			"Failed to post completion message (err=%d).\n",
+			err);
+	}
 }
 #endif
 

@@ -1,0 +1,72 @@
+We began by trying to fix the scheduler since it had bad design:
+* It allowed thread switches in the middle of async events.
+* It performed immediate thread switches to higher priority threads inside of
+  schedops (TaskTrib::wake/dormant/block/unblock/yield), when the kernel was
+  built in coop-sched mode.
+
+When we fixed these design issues we found that the lack of immediate thread
+switches inside of schedops disrupted the kernel's boot flow since several
+subsystems spawn threads during boot; and we must wait for various ACK messages
+from those threads before continuing bootup.
+* Hence we had to make most of those threads use various types of
+  scheduler-aided synchronization mechanisms instead of relying on yield(), for
+  example.
+
+* As a consequence of the changes to service threads, we had to revamp the
+  Callback classes in callback.h.
+* We also ended up having to make the CPU Bootup sequence properly asynchronous
+  with callbacks.
+
+In order to enable us to make these various service threads fully asynchronous,
+we had to figure out how to convert an async sequence into a synchronous one,
+so that we could wrap the async sequence in a sync sequence. This enables us to
+escape async nesting hell, wherein a single async func call nested deep inside
+of a call chain, would force all of its callers up the stack, to have to also
+be async.
+* We solved this with 2 mechanisms:
+  * A new MessageStream::Filter class that allows us to tell
+    MessageStream::pull to only return messages that pass the filter's criteria.
+    ^ Has the disadvantage that pull() will delay the delivery of all messages
+      until a the filter-passing message has been found.
+    ^ This means that other messages will pill up in the queue and not be
+      handled until a filter-passing message comes in.
+  * A new MessageStream::pullAndDispatchUntil() method that enables us to handle
+    and dispatch messages being sent irrespective of whether they pass a filter.
+    MessageStream::pullAndDispatchUntil() takes a dispatcher function that is
+    executed on every message in the queue. This enables the caller to
+    programmatically filter messages for ximself.
+    ^ The benefit is that we can achieve  what MessageStream::Filter is trying
+      to accomplish, but without delaying the processing of non-filter-passing
+      messsages.
+    ^ Useful as a low-latency-inducing async bridge mechanism.
+
+After we implemented these service thread changes and the async bridge
+mechanism, we found that we had some scheduler bugs wherein we were repeatedly
+told that unblock() was being called on some thread (0x10003: the TimerTrib
+EventProcessor thread), but the thread was already RUNNABLE.
+
+To handle this we hypothesized that we needed to generalize our lost-wakeup and
+superfluous wakeup logic into a mechanism. This mechanism would allow a thread
+to wake on multiple queues without missing wakeups, and potentially also without
+being unblocked superfluously.
+
+When we implemented this, we got deadlocks on the WaitLock inside of the Heap.
+We investigated and found that when CONFIG_RT_KERNEL_IRQS is enabled, then we
+could have a situation where the heap lock was acquired, and then a #PF
+exception occured while the lock was still held. Then, within that #PF, an
+IRQ could arrive (because of CONFIG_RT_KERNEL_IRQS). Within that IRQ, an ISR
+(e.g: i8254pit::isr) could alloc memory from the heap (for example: to add a
+timer timeout event message to a timer device's event queue). This heap
+allocation would then re-enter the heap and then deadlock.
+* We have some options:
+  * Disable kernel heap demand paging.
+  * Disable kernel vaddrspace demand paging.
+  * Maintain demand paging but make it mutually exclusive with
+    CONFIG_RT_KERNEL_IRQS.
+  * Try to see if it's possible to maintain the invariant that the MM must never
+    fault.
+
+Additionally, we also implemented minor extra features such as
+* CONFIG_RT_KERNEL_IRQS.
+* CONFIG_RT_KERNEL_IRQ_NESTING.
+* New locking ScopedGuard classes that auto-acquire and auto-release locks.
