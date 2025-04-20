@@ -1187,14 +1187,14 @@ typedef void (__knewDeviceIndCbFn)(
 	MessageStream::sHeader *msg, fplainn::Zui::sIndexMsg *originCtxt);
 
 class NewDeviceIndCb
-: public _Callback<__knewDeviceIndCbFn>
+: public MessageStreamCallback<__knewDeviceIndCbFn *>
 {
 	fplainn::Zui::sIndexMsg	*originCtxt;
 
 public:
 	NewDeviceIndCb(
 		__knewDeviceIndCbFn *kcb, fplainn::Zui::sIndexMsg *originCtxt)
-	: _Callback<__knewDeviceIndCbFn>(kcb),
+	: MessageStreamCallback<__knewDeviceIndCbFn *>(kcb),
 	originCtxt(originCtxt)
 	{}
 
@@ -1549,6 +1549,8 @@ void fplainn::Zui::main(void *)
 		__kindexHeader.nSupportedMetas,
 		__kindexHeader.nSupportedDevices);
 
+	self->sendAckToSpawner(ERROR_SUCCESS);
+
 	for (;FOREVER;)
 	{
 		self->messageStream.pull(&gcb);
@@ -1576,7 +1578,7 @@ void fplainn::Zui::main(void *)
 		default:
 			Callback		*callback;
 
-			callback = (Callback *)gcb->privateData;
+			callback = static_cast<Callback *>(gcb->privateData);
 			if (callback == NULL)
 			{
 				printf(NOTICE FPLAINNIDX"Unknown message with "

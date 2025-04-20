@@ -1,4 +1,3 @@
-
 #include <in_asm.h>
 #include <assembler.h>
 
@@ -123,13 +122,30 @@ ASM_END_FUNCTION(__ksaveRegs)
 
 ASM_GLOBAL_FUNCTION(saveContextAndCallPull)
 	/**	EXPLANATION:
-	 * We were called here using the ABI;
-	 * 	ESP+0 = return address.
+	 * void saveContextAndCallPull(void *cpuSleepStackBaseAddr, uarch_t asyncIntNestingLevel);
 	 *
-	 * Push all state to the stack in the same order that the CPU does
-	 * naturally on IRQ entry, minus SS + ESP.
+	 * If asyncIntNestingLevel is 0, this function will save the current
+	 * thread's register context and call TaskStream::pull().
+	 * Else it will do nothing and return immediately.
 	 **/
-	pushl	%eax
+	/* At this point:
+	 *	ESP+0=retAddr, ESP+4=sleepStackBaseAddr, ESP+8=asyncIntNestingLevel.
+	 **/
+
+	/* Check if asyncIntNestingLevel is 0. If not, return immediately */
+	pushl   %eax                    /* Save EAX before using it */
+	/* After pushing EAX:
+	 *	ESP+0=savedEAX,
+	 *	ESP+4=retAddr, ESP+8=sleepStackBaseAddr, ESP+12=asyncIntNestingLevel
+	 *
+	 * Test asyncIntNestingLevel. If it's above zero, that means the CPU is
+	 * handling an IRQ so we shouldn't perform a context switch.
+	 */
+	movl    12(%esp), %eax          
+	testl   %eax, %eax
+	jnz     .Lret_because_cpu_is_handling_int
+
+	/* IRQ nesting level is 0, proceed with context switch */
 	movl	0x4(%esp), %eax
 	pushl	%eax
 	pushf
@@ -170,6 +186,12 @@ ASM_GLOBAL_FUNCTION(saveContextAndCallPull)
 	 **/
 	pushl	%eax
 	call	taskStream_pull
+	// Should be unreachable
+
+.Lret_because_cpu_is_handling_int:
+	// Restore EAX since we clobbered it above.
+	popl	%eax
+	ret
 ASM_END_FUNCTION(saveContextAndCallPull)
 
 ASM_GLOBAL_FUNCTION(loadContextAndJump)

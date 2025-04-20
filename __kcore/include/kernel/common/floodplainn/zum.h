@@ -29,7 +29,7 @@ public:
 	serverTid(PROCID_INVALID), server(NULL)
 	{}
 
-	error_t initialize(void);
+	error_t initializeReq(MessageStreamCb *callback);
 	~Zum(void) {};
 
 public:
@@ -353,6 +353,7 @@ private:
 
 	static void main(void *);
 
+public:
 	static sZumServerMsg *createServerRequestMsg(
 		utf8Char *func, utf8Char *devPath, sZumServerMsg::opE op,
 		uarch_t extraMemNBytes=0);

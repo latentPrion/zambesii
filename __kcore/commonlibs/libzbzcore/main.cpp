@@ -42,7 +42,7 @@ void __klzbzcore::main()
 			"Dormanting.\n",
 			self->getFullId());
 
-		self->parent->sendResponse(ERROR_INVALID_FORMAT);
+		self->parent->sendAckToSpawner(ERROR_INVALID_FORMAT);
 		break;
 	};
 
@@ -58,7 +58,7 @@ void __klzbzcore::main()
 
 static void driverMain1(Thread *self, error_t ret)
 {
-	self->parent->sendResponse(ret);
+	self->parent->sendAckToSpawner(ret);
 	printf(NOTICE LZBZCORE"Driver Proc %x: Done executing. "
 		"ACKing our process spawner with ret %s.\n",
 		self->getFullId(), strerror(ret));
@@ -70,7 +70,7 @@ static void driverMain1(Thread *self, error_t ret)
 
 static void distributaryMain1(Thread *self, error_t ret)
 {
-	self->parent->sendResponse(ret);
+	self->parent->sendAckToSpawner(ret);
 	printf(NOTICE LZBZCORE"Dtrib Proc %x: Done executing. Killing with "
 		"ret %s.\n",
 		self->getFullId(), strerror(ret));

@@ -9,7 +9,7 @@
 #include <__kstdlib/__kcxxlib/memory>
 #include <__kclasses/debugPipe.h>
 #include <__kclasses/memReservoir.h>
-#include <__kthreads/main.h>
+#include <__kthreads/__korientation.h>
 #include <kernel/common/__koptimizationHacks.h>
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
@@ -28,9 +28,13 @@
 int oo=0, pp=0, qq=0, rr=0;
 
 static void				__korientationMain1(void);
-static __kcbFn				__korientationMain2;
-static __kcbFn				__korientationMain3;
-static __kcbFn				__korientationMain4;
+static MessageStreamCallbackFn		__korientationMain2,
+					__korientationMain3,
+					__korientationMain4,
+					__korientationMain5,
+					__korientationMain6,
+					__korientationMain7;
+
 
 #include <commonlibs/libacpi/libacpi.h>
 static void rDumpSrat(void)
@@ -157,6 +161,34 @@ static void dumpSrat(void)
  * We then pass control to __korientationMain().
  **/
 
+void __korientationMainDispatchOne(MessageStream::sHeader *msg)
+{
+	assert_fatal(msg != NULL);
+	
+	Callback	*cb = static_cast<Callback *>(msg->privateData);
+
+	switch (msg->subsystem)
+	{
+	default:
+		if (cb == NULL)
+		{
+			printf(ERROR ORIENT"No callback found for message @%p, "
+				"from thread %d, with subsystem %d, "
+				"function %d.\n",
+				msg,
+				msg->sourceId, msg->subsystem, msg->function);
+
+			break;
+		}
+
+		(*cb)(msg);
+		delete cb;
+		break;
+	}
+
+	delete msg;
+}
+
 extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 {
 	error_t			ret;
@@ -263,33 +295,11 @@ extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 	for (;FOREVER;)
 	{
 		MessageStream::sHeader		*iMessage;
-		Callback			*callback;
 
 		self->messageStream.pull(&iMessage);
-		callback = (Callback *)iMessage->privateData;
-
-		switch (iMessage->subsystem)
-		{
-		default:
-			// Discard message if it has no callback.
-			if (callback == NULL)
-			{
-				printf(WARNING ORIENT"Unknown message with "
-					"no callback.\n"
-					"\tSrcTid %x, subsys %d, func %d.\n",
-					iMessage->sourceId,
-					iMessage->subsystem,
-					iMessage->function);
-
-				break;
-			};
-
-			(*callback)(iMessage);
-			delete callback;
-			break;
-		};
-
-		delete iMessage;
+printf(NOTICE ORIENT"Pulled message: %p, privateData is %p. About to dispatch.\n",
+	iMessage, iMessage->privateData);
+		__korientationMainDispatchOne(iMessage);
 	};
 
 	printf(NOTICE ORIENT"Main: Exited async loop. Killing.\n");
@@ -308,8 +318,50 @@ void __korientationMain1(void)
 	/* Next block, we initialize the kernel's Floodplainn.
 	 **/
 	DO_OR_DIE(floodplainn, initialize(), ret);
-	DO_OR_DIE(floodplainn.zui, initialize(), ret);
-	DO_OR_DIE(floodplainn.zum, initialize(), ret);
+	DO_OR_DIE(floodplainn.zui, initializeReq(
+		new MessageStreamCb(&__korientationMain2)), ret);
+}
+
+void __korientationMain2(MessageStream::sHeader *msgIt)
+{
+	Thread				*self;
+	error_t				ret;
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	(void)self;
+
+	if (msgIt->error != ERROR_SUCCESS)
+	{
+		printf(FATAL ORIENT"Failed to initialize ZUI.\n"
+			"\tError is %s.\n",
+			strerror(msgIt->error));
+
+		return;
+	};
+
+	DO_OR_DIE(
+		floodplainn.zum,
+		initializeReq(
+			new MessageStreamCb(&__korientationMain3)), ret);
+}
+
+void __korientationMain3(MessageStream::sHeader *msgIt)
+{
+	error_t				ret;
+	Thread				*self;
+
+	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
+	(void)self;
+
+	if (msgIt->error != ERROR_SUCCESS)
+	{
+		printf(FATAL ORIENT"Failed to initialize ZUM.\n"
+			"\tError is %s.\n",
+			strerror(msgIt->error));
+
+		return;
+	};
+
 	DO_OR_DIE(floodplainn.zudi, initialize(), ret);
 
 	/* Start the chipset up.
@@ -317,10 +369,10 @@ void __korientationMain1(void)
 //	DO_OR_DIE(floodplainn, enumerateBaseDevices(), ret);
 	floodplainn.zui.newDeviceInd(
 		CC"by-id", fplainn::Zui::INDEX_KERNEL,
-		new __kCallback(&__korientationMain2));
+		new MessageStreamCb(&__korientationMain4));
 }
 
-void __korientationMain2(MessageStream::sHeader *msgIt)
+void __korientationMain4(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
 	fplainn::Device			*chipsetDev; (void)chipsetDev;
@@ -343,12 +395,10 @@ void __korientationMain2(MessageStream::sHeader *msgIt)
 
 	floodplainn.zum.startDeviceReq(
 		CC"by-id", UDI_RESOURCES_NORMAL,
-		new __kCallback(&__korientationMain3));
+		new MessageStreamCb(&__korientationMain5));
 }
 
-void __korientationMain4(MessageStream::sHeader *msgIt);
-
-void __korientationMain3(MessageStream::sHeader *msgIt)
+void __korientationMain5(MessageStream::sHeader *msgIt)
 {
 	Thread				*self;
 	fplainn::Zum::sZumDeviceMgmtMsg		*msg=reinterpret_cast<
@@ -395,14 +445,14 @@ void __korientationMain3(MessageStream::sHeader *msgIt)
 	// Enumerate the children of the root device.
 	floodplainn.zum.enumerateChildrenReq(
 		CC"by-id", &ecb, 0,
-		new __kCallback(&__korientationMain4));
+		new MessageStreamCb(&__korientationMain6));
 }
 
-void __korientationMain4(MessageStream::sHeader *msgIt)
+void __korientationMain6(MessageStream::sHeader *msgIt)
 {
-	fplainn::Zum::sZumDeviceMgmtMsg		*msg = (fplainn::Zum::sZumDeviceMgmtMsg *)msgIt;
+	error_t				ret, err;
 	status_t			stat;
-	error_t				ret;
+	fplainn::Zum::sZumDeviceMgmtMsg		*msg = (fplainn::Zum::sZumDeviceMgmtMsg *)msgIt;
 
 	if (msg->info.params.enumerateChildren.final_enumeration_result
 		!= UDI_ENUMERATE_DONE)
@@ -465,10 +515,6 @@ void __korientationMain4(MessageStream::sHeader *msgIt)
 	DO_OR_DIE(zkcmCore.timerControl, initialize(), ret);
 	DO_OR_DIE(timerTrib, initialize(), ret);
 
-printf(NOTICE ORIENT"IRQs enabled? %d\n", cpuControl::interruptsEnabled());
-printf(NOTICE ORIENT"Got here\n");
-return;
-
 	// Detect physical memory.
 	DO_OR_DIE(zkcmCore.memoryDetection, initialize(), ret);
 	DO_OR_DIE(memoryTrib, pmemInit(), ret);
@@ -476,6 +522,8 @@ return;
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
+printf(FATAL ORIENT"here: Local INT# is %d.\n", cpuControl::interruptsEnabled());
+return;
 
 	uarch_t tot, succ, fail;
 	struct {
@@ -488,17 +536,6 @@ return;
 	DO_OR_DIE(testobj, runTests(&tot, &succ, &fail), stat);
 	printf(NOTICE"Tests: %d total, %d succ, %d fail\n", tot, succ, fail);
 	printf(NOTICE"All is well in the universe.\n");
-}
-
-
-void __kecrCb(MessageStream::sHeader *msgIt)
-{
-	fplainn::Zum::sZumDeviceMgmtMsg		*msg = (fplainn::Zum::sZumDeviceMgmtMsg *)msgIt;
-	error_t err;
-	status_t stat;
-
-	printf(NOTICE"Here, devmgmt done. %d new child IDs in buffer.\n",
-		msg->info.params.enumerateChildren.nDeviceIds);
 //~ __kdebug.refresh();
 
 	fplainn::dma::Constraints			c;

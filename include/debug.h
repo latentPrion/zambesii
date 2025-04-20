@@ -22,7 +22,7 @@ extern char *pp0, *pp1, *pp2, *pp3;
 int testFunction(...);
 
 // GCC likes to warn me about this, and it gets really irritating.
-void PRINTFON(int __cond, const utf8Char *__str, ...);
+sarch_t PRINTFON(int __cond, const utf8Char *__str, ...);
 
 #endif
 

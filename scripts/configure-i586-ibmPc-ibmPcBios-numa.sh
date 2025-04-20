@@ -43,4 +43,4 @@ echo "Running configure with custom options..."
     --with-max-ncpus=64 \
     ${REPLACE_ARGS} ${APPEND_ARGS}
 
-echo "Configuration completed successfully!" 
+echo "Configuration completed successfully!"

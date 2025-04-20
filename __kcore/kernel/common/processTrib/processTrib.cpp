@@ -14,7 +14,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/vfsTrib/vfsTrib.h>
 #include <kernel/common/floodplainn/floodplainn.h>
-#include <__kthreads/main.h>
+#include <__kthreads/__korientation.h>
 
 
 sPriorityClass	prioClasses[PRIOCLASS_NCLASSES];
@@ -526,7 +526,7 @@ error_t ProcessTrib::spawnDriver(
 		Thread::REAL_TIME, prio,
 		flags | SPAWNTHREAD_FLAGS_AFFINITY_SET
 		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
-		&firstThread);
+		&firstThread, privateData);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -596,7 +596,7 @@ error_t ProcessTrib::spawnDistributary(
 		SPAWNTHREAD_FLAGS_AFFINITY_SET
 		| SPAWNTHREAD_FLAGS_SCHEDPOLICY_SET
 		| SPAWNTHREAD_FLAGS_FIRST_THREAD,
-		&firstTask);
+		&firstTask, privateData);
 
 	if (ret != ERROR_SUCCESS)
 	{

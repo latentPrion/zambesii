@@ -68,7 +68,7 @@ public:
 
 public:
 	// Zambesii only supports UTF-8 strings in the kernel.
-	void printf(const utf8Char *str, va_list v);
+	sarch_t printf(const utf8Char *str, va_list v);
 
 	/**	NOTE:
 	 * This version of printf is used for kernel debugging inside of
@@ -82,7 +82,7 @@ public:
 	 * passed as an argument. This may cause a race condition on the kernel
 	 * debug log, but seeing some output is better than seeing none.
 	 **/
-	void printf(SharedResourceGroup<WaitLock, utf8Char *> *buff,
+	sarch_t printf(SharedResourceGroup<WaitLock, utf8Char *> *buff,
 		uarch_t buffSize, utf8Char *str, va_list v);
 
 	/**	EXPLANATION:
@@ -111,19 +111,21 @@ private:
 	SharedResourceGroup<WaitLock, uarch_t>	devices;
 };
 
-void printf(const utf8Char *str, ...);
-void vprintf(const utf8Char *str, va_list args);
+sarch_t printf(const utf8Char *str, ...);
+sarch_t vprintf(const utf8Char *str, va_list args);
 
 // The kernel deliberately does not provide sprintf.
 extern "C" sarch_t snprintf(
 	utf8Char *buff, uarch_t maxLength, utf8Char *format, ...);
 
 // Used for debugging, see above.
-void printf(SharedResourceGroup<WaitLock, utf8Char *> *buff,
+sarch_t printf(
+	SharedResourceGroup<WaitLock, utf8Char *> *buff,
 	uarch_t buffSize, utf8Char *str, ...);
 
 // Used for debugging with va_list
-void vnprintf(SharedResourceGroup<WaitLock, utf8Char *> *buff,
+sarch_t vnprintf(
+	SharedResourceGroup<WaitLock, utf8Char *> *buff,
 	uarch_t buffSize, utf8Char *str, va_list args);
 
 extern DebugPipe	__kdebug;

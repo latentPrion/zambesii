@@ -56,6 +56,10 @@ void panic(void)
 {
 	for (;FOREVER;)
 	{
+		asm volatile("movl %0, %%edx\n\t"
+			:
+			: "b" (__builtin_return_address(0))
+			: "edx");
 		cpuControl::disableInterrupts();
 		cpuControl::halt();
 	};

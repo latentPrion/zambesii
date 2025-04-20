@@ -32,7 +32,7 @@ RegisterContext::RegisterContext(ubit8 execDomain)
 	 * spawned thread will begin executing with IRQs enabled, and fail
 	 * immediately upon executing.
 	 **/
-	//eflags |= x8632_CPUFLAGS_IF;
+	eflags |= x8632_CPUFLAGS_IF;
 	if (execDomain == PROCESS_EXECDOMAIN_KERNEL)
 	{
 		cs = 0x08;

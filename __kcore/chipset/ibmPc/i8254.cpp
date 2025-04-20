@@ -193,13 +193,16 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 	};
 
 	device->state.lock.release();
+printf(CC"[1:CPU %d]", cpuTrib.getCurrentCpuStream()->cpuId);
 
 	// Don't claim the IRQ if the timer hadn't been enabled.
 	if (!FLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED)) {
 		return ZKCM_ISR_NOT_MY_IRQ;
 	};
 
+printf(CC"[2]");
 	device->sendEoi();
+printf(CC"[3]");
 
 	// Invoke the system clock update routine if installed on this device.
 	if (device->clockRoutine != NULL)
@@ -212,10 +215,14 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 	};
 
 	// Create an event.
-	if (!FLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED)) {
+	if (!FLAG_TEST(
+		devFlags,
+		ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED))
+	{
 		return ZKCM_ISR_SUCCESS;
 	};
 
+printf(CC"[4]");
 	irqEvent = device->allocateIrqEvent();
 	// Note well, this is faultable memory being allocated.
 	if (irqEvent == NULL)
@@ -225,13 +232,21 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 		return ZKCM_ISR_SUCCESS;
 	};
 
+printf(CC"[5]");
 	// Fill out the event and queue it.
 	irqEvent->device = device;
 	device->getLatchState(
 		&irqEvent->latchedStream);
 
+/*printf(FATAL i8254"Latch state: %p, latched stream ID %x.\n",
+	irqEvent->latchedStream,
+	(irqEvent->latchedStream != NULL)
+		? irqEvent->latchedStream->id : PROCID_INVALID);*/
+
 	timerTrib.getCurrentDateTime(&irqEvent->irqStamp);
+printf(CC"[6]");
 	err = device->irqEventQueue.addItem(irqEvent);
+printf(CC"[7]");
 	if (err != ERROR_SUCCESS)
 	{
 		device->freeIrqEvent(irqEvent);

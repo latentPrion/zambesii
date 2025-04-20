@@ -513,7 +513,7 @@ error_t ProcessStream::generateEnvironment(const utf8Char *environmentString)
 	return ERROR_SUCCESS;
 }
 
-void ProcessStream::sendResponse(error_t err)
+void ProcessStream::sendAckToSpawner(error_t err)
 {
 	error_t				tmpErr;
 	MessageStream::sHeader		*msg;
@@ -580,7 +580,8 @@ error_t ProcessStream::spawnThread(
 	Bitmap * cpuAffinity,
 	_Task::schedPolicyE schedPolicy,
 	ubit8 prio, uarch_t flags,
-	Thread **const newThread
+	Thread **const newThread,
+	void *ackMsgPrivateData
 	)
 {
 	error_t		ret;
@@ -643,6 +644,19 @@ error_t ProcessStream::spawnThread(
 			this->execDomain,
 			FLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD));
 	};
+
+	/* Allocate the thread's response message, which is to be
+	 * sent to the spawning thread.
+	 **/
+	(*newThread)->responseMessage = new MessageStream::sHeader(
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->getFullId(),
+		MSGSTREAM_SUBSYSTEM_TASKTRIB,
+		TASKTRIB_SPAWNTHREAD_ACK,
+		sizeof(MessageStream::sHeader),
+		0,
+		ackMsgPrivateData);
+
+	if (*newThread == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	/* First thread in a process is always scheduled immediately; DORMANT
 	 * is handled by the kernel's common entry point for such threads. For

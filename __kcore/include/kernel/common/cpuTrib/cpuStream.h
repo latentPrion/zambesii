@@ -16,6 +16,7 @@
 	#include <kernel/common/waitLock.h>
 	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/taskTrib/taskStream.h>
+	#include <kernel/common/messageStream.h>
 
 #define CPUSTREAM			"CPU Stream "
 #define CPUPWRMGR			"CPU PwrMgr "
@@ -100,6 +101,7 @@ public:
 	static ubit32			bspAcpiId;
 	static bspPlugTypeE		bspPlugType;
 	static sCpuFeatures		baseCpuFeatures;
+	static uarch_t			nCpusInExcessOfConfigMaxNcpus;
 
 	status_t enumerate(void);
 	sCpuFeatures *getCpuFeatureBlock(void);
@@ -166,8 +168,35 @@ public:
 			powerStatus.lock.writeRelease();
 		}
 
+		struct sCpuPowerOnMsg
+		{
+			sCpuPowerOnMsg(
+				processId_t targetPid,
+				ubit16 function,
+				uarch_t flags, void *privateData,
+				CpuStream *cpuStream)
+			: header(
+				targetPid,
+				MSGSTREAM_SUBSYSTEM_CPUSTREAM_POWER_MANAGER,
+				function, sizeof(*this), flags, privateData),
+			cpuStream(cpuStream)
+			{}
+
+			MessageStream::sHeader	header;
+			CpuStream		*cpuStream;
+		};
+
+		enum PowerManagerOpE
+		{
+			OP_POWER_ON,
+			OP_BOOT_POWER_ON_REQ,
+			OP_HALT,
+			OP_SLEEP,
+			OP_POWER_OFF
+		};
+
 		status_t powerOn(ubit32 flags);
-		status_t bootPowerOn(ubit32 flags);
+		status_t bootPowerOnReq(ubit32 flags, void *privateData);
 		status_t halt(ubit32 flags);
 		status_t sleep(ubit32 flags);
 		status_t powerOff(ubit32 flags);

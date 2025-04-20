@@ -14,7 +14,7 @@
 
 
 class __klzbzcore::region::MainCb
-: public _Callback<__kmainCbFn>
+: public MessageStreamCallback<__kmainCbFn *>
 {
 	fplainn::Zudi::sKernelCallMsg		*ctxtMsg;
 	Thread					*self;
@@ -30,7 +30,7 @@ public:
 		__klzbzcore::driver::CachedInfo **drvInfoCache,
 		lzudi::sRegion *r,
 		fplainn::Device *dev)
-	: _Callback<__kmainCbFn>(kcb),
+	: MessageStreamCallback<__kmainCbFn *>(kcb),
 	ctxtMsg(ctxtMsg), self(self), dev(dev), drvInfoCache(drvInfoCache), r(r)
 	{}
 

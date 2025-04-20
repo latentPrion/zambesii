@@ -250,9 +250,7 @@ error_t ZAsyncStream::send(
 		&& !findConnection(bindTid))
 		{ return ERROR_UNINITIALIZED; };
 
-	dataHeader = new (ipc::createDataHeader(data, nBytes, method))
-		ipc::sDataHeader;
-
+	dataHeader = ipc::createDataHeader(data, nBytes, method);
 	if (dataHeader == NULL) { return ERROR_MEMORY_NOMEM; };
 
 	message = new sZAsyncMsg(

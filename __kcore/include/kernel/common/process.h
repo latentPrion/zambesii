@@ -19,7 +19,7 @@
 	#include <kernel/common/memoryTrib/memoryStream.h>
 	#include <kernel/common/timerTrib/timerStream.h>
 	#include <kernel/common/floodplainn/floodplainnStream.h>
-	#include <__kthreads/main.h>
+	#include <__kthreads/__korientation.h>
 
 #define PROCESS_ENV_MAX_NVARS		(64)
 #define PROCESS_ENV_NAME_MAXLEN		(96)
@@ -161,16 +161,19 @@ public:
 	void getInitializationBlockSizeInfo(sInitializationBlockizeInfo *ret);
 	void getInitializationBlock(sInitializationBlock *ret);
 
-	void sendResponse(error_t err);
+	void sendAckToSpawner(error_t err);
 
 	// I am very reluctant to have this "argument" parameter.
 	error_t spawnThread(
 		void (*entryPoint)(void *),
+		// This is passed to the new thread's entry point.
 		void *argument,
 		Bitmap *cpuAffinity,
 		Thread::schedPolicyE schedPolicy, ubit8 prio,
 		uarch_t flags,
-		Thread **ret);
+		Thread **ret,
+		// This is assigned to the async response message's privateData field.
+		void *ackMsgPrivateData);
 
 public:
 	struct sEnvironmentVar

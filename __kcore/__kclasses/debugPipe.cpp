@@ -195,38 +195,44 @@ sarch_t sprintnum(
 	return buffCursor;
 }
 
-void printf(const utf8Char *str, ...)
+sarch_t printf(const utf8Char *str, ...)
 {
 	va_list		args;
+	sarch_t		nPrinted;
 
 	va_start(args, str);
-	__kdebug.printf(str, args);
+	nPrinted = __kdebug.printf(str, args);
 	va_end(args);
+
+	return nPrinted;
 }
 
-void vprintf(const utf8Char *str, va_list args)
+sarch_t vprintf(const utf8Char *str, va_list args)
 {
-	__kdebug.printf(str, args);
+	return __kdebug.printf(str, args);
 }
 
-void printf(
+sarch_t printf(
 	SharedResourceGroup<WaitLock, utf8Char *> *buff, uarch_t buffSize,
 	utf8Char *str, ...
 	)
 {
 	va_list		args;
+	sarch_t		nPrinted;
 
 	va_start(args, str);
-	__kdebug.printf(buff, buffSize, str, args);
+	nPrinted = __kdebug.printf(buff, buffSize, str, args);
 	va_end(args);
+
+	return nPrinted;
 }
 
-void vnprintf(
+sarch_t vnprintf(
 	SharedResourceGroup<WaitLock, utf8Char *> *buff, uarch_t buffSize,
 	utf8Char *str, va_list args
 	)
 {
-	__kdebug.printf(buff, buffSize, str, args);
+	return __kdebug.printf(buff, buffSize, str, args);
 }
 
 static ubit16 getNumberOfFormatArgsN(utf8Char *format, uarch_t maxLength)
@@ -482,7 +488,7 @@ sarch_t snprintf(utf8Char *buff, uarch_t maxLength, utf8Char *format, ...)
 	return nPrinted;
 }
 
-void DebugPipe::printf(const utf8Char *str, va_list args)
+sarch_t DebugPipe::printf(const utf8Char *str, va_list args)
 {
 	sarch_t		buffLen=0, buffMax;
 	uarch_t		printfFlags=0;
@@ -493,7 +499,7 @@ void DebugPipe::printf(const utf8Char *str, va_list args)
 /*	if (convBuff.rsrc == NULL)
 	{
 		convBuff.lock.release();
-		return;
+		return 0;
 	};*/
 
 	buffMax = DEBUGPIPE_CONVERSION_BUFF_NBYTES;
@@ -505,7 +511,7 @@ void DebugPipe::printf(const utf8Char *str, va_list args)
 	if (buffLen < 0)
 	{
 		convBuff.lock.release();
-		return;
+		return buffLen;
 	};
 
 	if (FLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
@@ -522,9 +528,10 @@ void DebugPipe::printf(const utf8Char *str, va_list args)
 	};
 
 	convBuff.lock.release();
+	return buffLen;
 }
 
-void DebugPipe::printf(
+sarch_t DebugPipe::printf(
 	SharedResourceGroup<WaitLock, utf8Char *> *buff, uarch_t buffSize,
 	utf8Char *str, va_list args
 	)
@@ -538,7 +545,7 @@ void DebugPipe::printf(
 	if (buff->rsrc == NULL)
 	{
 		buff->lock.release();
-		return;
+		return 0;
 	};
 
 	buffMax = buffSize / sizeof(utf8Char);
@@ -551,7 +558,7 @@ void DebugPipe::printf(
 	if (buffLen < 0)
 	{
 		buff->lock.release();
-		return;
+		return buffLen;
 	};
 
 	if (FLAG_TEST(devices.rsrc, DEBUGPIPE_DEVICE_BUFFER)
@@ -571,6 +578,7 @@ void DebugPipe::printf(
 	};
 
 	buff->lock.release();
+	return buffLen;
 }
 
 #if 0

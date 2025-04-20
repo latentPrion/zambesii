@@ -213,13 +213,14 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 
 	while (request != NULL)
 	{
-
+printf(CC"<1>");
 		if (request->expirationStamp > event->irqStamp)
 		{
 			unlockRequestQueue();
 			return;
 		};
 
+printf(CC"<2>");
 		// Remove the item.
 		request = requestQueue.popFromHead();
 		unlockRequestQueue();
@@ -230,6 +231,7 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 		targetProcess = getTargetProcess(request);
 		if (targetProcess != NULL)
 		{
+printf(CC"<3>");
 			/* Queue new event on wake-target process' Timer Stream.
 			 * "TargetObject" could end up being NULL if the target
 			 * thread within the target process exited, or never
@@ -244,6 +246,7 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 		}
 		else
 		{
+printf(CC"<4>");
 			printf(WARNING TIMERQUEUE"%dus: wake target process "
 				"%x does not exist.\n",
 				getNativePeriod() / 1000,
@@ -258,12 +261,17 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 		if (PROCID_PROCESS(request->header.sourceId)
 			!= PROCID_PROCESS(request->header.targetId))
 		{
+printf(CC"<5: creatorProcess=%x, targetProcess=%x>", request->header.sourceId, request->header.targetId);
 			creatorProcess = getCreatorProcess(request);
 		}
-		else { creatorProcess = targetProcess; };
+		else {
+printf(CC"<6>");
+			creatorProcess = targetProcess;
+		};
 
 		if (creatorProcess == NULL)
 		{
+printf(CC"<7>");
 			printf(WARNING TIMERQUEUE"%dus: Inexistent creator "
 				"process %x for timer queue request.\n",
 				getNativePeriod() / 1000,
@@ -271,6 +279,7 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 		}
 		else
 		{
+printf(CC"<8>");
 			// Pull a new request from the creator process.
 			creatorProcess->timerStream
 				.timerRequestTimeoutNotification();
@@ -285,10 +294,13 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 		 * thread.
 		 **/
 		if (targetProcess != NULL && targetThread != NULL) {
+printf(CC"<9>");
 			taskTrib.unblock(targetThread);
 		};
 
 		delete request;
+
+//if (targetThread != NULL) { targetThread->messageStream.dump(); }
 
 		// See comments above for the reason behind these lock guards.
 		lockRequestQueue();
