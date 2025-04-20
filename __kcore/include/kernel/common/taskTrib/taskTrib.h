@@ -38,7 +38,9 @@ public:
 	// Back ends.
 	error_t dormant(Thread *thread);
 	error_t wake(Thread *thread);
-	error_t unblock(Thread *thread);
+	error_t unblock(
+		Thread *thread,
+		Lock::sOperationDescriptor *unlockDescriptor=NULL);
 	void kill(Thread *thread) { dormant(thread); }
 
 	/* These next few overloads are front-ends for the back ends that take
@@ -70,7 +72,10 @@ public:
 		return wake(thread);
 	}
 
-	error_t unblock(processId_t tid)
+	error_t unblock(
+		processId_t tid,
+		Lock::sOperationDescriptor *unlockDescriptor=NULL
+		)
 	{
 		ProcessStream	*proc;
 		Thread		*thread;
@@ -79,7 +84,7 @@ public:
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 		thread = proc->getThread(tid);
-		return unblock(thread);
+		return unblock(thread, unlockDescriptor);
 	}
 
 	void kill(processId_t tid)
