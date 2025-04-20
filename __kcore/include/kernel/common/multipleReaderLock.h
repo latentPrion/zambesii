@@ -106,10 +106,13 @@ public:
 		uarch_t		flags;
 	};
 
+
+
 public:
 	// Flag shift values for the 'flags' member, continuing from Lock::FLAGS_ENUM_END
 	enum flagShiftE {
 		MR_FLAGS_WRITE_REQUEST_SHIFT = Lock::FLAGS_ENUM_END,
+		MR_FLAGS_INNER_WRITE_REQUEST_SHIFT,
 		MR_FLAGS_ENUM_END
 	};
 
@@ -118,7 +121,9 @@ public:
 
 	// Actual flag values derived from shifts
 	enum flagValueE {
-		MR_FLAGS_WRITE_REQUEST = (1 << MR_FLAGS_WRITE_REQUEST_SHIFT)
+		MR_FLAGS_WRITE_REQUEST = (1 << MR_FLAGS_WRITE_REQUEST_SHIFT),
+		MR_FLAGS_INNER_WRITE_REQUEST =
+			(1 << MR_FLAGS_INNER_WRITE_REQUEST_SHIFT)
 	};
 
 public:
