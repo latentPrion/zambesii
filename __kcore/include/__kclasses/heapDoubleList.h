@@ -13,7 +13,7 @@
 
 #define PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE	(1<<0)
 
-#define PTRDBLLIST_FLAGS_UNLOCKED    (1<<0)
+#define PTRDBLLIST_OP_FLAGS_UNLOCKED    (1<<0)
 
 #define PTRDBLLIST_ADD_HEAD		0x0
 #define PTRDBLLIST_ADD_TAIL		0x1
@@ -219,7 +219,7 @@ error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode, ubit32 flags)
 	case PTRDBLLIST_ADD_HEAD:
 		newNode->prev = NULL;
 		
-		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+		if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 			{ list.lock.acquire(); }
 
 		newNode->next = list.rsrc.head;
@@ -230,14 +230,14 @@ error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode, ubit32 flags)
 		list.rsrc.head = newNode;
 		list.rsrc.nItems++;
 
-		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+		if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 			{ list.lock.release(); }
 		break;
 
 	case PTRDBLLIST_ADD_TAIL:
 		newNode->next = NULL;
 
-		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+		if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 			{ list.lock.acquire(); }
 
 		newNode->prev = list.rsrc.tail;
@@ -248,7 +248,7 @@ error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode, ubit32 flags)
 		list.rsrc.tail = newNode;
 		list.rsrc.nItems++;
 
-		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+		if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 			{ list.lock.release(); }
 		break;
 
@@ -267,7 +267,7 @@ void HeapDoubleList<T>::removeItem(T *item, ubit32 flags)
 {
 	sListNode	*curr;
 
-	if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+	if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 		{ list.lock.acquire(); }
 
 	// Just run through until we find it, then remove it.
@@ -295,7 +295,7 @@ void HeapDoubleList<T>::removeItem(T *item, ubit32 flags)
 
 			list.rsrc.nItems--;
 
-			if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+			if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 				{ list.lock.release(); }
 
 			if (objectCache == NULL) { delete curr; }
@@ -304,7 +304,7 @@ void HeapDoubleList<T>::removeItem(T *item, ubit32 flags)
 		};
 	};
 
-	if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+	if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 		{ list.lock.release(); }
 }
 
@@ -314,7 +314,7 @@ T *HeapDoubleList<T>::popFromHead(uarch_t flags)
 	T		*ret=NULL;
 	sListNode	*tmp;
 
-	if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+	if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 		{ list.lock.acquire(); }
 
 	// If removing last item:
@@ -330,7 +330,7 @@ T *HeapDoubleList<T>::popFromHead(uarch_t flags)
 		list.rsrc.head = list.rsrc.head->next;
 		list.rsrc.nItems--;
 
-		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+		if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 			{ list.lock.release(); }
 
 		ret = tmp->item;
@@ -341,7 +341,7 @@ T *HeapDoubleList<T>::popFromHead(uarch_t flags)
 	}
 	else
 	{
-		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+		if (!FLAG_TEST(flags, PTRDBLLIST_OP_FLAGS_UNLOCKED))
 			{ list.lock.release(); }
 
 		return NULL;
