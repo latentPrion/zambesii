@@ -42,7 +42,8 @@ error_t SingleWaiterQueue::addItem(void *item)
 
 	ret = HeapDoubleList<void>::addItem(item);
 
-	state.lock.release();
+	ret = HeapDoubleList<void>::addItem(
+		item, PTRDBLLIST_ADD_TAIL, PTRDBLLIST_OP_FLAGS_UNLOCKED);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -52,8 +53,21 @@ error_t SingleWaiterQueue::addItem(void *item)
 		return ret;
 	};
 
+	/**	EXPLANATION:
+	 * Atomically unblock the waiting thread with respect to this
+	 * addItem() call's queue operation.
+	 *
+	 * TaskTrib::unblock() will release the threadSchedStateGuard on our
+	 * behalf after internally manipulating the sched queues. This has the
+	 * effect of making the thread unblock() operation atomic with respect to
+	 * this addItem() call's queue operation.
+	 */
+	Lock::sOperationDescriptor	unlockDescriptor(
+		&state.lock,
+		Lock::sOperationDescriptor::WAIT);
+
 	ret = taskTrib.unblock(reinterpret_cast<Thread *>(
-		atomicAsm::read(&state.rsrc.thread)));
+		atomicAsm::read(&state.rsrc.thread)), &unlockDescriptor);
 
 	if (ret != ERROR_SUCCESS)
 		{ panic(ret, FATAL SWAITQ"Failed to unblock thread!"); }
@@ -98,6 +112,7 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 		if (state.rsrc.thread == NULL)
 		{
 			state.lock.release();
+
 			printf(ERROR SWAITQ"pop failed because no waiting thread "
 				"has been set.\n");
 
@@ -107,6 +122,7 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 		if (state.rsrc.thread != currThread)
 		{
 			state.lock.release();
+
 			printf(ERROR SWAITQ"pop called by thread %x, but "
 				"waiting thread is %x.\n",
 				currThread->getFullId(),
@@ -115,7 +131,9 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 			return ERROR_UNINITIALIZED;
 		};
 
-		*item = HeapDoubleList<void>::popFromHead();
+		*item = HeapDoubleList<void>::popFromHead(
+			PTRDBLLIST_OP_FLAGS_UNLOCKED);
+
 		if (*item != NULL)
 		{
 			state.lock.release();
