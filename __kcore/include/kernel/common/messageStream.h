@@ -236,13 +236,13 @@ public:
 
 		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_N_QUEUES; i++)
 		{
-			ret = queues[i].initialize(
+			ret = state.rsrc.queues[i].initialize(
 				PTRDBLLIST_INITIALIZE_FLAGS_USE_OBJECT_CACHE);
 
 			if (ret != ERROR_SUCCESS) { return ret; };
 		};
 
-		return pendingSubsystems.initialize(
+		return state.rsrc.pendingSubsystems.initialize(
 			MSGSTREAM_SUBSYSTEM_N_QUEUES);
 	};
 
