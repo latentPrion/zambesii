@@ -246,6 +246,93 @@ public:
 	numaBankId_t		bankId;
 #endif
 	sCpuFeatures		cpuFeatures;
+
+	/* These are the nesting levels for each of the individual
+	 * interrupt types.
+	 *
+	 * We don't need to know these for the most part, other than the
+	 * nmiNestingLevel. Other than the nmiNestingLevel, they're purely
+	 * useful for profiling and debugging.
+	 *
+	 * The nmiNestingLevel is needed because NMIs may defy the CPU's
+	 * local interrupt masking mechanism. The NMI handler may need
+	 * to know how many levels deep it is nested, and whether there
+	 * have been multiple NMIs nested on the current CPU.
+	 */
+	InterruptNestingCounter nmiEvent;
+#ifdef CONFIG_DEBUG_INTERRUPTS
+	/* The following counters are built into the kernel when
+	 * CONFIG_DEBUG_INTERRUPTS is enabled.
+	 *
+	 * swiEvent should never have a nesting level greater than 1.
+	 * Nested SWIs are not supported.
+	 **/
+	InterruptNestingCounter irqEvent, excEvent, swiEvent;
+
+	/* This is the number of levels of interrupts of any kind that are
+	 * nested.
+	 *
+	 * "Interrupt" here is used in the loosest sense possible. It
+	 * includes both async and sync interrupts (IRQs, NMIs, SWIs,
+	 * exceptions).
+	 */
+	InterruptNestingCounter interruptEvent;
+
+	/* Indicates how many levels of Sync interrupt events are nested.
+	 * NB: Sync interrupts include: SWI, exceptions.
+	 *
+	 * * If we're handling a SWI/EXC, this should be > 0.
+	 * * If we're not handling a SWI/EXC, this should be == 0.
+	 * * If we're handling a SWI/EXC and it's the "first" (i.e: no nesting)
+	 *   then this should be == 1.
+	 * * When the first "nested" SWI/EXC comes in, this should be incremented
+	 *   to 2.
+	 *
+	 * Threads that are executing a sync interrupt handler can be preempted
+	 * by the timeslicer.
+	 */
+	InterruptNestingCounter syncInterruptEvent;
+#endif
+
+	/* Indicates how many levels of Async interrupt events are nested.
+	 * NB: Async interrupts include: IRQs, NMIs.
+	 * This is analogous to Linux's preempt_count, but we are doing things
+	 * a bit more abstractly than the Linux devs.
+	 *
+	 * * If we're handling an IRQ/NMI/etc, this should be > 0.
+	 * * If we're not handling an IRQ/NMI/etc, this should be == 0.
+	 * * If we're handling an IRQ/NMI/etc and it's the "first" (i.e: no nesting)
+	 *   then this should be == 1.
+	 * * When the first "nested" IRQ/NMI/etc comes in, this should be incremented
+	 *   to 2.
+	 *
+	 * This is used to control whether the timeslice preemptor should be
+	 * invoked at the exit from the current async int event.
+	 *
+	 * The timeslicer should only be invoked when we're at the outermost
+	 * level of async interrupt nesting (i.e: asyncInterruptNestingLevel == 1).
+	 * Calling the timeslicer at higher levels of nesting is pointless, will
+	 * cause the timeslicer to preempt one of the lower-nested async events.
+	 * This means that all of the lower nested async events will be
+	 * synchronously bound to the current thread on whose stack they're
+	 * running. This effectively converts all of those lower-nested async
+	 * events into sync events.
+	 *
+	 * Hence we must avoid calling the timeslicer during async int events.
+	 *
+	 * ----------------------------------------------------------------
+	 * Built unconditionally into every version of the kernel because it's
+	 * used to prevent the TaskTrib:: sched ops from performing an immediate
+	 * thread switch from within an async interrupt handler.
+	 *
+	 * It also has an overloaded second use when CONFIG_SCHED_PREEMPT_TIMESLICE
+	 * is enabled because it's used to prevent the timeslicer from being called
+	 * during async int events whose nesting level is > 1.
+	 *
+	 * Also useful for debugging purposes.
+	 **/
+	AsyncInterruptNestingCounter asyncInterruptEvent;
+
 	// Per CPU scheduler.
 	TaskStream		taskStream;
 
