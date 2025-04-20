@@ -55,14 +55,16 @@ public:
 public:
 	void dump(void);
 
-	error_t addItem(T *item, ubit8 mode=PTRDBLLIST_ADD_TAIL);
+	error_t addItem(
+		T *item, ubit8 mode=PTRDBLLIST_ADD_TAIL, ubit32 flags=0);
 	void removeItem(T *item, ubit32 flags=0);
-	T *popFromHead(void);
+	T *popFromHead(uarch_t flags=0);
 	T *popFromTail(void);
 	T *getHead(void);
 	T *getTail(void);
 
 	uarch_t	getNItems(void);
+	uarch_t unlocked_getNItems(void);
 
 	// Lock methods to explicitly control access
 	void lock(void) { list.lock.acquire(); }
@@ -143,12 +145,18 @@ public:
  ******************************************************************************/
 
 template <class T>
+uarch_t HeapDoubleList<T>::unlocked_getNItems(void)
+{
+	return list.rsrc.nItems;
+}
+
+template <class T>
 uarch_t HeapDoubleList<T>::getNItems(void)
 {
 	uarch_t		ret;
 
 	list.lock.acquire();
-	ret = list.rsrc.nItems;
+	ret = unlocked_getNItems();
 	list.lock.release();
 
 	return ret;
@@ -187,7 +195,7 @@ void HeapDoubleList<T>::dump(void)
 }
 
 template <class T>
-error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode)
+error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode, ubit32 flags)
 {
 	sListNode	*newNode;
 
@@ -211,7 +219,8 @@ error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode)
 	case PTRDBLLIST_ADD_HEAD:
 		newNode->prev = NULL;
 		
-		list.lock.acquire();
+		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+			{ list.lock.acquire(); }
 
 		newNode->next = list.rsrc.head;
 		if (list.rsrc.head != NULL) {
@@ -221,13 +230,15 @@ error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode)
 		list.rsrc.head = newNode;
 		list.rsrc.nItems++;
 
-		list.lock.release();
+		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+			{ list.lock.release(); }
 		break;
 
 	case PTRDBLLIST_ADD_TAIL:
 		newNode->next = NULL;
 
-		list.lock.acquire();
+		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+			{ list.lock.acquire(); }
 
 		newNode->prev = list.rsrc.tail;
 		if (list.rsrc.tail != NULL) {
@@ -237,7 +248,8 @@ error_t HeapDoubleList<T>::addItem(T *item, ubit8 mode)
 		list.rsrc.tail = newNode;
 		list.rsrc.nItems++;
 
-		list.lock.release();
+		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+			{ list.lock.release(); }
 		break;
 
 	default:
@@ -297,12 +309,13 @@ void HeapDoubleList<T>::removeItem(T *item, ubit32 flags)
 }
 
 template <class T>
-T *HeapDoubleList<T>::popFromHead(void)
+T *HeapDoubleList<T>::popFromHead(uarch_t flags)
 {
 	T		*ret=NULL;
 	sListNode	*tmp;
 
-	list.lock.acquire();
+	if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+		{ list.lock.acquire(); }
 
 	// If removing last item:
 	if (list.rsrc.tail == list.rsrc.head) { list.rsrc.tail = NULL; };
@@ -317,7 +330,8 @@ T *HeapDoubleList<T>::popFromHead(void)
 		list.rsrc.head = list.rsrc.head->next;
 		list.rsrc.nItems--;
 
-		list.lock.release();
+		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+			{ list.lock.release(); }
 
 		ret = tmp->item;
 
@@ -327,7 +341,9 @@ T *HeapDoubleList<T>::popFromHead(void)
 	}
 	else
 	{
-		list.lock.release();
+		if (!FLAG_TEST(flags, PTRDBLLIST_FLAGS_UNLOCKED))
+			{ list.lock.release(); }
+
 		return NULL;
 	};
 }
