@@ -21,6 +21,7 @@
 /* The writer asserts this flag to notify all current readers not to try for the
  * lock on readRelease().
  **/
+#include <__kclasses/debugPipe.h>
 class MultipleReaderLock
 :
 public Lock
@@ -131,7 +132,6 @@ public:
 	: Lock(name)
 	{}
 
-public:
 	void readAcquire(uarch_t *flags);
 	void readRelease(uarch_t flags);
 

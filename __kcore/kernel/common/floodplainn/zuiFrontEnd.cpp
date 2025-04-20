@@ -9,14 +9,15 @@
 #include <kernel/common/floodplainn/zui.h>
 
 
-error_t fplainn::Zui::initialize(void)
+error_t fplainn::Zui::initializeReq(MessageStreamCb *callerCb)
 {
 	error_t		ret;
 
 	ret = processTrib.__kgetStream()->spawnThread(
 		&main, NULL,
 		NULL, Thread::ROUND_ROBIN,
-		0, 0, &server);
+		0, 0, &server,
+		callerCb);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -25,7 +26,6 @@ error_t fplainn::Zui::initialize(void)
 	};
 
 	setServerTid(server->getFullId());
-	taskTrib.yield();
 	return ERROR_SUCCESS;
 }
 

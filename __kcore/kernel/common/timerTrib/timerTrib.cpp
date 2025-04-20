@@ -10,6 +10,8 @@
 #include <kernel/common/timerTrib/timerTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
+#include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/zasyncStream.h>
 
 
 TimerTrib::TimerTrib(void)
@@ -69,7 +71,7 @@ sarch_t TimerTrib::uninstallClockRoutine(void)
 	return timerQueues[clockQueueId]->uninstallClockRoutine();
 }
 
-void TimerTrib::initializeAllQueues(void)
+void TimerTrib::initializeAllQueuesReq(void)
 {
 	error_t			ret;
 	ZkcmTimerDevice		*dev;
@@ -118,13 +120,14 @@ void TimerTrib::initializeAllQueues(void)
 			| TIMERCTL_FILTER_FLAGS_SKIP_LATCHED,
 			&it))
 	{
-		newTimerDeviceNotification(dev);
+		newTimerDeviceInd(dev);
 	};
 }
 
-void TimerTrib::newTimerDeviceNotification(ZkcmTimerDevice *dev)
+void TimerTrib::newTimerDeviceInd(ZkcmTimerDevice *dev)
 {
 	sTime		min, max;
+	ubit8		dummySym;
 
 	/**	EXPLANATION:
 	 * Checks to see if the new timer device can be consumed by any of the
@@ -155,149 +158,80 @@ void TimerTrib::newTimerDeviceNotification(ZkcmTimerDevice *dev)
 			};
 
 			__KBIT_SET(latchedPeriodMask, i);
-			enableWaitingOnQueue(timerQueues[i]);
+			eventProcessor.enableWaitingOnQueue(
+				timerQueues[i], 1,
+				reinterpret_cast<MessageStreamCb *>(&dummySym));
+
 			return;
 		};
 	};
 
 }
 
-error_t TimerTrib::enableWaitingOnQueue(ubit32 nanos)
+TimerQueue* TimerTrib::lookupQueueForPeriodNs(ubit32 nanos)
 {
-	TimerQueue			*queue;
-
 	switch (nanos)
 	{
 	case 1000000000:
-		queue = &period1s;
-		break;
+		return &period1s;
 
 	case 100000000:
-		queue = &period100ms;
-		break;
+		return &period100ms;
 
 	case 10000000:
-		queue = &period10ms;
-		break;
+		return &period10ms;
 
 	case 1000000:
-		queue = &period1ms;
-		break;
+		return &period1ms;
 
 	case 100000:
-		queue = &period100us;
-		break;
+		return &period100us;
 
 	case 10000:
-		queue = &period10us;
-		break;
+		return &period10us;
 
 	case 1000:
-		queue = &period1us;
-		break;
+		return &period1us;
 
 	case 100:
-		queue = &period100ns;
-		break;
+		return &period100ns;
 
 	case 10:
-		queue = &period10ns;
-		break;
+		return &period10ns;
 
 	case 1:
-		queue = &period1ns;
-		break;
+		return &period1ns;
 
 	default:
-		return ERROR_INVALID_ARG_VAL;
-	};
-
-	return enableWaitingOnQueue(queue);
+		return NULL;
+	}
 }
 
-error_t TimerTrib::enableWaitingOnQueue(TimerQueue *queue)
+error_t TimerTrib::enableWaitingOnQueue(ubit32 nanos)
 {
-	sEventProcessor::sMessage	*msg;
+	ubit8			dummySym;
+	TimerQueue *queue = lookupQueueForPeriodNs(nanos);
 
-	if (!queue->isLatched()) { return ERROR_UNINITIALIZED; };
+	if (queue == NULL) { return ERROR_INVALID_ARG_VAL; };
 
-	msg = new sEventProcessor::sMessage(
-		sEventProcessor::sMessage::QUEUE_LATCHED,
-		queue);
-
-	if (msg == NULL) { return ERROR_MEMORY_NOMEM; };
-
-	return eventProcessor.controlQueue.addItem(msg);
+	return eventProcessor.enableWaitingOnQueue(
+		queue, 1, reinterpret_cast<MessageStreamCb*>(&dummySym));
 }
 
-error_t TimerTrib::insertTimerQueueRequestObject(TimerStream::sTimerMsg *request)
+error_t TimerTrib::disableWaitingOnQueue(ubit32 nanos)
 {
-	error_t		ret;
-	TimerQueue	*suboptimal=NULL;
+	ubit8			dummySym;
+	TimerQueue *queue = lookupQueueForPeriodNs(nanos);
 
-	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
-	{
-		// Skip queues that aren't latched to a device.
-		if (!__KBIT_TEST(latchedPeriodMask, i)) { continue; };
+	if (queue == NULL) { return ERROR_INVALID_ARG_VAL; };
 
-		suboptimal = timerQueues[i];
-
-		// Temporarily add the queue's period to the placement time.
-		request->placementStamp.time.nseconds
-			+= timerQueues[i]->getNativePeriod();
-
-		/* If the object's timeout will be exceeded by placing it into
-		 * this queue, skip the queue.
-		 **/
-		if (request->placementStamp > request->expirationStamp)
-		{
-			// Reset the change before continuing.
-			request->placementStamp.time.nseconds
-				-= timerQueues[i]->getNativePeriod();
-
-			continue;
-		};
-
-		// Same as above: reset the change to placementStamp.
-		request->placementStamp.time.nseconds
-			-= timerQueues[i]->getNativePeriod();
-
-		// Else, the request can spend at least one tick in this queue.
-		timerQueues[i]->lockRequestQueue();
-		ret = timerQueues[i]->insert(request);
-		timerQueues[i]->unlockRequestQueue();
-		return ret;
-	};
-
-	if (suboptimal == NULL)
-	{
-		printf(FATAL TIMERTRIB"No timer queues are latched.\n");
-		return ERROR_FATAL;
-	};
-
-	/*printf(WARNING TIMERTRIB"Request placed into suboptimal queue %dus."
-		"\n", suboptimal->getNativePeriod() / 1000);*/
-
-	return suboptimal->insert(request);
-}
-
-// Called by Timer Streams to cancel Timer Request objects from Qs.
-sarch_t TimerTrib::cancelTimerQueueRequestObject(TimerStream::sTimerMsg *request)
-{
-	sarch_t		ret;
-	TimerQueue	*targetQueue;
-
-	targetQueue = request->currentQueue;
-
-	targetQueue->lockRequestQueue();
-	ret = targetQueue->cancel(request);
-	targetQueue->unlockRequestQueue();
-	return ret;
+	return eventProcessor.disableWaitingOnQueue(
+		queue, 1, reinterpret_cast<MessageStreamCb*>(&dummySym));
 }
 
 error_t TimerTrib::initialize(void)
 {
-	ubit8			h, m, s;
+	ubit8			h, m, s, dummySym;
 	error_t			ret;
 
 	/**	EXPLANATION:
@@ -341,7 +275,9 @@ error_t TimerTrib::initialize(void)
 	// Get mask of safe periods for this chipset.
 	safePeriodMask = zkcmCore.timerControl.getChipsetSafeTimerPeriods();
 
-	// Spawn the timer event dequeueing thread.
+	/* Spawn the timer event dequeueing thread. Use the dummySym variable
+	 * to identify the ACK msg.
+	 **/
 	ret = processTrib.__kgetStream()->spawnThread(
 		&TimerTrib::sEventProcessor::thread, NULL,
 		NULL,
@@ -350,31 +286,173 @@ error_t TimerTrib::initialize(void)
 		SPAWNTHREAD_FLAGS_AFFINITY_PINHERIT
 		| SPAWNTHREAD_FLAGS_SCHEDPRIO_PRIOCLASS_SET
 		| SPAWNTHREAD_FLAGS_DORMANT,
-		&eventProcessor.task);
+		&eventProcessor.task, &dummySym);
 
-	if (ret != ERROR_SUCCESS) { return ret; };
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR TIMERTRIB"Failed to spawn event dqer thread: "
+			"%d.\n", ret);
+		return ret;
+	}
 
 	eventProcessor.tid = eventProcessor.task->getFullId();
-
-	ret = eventProcessor.controlQueue.initialize();
-	if (ret != ERROR_SUCCESS) { return ret; };
 
 	printf(NOTICE TIMERTRIB"initialize: Spawned event dqer thread. "
 		"addr %p, id %x.\n",
 		eventProcessor.task, eventProcessor.tid);
 
-	eventProcessor.controlQueue.setWaitingThread(eventProcessor.task);
+printf(FATAL TIMERTRIB"initialize: DQer thread ID is %x.\n",
+	eventProcessor.task->getFullId());
+	/** EXPLANATION:
+	 * We spawned the event processor thread with the DORMANT flag
+	 * set, so it won't run until we wake it. This enabled us to
+	 * do some initialization here without worrying about race
+	 * conditions with the event processor thread.
+	 *
+	 * wake() will cause the event processor thread to wake up and
+	 * initialize. When it's initialized, it'll send an ACK msg back
+	 * to us, which will cause us to resume execution at
+	 * initialize_contd2() below.
+	 **/
+	if (taskTrib.schedule(eventProcessor.task) != ERROR_SUCCESS)
+	{
+		printf(ERROR TIMERTRIB"Failed to schedule event processor "
+			"thread!\n");
+		return ERROR_UNKNOWN;
+	}
 	if (taskTrib.wake(eventProcessor.task) != ERROR_SUCCESS)
 	{
-		printf(ERROR TIMERTRIB"Failed to wake event processor thread!\n");
+		printf(ERROR TIMERTRIB"Failed to wake event processor "
+			"thread!\n");
 		return ERROR_UNKNOWN;
 	}
 
-	initializeAllQueues();
-	zkcmCore.timerControl.timerQueuesInitializedNotification();
+	printf(FATAL TIMERTRIB"initialize: wake(%x) returned %d.\n",
+		eventProcessor.task->getFullId(), ret);
+
+	MessageStream::sHeader		*threadAckMsg=NULL;
+	MessageStream::Filter		filter(
+		0, 0, 0, 0, 0, &dummySym,
+		MessageStream::Filter::FLAG_PRIVATE_DATA);
+
+	// Block until the event processor thread sends an ACK msg.
+	ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+		->messageStream.pull(
+			&threadAckMsg, 0, &filter);
+
+	if (ret != ERROR_SUCCESS || threadAckMsg->error != ERROR_SUCCESS)
+	{
+		printf(ERROR TIMERTRIB"initialize: Event processor "
+			"thread failed to initialize: "
+			"ACK'd with error %d.\n", threadAckMsg->error);
+
+		return threadAckMsg->error;
+	};
 
 	// Initialize the kernel Timer Stream.
-	return processTrib.__kgetStream()->timerStream.initialize();
+	initializeAllQueuesReq();
+	zkcmCore.timerControl.timerQueuesInitializedNotification();
+
+	printf(FATAL TIMERTRIB"initialize: done initializing queues and "
+		"sending chipset notification.\n");
+
+	ret = processTrib.__kgetStream()->timerStream.initialize();
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR TIMERTRIB"initialize: Failed to "
+			"initialize timer stream.\n");
+
+		return ret;
+	};
+
+	printf(FATAL TIMERTRIB"initialize: done initializing timer "
+		"stream.\n");
+
+	return ERROR_SUCCESS;
+}
+
+error_t TimerTrib::insertTimerQueueRequestObject(
+	TimerStream::sTimerMsg *request
+	)
+{
+	error_t		ret;
+	TimerQueue	*suboptimal=NULL;
+
+	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
+	{
+		// Skip queues that aren't latched to a device.
+		if (!__KBIT_TEST(latchedPeriodMask, i)) { continue; };
+
+printf(CC"&1&:%d\n", i);
+		suboptimal = timerQueues[i];
+
+		// Temporarily add the queue's period to the placement time.
+		request->placementStamp.time.nseconds
+			+= timerQueues[i]->getNativePeriod();
+
+printf(CC"&2&");
+
+		/* If the object's timeout will be exceeded by placing it into
+		 * this queue, skip the queue.
+		 **/
+		if (request->placementStamp > request->expirationStamp)
+		{
+printf(CC"&3&");
+			// Reset the change before continuing.
+			request->placementStamp.time.nseconds
+				-= timerQueues[i]->getNativePeriod();
+
+			continue;
+		};
+
+printf(CC"&4&");
+		// Same as above: reset the change to placementStamp.
+		request->placementStamp.time.nseconds
+			-= timerQueues[i]->getNativePeriod();
+
+		// Else, the request can spend at least one tick in this queue.
+		timerQueues[i]->lockRequestQueue();
+printf(CC"&5&");
+		ret = timerQueues[i]->insert(request);
+printf(CC"&6&");
+		timerQueues[i]->unlockRequestQueue();
+printf(CC"&7&");
+		return ret;
+	};
+
+	if (suboptimal == NULL)
+	{
+		printf(FATAL TIMERTRIB"No timer queues are latched.\n");
+		return ERROR_FATAL;
+	};
+
+	/*printf(WARNING TIMERTRIB"Request placed into suboptimal queue %dus."
+		"\n", suboptimal->getNativePeriod() / 1000);*/
+
+printf(CC"&8&");
+	suboptimal->lockRequestQueue();
+printf(CC"&9&");
+	ret = suboptimal->insert(request);
+printf(CC"&10&");
+	suboptimal->unlockRequestQueue();
+printf(CC"&11&");
+	return ret;
+}
+
+// Called by Timer Streams to cancel Timer Request objects from Qs.
+sarch_t TimerTrib::cancelTimerQueueRequestObject(
+	TimerStream::sTimerMsg *request
+	)
+{
+	sarch_t		ret;
+	TimerQueue	*targetQueue;
+
+	targetQueue = request->currentQueue;
+
+	targetQueue->lockRequestQueue();
+	ret = targetQueue->cancel(request);
+	targetQueue->unlockRequestQueue();
+	return ret;
 }
 
 void TimerTrib::getCurrentTime(sTime *t)
@@ -390,206 +468,6 @@ void TimerTrib::getCurrentDate(sDate *d)
 void TimerTrib::getCurrentDateTime(sTimestamp *stamp)
 {
 	zkcmCore.timerControl.getCurrentDateTime(stamp);
-}
-
-sarch_t TimerTrib::sEventProcessor::getFreeWaitSlot(ubit8 *ret)
-{
-	for (*ret=0; *ret<6; *ret += 1)
-	{
-		if (waitSlots[*ret].eventQueue == NULL) {
-			return 1;
-		};
-	};
-
-	return 0;
-}
-
-void TimerTrib::sEventProcessor::releaseWaitSlotFor(TimerQueue *timerQueue)
-{
-	for (ubit8 i=0; i<6; i++)
-	{
-		if (waitSlots[i].timerQueue == timerQueue) {
-			releaseWaitSlot(i);
-		};
-	};
-}
-
-void TimerTrib::sEventProcessor::processQueueLatchedMessage(sMessage *msg)
-{
-	ubit8		slot;
-
-	// Wait on the specified queue.
-	if (!getFreeWaitSlot(&slot))
-	{
-		printf(ERROR TIMERTRIB"event DQer: failed to wait on "
-			"timer Q %dus: no free slots.\n",
-			msg->timerQueue->getNativePeriod() / 1000);
-
-		return;
-	};
-
-	waitSlots[slot].timerQueue = msg->timerQueue;
-	waitSlots[slot].eventQueue = msg->timerQueue
-		->getDevice()->getEventQueue();
-
-	waitSlots[slot].eventQueue->setWaitingThread(
-		timerTrib.eventProcessor.task);
-
-	printf(NOTICE TIMERTRIB"event DQer: Waiting on timerQueue %dus.\n\t"
-		"Allocated to slot %d.\n",
-		waitSlots[slot].timerQueue->getNativePeriod() / 1000, slot);
-}
-
-void TimerTrib::sEventProcessor::processQueueUnlatchedMessage(sMessage *msg)
-{
-	// Stop waiting on the specified queue.
-	releaseWaitSlotFor(msg->timerQueue);
-	printf(NOTICE TIMERTRIB"event DQer: no longer waiting on timerQueue "
-		"%dus.\n",
-		msg->timerQueue->getNativePeriod() / 1000);
-}
-
-void TimerTrib::sEventProcessor::processExitMessage(sMessage *)
-{
-	printf(WARNING TIMERTRIB"event DQer: Got EXIT_THREAD message.\n");
-	/*UNIMPLEMENTED(
-		"TimerTrib::"
-		"sEventProcessor::processExitMessage");*/
-}
-
-void TimerTrib::sEventProcessor::dump(void)
-{
-	const ubit8		nWaitSlots = sizeof(waitSlots) / sizeof(waitSlots[0]);
-
-	printf(NOTICE TIMERTRIB"Event DQer thread: %d wait slots:\n",
-		nWaitSlots);
-
-	for (ubit8 i=0; i<nWaitSlots; i++)
-	{
-		printf(NOTICE TIMERTRIB"waitSlot[%d]: timerQueue %p, "
-			"eventQueue %p.\n",
-			i, waitSlots[i].timerQueue,
-			waitSlots[i].eventQueue);
-
-		if (waitSlots[i].eventQueue != NULL)
-			{ waitSlots[i].eventQueue->dump(); };
-		if (waitSlots[i].timerQueue != NULL)
-			{ waitSlots[i].timerQueue->dump(); };
-	};
-}
-
-void TimerTrib::sendMessage(void)
-{
-	sEventProcessor::sMessage	*msg;
-
-	// Posts an artificial message to the control queue.
-	msg = new sEventProcessor::sMessage(
-		sEventProcessor::sMessage::EXIT_THREAD, NULL);
-
-	eventProcessor.controlQueue.addItem(msg);
-}
-
-void TimerTrib::sendQMessage(void)
-{
-	sZkcmTimerEvent		*irqEvent;
-
-	irqEvent = period10ms.getDevice()->allocateIrqEvent();
-	irqEvent->device = period10ms.getDevice();
-	irqEvent->latchedStream = &processTrib.__kgetStream()->floodplainnStream;
-	getCurrentTime(&irqEvent->irqStamp.time);
-	getCurrentDate(&irqEvent->irqStamp.date);
-
-	period10ms.getDevice()->getEventQueue()->addItem(irqEvent);
-}
-
-void TimerTrib::sEventProcessor::thread(void *)
-{
-	sEventProcessor::sMessage	*currMsg;
-	sarch_t				messagesWereFound;
-	error_t				err;
-
-	printf(NOTICE TIMERTRIB"Event DQer thread has begun executing.\n");
-	for (;FOREVER;)
-	{
-		messagesWereFound = 0;
-
-		err = timerTrib.eventProcessor.controlQueue.pop(
-			(void **)&currMsg,
-			SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
-
-		if (err == ERROR_SUCCESS)
-		{
-			messagesWereFound = 1;
-			switch (currMsg->type)
-			{
-			case sEventProcessor::sMessage::EXIT_THREAD:
-				timerTrib.eventProcessor.processExitMessage(
-					currMsg);
-				break;
-
-			case sEventProcessor::sMessage::QUEUE_LATCHED:
-				timerTrib.eventProcessor
-					.processQueueLatchedMessage(currMsg);
-
-				break;
-
-			case sEventProcessor::sMessage::QUEUE_UNLATCHED:
-				timerTrib.eventProcessor
-					.processQueueUnlatchedMessage(currMsg);
-
-				break;
-
-			default:
-				printf(NOTICE TIMERTRIB"event dqer thread: "
-					"invalid message type %d.\n",
-					currMsg->type);
-				break;
-			};
-
-			/* Free the message and force the loop to return and
-			 * check the control queue again, until it returns
-			 * no new messages. Control queue messages have a higher
-			 * priority than IRQ event messages.
-			 **/
-			delete currMsg;
-			continue;
-		};
-
-		// Wait for the other queues here.
-		sZkcmTimerEvent		*currIrqEvent;
-		for (ubit8 i=0; i<6; i++)
-		{
-			// Skip blank slots.
-			if (timerTrib.eventProcessor.waitSlots[i].eventQueue
-				== NULL)
-			{
-				continue;
-			};
-
-			err = timerTrib.eventProcessor.waitSlots[i].eventQueue
-				->pop(
-					(void **)&currIrqEvent,
-					SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
-
-			if (err == ERROR_SUCCESS)
-			{
-				messagesWereFound = 1;
-
-				// Dispatch the message here.
-				timerTrib.eventProcessor.waitSlots[i].timerQueue
-					->tick(currIrqEvent);
-
-				timerTrib.eventProcessor.waitSlots[i].timerQueue
-					->getDevice()->freeIrqEvent(
-						currIrqEvent);
-			};
-		};
-
-		// If the loop ran to its end and there were no messages, block.
-		if (!messagesWereFound) {
-			taskTrib.block();
-		};
-	};
 }
 
 void TimerTrib::dump(void)

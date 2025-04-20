@@ -11,6 +11,7 @@
 #include <__kclasses/heapList.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
+#include <kernel/common/interruptTrib/interruptEventGuards.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
 
@@ -111,19 +112,17 @@ error_t InterruptTrib::initializeIrqs(void)
 void InterruptTrib::msiIrqMain(RegisterContext *regs)
 {
 	(void)regs;
+	CpuStream *cpuStream = cpuTrib.getCurrentCpuStream();
+
+	IrqEventCounterGuard irqEventCounterGuard(cpuStream);
+
+	// First get the IRQ metadata, then enable interrupts.
 
 #ifdef CONFIG_RT_KERNEL_IRQ_NESTING
 	/* See comments in pinIrqMain() for more details about why
 	 * we must enable interrupts *after* calling enterIrq().
 	 **/
-	cpuControl::enableInterrupts();
-#endif
-	// First get the IRQ metadata, then enable interrupts.
-#ifdef CONFIG_RT_KERNEL_IRQ_NESTING
-	/* See comments in pinIrqMain() for more details about why
-	 * we must disable interrupts *before* calling exitIrq().
-	 **/
-	cpuControl::disableInterrupts();
+	LocalInterruptSignalGuard localInterruptGuard;
 #endif
 }
 
@@ -134,6 +133,11 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 	status_t		status;
 	ubit8			makeNoise, triggerMode, isrRetireListLength=0;
 	ubit16			__kpin;
+	CpuStream		*cpuStream;
+
+	cpuStream = cpuTrib.getCurrentCpuStream();
+
+	IrqEventCounterGuard irqEventCounterGuard(cpuStream);
 
 	// Ask the chipset if any pin-based IRQs are pending and handle them.
 	status = zkcmCore.irqControl.identifyActiveIrq(
@@ -172,11 +176,13 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 	 * enableInterrupts(), it's because we need to read the IRQ metadata
 	 * before it gets overwritten.
 	 **/
-	cpuControl::enableInterrupts();
+	LocalInterruptSignalGuard localInterruptGuard;
 #endif
 
 #ifdef CONFIG_DEBUG_INTERRUPTS
 	makeNoise = (__kpin != 0 && __kpin != 18 && __kpin != 16);
+#else
+	makeNoise = 0; (void)makeNoise;
 #endif
 
 	if (status == IRQCTL_IDENTIFY_ACTIVE_IRQ_SPURIOUS
@@ -228,10 +234,10 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 #endif
 	atomicAsm::set(&pinDescriptor->inService, 1);
 
-	HeapList<sIsrDescriptor>::Iterator	it =
-		pinDescriptor->isrList.begin(0);
-
-	for (; it != pinDescriptor->isrList.end(); ++it)
+	for (HeapList<sIsrDescriptor>::Iterator	it =
+			pinDescriptor->isrList.begin(0);
+		it != pinDescriptor->isrList.end();
+		++it)
 	{
 		isrDescriptor = *it;
 
@@ -276,7 +282,9 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 	zkcmCore.irqControl.sendEoi(__kpin);
 
 	// Run the retire list.
-	if (isrRetireListLength == 0) { return; };
+	if (isrRetireListLength == 0)
+		{ return; };
+
 	for (uarch_t i=0; i<isrRetireListLength; i++)
 	{
 		if (isrRetireList[i]->driverType == sIsrDescriptor::ZKCM)
@@ -286,22 +294,13 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 		}
 		else {};
 	};
-
-#ifdef CONFIG_RT_KERNEL_IRQ_NESTING
-	/* Disable interrupts before calling exitIrq().
-	 *
-	 * If we call exitIrq() before disabling interrupts, this will
-	 * allow a nested IRQ to come in and think that its nesting level
-	 * is lower than it should be. This has similarly bad consequences
-	 * to the problem described above in the comment for enterIrq().
-	 **/
-	cpuControl::disableInterrupts();
-#endif
 }
 
 void InterruptTrib::exceptionMain(RegisterContext *regs)
 {
 	CpuStream *cpuStream = cpuTrib.getCurrentCpuStream();
+
+	ExceptionEventCounterGuard exceptionEventCounterGuard(cpuStream);
 
 	if (msiIrqTable[regs->vectorNo].type == sVectorDescriptor::UNCLAIMED)
 	{
@@ -322,6 +321,7 @@ void InterruptTrib::exceptionMain(RegisterContext *regs)
 	{
 		(msiIrqTable[regs->vectorNo].exception)(regs, 1);
 	};
+
 }
 
 void InterruptTrib::installException(

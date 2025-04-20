@@ -1,7 +1,8 @@
 {
     "files.associations": {
         "new": "cpp",
-        "type_traits": "cpp"
+        "type_traits": "cpp",
+        "memory": "cpp"
     },
  //   "C_Cpp.errorSquiggles": "disabled",
     "terminal.integrated.env.linux": {

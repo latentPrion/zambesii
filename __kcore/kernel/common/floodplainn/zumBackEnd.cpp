@@ -232,6 +232,7 @@ void fplainn::Zum::main(void *)
 	};
 
 	printf(NOTICE ZUM"main: running, tid %x.\n", self->getFullId());
+	self->sendAckToSpawner(ERROR_SUCCESS);
 
 	for (;FOREVER;)
 	{
@@ -249,7 +250,7 @@ void fplainn::Zum::main(void *)
 		default:
 			Callback	*callback;
 
-			callback = (Callback *)iMsg->privateData;
+			callback = static_cast<Callback *>(iMsg->privateData);
 			if (callback == NULL)
 			{
 				printf(WARNING ZUM"main: message with no "
@@ -333,7 +334,7 @@ void zumServer::zasyncHandler(
 }
 
 class zumServer::start::StartDeviceReqCb
-: public _Callback<startDeviceReqCbFn>
+: public MessageStreamCallback<startDeviceReqCbFn *>
 {
 	fplainn::Zum::sZumDeviceMgmtMsg *ctxt;
 	Thread *self;
@@ -343,7 +344,7 @@ public:
 	StartDeviceReqCb(
 		startDeviceReqCbFn *fn,
 		fplainn::Zum::sZumDeviceMgmtMsg *ctxt, Thread *self, fplainn::Device *dev)
-	: _Callback<startDeviceReqCbFn>(fn),
+	: MessageStreamCallback<startDeviceReqCbFn *>(fn),
 	ctxt(ctxt), self(self), dev(dev)
 	{}
 

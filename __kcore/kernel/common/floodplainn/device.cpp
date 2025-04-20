@@ -171,7 +171,7 @@ error_t fplainn::Driver::detectClasses(void)
 					"\tMeta index %d in child bops doesn't "
 					"map to any meta declaration.\n",
 					basePath, shortName, currMetaIndex)
-				: noop();
+				: 0;
 
 				continue;
 			};
@@ -730,29 +730,37 @@ error_t fplainn::Driver::addOrModifyOpsInit(ubit16 opsIndex, ubit16 metaIndex)
 {
 	sOpsInit	*old;
 
+printf(CC"~1~");
 	if (opsIndex == 0 || metaIndex == 0) { return ERROR_INVALID_ARG_VAL; }
+printf(CC"~2~");
 
 	// Does the opsIndex already exist?
 	old = getOpsInit(opsIndex);
 	if (old != NULL)
 	{
+printf(CC"~3~");
 		old->metaIndex = metaIndex;
 		return ERROR_SUCCESS;
 	}
 
+printf(CC"~4~");
 	sOpsInit *tmp = new sOpsInit[nOpsInits + 1];
 	if (tmp == NULL)
 	{
+printf(CC"~5~");
 		return ERROR_MEMORY_NOMEM;
 	}
 
+printf(CC"~6~");
 	if (nOpsInits > 0)
 	{
+printf(CC"~7~");
 		memcpy(
 			tmp, opsInits,
 			nOpsInits * sizeof(*opsInits));
 	}
 
+printf(CC"~8~");
 	tmp[nOpsInits] = sOpsInit(opsIndex, metaIndex);
 	old = opsInits;
 	opsInits = tmp;

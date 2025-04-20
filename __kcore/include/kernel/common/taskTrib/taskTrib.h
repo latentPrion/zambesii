@@ -6,6 +6,7 @@
 	#include <kernel/common/tributary.h>
 	#include <kernel/common/thread.h>
 	#include <kernel/common/lock.h>
+	#include <kernel/common/multipleReaderLock.h>
 	#include <kernel/common/taskTrib/prio.h>
 	#include <kernel/common/taskTrib/taskQNode.h>
 	#include <kernel/common/processTrib/processTrib.h>
@@ -13,6 +14,8 @@
 	#include <kernel/common/taskTrib/load.h>
 
 #define TASKTRIB		"Task Trib: "
+
+#define TASKTRIB_SPAWNTHREAD_ACK	(0)
 
 class TaskTrib
 :

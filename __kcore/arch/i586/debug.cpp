@@ -106,12 +106,14 @@ void debug::printStackTrace(void *startFrame, sStackDescriptor *stack)
 {
 	sX8632StackFrame *currFrame;
 
+	// Print stack bounds information
 	printf(NOTICE"Stack: bounds: low %p, high %p. Start frame %p\n",
 		stack->start, stack->eof, startFrame);
 
 	currFrame = (sX8632StackFrame *)startFrame;
 	do
 	{
+		// Print frame information
 		printf(NOTICE"Stack: frame @%p, called by: %p\n",
 			currFrame, currFrame->caller);
 

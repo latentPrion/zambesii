@@ -1,0 +1,1978 @@
+N: Orientation: Kernel debug output tied to devices BUFFER and DEVICE1.
+N: Orientation: Zambesii kernel version 0.00.014
+N: Orientation: Multiboot 1 header at vX2cf20
+N: Mem Reservoir: initialize(): Done. __kheap chunk size 0x200000, custom bogs array vXc0500000.
+F: IBMPC Irq-Ctl: chipsetEventNotification has been disconnected from the kernel code path.
+	You will have to re-organize and reconnect this code path.
+	ONLY the IBMPC VGA terminal will receive this message.
+	Event is 7.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0502004, EIP vXc0057c54
+	WPRl map: stat 0, pmap Px403000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0503004, EIP vXc0057cac
+	WPRl map: stat 0, pmap Px404000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: getNewChunk: chunk vXc0502000: first block @vXc0503000, 2093056 bytes.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0505008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px405000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0507008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px406000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0509008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px408000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc050b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px40A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc050d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px40B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc050f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px40D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0511008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px40E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0513008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px40F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0515008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px410000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0517008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px411000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0519008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px412000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc051b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px413000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc051d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px414000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc051f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px415000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0521008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px416000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0523008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px417000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0525008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px418000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0527008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px419000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0529008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px41A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc052b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px41B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc052d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px41C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc052f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px41D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0531008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px41E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0533008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px41F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0535008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px420000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0537008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px421000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0539008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px422000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc053b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px423000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc053d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px424000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc053f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px425000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0541008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px426000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0543008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px427000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0545008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px428000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: IBMPC-8259: Registered for __kpins. Base: 0.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0547008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px429000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0549008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px42A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+W: chipset_findTables: RSDP: No RSDP found.
+W: chipset_findTables: MPFP: No MP FP found.
+W: LAPIC: detectPaddr: Using default paddr.
+N: LAPIC: detectPaddr: LAPIC paddr: PxFEE00000.
+N: CPU Trib: loadBspInformation: BSP CPU ID is 0.
+W: chipset_findTables: RSDP: No RSDP found.
+W: CPU Trib: loadBspInformation: Unable to determine BSP bank ID.
+	Assuming BSP CPU is on SHBANKID (31).
+W: chipset_findTables: RSDP: No RSDP found.
+W: chipset_findTables: RSDP: No RSDP found.
+N: CPU Mod: SMP: getSmpMap: No ACPI. Trying MP.
+N: CPU Mod: SMP: getSmpMap: Falling back to MP tables.
+W: chipset_findTables: MPFP: No MP FP found.
+N: CPU Mod: SMP: getSmpMap: No MP tables.
+W: CPU Trib: loadBspInformation: Failed to detect BSP ACPI ID.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc054b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px42B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: CPU Trib: createBank(31): Successful.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc054d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px42D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc054f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px42E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU -1 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0551008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px42F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU -1 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0553008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px430000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0555008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px431000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0557008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px432000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0559008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px433000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc055b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px434000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc055d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px435000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc055f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px436000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0561008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px437000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0563008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px438000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0565008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px439000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0567008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px43A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0569008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px43B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc056b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px43C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc056d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px43D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc056f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px43E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0571008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px43F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0573008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px440000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0575008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px441000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0577008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px442000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0579008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px443000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: CPU Stream 0 @vXc0076940: initialize: done.
+	__kcps symbol @vXc00b15c0, __kcps array @vXc00b15c0, __kcps[0] = vXc0078cf4, stackTopAbs = vXc0078cf8
+	Power stack sz=8192B.
+N: CPU Trib: spawnStream(31,0,-1): Success.
+N: CPU Messager 0: Bound.
+W: chipset_findTables: MPFP: No MP FP found.
+W: chipset_findTables: RSDP: No RSDP found.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc057b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px445000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: CPU Stream 0: CPU model detected as AMD Athlon(tm) processor.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc057d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px446000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+W: ZKCM Core: Unhandled event 8.
+N: Orientation: Entering message loop. Task ID 0x0 (@vXc0076a68).
+W: ZKCM Core: Unhandled event 12.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc057f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px447000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0581008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px448000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0587008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px449000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+W: ZKCM Core: Unhandled event 10.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0589008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px44A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc058b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px44B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+W: ZKCM Core: Unhandled event 11.
+W: ZKCM Core: Unhandled event 12.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc058d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px44C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc058f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px44D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0591008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px44E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0593008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px44F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0595008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px450000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0597008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px451000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0599008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px452000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc059b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px453000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc059d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px454000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc059f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px455000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05a1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px456000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+W: ZKCM Core: Unhandled event 11.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05a3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px458000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05a5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px459000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+W: ZKCM Core: Unhandled event 11.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05a7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px45A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05a9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px45B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+W: ZKCM Core: Unhandled event 11.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05ab008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px45C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05ad008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px45D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+W: ZKCM Core: Unhandled event 11.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05af008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px45E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05b1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px45F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05b3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px460000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05b5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px461000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05b7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px462000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05b9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px463000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05bb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px464000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05bd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px465000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05bf008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px466000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05c1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px467000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05c3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px468000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05c5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px469000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05c7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px46A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05c9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px46B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05cb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px46C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05cd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px46D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05cf008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px46E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05d1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px46F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05d3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px470000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05d5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px471000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05d7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px472000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05d9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px473000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05db008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px474000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05dd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px475000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05df008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px478000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+F: Task Trib: In block(): currThread->id is 0x0, schedState is 4(running) (addr vXc0076afc).
+F: Task Trib: In block(0x0): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10001.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05e1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px47A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05e3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px47B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05e5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px47C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05e7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px47D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05ea008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px47E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05ec008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px47F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05ef008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px480000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05f1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px481000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05f4008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px482000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05f6008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px483000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05f9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px484000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05fb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px485000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc05fe008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px486000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0600008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px487000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0603008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px488000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0605008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px489000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0607008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px48A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc060a008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px48B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc060c008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px48C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc060f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px48D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0611008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px48E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0614008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px48F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0616008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px490000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0619008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px491000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc061b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px492000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc061e008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px493000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0620008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px494000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0623008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px495000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: FplainnIndex: Floodplainn-indexer executing;
+	process ID: 0x10001. ESP: vXc070df58. Listening; dormanting.
+N: FplainnIndex: KERNEL_INDEX: Version 0.0. (le), holds 8 drivers, 5 provisions, 3 devices.
+	Entering event loop.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10001, schedState is 4(running) (addr vXc05bde04).
+F: Task Trib: In block(0x10001): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x0.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0625008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px496000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0627008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px497000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0629008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px498000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc062b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px499000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc062d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px49A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc062f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px49B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0631008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px49C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0633008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px49D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0635008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px49E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0637008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px49F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0639008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4A0000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc063b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4A1000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc063d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4A2000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc063f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4A3000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0641008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4A4000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0643008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4A5000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0645008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4A6000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0647008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4A7000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0649008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4AA000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+F: Task Trib: In block(): currThread->id is 0x0, schedState is 4(running) (addr vXc0076afc).
+F: Task Trib: In block(0x0): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10002.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc064d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4AB000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: ZUM: main: running, tid 0x10002.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10002, schedState is 4(running) (addr vXc0627e04).
+F: Task Trib: In block(0x10002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x0.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc064f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4AC000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0651008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4AD000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x0, schedState is 4(running) (addr vXc0076afc).
+F: Task Trib: In block(0x0): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10001.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0653008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4AE000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x10001): Thread is not blocked.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0655008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4AF000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0657008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B0000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0659008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B1000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: FplainnIndex: detectDriver: devname by-id. Src 0x10001, target 0x10001.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc065b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B2000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: DEVICE: (driver 0 'pc_chpst'), Device name: IBM-PC compatible chipset.
+	100 1 3 attrs.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc065d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B3000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: DEVICE: (driver 6 'zramdisk'), Device name: Zambesii kernel RAM-disk device.
+	100 1 1 attrs.
+N: DEVICE: (driver 7 'zrootdev'), Device name: Zambesii root device.
+	10 1 1 attrs.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc065f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B4000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: FplainnIndex: detectDriver: Devnode "by-id" ranks 1, matching device
+	"Zambesii root device"
+{1}{1.1}W: Task Trib: unblock(0x10001): Thread is not blocked.
+{1}{1.1}W: Task Trib: unblock(0x10001): Thread is not blocked.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0661008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B5000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0663008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B6000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0665008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B7000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0667008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B8000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0669008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4B9000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc066b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4BA000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc066d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4BB000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x10001): Thread is not blocked.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0671008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4BC000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc066edf4, EIP vXc0021840
+	WPRl map: stat 0, pmap Px4BD000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc066ff8c, EIP vXc0021840
+	WPRl map: stat 0, pmap Px4BE000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0673008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4BF000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0675008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4C0000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0677008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4C1000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0679008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4C2000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc067b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4C3000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc067d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4C4000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc067f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4C5000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: vaddrSpace: initialize: binding 31; lvl0: v vXc0711000, p Px4C6000.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0681008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4C8000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0683008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4C9000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0685008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4CA000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0687008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4CB000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0689008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4CC000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc068b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4CD000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc068d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4CE000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc068f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4CF000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0691008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4D0000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0693008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4D1000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0695008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4D2000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0697008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4D3000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0699008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4D4000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc069b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4D5000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc069d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4D6000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc069f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4D7000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06a1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4DA000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: Proc Trib: spawnDriver: New driver spawned, tid = 0x20000.
+F: Task Trib: In block(): currThread->id is 0x10001, schedState is 4(running) (addr vXc05bde04).
+F: Task Trib: In block(0x10001): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20000.
+N: Proc Trib: New process running. ID=0x20000 type=0.
+N: lzbzcore: New process entered. Pid 0x20000, type 0.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06a3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4DE000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06a5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4DF000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06a7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E0000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06a9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E1000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06ab008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E2000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06ad008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E3000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06af008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E4000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06b1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E5000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06b3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E6000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06b5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E7000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06b7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E8000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20000, schedState is 4(running) (addr vXc067fe04).
+F: Task Trib: In block(0x20000): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10001.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06b9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4E9000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06bb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4EA000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06bd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4EB000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06bf008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4EC000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10001, schedState is 4(running) (addr vXc05bde04).
+F: Task Trib: In block(0x10001): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20000.
+N: lzbzcore: driverPath1: Ret from loadRequirementsReq: SUCCESS (0).
+~1~~2~~4~~6~~8~~1~~2~~4~~6~~7~~8~N: lzbzcore: spawnDriver(zrootdev, NUMA31): done. PID 0x20000.
+{1}{2}{3}{4}N: lzbzcore: Driver Proc 0x20000: Done executing. ACKing our process spawner with ret SUCCESS.
+F: Task Trib: In block(): currThread->id is 0x20000, schedState is 4(running) (addr vXc067fe04).
+F: Task Trib: In block(0x20000): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10001.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06c1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4ED000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06c3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4EE000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06c5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4EF000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06c7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F0000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06c9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F1000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06cb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F2000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06cd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F3000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10001, schedState is 4(running) (addr vXc05bde04).
+F: Task Trib: In block(0x10001): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20000.
+N: lzbzcore: instDevReq(by-id).
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06cf008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F4000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06d1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F5000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06d3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F6000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06d5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F7000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06d7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F8000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06d9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4F9000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06db008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4FA000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06dd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4FB000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06df008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4FC000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06e1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4FD000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06e3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4FE000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06e5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px4FF000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06e7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px500000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06e9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px501000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06eb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px502000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06ed008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px505000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06ef008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px506000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06f1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px507000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06f3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px508000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06f5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px509000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06f7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px50A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06f9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px50B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06fb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px50C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06fd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px50D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc06ff008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px50E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0701008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px50F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0718004, EIP vXc0057c54
+	WPRl map: stat 0, pmap Px511000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0719004, EIP vXc0057cac
+	WPRl map: stat 0, pmap Px512000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: getNewChunk: chunk vXc0718000: first block @vXc0719000, 2093056 bytes.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc071b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px513000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc071d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px514000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc071f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px515000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0721008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px516000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0723008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px517000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0725008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px518000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0727008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px51B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0729008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px51C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc072b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px51D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc072d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px51E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc072f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px51F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0731008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px520000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0733008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px521000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0735008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px522000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0737008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px523000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0739008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px524000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc073b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px525000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc073d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px526000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc073f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px527000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0741008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px528000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0743008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px529000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0745008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px52A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0747008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px52B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0749008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px52E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc074b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px52F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc074d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px530000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc074f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px531000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0751008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px532000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0753008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px533000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0755008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px534000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0757008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px535000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0759008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px536000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc075b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px537000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc075d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px538000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc075f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px539000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0761008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px53A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0763008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px53B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0765008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px53C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0767008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px53D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0769008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px53E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc076b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px541000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: lzbzcore: instDevReq(by-id): Done spawning all threads.
+F: Task Trib: In block(): currThread->id is 0x20000, schedState is 4(running) (addr vXc067fe04).
+F: Task Trib: In block(0x20000): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20001.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc076d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px542000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc076f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px543000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}N: lzbzcore: Region 3, dev by-id: Entering event loop.
+F: Task Trib: In block(): currThread->id is 0x20001, schedState is 4(running) (addr vXc0651e04).
+F: Task Trib: In block(0x20001): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20002.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0771008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px544000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0773008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px545000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0775008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px546000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x20000): Thread is not blocked.
+N: lzbzcore: Region 2, dev by-id: Entering event loop.
+F: Task Trib: In block(): currThread->id is 0x20002, schedState is 4(running) (addr vXc06ede04).
+F: Task Trib: In block(0x20002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20003.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0777008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px547000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0779008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px548000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc077b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px549000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x20000): Thread is not blocked.
+N: lzbzcore: Region 1, dev by-id: Entering event loop.
+F: Task Trib: In block(): currThread->id is 0x20003, schedState is 4(running) (addr vXc0727e04).
+F: Task Trib: In block(0x20003): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20004.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc077d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px54A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc077f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px54B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0781008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px54C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x20000): Thread is not blocked.
+N: lzbzcore: Region 0, dev by-id: Entering event loop.
+F: Task Trib: In block(): currThread->id is 0x20004, schedState is 4(running) (addr vXc0749e04).
+F: Task Trib: In block(0x20004): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20000.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0783008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px54D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}{1}{2}{3}{4}{1}{2}{3}{4}{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20000, schedState is 4(running) (addr vXc067fe04).
+F: Task Trib: In block(0x20000): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20001.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0785008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px54E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0787008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px54F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20001, schedState is 4(running) (addr vXc0651e04).
+F: Task Trib: In block(0x20001): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20002.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0789008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px550000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x20000): Thread is not blocked.
+F: Task Trib: In block(): currThread->id is 0x20002, schedState is 4(running) (addr vXc06ede04).
+F: Task Trib: In block(0x20002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20003.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc078b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px551000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x20000): Thread is not blocked.
+F: Task Trib: In block(): currThread->id is 0x20003, schedState is 4(running) (addr vXc0727e04).
+F: Task Trib: In block(0x20003): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20004.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc078d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px552000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x20000): Thread is not blocked.
+F: Task Trib: In block(): currThread->id is 0x20004, schedState is 4(running) (addr vXc0749e04).
+F: Task Trib: In block(0x20004): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20000.
+{1}{2}{3}{4}{1}{2}{3}{4}{1}{2}{3}{4}{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20000, schedState is 4(running) (addr vXc067fe04).
+F: Task Trib: In block(0x20000): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20001.
+N: lzbzcore: region:main2 Device by-id, region 3 running: rdata 0xc077ffdc.
+N: spawnIBopChan(by-id, 3, vXc0074d70, vXc0074d70).
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc078f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px553000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0791008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px554000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20001, schedState is 4(running) (addr vXc0651e04).
+F: Task Trib: In block(0x20001): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20002.
+N: lzbzcore: region:main2 Device by-id, region 2 running: rdata 0xc076bfc4.
+N: spawnIBopChan(by-id, 2, vXc0074d70, vXc0074d70).
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0793008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px555000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0795008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px556000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x20000): Thread is not blocked.
+F: Task Trib: In block(): currThread->id is 0x20002, schedState is 4(running) (addr vXc06ede04).
+F: Task Trib: In block(0x20002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20003.
+N: lzbzcore: region:main2 Device by-id, region 1 running: rdata 0xc076dfdc.
+N: spawnIBopChan(by-id, 1, vXc0074d70, vXc0074d70).
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0797008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px557000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0799008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px558000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x20000): Thread is not blocked.
+F: Task Trib: In block(): currThread->id is 0x20003, schedState is 4(running) (addr vXc0727e04).
+F: Task Trib: In block(0x20003): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20004.
+N: lzbzcore: region:main2 Device by-id, region 0 running: rdata 0xc0773fa4.
+{1}{1.1}W: Task Trib: unblock(0x20000): Thread is not blocked.
+F: Task Trib: In block(): currThread->id is 0x20004, schedState is 4(running) (addr vXc0749e04).
+F: Task Trib: In block(0x20004): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20000.
+N: lzbzcore: instDevReq1 by-id: Done.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20000, schedState is 4(running) (addr vXc067fe04).
+F: Task Trib: In block(0x20000): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10001.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10001, schedState is 4(running) (addr vXc05bde04).
+F: Task Trib: In block(0x10001): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x0.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x0, schedState is 4(running) (addr vXc0076afc).
+F: Task Trib: In block(0x0): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10002.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10002, schedState is 4(running) (addr vXc0627e04).
+F: Task Trib: In block(0x10002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20004.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc079b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px559000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: We are saved by grace, through faith,
+	and that not of ourselves: but it is a gift of El.
+	rdata vXc0773fa4, scratch vX0, channel vXc0793fcc, resource_lvl 3.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc079d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px55A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20004, schedState is 4(running) (addr vXc0749e04).
+F: Task Trib: In block(0x20004): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10002.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc079f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px55B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07a1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px55C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07a3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px55D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07a5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px55E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07a7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px55F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07a9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px560000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{2}{3}{4}N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07ab008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px561000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07ad008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px562000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07af008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px563000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07b1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px564000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10002, schedState is 4(running) (addr vXc0627e04).
+F: Task Trib: In block(0x10002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20003.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07b3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px565000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: ayo~! CHANNEL_BOUND. Chan vXc0795fcc.
+	cb @vXc07a7fdc, bind_cb @vXc07b1fdc, bind_cb->scratch vX0.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07b5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px566000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20003, schedState is 4(running) (addr vXc0727e04).
+F: Task Trib: In block(0x20003): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20002.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07b7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px567000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: ayo~! CHANNEL_BOUND. Chan vXc0791fcc.
+	cb @vXc07a3fdc, bind_cb @vXc07b5fdc, bind_cb->scratch vX0.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07b9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px568000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+F: Task Trib: In block(): currThread->id is 0x20002, schedState is 4(running) (addr vXc06ede04).
+F: Task Trib: In block(0x20002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20001.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07bb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px569000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: ayo~! CHANNEL_BOUND. Chan vXc078dfcc.
+	cb @vXc07abfdc, bind_cb @vXc07b9fdc, bind_cb->scratch vX0.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07bd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px56A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+F: Task Trib: In block(): currThread->id is 0x20001, schedState is 4(running) (addr vXc0651e04).
+F: Task Trib: In block(0x20001): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10002.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10002, schedState is 4(running) (addr vXc0627e04).
+F: Task Trib: In block(0x10002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x0.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x0, schedState is 4(running) (addr vXc0076afc).
+F: Task Trib: In block(0x0): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10002.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10002, schedState is 4(running) (addr vXc0627e04).
+F: Task Trib: In block(0x10002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20004.
+N: enum!	cb vXc079dfd4, 0 attr @vXc07a9e78, 0 filt @vX0, rdata @vXc0773fa4.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20004, schedState is 4(running) (addr vXc0749e04).
+F: Task Trib: In block(0x20004): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10002.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+W: ZKCM Core: Unhandled event 11.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07bf008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px56C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07c1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px56D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07c3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px56E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07c5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px56F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07c7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px570000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07c9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px571000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10002, schedState is 4(running) (addr vXc0627e04).
+F: Task Trib: In block(0x10002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20004.
+N: enum!	cb vXc07c3fd4, 0 attr @vXc07c7e78, 0 filt @vX0, rdata @vXc0773fa4.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07cb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px572000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20004, schedState is 4(running) (addr vXc0749e04).
+F: Task Trib: In block(0x20004): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10002.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+W: ZKCM Core: Unhandled event 11.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07cd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px573000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07cf008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px574000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07d1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px575000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07d3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px576000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07d5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px577000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07d7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px578000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07d9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px579000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07db008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px57A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07dd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px57B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07df008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px57C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10002, schedState is 4(running) (addr vXc0627e04).
+F: Task Trib: In block(0x10002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20004.
+N: enum!	cb vXc07d9fd4, 0 attr @vXc07dde78, 0 filt @vX0, rdata @vXc0773fa4.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07e1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px57D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20004, schedState is 4(running) (addr vXc0749e04).
+F: Task Trib: In block(0x20004): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10002.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+W: ZKCM Core: Unhandled event 11.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07e3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px57E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07e5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px57F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07e7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px580000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07e9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px581000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07eb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px582000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07ed008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px583000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07ef008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px584000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07f1008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px585000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07f3008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px586000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07f5008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px587000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10002, schedState is 4(running) (addr vXc0627e04).
+F: Task Trib: In block(0x10002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x20004.
+N: enum!	cb vXc07effd4, 0 attr @vXc07f3e78, 0 filt @vX0, rdata @vXc0773fa4.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07f7008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px588000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x20004, schedState is 4(running) (addr vXc0749e04).
+F: Task Trib: In block(0x20004): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10002.
+{1}{1.1}W: Task Trib: unblock(0x10002): Thread is not blocked.
+{1}{2}{3}{4}F: Task Trib: In block(): currThread->id is 0x10002, schedState is 4(running) (addr vXc0627e04).
+F: Task Trib: In block(0x10002): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x0.
+N: Orientation: Root dev reported 3 children.
+N: Orientation: Dev: name /by-id/1
+N: Device: @vXc0797e50, bid 31, 4 enum attrs.
+	longname .
+N: Attr: name identifier, type 1, val ramdisk.
+N: Attr: name address_locator, type 1, val root-dev1.
+N: Attr: name bus_type, type 1, val zbz_root.
+N: Attr: name zbz_root_device_type, type 1, val ramdisk.
+N: Orientation: Dev: name /by-id/2
+N: Device: @vXc0785e50, bid 31, 4 enum attrs.
+	longname .
+N: Attr: name identifier, type 1, val vchipset.
+N: Attr: name address_locator, type 1, val root-dev2.
+N: Attr: name bus_type, type 1, val zbz_root.
+N: Attr: name zbz_root_device_type, type 1, val virtual-chipset.
+N: Orientation: Dev: name /by-id/3
+N: Device: @vXc07bfe50, bid 31, 4 enum attrs.
+	longname .
+N: Attr: name identifier, type 1, val chipset.
+N: Attr: name address_locator, type 1, val root-dev3.
+N: Attr: name bus_type, type 1, val zbz_root.
+N: Attr: name zbz_root_device_type, type 1, val chipset.
+W: ZKCM Core: Unhandled event 0.
+N: BusPinMapping: ISA: uniprocessor mode. Assumed i8259s.
+W: RTC/CMOS: RTC/CMOS chip may not be powered adequately.
+	CMOS RAM may be unreliable/invalid.
+N: Timer Control: registerNewTimerDevice: Added timer:
+N: ZKCM Timer Device: (childId 0) "i8254"
+	IBM-PC compatible i8254 PIT, channel 0 timer.
+	Type: chipset; supported modes Periodic and oneshot.
+	Precision Negligable, ioLatency Moderate.
+W: chipset_findTables: RSDP: No RSDP found.
+N: TimerTrib: Kernel boot timestamp: Date: 2025-3-23, Time 13:27:5, 0us.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07f9008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px589000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07fb008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px58A000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07fd008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px58B000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc07ff008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px58C000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0801008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px58D000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0803008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px58E000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0805008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px58F000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0807008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px590000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0809008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px591000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc080b008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px592000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc080d008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px593000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc080f008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px594000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0811008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px595000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0813008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px598000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+N: TimerTrib: initialize: Spawned event dqer thread. addr vXc07efd70, id 0x10003.
+F: TimerTrib: initialize: setWaitingThread to 0x10003.
+F: Task Trib: wake(0x10003): about to call taskTrib::schedule().
+F: Task Trib: wake(0x10003): taskTrib::schedule() returned 0.
+F: Task Trib: wake(0x10003): about to check if thread should preempt current thread.
+F: Task Trib: wake(0x10003): thread should preempt current thread.
+F: TimerTrib: initialize: wake(0x10003) returned 0.
+F: Task Trib: In block(): currThread->id is 0x0, schedState is 4(running) (addr vXc0076afc).
+F: Task Trib: In block(0x0): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x10003.
+{1}{2}{3}{4}N: TimerTrib: Event DQer thread has begun executing.
+F: Task Trib: In block(): currThread->id is 0x10003, schedState is 4(running) (addr vXc07efe04).
+F: Task Trib: In block(0x10003): currCpuStream->asyncInterruptEvent.getNestingLevel() is 0.
+N: Task Stream 0: Switching to task 0x0.
+N: TimerTrib: newTimerDevice: "i8254"; min 1000000, max 54928000.
+N: timerQ 10000us: latch: latched to device "i8254".
+{1}{2}{3}{4}{5}{6}N: IBMPC-8254: enable: BPM reports ISA IRQ 0 __kpin is 0.
+N: InterruptTrib: interruptEntry: CPU 0 entered on vector 14.
+N: Page Fault: FAKE_DYN: addr vXc0815008, EIP vXc005740e
+	WPRl map: stat 0, pmap Px599000, __kf 0x6.
+N: InterruptTrib: interruptEntry: Exiting on CPU 0 vector 14.
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).
+[1][2][3][4][5][6]E: Single-WaiterQ: addItem failed because no waiting thread has been set.
+[7]W: IBMPC-8254: isr: Failed to queue IRQ event; err -32 (UNINITIALIZED).

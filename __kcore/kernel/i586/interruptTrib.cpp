@@ -10,8 +10,6 @@
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
 
-static void noop(void) {}
-
 void interruptTrib_interruptEntry(RegisterContext *regs)
 {
 	ubit8		makeNoise;
@@ -19,7 +17,10 @@ void interruptTrib_interruptEntry(RegisterContext *regs)
 
 	cpuStream = cpuTrib.getCurrentCpuStream();
 
+	(void)makeNoise, (void)cpuStream;
 #ifdef CONFIG_DEBUG_INTERRUPTS
+	cpuStream->interruptEvent.enter();
+
 	makeNoise = regs->vectorNo != 254 && regs->vectorNo != 32
 		&& regs->vectorNo != 34;
 
@@ -27,16 +28,21 @@ void interruptTrib_interruptEntry(RegisterContext *regs)
 		INTTRIB"interruptEntry: CPU %d "
 		"entered on vector %d.\n",
 		cpuStream->cpuId, regs->vectorNo)
-		: noop();
+		: 0;
 #endif
 
 #ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
 	if (cpuStream->nLocksHeld > 0)
 	{
 		printf(FATAL INTTRIB"interruptEntry: CPU %d "
-			"has %d locks held.\n",
-			cpuStream->cpuId, cpuStream->nLocksHeld);
-		panic(ERROR_INVALID_STATE);
+			"holds %d locks. This should never happen.\n"
+			"\tmost recently acquired: %p, name: %s.\n",
+			cpuStream->cpuId, cpuStream->nLocksHeld,
+			cpuStream->mostRecentlyAcquiredLock,
+			(cpuStream->mostRecentlyAcquiredLock)
+				? cpuStream->mostRecentlyAcquiredLock->name
+				: CC"NULL");
+		//panic(ERROR_INVALID_STATE);
 	};
 #endif
 
@@ -72,7 +78,9 @@ out:
 		INTTRIB"interruptEntry: Exiting "
 		"on CPU %d vector %d.\n",
 		cpuStream->cpuId, regs->vectorNo)
-		: noop();
+		: 0;
+
+	cpuStream->interruptEvent.exit();
 #endif
 
 	// We should be able to: point ESP to regs, and then pop and iret.

@@ -82,6 +82,11 @@ enum MessageStreamSubsystem {
 	MSGSTREAM_SUBSYSTEM_ZUI,
 	MSGSTREAM_SUBSYSTEM_ZUM,
 	MSGSTREAM_SUBSYSTEM_PROCESS,
+	MSGSTREAM_SUBSYSTEM_TASKTRIB,
+	MSGSTREAM_SUBSYSTEM_CPUTRIB,
+	MSGSTREAM_SUBSYSTEM_TIMERTRIB,
+	MSGSTREAM_SUBSYSTEM_TIMERTRIB_EVENT_PROCESSOR,
+	MSGSTREAM_SUBSYSTEM_CPUSTREAM_POWER_MANAGER,
 
 	/* Insert new subsystems *ABOVE* this one.
 	 * This must *ALWAYS* be the last element in the enum.
@@ -249,10 +254,38 @@ public:
 	~MessageStream(void) {};
 
 public:
-	error_t pull(MessageStream::sHeader **message, ubit32 flags=0);
+	error_t pull(
+		MessageStream::sHeader **message,
+		ubit32 flags=0, const MessageStream::Filter *filter=NULL);
+
 	error_t pullFrom(
 		ubit16 subsystemQueue, MessageStream::sHeader **message,
-		ubit32 flags=0);
+		ubit32 flags=0, const MessageStream::Filter *filter=NULL);
+
+	/** EXPLANATION:
+	 * Loops internally, pulling messages from the MessageStream and
+	 * executing "processFn" for each message until "processFn" returns
+	 * a non-zero value.
+	 *
+	 * When "processFn" returns a non-zero value, the loop exits and
+	 * the message is returned to the caller.
+	 *
+	 * This is useful for trying to force-synchronize an asynchronous
+	 * sequence by block()ing and waiting for a specific message, but
+	 * there are other messages which may be arriving in the thread's
+	 * queue while you block() waiting for your specific message. In such
+	 * a case, you would want the other messages that arrive to be
+	 * processed while you block() waiting for your specific message.
+	 *
+	 *	XXX:
+	 * This function makes the "filter" parameter to "pull()" a
+	 * obsolete since we can do the filtering using this mechanism.
+	 **/
+	typedef sbit8 (DispatchFn)(MessageStream::sHeader *msg);
+
+	error_t pullAndDispatchUntil(
+		MessageStream::sHeader **message, ubit32 flags,
+		const MessageStream::Filter *filter, DispatchFn *dispatchFn);
 
 	/** EXPLANATION:
 	 * Enqueues a message to a designated MSGSTREAM_SUBSYSTEM_* subsystem

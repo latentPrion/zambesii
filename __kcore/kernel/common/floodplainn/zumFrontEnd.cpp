@@ -1,9 +1,11 @@
 
+#include <__kstdlib/callback.h>
 #include <__kstdlib/__kcxxlib/memory>
 #include <__kstdlib/__kclib/string.h>
 #include <kernel/common/thread.h>
 #include <kernel/common/process.h>
 #include <kernel/common/floodplainn/zum.h>
+#include <kernel/common/floodplainn/floodplainn.h>
 #include <kernel/common/floodplainn/movableMemory.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/taskTrib/taskTrib.h>
@@ -97,14 +99,15 @@ void fplainn::Zum::EnumerateReqMovableMemMarshaller::unmarshal(
 /* Server methods.
  ******************************************************************************/
 
-error_t fplainn::Zum::initialize(void)
+error_t fplainn::Zum::initializeReq(MessageStreamCb *callerCb)
 {
 	error_t		ret;
 
 	ret = processTrib.__kgetStream()->spawnThread(
 		&main, NULL,
 		NULL, Thread::ROUND_ROBIN,
-		0, 0, &server);
+		0, 0, &server,
+		callerCb);
 
 	if (ret != ERROR_SUCCESS)
 	{
@@ -113,7 +116,6 @@ error_t fplainn::Zum::initialize(void)
 	};
 
 	setServerTid(server->getFullId());
-	taskTrib.yield();
 	return ERROR_SUCCESS;
 }
 

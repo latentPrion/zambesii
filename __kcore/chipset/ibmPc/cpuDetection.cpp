@@ -596,7 +596,7 @@ error_t ZkcmCpuDetectionMod::loadBspId(cpu_t *bspId, sbit8 requery)
 	// If the BSP CPU has no LAPIC, that's a problem:
 	if (!lapic->cpuHasLapic())
 	{
-		printf(NOTICE CPUMOD"getBspId: BSP CPU has no LAPIC. Assigning "
+		printf(WARNING CPUMOD"getBspId: BSP CPU has no LAPIC. Assigning "
 			"ID INVALID.\n");
 
 		ibmPcState.bspInfo.bspIdRequestedAlready = 1;

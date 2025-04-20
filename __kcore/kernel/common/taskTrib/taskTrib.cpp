@@ -91,8 +91,6 @@ void TaskTrib::updateLoad(ubit8 action, uarch_t val)
 
 error_t TaskTrib::dormant(Thread *thread)
 {
-	CpuStream	*threadCurrentCpu;
-
 	/**	FIXME:
 	 * The following inconsistent behaviour arises:
 	 *
@@ -127,6 +125,8 @@ error_t TaskTrib::dormant(Thread *thread)
 
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
+	MultipleReaderLock::ScopedWriteGuard	guard(&thread->schedState.lock);
+
 	/** EXPLANATION:
 	 * This current implementation of dormant() will leave an unscheduled
 	 * thread in the UNSCHEDULED state if invoked on one. Basically, calling
@@ -136,18 +136,17 @@ error_t TaskTrib::dormant(Thread *thread)
 		|| thread->schedState.rsrc.status == Thread::DORMANT)
 		{ return ERROR_SUCCESS; };
 
-	threadCurrentCpu = reinterpret_cast<CpuStream *>(
-		atomicAsm::read(&thread->schedStatus.rsrc.currentCpu));
-
-	threadCurrentCpu->taskStream.dormant(thread);
+	thread->schedState.rsrc.currentCpu->taskStream.dormant(thread);
 
 	/* At this point, taskCurrentCpu points to the CPU which the
 	 * particular unique thread or per-cpu thread that was our target, is
 	 * currently scheduled to. For a per-cpu thread, it points to the
 	 * particular CPU whose per-cpu thread was acted on.
 	 **/
-	if (threadCurrentCpu != cpuTrib.getCurrentCpuStream())
+	if (thread->schedState.rsrc.currentCpu != cpuTrib.getCurrentCpuStream())
 	{
+		guard.releaseManagementAndUnlock();
+
 		/* Message the foreign CPU to preempt and choose another thread.
 		 * Should probably take an argument for the thread to be
 		 * pre-empted.
@@ -155,18 +154,23 @@ error_t TaskTrib::dormant(Thread *thread)
 	}
 	else
 	{
+		guard.releaseManagementAndUnlock();
+
 		/* If the task is both on the current CPU and currently being
 		 * executed, force the current CPU to context switch.
 		 **/
 		if (thread == cpuTrib.getCurrentCpuStream()->taskStream
 			.getCurrentThread())
 		{
+			CpuStream	*currCpu;
+
+			currCpu = cpuTrib.getCurrentCpuStream();
+if (currCpu->asyncInterruptEvent.getNestingLevel() > 0) {printf(FATAL TASKTRIB"In int context: asyncNestingLevel is %d.\n", currCpu->asyncInterruptEvent.getNestingLevel());}
 			// TODO: Set this CPU's currentTask to NULL here.
 			saveContextAndCallPull(
-				&threadCurrentCpu->schedStack[
-					sizeof(threadCurrentCpu->schedStack)]);
-
-			// Unreachable.
+				&currCpu->schedStack[
+					sizeof(currCpu->schedStack)],
+				currCpu->asyncInterruptEvent.getNestingLevel());
 		};
 	};
 
@@ -179,30 +183,61 @@ error_t TaskTrib::wake(Thread *thread)
 
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
+	MultipleReaderLock::ScopedWriteGuard	guard(&thread->schedState.lock);
+
 	if (thread->schedState.rsrc.status == Thread::RUNNABLE
 		|| thread->schedState.rsrc.status == Thread::RUNNING)
 		{ return ERROR_SUCCESS; };
 
 	if (thread->schedState.rsrc.status == Thread::UNSCHEDULED)
-		{ err = schedule(thread); } 
+	{
+		printf(FATAL TASKTRIB"wake(%x): called on an unscheduled "
+			"thread. Please schedule() it first.\n",
+			thread->getFullId());
+
+		return ERROR_INVALID_STATE;
+	}
 
 	err = thread->schedState.rsrc.currentCpu->taskStream.wake(thread);
-
 	if (err != ERROR_SUCCESS) {
 		panic(err, ERROR"wake() failed on thread!");
 	}
 
+printf(FATAL TASKTRIB"wake(%x): about to check if thread should preempt current thread.\n",
+	thread->getFullId());
 	if (thread->shouldPreemptCurrentThreadOn(
 		thread->schedState.rsrc.currentCpu))
 	{
+printf(FATAL TASKTRIB"wake(%x): thread should preempt current thread.\n",
+	thread->getFullId());
 		if (thread->schedState.rsrc.currentCpu == cpuTrib.getCurrentCpuStream())
-			{ yield(); }
+		{
+			guard.releaseManagementAndUnlock();
+
+			/** EXPLANATION:
+			 * We shouldn't perform an immediate task switch here because
+			 * * If we're on a coop sched build, the user expects not to
+			 *   be pre-empted merely because a higher priority thread has
+			 *   been woken up.
+			 * * If we're on a passive preempt build, the preemptor will enforce
+			 *   the preemption at kernel exit.
+			 * * Wake(), by its nature, is not intended to support an immediate
+			 *   task switch, because it doesn't put the current thread back
+			 *   into the runqueue.
+			 *
+			 * So, we just return here and let the next kernel exit do the
+			 * task switch.
+			 **/
+		}
 		else
 		{
-			/* FIXME: Send an IPC message to the other CPU to check
-			 * its queue in case the newly scheduled thread is higher
-			 * priority.
-			 */
+			guard.releaseManagementAndUnlock();
+
+			/** EXPLANATION:
+			 * We're on a different CPU, so we need to send an IPC message
+			 * to the other CPU to check if it has a higher priority thread
+			 * in its runqueue.
+			 **/
 		}
 	}
 
@@ -212,29 +247,37 @@ error_t TaskTrib::wake(Thread *thread)
 void TaskTrib::yield(void)
 {
 	Thread		*currThread;
+	CpuStream	*currCpuStream;
 
 	/* Yield() and block() are always called by the current thread, and
 	 * they always act on the thread that called them.
 	 **/
-	currThread = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread();
+	currCpuStream = cpuTrib.getCurrentCpuStream();
+	currThread = currCpuStream->taskStream.getCurrentThread();
 
 #ifdef CONFIG_DEBUG_SCHEDULER
 	/* The only thread allowed to call this while not in the RUNNING state
 	 * is the BSP's power thread, and even the BSP's power thread should only
 	 * do this when it is in the UNSCHEDULED state (i.e: at boot time).
 	 **/
-	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING
-		|| (currThread->schedState.rsrc.status == Thread::UNSCHEDULED
-			&& Thread::isPowerThread(currThread->getFullId())));
+printf(FATAL TASKTRIB"In yield(): currThread->id is %x, schedState is %d(%s) (addr %p).\n",
+	currThread->getFullId(), currThread->schedState.rsrc.status, Thread::schedStates[currThread->schedState.rsrc.status], &currThread->schedState);
+	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING);
 #endif
 
-	cpuTrib.getCurrentCpuStream()->taskStream.yield(currThread);
+	{
+		MultipleReaderLock::ScopedWriteGuard	guard(
+			&currThread->schedState.lock);
 
+		currCpuStream->taskStream.yield(currThread);
+	}
+
+if (currCpuStream->asyncInterruptEvent.getNestingLevel() > 0) {printf(FATAL TASKTRIB"In int context: asyncNestingLevel is %d.\n", currCpuStream->asyncInterruptEvent.getNestingLevel());}
 	// TODO: Set this CPU's currentTask to NULL here.
 	saveContextAndCallPull(
-		&cpuTrib.getCurrentCpuStream()->schedStack[
-			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
+		&currCpuStream->schedStack[
+			sizeof(currCpuStream->schedStack)],
+		currCpuStream->asyncInterruptEvent.getNestingLevel());
 }
 
 void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
@@ -258,12 +301,21 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	 * is the BSP's power thread, and even the BSP's power thread should only
 	 * do this when it is in the UNSCHEDULED state (i.e: at boot time).
 	 **/
-	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING
-		|| (currThread->schedState.rsrc.status == Thread::UNSCHEDULED
-			&& Thread::isPowerThread(currThread->getFullId())));
+printf(FATAL TASKTRIB"In block(): currThread->id is %x, schedState is %d(%s) (addr %p).\n",
+	currThread->getFullId(), currThread->schedState.rsrc.status, Thread::schedStates[currThread->schedState.rsrc.status], &currThread->schedState);
+	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING);
 #endif
 
-	cpuTrib.getCurrentCpuStream()->taskStream.block(currThread);
+	if (unlockDescriptor == NULL)
+	{
+		MultipleReaderLock::ScopedWriteGuard	guard(
+			&currThread->schedState.lock);
+
+		currCpuStream->taskStream.block(currThread);
+	}
+	else {
+		currCpuStream->taskStream.block(currThread);
+	}
 
 	/**	EXPLANATION:
 	 * This bit here completely purges the problem of lost wakeups
@@ -295,10 +347,13 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	 **/
 	if (unlockDescriptor != NULL) { unlockDescriptor->execute(); };
 
+if (currCpuStream->asyncInterruptEvent.getNestingLevel() > 0) {printf(FATAL TASKTRIB"In int context: asyncNestingLevel is %d.\n", currCpuStream->asyncInterruptEvent.getNestingLevel());}
 	// TODO: Set this CPU's currentTask to NULL here.
+printf(FATAL TASKTRIB"In block(%x): currCpuStream->asyncInterruptEvent.getNestingLevel() is %d.\n", currThread->getFullId(), currCpuStream->asyncInterruptEvent.getNestingLevel());
 	saveContextAndCallPull(
-		&cpuTrib.getCurrentCpuStream()->schedStack[
-			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
+		&currCpuStream->schedStack[
+			sizeof(currCpuStream->schedStack)],
+		currCpuStream->asyncInterruptEvent.getNestingLevel());
 }
 
 error_t TaskTrib::unblock(
@@ -306,7 +361,8 @@ error_t TaskTrib::unblock(
 	Lock::sOperationDescriptor *unlockDescriptor
 	)
 {
-	error_t		err;
+	error_t					err;
+	MultipleReaderLock::ScopedReadGuard	schedStateGuard;
 
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
@@ -317,21 +373,41 @@ error_t TaskTrib::unblock(
 	 * which called unblock() on the thread. Just documenting for posterity.
 	 **/
 
+#if 0
+	if (callerSchedStateGuard != NULL) {
+		schedStateGuard.move_assign(*callerSchedStateGuard);
+	}
+	else
+	{
+		new (&schedStateGuard) MultipleReaderLock::ScopedReadGuard(
+			&thread->schedState.lock);
+	}
+#endif
+
+printf(CC"{1}");
 	if (thread->schedState.rsrc.status == Thread::RUNNABLE
 		|| thread->schedState.rsrc.status == Thread::RUNNING)
 	{
+printf(CC"{1.1}");
 		/* It's not the worst thing if this happens, so just warn the user
 		 * that their state machine is flawed and move on.
 		 */
+		printf(WARNING TASKTRIB"unblock(%x), CPU %d: Thread is already "
+			"running or runnable (schedState is %d (%s)).\n",
+			thread->getFullId(),
+			cpuTrib.getCurrentCpuStream()->cpuId,
+			thread->schedState.rsrc.status,
+			Thread::schedStates[thread->schedState.rsrc.status]);
+
 		if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
-		printf(WARNING TASKTRIB"unblock(%x): Thread is not blocked.\n",
-			thread->getFullId());
 
 		return ERROR_SUCCESS;
 	};
 
+printf(CC"{2: %d(%s)}\n", thread->schedState.rsrc.status, Thread::schedStates[thread->schedState.rsrc.status]);
 	if (thread->schedState.rsrc.status != Thread::BLOCKED)
 	{
+printf(CC"{2.1}");
 		printf(NOTICE TASKTRIB"unblock(%x): Invalid sched state."
 			"schedState is %d (%s).\n",
 			thread->getFullId(),
@@ -343,19 +419,31 @@ error_t TaskTrib::unblock(
 		return ERROR_INVALID_OPERATION;
 	};
 
+printf(CC"{3}");
 	err = thread->schedState.rsrc.currentCpu->taskStream.unblock(thread);
 	if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
 
 	if (err != ERROR_SUCCESS)
 		{ panic(err, ERROR"Failed to unblock thread!"); }
+printf(CC"{4}");
 
 	if (thread->shouldPreemptCurrentThreadOn(
 		thread->schedState.rsrc.currentCpu))
 	{
+printf(CC"{5}");
 		if (thread->schedState.rsrc.currentCpu == cpuTrib.getCurrentCpuStream())
-			{ yield(); }
+		{
+//			schedStateGuard.releaseManagementAndUnlock();
+printf(CC"{6}");
+			/* We don't perform an immediate task switch here for the same
+			 * reasons as in the wake() function. See comments in that function
+			 * for more details.
+			 **/
+		}
 		else
 		{
+//			schedStateGuard.releaseManagementAndUnlock();
+printf(CC"{7}");
 			/* FIXME: Send an IPC message to the other CPU to check
 			 * its queue in case the newly scheduled thread is higher
 			 * priority.

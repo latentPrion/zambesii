@@ -12,6 +12,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/memoryTrib/memoryTrib.h>
 #include <kernel/common/processTrib/processTrib.h>
+#include <kernel/common/interruptTrib/interruptEventGuards.h>
 #include "exceptions.h"
 
 
@@ -103,8 +104,8 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 	faultAddr = getCr2();
 
 #ifdef CONFIG_RT_KERNEL_IRQS
-	if (cpuTrib.getCurrentCpuStream()->isReadyForIrqs())
-		{ cpuControl::enableInterrupts(); }
+	LocalInterruptSignalGuard localInterruptGuard(
+		cpuTrib.getCurrentCpuStream()->isReadyForIrqs());
 #endif
 
 	if (faultAddr >= (void *)ARCH_MEMORY___KLOAD_VADDR_BASE)
@@ -255,11 +256,6 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 		debug::printStackArguments(
 			(void *)regs->ebp, (void *)regs->dummyEsp);
 	};
-
-#ifdef CONFIG_RT_KERNEL_IRQS
-	if (cpuTrib.getCurrentCpuStream()->isReadyForIrqs())
-		{ cpuControl::disableInterrupts(); }
-#endif
 
 	if (panicWorthy) { panic(ERROR_FATAL); };
 	return ERROR_SUCCESS;

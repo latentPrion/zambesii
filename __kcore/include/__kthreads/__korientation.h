@@ -6,6 +6,7 @@
 	#include <arch/paging.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <kernel/common/panic.h>
+	#include <kernel/common/messageStream.h>
 
 #define ORIENT_QUOTE(x)			#x
 
@@ -41,6 +42,8 @@ union uMultibootHeader
 };
 
 extern "C" void main(ubit32 mbMagic, uMultibootHeader mbHeader);
+
+extern void __korientationMainDispatchOne(MessageStream::sHeader *msg);
 
 extern ubit8		__korientationPreallocatedBmpMem[][64];
 

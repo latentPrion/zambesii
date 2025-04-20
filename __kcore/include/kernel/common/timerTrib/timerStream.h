@@ -142,7 +142,7 @@ private:
 	 **/
 	void timerRequestTimeoutNotification(void);
 
-private:
+public:
 	SortedHeapDoubleList<sTimerMsg, sTimestamp>	requests;
 	/* Used to prevent race conditions while requests from this process are
 	 * being expired.

@@ -96,20 +96,19 @@ private:
 	error_t bootCpuNotification(
 		numaBankId_t bid, cpu_t cid, ubit32 acpiId);
 
-	void bootParseNumaMap(struct sZkcmNumaMap *numaMap);
-	void bootParseNumaMap(
+	#define CPUTRIB_BOOT_PARSE_NUMA_MAP_ACK			0
+	error_t bootParseNumaMap(struct sZkcmNumaMap *numaMap);
+	#define CPUTRIB_BOOT_PARSE_NUMA_MAP_AGAINST_SMP_MAP_ACK	1
+	error_t bootParseNumaMapAgainstSmpMap(
 		struct sZkcmNumaMap *numaMap, struct sZkcmSmpMap *smpMap);
 
-	void bootConfirmNumaCpusBooted(struct sZkcmNumaMap *numaMap);
-	void bootConfirmNumaCpusBooted(
-		struct sZkcmNumaMap *numaMap, struct sZkcmSmpMap *smpMap);
 #elif __SCALING__ == SCALING_SMP
 	error_t newCpuNotification(cpu_t cid, ubit32 acpiId);
 	error_t bootCpuNotification(cpu_t cid, ubit32 acpiId);
 #endif
 #if __SCALING__ >= SCALING_SMP
-	void bootParseSmpMap(struct sZkcmSmpMap *smpMap);
-	void bootConfirmSmpCpusBooted(struct sZkcmSmpMap *smpMap);
+	#define CPUTRIB_BOOT_PARSE_SMP_MAP_ACK			2
+	error_t bootParseSmpMap(struct sZkcmSmpMap *smpMap);
 #endif
 
 public:

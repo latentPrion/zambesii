@@ -11,7 +11,7 @@
 
 
 class __klzbzcore::driver::MainCb
-: public _Callback<__kmainCbFn>
+: public MessageStreamCallback<__kmainCbFn *>
 {
 	Thread		*self;
 	mainCbFn	*callerCb;
@@ -21,7 +21,7 @@ public:
 	MainCb(
 		__kmainCbFn *kcb, Thread *self, CachedInfo *driverCachedInfo,
 		mainCbFn *callerCb)
-	: _Callback<__kmainCbFn>(kcb),
+	: MessageStreamCallback<__kmainCbFn *>(kcb),
 	self(self), callerCb(callerCb), driverCachedInfo(driverCachedInfo)
 	{}
 
@@ -404,7 +404,7 @@ void __klzbzcore::driver::main(Thread *self, mainCbFn *callerCb)
 		Callback			*callback;
 
 		self->messageStream.pull(&iMsg);
-		callback = (Callback *)iMsg->privateData;
+		callback = static_cast<Callback *>(iMsg->privateData);
 
 		switch (iMsg->subsystem)
 		{
@@ -811,7 +811,7 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 			NULL, (Thread::schedPolicyE)0, 0,
 //			SPAWNTHREAD_FLAGS_DORMANT,
 			0,
-			&newThread);
+			&newThread, NULL);
 
 		if (err != ERROR_SUCCESS)
 		{

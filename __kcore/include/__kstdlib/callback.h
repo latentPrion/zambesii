@@ -20,35 +20,38 @@
 class Callback
 {
 public:
-	virtual ~Callback(void) {};
-	virtual void operator()(MessageStream::sHeader *message)=0;
-};
-
-template <class T>
-class _Callback
-: public Callback
-{
-protected:
-	_Callback(T *fn)
-	:
-	function(fn)
+	Callback(void)
 	{}
 
-public:
 	virtual void operator()(MessageStream::sHeader *message)=0;
-
-	virtual ~_Callback(void) { function = NULL; }
-
-protected:
-	T		*function;
+	virtual ~Callback(void) {};
 };
 
-typedef void (__kcbFn)(MessageStream::sHeader *msg);
-class __kCallback
-: public _Callback<__kcbFn>
+typedef void (MessageStreamCallbackFn)(MessageStream::sHeader *msg);
+
+template <class FnPtrT>
+class MessageStreamCallback
+: public Callback
 {
 public:
-	__kCallback(__kcbFn *fn) : _Callback<__kcbFn>(fn) {}
+	MessageStreamCallback(FnPtrT fnPtr = NULL)
+	: function(fnPtr)
+	{}
+
+	virtual ~MessageStreamCallback(void) { function = NULL; };
+	virtual void operator()(MessageStream::sHeader *message)=0;
+
+protected:
+	FnPtrT		function;
+};
+
+class MessageStreamCb
+: public MessageStreamCallback<MessageStreamCallbackFn *>
+{
+public:
+	MessageStreamCb(MessageStreamCallbackFn *fnPtr = NULL)
+	: MessageStreamCallback<MessageStreamCallbackFn *>(fnPtr)
+	{}
 
 	virtual void operator()(MessageStream::sHeader *message)
 		{ function(message); }

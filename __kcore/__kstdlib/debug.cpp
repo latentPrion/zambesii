@@ -4,13 +4,16 @@
 #include <__kclasses/debugPipe.h>
 
 
-void PRINTFON(int cond, const utf8Char *str, ...)
+sarch_t PRINTFON(int cond, const utf8Char *str, ...)
 {
 	va_list args;
+	sarch_t n = 0;
+
+	if (!cond) { return 0; }
 
 	va_start(args, str);
-	if (cond)
-		return vprintf(str, args);
-
+	n = vprintf(str, args);
 	va_end(args);
+
+	return n;
 }

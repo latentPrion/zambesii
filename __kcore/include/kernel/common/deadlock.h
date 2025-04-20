@@ -9,18 +9,18 @@
     #include <kernel/common/waitLock.h>
     #include <kernel/common/sharedResourceGroup.h>
 
-#define DEADLOCK_BUFF_MAX_NBYTES	(1024)
-#define DEADLOCK_READ_BASE_MAX_NTRIES	(10000)
-#define DEADLOCK_WRITE_BASE_MAX_NTRIES	(10000)
-#define DEADLOCK_PER_CPU_EXTRA_READ_NTRIES	(7500)
-#define DEADLOCK_PER_CPU_EXTRA_WRITE_NTRIES	(7500)
+#define DEADLOCK_BUFF_MAX_NBYTES	(1024 * 3)
+#define DEADLOCK_READ_BASE_MAX_NTRIES	(1000000)
+#define DEADLOCK_WRITE_BASE_MAX_NTRIES	(1000000)
+#define DEADLOCK_PER_CPU_EXTRA_READ_NTRIES	(500000)
+#define DEADLOCK_PER_CPU_EXTRA_WRITE_NTRIES	(500000)
 
 inline uarch_t calcDeadlockNTries(
     uarch_t highestCpuId, uarch_t baseMaxTries,
 	uarch_t perCpuExtraTries
     )
 {
-    /**	EXPLANATION:
+    /**EXPLANATION:
      * At early boot, the highest CPU ID is not known, so it defaults to
      * CPUID_INVALID, which is a negative number. We handle this case by
      * setting the scale factor to 1 until the highest CPU ID is known.

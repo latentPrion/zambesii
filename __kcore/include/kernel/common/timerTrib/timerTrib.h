@@ -4,6 +4,7 @@
 	#include <chipset/zkcm/zkcmIsr.h>
 	#include <chipset/zkcm/timerDevice.h>
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/callback.h>
 	#include <__kstdlib/__kclib/string.h>
 	#include <__kclasses/clock_t.h>
 	#include <__kclasses/singleWaiterQueue.h>
@@ -70,9 +71,7 @@ public:
 	 *	ERROR_INVALID_ARG_VAL if an invalid arg is supplied.
 	 **/
 	error_t enableWaitingOnQueue(ubit32 nanos);
-	error_t enableWaitingOnQueue(TimerQueue *queue);
 	error_t disableWaitingOnQueue(ubit32 nanos);
-	error_t disableWaitingOnQueue(TimerQueue *queue);
 
 	/**	Pending redesign.
 	mstime_t	getCurrentTickMs(void);
@@ -85,12 +84,11 @@ public:
 	void dump(void);
 
 	// Artifacts from debugging.
-	void sendMessage(void);
 	void sendQMessage(void);
 
 private:
 	// Called by ZKCM Timer Control when a new timer device is detected.
-	void newTimerDeviceNotification(ZkcmTimerDevice *dev);
+	void newTimerDeviceInd(ZkcmTimerDevice *dev);
 
 	/* Called by ZKCM Timer Control to ask the chipset for a mask of latched
 	 * timer queues. This is only called by chipsets which emulate
@@ -150,6 +148,8 @@ private:
 	sbit32		clockQueueId;
 	SharedResourceGroup<WaitLock, sWatchdogIsr>	watchdog;
 
+	TimerQueue* lookupQueueForPeriodNs(ubit32 nanos);
+
 public:
 	// All of the event processing thread's state information.
 	struct sEventProcessor
@@ -171,36 +171,48 @@ public:
 			waitSlots[slot].eventQueue = NULL;
 		}
 
-		struct sMessage
+		error_t enableWaitingOnQueue(
+			TimerQueue *queue,
+			sbit8 doSynchronously, MessageStreamCb *callerCb);
+
+		error_t disableWaitingOnQueue(
+			TimerQueue *queue,
+			sbit8 doSynchronously, MessageStreamCb *callerCb);
+
+		error_t sendShutdownMessage(
+			sbit8 doSynchronously, MessageStreamCb *callerCb);
+
+		struct sControlMsg
 		{
-			enum typeE {
+			friend void TimerTrib::sEventProcessor::thread(void *);
+			
+			enum commandE {
 				QUEUE_LATCHED=1, QUEUE_UNLATCHED, EXIT_THREAD };
 
-			sMessage(void)
+			sControlMsg(commandE command, TimerQueue *timerQueue)
 			:
-			type(static_cast<typeE>( 0 ))
+			command(command), timerQueue(timerQueue)
 			{}
 
-			sMessage(typeE type, TimerQueue *timerQueue)
-			:
-			type(type), timerQueue(timerQueue)
-			{}
-
-			typeE		type;
+			commandE	command;
 			TimerQueue	*timerQueue;
+
+		private:
+			sControlMsg(void)
+			:
+			command(static_cast<commandE>(0)), timerQueue(NULL)
+			{}
 		};
 
-		void processQueueLatchedMessage(sMessage *msg);
-		void processQueueUnlatchedMessage(sMessage *msg);
-		void processExitMessage(sMessage *);
+		void processQueueLatchedMessage(sControlMsg *msg);
+		void processQueueUnlatchedMessage(sControlMsg *msg);
+		void processExitMessage(sControlMsg *);
 
 		void dump(void);
 
 		// PID and Pointer to event processing thread's Task struct.
 		processId_t		tid;
 		Thread			*task;
-		// Control queue used to send signals to the processing thread.
-		SingleWaiterQueue	controlQueue;
 		/* Array of wait queues for each of the timerQueues which are
 		 * usable on this chipset. When a timer device is bound to a
 		 * queue (newTimerDeviceNotification() -> initializeQueue()),
@@ -221,7 +233,9 @@ public:
 
 private:
 	void initializeQueue(TimerQueue *queue, ubit32 ns);
-	void initializeAllQueues(void);
+	void initializeAllQueuesReq(void);
+
+public:
 };
 
 extern TimerTrib		timerTrib;

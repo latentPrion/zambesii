@@ -1,0 +1,96 @@
+Agent instructions:
+
+* Make sure to set the console-needed flag in the Multiboot2 header?
+
+I want to implement support for EFI booting on the i586 platform, using the 32-bit UEFI system tables as passed to the kernel by the Multiboot2 protocol -- i.e, I won't need to implement PE support, etc. I'll just rely o the Multiboot2 loader to load me and give me the EFI system table. On i586, the EFI plumbing should not use the 64-bit EFI system table, but rather the 32-bit EFI system table instead. Multiboot2 provides both the 32-bit and 64-bit EFI system tables, so on i586, please use the 32-bit EFI system tables (MULTIBOOT_TAG_TYPE_EFI32 and MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS_EFI32). You'll need to bifurcate the code based on __VADDR_NBITS__ to determine the arch's native pointer size. E.g:
+
+./__kcore/firmware/efi/
+  efi.{h,cpp}
+  efi32.{h,cpp}
+  efi64.{h,cpp}
+
+```efi.cpp
+#if __VADDR_NBITS__ == 32
+#include "efi32.h"
+#else
+#include "efi64.h"
+#endif
+```
+
+Place all multiboot2 specific code into __kcore/include/ for headers, and __kcore/ for source files.
+If you decide to implement EFI text mode console output support, please actually follow the ZkcmDebugDevice interface. Implement a ZkcmDebugDevice derived class that implements the ZkcmDebugDevice interface, just like what you see in __kcore/chipset/ibmPc/vgaTerminal.h and __kcore/chipset/ibmPc/vgaTerminal.cpp. Use the same method names and signatures as the vgaTerminal class. Hook the ZkcmDebugDevice object into the ZkcmCore debug device list in __kcore/chipset/ibmPc/zkcmCore.cpp. Don't go making up your own interface and method names.
+
+FEEDBACK:
+
+Make the directory structure as follows:
+
+__kcore/
+  multiboot2.cpp
+  include/
+    multiboot2.h
+    firmware/efi/
+      efi.h
+      efi32.h
+      efi64.h
+      protocols.h
+      firmwareManager.h
+      efiSimpleTextOutput.h
+      vaddrSpaceManager.h
+  chipset/ibmPc/
+    efiBootConsole.h
+    efiBootConsole.cpp: Implement the ZkcmDebugDevice interface to wrap around BootServices::ConOut. Make sure to actually faithfully follow the ZkcmDebugDevice interface and don't go making up your own interface and method names.
+  firmware/efi/
+    firmwareManager.cpp: Main class that stores the SystemTable pointer, and provides methods to access the protocols, and the other UEFI abstractions we'll implement.
+    efiSimpleTextOutput.cpp: Implement the call interface wrapper around the UEFI Simple Text Output Protocol.
+    vaddrSpaceManager.cpp: Use walkerPageRanger:: functions to run through the EFI memory map. Expose methods via this class so that we can call on them from __korientationMain -- specifically right after __kspaceInitialize() is called. For each memory region that has to be remapped for SetVirtualAddressMap():
+      * Identity map it into the kernel process' vaddrSpace by calling walkerPageRanger directly.
+      * invoke the kernel process' vaddrSpaceStream() and allocate memory for it using the vaddrSpaceStream::getPages() method.
+      * Track both the ID mapping and the vaddrSpaceStream pointer in a list of some kind.
+    
+* We may want to mark the UEFI memory regions that are code as PAGEATTRIB_EXECUTABLE.
+* I don't know if the MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS_EFI32 tags are needed and suspect they're actually deleterious.
+
+
+
+Those changes weren't quite what I hadin mind.  Have a look at zum.h, zum[Back/Front]End.cpp, zui.h, zui[Back/Front]End.cpp to have an idea how to use ZAsyncStream. You don't define a new ZAsyncStream instance. Every process has its own ZAsyncStream. You should be able to use the connectionless feature of ZAsyncStream to accept messages from arbitrary senders.
+
+After we spawn the DQer thread, we already set its TID inside of sEventProcessor.tid and sEventProcessor.task.
+
+You'll have to get rid of eventProcessor.controlQueue and replace sEventProcessor::sMessage with a new message type, something like sEventProcessor::sControlMsg. This message type is what you'll send to the DQer thread via ZAsyncStream.
+
+The DQer thread should use ZasyncStream::acknowledge as the sync method to enable the initialize*() functions to block and be unblocked when it acknowledges their messages.
+
+Add an `error_t error` to sEventProcessor::sControlMsg so that the DQer thread can indicate success/error in its acknowledge() calls.
+
+You should be able to just call zAsyncStream.send(eventProcessor.tid, &controlMsg, controlMsgNBytes, METHOD_BUFFER) with an sControlMsg. The controlMsg can be a stack var since ipc::createDataHeader will internally allocate its own buffer and copy the contents of send()'s arg into it.
+
+----
+
+Ok, then my current goal is to use Thread::schedState as the new synchronizer for preventing lost wakeups and superfluous/extra wakeups.
+
+I think extra wakeups are responsible for the factthat  we keep getting messages saying "thread is not blocked" in the kernel logs. In singleWaiterQ and pull,these are the only classes whose object the kernel actually blocks on.
+
+In sWaitQ, we don't fully prevent extra wakeups because we allow there to be a gap between checking the Q for new messages, and calling unblock() on th ewaiting thread. This means the waiting thread could theoretically be awake and checking the qeue and it could go like:
+T1: enqueue msg.
+Twaiter: pop msg.
+Twaiter: process msg.
+Twaiter: call pull() and get blocked() by the kenrel.
+T1: call unblock(Twaiter).
+
+hence T1 gets unblocked unnecessarily.
+
+I'm trying to do 2 things at once, and maybe I should go one at a time. I'm trying to first eliminate the extra wakeups. Then I want to add a way allow a thread to block on multiple queues by allow it to explicitly control its schedState.lock object. The current design (the one at git HEAD) uses locks that aren't exposed to the user, and so you can see the awkward way we use WOULD_BLOCK to construct a loop that waits on multiple objects in timerTrib/.I think it's in eventPRocessorBackEnd.cpp (but that's been renamed in the working tree, so git HEAD doesn't have a file with that name. Just check in timerTrib/ for the correct file on the git HEAD).
+
+The idea is to allow the user to just call writeAcquire() and writeRelease() around his checks to multiple queue objects. The threads that enqueue messages on these objects will call readAcquire/readRelease(), so this way multiple threads can enqueue messages,but none can do so while the waiter is actually checking the queue objects.
+
+Since all objects that are checked by a particular thread will have readAcquire() called on that waiting thrad's schedState, this should ensure that the enqueuers can be prevented from doing extra wakeups if we ensure that we close up that gap between addItem and pop() inside singleWaiterQ.
+
+Then we can make the loop in timerTrib/ more robust.
+
+With respect to the multi-queue checking flow that we want to use in TimerTrib, it should still use DONT_BLOCK, but the difference is now that it should writeAcquire() its own schedState lock to ensure that other threads don't update the object it's waiting on while it polls them.
+
+Also, we may want to replace LockOperation with the new ScopedGuard classes -- we can pass in a ScopedGuard object into both unlock() and lock() and the ScopedGuard object should perform the same function as LockOperation.
+
+Don't create new files. Use pre-existing .cpp files.
+
+Also, the _UNLOCKED flags should be added to the classes that the waited-on classes make use of. E.g: to  HeapDoubleList, or to Bitmap, **if needed**.
