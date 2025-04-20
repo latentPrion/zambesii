@@ -301,8 +301,6 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	 * is the BSP's power thread, and even the BSP's power thread should only
 	 * do this when it is in the UNSCHEDULED state (i.e: at boot time).
 	 **/
-printf(FATAL TASKTRIB"In block(): currThread->id is %x, schedState is %d(%s) (addr %p).\n",
-	currThread->getFullId(), currThread->schedState.rsrc.status, Thread::schedStates[currThread->schedState.rsrc.status], &currThread->schedState);
 	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING);
 #endif
 

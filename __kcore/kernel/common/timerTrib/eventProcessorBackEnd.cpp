@@ -210,6 +210,7 @@ void TimerTrib::sEventProcessor::thread(void *)
 			};
 		};
 
+printf(CC"`1`");
 		// If the loop ran to its end and there were no messages, block.
 		if (!messagesWereFound) {
 			taskTrib.block();
