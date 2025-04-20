@@ -240,6 +240,7 @@ void TaskTrib::yield(void)
 void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 {
 	Thread		*currThread;
+	CpuStream	*currCpuStream;
 
 	/**	NOTES:
 	 * After placing a task into a waitqueue, call this function to
@@ -249,8 +250,8 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	/* Yield() and block() are always called by the current thread, and
 	 * they always act on the thread that called them.
 	 **/
-	currThread = cpuTrib.getCurrentCpuStream()->taskStream
-		.getCurrentThread();
+	currCpuStream = cpuTrib.getCurrentCpuStream();
+	currThread = currCpuStream->taskStream.getCurrentThread();
 
 #ifdef CONFIG_DEBUG_SCHEDULER
 	/* The only thread allowed to call this while not in the RUNNING state
@@ -300,7 +301,10 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 			sizeof(cpuTrib.getCurrentCpuStream()->schedStack)]);
 }
 
-error_t TaskTrib::unblock(Thread *thread)
+error_t TaskTrib::unblock(
+	Thread *thread,
+	Lock::sOperationDescriptor *unlockDescriptor
+	)
 {
 	error_t		err;
 
@@ -319,6 +323,7 @@ error_t TaskTrib::unblock(Thread *thread)
 		/* It's not the worst thing if this happens, so just warn the user
 		 * that their state machine is flawed and move on.
 		 */
+		if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
 		printf(WARNING TASKTRIB"unblock(%x): Thread is not blocked.\n",
 			thread->getFullId());
 
@@ -333,10 +338,14 @@ error_t TaskTrib::unblock(Thread *thread)
 			thread->schedState.rsrc.status,
 			Thread::schedStates[thread->schedState.rsrc.status]);
 
+		if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
+
 		return ERROR_INVALID_OPERATION;
 	};
 
 	err = thread->schedState.rsrc.currentCpu->taskStream.unblock(thread);
+	if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
+
 	if (err != ERROR_SUCCESS)
 		{ panic(err, ERROR"Failed to unblock thread!"); }
 
