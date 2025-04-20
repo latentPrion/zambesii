@@ -6,6 +6,7 @@
 	#include <__kclasses/heapDoubleList.h>
 	#include <kernel/common/processId.h>
 	#include <kernel/common/stream.h>
+	#include <kernel/common/sharedResourceGroup.h>
 
 /**	EXPLANATION:
  * Per-thread kernel API callback queue manager that enqueues callbacks for the
@@ -225,7 +226,8 @@ public:
 
 public:
 	MessageStream(Thread *parent)
-	: Stream<Thread>(parent, 0)
+	: Stream<Thread>(parent, 0),
+	state(CC"MessageStream state")
 	{}
 
 	error_t initialize(void)
@@ -304,21 +306,25 @@ private:
 		if (subsystemId > MSGSTREAM_SUBSYSTEM_MAXVAL)
 			{ return NULL; }
 
-		return &queues[subsystemId];
+		return &state.rsrc.queues[subsystemId];
 	}
 
-public:
-	MessageQueue	queues[MSGSTREAM_SUBSYSTEM_N_QUEUES];
+private:
+	struct sState
+	{
+		MessageQueue	queues[MSGSTREAM_SUBSYSTEM_N_QUEUES];
+		/* Bitmap of all subsystem queues which have messages in them. The lock
+		 * on this bitmap is also used as the serializing lock that minimizes
+		 * the chances of lost wakeup races occuring.
+		 *
+		 * Callbacks have to acquire this lock before inserting a new message
+		 * in any queue, and they hold it until they have inserted the
+		 * new message.
+		 **/
+		Bitmap		pendingSubsystems;
+	};
 
-	/* Bitmap of all subsystem queues which have messages in them. The lock
-	 * on this bitmap is also used as the serializing lock that minimizes
-	 * the chances of lost wakeup races occuring.
-	 *
-	 * Callbacks have to acquire this lock before inserting a new message
-	 * in any queue, and they hold it until they have inserted the
-	 * new message.
-	 **/
-	Bitmap			pendingSubsystems;
+	SharedResourceGroup<WaitLock, sState>	state;
 };
 
 #define DONT_SEND_RESPONSE		((void *)NULL)
