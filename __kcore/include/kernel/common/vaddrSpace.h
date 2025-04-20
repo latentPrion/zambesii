@@ -27,7 +27,7 @@ public:
 	void dumpAllPresent(void);
 	status_t getTopLevelAddrState(void *vaddr)
 	{
-		return getTopLevelAddrState(
+		return getTopLevelEntryState(
 			(uintptr_t)vaddr >> PAGING_L0_VADDR_SHIFT);
 	}
 
