@@ -364,9 +364,9 @@ subsystem(subsystem), flags(0), function(function), size(size)
 void MessageStream::dump(void)
 {
 	printf(NOTICE MSGSTREAM"@%p: Dumping.\n", this);
-	pendingSubsystems.dump();
+	state.rsrc.pendingSubsystems.dump();
 	for (uarch_t i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++) {
-		queues[i].dump();
+		state.rsrc.queues[i].dump();
 	};
 }
 
@@ -414,16 +414,21 @@ error_t MessageStream::pullFrom(
 
 	for (;FOREVER;)
 	{
-		pendingSubsystems.lock();
+		state.lock.acquire();
 
-		if (pendingSubsystems.test(subsystemQueue))
+		if (state.rsrc.pendingSubsystems.test(subsystemQueue))
 		{
-			tmp = queues[subsystemQueue].popFromHead();
-			if (queues[subsystemQueue].getNItems() == 0) {
-				pendingSubsystems.unset(subsystemQueue);
+			tmp = state.rsrc.queues[subsystemQueue].popFromHead(
+				PTRDBLLIST_OP_FLAGS_UNLOCKED);
+
+			if (state.rsrc.queues[subsystemQueue]
+				.unlocked_getNItems() == 0)
+			{
+				state.rsrc.pendingSubsystems.unset(
+					subsystemQueue);
 			};
 
-			pendingSubsystems.unlock();
+			state.lock.release();
 
 			*message = tmp;
 			return ERROR_SUCCESS;
@@ -431,12 +436,12 @@ error_t MessageStream::pullFrom(
 
 		if (FLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
 		{
-			pendingSubsystems.unlock();
+			state.lock.release();
 			return ERROR_WOULD_BLOCK;
 		};
 
 		Lock::sOperationDescriptor	unlockDescriptor(
-			&pendingSubsystems.bmp.lock,
+			&state.lock,
 			Lock::sOperationDescriptor::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
@@ -451,18 +456,22 @@ error_t MessageStream::pull(MessageStream::sHeader **message, ubit32 flags)
 
 	for (;FOREVER;)
 	{
-		pendingSubsystems.lock();
+		state.lock.acquire();
 
 		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
 		{
-			if (pendingSubsystems.test(i))
+			if (state.rsrc.pendingSubsystems.test(i))
 			{
-				tmp = queues[i].popFromHead();
-				if (queues[i].getNItems() == 0) {
-					pendingSubsystems.unset(i);
+				tmp = state.rsrc.queues[i].popFromHead(
+					PTRDBLLIST_OP_FLAGS_UNLOCKED);
+
+				if (state.rsrc.queues[i]
+					.unlocked_getNItems() == 0)
+				{
+					state.rsrc.pendingSubsystems.unset(i);
 				};
 
-				pendingSubsystems.unlock();
+				state.lock.release();
 
 				// Very useful checks here for sanity.
 				assert_fatal(tmp->size >= sizeof(*tmp));
@@ -478,12 +487,12 @@ error_t MessageStream::pull(MessageStream::sHeader **message, ubit32 flags)
 
 		if (FLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
 		{
-			pendingSubsystems.unlock();
+			state.lock.release();
 			return ERROR_WOULD_BLOCK;
 		};
 
 		Lock::sOperationDescriptor	unlockDescriptor(
-			&pendingSubsystems.bmp.lock,
+			&state.lock,
 			Lock::sOperationDescriptor::WAIT);
 
 		taskTrib.block(&unlockDescriptor);
@@ -558,17 +567,24 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	 * since this is mostly a throughput optimization and not a
 	 * functionality tweak.
 	 **/
-	pendingSubsystems.lock();
+	state.lock.acquire();
 
-	ret = queues[queueId].addItem(callback);
+	ret = state.rsrc.queues[queueId].addItem(
+		callback, PTRDBLLIST_ADD_TAIL, PTRDBLLIST_OP_FLAGS_UNLOCKED);
+
 	if (ret == ERROR_SUCCESS)
 	{
-		pendingSubsystems.set(queueId);
+		state.rsrc.pendingSubsystems.set(queueId);
+
+		Lock::sOperationDescriptor	unlockDescriptor(
+			&state.lock,
+			Lock::sOperationDescriptor::WAIT);
+
 		// Unblock the thread.
-		taskTrib.unblock(parent);
+		taskTrib.unblock(parent, &unlockDescriptor);
 	};
 
-	pendingSubsystems.unlock();
+	state.lock.release();
 	return ret;
 }
 
