@@ -66,7 +66,7 @@ void WaitLock::acquire(void)
 		__builtin_return_address(0));
 #endif
 #endif
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
 	cpuTrib.getCurrentCpuStream()->mostRecentlyAcquiredLock = this;
 #endif
@@ -89,7 +89,7 @@ void WaitLock::release(void)
 
 	atomicAsm::set(&lock, 0);
 #endif
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
 #if __SCALING__ >= SCALING_SMP
@@ -106,7 +106,7 @@ void WaitLock::releaseNoIrqs(void)
 #if __SCALING__ >= SCALING_SMP
 	atomicAsm::set(&lock, 0);
 #endif
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
 }

@@ -76,7 +76,7 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 	}
 #endif
 #endif
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
 	cpuTrib.getCurrentCpuStream()->mostRecentlyAcquiredLock = this;
 #endif
@@ -87,7 +87,7 @@ void MultipleReaderLock::readRelease(uarch_t _flags)
 #if __SCALING__ >= SCALING_SMP
 	atomicAsm::decrement(&lock);
 #endif
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
 
@@ -179,7 +179,7 @@ deadlock:
 		__builtin_return_address(0));
 #endif
 #endif
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
 	cpuTrib.getCurrentCpuStream()->mostRecentlyAcquiredLock = this;
 #endif
@@ -232,7 +232,7 @@ void MultipleReaderLock::writeRelease(void)
 	}
 #endif
 
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
 
@@ -309,7 +309,12 @@ deadlock:
 #endif
 #endif
 
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
+	/* FIXME: The interrupt entry during lock holding bug may
+	 * actually just be because of an accounting error in
+	 * here btw, if the locks in question are
+	 * multipleReaderLocks.
+	 */
 	// We don't modify nLocksHeld in readReleaseWriteAcquire().
 	cpuTrib.getCurrentCpuStream()->mostRecentlyAcquiredLock = this;
 #endif
