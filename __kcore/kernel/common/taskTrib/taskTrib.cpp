@@ -256,9 +256,8 @@ void TaskTrib::yield(void)
 	currThread = currCpuStream->taskStream.getCurrentThread();
 
 #ifdef CONFIG_DEBUG_SCHEDULER
-	/* The only thread allowed to call this while not in the RUNNING state
-	 * is the BSP's power thread, and even the BSP's power thread should only
-	 * do this when it is in the UNSCHEDULED state (i.e: at boot time).
+	/* All threads should be in the RUNNING state when calling yield().
+	 * Power threads are set to RUNNING state in their constructors.
 	 **/
 printf(FATAL TASKTRIB"In yield(): currThread->id is %x, schedState is %d(%s) (addr %p).\n",
 	currThread->getFullId(), currThread->schedState.rsrc.status, Thread::schedStates[currThread->schedState.rsrc.status], &currThread->schedState);
@@ -297,9 +296,8 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	currThread = currCpuStream->taskStream.getCurrentThread();
 
 #ifdef CONFIG_DEBUG_SCHEDULER
-	/* The only thread allowed to call this while not in the RUNNING state
-	 * is the BSP's power thread, and even the BSP's power thread should only
-	 * do this when it is in the UNSCHEDULED state (i.e: at boot time).
+	/* All threads should be in the RUNNING state when calling block().
+	 * Power threads are set to RUNNING state in their constructors.
 	 **/
 	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING);
 #endif
