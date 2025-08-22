@@ -50,16 +50,13 @@ defaultMemoryBank(CC"_TaskContext defaultMemoryBank")
 		sizeof(bspPowerTaskContextCpuAffinityMem));
 
 	/** EXPLANATION:
-	 * The BSP's power thread, when it's first being initialized
-	 * (this is represented as its "first plugin event"), should be
-	 * in the RUNNING state. Because it quite literally is executing
-	 * this very code here in this case. It is indeed the BSP's power
-	 * thread that boots up the kernel.
+	 * All power threads should be in the RUNNING state when they are
+	 * first initialized, because they are the threads that are executing
+	 * on their respective CPUs when the CPUs are awakened.
 	 *
 	 * All other threads are UNSCHEDULED by default.
 	 **/
-	schedState.rsrc.status = (Thread::isBspPowerThread(tid)
-		&& CpuStream::isBspFirstPlug())
+	schedState.rsrc.status = Thread::isPowerThread(tid)
 		? Thread::RUNNING
 		: Thread::UNSCHEDULED;
 }
