@@ -570,7 +570,7 @@ static MessageStream::DispatchFn	bootParseNumaMap_syncDispatcher;
 
 static sbit8 bootParseNumaMap_syncDispatcher(MessageStream::sHeader *msg)
 {
-	if (msg->subsystem == MSGSTREAM_SUBSYSTEM_USER0
+	if (msg->subsystem == MSGSTREAM_USERQ(MSGSTREAM_SUBSYSTEM_USER0)
 		&& msg->function
 			== CPUTRIB_BOOT_PARSE_NUMA_MAP_ACK)
 	{
@@ -691,7 +691,7 @@ static sbit8 bootParseNumaMapAgainstSmpMap_syncDispatcher(
 	MessageStream::sHeader *msg
 	)
 {
-	if (msg->subsystem == MSGSTREAM_SUBSYSTEM_USER0
+	if (msg->subsystem == MSGSTREAM_USERQ(MSGSTREAM_SUBSYSTEM_USER0)
 		&& msg->function
 			== CPUTRIB_BOOT_PARSE_NUMA_MAP_AGAINST_SMP_MAP_ACK)
 	{
@@ -922,7 +922,7 @@ static sbit8 bootParseSmpMap_syncDispatcher(
 	MessageStream::sHeader *msg
 	)
 {
-	if (msg->subsystem == MSGSTREAM_SUBSYSTEM_USER0
+	if (msg->subsystem == MSGSTREAM_USERQ(MSGSTREAM_SUBSYSTEM_USER0)
 		&& msg->function == CPUTRIB_BOOT_PARSE_SMP_MAP_ACK)
 	{
 		return 1;

@@ -194,11 +194,21 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 				panic();
 			}
 
-			thread->messageStream.postUserQMessage(
+printf(NOTICE i8254"isr: Posting SMP mode switch message to BSP "
+	"power thread.\n");
+			err = thread->messageStream.postUserQMessage(
 				device->i8254State.smpModeSwitchThread,
 				MSGSTREAM_USERQ(MSGSTREAM_SUBSYSTEM_USER0), 0,
 				NULL, NULL,
 				ERROR_SUCCESS);
+
+			if (err != ERROR_SUCCESS)
+			{
+				printf(WARNING i8254"isr: Failed to post SMP mode "
+					"switch message to BSP power thread.\n");
+
+				panic();
+			}
 		};
 
 		return ZKCM_ISR_SUCCESS_AND_RETIRE_ME;
@@ -418,6 +428,15 @@ void I8254Pit::disable(void)
 	 **/
 
 	state.lock.acquire();
+
+	if (atomicAsm::read(&i8254State.smpModeSwitchInProgress))
+	{
+		/**	FIXME:
+		 * Figure out why this is still needed even though we now post
+		 * a message to the setSmpMode sequence.
+		 **/
+		disableDelayClks = 20000;
+	};
 
 	// Write out the oneshot mode (mode 0) control byte.
 	io::write8(
