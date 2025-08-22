@@ -197,7 +197,8 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 	Thread			*targetThread=NULL;
 	ProcessStream		*targetProcess, *creatorProcess;
 	sarch_t			requestQueueWasEmpty=1;
-	
+
+	(void)targetThread;
 	// Tracing control for this function
 	const bool enableTracing = true;
 
@@ -317,21 +318,7 @@ printf(CC"<8>");
 				.timerRequestTimeoutNotification();
 		};
 
-		/** FIXME:
-		 * I don't think this taskTrib.unblock() call is needed.
-		 *
-		 * The call to timerRequestTimeoutNotification(foo, bar) on the
-		 * target process' Timer Stream should call enqueue() on the target
-		 * thread's messageStream, which should already wake the target
-		 * thread.
-		 **/
-		if (targetProcess != NULL && targetThread != NULL) {
-			if (enableTracing) {
 printf(CC"<9>");
-			}
-			taskTrib.unblock(targetThread);
-		};
-
 		delete request;
 
 //if (targetThread != NULL) { targetThread->messageStream.dump(); }
