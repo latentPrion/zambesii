@@ -628,6 +628,20 @@ error_t ZkcmCpuDetectionMod::loadBspId(cpu_t *bspId, sbit8 requery)
 	return ERROR_SUCCESS;
 }
 
+static sbit8 setSmpMode_i8254DisablingIrqWaiter(
+	MessageStream::sHeader *msg
+	)
+{
+	if (msg->subsystem == MSGSTREAM_SUBSYSTEM_USER0
+		&& msg->function == 0)
+	{
+		return 1;
+	}
+
+	__korientationMainDispatchOne(msg);
+	return 0;
+}
+
 error_t ZkcmCpuDetectionMod::setSmpMode(void)
 {
 	error_t			ret;
@@ -741,7 +755,17 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 		 * This should eliminate the timing issue and the need for this
 		 * block() call.
 		 */
-		taskTrib.block();
+		MessageStream::sHeader	*timerDevRetiredIndMsg;
+
+		cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+			->messageStream.pullAndDispatchUntil(
+				&timerDevRetiredIndMsg,
+				0, NULL,
+				&setSmpMode_i8254DisablingIrqWaiter);
+
+		delete timerDevRetiredIndMsg;
+		printf(NOTICE CPUMOD"setSmpMode: i8254 disabling Ind msg "
+			"dequeued.\n");
 	};
 
 	i8254Pit.unsetSmpModeSwitchFlag();

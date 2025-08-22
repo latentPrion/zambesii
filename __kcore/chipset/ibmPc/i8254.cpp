@@ -179,9 +179,26 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 		if (atomicAsm::read(
 			&device->i8254State.smpModeSwitchInProgress))
 		{
-			// Release the lock and exit.
-			taskTrib.unblock(
+			Thread	*thread;
+
+			thread = processTrib.__kgetStream()->getThread(
 				device->i8254State.smpModeSwitchThread);
+
+			if (thread == NULL)
+			{
+				printf(WARNING i8254"isr: Failed to get BSP "
+					"power thread handle to wake it up for "
+					"SMP mode switch.\n");
+
+				// Pretty panic() worthy, imo.
+				panic();
+			}
+
+			thread->messageStream.postUserQMessage(
+				device->i8254State.smpModeSwitchThread,
+				MSGSTREAM_USERQ(MSGSTREAM_SUBSYSTEM_USER0), 0,
+				NULL, NULL,
+				ERROR_SUCCESS);
 		};
 
 		return ZKCM_ISR_SUCCESS_AND_RETIRE_ME;
