@@ -22,6 +22,9 @@ error_t TimerStream::createOneshotEvent(
 {
 	sTimerMsg	*request, *tmp;
 	error_t		ret;
+	
+	// Tracing control for this function
+	const bool enableTracing = false;
 
 	if (type > TIMERSTREAM_CREATEONESHOT_TYPE_MAXVAL) {
 		return ERROR_INVALID_ARG_VAL;
@@ -67,29 +70,43 @@ printf(FATAL TIMERSTREAM"%x: new msg sourceTid=%x, targetTid=%x.\n",
 	 * In the current implementation, such a request would just expire as
 	 * soon as the next timer event fires.
 	 **/
+	if (enableTracing) {
 printf(CC"$1$");
+	}
 	lockRequestQueue();
+	if (enableTracing) {
 printf(CC"$2$");
+	}
 	tmp = requests.getHead();
+	if (enableTracing) {
 printf(CC"$3$");
+	}
 
 	// If the request queue was empty:
 	if (tmp == NULL)
 	{
+		if (enableTracing) {
 printf(CC"$4$");
+		}
 		ret = requests.addItem(request, request->expirationStamp);
 		unlockRequestQueue();
-		if (ret != ERROR_SUCCESS) { printf(CC"$4.1$"); return ret; };
+		if (ret != ERROR_SUCCESS) { if (enableTracing) { printf(CC"$4.1$"); } return ret; };
 
+		if (enableTracing) {
 printf(CC"$4.2$");
+		}
 		return timerTrib.insertTimerQueueRequestObject(request);
 	};
 
+	if (enableTracing) {
 printf(CC"$5$");
+	}
 	// If the new request expires before the one currently being serviced:
 	if (request->expirationStamp < tmp->expirationStamp)
 	{
+		if (enableTracing) {
 printf(CC"$6$");
+		}
 		timerTrib.cancelTimerQueueRequestObject(tmp);
 		ret = requests.addItem(request, request->expirationStamp);
 		unlockRequestQueue();
@@ -98,12 +115,16 @@ printf(CC"$6$");
 	}
 	else
 	{
+		if (enableTracing) {
 printf(CC"$7$");
+		}
 		ret = requests.addItem(request, request->expirationStamp);
 		unlockRequestQueue();
 	};
 
+	if (enableTracing) {
 printf(CC"$8$");
+	}
 	assert_fatal(i8254Pit.irqEventMessagesEnabled());
 	printf(NOTICE TIMERSTREAM"%x: created oneshot event.\n", id);
 	return ret;
@@ -148,6 +169,9 @@ Thread *TimerStream::timerRequestTimeoutNotification(
 	sTimerMsg	*event;
 	error_t		ret;
 	Thread		*thread;
+	
+	// Tracing control for this function
+	const bool enableTracing = false;
 
 	/* Need to get the correct TaskContext object; this could be a context
 	 * object that is part of a Thread object, or a context object that
@@ -156,18 +180,26 @@ Thread *TimerStream::timerRequestTimeoutNotification(
 	 * If TIMERSTREAM_CREATE*_FLAGS_CPU_TARGET is set, then the target
 	 * context is a per-CPU context. Else, it is a normal thread context.
 	 **/
+	if (enableTracing) {
 printf(CC"+1+");
+	}
 	thread = parent->getThread(request->header.targetId);
 	if (thread == NULL) {
+		if (enableTracing) {
 printf(CC"+2+");
+		}
 		return NULL;
 	};
 
+	if (enableTracing) {
 printf(CC"+3+");
+	}
 	event = new sTimerMsg(*request);
 	if (event == NULL)
 	{
+		if (enableTracing) {
 printf(CC"+4+");
+		}
 		printf(ERROR TIMERSTREAM"%d: Failed to allocate event for "
 			"expired request.\n",
 			id);
@@ -180,15 +212,21 @@ printf(CC"+4+");
 	// Queue event.
 	ret = thread->messageStream.enqueue(
 		event->header.subsystem, &event->header);
+	if (enableTracing) {
 printf(CC"+5+");
+	}
 	if (ret != ERROR_SUCCESS)
 	{
+		if (enableTracing) {
 printf(CC"+6+");
+		}
 		printf(ERROR TIMERSTREAM"%x: Failed to add expired event to "
 			"thread %x's queue.\n",
 			id, thread->getFullId());
 	};
+	if (enableTracing) {
 printf(CC"+7+");
+	}
 	return thread;
 }
 

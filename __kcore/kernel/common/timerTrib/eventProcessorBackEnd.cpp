@@ -79,6 +79,9 @@ void TimerTrib::sEventProcessor::thread(void *)
 	MessageStream::sHeader		*msg = NULL;
 	sControlMsg			controlMsg;
 	
+	// Tracing control for this function
+	const bool enableTracing = true;
+
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 	
 	// Enable connectionless receiving on this thread's ZAsyncStream
@@ -191,16 +194,26 @@ void TimerTrib::sEventProcessor::thread(void *)
 				continue;
 			};
 
+			if (enableTracing) {
+printf(CC"`1`");
+			}
 			err = timerTrib.eventProcessor.waitSlots[i].eventQueue
 				->pop(
 					(void **)&currIrqEvent,
 					SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
 			if (err != ERROR_SUCCESS) {
+				if (enableTracing) {
+printf(CC"`2`");
+				}
 				continue;
 			}
 
 			messagesWereFound = 1;
+			if (enableTracing) {
+printf(CC"`3:QnItems=%d`",
+	timerTrib.eventProcessor.waitSlots[i].timerQueue->requestQueue.getNItems());
+			}
 
 			// Dispatch the message here.
 			timerTrib.eventProcessor.waitSlots[i].timerQueue
@@ -211,9 +224,11 @@ void TimerTrib::sEventProcessor::thread(void *)
 					currIrqEvent);
 		};
 
-printf(CC"`1`");
 		// If the loop ran to its end and there were no messages, block.
 		if (!messagesWereFound) {
+			if (enableTracing) {
+printf(CC"`4`");
+			}
 			taskTrib.block();
 		};
 	};

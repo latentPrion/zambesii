@@ -633,6 +633,8 @@ printf(NOTICE"DEVICE: (driver %d '%s'), Device name: %s.\n\t%d %d %d attrs.\n",
 		matchingDevices.begin(0);
 
 	for (; it != matchingDevices.end(); ++it) { delete *it; };
+printf(NOTICE FPLAINNIDX"detectDriver(%s): Done.\n",
+	requestData->path);
 }
 
 void zuiBackend::newDeviceActionReq(

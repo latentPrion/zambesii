@@ -670,9 +670,13 @@ error_t ProcessStream::spawnThread(
 		|| FLAG_TEST(flags, SPAWNTHREAD_FLAGS_FIRST_THREAD))
 		&& !FLAG_TEST(flags, SPAWNTHREAD_FLAGS_POWER_THREAD))
 	{
+printf(FATAL TASKTRIB"About to schedule thread %x.\n",
+	(*newThread)->getFullId());
 		return taskTrib.schedule(*newThread);
 	}
 	else {
+printf(FATAL TASKTRIB"Not scheduling thread %x.\n",
+	(*newThread)->getFullId());
 		return ERROR_SUCCESS;
 	};
 }

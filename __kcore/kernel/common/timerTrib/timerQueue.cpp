@@ -197,6 +197,9 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 	Thread			*targetThread=NULL;
 	ProcessStream		*targetProcess, *creatorProcess;
 	sarch_t			requestQueueWasEmpty=1;
+	
+	// Tracing control for this function
+	const bool enableTracing = true;
 
 	/**	EXPLANATION
 	 * Get the request at the front of the queue, and if it's expired,
@@ -226,14 +229,18 @@ void TimerQueue::tick(sZkcmTimerEvent *event)
 
 	while (request != NULL)
 	{
+		if (enableTracing) {
 printf(CC"<1>");
+		}
 		if (request->expirationStamp > event->irqStamp)
 		{
 			unlockRequestQueue();
 			return;
 		};
 
+		if (enableTracing) {
 printf(CC"<2>");
+		}
 		// Remove the item.
 		request = requestQueue.popFromHead();
 		unlockRequestQueue();
@@ -244,7 +251,9 @@ printf(CC"<2>");
 		targetProcess = getTargetProcess(request);
 		if (targetProcess != NULL)
 		{
+			if (enableTracing) {
 printf(CC"<3>");
+			}
 			/* Queue new event on wake-target process' Timer Stream.
 			 * "TargetObject" could end up being NULL if the target
 			 * thread within the target process exited, or never
@@ -259,7 +268,9 @@ printf(CC"<3>");
 		}
 		else
 		{
+			if (enableTracing) {
 printf(CC"<4>");
+			}
 			printf(WARNING TIMERQUEUE"%dus: wake target process "
 				"%x does not exist.\n",
 				getNativePeriod() / 1000,
@@ -274,17 +285,23 @@ printf(CC"<4>");
 		if (PROCID_PROCESS(request->header.sourceId)
 			!= PROCID_PROCESS(request->header.targetId))
 		{
+			if (enableTracing) {
 printf(CC"<5: creatorProcess=%x, targetProcess=%x>", request->header.sourceId, request->header.targetId);
+			}
 			creatorProcess = getCreatorProcess(request);
 		}
 		else {
+			if (enableTracing) {
 printf(CC"<6>");
+			}
 			creatorProcess = targetProcess;
 		};
 
 		if (creatorProcess == NULL)
 		{
+			if (enableTracing) {
 printf(CC"<7>");
+			}
 			printf(WARNING TIMERQUEUE"%dus: Inexistent creator "
 				"process %x for timer queue request.\n",
 				getNativePeriod() / 1000,
@@ -292,7 +309,9 @@ printf(CC"<7>");
 		}
 		else
 		{
+			if (enableTracing) {
 printf(CC"<8>");
+			}
 			// Pull a new request from the creator process.
 			creatorProcess->timerStream
 				.timerRequestTimeoutNotification();
@@ -307,7 +326,9 @@ printf(CC"<8>");
 		 * thread.
 		 **/
 		if (targetProcess != NULL && targetThread != NULL) {
+			if (enableTracing) {
 printf(CC"<9>");
+			}
 			taskTrib.unblock(targetThread);
 		};
 

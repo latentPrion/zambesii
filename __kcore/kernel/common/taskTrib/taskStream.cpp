@@ -220,10 +220,10 @@ void TaskStream::pull(void)
 		// Else set the CPU to a low power state.
 		if (/* !parent->isBspCpu() */ 1)
 		{
-			printf(NOTICE TASKSTREAM"%d: Entering C1: "
-				"IRQs enabled? %d. Prev threadID %x.\n",
+			printf(NOTICE TASKSTREAM"%d=>C1: "
+				"IRQs=%d, PrevTID=%x.\n",
 				parent->cpuId,
-				cpuControl::interruptsEnabled(),
+				!!cpuControl::interruptsEnabled(),
 				getCurrentThread()->getFullId());
 		};
 
@@ -261,8 +261,8 @@ void TaskStream::pull(void)
 
 	currentThread = newThread;
 
-printf(NOTICE TASKSTREAM"%d: Switching to task %x, IRQs are %d.\n",
-	parent->cpuId, newThread->getFullId(), cpuControl::interruptsEnabled());
+printf(NOTICE TASKSTREAM"%d: SWITCH=>%x, IRQs=%d.\n",
+	parent->cpuId, newThread->getFullId(), !!cpuControl::interruptsEnabled());
 
 	loadContextAndJump(newThread->context);
 }

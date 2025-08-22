@@ -295,10 +295,19 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	currCpuStream = cpuTrib.getCurrentCpuStream();
 	currThread = currCpuStream->taskStream.getCurrentThread();
 
+	if (currCpuStream->asyncInterruptEvent.getNestingLevel() > 0) {printf(FATAL TASKTRIB"In int context: asyncNestingLevel is %d.\n", currCpuStream->asyncInterruptEvent.getNestingLevel());}
+	assert_fatal(currCpuStream->asyncInterruptEvent.getNestingLevel() == 0);
+
 #ifdef CONFIG_DEBUG_SCHEDULER
 	/* All threads should be in the RUNNING state when calling block().
 	 * Power threads are set to RUNNING state in their constructors.
 	 **/
+if (currThread->schedState.rsrc.status != Thread::RUNNING) {
+printf(FATAL TASKTRIB"In block(): currThread->id is %x, schedState is %d(%s) (addr %p).\n",
+	currThread->getFullId(), currThread->schedState.rsrc.status,
+	Thread::schedStates[currThread->schedState.rsrc.status],
+	&currThread->schedState);
+}
 	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING);
 #endif
 
@@ -343,9 +352,7 @@ void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
 	 **/
 	if (unlockDescriptor != NULL) { unlockDescriptor->execute(); };
 
-if (currCpuStream->asyncInterruptEvent.getNestingLevel() > 0) {printf(FATAL TASKTRIB"In int context: asyncNestingLevel is %d.\n", currCpuStream->asyncInterruptEvent.getNestingLevel());}
 	// TODO: Set this CPU's currentTask to NULL here.
-printf(FATAL TASKTRIB"In block(%x): currCpuStream->asyncInterruptEvent.getNestingLevel() is %d.\n", currThread->getFullId(), currCpuStream->asyncInterruptEvent.getNestingLevel());
 	saveContextAndCallPull(
 		&currCpuStream->schedStack[
 			sizeof(currCpuStream->schedStack)],
@@ -359,6 +366,9 @@ error_t TaskTrib::unblock(
 {
 	error_t					err;
 	MultipleReaderLock::ScopedReadGuard	schedStateGuard;
+	
+	// Tracing control for this function
+	const bool enableTracing = false;
 
 	if (thread == NULL) { return ERROR_INVALID_ARG; };
 
@@ -380,11 +390,15 @@ error_t TaskTrib::unblock(
 	}
 #endif
 
+	if (enableTracing) {
 printf(CC"{1}");
+	}
 	if (thread->schedState.rsrc.status == Thread::RUNNABLE
 		|| thread->schedState.rsrc.status == Thread::RUNNING)
 	{
+		if (enableTracing) {
 printf(CC"{1.1}");
+		}
 		/* It's not the worst thing if this happens, so just warn the user
 		 * that their state machine is flawed and move on.
 		 */
@@ -400,10 +414,14 @@ printf(CC"{1.1}");
 		return ERROR_SUCCESS;
 	};
 
+	if (enableTracing) {
 printf(CC"{2: %d(%s)}\n", thread->schedState.rsrc.status, Thread::schedStates[thread->schedState.rsrc.status]);
+	}
 	if (thread->schedState.rsrc.status != Thread::BLOCKED)
 	{
+		if (enableTracing) {
 printf(CC"{2.1}");
+		}
 		printf(NOTICE TASKTRIB"unblock(%x): Invalid sched state."
 			"schedState is %d (%s).\n",
 			thread->getFullId(),
@@ -415,22 +433,30 @@ printf(CC"{2.1}");
 		return ERROR_INVALID_OPERATION;
 	};
 
+	if (enableTracing) {
 printf(CC"{3}");
+	}
 	err = thread->schedState.rsrc.currentCpu->taskStream.unblock(thread);
 	if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
 
 	if (err != ERROR_SUCCESS)
 		{ panic(err, ERROR"Failed to unblock thread!"); }
+	if (enableTracing) {
 printf(CC"{4}");
+	}
 
 	if (thread->shouldPreemptCurrentThreadOn(
 		thread->schedState.rsrc.currentCpu))
 	{
+		if (enableTracing) {
 printf(CC"{5}");
+		}
 		if (thread->schedState.rsrc.currentCpu == cpuTrib.getCurrentCpuStream())
 		{
 //			schedStateGuard.releaseManagementAndUnlock();
+			if (enableTracing) {
 printf(CC"{6}");
+			}
 			/* We don't perform an immediate task switch here for the same
 			 * reasons as in the wake() function. See comments in that function
 			 * for more details.
@@ -439,7 +465,9 @@ printf(CC"{6}");
 		else
 		{
 //			schedStateGuard.releaseManagementAndUnlock();
+			if (enableTracing) {
 printf(CC"{7}");
+			}
 			/* FIXME: Send an IPC message to the other CPU to check
 			 * its queue in case the newly scheduled thread is higher
 			 * priority.
