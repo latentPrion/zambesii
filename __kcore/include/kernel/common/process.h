@@ -82,7 +82,18 @@ public:
 		flags(0),
 		privateData(privateData), responseMessage(NULL),
 
-		// Kernel process hands out thread IDs from 1 since 0 is taken.
+		/* Kernel process hands out thread IDs from 1 since 0 is taken.
+		 *
+		 *	FIXME:
+		 * The above comment may not be true anymore. We used to reserve
+		 * thread ID 0 for a special thread called __korientation. But
+		 * the current design simply makes the __korientation code
+		 * sequence a mere power management code sequence, and has the
+		 * BSP's power thread execute that code sequence.
+		 *
+		 * In which case, we should probably re-claim thread ID 0.
+		 * Verify this.
+		 **/
 		threadLock(CC"ProcessStream threadLock"),
 		nextThreadId(
 			CHIPSET_MEMORY_MAX_NTASKS - 1,
