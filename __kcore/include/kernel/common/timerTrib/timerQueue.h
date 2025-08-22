@@ -106,6 +106,7 @@ private:
 	error_t installClockRoutine(ZkcmTimerDevice::clockRoutineFn *routine)
 	{
 		error_t		ret;
+		sbit8		deviceWasEnabled;
 
 		if (!isLatched()) { return ERROR_UNINITIALIZED; };
 		ret = device->installClockRoutine(routine);
@@ -113,10 +114,14 @@ private:
 			atomicAsm::set((uintptr_t *)&clockRoutineInstalled, 1);
 		};
 
+		deviceWasEnabled = device->isEnabled();
 		// If the underlying device is not enabled, enable it.
-		if (!device->isEnabled())
+		if (!deviceWasEnabled)
 		{
-			ret = enable();
+			/* Keep IRQ event messages disabled because the device
+			 * was disabled prior to installing the clock routine.
+			 */
+			ret = enable(0);
 			if (ret != ERROR_SUCCESS)
 			{
 				printf(NOTICE TIMERQUEUE"%dus: "
@@ -127,15 +132,13 @@ private:
 				return ret;
 			};
 
-			/* Disable IRQ event messages because the device was disabled
-			 * prior to installing the clock routine.
-			 */
-			device->disableIrqEventMessages();
-			printf(NOTICE TIMERQUEUE"%dus: installClockRoutine: "
-				"softDisabled device \"%s\".\n",
-				getNativePeriod() / 1000,
-				device->getBaseDevice()->shortName);
 		};
+
+		printf(NOTICE TIMERQUEUE"%dus: installClockRoutine: "
+			"on device \"%s\" (IRQ event messages %sabled).\n",
+			getNativePeriod() / 1000,
+			device->getBaseDevice()->shortName,
+			deviceWasEnabled ? "en" : "dis");
 
 		return ret;
 	}
@@ -154,7 +157,7 @@ private:
 	 * further requests for timer services until enable() is called, even
 	 * if it is still waiting for stale requests to time out.
 	 **/
-	error_t enable(void);
+	error_t enable(sbit8 enableIrqEventMessages = 1);
 	void disable(sarch_t forceHardDisable = 0);
 
 	void lockRequestQueue(void) { requestQueueLock.acquire(); }
