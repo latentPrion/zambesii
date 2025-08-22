@@ -100,7 +100,8 @@ private:
 		// __kpin ID of the IRQ pin our device is currently tied to.
 		ubit16			__kpinId;
 		irqStateE		irqState;
-		ubit8			smpModeSwitchInProgress;
+		// Set with atomics.
+		uarch_t			smpModeSwitchInProgress;
 		processId_t		smpModeSwitchThread;
 	} i8254State;
 };

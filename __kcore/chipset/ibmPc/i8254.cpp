@@ -173,7 +173,8 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 		device->state.lock.release();
 
 		// Part of the IBM-PC Symmetric IO mode switch.
-		if (device->i8254State.smpModeSwitchInProgress)
+		if (atomicAsm::read(
+			&device->i8254State.smpModeSwitchInProgress))
 		{
 			// Release the lock and exit.
 			taskTrib.unblock(
@@ -349,13 +350,15 @@ error_t I8254Pit::enable(void)
 
 void I8254Pit::setSmpModeSwitchFlag(processId_t wakeTargetThread)
 {
-	i8254State.smpModeSwitchInProgress = 1;
+	atomicAsm::set(
+		&i8254State.smpModeSwitchInProgress, 1);
 	i8254State.smpModeSwitchThread = wakeTargetThread;
 }
 
 void I8254Pit::unsetSmpModeSwitchFlag(void)
 {
-	i8254State.smpModeSwitchInProgress = 0;
+	atomicAsm::set(
+		&i8254State.smpModeSwitchInProgress, 0);
 }
 
 void I8254Pit::disable(void)
@@ -381,7 +384,7 @@ void I8254Pit::disable(void)
 	 **/
 
 	state.lock.acquire();
-	if (i8254State.smpModeSwitchInProgress)
+	if (atomicAsm::read(&i8254State.smpModeSwitchInProgress))
 	{
 		/* The smpModeSwitch delay is a bit longer because
 		 * we have to give enough time for this function to
