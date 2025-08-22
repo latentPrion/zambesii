@@ -7,7 +7,7 @@
 set -e
 
 echo "Running autoreconf..."
-autoreconf ..
+autoreconf -i .. ../build/zudi
 
 echo "Running configure with custom options..."
 ../configure \
