@@ -566,10 +566,7 @@ void I8254Pit::writeOneshotIo(void)
 		i8254_CHAN0_IO_COUNTER,
 		i8254State.currentTimeoutClks >> 8);
 
-	FLAG_SET(
-		state.rsrc.flags,
-		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
-		| ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED);
+	FLAG_SET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
 
 	state.lock.release();
 }
@@ -595,10 +592,7 @@ void I8254Pit::writePeriodicIo(void)
 		i8254_CHAN0_IO_COUNTER,
 		i8254State.currentIntervalClks >> 8);
 
-	FLAG_SET(
-		state.rsrc.flags,
-		ZKCM_TIMERDEV_STATE_FLAGS_ENABLED
-		| ZKCM_TIMERDEV_STATE_FLAGS_IRQ_EVENT_MESSAGES_ENABLED);
+	FLAG_SET(state.rsrc.flags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED);
 
 	state.lock.release();
 }

@@ -74,7 +74,7 @@ void TimerQueue::unlatch(void)
 		getNativePeriod() / 1000);
 }
 
-error_t TimerQueue::enable(void)
+error_t TimerQueue::enable(sbit8 enableIrqEventMessages)
 {
 	error_t		ret;
 	sTime		stamp;
@@ -92,6 +92,19 @@ error_t TimerQueue::enable(void)
 			getDevice()->getBaseDevice()->shortName);
 
 		return ret;
+	};
+
+	ret = device->enable();
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR TIMERQUEUE"%dus: Failed to enable() device.\n",
+			getNativePeriod() / 1000);
+
+		return ret;
+	};
+
+	if (!enableIrqEventMessages) {
+		return ERROR_SUCCESS;
 	};
 
 	ret = device->enableIrqEventMessages();
