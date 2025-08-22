@@ -50,9 +50,14 @@ void RecursiveLock::acquire(void)
 
 		if (oldValue == PROCID_INVALID)
 		{
+			/* The interrupt entry during lock holding bug may
+			 * actually just be because of an accounting error in
+			 * here btw, if the locks in question are
+			 * recursiveLocks.
+			 */
 			// We acquired the lock
 			recursionCount = 1;
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 			cpuTrib.getCurrentCpuStream()->nLocksHeld++;
 			cpuTrib.getCurrentCpuStream()
 				->mostRecentlyAcquiredLock = this;
@@ -71,7 +76,7 @@ void RecursiveLock::acquire(void)
 		{
 			// We already own the lock, increment recursion count
 			recursionCount++;
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 			cpuTrib.getCurrentCpuStream()->nLocksHeld++;
 			cpuTrib.getCurrentCpuStream()
 				->mostRecentlyAcquiredLock = this;
@@ -120,7 +125,7 @@ void RecursiveLock::acquire(void)
 	// In non-SMP mode, just take the lock
 	lock = currThreadId;
 	recursionCount++;
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
 	cpuTrib.getCurrentCpuStream()
 		->mostRecentlyAcquiredLock = this;
@@ -138,7 +143,7 @@ void RecursiveLock::release(void)
 	 **/
 
 	recursionCount--;
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
 	// If we're releasing the lock completely, open it up for other tasks

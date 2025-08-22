@@ -42,9 +42,9 @@ AC_DEFUN([AX_ZBZ_DEBUG_ARG_ENABLE], [
 AX_ZBZ_DEBUG_ARG_ENABLE([locks], [Lock debugging],
     [CONFIG_DEBUG_LOCKS])
 
-AX_ZBZ_DEBUG_ARG_ENABLE([lock-exceptions],
-    [Check for exceptions while holding locks],
-    [CONFIG_DEBUG_LOCK_EXCEPTIONS])
+AX_ZBZ_DEBUG_ARG_ENABLE([locked-interrupt-entry],
+    [Check for any interrupt entry while holding locks],
+    [CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY])
 
 AX_ZBZ_DEBUG_ARG_ENABLE([scheduler],
     [Enable debugging for the scheduler],

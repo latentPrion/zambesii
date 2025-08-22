@@ -31,7 +31,7 @@ void interruptTrib_interruptEntry(RegisterContext *regs)
 		: 0;
 #endif
 
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	if (cpuStream->nLocksHeld > 0)
 	{
 		printf(FATAL INTTRIB"interruptEntry: CPU %d "

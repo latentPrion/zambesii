@@ -376,7 +376,7 @@ public:
 	class X86Lapic		lapic;
 #endif
 
-#ifdef CONFIG_DEBUG_LOCK_EXCEPTIONS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 	uarch_t			nLocksHeld;
 	Lock			*mostRecentlyAcquiredLock;
 #endif
