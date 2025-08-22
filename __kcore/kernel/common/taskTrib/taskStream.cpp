@@ -218,13 +218,20 @@ void TaskStream::pull(void)
 		};
 
 		// Else set the CPU to a low power state.
-		if (/* !parent->isBspCpu() */ 1)
+		printf(NOTICE TASKSTREAM"%d=>C1: "
+			"IRQs=%d, PrevTID=%x.\n",
+			parent->cpuId,
+			!!cpuControl::interruptsEnabled(),
+			getCurrentThread()->getFullId());
+
+		if (!parent->isBspCpu())
 		{
-			printf(NOTICE TASKSTREAM"%d=>C1: "
-				"IRQs=%d, PrevTID=%x.\n",
-				parent->cpuId,
-				!!cpuControl::interruptsEnabled(),
-				getCurrentThread()->getFullId());
+			/**	FIXME:
+			 * Figure out why the AP CPUs keep getting awakened and
+			 * thus repeatedly spamming this loop. They should be
+			 * tranquil, as far as I can tell.
+			 */
+			cpuControl::disableInterrupts();
 		};
 
 		cpuControl::halt();
