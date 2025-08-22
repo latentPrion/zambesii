@@ -196,18 +196,19 @@ void TimerTrib::sEventProcessor::thread(void *)
 					(void **)&currIrqEvent,
 					SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
-			if (err == ERROR_SUCCESS)
-			{
-				messagesWereFound = 1;
+			if (err != ERROR_SUCCESS) {
+				continue;
+			}
 
-				// Dispatch the message here.
-				timerTrib.eventProcessor.waitSlots[i].timerQueue
-					->tick(currIrqEvent);
+			messagesWereFound = 1;
 
-				timerTrib.eventProcessor.waitSlots[i].timerQueue
-					->getDevice()->freeIrqEvent(
-						currIrqEvent);
-			};
+			// Dispatch the message here.
+			timerTrib.eventProcessor.waitSlots[i].timerQueue
+				->tick(currIrqEvent);
+
+			timerTrib.eventProcessor.waitSlots[i].timerQueue
+				->getDevice()->freeIrqEvent(
+					currIrqEvent);
 		};
 
 printf(CC"`1`");
