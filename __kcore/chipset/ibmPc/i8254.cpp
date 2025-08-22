@@ -150,6 +150,9 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 	I8254Pit	*device;
 	error_t		err;
 	modeE		mode;
+	
+	// Tracing control for this function
+	const bool enableTracing = true;
 
 	/**	EXPLANATION:
 	 * 1. Check to make sure that this is not a "disabling" IRQ which is
@@ -194,16 +197,22 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 	};
 
 	device->state.lock.release();
+	if (enableTracing) {
 printf(CC"[1:CPU %d]", cpuTrib.getCurrentCpuStream()->cpuId);
+	}
 
 	// Don't claim the IRQ if the timer hadn't been enabled.
 	if (!FLAG_TEST(devFlags, ZKCM_TIMERDEV_STATE_FLAGS_ENABLED)) {
 		return ZKCM_ISR_NOT_MY_IRQ;
 	};
 
+	if (enableTracing) {
 printf(CC"[2]");
+	}
 	device->sendEoi();
+	if (enableTracing) {
 printf(CC"[3]");
+	}
 
 	// Invoke the system clock update routine if installed on this device.
 	if (device->clockRoutine != NULL)
@@ -223,7 +232,9 @@ printf(CC"[3]");
 		return ZKCM_ISR_SUCCESS;
 	};
 
+	if (enableTracing) {
 printf(CC"[4]");
+	}
 	irqEvent = device->allocateIrqEvent();
 	// Note well, this is faultable memory being allocated.
 	if (irqEvent == NULL)
@@ -233,7 +244,9 @@ printf(CC"[4]");
 		return ZKCM_ISR_SUCCESS;
 	};
 
+	if (enableTracing) {
 printf(CC"[5]");
+	}
 	// Fill out the event and queue it.
 	irqEvent->device = device;
 	device->getLatchState(
@@ -245,9 +258,13 @@ printf(CC"[5]");
 		? irqEvent->latchedStream->id : PROCID_INVALID);*/
 
 	timerTrib.getCurrentDateTime(&irqEvent->irqStamp);
+	if (enableTracing) {
 printf(CC"[6]");
+	}
 	err = device->irqEventQueue.addItem(irqEvent);
+	if (enableTracing) {
 printf(CC"[7]");
+	}
 	if (err != ERROR_SUCCESS)
 	{
 		device->freeIrqEvent(irqEvent);

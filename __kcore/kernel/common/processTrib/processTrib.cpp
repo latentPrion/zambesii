@@ -535,8 +535,11 @@ error_t ProcessTrib::spawnDriver(
 		return ret;
 	};
 
-	printf(NOTICE PROCTRIB"spawnDriver: New driver spawned, tid = %x.\n",
-		firstThread->getFullId());
+	printf(NOTICE PROCTRIB"spawnDriver: New driver spawned, tid = %x, "
+		"schedState is %d (%s).\n",
+		firstThread->getFullId(),
+		firstThread->schedState.rsrc.status,
+		Thread::schedStates[firstThread->schedState.rsrc.status]);
 
 	*retProcess = newProcess.release();
 	return ERROR_SUCCESS;

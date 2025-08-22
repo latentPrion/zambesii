@@ -729,38 +729,57 @@ error_t fplainn::Driver::sModule::addAttachedRegion(ubit16 regionIndex)
 error_t fplainn::Driver::addOrModifyOpsInit(ubit16 opsIndex, ubit16 metaIndex)
 {
 	sOpsInit	*old;
+	
+	// Tracing control for this function
+	const bool enableTracing = false;
 
+	if (enableTracing) {
 printf(CC"~1~");
+	}
 	if (opsIndex == 0 || metaIndex == 0) { return ERROR_INVALID_ARG_VAL; }
+	if (enableTracing) {
 printf(CC"~2~");
+	}
 
 	// Does the opsIndex already exist?
 	old = getOpsInit(opsIndex);
 	if (old != NULL)
 	{
+		if (enableTracing) {
 printf(CC"~3~");
+		}
 		old->metaIndex = metaIndex;
 		return ERROR_SUCCESS;
 	}
 
+	if (enableTracing) {
 printf(CC"~4~");
+	}
 	sOpsInit *tmp = new sOpsInit[nOpsInits + 1];
 	if (tmp == NULL)
 	{
+		if (enableTracing) {
 printf(CC"~5~");
+		}
 		return ERROR_MEMORY_NOMEM;
 	}
 
+	if (enableTracing) {
 printf(CC"~6~");
+	}
 	if (nOpsInits > 0)
 	{
+		if (enableTracing) {
 printf(CC"~7~");
+		}
 		memcpy(
 			tmp, opsInits,
 			nOpsInits * sizeof(*opsInits));
 	}
 
+	if (enableTracing) {
 printf(CC"~8~");
+	}
 	tmp[nOpsInits] = sOpsInit(opsIndex, metaIndex);
 	old = opsInits;
 	opsInits = tmp;

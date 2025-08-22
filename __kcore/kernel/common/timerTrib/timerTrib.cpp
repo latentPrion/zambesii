@@ -377,27 +377,36 @@ error_t TimerTrib::insertTimerQueueRequestObject(
 {
 	error_t		ret;
 	TimerQueue	*suboptimal=NULL;
+	
+	// Tracing control for this function
+	const bool enableTracing = false;
 
 	for (uarch_t i=0; i<TIMERTRIB_TIMERQS_NQUEUES; i++)
 	{
 		// Skip queues that aren't latched to a device.
 		if (!__KBIT_TEST(latchedPeriodMask, i)) { continue; };
 
+		if (enableTracing) {
 printf(CC"&1&:%d\n", i);
+		}
 		suboptimal = timerQueues[i];
 
 		// Temporarily add the queue's period to the placement time.
 		request->placementStamp.time.nseconds
 			+= timerQueues[i]->getNativePeriod();
 
+		if (enableTracing) {
 printf(CC"&2&");
+		}
 
 		/* If the object's timeout will be exceeded by placing it into
 		 * this queue, skip the queue.
 		 **/
 		if (request->placementStamp > request->expirationStamp)
 		{
+			if (enableTracing) {
 printf(CC"&3&");
+			}
 			// Reset the change before continuing.
 			request->placementStamp.time.nseconds
 				-= timerQueues[i]->getNativePeriod();
@@ -405,18 +414,26 @@ printf(CC"&3&");
 			continue;
 		};
 
+		if (enableTracing) {
 printf(CC"&4&");
+		}
 		// Same as above: reset the change to placementStamp.
 		request->placementStamp.time.nseconds
 			-= timerQueues[i]->getNativePeriod();
 
 		// Else, the request can spend at least one tick in this queue.
 		timerQueues[i]->lockRequestQueue();
+		if (enableTracing) {
 printf(CC"&5&");
+		}
 		ret = timerQueues[i]->insert(request);
+		if (enableTracing) {
 printf(CC"&6&");
+		}
 		timerQueues[i]->unlockRequestQueue();
+		if (enableTracing) {
 printf(CC"&7&");
+		}
 		return ret;
 	};
 
@@ -429,13 +446,21 @@ printf(CC"&7&");
 	/*printf(WARNING TIMERTRIB"Request placed into suboptimal queue %dus."
 		"\n", suboptimal->getNativePeriod() / 1000);*/
 
+	if (enableTracing) {
 printf(CC"&8&");
+	}
 	suboptimal->lockRequestQueue();
+	if (enableTracing) {
 printf(CC"&9&");
+	}
 	ret = suboptimal->insert(request);
+	if (enableTracing) {
 printf(CC"&10&");
+	}
 	suboptimal->unlockRequestQueue();
+	if (enableTracing) {
 printf(CC"&11&");
+	}
 	return ret;
 }
 

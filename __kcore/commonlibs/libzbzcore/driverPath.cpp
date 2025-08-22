@@ -831,6 +831,10 @@ void __klzbzcore::driver::__kcontrol::instantiateDeviceReq(
 		dev->instance->setThreadRegionPointer(
 			newThread->getFullId());
 
+		printf(NOTICE LZBZCORE"instDevReq(%s): called spawnThread() for "
+			"region %d: thread %x.\n",
+			ctxt->path, drv->regions[i].index, newThread->getFullId());
+
 //		taskTrib.wake(newThread);
 	};
 
