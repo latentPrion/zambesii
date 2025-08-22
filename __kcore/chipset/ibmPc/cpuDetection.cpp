@@ -733,6 +733,14 @@ error_t ZkcmCpuDetectionMod::setSmpMode(void)
 	if (i8254WasEnabled)
 	{
 		i8254Pit.disable();
+		/*	FIXME:
+		 * Replace this timing sensitive block here with a call to
+		 * pullAndDispatchUntil(). Modify I8254Pit::disable to call
+		 * postMessage() on the BSP power thread's MessageStream.
+		 *
+		 * This should eliminate the timing issue and the need for this
+		 * block() call.
+		 */
 		taskTrib.block();
 	};
 
