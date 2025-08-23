@@ -632,7 +632,7 @@ static sbit8 setSmpMode_i8254DisablingIrqWaiter(
 	MessageStream::sHeader *msg
 	)
 {
-	if (msg->subsystem == MSGSTREAM_USERQ(MSGSTREAM_SUBSYSTEM_USER0)
+	if (msg->subsystem == MSGSTREAM_USERQ(0)
 		&& msg->function == 0)
 	{
 		return 1;

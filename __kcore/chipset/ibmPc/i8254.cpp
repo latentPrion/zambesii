@@ -198,7 +198,7 @@ printf(NOTICE i8254"isr: Posting SMP mode switch message to BSP "
 	"power thread.\n");
 			err = thread->messageStream.postUserQMessage(
 				device->i8254State.smpModeSwitchThread,
-				MSGSTREAM_USERQ(MSGSTREAM_SUBSYSTEM_USER0), 0,
+				0, 0,
 				NULL, NULL,
 				ERROR_SUCCESS);
 
