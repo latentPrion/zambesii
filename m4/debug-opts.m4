@@ -61,3 +61,7 @@ AX_ZBZ_DEBUG_ARG_ENABLE([page-faults],
 AX_ZBZ_DEBUG_ARG_ENABLE([heap-slam-cache],
     [Enable heap SLAM cache debugging],
     [CONFIG_DEBUG_HEAP_SLAM_CACHE])
+
+AX_ZBZ_DEBUG_ARG_ENABLE([schedstate-unblocks],
+    [Enable debugging for scheduler state unblocks],
+    [CONFIG_DEBUG_SCHEDSTATE_UNBLOCKS])

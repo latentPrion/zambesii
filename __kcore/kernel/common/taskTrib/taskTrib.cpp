@@ -399,6 +399,7 @@ printf(CC"{1}");
 		if (enableTracing) {
 printf(CC"{1.1}");
 		}
+#ifdef CONFIG_DEBUG_SCHEDSTATE_UNBLOCKS
 		/* It's not the worst thing if this happens, so just warn the user
 		 * that their state machine is flawed and move on.
 		 */
@@ -408,6 +409,7 @@ printf(CC"{1.1}");
 			cpuTrib.getCurrentCpuStream()->cpuId,
 			thread->schedState.rsrc.status,
 			Thread::schedStates[thread->schedState.rsrc.status]);
+#endif
 
 		if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
 
