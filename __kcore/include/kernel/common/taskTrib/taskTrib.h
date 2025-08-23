@@ -36,14 +36,14 @@ public:
 	error_t schedule(Thread *thread);
 	void yield(void);
 	// Used to prevent race conditions. See comments in definition.
-	void block(Lock::sOperationDescriptor *unlockDescriptor=NULL);
+	void block(MultipleReaderLock::ScopedWriteGuard *schedStateGuard=NULL);
 
 	// Back ends.
 	error_t dormant(Thread *thread);
 	error_t wake(Thread *thread);
 	error_t unblock(
 		Thread *thread,
-		Lock::sOperationDescriptor *unlockDescriptor=NULL);
+		MultipleReaderLock::ScopedReadGuard *schedStateGuard=NULL);
 	void kill(Thread *thread) { dormant(thread); }
 
 	/* These next few overloads are front-ends for the back ends that take
@@ -77,7 +77,7 @@ public:
 
 	error_t unblock(
 		processId_t tid,
-		Lock::sOperationDescriptor *unlockDescriptor=NULL
+		MultipleReaderLock::ScopedReadGuard *callerSchedStateGuard=NULL
 		)
 	{
 		ProcessStream	*proc;
@@ -87,7 +87,7 @@ public:
 		if (proc == NULL) { return ERROR_INVALID_ARG_VAL; };
 
 		thread = proc->getThread(tid);
-		return unblock(thread, unlockDescriptor);
+		return unblock(thread, callerSchedStateGuard);
 	}
 
 	void kill(processId_t tid)

@@ -8,6 +8,7 @@
 error_t SingleWaiterQueue::addItem(void *item)
 {
 	error_t		ret;
+	Thread		*waitingThread;
 
 	/**	EXPLANATION:
 	 * The enqueue and unblock() do not have to be atomically executed,
@@ -30,7 +31,8 @@ error_t SingleWaiterQueue::addItem(void *item)
 	 */
 	state.lock.acquire();
 
-	if (state.rsrc.thread == NULL)
+	waitingThread = state.rsrc.thread;
+	if (waitingThread == NULL)
 	{
 		state.lock.release();
 
@@ -64,13 +66,16 @@ error_t SingleWaiterQueue::addItem(void *item)
 	 * effect of making the thread unblock() operation atomic with respect to
 	 * this addItem() call's queue operation.
 	 */
-	Lock::sOperationDescriptor	unlockDescriptor(
-		&state.lock,
-		Lock::sOperationDescriptor::WAIT);
+	ret = taskTrib.unblock(waitingThread, &threadSchedStateGuard);
 
-	threadSchedStateGuard.releaseManagementAndUnlock();
-	ret = taskTrib.unblock(reinterpret_cast<Thread *>(
-		atomicAsm::read(&state.rsrc.thread)), &unlockDescriptor);
+	/**	FIXME:
+	 * I hate that I have to hold state.lock for the duration of the
+	 * unblock() call. We have to hold state.lock because state.rsrc.thread
+	 * could possibly be changed while we're executing this critical
+	 * section. It's extremely unlikely, but it's possible.
+	 * Try and see if we can optimize this somehow.
+	 */
+	state.lock.release();
 
 	if (ret != ERROR_SUCCESS)
 		{ panic(ret, FATAL SWAITQ"Failed to unblock thread!"); }
@@ -134,26 +139,20 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 			return ERROR_UNINITIALIZED;
 		};
 
+		MultipleReaderLock::ScopedWriteGuard	threadSchedStateGuard(
+			&currThread->schedState.lock);
+
 		*item = HeapDoubleList<void>::popFromHead(
 			PTRDBLLIST_OP_FLAGS_UNLOCKED);
 
-		if (*item != NULL)
-		{
-			state.lock.release();
-			return ERROR_SUCCESS;
-		};
+		state.lock.release();
+
+		if (*item != NULL) { return ERROR_SUCCESS; };
 
 		if (FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_DONTBLOCK))
-		{
-			state.lock.release();
-			return ERROR_WOULD_BLOCK;
-		};
+			{ return ERROR_WOULD_BLOCK; };
 
-		Lock::sOperationDescriptor	unlockDescriptor(
-			&state.lock,
-			Lock::sOperationDescriptor::WAIT);
-
-		taskTrib.block(&unlockDescriptor);
+		taskTrib.block(&threadSchedStateGuard);
 	};
 }
 
