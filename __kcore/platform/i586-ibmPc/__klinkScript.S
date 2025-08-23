@@ -150,6 +150,7 @@ SECTIONS
 
 	.rodata BLOCK(0x4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.rodata)) {
+		*(.note.gnu.build-id)
 		*(.rodata*)
 	} >ibmPc___kload_vaddr
 

@@ -57,7 +57,8 @@ zambesii_zxe_DEPENDENCIES=$(__KCORE_LIBS) $(zambesii_zxe_LDSCRIPT)
 zambesii_zxe_LDFLAGS=-nodefaultlibs \
 	-T $(zambesii_zxe_LDSCRIPT) \
 	-B"__kcore/__kthreads/$(ZARCH)" \
-	-Wl,--start-group $(__KCORE_LIBS) -Wl,--end-group
+	-Wl,--start-group $(__KCORE_LIBS) -Wl,--end-group \
+	$(AM_LDFLAGS)
 zambesii_zxe_SOURCES=force_cpp_link.cpp
 
 #

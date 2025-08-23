@@ -149,15 +149,23 @@ ZBZ_CPP_FLAGS=m4_normalize(["-I\"\$(top_srcdir)/include\" \
     -I\"\$(top_srcdir)/programs/zudi/include\" \
     -I\"\$(top_srcdir)/__kcore/include\" \
     -ffreestanding"])
-ZBZ_C_FLAGS=m4_normalize(["-O3 -Wstrict-overflow=4 -Wall -Wextra \
-    -pedantic -std=c99 -fno-omit-frame-pointer"])
-ZBZ_CXX_FLAGS=m4_normalize(["-O3 -Wstrict-overflow=4 -Wall -Wextra \
-    -pedantic -std=c++98 -fno-omit-frame-pointer \
-    -fno-exceptions -fno-rtti"])
+ZBZ_C_CXX_COMMON_FLAGS=m4_normalize(["-O3 -Wstrict-overflow=4 -Wall -Wextra \
+    -pedantic -fno-omit-frame-pointer -fno-pic"])
+ZBZ_C_FLAGS=m4_normalize(["-std=c99"])
+ZBZ_CXX_FLAGS=m4_normalize(["-std=c++98 -fno-exceptions -fno-rtti"])
+# For some reason, i686-linux-gnu-ld tries to build a position-
+# independent binary image by default.
+#
+#	FIXME:
+# Also, it appears as if some executable code may be generated
+# on the stack when cross targeting i686-linux-gnu from an
+# aarch64-linux-gnu buildmach? Unsure. Investigate.
+ZBZ_LD_FLAGS=m4_normalize(["-no-pie -z noexecstack"])
 
 AM_CPPFLAGS=${ZBZ_CPP_FLAGS}
-AM_CFLAGS=${ZBZ_C_FLAGS}
-AM_CXXFLAGS=${ZBZ_CXX_FLAGS}
+AM_CFLAGS="${ZBZ_C_CXX_COMMON_FLAGS} ${ZBZ_C_FLAGS}"
+AM_CXXFLAGS="${ZBZ_C_CXX_COMMON_FLAGS} ${ZBZ_CXX_FLAGS}"
+AM_LDFLAGS=${ZBZ_LD_FLAGS}
 
 # Export host and build toolchain flags to be used in Makefile.am
 AC_SUBST([ZARCH])
@@ -178,6 +186,7 @@ AC_SUBST([ZBZ_LD_FLAGS])
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_CXXFLAGS])
+AC_SUBST([AM_LDFLAGS])
 
 AC_SUBST([ISOPROG])
 AC_SUBST([LN_S])
