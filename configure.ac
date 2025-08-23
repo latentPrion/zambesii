@@ -39,6 +39,24 @@ AC_PATH_PROGS([ISOPROG], [mkisofs genisoimage])
 AS_IF([test -z "$ISOPROG"],
     [AC_MSG_ERROR([Could not find mkisofs or genisoimage in PATH. Please install one of them.])])
 
+# ZBZ flags: for building the Zambesii kernel binaries that will run on the host
+ZBZ_CPP_FLAGS=m4_normalize(["-I\"\$(top_srcdir)/include\" \
+    -I\"\$(top_srcdir)/programs/zudi/include\" \
+    -I\"\$(top_srcdir)/__kcore/include\" \
+    -ffreestanding"])
+ZBZ_C_CXX_COMMON_FLAGS=m4_normalize(["-O3 -Wstrict-overflow=4 -Wall -Wextra \
+    -pedantic -fno-omit-frame-pointer -fno-pic"])
+ZBZ_C_FLAGS=m4_normalize(["-std=c99"])
+ZBZ_CXX_FLAGS=m4_normalize(["-std=c++98 -fno-exceptions -fno-rtti"])
+# For some reason, i686-linux-gnu-ld tries to build a position-
+# independent binary image by default.
+#
+#	FIXME:
+# Also, it appears as if some executable code may be generated
+# on the stack when cross targeting i686-linux-gnu from an
+# aarch64-linux-gnu buildmach? Unsure. Investigate.
+ZBZ_LD_FLAGS=m4_normalize(["-no-pie -z noexecstack"])
+
 # Add arguments for host machine
 AC_ARG_VAR([ZARCH], [Zambesii kernel architecture (mandatory, options: i586, x86_64)])
 AC_ARG_VAR([ZSOC], [Zambesii kernel SoC embedding (optional)])
@@ -89,7 +107,11 @@ AS_IF([test -z "$ZARCH" && test -n "$host_alias"], [
 AS_CASE(["$ZARCH"],
     [i?86|x86|x86_32],
         ZARCH="i586"
-        AC_DEFINE([CONFIG_ARCH_x86_32], [1], [x86 32-bit architecture]),
+        AC_DEFINE([CONFIG_ARCH_x86_32], [1], [x86 32-bit architecture])
+	# GCC automatically enables -fcf-protection when we enable -march=i586.
+	# So we disable it.
+	ZBZ_C_CXX_COMMON_FLAGS=m4_normalize(["${ZBZ_C_CXX_COMMON_FLAGS} \
+		-march=i586 -fcf-protection=none"]),
     [x86_64|x64|amd64|?ntel64],
         ZARCH="x86_64"
         AC_DEFINE([CONFIG_ARCH_x86_64], [1], [x86 64-bit architecture])
@@ -143,24 +165,6 @@ AS_IF([test -z "$CP"], [
 AC_PATH_PROG([TOUCH], [touch])
 AS_IF([test -z "$TOUCH"], [
     AC_MSG_ERROR([Could not find 'touch' in PATH. Please install it or add it to PATH.])])
-
-# ZBZ flags: for building the Zambesii kernel binaries that will run on the host
-ZBZ_CPP_FLAGS=m4_normalize(["-I\"\$(top_srcdir)/include\" \
-    -I\"\$(top_srcdir)/programs/zudi/include\" \
-    -I\"\$(top_srcdir)/__kcore/include\" \
-    -ffreestanding"])
-ZBZ_C_CXX_COMMON_FLAGS=m4_normalize(["-O3 -Wstrict-overflow=4 -Wall -Wextra \
-    -pedantic -fno-omit-frame-pointer -fno-pic"])
-ZBZ_C_FLAGS=m4_normalize(["-std=c99"])
-ZBZ_CXX_FLAGS=m4_normalize(["-std=c++98 -fno-exceptions -fno-rtti"])
-# For some reason, i686-linux-gnu-ld tries to build a position-
-# independent binary image by default.
-#
-#	FIXME:
-# Also, it appears as if some executable code may be generated
-# on the stack when cross targeting i686-linux-gnu from an
-# aarch64-linux-gnu buildmach? Unsure. Investigate.
-ZBZ_LD_FLAGS=m4_normalize(["-no-pie -z noexecstack"])
 
 AM_CPPFLAGS=${ZBZ_CPP_FLAGS}
 AM_CFLAGS="${ZBZ_C_CXX_COMMON_FLAGS} ${ZBZ_C_FLAGS}"
