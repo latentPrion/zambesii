@@ -77,8 +77,8 @@ ASM_LOCAL_FUNCTION(_startVirtual)
 	call memset
 	addl	$12, %esp
 
-	/* Call __init. */
-	call __init
+	/* Call _init. */
+	call _init
 
 	/* Jump into the C++ HLL. */
 	call main

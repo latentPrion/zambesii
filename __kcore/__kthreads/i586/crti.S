@@ -1,13 +1,11 @@
+#include <assembler.h>
+
 .section .init
-.global __init
-.type __init, @function
-__init:
+ASM_GLOBAL_FUNCTION(_init)
 	pushl	%ebp
 	movl	%esp, %ebp
 
 .section .fini
-.global __fini
-.type __fini, @function
-__fini:
+ASM_GLOBAL_FUNCTION(_fini)
 	pushl	%ebp
 	movl	%esp, %ebp

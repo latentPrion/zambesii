@@ -1,3 +1,5 @@
+#include <assembler.h>
+
 .section .init
 	movl	%ebp, %esp
 	popl	%ebp
