@@ -441,7 +441,7 @@ error_t MessageStream::pull(
 	for (;FOREVER;)
 	{
 		state.lock.acquire();
-		MultipleReaderLock::ScopedWriteGuard threadSchedStateGuard(
+		MultipleReaderLock::ScopedWriteGuard schedStateGuard(
 			&parent->schedState.lock);
 
 		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
@@ -492,14 +492,13 @@ error_t MessageStream::pull(
 
 			if (tmp == NULL) { continue; }
 
-			/* This should only be unlocked if we've found a message
-			 * that should be returned to the caller.
+			/* This should only be unlocked inside of this nested
+			 * loop if we've found a message that should be returned
+			 * to the caller.
 			 *
-			 * If we don't find a message, we'll unlock the
-			 * pendingSubsystems lock below and check for
-			 * ERROR_WOULD_BLOCK before potentially blocking.
+			 * If we don't find a message, we'll unlock it below
+			 * in the outer loop.
 			 **/
-			threadSchedStateGuard.releaseManagementAndUnlock();
 			state.lock.release();
 
 			// Very useful checks here for sanity.
@@ -513,18 +512,12 @@ error_t MessageStream::pull(
 			return ERROR_SUCCESS;
 		};
 
+		state.lock.release();
+
 		if (FLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
-		{
-			state.lock.release();
-			return ERROR_WOULD_BLOCK;
-		};
+			{ return ERROR_WOULD_BLOCK; };
 
-		Lock::sOperationDescriptor	unlockDescriptor(
-			&state.lock,
-			Lock::sOperationDescriptor::WAIT);
-
-		threadSchedStateGuard.releaseManagementAndUnlock();
-		taskTrib.block(&unlockDescriptor);
+		taskTrib.block(&schedStateGuard);
 	};
 }
 
@@ -636,7 +629,12 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 
 	state.rsrc.pendingSubsystems.set(queueId);
 
-	threadSchedStateGuard.releaseManagementAndUnlock();
+	/**	FIXME:
+	 * I suspect that we can release state.lock here, but I'm not sure how
+	 * exactly pendingSubsystems is used inside of pull(), and whether
+	 * unlocking here will cause lost wakeups. Examine this and see if we
+	 * can unlock state.lock earlier up here.
+	 **/
 
 	/**	EXPLANATION:
 	 * Unblock the thread atomically with respect to this enqueue() call's
@@ -647,11 +645,9 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	 * making the thread unblock() operation atomic with respect to this
 	 * enqueue() call's queue operation.
 	 **/
-	Lock::sOperationDescriptor	unlockDescriptor(
-		&state.lock,
-		Lock::sOperationDescriptor::WAIT);
+	taskTrib.unblock(parent, &threadSchedStateGuard);
 
-	taskTrib.unblock(parent, &unlockDescriptor);
+	state.lock.release();
 	return ERROR_SUCCESS;
 }
 

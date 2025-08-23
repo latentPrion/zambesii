@@ -279,7 +279,9 @@ if (currCpuStream->asyncInterruptEvent.getNestingLevel() > 0) {printf(FATAL TASK
 		currCpuStream->asyncInterruptEvent.getNestingLevel());
 }
 
-void TaskTrib::block(Lock::sOperationDescriptor *unlockDescriptor)
+void TaskTrib::block(
+	MultipleReaderLock::ScopedWriteGuard *callerSchedStateGuard
+	)
 {
 	Thread		*currThread;
 	CpuStream	*currCpuStream;
@@ -311,9 +313,9 @@ printf(FATAL TASKTRIB"In block(): currThread->id is %x, schedState is %d(%s) (ad
 	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING);
 #endif
 
-	if (unlockDescriptor == NULL)
+	if (callerSchedStateGuard == NULL)
 	{
-		MultipleReaderLock::ScopedWriteGuard	guard(
+		MultipleReaderLock::ScopedWriteGuard	localGuard(
 			&currThread->schedState.lock);
 
 		currCpuStream->taskStream.block(currThread);
@@ -347,10 +349,10 @@ printf(FATAL TASKTRIB"In block(): currThread->id is %x, schedState is %d(%s) (ad
 	 * the thread from the scheduler queues; thereby eliminating the race
 	 * condition.
 	 *
-	 * Be sure to pass in the correct 'lockType' value, and for multiple-
-	 * reader locks, the correct 'unlockOp' value.
+	 * Be sure to pass in the correct 'callerSchedStateGuard' value.
 	 **/
-	if (unlockDescriptor != NULL) { unlockDescriptor->execute(); };
+	if (callerSchedStateGuard != NULL)
+		{ callerSchedStateGuard->releaseManagementAndUnlock(); };
 
 	// TODO: Set this CPU's currentTask to NULL here.
 	saveContextAndCallPull(
@@ -361,7 +363,7 @@ printf(FATAL TASKTRIB"In block(): currThread->id is %x, schedState is %d(%s) (ad
 
 error_t TaskTrib::unblock(
 	Thread *thread,
-	Lock::sOperationDescriptor *unlockDescriptor
+	MultipleReaderLock::ScopedReadGuard *callerSchedStateGuard
 	)
 {
 	error_t					err;
@@ -379,7 +381,6 @@ error_t TaskTrib::unblock(
 	 * which called unblock() on the thread. Just documenting for posterity.
 	 **/
 
-#if 0
 	if (callerSchedStateGuard != NULL) {
 		schedStateGuard.move_assign(*callerSchedStateGuard);
 	}
@@ -388,7 +389,6 @@ error_t TaskTrib::unblock(
 		new (&schedStateGuard) MultipleReaderLock::ScopedReadGuard(
 			&thread->schedState.lock);
 	}
-#endif
 
 	if (enableTracing) {
 printf(CC"{1}");
@@ -411,8 +411,6 @@ printf(CC"{1.1}");
 			Thread::schedStates[thread->schedState.rsrc.status]);
 #endif
 
-		if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
-
 		return ERROR_SUCCESS;
 	};
 
@@ -430,8 +428,6 @@ printf(CC"{2.1}");
 			thread->schedState.rsrc.status,
 			Thread::schedStates[thread->schedState.rsrc.status]);
 
-		if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
-
 		return ERROR_INVALID_OPERATION;
 	};
 
@@ -439,7 +435,10 @@ printf(CC"{2.1}");
 printf(CC"{3}");
 	}
 	err = thread->schedState.rsrc.currentCpu->taskStream.unblock(thread);
-	if (unlockDescriptor != NULL) { unlockDescriptor->execute(); }
+	/**	EXPLANATION:
+	 * Sadly we can't release the schedStateGuard here as yet because
+	 * we still need to read schedState.rsrc.currentCpu below.
+	 **/
 
 	if (err != ERROR_SUCCESS)
 		{ panic(err, ERROR"Failed to unblock thread!"); }
@@ -447,15 +446,17 @@ printf(CC"{3}");
 printf(CC"{4}");
 	}
 
-	if (thread->shouldPreemptCurrentThreadOn(
-		thread->schedState.rsrc.currentCpu))
+	CpuStream		*unblockedThreadCpu;
+
+	unblockedThreadCpu = thread->schedState.rsrc.currentCpu;
+	if (thread->shouldPreemptCurrentThreadOn(unblockedThreadCpu))
 	{
 		if (enableTracing) {
 printf(CC"{5}");
 		}
-		if (thread->schedState.rsrc.currentCpu == cpuTrib.getCurrentCpuStream())
+		if (unblockedThreadCpu == cpuTrib.getCurrentCpuStream())
 		{
-//			schedStateGuard.releaseManagementAndUnlock();
+			schedStateGuard.releaseManagementAndUnlock();
 			if (enableTracing) {
 printf(CC"{6}");
 			}
@@ -466,7 +467,7 @@ printf(CC"{6}");
 		}
 		else
 		{
-//			schedStateGuard.releaseManagementAndUnlock();
+			schedStateGuard.releaseManagementAndUnlock();
 			if (enableTracing) {
 printf(CC"{7}");
 			}

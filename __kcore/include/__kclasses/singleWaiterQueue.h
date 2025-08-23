@@ -7,7 +7,9 @@
 
 #define SWAITQ		"Single-WaiterQ: "
 
-#define SINGLEWAITERQ_POP_FLAGS_DONTBLOCK	(1<<0)
+#define SINGLEWAITERQ_POP_FLAGS_DONTBLOCK		(1<<0)
+// For now, CALLER_SCHEDLOCKED and DONT_BLOCK are functionally synonymous
+#define SINGLEWAITERQ_POP_FLAGS_CALLER_SCHEDLOCKED	(1<<1)
 
 class Thread;
 

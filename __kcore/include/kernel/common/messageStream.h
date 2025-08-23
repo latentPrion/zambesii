@@ -33,6 +33,8 @@
 /**	Flags for MessageStream::pull().
  **/
 #define ZCALLBACK_PULL_FLAGS_DONT_BLOCK		(1<<0)
+// For now, CALLER_SCHEDLOCKED and DONT_BLOCK are functionally synonymous
+#define ZCALLBACK_PULL_FLAGS_CALLER_SCHEDLOCKED	(1<<1)
 
 #define MSGSTREAM				"MsgStream "
 
