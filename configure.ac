@@ -72,7 +72,8 @@ ZBZ_CXX_FLAGS=m4_normalize(["-std=c++98 -fno-exceptions -fno-rtti"])
 # --no-dynamic-linker tells LD not to emit .interp, or to emit any
 # dynamic linking info for a position independent build. We add it
 # out of caution.
-ZBZ_LD_FLAGS=m4_normalize(["-no-pie -Wl,--no-dynamic-linker -z noexecstack -nostartfiles"])
+ZBZ_LD_FLAGS=m4_normalize(["-no-pie -Wl,--no-dynamic-linker -z noexecstack
+	-nostartfiles -nodefaultlibs"])
 
 # Add arguments for host machine
 AC_ARG_VAR([ZARCH], [Zambesii kernel architecture (mandatory, options: i586, x86_64)])

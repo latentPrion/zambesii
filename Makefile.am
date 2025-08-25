@@ -54,8 +54,7 @@ zambesii_zxe_DEPENDENCIES=$(__KCORE_LIBS) $(zambesii_zxe_LDSCRIPT)
 # arguments to the linker. However, -Xlinker is used to
 # pass arguments that are not recognized by the compiler,
 # and so the compiler should not try to interpret them.
-zambesii_zxe_LDFLAGS=-nodefaultlibs \
-	-T $(zambesii_zxe_LDSCRIPT) \
+zambesii_zxe_LDFLAGS=-T $(zambesii_zxe_LDSCRIPT) \
 	-B"__kcore/__kthreads/$(ZARCH)" \
 	-Wl,--start-group $(__KCORE_LIBS) -Wl,--end-group \
 	$(AM_LDFLAGS)
