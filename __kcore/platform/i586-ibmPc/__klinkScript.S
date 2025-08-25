@@ -115,6 +115,13 @@ SECTIONS
 	__kloadVaddrCodeEnd = .;
 	__kloadVaddrRodataStart = .;
 
+	__kinitArrayCtorStart = .;
+	.init_array BLOCK(4)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init_array)) {
+		*(.init_array*)
+	} >ibmPc___kload_vaddr
+	__kinitArrayCtorEnd = .;
+
 	/* If we don't place these __kinitCtorStart symbols
 	 * here outside the definition block for the .init
 	 * section, then even if GCC generates a .init section,
@@ -134,13 +141,6 @@ SECTIONS
 		*(.fini*)
 	} >ibmPc___kload_vaddr
 	__kfiniDtorEnd = .;
-
-	__kinitArrayCtorStart = .;
-	.init_array BLOCK(4)
-	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init_array)) {
-		*(.init_array*)
-	} >ibmPc___kload_vaddr
-	__kinitArrayCtorEnd = .;
 
 	__kctorStart = .;
 	.ctors BLOCK(PAGING_BASE_SIZE)
