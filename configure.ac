@@ -245,6 +245,7 @@ m4_include([m4/icxxabi-opts.m4])
 #
 # C++ Runtime Library Constructor Detection
 #
+m4_include([m4/cxxrtl-opts.m4])
 m4_include([m4/cxxrtl-ctors.m4])
 ZBZ_DETECT_CXXRTL_CTORS
 
@@ -344,6 +345,11 @@ AC_CONFIG_COMMANDS_POST(
     AC_MSG_NOTICE(m4_normalize(
         [Distributaries enabled:
         (${DISTRIBUTARIES_ENABLED_SUBDIRS})]
+    ))
+    AC_MSG_NOTICE(m4_normalize(
+        [C++ Runtime Library Constructor Detection:
+        (Packaging:${ctor_packaging})
+        (Call method:${ctor_call_method})]
     ))
 )
 

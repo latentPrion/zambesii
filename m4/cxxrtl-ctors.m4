@@ -41,14 +41,14 @@ TestConstructor ctor3("ctor3");
 /* Minimal main function to ensure object file generation
  * The constructors will be analyzed regardless of main
  */
-int main() {
+int main(void) {
     return 0;
 }
 
 /* Entry point for freestanding linking. The linker should automatically use
  * this _start symbol as the program entry point.
  */
-extern "C" void _start() {
+extern "C" void _start(void) {
     main();
 }
 ])
@@ -66,14 +66,19 @@ AC_DEFUN([ZBZ_DETECT_CTOR_PACKAGING], [
 
     # Set flags for freestanding compilation
     CPPFLAGS="$AM_CPPFLAGS"
-    CFLAGS="$AM_CFLAGS"
-    CXXFLAGS="$AM_CXXFLAGS"
+    CFLAGS="${AM_CFLAGS} -Wno-pedantic"
+    CXXFLAGS="${AM_CXXFLAGS} -Wno-pedantic"
     LDFLAGS="$AM_LDFLAGS"
 
     # Switch to C++ language mode and try to compile object file
     AC_LANG_PUSH([C++])
     AC_COMPILE_IFELSE([AC_LANG_SOURCE(ZBZ_CTOR_TEST_PROGRAM)], [
-        # Compilation succeeded, analyze the object file
+# Compilation succeeded, copy object file for inspection
+if test -f conftest.${OBJEXT}; then
+cp conftest.${OBJEXT} packaging-detection-test.o
+AC_MSG_NOTICE([Object file saved for inspection: packaging-detection-test.o])
+fi
+# Analyze the object file
         # Check which sections contain constructor data.
         AS_IF([${OBJDUMP} -h conftest.${OBJEXT} 2>/dev/null | grep -q "\.ctors"], [
             ctor_packaging="ctors_section"
@@ -93,13 +98,16 @@ AC_DEFUN([ZBZ_DETECT_CTOR_PACKAGING], [
         ], [
             ctor_packaging="unknown"
             AC_MSG_FAILURE(m4_normalize([Failed to detect C++ global constructor
-		packaging method]))
+		packaging method. Use
+		--with-cxxrtl-ctor-packaging to specify manually.]))
         ])
     ], [
         ctor_packaging="unknown"
         AC_MSG_FAILURE(m4_normalize([Failed to compile test program to detect
-		C++ global constructor packaging method]))
+		C++ global constructor packaging method.
+		Use --with-cxxrtl-ctor-packaging to specify manually.]))
     ])
+
     # Restore language mode
     AC_LANG_POP([C++])
     # Clean up
@@ -131,16 +139,24 @@ AC_DEFUN([ZBZ_DETECT_CTOR_CALL_METHOD], [
     CXXFLAGS="$AM_CXXFLAGS"
     LDFLAGS="$AM_LDFLAGS"
 
-    # Switch to C++ language mode and try to compile object file
+    # Switch to C++ language mode and try to compile and link test program
     AC_LANG_PUSH([C++])
-    AC_COMPILE_IFELSE([AC_LANG_SOURCE(ZBZ_CTOR_TEST_PROGRAM)], [
-        # Compilation succeeded, analyze the object file.
+    ZBZ_LINK_IFELSE([AC_LANG_SOURCE(ZBZ_CTOR_TEST_PROGRAM)], [
+        # Compilation and linking succeeded, analyze the linked output.
 	# We subtractively decode the first word of each section to deduce
 	# the call method. This deduction is not perfect, but it's a good
 	# heuristic.
+AC_MSG_NOTICE([Got here: seems to have compiled and linked])
+
         AS_IF([test "$ctor_packaging" = "ctors_section"], [
             # Check .ctors section format
-            ctor_first_word=$(extract_first_word ".ctors" "conftest.${OBJEXT}")
+AC_MSG_NOTICE([Debug: Packaging detected .ctors section, but checking linked executable])
+AC_MSG_NOTICE([Debug: .ctors section objdump output:])
+${OBJDUMP} -s -j .ctors conftest 2>/dev/null | while read line; do
+AC_MSG_NOTICE([  $line])
+done
+            ctor_first_word=$(extract_first_word ".ctors" "conftest")
+AC_MSG_NOTICE([Debug: .ctors first word = "$ctor_first_word"])
             AS_IF([test "$ctor_first_word" = "ffffffff"], [
                 # First word is -1: indicates possibly prefixed count with null
 		# termination, based on the GCC source code.
@@ -167,7 +183,12 @@ AC_DEFUN([ZBZ_DETECT_CTOR_CALL_METHOD], [
             ])
         ], [test "$ctor_packaging" = "init_section"], [
             # Check .init section format
-            init_first_word=$(extract_first_word ".init" "conftest.${OBJEXT}")
+AC_MSG_NOTICE([Debug: .init section objdump output:])
+${OBJDUMP} -s -j .init conftest 2>/dev/null | while read line; do
+AC_MSG_NOTICE([  $line])
+done
+            init_first_word=$(extract_first_word ".init" "conftest")
+AC_MSG_NOTICE([Debug: .init first word = "$init_first_word"])
             AS_IF([test -n "$init_first_word" && is___kvaddrspace_vaddr "$init_first_word"], [
                 # First word is a kernel virtual address space address:
 		# suggests a bounded array. It's less clear with the .init
@@ -188,23 +209,31 @@ AC_DEFUN([ZBZ_DETECT_CTOR_CALL_METHOD], [
         ], [test "$ctor_packaging" = "init_array_section"], [
 	    # .init_array section is always a bounded array of function
 	    # pointers.
+AC_MSG_NOTICE([Debug: .init_array section objdump output:])
+${OBJDUMP} -s -j .init_array conftest 2>/dev/null | while read line; do
+AC_MSG_NOTICE([  $line])
+done
+
             ctor_call_method="bounded"
             AC_DEFINE([CONFIG_CXXRTL_CTORS_CALLMETHOD_BOUNDED], [1],
                 m4_normalize([C++ global constructors use bounded array]))
         ], [
             ctor_call_method="unknown"
             AC_MSG_FAILURE(m4_normalize([Could not determine C++ global
-		constructor call method]))
+		constructor call method. Use
+		--with-cxxrtl-ctor-callmethod to specify manually.]))
         ])
     ], [
         ctor_call_method="unknown"
-        AC_MSG_FAILURE(m4_normalize([Failed to compile test program to detect
-		C++ global constructor call method]))
+        AC_MSG_FAILURE(m4_normalize([Failed to compile and link test program to
+		detect C++ global constructor call method. Use
+		--with-cxxrtl-ctor-callmethod to specify manually.]))
     ])
     # Restore language mode
     AC_LANG_POP([C++])
+
     # Clean up
-    rm -f conftest.cpp conftest
+    rm -f conftest.cpp conftest.${OBJEXT} conftest
 
     # Restore flags
     CPPFLAGS="$ZBZ_SAVED_CPPFLAGS"
@@ -224,25 +253,56 @@ AC_DEFUN([ZBZ_DETECT_CXXRTL_CTORS], [
 		constructor packaging and call method detection]))
     ])
 
-    # Detect packaging method
-    ZBZ_DETECT_CTOR_PACKAGING
+    # Detect C++ global constructor packaging method if not overridden
+    AS_IF([test -z "$ctor_packaging"], [
+        ZBZ_DETECT_CTOR_PACKAGING
+    ])
 
-    # Detect call method
-    ZBZ_DETECT_CTOR_CALL_METHOD
+    # Detect C++ global constructor call method if not overridden
+    AS_IF([test -z "$ctor_call_method"], [
+        ZBZ_DETECT_CTOR_CALL_METHOD
+    ])
+
+    # Set the appropriate defines based on packaging method
+    AS_CASE(["$ctor_packaging"],
+        [ctors_section],
+            [AC_DEFINE([CONFIG_CXXRTL_CTORS_PACKAGING_CTORS_SECTION], [1],
+                [Global constructors packaged in .ctors section])],
+        [init_section],
+            [AC_DEFINE([CONFIG_CXXRTL_CTORS_PACKAGING_INIT_SECTION], [1],
+                [Global constructors packaged in .init section])],
+        [init_array_section],
+            [AC_DEFINE([CONFIG_CXXRTL_CTORS_PACKAGING_INIT_ARRAY_SECTION], [1],
+                [Global constructors packaged in .init_array section])]
+    )
+
+    # Set the appropriate defines based on call method
+    AS_CASE(["$ctor_call_method"],
+        [bounded],
+            [AC_DEFINE([CONFIG_CXXRTL_CTORS_CALLMETHOD_BOUNDED], [1],
+                [C++ global constructors use bounded array])],
+        [possibly_prefixed_count_null_terminated],
+            [AC_DEFINE([CONFIG_CXXRTL_CTORS_CALLMETHOD_POSSIBLY_PREFIXED_COUNT_NULL_TERMINATED], [1],
+                [C++ global constructors use possibly prefixed count with null termination])],
+        [null_terminated],
+            [AC_DEFINE([CONFIG_CXXRTL_CTORS_CALLMETHOD_NULL_TERMINATED], [1],
+                [C++ global constructors use null termination])],
+        [callable_section],
+            [AC_DEFINE([CONFIG_CXXRTL_CTORS_CALLMETHOD_CALLABLE_SECTION], [1],
+                [C++ global constructors use callable section])]
+    )
 
     # Set default values if detection failed
     AS_IF([test "$ctor_packaging" = "unknown"], [
-        AC_MSG_WARN([Using default constructor packaging: ctors_section])
-        ctor_packaging="ctors_section"
-        AC_DEFINE([CONFIG_CXXRTL_CTORS_PACKAGING_CTORS_SECTION], [1],
-            m4_normalize([C++ global constructors packaged in .ctors section (default)]))
+        AC_MSG_FAILURE(m4_normalize([Could not determine C++ global constructor
+		packaging method. Use --with-cxxrtl-ctor-packaging to specify
+		manually.]))
     ])
 
     AS_IF([test "$ctor_call_method" = "unknown"], [
-        AC_MSG_WARN([Using default constructor call method: possibly_prefixed_count_null_terminated])
-        ctor_call_method="possibly_prefixed_count_null_terminated"
-        AC_DEFINE([CONFIG_CXXRTL_CTORS_CALLMETHOD_POSSIBLY_PREFIXED_COUNT_NULL_TERMINATED], [1],
-            m4_normalize([C++ global constructors use possibly prefixed count with null termination (default)]))
+        AC_MSG_FAILURE(m4_normalize([Could not determine C++ global constructor
+		call method. Use --with-cxxrtl-ctor-callmethod to specify
+		manually.]))
     ])
 
     # Export variables for Makefiles

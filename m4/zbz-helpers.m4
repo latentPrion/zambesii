@@ -41,3 +41,42 @@ AC_DEFUN([ZBZ_SPLIT_VERSION], [
     AC_SUBST([ZVERSION_MINOR])
     AC_SUBST([ZVERSION_PATCHLEVEL])
 ])
+
+# Generic macro to compile and then link a test program
+# Usage: ZBZ_LINK_IFELSE([source], [action-if-success], [action-if-failure])
+# This macro compiles the source using AC_COMPILE_IFELSE, then links the
+# resulting object file using the appropriate compiler frontend with LDFLAGS.
+AC_DEFUN([ZBZ_LINK_IFELSE], [
+    # First compile the test program using AC_COMPILE_IFELSE
+    AC_COMPILE_IFELSE([$1], [
+        # Compilation succeeded, now link the object file
+        # Set appropriate compiler frontend and flags based on current language mode
+AC_MSG_NOTICE([Got here: seems to have compiled])
+        AS_IF([test "$ac_ext" = "cc" -o "$ac_ext" = "cpp" -o "$ac_ext" = "cxx"], [
+            zbz_linker="$CXX"
+            zbz_flags="$CXXFLAGS"
+        ], [
+            zbz_linker="$CC"
+            zbz_flags="$CFLAGS"
+        ])
+
+        # Link using the selected frontend with appropriate flags
+AC_MSG_NOTICE([Linking command: $zbz_linker $zbz_flags $LDFLAGS -o conftest conftest.${OBJEXT}])
+        AS_IF([$zbz_linker $zbz_flags $LDFLAGS -o conftest conftest.${OBJEXT} 2>&1], [
+# Copy the conftest file immediately after creation
+AC_MSG_NOTICE([Attempting to copy conftest file...])
+if test -f conftest; then
+cp conftest ctor-detection-test.elf
+AC_MSG_NOTICE([Conftest file copied successfully: ctor-detection-test.elf])
+else
+AC_MSG_NOTICE([Conftest file not found for copying])
+fi
+            $2
+        ], [
+            $3
+        ])
+    ], [
+        # Compilation failed, execute failure action
+        $3
+    ])
+])
