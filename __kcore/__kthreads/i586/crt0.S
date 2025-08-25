@@ -1,7 +1,4 @@
 #include <config.h>
-
-#ifndef LIBZBZ_PREBUILD
-
 #include <in_asm.h>
 #include <assembler.h>
 #include <arch/paging.h>
@@ -14,7 +11,7 @@
 
 ASM_SECTION(.__ksetupText)
 
-ASM_GLOBAL_FUNCTION(__korientationEntry)
+ASM_GLOBAL_FUNCTION(_start)
 	cli
 
 	/* Enable Paging, then move on from there. */
@@ -31,7 +28,7 @@ ASM_GLOBAL_FUNCTION(__korientationEntry)
 	/* Jump to the virtual offset now. */
 	movl $_startVirtual, %ecx
 	jmp *%ecx
-ASM_END_FUNCTION(__korientationEntry)
+ASM_END_FUNCTION(_start)
 
 .section .text
 
@@ -77,16 +74,15 @@ ASM_LOCAL_FUNCTION(_startVirtual)
 	call memset
 	addl	$12, %esp
 
-	/* Call _init. */
-	call _init
-jmp .
+	/* Call global constructors. */
+	call cxxrtl_call_global_constructors
 
 	/* Jump into the C++ HLL. */
 	call main
 	addl $0x8, %esp
 
-	/* Call __fini. */
-	call __fini
+	/* Call global destructors. */
+	call cxxrtl_call_global_destructors
 ret
 
 .infiniteLoop:
@@ -94,39 +90,3 @@ ret
 	hlt
 	jmp .infiniteLoop
 ASM_END_FUNCTION(_startVirtual)
-
-#else
-
-#define ASM_SECTION(__secname)				\
-	.section __secname,"a"; \
-
-#endif /* !defined(LIBZBZ_PREBUILD) */
-
-	/**	EXPLANATION:
-	 * This is how we solve the problem with GCC not linking crti.o and
-	 * crtn.o.
-	 *
-	 * We just use the linker to assemble these bits of code in the right
-	 * order surrounding the .init and .fini sections of our output
-	 * executable.
-	 **/
-ASM_SECTION(.init.prologue)
-__init:
-	pushl	%ebp
-	movl	%esp, %ebp
-ASM_SECTION(.fini.prologue)
-__fini:
-	pushl	%ebp
-	movl	%esp, %ebp
-
-ASM_SECTION(.init)
-ASM_SECTION(.fini)
-
-ASM_SECTION(.init.epilogue)
-	movl	%ebp, %esp
-	popl	%ebp
-	ret
-ASM_SECTION(.fini.epilogue)
-	movl	%ebp, %esp
-	popl	%ebp
-	ret

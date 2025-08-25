@@ -11,13 +11,11 @@ struct sAtexitFuncTableEntry
 	void *arg, *dsoHandle;
 } atexitFuncTable[ CXXABI_ATEXIT_MAX_NFUNCS ];
 
-/**	EXPLANATIONL:
- * No longer needed since we now properly use -nodefaultlibs and let the
- * compiler do its job, by allowing it to link the startfiles (crt*.o).
- * Apparently this symbol is contained within crtbegin.o for GCC's
- * implementation.
+/**	EXPLANATION:
+ * Required by Itanium ABI when using -nostartfiles.
+ * This symbol must be defined. Cursor's AI thinks it must also point to itself.
  * **/
-// void * __dso_handle = 0;
+void *__dso_handle __attribute__((__visibility__("hidden"))) = &__dso_handle;
 
 extern "C" void __cxa_pure_virtual(void)
 {
@@ -35,7 +33,7 @@ extern "C" int __cxa_atexit(
 	(void)func;
 	(void)arg;
 	(void)dsoHandle;
-#if 0
+#if 1
 	for (int i=0; i<CXXABI_ATEXIT_MAX_NFUNCS; i++)
 	{
 		if (atexitFuncTable[i].func == 0)

@@ -178,7 +178,6 @@ extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 	 **/
 	DO_OR_DIE(interruptTrib, initializeExceptions(), ret);
 	DO_OR_DIE(memoryTrib, initialize(), ret);
-for(;;);
 	DO_OR_DIE(memoryTrib, __kspaceInitialize(), ret);
 
 	DO_OR_DIE(zkcmCore, initialize(), ret);

@@ -19,7 +19,7 @@
 
 OUTPUT_FORMAT("elf32-i386", "elf32-i386",
               "elf32-i386")
-ENTRY(__korientationEntry)
+ENTRY(_start)
 
 /*
  * INCLUDE ldSearchDirs.ld
@@ -117,31 +117,31 @@ SECTIONS
 
 	.init BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init)) {
-		*(.init.prologue)
-		*(.init.prologue*)
 		*(.init*)
-		*(.init.epilogue)
-		*(.init.epilogue*)
 	} >ibmPc___kload_vaddr
 
 	.fini BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.fini)) {
-		*(.fini.prologue)
 		*(.fini*)
-		*(.fini.epilogue)
 	} >ibmPc___kload_vaddr
 
-	.ctor BLOCK(PAGING_BASE_SIZE)
-	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.ctor)) {
+	.ctors BLOCK(PAGING_BASE_SIZE)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.ctors)) {
 		__kctorStart = .;
-		*(.ctor*)
+		*(.ctors.*)
+		*(.ctor.*)
+		*(.ctors)
+		*(.ctor)
 		__kctorEnd = .;
 	} >ibmPc___kload_vaddr
 
-	.dtor BLOCK(0x4)
-	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.dtor)) {
+	.dtors BLOCK(0x4)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.dtors)) {
 		__kdtorStart = .;
-		*(.dtor*)
+		*(.dtors.*)
+		*(.dtor.*)
+		*(.dtors)
+		*(.dtor)
 		__kdtorEnd = .;
 	} >ibmPc___kload_vaddr
 

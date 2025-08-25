@@ -6,6 +6,7 @@
 namespace cxxrtl
 {
 	status_t callGlobalConstructors(void);
+	status_t callGlobalDestructors(void);
 }
 
 #endif
