@@ -5,6 +5,7 @@
 #include <__kclasses/cachePool.h>
 
 
+cxxrtl::__kConstructorTester	cxxrtl::__kconstructorTester;
 typedef void ctorFn(void);
 
 status_t cxxrtl::callGlobalConstructors(void)

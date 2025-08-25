@@ -169,6 +169,9 @@ extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 	 * C++ global constructors.
 	 **/
 	__koptimizationHacks();
+	if (!cxxrtl::__kconstructorTester.wasSuccessful())
+		{ for (;FOREVER;) { panic(); } }
+
 	bspCpu.initializeBaseState();
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 
