@@ -236,6 +236,11 @@ AC_SUBST([DISTRIBUTARIES_KERNEL_LIBS])
 #
 m4_include([m4/debug-opts.m4])
 
+#
+# Itanium C++ ABI options.
+#
+m4_include([m4/icxxabi-opts.m4])
+
 # Generate config.h and other files
 AC_CONFIG_HEADERS([include/config.h])
 

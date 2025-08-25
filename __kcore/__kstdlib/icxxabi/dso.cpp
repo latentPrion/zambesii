@@ -1,15 +1,15 @@
 
+#include <config.h>
+#include <__kstdlib/__kclib/string.h>
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
-//#include "icxxabi.h"
 
-#define CXXABI_ATEXIT_MAX_NFUNCS 128
 
 struct sAtexitFuncTableEntry
 {
 	void (*func)(void *);
 	void *arg, *dsoHandle;
-} atexitFuncTable[ CXXABI_ATEXIT_MAX_NFUNCS ];
+} atexitFuncTable[CONFIG_CXXABI_ATEXIT_MAX_NFUNCS];
 
 /**	EXPLANATION:
  * Required by Itanium ABI when using -nostartfiles.
@@ -30,24 +30,17 @@ extern "C" int __cxa_atexit(
 	void *dsoHandle
 	)
 {
-	(void)func;
-	(void)arg;
-	(void)dsoHandle;
-#if 1
-	for (int i=0; i<CXXABI_ATEXIT_MAX_NFUNCS; i++)
+	for (int i=0; i<CONFIG_CXXABI_ATEXIT_MAX_NFUNCS; i++)
 	{
-		if (atexitFuncTable[i].func == 0)
-		{
-			atexitFuncTable[i].func = func;
-			atexitFuncTable[i].arg = arg;
-			atexitFuncTable[i].dsoHandle = dsoHandle;
-			return 0;
-		};
+		if (atexitFuncTable[i].func != NULL) { continue; }
+
+		atexitFuncTable[i].func = func;
+		atexitFuncTable[i].arg = arg;
+		atexitFuncTable[i].dsoHandle = dsoHandle;
+		return 0;
 	};
+
 	return -1;
-#else
-	return 0;
-#endif
 }
 
 /* __cxa_finalize(): Calls a function in the list if given a pointer,
@@ -55,59 +48,52 @@ extern "C" int __cxa_atexit(
  **/
 extern "C" void __cxa_finalize(void *dsoHandle)
 {
-	// Function 1: Destroy all of a particular DSO's objects.
-	if (dsoHandle != 0)
+	/**	EXPLANATION:
+	 * If dsoHandle is NULL, call and destroy every object in the table,
+	 * then return.
+	 *
+	 * Otherwise, destroy all of a particular DSO's objects.
+	 * **/
+	if (dsoHandle == NULL)
 	{
-		// Run through and find all entries with passed DSO handle.
-		for (int i=0; i<CXXABI_ATEXIT_MAX_NFUNCS; i++)
+		for (int i = 0; i < CONFIG_CXXABI_ATEXIT_MAX_NFUNCS; i++)
 		{
-			if (atexitFuncTable[i].dsoHandle == dsoHandle)
-			{
-				// If handle matches, call function with arg.
-				(*atexitFuncTable[i].func)(
-					atexitFuncTable[i].arg
-					);
+			if (atexitFuncTable[i].func == NULL) { continue; }
 
-				// To remove, bring the rest one index up.
-				int j=i;
-				if ((j < CXXABI_ATEXIT_MAX_NFUNCS - 1)
-					&& (atexitFuncTable[j+1].func != 0))
-				{
-					while (j < CXXABI_ATEXIT_MAX_NFUNCS - 1)
-					{
-						// memcpy() may be faster here.
-						atexitFuncTable[j].func =
-							atexitFuncTable[j+1]
-								.func;
+			(*atexitFuncTable[i].func)(atexitFuncTable[i].arg);
+			atexitFuncTable[i].func = NULL;
+		}
 
-						atexitFuncTable[j].arg =
-							atexitFuncTable[j+1]
-								.arg;
-
-						atexitFuncTable[j].dsoHandle =
-							atexitFuncTable[j+1]
-								.dsoHandle;
-
-						atexitFuncTable[j+1].func = 0;
-						j++;
-					};
-				};
-			};
-		};
+		return;
 	}
-	// Function 2: Call and destroy every object in the table.
-	else
+
+	// Call the funcs for the particular DSO.
+	for (int i = 0; i < CONFIG_CXXABI_ATEXIT_MAX_NFUNCS; i++)
 	{
-		for (int i=0; i<CXXABI_ATEXIT_MAX_NFUNCS; i++)
+		if (atexitFuncTable[i].dsoHandle != dsoHandle)
+			{ continue; }
+
+		(*atexitFuncTable[i].func)(atexitFuncTable[i].arg);
+
+		// To remove, bring the rest one index up using memmove.
+		int last = i;
+		while (last < CONFIG_CXXABI_ATEXIT_MAX_NFUNCS - 1
+			&& atexitFuncTable[last + 1].func != NULL)
 		{
-			if (atexitFuncTable[i].func != 0)
-			{
-				(*atexitFuncTable[i].func)(
-					atexitFuncTable[i].arg
-					);
-				atexitFuncTable[i].func = 0;
-			};
-		};
-	};
+			last++;
+		}
+
+		if (last <= i) { continue; }
+
+		memmove(
+			&atexitFuncTable[i],
+			&atexitFuncTable[i + 1],
+			(last - i) * sizeof(atexitFuncTable[0]));
+
+		// Clear the now-duplicate last entry
+		memset(
+			&atexitFuncTable[last], 0,
+			sizeof(atexitFuncTable[last]));
+	}
 }
 
