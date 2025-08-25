@@ -242,6 +242,12 @@ m4_include([m4/debug-opts.m4])
 #
 m4_include([m4/icxxabi-opts.m4])
 
+#
+# C++ Runtime Library Constructor Detection
+#
+m4_include([m4/cxxrtl-ctors.m4])
+ZBZ_DETECT_CXXRTL_CTORS
+
 # Generate config.h and other files
 AC_CONFIG_HEADERS([include/config.h])
 
