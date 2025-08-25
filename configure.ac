@@ -44,19 +44,35 @@ ZBZ_CPP_FLAGS=m4_normalize(["-I\"\$(top_srcdir)/include\" \
     -I\"\$(top_srcdir)/programs/zudi/include\" \
     -I\"\$(top_srcdir)/__kcore/include\" \
     -ffreestanding"])
+# TODO: If we add suppor for CLang, we should add -fno-use-init-array.
 ZBZ_C_CXX_COMMON_FLAGS=m4_normalize(["-O3 -Wstrict-overflow=4 -Wall -Wextra \
     -pedantic -fno-omit-frame-pointer \
     -fno-pic -static -static-libgcc -static-libstdc++"])
 ZBZ_C_FLAGS=m4_normalize(["-std=c99"])
 ZBZ_CXX_FLAGS=m4_normalize(["-std=c++98 -fno-exceptions -fno-rtti"])
 # For some reason, i686-linux-gnu-ld tries to build a position-
-# independent binary image by default.
+# independent binary image by default. Thus we pass -no-pie.
 #
 #	FIXME:
 # Also, it appears as if some executable code may be generated
 # on the stack when cross targeting i686-linux-gnu from an
 # aarch64-linux-gnu buildmach? Unsure. Investigate.
-ZBZ_LD_FLAGS=m4_normalize(["-no-pie  -Wl,--no-dynamic-linker -z noexecstack"])
+#
+#	EXPLANATION:
+# We use -nostartfiles in order to constrain the method that GCC
+# uses to assemble the global constructors. Without -nostartfiles,
+# GCC can choose any of the methods, from Collect2, to .ctors,
+# to .init, to .init_array. The .init_array option is ghoulishly
+# undesirable for a kernel; and -nostartfiles basically seems to
+# exclude that option; and moreover it seems to force GCC to use
+# the Itanium ABI method. The other methods are all able to be
+# handled gracefully, even if it doesn't force Itanium ABI
+# conformance on all xcompilers.
+#
+# --no-dynamic-linker tells LD not to emit .interp, or to emit any
+# dynamic linking info for a position independent build. We add it
+# out of caution.
+ZBZ_LD_FLAGS=m4_normalize(["-no-pie -Wl,--no-dynamic-linker -z noexecstack -nostartfiles"])
 
 # Add arguments for host machine
 AC_ARG_VAR([ZARCH], [Zambesii kernel architecture (mandatory, options: i586, x86_64)])
