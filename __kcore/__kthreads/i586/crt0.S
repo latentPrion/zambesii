@@ -79,6 +79,7 @@ ASM_LOCAL_FUNCTION(_startVirtual)
 
 	/* Call _init. */
 	call _init
+jmp .
 
 	/* Jump into the C++ HLL. */
 	call main

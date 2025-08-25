@@ -118,8 +118,10 @@ SECTIONS
 	.init BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init)) {
 		*(.init.prologue)
+		*(.init.prologue*)
 		*(.init*)
 		*(.init.epilogue)
+		*(.init.epilogue*)
 	} >ibmPc___kload_vaddr
 
 	.fini BLOCK(4)
