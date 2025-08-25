@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        "new": "cpp"
+        "new": "cpp",
+        "type_traits": "cpp"
     },
  //   "C_Cpp.errorSquiggles": "disabled",
     "terminal.integrated.env.linux": {
