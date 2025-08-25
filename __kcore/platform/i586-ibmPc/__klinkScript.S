@@ -115,29 +115,42 @@ SECTIONS
 	__kloadVaddrCodeEnd = .;
 	__kloadVaddrRodataStart = .;
 
+	/* If we don't place these __kinitCtorStart symbols
+	 * here outside the definition block for the .init
+	 * section, then even if GCC generates a .init section,
+	 * it will simply refuse to output these __kinitCtorStart
+	 * symbols. So we put them outside the def block.
+	 */
+	__kinitCtorStart = .;
 	.init BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init)) {
-		__kinitCtorStart = .;
 		*(.init*)
-		__kinitCtorEnd = .;
 	} >ibmPc___kload_vaddr
+	__kinitCtorEnd = .;
 
+	__kfiniDtorStart = .;
 	.fini BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.fini)) {
-		__kfiniDtorStart = .;
 		*(.fini*)
-		__kfiniDtorEnd = .;
 	} >ibmPc___kload_vaddr
+	__kfiniDtorEnd = .;
 
+	__kinitArrayCtorStart = .;
+	.init_array BLOCK(4)
+	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init_array)) {
+		*(.init_array*)
+	} >ibmPc___kload_vaddr
+	__kinitArrayCtorEnd = .;
+
+	__kctorStart = .;
 	.ctors BLOCK(PAGING_BASE_SIZE)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.ctors)) {
-		__kctorStart = .;
 		*(.ctors.*)
 		*(.ctor.*)
 		*(.ctors)
 		*(.ctor)
-		__kctorEnd = .;
 	} >ibmPc___kload_vaddr
+	__kctorEnd = .;
 
 	.dtors BLOCK(0x4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.dtors)) {

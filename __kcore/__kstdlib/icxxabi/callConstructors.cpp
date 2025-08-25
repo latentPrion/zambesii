@@ -1,6 +1,7 @@
 
 #include <debug.h>
 #include <__ksymbols.h>
+#include <__kstdlib/__ktypes.h>
 #include <arch/memory.h>
 #include <__kstdlib/compiler/cxxrtl.h>
 #include <__kclasses/cachePool.h>
@@ -100,8 +101,8 @@ status_t callGlobalConstructorsCallableSection(void *sectionStart)
 	 * The section has a function encoded into it. The section pointer is
 	 * effectively a function pointer.
 	 */
-	ctorFn *ctorFn = reinterpret_cast<ctorFn *>(sectionStart);
-	(*ctorFn)();
+	ctorFn *ctorFunc = reinterpret_cast<ctorFn *>(sectionStart);
+	(*ctorFunc)();
 
 	return ERROR_SUCCESS;
 }
@@ -131,9 +132,12 @@ status_t callGlobalConstructors(void)
 	return callGlobalConstructorsNullTerminated(
 		&__kctorStart);
 #else
+	return ERROR_FATAL;
 #  error "CXXRTL: No constructor call method defined."
 #endif
 }
+
+} // namespace ctors_section
 
 namespace init_section {
 
@@ -156,13 +160,28 @@ status_t callGlobalConstructors(void)
 	);
 	// The provided function prolly calls __cxa_atexit itself.
 #else
+	return ERROR_FATAL;
 #  error "CXXRTL: No constructor call method defined."
 #endif
-
-	return ERROR_SUCCESS;
 }
 
 } // namespace init_section
+
+namespace init_array_section {
+
+status_t callGlobalConstructors(void)
+{
+	/**	EXPLANATION:
+	 * The .init_array section is always a bounded array of function pointers.
+	 * This is the modern ELF standard for global constructors.
+	 */
+	return callGlobalConstructorsBounded(
+		&__kinitArrayCtorStart,
+		&__kinitArrayCtorEnd
+	);
+}
+
+} // namespace init_array_section
 
 } // namespace cxxrtl
 
@@ -170,10 +189,13 @@ extern "C" status_t cxxrtl_call_global_constructors(void);
 status_t cxxrtl_call_global_constructors(void)
 {
 #ifdef CONFIG_CXXRTL_CTORS_PACKAGING_CTORS_SECTION
-	return ctors_section::callGlobalConstructors();
+	return cxxrtl::ctors_section::callGlobalConstructors();
 #elif defined(CONFIG_CXXRTL_CTORS_PACKAGING_INIT_SECTION)
-	return init_section::callGlobalConstructors();
+	return cxxrtl::init_section::callGlobalConstructors();
+#elif defined(CONFIG_CXXRTL_CTORS_PACKAGING_INIT_ARRAY_SECTION)
+	return cxxrtl::init_array_section::callGlobalConstructors();
 #else
+	return ERROR_FATAL;
 #  error "CXXRTL: No constructor packaging method defined."
 #endif
 }

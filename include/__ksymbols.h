@@ -21,6 +21,7 @@ EXTERN uarch_t		__ksetupStart, __ksetupEnd;
 EXTERN uarch_t		__kctorStart, __kctorEnd, __kdtorStart, __kdtorEnd,
 			__kinitCtorStart, __kinitCtorEnd,
 			__kfiniDtorStart, __kfiniDtorEnd;
+EXTERN uarch_t		__kinitArrayCtorStart, __kinitArrayCtorEnd;
 EXTERN uarch_t		__korientationStart, __korientationEnd;
 EXTERN uarch_t		__kinitstart, __kinitEnd, __kfiniStart, __kfiniEnd;
 EXTERN uarch_t		__ktextStart, __ktextEnd;
