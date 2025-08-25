@@ -45,7 +45,8 @@ ZBZ_CPP_FLAGS=m4_normalize(["-I\"\$(top_srcdir)/include\" \
     -I\"\$(top_srcdir)/__kcore/include\" \
     -ffreestanding"])
 ZBZ_C_CXX_COMMON_FLAGS=m4_normalize(["-O3 -Wstrict-overflow=4 -Wall -Wextra \
-    -pedantic -fno-omit-frame-pointer -fno-pic"])
+    -pedantic -fno-omit-frame-pointer \
+    -fno-pic -static -static-libgcc -static-libstdc++"])
 ZBZ_C_FLAGS=m4_normalize(["-std=c99"])
 ZBZ_CXX_FLAGS=m4_normalize(["-std=c++98 -fno-exceptions -fno-rtti"])
 # For some reason, i686-linux-gnu-ld tries to build a position-
@@ -55,7 +56,7 @@ ZBZ_CXX_FLAGS=m4_normalize(["-std=c++98 -fno-exceptions -fno-rtti"])
 # Also, it appears as if some executable code may be generated
 # on the stack when cross targeting i686-linux-gnu from an
 # aarch64-linux-gnu buildmach? Unsure. Investigate.
-ZBZ_LD_FLAGS=m4_normalize(["-no-pie -z noexecstack"])
+ZBZ_LD_FLAGS=m4_normalize(["-no-pie  -Wl,--no-dynamic-linker -z noexecstack"])
 
 # Add arguments for host machine
 AC_ARG_VAR([ZARCH], [Zambesii kernel architecture (mandatory, options: i586, x86_64)])
