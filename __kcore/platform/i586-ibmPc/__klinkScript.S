@@ -117,12 +117,16 @@ SECTIONS
 
 	.init BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init)) {
+		__kinitCtorStart = .;
 		*(.init*)
+		__kinitCtorEnd = .;
 	} >ibmPc___kload_vaddr
 
 	.fini BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.fini)) {
+		__kfiniDtorStart = .;
 		*(.fini*)
+		__kfiniDtorEnd = .;
 	} >ibmPc___kload_vaddr
 
 	.ctors BLOCK(PAGING_BASE_SIZE)

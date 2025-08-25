@@ -5,9 +5,6 @@
 
 namespace cxxrtl {
 
-status_t callGlobalConstructors(void);
-status_t callGlobalDestructors(void);
-
 class __kConstructorTester
 {
 public:
@@ -28,5 +25,9 @@ private:
 extern __kConstructorTester __kconstructorTester;
 
 } // namespace cxxrtl
+
+extern "C" void *__dso_handle;
+extern "C" int __cxa_atexit(void (*func)(void *), void *arg, void *dsoHandle);
+extern "C" void __cxa_finalize(void *dsoHandle);
 
 #endif
