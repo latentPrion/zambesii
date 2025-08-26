@@ -65,10 +65,10 @@ AC_DEFUN([ZBZ_DETECT_CTOR_PACKAGING], [
     ZBZ_SAVED_LDFLAGS="$LDFLAGS"
 
     # Set flags for freestanding compilation
-    CPPFLAGS="$AM_CPPFLAGS"
-    CFLAGS="${AM_CFLAGS} -Wno-pedantic"
-    CXXFLAGS="${AM_CXXFLAGS} -Wno-pedantic"
-    LDFLAGS="$AM_LDFLAGS"
+    CPPFLAGS="${AM_CPPFLAGS} ${CPPFLAGS}"
+    CFLAGS="${AM_CFLAGS} ${CFLAGS} -Wno-pedantic"
+    CXXFLAGS="${AM_CXXFLAGS} ${CXXFLAGS} -Wno-pedantic"
+    LDFLAGS="${AM_LDFLAGS} ${LDFLAGS}"
 
     # Switch to C++ language mode and try to compile object file
     AC_LANG_PUSH([C++])
@@ -134,10 +134,10 @@ AC_DEFUN([ZBZ_DETECT_CTOR_CALL_METHOD], [
     ZBZ_SAVED_LDFLAGS="$LDFLAGS"
 
     # Set flags for freestanding compilation
-    CPPFLAGS="$AM_CPPFLAGS"
-    CFLAGS="$AM_CFLAGS"
-    CXXFLAGS="$AM_CXXFLAGS"
-    LDFLAGS="$AM_LDFLAGS"
+    CPPFLAGS="${AM_CPPFLAGS} ${CPPFLAGS}"
+    CFLAGS="${AM_CFLAGS} ${CFLAGS} -Wno-pedantic"
+    CXXFLAGS="${AM_CXXFLAGS} ${CXXFLAGS} -Wno-pedantic"
+    LDFLAGS="${AM_LDFLAGS} ${LDFLAGS}"
 
     # Switch to C++ language mode and try to compile and link test program
     AC_LANG_PUSH([C++])
