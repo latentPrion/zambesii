@@ -2,9 +2,12 @@
 	#define _MULTIPLE_READER_LOCK_H
 
 	#include <__kstdlib/__ktypes.h>
+	#include <__kstdlib/__kclib/assert.h>
 	#include <kernel/common/lock.h>
 	#include <kernel/common/sharedResourceGroup.h>
 	#include <kernel/common/waitLock.h>
+	#include <kernel/common/panic.h>
+	
 
 /**	EXPLANATION:
  * Multiple Reader Lock is a reader-writer lock which enforces concurrency
@@ -34,7 +37,23 @@ public:
 		ScopedWriteGuard(MultipleReaderLock* _lock)
 		: Lock::ScopedGuard(_lock)
 		{
-			_lock->writeAcquire();
+			/**	EXPLANATION:
+			 * The ScopedWriteGuard is specifically allowed to be
+			 * initialized with a NULL lock pointer. This is to
+			 * facilitate the use case where a dequeuing thread
+			 * is allowed to manually manage the lock using
+			 * CALLER_SCHEDLOCKED.
+			 **/
+			if (_lock != NULL)
+				{ _lock->writeAcquire(); }
+		}
+
+		ScopedWriteGuard &move_assign(ScopedWriteGuard &other)
+		{
+			lock = other.lock;
+			doAutoRelease = other.doAutoRelease;
+			other.releaseManagement();
+			return *this;
 		}
 
 		~ScopedWriteGuard()
@@ -53,7 +72,20 @@ public:
 		}
 
 		virtual void releaseManagementAndUnlock(void)
-			{ releaseManagement()->writeRelease(); }
+		{
+			MultipleReaderLock	*tmp = releaseManagement();
+
+			if (tmp != NULL) { tmp->writeRelease(); }
+		}
+
+	private:
+		// Only allow TaskTrib::block() to call default constructor
+		friend class TaskTrib;
+		ScopedWriteGuard(void)
+		: Lock::ScopedGuard(NULL)
+		{
+			Lock::ScopedGuard::doAutoRelease = 0;
+		}
 	};
 
 	class ScopedReadGuard
@@ -63,6 +95,7 @@ public:
 		ScopedReadGuard(MultipleReaderLock* _lock)
 		: Lock::ScopedGuard(_lock), flags(0)
 		{
+			assert_fatal(_lock != NULL);
 			_lock->readAcquire(&flags);
 		}
 
@@ -74,7 +107,7 @@ public:
 			other.releaseManagement();
 			return *this;
 		}
-		
+
 		~ScopedReadGuard()
 			{ if (doAutoRelease) { unlock(); } }
 
@@ -139,6 +172,7 @@ public:
 	void writeRelease(void);
 
 	void readReleaseWriteAcquire(uarch_t flags);
+	void dump(void);
 };
 
 #endif

@@ -8,6 +8,17 @@
 #include <kernel/common/deadlock.h>
 
 
+void MultipleReaderLock::dump(void)
+{
+	printf(NOTICE "MultipleReaderLock::dump() called on %s @ %p:\n"
+		"\tlockval: %x, flags: %x, writeRequestBit: %s, nReaders: %d\n"
+		"\townerAcquisitionInstr: %p.\n",
+		name, this, lock, flags,
+		FLAG_TEST(flags, MR_FLAGS_WRITE_REQUEST) ? "SET" : "CLEAR",
+		lock & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1),
+		ownerAcquisitionInstr);
+}
+
 void MultipleReaderLock::readAcquire(uarch_t *_flags)
 {
 	if (cpuControl::interruptsEnabled())
