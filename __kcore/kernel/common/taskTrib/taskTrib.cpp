@@ -283,8 +283,9 @@ void TaskTrib::block(
 	MultipleReaderLock::ScopedWriteGuard *callerSchedStateGuard
 	)
 {
-	Thread		*currThread;
-	CpuStream	*currCpuStream;
+	Thread					*currThread;
+	CpuStream				*currCpuStream;
+	MultipleReaderLock::ScopedWriteGuard	schedStateGuard;
 
 	/**	NOTES:
 	 * After placing a task into a waitqueue, call this function to
@@ -296,6 +297,14 @@ void TaskTrib::block(
 	 **/
 	currCpuStream = cpuTrib.getCurrentCpuStream();
 	currThread = currCpuStream->taskStream.getCurrentThread();
+
+	if (callerSchedStateGuard != NULL)
+		{ schedStateGuard.move_assign(*callerSchedStateGuard); }
+	else
+	{
+		new (&schedStateGuard) MultipleReaderLock::ScopedWriteGuard(
+			&currThread->schedState.lock);
+	}
 
 	if (currCpuStream->asyncInterruptEvent.getNestingLevel() > 0) {printf(FATAL TASKTRIB"In int context: asyncNestingLevel is %d.\n", currCpuStream->asyncInterruptEvent.getNestingLevel());}
 	assert_fatal(currCpuStream->asyncInterruptEvent.getNestingLevel() == 0);
@@ -313,16 +322,7 @@ printf(FATAL TASKTRIB"In block(): currThread->id is %x, schedState is %d(%s) (ad
 	assert_fatal(currThread->schedState.rsrc.status == Thread::RUNNING);
 #endif
 
-	if (callerSchedStateGuard == NULL)
-	{
-		MultipleReaderLock::ScopedWriteGuard	localGuard(
-			&currThread->schedState.lock);
-
-		currCpuStream->taskStream.block(currThread);
-	}
-	else {
-		currCpuStream->taskStream.block(currThread);
-	}
+	currCpuStream->taskStream.block(currThread);
 
 	/**	EXPLANATION:
 	 * This bit here completely purges the problem of lost wakeups
@@ -351,8 +351,7 @@ printf(FATAL TASKTRIB"In block(): currThread->id is %x, schedState is %d(%s) (ad
 	 *
 	 * Be sure to pass in the correct 'callerSchedStateGuard' value.
 	 **/
-	if (callerSchedStateGuard != NULL)
-		{ callerSchedStateGuard->releaseManagementAndUnlock(); };
+	schedStateGuard.releaseManagementAndUnlock();
 
 	// TODO: Set this CPU's currentTask to NULL here.
 	saveContextAndCallPull(

@@ -435,14 +435,35 @@ error_t MessageStream::pull(
 	)
 {
 	MessageStream::sHeader	*tmp=NULL;
+	MultipleReaderLock	*schedStateLock;
 
 	if (message == NULL) { return ERROR_INVALID_ARG; };
 
+	// If CALLER_SCHEDLOCKED is set, forcibly set DONT_BLOCK.
+	if (FLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_CALLER_SCHEDLOCKED) &&
+		!FLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_DONT_BLOCK))
+	{
+		flags |= ZCALLBACK_PULL_FLAGS_DONT_BLOCK;
+		printf(WARNING MSGSTREAM"pull called with CALLER_SCHEDLOCKED "
+			"but without DONT_BLOCK. Forcibly setting DONT_BLOCK.\n");
+	}
+
+	schedStateLock = &parent->schedState.lock;
+
 	for (;FOREVER;)
 	{
+		/**	EXPLANATION:
+		 * If the caller is passes in CALLER_SCHEDLOCKED, it means they
+		 * plan to manually manage the dequeuing thread's schedState
+		 * lock. They'll acquire it and free it themself, so we
+		 * shouldn't acquire it here.
+		 **/
+		if (FLAG_TEST(flags, ZCALLBACK_PULL_FLAGS_CALLER_SCHEDLOCKED))
+			{ schedStateLock = NULL; }
+
 		state.lock.acquire();
 		MultipleReaderLock::ScopedWriteGuard schedStateGuard(
-			&parent->schedState.lock);
+			schedStateLock);
 
 		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
 		{

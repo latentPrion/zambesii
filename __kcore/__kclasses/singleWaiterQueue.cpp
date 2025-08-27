@@ -85,7 +85,17 @@ error_t SingleWaiterQueue::addItem(void *item)
 
 error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 {
-	Thread		*currThread;
+	Thread			*currThread;
+	MultipleReaderLock	*schedStateLock;
+
+	// If CALLER_SCHEDLOCKED is set, forcibly set DONT_BLOCK.
+	if (FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_CALLER_SCHEDLOCKED) &&
+		!FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_DONTBLOCK))
+	{
+		flags |= SINGLEWAITERQ_POP_FLAGS_DONTBLOCK;
+		printf(WARNING SWAITQ"pop called with CALLER_SCHEDLOCKED but "
+			"without DONT_BLOCK. Forcibly setting DONT_BLOCK.\n");
+	}
 
 	/**	EXPLANATION:
 	 * The pop operation must atomically do both the check and the block.
@@ -111,6 +121,11 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 	 */
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
+
+	assert_fatal(currThread->schedState.lock.lock == 0);
+	schedStateLock = &currThread->schedState.lock;
+	if (FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_CALLER_SCHEDLOCKED))
+		{ schedStateLock = NULL; }
 
 	for (;FOREVER;)
 	{
@@ -140,7 +155,7 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 		};
 
 		MultipleReaderLock::ScopedWriteGuard	threadSchedStateGuard(
-			&currThread->schedState.lock);
+			schedStateLock);
 
 		*item = HeapDoubleList<void>::popFromHead(
 			PTRDBLLIST_OP_FLAGS_UNLOCKED);
