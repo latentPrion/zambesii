@@ -118,7 +118,13 @@ void *MemReservoir::allocate(uarch_t nBytes, uarch_t)
 	// Unable to allocate from the kernel bog. Stream allocate.
 	ret = new (
 		sourceStream->memAlloc(
-			PAGING_BYTES_TO_PAGES(nBytes), 0)) sReservoirHeader;
+			PAGING_BYTES_TO_PAGES(nBytes),
+#ifndef CONFIG_HEAP_DEMAND_PAGING
+			MEMALLOC_NO_FAKEMAP
+#else
+			0
+#endif
+			)) sReservoirHeader;
 
 	if (ret != NULL)
 	{
