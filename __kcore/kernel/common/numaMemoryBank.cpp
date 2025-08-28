@@ -53,7 +53,7 @@ NumaMemoryBank::~NumaMemoryBank(void)
 
 void NumaMemoryBank::dump(void)
 {
-	uarch_t		rwFlags, rwFlags2;
+	uarch_t		rwFlags=0, rwFlags2=0;
 
 	ranges.lock.readAcquire(&rwFlags);
 	defRange.lock.readAcquire(&rwFlags2);
@@ -199,7 +199,7 @@ error_t NumaMemoryBank::removeMemoryRange(paddr_t baseAddr)
 status_t NumaMemoryBank::fragmentedGetFrames(
 	uarch_t nFrames, paddr_t *paddr, ubit32)
 {
-	uarch_t		rwFlags, rwFlags2;
+	uarch_t		rwFlags=0, rwFlags2=0;
 	error_t		ret;
 
 	defRange.lock.readAcquire(&rwFlags);
@@ -295,7 +295,7 @@ status_t NumaMemoryBank::constrainedGetFrames(
 
 void NumaMemoryBank::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	ranges.lock.readAcquire(&rwFlags);
 
@@ -318,7 +318,7 @@ void NumaMemoryBank::releaseFrames(paddr_t basePaddr, uarch_t nFrames)
 
 sarch_t NumaMemoryBank::identifyPaddr(paddr_t paddr)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	ranges.lock.readAcquire(&rwFlags);
 
@@ -342,7 +342,7 @@ sarch_t NumaMemoryBank::identifyPaddr(paddr_t paddr)
 
 sarch_t NumaMemoryBank::identifyPaddrRange(paddr_t basePaddr, paddr_t nBytes)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	ranges.lock.readAcquire(&rwFlags);
 
@@ -354,13 +354,14 @@ sarch_t NumaMemoryBank::identifyPaddrRange(paddr_t basePaddr, paddr_t nBytes)
 			return 1;
 		};
 	};
+
 	ranges.lock.readRelease(rwFlags);
 	return 0;
 }
 
 void NumaMemoryBank::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	ranges.lock.readAcquire(&rwFlags);
 
@@ -372,7 +373,7 @@ void NumaMemoryBank::mapMemUsed(paddr_t baseAddr, uarch_t nFrames)
 
 void NumaMemoryBank::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	ranges.lock.readAcquire(&rwFlags);
 
@@ -385,7 +386,7 @@ void NumaMemoryBank::mapMemUnused(paddr_t baseAddr, uarch_t nFrames)
 
 status_t NumaMemoryBank::merge(NumaMemoryBank *nmb)
 {
-	uarch_t		rwFlags, rwFlags2;
+	uarch_t		rwFlags=0, rwFlags2=0;
 	status_t	ret=0;
 
 	ranges.lock.readAcquire(&rwFlags);

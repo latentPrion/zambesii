@@ -35,7 +35,7 @@ error_t HardwareIdList::initialize(
 
 void HardwareIdList::dump(void)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 	Iterator	it;
 
 	arr.lock.readAcquire(&rwFlags);
@@ -59,7 +59,7 @@ void HardwareIdList::dump(void)
 
 void *HardwareIdList::getItem(sarch_t id)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 	void		*ret=NULL;
 
 	arr.lock.readAcquire(&rwFlags);
@@ -80,7 +80,7 @@ void *HardwareIdList::getItem(sarch_t id)
 
 error_t HardwareIdList::findFreeIndex(uarch_t *id)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	arr.lock.readAcquire(&rwFlags);
 
@@ -103,7 +103,7 @@ error_t HardwareIdList::findFreeIndex(uarch_t *id)
 
 void *HardwareIdList::getNextItem(sarch_t *cursor)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 	void		*ret;
 
 	arr.lock.readAcquire(&rwFlags);
@@ -138,7 +138,7 @@ void *HardwareIdList::getNextItem(sarch_t *cursor)
 
 error_t HardwareIdList::addItem(sarch_t index, void *item)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 	sarch_t		maxIndex, maxAllocatedIndex;
 	sArrayNode	*tmp, *old;
 
@@ -258,7 +258,7 @@ error_t HardwareIdList::addItem(sarch_t index, void *item)
 
 void HardwareIdList::removeItem(sarch_t id)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 	sarch_t		maxIndex;
 
 	arr.lock.readAcquire(&rwFlags);
