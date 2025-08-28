@@ -654,18 +654,21 @@ printf(FATAL CPUTRIB"About to call bootPowerOn() for CPU %d.\n", numaMap->cpuEnt
 printf(FATAL CPUTRIB"About to pullAndDispatchUntil() for %d CPUs.\n",
 	nTotal);
 
-	ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->messageStream.pullAndDispatchUntil(
-			&msg, 0, NULL,
-			&bootParseNumaMap_syncDispatcher);
-
-	if (ret != ERROR_SUCCESS)
+	if (nTotal > 0)
 	{
-		printf(ERROR CPUTRIB"bootParseNumaMap: "
-			"Failed to pullAndDispatchUntil (err=%d).\n",
-			ret);
+		ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+			->messageStream.pullAndDispatchUntil(
+				&msg, 0, NULL,
+				&bootParseNumaMap_syncDispatcher);
 
-		return ret;
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR CPUTRIB"bootParseNumaMap: "
+				"Failed to pullAndDispatchUntil (err=%d).\n",
+				ret);
+
+			return ret;
+		}
 	}
 
 	printf(NOTICE CPUTRIB"bootParseNumaMap: Processed %d CPUs. "
@@ -681,7 +684,7 @@ printf(FATAL CPUTRIB"About to pullAndDispatchUntil() for %d CPUs.\n",
 		? ERROR_INITIALIZATION_FAILURE
 		: ERROR_SUCCESS;
 
-	delete msg;
+	if (nTotal > 0) { delete msg; };
 	return ret;
 }
 
@@ -782,18 +785,21 @@ error_t CpuTrib::bootParseNumaMapAgainstSmpMap(
 
 	MessageStream::sHeader *msg;
 
-	ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->messageStream.pullAndDispatchUntil(
-			&msg, 0, NULL,
-			&bootParseNumaMapAgainstSmpMap_syncDispatcher);
-
-	if (ret != ERROR_SUCCESS)
+	if (nTotal > 0)
 	{
-		printf(ERROR CPUTRIB"bootParseNumaMapAgainstSmpMap: "
-			"Failed to pullAndDispatchUntil (err=%d).\n",
-			ret);
-		
-		return ret;
+		ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+			->messageStream.pullAndDispatchUntil(
+				&msg, 0, NULL,
+				&bootParseNumaMapAgainstSmpMap_syncDispatcher);
+
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR CPUTRIB"bootParseNumaMapAgainstSmpMap: "
+				"Failed to pullAndDispatchUntil (err=%d).\n",
+				ret);
+
+			return ret;
+		}
 	}
 
 	printf(NOTICE CPUTRIB"bootParseNumaMapAgainstSmpMap: Processed %d CPUs. "
@@ -809,7 +815,7 @@ error_t CpuTrib::bootParseNumaMapAgainstSmpMap(
 		? ERROR_INITIALIZATION_FAILURE
 		: ERROR_SUCCESS;
 
-	delete msg;
+	if (nTotal > 0) { delete msg; };
 	return ret;
 }
 #endif
@@ -869,13 +875,13 @@ error_t CpuTrib::numaInit(void)
 		 *	   to SMP operation. CPUs will be placed on a shared
 		 *	   bank in this case also.
 		 **/
-		printf(NOTICE CPUTRIB"numaInit: Using shared CPU bank; ");
+		printf(NOTICE CPUTRIB"numaInit: Using shared CPU bank.\n");
 
 		// Case 1 from above.
 		if (numaMap != NULL && numaMap->nCpuEntries > 0)
 		{
 			// Filter out the CPUs which need to be in shared bank.
-			printf(NOTICE CPUTRIB"Filtering out NUMA CPUs.\n");
+			printf(NOTICE CPUTRIB"numaInit: Filtering out NUMA CPUs.\n");
 			bootParseNumaMapAgainstSmpMap(numaMap, smpMap);
 		}
 		else
@@ -892,8 +898,9 @@ error_t CpuTrib::numaInit(void)
 			 * admin may insert new CPUs later on which have NUMA
 			 * affinity, even if there were none at boot.
 			 **/
-			printf(CC"No NUMA map, all CPUs on shared bank (SMP "
-				"operation).\n");
+			printf(CC"numaInit: No NUMA map, all CPUs being placed "
+				"into shared bank (de facto SMP operation).\n");
+
 			bootParseSmpMap(smpMap);
 		};
 	}
@@ -1002,18 +1009,21 @@ error_t CpuTrib::bootParseSmpMap(sZkcmSmpMap *smpMap)
 
 	MessageStream::sHeader *msg;
 
-	ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->messageStream.pullAndDispatchUntil(
-			&msg, 0, NULL,
-			&bootParseSmpMap_syncDispatcher);
-
-	if (ret != ERROR_SUCCESS)
+	if (nTotal > 0)
 	{
-		printf(ERROR CPUTRIB"bootParseSmpMap: "
-			"Failed to pullAndDispatchUntil (err=%d).\n",
-			ret);
+		ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
+			->messageStream.pullAndDispatchUntil(
+				&msg, 0, NULL,
+				&bootParseSmpMap_syncDispatcher);
 
-		return ret;
+		if (ret != ERROR_SUCCESS)
+		{
+			printf(ERROR CPUTRIB"bootParseSmpMap: "
+				"Failed to pullAndDispatchUntil (err=%d).\n",
+				ret);
+
+			return ret;
+		}
 	}
 
 	printf(NOTICE CPUTRIB"bootParseSmpMap: Processed %d CPUs. "
@@ -1029,7 +1039,7 @@ error_t CpuTrib::bootParseSmpMap(sZkcmSmpMap *smpMap)
 		? ERROR_INITIALIZATION_FAILURE
 		: ERROR_SUCCESS;
 
-	delete msg;
+	if (nTotal > 0) { delete msg; };
 	return ret;
 }
 
