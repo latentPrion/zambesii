@@ -30,7 +30,7 @@ void VfsTrib::dumpTrees(void)
 vfsDirC *VfsTrib::getDefaultTree(void)
 {
 	vfsDirC		*ret;
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	defaultTree.lock.readAcquire(&rwFlags);
 	ret = defaultTree.rsrc;

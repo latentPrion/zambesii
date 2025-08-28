@@ -293,7 +293,7 @@ void zuiBackend::detectDriverReq(
 	HeapList<zui::device::sHeader>		matchingDevices;
 	status_t				bestRank=-1;
 	AsyncResponse				myResponse;
-	uarch_t					rwflags;
+	uarch_t					rwflags=0;
 
 	/** FIXME: Memory leaks all over this function.
 	 **/
@@ -735,7 +735,7 @@ void zuiBackend::loadDriverReq(
 	fplainn::Device				*device;
 	fplainn::Zui::indexE			devDriverIndex;
 	error_t					err;
-	uarch_t					rwflags;
+	uarch_t					rwflags=0;
 
 	response = new fplainn::Zui::sIndexMsg(
 		request->header.sourceId,

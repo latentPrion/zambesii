@@ -35,7 +35,7 @@ error_t FloodplainnStream::getParentConstraints(
 	Thread					*self;
 	fplainn::Device				*currDev;
 	fplainn::Device::ParentTag		*parentTag;
-	uarch_t					rwflags;;
+	uarch_t					rwflags=0;
 
 	if (ret == NULL) { return ERROR_INVALID_ARG; }
 

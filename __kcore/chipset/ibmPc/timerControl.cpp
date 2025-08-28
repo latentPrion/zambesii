@@ -61,7 +61,7 @@ static void updateSystemTime(ubit32 tickGranularity)
 
 status_t ZkcmTimerControlMod::getCurrentDate(sDate *date)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	systemTime.lock.readAcquire(&rwFlags);
 	*date = systemTime.rsrc.date;
@@ -72,7 +72,7 @@ status_t ZkcmTimerControlMod::getCurrentDate(sDate *date)
 
 status_t ZkcmTimerControlMod::getCurrentTime(sTime *time)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	systemTime.lock.readAcquire(&rwFlags);
 	*time = systemTime.rsrc.time;
@@ -83,7 +83,7 @@ status_t ZkcmTimerControlMod::getCurrentTime(sTime *time)
 
 status_t ZkcmTimerControlMod::getCurrentDateTime(sTimestamp *stamp)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	systemTime.lock.readAcquire(&rwFlags);
 	*stamp = systemTime.rsrc;

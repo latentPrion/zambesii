@@ -32,7 +32,7 @@ BITMAP_DEFINE_PREALLOCATED_MEM(__kprocessPreallocatedBmpMem[3], 256);
 Thread *ProcessStream::getThread(processId_t id)
 {
 	Thread		*ret;
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 	CpuStream	*cs;
 
 	if (PROCID_PROCESS(id) == PROCID_PROCESS(CPU_PROCESSID))

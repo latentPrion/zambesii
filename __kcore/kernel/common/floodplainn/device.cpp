@@ -269,7 +269,7 @@ error_t fplainn::DriverInstance::initialize(void)
 error_t fplainn::DriverInstance::addHostedDevice(utf8Char *path)
 {
 	HeapArr<HeapArr<utf8Char> >	tmp, old;
-	uarch_t				len, rwflags;
+	uarch_t				len, rwflags=0;
 
 	s.lock.readAcquire(&rwflags);
 
@@ -318,7 +318,7 @@ error_t fplainn::DriverInstance::addHostedDevice(utf8Char *path)
 void fplainn::DriverInstance::removeHostedDevice(utf8Char *path)
 {
 	HeapArr<utf8Char>	tmp;
-	uarch_t			rwflags;
+	uarch_t			rwflags=0;
 
 	s.lock.readAcquire(&rwflags);
 
@@ -352,7 +352,7 @@ error_t fplainn::DriverInstance::getHostedDevicePathByTid(
 	)
 {
 	error_t		ret;
-	uarch_t		rwflags;
+	uarch_t		rwflags=0;
 
 	/**	EXPLANATION:
 	 * Newly started threads will not know which device they belong to.
@@ -524,7 +524,7 @@ void fplainn::DeviceInstance::dumpChannels(void)
 void fplainn::Device::dumpEnumerationAttributes(void)
 {
 	utf8Char		*fmtChar;
-	uarch_t			rwflags;
+	uarch_t			rwflags=0;
 
 	s.lock.readAcquire(&rwflags);
 
@@ -564,7 +564,7 @@ error_t fplainn::Device::findEnumerationAttribute(
 	utf8Char *name, udi_instance_attr_list_t **attr
 	)
 {
-	uarch_t		rwflags;
+	uarch_t		rwflags=0;
 
 	s.lock.readAcquire(&rwflags);
 
@@ -841,7 +841,7 @@ error_t fplainn::Driver::addInstance(numaBankId_t bid, processId_t pid)
 
 void fplainn::Driver::dump(void)
 {
-	uarch_t		rwflags;
+	uarch_t		rwflags=0;
 
 	state.lock.readAcquire(&rwflags);
 

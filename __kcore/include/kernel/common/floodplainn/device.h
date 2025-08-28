@@ -1069,7 +1069,7 @@ namespace fplainn
 
 inline fplainn::DriverInstance *fplainn::Driver::getInstance(numaBankId_t bid)
 {
-	uarch_t		rwflags;
+	uarch_t		rwflags=0;
 
 	state.lock.readAcquire(&rwflags);
 

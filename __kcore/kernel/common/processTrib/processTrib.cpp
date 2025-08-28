@@ -362,7 +362,7 @@ void ProcessTrib::commonEntry(void *)
 ProcessStream *ProcessTrib::getStream(processId_t id)
 {
 	ProcessStream	*ret;
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 
 	if (PROCID_PROCESS(id) == CPU_PROCESSID) {
 		return __kgetStream();
@@ -377,7 +377,7 @@ ProcessStream *ProcessTrib::getStream(processId_t id)
 
 error_t ProcessTrib::getNewProcessId(processId_t *ret)
 {
-	uarch_t		rwFlags;
+	uarch_t		rwFlags=0;
 	sbit32		tmpId;
 
 	processes.lock.readAcquire(&rwFlags);
@@ -631,7 +631,7 @@ error_t *ProcessTrib::spawnStream(
 {
 	processId_t		newId, parentId;
 	sbit32			newIdTmp;
-	uarch_t			rwFlags;
+	uarch_t			rwFlags=0;
 	ProcessStream		*newProc=NULL;
 	utf8Char		*fileName, *workingDir;
 	/**	NOTES:

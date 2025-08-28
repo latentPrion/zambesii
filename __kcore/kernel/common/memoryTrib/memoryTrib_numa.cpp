@@ -238,7 +238,7 @@ error_t MemoryTrib::fragmentedGetFrames(uarch_t nPages, paddr_t *paddr, ubit32)
 	HardwareIdList::Iterator	currIt;
 	NumaMemoryBank			*currBank;
 	error_t				ret;
-	uarch_t				rwFlags;
+	uarch_t				rwFlags=0;
 	Thread				*thread;
 
 	thread = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
