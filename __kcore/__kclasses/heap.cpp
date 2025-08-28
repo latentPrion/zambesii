@@ -160,14 +160,18 @@ Heap::Allocation *Heap::Chunk::malloc(
 
 		if (currBlock->parent != this)
 		{
-			printf(ERROR HEAP"Chunk::malloc: corrupt block. Invalid parent.\n");
+			printf(ERROR HEAP"Chunk::malloc: corrupt block. "
+				"Invalid parent.\n");
+
 			panic(ERROR_UNKNOWN);
 		};
 
 		if (heap->options & Heap::OPT_CHECK_BLOCK_MAGIC_PASSIVELY
 			&& !currBlock->magicIsValid())
 		{
-			printf(ERROR HEAP"Chunk::malloc: Corrupt block. Invalid magic.\n");
+			printf(ERROR HEAP"Chunk::malloc: Corrupt block. "
+				"Invalid magic.\n");
+
 			panic(ERROR_UNKNOWN);
 		};
 
