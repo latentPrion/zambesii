@@ -30,7 +30,7 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 #if __SCALING__ >= SCALING_SMP
 #ifdef CONFIG_DEBUG_LOCKS
 	// Scale the number of tries based on the number of CPUs
-	cpu_t highestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
+	cpu_t highestCpuId = atomicAsm::read<cpu_t>(&CpuStream::highestCpuId);
 	uarch_t nReadTriesRemaining = calcDeadlockNReadTries(highestCpuId);
 #endif
 
@@ -71,7 +71,7 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 #ifdef CONFIG_DEBUG_LOCKS
 	if (nReadTriesRemaining <= 1)
 	{
-		uarch_t lockValue = atomicAsm::read(&lock);
+		uarch_t lockValue = atomicAsm::read<uarch_t>(&lock);
 		uarch_t nReaders = lockValue & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1);
 		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
@@ -112,7 +112,7 @@ void MultipleReaderLock::writeAcquire(void)
 {
 #ifdef CONFIG_DEBUG_LOCKS
 	// Scale the number of tries based on the number of CPUs
-	cpu_t highestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
+	cpu_t highestCpuId = atomicAsm::read<cpu_t>(&CpuStream::highestCpuId);
 	uarch_t nReadTriesRemaining = calcDeadlockNReadTries(highestCpuId);
 	uarch_t nWriteTriesRemaining = calcDeadlockNWriteTries(highestCpuId);
 #endif
@@ -146,7 +146,7 @@ void MultipleReaderLock::writeAcquire(void)
 	/* Spin on reader count until there are no readers left on the
 	 * shared resource.
 	 **/
-	while ((atomicAsm::read(&lock)
+	while ((atomicAsm::read<uarch_t>(&lock)
 		& ((1 << Lock::FLAGS_ENUM_START) - 1)) != 0)
 	{
 #ifdef CONFIG_RT_KERNEL_IRQS
@@ -168,7 +168,7 @@ void MultipleReaderLock::writeAcquire(void)
 deadlock:
 	if (nReadTriesRemaining <= 1 || nWriteTriesRemaining <= 1)
 	{
-		uarch_t lockValue = atomicAsm::read(&lock);
+		uarch_t lockValue = atomicAsm::read<uarch_t>(&lock);
 		uarch_t nReaders = lockValue & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1);
 		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
@@ -264,7 +264,7 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 #if __SCALING__ >= SCALING_SMP
 #ifdef CONFIG_DEBUG_LOCKS
 	// Scale the number of tries based on the number of CPUs
-	cpu_t highestCpuId = atomicAsm::read(&CpuStream::highestCpuId);
+	cpu_t highestCpuId = atomicAsm::read<cpu_t>(&CpuStream::highestCpuId);
 	uarch_t nWriteTriesRemaining = calcDeadlockNWriteTries(highestCpuId);
 #endif
 
@@ -297,7 +297,7 @@ void MultipleReaderLock::readReleaseWriteAcquire(uarch_t rwFlags)
 deadlock:
 	if (nWriteTriesRemaining <= 1)
 	{
-		uarch_t lockValue = atomicAsm::read(&lock);
+		uarch_t lockValue = atomicAsm::read<uarch_t>(&lock);
 		uarch_t nReaders = lockValue & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1);
 		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
