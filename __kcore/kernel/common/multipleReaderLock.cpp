@@ -74,17 +74,45 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 		uarch_t lockValue = atomicAsm::read<uarch_t>(&lock);
 		uarch_t nReaders = lockValue & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1);
 		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
+		uarch_t prevNReaders = postPrevOpState.lock
+			& ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1);
+		uarch_t prevWriteRequestSet = (postPrevOpState.lock
+			& MR_FLAGS_WRITE_REQUEST) != 0;
 
 		reportDeadlock(
-			FATAL"MultipleReaderLock::readAcquire[%s] deadlock detected:\n"
-			"\tnReadTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
+			FATAL"MultipleReaderLock::readAcquire(%s) deadlock "
+			"detected:\n"
+			"\tnReadTriesRemaining: %d, lock int addr: %p, "
+			"lockval: %x,\n"
+			"\tflags: %x, Write request bit: %s, Number of "
+			"readers: %d\n"
+			"\tCPU: %d, Lock obj addr: %p, \n"
+			"\tCalling function: %p\n"
+			"\tcurr ownerAcquisitionInstr: %p "
+			"local IRQs: %d\n"
+			"State after previous operation (op=%s):\n"
+			"\tlockval: %x, flags: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
-			"\tCPU: %d, Lock obj addr: %p, Calling function: %p",
-			name, nReadTriesRemaining, &lock, lock,
-			writeRequestSet ? "SET" : "CLEAR", nReaders,
+			"\townerAcquisitionInstr: %p.\n",
+			name, nReadTriesRemaining, &lock, lock, flags,
+			(writeRequestSet ? "SET" : "CLEAR"), nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
-			__builtin_return_address(0));
+			__builtin_return_address(0),
+			ownerAcquisitionInstr,
+			!!cpuControl::interruptsEnabled(),
+			/* State after previous operation below*/
+			postPrevOpState.prevOpName,
+			postPrevOpState.lock,
+			postPrevOpState.flags,
+			(prevWriteRequestSet ? "SET" : "CLEAR"),
+			prevNReaders,
+			postPrevOpState.ownerAcquisitionInstr);
 	}
+
+	postPrevOpState = *this;
+	strncpy8(postPrevOpState.prevOpName, CC __func__, LOCK_OP_NAME_MAX_LEN);
+	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
+		__builtin_return_address(0));
 #endif
 #endif
 #ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
@@ -173,19 +201,25 @@ deadlock:
 		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
 		reportDeadlock(
-			FATAL"MultipleReaderLock::writeAcquire[%s] deadlock detected:\n"
+			FATAL"MultipleReaderLock::writeAcquire[%s] deadlock "
+			"detected:\n"
 			"\tnReadTriesRemaining: %d, nWriteTriesRemaining: %d\n"
-			"\tlock addr: %p, lock val: %x\n"
+			"\tlock addr: %p, lock val: %x, flags: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
-			"curr ownerAcquisitionInstr: %p",
-			name, nReadTriesRemaining, nWriteTriesRemaining, &lock, lock,
+			"\tcurr ownerAcquisitionInstr: %p, local IRQs: %d\n",
+			name, nReadTriesRemaining, nWriteTriesRemaining,
+			&lock, lock, flags,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
-			ownerAcquisitionInstr);
+			ownerAcquisitionInstr,
+			!!cpuControl::interruptsEnabled());
 	};
 
+	// First save the previous state of the lock object.
+	postPrevOpState = *this;
+	strncpy8(postPrevOpState.prevOpName, CC __func__, LOCK_OP_NAME_MAX_LEN);
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
 #endif
@@ -302,19 +336,23 @@ deadlock:
 		uarch_t writeRequestSet = (lockValue & MR_FLAGS_WRITE_REQUEST) != 0;
 
 		reportDeadlock(
-			FATAL"MultipleReaderLock::readReleaseWriteAcquire[%s] deadlock detected:\n"
+			FATAL"MultipleReaderLock::readReleaseWriteAcquire[%s] "
+			"deadlock detected:\n"
 			"\tnWriteTriesRemaining: %d\n"
-			"\tlock addr: %p, lock val: %x\n"
+			"\tlock addr: %p, lock val: %x, flags: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
-			"curr ownerAcquisitionInstr: %p",
-			name, nWriteTriesRemaining, &lock, lock,
+			"\tcurr ownerAcquisitionInstr: %p, local IRQs: %d\n",
+			name, nWriteTriesRemaining, &lock, lock, flags,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
-			ownerAcquisitionInstr);
+			ownerAcquisitionInstr,
+			!!cpuControl::interruptsEnabled());
 	}
 
+	postPrevOpState = *this;
+	strncpy8(postPrevOpState.prevOpName, CC __func__, LOCK_OP_NAME_MAX_LEN);
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
 #endif

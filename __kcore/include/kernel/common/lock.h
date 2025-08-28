@@ -11,7 +11,11 @@
 class Lock
 {
 public:
-	enum { LOCK_NAME_MAX_LEN = 64 };
+	enum {
+		LOCK_NAME_MAX_LEN = 64,
+		// Needs to be big enough to hold a mangled function name.
+		LOCK_OP_NAME_MAX_LEN = 192
+	};
 
 public:
 	class ScopedGuard
@@ -118,11 +122,28 @@ public:
 	 * lock. I.e: tells us the place where the lock was acquired.
 	 **/
 	void			(*ownerAcquisitionInstr)(void);
-	utf8Char		name[LOCK_NAME_MAX_LEN];
+	utf8Char		name[LOCK_NAME_MAX_LEN],
+				prevOpName[LOCK_OP_NAME_MAX_LEN];
 #endif
 
 protected:
 	uarch_t			flags;
+
+	friend class MultipleReaderLock;
+	Lock &operator=(const Lock &other)
+	{
+#if __SCALING__ >= SCALING_SMP
+		lock = other.lock;
+#endif
+		flags = other.flags;
+		magic = other.magic;
+#ifdef CONFIG_DEBUG_LOCKS
+		ownerAcquisitionInstr = other.ownerAcquisitionInstr;
+		strncpy8(name, other.name, LOCK_NAME_MAX_LEN);
+		strncpy8(prevOpName, other.prevOpName, LOCK_OP_NAME_MAX_LEN);
+#endif
+		return *this;
+	}
 };
 
 #endif

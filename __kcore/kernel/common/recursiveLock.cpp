@@ -110,14 +110,16 @@ void RecursiveLock::acquire(void)
 	{
 		reportDeadlock(
 			FATAL"RecursiveLock::acquire[%s] deadlock detected:\n"
-			"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x\n"
+			"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x "
+			"flags: %x\n"
 			"\tcurrThreadId: %x, CPU: %d, Lock obj addr: %p,\n"
 			"\tCalling function: %p, "
-			"curr ownerAcquisitionInstr: %p",
-			name, nTries, &lock, lock, currThreadId,
+			"\tcurr ownerAcquisitionInstr: %p, local IRQs: %d\n",
+			name, nTries, &lock, lock, flags, currThreadId,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
-			ownerAcquisitionInstr);
+			ownerAcquisitionInstr,
+			!!cpuControl::interruptsEnabled());
 	}
 #endif
 

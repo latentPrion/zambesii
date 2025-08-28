@@ -162,7 +162,7 @@ public:
 
 public:
 	MultipleReaderLock(const utf8Char *name)
-	: Lock(name)
+	: Lock(name), postPrevOpState(name)
 	{}
 
 	void readAcquire(uarch_t *flags);
@@ -173,6 +173,20 @@ public:
 
 	void readReleaseWriteAcquire(uarch_t flags);
 	void dump(void);
+
+private:
+	/* This copy of the lock object is used to store the state of the lock
+	 * after a previous operation has been executed.
+	 * This is used to detect deadlocks.
+	 *
+	 * The idea is that we can see what state the previous operation left
+	 * the lock in, and compare it to the current state of the lock so we
+	 * can detect why the deadlock is occuring. Moreover, we can also see
+	 * which function was the last to acquire the lock. So we can know which
+	 * function acquired the lock, and which function is currently
+	 * deadlocked on the lock.
+	 **/
+	Lock		postPrevOpState;
 };
 
 #endif
