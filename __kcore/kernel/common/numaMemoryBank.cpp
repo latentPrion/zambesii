@@ -201,10 +201,12 @@ status_t NumaMemoryBank::fragmentedGetFrames(
 {
 	uarch_t		rwFlags=0, rwFlags2=0;
 	error_t		ret;
+	NumaMemoryRange	*currentDefRange;
 
 	defRange.lock.readAcquire(&rwFlags);
 
-	if (defRange.rsrc == NULL)
+	currentDefRange = defRange.rsrc;
+	if (currentDefRange == NULL)
 	{
 		// Check and see if any new ranges have been added recently.
 		ranges.lock.readAcquire(&rwFlags2);
@@ -218,46 +220,42 @@ status_t NumaMemoryBank::fragmentedGetFrames(
 		};
 
 		defRange.lock.readReleaseWriteAcquire(rwFlags);
-		defRange.rsrc = ranges.rsrc->range;
-		defRange.lock.writeRelease();
+		currentDefRange = defRange.rsrc = ranges.rsrc->range;
 
 		ranges.lock.readRelease(rwFlags2);
-		defRange.lock.readAcquire(&rwFlags);
-		// Note that we still hold readAcquire on defRange here.
-	};
+		defRange.lock.writeRelease();
+	}
+	else {
+		defRange.lock.readRelease(rwFlags);
+	}
 
 	// Allocate from the default first.
-	ret = defRange.rsrc->fragmentedGetFrames(nFrames, paddr);
-	if (ret > 0)
-	{
-		defRange.lock.readRelease(rwFlags);
-		return ret;
-	};
+	ret = currentDefRange->fragmentedGetFrames(nFrames, paddr);
+	if (ret > 0) { return ret; };
 
 	// Default has no mem. Below we'll scan all the other ranges.
 	ranges.lock.readAcquire(&rwFlags2);
-	// We now hold both locks.
+
 	for (sRangePtr *cur = ranges.rsrc; cur != NULL; cur = cur->next)
 	{
 		// Don't waste time re-trying the same range.
-		if (cur->range == defRange.rsrc) {
+		if (cur->range == currentDefRange) {
 			continue;
 		};
 
 		ret = cur->range->fragmentedGetFrames(nFrames, paddr);
-		if (ret > 0)
-		{
-			ranges.lock.readRelease(rwFlags2);
-			defRange.lock.readReleaseWriteAcquire(rwFlags);
-			defRange.rsrc = cur->range;
-			defRange.lock.writeRelease();
-			return ret;
-		};
+		if (ret <= 0) { continue; };
+
+		defRange.lock.writeAcquire();
+		currentDefRange = defRange.rsrc = cur->range;
+		defRange.lock.writeRelease();
+
+		ranges.lock.readRelease(rwFlags2);
+		return ret;
 	};
 
 	// Reaching here means no mem was found.
 	ranges.lock.readRelease(rwFlags2);
-	defRange.lock.readRelease(rwFlags);
 
 	return ERROR_MEMORY_NOMEM_PHYSICAL;
 }
