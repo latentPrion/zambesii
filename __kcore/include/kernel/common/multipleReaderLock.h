@@ -30,6 +30,8 @@ class MultipleReaderLock
 public Lock
 {
 public:
+	friend class WaitLock;
+
 	class ScopedWriteGuard
 	: public Lock::ScopedGuard
 	{
