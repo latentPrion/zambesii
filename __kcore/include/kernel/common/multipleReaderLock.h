@@ -137,6 +137,9 @@ public:
 		}
 
 	private:
+		// Only allow WaitLock to transfer IRQ ownership to this lock
+		friend class SingleWaiterQueue;
+		friend class MessageStream;
 		uarch_t		flags;
 	};
 
@@ -173,6 +176,9 @@ public:
 
 	void readReleaseWriteAcquire(uarch_t flags);
 	void dump(void);
+
+	// Allow WaitLock to transfer IRQ ownership to this lock
+	void setIrqFlags(uarch_t irqFlags) { flags |= irqFlags; }
 
 private:
 	/* This copy of the lock object is used to store the state of the lock
