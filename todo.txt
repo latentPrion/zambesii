@@ -1,19 +1,6 @@
 Sched bugs-ish?
-* TimerQueue::tick() shouldn't need to call taskTrib.unblock() on the
-  target thread since the call to timerRequestTimeoutNotification() on
-  the target process' Timer Stream should wake the target thread; because
-  timerRequestTimeoutNotification() calls enqueue() on the target thread's
-  messageStream, which should already wake the target thread.
-* TaskTrib::unblock() calls yield() in the case where the thread is
-  runnable. This is fine as long as the caller isn't in IRQ context.
-  Unfortunately, we don't guard against this possibility, so we actually
-  yield() and perform a full context switch in IRQ context, which is bad.
-  * The problem may not be the fundamental design of the scheduler but rather
-    merely the way we impliement yield(). IFF we call saveContextAndCallPull
-    in yield(), or we call pull() or something of that sort, then that's likely
-    the entire problem.
-  * Double check that we don't call pull() anywhere other than at the end of
-    interrupt context.
+* Double check that we don't call TaskTrib::pull() anywhere other than at the
+  end of interrupt context.
 * Double check the way we do saveContextAndCallPull -- we may need to redesign it.
 * Yes: the specific issue is that in TaskTrib, the scheduler functions don't merely
   manipulate the per-CPU scheduler queues (prio queues of threads) but they also
@@ -117,12 +104,11 @@ Kernel preemption is always done in interrupt context. Kernel
 
 
 Improvements:
-* Rename fplainn::Zum::sZAsyncMsg. Too confusing the way it's named right now.
-  * Understand why we delete movableMem in unmarshalEnumerateAckAttrsAndFilters.
-    * We may need to entirely redesign the way we do movable mem allocation because
-      I'm not sure the correct parties are allocating and freeing here.
-    * We need to figure out where we can preallocate memory within one of the messageStream
-      for marshaling. Then marshal the attr/filter lists into it.
+* Understand why we delete movableMem in unmarshalEnumerateAckAttrsAndFilters.
+  * We may need to entirely redesign the way we do movable mem allocation because
+    I'm not sure the correct parties are allocating and freeing here.
+  * We need to figure out where we can preallocate memory within one of the messageStream
+    for marshaling. Then marshal the attr/filter lists into it.
 
 * We unwittingly introduced upcasts (base-to-derived)
   without dynamic_cast<>(). These are probably causing
