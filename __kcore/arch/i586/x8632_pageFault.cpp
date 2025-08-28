@@ -223,7 +223,8 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 		traceStack = 1;
 		// Not implemented.
 #ifdef CONFIG_DEBUG_PAGE_FAULTS
-		printf(FATAL"Encountered swapped page. at %X.\n", faultAddr);
+		printf(FATAL"Encountered swapped page at %X; EIP %p.\n",
+			faultAddr, regs->eip);
 #endif
 		break;
 
