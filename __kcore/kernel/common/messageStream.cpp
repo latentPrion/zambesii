@@ -465,6 +465,8 @@ error_t MessageStream::pull(
 		MultipleReaderLock::ScopedWriteGuard schedStateGuard(
 			schedStateLock);
 
+		state.lock.giveOwnershipOfLocalIrqsTo(schedStateLock);
+
 		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
 		{
 			if (!state.rsrc.pendingSubsystems.test(i))
@@ -639,6 +641,8 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	MultipleReaderLock::ScopedReadGuard 	threadSchedStateGuard(
 		&parent->schedState.lock);
 
+	state.lock.giveOwnershipOfLocalIrqsTo(&threadSchedStateGuard.flags);
+
 	ret = state.rsrc.queues[queueId].addItem(
 		callback, PTRDBLLIST_ADD_TAIL, PTRDBLLIST_OP_FLAGS_UNLOCKED);
 
@@ -655,7 +659,10 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	 * exactly pendingSubsystems is used inside of pull(), and whether
 	 * unlocking here will cause lost wakeups. Examine this and see if we
 	 * can unlock state.lock earlier up here.
+	 *
+	 * (We used to release state.lock after calling unblock() below).
 	 **/
+	state.lock.release();
 
 	/**	EXPLANATION:
 	 * Unblock the thread atomically with respect to this enqueue() call's
@@ -667,8 +674,6 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	 * enqueue() call's queue operation.
 	 **/
 	taskTrib.unblock(parent, &threadSchedStateGuard);
-
-	state.lock.release();
 	return ERROR_SUCCESS;
 }
 

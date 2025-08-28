@@ -46,11 +46,16 @@ error_t SingleWaiterQueue::addItem(void *item)
 	MultipleReaderLock::ScopedReadGuard	threadSchedStateGuard(
 		&state.rsrc.thread->schedState.lock);
 
+	state.lock.giveOwnershipOfLocalIrqsTo(&threadSchedStateGuard.flags);
+
 	ret = HeapDoubleList<void>::addItem(
 		item, PTRDBLLIST_ADD_TAIL, PTRDBLLIST_OP_FLAGS_UNLOCKED);
 
+	state.lock.release();
+
 	if (ret != ERROR_SUCCESS)
 	{
+
 		printf(ERROR SWAITQ"addItem(%p) failed. Err %d (%s).\n",
 			item, ret, strerror(ret));
 
@@ -67,15 +72,6 @@ error_t SingleWaiterQueue::addItem(void *item)
 	 * this addItem() call's queue operation.
 	 */
 	ret = taskTrib.unblock(waitingThread, &threadSchedStateGuard);
-
-	/**	FIXME:
-	 * I hate that I have to hold state.lock for the duration of the
-	 * unblock() call. We have to hold state.lock because state.rsrc.thread
-	 * could possibly be changed while we're executing this critical
-	 * section. It's extremely unlikely, but it's possible.
-	 * Try and see if we can optimize this somehow.
-	 */
-	state.lock.release();
 
 	if (ret != ERROR_SUCCESS)
 		{ panic(ret, FATAL SWAITQ"Failed to unblock thread!"); }
@@ -156,6 +152,8 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 
 		MultipleReaderLock::ScopedWriteGuard	threadSchedStateGuard(
 			schedStateLock);
+
+		state.lock.giveOwnershipOfLocalIrqsTo(schedStateLock);
 
 		*item = HeapDoubleList<void>::popFromHead(
 			PTRDBLLIST_OP_FLAGS_UNLOCKED);
