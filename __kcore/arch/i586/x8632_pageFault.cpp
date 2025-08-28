@@ -123,6 +123,13 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 	case WPRANGER_STATUS_FAKEMAPPED_DYNAMIC:
 		uarch_t nTries;
 
+#ifndef CONFIG_KERNEL_VADDRSPACE_DEMAND_PAGING
+//		panicWorthy = 1;
+//		traceStack = 1;
+		printf(FATAL"Encountered fakemapped page while "
+			"!defined(CONFIG_KERNEL_VADDRSPACE_DEMAND_PAGING).\n");
+#endif
+
 		for (nTries=0, status = 0;
 			nTries < 4 && status < 1;
 			nTries++)
