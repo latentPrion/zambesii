@@ -522,8 +522,6 @@ void __korientationMain6(MessageStream::sHeader *msgIt)
 
 	// Detect and wake all CPUs.
 	DO_OR_DIE(cpuTrib, initializeAllCpus(), ret);
-printf(FATAL ORIENT"here: Local INT# is %d.\n", cpuControl::interruptsEnabled());
-return;
 
 	uarch_t tot, succ, fail;
 	struct {
