@@ -184,8 +184,8 @@ public:
 
 		struct sControlMsg
 		{
-			friend void TimerTrib::sEventProcessor::thread(void *);
-			
+			friend class sEventProcessor;
+
 			enum commandE {
 				QUEUE_LATCHED=1, QUEUE_UNLATCHED, EXIT_THREAD };
 
@@ -207,6 +207,8 @@ public:
 		void processQueueLatchedMessage(sControlMsg *msg);
 		void processQueueUnlatchedMessage(sControlMsg *msg);
 		void processExitMessage(sControlMsg *);
+
+		void handleZAsyncStreamMsg(MessageStream::sHeader *msg);
 
 		void dump(void);
 

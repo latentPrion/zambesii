@@ -71,6 +71,85 @@ void TimerTrib::sEventProcessor::processExitMessage(sControlMsg *)
 		"sEventProcessor::processExitMessage");*/
 }
 
+void TimerTrib::sEventProcessor::handleZAsyncStreamMsg(
+	MessageStream::sHeader *msg
+	)
+{
+	error_t			err;
+	sControlMsg 		controlMsg;
+
+	Thread *self = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread();
+
+	if (msg->subsystem != MSGSTREAM_SUBSYSTEM_ZASYNC)
+	{
+		printf(ERROR TIMERTRIB"event DQer thread: invalid message "
+			"subsystem %d.\n",
+			msg->subsystem);
+
+		delete msg;
+		return;
+	}
+
+	ZAsyncStream::sZAsyncMsg *asyncMsg = reinterpret_cast<
+		ZAsyncStream::sZAsyncMsg *>(msg);
+
+	// Receive the message
+	err = self->parent->zasyncStream.receive(
+		asyncMsg->dataHandle, &controlMsg, 0);
+
+	if (err != ERROR_SUCCESS)
+	{
+		printf(ERROR TIMERTRIB"event DQer thread: zasyncStream::"
+			"receive() failed from TID %x.\n",
+			asyncMsg->header.sourceId);
+
+		delete msg;
+		return;
+	}
+
+	switch (controlMsg.command)
+	{
+	case sEventProcessor::sControlMsg::EXIT_THREAD:
+		timerTrib.eventProcessor.processExitMessage(&controlMsg);
+		break;
+
+	case sEventProcessor::sControlMsg::QUEUE_LATCHED:
+		timerTrib.eventProcessor.processQueueLatchedMessage(
+				&controlMsg);
+		break;
+
+	case sEventProcessor::sControlMsg::QUEUE_UNLATCHED:
+		timerTrib.eventProcessor.processQueueUnlatchedMessage(
+				&controlMsg);
+		break;
+
+	default:
+		printf(NOTICE TIMERTRIB"event DQer thread: invalid message "
+			"type %d.\n",
+			controlMsg.command);
+
+		break;
+	};
+
+	// Send acknowledgment
+	self->parent->zasyncStream.acknowledge(
+		asyncMsg->dataHandle, &controlMsg,
+		msg->privateData);
+
+	// Reuse the message using placement new.
+	new (msg) MessageStream::sHeader(
+		asyncMsg->header.sourceId,
+		MSGSTREAM_SUBSYSTEM_TIMERTRIB_EVENT_PROCESSOR,
+		controlMsg.command,
+		sizeof(MessageStream::sHeader), 0,
+		msg->privateData);
+
+	msg->error = ERROR_SUCCESS;
+	MessageStream::enqueueOnThread(
+		msg->targetId, msg);
+}
+
 void TimerTrib::sEventProcessor::thread(void *)
 {
 	sarch_t				messagesWereFound;
@@ -78,12 +157,12 @@ void TimerTrib::sEventProcessor::thread(void *)
 	Thread				*self;
 	MessageStream::sHeader		*msg = NULL;
 	sControlMsg			controlMsg;
-	
+
 	// Tracing control for this function
 	const bool enableTracing = true;
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
-	
+
 	// Enable connectionless receiving on this thread's ZAsyncStream
 	self->parent->zasyncStream.listen(self->getFullId(), 1);
 
@@ -94,92 +173,33 @@ void TimerTrib::sEventProcessor::thread(void *)
 	{
 		messagesWereFound = 0;
 
-		// Check for messages from MessageStream first
+		/**	EXPLANATION:
+		 * Multiqueue pulling:
+		 *
+		 * Manually acquire our own schedState lock here to prevent
+		 * any other thread from attempting to change our schedState
+		 * while we are pulling messages.
+		 *
+		 * Then use the CALLER_SCHEDLOCKED flag to prevent pull() and
+		 * other dequeue operations from calling taskTrib.block()
+		 * automatically on our behalf. When we're done pulling, we'll
+		 * manually call taskTrib.block() and have it unlock our own
+		 * schedState lock.
+		 **/
+		MultipleReaderLock::ScopedWriteGuard guard(
+			&self->schedState.lock);
+
 		err = self->messageStream.pull(
-			&msg, ZCALLBACK_PULL_FLAGS_DONT_BLOCK);
+			&msg,
+			ZCALLBACK_PULL_FLAGS_CALLER_SCHEDLOCKED
+			| ZCALLBACK_PULL_FLAGS_DONT_BLOCK);
 
 		if (err == ERROR_SUCCESS)
 		{
 			messagesWereFound = 1;
-			
-			if (msg->subsystem != MSGSTREAM_SUBSYSTEM_ZASYNC)
-			{
-				printf(ERROR TIMERTRIB"event DQer "
-					"thread: invalid message "
-					"subsystem %d.\n",
-					msg->subsystem);
 
-				delete msg;
-				continue;
-			}
-
-			ZAsyncStream::sZAsyncMsg *asyncMsg = 
-				reinterpret_cast<
-				ZAsyncStream::sZAsyncMsg *>(msg);
-			
-			// Receive the message
-			err = self->parent->zasyncStream.receive(
-				asyncMsg->dataHandle,
-				&controlMsg, 0);
-
-			if (err != ERROR_SUCCESS)
-			{
-				printf(ERROR TIMERTRIB"event DQer "
-					"thread: zasyncStream::"
-					"receive() failed from "
-					"TID %x.\n",
-					asyncMsg->header.sourceId);
-				delete msg;
-				continue;
-			}
-
-			switch (controlMsg.command)
-			{
-			case sEventProcessor::sControlMsg::EXIT_THREAD:
-				timerTrib.eventProcessor
-					.processExitMessage(
-						&controlMsg);
-				break;
-
-			case sEventProcessor::sControlMsg::QUEUE_LATCHED:
-				timerTrib.eventProcessor
-					.processQueueLatchedMessage(
-						&controlMsg);
-				break;
-
-			case sEventProcessor::sControlMsg::QUEUE_UNLATCHED:
-				timerTrib.eventProcessor
-					.processQueueUnlatchedMessage(
-						&controlMsg);
-				break;
-
-			default:
-				printf(NOTICE TIMERTRIB"event DQer "
-					"thread: invalid message "
-					"type %d.\n",
-					controlMsg.command);
-				break;
-			};
-
-			// Send acknowledgment
-			self->parent->zasyncStream.acknowledge(
-				asyncMsg->dataHandle, 
-				&controlMsg, 
-				msg->privateData);
-
-			// Reuse the message using placement new.
-			new (msg) MessageStream::sHeader(
-				asyncMsg->header.sourceId,
-				MSGSTREAM_SUBSYSTEM_TIMERTRIB_EVENT_PROCESSOR,
-				controlMsg.command,
-				sizeof(MessageStream::sHeader),
-				0,
-				msg->privateData);
-
-			msg->error = ERROR_SUCCESS;
-			MessageStream::enqueueOnThread(
-				msg->targetId, msg);
-
+			// Handle ZAsyncStream messages
+			timerTrib.eventProcessor.handleZAsyncStreamMsg(msg);
 			continue;
 		}
 
@@ -200,7 +220,8 @@ printf(CC"`1`");
 			err = timerTrib.eventProcessor.waitSlots[i].eventQueue
 				->pop(
 					(void **)&currIrqEvent,
-					SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
+					SINGLEWAITERQ_POP_FLAGS_CALLER_SCHEDLOCKED
+					| SINGLEWAITERQ_POP_FLAGS_DONTBLOCK);
 
 			if (err != ERROR_SUCCESS) {
 				if (enableTracing) {
@@ -225,11 +246,11 @@ printf(CC"`3:QnItems=%d`",
 		};
 
 		// If the loop ran to its end and there were no messages, block.
-		if (!messagesWereFound) {
-			if (enableTracing) {
-printf(CC"`4`");
-			}
-			taskTrib.block();
-		};
+		if (messagesWereFound)
+			{ continue; };
+
+if (enableTracing) { printf(CC"`4`"); };
+
+		taskTrib.block(&guard);
 	};
 }
