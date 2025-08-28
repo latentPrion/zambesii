@@ -1,6 +1,7 @@
 
 #include <scaling.h>
 #include <arch/cpuControl.h>
+#include <arch/debug.h>
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/recursiveLock.h>
 #include <kernel/common/thread.h>
@@ -34,6 +35,18 @@ void RecursiveLock::acquire(void)
 		.getCurrentThread();
 	currThreadId = thread->getFullId();
 
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+	if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0
+		&& cpuControl::interruptsEnabled())
+	{
+		printf(FATAL"%s(%s): nLocksHeld=%d but local IRQs=%d\n",
+			name, __func__,
+			cpuTrib.getCurrentCpuStream()->nLocksHeld,
+			cpuControl::interruptsEnabled());
+
+		panic(ERROR_INVALID_STATE);
+	}
+#endif
 	// Save the current interrupt state
 	irqsWereEnabled = cpuControl::interruptsEnabled();
 
@@ -153,12 +166,33 @@ void RecursiveLock::release(void)
 	{
 		uarch_t irqsWereEnabled = FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
 		FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
-		
+
 		// Mark the lock as free atomically
 		atomicAsm::set(&lock, PROCID_INVALID);
 		
 		// Restore interrupts if they were enabled before
 		if (irqsWereEnabled)
-			{ cpuControl::enableInterrupts(); }
+		{
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+			if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0)
+			{
+				printf(FATAL"%s(%s): nLocksHeld=%d but we're "
+					"enabling local IRQs.\n",
+					name, __func__,
+					cpuTrib.getCurrentCpuStream()->nLocksHeld);
+
+				// Print stack trace like x8632_debug does
+				debug::sStackDescriptor currStackDesc;
+				debug::getCurrentStackInfo(&currStackDesc);
+				debug::printStackTrace(
+					debug::getBasePointer(),
+					&currStackDesc);
+
+				panic(ERROR_INVALID_STATE);
+			}
+#endif
+
+			cpuControl::enableInterrupts();
+		}
 	}
 }

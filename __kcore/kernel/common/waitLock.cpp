@@ -21,6 +21,19 @@ void WaitLock::acquire(void)
 #endif
 	uarch_t contenderFlags=0;
 
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+	if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0
+		&& cpuControl::interruptsEnabled())
+	{
+		printf(FATAL"%s(%s): nLocksHeld=%d but local IRQs=%d\n",
+			name, __func__,
+			cpuTrib.getCurrentCpuStream()->nLocksHeld,
+			cpuControl::interruptsEnabled());
+
+		panic(ERROR_INVALID_STATE);
+	}
+#endif
+
 	if (cpuControl::interruptsEnabled())
 	{
 		FLAG_SET(contenderFlags, Lock::FLAGS_IRQS_WERE_ENABLED);
@@ -96,7 +109,19 @@ void WaitLock::release(void)
 #endif
 #if __SCALING__ >= SCALING_SMP
 
-	if (enableIrqs) {
+	if (enableIrqs)
+	{
+#ifdef CONFIG_DEBUG_LOCKS
+		if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0)
+		{
+			printf(FATAL"%s(%s): nLocksHeld=%d but we're enabling "
+				"local IRQs.\n",
+				name, __func__,
+				cpuTrib.getCurrentCpuStream()->nLocksHeld);
+
+			panic(ERROR_INVALID_STATE);
+		}
+#endif
 #endif
 		cpuControl::enableInterrupts();
 	};
