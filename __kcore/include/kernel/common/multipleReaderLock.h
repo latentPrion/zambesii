@@ -145,8 +145,6 @@ public:
 		uarch_t		flags;
 	};
 
-
-
 public:
 	// Flag shift values for the 'flags' member, continuing from Lock::FLAGS_ENUM_END
 	enum flagShiftE {
