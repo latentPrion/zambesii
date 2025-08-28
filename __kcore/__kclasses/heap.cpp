@@ -387,6 +387,8 @@ error_t Heap::getNewChunk(Chunk **retchunk) const
 
 	if (options & OPT_DEMAND_PAGED)
 		{ memAllocFlags |= MEMALLOC_PURE_VIRTUAL; }
+	else
+		{ memAllocFlags |= MEMALLOC_NO_FAKEMAP; };
 
 	tmpchunk = new (
 #ifndef __ZAMBESII_KERNEL_SOURCE__
