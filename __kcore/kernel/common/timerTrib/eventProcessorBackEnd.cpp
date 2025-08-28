@@ -243,6 +243,19 @@ printf(CC"`3:QnItems=%d`",
 			timerTrib.eventProcessor.waitSlots[i].timerQueue
 				->getDevice()->freeIrqEvent(
 					currIrqEvent);
+
+			/*	EXPLANATION:
+			 * The purpose of breaking out of this nested loop here
+			 * is to give priority to the ZAsyncStream message
+			 * handling above. We could have just continued this
+			 * nested timer event loop, but we want to ensure that
+			 * we give maximal responsiveness to the ZAsyncStream
+			 * message queue.
+			 *
+			 * Basically, control messages are more important than
+			 * timer events.
+			 */
+			break;
 		};
 
 		// If the loop ran to its end and there were no messages, block.
