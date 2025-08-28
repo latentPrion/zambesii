@@ -164,7 +164,7 @@ static void dumpSrat(void)
 void __korientationMainDispatchOne(MessageStream::sHeader *msg)
 {
 	assert_fatal(msg != NULL);
-	
+
 	Callback	*cb = static_cast<Callback *>(msg->privateData);
 
 	switch (msg->subsystem)
@@ -587,6 +587,7 @@ void __korientationMain6(MessageStream::sHeader *msgIt)
 
 	sgl.dump();
 
+	printf(NOTICE ORIENT"Done.\n");
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
 	{
 		printf(NOTICE"New child: %s/%d.\n",
