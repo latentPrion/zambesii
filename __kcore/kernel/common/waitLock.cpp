@@ -113,3 +113,81 @@ void WaitLock::releaseNoIrqs(void)
 #endif
 }
 
+/*
+ * USAGE EXAMPLES:
+ *
+ * Example 1: Transfer IRQ ownership to MultipleReaderLock write lock
+ * WaitLock wlock("example");
+ * MultipleReaderLock mrlock("example");
+ *
+ * wlock.acquire();
+ * mrlock.writeAcquire();
+ * wlock.giveOwnershipOfLocalIrqsTo(&mrlock);
+ * wlock.release();  // Won't re-enable IRQs
+ * // ... critical section ...
+ * mrlock.writeRelease();  // Will re-enable IRQs if they were enabled before
+ *
+ * Example 2: Transfer IRQ ownership to MultipleReaderLock read lock
+ * WaitLock wlock("example");
+ * MultipleReaderLock mrlock("example");
+ * uarch_t mrFlags = 0;
+ *
+ * wlock.acquire();
+ * mrlock.readAcquire(&mrFlags);
+ * wlock.giveOwnershipOfLocalIrqsTo(&mrFlags);
+ * wlock.release();  // Won't re-enable IRQs
+ * // ... critical section ...
+ * mrlock.readRelease(mrFlags);  // Will re-enable IRQs if they were enabled before
+ */
+void WaitLock::giveOwnershipOfLocalIrqsTo(MultipleReaderLock *targetLock)
+{
+	/**	EXPLANATION:
+	 * Transfer IRQ ownership from this WaitLock to the target
+	 * MultipleReaderLock. This prevents the WaitLock from re-enabling IRQs
+	 * when it's released, allowing the MultipleReaderLock to maintain
+	 * control of the IRQ state throughout its critical section.
+	 *
+	 * This is used in nested lock scenarios like:
+	 * WaitLock.acquire()
+	 * MRLock.acquire()
+	 * WaitLock.giveOwnershipOfLocalIrqsTo(&MRLock)
+	 * WaitLock.release()  // Won't re-enable IRQs
+	 * // ... critical section ...
+	 * MRLock.release()    	// Will re-enable IRQs if they were enabled
+	 *			// before the MRLock was acquired.
+	 */
+	if (FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED))
+	{
+		// Transfer the flag from WaitLock to MultipleReaderLock
+		FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
+		// Use the public method to set the flags
+		targetLock->setIrqFlags(Lock::FLAGS_IRQS_WERE_ENABLED);
+	}
+}
+
+void WaitLock::giveOwnershipOfLocalIrqsTo(uarch_t *targetFlags)
+{
+	/**	EXPLANATION:
+	 * Transfer IRQ ownership from this WaitLock to a local flags variable.
+	 * This is used when the target is a MultipleReaderLock that was
+	 * acquired via readAcquire(), which uses a local stack variable to
+	 * track IRQ state.
+	 *
+	 * This is used in nested lock scenarios like:
+	 * WaitLock.acquire()
+	 * uarch_t mrFlags = 0;
+	 * MRLock.readAcquire(&mrFlags)
+	 * WaitLock.giveOwnershipOfLocalIrqsTo(&mrFlags)
+	 * WaitLock.release()  // Won't re-enable IRQs
+	 * // ... critical section ...
+	 * MRLock.readRelease(mrFlags)  // Will re-enable IRQs if they were
+	 *				// enabled before the MRLock was
+	 *				// acquired.
+	 */
+	if (FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED))
+	{
+		// Transfer the flag from WaitLock to the local flags variable
+		FLAG_UNSET(flags, Lock::FLAGS_IRQS_WERE_ENABLED);
+		FLAG_SET(*targetFlags, Lock::FLAGS_IRQS_WERE_ENABLED);
+	}
+}

@@ -66,6 +66,10 @@ public:
 	// Release without re-enabling IRQs even if they were on before acquire.
 	void releaseNoIrqs();
 
+	// Transfer IRQ ownership to another lock to handle nested lock scenarios
+	void giveOwnershipOfLocalIrqsTo(MultipleReaderLock *targetLock);
+	void giveOwnershipOfLocalIrqsTo(uarch_t *targetFlags);
+
 #ifdef ARCH_HAS_ATOMIC_WAITLOCK_PRIMITIVE
 };
 #else
