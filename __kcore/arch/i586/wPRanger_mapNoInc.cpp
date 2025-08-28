@@ -196,11 +196,11 @@ out:
 #endif
 
 	// Release both locks.
-	vaddrSpace->level0Accessor.lock.release();
 	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
 
+	vaddrSpace->level0Accessor.lock.release();
 	return ret;
 }
 

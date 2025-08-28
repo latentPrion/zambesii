@@ -223,10 +223,11 @@ void walkerPageRanger::remapInc(
 	tlbControl::flushEntryRange(vaddr, nPages);
 #endif
 
-	vaddrSpace->level0Accessor.lock.release();
 	cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()->parent
 		->getVaddrSpaceStream()->vaddrSpace
 		.level0Accessor.lock.release();
+
+	vaddrSpace->level0Accessor.lock.release();
 
 	/*	FIXME:
 	 * Insert code here to propagate possible changes to the kernel
