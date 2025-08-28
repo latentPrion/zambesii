@@ -6,7 +6,7 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/deadlock.h>
-
+#include <arch/debug.h>
 
 void MultipleReaderLock::dump(void)
 {
@@ -21,6 +21,19 @@ void MultipleReaderLock::dump(void)
 
 void MultipleReaderLock::readAcquire(uarch_t *_flags)
 {
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+	if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0
+		&& cpuControl::interruptsEnabled())
+	{
+		printf(FATAL"%s(%s): nLocksHeld=%d but local IRQs=%d\n",
+			name, __func__,
+			cpuTrib.getCurrentCpuStream()->nLocksHeld,
+			cpuControl::interruptsEnabled());
+
+		panic(ERROR_INVALID_STATE);
+	}
+#endif
+
 	if (cpuControl::interruptsEnabled())
 	{
 		FLAG_SET(*_flags, Lock::FLAGS_IRQS_WERE_ENABLED);
@@ -131,7 +144,27 @@ void MultipleReaderLock::readRelease(uarch_t _flags)
 #endif
 
 	// Test the flags and see whether or not to enable IRQs.
-	if (FLAG_TEST(_flags, Lock::FLAGS_IRQS_WERE_ENABLED)) {
+	if (FLAG_TEST(_flags, Lock::FLAGS_IRQS_WERE_ENABLED))
+	{
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+		if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0)
+		{
+			printf(FATAL"%s(%s): nLocksHeld=%d but we're enabling "
+				"local IRQs.\n",
+				name, __func__,
+				cpuTrib.getCurrentCpuStream()->nLocksHeld);
+
+			// Print stack trace like x8632_debug does
+			debug::sStackDescriptor currStackDesc;
+			debug::getCurrentStackInfo(&currStackDesc);
+			debug::printStackTrace(
+				debug::getBasePointer(),
+				&currStackDesc);
+
+			panic(ERROR_INVALID_STATE);
+		}
+#endif
+
 		cpuControl::enableInterrupts();
 	};
 }
@@ -145,6 +178,19 @@ void MultipleReaderLock::writeAcquire(void)
 	uarch_t nWriteTriesRemaining = calcDeadlockNWriteTries(highestCpuId);
 #endif
 	uarch_t contenderFlags = 0;
+
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+	if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0
+		&& cpuControl::interruptsEnabled())
+	{
+		printf(FATAL"%s(%s): nLocksHeld=%d but local IRQs=%d\n",
+			name, __func__,
+			cpuTrib.getCurrentCpuStream()->nLocksHeld,
+			cpuControl::interruptsEnabled());
+
+		panic(ERROR_INVALID_STATE);
+	}
+#endif
 
 	if (cpuControl::interruptsEnabled())
 	{
@@ -281,7 +327,27 @@ void MultipleReaderLock::writeRelease(void)
 	cpuTrib.getCurrentCpuStream()->nLocksHeld--;
 #endif
 
-	if (enableIrqs) {
+	if (enableIrqs)
+	{
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+		if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0)
+		{
+			printf(FATAL"%s(%s): nLocksHeld=%d but we're enabling "
+				"local IRQs.\n",
+				name, __func__,
+				cpuTrib.getCurrentCpuStream()->nLocksHeld);
+
+			// Print stack trace like x8632_debug does
+			debug::sStackDescriptor currStackDesc;
+			debug::getCurrentStackInfo(&currStackDesc);
+			debug::printStackTrace(
+				debug::getBasePointer(),
+				&currStackDesc);
+
+			panic(ERROR_INVALID_STATE);
+		}
+#endif
+
 		cpuControl::enableInterrupts();
 	};
 }
@@ -367,6 +433,14 @@ deadlock:
 	// We don't modify nLocksHeld in readReleaseWriteAcquire().
 	cpuTrib.getCurrentCpuStream()->mostRecentlyAcquiredLock = this;
 #endif
+
+	if (cpuControl::interruptsEnabled())
+	{
+		printf(FATAL"%s(%s): readReleaseWriteAcquire() called with "
+			"IRQs enabled.\n", name, __func__);
+
+		panic(ERROR_INVALID_STATE);
+	}
 
 	flags |= rwFlags;
 }
