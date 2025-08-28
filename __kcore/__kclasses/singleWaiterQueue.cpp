@@ -118,7 +118,9 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 	currThread = cpuTrib.getCurrentCpuStream()->taskStream
 		.getCurrentThread();
 
-	assert_fatal(currThread->schedState.lock.lock == 0);
+	if (!FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_CALLER_SCHEDLOCKED))
+		{ assert_fatal(currThread->schedState.lock.lock == 0); }
+
 	schedStateLock = &currThread->schedState.lock;
 	if (FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_CALLER_SCHEDLOCKED))
 		{ schedStateLock = NULL; }
@@ -149,6 +151,9 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 
 			return ERROR_UNINITIALIZED;
 		};
+
+//		if (!FLAG_TEST(flags, SINGLEWAITERQ_POP_FLAGS_CALLER_SCHEDLOCKED))
+//			{ assert_fatal(currThread->schedState.lock.lock == 0); };
 
 		MultipleReaderLock::ScopedWriteGuard	threadSchedStateGuard(
 			schedStateLock);
