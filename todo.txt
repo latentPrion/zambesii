@@ -128,3 +128,5 @@ Improvements:
   without dynamic_cast<>(). These are probably causing
   numerous bugs. We need to go through, find and fix
   all of these errors.
+* We need to implement refcounting on objects with dynamic
+  lifetimes.
