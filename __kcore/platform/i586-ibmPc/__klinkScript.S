@@ -29,6 +29,13 @@ ENTRY(_start)
 
 MEMORY
 {
+	/**	FIXME:
+	 * Update these memory region sizes to be up to date with our current
+	 * memory usage.
+	 *
+	 * Also find a way to keep these in sync with the actual kernel memory
+	 * usage.
+	 **/
 	ibmPc_lowmem_trampoline (rx)
 		: ORIGIN = x8632_IBMPC_POWERON_PADDR_BASE, LENGTH = 16K
 	ibmPc___kload_paddr (rwx)
