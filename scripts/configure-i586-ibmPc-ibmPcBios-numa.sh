@@ -20,10 +20,7 @@ then REPLACE_ARGS=$(cat <<'EOF'
     --enable-all-debug-opts
  --disable-kernel-vaddrspace-demand-paging
  --disable-heap-demand-paging
- --enable-debug-page-faults
  --disable-debug-interrupts
- --enable-debug-locked-interrupt-entry
- --enable-debug-locks
     --enable-dtrib-cisternn
 EOF
 )
