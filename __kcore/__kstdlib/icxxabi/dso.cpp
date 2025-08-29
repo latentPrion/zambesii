@@ -9,7 +9,7 @@ struct sAtexitFuncTableEntry
 {
 	void (*func)(void *);
 	void *arg, *dsoHandle;
-} atexitFuncTable[CONFIG_CXXABI_ATEXIT_MAX_NFUNCS];
+} atexitFuncTable[CONFIG_ICXXABI_ATEXIT_MAX_NFUNCS];
 
 /**	EXPLANATION:
  * Required by Itanium ABI when using -nostartfiles.
@@ -30,7 +30,7 @@ extern "C" int __cxa_atexit(
 	void *dsoHandle
 	)
 {
-	for (int i=0; i<CONFIG_CXXABI_ATEXIT_MAX_NFUNCS; i++)
+	for (int i=0; i<CONFIG_ICXXABI_ATEXIT_MAX_NFUNCS; i++)
 	{
 		if (atexitFuncTable[i].func != NULL) { continue; }
 
@@ -56,7 +56,7 @@ extern "C" void __cxa_finalize(void *dsoHandle)
 	 * **/
 	if (dsoHandle == NULL)
 	{
-		for (int i = 0; i < CONFIG_CXXABI_ATEXIT_MAX_NFUNCS; i++)
+		for (int i = 0; i < CONFIG_ICXXABI_ATEXIT_MAX_NFUNCS; i++)
 		{
 			if (atexitFuncTable[i].func == NULL) { continue; }
 
@@ -68,7 +68,7 @@ extern "C" void __cxa_finalize(void *dsoHandle)
 	}
 
 	// Call the funcs for the particular DSO.
-	for (int i = 0; i < CONFIG_CXXABI_ATEXIT_MAX_NFUNCS; i++)
+	for (int i = 0; i < CONFIG_ICXXABI_ATEXIT_MAX_NFUNCS; i++)
 	{
 		if (atexitFuncTable[i].dsoHandle != dsoHandle)
 			{ continue; }
@@ -77,7 +77,7 @@ extern "C" void __cxa_finalize(void *dsoHandle)
 
 		// To remove, bring the rest one index up using memmove.
 		int last = i;
-		while (last < CONFIG_CXXABI_ATEXIT_MAX_NFUNCS - 1
+		while (last < CONFIG_ICXXABI_ATEXIT_MAX_NFUNCS - 1
 			&& atexitFuncTable[last + 1].func != NULL)
 		{
 			last++;
