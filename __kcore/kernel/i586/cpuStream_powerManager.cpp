@@ -184,24 +184,15 @@ static void bootPowerOn_contd1(
 	AsyncResponse				myResponse;
 	const uarch_t				sipiVector =
 		calculateSipiVector();
-	
-	// Tracing control for this function
-	const bool enableTracing = false;
 
 	myResponse(response);
 
 	switch (cspm->getPowerStatus())
 	{
 	case CpuStream::PowerManager::OFF:
-		if (enableTracing) {
-printf(CC"#1#");
-		}
 		// If non-integrated LAPIC, boot failed. Else send SIPI.
 		if (cpuHasOlderNonIntegratedLapic(cspm->parent->cpuId))
 		{
-			if (enableTracing) {
-printf(CC"#2#");
-			}
 			cspm->setPowerStatus(
 				CpuStream::PowerManager::FAILED_BOOT);
 
@@ -214,9 +205,6 @@ printf(CC"#2#");
 		}
 		else
 		{
-			if (enableTracing) {
-printf(CC"#3#");
-			}
 			// Intgr. LAPIC. Send first SIPI, set timeout.
 			cspm->setPowerStatus(
 				CpuStream::PowerManager::POWERING_ON);
@@ -227,14 +215,8 @@ printf(CC"#3#");
 				x86LAPIC_IPI_SHORTDEST_NONE,
 				cspm->parent->cpuId);
 
-			if (enableTracing) {
-printf(CC"#4#");
-			}
 			if (err != ERROR_SUCCESS)
 			{
-				if (enableTracing) {
-printf(CC"#5#");
-				}
 				printf(ERROR CPUPWRMGR"%d: "
 					"bootPowerOn: SIPI1 timed out."
 					"\n", cspm->parent->cpuId);
@@ -245,9 +227,6 @@ printf(CC"#5#");
 				myResponse(err); return;
 			};
 
-			if (enableTracing) {
-printf(CC"#6#");
-			}
 			err = processTrib.__kgetStream()->timerStream
 				.createRelativeOneshotEvent(
 					sTimestamp(0, 0, 200000),
@@ -267,18 +246,12 @@ printf(CC"#6#");
 
 				myResponse(err); return;
 			};
-			if (enableTracing) {
-printf(CC"#7#");
-			}
 		}
 
 		myResponse(DONT_SEND_RESPONSE);
 		return;
 
 	case CpuStream::PowerManager::POWERING_ON:
-		if (enableTracing) {
-printf(CC"#8#");
-		}
 		// Integrated LAPIC. Send second SIPI and set timeout.
 		cspm->setPowerStatus(
 			CpuStream::PowerManager::POWERING_ON_RETRY);
@@ -287,14 +260,8 @@ printf(CC"#8#");
 			sipiVector,
 			x86LAPIC_IPI_SHORTDEST_NONE,
 			cspm->parent->cpuId);
-		if (enableTracing) {
-printf(CC"#9#");
-		}
 		if (err != ERROR_SUCCESS)
 		{
-			if (enableTracing) {
-printf(CC"#10#");
-			}
 			printf(ERROR CPUPWRMGR"%d: bootPowerOn: "
 				"SIPI2 timed out.\n",
 				cspm->parent->cpuId);
@@ -305,9 +272,6 @@ printf(CC"#10#");
 			myResponse(err); return;
 		};
 
-		if (enableTracing) {
-printf(CC"#11#");
-		}
 		err = processTrib.__kgetStream()->timerStream
 			.createRelativeOneshotEvent(
 				sTimestamp(0, 0, 200000), 0,
@@ -327,18 +291,12 @@ printf(CC"#11#");
 
 			myResponse(err); return;
 		};
-		if (enableTracing) {
-printf(CC"#12#");
-		}
 
 		myResponse(DONT_SEND_RESPONSE);
 		return;
 
 	case CpuStream::PowerManager::POWERING_ON_RETRY:
 		// Integrated LAPIC that failed to boot.
-		if (enableTracing) {
-printf(CC"#13#");
-		}
 		cspm->setPowerStatus(
 			CpuStream::PowerManager::FAILED_BOOT);
 
@@ -353,17 +311,11 @@ printf(CC"#13#");
 		printf(NOTICE CPUPWRMGR"%d: Successfully booted.\n",
 			cspm->parent->cpuId);
 
-		if (enableTracing) {
-printf(CC"#14#");
-		}
 		myResponse(ERROR_SUCCESS);
 		return;
 
 	}
 
-	if (enableTracing) {
-printf(CC"#15#");
-	}
 	myResponse(ERROR_UNKNOWN);
 }
 
