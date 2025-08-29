@@ -19,7 +19,9 @@ foo
 *.zudi-index
 *.geany
 cscope.out
-b
+/b
+/b-*
+/*-b
 
 # Autotools
 aclocal.m4
