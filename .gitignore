@@ -28,11 +28,12 @@ aclocal.m4
 autom4te.cache/
 /autotools-aux/
 configure
-config.log
-config.status
 Makefile.vars
 Makefile
 Makefile.in
 include/config.h*
 include/stamp-h*
 confdefs.h
+
+# Ignore 3rd party source we're scanning while building features
+docs/3rdParty

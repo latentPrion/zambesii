@@ -1,0 +1,9 @@
+# config-ml.in fragment for multilib support
+# This is a minimal version for freestanding libstdc++ builds
+
+# Default multilib configuration
+case "${target}" in
+  *)
+    # Default case - no special multilib configuration needed
+    ;;
+esac

@@ -1,0 +1,18 @@
+diff --git a/Makefile.am b/Makefile.am
+index 28146b0..55bed6d 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -24,11 +24,11 @@ include $(top_srcdir)/fragment.am
+ 
+ if GLIBCXX_HOSTED
+ ## Note that python must come after src.
+-  hosted_source = doc po testsuite python
++  hosted_source = 
+ endif
+ 
+ ## Keep this list sync'd with acinclude.m4:GLIBCXX_CONFIGURE.
+-SUBDIRS = include libsupc++ src $(hosted_source)
++SUBDIRS = include libsupc++ $(hosted_source)
+ 
+ ACLOCAL_AMFLAGS = -I . -I .. -I ../config
+ 

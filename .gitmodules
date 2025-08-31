@@ -1,0 +1,3 @@
+[submodule "__kcore/__kstdlib/gcclibstdcxx/libstdcxx-v3"]
+	path = __kcore/__kstdlib/gcclibstdcxx/libstdcxx-v3
+	url = ../libstdcxx-v3.git
