@@ -3,17 +3,19 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/__kcore/include",
                 "${workspaceFolder}/programs/zudi/include",
-                "${workspaceFolder}/b/include"
+                "${workspaceFolder}/__kcore/include",
+                "${workspaceFolder}/b/include",
+                "${workspaceFolder}/**"
             ],
-            "defines": [],
-            "compilerPath": "/usr/local/bin/i586-elf/bin/i586-elf-g++",
-            "cStandard": "c11",
+            "defines": [
+                "__ZAMBESII_KERNEL_SOURCE__=1"
+            ],
+            "compilerPath": "/usr/bin/i686-linux-gnu-g++",
+            "cStandard": "c99",
             "cppStandard": "c++98",
-            "intelliSenseMode": "gcc-x86",
+            "intelliSenseMode": "linux-gcc-x86",
             "browse": {
                 "path": [
                     "${workspaceFolder}",
