@@ -533,8 +533,6 @@ void __korientationMain6(MessageStream::sHeader *msgIt)
 
 	DO_OR_DIE(testobj, runTests(&tot, &succ, &fail), stat);
 	printf(NOTICE"Tests: %d total, %d succ, %d fail\n", tot, succ, fail);
-	printf(NOTICE"All is well in the universe.\n");
-//~ __kdebug.refresh();
 
 	fplainn::dma::Constraints			c;
 	fplainn::dma::constraints::Compiler		cmp;
@@ -587,6 +585,8 @@ void __korientationMain6(MessageStream::sHeader *msgIt)
 
 	sgl.dump();
 
+	printf(NOTICE"All is well in the universe.\n");
+//~ __kdebug.refresh();
 	printf(NOTICE ORIENT"Done.\n");
 /*	for (uarch_t i=0; i<msg->info.params.enumerateChildren.nDeviceIds; i++)
 	{
