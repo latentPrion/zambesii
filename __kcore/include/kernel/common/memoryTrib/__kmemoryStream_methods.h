@@ -14,5 +14,6 @@ void *__kmemoryStream_memRealloc(
 	void *oldmem, uarch_t oldNBytes, uarch_t newNBytes,
 	uarch_t flags=0);
 
-#endif
+void __kmemoryStream_memFree(void *mem);
 
+#endif

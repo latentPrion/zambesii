@@ -266,3 +266,8 @@ void *__kmemoryStream_memRealloc(
 	return processTrib.__kgetStream()->memoryStream.memRealloc(
 		oldmem, oldNBytes, newNBytes, flags);
 }
+
+void __kmemoryStream_memFree(void *mem)
+{
+	processTrib.__kgetStream()->memoryStream.memFree(mem);
+}

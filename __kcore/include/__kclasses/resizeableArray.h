@@ -32,7 +32,13 @@ public:
 	~ResizeableArray(void)
 	{
 		s.rsrc.nIndexes = 0;
-		::operator delete(s.rsrc.array);
+		if (!FLAG_TEST(flags, RESIZEABLE_ARRAY_FLAGS_NO_FAKEMAP))
+		{
+			::operator delete[](s.rsrc.array);
+		}
+		else {
+			__kmemoryStream_memFree(s.rsrc.array);
+		}
 	}
 
 public:
