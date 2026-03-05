@@ -285,7 +285,8 @@ private:
 
 			assign_scgth_block_busaddr_to_paddr(p, tmp->block_busaddr);
 
-			memoryTrib.releaseFrames(p, tmp->block_length);
+			memoryTrib.releaseFrames(
+				p, PAGING_BYTES_TO_PAGES(tmp->block_length));
 		}
 		unlock();
 	}
