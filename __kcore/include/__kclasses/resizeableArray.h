@@ -39,6 +39,27 @@ public:
 	void lock(void) { s.lock.acquire(); }
 	void unlock(void) { s.lock.release(); }
 
+	void dump(void)
+	{
+		ubit32		count=4;
+
+		s.lock.acquire();
+
+		printf(NOTICE"ResizeableArray @%p: dumping; lock @%p.\n"
+			"\tflags 0x%x, array %p, nIndexes %d.\n\t",
+			this, &s.lock,
+			flags, s.rsrc.array, s.rsrc.nIndexes);
+
+		for (uarch_t i=0; i<s.rsrc.nIndexes; i++, count--)
+		{
+			if (count == 0) { printf(CC"\n\t"); count = 4; };
+			printf(CC"[%d]@%p, ", i, &s.rsrc.array[i]);
+		};
+		printf(CC"\n");
+
+		s.lock.release();
+	}
+
 	uarch_t unlocked_getNIndexes(void)
 	{
 		return s.rsrc.nIndexes;
