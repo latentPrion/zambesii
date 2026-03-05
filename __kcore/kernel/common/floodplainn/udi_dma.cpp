@@ -242,6 +242,7 @@ void fplainn::dma::ScatterGatherList::dump(void)
 {
 	printf(NOTICE "ScGthList: %d elements, dumping:\n",
 		elements.getNIndexes());
+	elements.dump();
 
 	for (typename SGListElementArray::Iterator it=elements.begin();
 		it != elements.end(); ++it)
