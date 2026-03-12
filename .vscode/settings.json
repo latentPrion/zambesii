@@ -5,6 +5,7 @@
         "memory": "cpp",
         "cstdlib": "cpp"
     },
+    "C_Cpp.intelliSenseEngine": "disabled",
  //   "C_Cpp.errorSquiggles": "disabled",
     "terminal.integrated.env.linux": {
         "GTK_PATH": null

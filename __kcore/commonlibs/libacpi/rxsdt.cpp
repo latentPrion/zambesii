@@ -96,13 +96,15 @@ static sarch_t checksumIsValid(acpi::sSdt *sdt)
 	return (checksum == 0);
 }
 
-
-acpiR::sSrat *acpiRsdt::getNextSrat(
-	acpi::sRsdt *rsdt, void **const context, void **const handle
+static acpi::sSdt *acpi_getNextTable(
+	acpi::sRsdt *rsdt,
+	void **const context,
+	void **const handle,
+	const utf8Char *sig,
+	const utf8Char *tableName
 	)
 {
 	acpi::sSdt	*sdt;
-	acpiR::sSrat	*ret=NULL;
 
 	if (*handle == NULL) {
 		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
@@ -112,110 +114,49 @@ acpiR::sSrat *acpiRsdt::getNextSrat(
 	{
 		sdt = (acpi::sSdt *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
 
-		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_SRAT, 4) == 0)
-			&& checksumIsValid(sdt))
+		if ((strncmp8(sdt->sig, sig, 4) == 0) && checksumIsValid(sdt))
 		{
-			ret = (acpiR::sSrat *)acpi_mapTable(
+			return (acpi::sSdt *)acpi_mapTable(
 				*(paddr_t *)*handle,
 				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
 		};
 
-		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_SRAT, 4) == 0)
-			&& (!checksumIsValid(sdt)))
+		if ((strncmp8(sdt->sig, sig, 4) == 0) && (!checksumIsValid(sdt)))
 		{
-			printf(WARNING ACPIR"SRAT with invalid checksum @P "
-				"%P.\n",
-				*handle);
+			printf(WARNING ACPIR"%s with invalid checksum @P %P.\n",
+				tableName, *handle);
 		};
 
 		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
-		if (ret != NULL) {
-			return ret;
-		};
 	};
 
 	destroyContext(context);
-	return ret;
+	return NULL;
+}
+
+
+acpiR::sSrat *acpiRsdt::getNextSrat(
+	acpi::sRsdt *rsdt, void **const context, void **const handle
+	)
+{
+	return (acpiR::sSrat *)acpi_getNextTable(
+		rsdt, context, handle, ACPI_SDT_SIG_SRAT, CC"SRAT");
 }
 
 acpiR::sMadt *acpiRsdt::getNextMadt(
 	acpi::sRsdt *rsdt, void **const context, void **const handle
 	)
 {
-	acpi::sSdt	*sdt;
-	acpiR::sMadt	*ret=NULL;
-
-	if (*handle == NULL) {
-		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
-	};
-
-	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
-	{
-		sdt = (acpi::sSdt *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
-		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
-			&& checksumIsValid(sdt))
-		{
-			ret = (acpiR::sMadt *)acpi_mapTable(
-				*(paddr_t *)*handle,
-				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
-		};
-
-		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_APIC, 4) == 0)
-			&& (!checksumIsValid(sdt)))
-		{
-			printf(WARNING ACPIR"MADT with invalid checksum @P "
-				"%P.\n",
-				*handle);
-		};
-
-		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
-		if (ret != NULL) {
-			return ret;
-		};
-	};
-
-	destroyContext(context);
-	return ret;
+	return (acpiR::sMadt *)acpi_getNextTable(
+		rsdt, context, handle, ACPI_SDT_SIG_APIC, CC"MADT");
 }
 
 acpiR::sFadt *acpiRsdt::getNextFadt(
 	acpi::sRsdt *rsdt, void **const context, void **const handle
 	)
 {
-	acpi::sSdt	*sdt;
-	acpiR::sFadt	*ret=NULL;
-
-	if (*handle == NULL) {
-		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
-	};
-
-	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
-	{
-		sdt = (acpi::sSdt *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
-		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
-			&& checksumIsValid(sdt))
-		{
-			ret = (acpiR::sFadt *)acpi_mapTable(
-				*(paddr_t *)*handle,
-				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
-		};
-
-		if ((strncmp8(sdt->sig, ACPI_SDT_SIG_FACP, 4) == 0)
-			&& (!checksumIsValid(sdt)))
-		{
-			printf(WARNING ACPIR"FADT with invalid checksum @P "
-				"%P.\n",
-				*handle);
-		};
-
-		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
-		if (ret != NULL) {
-			return ret;
-		};
-	};
-
-	destroyContext(context);
-	return ret;
+	return (acpiR::sFadt *)acpi_getNextTable(
+		rsdt, context, handle, ACPI_SDT_SIG_FACP, CC"FADT");
 }
 
 #include <kernel/common/cpuTrib/cpuTrib.h>
@@ -239,4 +180,3 @@ void acpiRsdt::destroySdt(acpi::sSdt *sdt)
 		nPages);
 if (!cpuTrib.getCurrentCpuStream()->isBspCpu()) {printf(NOTICE"Destroying SDT @v %p on CPU %d.\n", sdt, cpuTrib.getCurrentCpuStream()->cpuId);};
 }
-
