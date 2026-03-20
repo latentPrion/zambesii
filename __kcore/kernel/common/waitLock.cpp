@@ -181,6 +181,8 @@ void WaitLock::giveOwnershipOfLocalIrqsTo(MultipleReaderLock *targetLock)
 	 * MRLock.release()    	// Will re-enable IRQs if they were enabled
 	 *			// before the MRLock was acquired.
 	 */
+	assert_fatal(targetLock != NULL);
+
 	// Delegate to the uarch_t* version by accessing the internal flags
 	giveOwnershipOfLocalIrqsTo(&targetLock->flags);
 }
@@ -204,6 +206,8 @@ void WaitLock::giveOwnershipOfLocalIrqsTo(uarch_t *targetFlags)
 	 *				// enabled before the MRLock was
 	 *				// acquired.
 	 */
+	assert_fatal(targetFlags != NULL);
+
 	if (FLAG_TEST(flags, Lock::FLAGS_IRQS_WERE_ENABLED))
 	{
 		// Transfer the flag from WaitLock to the local flags variable
