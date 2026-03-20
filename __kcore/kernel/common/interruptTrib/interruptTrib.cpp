@@ -14,6 +14,44 @@
 #include <kernel/common/interruptTrib/interruptEventGuards.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
+void reportLockedInterruptEntry(
+	CpuStream *cpuStream, RegisterContext *regs)
+{
+	Thread		*currentThread;
+
+	if (cpuStream->nLocksHeld == 0) { return; };
+	currentThread = cpuStream->taskStream.getCurrentThread();
+
+	printf(FATAL INTTRIB"interrupt entry: CPU %d vector %d entered "
+		"while holding %d locks.\n"
+		"\tcurrent thread: %x (%p), local IRQs: %d.\n",
+		cpuStream->cpuId, regs->vectorNo, cpuStream->nLocksHeld,
+		(currentThread != NULL) ? currentThread->getFullId() : 0,
+		currentThread, !!cpuControl::interruptsEnabled());
+
+#ifdef CONFIG_DEBUG_INTERRUPTS
+	printf("\tinterrupt nesting: total %d, sync %d, async %d, nmi %d.\n",
+		cpuStream->interruptEvent.getNestingLevel(),
+		cpuStream->syncInterruptEvent.getNestingLevel(),
+		cpuStream->asyncInterruptEvent.getNestingLevel(),
+		cpuStream->nmiEvent.getNestingLevel());
+#endif
+
+	printf(CC"\tmost recently acquired: %p",
+		cpuStream->mostRecentlyAcquiredLock);
+
+#ifdef CONFIG_DEBUG_LOCKS
+	printf(CC", name: %s.\n",
+		(cpuStream->mostRecentlyAcquiredLock != NULL)
+			? cpuStream->mostRecentlyAcquiredLock->name
+			: CC"NULL");
+#else
+	printf(CC".\n");
+#endif
+}
+#endif
+
 
 InterruptTrib::InterruptTrib(void)
 :
@@ -725,4 +763,3 @@ void InterruptTrib::dumpIrqPins(void)
 			curr.cursor, tmp->isrList.getNItems());
 	};
 }
-

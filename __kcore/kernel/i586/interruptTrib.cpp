@@ -9,6 +9,10 @@
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/interruptTrib/interruptTrib.h>
 
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
+extern void reportLockedInterruptEntry(
+	CpuStream *cpuStream, RegisterContext *regs);
+#endif
 
 void interruptTrib_interruptEntry(RegisterContext *regs)
 {
@@ -32,18 +36,7 @@ void interruptTrib_interruptEntry(RegisterContext *regs)
 #endif
 
 #ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
-	if (cpuStream->nLocksHeld > 0)
-	{
-		printf(FATAL INTTRIB"interruptEntry: CPU %d "
-			"holds %d locks. This should never happen.\n"
-			"\tmost recently acquired: %p, name: %s.\n",
-			cpuStream->cpuId, cpuStream->nLocksHeld,
-			cpuStream->mostRecentlyAcquiredLock,
-			(cpuStream->mostRecentlyAcquiredLock)
-				? cpuStream->mostRecentlyAcquiredLock->name
-				: CC"NULL");
-		//panic(ERROR_INVALID_STATE);
-	};
+	reportLockedInterruptEntry(cpuStream, regs);
 #endif
 
 	/**	EXPLANATION:
@@ -70,6 +63,9 @@ void interruptTrib_interruptEntry(RegisterContext *regs)
 		goto out;
 	};
 
+	/* TODO: If NMIs ever get their own dispatch path, decide whether the
+	 * locked-entry detector should gain dedicated NMI handling too.
+	 */
 	interruptTrib.exceptionMain(regs);
 
 out:
@@ -135,4 +131,3 @@ void InterruptTrib::installExceptionRoutines(void)
 		installException(i, __kexceptionTable[19], 0);
 	};
 }
-

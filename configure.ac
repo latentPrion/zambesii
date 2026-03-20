@@ -350,7 +350,7 @@ AC_CONFIG_COMMANDS_POST(
         (Scheduler:${enable_debug_scheduler})
         (Interrupts:${enable_debug_interrupts})
         (Page faults:${enable_debug_page_faults})
-        (Lock exceptions:${enable_debug_lock_exceptions})
+        (Locked interrupt entry:${enable_debug_locked_interrupt_entry})
         (Schedstate unblocks:${enable_debug_schedstate_unblocks})]
     ))
     AC_MSG_NOTICE(m4_normalize(
