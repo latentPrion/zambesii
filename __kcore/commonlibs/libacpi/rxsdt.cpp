@@ -96,67 +96,93 @@ static sarch_t checksumIsValid(acpi::sSdt *sdt)
 	return (checksum == 0);
 }
 
-static acpi::sSdt *acpi_getNextTable(
-	acpi::sRsdt *rsdt,
-	void **const context,
-	void **const handle,
-	const utf8Char *sig,
-	const utf8Char *tableName
-	)
+namespace
 {
-	acpi::sSdt	*sdt;
-
-	if (*handle == NULL) {
-		*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
-	};
-
-	for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
+	struct sSdtTypeInfo
 	{
-		sdt = (acpi::sSdt *)acpi_tmpMapSdt(context, *(paddr_t *)*handle);
-
-		if ((strncmp8(sdt->sig, sig, 4) == 0) && checksumIsValid(sdt))
-		{
-			return (acpi::sSdt *)acpi_mapTable(
-				*(paddr_t *)*handle,
-				PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
-		};
-
-		if ((strncmp8(sdt->sig, sig, 4) == 0) && (!checksumIsValid(sdt)))
-		{
-			printf(WARNING ACPIR"%s with invalid checksum @P %P.\n",
-				tableName, *handle);
-		};
-
-		*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
+		const utf8Char	*sig;
+		const char	*name;
 	};
 
-	destroyContext(context);
-	return NULL;
-}
+	static void *getNextSdtOfType(
+		acpi::sRsdt *rsdt, void **const context, void **const handle,
+		const sSdtTypeInfo &requestedType)
+	{
+		acpi::sSdt	*sdt;
+		void		*ret=NULL;
 
+		if (*handle == NULL) {
+			*handle = ACPI_TABLE_GET_FIRST_ENTRY(rsdt);
+		};
+
+		for (; *handle < ACPI_TABLE_GET_ENDADDR(rsdt); )
+		{
+			sdt = static_cast<acpi::sSdt *>(
+				acpi_tmpMapSdt(context, *(paddr_t *)*handle));
+			if (strncmp8(sdt->sig, requestedType.sig, 4) == 0)
+			{
+				if (checksumIsValid(sdt))
+				{
+					ret = acpi_mapTable(
+						*(paddr_t *)*handle,
+						PAGING_BYTES_TO_PAGES(sdt->tableLength) + 1);
+				}
+				else
+				{
+					printf(WARNING ACPIR"%s with invalid checksum "
+						"@P %P.\n",
+						requestedType.name, *handle);
+				};
+			};
+
+			*handle = reinterpret_cast<void *>( (uarch_t)*handle + 4 );
+			if (ret != NULL) {
+				return ret;
+			};
+		};
+
+		acpiRsdt::destroyContext(context);
+		return ret;
+	}
+}
 
 acpiR::sSrat *acpiRsdt::getNextSrat(
 	acpi::sRsdt *rsdt, void **const context, void **const handle
 	)
 {
-	return (acpiR::sSrat *)acpi_getNextTable(
-		rsdt, context, handle, ACPI_SDT_SIG_SRAT, CC"SRAT");
+	static const sSdtTypeInfo	sratType = {
+		ACPI_SDT_SIG_SRAT,
+		"SRAT"
+	};
+
+	return static_cast<acpiR::sSrat *>(
+		getNextSdtOfType(rsdt, context, handle, sratType));
 }
 
 acpiR::sMadt *acpiRsdt::getNextMadt(
 	acpi::sRsdt *rsdt, void **const context, void **const handle
 	)
 {
-	return (acpiR::sMadt *)acpi_getNextTable(
-		rsdt, context, handle, ACPI_SDT_SIG_APIC, CC"MADT");
+	static const sSdtTypeInfo	madtType = {
+		ACPI_SDT_SIG_APIC,
+		"MADT"
+	};
+
+	return static_cast<acpiR::sMadt *>(
+		getNextSdtOfType(rsdt, context, handle, madtType));
 }
 
 acpiR::sFadt *acpiRsdt::getNextFadt(
 	acpi::sRsdt *rsdt, void **const context, void **const handle
 	)
 {
-	return (acpiR::sFadt *)acpi_getNextTable(
-		rsdt, context, handle, ACPI_SDT_SIG_FACP, CC"FADT");
+	static const sSdtTypeInfo	fadtType = {
+		ACPI_SDT_SIG_FACP,
+		"FADT"
+	};
+
+	return static_cast<acpiR::sFadt *>(
+		getNextSdtOfType(rsdt, context, handle, fadtType));
 }
 
 #include <kernel/common/cpuTrib/cpuTrib.h>
