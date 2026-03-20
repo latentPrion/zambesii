@@ -43,7 +43,7 @@ void WaitLock::acquire(void)
 #if __SCALING__ >= SCALING_SMP
 	ARCH_ATOMIC_WAITLOCK_HEADER(&lock, 1, 0)
 	{
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 		// Re-enable interrupts while we spin if they were enabled before
 		if (FLAG_TEST(contenderFlags, Lock::FLAGS_IRQS_WERE_ENABLED))
 			{ cpuControl::enableInterrupts(); }
@@ -51,7 +51,7 @@ void WaitLock::acquire(void)
 		// Relax the CPU
 		cpuControl::subZero();
 
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 		// Disable interrupts again before next attempt
 		cpuControl::disableInterrupts();
 #endif

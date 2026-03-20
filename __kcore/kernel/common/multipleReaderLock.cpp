@@ -65,13 +65,13 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 			 * pause
 			 */
 			atomicAsm::decrement(&lock);
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 			// Re-enable interrupts while we spin if they were enabled before
 			if (FLAG_TEST(*_flags, Lock::FLAGS_IRQS_WERE_ENABLED))
 				{ cpuControl::enableInterrupts(); }
 #endif
 			cpuControl::subZero();
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 			cpuControl::disableInterrupts();
 #endif
 
@@ -202,13 +202,13 @@ void MultipleReaderLock::writeAcquire(void)
 	// Spin until we can set the write request bit (it was previously unset)
 	while (atomicAsm::bitTestAndSet(&lock, MR_FLAGS_WRITE_REQUEST_SHIFT) != 0)
 	{
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 		// Re-enable interrupts while we spin if they were enabled before
 		if (FLAG_TEST(contenderFlags, Lock::FLAGS_IRQS_WERE_ENABLED))
 			{ cpuControl::enableInterrupts(); }
 #endif
 		cpuControl::subZero();
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 		cpuControl::disableInterrupts();
 #endif
 
@@ -223,13 +223,13 @@ void MultipleReaderLock::writeAcquire(void)
 	while ((atomicAsm::read<uarch_t>(&lock)
 		& ((1 << Lock::FLAGS_ENUM_START) - 1)) != 0)
 	{
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 		// Re-enable interrupts while we spin if they were enabled before
 		if (FLAG_TEST(contenderFlags, Lock::FLAGS_IRQS_WERE_ENABLED))
 			{ cpuControl::enableInterrupts(); }
 #endif
 		cpuControl::subZero();
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 		cpuControl::disableInterrupts();
 #endif
 
@@ -444,4 +444,3 @@ deadlock:
 
 	flags |= rwFlags;
 }
-

@@ -51,10 +51,10 @@ to wake on multiple queues without missing wakeups, and potentially also without
 being unblocked superfluously.
 
 When we implemented this, we got deadlocks on the WaitLock inside of the Heap.
-We investigated and found that when CONFIG_RT_KERNEL_IRQS is enabled, then we
+We investigated and found that when CONFIG_RT_SYNC_INT_IRQS is enabled, then we
 could have a situation where the heap lock was acquired, and then a #PF
 exception occured while the lock was still held. Then, within that #PF, an
-IRQ could arrive (because of CONFIG_RT_KERNEL_IRQS). Within that IRQ, an ISR
+IRQ could arrive (because of CONFIG_RT_SYNC_INT_IRQS). Within that IRQ, an ISR
 (e.g: i8254pit::isr) could alloc memory from the heap (for example: to add a
 timer timeout event message to a timer device's event queue). This heap
 allocation would then re-enter the heap and then deadlock.
@@ -62,11 +62,11 @@ allocation would then re-enter the heap and then deadlock.
   * Disable kernel heap demand paging.
   * Disable kernel vaddrspace demand paging.
   * Maintain demand paging but make it mutually exclusive with
-    CONFIG_RT_KERNEL_IRQS.
+    CONFIG_RT_SYNC_INT_IRQS.
   * Try to see if it's possible to maintain the invariant that the MM must never
     fault.
 
 Additionally, we also implemented minor extra features such as
-* CONFIG_RT_KERNEL_IRQS.
-* CONFIG_RT_KERNEL_IRQ_NESTING.
+* CONFIG_RT_SYNC_INT_IRQS.
+* CONFIG_RT_SYNC_INT_IRQ_NESTING.
 * New locking ScopedGuard classes that auto-acquire and auto-release locks.

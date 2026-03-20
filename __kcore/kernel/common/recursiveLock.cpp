@@ -100,7 +100,7 @@ void RecursiveLock::acquire(void)
 		/* If we get here, someone else owns the lock
 		 * Re-enable interrupts while we spin
 		 * */
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 		if (irqsWereEnabled)
 			{ cpuControl::enableInterrupts(); }
 #endif
@@ -108,7 +108,7 @@ void RecursiveLock::acquire(void)
 		// Relax the CPU.
 		cpuControl::subZero();
 
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 		// Disable interrupts again before next attempt
 		cpuControl::disableInterrupts();
 #endif

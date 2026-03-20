@@ -118,7 +118,7 @@ void InterruptTrib::msiIrqMain(RegisterContext *regs)
 
 	// First get the IRQ metadata, then enable interrupts.
 
-#ifdef CONFIG_RT_KERNEL_IRQ_NESTING
+#ifdef CONFIG_RT_SYNC_INT_IRQ_NESTING
 	/* See comments in pinIrqMain() for more details about why
 	 * we must enable interrupts *after* calling enterIrq().
 	 **/
@@ -145,7 +145,7 @@ void InterruptTrib::pinIrqMain(RegisterContext *regs)
 		regs->vectorNo,
 		&__kpin, &triggerMode);
 
-#ifdef CONFIG_RT_KERNEL_IRQ_NESTING
+#ifdef CONFIG_RT_SYNC_INT_IRQ_NESTING
 	/* Only enable *after* calling enterIrq(), *and* calling
 	 * identifyActiveIrq().
 	 *

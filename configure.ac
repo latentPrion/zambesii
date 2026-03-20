@@ -341,8 +341,8 @@ AC_CONFIG_COMMANDS_POST(
     ))
     AC_MSG_NOTICE(m4_normalize(
         [Realtime options:
-        (Kernel IRQs:${enable_rt_kernel_irqs})
-        (IRQ nesting:${enable_rt_kernel_irq_nesting})]
+        (Sync-int IRQs:${enable_rt_sync_int_irqs})
+        (Sync-int IRQ nesting:${enable_rt_sync_int_irq_nesting})]
     ))
     AC_MSG_NOTICE(m4_normalize(
         [Debugging options:

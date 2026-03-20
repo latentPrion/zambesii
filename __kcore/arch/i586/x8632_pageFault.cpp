@@ -103,7 +103,7 @@ status_t x8632_page_fault(RegisterContext *regs, ubit8)
 	vaddrSpaceStream = currThread->parent->getVaddrSpaceStream();
 	faultAddr = getCr2();
 
-#ifdef CONFIG_RT_KERNEL_IRQS
+#ifdef CONFIG_RT_SYNC_INT_IRQS
 	LocalInterruptSignalGuard localInterruptGuard(
 		cpuTrib.getCurrentCpuStream()->isReadyForIrqs());
 #endif
