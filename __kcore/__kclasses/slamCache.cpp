@@ -154,7 +154,7 @@ status_t SlamCache::flush(void)
 void *SlamCache::allocate(uarch_t flags, ubit8 *requiredNewPage)
 {
 	void			*ret;
-	sObject			*tmp=NULL;
+	sObject			*tmp=NULL, *newTail=NULL;
 	sarch_t			localFlush;
 
 	localFlush = FLAG_TEST(flags, SLAMCACHE_ALLOC_LOCAL_FLUSH_ONLY);
@@ -162,49 +162,64 @@ void *SlamCache::allocate(uarch_t flags, ubit8 *requiredNewPage)
 	partialList.lock.acquire();
 
 	ret = partialList.rsrc;
-	if (ret == NULL)
+	if (ret != NULL)
 	{
-		freeList.lock.acquire();
-
-		if (freeList.rsrc != NULL)
-		{
-			tmp = freeList.rsrc;
-			freeList.rsrc = freeList.rsrc->next;
-		};
-
-		freeList.lock.release();
-
-		if (tmp == NULL)
-		{
-			if (requiredNewPage != NULL) {
-				*requiredNewPage = 1;
-			};
-
-			tmp = new (getNewPage(localFlush)) sObject;
-
-			if (tmp == NULL)
-			{
-				partialList.lock.release();
-				return NULL;
-			};
-		};
-
-		partialList.rsrc = tmp;
-
-		// Break up the new block from the free list.
-		for (uarch_t i=perPageBlocks-1; i>0; i--)
-		{
-			tmp->next = reinterpret_cast<sObject *>(
-				(uintptr_t)tmp + this->sObjectize );
-
-			tmp = tmp->next;
-		};
-		tmp->next = NULL;
+		partialList.rsrc = partialList.rsrc->next;
+		partialList.lock.release();
+		return ret;
 	};
 
-	ret = partialList.rsrc;
-	partialList.rsrc = partialList.rsrc->next;
 	partialList.lock.release();
+
+	freeList.lock.acquire();
+
+	if (freeList.rsrc != NULL)
+	{
+		tmp = freeList.rsrc;
+		freeList.rsrc = freeList.rsrc->next;
+	};
+
+	freeList.lock.release();
+
+	if (tmp == NULL)
+	{
+		/* Don't hold the partial list lock across page allocation:
+		 * refills can fault and trigger TLB work.
+		 */
+		tmp = new (getNewPage(localFlush)) sObject;
+
+		if (tmp == NULL) {
+			return NULL;
+		};
+
+		if (requiredNewPage != NULL) {
+			*requiredNewPage = 1;
+		};
+	};
+
+	newTail = tmp;
+
+	// Break up the new block from the free list.
+	for (uarch_t i=perPageBlocks-1; i>0; i--)
+	{
+		newTail->next = reinterpret_cast<sObject *>(
+			(uintptr_t)newTail + this->sObjectize );
+
+		newTail = newTail->next;
+	};
+	newTail->next = NULL;
+
+	ret = tmp;
+	tmp = tmp->next;
+
+	partialList.lock.acquire();
+	if (tmp != NULL)
+	{
+		newTail->next = partialList.rsrc;
+		partialList.rsrc = tmp;
+	};
+	partialList.lock.release();
+
 	return ret;
 }
 
@@ -221,4 +236,3 @@ void SlamCache::free(void *obj)
 
 	partialList.lock.release();
 }
-
