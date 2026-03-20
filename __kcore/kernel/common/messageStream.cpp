@@ -465,7 +465,8 @@ error_t MessageStream::pull(
 		MultipleReaderLock::ScopedWriteGuard schedStateGuard(
 			schedStateLock);
 
-		state.lock.giveOwnershipOfLocalIrqsTo(schedStateLock);
+		if (schedStateLock != NULL)
+			{ state.lock.giveOwnershipOfLocalIrqsTo(schedStateLock); }
 
 		for (ubit16 i=0; i<MSGSTREAM_SUBSYSTEM_MAXVAL + 1; i++)
 		{
@@ -676,4 +677,3 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	taskTrib.unblock(parent, &threadSchedStateGuard);
 	return ERROR_SUCCESS;
 }
-

@@ -158,7 +158,8 @@ error_t SingleWaiterQueue::pop(void **item, uarch_t flags)
 		MultipleReaderLock::ScopedWriteGuard	threadSchedStateGuard(
 			schedStateLock);
 
-		state.lock.giveOwnershipOfLocalIrqsTo(schedStateLock);
+		if (schedStateLock != NULL)
+			{ state.lock.giveOwnershipOfLocalIrqsTo(schedStateLock); }
 
 		*item = HeapDoubleList<void>::popFromHead(
 			PTRDBLLIST_OP_FLAGS_UNLOCKED);
@@ -196,4 +197,3 @@ error_t SingleWaiterQueue::setWaitingThread(Thread *newThread)
 	state.rsrc.thread = newThread;
 	return ERROR_SUCCESS;
 }
-
