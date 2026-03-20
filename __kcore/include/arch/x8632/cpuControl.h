@@ -41,12 +41,12 @@ inline void cpuControl::subZero(void)
 
 inline void cpuControl::enableInterrupts(void)
 {
-	asm volatile ("sti\n\t");
+	asm volatile ("sti\n\t" ::: "memory");
 }
 
 inline void cpuControl::disableInterrupts(void)
 {
-	asm volatile ("cli\n\t");
+	asm volatile ("cli\n\t" ::: "memory");
 }
 
 inline void cpuControl::safeEnableInterrupts(uarch_t f)
@@ -59,7 +59,8 @@ inline void cpuControl::safeEnableInterrupts(uarch_t f)
 		popfl \n\t \
 		popl	%%eax \n\t"
 		:
-		: "r" (f));
+		: "r" (f)
+		: "memory");
 }
 
 inline void cpuControl::safeDisableInterrupts(uarch_t *f)
@@ -93,4 +94,3 @@ inline sarch_t cpuControl::interruptsEnabled(void)
 }
 
 #endif
-
