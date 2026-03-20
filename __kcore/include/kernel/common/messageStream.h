@@ -279,9 +279,9 @@ public:
 	 * a case, you would want the other messages that arrive to be
 	 * processed while you block() waiting for your specific message.
 	 *
-	 *	XXX:
-	 * This function makes the "filter" parameter to "pull()" a
-	 * obsolete since we can do the filtering using this mechanism.
+	 * If "filter" is non-NULL, messages are still pulled broadly so that
+	 * unrelated work can be dispatched, but the loop will return to the
+	 * caller as soon as a pulled message matches the filter.
 	 **/
 	typedef sbit8 (DispatchFn)(MessageStream::sHeader *msg);
 
@@ -405,4 +405,3 @@ private:
 };
 
 #endif
-

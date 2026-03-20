@@ -554,13 +554,18 @@ error_t MessageStream::pullAndDispatchUntil(
 	
 	for (;FOREVER;)
 	{
-		ret = pull(message, flags, filter);
+		ret = pull(message, flags, NULL);
 		if (ret != ERROR_SUCCESS)
 		{
 			printf(ERROR MSGSTREAM"%d: pullAndDispatchUntil: "
 				"pull() returned %d.\n",
 				parent->getFullId(), ret);
 			return ret;
+		}
+
+		if (filter != NULL && filter->compare(*message))
+		{
+			return ERROR_SUCCESS;
 		}
 
 		if (dispatchFn(*message) != 0)
