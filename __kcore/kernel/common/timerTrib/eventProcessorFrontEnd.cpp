@@ -4,29 +4,49 @@
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/zasyncStream.h>
 #include <kernel/common/process.h>
+#include <__kthreads/__korientation.h>
 
+
+namespace {
+
+static sbit8 waitForResponse_syncDispatcher(MessageStream::sHeader *msg)
+{
+	__korientationMainDispatchOne(msg);
+	return 0;
+}
+
+}
 
 static error_t waitForResponse(
-	MessageStreamCb *callerCb, const char *operation
+	MessageStreamCb *callerCb,
+	TimerTrib::sEventProcessor::sControlMsg::commandE expectedCommand,
+	const char *operation
 	)
 {
 	error_t ret;
 	MessageStream::sHeader *msg = NULL;
 	MessageStream::Filter filter(
-		0, 0, 0, 0, 0, callerCb,
-		MessageStream::Filter::FLAG_PRIVATE_DATA);
+		0,
+		MSGSTREAM_SUBSYSTEM_TIMERTRIB_EVENT_PROCESSOR,
+		expectedCommand, 0, 0, callerCb,
+		MessageStream::Filter::FLAG_SUBSYSTEM
+		| MessageStream::Filter::FLAG_FUNCTION
+		| MessageStream::Filter::FLAG_PRIVATE_DATA);
 
-	// Block until the event processor thread has processed the message.
 	ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->messageStream.pull(&msg, 0, &filter);
-
+		->messageStream.pullAndDispatchUntil(
+			&msg, 0, &filter, &waitForResponse_syncDispatcher);
 	if (ret != ERROR_SUCCESS)
 	{
 		printf(ERROR TIMERTRIB"%s: "
-			"Failed to pull message (ret=%d).\n", operation, ret);
+			"Failed to pullAndDispatchUntil (ret=%d).\n",
+			operation, ret);
+		return ret;
 	}
 
-	return msg->error;
+	ret = msg->error;
+	delete msg;
+	return ret;
 }
 
 error_t TimerTrib::sEventProcessor::sendShutdownMessage(
@@ -56,7 +76,8 @@ error_t TimerTrib::sEventProcessor::sendShutdownMessage(
 
 	if (!doSynchronously) { return ret; }
 
-	return waitForResponse(callerCb, "shutdownMessage");
+	return waitForResponse(
+		callerCb, sControlMsg::EXIT_THREAD, "shutdownMessage");
 }
 
 error_t TimerTrib::sEventProcessor::enableWaitingOnQueue(
@@ -90,7 +111,9 @@ error_t TimerTrib::sEventProcessor::enableWaitingOnQueue(
 
 	if (!doSynchronously) { return ret; }
 
-	return waitForResponse(callerCb, "enableWaitingOnQueue");
+	return waitForResponse(
+		callerCb, sControlMsg::QUEUE_LATCHED,
+		"enableWaitingOnQueue");
 }
 
 error_t TimerTrib::sEventProcessor::disableWaitingOnQueue(
@@ -124,7 +147,9 @@ error_t TimerTrib::sEventProcessor::disableWaitingOnQueue(
 
 	if (!doSynchronously) { return ret; }
 
-	return waitForResponse(callerCb, "disableWaitingOnQueue");
+	return waitForResponse(
+		callerCb, sControlMsg::QUEUE_UNLATCHED,
+		"disableWaitingOnQueue");
 }
 
 void TimerTrib::sendQMessage(void)

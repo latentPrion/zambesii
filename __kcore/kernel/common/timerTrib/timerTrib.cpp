@@ -12,7 +12,18 @@
 #include <kernel/common/taskTrib/taskTrib.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
 #include <kernel/common/zasyncStream.h>
+#include <__kthreads/__korientation.h>
 
+
+namespace {
+
+static sbit8 initialize_syncDispatcher(MessageStream::sHeader *msg)
+{
+	__korientationMainDispatchOne(msg);
+	return 0;
+}
+
+}
 
 TimerTrib::TimerTrib(void)
 :
@@ -332,22 +343,35 @@ printf(FATAL TIMERTRIB"initialize: DQer thread ID is %x.\n",
 
 	MessageStream::sHeader		*threadAckMsg=NULL;
 	MessageStream::Filter		filter(
-		0, 0, 0, 0, 0, &dummySym,
-		MessageStream::Filter::FLAG_PRIVATE_DATA);
+		0, MSGSTREAM_SUBSYSTEM_TASKTRIB, TASKTRIB_SPAWNTHREAD_ACK,
+		0, 0, &dummySym,
+		MessageStream::Filter::FLAG_SUBSYSTEM
+		| MessageStream::Filter::FLAG_FUNCTION
+		| MessageStream::Filter::FLAG_PRIVATE_DATA);
 
-	// Block until the event processor thread sends an ACK msg.
+	// Async-bridge until the event processor thread sends an ACK msg.
 	ret = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread()
-		->messageStream.pull(
-			&threadAckMsg, 0, &filter);
+		->messageStream.pullAndDispatchUntil(
+			&threadAckMsg, 0, &filter, &initialize_syncDispatcher);
+	if (ret != ERROR_SUCCESS)
+	{
+		printf(ERROR TIMERTRIB"initialize: "
+			"Failed to pullAndDispatchUntil (ret=%d).\n", ret);
+		return ret;
+	}
 
-	if (ret != ERROR_SUCCESS || threadAckMsg->error != ERROR_SUCCESS)
+	if (threadAckMsg->error != ERROR_SUCCESS)
 	{
 		printf(ERROR TIMERTRIB"initialize: Event processor "
 			"thread failed to initialize: "
 			"ACK'd with error %d.\n", threadAckMsg->error);
 
-		return threadAckMsg->error;
+		ret = threadAckMsg->error;
+		delete threadAckMsg;
+		return ret;
 	};
+
+	delete threadAckMsg;
 
 	// Initialize the kernel Timer Stream.
 	initializeAllQueuesReq();
@@ -581,4 +605,3 @@ void TimerTrib::unregisterWatchdogIsr(void)
 		return;
 	};
 }
-
