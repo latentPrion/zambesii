@@ -194,8 +194,6 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 				panic();
 			}
 
-printf(NOTICE i8254"isr: Posting SMP mode switch message to BSP "
-	"power thread.\n");
 			err = thread->messageStream.postUserQMessage(
 				device->i8254State.smpModeSwitchThread,
 				0, 0,

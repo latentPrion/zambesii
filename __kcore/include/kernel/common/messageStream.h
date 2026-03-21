@@ -302,16 +302,17 @@ public:
 	 * Enqueues a message with a subsystem-ID of
 	 * MSGSTREAM_USERQ(userQueueId).
 	 *
-	 * Can only be used between threads that share the same processId.
-	 * This also applies to __KPROCESSID and CPU_PROCESSID. CPU Power
-	 * threads can't send messages to kernel threads and vice versa.
+	 * By default, sender and target must share the same process. One
+	 * exception: posting between __KPROCESSID and CPU_PROCESSID is
+	 * allowed in either direction. All other cross-process posting
+	 * returns ERROR_UNAUTHORIZED.
 	 *
-	 * To send messages to threads in a different process, use
-	 * ZAsyncStream.
+	 * To send messages to threads in other processes (outside that
+	 * exception), use ZAsyncStream.
 	 *
-	 * This is useful for sending messages among kernel
-	 * threads without needing to go through the connection-oriented
-	 * setup burden that's imposed by ZAsyncStream connections.
+	 * This is useful for sending messages among kernel threads and
+	 * between kernel and CPU power threads without needing the
+	 * connection-oriented setup imposed by ZAsyncStream.
 	 *
 	 * It allows threads to act as servers without needing to set
 	 * up formal subsystem-specific MessageStream queues.

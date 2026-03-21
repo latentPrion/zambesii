@@ -590,16 +590,23 @@ error_t MessageStream::postUserQMessage(
 		{ return ERROR_LIMIT_OVERFLOWED; };
 
 	/**	NOTE:
-	 * I thought about removing this restriction when we made CPUs have
-	 * their own threads, but then CPUs shouldn't be using the postUserQMessage()
-	 * facility to post messages to kernel threads, and vice-versa.
-	 *
-	 * postUserQMessage() when used by kernel threads should be used to post
-	 * messages between *related* groups of kernel threads. CPUs should only
-	 * use postUserQMessage() to post messages to *other* CPUs.
+	 * Cross-process posting is restricted. By default, sender and target
+	 * must share the same process. One exception: posting between
+	 * __KPROCESSID and CPU_PROCESSID is allowed in either direction
+	 * (kernel threads and CPU power threads may exchange user-queue
+	 * messages). All other cross-process posting returns ERROR_UNAUTHORIZED.
 	 **/
 	if (PROCID_PROCESS(tid) != PROCID_PROCESS(currTid))
-		{ return ERROR_UNAUTHORIZED; };
+	{
+		processId_t currProc = PROCID_PROCESS(currTid);
+		processId_t targetProc = PROCID_PROCESS(tid);
+		sbit8 currOk = (currProc == PROCID_PROCESS(__KPROCESSID))
+			|| (currProc == PROCID_PROCESS(CPU_PROCESSID));
+		sbit8 targetOk = (targetProc == PROCID_PROCESS(__KPROCESSID))
+			|| (targetProc == PROCID_PROCESS(CPU_PROCESSID));
+		if (!(currOk && targetOk))
+			{ return ERROR_UNAUTHORIZED; };
+	}
 
 	message = new MessageStream::sPostMsg(
 		tid, MSGSTREAM_USERQ(userQId), messageNo,
