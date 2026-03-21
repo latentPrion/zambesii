@@ -1,0 +1,77 @@
+When we thought about the question of whether we should allow demand paging in
+the kernel vaddrspace, we remembered that this question may be broader than
+just the __kvaddrspace, since drivers execute in ring0 and have their own
+vaddrspaces. I.e: does this issue more broadly encompass all processes which
+execute in ring0? So the question begins: why shouldn't we allow page faults to
+occur on pages in the __kvaddrspace?
+1. Because we could access fault-prone pages while holding a lock. This would
+cause a sync int to occur while holding a lock, which would mean that spinlocks
+could potentially leave rival contenders spin-waiting until the lock holder
+exits a page fault. This is unacceptable spin-waiting latency. That's the broad
+reason.
+2. Spinlocked "critical sections" are often used to guarantee that a particular
+sequence of I/O instructions are sent to an I/O controller within particular
+timing deadlines/constraints. I.e: the kernel spinlocks guarantee contiguous
+execution of the lock protected code. Page faults in the __kvaddrspace
+violate this guarantee that is relied upon by a lot of code.
+3. The spinlock guarantees that the code in the critical section has exclusive
+use of the CPU (other than NMI/SMI). Page faults in the __kvaddrspace also
+violate this guarantee.
+4. A third, narrower reason is that the lock which we hold during the sync int
+event could be try-acquired by the sync int event. I.e: we hold LockA; we fault
+on a fault-prone page while holding LockA; The sync int tries to re-acquire
+LockA. This is a deadlock.
+  * The rule to avoid triggering this calamity is: no lock which is acquired
+  by any sync int should ever access fault-prone memory. Notice that this widens
+  our previous scope for what parts of the kernel must never fault. We
+  previously thought that only MM metadata must never fault. Now we know that
+  no metadata which is accessed within a locked section of code __during an int
+  event__ must ever fault. The far-reaching applicability of this rule has now
+  stretched the cognitive load of knowing which metadata is accessed in a lock
+  during an int event, to the extent that this is cognitively unmanageable. This
+  newly discovered constraint has begun to tip the scales against demand paging
+  in the __kvaddrspace altogether -- and not merely against demand paging in
+  the MM metadata.
+
+Now do these two reasons for avoiding demand paging of the __kvaddrspace, also
+apply to PROCESS_EXECDOMAIN_KERNEL processes which have their own vaddrspaces?
+Like Distributaries and __kindex drivers, for example. Do they need to have
+these same guarantees for spinlocks that they implement? Or should they have to
+specifically rely upon kernel APIs to provide them those guarantees? For example
+the sequential contiguity and exclusive CPU access guarantees can be met by
+relying on the UDI PIO service which has a kernel-process execution engine. So
+__should__ we be trying to provide PROCESS_EXECDOMAIN_KERNEL code which is SAS,
+with any of these guarantees independently of the kernel APIs which provide
+them? We __could__ probably do it, but __ought__ we do so?
+1. We have no good reason to ever use spinlocks inside of ring0 SAS processes
+to serialize threads because we've invented the notion of TeQutexes
+(ThrEadQutexes), which are superior to userspace spinlocks. TeQutexes are a
+lockless thread serialization mechanism that uses posted IPC messages to resume
+a thread when a lock is free. Spinlocks are needed only for serializing access
+to the kernel's MessageStream. All other thread serialization can be done via
+tequtexes. All continuation serialization can be done via ConQutexes; and all
+coroutine serialization can be done via CoQutexes.
+2. Dtribs/__kidx drivers should indeed rely on the appropriate kernel APIs to
+provide them with instruction execution contiguity guarantees. There's no good
+reason why we ought not be able to demand page SAS drivers' vaddrspaces. Now, in
+practice we are likely to choose not to, because driver should have maximal
+performance but conceptually there's no reason we shouldn't be able to if we so
+choose.
+Also, the fact that they execute in PROCESS_EXECDOMAIN_KERNEL means they won't
+even need to syscall or cross the privilege barrier. They can be linked directly
+against the kernel's binary and execute its APIs directly as function calls. So
+there's no performance loss for using the kernel APIs. Hence there's no argument
+in favour of overextending the kernel's design to enable SAS ring0 processes to
+construct their own ways of providing these guarantees.
+3. Dtribs/__kidx drivers also ought to rely on kernel APIs, command lists, etc
+to provide CPU control-exclusivity code sections. We can do this via UDI PIO.
+And again: they execute in PROCESS_EXECDOMAIN_KERNEL so they invoke kernel APIs
+as direct function calls.
+4. We should never design the kernel's int handlers to share locks with any
+entity outside of the __kvaddrspace/__kprocess. Thus, it isn't a problem for the
+kernel if a ring0 SAS process #PFs on its SAS vaddrspace memory while holding a
+spinlock.
+
+So I think we can conclude that it's safe for ring0 SAS processes
+(i.e: PROCESS_EXECDOMAIN_KERNEL, but not using __kvaddrspaceStream) to be demand
+paged.
