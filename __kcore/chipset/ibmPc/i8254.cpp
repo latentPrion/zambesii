@@ -632,5 +632,3 @@ void I8254Pit::writePeriodicIo(void)
 }
 
 /*uarch_t I8254Pit::getPrecisionDiscrepancyForPeriod(ubit32 period) { return 0; }*/
-
-
