@@ -95,14 +95,60 @@ error_t Heap::unsetGuardPage(void *vaddr)
 
 	return ERROR_SUCCESS;
 #else
-	// Just unconditionally map the page FAKEMAPPED_DYNAMIC.
-	walkerPageRanger::remapInc(
-		&memoryStream->parent->getVaddrSpaceStream()->vaddrSpace,
-		vaddr,
-		PAGESTATUS_FAKEMAPPED_DYNAMIC << PAGING_PAGESTATUS_SHIFT,
-		1,
-		// Do nothing with the flag bits.
-		0, 0);
+	status_t	expectedStatusAfterUnset;
+
+	if (options & OPT_DEMAND_PAGED)
+	{
+		/**	EXPLANATION:
+		 * When __kheap demand paging is enabled, we can undo guard
+		 * pages by just force-setting them to FAKEMAPPED_DYNAMIC, and
+		 * that will just cause the #PF handler to commit a frame to the
+		 * former guard page when it faults later on.
+		 */
+		// Just unconditionally map the page FAKEMAPPED_DYNAMIC.
+		walkerPageRanger::remapInc(
+			&memoryStream->parent->getVaddrSpaceStream()->vaddrSpace,
+			vaddr,
+			PAGESTATUS_FAKEMAPPED_DYNAMIC << PAGING_PAGESTATUS_SHIFT,
+			1,
+			// Do nothing with the flag bits.
+			0, 0);
+
+		expectedStatusAfterUnset = WPRANGER_STATUS_FAKEMAPPED_DYNAMIC;
+	}
+	else
+	{
+		/**	EXPLANATION:
+		* When __kheap demand paging is disabled, we must alloc a new
+		* frame to replace the one we freed during setGuardPage(). Why?
+		* Because when __kheap demand paging is disabled, we mustn't
+		* rely on the #PF handler to commit a frame to the former guard
+		* since there shouldn't be any #PFs on non-guard pages in the
+		* heap when demand paging is disabled.
+		*
+		* NB: __kheap demand paging is not the same as __kvaddrspace
+		* demand paging.
+		*/
+		// Alloc a new frame and then map it into the former guard page.
+		paddr_t		p;
+		status_t	status;
+
+		status = memoryTrib.fragmentedGetFrames(1, &p);
+		if (status < 1)
+		{
+			printf(ERROR HEAP"unsetGuardPage: Failed to get frame "
+				"to map into guard page %p.\n", vaddr);
+			return ERROR_MEMORY_NOMEM;
+		}
+
+		walkerPageRanger::remapInc(
+			&memoryStream->parent->getVaddrSpaceStream()->vaddrSpace,
+			vaddr,
+			p, 1,
+			WPRANGER_OP_SET_PRESENT, 0);
+
+		expectedStatusAfterUnset = WPRANGER_STATUS_BACKED;
+	}
 
 	status_t	status;
 	uarch_t		f;
@@ -113,11 +159,11 @@ error_t Heap::unsetGuardPage(void *vaddr)
 		vaddr, &p, &f);
 
 	// Verify that we unprotected the guardpage.
-	if (status != WPRANGER_STATUS_FAKEMAPPED_DYNAMIC)
+	if (status != expectedStatusAfterUnset)
 	{
 		printf(FATAL HEAP"unsetGuardPage %p: lookup didn't return "
-			"FAKE_DYN status value. Status %d.\n",
-			vaddr, status);
+			"expected status value. Status %d.\n",
+			vaddr, expectedStatusAfterUnset, status);
 
 		panic(FATAL HEAP"Failed to unprotect heap guardpage\n");
 	};
