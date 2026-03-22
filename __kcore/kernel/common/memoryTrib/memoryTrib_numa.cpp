@@ -201,7 +201,7 @@ sbit8 MemoryTrib::releaseFrames(paddr_t paddr, uarch_t nFrames)
 	{
 		printf(FATAL MEMTRIB"releaseFrames(%P, %d): Attempted to "
 			"free to non-existent mem bank %d.\n",
-			paddr, nFrames, defaultAffinity.def.rsrc);
+			&paddr, nFrames, defaultAffinity.def.rsrc);
 	};
 #endif
 
