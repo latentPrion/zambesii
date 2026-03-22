@@ -48,7 +48,9 @@ void *MemoryStream::memAlloc(uarch_t nPages, uarch_t flags)
 
 	if (FLAG_TEST(flags, MEMALLOC_LOCAL_FLUSH_ONLY)) { localFlush = 1; };
 
-	// Try alloc cache.
+	/* Try alloc cache. Cached allocs are fully backed; restore with
+	 * SET_PRESENT.
+	 */
 	if (!FLAG_TEST(flags, MEMALLOC_PURE_VIRTUAL)
 		&& (allocCache.pop(nPages, &ret) == ERROR_SUCCESS))
 	{
@@ -210,14 +212,33 @@ void MemoryStream::memFree(void *vaddr)
 		return;
 	};
 
-	if (allocCache.push(nPages, vaddr) == ERROR_SUCCESS)
+	/* Only cache fully-backed allocs. Verify every page is BACKED. */
 	{
-		walkerPageRanger::setAttributes(
-			&parent->getVaddrSpaceStream()->vaddrSpace,
-			vaddr, nPages, WPRANGER_OP_CLEAR_PRESENT, 0);
+		void		*page = vaddr;
+		uarch_t		i;
+		sbit8		allBacked = 1;
+		VaddrSpace	*vaddrSpace =
+			&parent->getVaddrSpaceStream()->vaddrSpace;
 
-		return;
-	};
+		for (i = 0; i < nPages && allBacked; i++,
+			page = (void *)((uintptr_t)page + PAGING_BASE_SIZE))
+		{
+			status = walkerPageRanger::lookup(
+				vaddrSpace, page, &paddr, &unmapFlags);
+
+			if (status != WPRANGER_STATUS_BACKED) { allBacked = 0; }
+		}
+
+		if (allBacked
+			&& allocCache.push(nPages, vaddr) == ERROR_SUCCESS)
+		{
+			walkerPageRanger::setAttributes(
+				vaddrSpace,
+				vaddr, nPages, WPRANGER_OP_CLEAR_PRESENT, 0);
+
+			return;
+		}
+	}
 
 	tracker = reinterpret_cast<uarch_t>( vaddr );
 	_nPages = nPages;
