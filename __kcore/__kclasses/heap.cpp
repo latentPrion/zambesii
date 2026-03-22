@@ -162,7 +162,7 @@ error_t Heap::unsetGuardPage(void *vaddr)
 	if (status != expectedStatusAfterUnset)
 	{
 		printf(FATAL HEAP"unsetGuardPage %p: lookup didn't return "
-			"expected status value. Status %d.\n",
+			"expected status value %d. Status %d.\n",
 			vaddr, expectedStatusAfterUnset, status);
 
 		panic(FATAL HEAP"Failed to unprotect heap guardpage\n");
