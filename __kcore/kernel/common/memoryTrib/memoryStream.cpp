@@ -229,7 +229,7 @@ void MemoryStream::memFree(void *vaddr)
 			&paddr, 1, &unmapFlags);
 
 		if (status == WPRANGER_STATUS_BACKED) {
-			memoryTribPmm::releaseFrames(paddr, nPages);
+			memoryTribPmm::releaseFrames(paddr, 1);
 		};
 	};
 
