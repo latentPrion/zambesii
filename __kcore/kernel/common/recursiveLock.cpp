@@ -35,7 +35,7 @@ void RecursiveLock::acquire(void)
 		.getCurrentThread();
 	currThreadId = thread->getFullId();
 
-#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY)
 	if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0
 		&& cpuControl::interruptsEnabled())
 	{
@@ -68,6 +68,7 @@ void RecursiveLock::acquire(void)
 			 * here btw, if the locks in question are
 			 * recursiveLocks.
 			 */
+			assert_fatal(recursionCount == 0);
 			// We acquired the lock
 			recursionCount = 1;
 #ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
@@ -156,6 +157,13 @@ void RecursiveLock::release(void)
 	 * already holds the lock. this is pretty logical. Anyone who does
 	 * otherwise is simply being malicious and stupid.
 	 **/
+#ifdef CONFIG_DEBUG_LOCKS
+	processId_t currThreadId = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->getFullId();
+
+	assert_fatal(lock != PROCID_INVALID);
+	assert_fatal(lock == currThreadId);
+#endif
 
 	recursionCount--;
 #ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
@@ -173,7 +181,7 @@ void RecursiveLock::release(void)
 		// Restore interrupts if they were enabled before
 		if (irqsWereEnabled)
 		{
-#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY)
 			if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0)
 			{
 				printf(FATAL"%s(%s): nLocksHeld=%d but we're "

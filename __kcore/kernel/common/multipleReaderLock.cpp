@@ -21,7 +21,7 @@ void MultipleReaderLock::dump(void)
 
 void MultipleReaderLock::readAcquire(uarch_t *_flags)
 {
-#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY)
 	if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0
 		&& cpuControl::interruptsEnabled())
 	{
@@ -146,7 +146,7 @@ void MultipleReaderLock::readRelease(uarch_t _flags)
 	// Test the flags and see whether or not to enable IRQs.
 	if (FLAG_TEST(_flags, Lock::FLAGS_IRQS_WERE_ENABLED))
 	{
-#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY)
 		if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0)
 		{
 			printf(FATAL"%s(%s): nLocksHeld=%d but we're enabling "
@@ -179,7 +179,7 @@ void MultipleReaderLock::writeAcquire(void)
 #endif
 	uarch_t contenderFlags = 0;
 
-#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY)
 	if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0
 		&& cpuControl::interruptsEnabled())
 	{
@@ -329,7 +329,7 @@ void MultipleReaderLock::writeRelease(void)
 
 	if (enableIrqs)
 	{
-#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY)
 		if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0)
 		{
 			printf(FATAL"%s(%s): nLocksHeld=%d but we're enabling "

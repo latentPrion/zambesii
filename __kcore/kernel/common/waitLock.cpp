@@ -21,7 +21,7 @@ void WaitLock::acquire(void)
 #endif
 	uarch_t contenderFlags=0;
 
-#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKS)
+#if __SCALING__ >= SCALING_SMP && defined(CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY)
 	if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0
 		&& cpuControl::interruptsEnabled())
 	{
@@ -111,7 +111,7 @@ void WaitLock::release(void)
 
 	if (enableIrqs)
 	{
-#ifdef CONFIG_DEBUG_LOCKS
+#ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
 		if (cpuTrib.getCurrentCpuStream()->nLocksHeld > 0)
 		{
 			printf(FATAL"%s(%s): nLocksHeld=%d but we're enabling "
