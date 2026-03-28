@@ -12,8 +12,8 @@ Our goal is to have a startup sequence like this:
 		* Kernel memory stream.
 		* Memory Tributary.
 		* Heap.
-	C++ Language environment setup, stage 2.
 	Debug Pipe.
+	C++ Language environment setup, stage 2.
 
 	Exceptions.
 	Message Queues.
