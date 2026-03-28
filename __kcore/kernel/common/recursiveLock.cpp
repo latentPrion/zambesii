@@ -80,6 +80,7 @@ void RecursiveLock::acquire(void)
 			// Only set ownerAcquisitionInstr on first acquisition.
 			ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 				__builtin_return_address(0));
+			ownerThreadId = currThreadId;
 #endif
 
 			if (irqsWereEnabled)
@@ -128,11 +129,12 @@ void RecursiveLock::acquire(void)
 			"flags: %x\n"
 			"\tcurrThreadId: %x, CPU: %d, Lock obj addr: %p,\n"
 			"\tCalling function: %p, "
-			"\tcurr ownerAcquisitionInstr: %p, local IRQs: %d\n",
+			"\tcurr ownerAcquisitionInstr: %p, ownerThreadId: %x, local IRQs: %d\n",
 			name, nTries, &lock, lock, flags, currThreadId,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
 			ownerAcquisitionInstr,
+			ownerThreadId,
 			!!cpuControl::interruptsEnabled());
 	}
 #endif
@@ -145,6 +147,9 @@ void RecursiveLock::acquire(void)
 	cpuTrib.getCurrentCpuStream()->nLocksHeld++;
 	cpuTrib.getCurrentCpuStream()
 		->mostRecentlyAcquiredLock = this;
+#endif
+#ifdef CONFIG_DEBUG_LOCKS
+	ownerThreadId = currThreadId;
 #endif
 	if (irqsWereEnabled)
 		{ FLAG_SET(flags, Lock::FLAGS_IRQS_WERE_ENABLED); }

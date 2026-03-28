@@ -4,6 +4,7 @@
 	#include <config.h>
 	#include <__kstdlib/__ktypes.h>
 	#include <__kstdlib/__kclib/string8.h>
+	#include <kernel/common/processId.h>
 
 // 10C1CO1C -> "lockOk". I'm not good with these magic numbers.
 #define LOCK_MAGIC				0x10C1C01C
@@ -80,6 +81,7 @@ public:
 		magic = LOCK_MAGIC;
 #ifdef CONFIG_DEBUG_LOCKS
 		strncpy8(name, _name, LOCK_NAME_MAX_LEN);
+		ownerThreadId = PROCID_INVALID;
 #else
 		(void)_name;
 #endif
@@ -122,6 +124,7 @@ public:
 	 * lock. I.e: tells us the place where the lock was acquired.
 	 **/
 	void			(*ownerAcquisitionInstr)(void);
+	processId_t		ownerThreadId;
 	utf8Char		name[LOCK_NAME_MAX_LEN],
 				prevOpName[LOCK_OP_NAME_MAX_LEN];
 #endif
@@ -139,6 +142,7 @@ protected:
 		magic = other.magic;
 #ifdef CONFIG_DEBUG_LOCKS
 		ownerAcquisitionInstr = other.ownerAcquisitionInstr;
+		ownerThreadId = other.ownerThreadId;
 		strncpy8(name, other.name, LOCK_NAME_MAX_LEN);
 		strncpy8(prevOpName, other.prevOpName, LOCK_OP_NAME_MAX_LEN);
 #endif

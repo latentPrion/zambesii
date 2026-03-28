@@ -4,6 +4,7 @@
 #include <__kstdlib/__kflagManipulation.h>
 #include <kernel/common/multipleReaderLock.h>
 #include <kernel/common/cpuTrib/cpuTrib.h>
+#include <kernel/common/thread.h>
 #include <kernel/common/panic.h>
 #include <kernel/common/deadlock.h>
 #include <arch/debug.h>
@@ -102,16 +103,17 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 			"\tCPU: %d, Lock obj addr: %p, \n"
 			"\tCalling function: %p\n"
 			"\tcurr ownerAcquisitionInstr: %p "
-			"local IRQs: %d\n"
+			"ownerThreadId: %x, local IRQs: %d\n"
 			"State after previous operation (op=%s):\n"
 			"\tlockval: %x, flags: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
-			"\townerAcquisitionInstr: %p.\n",
+			"\townerAcquisitionInstr: %p, ownerThreadId: %x.\n",
 			name, nReadTriesRemaining, &lock, lock, flags,
 			(writeRequestSet ? "SET" : "CLEAR"), nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
 			ownerAcquisitionInstr,
+			ownerThreadId,
 			!!cpuControl::interruptsEnabled(),
 			/* State after previous operation below*/
 			postPrevOpState.prevOpName,
@@ -119,13 +121,16 @@ void MultipleReaderLock::readAcquire(uarch_t *_flags)
 			postPrevOpState.flags,
 			(prevWriteRequestSet ? "SET" : "CLEAR"),
 			prevNReaders,
-			postPrevOpState.ownerAcquisitionInstr);
+			postPrevOpState.ownerAcquisitionInstr,
+			postPrevOpState.ownerThreadId);
 	}
 
 	postPrevOpState = *this;
 	strncpy8(postPrevOpState.prevOpName, CC __func__, LOCK_OP_NAME_MAX_LEN);
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
+	ownerThreadId = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->getFullId();
 #endif
 #endif
 #ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
@@ -253,13 +258,14 @@ deadlock:
 			"\tlock addr: %p, lock val: %x, flags: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
-			"\tcurr ownerAcquisitionInstr: %p, local IRQs: %d\n",
+			"\tcurr ownerAcquisitionInstr: %p, ownerThreadId: %x, local IRQs: %d\n",
 			name, nReadTriesRemaining, nWriteTriesRemaining,
 			&lock, lock, flags,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
 			ownerAcquisitionInstr,
+			ownerThreadId,
 			!!cpuControl::interruptsEnabled());
 	};
 
@@ -268,6 +274,8 @@ deadlock:
 	strncpy8(postPrevOpState.prevOpName, CC __func__, LOCK_OP_NAME_MAX_LEN);
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
+	ownerThreadId = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->getFullId();
 #endif
 #endif
 #ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
@@ -408,12 +416,13 @@ deadlock:
 			"\tlock addr: %p, lock val: %x, flags: %x\n"
 			"\tWrite request bit: %s, Number of readers: %d\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
-			"\tcurr ownerAcquisitionInstr: %p, local IRQs: %d\n",
+			"\tcurr ownerAcquisitionInstr: %p, ownerThreadId: %x, local IRQs: %d\n",
 			name, nWriteTriesRemaining, &lock, lock, flags,
 			writeRequestSet ? "SET" : "CLEAR", nReaders,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
 			ownerAcquisitionInstr,
+			ownerThreadId,
 			!!cpuControl::interruptsEnabled());
 	}
 
@@ -421,6 +430,8 @@ deadlock:
 	strncpy8(postPrevOpState.prevOpName, CC __func__, LOCK_OP_NAME_MAX_LEN);
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
+	ownerThreadId = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->getFullId();
 #endif
 #endif
 

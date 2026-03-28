@@ -69,16 +69,19 @@ void WaitLock::acquire(void)
 			"\tnTriesRemaining: %d, lock int addr: %p, lockval: %x "
 			"flags: %x\n"
 			"\tCPU: %d, Lock obj addr: %p, Calling function: %p, "
-			"\tcurr ownerAcquisitionInstr: %p, local IRQs: %d\n",
+			"\tcurr ownerAcquisitionInstr: %p, ownerThreadId: %x, local IRQs: %d\n",
 			name, nTries, &lock, lock, flags,
 			cpuTrib.getCurrentCpuStream()->cpuId, this,
 			__builtin_return_address(0),
 			ownerAcquisitionInstr,
+			ownerThreadId,
 			!!cpuControl::interruptsEnabled());
 	};
 
 	ownerAcquisitionInstr = reinterpret_cast<void(*)()>(
 		__builtin_return_address(0));
+	ownerThreadId = cpuTrib.getCurrentCpuStream()->taskStream
+		.getCurrentThread()->getFullId();
 #endif
 #endif
 #ifdef CONFIG_DEBUG_LOCKED_INTERRUPT_ENTRY
