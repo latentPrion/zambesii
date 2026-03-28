@@ -554,6 +554,23 @@ error_t MessageStream::pullAndDispatchUntil(
 	
 	for (;FOREVER;)
 	{
+		if (filter != NULL)
+		{
+			ubit32 probeFlags = flags | ZCALLBACK_PULL_FLAGS_DONT_BLOCK;
+			ret = pull(message, probeFlags, filter);
+			if (ret == ERROR_SUCCESS)
+			{
+				return ERROR_SUCCESS;
+			}
+			if (ret != ERROR_WOULD_BLOCK)
+			{
+				printf(ERROR MSGSTREAM"%d: pullAndDispatchUntil: "
+					"pull() returned %d.\n",
+					parent->getFullId(), ret);
+				return ret;
+			}
+		}
+
 		ret = pull(message, flags, NULL);
 		if (ret != ERROR_SUCCESS)
 		{
