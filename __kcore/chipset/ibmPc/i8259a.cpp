@@ -448,4 +448,3 @@ sarch_t I8259APic::irqIsEnabled(ubit16 __kid)
 			io::read8(PIC_PIC2_DATA), pin-8);
 	};
 }
-

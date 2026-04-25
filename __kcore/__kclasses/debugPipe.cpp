@@ -612,4 +612,3 @@ sarch_t DebugPipe::printf(
 				goto blitToBuff;
 			};
 #endif
-
