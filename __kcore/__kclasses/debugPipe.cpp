@@ -93,7 +93,8 @@ uarch_t DebugPipe::untieFrom(uarch_t device)
 				continue;
 			};
 
-			// Assume that mod exists if its bit is set.
+			if (zkcmCore.debug[i] == NULL) { continue; }
+
 			err = zkcmCore.debug[i]->shutdown();
 			if (err == ERROR_SUCCESS) {
 				FLAG_UNSET(devices.rsrc, (1<<i));
@@ -119,7 +120,7 @@ void DebugPipe::refresh(void)
 	// Clear "screen" on each device, whatever that means to that device.
 	for (ubit8 i=0; i<4; i++)
 	{
-		if (FLAG_TEST(devices.rsrc, (1<<i))) {
+		if (FLAG_TEST(devices.rsrc, (1<<i)) && zkcmCore.debug[i] != NULL) {
 			zkcmCore.debug[i]->clear();
 		};
 	};
@@ -130,7 +131,7 @@ void DebugPipe::refresh(void)
 	{
 		for (ubit8 i=0; i<4; i++)
 		{
-			if (FLAG_TEST(devices.rsrc, (1<<i))) {
+			if (FLAG_TEST(devices.rsrc, (1<<i)) && zkcmCore.debug[i] != NULL) {
 				zkcmCore.debug[i]->syphon(buff, len);
 			};
 		};
@@ -529,7 +530,7 @@ sarch_t DebugPipe::printf(const utf8Char *str, va_list args)
 
 	for (ubit8 i=0; i<4; i++)
 	{
-		if (FLAG_TEST(devices.rsrc, (1<<i))) {
+		if (FLAG_TEST(devices.rsrc, (1<<i)) && zkcmCore.debug[i] != NULL) {
 			zkcmCore.debug[i]->syphon(convBuff.rsrc, buffLen);
 		};
 	};
@@ -577,7 +578,7 @@ sarch_t DebugPipe::printf(
 
 	for (ubit8 i=0; i<4; i++)
 	{
-		if (FLAG_TEST(devices.rsrc, (1<<i)))
+		if (FLAG_TEST(devices.rsrc, (1<<i)) && zkcmCore.debug[i] != NULL)
 		{
 			zkcmCore.debug[i]->syphon(
 				static_cast<utf8Char *>( buff->rsrc ), buffLen);
