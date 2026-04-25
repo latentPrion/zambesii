@@ -103,6 +103,13 @@ void __kcpuPowerOnMain(CpuStream *cs)
 			continue;
 		}
 
+		if (iMsg == NULL)
+		{
+			printf(FATAL CPUPOWER"%d: pull() succeeded but iMsg is NULL.\n",
+				cs->cpuId);
+			continue;
+		}
+
 		printf(NOTICE CPUPOWER"%d: Pulled message from MessageStream: "
 			"Subsystem %d, function %d.\n",
 			cs->cpuId, iMsg->subsystem, iMsg->function);

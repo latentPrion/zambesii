@@ -159,7 +159,7 @@ void TimerTrib::sEventProcessor::thread(void *)
 	sControlMsg			controlMsg;
 
 	// Tracing control for this function
-	const bool enableTracing = true;
+	const bool enableTracing = false;
 
 	self = cpuTrib.getCurrentCpuStream()->taskStream.getCurrentThread();
 

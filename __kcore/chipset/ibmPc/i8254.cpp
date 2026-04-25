@@ -152,7 +152,7 @@ status_t I8254Pit::isr(ZkcmDeviceBase *self, ubit32 flags)
 	modeE		mode;
 	
 	// Tracing control for this function
-	const bool enableTracing = true;
+	const bool enableTracing = false;
 
 	/**	EXPLANATION:
 	 * 1. Check to make sure that this is not a "disabling" IRQ which is
