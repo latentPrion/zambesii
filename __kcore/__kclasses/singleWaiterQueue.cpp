@@ -62,6 +62,17 @@ error_t SingleWaiterQueue::addItem(void *item)
 		return ret;
 	};
 
+	/* If the waiter is already runnable or running, the queue item itself
+	 * is sufficient notification. Avoid a redundant unblock() call and the
+	 * resulting debug churn on hot IRQ paths.
+	 */
+	if (waitingThread->schedState.rsrc.status == Thread::RUNNABLE
+		|| waitingThread->schedState.rsrc.status == Thread::RUNNING)
+	{
+		threadSchedStateGuard.releaseManagementAndUnlock();
+		return ERROR_SUCCESS;
+	}
+
 	/**	EXPLANATION:
 	 * Atomically unblock the waiting thread with respect to this
 	 * addItem() call's queue operation.

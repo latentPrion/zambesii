@@ -694,6 +694,16 @@ error_t	MessageStream::enqueue(ubit16 queueId, MessageStream::sHeader *callback)
 	 **/
 	state.lock.release();
 
+	/* If the target thread is already runnable or running, the enqueued
+	 * message will be observed without another unblock() call.
+	 */
+	if (parent->schedState.rsrc.status == Thread::RUNNABLE
+		|| parent->schedState.rsrc.status == Thread::RUNNING)
+	{
+		threadSchedStateGuard.releaseManagementAndUnlock();
+		return ERROR_SUCCESS;
+	}
+
 	/**	EXPLANATION:
 	 * Unblock the thread atomically with respect to this enqueue() call's
 	 * queue operation.

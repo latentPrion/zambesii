@@ -31,7 +31,7 @@ void reportLockedInterruptEntry(
 		currentThread, !!cpuControl::interruptsEnabled());
 
 #ifdef CONFIG_DEBUG_INTERRUPTS
-	printf("\tinterrupt nesting: total %d, sync %d, async %d, nmi %d.\n",
+	printf(CC"\tinterrupt nesting: total %d, sync %d, async %d, nmi %d.\n",
 		cpuStream->interruptEvent.getNestingLevel(),
 		cpuStream->syncInterruptEvent.getNestingLevel(),
 		cpuStream->asyncInterruptEvent.getNestingLevel(),
