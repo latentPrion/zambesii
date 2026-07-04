@@ -3,13 +3,19 @@
 #include <chipset/zkcm/zkcmCore.h>
 #include <__kstdlib/__kclib/string.h>
 #include <__kstdlib/__kclib/string8.h>
+#include <__kstdlib/__kflagManipulation.h>
 #include <__kstdlib/__kcxxlib/new>
+#include <__kclasses/debugPipe.h>
 #include <kernel/common/panic.h>
 #include <__kthreads/__kcpuPowerOn.h>
 
 #include "zkcmIbmPcState.h"
 #include "vgaTerminal.h"
 #include "rs232.h"
+#if defined(CONFIG_FIRMWARE_IBM_PC_BIOS) && defined(CONFIG_DEBUG_PIPE_DEVICE_BIOS_PXE)
+#include <firmware/ibmPcBios/ibmPcBiosPxe.h>
+#endif
+
 
 ZkcmCore		zkcmCore(CC"IBM PC compatible", CC"Unknown");
 
@@ -20,7 +26,12 @@ ZkcmCore::ZkcmCore(utf8Char *chipsetName, utf8Char *chipsetVendor)
 
 	debug[0] = &ibmPcVgaTerminal;
 	debug[1] = &ibmPcRs2320;
-	debug[2] = debug[3] = NULL;
+#if defined(CONFIG_FIRMWARE_IBM_PC_BIOS) && defined(CONFIG_DEBUG_PIPE_DEVICE_BIOS_PXE)
+	debug[2] = &ibmPcBiosPxeDebug;
+#else
+	debug[2] = NULL;
+#endif
+	debug[3] = NULL;
 }
 
 error_t ZkcmCore::initialize(void) { return ERROR_SUCCESS; }
@@ -45,6 +56,23 @@ void ZkcmCore::chipsetEventNotification(e__kPowerEvent event, uarch_t flags)
 	{
 	case __KPOWER_EVENT___KMEMORY_STREAM_AVAIL:
 		ibmPcVgaTerminal.chipsetEventNotification(event, flags);
+#if defined(CONFIG_FIRMWARE_IBM_PC_BIOS) && defined(CONFIG_DEBUG_PIPE_DEVICE_BIOS_PXE)
+		{
+			uarch_t	devMask;
+
+			devMask = __kdebug.tieTo(DEBUGPIPE_DEVICE3);
+			if (FLAG_TEST(devMask, DEBUGPIPE_DEVICE3))
+			{
+				ibmPcBiosPxeDebug.announceSessionStart();
+				printf(NOTICE ZKCMCORE"Kernel debug output tied to "
+					"BIOS PXE device.\n");
+			}
+			else {
+				printf(WARNING ZKCMCORE"BIOS PXE debug device not "
+					"available.\n");
+			}
+		}
+#endif
 		break;
 
 	case __KPOWER_EVENT_HEAP_AVAIL:
