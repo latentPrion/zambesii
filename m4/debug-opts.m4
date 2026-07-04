@@ -65,3 +65,7 @@ AX_ZBZ_DEBUG_ARG_ENABLE([heap-slam-cache],
 AX_ZBZ_DEBUG_ARG_ENABLE([schedstate-unblocks],
     [Enable debugging for scheduler state unblocks],
     [CONFIG_DEBUG_SCHEDSTATE_UNBLOCKS])
+
+AX_ZBZ_DEBUG_ARG_ENABLE([pipe-device-bios-pxe],
+    [debug pipe BIOS PXE network device],
+    [CONFIG_DEBUG_PIPE_DEVICE_BIOS_PXE])

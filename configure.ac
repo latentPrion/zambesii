@@ -235,6 +235,9 @@ AC_SUBST([DISTRIBUTARIES_KERNEL_LIBS])
 
 # Debugging options.
 m4_include([m4/debug-opts.m4])
+# IBM PC BIOS specific options (configure flags apply when ZFIRMWARE=ibmPcBios).
+m4_include([m4/ibm-pc-bios-opts.m4])
+
 # Virtual memory options.
 m4_include([m4/virtual-memory-opts.m4])
 
