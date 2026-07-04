@@ -7,6 +7,7 @@
 #include <__kclasses/debugPipe.h>
 #include <kernel/common/processTrib/processTrib.h>
 #include <kernel/common/waitLock.h>
+#include <chipset/zkcm/zkcmCore.h>
 #include <firmware/ibmPcBios/x86emu.h>
 #include "x86EmuAuxFuncs.h"
 
@@ -73,6 +74,8 @@ error_t ibmPcBios::initialize(void)
 
 	ibmPcBios_initialized = 1;
 	ibmPcBios_initState = ERROR_SUCCESS;
+	zkcmCore.chipsetEventNotification(
+		__KPOWER_EVENT_FIRMWARE_BIOS_EMU_AVAIL, 0);
 	return ERROR_SUCCESS;
 }
 
