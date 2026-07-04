@@ -10,6 +10,9 @@
 #include "zkcmIbmPcState.h"
 #include "vgaTerminal.h"
 #include "rs232.h"
+#if defined(CONFIG_FIRMWARE_IBM_PC_BIOS)
+#include <firmware/ibmPcBios/ibmPcBios_coreFuncs.h>
+#endif
 
 
 ZkcmCore		zkcmCore(CC"IBM PC compatible", CC"Unknown");
@@ -51,6 +54,18 @@ void ZkcmCore::chipsetEventNotification(e__kPowerEvent event, uarch_t flags)
 	case __KPOWER_EVENT_HEAP_AVAIL:
 	case __KPOWER_EVENT_POST_SMP_MODE_SWITCH:
 		irqControl.chipsetEventNotification(event, flags);
+		break;
+
+	case __KPOWER_EVENT_FIRMWARE_BIOS_EMU_AVAIL:
+#if defined(CONFIG_FIRMWARE_IBM_PC_BIOS)
+		if (ibmPcBios::initialize() != ERROR_SUCCESS)
+		{
+			printf(WARNING ZKCMCORE"Failed to initialize BIOS "
+				"emulator.\n");
+		}
+#else
+		(void)flags;
+#endif
 		break;
 
 	default:

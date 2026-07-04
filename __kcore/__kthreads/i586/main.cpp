@@ -252,6 +252,9 @@ extern "C" void main(ubit32 magic, uMultibootHeader mbHeader)
 	DO_OR_DIE(memReservoir, initialize(), ret);
 	DO_OR_DIE(cachePool, initialize(), ret);
 
+	zkcmCore.chipsetEventNotification(
+		__KPOWER_EVENT_FIRMWARE_BIOS_EMU_AVAIL, 0);
+
 	/* Next block is dedicated to initializing Process management,
 	 * Threading and scheduling.
 	 **/
