@@ -11,13 +11,29 @@
 
 void MultipleReaderLock::dump(void)
 {
-	printf(NOTICE "MultipleReaderLock::dump() called on %s @ %p:\n"
-		"\tlockval: %x, flags: %x, writeRequestBit: %s, nReaders: %d\n"
-		"\townerAcquisitionInstr: %p.\n",
-		name, this, lock, flags,
+	printf(NOTICE
+#ifdef CONFIG_DEBUG_LOCKS
+		"MultipleReaderLock::dump() called on %s @ %p:\n"
+#else
+		"MultipleReaderLock::dump() called @ %p:\n"
+#endif
+		"\tlockval: %x, flags: %x, writeRequestBit: %s, nReaders: %d"
+#ifdef CONFIG_DEBUG_LOCKS
+		"\n\townerAcquisitionInstr: %p.\n"
+#else
+		".\n"
+#endif
+		,
+#ifdef CONFIG_DEBUG_LOCKS
+		name,
+#endif
+		this, lock, flags,
 		FLAG_TEST(flags, MR_FLAGS_WRITE_REQUEST) ? "SET" : "CLEAR",
-		lock & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1),
-		ownerAcquisitionInstr);
+		lock & ((1 << MR_FLAGS_WRITE_REQUEST_SHIFT) - 1)
+#ifdef CONFIG_DEBUG_LOCKS
+		, ownerAcquisitionInstr
+#endif
+		);
 }
 
 void MultipleReaderLock::readAcquire(uarch_t *_flags)
@@ -447,8 +463,8 @@ deadlock:
 
 	if (cpuControl::interruptsEnabled())
 	{
-		printf(FATAL"%s(%s): readReleaseWriteAcquire() called with "
-			"IRQs enabled.\n", name, __func__);
+		printf(FATAL"MultipleReaderLock(%s): readReleaseWriteAcquire() "
+			"called with IRQs enabled.\n", __func__);
 
 		panic(ERROR_INVALID_STATE);
 	}
