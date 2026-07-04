@@ -1,1 +1,1 @@
-SUBDIRS=zudi
+SUBDIRS=zudi zbz-pxe-log-sink

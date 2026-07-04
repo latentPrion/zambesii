@@ -1,0 +1,16 @@
+[Unit]
+Description=Zambesii PXE EtherType kernel log sink
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/zbz-pxe-log-sink --interface auto --log-dir /var/log/zbz-kernel --ethertype 0x02B2 --idle-gap 30
+Restart=always
+RestartSec=2
+AmbientCapabilities=CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_RAW
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

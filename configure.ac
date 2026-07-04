@@ -321,6 +321,11 @@ AX_SUBDIRS_CONFIGURE([build/zudi],
     [[--build=${build_alias}],[--host=${build_alias}],[host_alias=${build_alias}]],
     [[host_alias=${host_alias}]])
 
+AX_SUBDIRS_CONFIGURE([build/zbz-pxe-log-sink],
+    [[]],[[]],
+    [[--build=${build_alias}],[--host=${build_alias}],[host_alias=${build_alias}]],
+    [[host_alias=${host_alias}]])
+
 AC_CONFIG_COMMANDS_POST(
     AC_MSG_NOTICE(m4_normalize(
         [Compiling Zambesii v${PACKAGE_VERSION} for platform:
