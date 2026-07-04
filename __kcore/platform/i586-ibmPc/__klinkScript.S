@@ -122,12 +122,12 @@ SECTIONS
 	__kloadVaddrCodeEnd = .;
 	__kloadVaddrRodataStart = .;
 
-	__kinitArrayCtorStart = .;
 	.init_array BLOCK(4)
 	: AT(IBMPC___KLOAD_VADDR_NEXT_PADDR(.init_array)) {
+		__kinitArrayCtorStart = .;
 		*(.init_array*)
+		__kinitArrayCtorEnd = .;
 	} >ibmPc___kload_vaddr
-	__kinitArrayCtorEnd = .;
 
 	/* If we don't place these __kinitCtorStart symbols
 	 * here outside the definition block for the .init
