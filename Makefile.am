@@ -49,20 +49,7 @@ __KCORE_LIBS += __kcore/__kclasses/lib__kclasses.a \
 
 zambesii_zxe_LDSCRIPT=__kcore/platform/$(ZARCH)-$(ZCHIPSET)/__klinkScript.ld
 noinst_PROGRAMS=zambesii.zxe
-
-# Static library archives do not change mtime when a member .o is recompiled
-# unless the archive rule runs in that subdirectory.  A direct "make zambesii.zxe"
-# only compared .a mtimes to the executable and skipped stale objects.  Rebuild
-# __kcore when any kernel source changes, then relink only when that stamp is new.
-__kcore_lib_source_deps = $(shell find '$(top_srcdir)/__kcore' -type f \
-	\( -name '*.cpp' -o -name '*.c' -o -name '*.cc' -o -name '*.S' \) 2>/dev/null)
-
-__kcore_libs_stamp: $(__kcore_lib_source_deps)
-	$(MAKE) $(AM_MAKEFLAGS) -C build/zudi all
-	$(MAKE) $(AM_MAKEFLAGS) -C __kcore all
-	$(AM_V_at)touch $@
-
-zambesii_zxe_DEPENDENCIES=__kcore_libs_stamp $(__KCORE_LIBS) $(zambesii_zxe_LDSCRIPT)
+zambesii_zxe_DEPENDENCIES=$(__KCORE_LIBS) $(zambesii_zxe_LDSCRIPT)
 # As documentation: -Xlinker and -Wl both pass
 # arguments to the linker. However, -Xlinker is used to
 # pass arguments that are not recognized by the compiler,
